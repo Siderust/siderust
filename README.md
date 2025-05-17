@@ -157,4 +157,18 @@ By participating you agree to follow the [Rust Code of Conduct](https://www.r
 
 ## License
 
-Licensed under **AGPL-3.0**.
+This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
+The AGPL-3.0 ensures that:
+
+- Any modifications and redistributions of the code (including as a network service) remain free and open.
+- End users have access to the full source code, including any improvements or extensions made.
+
+> **Note for commercial or proprietary use:**
+> If you wish to incorporate this code into a closed-source or otherwise differently licensed project, a **dual-licensing** arrangement can be negotiated. Please contact the authors to discuss terms and conditions for a commercial or proprietary license that suits your needs.
+
+
+---
+
+## Acknowledgments
+
+Big thanks to **Màrius Montón** ([@mariusmm](https://github.com/mariusmm)) for inviting me to his three-week Rust intro course at the Universitat Autònoma de Barcelona (UAB) in 2024 that nudge set this project in motion.
