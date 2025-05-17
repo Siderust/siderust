@@ -21,6 +21,7 @@ Siderust aims to be the reference ephemeris and orbit‑analysis library for emb
 8. [Roadmap](#roadmap)
 9. [Contributing](#contributing)
 10. [License](#license)
+11. [Acknowledgments](#acknowledgments)
 
 ---
 
