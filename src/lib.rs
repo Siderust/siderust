@@ -62,7 +62,7 @@
 //! 
 //! println!("{}", mars.position);
 //! ```
-//! //!
+//!
 //! ---
 //!
 //! **Note:** The (in-code) documentation within this project’s has been
