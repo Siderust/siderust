@@ -46,11 +46,10 @@
 //! - Large static coefficient tables are generated automatically from the
 //!   IERS ASCII source.
 
-use crate::units::{Radians, Degrees, JulianDay};
+use crate::units::JulianDay;
 use crate::coordinates::{
     SphericalCoord, CartesianCoord,
-    centers::Geocentric, centers::Heliocentric,
-    frames::Equatorial, frames::Ecliptic,
+    centers::Geocentric, frames::Equatorial
 };
 
 
@@ -96,29 +95,10 @@ struct Xyz {
     pub cos2: i32,
 }
 
-
-/// Add **annual aberration** to a mean equatorial Cartesian position.
-///
-/// * `mean` – Geocentric Cartesian coordinates referred to the true equator &
-///   equinox of date (in astronomical units).
-/// * `jd`   – Terrestrial Time (TT) in Julian Day.
-///
-/// # Returns
-/// A new [`CartesianCoord`] whose x, y, z components include the effect of
-/// the Earth's orbital velocity.
-///
-/// # Accuracy
-/// Better than 0.1 mas for dates 1900-2100; dominated by the underlying
-/// Ron–Vondrák theory.
-#[must_use]
-pub fn aberration(
-    mean: CartesianCoord<Geocentric, Equatorial>,
-    jd:   JulianDay,
-) -> CartesianCoord<Geocentric, Equatorial> {
-    //--------------------------------------------------------------------
-    // 1. Fundamental arguments (radians)
-    //--------------------------------------------------------------------
-    let t = jd.julian_centuries().value();
+fn heliocentric_velocity_components(t: f64) -> (f64, f64, f64) {
+    let mut vx = 0.0;
+    let mut vy = 0.0;
+    let mut vz = 0.0;
 
     let l2 = (3.176_146_7 + 1_021.328_554_6 * t).rem_euclid(TAU);
     let l3 = (1.753_470_3 +   628.307_584_9 * t).rem_euclid(TAU);
@@ -131,13 +111,6 @@ pub fn aberration(
     let  d = (5.198_466_7 + 7_771.377_148_6 * t).rem_euclid(TAU);
     let mm = (2.355_555_9 + 8_328.691_428_9 * t).rem_euclid(TAU);
     let  f = (1.627_905_2 + 8_433.466_160_1 * t).rem_euclid(TAU);
-
-    //--------------------------------------------------------------------
-    // 2. Heliocentric velocity components  (10⁻⁸ au d⁻¹)
-    //--------------------------------------------------------------------
-    let mut vx = 0.0;
-    let mut vy = 0.0;
-    let mut vz = 0.0;
 
     for i in 0..TERMS {
         let arg =
@@ -162,130 +135,113 @@ pub fn aberration(
         vz += (Z_COEFFICIENTS[i].sin1 as f64 + Z_COEFFICIENTS[i].sin2 as f64 * t) * s
             + (Z_COEFFICIENTS[i].cos1 as f64 + Z_COEFFICIENTS[i].cos2 as f64 * t) * c;
     }
-
-    //--------------------------------------------------------------------
-    // 3. Apply v/c to the unit vector of the star
-    //--------------------------------------------------------------------
-    // Extract the geometric position in units of AU:
-    let mx = mean.x();
-    let my = mean.y();
-    let mz = mean.z();
-
-    // Normalize to obtain the unit vector
-    let r = (mx*mx + my*my + mz*mz).sqrt();
-    let mut px = mx / r;
-    let mut py = my / r;
-    let mut pz = mz / r;
-
-    // Apply the v/c term
-    px += vx / C_10E8;
-    py += vy / C_10E8;
-    pz += vz / C_10E8;
-
-    // Renormalize and restore the original distance
-    let norm = (px*px + py*py + pz*pz).sqrt();
-    px = px / norm * r;
-    py = py / norm * r;
-    pz = pz / norm * r;
-
-    CartesianCoord::<Geocentric, Equatorial>::new(
-        px,
-        py,
-        pz
-    )
+    (vx, vy, vz)
 }
 
-
-/// Add **annual aberration** to a mean equatorial position.
+/// Add **annual aberration** to a mean equatorial Cartesian position.
 ///
-/// * `mean` – Geometric (catalogue) position referred to the true equator &
-///   equinox of date.
+/// * `mean` – Geocentric Cartesian coordinates referred to the true equator &
+///   equinox of date (in astronomical units).
 /// * `jd`   – Terrestrial Time (TT) in Julian Day.
 ///
 /// # Returns
-/// A new [`SphericalCoord`] whose right ascension and declination include the
-/// effect of the Earth's orbital velocity.
+/// A new [`CartesianCoord`] whose x, y, z components include the effect of
+/// the Earth's orbital velocity.
 ///
 /// # Accuracy
-/// Better than 0.1 mas for dates 1900‑2100; dominated by the underlying
+/// Better than 0.1 mas for dates 1900-2100; dominated by the underlying
 /// Ron–Vondrák theory.
 #[must_use]
-pub fn aberration_sph(
-    mean: SphericalCoord<Geocentric, Equatorial>,
+pub fn apply_aberration(
+    mean: CartesianCoord<Geocentric, Equatorial>,
     jd:   JulianDay,
-) -> SphericalCoord<Geocentric, Equatorial> {
-    (&aberration((&mean).into(), jd)).into()
-}
+) -> CartesianCoord<Geocentric, Equatorial> {
 
+    if mean.distance_from_origin() == 0.0 {
+        // Don't look at your feet!
+        return mean;
+    }
 
-/// Constant of aberration κ = 20".49552 expressed in **radians**.
-/// κ = (20.49552 / 3600)° × π/180 ≃ 9.936 508 497 × 10⁻⁵ rad.
-const K_ABERR: f64 = 9.936_508_497_454_118e-5;
-
-/// Add annual aberration (Meeus §22.2) in the geocentric–ecliptic frame.
-#[inline]
-#[must_use]
-pub fn ecl_aberration_sph(
-    mean_position: SphericalCoord<Geocentric, Ecliptic>,
-    jd:   JulianDay,
-) -> SphericalCoord<Geocentric, Ecliptic> {
+    let t = jd.julian_centuries().value();
 
     //--------------------------------------------------------------------
-    // 1. Time arguments
+    // 1. Heliocentric velocity components  (10⁻⁸ au d⁻¹)
     //--------------------------------------------------------------------
-    let tc  = jd.julian_centuries().value();
-    let tc2 = tc * tc;
+    let (vx, vy, vz) = heliocentric_velocity_components(t);
 
     //--------------------------------------------------------------------
-    // 2. Get Solar and orbital parameters
+    // 2. Apply v/c to the unit vector of the star
     //--------------------------------------------------------------------
-    let lambda_sun = SphericalCoord::<Geocentric, Ecliptic>::from(
-        &SphericalCoord::<Heliocentric, Ecliptic>::new(Degrees::new(0.0), Degrees::new(0.0), 0.0)
-    ).lon().to_radians(); // λ☉ in radians
+    // Normalize to obtain the unit vector
+    let norm: CartesianCoord<Geocentric, Equatorial> = mean.normalize();
 
-    // Orbital eccentricity of the Earth (dimensionless)
-    let ecc = 0.016_708_617 - 0.000_042_037 * tc - 0.000_000_123_6 * tc2;
-
-    // Longitude of perihelion of the Earth's orbit ω (radians)
-    let omega = Degrees::new(102.93735 + 1.71953 * tc + 0.000046 * tc2).to_radians();
-
-    //--------------------------------------------------------------------
-    // 3. Convert mean λ, β to radians
-    //--------------------------------------------------------------------
-    let mut lambda = mean_position.lon().to_radians();
-    let mut beta   = mean_position.lat().to_radians();
-
-    //--------------------------------------------------------------------
-    // 4. Meeus 22.2 corrections
-    //--------------------------------------------------------------------
-    let delta_lambda = (
-        -K_ABERR * (lambda_sun - lambda).cos() +
-         ecc     * K_ABERR * (omega - lambda).cos()
-    ) / beta.cos();
-
-    let delta_beta = -K_ABERR * beta.sin() * (
-        (lambda_sun - lambda).sin() -
-         ecc * (omega - lambda).sin()
+    // TODO: impl CartesianCoord Arithmetics
+    let with_vc = CartesianCoord::<Geocentric, Equatorial>::new(
+        norm.x() + vx / C_10E8,
+        norm.y() + vy / C_10E8,
+        norm.z() + vz / C_10E8
     );
 
-    //--------------------------------------------------------------------
-    // 5. Apply corrections
-    //--------------------------------------------------------------------
-    lambda += Radians::new(delta_lambda);
-    beta   += Radians::new(delta_beta);
+    let norm = with_vc.normalize();
 
-    SphericalCoord::<Geocentric, Ecliptic>::new(
-        lambda.to_degrees(),
-        beta.to_degrees(),
-        mean_position.radial_distance,
+    let r = mean.distance_from_origin();
+    // TODO: impl CartesianCoord Arithmetics
+    CartesianCoord::<Geocentric, Equatorial>::new(
+        norm.x() * r,
+        norm.y() * r,
+        norm.z() * r
     )
 }
 
-pub fn ecl_aberration(
-    mean: CartesianCoord<Geocentric, Ecliptic>,
+#[must_use]
+pub fn remove_aberration(
+    app: CartesianCoord<Geocentric, Equatorial>,
+    jd:  JulianDay,
+) -> CartesianCoord<Geocentric, Equatorial> {
+
+    if app.distance_from_origin() == 0.0 {
+        // Don't look at your feet!
+        return app;
+    }
+
+    let t  = jd.julian_centuries().value();
+
+    //--------------------------------------------------------------------
+    // 1. Heliocentric velocity components  (10⁻⁸ au d⁻¹)
+    //--------------------------------------------------------------------
+    let (vx, vy, vz) = heliocentric_velocity_components(t);
+
+    //--------------------------------------------------------------------
+    // 2. Apply -v/c to the unit vector of the star
+    //--------------------------------------------------------------------
+    // Normalize to obtain the unit vector
+    let norm: CartesianCoord<Geocentric, Equatorial> = app.normalize();
+
+    // TODO: impl CartesianCoord Arithmetics
+    let with_vc = CartesianCoord::<Geocentric, Equatorial>::new(
+        norm.x() - vx / C_10E8,
+        norm.y() - vy / C_10E8,
+        norm.z() - vz / C_10E8
+    );
+
+    let norm = with_vc.normalize();
+
+    let r = app.distance_from_origin();
+    // TODO: impl CartesianCoord Arithmetics
+    CartesianCoord::<Geocentric, Equatorial>::new(
+        norm.x() * r,
+        norm.y() * r,
+        norm.z() * r
+    )
+}
+
+
+#[must_use]
+pub fn apply_aberration_sph(
+    mean: SphericalCoord<Geocentric, Equatorial>,
     jd:   JulianDay,
-) -> CartesianCoord<Geocentric, Ecliptic> {
-    (&ecl_aberration_sph((&mean).into(), jd)).into()
+) -> SphericalCoord<Geocentric, Equatorial> {
+    (&apply_aberration((&mean).into(), jd)).into()
 }
 
 const ARGUMENTS: [Arg; TERMS] = [
@@ -449,6 +405,7 @@ const Z_COEFFICIENTS: [Xyz; TERMS] = [
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::units::Degrees;
     use approx::assert_relative_eq;
 
     #[test]
@@ -459,7 +416,7 @@ mod tests {
             Degrees::new(20.0),
             1.23
         );
-        let out = aberration_sph(mean, jd);
+        let out = apply_aberration_sph(mean, jd);
 
         assert_relative_eq!(out.radial_distance, mean.radial_distance, epsilon = 0.0);
     }
@@ -472,7 +429,7 @@ mod tests {
             Degrees::new(0.0),    // Dec = 0°
             1.0
         );
-        let out = aberration_sph(mean, jd);
+        let out = apply_aberration_sph(mean, jd);
 
         let delta_ra = out.ra().diff_deg(mean.ra());
         let delta_dec = out.dec().diff_deg(mean.dec());
@@ -490,23 +447,10 @@ mod tests {
             Degrees::new(90.0),   // Dec = +90°
             1.0
         );
-        let out = aberration_sph(mean, jd);
+        let out = apply_aberration_sph(mean, jd);
 
         assert!(out.dec().as_f64() < 90.0, "Declination should decrease slightly at pole");
         assert!(!out.ra().as_f64().is_nan(), "RA must not be NaN at the pole");
-    }
-
-    #[test]
-    fn meeus_example_regulus() {
-        let jd  = JulianDay::new(2458849.5); // 2020‑07‑01T00:00 TT
-        let star = SphericalCoord::<Geocentric, Ecliptic>::new(
-            Degrees::new(149.481),
-            Degrees::new(0.0),
-            1.0
-        );
-        let app = ecl_aberration_sph(star, jd);
-        assert!(app.lon().diff_deg(Degrees::new(149.486_803)).as_f64() < 0.05); // 0.05″ tol
-        assert!(app.lat().diff_deg(Degrees::new(-0.000_043)).as_f64()  < 0.05);
     }
 
 }
