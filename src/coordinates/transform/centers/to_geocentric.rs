@@ -17,11 +17,7 @@ where
     let earth = CartesianCoord::<Barycentric, F>::from(
         Earth::vsop87e(jd).get_position()
     );
-    CartesianCoord::new(
-        bary.x() - earth.x(),
-        bary.y() - earth.y(),
-        bary.z() - earth.z(),
-    )
+    CartesianCoord::from_vec3(bary.as_vec3() - earth.as_vec3())
 }
 
 pub fn heliocentric_to_geocentric<F: ReferenceFrame>(
@@ -34,11 +30,7 @@ where
     let earth = CartesianCoord::<Heliocentric, F>::from(
         Earth::vsop87a(jd).get_position()
     );
-    CartesianCoord::new(
-        helio.x() - earth.x(),
-        helio.y() - earth.y(),
-        helio.z() - earth.z(),
-    )
+    CartesianCoord::from_vec3(helio.as_vec3() - earth.as_vec3())
 }
 
 impl<F: ReferenceFrame> Transform<CartesianCoord<Geocentric, F>> for CartesianCoord<Barycentric, F>

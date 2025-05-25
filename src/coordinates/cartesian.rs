@@ -45,6 +45,12 @@ impl<Center: centers::ReferenceCenter, Frame: frames::ReferenceFrame> CartesianC
         CartesianCoord { xyz: Vector3::<f64>::new(x, y, z), _center: PhantomData, _frame: PhantomData }
     }
 
+    pub const fn from_vec3(vec3: Vector3<f64>) -> Self {
+        CartesianCoord { xyz: vec3, _center: PhantomData, _frame: PhantomData }
+    }
+
+    pub const fn as_vec3(&self) -> Vector3<f64> { self.xyz }
+
     /// Gets the x-coordinate in AU.
     pub fn x(&self) -> f64 { self.xyz[0] }
 
