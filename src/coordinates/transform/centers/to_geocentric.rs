@@ -2,27 +2,28 @@ use crate::bodies::solar_system::Earth;
 use crate::units::JulianDay;
 use crate::coordinates::{
     CartesianCoord,
-    frames::{ReferenceFrame, Ecliptic},
+    frames::{ReferenceFrame, Ecliptic, Equatorial},
     centers::{Heliocentric, Barycentric, Geocentric}
 };
 use crate::coordinates::transform::Transform;
-use crate::astro::aberration::ecl_aberration;
+use crate::astro::aberration::apply_aberration;
 
 pub fn barycentric_to_geocentric<F: ReferenceFrame>(
     bary: &CartesianCoord<Barycentric, F>,
     jd: JulianDay
 ) -> CartesianCoord<Geocentric, F>
 where
-    for<'a> CartesianCoord<Barycentric, Ecliptic>: From<&'a CartesianCoord<Barycentric, F>>, // Required by VSOP
-    for<'a> CartesianCoord<Geocentric,  F>: From<&'a CartesianCoord<Geocentric, Ecliptic>>,  // Required by Aberration
+    for<'a> CartesianCoord<Barycentric, Equatorial>: From<&'a CartesianCoord<Barycentric, Ecliptic>>, // Required by VSOP
+    for<'a> CartesianCoord<Barycentric, Equatorial>: From<&'a CartesianCoord<Barycentric, F>>, // Required by Aberration
+    for<'a> CartesianCoord<Geocentric, F>: From<&'a CartesianCoord<Geocentric, Equatorial>>, // Required by Aberration
 {
-    let earth_ecl = Earth::vsop87e(jd).get_position().clone();
-    let bary_ecl  = CartesianCoord::<Barycentric, Ecliptic>::from(bary);
-    let geo_ecl   = CartesianCoord::<Geocentric, Ecliptic>::from_vec3(bary_ecl.as_vec3() - earth_ecl.as_vec3());
+    let earth_ecl = Earth::vsop87e(jd).get_position().clone(); // Barycentric Ecliptic Earth
+    let earth_equ = CartesianCoord::<Barycentric, Equatorial>::from(&earth_ecl); // (Bary-Ecl) -> (Bary-Equ)
+    let bary_equ  = CartesianCoord::<Barycentric, Equatorial>::from(bary);      // (Bary-F)   -> (Bary-Equ)
+    let geo_equ   = CartesianCoord::<Geocentric, Equatorial>::from_vec3(bary_equ.as_vec3() - earth_equ.as_vec3()); // Barycentric -> Geocentric
 
-    CartesianCoord::<Geocentric, F>::from(
-        &ecl_aberration(geo_ecl, jd)
-    )
+    let gcrs = apply_aberration(geo_equ, jd); // Apply aberration
+    CartesianCoord::<Geocentric, F>::from(&gcrs) // Equatorial -> F
 }
 
 pub fn heliocentric_to_geocentric<F: ReferenceFrame>(
@@ -40,8 +41,9 @@ where
 
 impl<F: ReferenceFrame> Transform<CartesianCoord<Geocentric, F>> for CartesianCoord<Barycentric, F>
 where
-    for<'a> CartesianCoord<Barycentric, Ecliptic>: From<&'a CartesianCoord<Barycentric, F>>, // Required by VSOP
-    for<'a> CartesianCoord<Geocentric,  F>: From<&'a CartesianCoord<Geocentric, Ecliptic>>,  // Required by Aberration
+    for<'a> CartesianCoord<Barycentric, Equatorial>: From<&'a CartesianCoord<Barycentric, Ecliptic>>, // Required by VSOP
+    for<'a> CartesianCoord<Barycentric, Equatorial>: From<&'a CartesianCoord<Barycentric, F>>, // Required by Aberration
+    for<'a> CartesianCoord<Geocentric, F>: From<&'a CartesianCoord<Geocentric, Equatorial>>, // Required by Aberration
 {
     fn transform(
         &self,
@@ -88,7 +90,7 @@ mod tests {
     }
 
     #[test] // Barycentric -> Geocentric
-    fn test_helio() {
+    fn test_bary_to_geo() {
         let earth_bary = Earth::vsop87e(JulianDay::J2000).get_position().clone();
         let earth_geo = CartesianCoord::<Geocentric, Ecliptic>::from(&earth_bary);
         let expected_earth_geo = CartesianCoord::<Geocentric, Ecliptic>::new(0.0, 0.0, 0.0);
@@ -97,7 +99,7 @@ mod tests {
     }
 
     #[test] // Heliocentric -> Geocentric
-    fn test_eart_bary() {
+    fn test_helio_to_geo() {
         let earth_helio = Earth::vsop87a(JulianDay::J2000).get_position().clone();
         let earth_geo = CartesianCoord::<Geocentric, Ecliptic>::from(&earth_helio);
         let expected_earth_geo = CartesianCoord::<Geocentric, Ecliptic>::new(0.0, 0.0, 0.0);
