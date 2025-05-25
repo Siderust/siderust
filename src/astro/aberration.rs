@@ -225,7 +225,7 @@ const K_ABERR: f64 = 9.936_508_497_454_118e-5;
 /// Add annual aberration (Meeus §22.2) in the geocentric–ecliptic frame.
 #[inline]
 #[must_use]
-pub fn ecl_aberration(
+pub fn ecl_aberration_sph(
     mean_position: SphericalCoord<Geocentric, Ecliptic>,
     jd:   JulianDay,
 ) -> SphericalCoord<Geocentric, Ecliptic> {
@@ -281,6 +281,12 @@ pub fn ecl_aberration(
     )
 }
 
+pub fn ecl_aberration(
+    mean: CartesianCoord<Geocentric, Ecliptic>,
+    jd:   JulianDay,
+) -> CartesianCoord<Geocentric, Ecliptic> {
+    (&ecl_aberration_sph((&mean).into(), jd)).into()
+}
 
 const ARGUMENTS: [Arg; TERMS] = [
     Arg { a_l2: 0, a_l3: 1, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
@@ -498,7 +504,7 @@ mod tests {
             Degrees::new(0.0),
             1.0
         );
-        let app = ecl_aberration(star, jd);
+        let app = ecl_aberration_sph(star, jd);
         assert!(app.lon().diff_deg(Degrees::new(149.486_803)).as_f64() < 0.05); // 0.05″ tol
         assert!(app.lat().diff_deg(Degrees::new(-0.000_043)).as_f64()  < 0.05);
     }
