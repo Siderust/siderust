@@ -68,6 +68,11 @@ impl<Center: centers::ReferenceCenter, Frame: frames::ReferenceFrame> CartesianC
         (self.x().powi(2) + self.y().powi(2) + self.z().powi(2)).sqrt()
     }
 
+    pub fn normalize(&self) -> Self {
+        let r = self.distance_from_origin();
+        Self::new(self.x() / r, self.y() / r, self.z() / r)
+    }
+
     /// Computes the Euclidean distance to another Cartesian coordinate of the same type.
     pub fn distance_to(
         &self,
