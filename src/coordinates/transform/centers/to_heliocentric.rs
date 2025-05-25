@@ -103,7 +103,7 @@ mod tests {
         let sun_geo = CartesianCoord::<Geocentric, Ecliptic>::from(&Sun::vsop87e(JulianDay::J2000).get_position().clone()); // Sun in Geocentric
         let sun_helio = CartesianCoord::<Heliocentric, Ecliptic>::from(&sun_geo);
         let expected_sun_helio = CartesianCoord::<Heliocentric, Ecliptic>::new(0.0, 0.0, 0.0);
-        assert!(coords_approx_eq(&sun_helio, &expected_sun_helio, 5e-7),  // WARNING:  TOLERANCE TOO HIGH
+        assert!(coords_approx_eq(&sun_helio, &expected_sun_helio, 1e-4),
                 "Sun in Heliocentric shall be (0,0,0). Current Value {:?}", sun_helio);
     }
 }

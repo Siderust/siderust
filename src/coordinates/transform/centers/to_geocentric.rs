@@ -6,18 +6,23 @@ use crate::coordinates::{
     centers::{Heliocentric, Barycentric, Geocentric}
 };
 use crate::coordinates::transform::Transform;
+use crate::astro::aberration::ecl_aberration;
 
 pub fn barycentric_to_geocentric<F: ReferenceFrame>(
     bary: &CartesianCoord<Barycentric, F>,
     jd: JulianDay
 ) -> CartesianCoord<Geocentric, F>
 where
-    for<'a> CartesianCoord<Barycentric, F>: From<&'a CartesianCoord<Barycentric, Ecliptic>>,
+    for<'a> CartesianCoord<Barycentric, Ecliptic>: From<&'a CartesianCoord<Barycentric, F>>, // Required by VSOP
+    for<'a> CartesianCoord<Geocentric,  F>: From<&'a CartesianCoord<Geocentric, Ecliptic>>,  // Required by Aberration
 {
-    let earth = CartesianCoord::<Barycentric, F>::from(
-        Earth::vsop87e(jd).get_position()
-    );
-    CartesianCoord::from_vec3(bary.as_vec3() - earth.as_vec3())
+    let earth_ecl = Earth::vsop87e(jd).get_position().clone();
+    let bary_ecl  = CartesianCoord::<Barycentric, Ecliptic>::from(bary);
+    let geo_ecl   = CartesianCoord::<Geocentric, Ecliptic>::from_vec3(bary_ecl.as_vec3() - earth_ecl.as_vec3());
+
+    CartesianCoord::<Geocentric, F>::from(
+        &ecl_aberration(geo_ecl, jd)
+    )
 }
 
 pub fn heliocentric_to_geocentric<F: ReferenceFrame>(
@@ -35,7 +40,8 @@ where
 
 impl<F: ReferenceFrame> Transform<CartesianCoord<Geocentric, F>> for CartesianCoord<Barycentric, F>
 where
-    for<'a> CartesianCoord<Barycentric, F>: From<&'a CartesianCoord<Barycentric, Ecliptic>>,
+    for<'a> CartesianCoord<Barycentric, Ecliptic>: From<&'a CartesianCoord<Barycentric, F>>, // Required by VSOP
+    for<'a> CartesianCoord<Geocentric,  F>: From<&'a CartesianCoord<Geocentric, Ecliptic>>,  // Required by Aberration
 {
     fn transform(
         &self,
