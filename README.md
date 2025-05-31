@@ -58,7 +58,7 @@ use siderust::coordinates::{CartesianCoord, centers::*, frames::*};
 // Position of Mars in the Heliocentric Ecliptic frame
 let mars_helio = CartesianCoord::<Heliocentric, Ecliptic>::new(x, y, z);
 
-// Convert to Geocentric Ecliptic spherical coordinates
+// Convert to Geocentric Ecliptic Cartesian coordinates
 let mars_geo: CartesianCoord::<Geocentric, Ecliptic> = mars_helio.transform(jd);
 ```
 
@@ -92,7 +92,7 @@ use chrono::prelude::*;
 // 1. Select an epoch (UTC now to JD)
 let jd = JulianDay::from_utc(Utc::now());
 
-// 2. Compute heliocentric barycentric coordinates via VSOP87
+// 2. Compute barycentric ecliptic coordinates via VSOP87
 let mars = Mars::vsop87e(jd);
 
 // 3. Print mars
