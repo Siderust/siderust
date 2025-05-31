@@ -19,8 +19,8 @@ where
 {
     let earth_ecl = Earth::vsop87e(jd).get_position().clone(); // Barycentric Ecliptic Earth
     let earth_equ = CartesianCoord::<Barycentric, Equatorial>::from(&earth_ecl); // (Bary-Ecl) -> (Bary-Equ)
-    let bary_equ  = CartesianCoord::<Barycentric, Equatorial>::from(bary);      // (Bary-F)   -> (Bary-Equ)
-    let geo_equ   = CartesianCoord::<Geocentric, Equatorial>::from_vec3(bary_equ.as_vec3() - earth_equ.as_vec3()); // Barycentric -> Geocentric
+    let bary_equ  = CartesianCoord::<Barycentric, Equatorial>::from(bary);       // (Bary-F)   -> (Bary-Equ)
+    let geo_equ    = CartesianCoord::<Geocentric, Equatorial>::from_vec3(bary_equ.as_vec3() - earth_equ.as_vec3()); // Barycentric -> Geocentric
 
     let gcrs = apply_aberration(geo_equ, jd); // Apply aberration
     CartesianCoord::<Geocentric, F>::from(&gcrs) // Equatorial -> F
@@ -31,12 +31,17 @@ pub fn heliocentric_to_geocentric<F: ReferenceFrame>(
     jd: JulianDay
 ) -> CartesianCoord<Geocentric, F>
 where
-    for<'a> CartesianCoord<Heliocentric, F>: From<&'a CartesianCoord<Heliocentric, Ecliptic>>,
+    for<'a> CartesianCoord<Heliocentric, Equatorial>: From<&'a CartesianCoord<Heliocentric, Ecliptic>>, // Required by VSOP
+    for<'a> CartesianCoord<Heliocentric, Equatorial>: From<&'a CartesianCoord<Heliocentric, F>>, // Required by Aberration
+    for<'a> CartesianCoord<Geocentric, F>: From<&'a CartesianCoord<Geocentric, Equatorial>>, // Required by Aberration
 {
-    let earth = CartesianCoord::<Heliocentric, F>::from(
-        Earth::vsop87a(jd).get_position()
-    );
-    CartesianCoord::from_vec3(helio.as_vec3() - earth.as_vec3())
+    let earth_ecl = Earth::vsop87a(jd).get_position().clone(); // Heliocentric Ecliptic Earth
+    let earth_equ = CartesianCoord::<Heliocentric, Equatorial>::from(&earth_ecl); // (Helio-Ecl) -> (Helio-Equ)
+    let helio_equ = CartesianCoord::<Heliocentric, Equatorial>::from(helio);      // (Helio-F)   -> (Helio-Equ)
+    let geo_equ     = CartesianCoord::<Geocentric, Equatorial>::from_vec3(helio_equ.as_vec3() - earth_equ.as_vec3()); // Heliocentric -> Geocentric
+
+    let gcrs = apply_aberration(geo_equ, jd); // Apply aberration
+    CartesianCoord::<Geocentric, F>::from(&gcrs) // Equatorial -> F
 }
 
 impl<F: ReferenceFrame> Transform<CartesianCoord<Geocentric, F>> for CartesianCoord<Barycentric, F>
@@ -55,7 +60,9 @@ where
 
 impl<F: ReferenceFrame> Transform<CartesianCoord<Geocentric, F>> for CartesianCoord<Heliocentric, F>
 where
-    for<'a> CartesianCoord<Heliocentric, F>: From<&'a CartesianCoord<Heliocentric, Ecliptic>>,
+    for<'a> CartesianCoord<Heliocentric, Equatorial>: From<&'a CartesianCoord<Heliocentric, Ecliptic>>, // Required by VSOP
+    for<'a> CartesianCoord<Heliocentric, Equatorial>: From<&'a CartesianCoord<Heliocentric, F>>, // Required by Aberration
+    for<'a> CartesianCoord<Geocentric, F>: From<&'a CartesianCoord<Geocentric, Equatorial>>, // Required by Aberration
 {
     fn transform(
         &self,
