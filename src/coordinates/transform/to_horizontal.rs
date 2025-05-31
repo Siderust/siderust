@@ -77,18 +77,7 @@ mod tests {
     use super::*;
     use crate::coordinates::*;
     use crate::units::DMS;
-
-    /// Helper function to compare floating-point values within a small tolerance
-    fn approx_eq(a: f64, b: f64, epsilon: f64) -> bool {
-        (a - b).abs() < epsilon
-    }
-
-    fn coords_approx_eq(a: &SphericalCoord<impl ReferenceCenter, impl ReferenceFrame>,
-                        b: &SphericalCoord<impl ReferenceCenter, impl ReferenceFrame>,
-                        epsilon: f64) {
-        assert!(approx_eq(a.polar.as_f64(), b.polar.as_f64(), epsilon), "Current Polar {:?}; Expected {:?}", a.polar, b.polar);
-        assert!(approx_eq(a.azimuth.as_f64(), b.azimuth.as_f64(), epsilon), "Current Azimuth {:?}; Expected {:?}", a.azimuth, b.azimuth);
-    }
+    use crate::macros::assert_spherical_eq;
 
     #[test]
     fn test_sirius_to_horizontal() {
@@ -104,6 +93,6 @@ mod tests {
         );
 
         let horizontal = geocentric_to_horizontal(&SIRIUS.target.get_position(), &ROQUE_DE_LOS_MUCHACHOS, jd);
-        coords_approx_eq(&horizontal, &expected_horizontal, 1.5);
+        assert_spherical_eq!(horizontal, expected_horizontal, 1.5);
     }
 }
