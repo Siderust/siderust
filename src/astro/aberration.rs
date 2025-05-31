@@ -95,7 +95,7 @@ struct Xyz {
     pub cos2: i32,
 }
 
-fn heliocentric_velocity_components(t: f64) -> (f64, f64, f64) {
+fn heliocentric_velocity_components(t: f64) -> CartesianCoord<Geocentric, Equatorial> {
     let mut vx = 0.0;
     let mut vy = 0.0;
     let mut vz = 0.0;
@@ -135,7 +135,7 @@ fn heliocentric_velocity_components(t: f64) -> (f64, f64, f64) {
         vz += (Z_COEFFICIENTS[i].sin1 as f64 + Z_COEFFICIENTS[i].sin2 as f64 * t) * s
             + (Z_COEFFICIENTS[i].cos1 as f64 + Z_COEFFICIENTS[i].cos2 as f64 * t) * c;
     }
-    (vx, vy, vz)
+    CartesianCoord::new(vx, vy, vz)
 }
 
 /// Add **annual aberration** to a mean equatorial Cartesian position.
@@ -167,30 +167,15 @@ pub fn apply_aberration(
     //--------------------------------------------------------------------
     // 1. Heliocentric velocity components  (10⁻⁸ au d⁻¹)
     //--------------------------------------------------------------------
-    let (vx, vy, vz) = heliocentric_velocity_components(t);
+    let velocity = heliocentric_velocity_components(t);
 
     //--------------------------------------------------------------------
     // 2. Apply v/c to the unit vector of the star
     //--------------------------------------------------------------------
     // Normalize to obtain the unit vector
     let norm: CartesianCoord<Geocentric, Equatorial> = mean.normalize();
-
-    // TODO: impl CartesianCoord Arithmetics
-    let with_vc = CartesianCoord::<Geocentric, Equatorial>::new(
-        norm.x() + vx / C_10E8,
-        norm.y() + vy / C_10E8,
-        norm.z() + vz / C_10E8
-    );
-
-    let norm = with_vc.normalize();
-
-    let r = mean.distance_from_origin();
-    // TODO: impl CartesianCoord Arithmetics
-    CartesianCoord::<Geocentric, Equatorial>::new(
-        norm.x() * r,
-        norm.y() * r,
-        norm.z() * r
-    )
+    let with_vc = norm + velocity / C_10E8;
+    with_vc.normalize() * mean.distance_from_origin()
 }
 
 #[must_use]
@@ -209,30 +194,14 @@ pub fn remove_aberration(
     //--------------------------------------------------------------------
     // 1. Heliocentric velocity components  (10⁻⁸ au d⁻¹)
     //--------------------------------------------------------------------
-    let (vx, vy, vz) = heliocentric_velocity_components(t);
+    let velocity = heliocentric_velocity_components(t);
 
     //--------------------------------------------------------------------
     // 2. Apply -v/c to the unit vector of the star
     //--------------------------------------------------------------------
-    // Normalize to obtain the unit vector
     let norm: CartesianCoord<Geocentric, Equatorial> = app.normalize();
-
-    // TODO: impl CartesianCoord Arithmetics
-    let with_vc = CartesianCoord::<Geocentric, Equatorial>::new(
-        norm.x() - vx / C_10E8,
-        norm.y() - vy / C_10E8,
-        norm.z() - vz / C_10E8
-    );
-
-    let norm = with_vc.normalize();
-
-    let r = app.distance_from_origin();
-    // TODO: impl CartesianCoord Arithmetics
-    CartesianCoord::<Geocentric, Equatorial>::new(
-        norm.x() * r,
-        norm.y() * r,
-        norm.z() * r
-    )
+    let with_vc = norm - velocity / C_10E8;
+    with_vc.normalize() * app.distance_from_origin()
 }
 
 

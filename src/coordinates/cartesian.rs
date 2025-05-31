@@ -13,6 +13,7 @@ use super::{frames, centers};
 
 use std::marker::PhantomData;
 use nalgebra::Vector3;
+use std::ops::{Add, Sub, Div, Mul};
 
 /// A Cartesian coordinate representation with a specific reference center and frame.
 ///
@@ -95,6 +96,55 @@ where
             Frame::frame_name(),
             self.x(), self.y(), self.z()
         )
+    }
+}
+
+
+impl<Center, Frame> Add for CartesianCoord<Center, Frame>
+where
+    Center: centers::ReferenceCenter,
+    Frame: frames::ReferenceFrame,
+{
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self::Output {
+        Self::from_vec3(self.xyz + other.xyz)
+    }
+}
+
+impl<Center, Frame> Sub for CartesianCoord<Center, Frame>
+where
+    Center: centers::ReferenceCenter,
+    Frame: frames::ReferenceFrame,
+{
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Self::from_vec3(self.xyz - other.xyz)
+    }
+}
+
+impl<Center, Frame> Div<f64> for CartesianCoord<Center, Frame>
+where
+    Center: centers::ReferenceCenter,
+    Frame: frames::ReferenceFrame,
+{
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        Self::from_vec3(self.xyz / rhs)
+    }
+}
+
+impl<Center, Frame> Mul<f64> for CartesianCoord<Center, Frame>
+where
+    Center: centers::ReferenceCenter,
+    Frame: frames::ReferenceFrame,
+{
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self::from_vec3(self.xyz * rhs)
     }
 }
 
