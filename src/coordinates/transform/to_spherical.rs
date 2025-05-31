@@ -32,10 +32,10 @@ where
             );
         }
 
-        let polar = Degrees::new(cart.y().atan2(cart.x()).to_degrees());
-        let azimuth = Degrees::new((cart.z() / r).asin().to_degrees());
+        let polar = Degrees::new((cart.z() / r).asin().to_degrees());
+        let azimuth = Degrees::new(cart.y().atan2(cart.x()).to_degrees());
 
-        SphericalCoord::<Center, Frame>::new_spherical_coord(azimuth, polar, r)
+        SphericalCoord::<Center, Frame>::new_spherical_coord(polar, azimuth, r)
     }
 }
 

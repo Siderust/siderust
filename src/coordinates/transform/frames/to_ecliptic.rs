@@ -36,6 +36,7 @@ impl<C: centers::ReferenceCenter> Transform<CartesianCoord<C, frames::Ecliptic>>
 mod tests {
     use crate::coordinates::*;
     use crate::coordinates::frames::*;
+    use crate::macros::assert_cartesian_eq;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
@@ -50,23 +51,13 @@ mod tests {
         ecl_back
     }
 
-    /// Check if two coordinates are approximately equal
-    fn coords_approx_eq(a: &CartesianCoord<impl centers::ReferenceCenter, impl ReferenceFrame>, 
-                        b: &CartesianCoord<impl centers::ReferenceCenter, impl ReferenceFrame>, 
-                        epsilon: f64) -> bool {
-        approx_eq(a.x(), b.x(), epsilon) &&
-        approx_eq(a.y(), b.y(), epsilon) &&
-        approx_eq(a.z(), b.z(), epsilon)
-    }
-
     /// **Test 1: Identity transformation (Zero vector)**
     #[test]
     fn test_zero_vector_transformation() {
         let zero_ecl = CartesianCoord::<centers::Heliocentric, Ecliptic>::new(0.0, 0.0, 0.0);
         let zero_ecl_back = serialize(&zero_ecl);
 
-        assert!(coords_approx_eq(&zero_ecl, &zero_ecl_back, EPSILON), 
-                "Zero vector transformation should be reversible.");
+        assert_cartesian_eq!(zero_ecl, zero_ecl_back, EPSILON, "Zero vector transformation should be reversible.");
     }
 
     /// **Test 3: Edge case - Aligned along X-axis (Should not change)**
@@ -75,8 +66,7 @@ mod tests {
         let coord_ecl = CartesianCoord::<centers::Heliocentric, Ecliptic>::new(1.0, 0.0, 0.0);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert!(coords_approx_eq(&coord_ecl, &coord_ecl_back, EPSILON), 
-                "X-aligned vector should remain unchanged after transformation.");
+        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "X-aligned vector should remain unchanged after transformation.");
     }
 
     /// **Test 4: Edge case - Aligned along Y-axis**
@@ -85,8 +75,7 @@ mod tests {
         let coord_ecl = CartesianCoord::<centers::Heliocentric, Ecliptic>::new(0.0, 1.0, 0.0);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert!(coords_approx_eq(&coord_ecl, &coord_ecl_back, EPSILON), 
-                "Y-aligned vector should recover after round-trip transformation.");
+        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "Y-aligned vector should recover after round-trip transformation.");
     }
 
     /// **Test 5: Edge case - Aligned along Z-axis**
@@ -95,8 +84,7 @@ mod tests {
         let coord_ecl = CartesianCoord::<centers::Heliocentric, Ecliptic>::new(0.0, 0.0, 1.0);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert!(coords_approx_eq(&coord_ecl, &coord_ecl_back, EPSILON), 
-                "Z-aligned vector should recover after round-trip transformation.");
+        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "Z-aligned vector should recover after round-trip transformation.");
     }
 
     /// **Test 6: Transformation with extreme values**
@@ -105,8 +93,7 @@ mod tests {
         let coord_ecl = CartesianCoord::<centers::Heliocentric, Ecliptic>::new(1e10, -1e10, 5e9);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert!(coords_approx_eq(&coord_ecl, &coord_ecl_back, EPSILON), 
-                "Large values should not cause precision errors.");
+        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "Large values should not cause precision errors.");
     }
 
     /// **Test 7: Transformation with small values (Precision test)**
@@ -115,7 +102,6 @@ mod tests {
         let coord_ecl = CartesianCoord::<centers::Heliocentric, Ecliptic>::new(1e-10, -1e-10, 5e-11);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert!(coords_approx_eq(&coord_ecl, &coord_ecl_back, EPSILON), 
-                "Small values should not cause precision errors.");
+        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "Small values should not cause precision errors.");
     }
 }
