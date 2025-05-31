@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+- Geocentric coordinates now account for Aberration
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.1.0]
+
+### Added
 - Initial commit
 - Target, Coordinates, Astro, Calculus, Observatories and Units modules.
 - AGPL-3 license

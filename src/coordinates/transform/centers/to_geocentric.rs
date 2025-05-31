@@ -22,7 +22,7 @@ where
     let bary_equ  = CartesianCoord::<Barycentric, Equatorial>::from(bary);       // (Bary-F)   -> (Bary-Equ)
     let geo_equ    = CartesianCoord::<Geocentric, Equatorial>::from_vec3(bary_equ.as_vec3() - earth_equ.as_vec3()); // Barycentric -> Geocentric
 
-    let gcrs = apply_aberration(geo_equ, jd); // Apply aberration
+    let gcrs = apply_aberration(geo_equ, jd);
     CartesianCoord::<Geocentric, F>::from(&gcrs) // Equatorial -> F
 }
 
@@ -37,10 +37,10 @@ where
 {
     let earth_ecl = Earth::vsop87a(jd).get_position().clone(); // Heliocentric Ecliptic Earth
     let earth_equ = CartesianCoord::<Heliocentric, Equatorial>::from(&earth_ecl); // (Helio-Ecl) -> (Helio-Equ)
-    let helio_equ = CartesianCoord::<Heliocentric, Equatorial>::from(helio);      // (Helio-F)   -> (Helio-Equ)
+    let helio_equ = CartesianCoord::<Heliocentric, Equatorial>::from(helio); // (Helio-F)   -> (Helio-Equ)
     let geo_equ     = CartesianCoord::<Geocentric, Equatorial>::from_vec3(helio_equ.as_vec3() - earth_equ.as_vec3()); // Heliocentric -> Geocentric
 
-    let gcrs = apply_aberration(geo_equ, jd); // Apply aberration
+    let gcrs = apply_aberration(geo_equ, jd);
     CartesianCoord::<Geocentric, F>::from(&gcrs) // Equatorial -> F
 }
 
