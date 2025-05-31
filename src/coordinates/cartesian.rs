@@ -13,6 +13,7 @@ use super::{frames, centers};
 
 use std::marker::PhantomData;
 use nalgebra::Vector3;
+use std::ops::{Add, Sub, Div, Mul};
 
 /// A Cartesian coordinate representation with a specific reference center and frame.
 ///
@@ -45,6 +46,12 @@ impl<Center: centers::ReferenceCenter, Frame: frames::ReferenceFrame> CartesianC
         CartesianCoord { xyz: Vector3::<f64>::new(x, y, z), _center: PhantomData, _frame: PhantomData }
     }
 
+    pub const fn from_vec3(vec3: Vector3<f64>) -> Self {
+        CartesianCoord { xyz: vec3, _center: PhantomData, _frame: PhantomData }
+    }
+
+    pub const fn as_vec3(&self) -> Vector3<f64> { self.xyz }
+
     /// Gets the x-coordinate in AU.
     pub fn x(&self) -> f64 { self.xyz[0] }
 
@@ -60,6 +67,11 @@ impl<Center: centers::ReferenceCenter, Frame: frames::ReferenceFrame> CartesianC
     /// The distance from the ReferenceCenter in AU.
     pub fn distance_from_origin(&self) -> f64 {
         (self.x().powi(2) + self.y().powi(2) + self.z().powi(2)).sqrt()
+    }
+
+    pub fn normalize(&self) -> Self {
+        let r = self.distance_from_origin();
+        Self::new(self.x() / r, self.y() / r, self.z() / r)
     }
 
     /// Computes the Euclidean distance to another Cartesian coordinate of the same type.
@@ -84,6 +96,55 @@ where
             Frame::frame_name(),
             self.x(), self.y(), self.z()
         )
+    }
+}
+
+
+impl<Center, Frame> Add for CartesianCoord<Center, Frame>
+where
+    Center: centers::ReferenceCenter,
+    Frame: frames::ReferenceFrame,
+{
+    type Output = Self;
+
+    fn add(self, other: Self) -> Self::Output {
+        Self::from_vec3(self.xyz + other.xyz)
+    }
+}
+
+impl<Center, Frame> Sub for CartesianCoord<Center, Frame>
+where
+    Center: centers::ReferenceCenter,
+    Frame: frames::ReferenceFrame,
+{
+    type Output = Self;
+
+    fn sub(self, other: Self) -> Self::Output {
+        Self::from_vec3(self.xyz - other.xyz)
+    }
+}
+
+impl<Center, Frame> Div<f64> for CartesianCoord<Center, Frame>
+where
+    Center: centers::ReferenceCenter,
+    Frame: frames::ReferenceFrame,
+{
+    type Output = Self;
+
+    fn div(self, rhs: f64) -> Self::Output {
+        Self::from_vec3(self.xyz / rhs)
+    }
+}
+
+impl<Center, Frame> Mul<f64> for CartesianCoord<Center, Frame>
+where
+    Center: centers::ReferenceCenter,
+    Frame: frames::ReferenceFrame,
+{
+    type Output = Self;
+
+    fn mul(self, rhs: f64) -> Self::Output {
+        Self::from_vec3(self.xyz * rhs)
     }
 }
 
