@@ -28,7 +28,6 @@ impl<Center, Frame> SphericalCoord<Center, Frame>
 where
     Center: ReferenceCenter,
     Frame: ReferenceFrame,
-    SphericalCoord<Center, Frame>: SphericalBuilder<Center, Frame>,
 {
 
     pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, radial_distance: f64) -> Self {
@@ -100,29 +99,6 @@ where
             self.polar, self.azimuth, self.radial_distance
         )
     }
-}
-
-
-/// A trait for building spherical coordinates in a structured way.
-///
-/// # Type Parameters
-/// - `Center`: The reference center (e.g., Barycentric, Heliocentric).
-/// - `Frame`: The reference frame (e.g., ICRS, Ecliptic).
-pub trait SphericalBuilder<Center: ReferenceCenter, Frame: ReferenceFrame> {
-    /// Builds a new spherical coordinate.
-    ///
-    /// # Arguments
-    /// - `polar`: The polar angle (θ), in degrees.
-    /// - `azimuth`: The azimuthal angle (φ), in degrees.
-    /// - `r`: The radial distance.
-    ///
-    /// # Returns
-    /// A new `SphericalCoord` instance.
-    fn build(
-        polar: Degrees,
-        azimuth: Degrees,
-        r: f64
-    ) -> SphericalCoord<Center, Frame>;
 }
 
 #[cfg(test)]

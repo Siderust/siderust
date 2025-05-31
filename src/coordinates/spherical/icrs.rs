@@ -32,7 +32,7 @@
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
-use super::{SphericalCoord, SphericalBuilder};
+use super::SphericalCoord;
 use crate::coordinates::{
     frames::*,
     centers::*,
@@ -49,19 +49,6 @@ pub type ICRSGeocentricSphericalCoord   = SphericalCoord<Geocentric,   ICRS>;
 pub type ICRSTopocentricSphericalCoord  = SphericalCoord<Topocentric,  ICRS>;
 
 impl<Center: ReferenceCenter> SphericalCoord<Center, ICRS> {
-    /// Creates a new ICRS spherical coordinate with constant values.
-    ///
-    /// # Arguments
-    /// - `ra`: Right Ascension (α), in degrees.
-    /// - `dec`: Declination (δ), in degrees.
-    /// - `radial_distance`: Distance to the object, typically in astronomical units (AU).
-    ///
-    /// # Returns
-    /// A new `SphericalCoord` in the ICRS frame.
-    pub const fn new_const(ra: Degrees, dec: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(dec, ra, radial_distance)
-    }
-
     /// Constructs a new ICRS spherical coordinate with normalized input angular.
     ///
     /// Right Ascension is normalized to the [0°, 360°] range, and Declination to the [-90°, 90°] range.
@@ -74,9 +61,9 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ICRS> {
     /// # Returns
     /// A normalized `SphericalCoord` in the ICRS frame.
     pub fn new(ra: Degrees, dec: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::<Center, ICRS>::new_const(
-            ra.normalize(),
+        SphericalCoord::new_spherical_coord(
             dec.normalize_to_90_range(),
+            ra.normalize(),
             radial_distance)
     }
 
@@ -85,28 +72,4 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ICRS> {
 
     /// Returns the Right Ascension (α) in degrees.
     pub fn ra(&self) -> Degrees { self.azimuth }
-}
-
-/// Builds a new ICRS spherical coordinate from RA/Dec, distance.
-///
-/// This is a convenience constructor for `SphericalBuilder` implementations,
-/// allowing generic code to instantiate ICRS coordinates.
-///
-/// # Arguments
-/// - `ra`: Right Ascension (α), in degrees.
-/// - `dec`: Declination (δ), in degrees.
-/// - `r`: Radial distance, typically in astronomical units (AU).
-///
-/// # Returns
-/// A new ICRS `SphericalCoord`.
-impl<Center: ReferenceCenter> SphericalBuilder<Center, ICRS>
-    for SphericalCoord<Center, ICRS>
-{
-    fn build(
-        ra: Degrees,
-        dec: Degrees,
-        r: f64
-    ) -> SphericalCoord<Center, ICRS> {
-        SphericalCoord::<Center, ICRS>::new(ra, dec, r)
-    }
 }
