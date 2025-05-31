@@ -80,6 +80,7 @@ mod tests {
     use crate::coordinates::frames::*;
     use crate::coordinates::centers::*;
     use crate::bodies::solar_system::Earth;
+    use crate::units::Degrees;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
@@ -94,6 +95,14 @@ mod tests {
         approx_eq(a.x(), b.x(), epsilon) &&
         approx_eq(a.y(), b.y(), epsilon) &&
         approx_eq(a.z(), b.z(), epsilon)
+    }
+
+    fn sph_coords_approx_eq(a: &SphericalCoord<impl ReferenceCenter, impl ReferenceFrame>,
+                            b: &SphericalCoord<impl ReferenceCenter, impl ReferenceFrame>,
+                            epsilon: f64) -> bool {
+        approx_eq(a.polar.as_f64(), b.polar.as_f64(), epsilon) &&
+        approx_eq(a.azimuth.as_f64(), b.azimuth.as_f64(), epsilon) &&
+        approx_eq(a.radial_distance, b.radial_distance, epsilon)
     }
 
     #[test] // Barycentric -> Geocentric
@@ -112,5 +121,14 @@ mod tests {
         let expected_earth_geo = CartesianCoord::<Geocentric, Ecliptic>::new(0.0, 0.0, 0.0);
         assert!(coords_approx_eq(&earth_geo, &expected_earth_geo, EPSILON), 
                 "Earth in Geocentric shall be (0,0,0). Current Value {:?}", earth_geo);
+    }
+
+    #[test] // ICRS -> GCRS
+    fn test_icrs_to_gcrs() {
+        let sirius = SphericalCoord::<Barycentric, frames::ICRS>::new(Degrees::new(101.28715533), Degrees::new(-16.71611586), 1.0);
+        let sirius_geo = barycentric_to_geocentric(&sirius.to_cartesian(), JulianDay::new(2460792.157638889)).to_spherical();
+        let expected_geo = SphericalCoord::<Geocentric, frames::ICRS>::new(Degrees::new(101.2846608), Degrees::new(-16.71925194), 1.0);
+        assert!(sph_coords_approx_eq(&sirius_geo, &expected_geo, EPSILON), 
+                "Sirius in Geocentric shall be {}. Current Value {}", expected_geo, sirius_geo);
     }
 }
