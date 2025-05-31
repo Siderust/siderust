@@ -3,8 +3,7 @@ use crate::coordinates::{
     CartesianCoord, SphericalCoord,
     frames::*,
     centers::*,
-    transform::Transform,
-    SphericalBuilder
+    transform::Transform
 };
 
 /// Blanket implementation to allow chaining two consecutive `Transform` operations.
@@ -47,8 +46,6 @@ impl<C1, F1, C2, F2> From<&Target<SphericalCoord<C1, F1>>> for Target<SphericalC
 where
     CartesianCoord<C1, F1>: Transform<CartesianCoord<C1, F2>>, // transform frame
     CartesianCoord<C1, F2>: Transform<CartesianCoord<C2, F2>>, // transform center
-    SphericalCoord<C1, F1>: SphericalBuilder<C1, F1>,
-    SphericalCoord<C2, F2>: SphericalBuilder<C2, F2>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: ReferenceFrame,

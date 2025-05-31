@@ -1,5 +1,5 @@
 use crate::coordinates::{
-    CartesianCoord, SphericalCoord, SphericalBuilder,
+    CartesianCoord, SphericalCoord,
     frames::ReferenceFrame,
     centers::ReferenceCenter
 };
@@ -32,7 +32,6 @@ impl<Center, Frame> SphericalCoord<Center, Frame>
 where
     Center: ReferenceCenter,
     Frame: ReferenceFrame,
-    SphericalCoord<Center, Frame>: SphericalBuilder<Center, Frame>,
 {
     pub fn to_cartesian(&self) -> CartesianCoord<Center, Frame> { self.into() }
     pub fn from_cartesian(cart: &CartesianCoord<Center, Frame>) -> Self { cart.into() }
