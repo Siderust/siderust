@@ -1,3 +1,4 @@
+#[allow(unused_macros)]
 macro_rules! assert_cartesian_eq {
     // ── standard form: a, b, ε ──────────────────────────────────────────────
     ($a:expr, $b:expr, $epsilon:expr $(,)?) => {{
@@ -28,6 +29,7 @@ macro_rules! assert_cartesian_eq {
     }};
 }
 
+#[allow(unused_macros)]
 macro_rules! assert_spherical_eq {
     ($a:expr, $b:expr, $epsilon:expr $(,)?) => {{
         fn _assert_same_type<T>(_: &T, _: &T) {}
@@ -54,6 +56,7 @@ macro_rules! assert_spherical_eq {
     }};
 }
 
-
+#[allow(unused_imports)]
 pub(crate) use assert_cartesian_eq;
+#[allow(unused_imports)]
 pub(crate) use assert_spherical_eq;
