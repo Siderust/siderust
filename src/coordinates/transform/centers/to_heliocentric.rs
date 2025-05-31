@@ -2,10 +2,11 @@ use crate::units::JulianDay;
 use crate::bodies::solar_system::{Sun, Earth};
 use crate::coordinates::{
     CartesianCoord,
-    frames::{ReferenceFrame, Ecliptic},
+    frames::{ReferenceFrame, Ecliptic, Equatorial},
     centers::{Heliocentric, Barycentric, Geocentric}
 };
 use crate::coordinates::transform::Transform;
+use crate::astro::aberration::remove_aberration;
 
 pub fn barycentric_to_heliocentric<F: ReferenceFrame>(
     bary: &CartesianCoord<Barycentric, F>,
@@ -29,21 +30,25 @@ pub fn geocentric_to_heliocentric<F: ReferenceFrame>(
     jd: JulianDay
 ) -> CartesianCoord<Heliocentric, F>
 where
-    for<'a> CartesianCoord<Heliocentric, F>: From<&'a CartesianCoord<Heliocentric, Ecliptic>>,
+    for<'a> CartesianCoord<Heliocentric, Equatorial>: From<&'a CartesianCoord<Heliocentric, Ecliptic>>, // Required by VSOP
+    for<'a> CartesianCoord<Geocentric, Equatorial>: From<&'a CartesianCoord<Geocentric, F>>,   // Required by Aberration
+    for<'a> CartesianCoord<Heliocentric, F>: From<&'a CartesianCoord<Heliocentric, Equatorial>>, // Required by Aberration
 {
-    let earth = CartesianCoord::<Heliocentric, F>::from(
-        Earth::vsop87a(jd).get_position()
-    );
-    CartesianCoord::new(
-        geo.x() + earth.x(),
-        geo.y() + earth.y(),
-        geo.z() + earth.z(),
-    )
+    let earth_helio_ecl = Earth::vsop87a(jd).get_position().clone();
+    let earth_helio_equ = CartesianCoord::<Heliocentric, Equatorial>::from(&earth_helio_ecl); // (Helio-Ecl) -> (Helio-Equ)
+
+    let target_geo_equ  = CartesianCoord::<Geocentric, Equatorial>::from(geo); // (Geo-F) -> (Geo-Equ)
+    let target_geo_equ_no_aberration = remove_aberration(target_geo_equ, jd);
+
+    let helio_equ = CartesianCoord::<Heliocentric, Equatorial>::from_vec3(target_geo_equ_no_aberration.as_vec3() + earth_helio_equ.as_vec3()); // Geocentric -> Barycentric
+    CartesianCoord::<Heliocentric, F>::from(&helio_equ) // Equatorial -> F
 }
 
 impl<F: ReferenceFrame> Transform<CartesianCoord<Heliocentric, F>> for CartesianCoord<Geocentric, F>
 where
-    for<'a> CartesianCoord<Heliocentric, F>: From<&'a CartesianCoord<Heliocentric, Ecliptic>>,
+    for<'a> CartesianCoord<Heliocentric, Equatorial>: From<&'a CartesianCoord<Heliocentric, Ecliptic>>, // Required by VSOP
+    for<'a> CartesianCoord<Geocentric, Equatorial>: From<&'a CartesianCoord<Geocentric, F>>,   // Required by Aberration
+    for<'a> CartesianCoord<Heliocentric, F>: From<&'a CartesianCoord<Heliocentric, Equatorial>>, // Required by Aberration
 {
     fn transform(
         &self,
