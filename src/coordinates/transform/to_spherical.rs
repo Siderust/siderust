@@ -1,7 +1,7 @@
 use crate::units::Degrees;
 use crate::coordinates::{
     CartesianCoord, SphericalCoord,
-    centers::*, frames::*, SphericalBuilder
+    centers::*, frames::*
 };
 
 /// Implements conversion from Cartesian to Spherical coordinates
@@ -21,12 +21,11 @@ impl<Center, Frame> From<&CartesianCoord<Center, Frame>> for SphericalCoord<Cent
 where
     Center: ReferenceCenter,
     Frame: ReferenceFrame,
-    SphericalCoord<Center, Frame>: SphericalBuilder<Center, Frame>,
 {
     fn from(cart: &CartesianCoord<Center, Frame>) -> Self {
         let r = cart.distance_from_origin();
         if r == 0.0 {
-            return SphericalCoord::<Center, Frame>::build(
+            return SphericalCoord::<Center, Frame>::new_spherical_coord(
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 0.0
@@ -36,7 +35,7 @@ where
         let polar = Degrees::new(cart.y().atan2(cart.x()).to_degrees());
         let azimuth = Degrees::new((cart.z() / r).asin().to_degrees());
 
-        SphericalCoord::<Center, Frame>::build(polar, azimuth, r)
+        SphericalCoord::<Center, Frame>::new_spherical_coord(azimuth, polar, r)
     }
 }
 
@@ -44,7 +43,6 @@ impl<Center, Frame> CartesianCoord<Center, Frame>
 where
     Center: ReferenceCenter,
     Frame: ReferenceFrame,
-    SphericalCoord<Center, Frame>: SphericalBuilder<Center, Frame>,
 {
     /// Converts this Cartesian coordinate into its equivalent spherical representation.
     pub fn to_spherical(&self) -> SphericalCoord<Center, Frame> {

@@ -4,7 +4,6 @@
 //! ## Features
 //! - **Generic Type Safety:** The type system enforces correct pairing of reference centers and frames.
 //! - **Strongly Typed Angles:** Uses [`crate::units::Degrees`] and [`crate::units::Radians`] for angular components to avoid unit confusion.
-//! - **Flexible Construction:** The [`SphericalBuilder`] trait enables structured and generic instantiation.
 //! - **Distance and Angular Separation:** Methods for computing Euclidean distances and angular separations.
 //! - **String Representation:** Human-readable formatting for debugging and logging.
 //!
@@ -52,7 +51,6 @@
 //! - The `SphericalCoord` struct, which represents a point in spherical coordinates
 //!   with a specific reference center and frame.
 //! - Methods for calculating distances, angular separations, and converting to string representations.
-//! - The `SphericalBuilder` trait for constructing spherical coordinates in a structured way.
 //!
 //! # Coordinate Components
 //! The `SphericalCoord` type uses:

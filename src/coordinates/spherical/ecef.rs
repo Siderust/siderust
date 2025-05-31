@@ -26,7 +26,7 @@
 //! println!("lat = {}, lon = {}", coord.lat(), coord.lon());
 //! ```
 
-use super::{SphericalCoord, SphericalBuilder};
+use super::SphericalCoord;
 use crate::coordinates::{
     frames::*,
     centers::*,
@@ -45,7 +45,7 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ECEF> {
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
     /// - `radial_distance`: Height or distance above the ellipsoid, in meters.
     pub fn new(lon: Degrees, lat: Degrees, radial_distance: f64) -> Self {
-        Self::new_const(
+        Self::new_spherical_coord(
             lat.normalize_to_90_range(),
             lon.normalize_to_180_range(),
             radial_distance)
@@ -58,17 +58,6 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ECEF> {
     pub fn lon(&self) -> Degrees { self.azimuth }
 }
 
-impl<Center: ReferenceCenter> SphericalBuilder<Center, ECEF>
-    for SphericalCoord<Center, ECEF>
-{
-    fn build(
-        lon: Degrees,
-        lat: Degrees,
-        r: f64
-    ) -> SphericalCoord<Center, ECEF> {
-        SphericalCoord::<Center, ECEF>::new(lon, lat, r)
-    }
-}
 
 // Define type alias for Geodetic/Geographic coordinates using SphericalCoord
 // Polar   -> Latitude (φ) – the angle from the equator. [-90°, 90°]
