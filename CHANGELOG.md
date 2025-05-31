@@ -7,9 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-
+- Implement Arithmetic Operator Add, Sub, Div, Mult in CartesianCoord.
 ### Changed
-- Geocentric coordinates now account for Aberration
+- Geocentric coordinates now account for Aberration.
 
 ### Deprecated
 
