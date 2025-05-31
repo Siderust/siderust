@@ -40,11 +40,6 @@ mod tests {
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
-    /// Helper function to compare floating-point values within a small tolerance
-    fn approx_eq(a: f64, b: f64, epsilon: f64) -> bool {
-        (a - b).abs() < epsilon
-    }
-
     fn serialize(ecl: &CartesianCoord::<centers::Heliocentric, Ecliptic>) -> CartesianCoord::<centers::Heliocentric, Ecliptic> {
         let hcrs: HCRS = ecl.into(); // Convert to ICRS
         let ecl_back: CartesianCoord::<centers::Heliocentric, Ecliptic> = (&hcrs).into(); // Convert back to Ecliptic
