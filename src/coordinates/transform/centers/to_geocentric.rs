@@ -80,7 +80,8 @@ mod tests {
     use crate::coordinates::frames::*;
     use crate::coordinates::centers::*;
     use crate::bodies::solar_system::Earth;
-    use crate::macros::assert_cartesian_eq;
+    use crate::units::Degrees;
+    use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
@@ -100,14 +101,27 @@ mod tests {
         assert_cartesian_eq!(&earth_geo, &expected_earth_geo, EPSILON, "Earth in Geocentric shall be (0,0,0). Current Value {:?}", earth_geo);
     }
 
-    /*
     #[test] // ICRS -> GCRS
     fn test_icrs_to_gcrs() {
-        let sirius = SphericalCoord::<Barycentric, frames::ICRS>::new(Degrees::new(101.28715533), Degrees::new(-16.71611586), 1.0);
-        let sirius_geo = barycentric_to_geocentric(&sirius.to_cartesian(), JulianDay::new(2460792.157638889)).to_spherical();
-        let expected_geo = SphericalCoord::<Geocentric, frames::ICRS>::new(Degrees::new(101.2846608), Degrees::new(-16.71925194), 1.0);
-        assert!(sph_coords_approx_eq(&sirius_geo, &expected_geo, EPSILON), 
-                "Sirius in Geocentric shall be {}. Current Value {}", expected_geo, sirius_geo);
+        const AU_PER_PC: f64 = 206_264.806_f64;
+        const SIRIUS_PARALLAX: f64 = 0.37921_f64;          // arcsec  (Hipparcos van Leeuwen 2007)
+        let sirius_distance_au = (1.0 / SIRIUS_PARALLAX) * AU_PER_PC;
+
+        let sirius_barycentric_spherical = SphericalCoord::<Barycentric, frames::ICRS>::new(
+            Degrees::new(101.287_155_33),
+            Degrees::new(-16.716_115_86),
+            sirius_distance_au
+        );
+        let expected_sirius_coordinates = SphericalCoord::<Geocentric, frames::ICRS>::new(
+            Degrees::new(101.2846608),
+            Degrees::new(-16.71925194),
+            543933.225421
+        );
+
+        let sirius_barycentric_cartesian = CartesianCoord::<Barycentric, frames::ICRS>::from(&sirius_barycentric_spherical);
+        let sirius_geocentric_cartesian = barycentric_to_geocentric(&sirius_barycentric_cartesian, JulianDay::new(2460792.157638889));
+        let sirius_geocentric_spherical = SphericalCoord::<Geocentric, frames::ICRS>::from(&sirius_geocentric_cartesian);
+        assert_spherical_eq!(sirius_geocentric_spherical, expected_sirius_coordinates, 2e-4, "Sirius in Geocentric shall be {}. Current Value {}", expected_sirius_coordinates, sirius_geocentric_spherical);
     }
-    */
+
 }
