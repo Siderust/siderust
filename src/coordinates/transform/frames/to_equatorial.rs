@@ -31,11 +31,11 @@ impl<C: ReferenceCenter> Transform<CartesianCoord<C, frames::Equatorial>> for Ca
 
 #[cfg(test)]
 mod tests {
-    use crate::units::Degrees;
     use crate::coordinates::{
         SphericalCoord,
         centers, frames
     };
+    use crate::units::Degrees;
     use crate::macros::assert_spherical_eq;
 
     const EPS: f64 = 1.0e-12;

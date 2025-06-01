@@ -36,7 +36,9 @@ impl<C: centers::ReferenceCenter> Transform<CartesianCoord<C, frames::Ecliptic>>
 mod tests {
     use crate::coordinates::*;
     use crate::coordinates::frames::*;
+    use crate::units::Degrees;
     use crate::macros::assert_cartesian_eq;
+    use crate::macros::assert_spherical_eq;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
@@ -98,5 +100,18 @@ mod tests {
         let coord_ecl_back = serialize(&coord_ecl);
 
         assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "Small values should not cause precision errors.");
+    }
+
+    #[test]
+    fn round_trip_equatorial_ecliptic() {
+        let equatorial_orig = SphericalCoord::<centers::Barycentric, frames::Equatorial>::new(
+            Degrees::new(123.4),
+            Degrees::new(-21.0),
+            2.7,
+        );
+        let ecliptic  = SphericalCoord::<centers::Barycentric, frames::Ecliptic>::from(&equatorial_orig);
+        let equatorial_rec = SphericalCoord::<centers::Barycentric, frames::Equatorial>::from(&ecliptic);
+
+        assert_spherical_eq!(equatorial_orig, equatorial_rec, 1e-10);
     }
 }
