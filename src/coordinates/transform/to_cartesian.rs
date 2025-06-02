@@ -20,7 +20,7 @@ where
     fn from(sph: &SphericalCoord<Center, Frame>) -> Self {
         let ra_rad = sph.azimuth.to_radians();
         let dec_rad = sph.polar.to_radians();
-        let r = sph.radial_distance;
+        let r = sph.distance;
         let x = r * dec_rad.cos() * ra_rad.cos();
         let y = r * dec_rad.cos() * ra_rad.sin();
         let z = r * dec_rad.sin();

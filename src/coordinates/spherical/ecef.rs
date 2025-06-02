@@ -34,8 +34,8 @@ use crate::coordinates::{
 use crate::units::Degrees;
 
 impl<Center: ReferenceCenter> SphericalCoord<Center, ECEF> {
-    pub const fn new_const(lon: Degrees, lat: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(lat, lon, radial_distance)
+    pub const fn new_const(lon: Degrees, lat: Degrees, distance: f64) -> Self {
+        SphericalCoord::new_spherical_coord(lat, lon, distance)
     }
 
     /// Creates a new geographic coordinate with normalized latitude and longitude.
@@ -43,12 +43,12 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ECEF> {
     /// # Arguments
     /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
-    /// - `radial_distance`: Height or distance above the ellipsoid, in meters.
-    pub fn new(lon: Degrees, lat: Degrees, radial_distance: f64) -> Self {
-        Self::new_spherical_coord(
+    /// - `distance`: Height or distance above the ellipsoid, in meters.
+    pub fn new(lon: Degrees, lat: Degrees, distance: f64) -> Self {
+        Self::new_const(
             lat.normalize_to_90_range(),
             lon.normalize_to_180_range(),
-            radial_distance)
+            distance)
     }
 
     /// Returns the latitude (φ) in degrees.

@@ -387,7 +387,7 @@ mod tests {
         );
         let out = apply_aberration_sph(mean, jd);
 
-        assert_relative_eq!(out.radial_distance, mean.radial_distance, epsilon = 0.0);
+        assert_relative_eq!(out.distance, mean.distance, epsilon = 0.0);
     }
 
     #[test]

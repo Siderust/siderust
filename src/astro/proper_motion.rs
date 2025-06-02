@@ -64,7 +64,7 @@ fn set_proper_motion_since_epoch(
     SphericalCoord::<Geocentric, Equatorial>::new(
         mean_position.ra() + (proper_motion.ra_μ * t).to_degrees().normalize(),
         (mean_position.dec() + (proper_motion.dec_μ * t).to_degrees()).normalize(),
-        mean_position.radial_distance,
+        mean_position.distance,
     )
 }
 

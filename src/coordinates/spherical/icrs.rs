@@ -49,6 +49,19 @@ pub type ICRSGeocentricSphericalCoord   = SphericalCoord<Geocentric,   ICRS>;
 pub type ICRSTopocentricSphericalCoord  = SphericalCoord<Topocentric,  ICRS>;
 
 impl<Center: ReferenceCenter> SphericalCoord<Center, ICRS> {
+    /// Creates a new ICRS spherical coordinate with constant values.
+    ///
+    /// # Arguments
+    /// - `ra`: Right Ascension (α), in degrees.
+    /// - `dec`: Declination (δ), in degrees.
+    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    ///
+    /// # Returns
+    /// A new `SphericalCoord` in the ICRS frame.
+    pub const fn new_const(ra: Degrees, dec: Degrees, distance: f64) -> Self {
+        SphericalCoord::new_spherical_coord(dec, ra, distance)
+    }
+
     /// Constructs a new ICRS spherical coordinate with normalized input angular.
     ///
     /// Right Ascension is normalized to the [0°, 360°] range, and Declination to the [-90°, 90°] range.
@@ -56,15 +69,15 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ICRS> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `radial_distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
     /// A normalized `SphericalCoord` in the ICRS frame.
-    pub fn new(ra: Degrees, dec: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(
-            dec.normalize_to_90_range(),
+    pub fn new(ra: Degrees, dec: Degrees, distance: f64) -> Self {
+        SphericalCoord::<Center, ICRS>::new_const(
             ra.normalize(),
-            radial_distance)
+            dec.normalize_to_90_range(),
+            distance)
     }
 
     /// Returns the Declination (δ) in degrees.

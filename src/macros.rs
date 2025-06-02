@@ -36,7 +36,7 @@ macro_rules! assert_spherical_eq {
         _assert_same_type(&$a, &$b);
 
         assert!(
-            ($a.radial_distance  - $b.radial_distance).abs()  < $epsilon &&
+            ($a.distance  - $b.distance).abs()  < $epsilon &&
             ($a.polar.as_f64()   - $b.polar.as_f64()).abs()   < $epsilon &&
             ($a.azimuth.as_f64() - $b.azimuth.as_f64()).abs() < $epsilon,
             "Spherical coords differ: {} vs {} (ε = {})",
@@ -48,7 +48,7 @@ macro_rules! assert_spherical_eq {
         _assert_same_type(&$a, &$b);
 
         assert!(
-            ($a.radial_distance  - $b.radial_distance).abs()  < $epsilon &&
+            ($a.distance  - $b.distance).abs()  < $epsilon &&
             ($a.polar.as_f64()   - $b.polar.as_f64()).abs()   < $epsilon &&
             ($a.azimuth.as_f64() - $b.azimuth.as_f64()).abs() < $epsilon,
             $($msg)+

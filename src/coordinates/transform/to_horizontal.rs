@@ -50,7 +50,7 @@ pub fn geocentric_to_horizontal(
     SphericalCoord::<Topocentric, Horizontal>::new(
         Degrees::new(alt_rad.to_degrees()),
         Degrees::new(az_rad.to_degrees()),
-        target.radial_distance,
+        target.distance,
     )
 }
 
@@ -89,7 +89,7 @@ mod tests {
         let expected_horizontal = SphericalCoord::<Topocentric, Horizontal>::new(
             DMS::new(DMS::NEGATIVE, 77, 59, 0.0).to_degrees(),
             DMS::new(DMS::POSITIVE, 349, 24, 0.0).to_degrees(),
-            SIRIUS.target.get_position().radial_distance,
+            SIRIUS.target.get_position().distance,
         );
 
         let horizontal = geocentric_to_horizontal(&SIRIUS.target.get_position(), &ROQUE_DE_LOS_MUCHACHOS, jd);

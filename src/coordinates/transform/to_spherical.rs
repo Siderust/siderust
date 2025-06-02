@@ -65,7 +65,7 @@ mod tests {
         let cart = CartesianCoord::<Geocentric, ICRS>::new(1.0, 1.0, 1.0);
         let sph: SphericalCoord<Geocentric, ICRS> = cart.to_spherical();
 
-        assert!((sph.radial_distance - 1.7320508075688772).abs() < 1e-6);
+        assert!((sph.distance - 1.7320508075688772).abs() < 1e-6);
         assert!((sph.azimuth - Degrees::new(45.0)).abs() < Degrees::new(1e-6));
         assert!((sph.polar - Degrees::new(35.26438968275466)).abs() < Degrees::new(1e-6));
     }
@@ -105,7 +105,7 @@ mod tests {
         let cart = CartesianCoord::from_spherical(&sph_original);
         let sph_converted = cart.to_spherical();
 
-        assert!((sph_original.radial_distance - sph_converted.radial_distance).abs() < 1e-6);
+        assert!((sph_original.distance - sph_converted.distance).abs() < 1e-6);
         assert!((sph_original.azimuth - sph_converted.azimuth).abs() < Degrees::new(1e-6));
         assert!((sph_original.polar - sph_converted.polar).abs() < Degrees::new(1e-6));
     }

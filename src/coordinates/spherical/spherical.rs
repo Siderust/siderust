@@ -18,7 +18,7 @@ pub struct SphericalCoord<Center: ReferenceCenter, Frame: ReferenceFrame> {
     /// The azimuthal angle (φ), in degrees.
     pub azimuth: Degrees,
     /// The radial distance (r).
-    pub radial_distance: f64,
+    pub distance: f64,
 
     _center: PhantomData<Center>,
     _frame: PhantomData<Frame>,
@@ -30,11 +30,11 @@ where
     Frame: ReferenceFrame,
 {
 
-    pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, radial_distance: f64) -> Self {
+    pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: f64) -> Self {
         Self {
             polar,
             azimuth,
-            radial_distance,
+            distance,
             _center: PhantomData,
             _frame: PhantomData,
         }
@@ -96,7 +96,7 @@ where
             "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}, r: {:.6}",
             Center::center_name(),
             Frame::frame_name(),
-            self.polar, self.azimuth, self.radial_distance
+            self.polar, self.azimuth, self.distance
         )
     }
 }
@@ -111,7 +111,7 @@ mod tests {
         let coord = SphericalCoord::<Barycentric, ICRS>::new(Degrees::new(45.0), Degrees::new(90.0), 1.0);
         assert_eq!(coord.ra().as_f64(), 45.0);
         assert_eq!(coord.dec().as_f64(), 90.0);
-        assert_eq!(coord.radial_distance, 1.0);
+        assert_eq!(coord.distance, 1.0);
     }
     
     #[test]
@@ -128,7 +128,7 @@ mod tests {
         let coord = SphericalCoord::<Heliocentric, ICRS>::new(Degrees::new(0.0), Degrees::new(0.0), 0.0);
         assert_eq!(coord.polar.as_f64(), 0.0);
         assert_eq!(coord.azimuth.as_f64(), 0.0);
-        assert_eq!(coord.radial_distance, 0.0);
+        assert_eq!(coord.distance, 0.0);
     }
 
     #[test]
@@ -136,6 +136,6 @@ mod tests {
         let coord = SphericalCoord::<Barycentric, ICRS>::new(Degrees::new(90.654321), Degrees::new(45.123456), 1234.56789);
         assert!((coord.dec().as_f64() - 45.123456).abs() < 1e-6);
         assert!((coord.ra().as_f64() - 90.654321).abs() < 1e-6);
-        assert!((coord.radial_distance - 1234.56789).abs() < 1e-6);
+        assert!((coord.distance - 1234.56789).abs() < 1e-6);
     }
 }

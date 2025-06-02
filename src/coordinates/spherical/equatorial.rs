@@ -47,8 +47,8 @@ pub type EquatorialGeocentricSphericalCoord   = SphericalCoord<Geocentric,   Equ
 pub type EquatorialTopocentricSphericalCoord  = SphericalCoord<Topocentric,  Equatorial>;
 
 impl<Center: ReferenceCenter> SphericalCoord<Center, Equatorial> {
-    pub const fn new_const(ra: Degrees, dec: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(dec, ra, radial_distance)
+    pub const fn new_const(ra: Degrees, dec: Degrees, distance: f64) -> Self {
+        SphericalCoord::new_spherical_coord(dec, ra, distance)
     }
 
     /// Constructs a new equatorial spherical coordinate with normalized input angular.
@@ -58,15 +58,15 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, Equatorial> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `radial_distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
     /// A normalized `SphericalCoord` in the equatorial frame.
-    pub fn new(ra: Degrees, dec: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(
-            dec.normalize_to_90_range(),
+    pub fn new(ra: Degrees, dec: Degrees, distance: f64) -> Self {
+        SphericalCoord::<Center, Equatorial>::new_const(
             ra.normalize(),
-            radial_distance)
+            dec.normalize_to_90_range(),
+            distance)
     }
 
     /// Returns the Declination (δ) in degrees.

@@ -225,7 +225,7 @@ pub fn precess_equatorial(
     SphericalCoord::<Geocentric, Equatorial>::new(
         ra.to_degrees(),
         dec.to_degrees(),
-        position.radial_distance
+        position.distance
     )
 }
 

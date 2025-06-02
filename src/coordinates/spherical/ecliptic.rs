@@ -49,11 +49,15 @@ pub type EclipticGeocentricSphericalCoord   = SphericalCoord<Geocentric,   Eclip
 pub type EclipticTopocentricSphericalCoord  = SphericalCoord<Topocentric,  Ecliptic>;
 
 impl<Center: ReferenceCenter> SphericalCoord<Center, Ecliptic> {
-    pub fn new(lon: Degrees, lat: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::<Center, Ecliptic>::new_spherical_coord(
-            lat.normalize_to_90_range(),
+    pub const fn new_const(lon: Degrees, lat: Degrees, distance: f64) -> Self {
+        SphericalCoord::new_spherical_coord(lat, lon, distance)
+    }
+
+    pub fn new(lon: Degrees, lat: Degrees, distance: f64) -> Self {
+        SphericalCoord::<Center, Ecliptic>::new_const(
             lon.normalize(),
-            radial_distance)
+            lat.normalize_to_90_range(),
+            distance)
     }
 
     pub fn lat(&self) -> Degrees { self.polar }

@@ -21,7 +21,7 @@ where
 {
     assert!((a.polar.as_f64()   - b.polar.as_f64()).abs()   < 1e-6, "polar mismatch: {} vs {}", a.polar, b.polar);
     assert!((a.azimuth.as_f64() - b.azimuth.as_f64()).abs() < 1e-6, "polar mismatch: {} vs {}", a.azimuth, b.azimuth);
-    assert!((a.radial_distance  - b.radial_distance).abs()  < 1e-6, "polar mismatch: {} vs {}", a.radial_distance, b.radial_distance);
+    assert!((a.distance  - b.distance).abs()  < 1e-6, "polar mismatch: {} vs {}", a.distance, b.distance);
 }
 
 

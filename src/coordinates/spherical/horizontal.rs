@@ -49,6 +49,19 @@ pub type HorizontalGeocentricSphericalCoord   = SphericalCoord<Geocentric,   Hor
 pub type HorizontalTopocentricSphericalCoord  = SphericalCoord<Topocentric,  Horizontal>;
 
 impl<Center: ReferenceCenter> SphericalCoord<Center, Horizontal> {
+    /// Creates a new horizontal spherical coordinate with constant values.
+    ///
+    /// # Arguments
+    /// - `alt`: Altitude (α), in degrees.
+    /// - `az`: Azimuth (θ), in degrees.
+    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    ///
+    /// # Returns
+    /// A new `SphericalCoord` in the horizontal frame.
+    pub const fn new_const(alt: Degrees, az: Degrees, distance: f64) -> Self {
+        SphericalCoord::new_spherical_coord(alt, az, distance)
+    }
+
     /// Constructs a new horizontal spherical coordinate with normalized input angular.
     ///
     /// Altitude is normalized to the [-90°, 90°] range, and azimuth to the [0°, 360°] range.
@@ -56,15 +69,15 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, Horizontal> {
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    /// - `radial_distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
     /// A `SphericalCoord` in the horizontal frame.
-    pub fn new(alt: Degrees, az: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(
+    pub fn new(alt: Degrees, az: Degrees, distance: f64) -> Self {
+        SphericalCoord::<Center, Horizontal>::new_const(
             alt.normalize_to_90_range(),
             az.normalize(),
-            radial_distance)
+            distance)
     }
 
     /// Returns the Altitude (α) in degrees.
