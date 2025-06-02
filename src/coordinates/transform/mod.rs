@@ -98,7 +98,7 @@ mod to_spherical;
 mod to_horizontal;
 
 use crate::{coordinates::{
-    centers::ReferenceCenter, frames::ReferenceFrame, CartesianCoord, SphericalBuilder, SphericalCoord
+    centers::ReferenceCenter, frames::ReferenceFrame, CartesianCoord, SphericalCoord
 }, units::JulianDay};
 
 // Blanket identity transform for CartesianCoord<Center, Frame>
@@ -148,8 +148,6 @@ impl<C1, F1, C2, F2> From<&SphericalCoord<C1, F1>> for SphericalCoord<C2, F2>
 where
     CartesianCoord<C1, F1>: Transform<CartesianCoord<C1, F2>>, // transform frame
     CartesianCoord<C1, F2>: Transform<CartesianCoord<C2, F2>>, // transform center
-    SphericalCoord<C1, F1>: SphericalBuilder<C1, F1>,
-    SphericalCoord<C2, F2>: SphericalBuilder<C2, F2>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: ReferenceFrame,

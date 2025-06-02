@@ -80,29 +80,17 @@ mod tests {
     use crate::coordinates::frames::*;
     use crate::coordinates::centers::*;
     use crate::bodies::solar_system::Earth;
+    use crate::units::Degrees;
+    use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
-
-    /// Helper function to compare floating-point values within a small tolerance
-    fn approx_eq(a: f64, b: f64, epsilon: f64) -> bool {
-        (a - b).abs() < epsilon
-    }
-
-    fn coords_approx_eq(a: &CartesianCoord<impl ReferenceCenter, impl ReferenceFrame>,
-                        b: &CartesianCoord<impl ReferenceCenter, impl ReferenceFrame>,
-                        epsilon: f64) -> bool {
-        approx_eq(a.x(), b.x(), epsilon) &&
-        approx_eq(a.y(), b.y(), epsilon) &&
-        approx_eq(a.z(), b.z(), epsilon)
-    }
 
     #[test] // Barycentric -> Geocentric
     fn test_bary_to_geo() {
         let earth_bary = Earth::vsop87e(JulianDay::J2000).get_position().clone();
         let earth_geo = CartesianCoord::<Geocentric, Ecliptic>::from(&earth_bary);
         let expected_earth_geo = CartesianCoord::<Geocentric, Ecliptic>::new(0.0, 0.0, 0.0);
-        assert!(coords_approx_eq(&earth_geo, &expected_earth_geo, EPSILON), 
-                "Earth in Geocentric shall be (0,0,0). Current Value {:?}", earth_geo);
+        assert_cartesian_eq!(&earth_geo, &expected_earth_geo, EPSILON, "Earth in Geocentric shall be (0,0,0). Current Value {:?}", earth_geo);
     }
 
     #[test] // Heliocentric -> Geocentric
@@ -110,7 +98,30 @@ mod tests {
         let earth_helio = Earth::vsop87a(JulianDay::J2000).get_position().clone();
         let earth_geo = CartesianCoord::<Geocentric, Ecliptic>::from(&earth_helio);
         let expected_earth_geo = CartesianCoord::<Geocentric, Ecliptic>::new(0.0, 0.0, 0.0);
-        assert!(coords_approx_eq(&earth_geo, &expected_earth_geo, EPSILON), 
-                "Earth in Geocentric shall be (0,0,0). Current Value {:?}", earth_geo);
+        assert_cartesian_eq!(&earth_geo, &expected_earth_geo, EPSILON, "Earth in Geocentric shall be (0,0,0). Current Value {:?}", earth_geo);
     }
+
+    #[test] // ICRS -> GCRS
+    fn test_icrs_to_gcrs() {
+        const AU_PER_PC: f64 = 206_264.806_f64;
+        const SIRIUS_PARALLAX: f64 = 0.37921_f64;          // arcsec  (Hipparcos van Leeuwen 2007)
+        let sirius_distance_au = (1.0 / SIRIUS_PARALLAX) * AU_PER_PC;
+
+        let sirius_barycentric_spherical = SphericalCoord::<Barycentric, frames::ICRS>::new(
+            Degrees::new(101.287_155_33),
+            Degrees::new(-16.716_115_86),
+            sirius_distance_au
+        );
+        let expected_sirius_coordinates = SphericalCoord::<Geocentric, frames::ICRS>::new(
+            Degrees::new(101.2846608),
+            Degrees::new(-16.71925194),
+            543933.225421
+        );
+
+        let sirius_barycentric_cartesian = CartesianCoord::<Barycentric, frames::ICRS>::from(&sirius_barycentric_spherical);
+        let sirius_geocentric_cartesian = barycentric_to_geocentric(&sirius_barycentric_cartesian, JulianDay::new(2460792.157638889));
+        let sirius_geocentric_spherical = SphericalCoord::<Geocentric, frames::ICRS>::from(&sirius_geocentric_cartesian);
+        assert_spherical_eq!(sirius_geocentric_spherical, expected_sirius_coordinates, 2e-4, "Sirius in Geocentric shall be {}. Current Value {}", expected_sirius_coordinates, sirius_geocentric_spherical);
+    }
+
 }

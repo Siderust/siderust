@@ -2,7 +2,7 @@ use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::*;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
-use siderust::units::JulianDay;
+use siderust::units::{JulianDay, Degrees};
 
 fn approx_eq<C, F>(a: &CartesianCoord<C, F>, b: &CartesianCoord<C, F>)
 where
@@ -12,6 +12,16 @@ where
     assert!((a.x() - b.x()).abs() < 1e-6, "x mismatch: {} vs {}", a.x(), b.x());
     assert!((a.y() - b.y()).abs() < 1e-6, "y mismatch: {} vs {}", a.y(), b.y());
     assert!((a.z() - b.z()).abs() < 1e-6, "z mismatch: {} vs {}", a.z(), b.z());
+}
+
+fn sph_approx_eq<C, F>(a: &SphericalCoord<C, F>, b: &SphericalCoord<C, F>)
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    assert!((a.polar.as_f64()   - b.polar.as_f64()).abs()   < 1e-6, "polar mismatch: {} vs {}", a.polar, b.polar);
+    assert!((a.azimuth.as_f64() - b.azimuth.as_f64()).abs() < 1e-6, "polar mismatch: {} vs {}", a.azimuth, b.azimuth);
+    assert!((a.radial_distance  - b.radial_distance).abs()  < 1e-6, "polar mismatch: {} vs {}", a.radial_distance, b.radial_distance);
 }
 
 
@@ -66,4 +76,13 @@ fn test_spherical_transformations() {
     let sph_bary_eq = SphericalCoord::from_cartesian(&bary_eq);
     let back_bary_eq = sph_bary_eq.to_cartesian();
     approx_eq(&bary_eq, &back_bary_eq);
+}
+
+
+#[test]
+fn serialize_cartesian_spherical() {
+    let sph_orig = SphericalCoord::<Barycentric, frames::ICRS>::new(Degrees::new(101.28715533), Degrees::new(-16.71611586), 1.0);
+    let cart = sph_orig.to_cartesian();
+    let sph_rec = cart.to_spherical();
+    sph_approx_eq(&sph_orig, &sph_rec);
 }
