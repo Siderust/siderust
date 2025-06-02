@@ -31,8 +31,7 @@
 //! println!("lon = {}, lat = {}", coord.lon(), coord.lat());
 //! ```
 
-
-use super::{SphericalCoord, SphericalBuilder};
+use super::SphericalCoord;
 use crate::coordinates::{
     frames::*,
     centers::*,
@@ -50,30 +49,13 @@ pub type EclipticGeocentricSphericalCoord   = SphericalCoord<Geocentric,   Eclip
 pub type EclipticTopocentricSphericalCoord  = SphericalCoord<Topocentric,  Ecliptic>;
 
 impl<Center: ReferenceCenter> SphericalCoord<Center, Ecliptic> {
-    pub const fn new_const(lon: Degrees, lat: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(lat, lon, radial_distance)
-    }
-
     pub fn new(lon: Degrees, lat: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::<Center, Ecliptic>::new_const(
-            lon.normalize(),
+        SphericalCoord::<Center, Ecliptic>::new_spherical_coord(
             lat.normalize_to_90_range(),
+            lon.normalize(),
             radial_distance)
     }
 
     pub fn lat(&self) -> Degrees { self.polar }
     pub fn lon(&self)  -> Degrees { self.azimuth }
-}
-
-
-impl<Center: ReferenceCenter> SphericalBuilder<Center, Ecliptic>
-    for SphericalCoord<Center, Ecliptic>
-{
-    fn build(
-        lon: Degrees,
-        lat: Degrees,
-        r: f64
-    ) -> SphericalCoord<Center, Ecliptic> {
-        SphericalCoord::<Center, Ecliptic>::new(lon, lat, r)
-    }
 }

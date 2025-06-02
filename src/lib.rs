@@ -76,3 +76,5 @@ pub mod astro;
 pub mod calculus;
 pub mod bodies;
 pub mod observatories;
+
+pub(crate) mod macros;

@@ -30,7 +30,7 @@
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
-use super::{SphericalCoord, SphericalBuilder};
+use super::SphericalCoord;
 use crate::coordinates::{
     frames::*,
     centers::*,
@@ -63,9 +63,9 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, Equatorial> {
     /// # Returns
     /// A normalized `SphericalCoord` in the equatorial frame.
     pub fn new(ra: Degrees, dec: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::<Center, Equatorial>::new_const(
-            ra.normalize(),
+        SphericalCoord::new_spherical_coord(
             dec.normalize_to_90_range(),
+            ra.normalize(),
             radial_distance)
     }
 
@@ -75,28 +75,4 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, Equatorial> {
     /// Returns the Right Ascension (α) in degrees.
     pub fn ra(&self)  -> Degrees { self.azimuth }
 
-}
-
-/// Builds a new equatorial spherical coordinate from RA/Dec, distance.
-///
-/// This is a convenience constructor for `SphericalBuilder` implementations,
-/// allowing generic code to instantiate equatorial coordinates.
-///
-/// # Arguments
-/// - `ra`: Right Ascension (α), in degrees.
-/// - `dec`: Declination (δ), in degrees.
-/// - `r`: Radial distance, typically in astronomical units (AU).
-///
-/// # Returns
-/// A new equatorial `SphericalCoord`.
-impl<Center: ReferenceCenter> SphericalBuilder<Center, Equatorial>
-    for SphericalCoord<Center, Equatorial>
-{
-    fn build(
-        ra: Degrees,
-        dec: Degrees,
-        r: f64
-    ) -> SphericalCoord<Center, Equatorial> {
-        SphericalCoord::<Center, Equatorial>::new(ra, dec, r)
-    }
 }
