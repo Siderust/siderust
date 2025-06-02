@@ -32,7 +32,7 @@
 //! println!("alt = {}, az = {}", coord.alt(), coord.az());
 //! ```
 
-use super::{SphericalCoord, SphericalBuilder};
+use super::SphericalCoord;
 use crate::coordinates::{
     frames::*,
     centers::*,
@@ -49,19 +49,6 @@ pub type HorizontalGeocentricSphericalCoord   = SphericalCoord<Geocentric,   Hor
 pub type HorizontalTopocentricSphericalCoord  = SphericalCoord<Topocentric,  Horizontal>;
 
 impl<Center: ReferenceCenter> SphericalCoord<Center, Horizontal> {
-    /// Creates a new horizontal spherical coordinate with constant values.
-    ///
-    /// # Arguments
-    /// - `alt`: Altitude (α), in degrees.
-    /// - `az`: Azimuth (θ), in degrees.
-    /// - `radial_distance`: Distance to the object, typically in astronomical units (AU).
-    ///
-    /// # Returns
-    /// A new `SphericalCoord` in the horizontal frame.
-    pub const fn new_const(alt: Degrees, az: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(alt, az, radial_distance)
-    }
-
     /// Constructs a new horizontal spherical coordinate with normalized input angular.
     ///
     /// Altitude is normalized to the [-90°, 90°] range, and azimuth to the [0°, 360°] range.
@@ -74,7 +61,7 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, Horizontal> {
     /// # Returns
     /// A `SphericalCoord` in the horizontal frame.
     pub fn new(alt: Degrees, az: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::<Center, Horizontal>::new_const(
+        SphericalCoord::new_spherical_coord(
             alt.normalize_to_90_range(),
             az.normalize(),
             radial_distance)
@@ -85,28 +72,4 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, Horizontal> {
 
     /// Returns the Azimuth (θ) in degrees.
     pub fn az(&self) -> Degrees { self.azimuth }
-}
-
-/// Builds a new horizontal spherical coordinate from Alt/Az, distance.
-///
-/// This is a convenience constructor for `SphericalBuilder` implementations,
-/// allowing generic code to instantiate horizontal coordinates.
-///
-/// # Arguments
-/// - `alt`: Altitude (α), in degrees.
-/// - `az`: Azimuth (θ), in degrees.
-/// - `r`: Radial distance, typically in astronomical units (AU).
-///
-/// # Returns
-/// A new horizontal `SphericalCoord`.
-impl<Center: ReferenceCenter> SphericalBuilder<Center, Horizontal>
-    for SphericalCoord<Center, Horizontal>
-{
-    fn build(
-        alt: Degrees,
-        az: Degrees,
-        r: f64
-    ) -> SphericalCoord<Center, Horizontal> {
-        SphericalCoord::<Center, Horizontal>::new(alt, az, r)
-    }
 }
