@@ -27,21 +27,21 @@
 //! ```
 
 use crate::coordinates::{
-    SphericalCoord,
+    spherical::Position,
     frames::*,
     centers::*,
 };
 use crate::units::{Degrees, Kilometers};
 use crate::bodies::EARTH;
 
-impl<Center: ReferenceCenter> SphericalCoord<Center, ECEF> {
+impl<Center: ReferenceCenter> Position<Center, ECEF> {
     pub const fn new_const(lon: Degrees, lat: Degrees, alt: Option<Kilometers>) -> Self {
         let base = EARTH.radius.value();
         let r = match alt {
             Some(d) => base + d.value(),
             None    => base,
         };
-        SphericalCoord::new_spherical_coord(lat, lon, r)
+        Position::new_spherical_coord(lat, lon, r)
     }
 
     /// Creates a new geographic coordinate with normalized latitude and longitude.
@@ -69,4 +69,4 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ECEF> {
 // Polar   -> Latitude (φ) – the angle from the equator. [-90°, 90°]
 // Azimuth -> Longitude (λ) – the angle from a prime meridian. [-180°, 180°]
 // Radial  -> Altitude (h) – the elevation above the reference ellipsoid (such as WGS84).
-pub type GeographicCoord = SphericalCoord<Geocentric, ECEF>;
+pub type GeographicCoord = Position<Geocentric, ECEF>;
