@@ -1,6 +1,6 @@
 use crate::bodies::solar_system::*;
 use crate::calculus::vsop87::compute_vsop87;
-use crate::coordinates::{CartesianCoord, centers::Barycentric, frames::Ecliptic};
+use crate::coordinates::{cartesian::Position, centers::Barycentric, frames::Ecliptic};
 use crate::targets::Target;
 use crate::units::JulianDay;
 use super::{sun_vsop87e::*,
@@ -21,7 +21,7 @@ macro_rules! impl_vsop87e {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            pub fn vsop87e(jd: JulianDay) -> Target<CartesianCoord<Barycentric, Ecliptic>> {
+            pub fn vsop87e(jd: JulianDay) -> Target<Position<Barycentric, Ecliptic>> {
                 let (x, y, z) = compute_vsop87(
                     jd,
                     &[$( &$x ),+],
@@ -29,7 +29,7 @@ macro_rules! impl_vsop87e {
                     &[$( &$z ),+]
                 );
                 Target::new_static(
-                    CartesianCoord::<Barycentric, Ecliptic>::new(x, y, z),
+                    Position::<Barycentric, Ecliptic>::new(x, y, z),
                     jd,
                 )
             }
@@ -38,7 +38,7 @@ macro_rules! impl_vsop87e {
 }
 
 impl Sun {
-    pub fn vsop87e(jd: JulianDay) -> Target<CartesianCoord<Barycentric, Ecliptic>> {
+    pub fn vsop87e(jd: JulianDay) -> Target<Position<Barycentric, Ecliptic>> {
         let (x, y, z) = compute_vsop87(
             jd,
             &[&SUN_X0, &SUN_X1, &SUN_X2, &SUN_X3, &SUN_X4, &SUN_X5],
@@ -46,7 +46,7 @@ impl Sun {
             &[&SUN_Z0, &SUN_Z1, &SUN_Z2, &SUN_Z3, &SUN_Z4, &SUN_Z5]
         );
         Target::new_static(
-            CartesianCoord::<Barycentric, Ecliptic>::new(x, y, z),
+            Position::<Barycentric, Ecliptic>::new(x, y, z),
             jd,
         )
     }
@@ -112,14 +112,14 @@ impl_vsop87e!(
 #[cfg(test)]
 mod tests {
     use crate::{time::julian_date::J2000};
-    use crate::coordinates::{CartesianCoord, frames::Ecliptic, centers::Heliocentric};
+    use crate::coordinates::{Position, frames::Ecliptic, centers::Heliocentric};
 
     /// Helper function to compare two floating-point numbers with a tolerance.
     fn approx_eq(a: f64, b: f64, tol: f64) -> bool {
         (a - b).abs() < tol
     }
 
-    fn check_cartesian(actual: CartesianCoord<Heliocentric, Ecliptic>, expected_x: f64, expected_y: f64, expected_z: f64, tol: f64) {
+    fn check_cartesian(actual: Position<Heliocentric, Ecliptic>, expected_x: f64, expected_y: f64, expected_z: f64, tol: f64) {
         assert!(approx_eq(actual.x(), expected_x, tol), "current x = {}, expected x = {}", actual.x(), expected_x);
         assert!(approx_eq(actual.y(), expected_y, tol), "current y = {}, expected y = {}", actual.y(), expected_y);
         assert!(approx_eq(actual.z(), expected_z, tol), "current z = {}, expected z = {}", actual.z(), expected_z);

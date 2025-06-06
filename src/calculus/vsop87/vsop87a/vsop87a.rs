@@ -1,6 +1,6 @@
 use crate::bodies::solar_system::Moon;
 use crate::units::JulianDay;
-use crate::coordinates::{CartesianCoord, centers::Heliocentric, frames::Ecliptic};
+use crate::coordinates::{cartesian::Position, centers::Heliocentric, frames::Ecliptic};
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
 use crate::calculus::vsop87::compute_vsop87;
@@ -22,7 +22,7 @@ macro_rules! impl_vsop87a {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            pub fn vsop87a(jd: JulianDay) -> Target<CartesianCoord<Heliocentric, Ecliptic>> {
+            pub fn vsop87a(jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic>> {
                 let (x, y, z) = compute_vsop87(
                     jd,
                     &[$( &$x ),+],
@@ -30,7 +30,7 @@ macro_rules! impl_vsop87a {
                     &[$( &$z ),+]
                 );
                 Target::new_static(
-                    CartesianCoord::<Heliocentric, Ecliptic>::new(x, y, z),
+                    Position::<Heliocentric, Ecliptic>::new(x, y, z),
                     jd,
                 )
             }
@@ -105,14 +105,14 @@ impl_vsop87a!(
 mod tests {
     use crate::units::JulianDay;
     use super::*;
-    use crate::coordinates::{CartesianCoord, frames::Ecliptic, centers::Heliocentric};
+    use crate::coordinates::{Position, frames::Ecliptic, centers::Heliocentric};
 
     /// Helper function to compare two floating-point numbers with a tolerance.
     fn approx_eq(a: f64, b: f64, tol: f64) -> bool {
         (a - b).abs() < tol
     }
 
-    fn check_cartesian(actual: CartesianCoord<Heliocentric, Ecliptic>, expected_x: f64, expected_y: f64, expected_z: f64, tol: f64) {
+    fn check_cartesian(actual: Position<Heliocentric, Ecliptic>, expected_x: f64, expected_y: f64, expected_z: f64, tol: f64) {
         assert!(approx_eq(actual.x(), expected_x, tol), "current x = {}, expected x = {}", actual.x(), expected_x);
         assert!(approx_eq(actual.y(), expected_y, tol), "current y = {}, expected y = {}", actual.y(), expected_y);
         assert!(approx_eq(actual.z(), expected_z, tol), "current z = {}, expected z = {}", actual.z(), expected_z);

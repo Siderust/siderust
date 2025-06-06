@@ -90,7 +90,7 @@
 
 use std::f64::consts::PI;
 use crate::coordinates::{
-    CartesianCoord,
+    cartesian::Position,
     centers::Heliocentric,
     frames::Ecliptic
 };
@@ -223,7 +223,7 @@ fn orbital_period_days(a: AstronomicalUnit) -> Days {
 pub fn calculate_orbit_position(
     elements: &Orbit,
     julian_date: JulianDay,
-) -> CartesianCoord<Heliocentric, Ecliptic> {
+) -> Position<Heliocentric, Ecliptic> {
 
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);
@@ -262,7 +262,7 @@ pub fn calculate_orbit_position(
     let (sin_omega, cos_omega) = omega_rad.sin_cos();
     let (sin_w_nu, cos_w_nu) = (w_rad + Radians::new(true_anomaly)).sin_cos();
 
-    CartesianCoord::<Heliocentric, Ecliptic>::new(
+    Position::<Heliocentric, Ecliptic>::new(
         /*x:*/ z.value() * (cos_omega * cos_w_nu - sin_omega * sin_w_nu * cos_i),
         /*y:*/ z.value() * (sin_omega * cos_w_nu + cos_omega * sin_w_nu * cos_i),
         /*z:*/ z.value() * (sin_w_nu * sin_i)
@@ -271,7 +271,7 @@ pub fn calculate_orbit_position(
 
 impl Orbit {
     /// Calculates heliocentric coordinates of the orbiting body at a given Julian date.
-    pub fn kepler_position(&self, jd: JulianDay) -> CartesianCoord<Heliocentric, Ecliptic> {
+    pub fn kepler_position(&self, jd: JulianDay) -> Position<Heliocentric, Ecliptic> {
         calculate_orbit_position(self, jd)
     }
 }
@@ -286,7 +286,7 @@ mod tests {
         (a - y).abs() < tol
     }
 
-    fn check_cartesian(actual: CartesianCoord::<Heliocentric, Ecliptic>, expected_x: f64, expected_y: f64, expected_z: f64, tol: f64) {
+    fn check_cartesian(actual: Position::<Heliocentric, Ecliptic>, expected_x: f64, expected_y: f64, expected_z: f64, tol: f64) {
         assert!(approx_eq(actual.x(), expected_x, tol), "current x = {}, expected x = {}", actual.x(), expected_x);
         assert!(approx_eq(actual.y(), expected_y, tol), "current y = {}, expected y = {}", actual.y(), expected_y);
         assert!(approx_eq(actual.z(), expected_z, tol), "current z = {}, expected z = {}", actual.z(), expected_z);
