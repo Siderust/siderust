@@ -59,7 +59,7 @@ impl<Center: ReferenceCenter> Position<Center, Horizontal> {
     /// # Returns
     /// A new `Position` in the horizontal frame.
     pub const fn new_const(alt: Degrees, az: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(alt, az, distance)
+        Position::new_spherical_coord(alt, az, Some(distance))
     }
 
     /// Constructs a new horizontal spherical coordinate with normalized input angular.

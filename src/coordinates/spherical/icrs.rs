@@ -59,7 +59,7 @@ impl<Center: ReferenceCenter> Position<Center, ICRS> {
     /// # Returns
     /// A new `Position` in the ICRS frame.
     pub const fn new_const(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(dec, ra, distance)
+        Position::new_spherical_coord(dec, ra, Some(distance))
     }
 
     /// Constructs a new ICRS spherical coordinate with normalized input angular.

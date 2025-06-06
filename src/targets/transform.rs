@@ -49,6 +49,8 @@ impl<C1, F1, C2, F2, K> From<&Target<SphericalCoord<C1, F1, K>>> for Target<Sphe
 where
     CartesianCoord<C1, F1, K>: Transform<CartesianCoord<C1, F2, K>>, // transform frame
     CartesianCoord<C1, F2, K>: Transform<CartesianCoord<C2, F2, K>>, // transform center
+    CartesianCoord<C1, F1, K>: for<'a> From<&'a SphericalCoord<C1, F1, K>>, // to_cartesian
+    SphericalCoord<C2, F2, K>: for<'a> From<&'a CartesianCoord<C2, F2, K>>, // to_spherical
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: ReferenceFrame,

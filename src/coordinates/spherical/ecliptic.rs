@@ -50,7 +50,7 @@ pub type EclipticTopocentricSphericalCoord  = Position<Topocentric,  Ecliptic>;
 
 impl<Center: ReferenceCenter> Position<Center, Ecliptic> {
     pub const fn new_const(lon: Degrees, lat: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(lat, lon, distance)
+        Position::new_spherical_coord(lat, lon, Some(distance))
     }
 
     pub fn new(lon: Degrees, lat: Degrees, distance: f64) -> Self {
