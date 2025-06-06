@@ -1,7 +1,6 @@
 use crate::astro::sidereal::*;
 use crate::coordinates::{
-    SphericalCoord, CartesianCoord,
-    GeographicCoord,
+    spherical, cartesian,
     centers::*,  frames::*
 };
 use crate::units::{Degrees, JulianDay};
@@ -24,10 +23,10 @@ use crate::units::{Degrees, JulianDay};
 /// - [`calculate_gst`]
 /// - [`calculate_lst`]
 pub fn geocentric_to_horizontal(
-    target:   &SphericalCoord<Geocentric, Equatorial>,
-    observer: &GeographicCoord,
+    target:   &spherical::Position<Geocentric, Equatorial>,
+    observer: &spherical::GeographicCoord,
     jd:       JulianDay
-) -> SphericalCoord<Topocentric, Horizontal> {
+) -> spherical::Position<Topocentric, Horizontal> {
 
     // 2) Tiempo sidéreo con ese JD, no con target.t
     let gst = calculate_gst(jd);
@@ -47,25 +46,25 @@ pub fn geocentric_to_horizontal(
                     dec_rad.sin() * lat_rad.cos()
                   - dec_rad.cos() * ha_rad.cos() * lat_rad.sin());
 
-    SphericalCoord::<Topocentric, Horizontal>::new(
+    spherical::Position::<Topocentric, Horizontal>::new(
         Degrees::new(alt_rad.to_degrees()),
         Degrees::new(az_rad.to_degrees()),
-        target.distance,
+        target.distance.unwrap(),
     )
 }
 
 
-impl CartesianCoord<Geocentric, Equatorial> {
-    pub fn to_horizontal(&self, observer: &GeographicCoord, jd: JulianDay) -> CartesianCoord<Topocentric, Horizontal> {
-        let spherical: SphericalCoord<Geocentric, Equatorial>   = self.into();
-        let horizontal: SphericalCoord<Topocentric, Horizontal> = spherical.to_horizontal(observer, jd);
+impl cartesian::Position<Geocentric, Equatorial> {
+    pub fn to_horizontal(&self, observer: &spherical::GeographicCoord, jd: JulianDay) -> cartesian::Position<Topocentric, Horizontal> {
+        let spherical: spherical::Position<Geocentric, Equatorial>   = self.into();
+        let horizontal = geocentric_to_horizontal(&spherical, observer, jd);
         (&horizontal).into()
     }
 }
 
 
-impl SphericalCoord<Geocentric, Equatorial> {
-    pub fn to_horizontal(&self, observer: &GeographicCoord, jd: JulianDay) -> SphericalCoord<Topocentric, Horizontal> {
+impl spherical::Position<Geocentric, Equatorial> {
+    pub fn to_horizontal(&self, observer: &spherical::GeographicCoord, jd: JulianDay) -> spherical::Position<Topocentric, Horizontal> {
         geocentric_to_horizontal(self, observer, jd)
     }
 }
@@ -75,7 +74,6 @@ impl SphericalCoord<Geocentric, Equatorial> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::*;
     use crate::units::DMS;
     use crate::macros::assert_spherical_eq;
 
@@ -86,7 +84,7 @@ mod tests {
 
         let jd: JulianDay = JulianDay::new(2460677.04358);
 
-        let expected_horizontal = SphericalCoord::<Topocentric, Horizontal>::new(
+        let expected_horizontal = spherical::Position::<Topocentric, Horizontal>::new(
             DMS::new(DMS::NEGATIVE, 77, 59, 0.0).to_degrees(),
             DMS::new(DMS::POSITIVE, 349, 24, 0.0).to_degrees(),
             SIRIUS.target.get_position().distance,
