@@ -3,6 +3,7 @@ use crate::units::{Degrees, Radians};
 use crate::coordinates::{
     frames::*,
     centers::*,
+    kinds::*,
 };
 use std::marker::PhantomData;
 
@@ -12,20 +13,26 @@ use std::marker::PhantomData;
 /// - `Center`: The reference center (e.g., Barycentric, Heliocentric).
 /// - `Frame`: The reference frame (e.g., ICRS, Ecliptic).
 #[derive(Debug, Clone, Copy)]
-pub struct SphericalCoord<C: ReferenceCenter, F: ReferenceFrame> {
+pub struct SphericalCoord<C: ReferenceCenter, F: ReferenceFrame, K: Kind> {
     pub polar: Degrees, // (θ)
     pub azimuth: Degrees, // (φ)
     pub distance: Option<f64>,
 
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
+    _kind: PhantomData<K>,
 }
 
-impl<C, F> SphericalCoord<C, F>
+pub type Position<C, F>  = SphericalCoord<C, F, PositionKind>;
+pub type Direction<C, F> = SphericalCoord<C, F, DirectionKind>;
+
+impl<C, F, K> SphericalCoord<C, F, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    K: Kind,
 {
+    pub const CENTER: Self = Self::from_degrees(0.0, 0.0, Some(0.0));
 
     pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Option<f64>) -> Self {
         Self {
@@ -34,6 +41,7 @@ where
             distance,
             _center: PhantomData,
             _frame: PhantomData,
+            _kind: PhantomData,
         }
     }
 
@@ -56,7 +64,7 @@ where
     ///
     /// # Returns
     /// The distance to the other coordinate.
-    pub fn distance_to(&self, other: &SphericalCoord<C, F>) -> f64 {
+    pub fn distance_to(&self, other: &Self) -> f64 {
         self.to_cartesian().distance_to(&other.to_cartesian())
     }
 
@@ -82,10 +90,11 @@ where
     }
 }
 
-impl<C, F> std::fmt::Display for SphericalCoord<C, F>
+impl<C, F, K> std::fmt::Display for SphericalCoord<C, F, K>
 where
-    C: crate::coordinates::centers::ReferenceCenter,
-    F: crate::coordinates::frames::ReferenceFrame,
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    K: Kind,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(

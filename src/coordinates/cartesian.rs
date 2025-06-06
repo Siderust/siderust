@@ -9,17 +9,14 @@
 //! Coordinates are expressed in abstract units (KM, LY, AU, ...) and Julian Days (JD).
 //! The type system enforces correct pairing of reference centers and frames.
 
-use super::{frames, centers};
+use super::{
+    frames, centers,
+    kinds::*,
+};
 
 use std::marker::PhantomData;
 use nalgebra::Vector3;
 use std::ops::{Add, Sub, Div, Mul};
-
-pub trait Kind {}
-pub struct PositionKind;
-pub struct DirectionKind; // ||v|| == 1
-impl Kind for PositionKind {}
-impl Kind for DirectionKind {}
 
 /// A Cartesian coordinate representation with a specific reference center and frame.
 ///
