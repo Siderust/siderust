@@ -15,23 +15,39 @@ use std::marker::PhantomData;
 use nalgebra::Vector3;
 use std::ops::{Add, Sub, Div, Mul};
 
+pub trait Kind {}
+pub struct PositionKind;
+pub struct DirectionKind; // ||v|| == 1
+impl Kind for PositionKind {}
+impl Kind for DirectionKind {}
+
 /// A Cartesian coordinate representation with a specific reference center and frame.
 ///
 /// # Type Parameters
 /// - `Center`: The reference center (e.g., Barycentric, Heliocentric).
 /// - `Frame`: The reference frame (e.g., ICRS, Ecliptic).
 #[derive(Debug, Clone, Copy)]
-pub struct CartesianCoord<Center: centers::ReferenceCenter, Frame: frames::ReferenceFrame> {
-    /// The 3D vector representing the Cartesian coordinates (x, y, z).
-    xyz: Vector3<f64>,
+pub struct CartesianCoord<
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    K : Kind
+> {
 
-    /// Phantom data to associate the coordinate with a reference center.
-    _center: PhantomData<Center>,
-    /// Phantom data to associate the coordinate with a reference frame.
-    _frame: PhantomData<Frame>,
+    xyz: Vector3<f64>,
+    _center: PhantomData<C>,
+    _frame : PhantomData<F>,
+    _kind  : PhantomData<K>,
 }
 
-impl<Center: centers::ReferenceCenter, Frame: frames::ReferenceFrame> CartesianCoord<Center, Frame> {
+pub type Position<C, F>  = CartesianCoord<C, F, PositionKind>;
+pub type Direction<C, F> = CartesianCoord<C, F, DirectionKind>;
+
+impl<C, F, K> CartesianCoord<C, F, K>
+where
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    K: Kind,
+{
     /// Creates a new Cartesian coordinate.
     ///
     /// # Arguments
@@ -43,11 +59,11 @@ impl<Center: centers::ReferenceCenter, Frame: frames::ReferenceFrame> CartesianC
     /// # Returns
     /// A new `CartesianCoord<Center, Frame>`.
     pub const fn new(x: f64, y: f64, z: f64) -> Self {
-        CartesianCoord { xyz: Vector3::<f64>::new(x, y, z), _center: PhantomData, _frame: PhantomData }
+        Self::from_vec3(Vector3::<f64>::new(x, y, z))
     }
 
     pub const fn from_vec3(vec3: Vector3<f64>) -> Self {
-        CartesianCoord { xyz: vec3, _center: PhantomData, _frame: PhantomData }
+        CartesianCoord { xyz: vec3, _center: PhantomData, _frame: PhantomData, _kind : PhantomData }
     }
 
     pub const fn as_vec3(&self) -> Vector3<f64> { self.xyz }
@@ -83,27 +99,29 @@ impl<Center: centers::ReferenceCenter, Frame: frames::ReferenceFrame> CartesianC
     }
 }
 
-impl<Center, Frame> std::fmt::Display for CartesianCoord<Center, Frame>
+impl<C, F, K> std::fmt::Display for CartesianCoord<C, F, K>
 where
-    Center: centers::ReferenceCenter,
-    Frame: frames::ReferenceFrame,
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    K: Kind,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "Center: {}, Frame: {}, X: {:.6}, Y: {:.6}, Z: {:.6}",
-            Center::center_name(),
-            Frame::frame_name(),
+            C::center_name(),
+            F::frame_name(),
             self.x(), self.y(), self.z()
         )
     }
 }
 
 
-impl<Center, Frame> Add for CartesianCoord<Center, Frame>
+impl<C, F, K> Add for CartesianCoord<C, F, K>
 where
-    Center: centers::ReferenceCenter,
-    Frame: frames::ReferenceFrame,
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    K: Kind,
 {
     type Output = Self;
 
@@ -112,10 +130,11 @@ where
     }
 }
 
-impl<Center, Frame> Sub for CartesianCoord<Center, Frame>
+impl<C, F, K> Sub for CartesianCoord<C, F, K>
 where
-    Center: centers::ReferenceCenter,
-    Frame: frames::ReferenceFrame,
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    K: Kind,
 {
     type Output = Self;
 
@@ -124,10 +143,11 @@ where
     }
 }
 
-impl<Center, Frame> Div<f64> for CartesianCoord<Center, Frame>
+impl<C, F, K> Div<f64> for CartesianCoord<C, F, K>
 where
-    Center: centers::ReferenceCenter,
-    Frame: frames::ReferenceFrame,
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    K: Kind,
 {
     type Output = Self;
 
@@ -136,10 +156,11 @@ where
     }
 }
 
-impl<Center, Frame> Mul<f64> for CartesianCoord<Center, Frame>
+impl<C, F, K> Mul<f64> for CartesianCoord<C, F, K>
 where
-    Center: centers::ReferenceCenter,
-    Frame: frames::ReferenceFrame,
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    K: Kind,
 {
     type Output = Self;
 
@@ -149,25 +170,25 @@ where
 }
 
 // === ICRS-based Cartesian coordinate types ===
-pub type ICRS = CartesianCoord<centers::Barycentric,  frames::ICRS>;
-pub type HCRS = CartesianCoord<centers::Heliocentric, frames::ICRS>;
-pub type GCRS = CartesianCoord<centers::Geocentric,   frames::ICRS>;
-pub type TCRS = CartesianCoord<centers::Topocentric,  frames::ICRS>;
+pub type ICRS = Position<centers::Barycentric,  frames::ICRS>;
+pub type HCRS = Position<centers::Heliocentric, frames::ICRS>;
+pub type GCRS = Position<centers::Geocentric,   frames::ICRS>;
+pub type TCRS = Position<centers::Topocentric,  frames::ICRS>;
 
 // === Ecliptic frame ===
-pub type EclipticBarycentricCartesianCoord  = CartesianCoord<centers::Barycentric,  frames::Ecliptic>;
-pub type EclipticHeliocentricCartesianCoord = CartesianCoord<centers::Heliocentric, frames::Ecliptic>;
-pub type EclipticGeocentricCartesianCoord   = CartesianCoord<centers::Geocentric,   frames::Ecliptic>;
-pub type EclipticTopocentricCartesianCoord  = CartesianCoord<centers::Topocentric,  frames::Ecliptic>;
+pub type EclipticBarycentricCartesianCoord  = Position<centers::Barycentric,  frames::Ecliptic>;
+pub type EclipticHeliocentricCartesianCoord = Position<centers::Heliocentric, frames::Ecliptic>;
+pub type EclipticGeocentricCartesianCoord   = Position<centers::Geocentric,   frames::Ecliptic>;
+pub type EclipticTopocentricCartesianCoord  = Position<centers::Topocentric,  frames::Ecliptic>;
 
 // === Equatorial frame ===
-pub type EquatorialBarycentricCartesianCoord  = CartesianCoord<centers::Barycentric,  frames::Equatorial>;
-pub type EquatorialHeliocentricCartesianCoord = CartesianCoord<centers::Heliocentric, frames::Equatorial>;
-pub type EquatorialGeocentricCartesianCoord   = CartesianCoord<centers::Geocentric,   frames::Equatorial>;
-pub type EquatorialTopocentricCartesianCoord  = CartesianCoord<centers::Topocentric,  frames::Equatorial>;
+pub type EquatorialBarycentricCartesianCoord  = Position<centers::Barycentric,  frames::Equatorial>;
+pub type EquatorialHeliocentricCartesianCoord = Position<centers::Heliocentric, frames::Equatorial>;
+pub type EquatorialGeocentricCartesianCoord   = Position<centers::Geocentric,   frames::Equatorial>;
+pub type EquatorialTopocentricCartesianCoord  = Position<centers::Topocentric,  frames::Equatorial>;
 
 // === Horizontal and Earth-fixed frame ===
-pub type HorizontalTopocentricCartesianCoord  = CartesianCoord<centers::Topocentric,  frames::Horizontal>;
+pub type HorizontalTopocentricCartesianCoord  = Position<centers::Topocentric,  frames::Horizontal>;
 
 // === Geographic and Earth-fixed frames ===
-pub type GeographicCartesianCoord = CartesianCoord<centers::Geocentric, frames::ECEF>;
+pub type GeographicCartesianCoord = Position<centers::Geocentric, frames::ECEF>;
