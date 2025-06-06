@@ -12,25 +12,22 @@ use std::marker::PhantomData;
 /// - `Center`: The reference center (e.g., Barycentric, Heliocentric).
 /// - `Frame`: The reference frame (e.g., ICRS, Ecliptic).
 #[derive(Debug, Clone, Copy)]
-pub struct SphericalCoord<Center: ReferenceCenter, Frame: ReferenceFrame> {
-    /// The polar angle (θ), in degrees.
-    pub polar: Degrees,
-    /// The azimuthal angle (φ), in degrees.
-    pub azimuth: Degrees,
-    /// The radial distance (r).
-    pub distance: f64,
+pub struct SphericalCoord<C: ReferenceCenter, F: ReferenceFrame> {
+    pub polar: Degrees, // (θ)
+    pub azimuth: Degrees, // (φ)
+    pub distance: Option<f64>,
 
-    _center: PhantomData<Center>,
-    _frame: PhantomData<Frame>,
+    _center: PhantomData<C>,
+    _frame: PhantomData<F>,
 }
 
-impl<Center, Frame> SphericalCoord<Center, Frame>
+impl<C, F> SphericalCoord<C, F>
 where
-    Center: ReferenceCenter,
-    Frame: ReferenceFrame,
+    C: ReferenceCenter,
+    F: ReferenceFrame,
 {
 
-    pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: f64) -> Self {
+    pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Option<f64>) -> Self {
         Self {
             polar,
             azimuth,
@@ -39,8 +36,8 @@ where
             _frame: PhantomData,
         }
     }
-    
-    pub const fn from_degrees(polar: f64, azimuth: f64, r: f64) -> Self{
+
+    pub const fn from_degrees(polar: f64, azimuth: f64, r: Option<f64>) -> Self{
         Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), r)
     }
 
@@ -59,7 +56,7 @@ where
     ///
     /// # Returns
     /// The distance to the other coordinate.
-    pub fn distance_to(&self, other: &SphericalCoord<Center, Frame>) -> f64 {
+    pub fn distance_to(&self, other: &SphericalCoord<C, F>) -> f64 {
         self.to_cartesian().distance_to(&other.to_cartesian())
     }
 
@@ -85,18 +82,18 @@ where
     }
 }
 
-impl<Center, Frame> std::fmt::Display for SphericalCoord<Center, Frame>
+impl<C, F> std::fmt::Display for SphericalCoord<C, F>
 where
-    Center: crate::coordinates::centers::ReferenceCenter,
-    Frame: crate::coordinates::frames::ReferenceFrame,
+    C: crate::coordinates::centers::ReferenceCenter,
+    F: crate::coordinates::frames::ReferenceFrame,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}, r: {:.6}",
-            Center::center_name(),
-            Frame::frame_name(),
-            self.polar, self.azimuth, self.distance
+            C::center_name(),
+            F::frame_name(),
+            self.polar, self.azimuth, self.distance.unwrap_or(std::f64::NAN)
         )
     }
 }
@@ -111,7 +108,7 @@ mod tests {
         let coord = SphericalCoord::<Barycentric, ICRS>::new(Degrees::new(45.0), Degrees::new(90.0), 1.0);
         assert_eq!(coord.ra().as_f64(), 45.0);
         assert_eq!(coord.dec().as_f64(), 90.0);
-        assert_eq!(coord.distance, 1.0);
+        assert_eq!(coord.distance.unwrap(), 1.0);
     }
     
     #[test]
@@ -128,7 +125,7 @@ mod tests {
         let coord = SphericalCoord::<Heliocentric, ICRS>::new(Degrees::new(0.0), Degrees::new(0.0), 0.0);
         assert_eq!(coord.polar.as_f64(), 0.0);
         assert_eq!(coord.azimuth.as_f64(), 0.0);
-        assert_eq!(coord.distance, 0.0);
+        assert_eq!(coord.distance.unwrap(), 0.0);
     }
 
     #[test]
@@ -136,6 +133,6 @@ mod tests {
         let coord = SphericalCoord::<Barycentric, ICRS>::new(Degrees::new(90.654321), Degrees::new(45.123456), 1234.56789);
         assert!((coord.dec().as_f64() - 45.123456).abs() < 1e-6);
         assert!((coord.ra().as_f64() - 90.654321).abs() < 1e-6);
-        assert!((coord.distance - 1234.56789).abs() < 1e-6);
+        assert!((coord.distance.unwrap() - 1234.56789).abs() < 1e-6);
     }
 }
