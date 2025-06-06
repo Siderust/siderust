@@ -1,7 +1,5 @@
 use crate::coordinates::{
-    CartesianCoord, SphericalCoord,
-    frames::ReferenceFrame,
-    centers::ReferenceCenter
+    centers::ReferenceCenter, frames::ReferenceFrame, kinds::Kind, spherical, cartesian,
 };
 
 /// Implements conversion from a spherical coordinate to a cartesian coordinate.
@@ -12,27 +10,43 @@ use crate::coordinates::{
 /// - `x = r * cos(polar) * cos(azimuth)`
 /// - `y = r * cos(polar) * sin(azimuth)`
 /// - `z = r * sin(polar)`
-impl<Center, Frame> From<&SphericalCoord<Center, Frame>> for CartesianCoord<Center, Frame>
+impl<C, F> From<&spherical::Position<C, F>> for cartesian::Position<C, F>
 where
-    Center: ReferenceCenter,
-    Frame: ReferenceFrame,
+    C: ReferenceCenter,
+    F: ReferenceFrame,
 {
-    fn from(sph: &SphericalCoord<Center, Frame>) -> Self {
+    fn from(sph: &spherical::Position<C, F>) -> Self {
         let ra_rad = sph.azimuth.to_radians();
         let dec_rad = sph.polar.to_radians();
-        let r = sph.distance;
+        let r = sph.distance.expect("SphericalCoord must have a distance");
         let x = r * dec_rad.cos() * ra_rad.cos();
         let y = r * dec_rad.cos() * ra_rad.sin();
         let z = r * dec_rad.sin();
-        CartesianCoord::new(x, y, z)
+        Self::new(x, y, z)
     }
 }
 
-impl<Center, Frame> SphericalCoord<Center, Frame>
+impl<C, F> From<&spherical::Direction<C, F>> for cartesian::Direction<C, F>
 where
-    Center: ReferenceCenter,
-    Frame: ReferenceFrame,
+    C: ReferenceCenter,
+    F: ReferenceFrame,
 {
-    pub fn to_cartesian(&self) -> CartesianCoord<Center, Frame> { self.into() }
-    pub fn from_cartesian(cart: &CartesianCoord<Center, Frame>) -> Self { cart.into() }
+    fn from(sph: &spherical::Direction<C, F>) -> Self {
+        let ra_rad = sph.azimuth.to_radians();
+        let dec_rad = sph.polar.to_radians();
+        let x = dec_rad.cos() * ra_rad.cos();
+        let y = dec_rad.cos() * ra_rad.sin();
+        let z = dec_rad.sin();
+        Self::new(x, y, z)
+    }
+}
+
+impl<C, F, K> spherical::SphericalCoord<C, F, K>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    K: Kind,
+{
+    pub fn to_cartesian(&self) -> cartesian::CartesianCoord<C, F, K> { self.into() }
+    pub fn to_cartesian(&self) -> cartesian::CartesianCoord<C, F, K> { self.into() }
 }
