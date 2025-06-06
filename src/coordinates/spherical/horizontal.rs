@@ -4,7 +4,7 @@
 //! relative to an observer's local horizon.
 //!
 //! # Coordinate Convention
-//! The `SphericalCoord<Center, Horizontal>` type uses:
+//! The `Position<Center, Horizontal>` type uses:
 //!
 //! - **Altitude (Alt)** → `polar`: angle above or below the horizon, in degrees.
 //! - **Azimuth (Az)**   → `azimuth`: angle measured clockwise from the north, in degrees.
@@ -32,7 +32,7 @@
 //! println!("alt = {}, az = {}", coord.alt(), coord.az());
 //! ```
 
-use super::SphericalCoord;
+use super::Position;
 use crate::coordinates::{
     frames::*,
     centers::*,
@@ -43,12 +43,12 @@ use crate::units::Degrees;
 // Polar   -> Alt (α) – the angle from the horizon. [-90°, 90°]
 // Azimuth -> Az (θ) – the angle from a prime meridian. [0°, 360°]
 // Radial  -> Distance (d) – the distance between the source and the target.
-pub type HorizontalBarycentricSphericalCoord  = SphericalCoord<Barycentric,  Horizontal>;
-pub type HorizontalHeliocentricSphericalCoord = SphericalCoord<Heliocentric, Horizontal>;
-pub type HorizontalGeocentricSphericalCoord   = SphericalCoord<Geocentric,   Horizontal>;
-pub type HorizontalTopocentricSphericalCoord  = SphericalCoord<Topocentric,  Horizontal>;
+pub type HorizontalBarycentricSphericalCoord  = Position<Barycentric,  Horizontal>;
+pub type HorizontalHeliocentricSphericalCoord = Position<Heliocentric, Horizontal>;
+pub type HorizontalGeocentricSphericalCoord   = Position<Geocentric,   Horizontal>;
+pub type HorizontalTopocentricSphericalCoord  = Position<Topocentric,  Horizontal>;
 
-impl<Center: ReferenceCenter> SphericalCoord<Center, Horizontal> {
+impl<Center: ReferenceCenter> Position<Center, Horizontal> {
     /// Creates a new horizontal spherical coordinate with constant values.
     ///
     /// # Arguments
@@ -57,9 +57,9 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, Horizontal> {
     /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
-    /// A new `SphericalCoord` in the horizontal frame.
+    /// A new `Position` in the horizontal frame.
     pub const fn new_const(alt: Degrees, az: Degrees, distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(alt, az, distance)
+        Position::new_spherical_coord(alt, az, distance)
     }
 
     /// Constructs a new horizontal spherical coordinate with normalized input angular.
@@ -72,9 +72,9 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, Horizontal> {
     /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
-    /// A `SphericalCoord` in the horizontal frame.
+    /// A `Position` in the horizontal frame.
     pub fn new(alt: Degrees, az: Degrees, distance: f64) -> Self {
-        SphericalCoord::<Center, Horizontal>::new_const(
+        Position::<Center, Horizontal>::new_const(
             alt.normalize_to_90_range(),
             az.normalize(),
             distance)

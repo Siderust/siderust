@@ -5,7 +5,7 @@
 //! of celestial objects relative to the ICRS, which is a standard celestial reference frame.
 //!
 //! # Coordinate Convention
-//! The `SphericalCoord<Center, ICRS>` type uses:
+//! The `Position<Center, ICRS>` type uses:
 //!
 //! - **Right Ascension (RA or α)** → `azimuth`: angle measured eastward along the celestial equator from the vernal equinox, in degrees.
 //! - **Declination (Dec or δ)**    → `polar`: angle above or below the celestial equator, in degrees.
@@ -32,7 +32,7 @@
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
-use super::SphericalCoord;
+use super::Position;
 use crate::coordinates::{
     frames::*,
     centers::*,
@@ -43,12 +43,12 @@ use crate::units::Degrees;
 // Polar   -> Dec (δ) – the angle from a prime meridian. [-90°, 90°]
 // Azimuth -> RA (α) – the angle from the equator. [0°, 360°]
 // Radial  -> Distance (d) – the distance between the source and the target.
-pub type ICRSBarycentricSphericalCoord  = SphericalCoord<Barycentric,  ICRS>;
-pub type ICRSHeliocentricSphericalCoord = SphericalCoord<Heliocentric, ICRS>;
-pub type ICRSGeocentricSphericalCoord   = SphericalCoord<Geocentric,   ICRS>;
-pub type ICRSTopocentricSphericalCoord  = SphericalCoord<Topocentric,  ICRS>;
+pub type ICRSBarycentricSphericalCoord  = Position<Barycentric,  ICRS>;
+pub type ICRSHeliocentricSphericalCoord = Position<Heliocentric, ICRS>;
+pub type ICRSGeocentricSphericalCoord   = Position<Geocentric,   ICRS>;
+pub type ICRSTopocentricSphericalCoord  = Position<Topocentric,  ICRS>;
 
-impl<Center: ReferenceCenter> SphericalCoord<Center, ICRS> {
+impl<Center: ReferenceCenter> Position<Center, ICRS> {
     /// Creates a new ICRS spherical coordinate with constant values.
     ///
     /// # Arguments
@@ -57,9 +57,9 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ICRS> {
     /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
-    /// A new `SphericalCoord` in the ICRS frame.
+    /// A new `Position` in the ICRS frame.
     pub const fn new_const(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(dec, ra, distance)
+        Position::new_spherical_coord(dec, ra, distance)
     }
 
     /// Constructs a new ICRS spherical coordinate with normalized input angular.
@@ -72,9 +72,9 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ICRS> {
     /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
-    /// A normalized `SphericalCoord` in the ICRS frame.
+    /// A normalized `Position` in the ICRS frame.
     pub fn new(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        SphericalCoord::<Center, ICRS>::new_const(
+        Position::<Center, ICRS>::new_const(
             ra.normalize(),
             dec.normalize_to_90_range(),
             distance)

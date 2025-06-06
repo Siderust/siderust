@@ -105,13 +105,14 @@ impl_vsop87a!(
 mod tests {
     use crate::units::JulianDay;
     use super::*;
-    use crate::coordinates::{Position, frames::Ecliptic, centers::Heliocentric};
+    use crate::coordinates::{cartesian::Position, frames::Ecliptic, centers::Heliocentric};
 
     /// Helper function to compare two floating-point numbers with a tolerance.
     fn approx_eq(a: f64, b: f64, tol: f64) -> bool {
         (a - b).abs() < tol
     }
 
+    // TODO: use macros
     fn check_cartesian(actual: Position<Heliocentric, Ecliptic>, expected_x: f64, expected_y: f64, expected_z: f64, tol: f64) {
         assert!(approx_eq(actual.x(), expected_x, tol), "current x = {}, expected x = {}", actual.x(), expected_x);
         assert!(approx_eq(actual.y(), expected_y, tol), "current y = {}, expected y = {}", actual.y(), expected_y);
