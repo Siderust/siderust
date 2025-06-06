@@ -47,7 +47,7 @@ impl Sun {
         geo.azimuth += nutation.longitude;
 
         // Apply aberration correction (simplified constant formula)
-        let aberration = (20.4898 / (360.0 * 60.0 * 60.0)) / geo.distance;
+        let aberration = (20.4898 / (360.0 * 60.0 * 60.0)) / geo.distance.expect("Distance should be defined");
         geo.azimuth -= Degrees::new(aberration);
 
         (&geo).into()

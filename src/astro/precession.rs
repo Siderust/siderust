@@ -225,7 +225,7 @@ pub fn precess_equatorial(
     Position::<Geocentric, Equatorial>::new(
         ra.to_degrees(),
         dec.to_degrees(),
-        position.distance
+        position.distance.expect("precess_equatorial: distance must be set")
     )
 }
 
