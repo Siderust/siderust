@@ -165,7 +165,7 @@ where
 {
     fn from(orig: &SphericalCoord<C1, F1, K>) -> Self {
         // Step 1: Convert spherical to Cartesian
-        let cart: CartesianCoord<C1, F1, K> = orig.to_cartesian();
+        let cart: CartesianCoord<C1, F1, K> = orig.into();
         // Step 2: Transform to new frame
         let cart_mid: CartesianCoord<C1, F2, K> = cart.transform(JulianDay::J2000);
         // Step 3: Transform to new center

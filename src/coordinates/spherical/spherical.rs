@@ -1,6 +1,7 @@
 use crate::units::{Degrees, Radians};
 
 use crate::coordinates::{
+    cartesian,
     frames::*,
     centers::*,
     kinds::*,
@@ -31,6 +32,7 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
     K: Kind,
+    cartesian::CartesianCoord<C, F, K>: for<'a> From<&'a Self>,
 {
     pub const CENTER: Self = Self::from_degrees(0.0, 0.0, Some(0.0));
 
@@ -47,14 +49,6 @@ where
 
     pub const fn from_degrees(polar: f64, azimuth: f64, r: Option<f64>) -> Self{
         Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), r)
-    }
-
-    /// Calculates the Euclidean distance from the origin.
-    ///
-    /// # Returns
-    /// The distance from the origin.
-    pub fn distance_from_origin(&self) -> f64 {
-        self.to_cartesian().distance_from_origin()
     }
 
     /// Calculates the Euclidean distance to another spherical coordinate.

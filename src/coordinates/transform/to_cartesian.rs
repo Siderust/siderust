@@ -51,6 +51,17 @@ where
     pub fn to_cartesian(&self) -> cartesian::CartesianCoord<C, F, K> { self.into() }
 }
 
+/*
+impl<C: ReferenceCenter, F: ReferenceFrame> spherical::Position<C, F>
+{
+    pub fn to_cartesian(&self) -> cartesian::Position<C, F> { self.into() }
+}
+
+impl<C: ReferenceCenter, F: ReferenceFrame> spherical::Direction<C, F>
+{
+    pub fn to_cartesian(&self) -> cartesian::Direction<C, F> { self.into() }
+} */
+
 impl<C, F, K> spherical::SphericalCoord<C, F, K>
 where
     C: ReferenceCenter,
