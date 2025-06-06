@@ -35,7 +35,7 @@
 //! * [`get_nutation`] → [`Nutation`].  Computes Δψ, Δε, ε₀ for a given
 //!   [`JulianDay`].  All outputs are **degrees**.
 //! * [`corrected_ra_with_nutation`]  
-//!   Input: a mean [`SphericalCoord`] (RA/Dec) and the same date.  Output: the
+//!   Input: a mean [`Position`] (RA/Dec) and the same date.  Output: the
 //!   apparent right ascension *αₜ* (°) after a 3‑1‑3 rotation using Δψ, Δε, ε₀.
 //!
 //! ## Quick example
@@ -43,7 +43,7 @@
 //! use chrono::prelude::*;
 //! use siderust::units::JulianDay;
 //! use siderust::bodies::catalog::SIRIUS;
-//! use siderust::coordinates::{SphericalCoord, centers::Geocentric, frames::Equatorial};
+//! use siderust::coordinates::{Position, centers::Geocentric, frames::Equatorial};
 //! use siderust::astro::nutation::{get_nutation, corrected_ra_with_nutation};
 //!
 //! let jd = JulianDay::from_utc(Utc::now());
@@ -60,7 +60,7 @@
 
 
 use crate::coordinates::{
-    SphericalCoord,
+    spherical::Position,
     centers::Geocentric,
     frames::Equatorial
 };
@@ -127,7 +127,7 @@ pub fn get_nutation(jd: JulianDay) -> Nutation {
 /// Rotate a mean position (RA, Dec) into **apparent** right ascension, applying nutation.
 #[inline]
 pub fn corrected_ra_with_nutation(
-    target: &SphericalCoord<Geocentric, Equatorial>,
+    target: &Position<Geocentric, Equatorial>,
     jd: JulianDay,
 ) -> Degrees {
     // 1) Fetch nutation terms in radians
