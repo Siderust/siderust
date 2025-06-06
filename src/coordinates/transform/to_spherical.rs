@@ -59,10 +59,20 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
     K: Kind,
+    spherical::SphericalCoord<C, F, K>: for<'a> From<&'a cartesian::CartesianCoord<C, F, K>>,
 {
-    /// Converts this Cartesian coordinate into its equivalent spherical representation.
-    pub fn to_spherical(&self)   -> spherical::SphericalCoord<C, F, K> { self.into() }
-    pub fn from_spherical(&self) -> spherical::SphericalCoord<C, F, K> { self.into() }
+    pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, K> { self.into() }
+}
+
+
+impl<C, F, K> cartesian::CartesianCoord<C, F, K>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    K: Kind,
+    cartesian::CartesianCoord<C, F, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, K>>,
+{
+    pub fn from_spherical(sph: &spherical::SphericalCoord<C, F, K>) -> Self { Self::from(&sph) }
 }
 
 #[cfg(test)]

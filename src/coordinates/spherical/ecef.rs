@@ -41,7 +41,7 @@ impl<Center: ReferenceCenter> Position<Center, ECEF> {
             Some(d) => base + d.value(),
             None    => base,
         };
-        Position::new_spherical_coord(lat, lon, r)
+        Position::new_spherical_coord(lat, lon, Some(r))
     }
 
     /// Creates a new geographic coordinate with normalized latitude and longitude.

@@ -48,7 +48,7 @@ pub type EquatorialTopocentricSphericalCoord  = Position<Topocentric,  Equatoria
 
 impl<Center: ReferenceCenter> Position<Center, Equatorial> {
     pub const fn new_const(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(dec, ra, distance)
+        Position::new_spherical_coord(dec, ra, Some(distance))
     }
 
     /// Constructs a new equatorial spherical coordinate with normalized input angular.
