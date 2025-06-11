@@ -9,7 +9,7 @@
 //! Coordinates are expressed in abstract units (KM, LY, AU, ...) and Julian Days (JD).
 //! The type system enforces correct pairing of reference centers and frames.
 
-use super::{
+use crate::coordinates::{
     frames, centers,
     kinds::*,
 };
@@ -36,9 +36,6 @@ pub struct CartesianCoord<
     _kind  : PhantomData<K>,
 }
 
-pub type Position<C, F>  = CartesianCoord<C, F, PositionKind>;
-pub type Direction<C, F> = CartesianCoord<C, F, DirectionKind>;
-
 impl<C, F, K> CartesianCoord<C, F, K>
 where
     C: centers::ReferenceCenter,
@@ -55,8 +52,10 @@ where
     ///
     /// # Returns
     /// A new `CartesianCoord<Center, Frame>`.
-    pub const fn new(x: f64, y: f64, z: f64) -> Self {
-        Self::from_vec3(Vector3::<f64>::new(x, y, z))
+    pub fn new(x: f64, y: f64, z: f64) -> Self {
+        // El inliner eliminará por completo la llamada para PositionKind
+        K::validate(x, y, z);
+        Self::from_vec3(Vector3::new(x, y, z))
     }
 
     pub const fn from_vec3(vec3: Vector3<f64>) -> Self {
@@ -73,19 +72,6 @@ where
 
     /// Gets the z-coordinate in AU.
     pub fn z(&self) -> f64 { self.xyz[2] }
-
-    /// Calculates the Euclidean distance with respect to the ReferenceCenter.
-    ///
-    /// # Returns
-    /// The distance from the ReferenceCenter in AU.
-    pub fn distance_from_origin(&self) -> f64 {
-        (self.x().powi(2) + self.y().powi(2) + self.z().powi(2)).sqrt()
-    }
-
-    pub fn normalize(&self) -> Self {
-        let r = self.distance_from_origin();
-        Self::new(self.x() / r, self.y() / r, self.z() / r)
-    }
 
     /// Computes the Euclidean distance to another Cartesian coordinate of the same type.
     pub fn distance_to(
@@ -165,27 +151,3 @@ where
         Self::from_vec3(self.xyz * rhs)
     }
 }
-
-// === ICRS-based Cartesian coordinate types ===
-pub type ICRS = Position<centers::Barycentric,  frames::ICRS>;
-pub type HCRS = Position<centers::Heliocentric, frames::ICRS>;
-pub type GCRS = Position<centers::Geocentric,   frames::ICRS>;
-pub type TCRS = Position<centers::Topocentric,  frames::ICRS>;
-
-// === Ecliptic frame ===
-pub type EclipticBarycentricCartesianCoord  = Position<centers::Barycentric,  frames::Ecliptic>;
-pub type EclipticHeliocentricCartesianCoord = Position<centers::Heliocentric, frames::Ecliptic>;
-pub type EclipticGeocentricCartesianCoord   = Position<centers::Geocentric,   frames::Ecliptic>;
-pub type EclipticTopocentricCartesianCoord  = Position<centers::Topocentric,  frames::Ecliptic>;
-
-// === Equatorial frame ===
-pub type EquatorialBarycentricCartesianCoord  = Position<centers::Barycentric,  frames::Equatorial>;
-pub type EquatorialHeliocentricCartesianCoord = Position<centers::Heliocentric, frames::Equatorial>;
-pub type EquatorialGeocentricCartesianCoord   = Position<centers::Geocentric,   frames::Equatorial>;
-pub type EquatorialTopocentricCartesianCoord  = Position<centers::Topocentric,  frames::Equatorial>;
-
-// === Horizontal and Earth-fixed frame ===
-pub type HorizontalTopocentricCartesianCoord  = Position<centers::Topocentric,  frames::Horizontal>;
-
-// === Geographic and Earth-fixed frames ===
-pub type GeographicCartesianCoord = Position<centers::Geocentric, frames::ECEF>;

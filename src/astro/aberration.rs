@@ -48,7 +48,6 @@
 
 use crate::units::JulianDay;
 use crate::coordinates::{
-    //spherical::Position, cartesian::Position,
     spherical, cartesian,
     centers::Geocentric, frames::Equatorial
 };
