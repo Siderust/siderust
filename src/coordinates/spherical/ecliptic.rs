@@ -22,7 +22,7 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::EclipticHeliocentricSphericalCoord;
+//! use siderust::coordinates::spherical::EclipticHeliocentricSphericalCoord;
 //! use siderust::units::Degrees;
 //!
 //! let coord = EclipticHeliocentricSphericalCoord::new(

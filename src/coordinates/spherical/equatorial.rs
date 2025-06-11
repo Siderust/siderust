@@ -21,7 +21,7 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::EquatorialGeocentricSphericalCoord;
+//! use siderust::coordinates::spherical::EquatorialGeocentricSphericalCoord;
 //! use siderust::units::Degrees;
 //!
 //! let coord = EquatorialGeocentricSphericalCoord::new(

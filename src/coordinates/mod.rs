@@ -29,22 +29,22 @@
 //!
 //! ## Example
 //! ```rust
-//! use siderust::coordinates::spherical::SphericalCoord;
-//! use siderust::coordinates::cartesian::CartesianCoord;
+//! use siderust::coordinates::spherical;
+//! use siderust::coordinates::cartesian;
 //! use siderust::coordinates::centers::Heliocentric;
 //! use siderust::coordinates::frames::Ecliptic;
 //! use siderust::units::Degrees;
 //!
 //! // Create a spherical coordinate
-//! let spherical = SphericalCoord::<Heliocentric, Ecliptic>::new(
+//! let spherical = spherical::Position::<Heliocentric, Ecliptic>::new(
 //!     Degrees::new(45.0), Degrees::new(7.0), 1.0
 //! );
 //!
 //! // Convert to cartesian coordinates
-//! let cartesian: CartesianCoord<Heliocentric, Ecliptic> = (&spherical).into();
+//! let cartesian: cartesian::Position<Heliocentric, Ecliptic> = (&spherical).into();
 //!
 //! // Convert back to spherical coordinates
-//! let spherical_converted: SphericalCoord<Heliocentric, Ecliptic> = (&cartesian).into();
+//! let spherical_converted: spherical::Position<Heliocentric, Ecliptic> = (&cartesian).into();
 //!
 //! println!("Spherical -> Cartesian -> Spherical: {:?}", spherical_converted);
 //! ```
@@ -63,6 +63,3 @@ pub mod spherical;
 pub mod frames;
 pub mod centers;
 pub mod kinds;
-
-//pub use cartesian::*;
-//pub use spherical::*;

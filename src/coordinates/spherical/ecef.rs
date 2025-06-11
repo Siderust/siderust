@@ -19,7 +19,7 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::GeographicCoord;
+//! use siderust::coordinates::spherical::GeographicCoord;
 //! use siderust::units::{Degrees, KM};
 //!
 //! let coord = GeographicCoord::new(Degrees::new(45.0), Degrees::new(7.0), Some(2.4*KM));

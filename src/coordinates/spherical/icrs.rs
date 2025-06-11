@@ -23,7 +23,7 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::ICRSGeocentricSphericalCoord;
+//! use siderust::coordinates::spherical::ICRSGeocentricSphericalCoord;
 //! use siderust::units::Degrees;
 //!
 //! let coord = ICRSGeocentricSphericalCoord::new(

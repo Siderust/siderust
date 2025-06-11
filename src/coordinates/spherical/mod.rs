@@ -21,13 +21,13 @@
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::coordinates::SphericalCoord;
+//! use siderust::coordinates::spherical::Position;
 //! use siderust::coordinates::frames::ICRS;
 //! use siderust::coordinates::centers::Barycentric;
 //! use siderust::units::Degrees;
 //!
 //! // Create a barycentric ICRS coordinate (RA, Dec, distance)
-//! let coord = SphericalCoord::<Barycentric, ICRS>::new(
+//! let coord = Position::<Barycentric, ICRS>::new(
 //!     Degrees::new(120.0), Degrees::new(45.0), 1.0
 //! );
 //! println!("{}", coord.to_string());
@@ -62,11 +62,11 @@
 //! # Example
 //! ```rust
 //! use siderust::units::Degrees;
-//! use siderust::coordinates::SphericalCoord;
+//! use siderust::coordinates::spherical::Position;
 //! use siderust::coordinates::frames::ICRS;
 //! use siderust::coordinates::centers::Barycentric;
 //!
-//! let coord = SphericalCoord::<Barycentric, ICRS>::new(
+//! let coord = Position::<Barycentric, ICRS>::new(
 //!     Degrees::new(120.0), Degrees::new(45.0), 1.0
 //! );
 //! println!("{}", coord.to_string());

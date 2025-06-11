@@ -86,9 +86,9 @@ mod tests {
         let cart = cartesian::Position::<Geocentric, ICRS>::new(1.0, 1.0, 1.0);
         let sph: spherical::Position<Geocentric, ICRS> = cart.to_spherical();
         let expected = spherical::Position::<Geocentric, ICRS>::new(
-            Degrees::new(35.26438968275466), // polar angle
-            Degrees::new(45.0),              // azimuth angle
-            1.7320508075688772,        // distance
+            Degrees::new(45.0),
+            Degrees::new(35.26438968275466),
+            1.7320508075688772,
         );
         assert_spherical_eq!(&sph, &expected, 1e-6, "Spherical coordinates do not match expected values");
     }

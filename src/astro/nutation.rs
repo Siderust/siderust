@@ -43,7 +43,6 @@
 //! use chrono::prelude::*;
 //! use siderust::units::JulianDay;
 //! use siderust::bodies::catalog::SIRIUS;
-//! use siderust::coordinates::{Position, centers::Geocentric, frames::Equatorial};
 //! use siderust::astro::nutation::{get_nutation, corrected_ra_with_nutation};
 //!
 //! let jd = JulianDay::from_utc(Utc::now());

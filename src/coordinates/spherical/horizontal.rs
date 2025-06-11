@@ -23,7 +23,7 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::HorizontalTopocentricSphericalCoord;
+//! use siderust::coordinates::spherical::HorizontalTopocentricSphericalCoord;
 //! use siderust::units::Degrees;
 //!
 //! let coord = HorizontalTopocentricSphericalCoord::new(

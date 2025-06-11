@@ -38,7 +38,7 @@ where C: ReferenceCenter, F: ReferenceFrame
     let da = (a.azimuth.as_f64() - b.azimuth.as_f64()).abs();
     if (d1 - d2).abs() >= epsilon || dp >= epsilon || da >= epsilon {
         if let Some(m) = msg {
-            panic!("{}", m);
+            panic!("{}. Spherical coords differ: {} vs {} (ε = {})", m, a, b, epsilon);
         } else {
             panic!("Spherical coords differ: {} vs {} (ε = {})", a, b, epsilon);
         }
