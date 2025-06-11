@@ -87,7 +87,7 @@ mod tests {
         let expected_horizontal = spherical::Position::<Topocentric, Horizontal>::new(
             DMS::new(DMS::NEGATIVE, 77, 59, 0.0).to_degrees(),
             DMS::new(DMS::POSITIVE, 349, 24, 0.0).to_degrees(),
-            SIRIUS.target.get_position().distance,
+            SIRIUS.target.get_position().distance.unwrap(),
         );
 
         let horizontal = geocentric_to_horizontal(&SIRIUS.target.get_position(), &ROQUE_DE_LOS_MUCHACHOS, jd);

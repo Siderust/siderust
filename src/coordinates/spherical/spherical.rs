@@ -108,7 +108,7 @@ mod tests {
     
     #[test]
     fn test_spherical_coord_creation() {
-        let coord = SphericalCoord::<Barycentric, ICRS>::new(Degrees::new(45.0), Degrees::new(90.0), 1.0);
+        let coord = Position::<Barycentric, ICRS>::new(Degrees::new(45.0), Degrees::new(90.0), 1.0);
         assert_eq!(coord.ra().as_f64(), 45.0);
         assert_eq!(coord.dec().as_f64(), 90.0);
         assert_eq!(coord.distance.unwrap(), 1.0);
@@ -116,7 +116,7 @@ mod tests {
     
     #[test]
     fn test_spherical_coord_to_string() {
-        let coord = SphericalCoord::<Geocentric, ICRS>::new(Degrees::new(30.0), Degrees::new(60.0), 1000.0);
+        let coord = Position::<Geocentric, ICRS>::new(Degrees::new(30.0), Degrees::new(60.0), 1000.0);
         let coord_string = coord.to_string();
         assert!(coord_string.contains("θ: 60"));
         assert!(coord_string.contains("φ: 30"));
@@ -125,7 +125,7 @@ mod tests {
     
     #[test]
     fn test_spherical_coord_zero_values() {
-        let coord = SphericalCoord::<Heliocentric, ICRS>::new(Degrees::new(0.0), Degrees::new(0.0), 0.0);
+        let coord = Position::<Heliocentric, ICRS>::new(Degrees::new(0.0), Degrees::new(0.0), 0.0);
         assert_eq!(coord.polar.as_f64(), 0.0);
         assert_eq!(coord.azimuth.as_f64(), 0.0);
         assert_eq!(coord.distance.unwrap(), 0.0);
@@ -133,7 +133,7 @@ mod tests {
 
     #[test]
     fn test_spherical_coord_precision() {
-        let coord = SphericalCoord::<Barycentric, ICRS>::new(Degrees::new(90.654321), Degrees::new(45.123456), 1234.56789);
+        let coord = Position::<Barycentric, ICRS>::new(Degrees::new(90.654321), Degrees::new(45.123456), 1234.56789);
         assert!((coord.dec().as_f64() - 45.123456).abs() < 1e-6);
         assert!((coord.ra().as_f64() - 90.654321).abs() < 1e-6);
         assert!((coord.distance.unwrap() - 1234.56789).abs() < 1e-6);

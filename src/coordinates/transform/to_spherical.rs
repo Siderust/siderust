@@ -79,15 +79,18 @@ where
 mod tests {
     use super::*;
     use crate::units::Degrees;
+    use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
 
     #[test]
     fn test_cartesian_to_spherical() {
         let cart = cartesian::Position::<Geocentric, ICRS>::new(1.0, 1.0, 1.0);
         let sph: spherical::Position<Geocentric, ICRS> = cart.to_spherical();
-
-        assert!((sph.distance - 1.7320508075688772).abs() < 1e-6);
-        assert!((sph.azimuth - Degrees::new(45.0)).abs() < Degrees::new(1e-6));
-        assert!((sph.polar - Degrees::new(35.26438968275466)).abs() < Degrees::new(1e-6));
+        let expected = spherical::Position::<Geocentric, ICRS>::new(
+            Degrees::new(35.26438968275466), // polar angle
+            Degrees::new(45.0),              // azimuth angle
+            1.7320508075688772,        // distance
+        );
+        assert_spherical_eq!(&sph, &expected, 1e-6, "Spherical coordinates do not match expected values");
     }
 
     #[test]
@@ -98,10 +101,8 @@ mod tests {
             1.7320508075688772,
         );
         let cart = cartesian::Position::<Geocentric, ICRS>::from_spherical(&sph);
-
-        assert!((cart.x() - 1.0).abs() < 1e-6);
-        assert!((cart.y() - 1.0).abs() < 1e-6);
-        assert!((cart.z() - 1.0).abs() < 1e-6);
+        let expected = cartesian::Position::<Geocentric, ICRS>::new(1.0, 1.0, 1.0);
+        assert_cartesian_eq!(&cart, &expected, 1e-6, "Cartesian coordinates do not match expected values");
     }
 
     #[test]
@@ -109,10 +110,7 @@ mod tests {
         let cart_original = cartesian::Position::<Geocentric, ICRS>::new(2.0, 3.0, 4.0,);
         let sph = cart_original.to_spherical();
         let cart_converted = cartesian::Position::from_spherical(&sph);
-
-        assert!((cart_original.x() - cart_converted.x()).abs() < 1e-6);
-        assert!((cart_original.y() - cart_converted.y()).abs() < 1e-6);
-        assert!((cart_original.z() - cart_converted.z()).abs() < 1e-6);
+        assert_cartesian_eq!(&cart_original, &cart_converted, 1e-6, "Cartesian coordinates do not match expected values");
     }
 
     #[test]
@@ -124,9 +122,6 @@ mod tests {
         );
         let cart = cartesian::CartesianCoord::from_spherical(&sph_original);
         let sph_converted = cart.to_spherical();
-
-        assert!((sph_original.distance - sph_converted.distance).abs() < 1e-6);
-        assert!((sph_original.azimuth - sph_converted.azimuth).abs() < Degrees::new(1e-6));
-        assert!((sph_original.polar - sph_converted.polar).abs() < Degrees::new(1e-6));
+        assert_spherical_eq!(&sph_original, &sph_converted, 1e-6, "Spherical coordinates do not match expected values");
     }
 }
