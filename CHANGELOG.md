@@ -8,10 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Coordinate macro checkers
+- spherical::Direction, cartesian::Direction
 
 ### Changed
 - Geogreaphic constructor order.
 - Refactor radial_distance -> distance
+- SphericalCoord -> spherical::Position
+- CartesianCoord -> cartesian::Position
 
 ### Deprecated
 
@@ -26,6 +29,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Implement Arithmetic Operator Add, Sub, Div, Mult in CartesianCoord.
+
 ### Changed
 - Geocentric coordinates now account for Aberration.
 
