@@ -19,23 +19,29 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::GeographicCoord;
-//! use siderust::units::Degrees;
+//! use siderust::coordinates::spherical::GeographicCoord;
+//! use siderust::units::{Degrees, KM};
 //!
-//! let coord = GeographicCoord::new(Degrees::new(45.0), Degrees::new(7.0), 400.0);
+//! let coord = GeographicCoord::new(Degrees::new(45.0), Degrees::new(7.0), Some(2.4*KM));
 //! println!("lat = {}, lon = {}", coord.lat(), coord.lon());
 //! ```
 
-use super::SphericalCoord;
 use crate::coordinates::{
+    spherical::Position,
     frames::*,
     centers::*,
 };
-use crate::units::Degrees;
+use crate::units::{Degrees, Kilometers};
+use crate::bodies::EARTH;
 
-impl<Center: ReferenceCenter> SphericalCoord<Center, ECEF> {
-    pub const fn new_const(lon: Degrees, lat: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(lat, lon, radial_distance)
+impl<Center: ReferenceCenter> Position<Center, ECEF> {
+    pub const fn new_const(lon: Degrees, lat: Degrees, alt: Option<Kilometers>) -> Self {
+        let base = EARTH.radius.value();
+        let r = match alt {
+            Some(d) => base + d.value(),
+            None    => base,
+        };
+        Position::new_spherical_coord(lat, lon, Some(r))
     }
 
     /// Creates a new geographic coordinate with normalized latitude and longitude.
@@ -43,12 +49,12 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ECEF> {
     /// # Arguments
     /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
-    /// - `radial_distance`: Height or distance above the ellipsoid, in meters.
-    pub fn new(lon: Degrees, lat: Degrees, radial_distance: f64) -> Self {
-        Self::new_spherical_coord(
+    /// - `alt`: Altitude above the sea, in Kilometers.
+    pub fn new(lon: Degrees, lat: Degrees, alt: Option<Kilometers>) -> Self {
+        Self::new_const(
             lat.normalize_to_90_range(),
             lon.normalize_to_180_range(),
-            radial_distance)
+            alt)
     }
 
     /// Returns the latitude (φ) in degrees.
@@ -62,5 +68,5 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, ECEF> {
 // Define type alias for Geodetic/Geographic coordinates using SphericalCoord
 // Polar   -> Latitude (φ) – the angle from the equator. [-90°, 90°]
 // Azimuth -> Longitude (λ) – the angle from a prime meridian. [-180°, 180°]
-// Radial  -> Height (h) – the elevation above the reference ellipsoid (such as WGS84).
-pub type GeographicCoord = SphericalCoord<Geocentric, ECEF>;
+// Radial  -> Altitude (h) – the elevation above the reference ellipsoid (such as WGS84).
+pub type GeographicCoord = Position<Geocentric, ECEF>;

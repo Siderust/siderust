@@ -4,7 +4,7 @@
 //! object positions in the solar system relative to various centers (barycentric, heliocentric, etc.).
 //!
 //! # Coordinate Convention
-//! The `SphericalCoord<Center, Ecliptic>` type uses:
+//! The `Position<Center, Ecliptic>` type uses:
 //!
 //! - **Longitude (λ or L)**  → `azimuth`: angle from the ecliptic zero meridian, in degrees.
 //! - **Latitude (β or B)**   → `polar`: angle from the ecliptic plane, in degrees.
@@ -22,7 +22,7 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::EclipticHeliocentricSphericalCoord;
+//! use siderust::coordinates::spherical::EclipticHeliocentricSphericalCoord;
 //! use siderust::units::Degrees;
 //!
 //! let coord = EclipticHeliocentricSphericalCoord::new(
@@ -31,7 +31,7 @@
 //! println!("lon = {}, lat = {}", coord.lon(), coord.lat());
 //! ```
 
-use super::SphericalCoord;
+use super::Position;
 use crate::coordinates::{
     frames::*,
     centers::*,
@@ -43,17 +43,21 @@ use crate::units::Degrees;
 // Polar   -> Latitude  (B) – the angle from the equator. [-90°, 90°]
 // Azimuth -> Longitude (L) – the angle from a prime meridian. [0°, 360°]
 // Radial  -> Distance  (R) – the distance between the source and the target.
-pub type EclipticBarycentricSphericalCoord  = SphericalCoord<Barycentric,  Ecliptic>;
-pub type EclipticHeliocentricSphericalCoord = SphericalCoord<Heliocentric, Ecliptic>; // L (l), B (b), R (r)
-pub type EclipticGeocentricSphericalCoord   = SphericalCoord<Geocentric,   Ecliptic>; // L (λ), B (β), R (Δ)
-pub type EclipticTopocentricSphericalCoord  = SphericalCoord<Topocentric,  Ecliptic>;
+pub type EclipticBarycentricSphericalCoord  = Position<Barycentric,  Ecliptic>;
+pub type EclipticHeliocentricSphericalCoord = Position<Heliocentric, Ecliptic>; // L (l), B (b), R (r)
+pub type EclipticGeocentricSphericalCoord   = Position<Geocentric,   Ecliptic>; // L (λ), B (β), R (Δ)
+pub type EclipticTopocentricSphericalCoord  = Position<Topocentric,  Ecliptic>;
 
-impl<Center: ReferenceCenter> SphericalCoord<Center, Ecliptic> {
-    pub fn new(lon: Degrees, lat: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::<Center, Ecliptic>::new_spherical_coord(
-            lat.normalize_to_90_range(),
+impl<Center: ReferenceCenter> Position<Center, Ecliptic> {
+    pub const fn new_const(lon: Degrees, lat: Degrees, distance: f64) -> Self {
+        Position::new_spherical_coord(lat, lon, Some(distance))
+    }
+
+    pub fn new(lon: Degrees, lat: Degrees, distance: f64) -> Self {
+        Position::<Center, Ecliptic>::new_const(
             lon.normalize(),
-            radial_distance)
+            lat.normalize_to_90_range(),
+            distance)
     }
 
     pub fn lat(&self) -> Degrees { self.polar }

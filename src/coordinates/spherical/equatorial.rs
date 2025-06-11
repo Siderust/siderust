@@ -4,7 +4,7 @@
 //! galaxies, and solar system bodies relative to celestial equators and poles.
 //!
 //! # Coordinate Convention
-//! The `SphericalCoord<Center, Equatorial>` type uses:
+//! The `Position<Center, Equatorial>` type uses:
 //!
 //! - **Right Ascension (α)** → `azimuth`: angle measured eastward along the celestial equator from the vernal equinox, in degrees.
 //! - **Declination (δ)**     → `polar`: angle above or below the celestial equator, in degrees.
@@ -21,7 +21,7 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::EquatorialGeocentricSphericalCoord;
+//! use siderust::coordinates::spherical::EquatorialGeocentricSphericalCoord;
 //! use siderust::units::Degrees;
 //!
 //! let coord = EquatorialGeocentricSphericalCoord::new(
@@ -30,7 +30,7 @@
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
-use super::SphericalCoord;
+use super::Position;
 use crate::coordinates::{
     frames::*,
     centers::*,
@@ -41,14 +41,14 @@ use crate::units::Degrees;
 // Polar   -> Dec (δ) – the angle from a prime meridian.
 // Azimuth -> RA (α) – the angle from the equator.
 // Radial  -> Distance (d) – the distance between the source and the target.
-pub type EquatorialBarycentricSphericalCoord  = SphericalCoord<Barycentric,  Equatorial>;
-pub type EquatorialHeliocentricSphericalCoord = SphericalCoord<Heliocentric, Equatorial>;
-pub type EquatorialGeocentricSphericalCoord   = SphericalCoord<Geocentric,   Equatorial>;
-pub type EquatorialTopocentricSphericalCoord  = SphericalCoord<Topocentric,  Equatorial>;
+pub type EquatorialBarycentricSphericalCoord  = Position<Barycentric,  Equatorial>;
+pub type EquatorialHeliocentricSphericalCoord = Position<Heliocentric, Equatorial>;
+pub type EquatorialGeocentricSphericalCoord   = Position<Geocentric,   Equatorial>;
+pub type EquatorialTopocentricSphericalCoord  = Position<Topocentric,  Equatorial>;
 
-impl<Center: ReferenceCenter> SphericalCoord<Center, Equatorial> {
-    pub const fn new_const(ra: Degrees, dec: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(dec, ra, radial_distance)
+impl<Center: ReferenceCenter> Position<Center, Equatorial> {
+    pub const fn new_const(ra: Degrees, dec: Degrees, distance: f64) -> Self {
+        Position::new_spherical_coord(dec, ra, Some(distance))
     }
 
     /// Constructs a new equatorial spherical coordinate with normalized input angular.
@@ -58,15 +58,15 @@ impl<Center: ReferenceCenter> SphericalCoord<Center, Equatorial> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `radial_distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
-    /// A normalized `SphericalCoord` in the equatorial frame.
-    pub fn new(ra: Degrees, dec: Degrees, radial_distance: f64) -> Self {
-        SphericalCoord::new_spherical_coord(
-            dec.normalize_to_90_range(),
+    /// A normalized `Position` in the equatorial frame.
+    pub fn new(ra: Degrees, dec: Degrees, distance: f64) -> Self {
+        Position::<Center, Equatorial>::new_const(
             ra.normalize(),
-            radial_distance)
+            dec.normalize_to_90_range(),
+            distance)
     }
 
     /// Returns the Declination (δ) in degrees.

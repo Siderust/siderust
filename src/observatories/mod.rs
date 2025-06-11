@@ -4,7 +4,7 @@
 //! represented by their geographic position. (see [`crate::coordinates::spherical::GeographicCoord`]).
 
 use crate::coordinates::spherical::GeographicCoord;
-use crate::units::Degrees;
+use crate::units::{Degrees, Kilometers};
 
 /// Roque de los Muchachos Observatory (La Palma, Canary Islands, Spain)
 /// - Longitude: −17.8925°
@@ -13,7 +13,7 @@ use crate::units::Degrees;
 pub const ROQUE_DE_LOS_MUCHACHOS: GeographicCoord = GeographicCoord::new_const(
     Degrees::new(-17.8925),
     Degrees::new(28.7543),
-    2_396.0,
+    Some(Kilometers::new(2.396)),
 );
 
 /// El Panaral (Chile)
@@ -23,7 +23,7 @@ pub const ROQUE_DE_LOS_MUCHACHOS: GeographicCoord = GeographicCoord::new_const(
 pub const EL_PANARAL: GeographicCoord = GeographicCoord::new_const(
     Degrees::new(-70.4043),
     Degrees::new(-24.6272),
-    2_635.0,
+    Some(Kilometers::new(2.635)),
 );
 
 /// Mauna Kea Observatory (Hawaiʻi, USA)
@@ -33,7 +33,7 @@ pub const EL_PANARAL: GeographicCoord = GeographicCoord::new_const(
 pub const MAUNA_KEA: GeographicCoord = GeographicCoord::new_const(
     Degrees::new(-155.4681),
     Degrees::new(19.8207),
-    4_207.0,
+    Some(Kilometers::new(4.207)),
 );
 
 /// La Silla Observatory (ESO, Chile)
@@ -43,5 +43,5 @@ pub const MAUNA_KEA: GeographicCoord = GeographicCoord::new_const(
 pub const LA_SILLA_OBSERVATORY: GeographicCoord = GeographicCoord::new_const(
     Degrees::new(-70.7346),
     Degrees::new(-29.2584),
-    2_400.0,
+    Some(Kilometers::new(2.400)),
 );
