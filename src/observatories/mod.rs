@@ -16,11 +16,11 @@ pub const ROQUE_DE_LOS_MUCHACHOS: GeographicCoord = GeographicCoord::new_const(
     2_396.0,
 );
 
-/// El Panaral (Chile)
+/// El Paranal (Chile)
 /// - Longitude: −70.4043°
 /// - Latitude:  −24.6272°
 /// - Altitude:  2635 m
-pub const EL_PANARAL: GeographicCoord = GeographicCoord::new_const(
+pub const EL_PARANAL: GeographicCoord = GeographicCoord::new_const(
     Degrees::new(-70.4043),
     Degrees::new(-24.6272),
     2_635.0,
