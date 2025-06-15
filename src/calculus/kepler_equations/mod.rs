@@ -300,14 +300,12 @@ mod tests {
         let m = Radians::new(0.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = 0.0;
-        println!("Test Case 1: E = {}", computed_e);
         assert!(approx_eq(computed_e.as_f64(), expected_e, 1e-10));
 
         // Test Case 2: e = 0.0, M = PI/2 radians
         let m = Radians::new(PI / 2.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = PI / 2.0;
-        println!("Test Case 2: E = {}", computed_e);
         assert!(approx_eq(computed_e.as_f64(), expected_e, 1e-10));
 
         // Test Case 3: e = 0.1, M = PI/2 radians
@@ -315,7 +313,6 @@ mod tests {
         let m = Radians::new(PI / 2.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = 1.670302; // Corrected expected value from previous step
-        println!("Test Case 3: E = {}", computed_e);
         assert!(approx_eq(computed_e.as_f64(), expected_e, 1e-6));
     }
 
@@ -456,7 +453,6 @@ mod tests {
 
         for planet in &planets {
             let coord = calculate_orbit_position(&planet.planet.orbit, JulianDay::J2000);
-            println!("Testing {}...", planet.name);
             check_cartesian(coord, planet.expected.0, planet.expected.1, planet.expected.2, planet.tol);
         }
     }

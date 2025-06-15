@@ -176,7 +176,6 @@ mod tests {
         let jd_end = jd_start + Days::new(1.0);
 
         let res = find_dynamic_extremas(|_| SIRIUS.target, &ROQUE_DE_LOS_MUCHACHOS, jd_start, jd_end);
-        println!("\n{:?}", res);
 
         let expected_lower = Culmination::Lower {jd: JulianDay::new(2_460_677.05000) };
         let expected_upper = Culmination::Upper { jd: JulianDay::new(2_460_677.54860) };
