@@ -76,6 +76,12 @@
 mod spherical;
 pub use spherical::*;
 
+mod position;
+pub use position::*;
+
+mod direction;
+pub use direction::*;
+
 mod equatorial;
 pub use equatorial::*;
 

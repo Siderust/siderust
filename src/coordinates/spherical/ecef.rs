@@ -34,6 +34,7 @@ use crate::coordinates::{
 use crate::units::{Degrees, Kilometers};
 use crate::bodies::EARTH;
 
+
 impl<Center: ReferenceCenter> Position<Center, ECEF> {
     pub const fn new_const(lon: Degrees, lat: Degrees, alt: Option<Kilometers>) -> Self {
         let base = EARTH.radius.value();

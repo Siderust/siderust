@@ -32,8 +32,10 @@
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
-use super::Position;
+use super::{Position, Direction};
+use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{
+    kinds::Kind,
     frames::*,
     centers::*,
 };
@@ -47,6 +49,39 @@ pub type ICRSBarycentricSphericalCoord  = Position<Barycentric,  ICRS>;
 pub type ICRSHeliocentricSphericalCoord = Position<Heliocentric, ICRS>;
 pub type ICRSGeocentricSphericalCoord   = Position<Geocentric,   ICRS>;
 pub type ICRSTopocentricSphericalCoord  = Position<Topocentric,  ICRS>;
+
+impl<Center: ReferenceCenter> Direction<Center, ICRS> {
+    /// Creates a new ICRS spherical coordinate with constant values.
+    ///
+    /// # Arguments
+    /// - `ra`: Right Ascension (α), in degrees.
+    /// - `dec`: Declination (δ), in degrees.
+    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    ///
+    /// # Returns
+    /// A new `Position` in the ICRS frame.
+    pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
+        Direction::new_spherical_coord(dec, ra, None)
+    }
+
+    /// Constructs a new ICRS spherical coordinate with normalized input angular.
+    ///
+    /// Right Ascension is normalized to the [0°, 360°] range, and Declination to the [-90°, 90°] range.
+    ///
+    /// # Arguments
+    /// - `ra`: Right Ascension (α), in degrees.
+    /// - `dec`: Declination (δ), in degrees.
+    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    ///
+    /// # Returns
+    /// A normalized `Position` in the ICRS frame.
+    pub fn new(ra: Degrees, dec: Degrees) -> Self {
+        Direction::<Center, ICRS>::new_const(
+            ra.normalize(),
+            dec.normalize_to_90_range()
+        )
+    }
+}
 
 impl<Center: ReferenceCenter> Position<Center, ICRS> {
     /// Creates a new ICRS spherical coordinate with constant values.
@@ -79,7 +114,9 @@ impl<Center: ReferenceCenter> Position<Center, ICRS> {
             dec.normalize_to_90_range(),
             distance)
     }
+}
 
+impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, ICRS, K> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees { self.polar }
 

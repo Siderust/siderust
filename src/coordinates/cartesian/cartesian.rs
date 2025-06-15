@@ -19,16 +19,16 @@
 //! use siderust::coordinates::cartesian::CartesianCoord;
 //! use siderust::coordinates::centers::Heliocentric;
 //! use siderust::coordinates::frames::Ecliptic;
-//! use siderust::coordinates::kinds::Position;
+//! use siderust::coordinates::kinds::PositionKind;
 //!
 //! // Create a heliocentric ecliptic position
-//! let pos = CartesianCoord::<Heliocentric, Ecliptic, Position>::new(1.0, 0.0, 0.0);
+//! let pos = CartesianCoord::<Heliocentric, Ecliptic, PositionKind>::new(1.0, 0.0, 0.0);
 //! println!("X: {}, Y: {}, Z: {}", pos.x(), pos.y(), pos.z());
 //! ```
 //!
 //! ## Type Aliases
 //! You may define type aliases for common systems, e.g.,
-//! `type HeliocentricEcliptic = CartesianCoord<Heliocentric, Ecliptic, Position>;`
+//! `type HeliocentricEcliptic = CartesianCoord<Heliocentric, Ecliptic, PositionKind>;`
 
 use crate::coordinates::{
     frames, centers,
