@@ -1,13 +1,34 @@
-//! Defines the generic [`CartesianCoord<Center, Frame>`] type for representing 3D+time positions
-//! in various astronomical reference frames and centers.
+//! # Cartesian Coordinates
 //!
-//! This module provides:
-//! - A generic Cartesian coordinate struct with time (Julian Date).
-//! - Type aliases for commonly used systems like ICRS, HCRS, Ecliptic, etc.
-//! - Distance calculation methods and string formatting.
+//! This module defines the generic [`CartesianCoord<C, F, K>`] type for representing 3D positions or directions
+//! in astronomical reference frames and centers, with strong compile-time type safety.
 //!
-//! Coordinates are expressed in abstract units (KM, LY, AU, ...) and Julian Days (JD).
-//! The type system enforces correct pairing of reference centers and frames.
+//! ## Overview
+//!
+//! - **Generic over Center, Frame, and Kind:**
+//!   - `C`: Reference center (e.g., `Heliocentric`, `Geocentric`).
+//!   - `F`: Reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`).
+//!   - `K`: Kind marker (`Position`, `Direction`), enforcing semantic correctness.
+//! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
+//! - **Units:** Coordinates are expressed in astronomical units (AU) by convention, but may represent other units if documented.
+//! - **Vector Operations:** Supports addition, subtraction, scaling, and distance calculation.
+//! - **Interoperability:** Seamless conversion to and from `nalgebra::Vector3<f64>`.
+//!
+//! ## Example
+//! ```rust
+//! use siderust::coordinates::cartesian::CartesianCoord;
+//! use siderust::coordinates::centers::Heliocentric;
+//! use siderust::coordinates::frames::Ecliptic;
+//! use siderust::coordinates::kinds::Position;
+//!
+//! // Create a heliocentric ecliptic position
+//! let pos = CartesianCoord::<Heliocentric, Ecliptic, Position>::new(1.0, 0.0, 0.0);
+//! println!("X: {}, Y: {}, Z: {}", pos.x(), pos.y(), pos.z());
+//! ```
+//!
+//! ## Type Aliases
+//! You may define type aliases for common systems, e.g.,
+//! `type HeliocentricEcliptic = CartesianCoord<Heliocentric, Ecliptic, Position>;`
 
 use crate::coordinates::{
     frames, centers,
@@ -18,11 +39,12 @@ use std::marker::PhantomData;
 use nalgebra::Vector3;
 use std::ops::{Add, Sub, Div, Mul};
 
-/// A Cartesian coordinate representation with a specific reference center and frame.
+/// A Cartesian coordinate representation with a specific reference center, frame, and kind.
 ///
 /// # Type Parameters
-/// - `Center`: The reference center (e.g., Barycentric, Heliocentric).
-/// - `Frame`: The reference frame (e.g., ICRS, Ecliptic).
+/// - `C`: The reference center (e.g., `Heliocentric`, `Geocentric`).
+/// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`).
+/// - `K`: The kind marker (`Position`, `Direction`).
 #[derive(Debug, Clone, Copy)]
 pub struct CartesianCoord<
     C: centers::ReferenceCenter,

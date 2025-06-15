@@ -1,3 +1,44 @@
+//! # Spherical Coordinates
+//!
+//! This module defines the generic [`SphericalCoord<C, F, K>`] type for representing positions or directions
+//! in spherical coordinates, parameterized by astronomical reference centers and frames for strong type safety.
+//!
+//! ## Overview
+//!
+//! - **Generic over Center, Frame, and Kind:**
+//!   - `C`: Reference center (e.g., `Heliocentric`, `Geocentric`, `Barycentric`).
+//!   - `F`: Reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`).
+//!   - `K`: Kind marker (`PositionKind`, `DirectionKind`), enforcing semantic correctness.
+//! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
+//! - **Units:** Angles are stored as [`Degrees`]; distance is optional and typically in AU or parsecs (see context).
+//! - **Conversions:** Seamless conversion to and from [`CartesianCoord`] via `From`/`Into`.
+//! - **Operations:** Compute Euclidean distance and angular separation between coordinates.
+//!
+//! ## Example
+//! ```rust
+//! use siderust::coordinates::spherical::Position;
+//! use siderust::coordinates::centers::Heliocentric;
+//! use siderust::coordinates::frames::Ecliptic;
+//! use siderust::units::Degrees;
+//!
+//! // Create a heliocentric ecliptic spherical position
+//! let sph = Position::<Heliocentric, Ecliptic>::new(Degrees::new(45.0), Degrees::new(7.0), 1.0);
+//! println!("θ: {}, φ: {}, r: {:?}", sph.polar, sph.azimuth, sph.distance);
+//! ```
+//!
+//! ## Type Aliases
+//! - [`Position<C, F>`]: Spherical position (with distance).
+//! - [`Direction<C, F>`]: Spherical direction (distance is typically `None`).
+//!
+//! ## Methods
+//! - [`new(polar, azimuth, distance)`]: Construct a new coordinate.
+//! - [`from_degrees(polar, azimuth, distance)`]: Construct from primitive values.
+//! - [`distance_to(other)`]: Compute Euclidean distance to another coordinate.
+//! - [`angular_separation(other)`]: Compute angular separation in degrees.
+//!
+//! ## Display
+//! Implements `Display` for readable output including center, frame, angles, and distance.
+
 use crate::units::{Degrees, Radians};
 
 use crate::coordinates::{
@@ -8,23 +49,26 @@ use crate::coordinates::{
 };
 use std::marker::PhantomData;
 
-/// Represents a point in spherical coordinates with a specific reference center and frame.
+/// Represents a point in spherical coordinates with a specific reference center, frame, and kind.
 ///
 /// # Type Parameters
-/// - `Center`: The reference center (e.g., Barycentric, Heliocentric).
-/// - `Frame`: The reference frame (e.g., ICRS, Ecliptic).
+/// - `C`: The reference center (e.g., `Barycentric`, `Heliocentric`).
+/// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`).
+/// - `K`: The kind marker (`PositionKind`, `DirectionKind`).
 #[derive(Debug, Clone, Copy)]
 pub struct SphericalCoord<C: ReferenceCenter, F: ReferenceFrame, K: Kind> {
-    pub polar: Degrees, // (θ)
-    pub azimuth: Degrees, // (φ)
-    pub distance: Option<f64>,
+    pub polar: Degrees,      // θ (polar/latitude/declination)
+    pub azimuth: Degrees,    // φ (azimuth/longitude/right ascension)
+    pub distance: Option<f64>, // Optional distance (AU, parsec, etc.)
 
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
     _kind: PhantomData<K>,
 }
 
+/// Spherical position (with distance).
 pub type Position<C, F>  = SphericalCoord<C, F, PositionKind>;
+/// Spherical direction (distance is typically `None`).
 pub type Direction<C, F> = SphericalCoord<C, F, DirectionKind>;
 
 impl<C, F, K> SphericalCoord<C, F, K>
@@ -34,8 +78,10 @@ where
     K: Kind,
     cartesian::CartesianCoord<C, F, K>: for<'a> From<&'a Self>,
 {
+    /// The zero point (origin) in this coordinate system.
     pub const CENTER: Self = Self::from_degrees(0.0, 0.0, Some(0.0));
 
+    /// Creates a new spherical coordinate from angle types and optional distance.
     pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Option<f64>) -> Self {
         Self {
             polar,
@@ -47,6 +93,7 @@ where
         }
     }
 
+    /// Creates a new spherical coordinate from primitive values (degrees).
     pub const fn from_degrees(polar: f64, azimuth: f64, r: Option<f64>) -> Self{
         Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), r)
     }

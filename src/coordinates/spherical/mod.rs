@@ -39,7 +39,7 @@
 //! - `HorizontalTopocentricSphericalCoord`, `GeographicCoord` (ECEF), etc.
 //!
 //! ## See Also
-//! - [`crate::coordinates::CartesianCoord`] for 3D Cartesian representation.
+//! - [`crate::coordinates::cartesian::CartesianCoord`] for 3D Cartesian representation.
 //! - Frame-specific modules for specialized constructors and accessors.
 //!
 //! ---
