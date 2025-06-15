@@ -12,7 +12,7 @@
 //!
 //! - **Polar angle (θ):** `polar` — angle from a reference plane (e.g., latitude, declination, altitude), in degrees.
 //! - **Azimuthal angle (φ):** `azimuth` — angle from a reference direction (e.g., longitude, right ascension, azimuth), in degrees.
-//! - **Radial distance (r):** `radial_distance` — distance from the reference center, in astronomical units (AU) or meters (for ECEF).
+//! - **Radial distance (r):** `distance` — distance from the reference center, in astronomical units (AU) or meters (for ECEF).
 //!
 //! The interpretation of these components depends on the chosen `Frame` and `Center`.
 //!
@@ -21,13 +21,13 @@
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::coordinates::SphericalCoord;
+//! use siderust::coordinates::spherical::Position;
 //! use siderust::coordinates::frames::ICRS;
 //! use siderust::coordinates::centers::Barycentric;
 //! use siderust::units::Degrees;
 //!
 //! // Create a barycentric ICRS coordinate (RA, Dec, distance)
-//! let coord = SphericalCoord::<Barycentric, ICRS>::new(
+//! let coord = Position::<Barycentric, ICRS>::new(
 //!     Degrees::new(120.0), Degrees::new(45.0), 1.0
 //! );
 //! println!("{}", coord.to_string());
@@ -57,16 +57,16 @@
 //!
 //! - **Polar (θ)** → `polar`: angle from a reference plane (e.g., latitude, declination, altitude), in degrees.
 //! - **Azimuth (φ)** → `azimuth`: angle from a reference direction (e.g., longitude, right ascension, azimuth), in degrees.
-//! - **Radial distance (r)** → `radial_distance`: distance from the reference center, in AU.
+//! - **Radial distance (r)** → `distance`: distance from the reference center, in AU.
 //!
 //! # Example
 //! ```rust
 //! use siderust::units::Degrees;
-//! use siderust::coordinates::SphericalCoord;
+//! use siderust::coordinates::spherical::Position;
 //! use siderust::coordinates::frames::ICRS;
 //! use siderust::coordinates::centers::Barycentric;
 //!
-//! let coord = SphericalCoord::<Barycentric, ICRS>::new(
+//! let coord = Position::<Barycentric, ICRS>::new(
 //!     Degrees::new(120.0), Degrees::new(45.0), 1.0
 //! );
 //! println!("{}", coord.to_string());

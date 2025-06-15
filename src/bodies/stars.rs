@@ -6,9 +6,9 @@
 //! - `mass`: Stellar mass in solar masses (`SolarMass`).
 //! - `radius`: Stellar radius in solar radii (`SolarRadius`).
 //! - `lumminosity`: Stellar luminosity in solar luminosities (`SolarLuminosity`).
-//! - `target`: [`Target`] pointing to a Spherical coordinates (see [`SphericalCoord`]), using degrees and Julian Day.
+//! - `target`: [`Target`] pointing to a Spherical coordinates (see [`Position`]), using degrees and Julian Day.
 
-use crate::coordinates::{centers::Geocentric, frames::Equatorial, SphericalCoord};
+use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
 use crate::targets::Target;
 use crate::units::*;
 
@@ -22,7 +22,7 @@ pub struct Star<'a> {
     pub mass: SolarMass,
     pub radius: SolarRadius,
     pub lumminosity: SolarLuminosity,
-    pub target: Target<SphericalCoord<Geocentric, Equatorial>>,
+    pub target: Target<Position<Geocentric, Equatorial>>,
 }
 
 impl<'a> Star<'a> {
@@ -33,7 +33,7 @@ impl<'a> Star<'a> {
         mass: SolarMass,
         radius: SolarRadius,
         lumminosity: SolarLuminosity,
-        target: Target<SphericalCoord<Geocentric, Equatorial>>,
+        target: Target<Position<Geocentric, Equatorial>>,
     ) -> Star<'static> {
         Star {
             name: Cow::Borrowed(name),
@@ -52,7 +52,7 @@ impl<'a> Star<'a> {
         mass: SolarMass,
         radius: SolarRadius,
         lumminosity: SolarLuminosity,
-        target: Target<SphericalCoord<Geocentric, Equatorial>>,
+        target: Target<Position<Geocentric, Equatorial>>,
     ) -> Star<'a>
     where
         N: Into<Cow<'a, str>>,
