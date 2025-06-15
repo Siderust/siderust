@@ -56,10 +56,9 @@ impl<Center: ReferenceCenter> Direction<Center, ICRS> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
-    /// A new `Position` in the ICRS frame.
+    /// A new `Direction` in the ICRS frame.
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
         Direction::new_spherical_coord(dec, ra, None)
     }
@@ -71,10 +70,9 @@ impl<Center: ReferenceCenter> Direction<Center, ICRS> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
-    /// A normalized `Position` in the ICRS frame.
+    /// A normalized `Direction` in the ICRS frame.
     pub fn new(ra: Degrees, dec: Degrees) -> Self {
         Direction::<Center, ICRS>::new_const(
             ra.normalize(),

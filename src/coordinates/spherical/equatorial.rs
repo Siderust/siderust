@@ -59,10 +59,9 @@ impl<Center: ReferenceCenter> Direction<Center, Equatorial> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
-    /// A normalized `Position` in the equatorial frame.
+    /// A normalized `Direction` in the equatorial frame.
     pub fn new(ra: Degrees, dec: Degrees) -> Self {
         Self::new_const(
             ra.normalize(),

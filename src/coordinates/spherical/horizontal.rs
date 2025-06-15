@@ -55,7 +55,6 @@ impl<Center: ReferenceCenter> Direction<Center, Horizontal> {
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
     /// A new `Position` in the horizontal frame.
@@ -70,10 +69,9 @@ impl<Center: ReferenceCenter> Direction<Center, Horizontal> {
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
     ///
     /// # Returns
-    /// A `Position` in the horizontal frame.
+    /// A `Direction` in the horizontal frame.
     pub fn new(alt: Degrees, az: Degrees) -> Self {
         Self::new_const(
             alt.normalize_to_90_range(),
