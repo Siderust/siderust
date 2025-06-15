@@ -32,10 +32,11 @@
 //! println!("alt = {}, az = {}", coord.alt(), coord.az());
 //! ```
 
-use super::Position;
+use super::*;
 use crate::coordinates::{
     frames::*,
     centers::*,
+    kinds::Kind,
 };
 use crate::units::Degrees;
 
@@ -79,7 +80,9 @@ impl<Center: ReferenceCenter> Position<Center, Horizontal> {
             az.normalize(),
             distance)
     }
+}
 
+impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, Horizontal, K> {
     /// Returns the Altitude (α) in degrees.
     pub fn alt(&self) -> Degrees { self.polar }
 

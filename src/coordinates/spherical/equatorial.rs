@@ -30,10 +30,11 @@
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
-use super::Position;
+use super::*;
 use crate::coordinates::{
     frames::*,
     centers::*,
+    kinds::Kind,
 };
 use crate::units::Degrees;
 
@@ -68,11 +69,12 @@ impl<Center: ReferenceCenter> Position<Center, Equatorial> {
             dec.normalize_to_90_range(),
             distance)
     }
+}
 
+impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, Equatorial, K> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees { self.polar }
 
     /// Returns the Right Ascension (α) in degrees.
     pub fn ra(&self)  -> Degrees { self.azimuth }
-
 }
