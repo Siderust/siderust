@@ -31,10 +31,11 @@
 //! println!("lon = {}, lat = {}", coord.lon(), coord.lat());
 //! ```
 
-use super::Position;
+use super::*;
 use crate::coordinates::{
     frames::*,
     centers::*,
+    kinds::Kind,
 };
 use crate::units::Degrees;
 
@@ -59,7 +60,44 @@ impl<Center: ReferenceCenter> Position<Center, Ecliptic> {
             lat.normalize_to_90_range(),
             distance)
     }
+}
 
+// Direction type aliases for Ecliptic frame
+pub type EclipticBarycentricDirection  = Direction<Barycentric,  Ecliptic>;
+pub type EclipticHeliocentricDirection = Direction<Heliocentric, Ecliptic>;
+pub type EclipticGeocentricDirection   = Direction<Geocentric,   Ecliptic>;
+pub type EclipticTopocentricDirection  = Direction<Topocentric,  Ecliptic>;
+
+impl<Center: ReferenceCenter> Direction<Center, Ecliptic> {
+    /// Creates a new ecliptic direction with constant values.
+    ///
+    /// # Arguments
+    /// - `lon`: Longitude (λ), in degrees.
+    /// - `lat`: Latitude (β), in degrees.
+    pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
+        Direction::new_spherical_coord(lat, lon, None)
+    }
+
+    /// Constructs a new ecliptic direction with normalized input angular.
+    ///
+    /// Longitude is normalized to [0°, 360°], latitude to [-90°, 90°].
+    ///
+    /// # Arguments
+    /// - `lon`: Longitude (λ), in degrees.
+    /// - `lat`: Latitude (β), in degrees.
+    pub fn new(lon: Degrees, lat: Degrees) -> Self {
+        Direction::<Center, Ecliptic>::new_const(
+            lon.normalize(),
+            lat.normalize_to_90_range()
+        )
+    }
+}
+
+// Optionally, add for all SphericalCoord in Ecliptic frame:
+impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, Ecliptic, K> {
+    /// Returns the Latitude (β) in degrees.
     pub fn lat(&self) -> Degrees { self.polar }
-    pub fn lon(&self)  -> Degrees { self.azimuth }
+
+    /// Returns the Longitude (λ) in degrees.
+    pub fn lon(&self) -> Degrees { self.azimuth }
 }

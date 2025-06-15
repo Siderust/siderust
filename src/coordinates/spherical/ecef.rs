@@ -22,27 +22,48 @@
 //! use siderust::coordinates::spherical::GeographicCoord;
 //! use siderust::units::{Degrees, KM};
 //!
-//! let coord = GeographicCoord::new(Degrees::new(45.0), Degrees::new(7.0), Some(2.4*KM));
+//! let coord = GeographicCoord::new(Degrees::new(45.0), Degrees::new(7.0), 2.4*KM);
 //! println!("lat = {}, lon = {}", coord.lat(), coord.lon());
 //! ```
 
+use super::*;
 use crate::coordinates::{
-    spherical::Position,
     frames::*,
     centers::*,
+    kinds::Kind,
 };
 use crate::units::{Degrees, Kilometers};
 use crate::bodies::EARTH;
 
+impl<Center: ReferenceCenter> Direction<Center, ECEF> {
+    pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
+        Self::new_spherical_coord(
+            lat,
+            lon,
+            None
+        )
+    }
+
+    /// Creates a new geographic coordinate with normalized latitude and longitude.
+    ///
+    /// # Arguments
+    /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
+    /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
+    pub fn new(lon: Degrees, lat: Degrees) -> Self {
+        Self::new_const(
+            lat.normalize_to_90_range(),
+            lon.normalize_to_180_range()
+        )
+    }
+}
 
 impl<Center: ReferenceCenter> Position<Center, ECEF> {
-    pub const fn new_const(lon: Degrees, lat: Degrees, alt: Option<Kilometers>) -> Self {
-        let base = EARTH.radius.value();
-        let r = match alt {
-            Some(d) => base + d.value(),
-            None    => base,
-        };
-        Position::new_spherical_coord(lat, lon, Some(r))
+    pub const fn new_const(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
+        Self::new_spherical_coord(
+            lat,
+            lon,
+            Some(EARTH.radius.value() + alt.value())
+        )
     }
 
     /// Creates a new geographic coordinate with normalized latitude and longitude.
@@ -51,13 +72,15 @@ impl<Center: ReferenceCenter> Position<Center, ECEF> {
     /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
     /// - `alt`: Altitude above the sea, in Kilometers.
-    pub fn new(lon: Degrees, lat: Degrees, alt: Option<Kilometers>) -> Self {
+    pub fn new(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
         Self::new_const(
             lat.normalize_to_90_range(),
             lon.normalize_to_180_range(),
             alt)
     }
+}
 
+impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, ECEF, K> {
     /// Returns the latitude (φ) in degrees.
     pub fn lat(&self) -> Degrees { self.polar }
 
@@ -71,3 +94,4 @@ impl<Center: ReferenceCenter> Position<Center, ECEF> {
 // Azimuth -> Longitude (λ) – the angle from a prime meridian. [-180°, 180°]
 // Radial  -> Altitude (h) – the elevation above the reference ellipsoid (such as WGS84).
 pub type GeographicCoord = Position<Geocentric, ECEF>;
+pub type GeographicDir = Direction<Geocentric, ECEF>;
