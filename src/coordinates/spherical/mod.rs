@@ -36,7 +36,7 @@
 //! ## Provided Types (via Type Aliases)
 //! - `ICRSBarycentricSphericalCoord`, `ICRSHeliocentricSphericalCoord`, etc.
 //! - `EclipticBarycentricSphericalCoord`, `EquatorialGeocentricSphericalCoord`, etc.
-//! - `HorizontalTopocentricSphericalCoord`, `GeographicCoord` (ECEF), etc.
+//! - `HorizontalTopocentricSphericalCoord`, `GeographicPos` (ECEF), etc.
 //!
 //! ## See Also
 //! - [`crate::coordinates::cartesian::CartesianCoord`] for 3D Cartesian representation.

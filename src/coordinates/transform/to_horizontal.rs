@@ -24,7 +24,7 @@ use crate::units::{Degrees, JulianDay};
 /// - [`calculate_lst`]
 pub fn geocentric_to_horizontal(
     target:   &spherical::Position<Geocentric, Equatorial>,
-    observer: &spherical::GeographicCoord,
+    observer: &spherical::GeographicPos,
     jd:       JulianDay
 ) -> spherical::Position<Topocentric, Horizontal> {
 
@@ -55,7 +55,7 @@ pub fn geocentric_to_horizontal(
 
 
 impl cartesian::Position<Geocentric, Equatorial> {
-    pub fn to_horizontal(&self, observer: &spherical::GeographicCoord, jd: JulianDay) -> cartesian::Position<Topocentric, Horizontal> {
+    pub fn to_horizontal(&self, observer: &spherical::GeographicPos, jd: JulianDay) -> cartesian::Position<Topocentric, Horizontal> {
         let spherical: spherical::Position<Geocentric, Equatorial>   = self.into();
         let horizontal = geocentric_to_horizontal(&spherical, observer, jd);
         (&horizontal).into()
@@ -64,7 +64,7 @@ impl cartesian::Position<Geocentric, Equatorial> {
 
 
 impl spherical::Position<Geocentric, Equatorial> {
-    pub fn to_horizontal(&self, observer: &spherical::GeographicCoord, jd: JulianDay) -> spherical::Position<Topocentric, Horizontal> {
+    pub fn to_horizontal(&self, observer: &spherical::GeographicPos, jd: JulianDay) -> spherical::Position<Topocentric, Horizontal> {
         geocentric_to_horizontal(self, observer, jd)
     }
 }
