@@ -1,6 +1,7 @@
 use crate::coordinates::{
-    CartesianCoord,
+    cartesian::CartesianCoord,
     centers::ReferenceCenter,
+    kinds::Kind,
     frames
 };
 use crate::coordinates::transform::Transform;
@@ -8,8 +9,8 @@ use crate::coordinates::transform::Transform;
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
-impl<C: ReferenceCenter> Transform<CartesianCoord<C, frames::Equatorial>> for CartesianCoord<C, frames::Ecliptic> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Equatorial> {
+impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Equatorial, K>> for CartesianCoord<C, frames::Ecliptic, K> {
+    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Equatorial, K> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
@@ -22,8 +23,8 @@ impl<C: ReferenceCenter> Transform<CartesianCoord<C, frames::Equatorial>> for Ca
 }
 
 // Implement Transform trait for ICRS -> Equatorial (identity)
-impl<C: ReferenceCenter> Transform<CartesianCoord<C, frames::Equatorial>> for CartesianCoord<C, frames::ICRS> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Equatorial> {
+impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Equatorial, K>> for CartesianCoord<C, frames::ICRS, K> {
+    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Equatorial, K> {
         CartesianCoord::new(self.x(), self.y(), self.z())
     }
 }
@@ -32,7 +33,7 @@ impl<C: ReferenceCenter> Transform<CartesianCoord<C, frames::Equatorial>> for Ca
 #[cfg(test)]
 mod tests {
     use crate::coordinates::{
-        SphericalCoord,
+        spherical::Position,
         centers, frames
     };
     use crate::units::Degrees;
@@ -42,13 +43,13 @@ mod tests {
 
     #[test]
     fn round_trip_ecliptic_equatorial() {
-        let ecliptic_orig = SphericalCoord::<centers::Barycentric, frames::Ecliptic>::new(
+        let ecliptic_orig = Position::<centers::Barycentric, frames::Ecliptic>::new(
             Degrees::new(123.4),
             Degrees::new(-21.0),
             2.7,
         );
-        let equatorial  = SphericalCoord::<centers::Barycentric, frames::Equatorial>::from(&ecliptic_orig);
-        let ecliptic_rec = SphericalCoord::<centers::Barycentric, frames::Ecliptic>::from(&equatorial);
+        let equatorial  = Position::<centers::Barycentric, frames::Equatorial>::from(&ecliptic_orig);
+        let ecliptic_rec = Position::<centers::Barycentric, frames::Ecliptic>::from(&equatorial);
 
         assert_spherical_eq!(ecliptic_orig, ecliptic_rec, EPS);
     }

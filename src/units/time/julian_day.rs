@@ -23,8 +23,8 @@ impl JulianDay {
     }
 
     #[inline]
-    pub fn julian_millennias(&self) -> Self {
-        Self((self.0 - Self::_J2000_) / 365_250.0)
+    pub fn julian_millennias(&self) -> f64 {
+        (self.0 - Self::_J2000_).value() / 365_250.0
     }
 
     #[inline]

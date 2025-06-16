@@ -1,8 +1,7 @@
 use crate::bodies::solar_system::Sun;
 
 use crate::coordinates::{
-    CartesianCoord,
-    SphericalCoord,
+    cartesian, spherical,
     centers::Geocentric,
     centers::Heliocentric,
     frames::Equatorial,
@@ -24,7 +23,7 @@ impl Sun {
     /// - `jd`: Julian Day for which to compute the Sun’s apparent position.
     ///
     /// ### Returns
-    /// - A `SphericalCoord<Geocentric, Equatorial>` representing the Sun’s
+    /// - A `spherical::Position<Geocentric, Equatorial>` representing the Sun’s
     ///   apparent right ascension and declination, in degrees.
     ///
     /// ### Notes
@@ -38,9 +37,9 @@ impl Sun {
     /// Suitable for applications where approximate solar position is acceptable,
     /// such as sunrise/sunset estimation, shadow modeling, or general astronomy
     /// visualization.
-    pub fn get_apparent_geocentric_equ(jd: JulianDay) -> SphericalCoord<Geocentric, Equatorial> {
-        let helio = CartesianCoord::<Heliocentric, Ecliptic>::new(0.0, 0.0, 0.0);
-        let geo_cart: CartesianCoord<Geocentric, Ecliptic> = (&helio).into();
+    pub fn get_apparent_geocentric_equ(jd: JulianDay) -> spherical::Position<Geocentric, Equatorial> {
+        let helio = cartesian::Position::<Heliocentric, Ecliptic>::new(0.0, 0.0, 0.0);
+        let geo_cart: cartesian::Position<Geocentric, Ecliptic> = (&helio).into();
         let mut geo = geo_cart.to_spherical();
 
         // Apply nutation in ecliptic longitude
@@ -48,7 +47,7 @@ impl Sun {
         geo.azimuth += nutation.longitude;
 
         // Apply aberration correction (simplified constant formula)
-        let aberration = (20.4898 / (360.0 * 60.0 * 60.0)) / geo.radial_distance;
+        let aberration = (20.4898 / (360.0 * 60.0 * 60.0)) / geo.distance.expect("Distance should be defined");
         geo.azimuth -= Degrees::new(aberration);
 
         (&geo).into()

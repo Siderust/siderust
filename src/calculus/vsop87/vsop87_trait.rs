@@ -1,5 +1,5 @@
 use crate::coordinates::{
-    CartesianCoord,
+    cartesian::Position,
     centers::{Heliocentric, Barycentric},
     frames::Ecliptic,
 };
@@ -8,18 +8,18 @@ use crate::targets::Target;
 use crate::bodies::solar_system::*;
 
 pub trait VSOP87 {
-    fn vsop87a(&self, jd: JulianDay) -> Target<CartesianCoord<Heliocentric, Ecliptic>>;
-    fn vsop87e(&self, jd: JulianDay) -> Target<CartesianCoord<Barycentric, Ecliptic>>;
+    fn vsop87a(&self, jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic>>;
+    fn vsop87e(&self, jd: JulianDay) -> Target<Position<Barycentric, Ecliptic>>;
 }
 
 macro_rules! impl_vsop87_for_planet {
     ($planet:ident) => {
         impl VSOP87 for $planet {
-            fn vsop87a(&self, jd: JulianDay) -> Target<CartesianCoord<Heliocentric, Ecliptic>> {
+            fn vsop87a(&self, jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic>> {
                 $planet::vsop87a(jd)
             }
 
-            fn vsop87e(&self, jd: JulianDay) -> Target<CartesianCoord<Barycentric, Ecliptic>> {
+            fn vsop87e(&self, jd: JulianDay) -> Target<Position<Barycentric, Ecliptic>> {
                 $planet::vsop87e(jd)
             }
         }
