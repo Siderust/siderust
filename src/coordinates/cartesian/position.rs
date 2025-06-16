@@ -1,6 +1,5 @@
 use crate::coordinates::{
-    frames, centers,
-    kinds::PositionKind,
+    cartesian::Direction, centers, frames, kinds::PositionKind
 };
 
 use super::CartesianCoord;
@@ -21,9 +20,13 @@ where
     }
 
     pub fn normalize(&self) -> Self {
-        let r = self.distance_from_origin();
-        Self::new(self.x() / r, self.y() / r, self.z() / r)
+        Self::from_vec3(self.as_vec3().normalize())
     }
+
+    pub fn direction(&self) -> super::Direction<C, F> {
+        Direction::from_vec3(self.as_vec3().normalize())
+    }
+
 }
 
 // === ICRS-based Cartesian coordinate types ===

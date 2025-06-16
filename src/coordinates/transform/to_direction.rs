@@ -11,7 +11,7 @@ where
     F: ReferenceFrame,
 {
     fn from(position: &spherical::Position<C, F>) -> Self {
-        spherical::Direction::new_spherical_coord(position.polar, position.azimuth, None)
+        position.direction()
     }
 }
 
@@ -21,6 +21,6 @@ where
     F: ReferenceFrame,
 {
     fn from(position: &cartesian::Position<C, F>) -> Self {
-        cartesian::Direction::from_vec3(position.as_vec3().normalize())
+        position.direction()
     }
 }
