@@ -72,30 +72,16 @@ mod tests {
     use crate::coordinates::frames::*;
     use crate::coordinates::centers::*;
     use crate::bodies::solar_system::{Sun, Earth};
+    use crate::macros::assert_cartesian_eq;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
-
-    /// Helper function to compare floating-point values within a small tolerance
-    fn approx_eq(a: f64, b: f64, epsilon: f64) -> bool {
-        (a - b).abs() < epsilon
-    }
-
-    //TODO: use macros
-    fn coords_approx_eq(a: &Position<impl ReferenceCenter, impl ReferenceFrame>,
-                        b: &Position<impl ReferenceCenter, impl ReferenceFrame>,
-                        epsilon: f64) -> bool {
-        approx_eq(a.x(), b.x(), epsilon) &&
-        approx_eq(a.y(), b.y(), epsilon) &&
-        approx_eq(a.z(), b.z(), epsilon)
-    }
 
     #[test] // Heliocentric -> Barycentric
     fn test_helio() {
         let sun_helio = Position::<Heliocentric, Ecliptic>::new(0.0, 0.0, 0.0);
         let sun_bary = Position::<Barycentric, Ecliptic>::from(&sun_helio);
         let expected_sun_bary = Sun::vsop87e(JulianDay::J2000).get_position().clone();
-        assert!(coords_approx_eq(&sun_bary, &expected_sun_bary, EPSILON), 
-                "Sun in Barycentric shall be {:?}. Current Value {:?}", expected_sun_bary, sun_bary);
+        assert_cartesian_eq!(&sun_bary, &expected_sun_bary, EPSILON);
     }
 
     #[test] // Geocentric -> Barycentric
@@ -103,8 +89,7 @@ mod tests {
         let earth_geo = Position::<Geocentric, Ecliptic>::new(0.0, 0.0, 0.0);
         let earth_bary = Position::<Barycentric, Ecliptic>::from(&earth_geo);
         let expected_earth_bary = Earth::vsop87e(JulianDay::J2000).get_position().clone();
-        assert!(coords_approx_eq(&earth_bary, &expected_earth_bary, EPSILON), 
-                "Earth in Geocentric shall be {:?}. Current Value {:?}", expected_earth_bary, earth_bary);
+        assert_cartesian_eq!(&earth_bary, &expected_earth_bary, EPSILON);
     }
 
 }
