@@ -280,16 +280,11 @@ impl Orbit {
 mod tests {
     use super::*;
     use crate::units::{Degrees, JulianDay, Days};
+    use crate::macros::assert_cartesian_eq;
 
     /// Helper function to compare two floating-point numbers with a tolerance.
     fn approx_eq(a: f64, y: f64, tol: f64) -> bool {
         (a - y).abs() < tol
-    }
-
-    fn check_cartesian(actual: Position::<Heliocentric, Ecliptic>, expected_x: f64, expected_y: f64, expected_z: f64, tol: f64) {
-        assert!(approx_eq(actual.x(), expected_x, tol), "current x = {}, expected x = {}", actual.x(), expected_x);
-        assert!(approx_eq(actual.y(), expected_y, tol), "current y = {}, expected y = {}", actual.y(), expected_y);
-        assert!(approx_eq(actual.z(), expected_z, tol), "current z = {}, expected z = {}", actual.z(), expected_z);
     }
 
     /// Test Kepler's Equation Solver with known values.
@@ -332,13 +327,13 @@ mod tests {
         // At epoch, mean anomaly M0 = 0 degrees, so true anomaly should be 0
         let coord = calculate_orbit_position(&orbit, JulianDay::J2000);
 
-        check_cartesian(coord, 1.0, 0.0, 0.0, 1e-10);
+        assert_cartesian_eq!(coord, Position::new(1.0, 0.0, 0.0), 1e-10);
 
         // 90 degrees after epoch
         let jd = JulianDay::J2000 + Days::new(90.0 / 0.9856076686); // Roughly 90 degrees / n days
         let coord = calculate_orbit_position(&orbit, jd);
         // Expect y to be approximately 1 AU
-        check_cartesian(coord, 0.0, 1.0, 0.0, 1e-4);
+        assert_cartesian_eq!(coord, Position::new(0.0, 1.0, 0.0), 1e-4);
     }
 
     /// Test heliocentric coordinates for zero inclination.
@@ -356,7 +351,7 @@ mod tests {
 
         // At epoch, mean anomaly M0 = 0, so true anomaly = 0
         let coord = calculate_orbit_position(&elements, JulianDay::J2000);
-        check_cartesian(coord, 1.8, 0.0, 0.0, 1e-10);
+        assert_cartesian_eq!(coord, Position::new(1.8, 0.0, 0.0), 1e-10);
     }
 
     /// Test heliocentric coordinates after a specific number of days.
@@ -453,7 +448,12 @@ mod tests {
 
         for planet in &planets {
             let coord = calculate_orbit_position(&planet.planet.orbit, JulianDay::J2000);
-            check_cartesian(coord, planet.expected.0, planet.expected.1, planet.expected.2, planet.tol);
+            let expected = Position::new(
+                planet.expected.0,
+                planet.expected.1,
+                planet.expected.2
+            );
+            assert_cartesian_eq!(coord, expected, planet.tol, "{} at J2000", planet.name);
         }
     }
 

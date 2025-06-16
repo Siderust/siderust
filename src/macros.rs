@@ -16,7 +16,7 @@ where C: ReferenceCenter, F: ReferenceFrame
     let dz = (a.z() - b.z()).abs();
     if dx >= epsilon || dy >= epsilon || dz >= epsilon {
         if let Some(m) = msg {
-            panic!("{}", m);
+            panic!("{}. Cartesian coords differ: {} vs {} (ε = {})", m, a, b, epsilon);
         } else {
             panic!("Cartesian coords differ: {} vs {} (ε = {})", a, b, epsilon);
         }
