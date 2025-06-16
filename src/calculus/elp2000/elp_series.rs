@@ -1,7 +1,7 @@
 #![allow(clippy::needless_range_loop)]
 
 use crate::coordinates::{
-    CartesianCoord,
+    cartesian::Position,
     centers::Geocentric,
     frames::Ecliptic,
 };
@@ -265,7 +265,7 @@ define_planet_series!(sum_series_elp21, elp_data::ELP21, true, true);
 // ====================
 
 /// Compute geocentric ecliptic coordinates of the Moon for a given Julian date
-fn ln_get_lunar_geo_posn(jd: JulianDay) -> CartesianCoord<Geocentric, Ecliptic> {
+fn ln_get_lunar_geo_posn(jd: JulianDay) -> Position<Geocentric, Ecliptic> {
     let t1 = jd.julian_centuries().value();
     let t = [1.0, t1, t1.powi(2), t1.powi(3), t1.powi(4)];
 
@@ -317,12 +317,12 @@ fn ln_get_lunar_geo_posn(jd: JulianDay) -> CartesianCoord<Geocentric, Ecliptic> 
     let y2 = pwqw * x + qw2 * y - qw * z;
     let z2 = -pw * x + qw * y + (pw2 + qw2 - 1.0) * z;
 
-    CartesianCoord::<Geocentric, Ecliptic>::new(x2, y2, z2)
+    Position::<Geocentric, Ecliptic>::new(x2, y2, z2)
 }
 
 impl Moon {
     /// Get the geocentric ecliptic coordinates of the Moon for a given Julian date
-    pub fn ln_get_geo_position(jd: JulianDay) -> CartesianCoord<Geocentric, Ecliptic> {
+    pub fn ln_get_geo_position(jd: JulianDay) -> Position<Geocentric, Ecliptic> {
         ln_get_lunar_geo_posn(jd)
     }
 }
