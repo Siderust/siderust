@@ -57,7 +57,7 @@ pub fn compute_vsop87(
 ) -> (f64, f64, f64) {
 
     let jd_tdb = JulianDay::tt_to_tdb(jd);
-    let t = jd_tdb.julian_millennias().value();
+    let t = jd_tdb.julian_millennias();
 
     let (x, yz) = join(
         || compute_coord_value(x_expansions, t),
