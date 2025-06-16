@@ -6,7 +6,7 @@ use crate::astro::{
     nutation::corrected_ra_with_nutation
 };
 use crate::coordinates::{
-    SphericalCoord,
+    spherical::Position,
     centers::Geocentric,
     frames::Equatorial,
     frames::ECEF
@@ -54,8 +54,8 @@ use crate::coordinates::{
 ///
 /// ---
 pub fn find_static_extremas(
-    target: &Target<SphericalCoord<Geocentric, Equatorial>>,
-    observer: &SphericalCoord<Geocentric, ECEF>,
+    target: &Target<Position<Geocentric, Equatorial>>,
+    observer: &Position<Geocentric, ECEF>,
     jd_start: JulianDay,
     jd_end: JulianDay,
 ) -> Vec<Culmination> {

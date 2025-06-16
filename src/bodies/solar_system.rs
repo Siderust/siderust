@@ -30,7 +30,7 @@
 
 use crate::units::*;
 use crate::astro::orbit::Orbit;
-use crate::coordinates::{centers::Geocentric, frames::Equatorial, SphericalCoord};
+use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
 use crate::targets::Target;
 
 pub struct Sun;
@@ -60,8 +60,8 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
     SOLAR_MASS,
     SOLAR_RADIUS,
     SOLAR_LUMINOSITY,
-    Target::<SphericalCoord::<Geocentric, Equatorial>>::new_static(
-        SphericalCoord::<Geocentric, Equatorial>::new_const(
+    Target::<Position::<Geocentric, Equatorial>>::new_static(
+        Position::<Geocentric, Equatorial>::new_const(
             Degrees::from_hms(18, 44, 48.0), // Aprox at J2000
             Degrees::from_hms(-23, 0, 0.0), // Aprox at J2000
             AU.to_light_year().value(), // Distance in Light Years

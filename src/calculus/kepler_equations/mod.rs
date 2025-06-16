@@ -90,7 +90,7 @@
 
 use std::f64::consts::PI;
 use crate::coordinates::{
-    CartesianCoord,
+    cartesian::Position,
     centers::Heliocentric,
     frames::Ecliptic
 };
@@ -223,7 +223,7 @@ fn orbital_period_days(a: AstronomicalUnit) -> Days {
 pub fn calculate_orbit_position(
     elements: &Orbit,
     julian_date: JulianDay,
-) -> CartesianCoord<Heliocentric, Ecliptic> {
+) -> Position<Heliocentric, Ecliptic> {
 
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);
@@ -262,7 +262,7 @@ pub fn calculate_orbit_position(
     let (sin_omega, cos_omega) = omega_rad.sin_cos();
     let (sin_w_nu, cos_w_nu) = (w_rad + Radians::new(true_anomaly)).sin_cos();
 
-    CartesianCoord::<Heliocentric, Ecliptic>::new(
+    Position::<Heliocentric, Ecliptic>::new(
         /*x:*/ z.value() * (cos_omega * cos_w_nu - sin_omega * sin_w_nu * cos_i),
         /*y:*/ z.value() * (sin_omega * cos_w_nu + cos_omega * sin_w_nu * cos_i),
         /*z:*/ z.value() * (sin_w_nu * sin_i)
@@ -271,7 +271,7 @@ pub fn calculate_orbit_position(
 
 impl Orbit {
     /// Calculates heliocentric coordinates of the orbiting body at a given Julian date.
-    pub fn kepler_position(&self, jd: JulianDay) -> CartesianCoord<Heliocentric, Ecliptic> {
+    pub fn kepler_position(&self, jd: JulianDay) -> Position<Heliocentric, Ecliptic> {
         calculate_orbit_position(self, jd)
     }
 }
@@ -280,16 +280,11 @@ impl Orbit {
 mod tests {
     use super::*;
     use crate::units::{Degrees, JulianDay, Days};
+    use crate::macros::assert_cartesian_eq;
 
     /// Helper function to compare two floating-point numbers with a tolerance.
     fn approx_eq(a: f64, y: f64, tol: f64) -> bool {
         (a - y).abs() < tol
-    }
-
-    fn check_cartesian(actual: CartesianCoord::<Heliocentric, Ecliptic>, expected_x: f64, expected_y: f64, expected_z: f64, tol: f64) {
-        assert!(approx_eq(actual.x(), expected_x, tol), "current x = {}, expected x = {}", actual.x(), expected_x);
-        assert!(approx_eq(actual.y(), expected_y, tol), "current y = {}, expected y = {}", actual.y(), expected_y);
-        assert!(approx_eq(actual.z(), expected_z, tol), "current z = {}, expected z = {}", actual.z(), expected_z);
     }
 
     /// Test Kepler's Equation Solver with known values.
@@ -300,14 +295,12 @@ mod tests {
         let m = Radians::new(0.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = 0.0;
-        println!("Test Case 1: E = {}", computed_e);
         assert!(approx_eq(computed_e.as_f64(), expected_e, 1e-10));
 
         // Test Case 2: e = 0.0, M = PI/2 radians
         let m = Radians::new(PI / 2.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = PI / 2.0;
-        println!("Test Case 2: E = {}", computed_e);
         assert!(approx_eq(computed_e.as_f64(), expected_e, 1e-10));
 
         // Test Case 3: e = 0.1, M = PI/2 radians
@@ -315,7 +308,6 @@ mod tests {
         let m = Radians::new(PI / 2.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = 1.670302; // Corrected expected value from previous step
-        println!("Test Case 3: E = {}", computed_e);
         assert!(approx_eq(computed_e.as_f64(), expected_e, 1e-6));
     }
 
@@ -335,13 +327,13 @@ mod tests {
         // At epoch, mean anomaly M0 = 0 degrees, so true anomaly should be 0
         let coord = calculate_orbit_position(&orbit, JulianDay::J2000);
 
-        check_cartesian(coord, 1.0, 0.0, 0.0, 1e-10);
+        assert_cartesian_eq!(coord, Position::new(1.0, 0.0, 0.0), 1e-10);
 
         // 90 degrees after epoch
         let jd = JulianDay::J2000 + Days::new(90.0 / 0.9856076686); // Roughly 90 degrees / n days
         let coord = calculate_orbit_position(&orbit, jd);
         // Expect y to be approximately 1 AU
-        check_cartesian(coord, 0.0, 1.0, 0.0, 1e-4);
+        assert_cartesian_eq!(coord, Position::new(0.0, 1.0, 0.0), 1e-4);
     }
 
     /// Test heliocentric coordinates for zero inclination.
@@ -359,7 +351,7 @@ mod tests {
 
         // At epoch, mean anomaly M0 = 0, so true anomaly = 0
         let coord = calculate_orbit_position(&elements, JulianDay::J2000);
-        check_cartesian(coord, 1.8, 0.0, 0.0, 1e-10);
+        assert_cartesian_eq!(coord, Position::new(1.8, 0.0, 0.0), 1e-10);
     }
 
     /// Test heliocentric coordinates after a specific number of days.
@@ -456,8 +448,12 @@ mod tests {
 
         for planet in &planets {
             let coord = calculate_orbit_position(&planet.planet.orbit, JulianDay::J2000);
-            println!("Testing {}...", planet.name);
-            check_cartesian(coord, planet.expected.0, planet.expected.1, planet.expected.2, planet.tol);
+            let expected = Position::new(
+                planet.expected.0,
+                planet.expected.1,
+                planet.expected.2
+            );
+            assert_cartesian_eq!(coord, expected, planet.tol, "{} at J2000", planet.name);
         }
     }
 
