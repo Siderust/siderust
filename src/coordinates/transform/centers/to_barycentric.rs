@@ -9,20 +9,15 @@ use crate::coordinates::transform::Transform;
 use crate::astro::aberration::remove_aberration;
 
 pub fn heliocentric_to_barycentric<F: ReferenceFrame>(
-    helio: &CartesianCoord<Heliocentric, F>,
+    helio_f: &CartesianCoord<Heliocentric, F>,
     jd: JulianDay
 ) -> CartesianCoord<Barycentric, F>
 where
     for<'a> CartesianCoord<Barycentric, F>: From<&'a CartesianCoord<Barycentric, Ecliptic>>,
 {
-    let sun = CartesianCoord::<Barycentric, F>::from(
-        Sun::vsop87e(jd).get_position()
-    );
-    CartesianCoord::new(
-        helio.x() + sun.x(),
-        helio.y() + sun.y(),
-        helio.z() + sun.z(),
-    )
+    let& sun_bary_ecl = Sun::vsop87e(jd).get_position();
+    let sun_bary_f = CartesianCoord::<Barycentric, F>::from(&sun_bary_ecl);
+    CartesianCoord::from_vec3(helio_f.as_vec3() + sun_bary_f.as_vec3())
 }
 
 pub fn geocentric_to_barycentric<F: ReferenceFrame>(
