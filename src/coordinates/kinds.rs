@@ -6,7 +6,17 @@ pub trait Kind {
 #[derive(Debug, Copy, Clone)]
 pub struct PositionKind;
 impl Kind for PositionKind {
-    // TODO: Check Distance > 0.0
+    #[inline(always)]
+    fn validate(x: f64, y: f64, z: f64) {
+        debug_assert!(
+            (x * x + y * y + z * z).sqrt() !=  std::f64::INFINITY,
+            "Vector cannot be infinite, got ({}, {}, {})", x, y, z
+        );
+        debug_assert!(
+            (x * x + y * y + z * z).sqrt() !=  std::f64::NAN,
+            "Vector cannot be NaN, got ({}, {}, {})", x, y, z
+        );
+    }
 }
 
 #[derive(Debug, Copy, Clone)]
