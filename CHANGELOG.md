@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Coordinate macro checkers
 - spherical::Direction, cartesian::Direction
 - Converstion functions from/to Position/Direction
+- apply_aberration_to_direction / remove_aberration_from_direction
 
 ### Changed
 - Geogreaphic constructor order.
