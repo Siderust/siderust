@@ -53,22 +53,18 @@ use crate::coordinates::{
     centers::Geocentric, frames::Equatorial
 };
 
+use std::f64::consts::TAU;
 
-//--------------------------------------------------------------------
-// Physical & mathematical constants
-//--------------------------------------------------------------------
-
-/// Speed of light **c = 17314 463 350 × 10⁻⁸ au d⁻¹** (IAU 2012 resolution B2).
-///
-/// The factor 10⁻⁸ matches the published Ron–Vondrák coefficients.
+/// Speed of light expressed as **c × 10⁻⁸ au d⁻¹**.
+/// The numerical value corresponds to the canonical speed of light
+/// \(c = 17314 463 350 × 10⁻⁸\;\text{au d}^{-1}\) adopted by the
+/// International Astronomical Union (IAU) in Resolution B2 (2012).
+/// Storing the quantity already scaled by 10⁻⁸ matches the convention
+/// used in the Ron–Vondrák analytical theory of aberration, allowing the
+/// velocity coefficients to be represented as small integers.
 pub const C_10E8: f64 = 17_314_463_350.0;
 
-/// 2 π, useful for argument reduction.
-pub const TAU: f64 = std::f64::consts::TAU;
-
-
 const TERMS: usize = 36;
-
 
 /// Integer multipliers of the fundamental arguments (l₂ … F).
 #[derive(Copy, Clone, Debug)]
@@ -87,7 +83,8 @@ struct Arg {
 }
 
 
-/// Trigonometric coefficients (10⁻⁸ au d⁻¹).
+/// Trigonometric coefficients (scaled by 10⁻⁸ au d⁻¹) that multiply the
+/// sine and cosine of the argument for each Cartesian component.
 #[derive(Copy, Clone, Debug)]
 struct Xyz {
     pub sin1: i32,
@@ -96,6 +93,16 @@ struct Xyz {
     pub cos2: i32,
 }
 
+/// Compute the heliocentric velocity components of the Earth.
+///
+/// The components are evaluated using the 36‑term Ron–Vondrák series.  The
+/// returned vector is expressed in the true equator and equinox of date
+/// and is scaled by **10⁻⁸ au d⁻¹** to preserve integer precision in the
+/// tabulated coefficients.
+///
+/// * `t` – Julian centuries of Terrestrial Time (TT) measured from
+///   *J2000.0* (i.e. JD 2451545.0 TT).
+#[must_use]
 fn heliocentric_velocity_components(t: f64) -> Position<Geocentric, Equatorial> {
     let mut vx = 0.0;
     let mut vy = 0.0;
@@ -139,19 +146,21 @@ fn heliocentric_velocity_components(t: f64) -> Position<Geocentric, Equatorial> 
     Position::new(vx, vy, vz)
 }
 
-/// Add **annual aberration** to a mean equatorial Cartesian direction.
+/// Apply **annual aberration** to a unit direction vector.
 ///
-/// * `mean` – Geocentric Cartesian coordinates referred to the true equator &
-///   equinox of date (in astronomical units).
-/// * `jd`   – Terrestrial Time (TT) in Julian Day.
+/// The function adds the relativistic correction \(v/c\) due to the
+/// Earth's orbital motion.
+///
+/// * `mean` – Geocentric unit vector referred to the true equator &
+///   equinox of date.
+/// * `jd`   – Epoch in Terrestrial Time (TT) as a *Julian Day*.
 ///
 /// # Returns
-/// A new [`Position`] whose x, y, z components include the effect of
-/// the Earth's orbital velocity.
+/// A new [`Direction`] whose components include annual aberration.
 ///
 /// # Accuracy
-/// Better than 0.1 mas for dates 1900-2100; dominated by the underlying
-/// Ron–Vondrák theory.
+/// Better than 0.1 mas over 1900‒2100, limited by the underlying
+/// Ron–Vondrák velocity series.
 #[must_use]
 pub fn apply_aberration_to_direction(
     mean: Direction<Geocentric, Equatorial>,
@@ -173,6 +182,9 @@ pub fn apply_aberration_to_direction(
     ).direction()
 }
 
+
+/// Remove **annual aberration** from an apparent direction.
+/// Inverse operation of [`apply_aberration_to_direction`].
 #[must_use]
 pub fn remove_aberration_from_direction(
     app: Direction<Geocentric, Equatorial>,
@@ -195,19 +207,8 @@ pub fn remove_aberration_from_direction(
 }
 
 
-/// Add **annual aberration** to a mean equatorial Cartesian position.
-///
-/// * `mean` – Geocentric Cartesian coordinates referred to the true equator &
-///   equinox of date (in astronomical units).
-/// * `jd`   – Terrestrial Time (TT) in Julian Day.
-///
-/// # Returns
-/// A new [`Position`] whose x, y, z components include the effect of
-/// the Earth's orbital velocity.
-///
-/// # Accuracy
-/// Better than 0.1 mas for dates 1900-2100; dominated by the underlying
-/// Ron–Vondrák theory.
+/// Apply **annual aberration** to a position vector, preserving its
+/// geocentric distance.
 #[must_use]
 pub fn apply_aberration(
     mean: Position<Geocentric, Equatorial>,
@@ -226,6 +227,8 @@ pub fn apply_aberration(
 }
 
 
+/// Remove **annual aberration** from a position vector, preserving its
+/// geocentric distance.
 #[must_use]
 pub fn remove_aberration(
     app: Position<Geocentric, Equatorial>,
