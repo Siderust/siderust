@@ -36,6 +36,7 @@
 //! ```
 /// A trait for defining a reference center (coordinate origin).
 pub trait ReferenceCenter {
+    const IS_GEOCENTRIC: bool;
     fn center_name() -> &'static str;
 }
 
@@ -45,6 +46,8 @@ macro_rules! new_center {
         pub struct $name;
 
         impl ReferenceCenter for $name {
+            const IS_GEOCENTRIC: bool = false;
+
             fn center_name() -> &'static str {
                 stringify!($name)
             }
@@ -54,6 +57,15 @@ macro_rules! new_center {
 
 new_center!(Barycentric);
 new_center!(Heliocentric);
-new_center!(Geocentric);
 new_center!(Topocentric);
 
+// Required for Transform specialization
+#[derive(Debug, Copy, Clone)]
+pub struct Geocentric;
+impl ReferenceCenter for Geocentric {
+    const IS_GEOCENTRIC: bool = true;
+
+    fn center_name() -> &'static str {
+        "Geocentric"
+    }
+}

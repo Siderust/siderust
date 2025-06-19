@@ -138,6 +138,38 @@ fn heliocentric_velocity_components(t: f64) -> cartesian::Position<Geocentric, E
     cartesian::Position::new(vx, vy, vz)
 }
 
+/// Add **annual aberration** to a mean equatorial Cartesian direction.
+///
+/// * `mean` – Geocentric Cartesian coordinates referred to the true equator &
+///   equinox of date (in astronomical units).
+/// * `jd`   – Terrestrial Time (TT) in Julian Day.
+///
+/// # Returns
+/// A new [`cartesian::Position`] whose x, y, z components include the effect of
+/// the Earth's orbital velocity.
+///
+/// # Accuracy
+/// Better than 0.1 mas for dates 1900-2100; dominated by the underlying
+/// Ron–Vondrák theory.
+#[must_use]
+pub fn apply_aberration_to_direction(
+    mean: cartesian::Direction<Geocentric, Equatorial>,
+    jd:   JulianDay,
+) -> cartesian::Direction<Geocentric, Equatorial> {
+
+    let t = jd.julian_centuries().value();
+
+    //--------------------------------------------------------------------
+    // 1. Heliocentric velocity components  (10⁻⁸ au d⁻¹)
+    //--------------------------------------------------------------------
+    let velocity = heliocentric_velocity_components(t);
+
+    //--------------------------------------------------------------------
+    // 2. Apply v/c to the unit vector of the star
+    //--------------------------------------------------------------------
+    cartesian::Direction::from_vec3(mean.as_vec3() + velocity.as_vec3() / C_10E8)
+}
+
 /// Add **annual aberration** to a mean equatorial Cartesian position.
 ///
 /// * `mean` – Geocentric Cartesian coordinates referred to the true equator &
@@ -177,6 +209,14 @@ pub fn apply_aberration(
     let with_vc = norm + velocity / C_10E8;
     with_vc.normalize() * mean.distance_from_origin()
 }
+#[must_use]
+pub fn remove_aberration_from_direction(
+    _app: cartesian::Direction<Geocentric, Equatorial>,
+    _jd:  JulianDay,
+) -> cartesian::Direction<Geocentric, Equatorial> {
+    todo!();
+}
+
 
 #[must_use]
 pub fn remove_aberration(
