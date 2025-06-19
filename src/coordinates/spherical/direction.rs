@@ -53,9 +53,6 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
 {
-    /// The zero point (origin) in this coordinate system.
-    pub const CENTER: Self = Self::from_degrees(0.0, 0.0, Some(0.0));
-
     pub fn position(&self, magnitude: f64) -> super::Position<C, F> {
         super::Position::new_spherical_coord(self.polar, self.azimuth, Some(magnitude))
     }
