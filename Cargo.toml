@@ -24,6 +24,11 @@ rayon = "1.10"
 rstest = "0.25"
 criterion = "0.5"
 
+[build-dependencies]
+walkdir = "2"
+regex = "1"
+anyhow = "1"
+
 [[bench]]
 name = "converters"
 harness = false
