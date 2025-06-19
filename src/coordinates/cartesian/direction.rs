@@ -16,7 +16,7 @@ where
     ///
     /// # Returns
     /// The distance from the ReferenceCenter in AU.
-    pub const fn distance_from_origin(&self) -> f64 { 1.0 }
+    pub const fn distance(&self) -> f64 { 1.0 }
 
     pub fn position(&self, magnitude: f64) -> super::Position<C, F> {
         super::Position::from_vec3(self.as_vec3() * magnitude)

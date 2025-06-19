@@ -48,7 +48,8 @@
 
 use crate::units::JulianDay;
 use crate::coordinates::{
-    spherical, cartesian,
+    cartesian::Position,
+    cartesian::Direction,
     centers::Geocentric, frames::Equatorial
 };
 
@@ -95,7 +96,7 @@ struct Xyz {
     pub cos2: i32,
 }
 
-fn heliocentric_velocity_components(t: f64) -> cartesian::Position<Geocentric, Equatorial> {
+fn heliocentric_velocity_components(t: f64) -> Position<Geocentric, Equatorial> {
     let mut vx = 0.0;
     let mut vy = 0.0;
     let mut vz = 0.0;
@@ -135,7 +136,7 @@ fn heliocentric_velocity_components(t: f64) -> cartesian::Position<Geocentric, E
         vz += (Z_COEFFICIENTS[i].sin1 as f64 + Z_COEFFICIENTS[i].sin2 as f64 * t) * s
             + (Z_COEFFICIENTS[i].cos1 as f64 + Z_COEFFICIENTS[i].cos2 as f64 * t) * c;
     }
-    cartesian::Position::new(vx, vy, vz)
+    Position::new(vx, vy, vz)
 }
 
 /// Add **annual aberration** to a mean equatorial Cartesian direction.
@@ -145,7 +146,7 @@ fn heliocentric_velocity_components(t: f64) -> cartesian::Position<Geocentric, E
 /// * `jd`   – Terrestrial Time (TT) in Julian Day.
 ///
 /// # Returns
-/// A new [`cartesian::Position`] whose x, y, z components include the effect of
+/// A new [`Position`] whose x, y, z components include the effect of
 /// the Earth's orbital velocity.
 ///
 /// # Accuracy
@@ -153,9 +154,9 @@ fn heliocentric_velocity_components(t: f64) -> cartesian::Position<Geocentric, E
 /// Ron–Vondrák theory.
 #[must_use]
 pub fn apply_aberration_to_direction(
-    mean: cartesian::Direction<Geocentric, Equatorial>,
+    mean: Direction<Geocentric, Equatorial>,
     jd:   JulianDay,
-) -> cartesian::Direction<Geocentric, Equatorial> {
+) -> Direction<Geocentric, Equatorial> {
 
     let t = jd.julian_centuries().value();
 
@@ -165,69 +166,18 @@ pub fn apply_aberration_to_direction(
     let velocity = heliocentric_velocity_components(t);
 
     //--------------------------------------------------------------------
-    // 2. Apply v/c to the unit vector of the star
+    // 2. Apply û' = û + v/c
     //--------------------------------------------------------------------
-    cartesian::Direction::from_vec3(mean.as_vec3() + velocity.as_vec3() / C_10E8)
+    Position::from_vec3(
+        mean.as_vec3() + velocity.as_vec3() / C_10E8
+    ).direction()
 }
 
-/// Add **annual aberration** to a mean equatorial Cartesian position.
-///
-/// * `mean` – Geocentric Cartesian coordinates referred to the true equator &
-///   equinox of date (in astronomical units).
-/// * `jd`   – Terrestrial Time (TT) in Julian Day.
-///
-/// # Returns
-/// A new [`cartesian::Position`] whose x, y, z components include the effect of
-/// the Earth's orbital velocity.
-///
-/// # Accuracy
-/// Better than 0.1 mas for dates 1900-2100; dominated by the underlying
-/// Ron–Vondrák theory.
-#[must_use]
-pub fn apply_aberration(
-    mean: cartesian::Position<Geocentric, Equatorial>,
-    jd:   JulianDay,
-) -> cartesian::Position<Geocentric, Equatorial> {
-
-    if mean.distance_from_origin() == 0.0 {
-        // Don't look at your feet!
-        return mean;
-    }
-
-    let t = jd.julian_centuries().value();
-
-    //--------------------------------------------------------------------
-    // 1. Heliocentric velocity components  (10⁻⁸ au d⁻¹)
-    //--------------------------------------------------------------------
-    let velocity = heliocentric_velocity_components(t);
-
-    //--------------------------------------------------------------------
-    // 2. Apply v/c to the unit vector of the star
-    //--------------------------------------------------------------------
-    // Normalize to obtain the unit vector
-    let norm: cartesian::Position<Geocentric, Equatorial> = mean.normalize();
-    let with_vc = norm + velocity / C_10E8;
-    with_vc.normalize() * mean.distance_from_origin()
-}
 #[must_use]
 pub fn remove_aberration_from_direction(
-    _app: cartesian::Direction<Geocentric, Equatorial>,
-    _jd:  JulianDay,
-) -> cartesian::Direction<Geocentric, Equatorial> {
-    todo!();
-}
-
-
-#[must_use]
-pub fn remove_aberration(
-    app: cartesian::Position<Geocentric, Equatorial>,
+    app: Direction<Geocentric, Equatorial>,
     jd:  JulianDay,
-) -> cartesian::Position<Geocentric, Equatorial> {
-
-    if app.distance_from_origin() == 0.0 {
-        // Don't look at your feet!
-        return app;
-    }
+) -> Direction<Geocentric, Equatorial> {
 
     let t  = jd.julian_centuries().value();
 
@@ -237,21 +187,62 @@ pub fn remove_aberration(
     let velocity = heliocentric_velocity_components(t);
 
     //--------------------------------------------------------------------
-    // 2. Apply -v/c to the unit vector of the star
+    // 2.û' = û - v/c
     //--------------------------------------------------------------------
-    let norm: cartesian::Position<Geocentric, Equatorial> = app.normalize();
-    let with_vc = norm - velocity / C_10E8;
-    with_vc.normalize() * app.distance_from_origin()
+    Position::from_vec3(
+        app.as_vec3() - velocity.as_vec3() / C_10E8
+    ).direction()
+}
+
+
+/// Add **annual aberration** to a mean equatorial Cartesian position.
+///
+/// * `mean` – Geocentric Cartesian coordinates referred to the true equator &
+///   equinox of date (in astronomical units).
+/// * `jd`   – Terrestrial Time (TT) in Julian Day.
+///
+/// # Returns
+/// A new [`Position`] whose x, y, z components include the effect of
+/// the Earth's orbital velocity.
+///
+/// # Accuracy
+/// Better than 0.1 mas for dates 1900-2100; dominated by the underlying
+/// Ron–Vondrák theory.
+#[must_use]
+pub fn apply_aberration(
+    mean: Position<Geocentric, Equatorial>,
+    jd:   JulianDay,
+) -> Position<Geocentric, Equatorial> {
+
+    if mean.distance() == 0.0 {
+        // Don't look at your feet!
+        return mean;
+    }
+
+    apply_aberration_to_direction(
+        mean.direction(),
+        jd,
+    ).position(mean.distance())
 }
 
 
 #[must_use]
-pub fn apply_aberration_sph(
-    mean: spherical::Position<Geocentric, Equatorial>,
-    jd:   JulianDay,
-) -> spherical::Position<Geocentric, Equatorial> {
-    (&apply_aberration((&mean).into(), jd)).into()
+pub fn remove_aberration(
+    app: Position<Geocentric, Equatorial>,
+    jd:  JulianDay,
+) -> Position<Geocentric, Equatorial> {
+
+    if app.distance() == 0.0 {
+        // Don't look at your feet!
+        return app;
+    }
+
+    remove_aberration_from_direction(
+        app.direction(),
+        jd,
+    ).position(app.distance())
 }
+
 
 const ARGUMENTS: [Arg; TERMS] = [
     Arg { a_l2: 0, a_l3: 1, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
@@ -415,12 +406,20 @@ const Z_COEFFICIENTS: [Xyz; TERMS] = [
 mod tests {
     use super::*;
     use crate::units::Degrees;
+    use crate::coordinates::spherical::Position;
     use approx::assert_relative_eq;
+
+    fn apply_aberration_sph(
+        mean: Position<Geocentric, Equatorial>,
+        jd:   JulianDay,
+    ) -> Position<Geocentric, Equatorial> {
+        (&apply_aberration((&mean).into(), jd)).into()
+    }
 
     #[test]
     fn test_aberration_preserva_distance_and_epoch() {
         let jd = JulianDay::new(2451545.0); // J2000.0
-        let mean = spherical::Position::<Geocentric, Equatorial>::new(
+        let mean = Position::<Geocentric, Equatorial>::new(
             Degrees::new(10.0),
             Degrees::new(20.0),
             1.23
@@ -433,7 +432,7 @@ mod tests {
     #[test]
     fn test_aberration_introduces_shift() {
         let jd = JulianDay::new(2451545.0); // J2000.0
-        let mean = spherical::Position::<Geocentric, Equatorial>::new(
+        let mean = Position::<Geocentric, Equatorial>::new(
             Degrees::new(0.0),    // RA = 0°
             Degrees::new(0.0),    // Dec = 0°
             1.0
@@ -451,7 +450,7 @@ mod tests {
     #[test]
     fn test_aberration_at_north_pole() {
         let jd = JulianDay::new(2451545.0);
-        let mean = spherical::Position::<Geocentric, Equatorial>::new(
+        let mean = Position::<Geocentric, Equatorial>::new(
             Degrees::new(123.4),  // dummy RA
             Degrees::new(90.0),   // Dec = +90°
             1.0

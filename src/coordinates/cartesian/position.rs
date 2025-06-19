@@ -15,7 +15,7 @@ where
     ///
     /// # Returns
     /// The distance from the ReferenceCenter in AU.
-    pub fn distance_from_origin(&self) -> f64 {
+    pub fn distance(&self) -> f64 {
         (self.x().powi(2) + self.y().powi(2) + self.z().powi(2)).sqrt()
     }
 
