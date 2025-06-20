@@ -37,6 +37,17 @@ where
     }
 }
 
+impl<C1: ReferenceCenter, C2: ReferenceCenter> Transform<cartesian::Direction<C1, Equatorial>> for cartesian::Direction<C2, Equatorial>
+where
+    C1: NonGeocentric,
+    C2: NonGeocentric
+{
+    #[inline]
+    fn transform(&self, _jd: JulianDay) -> cartesian::Direction<C1, Equatorial> {
+        cartesian::Direction::from_vec3(self.as_vec3())
+    }
+}
+
 impl<C: ReferenceCenter> Transform<spherical::Direction<Geocentric, Equatorial>> for spherical::Direction<C, Equatorial>
 where
     C: NonGeocentric
@@ -57,6 +68,19 @@ where
     fn transform(&self, jd: JulianDay) -> spherical::Direction<C, Equatorial> {
         let cart = self.to_cartesian();
         let catr_trasnformed: cartesian::Direction<C, Equatorial> = cart.transform(jd);
+        catr_trasnformed.to_spherical()
+    }
+}
+
+impl<C1: ReferenceCenter, C2: ReferenceCenter> Transform<spherical::Direction<C1, Equatorial>> for spherical::Direction<C2, Equatorial>
+where
+    C1: NonGeocentric,
+    C2: NonGeocentric
+{
+    #[inline]
+    fn transform(&self, jd: JulianDay) -> spherical::Direction<C1, Equatorial> {
+        let cart = self.to_cartesian();
+        let catr_trasnformed: cartesian::Direction<C1, Equatorial> = cart.transform(jd);
         catr_trasnformed.to_spherical()
     }
 }
