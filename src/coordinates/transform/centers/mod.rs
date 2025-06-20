@@ -92,16 +92,19 @@ where
     }
 }
 
-impl<C1: ReferenceCenter, C2: ReferenceCenter> Transform<spherical::Direction<C1, Equatorial>> for spherical::Direction<C2, Equatorial>
+// If None of the centers are geocentric, we can just pass the spherical coordinates through
+impl<C1: ReferenceCenter, C2: ReferenceCenter, F: ReferenceFrame> Transform<spherical::Direction<C1, F>> for spherical::Direction<C2, F>
 where
     C1: NonGeocentric,
     C2: NonGeocentric
 {
     #[inline]
-    fn transform(&self, jd: JulianDay) -> spherical::Direction<C1, Equatorial> {
-        let cart = self.to_cartesian();
-        let catr_trasnformed: cartesian::Direction<C1, Equatorial> = cart.transform(jd);
-        catr_trasnformed.to_spherical()
+    fn transform(&self, _jd: JulianDay) -> spherical::Direction<C1, F> {
+        spherical::Direction::<C1, F>::new_spherical_coord(
+            self.polar,
+            self.azimuth,
+            None
+        )
     }
 }
 
