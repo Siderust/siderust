@@ -69,3 +69,8 @@ impl ReferenceCenter for Geocentric {
         "Geocentric"
     }
 }
+
+pub trait NonGeocentric: ReferenceCenter {}
+impl NonGeocentric for Heliocentric {}
+impl NonGeocentric for Barycentric {}
+impl NonGeocentric for Topocentric {}

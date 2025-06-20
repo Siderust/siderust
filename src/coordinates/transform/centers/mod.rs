@@ -5,62 +5,103 @@ pub mod to_geocentric;
 use crate::units::JulianDay;
 use crate::coordinates::{
     frames::*, centers::*,
-    cartesian::Direction,
+    cartesian, spherical,
 };
-use crate::coordinates::frames;
 use crate::coordinates::transform::Transform;
 use crate::astro::aberration::{
     apply_aberration_to_direction,
     remove_aberration_from_direction,
 };
 
-#[inline]
-#[must_use]
-fn aberrate<F, Op>(
-    dir: &Direction<Geocentric, F>,
-    jd: JulianDay,
-    op: Op,
-) -> Direction<Geocentric, F>
+impl<C: ReferenceCenter> Transform<cartesian::Direction<Geocentric, Equatorial>> for cartesian::Direction<C, Equatorial>
 where
-    F: frames::ReferenceFrame,
-    Op: FnOnce(Direction<Geocentric, Equatorial>, JulianDay)
-        -> Direction<Geocentric, Equatorial>,
-    Direction<Geocentric, Equatorial>: for<'a> From<&'a Direction<Geocentric, F>>,
-    Direction<Geocentric, F>: for<'a> From<&'a Direction<Geocentric, Equatorial>>,
-{
-    let geo_eq = Direction::<Geocentric, Equatorial>::from(dir);
-    let geo_eq = op(geo_eq, jd);
-    Direction::<Geocentric, F>::from(&geo_eq)
-}
-
-impl<C1, C2, F> Transform<Direction<C1, F>> for Direction<C2, F>
-where
-    C1: ReferenceCenter,
-    C2: ReferenceCenter,
-    F: frames::ReferenceFrame,
-    Direction<Geocentric, Equatorial>: for<'a> From<&'a Direction<Geocentric, F>>,
-    Direction<Geocentric, F>: for<'a> From<&'a Direction<Geocentric, Equatorial>>,
-    Direction<Geocentric, F>: for<'a> From<&'a Direction<C2, F>>,
-    Direction<C1, F>: for<'a> From<&'a Direction<Geocentric, F>>,
+    C: NonGeocentric
 {
     #[inline]
-    fn transform(&self, jd: JulianDay) -> Direction<C1, F> {
-        // Same center No aberration needed.
-        if C1::IS_GEOCENTRIC == C2::IS_GEOCENTRIC {
-            return Direction::from_vec3(self.as_vec3());
-        }
-
-        // Convert source vector to Geocentric+F
-        let geo_f: Direction<Geocentric, F> = self.into();
-
-        // Apply or remove aberration depending on the direction.
-        let geo_f = if C2::IS_GEOCENTRIC {
-            aberrate(&geo_f, jd, remove_aberration_from_direction)
-        } else {
-            aberrate(&geo_f, jd, apply_aberration_to_direction)
-        };
-
-        // Convert back to the target center.
-        Direction::<C1, F>::from(&geo_f)
+    fn transform(&self, jd: JulianDay) -> cartesian::Direction<Geocentric, Equatorial> {
+        apply_aberration_to_direction(
+            cartesian::Direction::from_vec3(self.as_vec3()), jd
+        )
     }
+}
+
+impl<C: ReferenceCenter> Transform<cartesian::Direction<C, Equatorial>> for cartesian::Direction<Geocentric, Equatorial>
+where
+    C: NonGeocentric
+{
+    #[inline]
+    fn transform(&self, jd: JulianDay) -> cartesian::Direction<C, Equatorial> {
+        cartesian::Direction::<C, Equatorial>::from_vec3(
+            remove_aberration_from_direction(*self, jd).as_vec3()
+        )
+    }
+}
+
+impl<C: ReferenceCenter> Transform<spherical::Direction<Geocentric, Equatorial>> for spherical::Direction<C, Equatorial>
+where
+    C: NonGeocentric
+{
+    #[inline]
+    fn transform(&self, jd: JulianDay) -> spherical::Direction<Geocentric, Equatorial> {
+        let cart = self.to_cartesian();
+        let catr_trasnformed: cartesian::Direction<Geocentric, Equatorial> = cart.transform(jd);
+        catr_trasnformed.to_spherical()
+    }
+}
+
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::coordinates::centers::{Geocentric, Heliocentric, Barycentric};
+    use crate::coordinates::spherical::Direction;
+    use crate::units::Degrees;
+
+    #[test]
+    fn test_from_heliocentric_to_geocentric() {
+        let dir = Direction::<Heliocentric, Equatorial>::new(Degrees::new(120.0), Degrees::new(-30.0));
+        let jd = crate::units::JulianDay::J2000;
+        let transformed: Direction<Geocentric, Equatorial> = dir.transform(jd);
+        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
+        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+    }
+
+        #[test]
+    fn test_from_barycentric_to_geocentric() {
+        let dir = Direction::<Barycentric, Equatorial>::new(Degrees::new(120.0), Degrees::new(-30.0));
+        let jd = crate::units::JulianDay::J2000;
+        let transformed: Direction<Geocentric, Equatorial> = dir.transform(jd);
+        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
+        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+    }
+/*
+
+    #[test]
+    fn test_from_geocentric_to_heliocentric() {
+        let dir = Direction::<Geocentric, Equatorial>::new(Degrees::new(10.0), Degrees::new(20.0));
+        let jd = crate::units::JulianDay::J2000;
+        let transformed: Direction<Heliocentric, Equatorial> = dir.transform(jd);
+        // Should be close in direction, but not identical due to aberration, so just check type and not NaN
+        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
+        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+    }
+
+
+    #[test]
+    fn test_barycentric_to_heliocentric() {
+        let dir = Direction::<Barycentric, ICRS>::new(Degrees::new(200.0), Degrees::new(45.0));
+        let jd = crate::units::JulianDay::J2000;
+        let transformed: Direction<Heliocentric, ICRS> = dir.transform(jd);
+        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
+        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+    }
+
+    #[test]
+    fn test_heliocentric_to_barycentric() {
+        let dir = Direction::<Heliocentric, ICRS>::new(Degrees::new(100.0), Degrees::new(-10.0));
+        let jd = crate::units::JulianDay::J2000;
+        let transformed: Direction<Barycentric, ICRS> = dir.transform(jd);
+        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
+        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+    }*/
 }
