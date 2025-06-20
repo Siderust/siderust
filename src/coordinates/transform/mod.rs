@@ -101,7 +101,7 @@ mod to_horizontal;
 use crate::coordinates::cartesian;
 use crate::coordinates::{
     centers::ReferenceCenter,
-    frames::ReferenceFrame,
+    frames::MutableFrame,
     kinds::Kind,
     cartesian::CartesianCoord,
     spherical::SphericalCoord
@@ -112,7 +112,7 @@ use crate::units::JulianDay;
 impl<C, F> Transform<cartesian::Position<C, F>> for cartesian::Position<C, F>
 where
     C: ReferenceCenter,
-    F: ReferenceFrame,
+    F: MutableFrame,
 {
     fn transform(&self, _jd: crate::units::JulianDay) -> cartesian::Position<C, F> {
         CartesianCoord::new(self.x(), self.y(), self.z())
@@ -132,8 +132,8 @@ where
     CartesianCoord<C1, F2, K>: Transform<CartesianCoord<C2, F2, K>>, // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
-    F1: ReferenceFrame,
-    F2: ReferenceFrame,
+    F1: MutableFrame,
+    F2: MutableFrame,
     K: Kind,
 {
     fn from(orig: &CartesianCoord<C1, F1, K>) -> Self {
@@ -160,8 +160,8 @@ where
     SphericalCoord<C2, F2, K>: for<'a> From<&'a CartesianCoord<C2, F2, K>>, // to_spherical
     C1: ReferenceCenter,
     C2: ReferenceCenter,
-    F1: ReferenceFrame,
-    F2: ReferenceFrame,
+    F1: MutableFrame,
+    F2: MutableFrame,
     K: Kind,
 {
     fn from(orig: &SphericalCoord<C1, F1, K>) -> Self {

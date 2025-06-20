@@ -13,15 +13,23 @@ use crate::astro::aberration::{
     remove_aberration_from_direction,
 };
 
-impl<C: ReferenceCenter> Transform<cartesian::Direction<Geocentric, Equatorial>> for cartesian::Direction<C, Equatorial>
+impl<C: ReferenceCenter, F: ReferenceFrame> Transform<cartesian::Direction<Geocentric, F>> for cartesian::Direction<C, F>
 where
-    C: NonGeocentric
+    C: NonGeocentric,
+    F: MutableFrame,
+    cartesian::Direction<Geocentric, F>: Transform<cartesian::Direction<Geocentric, Equatorial>>, // Required by Aberration
+    cartesian::Direction<Geocentric, Equatorial>: Transform<cartesian::Direction<Geocentric, F>>,
 {
     #[inline]
-    fn transform(&self, jd: JulianDay) -> cartesian::Direction<Geocentric, Equatorial> {
-        apply_aberration_to_direction(
-            cartesian::Direction::from_vec3(self.as_vec3()), jd
-        )
+    fn transform(&self, jd: JulianDay) -> cartesian::Direction<Geocentric, F> {
+        let geocentric = cartesian::Direction::<Geocentric, F>::from_vec3(
+            self.as_vec3()
+        );
+        let equatorial: cartesian::Direction<Geocentric, Equatorial> = geocentric.transform(jd);
+        let aberrated = apply_aberration_to_direction(
+            cartesian::Direction::from_vec3(equatorial.as_vec3()), jd
+        );
+        aberrated.transform(jd)
     }
 }
 
@@ -48,21 +56,33 @@ where
     }
 }
 
-impl<C: ReferenceCenter> Transform<spherical::Direction<Geocentric, Equatorial>> for spherical::Direction<C, Equatorial>
-where
-    C: NonGeocentric
+impl Transform<cartesian::Direction<Geocentric, Equatorial>>
+    for cartesian::Direction<Geocentric, Equatorial>
 {
     #[inline]
-    fn transform(&self, jd: JulianDay) -> spherical::Direction<Geocentric, Equatorial> {
+    fn transform(&self, _jd: JulianDay) -> cartesian::Direction<Geocentric, Equatorial> {
+        cartesian::Direction::from_vec3(self.as_vec3())
+    }
+}
+
+impl<C: ReferenceCenter, F: ReferenceFrame> Transform<spherical::Direction<Geocentric, F>> for spherical::Direction<C, F>
+where
+    C: NonGeocentric,
+    F: MutableFrame,
+    cartesian::Direction<Geocentric, F>: Transform<cartesian::Direction<Geocentric, Equatorial>>, // Required by Aberration
+    cartesian::Direction<Geocentric, Equatorial>: Transform<cartesian::Direction<Geocentric, F>>,
+{
+    #[inline]
+    fn transform(&self, jd: JulianDay) -> spherical::Direction<Geocentric, F> {
         let cart = self.to_cartesian();
-        let catr_trasnformed: cartesian::Direction<Geocentric, Equatorial> = cart.transform(jd);
-        catr_trasnformed.to_spherical()
+        let cart_transformed = Transform::<cartesian::Direction<Geocentric, F>>::transform(&cart, jd);
+        cart_transformed.to_spherical()
     }
 }
 
 impl<C: ReferenceCenter> Transform<spherical::Direction<C, Equatorial>> for spherical::Direction<Geocentric, Equatorial>
 where
-    C: NonGeocentric
+    C: NonGeocentric,
 {
     #[inline]
     fn transform(&self, jd: JulianDay) -> spherical::Direction<C, Equatorial> {
@@ -88,7 +108,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::centers::{Geocentric, Heliocentric, Barycentric};
     use crate::coordinates::spherical::Direction;
     use crate::units::Degrees;
 
@@ -101,7 +120,7 @@ mod tests {
         assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
     }
 
-        #[test]
+    #[test]
     fn test_from_barycentric_to_geocentric() {
         let dir = Direction::<Barycentric, Equatorial>::new(Degrees::new(120.0), Degrees::new(-30.0));
         let jd = crate::units::JulianDay::J2000;
@@ -121,7 +140,6 @@ mod tests {
     }
 
 /*
-
     #[test]
     fn test_barycentric_to_heliocentric() {
         let dir = Direction::<Barycentric, ICRS>::new(Degrees::new(200.0), Degrees::new(45.0));
@@ -138,5 +156,6 @@ mod tests {
         let transformed: Direction<Barycentric, ICRS> = dir.transform(jd);
         assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
         assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
-    }*/
+    }
+    */
 }
