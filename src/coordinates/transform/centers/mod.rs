@@ -49,6 +49,17 @@ where
     }
 }
 
+impl<C: ReferenceCenter> Transform<spherical::Direction<C, Equatorial>> for spherical::Direction<Geocentric, Equatorial>
+where
+    C: NonGeocentric
+{
+    #[inline]
+    fn transform(&self, jd: JulianDay) -> spherical::Direction<C, Equatorial> {
+        let cart = self.to_cartesian();
+        let catr_trasnformed: cartesian::Direction<C, Equatorial> = cart.transform(jd);
+        catr_trasnformed.to_spherical()
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -74,7 +85,6 @@ mod tests {
         assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
         assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
     }
-/*
 
     #[test]
     fn test_from_geocentric_to_heliocentric() {
@@ -86,6 +96,7 @@ mod tests {
         assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
     }
 
+/*
 
     #[test]
     fn test_barycentric_to_heliocentric() {
