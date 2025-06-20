@@ -172,8 +172,8 @@ mod tests {
         let dir = Direction::<Barycentric, ICRS>::new(Degrees::new(200.0), Degrees::new(45.0));
         let jd = crate::units::JulianDay::J2000;
         let transformed: Direction<Heliocentric, ICRS> = dir.transform(jd);
-        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
-        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+        assert_eq!(dir.polar.as_f64(), transformed.polar.as_f64(), "Polar should not change");
+        assert_eq!(dir.azimuth.as_f64(), transformed.azimuth.as_f64(), "Azimuth should not change");
     }
 
     #[test]
@@ -181,8 +181,8 @@ mod tests {
         let dir = Direction::<Heliocentric, ICRS>::new(Degrees::new(100.0), Degrees::new(-10.0));
         let jd = crate::units::JulianDay::J2000;
         let transformed: Direction<Barycentric, ICRS> = dir.transform(jd);
-        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
-        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+        assert_eq!(dir.polar.as_f64(), transformed.polar.as_f64(), "Polar should not change");
+        assert_eq!(dir.azimuth.as_f64(), transformed.azimuth.as_f64(), "Azimuth should not change");
     }
 
 }
