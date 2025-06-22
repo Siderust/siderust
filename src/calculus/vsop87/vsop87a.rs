@@ -1,9 +1,13 @@
+use super::*;
 use crate::bodies::solar_system::Moon;
 use crate::units::JulianDay;
-use crate::coordinates::{cartesian::Position, centers::Heliocentric, frames::Ecliptic};
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
-use crate::calculus::vsop87::compute_vsop87;
+use crate::coordinates::{
+    cartesian::{Position, Velocity},
+    centers::Heliocentric, frames::Ecliptic
+};
+
 include!(concat!(env!("OUT_DIR"), "/vsop87a.rs"));
 
 macro_rules! impl_vsop87a {
@@ -15,7 +19,7 @@ macro_rules! impl_vsop87a {
     ) => {
         impl $Planet {
             pub fn vsop87a(jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic>> {
-                let (x, y, z) = compute_vsop87(
+                let (x, y, z) = position(
                     jd,
                     &[$( &$x ),+],
                     &[$( &$y ),+],
@@ -25,6 +29,26 @@ macro_rules! impl_vsop87a {
                     Position::<Heliocentric, Ecliptic>::new(x, y, z),
                     jd,
                 )
+            }
+
+            pub fn vsop87a_vel(jd: JulianDay) -> Velocity<Heliocentric, Ecliptic> {
+                let (vx, vy, vz) = velocity(
+                    jd,
+                    &[$( &$x ),+],
+                    &[$( &$y ),+],
+                    &[$( &$z ),+]
+                );
+                Velocity::new(vx, vy, vz)
+            }
+
+            pub fn vsop87a_pos_vel(jd: JulianDay) -> (Target<Position<Heliocentric, Ecliptic>>, Velocity<Heliocentric, Ecliptic>) {
+                let ((x, y, z), (vx, vy, vz)) = position_velocity(
+                    jd,
+                    &[$( &$x ),+],
+                    &[$( &$y ),+],
+                    &[$( &$z ),+]
+                );
+                (Target::new_static(Position::new(x, y, z), jd,), Velocity::new(vx, vy, vz))
             }
         }
     };
