@@ -19,10 +19,6 @@ pub struct Vsop87 {
     pub c: f64,
 }
 
-// ---------------------------------------------------------------------------
-// Mode markers (compile‑time flags)
-// ---------------------------------------------------------------------------
-
 trait Mode {
     const NEED_VAL: bool;
     const NEED_DER: bool;
@@ -32,10 +28,7 @@ impl Mode for Val  { const NEED_VAL: bool = true;  const NEED_DER: bool = false;
 impl Mode for Der  { const NEED_VAL: bool = false; const NEED_DER: bool = true;  }
 impl Mode for Both { const NEED_VAL: bool = true;  const NEED_DER: bool = true;  }
 
-// ---------------------------------------------------------------------------
-// Core helper: computes (value, d/dt) according to `M`.
-// ---------------------------------------------------------------------------
-
+// computes (value, d/dt) according to `M`.
 #[inline]
 fn coord<M: Mode>(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
     let mut t_pow     = 1.0;  // T^0
@@ -73,11 +66,7 @@ fn coord<M: Mode>(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
     (value, deriv_t * DT_DT)
 }
 
-// ---------------------------------------------------------------------------
 // Public façade
-// ---------------------------------------------------------------------------
-
-/// Heliocentric rectangular position (AU).
 pub fn position(
     jd: JulianDay,
     x_series: &[&[Vsop87]],
@@ -97,7 +86,6 @@ pub fn position(
     (x, y, z)
 }
 
-/// Heliocentric rectangular velocity (AU / day).
 pub fn velocity(
     jd: JulianDay,
     x_series: &[&[Vsop87]],
