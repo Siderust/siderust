@@ -1,5 +1,6 @@
 macro_rules! impl_arithmetic_ops {
     ($t:ty) => {
+
         impl std::ops::Add for $t {
             type Output = $t;
             fn add(self, rhs: $t) -> $t {

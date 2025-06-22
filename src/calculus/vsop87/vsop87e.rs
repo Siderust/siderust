@@ -1,7 +1,7 @@
 use super::*;
 use crate::bodies::solar_system::*;
 use crate::targets::Target;
-use crate::units::JulianDay;
+use crate::units::{AstronomicalUnit, JulianDay};
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Barycentric, frames::Ecliptic
@@ -16,7 +16,7 @@ macro_rules! impl_vsop87e {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            pub fn vsop87e(jd: JulianDay) -> Target<Position<Barycentric, Ecliptic>> {
+            pub fn vsop87e(jd: JulianDay) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
                 let (x, y, z) = position(
                     jd,
                     &[$( &$x ),+],
@@ -24,29 +24,46 @@ macro_rules! impl_vsop87e {
                     &[$( &$z ),+]
                 );
                 Target::new_static(
-                    Position::<Barycentric, Ecliptic>::new(x, y, z),
+                    Position::new(
+                        AstronomicalUnit::new(x),
+                        AstronomicalUnit::new(y),
+                        AstronomicalUnit::new(z)),
                     jd,
                 )
             }
 
-            pub fn vsop87e_vel(jd: JulianDay) -> Velocity<Barycentric, Ecliptic> {
+            pub fn vsop87e_vel(jd: JulianDay) -> Velocity<Barycentric, Ecliptic, AstronomicalUnit> {
                 let (vx, vy, vz) = velocity(
                     jd,
                     &[$( &$x ),+],
                     &[$( &$y ),+],
                     &[$( &$z ),+]
                 );
-                Velocity::new(vx, vy, vz)
+                Velocity::new(
+                    AstronomicalUnit::new(vx),
+                    AstronomicalUnit::new(vy),
+                    AstronomicalUnit::new(vz)
+                )
             }
 
-            pub fn vsop87e_pos_vel(jd: JulianDay) -> (Target<Position<Barycentric, Ecliptic>>, Velocity<Barycentric, Ecliptic>) {
+            pub fn vsop87e_pos_vel(jd: JulianDay)
+                -> (Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>, Velocity<Barycentric, Ecliptic, AstronomicalUnit>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
                     &[$( &$x ),+],
                     &[$( &$y ),+],
                     &[$( &$z ),+]
                 );
-                (Target::new_static(Position::new(x, y, z), jd,), Velocity::new(vx, vy, vz))
+                (
+                    Target::new_static(Position::new(
+                        AstronomicalUnit::new(x),
+                        AstronomicalUnit::new(y),
+                        AstronomicalUnit::new(z)), jd,),
+                    Velocity::new(
+                        AstronomicalUnit::new(vx),
+                        AstronomicalUnit::new(vy),
+                        AstronomicalUnit::new(vz))
+                )
             }
         }
     };
