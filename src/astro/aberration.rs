@@ -53,98 +53,7 @@ use crate::coordinates::{
     centers::Geocentric, frames::Equatorial
 };
 
-use std::f64::consts::TAU;
-
-/// Speed of light expressed as **c × 10⁻⁸ au d⁻¹**.
-/// The numerical value corresponds to the canonical speed of light
-/// \(c = 17314 463 350 × 10⁻⁸\;\text{au d}^{-1}\) adopted by the
-/// International Astronomical Union (IAU) in Resolution B2 (2012).
-/// Storing the quantity already scaled by 10⁻⁸ matches the convention
-/// used in the Ron–Vondrák analytical theory of aberration, allowing the
-/// velocity coefficients to be represented as small integers.
-pub const C_10E8: f64 = 17_314_463_350.0;
-
-const TERMS: usize = 36;
-
-/// Integer multipliers of the fundamental arguments (l₂ … F).
-#[derive(Copy, Clone, Debug)]
-struct Arg {
-    pub a_l2: i32,
-    pub a_l3: i32,
-    pub a_l4: i32,
-    pub a_l5: i32,
-    pub a_l6: i32,
-    pub a_l7: i32,
-    pub a_l8: i32,
-    pub a_ll: i32,
-    pub a_d:  i32,
-    pub a_mm: i32,
-    pub a_f:  i32,
-}
-
-
-/// Trigonometric coefficients (scaled by 10⁻⁸ au d⁻¹) that multiply the
-/// sine and cosine of the argument for each Cartesian component.
-#[derive(Copy, Clone, Debug)]
-struct Xyz {
-    pub sin1: i32,
-    pub sin2: i32,
-    pub cos1: i32,
-    pub cos2: i32,
-}
-
-/// Compute the heliocentric velocity components of the Earth.
-///
-/// The components are evaluated using the 36‑term Ron–Vondrák series.  The
-/// returned vector is expressed in the true equator and equinox of date
-/// and is scaled by **10⁻⁸ au d⁻¹** to preserve integer precision in the
-/// tabulated coefficients.
-///
-/// * `t` – Julian centuries of Terrestrial Time (TT) measured from
-///   *J2000.0* (i.e. JD 2451545.0 TT).
-#[must_use]
-fn heliocentric_velocity_components(t: f64) -> Position<Geocentric, Equatorial> {
-    let mut vx = 0.0;
-    let mut vy = 0.0;
-    let mut vz = 0.0;
-
-    let l2 = (3.176_146_7 + 1_021.328_554_6 * t).rem_euclid(TAU);
-    let l3 = (1.753_470_3 +   628.307_584_9 * t).rem_euclid(TAU);
-    let l4 = (6.203_480_9 +   334.061_243_1 * t).rem_euclid(TAU);
-    let l5 = (0.599_546_4 +    52.969_096_5 * t).rem_euclid(TAU);
-    let l6 = (0.874_016_8 +    21.329_909_095 * t).rem_euclid(TAU);
-    let l7 = (5.481_293_9 +     7.478_159_9 * t).rem_euclid(TAU);
-    let l8 = (5.311_886_3 +     3.813_303_6 * t).rem_euclid(TAU);
-    let ll = (3.810_344_4 + 8_399.684_733_7 * t).rem_euclid(TAU);
-    let  d = (5.198_466_7 + 7_771.377_148_6 * t).rem_euclid(TAU);
-    let mm = (2.355_555_9 + 8_328.691_428_9 * t).rem_euclid(TAU);
-    let  f = (1.627_905_2 + 8_433.466_160_1 * t).rem_euclid(TAU);
-
-    for i in 0..TERMS {
-        let arg =
-              ARGUMENTS[i].a_l2 as f64 * l2
-            + ARGUMENTS[i].a_l3 as f64 * l3
-            + ARGUMENTS[i].a_l4 as f64 * l4
-            + ARGUMENTS[i].a_l5 as f64 * l5
-            + ARGUMENTS[i].a_l6 as f64 * l6
-            + ARGUMENTS[i].a_l7 as f64 * l7
-            + ARGUMENTS[i].a_l8 as f64 * l8
-            + ARGUMENTS[i].a_ll as f64 * ll
-            + ARGUMENTS[i].a_d  as f64 *  d
-            + ARGUMENTS[i].a_mm as f64 * mm
-            + ARGUMENTS[i].a_f  as f64 *  f;
-
-        let (s, c) = arg.sin_cos();
-
-        vx += (X_COEFFICIENTS[i].sin1 as f64 + X_COEFFICIENTS[i].sin2 as f64 * t) * s
-            + (X_COEFFICIENTS[i].cos1 as f64 + X_COEFFICIENTS[i].cos2 as f64 * t) * c;
-        vy += (Y_COEFFICIENTS[i].sin1 as f64 + Y_COEFFICIENTS[i].sin2 as f64 * t) * s
-            + (Y_COEFFICIENTS[i].cos1 as f64 + Y_COEFFICIENTS[i].cos2 as f64 * t) * c;
-        vz += (Z_COEFFICIENTS[i].sin1 as f64 + Z_COEFFICIENTS[i].sin2 as f64 * t) * s
-            + (Z_COEFFICIENTS[i].cos1 as f64 + Z_COEFFICIENTS[i].cos2 as f64 * t) * c;
-    }
-    Position::new(vx, vy, vz)
-}
+const AU_PER_DAY_C: f64 = 173.144_632_674;
 
 /// Apply **annual aberration** to a unit direction vector.
 ///
@@ -167,18 +76,14 @@ pub fn apply_aberration_to_direction(
     jd:   JulianDay,
 ) -> Direction<Geocentric, Equatorial> {
 
-    let t = jd.julian_centuries().value();
-
-    //--------------------------------------------------------------------
-    // 1. Heliocentric velocity components  (10⁻⁸ au d⁻¹)
-    //--------------------------------------------------------------------
-    let velocity = heliocentric_velocity_components(t);
+    let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
+    // TODO: Rotate Ecliptic to Equatorial frame!
 
     //--------------------------------------------------------------------
     // 2. Apply û' = û + v/c
     //--------------------------------------------------------------------
     Position::from_vec3(
-        mean.as_vec3() + velocity.as_vec3() / C_10E8
+        mean.as_vec3() + velocity / AU_PER_DAY_C
     ).direction()
 }
 
@@ -191,18 +96,14 @@ pub fn remove_aberration_from_direction(
     jd:  JulianDay,
 ) -> Direction<Geocentric, Equatorial> {
 
-    let t  = jd.julian_centuries().value();
-
-    //--------------------------------------------------------------------
-    // 1. Heliocentric velocity components  (10⁻⁸ au d⁻¹)
-    //--------------------------------------------------------------------
-    let velocity = heliocentric_velocity_components(t);
+    let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
+    // TODO: Rotate Ecliptic to Equatorial frame!
 
     //--------------------------------------------------------------------
     // 2.û' = û - v/c
     //--------------------------------------------------------------------
     Position::from_vec3(
-        app.as_vec3() - velocity.as_vec3() / C_10E8
+        app.as_vec3() - velocity / AU_PER_DAY_C
     ).direction()
 }
 
@@ -245,165 +146,6 @@ pub fn remove_aberration(
         jd,
     ).position(app.distance())
 }
-
-
-const ARGUMENTS: [Arg; TERMS] = [
-    Arg { a_l2: 0, a_l3: 1, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 2, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 1, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 1, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 3, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 1, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 1 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 1, a_d: 0, a_mm: 1, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 2, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 2, a_l4: 0, a_l5: -1, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 3, a_l4: -8, a_l5: 3, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 5, a_l4: -8, a_l5: 3, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 2, a_l3: -1, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 1, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 1, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 1, a_l4: 0, a_l5: -2, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 1, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 1, a_l4: 0, a_l5: 1, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 2, a_l3: -2, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 1, a_l4: 0, a_l5: -1, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 4, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 3, a_l4: 0, a_l5: -2, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 1, a_l3: -2, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 2, a_l3: -3, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 2, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 2, a_l3: 4, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 3, a_l4: -2, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 1, a_d: 2, a_mm: -1, a_f: 0 },
-    Arg { a_l2: 8, a_l3: 12, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 8, a_l3: 14, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 2, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 3, a_l3: 4, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 2, a_l4: 0, a_l5: -2, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 3, a_l3: -3, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 2, a_l4: -2, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 0, a_d: 0, a_mm: 0, a_f: 0 },
-    Arg { a_l2: 0, a_l3: 0, a_l4: 0, a_l5: 0, a_l6: 0, a_l7: 0, a_l8: 0, a_ll: 1, a_d: -2, a_mm: 0, a_f: 0 }
-];
-
-const X_COEFFICIENTS: [Xyz; TERMS] = [
-    Xyz { sin1: -1719914, sin2: -2, cos1: -25, cos2: 0 },
-    Xyz { sin1: 6434, sin2: 141, cos1: 28007, cos2: -107 },
-    Xyz { sin1: 715, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 715, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 486, sin2: -5, cos1: -236, cos2: -4 },
-    Xyz { sin1: 159, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 39, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 33, sin2: 0, cos1: -10, cos2: 0 },
-    Xyz { sin1: 31, sin2: 0, cos1: 1, cos2: 0 },
-    Xyz { sin1: 8, sin2: 0, cos1: -28, cos2: 0 },
-    Xyz { sin1: 8, sin2: 0, cos1: -28, cos2: 0 },
-    Xyz { sin1: 21, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: -19, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 17, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 16, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 16, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 11, sin2: 0, cos1: -1, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -11, cos2: 0 },
-    Xyz { sin1: -11, sin2: 0, cos1: -2, cos2: 0 },
-    Xyz { sin1: -7, sin2: 0, cos1: -8, cos2: 0 },
-    Xyz { sin1: -10, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: -9, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: -9, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -9, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -9, cos2: 0 },
-    Xyz { sin1: 8, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 8, sin2: 0, cos1: 0, cos2: 0 }, 
-    Xyz { sin1: -4, sin2: 0, cos1: -7, cos2: 0 },
-    Xyz { sin1: -4, sin2: 0, cos1: -7, cos2: 0 },
-    Xyz { sin1: -6, sin2: 0, cos1: -5, cos2: 0 },
-    Xyz { sin1: -1, sin2: 0, cos1: -1, cos2: 0 },
-    Xyz { sin1: 4, sin2: 0, cos1: -6, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -7, cos2: 0 },
-    Xyz { sin1: 5, sin2: 0, cos1: -5, cos2: 0 },
-    Xyz { sin1: 5, sin2: 0, cos1: 0, cos2: 0 }
-];
-
-const Y_COEFFICIENTS: [Xyz; TERMS] = [
-    Xyz { sin1: 25, sin2: -13, cos1: 1578089, cos2: 156 },
-    Xyz { sin1: 25697, sin2: -95, cos1: -5904, cos2: -130 },
-    Xyz { sin1: 6, sin2: 0, cos1: -657, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -656, cos2: 0 },
-    Xyz { sin1: -216, sin2: -4, cos1: -446, cos2: 5 },
-    Xyz { sin1: 2, sin2: 0, cos1: -147, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: 26, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -36, cos2: 0 },
-    Xyz { sin1: -9, sin2: 0, cos1: -30, cos2: 0 },
-    Xyz { sin1: 1, sin2: 0, cos1: -28, cos2: 0 },
-    Xyz { sin1: 25, sin2: 0, cos1: 8, cos2: 0 },
-    Xyz { sin1: -25, sin2: 0, cos1: -8, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -19, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: 17, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -16, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: 15, cos2: 0 },
-    Xyz { sin1: 1, sin2: 0, cos1: -15, cos2: 0 },
-    Xyz { sin1: -1, sin2: 0, cos1: -10, cos2: 0 },
-    Xyz { sin1: -10, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: -2, sin2: 0, cos1: 9, cos2: 0 },
-    Xyz { sin1: -8, sin2: 0, cos1: 6, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: 9, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -9, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -8, cos2: 0 },
-    Xyz { sin1: -8, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 8, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -8, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -7, cos2: 0 },
-    Xyz { sin1: -6, sin2: 0, cos1: -4, cos2: 0 },
-    Xyz { sin1: 6, sin2: 0, cos1: -4, cos2: 0 },
-    Xyz { sin1: -4, sin2: 0, cos1: 5, cos2: 0 },
-    Xyz { sin1: -2, sin2: 0, cos1: -7, cos2: 0 },
-    Xyz { sin1: -5, sin2: 0, cos1: -4, cos2: 0 },
-    Xyz { sin1: -6, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: -4, sin2: 0, cos1: -5, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -5, cos2: 0 }
-];
-
-const Z_COEFFICIENTS: [Xyz; TERMS] = [
-    Xyz { sin1: 10, sin2: 32, cos1: 684185, cos2: -358 },
-    Xyz { sin1: 11141, sin2: -48, cos1: -2559, cos2: -55 },
-    Xyz { sin1: -15, sin2: 0, cos1: -282, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -285, cos2: 0 },
-    Xyz { sin1: -94, sin2: 0, cos1: -193, cos2: 0 },
-    Xyz { sin1: -6, sin2: 0, cos1: -61, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: 59, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: 16, cos2: 0 },
-    Xyz { sin1: -5, sin2: 0, cos1: -13, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -12, cos2: 0 },
-    Xyz { sin1: 11, sin2: 0, cos1: 3, cos2: 0 },
-    Xyz { sin1: -11, sin2: 0, cos1: -3, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -8, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: 8, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -7, cos2: 0 },
-    Xyz { sin1: 1, sin2: 0, cos1: 7, cos2: 0 },
-    Xyz { sin1: -3, sin2: 0, cos1: -6, cos2: 0 },
-    Xyz { sin1: -1, sin2: 0, cos1: 5, cos2: 0 },
-    Xyz { sin1: -4, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: -1, sin2: 0, cos1: 4, cos2: 0 },
-    Xyz { sin1: -3, sin2: 0, cos1: 3, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: 4, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -4, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -4, cos2: 0 },
-    Xyz { sin1: -3, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 3, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -3, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -3, cos2: 0 },
-    Xyz { sin1: -3, sin2: 0, cos1: 2, cos2: 0 },
-    Xyz { sin1: 3, sin2: 0, cos1: -2, cos2: 0 },
-    Xyz { sin1: -2, sin2: 0, cos1: 2, cos2: 0 },
-    Xyz { sin1: 1, sin2: 0, cos1: -4, cos2: 0 },
-    Xyz { sin1: -2, sin2: 0, cos1: -2, cos2: 0 },
-    Xyz { sin1: -3, sin2: 0, cos1: 0, cos2: 0 },
-    Xyz { sin1: -2, sin2: 0, cos1: -2, cos2: 0 },
-    Xyz { sin1: 0, sin2: 0, cos1: -2, cos2: 0 }
-];
-
-
 
 #[cfg(test)]
 mod tests {
