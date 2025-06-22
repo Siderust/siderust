@@ -37,7 +37,7 @@
 //! ## References
 //!
 //! - Bretagnon, P., & Francou, G. (1988). "VSOP87: Theory of the motions of the five major planets". Astronomy and Astrophysics, 202, 309-315.
-//! - [IMCCE VSOP87 Resources](https://www.imcce.fr/inpop/ephemerides/vsop87/)
+//! - [IMCCE VSOP87 Resources](https://www.imcce.fr/inpop/ephemerides/vsop87/): ftp://ftp.imcce.fr/pub/ephem/planets/vsop87/
 //! - Meeus, J. (1998). "Astronomical Algorithms", 2nd Edition. Willmann-Bell, Inc.
 //!
 //! ## Module Structure
