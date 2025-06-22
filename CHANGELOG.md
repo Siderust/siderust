@@ -7,25 +7,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- Coordinate macro checkers
-- spherical::Direction, cartesian::Direction
-- build scripts to fetch vsop87 coeffs and auto-generate static rust arrays
-- Converstion functions from/to Position/Direction
-- apply_aberration_to_direction / remove_aberration_from_direction
+- Coordinate macro checkers.
+- spherical::Direction, cartesian::Direction.
+- build scripts to fetch vsop87 coeffs and auto-generate static rust arrays.
+- Converstion functions from/to Position/Direction.
+- apply_aberration_to_direction / remove_aberration_from_direction.
 
 
 ### Changed
 - Geogreaphic constructor order.
-- Refactor radial_distance -> distance
-- Refactor distance_from_origin() -> distance()
-- SphericalCoord -> spherical::Position
-- CartesianCoord -> cartesian::Position
+- Refactor radial_distance -> distance.
+- Refactor distance_from_origin() -> distance().
+- SphericalCoord -> spherical::Position.
+- CartesianCoord -> cartesian::Position.
+- Compute Aberration using VSOP87 earth velocity.
 
 ### Deprecated
 
 ### Removed
-- SphericalBuilder
-- Hardcoded vsop coefficients
+- SphericalBuilder.
+- Hardcoded vsop coefficients.
+- Ron–Vondrák velocity series.
 
 ### Fixed
 
