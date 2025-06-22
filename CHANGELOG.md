@@ -9,9 +9,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Coordinate macro checkers.
 - spherical::Direction, cartesian::Direction.
-- build scripts to fetch vsop87 coeffs and auto-generate static rust arrays.
+- build scripts to fetch VSOP87 coeffs and auto-generate static rust arrays.
 - Converstion functions from/to Position/Direction.
 - apply_aberration_to_direction / remove_aberration_from_direction.
+- Compute VSOP87 velocity
 
 
 ### Changed
@@ -44,6 +45,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.1.0]
 
 ### Added
-- Initial commit
+- Initial commit.
 - Target, Coordinates, Astro, Calculus, Observatories and Units modules.
-- AGPL-3 license
+- AGPL-3 license.
