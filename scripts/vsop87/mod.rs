@@ -50,10 +50,12 @@ use std::{
     collections::BTreeMap,
     env,
     path::PathBuf,
+    path::Path,
 };
 
 use anyhow::Context;
 
+mod fetch;
 mod collect;
 mod codegen;
 mod io;
@@ -80,29 +82,25 @@ type PlanetMap  = BTreeMap<String, CoordMap>;
 /// version → PlanetMap
 type VersionMap = BTreeMap<char, PlanetMap>;
 
-// ===========================================================================
-// Public API – the single entry for build.rs
-// ===========================================================================
-
-/// Assemble the **entire** VSOP87 build pipeline.
+/// Runs the complete VSOP87 build pipeline.
 ///
-/// 1. **Tell Cargo** to rerun if anything under `data_dir` changes.
-/// 2. **Locate** `OUT_DIR` (where build scripts must emit artefacts).
-/// 3. **collect → codegen → io** pipeline.
+/// Steps:
+/// 1. Ensures the dataset exists in `data_dir` (downloads it if missing).
+/// 2. Instructs Cargo to rerun the build script if anything under `data_dir` changes.
+/// 3. Locates `OUT_DIR` (the directory where build artifacts must be emitted).
+/// 4. Parses all VSOP87 data files and builds the in-memory `VersionMap`.
+/// 5. Generates Rust source code from the parsed data.
+/// 6. Writes the generated code to files in `OUT_DIR`.
 ///
 /// # Errors
-/// Propagates any I/O or parsing failure wrapped in `anyhow::Error`.
-pub fn run(data_dir: &str) -> anyhow::Result<()> {
-    // 1) Watch data directory for changes so Cargo triggers a rebuild.
-    let data_dir = PathBuf::from(data_dir);
-    println!("cargo:rerun-if-changed={}", data_dir.display());
-
-    // 2) Resolve OUT_DIR – provided by Cargo at build‑time.
+/// Returns any I/O or parsing error wrapped in `anyhow::Error`.
+pub fn run(data_dir: &Path) -> anyhow::Result<()> {
     let out_dir = PathBuf::from(
         env::var("OUT_DIR").context("OUT_DIR not set (missing Cargo build context)")?,
     );
 
-    // 3) Pipeline: parse → generate code → write files.
+    // Pipeline: fetch → parse → generate code → write files.
+    fetch::ensure_dataset(&data_dir)?;
     let versions = collect::collect_terms(&data_dir)?;
     let modules  = codegen::generate_modules(&versions)?;
     io::write_modules(&modules, &out_dir)?;
