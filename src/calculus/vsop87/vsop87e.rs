@@ -1,8 +1,11 @@
+use super::*;
 use crate::bodies::solar_system::*;
-use crate::calculus::vsop87::position;
-use crate::coordinates::{cartesian::Position, centers::Barycentric, frames::Ecliptic};
 use crate::targets::Target;
 use crate::units::JulianDay;
+use crate::coordinates::{
+    cartesian::{Position, Velocity},
+    centers::Barycentric, frames::Ecliptic
+};
 include!(concat!(env!("OUT_DIR"), "/vsop87e.rs"));
 
 macro_rules! impl_vsop87e {
@@ -24,6 +27,26 @@ macro_rules! impl_vsop87e {
                     Position::<Barycentric, Ecliptic>::new(x, y, z),
                     jd,
                 )
+            }
+
+            pub fn vsop87e_vel(jd: JulianDay) -> Velocity<Barycentric, Ecliptic> {
+                let (vx, vy, vz) = velocity(
+                    jd,
+                    &[$( &$x ),+],
+                    &[$( &$y ),+],
+                    &[$( &$z ),+]
+                );
+                Velocity::new(vx, vy, vz)
+            }
+
+            pub fn vsop87e_pos_vel(jd: JulianDay) -> (Target<Position<Barycentric, Ecliptic>>, Velocity<Barycentric, Ecliptic>) {
+                let ((x, y, z), (vx, vy, vz)) = position_velocity(
+                    jd,
+                    &[$( &$x ),+],
+                    &[$( &$y ),+],
+                    &[$( &$z ),+]
+                );
+                (Target::new_static(Position::new(x, y, z), jd,), Velocity::new(vx, vy, vz))
             }
         }
     };

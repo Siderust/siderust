@@ -1,8 +1,8 @@
+use super::*;
 use crate::bodies::solar_system::Moon;
 use crate::units::JulianDay;
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
-use crate::calculus::vsop87::*;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Heliocentric, frames::Ecliptic
@@ -41,17 +41,14 @@ macro_rules! impl_vsop87a {
                 Velocity::new(vx, vy, vz)
             }
 
-            pub fn vsop87a_pos_vel(jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic>> {
-                let ((x, y, z), (_vx, _vy, _vz)) = position_velocity(
+            pub fn vsop87a_pos_vel(jd: JulianDay) -> (Target<Position<Heliocentric, Ecliptic>>, Velocity<Heliocentric, Ecliptic>) {
+                let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
                     &[$( &$x ),+],
                     &[$( &$y ),+],
                     &[$( &$z ),+]
                 );
-                Target::new_static(
-                    Position::<Heliocentric, Ecliptic>::new(x, y, z),
-                    jd,
-                )
+                (Target::new_static(Position::new(x, y, z), jd,), Velocity::new(vx, vy, vz))
             }
         }
     };
