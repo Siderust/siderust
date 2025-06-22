@@ -3,9 +3,9 @@ use crate::coordinates::{
     kinds::DirectionKind,
 };
 
-use super::CartesianCoord;
+use super::Vector;
 
-pub type Direction<C, F> = CartesianCoord<C, F, DirectionKind>;
+pub type Direction<C, F> = Vector<C, F, DirectionKind>;
 
 impl<C, F> Direction<C, F>
 where

@@ -1,5 +1,5 @@
 use crate::coordinates::{
-    cartesian::CartesianCoord,
+    cartesian::Vector,
     centers::ReferenceCenter,
     kinds::Kind,
     frames
@@ -9,8 +9,8 @@ use crate::coordinates::transform::Transform;
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
-impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Equatorial, K>> for CartesianCoord<C, frames::Ecliptic, K> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Equatorial, K> {
+impl<C: ReferenceCenter, K: Kind> Transform<Vector<C, frames::Equatorial, K>> for Vector<C, frames::Ecliptic, K> {
+    fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Equatorial, K> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
@@ -18,14 +18,14 @@ impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Equatorial
         let y_eq = cos_e * self.y() - sin_e * self.z();
         let z_eq = sin_e * self.y() + cos_e * self.z();
 
-        CartesianCoord::new(x_eq, y_eq, z_eq)
+        Vector::new(x_eq, y_eq, z_eq)
     }
 }
 
 // Implement Transform trait for ICRS -> Equatorial (identity)
-impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Equatorial, K>> for CartesianCoord<C, frames::ICRS, K> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Equatorial, K> {
-        CartesianCoord::new(self.x(), self.y(), self.z())
+impl<C: ReferenceCenter, K: Kind> Transform<Vector<C, frames::Equatorial, K>> for Vector<C, frames::ICRS, K> {
+    fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Equatorial, K> {
+        Vector::new(self.x(), self.y(), self.z())
     }
 }
 

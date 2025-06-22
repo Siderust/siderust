@@ -1,6 +1,6 @@
 //! # Cartesian Coordinates
 //!
-//! This module defines the generic [`CartesianCoord<C, F, K>`] type for representing 3D positions or directions
+//! This module defines the generic [`Vector<C, F, K>`] type for representing 3D positions or directions
 //! in astronomical reference frames and centers, with strong compile-time type safety.
 //!
 //! ## Overview
@@ -16,19 +16,19 @@
 //!
 //! ## Example
 //! ```rust
-//! use siderust::coordinates::cartesian::CartesianCoord;
+//! use siderust::coordinates::cartesian::Vector;
 //! use siderust::coordinates::centers::Heliocentric;
 //! use siderust::coordinates::frames::Ecliptic;
 //! use siderust::coordinates::kinds::PositionKind;
 //!
 //! // Create a heliocentric ecliptic position
-//! let pos = CartesianCoord::<Heliocentric, Ecliptic, PositionKind>::new(1.0, 0.0, 0.0);
+//! let pos = Vector::<Heliocentric, Ecliptic, PositionKind>::new(1.0, 0.0, 0.0);
 //! println!("X: {}, Y: {}, Z: {}", pos.x(), pos.y(), pos.z());
 //! ```
 //!
 //! ## Type Aliases
 //! You may define type aliases for common systems, e.g.,
-//! `type HeliocentricEcliptic = CartesianCoord<Heliocentric, Ecliptic, PositionKind>;`
+//! `type HeliocentricEcliptic = Vector<Heliocentric, Ecliptic, PositionKind>;`
 
 use crate::coordinates::{
     frames, centers,
@@ -46,7 +46,7 @@ use std::ops::{Add, Sub, Div, Mul};
 /// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`).
 /// - `K`: The kind marker (`Position`, `Direction`).
 #[derive(Debug, Clone, Copy)]
-pub struct CartesianCoord<
+pub struct Vector<
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
     K : Kind
@@ -58,7 +58,7 @@ pub struct CartesianCoord<
     _kind  : PhantomData<K>,
 }
 
-impl<C, F, K> CartesianCoord<C, F, K>
+impl<C, F, K> Vector<C, F, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
@@ -73,7 +73,7 @@ where
     /// - `t`: The time coordinate (e.g., Julian Date).
     ///
     /// # Returns
-    /// A new `CartesianCoord<Center, Frame>`.
+    /// A new `Vector<Center, Frame>`.
     pub fn new(x: f64, y: f64, z: f64) -> Self {
         // El inliner eliminará por completo la llamada para PositionKind
         K::validate(x, y, z);
@@ -81,7 +81,7 @@ where
     }
 
     pub const fn from_vec3(vec3: Vector3<f64>) -> Self {
-        CartesianCoord { xyz: vec3, _center: PhantomData, _frame: PhantomData, _kind : PhantomData }
+        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData, _kind : PhantomData }
     }
 
     pub const fn as_vec3(&self) -> Vector3<f64> { self.xyz }
@@ -104,7 +104,7 @@ where
     }
 }
 
-impl<C, F, K> std::fmt::Display for CartesianCoord<C, F, K>
+impl<C, F, K> std::fmt::Display for Vector<C, F, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
@@ -122,7 +122,7 @@ where
 }
 
 
-impl<C, F, K> Add for CartesianCoord<C, F, K>
+impl<C, F, K> Add for Vector<C, F, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
@@ -135,7 +135,7 @@ where
     }
 }
 
-impl<C, F, K> Sub for CartesianCoord<C, F, K>
+impl<C, F, K> Sub for Vector<C, F, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
@@ -148,7 +148,7 @@ where
     }
 }
 
-impl<C, F, K> Div<f64> for CartesianCoord<C, F, K>
+impl<C, F, K> Div<f64> for Vector<C, F, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
@@ -161,7 +161,7 @@ where
     }
 }
 
-impl<C, F, K> Mul<f64> for CartesianCoord<C, F, K>
+impl<C, F, K> Mul<f64> for Vector<C, F, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,

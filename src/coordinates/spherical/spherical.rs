@@ -11,7 +11,7 @@
 //!   - `K`: Kind marker (`PositionKind`, `DirectionKind`), enforcing semantic correctness.
 //! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
 //! - **Units:** Angles are stored as [`Degrees`]; distance is optional and typically in AU or parsecs (see context).
-//! - **Conversions:** Seamless conversion to and from [`CartesianCoord`] via `From`/`Into`.
+//! - **Conversions:** Seamless conversion to and from [`Vector`] via `From`/`Into`.
 //! - **Operations:** Compute Euclidean distance and angular separation between coordinates.
 //!
 //! ## Example
@@ -71,7 +71,7 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
     K: Kind,
-    cartesian::CartesianCoord<C, F, K>: for<'a> From<&'a Self>,
+    cartesian::Vector<C, F, K>: for<'a> From<&'a Self>,
 {
 
     /// Creates a new spherical coordinate from angle types and optional distance.
