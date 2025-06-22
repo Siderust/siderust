@@ -9,6 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Coordinate macro checkers
 - spherical::Direction, cartesian::Direction
+- build scripts to fetch vsop87 coeffs and auto-generate static rust arrays
 
 ### Changed
 - Geogreaphic constructor order.
@@ -20,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 - SphericalBuilder
+- Hardcoded vsop coefficients
 
 ### Fixed
 
