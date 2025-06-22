@@ -25,7 +25,7 @@ where
     F: ReferenceFrame,
 {
     fn from(cart: &cartesian::Position<C, F>) -> Self {
-        let r = cart.distance_from_origin();
+        let r = cart.distance();
         if r == 0.0 {
             return Self::CENTER;
         }
@@ -43,7 +43,7 @@ where
 {
     fn from(cart: &cartesian::Direction<C, F>) -> Self {
         debug_assert!(
-            (cart.distance_from_origin() - 1.0).abs() < 1e-12,
+            (cart.distance() - 1.0).abs() < 1e-12,
             "A CartesianCoord<…, DirectionKind> must have a magnitude ≈ 1.0"
         );
 

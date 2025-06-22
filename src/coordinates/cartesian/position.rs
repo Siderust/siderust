@@ -1,6 +1,5 @@
 use crate::coordinates::{
-    frames, centers,
-    kinds::PositionKind,
+    cartesian::Direction, centers, frames, kinds::PositionKind
 };
 
 use super::CartesianCoord;
@@ -16,14 +15,18 @@ where
     ///
     /// # Returns
     /// The distance from the ReferenceCenter in AU.
-    pub fn distance_from_origin(&self) -> f64 {
+    pub fn distance(&self) -> f64 {
         (self.x().powi(2) + self.y().powi(2) + self.z().powi(2)).sqrt()
     }
 
     pub fn normalize(&self) -> Self {
-        let r = self.distance_from_origin();
-        Self::new(self.x() / r, self.y() / r, self.z() / r)
+        Self::from_vec3(self.as_vec3().normalize())
     }
+
+    pub fn direction(&self) -> super::Direction<C, F> {
+        Direction::from_vec3(self.as_vec3().normalize())
+    }
+
 }
 
 // === ICRS-based Cartesian coordinate types ===
