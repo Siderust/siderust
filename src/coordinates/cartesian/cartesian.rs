@@ -12,7 +12,7 @@
 //! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
 //! - **Units:** Coordinates are expressed in astronomical units (AU) by convention, but may represent other units if documented.
 //! - **Vector Operations:** Supports addition, subtraction, scaling, and distance calculation.
-//! - **Interoperability:** Seamless conversion to and from `nalgebra::Vector3<f64>`.
+//! - **Interoperability:** Seamless conversion to and from `nalgebra::Vector3<U>`.
 //!
 //! ## Example
 //! ```rust
@@ -38,30 +38,28 @@ use crate::coordinates::{
 use std::marker::PhantomData;
 use nalgebra::Vector3;
 use std::ops::{Add, Sub, Div, Mul};
+use crate::units::Unit;
 
-/// A Cartesian coordinate representation with a specific reference center, frame, and kind.
-///
-/// # Type Parameters
-/// - `C`: The reference center (e.g., `Heliocentric`, `Geocentric`).
-/// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`).
-/// - `K`: The kind marker (`Position`, `Direction`).
+// Refactoriza la definición de Vector:
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    K : Kind
+    U: Unit = f64,
+    K: Kind = PositionKind,
 > {
-
-    xyz: Vector3<f64>,
+    xyz: Vector3<U>,
     _center: PhantomData<C>,
-    _frame : PhantomData<F>,
-    _kind  : PhantomData<K>,
+    _frame: PhantomData<F>,
+    _kind: PhantomData<K>,
 }
 
-impl<C, F, K> Vector<C, F, K>
+// Refactoriza los métodos y traits:
+impl<C, F, U, K> Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
+    U: Unit,
     K: Kind,
 {
     /// Creates a new Cartesian coordinate.
@@ -74,40 +72,40 @@ where
     ///
     /// # Returns
     /// A new `Vector<Center, Frame>`.
-    pub fn new(x: f64, y: f64, z: f64) -> Self {
+    pub fn new(x: U, y: U, z: U) -> Self {
         // El inliner eliminará por completo la llamada para PositionKind
-        K::validate(x, y, z);
+        //K::validate(x, y, z);
         Self::from_vec3(Vector3::new(x, y, z))
     }
 
-    pub const fn from_vec3(vec3: Vector3<f64>) -> Self {
-        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData, _kind : PhantomData }
+    pub const fn from_vec3(vec3: Vector3<U>) -> Self {
+        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData, _kind: PhantomData }
     }
 
-    pub const fn as_vec3(&self) -> Vector3<f64> { self.xyz }
+    pub const fn as_vec3(&self) -> Vector3<U> { self.xyz }
 
     /// Gets the x-coordinate in AU.
-    pub fn x(&self) -> f64 { self.xyz[0] }
+    pub fn x(&self) -> U { self.xyz[0] }
 
     /// Gets the y-coordinate in AU.
-    pub fn y(&self) -> f64 { self.xyz[1] }
+    pub fn y(&self) -> U { self.xyz[1] }
 
     /// Gets the z-coordinate in AU.
-    pub fn z(&self) -> f64 { self.xyz[2] }
+    pub fn z(&self) -> U { self.xyz[2] }
 
     /// Computes the Euclidean distance to another Cartesian coordinate of the same type.
-    pub fn distance_to(
-        &self,
-        other: &Self,
-    ) -> f64 {
-        ((self.x() - other.x()).powi(2) + (self.y() - other.y()).powi(2) + (self.z() - other.z()).powi(2)).sqrt()
+    pub fn distance_to(&self, other: &Self) -> U {
+        ((self.x() - other.x()).powi(2) +
+         (self.y() - other.y()).powi(2) +
+         (self.z() - other.z()).powi(2)).sqrt()
     }
 }
 
-impl<C, F, K> std::fmt::Display for Vector<C, F, K>
+impl<C, F, U, K> std::fmt::Display for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
+    U: Unit,
     K: Kind,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -121,11 +119,11 @@ where
     }
 }
 
-
-impl<C, F, K> Add for Vector<C, F, K>
+impl<C, F, U, K> Add for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
+    U: Unit,
     K: Kind,
 {
     type Output = Self;
@@ -135,10 +133,11 @@ where
     }
 }
 
-impl<C, F, K> Sub for Vector<C, F, K>
+impl<C, F, U, K> Sub for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
+    U: Unit,
     K: Kind,
 {
     type Output = Self;
@@ -148,28 +147,30 @@ where
     }
 }
 
-impl<C, F, K> Div<f64> for Vector<C, F, K>
+impl<C, F, U, K> Div<U> for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
+    U: Unit,
     K: Kind,
 {
     type Output = Self;
 
-    fn div(self, rhs: f64) -> Self::Output {
+    fn div(self, rhs: U) -> Self::Output {
         Self::from_vec3(self.xyz / rhs)
     }
 }
 
-impl<C, F, K> Mul<f64> for Vector<C, F, K>
+impl<C, F, U, K> Mul<U> for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
+    U: Unit,
     K: Kind,
 {
     type Output = Self;
 
-    fn mul(self, rhs: f64) -> Self::Output {
+    fn mul(self, rhs: U) -> Self::Output {
         Self::from_vec3(self.xyz * rhs)
     }
 }

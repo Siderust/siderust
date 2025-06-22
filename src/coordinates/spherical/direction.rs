@@ -45,16 +45,18 @@ use crate::coordinates::{
     frames::ReferenceFrame,
     kinds::DirectionKind
 };
+use crate::units::Unit;
 
-pub type Direction<C, F> = SphericalCoord<C, F, DirectionKind>;
+pub type Direction<C, F, U=f64> = SphericalCoord<C, F, U, DirectionKind>;
 
-impl<C, F> Direction<C, F>
+impl<C, F, U> Direction<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
 {
-    pub fn position(&self, magnitude: f64) -> super::Position<C, F> {
-        super::Position::new_spherical_coord(self.polar, self.azimuth, Some(magnitude))
+    pub fn position(&self, magnitude: U) -> super::Position<C, F, U> {
+        Self::new_spherical_coord(self.polar, self.azimuth, Some(magnitude))
     }
 }
 

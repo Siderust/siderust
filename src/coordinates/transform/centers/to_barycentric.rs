@@ -1,4 +1,4 @@
-use crate::units::JulianDay;
+use crate::units::{JulianDay, Unit};
 use crate::bodies::solar_system::{Sun, Earth};
 use crate::coordinates::{
     frames::{MutableFrame, Ecliptic, Equatorial},
@@ -8,26 +8,26 @@ use crate::coordinates::{
 use crate::coordinates::transform::Transform;
 use crate::astro::aberration::remove_aberration;
 
-pub fn heliocentric_to_barycentric<F: MutableFrame>(
-    helio_f: &Position<Heliocentric, F>,
+pub fn heliocentric_to_barycentric<F: MutableFrame, U: Unit>(
+    helio_f: &Position<Heliocentric, F, U>,
     jd: JulianDay
-) -> Position<Barycentric, F>
+) -> Position<Barycentric, F, U>
 where
-    for<'a> Position<Barycentric, F>: From<&'a Position<Barycentric, Ecliptic>>,
+    for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Ecliptic, U>>,
 {
-    let& sun_bary_ecl = Sun::vsop87e(jd).get_position();
-    let sun_bary_f = Position::<Barycentric, F>::from(&sun_bary_ecl);
+    let sun_bary_ecl = Sun::vsop87e(jd).get_position();
+    let sun_bary_f = Position::<Barycentric, F>::from(sun_bary_ecl);
     Position::from_vec3(helio_f.as_vec3() + sun_bary_f.as_vec3())
 }
 
-pub fn geocentric_to_barycentric<F: MutableFrame>(
-    geo: &Position<Geocentric, F>,
+pub fn geocentric_to_barycentric<F: MutableFrame, U: Unit>(
+    geo: &Position<Geocentric, F, U>,
     jd: JulianDay
-) -> Position<Barycentric, F>
+) -> Position<Barycentric, F, U>
 where
-    for<'a> Position<Barycentric, Equatorial>: From<&'a Position<Barycentric, Ecliptic>>, // Required by VSOP
-    for<'a> Position<Geocentric, Equatorial>: From<&'a Position<Geocentric, F>>,   // Required by Aberration
-    for<'a> Position<Barycentric, F>: From<&'a Position<Barycentric, Equatorial>>, // Required by Aberration
+    for<'a> Position<Barycentric, Equatorial, U>: From<&'a Position<Barycentric, Ecliptic, U>>, // Required by VSOP
+    for<'a> Position<Geocentric, Equatorial, U>: From<&'a Position<Geocentric, F, U>>,   // Required by Aberration
+    for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Equatorial, U>>, // Required by Aberration
 {
     let earth_bary_ecl = Earth::vsop87e(jd).get_position().clone();
     let earth_bary_equ = Position::<Barycentric, Equatorial>::from(&earth_bary_ecl); // (Bary-Ecl) -> (Bary-Equ)
@@ -35,31 +35,29 @@ where
     let target_geo_equ  = Position::<Geocentric, Equatorial>::from(geo); // (Geo-F) -> (Geo-Equ)
     let target_geo_equ_no_aberration = remove_aberration(target_geo_equ, jd);
 
-    let bary_equ = Position::<Barycentric, Equatorial>::from_vec3(target_geo_equ_no_aberration.as_vec3() + earth_bary_equ.as_vec3()); // Geocentric -> Barycentric
-    Position::<Barycentric, F>::from(&bary_equ) // Equatorial -> F
+    let bary_equ = Position::<Barycentric, Equatorial, U>::from_vec3(target_geo_equ_no_aberration.as_vec3() + earth_bary_equ.as_vec3()); // Geocentric -> Barycentric
+    Position::<Barycentric, F, U>::from(&bary_equ) // Equatorial -> F
 }
 
-
-impl<F: MutableFrame> Transform<Position<Barycentric, F>> for Position<Heliocentric, F>
+impl<F: MutableFrame, U: Unit> Transform<Position<Barycentric, F, U>> for Position<Heliocentric, F, U>
 where
-    for<'a> Position<Barycentric, F>: From<&'a Position<Barycentric, Ecliptic>>,
+    for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Ecliptic, U>>,
 {
-    fn transform(&self, jd: JulianDay) -> Position<Barycentric, F> {
+    fn transform(&self, jd: JulianDay) -> Position<Barycentric, F, U> {
         heliocentric_to_barycentric(self, jd)
     }
 }
 
-impl<F: MutableFrame>  Transform<Position<Barycentric, F>> for Position<Geocentric, F>
+impl<F: MutableFrame, U: Unit> Transform<Position<Barycentric, F, U>> for Position<Geocentric, F, U>
 where
-    for<'a> Position<Barycentric, Equatorial>: From<&'a Position<Barycentric, Ecliptic>>, // Required by VSOP
-    for<'a> Position<Geocentric, Equatorial>: From<&'a Position<Geocentric, F>>, // Required by Aberration
-    for<'a> Position<Barycentric, F>: From<&'a Position<Barycentric, Equatorial>>, // Required by Aberration
+    for<'a> Position<Barycentric, Equatorial, U>: From<&'a Position<Barycentric, Ecliptic, U>>, // Required by VSOP
+    for<'a> Position<Geocentric, Equatorial, U>: From<&'a Position<Geocentric, F, U>>, // Required by Aberration
+    for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Equatorial, U>>, // Required by Aberration
 {
-    fn transform( &self, jd: JulianDay) -> Position<Barycentric, F> {
+    fn transform(&self, jd: JulianDay) -> Position<Barycentric, F, U> {
         geocentric_to_barycentric(self, jd)
     }
 }
-
 
 #[cfg(test)]
 mod tests {

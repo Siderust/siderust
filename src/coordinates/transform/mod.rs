@@ -107,6 +107,7 @@ use crate::coordinates::{
     spherical::SphericalCoord
 };
 use crate::units::JulianDay;
+use crate::units::Unit;
 
 // Blanket identity transform for Vector<Center, Frame>
 impl<C, F> Transform<cartesian::Position<C, F>> for cartesian::Position<C, F>
@@ -126,19 +127,20 @@ where
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, F1, C2, F2, K> From<&Vector<C1, F1, K>> for Vector<C2, F2, K>
+impl<C1, F1, C2, F2, U, K> From<&Vector<C1, F1, U, K>> for Vector<C2, F2, U, K>
 where
-    Vector<C1, F1, K>: Transform<Vector<C1, F2, K>>, // transform frame
-    Vector<C1, F2, K>: Transform<Vector<C2, F2, K>>, // transform center
+    Vector<C1, F1, U, K>: Transform<Vector<C1, F2, U, K>>, // transform frame
+    Vector<C1, F2, U, K>: Transform<Vector<C2, F2, U, K>>, // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
+    U: Unit,
     K: Kind,
 {
-    fn from(orig: &Vector<C1, F1, K>) -> Self {
+    fn from(orig: &Vector<C1, F1, U, K>) -> Self {
         // Step 1: Transform to new frame, keeping the original center.
-        let mid: Vector<C1, F2, K> = orig.transform(JulianDay::J2000);
+        let mid: Vector<C1, F2, U, K> = orig.transform(JulianDay::J2000);
         // Step 2: Transform to new center, now using the new frame.
         mid.transform(JulianDay::J2000)
     }
@@ -152,25 +154,26 @@ where
 /// 2. Apply frame transformation.
 /// 3. Apply center transformation.
 /// 4. Convert back to spherical coordinates.
-impl<C1, F1, C2, F2, K> From<&SphericalCoord<C1, F1, K>> for SphericalCoord<C2, F2, K>
+impl<C1, F1, C2, F2, U, K> From<&SphericalCoord<C1, F1, U, K>> for SphericalCoord<C2, F2, U, K>
 where
-    Vector<C1, F1, K>: Transform<Vector<C1, F2, K>>, // transform frame
-    Vector<C1, F2, K>: Transform<Vector<C2, F2, K>>, // transform center
-    Vector<C1, F1, K>: for<'a> From<&'a SphericalCoord<C1, F1, K>>, // to_cartesian
-    SphericalCoord<C2, F2, K>: for<'a> From<&'a Vector<C2, F2, K>>, // to_spherical
+    Vector<C1, F1, U, K>: Transform<Vector<C1, F2, U, K>>, // transform frame
+    Vector<C1, F2, U, K>: Transform<Vector<C2, F2, U, K>>, // transform center
+    Vector<C1, F1, U, K>: for<'a> From<&'a SphericalCoord<C1, F1, U, K>>, // to_cartesian
+    SphericalCoord<C2, F2, U, K>: for<'a> From<&'a Vector<C2, F2, U, K>>, // to_spherical
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
+    U: Unit,
     K: Kind,
 {
-    fn from(orig: &SphericalCoord<C1, F1, K>) -> Self {
+    fn from(orig: &SphericalCoord<C1, F1, U, K>) -> Self {
         // Step 1: Convert spherical to Cartesian
-        let cart: Vector<C1, F1, K> = orig.to_cartesian();
+        let cart: Vector<C1, F1, U, K> = orig.to_cartesian();
         // Step 2: Transform to new frame
-        let cart_mid: Vector<C1, F2, K> = cart.transform(JulianDay::J2000);
+        let cart_mid: Vector<C1, F2, U, K> = cart.transform(JulianDay::J2000);
         // Step 3: Transform to new center
-        let cart_dest: Vector<C2, F2, K> = cart_mid.transform(JulianDay::J2000);
+        let cart_dest: Vector<C2, F2, U, K> = cart_mid.transform(JulianDay::J2000);
         // Step 4: Convert back to spherical
         cart_dest.to_spherical()
     }

@@ -39,7 +39,7 @@ use crate::coordinates::{
     frames::*,
     centers::*,
 };
-use crate::units::Degrees;
+use crate::units::{Unit, Degrees};
 
 // ICRS Coordinate Types
 // Polar   -> Dec (δ) – the angle from a prime meridian. [-90°, 90°]
@@ -50,7 +50,7 @@ pub type ICRSHeliocentricSphericalCoord = Position<Heliocentric, ICRS>;
 pub type ICRSGeocentricSphericalCoord   = Position<Geocentric,   ICRS>;
 pub type ICRSTopocentricSphericalCoord  = Position<Topocentric,  ICRS>;
 
-impl<Center: ReferenceCenter> Direction<Center, ICRS> {
+impl<C: ReferenceCenter, U: Unit> Direction<C, ICRS, U> {
     /// Creates a new ICRS spherical coordinate with constant values.
     ///
     /// # Arguments
@@ -60,7 +60,7 @@ impl<Center: ReferenceCenter> Direction<Center, ICRS> {
     /// # Returns
     /// A new `Direction` in the ICRS frame.
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
-        Direction::new_spherical_coord(dec, ra, None)
+        Self::new_spherical_coord(dec, ra, None)
     }
 
     /// Constructs a new ICRS spherical coordinate with normalized input angular.
@@ -74,14 +74,14 @@ impl<Center: ReferenceCenter> Direction<Center, ICRS> {
     /// # Returns
     /// A normalized `Direction` in the ICRS frame.
     pub fn new(ra: Degrees, dec: Degrees) -> Self {
-        Direction::<Center, ICRS>::new_const(
+        Self::new_const(
             ra.normalize(),
             dec.normalize_to_90_range()
         )
     }
 }
 
-impl<Center: ReferenceCenter> Position<Center, ICRS> {
+impl<C: ReferenceCenter, U: Unit> Position<C, ICRS, U> {
     /// Creates a new ICRS spherical coordinate with constant values.
     ///
     /// # Arguments
@@ -91,8 +91,8 @@ impl<Center: ReferenceCenter> Position<Center, ICRS> {
     ///
     /// # Returns
     /// A new `Position` in the ICRS frame.
-    pub const fn new_const(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(dec, ra, Some(distance))
+    pub const fn new_const(ra: Degrees, dec: Degrees, distance: U) -> Self {
+        Self::new_spherical_coord(dec, ra, Some(distance))
     }
 
     /// Constructs a new ICRS spherical coordinate with normalized input angular.
@@ -106,15 +106,15 @@ impl<Center: ReferenceCenter> Position<Center, ICRS> {
     ///
     /// # Returns
     /// A normalized `Position` in the ICRS frame.
-    pub fn new(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        Position::<Center, ICRS>::new_const(
+    pub fn new(ra: Degrees, dec: Degrees, distance: U) -> Self {
+        Self::new_const(
             ra.normalize(),
             dec.normalize_to_90_range(),
             distance)
     }
 }
 
-impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, ICRS, K> {
+impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, ICRS, U, K> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees { self.polar }
 

@@ -39,7 +39,7 @@
 //! ## Display
 //! Implements `Display` for readable output including center, frame, angles, and distance.
 
-use crate::units::{Degrees, Radians};
+use crate::units::{Degrees, Radians, Unit};
 
 use crate::coordinates::{
     cartesian,
@@ -56,26 +56,32 @@ use std::marker::PhantomData;
 /// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`).
 /// - `K`: The kind marker (`PositionKind`, `DirectionKind`).
 #[derive(Debug, Clone, Copy)]
-pub struct SphericalCoord<C: ReferenceCenter, F: ReferenceFrame, K: Kind> {
+pub struct SphericalCoord<
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: Unit = f64,
+    K: Kind = PositionKind,
+> {
     pub polar: Degrees,      // θ (polar/latitude/declination)
     pub azimuth: Degrees,    // φ (azimuth/longitude/right ascension)
-    pub distance: Option<f64>, // Optional distance (AU, parsec, etc.)
+    pub distance: Option<U>, // Optional distance (AU, parsec, etc.)
 
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
     _kind: PhantomData<K>,
 }
 
-impl<C, F, K> SphericalCoord<C, F, K>
+impl<C, F, U, K> SphericalCoord<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
     K: Kind,
-    cartesian::Vector<C, F, K>: for<'a> From<&'a Self>,
+    cartesian::Vector<C, F, U, K>: for<'a> From<&'a Self>,
 {
 
     /// Creates a new spherical coordinate from angle types and optional distance.
-    pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Option<f64>) -> Self {
+    pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Option<U>) -> Self {
         Self {
             polar,
             azimuth,
@@ -87,7 +93,7 @@ where
     }
 
     /// Creates a new spherical coordinate from primitive values (degrees).
-    pub const fn from_degrees(polar: f64, azimuth: f64, r: Option<f64>) -> Self{
+    pub const fn from_degrees(polar: f64, azimuth: f64, r: Option<U>) -> Self{
         Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), r)
     }
 
@@ -98,7 +104,7 @@ where
     ///
     /// # Returns
     /// The distance to the other coordinate.
-    pub fn distance_to(&self, other: &Self) -> f64 {
+    pub fn distance_to(&self, other: &Self) -> U {
         self.to_cartesian().distance_to(&other.to_cartesian())
     }
 
@@ -124,10 +130,11 @@ where
     }
 }
 
-impl<C, F, K> std::fmt::Display for SphericalCoord<C, F, K>
+impl<C, F, U, K> std::fmt::Display for SphericalCoord<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
     K: Kind,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -136,7 +143,7 @@ where
             "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}, r: {:.6}",
             C::center_name(),
             F::frame_name(),
-            self.polar, self.azimuth, self.distance.unwrap_or(std::f64::NAN)
+            self.polar, self.azimuth, self.distance.unwrap_or(U::NAN)
         )
     }
 }
