@@ -3,15 +3,7 @@ use crate::calculus::vsop87::compute_vsop87;
 use crate::coordinates::{cartesian::Position, centers::Barycentric, frames::Ecliptic};
 use crate::targets::Target;
 use crate::units::JulianDay;
-use super::{sun_vsop87e::*,
-            mercury_vsop87e::*,
-            venus_vsop87e::*,
-            earth_vsop87e::*,
-            mars_vsop87e::*,
-            jupiter_vsop87e::*,
-            saturn_vsop87e::*,
-            uranus_vsop87e::*,
-            neptune_vsop87e::*};
+include!(concat!(env!("OUT_DIR"), "/vsop87e.rs"));
 
 macro_rules! impl_vsop87e {
     (

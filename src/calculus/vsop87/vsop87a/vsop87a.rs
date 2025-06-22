@@ -4,15 +4,7 @@ use crate::coordinates::{cartesian::Position, centers::Heliocentric, frames::Ecl
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
 use crate::calculus::vsop87::compute_vsop87;
-use super::{mercury_vsop87a::*,
-            venus_vsop87a::*,
-            earth_vsop87a::*,
-            moon_vsop87a::*,
-            mars_vsop87a::*,
-            jupiter_vsop87a::*,
-            saturn_vsop87a::*,
-            uranus_vsop87a::*,
-            neptune_vsop87a::*};
+include!(concat!(env!("OUT_DIR"), "/vsop87a.rs"));
 
 macro_rules! impl_vsop87a {
     (
