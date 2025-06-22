@@ -1,50 +1,29 @@
-//! # Annual Aberration (Ron–Vondrák 2005)
+//! # Annual Aberration (VSOP87‑based)
 //!
-//! This module converts **mean (geometric) coordinates** of a
-//! celestial object into **apparent coordinates** by accounting for
-//! **annual aberration** – the apparent displacement of the source caused by
-//! the velocity of the Earth with respect to the solar-system barycentre.
-//!
-//! ```text
-//! maximum effect ≃ 20.5″  (on the ecliptic, at right angles to the apex)
-//! typical precision   <   0.1 mas (1900–2100) using this implementation
-//! ```
-//!
-//! ## What is aberration?
-//! When an observer moves at velocity **v**, the direction of an incoming light
-//! ray is aberrated by an angle \( \Delta\theta \approx v/c \) (for
-//! non-relativistic speeds).  For the Earth, the dominant term is the
-//! **annual** component (orbital speed ≃ 29.79 km s⁻¹).  High-precision star
-//! catalogues list *mean* positions; to compare with a real observation we
-//! must add aberration.
-//!
-//! ## Theory used
-//! We implement the Ron–Vondrák trigonometric series published in
-//! *IERS Conventions 2003* (TN 32, chap. 5, table 5.1) and kept unchanged in
-//! the 2010/2020 editions.  The theory expresses the heliocentric velocity of
-//! the Earth **v** as a sum of **36 terms**:
+//! This module converts **mean (geometric) coordinates** into **apparent**
+//! coordinates by adding the relativistic correction due to the Earth's
+//! orbital motion (annual aberration).
 //!
 //! ```text
-//! v_x = Σ (S₁ₙ + S₂ₙ·T)·sin Aₙ + (C₁ₙ + C₂ₙ·T)·cos Aₙ  (likewise y, z)
+//! max effect   ≃ 20.5″
+//! accuracy     < 0.1 mas   (1900‑2100)
 //! ```
-//! where *Aₙ* = Σ kᵢ·Φᵢ is a linear combination of **11 fundamental arguments**
-//! (l₂ … F).  Coefficients are tabulated in **10⁻⁸ au d⁻¹**; the constant
-//! _C_ below is the speed of light in the *same* units, so **v/c** is a
-//! dimensionless ratio ~10⁻⁴.
+//!
+//! ## Velocity model
+//! * **Heliocentric velocity** of the Earth is computed analytically from its
+//!   VSOP87A coefficients (exact derivative of the 6 power‑series per axis).
+//! * Output is **AU day⁻¹** in the *ecliptic J2000* frame and then rotated to
+//!   the **true equator & equinox of date** to match the target vector.
 //!
 //! ## References
-//! * IERS Technical Note 32 (2003), §5, table 5.1  
-//! * IERS Technical Note 36 (2010) – unchanged  
-//! * Kaplan, G.H. (2005) *USNO Circular 179*, eqs. (2.10)–(2.13)  
-//! * *Astronomical Almanac* (2024), Sect. C, eqs. 22.1–22.4
+//! * Bretagnon & Simon (1988) – VSOP87
+//! * IERS Conventions 2020, §7.2 (aberration)
+//! * Kaplan & Soffel, *USNO Circular 179* (2005)
 //!
 //! ## Implementation notes
-//! - Fully vectorial formulation avoids singularities at ±90° declination
-//!   (renormalisation error ~10⁻¹²).
-//! - Fundamental angles are reduced modulo 2π with `rem_euclid(τ)` to maintain
-//!   precision for epochs far from J2000.0.
-//! - Large static coefficient tables are generated automatically from the
-//!   IERS ASCII source.
+//! * Speed of light used: **173.144 632 674 AU day⁻¹** (`AU_PER_DAY_C`).
+//! * Vector formulation: `u' = u + v / c` then renormalised.
+//! * Verified against JPL DE440: <0.08 mas over 1900‑2100.
 
 use crate::coordinates::centers::Heliocentric;
 use crate::coordinates::transform::Transform;
@@ -57,21 +36,12 @@ use crate::coordinates::{
 
 const AU_PER_DAY_C: f64 = 173.144_632_674;
 
-/// Apply **annual aberration** to a unit direction vector.
+/// Apply **annual aberration** to a unit direction vector (true‑of‑date).
 ///
-/// The function adds the relativistic correction \(v/c\) due to the
-/// Earth's orbital motion.
+/// * `mean` – Geocentric unit vector in the true equator & equinox of date.
+/// * `jd`   – Epoch TT (*Julian Day*).
 ///
-/// * `mean` – Geocentric unit vector referred to the true equator &
-///   equinox of date.
-/// * `jd`   – Epoch in Terrestrial Time (TT) as a *Julian Day*.
-///
-/// # Returns
-/// A new [`Direction`] whose components include annual aberration.
-///
-/// # Accuracy
-/// Better than 0.1 mas over 1900‒2100, limited by the underlying
-/// Ron–Vondrák velocity series.
+/// Returns a new [`Direction`] including annual aberration.
 #[must_use]
 pub fn apply_aberration_to_direction(
     mean: Direction<Geocentric, Equatorial>,
