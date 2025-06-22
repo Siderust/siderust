@@ -61,4 +61,6 @@ mod vsop87_trait;
 pub use vsop87_trait::VSOP87;
 
 use vsop87_impl::Vsop87;
-use vsop87_impl::compute_vsop87;
+use vsop87_impl::position;
+use vsop87_impl::velocity;
+use vsop87_impl::position_velocity;
