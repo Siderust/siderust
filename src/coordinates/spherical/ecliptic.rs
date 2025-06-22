@@ -37,7 +37,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::Degrees;
+use crate::units::{Degrees, Unit};
 
 
 // Ecliptic Coordinate Types
@@ -49,13 +49,13 @@ pub type EclipticHeliocentricPos = Position<Heliocentric, Ecliptic>; // L (l), B
 pub type EclipticGeocentricPos   = Position<Geocentric,   Ecliptic>; // L (λ), B (β), R (Δ)
 pub type EclipticTopocentricPos  = Position<Topocentric,  Ecliptic>;
 
-impl<Center: ReferenceCenter> Position<Center, Ecliptic> {
-    pub const fn new_const(lon: Degrees, lat: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(lat, lon, Some(distance))
+impl<C: ReferenceCenter, U: Unit> Position<C, Ecliptic, U> {
+    pub const fn new_const(lon: Degrees, lat: Degrees, distance: U) -> Self {
+        Self::new_spherical_coord(lat, lon, Some(distance))
     }
 
-    pub fn new(lon: Degrees, lat: Degrees, distance: f64) -> Self {
-        Position::<Center, Ecliptic>::new_const(
+    pub fn new(lon: Degrees, lat: Degrees, distance: U) -> Self {
+        Self::<C, Ecliptic, U>::new_const(
             lon.normalize(),
             lat.normalize_to_90_range(),
             distance)
@@ -68,14 +68,14 @@ pub type EclipticHeliocentricDir = Direction<Heliocentric, Ecliptic>;
 pub type EclipticGeocentricDir   = Direction<Geocentric,   Ecliptic>;
 pub type EclipticTopocentricDir  = Direction<Topocentric,  Ecliptic>;
 
-impl<Center: ReferenceCenter> Direction<Center, Ecliptic> {
+impl<C: ReferenceCenter, U: Unit> Direction<C, Ecliptic, U> {
     /// Creates a new ecliptic direction with constant values.
     ///
     /// # Arguments
     /// - `lon`: Longitude (λ), in degrees.
     /// - `lat`: Latitude (β), in degrees.
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
-        Direction::new_spherical_coord(lat, lon, None)
+        Self::new_spherical_coord(lat, lon, None)
     }
 
     /// Constructs a new ecliptic direction with normalized input angular.
@@ -86,14 +86,14 @@ impl<Center: ReferenceCenter> Direction<Center, Ecliptic> {
     /// - `lon`: Longitude (λ), in degrees.
     /// - `lat`: Latitude (β), in degrees.
     pub fn new(lon: Degrees, lat: Degrees) -> Self {
-        Direction::<Center, Ecliptic>::new_const(
+        Self::new_const(
             lon.normalize(),
             lat.normalize_to_90_range()
         )
     }
 }
 
-impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, Ecliptic, K> {
+impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, Ecliptic, U, K> {
     /// Returns the Latitude (β) in degrees.
     pub fn lat(&self) -> Degrees { self.polar }
 

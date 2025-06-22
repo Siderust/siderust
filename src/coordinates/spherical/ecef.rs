@@ -32,10 +32,10 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::{Degrees, Kilometers};
+use crate::units::{Degrees, Kilometers, Unit};
 use crate::bodies::EARTH;
 
-impl<Center: ReferenceCenter> Direction<Center, ECEF> {
+impl<C: ReferenceCenter, U: Unit> Direction<C, ECEF, U> {
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
         Self::new_spherical_coord(
             lat,
@@ -57,7 +57,7 @@ impl<Center: ReferenceCenter> Direction<Center, ECEF> {
     }
 }
 
-impl<Center: ReferenceCenter> Position<Center, ECEF> {
+impl<C: ReferenceCenter, U: Unit> Position<C, ECEF, U> {
     pub const fn new_const(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
         Self::new_spherical_coord(
             lat,
@@ -80,7 +80,7 @@ impl<Center: ReferenceCenter> Position<Center, ECEF> {
     }
 }
 
-impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, ECEF, K> {
+impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, ECEF, U, K> {
     /// Returns the latitude (φ) in degrees.
     pub fn lat(&self) -> Degrees { self.polar }
 

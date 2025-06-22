@@ -3,24 +3,26 @@ use crate::coordinates::{
     frames::ReferenceFrame,
     centers::ReferenceCenter,
 };
+use crate::units::Unit;
 
-
-impl<C, F> From<&spherical::Position<C, F,>> for spherical::Direction<C, F>
+impl<C, F, U> From<&spherical::Position<C, F, U>> for spherical::Direction<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
 {
-    fn from(position: &spherical::Position<C, F>) -> Self {
+    fn from(position: &spherical::Position<C, F, U>) -> Self {
         position.direction()
     }
 }
 
-impl<C, F> From<&cartesian::Position<C, F,>> for cartesian::Direction<C, F>
+impl<C, F, U> From<&cartesian::Position<C, F, U>> for cartesian::Direction<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
 {
-    fn from(position: &cartesian::Position<C, F>) -> Self {
+    fn from(position: &cartesian::Position<C, F, U>) -> Self {
         position.direction()
     }
 }

@@ -4,7 +4,7 @@ use crate::coordinates::{
     centers::*, frames::*,
     kinds::Kind,
 };
-
+use crate::units::Unit;
 
 /// Implements conversion from Cartesian to Spherical coordinates
 /// by borrowing a `&Vector` reference.
@@ -19,12 +19,13 @@ use crate::coordinates::{
 /// # Type Parameters
 /// - `Center`: The reference center (e.g., Geocentric).
 /// - `Frame`: The reference frame (e.g., ICRS).
-impl<C, F> From<&cartesian::Position<C, F>> for spherical::Position<C, F>
+impl<C, F, U> From<&cartesian::Position<C, F, U>> for spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
 {
-    fn from(cart: &cartesian::Position<C, F>) -> Self {
+    fn from(cart: &cartesian::Position<C, F, U>) -> Self {
         let r = cart.distance();
         if r == 0.0 {
             return Self::CENTER;
@@ -36,12 +37,13 @@ where
     }
 }
 
-impl<C, F> From<&cartesian::Direction<C, F>> for spherical::Direction<C, F>
+impl<C, F, U> From<&cartesian::Direction<C, F, U>> for spherical::Direction<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
 {
-    fn from(cart: &cartesian::Direction<C, F>) -> Self {
+    fn from(cart: &cartesian::Direction<C, F, U>) -> Self {
         debug_assert!(
             (cart.distance() - 1.0).abs() < 1e-12,
             "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
@@ -54,25 +56,27 @@ where
     }
 }
 
-impl<C, F, K> cartesian::Vector<C, F, K>
+impl<C, F, U, K> cartesian::Vector<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
     K: Kind,
-    spherical::SphericalCoord<C, F, K>: for<'a> From<&'a cartesian::Vector<C, F, K>>,
+    spherical::SphericalCoord<C, F, U, K>: for<'a> From<&'a cartesian::Vector<C, F, U, K>>,
 {
-    pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, K> { self.into() }
+    pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, U, K> { self.into() }
 }
 
 
-impl<C, F, K> cartesian::Vector<C, F, K>
+impl<C, F, U, K> cartesian::Vector<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
     K: Kind,
-    cartesian::Vector<C, F, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, K>>,
+    cartesian::Vector<C, F, U, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, U, K>>,
 {
-    pub fn from_spherical(sph: &spherical::SphericalCoord<C, F, K>) -> Self { Self::from(&sph) }
+    pub fn from_spherical(sph: &spherical::SphericalCoord<C, F, U, K>) -> Self { Self::from(&sph) }
 }
 
 #[cfg(test)]

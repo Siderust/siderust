@@ -62,3 +62,29 @@ pub use length::*;
 pub use velocity::*;
 pub use mass::*;
 pub use power::*;
+
+use std::ops::{Add, Sub, Mul, Div};
+
+// Asegúrate de tener este trait en tu crate o define uno similar:
+pub trait Unit:
+    Copy
+    + Clone
+    + PartialEq
+    + PartialOrd
+    + std::fmt::Debug
+    + std::fmt::Display
+    + Add<Output = Self>
+    + Sub<Output = Self>
+    + Mul<Output = Self>
+    + Div<Output = Self>
+    + From<f64>
+{
+    fn sqrt(self) -> Self;
+    fn powi(self, n: i32) -> Self;
+}
+
+// Implementación para f64 por defecto:
+impl Unit for f64 {
+    fn sqrt(self) -> Self { f64::sqrt(self) }
+    fn powi(self, n: i32) -> Self { f64::powi(self, n) }
+}

@@ -36,7 +36,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::Degrees;
+use crate::units::{Unit, Degrees};
 
 // Equatorial Coordinate Types
 // Polar   -> Dec (δ) – the angle from a prime meridian.
@@ -47,7 +47,7 @@ pub type EquatorialHeliocentricSphericalPos = Position<Heliocentric, Equatorial>
 pub type EquatorialGeocentricSphericalPos   = Position<Geocentric,   Equatorial>;
 pub type EquatorialTopocentricSphericalPos  = Position<Topocentric,  Equatorial>;
 
-impl<Center: ReferenceCenter> Direction<Center, Equatorial> {
+impl<C: ReferenceCenter, U: Unit> Direction<C, Equatorial, U> {
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
         Self::new_spherical_coord(dec, ra, None)
     }
@@ -70,9 +70,9 @@ impl<Center: ReferenceCenter> Direction<Center, Equatorial> {
     }
 }
 
-impl<Center: ReferenceCenter> Position<Center, Equatorial> {
-    pub const fn new_const(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(dec, ra, Some(distance))
+impl<C: ReferenceCenter, U: Unit> Position<C, Equatorial, U> {
+    pub const fn new_const(ra: Degrees, dec: Degrees, distance: U) -> Self {
+        Self::new_spherical_coord(dec, ra, Some(distance))
     }
 
     /// Constructs a new equatorial spherical coordinate with normalized input angular.
@@ -86,15 +86,15 @@ impl<Center: ReferenceCenter> Position<Center, Equatorial> {
     ///
     /// # Returns
     /// A normalized `Position` in the equatorial frame.
-    pub fn new(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        Position::<Center, Equatorial>::new_const(
+    pub fn new(ra: Degrees, dec: Degrees, distance: U) -> Self {
+        Self::new_const(
             ra.normalize(),
             dec.normalize_to_90_range(),
             distance)
     }
 }
 
-impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, Equatorial, K> {
+impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, Equatorial, U, K> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees { self.polar }
 
