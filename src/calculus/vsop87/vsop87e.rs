@@ -1,5 +1,5 @@
 use crate::bodies::solar_system::*;
-use crate::calculus::vsop87::compute_vsop87;
+use crate::calculus::vsop87::position;
 use crate::coordinates::{cartesian::Position, centers::Barycentric, frames::Ecliptic};
 use crate::targets::Target;
 use crate::units::JulianDay;
@@ -14,7 +14,7 @@ macro_rules! impl_vsop87e {
     ) => {
         impl $Planet {
             pub fn vsop87e(jd: JulianDay) -> Target<Position<Barycentric, Ecliptic>> {
-                let (x, y, z) = compute_vsop87(
+                let (x, y, z) = position(
                     jd,
                     &[$( &$x ),+],
                     &[$( &$y ),+],
@@ -31,7 +31,7 @@ macro_rules! impl_vsop87e {
 
 impl Sun {
     pub fn vsop87e(jd: JulianDay) -> Target<Position<Barycentric, Ecliptic>> {
-        let (x, y, z) = compute_vsop87(
+        let (x, y, z) = position(
             jd,
             &[&SUN_X0, &SUN_X1, &SUN_X2, &SUN_X3, &SUN_X4, &SUN_X5],
             &[&SUN_Y0, &SUN_Y1, &SUN_Y2, &SUN_Y3, &SUN_Y4, &SUN_Y5],
