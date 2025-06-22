@@ -9,10 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 - Coordinate macro checkers
 - spherical::Direction, cartesian::Direction
+- Converstion functions from/to Position/Direction
+- apply_aberration_to_direction / remove_aberration_from_direction
 
 ### Changed
 - Geogreaphic constructor order.
 - Refactor radial_distance -> distance
+- Refactor distance_from_origin() -> distance()
 - SphericalCoord -> spherical::Position
 - CartesianCoord -> cartesian::Position
 

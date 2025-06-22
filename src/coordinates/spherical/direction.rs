@@ -40,8 +40,23 @@
 //! Implements `Display` for readable output including center, frame, angles, and distance.
 
 use super::SphericalCoord;
-use crate::coordinates::kinds::DirectionKind;
+use crate::coordinates::{
+    centers::ReferenceCenter,
+    frames::ReferenceFrame,
+    kinds::DirectionKind
+};
+
 pub type Direction<C, F> = SphericalCoord<C, F, DirectionKind>;
+
+impl<C, F> Direction<C, F>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    pub fn position(&self, magnitude: f64) -> super::Position<C, F> {
+        super::Position::new_spherical_coord(self.polar, self.azimuth, Some(magnitude))
+    }
+}
 
 #[cfg(test)]
 mod tests {

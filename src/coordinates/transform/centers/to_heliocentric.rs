@@ -2,13 +2,13 @@ use crate::units::JulianDay;
 use crate::bodies::solar_system::{Sun, Earth};
 use crate::coordinates::{
     cartesian::Position,
-    frames::{ReferenceFrame, Ecliptic, Equatorial},
+    frames::{MutableFrame, Ecliptic, Equatorial},
     centers::{Heliocentric, Barycentric, Geocentric}
 };
 use crate::coordinates::transform::Transform;
 use crate::astro::aberration::remove_aberration;
 
-pub fn barycentric_to_heliocentric<F: ReferenceFrame>(
+pub fn barycentric_to_heliocentric<F: MutableFrame>(
     bary: &Position<Barycentric, F>,
     jd: JulianDay
 ) -> Position<Heliocentric, F>
@@ -25,7 +25,7 @@ where
     )
 }
 
-pub fn geocentric_to_heliocentric<F: ReferenceFrame>(
+pub fn geocentric_to_heliocentric<F: MutableFrame>(
     geo: &Position<Geocentric, F>,
     jd: JulianDay
 ) -> Position<Heliocentric, F>
@@ -44,7 +44,7 @@ where
     Position::<Heliocentric, F>::from(&helio_equ) // Equatorial -> F
 }
 
-impl<F: ReferenceFrame> Transform<Position<Heliocentric, F>> for Position<Geocentric, F>
+impl<F: MutableFrame> Transform<Position<Heliocentric, F>> for Position<Geocentric, F>
 where
     for<'a> Position<Heliocentric, Equatorial>: From<&'a Position<Heliocentric, Ecliptic>>, // Required by VSOP
     for<'a> Position<Geocentric, Equatorial>: From<&'a Position<Geocentric, F>>,   // Required by Aberration
@@ -58,7 +58,7 @@ where
     }
 }
 
-impl<F: ReferenceFrame> Transform<Position<Heliocentric, F>> for Position<Barycentric, F>
+impl<F: MutableFrame> Transform<Position<Heliocentric, F>> for Position<Barycentric, F>
 where
     for<'a> Position<Barycentric, F>: From<&'a Position<Barycentric, Ecliptic>>,
 {
@@ -85,8 +85,8 @@ mod tests {
         (a - b).abs() < epsilon
     }
 
-    fn coords_approx_eq(a: &Position<impl ReferenceCenter, impl ReferenceFrame>,
-                        b: &Position<impl ReferenceCenter, impl ReferenceFrame>,
+    fn coords_approx_eq(a: &Position<impl ReferenceCenter, impl MutableFrame>,
+                        b: &Position<impl ReferenceCenter, impl MutableFrame>,
                         epsilon: f64) -> bool {
         approx_eq(a.x(), b.x(), epsilon) &&
         approx_eq(a.y(), b.y(), epsilon) &&
