@@ -1,5 +1,5 @@
 use crate::coordinates::{
-    cartesian::CartesianCoord,
+    cartesian::Vector,
     centers::ReferenceCenter,
     kinds::Kind,
     frames
@@ -7,8 +7,8 @@ use crate::coordinates::{
 use crate::coordinates::transform::Transform;
 
 // Implement Transform trait for ICRS -> Ecliptic
-impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Ecliptic, K>> for CartesianCoord<C, frames::ICRS, K> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Ecliptic, K> {
+impl<C: ReferenceCenter, K: Kind> Transform<Vector<C, frames::Ecliptic, K>> for Vector<C, frames::ICRS, K> {
+    fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Ecliptic, K> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
@@ -16,13 +16,13 @@ impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Ecliptic, 
         let y_ecl = cos_e * self.y() + sin_e * self.z();
         let z_ecl = -sin_e * self.y() + cos_e * self.z();
 
-        CartesianCoord::new(x_ecl, y_ecl, z_ecl)
+        Vector::new(x_ecl, y_ecl, z_ecl)
     }
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Ecliptic, K>> for CartesianCoord<C, frames::Equatorial, K> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Ecliptic, K> {
+impl<C: ReferenceCenter, K: Kind> Transform<Vector<C, frames::Ecliptic, K>> for Vector<C, frames::Equatorial, K> {
+    fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Ecliptic, K> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
@@ -30,7 +30,7 @@ impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Ecliptic, 
         let y_ecl = cos_e * self.y() + sin_e * self.z();
         let z_ecl = -sin_e * self.y() + cos_e * self.z();
 
-        CartesianCoord::new(x_ecl, y_ecl, z_ecl)
+        Vector::new(x_ecl, y_ecl, z_ecl)
     }
 }
 

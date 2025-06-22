@@ -2,10 +2,10 @@ use crate::coordinates::{
     cartesian::Direction, centers, frames, kinds::{PositionKind, VelocityKind}
 };
 
-use super::CartesianCoord;
+use super::Vector;
 
-pub type Position<C, F>  = CartesianCoord<C, F, PositionKind>;
-pub type Velocity<C, F>  = CartesianCoord<C, F, VelocityKind>;
+pub type Position<C, F>  = Vector<C, F, PositionKind>;
+pub type Velocity<C, F>  = Vector<C, F, VelocityKind>;
 
 impl<C, F> Position<C, F>
 where

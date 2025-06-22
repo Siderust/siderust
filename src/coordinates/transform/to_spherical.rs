@@ -7,7 +7,7 @@ use crate::coordinates::{
 
 
 /// Implements conversion from Cartesian to Spherical coordinates
-/// by borrowing a `&CartesianCoord` reference.
+/// by borrowing a `&Vector` reference.
 ///
 /// The conversion uses the following formulas:
 /// - `r = sqrt(x² + y² + z²)`
@@ -44,7 +44,7 @@ where
     fn from(cart: &cartesian::Direction<C, F>) -> Self {
         debug_assert!(
             (cart.distance() - 1.0).abs() < 1e-12,
-            "A CartesianCoord<…, DirectionKind> must have a magnitude ≈ 1.0"
+            "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
         );
 
         let polar   = Degrees::new(cart.z().asin().to_degrees());
@@ -54,23 +54,23 @@ where
     }
 }
 
-impl<C, F, K> cartesian::CartesianCoord<C, F, K>
+impl<C, F, K> cartesian::Vector<C, F, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     K: Kind,
-    spherical::SphericalCoord<C, F, K>: for<'a> From<&'a cartesian::CartesianCoord<C, F, K>>,
+    spherical::SphericalCoord<C, F, K>: for<'a> From<&'a cartesian::Vector<C, F, K>>,
 {
     pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, K> { self.into() }
 }
 
 
-impl<C, F, K> cartesian::CartesianCoord<C, F, K>
+impl<C, F, K> cartesian::Vector<C, F, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     K: Kind,
-    cartesian::CartesianCoord<C, F, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, K>>,
+    cartesian::Vector<C, F, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, K>>,
 {
     pub fn from_spherical(sph: &spherical::SphericalCoord<C, F, K>) -> Self { Self::from(&sph) }
 }
@@ -120,7 +120,7 @@ mod tests {
             Degrees::new(60.0),
             5.0,
         );
-        let cart = cartesian::CartesianCoord::from_spherical(&sph_original);
+        let cart = cartesian::Vector::from_spherical(&sph_original);
         let sph_converted = cart.to_spherical();
         assert_spherical_eq!(&sph_original, &sph_converted, 1e-6, "Spherical coordinates do not match expected values");
     }

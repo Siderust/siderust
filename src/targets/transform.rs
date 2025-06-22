@@ -1,6 +1,6 @@
 use super::Target;
 use crate::coordinates::{
-    cartesian::CartesianCoord,
+    cartesian::Vector,
     spherical::SphericalCoord,
     centers::*,
     frames::*,
@@ -15,19 +15,19 @@ use crate::coordinates::{
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, F1, C2, F2, K> From<&Target<CartesianCoord<C1, F1, K>>> for Target<CartesianCoord<C2, F2, K>>
+impl<C1, F1, C2, F2, K> From<&Target<Vector<C1, F1, K>>> for Target<Vector<C2, F2, K>>
 where
-    CartesianCoord<C1, F1, K>: Transform<CartesianCoord<C1, F2, K>>, // transform frame
-    CartesianCoord<C1, F2, K>: Transform<CartesianCoord<C2, F2, K>>, // transform center
+    Vector<C1, F1, K>: Transform<Vector<C1, F2, K>>, // transform frame
+    Vector<C1, F2, K>: Transform<Vector<C2, F2, K>>, // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: ReferenceFrame,
     F2: ReferenceFrame,
     K: Kind,
 {
-    fn from(orig: &Target<CartesianCoord<C1, F1, K>>) -> Self {
+    fn from(orig: &Target<Vector<C1, F1, K>>) -> Self {
         // Step 1: Transform to new frame, keeping the original center.
-        let mid: CartesianCoord<C1, F2, K> = orig.position.transform(orig.time);
+        let mid: Vector<C1, F2, K> = orig.position.transform(orig.time);
         // Step 2: Transform to new center, now using the new frame.
         Self::new_raw(
             mid.transform(orig.time),
@@ -47,10 +47,10 @@ where
 /// 4. Convert back to spherical coordinates.
 impl<C1, F1, C2, F2, K> From<&Target<SphericalCoord<C1, F1, K>>> for Target<SphericalCoord<C2, F2, K>>
 where
-    CartesianCoord<C1, F1, K>: Transform<CartesianCoord<C1, F2, K>>, // transform frame
-    CartesianCoord<C1, F2, K>: Transform<CartesianCoord<C2, F2, K>>, // transform center
-    CartesianCoord<C1, F1, K>: for<'a> From<&'a SphericalCoord<C1, F1, K>>, // to_cartesian
-    SphericalCoord<C2, F2, K>: for<'a> From<&'a CartesianCoord<C2, F2, K>>, // to_spherical
+    Vector<C1, F1, K>: Transform<Vector<C1, F2, K>>, // transform frame
+    Vector<C1, F2, K>: Transform<Vector<C2, F2, K>>, // transform center
+    Vector<C1, F1, K>: for<'a> From<&'a SphericalCoord<C1, F1, K>>, // to_cartesian
+    SphericalCoord<C2, F2, K>: for<'a> From<&'a Vector<C2, F2, K>>, // to_spherical
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: ReferenceFrame,
@@ -59,11 +59,11 @@ where
 {
     fn from(orig: &Target<SphericalCoord<C1, F1, K>>) -> Self {
         // Step 1: Convert spherical to Cartesian
-        let cart: CartesianCoord<C1, F1, K> = orig.position.to_cartesian();
+        let cart: Vector<C1, F1, K> = orig.position.to_cartesian();
         // Step 2: Transform to new frame
-        let cart_mid: CartesianCoord<C1, F2, K> = cart.transform(orig.time);
+        let cart_mid: Vector<C1, F2, K> = cart.transform(orig.time);
         // Step 3: Transform to new center
-        let cart_dest: CartesianCoord<C2, F2, K> = cart_mid.transform(orig.time);
+        let cart_dest: Vector<C2, F2, K> = cart_mid.transform(orig.time);
         // Step 4: Convert back to spherical
         let mid: SphericalCoord<C2, F2, K> = cart_dest.to_spherical();
         // Construct the new Target
