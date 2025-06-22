@@ -1,11 +1,14 @@
 use crate::bodies::solar_system::Moon;
 use crate::units::JulianDay;
-use crate::coordinates::{cartesian::Position, centers::Heliocentric, frames::Ecliptic};
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
 use crate::calculus::vsop87::*;
+use crate::coordinates::{
+    cartesian::{Position, Velocity},
+    centers::Heliocentric, frames::Ecliptic
+};
+
 include!(concat!(env!("OUT_DIR"), "/vsop87a.rs"));
-use nalgebra::Vector3;
 
 macro_rules! impl_vsop87a {
     (
@@ -28,14 +31,14 @@ macro_rules! impl_vsop87a {
                 )
             }
 
-            pub fn vsop87a_vel(jd: JulianDay) -> Vector3<f64> {
+            pub fn vsop87a_vel(jd: JulianDay) -> Velocity<Heliocentric, Ecliptic> {
                 let (vx, vy, vz) = velocity(
                     jd,
                     &[$( &$x ),+],
                     &[$( &$y ),+],
                     &[$( &$z ),+]
                 );
-                Vector3::<f64>::new(vx, vy, vz)
+                Velocity::new(vx, vy, vz)
             }
 
             pub fn vsop87a_pos_vel(jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic>> {
