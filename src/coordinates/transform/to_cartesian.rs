@@ -46,9 +46,9 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
     K: Kind,
-    cartesian::CartesianCoord<C, F, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, K>>,
+    cartesian::Vector<C, F, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, K>>,
 {
-    pub fn to_cartesian(&self) -> cartesian::CartesianCoord<C, F, K> { self.into() }
+    pub fn to_cartesian(&self) -> cartesian::Vector<C, F, K> { self.into() }
 }
 
 /*
@@ -67,7 +67,7 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
     K: Kind,
-    spherical::SphericalCoord<C, F, K>: for<'a> From<&'a cartesian::CartesianCoord<C, F, K>>,
+    spherical::SphericalCoord<C, F, K>: for<'a> From<&'a cartesian::Vector<C, F, K>>,
 {
-    pub fn from_cartesian(cart: &cartesian::CartesianCoord<C, F, K>) -> Self { Self::from(&cart) }
+    pub fn from_cartesian(cart: &cartesian::Vector<C, F, K>) -> Self { Self::from(&cart) }
 }

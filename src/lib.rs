@@ -7,7 +7,7 @@
 //!
 //! ## Features
 //!
-//! - **Coordinate Systems**: Strongly-typed `CartesianCoord` and `SphericalCoord` types,
+//! - **Coordinate Systems**: Strongly-typed `Vector` and `SphericalCoord` types,
 //!   parameterized by phantom `ReferenceCenter` (e.g., Sun, Earth) and
 //!   `ReferenceFrame` (e.g., ICRS, Ecliptic, Equatorial, Horizontal), and
 //!   `Kind` (Position, Direction), enabling compile-time protection
