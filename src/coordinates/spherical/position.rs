@@ -1,21 +1,24 @@
 use super::SphericalCoord;
 use crate::coordinates::kinds::PositionKind;
-pub type Position<C, F>  = SphericalCoord<C, F, PositionKind>;
+
+pub type Position<C, F, U=f64>  = SphericalCoord<C, F, U, PositionKind>;
 
 use crate::coordinates::{
     frames::*,
     centers::*,
 };
+use crate::units::Unit;
 
-impl<C, F> Position<C, F>
+impl<C, F, U> Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
 {
     /// The zero point (origin) in this coordinate system.
     pub const CENTER: Self = Self::from_degrees(0.0, 0.0, Some(0.0));
 
-    pub fn direction(&self) -> super::Direction<C, F> {
+    pub fn direction(&self) -> super::Direction<C, F, U> {
         super::Direction::new_spherical_coord(self.polar, self.azimuth, None)
     }
 }

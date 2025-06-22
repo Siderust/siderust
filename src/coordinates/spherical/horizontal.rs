@@ -38,7 +38,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::Degrees;
+use crate::units::{Degrees, Unit};
 
 // Horizontal Coordinate Types
 // Polar   -> Alt (α) – the angle from the horizon. [-90°, 90°]
@@ -49,7 +49,7 @@ pub type HorizontalHeliocentricSphericalPos = Position<Heliocentric, Horizontal>
 pub type HorizontalGeocentricSphericalPos   = Position<Geocentric,   Horizontal>;
 pub type HorizontalTopocentricSphericalPos  = Position<Topocentric,  Horizontal>;
 
-impl<Center: ReferenceCenter> Direction<Center, Horizontal> {
+impl<C: ReferenceCenter, U: Unit> Direction<C, Horizontal, U> {
     /// Creates a new horizontal spherical coordinate with constant values.
     ///
     /// # Arguments
@@ -80,7 +80,7 @@ impl<Center: ReferenceCenter> Direction<Center, Horizontal> {
     }
 }
 
-impl<Center: ReferenceCenter> Position<Center, Horizontal> {
+impl<C: ReferenceCenter, U: Unit> Position<C, Horizontal, U> {
     /// Creates a new horizontal spherical coordinate with constant values.
     ///
     /// # Arguments
@@ -90,8 +90,8 @@ impl<Center: ReferenceCenter> Position<Center, Horizontal> {
     ///
     /// # Returns
     /// A new `Position` in the horizontal frame.
-    pub const fn new_const(alt: Degrees, az: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(alt, az, Some(distance))
+    pub const fn new_const(alt: Degrees, az: Degrees, distance: U) -> Self {
+        Self::new_spherical_coord(alt, az, Some(distance))
     }
 
     /// Constructs a new horizontal spherical coordinate with normalized input angular.
@@ -105,7 +105,7 @@ impl<Center: ReferenceCenter> Position<Center, Horizontal> {
     ///
     /// # Returns
     /// A `Position` in the horizontal frame.
-    pub fn new(alt: Degrees, az: Degrees, distance: f64) -> Self {
+    pub fn new(alt: Degrees, az: Degrees, distance: U) -> Self {
         Self::new_const(
             alt.normalize_to_90_range(),
             az.normalize(),
@@ -113,7 +113,7 @@ impl<Center: ReferenceCenter> Position<Center, Horizontal> {
     }
 }
 
-impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, Horizontal, K> {
+impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, Horizontal, U, K> {
     /// Returns the Altitude (α) in degrees.
     pub fn alt(&self) -> Degrees { self.polar }
 
