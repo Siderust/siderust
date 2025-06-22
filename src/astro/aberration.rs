@@ -46,9 +46,11 @@
 //! - Large static coefficient tables are generated automatically from the
 //!   IERS ASCII source.
 
+use crate::coordinates::centers::Heliocentric;
+use crate::coordinates::transform::Transform;
 use crate::units::JulianDay;
 use crate::coordinates::{
-    cartesian::Position,
+    cartesian::{Position, Velocity},
     cartesian::Direction,
     centers::Geocentric, frames::Equatorial
 };
@@ -77,13 +79,13 @@ pub fn apply_aberration_to_direction(
 ) -> Direction<Geocentric, Equatorial> {
 
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    // TODO: Rotate Ecliptic to Equatorial frame!
+    let velocity: Velocity<Heliocentric, Equatorial> = velocity.transform(jd);
 
     //--------------------------------------------------------------------
-    // 2. Apply û' = û + v/c
+    // Apply û' = û + v/c
     //--------------------------------------------------------------------
     Position::from_vec3(
-        mean.as_vec3() + velocity / AU_PER_DAY_C
+        mean.as_vec3() + velocity.as_vec3() / AU_PER_DAY_C
     ).direction()
 }
 
@@ -97,13 +99,13 @@ pub fn remove_aberration_from_direction(
 ) -> Direction<Geocentric, Equatorial> {
 
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    // TODO: Rotate Ecliptic to Equatorial frame!
+    let velocity: Velocity<Heliocentric, Equatorial> = velocity.transform(jd);
 
     //--------------------------------------------------------------------
-    // 2.û' = û - v/c
+    //  Apply û' = û - v/c
     //--------------------------------------------------------------------
     Position::from_vec3(
-        app.as_vec3() - velocity / AU_PER_DAY_C
+        app.as_vec3() - velocity.as_vec3() / AU_PER_DAY_C
     ).direction()
 }
 
