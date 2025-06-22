@@ -3,6 +3,8 @@
 //! Provides a strongly-typed representation of a length in Astronomical Units (AU)
 //! and conversions to and from Light Years (LY).
 
+use crate::units::Unit;
+
 use super::Kilometers;
 
 pub const AU: AstronomicalUnit = AstronomicalUnit::new(1.0);
@@ -10,6 +12,16 @@ pub const AU: AstronomicalUnit = AstronomicalUnit::new(1.0);
 /// A strongly-typed representation of a length in Astronomical Units (AU).
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct AstronomicalUnit(f64);
+
+impl Unit for AstronomicalUnit {
+    fn sqrt(self) -> Self {
+        AstronomicalUnit(self.0.sqrt())
+    }
+
+    fn powi(self, n: i32) -> Self {
+        AstronomicalUnit(self.0.powi(n))
+    }
+}
 
 impl AstronomicalUnit {
 
@@ -47,6 +59,27 @@ impl AstronomicalUnit {
 impl From<AstronomicalUnit> for super::LightYear {
     fn from(ly: AstronomicalUnit) -> Self {
         ly.to_light_year()
+    }
+}
+
+impl From<f64> for super::AstronomicalUnit {
+    fn from(value: f64) -> Self {
+        AstronomicalUnit::new(value)
+    }
+}
+
+impl  std::ops::Mul<AstronomicalUnit> for AstronomicalUnit {
+    type Output = AstronomicalUnit;
+
+    fn mul(self, other: AstronomicalUnit) -> Self::Output {
+        Self::Output::new(self.0 * other.0)
+    }
+}
+
+impl std::ops::Div<AstronomicalUnit> for AstronomicalUnit {
+    type Output = AstronomicalUnit;
+    fn div(self, other: AstronomicalUnit) -> AstronomicalUnit {
+        AstronomicalUnit::new(self.0 / other.0)
     }
 }
 
