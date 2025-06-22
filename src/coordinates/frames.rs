@@ -59,3 +59,9 @@ new_frame!(Equatorial);
 new_frame!(Ecliptic);
 new_frame!(ITRF);
 new_frame!(ECEF);
+
+
+pub trait MutableFrame: ReferenceFrame {}
+impl MutableFrame for ICRS {}
+impl MutableFrame for Ecliptic {}
+impl MutableFrame for Equatorial {}

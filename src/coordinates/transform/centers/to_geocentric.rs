@@ -1,14 +1,14 @@
 use crate::bodies::solar_system::Earth;
 use crate::units::JulianDay;
 use crate::coordinates::{
-    cartesian::Position,
-    frames::{ReferenceFrame, Ecliptic, Equatorial},
-    centers::{Heliocentric, Barycentric, Geocentric}
+    cartesian::Position, cartesian::Direction,
+    frames::*, centers::*,
+    spherical
 };
 use crate::coordinates::transform::Transform;
-use crate::astro::aberration::apply_aberration;
+use crate::astro::aberration::{apply_aberration, apply_aberration_to_direction};
 
-pub fn barycentric_to_geocentric<F: ReferenceFrame>(
+pub fn barycentric_to_geocentric<F: MutableFrame>(
     bary: &Position<Barycentric, F>,
     jd: JulianDay
 ) -> Position<Geocentric, F>
@@ -26,7 +26,7 @@ where
     Position::<Geocentric, F>::from(&gcrs) // Equatorial -> F
 }
 
-pub fn heliocentric_to_geocentric<F: ReferenceFrame>(
+pub fn heliocentric_to_geocentric<F: MutableFrame>(
     helio: &Position<Heliocentric, F>,
     jd: JulianDay
 ) -> Position<Geocentric, F>
@@ -44,7 +44,7 @@ where
     Position::<Geocentric, F>::from(&gcrs) // Equatorial -> F
 }
 
-impl<F: ReferenceFrame> Transform<Position<Geocentric, F>> for Position<Barycentric, F>
+impl<F: MutableFrame> Transform<Position<Geocentric, F>> for Position<Barycentric, F>
 where
     for<'a> Position<Barycentric, Equatorial>: From<&'a Position<Barycentric, Ecliptic>>, // Required by VSOP
     for<'a> Position<Barycentric, Equatorial>: From<&'a Position<Barycentric, F>>, // Required by Aberration
@@ -58,7 +58,7 @@ where
     }
 }
 
-impl<F: ReferenceFrame> Transform<Position<Geocentric, F>> for Position<Heliocentric, F>
+impl<F: MutableFrame> Transform<Position<Geocentric, F>> for Position<Heliocentric, F>
 where
     for<'a> Position<Heliocentric, Equatorial>: From<&'a Position<Heliocentric, Ecliptic>>, // Required by VSOP
     for<'a> Position<Heliocentric, Equatorial>: From<&'a Position<Heliocentric, F>>, // Required by Aberration
@@ -72,13 +72,50 @@ where
     }
 }
 
+// ------------- If we transform TO a Geocentric Direction, we only need to apply aberration ------------------
+impl<C: ReferenceCenter, F: ReferenceFrame> Transform<Direction<Geocentric, F>> for Direction<C, F>
+where
+    C: NonGeocentric,
+    F: MutableFrame,
+    Direction<Geocentric, F>: Transform<Direction<Geocentric, Equatorial>>, // Required by Aberration
+    Direction<Geocentric, Equatorial>: Transform<Direction<Geocentric, F>>,
+{
+    #[inline]
+    fn transform(&self, jd: JulianDay) -> Direction<Geocentric, F> {
+        // 1. Convert to Geocentric Equatorial coordinates
+        let geocentric = Direction::<Geocentric, F>::from_vec3(
+            self.as_vec3()
+        );
+        // 2. Transform to Geocentric Equatorial
+        let equatorial: Direction<Geocentric, Equatorial> = geocentric.transform(jd);
+        // 3. Apply aberration
+        let aberrated = apply_aberration_to_direction(
+            Direction::from_vec3(equatorial.as_vec3()), jd
+        );
+        // 4. Recover target Frame
+        Transform::<Direction<Geocentric, F>>::transform(&aberrated, jd)
+    }
+}
+
+impl<C: ReferenceCenter, F: ReferenceFrame> Transform<spherical::Direction<Geocentric, F>> for spherical::Direction<C, F>
+where
+    C: NonGeocentric,
+    F: MutableFrame,
+    Direction<Geocentric, F>: Transform<Direction<Geocentric, Equatorial>>,
+    Direction<Geocentric, Equatorial>: Transform<Direction<Geocentric, F>>,
+{
+    #[inline]
+    fn transform(&self, jd: JulianDay) -> spherical::Direction<Geocentric, F> {
+        let cart = self.to_cartesian();
+        let cart_transformed = Transform::<Direction<Geocentric, F>>::transform(&cart, jd);
+        cart_transformed.to_spherical()
+    }
+}
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::coordinates::*;
-    use crate::coordinates::frames::*;
-    use crate::coordinates::centers::*;
     use crate::bodies::solar_system::Earth;
     use crate::units::Degrees;
     use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
