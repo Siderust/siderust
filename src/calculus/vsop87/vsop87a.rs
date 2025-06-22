@@ -5,6 +5,7 @@ use crate::targets::Target;
 use crate::bodies::solar_system::*;
 use crate::calculus::vsop87::*;
 include!(concat!(env!("OUT_DIR"), "/vsop87a.rs"));
+use nalgebra::Vector3;
 
 macro_rules! impl_vsop87a {
     (
@@ -27,17 +28,14 @@ macro_rules! impl_vsop87a {
                 )
             }
 
-            pub fn vsop87a_vel(jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic>> {
-                let (x, y, z) = velocity(
+            pub fn vsop87a_vel(jd: JulianDay) -> Vector3<f64> {
+                let (vx, vy, vz) = velocity(
                     jd,
                     &[$( &$x ),+],
                     &[$( &$y ),+],
                     &[$( &$z ),+]
                 );
-                Target::new_static(
-                    Position::<Heliocentric, Ecliptic>::new(x, y, z),
-                    jd,
-                )
+                Vector3::<f64>::new(vx, vy, vz)
             }
 
             pub fn vsop87a_pos_vel(jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic>> {
