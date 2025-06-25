@@ -26,14 +26,18 @@ where
     U: Unit,
 {
     fn from(cart: &cartesian::Position<C, F, U>) -> Self {
-        let r = cart.distance();
+        let r:f64 = cart.distance().into();
+        let x:f64 = cart.x().into();
+        let y:f64 = cart.y().into();
+        let z:f64 = cart.z().into();
+
         if r == 0.0 {
             return Self::CENTER;
         }
 
-        let polar = Degrees::new((cart.z() / r).asin().to_degrees());
-        let azimuth = Degrees::new(cart.y().atan2(cart.x()).to_degrees());
-        Self::new_spherical_coord(polar, azimuth, Some(r))
+        let polar = Degrees::new((z / r).asin().to_degrees());
+        let azimuth = Degrees::new(y.atan2(x).to_degrees());
+        Self::new_spherical_coord(polar, azimuth, Some(cart.distance()))
     }
 }
 
@@ -44,13 +48,18 @@ where
     U: Unit,
 {
     fn from(cart: &cartesian::Direction<C, F, U>) -> Self {
+        let r:f64 = cart.distance().into();
+        let x:f64 = cart.x().into();
+        let y:f64 = cart.y().into();
+        let z:f64 = cart.z().into();
+
         debug_assert!(
-            (cart.distance() - 1.0).abs() < 1e-12,
+            (r - 1.0).abs() < 1e-12,
             "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
         );
 
-        let polar   = Degrees::new(cart.z().asin().to_degrees());
-        let azimuth = Degrees::new(cart.y().atan2(cart.x()).to_degrees());
+        let polar   = Degrees::new(z.asin().to_degrees());
+        let azimuth = Degrees::new(y.atan2(x).to_degrees());
 
         Self::new_spherical_coord(polar, azimuth, None)
     }
