@@ -3,7 +3,6 @@ use crate::bodies::solar_system::Moon;
 use crate::units::{JulianDay, AstronomicalUnit};
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
-use crate::calculus::vsop87::*;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Heliocentric, frames::Ecliptic

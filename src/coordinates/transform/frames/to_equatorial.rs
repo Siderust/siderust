@@ -12,12 +12,15 @@ use crate::units::Unit;
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
 impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::Ecliptic, U, K> {
     fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Equatorial, U, K> {
+        let x:f64 = self.x().into();
+        let y:f64 = self.y().into();
+        let z:f64 = self.z().into();
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
-        let x_eq = self.x();
-        let y_eq = cos_e * self.y() - sin_e * self.z();
-        let z_eq = sin_e * self.y() + cos_e * self.z();
+        let x_eq = x;
+        let y_eq = cos_e * y - sin_e * z;
+        let z_eq = sin_e * y + cos_e * z;
 
         Vector::new(x_eq, y_eq, z_eq)
     }

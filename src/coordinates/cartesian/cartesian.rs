@@ -48,9 +48,10 @@ pub struct Vector<
     U: Unit = f64,
     K: Kind = PositionKind,
 > {
-    xyz: Vector3<U>,
+    xyz: Vector3<f64>,
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
+    _unit: PhantomData<U>,
     _kind: PhantomData<K>,
 }
 
@@ -75,23 +76,23 @@ where
     pub fn new(x: U, y: U, z: U) -> Self {
         // El inliner eliminará por completo la llamada para PositionKind
         //K::validate(x, y, z);
-        Self::from_vec3(Vector3::new(x, y, z))
+        Self::from_vec3(Vector3::new(x.into(), y.into(), z.into()))
     }
 
-    pub const fn from_vec3(vec3: Vector3<U>) -> Self {
-        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData, _kind: PhantomData }
+    pub const fn from_vec3(vec3: Vector3<f64>) -> Self {
+        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData, _unit: PhantomData, _kind: PhantomData }
     }
 
-    pub const fn as_vec3(&self) -> Vector3<U> { self.xyz }
+    pub const fn as_vec3(&self) -> Vector3<f64> { self.xyz }
 
     /// Gets the x-coordinate in AU.
-    pub fn x(&self) -> U { self.xyz[0] }
+    pub fn x(&self) -> U { self.xyz[0].into() }
 
     /// Gets the y-coordinate in AU.
-    pub fn y(&self) -> U { self.xyz[1] }
+    pub fn y(&self) -> U { self.xyz[1].into() }
 
     /// Gets the z-coordinate in AU.
-    pub fn z(&self) -> U { self.xyz[2] }
+    pub fn z(&self) -> U { self.xyz[2].into() }
 
     /// Computes the Euclidean distance to another Cartesian coordinate of the same type.
     pub fn distance_to(&self, other: &Self) -> U {

@@ -15,8 +15,14 @@ pub fn heliocentric_to_barycentric<F: MutableFrame, U: Unit>(
 where
     for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Ecliptic, U>>,
 {
-    let sun_bary_ecl = Sun::vsop87e(jd).get_position();
-    let sun_bary_f = Position::<Barycentric, F>::from(sun_bary_ecl);
+    // VSOP87 gives the Sun's position in AstronomicalUnits, so we need to convert to U
+    let sun_bary_ecl_au = Sun::vsop87e(jd).get_position();
+    let x: U = sun_bary_ecl_au.x().into();
+    let y: U = sun_bary_ecl_au.y().into();
+    let z: U = sun_bary_ecl_au.z().into();
+    let sun_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(x, y, z);
+
+    let sun_bary_f = Position::<Barycentric, F, U>::from(&sun_bary_ecl);
     Position::from_vec3(helio_f.as_vec3() + sun_bary_f.as_vec3())
 }
 
@@ -29,10 +35,16 @@ where
     for<'a> Position<Geocentric, Equatorial, U>: From<&'a Position<Geocentric, F, U>>,   // Required by Aberration
     for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Equatorial, U>>, // Required by Aberration
 {
-    let earth_bary_ecl = Earth::vsop87e(jd).get_position().clone();
-    let earth_bary_equ = Position::<Barycentric, Equatorial>::from(&earth_bary_ecl); // (Bary-Ecl) -> (Bary-Equ)
+    // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
+    let earth_bary_ecl_au = Earth::vsop87e(jd).get_position();
+    let x: U = earth_bary_ecl_au.x().into();
+    let y: U = earth_bary_ecl_au.y().into();
+    let z: U = earth_bary_ecl_au.z().into();
+    let earth_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(x, y, z);
 
-    let target_geo_equ  = Position::<Geocentric, Equatorial>::from(geo); // (Geo-F) -> (Geo-Equ)
+    let earth_bary_equ = Position::<Barycentric, Equatorial, U>::from(&earth_bary_ecl); // (Bary-Ecl) -> (Bary-Equ)
+
+    let target_geo_equ  = Position::<Geocentric, Equatorial, U>::from(geo); // (Geo-F) -> (Geo-Equ)
     let target_geo_equ_no_aberration = remove_aberration(target_geo_equ, jd);
 
     let bary_equ = Position::<Barycentric, Equatorial, U>::from_vec3(target_geo_equ_no_aberration.as_vec3() + earth_bary_equ.as_vec3()); // Geocentric -> Barycentric
