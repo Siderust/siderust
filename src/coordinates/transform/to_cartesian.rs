@@ -2,6 +2,7 @@ use crate::coordinates::{
     centers::ReferenceCenter, frames::ReferenceFrame, kinds::Kind, spherical, cartesian,
 };
 use crate::units::Unit;
+use nalgebra::Vector3;
 
 /// Implements conversion from a spherical coordinate to a cartesian coordinate.
 ///
@@ -24,7 +25,7 @@ where
         let x = r * dec_rad.cos() * ra_rad.cos();
         let y = r * dec_rad.cos() * ra_rad.sin();
         let z = r * dec_rad.sin();
-        Self::new(x, y, z)
+        Self::from_vec3(Vector3::new(x, y, z))
     }
 }
 
@@ -40,7 +41,7 @@ where
         let x = dec_rad.cos() * ra_rad.cos();
         let y = dec_rad.cos() * ra_rad.sin();
         let z = dec_rad.sin();
-        Self::new(x, y, z)
+        Self::from_vec3(Vector3::new(x, y, z))
     }
 }
 

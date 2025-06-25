@@ -3,7 +3,7 @@ use crate::coordinates::{
     spherical, cartesian,
     centers::*,  frames::*
 };
-use crate::units::{Degrees, JulianDay};
+use crate::units::{Unit, Degrees, JulianDay};
 
 
 /// Converts geocentric equatorial coordinates to topocentric horizontal coordinates
@@ -22,11 +22,11 @@ use crate::units::{Degrees, JulianDay};
 /// # See Also
 /// - [`calculate_gst`]
 /// - [`calculate_lst`]
-pub fn geocentric_to_horizontal(
+pub fn geocentric_to_horizontal<U: Unit>(
     target:   &spherical::Position<Geocentric, Equatorial>,
     observer: &spherical::GeographicPos,
     jd:       JulianDay
-) -> spherical::Position<Topocentric, Horizontal> {
+) -> spherical::Position<Topocentric, Horizontal, U> {
 
     // 2) Tiempo sidéreo con ese JD, no con target.t
     let gst = calculate_gst(jd);
@@ -46,7 +46,7 @@ pub fn geocentric_to_horizontal(
                     dec_rad.sin() * lat_rad.cos()
                   - dec_rad.cos() * ha_rad.cos() * lat_rad.sin());
 
-    spherical::Position::<Topocentric, Horizontal>::new(
+    spherical::Position::<Topocentric, Horizontal, U>::new(
         Degrees::new(alt_rad.to_degrees()),
         Degrees::new(az_rad.to_degrees()),
         target.distance.unwrap(),
@@ -54,8 +54,8 @@ pub fn geocentric_to_horizontal(
 }
 
 
-impl cartesian::Position<Geocentric, Equatorial> {
-    pub fn to_horizontal(&self, observer: &spherical::GeographicPos, jd: JulianDay) -> cartesian::Position<Topocentric, Horizontal> {
+impl<U: Unit> cartesian::Position<Geocentric, Equatorial, U> {
+    pub fn to_horizontal(&self, observer: &spherical::GeographicPos, jd: JulianDay) -> cartesian::Position<Topocentric, Horizontal, U> {
         let spherical: spherical::Position<Geocentric, Equatorial>   = self.into();
         let horizontal = geocentric_to_horizontal(&spherical, observer, jd);
         (&horizontal).into()
@@ -63,8 +63,8 @@ impl cartesian::Position<Geocentric, Equatorial> {
 }
 
 
-impl spherical::Position<Geocentric, Equatorial> {
-    pub fn to_horizontal(&self, observer: &spherical::GeographicPos, jd: JulianDay) -> spherical::Position<Topocentric, Horizontal> {
+impl<U: Unit> spherical::Position<Geocentric, Equatorial, U> {
+    pub fn to_horizontal(&self, observer: &spherical::GeographicPos, jd: JulianDay) -> spherical::Position<Topocentric, Horizontal, U> {
         geocentric_to_horizontal(self, observer, jd)
     }
 }

@@ -110,12 +110,13 @@ use crate::units::JulianDay;
 use crate::units::Unit;
 
 // Blanket identity transform for Vector<Center, Frame>
-impl<C, F> Transform<cartesian::Position<C, F>> for cartesian::Position<C, F>
+impl<C, F, U> Transform<cartesian::Position<C, F, U>> for cartesian::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: MutableFrame,
+    U: Unit
 {
-    fn transform(&self, _jd: crate::units::JulianDay) -> cartesian::Position<C, F> {
+    fn transform(&self, _jd: crate::units::JulianDay) -> cartesian::Position<C, F,U> {
         Vector::new(self.x(), self.y(), self.z())
     }
 }

@@ -3,6 +3,8 @@
 //! Provides a strongly-typed representation of a length in Kilometers (km)
 //! and conversions to and from Light Years (LY).
 
+use crate::units::Unit;
+
 use super::{AstronomicalUnit, LightYear};
 
 pub const KM: Kilometers = Kilometers::new(1.0);
@@ -10,6 +12,18 @@ pub const KM: Kilometers = Kilometers::new(1.0);
 /// A strongly-typed representation of a length in Kilometers (km).
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Kilometers(f64);
+
+impl Unit for Kilometers {
+    const NAN: Self = Kilometers(f64::NAN);
+
+    fn sqrt(self) -> Self {
+        Kilometers(self.0.sqrt())
+    }
+
+    fn powi(self, n: i32) -> Self {
+        Kilometers(self.0.powi(n))
+    }
+}
 
 impl Kilometers {
 
@@ -43,6 +57,17 @@ impl From<Kilometers> for LightYear {
 impl From<Kilometers> for AstronomicalUnit {
     fn from(km: Kilometers) -> Self {
         km.to_au()
+    }
+}
+impl From<f64> for super::Kilometers {
+    fn from(value: f64) -> Self {
+        Self::new(value)
+    }
+}
+
+impl From<Kilometers> for f64 {
+    fn from(value: Kilometers) -> Self {
+        value.0
     }
 }
 

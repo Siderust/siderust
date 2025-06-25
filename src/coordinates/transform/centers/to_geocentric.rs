@@ -17,7 +17,13 @@ where
     for<'a> Position<Barycentric, Equatorial, U>: From<&'a Position<Barycentric, F, U>>, // Required by Aberration
     for<'a> Position<Geocentric, F, U>: From<&'a Position<Geocentric, Equatorial, U>>, // Required by Aberration
 {
-    let earth_ecl = Earth::vsop87e(jd).get_position().clone(); // Barycentric Ecliptic Earth
+    // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
+    let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
+    let x: U = earth_bary_ecl_au.x().into();
+    let y: U = earth_bary_ecl_au.y().into();
+    let z: U = earth_bary_ecl_au.z().into();
+    let earth_ecl = Position::<Barycentric, Ecliptic, U>::new(x, y, z);
+
     let earth_equ = Position::<Barycentric, Equatorial, U>::from(&earth_ecl); // (Bary-Ecl) -> (Bary-Equ)
     let bary_equ  = Position::<Barycentric, Equatorial, U>::from(bary);       // (Bary-F)   -> (Bary-Equ)
     let geo_equ   = Position::<Geocentric, Equatorial, U>::from_vec3(bary_equ.as_vec3() - earth_equ.as_vec3()); // Barycentric -> Geocentric
@@ -35,7 +41,13 @@ where
     for<'a> Position<Heliocentric, Equatorial, U>: From<&'a Position<Heliocentric, F, U>>, // Required by Aberration
     for<'a> Position<Geocentric, F, U>: From<&'a Position<Geocentric, Equatorial, U>>, // Required by Aberration
 {
-    let earth_ecl = Earth::vsop87a(jd).get_position().clone(); // Heliocentric Ecliptic Earth
+    // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
+    let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
+    let x: U = earth_helio_ecl_au.x().into();
+    let y: U = earth_helio_ecl_au.y().into();
+    let z: U = earth_helio_ecl_au.z().into();
+    let earth_ecl = Position::<Barycentric, Ecliptic, U>::new(x, y, z);
+
     let earth_equ = Position::<Heliocentric, Equatorial, U>::from(&earth_ecl); // (Helio-Ecl) -> (Helio-Equ)
     let helio_equ = Position::<Heliocentric, Equatorial, U>::from(helio); // (Helio-F)   -> (Helio-Equ)
     let geo_equ   = Position::<Geocentric, Equatorial, U>::from_vec3(helio_equ.as_vec3() - earth_equ.as_vec3()); // Heliocentric -> Geocentric

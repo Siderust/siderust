@@ -14,6 +14,8 @@ pub const AU: AstronomicalUnit = AstronomicalUnit::new(1.0);
 pub struct AstronomicalUnit(f64);
 
 impl Unit for AstronomicalUnit {
+    const NAN: Self = AstronomicalUnit(f64::NAN);
+
     fn sqrt(self) -> Self {
         AstronomicalUnit(self.0.sqrt())
     }
@@ -64,7 +66,19 @@ impl From<AstronomicalUnit> for super::LightYear {
 
 impl From<f64> for super::AstronomicalUnit {
     fn from(value: f64) -> Self {
-        AstronomicalUnit::new(value)
+        Self::new(value)
+    }
+}
+
+impl From<AstronomicalUnit> for f64 {
+    fn from(value: AstronomicalUnit) -> Self {
+        value.0
+    }
+}
+
+impl From<AstronomicalUnit> for Kilometers {
+    fn from(value: AstronomicalUnit) -> Self {
+        value.to_km()
     }
 }
 

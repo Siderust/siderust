@@ -70,7 +70,7 @@ macro_rules! impl_vsop87e {
 }
 
 impl Sun {
-    pub fn vsop87e(jd: JulianDay) -> Target<Position<Barycentric, Ecliptic>> {
+    pub fn vsop87e(jd: JulianDay) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
         let (x, y, z) = position(
             jd,
             &[&SUN_X0, &SUN_X1, &SUN_X2, &SUN_X3, &SUN_X4, &SUN_X5],
@@ -78,7 +78,10 @@ impl Sun {
             &[&SUN_Z0, &SUN_Z1, &SUN_Z2, &SUN_Z3, &SUN_Z4, &SUN_Z5]
         );
         Target::new_static(
-            Position::<Barycentric, Ecliptic>::new(x, y, z),
+            Position::new(
+                AstronomicalUnit::new(x),
+                AstronomicalUnit::new(y),
+                AstronomicalUnit::new(z)),
             jd,
         )
     }

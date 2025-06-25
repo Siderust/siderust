@@ -15,12 +15,15 @@ pub fn barycentric_to_heliocentric<F: MutableFrame, U: Unit>(
 where
     for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Ecliptic, U>>,
 {
-    let sun = Position::<Barycentric, F, U>::from(
-        Sun::vsop87e(jd).get_position()
-    );
-    Position::from_vec3(
-        bary.as_vec3() - sun.as_vec3()
-    )
+    // VSOP87 gives the Sun's position in AstronomicalUnits, so we need to convert to U
+    let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
+    let x: U = sun_bary_ecl_au.x().into();
+    let y: U = sun_bary_ecl_au.y().into();
+    let z: U = sun_bary_ecl_au.z().into();
+    let sun_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(x, y, z);
+
+    let sun = Position::<Barycentric, F, U>::from(&sun_bary_ecl);
+    Position::from_vec3(bary.as_vec3() - sun.as_vec3())
 }
 
 pub fn geocentric_to_heliocentric<F: MutableFrame, U: Unit>(
@@ -32,7 +35,13 @@ where
     for<'a> Position<Geocentric, Equatorial, U>: From<&'a Position<Geocentric, F, U>>,   // Required by Aberration
     for<'a> Position<Heliocentric, F, U>: From<&'a Position<Heliocentric, Equatorial, U>>, // Required by Aberration
 {
-    let earth_helio_ecl = Earth::vsop87a(jd).get_position().clone();
+    // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
+    let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
+    let x: U = earth_helio_ecl_au.x().into();
+    let y: U = earth_helio_ecl_au.y().into();
+    let z: U = earth_helio_ecl_au.z().into();
+    let earth_helio_ecl = Position::<Heliocentric, Ecliptic, U>::new(x, y, z);
+
     let earth_helio_equ = Position::<Heliocentric, Equatorial, U>::from(&earth_helio_ecl); // (Helio-Ecl) -> (Helio-Equ)
 
     let target_geo_equ  = Position::<Geocentric, Equatorial, U>::from(geo); // (Geo-F) -> (Geo-Equ)

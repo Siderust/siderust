@@ -71,16 +71,14 @@ pub struct SphericalCoord<
     _kind: PhantomData<K>,
 }
 
+// filepath: src/coordinates/spherical/spherical.rs
 impl<C, F, U, K> SphericalCoord<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: Unit,
     K: Kind,
-    cartesian::Vector<C, F, U, K>: for<'a> From<&'a Self>,
 {
-
-    /// Creates a new spherical coordinate from angle types and optional distance.
     pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Option<U>) -> Self {
         Self {
             polar,
@@ -92,11 +90,19 @@ where
         }
     }
 
-    /// Creates a new spherical coordinate from primitive values (degrees).
-    pub const fn from_degrees(polar: f64, azimuth: f64, r: Option<U>) -> Self{
+    pub const fn from_degrees(polar: f64, azimuth: f64, r: Option<U>) -> Self {
         Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), r)
     }
+}
 
+impl<C, F, U, K> SphericalCoord<C, F, U, K>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: Unit,
+    K: Kind,
+    cartesian::Vector<C, F, U, K>: for<'a> From<&'a Self>,
+{
     /// Calculates the Euclidean distance to another spherical coordinate.
     ///
     /// # Arguments

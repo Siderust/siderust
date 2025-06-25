@@ -27,7 +27,7 @@
 
 use crate::coordinates::centers::Heliocentric;
 use crate::coordinates::transform::Transform;
-use crate::units::JulianDay;
+use crate::units::{AstronomicalUnit, JulianDay, Unit};
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     cartesian::Direction,
@@ -43,13 +43,14 @@ const AU_PER_DAY_C: f64 = 173.144_632_674;
 ///
 /// Returns a new [`Direction`] including annual aberration.
 #[must_use]
-pub fn apply_aberration_to_direction(
-    mean: Direction<Geocentric, Equatorial>,
+pub fn apply_aberration_to_direction<U: Unit>(
+    mean: Direction<Geocentric, Equatorial, U>,
     jd:   JulianDay,
-) -> Direction<Geocentric, Equatorial> {
+) -> Direction<Geocentric, Equatorial, U> {
 
+    // TODO: Units must be AU/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<Heliocentric, Equatorial> = velocity.transform(jd);
+    let velocity: Velocity<Heliocentric, Equatorial, AstronomicalUnit> = velocity.transform(jd);
 
     //--------------------------------------------------------------------
     // Apply û' = û + v/c
@@ -63,13 +64,14 @@ pub fn apply_aberration_to_direction(
 /// Remove **annual aberration** from an apparent direction.
 /// Inverse operation of [`apply_aberration_to_direction`].
 #[must_use]
-pub fn remove_aberration_from_direction(
-    app: Direction<Geocentric, Equatorial>,
+pub fn remove_aberration_from_direction<U: Unit>(
+    app: Direction<Geocentric, Equatorial, U>,
     jd:  JulianDay,
-) -> Direction<Geocentric, Equatorial> {
+) -> Direction<Geocentric, Equatorial, U> {
 
+    // TODO: Units must be AU/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<Heliocentric, Equatorial> = velocity.transform(jd);
+    let velocity: Velocity<Heliocentric, Equatorial, AstronomicalUnit> = velocity.transform(jd);
 
     //--------------------------------------------------------------------
     //  Apply û' = û - v/c
@@ -83,10 +85,10 @@ pub fn remove_aberration_from_direction(
 /// Apply **annual aberration** to a position vector, preserving its
 /// geocentric distance.
 #[must_use]
-pub fn apply_aberration(
-    mean: Position<Geocentric, Equatorial>,
+pub fn apply_aberration<U: Unit>(
+    mean: Position<Geocentric, Equatorial, U>,
     jd:   JulianDay,
-) -> Position<Geocentric, Equatorial> {
+) -> Position<Geocentric, Equatorial, U> {
 
     if mean.distance() == 0.0 {
         // Don't look at your feet!
@@ -103,10 +105,10 @@ pub fn apply_aberration(
 /// Remove **annual aberration** from a position vector, preserving its
 /// geocentric distance.
 #[must_use]
-pub fn remove_aberration(
-    app: Position<Geocentric, Equatorial>,
+pub fn remove_aberration<U: Unit>(
+    app: Position<Geocentric, Equatorial, U>,
     jd:  JulianDay,
-) -> Position<Geocentric, Equatorial> {
+) -> Position<Geocentric, Equatorial, U> {
 
     if app.distance() == 0.0 {
         // Don't look at your feet!
