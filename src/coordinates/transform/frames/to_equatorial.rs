@@ -22,7 +22,7 @@ impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::Equatoria
         let y_eq = cos_e * y - sin_e * z;
         let z_eq = sin_e * y + cos_e * z;
 
-        Vector::new(x_eq, y_eq, z_eq)
+        Vector::new(x_eq.into(), y_eq.into(), z_eq.into())
     }
 }
 

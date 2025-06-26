@@ -21,7 +21,7 @@ impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::ICRS, U, 
         let y_icrs = cos_e * y - sin_e * z;
         let z_icrs = sin_e * y + cos_e * z;
 
-        Vector::new(x_icrs, y_icrs, z_icrs)
+        Vector::new(x_icrs.into(), y_icrs.into(), z_icrs.into())
     }
 }
 
