@@ -5,7 +5,7 @@ use crate::coordinates::{
 };
 use crate::units::Unit;
 
-impl<C, F, U> From<&spherical::Position<C, F, U>> for spherical::Direction<C, F, U>
+impl<C, F, U> From<&spherical::Position<C, F, U>> for spherical::Direction<C, F>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
@@ -16,7 +16,7 @@ where
     }
 }
 
-impl<C, F, U> From<&cartesian::Position<C, F, U>> for cartesian::Direction<C, F, U>
+impl<C, F, U> From<&cartesian::Position<C, F, U>> for cartesian::Direction<C, F>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,

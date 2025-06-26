@@ -27,7 +27,7 @@ where
         )
     }
 
-    pub fn direction(&self) -> super::Direction<C, F, U> {
+    pub fn direction(&self) -> super::Direction<C, F> {
         Direction::from_vec3(
             self.as_vec3().normalize()
         )

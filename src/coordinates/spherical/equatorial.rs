@@ -47,7 +47,7 @@ pub type EquatorialHeliocentricSphericalPos = Position<Heliocentric, Equatorial>
 pub type EquatorialGeocentricSphericalPos   = Position<Geocentric,   Equatorial>;
 pub type EquatorialTopocentricSphericalPos  = Position<Topocentric,  Equatorial>;
 
-impl<C: ReferenceCenter, U: Unit> Direction<C, Equatorial, U> {
+impl<C: ReferenceCenter> Direction<C, Equatorial> {
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
         Self::new_spherical_coord(dec, ra, None)
     }

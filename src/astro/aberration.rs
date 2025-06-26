@@ -43,10 +43,10 @@ const AU_PER_DAY_C: f64 = 173.144_632_674;
 ///
 /// Returns a new [`Direction`] including annual aberration.
 #[must_use]
-pub fn apply_aberration_to_direction<U: Unit>(
-    mean: Direction<Geocentric, Equatorial, U>,
+pub fn apply_aberration_to_direction(
+    mean: Direction<Geocentric, Equatorial>,
     jd:   JulianDay,
-) -> Direction<Geocentric, Equatorial, U> {
+) -> Direction<Geocentric, Equatorial> {
 
     // TODO: Units must be AU/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
@@ -55,19 +55,19 @@ pub fn apply_aberration_to_direction<U: Unit>(
     //--------------------------------------------------------------------
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
-    Position::from_vec3(
+    Direction::from_vec3(
         mean.as_vec3() + velocity.as_vec3() / AU_PER_DAY_C
-    ).direction()
+    )
 }
 
 
 /// Remove **annual aberration** from an apparent direction.
 /// Inverse operation of [`apply_aberration_to_direction`].
 #[must_use]
-pub fn remove_aberration_from_direction<U: Unit>(
-    app: Direction<Geocentric, Equatorial, U>,
+pub fn remove_aberration_from_direction(
+    app: Direction<Geocentric, Equatorial>,
     jd:  JulianDay,
-) -> Direction<Geocentric, Equatorial, U> {
+) -> Direction<Geocentric, Equatorial> {
 
     // TODO: Units must be AU/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
@@ -76,9 +76,9 @@ pub fn remove_aberration_from_direction<U: Unit>(
     //--------------------------------------------------------------------
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
-    Position::from_vec3(
+    Direction::from_vec3(
         app.as_vec3() - velocity.as_vec3() / AU_PER_DAY_C
-    ).direction()
+    )
 }
 
 

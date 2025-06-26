@@ -68,7 +68,7 @@ pub type EclipticHeliocentricDir = Direction<Heliocentric, Ecliptic>;
 pub type EclipticGeocentricDir   = Direction<Geocentric,   Ecliptic>;
 pub type EclipticTopocentricDir  = Direction<Topocentric,  Ecliptic>;
 
-impl<C: ReferenceCenter, U: Unit> Direction<C, Ecliptic, U> {
+impl<C: ReferenceCenter> Direction<C, Ecliptic> {
     /// Creates a new ecliptic direction with constant values.
     ///
     /// # Arguments
