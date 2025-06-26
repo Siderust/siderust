@@ -20,6 +20,6 @@ where
 
     /// Returns a Position vector in the same direction, scaled by the given magnitude.
     pub fn position(&self, magnitude: U) -> super::Position<C, F, U> {
-        super::Position::from_vec3(self.as_vec3() * magnitude)
+        super::Position::from_vec3(self.as_vec3() * magnitude.into())
     }
 }

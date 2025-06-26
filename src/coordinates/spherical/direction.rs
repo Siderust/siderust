@@ -56,7 +56,7 @@ where
     U: Unit,
 {
     pub fn position(&self, magnitude: U) -> super::Position<C, F, U> {
-        Self::new_spherical_coord(self.polar, self.azimuth, Some(magnitude))
+        super::Position::new_spherical_coord(self.polar, self.azimuth, Some(magnitude))
     }
 }
 

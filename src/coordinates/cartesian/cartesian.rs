@@ -158,7 +158,7 @@ where
     type Output = Self;
 
     fn div(self, rhs: U) -> Self::Output {
-        Self::from_vec3(self.xyz / rhs)
+        Self::from_vec3(self.xyz / rhs.into())
     }
 }
 
@@ -172,6 +172,6 @@ where
     type Output = Self;
 
     fn mul(self, rhs: U) -> Self::Output {
-        Self::from_vec3(self.xyz * rhs)
+        Self::from_vec3(self.xyz * rhs.into())
     }
 }
