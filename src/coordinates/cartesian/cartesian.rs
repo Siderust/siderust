@@ -37,7 +37,7 @@ use crate::coordinates::{
 
 use std::marker::PhantomData;
 use nalgebra::Vector3;
-use std::ops::{Add, Sub, Div, Mul};
+use std::ops::{Add, Sub};
 use crate::units::Unit;
 
 // Refactoriza la definición de Vector:
@@ -48,10 +48,9 @@ pub struct Vector<
     U: Unit = f64,
     K: Kind = PositionKind,
 > {
-    xyz: Vector3<f64>,
+    xyz: Vector3<U>,
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
-    _unit: PhantomData<U>,
     _kind: PhantomData<K>,
 }
 
@@ -69,30 +68,28 @@ where
     /// - `x`: The x-coordinate in AU.
     /// - `y`: The y-coordinate in AU.
     /// - `z`: The z-coordinate in AU.
-    /// - `t`: The time coordinate (e.g., Julian Date).
     ///
     /// # Returns
     /// A new `Vector<Center, Frame>`.
     pub fn new(x: U, y: U, z: U) -> Self {
-        // El inliner eliminará por completo la llamada para PositionKind
         //K::validate(x, y, z);
-        Self::from_vec3(Vector3::new(x.into(), y.into(), z.into()))
+        Self::from_vec3(Vector3::new(x, y, z))
     }
 
-    pub const fn from_vec3(vec3: Vector3<f64>) -> Self {
-        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData, _unit: PhantomData, _kind: PhantomData }
+    pub const fn from_vec3(vec3: Vector3<U>) -> Self {
+        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData, _kind: PhantomData }
     }
 
-    pub const fn as_vec3(&self) -> Vector3<f64> { self.xyz }
+    pub const fn as_vec3(&self) -> Vector3<U> { self.xyz }
 
     /// Gets the x-coordinate in AU.
-    pub fn x(&self) -> U { self.xyz[0].into() }
+    pub fn x(&self) -> U { self.xyz[0] }
 
     /// Gets the y-coordinate in AU.
-    pub fn y(&self) -> U { self.xyz[1].into() }
+    pub fn y(&self) -> U { self.xyz[1] }
 
     /// Gets the z-coordinate in AU.
-    pub fn z(&self) -> U { self.xyz[2].into() }
+    pub fn z(&self) -> U { self.xyz[2] }
 
     /// Computes the Euclidean distance to another Cartesian coordinate of the same type.
     pub fn distance_to(&self, other: &Self) -> U {
@@ -148,7 +145,7 @@ where
     }
 }
 
-impl<C, F, U, K> Div<U> for Vector<C, F, U, K>
+/*impl<C, F, U, K> Div<U> for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
@@ -158,7 +155,7 @@ where
     type Output = Self;
 
     fn div(self, rhs: U) -> Self::Output {
-        Self::from_vec3(self.xyz / rhs.into())
+        Self::from_vec3(self.xyz / rhs.as_vec3())
     }
 }
 
@@ -175,3 +172,4 @@ where
         Self::from_vec3(self.xyz * rhs.into())
     }
 }
+*/

@@ -18,6 +18,7 @@ name = "siderust"
 approx = "0.5"
 chrono = "0.4"
 nalgebra = "0.33.2"
+simba = "0.9"
 rayon = "1.10"
 
 [dev-dependencies]

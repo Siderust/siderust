@@ -9,18 +9,19 @@ use crate::units::Unit;
 use nalgebra::Vector3;
 
 // Implement Transform trait for ICRS -> Ecliptic
-impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::Ecliptic, U, K>> for Vector<C, frames::ICRS, U, K> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Ecliptic, U, K> {
-        let x:f64 = self.x().into();
-        let y:f64 = self.y().into();
-        let z:f64 = self.z().into();
 
-        let eps = 23.439281_f64.to_radians(); // obliquity in radians
+impl<C: ReferenceCenter, K: Kind, U> Transform<Vector<C, frames::Ecliptic, U, K>>
+    for Vector<C, frames::ICRS, U, K>
+where
+    U: Unit,
+{
+    fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Ecliptic, U, K> {
+        let eps = 23.439281_f64.to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
-        let x_ecl = x;
-        let y_ecl = cos_e * y + sin_e * z;
-        let z_ecl = -sin_e * y + cos_e * z;
+        let x_ecl = self.x();
+        let y_ecl = self.y() *  cos_e   + self.z() * sin_e;
+        let z_ecl = self.y() * (-sin_e) + self.z() * cos_e;
 
         Vector::from_vec3(Vector3::new(x_ecl, y_ecl, z_ecl))
     }
@@ -29,15 +30,12 @@ impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::Ecliptic,
 // Implement Transform trait for Equatorial -> Ecliptic
 impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::Ecliptic, U, K>> for Vector<C, frames::Equatorial, U, K> {
     fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Ecliptic, U, K> {
-        let x:f64 = self.x().into();
-        let y:f64 = self.y().into();
-        let z:f64 = self.z().into();
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
-        let x_ecl = x;
-        let y_ecl = cos_e * y + sin_e * z;
-        let z_ecl = -sin_e * y + cos_e * z;
+        let x_ecl = self.x();
+        let y_ecl = self.y() *  cos_e   + self.z() * sin_e;
+        let z_ecl = self.y() * (-sin_e) + self.z() * cos_e;
 
         Vector::from_vec3(Vector3::new(x_ecl, y_ecl, z_ecl))
     }

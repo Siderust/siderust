@@ -63,7 +63,9 @@ pub use velocity::*;
 pub use mass::*;
 pub use power::*;
 
-use std::ops::{Add, Sub, Mul, Div};
+use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign};
+use simba::scalar::{ClosedAdd, ClosedSub};
+use nalgebra::Scalar;
 
 pub trait Unit:
     Copy
@@ -72,13 +74,18 @@ pub trait Unit:
     + PartialOrd
     + std::fmt::Debug
     + std::fmt::Display
-    + Add<Output = Self>
-    + Sub<Output = Self>
-    + Mul<f64>
-    + Div<f64>
+    + Add<Self>
+    + Sub<Self>
+    + Mul<f64, Output = Self>
+    + Div<f64, Output = Self>
     + From<f64>
     + Into<f64>
     + PartialEq<f64>
+    + AddAssign
+    + SubAssign
+    + ClosedAdd
+    + ClosedSub
+    + Scalar
     + From<AstronomicalUnit>
 {
     const NAN: Self;
