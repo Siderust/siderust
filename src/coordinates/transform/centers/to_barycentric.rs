@@ -16,7 +16,7 @@ where
     for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Ecliptic, U>>,
 {
     // VSOP87 gives the Sun's position in AstronomicalUnits, so we need to convert to U
-    let sun_bary_ecl_au = Sun::vsop87e(jd).get_position();
+    let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
     let x: U = sun_bary_ecl_au.x().into();
     let y: U = sun_bary_ecl_au.y().into();
     let z: U = sun_bary_ecl_au.z().into();
@@ -36,7 +36,7 @@ where
     for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Equatorial, U>>, // Required by Aberration
 {
     // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
-    let earth_bary_ecl_au = Earth::vsop87e(jd).get_position();
+    let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
     let x: U = earth_bary_ecl_au.x().into();
     let y: U = earth_bary_ecl_au.y().into();
     let z: U = earth_bary_ecl_au.z().into();

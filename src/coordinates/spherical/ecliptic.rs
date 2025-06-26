@@ -55,7 +55,7 @@ impl<C: ReferenceCenter, U: Unit> Position<C, Ecliptic, U> {
     }
 
     pub fn new(lon: Degrees, lat: Degrees, distance: U) -> Self {
-        Self::<C, Ecliptic, U>::new_const(
+        Self::new_const(
             lon.normalize(),
             lat.normalize_to_90_range(),
             distance)

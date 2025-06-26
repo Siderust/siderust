@@ -22,16 +22,15 @@ where
     }
 
     pub fn normalize(&self) -> Self {
-        let norm = self.distance();
-        if norm == U::from(0.0) {
-            *self
-        } else {
-            *self / norm
-        }
+        Self::from_vec3(
+            self.as_vec3().normalize()
+        )
     }
 
     pub fn direction(&self) -> super::Direction<C, F, U> {
-        Direction::from_vec3(self.as_vec3() / self.distance())
+        Direction::from_vec3(
+            self.as_vec3().normalize()
+        )
     }
 }
 
