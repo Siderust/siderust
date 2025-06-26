@@ -29,13 +29,12 @@ where
     }
 }
 
-impl<C, F, U> From<&spherical::Direction<C, F, U>> for cartesian::Direction<C, F, U>
+impl<C, F> From<&spherical::Direction<C, F>> for cartesian::Direction<C, F>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
 {
-    fn from(sph: &spherical::Direction<C, F, U>) -> Self {
+    fn from(sph: &spherical::Direction<C, F>) -> Self {
         let ra_rad = sph.azimuth.to_radians();
         let dec_rad = sph.polar.to_radians();
         let x = dec_rad.cos() * ra_rad.cos();

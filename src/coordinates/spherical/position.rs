@@ -18,7 +18,7 @@ where
     /// The zero point (origin) in this coordinate system.
     pub const CENTER: Self = Self::from_degrees(0.0, 0.0, None);
 
-    pub fn direction(&self) -> super::Direction<C, F, U> {
+    pub fn direction(&self) -> super::Direction<C, F> {
         super::Direction::new_spherical_coord(self.polar, self.azimuth, None)
     }
 }

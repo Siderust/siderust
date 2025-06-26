@@ -35,7 +35,7 @@ use crate::coordinates::{
 use crate::units::{Degrees, Kilometers, Unit};
 use crate::bodies::EARTH;
 
-impl<C: ReferenceCenter,> Direction<C, ECEF, Kilometers> {
+impl<C: ReferenceCenter,> Direction<C, ECEF> {
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
         Self::new_spherical_coord(
             lat,
@@ -94,4 +94,4 @@ impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, ECEF, U, K> {
 // Azimuth -> Longitude (λ) – the angle from a prime meridian. [-180°, 180°]
 // Radial  -> Altitude (h) – the elevation above the reference ellipsoid (such as WGS84).
 pub type GeographicPos = Position<Geocentric, ECEF, Kilometers>;
-pub type GeographicDir = Direction<Geocentric, ECEF, Kilometers>;
+pub type GeographicDir = Direction<Geocentric, ECEF>;

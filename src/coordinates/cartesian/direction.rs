@@ -5,21 +5,15 @@ use crate::coordinates::{
 use crate::units::Unit;
 use super::Vector;
 
-pub type Direction<C, F, U = f64> = Vector<C, F, U, DirectionKind>;
+pub type Direction<C, F> = Vector<C, F, f64, DirectionKind>;
 
-impl<C, F, U> Direction<C, F, U>
+impl<C, F> Direction<C, F>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
 {
-    /// For a unit direction vector, the "distance" is always 1 in its unit system.
-    pub fn distance(&self) -> U {
-        U::from(1.0)
-    }
-
     /// Returns a Position vector in the same direction, scaled by the given magnitude.
-    pub fn position(&self, magnitude: U) -> super::Position<C, F, U> {
+    pub fn position<U: Unit>(&self, magnitude: U) -> super::Position<C, F, U> {
         super::Position::from_vec3(self.as_vec3() * magnitude.into())
     }
 }

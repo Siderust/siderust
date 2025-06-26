@@ -41,20 +41,18 @@ where
     }
 }
 
-impl<C, F, U> From<&cartesian::Direction<C, F, U>> for spherical::Direction<C, F, U>
+impl<C, F> From<&cartesian::Direction<C, F>> for spherical::Direction<C, F>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
 {
-    fn from(cart: &cartesian::Direction<C, F, U>) -> Self {
-        let r:f64 = cart.distance().into();
+    fn from(cart: &cartesian::Direction<C, F>) -> Self {
         let x:f64 = cart.x().into();
         let y:f64 = cart.y().into();
         let z:f64 = cart.z().into();
 
         debug_assert!(
-            (r - 1.0).abs() < 1e-12,
+            (cart.as_vec3().magnitude() - 1.0).abs() < 1e-12,
             "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
         );
 
