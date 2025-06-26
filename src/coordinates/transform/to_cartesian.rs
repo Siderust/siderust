@@ -12,20 +12,20 @@ use nalgebra::Vector3;
 /// - `x = r * cos(polar) * cos(azimuth)`
 /// - `y = r * cos(polar) * sin(azimuth)`
 /// - `z = r * sin(polar)`
-impl<C, F, U> From<&spherical::Position<C, F>> for cartesian::Position<C, F, U>
+impl<C, F, U> From<&spherical::Position<C, F, U>> for cartesian::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: Unit
 {
-    fn from(sph: &spherical::Position<C, F>) -> Self {
+    fn from(sph: &spherical::Position<C, F, U>) -> Self {
         let ra_rad = sph.azimuth.to_radians();
         let dec_rad = sph.polar.to_radians();
         let r = sph.distance.expect("SphericalCoord must have a distance");
         let x = r * dec_rad.cos() * ra_rad.cos();
         let y = r * dec_rad.cos() * ra_rad.sin();
         let z = r * dec_rad.sin();
-        Self::from_vec3(Vector3::new(x, y, z))
+        Self::new(x, y, z)
     }
 }
 
