@@ -85,43 +85,41 @@ where
 }
 
 // ------------- If we transform TO a Geocentric Direction, we only need to apply aberration ------------------
-impl<C, F, U> Transform<Direction<Geocentric, F, U>> for Direction<C, F, U>
+impl<C, F> Transform<Direction<Geocentric, F>> for Direction<C, F>
 where
     C: ReferenceCenter + NonGeocentric,
     F: ReferenceFrame + MutableFrame,
-    U: Unit,
-    Direction<Geocentric, F, U>: Transform<Direction<Geocentric, Equatorial, U>>, // Required by Aberration
-    Direction<Geocentric, Equatorial, U>: Transform<Direction<Geocentric, F, U>>,
+    Direction<Geocentric, F>: Transform<Direction<Geocentric, Equatorial>>, // Required by Aberration
+    Direction<Geocentric, Equatorial>: Transform<Direction<Geocentric, F>>,
 {
     #[inline]
-    fn transform(&self, jd: JulianDay) -> Direction<Geocentric, F, U> {
+    fn transform(&self, jd: JulianDay) -> Direction<Geocentric, F> {
         // 1. Convert to Geocentric Equatorial coordinates
-        let geocentric = Direction::<Geocentric, F, U>::from_vec3(
+        let geocentric = Direction::<Geocentric, F>::from_vec3(
             self.as_vec3()
         );
         // 2. Transform to Geocentric Equatorial
-        let equatorial: Direction<Geocentric, Equatorial, U> = geocentric.transform(jd);
+        let equatorial: Direction<Geocentric, Equatorial> = geocentric.transform(jd);
         // 3. Apply aberration
         let aberrated = apply_aberration_to_direction(
-            Direction::<Geocentric, Equatorial, U>::from_vec3(equatorial.as_vec3()), jd
+            Direction::<Geocentric, Equatorial>::from_vec3(equatorial.as_vec3()), jd
         );
         // 4. Recover target Frame
-        Transform::<Direction<Geocentric, F, U>>::transform(&aberrated, jd)
+        Transform::<Direction<Geocentric, F>>::transform(&aberrated, jd)
     }
 }
 
-impl<C, F, U> Transform<spherical::Direction<Geocentric, F, U>> for spherical::Direction<C, F, U>
+impl<C, F> Transform<spherical::Direction<Geocentric, F>> for spherical::Direction<C, F>
 where
     C: ReferenceCenter + NonGeocentric,
     F: ReferenceFrame + MutableFrame,
-    U: Unit,
-    Direction<Geocentric, F, U>: Transform<Direction<Geocentric, Equatorial, U>>,
-    Direction<Geocentric, Equatorial, U>: Transform<Direction<Geocentric, F, U>>,
+    Direction<Geocentric, F>: Transform<Direction<Geocentric, Equatorial>>,
+    Direction<Geocentric, Equatorial>: Transform<Direction<Geocentric, F>>,
 {
     #[inline]
-    fn transform(&self, jd: JulianDay) -> spherical::Direction<Geocentric, F, U> {
+    fn transform(&self, jd: JulianDay) -> spherical::Direction<Geocentric, F> {
         let cart = self.to_cartesian();
-        let cart_transformed = Transform::<Direction<Geocentric, F, U>>::transform(&cart, jd);
+        let cart_transformed = Transform::<Direction<Geocentric, F>>::transform(&cart, jd);
         cart_transformed.to_spherical()
     }
 }

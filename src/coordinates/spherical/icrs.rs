@@ -50,7 +50,7 @@ pub type ICRSHeliocentricSphericalCoord = Position<Heliocentric, ICRS>;
 pub type ICRSGeocentricSphericalCoord   = Position<Geocentric,   ICRS>;
 pub type ICRSTopocentricSphericalCoord  = Position<Topocentric,  ICRS>;
 
-impl<C: ReferenceCenter, U: Unit> Direction<C, ICRS, U> {
+impl<C: ReferenceCenter> Direction<C, ICRS> {
     /// Creates a new ICRS spherical coordinate with constant values.
     ///
     /// # Arguments

@@ -49,7 +49,7 @@ pub type HorizontalHeliocentricSphericalPos = Position<Heliocentric, Horizontal>
 pub type HorizontalGeocentricSphericalPos   = Position<Geocentric,   Horizontal>;
 pub type HorizontalTopocentricSphericalPos  = Position<Topocentric,  Horizontal>;
 
-impl<C: ReferenceCenter, U: Unit> Direction<C, Horizontal, U> {
+impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// Creates a new horizontal spherical coordinate with constant values.
     ///
     /// # Arguments
