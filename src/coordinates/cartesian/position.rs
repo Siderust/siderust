@@ -22,14 +22,30 @@ where
     }
 
     pub fn normalize(&self) -> Self {
-        Self::from_vec3(
-            self.as_vec3().normalize()
+        // TODO: Use nalgebra for this?
+        let norm = nalgebra::Vector3::<f64>::new(
+            self.x().into(),
+            self.y().into(),
+            self.z().into()
+        ).normalize();
+        Self::new(
+            U::from(norm.x),
+            U::from(norm.y),
+            U::from(norm.z)
         )
     }
 
     pub fn direction(&self) -> super::Direction<C, F> {
-        Direction::from_vec3(
-            self.as_vec3().normalize()
+        // TODO: Use nalgebra for this?
+        let norm = nalgebra::Vector3::<f64>::new(
+            self.x().into(),
+            self.y().into(),
+            self.z().into()
+        ).normalize();
+        Direction::new(
+            norm.x,
+            norm.y,
+            norm.z
         )
     }
 }

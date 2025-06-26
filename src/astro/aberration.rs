@@ -55,9 +55,11 @@ pub fn apply_aberration_to_direction(
     //--------------------------------------------------------------------
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
-    Direction::from_vec3(
-        mean.as_vec3() + velocity.as_vec3() / AU_PER_DAY_C
-    )
+    Position::<Geocentric, Equatorial, f64>::new(
+        mean.x() + Into::<f64>::into(velocity.x() / AU_PER_DAY_C),
+        mean.y() + Into::<f64>::into(velocity.y() / AU_PER_DAY_C),
+        mean.z() + Into::<f64>::into(velocity.z() / AU_PER_DAY_C),
+    ).direction()
 }
 
 
@@ -76,9 +78,11 @@ pub fn remove_aberration_from_direction(
     //--------------------------------------------------------------------
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
-    Direction::from_vec3(
-        app.as_vec3() - velocity.as_vec3() / AU_PER_DAY_C
-    )
+    Position::<Geocentric, Equatorial, f64>::new(
+        app.x() - Into::<f64>::into(velocity.x() / AU_PER_DAY_C),
+        app.y() - Into::<f64>::into(velocity.y() / AU_PER_DAY_C),
+        app.z() - Into::<f64>::into(velocity.z() / AU_PER_DAY_C),
+    ).direction()
 }
 
 
