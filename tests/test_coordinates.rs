@@ -2,22 +2,24 @@ use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::*;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
-use siderust::units::{JulianDay, Degrees};
+use siderust::units::{Unit, JulianDay, Degrees};
 
-fn approx_eq<C, F>(a: &cartesian::Position<C, F>, b: &cartesian::Position<C, F>)
+fn approx_eq<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
 {
     assert!((a.x() - b.x()).abs() < 1e-6, "x mismatch: {} vs {}", a.x(), b.x());
     assert!((a.y() - b.y()).abs() < 1e-6, "y mismatch: {} vs {}", a.y(), b.y());
     assert!((a.z() - b.z()).abs() < 1e-6, "z mismatch: {} vs {}", a.z(), b.z());
 }
 
-fn sph_approx_eq<C, F>(a: &spherical::Position<C, F>, b: &spherical::Position<C, F>)
+fn sph_approx_eq<C, F, U>(a: &spherical::Position<C, F, U>, b: &spherical::Position<C, F, U>)
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
 {
     assert!((a.polar.as_f64()   - b.polar.as_f64()).abs()   < 1e-6, "polar mismatch: {} vs {}", a.polar, b.polar);
     assert!((a.azimuth.as_f64() - b.azimuth.as_f64()).abs() < 1e-6, "polar mismatch: {} vs {}", a.azimuth, b.azimuth);
