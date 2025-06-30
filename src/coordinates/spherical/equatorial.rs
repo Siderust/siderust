@@ -42,10 +42,8 @@ use crate::units::{Unit, Degrees};
 // Polar   -> Dec (δ) – the angle from a prime meridian.
 // Azimuth -> RA (α) – the angle from the equator.
 // Radial  -> Distance (d) – the distance between the source and the target.
-pub type EquatorialBarycentricSphericalPos  = Position<Barycentric,  Equatorial>;
-pub type EquatorialHeliocentricSphericalPos = Position<Heliocentric, Equatorial>;
-pub type EquatorialGeocentricSphericalPos   = Position<Geocentric,   Equatorial>;
-pub type EquatorialTopocentricSphericalPos  = Position<Topocentric,  Equatorial>;
+pub type EquatorialPos<U> = Position<Geocentric, Equatorial, U>;
+pub type EquatorialDir = Direction<Geocentric, Equatorial>;
 
 impl<C: ReferenceCenter> Direction<C, Equatorial> {
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
