@@ -4,7 +4,7 @@ use crate::coordinates::{
     frames::{ECEF, Equatorial},
     spherical::Position,
 };
-use crate::units::{Degrees, Radians, JulianDay, Days};
+use crate::units::{Degrees, Radians, JulianDay, Days, Kilometers};
 use crate::astro::nutation::corrected_ra_with_nutation;
 use crate::targets::Target;
 
@@ -51,7 +51,7 @@ const NEWTON_MAX_ITERS: usize = 15;
 /// 4. Collect all roots in `[jd_start, jd_end)` and sort them.
 pub fn find_dynamic_extremas<F>(
     get_equatorial: F,
-    observer: &Position<Geocentric, ECEF>,
+    observer: &Position<Geocentric, ECEF, Kilometers>,
     jd_start: JulianDay,
     jd_end: JulianDay,
 ) -> Vec<Culmination>
