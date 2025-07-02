@@ -14,9 +14,6 @@
 //! - **Longitude (λ)**  → `azimuth`: angle from the prime meridian in degrees, normalized to [-180°, 180°].
 //! - **Radial distance (h)** → height above the reference ellipsoid (e.g., WGS84), in meters.
 //!
-//! # Type Aliases
-//! - `Geographic` = `SphericalCoord<Geocentric, ECEF>`
-//!
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::position::Geographic;
@@ -89,7 +86,3 @@ impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, ECEF, U, K> {
 }
 
 
-// Define type alias for Geodetic/Geographic coordinates using SphericalCoord
-// Polar   -> Latitude (φ) – the angle from the equator. [-90°, 90°]
-// Azimuth -> Longitude (λ) – the angle from a prime meridian. [-180°, 180°]
-// Radial  -> Altitude (h) – the elevation above the reference ellipsoid (such as WGS84).

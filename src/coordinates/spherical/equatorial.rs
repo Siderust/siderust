@@ -12,13 +12,6 @@
 //!
 //! Right Ascension is normalized to the [0°, 360°] range, and Declination to [-90°, 90°].
 //!
-//! # Provided Types
-//! The following type aliases define common equatorial coordinate systems with different centers:
-//!
-//! - `EquatorialBarycentricSphericalPos` → For sources relative to the solar system barycenter.
-//! - `EquatorialHeliocentricSphericalPos` → For solar system objects relative to the Sun.
-//! - `EquatorialGeocentricSphericalPos` → For objects relative to the Earth (most common in observations).
-//!
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::position::Equatorial;
@@ -37,11 +30,6 @@ use crate::coordinates::{
     kinds::Kind,
 };
 use crate::units::{Unit, Degrees};
-
-// Equatorial Coordinate Types
-// Polar   -> Dec (δ) – the angle from a prime meridian.
-// Azimuth -> RA (α) – the angle from the equator.
-// Radial  -> Distance (d) – the distance between the source and the target.
 
 impl<C: ReferenceCenter> Direction<C, Equatorial> {
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {

@@ -13,14 +13,6 @@
 //!
 //! Right Ascension is normalized to the [0°, 360°] range, and Declination to the [-90°, 90°] range.
 //!
-//! # Provided Types
-//! The following type aliases define common combinations of center and ICRS frame:
-//!
-//! - `ICRSBarycentricSphericalCoord` → Center: solar system barycenter.
-//! - `ICRSHeliocentricSphericalCoord` → Center: Sun.
-//! - `ICRSGeocentricSphericalCoord` → Center: Earth (common for observations).
-//! - `ICRSTopocentricSphericalCoord` → Center: specific observer on Earth.
-//!
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::position::GCRS;
@@ -40,12 +32,6 @@ use crate::coordinates::{
     centers::*,
 };
 use crate::units::{Unit, Degrees};
-
-// ICRS Coordinate Types
-// Polar   -> Dec (δ) – the angle from a prime meridian. [-90°, 90°]
-// Azimuth -> RA (α) – the angle from the equator. [0°, 360°]
-// Radial  -> Distance (d) – the distance between the source and the target.
-
 
 impl<C: ReferenceCenter> Direction<C, ICRS> {
     /// Creates a new ICRS spherical coordinate with constant values.
