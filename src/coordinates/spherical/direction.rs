@@ -27,14 +27,17 @@
 //! ```
 //!
 //! ## Type Aliases
-//! - [`Position<C, F>`]: Spherical position (with distance).
 //! - [`Direction<C, F>`]: Spherical direction (distance is typically `None`).
 //!
-//! ## Methods
-//! - [`new(polar, azimuth, distance)`]: Construct a new coordinate.
-//! - [`from_degrees(polar, azimuth, distance)`]: Construct from primitive values.
-//! - [`distance_to(other)`]: Compute Euclidean distance to another coordinate.
-//! - [`angular_separation(other)`]: Compute angular separation in degrees.
+//! ## Type Aliases
+//! - [`Direction<C, F>`]: Spherical direction (angles only, distance is always `None`).
+//! - [`Ecliptic`]: Heliocentric ecliptic direction (longitude, latitude).
+//! - [`Equatorial`]: Geocentric equatorial direction (right ascension, declination).
+//! - [`Horizontal`]: Topocentric horizontal direction (azimuth, altitude).
+//! - [`ICRS`]: Barycentric ICRS direction (right ascension, declination).
+//! - [`HCRS`]: Heliocentric ICRS direction (right ascension, declination).
+//! - [`GCRS`]: Geocentric ICRS direction (right ascension, declination).
+//! - [`Geographic`]: Geocentric ECEF
 //!
 //! ## Display
 //! Implements `Display` for readable output including center, frame, angles, and distance.
