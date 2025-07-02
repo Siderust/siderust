@@ -16,13 +16,9 @@ pub struct Kilometers(f64);
 impl Unit for Kilometers {
     const NAN: Self = Kilometers(f64::NAN);
 
-    fn sqrt(self) -> Self {
-        Kilometers(self.0.sqrt())
-    }
-
-    fn powi(self, n: i32) -> Self {
-        Kilometers(self.0.powi(n))
-    }
+    fn sqrt(self) -> Self { Kilometers(self.0.sqrt()) }
+    fn powi(self, n: i32) -> Self { Kilometers(self.0.powi(n)) }
+    fn abs(self) -> Self { Kilometers(self.0.abs()) }
 }
 
 impl Kilometers {

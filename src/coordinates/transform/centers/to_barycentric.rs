@@ -78,13 +78,15 @@ mod tests {
     use crate::coordinates::centers::*;
     use crate::bodies::solar_system::{Sun, Earth};
     use crate::macros::assert_cartesian_eq;
+    use crate::units::AU;
+    use crate::coordinates::cartesian::EclipticPos;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
     #[test] // Heliocentric -> Barycentric
     fn test_helio() {
-        let sun_helio = Position::<Heliocentric, Ecliptic>::new(0.0, 0.0, 0.0);
-        let sun_bary = Position::<Barycentric, Ecliptic>::from(&sun_helio);
+        let sun_helio = EclipticPos::<AU>::new(0.0, 0.0, 0.0);
+        let sun_bary = EclipticPos::from(&sun_helio);
         let expected_sun_bary = Sun::vsop87e(JulianDay::J2000).get_position().clone();
         assert_cartesian_eq!(&sun_bary, &expected_sun_bary, EPSILON);
     }

@@ -36,7 +36,7 @@ use super::{Position, Direction};
 use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{
     kinds::Kind,
-    frames::*,
+    frames::ICRS,
     centers::*,
 };
 use crate::units::{Unit, Degrees};
@@ -45,10 +45,10 @@ use crate::units::{Unit, Degrees};
 // Polar   -> Dec (δ) – the angle from a prime meridian. [-90°, 90°]
 // Azimuth -> RA (α) – the angle from the equator. [0°, 360°]
 // Radial  -> Distance (d) – the distance between the source and the target.
-pub type ICRSBarycentricSphericalCoord  = Position<Barycentric,  ICRS>;
-pub type ICRSHeliocentricSphericalCoord = Position<Heliocentric, ICRS>;
-pub type ICRSGeocentricSphericalCoord   = Position<Geocentric,   ICRS>;
-pub type ICRSTopocentricSphericalCoord  = Position<Topocentric,  ICRS>;
+// TODO: Split Position and Direction in different modules
+//pub type ICRS<U=f64> = super::Position<Barycentric,  frames::ICRS, U>;
+//pub type HCRS<U=f64> = super::Position<Heliocentric, ICRS, U>;
+//pub type GCRS<U=f64> = super::Position<Geocentric,   ICRS, U>;
 
 impl<C: ReferenceCenter> Direction<C, ICRS> {
     /// Creates a new ICRS spherical coordinate with constant values.
