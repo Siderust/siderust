@@ -223,7 +223,7 @@ fn orbital_period_days(a: AstronomicalUnit) -> Days {
 pub fn calculate_orbit_position(
     elements: &Orbit,
     julian_date: JulianDay,
-) -> Position<Heliocentric, Ecliptic> {
+) -> Position<Heliocentric, Ecliptic, f64> { //TODO: check units
 
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);
@@ -262,7 +262,7 @@ pub fn calculate_orbit_position(
     let (sin_omega, cos_omega) = omega_rad.sin_cos();
     let (sin_w_nu, cos_w_nu) = (w_rad + Radians::new(true_anomaly)).sin_cos();
 
-    Position::<Heliocentric, Ecliptic>::new(
+    Position::new(
         /*x:*/ z.value() * (cos_omega * cos_w_nu - sin_omega * sin_w_nu * cos_i),
         /*y:*/ z.value() * (sin_omega * cos_w_nu + cos_omega * sin_w_nu * cos_i),
         /*z:*/ z.value() * (sin_w_nu * sin_i)
@@ -271,7 +271,7 @@ pub fn calculate_orbit_position(
 
 impl Orbit {
     /// Calculates heliocentric coordinates of the orbiting body at a given Julian date.
-    pub fn kepler_position(&self, jd: JulianDay) -> Position<Heliocentric, Ecliptic> {
+    pub fn kepler_position(&self, jd: JulianDay) -> Position<Heliocentric, Ecliptic, f64> {
         calculate_orbit_position(self, jd)
     }
 }
