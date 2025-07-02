@@ -21,10 +21,10 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::EquatorialGeocentricSphericalPos;
+//! use siderust::coordinates::spherical::EquatorialPos;
 //! use siderust::units::Degrees;
 //!
-//! let coord = EquatorialGeocentricSphericalPos::new(
+//! let coord = EquatorialPos::new(
 //!     Degrees::new(120.0), Degrees::new(45.0), 1.0
 //! );
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
