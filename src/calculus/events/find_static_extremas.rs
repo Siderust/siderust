@@ -1,6 +1,6 @@
 use super::Culmination;
 use crate::targets::Target;
-use crate::units::{Degrees, JulianDay, Days};
+use crate::units::{Days, Degrees, JulianDay, Kilometers};
 use crate::astro::{
     sidereal::*,
     nutation::corrected_ra_with_nutation
@@ -55,7 +55,7 @@ use crate::coordinates::{
 /// ---
 pub fn find_static_extremas(
     target: &Target<Position<Geocentric, Equatorial>>,
-    observer: &Position<Geocentric, ECEF>,
+    observer: &Position<Geocentric, ECEF, Kilometers>,
     jd_start: JulianDay,
     jd_end: JulianDay,
 ) -> Vec<Culmination> {
