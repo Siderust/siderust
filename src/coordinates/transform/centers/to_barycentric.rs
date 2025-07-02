@@ -79,7 +79,7 @@ mod tests {
     use crate::bodies::solar_system::{Sun, Earth};
     use crate::macros::assert_cartesian_eq;
     use crate::units::AU;
-    use crate::coordinates::cartesian::Ecliptic;
+    use crate::coordinates::cartesian::position::Ecliptic;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
