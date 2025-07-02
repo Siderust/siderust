@@ -2,7 +2,7 @@
 //! with respect to the Earth-Centered Earth-Fixed (ECEF) reference frame.
 //!
 //! This module provides:
-//! - The `GeographicPos` type, a spherical coordinate
+//! - The `Geographic` type, a spherical coordinate
 //!   system using latitude, longitude, and radial height.
 //! - Creation methods that normalize angular values to valid geodetic ranges.
 //! - Traits and builders for structured instantiation.
@@ -15,14 +15,14 @@
 //! - **Radial distance (h)** → height above the reference ellipsoid (e.g., WGS84), in meters.
 //!
 //! # Type Aliases
-//! - `GeographicPos` = `SphericalCoord<Geocentric, ECEF>`
+//! - `Geographic` = `SphericalCoord<Geocentric, ECEF>`
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::GeographicPos;
+//! use siderust::coordinates::spherical::position::Geographic;
 //! use siderust::units::{Degrees, KM};
 //!
-//! let coord = GeographicPos::new(Degrees::new(45.0), Degrees::new(7.0), 2.4*KM);
+//! let coord = Geographic::new(Degrees::new(45.0), Degrees::new(7.0), 2.4*KM);
 //! println!("lat = {}, lon = {}", coord.lat(), coord.lon());
 //! ```
 
@@ -93,5 +93,3 @@ impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, ECEF, U, K> {
 // Polar   -> Latitude (φ) – the angle from the equator. [-90°, 90°]
 // Azimuth -> Longitude (λ) – the angle from a prime meridian. [-180°, 180°]
 // Radial  -> Altitude (h) – the elevation above the reference ellipsoid (such as WGS84).
-pub type GeographicPos = Position<Geocentric, ECEF, Kilometers>;
-pub type GeographicDir = Direction<Geocentric, ECEF>;
