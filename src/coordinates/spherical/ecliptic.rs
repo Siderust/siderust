@@ -22,10 +22,10 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::Ecliptic;
+//! use siderust::coordinates::spherical::EclipticPos;
 //! use siderust::units::Degrees;
 //!
-//! let coord = Ecliptic::new(
+//! let coord = EclipticPos::new(
 //!     Degrees::new(120.0), Degrees::new(5.0), 1.0
 //! );
 //! println!("lon = {}, lat = {}", coord.lon(), coord.lat());
