@@ -46,7 +46,7 @@ where
     let x: U = earth_helio_ecl_au.x().into();
     let y: U = earth_helio_ecl_au.y().into();
     let z: U = earth_helio_ecl_au.z().into();
-    let earth_ecl = Position::<Barycentric, Ecliptic, U>::new(x, y, z);
+    let earth_ecl = Position::<Heliocentric, Ecliptic, U>::new(x, y, z);
 
     let earth_equ = Position::<Heliocentric, Equatorial, U>::from(&earth_ecl); // (Helio-Ecl) -> (Helio-Equ)
     let helio_equ = Position::<Heliocentric, Equatorial, U>::from(helio); // (Helio-F)   -> (Helio-Equ)
@@ -144,10 +144,10 @@ mod tests {
 
     #[test] // Heliocentric -> Geocentric
     fn test_helio_to_geo() {
-        let earth_helio = Earth::vsop87a(JulianDay::J2000).get_position().clone();
+        let earth_helio: cartesian::Vector<Heliocentric, Ecliptic, crate::units::AstronomicalUnit> = Earth::vsop87a(JulianDay::J2000).get_position().clone();
         let earth_geo = Position::<Geocentric, Ecliptic, AU>::from(&earth_helio);
         let expected_earth_geo = Position::<Geocentric, Ecliptic, AU>::new(0.0*AU, 0.0*AU, 0.0*AU);
-        assert_cartesian_eq!(&earth_geo, &expected_earth_geo, EPSILON, "Earth in Geocentric shall be (0,0,0). Current Value {:?}", earth_geo);
+        assert_cartesian_eq!(&earth_geo, &expected_earth_geo, EPSILON);
     }
 
     #[test] // ICRS -> GCRS
