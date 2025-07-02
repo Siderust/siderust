@@ -85,16 +85,17 @@ mod tests {
 
     #[test] // Heliocentric -> Barycentric
     fn test_helio() {
-        let sun_helio = EclipticPos::<AU>::new(0.0, 0.0, 0.0);
-        let sun_bary = EclipticPos::from(&sun_helio);
+        use crate::coordinates::cartesian::Position;
+        let sun_helio = EclipticPos::<AU>::new(0.0*AU, 0.0*AU, 0.0*AU);
+        let sun_bary = Position::<Barycentric, Ecliptic, AU>::from(&sun_helio);
         let expected_sun_bary = Sun::vsop87e(JulianDay::J2000).get_position().clone();
-        assert_cartesian_eq!(&sun_bary, &expected_sun_bary, EPSILON);
+        assert_cartesian_eq!(sun_bary, expected_sun_bary, EPSILON);
     }
 
     #[test] // Geocentric -> Barycentric
     fn test_geo() {
-        let earth_geo = Position::<Geocentric, Ecliptic>::new(0.0, 0.0, 0.0);
-        let earth_bary = Position::<Barycentric, Ecliptic>::from(&earth_geo);
+        let earth_geo = Position::<Geocentric, Ecliptic, AU>::new(0.0*AU, 0.0*AU, 0.0*AU);
+        let earth_bary = Position::<Barycentric, Ecliptic, AU>::from(&earth_geo);
         let expected_earth_bary = Earth::vsop87e(JulianDay::J2000).get_position().clone();
         assert_cartesian_eq!(&earth_bary, &expected_earth_bary, EPSILON);
     }
