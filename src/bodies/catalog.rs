@@ -8,7 +8,7 @@ use super::Star;
 use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
 use crate::targets::Target;
 use crate::units::*;
-
+// TODO: use LY units
 pub const VEGA: Star<'static> = Star::new_const(
     "Vega",
     LightYear::new(25.0),
