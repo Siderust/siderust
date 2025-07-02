@@ -45,7 +45,7 @@ use crate::units::Unit;
 pub struct Vector<
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit = f64,
+    U: Unit,
     K: Kind = PositionKind,
 > {
     xyz: Vector3<U>,
