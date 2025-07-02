@@ -22,7 +22,7 @@
 //! use siderust::coordinates::kinds::PositionKind;
 //!
 //! // Create a heliocentric ecliptic position
-//! let pos = Vector::<Heliocentric, Ecliptic, PositionKind>::new(1.0, 0.0, 0.0);
+//! let pos = Vector::<Heliocentric, Ecliptic, f64, PositionKind>::new(1.0, 0.0, 0.0);
 //! println!("X: {}, Y: {}, Z: {}", pos.x(), pos.y(), pos.z());
 //! ```
 //!

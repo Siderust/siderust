@@ -23,10 +23,10 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::ICRSGeocentricSphericalCoord;
+//! use siderust::coordinates::spherical::GCRSPos;
 //! use siderust::units::Degrees;
 //!
-//! let coord = ICRSGeocentricSphericalCoord::new(
+//! let coord = GCRSPos::new(
 //!     Degrees::new(120.0), Degrees::new(45.0), 1.0
 //! );
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
@@ -48,7 +48,7 @@ use crate::units::{Unit, Degrees};
 // TODO: Split Position and Direction in different modules
 //pub type ICRS<U=f64> = super::Position<Barycentric,  frames::ICRS, U>;
 //pub type HCRS<U=f64> = super::Position<Heliocentric, ICRS, U>;
-//pub type GCRS<U=f64> = super::Position<Geocentric,   ICRS, U>;
+pub type GCRSPos<U=f64> = super::Position<Geocentric,   ICRS, U>;
 
 impl<C: ReferenceCenter> Direction<C, ICRS> {
     /// Creates a new ICRS spherical coordinate with constant values.
