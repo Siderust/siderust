@@ -12,14 +12,6 @@
 //!
 //! Longitude is normalized to the [0°, 360°] range, and latitude to [-90°, 90°].
 //!
-//! # Provided Types
-//! The following type aliases define common combinations of center and ecliptic frame:
-//!
-//! - `EclipticBarycentricPos` → Center: solar system barycenter.
-//! - `EclipticHeliocentricPos` → Center: Sun (true heliocentric).
-//! - `EclipticGeocentricPos` → Center: Earth (common for Moon or planets).
-//! - `EclipticTopocentricPos` → Center: specific observer on Earth.
-//!
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::position::Ecliptic;
@@ -37,12 +29,6 @@ use crate::coordinates::{
     kinds::Kind,
 };
 use crate::units::{Degrees, Unit};
-
-
-// Ecliptic Coordinate Types
-// Polar   -> Latitude  (B) – the angle from the equator. [-90°, 90°]
-// Azimuth -> Longitude (L) – the angle from a prime meridian. [0°, 360°]
-// Radial  -> Distance  (R) – the distance between the source and the target.
 
 impl<C: ReferenceCenter, U: Unit> Position<C, frames::Ecliptic, U> {
     pub const fn new_const(lon: Degrees, lat: Degrees, distance: U) -> Self {

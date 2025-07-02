@@ -33,11 +33,6 @@
 //! println!("{}", coord.to_string());
 //! ```
 //!
-//! ## Provided Types (via Type Aliases)
-//! - `ICRSBarycentricSphericalCoord`, `ICRSHeliocentricSphericalCoord`, etc.
-//! - `EclipticBarycentricSphericalCoord`, `EquatorialGeocentricSphericalCoord`, etc.
-//! - `HorizontalTopocentricSphericalCoord`, `Geographic` (ECEF), etc.
-//!
 //! ## See Also
 //! - [`crate::coordinates::cartesian::Vector`] for 3D Cartesian representation.
 //! - Frame-specific modules for specialized constructors and accessors.
@@ -62,11 +57,9 @@
 //! # Example
 //! ```rust
 //! use siderust::units::Degrees;
-//! use siderust::coordinates::spherical::Position;
-//! use siderust::coordinates::frames::ICRS;
-//! use siderust::coordinates::centers::Barycentric;
+//! use siderust::coordinates::spherical::position::ICRS;
 //!
-//! let coord = Position::<Barycentric, ICRS>::new(
+//! let coord = ICRS::new(
 //!     Degrees::new(120.0), Degrees::new(45.0), 1.0
 //! );
 //! println!("{}", coord.to_string());

@@ -13,11 +13,6 @@
 //! Altitude is normalized to the [-90°, 90°] range, and azimuth to the [0°, 360°] range.
 //! Time is represented as Julian Date (JD).
 //!
-//! # Provided Types
-//! The following type aliases define common combinations of center and horizontal frame:
-//!
-//! - `Horizontal` → Center: specific observer on Earth.
-//!
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::position::Horizontal;
@@ -36,11 +31,6 @@ use crate::coordinates::{
     kinds::Kind,
 };
 use crate::units::{Degrees, Unit};
-
-// Horizontal Coordinate Types
-// Polar   -> Alt (α) – the angle from the horizon. [-90°, 90°]
-// Azimuth -> Az (θ) – the angle from a prime meridian. [0°, 360°]
-// Radial  -> Distance (d) – the distance between the source and the target.
 
 impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// Creates a new horizontal spherical coordinate with constant values.
