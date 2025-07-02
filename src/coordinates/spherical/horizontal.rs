@@ -16,17 +16,14 @@
 //! # Provided Types
 //! The following type aliases define common combinations of center and horizontal frame:
 //!
-//! - `HorizontalBarycentricSphericalPos` → Center: solar system barycenter.
-//! - `HorizontalHeliocentricSphericalPos` → Center: Sun.
-//! - `HorizontalGeocentricSphericalPos` → Center: Earth (common for ground-based observations).
-//! - `HorizontalTopocentricSphericalPos` → Center: specific observer on Earth.
+//! - `Horizontal` → Center: specific observer on Earth.
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::HorizontalTopocentricSphericalPos;
+//! use siderust::coordinates::spherical::position::Horizontal;
 //! use siderust::units::Degrees;
 //!
-//! let coord = HorizontalTopocentricSphericalPos::new(
+//! let coord = Horizontal::new(
 //!     Degrees::new(45.0), Degrees::new(120.0), 1.0
 //! );
 //! println!("alt = {}, az = {}", coord.alt(), coord.az());
@@ -44,10 +41,6 @@ use crate::units::{Degrees, Unit};
 // Polar   -> Alt (α) – the angle from the horizon. [-90°, 90°]
 // Azimuth -> Az (θ) – the angle from a prime meridian. [0°, 360°]
 // Radial  -> Distance (d) – the distance between the source and the target.
-pub type HorizontalBarycentricSphericalPos  = Position<Barycentric,  Horizontal>;
-pub type HorizontalHeliocentricSphericalPos = Position<Heliocentric, Horizontal>;
-pub type HorizontalGeocentricSphericalPos   = Position<Geocentric,   Horizontal>;
-pub type HorizontalTopocentricSphericalPos  = Position<Topocentric,  Horizontal>;
 
 impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// Creates a new horizontal spherical coordinate with constant values.
