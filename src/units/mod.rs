@@ -92,10 +92,12 @@ pub trait Unit:
 
     fn sqrt(self) -> Self;
     fn powi(self, n: i32) -> Self;
+    fn abs(self) -> Self;
 }
 
 impl Unit for f64 {
     const NAN: Self = f64::NAN;
     fn sqrt(self) -> Self { f64::sqrt(self) }
     fn powi(self, n: i32) -> Self { f64::powi(self, n) }
+    fn abs(self) -> Self { f64::abs(self) }
 }

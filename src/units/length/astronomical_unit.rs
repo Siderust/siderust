@@ -8,6 +8,7 @@ use crate::units::Unit;
 use super::Kilometers;
 
 pub const AU: AstronomicalUnit = AstronomicalUnit::new(1.0);
+pub type AU = AstronomicalUnit;
 
 /// A strongly-typed representation of a length in Astronomical Units (AU).
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
@@ -16,13 +17,9 @@ pub struct AstronomicalUnit(f64);
 impl Unit for AstronomicalUnit {
     const NAN: Self = AstronomicalUnit(f64::NAN);
 
-    fn sqrt(self) -> Self {
-        AstronomicalUnit(self.0.sqrt())
-    }
-
-    fn powi(self, n: i32) -> Self {
-        AstronomicalUnit(self.0.powi(n))
-    }
+    fn sqrt(self) -> Self { AstronomicalUnit(self.0.sqrt()) }
+    fn powi(self, n: i32) -> Self { AstronomicalUnit(self.0.powi(n)) }
+    fn abs(self) -> Self { AstronomicalUnit(self.0.abs()) }
 }
 
 impl AstronomicalUnit {

@@ -44,10 +44,8 @@ use crate::units::{Degrees, Unit};
 // Polar   -> Latitude  (B) – the angle from the equator. [-90°, 90°]
 // Azimuth -> Longitude (L) – the angle from a prime meridian. [0°, 360°]
 // Radial  -> Distance  (R) – the distance between the source and the target.
-pub type EclipticBarycentricPos  = Position<Barycentric,  Ecliptic>;
-pub type EclipticHeliocentricPos = Position<Heliocentric, Ecliptic>; // L (l), B (b), R (r)
-pub type EclipticGeocentricPos   = Position<Geocentric,   Ecliptic>; // L (λ), B (β), R (Δ)
-pub type EclipticTopocentricPos  = Position<Topocentric,  Ecliptic>;
+pub type EclipticPos<U> = Position<Heliocentric, Ecliptic, U>; // L (l), B (b), R (r)
+pub type EclipticDir = Direction<Heliocentric, Ecliptic>; // L (l), B (b), R (r)
 
 impl<C: ReferenceCenter, U: Unit> Position<C, Ecliptic, U> {
     pub const fn new_const(lon: Degrees, lat: Degrees, distance: U) -> Self {

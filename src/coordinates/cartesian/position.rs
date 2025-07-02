@@ -57,19 +57,13 @@ pub type GCRS<U = f64> = Position<centers::Geocentric,   frames::ICRS, U>;
 pub type TCRS<U = f64> = Position<centers::Topocentric,  frames::ICRS, U>;
 
 // === Ecliptic frame ===
-pub type EclipticBarycentricCartesianCoord<U = f64>  = Position<centers::Barycentric,  frames::Ecliptic, U>;
-pub type EclipticHeliocentricCartesianCoord<U = f64> = Position<centers::Heliocentric, frames::Ecliptic, U>;
-pub type EclipticGeocentricCartesianCoord<U = f64>   = Position<centers::Geocentric,   frames::Ecliptic, U>;
-pub type EclipticTopocentricCartesianCoord<U = f64>  = Position<centers::Topocentric,  frames::Ecliptic, U>;
+pub type EclipticPos<U = f64> = Position<centers::Heliocentric, frames::Ecliptic, U>;
 
 // === Equatorial frame ===
-pub type EquatorialBarycentricCartesianCoord<U = f64>  = Position<centers::Barycentric,  frames::Equatorial, U>;
-pub type EquatorialHeliocentricCartesianCoord<U = f64> = Position<centers::Heliocentric, frames::Equatorial, U>;
-pub type EquatorialGeocentricCartesianCoord<U = f64>   = Position<centers::Geocentric,   frames::Equatorial, U>;
-pub type EquatorialTopocentricCartesianCoord<U = f64>  = Position<centers::Topocentric,  frames::Equatorial, U>;
+pub type EquatorialPos<U = f64>   = Position<centers::Geocentric,   frames::Equatorial, U>;
 
 // === Horizontal and Earth-fixed frame ===
-pub type HorizontalTopocentricCartesianCoord<U = f64>  = Position<centers::Topocentric,  frames::Horizontal, U>;
+pub type HorizontalPos<U = f64>  = Position<centers::Topocentric,  frames::Horizontal, U>;
 
 // === Geographic and Earth-fixed frames ===
-pub type GeographicCartesianCoord<U = f64> = Position<centers::Geocentric, frames::ECEF, U>;
+pub type GeographicPos<U = f64> = Position<centers::Geocentric, frames::ECEF, U>;
