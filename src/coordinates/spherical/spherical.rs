@@ -59,7 +59,7 @@ use std::marker::PhantomData;
 pub struct SphericalCoord<
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit = f64,
+    U: Unit,
     K: Kind = PositionKind,
 > {
     pub polar: Degrees,      // θ (polar/latitude/declination)

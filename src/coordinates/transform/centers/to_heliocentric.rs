@@ -84,37 +84,26 @@ mod tests {
     use crate::coordinates::frames::*;
     use crate::coordinates::centers::*;
     use crate::bodies::solar_system::Sun;
+    use crate::units::AU;
+    use crate::macros::assert_cartesian_eq;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
-
-    /// Helper function to compare floating-point values within a small tolerance
-    fn approx_eq(a: f64, b: f64, epsilon: f64) -> bool {
-        (a - b).abs() < epsilon
-    }
-
-    fn coords_approx_eq(a: &Position<impl ReferenceCenter, impl MutableFrame>,
-                        b: &Position<impl ReferenceCenter, impl MutableFrame>,
-                        epsilon: f64) -> bool {
-        approx_eq(a.x(), b.x(), epsilon) &&
-        approx_eq(a.y(), b.y(), epsilon) &&
-        approx_eq(a.z(), b.z(), epsilon)
-    }
 
     #[test] // Barycentric -> Heliocentric
     fn test_bary() {
         let sun_bary = Sun::vsop87e(JulianDay::J2000).get_position().clone();
-        let sun_helio = Position::<Heliocentric, Ecliptic>::from(&sun_bary);
-        let expected_sun_helio = Position::<Heliocentric, Ecliptic>::new(0.0, 0.0, 0.0);
-        assert!(coords_approx_eq(&sun_helio, &expected_sun_helio, EPSILON), 
+        let sun_helio = Position::<Heliocentric, Ecliptic, AU>::from(&sun_bary);
+        let expected_sun_helio = Position::<Heliocentric, Ecliptic, AU>::new(0.0*AU, 0.0*AU, 0.0*AU);
+        assert_cartesian_eq!(&sun_helio, &expected_sun_helio, EPSILON, 
                 "Sun in Heliocentric shall be (0,0,0). Current Value {:?}", sun_helio);
     }
 
     #[test] // Geocentric -> Heliocentric
     fn test_geo() {
-        let sun_geo = Position::<Geocentric, Ecliptic>::from(&Sun::vsop87e(JulianDay::J2000).get_position().clone()); // Sun in Geocentric
-        let sun_helio = Position::<Heliocentric, Ecliptic>::from(&sun_geo);
-        let expected_sun_helio = Position::<Heliocentric, Ecliptic>::new(0.0, 0.0, 0.0);
-        assert!(coords_approx_eq(&sun_helio, &expected_sun_helio, 1e-8),
+        let sun_geo = Position::<Geocentric, Ecliptic, AU>::from(&Sun::vsop87e(JulianDay::J2000).get_position().clone()); // Sun in Geocentric
+        let sun_helio = Position::<Heliocentric, Ecliptic, AU>::from(&sun_geo);
+        let expected_sun_helio = Position::<Heliocentric, Ecliptic, AU>::new(0.0*AU, 0.0*AU, 0.0*AU);
+        assert_cartesian_eq!(&sun_helio, &expected_sun_helio, 1e-8,
                 "Sun in Heliocentric shall be (0,0,0). Current Value {:?}", sun_helio);
     }
 }

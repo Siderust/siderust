@@ -39,7 +39,7 @@ impl Sun {
     /// visualization.
     pub fn get_apparent_geocentric_equ(jd: JulianDay) -> spherical::Position<Geocentric, Equatorial> {
         let helio = cartesian::Position::<Heliocentric, Ecliptic>::new(0.0, 0.0, 0.0);
-        let geo_cart: cartesian::Position<Geocentric, Ecliptic> = (&helio).into();
+        let geo_cart: cartesian::Position<Geocentric, Ecliptic, > = (&helio).into();
         let mut geo = geo_cart.to_spherical();
 
         // Apply nutation in ecliptic longitude
