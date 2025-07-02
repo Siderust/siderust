@@ -156,18 +156,18 @@ mod tests {
         const SIRIUS_PARALLAX: f64 = 0.37921_f64;          // arcsec  (Hipparcos van Leeuwen 2007)
         let sirius_distance_au = (1.0 / SIRIUS_PARALLAX) * AU_PER_PC;
 
-        let sirius_barycentric_spherical = spherical::Position::<Barycentric, frames::ICRS, AU>::new(
+        let sirius_barycentric_spherical = spherical::position::ICRS::<AU>::new(
             Degrees::new(101.287_155_33),
             Degrees::new(-16.716_115_86),
             sirius_distance_au*AU
         );
-        let expected_sirius_coordinates = spherical::Position::<Geocentric, frames::ICRS, AU>::new(
+        let expected_sirius_coordinates = spherical::position::GCRS::<AU>::new(
             Degrees::new(101.2846608),
             Degrees::new(-16.71925194),
             543933.225421*AU
         );
 
-        let sirius_barycentric_cartesian = Position::<Barycentric, frames::ICRS, AU>::from(&sirius_barycentric_spherical);
+        let sirius_barycentric_cartesian = cartesian::position::ICRS::<AU>::from(&sirius_barycentric_spherical);
         let sirius_geocentric_cartesian = barycentric_to_geocentric(&sirius_barycentric_cartesian, JulianDay::new(2460792.157638889));
         let sirius_geocentric_spherical = spherical::Position::<Geocentric, frames::ICRS, AU>::from(&sirius_geocentric_cartesian);
         assert_spherical_eq!(sirius_geocentric_spherical, expected_sirius_coordinates, 2e-4, "Sirius in Geocentric shall be {}. Current Value {}", expected_sirius_coordinates, sirius_geocentric_spherical);
