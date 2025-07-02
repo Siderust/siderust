@@ -57,7 +57,7 @@ pub type GCRS<U = f64> = Position<centers::Geocentric,   frames::ICRS, U>;
 pub type TCRS<U = f64> = Position<centers::Topocentric,  frames::ICRS, U>;
 
 // === Ecliptic frame ===
-pub type EclipticPos<U = f64> = Position<centers::Heliocentric, frames::Ecliptic, U>;
+pub type Ecliptic<U = f64> = Position<centers::Heliocentric, frames::Ecliptic, U>;
 
 // === Equatorial frame ===
 pub type EquatorialPos<U = f64>   = Position<centers::Geocentric,   frames::Equatorial, U>;
