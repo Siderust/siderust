@@ -36,7 +36,7 @@
 //! ## Provided Types (via Type Aliases)
 //! - `ICRSBarycentricSphericalCoord`, `ICRSHeliocentricSphericalCoord`, etc.
 //! - `EclipticBarycentricSphericalCoord`, `EquatorialGeocentricSphericalCoord`, etc.
-//! - `HorizontalTopocentricSphericalCoord`, `GeographicPos` (ECEF), etc.
+//! - `HorizontalTopocentricSphericalCoord`, `Geographic` (ECEF), etc.
 //!
 //! ## See Also
 //! - [`crate::coordinates::cartesian::Vector`] for 3D Cartesian representation.
@@ -76,23 +76,14 @@
 mod spherical;
 pub use spherical::*;
 
-mod position;
-pub use position::*;
+pub mod position;
+pub use position::Position;
 
-mod direction;
-pub use direction::*;
+pub mod direction;
+pub use direction::Direction;
 
 mod equatorial;
-pub use equatorial::*;
-
 mod ecliptic;
-pub use ecliptic::*;
-
 mod horizontal;
-pub use horizontal::*;
-
 mod icrs;
-pub use icrs::*;
-
 mod ecef;
-pub use ecef::*;

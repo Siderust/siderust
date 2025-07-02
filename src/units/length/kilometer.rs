@@ -8,6 +8,7 @@ use crate::units::Unit;
 use super::{AstronomicalUnit, LightYear};
 
 pub const KM: Kilometers = Kilometers::new(1.0);
+pub type KM = Kilometers;
 
 /// A strongly-typed representation of a length in Kilometers (km).
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]

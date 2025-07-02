@@ -23,10 +23,10 @@ use crate::units::{Unit, Degrees, JulianDay};
 /// - [`calculate_gst`]
 /// - [`calculate_lst`]
 pub fn geocentric_to_horizontal<U: Unit>(
-    target:   &spherical::Position<Geocentric, Equatorial, U>,
-    observer: &spherical::GeographicPos,
+    target:   &spherical::position::Equatorial<U>,
+    observer: &spherical::position::Geographic,
     jd:       JulianDay
-) -> spherical::Position<Topocentric, Horizontal, U> {
+) -> spherical::position::Horizontal<U> {
 
     // 2) Tiempo sidéreo con ese JD, no con target.t
     let gst = calculate_gst(jd);
@@ -57,7 +57,7 @@ impl<U: Unit> cartesian::Position<Geocentric, Equatorial, U>
 where
     cartesian::Position<Topocentric, Horizontal, U>: for<'a> From<&'a spherical::Position<Topocentric, Horizontal, U>>,
 {
-    pub fn to_horizontal(&self, observer: &spherical::GeographicPos, jd: JulianDay) -> cartesian::Position<Topocentric, Horizontal, U> {
+    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDay) -> cartesian::Position<Topocentric, Horizontal, U> {
         let spherical: spherical::Position<Geocentric, Equatorial, U>   = self.into();
         let horizontal = geocentric_to_horizontal(&spherical, observer, jd);
         (&horizontal).into()
@@ -66,7 +66,7 @@ where
 
 
 impl<U: Unit> spherical::Position<Geocentric, Equatorial, U> {
-    pub fn to_horizontal(&self, observer: &spherical::GeographicPos, jd: JulianDay) -> spherical::Position<Topocentric, Horizontal, U> {
+    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDay) -> spherical::Position<Topocentric, Horizontal, U> {
         geocentric_to_horizontal(self, observer, jd)
     }
 }

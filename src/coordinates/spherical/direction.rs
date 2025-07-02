@@ -41,6 +41,7 @@
 
 use super::SphericalCoord;
 use crate::coordinates::{
+    centers, frames,
     centers::ReferenceCenter,
     frames::ReferenceFrame,
     kinds::DirectionKind
@@ -48,6 +49,13 @@ use crate::coordinates::{
 use crate::units::Unit;
 
 pub type Direction<C, F> = SphericalCoord<C, F, f64, DirectionKind>;
+pub type Ecliptic   = Direction<centers::Heliocentric, frames::Ecliptic>;   // L (l), B (b)
+pub type Equatorial = Direction<centers::Geocentric,   frames::Equatorial>; // Dec (δ), RA (α)
+pub type Horizontal = Direction<centers::Topocentric,  frames::Horizontal>; // Alt (α), Az (θ)
+pub type ICRS       = Direction<centers::Barycentric,  frames::ICRS>; // Dec (δ), RA (α)
+pub type HCRS       = Direction<centers::Heliocentric, frames::ICRS>; // Dec (δ), RA (α)
+pub type GCRS       = Direction<centers::Geocentric,   frames::ICRS>; // Dec (δ), RA (α)
+pub type Geographic = Direction<centers::Geocentric,   frames::ECEF>;  //Latitude (φ),Longitude (λ)
 
 impl<C, F> Direction<C, F>
 where
