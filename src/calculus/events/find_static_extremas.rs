@@ -1,15 +1,15 @@
 use super::Culmination;
 use crate::targets::Target;
-use crate::units::{Days, Degrees, JulianDay, Kilometers};
+use crate::units::{Days, Degrees, JulianDay};
 use crate::astro::{
     sidereal::*,
     nutation::corrected_ra_with_nutation
 };
 use crate::coordinates::{
+    spherical::position,
     spherical::Position,
     centers::Geocentric,
     frames::Equatorial,
-    frames::ECEF
 };
 
 /// Returns **all** upper- and lower-culminations (meridian passages) that occur
@@ -55,7 +55,7 @@ use crate::coordinates::{
 /// ---
 pub fn find_static_extremas(
     target: &Target<Position<Geocentric, Equatorial>>,
-    observer: &Position<Geocentric, ECEF, Kilometers>,
+    observer: &position::Geographic,
     jd_start: JulianDay,
     jd_end: JulianDay,
 ) -> Vec<Culmination> {

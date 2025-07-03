@@ -88,15 +88,15 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use crate::units::Degrees;
     use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
+    use crate::coordinates::{cartesian, spherical};
 
     #[test]
     fn test_cartesian_to_spherical() {
-        let cart = cartesian::Position::<Geocentric, ICRS>::new(1.0, 1.0, 1.0);
-        let sph: spherical::Position<Geocentric, ICRS> = cart.to_spherical();
-        let expected = spherical::Position::<Geocentric, ICRS>::new(
+        let cart = cartesian::position::GCRS::new(1.0, 1.0, 1.0);
+        let sph: spherical::position::GCRS = cart.to_spherical();
+        let expected = spherical::position::GCRS::new(
             Degrees::new(45.0),
             Degrees::new(35.26438968275466),
             1.7320508075688772,
@@ -106,19 +106,19 @@ mod tests {
 
     #[test]
     fn test_spherical_to_cartesian() {
-        let sph = spherical::Position::<Geocentric, ICRS>::new(
-            Degrees::new(45.0),  
+        let sph = spherical::position::GCRS::new(
+            Degrees::new(45.0),
             Degrees::new(35.26438968275466), 
             1.7320508075688772,
         );
-        let cart = cartesian::Position::<Geocentric, ICRS>::from_spherical(&sph);
-        let expected = cartesian::Position::<Geocentric, ICRS>::new(1.0, 1.0, 1.0);
+        let cart = cartesian::position::GCRS::from_spherical(&sph);
+        let expected = cartesian::position::GCRS::new(1.0, 1.0, 1.0);
         assert_cartesian_eq!(&cart, &expected, 1e-6, "Cartesian coordinates do not match expected values");
     }
 
     #[test]
     fn test_cartesian_spherical_round_trip() {
-        let cart_original = cartesian::Position::<Geocentric, ICRS>::new(2.0, 3.0, 4.0,);
+        let cart_original = cartesian::position::GCRS::new(2.0, 3.0, 4.0,);
         let sph = cart_original.to_spherical();
         let cart_converted = cartesian::Position::from_spherical(&sph);
         assert_cartesian_eq!(&cart_original, &cart_converted, 1e-6, "Cartesian coordinates do not match expected values");
@@ -126,7 +126,7 @@ mod tests {
 
     #[test]
     fn test_spherical_cartesian_round_trip() {
-        let sph_original = spherical::Position::<Geocentric, ICRS>::new(
+        let sph_original = spherical::position::GCRS::new(
             Degrees::new(30.0),
             Degrees::new(60.0),
             5.0,

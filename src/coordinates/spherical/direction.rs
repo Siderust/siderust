@@ -74,15 +74,13 @@ where
 mod tests {
     use super::*;
     use crate::units::Degrees;
-    use crate::coordinates::centers::{Barycentric, Geocentric};
-    use crate::coordinates::frames::ICRS;
 
     #[test]
     fn creates_valid_spherical_position() {
         let polar = Degrees::new(45.0);
         let azimuth = Degrees::new(90.0);
 
-        let coord = Direction::<Barycentric, ICRS>::new(polar, azimuth);
+        let coord = ICRS::new(polar, azimuth);
 
         assert_eq!(coord.ra().as_f64(), 45.0);
         assert_eq!(coord.dec().as_f64(), 90.0);
@@ -91,7 +89,7 @@ mod tests {
 
     #[test]
     fn displays_coordinate_as_string_correctly() {
-        let coord = Direction::<Geocentric, ICRS>::new(
+        let coord = ICRS::new(
             Degrees::new(30.0),
             Degrees::new(60.0),
         );
@@ -108,7 +106,7 @@ mod tests {
         let polar = Degrees::new(90.654_321);
         let azimuth = Degrees::new(45.123_456);
 
-        let coord = Direction::<Barycentric, ICRS>::new(polar, azimuth);
+        let coord = ICRS::new(polar, azimuth);
 
         assert!((coord.ra().as_f64() - 90.654_321).abs() < 1e-6);
         assert!((coord.dec().as_f64() - 45.123_456).abs() < 1e-6);
