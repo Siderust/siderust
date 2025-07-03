@@ -39,7 +39,7 @@
 //! ## Display
 //! Implements `Display` for readable output including center, frame, angles, and distance.
 
-use crate::units::{Degrees, Radians, Unit};
+use crate::units::{Degrees, Radians, Distance};
 
 use crate::coordinates::{
     cartesian,
@@ -59,7 +59,7 @@ use std::marker::PhantomData;
 pub struct SphericalCoord<
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind = PositionKind,
 > {
     pub polar: Degrees,      // θ (polar/latitude/declination)
@@ -76,7 +76,7 @@ impl<C, F, U, K> SphericalCoord<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Option<U>) -> Self {
@@ -99,7 +99,7 @@ impl<C, F, U, K> SphericalCoord<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
     cartesian::Vector<C, F, U, K>: for<'a> From<&'a Self>,
 {
@@ -140,7 +140,7 @@ impl<C, F, U, K> std::fmt::Display for SphericalCoord<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

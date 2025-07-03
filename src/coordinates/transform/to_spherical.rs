@@ -4,7 +4,7 @@ use crate::coordinates::{
     centers::*, frames::*,
     kinds::Kind,
 };
-use crate::units::Unit;
+use crate::units::Distance;
 
 /// Implements conversion from Cartesian to Spherical coordinates
 /// by borrowing a `&Vector` reference.
@@ -23,7 +23,7 @@ impl<C, F, U> From<&cartesian::Position<C, F, U>> for spherical::Position<C, F, 
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: Distance,
 {
     fn from(cart: &cartesian::Position<C, F, U>) -> Self {
         let r:f64 = cart.distance().into();
@@ -67,7 +67,7 @@ impl<C, F, U, K> cartesian::Vector<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
     spherical::SphericalCoord<C, F, U, K>: for<'a> From<&'a cartesian::Vector<C, F, U, K>>,
 {
@@ -79,7 +79,7 @@ impl<C, F, U, K> cartesian::Vector<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
     cartesian::Vector<C, F, U, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, U, K>>,
 {

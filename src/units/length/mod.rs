@@ -27,3 +27,9 @@ pub use astronomical_unit::*;
 pub use light_year::*;
 pub use kilometer::*;
 pub use solar_radius::*;
+
+pub trait Distance: crate::units::Unit
+    + From<AstronomicalUnit>
+{ }
+
+impl super::Distance for f64 { }

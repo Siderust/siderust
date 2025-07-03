@@ -27,7 +27,7 @@
 
 use crate::coordinates::centers::Heliocentric;
 use crate::coordinates::transform::Transform;
-use crate::units::{AstronomicalUnit, JulianDay, Unit};
+use crate::units::{AstronomicalUnit, JulianDay, Distance};
 use crate::coordinates::{
     cartesian::{position, direction},
     cartesian::{Position, Velocity},
@@ -89,7 +89,7 @@ pub fn remove_aberration_from_direction(
 /// Apply **annual aberration** to a position vector, preserving its
 /// geocentric distance.
 #[must_use]
-pub fn apply_aberration<U: Unit>(
+pub fn apply_aberration<U: Distance>(
     mean: position::Equatorial<U>,
     jd:   JulianDay,
 ) -> position::Equatorial<U> {
@@ -109,7 +109,7 @@ pub fn apply_aberration<U: Unit>(
 /// Remove **annual aberration** from a position vector, preserving its
 /// geocentric distance.
 #[must_use]
-pub fn remove_aberration<U: Unit>(
+pub fn remove_aberration<U: Distance>(
     app: position::Equatorial<U>,
     jd:  JulianDay,
 ) -> position::Equatorial<U> {
@@ -132,7 +132,7 @@ mod tests {
     use crate::coordinates::spherical::position;
     use approx::assert_relative_eq;
 
-    fn apply_aberration_sph<U: Unit>(
+    fn apply_aberration_sph<U: Distance>(
         mean: position::Equatorial<U>,
         jd:   JulianDay,
     ) -> position::Equatorial<U> {

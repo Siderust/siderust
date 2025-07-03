@@ -2,7 +2,7 @@ use crate::coordinates::{
     frames, centers,
     kinds::DirectionKind,
 };
-use crate::units::Unit;
+use crate::units::Distance;
 use super::Vector;
 
 pub type Direction<C, F> = Vector<C, F, f64, DirectionKind>;
@@ -13,7 +13,7 @@ where
     F: frames::ReferenceFrame,
 {
     /// Returns a Position vector in the same direction, scaled by the given magnitude.
-    pub fn position<U: Unit>(&self, magnitude: U) -> super::Position<C, F, U> {
+    pub fn position<U: Distance>(&self, magnitude: U) -> super::Position<C, F, U> {
         super::Position::new(
             magnitude * self.x(),
             magnitude * self.y(),

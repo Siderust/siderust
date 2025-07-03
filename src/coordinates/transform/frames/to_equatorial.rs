@@ -5,12 +5,12 @@ use crate::coordinates::{
     frames
 };
 use crate::coordinates::transform::Transform;
-use crate::units::Unit;
+use crate::units::Distance;
 
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
-impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::Ecliptic, U, K> {
+impl<C: ReferenceCenter, K: Kind, U: Distance> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::Ecliptic, U, K> {
     fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Equatorial, U, K> {
         let x:f64 = self.x().into();
         let y:f64 = self.y().into();
@@ -27,7 +27,7 @@ impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::Equatoria
 }
 
 // Implement Transform trait for ICRS -> Equatorial (identity)
-impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::ICRS, U, K> {
+impl<C: ReferenceCenter, K: Kind, U: Distance> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::ICRS, U, K> {
     fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Equatorial, U, K> {
         Vector::new(self.x(), self.y(), self.z())
     }

@@ -23,7 +23,7 @@ const ALPHA: f64 = 0.002_571_881_335;
 const DTASM: f64 = 2.0 * ALPHA / (3.0 * AM);
 const PRECES: f64 = 5_029.096_6 / RAD;
 
-// Unit conversions
+// Distance conversions
 const C1: f64 = 60.0;
 const C2: f64 = 3600.0;
 

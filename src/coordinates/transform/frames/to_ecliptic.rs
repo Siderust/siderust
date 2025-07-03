@@ -5,7 +5,7 @@ use crate::coordinates::{
     frames
 };
 use crate::coordinates::transform::Transform;
-use crate::units::Unit;
+use crate::units::Distance;
 use nalgebra::Vector3;
 
 // Implement Transform trait for ICRS -> Ecliptic
@@ -13,7 +13,7 @@ use nalgebra::Vector3;
 impl<C: ReferenceCenter, K: Kind, U> Transform<Vector<C, frames::Ecliptic, U, K>>
     for Vector<C, frames::ICRS, U, K>
 where
-    U: Unit,
+    U: Distance,
 {
     fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Ecliptic, U, K> {
         let eps = 23.439281_f64.to_radians();
@@ -28,7 +28,7 @@ where
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, K: Kind, U: Unit> Transform<Vector<C, frames::Ecliptic, U, K>> for Vector<C, frames::Equatorial, U, K> {
+impl<C: ReferenceCenter, K: Kind, U: Distance> Transform<Vector<C, frames::Ecliptic, U, K>> for Vector<C, frames::Equatorial, U, K> {
     fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Ecliptic, U, K> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
