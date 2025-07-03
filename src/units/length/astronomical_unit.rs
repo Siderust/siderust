@@ -22,6 +22,8 @@ impl Unit for AstronomicalUnit {
     fn abs(self) -> Self { AstronomicalUnit(self.0.abs()) }
 }
 
+impl super::Distance for AstronomicalUnit { }
+
 impl AstronomicalUnit {
 
     pub const KM_PER_AU: f64 = 149_597_870.7;

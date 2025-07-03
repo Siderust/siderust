@@ -29,7 +29,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::{Unit, Degrees};
+use crate::units::{Distance, Degrees};
 
 impl<C: ReferenceCenter> Direction<C, Equatorial> {
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
@@ -54,7 +54,7 @@ impl<C: ReferenceCenter> Direction<C, Equatorial> {
     }
 }
 
-impl<C: ReferenceCenter, U: Unit> Position<C, Equatorial, U> {
+impl<C: ReferenceCenter, U: Distance> Position<C, Equatorial, U> {
     pub const fn new_const(ra: Degrees, dec: Degrees, distance: U) -> Self {
         Self::new_spherical_coord(dec, ra, Some(distance))
     }
@@ -78,7 +78,7 @@ impl<C: ReferenceCenter, U: Unit> Position<C, Equatorial, U> {
     }
 }
 
-impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, Equatorial, U, K> {
+impl<C: ReferenceCenter, U: Distance, K: Kind> SphericalCoord<C, Equatorial, U, K> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees { self.polar }
 

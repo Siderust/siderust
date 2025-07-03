@@ -30,7 +30,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::{Degrees, Unit};
+use crate::units::{Degrees, Distance};
 
 impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// Creates a new horizontal spherical coordinate with constant values.
@@ -63,7 +63,7 @@ impl<C: ReferenceCenter> Direction<C, Horizontal> {
     }
 }
 
-impl<C: ReferenceCenter, U: Unit> Position<C, Horizontal, U> {
+impl<C: ReferenceCenter, U: Distance> Position<C, Horizontal, U> {
     /// Creates a new horizontal spherical coordinate with constant values.
     ///
     /// # Arguments
@@ -96,7 +96,7 @@ impl<C: ReferenceCenter, U: Unit> Position<C, Horizontal, U> {
     }
 }
 
-impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, Horizontal, U, K> {
+impl<C: ReferenceCenter, U: Distance, K: Kind> SphericalCoord<C, Horizontal, U, K> {
     /// Returns the Altitude (α) in degrees.
     pub fn alt(&self) -> Degrees { self.polar }
 

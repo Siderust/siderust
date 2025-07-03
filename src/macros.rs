@@ -1,7 +1,7 @@
 // src/macros.rs
 use core::f64;
 use crate::coordinates::{ cartesian, spherical, centers::ReferenceCenter, frames::ReferenceFrame };
-use crate::units::Unit;
+use crate::units::Distance;
 
 #[doc(hidden)]
 pub(crate) fn __assert_cartesian_eq<C, F, U>(
@@ -10,7 +10,7 @@ pub(crate) fn __assert_cartesian_eq<C, F, U>(
     epsilon: f64,
     msg: Option<String>,
 )
-where C: ReferenceCenter, F: ReferenceFrame, U: Unit
+where C: ReferenceCenter, F: ReferenceFrame, U: Distance
 {
     let dx = (a.x() - b.x()).abs();
     let dy = (a.y() - b.y()).abs();
@@ -31,7 +31,7 @@ pub(crate) fn __assert_spherical_eq<C, F,  U>(
     epsilon: f64,
     msg: Option<String>,
 )
-where C: ReferenceCenter, F: ReferenceFrame, U: Unit
+where C: ReferenceCenter, F: ReferenceFrame, U: Distance
 {
     let d1 = a.distance.unwrap_or(U::NAN);
     let d2 = b.distance.unwrap_or(U::NAN);

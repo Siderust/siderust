@@ -63,10 +63,6 @@ pub use velocity::*;
 pub use mass::*;
 pub use power::*;
 
-use std::ops::{Add, Sub, Mul, Div, AddAssign, SubAssign};
-use simba::scalar::{ClosedAdd, ClosedSub};
-use nalgebra::Scalar;
-
 pub trait Unit:
     Copy
     + Clone
@@ -74,19 +70,18 @@ pub trait Unit:
     + PartialOrd
     + std::fmt::Debug
     + std::fmt::Display
-    + Add<Self>
-    + Sub<Self>
-    + Mul<f64, Output = Self>
-    + Div<f64, Output = Self>
+    + std::ops::Add<Self, Output = Self>
+    + std::ops::Sub<Self, Output = Self>
+    + std::ops::Mul<f64, Output = Self>
+    + std::ops::Div<f64, Output = Self>
     + From<f64>
     + Into<f64>
     + PartialEq<f64>
-    + AddAssign
-    + SubAssign
-    + ClosedAdd
-    + ClosedSub
-    + Scalar
-    + From<AstronomicalUnit>
+    + std::ops::AddAssign
+    + std::ops::SubAssign
+    + simba::scalar::ClosedAdd
+    + simba::scalar::ClosedSub
+    + nalgebra::Scalar
 {
     const NAN: Self;
 
@@ -94,6 +89,7 @@ pub trait Unit:
     fn powi(self, n: i32) -> Self;
     fn abs(self) -> Self;
 }
+
 
 impl Unit for f64 {
     const NAN: Self = f64::NAN;

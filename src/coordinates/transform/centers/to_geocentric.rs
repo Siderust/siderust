@@ -1,5 +1,5 @@
 use crate::bodies::solar_system::Earth;
-use crate::units::{JulianDay, Unit};
+use crate::units::{JulianDay, Distance};
 use crate::coordinates::{
     cartesian::Position, cartesian::Direction,
     frames::*, centers::*,
@@ -8,7 +8,7 @@ use crate::coordinates::{
 use crate::coordinates::transform::Transform;
 use crate::astro::aberration::{apply_aberration, apply_aberration_to_direction};
 
-pub fn barycentric_to_geocentric<F: MutableFrame, U: Unit>(
+pub fn barycentric_to_geocentric<F: MutableFrame, U: Distance>(
     bary: &Position<Barycentric, F, U>,
     jd: JulianDay
 ) -> Position<Geocentric, F, U>
@@ -32,7 +32,7 @@ where
     Position::<Geocentric, F, U>::from(&gcrs) // Equatorial -> F
 }
 
-pub fn heliocentric_to_geocentric<F: MutableFrame, U: Unit>(
+pub fn heliocentric_to_geocentric<F: MutableFrame, U: Distance>(
     helio: &Position<Heliocentric, F, U>,
     jd: JulianDay
 ) -> Position<Geocentric, F, U>
@@ -56,7 +56,7 @@ where
     Position::<Geocentric, F, U>::from(&gcrs) // Equatorial -> F
 }
 
-impl<F: MutableFrame, U: Unit> Transform<Position<Geocentric, F, U>> for Position<Barycentric, F, U>
+impl<F: MutableFrame, U: Distance> Transform<Position<Geocentric, F, U>> for Position<Barycentric, F, U>
 where
     for<'a> Position<Barycentric, Equatorial, U>: From<&'a Position<Barycentric, Ecliptic, U>>, // Required by VSOP
     for<'a> Position<Barycentric, Equatorial, U>: From<&'a Position<Barycentric, F, U>>, // Required by Aberration
@@ -70,7 +70,7 @@ where
     }
 }
 
-impl<F: MutableFrame, U: Unit> Transform<Position<Geocentric, F, U>> for Position<Heliocentric, F, U>
+impl<F: MutableFrame, U: Distance> Transform<Position<Geocentric, F, U>> for Position<Heliocentric, F, U>
 where
     for<'a> Position<Heliocentric, Equatorial, U>: From<&'a Position<Heliocentric, Ecliptic, U>>, // Required by VSOP
     for<'a> Position<Heliocentric, Equatorial, U>: From<&'a Position<Heliocentric, F, U>>, // Required by Aberration

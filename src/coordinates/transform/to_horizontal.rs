@@ -3,7 +3,7 @@ use crate::coordinates::{
     spherical, cartesian,
     centers::*,  frames::*
 };
-use crate::units::{Unit, Degrees, JulianDay};
+use crate::units::{Distance, Degrees, JulianDay};
 
 
 /// Converts geocentric equatorial coordinates to topocentric horizontal coordinates
@@ -22,7 +22,7 @@ use crate::units::{Unit, Degrees, JulianDay};
 /// # See Also
 /// - [`calculate_gst`]
 /// - [`calculate_lst`]
-pub fn geocentric_to_horizontal<U: Unit>(
+pub fn geocentric_to_horizontal<U: Distance>(
     target:   &spherical::position::Equatorial<U>,
     observer: &spherical::position::Geographic,
     jd:       JulianDay
@@ -53,7 +53,7 @@ pub fn geocentric_to_horizontal<U: Unit>(
     )
 }
 
-impl<U: Unit> cartesian::Position<Geocentric, Equatorial, U>
+impl<U: Distance> cartesian::Position<Geocentric, Equatorial, U>
 where
     cartesian::Position<Topocentric, Horizontal, U>: for<'a> From<&'a spherical::Position<Topocentric, Horizontal, U>>,
 {
@@ -65,7 +65,7 @@ where
 }
 
 
-impl<U: Unit> spherical::Position<Geocentric, Equatorial, U> {
+impl<U: Distance> spherical::Position<Geocentric, Equatorial, U> {
     pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDay) -> spherical::Position<Topocentric, Horizontal, U> {
         geocentric_to_horizontal(self, observer, jd)
     }

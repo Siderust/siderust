@@ -2,7 +2,7 @@ use crate::coordinates::{
     cartesian::Direction, centers, frames, kinds::{PositionKind, VelocityKind}
 };
 use super::Vector;
-use crate::units::Unit;
+use crate::units::Distance;
 
 pub type Position<C, F, U = f64>  = Vector<C, F, U, PositionKind>;
 pub type Velocity<C, F, U = f64>  = Vector<C, F, U, VelocityKind>;
@@ -11,7 +11,7 @@ impl<C, F, U> Position<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: Distance,
 {
     /// Calculates the Euclidean distance with respect to the ReferenceCenter.
     ///

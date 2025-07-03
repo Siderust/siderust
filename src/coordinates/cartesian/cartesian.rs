@@ -38,14 +38,14 @@ use crate::coordinates::{
 use std::marker::PhantomData;
 use nalgebra::Vector3;
 use std::ops::{Add, Sub};
-use crate::units::Unit;
+use crate::units::Distance;
 
 // Refactoriza la definición de Vector:
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind = PositionKind,
 > {
     xyz: Vector3<U>,
@@ -59,7 +59,7 @@ impl<C, F, U, K> Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     /// Creates a new Cartesian coordinate.
@@ -103,7 +103,7 @@ impl<C, F, U, K> std::fmt::Display for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -121,7 +121,7 @@ impl<C, F, U, K> Add for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     type Output = Self;
@@ -135,7 +135,7 @@ impl<C, F, U, K> Sub for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     type Output = Self;
@@ -149,7 +149,7 @@ where
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     type Output = Self;
@@ -163,7 +163,7 @@ impl<C, F, U, K> Mul<U> for Vector<C, F, U, K>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     type Output = Self;
