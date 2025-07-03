@@ -1,6 +1,6 @@
 use super::*;
 use crate::bodies::solar_system::Moon;
-use crate::units::{JulianDay, AstronomicalUnit};
+use crate::units::{JulianDay, AU};
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
@@ -18,7 +18,7 @@ macro_rules! impl_vsop87a {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            pub fn vsop87a(jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>> {
+            pub fn vsop87a(jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic, AU>> {
                 let (x, y, z) = position(
                     jd,
                     &[$( &$x ),+],
@@ -27,14 +27,14 @@ macro_rules! impl_vsop87a {
                 );
                 Target::new_static(
                     Position::new(
-                        AstronomicalUnit::new(x),
-                        AstronomicalUnit::new(y),
-                        AstronomicalUnit::new(z)),
+                        AU::new(x),
+                        AU::new(y),
+                        AU::new(z)),
                     jd,
                 )
             }
 
-            pub fn vsop87a_vel(jd: JulianDay) -> Velocity<Heliocentric, Ecliptic, AstronomicalUnit> {
+            pub fn vsop87a_vel(jd: JulianDay) -> Velocity<Heliocentric, Ecliptic, AU> {
                 let (vx, vy, vz) = velocity(
                     jd,
                     &[$( &$x ),+],
@@ -42,14 +42,14 @@ macro_rules! impl_vsop87a {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    AstronomicalUnit::new(vx),
-                    AstronomicalUnit::new(vy),
-                    AstronomicalUnit::new(vz)
+                    AU::new(vx),
+                    AU::new(vy),
+                    AU::new(vz)
                 )
             }
 
             pub fn vsop87a_pos_vel(jd: JulianDay)
-                -> (Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>>, Velocity<Heliocentric, Ecliptic, AstronomicalUnit>) {
+                -> (Target<Position<Heliocentric, Ecliptic, AU>>, Velocity<Heliocentric, Ecliptic, AU>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
                     &[$( &$x ),+],
@@ -58,13 +58,13 @@ macro_rules! impl_vsop87a {
                 );
                 (
                     Target::new_static(Position::new(
-                        AstronomicalUnit::new(x),
-                        AstronomicalUnit::new(y),
-                        AstronomicalUnit::new(z)), jd,),
+                        AU::new(x),
+                        AU::new(y),
+                        AU::new(z)), jd,),
                     Velocity::new(
-                        AstronomicalUnit::new(vx),
-                        AstronomicalUnit::new(vy),
-                        AstronomicalUnit::new(vz))
+                        AU::new(vx),
+                        AU::new(vy),
+                        AU::new(vz))
                 )
             }
         }
