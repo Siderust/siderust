@@ -29,7 +29,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::{Degrees, Kilometers, Unit};
+use crate::units::{Degrees, Kilometers, Distance};
 use crate::bodies::EARTH;
 
 impl<C: ReferenceCenter,> Direction<C, ECEF> {
@@ -77,7 +77,7 @@ impl<C: ReferenceCenter> Position<C, ECEF, Kilometers> {
     }
 }
 
-impl<C: ReferenceCenter, U: Unit, K: Kind> SphericalCoord<C, ECEF, U, K> {
+impl<C: ReferenceCenter, U: Distance, K: Kind> SphericalCoord<C, ECEF, U, K> {
     /// Returns the latitude (φ) in degrees.
     pub fn lat(&self) -> Degrees { self.polar }
 

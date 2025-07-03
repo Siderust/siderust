@@ -22,6 +22,8 @@ impl Unit for Kilometers {
     fn abs(self) -> Self { Kilometers(self.0.abs()) }
 }
 
+impl super::Distance for Kilometers { }
+
 impl Kilometers {
 
     /// Creates a new `Kilometers` from a value in km.

@@ -19,13 +19,13 @@ use crate::coordinates::{
     frames::*,
     centers::*,
 };
-use crate::units::Unit;
+use crate::units::Distance;
 
 impl<C, F, U> Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: Distance,
 {
     /// The zero point (origin) in this coordinate system.
     pub const CENTER: Self = Self::from_degrees(0.0, 0.0, None);

@@ -7,7 +7,7 @@ use crate::coordinates::{
     kinds::Kind,
     transform::Transform
 };
-use crate::units::Unit;
+use crate::units::Distance;
 
 /// Blanket implementation to allow chaining two consecutive `Transform` operations.
 ///
@@ -24,7 +24,7 @@ where
     C2: ReferenceCenter,
     F1: ReferenceFrame,
     F2: ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     fn from(orig: &Target<Vector<C1, F1, U, K>>) -> Self {
@@ -57,7 +57,7 @@ where
     C2: ReferenceCenter,
     F1: ReferenceFrame,
     F2: ReferenceFrame,
-    U: Unit,
+    U: Distance,
     K: Kind,
 {
     fn from(orig: &Target<SphericalCoord<C1, F1, U, K>>) -> Self {
