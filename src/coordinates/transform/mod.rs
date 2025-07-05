@@ -107,14 +107,14 @@ use crate::coordinates::{
     spherical::SphericalCoord
 };
 use crate::units::JulianDay;
-use crate::units::Distance;
+use crate::units::LengthUnit;
 
 // Blanket identity transform for Vector<Center, Frame>
 impl<C, F, U> Transform<cartesian::Position<C, F, U>> for cartesian::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: MutableFrame,
-    U: Distance
+    U: LengthUnit
 {
     fn transform(&self, _jd: crate::units::JulianDay) -> cartesian::Position<C, F,U> {
         Vector::new(self.x(), self.y(), self.z())
@@ -136,7 +136,7 @@ where
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Distance,
+    U: LengthUnit,
     K: Kind,
 {
     fn from(orig: &Vector<C1, F1, U, K>) -> Self {
@@ -165,7 +165,7 @@ where
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Distance,
+    U: LengthUnit,
     K: Kind,
 {
     fn from(orig: &SphericalCoord<C1, F1, U, K>) -> Self {

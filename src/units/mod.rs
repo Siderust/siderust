@@ -63,6 +63,134 @@ pub use velocity::*;
 pub use mass::*;
 pub use power::*;
 
+use core::marker::PhantomData;
+use core::ops::{Add, AddAssign, Sub, SubAssign, Mul, Div, Rem, Neg};
+use core::cmp::{PartialOrd, PartialEq};
+
+pub trait Dimension {} // (Length, Time, Mass…).
+
+pub trait Unit: Copy + 'static {
+    const RATIO: f64;
+    type Dim: Dimension;
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+pub struct Quantity<U: Unit>(f64, PhantomData<U>);
+
+impl<U: Unit + Copy> Quantity<U> {
+    pub const NAN: Self = Self::new(f64::NAN);
+
+    pub const fn new(value: f64) -> Self {
+        Self(value, PhantomData)
+    }
+
+    pub const fn value(self) -> f64 { self.0 }
+
+    pub fn abs(self) -> Self { Self::new(self.0.abs()) }
+
+    pub fn to<T: Unit<Dim = U::Dim>>(self) -> Quantity<T> {
+        let base = self.0 * U::RATIO;
+        Quantity::<T>::new(base / T::RATIO)
+    }
+}
+
+
+impl<U> Add for Quantity<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+    fn add(self, rhs: Self) -> Self { Self::new(self.0 + rhs.0) }
+}
+
+impl<U> AddAssign for Quantity<U>
+where
+    U: Unit
+{
+    fn add_assign(&mut self, rhs: Self) {
+        self.0 += rhs.0;
+    }
+}
+
+impl<U> Sub for Quantity<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+    fn sub(self, rhs: Self) -> Self { Self::new(self.0 - rhs.0) }
+}
+
+impl<U> SubAssign for Quantity<U>
+where
+    U: Unit,
+{
+    fn sub_assign(&mut self, rhs: Self) {
+        self.0 -= rhs.0;
+    }
+}
+
+impl<U> Mul<f64> for Quantity<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+    fn mul(self, rhs: f64) -> Self { Self::new(self.0 * rhs) }
+}
+
+impl<U> Mul<Quantity<U>> for f64
+where
+    U: Unit,
+{
+    type Output = Quantity<U>;
+    fn mul(self, rhs: Quantity<U>) -> Self::Output {
+        rhs * self
+    }
+}
+
+impl<U> Div<f64> for Quantity<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+    fn div(self, rhs: f64) -> Self { Self::new(self.0 / rhs) }
+}
+
+
+impl<U> Div<Quantity<U>> for Quantity<U>
+where
+    U: Unit,
+{
+    type Output = f64;
+    fn div(self, rhs: Quantity<U>) -> Self::Output { self.0 / rhs.0 }
+}
+
+impl<U> Rem<f64> for Quantity<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+    fn rem(self, rhs: f64) -> Self { Self::new(self.0 % rhs) }
+}
+
+impl<U> PartialEq<f64> for Quantity<U>
+where
+    U: Unit,
+{
+    fn eq(&self, other: &f64) -> bool {
+        self.0 == *other
+    }
+}
+
+impl<U> Neg for Quantity<U>
+where
+    U: Unit,
+{
+    type Output = Self;
+    fn neg(self) -> Self { Self::new(-self.0) }
+}
+
+
+/*
 pub trait Unit:
     Copy
     + Clone
@@ -89,11 +217,24 @@ pub trait Unit:
     fn powi(self, n: i32) -> Self;
     fn abs(self) -> Self;
 }
-
-
+// TODO: f64 has no Unit!! Remove me
 impl Unit for f64 {
     const NAN: Self = f64::NAN;
     fn sqrt(self) -> Self { f64::sqrt(self) }
     fn powi(self, n: i32) -> Self { f64::powi(self, n) }
     fn abs(self) -> Self { f64::abs(self) }
 }
+
+macro_rules! impl_simple_unit {
+    ($U:ty) => {
+        impl Unit for $U {
+            const NAN: Self = Self(f64::NAN);
+            fn sqrt(self) -> Self { Self(self.0.sqrt()) }
+            fn powi(self, n: i32) -> Self { Self(self.0.powi(n)) }
+            fn abs(self) -> Self { Self(self.0.abs()) }
+        }
+    };
+}
+
+pub(crate) use impl_simple_unit;
+*/

@@ -4,7 +4,7 @@ use crate::coordinates::{
     centers::*, frames::*,
     kinds::Kind,
 };
-use crate::units::Distance;
+use crate::units::LengthUnit;
 
 /// Implements conversion from Cartesian to Spherical coordinates
 /// by borrowing a `&Vector` reference.
@@ -23,20 +23,23 @@ impl<C, F, U> From<&cartesian::Position<C, F, U>> for spherical::Position<C, F, 
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Distance,
+    U: LengthUnit,
 {
     fn from(cart: &cartesian::Position<C, F, U>) -> Self {
-        let r:f64 = cart.distance().into();
-        let x:f64 = cart.x().into();
-        let y:f64 = cart.y().into();
-        let z:f64 = cart.z().into();
+        let r = cart.distance();
+        let x = cart.x();
+        let y = cart.y();
+        let z = cart.z();
 
         if r == 0.0 {
             return Self::CENTER;
         }
 
-        let polar = Degrees::new((z / r).asin().to_degrees());
-        let azimuth = Degrees::new(y.atan2(x).to_degrees());
+        let polar = Degrees::new((z / r).asin()
+                                                 .to_degrees());
+        let azimuth = Degrees::new(y.value()
+                                             .atan2(x.value())
+                                             .to_degrees());
         Self::new_spherical_coord(polar, azimuth, Some(cart.distance()))
     }
 }
@@ -47,14 +50,15 @@ where
     F: ReferenceFrame,
 {
     fn from(cart: &cartesian::Direction<C, F>) -> Self {
-        let x:f64 = cart.x().into();
-        let y:f64 = cart.y().into();
-        let z:f64 = cart.z().into();
+        let x = cart.x().value();
+        let y = cart.y().value();
+        let z = cart.z().value();
 
-        debug_assert!(
-            (cart.as_vec3().magnitude() - 1.0).abs() < 1e-12,
-            "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
-        );
+        // TODO
+        //debug_assert!(
+        //    (cart.as_vec3().magnitude() - 1.0).abs() < 1e-12,
+        //    "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
+        //);
 
         let polar   = Degrees::new(z.asin().to_degrees());
         let azimuth = Degrees::new(y.atan2(x).to_degrees());
@@ -67,7 +71,7 @@ impl<C, F, U, K> cartesian::Vector<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Distance,
+    U: LengthUnit,
     K: Kind,
     spherical::SphericalCoord<C, F, U, K>: for<'a> From<&'a cartesian::Vector<C, F, U, K>>,
 {
@@ -79,7 +83,7 @@ impl<C, F, U, K> cartesian::Vector<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Distance,
+    U: LengthUnit,
     K: Kind,
     cartesian::Vector<C, F, U, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, U, K>>,
 {

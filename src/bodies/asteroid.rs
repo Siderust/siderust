@@ -8,7 +8,7 @@
 use crate::astro::orbit::Orbit;
 
 /// Represents an **asteroid** characterized by its composition and orbit.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Asteroid {
     pub name: String,
     pub composition: String,

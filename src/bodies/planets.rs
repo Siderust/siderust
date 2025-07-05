@@ -9,7 +9,7 @@ use crate::astro::orbit::Orbit;
 use crate::units::{Kilometers, Kilograms};
 
 /// Represents a **Planet** characterized by its mass, radius and orbit.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Planet {
     pub mass: Kilograms,
     pub radius: Kilometers,

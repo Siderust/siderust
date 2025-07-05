@@ -2,50 +2,65 @@ use crate::coordinates::{
     cartesian::Direction, centers, frames, kinds::{PositionKind, VelocityKind}
 };
 use super::Vector;
-use crate::units::Distance;
+use crate::units::{Quantity, LengthUnit};
 
-pub type Position<C, F, U = f64>  = Vector<C, F, U, PositionKind>;
-pub type Velocity<C, F, U = f64>  = Vector<C, F, U, VelocityKind>;
+pub type Position<C, F, U>  = Vector<C, F, U, PositionKind>;
+pub type Velocity<C, F, U>  = Vector<C, F, U, VelocityKind>;
 
 impl<C, F, U> Position<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Distance,
+    U: LengthUnit,
 {
+    pub const CENTER: Self = Self::new(Quantity::<U>::new(0.0), Quantity::<U>::new(0.0), Quantity::<U>::new(0.0));
+
     /// Calculates the Euclidean distance with respect to the ReferenceCenter.
     ///
     /// # Returns
     /// The distance from the ReferenceCenter in units of U.
-    pub fn distance(&self) -> U {
-        (self.x().powi(2) + self.y().powi(2) + self.z().powi(2)).sqrt()
+    pub fn distance(&self) -> Quantity<U> {
+        //TODO
+        //self.as_vec3().magnitude()
+        Quantity::<U>::new(0.0)
     }
 
     pub fn normalize(&self) -> Self {
         // TODO: Use nalgebra for this?
-        let norm = nalgebra::Vector3::<f64>::new(
-            self.x().into(),
-            self.y().into(),
-            self.z().into()
-        ).normalize();
+        //let norm = nalgebra::Vector3::<f64>::new(
+        //    self.x().into(),
+        //    self.y().into(),
+        //    self.z().into()
+        //).normalize();
+        //Self::new(
+        //    U::from(norm.x),
+        //    U::from(norm.y),
+        //    U::from(norm.z)
+        //)
+
         Self::new(
-            U::from(norm.x),
-            U::from(norm.y),
-            U::from(norm.z)
+            Quantity::<U>::new(0.0),
+            Quantity::<U>::new(0.0),
+            Quantity::<U>::new(0.0)
         )
     }
 
     pub fn direction(&self) -> super::Direction<C, F> {
         // TODO: Use nalgebra for this?
-        let norm = nalgebra::Vector3::<f64>::new(
-            self.x().into(),
-            self.y().into(),
-            self.z().into()
-        ).normalize();
+        //let norm = nalgebra::Vector3::<f64>::new(
+        //    self.x().into(),
+        //    self.y().into(),
+        //    self.z().into()
+        //).normalize();
+        //Direction::new(
+        //    norm.x,
+        //    norm.y,
+        //    norm.z
+        //)
         Direction::new(
-            norm.x,
-            norm.y,
-            norm.z
+            Quantity::<f64>::new(0.0),
+            Quantity::<f64>::new(0.0),
+            Quantity::<f64>::new(0.0)
         )
     }
 }

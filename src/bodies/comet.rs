@@ -9,7 +9,7 @@ use crate::astro::orbit::Orbit;
 use crate::units::Kilometers;
 
 /// Represents a **Comet** characterized by its tail length and orbit.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Comet {
     pub name: String,
     pub tail_length: Kilometers,

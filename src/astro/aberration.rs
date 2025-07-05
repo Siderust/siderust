@@ -27,7 +27,7 @@
 
 use crate::coordinates::centers::Heliocentric;
 use crate::coordinates::transform::Transform;
-use crate::units::{AstronomicalUnit, JulianDay, Distance};
+use crate::units::{AstronomicalUnit, JulianDay, LengthUnit, Quantity};
 use crate::coordinates::{
     cartesian::{position, direction},
     cartesian::{Position, Velocity},
@@ -56,9 +56,9 @@ pub fn apply_aberration_to_direction(
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
     Position::new(
-        mean.x() + Into::<f64>::into(velocity.x() / AU_PER_DAY_C),
-        mean.y() + Into::<f64>::into(velocity.y() / AU_PER_DAY_C),
-        mean.z() + Into::<f64>::into(velocity.z() / AU_PER_DAY_C),
+        mean.x() + Quantity::<f64>::new(velocity.x().value() / AU_PER_DAY_C),
+        mean.y() + Quantity::<f64>::new(velocity.y().value() / AU_PER_DAY_C),
+        mean.z() + Quantity::<f64>::new(velocity.z().value() / AU_PER_DAY_C),
     ).direction()
 }
 
@@ -79,9 +79,9 @@ pub fn remove_aberration_from_direction(
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
     Position::new(
-        app.x() - Into::<f64>::into(velocity.x() / AU_PER_DAY_C),
-        app.y() - Into::<f64>::into(velocity.y() / AU_PER_DAY_C),
-        app.z() - Into::<f64>::into(velocity.z() / AU_PER_DAY_C),
+        app.x() - Quantity::<f64>::new(velocity.x().value() / AU_PER_DAY_C),
+        app.y() - Quantity::<f64>::new(velocity.y().value() / AU_PER_DAY_C),
+        app.z() - Quantity::<f64>::new(velocity.z().value() / AU_PER_DAY_C),
     ).direction()
 }
 
@@ -89,7 +89,7 @@ pub fn remove_aberration_from_direction(
 /// Apply **annual aberration** to a position vector, preserving its
 /// geocentric distance.
 #[must_use]
-pub fn apply_aberration<U: Distance>(
+pub fn apply_aberration<U: LengthUnit>(
     mean: position::Equatorial<U>,
     jd:   JulianDay,
 ) -> position::Equatorial<U> {
@@ -109,7 +109,7 @@ pub fn apply_aberration<U: Distance>(
 /// Remove **annual aberration** from a position vector, preserving its
 /// geocentric distance.
 #[must_use]
-pub fn remove_aberration<U: Distance>(
+pub fn remove_aberration<U: LengthUnit>(
     app: position::Equatorial<U>,
     jd:  JulianDay,
 ) -> position::Equatorial<U> {
@@ -132,7 +132,7 @@ mod tests {
     use crate::coordinates::spherical::position;
     use approx::assert_relative_eq;
 
-    fn apply_aberration_sph<U: Distance>(
+    fn apply_aberration_sph<U: LengthUnit>(
         mean: position::Equatorial<U>,
         jd:   JulianDay,
     ) -> position::Equatorial<U> {

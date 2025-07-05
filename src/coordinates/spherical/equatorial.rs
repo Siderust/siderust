@@ -29,7 +29,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::{Distance, Degrees};
+use crate::units::{LengthUnit, Degrees, Quantity};
 
 impl<C: ReferenceCenter> Direction<C, Equatorial> {
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
@@ -54,8 +54,8 @@ impl<C: ReferenceCenter> Direction<C, Equatorial> {
     }
 }
 
-impl<C: ReferenceCenter, U: Distance> Position<C, Equatorial, U> {
-    pub const fn new_const(ra: Degrees, dec: Degrees, distance: U) -> Self {
+impl<C: ReferenceCenter, U: LengthUnit> Position<C, Equatorial, U> {
+    pub const fn new_const(ra: Degrees, dec: Degrees, distance: Quantity<U>) -> Self {
         Self::new_spherical_coord(dec, ra, Some(distance))
     }
 
@@ -66,11 +66,11 @@ impl<C: ReferenceCenter, U: Distance> Position<C, Equatorial, U> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AU).
     ///
     /// # Returns
     /// A normalized `Position` in the equatorial frame.
-    pub fn new(ra: Degrees, dec: Degrees, distance: U) -> Self {
+    pub fn new(ra: Degrees, dec: Degrees, distance: Quantity<U>) -> Self {
         Self::new_const(
             ra.normalize(),
             dec.normalize_to_90_range(),
@@ -78,7 +78,7 @@ impl<C: ReferenceCenter, U: Distance> Position<C, Equatorial, U> {
     }
 }
 
-impl<C: ReferenceCenter, U: Distance, K: Kind> SphericalCoord<C, Equatorial, U, K> {
+impl<C: ReferenceCenter, U: LengthUnit, K: Kind> SphericalCoord<C, Equatorial, U, K> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees { self.polar }
 

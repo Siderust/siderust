@@ -49,7 +49,7 @@ use crate::coordinates::{
     frames::ReferenceFrame,
     kinds::DirectionKind
 };
-use crate::units::Distance;
+use crate::units::{Quantity, LengthUnit};
 
 pub type Direction<C, F> = SphericalCoord<C, F, f64, DirectionKind>;
 pub type Ecliptic   = Direction<centers::Heliocentric, frames::Ecliptic>;   // L (l), B (b)
@@ -65,7 +65,7 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
 {
-    pub fn position<U: Distance>(&self, magnitude: U) -> super::Position<C, F, U> {
+    pub fn position<U: LengthUnit>(&self, magnitude: Quantity<U>) -> super::Position<C, F, U> {
         super::Position::new_spherical_coord(self.polar, self.azimuth, Some(magnitude))
     }
 }
@@ -98,7 +98,7 @@ mod tests {
 
         assert!(output.contains("θ: 60"), "Missing polar angle");
         assert!(output.contains("φ: 30"), "Missing azimuth");
-        assert!(output.contains("r: NaN"), "Distance should be NaN");
+        assert!(output.contains("r: NaN"), "LengthUnit should be NaN");
     }
 
     #[test]

@@ -2,8 +2,7 @@
 //!
 //! Provides a strongly-typed representation of a length in Kilometers (km)
 //! and conversions to and from Light Years (LY).
-
-use crate::units::Unit;
+/*
 
 use super::{AstronomicalUnit, LightYear};
 
@@ -14,15 +13,11 @@ pub type KM = Kilometers;
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct Kilometers(f64);
 
-impl Unit for Kilometers {
-    const NAN: Self = Kilometers(f64::NAN);
+crate::units::impl_simple_unit!(Kilometers);
 
-    fn sqrt(self) -> Self { Kilometers(self.0.sqrt()) }
-    fn powi(self, n: i32) -> Self { Kilometers(self.0.powi(n)) }
-    fn abs(self) -> Self { Kilometers(self.0.abs()) }
-}
-
-impl super::Distance for Kilometers { }
+impl super::LengthUnit for Kilometers { }
+*/
+use crate::units::*;
 
 impl Kilometers {
 
@@ -30,21 +25,21 @@ impl Kilometers {
     ///
     /// # Arguments
     /// * `value` - The length in kilometers.
-    pub const fn new(value: f64) -> Self {
-        Self(value)
+    //pub const fn new(value: f64) -> Self {
+    //    Self(value)
+    //}
+
+    pub const fn to_au(&self) -> AstronomicalUnits {
+        AU::new(self.0 / AstronomicalUnits::KM_PER_AU)
     }
 
-    pub const fn to_au(&self) -> AstronomicalUnit {
-        AstronomicalUnit::new(self.0 / AstronomicalUnit::KM_PER_AU)
-    }
-
-    /// Returns the inner value in kilometers.
-    pub const fn value(&self) -> f64 {
-        self.0
-    }
+    // Returns the inner value in kilometers.
+    //pub const fn value(&self) -> f64 {
+    //    self.0
+    //}
 }
 
-
+/*
 /// Converts a `Kilometers` to `LightYear`.
 impl From<Kilometers> for LightYear {
     fn from(km: Kilometers) -> Self {
@@ -79,3 +74,4 @@ impl std::fmt::Display for Kilometers {
 
 // Import your macro path correctly if needed
 crate::units::arithmetic_ops::impl_arithmetic_ops!(Kilometers);
+ */
