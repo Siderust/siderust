@@ -64,12 +64,13 @@ pub use mass::*;
 pub use power::*;
 
 use core::marker::PhantomData;
-use core::ops::{Add, AddAssign, Sub, SubAssign, Mul, Div, Rem, Neg};
-use core::cmp::{PartialOrd, PartialEq};
+use core::ops::*;
+use core::cmp::*;
+use std::fmt::*;
 
 pub trait Dimension {} // (Length, Time, Mass…).
 
-pub trait Unit: Copy + 'static {
+pub trait Unit: Copy + PartialEq + Debug + 'static {
     const RATIO: f64;
     type Dim: Dimension;
 }
@@ -155,7 +156,6 @@ where
     fn div(self, rhs: f64) -> Self { Self::new(self.0 / rhs) }
 }
 
-
 impl<U> Div<Quantity<U>> for Quantity<U>
 where
     U: Unit,
@@ -163,6 +163,16 @@ where
     type Output = f64;
     fn div(self, rhs: Quantity<U>) -> Self::Output { self.0 / rhs.0 }
 }
+
+impl<U> DivAssign for Quantity<U>
+where
+    U: Unit
+{
+    fn div_assign(&mut self, rhs: Self) {
+        self.0 /= rhs.0;
+    }
+}
+
 
 impl<U> Rem<f64> for Quantity<U>
 where
@@ -188,53 +198,3 @@ where
     type Output = Self;
     fn neg(self) -> Self { Self::new(-self.0) }
 }
-
-
-/*
-pub trait Unit:
-    Copy
-    + Clone
-    + PartialEq
-    + PartialOrd
-    + std::fmt::Debug
-    + std::fmt::Display
-    + std::ops::Add<Self, Output = Self>
-    + std::ops::Sub<Self, Output = Self>
-    + std::ops::Mul<f64, Output = Self>
-    + std::ops::Div<f64, Output = Self>
-    + From<f64>
-    + Into<f64>
-    + PartialEq<f64>
-    + std::ops::AddAssign
-    + std::ops::SubAssign
-    + simba::scalar::ClosedAdd
-    + simba::scalar::ClosedSub
-    + nalgebra::Scalar
-{
-    const NAN: Self;
-
-    fn sqrt(self) -> Self;
-    fn powi(self, n: i32) -> Self;
-    fn abs(self) -> Self;
-}
-// TODO: f64 has no Unit!! Remove me
-impl Unit for f64 {
-    const NAN: Self = f64::NAN;
-    fn sqrt(self) -> Self { f64::sqrt(self) }
-    fn powi(self, n: i32) -> Self { f64::powi(self, n) }
-    fn abs(self) -> Self { f64::abs(self) }
-}
-
-macro_rules! impl_simple_unit {
-    ($U:ty) => {
-        impl Unit for $U {
-            const NAN: Self = Self(f64::NAN);
-            fn sqrt(self) -> Self { Self(self.0.sqrt()) }
-            fn powi(self, n: i32) -> Self { Self(self.0.powi(n)) }
-            fn abs(self) -> Self { Self(self.0.abs()) }
-        }
-    };
-}
-
-pub(crate) use impl_simple_unit;
-*/

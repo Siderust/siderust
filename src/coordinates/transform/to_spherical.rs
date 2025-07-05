@@ -54,11 +54,10 @@ where
         let y = cart.y().value();
         let z = cart.z().value();
 
-        // TODO
-        //debug_assert!(
-        //    (cart.as_vec3().magnitude() - 1.0).abs() < 1e-12,
-        //    "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
-        //);
+        debug_assert!(
+            (cart.distance().value() - 1.0).abs() < 1e-12,
+            "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
+        );
 
         let polar   = Degrees::new(z.asin().to_degrees());
         let azimuth = Degrees::new(y.atan2(x).to_degrees());

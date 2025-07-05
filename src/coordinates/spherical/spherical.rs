@@ -110,8 +110,12 @@ where
     ///
     /// # Returns
     /// The distance to the other coordinate.
-    pub fn distance_to(&self, other: &Self) -> Quantity<U> {
-        self.to_cartesian().distance_to(&other.to_cartesian())
+    pub fn distance_to(&self, other: &Self) -> Quantity<U>
+    where
+        U: std::cmp::PartialEq + std::fmt::Debug
+    {
+        self.to_cartesian()
+            .distance_to(&other.to_cartesian())
     }
 
     /// Calculates the angular separation between this coordinate and another.
