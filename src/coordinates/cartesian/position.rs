@@ -1,5 +1,6 @@
 use crate::coordinates::{
-    cartesian::Direction, centers, frames, kinds::{PositionKind, VelocityKind}
+    centers, frames,
+    kinds::{PositionKind, VelocityKind}
 };
 use super::Vector;
 use crate::units::{Quantity, LengthUnit};
@@ -15,52 +16,12 @@ where
 {
     pub const CENTER: Self = Self::new(Quantity::<U>::new(0.0), Quantity::<U>::new(0.0), Quantity::<U>::new(0.0));
 
-    /// Calculates the Euclidean distance with respect to the ReferenceCenter.
-    ///
-    /// # Returns
-    /// The distance from the ReferenceCenter in units of U.
-    pub fn distance(&self) -> Quantity<U> {
-        //TODO
-        //self.as_vec3().magnitude()
-        Quantity::<U>::new(0.0)
-    }
-
-    pub fn normalize(&self) -> Self {
-        // TODO: Use nalgebra for this?
-        //let norm = nalgebra::Vector3::<f64>::new(
-        //    self.x().into(),
-        //    self.y().into(),
-        //    self.z().into()
-        //).normalize();
-        //Self::new(
-        //    U::from(norm.x),
-        //    U::from(norm.y),
-        //    U::from(norm.z)
-        //)
-
-        Self::new(
-            Quantity::<U>::new(0.0),
-            Quantity::<U>::new(0.0),
-            Quantity::<U>::new(0.0)
-        )
-    }
-
     pub fn direction(&self) -> super::Direction<C, F> {
-        // TODO: Use nalgebra for this?
-        //let norm = nalgebra::Vector3::<f64>::new(
-        //    self.x().into(),
-        //    self.y().into(),
-        //    self.z().into()
-        //).normalize();
-        //Direction::new(
-        //    norm.x,
-        //    norm.y,
-        //    norm.z
-        //)
-        Direction::new(
-            Quantity::<f64>::new(0.0),
-            Quantity::<f64>::new(0.0),
-            Quantity::<f64>::new(0.0)
+        let d = self.distance();
+        super::Direction::<C, F>::new(
+            Quantity::<f64>::new(self.x() / d),
+            Quantity::<f64>::new(self.y() / d),
+            Quantity::<f64>::new(self.z() / d)
         )
     }
 }

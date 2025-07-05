@@ -223,7 +223,7 @@ fn orbital_period_days(a: AU) -> Days {
 pub fn calculate_orbit_position(
     elements: &Orbit,
     julian_date: JulianDay,
-) -> Position<Heliocentric, Ecliptic, AstronomicalUnit> { //TODO: check units
+) -> Position<Heliocentric, Ecliptic, AstronomicalUnit> { //TODO: check units (Generic?)
 
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);

@@ -91,13 +91,36 @@ where
     /// Gets the z-coordinate in AU.
     pub fn z(&self) -> Quantity<U> { self.xyz[2] }
 
-    /// Computes the Euclidean distance to another Cartesian coordinate of the same type.
-    pub fn distance_to(&self, _other: &Self) -> Quantity<U> {
-        // TODO
-        // (self - other).distance()
-        Quantity::new(0.0)
+    pub fn sub(&self, other: &Self) -> Self
+    where
+        U: std::cmp::PartialEq + std::fmt::Debug
+    {
+        Self::from_vec3(self.as_vec3() - other.as_vec3())
     }
+
+    /// Calculates the Euclidean distance with respect to the ReferenceCenter.
+    ///
+    /// # Returns
+    /// The distance from the ReferenceCenter in units of U.
+    pub fn distance(&self) -> Quantity<U> {
+        let distance = Vector3::<f64>::new(
+            self.x().value(),
+            self.y().value(),
+            self.z().value()
+        ).magnitude();
+        Quantity::new(distance)
+    }
+
+    /// Computes the Euclidean distance to another Cartesian coordinate of the same type.
+    pub fn distance_to(&self, other: &Self) -> Quantity<U>
+    where
+        U: std::cmp::PartialEq + std::fmt::Debug
+    {
+        self.sub(other).distance()
+    }
+
 }
+
 
 impl<C, F, U, K> std::fmt::Display for Vector<C, F, U, K>
 where
@@ -140,10 +163,7 @@ where
     K: Kind,
 {
     type Output = Self;
-
-    fn sub(self, other: Self) -> Self::Output {
-        Self::from_vec3(self.xyz - other.xyz)
-    }
+    fn sub(self, other: Self) -> Self::Output { (&self).sub(&other) }
 }
 
 /*impl<C, F, U, K> Div<U> for Vector<C, F, U, K>
