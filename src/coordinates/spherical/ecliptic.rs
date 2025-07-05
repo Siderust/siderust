@@ -15,7 +15,7 @@
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::position::Ecliptic;
-//! use siderust::units::Degrees;
+//! use siderust::units::{Degrees};
 //!
 //! let coord = Ecliptic::new(
 //!     Degrees::new(120.0), Degrees::new(5.0), 1.0
@@ -28,14 +28,14 @@ use crate::coordinates::{
     centers::*, frames,
     kinds::Kind,
 };
-use crate::units::{Degrees, Distance};
+use crate::units::{Degrees, Quantity, LengthUnit};
 
-impl<C: ReferenceCenter, U: Distance> Position<C, frames::Ecliptic, U> {
-    pub const fn new_const(lon: Degrees, lat: Degrees, distance: U) -> Self {
+impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
+    pub const fn new_const(lon: Degrees, lat: Degrees, distance: Quantity<U>) -> Self {
         Self::new_spherical_coord(lat, lon, Some(distance))
     }
 
-    pub fn new(lon: Degrees, lat: Degrees, distance: U) -> Self {
+    pub fn new(lon: Degrees, lat: Degrees, distance: Quantity<U>) -> Self {
         Self::new_const(
             lon.normalize(),
             lat.normalize_to_90_range(),
@@ -68,7 +68,7 @@ impl<C: ReferenceCenter> Direction<C, frames::Ecliptic> {
     }
 }
 
-impl<C: ReferenceCenter, U: Distance, K: Kind> SphericalCoord<C, frames::Ecliptic, U, K> {
+impl<C: ReferenceCenter, U: LengthUnit, K: Kind> SphericalCoord<C, frames::Ecliptic, U, K> {
     /// Returns the Latitude (β) in degrees.
     pub fn lat(&self) -> Degrees { self.polar }
 

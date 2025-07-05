@@ -11,7 +11,7 @@ use crate::units::{Kilograms, Kilometers};
 
 use std::borrow::Cow;
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 /// Represents a **Satelite** characterized by its mass, radius and orbit.
 pub struct Satelite<'a> {
     pub name: Cow<'a, str>,

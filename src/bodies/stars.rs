@@ -2,7 +2,7 @@
 //!
 //! Represents stars with name, distance, mass, radius, luminosity, and target.
 //! - `name`: Name of the star (borrowed or owned).
-//! - `distance`: Distance from Earth in light-years (`LightYear`).
+//! - `distance`: LengthUnit from Earth in light-years (`LightYear`).
 //! - `mass`: Stellar mass in solar masses (`SolarMass`).
 //! - `radius`: Stellar radius in solar radii (`SolarRadius`).
 //! - `lumminosity`: Stellar luminosity in solar luminosities (`SolarLuminosity`).
@@ -15,25 +15,25 @@ use crate::units::*;
 use std::borrow::Cow;
 
 /// Represents a **Star** characterized by its distance, mass, radius, luminosity and position in the sky.
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct Star<'a> {
     pub name: Cow<'a, str>,
-    pub distance: LightYear,
+    pub distance: LY,
     pub mass: SolarMass,
     pub radius: SolarRadius,
     pub lumminosity: SolarLuminosity,
-    pub target: Target<Position<Geocentric, Equatorial>>,
+    pub target: Target<Position<Geocentric, Equatorial, LightYear>>,
 }
 
 impl<'a> Star<'a> {
     /// Compile‐time constructor: only works with `'static` string literals.
     pub const fn new_const(
         name: &'static str,
-        distance: LightYear,
+        distance: LY,
         mass: SolarMass,
         radius: SolarRadius,
         lumminosity: SolarLuminosity,
-        target: Target<Position<Geocentric, Equatorial>>,
+        target: Target<Position<Geocentric, Equatorial, LightYear>>,
     ) -> Star<'static> {
         Star {
             name: Cow::Borrowed(name),
@@ -48,11 +48,11 @@ impl<'a> Star<'a> {
     /// Runtime constructor: accepts any string-like thing.
     pub fn new<N>(
         name: N,
-        distance: LightYear,
+        distance: LY,
         mass: SolarMass,
         radius: SolarRadius,
         lumminosity: SolarLuminosity,
-        target: Target<Position<Geocentric, Equatorial>>,
+        target: Target<Position<Geocentric, Equatorial, LightYear>>,
     ) -> Star<'a>
     where
         N: Into<Cow<'a, str>>,

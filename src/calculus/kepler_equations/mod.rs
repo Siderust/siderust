@@ -202,7 +202,7 @@ pub fn solve_keplers_equation(m: Radians, e: f64) -> Radians {
     }
 }
 
-fn orbital_period_days(a: AstronomicalUnit) -> Days {
+fn orbital_period_days(a: AU) -> Days {
     // Kepler’s Third Law: T^2 = a^3 for the Sun+tiny planet
     // T in years, a in AU
     // 1 year ~ 365.256898326 days
@@ -223,7 +223,7 @@ fn orbital_period_days(a: AstronomicalUnit) -> Days {
 pub fn calculate_orbit_position(
     elements: &Orbit,
     julian_date: JulianDay,
-) -> Position<Heliocentric, Ecliptic, f64> { //TODO: check units
+) -> Position<Heliocentric, Ecliptic, AstronomicalUnit> { //TODO: check units
 
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);
@@ -263,15 +263,15 @@ pub fn calculate_orbit_position(
     let (sin_w_nu, cos_w_nu) = (w_rad + Radians::new(true_anomaly)).sin_cos();
 
     Position::new(
-        /*x:*/ z.value() * (cos_omega * cos_w_nu - sin_omega * sin_w_nu * cos_i),
-        /*y:*/ z.value() * (sin_omega * cos_w_nu + cos_omega * sin_w_nu * cos_i),
-        /*z:*/ z.value() * (sin_w_nu * sin_i)
+        z * (cos_omega * cos_w_nu - sin_omega * sin_w_nu * cos_i),
+        z * (sin_omega * cos_w_nu + cos_omega * sin_w_nu * cos_i),
+        z * (sin_w_nu * sin_i)
     )
 }
 
 impl Orbit {
     /// Calculates heliocentric coordinates of the orbiting body at a given Julian date.
-    pub fn kepler_position(&self, jd: JulianDay) -> Position<Heliocentric, Ecliptic, f64> {
+    pub fn kepler_position(&self, jd: JulianDay) -> Position<Heliocentric, Ecliptic, AstronomicalUnit> {
         calculate_orbit_position(self, jd)
     }
 }

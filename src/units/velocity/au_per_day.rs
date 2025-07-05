@@ -3,23 +3,23 @@
 //! Provides a strongly-typed representation of linear velocity in Astronomical Uits (AU) per day.
 
 use crate::units::time::Days;
-use crate::units::length::AstronomicalUnit;
+use crate::units::AU;
 
-/// A strongly-typed representation of linear velocity in AstronomicalUnit per day.
-#[derive(Debug, Clone, PartialEq)]
-pub struct AUsPerDay(pub AstronomicalUnit, pub Days);
+/// A strongly-typed representation of linear velocity in AU per day.
+#[derive(Clone)]
+pub struct AUsPerDay(pub AU, pub Days);
 
 impl AUsPerDay {
-    /// Creates a new `AUsPerDay` from a value in AstronomicalUnit per day.
-    pub fn new(aus: AstronomicalUnit, days: Days) -> Self {
+    /// Creates a new `AUsPerDay` from a value in AU per day.
+    pub fn new(aus: AU, days: Days) -> Self {
         Self(aus, days)
     }
 
     pub fn from_decimal(aus_per_day: f64) -> Self {
-        Self(AstronomicalUnit::new(aus_per_day), Days::new(1.0))
+        Self(AU::new(aus_per_day), Days::new(1.0))
     }
 
-    /// Returns the f64 result of AstronomicalUnit per day.
+    /// Returns the f64 result of AU per day.
     pub fn value(&self) -> f64 {
         self.0.value() / self.1.value()
     }
@@ -31,8 +31,8 @@ impl std::fmt::Display for AUsPerDay {
     }
 }
 
-/// Division of `AstronomicalUnit` by `Days` yields `AUsPerDay`.
-impl std::ops::Div<Days> for AstronomicalUnit {
+/// Division of `AU` by `Days` yields `AUsPerDay`.
+impl std::ops::Div<Days> for AU {
     type Output = AUsPerDay;
 
     fn div(self, rhs: Days) -> Self::Output {
@@ -40,9 +40,9 @@ impl std::ops::Div<Days> for AstronomicalUnit {
     }
 }
 
-/// Multiplication of `AUsPerDay` by `Days` yields `AstronomicalUnit`.
+/// Multiplication of `AUsPerDay` by `Days` yields `AU`.
 impl std::ops::Mul<Days> for AUsPerDay {
-    type Output = AstronomicalUnit;
+    type Output = AU;
 
     fn mul(self, rhs: Days) -> Self::Output {
         self.0 * (rhs / self.1)

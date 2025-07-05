@@ -2,9 +2,10 @@ use crate::coordinates::{
     frames, centers,
     kinds::DirectionKind,
 };
-use crate::units::Distance;
+use crate::units::{Quantity, LengthUnit};
 use super::Vector;
 
+// TODO: Remove Unit from Direction
 pub type Direction<C, F> = Vector<C, F, f64, DirectionKind>;
 
 impl<C, F> Direction<C, F>
@@ -13,11 +14,11 @@ where
     F: frames::ReferenceFrame,
 {
     /// Returns a Position vector in the same direction, scaled by the given magnitude.
-    pub fn position<U: Distance>(&self, magnitude: U) -> super::Position<C, F, U> {
+    pub fn position<U: LengthUnit>(&self, magnitude: Quantity<U>) -> super::Position<C, F, U> {
         super::Position::new(
-            magnitude * self.x(),
-            magnitude * self.y(),
-            magnitude * self.z()
+            magnitude * self.x().value(),
+            magnitude * self.y().value(),
+            magnitude * self.z().value()
         )
     }
 }
