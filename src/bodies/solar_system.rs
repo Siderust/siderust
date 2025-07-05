@@ -53,18 +53,18 @@ pub struct Neptune;
 /// | Luminosity      | 3.828 × 10²⁶ W       |
 /// | Right Ascension | 18h 44m 48s (J2000) |
 /// | Declination     | −23° 00′ 00″ (J2000)|
-/// | Distance        | 1 AU (~0.0000158 ly)|
+/// | LengthUnit        | 1 AU (~0.0000158 ly)|
 pub const SUN: super::Star<'static> = super::Star::new_const(
     "Sun",
     AU.to_light_year(),
     SOLAR_MASS,
     SOLAR_RADIUS,
     SOLAR_LUMINOSITY,
-    Target::<Position::<Geocentric, Equatorial>>::new_static(
-        Position::<Geocentric, Equatorial>::new_const(
+    Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
+        Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::from_hms(18, 44, 48.0), // Aprox at J2000
             Degrees::from_hms(-23, 0, 0.0), // Aprox at J2000
-            AU.to_light_year().value(), // Distance in Light Years
+            AU.to_light_year(),
         ),
         JulianDay::J2000,
     ),
@@ -86,7 +86,7 @@ pub const MERCURY: super::Planet = super::Planet {
     mass: Kilograms::new(3.3011e23),
     radius: Kilometers::new(2439.7),
     orbit: Orbit::new(
-        AstronomicalUnit::new(0.38709893),
+        AU::new(0.38709893),
         0.20563069,
         Degrees::new(7.00487),
         Degrees::new(48.33167),
@@ -112,7 +112,7 @@ pub const VENUS: super::Planet = super::Planet {
     mass: Kilograms::new(4.8675e24),
     radius: Kilometers::new(6051.8),
     orbit: Orbit::new(
-        AstronomicalUnit::new(0.72333199),
+        AU::new(0.72333199),
         0.00677323,
         Degrees::new(3.39471),
         Degrees::new(76.68069),
@@ -138,7 +138,7 @@ pub const EARTH: super::Planet = super::Planet {
     mass: Kilograms::new(5.97237e24),
     radius: Kilometers::new(6371.0),
     orbit: Orbit::new(
-        AstronomicalUnit::new(1.00000011),
+        AU::new(1.00000011),
         0.01671022,
         Degrees::new(0.00005),
         Degrees::new(-11.26064),
@@ -193,7 +193,7 @@ pub const MARS: super::Planet = super::Planet {
     mass: Kilograms::new(6.4171e23),
     radius: Kilometers::new(3389.5),
     orbit: Orbit::new(
-        AstronomicalUnit::new(1.52366231),
+        AU::new(1.52366231),
         0.09341233,
         Degrees::new(1.85061),
         Degrees::new(49.57854),
@@ -219,7 +219,7 @@ pub const JUPITER: super::Planet = super::Planet {
     mass: Kilograms::new(1.8982e27),
     radius: Kilometers::new(69911.0),
     orbit: Orbit::new(
-        AstronomicalUnit::new(5.20336301),
+        AU::new(5.20336301),
         0.04839266,
         Degrees::new(1.30530),
         Degrees::new(100.55615),
@@ -245,7 +245,7 @@ pub const SATURN: super::Planet = super::Planet {
     mass: Kilograms::new(5.6834e26),
     radius: Kilometers::new(58232.0),
     orbit: Orbit::new(
-        AstronomicalUnit::new(9.53707032),
+        AU::new(9.53707032),
         0.05415060,
         Degrees::new(2.48446),
         Degrees::new(113.71504),
@@ -271,7 +271,7 @@ pub const URANUS: super::Planet = super::Planet {
     mass: Kilograms::new(8.6810e25),
     radius: Kilometers::new(25362.0),
     orbit: Orbit::new(
-        AstronomicalUnit::new(19.19126393),
+        AU::new(19.19126393),
         0.04716771,
         Degrees::new(0.76986),
         Degrees::new(74.22988),
@@ -297,7 +297,7 @@ pub const NEPTUNE: super::Planet = super::Planet {
     mass: Kilograms::new(1.02409e26),
     radius: Kilometers::new(24622.0),
     orbit: Orbit::new(
-        AstronomicalUnit::new(30.06896348),
+        AU::new(30.06896348),
         0.00858587,
         Degrees::new(1.76917),
         Degrees::new(131.72169),
@@ -323,7 +323,7 @@ pub const PLUTO: super::Planet = super::Planet {
     mass: Kilograms::new(1.303e22),
     radius: Kilometers::new(1188.3),
     orbit: Orbit::new(
-        AstronomicalUnit::new(39.48168677),
+        AU::new(39.48168677),
         0.24880766,
         Degrees::new(17.14175),
         Degrees::new(110.30347),

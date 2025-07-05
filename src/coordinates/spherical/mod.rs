@@ -4,7 +4,7 @@
 //! ## Features
 //! - **Generic Type Safety:** The type system enforces correct pairing of reference centers and frames.
 //! - **Strongly Typed Angles:** Uses [`crate::units::Degrees`] and [`crate::units::Radians`] for angular components to avoid unit confusion.
-//! - **Distance and Angular Separation:** Methods for computing Euclidean distances and angular separations.
+//! - **LengthUnit and Angular Separation:** Methods for computing Euclidean distances and angular separations.
 //! - **String Representation:** Human-readable formatting for debugging and logging.
 //!
 //! ## Coordinate Convention

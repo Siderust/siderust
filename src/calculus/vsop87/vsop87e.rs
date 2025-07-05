@@ -1,7 +1,7 @@
 use super::*;
 use crate::bodies::solar_system::*;
 use crate::targets::Target;
-use crate::units::{AstronomicalUnit, JulianDay};
+use crate::units::{AU, AstronomicalUnit, JulianDay};
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Barycentric, frames::Ecliptic
@@ -25,9 +25,9 @@ macro_rules! impl_vsop87e {
                 );
                 Target::new_static(
                     Position::new(
-                        AstronomicalUnit::new(x),
-                        AstronomicalUnit::new(y),
-                        AstronomicalUnit::new(z)),
+                        AU::new(x),
+                        AU::new(y),
+                        AU::new(z)),
                     jd,
                 )
             }
@@ -40,9 +40,9 @@ macro_rules! impl_vsop87e {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    AstronomicalUnit::new(vx),
-                    AstronomicalUnit::new(vy),
-                    AstronomicalUnit::new(vz)
+                    AU::new(vx),
+                    AU::new(vy),
+                    AU::new(vz)
                 )
             }
 
@@ -56,13 +56,13 @@ macro_rules! impl_vsop87e {
                 );
                 (
                     Target::new_static(Position::new(
-                        AstronomicalUnit::new(x),
-                        AstronomicalUnit::new(y),
-                        AstronomicalUnit::new(z)), jd,),
+                        AU::new(x),
+                        AU::new(y),
+                        AU::new(z)), jd,),
                     Velocity::new(
-                        AstronomicalUnit::new(vx),
-                        AstronomicalUnit::new(vy),
-                        AstronomicalUnit::new(vz))
+                        AU::new(vx),
+                        AU::new(vy),
+                        AU::new(vz))
                 )
             }
         }
@@ -79,9 +79,9 @@ impl Sun {
         );
         Target::new_static(
             Position::new(
-                AstronomicalUnit::new(x),
-                AstronomicalUnit::new(y),
-                AstronomicalUnit::new(z)),
+                AU::new(x),
+                AU::new(y),
+                AU::new(z)),
             jd,
         )
     }

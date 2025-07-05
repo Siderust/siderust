@@ -16,10 +16,10 @@
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::position::Horizontal;
-//! use siderust::units::Degrees;
+//! use siderust::units::{Quantity, Degrees};
 //!
 //! let coord = Horizontal::new(
-//!     Degrees::new(45.0), Degrees::new(120.0), 1.0
+//!     Degrees::new(45.0), Degrees::new(120.0), Quantity::<f64>::(1.0)
 //! );
 //! println!("alt = {}, az = {}", coord.alt(), coord.az());
 //! ```
@@ -30,7 +30,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::{Degrees, Distance};
+use crate::units::{Quantity, Degrees, LengthUnit};
 
 impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// Creates a new horizontal spherical coordinate with constant values.
@@ -63,17 +63,17 @@ impl<C: ReferenceCenter> Direction<C, Horizontal> {
     }
 }
 
-impl<C: ReferenceCenter, U: Distance> Position<C, Horizontal, U> {
+impl<C: ReferenceCenter, U: LengthUnit> Position<C, Horizontal, U> {
     /// Creates a new horizontal spherical coordinate with constant values.
     ///
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AU).
     ///
     /// # Returns
     /// A new `Position` in the horizontal frame.
-    pub const fn new_const(alt: Degrees, az: Degrees, distance: U) -> Self {
+    pub const fn new_const(alt: Degrees, az: Degrees, distance: Quantity<U>) -> Self {
         Self::new_spherical_coord(alt, az, Some(distance))
     }
 
@@ -84,11 +84,11 @@ impl<C: ReferenceCenter, U: Distance> Position<C, Horizontal, U> {
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AU).
     ///
     /// # Returns
     /// A `Position` in the horizontal frame.
-    pub fn new(alt: Degrees, az: Degrees, distance: U) -> Self {
+    pub fn new(alt: Degrees, az: Degrees, distance: Quantity<U>) -> Self {
         Self::new_const(
             alt.normalize_to_90_range(),
             az.normalize(),
@@ -96,7 +96,7 @@ impl<C: ReferenceCenter, U: Distance> Position<C, Horizontal, U> {
     }
 }
 
-impl<C: ReferenceCenter, U: Distance, K: Kind> SphericalCoord<C, Horizontal, U, K> {
+impl<C: ReferenceCenter, U: LengthUnit, K: Kind> SphericalCoord<C, Horizontal, U, K> {
     /// Returns the Altitude (α) in degrees.
     pub fn alt(&self) -> Degrees { self.polar }
 

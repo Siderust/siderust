@@ -1,8 +1,7 @@
 use crate::coordinates::{
     centers::ReferenceCenter, frames::ReferenceFrame, kinds::Kind, spherical, cartesian,
 };
-use crate::units::Distance;
-use nalgebra::Vector3;
+use crate::units::{Quantity, LengthUnit};
 
 /// Implements conversion from a spherical coordinate to a cartesian coordinate.
 ///
@@ -16,7 +15,7 @@ impl<C, F, U> From<&spherical::Position<C, F, U>> for cartesian::Position<C, F, 
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Distance
+    U: LengthUnit
 {
     fn from(sph: &spherical::Position<C, F, U>) -> Self {
         let ra_rad = sph.azimuth.to_radians();
@@ -37,10 +36,12 @@ where
     fn from(sph: &spherical::Direction<C, F>) -> Self {
         let ra_rad = sph.azimuth.to_radians();
         let dec_rad = sph.polar.to_radians();
-        let x = dec_rad.cos() * ra_rad.cos();
-        let y = dec_rad.cos() * ra_rad.sin();
-        let z = dec_rad.sin();
-        Self::from_vec3(Vector3::new(x, y, z))
+
+        Self::new(
+            Quantity::<f64>::new(dec_rad.cos() * ra_rad.cos()),
+            Quantity::<f64>::new(dec_rad.cos() * ra_rad.sin()),
+            Quantity::<f64>::new(dec_rad.sin())
+        )
     }
 }
 
@@ -49,7 +50,7 @@ impl<C, F, U, K> spherical::SphericalCoord<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Distance,
+    U: LengthUnit,
     K: Kind,
     cartesian::Vector<C, F, U, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, U, K>>,
 {
@@ -60,7 +61,7 @@ impl<C, F, U, K> spherical::SphericalCoord<C, F, U, K>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Distance,
+    U: LengthUnit,
     K: Kind,
     spherical::SphericalCoord<C, F, U, K>: for<'a> From<&'a cartesian::Vector<C, F, U, K>>,
 {

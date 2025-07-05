@@ -29,7 +29,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::{Degrees, Kilometers, Distance};
+use crate::units::{Degrees, KM, Kilometer, LengthUnit};
 use crate::bodies::EARTH;
 
 impl<C: ReferenceCenter,> Direction<C, ECEF> {
@@ -54,12 +54,12 @@ impl<C: ReferenceCenter,> Direction<C, ECEF> {
     }
 }
 
-impl<C: ReferenceCenter> Position<C, ECEF, Kilometers> {
-    pub const fn new_const(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
+impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
+    pub const fn new_const(lon: Degrees, lat: Degrees, alt: KM) -> Self {
         Self::new_spherical_coord(
             lat,
             lon,
-            Some(Kilometers::new(EARTH.radius.value() + alt.value()))
+            Some(KM::new(EARTH.radius.value() + alt.value()))
         )
     }
 
@@ -68,8 +68,8 @@ impl<C: ReferenceCenter> Position<C, ECEF, Kilometers> {
     /// # Arguments
     /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
-    /// - `alt`: Altitude above the sea, in Kilometers.
-    pub fn new(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
+    /// - `alt`: Altitude above the sea, in KM.
+    pub fn new(lon: Degrees, lat: Degrees, alt: KM) -> Self {
         Self::new_const(
             lat.normalize_to_90_range(),
             lon.normalize_to_180_range(),
@@ -77,7 +77,7 @@ impl<C: ReferenceCenter> Position<C, ECEF, Kilometers> {
     }
 }
 
-impl<C: ReferenceCenter, U: Distance, K: Kind> SphericalCoord<C, ECEF, U, K> {
+impl<C: ReferenceCenter, U: LengthUnit, K: Kind> SphericalCoord<C, ECEF, U, K> {
     /// Returns the latitude (φ) in degrees.
     pub fn lat(&self) -> Degrees { self.polar }
 

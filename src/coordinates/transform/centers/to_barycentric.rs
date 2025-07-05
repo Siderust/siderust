@@ -1,4 +1,4 @@
-use crate::units::{JulianDay, Distance};
+use crate::units::{JulianDay, LengthUnit, AstronomicalUnits, Quantity};
 use crate::bodies::solar_system::{Sun, Earth};
 use crate::coordinates::{
     frames::{MutableFrame, Ecliptic, Equatorial},
@@ -8,66 +8,51 @@ use crate::coordinates::{
 use crate::coordinates::transform::Transform;
 use crate::astro::aberration::remove_aberration;
 
-pub fn heliocentric_to_barycentric<F: MutableFrame, U: Distance>(
-    helio_f: &Position<Heliocentric, F, U>,
-    jd: JulianDay
-) -> Position<Barycentric, F, U>
+impl<F: MutableFrame, U: LengthUnit> Transform<Position<Barycentric, F, U>> for Position<Heliocentric, F, U>
 where
-    for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Ecliptic, U>>,
-{
-    // VSOP87 gives the Sun's position in AstronomicalUnits, so we need to convert to U
-    let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
-    let x: U = sun_bary_ecl_au.x().into();
-    let y: U = sun_bary_ecl_au.y().into();
-    let z: U = sun_bary_ecl_au.z().into();
-    let sun_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(x, y, z);
-
-    let sun_bary_f = Position::<Barycentric, F, U>::from(&sun_bary_ecl);
-    Position::from_vec3(helio_f.as_vec3() + sun_bary_f.as_vec3())
-}
-
-pub fn geocentric_to_barycentric<F: MutableFrame, U: Distance>(
-    geo: &Position<Geocentric, F, U>,
-    jd: JulianDay
-) -> Position<Barycentric, F, U>
-where
-    for<'a> Position<Barycentric, Equatorial, U>: From<&'a Position<Barycentric, Ecliptic, U>>, // Required by VSOP
-    for<'a> Position<Geocentric, Equatorial, U>: From<&'a Position<Geocentric, F, U>>,   // Required by Aberration
-    for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Equatorial, U>>, // Required by Aberration
-{
-    // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
-    let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
-    let x: U = earth_bary_ecl_au.x().into();
-    let y: U = earth_bary_ecl_au.y().into();
-    let z: U = earth_bary_ecl_au.z().into();
-    let earth_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(x, y, z);
-
-    let earth_bary_equ = Position::<Barycentric, Equatorial, U>::from(&earth_bary_ecl); // (Bary-Ecl) -> (Bary-Equ)
-
-    let target_geo_equ  = Position::<Geocentric, Equatorial, U>::from(geo); // (Geo-F) -> (Geo-Equ)
-    let target_geo_equ_no_aberration = remove_aberration(target_geo_equ, jd);
-
-    let bary_equ = Position::<Barycentric, Equatorial, U>::from_vec3(target_geo_equ_no_aberration.as_vec3() + earth_bary_equ.as_vec3()); // Geocentric -> Barycentric
-    Position::<Barycentric, F, U>::from(&bary_equ) // Equatorial -> F
-}
-
-impl<F: MutableFrame, U: Distance> Transform<Position<Barycentric, F, U>> for Position<Heliocentric, F, U>
-where
+    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
     for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Ecliptic, U>>,
 {
     fn transform(&self, jd: JulianDay) -> Position<Barycentric, F, U> {
-        heliocentric_to_barycentric(self, jd)
+        //heliocentric_to_barycentric(self, jd)
+        // VSOP87 gives the Sun's position in AstronomicalUnits, so we need to convert to U
+        let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
+
+        let sun_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(
+            sun_bary_ecl_au.x().into(),
+            sun_bary_ecl_au.y().into(),
+            sun_bary_ecl_au.z().into(),
+        );
+
+        let sun_bary_f = Position::<Barycentric, F, U>::from(&sun_bary_ecl);
+        Position::from_vec3(self.as_vec3() + sun_bary_f.as_vec3())
     }
 }
 
-impl<F: MutableFrame, U: Distance> Transform<Position<Barycentric, F, U>> for Position<Geocentric, F, U>
+impl<F: MutableFrame, U: LengthUnit> Transform<Position<Barycentric, F, U>> for Position<Geocentric, F, U>
 where
+    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
     for<'a> Position<Barycentric, Equatorial, U>: From<&'a Position<Barycentric, Ecliptic, U>>, // Required by VSOP
     for<'a> Position<Geocentric, Equatorial, U>: From<&'a Position<Geocentric, F, U>>, // Required by Aberration
     for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Equatorial, U>>, // Required by Aberration
 {
     fn transform(&self, jd: JulianDay) -> Position<Barycentric, F, U> {
-        geocentric_to_barycentric(self, jd)
+        //geocentric_to_barycentric(self, jd)
+        // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
+        let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
+        let earth_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(
+            earth_bary_ecl_au.x().into(),
+            earth_bary_ecl_au.y().into(),
+            earth_bary_ecl_au.z().into(),
+        );
+
+        let earth_bary_equ = Position::<Barycentric, Equatorial, U>::from(&earth_bary_ecl); // (Bary-Ecl) -> (Bary-Equ)
+
+        let target_geo_equ  = Position::<Geocentric, Equatorial, U>::from(self); // (Geo-F) -> (Geo-Equ)
+        let target_geo_equ_no_aberration = remove_aberration(target_geo_equ, jd);
+
+        let bary_equ = Position::<Barycentric, Equatorial, U>::from_vec3(target_geo_equ_no_aberration.as_vec3() + earth_bary_equ.as_vec3()); // Geocentric -> Barycentric
+        Position::<Barycentric, F, U>::from(&bary_equ) // Equatorial -> F
     }
 }
 

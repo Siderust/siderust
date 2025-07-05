@@ -5,29 +5,28 @@ use crate::coordinates::{
     frames
 };
 use crate::coordinates::transform::Transform;
-use crate::units::Distance;
+use crate::units::LengthUnit;
 
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
-impl<C: ReferenceCenter, K: Kind, U: Distance> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::Ecliptic, U, K> {
+impl<C: ReferenceCenter, K: Kind, U: LengthUnit> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::Ecliptic, U, K> {
     fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Equatorial, U, K> {
-        let x:f64 = self.x().into();
-        let y:f64 = self.y().into();
-        let z:f64 = self.z().into();
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
-        let x_eq = x;
-        let y_eq = cos_e * y - sin_e * z;
-        let z_eq = sin_e * y + cos_e * z;
-
-        Vector::new(x_eq.into(), y_eq.into(), z_eq.into())
+        let y = self.y();
+        let z = self.z();
+        Vector::new(
+            self.x(),
+            cos_e * y - sin_e * z,
+            sin_e * y + cos_e * z
+        )
     }
 }
 
 // Implement Transform trait for ICRS -> Equatorial (identity)
-impl<C: ReferenceCenter, K: Kind, U: Distance> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::ICRS, U, K> {
+impl<C: ReferenceCenter, K: Kind, U: LengthUnit> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::ICRS, U, K> {
     fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Equatorial, U, K> {
         Vector::new(self.x(), self.y(), self.z())
     }

@@ -5,27 +5,27 @@ use crate::coordinates::{
     kinds::PositionKind
 };
 
-use crate::units::KM;
+use crate::units::Kilometer;
 pub type Position<C, F, U=f64>  = SphericalCoord<C, F, U, PositionKind>;
 pub type Ecliptic<U>    = Position<centers::Heliocentric, frames::Ecliptic, U>;   // L (l), B (b), R (r)
-pub type Equatorial<U>  = Position<centers::Geocentric,   frames::Equatorial, U>; // Dec (δ), RA (α), Distance (d)
-pub type Horizontal<U>  = Position<centers::Topocentric,  frames::Horizontal, U>; // Alt (α), Az (θ), Distance (d)
-pub type ICRS<U=f64>    = Position<centers::Barycentric,  frames::ICRS, U>; // Dec (δ), RA (α), Distance (d)
-pub type HCRS<U=f64>    = Position<centers::Heliocentric, frames::ICRS, U>; // Dec (δ), RA (α), Distance (d)
-pub type GCRS<U=f64>    = Position<centers::Geocentric,   frames::ICRS, U>; // Dec (δ), RA (α), Distance (d)
-pub type Geographic     = Position<centers::Geocentric,   frames::ECEF, KM>; //Latitude (φ),Longitude (λ), Altitude (h)
+pub type Equatorial<U>  = Position<centers::Geocentric,   frames::Equatorial, U>; // Dec (δ), RA (α), LengthUnit (d)
+pub type Horizontal<U>  = Position<centers::Topocentric,  frames::Horizontal, U>; // Alt (α), Az (θ), LengthUnit (d)
+pub type ICRS<U=f64>    = Position<centers::Barycentric,  frames::ICRS, U>; // Dec (δ), RA (α), LengthUnit (d)
+pub type HCRS<U=f64>    = Position<centers::Heliocentric, frames::ICRS, U>; // Dec (δ), RA (α), LengthUnit (d)
+pub type GCRS<U=f64>    = Position<centers::Geocentric,   frames::ICRS, U>; // Dec (δ), RA (α), LengthUnit (d)
+pub type Geographic     = Position<centers::Geocentric,   frames::ECEF, Kilometer>; //Latitude (φ),Longitude (λ), Altitude (h)
 
 use crate::coordinates::{
     frames::*,
     centers::*,
 };
-use crate::units::Distance;
+use crate::units::LengthUnit;
 
 impl<C, F, U> Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Distance,
+    U: LengthUnit,
 {
     /// The zero point (origin) in this coordinate system.
     pub const CENTER: Self = Self::from_degrees(0.0, 0.0, None);
