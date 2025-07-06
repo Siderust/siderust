@@ -8,20 +8,20 @@ use crate::coordinates::{
 use crate::coordinates::transform::Transform;
 use crate::astro::aberration::remove_aberration;
 
+// Heliocentric To Barycentric
 impl<F: MutableFrame, U: LengthUnit> Transform<Position<Barycentric, F, U>> for Position<Heliocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
     for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Ecliptic, U>>,
 {
     fn transform(&self, jd: JulianDay) -> Position<Barycentric, F, U> {
-        //heliocentric_to_barycentric(self, jd)
-        // VSOP87 gives the Sun's position in AstronomicalUnits, so we need to convert to U
         let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
 
+        // VSOP87 gives the Sun's position in AstronomicalUnits, so we need to convert to U
         let sun_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(
-            sun_bary_ecl_au.x().into(),
-            sun_bary_ecl_au.y().into(),
-            sun_bary_ecl_au.z().into(),
+            sun_bary_ecl_au.x(),
+            sun_bary_ecl_au.y(),
+            sun_bary_ecl_au.z(),
         );
 
         let sun_bary_f = Position::<Barycentric, F, U>::from(&sun_bary_ecl);
@@ -29,6 +29,7 @@ where
     }
 }
 
+// Geocentric To Barycentric
 impl<F: MutableFrame, U: LengthUnit> Transform<Position<Barycentric, F, U>> for Position<Geocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
@@ -37,13 +38,13 @@ where
     for<'a> Position<Barycentric, F, U>: From<&'a Position<Barycentric, Equatorial, U>>, // Required by Aberration
 {
     fn transform(&self, jd: JulianDay) -> Position<Barycentric, F, U> {
-        //geocentric_to_barycentric(self, jd)
-        // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
         let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
+
+        // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
         let earth_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(
-            earth_bary_ecl_au.x().into(),
-            earth_bary_ecl_au.y().into(),
-            earth_bary_ecl_au.z().into(),
+            earth_bary_ecl_au.x(),
+            earth_bary_ecl_au.y(),
+            earth_bary_ecl_au.z(),
         );
 
         let earth_bary_equ = Position::<Barycentric, Equatorial, U>::from(&earth_bary_ecl); // (Bary-Ecl) -> (Bary-Equ)

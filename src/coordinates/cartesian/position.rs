@@ -14,7 +14,7 @@ where
     F: frames::ReferenceFrame,
     U: LengthUnit,
 {
-    pub const CENTER: Self = Self::new(Quantity::<U>::new(0.0), Quantity::<U>::new(0.0), Quantity::<U>::new(0.0));
+    pub const CENTER: Self = Self::new_const(Quantity::<U>::new(0.0), Quantity::<U>::new(0.0), Quantity::<U>::new(0.0));
 
     pub fn direction(&self) -> super::Direction<C, F> {
         let d = self.distance();
