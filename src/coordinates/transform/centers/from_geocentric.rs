@@ -12,8 +12,8 @@ impl<C, F> Transform<cartesian::Direction<C, F>> for cartesian::Direction<Geocen
 where
     C: ReferenceCenter + NonGeocentric,
     F: MutableFrame,
-    cartesian::Direction<Geocentric, F>: Transform<cartesian::Direction<Geocentric, Equatorial>>, // Required by Aberration
-    cartesian::Direction<Geocentric, Equatorial>: Transform<cartesian::Direction<Geocentric, F>>,
+    cartesian::Direction<Geocentric, F>: Transform<cartesian::Direction<Geocentric, Equatorial>>, // ToEquatorial
+    cartesian::Direction<Geocentric, Equatorial>: Transform<cartesian::Direction<Geocentric, F>>, // FromEquatorial
 {
     #[inline]
     fn transform(&self, jd: JulianDay) -> cartesian::Direction<C, F> {
@@ -36,8 +36,8 @@ impl<C, F> Transform<spherical::Direction<C, F>> for spherical::Direction<Geocen
 where
     C: ReferenceCenter + NonGeocentric,
     F: MutableFrame,
-    cartesian::Direction<Geocentric, F>: Transform<cartesian::Direction<Geocentric, Equatorial>>,
-    cartesian::Direction<Geocentric, Equatorial>: Transform<cartesian::Direction<Geocentric, F>>,
+    cartesian::Direction<Geocentric, F>: Transform<cartesian::Direction<Geocentric, Equatorial>>, // ToEquatorial
+    cartesian::Direction<Geocentric, Equatorial>: Transform<cartesian::Direction<Geocentric, F>>, // FromEquatorial
 {
     #[inline]
     fn transform(&self, jd: JulianDay) -> spherical::Direction<C, F> {

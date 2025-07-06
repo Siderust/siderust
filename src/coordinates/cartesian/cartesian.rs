@@ -71,9 +71,15 @@ where
     ///
     /// # Returns
     /// A new `Vector<Center, Frame>`.
-    pub const fn new(x: Quantity<U>, y: Quantity<U>, z: Quantity<U>) -> Self {
-        //K::validate(x, y, z);
+    pub const fn new_const(x: Quantity<U>, y: Quantity<U>, z: Quantity<U>) -> Self {
         Self::from_vec3(Vector3::new(x, y, z))
+    }
+
+    pub fn new<T>(x: T, y: T, z: T) -> Self
+    where
+        T: Into<Quantity<U>>,
+    {
+        Self::from_vec3(Vector3::new(x.into(), y.into(), z.into()))
     }
 
     pub const fn from_vec3(vec3: Vector3<Quantity<U>>) -> Self {

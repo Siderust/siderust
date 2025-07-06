@@ -18,12 +18,11 @@ where
 {
     fn transform(&self, jd: JulianDay) -> Position<Heliocentric, F, U> {
         //geocentric_to_heliocentric(self, jd)
-        // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
         let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
         let earth_helio_ecl = Position::<Heliocentric, Ecliptic, U>::new(
-            earth_helio_ecl_au.x().into(),
-            earth_helio_ecl_au.y().into(),
-            earth_helio_ecl_au.z().into(),
+            earth_helio_ecl_au.x(),
+            earth_helio_ecl_au.y(),
+            earth_helio_ecl_au.z(),
         );
 
         let earth_helio_equ = Position::<Heliocentric, Equatorial, U>::from(&earth_helio_ecl); // (Helio-Ecl) -> (Helio-Equ)
@@ -46,12 +45,11 @@ where
 {
     fn transform(&self, jd: JulianDay) -> Position<Heliocentric, F, U> {
         // Barycentric to Heliocentric
-        // VSOP87 gives the Sun's position in AstronomicalUnits, so we need to convert to U
         let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
         let sun_bary_ecl = Position::<Barycentric, Ecliptic, U>::new(
-            sun_bary_ecl_au.x().into(),
-            sun_bary_ecl_au.y().into(),
-            sun_bary_ecl_au.z().into(),
+            sun_bary_ecl_au.x(),
+            sun_bary_ecl_au.y(),
+            sun_bary_ecl_au.z(),
         );
 
         let sun = Position::<Barycentric, F, U>::from(&sun_bary_ecl);

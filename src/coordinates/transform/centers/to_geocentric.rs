@@ -6,6 +6,7 @@ use crate::coordinates::{
 };
 use crate::units::{AstronomicalUnits, JulianDay, LengthUnit, Quantity};
 
+// Barycentric To Geocentric
 impl<F: MutableFrame, U: LengthUnit> Transform<Position<Geocentric, F, U>>
     for Position<Barycentric, F, U>
 where
@@ -15,13 +16,11 @@ where
     for<'a> Position<Geocentric, F, U>: From<&'a Position<Geocentric, Equatorial, U>>, // Required by Aberration
 {
     fn transform(&self, jd: JulianDay) -> Position<Geocentric, F, U> {
-        //barycentric_to_geocentric(self, jd)
-        // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
         let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
         let earth_ecl = Position::<Barycentric, Ecliptic, U>::new(
-            earth_bary_ecl_au.x().into(),
-            earth_bary_ecl_au.y().into(),
-            earth_bary_ecl_au.z().into(),
+            earth_bary_ecl_au.x(),
+            earth_bary_ecl_au.y(),
+            earth_bary_ecl_au.z(),
         );
 
         let earth_equ = Position::<Barycentric, Equatorial, U>::from(&earth_ecl); // (Bary-Ecl) -> (Bary-Equ)
@@ -35,6 +34,7 @@ where
     }
 }
 
+// Heliocentric To Geocentric
 impl<F: MutableFrame, U: LengthUnit> Transform<Position<Geocentric, F, U>>
     for Position<Heliocentric, F, U>
 where
@@ -44,13 +44,11 @@ where
     for<'a> Position<Geocentric, F, U>: From<&'a Position<Geocentric, Equatorial, U>>, // Required by Aberration
 {
     fn transform(&self, jd: JulianDay) -> Position<Geocentric, F, U> {
-        //heliocentric_to_geocentric(self, jd)
-        // VSOP87 gives the Earth's position in AstronomicalUnits, so we need to convert to U
         let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
         let earth_ecl = Position::<Heliocentric, Ecliptic, U>::new(
-            earth_helio_ecl_au.x().into(),
-            earth_helio_ecl_au.y().into(),
-            earth_helio_ecl_au.z().into(),
+            earth_helio_ecl_au.x(),
+            earth_helio_ecl_au.y(),
+            earth_helio_ecl_au.z(),
         );
 
         let earth_equ = Position::<Heliocentric, Equatorial, U>::from(&earth_ecl); // (Helio-Ecl) -> (Helio-Equ)
