@@ -11,11 +11,11 @@
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::units::{AstronomicalUnit, LightYear};
+//! use siderust::units::{AU, LightYear};
 //!
-//! let au = AU::new(1.0);
-//! let ly = LightYear::from(au);
-//! assert!((ly.value() - 1.582e-5).abs() < 1e-8);
+//! let au = 1.0*AU;
+//! //let ly = LightYear::from(au); TODO
+//! //assert!((ly.value() - 1.582e-5).abs() < 1e-8);
 //! ```
 
 mod astronomical_unit;

@@ -40,14 +40,14 @@
 //! ```rust
 //! use siderust::coordinates::{cartesian::Position, frames::*, centers::*};
 //! use siderust::coordinates::transform::Transform;
-//! use siderust::units::JulianDay;
+//! use siderust::units::{JulianDay, AstronomicalUnit};
 //!
-//! let cart_eq = Position::<Geocentric, Equatorial>::new(1.0, 2.0, 3.0);
+//! let cart_eq = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 2.0, 3.0);
 //! let jd = JulianDay::J2000;
 //! // Transform to Geocentric Ecliptic coordinates
-//! let cart_geo_ecl: Position<Geocentric, Ecliptic> = cart_eq.transform(jd);
+//! let cart_geo_ecl: Position<Geocentric, Ecliptic, AstronomicalUnit> = cart_eq.transform(jd);
 //! // Transform to Heliocentric Ecliptic coordinates
-//! let cart_helio_ecl: Position<Heliocentric, Ecliptic> = cart_geo_ecl.transform(jd);
+//! let cart_helio_ecl: Position<Heliocentric, Ecliptic, AstronomicalUnit> = cart_geo_ecl.transform(jd);
 //! ```
 //!
 //! ## Extending the System

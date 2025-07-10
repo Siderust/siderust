@@ -14,11 +14,11 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::position::Equatorial;
+//! use siderust::coordinates::spherical::direction::Equatorial;
 //! use siderust::units::Degrees;
 //!
 //! let coord = Equatorial::new(
-//!     Degrees::new(120.0), Degrees::new(45.0), 1.0
+//!     Degrees::new(120.0), Degrees::new(45.0)
 //! );
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
