@@ -49,13 +49,23 @@ impl super::AstronomicalUnits {
     //    self.0
     //}
 }
-/*
-/// Converts an `AstronomicalUnit` to a `LightYear`.
-impl From<AstronomicalUnit> for super::LightYear {
-    fn from(ly: AstronomicalUnit) -> Self {
-        ly.to_light_year()
+
+impl std::fmt::Display for super::AstronomicalUnits {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} Au", self.value())
     }
 }
+
+
+
+/// Converts an `AstronomicalUnit` to a `LightYear`.
+impl From<super::Quantity<super::AstronomicalUnit>> for super::Quantity<super::LightYear> {
+    fn from(au: super::Quantity<super::AstronomicalUnit>) -> Self {
+        au.to_light_year()
+    }
+}
+
+/*
 
 impl From<f64> for super::AstronomicalUnit {
     fn from(value: f64) -> Self {

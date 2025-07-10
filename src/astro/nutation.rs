@@ -63,7 +63,7 @@ use crate::coordinates::{
     centers::Geocentric,
     frames::Equatorial
 };
-use crate::units::{Degrees, Radians, JulianDay};
+use crate::units::{Degrees, JulianDay, LengthUnit, Radians};
 use crate::astro::dynamical_time::julian_ephemeris_day;
 
 /// Nutation components for a given epoch (all **degrees**).
@@ -125,8 +125,8 @@ pub fn get_nutation(jd: JulianDay) -> Nutation {
 
 /// Rotate a mean position (RA, Dec) into **apparent** right ascension, applying nutation.
 #[inline]
-pub fn corrected_ra_with_nutation(
-    target: &Position<Geocentric, Equatorial>,
+pub fn corrected_ra_with_nutation<U: LengthUnit>(
+    target: &Position<Geocentric, Equatorial, U>,
     jd: JulianDay,
 ) -> Degrees {
     // 1) Fetch nutation terms in radians

@@ -377,7 +377,7 @@ mod tests {
 
         // For e=0.0167, we can compute expected E and true anomaly
         // However, for simplicity, we'll check that the distance is roughly constant
-        let computed_r = (coord.x().powi(2) + coord.y().powi(2) + coord.z().powi(2)).sqrt();
+        let computed_r = (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2)).sqrt();
         let expected_r = 1.0 * (1.0 - 0.0167 * m_rad.cos()); // Approximation
 
         assert!(approx_eq(computed_r, expected_r, 1e-3)); // Allow some tolerance
