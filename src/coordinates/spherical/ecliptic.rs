@@ -35,11 +35,14 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
         Self::new_spherical_coord(lat, lon, Some(distance))
     }
 
-    pub fn new(lon: Degrees, lat: Degrees, distance: Quantity<U>) -> Self {
+    pub fn new<T>(lon: Degrees, lat: Degrees, distance: T) -> Self
+    where
+        T: Into<Quantity<U>>,
+    {
         Self::new_const(
             lon.normalize(),
             lat.normalize_to_90_range(),
-            distance)
+            distance.into())
     }
 }
 

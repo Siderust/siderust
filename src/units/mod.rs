@@ -198,3 +198,12 @@ where
     type Output = Self;
     fn neg(self) -> Self { Self::new(-self.0) }
 }
+
+impl<U> From<f64> for Quantity<U>
+where
+    U: Unit,
+{
+    fn from(value: f64) -> Self {
+        Self::new(value)
+    }
+}

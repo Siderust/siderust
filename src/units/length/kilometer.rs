@@ -39,6 +39,13 @@ impl Kilometers {
     //}
 }
 
+impl std::fmt::Display for super::Kilometers {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} Km", self.value())
+    }
+}
+
+
 /*
 /// Converts a `Kilometers` to `LightYear`.
 impl From<Kilometers> for LightYear {

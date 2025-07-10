@@ -171,32 +171,3 @@ where
     type Output = Self;
     fn sub(self, other: Self) -> Self::Output { (&self).sub(&other) }
 }
-
-/*impl<C, F, U, K> Div<U> for Vector<C, F, U, K>
-where
-    C: centers::ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: LengthUnit,
-    K: Kind,
-{
-    type Output = Self;
-
-    fn div(self, rhs: U) -> Self::Output {
-        Self::from_vec3(self.xyz / rhs.as_vec3())
-    }
-}
-
-impl<C, F, U, K> Mul<U> for Vector<C, F, U, K>
-where
-    C: centers::ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: LengthUnit,
-    K: Kind,
-{
-    type Output = Self;
-
-    fn mul(self, rhs: U) -> Self::Output {
-        Self::from_vec3(self.xyz * rhs.into())
-    }
-}
-*/

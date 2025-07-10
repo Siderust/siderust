@@ -91,15 +91,15 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::units::Degrees;
+    use crate::units::{AstronomicalUnit, Degrees};
     use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
     use crate::coordinates::{cartesian, spherical};
 
     #[test]
     fn test_cartesian_to_spherical() {
-        let cart = cartesian::position::GCRS::new(1.0, 1.0, 1.0);
-        let sph: spherical::position::GCRS = cart.to_spherical();
-        let expected = spherical::position::GCRS::new(
+        let cart = cartesian::position::GCRS::<AstronomicalUnit>::new(1.0, 1.0, 1.0);
+        let sph: spherical::position::GCRS::<AstronomicalUnit> = cart.to_spherical();
+        let expected = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(45.0),
             Degrees::new(35.26438968275466),
             1.7320508075688772,
@@ -109,7 +109,7 @@ mod tests {
 
     #[test]
     fn test_spherical_to_cartesian() {
-        let sph = spherical::position::GCRS::new(
+        let sph = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(45.0),
             Degrees::new(35.26438968275466), 
             1.7320508075688772,
@@ -121,7 +121,7 @@ mod tests {
 
     #[test]
     fn test_cartesian_spherical_round_trip() {
-        let cart_original = cartesian::position::GCRS::new(2.0, 3.0, 4.0,);
+        let cart_original = cartesian::position::GCRS::<AstronomicalUnit>::new(2.0, 3.0, 4.0,);
         let sph = cart_original.to_spherical();
         let cart_converted = cartesian::Position::from_spherical(&sph);
         assert_cartesian_eq!(&cart_original, &cart_converted, 1e-6, "Cartesian coordinates do not match expected values");
@@ -129,7 +129,7 @@ mod tests {
 
     #[test]
     fn test_spherical_cartesian_round_trip() {
-        let sph_original = spherical::position::GCRS::new(
+        let sph_original = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(30.0),
             Degrees::new(60.0),
             5.0,

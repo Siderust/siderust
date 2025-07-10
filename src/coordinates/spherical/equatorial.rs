@@ -70,11 +70,14 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Equatorial, U> {
     ///
     /// # Returns
     /// A normalized `Position` in the equatorial frame.
-    pub fn new(ra: Degrees, dec: Degrees, distance: Quantity<U>) -> Self {
+    pub fn new<T>(ra: Degrees, dec: Degrees, distance: T) -> Self
+    where
+        T: Into<Quantity<U>>
+    {
         Self::new_const(
             ra.normalize(),
             dec.normalize_to_90_range(),
-            distance)
+            distance.into())
     }
 }
 

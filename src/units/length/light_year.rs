@@ -46,13 +46,10 @@ impl LightYears {
     }
 
 }
-/*
-/// Converts a `LightYear` to `Kilometers`.
-impl From<LightYear> for super::Kilometers {
-    fn from(ly: LightYear) -> Self {
-        ly.to_km()
+
+/// Converts a `LightYear` to `AstronomicalUnits`.
+impl From<LightYears> for super::AstronomicalUnits {
+    fn from(ly: LightYears) -> Self {
+        ly.to_au()
     }
 }
-
-crate::units::arithmetic_ops::impl_arithmetic_ops!(LightYear);
-*/

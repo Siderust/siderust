@@ -29,7 +29,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::{Degrees, KM, Kilometer, LengthUnit};
+use crate::units::{Degrees, KM, Quantity, LengthUnit, Kilometer};
 use crate::bodies::EARTH;
 
 impl<C: ReferenceCenter,> Direction<C, ECEF> {
@@ -69,11 +69,14 @@ impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
     /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
     /// - `alt`: Altitude above the sea, in KM.
-    pub fn new(lon: Degrees, lat: Degrees, alt: KM) -> Self {
+    pub fn new<T>(lon: Degrees, lat: Degrees, alt: T) -> Self
+    where
+        T: Into<Quantity<Kilometer>>,
+    {
         Self::new_const(
             lat.normalize_to_90_range(),
             lon.normalize_to_180_range(),
-            alt)
+            alt.into())
     }
 }
 

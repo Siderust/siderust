@@ -92,8 +92,8 @@
 
 use std::f64::consts::TAU;
 
-use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
-use crate::units::{Centuries, Degrees, JulianDay, Radians};
+use crate::coordinates::spherical::position;
+use crate::units::{Centuries, Degrees, JulianDay, Radians, Quantity, LengthUnit};
 
 /* -------------------------------------------------------------------------
  * Constants & small utilities
@@ -194,10 +194,10 @@ fn rotate_equatorial(ra: Radians, dec: Radians, zeta: Radians, z: Radians, theta
 /// Transforms mean right ascension & declination supplied at the standard
 /// reference epoch (JD 2 451 545.0) to the mean equator & equinox of `to_jd`.
 #[inline]
-pub fn precess_from_j2000(
-    mean_position: Position<Geocentric, Equatorial>,
+pub fn precess_from_j2000<U: LengthUnit>(
+    mean_position: position::Equatorial<U>,
     to_jd: JulianDay,
-) -> Position<Geocentric, Equatorial> {
+) -> position::Equatorial<U> {
     precess_equatorial(mean_position, JulianDay::J2000, to_jd)
 }
 
@@ -207,11 +207,11 @@ pub fn precess_from_j2000(
 /// * `from_jd`, `to_jd` – Julian Days of source and target epochs.
 ///
 /// Returns the coordinates referred to `to_jd`.
-pub fn precess_equatorial(
-    position: Position<Geocentric, Equatorial>,
+pub fn precess_equatorial<U: LengthUnit>(
+    position: position::Equatorial<U>,
     from_jd: JulianDay,
     to_jd: JulianDay,
-) -> Position<Geocentric, Equatorial> {
+) -> position::Equatorial<U> {
     let ra0 = position.ra().to_radians();
     let dec0 = position.dec().to_radians();
 
@@ -222,7 +222,7 @@ pub fn precess_equatorial(
 
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
-    Position::<Geocentric, Equatorial>::new(
+    position::Equatorial::new::<Quantity<U>>(
         ra.to_degrees(),
         dec.to_degrees(),
         position.distance.expect("precess_equatorial: distance must be set")
