@@ -73,6 +73,7 @@ pub trait Dimension {} // (Length, Time, Mass…).
 pub trait Unit: Copy + PartialEq + Debug + 'static {
     const RATIO: f64;
     type Dim: Dimension;
+    const SYMBOL: &'static str;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
