@@ -15,12 +15,10 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::position::Horizontal;
-//! use siderust::units::{Quantity, Degrees};
+//! use siderust::coordinates::spherical::direction::Horizontal;
+//! use siderust::units::Degrees;
 //!
-//! let coord = Horizontal::new(
-//!     Degrees::new(45.0), Degrees::new(120.0), Quantity::<f64>::(1.0)
-//! );
+//! let coord = Horizontal::new(Degrees::new(45.0), Degrees::new(120.0));
 //! println!("alt = {}, az = {}", coord.alt(), coord.az());
 //! ```
 

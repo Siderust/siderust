@@ -23,7 +23,7 @@
 //!
 //! // Create a heliocentric ecliptic position
 //! let pos = Vector::<Heliocentric, Ecliptic, f64, PositionKind>::new(1.0, 0.0, 0.0);
-//! println!("X: {}, Y: {}, Z: {}", pos.x(), pos.y(), pos.z());
+//! println!("X: {}, Y: {}, Z: {}", pos.x().value(), pos.y().value(), pos.z().value());
 //! ```
 //!
 //! ## Type Aliases

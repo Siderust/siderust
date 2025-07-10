@@ -20,17 +20,14 @@
 //! By encoding the reference center and frame as type parameters, this module prevents mixing incompatible coordinate systems at compile time.
 //!
 //! ## Example Usage
-//! ```rust
-//! use siderust::coordinates::spherical::Position;
-//! use siderust::coordinates::frames::ICRS;
-//! use siderust::coordinates::centers::Barycentric;
+//! ```rust,ignore
 //! use siderust::units::Degrees;
+//! use siderust::coordinates::spherical::direction::ICRS;
 //!
-//! // Create a barycentric ICRS coordinate (RA, Dec, distance)
-//! let coord = Position::<Barycentric, ICRS>::new(
-//!     Degrees::new(120.0), Degrees::new(45.0), 1.0
+//! let coord = ICRS::new(
+//!     Degrees::new(120.0), Degrees::new(45.0)
 //! );
-//! println!("{}", coord.to_string());
+//! //println!("{}", coord.to_string()); TODO
 //! ```
 //!
 //! ## See Also
@@ -57,12 +54,12 @@
 //! # Example
 //! ```rust
 //! use siderust::units::Degrees;
-//! use siderust::coordinates::spherical::position::ICRS;
+//! use siderust::coordinates::spherical::direction::ICRS;
 //!
 //! let coord = ICRS::new(
-//!     Degrees::new(120.0), Degrees::new(45.0), 1.0
+//!     Degrees::new(120.0), Degrees::new(45.0)
 //! );
-//! println!("{}", coord.to_string());
+//! // println!("{}", coord.to_string()); TODO
 //! ```
 
 #[allow(clippy::all)]

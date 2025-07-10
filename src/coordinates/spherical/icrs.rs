@@ -15,11 +15,11 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::position::GCRS;
+//! use siderust::coordinates::spherical::direction::GCRS;
 //! use siderust::units::Degrees;
 //!
 //! let coord = GCRS::new(
-//!     Degrees::new(120.0), Degrees::new(45.0), 1.0
+//!     Degrees::new(120.0), Degrees::new(45.0)
 //! );
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```

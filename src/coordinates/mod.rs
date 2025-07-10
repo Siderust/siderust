@@ -27,15 +27,15 @@
 //! use siderust::units::Degrees;
 //!
 //! // Create a heliocentric ecliptic spherical position
-//! let spherical = spherical::Position::<Heliocentric, Ecliptic>::new(
-//!     Degrees::new(45.0), Degrees::new(7.0), 1.0
+//! let spherical = spherical::Direction::<Heliocentric, Ecliptic>::new(
+//!     Degrees::new(45.0), Degrees::new(7.0)
 //! );
 //!
 //! // Convert to cartesian coordinates
-//! let cartesian: cartesian::Position<Heliocentric, Ecliptic> = (&spherical).into();
+//! let cartesian: cartesian::Direction<Heliocentric, Ecliptic> = (&spherical).into();
 //!
 //! // Convert back to spherical coordinates
-//! let spherical_converted: spherical::Position<Heliocentric, Ecliptic> = (&cartesian).into();
+//! let spherical_converted: spherical::Direction<Heliocentric, Ecliptic> = (&cartesian).into();
 //!
 //! println!("Spherical -> Cartesian -> Spherical: {:?}", spherical_converted);
 //! ```

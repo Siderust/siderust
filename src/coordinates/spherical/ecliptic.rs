@@ -14,11 +14,11 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::position::Ecliptic;
+//! use siderust::coordinates::spherical::direction::Ecliptic;
 //! use siderust::units::{Degrees};
 //!
 //! let coord = Ecliptic::new(
-//!     Degrees::new(120.0), Degrees::new(5.0), 1.0
+//!     Degrees::new(120.0), Degrees::new(5.0)
 //! );
 //! println!("lon = {}, lat = {}", coord.lon(), coord.lat());
 //! ```
