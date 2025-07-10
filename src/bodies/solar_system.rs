@@ -56,7 +56,7 @@ pub struct Neptune;
 /// | LengthUnit        | 1 AU (~0.0000158 ly)|
 pub const SUN: super::Star<'static> = super::Star::new_const(
     "Sun",
-    AU.to_light_year(),
+    LightYears::new(1.58125e-5), // 1 AU in LY
     SOLAR_MASS,
     SOLAR_RADIUS,
     SOLAR_LUMINOSITY,
@@ -64,7 +64,7 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::from_hms(18, 44, 48.0), // Aprox at J2000
             Degrees::from_hms(-23, 0, 0.0), // Aprox at J2000
-            AU.to_light_year(),
+            LightYears::new(1.58125e-5), // 1 AU in LY
         ),
         JulianDay::J2000,
     ),
@@ -167,7 +167,7 @@ pub const MOON: super::Satelite = super::Satelite::new_const(
 
     Orbit {
         // 384 400 km → AU
-        semi_major_axis: Kilometers::new(384_400.0).to_au(),
+        semi_major_axis: AstronomicalUnits::new(2.566881e-6),
         eccentricity: 0.054_9,
         inclination: Degrees::new(5.145),
         longitude_of_ascending_node: Degrees::new(125.08),

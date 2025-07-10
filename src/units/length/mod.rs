@@ -18,14 +18,7 @@
 //! //assert!((ly.value() - 1.582e-5).abs() < 1e-8);
 //! ```
 
-mod astronomical_unit;
-mod kilometer;
-mod light_year;
 mod solar_radius;
-
-//pub use astronomical_unit::*;
-//pub use kilometer::*;
-//pub use light_year::*;
 pub use solar_radius::*;
 
 
@@ -69,6 +62,11 @@ define_unit!(KM, Kilometer, Length, 1_000.0);
 define_unit!(AU, AstronomicalUnit, Length, 149_597_870.7);
 define_unit!(LY, LightYear, Length, 9_460_730_472_580.8);
 
+/// AstronomicalUnit -> LightYear.
+impl From<AU> for LY { fn from(au: AU) -> Self { au.to::<LightYear>() } }
+
+/// LightYear -> AstronomicalUnits.
+impl From<LY> for AU { fn from(ly: LY) -> Self { ly.to::<AstronomicalUnit>() } }
 
 // TODO: Remove me
 impl Unit for f64 {
