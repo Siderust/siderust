@@ -91,8 +91,7 @@ impl<U: Unit + Copy> Quantity<U> {
     pub fn abs(self) -> Self { Self::new(self.0.abs()) }
 
     pub fn to<T: Unit<Dim = U::Dim>>(self) -> Quantity<T> {
-        let base = self.0 * U::RATIO;
-        Quantity::<T>::new(base / T::RATIO)
+        Quantity::<T>::new(self.0 * (U::RATIO / T::RATIO))
     }
 }
 
