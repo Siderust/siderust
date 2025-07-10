@@ -88,12 +88,16 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Horizontal, U> {
     ///
     /// # Returns
     /// A `Position` in the horizontal frame.
-    pub fn new(alt: Degrees, az: Degrees, distance: Quantity<U>) -> Self {
+    pub fn new<T>(alt: Degrees, az: Degrees, distance: T) -> Self
+    where
+        T: Into<Quantity<U>>
+    {
         Self::new_const(
             alt.normalize_to_90_range(),
             az.normalize(),
-            distance)
+            distance.into())
     }
+
 }
 
 impl<C: ReferenceCenter, U: LengthUnit, K: Kind> SphericalCoord<C, Horizontal, U, K> {

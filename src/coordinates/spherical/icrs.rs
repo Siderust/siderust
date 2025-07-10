@@ -89,12 +89,16 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
     ///
     /// # Returns
     /// A normalized `Position` in the ICRS frame.
-    pub fn new(ra: Degrees, dec: Degrees, distance: Quantity<U>) -> Self {
+    pub fn new<T>(ra: Degrees, dec: Degrees, distance: T) -> Self
+    where
+        T: Into<Quantity<U>>,
+    {
         Self::new_const(
             ra.normalize(),
             dec.normalize_to_90_range(),
-            distance)
+            distance.into())
     }
+
 }
 
 impl<C: ReferenceCenter, U: LengthUnit, K: Kind> SphericalCoord<C, ICRS, U, K> {

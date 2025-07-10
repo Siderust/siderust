@@ -36,7 +36,7 @@ use crate::units::Quantity;
 macro_rules! define_unit {
     ($abreviation:ident, $name:ident, $dim:ty, $ratio:expr) => {
 
-        #[derive(Clone, Copy, Debug, PartialEq)]
+        #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
         pub enum $name {}
         impl Unit for $name {
             const RATIO: f64 = $ratio;

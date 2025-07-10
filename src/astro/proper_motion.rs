@@ -12,12 +12,8 @@
 //! positions at a reference epoch (usually J2000.0), we need to correct
 //! for proper motion when computing positions at a later date.
 
-use crate::units::{DmsPerYear, JulianDay, Years, DMS};
-use crate::coordinates::{
-    spherical::Position,
-    centers::Geocentric,
-    frames::Equatorial
-};
+use crate::units::{Quantity, DmsPerYear, JulianDay, LengthUnit, Years, DMS};
+use crate::coordinates::spherical::position;
 
 /// Describes the proper motion of a star in equatorial coordinates.
 ///
@@ -52,16 +48,16 @@ impl ProperMotion {
 /// New apparent position adjusted by linear proper motion.
 ///
 /// Assumes motion is linear (valid for most stars over <1000 year timescales).
-fn set_proper_motion_since_epoch(
-    mean_position: Position<Geocentric, Equatorial>,
+fn set_proper_motion_since_epoch<U: LengthUnit>(
+    mean_position: position::Equatorial<U>,
     proper_motion: ProperMotion,
     jd: JulianDay,
     epoch_jd: JulianDay
-) -> Position<Geocentric, Equatorial> {
+) -> position::Equatorial<U> {
     // Time difference in Julian years
     let t: Years = Years::new((jd - epoch_jd) / JulianDay::JULIAN_YEAR);
     // Linearly apply proper motion in RA and DEC
-    Position::<Geocentric, Equatorial>::new(
+    position::Equatorial::new::<Quantity<U>>(
         mean_position.ra() + (proper_motion.ra_μ * t).to_degrees().normalize(),
         (mean_position.dec() + (proper_motion.dec_μ * t).to_degrees()).normalize(),
         mean_position.distance.unwrap(),
@@ -77,11 +73,11 @@ fn set_proper_motion_since_epoch(
 ///
 /// # Returns
 /// Updated position after applying proper motion since J2000.0
-pub fn set_proper_motion_since_j2000(
-    mean_position: Position<Geocentric, Equatorial>,
+pub fn set_proper_motion_since_j2000<U: LengthUnit>(
+    mean_position: position::Equatorial<U>,
     proper_motion: ProperMotion,
     jd: JulianDay
-) -> Position<Geocentric, Equatorial> {
+) -> position::Equatorial<U> {
     set_proper_motion_since_epoch(mean_position, proper_motion, jd, JulianDay::J2000)
 }
 
@@ -89,7 +85,7 @@ pub fn set_proper_motion_since_j2000(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::units::{Degrees, DmsPerYear, JulianDay};
+    use crate::units::{Degrees, DmsPerYear, JulianDay, AstronomicalUnit};
     use crate::coordinates::{
         spherical::Position,
         centers::Geocentric,
@@ -99,7 +95,7 @@ mod tests {
     #[test]
     fn test_proper_motion_linear_shift() {
         // Mean position at J2000
-        let mean_position = Position::<Geocentric, Equatorial>::new(
+        let mean_position = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(
             Degrees::new(10.0),   // RA = 10°
             Degrees::new(20.0),  // DEC = 20°
             1.0      // arbitrary distance

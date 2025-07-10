@@ -64,16 +64,16 @@ mod tests {
     use crate::coordinates::centers::*;
     use crate::coordinates::frames::*;
     use crate::macros::assert_cartesian_eq;
-    use crate::units::AU;
+    use crate::units::AstronomicalUnit;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
     #[test] // Barycentric -> Heliocentric
     fn test_bary() {
         let sun_bary = Sun::vsop87e(JulianDay::J2000).get_position().clone();
-        let sun_helio = Position::<Heliocentric, Ecliptic, AU>::from(&sun_bary);
+        let sun_helio = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::from(&sun_bary);
         let expected_sun_helio =
-            Position::<Heliocentric, Ecliptic, AU>::new(0.0 * AU, 0.0 * AU, 0.0 * AU);
+            Position::<Heliocentric, Ecliptic, AstronomicalUnit>::CENTER;
         assert_cartesian_eq!(
             &sun_helio,
             &expected_sun_helio,
@@ -85,12 +85,12 @@ mod tests {
 
     #[test] // Geocentric -> Heliocentric
     fn test_geo() {
-        let sun_geo = Position::<Geocentric, Ecliptic, AU>::from(
+        let sun_geo = Position::<Geocentric, Ecliptic, AstronomicalUnit>::from(
             &Sun::vsop87e(JulianDay::J2000).get_position().clone(),
         ); // Sun in Geocentric
-        let sun_helio = Position::<Heliocentric, Ecliptic, AU>::from(&sun_geo);
+        let sun_helio = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::from(&sun_geo);
         let expected_sun_helio =
-            Position::<Heliocentric, Ecliptic, AU>::new(0.0 * AU, 0.0 * AU, 0.0 * AU);
+            Position::<Heliocentric, Ecliptic, AstronomicalUnit>::CENTER;
         assert_cartesian_eq!(
             &sun_helio,
             &expected_sun_helio,

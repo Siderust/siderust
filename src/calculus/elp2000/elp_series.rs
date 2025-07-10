@@ -331,15 +331,16 @@ impl Moon {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::units::{Kilometer, KM};
 
     #[test]
     fn test_lunar_position_against_reference() {
-        let pos = ln_get_lunar_geo_posn(JulianDay::J2000);
+        let pos = Moon::get_geo_position::<Kilometer>(JulianDay::J2000);
 
-        let expected_x = -291608.0;
-        let expected_y = -274980.0;
-        let expected_z =  36271.2;
-        let tolerance = 1.0; // tolerance in kilometers
+        let expected_x = -291608.0*KM;
+        let expected_y = -274980.0*KM;
+        let expected_z =  36271.2*KM;
+        let tolerance = 1.0*KM;
 
         assert!((pos.x() - expected_x).abs() < tolerance, "X mismatch: got {}, expected {}", pos.x(), expected_x);
         assert!((pos.y() - expected_y).abs() < tolerance, "Y mismatch: got {}, expected {}", pos.y(), expected_y);

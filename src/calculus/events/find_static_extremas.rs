@@ -1,6 +1,6 @@
 use super::Culmination;
 use crate::targets::Target;
-use crate::units::{Days, Degrees, JulianDay};
+use crate::units::{Days, Degrees, JulianDay, LengthUnit};
 use crate::astro::{
     sidereal::*,
     nutation::corrected_ra_with_nutation
@@ -53,8 +53,8 @@ use crate::coordinates::{
 ///   value.
 ///
 /// ---
-pub fn find_static_extremas(
-    target: &Target<Position<Geocentric, Equatorial>>,
+pub fn find_static_extremas<U: LengthUnit>(
+    target: &Target<Position<Geocentric, Equatorial, U>>,
     observer: &position::Geographic,
     jd_start: JulianDay,
     jd_end: JulianDay,

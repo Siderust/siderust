@@ -39,20 +39,20 @@ mod tests {
         spherical::Position,
         centers, frames
     };
-    use crate::units::Degrees;
+    use crate::units::{Degrees, AstronomicalUnit};
     use crate::macros::assert_spherical_eq;
 
     const EPS: f64 = 1.0e-12;
 
     #[test]
     fn round_trip_ecliptic_equatorial() {
-        let ecliptic_orig = Position::<centers::Barycentric, frames::Ecliptic>::new(
+        let ecliptic_orig = Position::<centers::Barycentric, frames::Ecliptic, AstronomicalUnit>::new(
             Degrees::new(123.4),
             Degrees::new(-21.0),
             2.7,
         );
-        let equatorial  = Position::<centers::Barycentric, frames::Equatorial>::from(&ecliptic_orig);
-        let ecliptic_rec = Position::<centers::Barycentric, frames::Ecliptic>::from(&equatorial);
+        let equatorial  = Position::<centers::Barycentric, frames::Equatorial, AstronomicalUnit>::from(&ecliptic_orig);
+        let ecliptic_rec = Position::<centers::Barycentric, frames::Ecliptic, AstronomicalUnit>::from(&equatorial);
 
         assert_spherical_eq!(ecliptic_orig, ecliptic_rec, EPS);
     }
