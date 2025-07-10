@@ -16,14 +16,14 @@
 //!
 //! ## Example
 //! ```rust
-//! use siderust::coordinates::spherical::Position;
+//! use siderust::coordinates::spherical::Direction;
 //! use siderust::coordinates::centers::Heliocentric;
 //! use siderust::coordinates::frames::Ecliptic;
 //! use siderust::units::Degrees;
 //!
-//! // Create a heliocentric ecliptic spherical position
-//! let sph = Position::<Heliocentric, Ecliptic>::new(Degrees::new(45.0), Degrees::new(7.0), 1.0);
-//! println!("θ: {}, φ: {}, r: {:?}", sph.polar, sph.azimuth, sph.distance);
+//! // Create a heliocentric ecliptic spherical Direction
+//! let sph = Direction::<Heliocentric, Ecliptic>::new(Degrees::new(45.0), Degrees::new(7.0));
+//! println!("θ: {}, φ: {}", sph.polar, sph.azimuth);
 //! ```
 //!
 //! ## Type Aliases

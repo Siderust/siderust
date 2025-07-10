@@ -19,10 +19,10 @@
 //! use siderust::coordinates::spherical::Position;
 //! use siderust::coordinates::centers::Heliocentric;
 //! use siderust::coordinates::frames::Ecliptic;
-//! use siderust::units::Degrees;
+//! use siderust::units::{Degrees, AstronomicalUnit};
 //!
 //! // Create a heliocentric ecliptic spherical position
-//! let sph = Position::<Heliocentric, Ecliptic>::new(Degrees::new(45.0), Degrees::new(7.0), 1.0);
+//! let sph = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(Degrees::new(45.0), Degrees::new(7.0), 1.0);
 //! println!("θ: {}, φ: {}, r: {:?}", sph.polar, sph.azimuth, sph.distance);
 //! ```
 //!
