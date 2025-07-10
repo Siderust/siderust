@@ -34,18 +34,25 @@ use paste::paste;
 use crate::units::Quantity;
 
 macro_rules! define_unit {
-    ($abreviation:ident, $name:ident, $dim:ty, $ratio:expr) => {
+    ($symbol:ident, $name:ident, $dim:ty, $ratio:expr) => {
 
         #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
         pub enum $name {}
         impl Unit for $name {
             const RATIO: f64 = $ratio;
             type Dim = $dim;
+            const SYMBOL: &'static str = stringify!($symbol);
         }
         paste! {
             pub type [<$name s>] = Quantity<$name>;
-            pub type $abreviation = [<$name s>];
-            pub const $abreviation: [<$name s>] = [<$name s>]::new(1.0);
+            pub type $symbol = [<$name s>];
+            pub const $symbol: [<$name s>] = [<$name s>]::new(1.0);
+        }
+
+        impl std::fmt::Display for Quantity<$name> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{} {}", self.value(), <$name>::SYMBOL)
+            }
         }
     };
 }
@@ -67,4 +74,5 @@ define_unit!(LY, LightYear, Length, 9_460_730_472_580.8);
 impl Unit for f64 {
     const RATIO: f64 = 1.0;
     type Dim = Length;
+    const SYMBOL: &'static str = "";
 }

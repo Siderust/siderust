@@ -13,12 +13,6 @@ impl super::AstronomicalUnits {
 
 }
 
-impl std::fmt::Display for super::AstronomicalUnits {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} Au", self.value())
-    }
-}
-
 
 /// Converts an `AstronomicalUnit` to a `LightYear`.
 impl From<super::Quantity<super::AstronomicalUnit>> for super::Quantity<super::LightYear> {
