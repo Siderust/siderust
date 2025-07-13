@@ -3,7 +3,7 @@
 //! Represents planets with mass, radius, and orbital parameters.
 //! - `mass`: Planetary mass in kilograms (`Kilograms`).
 //! - `radius`: Mean planetary radius in kilometers (`Kilometers`).
-//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AU, degrees, Julian Day).
+//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AstronomicalUnits, degrees, Julian Day).
 
 use crate::astro::orbit::Orbit;
 use crate::units::{Kilometers, Kilograms};

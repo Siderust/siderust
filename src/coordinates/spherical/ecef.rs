@@ -29,7 +29,7 @@ use crate::coordinates::{
     centers::*,
     kinds::Kind,
 };
-use crate::units::{Degrees, KM, Quantity, LengthUnit, Kilometer};
+use crate::units::{Degrees, Kilometers, Quantity, LengthUnit, Kilometer};
 use crate::bodies::EARTH;
 
 impl<C: ReferenceCenter,> Direction<C, ECEF> {
@@ -55,11 +55,11 @@ impl<C: ReferenceCenter,> Direction<C, ECEF> {
 }
 
 impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
-    pub const fn new_const(lon: Degrees, lat: Degrees, alt: KM) -> Self {
+    pub const fn new_const(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
         Self::new_spherical_coord(
             lat,
             lon,
-            Some(KM::new(EARTH.radius.value() + alt.value()))
+            Some(Kilometers::new(EARTH.radius.value() + alt.value()))
         )
     }
 

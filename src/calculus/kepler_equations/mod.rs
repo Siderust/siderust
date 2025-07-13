@@ -39,7 +39,7 @@
 //!   `MAX_BISECTION_ITERS = 100` iterations.  
 //!
 //! Both methods share the absolute tolerance  
-//! `TOLERANCE = 1 × 10⁻¹⁴ rad` (≈ 3 mm on 1 AU).
+//! `TOLERANCE = 1 × 10⁻¹⁴ rad` (≈ 3 mm on 1 AstronomicalUnits).
 //!
 //! ## Public API
 //!
@@ -202,9 +202,9 @@ pub fn solve_keplers_equation(m: Radians, e: f64) -> Radians {
     }
 }
 
-fn orbital_period_days(a: AU) -> Days {
+fn orbital_period_days(a: AstronomicalUnits) -> Days {
     // Kepler’s Third Law: T^2 = a^3 for the Sun+tiny planet
-    // T in years, a in AU
+    // T in years, a in AstronomicalUnits
     // 1 year ~ 365.256898326 days
     let year = 365.256898326;
     let t_years = a.value().powf(1.5);    // T in years
@@ -219,7 +219,7 @@ fn orbital_period_days(a: AU) -> Days {
 /// - `julian_date`: Julian date for the desired position.
 ///
 /// # Returns
-/// - `(x, y, z)`: Heliocentric coordinates in AU.
+/// - `(x, y, z)`: Heliocentric coordinates in AstronomicalUnits.
 pub fn calculate_orbit_position(
     elements: &Orbit,
     julian_date: JulianDay,
@@ -315,7 +315,7 @@ mod tests {
     #[test]
     fn test_circular_orbit() {
         let orbit = Orbit::new(
-            1.0*AU,    // a (AU)
+            1.0*AU,    // a (AstronomicalUnits)
             0.0,    // e
             Degrees::new(0.0),    // i 
             Degrees::new(0.0),    // Ω 
@@ -332,7 +332,7 @@ mod tests {
         // 90 degrees after epoch
         let jd = JulianDay::J2000 + Days::new(90.0 / 0.9856076686); // Roughly 90 degrees / n days
         let coord = calculate_orbit_position(&orbit, jd);
-        // Expect y to be approximately 1 AU
+        // Expect y to be approximately 1 AstronomicalUnits
         assert_cartesian_eq!(coord, Position::new(0.0, 1.0, 0.0), 1e-4);
     }
 
@@ -340,7 +340,7 @@ mod tests {
     #[test]
     fn test_zero_inclination() {
         let elements = Orbit::new(
-            2.0*AU,    // a (AU)
+            2.0*AU,    // a (AstronomicalUnits)
             0.1,    // e
             Degrees::new(0.0),    // i
             Degrees::new(0.0),    // Ω
@@ -358,7 +358,7 @@ mod tests {
     #[test]
     fn test_after_days() {
         let elements = Orbit::new(
-            1.0*AU,    // a (AU)
+            1.0*AU,    // a (AstronomicalUnits)
             0.0167, // e
             Degrees::new(0.0),    // i
             Degrees::new(0.0),    // Ω

@@ -7,7 +7,7 @@
 //! ## Features
 //! - **Time Units**: Includes representations for Julian Day, Modified Julian Day, Days, Years, Julian Years, and Centuries.
 //! - **Angular Units**: Provides types for Degrees, Radians, DMS (Degrees, Minutes, Seconds), HMS (Hours, Minutes, Seconds), and Arcseconds.
-//! - **Length Units**: Includes types for meters and astronomical units (AU).
+//! - **Length Units**: Includes types for meters and astronomical units (AstronomicalUnits).
 //! - **Velocity Units**: Provides types for meters per second and kilometers per second.
 //! - **Mass Units**: Includes types for kilograms and solar masses.
 //! - **Power Units**: Includes types for watts and solar luminosity.
@@ -15,7 +15,7 @@
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::units::{JulianDay, ModifiedJulianDay, Days, Degrees, Radians, DMS, Kilograms, SolarMass};
+//! use siderust::units::{JulianDay, ModifiedJulianDay, Days, Degrees, Radians, DMS, Kilograms, SolarMasses};
 //!
 //! // Time Units
 //! let jd = JulianDay::new(2451545.0);
@@ -29,7 +29,7 @@
 //!
 //! // Mass Units
 //! let mass_kg = Kilograms::new(5.0);
-//! let mass_solar = SolarMass::new(2.0);
+//! let mass_solar = SolarMasses::new(2.0);
 //!
 //! // Conversions
 //! let jd_to_utc = jd.to_utc();
@@ -207,3 +207,24 @@ where
         Self::new(value)
     }
 }
+
+#[macro_export]
+macro_rules! define_unit {
+    ($symbol:literal, $name:ident, $dim:ty, $ratio:expr) => {
+
+        #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+        pub enum $name {}
+        impl Unit for $name {
+            const RATIO: f64 = $ratio;
+            type Dim = $dim;
+            const SYMBOL: &'static str = stringify!($symbol);
+        }
+        impl std::fmt::Display for Quantity<$name> {
+            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+                write!(f, "{} {}", self.value(), <$name>::SYMBOL)
+            }
+        }
+    };
+}
+
+pub(crate) use define_unit;

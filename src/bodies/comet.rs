@@ -3,7 +3,7 @@
 //! Represents comets with their name, tail length, and orbital parameters.
 //! - `name`: String identifier for the comet.
 //! - `tail_length`: Tail length in kilometers (`Kilometers`).
-//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AU, degrees, Julian Day).
+//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AstronomicalUnits, degrees, Julian Day).
 
 use crate::astro::orbit::Orbit;
 use crate::units::Kilometers;
