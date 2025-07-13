@@ -8,7 +8,7 @@
 //!
 //! - **Right Ascension (α)** → `azimuth`: angle measured eastward along the celestial equator from the vernal equinox, in degrees.
 //! - **Declination (δ)**     → `polar`: angle above or below the celestial equator, in degrees.
-//! - **Radial distance (d)** → distance from the reference center, typically in astronomical units (AU).
+//! - **Radial distance (d)** → distance from the reference center, typically in astronomical units (AstronomicalUnits).
 //!
 //! Right Ascension is normalized to the [0°, 360°] range, and Declination to [-90°, 90°].
 //!
@@ -66,7 +66,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Equatorial, U> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `distance`: LengthUnit to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AstronomicalUnits).
     ///
     /// # Returns
     /// A normalized `Position` in the equatorial frame.

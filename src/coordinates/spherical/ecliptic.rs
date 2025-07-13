@@ -8,7 +8,7 @@
 //!
 //! - **Longitude (λ or L)**  → `azimuth`: angle from the ecliptic zero meridian, in degrees.
 //! - **Latitude (β or B)**   → `polar`: angle from the ecliptic plane, in degrees.
-//! - **Radial distance (R)** → distance from the reference center, in AU (astronomical units).
+//! - **Radial distance (R)** → distance from the reference center, in AstronomicalUnits (astronomical units).
 //!
 //! Longitude is normalized to the [0°, 360°] range, and latitude to [-90°, 90°].
 //!

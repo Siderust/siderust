@@ -10,7 +10,7 @@
 //!   - `F`: Reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`).
 //!   - `K`: Kind marker (`PositionKind`, `DirectionKind`), enforcing semantic correctness.
 //! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
-//! - **Units:** Angles are stored as [`Degrees`]; distance is optional and typically in AU or parsecs (see context).
+//! - **Units:** Angles are stored as [`Degrees`]; distance is optional and typically in AstronomicalUnits or parsecs (see context).
 //! - **Conversions:** Seamless conversion to and from [`Vector`] via `From`/`Into`.
 //! - **Operations:** Compute Euclidean distance and angular separation between coordinates.
 //!

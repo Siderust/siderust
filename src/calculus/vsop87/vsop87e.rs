@@ -1,7 +1,7 @@
 use super::*;
 use crate::bodies::solar_system::*;
 use crate::targets::Target;
-use crate::units::{AU, AstronomicalUnit, JulianDay};
+use crate::units::{AstronomicalUnits, AstronomicalUnit, JulianDay};
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Barycentric, frames::Ecliptic
@@ -25,9 +25,9 @@ macro_rules! impl_vsop87e {
                 );
                 Target::new_static(
                     Position::new(
-                        AU::new(x),
-                        AU::new(y),
-                        AU::new(z)),
+                        AstronomicalUnits::new(x),
+                        AstronomicalUnits::new(y),
+                        AstronomicalUnits::new(z)),
                     jd,
                 )
             }
@@ -40,9 +40,9 @@ macro_rules! impl_vsop87e {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    AU::new(vx),
-                    AU::new(vy),
-                    AU::new(vz)
+                    AstronomicalUnits::new(vx),
+                    AstronomicalUnits::new(vy),
+                    AstronomicalUnits::new(vz)
                 )
             }
 
@@ -56,13 +56,13 @@ macro_rules! impl_vsop87e {
                 );
                 (
                     Target::new_static(Position::new(
-                        AU::new(x),
-                        AU::new(y),
-                        AU::new(z)), jd,),
+                        AstronomicalUnits::new(x),
+                        AstronomicalUnits::new(y),
+                        AstronomicalUnits::new(z)), jd,),
                     Velocity::new(
-                        AU::new(vx),
-                        AU::new(vy),
-                        AU::new(vz))
+                        AstronomicalUnits::new(vx),
+                        AstronomicalUnits::new(vy),
+                        AstronomicalUnits::new(vz))
                 )
             }
         }
@@ -79,9 +79,9 @@ impl Sun {
         );
         Target::new_static(
             Position::new(
-                AU::new(x),
-                AU::new(y),
-                AU::new(z)),
+                AstronomicalUnits::new(x),
+                AstronomicalUnits::new(y),
+                AstronomicalUnits::new(z)),
             jd,
         )
     }

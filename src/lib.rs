@@ -60,7 +60,7 @@
 //! // 2. Compute heliocentric ecliptic coordinates via VSOP87
 //! let mars = Mars::vsop87e(jd);
 //!
-//! // 3. Print Mars's heliocentric ecliptic position (AU)
+//! // 3. Print Mars's heliocentric ecliptic position (AstronomicalUnits)
 //! println!("{}", mars.position);
 //! ```
 //!

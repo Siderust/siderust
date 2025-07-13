@@ -8,7 +8,7 @@
 //! 1. **Semi-major axis (`a`)**  
 //!    - Defines the size of the orbit.
 //!    - It is half the longest diameter of the ellipse.
-//!    - Expressed in astronomical units (AU).
+//!    - Expressed in astronomical units (AstronomicalUnits).
 //!
 //! 2. **Eccentricity (`e`)**  
 //!    - Defines the shape of the orbit.
@@ -54,7 +54,7 @@
 //!
 //! This module assumes that:
 //! - **Angles** are expressed in degrees (`Degrees`).
-//! - **Distances** use astronomical units (`AU`).
+//! - **Distances** use astronomical units (`AstronomicalUnits`).
 //! - **Time** is expressed as Julian Days (`JulianDay`).
 //!
 //! ## Usage Example
@@ -83,7 +83,7 @@ use crate::units::*;
 /// Represents the Keplerian orbital elements of a celestial object.
 #[derive(Clone, Copy)]
 pub struct Orbit {
-    pub semi_major_axis: AU,    // Semi-major axis (AU)
+    pub semi_major_axis: AstronomicalUnits,    // Semi-major axis (AstronomicalUnits)
     pub eccentricity: f64,                    // Orbital eccentricity
     pub inclination: Degrees,                 // Inclination (degrees)
     pub longitude_of_ascending_node: Degrees, // Longitude of ascending node (Ω)
@@ -95,7 +95,7 @@ pub struct Orbit {
 impl Orbit {
     /// Creates a new set of orbital elements.
     pub const fn new(
-        semi_major_axis: AU,
+        semi_major_axis: AstronomicalUnits,
         eccentricity: f64,
         inclination: Degrees,
         longitude_of_ascending_node: Degrees,

@@ -21,7 +21,7 @@
 //! * Kaplan & Soffel, *USNO Circular 179* (2005)
 //!
 //! ## Implementation notes
-//! * Speed of light used: **173.144 632 674 AU day⁻¹** (`AU_PER_DAY_C`).
+//! * Speed of light used: **173.144 632 674 AstronomicalUnits day⁻¹** (`AU_PER_DAY_C`).
 //! * Vector formulation: `u' = u + v / c` then renormalised.
 //! * Verified against JPL DE440: <0.08 mas over 1900‑2100.
 
@@ -48,7 +48,7 @@ pub fn apply_aberration_to_direction(
     jd:   JulianDay,
 ) -> direction::Equatorial {
 
-    // TODO: Units must be AU/Day
+    // TODO: Units must be AstronomicalUnits/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
     let velocity: Velocity<Heliocentric, frames::Equatorial, AstronomicalUnit> = velocity.transform(jd);
 
@@ -71,7 +71,7 @@ pub fn remove_aberration_from_direction(
     jd:  JulianDay,
 ) -> direction::Equatorial {
 
-    // TODO: Units must be AU/Day
+    // TODO: Units must be AstronomicalUnits/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
     let velocity: Velocity<Heliocentric, frames::Equatorial, AstronomicalUnit> = velocity.transform(jd);
 
