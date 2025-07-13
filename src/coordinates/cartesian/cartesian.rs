@@ -10,7 +10,7 @@
 //!   - `F`: Reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`).
 //!   - `K`: Kind marker (`Position`, `Direction`), enforcing semantic correctness.
 //! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
-//! - **Units:** Coordinates are expressed in astronomical units (AU) by convention, but may represent other units if documented.
+//! - **Units:** Coordinates are expressed in astronomical units (AstronomicalUnits) by convention, but may represent other units if documented.
 //! - **Vector Operations:** Supports addition, subtraction, scaling, and distance calculation.
 //! - **Interoperability:** Seamless conversion to and from `nalgebra::Vector3<U>`.
 //!
@@ -65,9 +65,9 @@ where
     /// Creates a new Cartesian coordinate.
     ///
     /// # Arguments
-    /// - `x`: The x-coordinate in AU.
-    /// - `y`: The y-coordinate in AU.
-    /// - `z`: The z-coordinate in AU.
+    /// - `x`: The x-coordinate in AstronomicalUnits.
+    /// - `y`: The y-coordinate in AstronomicalUnits.
+    /// - `z`: The z-coordinate in AstronomicalUnits.
     ///
     /// # Returns
     /// A new `Vector<Center, Frame>`.
@@ -88,13 +88,13 @@ where
 
     pub const fn as_vec3(&self) -> Vector3<Quantity<U>> { self.xyz }
 
-    /// Gets the x-coordinate in AU.
+    /// Gets the x-coordinate in AstronomicalUnits.
     pub fn x(&self) -> Quantity<U> { self.xyz[0] }
 
-    /// Gets the y-coordinate in AU.
+    /// Gets the y-coordinate in AstronomicalUnits.
     pub fn y(&self) -> Quantity<U> { self.xyz[1] }
 
-    /// Gets the z-coordinate in AU.
+    /// Gets the z-coordinate in AstronomicalUnits.
     pub fn z(&self) -> Quantity<U> { self.xyz[2] }
 
     pub fn sub(&self, other: &Self) -> Self

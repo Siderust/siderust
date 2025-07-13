@@ -5,50 +5,20 @@
 //! length units and conversions between them.
 //!
 //! ## Features
-//! - **Astronomical Unit (AU)**: The mean distance between the Earth and the Sun.
-//! - **Light Year (LY)**: The distance light travels in one Julian year in vacuum.
-//! - Conversion between AU and LY.
+//! - **Astronomical Unit (AstronomicalUnits)**: The mean distance between the Earth and the Sun.
+//! - **Light Year (LightYears)**: The distance light travels in one Julian year in vacuum.
+//! - Conversion between AstronomicalUnits and LightYears.
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::units::{AU, LightYear};
+//! use siderust::units::{AU, LightYears};
 //!
 //! let au = 1.0*AU;
-//! //let ly = LightYear::from(au); TODO
+//! //let ly = LightYears::from(au); TODO
 //! //assert!((ly.value() - 1.582e-5).abs() < 1e-8);
 //! ```
 
-mod solar_radius;
-pub use solar_radius::*;
-
-
-
-use paste::paste;
-use crate::units::Quantity;
-
-macro_rules! define_unit {
-    ($symbol:ident, $name:ident, $dim:ty, $ratio:expr) => {
-
-        #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-        pub enum $name {}
-        impl Unit for $name {
-            const RATIO: f64 = $ratio;
-            type Dim = $dim;
-            const SYMBOL: &'static str = stringify!($symbol);
-        }
-        paste! {
-            pub type [<$name s>] = Quantity<$name>;
-            pub type $symbol = [<$name s>];
-            pub const $symbol: [<$name s>] = [<$name s>]::new(1.0);
-        }
-
-        impl std::fmt::Display for Quantity<$name> {
-            fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-                write!(f, "{} {}", self.value(), <$name>::SYMBOL)
-            }
-        }
-    };
-}
+use crate::units::{define_unit, Quantity};
 
 use crate::units::{Dimension, Unit};
 pub enum Length {}
@@ -57,16 +27,34 @@ pub trait LengthUnit: Unit<Dim = Length> {}
 impl<T: Unit<Dim = Length>> LengthUnit for T {}
 
 
-define_unit!(M, Meter, Length, 1.0);
-define_unit!(KM, Kilometer, Length, 1_000.0);
-define_unit!(AU, AstronomicalUnit, Length, 149_597_870.7);
-define_unit!(LY, LightYear, Length, 9_460_730_472_580.8);
+define_unit!("m", Meter, Length, 1.0);
+pub type Meters = Quantity<Meter>;
+
+define_unit!("Km", Kilometer, Length, 1_000.0);
+pub type Km = Kilometer;
+pub type Kilometers = Quantity<Km>;
+pub const KM: Kilometers = Kilometers::new(1.0);
+
+define_unit!("Au", AstronomicalUnit, Length, 149_597_870.7);
+pub type Au = AstronomicalUnit;
+pub type AstronomicalUnits = Quantity<Au>;
+pub const AU: AstronomicalUnits = AstronomicalUnits::new(1.0);
+
+define_unit!("Ly", LightYear, Length, 9_460_730_472_580.8);
+pub type Ly = LightYear;
+pub type LightYears = Quantity<Ly>;
+pub const LY: LightYears = LightYears::new(1.0);
+
+define_unit!("SR", SolarRadius, Length, 695_700_000.0);
+pub type SolarRadiuses = Quantity<SolarRadius>;
+pub const SR: SolarRadiuses = SolarRadiuses::new(1.0);
+
 
 /// AstronomicalUnit -> LightYear.
-impl From<AU> for LY { fn from(au: AU) -> Self { au.to::<LightYear>() } }
+impl From<AstronomicalUnits> for LightYears { fn from(au: AstronomicalUnits) -> Self { au.to::<LightYear>() } }
 
 /// LightYear -> AstronomicalUnits.
-impl From<LY> for AU { fn from(ly: LY) -> Self { ly.to::<AstronomicalUnit>() } }
+impl From<LightYears> for AstronomicalUnits { fn from(ly: LightYears) -> Self { ly.to::<AstronomicalUnit>() } }
 
 // TODO: Remove me
 impl Unit for f64 {

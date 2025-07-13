@@ -1,8 +1,8 @@
 //! VSOP87 position / velocity computation (stable‑Rust version)
 //!
 //! Exposes three public helpers:
-//! * [`position`]  – only X,Y,Z (AU)
-//! * [`velocity`]  – only Ẋ,Ẏ,Ż (AU/day)
+//! * [`position`]  – only X,Y,Z (AstronomicalUnits)
+//! * [`velocity`]  – only Ẋ,Ẏ,Ż (AstronomicalUnits/day)
 //! * [`position_velocity`] – both in one pass (≈30 % más rápido que dos llamadas)
 //!
 //! Internamente usamos un *tipo marcador* + *const bools* en vez de const‑enums,

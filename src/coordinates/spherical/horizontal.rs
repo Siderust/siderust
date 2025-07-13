@@ -8,7 +8,7 @@
 //!
 //! - **Altitude (Alt)** → `polar`: angle above or below the horizon, in degrees.
 //! - **Azimuth (Az)**   → `azimuth`: angle measured clockwise from the north, in degrees.
-//! - **Radial distance (d)** → distance from the reference center, typically in astronomical units (AU).
+//! - **Radial distance (d)** → distance from the reference center, typically in astronomical units (AstronomicalUnits).
 //!
 //! Altitude is normalized to the [-90°, 90°] range, and azimuth to the [0°, 360°] range.
 //! Time is represented as Julian Date (JD).
@@ -67,7 +67,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Horizontal, U> {
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    /// - `distance`: LengthUnit to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AstronomicalUnits).
     ///
     /// # Returns
     /// A new `Position` in the horizontal frame.
@@ -82,7 +82,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Horizontal, U> {
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    /// - `distance`: LengthUnit to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AstronomicalUnits).
     ///
     /// # Returns
     /// A `Position` in the horizontal frame.

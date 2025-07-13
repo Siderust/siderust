@@ -12,7 +12,7 @@
 //!
 //! - **Polar angle (θ):** `polar` — angle from a reference plane (e.g., latitude, declination, altitude), in degrees.
 //! - **Azimuthal angle (φ):** `azimuth` — angle from a reference direction (e.g., longitude, right ascension, azimuth), in degrees.
-//! - **Radial distance (r):** `distance` — distance from the reference center, in astronomical units (AU) or meters (for ECEF).
+//! - **Radial distance (r):** `distance` — distance from the reference center, in astronomical units (AstronomicalUnits) or meters (for ECEF).
 //!
 //! The interpretation of these components depends on the chosen `Frame` and `Center`.
 //!
@@ -49,7 +49,7 @@
 //!
 //! - **Polar (θ)** → `polar`: angle from a reference plane (e.g., latitude, declination, altitude), in degrees.
 //! - **Azimuth (φ)** → `azimuth`: angle from a reference direction (e.g., longitude, right ascension, azimuth), in degrees.
-//! - **Radial distance (r)** → `distance`: distance from the reference center, in AU.
+//! - **Radial distance (r)** → `distance`: distance from the reference center, in AstronomicalUnits.
 //!
 //! # Example
 //! ```rust

@@ -4,7 +4,7 @@
 //! - `name`: Name of the satellite (borrowed or owned).
 //! - `mass`: Mass in kilograms (`Kilograms`).
 //! - `radius`: Mean radius in kilometers (`Kilometers`).
-//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AU, degrees, Julian Day).
+//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AstronomicalUnits, degrees, Julian Day).
 
 use crate::astro::orbit::Orbit;
 use crate::units::{Kilograms, Kilometers};

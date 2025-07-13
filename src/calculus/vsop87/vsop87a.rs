@@ -1,6 +1,6 @@
 use super::*;
 use crate::bodies::solar_system::Moon;
-use crate::units::{JulianDay, AU, AstronomicalUnit};
+use crate::units::{JulianDay, AstronomicalUnits, AstronomicalUnit};
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
@@ -27,9 +27,9 @@ macro_rules! impl_vsop87a {
                 );
                 Target::new_static(
                     Position::new(
-                        AU::new(x),
-                        AU::new(y),
-                        AU::new(z)),
+                        AstronomicalUnits::new(x),
+                        AstronomicalUnits::new(y),
+                        AstronomicalUnits::new(z)),
                     jd,
                 )
             }
@@ -42,9 +42,9 @@ macro_rules! impl_vsop87a {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    AU::new(vx),
-                    AU::new(vy),
-                    AU::new(vz)
+                    AstronomicalUnits::new(vx),
+                    AstronomicalUnits::new(vy),
+                    AstronomicalUnits::new(vz)
                 )
             }
 
@@ -58,13 +58,13 @@ macro_rules! impl_vsop87a {
                 );
                 (
                     Target::new_static(Position::new(
-                        AU::new(x),
-                        AU::new(y),
-                        AU::new(z)), jd,),
+                        AstronomicalUnits::new(x),
+                        AstronomicalUnits::new(y),
+                        AstronomicalUnits::new(z)), jd,),
                     Velocity::new(
-                        AU::new(vx),
-                        AU::new(vy),
-                        AU::new(vz))
+                        AstronomicalUnits::new(vx),
+                        AstronomicalUnits::new(vy),
+                        AstronomicalUnits::new(vz))
                 )
             }
         }

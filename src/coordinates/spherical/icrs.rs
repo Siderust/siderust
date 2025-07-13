@@ -9,7 +9,7 @@
 //!
 //! - **Right Ascension (RA or α)** → `azimuth`: angle measured eastward along the celestial equator from the vernal equinox, in degrees.
 //! - **Declination (Dec or δ)**    → `polar`: angle above or below the celestial equator, in degrees.
-//! - **Radial distance (d)**       → distance from the reference center, typically in astronomical units (AU).
+//! - **Radial distance (d)**       → distance from the reference center, typically in astronomical units (AstronomicalUnits).
 //!
 //! Right Ascension is normalized to the [0°, 360°] range, and Declination to the [-90°, 90°] range.
 //!
@@ -70,7 +70,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `distance`: LengthUnit to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AstronomicalUnits).
     ///
     /// # Returns
     /// A new `Position` in the ICRS frame.
@@ -85,7 +85,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `distance`: LengthUnit to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AstronomicalUnits).
     ///
     /// # Returns
     /// A normalized `Position` in the ICRS frame.

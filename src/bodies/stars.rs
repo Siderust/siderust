@@ -3,8 +3,8 @@
 //! Represents stars with name, distance, mass, radius, luminosity, and target.
 //! - `name`: Name of the star (borrowed or owned).
 //! - `distance`: LengthUnit from Earth in light-years (`LightYear`).
-//! - `mass`: Stellar mass in solar masses (`SolarMass`).
-//! - `radius`: Stellar radius in solar radii (`SolarRadius`).
+//! - `mass`: Stellar mass in solar masses (`SolarMasses`).
+//! - `radius`: Stellar radius in solar radii (`SolarRadiuses`).
 //! - `lumminosity`: Stellar luminosity in solar luminosities (`SolarLuminosity`).
 //! - `target`: [`Target`] pointing to a Spherical coordinates (see [`Position`]), using degrees and Julian Day.
 
@@ -18,9 +18,9 @@ use std::borrow::Cow;
 #[derive(Clone)]
 pub struct Star<'a> {
     pub name: Cow<'a, str>,
-    pub distance: LY,
-    pub mass: SolarMass,
-    pub radius: SolarRadius,
+    pub distance: LightYears,
+    pub mass: SolarMasses,
+    pub radius: SolarRadiuses,
     pub lumminosity: SolarLuminosity,
     pub target: Target<Position<Geocentric, Equatorial, LightYear>>,
 }
@@ -29,9 +29,9 @@ impl<'a> Star<'a> {
     /// Compile‐time constructor: only works with `'static` string literals.
     pub const fn new_const(
         name: &'static str,
-        distance: LY,
-        mass: SolarMass,
-        radius: SolarRadius,
+        distance: LightYears,
+        mass: SolarMasses,
+        radius: SolarRadiuses,
         lumminosity: SolarLuminosity,
         target: Target<Position<Geocentric, Equatorial, LightYear>>,
     ) -> Star<'static> {
@@ -48,9 +48,9 @@ impl<'a> Star<'a> {
     /// Runtime constructor: accepts any string-like thing.
     pub fn new<N>(
         name: N,
-        distance: LY,
-        mass: SolarMass,
-        radius: SolarRadius,
+        distance: LightYears,
+        mass: SolarMasses,
+        radius: SolarRadiuses,
         lumminosity: SolarLuminosity,
         target: Target<Position<Geocentric, Equatorial, LightYear>>,
     ) -> Star<'a>

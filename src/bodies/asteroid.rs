@@ -3,7 +3,7 @@
 //! Represents asteroids with their name, composition, and orbital parameters.
 //! - `name`: String identifier for the asteroid.
 //! - `composition`: String describing the primary material makeup.
-//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AU, degrees, Julian Day).
+//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AstronomicalUnits, degrees, Julian Day).
 
 use crate::astro::orbit::Orbit;
 
