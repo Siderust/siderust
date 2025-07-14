@@ -49,14 +49,15 @@
 //! use siderust::calculus::events::{find_static_extremas, find_dynamic_extremas, Culmination};
 //! use siderust::bodies::catalog::SIRIUS;
 //! use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-//! use siderust::units::{Days, JulianDay};
+//! use siderust::units::Days;
+//! use siderust::astro::JulianDate;
 //! 
 //! // Example: Find extrema of a function in a given interval
 //! let extrema = find_static_extremas(
 //!     &SIRIUS.target,                    // Target to be observed
 //!     &ROQUE_DE_LOS_MUCHACHOS,           // Location of the observer
-//!     JulianDay::J2000,                  // start time
-//!     JulianDay::J2000 + Days::new(1.0), // end time
+//!     JulianDate::J2000,                  // start time
+//!     JulianDate::J2000 + Days::new(1.0), // end time
 //! );
 //!
 //! for ext in extrema {

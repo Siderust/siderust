@@ -55,12 +55,13 @@
 //! This module assumes that:
 //! - **Angles** are expressed in degrees (`Degrees`).
 //! - **Distances** use astronomical units (`AstronomicalUnits`).
-//! - **Time** is expressed as Julian Days (`JulianDay`).
+//! - **Time** is expressed as Julian Days (`JulianDate`).
 //!
 //! ## Usage Example
 //!
 //! ```rust
 //! use siderust::astro::orbit::Orbit;
+//! use siderust::astro::JulianDate;
 //! use siderust::units::*;
 //!
 //! let earth_orbit = Orbit::new(
@@ -70,15 +71,16 @@
 //!     Degrees::new(-11.26064),   // Ω
 //!     Degrees::new(102.94719),   // ω
 //!     Degrees::new(100.46435),   // M₀
-//!     JulianDay::J2000,          // epoch (J2000)
+//!     JulianDate::J2000,          // epoch (J2000)
 //! );
 //!
-//! let coords = earth_orbit.kepler_position(JulianDay::new(2459200.5));
+//! let coords = earth_orbit.kepler_position(JulianDate::new(2459200.5));
 //! ```
 //!
 //! This example computes Earth's position on a given Julian date.
 
 use crate::units::*;
+use crate::astro::JulianDate;
 
 /// Represents the Keplerian orbital elements of a celestial object.
 #[derive(Clone, Copy)]
@@ -89,7 +91,7 @@ pub struct Orbit {
     pub longitude_of_ascending_node: Degrees, // Longitude of ascending node (Ω)
     pub argument_of_perihelion: Degrees,      // Argument of perihelion (ω)
     pub mean_anomaly_at_epoch: Degrees,       // Mean anomaly at epoch (M₀)
-    pub epoch: JulianDay,                     // Epoch (Julian Dat
+    pub epoch: JulianDate,                     // Epoch (Julian Dat
 }
 
 impl Orbit {
@@ -101,7 +103,7 @@ impl Orbit {
         longitude_of_ascending_node: Degrees,
         argument_of_perihelion: Degrees,
         mean_anomaly_at_epoch: Degrees,
-        epoch: JulianDay,
+        epoch: JulianDate,
     ) -> Self {
         Self {
             semi_major_axis,

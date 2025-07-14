@@ -32,7 +32,7 @@
 //!   types with different centers and frames by chaining the appropriate [`Transform`] operations.
 //!
 //! - **Time Dependency**: Many transformations depend on the Julian Date (e.g., due to precession,
-//!   nutation, or planetary positions). The trait method always receives a `JulianDay` parameter to
+//!   nutation, or planetary positions). The trait method always receives a `JulianDate` parameter to
 //!   support such cases, even if some transformations are time-independent.
 //!
 //! ## Usage Example
@@ -40,10 +40,11 @@
 //! ```rust
 //! use siderust::coordinates::{cartesian::Position, frames::*, centers::*};
 //! use siderust::coordinates::transform::Transform;
-//! use siderust::units::{JulianDay, AstronomicalUnit};
+//! use siderust::units::AstronomicalUnit;
+//! use siderust::astro::JulianDate;
 //!
 //! let cart_eq = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 2.0, 3.0);
-//! let jd = JulianDay::J2000;
+//! let jd = JulianDate::J2000;
 //! // Transform to Geocentric Ecliptic coordinates
 //! let cart_geo_ecl: Position<Geocentric, Ecliptic, AstronomicalUnit> = cart_eq.transform(jd);
 //! // Transform to Heliocentric Ecliptic coordinates
@@ -58,7 +59,7 @@
 //!
 //! ```rust,ignore
 //! impl Transform<DestinationType> for SourceType {
-//!     fn transform(&self, jd: JulianDay) -> DestinationType {
+//!     fn transform(&self, jd: JulianDate) -> DestinationType {
 //!         // ...conversion logic...
 //!     }
 //! }
@@ -88,7 +89,7 @@
 //! [`to_horizontal`]: to_horizontal/index.html
 
 pub trait Transform<Coord> {
-    fn transform(&self, jd: crate::units::JulianDay) -> Coord;
+    fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
 }
 
 mod centers;
@@ -106,7 +107,7 @@ use crate::coordinates::{
     cartesian::Vector,
     spherical::SphericalCoord
 };
-use crate::units::JulianDay;
+use crate::astro::JulianDate;
 use crate::units::LengthUnit;
 
 // Blanket identity transform for Vector<Center, Frame>
@@ -116,7 +117,7 @@ where
     F: MutableFrame,
     U: LengthUnit
 {
-    fn transform(&self, _jd: crate::units::JulianDay) -> cartesian::Position<C, F,U> {
+    fn transform(&self, _jd: crate::astro::JulianDate) -> cartesian::Position<C, F,U> {
         Vector::new(self.x(), self.y(), self.z())
     }
 }
@@ -141,9 +142,9 @@ where
 {
     fn from(orig: &Vector<C1, F1, U, K>) -> Self {
         // Step 1: Transform to new frame, keeping the original center.
-        let mid: Vector<C1, F2, U, K> = orig.transform(JulianDay::J2000);
+        let mid: Vector<C1, F2, U, K> = orig.transform(JulianDate::J2000);
         // Step 2: Transform to new center, now using the new frame.
-        mid.transform(JulianDay::J2000)
+        mid.transform(JulianDate::J2000)
     }
 }
 
@@ -172,9 +173,9 @@ where
         // Step 1: Convert spherical to Cartesian
         let cart: Vector<C1, F1, U, K> = orig.to_cartesian();
         // Step 2: Transform to new frame
-        let cart_mid: Vector<C1, F2, U, K> = cart.transform(JulianDay::J2000);
+        let cart_mid: Vector<C1, F2, U, K> = cart.transform(JulianDate::J2000);
         // Step 3: Transform to new center
-        let cart_dest: Vector<C2, F2, U, K> = cart_mid.transform(JulianDay::J2000);
+        let cart_dest: Vector<C2, F2, U, K> = cart_mid.transform(JulianDate::J2000);
         // Step 4: Convert back to spherical
         cart_dest.to_spherical()
     }

@@ -1,4 +1,5 @@
-use crate::units::{JulianDay, LengthUnit, AstronomicalUnits, Quantity};
+use crate::units::{LengthUnit, AstronomicalUnits, Quantity};
+use crate::astro::JulianDate;
 use crate::bodies::solar_system::{Sun, Earth};
 use crate::coordinates::{
     frames::MutableFrame,
@@ -15,7 +16,7 @@ where
     Quantity<U>: From<AstronomicalUnits>,
     for<'a> Position<Barycentric, F, U>: From<&'a Ecliptic<U, Barycentric>>,
 {
-    fn transform(&self, jd: JulianDay) -> Position<Barycentric, F, U> {
+    fn transform(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
 
         // VSOP87 gives the Sun's position in AstronomicalUnits
@@ -38,7 +39,7 @@ where
     for<'a> Equatorial<U>: From<&'a Position<Geocentric, F, U>>, // Required by Aberration
     for<'a> Position<Barycentric, F, U>: From<&'a Equatorial<U, Barycentric>>, // Required by Aberration
 {
-    fn transform(&self, jd: JulianDay) -> Position<Barycentric, F, U> {
+    fn transform(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
 
         // VSOP87 gives the Earth's position in AstronomicalUnits
@@ -72,7 +73,7 @@ mod tests {
     fn test_helio() {
         let sun_helio = Ecliptic::<Au>::CENTER;
         let sun_bary = Ecliptic::<Au, Barycentric>::from(&sun_helio);
-        let expected_sun_bary = Sun::vsop87e(JulianDay::J2000).get_position().clone();
+        let expected_sun_bary = Sun::vsop87e(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(sun_bary, expected_sun_bary, EPSILON);
     }
 
@@ -80,7 +81,7 @@ mod tests {
     fn test_geo() {
         let earth_geo = Ecliptic::<Au, Geocentric>::CENTER;
         let earth_bary = Ecliptic::<Au, Barycentric>::from(&earth_geo);
-        let expected_earth_bary = Earth::vsop87e(JulianDay::J2000).get_position().clone();
+        let expected_earth_bary = Earth::vsop87e(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(&earth_bary, &expected_earth_bary, EPSILON);
     }
 

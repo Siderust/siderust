@@ -1,4 +1,4 @@
-use crate::units::JulianDay;
+use crate::astro::JulianDate;
 use crate::coordinates::{
     centers::*,
     frames::MutableFrame,
@@ -17,7 +17,7 @@ where
     Equatorial: Transform<cartesian::Direction<Geocentric, F>>, // FromEquatorial
 {
     #[inline]
-    fn transform(&self, jd: JulianDay) -> cartesian::Direction<C, F> {
+    fn transform(&self, jd: JulianDate) -> cartesian::Direction<C, F> {
         // 1. Transform to Equatorial (already in Geocentric)
         let equatorial: Equatorial = self.transform(jd);
         // 2. Remove aberration
@@ -41,7 +41,7 @@ where
     Equatorial: Transform<cartesian::Direction<Geocentric, F>>, // FromEquatorial
 {
     #[inline]
-    fn transform(&self, jd: JulianDay) -> spherical::Direction<C, F> {
+    fn transform(&self, jd: JulianDate) -> spherical::Direction<C, F> {
         let cart = self.to_cartesian();
         let cart_transformed = Transform::<cartesian::Direction<C, F>>::transform(&cart, jd);
         cart_transformed.to_spherical()

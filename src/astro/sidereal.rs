@@ -23,16 +23,18 @@
 //! ## Example
 //! ```rust
 //! use chrono::prelude::*;
-//! use siderust::units::{JulianDay, Degrees};
+//! use siderust::astro::JulianDate;
+//! use siderust::units::Degrees;
 //! use siderust::astro::sidereal::{calculate_gst, calculate_lst};
 //!
-//! let jd = JulianDay::from_utc(Utc::now());
+//! let jd = JulianDate::from_utc(Utc::now());
 //! let gst = calculate_gst(jd);
 //! let lst = calculate_lst(gst, Degrees::new(-3.7038)); // Madrid ≈ ‑3.70°
 //! println!("GST = {:.4}°,  LST = {:.4}°", gst, lst);
 //! ```
 
-use crate::units::{Degrees, JulianDay, Days};
+use crate::units::{Degrees, Days};
+use crate::astro::JulianDate;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
 pub const SIDEREAL_DAY: Days = Days::new(23.934_469_6 / 24.0);
@@ -41,9 +43,9 @@ pub const SIDEREAL_DAY: Days = Days::new(23.934_469_6 / 24.0);
 ///
 /// *Output*: angle in degrees, may be < 0° or > 360°.
 #[inline]
-pub fn unmodded_gst(julian_date: JulianDay) -> Degrees {
+pub fn unmodded_gst(julian_date: JulianDate) -> Degrees {
     let t = julian_date.julian_centuries().value();
-    let base = julian_date - JulianDay::J2000;
+    let base = julian_date - JulianDate::J2000;
 
     // IAU 2006 polynomial (units: degrees)
     let gst = 280.460_618_37
@@ -55,13 +57,13 @@ pub fn unmodded_gst(julian_date: JulianDay) -> Degrees {
 
 /// Unwrapped Local Sidereal Time = unwrapped GST + observer longitude (east +).
 #[inline]
-pub fn unmodded_lst(jd: JulianDay, longitude_deg: Degrees) -> Degrees {
+pub fn unmodded_lst(jd: JulianDate, longitude_deg: Degrees) -> Degrees {
     unmodded_gst(jd) + longitude_deg
 }
 
 /// Greenwich Sidereal Time wrapped to **[0°, 360°)**.
 #[inline]
-pub fn calculate_gst(julian_date: JulianDay) -> Degrees {
+pub fn calculate_gst(julian_date: JulianDate) -> Degrees {
     unmodded_gst(julian_date).normalize()
 }
 
@@ -78,7 +80,7 @@ mod tests {
 
     #[test]
     fn gst_lst_ranges() {
-        let jd = JulianDay::new(2_459_945.5); // 2023‑01‑01 00 UT
+        let jd = JulianDate::new(2_459_945.5); // 2023‑01‑01 00 UT
         let gst = calculate_gst(jd);
         let lst = calculate_lst(gst, Degrees::new(-75.0));
         assert!(gst.as_f64() >= 0.0 && gst.as_f64() < 360.0);

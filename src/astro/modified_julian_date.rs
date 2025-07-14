@@ -3,20 +3,20 @@ use chrono::{DateTime, Utc};
 /// Represents Modified Julian Day (MJD), which is the Julian Day
 /// minus 2400000.5, used in various scientific and technical applications.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ModifiedJulianDay(f64);
+pub struct ModifiedJulianDate(f64);
 
-impl ModifiedJulianDay {
+impl ModifiedJulianDate {
 
     pub fn new(mjd: f64) -> Self {
-        ModifiedJulianDay(mjd)
+        ModifiedJulianDate(mjd)
     }
 
     /// Returns the inner Modified Julian Day value.
     pub const fn value(&self) -> f64 { self.0 }
 
 
-    pub const fn to_julian_day(&self) -> super::JulianDay {
-        super::JulianDay::new(self.value() + 2400000.5)
+    pub const fn to_julian_day(&self) -> super::JulianDate {
+        super::JulianDate::new(self.value() + 2400000.5)
     }
 
 
@@ -35,7 +35,7 @@ impl ModifiedJulianDay {
         let seconds_since_epoch = datetime.timestamp() as f64;
         let nanos = datetime.timestamp_subsec_nanos() as f64 / 1e9;
         let jd = unix_epoch_jd + (seconds_since_epoch + nanos) / 86400.0;
-        ModifiedJulianDay::new(jd - 2400000.5)
+        ModifiedJulianDate::new(jd - 2400000.5)
     }
 }
 
@@ -46,19 +46,19 @@ mod tests {
 
     #[test]
     fn test_modified_julian_day_creation() {
-        let mjd = ModifiedJulianDay::new(51544.5);
+        let mjd = ModifiedJulianDate::new(51544.5);
         assert_eq!(mjd.value(), 51544.5);
     }
 
     #[test]
     fn test_to_julian_day() {
-        let mjd = ModifiedJulianDay::new(51544.5);
+        let mjd = ModifiedJulianDate::new(51544.5);
         assert_eq!(mjd.to_julian_day().value(), 2451545.0);
     }
 
     #[test]
     fn test_to_utc() {
-        let mjd = ModifiedJulianDay::new(51544.5);
+        let mjd = ModifiedJulianDate::new(51544.5);
         let datetime = mjd.to_utc();
         assert_eq!(datetime, DateTime::from_timestamp(946728000, 0));
     }
@@ -66,7 +66,7 @@ mod tests {
     #[test]
     fn test_from_utc() {
         let datetime = DateTime::from_timestamp(946728000, 0);
-        let mjd = ModifiedJulianDay::from_utc(datetime.unwrap());
+        let mjd = ModifiedJulianDate::from_utc(datetime.unwrap());
         assert_eq!(mjd.value(), 51544.5);
     }
 }

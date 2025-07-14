@@ -3,7 +3,8 @@ use crate::coordinates::{
     spherical, cartesian,
     centers::*,  frames::*
 };
-use crate::units::{Quantity, LengthUnit, Degrees, JulianDay};
+use crate::units::{Quantity, LengthUnit, Degrees};
+use crate::astro::JulianDate;
 
 
 /// Converts geocentric equatorial coordinates to topocentric horizontal coordinates
@@ -25,7 +26,7 @@ use crate::units::{Quantity, LengthUnit, Degrees, JulianDay};
 pub fn geocentric_to_horizontal<U: LengthUnit>(
     target:   &spherical::position::Equatorial<U>,
     observer: &spherical::position::Geographic,
-    jd:       JulianDay
+    jd:       JulianDate
 ) -> spherical::position::Horizontal<U> {
 
     // 2) Tiempo sidéreo con ese JD, no con target.t
@@ -57,7 +58,7 @@ impl<U: LengthUnit> cartesian::Position<Geocentric, Equatorial, U>
 where
     cartesian::Position<Topocentric, Horizontal, U>: for<'a> From<&'a spherical::Position<Topocentric, Horizontal, U>>,
 {
-    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDay) -> cartesian::Position<Topocentric, Horizontal, U> {
+    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDate) -> cartesian::Position<Topocentric, Horizontal, U> {
         let spherical: spherical::Position<Geocentric, Equatorial, U>   = self.into();
         let horizontal = geocentric_to_horizontal(&spherical, observer, jd);
         (&horizontal).into()
@@ -66,7 +67,7 @@ where
 
 
 impl<U: LengthUnit> spherical::Position<Geocentric, Equatorial, U> {
-    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDay) -> spherical::Position<Topocentric, Horizontal, U> {
+    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDate) -> spherical::Position<Topocentric, Horizontal, U> {
         geocentric_to_horizontal(self, observer, jd)
     }
 }
@@ -82,7 +83,7 @@ mod tests {
         use crate::bodies::catalog::SIRIUS;
         use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
 
-        let jd: JulianDay = JulianDay::new(2460677.04358);
+        let jd: JulianDate = JulianDate::new(2460677.04358);
 
         let expected_horizontal = spherical::position::Horizontal::<LightYear>::new(
             DMS::new(DMS::NEGATIVE, 77, 59, 0.0).to_degrees(),

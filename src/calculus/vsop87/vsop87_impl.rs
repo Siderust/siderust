@@ -9,7 +9,7 @@
 //! para que compile en **Rust estable** (sin la feature `adt_const_params`).
 
 use rayon::join;
-use crate::units::JulianDay;
+use crate::astro::JulianDate;
 
 /// One VSOP87 coefficient term  _a · cos(b + c·T)_
 #[derive(Debug, Clone, Copy)]
@@ -68,12 +68,12 @@ fn coord<M: Mode>(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
 
 // Public façade
 pub fn position(
-    jd: JulianDay,
+    jd: JulianDate,
     x_series: &[&[Vsop87]],
     y_series: &[&[Vsop87]],
     z_series: &[&[Vsop87]],
 ) -> (f64, f64, f64) {
-    let t = JulianDay::tt_to_tdb(jd).julian_millennias();
+    let t = JulianDate::tt_to_tdb(jd).julian_millennias();
 
     let (x, (y, z)) = join(
         || coord::<Val>(x_series, t).0,
@@ -87,12 +87,12 @@ pub fn position(
 }
 
 pub fn velocity(
-    jd: JulianDay,
+    jd: JulianDate,
     x_series: &[&[Vsop87]],
     y_series: &[&[Vsop87]],
     z_series: &[&[Vsop87]],
 ) -> (f64, f64, f64) {
-    let t = JulianDay::tt_to_tdb(jd).julian_millennias();
+    let t = JulianDate::tt_to_tdb(jd).julian_millennias();
 
     let (xdot, (ydot, zdot)) = join(
         || coord::<Der>(x_series, t).1,
@@ -108,12 +108,12 @@ pub fn velocity(
 /// Position **and** velocity in a single pass (≈30 % faster than calling
 /// the two previous helpers).
 pub fn position_velocity(
-    jd: JulianDay,
+    jd: JulianDate,
     x_series: &[&[Vsop87]],
     y_series: &[&[Vsop87]],
     z_series: &[&[Vsop87]],
 ) -> ((f64, f64, f64), (f64, f64, f64)) {
-    let t = JulianDay::tt_to_tdb(jd).julian_millennias();
+    let t = JulianDate::tt_to_tdb(jd).julian_millennias();
 
     let ((x, xdot), (y, ydot, z, zdot)) = join(
         || coord::<Both>(x_series, t),

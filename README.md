@@ -85,12 +85,12 @@ The compiler will refuse `distance + period` – dimensional analysis at compile
 ```rust
 use siderust::{
     bodies::Mars,
-    units::JulianDay,
+    astro::JulianDate,
 };
 use chrono::prelude::*;
 
 // 1. Select an epoch (UTC now to JD)
-let jd = JulianDay::from_utc(Utc::now());
+let jd = JulianDate::from_utc(Utc::now());
 
 // 2. Compute barycentric ecliptic coordinates via VSOP87
 let mars = Mars::vsop87e(jd);

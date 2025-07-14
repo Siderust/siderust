@@ -17,7 +17,7 @@
 //! ## Examples
 //! ```rust
 //! use siderust::targets::Target;
-//! use siderust::units::ModifiedJulianDay;
+//! use siderust::astro::ModifiedJulianDate;
 //! use siderust::coordinates::{spherical::Direction, frames::Equatorial, centers::Geocentric};
 //! use siderust::astro::proper_motion::ProperMotion;
 //!
@@ -25,14 +25,14 @@
 //! let betelgeuse_pm = ProperMotion::from_mas_per_year(-3.10, 9.56);
 //! let betelgeuse = Target::new(
 //!     Direction::<Geocentric, Equatorial>::from_degrees(88.792939, 7.407064, None),
-//!     ModifiedJulianDay::new(60200.0).to_julian_day(),
+//!     ModifiedJulianDate::new(60200.0).to_julian_day(),
 //!     betelgeuse_pm,
 //! );
 //!
 //! // Jupiter’s geocentric position at a given epoch (no proper motion)
 //! let jupiter = Target::new_static(
 //!     Direction::<Geocentric, Equatorial>::from_degrees(23.123, -5.321, None),
-//!     ModifiedJulianDay::new(60200.0).to_julian_day(),
+//!     ModifiedJulianDate::new(60200.0).to_julian_day(),
 //! );
 //! ```
 //!

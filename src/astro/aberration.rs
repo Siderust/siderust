@@ -27,7 +27,8 @@
 
 use crate::coordinates::centers::Heliocentric;
 use crate::coordinates::transform::Transform;
-use crate::units::{AstronomicalUnit, JulianDay, LengthUnit, Quantity};
+use crate::astro::JulianDate;
+use crate::units::{AstronomicalUnit, LengthUnit, Quantity};
 use crate::coordinates::{
     cartesian::{position, direction},
     cartesian::{Position, Velocity},
@@ -45,7 +46,7 @@ const AU_PER_DAY_C: f64 = 173.144_632_674;
 #[must_use]
 pub fn apply_aberration_to_direction(
     mean: direction::Equatorial,
-    jd:   JulianDay,
+    jd:   JulianDate,
 ) -> direction::Equatorial {
 
     // TODO: Units must be AstronomicalUnits/Day
@@ -68,7 +69,7 @@ pub fn apply_aberration_to_direction(
 #[must_use]
 pub fn remove_aberration_from_direction(
     app: direction::Equatorial,
-    jd:  JulianDay,
+    jd:  JulianDate,
 ) -> direction::Equatorial {
 
     // TODO: Units must be AstronomicalUnits/Day
@@ -91,7 +92,7 @@ pub fn remove_aberration_from_direction(
 #[must_use]
 pub fn apply_aberration<U: LengthUnit>(
     mean: position::Equatorial<U>,
-    jd:   JulianDay,
+    jd:   JulianDate,
 ) -> position::Equatorial<U> {
 
     if mean.distance() == 0.0 {
@@ -111,7 +112,7 @@ pub fn apply_aberration<U: LengthUnit>(
 #[must_use]
 pub fn remove_aberration<U: LengthUnit>(
     app: position::Equatorial<U>,
-    jd:  JulianDay,
+    jd:  JulianDate,
 ) -> position::Equatorial<U> {
 
     if app.distance() == 0.0 {
@@ -134,14 +135,14 @@ mod tests {
 
     fn apply_aberration_sph<U: LengthUnit>(
         mean: position::Equatorial<U>,
-        jd:   JulianDay,
+        jd:   JulianDate,
     ) -> position::Equatorial<U> {
         (&apply_aberration((&mean).into(), jd)).into()
     }
 
     #[test]
     fn test_aberration_preserva_distance_and_epoch() {
-        let jd = JulianDay::new(2451545.0); // J2000.0
+        let jd = JulianDate::new(2451545.0); // J2000.0
         let mean = position::Equatorial::<f64>::new(
             Degrees::new(10.0),
             Degrees::new(20.0),
@@ -154,7 +155,7 @@ mod tests {
 
     #[test]
     fn test_aberration_introduces_shift() {
-        let jd = JulianDay::new(2451545.0); // J2000.0
+        let jd = JulianDate::new(2451545.0); // J2000.0
         let mean = position::Equatorial::<f64>::new(
             Degrees::new(0.0),    // RA = 0°
             Degrees::new(0.0),    // Dec = 0°
@@ -172,7 +173,7 @@ mod tests {
 
     #[test]
     fn test_aberration_at_north_pole() {
-        let jd = JulianDay::new(2451545.0);
+        let jd = JulianDate::new(2451545.0);
         let mean = position::Equatorial::<f64>::new(
             Degrees::new(123.4),  // dummy RA
             Degrees::new(90.0),  // Dec = +90°
