@@ -7,7 +7,8 @@ use crate::coordinates::{
 };
 use crate::calculus::elp2000::elp_data;
 use crate::calculus::elp2000::elp_structs::{MainProblem, EarthPert, PlanetPert};
-use crate::units::{LengthUnit, Quantity, JulianDay};
+use crate::astro::JulianDate;
+use crate::units::{LengthUnit, Quantity};
 use std::f64::consts::{PI, FRAC_PI_2};
 use crate::bodies::solar_system::Moon;
 
@@ -266,7 +267,7 @@ define_planet_series!(sum_series_elp21, elp_data::ELP21, true, true);
 
 impl Moon {
     /// Get the geocentric ecliptic coordinates of the Moon for a given Julian date
-    pub fn get_geo_position<U>(jd: JulianDay) -> Position<Geocentric, Ecliptic, U>
+    pub fn get_geo_position<U>(jd: JulianDate) -> Position<Geocentric, Ecliptic, U>
     where U: LengthUnit
     {
         let t1 = jd.julian_centuries().value();
@@ -335,7 +336,7 @@ mod tests {
 
     #[test]
     fn test_lunar_position_against_reference() {
-        let pos = Moon::get_geo_position::<Kilometer>(JulianDay::J2000);
+        let pos = Moon::get_geo_position::<Kilometer>(JulianDate::J2000);
 
         let expected_x = -291608.0*KM;
         let expected_y = -274980.0*KM;

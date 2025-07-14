@@ -6,7 +6,8 @@ use crate::coordinates::{
     frames::MutableFrame,
     cartesian::position::{Position, Ecliptic, Equatorial},
 };
-use crate::units::{Quantity, AstronomicalUnits, JulianDay, LengthUnit};
+use crate::units::{Quantity, AstronomicalUnits, LengthUnit};
+use crate::astro::JulianDate;
 
 impl<F: MutableFrame, U: LengthUnit> Transform<Position<Heliocentric, F, U>>
     for Position<Geocentric, F, U>
@@ -16,7 +17,7 @@ where
     for<'a> Equatorial<U, Geocentric>: From<&'a Position<Geocentric, F, U>>, // Required by Aberration
     for<'a> Position<Heliocentric, F, U>: From<&'a Equatorial<U, Heliocentric>>, // Required by Aberration
 {
-    fn transform(&self, jd: JulianDay) -> Position<Heliocentric, F, U> {
+    fn transform(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
         //geocentric_to_heliocentric(self, jd)
         let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
         let earth_helio_ecl = Ecliptic::<U, Heliocentric>::new(
@@ -43,7 +44,7 @@ where
     Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
     for<'a> Position<Barycentric, F, U>: From<&'a Ecliptic<U, Barycentric>>,
 {
-    fn transform(&self, jd: JulianDay) -> Position<Heliocentric, F, U> {
+    fn transform(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
         // Barycentric to Heliocentric
         let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
         let sun_bary_ecl = Ecliptic::<U, Barycentric>::new(
@@ -69,7 +70,7 @@ mod tests {
 
     #[test] // Barycentric -> Heliocentric
     fn test_bary() {
-        let sun_bary = Sun::vsop87e(JulianDay::J2000).get_position().clone();
+        let sun_bary = Sun::vsop87e(JulianDate::J2000).get_position().clone();
         let sun_helio = Ecliptic::<Au, Heliocentric>::from(&sun_bary);
         let expected_sun_helio = Ecliptic::<Au>::CENTER;
         assert_cartesian_eq!(
@@ -84,7 +85,7 @@ mod tests {
     #[test] // Geocentric -> Heliocentric
     fn test_geo() {
         let sun_geo = Ecliptic::<Au, Geocentric>::from(
-            &Sun::vsop87e(JulianDay::J2000).get_position().clone(),
+            &Sun::vsop87e(JulianDate::J2000).get_position().clone(),
         ); // Sun in Geocentric
         let sun_helio = Ecliptic::<Au>::from(&sun_geo);
         let expected_sun_helio = Ecliptic::<Au>::CENTER;

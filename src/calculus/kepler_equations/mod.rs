@@ -96,6 +96,7 @@ use crate::coordinates::{
 };
 use crate::astro::orbit::Orbit;
 use crate::units::*;
+use crate::astro::JulianDate;
 
 const TOLERANCE: Radians = Radians::new(1e-14);
 const MAX_NEWTON_ITERS: usize = 30;
@@ -222,7 +223,7 @@ fn orbital_period_days(a: AstronomicalUnits) -> Days {
 /// - `(x, y, z)`: Heliocentric coordinates in AstronomicalUnits.
 pub fn calculate_orbit_position(
     elements: &Orbit,
-    julian_date: JulianDay,
+    julian_date: JulianDate,
 ) -> Position<Heliocentric, Ecliptic, AstronomicalUnit> { //TODO: check units (Generic?)
 
     // 1) Mean motion (n).
@@ -271,7 +272,7 @@ pub fn calculate_orbit_position(
 
 impl Orbit {
     /// Calculates heliocentric coordinates of the orbiting body at a given Julian date.
-    pub fn kepler_position(&self, jd: JulianDay) -> Position<Heliocentric, Ecliptic, AstronomicalUnit> {
+    pub fn kepler_position(&self, jd: JulianDate) -> Position<Heliocentric, Ecliptic, AstronomicalUnit> {
         calculate_orbit_position(self, jd)
     }
 }
@@ -279,7 +280,8 @@ impl Orbit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::units::{Degrees, JulianDay, Days};
+    use crate::astro::JulianDate;
+    use crate::units::{Degrees, Days};
     use crate::macros::assert_cartesian_eq;
 
     /// Helper function to compare two floating-point numbers with a tolerance.
@@ -321,16 +323,16 @@ mod tests {
             Degrees::new(0.0),    // Ω 
             Degrees::new(0.0),    // ω 
             Degrees::new(0.0),    // M0
-            JulianDay::J2000, // epoch (Julian Date)
+            JulianDate::J2000, // epoch (Julian Date)
         );
 
         // At epoch, mean anomaly M0 = 0 degrees, so true anomaly should be 0
-        let coord = calculate_orbit_position(&orbit, JulianDay::J2000);
+        let coord = calculate_orbit_position(&orbit, JulianDate::J2000);
 
         assert_cartesian_eq!(coord, Position::new(1.0, 0.0, 0.0), 1e-10);
 
         // 90 degrees after epoch
-        let jd = JulianDay::J2000 + Days::new(90.0 / 0.9856076686); // Roughly 90 degrees / n days
+        let jd = JulianDate::J2000 + Days::new(90.0 / 0.9856076686); // Roughly 90 degrees / n days
         let coord = calculate_orbit_position(&orbit, jd);
         // Expect y to be approximately 1 AstronomicalUnits
         assert_cartesian_eq!(coord, Position::new(0.0, 1.0, 0.0), 1e-4);
@@ -346,11 +348,11 @@ mod tests {
             Degrees::new(0.0),    // Ω
             Degrees::new(0.0),    // ω
             Degrees::new(0.0),    // M0
-            JulianDay::J2000, // epoch (Julian Date)
+            JulianDate::J2000, // epoch (Julian Date)
         );
 
         // At epoch, mean anomaly M0 = 0, so true anomaly = 0
-        let coord = calculate_orbit_position(&elements, JulianDay::J2000);
+        let coord = calculate_orbit_position(&elements, JulianDate::J2000);
         assert_cartesian_eq!(coord, Position::new(1.8, 0.0, 0.0), 1e-10);
     }
 
@@ -364,11 +366,11 @@ mod tests {
             Degrees::new(0.0),    // Ω
             Degrees::new(0.0),    // ω
             Degrees::new(0.0),    // M0
-            JulianDay::J2000, // epoch (Julian Date)
+            JulianDate::J2000, // epoch (Julian Date)
         );
 
         // Assume circular orbit for simplicity in this test
-        let coord = calculate_orbit_position(&elements, JulianDay::J2000 + Days::new(100.0));
+        let coord = calculate_orbit_position(&elements, JulianDate::J2000 + Days::new(100.0));
 
         // Mean motion n = 0.9856076686 / a^(3/2) = 0.9856076686 degrees/day
         let n = 0.9856076686; // degrees/day
@@ -447,7 +449,7 @@ mod tests {
         ];
 
         for planet in &planets {
-            let coord = calculate_orbit_position(&planet.planet.orbit, JulianDay::J2000);
+            let coord = calculate_orbit_position(&planet.planet.orbit, JulianDate::J2000);
             let expected = Position::new(
                 planet.expected.0,
                 planet.expected.1,

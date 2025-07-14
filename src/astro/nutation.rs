@@ -33,7 +33,7 @@
 //!
 //! ## API surface
 //! * [`get_nutation`] → [`Nutation`].  Computes Δψ, Δε, ε₀ for a given
-//!   [`JulianDay`].  All outputs are **degrees**.
+//!   [`JulianDate`].  All outputs are **degrees**.
 //! * [`corrected_ra_with_nutation`]  
 //!   Input: a mean [`Position`] (RA/Dec) and the same date.  Output: the
 //!   apparent right ascension *αₜ* (°) after a 3‑1‑3 rotation using Δψ, Δε, ε₀.
@@ -41,11 +41,11 @@
 //! ## Quick example
 //! ```rust
 //! use chrono::prelude::*;
-//! use siderust::units::JulianDay;
+//! use siderust::astro::JulianDate;
 //! use siderust::bodies::catalog::SIRIUS;
 //! use siderust::astro::nutation::{get_nutation, corrected_ra_with_nutation};
 //!
-//! let jd = JulianDay::from_utc(Utc::now());
+//! let jd = JulianDate::from_utc(Utc::now());
 //! let n = get_nutation(jd);
 //! println!("Δψ = {:.4}°, Δε = {:.4}°", n.longitude, n.obliquity);
 //!
@@ -63,7 +63,8 @@ use crate::coordinates::{
     centers::Geocentric,
     frames::Equatorial
 };
-use crate::units::{Degrees, JulianDay, LengthUnit, Radians};
+use crate::astro::JulianDate;
+use crate::units::{Degrees, LengthUnit, Radians};
 use crate::astro::dynamical_time::julian_ephemeris_day;
 
 /// Nutation components for a given epoch (all **degrees**).
@@ -86,7 +87,7 @@ const TERMS: usize = 63;
 
 /// Compute Δψ, Δε and ε₀ for the supplied Julian Day (JD).
 #[inline]
-pub fn get_nutation(jd: JulianDay) -> Nutation {
+pub fn get_nutation(jd: JulianDate) -> Nutation {
     let jde = julian_ephemeris_day(jd);
     let t = jde.julian_centuries().value();
     let t2 = t * t;
@@ -127,7 +128,7 @@ pub fn get_nutation(jd: JulianDay) -> Nutation {
 #[inline]
 pub fn corrected_ra_with_nutation<U: LengthUnit>(
     target: &Position<Geocentric, Equatorial, U>,
-    jd: JulianDay,
+    jd: JulianDate,
 ) -> Degrees {
     // 1) Fetch nutation terms in radians
     let Nutation { longitude, obliquity, ecliptic } = get_nutation(jd);

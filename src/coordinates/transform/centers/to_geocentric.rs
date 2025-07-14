@@ -1,7 +1,8 @@
 mod position {
     use crate::bodies::solar_system::Earth;
     use crate::astro::aberration::apply_aberration;
-    use crate::units::{AstronomicalUnits, JulianDay, LengthUnit, Quantity};
+    use crate::units::{AstronomicalUnits, LengthUnit, Quantity};
+    use crate::astro::JulianDate;
     use crate::coordinates::{
         transform::Transform,
         frames::MutableFrame,
@@ -18,7 +19,7 @@ mod position {
         for<'a> Equatorial<U, Barycentric>: From<&'a Position<Barycentric, F, U>>, // Required by Aberration
         for<'a> Position<Geocentric, F, U>: From<&'a Equatorial<U>>, // Required by Aberration
     {
-        fn transform(&self, jd: JulianDay) -> Position<Geocentric, F, U> {
+        fn transform(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
             let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
             let earth_ecl = Ecliptic::<U, Barycentric>::new(
                 earth_bary_ecl_au.x(),
@@ -46,7 +47,7 @@ mod position {
         for<'a> Equatorial<U, Heliocentric>: From<&'a Position<Heliocentric, F, U>>, // Required by Aberration
         for<'a> Position<Geocentric, F, U>: From<&'a Equatorial<U>>, // Required by Aberration
     {
-        fn transform(&self, jd: JulianDay) -> Position<Geocentric, F, U> {
+        fn transform(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
             let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
             let earth_ecl = Ecliptic::<U>::new(
                 earth_helio_ecl_au.x(),
@@ -76,7 +77,7 @@ mod direction {
         spherical,
         cartesian::direction::{Direction, Equatorial}
     };
-    use crate::units::JulianDay;
+    use crate::astro::JulianDate;
 
     // ------------- If we transform TO a Geocentric Direction, we only need to apply aberration ------------------
     impl<C, F> Transform<Direction<Geocentric, F>> for Direction<C, F>
@@ -87,7 +88,7 @@ mod direction {
         Equatorial: Transform<Direction<Geocentric, F>>,
     {
         #[inline]
-        fn transform(&self, jd: JulianDay) -> Direction<Geocentric, F> {
+        fn transform(&self, jd: JulianDate) -> Direction<Geocentric, F> {
             // 1. Convert to Geocentric Equatorial coordinates
             let geocentric = Direction::<Geocentric, F>::from_vec3(self.as_vec3());
             // 2. Transform to Geocentric Equatorial
@@ -110,7 +111,7 @@ mod direction {
         Equatorial: Transform<Direction<Geocentric, F>>,
     {
         #[inline]
-        fn transform(&self, jd: JulianDay) -> spherical::Direction<Geocentric, F> {
+        fn transform(&self, jd: JulianDate) -> spherical::Direction<Geocentric, F> {
             let cart = self.to_cartesian();
             let cart_transformed = Transform::<Direction<Geocentric, F>>::transform(&cart, jd);
             cart_transformed.to_spherical()
@@ -122,6 +123,7 @@ mod direction {
 #[cfg(test)]
 mod tests {
     use crate::bodies::solar_system::Earth;
+    use crate::astro::JulianDate;
     use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
     use crate::units::*;
     use crate::coordinates::{
@@ -136,7 +138,7 @@ mod tests {
 
     #[test] // Barycentric -> Geocentric
     fn test_bary_to_geo() {
-        let earth_bary = Earth::vsop87e(JulianDay::J2000).get_position().clone();
+        let earth_bary = Earth::vsop87e(JulianDate::J2000).get_position().clone();
         let earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::from(&earth_bary);
         let expected_earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::CENTER;
         assert_cartesian_eq!(
@@ -150,7 +152,7 @@ mod tests {
 
     #[test] // Heliocentric -> Geocentric
     fn test_helio_to_geo() {
-        let earth_helio = Earth::vsop87a(JulianDay::J2000).get_position().clone();
+        let earth_helio = Earth::vsop87a(JulianDate::J2000).get_position().clone();
         let earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::from(&earth_helio);
         let expected_earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::CENTER;
         assert_cartesian_eq!(&earth_geo, &expected_earth_geo, EPSILON);
@@ -177,7 +179,7 @@ mod tests {
             cartesian::position::ICRS::<Au>::from(&sirius_barycentric_spherical);
         let sirius_geocentric_cartesian: cartesian::position::GCRS<Au> = Transform::transform(
             &sirius_barycentric_cartesian,
-            JulianDay::new(2460792.157638889),
+            JulianDate::new(2460792.157638889),
         );
         let sirius_geocentric_spherical =
             spherical::position::GCRS::<Au>::from(&sirius_geocentric_cartesian);

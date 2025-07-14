@@ -1,6 +1,7 @@
 use super::*;
 use crate::bodies::solar_system::Moon;
-use crate::units::{JulianDay, AstronomicalUnits, AstronomicalUnit};
+use crate::units::{AstronomicalUnits, AstronomicalUnit};
+use crate::astro::JulianDate;
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
@@ -18,7 +19,7 @@ macro_rules! impl_vsop87a {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            pub fn vsop87a(jd: JulianDay) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>> {
+            pub fn vsop87a(jd: JulianDate) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>> {
                 let (x, y, z) = position(
                     jd,
                     &[$( &$x ),+],
@@ -34,7 +35,7 @@ macro_rules! impl_vsop87a {
                 )
             }
 
-            pub fn vsop87a_vel(jd: JulianDay) -> Velocity<Heliocentric, Ecliptic, AstronomicalUnit> {
+            pub fn vsop87a_vel(jd: JulianDate) -> Velocity<Heliocentric, Ecliptic, AstronomicalUnit> {
                 let (vx, vy, vz) = velocity(
                     jd,
                     &[$( &$x ),+],
@@ -48,7 +49,7 @@ macro_rules! impl_vsop87a {
                 )
             }
 
-            pub fn vsop87a_pos_vel(jd: JulianDay)
+            pub fn vsop87a_pos_vel(jd: JulianDate)
                 -> (Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>>, Velocity<Heliocentric, Ecliptic, AstronomicalUnit>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
@@ -136,7 +137,8 @@ impl_vsop87a!(
 
 #[cfg(test)]
 mod tests {
-    use crate::units::{JulianDay, AU};
+    use crate::units::AU;
+    use crate::astro::JulianDate;
     use super::*;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
@@ -147,7 +149,7 @@ mod tests {
     #[test]
     fn test_mercury_at_epoch() {
 
-        let coord = Mercury::vsop87a(JulianDay::J2000).get_position().clone();
+        let coord = Mercury::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(coord, Position::new(-0.1302524*AU, -0.4472397*AU, -0.0245799*AU), PRECISION);
     }
 
@@ -155,7 +157,7 @@ mod tests {
     #[test]
     fn test_venus_at_epoch() {
         // At epoch, compute heliocentric coordinates
-        let coord = Venus::vsop87a(JulianDay::J2000).get_position().clone();
+        let coord = Venus::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(coord, Position::new(-0.7183022991131299*AU, -0.03265428553900499*AU, 0.040809*AU), PRECISION);
     }
 
@@ -163,7 +165,7 @@ mod tests {
     #[test]
     fn test_mars_at_epoch() {
         // At epoch, compute heliocentric coordinates
-        let coord = Mars::vsop87a(JulianDay::J2000).get_position().clone();
+        let coord = Mars::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(coord, Position::new(1.3907159447538169*AU, -0.013416322699311728*AU, -0.034668*AU), PRECISION);
     }
 
@@ -171,7 +173,7 @@ mod tests {
     #[test]
     fn test_jupiter_at_epoch() {
         // At epoch, compute heliocentric coordinates
-        let coord = Jupiter::vsop87a(JulianDay::J2000).get_position().clone();
+        let coord = Jupiter::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(coord, Position::new(4.008895*AU, 2.940636*AU, -0.101869*AU), 1e-2);
     }
 
@@ -179,7 +181,7 @@ mod tests {
     #[test]
     fn test_saturn_at_epoch() {
         // At epoch, compute heliocentric coordinates
-        let coord = Saturn::vsop87a(JulianDay::J2000).get_position().clone();
+        let coord = Saturn::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(coord, Position::new(6.412182*AU, 6.572783*AU, -0.369816*AU), 5e-2);
     }
 
@@ -187,14 +189,14 @@ mod tests {
     #[test]
     fn test_uranus_at_epoch() {
         // At epoch, compute heliocentric coordinates
-        let coord = Uranus::vsop87a(JulianDay::J2000).get_position().clone();
+        let coord = Uranus::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(coord, Position::new(14.438269*AU, -13.733294*AU, -0.238515*AU), 1e-2);
     }
 
     /// Test Neptune's heliocentric coordinates at epoch J2000.0
     #[test]
     fn test_neptune_at_epoch() {
-        let coord = Neptune::vsop87a(JulianDay::J2000).get_position().clone();
+        let coord = Neptune::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(coord, Position::new(16.817474*AU, -24.990018*AU, 0.126993*AU), 1e-2);
     }
 }

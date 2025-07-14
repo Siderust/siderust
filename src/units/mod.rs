@@ -5,7 +5,7 @@
 //! clarity, and ease of use when working with various units of measurement.
 //!
 //! ## Features
-//! - **Time Units**: Includes representations for Julian Day, Modified Julian Day, Days, Years, Julian Years, and Centuries.
+//! - **Time Units**: Includes representations for Days, Years, Julian Years, and Centuries.
 //! - **Angular Units**: Provides types for Degrees, Radians, DMS (Degrees, Minutes, Seconds), HMS (Hours, Minutes, Seconds), and Arcseconds.
 //! - **Length Units**: Includes types for meters and astronomical units (AstronomicalUnits).
 //! - **Velocity Units**: Provides types for meters per second and kilometers per second.
@@ -15,12 +15,7 @@
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::units::{JulianDay, ModifiedJulianDay, Days, Degrees, Radians, DMS, Kilograms, SolarMasses};
-//!
-//! // Time Units
-//! let jd = JulianDay::new(2451545.0);
-//! let mjd = ModifiedJulianDay::new(51544.5);
-//! let days = Days::new(365.25);
+//! use siderust::units::{Days, Degrees, Radians, DMS, Kilograms, SolarMasses};
 //!
 //! // Angular Units
 //! let degrees = Degrees::new(180.0);
@@ -32,8 +27,6 @@
 //! let mass_solar = SolarMasses::new(2.0);
 //!
 //! // Conversions
-//! let jd_to_utc = jd.to_utc();
-//! let mjd_to_jd = mjd.to_julian_day();
 //! let dms_to_decimal = dms.as_f64();
 //!
 //! assert_eq!(radians.as_f64(), std::f64::consts::PI);

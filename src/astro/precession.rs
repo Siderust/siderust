@@ -93,7 +93,8 @@
 use std::f64::consts::TAU;
 
 use crate::coordinates::spherical::position;
-use crate::units::{Centuries, Degrees, JulianDay, Radians, Quantity, LengthUnit};
+use crate::units::{Centuries, Degrees, Radians, Quantity, LengthUnit};
+use crate::astro::JulianDate;
 
 /* -------------------------------------------------------------------------
  * Constants & small utilities
@@ -196,9 +197,9 @@ fn rotate_equatorial(ra: Radians, dec: Radians, zeta: Radians, z: Radians, theta
 #[inline]
 pub fn precess_from_j2000<U: LengthUnit>(
     mean_position: position::Equatorial<U>,
-    to_jd: JulianDay,
+    to_jd: JulianDate,
 ) -> position::Equatorial<U> {
-    precess_equatorial(mean_position, JulianDay::J2000, to_jd)
+    precess_equatorial(mean_position, JulianDate::J2000, to_jd)
 }
 
 /// **Epoch → epoch** precession.
@@ -209,8 +210,8 @@ pub fn precess_from_j2000<U: LengthUnit>(
 /// Returns the coordinates referred to `to_jd`.
 pub fn precess_equatorial<U: LengthUnit>(
     position: position::Equatorial<U>,
-    from_jd: JulianDay,
-    to_jd: JulianDay,
+    from_jd: JulianDate,
+    to_jd: JulianDate,
 ) -> position::Equatorial<U> {
     let ra0 = position.ra().to_radians();
     let dec0 = position.dec().to_radians();
@@ -238,7 +239,7 @@ mod tests {
         use crate::bodies::catalog::SIRIUS;
 
         // Target epoch: 2025‑05‑12 (JD 2 469 807.5)
-        let prec = precess_from_j2000(SIRIUS.target.get_position().clone(), JulianDay::new(2_460_807.5));
+        let prec = precess_from_j2000(SIRIUS.target.get_position().clone(), JulianDate::new(2_460_807.5));
 
         // Expected (Meeus short model): α ≈ 101.84557°, δ ≈ −16.77182°
         assert!((prec.ra().as_f64()  - 101.57047).abs() < 3e-5, "current α ≈ {}", prec.ra());

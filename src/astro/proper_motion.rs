@@ -14,6 +14,7 @@
 
 use crate::units::*;
 use crate::coordinates::spherical::position;
+use crate::astro::JulianDate;
 
 /// Describes the proper motion of a star in equatorial coordinates.
 ///
@@ -51,11 +52,11 @@ impl ProperMotion {
 fn set_proper_motion_since_epoch<U: LengthUnit>(
     mean_position: position::Equatorial<U>,
     proper_motion: ProperMotion,
-    jd: JulianDay,
-    epoch_jd: JulianDay
+    jd: JulianDate,
+    epoch_jd: JulianDate
 ) -> position::Equatorial<U> {
     // Time difference in Julian years
-    let t: Years = Years::new((jd - epoch_jd) / JulianDay::JULIAN_YEAR);
+    let t: Years = Years::new((jd - epoch_jd) / JulianDate::JULIAN_YEAR);
     // Linearly apply proper motion in RA and DEC
     position::Equatorial::new::<Quantity<U>>(
         mean_position.ra() + (proper_motion.ra_μ * t).to_degrees().normalize(),
@@ -76,16 +77,17 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
 pub fn set_proper_motion_since_j2000<U: LengthUnit>(
     mean_position: position::Equatorial<U>,
     proper_motion: ProperMotion,
-    jd: JulianDay
+    jd: JulianDate
 ) -> position::Equatorial<U> {
-    set_proper_motion_since_epoch(mean_position, proper_motion, jd, JulianDay::J2000)
+    set_proper_motion_since_epoch(mean_position, proper_motion, jd, JulianDate::J2000)
 }
 
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::units::{Degrees, DmsPerYear, JulianDay, AstronomicalUnit};
+    use crate::astro::JulianDate;
+    use crate::units::{Degrees, DmsPerYear, AstronomicalUnit};
     use crate::coordinates::{
         spherical::Position,
         centers::Geocentric,
@@ -108,7 +110,7 @@ mod tests {
         };
 
         // Target epoch: 50 years after J2000
-        let jd_future = JulianDay::J2000 + 50.0 * JulianDay::JULIAN_YEAR;
+        let jd_future = JulianDate::J2000 + 50.0 * JulianDate::JULIAN_YEAR;
 
         let shifted = set_proper_motion_since_j2000(mean_position, mu, jd_future);
 

@@ -5,7 +5,8 @@ use crate::coordinates::{
     centers::Geocentric,
     frames::Ecliptic
 };
-use crate::units::{Quantity, AstronomicalUnits, LengthUnit, Degrees, JulianDay};
+use crate::units::{Quantity, AstronomicalUnits, LengthUnit, Degrees};
+use crate::astro::JulianDate;
 
 use crate::astro::nutation::get_nutation;
 
@@ -35,7 +36,7 @@ impl Sun {
     /// Suitable for applications where approximate solar position is acceptable,
     /// such as sunrise/sunset estimation, shadow modeling, or general astronomy
     /// visualization.
-    pub fn get_apparent_geocentric_equ<U: LengthUnit>(jd: JulianDay) -> spherical::position::Equatorial<U>
+    pub fn get_apparent_geocentric_equ<U: LengthUnit>(jd: JulianDate) -> spherical::position::Equatorial<U>
     where
         Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
     {

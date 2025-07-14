@@ -1,7 +1,8 @@
 use super::Culmination;
 use crate::targets::Target;
-use crate::units::{Days, Degrees, JulianDay, LengthUnit};
+use crate::units::{Days, Degrees, LengthUnit};
 use crate::astro::{
+    JulianDate,
     sidereal::*,
     nutation::corrected_ra_with_nutation
 };
@@ -56,8 +57,8 @@ use crate::coordinates::{
 pub fn find_static_extremas<U: LengthUnit>(
     target: &Target<Position<Geocentric, Equatorial, U>>,
     observer: &position::Geographic,
-    jd_start: JulianDay,
-    jd_end: JulianDay,
+    jd_start: JulianDate,
+    jd_end: JulianDate,
 ) -> Vec<Culmination> {
     const MAX_ITER: usize = 8;
     const TOLERANCE: f64 = 1e-11;
@@ -76,7 +77,7 @@ pub fn find_static_extremas<U: LengthUnit>(
         let k0 = raw_k.round() as i32;
 
         // Try k₀ and k₀+1, keep the earliest ≥ jd_start
-        let mut t_first = JulianDay::new(f64::INFINITY);
+        let mut t_first = JulianDate::new(f64::INFINITY);
         for k in [k0, k0 + 1] {
             let mut t = jd_start;
             // Newton–Raphson refinement
@@ -141,14 +142,14 @@ mod tests {
     #[test]
     fn test_find_sirius_static() {
 
-        let jd_start = JulianDay::new(2460677.0);
+        let jd_start = JulianDate::new(2460677.0);
         let jd_end = jd_start + Days::new(1.0);
 
         let results = find_static_extremas(&SIRIUS.target, &ROQUE_DE_LOS_MUCHACHOS, jd_start, jd_end);
         print!("\n{:?}", results);
 
-        let expected_lower = Culmination::Lower {jd: JulianDay::new(2460677.05000)};
-        let expected_upper = Culmination::Upper {jd: JulianDay::new(2460677.54860)};
+        let expected_lower = Culmination::Lower {jd: JulianDate::new(2460677.05000)};
+        let expected_upper = Culmination::Upper {jd: JulianDate::new(2460677.54860)};
 
         assert_eq!(results.len(), 2);
         approx_eq(&results[0], &expected_lower, 0.001);

@@ -2,7 +2,8 @@ use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::*;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
-use siderust::units::{LengthUnit, JulianDay, Degrees, AstronomicalUnit, Quantity};
+use siderust::units::{LengthUnit, Degrees, AstronomicalUnit, Quantity};
+use siderust::astro::JulianDate;
 
 fn approx_eq<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
 where
@@ -34,7 +35,7 @@ where
 fn test_coord_transformations() {
     use siderust::coordinates::cartesian::Position;
 
-    let original = Mars::vsop87a(JulianDay::J2000).get_position().clone(); // Heliocentric, Ecliptic (implícito)
+    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone(); // Heliocentric, Ecliptic (implícito)
 
     // Heliocentric Ecliptic -> Geocentric Ecliptic -> back
     let geo_ecl = Position::<Geocentric, Ecliptic, AstronomicalUnit>::from(&original);
@@ -60,7 +61,7 @@ fn test_coord_transformations() {
 
 #[test]
 fn test_spherical_transformations() {
-    let original = Mars::vsop87a(JulianDay::J2000).get_position().clone(); // Heliocentric, Ecliptic
+    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone(); // Heliocentric, Ecliptic
 
     // Convertir a otros marcos cartesianos
     let geo_eq = cartesian::Position::<Geocentric, Equatorial, AstronomicalUnit>::from(&original);

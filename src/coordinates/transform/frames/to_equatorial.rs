@@ -11,7 +11,7 @@ use crate::units::LengthUnit;
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
 impl<C: ReferenceCenter, K: Kind, U: LengthUnit> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::Ecliptic, U, K> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Equatorial, U, K> {
+    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Equatorial, U, K> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
@@ -27,7 +27,7 @@ impl<C: ReferenceCenter, K: Kind, U: LengthUnit> Transform<Vector<C, frames::Equ
 
 // Implement Transform trait for ICRS -> Equatorial (identity)
 impl<C: ReferenceCenter, K: Kind, U: LengthUnit> Transform<Vector<C, frames::Equatorial, U, K>> for Vector<C, frames::ICRS, U, K> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> Vector<C, frames::Equatorial, U, K> {
+    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Equatorial, U, K> {
         Vector::new(self.x(), self.y(), self.z())
     }
 }

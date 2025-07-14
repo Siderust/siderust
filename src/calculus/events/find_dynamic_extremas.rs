@@ -3,7 +3,8 @@ use crate::coordinates::spherical::*;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::units::LengthUnit;
-use crate::units::{Degrees, Radians, JulianDay, Days};
+use crate::units::{Degrees, Radians, Days};
+use crate::astro::JulianDate;
 use crate::astro::nutation::corrected_ra_with_nutation;
 use crate::targets::Target;
 
@@ -13,7 +14,7 @@ use core::f64::consts::PI;
 /// A **quick-and-dirty** JD → GAST approximation 
 /// (error < 0.1″ for ±50 yr around 2025).  
 /// Swap for a rigorous routine if you need sub-arc-second accuracy.
-fn gast_fast(jd: JulianDay) -> Degrees {
+fn gast_fast(jd: JulianDate) -> Degrees {
     // Duffett-Smith & Zwart, *Practical Astronomy*, 4 th ed.
     let t = (jd.value() - 2_451_545.0) / 36_525.0;          // centuries since J2000.0
     let gast = 280.460_618_37
@@ -51,16 +52,16 @@ const NEWTON_MAX_ITERS: usize = 15;
 pub fn find_dynamic_extremas<F, U: LengthUnit>(
     get_equatorial: F,
     observer: &position::Geographic,
-    jd_start: JulianDay,
-    jd_end: JulianDay,
+    jd_start: JulianDate,
+    jd_end: JulianDate,
 ) -> Vec<Culmination>
 where
-    F: Fn(JulianDay) -> Target<Position<Geocentric, frames::Equatorial, U>> + Copy,
+    F: Fn(JulianDate) -> Target<Position<Geocentric, frames::Equatorial, U>> + Copy,
 {
     // ────────────────────────────────────────────────────────────
     // Helper: hour angle H(jd) [rad]
     // ────────────────────────────────────────────────────────────
-    let hour_angle = |jd: JulianDay| -> Radians {
+    let hour_angle = |jd: JulianDate| -> Radians {
         let ra_nut = corrected_ra_with_nutation(get_equatorial(jd).get_position(), jd);
         let ra    = ra_nut.to_radians();
         let theta = gast_fast(jd).to_radians() + observer.lon().to_radians(); // local sidereal time
@@ -70,7 +71,7 @@ where
     // ────────────────────────────────────────────────────────────
     // Newton-Raphson root-refinement for H(jd) − target = 0
     // ────────────────────────────────────────────────────────────
-    let refine = |mut jd: JulianDay, target: Radians| -> Option<JulianDay> {
+    let refine = |mut jd: JulianDate, target: Radians| -> Option<JulianDate> {
         for _ in 0..NEWTON_MAX_ITERS {
             let h  = (hour_angle(jd) - target).wrap_pi();
             if h.abs().as_f64() < 1e-12 {
@@ -106,7 +107,7 @@ where
     let mut s0_pi   = (h0 - Radians::new(PI)).sin();  // for H = π
 
     while jd0 < jd_end {
-        let jd1 = JulianDay::new((jd0 + STEP_DAYS).value().min(jd_end.value()));
+        let jd1 = JulianDate::new((jd0 + STEP_DAYS).value().min(jd_end.value()));
         let h1  = hour_angle(jd1);
         let s1      = h1.sin();
         let s1_pi   = (h1 - Radians::new(PI)).sin();
@@ -114,7 +115,7 @@ where
         // Sign change ⇒ a root lies in (jd0, jd1)
         if s0 * s1 < 0.0 {
             if let Some(root) = refine(
-                JulianDay::new((jd0.value() + jd1.value()) * 0.5),
+                JulianDate::new((jd0.value() + jd1.value()) * 0.5),
                 Radians::new(0.0),
             ) {
                 if root >= jd_start && root < jd_end {
@@ -124,7 +125,7 @@ where
         }
         if s0_pi * s1_pi < 0.0 {
             if let Some(root) = refine(
-                JulianDay::new((jd0.value() + jd1.value()) * 0.5),
+                JulianDate::new((jd0.value() + jd1.value()) * 0.5),
                 Radians::new(PI),
             ) {
                 if root >= jd_start && root < jd_end {
@@ -171,13 +172,13 @@ mod tests {
 
     #[test]
     fn test_find_sirius_dynamic() {
-        let jd_start = JulianDay::new(2_460_677.0);
+        let jd_start = JulianDate::new(2_460_677.0);
         let jd_end = jd_start + Days::new(1.0);
 
         let res = find_dynamic_extremas(|_| SIRIUS.target, &ROQUE_DE_LOS_MUCHACHOS, jd_start, jd_end);
 
-        let expected_lower = Culmination::Lower {jd: JulianDay::new(2_460_677.05000) };
-        let expected_upper = Culmination::Upper { jd: JulianDay::new(2_460_677.54860) };
+        let expected_lower = Culmination::Lower {jd: JulianDate::new(2_460_677.05000) };
+        let expected_upper = Culmination::Upper { jd: JulianDate::new(2_460_677.54860) };
 
         assert_eq!(res.len(), 2);
         approx_eq(&res[0], &expected_lower, 0.001);
