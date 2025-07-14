@@ -14,8 +14,8 @@
 //! use siderust::units::{AU, LightYears};
 //!
 //! let au = 1.0*AU;
-//! //let ly = LightYears::from(au); TODO
-//! //assert!((ly.value() - 1.582e-5).abs() < 1e-8);
+//! let ly = LightYears::from(au);
+//! assert!((ly.value() - 1.582e-5).abs() < 1e-8);
 //! ```
 
 use crate::units::{define_unit, Quantity};
@@ -61,4 +61,10 @@ impl Unit for f64 {
     const RATIO: f64 = 1.0;
     type Dim = Length;
     const SYMBOL: &'static str = "";
+}
+
+impl std::fmt::Display for Quantity<f64> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.value(), "")
+    }
 }

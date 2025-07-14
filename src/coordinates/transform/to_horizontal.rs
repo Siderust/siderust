@@ -71,8 +71,6 @@ impl<U: LengthUnit> spherical::Position<Geocentric, Equatorial, U> {
     }
 }
 
-
-/* TODO
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -96,4 +94,3 @@ mod tests {
         assert_spherical_eq!(horizontal, expected_horizontal, 1.5);
     }
 }
-*/
