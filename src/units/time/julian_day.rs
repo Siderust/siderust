@@ -3,7 +3,7 @@
 //! This module provides the `JulianDay` struct, representing the Julian Day number,
 //! a continuous count of days since the beginning of the Julian Period used in astronomy.
 
-use super::days::Days;
+use super::Days;
 
 use chrono::{DateTime, Utc};
 use std::ops::{Add, Sub, AddAssign, SubAssign};
@@ -29,7 +29,7 @@ impl JulianDay {
 
     #[inline]
     pub fn julian_centuries(&self) -> super::Centuries {
-        super::Centuries((self.0 - Self::_J2000_).value() / 36_525.0)
+        super::Centuries::new((self.0 - Self::_J2000_).value() / 36_525.0)
     }
 
     #[inline]

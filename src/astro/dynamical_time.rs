@@ -36,7 +36,7 @@
 //! ≤ ±2 s before 1800 CE, and ≤ ±0.5 s since 1900.
 //! For future predictions, more accurate IERS-provided curves are recommended.
 
-use crate::units::{time, Days, JulianDay};
+use crate::units::{Days, JulianDay};
 
 /// Total number of tabulated terms (biennial 1620–1992).
 const TERMS: usize = 187;
@@ -135,7 +135,8 @@ pub fn delta_t_seconds(jd: f64) -> f64 {
 /// Converts a [`JulianDay`] to **Julian Ephemeris Day (JDE)** by adding ΔT/86400.
 #[inline]
 pub fn julian_ephemeris_day(jd: JulianDay) -> JulianDay {
-    jd + Days::new(delta_t_seconds(jd.value())) / time::SECONDS_PER_DAY
+    pub const SECONDS_PER_DAY: f64 = 86_400.0;
+    jd + Days::new(delta_t_seconds(jd.value())) / SECONDS_PER_DAY
 }
 
 #[cfg(test)]

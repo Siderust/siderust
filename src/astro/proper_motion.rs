@@ -12,7 +12,7 @@
 //! positions at a reference epoch (usually J2000.0), we need to correct
 //! for proper motion when computing positions at a later date.
 
-use crate::units::{Quantity, DmsPerYear, JulianDay, LengthUnit, Years, DMS};
+use crate::units::*;
 use crate::coordinates::spherical::position;
 
 /// Describes the proper motion of a star in equatorial coordinates.
@@ -30,8 +30,8 @@ pub struct ProperMotion {
 impl ProperMotion {
     pub fn from_mas_per_year(ra: f64, dec: f64) -> ProperMotion {
         ProperMotion{
-            ra_μ: DmsPerYear(DMS::from_milliarcseconds(ra), Years(1.0)),
-            dec_μ: DmsPerYear(DMS::from_milliarcseconds(dec), Years(1.0))
+            ra_μ: DmsPerYear(DMS::from_milliarcseconds(ra), YEAR),
+            dec_μ: DmsPerYear(DMS::from_milliarcseconds(dec), YEAR)
         }
     }
 }
