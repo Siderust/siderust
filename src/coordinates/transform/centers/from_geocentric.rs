@@ -1,24 +1,25 @@
 use crate::units::JulianDay;
 use crate::coordinates::{
-    frames::*, centers::*,
-    cartesian, spherical,
+    centers::*,
+    frames::MutableFrame,
+    spherical, cartesian,
+    cartesian::direction::Equatorial
 };
 use crate::coordinates::transform::Transform;
 use crate::astro::aberration::remove_aberration_from_direction;
-
 
 // ------------- If we transform FROM a Geocentric ReferenceCenter, we need to remove aberration ------------------
 impl<C, F> Transform<cartesian::Direction<C, F>> for cartesian::Direction<Geocentric, F>
 where
     C: ReferenceCenter + NonGeocentric,
     F: MutableFrame,
-    cartesian::Direction<Geocentric, F>: Transform<cartesian::Direction<Geocentric, Equatorial>>, // ToEquatorial
-    cartesian::Direction<Geocentric, Equatorial>: Transform<cartesian::Direction<Geocentric, F>>, // FromEquatorial
+    cartesian::Direction<Geocentric, F>: Transform<Equatorial>, // ToEquatorial
+    Equatorial: Transform<cartesian::Direction<Geocentric, F>>, // FromEquatorial
 {
     #[inline]
     fn transform(&self, jd: JulianDay) -> cartesian::Direction<C, F> {
         // 1. Transform to Equatorial (already in Geocentric)
-        let equatorial: cartesian::Direction<Geocentric, Equatorial> = self.transform(jd);
+        let equatorial: Equatorial = self.transform(jd);
         // 2. Remove aberration
         let deaberrated =  remove_aberration_from_direction(
             equatorial, jd
@@ -36,8 +37,8 @@ impl<C, F> Transform<spherical::Direction<C, F>> for spherical::Direction<Geocen
 where
     C: ReferenceCenter + NonGeocentric,
     F: MutableFrame,
-    cartesian::Direction<Geocentric, F>: Transform<cartesian::Direction<Geocentric, Equatorial>>, // ToEquatorial
-    cartesian::Direction<Geocentric, Equatorial>: Transform<cartesian::Direction<Geocentric, F>>, // FromEquatorial
+    cartesian::Direction<Geocentric, F>: Transform<Equatorial>, // ToEquatorial
+    Equatorial: Transform<cartesian::Direction<Geocentric, F>>, // FromEquatorial
 {
     #[inline]
     fn transform(&self, jd: JulianDay) -> spherical::Direction<C, F> {
