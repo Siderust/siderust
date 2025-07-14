@@ -18,3 +18,8 @@ pub mod precession;
 pub mod sidereal;
 pub mod dynamical_time;
 pub mod orbit;
+pub mod julian_date;
+pub mod modified_julian_date;
+
+pub use julian_date::*;
+pub use modified_julian_date::*;

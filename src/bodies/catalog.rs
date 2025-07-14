@@ -8,6 +8,7 @@ use super::Star;
 use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
 use crate::targets::Target;
 use crate::units::*;
+use crate::astro::JulianDate;
 
 pub const VEGA: Star<'static> = Star::new_const(
     "Vega",
@@ -21,7 +22,7 @@ pub const VEGA: Star<'static> = Star::new_const(
             Degrees::new(38.7837),
             LightYears::new(25.0),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -37,7 +38,7 @@ pub const POLARIS: Star<'static> = Star::new_const(
             Degrees::new(89.26410897),
             LightYears::new(433.0),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -53,7 +54,7 @@ pub const SIRIUS: Star<'static> = Star::new_const(
             Degrees::new(-16.716115867),
             LightYears::new(8.6),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -69,7 +70,7 @@ pub const CANOPUS: Star<'static> = Star::new_const(
             Degrees::new(-52.69566111),
             LightYears::new(310.0),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -85,7 +86,7 @@ pub const ARCTURUS: Star<'static> = Star::new_const(
             Degrees::new(19.1825),
             LightYears::new(36.7),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -101,7 +102,7 @@ pub const RIGEL: Star<'static> = Star::new_const(
             Degrees::new(-8.20163889),
             LightYears::new(860.0),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -117,7 +118,7 @@ pub const BETELGEUSE: Star<'static> = Star::new_const(
             Degrees::new(7.407064),
             LightYears::new(548.0),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -133,7 +134,7 @@ pub const PROCYON: Star<'static> = Star::new_const(
             Degrees::new(5.224993),
             LightYears::new(11.5),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -149,7 +150,7 @@ pub const ALDEBARAN: Star<'static> = Star::new_const(
             Degrees::new(16.509302),
             LightYears::new(65.1),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -165,6 +166,6 @@ pub const ALTAIR: Star<'static> = Star::new_const(
             Degrees::new(8.868321),
             LightYears::new(16.7),
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );

@@ -30,6 +30,7 @@
 
 use crate::units::*;
 use crate::astro::orbit::Orbit;
+use crate::astro::JulianDate;
 use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
 use crate::targets::Target;
 
@@ -66,7 +67,7 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
             Degrees::from_hms(-23, 0, 0.0), // Aprox at J2000
             LightYears::new(1.58125e-5), // 1 AstronomicalUnits in LightYears
         ),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 );
 
@@ -92,7 +93,7 @@ pub const MERCURY: super::Planet = super::Planet {
         Degrees::new(48.33167),
         Degrees::new(29.12478),
         Degrees::new(174.79439),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 };
 
@@ -118,7 +119,7 @@ pub const VENUS: super::Planet = super::Planet {
         Degrees::new(76.68069),
         Degrees::new(54.85229),
         Degrees::new(50.44675),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 };
 
@@ -144,7 +145,7 @@ pub const EARTH: super::Planet = super::Planet {
         Degrees::new(-11.26064),
         Degrees::new(114.20783),
         Degrees::new(357.51716),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 };
 
@@ -173,7 +174,7 @@ pub const MOON: super::Satelite = super::Satelite::new_const(
         longitude_of_ascending_node: Degrees::new(125.08),
         argument_of_perihelion: Degrees::new(318.15),
         mean_anomaly_at_epoch: Degrees::new(135.27),
-        epoch: JulianDay::J2000,
+        epoch: JulianDate::J2000,
     },
 );
 
@@ -199,7 +200,7 @@ pub const MARS: super::Planet = super::Planet {
         Degrees::new(49.57854),
         Degrees::new(286.46230),
         Degrees::new(19.41248),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 };
 
@@ -225,7 +226,7 @@ pub const JUPITER: super::Planet = super::Planet {
         Degrees::new(100.55615),
         Degrees::new(274.19770),
         Degrees::new(19.65053),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 };
 
@@ -251,7 +252,7 @@ pub const SATURN: super::Planet = super::Planet {
         Degrees::new(113.71504),
         Degrees::new(338.71690),
         Degrees::new(317.51238),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 };
 
@@ -277,7 +278,7 @@ pub const URANUS: super::Planet = super::Planet {
         Degrees::new(74.22988),
         Degrees::new(96.73436),
         Degrees::new(142.26794),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 };
 
@@ -303,7 +304,7 @@ pub const NEPTUNE: super::Planet = super::Planet {
         Degrees::new(131.72169),
         Degrees::new(273.24966),
         Degrees::new(259.90868),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 };
 
@@ -329,6 +330,6 @@ pub const PLUTO: super::Planet = super::Planet {
         Degrees::new(110.30347),
         Degrees::new(113.76329),
         Degrees::new(14.86205),
-        JulianDay::J2000,
+        JulianDate::J2000,
     ),
 };
