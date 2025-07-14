@@ -14,7 +14,7 @@ pub const VEGA: Star<'static> = Star::new_const(
     LightYears::new(25.0),
     SolarMasses::new(2.135),
     SolarRadiuses::new(2.59),
-    SolarLuminosity::new(40.12),
+    SolarLuminosities::new(40.12),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(279.2347),
@@ -30,7 +30,7 @@ pub const POLARIS: Star<'static> = Star::new_const(
     LightYears::new(433.0),
     SolarMasses::new(6.5),
     SolarRadiuses::new(46.0),
-    SolarLuminosity::new(2500.0),
+    SolarLuminosities::new(2500.0),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(37.95456067),
@@ -46,7 +46,7 @@ pub const SIRIUS: Star<'static> = Star::new_const(
     LightYears::new(8.6),
     SolarMasses::new(2.063),
     SolarRadiuses::new(1.713),
-    SolarLuminosity::new(24.7),
+    SolarLuminosities::new(24.7),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(101.28715533),
@@ -62,7 +62,7 @@ pub const CANOPUS: Star<'static> = Star::new_const(
     LightYears::new(310.0),
     SolarMasses::new(8.0),
     SolarRadiuses::new(71.0),
-    SolarLuminosity::new(13_600.0),
+    SolarLuminosities::new(13_600.0),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(95.98787778),
@@ -78,7 +78,7 @@ pub const ARCTURUS: Star<'static> = Star::new_const(
     LightYears::new(36.7),
     SolarMasses::new(1.1),
     SolarRadiuses::new(26.0),
-    SolarLuminosity::new(170.0),
+    SolarLuminosities::new(170.0),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(213.9153),
@@ -94,7 +94,7 @@ pub const RIGEL: Star<'static> = Star::new_const(
     LightYears::new(860.0),
     SolarMasses::new(17.0),
     SolarRadiuses::new(78.9),
-    SolarLuminosity::new(120_000.0),
+    SolarLuminosities::new(120_000.0),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(78.634467),
@@ -110,7 +110,7 @@ pub const BETELGEUSE: Star<'static> = Star::new_const(
     LightYears::new(548.0),
     SolarMasses::new(11.6),
     SolarRadiuses::new(724.0),
-    SolarLuminosity::new(14_000.0),
+    SolarLuminosities::new(14_000.0),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(88.792939),
@@ -126,7 +126,7 @@ pub const PROCYON: Star<'static> = Star::new_const(
     LightYears::new(11.5),
     SolarMasses::new(1.499),
     SolarRadiuses::new(2.048),
-    SolarLuminosity::new(6.93),
+    SolarLuminosities::new(6.93),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(114.825493),
@@ -142,7 +142,7 @@ pub const ALDEBARAN: Star<'static> = Star::new_const(
     LightYears::new(65.1),
     SolarMasses::new(1.16),
     SolarRadiuses::new(45.1),
-    SolarLuminosity::new(439.0),
+    SolarLuminosities::new(439.0),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(68.980163),
@@ -158,7 +158,7 @@ pub const ALTAIR: Star<'static> = Star::new_const(
     LightYears::new(16.7),
     SolarMasses::new(1.86),
     SolarRadiuses::new(1.79),
-    SolarLuminosity::new(10.6),
+    SolarLuminosities::new(10.6),
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::new(297.695827),
