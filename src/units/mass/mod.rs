@@ -27,7 +27,6 @@ impl Dimension for Mass {}
 pub trait MassUnit: Unit<Dim = Mass> {}
 impl<T: Unit<Dim = Mass>> MassUnit for T {}
 
-
 define_unit!("g", Gram, Mass, 1.0);
 pub type Grams = Quantity<Gram>;
 
