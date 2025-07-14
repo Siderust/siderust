@@ -27,7 +27,7 @@
 //! let coord = ICRS::new(
 //!     Degrees::new(120.0), Degrees::new(45.0)
 //! );
-//! //println!("{}", coord.to_string()); TODO
+//! println!("{}", coord.to_string());
 //! ```
 //!
 //! ## See Also
@@ -59,7 +59,7 @@
 //! let coord = ICRS::new(
 //!     Degrees::new(120.0), Degrees::new(45.0)
 //! );
-//! // println!("{}", coord.to_string()); TODO
+//! println!("{}", coord.to_string());
 //! ```
 
 #[allow(clippy::all)]
