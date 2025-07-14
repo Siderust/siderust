@@ -21,7 +21,7 @@ pub struct Star<'a> {
     pub distance: LightYears,
     pub mass: SolarMasses,
     pub radius: SolarRadiuses,
-    pub lumminosity: SolarLuminosity,
+    pub lumminosity: SolarLuminosities,
     pub target: Target<Position<Geocentric, Equatorial, LightYear>>,
 }
 
@@ -32,7 +32,7 @@ impl<'a> Star<'a> {
         distance: LightYears,
         mass: SolarMasses,
         radius: SolarRadiuses,
-        lumminosity: SolarLuminosity,
+        lumminosity: SolarLuminosities,
         target: Target<Position<Geocentric, Equatorial, LightYear>>,
     ) -> Star<'static> {
         Star {
@@ -51,7 +51,7 @@ impl<'a> Star<'a> {
         distance: LightYears,
         mass: SolarMasses,
         radius: SolarRadiuses,
-        lumminosity: SolarLuminosity,
+        lumminosity: SolarLuminosities,
         target: Target<Position<Geocentric, Equatorial, LightYear>>,
     ) -> Star<'a>
     where

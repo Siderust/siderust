@@ -59,7 +59,7 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
     LightYears::new(1.58125e-5), // 1 AstronomicalUnits in LightYears
     SolarMasses::new(1.0),
     SR,
-    SOLAR_LUMINOSITY,
+    L_SUN,
     Target::<Position::<Geocentric, Equatorial, LightYear>>::new_static(
         Position::<Geocentric, Equatorial, LightYear>::new_const(
             Degrees::from_hms(18, 44, 48.0), // Aprox at J2000
