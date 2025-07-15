@@ -24,7 +24,7 @@
 //!
 //! let deg = Degrees::new(180.0);
 //! let rad = Radians::from(deg);
-//! assert_eq!(rad.as_f64(), std::f64::consts::PI);
+//! assert_eq!(rad.value(), std::f64::consts::PI);
 //!
 //! let dms = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
 //! let hms = HMS::new(5, 30, 0.0);
@@ -33,15 +33,142 @@
 //! This module aims to make astronomical angle manipulations explicit,
 //! correct, and ergonomic.
 
-
-mod degrees;
-mod radians;
+//mod degrees;
+//mod radians;
 mod dms;
 mod hms;
 mod arcsec;
 
-pub use degrees::*;
-pub use radians::*;
+//pub use degrees::*;
+//pub use radians::*;
 pub use dms::*;
 pub use hms::*;
 pub use arcsec::*;
+
+use crate::units::{define_unit, Quantity, Dimension, Unit};
+use std::f64::consts::PI;
+
+pub enum Angle {}
+impl Dimension for Angle {}
+pub trait AngleUnit: Unit<Dim = Angle> {}
+impl<T: Unit<Dim = Angle>> AngleUnit for T {}
+
+
+define_unit!("Deg", Degree, Angle, 1.0);
+pub type Deg = Degree;
+pub type Degrees = Quantity<Deg>;
+pub const DEG: Degrees = Degrees::new(1.0);
+
+define_unit!("Rad", Radian, Angle, PI / 180.0);
+pub type Rad = Radian;
+pub type Radians = Quantity<Rad>;
+pub const RAD: Radians = Radians::new(1.0);
+
+define_unit!("Arcs", Arcsecond, Angle, 1.0/3600.0);
+pub type Arcs = Arcsecond;
+pub type Arcseconds = Quantity<Arcs>;
+pub const ARCS: Arcseconds = Arcseconds::new(1.0);
+
+
+impl Degrees {
+        /// Returns the inner `f64` value for this angle in degrees.
+    pub const fn from_hms(hours: i32, minutes: u32, seconds: f64) -> Degrees {
+        let h_deg = hours as f64 * 15.0;
+        let m_deg = minutes as f64 * 15.0 / 60.0;
+        let s_deg = seconds * 15.0 / 3600.0;
+        Self::new(h_deg + m_deg + s_deg)
+    }
+
+    #[inline]
+    pub const fn to_radians(self) -> Radians {
+        Radians::new(self.value() * PI / 180.0)
+    }
+
+        /// Compute the sine of the angle (in degrees), by converting internally to radians.
+    #[inline]
+    pub fn sin(self) -> f64 {
+        self.to_radians().sin()
+    }
+
+    /// Compute the cosine of the angle (in degrees).
+    #[inline]
+    pub fn cos(self) -> f64 {
+        self.to_radians().cos()
+    }
+
+    /// Compute the tangent of the angle (in degrees).
+    #[inline]
+    pub fn tan(self) -> f64 {
+        self.to_radians().tan()
+    }
+
+    /// Normalize an angle in degrees to the range [0, 360).
+    #[inline]
+    pub fn normalize(self) -> Self {
+        Self::new(self.value().rem_euclid(360.0))
+    }
+
+    /// Normalize to the range [−90, +90] in a symmetrical fashion.
+    ///
+    /// (Implementation depends on your use case—this is just an example.)
+    #[inline]
+    pub fn normalize_to_90_range(self) -> Self {
+        let y = (self.value() + 90.0).rem_euclid(360.0);
+        Self::new(90.0 - (y - 180.0).abs())
+    }
+    
+    /// Normalize to the range [−180, +180].
+    #[inline]
+    pub fn normalize_to_180_range(self) -> Self {
+        Self::new((self.value() + 180.0).rem_euclid(360.0) - 180.0)
+    }
+}
+
+
+impl Radians {
+    pub const TAU: Radians = Radians::new(std::f64::consts::TAU);
+
+    #[inline]
+    pub fn to_degrees(self) -> Degrees {
+        Degrees::new(self.value() * 180.0 / PI)
+    }
+
+    /// Compute the cosine of the angle.
+    #[inline]
+    pub fn cos(self) -> f64 {
+        self.value().cos()
+    }
+
+    /// Compute the sine of the angle.
+    #[inline]
+    pub fn sin(self) -> f64 {
+        self.value().sin()
+    }
+
+    /// Compute the tangent of the angle.
+    #[inline]
+    pub fn tan(self) -> f64 {
+        self.value().tan()
+    }
+
+    /// Simultaneously computes the sine and cosine of the angle.
+    #[inline]
+    pub fn sin_cos(self) -> (f64, f64) {
+        self.value().sin_cos()
+    }
+
+    /// Returns the signum of the angle (i.e. sign of the inner value).
+    #[inline]
+    pub fn signum(self) -> f64 {
+        self.value().signum()
+    }
+
+    /// Normalize range (-π, π].
+    #[inline]
+    pub fn wrap_pi(self) -> Self {
+        let x = self.value();
+        let y = (x + PI).rem_euclid(2.0 * PI) - PI;
+        let norm = if y <= -PI { y + 2.0 * PI } else { y };
+        Radians::new(norm)
+    }
+}

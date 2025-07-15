@@ -82,7 +82,7 @@ impl Radians {
         let x = self.as_f64();
         let y = (x + PI).rem_euclid(2.0 * PI) - PI;
         let norm = if y <= -PI { y + 2.0 * PI } else { y };
-        Radians(norm)
+        Radians::new(norm)
     }
 }
 

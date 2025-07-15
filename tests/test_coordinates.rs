@@ -24,8 +24,8 @@ where
     U: LengthUnit,
     Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
-    assert!((a.polar.as_f64()   - b.polar.as_f64()).abs()   < 1e-6, "polar mismatch: {} vs {}", a.polar, b.polar);
-    assert!((a.azimuth.as_f64() - b.azimuth.as_f64()).abs() < 1e-6, "polar mismatch: {} vs {}", a.azimuth, b.azimuth);
+    assert!((a.polar.value()   - b.polar.value()).abs()   < 1e-6, "polar mismatch: {} vs {}", a.polar, b.polar);
+    assert!((a.azimuth.value() - b.azimuth.value()).abs() < 1e-6, "polar mismatch: {} vs {}", a.azimuth, b.azimuth);
     assert!((a.distance.unwrap_or(Quantity::<U>::NAN)  - b.distance.unwrap_or(Quantity::<U>::NAN)).abs()  < (1e-6).into(),
             "polar mismatch: {} vs {}", a.distance.unwrap_or(Quantity::<U>::NAN), b.distance.unwrap_or(Quantity::<U>::NAN));
 }

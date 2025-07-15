@@ -297,20 +297,20 @@ mod tests {
         let m = Radians::new(0.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = 0.0;
-        assert!(approx_eq(computed_e.as_f64(), expected_e, 1e-10));
+        assert!(approx_eq(computed_e.value(), expected_e, 1e-10));
 
         // Test Case 2: e = 0.0, M = PI/2 radians
         let m = Radians::new(PI / 2.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = PI / 2.0;
-        assert!(approx_eq(computed_e.as_f64(), expected_e, 1e-10));
+        assert!(approx_eq(computed_e.value(), expected_e, 1e-10));
 
         // Test Case 3: e = 0.1, M = PI/2 radians
         let e = 0.1;
         let m = Radians::new(PI / 2.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = 1.670302; // Corrected expected value from previous step
-        assert!(approx_eq(computed_e.as_f64(), expected_e, 1e-6));
+        assert!(approx_eq(computed_e.value(), expected_e, 1e-6));
     }
 
     /// Test circular orbit where eccentricity is zero.

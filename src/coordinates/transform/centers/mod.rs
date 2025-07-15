@@ -61,8 +61,8 @@ mod tests {
         let dir = Direction::<Heliocentric, frames::Equatorial>::new(Degrees::new(120.0), Degrees::new(-30.0));
         let jd = crate::astro::JulianDate::J2000;
         let transformed: Equatorial = dir.transform(jd);
-        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
-        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+        assert!(!transformed.polar.value().is_nan(), "Polar should not be NaN");
+        assert!(!transformed.azimuth.value().is_nan(), "Azimuth should not be NaN");
     }
 
     #[test]
@@ -70,8 +70,8 @@ mod tests {
         let dir = Direction::<Barycentric, frames::Equatorial>::new(Degrees::new(120.0), Degrees::new(-30.0));
         let jd = crate::astro::JulianDate::J2000;
         let transformed: Equatorial = dir.transform(jd);
-        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
-        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+        assert!(!transformed.polar.value().is_nan(), "Polar should not be NaN");
+        assert!(!transformed.azimuth.value().is_nan(), "Azimuth should not be NaN");
     }
 
     #[test]
@@ -80,8 +80,8 @@ mod tests {
         let jd = crate::astro::JulianDate::J2000;
         let transformed: Direction<Heliocentric, frames::Equatorial> = dir.transform(jd);
         // Should be close in direction, but not identical due to aberration, so just check type and not NaN
-        assert!(!transformed.polar.as_f64().is_nan(), "Polar should not be NaN");
-        assert!(!transformed.azimuth.as_f64().is_nan(), "Azimuth should not be NaN");
+        assert!(!transformed.polar.value().is_nan(), "Polar should not be NaN");
+        assert!(!transformed.azimuth.value().is_nan(), "Azimuth should not be NaN");
     }
 
     #[test]
@@ -89,8 +89,8 @@ mod tests {
         let dir = ICRS::new(Degrees::new(200.0), Degrees::new(45.0));
         let jd = crate::astro::JulianDate::J2000;
         let transformed: HCRS = dir.transform(jd);
-        assert_eq!(dir.polar.as_f64(), transformed.polar.as_f64(), "Polar should not change");
-        assert_eq!(dir.azimuth.as_f64(), transformed.azimuth.as_f64(), "Azimuth should not change");
+        assert_eq!(dir.polar.value(), transformed.polar.value(), "Polar should not change");
+        assert_eq!(dir.azimuth.value(), transformed.azimuth.value(), "Azimuth should not change");
     }
 
     #[test]
@@ -98,7 +98,7 @@ mod tests {
         let dir = HCRS::new(Degrees::new(100.0), Degrees::new(-10.0));
         let jd = crate::astro::JulianDate::J2000;
         let transformed: ICRS = dir.transform(jd);
-        assert_eq!(dir.polar.as_f64(), transformed.polar.as_f64(), "Polar should not change");
-        assert_eq!(dir.azimuth.as_f64(), transformed.azimuth.as_f64(), "Azimuth should not change");
+        assert_eq!(dir.polar.value(), transformed.polar.value(), "Polar should not change");
+        assert_eq!(dir.azimuth.value(), transformed.azimuth.value(), "Azimuth should not change");
     }
 }

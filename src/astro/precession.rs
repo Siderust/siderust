@@ -169,13 +169,13 @@ fn rotate_equatorial(ra: Radians, dec: Radians, zeta: Radians, z: Radians, theta
     let c = sin_th * cos_dec * cos_ra_zeta + cos_th * sin_dec;
 
     // New right ascension, wrapped to 0–2π.
-    let mut new_ra = a.atan2(b) + z.as_f64();
+    let mut new_ra = a.atan2(b) + z.value();
     new_ra = new_ra.rem_euclid(TAU);
 
     // New declination: pole‑safe formula when |δ| > 85 °.
-    let new_dec = if dec.as_f64().abs() > NEAR_POLE_LIMIT {
+    let new_dec = if dec.value().abs() > NEAR_POLE_LIMIT {
         let mut d = (a * a + b * b).sqrt().acos();
-        if dec.as_f64().is_sign_negative() {
+        if dec.value().is_sign_negative() {
             d = -d;
         }
         d
@@ -242,7 +242,7 @@ mod tests {
         let prec = precess_from_j2000(SIRIUS.target.get_position().clone(), JulianDate::new(2_460_807.5));
 
         // Expected (Meeus short model): α ≈ 101.84557°, δ ≈ −16.77182°
-        assert!((prec.ra().as_f64()  - 101.57047).abs() < 3e-5, "current α ≈ {}", prec.ra());
-        assert!((prec.dec().as_f64() + 16.74409).abs() < 1e-5, "current δ ≈ {}", prec.dec());
+        assert!((prec.ra().value()  - 101.57047).abs() < 3e-5, "current α ≈ {}", prec.ra());
+        assert!((prec.dec().value() + 16.74409).abs() < 1e-5, "current δ ≈ {}", prec.dec());
     }
 }

@@ -83,7 +83,7 @@ mod tests {
         let jd = JulianDate::new(2_459_945.5); // 2023‑01‑01 00 UT
         let gst = calculate_gst(jd);
         let lst = calculate_lst(gst, Degrees::new(-75.0));
-        assert!(gst.as_f64() >= 0.0 && gst.as_f64() < 360.0);
-        assert!(lst.as_f64() >= 0.0 && lst.as_f64() < 360.0);
+        assert!(gst.value() >= 0.0 && gst.value() < 360.0);
+        assert!(lst.value() >= 0.0 && lst.value() < 360.0);
     }
 }

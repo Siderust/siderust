@@ -21,7 +21,7 @@ impl DmsPerYear {
 
     /// Returns the f64 result of DMS per year.
     pub fn value(&self) -> f64 {
-        self.0.as_f64() / self.1.value()
+        self.0.value() / self.1.value()
     }
 }
 

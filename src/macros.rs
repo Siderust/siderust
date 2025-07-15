@@ -39,8 +39,8 @@ where
 {
     let d1 = a.distance.unwrap_or(Quantity::<U>::NAN);
     let d2 = b.distance.unwrap_or(Quantity::<U>::NAN);
-    let dp = (a.polar.as_f64()   - b.polar.as_f64()).abs();
-    let da = (a.azimuth.as_f64() - b.azimuth.as_f64()).abs();
+    let dp = (a.polar.value()   - b.polar.value()).abs();
+    let da = (a.azimuth.value() - b.azimuth.value()).abs();
     if (d1 - d2).abs() >= Quantity::<U>::new(epsilon) || dp >= epsilon || da >= epsilon {
         if let Some(m) = msg {
             panic!("{}. Spherical coords differ: {} vs {} (ε = {})", m, a, b, epsilon);

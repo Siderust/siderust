@@ -27,9 +27,9 @@
 //! let mass_solar = SolarMasses::new(2.0);
 //!
 //! // Conversions
-//! let dms_to_decimal = dms.as_f64();
+//! let dms_to_decimal = dms.value();
 //!
-//! assert_eq!(radians.as_f64(), std::f64::consts::PI);
+//! assert_eq!(radians.value(), std::f64::consts::PI);
 //! ```
 //!
 //! ## Modules
