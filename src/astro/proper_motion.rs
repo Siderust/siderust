@@ -121,7 +121,7 @@ mod tests {
         let ra_err = (shifted.ra() - expected_ra).abs();
         let dec_err = (shifted.dec() - expected_dec).abs();
 
-        assert!(ra_err.as_f64() < 1e-6, "RA shifted incorrectly: got {}, expected {}", shifted.ra(), expected_ra);
-        assert!(dec_err.as_f64() < 1e-6, "DEC shifted incorrectly: got {}, expected {}", shifted.dec(), expected_dec);
+        assert!(ra_err.value() < 1e-6, "RA shifted incorrectly: got {}, expected {}", shifted.ra(), expected_ra);
+        assert!(dec_err.value() < 1e-6, "DEC shifted incorrectly: got {}, expected {}", shifted.dec(), expected_dec);
     }
 }

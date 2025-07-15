@@ -82,8 +82,8 @@ mod tests {
 
         let coord = ICRS::new(polar, azimuth);
 
-        assert_eq!(coord.ra().as_f64(), 45.0);
-        assert_eq!(coord.dec().as_f64(), 90.0);
+        assert_eq!(coord.ra().value(), 45.0);
+        assert_eq!(coord.dec().value(), 90.0);
         assert_eq!(coord.distance, None);
     }
 
@@ -108,8 +108,8 @@ mod tests {
 
         let coord = ICRS::new(polar, azimuth);
 
-        assert!((coord.ra().as_f64() - 90.654_321).abs() < 1e-6);
-        assert!((coord.dec().as_f64() - 45.123_456).abs() < 1e-6);
+        assert!((coord.ra().value() - 90.654_321).abs() < 1e-6);
+        assert!((coord.dec().value() - 45.123_456).abs() < 1e-6);
         assert_eq!(coord.distance, None);
     }
 }
