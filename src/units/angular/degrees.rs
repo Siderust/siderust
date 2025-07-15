@@ -32,44 +32,44 @@ impl Degrees {
 
     /// Returns the inner `f64` value for this angle in degrees.
     #[inline]
-    pub const fn as_f64(&self) -> f64 {
+    pub const fn value(&self) -> f64 {
         self.0
     }
 
     /// Convert degrees to radians (equivalent to `Radians::from(*self)`).
     #[inline]
     pub const fn to_radians(self) -> Radians {
-        Radians::new(self.as_f64() * PI / 180.0)
+        Radians::new(self.value() * PI / 180.0)
     }
 
     /// Compute the sine of the angle (in degrees), by converting internally to radians.
     #[inline]
     pub fn sin(self) -> f64 {
-        self.to_radians().as_f64().sin()
+        self.to_radians().value().sin()
     }
 
     /// Compute the cosine of the angle (in degrees).
     #[inline]
     pub fn cos(self) -> f64 {
-        self.to_radians().as_f64().cos()
+        self.to_radians().value().cos()
     }
 
     /// Compute the tangent of the angle (in degrees).
     #[inline]
     pub fn tan(self) -> f64 {
-        self.to_radians().as_f64().tan()
+        self.to_radians().value().tan()
     }
 
     /// Normalize an angle in degrees to the range [0, 360).
     #[inline]
     pub fn normalize(self) -> Self {
-        Self(self.as_f64().rem_euclid(360.0))
+        Self::new(self.value().rem_euclid(360.0))
     }
 
     /// Take the absolute value of the angle.
     #[inline]
     pub fn abs(self) -> Self {
-        Self(self.as_f64().abs())
+        Self(self.value().abs())
     }
 
     /// Creates a `Degrees` from a number of arcseconds.
@@ -83,19 +83,19 @@ impl Degrees {
     /// (Implementation depends on your use case—this is just an example.)
     #[inline]
     pub fn normalize_to_90_range(self) -> Self {
-        let y = (self.as_f64() + 90.0).rem_euclid(360.0);
-        Self(90.0 - (y - 180.0).abs())
+        let y = (self.value() + 90.0).rem_euclid(360.0);
+        Self::new(90.0 - (y - 180.0).abs())
     }
     
     /// Normalize to the range [−180, +180].
     #[inline]
     pub fn normalize_to_180_range(self) -> Self {
-        Self((self.as_f64() + 180.0).rem_euclid(360.0) - 180.0)
+        Self::new((self.value() + 180.0).rem_euclid(360.0) - 180.0)
     }
 
     pub fn diff_deg(self, other: Degrees) -> Self {
         // diferencia normalizada al intervalo 0 … 360
-        let d = (self.as_f64() - other.as_f64()).rem_euclid(360.0);
+        let d = (self.value() - other.value()).rem_euclid(360.0);
         if d > 180.0 { Self(360.0 - d) } else { Self(d) }
     }
 
@@ -107,7 +107,7 @@ impl Degrees {
 /// Implement `Display` for `Degrees`.
 impl std::fmt::Display for Degrees {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{:.6}°", self.as_f64())
+        write!(f, "{:.6}°", self.value())
     }
 }
 

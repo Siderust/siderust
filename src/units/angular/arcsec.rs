@@ -14,7 +14,7 @@ impl ArcSecond {
 
     /// Returns the inner `f64` value for this angle in arcseconds.
     #[inline]
-    pub const fn as_f64(&self) -> f64 {
+    pub const fn value(&self) -> f64 {
         self.0
     }
 
@@ -41,7 +41,7 @@ impl From<ArcSecond> for Degrees {
 /// Conversion from Degrees to ArcSecond.
 impl From<Degrees> for ArcSecond {
     fn from(deg: Degrees) -> Self {
-        ArcSecond(deg.as_f64() * 3600.0)
+        ArcSecond(deg.value() * 3600.0)
     }
 }
 

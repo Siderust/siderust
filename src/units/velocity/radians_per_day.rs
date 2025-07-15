@@ -42,7 +42,7 @@ impl std::ops::Div<Days> for Radians {
     type Output = RadiansPerDay;
 
     fn div(self, rhs: Days) -> Self::Output {
-        RadiansPerDay::new(self.as_f64() / rhs.value())
+        RadiansPerDay::new(self.value() / rhs.value())
     }
 }
 

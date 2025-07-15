@@ -74,20 +74,20 @@ where
     let refine = |mut jd: JulianDate, target: Radians| -> Option<JulianDate> {
         for _ in 0..NEWTON_MAX_ITERS {
             let h  = (hour_angle(jd) - target).wrap_pi();
-            if h.abs().as_f64() < 1e-12 {
+            if h.abs().value() < 1e-12 {
                 return Some(jd); // already precise enough
             }
 
             // Finite-difference dH/dt using ±1 s
             let dt  = Days::new(1.0 / 86_400.0);
             let dh  = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_pi();
-            let deriv = dh.as_f64() / (2.0 * dt.value()); // rad / day
+            let deriv = dh.value() / (2.0 * dt.value()); // rad / day
             if deriv.abs() < 1e-10 {
                 return None; // derivative ~ 0, avoid blow-up
             }
 
             // Newton step
-            let delta = Days::new(h.as_f64() / deriv);
+            let delta = Days::new(h.value() / deriv);
             jd -= delta;
             if delta.value().abs() < NEWTON_EPS {
                 return Some(jd);

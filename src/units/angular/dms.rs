@@ -34,7 +34,7 @@ impl DMS {
     }
 
     pub fn from_degrees(degrees: Degrees) -> DMS{
-        let mut decimal_degrees = degrees.as_f64();
+        let mut decimal_degrees = degrees.value();
         let sign: bool = decimal_degrees < 0.0;
         decimal_degrees = decimal_degrees.abs();
     
@@ -69,8 +69,8 @@ impl DMS {
         self.to_degrees().to_radians()
     }
 
-    pub fn as_f64(&self) -> f64 {
-        self.to_degrees().as_f64()
+    pub fn value(&self) -> f64 {
+        self.to_degrees().value()
     }
 }
 
@@ -145,14 +145,14 @@ mod tests {
     #[test]
     fn test_to_decimal_positive() {
         let angle = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
-        let decimal = angle.as_f64();
+        let decimal = angle.value();
         assert!((decimal - 12.582222).abs() < 1e-6);
     }
 
     #[test]
     fn test_to_decimal_negative() {
         let angle = DMS::new(DMS::NEGATIVE, 12, 34, 56.0);
-        let decimal = angle.as_f64();
+        let decimal = angle.value();
         assert!((decimal + 12.582222).abs() < 1e-6);
     }
 

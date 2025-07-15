@@ -44,8 +44,8 @@ mod tests {
     #[test]
     fn test_spherical_coord_creation() {
         let coord = ICRS::<AstronomicalUnit>::new(Degrees::new(45.0), Degrees::new(90.0), 1.0);
-        assert_eq!(coord.ra().as_f64(), 45.0);
-        assert_eq!(coord.dec().as_f64(), 90.0);
+        assert_eq!(coord.ra().value(), 45.0);
+        assert_eq!(coord.dec().value(), 90.0);
         assert_eq!(coord.distance.unwrap(), 1.0);
     }
     
@@ -61,16 +61,16 @@ mod tests {
     #[test]
     fn test_spherical_coord_zero_values() {
         let coord = HCRS::<AstronomicalUnit>::new(Degrees::new(0.0), Degrees::new(0.0), 0.0);
-        assert_eq!(coord.polar.as_f64(), 0.0);
-        assert_eq!(coord.azimuth.as_f64(), 0.0);
+        assert_eq!(coord.polar.value(), 0.0);
+        assert_eq!(coord.azimuth.value(), 0.0);
         assert_eq!(coord.distance.unwrap(), 0.0);
     }
 
     #[test]
     fn test_spherical_coord_precision() {
         let coord = ICRS::<AstronomicalUnit>::new(Degrees::new(90.654321), Degrees::new(45.123456), 1234.56789);
-        assert!((coord.dec().as_f64() - 45.123456).abs() < 1e-6);
-        assert!((coord.ra().as_f64() - 90.654321).abs() < 1e-6);
+        assert!((coord.dec().value() - 45.123456).abs() < 1e-6);
+        assert!((coord.ra().value() - 90.654321).abs() < 1e-6);
         assert!((coord.distance.unwrap() - 1234.56789*AU).abs() < 1e-6*AU);
     }
 }
