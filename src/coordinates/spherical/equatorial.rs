@@ -49,7 +49,7 @@ impl<C: ReferenceCenter> Direction<C, Equatorial> {
     pub fn new(ra: Degrees, dec: Degrees) -> Self {
         Self::new_const(
             ra.normalize(),
-            dec.normalize_to_90_range()
+            dec.wrap_quarter_fold()
         )
     }
 }
@@ -76,7 +76,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Equatorial, U> {
     {
         Self::new_const(
             ra.normalize(),
-            dec.normalize_to_90_range(),
+            dec.wrap_quarter_fold(),
             distance.into())
     }
 }
