@@ -41,7 +41,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
     {
         Self::new_const(
             lon.normalize(),
-            lat.normalize_to_90_range(),
+            lat.wrap_quarter_fold(),
             distance.into())
     }
 }
@@ -66,7 +66,7 @@ impl<C: ReferenceCenter> Direction<C, frames::Ecliptic> {
     pub fn new(lon: Degrees, lat: Degrees) -> Self {
         Self::new_const(
             lon.normalize(),
-            lat.normalize_to_90_range()
+            lat.wrap_quarter_fold()
         )
     }
 }

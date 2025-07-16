@@ -59,7 +59,7 @@ impl<C: ReferenceCenter> Direction<C, ICRS> {
     pub fn new(ra: Degrees, dec: Degrees) -> Self {
         Self::new_const(
             ra.normalize(),
-            dec.normalize_to_90_range()
+            dec.wrap_quarter_fold()
         )
     }
 }
@@ -95,7 +95,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
     {
         Self::new_const(
             ra.normalize(),
-            dec.normalize_to_90_range(),
+            dec.wrap_quarter_fold(),
             distance.into())
     }
 
