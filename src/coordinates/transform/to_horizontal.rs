@@ -75,7 +75,6 @@ impl<U: LengthUnit> spherical::Position<Geocentric, Equatorial, U> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::units::{DMS, LightYear};
     use crate::macros::assert_spherical_eq;
 
     #[test]
@@ -86,8 +85,8 @@ mod tests {
         let jd: JulianDate = JulianDate::new(2460677.04358);
 
         let expected_horizontal = spherical::position::Horizontal::<LightYear>::new(
-            DMS::new(DMS::NEGATIVE, 77, 59, 0.0).to_degrees(),
-            DMS::new(DMS::POSITIVE, 349, 24, 0.0).to_degrees(),
+            Degrees::from_dms(-77, 59, 0.0).to::<Deg>(),
+            Degrees::from_dms(349, 24, 0.0).to::<Deg>(),
             SIRIUS.target.get_position().distance.unwrap(),
         );
 
