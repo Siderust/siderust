@@ -228,10 +228,10 @@ pub fn calculate_orbit_position(
 
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);
-    let n = Radians::TAU / period;
+    let n: RadiansPerDay = Radians::TAU / period;
 
     // 2) Days since epoch
-    let dt = julian_date - elements.epoch;
+    let dt: Days = julian_date - elements.epoch;
 
     // 3) Mean Anomaly (M) in radians
     let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
