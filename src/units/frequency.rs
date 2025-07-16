@@ -19,7 +19,7 @@
 //! assert_eq!(frequency.value(), std::f64::consts::PI / 2.0);
 //! ```
 
-use crate::units::*;
+use super::*;
 use std::f64::consts::PI;
 
 pub enum Frequency {}

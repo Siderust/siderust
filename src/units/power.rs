@@ -21,7 +21,7 @@
 //! assert!((p_w_equiv.value() - 3.0 * 3.828e26).abs() < 1e15);
 //! ```
 
-use crate::units::{define_unit, Dimension, Quantity, Unit};
+use super::*;
 
 /// Fundamental dimension – power.
 pub enum Power {}
