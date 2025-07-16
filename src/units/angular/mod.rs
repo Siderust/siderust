@@ -27,7 +27,7 @@
 //! assert_eq!(rad.value(), std::f64::consts::PI);
 //!
 //! let dms = Degrees::from_dms(12, 34, 56.0);
-//! let hms = Hours::from_hms(5, 30, 0.0);
+//! let hms = HourAngles::from_hms(5, 30, 0.0);
 //! ```
 //!
 //! This module aims to make astronomical Angular manipulations explicit,
@@ -160,10 +160,10 @@ pub const MAS: MilliArcseconds = MilliArcseconds::new(1.0);
 
 define_unit!("Hms", HourAngle, Angular, 15.0);
 pub type Hms = HourAngle;
-pub type Hours = Quantity<Hms>;
-pub const HOUR: Hours = Hours::new(1.0);
+pub type HourAngles = Quantity<Hms>;
+pub const HOUR_ANGLE: HourAngles = HourAngles::new(1.0);
 
-impl Hours {
+impl HourAngles {
     pub const fn from_hms(hours: i32, minutes: u32, seconds: f64) -> Self {
         let sign = if hours < 0 { -1.0 } else { 1.0 };
         let h_abs = if hours < 0 { -hours } else { hours } as f64;

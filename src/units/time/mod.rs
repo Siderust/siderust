@@ -20,6 +20,17 @@ impl Dimension for Time {}
 pub trait TimeUnit: Unit<Dim = Time> {}
 impl<T: Unit<Dim = Time>> TimeUnit for T {}
 
+define_unit!("sec",  Second,     Time, 1.0/(24.0*3600.0));
+pub type Seconds = Quantity<Second>;
+pub const SEC: Seconds = Seconds::new(1.0);
+
+define_unit!("min",  Minute,     Time, 1.0/(24.0*60.0));
+pub type Minutes = Quantity<Minute>;
+pub const MIN: Minutes = Minutes::new(1.0);
+
+define_unit!("h",  Hour,     Time, 1.0/24.0);
+pub type Hours = Quantity<Hour>;
+pub const HOUR: Hours = Hours::new(1.0);
 
 // Mean solar day
 define_unit!("d",  Day,     Time, 1.0);
