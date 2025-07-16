@@ -1,7 +1,7 @@
 use crate::coordinates::{
     centers::ReferenceCenter, frames::ReferenceFrame, kinds::Kind, spherical, cartesian,
 };
-use crate::units::{Quantity, LengthUnit};
+use crate::units::*;
 
 /// Implements conversion from a spherical coordinate to a cartesian coordinate.
 ///
@@ -18,8 +18,8 @@ where
     U: LengthUnit
 {
     fn from(sph: &spherical::Position<C, F, U>) -> Self {
-        let ra_rad = sph.azimuth.to_radians();
-        let dec_rad = sph.polar.to_radians();
+        let ra_rad = sph.azimuth.to::<Radian>();
+        let dec_rad = sph.polar.to::<Radian>();
         let r = sph.distance.expect("SphericalCoord must have a distance");
         let x = r * dec_rad.cos() * ra_rad.cos();
         let y = r * dec_rad.cos() * ra_rad.sin();
@@ -34,8 +34,8 @@ where
     F: ReferenceFrame,
 {
     fn from(sph: &spherical::Direction<C, F>) -> Self {
-        let ra_rad = sph.azimuth.to_radians();
-        let dec_rad = sph.polar.to_radians();
+        let ra_rad = sph.azimuth.to::<Radian>();
+        let dec_rad = sph.polar.to::<Radian>();
 
         Self::new(
             Quantity::<f64>::new(dec_rad.cos() * ra_rad.cos()),

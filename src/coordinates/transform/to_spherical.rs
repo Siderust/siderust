@@ -1,10 +1,9 @@
-use crate::units::Degrees;
 use crate::coordinates::{
     cartesian, spherical,
     centers::*, frames::*,
     kinds::Kind,
 };
-use crate::units::LengthUnit;
+use crate::units::*;
 
 /// Implements conversion from Cartesian to Spherical coordinates
 /// by borrowing a `&Vector` reference.
@@ -36,10 +35,10 @@ where
         }
 
         let polar = Degrees::new((z / r).asin()
-                                                 .to_degrees());
+                                        .to_degrees());
         let azimuth = Degrees::new(y.value()
-                                             .atan2(x.value())
-                                             .to_degrees());
+                                    .atan2(x.value())
+                                    .to_degrees());
         Self::new_spherical_coord(polar, azimuth, Some(cart.distance()))
     }
 }
