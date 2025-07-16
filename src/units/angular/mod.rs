@@ -26,15 +26,15 @@
 //! let rad = deg.to::<Radian>();
 //! assert_eq!(rad.value(), std::f64::consts::PI);
 //!
-//! let dms = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
+//! let dms = Degrees::from_dms(12, 34, 56.0);
 //! let hms = Hours::from_hms(5, 30, 0.0);
 //! ```
 //!
 //! This module aims to make astronomical Angular manipulations explicit,
 //! correct, and ergonomic.
 
-mod dms;
-
+// TODO: delete after working dms_per_year
+pub mod dms;
 pub use dms::*;
 
 use crate::units::{define_unit, Quantity, Dimension, Unit};
@@ -169,6 +169,28 @@ impl Hours {
         let s = seconds / 3600.0;
         let total_hours = sign * (h_abs + m + s);
         Self::new(total_hours)
+    }
+}
+
+impl Degrees {
+    /// Construct from DMS components. Sign is taken from `deg`.
+    /// `min` and `sec` are treated as magnitudes (>=0); no range check is enforced.
+    /// Use `.normalize()` or `.wrap_*()` after constructing if you need canonical ranges.
+    pub const fn from_dms(deg: i32, min: u32, sec: f64) -> Self {
+        let sign = if deg < 0 { -1.0 } else { 1.0 };
+        let d_abs = if deg < 0 { -deg } else { deg } as f64;
+        let m = min as f64 / 60.0;
+        let s = sec / 3600.0;
+        let total = sign * (d_abs + m + s);
+        Self::new(total)
+    }
+
+    /// Construct from explicit sign and magnitude components.
+    /// `sign` should be -1, 0, or +1 (0 treated as +1 unless all components zero).
+    pub const fn from_dms_sign(sign: i8, deg: u32, min: u32, sec: f64) -> Self {
+        let s = if sign < 0 { -1.0 } else { 1.0 };
+        let total = (deg as f64) + (min as f64)/60.0 + (sec/3600.0);
+        Self::new(s * total)
     }
 }
 
