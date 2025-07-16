@@ -19,9 +19,8 @@
 //! assert_eq!(m_solar.value(), 2.0);
 //! ```
 
-use crate::units::{define_unit, Quantity};
+use super::*;
 
-use crate::units::{Dimension, Unit};
 pub enum Mass {}
 impl Dimension for Mass {}
 pub trait MassUnit: Unit<Dim = Mass> {}

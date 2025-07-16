@@ -33,7 +33,7 @@
 //! This module aims to make astronomical Angular manipulations explicit,
 //! correct, and ergonomic.
 
-use crate::units::{define_unit, Quantity, Dimension, Unit};
+use super::*;
 use std::f64::consts::{TAU, PI};
 
 pub enum Angular {}

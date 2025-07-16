@@ -19,39 +19,46 @@
 //! assert_eq!(velocity.value(), std::f64::consts::PI / 2.0);
 //! ```
 
-use crate::units::*;
+use super::*;
+use paste::paste;
 
 pub enum Velocity {}
 impl Dimension for Velocity {}
 pub trait VelocityUnit: Unit<Dim = Velocity> {}
 impl<T: Unit<Dim = Velocity>> VelocityUnit for T {}
 
+macro_rules! velocity_unit_auto {
+    ($Num:ident, $Den:ident) => {
+        paste! {
+            define_unit!(
+                concat!($Num::SYMBOL, "/", $Den::SYMBOL),
+                [<$Num Per $Den>],
+                Velocity,
+                $Num::RATIO / $Den::RATIO
+            );
+            pub type [<$Num sPer $Den>] = Quantity<[<$Num Per $Den>]>;
+            
+            impl std::ops::Div<Quantity<$Den>> for Quantity<$Num> {
+                type Output = Quantity<[<$Num Per $Den>]>;
 
-define_unit!("m/s", MeterPerSec, Velocity, Meter::RATIO/Second::RATIO);
-pub type MetersPerSec = Quantity<MeterPerSec>;
+                fn div(self, rhs: Quantity<$Den>) -> Self::Output {
+                    Self::Output::new(self.0 / rhs.0)
+                }
+            }
 
-define_unit!("Km/s", KilometerPerSec, Velocity, Kilometer::RATIO/Second::RATIO);
-pub type KilometersPerSec = KilometerPerSec;
+            impl std::ops::Mul<Quantity<$Den>> for  Quantity<[<$Num Per $Den>]> {
+                type Output = Quantity<$Num>;
 
-define_unit!("Km/h", KilometerPerHour, Velocity, Kilometer::RATIO/Hour::RATIO);
-pub type KilometersPerHour = KilometerPerHour;
+                fn mul(self, rhs: Quantity<$Den>) -> Self::Output {
+                    Self::Output::new(self.0 * rhs.value())
+                }
+            }
 
-define_unit!("au/day", AUPerDay, Velocity, Au::RATIO/Day::RATIO);
-pub type AUsPerDay = Quantity<AUPerDay>;
-
-
-impl std::ops::Div<Days> for AstronomicalUnits {
-    type Output = AUsPerDay;
-
-    fn div(self, rhs: Days) -> Self::Output {
-        Self::Output::new(self.0 / rhs.0)
-    }
+        }
+    };
 }
 
-impl std::ops::Mul<Days> for AUsPerDay {
-    type Output = AstronomicalUnits;
+velocity_unit_auto!(Meter, Second);      // "m/s"
+velocity_unit_auto!(Kilometer, Hour);    // "Km/h"
+velocity_unit_auto!(Au, Day);            // "au/day"
 
-    fn mul(self, rhs: Days) -> Self::Output {
-        Self::Output::new(self.0 * rhs.value())
-    }
-}
