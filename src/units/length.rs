@@ -18,9 +18,8 @@
 //! assert!((ly.value() - 1.582e-5).abs() < 1e-8);
 //! ```
 
-use crate::units::{define_unit, Quantity};
+use super::*;
 
-use crate::units::{Dimension, Unit};
 pub enum Length {}
 impl Dimension for Length {}
 pub trait LengthUnit: Unit<Dim = Length> {}

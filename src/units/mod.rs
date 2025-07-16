@@ -61,14 +61,59 @@ use core::ops::*;
 use core::cmp::*;
 use std::fmt::*;
 
-pub trait Dimension {} // (Length, Time, Mass…).
+/// Marker trait for **dimensions** (Length, Time, Mass …).
+///
+/// A *dimension* is the category that distinguishes a metre from a second.
+/// You usually model each dimension as an empty enum:
+///
+/// ```rust
+/// use siderust::units::Dimension;
+/// #[derive(Debug)]
+/// pub enum Length {}
+/// impl Dimension for Length {}
+/// ```
+pub trait Dimension {}
 
+/// Trait implemented by every **unit** type generated through [`define_unit!`].
+///
+/// * `RATIO` expresses how many of this unit fit into the *canonical* unit
+///   of the same dimension.
+///   Example: The ratio for centimetres is `1.000` because `1 km = 1.000 m`.
+///
+/// * `SYMBOL` is the printable string (e.g. `"m"` or `"cm"`).
+///
+/// * `Dim` ties the unit to its underlying [`Dimension`].
+///
+/// # Safety
+/// The trait is `Copy + 'static`, so types must be zero-sized marker enums.
 pub trait Unit: Copy + PartialEq + Debug + 'static {
+
+    /// Unit-to-canonical conversion factor.
     const RATIO: f64;
+
+    /// Dimension to which this unit belongs.
     type Dim: Dimension;
+
+    /// Printable symbol, shown by [`Display`](std::fmt::Display).
     const SYMBOL: &'static str;
 }
 
+/// Numeric value tagged with a unit at compile time.
+///
+/// Arithmetic between mismatched dimensions is a **compile-time error**.
+/// Scalar factors (`f64`) are allowed on either side of `*`/`/`.
+///
+/// ```rust
+/// use siderust::units::length::Meter;
+/// use siderust::units::time::Second;
+/// use siderust::units::Quantity;
+///
+/// let speed = Quantity::<Meter>::new(10.0) / Quantity::<Second>::new(2.0);
+/// //             ^^^^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
+/// //            10 m (Length)                2 s (Time)
+///
+/// // error[E0308]: binary operation `/` cannot be applied to two `Quantity<_>`
+/// ```
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Quantity<U: Unit>(f64, PhantomData<U>);
 
@@ -201,9 +246,10 @@ where
     }
 }
 
+/// Generate a **unit type** and its [`Display`] implementation.
 #[macro_export]
 macro_rules! define_unit {
-    ($symbol:literal, $name:ident, $dim:ty, $ratio:expr) => {
+    ($symbol:expr, $name:ident, $dim:ty, $ratio:expr) => {
 
         #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
         pub enum $name {}
@@ -220,4 +266,4 @@ macro_rules! define_unit {
     };
 }
 
-pub(crate) use define_unit;
+use define_unit;
