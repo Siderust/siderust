@@ -19,10 +19,37 @@
 //! assert_eq!(velocity.value(), std::f64::consts::PI / 2.0);
 //! ```
 
-mod radians_per_day;
 mod dms_per_year;
 mod au_per_day;
 
-pub use radians_per_day::*;
 pub use dms_per_year::*;
 pub use au_per_day::*;
+
+use crate::units::*;
+
+pub enum Velocity {}
+impl Dimension for Velocity {}
+pub trait VelocityUnit: Unit<Dim = Velocity> {}
+impl<T: Unit<Dim = Velocity>> VelocityUnit for T {}
+
+
+define_unit!("rad/day", RadianPerDay, Velocity, 1.0);
+pub type RadiansPerDay = Quantity<Au>;
+
+/// Division of `Radians` by `Days` yields `RadiansPerDay`.
+impl std::ops::Div<Days> for Radians {
+    type Output = RadiansPerDay;
+
+    fn div(self, rhs: Days) -> Self::Output {
+        RadiansPerDay::new(self.value() / rhs.value())
+    }
+}
+
+/// Multiplication of `RadiansPerDay` per `Days` yields `Radians`.
+impl std::ops::Mul<Days> for RadiansPerDay {
+    type Output = Radians;
+
+    fn mul(self, rhs: Days) -> Self::Output {
+        Radians::new(self.0 * rhs.value())
+    }
+}

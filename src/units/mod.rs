@@ -40,8 +40,6 @@
 //! - [`mass`]: Mass-related units and utilities.
 //! - [`power`]: Power-related units and utilities.
 
-pub(crate) mod arithmetic_ops;
-
 pub mod angular;
 pub mod time;
 pub mod length;
