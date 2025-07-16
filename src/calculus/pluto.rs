@@ -61,7 +61,7 @@ impl Pluto {
                     pluto_lon   * ARGUMENTS[i].p;
             
             // Convert 'a' from degrees to radians.
-            let (sin_a, cos_a) = a.to_radians().sin_cos();
+            let (sin_a, cos_a) = a.to::<Radian>().sin_cos();
 
             // Add periodic corrections for longitude, latitude, and radius.
             sum_longitude += Degrees::new(LONGITUDE_TERMS[i].a * sin_a + LONGITUDE_TERMS[i].b * cos_a);

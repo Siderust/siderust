@@ -20,10 +20,10 @@
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::units::{Degrees, Radians, DMS, HMS};
+//! use siderust::units::*;
 //!
 //! let deg = Degrees::new(180.0);
-//! let rad = deg.to_radians();
+//! let rad = deg.to::<Radian>();
 //! assert_eq!(rad.value(), std::f64::consts::PI);
 //!
 //! let dms = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
@@ -33,17 +33,11 @@
 //! This module aims to make astronomical angle manipulations explicit,
 //! correct, and ergonomic.
 
-//mod degrees;
-//mod radians;
 mod dms;
 mod hms;
-mod arcsec;
 
-//pub use degrees::*;
-//pub use radians::*;
 pub use dms::*;
 pub use hms::*;
-pub use arcsec::*;
 
 use crate::units::{define_unit, Quantity, Dimension, Unit};
 use std::f64::consts::PI;
@@ -59,7 +53,7 @@ pub type Deg = Degree;
 pub type Degrees = Quantity<Deg>;
 pub const DEG: Degrees = Degrees::new(1.0);
 
-define_unit!("Rad", Radian, Angle, PI / 180.0);
+define_unit!("Rad", Radian, Angle, 180.0/PI);
 pub type Rad = Radian;
 pub type Radians = Quantity<Rad>;
 pub const RAD: Radians = Radians::new(1.0);
@@ -79,27 +73,22 @@ impl Degrees {
         Self::new(h_deg + m_deg + s_deg)
     }
 
-    #[inline]
-    pub const fn to_radians(self) -> Radians {
-        Radians::new(self.value() * PI / 180.0)
-    }
-
-        /// Compute the sine of the angle (in degrees), by converting internally to radians.
+    /// Compute the sine of the angle (in degrees), by converting internally to radians.
     #[inline]
     pub fn sin(self) -> f64 {
-        self.to_radians().sin()
+        self.to::<Radian>().sin()
     }
 
     /// Compute the cosine of the angle (in degrees).
     #[inline]
     pub fn cos(self) -> f64 {
-        self.to_radians().cos()
+        self.to::<Radian>().cos()
     }
 
     /// Compute the tangent of the angle (in degrees).
     #[inline]
     pub fn tan(self) -> f64 {
-        self.to_radians().tan()
+        self.to::<Radian>().tan()
     }
 
     /// Normalize an angle in degrees to the range [0, 360).
@@ -133,11 +122,6 @@ impl Degrees {
 
 impl Radians {
     pub const TAU: Radians = Radians::new(std::f64::consts::TAU);
-
-    #[inline]
-    pub fn to_degrees(self) -> Degrees {
-        Degrees::new(self.value() * 180.0 / PI)
-    }
 
     /// Compute the cosine of the angle.
     #[inline]

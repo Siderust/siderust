@@ -1,4 +1,4 @@
-use super::{Degrees, Radians};
+use super::*;
 
 /// A strongly-typed representation of an angle in Hours, Minutes, and Seconds (HMS),
 /// with an explicit sign flag to avoid ambiguity.
@@ -66,7 +66,7 @@ impl HMS {
 
     /// Converts to a `Radians` type.
     pub fn to_radians(&self) -> Radians {
-        self.to_degrees().to_radians()
+        self.to_degrees().to::<Radian>()
     }
 }
 

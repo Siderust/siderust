@@ -2,8 +2,7 @@ use super::Culmination;
 use crate::coordinates::spherical::*;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
-use crate::units::LengthUnit;
-use crate::units::{Degrees, Radians, Days};
+use crate::units::*;
 use crate::astro::JulianDate;
 use crate::astro::nutation::corrected_ra_with_nutation;
 use crate::targets::Target;
@@ -63,8 +62,8 @@ where
     // ────────────────────────────────────────────────────────────
     let hour_angle = |jd: JulianDate| -> Radians {
         let ra_nut = corrected_ra_with_nutation(get_equatorial(jd).get_position(), jd);
-        let ra    = ra_nut.to_radians();
-        let theta = gast_fast(jd).to_radians() + observer.lon().to_radians(); // local sidereal time
+        let ra    = ra_nut.to::<Radian>();
+        let theta = gast_fast(jd).to::<Radian>() + observer.lon().to::<Radian>(); // local sidereal time
         (theta - ra).wrap_pi() // H in (−π, π]
     };
 

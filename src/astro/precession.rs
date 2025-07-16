@@ -93,7 +93,7 @@
 use std::f64::consts::TAU;
 
 use crate::coordinates::spherical::position;
-use crate::units::{Centuries, Degrees, Radians, Quantity, LengthUnit};
+use crate::units::*;
 use crate::astro::JulianDate;
 
 /* -------------------------------------------------------------------------
@@ -145,7 +145,7 @@ fn short_series_coefficients(epoch: Centuries, span: Centuries) -> (Radians, Rad
         - 0.041_833 * t3;
 
     // arc-seconds → degrees → radians
-    let as_to_rad = |a: f64| Degrees::new(a / 3600.0).to_radians();
+    let as_to_rad = |a: f64| Degrees::new(a / 3600.0).to::<Radian>();
     (as_to_rad(zeta_as), as_to_rad(z_as), as_to_rad(theta_as))
 }
 
@@ -213,8 +213,8 @@ pub fn precess_equatorial<U: LengthUnit>(
     from_jd: JulianDate,
     to_jd: JulianDate,
 ) -> position::Equatorial<U> {
-    let ra0 = position.ra().to_radians();
-    let dec0 = position.dec().to_radians();
+    let ra0 = position.ra().to::<Radian>();
+    let dec0 = position.dec().to::<Radian>();
 
     let from_centuries = from_jd.julian_centuries();
     let centuries_span = to_jd.julian_centuries() - from_centuries;
@@ -224,8 +224,8 @@ pub fn precess_equatorial<U: LengthUnit>(
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
     position::Equatorial::new::<Quantity<U>>(
-        ra.to_degrees(),
-        dec.to_degrees(),
+        ra.to::<Degree>(),
+        dec.to::<Degree>(),
         position.distance.expect("precess_equatorial: distance must be set")
     )
 }

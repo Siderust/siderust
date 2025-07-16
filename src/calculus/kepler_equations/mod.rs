@@ -234,7 +234,7 @@ pub fn calculate_orbit_position(
     let dt = julian_date - elements.epoch;
 
     // 3) Mean Anomaly (M) in radians
-    let m0_rad = elements.mean_anomaly_at_epoch.to_radians();
+    let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
     let m_rad = (m0_rad + n * dt) % std::f64::consts::TAU;
 
     // 4) Solve Kepler's Equation (E) for the eccentric anomaly
@@ -249,9 +249,9 @@ pub fn calculate_orbit_position(
     let z = elements.semi_major_axis * (1.0 - e * e_anomaly.cos());
 
     // 7) Compute standard rotation angular
-    let i_rad     = elements.inclination.to_radians();
-    let omega_rad = elements.longitude_of_ascending_node.to_radians();
-    let w_rad     = elements.argument_of_perihelion.to_radians();
+    let i_rad     = elements.inclination.to::<Radian>();
+    let omega_rad = elements.longitude_of_ascending_node.to::<Radian>();
+    let w_rad     = elements.argument_of_perihelion.to::<Radian>();
 
     // 8) Textbook formula: position in ecliptic coordinates (X, Y, Z)
     //
@@ -375,7 +375,7 @@ mod tests {
         // Mean motion n = 0.9856076686 / a^(3/2) = 0.9856076686 degrees/day
         let n = 0.9856076686; // degrees/day
         let m_deg = Degrees::new(0.0 + n * 100.0) % 360.0; // 98.56076686 degrees
-        let m_rad = m_deg.to_radians();
+        let m_rad = m_deg.to::<Radian>();
 
         // For e=0.0167, we can compute expected E and true anomaly
         // However, for simplicity, we'll check that the distance is roughly constant

@@ -1,4 +1,4 @@
-use super::{Degrees, Radians};
+use super::*;
 use std::ops::Mul;
 
 /// A strongly-typed representation of an angle in Degrees, Minutes, and Seconds (DMS),
@@ -66,7 +66,7 @@ impl DMS {
 
     /// Converts to a `Radians` type.
     pub fn to_radians(&self) -> Radians {
-        self.to_degrees().to_radians()
+        self.to_degrees().to::<Radian>()
     }
 
     pub fn value(&self) -> f64 {

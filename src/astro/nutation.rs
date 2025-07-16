@@ -64,7 +64,7 @@ use crate::coordinates::{
     frames::Equatorial
 };
 use crate::astro::JulianDate;
-use crate::units::{Degrees, LengthUnit, Radians};
+use crate::units::*;
 use crate::astro::dynamical_time::julian_ephemeris_day;
 
 /// Nutation components for a given epoch (all **degrees**).
@@ -94,11 +94,11 @@ pub fn get_nutation(jd: JulianDate) -> Nutation {
     let t3 = t2 * t;
 
     // Fundamental arguments (radians)
-    let d  = Degrees::new(297.850_36 + 445_267.111_480 * t - 0.001_914_2 * t2 + t3 / 189_474.0).to_radians();
-    let m  = Degrees::new(357.527_72 +  35_999.050_340 * t - 0.000_160_3 * t2 - t3 / 300_000.0).to_radians();
-    let mp = Degrees::new(134.962_98 + 477_198.867_398 * t + 0.008_697_2 * t2 + t3 /  56_250.0).to_radians();
-    let f  = Degrees::new( 93.271_91 + 483_202.017_538 * t - 0.003_682_5 * t2 + t3 / 327_270.0).to_radians();
-    let om = Degrees::new(125.044_52 -   1_934.136_261 * t + 0.002_070_8 * t2 + t3 / 450_000.0).to_radians();
+    let d  = Degrees::new(297.850_36 + 445_267.111_480 * t - 0.001_914_2 * t2 + t3 / 189_474.0).to::<Radian>();
+    let m  = Degrees::new(357.527_72 +  35_999.050_340 * t - 0.000_160_3 * t2 - t3 / 300_000.0).to::<Radian>();
+    let mp = Degrees::new(134.962_98 + 477_198.867_398 * t + 0.008_697_2 * t2 + t3 /  56_250.0).to::<Radian>();
+    let f  = Degrees::new( 93.271_91 + 483_202.017_538 * t - 0.003_682_5 * t2 + t3 / 327_270.0).to::<Radian>();
+    let om = Degrees::new(125.044_52 -   1_934.136_261 * t + 0.002_070_8 * t2 + t3 / 450_000.0).to::<Radian>();
 
     // Evaluate trigonometric series (0.0001″ units)
     let mut dpsi = 0.0;
@@ -132,12 +132,12 @@ pub fn corrected_ra_with_nutation<U: LengthUnit>(
 ) -> Degrees {
     // 1) Fetch nutation terms in radians
     let Nutation { longitude, obliquity, ecliptic } = get_nutation(jd);
-    let dpsi = longitude.to_radians();
-    let deps = obliquity.to_radians();
-    let eps0 = ecliptic.to_radians();
+    let dpsi = longitude.to::<Radian>();
+    let deps = obliquity.to::<Radian>();
+    let eps0 = ecliptic.to::<Radian>();
 
     // 2) Mean equatorial coordinates → Cartesian vector
-    let (alpha, delta) = (target.ra().to_radians(), target.dec().to_radians());
+    let (alpha, delta) = (target.ra().to::<Radian>(), target.dec().to::<Radian>());
     let (x, y, z) = (delta.cos() * alpha.cos(), delta.cos() * alpha.sin(), delta.sin());
 
     // 3) Rotate R1(ε₀+Δε) · R3(Δψ) · R1(−ε₀)
