@@ -20,7 +20,7 @@
 //! // Angular Units
 //! let degrees = Degrees::new(180.0);
 //! let radians = degrees.to::<Radian>();
-//! let dms = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
+//! let dms = Degrees::from_dms(12, 34, 56.0);
 //!
 //! // Mass Units
 //! let mass_kg = Kilograms::new(5.0);

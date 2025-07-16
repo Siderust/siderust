@@ -24,15 +24,15 @@ use crate::astro::JulianDate;
 /// Units: both fields are in **degrees per Julian year**
 #[derive(Debug, Clone)]
 pub struct ProperMotion {
-    pub ra_μ: DmsPerYear,
-    pub dec_μ: DmsPerYear,
+    pub ra_μ: DegreesPerYear,
+    pub dec_μ: DegreesPerYear,
 }
 
 impl ProperMotion {
     pub fn from_mas_per_year(ra: f64, dec: f64) -> ProperMotion {
         ProperMotion{
-            ra_μ: DmsPerYear(DMS::from_milliarcseconds(ra), YEAR),
-            dec_μ: DmsPerYear(DMS::from_milliarcseconds(dec), YEAR)
+            ra_μ: MilliArcseconds::new(ra).to::<Degree>() / YEAR,
+            dec_μ: MilliArcseconds::new(dec).to::<Degree>() / YEAR
         }
     }
 }
@@ -59,8 +59,8 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
     let t: Years = Years::new((jd - epoch_jd) / JulianDate::JULIAN_YEAR);
     // Linearly apply proper motion in RA and DEC
     position::Equatorial::new::<Quantity<U>>(
-        mean_position.ra() + (proper_motion.ra_μ * t).to_degrees().normalize(),
-        (mean_position.dec() + (proper_motion.dec_μ * t).to_degrees()).normalize(),
+        mean_position.ra() + (proper_motion.ra_μ * t).to::<Deg>().normalize(),
+        (mean_position.dec() + (proper_motion.dec_μ * t).to::<Deg>()).normalize(),
         mean_position.distance.unwrap(),
     )
 }
@@ -87,7 +87,7 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::units::{Degrees, DmsPerYear, AstronomicalUnit};
+    use crate::units::{Degrees, DegreesPerYear, AstronomicalUnit};
     use crate::coordinates::{
         spherical::Position,
         centers::Geocentric,
@@ -105,8 +105,8 @@ mod tests {
 
         // Proper motion: 0.01°/year in RA, -0.005°/year in DEC
         let mu = ProperMotion {
-            ra_μ: DmsPerYear::from_decimal(0.01),
-            dec_μ: DmsPerYear::from_decimal(-0.005),
+            ra_μ: DegreesPerYear::new(0.01),
+            dec_μ: DegreesPerYear::new(-0.005),
         };
 
         // Target epoch: 50 years after J2000

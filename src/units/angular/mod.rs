@@ -33,10 +33,6 @@
 //! This module aims to make astronomical Angular manipulations explicit,
 //! correct, and ergonomic.
 
-// TODO: delete after working dms_per_year
-pub mod dms;
-pub use dms::*;
-
 use crate::units::{define_unit, Quantity, Dimension, Unit};
 use std::f64::consts::{TAU, PI};
 
@@ -155,6 +151,12 @@ define_unit!("Arcs", Arcsecond, Angular, 1.0/3600.0);
 pub type Arcs = Arcsecond;
 pub type Arcseconds = Quantity<Arcs>;
 pub const ARCS: Arcseconds = Arcseconds::new(1.0);
+
+define_unit!("Mas", MilliArcsecond, Angular, 1.0 / 3_600_000.0);
+pub type Mas = MilliArcsecond;
+pub type MilliArcseconds = Quantity<Mas>;
+pub const MAS: MilliArcseconds = MilliArcseconds::new(1.0);
+
 
 define_unit!("Hms", HourAngle, Angular, 15.0);
 pub type Hms = HourAngle;
