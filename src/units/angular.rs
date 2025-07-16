@@ -197,6 +197,7 @@ impl Degrees {
 }
 
 
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -206,5 +207,20 @@ mod tests {
         assert_eq!(Radian::FULL_TURN, TAU);
         assert_eq!(Degree::FULL_TURN, 360.0);
         assert_eq!(Arcsecond::FULL_TURN, 1_296_000.0);
+    }
+
+    #[test]
+    fn test_trig() {
+        let a = Degrees::new(90.0);
+        assert!((a.sin() - 1.0).abs() < 1e-12);
+        assert!(a.cos().abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_wrap_signed() {
+        let a = Degrees::new(370.0).wrap_signed();
+        assert_eq!(a.value(), 10.0);
+        let b = Degrees::new(-190.0).wrap_signed();
+        assert_eq!(b.value(), 170.0);
     }
 }
