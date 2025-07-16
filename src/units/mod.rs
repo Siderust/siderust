@@ -15,11 +15,11 @@
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::units::{Days, Degrees, Radians, DMS, Kilograms, SolarMasses};
+//! use siderust::units::*;
 //!
 //! // Angular Units
 //! let degrees = Degrees::new(180.0);
-//! let radians = degrees.to_radians();
+//! let radians = degrees.to::<Radian>();
 //! let dms = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
 //!
 //! // Mass Units
@@ -83,7 +83,7 @@ impl<U: Unit + Copy> Quantity<U> {
 
     pub fn abs(self) -> Self { Self::new(self.0.abs()) }
 
-    pub fn to<T: Unit<Dim = U::Dim>>(self) -> Quantity<T> {
+    pub const fn to<T: Unit<Dim = U::Dim>>(self) -> Quantity<T> {
         Quantity::<T>::new(self.0 * (U::RATIO / T::RATIO))
     }
 }

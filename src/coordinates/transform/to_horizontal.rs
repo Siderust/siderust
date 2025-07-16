@@ -3,7 +3,7 @@ use crate::coordinates::{
     spherical, cartesian,
     centers::*,  frames::*
 };
-use crate::units::{Quantity, LengthUnit, Degrees};
+use crate::units::*;
 use crate::astro::JulianDate;
 
 
@@ -35,9 +35,9 @@ pub fn geocentric_to_horizontal<U: LengthUnit>(
 
     // 3) El resto no cambia
     let ra_deg   = target.ra().normalize();
-    let dec_rad  = target.dec().to_radians();
-    let ha_rad   = (lst - ra_deg).normalize().to_radians();
-    let lat_rad  = observer.lat().to_radians();
+    let dec_rad  = target.dec().to::<Radian>();
+    let ha_rad   = (lst - ra_deg).normalize().to::<Radian>();
+    let lat_rad  = observer.lat().to::<Radian>();
 
     let alt_rad = (dec_rad.sin() * lat_rad.sin()
                  + dec_rad.cos() * lat_rad.cos() * ha_rad.cos()).asin();

@@ -39,7 +39,7 @@
 //! ## Display
 //! Implements `Display` for readable output including center, frame, angles, and distance.
 
-use crate::units::{Degrees, Radians, LengthUnit, Quantity};
+use crate::units::*;
 
 use crate::coordinates::{
     cartesian,
@@ -126,17 +126,17 @@ where
     /// # Returns
     /// The angular separation in degrees.
     pub fn angular_separation(&self, other: Self) -> Degrees {
-        let az1 = self.azimuth.to_radians();
-        let po1 = self.polar.to_radians();
-        let az2 = other.azimuth.to_radians();
-        let po2 = other.polar.to_radians();
+        let az1 = self.azimuth.to::<Radian>();
+        let po1 = self.polar.to::<Radian>();
+        let az2 = other.azimuth.to::<Radian>();
+        let po2 = other.polar.to::<Radian>();
 
         let x = (po1.cos() * po2.sin()) - (po1.sin() * po2.cos() * (az2 - az1).cos());
         let y = po2.cos() * (az2 - az1).sin();
         let z = (po1.sin() * po2.sin()) + (po1.cos() * po2.cos() * (az2 - az1).cos());
 
         let angle_rad = (x * x + y * y).sqrt().atan2(z);
-        Radians::new(angle_rad).to_degrees()
+        Radians::new(angle_rad).to::<Degree>()
     }
 }
 
