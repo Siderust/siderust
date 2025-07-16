@@ -19,61 +19,39 @@
 //! assert_eq!(velocity.value(), std::f64::consts::PI / 2.0);
 //! ```
 
-//mod dms_per_year;
-mod au_per_day;
-
-//pub use dms_per_year::*;
-pub use au_per_day::*;
-
 use crate::units::*;
-use std::f64::consts::PI;
 
 pub enum Velocity {}
 impl Dimension for Velocity {}
 pub trait VelocityUnit: Unit<Dim = Velocity> {}
 impl<T: Unit<Dim = Velocity>> VelocityUnit for T {}
 
-define_unit!("deg/day", DegreePerDay, Velocity, 1.0);
-pub type DegreesPerDay = Quantity<DegreePerDay>;
+
+define_unit!("m/s", MeterPerSec, Velocity, Meter::RATIO/Second::RATIO);
+pub type MetersPerSec = Quantity<MeterPerSec>;
+
+define_unit!("Km/s", KilometerPerSec, Velocity, Kilometer::RATIO/Second::RATIO);
+pub type KilometersPerSec = KilometerPerSec;
+
+define_unit!("Km/h", KilometerPerHour, Velocity, Kilometer::RATIO/Hour::RATIO);
+pub type KilometersPerHour = KilometerPerHour;
+
+define_unit!("au/day", AUPerDay, Velocity, Au::RATIO/Day::RATIO);
+pub type AUsPerDay = Quantity<AUPerDay>;
 
 
-define_unit!("deg/year", DegreePerYear, Velocity, 1.0/Year::RATIO);
-pub type DegreesPerYear = Quantity<DegreePerYear>;
-
-define_unit!("rad/day", RadianPerDay, Velocity, 180.0/PI);
-pub type RadiansPerDay = Quantity<RadianPerDay>;
-
-
-impl std::ops::Div<Days> for Radians {
-    type Output = RadiansPerDay;
+impl std::ops::Div<Days> for AstronomicalUnits {
+    type Output = AUsPerDay;
 
     fn div(self, rhs: Days) -> Self::Output {
-        RadiansPerDay::new(self.value() / rhs.value())
+        Self::Output::new(self.0 / rhs.0)
     }
 }
 
-impl std::ops::Mul<Days> for RadiansPerDay {
-    type Output = Radians;
+impl std::ops::Mul<Days> for AUsPerDay {
+    type Output = AstronomicalUnits;
 
     fn mul(self, rhs: Days) -> Self::Output {
-        Radians::new(self.0 * rhs.value())
-    }
-}
-
-
-impl std::ops::Div<Years> for Degrees {
-    type Output = DegreesPerYear;
-
-    fn div(self, rhs: Years) -> Self::Output {
-        // 1 year = 365.25 days
-        DegreesPerYear::new(self.value() / rhs.value())
-    }
-}
-
-impl std::ops::Mul<Years> for DegreesPerYear {
-    type Output = Degrees;
-
-    fn mul(self, rhs: Years) -> Self::Output {
-        Degrees::new(self.0 * rhs.value())
+        Self::Output::new(self.0 * rhs.value())
     }
 }

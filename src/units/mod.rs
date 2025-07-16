@@ -6,7 +6,7 @@
 //!
 //! ## Features
 //! - **Time Units**: Includes representations for Days, Years, Julian Years, and Centuries.
-//! - **Angular Units**: Provides types for Degrees, Radians, DMS (Degrees, Minutes, Seconds), HMS (Hours, Minutes, Seconds), and Arcseconds.
+//! - **Angular Units**: Provides types for Degrees, Radians, DMS (Degrees, Minutes, Seconds), HMS (HourAngles, Minutes, Seconds), and Arcseconds.
 //! - **Length Units**: Includes types for meters and astronomical units (AstronomicalUnits).
 //! - **Velocity Units**: Provides types for meters per second and kilometers per second.
 //! - **Mass Units**: Includes types for kilograms and solar masses.
@@ -46,6 +46,7 @@ pub mod length;
 pub mod velocity;
 pub mod mass;
 pub mod power;
+pub mod frequency;
 
 pub use angular::*;
 pub use time::*;
@@ -53,6 +54,7 @@ pub use length::*;
 pub use velocity::*;
 pub use mass::*;
 pub use power::*;
+pub use frequency::*;
 
 use core::marker::PhantomData;
 use core::ops::*;
