@@ -4,8 +4,8 @@
 //! used in astronomical calculations. It provides types and utilities
 //! for converting between common angular formats such as:
 //!
-//! - **Degrees**: Decimal representation of an angle.
-//! - **Radians**: Standard mathematical unit for angle measurement.
+//! - **Degrees**: Decimal representation of an Angular.
+//! - **Radians**: Standard mathematical unit for Angular measurement.
 //! - **DMS (Degrees, Minutes, Seconds)**: Sexagesimal format used in many
 //!   astronomical and geodetic contexts.
 //! - **HMS (Hours, Minutes, Seconds)**: Commonly used in right ascension
@@ -30,7 +30,7 @@
 //! let hms = HMS::new(5, 30, 0.0);
 //! ```
 //!
-//! This module aims to make astronomical angle manipulations explicit,
+//! This module aims to make astronomical Angular manipulations explicit,
 //! correct, and ergonomic.
 
 mod dms;
@@ -42,30 +42,49 @@ pub use hms::*;
 use crate::units::{define_unit, Quantity, Dimension, Unit};
 use std::f64::consts::PI;
 
-pub enum Angle {}
-impl Dimension for Angle {}
-pub trait AngleUnit: Unit<Dim = Angle> {}
-impl<T: Unit<Dim = Angle>> AngleUnit for T {}
+pub enum Angular {}
+impl Dimension for Angular {}
+pub trait AngularUnit: Unit<Dim = Angular> {}
+impl<T: Unit<Dim = Angular>> AngularUnit for T {}
 
+impl<U: AngularUnit + Copy> Quantity<U> {
+    /// Compute the sine of the Angular (in degrees), by converting internally to radians.
+    #[inline]
+    pub fn sin(&self) -> f64 {
+        self.to::<Radian>().value().sin()
+    }
 
-define_unit!("Deg", Degree, Angle, 1.0);
+    /// Compute the cosine of the Angular (in degrees).
+    #[inline]
+    pub fn cos(&self) -> f64 {
+        self.to::<Radian>().value().cos()
+    }
+
+    /// Compute the tangent of the Angular (in degrees).
+    #[inline]
+    pub fn tan(&self) -> f64 {
+        self.to::<Radian>().value().tan()
+    }
+}
+
+define_unit!("Deg", Degree, Angular, 1.0);
 pub type Deg = Degree;
 pub type Degrees = Quantity<Deg>;
 pub const DEG: Degrees = Degrees::new(1.0);
 
-define_unit!("Rad", Radian, Angle, 180.0/PI);
+define_unit!("Rad", Radian, Angular, 180.0/PI);
 pub type Rad = Radian;
 pub type Radians = Quantity<Rad>;
 pub const RAD: Radians = Radians::new(1.0);
 
-define_unit!("Arcs", Arcsecond, Angle, 1.0/3600.0);
+define_unit!("Arcs", Arcsecond, Angular, 1.0/3600.0);
 pub type Arcs = Arcsecond;
 pub type Arcseconds = Quantity<Arcs>;
 pub const ARCS: Arcseconds = Arcseconds::new(1.0);
 
 
 impl Degrees {
-        /// Returns the inner `f64` value for this angle in degrees.
+        /// Returns the inner `f64` value for this Angular in degrees.
     pub const fn from_hms(hours: i32, minutes: u32, seconds: f64) -> Degrees {
         let h_deg = hours as f64 * 15.0;
         let m_deg = minutes as f64 * 15.0 / 60.0;
@@ -73,25 +92,7 @@ impl Degrees {
         Self::new(h_deg + m_deg + s_deg)
     }
 
-    /// Compute the sine of the angle (in degrees), by converting internally to radians.
-    #[inline]
-    pub fn sin(self) -> f64 {
-        self.to::<Radian>().sin()
-    }
-
-    /// Compute the cosine of the angle (in degrees).
-    #[inline]
-    pub fn cos(self) -> f64 {
-        self.to::<Radian>().cos()
-    }
-
-    /// Compute the tangent of the angle (in degrees).
-    #[inline]
-    pub fn tan(self) -> f64 {
-        self.to::<Radian>().tan()
-    }
-
-    /// Normalize an angle in degrees to the range [0, 360).
+    /// Normalize an Angular in degrees to the range [0, 360).
     #[inline]
     pub fn normalize(self) -> Self {
         Self::new(self.value().rem_euclid(360.0))
@@ -123,31 +124,13 @@ impl Degrees {
 impl Radians {
     pub const TAU: Radians = Radians::new(std::f64::consts::TAU);
 
-    /// Compute the cosine of the angle.
-    #[inline]
-    pub fn cos(self) -> f64 {
-        self.value().cos()
-    }
-
-    /// Compute the sine of the angle.
-    #[inline]
-    pub fn sin(self) -> f64 {
-        self.value().sin()
-    }
-
-    /// Compute the tangent of the angle.
-    #[inline]
-    pub fn tan(self) -> f64 {
-        self.value().tan()
-    }
-
-    /// Simultaneously computes the sine and cosine of the angle.
+    /// Simultaneously computes the sine and cosine of the Angular.
     #[inline]
     pub fn sin_cos(self) -> (f64, f64) {
         self.value().sin_cos()
     }
 
-    /// Returns the signum of the angle (i.e. sign of the inner value).
+    /// Returns the signum of the Angular (i.e. sign of the inner value).
     #[inline]
     pub fn signum(self) -> f64 {
         self.value().signum()
