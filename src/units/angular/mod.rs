@@ -23,7 +23,7 @@
 //! use siderust::units::{Degrees, Radians, DMS, HMS};
 //!
 //! let deg = Degrees::new(180.0);
-//! let rad = Radians::from(deg);
+//! let rad = deg.to_radians();
 //! assert_eq!(rad.value(), std::f64::consts::PI);
 //!
 //! let dms = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
@@ -121,6 +121,12 @@ impl Degrees {
     #[inline]
     pub fn normalize_to_180_range(self) -> Self {
         Self::new((self.value() + 180.0).rem_euclid(360.0) - 180.0)
+    }
+
+    pub fn diff_deg(self, other: Degrees) -> Self {
+        // diferencia normalizada al intervalo 0 … 360
+        let d = (self.value() - other.value()).rem_euclid(360.0);
+        if d > 180.0 { Self::new(360.0 - d) } else { Self::new(d) }
     }
 }
 
