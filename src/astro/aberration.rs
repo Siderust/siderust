@@ -163,8 +163,8 @@ mod tests {
         );
         let out = apply_aberration_sph(mean, jd);
 
-        let delta_ra = out.ra().diff_deg(mean.ra());
-        let delta_dec = out.dec().diff_deg(mean.dec());
+        let delta_ra = out.ra().abs_separation(mean.ra());
+        let delta_dec = out.dec().abs_separation(mean.dec());
         assert!(delta_ra.value() > 0.0 || delta_dec.value() > 0.0,
             "Expected a change in RA or Dec");
         assert!(delta_ra.value() < 0.01 && delta_dec.value() < 0.01,

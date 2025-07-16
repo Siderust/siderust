@@ -40,31 +40,107 @@ pub use dms::*;
 pub use hms::*;
 
 use crate::units::{define_unit, Quantity, Dimension, Unit};
-use std::f64::consts::PI;
+use std::f64::consts::{TAU, PI};
 
 pub enum Angular {}
 impl Dimension for Angular {}
-pub trait AngularUnit: Unit<Dim = Angular> {}
-impl<T: Unit<Dim = Angular>> AngularUnit for T {}
+pub trait AngularUnit: Unit<Dim = Angular> {
+    const FULL_TURN: f64;
+    const HALF_TURN: f64;
+    const QUARTED_TURN: f64;
+}
+impl<T: Unit<Dim = Angular>> AngularUnit for T {
+    const FULL_TURN: f64 = Radians::new(TAU).to::<T>().value();
+    const HALF_TURN: f64 = Radians::new(TAU).to::<T>().value() * 0.5;
+    const QUARTED_TURN: f64 = Radians::new(TAU).to::<T>().value() * 0.25 ;
+}
 
 impl<U: AngularUnit + Copy> Quantity<U> {
-    /// Compute the sine of the Angular (in degrees), by converting internally to radians.
+    pub const TAU: Radians = Radians::new(TAU);
+
     #[inline]
     pub fn sin(&self) -> f64 {
         self.to::<Radian>().value().sin()
     }
 
-    /// Compute the cosine of the Angular (in degrees).
     #[inline]
     pub fn cos(&self) -> f64 {
         self.to::<Radian>().value().cos()
     }
 
-    /// Compute the tangent of the Angular (in degrees).
     #[inline]
     pub fn tan(&self) -> f64 {
         self.to::<Radian>().value().tan()
     }
+
+    #[inline]
+    pub fn sin_cos(&self) -> (f64, f64) {
+        self.to::<Radian>().value().sin_cos()
+    }
+
+    /// Sign of the *raw numeric* in this unit (same semantics as f64::signum()).
+    #[inline]
+    pub const fn signum(self) -> f64 {
+        self.value().signum()
+    }
+
+    #[inline]
+    pub fn normalize(self) -> Self {
+        self.wrap_pos()
+    }
+
+    #[inline]
+    pub fn wrap_pos(self) -> Self {
+        Self::new(self.value().rem_euclid(U::FULL_TURN))
+    }
+
+    /// Wrap to (-HALF_TURN, HALF_TURN].  (Your original `wrap_signed` semantics.)
+    #[inline]
+    pub fn wrap_signed(self) -> Self {
+        let full = U::FULL_TURN;
+        let half = 0.5 * full;
+        let x = self.value();
+        let y = (x + half).rem_euclid(full) - half;
+        let norm = if y <= -half { y + full } else { y };
+        Self::new(norm)
+    }
+
+    /// Wrap to [-HALF_TURN, HALF_TURN) (alternate boundary).
+    #[inline]
+    pub fn wrap_signed_lo(self) -> Self {
+        let mut y = self.wrap_signed().value(); // now in (-half,half]
+        let half = 0.5 * U::FULL_TURN;
+        if y > half - 0.0 { // exact compare is fine; y==half means +half
+            y -= U::FULL_TURN; // move +half to -half
+        }
+        Self::new(y)
+    }
+
+    /// "Latitude fold": map to [-QUARTER_TURN, +QUARTER_TURN].
+    ///
+    /// Equivalent to your `wrap_quarter_fold` for degrees.
+    #[inline]
+    pub fn wrap_quarter_fold(self) -> Self {
+        let full = U::FULL_TURN;
+        let half = 0.5 * full;
+        let quarter = 0.25 * full;
+        let y = (self.value() + quarter).rem_euclid(full);
+        // quarter - |y - half| yields [-quarter, quarter]
+        Self::new(quarter - (y - half).abs())
+    }
+
+    /// Signed smallest separation in (-HALF_TURN, HALF_TURN].
+    #[inline]
+    pub fn signed_separation(self, other: Self) -> Self {
+        (self - other).wrap_signed() // requires Sub impl returning Self
+    }
+
+    //#[inline]
+    pub fn abs_separation(self, other: Self) -> Self {
+        let sep = self.signed_separation(other);
+        Self::new(sep.value().abs())
+    }
+
 }
 
 define_unit!("Deg", Degree, Angular, 1.0);
@@ -91,57 +167,18 @@ impl Degrees {
         let s_deg = seconds * 15.0 / 3600.0;
         Self::new(h_deg + m_deg + s_deg)
     }
-
-    /// Normalize an Angular in degrees to the range [0, 360).
-    #[inline]
-    pub fn normalize(self) -> Self {
-        Self::new(self.value().rem_euclid(360.0))
-    }
-
-    /// Normalize to the range [−90, +90] in a symmetrical fashion.
-    ///
-    /// (Implementation depends on your use case—this is just an example.)
-    #[inline]
-    pub fn normalize_to_90_range(self) -> Self {
-        let y = (self.value() + 90.0).rem_euclid(360.0);
-        Self::new(90.0 - (y - 180.0).abs())
-    }
-    
-    /// Normalize to the range [−180, +180].
-    #[inline]
-    pub fn normalize_to_180_range(self) -> Self {
-        Self::new((self.value() + 180.0).rem_euclid(360.0) - 180.0)
-    }
-
-    pub fn diff_deg(self, other: Degrees) -> Self {
-        // diferencia normalizada al intervalo 0 … 360
-        let d = (self.value() - other.value()).rem_euclid(360.0);
-        if d > 180.0 { Self::new(360.0 - d) } else { Self::new(d) }
-    }
 }
 
 
-impl Radians {
-    pub const TAU: Radians = Radians::new(std::f64::consts::TAU);
 
-    /// Simultaneously computes the sine and cosine of the Angular.
-    #[inline]
-    pub fn sin_cos(self) -> (f64, f64) {
-        self.value().sin_cos()
-    }
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    /// Returns the signum of the Angular (i.e. sign of the inner value).
-    #[inline]
-    pub fn signum(self) -> f64 {
-        self.value().signum()
-    }
-
-    /// Normalize range (-π, π].
-    #[inline]
-    pub fn wrap_pi(self) -> Self {
-        let x = self.value();
-        let y = (x + PI).rem_euclid(2.0 * PI) - PI;
-        let norm = if y <= -PI { y + 2.0 * PI } else { y };
-        Radians::new(norm)
+    #[test]
+    fn test_full_turn() {
+        assert_eq!(Radian::FULL_TURN, TAU);
+        assert_eq!(Degree::FULL_TURN, 360.0);
+        assert_eq!(Arcsecond::FULL_TURN, 1_296_000.0);
     }
 }

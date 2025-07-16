@@ -64,7 +64,7 @@ where
         let ra_nut = corrected_ra_with_nutation(get_equatorial(jd).get_position(), jd);
         let ra    = ra_nut.to::<Radian>();
         let theta = gast_fast(jd).to::<Radian>() + observer.lon().to::<Radian>(); // local sidereal time
-        (theta - ra).wrap_pi() // H in (−π, π]
+        (theta - ra).wrap_signed() // H in (−π, π]
     };
 
     // ────────────────────────────────────────────────────────────
@@ -72,14 +72,14 @@ where
     // ────────────────────────────────────────────────────────────
     let refine = |mut jd: JulianDate, target: Radians| -> Option<JulianDate> {
         for _ in 0..NEWTON_MAX_ITERS {
-            let h  = (hour_angle(jd) - target).wrap_pi();
+            let h  = (hour_angle(jd) - target).wrap_signed();
             if h.abs().value() < 1e-12 {
                 return Some(jd); // already precise enough
             }
 
             // Finite-difference dH/dt using ±1 s
             let dt  = Days::new(1.0 / 86_400.0);
-            let dh  = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_pi();
+            let dh  = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_signed();
             let deriv = dh.value() / (2.0 * dt.value()); // rad / day
             if deriv.abs() < 1e-10 {
                 return None; // derivative ~ 0, avoid blow-up

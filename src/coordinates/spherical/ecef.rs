@@ -48,8 +48,8 @@ impl<C: ReferenceCenter,> Direction<C, ECEF> {
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
     pub fn new(lon: Degrees, lat: Degrees) -> Self {
         Self::new_const(
-            lat.normalize_to_90_range(),
-            lon.normalize_to_180_range()
+            lat.wrap_quarter_fold(),
+            lon.wrap_signed_lo()
         )
     }
 }
@@ -74,8 +74,8 @@ impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
         T: Into<Quantity<Kilometer>>,
     {
         Self::new_const(
-            lat.normalize_to_90_range(),
-            lon.normalize_to_180_range(),
+            lat.wrap_quarter_fold(),
+            lon.wrap_signed_lo(),
             alt.into())
     }
 }
