@@ -27,17 +27,15 @@
 //! assert_eq!(rad.value(), std::f64::consts::PI);
 //!
 //! let dms = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
-//! let hms = HMS::new(5, 30, 0.0);
+//! let hms = Hours::from_hms(5, 30, 0.0);
 //! ```
 //!
 //! This module aims to make astronomical Angular manipulations explicit,
 //! correct, and ergonomic.
 
 mod dms;
-mod hms;
 
 pub use dms::*;
-pub use hms::*;
 
 use crate::units::{define_unit, Quantity, Dimension, Unit};
 use std::f64::consts::{TAU, PI};
@@ -158,17 +156,21 @@ pub type Arcs = Arcsecond;
 pub type Arcseconds = Quantity<Arcs>;
 pub const ARCS: Arcseconds = Arcseconds::new(1.0);
 
+define_unit!("Hms", HourAngle, Angular, 15.0);
+pub type Hms = HourAngle;
+pub type Hours = Quantity<Hms>;
+pub const HOUR: Hours = Hours::new(1.0);
 
-impl Degrees {
-        /// Returns the inner `f64` value for this Angular in degrees.
-    pub const fn from_hms(hours: i32, minutes: u32, seconds: f64) -> Degrees {
-        let h_deg = hours as f64 * 15.0;
-        let m_deg = minutes as f64 * 15.0 / 60.0;
-        let s_deg = seconds * 15.0 / 3600.0;
-        Self::new(h_deg + m_deg + s_deg)
+impl Hours {
+    pub const fn from_hms(hours: i32, minutes: u32, seconds: f64) -> Self {
+        let sign = if hours < 0 { -1.0 } else { 1.0 };
+        let h_abs = if hours < 0 { -hours } else { hours } as f64;
+        let m = minutes as f64 / 60.0;
+        let s = seconds / 3600.0;
+        let total_hours = sign * (h_abs + m + s);
+        Self::new(total_hours)
     }
 }
-
 
 
 #[cfg(test)]
