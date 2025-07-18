@@ -40,6 +40,7 @@
 //! - [`mass`]: Mass-related units and utilities.
 //! - [`power`]: Power-related units and utilities.
 
+pub mod unitless;
 pub mod angular;
 pub mod time;
 pub mod length;
@@ -48,6 +49,7 @@ pub mod mass;
 pub mod power;
 pub mod frequency;
 
+pub use unitless::*;
 pub use angular::*;
 pub use time::*;
 pub use length::*;

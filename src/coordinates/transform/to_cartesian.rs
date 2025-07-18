@@ -1,5 +1,5 @@
 use crate::coordinates::{
-    centers::ReferenceCenter, frames::ReferenceFrame, kinds::Kind, spherical, cartesian,
+    centers::ReferenceCenter, frames::ReferenceFrame, spherical, cartesian,
 };
 use crate::units::*;
 
@@ -46,24 +46,22 @@ where
 }
 
 // TODO: can we simply say impl<F> ...?
-impl<C, F, U, K> spherical::SphericalCoord<C, F, U, K>
+impl<C, F, U> spherical::SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: LengthUnit,
-    K: Kind,
-    cartesian::Vector<C, F, U, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, U, K>>,
+    cartesian::Vector<C, F, U>: for<'a> From<&'a spherical::SphericalCoord<C, F, U>>,
 {
-    pub fn to_cartesian(&self) -> cartesian::Vector<C, F, U, K> { self.into() }
+    pub fn to_cartesian(&self) -> cartesian::Vector<C, F, U> { self.into() }
 }
 
-impl<C, F, U, K> spherical::SphericalCoord<C, F, U, K>
+impl<C, F, U> spherical::SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: LengthUnit,
-    K: Kind,
-    spherical::SphericalCoord<C, F, U, K>: for<'a> From<&'a cartesian::Vector<C, F, U, K>>,
+    spherical::SphericalCoord<C, F, U>: for<'a> From<&'a cartesian::Vector<C, F, U>>,
 {
-    pub fn from_cartesian(cart: &cartesian::Vector<C, F, U, K>) -> Self { Self::from(&cart) }
+    pub fn from_cartesian(cart: &cartesian::Vector<C, F, U>) -> Self { Self::from(&cart) }
 }

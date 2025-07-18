@@ -1,6 +1,6 @@
 //! # Cartesian Coordinates
 //!
-//! This module defines the generic [`Vector<C, F, K>`] type for representing 3D positions or directions
+//! This module defines the generic [`Vector<C, F>`] type for representing 3D positions or directions
 //! in astronomical reference frames and centers, with strong compile-time type safety.
 //!
 //! ## Overview
@@ -30,37 +30,31 @@
 //! You may define type aliases for common systems, e.g.,
 //! `type HeliocentricEcliptic = Vector<Heliocentric, Ecliptic, PositionKind>;`
 
-use crate::coordinates::{
-    frames, centers,
-    kinds::*,
-};
+use crate::coordinates::{frames, centers};
 
 use std::marker::PhantomData;
 use nalgebra::Vector3;
 use std::ops::{Add, Sub};
-use crate::units::{Quantity, LengthUnit};
+use crate::units::*;
 
 // Refactoriza la definición de Vector:
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: LengthUnit,
-    K: Kind = PositionKind,
+    U: Unit,
 > {
     xyz: Vector3<Quantity<U>>,
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
-    _kind: PhantomData<K>,
 }
 
 // Refactoriza los métodos y traits:
-impl<C, F, U, K> Vector<C, F, U, K>
+impl<C, F, U> Vector<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: LengthUnit,
-    K: Kind,
+    U: Unit,
 {
     /// Creates a new Cartesian coordinate.
     ///
@@ -83,7 +77,7 @@ where
     }
 
     pub const fn from_vec3(vec3: Vector3<Quantity<U>>) -> Self {
-        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData, _kind: PhantomData }
+        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData }
     }
 
     pub const fn as_vec3(&self) -> Vector3<Quantity<U>> { self.xyz }
@@ -128,12 +122,11 @@ where
 }
 
 
-impl<C, F, U, K> std::fmt::Display for Vector<C, F, U, K>
+impl<C, F, U> std::fmt::Display for Vector<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
     U: LengthUnit,
-    K: Kind,
     Quantity<U>: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -147,12 +140,11 @@ where
     }
 }
 
-impl<C, F, U, K> Add for Vector<C, F, U, K>
+impl<C, F, U> Add for Vector<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
     U: LengthUnit + std::cmp::PartialEq + std::fmt::Debug,
-    K: Kind,
 {
     type Output = Self;
 
@@ -161,12 +153,11 @@ where
     }
 }
 
-impl<C, F, U, K> Sub for Vector<C, F, U, K>
+impl<C, F, U> Sub for Vector<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
     U: LengthUnit + std::cmp::PartialEq + std::fmt::Debug,
-    K: Kind,
 {
     type Output = Self;
     fn sub(self, other: Self) -> Self::Output { (&self).sub(&other) }
