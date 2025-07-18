@@ -74,3 +74,9 @@ pub trait NonGeocentric: ReferenceCenter {}
 impl NonGeocentric for Heliocentric {}
 impl NonGeocentric for Barycentric {}
 impl NonGeocentric for Topocentric {}
+
+
+impl ReferenceCenter for () {
+    const IS_GEOCENTRIC: bool = false;
+    fn center_name() -> &'static str {""}
+}
