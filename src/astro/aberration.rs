@@ -28,10 +28,9 @@
 use crate::coordinates::centers::Heliocentric;
 use crate::coordinates::transform::Transform;
 use crate::astro::JulianDate;
-use crate::units::{AstronomicalUnit, LengthUnit, Quantity};
+use crate::units::{AstronomicalUnit, LengthUnit};
 use crate::coordinates::{
-    cartesian::{position, direction},
-    cartesian::{Position, Velocity},
+    cartesian::{position, direction, Velocity},
     frames
 };
 
@@ -57,9 +56,9 @@ pub fn apply_aberration_to_direction(
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
     position::Equatorial::<AstronomicalUnit>::new(
-        mean.x() + Quantity::<f64>::new(velocity.x().value() / AU_PER_DAY_C),
-        mean.y() + Quantity::<f64>::new(velocity.y().value() / AU_PER_DAY_C),
-        mean.z() + Quantity::<f64>::new(velocity.z().value() / AU_PER_DAY_C),
+        mean.x().value() + velocity.x().value() / AU_PER_DAY_C,
+        mean.y().value() + velocity.y().value() / AU_PER_DAY_C,
+        mean.z().value() + velocity.z().value() / AU_PER_DAY_C,
     ).direction()
 }
 
@@ -79,10 +78,10 @@ pub fn remove_aberration_from_direction(
     //--------------------------------------------------------------------
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
-    Position::new(
-        app.x() - Quantity::<f64>::new(velocity.x().value() / AU_PER_DAY_C),
-        app.y() - Quantity::<f64>::new(velocity.y().value() / AU_PER_DAY_C),
-        app.z() - Quantity::<f64>::new(velocity.z().value() / AU_PER_DAY_C),
+    position::Equatorial::<AstronomicalUnit>::new(
+        app.x().value() - velocity.x().value() / AU_PER_DAY_C,
+        app.y().value() - velocity.y().value() / AU_PER_DAY_C,
+        app.z().value() - velocity.z().value() / AU_PER_DAY_C,
     ).direction()
 }
 
