@@ -1,9 +1,8 @@
 use crate::coordinates::{frames, centers};
-use crate::units::{Quantity, LengthUnit};
+use crate::units::{Quantity, LengthUnit, Unitless};
 use super::Vector;
 
-// TODO: Remove Unit from Direction
-pub type Direction<C, F> = Vector<C, F, f64>;
+pub type Direction<C, F> = Vector<C, F, Unitless>;
 
 impl<C, F> Direction<C, F>
 where
@@ -25,6 +24,6 @@ pub type Equatorial<C=centers::Geocentric>  = Direction<C, frames::Equatorial>;
 pub type Horizontal<C=centers::Topocentric> = Direction<C, frames::Horizontal>;
 pub type Geographic<C=centers::Geocentric>  = Direction<C, frames::ECEF>;
 pub type ICRS<C=centers::Barycentric>       = Direction<C, frames::ICRS>;
-pub type HCRS       = Direction<centers::Heliocentric, frames::ICRS>;
-pub type GCRS       = Direction<centers::Geocentric,   frames::ICRS>;
-pub type TCRS       = Direction<centers::Topocentric,  frames::ICRS>;
+pub type HCRS = Direction<centers::Heliocentric, frames::ICRS>;
+pub type GCRS = Direction<centers::Geocentric,   frames::ICRS>;
+pub type TCRS = Direction<centers::Topocentric,  frames::ICRS>;

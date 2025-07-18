@@ -104,9 +104,7 @@ use crate::coordinates::{
     centers::ReferenceCenter,
     frames::MutableFrame,
     cartesian::Vector,
-    //spherical::SphericalCoord
 };
-//use crate::astro::JulianDate;
 use crate::units::*;
 
 // Blanket identity transform for Vector<Center, Frame>
