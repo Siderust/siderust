@@ -33,7 +33,7 @@ use crate::coordinates::{
     frames
 };
 
-const AU_PER_DAY_C: f64 = 173.144_632_674;
+const AU_PER_DAY_C: AusPerDay = MetersPerSecond::new(299_792_458.0).to::<AuPerDay>(); // Speed Of Light
 
 /// Apply **annual aberration** to a unit direction vector (true‑of‑date).
 ///
@@ -55,9 +55,9 @@ pub fn apply_aberration_to_direction(
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
     position::Equatorial::<AstronomicalUnit>::new(
-        mean.x().value() + velocity.x().value() / AU_PER_DAY_C,
-        mean.y().value() + velocity.y().value() / AU_PER_DAY_C,
-        mean.z().value() + velocity.z().value() / AU_PER_DAY_C,
+        mean.x().value() + velocity.x() / AU_PER_DAY_C,
+        mean.y().value() + velocity.y() / AU_PER_DAY_C,
+        mean.z().value() + velocity.z() / AU_PER_DAY_C,
     ).direction()
 }
 
@@ -78,9 +78,9 @@ pub fn remove_aberration_from_direction(
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
     position::Equatorial::<AstronomicalUnit>::new(
-        app.x().value() - velocity.x().value() / AU_PER_DAY_C,
-        app.y().value() - velocity.y().value() / AU_PER_DAY_C,
-        app.z().value() - velocity.z().value() / AU_PER_DAY_C,
+        app.x().value() - velocity.x() / AU_PER_DAY_C,
+        app.y().value() - velocity.y() / AU_PER_DAY_C,
+        app.z().value() - velocity.z() / AU_PER_DAY_C,
     ).direction()
 }
 
