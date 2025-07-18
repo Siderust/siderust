@@ -16,13 +16,11 @@
 //!
 //! ## Example
 //! ```rust
-//! use siderust::coordinates::cartesian::Vector;
-//! use siderust::coordinates::centers::Heliocentric;
-//! use siderust::coordinates::frames::Ecliptic;
-//! use siderust::coordinates::kinds::PositionKind;
+//! use siderust::coordinates::cartesian::position::Ecliptic;
+//! use siderust::units::Au;
 //!
 //! // Create a heliocentric ecliptic position
-//! let pos = Vector::<Heliocentric, Ecliptic, f64, PositionKind>::new(1.0, 0.0, 0.0);
+//! let pos = Ecliptic::<Au>::new(1.0, 0.0, 0.0);
 //! println!("X: {}, Y: {}, Z: {}", pos.x().value(), pos.y().value(), pos.z().value());
 //! ```
 //!

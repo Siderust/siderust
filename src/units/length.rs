@@ -39,7 +39,7 @@ pub type Au = AstronomicalUnit;
 pub type AstronomicalUnits = Quantity<Au>;
 pub const AU: AstronomicalUnits = AstronomicalUnits::new(1.0);
 
-define_unit!("Ly", LightYear, Length, 9_460_730_472_580.8);
+define_unit!("Ly", LightYear, Length, 9_460_730_472_580_000.8);
 pub type Ly = LightYear;
 pub type LightYears = Quantity<Ly>;
 pub const LY: LightYears = LightYears::new(1.0);
