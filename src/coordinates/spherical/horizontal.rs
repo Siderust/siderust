@@ -27,7 +27,7 @@ use crate::coordinates::{
     frames::*,
     centers::*,
 };
-use crate::units::{Quantity, Degrees, LengthUnit};
+use crate::units::*;
 
 impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// Creates a new horizontal spherical coordinate with constant values.
@@ -97,7 +97,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Horizontal, U> {
 
 }
 
-impl<C: ReferenceCenter, U: LengthUnit> SphericalCoord<C, Horizontal, U> {
+impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, Horizontal, U> {
     /// Returns the Altitude (α) in degrees.
     pub fn alt(&self) -> Degrees { self.polar }
 
