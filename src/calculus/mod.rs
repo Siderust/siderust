@@ -94,8 +94,7 @@
 //! high-precision ephemerides and general-purpose celestial mechanics._
 //!
 
-//TODO
-//pub mod solar;
+pub mod solar;
 pub mod events;
 pub mod vsop87;
 pub mod elp2000;
