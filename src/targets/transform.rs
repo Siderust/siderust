@@ -4,7 +4,6 @@ use crate::coordinates::{
     spherical::SphericalCoord,
     centers::*,
     frames::*,
-    kinds::Kind,
     transform::Transform
 };
 use crate::units::LengthUnit;
@@ -25,7 +24,6 @@ where
     F1: ReferenceFrame,
     F2: ReferenceFrame,
     U: LengthUnit,
-    K: Kind,
 {
     fn from(orig: &Target<Vector<C1, F1, U>>) -> Self {
         // Step 1: Transform to new frame, keeping the original center.
@@ -58,7 +56,6 @@ where
     F1: ReferenceFrame,
     F2: ReferenceFrame,
     U: LengthUnit,
-    K: Kind,
 {
     fn from(orig: &Target<SphericalCoord<C1, F1, U>>) -> Self {
         // Step 1: Convert spherical to Cartesian

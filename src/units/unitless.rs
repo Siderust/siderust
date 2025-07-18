@@ -13,3 +13,11 @@ impl std::fmt::Display for Quantity<f64> {
         write!(f, "{} {}", self.value(), "")
     }
 }
+
+impl From<Quantity<U>> for Quantity<f64>
+where U: LengthUnit
+{
+    fn from(length: Quantity<U>) -> Self {
+        Self::new(length.value())
+    }
+}

@@ -1,7 +1,6 @@
 use crate::coordinates::{
     cartesian::Vector,
     centers::ReferenceCenter,
-    kinds::Kind,
     frames
 };
 use crate::coordinates::transform::Transform;
@@ -9,7 +8,7 @@ use crate::units::LengthUnit;
 
 // Implement Transform trait for ICRS -> Ecliptic
 
-impl<C: ReferenceCenter, K: Kind, U> Transform<Vector<C, frames::Ecliptic, U>>
+impl<C: ReferenceCenter, U> Transform<Vector<C, frames::Ecliptic, U>>
     for Vector<C, frames::ICRS, U>
 where
     U: LengthUnit,
@@ -29,7 +28,7 @@ where
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, K: Kind, U: LengthUnit> Transform<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
+impl<C: ReferenceCenter, U: LengthUnit> Transform<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
     fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());

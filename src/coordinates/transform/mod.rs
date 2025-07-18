@@ -104,9 +104,9 @@ use crate::coordinates::{
     centers::ReferenceCenter,
     frames::MutableFrame,
     cartesian::Vector,
-    spherical::SphericalCoord
+    //spherical::SphericalCoord
 };
-use crate::astro::JulianDate;
+//use crate::astro::JulianDate;
 use crate::units::*;
 
 // Blanket identity transform for Vector<Center, Frame>
@@ -121,6 +121,7 @@ where
     }
 }
 
+/*
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
 /// This implementation allows converting a [`Vector`] in from one
@@ -176,4 +177,4 @@ where
         // Step 4: Convert back to spherical
         cart_dest.to_spherical()
     }
-}
+}*/
