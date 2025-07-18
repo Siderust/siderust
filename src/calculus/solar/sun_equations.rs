@@ -9,7 +9,6 @@ use crate::units::{Quantity, AstronomicalUnits, LengthUnit, Degrees};
 use crate::astro::JulianDate;
 
 use crate::astro::nutation::get_nutation;
-
 impl Sun {
     /// Returns the **apparent geocentric equatorial coordinates** of the Sun
     /// at a given Julian day.
