@@ -14,8 +14,7 @@ impl std::fmt::Display for Quantity<f64> {
     }
 }
 
-impl From<Quantity<U>> for Quantity<f64>
-where U: LengthUnit
+impl<U: LengthUnit> From<Quantity<U>> for Quantity<f64>
 {
     fn from(length: Quantity<U>) -> Self {
         Self::new(length.value())
