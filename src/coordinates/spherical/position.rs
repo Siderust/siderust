@@ -1,12 +1,9 @@
 use super::SphericalCoord;
 
-use crate::coordinates::{
-    centers, frames,
-    kinds::PositionKind
-};
+use crate::coordinates::{centers, frames};
 
 use crate::units::Kilometer;
-pub type Position<C, F, U>  = SphericalCoord<C, F, U, PositionKind>;
+pub type Position<C, F, U: LengthUnit>  = SphericalCoord<C, F, U>;
 pub type Ecliptic<U>    = Position<centers::Heliocentric, frames::Ecliptic, U>;   // L (l), B (b), R (r)
 pub type Equatorial<U>  = Position<centers::Geocentric,   frames::Equatorial, U>; // Dec (δ), RA (α), LengthUnit (d)
 pub type Horizontal<U>  = Position<centers::Topocentric,  frames::Horizontal, U>; // Alt (α), Az (θ), LengthUnit (d)

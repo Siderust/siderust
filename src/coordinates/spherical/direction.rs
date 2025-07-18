@@ -1,6 +1,6 @@
 //! # Spherical Coordinates
 //!
-//! This module defines the generic [`SphericalCoord<C, F, K>`] type for representing positions or directions
+//! This module defines the generic [`SphericalCoord<C, F>`] type for representing positions or directions
 //! in spherical coordinates, parameterized by astronomical reference centers and frames for strong type safety.
 //!
 //! ## Overview
@@ -47,11 +47,10 @@ use crate::coordinates::{
     centers, frames,
     centers::ReferenceCenter,
     frames::ReferenceFrame,
-    kinds::DirectionKind
 };
 use crate::units::{Quantity, LengthUnit};
 
-pub type Direction<C, F> = SphericalCoord<C, F, f64, DirectionKind>;
+pub type Direction<C, F> = SphericalCoord<C, F, f64>;
 pub type Ecliptic   = Direction<centers::Heliocentric, frames::Ecliptic>;   // L (l), B (b)
 pub type Equatorial = Direction<centers::Geocentric,   frames::Equatorial>; // Dec (δ), RA (α)
 pub type Horizontal = Direction<centers::Topocentric,  frames::Horizontal>; // Alt (α), Az (θ)

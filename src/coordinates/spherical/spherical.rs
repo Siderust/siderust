@@ -1,14 +1,13 @@
 //! # Spherical Coordinates
 //!
-//! This module defines the generic [`SphericalCoord<C, F, K>`] type for representing positions or directions
+//! This module defines the generic [`SphericalCoord<C, F>`] type for representing positions or directions
 //! in spherical coordinates, parameterized by astronomical reference centers and frames for strong type safety.
 //!
 //! ## Overview
 //!
-//! - **Generic over Center, Frame, and Kind:**
+//! - **Generic over Center and Frame:**
 //!   - `C`: Reference center (e.g., `Heliocentric`, `Geocentric`, `Barycentric`).
 //!   - `F`: Reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`).
-//!   - `K`: Kind marker (`PositionKind`, `DirectionKind`), enforcing semantic correctness.
 //! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
 //! - **Units:** Angles are stored as [`Degrees`]; distance is optional and typically in AstronomicalUnits or parsecs (see context).
 //! - **Conversions:** Seamless conversion to and from [`Vector`] via `From`/`Into`.
@@ -45,22 +44,19 @@ use crate::coordinates::{
     cartesian,
     frames::*,
     centers::*,
-    kinds::*,
 };
 use std::marker::PhantomData;
 
-/// Represents a point in spherical coordinates with a specific reference center, frame, and kind.
+/// Represents a point in spherical coordinates with a specific reference center and frame.
 ///
 /// # Type Parameters
 /// - `C`: The reference center (e.g., `Barycentric`, `Heliocentric`).
 /// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`).
-/// - `K`: The kind marker (`PositionKind`, `DirectionKind`).
 #[derive(Debug, Clone, Copy)]
 pub struct SphericalCoord<
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
-    K: Kind = PositionKind,
+    U: Unit,
 > {
     pub polar: Degrees,      // θ (polar/latitude/declination)
     pub azimuth: Degrees,    // φ (azimuth/longitude/right ascension)
@@ -68,16 +64,14 @@ pub struct SphericalCoord<
 
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
-    _kind: PhantomData<K>,
 }
 
 // filepath: src/coordinates/spherical/spherical.rs
-impl<C, F, U, K> SphericalCoord<C, F, U, K>
+impl<C, F, U> SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
-    K: Kind,
+    U: Unit,
 {
     pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Option<Quantity<U>>) -> Self {
         Self {
@@ -86,7 +80,6 @@ where
             distance,
             _center: PhantomData,
             _frame: PhantomData,
-            _kind: PhantomData,
         }
     }
 
@@ -95,13 +88,12 @@ where
     }
 }
 
-impl<C, F, U, K> SphericalCoord<C, F, U, K>
+impl<C, F, U> SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: LengthUnit,
-    K: Kind,
-    cartesian::Vector<C, F, U, K>: for<'a> From<&'a Self>,
+    cartesian::Vector<C, F, U>: for<'a> From<&'a Self>,
 {
     /// Calculates the Euclidean distance to another spherical coordinate.
     ///
@@ -140,12 +132,11 @@ where
     }
 }
 
-impl<C, F, U, K> std::fmt::Display for SphericalCoord<C, F, U, K>
+impl<C, F, U> std::fmt::Display for SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: LengthUnit,
-    K: Kind,
     Quantity<U>: std::fmt::Display
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

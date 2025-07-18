@@ -1,12 +1,9 @@
-use crate::coordinates::{
-    frames, centers,
-    kinds::DirectionKind,
-};
+use crate::coordinates::{frames, centers};
 use crate::units::{Quantity, LengthUnit};
 use super::Vector;
 
 // TODO: Remove Unit from Direction
-pub type Direction<C, F> = Vector<C, F, f64, DirectionKind>;
+pub type Direction<C, F> = Vector<C, F, f64>;
 
 impl<C, F> Direction<C, F>
 where

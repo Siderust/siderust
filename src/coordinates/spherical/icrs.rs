@@ -27,7 +27,6 @@
 use super::{Position, Direction};
 use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{
-    kinds::Kind,
     frames::ICRS,
     centers::*,
 };
@@ -101,7 +100,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
 
 }
 
-impl<C: ReferenceCenter, U: LengthUnit, K: Kind> SphericalCoord<C, ICRS, U, K> {
+impl<C: ReferenceCenter, U: LengthUnit> SphericalCoord<C, ICRS, U> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees { self.polar }
 

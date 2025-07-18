@@ -54,16 +54,3 @@ impl From<AstronomicalUnits> for LightYears { fn from(au: AstronomicalUnits) -> 
 
 /// LightYear -> AstronomicalUnits.
 impl From<LightYears> for AstronomicalUnits { fn from(ly: LightYears) -> Self { ly.to::<AstronomicalUnit>() } }
-
-// TODO: Remove me
-impl Unit for f64 {
-    const RATIO: f64 = 1.0;
-    type Dim = Length;
-    const SYMBOL: &'static str = "";
-}
-
-impl std::fmt::Display for Quantity<f64> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.value(), "")
-    }
-}
