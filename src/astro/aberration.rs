@@ -47,18 +47,17 @@ pub fn apply_aberration_to_direction(
     jd:   JulianDate,
 ) -> direction::Equatorial {
 
-    // TODO: Units must be AstronomicalUnits/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
     let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.transform(jd);
 
     //--------------------------------------------------------------------
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
-    position::Equatorial::<AstronomicalUnit>::new(
+    direction::Equatorial::normalize(
         mean.x().value() + velocity.x() / AU_PER_DAY_C,
         mean.y().value() + velocity.y() / AU_PER_DAY_C,
         mean.z().value() + velocity.z() / AU_PER_DAY_C,
-    ).direction()
+    )
 }
 
 
@@ -70,18 +69,17 @@ pub fn remove_aberration_from_direction(
     jd:  JulianDate,
 ) -> direction::Equatorial {
 
-    // TODO: Units must be AstronomicalUnits/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
     let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.transform(jd);
 
     //--------------------------------------------------------------------
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
-    position::Equatorial::<AstronomicalUnit>::new(
+    direction::Equatorial::normalize(
         app.x().value() - velocity.x() / AU_PER_DAY_C,
         app.y().value() - velocity.y() / AU_PER_DAY_C,
         app.z().value() - velocity.z() / AU_PER_DAY_C,
-    ).direction()
+    )
 }
 
 
