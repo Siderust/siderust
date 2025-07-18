@@ -9,12 +9,12 @@ use crate::units::LengthUnit;
 
 // Implement Transform trait for ICRS -> Ecliptic
 
-impl<C: ReferenceCenter, K: Kind, U> Transform<Vector<C, frames::Ecliptic, U, K>>
-    for Vector<C, frames::ICRS, U, K>
+impl<C: ReferenceCenter, K: Kind, U> Transform<Vector<C, frames::Ecliptic, U>>
+    for Vector<C, frames::ICRS, U>
 where
     U: LengthUnit,
 {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U, K> {
+    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
@@ -29,8 +29,8 @@ where
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, K: Kind, U: LengthUnit> Transform<Vector<C, frames::Ecliptic, U, K>> for Vector<C, frames::Equatorial, U, K> {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U, K> {
+impl<C: ReferenceCenter, K: Kind, U: LengthUnit> Transform<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
+    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 

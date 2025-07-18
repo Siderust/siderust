@@ -1,12 +1,9 @@
-use crate::coordinates::{
-    centers, frames,
-    kinds::{PositionKind, VelocityKind}
-};
+use crate::coordinates::{centers, frames};
 use super::Vector;
-use crate::units::{Quantity, LengthUnit};
+use crate::units::*;
 
-pub type Position<C, F, U>  = Vector<C, F, U, PositionKind>;
-pub type Velocity<C, F, U>  = Vector<C, F, U, VelocityKind>;
+pub type Position<C, F, U: LengthUnit>   = Vector<C, F, U>;
+pub type Velocity<C, F, U: VelocityUnit> = Vector<C, F, U>;
 
 impl<C, F, U> Position<C, F, U>
 where
