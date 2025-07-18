@@ -59,6 +59,7 @@ macro_rules! velocity_unit_auto {
 }
 
 velocity_unit_auto!(Meter, Second);      // "m/s"
+velocity_unit_auto!(Kilometer, Second);  // "Km/s"
 velocity_unit_auto!(Kilometer, Hour);    // "Km/h"
 velocity_unit_auto!(Au, Day);            // "au/day"
 
