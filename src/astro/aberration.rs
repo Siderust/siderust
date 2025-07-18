@@ -56,7 +56,7 @@ pub fn apply_aberration_to_direction(
     //--------------------------------------------------------------------
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
-    Position::new(
+    position::Equatorial::<AstronomicalUnit>::new(
         mean.x() + Quantity::<f64>::new(velocity.x().value() / AU_PER_DAY_C),
         mean.y() + Quantity::<f64>::new(velocity.y().value() / AU_PER_DAY_C),
         mean.z() + Quantity::<f64>::new(velocity.z().value() / AU_PER_DAY_C),

@@ -2,7 +2,7 @@ use crate::coordinates::{
     cartesian, spherical,
     centers::*, frames::*,
 };
-use crate::units::*;
+use crate::units::{Unit, LengthUnit, Degrees};
 
 /// Implements conversion from Cartesian to Spherical coordinates
 /// by borrowing a `&Vector` reference.
@@ -68,7 +68,7 @@ impl<C, F, U> cartesian::Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
+    U: Unit,
     spherical::SphericalCoord<C, F, U>: for<'a> From<&'a cartesian::Vector<C, F, U>>,
 {
     pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, U> { self.into() }
@@ -79,7 +79,7 @@ impl<C, F, U> cartesian::Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
+    U: Unit,
     cartesian::Vector<C, F, U>: for<'a> From<&'a spherical::SphericalCoord<C, F, U>>,
 {
     pub fn from_spherical(sph: &spherical::SphericalCoord<C, F, U>) -> Self { Self::from(&sph) }

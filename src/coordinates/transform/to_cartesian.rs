@@ -50,7 +50,7 @@ impl<C, F, U> spherical::SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
+    U: Unit,
     cartesian::Vector<C, F, U>: for<'a> From<&'a spherical::SphericalCoord<C, F, U>>,
 {
     pub fn to_cartesian(&self) -> cartesian::Vector<C, F, U> { self.into() }
@@ -60,7 +60,7 @@ impl<C, F, U> spherical::SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
+    U: Unit,
     spherical::SphericalCoord<C, F, U>: for<'a> From<&'a cartesian::Vector<C, F, U>>,
 {
     pub fn from_cartesian(cart: &cartesian::Vector<C, F, U>) -> Self { Self::from(&cart) }
