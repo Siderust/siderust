@@ -17,6 +17,15 @@ where
             magnitude * self.z().value()
         )
     }
+
+    pub fn normalize(x: f64, y: f64, z: f64) -> Self {
+        let norm = nalgebra::Vector3::<f64>::new(x, y, z).normalize();
+        Self::new(
+            Quantity::<Unitless>::new(norm.x),
+            Quantity::<Unitless>::new(norm.y),
+            Quantity::<Unitless>::new(norm.z)
+        )
+    }
 }
 
 pub type Ecliptic<C=centers::Heliocentric>  = Direction<C, frames::Ecliptic>;
