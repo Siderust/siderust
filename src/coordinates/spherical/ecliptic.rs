@@ -25,7 +25,7 @@
 
 use super::*;
 use crate::coordinates::{centers::*, frames};
-use crate::units::{Degrees, Quantity, LengthUnit};
+use crate::units::*;
 
 impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
     pub const fn new_const(lon: Degrees, lat: Degrees, distance: Quantity<U>) -> Self {
@@ -68,7 +68,7 @@ impl<C: ReferenceCenter> Direction<C, frames::Ecliptic> {
     }
 }
 
-impl<C: ReferenceCenter, U: LengthUnit> SphericalCoord<C, frames::Ecliptic, U> {
+impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, frames::Ecliptic, U> {
     /// Returns the Latitude (β) in degrees.
     pub fn lat(&self) -> Degrees { self.polar }
 

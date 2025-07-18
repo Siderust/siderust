@@ -45,16 +45,16 @@ impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Ecliptic, U>> for 
 
 #[cfg(test)]
 mod tests {
+    use crate::units::*;
     use crate::coordinates::*;
     use crate::coordinates::cartesian::position::*;
     use crate::units::Degrees;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
-    use crate::units::{Quantity, Unit, AstronomicalUnit};
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
-    fn serialize<U: Unit>(ecl: &Ecliptic<U>) -> Ecliptic<U>
+    fn serialize<U: LengthUnit>(ecl: &Ecliptic<U>) -> Ecliptic<U>
     where
         Quantity<U>: From<Quantity<AstronomicalUnit>>
     {
@@ -124,8 +124,8 @@ mod tests {
             Degrees::new(-21.0),
             2.7,
         );
-        let ecliptic  = spherical::Position::<centers::Barycentric, frames::Ecliptic, AstronomicalUnit>::from(&equatorial_orig);
-        let equatorial_rec = spherical::Position::<centers::Barycentric, frames::Equatorial, AstronomicalUnit>::from(&ecliptic);
+        let ecliptic  = spherical::Position::<centers::Barycentric, frames::Ecliptic, Au>::from(&equatorial_orig);
+        let equatorial_rec = spherical::Position::<centers::Barycentric, frames::Equatorial, Au>::from(&ecliptic);
 
         assert_spherical_eq!(equatorial_orig, equatorial_rec, 1e-10);
     }
