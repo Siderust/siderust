@@ -88,10 +88,6 @@
 //! [`to_spherical`]: to_spherical/index.html
 //! [`to_horizontal`]: to_horizontal/index.html
 
-pub trait Transform<Coord> {
-    fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
-}
-
 mod centers;
 mod frames;
 mod to_cartesian;
@@ -99,13 +95,20 @@ mod to_spherical;
 mod to_direction;
 mod to_horizontal;
 
-use crate::coordinates::cartesian;
+use crate::astro::JulianDate;
 use crate::coordinates::{
     centers::ReferenceCenter,
     frames::MutableFrame,
+    cartesian,
     cartesian::Vector,
+    spherical::SphericalCoord
 };
 use crate::units::*;
+
+
+pub trait Transform<Coord> {
+    fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
+}
 
 // Blanket identity transform for Vector<Center, Frame>
 impl<C, F, U> Transform<cartesian::Position<C, F, U>> for cartesian::Position<C, F, U>
@@ -119,7 +122,6 @@ where
     }
 }
 
-/*
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
 /// This implementation allows converting a [`Vector`] in from one
@@ -175,4 +177,4 @@ where
         // Step 4: Convert back to spherical
         cart_dest.to_spherical()
     }
-}*/
+}

@@ -30,7 +30,7 @@ use crate::coordinates::{
     frames::ICRS,
     centers::*,
 };
-use crate::units::{Quantity, LengthUnit, Degrees};
+use crate::units::*;
 
 impl<C: ReferenceCenter> Direction<C, ICRS> {
     /// Creates a new ICRS spherical coordinate with constant values.
@@ -100,7 +100,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
 
 }
 
-impl<C: ReferenceCenter, U: LengthUnit> SphericalCoord<C, ICRS, U> {
+impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, ICRS, U> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees { self.polar }
 

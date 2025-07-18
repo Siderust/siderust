@@ -34,7 +34,7 @@ pub type Km = Kilometer;
 pub type Kilometers = Quantity<Km>;
 pub const KM: Kilometers = Kilometers::new(1.0);
 
-define_unit!("Au", AstronomicalUnit, Length, 149_597_870.7);
+define_unit!("Au", AstronomicalUnit, Length, 149_597_870_000.7);
 pub type Au = AstronomicalUnit;
 pub type AstronomicalUnits = Quantity<Au>;
 pub const AU: AstronomicalUnits = AstronomicalUnits::new(1.0);
