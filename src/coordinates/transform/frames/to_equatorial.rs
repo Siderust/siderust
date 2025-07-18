@@ -4,12 +4,12 @@ use crate::coordinates::{
     frames
 };
 use crate::coordinates::transform::Transform;
-use crate::units::LengthUnit;
+use crate::units::Unit;
 
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
-impl<C: ReferenceCenter, U: LengthUnit> Transform<Vector<C, frames::Equatorial, U>> for Vector<C, frames::Ecliptic, U> {
+impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Equatorial, U>> for Vector<C, frames::Ecliptic, U> {
     fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Equatorial, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
@@ -25,7 +25,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Transform<Vector<C, frames::Equatorial, 
 }
 
 // Implement Transform trait for ICRS -> Equatorial (identity)
-impl<C: ReferenceCenter, U: LengthUnit> Transform<Vector<C, frames::Equatorial, U>> for Vector<C, frames::ICRS, U> {
+impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Equatorial, U>> for Vector<C, frames::ICRS, U> {
     fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Equatorial, U> {
         Vector::new(self.x(), self.y(), self.z())
     }

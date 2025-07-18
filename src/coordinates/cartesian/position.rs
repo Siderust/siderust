@@ -2,12 +2,10 @@ use crate::coordinates::{centers, frames};
 use super::Vector;
 use crate::units::*;
 
-// TODO: Bound U to LengthUnit and VelocityUnit
+// TODO: Bound U to LengthUnit
 // see issue #112792 <https://github.com/rust-lang/rust/issues/112792> for more information
 //pub type Position<C, F, U: LengthUnit>   = Vector<C, F, U>;
-//pub type Velocity<C, F, U: VelocityUnit> = Vector<C, F, U>;
 pub type Position<C, F, U> = Vector<C, F, U>;
-pub type Velocity<C, F, U> = Vector<C, F, U>;
 
 impl<C, F, U> Position<C, F, U>
 where

@@ -25,10 +25,9 @@
 //! * Vector formulation: `u' = u + v / c` then renormalised.
 //! * Verified against JPL DE440: <0.08 mas over 1900‑2100.
 
-use crate::coordinates::centers::Heliocentric;
+use crate::units::*;
 use crate::coordinates::transform::Transform;
 use crate::astro::JulianDate;
-use crate::units::{AstronomicalUnit, LengthUnit};
 use crate::coordinates::{
     cartesian::{position, direction, Velocity},
     frames
@@ -50,7 +49,7 @@ pub fn apply_aberration_to_direction(
 
     // TODO: Units must be AstronomicalUnits/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<Heliocentric, frames::Equatorial, AstronomicalUnit> = velocity.transform(jd);
+    let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.transform(jd);
 
     //--------------------------------------------------------------------
     // Apply û' = û + v/c
@@ -73,7 +72,7 @@ pub fn remove_aberration_from_direction(
 
     // TODO: Units must be AstronomicalUnits/Day
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<Heliocentric, frames::Equatorial, AstronomicalUnit> = velocity.transform(jd);
+    let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.transform(jd);
 
     //--------------------------------------------------------------------
     //  Apply û' = û - v/c

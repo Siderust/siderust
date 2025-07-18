@@ -2,7 +2,7 @@ use super::*;
 use crate::bodies::solar_system::*;
 use crate::targets::Target;
 use crate::astro::JulianDate;
-use crate::units::{AstronomicalUnits, AstronomicalUnit};
+use crate::units::*;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Barycentric, frames::Ecliptic
@@ -33,7 +33,7 @@ macro_rules! impl_vsop87e {
                 )
             }
 
-            pub fn vsop87e_vel(jd: JulianDate) -> Velocity<Barycentric, Ecliptic, AstronomicalUnit> {
+            pub fn vsop87e_vel(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay> {
                 let (vx, vy, vz) = velocity(
                     jd,
                     &[$( &$x ),+],
@@ -41,14 +41,14 @@ macro_rules! impl_vsop87e {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    AstronomicalUnits::new(vx),
-                    AstronomicalUnits::new(vy),
-                    AstronomicalUnits::new(vz)
+                    AusPerDay::new(vx),
+                    AusPerDay::new(vy),
+                    AusPerDay::new(vz)
                 )
             }
 
             pub fn vsop87e_pos_vel(jd: JulianDate)
-                -> (Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>, Velocity<Barycentric, Ecliptic, AstronomicalUnit>) {
+                -> (Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>, Velocity<Ecliptic, AuPerDay>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
                     &[$( &$x ),+],
@@ -61,9 +61,9 @@ macro_rules! impl_vsop87e {
                         AstronomicalUnits::new(y),
                         AstronomicalUnits::new(z)), jd,),
                     Velocity::new(
-                        AstronomicalUnits::new(vx),
-                        AstronomicalUnits::new(vy),
-                        AstronomicalUnits::new(vz))
+                        AusPerDay::new(vx),
+                        AusPerDay::new(vy),
+                        AusPerDay::new(vz))
                 )
             }
         }

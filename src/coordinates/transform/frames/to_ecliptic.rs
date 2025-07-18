@@ -4,14 +4,14 @@ use crate::coordinates::{
     frames
 };
 use crate::coordinates::transform::Transform;
-use crate::units::LengthUnit;
+use crate::units::Unit;
 
 // Implement Transform trait for ICRS -> Ecliptic
 
 impl<C: ReferenceCenter, U> Transform<Vector<C, frames::Ecliptic, U>>
     for Vector<C, frames::ICRS, U>
 where
-    U: LengthUnit,
+    U: Unit,
 {
     fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians();
@@ -28,7 +28,7 @@ where
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, U: LengthUnit> Transform<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
+impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
     fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
@@ -50,11 +50,11 @@ mod tests {
     use crate::units::Degrees;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
-    use crate::units::{Quantity, LengthUnit, AstronomicalUnit};
+    use crate::units::{Quantity, Unit, AstronomicalUnit};
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
-    fn serialize<U: LengthUnit>(ecl: &Ecliptic<U>) -> Ecliptic<U>
+    fn serialize<U: Unit>(ecl: &Ecliptic<U>) -> Ecliptic<U>
     where
         Quantity<U>: From<Quantity<AstronomicalUnit>>
     {

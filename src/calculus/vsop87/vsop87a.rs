@@ -1,6 +1,6 @@
 use super::*;
+use crate::units::*;
 use crate::bodies::solar_system::Moon;
-use crate::units::{AstronomicalUnits, AstronomicalUnit};
 use crate::astro::JulianDate;
 use crate::targets::Target;
 use crate::bodies::solar_system::*;
@@ -35,7 +35,7 @@ macro_rules! impl_vsop87a {
                 )
             }
 
-            pub fn vsop87a_vel(jd: JulianDate) -> Velocity<Heliocentric, Ecliptic, AstronomicalUnit> {
+            pub fn vsop87a_vel(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay> {
                 let (vx, vy, vz) = velocity(
                     jd,
                     &[$( &$x ),+],
@@ -43,14 +43,14 @@ macro_rules! impl_vsop87a {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    AstronomicalUnits::new(vx),
-                    AstronomicalUnits::new(vy),
-                    AstronomicalUnits::new(vz)
+                    AusPerDay::new(vx),
+                    AusPerDay::new(vy),
+                    AusPerDay::new(vz)
                 )
             }
 
             pub fn vsop87a_pos_vel(jd: JulianDate)
-                -> (Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>>, Velocity<Heliocentric, Ecliptic, AstronomicalUnit>) {
+                -> (Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>>, Velocity<Ecliptic, AuPerDay>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
                     &[$( &$x ),+],
@@ -63,9 +63,9 @@ macro_rules! impl_vsop87a {
                         AstronomicalUnits::new(y),
                         AstronomicalUnits::new(z)), jd,),
                     Velocity::new(
-                        AstronomicalUnits::new(vx),
-                        AstronomicalUnits::new(vy),
-                        AstronomicalUnits::new(vz))
+                        AusPerDay::new(vx),
+                        AusPerDay::new(vy),
+                        AusPerDay::new(vz))
                 )
             }
         }
