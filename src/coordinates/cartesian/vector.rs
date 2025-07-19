@@ -8,11 +8,9 @@
 //! - **Generic over Center, Frame, and Kind:**
 //!   - `C`: Reference center (e.g., `Heliocentric`, `Geocentric`).
 //!   - `F`: Reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`).
-//!   - `K`: Kind marker (`Position`, `Direction`), enforcing semantic correctness.
 //! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
-//! - **Units:** Coordinates are expressed in astronomical units (AstronomicalUnits) by convention, but may represent other units if documented.
+//! - **Units:** Coordinates are expressed in units (Length and Velocity).
 //! - **Vector Operations:** Supports addition, subtraction, scaling, and distance calculation.
-//! - **Interoperability:** Seamless conversion to and from `nalgebra::Vector3<U>`.
 //!
 //! ## Example
 //! ```rust
@@ -21,33 +19,33 @@
 //!
 //! // Create a heliocentric ecliptic position
 //! let pos = Ecliptic::<Au>::new(1.0, 0.0, 0.0);
-//! println!("X: {}, Y: {}, Z: {}", pos.x().value(), pos.y().value(), pos.z().value());
+//! println!("X: {}, Y: {}, Z: {}", pos.x(), pos.y(), pos.z());
 //! ```
 //!
 //! ## Type Aliases
-//! You may define type aliases for common systems, e.g.,
-//! `type HeliocentricEcliptic = Vector<Heliocentric, Ecliptic, PositionKind>;`
+//! We define type aliases for common systems, e.g.,
+//! `type Distance<C: ReferenceCenter, F: ReferenceFrame> = Vector<C, F, Unitless>;`
+//! `type Velocity<C: ReferenceCenter, F: ReferenceFrame, U: VelocityUnit> = Vector<C, F, U>;`
+//! `type Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>   = Vector<C, F, U>;`
 
+use crate::units::*;
 use crate::coordinates::{frames, centers};
 
 use std::marker::PhantomData;
 use nalgebra::Vector3;
 use std::ops::{Add, Sub};
-use crate::units::*;
 
-// Refactoriza la definición de Vector:
 #[derive(Debug, Clone, Copy)]
 pub struct Vector<
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
     U: Unit,
 > {
-    xyz: Vector3<Quantity<U>>,
+    xyz: nalgebra::Vector3<Quantity<U>>,
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
 }
 
-// Refactoriza los métodos y traits:
 impl<C, F, U> Vector<C, F, U>
 where
     C: centers::ReferenceCenter,
@@ -109,7 +107,7 @@ where
         Quantity::new(distance)
     }
 
-    /// Computes the Euclidean distance to another Cartesian coordinate of the same type.
+    /// Computes the Euclidean distance to another vector of the same type.
     pub fn distance_to(&self, other: &Self) -> Quantity<U>
     where
         U: std::cmp::PartialEq + std::fmt::Debug
@@ -118,7 +116,6 @@ where
     }
 
 }
-
 
 impl<C, F, U> std::fmt::Display for Vector<C, F, U>
 where
@@ -142,7 +139,7 @@ impl<C, F, U> Add for Vector<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: LengthUnit + std::cmp::PartialEq + std::fmt::Debug,
+    U: Unit,
 {
     type Output = Self;
 
@@ -155,7 +152,7 @@ impl<C, F, U> Sub for Vector<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: LengthUnit + std::cmp::PartialEq + std::fmt::Debug,
+    U: Unit,
 {
     type Output = Self;
     fn sub(self, other: Self) -> Self::Output { (&self).sub(&other) }
