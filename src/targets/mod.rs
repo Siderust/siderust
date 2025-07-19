@@ -27,14 +27,14 @@
 //! let dec_in_mas_per_year = MilliArcseconds::new(9.56) / DAY;
 //! let betelgeuse_pm = ProperMotion::new(ra_in_mas_per_year, dec_in_mas_per_year);
 //! let betelgeuse = Target::new(
-//!     Direction::<Geocentric, Equatorial>::from_degrees(88.792939, 7.407064, None),
+//!     Direction::<Geocentric, Equatorial>::from_degrees(88.792939, 7.407064, Quantity::<Unitless>::new(1.0)),
 //!     ModifiedJulianDate::new(60200.0).to_julian_day(),
 //!     betelgeuse_pm,
 //! );
 //!
 //! // Jupiter’s geocentric position at a given epoch (no proper motion)
 //! let jupiter = Target::new_static(
-//!     Direction::<Geocentric, Equatorial>::from_degrees(23.123, -5.321, None),
+//!     Direction::<Geocentric, Equatorial>::from_degrees(23.123, -5.321, Quantity::<Unitless>::new(1.0)),
 //!     ModifiedJulianDate::new(60200.0).to_julian_day(),
 //! );
 //! ```

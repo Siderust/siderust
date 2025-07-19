@@ -36,7 +36,7 @@ impl<C: ReferenceCenter,> Direction<C, ECEF> {
         Self::new_spherical_coord(
             lat,
             lon,
-            None
+            Quantity::<Unitless>::new(1.0)
         )
     }
 
@@ -58,7 +58,7 @@ impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
         Self::new_spherical_coord(
             lat,
             lon,
-            Some(Kilometers::new(EARTH.radius.value() + alt.value()))
+            Kilometers::new(EARTH.radius.value() + alt.value())
         )
     }
 

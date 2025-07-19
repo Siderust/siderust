@@ -225,7 +225,7 @@ pub fn precess_equatorial<U: LengthUnit>(
     position::Equatorial::<U>::new::<Quantity<U>>(
         ra.to::<Degree>(),
         dec.to::<Degree>(),
-        position.distance.expect("precess_equatorial: distance must be set")
+        position.distance
     )
 }
 

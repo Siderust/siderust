@@ -42,7 +42,7 @@ impl<C: ReferenceCenter> Direction<C, ICRS> {
     /// # Returns
     /// A new `Direction` in the ICRS frame.
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
-        Self::new_spherical_coord(dec, ra, None)
+        Self::new_spherical_coord(dec, ra, Quantity::<Unitless>::new(1.0))
     }
 
     /// Constructs a new ICRS spherical coordinate with normalized input angular.
@@ -74,7 +74,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
     /// # Returns
     /// A new `Position` in the ICRS frame.
     pub const fn new_const(ra: Degrees, dec: Degrees, distance: Quantity<U>) -> Self {
-        Self::new_spherical_coord(dec, ra, Some(distance))
+        Self::new_spherical_coord(dec, ra, distance)
     }
 
     /// Constructs a new ICRS spherical coordinate with normalized input angular.
