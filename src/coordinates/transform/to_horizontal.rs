@@ -47,7 +47,7 @@ pub fn geocentric_to_horizontal<U: LengthUnit>(
                     dec_rad.sin() * lat_rad.cos()
                   - dec_rad.cos() * ha_rad.cos() * lat_rad.sin());
 
-    spherical::position::Horizontal::<U>::new::<Quantity<U>>(
+    spherical::position::Horizontal::<U>::new(
         Degrees::new(alt_rad.to_degrees()),
         Degrees::new(az_rad.to_degrees()),
         target.distance,

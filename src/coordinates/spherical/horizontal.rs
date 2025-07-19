@@ -52,10 +52,13 @@ impl<C: ReferenceCenter> Direction<C, Horizontal> {
     ///
     /// # Returns
     /// A `Direction` in the horizontal frame.
-    pub fn new(alt: Degrees, az: Degrees) -> Self {
+    pub fn new<T>(alt: T, az: T) -> Self
+    where
+        T: Into<Degrees>,
+    {
         Self::new_const(
-            alt.wrap_quarter_fold(),
-            az.normalize()
+            alt.into().wrap_quarter_fold(),
+            az.into().normalize()
         )
     }
 }
@@ -85,13 +88,14 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Horizontal, U> {
     ///
     /// # Returns
     /// A `Position` in the horizontal frame.
-    pub fn new<T>(alt: Degrees, az: Degrees, distance: T) -> Self
+    pub fn new<A, T>(alt: A, az: A, distance: T) -> Self
     where
+        A: Into<Degrees>,
         T: Into<Quantity<U>>
     {
         Self::new_const(
-            alt.wrap_quarter_fold(),
-            az.normalize(),
+            alt.into().wrap_quarter_fold(),
+            az.into().normalize(),
             distance.into())
     }
 
