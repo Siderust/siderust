@@ -82,10 +82,6 @@ where
             _frame: PhantomData,
         }
     }
-
-    pub const fn from_degrees(polar: f64, azimuth: f64, r: Quantity<U>) -> Self {
-        Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), r)
-    }
 }
 
 impl<C, F, U> SphericalCoord<C, F, U>
