@@ -43,12 +43,12 @@
 //! Implements `Display` for readable output including center, frame, angles, and distance.
 
 use super::SphericalCoord;
+use crate::units::{Quantity, LengthUnit, Unitless, Degrees};
 use crate::coordinates::{
     centers, frames,
     centers::ReferenceCenter,
     frames::ReferenceFrame,
 };
-use crate::units::{Quantity, LengthUnit, Unitless};
 
 pub type Direction<C, F> = SphericalCoord<C, F, Unitless>;
 pub type Ecliptic   = Direction<centers::Heliocentric, frames::Ecliptic>;   // L (l), B (b)
@@ -64,6 +64,11 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
 {
+
+    pub const fn from_degrees(polar: f64, azimuth: f64) -> Self {
+        Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), Quantity::<Unitless>::new(1.0))
+    }
+
     pub fn position<U: LengthUnit>(&self, magnitude: Quantity<U>) -> super::Position<C, F, U> {
         super::Position::new_spherical_coord(self.polar, self.azimuth, magnitude)
     }
