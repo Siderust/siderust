@@ -262,7 +262,8 @@ impl Degrees {
     }
 }
 
-
+impl From<Degrees> for Radians { fn from(deg: Degrees) -> Self { deg.to::<Radian>() } }
+impl From<Radians> for Degrees { fn from(rad: Radians) -> Self { rad.to::<Degree>() } }
 
 #[cfg(test)]
 mod tests {

@@ -222,9 +222,9 @@ pub fn precess_equatorial<U: LengthUnit>(
 
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
-    position::Equatorial::<U>::new::<Quantity<U>>(
-        ra.to::<Degree>(),
-        dec.to::<Degree>(),
+    position::Equatorial::<U>::new(
+        ra,
+        dec,
         position.distance
     )
 }

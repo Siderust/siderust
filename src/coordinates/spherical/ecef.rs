@@ -45,10 +45,13 @@ impl<C: ReferenceCenter,> Direction<C, ECEF> {
     /// # Arguments
     /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
-    pub fn new(lon: Degrees, lat: Degrees) -> Self {
+    pub fn new<T>(lon: T, lat: T) -> Self
+    where
+        T: Into<Degrees>,
+    {
         Self::new_const(
-            lat.wrap_quarter_fold(),
-            lon.wrap_signed_lo()
+            lat.into().wrap_quarter_fold(),
+            lon.into().wrap_signed_lo()
         )
     }
 }
@@ -68,13 +71,14 @@ impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
     /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
     /// - `alt`: Altitude above the sea, in KM.
-    pub fn new<T>(lon: Degrees, lat: Degrees, alt: T) -> Self
+    pub fn new<A, T>(lon: A, lat: A, alt: T) -> Self
     where
-        T: Into<Quantity<Kilometer>>,
+        T: Into<Kilometers>,
+        A: Into<Degrees>,
     {
         Self::new_const(
-            lat.wrap_quarter_fold(),
-            lon.wrap_signed_lo(),
+            lat.into().wrap_quarter_fold(),
+            lon.into().wrap_signed_lo(),
             alt.into())
     }
 }
