@@ -53,4 +53,3 @@ pub mod cartesian;
 pub mod spherical;
 pub mod frames;
 pub mod centers;
-pub mod kinds;
