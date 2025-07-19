@@ -48,9 +48,9 @@ use crate::coordinates::{
     centers::ReferenceCenter,
     frames::ReferenceFrame,
 };
-use crate::units::{Quantity, LengthUnit};
+use crate::units::{Quantity, LengthUnit, Unitless};
 
-pub type Direction<C, F> = SphericalCoord<C, F, f64>;
+pub type Direction<C, F> = SphericalCoord<C, F, Unitless>;
 pub type Ecliptic   = Direction<centers::Heliocentric, frames::Ecliptic>;   // L (l), B (b)
 pub type Equatorial = Direction<centers::Geocentric,   frames::Equatorial>; // Dec (δ), RA (α)
 pub type Horizontal = Direction<centers::Topocentric,  frames::Horizontal>; // Alt (α), Az (θ)
@@ -65,7 +65,7 @@ where
     F: ReferenceFrame,
 {
     pub fn position<U: LengthUnit>(&self, magnitude: Quantity<U>) -> super::Position<C, F, U> {
-        super::Position::new_spherical_coord(self.polar, self.azimuth, Some(magnitude))
+        super::Position::new_spherical_coord(self.polar, self.azimuth, magnitude)
     }
 }
 
@@ -83,7 +83,7 @@ mod tests {
 
         assert_eq!(coord.ra().value(), 45.0);
         assert_eq!(coord.dec().value(), 90.0);
-        assert_eq!(coord.distance, None);
+        assert_eq!(coord.distance.value(), 1.0);
     }
 
     #[test]
@@ -97,7 +97,6 @@ mod tests {
 
         assert!(output.contains("θ: 60"), "Missing polar angle");
         assert!(output.contains("φ: 30"), "Missing azimuth");
-        assert!(output.contains("r: NaN"), "LengthUnit should be NaN");
     }
 
     #[test]
@@ -109,6 +108,5 @@ mod tests {
 
         assert!((coord.ra().value() - 90.654_321).abs() < 1e-6);
         assert!((coord.dec().value() - 45.123_456).abs() < 1e-6);
-        assert_eq!(coord.distance, None);
     }
 }

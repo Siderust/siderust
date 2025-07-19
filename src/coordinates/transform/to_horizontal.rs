@@ -50,7 +50,7 @@ pub fn geocentric_to_horizontal<U: LengthUnit>(
     spherical::position::Horizontal::<U>::new::<Quantity<U>>(
         Degrees::new(alt_rad.to_degrees()),
         Degrees::new(az_rad.to_degrees()),
-        target.distance.unwrap(),
+        target.distance,
     )
 }
 
@@ -87,7 +87,7 @@ mod tests {
         let expected_horizontal = spherical::position::Horizontal::<LightYear>::new(
             Degrees::from_dms(-77, 59, 0.0).to::<Deg>(),
             Degrees::from_dms(349, 24, 0.0).to::<Deg>(),
-            SIRIUS.target.get_position().distance.unwrap(),
+            SIRIUS.target.get_position().distance,
         );
 
         let horizontal = geocentric_to_horizontal(&SIRIUS.target.get_position(), &ROQUE_DE_LOS_MUCHACHOS, jd);

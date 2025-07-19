@@ -64,7 +64,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
     position::Equatorial::<U>::new::<Quantity<U>>(
         mean_position.ra() + (proper_motion.ra_μ * t).to::<Deg>().normalize(),
         (mean_position.dec() + (proper_motion.dec_μ * t).to::<Deg>()).normalize(),
-        mean_position.distance.unwrap(),
+        mean_position.distance,
     )
 }
 
