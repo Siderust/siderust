@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 
-/// Represents Modified Julian Day (MJD), which is the Julian Day
+/// Represents Modified Julian Date (MJD), which is the Julian Date
 /// minus 2400000.5, used in various scientific and technical applications.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct ModifiedJulianDate(f64);
@@ -18,7 +18,6 @@ impl ModifiedJulianDate {
     pub const fn to_julian_day(&self) -> super::JulianDate {
         super::JulianDate::new(self.value() + 2400000.5)
     }
-
 
     pub fn to_utc(&self) -> Option<DateTime<Utc>> {
         let jd = self.to_julian_day().value();
