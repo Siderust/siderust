@@ -3,21 +3,21 @@
 //! **Nutation** describes short‑period wobbles of the Earth’s rotation axis that
 //! ride on top of the much slower 26 000‑year precession.  The motion is driven
 //! by the changing torque exerted by the Moon and the Sun on the Earth’s
-//! equatorial bulge.  Ignoring nutation would introduce errors of up to
-//! ±17″ of arc in the position of a star — far larger than the field of view of
+//! equatorial bulge. Ignoring nutation would introduce errors of up to
+//! ±17″ of arc in the position of a star, far larger than the field of view of
 //! modern telescopes.
 //!
 //! The module supplies:
-//! * **Δψ (longitude)** — the shift of the ecliptic along its own plane (°).
-//! * **Δε (obliquity)** — the oscillation of the ecliptic’s tilt (°).
-//! * **ε₀ (mean obliquity)** — the mean tilt of the ecliptic at the same epoch (°).
+//! * **Δψ (longitude)**: the shift of the ecliptic along its own plane (°).
+//! * **Δε (obliquity)**: the oscillation of the ecliptic’s tilt (°).
+//! * **ε₀ (mean obliquity)**: the mean tilt of the ecliptic at the same epoch (°).
 //!
 //! With those three numbers you can rotate *mean* equatorial coordinates
 //! (*RA*, *Dec*) of any object into *true* (apparent) coordinates valid for the
 //! requested date.
 //!
 //! ## Numerical model
-//! We implement the **IAU 1980** nutation theory (63 trigonometric terms).  It is
+//! We implement the **IAU 1980** nutation theory (63 trigonometric terms). It is
 //! still accurate to ≲ 0.1″ from year 1800 to 2050 and matches the recipe in
 //! Chapter 22 of _Jean Meeus – Astronomical Algorithms_, 2nd ed. (1998).
 //!
@@ -70,11 +70,11 @@ use crate::astro::dynamical_time::julian_ephemeris_day;
 /// Nutation components for a given epoch (all **degrees**).
 #[derive(Debug)]
 pub struct Nutation {
-    /// Δψ — nutation in ecliptic longitude.
+    /// Δψ: nutation in ecliptic longitude.
     pub longitude: Degrees,
-    /// Δε — nutation in obliquity.
+    /// Δε: nutation in obliquity.
     pub obliquity: Degrees,
-    /// ε₀ — mean obliquity of the ecliptic.
+    /// ε₀: mean obliquity of the ecliptic.
     pub ecliptic: Degrees,
 }
 

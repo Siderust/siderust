@@ -4,31 +4,31 @@
 //! following the *short series* formulation in chapter&nbsp;20 of Jean&nbsp;Meeus’
 //! *Astronomical Algorithms* (2nd ed.).  The algorithm is sufficient for most
 //! practical astronomical work: its errors remain below **0.1 arc‑second** for
-//! epochs within ±5 Julian centuries of **J2000.0** – that is, the years
+//! epochs within ±5 Julian centuries of **J2000.0**. That is, the years
 //! **1500 → 2500**.
 //!
 //! ## What is precession?
 //! The rotation axis of the Earth is not fixed in inertial space: the torques
 //! produced by the gravitational attraction of the Sun and the Moon on the
-//! Earth’s equatorial bulge make the axis describe a **slow conical motion** – a
+//! Earth’s equatorial bulge make the axis describe a **slow conical motion**, a
 //! gyroscope under external torque.  The effect is known as **lunisolar
 //! precession** and has a period of about **25 770 years** (*the Platonic year*).
 //! A smaller contribution, **planetary precession**, is produced by the tidal
 //! forces of the other planets.
 //!
 //! In equatorial coordinates (right ascension *α*, declination *δ*) this causes
-//! the celestial poles and the equinox to *drift* at roughly **50″ · yr⁻¹**.  If
+//! the celestial poles and the equinox to *drift* at roughly **50″ · yr⁻¹**. If
 //! the apparent or mean position of a star is referred to two different epochs
 //! it must therefore be **precessed** to the desired date before it can be
 //! compared with catalogued data or with another observation.
 //!
 //! ## Why do we need a numerical model?
 //! Astronomical catalogues adopt a fixed **reference epoch** (e.g. B1950.0 or
-//! J2000.0).  Precise pointing, orbit determination or reduction of
+//! J2000.0). Precise pointing, orbit determination or reduction of
 //! observational data to standard coordinates all require a transformation
 //! between the catalogue epoch and the observation epoch.  Performing that
 //! transformation with an accuracy of a few milliarc‑seconds – small enough for
-//! sub‑arc‑second telescopes and for most amateur‑level applications – is the
+//! sub‑arc‑second telescopes and for most amateur‑level applications, is the
 //! purpose of the present code.
 //!
 //! ## How is precession computed here?
@@ -62,7 +62,7 @@
 //! | When to apply?    | **Always** when comparing coordinates referred to different epochs | When sub‑arc‑second precision or true‑of‑date coordinates are required |
 //!
 //! In other words, **precession is the steady drift** of the reference frame;
-//! **nutation is the superposed wobble**.  The two effects must be added to
+//! **nutation is the superposed wobble**. The two effects must be added to
 //! obtain the *true* or *apparent* equator and equinox of date.  This module
 //! provides the precession step; nutation would be applied subsequently by a
 //! dedicated routine.
@@ -88,7 +88,6 @@
 //! - [`precess_from_j2000`] – convenience layer for the common case
 //!   “mean J2000.0 → given date”.
 //! - [`precess_equatorial`] – precess between *any* two epochs.
-
 
 use std::f64::consts::TAU;
 
