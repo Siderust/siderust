@@ -20,7 +20,7 @@ where
     fn from(sph: &spherical::Position<C, F, U>) -> Self {
         let ra_rad = sph.azimuth.to::<Radian>();
         let dec_rad = sph.polar.to::<Radian>();
-        let r = sph.distance.expect("SphericalCoord must have a distance");
+        let r = sph.distance;
         let x = r * dec_rad.cos() * ra_rad.cos();
         let y = r * dec_rad.cos() * ra_rad.sin();
         let z = r * dec_rad.sin();

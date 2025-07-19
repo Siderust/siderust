@@ -58,9 +58,9 @@ pub struct SphericalCoord<
     F: ReferenceFrame,
     U: Unit,
 > {
-    pub polar: Degrees,      // θ (polar/latitude/declination)
-    pub azimuth: Degrees,    // φ (azimuth/longitude/right ascension)
-    pub distance: Option<Quantity<U>>, // Optional distance (AstronomicalUnits, parsec, etc.)
+    pub polar: Degrees,        // θ (polar/latitude/declination)
+    pub azimuth: Degrees,      // φ (azimuth/longitude/right ascension)
+    pub distance: Quantity<U>, // Optional distance (AstronomicalUnits, parsec, etc.)
 
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
@@ -73,7 +73,7 @@ where
     F: ReferenceFrame,
     U: Unit,
 {
-    pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Option<Quantity<U>>) -> Self {
+    pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
         Self {
             polar,
             azimuth,
@@ -83,7 +83,7 @@ where
         }
     }
 
-    pub const fn from_degrees(polar: f64, azimuth: f64, r: Option<Quantity<U>>) -> Self {
+    pub const fn from_degrees(polar: f64, azimuth: f64, r: Quantity<U>) -> Self {
         Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), r)
     }
 }
@@ -136,7 +136,7 @@ impl<C, F, U> std::fmt::Display for SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
     Quantity<U>: std::fmt::Display
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
@@ -145,7 +145,23 @@ where
             "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}, r: {:.6}",
             C::center_name(),
             F::frame_name(),
-            self.polar, self.azimuth, self.distance.unwrap_or(Quantity::<U>::NAN)
+            self.polar, self.azimuth, self.distance
+        )
+    }
+}
+
+impl<C, F> std::fmt::Display for SphericalCoord<C, F, Unitless>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}",
+            C::center_name(),
+            F::frame_name(),
+            self.polar, self.azimuth
         )
     }
 }

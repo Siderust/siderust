@@ -126,7 +126,6 @@ pub fn remove_aberration<U: LengthUnit>(
 mod tests {
     use super::*;
     use crate::coordinates::spherical::position;
-    use approx::assert_relative_eq;
 
     fn apply_aberration_sph<U: LengthUnit>(
         mean: position::Equatorial<U>,
@@ -145,7 +144,7 @@ mod tests {
         );
         let out = apply_aberration_sph(mean, jd);
 
-        assert_relative_eq!(out.distance.unwrap().value(), mean.distance.unwrap().value(), epsilon = 0.0);
+        assert_eq!(out.distance.value(), mean.distance.value());
     }
 
     #[test]

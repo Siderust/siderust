@@ -37,8 +37,8 @@ where
     C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit,
     Quantity<U>: std::cmp::PartialOrd + std::fmt::Display
 {
-    let d1 = a.distance.unwrap_or(Quantity::<U>::NAN);
-    let d2 = b.distance.unwrap_or(Quantity::<U>::NAN);
+    let d1 = a.distance;
+    let d2 = b.distance;
     let dp = (a.polar.value()   - b.polar.value()).abs();
     let da = (a.azimuth.value() - b.azimuth.value()).abs();
     if (d1 - d2).abs() >= Quantity::<U>::new(epsilon) || dp >= epsilon || da >= epsilon {
@@ -55,7 +55,6 @@ macro_rules! assert_cartesian_eq {
     ($a:expr, $b:expr, $eps:expr $(,)?) => {{
         fn _check<T>(_: &T, _: &T) {}
         _check(&$a, &$b);
-        // <-- note the extra `macros` path here:
         $crate::macros::__assert_cartesian_eq(&$a, &$b, $eps, None);
     }};
     ($a:expr, $b:expr, $eps:expr, $($msg:tt)+) => {{

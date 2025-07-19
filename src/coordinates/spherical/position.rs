@@ -19,7 +19,7 @@ use crate::coordinates::{
     frames::*,
     centers::*,
 };
-use crate::units::LengthUnit;
+use crate::units::{LengthUnit, Quantity, Unitless};
 
 impl<C, F, U> Position<C, F, U>
 where
@@ -28,10 +28,10 @@ where
     U: LengthUnit,
 {
     /// The zero point (origin) in this coordinate system.
-    pub const CENTER: Self = Self::from_degrees(0.0, 0.0, None);
+    pub const CENTER: Self = Self::from_degrees(0.0, 0.0, Quantity::<U>::new(0.0));
 
     pub fn direction(&self) -> super::Direction<C, F> {
-        super::Direction::new_spherical_coord(self.polar, self.azimuth, None)
+        super::Direction::new_spherical_coord(self.polar, self.azimuth, Quantity::<Unitless>::new(1.0))
     }
 }
 
@@ -46,7 +46,7 @@ mod tests {
         let coord = ICRS::<AstronomicalUnit>::new(Degrees::new(45.0), Degrees::new(90.0), 1.0);
         assert_eq!(coord.ra().value(), 45.0);
         assert_eq!(coord.dec().value(), 90.0);
-        assert_eq!(coord.distance.unwrap(), 1.0);
+        assert_eq!(coord.distance.value(), 1.0);
     }
     
     #[test]
@@ -63,7 +63,7 @@ mod tests {
         let coord = HCRS::<AstronomicalUnit>::new(Degrees::new(0.0), Degrees::new(0.0), 0.0);
         assert_eq!(coord.polar.value(), 0.0);
         assert_eq!(coord.azimuth.value(), 0.0);
-        assert_eq!(coord.distance.unwrap(), 0.0);
+        assert_eq!(coord.distance.value(), 0.0);
     }
 
     #[test]
@@ -71,6 +71,6 @@ mod tests {
         let coord = ICRS::<AstronomicalUnit>::new(Degrees::new(90.654321), Degrees::new(45.123456), 1234.56789);
         assert!((coord.dec().value() - 45.123456).abs() < 1e-6);
         assert!((coord.ra().value() - 90.654321).abs() < 1e-6);
-        assert!((coord.distance.unwrap() - 1234.56789*AU).abs() < 1e-6*AU);
+        assert!((coord.distance - 1234.56789*AU).abs() < 1e-6*AU);
     }
 }

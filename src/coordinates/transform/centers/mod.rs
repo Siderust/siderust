@@ -44,7 +44,7 @@ where
         spherical::Direction::new_spherical_coord(
             self.polar,
             self.azimuth,
-            None
+            self.distance
         )
     }
 }
