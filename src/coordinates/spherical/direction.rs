@@ -5,10 +5,9 @@
 //!
 //! ## Overview
 //!
-//! - **Generic over Center, Frame, and Kind:**
+//! - **Generic over Center and Frame:**
 //!   - `C`: Reference center (e.g., `Heliocentric`, `Geocentric`, `Barycentric`).
 //!   - `F`: Reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`).
-//!   - `K`: Kind marker (`PositionKind`, `DirectionKind`), enforcing semantic correctness.
 //! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
 //! - **Units:** Angles are stored as [`Degrees`]; distance is optional and typically in AstronomicalUnits or parsecs (see context).
 //! - **Conversions:** Seamless conversion to and from [`Vector`] via `From`/`Into`.
@@ -30,7 +29,7 @@
 //! - [`Direction<C, F>`]: Spherical direction (distance is typically `None`).
 //!
 //! ## Type Aliases
-//! - [`Direction<C, F>`]: Spherical direction (angles only, distance is always `None`).
+//! - [`Direction<C, F>`]: Spherical direction (angles only, vector is unitary).
 //! - [`Ecliptic`]: Heliocentric ecliptic direction (longitude, latitude).
 //! - [`Equatorial`]: Geocentric equatorial direction (right ascension, declination).
 //! - [`Horizontal`]: Topocentric horizontal direction (azimuth, altitude).
@@ -38,9 +37,6 @@
 //! - [`HCRS`]: Heliocentric ICRS direction (right ascension, declination).
 //! - [`GCRS`]: Geocentric ICRS direction (right ascension, declination).
 //! - [`Geographic`]: Geocentric ECEF
-//!
-//! ## Display
-//! Implements `Display` for readable output including center, frame, angles, and distance.
 
 use super::SphericalCoord;
 use crate::units::{Quantity, LengthUnit, Unitless, Degrees};

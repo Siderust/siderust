@@ -31,7 +31,6 @@
 //!
 //! ## Methods
 //! - [`new(polar, azimuth, distance)`]: Construct a new coordinate.
-//! - [`from_degrees(polar, azimuth, distance)`]: Construct from primitive values.
 //! - [`distance_to(other)`]: Compute Euclidean distance to another coordinate.
 //! - [`angular_separation(other)`]: Compute angular separation in degrees.
 //!
