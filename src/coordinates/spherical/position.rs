@@ -1,7 +1,7 @@
 use super::SphericalCoord;
 
+use crate::units::*;
 use crate::coordinates::{centers, frames};
-use crate::units::Kilometer;
 
 // TODO: Bound U to LengthUnit and VelocityUnit
 // see issue #112792 <https://github.com/rust-lang/rust/issues/112792> for more information
@@ -15,20 +15,18 @@ pub type HCRS<U>        = Position<centers::Heliocentric, frames::ICRS, U>; // D
 pub type GCRS<U>        = Position<centers::Geocentric,   frames::ICRS, U>; // Dec (δ), RA (α), LengthUnit (d)
 pub type Geographic     = Position<centers::Geocentric,   frames::ECEF, Kilometer>; //Latitude (φ),Longitude (λ), Altitude (h)
 
-use crate::coordinates::{
-    frames::*,
-    centers::*,
-};
-use crate::units::{LengthUnit, Quantity, Unitless};
-
 impl<C, F, U> Position<C, F, U>
 where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
     U: LengthUnit,
 {
     /// The zero point (origin) in this coordinate system.
     pub const CENTER: Self = Self::from_degrees(0.0, 0.0, Quantity::<U>::new(0.0));
+
+    pub const fn from_degrees(polar: f64, azimuth: f64, r: Quantity<U>) -> Self {
+        Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), r)
+    }
 
     pub fn direction(&self) -> super::Direction<C, F> {
         super::Direction::new_spherical_coord(self.polar, self.azimuth, Quantity::<Unitless>::new(1.0))
