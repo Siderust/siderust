@@ -29,10 +29,13 @@ pub struct ProperMotion {
 }
 
 impl ProperMotion {
-    pub fn from_mas_per_year(ra: f64, dec: f64) -> ProperMotion {
-        ProperMotion{
-            ra_μ: MilliArcseconds::new(ra).to::<Degree>() / YEAR,
-            dec_μ: MilliArcseconds::new(dec).to::<Degree>() / YEAR
+    pub fn new<T>(ra_v: Quantity<T>, dec_v: Quantity<T>) -> Self
+    where
+        T: FrequencyUnit,
+    {
+        Self{
+            ra_μ: ra_v.to::<DegreePerYear>(),
+            dec_μ: dec_v.to::<DegreePerYear>()
         }
     }
 }

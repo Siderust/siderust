@@ -182,7 +182,6 @@ mod tests {
 
     #[test]
     fn test_speed_of_light() {
-        //const AU_PER_DAY_C: AusPerDay = MetersPerSecond::new(299_792_458.0).to::<AuPerDay>(); // Speed Of Light
         assert_eq!(AU_PER_DAY_C.value(), 173.1446334836104);
     }
 

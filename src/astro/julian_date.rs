@@ -1,6 +1,6 @@
-//! Time unit: Julian Day
+//! Astro Date: Julian Date
 //!
-//! This module provides the `JulianDate` struct, representing the Julian Day number,
+//! This module provides the `JulianDate` struct, representing the Julian Date,
 //! a continuous count of days since the beginning of the Julian Period used in astronomy.
 
 use crate::units::*;
@@ -49,11 +49,6 @@ impl JulianDate {
     #[inline]
     pub fn value(&self) -> f64 {
         self.0.value()
-    }
-
-    #[inline]
-    pub fn days(&self) -> Days {
-        self.0
     }
 
     pub fn to_utc(&self) -> Option<DateTime<Utc>> {

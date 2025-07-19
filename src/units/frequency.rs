@@ -20,23 +20,24 @@
 //! ```
 
 use super::*;
-use std::f64::consts::PI;
 
 pub enum Frequency {}
 impl Dimension for Frequency {}
 pub trait FrequencyUnit: Unit<Dim = Frequency> {}
 impl<T: Unit<Dim = Frequency>> FrequencyUnit for T {}
 
-define_unit!("deg/day", DegreePerDay, Frequency, 1.0);
+define_unit!("deg/day", DegreePerDay, Frequency, Degree::RATIO / Day::RATIO);
 pub type DegreesPerDay = Quantity<DegreePerDay>;
 
 
-define_unit!("deg/year", DegreePerYear, Frequency, 1.0/Year::RATIO);
+define_unit!("deg/year", DegreePerYear, Frequency, Degree::RATIO/Year::RATIO);
 pub type DegreesPerYear = Quantity<DegreePerYear>;
 
-define_unit!("rad/day", RadianPerDay, Frequency, 180.0/PI);
+define_unit!("rad/day", RadianPerDay, Frequency, Radian::RATIO / Day::RATIO);
 pub type RadiansPerDay = Quantity<RadianPerDay>;
 
+define_unit!("mas/day", MilliArcsecondPerDay, Frequency, MilliArcsecond::RATIO/Day::RATIO);
+pub type MilliArcsecondsPerDay = Quantity<MilliArcsecondPerDay>;
 
 impl std::ops::Div<Days> for Radians {
     type Output = RadiansPerDay;
@@ -60,6 +61,14 @@ impl std::ops::Div<Years> for Degrees {
     fn div(self, rhs: Years) -> Self::Output {
         // 1 year = 365.25 days
         DegreesPerYear::new(self.value() / rhs.value())
+    }
+}
+
+impl std::ops::Div<Days> for MilliArcseconds {
+    type Output = MilliArcsecondsPerDay;
+
+    fn div(self, rhs: Days) -> Self::Output {
+        Self::Output::new(self.value() / rhs.value())
     }
 }
 

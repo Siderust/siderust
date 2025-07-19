@@ -16,13 +16,16 @@
 //!
 //! ## Examples
 //! ```rust
+//! use siderust::units::*;
 //! use siderust::targets::Target;
 //! use siderust::astro::ModifiedJulianDate;
 //! use siderust::coordinates::{spherical::Direction, frames::Equatorial, centers::Geocentric};
 //! use siderust::astro::proper_motion::ProperMotion;
 //!
 //! // A star with known proper motion
-//! let betelgeuse_pm = ProperMotion::from_mas_per_year(-3.10, 9.56);
+//! let ra_in_mas_per_year = MilliArcseconds::new(-3.10) / DAY;
+//! let dec_in_mas_per_year = MilliArcseconds::new(9.56) / DAY;
+//! let betelgeuse_pm = ProperMotion::new(ra_in_mas_per_year, dec_in_mas_per_year);
 //! let betelgeuse = Target::new(
 //!     Direction::<Geocentric, Equatorial>::from_degrees(88.792939, 7.407064, None),
 //!     ModifiedJulianDate::new(60200.0).to_julian_day(),
