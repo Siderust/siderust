@@ -32,13 +32,14 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
         Self::new_spherical_coord(lat, lon, distance)
     }
 
-    pub fn new<T>(lon: Degrees, lat: Degrees, distance: T) -> Self
+    pub fn new<A, T>(lon: A, lat: A, distance: T) -> Self
     where
         T: Into<Quantity<U>>,
+        A: Into<Degrees>,
     {
         Self::new_const(
-            lon.normalize(),
-            lat.wrap_quarter_fold(),
+            lon.into().normalize(),
+            lat.into().wrap_quarter_fold(),
             distance.into())
     }
 }
@@ -60,10 +61,13 @@ impl<C: ReferenceCenter> Direction<C, frames::Ecliptic> {
     /// # Arguments
     /// - `lon`: Longitude (λ), in degrees.
     /// - `lat`: Latitude (β), in degrees.
-    pub fn new(lon: Degrees, lat: Degrees) -> Self {
+    pub fn new<T>(lon: T, lat: T) -> Self
+    where
+        T: Into<Degrees>,
+    {
         Self::new_const(
-            lon.normalize(),
-            lat.wrap_quarter_fold()
+            lon.into().normalize(),
+            lat.into().wrap_quarter_fold()
         )
     }
 }

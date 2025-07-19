@@ -45,10 +45,13 @@ impl<C: ReferenceCenter> Direction<C, Equatorial> {
     ///
     /// # Returns
     /// A normalized `Direction` in the equatorial frame.
-    pub fn new(ra: Degrees, dec: Degrees) -> Self {
+    pub fn new<T>(ra: T, dec: T) -> Self
+        where
+        T: Into<Degrees>,
+    {
         Self::new_const(
-            ra.normalize(),
-            dec.wrap_quarter_fold()
+            ra.into().normalize(),
+            dec.into().wrap_quarter_fold()
         )
     }
 }
@@ -69,13 +72,14 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Equatorial, U> {
     ///
     /// # Returns
     /// A normalized `Position` in the equatorial frame.
-    pub fn new<T>(ra: Degrees, dec: Degrees, distance: T) -> Self
+    pub fn new<A, T>(ra: A, dec: A, distance: T) -> Self
     where
+        A: Into<Degrees>,
         T: Into<Quantity<U>>
     {
         Self::new_const(
-            ra.normalize(),
-            dec.wrap_quarter_fold(),
+            ra.into().normalize(),
+            dec.into().wrap_quarter_fold(),
             distance.into())
     }
 }
