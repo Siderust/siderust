@@ -5,7 +5,7 @@
 //! - `distance`: LengthUnit from Earth in light-years (`LightYear`).
 //! - `mass`: Stellar mass in solar masses (`SolarMasses`).
 //! - `radius`: Stellar radius in solar radii (`SolarRadiuses`).
-//! - `lumminosity`: Stellar luminosity in solar luminosities (`SolarLuminosity`).
+//! - `luminosity`: Stellar luminosity in solar luminosities (`SolarLuminosity`).
 //! - `target`: [`Target`] pointing to a Spherical coordinates (see [`Position`]), using degrees and Julian Day.
 
 use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
@@ -15,13 +15,13 @@ use crate::units::*;
 use std::borrow::Cow;
 
 /// Represents a **Star** characterized by its distance, mass, radius, luminosity and position in the sky.
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Star<'a> {
     pub name: Cow<'a, str>,
     pub distance: LightYears,
     pub mass: SolarMasses,
     pub radius: SolarRadiuses,
-    pub lumminosity: SolarLuminosities,
+    pub luminosity: SolarLuminosities,
     pub target: Target<Position<Geocentric, Equatorial, LightYear>>,
 }
 
@@ -32,7 +32,7 @@ impl<'a> Star<'a> {
         distance: LightYears,
         mass: SolarMasses,
         radius: SolarRadiuses,
-        lumminosity: SolarLuminosities,
+        luminosity: SolarLuminosities,
         target: Target<Position<Geocentric, Equatorial, LightYear>>,
     ) -> Star<'static> {
         Star {
@@ -40,7 +40,7 @@ impl<'a> Star<'a> {
             distance,
             mass,
             radius,
-            lumminosity,
+            luminosity,
             target,
         }
     }
@@ -51,7 +51,7 @@ impl<'a> Star<'a> {
         distance: LightYears,
         mass: SolarMasses,
         radius: SolarRadiuses,
-        lumminosity: SolarLuminosities,
+        luminosity: SolarLuminosities,
         target: Target<Position<Geocentric, Equatorial, LightYear>>,
     ) -> Star<'a>
     where
@@ -62,7 +62,7 @@ impl<'a> Star<'a> {
             distance,
             mass,
             radius,
-            lumminosity,
+            luminosity,
             target,
         }
     }
