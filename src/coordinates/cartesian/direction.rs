@@ -1,8 +1,7 @@
 use crate::coordinates::{frames, centers};
 use crate::units::{Quantity, LengthUnit, Unitless};
-use super::Vector;
 
-pub type Direction<C, F> = Vector<C, F, Unitless>;
+pub type Direction<C, F> = super::Vector<C, F, Unitless>;
 
 impl<C, F> Direction<C, F>
 where

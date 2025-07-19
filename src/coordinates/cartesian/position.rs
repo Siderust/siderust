@@ -1,11 +1,10 @@
 use crate::coordinates::{centers, frames};
-use super::Vector;
-use crate::units::*;
+use crate::units::{Quantity, LengthUnit};
 
 // TODO: Bound U to LengthUnit
 // see issue #112792 <https://github.com/rust-lang/rust/issues/112792> for more information
-//pub type Position<C, F, U: LengthUnit>   = Vector<C, F, U>;
-pub type Position<C, F, U> = Vector<C, F, U>;
+//pub type Position<C, F, U: LengthUnit> = super::Vector<C, F, U>;
+pub type Position<C, F, U> = super::Vector<C, F, U>;
 
 impl<C, F, U> Position<C, F, U>
 where
