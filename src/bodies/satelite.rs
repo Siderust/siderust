@@ -4,14 +4,14 @@
 //! - `name`: Name of the satellite (borrowed or owned).
 //! - `mass`: Mass in kilograms (`Kilograms`).
 //! - `radius`: Mean radius in kilometers (`Kilometers`).
-//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AstronomicalUnits, degrees, Julian Day).
+//! - `orbit`: Orbital parameters (see [`Orbit`]).
 
 use crate::astro::orbit::Orbit;
 use crate::units::{Kilograms, Kilometers};
 
 use std::borrow::Cow;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 /// Represents a **Satelite** characterized by its mass, radius and orbit.
 pub struct Satelite<'a> {
     pub name: Cow<'a, str>,

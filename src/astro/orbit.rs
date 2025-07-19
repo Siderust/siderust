@@ -83,7 +83,7 @@ use crate::units::*;
 use crate::astro::JulianDate;
 
 /// Represents the Keplerian orbital elements of a celestial object.
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug)]
 pub struct Orbit {
     pub semi_major_axis: AstronomicalUnits,   // Semi-major axis (AstronomicalUnits)
     pub eccentricity: f64,                    // Orbital eccentricity
