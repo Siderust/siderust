@@ -136,7 +136,7 @@ mod tests {
     use super::*;
     use std::f64::consts::SQRT_2;
 
-    const EPS: Degrees = Degrees::new(1e-6);
+    const EPS: f64 = 1e-6;
 
     #[test]
     fn test_spherical_coord_creation() {
@@ -180,8 +180,8 @@ mod tests {
         assert_eq!(dir.distance.value(), 1.0);
 
         // angular components are preserved
-        assert!((dir.polar - 10.0*DEG).abs() < EPS);
-        assert!((dir.azimuth - 20.0*DEG).abs() < EPS);
+        assert!((dir.polar - 10.0*DEG).abs() < EPS*DEG);
+        assert!((dir.azimuth - 20.0*DEG).abs() < EPS*DEG);
     }
 
     #[test]
@@ -208,12 +208,12 @@ mod tests {
         // identity
         let a = ICRS::<AstronomicalUnit>::new(0.0*DEG, 0.0*DEG, 1.0 * AU);
         let d0 = a.distance_to(&a);
-        assert!(d0.abs().value() < EPS.value());
+        assert!(d0.abs().value() < EPS);
 
         // orthogonal points on unit sphere → chord length sqrt(2) * r
         let b = ICRS::<AstronomicalUnit>::new(0.0*DEG, 90.0*DEG, 1.0 * AU);
         let d = a.distance_to(&b);
-        assert!((d.value() - SQRT_2).abs() < EPS.value());
+        assert!((d.value() - SQRT_2).abs() < EPS);
     }
 
 }
