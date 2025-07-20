@@ -6,8 +6,12 @@ use crate::astro::{
     sidereal::*,
     nutation::corrected_ra_with_nutation
 };
-use crate::coordinates::spherical::position::Equatorial;
-use crate::coordinates::spherical::position::Geographic;
+use crate::coordinates::{
+    spherical::SphericalCoord,
+    spherical::position::Geographic,
+    centers::Geocentric,
+    frames::Equatorial
+};
 
 /// Returns **all** upper- and lower-culminations (meridian passages) that occur
 /// in the interval `[jd_start, jd_end]` for a target whose right-ascension and
@@ -50,17 +54,17 @@ use crate::coordinates::spherical::position::Geographic;
 ///   value.
 ///
 /// ---
-pub fn find_static_extremas<U: LengthUnit>(
-    target: &Target<Equatorial<U>>,
+pub fn find_static_extremas<U: Unit>(
+    target: &Target<SphericalCoord::<Geocentric, Equatorial, U>>,
     observer: &Geographic,
     jd_start: JulianDate,
     jd_end: JulianDate,
 ) -> Vec<Culmination> {
     const MAX_ITER: usize = 8;
     const TOLERANCE: Days = Days::new(1e-11);
-    const D_LST_D_JD: DegreesPerDay = DegreesPerDay::new(360.985_647_366_29); // ° per Julian day
+    const D_LST_D_JD: DegreesPerDay = DegreesPerDay::new(360.985_647_366_29); // Earth rotation freq.
 
-    let ra: Degrees = corrected_ra_with_nutation(target.get_position(), jd_start);
+    let ra: Degrees = corrected_ra_with_nutation(&target.get_position().direction(), jd_start);
 
     let lon: Degrees = observer.lon();
     let mut out = Vec::new();
