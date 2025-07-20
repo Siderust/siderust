@@ -32,7 +32,7 @@ use crate::units::*;
 
 impl<C: ReferenceCenter> Direction<C, Equatorial> {
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
-        Self::new_spherical_coord(dec, ra, Quantity::<Unitless>::new(1.0))
+        Self::new_raw(dec, ra, Quantity::<Unitless>::new(1.0))
     }
 
     /// Constructs a new equatorial spherical coordinate with normalized input angular.
@@ -58,7 +58,7 @@ impl<C: ReferenceCenter> Direction<C, Equatorial> {
 
 impl<C: ReferenceCenter, U: LengthUnit> Position<C, Equatorial, U> {
     pub const fn new_const(ra: Degrees, dec: Degrees, distance: Quantity<U>) -> Self {
-        Self::new_spherical_coord(dec, ra, distance)
+        Self::new_raw(dec, ra, distance)
     }
 
     /// Constructs a new equatorial spherical coordinate with normalized input angular.

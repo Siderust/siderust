@@ -39,7 +39,7 @@ impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// # Returns
     /// A new `Position` in the horizontal frame.
     pub const fn new_const(alt: Degrees, az: Degrees) -> Self {
-        Self::new_spherical_coord(alt, az, Quantity::<Unitless>::new(1.0))
+        Self::new_raw(alt, az, Quantity::<Unitless>::new(1.0))
     }
 
     /// Constructs a new horizontal spherical coordinate with normalized input angular.
@@ -74,7 +74,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Horizontal, U> {
     /// # Returns
     /// A new `Position` in the horizontal frame.
     pub const fn new_const(alt: Degrees, az: Degrees, distance: Quantity<U>) -> Self {
-        Self::new_spherical_coord(alt, az, distance)
+        Self::new_raw(alt, az, distance)
     }
 
     /// Constructs a new horizontal spherical coordinate with normalized input angular.

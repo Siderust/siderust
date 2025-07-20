@@ -71,7 +71,7 @@ where
     F: ReferenceFrame,
     U: Unit,
 {
-    pub const fn new_spherical_coord(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
+    pub const fn new_raw(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
         Self {
             polar,
             azimuth,

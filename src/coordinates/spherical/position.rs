@@ -25,11 +25,11 @@ where
     pub const CENTER: Self = Self::from_degrees(0.0, 0.0, Quantity::<U>::new(0.0));
 
     pub const fn from_degrees(polar: f64, azimuth: f64, r: Quantity<U>) -> Self {
-        Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), r)
+        Self::new_raw(Degrees::new(polar), Degrees::new(azimuth), r)
     }
 
     pub fn direction(&self) -> super::Direction<C, F> {
-        super::Direction::new_spherical_coord(self.polar, self.azimuth, Quantity::<Unitless>::new(1.0))
+        super::Direction::new_raw(self.polar, self.azimuth, Quantity::<Unitless>::new(1.0))
     }
 }
 
