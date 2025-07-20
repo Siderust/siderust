@@ -5,8 +5,8 @@ use crate::coordinates::{
     centers::Geocentric,
     frames::Ecliptic,
 };
-use crate::calculus::elp2000::elp_data;
-use crate::calculus::elp2000::elp_structs::{MainProblem, EarthPert, PlanetPert};
+
+include!(concat!(env!("OUT_DIR"), "/elp_data.rs"));
 use crate::astro::JulianDate;
 use crate::units::{LengthUnit, Quantity};
 use std::f64::consts::{PI, FRAC_PI_2};
@@ -138,9 +138,9 @@ macro_rules! define_main_series {
     };
 }
 
-define_main_series!(sum_series_elp1, elp_data::ELP1, 0.0);
-define_main_series!(sum_series_elp2, elp_data::ELP2, 0.0);
-define_main_series!(sum_series_elp3, elp_data::ELP3, FRAC_PI_2);
+define_main_series!(sum_series_elp1, ELP1, 0.0);
+define_main_series!(sum_series_elp2, ELP2, 0.0);
+define_main_series!(sum_series_elp3, ELP3, FRAC_PI_2);
 
 // ====================
 // Earth perturbation series (ELP4-9,22-29,30-36)
@@ -173,33 +173,33 @@ macro_rules! define_earth_series {
 }
 
 // ELP4-9
-define_earth_series!(sum_series_elp4,  elp_data::ELP4,  None);
-define_earth_series!(sum_series_elp5,  elp_data::ELP5,  None);
-define_earth_series!(sum_series_elp6,  elp_data::ELP6,  None);
-define_earth_series!(sum_series_elp7,  elp_data::ELP7,  Some(1));
-define_earth_series!(sum_series_elp8,  elp_data::ELP8,  Some(1));
-define_earth_series!(sum_series_elp9,  elp_data::ELP9,  Some(1));
+define_earth_series!(sum_series_elp4,  ELP4,  None);
+define_earth_series!(sum_series_elp5,  ELP5,  None);
+define_earth_series!(sum_series_elp6,  ELP6,  None);
+define_earth_series!(sum_series_elp7,  ELP7,  Some(1));
+define_earth_series!(sum_series_elp8,  ELP8,  Some(1));
+define_earth_series!(sum_series_elp9,  ELP9,  Some(1));
 
 // ELP22-29,30-33 (no scaling)
-define_earth_series!(sum_series_elp22, elp_data::ELP22, None);
-define_earth_series!(sum_series_elp23, elp_data::ELP23, None);
-define_earth_series!(sum_series_elp24, elp_data::ELP24, None);
-define_earth_series!(sum_series_elp28, elp_data::ELP28, None);
-define_earth_series!(sum_series_elp29, elp_data::ELP29, None);
-define_earth_series!(sum_series_elp30, elp_data::ELP30, None);
-define_earth_series!(sum_series_elp31, elp_data::ELP31, None);
-define_earth_series!(sum_series_elp32, elp_data::ELP32, None);
-define_earth_series!(sum_series_elp33, elp_data::ELP33, None);
+define_earth_series!(sum_series_elp22, ELP22, None);
+define_earth_series!(sum_series_elp23, ELP23, None);
+define_earth_series!(sum_series_elp24, ELP24, None);
+define_earth_series!(sum_series_elp28, ELP28, None);
+define_earth_series!(sum_series_elp29, ELP29, None);
+define_earth_series!(sum_series_elp30, ELP30, None);
+define_earth_series!(sum_series_elp31, ELP31, None);
+define_earth_series!(sum_series_elp32, ELP32, None);
+define_earth_series!(sum_series_elp33, ELP33, None);
 
 // ELP25-27 (scale on t[1])
-define_earth_series!(sum_series_elp25, elp_data::ELP25, Some(1));
-define_earth_series!(sum_series_elp26, elp_data::ELP26, Some(1));
-define_earth_series!(sum_series_elp27, elp_data::ELP27, Some(1));
+define_earth_series!(sum_series_elp25, ELP25, Some(1));
+define_earth_series!(sum_series_elp26, ELP26, Some(1));
+define_earth_series!(sum_series_elp27, ELP27, Some(1));
 
 // ELP34-36 (scale on t[2])
-define_earth_series!(sum_series_elp34, elp_data::ELP34, Some(2));
-define_earth_series!(sum_series_elp35, elp_data::ELP35, Some(2));
-define_earth_series!(sum_series_elp36, elp_data::ELP36, Some(2));
+define_earth_series!(sum_series_elp34, ELP34, Some(2));
+define_earth_series!(sum_series_elp35, ELP35, Some(2));
+define_earth_series!(sum_series_elp36, ELP36, Some(2));
 
 // ====================
 // Planet perturbation series (ELP10-21)
@@ -245,21 +245,21 @@ macro_rules! define_planet_series {
 }
 
 // No scale, no alt
-define_planet_series!(sum_series_elp10, elp_data::ELP10, false, false);
-define_planet_series!(sum_series_elp11, elp_data::ELP11, false, false);
-define_planet_series!(sum_series_elp12, elp_data::ELP12, false, false);
+define_planet_series!(sum_series_elp10, ELP10, false, false);
+define_planet_series!(sum_series_elp11, ELP11, false, false);
+define_planet_series!(sum_series_elp12, ELP12, false, false);
 // scale, no alt
-define_planet_series!(sum_series_elp13, elp_data::ELP13, true, false);
-define_planet_series!(sum_series_elp14, elp_data::ELP14, true, false);
-define_planet_series!(sum_series_elp15, elp_data::ELP15, true, false);
+define_planet_series!(sum_series_elp13, ELP13, true, false);
+define_planet_series!(sum_series_elp14, ELP14, true, false);
+define_planet_series!(sum_series_elp15, ELP15, true, false);
 // no scale, alt
-define_planet_series!(sum_series_elp16, elp_data::ELP16, false, true);
-define_planet_series!(sum_series_elp17, elp_data::ELP17, false, true);
-define_planet_series!(sum_series_elp18, elp_data::ELP18, false, true);
+define_planet_series!(sum_series_elp16, ELP16, false, true);
+define_planet_series!(sum_series_elp17, ELP17, false, true);
+define_planet_series!(sum_series_elp18, ELP18, false, true);
 // scale, alt
-define_planet_series!(sum_series_elp19, elp_data::ELP19, true, true);
-define_planet_series!(sum_series_elp20, elp_data::ELP20, true, true);
-define_planet_series!(sum_series_elp21, elp_data::ELP21, true, true);
+define_planet_series!(sum_series_elp19, ELP19, true, true);
+define_planet_series!(sum_series_elp20, ELP20, true, true);
+define_planet_series!(sum_series_elp21, ELP21, true, true);
 
 // ====================
 // Lunar position computation
