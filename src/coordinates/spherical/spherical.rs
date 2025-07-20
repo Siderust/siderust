@@ -38,12 +38,8 @@
 //! Implements `Display` for readable output including center, frame, angles, and distance.
 
 use crate::units::*;
+use crate::coordinates::{frames, centers};
 
-use crate::coordinates::{
-    cartesian,
-    frames::*,
-    centers::*,
-};
 use std::marker::PhantomData;
 
 /// Represents a point in spherical coordinates with a specific reference center and frame.
@@ -53,13 +49,13 @@ use std::marker::PhantomData;
 /// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`).
 #[derive(Debug, Clone, Copy)]
 pub struct SphericalCoord<
-    C: ReferenceCenter,
-    F: ReferenceFrame,
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
     U: Unit,
 > {
     pub polar: Degrees,        // θ (polar/latitude/declination)
     pub azimuth: Degrees,      // φ (azimuth/longitude/right ascension)
-    pub distance: Quantity<U>, // Optional distance (AstronomicalUnits, parsec, etc.)
+    pub distance: Quantity<U>, // Distance (AstronomicalUnits, parsec, etc.)
 
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
@@ -67,10 +63,15 @@ pub struct SphericalCoord<
 
 impl<C, F, U> SphericalCoord<C, F, U>
 where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
     U: Unit,
 {
+    /// Constructs a new spherical coordinate.
+    ///
+    /// * `polar`: angle from the reference plane, in degrees  
+    /// * `azimuth`: angle from the reference direction, in degrees  
+    /// * `distance`: radial distance in the same unit `U`
     pub const fn new_raw(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
         Self {
             polar,
@@ -79,29 +80,6 @@ where
             _center: PhantomData,
             _frame: PhantomData,
         }
-    }
-}
-
-impl<C, F, U> SphericalCoord<C, F, U>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-    U: LengthUnit,
-    cartesian::Vector<C, F, U>: for<'a> From<&'a Self>,
-{
-    /// Calculates the Euclidean distance to another spherical coordinate.
-    ///
-    /// # Arguments
-    /// - `other`: The other spherical coordinate.
-    ///
-    /// # Returns
-    /// The distance to the other coordinate.
-    pub fn distance_to(&self, other: &Self) -> Quantity<U>
-    where
-        U: std::cmp::PartialEq + std::fmt::Debug
-    {
-        self.to_cartesian()
-            .distance_to(&other.to_cartesian())
     }
 
     /// Calculates the angular separation between this coordinate and another.
@@ -126,3 +104,56 @@ where
     }
 }
 
+#[cfg(test)]
+mod tests {
+    use crate::coordinates::spherical::SphericalCoord;
+    use crate::coordinates::centers::Geocentric;
+    use crate::coordinates::frames::ICRS;
+    use crate::units::*;
+
+    const EPS: Degrees = Degrees::new(1e-6);       // tolerance for the exact geometry cases
+    const EPS_STAR: Degrees = Degrees::new(1e-2);  // tolerance for the real‑world catalogue case
+
+    /// Helper to build a unit‑length direction in the ICRS frame.
+    fn dir(dec: f64, ra: f64) -> SphericalCoord<Geocentric, ICRS, Unitless> {
+        SphericalCoord::new_raw(
+            Degrees::new(dec),   // polar / declination
+            Degrees::new(ra),    // azimuth / right‑ascension
+            Quantity::<Unitless>::new(1.0),
+        )
+    }
+
+    #[test]
+    fn identity_separation_is_zero() {
+        let a = dir(12.3, 45.6);
+        let sep = a.angular_separation(a);
+        assert!(sep.to::<Degree>().abs() < EPS, "expected 0°, got {}°", sep);
+    }
+
+    #[test]
+    fn orthogonal_points_give_ninety_degrees() {
+        let a = dir(0.0, 0.0);
+        let b = dir(0.0, 90.0);
+        let sep = a.angular_separation(b);
+        assert!((sep.to::<Degree>() - 90.0*DEG).abs() < EPS, "expected 90°, got {}°", sep);
+    }
+
+    #[test]
+    fn antipodal_points_give_180_degrees() {
+        let a = dir(0.0, 0.0);
+        let b = dir(0.0, 180.0);
+        let sep = a.angular_separation(b);
+        assert!((sep.to::<Degree>() - 180.0*DEG).abs() < EPS, "expected 180°, got {}°", sep);
+    }
+
+    #[test]
+    fn polaris_betelgeuse_real_world() {
+        // Star coordinates (J2000) from SIMBAD
+        let polaris = dir(89.26410897, 37.95456067);   // Dec, RA
+        let betel   = dir(7.407064,    88.792939);     // Dec, RA
+        let sep = polaris.angular_separation(betel);
+        assert!((sep.to::<Degree>() - 82.1286*DEG).abs() < EPS_STAR,
+            "expected 224882.13°, got {}°", sep);
+    }
+
+}
