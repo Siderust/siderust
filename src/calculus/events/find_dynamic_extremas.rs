@@ -24,8 +24,8 @@ fn gast_fast(jd: JulianDate) -> Degrees {
 }
 
 /// Scan step: 20 min in days.  Adjust for the usual speed/robustness trade-off.
-const STEP_DAYS: Days        = Days::new(20.0 / 1_440.0); // 20 min
-const NEWTON_EPS: f64        = 1e-9;    // ≈ 0.9 ms
+const STEP_DAYS: Days         = Minutes::new(20.0).to::<Day>();
+const NEWTON_EPS: Days        = Milliseconds::new(0.9).to::<Day>();
 const NEWTON_MAX_ITERS: usize = 15;
 
 /// Finds every altitude extremum (**upper** and **lower** culmination) of a
@@ -72,23 +72,23 @@ where
     // ────────────────────────────────────────────────────────────
     let refine = |mut jd: JulianDate, target: Radians| -> Option<JulianDate> {
         for _ in 0..NEWTON_MAX_ITERS {
-            let h  = (hour_angle(jd) - target).wrap_signed();
-            if h.abs().value() < 1e-12 {
+            let h: Radians  = (hour_angle(jd) - target).wrap_signed();
+            if h.abs() < Radians::new(1e-12) {
                 return Some(jd); // already precise enough
             }
 
             // Finite-difference dH/dt using ±1 s
-            let dt  = Days::new(1.0 / 86_400.0);
-            let dh  = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_signed();
-            let deriv = dh.value() / (2.0 * dt.value()); // rad / day
-            if deriv.abs() < 1e-10 {
+            let dt: Days  = Days::new(1.0 / 86_400.0);
+            let dh: Radians  = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_signed();
+            let deriv: RadiansPerDay = dh / (dt * 2.0); // rad / day
+            if deriv.abs() < RadiansPerDay::new(1e-10) {
                 return None; // derivative ~ 0, avoid blow-up
             }
 
             // Newton step
-            let delta = Days::new(h.value() / deriv);
+            let delta: Days = h / deriv;
             jd -= delta;
-            if delta.value().abs() < NEWTON_EPS {
+            if delta.abs() < NEWTON_EPS {
                 return Some(jd);
             }
         }
@@ -101,15 +101,15 @@ where
     let mut out = Vec::new();
     let mut jd0 = jd_start;
 
-    let h0      = hour_angle(jd0);
+    let h0: Radians = hour_angle(jd0);
     let mut s0      = h0.sin();                       // for H = 0
     let mut s0_pi   = (h0 - Radians::new(PI)).sin();  // for H = π
 
     while jd0 < jd_end {
-        let jd1 = JulianDate::new((jd0 + STEP_DAYS).value().min(jd_end.value()));
-        let h1  = hour_angle(jd1);
-        let s1      = h1.sin();
-        let s1_pi   = (h1 - Radians::new(PI)).sin();
+        let jd1   = (jd0 + STEP_DAYS).min(jd_end);
+        let h1    = hour_angle(jd1);
+        let s1    = h1.sin();
+        let s1_pi = (h1 - Radians::new(PI)).sin();
 
         // Sign change ⇒ a root lies in (jd0, jd1)
         if s0 * s1 < 0.0 {

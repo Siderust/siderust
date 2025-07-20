@@ -95,3 +95,11 @@ impl std::ops::Div<DegreesPerDay> for Degrees {
         Self::Output::new(self.value() / rhs.value())
     }
 }
+
+impl std::ops::Div<RadiansPerDay> for Radians {
+    type Output = Days;
+
+    fn div(self, rhs: RadiansPerDay) -> Self::Output {
+        Self::Output::new(self.value() / rhs.value())
+    }
+}
