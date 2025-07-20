@@ -62,12 +62,10 @@ fn test_coord_transformations() {
 fn test_spherical_transformations() {
     let original = Mars::vsop87a(JulianDate::J2000).get_position().clone(); // Heliocentric, Ecliptic
 
-    // Convertir a otros marcos cartesianos
     let geo_eq = cartesian::Position::<Geocentric, Equatorial, AstronomicalUnit>::from(&original);
     let helio_icrs = cartesian::Position::<Heliocentric, frames::ICRS, AstronomicalUnit>::from(&original);
     let bary_eq = cartesian::Position::<Barycentric, Equatorial, AstronomicalUnit>::from(&original);
 
-    // Probar conversiones Cartesiano -> Esférico -> Cartesiano
     let sph_helio_ecl = spherical::Position::from_cartesian(&original);
     let back_helio_ecl = sph_helio_ecl.to_cartesian();
     approx_eq(&original, &back_helio_ecl);

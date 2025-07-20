@@ -4,9 +4,6 @@
 //! * [`position`]  – only X,Y,Z (AstronomicalUnits)
 //! * [`velocity`]  – only Ẋ,Ẏ,Ż (AstronomicalUnits/day)
 //! * [`position_velocity`] – both in one pass (≈30 % más rápido que dos llamadas)
-//!
-//! Internamente usamos un *tipo marcador* + *const bools* en vez de const‑enums,
-//! para que compile en **Rust estable** (sin la feature `adt_const_params`).
 
 use rayon::join;
 use crate::astro::JulianDate;
