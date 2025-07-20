@@ -122,7 +122,7 @@ All numeric kernels are cross‑checked against JPL Horizons (see **siderust-py*
 
 ```
 ├─ astro/        # Astronomical properites (nutation, precession, …)
-├─ bodies/       # Data Structures for celestial bodies (Planet, Star, Satelite, …)
+├─ bodies/       # Data Structures for celestial bodies (Planet, Star, Satellite, …)
 ├─ calculus/     # Numerical kernels (kepler, vsop87, …)
 ├─ coordinates/  # Coordinate types & transforms
 ├─ observatory/  # Ground stations & observer helpers

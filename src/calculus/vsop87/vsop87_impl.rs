@@ -3,7 +3,7 @@
 //! Exposes three public helpers:
 //! * [`position`]  – only X,Y,Z (AstronomicalUnits)
 //! * [`velocity`]  – only Ẋ,Ẏ,Ż (AstronomicalUnits/day)
-//! * [`position_velocity`] – both in one pass (≈30 % más rápido que dos llamadas)
+//! * [`position_velocity`] – both in one pass (≈30 % faster in 2 calls)
 
 use rayon::join;
 use crate::astro::JulianDate;

@@ -46,7 +46,7 @@
 //! 1. NASA – Planetary Fact Sheet: <https://nssdc.gsfc.nasa.gov/planetary/factsheet/>
 //! 2. Williams, D. R. (2024). *Planetary Fact Sheet – Metric*. NASA Goddard Space Flight Center.
 
-use super::{Satelite, Planet, Star};
+use super::{Satellite, Planet, Star};
 use crate::units::*;
 use crate::astro::{orbit::Orbit, JulianDate};
 use crate::coordinates::spherical::position::{Ecliptic, Equatorial};
@@ -179,7 +179,7 @@ pub const EARTH: super::Planet = super::Planet {
 /// | Ω         | 125.08°          |
 /// | ω         | 318.15°          |
 /// | M₀        | 135.27°          |
-pub const MOON: super::Satelite = super::Satelite::new_const(
+pub const MOON: super::Satellite = super::Satellite::new_const(
     "Moon",
     Kilograms::new(7.346e22),
     Kilometers::new(1_737.4),
@@ -418,7 +418,7 @@ pub const DWARF_PLANETS: &[&Planet] = &[&super::PLUTO, &CERES, &HAUMEA, &MAKEMAK
 //  Major moons (planet‑centric orbital elements approximated; not heliocentric)
 // -------------------------------------------------------------------------------------------------
 
-pub const IO: Satelite = Satelite::new_const(
+pub const IO: Satellite = Satellite::new_const(
     "Io",
     Kilograms::new(8.9319e22),
     Kilometers::new(1821.6),
@@ -434,7 +434,7 @@ pub const IO: Satelite = Satelite::new_const(
     },
 );
 
-pub const EUROPA: Satelite = Satelite::new_const(
+pub const EUROPA: Satellite = Satellite::new_const(
     "Europa",
     Kilograms::new(4.7998e22),
     Kilometers::new(1560.8),
@@ -449,7 +449,7 @@ pub const EUROPA: Satelite = Satelite::new_const(
     },
 );
 
-pub const GANYMEDE: Satelite = Satelite::new_const(
+pub const GANYMEDE: Satellite = Satellite::new_const(
     "Ganymede",
     Kilograms::new(1.4819e23),
     Kilometers::new(2634.1),
@@ -464,7 +464,7 @@ pub const GANYMEDE: Satelite = Satelite::new_const(
     },
 );
 
-pub const CALLISTO: Satelite = Satelite::new_const(
+pub const CALLISTO: Satellite = Satellite::new_const(
     "Callisto",
     Kilograms::new(1.0759e23),
     Kilometers::new(2410.3),
@@ -479,7 +479,7 @@ pub const CALLISTO: Satelite = Satelite::new_const(
     },
 );
 
-pub const TITAN: Satelite = Satelite::new_const(
+pub const TITAN: Satellite = Satellite::new_const(
     "Titan",
     Kilograms::new(1.3452e23),
     Kilometers::new(2574.73),
@@ -494,7 +494,7 @@ pub const TITAN: Satelite = Satelite::new_const(
     },
 );
 
-pub const TRITON: Satelite = Satelite::new_const(
+pub const TRITON: Satellite = Satellite::new_const(
     "Triton",
     Kilograms::new(2.14e22),
     Kilometers::new(1353.4),
@@ -509,7 +509,7 @@ pub const TRITON: Satelite = Satelite::new_const(
     },
 );
 
-pub const MAJOR_MOONS: &[&Satelite] = &[
+pub const MAJOR_MOONS: &[&Satellite] = &[
     &super::MOON,
     &IO,
     &EUROPA,
@@ -561,7 +561,7 @@ pub struct SolarSystem<'a> {
     pub sun: &'a Star<'a>,
     pub planets: &'a [&'a Planet],
     pub dwarf_planets: &'a [&'a Planet],
-    pub moons: &'a [&'a Satelite<'a>],
+    pub moons: &'a [&'a Satellite<'a>],
     pub lagrange_points: &'a [&'a LagrangePoint],
 }
 

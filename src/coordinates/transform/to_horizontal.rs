@@ -29,11 +29,9 @@ pub fn geocentric_to_horizontal<U: LengthUnit>(
     jd:       JulianDate
 ) -> spherical::position::Horizontal<U> {
 
-    // 2) Tiempo sidéreo con ese JD, no con target.t
     let gst = calculate_gst(jd);
     let lst = calculate_lst(gst, observer.lon());
 
-    // 3) El resto no cambia
     let ra_deg   = target.ra().normalize();
     let dec_rad  = target.dec().to::<Radian>();
     let ha_rad   = (lst - ra_deg).normalize().to::<Radian>();
@@ -42,7 +40,6 @@ pub fn geocentric_to_horizontal<U: LengthUnit>(
     let alt_rad = (dec_rad.sin() * lat_rad.sin()
                  + dec_rad.cos() * lat_rad.cos() * ha_rad.cos()).asin();
 
-    // azimut de 0-360°
     let az_rad  = (-dec_rad.cos() * ha_rad.sin()).atan2(
                     dec_rad.sin() * lat_rad.cos()
                   - dec_rad.cos() * ha_rad.cos() * lat_rad.sin());
