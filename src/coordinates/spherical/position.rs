@@ -31,6 +31,21 @@ where
     pub fn direction(&self) -> super::Direction<C, F> {
         super::Direction::new_raw(self.polar, self.azimuth, Quantity::<Unitless>::new(1.0))
     }
+
+    /// Calculates the Euclidean distance to another spherical coordinate.
+    ///
+    /// # Arguments
+    /// - `other`: The other spherical coordinate.
+    ///
+    /// # Returns
+    /// The distance to the other coordinate.
+    pub fn distance_to(&self, other: &Self) -> Quantity<U>
+    where
+        U: std::cmp::PartialEq + std::fmt::Debug
+    {
+        self.to_cartesian()
+            .distance_to(&other.to_cartesian())
+    }
 }
 
 impl<C, F, U> std::fmt::Display for Position<C, F, U>
