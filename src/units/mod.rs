@@ -133,6 +133,10 @@ impl<U: Unit + Copy> Quantity<U> {
     pub const fn to<T: Unit<Dim = U::Dim>>(self) -> Quantity<T> {
         Quantity::<T>::new(self.0 * (U::RATIO / T::RATIO))
     }
+
+    pub const fn min(&self, other: Quantity<U>) -> Quantity<U> {
+        Quantity::<U>::new(self.value().min(other.value()))
+    }
 }
 
 

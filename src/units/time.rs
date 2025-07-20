@@ -18,6 +18,10 @@ impl Dimension for Time {}
 pub trait TimeUnit: Unit<Dim = Time> {}
 impl<T: Unit<Dim = Time>> TimeUnit for T {}
 
+define_unit!("ms",  Millisecond, Time, 1.0/(24.0*3600.0*1_000.0));
+pub type Milliseconds = Quantity<Millisecond>;
+pub const MILLISEC: Milliseconds = Milliseconds::new(1.0);
+
 define_unit!("sec",  Second,     Time, 1.0/(24.0*3600.0));
 pub type Seconds = Quantity<Second>;
 pub const SEC: Seconds = Seconds::new(1.0);

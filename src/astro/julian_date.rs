@@ -66,6 +66,10 @@ impl JulianDate {
         let jd = unix_epoch_jd + (seconds_since_epoch + nanos) / 86400.0;
         JulianDate::new(jd)
     }
+
+    pub const fn min(&self, other: JulianDate) -> JulianDate {
+        JulianDate(self.0.min(other.0))
+    }
 }
 
 impl std::fmt::Display for JulianDate {
