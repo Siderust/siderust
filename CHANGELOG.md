@@ -18,7 +18,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 ### Changed
-- Geogreaphic constructor order.
+- Geographic constructor order.
 - Refactor radial_distance -> distance.
 - Refactor distance_from_origin() -> distance().
 - SphericalCoord -> spherical::Position.
@@ -36,7 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ron–Vondrák velocity series.
 
 ### Fixed
-- Missmatch addition of units in Coordinate center transforamtion.
+- Missmatch addition of units in Coordinate center transformation.
 
 ### Security
 

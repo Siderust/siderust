@@ -7,7 +7,6 @@ use siderust::{
 };
 
 fn bench_vsop87(c: &mut Criterion) {
-    // Intervalo de tiempo
     let start = JulianDate::J2000 + Years::new(25.0);
 
     let planet_list: Vec<(&str, Box<dyn VSOP87>)> = vec![
