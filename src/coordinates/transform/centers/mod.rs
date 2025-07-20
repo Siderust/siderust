@@ -41,7 +41,7 @@ where
 {
     #[inline]
     fn transform(&self, _jd: JulianDate) -> spherical::Direction<C1, F> {
-        spherical::Direction::new_spherical_coord(
+        spherical::Direction::new_raw(
             self.polar,
             self.azimuth,
             self.distance
