@@ -48,6 +48,10 @@ define_unit!("SR", SolarRadius, Length, 695_700_000.0);
 pub type SolarRadiuses = Quantity<SolarRadius>;
 pub const SR: SolarRadiuses = SolarRadiuses::new(1.0);
 
+define_unit!("ps", Parsec, Length, 3.26*LightYear::RATIO);
+pub type Parsecs = Quantity<Parsec>;
+pub const PS: Parsecs = Parsecs::new(1.0);
+
 
 /// AstronomicalUnit -> LightYear.
 impl From<AstronomicalUnits> for LightYears { fn from(au: AstronomicalUnits) -> Self { au.to::<LightYear>() } }
