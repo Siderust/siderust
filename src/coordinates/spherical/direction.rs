@@ -1,59 +1,78 @@
-//! # Spherical Coordinates
+//! # Direction‐type Specialisations (unit vectors)
 //!
-//! This module defines the generic [`SphericalCoord<C, F>`] type for representing positions or directions
-//! in spherical coordinates, parameterized by astronomical reference centers and frames for strong type safety.
+//! A **direction** represents a *unit‐length* pointing vector: spherical
+//! coordinates in which the radial component is implicitly fixed to 1.
+//! Instead of carrying a distance, the type alias [`Direction<C, F>`] hard‐codes
+//! the distance unit to [`Unitless`].  This allows you to express pointing
+//! vectors (e.g. *line of sight*, *observer zenith*, etc.) while still keeping
+//! the **centre** and **frame** strongly typed.
 //!
-//! ## Overview
+//! Most users will prefer the ready‑made aliases below, each corresponding to a
+//! widely used astronomical system:
 //!
-//! - **Generic over Center and Frame:**
-//!   - `C`: Reference center (e.g., `Heliocentric`, `Geocentric`, `Barycentric`).
-//!   - `F`: Reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`).
-//! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
-//! - **Units:** Angles are stored as [`Degrees`]; distance is optional and typically in AstronomicalUnits or parsecs (see context).
-//! - **Conversions:** Seamless conversion to and from [`Vector`] via `From`/`Into`.
-//! - **Operations:** Compute Euclidean distance and angular separation between coordinates.
+//! | Alias        | Centre           | Frame        | Angles (θ, φ)                        |
+//! |--------------|------------------|--------------|--------------------------------------|
+//! | `Ecliptic`   | `Heliocentric`   | `Ecliptic`   | latitude *B*, longitude *L*          |
+//! | `Equatorial` | `Geocentric`     | `Equatorial` | declination *δ*, right‑ascension *α* |
+//! | `Horizontal` | `Topocentric`    | `Horizontal` | altitude *Alt*, azimuth *Az*         |
+//! | `ICRS`       | `Barycentric`    | `ICRS`       | declination *δ*, right‑ascension *α* |
+//! | `HCRS`       | `Heliocentric`   | `ICRS`       | declination *δ*, right‑ascension *α* |
+//! | `GCRS`       | `Geocentric`     | `ICRS`       | declination *δ*, right‑ascension *α* |
+//! | `Geographic` | `Geocentric`     | `ECEF`       | latitude *φ*, longitude *λ*          |
 //!
-//! ## Example
+//! ## Quick example
 //! ```rust
-//! use siderust::coordinates::spherical::Direction;
-//! use siderust::coordinates::centers::Heliocentric;
-//! use siderust::coordinates::frames::Ecliptic;
+//! use siderust::coordinates::spherical::direction::ICRS;
 //! use siderust::units::Degrees;
 //!
-//! // Create a heliocentric ecliptic spherical Direction
-//! let sph = Direction::<Heliocentric, Ecliptic>::new(Degrees::new(45.0), Degrees::new(7.0));
-//! println!("θ: {}, φ: {}", sph.polar, sph.azimuth);
+//! // Barycentric pointing direction to Vega (J2000)
+//! let vega: ICRS = ICRS::new(Degrees::new(279.23473479), Degrees::new(38.78368896));
+//!
+//! // Convert that direction into a position one parsec away:
+//! use siderust::units::PS;
+//! let one_pc = 1.0 * PS;
+//! let pos = vega.position(one_pc);
+//! println!("Vega direction  = {vega}\nVega@1pc position = {pos}");
 //! ```
 //!
-//! ## Type Aliases
-//! - [`Direction<C, F>`]: Spherical direction (distance is typically `None`).
+//! The conversion above is *zero‑cost*; both `Direction` and `Position` are
+//! simple aliases around [`SphericalCoord`]. Only the *type* (and therefore the
+//! allowed operations) change at compile time — there is no run‑time penalty.
 //!
-//! ## Type Aliases
-//! - [`Direction<C, F>`]: Spherical direction (angles only, vector is unitary).
-//! - [`Ecliptic`]: Heliocentric ecliptic direction (longitude, latitude).
-//! - [`Equatorial`]: Geocentric equatorial direction (right ascension, declination).
-//! - [`Horizontal`]: Topocentric horizontal direction (azimuth, altitude).
-//! - [`ICRS`]: Barycentric ICRS direction (right ascension, declination).
-//! - [`HCRS`]: Heliocentric ICRS direction (right ascension, declination).
-//! - [`GCRS`]: Geocentric ICRS direction (right ascension, declination).
-//! - [`Geographic`]: Geocentric ECEF
+//! ---
+//!
+//! ## API summary
+//! * `position(magnitude)` – promotes a direction to a position with the given
+//!   radial `magnitude`.
+//! * `Display` – prints the centre, frame and angles.
 
 use super::SphericalCoord;
-use crate::units::{Quantity, LengthUnit, Unitless, Degrees};
+use crate::units::{Quantity, LengthUnit, Unitless};
 use crate::coordinates::{
     centers, frames,
     centers::ReferenceCenter,
     frames::ReferenceFrame,
 };
 
+/// Generic alias for a *unit vector* (radius = 1).
+///
+/// The distance unit is fixed to [`Unitless`].
 pub type Direction<C, F> = SphericalCoord<C, F, Unitless>;
-pub type Ecliptic   = Direction<centers::Heliocentric, frames::Ecliptic>;   // L (l), B (b)
-pub type Equatorial = Direction<centers::Geocentric,   frames::Equatorial>; // Dec (δ), RA (α)
-pub type Horizontal = Direction<centers::Topocentric,  frames::Horizontal>; // Alt (α), Az (θ)
-pub type ICRS       = Direction<centers::Barycentric,  frames::ICRS>; // Dec (δ), RA (α)
-pub type HCRS       = Direction<centers::Heliocentric, frames::ICRS>; // Dec (δ), RA (α)
-pub type GCRS       = Direction<centers::Geocentric,   frames::ICRS>; // Dec (δ), RA (α)
-pub type Geographic = Direction<centers::Geocentric,   frames::ECEF>;  //Latitude (φ),Longitude (λ)
+
+/// **Heliocentric ecliptic** direction (longitude *L*, latitude *B*).
+pub type Ecliptic = Direction<centers::Heliocentric, frames::Ecliptic>;
+/// **Geocentric equatorial** direction (right‑ascension *α*, declination *δ*).
+pub type Equatorial = Direction<centers::Geocentric, frames::Equatorial>;
+/// **Topocentric horizontal** direction (azimuth *Az*, altitude *Alt*).
+pub type Horizontal = Direction<centers::Topocentric, frames::Horizontal>;
+/// **Barycentric ICRS** direction.
+pub type ICRS = Direction<centers::Barycentric, frames::ICRS>;
+/// **Heliocentric ICRS** direction.
+pub type HCRS = Direction<centers::Heliocentric, frames::ICRS>;
+/// **Geocentric ICRS** direction.
+pub type GCRS = Direction<centers::Geocentric, frames::ICRS>;
+/// **Geographic** (ECEF) direction: latitude, longitude.
+pub type Geographic = Direction<centers::Geocentric, frames::ECEF>;
 
 impl<C, F> Direction<C, F>
 where
@@ -61,10 +80,19 @@ where
     F: ReferenceFrame,
 {
 
-    pub const fn from_degrees(polar: f64, azimuth: f64) -> Self {
-        Self::new_raw(Degrees::new(polar), Degrees::new(azimuth), Quantity::<Unitless>::new(1.0))
-    }
-
+    /// Promotes this direction to a full [`Position`](super::Position) with the
+    /// supplied radial `magnitude`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use siderust::coordinates::spherical::direction::Ecliptic;
+    /// use siderust::units::{AU, DEG};
+    ///
+    /// let dir = Ecliptic::new(0.0*DEG, 0.0*DEG);
+    /// let pos = dir.position(1.0*AU); // 1 au
+    /// assert_eq!(pos.distance.value(), 1.0);
+    /// ```
+    #[must_use]
     pub fn position<U: LengthUnit>(&self, magnitude: Quantity<U>) -> super::Position<C, F, U> {
         super::Position::new_raw(self.polar, self.azimuth, magnitude)
     }
@@ -90,7 +118,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::units::Degrees;
+    use crate::units::*;
 
     #[test]
     fn creates_valid_spherical_position() {
@@ -127,4 +155,28 @@ mod tests {
         assert!((coord.ra().value() - 90.654_321).abs() < 1e-6);
         assert!((coord.dec().value() - 45.123_456).abs() < 1e-6);
     }
+
+    const EPS: f64 = 1e-6;
+
+    #[test]
+    fn position_method_promotes_with_given_radius() {
+        let dir: ICRS = ICRS::new(Degrees::new(120.0), Degrees::new(-30.0));
+        let pos = dir.position(Quantity::<AstronomicalUnit>::new(2.0));
+
+        // angles are preserved
+        assert!((pos.ra().value() - 120.0).abs() < EPS);
+        assert!((pos.dec().value() - (-30.0)).abs() < EPS);
+
+        // distance matches the supplied magnitude
+        assert!((pos.distance - 2.0 * AU).abs() < EPS * AU);
+    }
+
+    #[test]
+    fn direction_display_mentions_center_and_frame() {
+        let eq: Equatorial = Equatorial::new(Degrees::new(45.0), Degrees::new(10.0));
+        let s = eq.to_string();
+        assert!(s.contains("Geocentric"), "missing center");
+        assert!(s.contains("Equatorial"), "missing frame");
+    }
+
 }
