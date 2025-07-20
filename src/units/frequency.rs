@@ -79,3 +79,19 @@ impl std::ops::Mul<Years> for DegreesPerYear {
         Degrees::new(self.0 * rhs.value())
     }
 }
+
+impl std::ops::Div<Days> for Degrees {
+    type Output = DegreesPerDay;
+
+    fn div(self, rhs: Days) -> Self::Output {
+        Self::Output::new(self.value() / rhs.value())
+    }
+}
+
+impl std::ops::Div<DegreesPerDay> for Degrees {
+    type Output = Days;
+
+    fn div(self, rhs: DegreesPerDay) -> Self::Output {
+        Self::Output::new(self.value() / rhs.value())
+    }
+}

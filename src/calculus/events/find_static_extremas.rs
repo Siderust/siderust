@@ -1,17 +1,13 @@
 use super::Culmination;
 use crate::targets::Target;
-use crate::units::{Days, Degrees, LengthUnit};
+use crate::units::*;
 use crate::astro::{
     JulianDate,
     sidereal::*,
     nutation::corrected_ra_with_nutation
 };
-use crate::coordinates::{
-    spherical::position,
-    spherical::Position,
-    centers::Geocentric,
-    frames::Equatorial,
-};
+use crate::coordinates::spherical::position::Equatorial;
+use crate::coordinates::spherical::position::Geographic;
 
 /// Returns **all** upper- and lower-culminations (meridian passages) that occur
 /// in the interval `[jd_start, jd_end]` for a target whose right-ascension and
@@ -55,26 +51,26 @@ use crate::coordinates::{
 ///
 /// ---
 pub fn find_static_extremas<U: LengthUnit>(
-    target: &Target<Position<Geocentric, Equatorial, U>>,
-    observer: &position::Geographic,
+    target: &Target<Equatorial<U>>,
+    observer: &Geographic,
     jd_start: JulianDate,
     jd_end: JulianDate,
 ) -> Vec<Culmination> {
     const MAX_ITER: usize = 8;
-    const TOLERANCE: f64 = 1e-11;
-    const D_LST_D_JD: f64 = 360.985_647_366_29; // ° per Julian day
+    const TOLERANCE: Days = Days::new(1e-11);
+    const D_LST_D_JD: DegreesPerDay = DegreesPerDay::new(360.985_647_366_29); // ° per Julian day
 
-    let ra = corrected_ra_with_nutation(target.get_position(), jd_start);
+    let ra: Degrees = corrected_ra_with_nutation(target.get_position(), jd_start);
 
-    let lon = observer.lon();
+    let lon: Degrees = observer.lon();
     let mut out = Vec::new();
 
     // h₀ = 0° (upper) and 180° (lower)
-    for &(h0, is_upper) in &[(0.0, true), (180.0, false)] {
+    for &(h0, is_upper) in &[(Degrees::new(0.0), true), (Degrees::HALF_TURN, false)] {
         // Find first culmination ≥ jd_start
-        let lst0 = unmodded_lst(jd_start, lon);
-        let raw_k = (lst0 - (ra + Degrees::new(h0))).value() / 360.0;
-        let k0 = raw_k.round() as i32;
+        let lst0: Degrees = unmodded_lst(jd_start, lon);
+        let raw_k = (lst0 - (ra + h0)) / Degrees::FULL_TURN;
+        let k0: i32 = raw_k.round() as i32;
 
         // Try k₀ and k₀+1, keep the earliest ≥ jd_start
         let mut t_first = JulianDate::new(f64::INFINITY);
@@ -82,10 +78,10 @@ pub fn find_static_extremas<U: LengthUnit>(
             let mut t = jd_start;
             // Newton–Raphson refinement
             for _ in 0..MAX_ITER {
-                let f = unmodded_lst(t, lon) - (ra + Degrees::new(h0 + 360.0 * k as f64));
-                let dt = Days::new(f.value() / D_LST_D_JD);
+                let f: Degrees = unmodded_lst(t, lon) - (ra + (h0 + Degrees::FULL_TURN * k as f64));
+                let dt: Days = f / D_LST_D_JD;
                 t -= dt;
-                if dt.value().abs() < TOLERANCE {
+                if dt.abs() < TOLERANCE {
                     break;
                 }
             }
