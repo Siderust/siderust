@@ -26,80 +26,46 @@ impl Dimension for Frequency {}
 pub trait FrequencyUnit: Unit<Dim = Frequency> {}
 impl<T: Unit<Dim = Frequency>> FrequencyUnit for T {}
 
-define_unit!("deg/day", DegreePerDay, Frequency, Degree::RATIO / Day::RATIO);
-pub type DegreesPerDay = Quantity<DegreePerDay>;
+macro_rules! frequency_unit_auto {
+    ($Num:ident, $Den:ident) => {
+        paste::paste! {
+            define_unit!(
+                concat!($Num::SYMBOL, "/", $Den::SYMBOL),
+                [<$Num Per $Den>],
+                Frequency,
+                $Num::RATIO / $Den::RATIO
+            );
+            pub type [<$Num sPer $Den>] = Quantity<[<$Num Per $Den>]>;
+            
+            impl std::ops::Div<Quantity<$Den>> for Quantity<$Num> {
+                type Output = Quantity<[<$Num Per $Den>]>;
 
+                fn div(self, rhs: Quantity<$Den>) -> Self::Output {
+                    Self::Output::new(self.0 / rhs.0)
+                }
+            }
 
-define_unit!("deg/year", DegreePerYear, Frequency, Degree::RATIO/Year::RATIO);
-pub type DegreesPerYear = Quantity<DegreePerYear>;
+            impl std::ops::Div<Quantity<[<$Num Per $Den>]>> for Quantity<$Num> {
+                type Output = Quantity<$Den>;
 
-define_unit!("rad/day", RadianPerDay, Frequency, Radian::RATIO / Day::RATIO);
-pub type RadiansPerDay = Quantity<RadianPerDay>;
+                fn div(self, rhs: Quantity<[<$Num Per $Den>]>) -> Self::Output {
+                    Self::Output::new(self.value() / rhs.value())
+                }
+            }
 
-define_unit!("mas/day", MilliArcsecondPerDay, Frequency, MilliArcsecond::RATIO/Day::RATIO);
-pub type MilliArcsecondsPerDay = Quantity<MilliArcsecondPerDay>;
+            impl std::ops::Mul<Quantity<$Den>> for  Quantity<[<$Num Per $Den>]> {
+                type Output = Quantity<$Num>;
 
-impl std::ops::Div<Days> for Radians {
-    type Output = RadiansPerDay;
+                fn mul(self, rhs: Quantity<$Den>) -> Self::Output {
+                    Self::Output::new(self.0 * rhs.value())
+                }
+            }
 
-    fn div(self, rhs: Days) -> Self::Output {
-        Self::Output::new(self.value() / rhs.value())
-    }
+        }
+    };
 }
 
-impl std::ops::Mul<Days> for RadiansPerDay {
-    type Output = Radians;
-
-    fn mul(self, rhs: Days) -> Self::Output {
-        Radians::new(self.0 * rhs.value())
-    }
-}
-
-impl std::ops::Div<Years> for Degrees {
-    type Output = DegreesPerYear;
-
-    fn div(self, rhs: Years) -> Self::Output {
-        // 1 year = 365.25 days
-        DegreesPerYear::new(self.value() / rhs.value())
-    }
-}
-
-impl std::ops::Div<Days> for MilliArcseconds {
-    type Output = MilliArcsecondsPerDay;
-
-    fn div(self, rhs: Days) -> Self::Output {
-        Self::Output::new(self.value() / rhs.value())
-    }
-}
-
-impl std::ops::Mul<Years> for DegreesPerYear {
-    type Output = Degrees;
-
-    fn mul(self, rhs: Years) -> Self::Output {
-        Degrees::new(self.0 * rhs.value())
-    }
-}
-
-impl std::ops::Div<Days> for Degrees {
-    type Output = DegreesPerDay;
-
-    fn div(self, rhs: Days) -> Self::Output {
-        Self::Output::new(self.value() / rhs.value())
-    }
-}
-
-impl std::ops::Div<DegreesPerDay> for Degrees {
-    type Output = Days;
-
-    fn div(self, rhs: DegreesPerDay) -> Self::Output {
-        Self::Output::new(self.value() / rhs.value())
-    }
-}
-
-impl std::ops::Div<RadiansPerDay> for Radians {
-    type Output = Days;
-
-    fn div(self, rhs: RadiansPerDay) -> Self::Output {
-        Self::Output::new(self.value() / rhs.value())
-    }
-}
+frequency_unit_auto!(Radian, Day);      // "rad/day"
+frequency_unit_auto!(Degree, Day);      // "deg/day"
+frequency_unit_auto!(Degree, Year);     // "deg/year"
+frequency_unit_auto!(MilliArcsecond, Day); // "mas/day"
