@@ -151,7 +151,7 @@ mod tests {
     use crate::macros::assert_cartesian_eq;
     use crate::units::AU;
 
-    // TODO: Precission is too high. Something may be wrong with the VSOP87E implementation.
+    // TODO: Precision is too high. Something may be wrong with the VSOP87E implementation.
     const PRECISION: f64 = 0.02;
 
     /// Test Mercury's barycentric coordinates at epoch J2000.0

@@ -113,7 +113,7 @@ All numeric kernels are cross‑checked against JPL Horizons (see **siderust-py*
 | ELP2000 Moon         | **310**        |                              |               |
 | Coordinate transform | **<50**        | center+frame change          |               |
 
---  This is jsut a placeholder to put the real data --
+--  This is just a placeholder to put the real data --
 
 ---
 
