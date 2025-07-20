@@ -92,13 +92,6 @@ where
     /// The *origin* of this coordinate system (all angles 0, radius 0). AKA Null Vector.
     pub const CENTER: Self = Self::new_raw(Degrees::new(0.0), Degrees::new(0.0), Quantity::<U>::new(0.0));
 
-    /// Returns a **direction** (unitless unitary vector) corresponding to this position
-    /// (i.e. same angular coordinates, radius = 1).
-    #[must_use]
-    pub fn direction(&self) -> super::Direction<C, F> {
-        super::Direction::new_raw(self.polar, self.azimuth, Quantity::<Unitless>::new(1.0))
-    }
-
     /// Euclidean distance to another position **in the same centre & frame**.
     ///
     /// The result is expressed in the *same unit `U`* as the inputs.
