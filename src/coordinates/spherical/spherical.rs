@@ -65,7 +65,6 @@ pub struct SphericalCoord<
     _frame: PhantomData<F>,
 }
 
-// filepath: src/coordinates/spherical/spherical.rs
 impl<C, F, U> SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
@@ -127,36 +126,3 @@ where
     }
 }
 
-impl<C, F, U> std::fmt::Display for SphericalCoord<C, F, U>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-    U: LengthUnit,
-    Quantity<U>: std::fmt::Display
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}, r: {:.6}",
-            C::center_name(),
-            F::frame_name(),
-            self.polar, self.azimuth, self.distance
-        )
-    }
-}
-
-impl<C, F> std::fmt::Display for SphericalCoord<C, F, Unitless>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}",
-            C::center_name(),
-            F::frame_name(),
-            self.polar, self.azimuth
-        )
-    }
-}
