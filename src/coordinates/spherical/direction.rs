@@ -62,11 +62,11 @@ where
 {
 
     pub const fn from_degrees(polar: f64, azimuth: f64) -> Self {
-        Self::new_spherical_coord(Degrees::new(polar), Degrees::new(azimuth), Quantity::<Unitless>::new(1.0))
+        Self::new_raw(Degrees::new(polar), Degrees::new(azimuth), Quantity::<Unitless>::new(1.0))
     }
 
     pub fn position<U: LengthUnit>(&self, magnitude: Quantity<U>) -> super::Position<C, F, U> {
-        super::Position::new_spherical_coord(self.polar, self.azimuth, magnitude)
+        super::Position::new_raw(self.polar, self.azimuth, magnitude)
     }
 }
 

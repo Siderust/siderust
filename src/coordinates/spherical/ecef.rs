@@ -33,7 +33,7 @@ use crate::bodies::EARTH;
 
 impl<C: ReferenceCenter,> Direction<C, ECEF> {
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
-        Self::new_spherical_coord(
+        Self::new_raw(
             lat,
             lon,
             Quantity::<Unitless>::new(1.0)
@@ -58,7 +58,7 @@ impl<C: ReferenceCenter,> Direction<C, ECEF> {
 
 impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
     pub const fn new_const(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
-        Self::new_spherical_coord(
+        Self::new_raw(
             lat,
             lon,
             Kilometers::new(EARTH.radius.value() + alt.value())

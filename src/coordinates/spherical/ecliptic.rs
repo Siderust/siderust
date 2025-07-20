@@ -29,7 +29,7 @@ use crate::units::*;
 
 impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
     pub const fn new_const(lon: Degrees, lat: Degrees, distance: Quantity<U>) -> Self {
-        Self::new_spherical_coord(lat, lon, distance)
+        Self::new_raw(lat, lon, distance)
     }
 
     pub fn new<A, T>(lon: A, lat: A, distance: T) -> Self
@@ -51,7 +51,7 @@ impl<C: ReferenceCenter> Direction<C, frames::Ecliptic> {
     /// - `lon`: Longitude (λ), in degrees.
     /// - `lat`: Latitude (β), in degrees.
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
-        Self::new_spherical_coord(lat, lon, Quantity::<Unitless>::new(1.0))
+        Self::new_raw(lat, lon, Quantity::<Unitless>::new(1.0))
     }
 
     /// Constructs a new ecliptic direction with normalized input angular.

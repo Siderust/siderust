@@ -38,7 +38,7 @@ where
         let azimuth = Degrees::new(y.value()
                                     .atan2(x.value())
                                     .to_degrees());
-        Self::new_spherical_coord(polar, azimuth, cart.distance())
+        Self::new_raw(polar, azimuth, cart.distance())
     }
 }
 
@@ -60,7 +60,7 @@ where
         let polar   = Degrees::new(z.asin().to_degrees());
         let azimuth = Degrees::new(y.atan2(x).to_degrees());
 
-        Self::new_spherical_coord(polar, azimuth, Quantity::<Unitless>::new(1.0))
+        Self::new_raw(polar, azimuth, Quantity::<Unitless>::new(1.0))
     }
 }
 
