@@ -8,11 +8,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 - Coordinate macro checkers.
-- spherical::Direction, cartesian::Direction.
+- spherical::Direction, cartesian::Direction, cartesian::Velocity.
 - build scripts to fetch VSOP87 coeffs and auto-generate static rust arrays.
 - Converstion functions from/to Position/Direction.
 - apply_aberration_to_direction / remove_aberration_from_direction.
-- Compute VSOP87 velocity
+- Compute VSOP87 velocity.
+- Implement Unit trait.
+- Expand bodies catalog (Lagrange Points and other major bodies).
 
 
 ### Changed
@@ -22,6 +24,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - SphericalCoord -> spherical::Position.
 - CartesianCoord -> cartesian::Position.
 - Compute Aberration using VSOP87 earth velocity.
+- Spherical distance is no longer Optional.
+- JulianDay & ModifiedJulianDay -> JuliaDate & ModifiedJulianDate.
+- Coordinate constructors handle any angular/distance unit.
 
 ### Deprecated
 
@@ -31,6 +36,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Ron–Vondrák velocity series.
 
 ### Fixed
+- Missmatch addition of units in Coordinate center transforamtion.
 
 ### Security
 
