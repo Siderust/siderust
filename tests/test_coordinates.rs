@@ -34,7 +34,7 @@ where
 fn test_coord_transformations() {
     use siderust::coordinates::cartesian::Position;
 
-    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone(); // Heliocentric, Ecliptic (implícito)
+    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone(); // Heliocentric, Ecliptic
 
     // Heliocentric Ecliptic -> Geocentric Ecliptic -> back
     let geo_ecl = Position::<Geocentric, Ecliptic, AstronomicalUnit>::from(&original);

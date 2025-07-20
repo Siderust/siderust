@@ -50,7 +50,7 @@
 //!
 //! * [`Comet`]
 //! * [`Asteroid`]
-//! * [`Satelite`]
+//! * [`Satellite`]
 //! * [`Planet`]
 //! * [`Star`]
 //! * Everything inside [`solar_system`]
@@ -67,7 +67,7 @@ pub mod solar_system;
 
 pub use comet::Comet;
 pub use asteroid::Asteroid;
-pub use satelite::Satelite;
+pub use satelite::Satellite;
 pub use planets::Planet;
 pub use stars::Star;
 
