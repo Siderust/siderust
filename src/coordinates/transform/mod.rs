@@ -51,20 +51,6 @@
 //! let cart_helio_ecl: Position<Heliocentric, Ecliptic, AstronomicalUnit> = cart_geo_ecl.transform(jd);
 //! ```
 //!
-//! ## Extending the System
-//!
-//! To add a new transformation, implement the [`Transform`] trait for the relevant source and
-//! destination coordinate types. For example, to add a transformation from a new frame or center,
-//! provide an implementation like:
-//!
-//! ```rust,ignore
-//! impl Transform<DestinationType> for SourceType {
-//!     fn transform(&self, jd: JulianDate) -> DestinationType {
-//!         // ...conversion logic...
-//!     }
-//! }
-//! ```
-//!
 //! ## Related Modules
 //!
 //! - [`centers`]: Transformations between reference centers (e.g., barycentric <-> heliocentric).
