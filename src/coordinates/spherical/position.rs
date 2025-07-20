@@ -33,6 +33,24 @@ where
     }
 }
 
+impl<C, F, U> std::fmt::Display for Position<C, F, U>
+where
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::fmt::Display
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}, r: {:.6}",
+            C::center_name(),
+            F::frame_name(),
+            self.polar, self.azimuth, self.distance
+        )
+    }
+}
+
 
 #[cfg(test)]
 mod tests {
