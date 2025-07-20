@@ -86,10 +86,22 @@
 //!
 //! This API is designed to be stable and extensible for future Siderust releases.
 
-mod extremas;
+
+/// Represents a culmination event — the moment a celestial body crosses
+/// the observer’s meridian.
+///
+/// - `Upper`: transit across the upper meridian (highest altitude).  
+/// - `Lower`: transit across the lower meridian (lowest altitude).
+///
+/// The `jd` field stores the Julian Day of the event.
+#[derive(Debug)]
+pub enum Culmination {
+    Upper { jd: crate::astro::JulianDate },
+    Lower { jd: crate::astro::JulianDate },
+}
+
 mod find_static_extremas;
 mod find_dynamic_extremas;
 
-pub use extremas::Culmination;
 pub use find_dynamic_extremas::find_dynamic_extremas;
 pub use find_static_extremas::find_static_extremas;
