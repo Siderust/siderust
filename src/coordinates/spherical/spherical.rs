@@ -102,6 +102,14 @@ where
         let angle_rad = (x * x + y * y).sqrt().atan2(z);
         Radians::new(angle_rad).to::<Degree>()
     }
+
+
+    /// Returns a **direction** (unitless unitary vector) corresponding to this position
+    /// (i.e. same angular coordinates, radius = 1).
+    #[must_use]
+    pub fn direction(&self) -> super::Direction<C, F> {
+        super::Direction::new_raw(self.polar, self.azimuth, Quantity::<Unitless>::new(1.0))
+    }
 }
 
 #[cfg(test)]

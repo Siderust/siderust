@@ -49,7 +49,7 @@
 //! let n = get_nutation(jd);
 //! println!("Δψ = {:.4}°, Δε = {:.4}°", n.longitude, n.obliquity);
 //!
-//! let ra_app = corrected_ra_with_nutation(&SIRIUS.target.get_position(), jd);
+//! let ra_app = corrected_ra_with_nutation(&SIRIUS.target.get_position().direction(), jd);
 //! println!("Apparent RA = {ra_app:.4}°");
 //! ```
 //!
@@ -58,11 +58,7 @@
 //! series (1365 terms) or IERS tabulated Δψ/Δε values.  
 
 
-use crate::coordinates::{
-    spherical::Position,
-    centers::Geocentric,
-    frames::Equatorial
-};
+use crate::coordinates::spherical::direction::Equatorial;
 use crate::astro::JulianDate;
 use crate::units::*;
 use crate::astro::dynamical_time::julian_ephemeris_day;
@@ -126,8 +122,8 @@ pub fn get_nutation(jd: JulianDate) -> Nutation {
 
 /// Rotate a mean position (RA, Dec) into **apparent** right ascension, applying nutation.
 #[inline]
-pub fn corrected_ra_with_nutation<U: LengthUnit>(
-    target: &Position<Geocentric, Equatorial, U>,
+pub fn corrected_ra_with_nutation(
+    target: &Equatorial,
     jd: JulianDate,
 ) -> Degrees {
     // 1) Fetch nutation terms in radians
