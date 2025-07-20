@@ -70,6 +70,12 @@ impl<T: Unit<Dim = Angular>> AngularUnit for T {
 impl<U: AngularUnit + Copy> Quantity<U> {
     /// Constant representing τ radians (2π rad == 360°).
     pub const TAU: Quantity::<U> = Quantity::<U>::new(U::FULL_TURN);
+    /// One full revolution (360°) expressed in Quantity<T> unit.
+    pub const FULL_TURN: Quantity::<U> = Quantity::<U>::new(U::FULL_TURN);
+    /// Half a revolution (180°) expressed in Quantity<T> unit.
+    pub const HALF_TURN: Quantity::<U> = Quantity::<U>::new(U::HALF_TURN);
+    /// Quarter revolution (90°) expressed in Quantity<T> unit.
+    pub const QUARTED_TURN: Quantity::<U> = Quantity::<U>::new(U::QUARTED_TURN);
 
     /// Sine of the angle.
     #[inline]
