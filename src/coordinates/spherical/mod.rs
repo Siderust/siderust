@@ -20,13 +20,11 @@
 //! By encoding the reference center and frame as type parameters, this module prevents mixing incompatible coordinate systems at compile time.
 //!
 //! ## Example Usage
-//! ```rust,ignore
-//! use siderust::units::Degrees;
+//! ```rust
+//! use siderust::units::DEG;
 //! use siderust::coordinates::spherical::direction::ICRS;
 //!
-//! let coord = ICRS::new(
-//!     Degrees::new(120.0), Degrees::new(45.0)
-//! );
+//! let coord = ICRS::new(120.0*DEG, 45.0*DEG);
 //! println!("{}", coord.to_string());
 //! ```
 //!
