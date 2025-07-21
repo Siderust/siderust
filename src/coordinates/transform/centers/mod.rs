@@ -49,6 +49,35 @@ where
     }
 }
 
+
+impl<C, F, U> cartesian::Vector<C, F, U>
+where
+    C: ReferenceCenter,
+    F: frames::ReferenceFrame,
+    U: crate::units::Unit,
+{
+    pub fn to_center<C2: ReferenceCenter>(&self, jd: JulianDate) -> cartesian::Vector<C2, F, U>
+    where
+        cartesian::Vector<C, F, U>: Transform<cartesian::Vector<C2, F, U>>,
+    {
+        self.transform(jd)
+    }
+}
+
+impl<C, F, U> spherical::SphericalCoord<C, F, U>
+where
+    C: ReferenceCenter,
+    F: frames::ReferenceFrame,
+    U: crate::units::Unit,
+{
+    pub fn to_center<C2: ReferenceCenter>(&self, jd: JulianDate) -> spherical::SphericalCoord<C2, F, U>
+    where
+        spherical::SphericalCoord<C, F, U>: Transform<spherical::SphericalCoord<C2, F, U>>,
+    {
+        self.transform(jd)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -100,5 +129,16 @@ mod tests {
         let transformed: ICRS = dir.transform(jd);
         assert_eq!(dir.polar.value(), transformed.polar.value(), "Polar should not change");
         assert_eq!(dir.azimuth.value(), transformed.azimuth.value(), "Azimuth should not change");
+    }
+
+    #[test]
+    fn test_to_center() {
+        let icrs = ICRS::new(Degrees::new(100.0), Degrees::new(-10.0));
+
+        let gcrs: GCRS = icrs.to_center::<Geocentric>(JulianDate::J2000);
+        let expected: GCRS = icrs.transform(JulianDate::J2000);
+        assert_eq!(gcrs.polar, expected.polar);
+        assert_eq!(gcrs.azimuth, expected.azimuth);
+        assert_eq!(gcrs.distance, expected.distance);
     }
 }
