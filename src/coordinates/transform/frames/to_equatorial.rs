@@ -32,10 +32,6 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Equatorial, U
     }
 }
 
-
-
-
-
 #[cfg(test)]
 mod tests {
     use crate::coordinates::{
