@@ -38,7 +38,7 @@ impl<C, F, U> SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: MutableFrame,
-    U: Unit,
+    U: crate::units::LengthUnit,
 {
     pub fn to_frame<F2: MutableFrame>(&self) -> SphericalCoord<C, F2, U>
     where

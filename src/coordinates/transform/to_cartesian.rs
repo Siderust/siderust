@@ -3,6 +3,41 @@ use crate::coordinates::{
 };
 use crate::units::*;
 
+pub fn spherical_to_cartesian_pos<C, F, U>(
+    sph: &spherical::Position<C, F, U>,
+) -> cartesian::Position<C, F, U>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: Unit,
+{
+    let ra_rad = sph.azimuth.to::<Radian>();
+    let dec_rad = sph.polar.to::<Radian>();
+    let r = sph.distance;
+    cartesian::Position::new(
+        r * dec_rad.cos() * ra_rad.cos(),
+        r * dec_rad.cos() * ra_rad.sin(),
+        r * dec_rad.sin(),
+    )
+}
+
+pub fn spherical_to_cartesian_dir<C, F>(
+    sph: &spherical::Direction<C, F>,
+) -> cartesian::Direction<C, F>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    let ra_rad = sph.azimuth.to::<Radian>();
+    let dec_rad = sph.polar.to::<Radian>();
+
+    cartesian::Direction::new(
+        dec_rad.cos() * ra_rad.cos(),
+        dec_rad.cos() * ra_rad.sin(),
+        dec_rad.sin(),
+    )
+}
+
 /// Implements conversion from a spherical coordinate to a cartesian coordinate.
 ///
 /// # Formula
@@ -18,13 +53,7 @@ where
     U: LengthUnit
 {
     fn from(sph: &spherical::Position<C, F, U>) -> Self {
-        let ra_rad = sph.azimuth.to::<Radian>();
-        let dec_rad = sph.polar.to::<Radian>();
-        let r = sph.distance;
-        let x = r * dec_rad.cos() * ra_rad.cos();
-        let y = r * dec_rad.cos() * ra_rad.sin();
-        let z = r * dec_rad.sin();
-        Self::new(x, y, z)
+        spherical_to_cartesian_pos(sph)
     }
 }
 
@@ -34,34 +63,31 @@ where
     F: ReferenceFrame,
 {
     fn from(sph: &spherical::Direction<C, F>) -> Self {
-        let ra_rad = sph.azimuth.to::<Radian>();
-        let dec_rad = sph.polar.to::<Radian>();
-
-        Self::new(
-            Quantity::<f64>::new(dec_rad.cos() * ra_rad.cos()),
-            Quantity::<f64>::new(dec_rad.cos() * ra_rad.sin()),
-            Quantity::<f64>::new(dec_rad.sin())
-        )
+        spherical_to_cartesian_dir(sph)
     }
 }
 
-// TODO: can we simply say impl<F> ...?
-impl<C, F, U> spherical::SphericalCoord<C, F, U>
+impl<C, F, U> crate::coordinates::spherical::SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: Unit,
-    cartesian::Vector<C, F, U>: for<'a> From<&'a spherical::SphericalCoord<C, F, U>>,
 {
-    pub fn to_cartesian(&self) -> cartesian::Vector<C, F, U> { self.into() }
+    pub fn to_cartesian(&self) -> cartesian::Position<C, F, U>
+    {
+        spherical_to_cartesian_pos(self)
+    }
 }
 
-impl<C, F, U> spherical::SphericalCoord<C, F, U>
+
+impl<C, F, U> crate::coordinates::cartesian::Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: Unit,
-    spherical::SphericalCoord<C, F, U>: for<'a> From<&'a cartesian::Vector<C, F, U>>,
 {
-    pub fn from_cartesian(cart: &cartesian::Vector<C, F, U>) -> Self { Self::from(&cart) }
+    pub fn from_spherical(sph: &spherical::Position<C, F, U>) -> Self
+    {
+        spherical_to_cartesian_pos(sph).into()
+    }
 }
