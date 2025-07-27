@@ -8,8 +8,9 @@ use crate::coordinates::{
 };
 use crate::units::{Quantity, AstronomicalUnits, LengthUnit};
 use crate::astro::JulianDate;
+use crate::coordinates::transform::centers::TransformCenter;
 
-impl<F: MutableFrame, U: LengthUnit> Transform<Position<Heliocentric, F, U>>
+impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Heliocentric, F, U>>
     for Position<Geocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
@@ -17,7 +18,7 @@ where
     for<'a> Equatorial<U, Geocentric>: From<&'a Position<Geocentric, F, U>>, // Required by Aberration
     for<'a> Position<Heliocentric, F, U>: From<&'a Equatorial<U, Heliocentric>>, // Required by Aberration
 {
-    fn transform(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
+    fn to_center(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
         //geocentric_to_heliocentric(self, jd)
         let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
         let earth_helio_ecl = Ecliptic::<U, Heliocentric>::new(
@@ -38,13 +39,13 @@ where
     }
 }
 
-impl<F: MutableFrame, U: LengthUnit> Transform<Position<Heliocentric, F, U>>
+impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Heliocentric, F, U>>
     for Position<Barycentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
     for<'a> Position<Barycentric, F, U>: From<&'a Ecliptic<U, Barycentric>>,
 {
-    fn transform(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
+    fn to_center(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
         // Barycentric to Heliocentric
         let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
         let sun_bary_ecl = Ecliptic::<U, Barycentric>::new(
@@ -55,6 +56,31 @@ where
 
         let sun = Position::<Barycentric, F, U>::from(&sun_bary_ecl);
         Position::from_vec3(self.as_vec3() - sun.as_vec3())
+    }
+}
+
+
+impl<F: MutableFrame, U: LengthUnit> Transform<Position<Heliocentric, F, U>>
+    for Position<Geocentric, F, U>
+where
+    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
+    for<'a> Equatorial<U, Heliocentric>: From<&'a Ecliptic<U>>, // Required by VSOP
+    for<'a> Equatorial<U, Geocentric>: From<&'a Position<Geocentric, F, U>>, // Required by Aberration
+    for<'a> Position<Heliocentric, F, U>: From<&'a Equatorial<U, Heliocentric>>, // Required by Aberration
+{
+    fn transform(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
+        self.to_center(jd)
+    }
+}
+
+impl<F: MutableFrame, U: LengthUnit> Transform<Position<Heliocentric, F, U>>
+    for Position<Barycentric, F, U>
+where
+    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
+    for<'a> Position<Barycentric, F, U>: From<&'a Ecliptic<U, Barycentric>>,
+{
+    fn transform(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
+        self.to_center(jd)
     }
 }
 
