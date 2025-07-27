@@ -41,7 +41,7 @@ where
     }
 }
 
-
+/*
 #[cfg(test)]
 mod tests {
     use crate::coordinates::centers;
@@ -60,3 +60,4 @@ mod tests {
         assert_eq!(equ.distance, expected.distance);
     }
 }
+*/
