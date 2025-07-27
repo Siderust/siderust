@@ -3,7 +3,6 @@ use crate::astro::aberration::apply_aberration;
 use crate::units::{AstronomicalUnits, LengthUnit, Quantity};
 use crate::astro::JulianDate;
 use crate::coordinates::{
-    transform::Transform,
     transform::TransformFrame,
     frames::MutableFrame,
     centers::{Geocentric, Barycentric, Heliocentric},
@@ -66,38 +65,6 @@ where
         gcrs.to_frame() // Equatorial -> any
     }
 }
-
-
-
-// Barycentric To Geocentric
-impl<F: MutableFrame, U: LengthUnit> Transform<Position<Geocentric, F, U>>
-    for Position<Barycentric, F, U>
-where
-    Quantity<U>: From<AstronomicalUnits>,
-    Position<Barycentric, F, U>: TransformFrame<Equatorial<U, Barycentric>>, // Required by Aberration
-    Equatorial<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>, // Required by Aberration
-    Equatorial<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>
-{
-    fn transform(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
-        self.to_center(jd)
-    }
-}
-
-// Heliocentric To Geocentric
-impl<F: MutableFrame, U: LengthUnit> Transform<Position<Geocentric, F, U>>
-    for Position<Heliocentric, F, U>
-where
-    Quantity<U>: From<AstronomicalUnits>,
-    Position<Heliocentric, F, U>: TransformFrame<Equatorial<U, Heliocentric>>, // Required by Aberration
-    Equatorial<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>, // Required by Aberration
-    Equatorial<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>
-{
-    fn transform(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
-        self.to_center(jd)
-    }
-}
-
-
 
 #[cfg(test)]
 mod tests {
