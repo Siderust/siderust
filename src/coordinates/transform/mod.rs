@@ -121,7 +121,7 @@ where
         mid.to_center(jd)
     }
 }
-/*
+
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
 /// This implementation allows converting a [`Vector`] in from one
@@ -131,19 +131,21 @@ where
 /// 2. Center transformation (within the new frame)
 impl<C1, C2, F1, F2, U> Transform<SphericalCoord<C2, F2, U>> for SphericalCoord<C1, F1, U>
 where
-    Vector<C1, F1, U>: Transform<Vector<C1, F2, U>>, // transform frame
+    Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>, // transform frame
+    Vector<C1, F2, U>: TransformCenter<Vector<C2, F2, U>>, // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn transform(&self, jd: JulianDate) -> SphericalCoord<C2, F2, U> {
         self.to_cartesian()
-            .transform(jd)
+            .to_frame()
+            .to_center(jd)
             .to_spherical()
     }
-}*/
+}
 
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
