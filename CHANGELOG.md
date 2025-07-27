@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - apply_aberration_to_direction / remove_aberration_from_direction.
 - Compute VSOP87 velocity.
 - Implement Unit trait.
-- Expand bodies catalog (Lagrange Points and other major bodies).
+- Expand bodies catalog (Lagrange Points and other major bodies).ç
+- Direction implements Display.
 
 
 ### Changed
