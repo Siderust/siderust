@@ -43,16 +43,7 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Ecliptic, U>>
     }
 }
 
-impl<C: ReferenceCenter, U> Transform<Vector<C, frames::Ecliptic, U>>
-    for Vector<C, frames::ICRS, U>
-where
-    U: Unit,
-{
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {
-        self.to_frame()
-    }
-}
-
+//TODO: REMOVE
 // Implement Transform trait for Equatorial -> Ecliptic
 impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
     fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {

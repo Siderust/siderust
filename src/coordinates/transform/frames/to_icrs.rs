@@ -3,7 +3,6 @@ use crate::coordinates::{
     centers::ReferenceCenter,
     frames
 };
-use crate::coordinates::transform::Transform;
 use super::TransformFrame;
 use crate::units::Unit;
 
@@ -28,20 +27,5 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>> for
 impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>> for Vector<C, frames::Equatorial, U> {
     fn to_frame(&self) -> Vector<C, frames::ICRS, U> {
         Vector::new(self.x(), self.y(), self.z())
-    }
-}
-
-
-// Implement Transform trait for Ecliptic -> ICRS
-impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::ICRS, U>> for Vector<C, frames::Ecliptic, U> {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::ICRS, U> {
-        self.to_frame()
-    }
-}
-
-// Implement Transform trait for Equatorial -> ICRS (identity)
-impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::ICRS, U>> for Vector<C, frames::Equatorial, U> {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::ICRS, U> {
-        self.to_frame()
     }
 }

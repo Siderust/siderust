@@ -33,7 +33,7 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Equatorial, U
     }
 }
 
-
+//TODO: REMOVE
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
@@ -43,12 +43,7 @@ impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Equatorial, U>> fo
     }
 }
 
-// Implement Transform trait for ICRS -> Equatorial (identity)
-impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Equatorial, U>> for Vector<C, frames::ICRS, U> {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Equatorial, U> {
-        self.to_frame()
-    }
-}
+
 
 
 #[cfg(test)]
