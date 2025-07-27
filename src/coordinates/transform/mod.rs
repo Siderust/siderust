@@ -104,6 +104,31 @@ pub trait Transform<Coord> {
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
+impl<C1, C2, F1, F2, U> Transform<Vector<C2, F2, U>> for Vector<C1, F1, U>
+where
+    Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>, // transform frame
+    Vector<C1, F2, U>: TransformCenter<Vector<C2, F2, U>>, // transform center
+    C1: ReferenceCenter,
+    C2: ReferenceCenter,
+    F1: MutableFrame,
+    F2: MutableFrame,
+    U: Unit,
+{
+    fn transform(&self, jd: JulianDate) -> Vector<C2, F2, U> {
+        // Step 1: Transform to new frame, keeping the original center.
+        let mid: Vector<C1, F2, U> = self.to_frame();
+        // Step 2: Transform to new center, now using the new frame.
+        mid.to_center(jd)
+    }
+}
+
+/// Blanket implementation to allow chaining two consecutive `From` operations.
+///
+/// This implementation allows converting a [`Vector`] in from one
+/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two 
+/// transformations:
+/// 1. Frame transformation (within the same center)
+/// 2. Center transformation (within the new frame)
 impl<C1, F1, C2, F2, U> From<&Vector<C1, F1, U>> for Vector<C2, F2, U>
 where
     Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>, // transform frame
