@@ -9,11 +9,7 @@ use crate::coordinates::centers::ReferenceCenter;
 use crate::astro::JulianDate;
 use crate::units::Unit;
 
-use crate::coordinates::{
-    cartesian,
-    frames::ReferenceFrame,
-    transform::Transform,
-};
+use crate::coordinates::transform::Transform;
 
 
 pub trait TransformFrame<Coord> {
@@ -34,19 +30,6 @@ where
             self.y(),
             self.z(),
         )
-    }
-}
-
-impl<C, F1, F2, U> Transform<cartesian::Vector<C, F1, U>> for cartesian::Vector<C, F2, U>
-where
-    C: ReferenceCenter,
-    F1: ReferenceFrame,
-    F2: ReferenceFrame,
-    U: Unit,
-    cartesian::Vector<C, F2, U>: TransformFrame<cartesian::Vector<C, F1, U>>
-{
-    fn transform(&self, _jd: JulianDate) -> cartesian::Vector<C, F1, U> {
-        self.to_frame()
     }
 }
 
