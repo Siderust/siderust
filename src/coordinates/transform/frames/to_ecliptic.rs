@@ -3,7 +3,6 @@ use crate::coordinates::{
     centers::ReferenceCenter,
     frames
 };
-use crate::coordinates::transform::Transform;
 use super::TransformFrame;
 use crate::units::Unit;
 
@@ -43,13 +42,6 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Ecliptic, U>>
     }
 }
 
-//TODO: REMOVE
-// Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {
-        self.to_frame()
-    }
-}
 
 #[cfg(test)]
 mod tests {
