@@ -81,6 +81,9 @@ mod to_spherical;
 mod to_direction;
 mod to_horizontal;
 
+pub use frames::TransformFrame;
+pub use centers::TransformCenter;
+
 use crate::astro::JulianDate;
 use crate::coordinates::{
     centers::ReferenceCenter,
@@ -90,7 +93,6 @@ use crate::coordinates::{
     spherical::SphericalCoord
 };
 use crate::units::*;
-use frames::TransformFrame;
 
 pub trait Transform<Coord> {
     fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
