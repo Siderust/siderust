@@ -4,31 +4,31 @@
 //! following the *short series* formulation in chapter&nbsp;20 of Jean&nbsp;Meeus’
 //! *Astronomical Algorithms* (2nd ed.).  The algorithm is sufficient for most
 //! practical astronomical work: its errors remain below **0.1 arc‑second** for
-//! epochs within ±5 Julian centuries of **J2000.0** – that is, the years
+//! epochs within ±5 Julian centuries of **J2000.0**. That is, the years
 //! **1500 → 2500**.
 //!
 //! ## What is precession?
 //! The rotation axis of the Earth is not fixed in inertial space: the torques
 //! produced by the gravitational attraction of the Sun and the Moon on the
-//! Earth’s equatorial bulge make the axis describe a **slow conical motion** – a
+//! Earth’s equatorial bulge make the axis describe a **slow conical motion**, a
 //! gyroscope under external torque.  The effect is known as **lunisolar
 //! precession** and has a period of about **25 770 years** (*the Platonic year*).
 //! A smaller contribution, **planetary precession**, is produced by the tidal
 //! forces of the other planets.
 //!
 //! In equatorial coordinates (right ascension *α*, declination *δ*) this causes
-//! the celestial poles and the equinox to *drift* at roughly **50″ · yr⁻¹**.  If
+//! the celestial poles and the equinox to *drift* at roughly **50″ · yr⁻¹**. If
 //! the apparent or mean position of a star is referred to two different epochs
 //! it must therefore be **precessed** to the desired date before it can be
 //! compared with catalogued data or with another observation.
 //!
 //! ## Why do we need a numerical model?
 //! Astronomical catalogues adopt a fixed **reference epoch** (e.g. B1950.0 or
-//! J2000.0).  Precise pointing, orbit determination or reduction of
+//! J2000.0). Precise pointing, orbit determination or reduction of
 //! observational data to standard coordinates all require a transformation
 //! between the catalogue epoch and the observation epoch.  Performing that
 //! transformation with an accuracy of a few milliarc‑seconds – small enough for
-//! sub‑arc‑second telescopes and for most amateur‑level applications – is the
+//! sub‑arc‑second telescopes and for most amateur‑level applications, is the
 //! purpose of the present code.
 //!
 //! ## How is precession computed here?
@@ -62,7 +62,7 @@
 //! | When to apply?    | **Always** when comparing coordinates referred to different epochs | When sub‑arc‑second precision or true‑of‑date coordinates are required |
 //!
 //! In other words, **precession is the steady drift** of the reference frame;
-//! **nutation is the superposed wobble**.  The two effects must be added to
+//! **nutation is the superposed wobble**. The two effects must be added to
 //! obtain the *true* or *apparent* equator and equinox of date.  This module
 //! provides the precession step; nutation would be applied subsequently by a
 //! dedicated routine.
@@ -89,11 +89,11 @@
 //!   “mean J2000.0 → given date”.
 //! - [`precess_equatorial`] – precess between *any* two epochs.
 
-
 use std::f64::consts::TAU;
 
-use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
-use crate::units::{Centuries, Degrees, JulianDay, Radians};
+use crate::coordinates::spherical::position;
+use crate::units::*;
+use crate::astro::JulianDate;
 
 /* -------------------------------------------------------------------------
  * Constants & small utilities
@@ -144,7 +144,7 @@ fn short_series_coefficients(epoch: Centuries, span: Centuries) -> (Radians, Rad
         - 0.041_833 * t3;
 
     // arc-seconds → degrees → radians
-    let as_to_rad = |a: f64| Degrees::new(a / 3600.0).to_radians();
+    let as_to_rad = |a: f64| Degrees::new(a / 3600.0).to::<Radian>();
     (as_to_rad(zeta_as), as_to_rad(z_as), as_to_rad(theta_as))
 }
 
@@ -168,13 +168,13 @@ fn rotate_equatorial(ra: Radians, dec: Radians, zeta: Radians, z: Radians, theta
     let c = sin_th * cos_dec * cos_ra_zeta + cos_th * sin_dec;
 
     // New right ascension, wrapped to 0–2π.
-    let mut new_ra = a.atan2(b) + z.as_f64();
+    let mut new_ra = a.atan2(b) + z.value();
     new_ra = new_ra.rem_euclid(TAU);
 
     // New declination: pole‑safe formula when |δ| > 85 °.
-    let new_dec = if dec.as_f64().abs() > NEAR_POLE_LIMIT {
+    let new_dec = if dec.value().abs() > NEAR_POLE_LIMIT {
         let mut d = (a * a + b * b).sqrt().acos();
-        if dec.as_f64().is_sign_negative() {
+        if dec.value().is_sign_negative() {
             d = -d;
         }
         d
@@ -194,11 +194,11 @@ fn rotate_equatorial(ra: Radians, dec: Radians, zeta: Radians, z: Radians, theta
 /// Transforms mean right ascension & declination supplied at the standard
 /// reference epoch (JD 2 451 545.0) to the mean equator & equinox of `to_jd`.
 #[inline]
-pub fn precess_from_j2000(
-    mean_position: Position<Geocentric, Equatorial>,
-    to_jd: JulianDay,
-) -> Position<Geocentric, Equatorial> {
-    precess_equatorial(mean_position, JulianDay::J2000, to_jd)
+pub fn precess_from_j2000<U: LengthUnit>(
+    mean_position: position::Equatorial<U>,
+    to_jd: JulianDate,
+) -> position::Equatorial<U> {
+    precess_equatorial(mean_position, JulianDate::J2000, to_jd)
 }
 
 /// **Epoch → epoch** precession.
@@ -207,13 +207,13 @@ pub fn precess_from_j2000(
 /// * `from_jd`, `to_jd` – Julian Days of source and target epochs.
 ///
 /// Returns the coordinates referred to `to_jd`.
-pub fn precess_equatorial(
-    position: Position<Geocentric, Equatorial>,
-    from_jd: JulianDay,
-    to_jd: JulianDay,
-) -> Position<Geocentric, Equatorial> {
-    let ra0 = position.ra().to_radians();
-    let dec0 = position.dec().to_radians();
+pub fn precess_equatorial<U: LengthUnit>(
+    position: position::Equatorial<U>,
+    from_jd: JulianDate,
+    to_jd: JulianDate,
+) -> position::Equatorial<U> {
+    let ra0 = position.ra().to::<Radian>();
+    let dec0 = position.dec().to::<Radian>();
 
     let from_centuries = from_jd.julian_centuries();
     let centuries_span = to_jd.julian_centuries() - from_centuries;
@@ -222,10 +222,10 @@ pub fn precess_equatorial(
 
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
-    Position::<Geocentric, Equatorial>::new(
-        ra.to_degrees(),
-        dec.to_degrees(),
-        position.distance.expect("precess_equatorial: distance must be set")
+    position::Equatorial::<U>::new(
+        ra,
+        dec,
+        position.distance
     )
 }
 
@@ -238,10 +238,10 @@ mod tests {
         use crate::bodies::catalog::SIRIUS;
 
         // Target epoch: 2025‑05‑12 (JD 2 469 807.5)
-        let prec = precess_from_j2000(SIRIUS.target.get_position().clone(), JulianDay::new(2_460_807.5));
+        let prec = precess_from_j2000(SIRIUS.target.get_position().clone(), JulianDate::new(2_460_807.5));
 
         // Expected (Meeus short model): α ≈ 101.84557°, δ ≈ −16.77182°
-        assert!((prec.ra().as_f64()  - 101.57047).abs() < 3e-5, "current α ≈ {}", prec.ra());
-        assert!((prec.dec().as_f64() + 16.74409).abs() < 1e-5, "current δ ≈ {}", prec.dec());
+        assert!((prec.ra().value()  - 101.57047).abs() < 3e-5, "current α ≈ {}", prec.ra());
+        assert!((prec.dec().value() + 16.74409).abs() < 1e-5, "current δ ≈ {}", prec.dec());
     }
 }

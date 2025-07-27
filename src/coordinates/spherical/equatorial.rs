@@ -8,24 +8,17 @@
 //!
 //! - **Right Ascension (α)** → `azimuth`: angle measured eastward along the celestial equator from the vernal equinox, in degrees.
 //! - **Declination (δ)**     → `polar`: angle above or below the celestial equator, in degrees.
-//! - **Radial distance (d)** → distance from the reference center, typically in astronomical units (AU).
+//! - **Radial distance (d)** → distance from the reference center, typically in astronomical units (AstronomicalUnits).
 //!
 //! Right Ascension is normalized to the [0°, 360°] range, and Declination to [-90°, 90°].
 //!
-//! # Provided Types
-//! The following type aliases define common equatorial coordinate systems with different centers:
-//!
-//! - `EquatorialBarycentricSphericalPos` → For sources relative to the solar system barycenter.
-//! - `EquatorialHeliocentricSphericalPos` → For solar system objects relative to the Sun.
-//! - `EquatorialGeocentricSphericalPos` → For objects relative to the Earth (most common in observations).
-//!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::EquatorialGeocentricSphericalPos;
+//! use siderust::coordinates::spherical::direction::Equatorial;
 //! use siderust::units::Degrees;
 //!
-//! let coord = EquatorialGeocentricSphericalPos::new(
-//!     Degrees::new(120.0), Degrees::new(45.0), 1.0
+//! let coord = Equatorial::new(
+//!     Degrees::new(120.0), Degrees::new(45.0)
 //! );
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
@@ -34,22 +27,12 @@ use super::*;
 use crate::coordinates::{
     frames::*,
     centers::*,
-    kinds::Kind,
 };
-use crate::units::Degrees;
+use crate::units::*;
 
-// Equatorial Coordinate Types
-// Polar   -> Dec (δ) – the angle from a prime meridian.
-// Azimuth -> RA (α) – the angle from the equator.
-// Radial  -> Distance (d) – the distance between the source and the target.
-pub type EquatorialBarycentricSphericalPos  = Position<Barycentric,  Equatorial>;
-pub type EquatorialHeliocentricSphericalPos = Position<Heliocentric, Equatorial>;
-pub type EquatorialGeocentricSphericalPos   = Position<Geocentric,   Equatorial>;
-pub type EquatorialTopocentricSphericalPos  = Position<Topocentric,  Equatorial>;
-
-impl<Center: ReferenceCenter> Direction<Center, Equatorial> {
+impl<C: ReferenceCenter> Direction<C, Equatorial> {
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
-        Self::new_spherical_coord(dec, ra, None)
+        Self::new_raw(dec, ra, Quantity::<Unitless>::new(1.0))
     }
 
     /// Constructs a new equatorial spherical coordinate with normalized input angular.
@@ -62,17 +45,20 @@ impl<Center: ReferenceCenter> Direction<Center, Equatorial> {
     ///
     /// # Returns
     /// A normalized `Direction` in the equatorial frame.
-    pub fn new(ra: Degrees, dec: Degrees) -> Self {
+    pub fn new<T>(ra: T, dec: T) -> Self
+        where
+        T: Into<Degrees>,
+    {
         Self::new_const(
-            ra.normalize(),
-            dec.normalize_to_90_range()
+            ra.into().normalize(),
+            dec.into().wrap_quarter_fold()
         )
     }
 }
 
-impl<Center: ReferenceCenter> Position<Center, Equatorial> {
-    pub const fn new_const(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(dec, ra, Some(distance))
+impl<C: ReferenceCenter, U: LengthUnit> Position<C, Equatorial, U> {
+    pub const fn new_const(ra: Degrees, dec: Degrees, distance: Quantity<U>) -> Self {
+        Self::new_raw(dec, ra, distance)
     }
 
     /// Constructs a new equatorial spherical coordinate with normalized input angular.
@@ -82,19 +68,23 @@ impl<Center: ReferenceCenter> Position<Center, Equatorial> {
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AstronomicalUnits).
     ///
     /// # Returns
     /// A normalized `Position` in the equatorial frame.
-    pub fn new(ra: Degrees, dec: Degrees, distance: f64) -> Self {
-        Position::<Center, Equatorial>::new_const(
-            ra.normalize(),
-            dec.normalize_to_90_range(),
-            distance)
+    pub fn new<A, T>(ra: A, dec: A, distance: T) -> Self
+    where
+        A: Into<Degrees>,
+        T: Into<Quantity<U>>
+    {
+        Self::new_const(
+            ra.into().normalize(),
+            dec.into().wrap_quarter_fold(),
+            distance.into())
     }
 }
 
-impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, Equatorial, K> {
+impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, Equatorial, U> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees { self.polar }
 

@@ -4,31 +4,31 @@
 //! - `name`: Name of the satellite (borrowed or owned).
 //! - `mass`: Mass in kilograms (`Kilograms`).
 //! - `radius`: Mean radius in kilometers (`Kilometers`).
-//! - `orbit`: Orbital parameters (see [`Orbit`]), using SI units (e.g., AU, degrees, Julian Day).
+//! - `orbit`: Orbital parameters (see [`Orbit`]).
 
 use crate::astro::orbit::Orbit;
 use crate::units::{Kilograms, Kilometers};
 
 use std::borrow::Cow;
 
-#[derive(Debug, Clone)]
-/// Represents a **Satelite** characterized by its mass, radius and orbit.
-pub struct Satelite<'a> {
+#[derive(Clone, Debug)]
+/// Represents a **Satellite** characterized by its mass, radius and orbit.
+pub struct Satellite<'a> {
     pub name: Cow<'a, str>,
     pub mass: Kilograms,
     pub radius: Kilometers,
     pub orbit: Orbit,
 }
 
-impl<'a> Satelite<'a> {
+impl<'a> Satellite<'a> {
     /// Compile‐time constructor: only works with `'static` string literals.
     pub const fn new_const(
         name: &'static str,
         mass: Kilograms,
         radius: Kilometers,
         orbit: Orbit,
-    ) -> Satelite<'static> {
-        Satelite {
+    ) -> Satellite<'static> {
+        Satellite {
             name: Cow::Borrowed(name),
             mass,
             radius,
@@ -37,11 +37,11 @@ impl<'a> Satelite<'a> {
     }
 
     /// Runtime constructor: accepts any string-like thing.
-    pub fn new<N>(name: N, mass: Kilograms, radius: Kilometers, orbit: Orbit) -> Satelite<'a>
+    pub fn new<N>(name: N, mass: Kilograms, radius: Kilometers, orbit: Orbit) -> Satellite<'a>
     where
         N: Into<Cow<'a, str>>,
     {
-        Satelite {
+        Satellite {
             name: name.into(),
             mass,
             radius,

@@ -4,7 +4,7 @@
 //! ## Features
 //! - **Generic Type Safety:** The type system enforces correct pairing of reference centers and frames.
 //! - **Strongly Typed Angles:** Uses [`crate::units::Degrees`] and [`crate::units::Radians`] for angular components to avoid unit confusion.
-//! - **Distance and Angular Separation:** Methods for computing Euclidean distances and angular separations.
+//! - **LengthUnit and Angular Separation:** Methods for computing Euclidean distances and angular separations.
 //! - **String Representation:** Human-readable formatting for debugging and logging.
 //!
 //! ## Coordinate Convention
@@ -12,7 +12,7 @@
 //!
 //! - **Polar angle (θ):** `polar` — angle from a reference plane (e.g., latitude, declination, altitude), in degrees.
 //! - **Azimuthal angle (φ):** `azimuth` — angle from a reference direction (e.g., longitude, right ascension, azimuth), in degrees.
-//! - **Radial distance (r):** `distance` — distance from the reference center, in astronomical units (AU) or meters (for ECEF).
+//! - **Radial distance (r):** `distance` — distance from the reference center, in astronomical units (AstronomicalUnits) or meters (for ECEF).
 //!
 //! The interpretation of these components depends on the chosen `Frame` and `Center`.
 //!
@@ -21,25 +21,15 @@
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::coordinates::spherical::Position;
-//! use siderust::coordinates::frames::ICRS;
-//! use siderust::coordinates::centers::Barycentric;
-//! use siderust::units::Degrees;
+//! use siderust::units::DEG;
+//! use siderust::coordinates::spherical::direction::ICRS;
 //!
-//! // Create a barycentric ICRS coordinate (RA, Dec, distance)
-//! let coord = Position::<Barycentric, ICRS>::new(
-//!     Degrees::new(120.0), Degrees::new(45.0), 1.0
-//! );
+//! let coord = ICRS::new(120.0*DEG, 45.0*DEG);
 //! println!("{}", coord.to_string());
 //! ```
 //!
-//! ## Provided Types (via Type Aliases)
-//! - `ICRSBarycentricSphericalCoord`, `ICRSHeliocentricSphericalCoord`, etc.
-//! - `EclipticBarycentricSphericalCoord`, `EquatorialGeocentricSphericalCoord`, etc.
-//! - `HorizontalTopocentricSphericalCoord`, `GeographicPos` (ECEF), etc.
-//!
 //! ## See Also
-//! - [`crate::coordinates::cartesian::CartesianCoord`] for 3D Cartesian representation.
+//! - [`crate::coordinates::cartesian::Vector`] for 3D Cartesian representation.
 //! - Frame-specific modules for specialized constructors and accessors.
 //!
 //! ---
@@ -57,17 +47,15 @@
 //!
 //! - **Polar (θ)** → `polar`: angle from a reference plane (e.g., latitude, declination, altitude), in degrees.
 //! - **Azimuth (φ)** → `azimuth`: angle from a reference direction (e.g., longitude, right ascension, azimuth), in degrees.
-//! - **Radial distance (r)** → `distance`: distance from the reference center, in AU.
+//! - **Radial distance (r)** → `distance`: distance from the reference center, in AstronomicalUnits.
 //!
 //! # Example
 //! ```rust
 //! use siderust::units::Degrees;
-//! use siderust::coordinates::spherical::Position;
-//! use siderust::coordinates::frames::ICRS;
-//! use siderust::coordinates::centers::Barycentric;
+//! use siderust::coordinates::spherical::direction::ICRS;
 //!
-//! let coord = Position::<Barycentric, ICRS>::new(
-//!     Degrees::new(120.0), Degrees::new(45.0), 1.0
+//! let coord = ICRS::new(
+//!     Degrees::new(120.0), Degrees::new(45.0)
 //! );
 //! println!("{}", coord.to_string());
 //! ```
@@ -76,23 +64,14 @@
 mod spherical;
 pub use spherical::*;
 
-mod position;
-pub use position::*;
+pub mod position;
+pub use position::Position;
 
-mod direction;
-pub use direction::*;
+pub mod direction;
+pub use direction::Direction;
 
 mod equatorial;
-pub use equatorial::*;
-
 mod ecliptic;
-pub use ecliptic::*;
-
 mod horizontal;
-pub use horizontal::*;
-
 mod icrs;
-pub use icrs::*;
-
 mod ecef;
-pub use ecef::*;

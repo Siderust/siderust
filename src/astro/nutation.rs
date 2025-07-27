@@ -3,21 +3,21 @@
 //! **Nutation** describes short‑period wobbles of the Earth’s rotation axis that
 //! ride on top of the much slower 26 000‑year precession.  The motion is driven
 //! by the changing torque exerted by the Moon and the Sun on the Earth’s
-//! equatorial bulge.  Ignoring nutation would introduce errors of up to
-//! ±17″ of arc in the position of a star — far larger than the field of view of
+//! equatorial bulge. Ignoring nutation would introduce errors of up to
+//! ±17″ of arc in the position of a star, far larger than the field of view of
 //! modern telescopes.
 //!
 //! The module supplies:
-//! * **Δψ (longitude)** — the shift of the ecliptic along its own plane (°).
-//! * **Δε (obliquity)** — the oscillation of the ecliptic’s tilt (°).
-//! * **ε₀ (mean obliquity)** — the mean tilt of the ecliptic at the same epoch (°).
+//! * **Δψ (longitude)**: the shift of the ecliptic along its own plane (°).
+//! * **Δε (obliquity)**: the oscillation of the ecliptic’s tilt (°).
+//! * **ε₀ (mean obliquity)**: the mean tilt of the ecliptic at the same epoch (°).
 //!
 //! With those three numbers you can rotate *mean* equatorial coordinates
 //! (*RA*, *Dec*) of any object into *true* (apparent) coordinates valid for the
 //! requested date.
 //!
 //! ## Numerical model
-//! We implement the **IAU 1980** nutation theory (63 trigonometric terms).  It is
+//! We implement the **IAU 1980** nutation theory (63 trigonometric terms). It is
 //! still accurate to ≲ 0.1″ from year 1800 to 2050 and matches the recipe in
 //! Chapter 22 of _Jean Meeus – Astronomical Algorithms_, 2nd ed. (1998).
 //!
@@ -33,7 +33,7 @@
 //!
 //! ## API surface
 //! * [`get_nutation`] → [`Nutation`].  Computes Δψ, Δε, ε₀ for a given
-//!   [`JulianDay`].  All outputs are **degrees**.
+//!   [`JulianDate`].  All outputs are **degrees**.
 //! * [`corrected_ra_with_nutation`]  
 //!   Input: a mean [`Position`] (RA/Dec) and the same date.  Output: the
 //!   apparent right ascension *αₜ* (°) after a 3‑1‑3 rotation using Δψ, Δε, ε₀.
@@ -41,15 +41,15 @@
 //! ## Quick example
 //! ```rust
 //! use chrono::prelude::*;
-//! use siderust::units::JulianDay;
+//! use siderust::astro::JulianDate;
 //! use siderust::bodies::catalog::SIRIUS;
 //! use siderust::astro::nutation::{get_nutation, corrected_ra_with_nutation};
 //!
-//! let jd = JulianDay::from_utc(Utc::now());
+//! let jd = JulianDate::from_utc(Utc::now());
 //! let n = get_nutation(jd);
 //! println!("Δψ = {:.4}°, Δε = {:.4}°", n.longitude, n.obliquity);
 //!
-//! let ra_app = corrected_ra_with_nutation(&SIRIUS.target.get_position(), jd);
+//! let ra_app = corrected_ra_with_nutation(&SIRIUS.target.get_position().direction(), jd);
 //! println!("Apparent RA = {ra_app:.4}°");
 //! ```
 //!
@@ -58,22 +58,19 @@
 //! series (1365 terms) or IERS tabulated Δψ/Δε values.  
 
 
-use crate::coordinates::{
-    spherical::Position,
-    centers::Geocentric,
-    frames::Equatorial
-};
-use crate::units::{Degrees, Radians, JulianDay};
+use crate::coordinates::spherical::direction::Equatorial;
+use crate::astro::JulianDate;
+use crate::units::*;
 use crate::astro::dynamical_time::julian_ephemeris_day;
 
 /// Nutation components for a given epoch (all **degrees**).
 #[derive(Debug)]
 pub struct Nutation {
-    /// Δψ — nutation in ecliptic longitude.
+    /// Δψ: nutation in ecliptic longitude.
     pub longitude: Degrees,
-    /// Δε — nutation in obliquity.
+    /// Δε: nutation in obliquity.
     pub obliquity: Degrees,
-    /// ε₀ — mean obliquity of the ecliptic.
+    /// ε₀: mean obliquity of the ecliptic.
     pub ecliptic: Degrees,
 }
 
@@ -86,18 +83,18 @@ const TERMS: usize = 63;
 
 /// Compute Δψ, Δε and ε₀ for the supplied Julian Day (JD).
 #[inline]
-pub fn get_nutation(jd: JulianDay) -> Nutation {
+pub fn get_nutation(jd: JulianDate) -> Nutation {
     let jde = julian_ephemeris_day(jd);
     let t = jde.julian_centuries().value();
     let t2 = t * t;
     let t3 = t2 * t;
 
     // Fundamental arguments (radians)
-    let d  = Degrees::new(297.850_36 + 445_267.111_480 * t - 0.001_914_2 * t2 + t3 / 189_474.0).to_radians();
-    let m  = Degrees::new(357.527_72 +  35_999.050_340 * t - 0.000_160_3 * t2 - t3 / 300_000.0).to_radians();
-    let mp = Degrees::new(134.962_98 + 477_198.867_398 * t + 0.008_697_2 * t2 + t3 /  56_250.0).to_radians();
-    let f  = Degrees::new( 93.271_91 + 483_202.017_538 * t - 0.003_682_5 * t2 + t3 / 327_270.0).to_radians();
-    let om = Degrees::new(125.044_52 -   1_934.136_261 * t + 0.002_070_8 * t2 + t3 / 450_000.0).to_radians();
+    let d  = Degrees::new(297.850_36 + 445_267.111_480 * t - 0.001_914_2 * t2 + t3 / 189_474.0).to::<Radian>();
+    let m  = Degrees::new(357.527_72 +  35_999.050_340 * t - 0.000_160_3 * t2 - t3 / 300_000.0).to::<Radian>();
+    let mp = Degrees::new(134.962_98 + 477_198.867_398 * t + 0.008_697_2 * t2 + t3 /  56_250.0).to::<Radian>();
+    let f  = Degrees::new( 93.271_91 + 483_202.017_538 * t - 0.003_682_5 * t2 + t3 / 327_270.0).to::<Radian>();
+    let om = Degrees::new(125.044_52 -   1_934.136_261 * t + 0.002_070_8 * t2 + t3 / 450_000.0).to::<Radian>();
 
     // Evaluate trigonometric series (0.0001″ units)
     let mut dpsi = 0.0;
@@ -126,17 +123,17 @@ pub fn get_nutation(jd: JulianDay) -> Nutation {
 /// Rotate a mean position (RA, Dec) into **apparent** right ascension, applying nutation.
 #[inline]
 pub fn corrected_ra_with_nutation(
-    target: &Position<Geocentric, Equatorial>,
-    jd: JulianDay,
+    target: &Equatorial,
+    jd: JulianDate,
 ) -> Degrees {
     // 1) Fetch nutation terms in radians
     let Nutation { longitude, obliquity, ecliptic } = get_nutation(jd);
-    let dpsi = longitude.to_radians();
-    let deps = obliquity.to_radians();
-    let eps0 = ecliptic.to_radians();
+    let dpsi = longitude.to::<Radian>();
+    let deps = obliquity.to::<Radian>();
+    let eps0 = ecliptic.to::<Radian>();
 
     // 2) Mean equatorial coordinates → Cartesian vector
-    let (alpha, delta) = (target.ra().to_radians(), target.dec().to_radians());
+    let (alpha, delta) = (target.ra().to::<Radian>(), target.dec().to::<Radian>());
     let (x, y, z) = (delta.cos() * alpha.cos(), delta.cos() * alpha.sin(), delta.sin());
 
     // 3) Rotate R1(ε₀+Δε) · R3(Δψ) · R1(−ε₀)

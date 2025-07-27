@@ -12,12 +12,9 @@
 //! positions at a reference epoch (usually J2000.0), we need to correct
 //! for proper motion when computing positions at a later date.
 
-use crate::units::{DmsPerYear, JulianDay, Years, DMS};
-use crate::coordinates::{
-    spherical::Position,
-    centers::Geocentric,
-    frames::Equatorial
-};
+use crate::units::*;
+use crate::coordinates::spherical::position;
+use crate::astro::JulianDate;
 
 /// Describes the proper motion of a star in equatorial coordinates.
 ///
@@ -27,15 +24,18 @@ use crate::coordinates::{
 /// Units: both fields are in **degrees per Julian year**
 #[derive(Debug, Clone)]
 pub struct ProperMotion {
-    pub ra_μ: DmsPerYear,
-    pub dec_μ: DmsPerYear,
+    pub ra_μ: DegreesPerYear,
+    pub dec_μ: DegreesPerYear,
 }
 
 impl ProperMotion {
-    pub fn from_mas_per_year(ra: f64, dec: f64) -> ProperMotion {
-        ProperMotion{
-            ra_μ: DmsPerYear(DMS::from_milliarcseconds(ra), Years(1.0)),
-            dec_μ: DmsPerYear(DMS::from_milliarcseconds(dec), Years(1.0))
+    pub fn new<T>(ra_v: Quantity<T>, dec_v: Quantity<T>) -> Self
+    where
+        T: FrequencyUnit,
+    {
+        Self{
+            ra_μ: ra_v.to::<DegreePerYear>(),
+            dec_μ: dec_v.to::<DegreePerYear>()
         }
     }
 }
@@ -52,19 +52,19 @@ impl ProperMotion {
 /// New apparent position adjusted by linear proper motion.
 ///
 /// Assumes motion is linear (valid for most stars over <1000 year timescales).
-fn set_proper_motion_since_epoch(
-    mean_position: Position<Geocentric, Equatorial>,
+fn set_proper_motion_since_epoch<U: LengthUnit>(
+    mean_position: position::Equatorial<U>,
     proper_motion: ProperMotion,
-    jd: JulianDay,
-    epoch_jd: JulianDay
-) -> Position<Geocentric, Equatorial> {
+    jd: JulianDate,
+    epoch_jd: JulianDate
+) -> position::Equatorial<U> {
     // Time difference in Julian years
-    let t: Years = Years::new((jd - epoch_jd) / JulianDay::JULIAN_YEAR);
+    let t: Years = Years::new((jd - epoch_jd) / JulianDate::JULIAN_YEAR);
     // Linearly apply proper motion in RA and DEC
-    Position::<Geocentric, Equatorial>::new(
-        mean_position.ra() + (proper_motion.ra_μ * t).to_degrees().normalize(),
-        (mean_position.dec() + (proper_motion.dec_μ * t).to_degrees()).normalize(),
-        mean_position.distance.unwrap(),
+    position::Equatorial::<U>::new::<Degrees, Quantity<U>>(
+        mean_position.ra() + (proper_motion.ra_μ * t).normalize(),
+        (mean_position.dec() + (proper_motion.dec_μ * t)).normalize(),
+        mean_position.distance,
     )
 }
 
@@ -77,19 +77,20 @@ fn set_proper_motion_since_epoch(
 ///
 /// # Returns
 /// Updated position after applying proper motion since J2000.0
-pub fn set_proper_motion_since_j2000(
-    mean_position: Position<Geocentric, Equatorial>,
+pub fn set_proper_motion_since_j2000<U: LengthUnit>(
+    mean_position: position::Equatorial<U>,
     proper_motion: ProperMotion,
-    jd: JulianDay
-) -> Position<Geocentric, Equatorial> {
-    set_proper_motion_since_epoch(mean_position, proper_motion, jd, JulianDay::J2000)
+    jd: JulianDate
+) -> position::Equatorial<U> {
+    set_proper_motion_since_epoch(mean_position, proper_motion, jd, JulianDate::J2000)
 }
 
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::units::{Degrees, DmsPerYear, JulianDay};
+    use crate::astro::JulianDate;
+    use crate::units::{Degrees, DegreesPerYear, AstronomicalUnit};
     use crate::coordinates::{
         spherical::Position,
         centers::Geocentric,
@@ -99,7 +100,7 @@ mod tests {
     #[test]
     fn test_proper_motion_linear_shift() {
         // Mean position at J2000
-        let mean_position = Position::<Geocentric, Equatorial>::new(
+        let mean_position = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(
             Degrees::new(10.0),   // RA = 10°
             Degrees::new(20.0),  // DEC = 20°
             1.0      // arbitrary distance
@@ -107,12 +108,12 @@ mod tests {
 
         // Proper motion: 0.01°/year in RA, -0.005°/year in DEC
         let mu = ProperMotion {
-            ra_μ: DmsPerYear::from_decimal(0.01),
-            dec_μ: DmsPerYear::from_decimal(-0.005),
+            ra_μ: DegreesPerYear::new(0.01),
+            dec_μ: DegreesPerYear::new(-0.005),
         };
 
         // Target epoch: 50 years after J2000
-        let jd_future = JulianDay::J2000 + 50.0 * JulianDay::JULIAN_YEAR;
+        let jd_future = JulianDate::J2000 + 50.0 * JulianDate::JULIAN_YEAR;
 
         let shifted = set_proper_motion_since_j2000(mean_position, mu, jd_future);
 
@@ -123,7 +124,7 @@ mod tests {
         let ra_err = (shifted.ra() - expected_ra).abs();
         let dec_err = (shifted.dec() - expected_dec).abs();
 
-        assert!(ra_err.as_f64() < 1e-6, "RA shifted incorrectly: got {}, expected {}", shifted.ra(), expected_ra);
-        assert!(dec_err.as_f64() < 1e-6, "DEC shifted incorrectly: got {}, expected {}", shifted.dec(), expected_dec);
+        assert!(ra_err.value() < 1e-6, "RA shifted incorrectly: got {}, expected {}", shifted.ra(), expected_ra);
+        assert!(dec_err.value() < 1e-6, "DEC shifted incorrectly: got {}, expected {}", shifted.dec(), expected_dec);
     }
 }

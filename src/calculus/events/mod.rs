@@ -49,14 +49,15 @@
 //! use siderust::calculus::events::{find_static_extremas, find_dynamic_extremas, Culmination};
 //! use siderust::bodies::catalog::SIRIUS;
 //! use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-//! use siderust::units::{Days, JulianDay};
+//! use siderust::units::Days;
+//! use siderust::astro::JulianDate;
 //! 
 //! // Example: Find extrema of a function in a given interval
 //! let extrema = find_static_extremas(
 //!     &SIRIUS.target,                    // Target to be observed
 //!     &ROQUE_DE_LOS_MUCHACHOS,           // Location of the observer
-//!     JulianDay::J2000,                  // start time
-//!     JulianDay::J2000 + Days::new(1.0), // end time
+//!     JulianDate::J2000,                  // start time
+//!     JulianDate::J2000 + Days::new(1.0), // end time
 //! );
 //!
 //! for ext in extrema {
@@ -85,10 +86,22 @@
 //!
 //! This API is designed to be stable and extensible for future Siderust releases.
 
-mod extremas;
+
+/// Represents a culmination event — the moment a celestial body crosses
+/// the observer’s meridian.
+///
+/// - `Upper`: transit across the upper meridian (highest altitude).  
+/// - `Lower`: transit across the lower meridian (lowest altitude).
+///
+/// The `jd` field stores the Julian Day of the event.
+#[derive(Debug)]
+pub enum Culmination {
+    Upper { jd: crate::astro::JulianDate },
+    Lower { jd: crate::astro::JulianDate },
+}
+
 mod find_static_extremas;
 mod find_dynamic_extremas;
 
-pub use extremas::Culmination;
 pub use find_dynamic_extremas::find_dynamic_extremas;
 pub use find_static_extremas::find_static_extremas;

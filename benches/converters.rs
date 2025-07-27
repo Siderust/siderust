@@ -1,7 +1,7 @@
 use std::time::Duration;
 use criterion::{black_box, Criterion, criterion_group, criterion_main};
 use siderust::{
-    coordinates::{SphericalCoord, CartesianCoord},
+    coordinates::{SphericalCoord, Vector},
     coordinates::centers::Barycentric,
     coordinates::frames::ICRS,
     units::Degrees,
@@ -10,7 +10,7 @@ use siderust::{
 fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     // Test data: one Cartesian and one Spherical point in the ICRS/Barycentric frame
     let icrs_cartesian =
-        CartesianCoord::<Barycentric, ICRS>::new(10.0, 20.0, 30.0);
+        Vector::<Barycentric, ICRS>::new(10.0, 20.0, 30.0);
     let icrs_spherical =
         SphericalCoord::<Barycentric, ICRS>::new(
             Degrees::new(10.0), Degrees::new(20.0), 30.0);
@@ -37,7 +37,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     group.bench_function("to_cartesian (ICRS)", |b| {
         b.iter(|| {
             let sph = black_box(&icrs_spherical);
-            let res: CartesianCoord<_, _> = sph.into();
+            let res: Vector<_, _> = sph.into();
             black_box(res);
         });
     });

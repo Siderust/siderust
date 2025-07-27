@@ -18,15 +18,15 @@
 //! This module re-implements the algorithm from Chapter 9 of **Jean Meeus – _Astronomical Algorithms_ (2nd ed. 1998)**.
 //!
 //! ## API
-//! * [`julian_ephemeris_day`] — Converts a [`JulianDay`] into **Julian Ephemeris Day (JDE)** by adding ΔT / 86400.
+//! * [`julian_ephemeris_day`] — Converts a [`JulianDate`] into **Julian Ephemeris Day (JDE)** by adding ΔT / 86400.
 //! * [`delta_t_seconds`] — Returns ΔT in seconds for a given Julian Day (JD).
 //!
 //! ## Quick Example
 //! ```rust
-//! use siderust::units::time::JulianDay;
+//! use siderust::astro::JulianDate;
 //! use siderust::astro::dynamical_time::julian_ephemeris_day;
 //!
-//! let jd = JulianDay::new(2_451_545.0); // January 1, 2000 (Epoch J2000)
+//! let jd = JulianDate::new(2_451_545.0); // January 1, 2000 (Epoch J2000)
 //! let jde = julian_ephemeris_day(jd);
 //! println!("JDE = {jde}");
 //! ```
@@ -36,7 +36,8 @@
 //! ≤ ±2 s before 1800 CE, and ≤ ±0.5 s since 1900.
 //! For future predictions, more accurate IERS-provided curves are recommended.
 
-use crate::units::{time, Days, JulianDay};
+use crate::units::Days;
+use crate::astro::JulianDate;
 
 /// Total number of tabulated terms (biennial 1620–1992).
 const TERMS: usize = 187;
@@ -132,10 +133,11 @@ pub fn delta_t_seconds(jd: f64) -> f64 {
     }
 }
 
-/// Converts a [`JulianDay`] to **Julian Ephemeris Day (JDE)** by adding ΔT/86400.
+/// Converts a [`JulianDate`] to **Julian Ephemeris Day (JDE)** by adding ΔT/86400.
 #[inline]
-pub fn julian_ephemeris_day(jd: JulianDay) -> JulianDay {
-    jd + Days::new(delta_t_seconds(jd.value())) / time::SECONDS_PER_DAY
+pub fn julian_ephemeris_day(jd: JulianDate) -> JulianDate {
+    pub const SECONDS_PER_DAY: f64 = 86_400.0;
+    jd + Days::new(delta_t_seconds(jd.value())) / SECONDS_PER_DAY
 }
 
 #[cfg(test)]
@@ -145,7 +147,7 @@ mod tests {
     #[test]
     fn delta_t_2000() {
         // IERS reference value: ~63.83 ±0.1 s
-        let dt = delta_t_seconds(JulianDay::J2000.value());
+        let dt = delta_t_seconds(JulianDate::J2000.value());
         assert!((dt - 63.83).abs() < 0.5);
     }
 }
