@@ -4,6 +4,50 @@ use crate::coordinates::{
 };
 use crate::units::*;
 
+fn cartesian_to_spherical_pos<C, F, U>(
+    cart: &cartesian::Position<C, F, U>,
+) -> spherical::Position<C, F, U>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: LengthUnit,
+{
+    let r = cart.distance();
+    let x = cart.x();
+    let y = cart.y();
+    let z = cart.z();
+
+    if r == 0.0 {
+        return spherical::Position::CENTER;
+    }
+
+    let polar = Degrees::new((z / r).asin().to_degrees());
+    let azimuth = Degrees::new(y.value().atan2(x.value()).to_degrees());
+    spherical::Position::new_raw(polar, azimuth, cart.distance())
+}
+
+fn cartesian_to_spherical_dir<C, F>(
+    cart: &cartesian::Direction<C, F>,
+) -> spherical::Direction<C, F>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    let x = cart.x().value();
+    let y = cart.y().value();
+    let z = cart.z().value();
+
+    debug_assert!(
+        (cart.distance().value() - 1.0).abs() < 1e-12,
+        "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
+    );
+
+    let polar = Degrees::new(z.asin().to_degrees());
+    let azimuth = Degrees::new(y.atan2(x).to_degrees());
+
+    spherical::Direction::new_raw(polar, azimuth, Quantity::<Unitless>::new(1.0))
+}
+
 /// Implements conversion from Cartesian to Spherical coordinates
 /// by borrowing a `&Vector` reference.
 ///
@@ -24,21 +68,7 @@ where
     U: LengthUnit,
 {
     fn from(cart: &cartesian::Position<C, F, U>) -> Self {
-        let r = cart.distance();
-        let x = cart.x();
-        let y = cart.y();
-        let z = cart.z();
-
-        if r == 0.0 {
-            return Self::CENTER;
-        }
-
-        let polar = Degrees::new((z / r).asin()
-                                        .to_degrees());
-        let azimuth = Degrees::new(y.value()
-                                    .atan2(x.value())
-                                    .to_degrees());
-        Self::new_raw(polar, azimuth, cart.distance())
+        cartesian_to_spherical_pos(cart)
     }
 }
 
@@ -48,41 +78,33 @@ where
     F: ReferenceFrame,
 {
     fn from(cart: &cartesian::Direction<C, F>) -> Self {
-        let x = cart.x().value();
-        let y = cart.y().value();
-        let z = cart.z().value();
-
-        debug_assert!(
-            (cart.distance().value() - 1.0).abs() < 1e-12,
-            "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
-        );
-
-        let polar   = Degrees::new(z.asin().to_degrees());
-        let azimuth = Degrees::new(y.atan2(x).to_degrees());
-
-        Self::new_raw(polar, azimuth, Quantity::<Unitless>::new(1.0))
+        cartesian_to_spherical_dir(cart)
     }
 }
 
-impl<C, F, U> cartesian::Vector<C, F, U>
+impl<C, F, U> crate::coordinates::spherical::SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
-    spherical::SphericalCoord<C, F, U>: for<'a> From<&'a cartesian::Vector<C, F, U>>,
+    U: LengthUnit,
 {
-    pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, U> { self.into() }
+    pub fn from_cartesian(cart: &cartesian::Position<C, F, U>) -> Self
+    {
+        cartesian_to_spherical_pos(cart)
+    }
 }
 
 
-impl<C, F, U> cartesian::Vector<C, F, U>
+impl<C, F, U> crate::coordinates::cartesian::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
-    cartesian::Vector<C, F, U>: for<'a> From<&'a spherical::SphericalCoord<C, F, U>>,
+    U: LengthUnit,
 {
-    pub fn from_spherical(sph: &spherical::SphericalCoord<C, F, U>) -> Self { Self::from(&sph) }
+    pub fn to_spherical(&self) -> spherical::Position<C, F, U>
+    {
+        cartesian_to_spherical_pos(self)
+    }
 }
 
 #[cfg(test)]
