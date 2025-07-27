@@ -3,7 +3,6 @@ use crate::coordinates::{
     centers::ReferenceCenter,
     frames
 };
-use crate::coordinates::transform::Transform;
 use super::TransformFrame;
 use crate::units::Unit;
 
@@ -33,15 +32,6 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Equatorial, U
     }
 }
 
-//TODO: REMOVE
-/// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
-///
-/// The transformation is a right‐hand rotation about +X by the obliquity ε.
-impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Equatorial, U>> for Vector<C, frames::Ecliptic, U> {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Equatorial, U> {
-        self.to_frame()
-    }
-}
 
 
 
