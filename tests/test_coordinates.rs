@@ -2,65 +2,70 @@ use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::*;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
-use siderust::units::{JulianDay, Degrees};
+use siderust::units::{LengthUnit, Degrees, AstronomicalUnit, Quantity};
+use siderust::astro::JulianDate;
 
-fn approx_eq<C, F>(a: &cartesian::Position<C, F>, b: &cartesian::Position<C, F>)
+fn approx_eq<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
-    assert!((a.x() - b.x()).abs() < 1e-6, "x mismatch: {} vs {}", a.x(), b.x());
-    assert!((a.y() - b.y()).abs() < 1e-6, "y mismatch: {} vs {}", a.y(), b.y());
-    assert!((a.z() - b.z()).abs() < 1e-6, "z mismatch: {} vs {}", a.z(), b.z());
+    assert!((a.x() - b.x()).abs() < (1e-6).into(), "x mismatch: {} vs {}", a.x(), b.x());
+    assert!((a.y() - b.y()).abs() < (1e-6).into(), "y mismatch: {} vs {}", a.y(), b.y());
+    assert!((a.z() - b.z()).abs() < (1e-6).into(), "z mismatch: {} vs {}", a.z(), b.z());
 }
 
-fn sph_approx_eq<C, F>(a: &spherical::Position<C, F>, b: &spherical::Position<C, F>)
+fn sph_approx_eq<C, F, U>(a: &spherical::Position<C, F, U>, b: &spherical::Position<C, F, U>)
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
-    assert!((a.polar.as_f64()   - b.polar.as_f64()).abs()   < 1e-6, "polar mismatch: {} vs {}", a.polar, b.polar);
-    assert!((a.azimuth.as_f64() - b.azimuth.as_f64()).abs() < 1e-6, "polar mismatch: {} vs {}", a.azimuth, b.azimuth);
-    assert!((a.distance.unwrap_or(std::f64::NAN)  - b.distance.unwrap_or(std::f64::NAN)).abs()  < 1e-6, "polar mismatch: {} vs {}", a.distance.unwrap_or(std::f64::NAN), b.distance.unwrap_or(std::f64::NAN));
+    assert!((a.polar    - b.polar   ).abs().value() < 1e-6, "polar mismatch: {} vs {}", a.polar, b.polar);
+    assert!((a.azimuth  - b.azimuth ).abs().value() < 1e-6, "polar mismatch: {} vs {}", a.azimuth, b.azimuth);
+    assert!((a.distance - b.distance).abs().value() < 1e-6, "polar mismatch: {} vs {}", a.distance, b.distance);
 }
 
 
 #[test]
 fn test_coord_transformations() {
-    let original = Mars::vsop87a(JulianDay::J2000).get_position().clone(); // Heliocentric, Ecliptic (implícito)
+    use siderust::coordinates::cartesian::Position;
+
+    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone(); // Heliocentric, Ecliptic
 
     // Heliocentric Ecliptic -> Geocentric Ecliptic -> back
-    let geo_ecl = cartesian::Position::<Geocentric, Ecliptic>::from(&original);
-    let helio_ecl = cartesian::Position::<Heliocentric, Ecliptic>::from(&geo_ecl);
+    let geo_ecl = Position::<Geocentric, Ecliptic, AstronomicalUnit>::from(&original);
+    let helio_ecl = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::from(&geo_ecl);
     approx_eq(&original, &helio_ecl);
 
     // Heliocentric Ecliptic -> Barycentric Ecliptic -> back
-    let bary_ecl = cartesian::Position::<Barycentric, Ecliptic>::from(&original);
-    let helio_from_bary = cartesian::Position::<Heliocentric, Ecliptic>::from(&bary_ecl);
+    let bary_ecl = Position::<Barycentric, Ecliptic, AstronomicalUnit>::from(&original);
+    let helio_from_bary = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::from(&bary_ecl);
     approx_eq(&original, &helio_from_bary);
 
     // Heliocentric Ecliptic -> Heliocentric Equatorial -> back
-    let helio_eq = cartesian::Position::<Heliocentric, Equatorial>::from(&original);
-    let helio_from_eq = cartesian::Position::<Heliocentric, Ecliptic>::from(&helio_eq);
+    let helio_eq = Position::<Heliocentric, Equatorial, AstronomicalUnit>::from(&original);
+    let helio_from_eq = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::from(&helio_eq);
     approx_eq(&original, &helio_from_eq);
 
     // Heliocentric Equatorial -> ICRS -> back
-    let icrs = cartesian::Position::<Heliocentric, frames::ICRS>::from(&helio_eq);
-    let helio_eq_back = cartesian::Position::<Heliocentric, Equatorial>::from(&icrs);
+    let icrs = Position::<Heliocentric, frames::ICRS, AstronomicalUnit>::from(&helio_eq);
+    let helio_eq_back = Position::<Heliocentric, Equatorial, AstronomicalUnit>::from(&icrs);
     approx_eq(&helio_eq, &helio_eq_back);
 }
 
 
 #[test]
 fn test_spherical_transformations() {
-    let original = Mars::vsop87a(JulianDay::J2000).get_position().clone(); // Heliocentric, Ecliptic
+    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone(); // Heliocentric, Ecliptic
 
-    // Convertir a otros marcos cartesianos
-    let geo_eq = cartesian::Position::<Geocentric, Equatorial>::from(&original);
-    let helio_icrs = cartesian::Position::<Heliocentric, frames::ICRS>::from(&original);
-    let bary_eq = cartesian::Position::<Barycentric, Equatorial>::from(&original);
+    let geo_eq = cartesian::Position::<Geocentric, Equatorial, AstronomicalUnit>::from(&original);
+    let helio_icrs = cartesian::Position::<Heliocentric, frames::ICRS, AstronomicalUnit>::from(&original);
+    let bary_eq = cartesian::Position::<Barycentric, Equatorial, AstronomicalUnit>::from(&original);
 
-    // Probar conversiones Cartesiano -> Esférico -> Cartesiano
     let sph_helio_ecl = spherical::Position::from_cartesian(&original);
     let back_helio_ecl = sph_helio_ecl.to_cartesian();
     approx_eq(&original, &back_helio_ecl);
@@ -81,7 +86,7 @@ fn test_spherical_transformations() {
 
 #[test]
 fn serialize_cartesian_spherical() {
-    let sph_orig = spherical::Position::<Barycentric, frames::ICRS>::new(Degrees::new(101.28715533), Degrees::new(-16.71611586), 1.0);
+    let sph_orig = spherical::Position::<Barycentric, frames::ICRS, AstronomicalUnit>::new(Degrees::new(101.28715533), Degrees::new(-16.71611586), 1.0);
     let cart = sph_orig.to_cartesian();
     let sph_rec = cart.to_spherical();
     sph_approx_eq(&sph_orig, &sph_rec);

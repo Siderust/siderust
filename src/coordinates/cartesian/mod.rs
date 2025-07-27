@@ -1,7 +1,9 @@
-pub mod cartesian;
+pub mod vector;
 pub mod direction;
 pub mod position;
+pub mod velocity;
 
-pub use cartesian::*;
-pub use direction::*;
-pub use position::*;
+pub use vector::*;
+pub use direction::Direction;
+pub use position::Position;
+pub use velocity::Velocity;

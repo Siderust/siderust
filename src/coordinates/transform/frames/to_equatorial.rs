@@ -1,31 +1,33 @@
 use crate::coordinates::{
-    cartesian::CartesianCoord,
+    cartesian::Vector,
     centers::ReferenceCenter,
-    kinds::Kind,
     frames
 };
 use crate::coordinates::transform::Transform;
+use crate::units::Unit;
 
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
-impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Equatorial, K>> for CartesianCoord<C, frames::Ecliptic, K> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Equatorial, K> {
+impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Equatorial, U>> for Vector<C, frames::Ecliptic, U> {
+    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Equatorial, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
-        let x_eq = self.x();
-        let y_eq = cos_e * self.y() - sin_e * self.z();
-        let z_eq = sin_e * self.y() + cos_e * self.z();
-
-        CartesianCoord::new(x_eq, y_eq, z_eq)
+        let y = self.y();
+        let z = self.z();
+        Vector::new(
+            self.x(),
+            cos_e * y - sin_e * z,
+            sin_e * y + cos_e * z
+        )
     }
 }
 
 // Implement Transform trait for ICRS -> Equatorial (identity)
-impl<C: ReferenceCenter, K: Kind> Transform<CartesianCoord<C, frames::Equatorial, K>> for CartesianCoord<C, frames::ICRS, K> {
-    fn transform(&self, _jd: crate::units::JulianDay) -> CartesianCoord<C, frames::Equatorial, K> {
-        CartesianCoord::new(self.x(), self.y(), self.z())
+impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Equatorial, U>> for Vector<C, frames::ICRS, U> {
+    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Equatorial, U> {
+        Vector::new(self.x(), self.y(), self.z())
     }
 }
 
@@ -36,20 +38,20 @@ mod tests {
         spherical::Position,
         centers, frames
     };
-    use crate::units::Degrees;
+    use crate::units::{Degrees, AstronomicalUnit};
     use crate::macros::assert_spherical_eq;
 
     const EPS: f64 = 1.0e-12;
 
     #[test]
     fn round_trip_ecliptic_equatorial() {
-        let ecliptic_orig = Position::<centers::Barycentric, frames::Ecliptic>::new(
+        let ecliptic_orig = Position::<centers::Barycentric, frames::Ecliptic, AstronomicalUnit>::new(
             Degrees::new(123.4),
             Degrees::new(-21.0),
             2.7,
         );
-        let equatorial  = Position::<centers::Barycentric, frames::Equatorial>::from(&ecliptic_orig);
-        let ecliptic_rec = Position::<centers::Barycentric, frames::Ecliptic>::from(&equatorial);
+        let equatorial  = Position::<centers::Barycentric, frames::Equatorial, AstronomicalUnit>::from(&ecliptic_orig);
+        let ecliptic_rec = Position::<centers::Barycentric, frames::Ecliptic, AstronomicalUnit>::from(&equatorial);
 
         assert_spherical_eq!(ecliptic_orig, ecliptic_rec, EPS);
     }

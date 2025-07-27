@@ -2,7 +2,7 @@
 //! with respect to the Earth-Centered Earth-Fixed (ECEF) reference frame.
 //!
 //! This module provides:
-//! - The `GeographicPos` type, a spherical coordinate
+//! - The `Geographic` type, a spherical coordinate
 //!   system using latitude, longitude, and radial height.
 //! - Creation methods that normalize angular values to valid geodetic ranges.
 //! - Traits and builders for structured instantiation.
@@ -14,15 +14,12 @@
 //! - **Longitude (λ)**  → `azimuth`: angle from the prime meridian in degrees, normalized to [-180°, 180°].
 //! - **Radial distance (h)** → height above the reference ellipsoid (e.g., WGS84), in meters.
 //!
-//! # Type Aliases
-//! - `GeographicPos` = `SphericalCoord<Geocentric, ECEF>`
-//!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::GeographicPos;
+//! use siderust::coordinates::spherical::position::Geographic;
 //! use siderust::units::{Degrees, KM};
 //!
-//! let coord = GeographicPos::new(Degrees::new(45.0), Degrees::new(7.0), 2.4*KM);
+//! let coord = Geographic::new(Degrees::new(45.0), Degrees::new(7.0), 2.4*KM);
 //! println!("lat = {}, lon = {}", coord.lat(), coord.lon());
 //! ```
 
@@ -30,17 +27,16 @@ use super::*;
 use crate::coordinates::{
     frames::*,
     centers::*,
-    kinds::Kind,
 };
-use crate::units::{Degrees, Kilometers};
+use crate::units::*;
 use crate::bodies::EARTH;
 
-impl<Center: ReferenceCenter> Direction<Center, ECEF> {
+impl<C: ReferenceCenter,> Direction<C, ECEF> {
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
-        Self::new_spherical_coord(
+        Self::new_raw(
             lat,
             lon,
-            None
+            Quantity::<Unitless>::new(1.0)
         )
     }
 
@@ -49,20 +45,23 @@ impl<Center: ReferenceCenter> Direction<Center, ECEF> {
     /// # Arguments
     /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
-    pub fn new(lon: Degrees, lat: Degrees) -> Self {
+    pub fn new<T>(lon: T, lat: T) -> Self
+    where
+        T: Into<Degrees>,
+    {
         Self::new_const(
-            lat.normalize_to_90_range(),
-            lon.normalize_to_180_range()
+            lat.into().wrap_quarter_fold(),
+            lon.into().wrap_signed_lo()
         )
     }
 }
 
-impl<Center: ReferenceCenter> Position<Center, ECEF> {
+impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
     pub const fn new_const(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
-        Self::new_spherical_coord(
+        Self::new_raw(
             lat,
             lon,
-            Some(EARTH.radius.value() + alt.value())
+            Kilometers::new(EARTH.radius.value() + alt.value())
         )
     }
 
@@ -71,16 +70,20 @@ impl<Center: ReferenceCenter> Position<Center, ECEF> {
     /// # Arguments
     /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
-    /// - `alt`: Altitude above the sea, in Kilometers.
-    pub fn new(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
+    /// - `alt`: Altitude above the sea, in KM.
+    pub fn new<A, T>(lon: A, lat: A, alt: T) -> Self
+    where
+        T: Into<Kilometers>,
+        A: Into<Degrees>,
+    {
         Self::new_const(
-            lat.normalize_to_90_range(),
-            lon.normalize_to_180_range(),
-            alt)
+            lat.into().wrap_quarter_fold(),
+            lon.into().wrap_signed_lo(),
+            alt.into())
     }
 }
 
-impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, ECEF, K> {
+impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, ECEF, U> {
     /// Returns the latitude (φ) in degrees.
     pub fn lat(&self) -> Degrees { self.polar }
 
@@ -89,9 +92,3 @@ impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, ECEF, K> {
 }
 
 
-// Define type alias for Geodetic/Geographic coordinates using SphericalCoord
-// Polar   -> Latitude (φ) – the angle from the equator. [-90°, 90°]
-// Azimuth -> Longitude (λ) – the angle from a prime meridian. [-180°, 180°]
-// Radial  -> Altitude (h) – the elevation above the reference ellipsoid (such as WGS84).
-pub type GeographicPos = Position<Geocentric, ECEF>;
-pub type GeographicDir = Direction<Geocentric, ECEF>;

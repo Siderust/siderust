@@ -8,27 +8,17 @@
 //!
 //! - **Altitude (Alt)** → `polar`: angle above or below the horizon, in degrees.
 //! - **Azimuth (Az)**   → `azimuth`: angle measured clockwise from the north, in degrees.
-//! - **Radial distance (d)** → distance from the reference center, typically in astronomical units (AU).
+//! - **Radial distance (d)** → distance from the reference center, typically in astronomical units (AstronomicalUnits).
 //!
 //! Altitude is normalized to the [-90°, 90°] range, and azimuth to the [0°, 360°] range.
 //! Time is represented as Julian Date (JD).
 //!
-//! # Provided Types
-//! The following type aliases define common combinations of center and horizontal frame:
-//!
-//! - `HorizontalBarycentricSphericalPos` → Center: solar system barycenter.
-//! - `HorizontalHeliocentricSphericalPos` → Center: Sun.
-//! - `HorizontalGeocentricSphericalPos` → Center: Earth (common for ground-based observations).
-//! - `HorizontalTopocentricSphericalPos` → Center: specific observer on Earth.
-//!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::HorizontalTopocentricSphericalPos;
+//! use siderust::coordinates::spherical::direction::Horizontal;
 //! use siderust::units::Degrees;
 //!
-//! let coord = HorizontalTopocentricSphericalPos::new(
-//!     Degrees::new(45.0), Degrees::new(120.0), 1.0
-//! );
+//! let coord = Horizontal::new(Degrees::new(45.0), Degrees::new(120.0));
 //! println!("alt = {}, az = {}", coord.alt(), coord.az());
 //! ```
 
@@ -36,20 +26,10 @@ use super::*;
 use crate::coordinates::{
     frames::*,
     centers::*,
-    kinds::Kind,
 };
-use crate::units::Degrees;
+use crate::units::*;
 
-// Horizontal Coordinate Types
-// Polar   -> Alt (α) – the angle from the horizon. [-90°, 90°]
-// Azimuth -> Az (θ) – the angle from a prime meridian. [0°, 360°]
-// Radial  -> Distance (d) – the distance between the source and the target.
-pub type HorizontalBarycentricSphericalPos  = Position<Barycentric,  Horizontal>;
-pub type HorizontalHeliocentricSphericalPos = Position<Heliocentric, Horizontal>;
-pub type HorizontalGeocentricSphericalPos   = Position<Geocentric,   Horizontal>;
-pub type HorizontalTopocentricSphericalPos  = Position<Topocentric,  Horizontal>;
-
-impl<Center: ReferenceCenter> Direction<Center, Horizontal> {
+impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// Creates a new horizontal spherical coordinate with constant values.
     ///
     /// # Arguments
@@ -59,7 +39,7 @@ impl<Center: ReferenceCenter> Direction<Center, Horizontal> {
     /// # Returns
     /// A new `Position` in the horizontal frame.
     pub const fn new_const(alt: Degrees, az: Degrees) -> Self {
-        Self::new_spherical_coord(alt, az, None)
+        Self::new_raw(alt, az, Quantity::<Unitless>::new(1.0))
     }
 
     /// Constructs a new horizontal spherical coordinate with normalized input angular.
@@ -72,26 +52,29 @@ impl<Center: ReferenceCenter> Direction<Center, Horizontal> {
     ///
     /// # Returns
     /// A `Direction` in the horizontal frame.
-    pub fn new(alt: Degrees, az: Degrees) -> Self {
+    pub fn new<T>(alt: T, az: T) -> Self
+    where
+        T: Into<Degrees>,
+    {
         Self::new_const(
-            alt.normalize_to_90_range(),
-            az.normalize()
+            alt.into().wrap_quarter_fold(),
+            az.into().normalize()
         )
     }
 }
 
-impl<Center: ReferenceCenter> Position<Center, Horizontal> {
+impl<C: ReferenceCenter, U: LengthUnit> Position<C, Horizontal, U> {
     /// Creates a new horizontal spherical coordinate with constant values.
     ///
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AstronomicalUnits).
     ///
     /// # Returns
     /// A new `Position` in the horizontal frame.
-    pub const fn new_const(alt: Degrees, az: Degrees, distance: f64) -> Self {
-        Position::new_spherical_coord(alt, az, Some(distance))
+    pub const fn new_const(alt: Degrees, az: Degrees, distance: Quantity<U>) -> Self {
+        Self::new_raw(alt, az, distance)
     }
 
     /// Constructs a new horizontal spherical coordinate with normalized input angular.
@@ -101,19 +84,24 @@ impl<Center: ReferenceCenter> Position<Center, Horizontal> {
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    /// - `distance`: Distance to the object, typically in astronomical units (AU).
+    /// - `distance`: LengthUnit to the object, typically in astronomical units (AstronomicalUnits).
     ///
     /// # Returns
     /// A `Position` in the horizontal frame.
-    pub fn new(alt: Degrees, az: Degrees, distance: f64) -> Self {
+    pub fn new<A, T>(alt: A, az: A, distance: T) -> Self
+    where
+        A: Into<Degrees>,
+        T: Into<Quantity<U>>
+    {
         Self::new_const(
-            alt.normalize_to_90_range(),
-            az.normalize(),
-            distance)
+            alt.into().wrap_quarter_fold(),
+            az.into().normalize(),
+            distance.into())
     }
+
 }
 
-impl<C: ReferenceCenter, K: Kind> SphericalCoord<C, Horizontal, K> {
+impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, Horizontal, U> {
     /// Returns the Altitude (α) in degrees.
     pub fn alt(&self) -> Degrees { self.polar }
 

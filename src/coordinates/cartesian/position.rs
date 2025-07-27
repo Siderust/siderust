@@ -1,55 +1,34 @@
-use crate::coordinates::{
-    cartesian::Direction, centers, frames, kinds::{PositionKind, VelocityKind}
-};
+use crate::coordinates::{centers, frames};
+use crate::units::{Quantity, LengthUnit};
 
-use super::CartesianCoord;
+// TODO: Bound U to LengthUnit
+// see issue #112792 <https://github.com/rust-lang/rust/issues/112792> for more information
+//pub type Position<C, F, U: LengthUnit> = super::Vector<C, F, U>;
+pub type Position<C, F, U> = super::Vector<C, F, U>;
 
-pub type Position<C, F>  = CartesianCoord<C, F, PositionKind>;
-pub type Velocity<C, F>  = CartesianCoord<C, F, VelocityKind>;
-
-impl<C, F> Position<C, F>
+impl<C, F, U> Position<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
+    U: LengthUnit,
 {
-    /// Calculates the Euclidean distance with respect to the ReferenceCenter.
-    ///
-    /// # Returns
-    /// The distance from the ReferenceCenter in AU.
-    pub fn distance(&self) -> f64 {
-        (self.x().powi(2) + self.y().powi(2) + self.z().powi(2)).sqrt()
-    }
-
-    pub fn normalize(&self) -> Self {
-        Self::from_vec3(self.as_vec3().normalize())
-    }
+    pub const CENTER: Self = Self::new_const(Quantity::<U>::new(0.0), Quantity::<U>::new(0.0), Quantity::<U>::new(0.0));
 
     pub fn direction(&self) -> super::Direction<C, F> {
-        Direction::from_vec3(self.as_vec3().normalize())
+        let d = self.distance();
+        super::Direction::<C, F>::new(
+            Quantity::<f64>::new(self.x() / d),
+            Quantity::<f64>::new(self.y() / d),
+            Quantity::<f64>::new(self.z() / d)
+        )
     }
-
 }
 
-// === ICRS-based Cartesian coordinate types ===
-pub type ICRS = Position<centers::Barycentric,  frames::ICRS>;
-pub type HCRS = Position<centers::Heliocentric, frames::ICRS>;
-pub type GCRS = Position<centers::Geocentric,   frames::ICRS>;
-pub type TCRS = Position<centers::Topocentric,  frames::ICRS>;
-
-// === Ecliptic frame ===
-pub type EclipticBarycentricCartesianCoord  = Position<centers::Barycentric,  frames::Ecliptic>;
-pub type EclipticHeliocentricCartesianCoord = Position<centers::Heliocentric, frames::Ecliptic>;
-pub type EclipticGeocentricCartesianCoord   = Position<centers::Geocentric,   frames::Ecliptic>;
-pub type EclipticTopocentricCartesianCoord  = Position<centers::Topocentric,  frames::Ecliptic>;
-
-// === Equatorial frame ===
-pub type EquatorialBarycentricCartesianCoord  = Position<centers::Barycentric,  frames::Equatorial>;
-pub type EquatorialHeliocentricCartesianCoord = Position<centers::Heliocentric, frames::Equatorial>;
-pub type EquatorialGeocentricCartesianCoord   = Position<centers::Geocentric,   frames::Equatorial>;
-pub type EquatorialTopocentricCartesianCoord  = Position<centers::Topocentric,  frames::Equatorial>;
-
-// === Horizontal and Earth-fixed frame ===
-pub type HorizontalTopocentricCartesianCoord  = Position<centers::Topocentric,  frames::Horizontal>;
-
-// === Geographic and Earth-fixed frames ===
-pub type GeographicCartesianCoord = Position<centers::Geocentric, frames::ECEF>;
+pub type Ecliptic<U, C=centers::Heliocentric>  = Position<C, frames::Ecliptic,   U>;
+pub type Equatorial<U, C=centers::Geocentric>  = Position<C, frames::Equatorial, U>;
+pub type Horizontal<U, C=centers::Topocentric> = Position<C, frames::Horizontal, U>;
+pub type Geographic<U, C=centers::Geocentric>  = Position<C, frames::ECEF,       U>;
+pub type ICRS<U, C=centers::Barycentric>       = Position<C,  frames::ICRS,      U>;
+pub type HCRS<U> = Position<centers::Heliocentric, frames::ICRS, U>;
+pub type GCRS<U> = Position<centers::Geocentric,   frames::ICRS, U>;
+pub type TCRS<U> = Position<centers::Topocentric,  frames::ICRS, U>;

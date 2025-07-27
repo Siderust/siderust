@@ -10,7 +10,7 @@
 //!   for converting a coordinate of one type into another, possibly using additional context such as
 //!   the Julian Date (for time-dependent transformations).
 //!
-//! - **Cartesian and Spherical Coordinates**: The system supports both [`CartesianCoord`] and
+//! - **Cartesian and Spherical Coordinates**: The system supports both [`Vector`] and
 //!   [`SphericalCoord`] types, parameterized by their reference center and frame. Transformations
 //!   can occur between these types, as well as between different centers and frames.
 //!
@@ -32,7 +32,7 @@
 //!   types with different centers and frames by chaining the appropriate [`Transform`] operations.
 //!
 //! - **Time Dependency**: Many transformations depend on the Julian Date (e.g., due to precession,
-//!   nutation, or planetary positions). The trait method always receives a `JulianDay` parameter to
+//!   nutation, or planetary positions). The trait method always receives a `JulianDate` parameter to
 //!   support such cases, even if some transformations are time-independent.
 //!
 //! ## Usage Example
@@ -40,28 +40,15 @@
 //! ```rust
 //! use siderust::coordinates::{cartesian::Position, frames::*, centers::*};
 //! use siderust::coordinates::transform::Transform;
-//! use siderust::units::JulianDay;
+//! use siderust::units::AstronomicalUnit;
+//! use siderust::astro::JulianDate;
 //!
-//! let cart_eq = Position::<Geocentric, Equatorial>::new(1.0, 2.0, 3.0);
-//! let jd = JulianDay::J2000;
+//! let cart_eq = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 2.0, 3.0);
+//! let jd = JulianDate::J2000;
 //! // Transform to Geocentric Ecliptic coordinates
-//! let cart_geo_ecl: Position<Geocentric, Ecliptic> = cart_eq.transform(jd);
+//! let cart_geo_ecl: Position<Geocentric, Ecliptic, AstronomicalUnit> = cart_eq.transform(jd);
 //! // Transform to Heliocentric Ecliptic coordinates
-//! let cart_helio_ecl: Position<Heliocentric, Ecliptic> = cart_geo_ecl.transform(jd);
-//! ```
-//!
-//! ## Extending the System
-//!
-//! To add a new transformation, implement the [`Transform`] trait for the relevant source and
-//! destination coordinate types. For example, to add a transformation from a new frame or center,
-//! provide an implementation like:
-//!
-//! ```rust,ignore
-//! impl Transform<DestinationType> for SourceType {
-//!     fn transform(&self, jd: JulianDay) -> DestinationType {
-//!         // ...conversion logic...
-//!     }
-//! }
+//! let cart_helio_ecl: Position<Heliocentric, Ecliptic, AstronomicalUnit> = cart_geo_ecl.transform(jd);
 //! ```
 //!
 //! ## Related Modules
@@ -79,17 +66,13 @@
 //! ---
 //! 
 //! [`Transform`]: trait.Transform.html
-//! [`CartesianCoord`]: ../struct.CartesianCoord.html
+//! [`Vector`]: ../struct.Vector.html
 //! [`SphericalCoord`]: ../struct.SphericalCoord.html
 //! [`centers`]: centers/index.html
 //! [`frames`]: frames/index.html
 //! [`to_cartesian`]: to_cartesian/index.html
 //! [`to_spherical`]: to_spherical/index.html
 //! [`to_horizontal`]: to_horizontal/index.html
-
-pub trait Transform<Coord> {
-    fn transform(&self, jd: crate::units::JulianDay) -> Coord;
-}
 
 mod centers;
 mod frames;
@@ -98,49 +81,55 @@ mod to_spherical;
 mod to_direction;
 mod to_horizontal;
 
-use crate::coordinates::cartesian;
+use crate::astro::JulianDate;
 use crate::coordinates::{
     centers::ReferenceCenter,
     frames::MutableFrame,
-    kinds::Kind,
-    cartesian::CartesianCoord,
+    cartesian,
+    cartesian::Vector,
     spherical::SphericalCoord
 };
-use crate::units::JulianDay;
+use crate::units::*;
 
-// Blanket identity transform for CartesianCoord<Center, Frame>
-impl<C, F> Transform<cartesian::Position<C, F>> for cartesian::Position<C, F>
+
+pub trait Transform<Coord> {
+    fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
+}
+
+// Blanket identity transform for Vector<Center, Frame>
+impl<C, F, U> Transform<cartesian::Position<C, F, U>> for cartesian::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: MutableFrame,
+    U: LengthUnit
 {
-    fn transform(&self, _jd: crate::units::JulianDay) -> cartesian::Position<C, F> {
-        CartesianCoord::new(self.x(), self.y(), self.z())
+    fn transform(&self, _jd: crate::astro::JulianDate) -> cartesian::Position<C, F,U> {
+        Vector::new(self.x(), self.y(), self.z())
     }
 }
 
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
-/// This implementation allows converting a [`CartesianCoord`] in from one
+/// This implementation allows converting a [`Vector`] in from one
 /// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two 
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, F1, C2, F2, K> From<&CartesianCoord<C1, F1, K>> for CartesianCoord<C2, F2, K>
+impl<C1, F1, C2, F2, U> From<&Vector<C1, F1, U>> for Vector<C2, F2, U>
 where
-    CartesianCoord<C1, F1, K>: Transform<CartesianCoord<C1, F2, K>>, // transform frame
-    CartesianCoord<C1, F2, K>: Transform<CartesianCoord<C2, F2, K>>, // transform center
+    Vector<C1, F1, U>: Transform<Vector<C1, F2, U>>, // transform frame
+    Vector<C1, F2, U>: Transform<Vector<C2, F2, U>>, // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    K: Kind,
+    U: Unit,
 {
-    fn from(orig: &CartesianCoord<C1, F1, K>) -> Self {
+    fn from(orig: &Vector<C1, F1, U>) -> Self {
         // Step 1: Transform to new frame, keeping the original center.
-        let mid: CartesianCoord<C1, F2, K> = orig.transform(JulianDay::J2000);
+        let mid: Vector<C1, F2, U> = orig.transform(JulianDate::J2000);
         // Step 2: Transform to new center, now using the new frame.
-        mid.transform(JulianDay::J2000)
+        mid.transform(JulianDate::J2000)
     }
 }
 
@@ -152,25 +141,25 @@ where
 /// 2. Apply frame transformation.
 /// 3. Apply center transformation.
 /// 4. Convert back to spherical coordinates.
-impl<C1, F1, C2, F2, K> From<&SphericalCoord<C1, F1, K>> for SphericalCoord<C2, F2, K>
+impl<C1, F1, C2, F2, U> From<&SphericalCoord<C1, F1, U>> for SphericalCoord<C2, F2, U>
 where
-    CartesianCoord<C1, F1, K>: Transform<CartesianCoord<C1, F2, K>>, // transform frame
-    CartesianCoord<C1, F2, K>: Transform<CartesianCoord<C2, F2, K>>, // transform center
-    CartesianCoord<C1, F1, K>: for<'a> From<&'a SphericalCoord<C1, F1, K>>, // to_cartesian
-    SphericalCoord<C2, F2, K>: for<'a> From<&'a CartesianCoord<C2, F2, K>>, // to_spherical
+    Vector<C1, F1, U>: Transform<Vector<C1, F2, U>>, // transform frame
+    Vector<C1, F2, U>: Transform<Vector<C2, F2, U>>, // transform center
+    Vector<C1, F1, U>: for<'a> From<&'a SphericalCoord<C1, F1, U>>, // to_cartesian
+    SphericalCoord<C2, F2, U>: for<'a> From<&'a Vector<C2, F2, U>>, // to_spherical
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    K: Kind,
+    U: Unit,
 {
-    fn from(orig: &SphericalCoord<C1, F1, K>) -> Self {
+    fn from(orig: &SphericalCoord<C1, F1, U>) -> Self {
         // Step 1: Convert spherical to Cartesian
-        let cart: CartesianCoord<C1, F1, K> = orig.to_cartesian();
+        let cart: Vector<C1, F1, U> = orig.to_cartesian();
         // Step 2: Transform to new frame
-        let cart_mid: CartesianCoord<C1, F2, K> = cart.transform(JulianDay::J2000);
+        let cart_mid: Vector<C1, F2, U> = cart.transform(JulianDate::J2000);
         // Step 3: Transform to new center
-        let cart_dest: CartesianCoord<C2, F2, K> = cart_mid.transform(JulianDay::J2000);
+        let cart_dest: Vector<C2, F2, U> = cart_mid.transform(JulianDate::J2000);
         // Step 4: Convert back to spherical
         cart_dest.to_spherical()
     }
