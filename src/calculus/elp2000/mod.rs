@@ -46,6 +46,6 @@
 //! This module provides the foundation for high-precision lunar calculations in Siderust.
 
 #[allow(clippy::all)]
-mod elp_data;
+//mod elp_data;
 mod elp_structs;
 mod elp_series;

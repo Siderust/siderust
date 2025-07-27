@@ -1,13 +1,13 @@
 use criterion::{black_box, criterion_group, criterion_main, Criterion};
 use siderust::{
-    units::{Days, Years, JulianDay},
+    astro::JuliaDate,
+    units::{Days, Years},
     bodies::solar_system::*,
     calculus::vsop87::VSOP87,
 };
 
 fn bench_vsop87(c: &mut Criterion) {
-    // Intervalo de tiempo
-    let start = JulianDay::J2000 + Years::new(25.0);
+    let start = JulianDate::J2000 + Years::new(25.0);
 
     let planet_list: Vec<(&str, Box<dyn VSOP87>)> = vec![
         ("Mercury", Box::new(Mercury)),

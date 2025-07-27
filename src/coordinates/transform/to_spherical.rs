@@ -1,13 +1,11 @@
-use crate::units::Degrees;
 use crate::coordinates::{
     cartesian, spherical,
     centers::*, frames::*,
-    kinds::Kind,
 };
-
+use crate::units::*;
 
 /// Implements conversion from Cartesian to Spherical coordinates
-/// by borrowing a `&CartesianCoord` reference.
+/// by borrowing a `&Vector` reference.
 ///
 /// The conversion uses the following formulas:
 /// - `r = sqrt(x² + y² + z²)`
@@ -19,20 +17,28 @@ use crate::coordinates::{
 /// # Type Parameters
 /// - `Center`: The reference center (e.g., Geocentric).
 /// - `Frame`: The reference frame (e.g., ICRS).
-impl<C, F> From<&cartesian::Position<C, F>> for spherical::Position<C, F>
+impl<C, F, U> From<&cartesian::Position<C, F, U>> for spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: LengthUnit,
 {
-    fn from(cart: &cartesian::Position<C, F>) -> Self {
+    fn from(cart: &cartesian::Position<C, F, U>) -> Self {
         let r = cart.distance();
+        let x = cart.x();
+        let y = cart.y();
+        let z = cart.z();
+
         if r == 0.0 {
             return Self::CENTER;
         }
 
-        let polar = Degrees::new((cart.z() / r).asin().to_degrees());
-        let azimuth = Degrees::new(cart.y().atan2(cart.x()).to_degrees());
-        Self::new_spherical_coord(polar, azimuth, Some(r))
+        let polar = Degrees::new((z / r).asin()
+                                        .to_degrees());
+        let azimuth = Degrees::new(y.value()
+                                    .atan2(x.value())
+                                    .to_degrees());
+        Self::new_raw(polar, azimuth, cart.distance())
     }
 }
 
@@ -42,50 +48,54 @@ where
     F: ReferenceFrame,
 {
     fn from(cart: &cartesian::Direction<C, F>) -> Self {
+        let x = cart.x().value();
+        let y = cart.y().value();
+        let z = cart.z().value();
+
         debug_assert!(
-            (cart.distance() - 1.0).abs() < 1e-12,
-            "A CartesianCoord<…, DirectionKind> must have a magnitude ≈ 1.0"
+            (cart.distance().value() - 1.0).abs() < 1e-12,
+            "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
         );
 
-        let polar   = Degrees::new(cart.z().asin().to_degrees());
-        let azimuth = Degrees::new(cart.y().atan2(cart.x()).to_degrees());
+        let polar   = Degrees::new(z.asin().to_degrees());
+        let azimuth = Degrees::new(y.atan2(x).to_degrees());
 
-        Self::new_spherical_coord(polar, azimuth, None)
+        Self::new_raw(polar, azimuth, Quantity::<Unitless>::new(1.0))
     }
 }
 
-impl<C, F, K> cartesian::CartesianCoord<C, F, K>
+impl<C, F, U> cartesian::Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    K: Kind,
-    spherical::SphericalCoord<C, F, K>: for<'a> From<&'a cartesian::CartesianCoord<C, F, K>>,
+    U: Unit,
+    spherical::SphericalCoord<C, F, U>: for<'a> From<&'a cartesian::Vector<C, F, U>>,
 {
-    pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, K> { self.into() }
+    pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, U> { self.into() }
 }
 
 
-impl<C, F, K> cartesian::CartesianCoord<C, F, K>
+impl<C, F, U> cartesian::Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    K: Kind,
-    cartesian::CartesianCoord<C, F, K>: for<'a> From<&'a spherical::SphericalCoord<C, F, K>>,
+    U: Unit,
+    cartesian::Vector<C, F, U>: for<'a> From<&'a spherical::SphericalCoord<C, F, U>>,
 {
-    pub fn from_spherical(sph: &spherical::SphericalCoord<C, F, K>) -> Self { Self::from(&sph) }
+    pub fn from_spherical(sph: &spherical::SphericalCoord<C, F, U>) -> Self { Self::from(&sph) }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::units::Degrees;
+    use crate::units::{AstronomicalUnit, Degrees};
     use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
+    use crate::coordinates::{cartesian, spherical};
 
     #[test]
     fn test_cartesian_to_spherical() {
-        let cart = cartesian::Position::<Geocentric, ICRS>::new(1.0, 1.0, 1.0);
-        let sph: spherical::Position<Geocentric, ICRS> = cart.to_spherical();
-        let expected = spherical::Position::<Geocentric, ICRS>::new(
+        let cart = cartesian::position::GCRS::<AstronomicalUnit>::new(1.0, 1.0, 1.0);
+        let sph: spherical::position::GCRS::<AstronomicalUnit> = cart.to_spherical();
+        let expected = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(45.0),
             Degrees::new(35.26438968275466),
             1.7320508075688772,
@@ -95,19 +105,19 @@ mod tests {
 
     #[test]
     fn test_spherical_to_cartesian() {
-        let sph = spherical::Position::<Geocentric, ICRS>::new(
-            Degrees::new(45.0),  
+        let sph = spherical::position::GCRS::<AstronomicalUnit>::new(
+            Degrees::new(45.0),
             Degrees::new(35.26438968275466), 
             1.7320508075688772,
         );
-        let cart = cartesian::Position::<Geocentric, ICRS>::from_spherical(&sph);
-        let expected = cartesian::Position::<Geocentric, ICRS>::new(1.0, 1.0, 1.0);
+        let cart = cartesian::position::GCRS::from_spherical(&sph);
+        let expected = cartesian::position::GCRS::new(1.0, 1.0, 1.0);
         assert_cartesian_eq!(&cart, &expected, 1e-6, "Cartesian coordinates do not match expected values");
     }
 
     #[test]
     fn test_cartesian_spherical_round_trip() {
-        let cart_original = cartesian::Position::<Geocentric, ICRS>::new(2.0, 3.0, 4.0,);
+        let cart_original = cartesian::position::GCRS::<AstronomicalUnit>::new(2.0, 3.0, 4.0,);
         let sph = cart_original.to_spherical();
         let cart_converted = cartesian::Position::from_spherical(&sph);
         assert_cartesian_eq!(&cart_original, &cart_converted, 1e-6, "Cartesian coordinates do not match expected values");
@@ -115,12 +125,12 @@ mod tests {
 
     #[test]
     fn test_spherical_cartesian_round_trip() {
-        let sph_original = spherical::Position::<Geocentric, ICRS>::new(
+        let sph_original = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(30.0),
             Degrees::new(60.0),
             5.0,
         );
-        let cart = cartesian::CartesianCoord::from_spherical(&sph_original);
+        let cart = cartesian::Vector::from_spherical(&sph_original);
         let sph_converted = cart.to_spherical();
         assert_spherical_eq!(&sph_original, &sph_converted, 1e-6, "Spherical coordinates do not match expected values");
     }

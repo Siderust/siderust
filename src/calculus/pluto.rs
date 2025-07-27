@@ -29,9 +29,9 @@
 //!   Astron. Assoc.* **99** (2), 75–82.
 
 
-use crate::units::{Degrees, JulianDay};
+use crate::units::{Degrees, JulianDate};
 use crate::coordinates::{
-    CartesianCoord, SphericalCoord,
+    Vector, SphericalCoord,
     centers::Heliocentric,
     frames::Ecliptic
 };
@@ -40,7 +40,7 @@ pub struct Pluto;
 
 impl Pluto {
 
-    pub fn get_heliocentric(jd: JulianDay) -> CartesianCoord<Heliocentric, Ecliptic> {
+    pub fn get_heliocentric(jd: JulianDate) -> Vector<Heliocentric, Ecliptic> {
         let t = jd.julian_centuries().value();
 
         // 2. Calculate mean longitudes (in degrees) for Jupiter, Saturn, and Pluto.
@@ -61,7 +61,7 @@ impl Pluto {
                     pluto_lon   * ARGUMENTS[i].p;
             
             // Convert 'a' from degrees to radians.
-            let (sin_a, cos_a) = a.to_radians().sin_cos();
+            let (sin_a, cos_a) = a.to::<Radian>().sin_cos();
 
             // Add periodic corrections for longitude, latitude, and radius.
             sum_longitude += Degrees::new(LONGITUDE_TERMS[i].a * sin_a + LONGITUDE_TERMS[i].b * cos_a);
@@ -75,7 +75,7 @@ impl Pluto {
             sum_longitude * 0.000001 + Degrees::new(238.958116 + 144.96 * t),
             sum_latitude  * 0.000001 - Degrees::new(3.908239),
             sum_radius    * 0.0000001 + 40.7241346,
-            JulianDay::new(t)
+            JulianDate::new(t)
         ).to_cartesian()
     }
 }

@@ -29,7 +29,7 @@ Siderust aims to be the reference ephemeris and orbit‑analysis library for emb
 
 | Category                | What you get                                                                                                                                                                                                         |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Coordinate Systems**  | `CartesianCoord` & `SphericalCoord` parametrised by `ReferenceCenter` (Helio, Geo, Bary, …) and `ReferenceFrame` (ICRS, Ecliptic, Equatorial, Topocentric, etc.). Compile‑time guarantees ensure you never mix frames by accident. |
+| **Coordinate Systems**  | `Vector` & `SphericalCoord` parametrised by `ReferenceCenter` (Helio, Geo, Bary, …) and `ReferenceFrame` (ICRS, Ecliptic, Equatorial, Topocentric, etc.). Compile‑time guarantees ensure you never mix frames by accident. |
 | **Target Tracking**     | `Target<T>` couples any coordinate with an observation epoch and optional `ProperMotion`, enabling extrapolation & filtering pipelines.                                                                              |
 | **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Time` & more; operator overloading makes math look natural while the compiler guards dimensional correctness.                                             |
 | **Celestial Mechanics** | Kepler solvers, VSOP87 & ELP2000 planetary/lunar theories, light‑time & aberration, nutation & precession matrices, apparent Sun & Moon, culmination searches.                                                       |
@@ -53,13 +53,13 @@ siderust = "0.1"
 Siderust encodes both the **origin** and the **orientation** of every vector at the type level:
 
 ```rust
-use siderust::coordinates::{CartesianCoord, centers::*, frames::*};
+use siderust::coordinates::{Vector, centers::*, frames::*};
 
 // Position of Mars in the Heliocentric Ecliptic frame
-let mars_helio = CartesianCoord::<Heliocentric, Ecliptic>::new(x, y, z);
+let mars_helio = Vector::<Heliocentric, Ecliptic>::new(x, y, z);
 
 // Convert to Geocentric Ecliptic Cartesian coordinates
-let mars_geo: CartesianCoord::<Geocentric, Ecliptic> = mars_helio.transform(jd);
+let mars_geo: Vector::<Geocentric, Ecliptic> = mars_helio.transform(jd);
 ```
 
 Impossible states (e.g. adding heliocentric and geocentric vectors) simply do not compile.
@@ -85,12 +85,12 @@ The compiler will refuse `distance + period` – dimensional analysis at compile
 ```rust
 use siderust::{
     bodies::Mars,
-    units::JulianDay,
+    astro::JulianDate,
 };
 use chrono::prelude::*;
 
 // 1. Select an epoch (UTC now to JD)
-let jd = JulianDay::from_utc(Utc::now());
+let jd = JulianDate::from_utc(Utc::now());
 
 // 2. Compute barycentric ecliptic coordinates via VSOP87
 let mars = Mars::vsop87e(jd);
@@ -113,7 +113,7 @@ All numeric kernels are cross‑checked against JPL Horizons (see **siderust-py*
 | ELP2000 Moon         | **310**        |                              |               |
 | Coordinate transform | **<50**        | center+frame change          |               |
 
---  This is jsut a placeholder to put the real data --
+--  This is just a placeholder to put the real data --
 
 ---
 
@@ -122,7 +122,7 @@ All numeric kernels are cross‑checked against JPL Horizons (see **siderust-py*
 
 ```
 ├─ astro/        # Astronomical properites (nutation, precession, …)
-├─ bodies/       # Data Structures for celestial bodies (Planet, Star, Satelite, …)
+├─ bodies/       # Data Structures for celestial bodies (Planet, Star, Satellite, …)
 ├─ calculus/     # Numerical kernels (kepler, vsop87, …)
 ├─ coordinates/  # Coordinate types & transforms
 ├─ observatory/  # Ground stations & observer helpers

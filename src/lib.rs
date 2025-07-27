@@ -7,14 +7,14 @@
 //!
 //! ## Features
 //!
-//! - **Coordinate Systems**: Strongly-typed `CartesianCoord` and `SphericalCoord` types,
+//! - **Coordinate Systems**: Strongly-typed `Vector` and `SphericalCoord` types,
 //!   parameterized by phantom `ReferenceCenter` (e.g., Sun, Earth) and
 //!   `ReferenceFrame` (e.g., ICRS, Ecliptic, Equatorial, Horizontal), and
 //!   `Kind` (Position, Direction), enabling compile-time protection
 //!   against mismatched frames and origins. Seamless conversions between
 //!   coordinate systems are supported via `From`/`Into` and the `Transform` trait.
 //! - **Target Tracking**: `Target<T>` couples any coordinate type with
-//!   an observation `JulianDay` and optional `ProperMotion` for
+//!   an observation `JulianDate` and optional `ProperMotion` for
 //!   extrapolation and movement analysis.
 //! - **Units & Quantities**: Strongly-typed `Mass`, `Length`, `Angle`,
 //!   `Velocity`, `Duration`, etc., with operator overloading for
@@ -50,17 +50,17 @@
 //! ```rust
 //! use siderust::{
 //!     bodies::Mars,
-//!     units::JulianDay,
+//!     astro::JulianDate,
 //! };
 //! use chrono::prelude::*;
 //!
 //! // 1. Select an epoch (UTC now to JD)
-//! let jd = JulianDay::from_utc(Utc::now());
+//! let jd = JulianDate::from_utc(Utc::now());
 //!
 //! // 2. Compute heliocentric ecliptic coordinates via VSOP87
 //! let mars = Mars::vsop87e(jd);
 //!
-//! // 3. Print Mars's heliocentric ecliptic position (AU)
+//! // 3. Print Mars's heliocentric ecliptic position (AstronomicalUnits)
 //! println!("{}", mars.position);
 //! ```
 //!

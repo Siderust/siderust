@@ -5,9 +5,10 @@ use crate::coordinates::{
     centers::Geocentric,
     frames::Ecliptic,
 };
-use crate::calculus::elp2000::elp_data;
-use crate::calculus::elp2000::elp_structs::{MainProblem, EarthPert, PlanetPert};
-use crate::units::JulianDay;
+
+include!(concat!(env!("OUT_DIR"), "/elp_data.rs"));
+use crate::astro::JulianDate;
+use crate::units::{LengthUnit, Quantity};
 use std::f64::consts::{PI, FRAC_PI_2};
 use crate::bodies::solar_system::Moon;
 
@@ -23,7 +24,7 @@ const ALPHA: f64 = 0.002_571_881_335;
 const DTASM: f64 = 2.0 * ALPHA / (3.0 * AM);
 const PRECES: f64 = 5_029.096_6 / RAD;
 
-// Unit conversions
+// LengthUnit conversions
 const C1: f64 = 60.0;
 const C2: f64 = 3600.0;
 
@@ -137,9 +138,9 @@ macro_rules! define_main_series {
     };
 }
 
-define_main_series!(sum_series_elp1, elp_data::ELP1, 0.0);
-define_main_series!(sum_series_elp2, elp_data::ELP2, 0.0);
-define_main_series!(sum_series_elp3, elp_data::ELP3, FRAC_PI_2);
+define_main_series!(sum_series_elp1, ELP1, 0.0);
+define_main_series!(sum_series_elp2, ELP2, 0.0);
+define_main_series!(sum_series_elp3, ELP3, FRAC_PI_2);
 
 // ====================
 // Earth perturbation series (ELP4-9,22-29,30-36)
@@ -172,33 +173,33 @@ macro_rules! define_earth_series {
 }
 
 // ELP4-9
-define_earth_series!(sum_series_elp4,  elp_data::ELP4,  None);
-define_earth_series!(sum_series_elp5,  elp_data::ELP5,  None);
-define_earth_series!(sum_series_elp6,  elp_data::ELP6,  None);
-define_earth_series!(sum_series_elp7,  elp_data::ELP7,  Some(1));
-define_earth_series!(sum_series_elp8,  elp_data::ELP8,  Some(1));
-define_earth_series!(sum_series_elp9,  elp_data::ELP9,  Some(1));
+define_earth_series!(sum_series_elp4,  ELP4,  None);
+define_earth_series!(sum_series_elp5,  ELP5,  None);
+define_earth_series!(sum_series_elp6,  ELP6,  None);
+define_earth_series!(sum_series_elp7,  ELP7,  Some(1));
+define_earth_series!(sum_series_elp8,  ELP8,  Some(1));
+define_earth_series!(sum_series_elp9,  ELP9,  Some(1));
 
 // ELP22-29,30-33 (no scaling)
-define_earth_series!(sum_series_elp22, elp_data::ELP22, None);
-define_earth_series!(sum_series_elp23, elp_data::ELP23, None);
-define_earth_series!(sum_series_elp24, elp_data::ELP24, None);
-define_earth_series!(sum_series_elp28, elp_data::ELP28, None);
-define_earth_series!(sum_series_elp29, elp_data::ELP29, None);
-define_earth_series!(sum_series_elp30, elp_data::ELP30, None);
-define_earth_series!(sum_series_elp31, elp_data::ELP31, None);
-define_earth_series!(sum_series_elp32, elp_data::ELP32, None);
-define_earth_series!(sum_series_elp33, elp_data::ELP33, None);
+define_earth_series!(sum_series_elp22, ELP22, None);
+define_earth_series!(sum_series_elp23, ELP23, None);
+define_earth_series!(sum_series_elp24, ELP24, None);
+define_earth_series!(sum_series_elp28, ELP28, None);
+define_earth_series!(sum_series_elp29, ELP29, None);
+define_earth_series!(sum_series_elp30, ELP30, None);
+define_earth_series!(sum_series_elp31, ELP31, None);
+define_earth_series!(sum_series_elp32, ELP32, None);
+define_earth_series!(sum_series_elp33, ELP33, None);
 
 // ELP25-27 (scale on t[1])
-define_earth_series!(sum_series_elp25, elp_data::ELP25, Some(1));
-define_earth_series!(sum_series_elp26, elp_data::ELP26, Some(1));
-define_earth_series!(sum_series_elp27, elp_data::ELP27, Some(1));
+define_earth_series!(sum_series_elp25, ELP25, Some(1));
+define_earth_series!(sum_series_elp26, ELP26, Some(1));
+define_earth_series!(sum_series_elp27, ELP27, Some(1));
 
 // ELP34-36 (scale on t[2])
-define_earth_series!(sum_series_elp34, elp_data::ELP34, Some(2));
-define_earth_series!(sum_series_elp35, elp_data::ELP35, Some(2));
-define_earth_series!(sum_series_elp36, elp_data::ELP36, Some(2));
+define_earth_series!(sum_series_elp34, ELP34, Some(2));
+define_earth_series!(sum_series_elp35, ELP35, Some(2));
+define_earth_series!(sum_series_elp36, ELP36, Some(2));
 
 // ====================
 // Planet perturbation series (ELP10-21)
@@ -244,101 +245,103 @@ macro_rules! define_planet_series {
 }
 
 // No scale, no alt
-define_planet_series!(sum_series_elp10, elp_data::ELP10, false, false);
-define_planet_series!(sum_series_elp11, elp_data::ELP11, false, false);
-define_planet_series!(sum_series_elp12, elp_data::ELP12, false, false);
+define_planet_series!(sum_series_elp10, ELP10, false, false);
+define_planet_series!(sum_series_elp11, ELP11, false, false);
+define_planet_series!(sum_series_elp12, ELP12, false, false);
 // scale, no alt
-define_planet_series!(sum_series_elp13, elp_data::ELP13, true, false);
-define_planet_series!(sum_series_elp14, elp_data::ELP14, true, false);
-define_planet_series!(sum_series_elp15, elp_data::ELP15, true, false);
+define_planet_series!(sum_series_elp13, ELP13, true, false);
+define_planet_series!(sum_series_elp14, ELP14, true, false);
+define_planet_series!(sum_series_elp15, ELP15, true, false);
 // no scale, alt
-define_planet_series!(sum_series_elp16, elp_data::ELP16, false, true);
-define_planet_series!(sum_series_elp17, elp_data::ELP17, false, true);
-define_planet_series!(sum_series_elp18, elp_data::ELP18, false, true);
+define_planet_series!(sum_series_elp16, ELP16, false, true);
+define_planet_series!(sum_series_elp17, ELP17, false, true);
+define_planet_series!(sum_series_elp18, ELP18, false, true);
 // scale, alt
-define_planet_series!(sum_series_elp19, elp_data::ELP19, true, true);
-define_planet_series!(sum_series_elp20, elp_data::ELP20, true, true);
-define_planet_series!(sum_series_elp21, elp_data::ELP21, true, true);
+define_planet_series!(sum_series_elp19, ELP19, true, true);
+define_planet_series!(sum_series_elp20, ELP20, true, true);
+define_planet_series!(sum_series_elp21, ELP21, true, true);
 
 // ====================
 // Lunar position computation
 // ====================
 
-/// Compute geocentric ecliptic coordinates of the Moon for a given Julian date
-fn ln_get_lunar_geo_posn(jd: JulianDay) -> Position<Geocentric, Ecliptic> {
-    let t1 = jd.julian_centuries().value();
-    let t = [1.0, t1, t1.powi(2), t1.powi(3), t1.powi(4)];
-
-    // Sum all series (36 values)
-    let elp_values: [f64; 36] = [
-        sum_series_elp1(&t), sum_series_elp2(&t), sum_series_elp3(&t),
-        sum_series_elp4(&t), sum_series_elp5(&t), sum_series_elp6(&t),
-        sum_series_elp7(&t), sum_series_elp8(&t), sum_series_elp9(&t),
-        sum_series_elp10(&t), sum_series_elp11(&t), sum_series_elp12(&t),
-        sum_series_elp13(&t), sum_series_elp14(&t), sum_series_elp15(&t),
-        sum_series_elp16(&t), sum_series_elp17(&t), sum_series_elp18(&t),
-        sum_series_elp19(&t), sum_series_elp20(&t), sum_series_elp21(&t),
-        sum_series_elp22(&t), sum_series_elp23(&t), sum_series_elp24(&t),
-        sum_series_elp25(&t), sum_series_elp26(&t), sum_series_elp27(&t),
-        sum_series_elp28(&t), sum_series_elp29(&t), sum_series_elp30(&t),
-        sum_series_elp31(&t), sum_series_elp32(&t), sum_series_elp33(&t),
-        sum_series_elp34(&t), sum_series_elp35(&t), sum_series_elp36(&t),
-    ];
-
-    // Aggregate longitude, latitude, distance
-    let a: f64 = elp_values.iter().step_by(3).sum();
-    let b: f64 = elp_values.iter().skip(1).step_by(3).sum();
-    let c: f64 = elp_values.iter().skip(2).step_by(3).sum();
-
-    let lon = a / RAD
-        + W1[0]
-        + W1[1] * t[1]
-        + W1[2] * t[2]
-        + W1[3] * t[3]
-        + W1[4] * t[4];
-    let lat = b / RAD;
-    let distance = c * A0 / ATH;
-
-    let x = distance * lat.cos();
-    let y = x * lon.sin();
-    let x = x * lon.cos();
-    let z = distance * lat.sin();
-
-    // Apply Laskar rotation
-    let pw = (P1 + P2 * t[1] + P3 * t[2] + P4 * t[3] + P5 * t[4]) * t[1];
-    let qw = (Q1 + Q2 * t[1] + Q3 * t[2] + Q4 * t[3] + Q5 * t[4]) * t[1];
-    let ra = 2.0 * (1.0 - pw * pw - qw * qw).sqrt();
-    let (pw2, qw2) = (1.0 - 2.0 * pw * pw, 1.0 - 2.0 * qw * qw);
-    let pwqw = 2.0 * pw * qw;
-    let pw = pw * ra;
-    let qw = qw * ra;
-
-    let x2 = pw2 * x + pwqw * y + pw * z;
-    let y2 = pwqw * x + qw2 * y - qw * z;
-    let z2 = -pw * x + qw * y + (pw2 + qw2 - 1.0) * z;
-
-    Position::<Geocentric, Ecliptic>::new(x2, y2, z2)
-}
-
 impl Moon {
     /// Get the geocentric ecliptic coordinates of the Moon for a given Julian date
-    pub fn ln_get_geo_position(jd: JulianDay) -> Position<Geocentric, Ecliptic> {
-        ln_get_lunar_geo_posn(jd)
+    pub fn get_geo_position<U>(jd: JulianDate) -> Position<Geocentric, Ecliptic, U>
+    where U: LengthUnit
+    {
+        let t1 = jd.julian_centuries().value();
+        let t = [1.0, t1, t1.powi(2), t1.powi(3), t1.powi(4)];
+
+        // Sum all series (36 values)
+        let elp_values: [f64; 36] = [
+            sum_series_elp1(&t), sum_series_elp2(&t), sum_series_elp3(&t),
+            sum_series_elp4(&t), sum_series_elp5(&t), sum_series_elp6(&t),
+            sum_series_elp7(&t), sum_series_elp8(&t), sum_series_elp9(&t),
+            sum_series_elp10(&t), sum_series_elp11(&t), sum_series_elp12(&t),
+            sum_series_elp13(&t), sum_series_elp14(&t), sum_series_elp15(&t),
+            sum_series_elp16(&t), sum_series_elp17(&t), sum_series_elp18(&t),
+            sum_series_elp19(&t), sum_series_elp20(&t), sum_series_elp21(&t),
+            sum_series_elp22(&t), sum_series_elp23(&t), sum_series_elp24(&t),
+            sum_series_elp25(&t), sum_series_elp26(&t), sum_series_elp27(&t),
+            sum_series_elp28(&t), sum_series_elp29(&t), sum_series_elp30(&t),
+            sum_series_elp31(&t), sum_series_elp32(&t), sum_series_elp33(&t),
+            sum_series_elp34(&t), sum_series_elp35(&t), sum_series_elp36(&t),
+        ];
+
+        // Aggregate longitude, latitude, distance
+        let a: f64 = elp_values.iter().step_by(3).sum();
+        let b: f64 = elp_values.iter().skip(1).step_by(3).sum();
+        let c: f64 = elp_values.iter().skip(2).step_by(3).sum();
+
+        let lon = a / RAD
+            + W1[0]
+            + W1[1] * t[1]
+            + W1[2] * t[2]
+            + W1[3] * t[3]
+            + W1[4] * t[4];
+        let lat = b / RAD;
+        let distance = c * A0 / ATH;
+
+        let x = distance * lat.cos();
+        let y = x * lon.sin();
+        let x = x * lon.cos();
+        let z = distance * lat.sin();
+
+        // Apply Laskar rotation
+        let pw = (P1 + P2 * t[1] + P3 * t[2] + P4 * t[3] + P5 * t[4]) * t[1];
+        let qw = (Q1 + Q2 * t[1] + Q3 * t[2] + Q4 * t[3] + Q5 * t[4]) * t[1];
+        let ra = 2.0 * (1.0 - pw * pw - qw * qw).sqrt();
+        let (pw2, qw2) = (1.0 - 2.0 * pw * pw, 1.0 - 2.0 * qw * qw);
+        let pwqw = 2.0 * pw * qw;
+        let pw = pw * ra;
+        let qw = qw * ra;
+
+        let x2 = pw2 * x + pwqw * y + pw * z;
+        let y2 = pwqw * x + qw2 * y - qw * z;
+        let z2 = -pw * x + qw * y + (pw2 + qw2 - 1.0) * z;
+
+        Position::<Geocentric, Ecliptic, U>::new(
+            Quantity::<U>::new(x2),
+            Quantity::<U>::new(y2),
+            Quantity::<U>::new(z2)
+        )
     }
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::units::{Kilometer, KM};
 
     #[test]
     fn test_lunar_position_against_reference() {
-        let pos = ln_get_lunar_geo_posn(JulianDay::J2000);
+        let pos = Moon::get_geo_position::<Kilometer>(JulianDate::J2000);
 
-        let expected_x = -291608.0;
-        let expected_y = -274980.0;
-        let expected_z =  36271.2;
-        let tolerance = 1.0; // tolerance in kilometers
+        let expected_x = -291608.0*KM;
+        let expected_y = -274980.0*KM;
+        let expected_z =  36271.2*KM;
+        let tolerance = 1.0*KM;
 
         assert!((pos.x() - expected_x).abs() < tolerance, "X mismatch: got {}, expected {}", pos.x(), expected_x);
         assert!((pos.y() - expected_y).abs() < tolerance, "Y mismatch: got {}, expected {}", pos.y(), expected_y);
