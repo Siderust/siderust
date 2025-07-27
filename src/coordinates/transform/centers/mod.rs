@@ -9,6 +9,10 @@ use crate::coordinates::{
 };
 use crate::coordinates::transform::Transform;
 
+pub trait TransformCenter<Coord> {
+    fn to_center(&self, jd: crate::astro::JulianDate) -> Coord;
+}
+
 // ------------- Identity Transform -------------
 impl Transform<cartesian::direction::Equatorial>
     for cartesian::direction::Equatorial
@@ -19,18 +23,6 @@ impl Transform<cartesian::direction::Equatorial>
     }
 }
 
-// ------------- If None of the centers are geocentric, we can just pass the spherical coordinates through -------------
-/*impl<C1, C2, F> Transform<cartesian::Direction<C1, F>> for cartesian::Direction<C2, F>
-where
-    C1: ReferenceCenter + NonGeocentric,
-    C2: ReferenceCenter + NonGeocentric,
-    F: frames::MutableFrame,
-{
-    #[inline]
-    fn transform(&self, _jd: JulianDate) -> cartesian::Direction<C1, F> {
-        cartesian::Direction::from_vec3(self.as_vec3())
-    }
-}*/
 
 impl<C1, C2, F> Transform<spherical::Direction<C1, F>> for spherical::Direction<C2, F>
 where
@@ -48,34 +40,6 @@ where
     }
 }
 
-
-impl<C, F, U> cartesian::Vector<C, F, U>
-where
-    C: ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: crate::units::Unit,
-{
-    pub fn to_center<C2: ReferenceCenter>(&self, jd: JulianDate) -> cartesian::Vector<C2, F, U>
-    where
-        cartesian::Vector<C, F, U>: Transform<cartesian::Vector<C2, F, U>>,
-    {
-        self.transform(jd)
-    }
-}
-
-impl<C, F, U> spherical::SphericalCoord<C, F, U>
-where
-    C: ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: crate::units::Unit,
-{
-    pub fn to_center<C2: ReferenceCenter>(&self, jd: JulianDate) -> spherical::SphericalCoord<C2, F, U>
-    where
-        spherical::SphericalCoord<C, F, U>: Transform<spherical::SphericalCoord<C2, F, U>>,
-    {
-        self.transform(jd)
-    }
-}
 /*
 #[cfg(test)]
 mod tests {
