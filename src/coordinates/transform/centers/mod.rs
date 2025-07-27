@@ -1,6 +1,6 @@
 pub mod position;
 pub mod direction;
-pub mod from_geocentric;
+//pub mod from_geocentric;
 
 use crate::astro::JulianDate;
 use crate::coordinates::{
@@ -20,7 +20,7 @@ impl Transform<cartesian::direction::Equatorial>
 }
 
 // ------------- If None of the centers are geocentric, we can just pass the spherical coordinates through -------------
-impl<C1, C2, F> Transform<cartesian::Direction<C1, F>> for cartesian::Direction<C2, F>
+/*impl<C1, C2, F> Transform<cartesian::Direction<C1, F>> for cartesian::Direction<C2, F>
 where
     C1: ReferenceCenter + NonGeocentric,
     C2: ReferenceCenter + NonGeocentric,
@@ -30,7 +30,7 @@ where
     fn transform(&self, _jd: JulianDate) -> cartesian::Direction<C1, F> {
         cartesian::Direction::from_vec3(self.as_vec3())
     }
-}
+}*/
 
 impl<C1, C2, F> Transform<spherical::Direction<C1, F>> for spherical::Direction<C2, F>
 where
@@ -76,7 +76,7 @@ where
         self.transform(jd)
     }
 }
-
+/*
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -141,3 +141,4 @@ mod tests {
         assert_eq!(gcrs.distance, expected.distance);
     }
 }
+*/

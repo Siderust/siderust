@@ -1,0 +1,40 @@
+use crate::astro::JulianDate;
+use crate::coordinates::{
+    centers::*,
+    frames::MutableFrame,
+    cartesian::direction::{Direction, Equatorial}
+};
+use crate::coordinates::transform::Transform;
+use crate::astro::aberration::remove_aberration_from_direction;
+
+// Heliocentric To Barycentric
+impl<F: MutableFrame> Transform<Direction<Barycentric, F>>
+    for Direction<Heliocentric, F>
+where
+{
+    fn transform(&self, _jd: JulianDate) -> Direction<Barycentric, F> {
+        Direction::from_vec3(self.as_vec3())
+    }
+}
+
+// Geocentric To Barycentric
+impl<F: MutableFrame> Transform<Direction<Barycentric, F>>
+    for Direction<Geocentric, F>
+where
+    Direction<Geocentric, F>: Transform<Equatorial>, // ToEquatorial
+    Equatorial: Transform<Direction<Geocentric, F>>, // FromEquatorial
+{
+    #[inline]
+    fn transform(&self, jd: JulianDate) -> Direction<Barycentric, F> {
+        // 1. Transform to Equatorial (already in Geocentric)
+        let equatorial: Equatorial = self.transform(jd);
+        // 2. Remove aberration
+        let deaberrated =  remove_aberration_from_direction(
+            equatorial, jd
+        );
+        // 3. Recover target Frame
+        let target_center: Direction::<Geocentric, F> = deaberrated.transform(jd);
+        // 4. Transform target Center
+        Direction::<Barycentric, F>::from_vec3(target_center.as_vec3())
+    }
+}
