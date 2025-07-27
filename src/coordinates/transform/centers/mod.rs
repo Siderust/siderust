@@ -5,22 +5,12 @@ pub mod direction;
 use crate::astro::JulianDate;
 use crate::coordinates::{
     frames, centers::*,
-    cartesian, spherical,
+    spherical,
 };
 use crate::coordinates::transform::Transform;
 
 pub trait TransformCenter<Coord> {
     fn to_center(&self, jd: crate::astro::JulianDate) -> Coord;
-}
-
-// ------------- Identity Transform -------------
-impl Transform<cartesian::direction::Equatorial>
-    for cartesian::direction::Equatorial
-{
-    #[inline]
-    fn transform(&self, _jd: JulianDate) -> cartesian::direction::Equatorial {
-        cartesian::Direction::from_vec3(self.as_vec3())
-    }
 }
 
 
