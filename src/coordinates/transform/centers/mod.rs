@@ -1,6 +1,5 @@
-pub mod to_barycentric;
-pub mod to_heliocentric;
-pub mod to_geocentric;
+pub mod position;
+pub mod direction;
 pub mod from_geocentric;
 
 use crate::astro::JulianDate;
