@@ -4,9 +4,10 @@ use crate::units::{AstronomicalUnits, LengthUnit, Quantity};
 use crate::astro::JulianDate;
 use crate::coordinates::{
     transform::Transform,
+    transform::TransformFrame,
     frames::MutableFrame,
     centers::{Geocentric, Barycentric, Heliocentric},
-    cartesian::position::{Position, Ecliptic, Equatorial}
+    cartesian::position::{Position, Ecliptic, Equatorial},
 };
 use crate::coordinates::transform::centers::TransformCenter;
 
@@ -15,9 +16,9 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
     for Position<Barycentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    for<'a> Equatorial<U, Barycentric>: From<&'a Ecliptic<U, Barycentric>>, // Required by VSOP
-    for<'a> Equatorial<U, Barycentric>: From<&'a Position<Barycentric, F, U>>, // Required by Aberration
-    for<'a> Position<Geocentric, F, U>: From<&'a Equatorial<U>>, // Required by Aberration
+    Position<Barycentric, F, U>: TransformFrame<Equatorial<U, Barycentric>>, // Required by Aberration
+    Equatorial<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>, // Required by Aberration
+    Equatorial<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
@@ -27,14 +28,14 @@ where
             earth_bary_ecl_au.z(),
         );
 
-        let earth_equ = Equatorial::<U, Barycentric>::from(&earth_ecl); // (Bary-Ecl) -> (Bary-Equ)
-        let bary_equ  = Equatorial::<U, Barycentric>::from(self); // (Bary-F)   -> (Bary-Equ)
+        let earth_equ: Equatorial::<U, Barycentric> = earth_ecl.to_frame(); // (Bary-Ecl) -> (Bary-Equ)
+        let bary_equ:  Equatorial::<U, Barycentric> = self.to_frame();      // (Bary-Any) -> (Bary-Equ)
         let geo_equ = Equatorial::<U>::from_vec3(
             bary_equ.as_vec3() - earth_equ.as_vec3(),
         ); // Barycentric -> Geocentric
 
         let gcrs = apply_aberration(geo_equ, jd);
-        Position::<Geocentric, F, U>::from(&gcrs) // Equatorial -> F
+        gcrs.to_frame() // Equatorial -> F
     }
 }
 
@@ -43,9 +44,9 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
     for Position<Heliocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    for<'a> Equatorial<U, Heliocentric>: From<&'a Ecliptic<U>>, // Required by VSOP
-    for<'a> Equatorial<U, Heliocentric>: From<&'a Position<Heliocentric, F, U>>, // Required by Aberration
-    for<'a> Position<Geocentric, F, U>: From<&'a Equatorial<U>>, // Required by Aberration
+    Position<Heliocentric, F, U>: TransformFrame<Equatorial<U, Heliocentric>>, // Required by Aberration
+    Equatorial<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>, // Required by Aberration
+    Equatorial<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
@@ -55,14 +56,14 @@ where
             earth_helio_ecl_au.z(),
         );
 
-        let earth_equ = Equatorial::<U, Heliocentric>::from(&earth_ecl); // (Helio-Ecl) -> (Helio-Equ)
-        let helio_equ = Equatorial::<U, Heliocentric>::from(self); // (Helio-F)   -> (Helio-Equ)
+        let earth_equ: Equatorial::<U, Heliocentric> = earth_ecl.to_frame(); // (Helio-Ecl) -> (Helio-Equ)
+        let helio_equ: Equatorial::<U, Heliocentric> = self.to_frame()     ; // (Helio-any) -> (Helio-Equ)
         let geo_equ = Equatorial::<U>::from_vec3(
             helio_equ.as_vec3() - earth_equ.as_vec3(),
         ); // Heliocentric -> Geocentric
 
         let gcrs = apply_aberration(geo_equ, jd);
-        Position::<Geocentric, F, U>::from(&gcrs) // Equatorial -> F
+        gcrs.to_frame() // Equatorial -> any
     }
 }
 
@@ -73,9 +74,9 @@ impl<F: MutableFrame, U: LengthUnit> Transform<Position<Geocentric, F, U>>
     for Position<Barycentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    for<'a> Equatorial<U, Barycentric>: From<&'a Ecliptic<U, Barycentric>>, // Required by VSOP
-    for<'a> Equatorial<U, Barycentric>: From<&'a Position<Barycentric, F, U>>, // Required by Aberration
-    for<'a> Position<Geocentric, F, U>: From<&'a Equatorial<U>>, // Required by Aberration
+    Position<Barycentric, F, U>: TransformFrame<Equatorial<U, Barycentric>>, // Required by Aberration
+    Equatorial<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>, // Required by Aberration
+    Equatorial<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>
 {
     fn transform(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         self.to_center(jd)
@@ -87,9 +88,9 @@ impl<F: MutableFrame, U: LengthUnit> Transform<Position<Geocentric, F, U>>
     for Position<Heliocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    for<'a> Equatorial<U, Heliocentric>: From<&'a Ecliptic<U>>, // Required by VSOP
-    for<'a> Equatorial<U, Heliocentric>: From<&'a Position<Heliocentric, F, U>>, // Required by Aberration
-    for<'a> Position<Geocentric, F, U>: From<&'a Equatorial<U>>, // Required by Aberration
+    Position<Heliocentric, F, U>: TransformFrame<Equatorial<U, Heliocentric>>, // Required by Aberration
+    Equatorial<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>, // Required by Aberration
+    Equatorial<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>
 {
     fn transform(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         self.to_center(jd)
