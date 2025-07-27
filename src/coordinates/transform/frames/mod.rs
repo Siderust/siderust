@@ -2,16 +2,35 @@ pub mod to_ecliptic;
 pub mod to_icrs;
 pub mod to_equatorial;
 
-use crate::coordinates::cartesian;
+use crate::coordinates::cartesian::Vector;
 use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::frames::MutableFrame;
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::transform::Transform;
 use crate::astro::JulianDate;
+use crate::units::Unit;
 
 pub trait TransformFrame<Coord> {
     fn to_frame(&self) -> Coord;
 }
+
+// Implement Identity frame transform
+impl<C, F, U> TransformFrame<Vector<C, F, U>>
+    for Vector<C, F, U>
+where
+    U: Unit,
+    F: MutableFrame,
+    C: ReferenceCenter,
+{
+    fn to_frame(&self) -> Vector<C, F, U> {
+        Vector::new(
+            self.x(),
+            self.y(),
+            self.z(),
+        )
+    }
+}
+
 
 impl<C, F, U> SphericalCoord<C, F, U>
 where
@@ -21,9 +40,9 @@ where
 {
     pub fn to_frame<F2: MutableFrame>(&self) -> SphericalCoord<C, F2, U>
     where
-        cartesian::Vector<C, F, U>: Transform<cartesian::Vector<C, F2, U>>,
-        cartesian::Vector<C, F, U>: for<'a> From<&'a SphericalCoord<C, F, U>>, // to_cartesian
-        SphericalCoord<C, F2, U>: for<'a> From<&'a cartesian::Vector<C, F2, U>>, // to_spherical
+        Vector<C, F, U>: Transform<Vector<C, F2, U>>,
+        Vector<C, F, U>: for<'a> From<&'a SphericalCoord<C, F, U>>, // to_cartesian
+        SphericalCoord<C, F2, U>: for<'a> From<&'a Vector<C, F2, U>>, // to_spherical
     {
         self.to_cartesian()
             .transform(JulianDate::J2000)
