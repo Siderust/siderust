@@ -375,7 +375,6 @@ mod tests {
         assert!(approx_eq(computed_r, expected_r, 1e-3)); // Allow some tolerance
     }
 
-
     #[test]
     fn test_planets_at_epoch() {
         use crate::bodies::*;
@@ -449,4 +448,199 @@ mod tests {
         }
     }
 
+    // Additional tests for untested functions and edge cases
+
+    #[test]
+    fn test_kepler_equation_residual() {
+        // Test the residual function directly
+        let e_anomaly = Radians::new(PI / 2.0);
+        let e = 0.1;
+        let m = Radians::new(PI / 2.0);
+
+        // For E = π/2, e = 0.1, M = π/2
+        // Residual = E - e*sin(E) - M = π/2 - 0.1*1 - π/2 = -0.1
+        let residual = kepler_equation_residual(e_anomaly, e, m);
+        assert!(approx_eq(residual.value(), -0.1, 1e-10));
+    }
+
+    #[test]
+    fn test_kepler_equation_derivative() {
+        // Test the derivative function directly
+        let e_anomaly = Radians::new(0.0);
+        let e = 0.1;
+
+        // For E = 0, e = 0.1
+        // Derivative = 1 - e*cos(E) = 1 - 0.1*1 = 0.9
+        let derivative = kepler_equation_derivative(e_anomaly, e);
+        assert!(approx_eq(derivative, 0.9, 1e-10));
+    }
+
+    #[test]
+    fn test_solve_keplers_equation_edge_cases() {
+        // Test with very small eccentricity
+        let e = 1e-10;
+        let m = Radians::new(PI / 4.0);
+        let computed_e = solve_keplers_equation(m, e);
+        assert!(approx_eq(computed_e.value(), m.value(), 1e-10));
+
+        // Test with high eccentricity (near 1.0)
+        let e = 0.99;
+        let m = Radians::new(PI / 2.0);
+        let computed_e = solve_keplers_equation(m, e);
+        // Should still converge and give a reasonable result
+        assert!(computed_e.value().is_finite());
+        assert!(computed_e.value() >= 0.0);
+        assert!(computed_e.value() <= 2.0 * PI);
+    }
+
+    #[test]
+    fn test_solve_keplers_equation_full_range() {
+        // Test over full range of mean anomalies
+        let e = 0.1;
+        for i in 0..8 {
+            let m = Radians::new(i as f64 * PI / 4.0);
+            let computed_e = solve_keplers_equation(m, e);
+
+            // Check that result is finite and in reasonable range
+            assert!(computed_e.value().is_finite());
+            assert!(computed_e.value() >= 0.0);
+            assert!(computed_e.value() <= 2.0 * PI);
+
+            // Check that it satisfies Kepler's equation approximately
+            let residual = kepler_equation_residual(computed_e, e, m);
+            assert!(residual.value().abs() < 1e-10);
+        }
+    }
+
+    #[test]
+    fn test_orbital_period_days() {
+        // Test orbital period calculation
+        let a = AstronomicalUnits::new(1.0); // 1 AU
+        let period = orbital_period_days(a);
+
+        // For 1 AU, period should be approximately 365.256898326 days
+        assert!(approx_eq(period.value(), 365.256898326, 1e-6));
+
+        // Test with different semi-major axes
+        let a = AstronomicalUnits::new(4.0); // 4 AU
+        let period = orbital_period_days(a);
+
+        // For 4 AU, period should be approximately 8 years = 2922.055186608 days
+        assert!(approx_eq(period.value(), 2922.055186608, 1e-6));
+    }
+
+    #[test]
+    fn test_calculate_orbit_position_edge_cases() {
+        // Test with zero semi-major axis (should handle gracefully)
+        let orbit = Orbit::new(
+            AstronomicalUnits::new(0.0), // a = 0 AU
+            0.0,    // e
+            Degrees::new(0.0),    // i
+            Degrees::new(0.0),    // Ω
+            Degrees::new(0.0),    // ω
+            Degrees::new(0.0),    // M0
+            JulianDate::J2000, // epoch
+        );
+
+        let coord = calculate_orbit_position(&orbit, JulianDate::J2000);
+        assert!(coord.x().value().is_finite());
+        assert!(coord.y().value().is_finite());
+        assert!(coord.z().value().is_finite());
+    }
+
+    #[test]
+    fn test_calculate_orbit_position_different_epochs() {
+        let orbit = Orbit::new(
+            1.0*AU,    // a (AU)
+            0.1,    // e
+            Degrees::new(0.0),    // i
+            Degrees::new(0.0),    // Ω
+            Degrees::new(0.0),    // ω
+            Degrees::new(0.0),    // M0
+            JulianDate::J2000, // epoch
+        );
+
+        // Test at different Julian dates
+        let dates = [
+            JulianDate::J2000,
+            JulianDate::J2000 + Days::new(365.25),
+            JulianDate::J2000 + Days::new(730.5),
+        ];
+
+        for &date in &dates {
+            let coord = calculate_orbit_position(&orbit, date);
+            assert!(coord.x().value().is_finite());
+            assert!(coord.y().value().is_finite());
+            assert!(coord.z().value().is_finite());
+
+            // Distance should be positive
+            let distance = (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2)).sqrt();
+            assert!(distance > 0.0);
+        }
+    }
+
+    #[test]
+    fn test_orbit_kepler_position_method() {
+        let orbit = Orbit::new(
+            1.0*AU,    // a (AU)
+            0.0,    // e (circular)
+            Degrees::new(0.0),    // i
+            Degrees::new(0.0),    // Ω
+            Degrees::new(0.0),    // ω
+            Degrees::new(0.0),    // M0
+            JulianDate::J2000, // epoch
+        );
+
+        // Test the convenience method
+        let coord1 = orbit.kepler_position(JulianDate::J2000);
+        let coord2 = calculate_orbit_position(&orbit, JulianDate::J2000);
+
+        assert!(approx_eq(coord1.x().value(), coord2.x().value(), 1e-10));
+        assert!(approx_eq(coord1.y().value(), coord2.y().value(), 1e-10));
+        assert!(approx_eq(coord1.z().value(), coord2.z().value(), 1e-10));
+    }
+
+    #[test]
+    fn test_high_inclination_orbit() {
+        let orbit = Orbit::new(
+            1.0*AU,    // a (AU)
+            0.1,    // e
+            Degrees::new(89.0),    // i (high inclination)
+            Degrees::new(0.0),    // Ω
+            Degrees::new(0.0),    // ω
+            Degrees::new(90.0),    // M0 (90 degrees to get non-zero z)
+            JulianDate::J2000, // epoch
+        );
+
+        let coord = calculate_orbit_position(&orbit, JulianDate::J2000);
+
+        // With high inclination, z component should be significant
+        // For 89° inclination, z should be close to the radial distance
+        assert!(coord.z().value().abs() > 0.01);
+
+        // Distance should still be reasonable
+        let distance = (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2)).sqrt();
+        assert!(distance > 0.0);
+        assert!(distance < 2.0); // Should be less than 2 AU for this orbit
+    }
+
+    #[test]
+    fn test_retrograde_orbit() {
+        let orbit = Orbit::new(
+            1.0*AU,    // a (AU)
+            0.1,    // e
+            Degrees::new(180.0),    // i (retrograde)
+            Degrees::new(0.0),    // Ω
+            Degrees::new(0.0),    // ω
+            Degrees::new(0.0),    // M0
+            JulianDate::J2000, // epoch
+        );
+
+        let coord = calculate_orbit_position(&orbit, JulianDate::J2000);
+
+        // Should still give valid coordinates
+        assert!(coord.x().value().is_finite());
+        assert!(coord.y().value().is_finite());
+        assert!(coord.z().value().is_finite());
+    }
 }
