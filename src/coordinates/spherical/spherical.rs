@@ -132,24 +132,46 @@ mod tests {
     
     #[test]
     fn test_spherical_coord_creation() {
-        let coord = SphericalCoord::<Barycentric, ICRS>::new(Degrees::new(45.0), Degrees::new(90.0), 1.0);
-        assert_eq!(coord.ra().as_f64(), 45.0);
-        assert_eq!(coord.dec().as_f64(), 90.0);
+        let coord = SphericalCoord::<Barycentric, ICRS>::new_spherical_coord(
+            Degrees::new(45.0),
+            Degrees::new(90.0),
+            1.0
+        );
+        assert_eq!(coord.polar.as_f64(), 45.0);
+        assert_eq!(coord.azimuth.as_f64(), 90.0);
         assert_eq!(coord.radial_distance, 1.0);
     }
     
     #[test]
+    fn test_spherical_coord_from_degrees() {
+        let coord = SphericalCoord::<Geocentric, ICRS>::from_degrees(30.0, 60.0, 1000.0);
+        assert_eq!(coord.polar.as_f64(), 30.0);
+        assert_eq!(coord.azimuth.as_f64(), 60.0);
+        assert_eq!(coord.radial_distance, 1000.0);
+    }
+
+    #[test]
     fn test_spherical_coord_to_string() {
-        let coord = SphericalCoord::<Geocentric, ICRS>::new(Degrees::new(30.0), Degrees::new(60.0), 1000.0);
+        let coord = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(30.0),
+            Degrees::new(60.0),
+            1000.0
+        );
         let coord_string = coord.to_string();
-        assert!(coord_string.contains("θ: 60"));
-        assert!(coord_string.contains("φ: 30"));
-        assert!(coord_string.contains("r: 1000"));
+        assert!(coord_string.contains("θ: 30.000000"));
+        assert!(coord_string.contains("φ: 60.000000"));
+        assert!(coord_string.contains("r: 1000.000000"));
+        assert!(coord_string.contains("Geocentric"));
+        assert!(coord_string.contains("ICRS"));
     }
     
     #[test]
     fn test_spherical_coord_zero_values() {
-        let coord = SphericalCoord::<Heliocentric, ICRS>::new(Degrees::new(0.0), Degrees::new(0.0), 0.0);
+        let coord = SphericalCoord::<Heliocentric, ICRS>::new_spherical_coord(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            0.0
+        );
         assert_eq!(coord.polar.as_f64(), 0.0);
         assert_eq!(coord.azimuth.as_f64(), 0.0);
         assert_eq!(coord.radial_distance, 0.0);
@@ -157,9 +179,182 @@ mod tests {
 
     #[test]
     fn test_spherical_coord_precision() {
-        let coord = SphericalCoord::<Barycentric, ICRS>::new(Degrees::new(90.654321), Degrees::new(45.123456), 1234.56789);
-        assert!((coord.dec().as_f64() - 45.123456).abs() < 1e-6);
-        assert!((coord.ra().as_f64() - 90.654321).abs() < 1e-6);
+        let coord = SphericalCoord::<Barycentric, ICRS>::new_spherical_coord(
+            Degrees::new(90.654321),
+            Degrees::new(45.123456),
+            1234.56789
+        );
+        assert!((coord.polar.as_f64() - 90.654321).abs() < 1e-6);
+        assert!((coord.azimuth.as_f64() - 45.123456).abs() < 1e-6);
         assert!((coord.radial_distance - 1234.56789).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_spherical_coord_distance_from_origin() {
+        let coord = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(45.0),
+            Degrees::new(30.0),
+            100.0
+        );
+        let distance = coord.distance_from_origin();
+        assert!((distance - 100.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_spherical_coord_distance_to() {
+        let coord1 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            100.0
+        );
+        let coord2 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            200.0
+        );
+        let distance = coord1.distance_to(&coord2);
+        assert!((distance - 100.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn test_spherical_coord_angular_separation() {
+        let coord1 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            100.0
+        );
+        let coord2 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(90.0),
+            Degrees::new(0.0),
+            100.0
+        );
+        let separation = coord1.angular_separation(coord2);
+        assert!((separation.as_f64() - 90.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_spherical_coord_angular_separation_same_point() {
+        let coord1 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(45.0),
+            Degrees::new(30.0),
+            100.0
+        );
+        let coord2 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(45.0),
+            Degrees::new(30.0),
+            200.0
+        );
+        let separation = coord1.angular_separation(coord2);
+        assert!((separation.as_f64() - 0.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_spherical_coord_angular_separation_opposite() {
+        let coord1 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            100.0
+        );
+        let coord2 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(180.0),
+            Degrees::new(0.0),
+            100.0
+        );
+        let separation = coord1.angular_separation(coord2);
+        assert!((separation.as_f64() - 180.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn test_spherical_coord_debug() {
+        let coord = SphericalCoord::<Barycentric, ICRS>::new_spherical_coord(
+            Degrees::new(45.0),
+            Degrees::new(90.0),
+            1.0
+        );
+        let debug_str = format!("{:?}", coord);
+        assert!(debug_str.contains("SphericalCoord"));
+    }
+
+    #[test]
+    fn test_spherical_coord_clone() {
+        let coord1 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(30.0),
+            Degrees::new(60.0),
+            100.0
+        );
+        let coord2 = coord1.clone();
+        assert_eq!(coord1.polar.as_f64(), coord2.polar.as_f64());
+        assert_eq!(coord1.azimuth.as_f64(), coord2.azimuth.as_f64());
+        assert_eq!(coord1.radial_distance, coord2.radial_distance);
+    }
+
+    #[test]
+    fn test_spherical_coord_copy() {
+        let coord1 = SphericalCoord::<Heliocentric, ICRS>::new_spherical_coord(
+            Degrees::new(45.0),
+            Degrees::new(90.0),
+            200.0
+        );
+        let coord2 = coord1; // Copy
+        assert_eq!(coord1.polar.as_f64(), coord2.polar.as_f64());
+        assert_eq!(coord1.azimuth.as_f64(), coord2.azimuth.as_f64());
+        assert_eq!(coord1.radial_distance, coord2.radial_distance);
+    }
+
+    #[test]
+    fn test_spherical_coord_different_centers() {
+        let coord1 = SphericalCoord::<Barycentric, ICRS>::new_spherical_coord(
+            Degrees::new(30.0),
+            Degrees::new(60.0),
+            100.0
+        );
+        let coord2 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(30.0),
+            Degrees::new(60.0),
+            100.0
+        );
+        assert_eq!(coord1.polar.as_f64(), coord2.polar.as_f64());
+        assert_eq!(coord1.azimuth.as_f64(), coord2.azimuth.as_f64());
+        assert_eq!(coord1.radial_distance, coord2.radial_distance);
+    }
+
+    #[test]
+    fn test_spherical_coord_different_frames() {
+        let coord1 = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(45.0),
+            Degrees::new(90.0),
+            150.0
+        );
+        let coord2 = SphericalCoord::<Geocentric, Ecliptic>::new_spherical_coord(
+            Degrees::new(45.0),
+            Degrees::new(90.0),
+            150.0
+        );
+        assert_eq!(coord1.polar.as_f64(), coord2.polar.as_f64());
+        assert_eq!(coord1.azimuth.as_f64(), coord2.azimuth.as_f64());
+        assert_eq!(coord1.radial_distance, coord2.radial_distance);
+    }
+
+    #[test]
+    fn test_spherical_coord_edge_cases() {
+        // Large angles
+        let coord = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(359.999),
+            Degrees::new(179.999),
+            1e6
+        );
+        assert!((coord.polar.as_f64() - 359.999).abs() < 1e-6);
+        assert!((coord.azimuth.as_f64() - 179.999).abs() < 1e-6);
+        assert!((coord.radial_distance - 1e6).abs() < 1e-6);
+
+        // Very small angles
+        let coord = SphericalCoord::<Geocentric, ICRS>::new_spherical_coord(
+            Degrees::new(0.001),
+            Degrees::new(0.001),
+            1e-6
+        );
+        assert!((coord.polar.as_f64() - 0.001).abs() < 1e-6);
+        assert!((coord.azimuth.as_f64() - 0.001).abs() < 1e-6);
+        assert!((coord.radial_distance - 1e-6).abs() < 1e-6);
     }
 }
