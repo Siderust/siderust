@@ -90,7 +90,7 @@ use crate::coordinates::{
     spherical::SphericalCoord
 };
 use crate::units::*;
-
+use frames::TransformFrame;
 
 pub trait Transform<Coord> {
     fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
@@ -117,7 +117,7 @@ where
 /// 2. Center transformation (within the new frame)
 impl<C1, F1, C2, F2, U> From<&Vector<C1, F1, U>> for Vector<C2, F2, U>
 where
-    Vector<C1, F1, U>: Transform<Vector<C1, F2, U>>, // transform frame
+    Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>, // transform frame
     Vector<C1, F2, U>: Transform<Vector<C2, F2, U>>, // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
@@ -127,7 +127,7 @@ where
 {
     fn from(orig: &Vector<C1, F1, U>) -> Self {
         // Step 1: Transform to new frame, keeping the original center.
-        let mid: Vector<C1, F2, U> = orig.transform(JulianDate::J2000);
+        let mid: Vector<C1, F2, U> = orig.to_frame();
         // Step 2: Transform to new center, now using the new frame.
         mid.transform(JulianDate::J2000)
     }
@@ -143,7 +143,7 @@ where
 /// 4. Convert back to spherical coordinates.
 impl<C1, F1, C2, F2, U> From<&SphericalCoord<C1, F1, U>> for SphericalCoord<C2, F2, U>
 where
-    Vector<C1, F1, U>: Transform<Vector<C1, F2, U>>, // transform frame
+    Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>, // transform frame
     Vector<C1, F2, U>: Transform<Vector<C2, F2, U>>, // transform center
     Vector<C1, F1, U>: for<'a> From<&'a SphericalCoord<C1, F1, U>>, // to_cartesian
     SphericalCoord<C2, F2, U>: for<'a> From<&'a Vector<C2, F2, U>>, // to_spherical
@@ -157,7 +157,7 @@ where
         // Step 1: Convert spherical to Cartesian
         let cart: Vector<C1, F1, U> = orig.to_cartesian();
         // Step 2: Transform to new frame
-        let cart_mid: Vector<C1, F2, U> = cart.transform(JulianDate::J2000);
+        let cart_mid: Vector<C1, F2, U> = cart.to_frame();
         // Step 3: Transform to new center
         let cart_dest: Vector<C2, F2, U> = cart_mid.transform(JulianDate::J2000);
         // Step 4: Convert back to spherical
