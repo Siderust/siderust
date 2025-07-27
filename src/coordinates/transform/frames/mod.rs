@@ -9,18 +9,8 @@ use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::transform::Transform;
 use crate::astro::JulianDate;
 
-impl<C, F, U> cartesian::Vector<C, F, U>
-where
-    C: ReferenceCenter,
-    F: MutableFrame,
-    U: crate::units::Unit,
-{
-    pub fn to_frame<F2: MutableFrame>(&self) -> cartesian::Vector<C, F2, U>
-    where
-        cartesian::Vector<C, F, U>: Transform<cartesian::Vector<C, F2, U>>,
-    {
-        self.transform(JulianDate::J2000)
-    }
+pub trait TransformFrame<Coord> {
+    fn to_frame(&self) -> Coord;
 }
 
 impl<C, F, U> SphericalCoord<C, F, U>
