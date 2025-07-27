@@ -7,7 +7,6 @@ use crate::coordinates::{
     cartesian::Position,
     cartesian::position::{Ecliptic, Equatorial}
 };
-use crate::coordinates::transform::Transform;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::astro::aberration::remove_aberration;
@@ -58,28 +57,6 @@ where
 
         let bary_equ = Equatorial::<U, Barycentric>::from_vec3(target_geo_equ_no_aberration.as_vec3() + earth_bary_equ.as_vec3()); // Geocentric -> Barycentric
         bary_equ.to_frame() // Equatorial -> F
-    }
-}
-
-impl<F: MutableFrame, U: LengthUnit> Transform<Position<Barycentric, F, U>> for Position<Heliocentric, F, U>
-where
-    Quantity<U>: From<AstronomicalUnits>,
-    Ecliptic<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>
-{
-    fn transform(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        self.to_center(jd)
-    }
-}
-
-impl<F: MutableFrame, U: LengthUnit> Transform<Position<Barycentric, F, U>> for Position<Geocentric, F, U>
-where
-    Quantity<U>: From<AstronomicalUnits>,
-    Ecliptic<U, Barycentric>:   TransformFrame<Equatorial<U, Barycentric>>,
-    Position<Geocentric, F, U>:   TransformFrame<Equatorial<U, Geocentric>>,
-    Equatorial<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>
-{
-    fn transform(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        self.to_center(jd)
     }
 }
 

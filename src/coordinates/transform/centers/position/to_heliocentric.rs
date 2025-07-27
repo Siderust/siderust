@@ -1,6 +1,5 @@
 use crate::astro::aberration::remove_aberration;
 use crate::bodies::solar_system::{Earth, Sun};
-use crate::coordinates::transform::Transform;
 use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::MutableFrame,
@@ -59,30 +58,6 @@ where
     }
 }
 
-
-impl<F: MutableFrame, U: LengthUnit> Transform<Position<Heliocentric, F, U>>
-    for Position<Geocentric, F, U>
-where
-    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
-    Ecliptic<U>: TransformFrame<Equatorial<U, Heliocentric>>, // Required by VSOP
-    Position<Geocentric, F, U>: TransformFrame<Equatorial<U, Geocentric>>, // Required by Aberration
-    Equatorial<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>, // Required by Aberration
-{
-    fn transform(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
-        self.to_center(jd)
-    }
-}
-
-impl<F: MutableFrame, U: LengthUnit> Transform<Position<Heliocentric, F, U>>
-    for Position<Barycentric, F, U>
-where
-    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
-    Ecliptic<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>,
-{
-    fn transform(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
-        self.to_center(jd)
-    }
-}
 
 #[cfg(test)]
 mod tests {
