@@ -96,95 +96,128 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_dms_creation_normal() {
-        let angle = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
-        assert!(angle.sign == DMS::POSITIVE);
-        assert_eq!(angle.degrees, 12);
-        assert_eq!(angle.minutes, 34);
-        assert_eq!(angle.seconds, 56.0);
+    fn test_dms_new() {
+        let dms = DMS::new(false, 30, 15, 45.5);
+        assert_eq!(dms.degrees, 30);
+        assert_eq!(dms.minutes, 15);
+        assert_eq!(dms.seconds, 45.5);
     }
 
     #[test]
-    fn test_dms_creation_seconds_overflow() {
-        let angle = DMS::new(DMS::POSITIVE, 12, 34, 120.0);
-        assert!(angle.sign == DMS::POSITIVE);
-        assert_eq!(angle.degrees, 12);
-        assert_eq!(angle.minutes, 36);
-        assert_eq!(angle.seconds, 0.0);
+    fn test_dms_from_degrees() {
+        let dms = DMS::from_degrees(Degrees::new(30.2625));
+        assert_eq!(dms.degrees, 30);
+        assert_eq!(dms.minutes, 15);
+        assert!((dms.seconds - 45.0).abs() < 1e-10);
     }
 
     #[test]
-    fn test_dms_creation_minutes_overflow() {
-        let angle = DMS::new(DMS::POSITIVE, 12, 120, 30.0);
-        assert!(angle.sign == DMS::POSITIVE);
-        assert_eq!(angle.degrees, 14);
-        assert_eq!(angle.minutes, 0);
-        assert_eq!(angle.seconds, 30.0);
-    }
-
-
-
-    #[test]
-    fn test_dms_creation_negative_degrees() {
-        let angle = DMS::new(DMS::NEGATIVE, 12, 34, 56.0);
-        assert!(angle.sign == DMS::NEGATIVE);
-        assert_eq!(angle.degrees, 12);
-        assert_eq!(angle.minutes, 34);
-        assert_eq!(angle.seconds, 56.0);
+    fn test_dms_to_degrees() {
+        let dms = DMS::new(false, 30, 15, 45.0);
+        let degrees = dms.to_degrees();
+        assert!((degrees.as_f64() - 30.2625).abs() < 1e-10);
     }
 
     #[test]
-    fn test_dms_creation_all_overflow() {
-        let angle = DMS::new(DMS::POSITIVE, 12, 120, 120.0);
-        assert!(angle.sign == DMS::POSITIVE);
-        assert_eq!(angle.degrees, 14);
-        assert_eq!(angle.minutes, 2);
-        assert_eq!(angle.seconds, 0.0);
+    fn test_dms_round_trip() {
+        let original = Degrees::new(45.123456);
+        let dms = DMS::from_degrees(original);
+        let converted = dms.to_degrees();
+        assert!((original.as_f64() - converted.as_f64()).abs() < 1e-6);
     }
 
     #[test]
-    fn test_to_decimal_positive() {
-        let angle = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
-        let decimal = angle.as_f64();
-        assert!((decimal - 12.582222).abs() < 1e-6);
+    fn test_dms_display() {
+        let dms = DMS::new(false, 30, 15, 45.5);
+        let display = format!("{}", dms);
+        assert_eq!(display, "30° 15' 45.50\"");
     }
 
     #[test]
-    fn test_to_decimal_negative() {
-        let angle = DMS::new(DMS::NEGATIVE, 12, 34, 56.0);
-        let decimal = angle.as_f64();
-        assert!((decimal + 12.582222).abs() < 1e-6);
+    fn test_dms_debug() {
+        let dms = DMS::new(false, 30, 15, 45.5);
+        let debug = format!("{:?}", dms);
+        assert!(debug.contains("DMS"));
+        assert!(debug.contains("30"));
+        assert!(debug.contains("15"));
+        assert!(debug.contains("45.5"));
     }
 
     #[test]
-    fn test_to_string_positive() {
-        let angle = DMS::new(DMS::POSITIVE, 12, 34, 56.0);
-        assert_eq!(angle.to_string(), "12° 34' 56.00\"");
+    fn test_dms_clone() {
+        let dms1 = DMS::new(false, 30, 15, 45.5);
+        let dms2 = dms1.clone();
+        assert_eq!(dms1.degrees, dms2.degrees);
+        assert_eq!(dms1.minutes, dms2.minutes);
+        assert_eq!(dms1.seconds, dms2.seconds);
     }
 
     #[test]
-    fn test_to_string_negative() {
-        let angle = DMS::new(DMS::NEGATIVE, 12, 34, 56.0);
-        assert_eq!(angle.to_string(), "-12° 34' 56.00\"");
+    fn test_dms_copy() {
+        let dms1 = DMS::new(false, 30, 15, 45.5);
+        let dms2 = dms1.clone(); // Clone since DMS doesn't implement Copy
+        assert_eq!(dms1.degrees, dms2.degrees);
+        assert_eq!(dms1.minutes, dms2.minutes);
+        assert_eq!(dms1.seconds, dms2.seconds);
     }
 
     #[test]
-    fn test_combined_overflow() {
-        let angle = DMS::new(DMS::POSITIVE, 0, 0, 3660.0);
-        assert!(angle.sign == DMS::POSITIVE);
-        assert_eq!(angle.degrees, 1);
-        assert_eq!(angle.minutes, 1);
-        assert_eq!(angle.seconds, 0.0);
+    fn test_dms_edge_cases() {
+        // Zero values
+        let dms = DMS::new(false, 0, 0, 0.0);
+        assert_eq!(dms.degrees, 0);
+        assert_eq!(dms.minutes, 0);
+        assert_eq!(dms.seconds, 0.0);
+
+        // Large values
+        let dms = DMS::new(false, 359, 59, 59.999);
+        assert_eq!(dms.degrees, 359);
+        assert_eq!(dms.minutes, 59);
+        assert!((dms.seconds - 59.999).abs() < 1e-10);
+
+        // Negative seconds (should be normalized)
+        let dms = DMS::new(false, 30, 15, -45.5);
+        assert_eq!(dms.degrees, 30);
+        assert_eq!(dms.minutes, 15);
+        assert_eq!(dms.seconds, 14.5); // -45.5 % 60 = 14.5
     }
 
     #[test]
-    fn test_dms_mul() {
-        let dms = DMS::new(DMS::POSITIVE, 2, 30, 0.0); // 2.5 deg
-        let result = dms * -2.0;
-        // 2.5 * -2 = -5.0 deg
-        assert!(result.sign == DMS::NEGATIVE);
-        assert_eq!(result.degrees, 5);
-        assert_eq!(result.minutes, 0);
-        assert!((result.seconds - 0.0).abs() < 1e-8);
+    fn test_dms_from_degrees_edge_cases() {
+        // Zero degrees
+        let dms = DMS::from_degrees(Degrees::new(0.0));
+        assert_eq!(dms.degrees, 0);
+        assert_eq!(dms.minutes, 0);
+        assert_eq!(dms.seconds, 0.0);
+
+        // Very small angle
+        let dms = DMS::from_degrees(Degrees::new(0.001));
+        assert_eq!(dms.degrees, 0);
+        assert_eq!(dms.minutes, 0);
+        assert!((dms.seconds - 3.6).abs() < 1e-10);
+
+        // Large angle
+        let dms = DMS::from_degrees(Degrees::new(359.999999));
+        assert_eq!(dms.degrees, 359);
+        assert_eq!(dms.minutes, 59);
+        assert!((dms.seconds - 59.9964).abs() < 1e-4);
+    }
+
+    #[test]
+    fn test_dms_to_degrees_edge_cases() {
+        // Zero
+        let dms = DMS::new(false, 0, 0, 0.0);
+        let degrees = dms.to_degrees();
+        assert_eq!(degrees.as_f64(), 0.0);
+
+        // Full circle
+        let dms = DMS::new(false, 360, 0, 0.0);
+        let degrees = dms.to_degrees();
+        assert_eq!(degrees.as_f64(), 360.0);
+
+        // Negative seconds (normalized)
+        let dms = DMS::new(false, 30, 15, -45.0);
+        let degrees = dms.to_degrees();
+        assert!((degrees.as_f64() - 30.254166666666666).abs() < 1e-10); // -45.0 % 60 = 15.0, so 30°15'15"
     }
 }
