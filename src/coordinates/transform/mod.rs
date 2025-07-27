@@ -88,7 +88,6 @@ use crate::astro::JulianDate;
 use crate::coordinates::{
     centers::ReferenceCenter,
     frames::MutableFrame,
-    cartesian,
     cartesian::Vector,
     spherical::SphericalCoord
 };
@@ -96,18 +95,6 @@ use crate::units::*;
 
 pub trait Transform<Coord> {
     fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
-}
-
-// Blanket identity transform for Vector<Center, Frame>
-impl<C, F, U> Transform<cartesian::Position<C, F, U>> for cartesian::Position<C, F, U>
-where
-    C: ReferenceCenter,
-    F: MutableFrame,
-    U: LengthUnit
-{
-    fn transform(&self, _jd: crate::astro::JulianDate) -> cartesian::Position<C, F,U> {
-        Vector::new(self.x(), self.y(), self.z())
-    }
 }
 
 /// Blanket implementation to allow chaining two consecutive `From` operations.
