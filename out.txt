@@ -1,0 +1,164 @@
+   Compiling siderust v0.2.0 (/home/valles/workspace/siderust)
+    Finished `test` profile [unoptimized + debuginfo] target(s) in 5.21s
+     Running unittests src/lib.rs (target/debug/deps/siderust-555841c3fa289515)
+
+running 123 tests
+test astro::modified_julian_date::tests::test_from_utc ... ok
+test astro::dynamical_time::tests::delta_t_2000 ... ok
+test astro::julian_date::tests::test_from_naive_datetime ... ok
+test astro::aberration::tests::test_speed_of_light ... ok
+test astro::modified_julian_date::tests::test_modified_julian_day_creation ... ok
+test astro::julian_date::tests::test_to_naive_datetime ... ok
+test astro::julian_date::tests::test_julian_day_creation ... ok
+test astro::modified_julian_date::tests::test_to_julian_day ... ok
+test astro::modified_julian_date::tests::test_to_utc ... ok
+test astro::sidereal::tests::gst_lst_ranges ... ok
+test astro::precession::tests::sirius_2025 ... ok
+test astro::proper_motion::tests::test_proper_motion_linear_shift ... ok
+test bodies::planets::tests::builder_roundtrip ... ok
+test calculus::events::find_static_extremas::tests::test_find_sirius_static ... ok
+test calculus::kepler_equations::tests::test_after_days ... ok
+test calculus::kepler_equations::tests::test_high_inclination_orbit ... ok
+test calculus::kepler_equations::tests::test_kepler_equation_derivative ... ok
+test calculus::kepler_equations::tests::test_kepler_equation_residual ... ok
+test calculus::kepler_equations::tests::test_solve_keplers_equation ... ok
+test calculus::kepler_equations::tests::test_calculate_orbit_position_different_epochs ... ok
+test calculus::kepler_equations::tests::test_orbit_kepler_position_method ... ok
+test calculus::kepler_equations::tests::test_solve_keplers_equation_edge_cases ... ok
+test calculus::kepler_equations::tests::test_orbital_period_days ... ok
+test calculus::kepler_equations::tests::test_retrograde_orbit ... ok
+test calculus::kepler_equations::tests::test_planets_at_epoch ... ok
+test calculus::kepler_equations::tests::test_calculate_orbit_position_edge_cases ... ok
+test calculus::kepler_equations::tests::test_circular_orbit ... ok
+test calculus::kepler_equations::tests::test_solve_keplers_equation_full_range ... ok
+test calculus::kepler_equations::tests::test_zero_inclination ... ok
+test coordinates::spherical::direction::tests::creates_valid_spherical_position ... ok
+test coordinates::spherical::direction::tests::maintains_high_precision_on_values ... ok
+test coordinates::spherical::direction::tests::position_method_promotes_with_given_radius ... ok
+test coordinates::spherical::direction::tests::direction_display_mentions_center_and_frame ... ok
+test coordinates::spherical::direction::tests::displays_coordinate_as_string_correctly ... ok
+test coordinates::spherical::position::tests::center_constant_is_origin ... ok
+test coordinates::spherical::position::tests::direction_returns_unit_vector ... ok
+test coordinates::spherical::position::tests::distance_identity_zero_and_orthogonal ... ok
+test coordinates::spherical::position::tests::from_degrees_matches_new_raw ... ok
+test coordinates::spherical::position::tests::test_spherical_coord_creation ... ok
+test calculus::events::find_dynamic_extremas::tests::test_find_sirius_dynamic ... ok
+test calculus::vsop87::vsop87a::tests::test_venus_at_epoch ... ok
+test calculus::vsop87::vsop87a::tests::test_mercury_at_epoch ... ok
+test calculus::vsop87::vsop87e::tests::test_uranus_at_epoch ... ok
+test calculus::vsop87::vsop87e::tests::test_neptune_at_epoch ... ok
+test coordinates::spherical::position::tests::test_spherical_coord_zero_values ... ok
+test astro::aberration::tests::test_aberration_at_north_pole ... ok
+test calculus::vsop87::vsop87a::tests::test_saturn_at_epoch ... ok
+test astro::aberration::tests::test_aberration_preserva_distance_and_epoch ... ok
+test astro::aberration::tests::test_aberration_introduces_shift ... ok
+test calculus::vsop87::vsop87a::tests::test_uranus_at_epoch ... ok
+test calculus::vsop87::vsop87e::tests::test_mars_at_epoch ... ok
+test calculus::vsop87::vsop87a::tests::test_mars_at_epoch ... ok
+test calculus::vsop87::vsop87e::tests::test_mercury_at_epoch ... ok
+test calculus::vsop87::vsop87e::tests::test_saturn_at_epoch ... ok
+test calculus::vsop87::vsop87e::tests::test_jupiter_at_epoch ... ok
+test calculus::vsop87::vsop87a::tests::test_jupiter_at_epoch ... ok
+test calculus::vsop87::vsop87a::tests::test_neptune_at_epoch ... ok
+test coordinates::spherical::position::tests::test_spherical_coord_to_string ... ok
+test calculus::vsop87::vsop87e::tests::test_venus_at_epoch ... ok
+test coordinates::spherical::spherical::tests::antipodal_points_give_180_degrees ... ok
+test coordinates::spherical::position::tests::test_spherical_coord_precision ... ok
+test coordinates::spherical::spherical::tests::identity_separation_is_zero ... ok
+test coordinates::spherical::spherical::tests::orthogonal_points_give_ninety_degrees ... ok
+test coordinates::spherical::spherical::tests::polaris_betelgeuse_real_world ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_angular_separation ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_angular_separation_opposite ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_angular_separation_same_point ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_clone ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_copy ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_creation ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_debug ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_different_centers ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_different_frames ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_distance_from_origin ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_distance_to ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_edge_cases ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_precision ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_zero_values ... ok
+test coordinates::transform::centers::tests::test_barycentric_to_heliocentric ... ok
+test coordinates::spherical::spherical::tests::test_spherical_coord_to_string ... FAILED
+test coordinates::spherical::spherical::tests::test_spherical_coord_new ... FAILED
+test coordinates::transform::centers::tests::test_heliocentric_to_barycentric ... ok
+test coordinates::transform::centers::tests::test_from_barycentric_to_geocentric ... ok
+test coordinates::transform::centers::tests::test_from_geocentric_to_heliocentric ... ok
+test coordinates::transform::centers::tests::test_from_heliocentric_to_geocentric ... ok
+test coordinates::transform::frames::tests::test_to_center ... ok
+test coordinates::transform::frames::to_ecliptic::tests::round_trip_equatorial_ecliptic ... ok
+test coordinates::transform::centers::to_barycentric::tests::test_geo ... ok
+test coordinates::transform::centers::tests::test_to_center ... ok
+test coordinates::transform::centers::to_geocentric::tests::test_helio_to_geo ... ok
+test coordinates::transform::to_horizontal::tests::test_sirius_to_horizontal ... ok
+test coordinates::transform::frames::to_equatorial::tests::round_trip_ecliptic_equatorial ... ok
+test coordinates::transform::to_spherical::tests::test_cartesian_spherical_round_trip ... ok
+test coordinates::transform::centers::to_geocentric::tests::test_bary_to_geo ... ok
+test coordinates::transform::to_spherical::tests::test_spherical_cartesian_round_trip ... ok
+test coordinates::transform::to_spherical::tests::test_spherical_to_cartesian ... ok
+test coordinates::transform::to_spherical::tests::test_cartesian_to_spherical ... ok
+test coordinates::transform::frames::to_ecliptic::tests::test_large_values ... ok
+test targets::target::tests::test_target_get_time ... ok
+test coordinates::transform::centers::to_heliocentric::tests::test_bary ... ok
+test coordinates::transform::frames::to_ecliptic::tests::test_small_values ... ok
+test targets::target::tests::test_target_new_raw ... ok
+test targets::target::tests::test_target_new_static ... ok
+test coordinates::transform::centers::to_barycentric::tests::test_helio ... ok
+test targets::target::tests::test_target_new ... ok
+test coordinates::transform::centers::to_geocentric::tests::test_icrs_to_gcrs ... ok
+test coordinates::transform::frames::to_ecliptic::tests::test_x_axis_aligned ... ok
+test coordinates::transform::frames::to_ecliptic::tests::test_zero_vector_transformation ... ok
+test coordinates::transform::frames::to_ecliptic::tests::test_y_axis_aligned ... ok
+test targets::target::tests::test_target_update ... FAILED
+test targets::target::tests::test_target_edge_cases ... ok
+test coordinates::transform::centers::to_heliocentric::tests::test_geo ... ok
+test units::angular::tests::test_full_turn ... ok
+test targets::target::tests::test_target_debug ... ok
+test targets::target::tests::test_target_get_position ... ok
+test targets::target::tests::test_target_get_proper_motion ... FAILED
+test coordinates::transform::frames::to_ecliptic::tests::test_z_axis_aligned ... ok
+test targets::target::tests::test_target_zero_proper_motion ... ok
+test units::angular::tests::test_trig ... ok
+test targets::target::tests::test_target_clone ... ok
+test targets::target::tests::test_target_new_with_proper_motion ... ok
+test units::angular::tests::test_wrap_signed ... ok
+test calculus::elp2000::elp_series::tests::test_lunar_position_against_reference ... ok
+
+failures:
+
+---- coordinates::spherical::spherical::tests::test_spherical_coord_to_string stdout ----
+
+thread 'coordinates::spherical::spherical::tests::test_spherical_coord_to_string' panicked at src/coordinates/spherical/spherical.rs:195:9:
+assertion failed: coord_string.contains("θ: 30.000000")
+
+---- coordinates::spherical::spherical::tests::test_spherical_coord_new stdout ----
+
+thread 'coordinates::spherical::spherical::tests::test_spherical_coord_new' panicked at src/coordinates/spherical/spherical.rs:182:9:
+assertion `left == right` failed
+  left: 60.0
+ right: 30.0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+---- targets::target::tests::test_target_update stdout ----
+
+thread 'targets::target::tests::test_target_update' panicked at src/targets/target.rs:216:13:
+assertion failed: (pm.ra_μ.value() - 6.944444444444445e-6).abs() < 1e-15
+
+---- targets::target::tests::test_target_get_proper_motion stdout ----
+
+thread 'targets::target::tests::test_target_get_proper_motion' panicked at src/targets/target.rs:161:13:
+assertion failed: (pm.ra_μ.value() - 5.555555555555556e-6).abs() < 1e-15
+
+
+failures:
+    coordinates::spherical::spherical::tests::test_spherical_coord_new
+    coordinates::spherical::spherical::tests::test_spherical_coord_to_string
+    targets::target::tests::test_target_get_proper_motion
+    targets::target::tests::test_target_update
+
+test result: FAILED. 119 passed; 4 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s
+
+error: test failed, to rerun pass `--lib`
