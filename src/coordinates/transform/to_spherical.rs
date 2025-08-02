@@ -147,14 +147,13 @@ mod tests {
         assert_spherical_eq!(&sph, &expected, 1e-6, "Spherical coordinates do not match expected values");
     }
 
-    // TODO: multiple `from_spherical` found
-    /*#[test]
+    #[test]
     fn test_cartesian_spherical_round_trip() {
         use crate::macros::assert_cartesian_eq;
         let cart_original = cartesian::position::GCRS::<AstronomicalUnit>::new(2.0, 3.0, 4.0,);
         let sph = cart_original.to_spherical();
-        let cart_converted = cartesian::Position::from_spherical(&sph);
+        let cart_converted = cartesian::position::GCRS::<AstronomicalUnit>::from_spherical(&sph);
         assert_cartesian_eq!(&cart_original, &cart_converted, 1e-6, "Cartesian coordinates do not match expected values");
-    }*/
+    }
 
 }
