@@ -85,7 +85,7 @@ mod tests {
     #[test] // Barycentric -> Geocentric
     fn test_bary_to_geo() {
         let earth_bary = Earth::vsop87e(JulianDate::J2000).get_position().clone();
-        let earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::from(&earth_bary);
+        let earth_geo: cartesian::position::Ecliptic::<Au, Geocentric> = (&earth_bary).transform(JulianDate::J2000);
         let expected_earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::CENTER;
         assert_cartesian_eq!(
             &earth_geo,
@@ -99,7 +99,7 @@ mod tests {
     #[test] // Heliocentric -> Geocentric
     fn test_helio_to_geo() {
         let earth_helio = Earth::vsop87a(JulianDate::J2000).get_position().clone();
-        let earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::from(&earth_helio);
+        let earth_geo: cartesian::position::Ecliptic::<Au, Geocentric> = (&earth_helio).transform(JulianDate::J2000);
         let expected_earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::CENTER;
         assert_cartesian_eq!(&earth_geo, &expected_earth_geo, EPSILON);
     }
