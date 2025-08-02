@@ -1,34 +1,28 @@
 pub mod position;
 pub mod direction;
-//pub mod from_geocentric;
 
-use crate::astro::JulianDate;
 use crate::coordinates::{
     frames, centers::*,
-    spherical,
+    cartesian::Vector,
 };
-use crate::coordinates::transform::Transform;
+use crate::units::Unit;
+use crate::astro::JulianDate;
 
 pub trait TransformCenter<Coord> {
     fn to_center(&self, jd: crate::astro::JulianDate) -> Coord;
 }
 
-
-impl<C1, C2, F> Transform<spherical::Direction<C1, F>> for spherical::Direction<C2, F>
+impl<C, F, U> TransformCenter<Vector<C, F, U>> for Vector<C, F, U>
 where
-    C1: ReferenceCenter + NonGeocentric,
-    C2: ReferenceCenter + NonGeocentric,
-    F: frames::MutableFrame,
+    C: ReferenceCenter,
+    F: frames::ReferenceFrame,
+    U: Unit,
 {
-    #[inline]
-    fn transform(&self, _jd: JulianDate) -> spherical::Direction<C1, F> {
-        spherical::Direction::new_raw(
-            self.polar,
-            self.azimuth,
-            self.distance
-        )
+    fn to_center(&self, _jd: JulianDate) -> Vector<C, F, U> {
+        Vector::<C, F, U>::from_vec3(self.as_vec3())
     }
 }
+
 
 /*
 #[cfg(test)]
