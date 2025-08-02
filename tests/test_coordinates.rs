@@ -2,14 +2,14 @@ use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::*;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
-use siderust::units::{LengthUnit, Degrees, AstronomicalUnit, Quantity};
+use siderust::units::*;
 use siderust::astro::JulianDate;
 
-fn approx_eq<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
+fn approx_eq<C, F, U>(a: &cartesian::Vector<C, F, U>, b: &cartesian::Vector<C, F, U>)
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
+    U: Unit,
     Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
     assert!((a.x() - b.x()).abs() < (1e-6).into(), "x mismatch: {} vs {}", a.x(), b.x());
@@ -32,53 +32,53 @@ where
 
 #[test]
 fn test_coord_transformations() {
-    use siderust::coordinates::cartesian::Position;
+    use siderust::coordinates::cartesian::Direction;
 
-    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone(); // Heliocentric, Ecliptic
+    let original: Direction<Heliocentric, Ecliptic> = Mars::vsop87a(JulianDate::J2000).get_position().clone().direction(); // Heliocentric, Ecliptic
 
     // Heliocentric Ecliptic -> Geocentric Ecliptic -> back
-    let geo_ecl = Position::<Geocentric, Ecliptic, AstronomicalUnit>::from(&original);
-    let helio_ecl = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::from(&geo_ecl);
+    let geo_ecl = Direction::<Geocentric, Ecliptic>::from(&original);
+    let helio_ecl = Direction::<Heliocentric, Ecliptic>::from(&geo_ecl);
     approx_eq(&original, &helio_ecl);
 
     // Heliocentric Ecliptic -> Barycentric Ecliptic -> back
-    let bary_ecl = Position::<Barycentric, Ecliptic, AstronomicalUnit>::from(&original);
-    let helio_from_bary = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::from(&bary_ecl);
+    let bary_ecl = Direction::<Barycentric, Ecliptic>::from(&original);
+    let helio_from_bary = Direction::<Heliocentric, Ecliptic>::from(&bary_ecl);
     approx_eq(&original, &helio_from_bary);
 
     // Heliocentric Ecliptic -> Heliocentric Equatorial -> back
-    let helio_eq = Position::<Heliocentric, Equatorial, AstronomicalUnit>::from(&original);
-    let helio_from_eq = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::from(&helio_eq);
+    let helio_eq = Direction::<Heliocentric, Equatorial>::from(&original);
+    let helio_from_eq = Direction::<Heliocentric, Ecliptic>::from(&helio_eq);
     approx_eq(&original, &helio_from_eq);
 
     // Heliocentric Equatorial -> ICRS -> back
-    let icrs = Position::<Heliocentric, frames::ICRS, AstronomicalUnit>::from(&helio_eq);
-    let helio_eq_back = Position::<Heliocentric, Equatorial, AstronomicalUnit>::from(&icrs);
+    let icrs = Direction::<Heliocentric, frames::ICRS>::from(&helio_eq);
+    let helio_eq_back = Direction::<Heliocentric, Equatorial>::from(&icrs);
     approx_eq(&helio_eq, &helio_eq_back);
 }
 
 
 #[test]
 fn test_spherical_transformations() {
-    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone(); // Heliocentric, Ecliptic
+    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone().direction(); // Heliocentric, Ecliptic
 
-    let geo_eq = cartesian::Position::<Geocentric, Equatorial, AstronomicalUnit>::from(&original);
-    let helio_icrs = cartesian::Position::<Heliocentric, frames::ICRS, AstronomicalUnit>::from(&original);
-    let bary_eq = cartesian::Position::<Barycentric, Equatorial, AstronomicalUnit>::from(&original);
+    let geo_eq = cartesian::Direction::<Geocentric, Equatorial>::from(&original);
+    let helio_icrs = cartesian::Direction::<Heliocentric, frames::ICRS>::from(&original);
+    let bary_eq = cartesian::Direction::<Barycentric, Equatorial>::from(&original);
 
-    let sph_helio_ecl = spherical::Position::from_cartesian(&original);
+    let sph_helio_ecl = original.to_spherical();
     let back_helio_ecl = sph_helio_ecl.to_cartesian();
     approx_eq(&original, &back_helio_ecl);
 
-    let sph_geo_eq = spherical::Position::from_cartesian(&geo_eq);
+    let sph_geo_eq = spherical::Direction::from_cartesian(&geo_eq);
     let back_geo_eq = sph_geo_eq.to_cartesian();
     approx_eq(&geo_eq, &back_geo_eq);
 
-    let sph_helio_icrs = spherical::Position::from_cartesian(&helio_icrs);
+    let sph_helio_icrs = spherical::Direction::from_cartesian(&helio_icrs);
     let back_helio_icrs = sph_helio_icrs.to_cartesian();
     approx_eq(&helio_icrs, &back_helio_icrs);
 
-    let sph_bary_eq = spherical::Position::from_cartesian(&bary_eq);
+    let sph_bary_eq = spherical::Direction::from_cartesian(&bary_eq);
     let back_bary_eq = sph_bary_eq.to_cartesian();
     approx_eq(&bary_eq, &back_bary_eq);
 }
