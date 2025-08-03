@@ -88,7 +88,7 @@ use crate::astro::JulianDate;
 use crate::coordinates::{
     centers::ReferenceCenter,
     frames::MutableFrame,
-    cartesian,
+    cartesian, spherical,
     spherical::SphericalCoord,
     cartesian::Vector
 };
@@ -128,20 +128,33 @@ where
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, C2, F1, F2, U> Transform<SphericalCoord<C2, F2, U>> for SphericalCoord<C1, F1, U>
+impl<C1, C2, F1, F2, U> Transform<spherical::Position<C2, F2, U>> for spherical::Position<C1, F1, U>
 where
-    Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>,
-    Vector<C1, F2, U>: TransformCenter<Vector<C2, F2, U>>,
+    cartesian::Position<C1, F1, U>: Transform<cartesian::Position<C2, F2, U>>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
     U: LengthUnit,
 {
-    fn transform(&self, jd: JulianDate) -> SphericalCoord<C2, F2, U> {
+    fn transform(&self, jd: JulianDate) -> spherical::Position<C2, F2, U> {
         self.to_cartesian()
-            .to_frame()
-            .to_center(jd)
+            .transform(jd)
+            .to_spherical()
+    }
+}
+
+impl<C1, C2, F1, F2> Transform<spherical::Direction<C2, F2>> for spherical::Direction<C1, F1>
+where
+    cartesian::Direction<C1, F1>: Transform<cartesian::Direction<C2, F2>>,
+    C1: ReferenceCenter,
+    C2: ReferenceCenter,
+    F1: MutableFrame,
+    F2: MutableFrame,
+{
+    fn transform(&self, jd: JulianDate) -> spherical::Direction<C2, F2> {
+        self.to_cartesian()
+            .transform(jd)
             .to_spherical()
     }
 }
