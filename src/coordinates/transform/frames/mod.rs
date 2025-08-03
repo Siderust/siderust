@@ -2,12 +2,13 @@ pub mod to_ecliptic;
 pub mod to_icrs;
 pub mod to_equatorial;
 
+use crate::coordinates::{spherical, cartesian};
 use crate::coordinates::cartesian::Vector;
 use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::frames::MutableFrame;
 use crate::coordinates::centers::ReferenceCenter;
 use crate::astro::JulianDate;
-use crate::units::Unit;
+use crate::units::{Unit, LengthUnit};
 
 use crate::coordinates::transform::Transform;
 
@@ -33,6 +34,34 @@ where
     }
 }
 
+impl<C, F1, F2, U> TransformFrame<spherical::Position<C, F2, U>> for spherical::Position<C, F1, U>
+where
+    cartesian::Position<C, F1, U>: TransformFrame<cartesian::Position<C, F2, U>>,
+    C: ReferenceCenter,
+    F1: MutableFrame,
+    F2: MutableFrame,
+    U: LengthUnit,
+{
+    fn to_frame(&self) -> spherical::Position<C, F2, U> {
+        self.to_cartesian()
+            .to_frame()
+            .to_spherical()
+    }
+}
+
+impl<C, F1, F2> TransformFrame<spherical::Direction<C, F2>> for spherical::Direction<C, F1>
+where
+    cartesian::Direction<C, F1>: TransformFrame<cartesian::Direction<C, F2>>,
+    C: ReferenceCenter,
+    F1: MutableFrame,
+    F2: MutableFrame,
+{
+    fn to_frame(&self) -> spherical::Direction<C, F2> {
+        self.to_cartesian()
+            .to_frame()
+            .to_spherical()
+    }
+}
 
 impl<C, F, U> SphericalCoord<C, F, U>
 where
