@@ -125,28 +125,12 @@ impl<N: Unit, D: Unit> Unit for Per<N, D> {
     const SYMBOL: &'static str = "";
 }
 
-impl<N: Unit, D: Unit> fmt::Display for Quantity<Per<N, D>> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+impl<N: Unit, D: Unit> Display for Quantity<Per<N, D>> {
+    fn fmt(&self, f: &mut Formatter<'_>) -> Result {
         write!(f, "{} {}/{}", self.value(), N::SYMBOL, D::SYMBOL)
     }
 }
 
-/// Numeric value tagged with a unit at compile time.
-///
-/// Arithmetic between mismatched dimensions is a **compile-time error**.
-/// Scalar factors (`f64`) are allowed on either side of `*`/`/`.
-///
-/// ```rust
-/// use siderust::units::length::Meter;
-/// use siderust::units::time::Second;
-/// use siderust::units::Quantity;
-///
-/// let speed = Quantity::<Meter>::new(10.0) / Quantity::<Second>::new(2.0);
-/// //             ^^^^^^^^^^^^^^^^^^^^^^^^^   ^^^^^^^^^^^^^^^^^^^^^^^^^^^
-/// //            10 m (Length)                2 s (Time)
-///
-/// // error[E0308]: binary operation `/` cannot be applied to two `Quantity<_>`
-/// ```
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
 pub struct Quantity<U: Unit>(f64, PhantomData<U>);
 
@@ -174,68 +158,48 @@ impl<U: Unit + Copy> Quantity<U> {
     }
 }
 
-impl<U> Add for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> Add for Quantity<U> {
     type Output = Self;
     fn add(self, rhs: Self) -> Self {
         Self::new(self.0 + rhs.0)
     }
 }
 
-impl<U> AddAssign for Quantity<U>
-where
-    U: Unit,
+impl<U: Unit> AddAssign for Quantity<U>
 {
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0;
     }
 }
 
-impl<U> Sub for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> Sub for Quantity<U> {
     type Output = Self;
     fn sub(self, rhs: Self) -> Self {
         Self::new(self.0 - rhs.0)
     }
 }
 
-impl<U> SubAssign for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> SubAssign for Quantity<U> {
     fn sub_assign(&mut self, rhs: Self) {
         self.0 -= rhs.0;
     }
 }
 
-impl<U> Mul<f64> for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> Mul<f64> for Quantity<U> {
     type Output = Self;
     fn mul(self, rhs: f64) -> Self {
         Self::new(self.0 * rhs)
     }
 }
 
-impl<U> Mul<Quantity<U>> for f64
-where
-    U: Unit,
-{
+impl<U: Unit> Mul<Quantity<U>> for f64 {
     type Output = Quantity<U>;
     fn mul(self, rhs: Quantity<U>) -> Self::Output {
         rhs * self
     }
 }
 
-impl<U> Div<f64> for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> Div<f64> for Quantity<U> {
     type Output = Self;
     fn div(self, rhs: f64) -> Self {
         Self::new(self.0 / rhs)
@@ -274,48 +238,33 @@ impl<N: Unit, D: Unit> Div<Quantity<Per<N, D>>> for Quantity<N> {
     }
 }
 
-impl<U> DivAssign for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> DivAssign for Quantity<U> {
     fn div_assign(&mut self, rhs: Self) {
         self.0 /= rhs.0;
     }
 }
 
-impl<U> Rem<f64> for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> Rem<f64> for Quantity<U> {
     type Output = Self;
     fn rem(self, rhs: f64) -> Self {
         Self::new(self.0 % rhs)
     }
 }
 
-impl<U> PartialEq<f64> for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> PartialEq<f64> for Quantity<U> {
     fn eq(&self, other: &f64) -> bool {
         self.0 == *other
     }
 }
 
-impl<U> Neg for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> Neg for Quantity<U> {
     type Output = Self;
     fn neg(self) -> Self {
         Self::new(-self.0)
     }
 }
 
-impl<U> From<f64> for Quantity<U>
-where
-    U: Unit,
-{
+impl<U: Unit> From<f64> for Quantity<U> {
     fn from(value: f64) -> Self {
         Self::new(value)
     }
