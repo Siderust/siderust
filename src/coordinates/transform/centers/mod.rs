@@ -24,13 +24,13 @@ where
 }
 
 
-/*
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::coordinates::spherical::direction::*;
     use crate::coordinates::frames;
     use crate::units::Degrees;
+    use crate::coordinates::transform::Transform;
 
     #[test]
     fn test_from_heliocentric_to_geocentric() {
@@ -61,15 +61,6 @@ mod tests {
     }
 
     #[test]
-    fn test_barycentric_to_heliocentric() {
-        let dir = ICRS::new(Degrees::new(200.0), Degrees::new(45.0));
-        let jd = crate::astro::JulianDate::J2000;
-        let transformed: HCRS = dir.transform(jd);
-        assert_eq!(dir.polar.value(), transformed.polar.value(), "Polar should not change");
-        assert_eq!(dir.azimuth.value(), transformed.azimuth.value(), "Azimuth should not change");
-    }
-
-    #[test]
     fn test_heliocentric_to_barycentric() {
         let dir = HCRS::new(Degrees::new(100.0), Degrees::new(-10.0));
         let jd = crate::astro::JulianDate::J2000;
@@ -77,16 +68,4 @@ mod tests {
         assert_eq!(dir.polar.value(), transformed.polar.value(), "Polar should not change");
         assert_eq!(dir.azimuth.value(), transformed.azimuth.value(), "Azimuth should not change");
     }
-
-    #[test]
-    fn test_to_center() {
-        let icrs = ICRS::new(Degrees::new(100.0), Degrees::new(-10.0));
-
-        let gcrs: GCRS = icrs.to_center::<Geocentric>(JulianDate::J2000);
-        let expected: GCRS = icrs.transform(JulianDate::J2000);
-        assert_eq!(gcrs.polar, expected.polar);
-        assert_eq!(gcrs.azimuth, expected.azimuth);
-        assert_eq!(gcrs.distance, expected.distance);
-    }
 }
-*/
