@@ -30,6 +30,7 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov
+          version: latest
 
       - name: Coverage (Cobertura)
         run: cargo llvm-cov --workspace --all-features --doctests \
