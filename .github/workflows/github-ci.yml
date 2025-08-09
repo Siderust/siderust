@@ -30,7 +30,6 @@ jobs:
         uses: taiki-e/install-action@v2
         with:
           tool: cargo-llvm-cov
-          version: latest
 
       - name: Coverage (run, no report)
         run: cargo llvm-cov --workspace --all-features --doctests --no-report
@@ -56,10 +55,10 @@ jobs:
         uses: insightsengineering/coverage-action@v3
         with:
           path: coverage.xml
-          threshold: 1 #TODO: set value!
+          threshold: 85
           fail: true
           publish: false
-          diff: false
+          diff-storage: ${{ secrets.COVERAGE_PAT }}
 
       - name: Upload coverage HTML
         if: always()
