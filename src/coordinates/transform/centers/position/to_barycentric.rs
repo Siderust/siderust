@@ -27,7 +27,6 @@ where
             sun_bary_ecl_au.z(),
         );
 
-        //let sun_bary_f = Position::<Barycentric, F, U>::from(&sun_bary_ecl);
         let sun_bary_f: Position<Barycentric, F, U> = sun_bary_ecl.to_frame(); // (Bary-Ecl) -> (Bary-F)
         Position::from_vec3(self.as_vec3() + sun_bary_f.as_vec3())
     }
