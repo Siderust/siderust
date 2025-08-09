@@ -35,8 +35,7 @@ jobs:
         run: |
           cargo llvm-cov --workspace --all-features --doctests \
             --cobertura --output-path coverage.xml \
-            --html --output-dir coverage_html \
-            --text | tee coverage.txt
+            --html --output-dir coverage_html
 
       - name: Build coverage summary (Markdown)
         uses: irongut/CodeCoverageSummary@v1.3.0
