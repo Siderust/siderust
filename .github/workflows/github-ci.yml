@@ -59,6 +59,7 @@ jobs:
           threshold: 1 #TODO: set value!
           fail: true
           publish: false
+          diff: false
 
       - name: Upload coverage HTML
         if: always()
