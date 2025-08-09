@@ -58,7 +58,8 @@ jobs:
           path: coverage.xml
           threshold: 85
           fail: true
-          publish: false
+          publish: true
+          diff: true
 
       - name: Upload coverage HTML
         if: always()
