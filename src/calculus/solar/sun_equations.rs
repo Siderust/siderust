@@ -6,7 +6,7 @@ use crate::coordinates::{
     transform::Transform,
 };
 use crate::units::{Quantity, AstronomicalUnits, LengthUnit};
-use crate::astro::JulianDate;
+use crate::astro::{JulianDate, nutation::corrected_ra_with_nutation};
 
 impl Sun {
     /// Returns the **apparent geocentric equatorial coordinates** of the Sun
@@ -40,10 +40,8 @@ impl Sun {
     {
         let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
         let geo_cart: cartesian::position::Equatorial<U, Geocentric> = helio.transform(jd);
-        geo_cart.to_spherical()
-
-        // TODO: Apply nutation in ecliptic longitude
-        //let nutation = get_nutation(jd);
-        //geo.azimuth += nutation.longitude;
+        let geo_sph = geo_cart.to_spherical();
+        let ra = corrected_ra_with_nutation(&geo_sph.direction(), jd);
+        spherical::position::Equatorial::<U>::new(ra, geo_sph.dec(), geo_sph.distance)
     }
 }
