@@ -54,6 +54,14 @@ jobs:
       - name: Publish to Job Summary
         run: cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
 
+      - name: Post coverage as PR comment
+        if: github.event_name == 'pull_request'
+        uses: mshick/add-pr-comment@v2
+        with:
+          message-path: code-coverage-results.md
+          repo-token: ${{ secrets.GITHUB_TOKEN }}
+
+
       # Gate: fail if total LINE coverage < 85% (no extra test run needed)
       - name: Coverage gate (≥85% lines)
         run: cargo llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 85
