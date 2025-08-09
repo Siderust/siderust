@@ -1,65 +1,27 @@
 //! # Velocity Units Module
 //!
-//! This module provides types and utilities for handling velocity-related calculations
-//! in astronomical and scientific contexts. It includes representations for angular
-//! velocity such as radians per day and conversions from angular and time units.
-//!
-//! ## Features
-//! - **RadiansPerDay**: Represents angular velocity in radians per day.
-//! - Arithmetic operations for velocity types.
-//! - Conversion from `Radians` and `Days`.
-//!
-//! ## Example Usage
-//! ```rust
-//! use siderust::units::{Radians, Days, RadiansPerDay};
-//!
-//! let angle = Radians::new(std::f64::consts::PI);
-//! let time = Days::new(2.0);
-//! let velocity = angle / time; // RadiansPerDay
-//! assert_eq!(velocity.value(), std::f64::consts::PI / 2.0);
-//! ```
+//! Composite velocity units built from a length over a time. The underlying
+//! implementation leverages the generic [`Per<N, D>`] type which composes two
+//! phantom unit parameters. This allows the multiplication and division traits
+//! to be implemented once for all unit pairs in [`Quantity`](super::Quantity).
 
 use super::*;
-use paste::paste;
 
-pub enum Velocity {}
-impl Dimension for Velocity {}
+/// Dimension alias for velocities (`Length / Time`).
+pub type Velocity = DivDim<Length, Time>;
+
+/// Marker trait for any unit with velocity dimension.
 pub trait VelocityUnit: Unit<Dim = Velocity> {}
 impl<T: Unit<Dim = Velocity>> VelocityUnit for T {}
 
-macro_rules! velocity_unit_auto {
-    ($Num:ident, $Den:ident) => {
-        paste! {
-            define_unit!(
-                concat!($Num::SYMBOL, "/", $Den::SYMBOL),
-                [<$Num Per $Den>],
-                Velocity,
-                $Num::RATIO / $Den::RATIO
-            );
-            pub type [<$Num sPer $Den>] = Quantity<[<$Num Per $Den>]>;
-            
-            impl std::ops::Div<Quantity<$Den>> for Quantity<$Num> {
-                type Output = Quantity<[<$Num Per $Den>]>;
+pub type MeterPerSecond = Per<Meter, Second>;
+pub type MetersPerSecond = Quantity<MeterPerSecond>;
 
-                fn div(self, rhs: Quantity<$Den>) -> Self::Output {
-                    Self::Output::new(self.0 / rhs.0)
-                }
-            }
+pub type KilometerPerSecond = Per<Kilometer, Second>;
+pub type KilometersPerSecond = Quantity<KilometerPerSecond>;
 
-            impl std::ops::Mul<Quantity<$Den>> for  Quantity<[<$Num Per $Den>]> {
-                type Output = Quantity<$Num>;
+pub type KilometerPerHour = Per<Kilometer, Hour>;
+pub type KilometersPerHour = Quantity<KilometerPerHour>;
 
-                fn mul(self, rhs: Quantity<$Den>) -> Self::Output {
-                    Self::Output::new(self.0 * rhs.value())
-                }
-            }
-
-        }
-    };
-}
-
-velocity_unit_auto!(Meter, Second);      // "m/s"
-velocity_unit_auto!(Kilometer, Second);  // "Km/s"
-velocity_unit_auto!(Kilometer, Hour);    // "Km/h"
-velocity_unit_auto!(Au, Day);            // "au/day"
-
+pub type AuPerDay = Per<Au, Day>;
+pub type AusPerDay = Quantity<AuPerDay>;
