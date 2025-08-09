@@ -58,7 +58,7 @@ jobs:
           threshold: 85
           fail: true
           publish: false
-          diff-storage: ${{ secrets.COVERAGE_PAT }}
+          diff: false
 
       - name: Upload coverage HTML
         if: always()
