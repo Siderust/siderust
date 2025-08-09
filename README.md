@@ -121,13 +121,13 @@ All numeric kernels are cross‑checked against JPL Horizons (see **siderust-py*
 ## Crate Layout
 
 ```
-├─ astro/        # Astronomical properites (nutation, precession, …)
-├─ bodies/       # Data Structures for celestial bodies (Planet, Star, Satellite, …)
-├─ calculus/     # Numerical kernels (kepler, vsop87, …)
-├─ coordinates/  # Coordinate types & transforms
-├─ observatory/  # Ground stations & observer helpers
-├─ target.rs     # Target<T> & ProperMotion
-└─ units/        # Dimensional quantities
+├─ astro/         # Astronomical properties (nutation, precession, …)
+├─ bodies/        # Data structures for celestial bodies (planet, star, satellite, …)
+├─ calculus/      # Numerical kernels (kepler, vsop87, …)
+├─ coordinates/   # Coordinate types & transforms
+├─ observatories/ # Ground stations & observer helpers
+├─ targets/       # Target<T> & ProperMotion
+└─ units/         # Dimensional quantities
 ```
 
 ---
