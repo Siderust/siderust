@@ -5,7 +5,7 @@ on:
     types: [opened, synchronize, reopened, ready_for_review]
 
 permissions:
-  contents: write
+  contents: read
   checks: write
 
 concurrency:
@@ -31,15 +31,18 @@ jobs:
         with:
           tool: cargo-llvm-cov
 
+      # Run tests once and collect coverage data (no report yet)
       - name: Coverage (run, no report)
         run: cargo llvm-cov --workspace --all-features --doctests --no-report
 
+      # Produce machine-readable + human-readable reports
       - name: Coverage (Cobertura XML)
         run: cargo llvm-cov report --cobertura --output-path coverage.xml
 
       - name: Coverage (HTML)
         run: cargo llvm-cov report --html --output-dir coverage_html
 
+      # Put a nice table + badge into the PR Checks "Summary" tab
       - name: Build coverage summary (Markdown)
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
@@ -51,15 +54,9 @@ jobs:
       - name: Publish to Job Summary
         run: cat code-coverage-results.md >> "$GITHUB_STEP_SUMMARY"
 
-      - name: Coverage check (gate)
-        if: github.event_name == 'push' || !github.event.pull_request.head.repo.fork
-        uses: insightsengineering/coverage-action@v3
-        with:
-          path: coverage.xml
-          threshold: 85
-          fail: true
-          publish: false
-          diff: true
+      # Gate: fail if total LINE coverage < 85% (no extra test run needed)
+      - name: Coverage gate (≥85% lines)
+        run: cargo llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 85
 
       - name: Upload coverage HTML
         if: always()
