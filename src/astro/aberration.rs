@@ -26,7 +26,7 @@
 //! * Verified against JPL DE440: <0.08 mas over 1900‑2100.
 
 use crate::units::*;
-use crate::coordinates::transform::Transform;
+use crate::coordinates::transform::TransformFrame;
 use crate::astro::JulianDate;
 use crate::coordinates::{
     cartesian::{position, direction, Velocity},
@@ -48,7 +48,7 @@ pub fn apply_aberration_to_direction(
 ) -> direction::Equatorial {
 
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.transform(jd);
+    let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.to_frame();
 
     //--------------------------------------------------------------------
     // Apply û' = û + v/c
@@ -70,7 +70,7 @@ pub fn remove_aberration_from_direction(
 ) -> direction::Equatorial {
 
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.transform(jd);
+    let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.to_frame();
 
     //--------------------------------------------------------------------
     //  Apply û' = û - v/c

@@ -35,3 +35,20 @@ pub type ICRS<C=centers::Barycentric>       = Direction<C, frames::ICRS>;
 pub type HCRS = Direction<centers::Heliocentric, frames::ICRS>;
 pub type GCRS = Direction<centers::Geocentric,   frames::ICRS>;
 pub type TCRS = Direction<centers::Topocentric,  frames::ICRS>;
+
+
+impl<C, F> std::fmt::Display for Direction<C, F>
+where
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "Center: {}, Frame: {}, X: {:.6}, Y: {:.6}, Z: {:.6}",
+            C::center_name(),
+            F::frame_name(),
+            self.x(), self.y(), self.z()
+        )
+    }
+}

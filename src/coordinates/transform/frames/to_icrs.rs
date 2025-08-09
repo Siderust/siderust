@@ -3,12 +3,12 @@ use crate::coordinates::{
     centers::ReferenceCenter,
     frames
 };
-use crate::coordinates::transform::Transform;
+use super::TransformFrame;
 use crate::units::Unit;
 
 // Implement Transform trait for Ecliptic -> ICRS
-impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::ICRS, U>> for Vector<C, frames::Ecliptic, U> {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::ICRS, U> {
+impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>> for Vector<C, frames::Ecliptic, U> {
+    fn to_frame(&self) -> Vector<C, frames::ICRS, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let cos_e = eps.cos();
         let sin_e = eps.sin();
@@ -24,8 +24,8 @@ impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::ICRS, U>> for Vect
 }
 
 // Implement Transform trait for Equatorial -> ICRS (identity)
-impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::ICRS, U>> for Vector<C, frames::Equatorial, U> {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::ICRS, U> {
+impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>> for Vector<C, frames::Equatorial, U> {
+    fn to_frame(&self) -> Vector<C, frames::ICRS, U> {
         Vector::new(self.x(), self.y(), self.z())
     }
 }

@@ -3,17 +3,16 @@ use crate::coordinates::{
     centers::ReferenceCenter,
     frames
 };
-use crate::coordinates::transform::Transform;
+use super::TransformFrame;
 use crate::units::Unit;
 
 // Implement Transform trait for ICRS -> Ecliptic
-
-impl<C: ReferenceCenter, U> Transform<Vector<C, frames::Ecliptic, U>>
+impl<C: ReferenceCenter, U> TransformFrame<Vector<C, frames::Ecliptic, U>>
     for Vector<C, frames::ICRS, U>
 where
     U: Unit,
 {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {
+    fn to_frame(&self) -> Vector<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
@@ -28,8 +27,8 @@ where
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
-    fn transform(&self, _jd: crate::astro::JulianDate) -> Vector<C, frames::Ecliptic, U> {
+impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
+    fn to_frame(&self) -> Vector<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
@@ -43,14 +42,17 @@ impl<C: ReferenceCenter, U: Unit> Transform<Vector<C, frames::Ecliptic, U>> for 
     }
 }
 
+
 #[cfg(test)]
 mod tests {
     use crate::units::*;
     use crate::coordinates::*;
     use crate::coordinates::cartesian::position::*;
     use crate::units::Degrees;
+    use crate::astro::JulianDate;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
+    use crate::coordinates::transform::Transform;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
@@ -58,8 +60,8 @@ mod tests {
     where
         Quantity<U>: From<Quantity<AstronomicalUnit>>
     {
-        let hcrs: ICRS<U> = ecl.into(); // Convert to ICRS
-        let ecl_back: Ecliptic<U> = (&hcrs).into(); // Convert back to Ecliptic
+        let hcrs: ICRS<U> = ecl.transform(JulianDate::J2000); // Convert to ICRS
+        let ecl_back: Ecliptic<U> = (&hcrs).transform(JulianDate::J2000); // Convert back to Ecliptic
         ecl_back
     }
 
@@ -124,8 +126,8 @@ mod tests {
             Degrees::new(-21.0),
             2.7,
         );
-        let ecliptic  = spherical::Position::<centers::Barycentric, frames::Ecliptic, Au>::from(&equatorial_orig);
-        let equatorial_rec = spherical::Position::<centers::Barycentric, frames::Equatorial, Au>::from(&ecliptic);
+        let ecliptic: spherical::Position::<centers::Barycentric, frames::Ecliptic, Au> = (&equatorial_orig).transform(JulianDate::J2000);
+        let equatorial_rec: spherical::Position::<centers::Barycentric, frames::Equatorial, Au> = (&ecliptic).transform(JulianDate::J2000);
 
         assert_spherical_eq!(equatorial_orig, equatorial_rec, 1e-10);
     }
