@@ -31,11 +31,13 @@ jobs:
         with:
           tool: cargo-llvm-cov
 
-      - name: Run coverage
-        run: |
-          cargo llvm-cov --workspace --all-features --doctests \
-            --cobertura --output-path coverage.xml \
-            --html --output-dir coverage_html
+      - name: Coverage (Cobertura)
+        run: cargo llvm-cov --workspace --all-features --doctests \
+              --cobertura --output-path coverage.xml
+
+      - name: Coverage (HTML)
+        run: cargo llvm-cov --workspace --all-features --doctests \
+              --html --output-dir coverage_html
 
       - name: Build coverage summary (Markdown)
         uses: irongut/CodeCoverageSummary@v1.3.0
