@@ -7,6 +7,7 @@ on:
 permissions:
   contents: read
   checks: write
+  pull-requests: write   # needed to post PR comments
 
 concurrency:
   group: coverage-pr-${{ github.event.pull_request.number }}
