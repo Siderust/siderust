@@ -19,7 +19,6 @@ approx = "0.5"
 chrono = "0.4"
 nalgebra = "0.34"
 rayon = "1.10"
-paste = "1.0"
 
 [dev-dependencies]
 rstest = "0.26"
