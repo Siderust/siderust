@@ -57,10 +57,10 @@
 //! // 1. Select an epoch (UTC now to JD)
 //! let jd = JulianDate::from_utc(Utc::now());
 //!
-//! // 2. Compute heliocentric ecliptic coordinates via VSOP87
+//! // 2. Compute barycentric ecliptic coordinates via VSOP87
 //! let mars = Mars::vsop87e(jd);
 //!
-//! // 3. Print Mars's heliocentric ecliptic position (AstronomicalUnits)
+//! // 3. Print Mars's barycentric ecliptic position (AstronomicalUnits)
 //! println!("{}", mars.position);
 //! ```
 //!
