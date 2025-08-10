@@ -156,6 +156,22 @@ impl<U: Unit + Copy> Quantity<U> {
     pub const fn min(&self, other: Quantity<U>) -> Quantity<U> {
         Quantity::<U>::new(self.value().min(other.value()))
     }
+
+    pub const fn add(&self, other: Quantity<U>) -> Quantity<U> {
+        Quantity::<U>::new(self.value() + other.value())
+    }
+
+    pub const fn sub(&self, other: Quantity<U>) -> Quantity<U> {
+        Quantity::<U>::new(self.value() - other.value())
+    }
+
+    pub const fn div(&self, other: Quantity<U>) -> Quantity<U> {
+        Quantity::<U>::new(self.value() / other.value())
+    }
+
+    pub const fn mul(&self, other: Quantity<U>) -> Quantity<U> {
+        Quantity::<U>::new(self.value() * other.value())
+    }
 }
 
 impl<U: Unit> Add for Quantity<U> {
