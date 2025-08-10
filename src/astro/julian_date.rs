@@ -160,4 +160,21 @@ mod tests {
         let jd = JulianDate::from_utc(datetime);
         assert_eq!(jd.value(), 2451545.0);
     }
+
+    #[test]
+    fn test_julian_conversions() {
+        let jd = JulianDate::J2000 + Days::new(365_250.0);
+        assert!((jd.julian_millennias() - 1.0).abs() < 1e-12);
+        assert!((jd.julian_centuries().value() - 10.0).abs() < 1e-12);
+        assert!((jd.julian_years().value() - 1000.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn test_tt_to_tdb_and_min() {
+        let jd_tdb = JulianDate::tt_to_tdb(JulianDate::J2000);
+        assert!((jd_tdb - JulianDate::J2000).value().abs() < 1e-6);
+
+        let later = JulianDate::J2000 + Days::new(1.0);
+        assert_eq!(JulianDate::J2000.min(later), JulianDate::J2000);
+    }
 }
