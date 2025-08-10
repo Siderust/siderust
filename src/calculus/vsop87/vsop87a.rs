@@ -1,13 +1,14 @@
 use super::*;
-use crate::units::*;
-use crate::bodies::solar_system::Moon;
 use crate::astro::JulianDate;
-use crate::targets::Target;
+use crate::bodies::solar_system::Moon;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
-    centers::Heliocentric, frames::Ecliptic
+    centers::Heliocentric,
+    frames::Ecliptic,
 };
+use crate::targets::Target;
+use crate::units::*;
 
 include!(concat!(env!("OUT_DIR"), "/vsop87a.rs"));
 
@@ -137,11 +138,11 @@ impl_vsop87a!(
 
 #[cfg(test)]
 mod tests {
-    use crate::units::AU;
-    use crate::astro::JulianDate;
     use super::*;
+    use crate::astro::JulianDate;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
+    use crate::units::AU;
 
     const PRECISION: f64 = 1e-6;
 
@@ -231,5 +232,37 @@ mod tests {
             Position::new(16.8121116576 * AU, -24.9916630908 * AU, 0.1272190171 * AU),
             PRECISION
         );
+    }
+
+    macro_rules! test_vel_and_pos_vel {
+        ($body:ident) => {{
+            let jd = JulianDate::J2000;
+            let pos = $body::vsop87a(jd);
+            let vel = $body::vsop87a_vel(jd);
+            let (pos2, vel2) = $body::vsop87a_pos_vel(jd);
+
+            assert_cartesian_eq!(
+                pos.get_position().clone(),
+                pos2.get_position().clone(),
+                PRECISION
+            );
+            assert!((vel.x() - vel2.x()).abs() < AusPerDay::new(PRECISION));
+            assert!((vel.y() - vel2.y()).abs() < AusPerDay::new(PRECISION));
+            assert!((vel.z() - vel2.z()).abs() < AusPerDay::new(PRECISION));
+        }};
+    }
+
+    #[test]
+    fn test_vsop87a_velocity_and_combined() {
+        use crate::units::AusPerDay;
+        test_vel_and_pos_vel!(Mercury);
+        test_vel_and_pos_vel!(Venus);
+        test_vel_and_pos_vel!(Earth);
+        test_vel_and_pos_vel!(Mars);
+        test_vel_and_pos_vel!(Jupiter);
+        test_vel_and_pos_vel!(Saturn);
+        test_vel_and_pos_vel!(Uranus);
+        test_vel_and_pos_vel!(Neptune);
+        test_vel_and_pos_vel!(Moon);
     }
 }
