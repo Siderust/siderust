@@ -48,7 +48,7 @@
 use crate::astro::orbit::Orbit;
 use crate::units::*;
 
-const GAUSSIAN_GRAVITATIONAL_CONSTANT: DegreesPerDay = DegreesPerDay::new(0.986);
+const GAUSSIAN_GRAVITATIONAL_CONSTANT: RadiansPerDay = RadiansPerDay::new(0.017_202_098_95);
 
 /// Represents a **Planet** characterised by its mass, mean radius, and orbit.
 #[derive(Clone, Debug)]
@@ -150,9 +150,13 @@ impl OrbitExt for Orbit {
         // Using Gaussian gravitational constant k ≈ 0.01720209895 AU^{3/2} d^{-1}
         // ⇒ period (days) = 2π / k * sqrt(a^3)
         // We compute in seconds directly.
-        let a_au = self.semi_major_axis.value(); // AstronomicalUnits internally store AU value
-        let period_days = 2.0 * std::f64::consts::PI / GAUSSIAN_GRAVITATIONAL_CONSTANT.value() * (a_au.powf(1.5));
-        Seconds::new(period_days * 86_400.0)
+
+        use std::f64::consts::PI;
+        let a_au = self.semi_major_axis.to::<AstronomicalUnit>().value();
+        let k = GAUSSIAN_GRAVITATIONAL_CONSTANT.to::<RadianPerDay>().value();
+
+        let t_days = (2.0 * PI / k) * a_au.powf(1.5);
+        Seconds::new(t_days * 86_400.0)
     }
 }
 

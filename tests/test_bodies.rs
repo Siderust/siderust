@@ -26,9 +26,9 @@ fn orbital_period() {
     let earth_period = EARTH.orbit.period();
     // sidereal year ~ 365.25 days
     let days = earth_period.to::<Day>().value();
-    assert!((days - 365.25).abs() < 0.1);
+    assert!((days - 365.25).abs() < 0.01);
 
     let mars_period = MARS.orbit.period();
     let days = mars_period.to::<Day>().value();
-    assert!((days - 686.98).abs() < 0.5);
+    assert!((days - 686.98).abs() < 0.05);
 }
