@@ -98,8 +98,8 @@ pub mod solar;
 pub mod events;
 pub mod vsop87;
 pub mod elp2000;
-
+pub mod pluto;
 pub mod kepler_equations;
 
 pub use vsop87::VSOP87;
-
+pub use pluto::Pluto;
