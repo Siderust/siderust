@@ -86,7 +86,7 @@ where
             }
 
             // Newton step
-            let delta: Days = h / deriv;
+            let delta: Days = (h / deriv).simplify();
             jd -= delta;
             if delta.abs() < NEWTON_EPS {
                 return Some(jd);
