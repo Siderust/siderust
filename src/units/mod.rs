@@ -1,44 +1,23 @@
-//! # Units Module
+//! Strongly typed physical quantities.
 //!
-//! This module provides a comprehensive set of strongly-typed units and utilities
-//! for astronomical and scientific calculations. It is designed to ensure correctness,
-//! clarity, and ease of use when working with various units of measurement.
+//! The `units` module supplies zero-cost wrappers around primitive values to
+//! encode their physical dimension in the type system. Arithmetic is only
+//! permitted between compatible dimensions, reducing the risk of unit mistakes in
+//! scientific code.
 //!
-//! ## Features
-//! - **Time Units**: Includes representations for Days, Years, Julian Years, and Centuries.
-//! - **Angular Units**: Provides types for Degrees, Radians, DMS (Degrees, Minutes, Seconds), HMS (HourAngles, Minutes, Seconds), and Arcseconds.
-//! - **Length Units**: Includes types for meters and astronomical units (AstronomicalUnits).
-//! - **Velocity Units**: Provides types for meters per second and kilometers per second.
-//! - **Mass Units**: Includes types for kilograms and solar masses.
-//! - **Power Units**: Includes types for watts and solar luminosity.
-//! - **Arithmetic Operations**: Supports arithmetic operations between compatible units, ensuring type safety.
+//! ## Provided dimensions
+//! - [`time`]: days, Julian years and related intervals.
+//! - [`angular`]: degrees, radians, hour angles and arcseconds.
+//! - [`length`]: metres, kilometres and astronomical units.
+//! - [`velocity`], [`mass`], [`power`], [`frequency`] and [`unitless`].
 //!
-//! ## Example Usage
+//! ## Example
 //! ```rust
 //! use siderust::units::*;
-//!
-//! // Angular Units
-//! let degrees = Degrees::new(180.0);
-//! let radians = degrees.to::<Radian>();
-//! let dms = Degrees::from_dms(12, 34, 56.0);
-//!
-//! // Mass Units
-//! let mass_kg = Kilograms::new(5.0);
-//! let mass_solar = SolarMasses::new(2.0);
-//!
-//! // Conversions
-//! let dms_to_decimal = dms.value();
-//!
+//! let angle = Degrees::new(180.0);
+//! let radians = angle.to::<Radians>();
 //! assert_eq!(radians.value(), std::f64::consts::PI);
 //! ```
-//!
-//! ## Modules
-//! - [`time`]: Time-related units and utilities.
-//! - [`angular`]: Angular measurement units and utilities.
-//! - [`length`]: Length units and utilities.
-//! - [`velocity`]: Velocity-related units and utilities.
-//! - [`mass`]: Mass-related units and utilities.
-//! - [`power`]: Power-related units and utilities.
 
 pub mod angular;
 pub mod frequency;

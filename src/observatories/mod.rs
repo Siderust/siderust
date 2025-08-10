@@ -1,7 +1,9 @@
-//! # Observatory Catalog Module
+//! Catalogue of observatory locations.
 //!
-//! This module provides a set of constant definitions for well-known observatories,
-//! represented by their geographic position. (see [`crate::coordinates::spherical::position::Geographic`]).
+//! The constants in this module describe well‑known facilities by their WGS‑84
+//! longitude, latitude and altitude using [`Geographic`]
+//! coordinates.  Values are `const` so they may be used in compile‑time
+//! calculations or embedded contexts.
 
 use crate::coordinates::spherical::position::Geographic;
 use crate::units::{Degrees, Kilometers};

@@ -1,20 +1,19 @@
-//! # Astro Module
+//! Astronomical time scales and positional corrections.
 //!
-//! This module provides astronomical calculations and utilities, including:
-//! - Sidereal time computations for tracking celestial objects.
-//! - Nutation corrections for Earth's rotational axis wobble.
-//! - Dynamical time calculations for precise timekeeping in astronomy.
-//! - Annual Aberration to consider relativistic correction due to the Earth's orbital motion
-//! - Astronomical Dates such as JulianDate and Modified Julian Date.
+//! The `astro` module gathers low‑level routines that model phenomena affecting
+//! precise astronomical observations.  It covers time representations, Earth
+//! orientation, relativistic effects and basic orbital tools.  Each component is
+//! allocation‑free and designed for cross‑validation against published models.
 //!
-//! ## Submodules
-//! - [`sidereal`]: Handles sidereal time calculations, including GST and LST.
-//! - [`nutation`]: Computes nutation components (Δψ, Δε) and applies corrections.
-//! - [`dynamical_time`]: Converts between Universal Time (UT) and Terrestrial Time (TT).
-//! - [`aberration`]: Applies annual aberration corrections to celestial coordinates.
-//! - [`orbit`]: Provides utilities for orbital mechanics and celestial object tracking.
-//! - [`julian_date`]: Implements Julian Date calculations.
-//! - [`modified_julian_date`]: Implements Modified Julian Date calculations.
+//! ## Components
+//! - [`julian_date`] and [`modified_julian_date`] time tags commonly used in
+//!   dynamical astronomy.
+//! - [`dynamical_time`] conversions between universal and terrestrial time.
+//! - [`nutation`] and [`precession`] describing Earth orientation.
+//! - [`aberration`] annual aberration corrections.
+//! - [`sidereal`] computation of Greenwich and local sidereal time.
+//! - [`orbit`] helpers for classical orbital elements.
+//! - [`proper_motion`] linear motion of stars.
 
 pub mod aberration;
 pub mod proper_motion;

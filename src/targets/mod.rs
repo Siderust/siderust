@@ -1,20 +1,14 @@
-//! Astronomical target representation
+//! Time‑stamped celestial targets.
 //!
-//! This module defines [`Target`], a lightweight container that couples a position
-//! with the time at which the target was seen at that position, together with an optional
-//! proper‑motion model.  It is deliberately generic over the coordinate type so
-//! it can be reused with Cartesian/Spherical equatorial/ecliptic/icrs.
+//! [`Target<T>`] couples a coordinate with the epoch at which it is valid and,
+//! optionally, a linear proper‑motion model.  The generic coordinate allows the
+//! same structure to describe stars, planets or static catalog entries while
+//! remaining allocation‑free.
 //!
-//! The design goals are:
-//! * **Zero‑cost abstraction** – All helper constructors are `const`, allowing
-//!   compile‑time evaluation when all arguments are known at build time.
-//! * **Flexibility** – The generic parameter `T` lets client code choose any
-//!   position type that implements the required operations.
-//! * **Clarity** – Specific helpers (`new`, `new_static`, `new_raw`) make the
-//!   author’s intent explicit: moving target, fixed target, or advanced manual
-//!   construction respectively.
+//! Helper constructors (`new`, `new_static` and `new_raw`) are `const` so they
+//! can participate in compile‑time calculations when all inputs are known.
 //!
-//! ## Examples
+//! ## Example
 //! ```rust
 //! use siderust::units::*;
 //! use siderust::targets::Target;
