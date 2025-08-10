@@ -54,9 +54,9 @@ pub fn apply_aberration_to_direction(
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        mean.x().value() + velocity.x() / AU_PER_DAY_C,
-        mean.y().value() + velocity.y() / AU_PER_DAY_C,
-        mean.z().value() + velocity.z() / AU_PER_DAY_C,
+        (mean.x() + (velocity.x() / AU_PER_DAY_C).simplify()).value(),
+        (mean.y() + (velocity.y() / AU_PER_DAY_C).simplify()).value(),
+        (mean.z() + (velocity.z() / AU_PER_DAY_C).simplify()).value(),
     )
 }
 
@@ -76,9 +76,9 @@ pub fn remove_aberration_from_direction(
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        app.x().value() - velocity.x() / AU_PER_DAY_C,
-        app.y().value() - velocity.y() / AU_PER_DAY_C,
-        app.z().value() - velocity.z() / AU_PER_DAY_C,
+        (app.x() - (velocity.x() / AU_PER_DAY_C).simplify()).value(),
+        (app.y() - (velocity.y() / AU_PER_DAY_C).simplify()).value(),
+        (app.z() - (velocity.z() / AU_PER_DAY_C).simplify()).value(),
     )
 }
 
