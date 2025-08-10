@@ -37,3 +37,43 @@ where
         Direction::<Barycentric, F>::from_vec3(target_center.as_vec3())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::aberration::apply_aberration_to_direction;
+    use crate::coordinates::{cartesian::direction, centers};
+    use crate::units::Degrees;
+
+    const EPS: f64 = 1e-12;
+
+    #[test]
+    fn heliocentric_to_barycentric_identity() {
+        let jd = JulianDate::J2000;
+        let helio = direction::Equatorial::<centers::Heliocentric>::normalize(0.1, 0.2, 0.9);
+        let bary: direction::Equatorial<centers::Barycentric> = helio.to_center(jd);
+
+        assert!((helio.x() - bary.x()).abs().value() < EPS);
+        assert!((helio.y() - bary.y()).abs().value() < EPS);
+        assert!((helio.z() - bary.z()).abs().value() < EPS);
+    }
+
+    #[test]
+    fn geocentric_apparent_to_barycentric_matches_mean() {
+        let jd = JulianDate::J2000;
+        // Start from a mean (aberration-free) direction defined via RA/Dec
+        let mean_sph = crate::coordinates::spherical::direction::Equatorial::new(
+            Degrees::new(120.0),
+            Degrees::new(-30.0),
+        );
+        let mean = mean_sph.to_cartesian();
+        // Add aberration to obtain an apparent geocentric direction
+        let apparent = apply_aberration_to_direction(mean, jd);
+        // Convert to barycentric, which should remove aberration
+        let bary: direction::Equatorial<centers::Barycentric> = apparent.to_center(jd);
+
+        assert!((bary.x() - mean.x()).abs().value() < 1e-8, "current {}, expected {}", bary.x(), mean.x());
+        assert!((bary.y() - mean.y()).abs().value() < 1e-8, "current {}, expected {}", bary.x(), mean.x());
+        assert!((bary.z() - mean.z()).abs().value() < 1e-8, "current {}, expected {}", bary.x(), mean.x());
+    }
+}
