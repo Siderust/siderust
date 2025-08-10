@@ -181,22 +181,7 @@ mod tests {
     #[test]
     fn test_earth_barycentric_at_epoch() {
         use crate::bodies::Earth;
-        use crate::astro::JulianDate;
-        use crate::coordinates::cartesian::Position;
-        use crate::units::AU;
-        use crate::macros::assert_cartesian_eq;
-
-        // VSOP87E gives barycentric ecliptic rectangular coords (J2000) in AU
-        // JD = 2451545.0 (J2000.0)
         let coord = Earth::vsop87e(JulianDate::J2000).get_position().clone();
-
-        // Expected barycentric Earth (≈ VSOP87A Earth + VSOP87E Sun at J2000)
-        // X  = -0.1842769894 AU
-        // Y  =  0.9644534522 AU
-        // Z  =  0.0002021000 AU
-        // Use a tight tolerance; full VSOP87 should easily pass this.
-        const PRECISION: f64 = 1e-6;
-
         assert_cartesian_eq!(
             coord,
             Position::new(-0.1842769894 * AU, 0.9644534522 * AU, 0.0002021000 * AU),
