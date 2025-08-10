@@ -145,9 +145,54 @@ mod tests {
     use super::*;
 
     #[test]
+    fn delta_t_ancient_sample() {
+        let dt = delta_t_seconds(2_000_000.0);
+        assert!((dt - 2734.342_214_024_879_5).abs() < 1e-6);
+    }
+
+    #[test]
+    fn delta_t_medieval_sample() {
+        let dt = delta_t_seconds(2_100_000.0);
+        assert!((dt - 1485.280_240_204_242_3).abs() < 1e-6);
+    }
+
+    #[test]
+    fn delta_t_table_sample() {
+        let dt = delta_t_seconds(2_312_752.5);
+        assert!((dt - 115.0).abs() < 1e-6);
+    }
+
+    #[test]
+    fn delta_t_table_upper_clip() {
+        let dt = delta_t_table(2_449_356.0);
+        assert!((dt - 59.3).abs() < 1e-6);
+    }
+
+    #[test]
     fn delta_t_2000() {
         // IERS reference value: ~63.83 ±0.1 s
         let dt = delta_t_seconds(JulianDate::J2000.value());
         assert!((dt - 63.83).abs() < 0.5);
+    }
+
+    #[test]
+    fn delta_t_recent_sample() {
+        let dt = delta_t_seconds(2_453_371.5);
+        assert!((dt - 67.016_266_923_586_13).abs() < 1e-6);
+    }
+
+    #[test]
+    fn delta_t_extrapolated_sample() {
+        let dt = delta_t_seconds(2_457_000.0);
+        assert!((dt - 121.492_798_369_147_89).abs() < 1e-6);
+    }
+
+    #[test]
+    fn jde_offset_matches_delta_t() {
+        let jd = JulianDate::J2000;
+        let jde = julian_ephemeris_day(jd);
+        let offset = (jde - jd).value();
+        let expected = delta_t_seconds(jd.value()) / 86_400.0;
+        assert!((offset - expected).abs() < 1e-9);
     }
 }
