@@ -7,6 +7,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+
+### Changed
+
+### Changed
+
+### Deprecated
+
+### Removed
+
+### Fixed
+
+### Security
+
+## [0.3.0]
+
+### Added
 - Coordinate macro checkers.
 - spherical::Direction, cartesian::Direction, cartesian::Velocity.
 - build scripts to fetch VSOP87 coeffs and auto-generate static rust arrays.
