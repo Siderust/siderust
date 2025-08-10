@@ -1,5 +1,6 @@
 use crate::coordinates::{centers, frames};
 use crate::units::{Quantity, LengthUnit};
+use crate::units::Simplify;
 
 // TODO: Bound U to LengthUnit
 // see issue #112792 <https://github.com/rust-lang/rust/issues/112792> for more information
@@ -17,9 +18,9 @@ where
     pub fn direction(&self) -> super::Direction<C, F> {
         let d = self.distance();
         super::Direction::<C, F>::new(
-            Quantity::<f64>::new(self.x() / d),
-            Quantity::<f64>::new(self.y() / d),
-            Quantity::<f64>::new(self.z() / d)
+            (self.x() / d).simplify(),
+            (self.y() / d).simplify(),
+            (self.z() / d).simplify()
         )
     }
 }
