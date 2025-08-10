@@ -1486,7 +1486,6 @@ dependencies = [
  "chrono",
  "criterion",
  "nalgebra",
- "paste",
  "rayon",
  "regex",
  "reqwest",
