@@ -255,7 +255,7 @@ impl<U: Unit> From<f64> for Quantity<U> {
 }
 
 
-/* TODO: Requires specialization (nightly)
+/* TODO: Requires specialization (nightly) see #16
 
 impl<N: Unit, D: Unit> Div<Quantity<D>> for Quantity<N> {
     type Output = Quantity<Per<N, D>>;
