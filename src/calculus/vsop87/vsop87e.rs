@@ -151,77 +151,116 @@ mod tests {
     use crate::macros::assert_cartesian_eq;
     use crate::units::AU;
 
-    // VSOP87E should match published barycentric coordinates to within a few
-    // micro‑astronomical units.  The tolerance below mirrors that precision.
-    const PRECISION: f64 = 1e-6;
+    const PRECISION: f64 = 1.0e-6;
 
-    /// Test Mercury's barycentric coordinates at epoch J2000.0
+    /// Mercury barycentric (ecliptic J2000) at epoch J2000.0 (JD_TDB = 2451545.0)
     #[test]
     fn test_mercury_at_epoch() {
         use crate::bodies::Mercury;
-
         let coord = Mercury::vsop87e(JulianDate::J2000).get_position().clone();
-        assert_cartesian_eq!(coord, Position::new(-0.13740649907839478*AU, -0.4500415920152621*AU, -0.0243731708345588*AU), PRECISION);
+        assert_cartesian_eq!(
+            coord,
+            Position::new(-0.1372349394 * AU, -0.4500758422 * AU, -0.0243922379 * AU),
+            PRECISION
+        );
     }
 
-
-    /// Test Venus barycentric coordinates at epoch J2000.0
+    /// Venus barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_venus_at_epoch() {
         use crate::bodies::Venus;
-
-        // At epoch, compute barycentric coordinates
         let coord = Venus::vsop87e(JulianDate::J2000).get_position().clone();
-        assert_cartesian_eq!(coord, Position::new(-0.7254563981915247*AU, -0.035456177554267096*AU, 0.041015729165441196*AU), PRECISION);
+        assert_cartesian_eq!(
+            coord,
+            Position::new(-0.7254438061 * AU, -0.0354427729 * AU, 0.0412204390 * AU),
+            PRECISION
+        );
     }
 
-    /// Test Mars's barycentric coordinates at epoch J2000.0
+    /// Test Earth's barycentric coordinates at epoch J2000.0 (VSOP87E)
+    #[test]
+    fn test_earth_barycentric_at_epoch() {
+        use crate::bodies::Earth;
+        use crate::astro::JulianDate;
+        use crate::coordinates::cartesian::Position;
+        use crate::units::AU;
+        use crate::macros::assert_cartesian_eq;
+
+        // VSOP87E gives barycentric ecliptic rectangular coords (J2000) in AU
+        // JD = 2451545.0 (J2000.0)
+        let coord = Earth::vsop87e(JulianDate::J2000).get_position().clone();
+
+        // Expected barycentric Earth (≈ VSOP87A Earth + VSOP87E Sun at J2000)
+        // X  = -0.1842769894 AU
+        // Y  =  0.9644534522 AU
+        // Z  =  0.0002021000 AU
+        // Use a tight tolerance; full VSOP87 should easily pass this.
+        const PRECISION: f64 = 1e-6;
+
+        assert_cartesian_eq!(
+            coord,
+            Position::new(-0.1842769894 * AU, 0.9644534522 * AU, 0.0002021000 * AU),
+            PRECISION
+        );
+    }
+
+    /// Mars barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_mars_at_epoch() {
         use crate::bodies::Mars;
-
-        // At epoch, compute barycentric coordinates
         let coord = Mars::vsop87e(JulianDate::J2000).get_position().clone();
-        assert_cartesian_eq!(coord, Position::new(1.3835618456754222*AU, -0.016218214714573832*AU, -0.0344612708345588*AU), PRECISION);
+        assert_cartesian_eq!(
+            coord,
+            Position::new(1.3835744053 * AU, -0.0162038666 * AU, -0.0342616574 * AU),
+            PRECISION
+        );
     }
 
-    /// Test Jupiter's barycentric coordinates at epoch J2000.0
+    /// Jupiter barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_jupiter_at_epoch() {
         use crate::bodies::Jupiter;
-
-        // At epoch, compute barycentric coordinates
         let coord = Jupiter::vsop87e(JulianDate::J2000).get_position().clone();
-        assert_cartesian_eq!(coord, Position::new(4.001740900921605*AU, 2.937834107984738*AU, -0.1016622708345588*AU), PRECISION);
+        assert_cartesian_eq!(
+            coord,
+            Position::new(3.9940325025 * AU, 2.9357928287 * AU, -0.1015776146 * AU),
+            PRECISION
+        );
     }
 
-    /// Test Saturn's barycentric coordinates at epoch J2000.0
+    /// Saturn barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_saturn_at_epoch() {
         use crate::bodies::Saturn;
-
-        // At epoch, compute barycentric coordinates
         let coord = Saturn::vsop87e(JulianDate::J2000).get_position().clone();
-        assert_cartesian_eq!(coord, Position::new(6.4050279009216045*AU, 6.569981107984738*AU, -0.3696092708345588*AU), PRECISION);
+        assert_cartesian_eq!(
+            coord,
+            Position::new(6.3992653459 * AU, 6.5672047374 * AU, -0.3688706482 * AU),
+            PRECISION
+        );
     }
 
-    /// Test Uranus's barycentric coordinates at epoch J2000.0
+    /// Uranus barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_uranus_at_epoch() {
         use crate::bodies::Uranus;
-
-        // At epoch, compute barycentric coordinates
         let coord = Uranus::vsop87e(JulianDate::J2000).get_position().clone();
-        assert_cartesian_eq!(coord, Position::new(14.431114900921605*AU, -13.736095892015262*AU, -0.2383082708345588*AU), PRECISION);
+        assert_cartesian_eq!(
+            coord,
+            Position::new(14.4247519568 * AU, -13.7371045087 * AU, -0.2379360887 * AU),
+            PRECISION
+        );
     }
 
-    /// Test Neptune's barycentric coordinates at epoch J2000.0
+    /// Neptune barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_neptune_at_epoch() {
         use crate::bodies::Neptune;
-
         let coord = Neptune::vsop87e(JulianDate::J2000).get_position().clone();
-        assert_cartesian_eq!(coord, Position::new(16.810319900921606*AU, -24.992819892015262*AU, 0.1271997291654412*AU), PRECISION);
+        assert_cartesian_eq!(
+            coord,
+            Position::new(16.8049701269 * AU, -24.9944513569 * AU, 0.1274251215 * AU),
+            PRECISION
+        );
     }
-
 }
