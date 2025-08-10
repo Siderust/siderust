@@ -59,7 +59,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
     epoch_jd: JulianDate
 ) -> position::Equatorial<U> {
     // Time difference in Julian years
-    let t: Years = Years::new((jd - epoch_jd) / JulianDate::JULIAN_YEAR);
+    let t: Years = Years::new(((jd - epoch_jd) / JulianDate::JULIAN_YEAR).simplify().value());
     // Linearly apply proper motion in RA and DEC
     position::Equatorial::<U>::new::<Degrees, Quantity<U>>(
         mean_position.ra() + (proper_motion.ra_μ * t).normalize(),
