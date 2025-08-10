@@ -74,7 +74,7 @@ pub fn find_static_extremas<U: Unit>(
         // Find first culmination ≥ jd_start
         let lst0: Degrees = unmodded_lst(jd_start, lon);
         let raw_k = (lst0 - (ra + h0)) / Degrees::FULL_TURN;
-        let k0: i32 = raw_k.round() as i32;
+        let k0: i32 = raw_k.simplify().value().round() as i32;
 
         // Try k₀ and k₀+1, keep the earliest ≥ jd_start
         let mut t_first = JulianDate::new(f64::INFINITY);
@@ -83,7 +83,7 @@ pub fn find_static_extremas<U: Unit>(
             // Newton–Raphson refinement
             for _ in 0..MAX_ITER {
                 let f: Degrees = unmodded_lst(t, lon) - (ra + (h0 + Degrees::FULL_TURN * k as f64));
-                let dt: Days = f / D_LST_D_JD;
+                let dt: Days = (f / D_LST_D_JD).simplify();
                 t -= dt;
                 if dt.abs() < TOLERANCE {
                     break;

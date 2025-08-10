@@ -165,8 +165,7 @@ impl<U: Unit> Add for Quantity<U> {
     }
 }
 
-impl<U: Unit> AddAssign for Quantity<U>
-{
+impl<U: Unit> AddAssign for Quantity<U> {
     fn add_assign(&mut self, rhs: Self) {
         self.0 += rhs.0;
     }
@@ -206,13 +205,6 @@ impl<U: Unit> Div<f64> for Quantity<U> {
     }
 }
 
-impl<N: Unit, D: Unit> Div<Quantity<D>> for Quantity<N> {
-    type Output = Quantity<Per<N, D>>;
-
-    fn div(self, rhs: Quantity<D>) -> Self::Output {
-        Quantity::<Per<N, D>>::new(self.0 / rhs.0)
-    }
-}
 
 impl<N: Unit, D: Unit> Mul<Quantity<D>> for Quantity<Per<N, D>> {
     type Output = Quantity<N>;
@@ -227,14 +219,6 @@ impl<N: Unit, D: Unit> Mul<Quantity<Per<N, D>>> for Quantity<D> {
 
     fn mul(self, rhs: Quantity<Per<N, D>>) -> Self::Output {
         rhs * self
-    }
-}
-
-impl<N: Unit, D: Unit> Div<Quantity<Per<N, D>>> for Quantity<N> {
-    type Output = Quantity<D>;
-
-    fn div(self, rhs: Quantity<Per<N, D>>) -> Self::Output {
-        Quantity::<D>::new(self.0 / rhs.0)
     }
 }
 
@@ -269,6 +253,64 @@ impl<U: Unit> From<f64> for Quantity<U> {
         Self::new(value)
     }
 }
+
+
+/* TODO: Requires specialization (nightly)
+
+impl<N: Unit, D: Unit> Div<Quantity<D>> for Quantity<N> {
+    type Output = Quantity<Per<N, D>>;
+
+    fn div(self, rhs: Quantity<D>) -> Self::Output {
+        Quantity::<Per<N, D>>::new(self.0 / rhs.0)
+    }
+}
+
+impl<N: Unit, D: Unit> Div<Quantity<Per<N, D>>> for Quantity<N> {
+    type Output = Quantity<D>;
+
+    fn div(self, rhs: Quantity<Per<N, D>>) -> Self::Output {
+        Quantity::<D>::new(self.0 / rhs.0)
+    }
+}
+
+*/
+
+impl<N: Unit, D: Unit> std::ops::Div<Quantity<D>> for Quantity<N> {
+    type Output = Quantity<Per<N, D>>;
+    fn div(self, rhs: Quantity<D>) -> Self::Output {
+        Quantity::new(self.value() / rhs.value())
+    }
+}
+
+pub trait Simplify {
+    type Out: Unit;
+    fn simplify(self) -> Quantity<Self::Out>;
+}
+
+// U/U → Unitless
+impl<U: Unit> Simplify for Quantity<Per<U, U>> {
+    type Out = Unitless;
+    fn simplify(self) -> Quantity<Unitless> {
+        Quantity::new(self.value())
+    }
+}
+
+// N / (N/D) → D
+impl<N: Unit, D: Unit> Simplify for Quantity<Per<N, Per<N, D>>> {
+    type Out = D;
+    fn simplify(self) -> Quantity<D> {
+        Quantity::new(self.value())
+    }
+}
+
+
+impl<U: Unit> Quantity<Per<U, U>> {
+    #[inline]
+    pub fn asin(&self) -> f64 {
+        self.value().asin()
+    }
+}
+
 /// Generate a **unit type** and its [`Display`] implementation.
 #[macro_export]
 macro_rules! define_unit {
