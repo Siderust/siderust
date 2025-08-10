@@ -8,21 +8,21 @@ use crate::coordinates::{
 
 include!(concat!(env!("OUT_DIR"), "/elp_data.rs"));
 use crate::astro::JulianDate;
-use crate::units::{LengthUnit, Quantity};
-use std::f64::consts::{PI, FRAC_PI_2};
+use crate::units::{Arcseconds, Degrees, LengthUnit, Quantity, Radian, Radians};
+use std::f64::consts::FRAC_PI_2;
 use crate::bodies::solar_system::Moon;
 
 // ====================
 // Constants
 // ====================
-const RAD: f64 = 648_000.0 / PI;
-const DEG: f64 = PI / 180.0;
+// Conversion helper using the strongly typed Units module
+const ARCSEC2RAD: f64 = Arcseconds::new(1.0).to::<Radian>().value();
 const A0: f64 = 384_747.980_644_895_4;
 const ATH: f64 = 384_747.980_674_316_5;
 const AM: f64 = 0.074_801_329_518;
 const ALPHA: f64 = 0.002_571_881_335;
 const DTASM: f64 = 2.0 * ALPHA / (3.0 * AM);
-const PRECES: f64 = 5_029.096_6 / RAD;
+const PRECES: f64 = Arcseconds::new(5_029.096_6).to::<Radian>().value();
 
 // LengthUnit conversions
 const C1: f64 = 60.0;
@@ -41,11 +41,13 @@ const Q4: f64 = -0.1371808e-11;
 const Q5: f64 = -0.320334e-14;
 
 // Corrections
-const DELNU: f64 = (0.55604 / RAD) / (1_732_559_343.736_04 / RAD);
-const DELE: f64 = 0.01789 / RAD;
-const DELG: f64 = -0.08066 / RAD;
-const DELNP: f64 = (-0.06424 / RAD) / (1_732_559_343.736_04 / RAD);
-const DELEP: f64 = -0.12879 / RAD;
+const DELNU: f64 = Arcseconds::new(0.55604).to::<Radian>().value()
+    / Arcseconds::new(1_732_559_343.736_04).to::<Radian>().value();
+const DELE: f64 = Arcseconds::new(0.01789).to::<Radian>().value();
+const DELG: f64 = Arcseconds::new(-0.08066).to::<Radian>().value();
+const DELNP: f64 = Arcseconds::new(-0.06424).to::<Radian>().value()
+    / Arcseconds::new(1_732_559_343.736_04).to::<Radian>().value();
+const DELEP: f64 = Arcseconds::new(-0.12879).to::<Radian>().value();
 
 // Delaunay arguments (series coefficients)
 #[allow(clippy::all)]
@@ -58,46 +60,64 @@ const DEL: [[f64; 5]; 4] = [
 
 // Fundamental lunar arguments: longitude offset and rate
 const ZETA: [f64; 2] = [
-    (218.0 + 18.0/60.0 + 59.955_71/3_600.0) * DEG,
-    (1_732_559_343.736_04 / RAD) + PRECES,
+    Degrees::new(218.0 + 18.0/60.0 + 59.955_71/3_600.0).to::<Radian>().value(),
+    Arcseconds::new(1_732_559_343.736_04).to::<Radian>().value() + PRECES,
 ];
 
 // Planetary argument coefficients
 #[allow(clippy::all)]
 const P_ARGS: [[f64; 2]; 8] = [
-    [ (252.0 + 15.0/C1 + 3.25986/C2) * DEG, 538_101_628.68898 / RAD ],
-    [ (181.0 + 58.0/C1 + 47.28305/C2) * DEG, 210_664_136.43355 / RAD ],
-    [ (100.0 + 27.0/60.0 + 59.22059/3600.0) * DEG, 129_597_742.27580 / RAD ],
-    [ (355.0 + 25.0/C1 + 59.78866/C2) * DEG,  68_905_077.59284 / RAD ],
-    [ (34.0  + 21.0/C1 + 5.34212/C2)  * DEG,  10_925_660.42861 / RAD ],
-    [ (50.0  +  4.0/C1 + 38.89694/C2) * DEG,   4_399_609.65932 / RAD ],
-    [ (314.0 +  3.0/C1 + 18.01841/C2) * DEG,   1_542_481.19393 / RAD ],
-    [ (304.0 + 20.0/C1 + 55.19575/C2) * DEG,     786_550.32074 / RAD ],
+    [
+        Degrees::new(252.0 + 15.0/C1 + 3.25986/C2).to::<Radian>().value(),
+        Arcseconds::new(538_101_628.68898).to::<Radian>().value(),
+    ],
+    [
+        Degrees::new(181.0 + 58.0/C1 + 47.28305/C2).to::<Radian>().value(),
+        Arcseconds::new(210_664_136.43355).to::<Radian>().value(),
+    ],
+    [
+        Degrees::new(100.0 + 27.0/60.0 + 59.22059/3600.0).to::<Radian>().value(),
+        Arcseconds::new(129_597_742.27580).to::<Radian>().value(),
+    ],
+    [
+        Degrees::new(355.0 + 25.0/C1 + 59.78866/C2).to::<Radian>().value(),
+        Arcseconds::new(68_905_077.59284).to::<Radian>().value(),
+    ],
+    [
+        Degrees::new(34.0  + 21.0/C1 + 5.34212/C2).to::<Radian>().value(),
+        Arcseconds::new(10_925_660.42861).to::<Radian>().value(),
+    ],
+    [
+        Degrees::new(50.0  +  4.0/C1 + 38.89694/C2).to::<Radian>().value(),
+        Arcseconds::new(4_399_609.65932).to::<Radian>().value(),
+    ],
+    [
+        Degrees::new(314.0 +  3.0/C1 + 18.01841/C2).to::<Radian>().value(),
+        Arcseconds::new(1_542_481.19393).to::<Radian>().value(),
+    ],
+    [
+        Degrees::new(304.0 + 20.0/C1 + 55.19575/C2).to::<Radian>().value(),
+        Arcseconds::new(786_550.32074).to::<Radian>().value(),
+    ],
 ];
 
 // Lunar rotation series terms
 const W1: [f64; 5] = [
-    (218.0 + 18.0/60.0 + 59.955_71/3_600.0) * DEG,
-    1_732_559_343.736_04 / RAD,
-    -5.888_3 / RAD,
-    0.006_604 / RAD,
-    -0.000_031_69 / RAD,
+    Degrees::new(218.0 + 18.0/60.0 + 59.955_71/3_600.0).to::<Radian>().value(),
+    Arcseconds::new(1_732_559_343.736_04).to::<Radian>().value(),
+    Arcseconds::new(-5.888_3).to::<Radian>().value(),
+    Arcseconds::new(0.006_604).to::<Radian>().value(),
+    Arcseconds::new(-0.000_031_69).to::<Radian>().value(),
 ];
 
 // ====================
 // Helpers
 // ====================
 
-/// Normalize angle to the range [-PI, PI]
+/// Normalize an angle to the range [-π, π].
 #[inline(always)]
-fn normalize_angle(mut angle: f64) -> f64 {
-    angle %= 2.0 * PI;
-    if angle > PI {
-        angle -= 2.0 * PI;
-    } else if angle < -PI {
-        angle += 2.0 * PI;
-    }
-    angle
+fn normalize_angle(angle: Radians) -> Radians {
+    angle.wrap_signed()
 }
 
 // ====================
@@ -105,7 +125,7 @@ fn normalize_angle(mut angle: f64) -> f64 {
 // ====================
 
 #[inline(always)]
-fn sum_main_problem_series(series: &[MainProblem], t: &[f64; 5], y_offset: f64) -> f64 {
+fn sum_main_problem_series(series: &[MainProblem], t: &[f64; 5], y_offset: Radians) -> f64 {
     // Precompute combined coefficient
     let delta_aux = DELNP - AM * DELNU;
 
@@ -121,7 +141,7 @@ fn sum_main_problem_series(series: &[MainProblem], t: &[f64; 5], y_offset: f64) 
         let mut y = y_offset;
         for k in 0..5 {
             for i in 0..4 {
-                y += entry.ilu[i] as f64 * DEL[i][k] * t[k];
+                y += Radians::new(entry.ilu[i] as f64 * DEL[i][k] * t[k]);
             }
         }
 
@@ -138,9 +158,9 @@ macro_rules! define_main_series {
     };
 }
 
-define_main_series!(sum_series_elp1, ELP1, 0.0);
-define_main_series!(sum_series_elp2, ELP2, 0.0);
-define_main_series!(sum_series_elp3, ELP3, FRAC_PI_2);
+define_main_series!(sum_series_elp1, ELP1, Radians::new(0.0));
+define_main_series!(sum_series_elp2, ELP2, Radians::new(0.0));
+define_main_series!(sum_series_elp3, ELP3, Radians::new(FRAC_PI_2));
 
 // ====================
 // Earth perturbation series (ELP4-9,22-29,30-36)
@@ -151,11 +171,11 @@ define_main_series!(sum_series_elp3, ELP3, FRAC_PI_2);
 fn sum_earth_pert_series(series: &[EarthPert], t: &[f64; 5], scale_idx: Option<usize>) -> f64 {
     series.iter().fold(0.0, |accum, entry| {
         // Compute argument y
-        let mut y = entry.o * DEG;
+        let mut y = Degrees::new(entry.o).to::<Radian>();
         for k in 0..2 {
-            y += entry.iz * ZETA[k] * t[k];
+            y += Radians::new(entry.iz * ZETA[k] * t[k]);
             for i in 0..4 {
-                y += entry.ilu[i] as f64 * DEL[i][k] * t[k];
+                y += Radians::new(entry.ilu[i] as f64 * DEL[i][k] * t[k]);
             }
         }
         let amplitude = if let Some(idx) = scale_idx { entry.a * t[idx] } else { entry.a };
@@ -209,9 +229,9 @@ define_earth_series!(sum_series_elp36, ELP36, Some(2));
 #[inline(always)]
 fn sum_planet_pert_series(series: &[PlanetPert], t: &[f64; 5], scale_o: bool, use_alt_del: bool) -> f64 {
     series.iter().fold(0.0, |accum, entry| {
-        let mut y = entry.theta * DEG;
+        let mut y = Degrees::new(entry.theta).to::<Radian>();
         for k in 0..2 {
-            y += if use_alt_del {
+            let delta = if use_alt_del {
                 // restored original two-loop alt_del branch
                 let mut delta = 0.0;
                 for i in 0..4 {
@@ -224,11 +244,12 @@ fn sum_planet_pert_series(series: &[PlanetPert], t: &[f64; 5], scale_o: bool, us
             } else {
                 // original formula
                 (entry.ipla[8] as f64 * DEL[0][k]
-                 + entry.ipla[9] as f64 * DEL[2][k]
-                 + entry.ipla[10] as f64 * DEL[3][k]
-                ) * t[k]
-                + (0..8).fold(0.0, |sum, i| sum + entry.ipla[i] as f64 * P_ARGS[i][k] * t[k])
+                    + entry.ipla[9] as f64 * DEL[2][k]
+                    + entry.ipla[10] as f64 * DEL[3][k])
+                    * t[k]
+                    + (0..8).fold(0.0, |sum, i| sum + entry.ipla[i] as f64 * P_ARGS[i][k] * t[k])
             };
+            y += Radians::new(delta);
         }
         let o_val = if scale_o { entry.o * t[1] } else { entry.o };
         accum + o_val * normalize_angle(y).sin()
@@ -294,13 +315,15 @@ impl Moon {
         let b: f64 = elp_values.iter().skip(1).step_by(3).sum();
         let c: f64 = elp_values.iter().skip(2).step_by(3).sum();
 
-        let lon = a / RAD
-            + W1[0]
-            + W1[1] * t[1]
-            + W1[2] * t[2]
-            + W1[3] * t[3]
-            + W1[4] * t[4];
-        let lat = b / RAD;
+        let lon = Radians::new(
+            a * ARCSEC2RAD
+                + W1[0]
+                + W1[1] * t[1]
+                + W1[2] * t[2]
+                + W1[3] * t[3]
+                + W1[4] * t[4],
+        );
+        let lat = Radians::new(b * ARCSEC2RAD);
         let distance = c * A0 / ATH;
 
         let x = distance * lat.cos();
