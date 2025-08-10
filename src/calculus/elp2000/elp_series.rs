@@ -1,24 +1,19 @@
 #![allow(clippy::needless_range_loop)]
 
-use crate::coordinates::{
-    cartesian::Position,
-    centers::Geocentric,
-    frames::Ecliptic,
-};
+use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::Ecliptic};
 
 include!(concat!(env!("OUT_DIR"), "/elp_data.rs"));
 use crate::astro::JulianDate;
-use crate::units::{Arcseconds, Degrees, LengthUnit, Quantity, Radian, Radians};
-use std::f64::consts::FRAC_PI_2;
 use crate::bodies::solar_system::Moon;
+use crate::units::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians, Simplify};
+use std::f64::consts::FRAC_PI_2;
 
 // ====================
 // Constants
 // ====================
 // Conversion helper using the strongly typed Units module
-const ARCSEC2RAD: f64 = Arcseconds::new(1.0).to::<Radian>().value();
-const A0: f64 = 384_747.980_644_895_4;
-const ATH: f64 = 384_747.980_674_316_5;
+const A0: Kilometers = Kilometers::new(384_747.980_644_895_4);
+const ATH: Kilometers = Kilometers::new(384_747.980_674_316_5);
 const AM: f64 = 0.074_801_329_518;
 const ALPHA: f64 = 0.002_571_881_335;
 const DTASM: f64 = 2.0 * ALPHA / (3.0 * AM);
@@ -41,71 +36,103 @@ const Q4: f64 = -0.1371808e-11;
 const Q5: f64 = -0.320334e-14;
 
 // Corrections
-const DELNU: f64 = Arcseconds::new(0.55604).to::<Radian>().div(Arcseconds::new(1_732_559_343.736_04).to::<Radian>()).value();
+const DELNU: f64 = Arcseconds::new(0.55604)
+    .to::<Radian>()
+    .div(Arcseconds::new(1_732_559_343.736_04).to::<Radian>())
+    .value();
 const DELE: f64 = Arcseconds::new(0.01789).to::<Radian>().value();
 const DELG: f64 = Arcseconds::new(-0.08066).to::<Radian>().value();
-const DELNP: f64 = Arcseconds::new(-0.06424).to::<Radian>().div(Arcseconds::new(1_732_559_343.736_04).to::<Radian>()).value();
+const DELNP: f64 = Arcseconds::new(-0.06424)
+    .to::<Radian>()
+    .div(Arcseconds::new(1_732_559_343.736_04).to::<Radian>())
+    .value();
 const DELEP: f64 = Arcseconds::new(-0.12879).to::<Radian>().value();
 
 // Delaunay arguments (series coefficients)
 #[allow(clippy::all)]
 const DEL: [[Radians; 5]; 4] = [
-    [Radians::new( 5.198466741027443), Radians::new(7771.377146811758394), Radians::new(-2.8449351621e-5),  Radians::new( 3.1973462e-8),  Radians::new(-1.54365e-10)],
-    [Radians::new(-0.043125180208125), Radians::new(628.301955168488007),  Radians::new(-2.6805348430e-6),  Radians::new( 7.12676e-10),   Radians::new( 7.2700e-13 )],
-    [Radians::new( 2.355555898265799), Radians::new(8328.691426955554562), Radians::new( 1.57027757616e-4), Radians::new( 2.50411114e-7), Radians::new(-1.186339e-9)],
-    [Radians::new( 1.627905233371468), Radians::new(8433.466158130539043), Radians::new(-5.9392100004e-5),  Radians::new(-4.949948e-9),   Radians::new( 2.0217e-11 )],
+    [
+        Radians::new(5.198466741027443),
+        Radians::new(7771.377146811758394),
+        Radians::new(-2.8449351621e-5),
+        Radians::new(3.1973462e-8),
+        Radians::new(-1.54365e-10),
+    ],
+    [
+        Radians::new(-0.043125180208125),
+        Radians::new(628.301955168488007),
+        Radians::new(-2.6805348430e-6),
+        Radians::new(7.12676e-10),
+        Radians::new(7.2700e-13),
+    ],
+    [
+        Radians::new(2.355555898265799),
+        Radians::new(8328.691426955554562),
+        Radians::new(1.57027757616e-4),
+        Radians::new(2.50411114e-7),
+        Radians::new(-1.186339e-9),
+    ],
+    [
+        Radians::new(1.627905233371468),
+        Radians::new(8433.466158130539043),
+        Radians::new(-5.9392100004e-5),
+        Radians::new(-4.949948e-9),
+        Radians::new(2.0217e-11),
+    ],
 ];
 
 // Fundamental lunar arguments: longitude offset and rate
 const ZETA: [Radians; 2] = [
-    Degrees::new(218.0 + 18.0/60.0 + 59.955_71/3_600.0).to::<Radian>(),
-    Arcseconds::new(1_732_559_343.736_04).to::<Radian>().add(PRECES),
+    Degrees::new(218.0 + 18.0 / 60.0 + 59.955_71 / 3_600.0).to::<Radian>(),
+    Arcseconds::new(1_732_559_343.736_04)
+        .to::<Radian>()
+        .add(PRECES),
 ];
 
 // Planetary argument coefficients
 #[allow(clippy::all)]
 const P_ARGS: [[Radians; 2]; 8] = [
     [
-        Degrees::new(252.0 + 15.0/C1 + 3.25986/C2).to::<Radian>(),
+        Degrees::new(252.0 + 15.0 / C1 + 3.25986 / C2).to::<Radian>(),
         Arcseconds::new(538_101_628.68898).to::<Radian>(),
     ],
     [
-        Degrees::new(181.0 + 58.0/C1 + 47.28305/C2).to::<Radian>(),
+        Degrees::new(181.0 + 58.0 / C1 + 47.28305 / C2).to::<Radian>(),
         Arcseconds::new(210_664_136.43355).to::<Radian>(),
     ],
     [
-        Degrees::new(100.0 + 27.0/60.0 + 59.22059/3600.0).to::<Radian>(),
+        Degrees::new(100.0 + 27.0 / 60.0 + 59.22059 / 3600.0).to::<Radian>(),
         Arcseconds::new(129_597_742.27580).to::<Radian>(),
     ],
     [
-        Degrees::new(355.0 + 25.0/C1 + 59.78866/C2).to::<Radian>(),
+        Degrees::new(355.0 + 25.0 / C1 + 59.78866 / C2).to::<Radian>(),
         Arcseconds::new(68_905_077.59284).to::<Radian>(),
     ],
     [
-        Degrees::new(34.0  + 21.0/C1 + 5.34212/C2).to::<Radian>(),
+        Degrees::new(34.0 + 21.0 / C1 + 5.34212 / C2).to::<Radian>(),
         Arcseconds::new(10_925_660.42861).to::<Radian>(),
     ],
     [
-        Degrees::new(50.0  +  4.0/C1 + 38.89694/C2).to::<Radian>(),
+        Degrees::new(50.0 + 4.0 / C1 + 38.89694 / C2).to::<Radian>(),
         Arcseconds::new(4_399_609.65932).to::<Radian>(),
     ],
     [
-        Degrees::new(314.0 +  3.0/C1 + 18.01841/C2).to::<Radian>(),
+        Degrees::new(314.0 + 3.0 / C1 + 18.01841 / C2).to::<Radian>(),
         Arcseconds::new(1_542_481.19393).to::<Radian>(),
     ],
     [
-        Degrees::new(304.0 + 20.0/C1 + 55.19575/C2).to::<Radian>(),
+        Degrees::new(304.0 + 20.0 / C1 + 55.19575 / C2).to::<Radian>(),
         Arcseconds::new(786_550.32074).to::<Radian>(),
     ],
 ];
 
 // Lunar rotation series terms
-const W1: [f64; 5] = [
-    Degrees::new(218.0 + 18.0/60.0 + 59.955_71/3_600.0).to::<Radian>().value(),
-    Arcseconds::new(1_732_559_343.736_04).to::<Radian>().value(),
-    Arcseconds::new(-5.888_3).to::<Radian>().value(),
-    Arcseconds::new(0.006_604).to::<Radian>().value(),
-    Arcseconds::new(-0.000_031_69).to::<Radian>().value(),
+const W1: [Radians; 5] = [
+    Degrees::new(218.0 + 18.0 / 60.0 + 59.955_71 / 3_600.0).to::<Radian>(),
+    Arcseconds::new(1_732_559_343.736_04).to::<Radian>(),
+    Arcseconds::new(-5.888_3).to::<Radian>(),
+    Arcseconds::new(0.006_604).to::<Radian>(),
+    Arcseconds::new(-0.000_031_69).to::<Radian>(),
 ];
 
 // ====================
@@ -129,11 +156,8 @@ fn sum_main_problem_series(series: &[MainProblem], t: &[f64; 5], y_offset: Radia
 
     series.iter().fold(0.0, |accum, entry| {
         let tgv = entry.b[0] + DTASM * entry.b[4];
-        let coeff = entry.a
-            + tgv * delta_aux
-            + entry.b[1] * DELG
-            + entry.b[2] * DELE
-            + entry.b[3] * DELEP;
+        let coeff =
+            entry.a + tgv * delta_aux + entry.b[1] * DELG + entry.b[2] * DELE + entry.b[3] * DELEP;
 
         // Compute argument y
         let mut y = y_offset;
@@ -176,7 +200,11 @@ fn sum_earth_pert_series(series: &[EarthPert], t: &[f64; 5], scale_idx: Option<u
                 y += entry.ilu[i] as f64 * DEL[i][k] * t[k];
             }
         }
-        let amplitude = if let Some(idx) = scale_idx { entry.a * t[idx] } else { entry.a };
+        let amplitude = if let Some(idx) = scale_idx {
+            entry.a * t[idx]
+        } else {
+            entry.a
+        };
         accum + amplitude * normalize_angle(y).sin()
     })
 }
@@ -191,12 +219,12 @@ macro_rules! define_earth_series {
 }
 
 // ELP4-9
-define_earth_series!(sum_series_elp4,  ELP4,  None);
-define_earth_series!(sum_series_elp5,  ELP5,  None);
-define_earth_series!(sum_series_elp6,  ELP6,  None);
-define_earth_series!(sum_series_elp7,  ELP7,  Some(1));
-define_earth_series!(sum_series_elp8,  ELP8,  Some(1));
-define_earth_series!(sum_series_elp9,  ELP9,  Some(1));
+define_earth_series!(sum_series_elp4, ELP4, None);
+define_earth_series!(sum_series_elp5, ELP5, None);
+define_earth_series!(sum_series_elp6, ELP6, None);
+define_earth_series!(sum_series_elp7, ELP7, Some(1));
+define_earth_series!(sum_series_elp8, ELP8, Some(1));
+define_earth_series!(sum_series_elp9, ELP9, Some(1));
 
 // ELP22-29,30-33 (no scaling)
 define_earth_series!(sum_series_elp22, ELP22, None);
@@ -225,7 +253,12 @@ define_earth_series!(sum_series_elp36, ELP36, Some(2));
 
 /// Sum planetary perturbation series; `scale_o` multiplies `o` by t[1], `use_alt_del` switches argument terms
 #[inline(always)]
-fn sum_planet_pert_series(series: &[PlanetPert], t: &[f64; 5], scale_o: bool, use_alt_del: bool) -> f64 {
+fn sum_planet_pert_series(
+    series: &[PlanetPert],
+    t: &[f64; 5],
+    scale_o: bool,
+    use_alt_del: bool,
+) -> f64 {
     series.iter().fold(0.0, |accum, entry| {
         let mut y = Degrees::new(entry.theta).to::<Radian>();
         for k in 0..2 {
@@ -245,7 +278,9 @@ fn sum_planet_pert_series(series: &[PlanetPert], t: &[f64; 5], scale_o: bool, us
                     + entry.ipla[9] as f64 * DEL[2][k]
                     + entry.ipla[10] as f64 * DEL[3][k])
                     * t[k]
-                    + (0..8).fold(Radians::new(0.0), |sum, i| sum + entry.ipla[i] as f64 * P_ARGS[i][k] * t[k])
+                    + (0..8).fold(Radians::new(0.0), |sum, i| {
+                        sum + entry.ipla[i] as f64 * P_ARGS[i][k] * t[k]
+                    })
             };
             y += delta;
         }
@@ -287,25 +322,50 @@ define_planet_series!(sum_series_elp21, ELP21, true, true);
 impl Moon {
     /// Get the geocentric ecliptic coordinates of the Moon for a given Julian date
     pub fn get_geo_position<U>(jd: JulianDate) -> Position<Geocentric, Ecliptic, U>
-    where U: LengthUnit
+    where
+        U: LengthUnit,
     {
         let t1 = jd.julian_centuries().value();
         let t = [1.0, t1, t1.powi(2), t1.powi(3), t1.powi(4)];
 
         // Sum all series (36 values)
         let elp_values: [f64; 36] = [
-            sum_series_elp1(&t), sum_series_elp2(&t), sum_series_elp3(&t),
-            sum_series_elp4(&t), sum_series_elp5(&t), sum_series_elp6(&t),
-            sum_series_elp7(&t), sum_series_elp8(&t), sum_series_elp9(&t),
-            sum_series_elp10(&t), sum_series_elp11(&t), sum_series_elp12(&t),
-            sum_series_elp13(&t), sum_series_elp14(&t), sum_series_elp15(&t),
-            sum_series_elp16(&t), sum_series_elp17(&t), sum_series_elp18(&t),
-            sum_series_elp19(&t), sum_series_elp20(&t), sum_series_elp21(&t),
-            sum_series_elp22(&t), sum_series_elp23(&t), sum_series_elp24(&t),
-            sum_series_elp25(&t), sum_series_elp26(&t), sum_series_elp27(&t),
-            sum_series_elp28(&t), sum_series_elp29(&t), sum_series_elp30(&t),
-            sum_series_elp31(&t), sum_series_elp32(&t), sum_series_elp33(&t),
-            sum_series_elp34(&t), sum_series_elp35(&t), sum_series_elp36(&t),
+            sum_series_elp1(&t),
+            sum_series_elp2(&t),
+            sum_series_elp3(&t),
+            sum_series_elp4(&t),
+            sum_series_elp5(&t),
+            sum_series_elp6(&t),
+            sum_series_elp7(&t),
+            sum_series_elp8(&t),
+            sum_series_elp9(&t),
+            sum_series_elp10(&t),
+            sum_series_elp11(&t),
+            sum_series_elp12(&t),
+            sum_series_elp13(&t),
+            sum_series_elp14(&t),
+            sum_series_elp15(&t),
+            sum_series_elp16(&t),
+            sum_series_elp17(&t),
+            sum_series_elp18(&t),
+            sum_series_elp19(&t),
+            sum_series_elp20(&t),
+            sum_series_elp21(&t),
+            sum_series_elp22(&t),
+            sum_series_elp23(&t),
+            sum_series_elp24(&t),
+            sum_series_elp25(&t),
+            sum_series_elp26(&t),
+            sum_series_elp27(&t),
+            sum_series_elp28(&t),
+            sum_series_elp29(&t),
+            sum_series_elp30(&t),
+            sum_series_elp31(&t),
+            sum_series_elp32(&t),
+            sum_series_elp33(&t),
+            sum_series_elp34(&t),
+            sum_series_elp35(&t),
+            sum_series_elp36(&t),
         ];
 
         // Aggregate longitude, latitude, distance
@@ -313,16 +373,15 @@ impl Moon {
         let b: f64 = elp_values.iter().skip(1).step_by(3).sum();
         let c: f64 = elp_values.iter().skip(2).step_by(3).sum();
 
-        let lon = Radians::new(
-            a * ARCSEC2RAD
-                + W1[0]
-                + W1[1] * t[1]
-                + W1[2] * t[2]
-                + W1[3] * t[3]
-                + W1[4] * t[4],
-        );
-        let lat = Radians::new(b * ARCSEC2RAD);
-        let distance = c * A0 / ATH;
+        let lon = Arcseconds::new(a).to::<Radian>()
+            + W1[0]
+            + W1[1] * t[1]
+            + W1[2] * t[2]
+            + W1[3] * t[3]
+            + W1[4] * t[4];
+        let lat = Arcseconds::new(b).to::<Radian>();
+        let ratio = (A0 / ATH).simplify().value();
+        let distance = Kilometers::new(c * ratio);
 
         let x = distance * lat.cos();
         let y = x * lon.sin();
@@ -342,11 +401,7 @@ impl Moon {
         let y2 = pwqw * x + qw2 * y - qw * z;
         let z2 = -pw * x + qw * y + (pw2 + qw2 - 1.0) * z;
 
-        Position::<Geocentric, Ecliptic, U>::new(
-            Quantity::<U>::new(x2),
-            Quantity::<U>::new(y2),
-            Quantity::<U>::new(z2)
-        )
+        Position::<Geocentric, Ecliptic, U>::new(x2.to::<U>(), y2.to::<U>(), z2.to::<U>())
     }
 }
 
@@ -359,13 +414,28 @@ mod tests {
     fn test_lunar_position_against_reference() {
         let pos = Moon::get_geo_position::<Kilometer>(JulianDate::J2000);
 
-        let expected_x = -291608.0*KM;
-        let expected_y = -274980.0*KM;
-        let expected_z =  36271.2*KM;
-        let tolerance = 1.0*KM;
+        let expected_x = -291608.0 * KM;
+        let expected_y = -274980.0 * KM;
+        let expected_z = 36271.2 * KM;
+        let tolerance = 1.0 * KM;
 
-        assert!((pos.x() - expected_x).abs() < tolerance, "X mismatch: got {}, expected {}", pos.x(), expected_x);
-        assert!((pos.y() - expected_y).abs() < tolerance, "Y mismatch: got {}, expected {}", pos.y(), expected_y);
-        assert!((pos.z() - expected_z).abs() < tolerance, "Z mismatch: got {}, expected {}", pos.z(), expected_z);
+        assert!(
+            (pos.x() - expected_x).abs() < tolerance,
+            "X mismatch: got {}, expected {}",
+            pos.x(),
+            expected_x
+        );
+        assert!(
+            (pos.y() - expected_y).abs() < tolerance,
+            "Y mismatch: got {}, expected {}",
+            pos.y(),
+            expected_y
+        );
+        assert!(
+            (pos.z() - expected_z).abs() < tolerance,
+            "Z mismatch: got {}, expected {}",
+            pos.z(),
+            expected_z
+        );
     }
 }
