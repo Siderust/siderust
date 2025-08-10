@@ -36,12 +36,13 @@ fn coord<M: Mode>(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
     for (k, terms) in series_by_power.iter().enumerate() {
         let mut serie_val = 0.0;
         let mut serie_der = 0.0;
+
         if M::NEED_VAL || M::NEED_DER {
             for term in *terms {
                 let arg = term.b + term.c * t;
-                if M::NEED_VAL {
-                    serie_val += term.a * arg.cos();
-                }
+                let cos_arg = arg.cos();
+                // We need S(T) even in Der mode for the k*T^{k-1}*S(T) term.
+                serie_val += term.a * cos_arg;
                 if M::NEED_DER {
                     serie_der += -term.a * term.c * arg.sin();
                 }
@@ -55,13 +56,15 @@ fn coord<M: Mode>(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
             deriv_t += t_pow * serie_der + t_pow_der * serie_val;
         }
 
-        t_pow_der = (k as f64 + 1.0) * t_pow; // (k)T^{k-1}
-        t_pow    *= t;
+        // Prepare for next k: d/dT T^{k+1} = (k+1) * T^k
+        t_pow_der = (k as f64 + 1.0) * t_pow;
+        t_pow *= t;
     }
 
-    const DT_DT: f64 = 1.0 / 365_250.0; // dT / dt  (T per day)
+    const DT_DT: f64 = 1.0 / 365_250.0; // dT/dt (T per day)
     (value, deriv_t * DT_DT)
 }
+
 
 // Public façade
 pub fn position(
