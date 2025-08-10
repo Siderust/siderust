@@ -22,7 +22,7 @@ const ATH: f64 = 384_747.980_674_316_5;
 const AM: f64 = 0.074_801_329_518;
 const ALPHA: f64 = 0.002_571_881_335;
 const DTASM: f64 = 2.0 * ALPHA / (3.0 * AM);
-const PRECES: f64 = Arcseconds::new(5_029.096_6).to::<Radian>().value();
+const PRECES: Radians = Arcseconds::new(5_029.096_6).to::<Radian>();
 
 // LengthUnit conversions
 const C1: f64 = 60.0;
@@ -41,63 +41,61 @@ const Q4: f64 = -0.1371808e-11;
 const Q5: f64 = -0.320334e-14;
 
 // Corrections
-const DELNU: f64 = Arcseconds::new(0.55604).to::<Radian>().value()
-    / Arcseconds::new(1_732_559_343.736_04).to::<Radian>().value();
+const DELNU: f64 = Arcseconds::new(0.55604).to::<Radian>().div(Arcseconds::new(1_732_559_343.736_04).to::<Radian>()).value();
 const DELE: f64 = Arcseconds::new(0.01789).to::<Radian>().value();
 const DELG: f64 = Arcseconds::new(-0.08066).to::<Radian>().value();
-const DELNP: f64 = Arcseconds::new(-0.06424).to::<Radian>().value()
-    / Arcseconds::new(1_732_559_343.736_04).to::<Radian>().value();
+const DELNP: f64 = Arcseconds::new(-0.06424).to::<Radian>().div(Arcseconds::new(1_732_559_343.736_04).to::<Radian>()).value();
 const DELEP: f64 = Arcseconds::new(-0.12879).to::<Radian>().value();
 
 // Delaunay arguments (series coefficients)
 #[allow(clippy::all)]
-const DEL: [[f64; 5]; 4] = [
-    [ 5.198466741027443, 7771.377146811758394, -2.8449351621e-5,  3.1973462e-8,  -1.54365e-10 ],
-    [-0.043125180208125, 628.301955168488007,  -2.6805348430e-6,  7.12676e-10,    7.2700e-13  ],
-    [ 2.355555898265799, 8328.691426955554562,  1.57027757616e-4, 2.50411114e-7, -1.186339e-9 ],
-    [ 1.627905233371468, 8433.466158130539043, -5.9392100004e-5, -4.949948e-9,    2.0217e-11  ],
+const DEL: [[Radians; 5]; 4] = [
+    [Radians::new( 5.198466741027443), Radians::new(7771.377146811758394), Radians::new(-2.8449351621e-5),  Radians::new( 3.1973462e-8),  Radians::new(-1.54365e-10)],
+    [Radians::new(-0.043125180208125), Radians::new(628.301955168488007),  Radians::new(-2.6805348430e-6),  Radians::new( 7.12676e-10),   Radians::new( 7.2700e-13 )],
+    [Radians::new( 2.355555898265799), Radians::new(8328.691426955554562), Radians::new( 1.57027757616e-4), Radians::new( 2.50411114e-7), Radians::new(-1.186339e-9)],
+    [Radians::new( 1.627905233371468), Radians::new(8433.466158130539043), Radians::new(-5.9392100004e-5),  Radians::new(-4.949948e-9),   Radians::new( 2.0217e-11 )],
 ];
 
 // Fundamental lunar arguments: longitude offset and rate
-const ZETA: [f64; 2] = [
-    Degrees::new(218.0 + 18.0/60.0 + 59.955_71/3_600.0).to::<Radian>().value(),
-    Arcseconds::new(1_732_559_343.736_04).to::<Radian>().value() + PRECES,
+const ZETA: [Radians; 2] = [
+    Degrees::new(218.0 + 18.0/60.0 + 59.955_71/3_600.0).to::<Radian>(),
+    Arcseconds::new(1_732_559_343.736_04).to::<Radian>().add(PRECES),
 ];
 
 // Planetary argument coefficients
 #[allow(clippy::all)]
-const P_ARGS: [[f64; 2]; 8] = [
+const P_ARGS: [[Radians; 2]; 8] = [
     [
-        Degrees::new(252.0 + 15.0/C1 + 3.25986/C2).to::<Radian>().value(),
-        Arcseconds::new(538_101_628.68898).to::<Radian>().value(),
+        Degrees::new(252.0 + 15.0/C1 + 3.25986/C2).to::<Radian>(),
+        Arcseconds::new(538_101_628.68898).to::<Radian>(),
     ],
     [
-        Degrees::new(181.0 + 58.0/C1 + 47.28305/C2).to::<Radian>().value(),
-        Arcseconds::new(210_664_136.43355).to::<Radian>().value(),
+        Degrees::new(181.0 + 58.0/C1 + 47.28305/C2).to::<Radian>(),
+        Arcseconds::new(210_664_136.43355).to::<Radian>(),
     ],
     [
-        Degrees::new(100.0 + 27.0/60.0 + 59.22059/3600.0).to::<Radian>().value(),
-        Arcseconds::new(129_597_742.27580).to::<Radian>().value(),
+        Degrees::new(100.0 + 27.0/60.0 + 59.22059/3600.0).to::<Radian>(),
+        Arcseconds::new(129_597_742.27580).to::<Radian>(),
     ],
     [
-        Degrees::new(355.0 + 25.0/C1 + 59.78866/C2).to::<Radian>().value(),
-        Arcseconds::new(68_905_077.59284).to::<Radian>().value(),
+        Degrees::new(355.0 + 25.0/C1 + 59.78866/C2).to::<Radian>(),
+        Arcseconds::new(68_905_077.59284).to::<Radian>(),
     ],
     [
-        Degrees::new(34.0  + 21.0/C1 + 5.34212/C2).to::<Radian>().value(),
-        Arcseconds::new(10_925_660.42861).to::<Radian>().value(),
+        Degrees::new(34.0  + 21.0/C1 + 5.34212/C2).to::<Radian>(),
+        Arcseconds::new(10_925_660.42861).to::<Radian>(),
     ],
     [
-        Degrees::new(50.0  +  4.0/C1 + 38.89694/C2).to::<Radian>().value(),
-        Arcseconds::new(4_399_609.65932).to::<Radian>().value(),
+        Degrees::new(50.0  +  4.0/C1 + 38.89694/C2).to::<Radian>(),
+        Arcseconds::new(4_399_609.65932).to::<Radian>(),
     ],
     [
-        Degrees::new(314.0 +  3.0/C1 + 18.01841/C2).to::<Radian>().value(),
-        Arcseconds::new(1_542_481.19393).to::<Radian>().value(),
+        Degrees::new(314.0 +  3.0/C1 + 18.01841/C2).to::<Radian>(),
+        Arcseconds::new(1_542_481.19393).to::<Radian>(),
     ],
     [
-        Degrees::new(304.0 + 20.0/C1 + 55.19575/C2).to::<Radian>().value(),
-        Arcseconds::new(786_550.32074).to::<Radian>().value(),
+        Degrees::new(304.0 + 20.0/C1 + 55.19575/C2).to::<Radian>(),
+        Arcseconds::new(786_550.32074).to::<Radian>(),
     ],
 ];
 
@@ -141,7 +139,7 @@ fn sum_main_problem_series(series: &[MainProblem], t: &[f64; 5], y_offset: Radia
         let mut y = y_offset;
         for k in 0..5 {
             for i in 0..4 {
-                y += Radians::new(entry.ilu[i] as f64 * DEL[i][k] * t[k]);
+                y += entry.ilu[i] as f64 * DEL[i][k] * t[k];
             }
         }
 
@@ -173,9 +171,9 @@ fn sum_earth_pert_series(series: &[EarthPert], t: &[f64; 5], scale_idx: Option<u
         // Compute argument y
         let mut y = Degrees::new(entry.o).to::<Radian>();
         for k in 0..2 {
-            y += Radians::new(entry.iz * ZETA[k] * t[k]);
+            y += entry.iz * ZETA[k] * t[k];
             for i in 0..4 {
-                y += Radians::new(entry.ilu[i] as f64 * DEL[i][k] * t[k]);
+                y += entry.ilu[i] as f64 * DEL[i][k] * t[k];
             }
         }
         let amplitude = if let Some(idx) = scale_idx { entry.a * t[idx] } else { entry.a };
@@ -233,7 +231,7 @@ fn sum_planet_pert_series(series: &[PlanetPert], t: &[f64; 5], scale_o: bool, us
         for k in 0..2 {
             let delta = if use_alt_del {
                 // restored original two-loop alt_del branch
-                let mut delta = 0.0;
+                let mut delta = Radians::new(0.0);
                 for i in 0..4 {
                     delta += entry.ipla[i + 7] as f64 * DEL[i][k] * t[k];
                 }
@@ -247,9 +245,9 @@ fn sum_planet_pert_series(series: &[PlanetPert], t: &[f64; 5], scale_o: bool, us
                     + entry.ipla[9] as f64 * DEL[2][k]
                     + entry.ipla[10] as f64 * DEL[3][k])
                     * t[k]
-                    + (0..8).fold(0.0, |sum, i| sum + entry.ipla[i] as f64 * P_ARGS[i][k] * t[k])
+                    + (0..8).fold(Radians::new(0.0), |sum, i| sum + entry.ipla[i] as f64 * P_ARGS[i][k] * t[k])
             };
-            y += Radians::new(delta);
+            y += delta;
         }
         let o_val = if scale_o { entry.o * t[1] } else { entry.o };
         accum + o_val * normalize_angle(y).sin()
