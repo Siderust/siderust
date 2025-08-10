@@ -5,8 +5,8 @@
 //! * [`velocity`]  – only Ẋ,Ẏ,Ż (AstronomicalUnits/day)
 //! * [`position_velocity`] – both in one pass (≈30 % faster in 2 calls)
 
-use rayon::join;
 use crate::astro::JulianDate;
+use rayon::join;
 
 /// One VSOP87 coefficient term  _a · cos(b + c·T)_
 #[derive(Debug, Clone, Copy)]
@@ -20,18 +20,29 @@ trait Mode {
     const NEED_VAL: bool;
     const NEED_DER: bool;
 }
-struct Val;  struct Der;  struct Both;
-impl Mode for Val  { const NEED_VAL: bool = true;  const NEED_DER: bool = false; }
-impl Mode for Der  { const NEED_VAL: bool = false; const NEED_DER: bool = true;  }
-impl Mode for Both { const NEED_VAL: bool = true;  const NEED_DER: bool = true;  }
+struct Val;
+struct Der;
+struct Both;
+impl Mode for Val {
+    const NEED_VAL: bool = true;
+    const NEED_DER: bool = false;
+}
+impl Mode for Der {
+    const NEED_VAL: bool = false;
+    const NEED_DER: bool = true;
+}
+impl Mode for Both {
+    const NEED_VAL: bool = true;
+    const NEED_DER: bool = true;
+}
 
 // computes (value, d/dt) according to `M`.
 #[inline]
 fn coord<M: Mode>(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
-    let mut t_pow     = 1.0;  // T^0
-    let mut t_pow_der = 0.0;  // d/dT T^k
-    let mut value     = 0.0;
-    let mut deriv_t   = 0.0;
+    let mut t_pow = 1.0; // T^0
+    let mut t_pow_der = 0.0; // d/dT T^k
+    let mut value = 0.0;
+    let mut deriv_t = 0.0;
 
     for (k, terms) in series_by_power.iter().enumerate() {
         let mut serie_val = 0.0;
@@ -64,7 +75,6 @@ fn coord<M: Mode>(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
     const DT_DT: f64 = 1.0 / 365_250.0; // dT/dt (T per day)
     (value, deriv_t * DT_DT)
 }
-
 
 // Public façade
 pub fn position(
@@ -132,12 +142,32 @@ mod tests {
     use super::*;
     use crate::astro::JulianDate;
 
-    const X0: [Vsop87;1] = [Vsop87 { a: 1.0, b: 0.0, c: 0.0 }];
-    const X1: [Vsop87;1] = [Vsop87 { a: 2.0, b: 0.0, c: 0.0 }];
-    const Y0: [Vsop87;1] = [Vsop87 { a: 0.0, b: 0.0, c: 0.0 }];
-    const Y1: [Vsop87;0] = [];
-    const Y2: [Vsop87;1] = [Vsop87 { a: 3.0, b: 0.0, c: 0.0 }];
-    const Z0: [Vsop87;1] = [Vsop87 { a: 4.0, b: 0.0, c: 0.0 }];
+    const X0: [Vsop87; 1] = [Vsop87 {
+        a: 1.0,
+        b: 0.0,
+        c: 0.0,
+    }];
+    const X1: [Vsop87; 1] = [Vsop87 {
+        a: 2.0,
+        b: 0.0,
+        c: 0.0,
+    }];
+    const Y0: [Vsop87; 1] = [Vsop87 {
+        a: 0.0,
+        b: 0.0,
+        c: 0.0,
+    }];
+    const Y1: [Vsop87; 0] = [];
+    const Y2: [Vsop87; 1] = [Vsop87 {
+        a: 3.0,
+        b: 0.0,
+        c: 0.0,
+    }];
+    const Z0: [Vsop87; 1] = [Vsop87 {
+        a: 4.0,
+        b: 0.0,
+        c: 0.0,
+    }];
 
     #[test]
     fn test_position_velocity() {
@@ -161,5 +191,18 @@ mod tests {
         assert!((v2.0 - vel.0).abs() < 1e-12);
         assert!((v2.1 - vel.1).abs() < 1e-12);
         assert!((v2.2 - vel.2).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_coord_without_value_or_derivative() {
+        struct NoneMode;
+        impl super::Mode for NoneMode {
+            const NEED_VAL: bool = false;
+            const NEED_DER: bool = false;
+        }
+        let empty: [&[Vsop87]; 0] = [];
+        let (v, d) = super::coord::<NoneMode>(&empty, 0.1);
+        assert_eq!(v, 0.0);
+        assert_eq!(d, 0.0);
     }
 }
