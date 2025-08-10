@@ -24,6 +24,8 @@ fn planet_builder_errors() {
 
 #[test]
 fn orbit_period_computation() {
+    let k = 0.017_202_098_95_f64; // rad/day
+
     let orbit = Orbit::new(
         AstronomicalUnits::new(1.0),
         0.0,
@@ -40,6 +42,6 @@ fn orbit_period_computation() {
         .build();
 
     let p = planet.orbit.period().value();
-    let expected = 2.0 * std::f64::consts::PI / 0.986 * 1.0_f64.powf(1.5) * 86400.0;
+    let expected = 2.0 * std::f64::consts::PI / k * 1.0_f64.powf(1.5) * 86400.0;
     assert!((p - expected).abs() < 1e-6);
 }
