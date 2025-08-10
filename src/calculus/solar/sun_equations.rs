@@ -45,3 +45,25 @@ impl Sun {
         spherical::position::Equatorial::<U>::new(ra, geo_sph.dec(), geo_sph.distance)
     }
 }
+
+
+#[cfg(test)]
+mod tests {
+    use crate::bodies::solar_system::Sun;
+    use crate::astro::JulianDate;
+    use crate::units::AstronomicalUnit;
+
+    #[test]
+    fn apparent_sun_position_j2000() {
+        let pos = Sun::get_apparent_geocentric_equ::<AstronomicalUnit>(JulianDate::J2000);
+
+        // Expected approximate values around J2000 epoch
+        let expected_ra = 281.2;   // degrees
+        let expected_dec = -23.0;  // degrees
+        let expected_dist = 1.0;   // astronomical units
+
+        assert!((pos.ra().value() - expected_ra).abs() < 2.0, "RA mismatch: {} vs {}", pos.ra().value(), expected_ra);
+        assert!((pos.dec().value() - expected_dec).abs() < 2.0, "Dec mismatch: {} vs {}", pos.dec().value(), expected_dec);
+        assert!((pos.distance.value() - expected_dist).abs() < 0.2, "Distance mismatch: {} vs {}", pos.distance.value(), expected_dist);
+    }
+}
