@@ -10,13 +10,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-### Changed
-
 ### Deprecated
 
 ### Removed
 
 ### Fixed
+
+### Security
+
+## [0.3.1-3]
+
+### Added
+* LFS (vsop/elp) data
+
+### Changed
+* Build process offline
+
+### Deprecated
+
+### Removed
+* unused imports
+
+### Fixed
+* Doc compilation
 
 ### Security
 
