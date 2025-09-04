@@ -53,7 +53,7 @@ fn parse_file(path: &Path, n_ints: usize, n_floats: usize) -> Result<Vec<Entry>>
 
     reader
         .lines()
-        .filter_map(|l| l.ok())
+        .map_while(Result::ok)
         .filter(|l| line_re.is_match(l))
         .map(|l| parse_line(&l, n_ints, n_floats, &token_re))
         .collect()
@@ -90,7 +90,6 @@ fn parse_all_elps(dir: &Path) -> Result<BTreeMap<String, Vec<Entry>>> {
 }
 
 /// ----------------------  RUST CODE GENERATOR  -------------------
-
 fn generate_rust(data: &BTreeMap<String, Vec<Entry>>) -> Result<String> {
     let mut out = String::new();
 
@@ -157,7 +156,6 @@ fn generate_rust(data: &BTreeMap<String, Vec<Entry>>) -> Result<String> {
 }
 
 /// ----------------------  DATASET HANDLING  ----------------------
-
 /// Ensure the 36 `ELPn` files are present under `dir`.
 ///
 /// The function first tries to copy the dataset from the repository checkout
@@ -213,7 +211,6 @@ fn copy_from_repo(dst: &Path) -> Result<bool> {
 }
 
 /// ---------------------------  ENTRYPOINT  -----------------------
-
 pub fn run(data_dir: &Path) -> Result<()> {
     ensure_dataset(data_dir)?;
 

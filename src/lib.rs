@@ -35,14 +35,11 @@
 //! ## Crate Modules
 //!
 //! - [`units`]         : Strongly-typed physical quantities and angles
-//! - [`coordinates`]   : Cartesian & Spherical coordinate types and
-//!                       transformations between reference centers & frames
+//! - [`coordinates`]   : Cartesian & Spherical coordinate types and transformations between reference centers & frames
 //! - [`targets`]       : `Target<T>` tracking with time and proper motion
-//! - [`astro`]         : Utilities for aberration, nutation, precession,
-//!                       sidereal time, and event searches
+//! - [`astro`]         : Utilities for aberration, nutation, precession, sidereal time, and event searches
 //! - [`calculus`]      : Numerical kernels (Kepler, VSOP87, ELP2000, etc.)
-//! - [`bodies`]        : Data structures for planets, comets, stars,
-//!                       satellites, and built-in catalogs
+//! - [`bodies`]        : Data structures for planets, comets, stars, satellites, and built-in catalogs
 //! - [`observatories`] : Predefined observatory locations and helpers
 //!
 //! ## Minimal Example

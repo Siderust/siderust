@@ -1,6 +1,6 @@
 [package]
 name = "siderust"
-version = "0.2.0"
+version = "0.3.3"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
