@@ -8,7 +8,7 @@ use std::{
 
 use anyhow::{Context, Result};
 use regex::Regex;
- use std::fmt::Write;
+use std::fmt::Write;
 
 /// ---------------------------  PARSER  ---------------------------
 
@@ -31,9 +31,13 @@ fn file_format(key: &str) -> Option<(usize, usize)> {
 fn parse_line(line: &str, n_ints: usize, n_floats: usize, token_re: &Regex) -> Result<Entry> {
     let tokens: Vec<&str> = token_re.find_iter(line).map(|m| m.as_str()).collect();
     if tokens.len() != n_ints + n_floats {
-        anyhow::bail!("Unexpected column count {} (wanted {})", tokens.len(), n_ints + n_floats);
+        anyhow::bail!(
+            "Unexpected column count {} (wanted {})",
+            tokens.len(),
+            n_ints + n_floats
+        );
     }
-    let ints  = tokens[..n_ints]
+    let ints = tokens[..n_ints]
         .iter()
         .map(|t| t.parse::<i64>().map_err(|e| anyhow::anyhow!(e)))
         .collect::<Result<Vec<_>>>()?;
@@ -62,10 +66,12 @@ fn parse_all_elps(dir: &Path) -> Result<BTreeMap<String, Vec<Entry>>> {
         .with_context(|| format!("read-dir {dir:?}"))?
         .filter_map(|e| e.ok())
         .map(|e| e.path())
-        .filter(|p| p.file_name()
-                     .and_then(|n| n.to_str())
-                     .map(|s| s.starts_with("ELP"))
-                     .unwrap_or(false))
+        .filter(|p| {
+            p.file_name()
+             .and_then(|n| n.to_str())
+             .map(|s| s.starts_with("ELP"))
+             .unwrap_or(false)
+        })
         .collect();
 
     paths.sort();
@@ -73,8 +79,8 @@ fn parse_all_elps(dir: &Path) -> Result<BTreeMap<String, Vec<Entry>>> {
     for path in paths {
         let key = path.file_stem().unwrap().to_string_lossy().to_uppercase();
         if let Some((n_ints, n_floats)) = file_format(&key) {
-            let entries = parse_file(&path, n_ints, n_floats)
-                .with_context(|| format!("Parsing {key}"))?;
+            let entries =
+                parse_file(&path, n_ints, n_floats).with_context(|| format!("Parsing {key}"))?;
             map.insert(key, entries);
         } else {
             println!("cargo:warning=Skipping {key}: unknown format");
@@ -106,24 +112,41 @@ fn generate_rust(data: &BTreeMap<String, Vec<Entry>>) -> Result<String> {
         for e in entries {
             match typ {
                 "MainProblem" => {
-                    let ilu = e.ints.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(", ");
-                    let a   = &e.floats[0];
-                    let b   = e.floats[1..].join(", ");
-                    writeln!(out,
-                        "    {typ} {{ ilu: [{ilu}], a: {a}, b: [{b}] }},")?;
+                    let ilu = e
+                        .ints
+                        .iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ");
+                    let a = &e.floats[0];
+                    let b = e.floats[1..].join(", ");
+                    writeln!(out, "    {typ} {{ ilu: [{ilu}], a: {a}, b: [{b}] }},")?;
                 }
                 "EarthPert" => {
-                    let iz = format!("{}{}", e.ints[0], ".0");         // "1.0", "-2.0", …
-                    let ilu = e.ints[1..5].iter().map(|v| v.to_string()).collect::<Vec<_>>().join(", ");
+                    let iz = format!("{}{}", e.ints[0], ".0"); // "1.0", "-2.0", …
+                    let ilu = e.ints[1..5]
+                        .iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ");
                     let (o, a, p) = (&e.floats[0], &e.floats[1], &e.floats[2]);
-                    writeln!(out,
-                        "    {typ} {{ iz: {iz}, ilu: [{ilu}], o: {o}, a: {a}, p: {p} }},")?;
+                    writeln!(
+                        out,
+                        "    {typ} {{ iz: {iz}, ilu: [{ilu}], o: {o}, a: {a}, p: {p} }},"
+                    )?;
                 }
                 "PlanetPert" => {
-                    let ipla = e.ints.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(", ");
+                    let ipla = e
+                        .ints
+                        .iter()
+                        .map(|v| v.to_string())
+                        .collect::<Vec<_>>()
+                        .join(", ");
                     let (theta, o, p) = (&e.floats[0], &e.floats[1], &e.floats[2]);
-                    writeln!(out,
-                        "    {typ} {{ ipla: [{ipla}], theta: {theta}, o: {o}, p: {p} }},")?;
+                    writeln!(
+                        out,
+                        "    {typ} {{ ipla: [{ipla}], theta: {theta}, o: {o}, p: {p} }},"
+                    )?;
                 }
                 _ => unreachable!(),
             }
@@ -135,13 +158,22 @@ fn generate_rust(data: &BTreeMap<String, Vec<Entry>>) -> Result<String> {
 
 /// ----------------------  DATASET HANDLING  ----------------------
 
-/// Descarga los 36 ficheros ELPn si no existen en `dir`.
+/// Ensure the 36 `ELPn` files are present under `dir`.
+///
+/// The function first tries to copy the dataset from the repository checkout
+/// (Git LFS). If that fails it falls back to downloading the files from the
+/// remote source.
 fn ensure_dataset(dir: &Path) -> Result<()> {
     use reqwest::blocking::Client;
 
+    // Try local dataset first -------------------------------------------------
+    if let Ok(true) = copy_from_repo(dir) {
+        return Ok(());
+    }
+
     fs::create_dir_all(dir)?;
 
-    let base   = "https://cdsarc.cds.unistra.fr/ftp/VI/79/";
+    let base = "https://cdsarc.cds.unistra.fr/ftp/VI/79/";
     let client = Client::builder()
         .user_agent("ELP build script (rust)")
         .build()?;
@@ -154,15 +186,30 @@ fn ensure_dataset(dir: &Path) -> Result<()> {
         }
         let url = format!("{base}/{name}");
         println!("cargo:info=Downloading {url}");
-        let bytes = client.get(&url)
+        let bytes = client
+            .get(&url)
             .send()
             .with_context(|| format!("GET {url}"))?
             .error_for_status()?
             .bytes()?;
-        fs::write(&path, &bytes)
-            .with_context(|| format!("write {path:?}"))?;
+        fs::write(&path, &bytes).with_context(|| format!("write {path:?}"))?;
     }
     Ok(())
+}
+
+fn copy_from_repo(dst: &Path) -> Result<bool> {
+    let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/elp2000/dataset");
+    if !src.is_dir() {
+        return Ok(false);
+    }
+    fs::create_dir_all(dst)?;
+    for entry in fs::read_dir(&src)? {
+        let entry = entry?;
+        let target = dst.join(entry.file_name());
+        fs::copy(entry.path(), target)
+            .with_context(|| format!("copy {:?} -> {:?}", entry.path(), dst))?;
+    }
+    Ok(true)
 }
 
 /// ---------------------------  ENTRYPOINT  -----------------------
@@ -174,8 +221,8 @@ pub fn run(data_dir: &Path) -> Result<()> {
     println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed={}", data_dir.display());
 
-    let parsed  = parse_all_elps(data_dir)?;
-    let code    = generate_rust(&parsed)?;
+    let parsed = parse_all_elps(data_dir)?;
+    let code                         = generate_rust(&parsed)?;
 
     // escribe el fichero dentro de OUT_DIR
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
