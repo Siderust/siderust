@@ -1,18 +1,21 @@
-use std::time::Duration;
-use criterion::{black_box, Criterion, criterion_group, criterion_main};
+use std::{hint::black_box, time::Duration};
+use criterion::{Criterion, criterion_group, criterion_main};
 use siderust::{
-    coordinates::{SphericalCoord, Vector},
-    coordinates::centers::Barycentric,
-    coordinates::frames::ICRS,
-    units::Degrees,
+    coordinates::{
+        cartesian::Vector,
+        spherical::SphericalCoord,
+        centers::Barycentric,
+        frames::ICRS,
+    },
+    units::{Degrees, Au},
 };
 
 fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     // Test data: one Cartesian and one Spherical point in the ICRS/Barycentric frame
     let icrs_cartesian =
-        Vector::<Barycentric, ICRS>::new(10.0, 20.0, 30.0);
+        Vector::<Barycentric, ICRS, Au>::new(10.0, 20.0, 30.0);
     let icrs_spherical =
-        SphericalCoord::<Barycentric, ICRS>::new(
+        SphericalCoord::<Barycentric, ICRS, Au>::new(
             Degrees::new(10.0), Degrees::new(20.0), 30.0);
 
     // Create a benchmark group so we can tweak settings just for these benchmarks
@@ -28,7 +31,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
         b.iter(|| {
             // black_box prevents the compiler from optimizing the value away
             let cart = black_box(&icrs_cartesian);
-            let res: SphericalCoord<_, _> = cart.into();
+            let res: SphericalCoord<_, _, Au> = cart.into();
             black_box(res);               // keep the result “alive”
         });
     });
@@ -37,7 +40,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     group.bench_function("to_cartesian (ICRS)", |b| {
         b.iter(|| {
             let sph = black_box(&icrs_spherical);
-            let res: Vector<_, _> = sph.into();
+            let res: Vector<_, _, Au> = sph.into();
             black_box(res);
         });
     });
@@ -48,7 +51,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
 // Disable plot generation (faster CI runs); keep default configuration otherwise
 criterion_group!{
     name = converter_benches;
-    config = Criterion::default().with_plots();
+    config = Criterion::default().without_plots();
     targets = bench_cartesian_spherical_converters
 }
 criterion_main!(converter_benches);
