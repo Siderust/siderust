@@ -28,19 +28,15 @@
 //! `type Velocity<C: ReferenceCenter, F: ReferenceFrame, U: VelocityUnit> = Vector<C, F, U>;`
 //! `type Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>   = Vector<C, F, U>;`
 
+use crate::coordinates::{centers, frames};
 use crate::units::*;
-use crate::coordinates::{frames, centers};
 
-use std::marker::PhantomData;
 use nalgebra::Vector3;
+use std::marker::PhantomData;
 use std::ops::{Add, Sub};
 
 #[derive(Debug, Clone, Copy)]
-pub struct Vector<
-    C: centers::ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: Unit,
-> {
+pub struct Vector<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: Unit> {
     xyz: nalgebra::Vector3<Quantity<U>>,
     _center: PhantomData<C>,
     _frame: PhantomData<F>,
@@ -73,23 +69,35 @@ where
     }
 
     pub const fn from_vec3(vec3: Vector3<Quantity<U>>) -> Self {
-        Vector { xyz: vec3, _center: PhantomData, _frame: PhantomData }
+        Vector {
+            xyz: vec3,
+            _center: PhantomData,
+            _frame: PhantomData,
+        }
     }
 
-    pub const fn as_vec3(&self) -> Vector3<Quantity<U>> { self.xyz }
+    pub const fn as_vec3(&self) -> Vector3<Quantity<U>> {
+        self.xyz
+    }
 
     /// Gets the x-coordinate in AstronomicalUnits.
-    pub fn x(&self) -> Quantity<U> { self.xyz[0] }
+    pub fn x(&self) -> Quantity<U> {
+        self.xyz[0]
+    }
 
     /// Gets the y-coordinate in AstronomicalUnits.
-    pub fn y(&self) -> Quantity<U> { self.xyz[1] }
+    pub fn y(&self) -> Quantity<U> {
+        self.xyz[1]
+    }
 
     /// Gets the z-coordinate in AstronomicalUnits.
-    pub fn z(&self) -> Quantity<U> { self.xyz[2] }
+    pub fn z(&self) -> Quantity<U> {
+        self.xyz[2]
+    }
 
     pub fn sub(&self, other: &Self) -> Self
     where
-        U: std::cmp::PartialEq + std::fmt::Debug
+        U: std::cmp::PartialEq + std::fmt::Debug,
     {
         Self::from_vec3(self.as_vec3() - other.as_vec3())
     }
@@ -99,22 +107,18 @@ where
     /// # Returns
     /// The distance from the ReferenceCenter in units of U.
     pub fn distance(&self) -> Quantity<U> {
-        let distance = Vector3::<f64>::new(
-            self.x().value(),
-            self.y().value(),
-            self.z().value()
-        ).magnitude();
+        let distance =
+            Vector3::<f64>::new(self.x().value(), self.y().value(), self.z().value()).magnitude();
         Quantity::new(distance)
     }
 
     /// Computes the Euclidean distance to another vector of the same type.
     pub fn distance_to(&self, other: &Self) -> Quantity<U>
     where
-        U: std::cmp::PartialEq + std::fmt::Debug
+        U: std::cmp::PartialEq + std::fmt::Debug,
     {
         self.sub(other).distance()
     }
-
 }
 
 impl<C, F, U> std::fmt::Display for Vector<C, F, U>
@@ -130,7 +134,9 @@ where
             "Center: {}, Frame: {}, X: {:.6}, Y: {:.6}, Z: {:.6}",
             C::center_name(),
             F::frame_name(),
-            self.x(), self.y(), self.z()
+            self.x(),
+            self.y(),
+            self.z()
         )
     }
 }
@@ -155,5 +161,7 @@ where
     U: Unit,
 {
     type Output = Self;
-    fn sub(self, other: Self) -> Self::Output { Self::sub(&self, &other) }
+    fn sub(self, other: Self) -> Self::Output {
+        Self::sub(&self, &other)
+    }
 }

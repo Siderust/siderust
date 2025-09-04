@@ -56,8 +56,7 @@ macro_rules! new_center {
                 stringify!($name)
             }
         }
-    impl NonGeocentric for $name {}
-
+        impl NonGeocentric for $name {}
     };
 }
 
@@ -77,9 +76,10 @@ impl ReferenceCenter for Geocentric {
 
 impl ReferenceCenter for () {
     const IS_GEOCENTRIC: bool = false;
-    fn center_name() -> &'static str {""}
+    fn center_name() -> &'static str {
+        ""
+    }
 }
-
 
 #[cfg(test)]
 mod tests {

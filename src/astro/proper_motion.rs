@@ -12,9 +12,9 @@
 //! positions at a reference epoch (usually J2000.0), we need to correct
 //! for proper motion when computing positions at a later date.
 
-use crate::units::*;
-use crate::coordinates::spherical::position;
 use crate::astro::JulianDate;
+use crate::coordinates::spherical::position;
+use crate::units::*;
 
 /// Describes the proper motion of a star in equatorial coordinates.
 ///
@@ -33,9 +33,9 @@ impl ProperMotion {
     where
         T: FrequencyUnit,
     {
-        Self{
+        Self {
             ra_μ: ra_v.to::<DegreePerYear>(),
-            dec_μ: dec_v.to::<DegreePerYear>()
+            dec_μ: dec_v.to::<DegreePerYear>(),
         }
     }
 }
@@ -56,10 +56,14 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
     mean_position: position::Equatorial<U>,
     proper_motion: ProperMotion,
     jd: JulianDate,
-    epoch_jd: JulianDate
+    epoch_jd: JulianDate,
 ) -> position::Equatorial<U> {
     // Time difference in Julian years
-    let t: Years = Years::new(((jd - epoch_jd) / JulianDate::JULIAN_YEAR).simplify().value());
+    let t: Years = Years::new(
+        ((jd - epoch_jd) / JulianDate::JULIAN_YEAR)
+            .simplify()
+            .value(),
+    );
     // Linearly apply proper motion in RA and DEC
     position::Equatorial::<U>::new::<Degrees, Quantity<U>>(
         mean_position.ra() + (proper_motion.ra_μ * t).normalize(),
@@ -80,30 +84,25 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
 pub fn set_proper_motion_since_j2000<U: LengthUnit>(
     mean_position: position::Equatorial<U>,
     proper_motion: ProperMotion,
-    jd: JulianDate
+    jd: JulianDate,
 ) -> position::Equatorial<U> {
     set_proper_motion_since_epoch(mean_position, proper_motion, jd, JulianDate::J2000)
 }
-
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::units::{Degrees, DegreesPerYear, AstronomicalUnit};
-    use crate::coordinates::{
-        spherical::Position,
-        centers::Geocentric,
-        frames::Equatorial
-    };
+    use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
+    use crate::units::{AstronomicalUnit, Degrees, DegreesPerYear};
 
     #[test]
     fn test_proper_motion_linear_shift() {
         // Mean position at J2000
         let mean_position = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(
-            Degrees::new(10.0),   // RA = 10°
-            Degrees::new(20.0),  // DEC = 20°
-            1.0      // arbitrary distance
+            Degrees::new(10.0), // RA = 10°
+            Degrees::new(20.0), // DEC = 20°
+            1.0,                // arbitrary distance
         );
 
         // Proper motion: 0.01°/year in RA, -0.005°/year in DEC
@@ -118,13 +117,23 @@ mod tests {
         let shifted = set_proper_motion_since_j2000(mean_position, mu, jd_future);
 
         // Expected shifts
-        let expected_ra = mean_position.ra()   + Degrees::new(0.5);
+        let expected_ra = mean_position.ra() + Degrees::new(0.5);
         let expected_dec = mean_position.dec() - Degrees::new(0.25);
 
         let ra_err = (shifted.ra() - expected_ra).abs();
         let dec_err = (shifted.dec() - expected_dec).abs();
 
-        assert!(ra_err.value() < 1e-6, "RA shifted incorrectly: got {}, expected {}", shifted.ra(), expected_ra);
-        assert!(dec_err.value() < 1e-6, "DEC shifted incorrectly: got {}, expected {}", shifted.dec(), expected_dec);
+        assert!(
+            ra_err.value() < 1e-6,
+            "RA shifted incorrectly: got {}, expected {}",
+            shifted.ra(),
+            expected_ra
+        );
+        assert!(
+            dec_err.value() < 1e-6,
+            "DEC shifted incorrectly: got {}, expected {}",
+            shifted.dec(),
+            expected_dec
+        );
     }
 }

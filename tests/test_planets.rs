@@ -1,11 +1,12 @@
-use siderust::bodies::planets::{Planet, PlanetBuilderError, OrbitExt};
-use siderust::units::{Kilograms, Kilometers, AstronomicalUnits, Degrees};
 use siderust::astro::{orbit::Orbit, JulianDate};
+use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
+use siderust::units::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
 
 #[test]
 fn planet_builder_errors() {
-    let builder = Planet::builder().radius(Kilometers::new(1.0)).orbit(
-        Orbit::new(
+    let builder = Planet::builder()
+        .radius(Kilometers::new(1.0))
+        .orbit(Orbit::new(
             AstronomicalUnits::new(1.0),
             0.0,
             Degrees::new(0.0),
@@ -13,12 +14,14 @@ fn planet_builder_errors() {
             Degrees::new(0.0),
             Degrees::new(0.0),
             JulianDate::J2000,
-        )
-    );
+        ));
     let err = builder.clone().try_build().unwrap_err();
     assert!(matches!(err, PlanetBuilderError::MissingMass));
 
-    let err = Planet::builder().mass(Kilograms::new(1.0)).try_build().unwrap_err();
+    let err = Planet::builder()
+        .mass(Kilograms::new(1.0))
+        .try_build()
+        .unwrap_err();
     assert!(matches!(err, PlanetBuilderError::MissingRadius));
 }
 

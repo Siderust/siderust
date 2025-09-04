@@ -1,30 +1,26 @@
-use std::{hint::black_box, time::Duration};
-use criterion::{Criterion, criterion_group, criterion_main};
+use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::{
     coordinates::{
-        cartesian::Vector,
-        spherical::SphericalCoord,
-        centers::Barycentric,
-        frames::ICRS,
+        cartesian::Vector, centers::Barycentric, frames::ICRS, spherical::SphericalCoord,
     },
-    units::{Degrees, Au},
+    units::{Au, Degrees},
 };
+use std::{hint::black_box, time::Duration};
 
 fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     // Test data: one Cartesian and one Spherical point in the ICRS/Barycentric frame
-    let icrs_cartesian =
-        Vector::<Barycentric, ICRS, Au>::new(10.0, 20.0, 30.0);
+    let icrs_cartesian = Vector::<Barycentric, ICRS, Au>::new(10.0, 20.0, 30.0);
     let icrs_spherical =
-        SphericalCoord::<Barycentric, ICRS, Au>::new(
-            Degrees::new(10.0), Degrees::new(20.0), 30.0);
+        SphericalCoord::<Barycentric, ICRS, Au>::new(Degrees::new(10.0), Degrees::new(20.0), 30.0);
 
     // Create a benchmark group so we can tweak settings just for these benchmarks
     let mut group = c.benchmark_group("converters");
 
     // Collect more samples and run a bit longer to reduce statistical noise
-    group.sample_size(1_000)              // number of samples to collect
-         .measurement_time(Duration::from_secs(3)) // time spent measuring
-         .warm_up_time(Duration::from_secs(1));    // time to let caches/freq settle
+    group
+        .sample_size(1_000) // number of samples to collect
+        .measurement_time(Duration::from_secs(3)) // time spent measuring
+        .warm_up_time(Duration::from_secs(1)); // time to let caches/freq settle
 
     // Cartesian → Spherical
     group.bench_function("to_spherical (ICRS)", |b| {
@@ -32,7 +28,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
             // black_box prevents the compiler from optimizing the value away
             let cart = black_box(&icrs_cartesian);
             let res: SphericalCoord<_, _, Au> = cart.into();
-            black_box(res);               // keep the result “alive”
+            black_box(res); // keep the result “alive”
         });
     });
 
@@ -49,7 +45,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
 }
 
 // Disable plot generation (faster CI runs); keep default configuration otherwise
-criterion_group!{
+criterion_group! {
     name = converter_benches;
     config = Criterion::default().without_plots();
     targets = bench_cartesian_spherical_converters

@@ -25,7 +25,6 @@ impl Dimension for Length {}
 pub trait LengthUnit: Unit<Dim = Length> {}
 impl<T: Unit<Dim = Length>> LengthUnit for T {}
 
-
 define_unit!("m", Meter, Length, 1.0);
 pub type Meters = Quantity<Meter>;
 
@@ -48,13 +47,20 @@ define_unit!("SR", SolarRadius, Length, 695_700_000.0);
 pub type SolarRadiuses = Quantity<SolarRadius>;
 pub const SR: SolarRadiuses = SolarRadiuses::new(1.0);
 
-define_unit!("ps", Parsec, Length, 3.26*LightYear::RATIO);
+define_unit!("ps", Parsec, Length, 3.26 * LightYear::RATIO);
 pub type Parsecs = Quantity<Parsec>;
 pub const PS: Parsecs = Parsecs::new(1.0);
 
-
 /// AstronomicalUnit -> LightYear.
-impl From<AstronomicalUnits> for LightYears { fn from(au: AstronomicalUnits) -> Self { au.to::<LightYear>() } }
+impl From<AstronomicalUnits> for LightYears {
+    fn from(au: AstronomicalUnits) -> Self {
+        au.to::<LightYear>()
+    }
+}
 
 /// LightYear -> AstronomicalUnits.
-impl From<LightYears> for AstronomicalUnits { fn from(ly: LightYears) -> Self { ly.to::<AstronomicalUnit>() } }
+impl From<LightYears> for AstronomicalUnits {
+    fn from(ly: LightYears) -> Self {
+        ly.to::<AstronomicalUnit>()
+    }
+}

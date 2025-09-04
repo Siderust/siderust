@@ -1,21 +1,21 @@
 use super::Culmination;
-use crate::coordinates::spherical::*;
+use crate::astro::nutation::corrected_ra_with_nutation;
+use crate::astro::JulianDate;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
-use crate::units::*;
-use crate::astro::JulianDate;
-use crate::astro::nutation::corrected_ra_with_nutation;
+use crate::coordinates::spherical::*;
 use crate::targets::Target;
+use crate::units::*;
 
 /// Convenience constants.
 use core::f64::consts::PI;
 
-/// A **quick-and-dirty** JD → GAST approximation 
+/// A **quick-and-dirty** JD → GAST approximation
 /// (error < 0.1″ for ±50 yr around 2025).  
 /// Swap for a rigorous routine if you need sub-arc-second accuracy.
 fn gast_fast(jd: JulianDate) -> Degrees {
     // Duffett-Smith & Zwart, *Practical Astronomy*, 4 th ed.
-    let t = (jd.value() - 2_451_545.0) / 36_525.0;          // centuries since J2000.0
+    let t = (jd.value() - 2_451_545.0) / 36_525.0; // centuries since J2000.0
     let gast = 280.460_618_37
         + 360.985_647_366_29 * (jd.value() - 2_451_545.0)   // mean rotation
         + 0.000_387_933 * t * t
@@ -24,8 +24,8 @@ fn gast_fast(jd: JulianDate) -> Degrees {
 }
 
 /// Scan step: 20 min in days.  Adjust for the usual speed/robustness trade-off.
-const STEP_DAYS: Days         = Minutes::new(20.0).to::<Day>();
-const NEWTON_EPS: Days        = Milliseconds::new(0.9).to::<Day>();
+const STEP_DAYS: Days = Minutes::new(20.0).to::<Day>();
+const NEWTON_EPS: Days = Milliseconds::new(0.9).to::<Day>();
 const NEWTON_MAX_ITERS: usize = 15;
 
 /// Finds every altitude extremum (**upper** and **lower** culmination) of a
@@ -62,7 +62,7 @@ where
     // ────────────────────────────────────────────────────────────
     let hour_angle = |jd: JulianDate| -> Radians {
         let ra_nut = corrected_ra_with_nutation(&get_equatorial(jd).get_position().direction(), jd);
-        let ra    = ra_nut.to::<Radian>();
+        let ra = ra_nut.to::<Radian>();
         let theta = gast_fast(jd).to::<Radian>() + observer.lon().to::<Radian>(); // local sidereal time
         (theta - ra).wrap_signed() // H in (−π, π]
     };
@@ -72,14 +72,14 @@ where
     // ────────────────────────────────────────────────────────────
     let refine = |mut jd: JulianDate, target: Radians| -> Option<JulianDate> {
         for _ in 0..NEWTON_MAX_ITERS {
-            let h: Radians  = (hour_angle(jd) - target).wrap_signed();
+            let h: Radians = (hour_angle(jd) - target).wrap_signed();
             if h.abs() < Radians::new(1e-12) {
                 return Some(jd); // already precise enough
             }
 
             // Finite-difference dH/dt using ±1 s
-            let dt: Days  = Days::new(1.0 / 86_400.0);
-            let dh: Radians  = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_signed();
+            let dt: Days = Days::new(1.0 / 86_400.0);
+            let dh: Radians = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_signed();
             let deriv: RadiansPerDay = dh / (dt * 2.0); // rad / day
             if deriv.abs() < RadiansPerDay::new(1e-10) {
                 return None; // derivative ~ 0, avoid blow-up
@@ -102,13 +102,13 @@ where
     let mut jd0 = jd_start;
 
     let h0: Radians = hour_angle(jd0);
-    let mut s0      = h0.sin();                       // for H = 0
-    let mut s0_pi   = (h0 - Radians::new(PI)).sin();  // for H = π
+    let mut s0 = h0.sin(); // for H = 0
+    let mut s0_pi = (h0 - Radians::new(PI)).sin(); // for H = π
 
     while jd0 < jd_end {
-        let jd1   = (jd0 + STEP_DAYS).min(jd_end);
-        let h1    = hour_angle(jd1);
-        let s1    = h1.sin();
+        let jd1 = (jd0 + STEP_DAYS).min(jd_end);
+        let h1 = hour_angle(jd1);
+        let s1 = h1.sin();
         let s1_pi = (h1 - Radians::new(PI)).sin();
 
         // Sign change ⇒ a root lies in (jd0, jd1)
@@ -133,8 +133,8 @@ where
             }
         }
 
-        jd0   = jd1;
-        s0    = s1;
+        jd0 = jd1;
+        s0 = s1;
         s0_pi = s1_pi;
     }
 
@@ -151,18 +151,16 @@ where
     out
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::bodies::catalog::SIRIUS;
     use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
 
-
     fn approx_eq(a: &Culmination, b: &Culmination, epsilon: f64) -> bool {
         match (a, b) {
-            (Culmination::Upper { jd: jd_a }, Culmination::Upper { jd: jd_b }) |
-            (Culmination::Lower { jd: jd_a }, Culmination::Lower { jd: jd_b }) => {
+            (Culmination::Upper { jd: jd_a }, Culmination::Upper { jd: jd_b })
+            | (Culmination::Lower { jd: jd_a }, Culmination::Lower { jd: jd_b }) => {
                 (jd_a.value() - jd_b.value()).abs() <= epsilon
             }
             _ => false, // mismatched types: one Upper, one Lower
@@ -174,10 +172,15 @@ mod tests {
         let jd_start = JulianDate::new(2_460_677.0);
         let jd_end = jd_start + Days::new(1.0);
 
-        let res = find_dynamic_extremas(|_| SIRIUS.target, &ROQUE_DE_LOS_MUCHACHOS, jd_start, jd_end);
+        let res =
+            find_dynamic_extremas(|_| SIRIUS.target, &ROQUE_DE_LOS_MUCHACHOS, jd_start, jd_end);
 
-        let expected_lower = Culmination::Lower {jd: JulianDate::new(2_460_677.05000) };
-        let expected_upper = Culmination::Upper { jd: JulianDate::new(2_460_677.54860) };
+        let expected_lower = Culmination::Lower {
+            jd: JulianDate::new(2_460_677.05000),
+        };
+        let expected_upper = Culmination::Upper {
+            jd: JulianDate::new(2_460_677.54860),
+        };
 
         assert_eq!(res.len(), 2);
         approx_eq(&res[0], &expected_lower, 0.001);

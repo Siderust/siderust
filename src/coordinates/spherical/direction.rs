@@ -47,12 +47,8 @@
 //! * `Display` – prints the centre, frame and angles.
 
 use super::SphericalCoord;
-use crate::units::{Quantity, LengthUnit, Unitless};
-use crate::coordinates::{
-    centers, frames,
-    centers::ReferenceCenter,
-    frames::ReferenceFrame,
-};
+use crate::coordinates::{centers, centers::ReferenceCenter, frames, frames::ReferenceFrame};
+use crate::units::{LengthUnit, Quantity, Unitless};
 
 /// Generic alias for a *unit vector* (radius = 1).
 ///
@@ -79,7 +75,6 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
 {
-
     /// Promotes this direction to a full [`Position`](super::Position) with the
     /// supplied radial `magnitude`.
     ///
@@ -109,11 +104,11 @@ where
             "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}",
             C::center_name(),
             F::frame_name(),
-            self.polar, self.azimuth
+            self.polar,
+            self.azimuth
         )
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -134,10 +129,7 @@ mod tests {
 
     #[test]
     fn displays_coordinate_as_string_correctly() {
-        let coord = ICRS::new(
-            Degrees::new(30.0),
-            Degrees::new(60.0),
-        );
+        let coord = ICRS::new(Degrees::new(30.0), Degrees::new(60.0));
 
         let output = coord.to_string();
 
@@ -178,5 +170,4 @@ mod tests {
         assert!(s.contains("Geocentric"), "missing center");
         assert!(s.contains("Equatorial"), "missing frame");
     }
-
 }

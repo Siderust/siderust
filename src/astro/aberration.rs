@@ -25,13 +25,13 @@
 //! * Vector formulation: `u' = u + v / c` then renormalised.
 //! * Verified against JPL DE440: <0.08 mas over 1900‑2100.
 
-use crate::units::*;
-use crate::coordinates::transform::TransformFrame;
 use crate::astro::JulianDate;
+use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{
-    cartesian::{position, direction, Velocity},
-    frames
+    cartesian::{direction, position, Velocity},
+    frames,
 };
+use crate::units::*;
 
 const AU_PER_DAY_C: AusPerDay = MetersPerSecond::new(299_792_458.0).to::<AuPerDay>(); // Speed Of Light
 
@@ -44,9 +44,8 @@ const AU_PER_DAY_C: AusPerDay = MetersPerSecond::new(299_792_458.0).to::<AuPerDa
 #[must_use]
 pub fn apply_aberration_to_direction(
     mean: direction::Equatorial,
-    jd:   JulianDate,
+    jd: JulianDate,
 ) -> direction::Equatorial {
-
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
     let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.to_frame();
 
@@ -60,15 +59,13 @@ pub fn apply_aberration_to_direction(
     )
 }
 
-
 /// Remove **annual aberration** from an apparent direction.
 /// Inverse operation of [`apply_aberration_to_direction`].
 #[must_use]
 pub fn remove_aberration_from_direction(
     app: direction::Equatorial,
-    jd:  JulianDate,
+    jd: JulianDate,
 ) -> direction::Equatorial {
-
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
     let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.to_frame();
 
@@ -82,44 +79,34 @@ pub fn remove_aberration_from_direction(
     )
 }
 
-
 /// Apply **annual aberration** to a position vector, preserving its
 /// geocentric distance.
 #[must_use]
 pub fn apply_aberration<U: LengthUnit>(
     mean: position::Equatorial<U>,
-    jd:   JulianDate,
+    jd: JulianDate,
 ) -> position::Equatorial<U> {
-
     if mean.distance() == 0.0 {
         // Don't look at your feet!
         return mean;
     }
 
-    apply_aberration_to_direction(
-        mean.direction(),
-        jd,
-    ).position(mean.distance())
+    apply_aberration_to_direction(mean.direction(), jd).position(mean.distance())
 }
-
 
 /// Remove **annual aberration** from a position vector, preserving its
 /// geocentric distance.
 #[must_use]
 pub fn remove_aberration<U: LengthUnit>(
     app: position::Equatorial<U>,
-    jd:  JulianDate,
+    jd: JulianDate,
 ) -> position::Equatorial<U> {
-
     if app.distance() == 0.0 {
         // Don't look at your feet!
         return app;
     }
 
-    remove_aberration_from_direction(
-        app.direction(),
-        jd,
-    ).position(app.distance())
+    remove_aberration_from_direction(app.direction(), jd).position(app.distance())
 }
 
 #[cfg(test)]
@@ -129,7 +116,7 @@ mod tests {
 
     fn apply_aberration_sph<U: LengthUnit>(
         mean: position::Equatorial<U>,
-        jd:   JulianDate,
+        jd: JulianDate,
     ) -> position::Equatorial<U> {
         (&apply_aberration((&mean).into(), jd)).into()
     }
@@ -137,11 +124,7 @@ mod tests {
     #[test]
     fn test_aberration_preserva_distance_and_epoch() {
         let jd = JulianDate::new(2451545.0); // J2000.0
-        let mean = position::Equatorial::<Au>::new(
-            Degrees::new(10.0),
-            Degrees::new(20.0),
-            1.23
-        );
+        let mean = position::Equatorial::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
         let out = apply_aberration_sph(mean, jd);
 
         assert_eq!(out.distance.value(), mean.distance.value());
@@ -151,31 +134,38 @@ mod tests {
     fn test_aberration_introduces_shift() {
         let jd = JulianDate::new(2451545.0); // J2000.0
         let mean = position::Equatorial::<Au>::new(
-            Degrees::new(0.0),    // RA = 0°
-            Degrees::new(0.0),    // Dec = 0°
-            1.0
+            Degrees::new(0.0), // RA = 0°
+            Degrees::new(0.0), // Dec = 0°
+            1.0,
         );
         let out = apply_aberration_sph(mean, jd);
 
         let delta_ra = out.ra().abs_separation(mean.ra());
         let delta_dec = out.dec().abs_separation(mean.dec());
-        assert!(delta_ra.value() > 0.0 || delta_dec.value() > 0.0,
-            "Expected a change in RA or Dec");
-        assert!(delta_ra.value() < 0.01 && delta_dec.value() < 0.01,
-            "Shift is too large")
+        assert!(
+            delta_ra.value() > 0.0 || delta_dec.value() > 0.0,
+            "Expected a change in RA or Dec"
+        );
+        assert!(
+            delta_ra.value() < 0.01 && delta_dec.value() < 0.01,
+            "Shift is too large"
+        )
     }
 
     #[test]
     fn test_aberration_at_north_pole() {
         let jd = JulianDate::new(2451545.0);
         let mean = position::Equatorial::<Au>::new(
-            Degrees::new(123.4),  // dummy RA
+            Degrees::new(123.4), // dummy RA
             Degrees::new(90.0),  // Dec = +90°
-            1.0
+            1.0,
         );
         let out = apply_aberration_sph(mean, jd);
 
-        assert!(out.dec().value() < 90.0, "Declination should decrease slightly at pole");
+        assert!(
+            out.dec().value() < 90.0,
+            "Declination should decrease slightly at pole"
+        );
         assert!(!out.ra().value().is_nan(), "RA must not be NaN at the pole");
     }
 
@@ -183,5 +173,4 @@ mod tests {
     fn test_speed_of_light() {
         assert_eq!(AU_PER_DAY_C.value(), 173.1446334836104);
     }
-
 }

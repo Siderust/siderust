@@ -37,8 +37,8 @@
 //! All aliases are **zero‑cost** at compile time: they are simple `type` synonyms.
 
 use super::SphericalCoord;
-use crate::units::*;
 use crate::coordinates::{centers, frames};
+use crate::units::*;
 
 // TODO: Bound U to LengthUnit and VelocityUnit
 // see issue #112792 <https://github.com/rust-lang/rust/issues/112792> for more information
@@ -90,7 +90,11 @@ where
     U: LengthUnit,
 {
     /// The *origin* of this coordinate system (all angles 0, radius 0). AKA Null Vector.
-    pub const CENTER: Self = Self::new_raw(Degrees::new(0.0), Degrees::new(0.0), Quantity::<U>::new(0.0));
+    pub const CENTER: Self = Self::new_raw(
+        Degrees::new(0.0),
+        Degrees::new(0.0),
+        Quantity::<U>::new(0.0),
+    );
 
     /// Euclidean distance to another position **in the same centre & frame**.
     ///
@@ -98,10 +102,9 @@ where
     #[must_use]
     pub fn distance_to(&self, other: &Self) -> Quantity<U>
     where
-        U: std::cmp::PartialEq + std::fmt::Debug
+        U: std::cmp::PartialEq + std::fmt::Debug,
     {
-        self.to_cartesian()
-            .distance_to(&other.to_cartesian())
+        self.to_cartesian().distance_to(&other.to_cartesian())
     }
 }
 
@@ -110,7 +113,7 @@ where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
     U: LengthUnit,
-    Quantity<U>: std::fmt::Display
+    Quantity<U>: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -118,11 +121,12 @@ where
             "Center: {}, Frame: {}, θ: {:.6}, φ: {:.6}, r: {:.6}",
             C::center_name(),
             F::frame_name(),
-            self.polar, self.azimuth, self.distance
+            self.polar,
+            self.azimuth,
+            self.distance
         )
     }
 }
-
 
 #[cfg(test)]
 mod tests {
@@ -138,7 +142,7 @@ mod tests {
         assert_eq!(coord.dec().value(), 90.0);
         assert_eq!(coord.distance.value(), 1.0);
     }
-    
+
     #[test]
     fn test_spherical_coord_to_string() {
         let coord = GCRS::<AstronomicalUnit>::new(Degrees::new(30.0), Degrees::new(60.0), 1000.0);
@@ -147,10 +151,10 @@ mod tests {
         assert!(coord_string.contains("φ: 30"));
         assert!(coord_string.contains("r: 1000"));
     }
-    
+
     #[test]
     fn test_spherical_coord_zero_values() {
-        let coord = HCRS::<AstronomicalUnit>::new(0.0*DEG, 0.0*DEG, 0.0);
+        let coord = HCRS::<AstronomicalUnit>::new(0.0 * DEG, 0.0 * DEG, 0.0);
         assert_eq!(coord.polar.value(), 0.0);
         assert_eq!(coord.azimuth.value(), 0.0);
         assert_eq!(coord.distance.value(), 0.0);
@@ -158,23 +162,23 @@ mod tests {
 
     #[test]
     fn test_spherical_coord_precision() {
-        let coord = ICRS::<AstronomicalUnit>::new(90.654321*DEG, 45.123456*DEG, 1234.56789);
+        let coord = ICRS::<AstronomicalUnit>::new(90.654321 * DEG, 45.123456 * DEG, 1234.56789);
         assert!((coord.dec().value() - 45.123456).abs() < 1e-6);
         assert!((coord.ra().value() - 90.654321).abs() < 1e-6);
-        assert!((coord.distance - 1234.56789*AU).abs() < 1e-6*AU);
+        assert!((coord.distance - 1234.56789 * AU).abs() < 1e-6 * AU);
     }
 
     #[test]
     fn direction_returns_unit_vector() {
-        let pos = Ecliptic::<AstronomicalUnit>::new_raw(10.0*DEG, 20.0*DEG, 2.5*AU);
+        let pos = Ecliptic::<AstronomicalUnit>::new_raw(10.0 * DEG, 20.0 * DEG, 2.5 * AU);
         let dir = pos.direction();
 
         // radial component must be exactly 1 (unitless)
         assert_eq!(dir.distance.value(), 1.0);
 
         // angular components are preserved
-        assert!((dir.polar - 10.0*DEG).abs() < EPS*DEG);
-        assert!((dir.azimuth - 20.0*DEG).abs() < EPS*DEG);
+        assert!((dir.polar - 10.0 * DEG).abs() < EPS * DEG);
+        assert!((dir.azimuth - 20.0 * DEG).abs() < EPS * DEG);
     }
 
     #[test]
@@ -189,8 +193,8 @@ mod tests {
 
     #[test]
     fn from_degrees_matches_new_raw() {
-        let a = ICRS::<AstronomicalUnit>::new(45.0*DEG, 30.0*DEG, 3.0 * AU);
-        let b = ICRS::<AstronomicalUnit>::new(45.0*DEG, 30.0*DEG, 3.0 * AU);
+        let a = ICRS::<AstronomicalUnit>::new(45.0 * DEG, 30.0 * DEG, 3.0 * AU);
+        let b = ICRS::<AstronomicalUnit>::new(45.0 * DEG, 30.0 * DEG, 3.0 * AU);
         assert_eq!(a.polar, b.polar);
         assert_eq!(a.azimuth, b.azimuth);
         assert_eq!(a.distance, b.distance);
@@ -199,14 +203,13 @@ mod tests {
     #[test]
     fn distance_identity_zero_and_orthogonal() {
         // identity
-        let a = ICRS::<AstronomicalUnit>::new(0.0*DEG, 0.0*DEG, 1.0 * AU);
+        let a = ICRS::<AstronomicalUnit>::new(0.0 * DEG, 0.0 * DEG, 1.0 * AU);
         let d0 = a.distance_to(&a);
         assert!(d0.abs().value() < EPS);
 
         // orthogonal points on unit sphere → chord length sqrt(2) * r
-        let b = ICRS::<AstronomicalUnit>::new(0.0*DEG, 90.0*DEG, 1.0 * AU);
+        let b = ICRS::<AstronomicalUnit>::new(0.0 * DEG, 90.0 * DEG, 1.0 * AU);
         let d = a.distance_to(&b);
         assert!((d.value() - SQRT_2).abs() < EPS);
     }
-
 }

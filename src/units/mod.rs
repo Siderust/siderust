@@ -221,7 +221,6 @@ impl<U: Unit> Div<f64> for Quantity<U> {
     }
 }
 
-
 impl<N: Unit, D: Unit> Mul<Quantity<D>> for Quantity<Per<N, D>> {
     type Output = Quantity<N>;
 
@@ -270,7 +269,6 @@ impl<U: Unit> From<f64> for Quantity<U> {
     }
 }
 
-
 /* TODO: Requires specialization (nightly) see #16
 
 impl<N: Unit, D: Unit> Div<Quantity<D>> for Quantity<N> {
@@ -318,7 +316,6 @@ impl<N: Unit, D: Unit> Simplify for Quantity<Per<N, Per<N, D>>> {
         Quantity::new(self.value())
     }
 }
-
 
 impl<U: Unit> Quantity<Per<U, U>> {
     #[inline]

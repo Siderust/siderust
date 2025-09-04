@@ -1,7 +1,7 @@
 // src/macros.rs
+use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
+use crate::units::{LengthUnit, Quantity};
 use core::f64;
-use crate::coordinates::{ cartesian, spherical, centers::ReferenceCenter, frames::ReferenceFrame };
-use crate::units::{Quantity, LengthUnit};
 
 #[doc(hidden)]
 pub(crate) fn __assert_cartesian_eq<C, F, U>(
@@ -9,17 +9,24 @@ pub(crate) fn __assert_cartesian_eq<C, F, U>(
     b: &cartesian::Position<C, F, U>,
     epsilon: f64,
     msg: Option<String>,
-)
-where
-    C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit,
-    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display
+) where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
     let dx = (a.x() - b.x()).abs();
     let dy = (a.y() - b.y()).abs();
     let dz = (a.z() - b.z()).abs();
-    if dx >= Quantity::<U>::new(epsilon) || dy >= Quantity::<U>::new(epsilon) || dz >= Quantity::<U>::new(epsilon) {
+    if dx >= Quantity::<U>::new(epsilon)
+        || dy >= Quantity::<U>::new(epsilon)
+        || dz >= Quantity::<U>::new(epsilon)
+    {
         if let Some(m) = msg {
-            panic!("{}. Cartesian coords differ: {} vs {} (ε = {})", m, a, b, epsilon);
+            panic!(
+                "{}. Cartesian coords differ: {} vs {} (ε = {})",
+                m, a, b, epsilon
+            );
         } else {
             panic!("Cartesian coords differ: {} vs {} (ε = {})", a, b, epsilon);
         }
@@ -27,23 +34,27 @@ where
 }
 
 #[doc(hidden)]
-pub(crate) fn __assert_spherical_eq<C, F,  U>(
+pub(crate) fn __assert_spherical_eq<C, F, U>(
     a: &spherical::Position<C, F, U>,
     b: &spherical::Position<C, F, U>,
     epsilon: f64,
     msg: Option<String>,
-)
-where
-    C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit,
-    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display
+) where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    U: LengthUnit,
+    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
     let d1 = a.distance;
     let d2 = b.distance;
-    let dp = (a.polar.value()   - b.polar.value()).abs();
+    let dp = (a.polar.value() - b.polar.value()).abs();
     let da = (a.azimuth.value() - b.azimuth.value()).abs();
     if (d1 - d2).abs() >= Quantity::<U>::new(epsilon) || dp >= epsilon || da >= epsilon {
         if let Some(m) = msg {
-            panic!("{}. Spherical coords differ: {} vs {} (ε = {})", m, a, b, epsilon);
+            panic!(
+                "{}. Spherical coords differ: {} vs {} (ε = {})",
+                m, a, b, epsilon
+            );
         } else {
             panic!("Spherical coords differ: {} vs {} (ε = {})", a, b, epsilon);
         }

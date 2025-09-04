@@ -1,9 +1,5 @@
-use crate::coordinates::{
-    cartesian::Vector,
-    centers::ReferenceCenter,
-    frames
-};
 use super::TransformFrame;
+use crate::coordinates::{cartesian::Vector, centers::ReferenceCenter, frames};
 use crate::units::Unit;
 
 // Implement Transform trait for ICRS -> Ecliptic
@@ -18,47 +14,40 @@ where
 
         let y = self.y();
         let z = self.z();
-        Vector::new(
-            self.x(),
-             cos_e * y + sin_e * z,
-            -sin_e * y + cos_e * z,
-        )
+        Vector::new(self.x(), cos_e * y + sin_e * z, -sin_e * y + cos_e * z)
     }
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Ecliptic, U>> for Vector<C, frames::Equatorial, U> {
+impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Ecliptic, U>>
+    for Vector<C, frames::Equatorial, U>
+{
     fn to_frame(&self) -> Vector<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
         let y = self.y();
         let z = self.z();
-        Vector::new(
-            self.x(),
-             cos_e * y + sin_e * z,
-            -sin_e * y + cos_e * z,
-        )
+        Vector::new(self.x(), cos_e * y + sin_e * z, -sin_e * y + cos_e * z)
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::units::*;
-    use crate::coordinates::*;
-    use crate::coordinates::cartesian::position::*;
-    use crate::units::Degrees;
     use crate::astro::JulianDate;
+    use crate::coordinates::cartesian::position::*;
+    use crate::coordinates::transform::Transform;
+    use crate::coordinates::*;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
-    use crate::coordinates::transform::Transform;
+    use crate::units::Degrees;
+    use crate::units::*;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
     fn serialize<U: LengthUnit>(ecl: &Ecliptic<U>) -> Ecliptic<U>
     where
-        Quantity<U>: From<Quantity<AstronomicalUnit>>
+        Quantity<U>: From<Quantity<AstronomicalUnit>>,
     {
         let hcrs: ICRS<U> = ecl.transform(JulianDate::J2000); // Convert to ICRS
         let ecl_back: Ecliptic<U> = (&hcrs).transform(JulianDate::J2000); // Convert back to Ecliptic
@@ -71,7 +60,12 @@ mod tests {
         let zero_ecl = Ecliptic::<AstronomicalUnit>::CENTER;
         let zero_ecl_back = serialize(&zero_ecl);
 
-        assert_cartesian_eq!(zero_ecl, zero_ecl_back, EPSILON, "Zero vector transformation should be reversible.");
+        assert_cartesian_eq!(
+            zero_ecl,
+            zero_ecl_back,
+            EPSILON,
+            "Zero vector transformation should be reversible."
+        );
     }
 
     /// **Test 3: Edge case - Aligned along X-axis (Should not change)**
@@ -80,7 +74,12 @@ mod tests {
         let coord_ecl = Ecliptic::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "X-aligned vector should remain unchanged after transformation.");
+        assert_cartesian_eq!(
+            coord_ecl,
+            coord_ecl_back,
+            EPSILON,
+            "X-aligned vector should remain unchanged after transformation."
+        );
     }
 
     /// **Test 4: Edge case - Aligned along Y-axis**
@@ -89,7 +88,12 @@ mod tests {
         let coord_ecl = Ecliptic::<AstronomicalUnit>::new(0.0, 1.0, 0.0);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "Y-aligned vector should recover after round-trip transformation.");
+        assert_cartesian_eq!(
+            coord_ecl,
+            coord_ecl_back,
+            EPSILON,
+            "Y-aligned vector should recover after round-trip transformation."
+        );
     }
 
     /// **Test 5: Edge case - Aligned along Z-axis**
@@ -98,7 +102,12 @@ mod tests {
         let coord_ecl = Ecliptic::<AstronomicalUnit>::new(0.0, 0.0, 1.0);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "Z-aligned vector should recover after round-trip transformation.");
+        assert_cartesian_eq!(
+            coord_ecl,
+            coord_ecl_back,
+            EPSILON,
+            "Z-aligned vector should recover after round-trip transformation."
+        );
     }
 
     /// **Test 6: Transformation with extreme values**
@@ -107,7 +116,12 @@ mod tests {
         let coord_ecl = Ecliptic::<AstronomicalUnit>::new(1e10, -1e10, 5e9);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "Large values should not cause precision errors.");
+        assert_cartesian_eq!(
+            coord_ecl,
+            coord_ecl_back,
+            EPSILON,
+            "Large values should not cause precision errors."
+        );
     }
 
     /// **Test 7: Transformation with small values (Precision test)**
@@ -116,18 +130,25 @@ mod tests {
         let coord_ecl = Ecliptic::<AstronomicalUnit>::new(1e-10, -1e-10, 5e-11);
         let coord_ecl_back = serialize(&coord_ecl);
 
-        assert_cartesian_eq!(coord_ecl, coord_ecl_back, EPSILON, "Small values should not cause precision errors.");
+        assert_cartesian_eq!(
+            coord_ecl,
+            coord_ecl_back,
+            EPSILON,
+            "Small values should not cause precision errors."
+        );
     }
 
     #[test]
     fn round_trip_equatorial_ecliptic() {
-        let equatorial_orig = spherical::Position::<centers::Barycentric, frames::Equatorial, AstronomicalUnit>::new(
-            Degrees::new(123.4),
-            Degrees::new(-21.0),
-            2.7,
-        );
-        let ecliptic: spherical::Position::<centers::Barycentric, frames::Ecliptic, Au> = (&equatorial_orig).transform(JulianDate::J2000);
-        let equatorial_rec: spherical::Position::<centers::Barycentric, frames::Equatorial, Au> = (&ecliptic).transform(JulianDate::J2000);
+        let equatorial_orig = spherical::Position::<
+            centers::Barycentric,
+            frames::Equatorial,
+            AstronomicalUnit,
+        >::new(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
+        let ecliptic: spherical::Position<centers::Barycentric, frames::Ecliptic, Au> =
+            (&equatorial_orig).transform(JulianDate::J2000);
+        let equatorial_rec: spherical::Position<centers::Barycentric, frames::Equatorial, Au> =
+            (&ecliptic).transform(JulianDate::J2000);
 
         assert_spherical_eq!(equatorial_orig, equatorial_rec, 1e-10);
     }

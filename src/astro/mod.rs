@@ -17,14 +17,14 @@
 //! - [`modified_julian_date`]: Implements Modified Julian Date calculations.
 
 pub mod aberration;
-pub mod proper_motion;
-pub mod nutation;
-pub mod precession;
-pub mod sidereal;
 pub mod dynamical_time;
-pub mod orbit;
 pub mod julian_date;
 pub mod modified_julian_date;
+pub mod nutation;
+pub mod orbit;
+pub mod precession;
+pub mod proper_motion;
+pub mod sidereal;
 
 pub use julian_date::*;
 pub use modified_julian_date::*;

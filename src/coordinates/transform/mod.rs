@@ -64,7 +64,7 @@
 //! reversibility (where applicable), including edge cases and precision checks.
 //!
 //! ---
-//! 
+//!
 //! [`Transform`]: trait.Transform.html
 //! [`Vector`]: ../struct.Vector.html
 //! [`SphericalCoord`]: ../struct.SphericalCoord.html
@@ -77,20 +77,17 @@
 mod centers;
 mod frames;
 mod to_cartesian;
-mod to_spherical;
 mod to_direction;
 mod to_horizontal;
+mod to_spherical;
 
-pub use frames::TransformFrame;
 pub use centers::TransformCenter;
+pub use frames::TransformFrame;
 
 use crate::astro::JulianDate;
 use crate::coordinates::{
-    centers::ReferenceCenter,
-    frames::MutableFrame,
-    cartesian, spherical,
+    cartesian, cartesian::Vector, centers::ReferenceCenter, frames::MutableFrame, spherical,
     spherical::SphericalCoord,
-    cartesian::Vector
 };
 use crate::units::*;
 
@@ -101,7 +98,7 @@ pub trait Transform<Coord> {
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
 /// This implementation allows converting a [`Vector`] in from one
-/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two 
+/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
@@ -116,15 +113,14 @@ where
     U: Unit,
 {
     fn transform(&self, jd: JulianDate) -> Vector<C2, F2, U> {
-        self.to_frame()
-            .to_center(jd)
+        self.to_frame().to_center(jd)
     }
 }
 
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
 /// This implementation allows converting a [`Vector`] in from one
-/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two 
+/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
@@ -138,9 +134,7 @@ where
     U: LengthUnit,
 {
     fn transform(&self, jd: JulianDate) -> spherical::Position<C2, F2, U> {
-        self.to_cartesian()
-            .transform(jd)
-            .to_spherical()
+        self.to_cartesian().transform(jd).to_spherical()
     }
 }
 
@@ -153,16 +147,14 @@ where
     F2: MutableFrame,
 {
     fn transform(&self, jd: JulianDate) -> spherical::Direction<C2, F2> {
-        self.to_cartesian()
-            .transform(jd)
-            .to_spherical()
+        self.to_cartesian().transform(jd).to_spherical()
     }
 }
 
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
 /// This implementation allows converting a [`Vector`] in from one
-/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two 
+/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
@@ -178,8 +170,7 @@ where
     fn from(orig: &cartesian::Direction<C1, F1>) -> Self {
         // Step 1: Transform to new frame, keeping the original center.
         // Step 2: Transform to new center, now using the new frame.
-        orig.to_frame()
-            .transform(JulianDate::J2000)
+        orig.to_frame().transform(JulianDate::J2000)
     }
 }
 
@@ -197,7 +188,6 @@ where
     }
 }
 
-
 /// Blanket implementation for transforming [`SphericalCoord`],
 /// involving frame and center changes. Internally uses Cartesian conversions.
 ///
@@ -209,7 +199,7 @@ where
 impl<C1, F1, C2, F2, U> From<&SphericalCoord<C1, F1, U>> for SphericalCoord<C2, F2, U>
 where
     Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>, // transform frame
-    Vector<C1, F2, U>: Transform<Vector<C2, F2, U>>, // transform center
+    Vector<C1, F2, U>: Transform<Vector<C2, F2, U>>,      // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,

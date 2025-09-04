@@ -1,21 +1,22 @@
-use crate::units::{LengthUnit, AstronomicalUnits, Quantity};
-use crate::astro::JulianDate;
-use crate::bodies::solar_system::{Sun, Earth};
-use crate::coordinates::{
-    frames::MutableFrame,
-    centers::{Barycentric, Heliocentric, Geocentric},
-    cartesian::Position,
-    cartesian::position::{Ecliptic, Equatorial}
-};
-use crate::coordinates::transform::TransformFrame;
-use crate::coordinates::transform::centers::TransformCenter;
 use crate::astro::aberration::remove_aberration;
+use crate::astro::JulianDate;
+use crate::bodies::solar_system::{Earth, Sun};
+use crate::coordinates::transform::centers::TransformCenter;
+use crate::coordinates::transform::TransformFrame;
+use crate::coordinates::{
+    cartesian::position::{Ecliptic, Equatorial},
+    cartesian::Position,
+    centers::{Barycentric, Geocentric, Heliocentric},
+    frames::MutableFrame,
+};
+use crate::units::{AstronomicalUnits, LengthUnit, Quantity};
 
 // Heliocentric To Barycentric
-impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>> for Position<Heliocentric, F, U>
+impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>>
+    for Position<Heliocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Ecliptic<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>
+    Ecliptic<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let sun_bary_ecl_au = *Sun::vsop87e(jd).get_position();
@@ -33,12 +34,13 @@ where
 }
 
 // Geocentric To Barycentric
-impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>> for Position<Geocentric, F, U>
+impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>>
+    for Position<Geocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Ecliptic<U, Barycentric>:   TransformFrame<Equatorial<U, Barycentric>>, // Required by VSOP
-    Position<Geocentric, F, U>:   TransformFrame<Equatorial<U, Geocentric>>, // Required by Aberration
-    Equatorial<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>> // Required by Aberration
+    Ecliptic<U, Barycentric>: TransformFrame<Equatorial<U, Barycentric>>, // Required by VSOP
+    Position<Geocentric, F, U>: TransformFrame<Equatorial<U, Geocentric>>, // Required by Aberration
+    Equatorial<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>, // Required by Aberration
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let earth_bary_ecl_au = *Earth::vsop87e(jd).get_position();
@@ -50,11 +52,13 @@ where
             earth_bary_ecl_au.z(),
         );
 
-        let earth_bary_equ: Equatorial::<U, Barycentric> = earth_bary_ecl.to_frame(); // (Bary-Ecl) -> (Bary-Equ)
-        let target_geo_equ: Equatorial::<U, Geocentric>  = self.to_frame(); // (Geo-F) -> (Geo-Equ)
+        let earth_bary_equ: Equatorial<U, Barycentric> = earth_bary_ecl.to_frame(); // (Bary-Ecl) -> (Bary-Equ)
+        let target_geo_equ: Equatorial<U, Geocentric> = self.to_frame(); // (Geo-F) -> (Geo-Equ)
         let target_geo_equ_no_aberration = remove_aberration(target_geo_equ, jd);
 
-        let bary_equ = Equatorial::<U, Barycentric>::from_vec3(target_geo_equ_no_aberration.as_vec3() + earth_bary_equ.as_vec3()); // Geocentric -> Barycentric
+        let bary_equ = Equatorial::<U, Barycentric>::from_vec3(
+            target_geo_equ_no_aberration.as_vec3() + earth_bary_equ.as_vec3(),
+        ); // Geocentric -> Barycentric
         bary_equ.to_frame() // Equatorial -> F
     }
 }
@@ -62,19 +66,19 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::bodies::solar_system::{Earth, Sun};
+    use crate::coordinates::cartesian::position::Ecliptic;
     use crate::coordinates::centers::*;
-    use crate::bodies::solar_system::{Sun, Earth};
+    use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
     use crate::units::Au;
-    use crate::coordinates::cartesian::position::Ecliptic;
-    use crate::coordinates::transform::Transform;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
     #[test] // Heliocentric -> Barycentric
     fn test_helio() {
         let sun_helio = Ecliptic::<Au>::CENTER;
-        let sun_bary: Ecliptic::<Au, Barycentric> = (&sun_helio).transform(JulianDate::J2000);
+        let sun_bary: Ecliptic<Au, Barycentric> = (&sun_helio).transform(JulianDate::J2000);
         let expected_sun_bary = Sun::vsop87e(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(sun_bary, expected_sun_bary, EPSILON);
     }
@@ -82,9 +86,8 @@ mod tests {
     #[test] // Geocentric -> Barycentric
     fn test_geo() {
         let earth_geo = Ecliptic::<Au, Geocentric>::CENTER;
-        let earth_bary: Ecliptic::<Au, Barycentric> = (&earth_geo).transform(JulianDate::J2000);
+        let earth_bary: Ecliptic<Au, Barycentric> = (&earth_geo).transform(JulianDate::J2000);
         let expected_earth_bary = Earth::vsop87e(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(&earth_bary, &expected_earth_bary, EPSILON);
     }
-
 }

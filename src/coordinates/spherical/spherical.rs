@@ -37,8 +37,8 @@
 //! ## Display
 //! Implements `Display` for readable output including center, frame, angles, and distance.
 
+use crate::coordinates::{centers, frames};
 use crate::units::*;
-use crate::coordinates::{frames, centers};
 
 use std::marker::PhantomData;
 
@@ -48,11 +48,7 @@ use std::marker::PhantomData;
 /// - `C`: The reference center (e.g., `Barycentric`, `Heliocentric`).
 /// - `F`: The reference frame (e.g., `frames::ICRS`, `Ecliptic`).
 #[derive(Debug, Clone, Copy)]
-pub struct SphericalCoord<
-    C: centers::ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: Unit,
-> {
+pub struct SphericalCoord<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: Unit> {
     pub polar: Degrees,        // θ (polar/latitude/declination)
     pub azimuth: Degrees,      // φ (azimuth/longitude/right ascension)
     pub distance: Quantity<U>, // Distance (AstronomicalUnits, parsec, etc.)
@@ -103,7 +99,6 @@ where
         Radians::new(angle_rad).to::<Degree>()
     }
 
-
     /// Returns a **direction** (unitless unitary vector) corresponding to this position
     /// (i.e. same angular coordinates, radius = 1).
     #[must_use]
@@ -115,18 +110,18 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::spherical::SphericalCoord;
     use crate::coordinates::centers::*;
     use crate::coordinates::frames;
+    use crate::coordinates::spherical::SphericalCoord;
 
-    const EPS: Degrees = Degrees::new(1e-6);       // tolerance for the exact geometry cases
-    const EPS_STAR: Degrees = Degrees::new(1e-2);  // tolerance for the real‑world catalogue case
+    const EPS: Degrees = Degrees::new(1e-6); // tolerance for the exact geometry cases
+    const EPS_STAR: Degrees = Degrees::new(1e-2); // tolerance for the real‑world catalogue case
 
     /// Helper to build a unit‑length direction in the frames::ICRS frame.
     fn dir(dec: f64, ra: f64) -> SphericalCoord<Geocentric, frames::ICRS, Unitless> {
         SphericalCoord::new_raw(
-            Degrees::new(dec),   // polar / declination
-            Degrees::new(ra),    // azimuth / right‑ascension
+            Degrees::new(dec), // polar / declination
+            Degrees::new(ra),  // azimuth / right‑ascension
             Quantity::<Unitless>::new(1.0),
         )
     }
@@ -143,7 +138,11 @@ mod tests {
         let a = dir(0.0, 0.0);
         let b = dir(0.0, 90.0);
         let sep = a.angular_separation(b);
-        assert!((sep.to::<Degree>() - 90.0*DEG).abs() < EPS, "expected 90°, got {}°", sep);
+        assert!(
+            (sep.to::<Degree>() - 90.0 * DEG).abs() < EPS,
+            "expected 90°, got {}°",
+            sep
+        );
     }
 
     #[test]
@@ -151,17 +150,24 @@ mod tests {
         let a = dir(0.0, 0.0);
         let b = dir(0.0, 180.0);
         let sep = a.angular_separation(b);
-        assert!((sep.to::<Degree>() - 180.0*DEG).abs() < EPS, "expected 180°, got {}°", sep);
+        assert!(
+            (sep.to::<Degree>() - 180.0 * DEG).abs() < EPS,
+            "expected 180°, got {}°",
+            sep
+        );
     }
 
     #[test]
     fn polaris_betelgeuse_real_world() {
         // Star coordinates (J2000) from SIMBAD
-        let polaris = dir(89.26410897, 37.95456067);   // Dec, RA
-        let betel   = dir(7.407064,    88.792939);     // Dec, RA
+        let polaris = dir(89.26410897, 37.95456067); // Dec, RA
+        let betel = dir(7.407064, 88.792939); // Dec, RA
         let sep = polaris.angular_separation(betel);
-        assert!((sep.to::<Degree>() - 82.1286*DEG).abs() < EPS_STAR,
-            "expected 224882.13°, got {}°", sep);
+        assert!(
+            (sep.to::<Degree>() - 82.1286 * DEG).abs() < EPS_STAR,
+            "expected 224882.13°, got {}°",
+            sep
+        );
     }
 
     #[test]
@@ -169,13 +175,13 @@ mod tests {
         let coord = SphericalCoord::<Barycentric, frames::ICRS, Au>::new_raw(
             Degrees::new(45.0),
             Degrees::new(90.0),
-            1.0*AU
+            1.0 * AU,
         );
         assert_eq!(coord.polar.value(), 45.0);
         assert_eq!(coord.azimuth.value(), 90.0);
         assert_eq!(coord.distance.value(), 1.0);
     }
-    
+
     #[test]
     fn test_spherical_coord_new() {
         let coord = SphericalCoord::<Geocentric, frames::ICRS, Au>::new(30.0, 60.0, 1000.0);
@@ -189,7 +195,7 @@ mod tests {
         let coord = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(30.0),
             Degrees::new(60.0),
-            1000.0*AU
+            1000.0 * AU,
         );
         let coord_string = coord.to_string();
         println!("{}", coord_string);
@@ -199,13 +205,13 @@ mod tests {
         assert!(coord_string.contains("Geocentric"));
         assert!(coord_string.contains("ICRS"));
     }
-    
+
     #[test]
     fn test_spherical_coord_zero_values() {
         let coord = SphericalCoord::<Heliocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(0.0),
             Degrees::new(0.0),
-            0.0*AU
+            0.0 * AU,
         );
         assert_eq!(coord.polar.value(), 0.0);
         assert_eq!(coord.azimuth.value(), 0.0);
@@ -217,7 +223,7 @@ mod tests {
         let coord = SphericalCoord::<Barycentric, frames::ICRS, Au>::new_raw(
             Degrees::new(90.654321),
             Degrees::new(45.123456),
-            1234.56789*AU
+            1234.56789 * AU,
         );
         assert!((coord.polar.value() - 90.654321).abs() < 1e-6);
         assert!((coord.azimuth.value() - 45.123456).abs() < 1e-6);
@@ -229,7 +235,7 @@ mod tests {
         let coord = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(45.0),
             Degrees::new(30.0),
-            100.0*AU
+            100.0 * AU,
         );
         let distance = coord.distance.value();
         assert!((distance - 100.0).abs() < 1e-10);
@@ -240,12 +246,12 @@ mod tests {
         let coord1 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(0.0),
             Degrees::new(0.0),
-            100.0*AU
+            100.0 * AU,
         );
         let coord2 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(0.0),
             Degrees::new(0.0),
-            200.0*AU
+            200.0 * AU,
         );
         let distance = coord1.distance.value() - coord2.distance.value();
         assert_eq!(distance.abs(), 100.0);
@@ -256,12 +262,12 @@ mod tests {
         let coord1 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(0.0),
             Degrees::new(0.0),
-            100.0*AU
+            100.0 * AU,
         );
         let coord2 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(90.0),
             Degrees::new(0.0),
-            100.0*AU
+            100.0 * AU,
         );
         let separation = coord1.angular_separation(coord2);
         assert!((separation.value() - 90.0).abs() < 1e-6);
@@ -272,12 +278,12 @@ mod tests {
         let coord1 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(45.0),
             Degrees::new(30.0),
-            100.0*AU
+            100.0 * AU,
         );
         let coord2 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(45.0),
             Degrees::new(30.0),
-            200.0*AU
+            200.0 * AU,
         );
         let separation = coord1.angular_separation(coord2);
         assert!((separation.value() - 0.0).abs() < 1e-6);
@@ -288,12 +294,12 @@ mod tests {
         let coord1 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(0.0),
             Degrees::new(0.0),
-            100.0*AU
+            100.0 * AU,
         );
         let coord2 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(180.0),
             Degrees::new(0.0),
-            100.0*AU
+            100.0 * AU,
         );
         let separation = coord1.angular_separation(coord2);
         assert!((separation.value() - 180.0).abs() < 1e-6);
@@ -304,7 +310,7 @@ mod tests {
         let coord = SphericalCoord::<Barycentric, frames::ICRS, Au>::new_raw(
             Degrees::new(45.0),
             Degrees::new(90.0),
-            1.0*AU
+            1.0 * AU,
         );
         let debug_str = format!("{:?}", coord);
         assert!(debug_str.contains("SphericalCoord"));
@@ -315,7 +321,7 @@ mod tests {
         let coord1 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(30.0),
             Degrees::new(60.0),
-            100.0*AU
+            100.0 * AU,
         );
         let coord2 = coord1.clone();
         assert_eq!(coord1.polar.value(), coord2.polar.value());
@@ -328,7 +334,7 @@ mod tests {
         let coord1 = SphericalCoord::<Heliocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(45.0),
             Degrees::new(90.0),
-            200.0*AU
+            200.0 * AU,
         );
         let coord2 = coord1; // Copy
         assert_eq!(coord1.polar.value(), coord2.polar.value());
@@ -341,12 +347,12 @@ mod tests {
         let coord1 = SphericalCoord::<Barycentric, frames::ICRS, Au>::new_raw(
             Degrees::new(30.0),
             Degrees::new(60.0),
-            100.0*AU
+            100.0 * AU,
         );
         let coord2 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(30.0),
             Degrees::new(60.0),
-            100.0*AU
+            100.0 * AU,
         );
         assert_eq!(coord1.polar.value(), coord2.polar.value());
         assert_eq!(coord1.azimuth.value(), coord2.azimuth.value());
@@ -358,12 +364,12 @@ mod tests {
         let coord1 = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(45.0),
             Degrees::new(90.0),
-            150.0*AU
+            150.0 * AU,
         );
         let coord2 = SphericalCoord::<Geocentric, frames::Ecliptic, Au>::new_raw(
             Degrees::new(45.0),
             Degrees::new(90.0),
-            150.0*AU
+            150.0 * AU,
         );
         assert_eq!(coord1.polar.value(), coord2.polar.value());
         assert_eq!(coord1.azimuth.value(), coord2.azimuth.value());
@@ -376,7 +382,7 @@ mod tests {
         let coord = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(359.999),
             Degrees::new(179.999),
-            1e6*AU
+            1e6 * AU,
         );
         assert!((coord.polar.value() - 359.999).abs() < 1e-6);
         assert!((coord.azimuth.value() - 179.999).abs() < 1e-6);
@@ -386,7 +392,7 @@ mod tests {
         let coord = SphericalCoord::<Geocentric, frames::ICRS, Au>::new_raw(
             Degrees::new(0.001),
             Degrees::new(0.001),
-            1e-6*AU
+            1e-6 * AU,
         );
         assert!((coord.polar.value() - 0.001).abs() < 1e-6);
         assert!((coord.azimuth.value() - 0.001).abs() < 1e-6);

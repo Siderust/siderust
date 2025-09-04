@@ -1,23 +1,23 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use std::hint::black_box;
 use siderust::{
     astro::JulianDate,
-    units::{Days, Years},
     bodies::solar_system::*,
     calculus::vsop87::VSOP87,
+    units::{Days, Years},
 };
+use std::hint::black_box;
 
 fn bench_vsop87(c: &mut Criterion) {
     let start = JulianDate::J2000 + Years::new(25.0);
 
     let planet_list: Vec<(&str, Box<dyn VSOP87>)> = vec![
         ("Mercury", Box::new(Mercury)),
-        ("Venus",   Box::new(Venus)),
-        ("Earth",   Box::new(Earth)),
-        ("Mars",    Box::new(Mars)),
+        ("Venus", Box::new(Venus)),
+        ("Earth", Box::new(Earth)),
+        ("Mars", Box::new(Mars)),
         ("Jupiter", Box::new(Jupiter)),
-        ("Saturn",  Box::new(Saturn)),
-        ("Uranus",  Box::new(Uranus)),
+        ("Saturn", Box::new(Saturn)),
+        ("Uranus", Box::new(Uranus)),
         ("Neptune", Box::new(Neptune)),
     ];
 
@@ -37,13 +37,11 @@ fn bench_vsop87(c: &mut Criterion) {
                 let _coords = planet.vsop87e(black_box(jd));
             });
         });
-
     }
 }
-criterion_group!{
+criterion_group! {
     name = vsop87_benches;
     config = Criterion::default().without_plots();
     targets = bench_vsop87
 }
 criterion_main!(vsop87_benches);
-

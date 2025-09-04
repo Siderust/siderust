@@ -34,7 +34,7 @@
 //!
 //! ---
 //!
-//! Defines the generic `SphericalCoord<center, frame>` type for representing 
+//! Defines the generic `SphericalCoord<center, frame>` type for representing
 //! strongly typed spherical coordinates with various reference centers and frames.
 //!
 //! This module provides:
@@ -70,8 +70,8 @@ pub use position::Position;
 pub mod direction;
 pub use direction::Direction;
 
-mod equatorial;
+mod ecef;
 mod ecliptic;
+mod equatorial;
 mod horizontal;
 mod icrs;
-mod ecef;

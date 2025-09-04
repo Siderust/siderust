@@ -13,12 +13,7 @@
 //! `codegen::generate_modules` and the already‑resolved `out_dir` path; it
 //! performs the write and surfaces any error through `anyhow`.
 
-use std::{
-    collections::BTreeMap,
-    fs::File,
-    io::Write,
-    path::Path,
-};
+use std::{collections::BTreeMap, fs::File, io::Write, path::Path};
 
 use anyhow::Context;
 
@@ -41,22 +36,18 @@ use anyhow::Context;
 /// The function is **idempotent**: it always overwrites the file with the new
 /// contents.  Errors from the file system are wrapped with context so that the
 /// caller knows *which* file failed.
-pub fn write_modules(
-    mods: &BTreeMap<char, String>,
-    out_dir: &Path,
-) -> anyhow::Result<()> {
+pub fn write_modules(mods: &BTreeMap<char, String>, out_dir: &Path) -> anyhow::Result<()> {
     for (version, code) in mods {
         // ------------------------------------------------------------------
         // 1) Compute final path   OUT_DIR / "vsop87{version}.rs"
         // ------------------------------------------------------------------
         let file_name = format!("vsop87{}.rs", version.to_ascii_lowercase());
-        let path      = out_dir.join(&file_name);
+        let path = out_dir.join(&file_name);
 
         // ------------------------------------------------------------------
         // 2) Create (or truncate) the file and write the source string
         // ------------------------------------------------------------------
-        let mut f = File::create(&path)
-            .with_context(|| format!("Could not create {path:?}"))?;
+        let mut f = File::create(&path).with_context(|| format!("Could not create {path:?}"))?;
         f.write_all(code.as_bytes())
             .with_context(|| format!("Error writing {path:?}"))?;
 

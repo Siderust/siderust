@@ -24,20 +24,13 @@
 //! ```
 
 use super::*;
-use crate::coordinates::{
-    frames::*,
-    centers::*,
-};
-use crate::units::*;
 use crate::bodies::EARTH;
+use crate::coordinates::{centers::*, frames::*};
+use crate::units::*;
 
-impl<C: ReferenceCenter,> Direction<C, ECEF> {
+impl<C: ReferenceCenter> Direction<C, ECEF> {
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
-        Self::new_raw(
-            lat,
-            lon,
-            Quantity::<Unitless>::new(1.0)
-        )
+        Self::new_raw(lat, lon, Quantity::<Unitless>::new(1.0))
     }
 
     /// Creates a new geographic coordinate with normalized latitude and longitude.
@@ -49,10 +42,7 @@ impl<C: ReferenceCenter,> Direction<C, ECEF> {
     where
         T: Into<Degrees>,
     {
-        Self::new_const(
-            lat.into().wrap_quarter_fold(),
-            lon.into().wrap_signed_lo()
-        )
+        Self::new_const(lat.into().wrap_quarter_fold(), lon.into().wrap_signed_lo())
     }
 }
 
@@ -61,7 +51,7 @@ impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
         Self::new_raw(
             lat,
             lon,
-            Kilometers::new(EARTH.radius.value() + alt.value())
+            Kilometers::new(EARTH.radius.value() + alt.value()),
         )
     }
 
@@ -79,16 +69,19 @@ impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
         Self::new_const(
             lat.into().wrap_quarter_fold(),
             lon.into().wrap_signed_lo(),
-            alt.into())
+            alt.into(),
+        )
     }
 }
 
 impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, ECEF, U> {
     /// Returns the latitude (φ) in degrees.
-    pub fn lat(&self) -> Degrees { self.polar }
+    pub fn lat(&self) -> Degrees {
+        self.polar
+    }
 
     /// Returns the longitude (λ) in degrees.
-    pub fn lon(&self) -> Degrees { self.azimuth }
+    pub fn lon(&self) -> Degrees {
+        self.azimuth
+    }
 }
-
-

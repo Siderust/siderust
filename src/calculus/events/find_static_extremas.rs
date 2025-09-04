@@ -1,17 +1,11 @@
 use super::Culmination;
+use crate::astro::{nutation::corrected_ra_with_nutation, sidereal::*, JulianDate};
+use crate::coordinates::{
+    centers::Geocentric, frames::Equatorial, spherical::position::Geographic,
+    spherical::SphericalCoord,
+};
 use crate::targets::Target;
 use crate::units::*;
-use crate::astro::{
-    JulianDate,
-    sidereal::*,
-    nutation::corrected_ra_with_nutation
-};
-use crate::coordinates::{
-    spherical::SphericalCoord,
-    spherical::position::Geographic,
-    centers::Geocentric,
-    frames::Equatorial
-};
 
 /// Returns **all** upper- and lower-culminations (meridian passages) that occur
 /// in the interval `[jd_start, jd_end]` for a target whose right-ascension and
@@ -55,7 +49,7 @@ use crate::coordinates::{
 ///
 /// ---
 pub fn find_static_extremas<U: Unit>(
-    target: &Target<SphericalCoord::<Geocentric, Equatorial, U>>,
+    target: &Target<SphericalCoord<Geocentric, Equatorial, U>>,
     observer: &Geographic,
     jd_start: JulianDate,
     jd_end: JulianDate,
@@ -97,7 +91,8 @@ pub fn find_static_extremas<U: Unit>(
         // Step through the remaining culminations
         if t_first.value().is_finite() {
             let mut t = t_first;
-            while t <= jd_end + Days::new(1e-12) { // numerical guard
+            while t <= jd_end + Days::new(1e-12) {
+                // numerical guard
                 let event = if is_upper {
                     Culmination::Upper { jd: t }
                 } else {
@@ -122,7 +117,6 @@ pub fn find_static_extremas<U: Unit>(
     out
 }
 
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -131,8 +125,8 @@ mod tests {
 
     fn approx_eq(a: &Culmination, b: &Culmination, epsilon: f64) -> bool {
         match (a, b) {
-            (Culmination::Upper { jd: jd_a }, Culmination::Upper { jd: jd_b }) |
-            (Culmination::Lower { jd: jd_a }, Culmination::Lower { jd: jd_b }) => {
+            (Culmination::Upper { jd: jd_a }, Culmination::Upper { jd: jd_b })
+            | (Culmination::Lower { jd: jd_a }, Culmination::Lower { jd: jd_b }) => {
                 (jd_a.value() - jd_b.value()).abs() <= epsilon
             }
             _ => false, // mismatched types: one Upper, one Lower
@@ -141,15 +135,19 @@ mod tests {
 
     #[test]
     fn test_find_sirius_static() {
-
         let jd_start = JulianDate::new(2460677.0);
         let jd_end = jd_start + Days::new(1.0);
 
-        let results = find_static_extremas(&SIRIUS.target, &ROQUE_DE_LOS_MUCHACHOS, jd_start, jd_end);
+        let results =
+            find_static_extremas(&SIRIUS.target, &ROQUE_DE_LOS_MUCHACHOS, jd_start, jd_end);
         print!("\n{:?}", results);
 
-        let expected_lower = Culmination::Lower {jd: JulianDate::new(2460677.05000)};
-        let expected_upper = Culmination::Upper {jd: JulianDate::new(2460677.54860)};
+        let expected_lower = Culmination::Lower {
+            jd: JulianDate::new(2460677.05000),
+        };
+        let expected_upper = Culmination::Upper {
+            jd: JulianDate::new(2460677.54860),
+        };
 
         assert_eq!(results.len(), 2);
         approx_eq(&results[0], &expected_lower, 0.001);
