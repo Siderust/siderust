@@ -49,7 +49,6 @@ impl_vsop87_for_planet!(Neptune);
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::bodies::solar_system::*;
     use crate::macros::assert_cartesian_eq;
 
     const PRECISION: f64 = 1.0e-12;

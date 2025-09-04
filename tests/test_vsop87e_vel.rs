@@ -2,7 +2,6 @@ use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::{
     Earth, Jupiter, Mars, Mercury, Neptune, Saturn, Sun, Uranus, Venus,
 };
-use siderust::units::AusPerDay;
 
 const PRECISION: f64 = 1.0e-6;
 
