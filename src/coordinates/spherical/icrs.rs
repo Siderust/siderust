@@ -24,12 +24,9 @@
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
-use super::{Position, Direction};
+use super::{Direction, Position};
 use crate::coordinates::spherical::SphericalCoord;
-use crate::coordinates::{
-    frames::ICRS,
-    centers::*,
-};
+use crate::coordinates::{centers::*, frames::ICRS};
 use crate::units::*;
 
 impl<C: ReferenceCenter> Direction<C, ICRS> {
@@ -59,10 +56,7 @@ impl<C: ReferenceCenter> Direction<C, ICRS> {
     where
         T: Into<Degrees>,
     {
-        Self::new_const(
-            ra.into().normalize(),
-            dec.into().wrap_quarter_fold()
-        )
+        Self::new_const(ra.into().normalize(), dec.into().wrap_quarter_fold())
     }
 }
 
@@ -99,15 +93,19 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
         Self::new_const(
             ra.into().normalize(),
             dec.into().wrap_quarter_fold(),
-            distance.into())
+            distance.into(),
+        )
     }
-
 }
 
 impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, ICRS, U> {
     /// Returns the Declination (δ) in degrees.
-    pub fn dec(&self) -> Degrees { self.polar }
+    pub fn dec(&self) -> Degrees {
+        self.polar
+    }
 
     /// Returns the Right Ascension (α) in degrees.
-    pub fn ra(&self) -> Degrees { self.azimuth }
+    pub fn ra(&self) -> Degrees {
+        self.azimuth
+    }
 }

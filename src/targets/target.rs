@@ -1,5 +1,5 @@
-use crate::astro::JulianDate;
 use crate::astro::proper_motion::ProperMotion;
+use crate::astro::JulianDate;
 
 #[derive(Debug, Clone)]
 pub struct Target<T> {
@@ -13,15 +13,31 @@ pub struct Target<T> {
 
 impl<T> Target<T> {
     pub const fn new(position: T, time: JulianDate, proper_motion: ProperMotion) -> Self {
-        Target { position, time, proper_motion: Some(proper_motion) }
+        Target {
+            position,
+            time,
+            proper_motion: Some(proper_motion),
+        }
     }
 
     pub const fn new_static(position: T, time: JulianDate) -> Self {
-        Target { position, time, proper_motion: None }
+        Target {
+            position,
+            time,
+            proper_motion: None,
+        }
     }
 
-    pub const fn new_raw(position: T, time: JulianDate, proper_motion: Option<ProperMotion>) -> Self {
-        Target { position, time, proper_motion }
+    pub const fn new_raw(
+        position: T,
+        time: JulianDate,
+        proper_motion: Option<ProperMotion>,
+    ) -> Self {
+        Target {
+            position,
+            time,
+            proper_motion,
+        }
     }
 
     pub const fn get_position(&self) -> &T {
@@ -36,12 +52,11 @@ impl<T> Target<T> {
         &self.time
     }
 
-
     /// Overwrite the position *and* epoch in one operation.
     ///
     /// This helper is convenient when a new observation arrives.  It leaves the
     /// proper‑motion model untouched so that later extrapolations still work.
-    pub  fn update(&mut self, position: T, time: JulianDate) {
+    pub fn update(&mut self, position: T, time: JulianDate) {
         self.time = time;
         self.position = position;
     }
@@ -50,9 +65,9 @@ impl<T> Target<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::astro::proper_motion::ProperMotion;
     use crate::astro::JulianDate;
     use crate::bodies::catalog::ALDEBARAN;
-    use crate::astro::proper_motion::ProperMotion;
     use crate::coordinates::spherical::position::GCRS;
     use crate::units::*;
 
@@ -70,11 +85,11 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(45.0),
             crate::units::Degrees::new(30.0),
-            100.0
+            100.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(10.0),
-            MilliArcsecondsPerDay::new(5.0)
+            MilliArcsecondsPerDay::new(5.0),
         );
         let target = Target::new(position.clone(), JulianDate::J2000, proper_motion);
 
@@ -89,7 +104,7 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(60.0),
             crate::units::Degrees::new(45.0),
-            200.0
+            200.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
 
@@ -104,11 +119,11 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(90.0),
             crate::units::Degrees::new(60.0),
-            300.0
+            300.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(15.0),
-            MilliArcsecondsPerDay::new(8.0)
+            MilliArcsecondsPerDay::new(8.0),
         );
 
         // Test with Some(proper_motion)
@@ -131,7 +146,7 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(120.0),
             crate::units::Degrees::new(75.0),
-            400.0
+            400.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
 
@@ -146,11 +161,11 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(150.0),
             crate::units::Degrees::new(80.0),
-            500.0
+            500.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(20.0),
-            MilliArcsecondsPerDay::new(12.0)
+            MilliArcsecondsPerDay::new(12.0),
         );
 
         // Test with proper motion
@@ -173,7 +188,7 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(180.0),
             crate::units::Degrees::new(85.0),
-            600.0
+            600.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
 
@@ -186,11 +201,11 @@ mod tests {
         let initial_position = GCRS::<Au>::new(
             crate::units::Degrees::new(200.0),
             crate::units::Degrees::new(90.0),
-            700.0
+            700.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(25.0),
-            MilliArcsecondsPerDay::new(15.0)
+            MilliArcsecondsPerDay::new(15.0),
         );
         let mut target = Target::new(initial_position.clone(), JulianDate::J2000, proper_motion);
 
@@ -198,7 +213,7 @@ mod tests {
         let new_position = GCRS::<Au>::new(
             crate::units::Degrees::new(220.0),
             crate::units::Degrees::new(85.0),
-            800.0
+            800.0,
         );
         let new_time = JulianDate::J2000 + crate::units::Days::new(365.25);
 
@@ -223,7 +238,7 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(240.0),
             crate::units::Degrees::new(80.0),
-            900.0
+            900.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
 
@@ -236,11 +251,11 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(260.0),
             crate::units::Degrees::new(75.0),
-            1000.0
+            1000.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(30.0),
-            MilliArcsecondsPerDay::new(18.0)
+            MilliArcsecondsPerDay::new(18.0),
         );
         let target1 = Target::new(position.clone(), JulianDate::J2000, proper_motion);
 
@@ -248,10 +263,16 @@ mod tests {
 
         // Check that all fields were cloned correctly
         assert_eq!(target1.position.ra().value(), target2.position.ra().value());
-        assert_eq!(target1.position.dec().value(), target2.position.dec().value());
+        assert_eq!(
+            target1.position.dec().value(),
+            target2.position.dec().value()
+        );
         assert_eq!(target1.position.distance, target2.position.distance);
         assert_eq!(target1.time, target2.time);
-        assert_eq!(target1.proper_motion.is_some(), target2.proper_motion.is_some());
+        assert_eq!(
+            target1.proper_motion.is_some(),
+            target2.proper_motion.is_some()
+        );
     }
 
     #[test]
@@ -260,7 +281,7 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(0.0),
             crate::units::Degrees::new(0.0),
-            0.0
+            0.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
         assert_eq!(target.position.ra().value(), 0.0);
@@ -271,7 +292,7 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(359.999),
             crate::units::Degrees::new(89.999),
-            1e6
+            1e6,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
         assert!((target.position.ra().value() - 359.999).abs() < 1e-6);
@@ -284,11 +305,11 @@ mod tests {
         let position = GCRS::<Au>::new(
             crate::units::Degrees::new(280.0),
             crate::units::Degrees::new(70.0),
-            1100.0
+            1100.0,
         );
         let zero_proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(0.0),
-            MilliArcsecondsPerDay::new(0.0)
+            MilliArcsecondsPerDay::new(0.0),
         );
         let target = Target::new(position.clone(), JulianDate::J2000, zero_proper_motion);
 

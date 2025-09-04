@@ -36,8 +36,8 @@
 //! ≤ ±2 s before 1800 CE, and ≤ ±0.5 s since 1900.
 //! For future predictions, more accurate IERS-provided curves are recommended.
 
-use crate::units::Days;
 use crate::astro::JulianDate;
+use crate::units::Days;
 
 /// Total number of tabulated terms (biennial 1620–1992).
 const TERMS: usize = 187;

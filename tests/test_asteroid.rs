@@ -1,6 +1,8 @@
-use siderust::bodies::asteroid::{Asteroid, AsteroidClass, ASTEROID_PRESETS, CERES_AST, BENNU, APOPHIS};
 use siderust::astro::orbit::Orbit;
 use siderust::astro::JulianDate;
+use siderust::bodies::asteroid::{
+    Asteroid, AsteroidClass, APOPHIS, ASTEROID_PRESETS, BENNU, CERES_AST,
+};
 use siderust::units::{AstronomicalUnits, Degrees};
 
 const TEST_ORBIT: Orbit = Orbit::new(
@@ -35,29 +37,20 @@ fn builder_sets_all_fields() {
 #[should_panic(expected = "missing name")]
 fn builder_missing_name_panics() {
     let orbit = TEST_ORBIT;
-    let _ = Asteroid::builder()
-        .designation("D-1")
-        .orbit(orbit)
-        .build();
+    let _ = Asteroid::builder().designation("D-1").orbit(orbit).build();
 }
 
 #[test]
 #[should_panic(expected = "missing designation")]
 fn builder_missing_designation_panics() {
     let orbit = TEST_ORBIT;
-    let _ = Asteroid::builder()
-        .name("Test")
-        .orbit(orbit)
-        .build();
+    let _ = Asteroid::builder().name("Test").orbit(orbit).build();
 }
 
 #[test]
 #[should_panic(expected = "missing orbit")]
 fn builder_missing_orbit_panics() {
-    let _ = Asteroid::builder()
-        .name("Test")
-        .designation("D-1")
-        .build();
+    let _ = Asteroid::builder().name("Test").designation("D-1").build();
 }
 
 const CONST_ASTEROID: Asteroid = Asteroid::new_const(

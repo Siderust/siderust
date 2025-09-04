@@ -81,12 +81,11 @@
 //! | `newton_kepler`, `bisection_kepler` | crate-private | Numerical kernels |
 //! | `kepler_equation_residual`, `kepler_equation_derivative` | crate-private | Helpers |
 
-
-use std::f64::consts::PI;
-use crate::coordinates::cartesian::position::Ecliptic;
 use crate::astro::orbit::Orbit;
-use crate::units::*;
 use crate::astro::JulianDate;
+use crate::coordinates::cartesian::position::Ecliptic;
+use crate::units::*;
+use std::f64::consts::PI;
 
 const TOLERANCE: Radians = Radians::new(1e-14);
 const MAX_NEWTON_ITERS: usize = 30;
@@ -104,9 +103,8 @@ fn kepler_equation_derivative(e_anomaly: Radians, e: f64) -> f64 {
     1.0 - e * e_anomaly.cos()
 }
 
-
 /// Attempts to solve Kepler's equation via Newton-Raphson.
-/// 
+///
 /// Returns `Some(e_anomaly)` on success, or `None` if:
 /// - Convergence isn't reached within `MAX_NEWTON_ITERS`, or
 /// - The derivative is too small (risking large updates).
@@ -134,7 +132,7 @@ fn newton_kepler(m: Radians, e: f64, initial_guess: Radians) -> Option<Radians> 
 
 /// Uses the bisection method to solve Kepler's equation, guaranteed to converge,
 /// but typically slower than Newton-Raphson.
-/// 
+///
 /// Assumes there's a bracket [lower, upper] where the sign of f differs.
 fn bisection_kepler(m: Radians, e: f64, mut lower: Radians, mut upper: Radians) -> Radians {
     let mut f_lower = kepler_equation_residual(lower, e, m);
@@ -167,7 +165,6 @@ fn bisection_kepler(m: Radians, e: f64, mut lower: Radians, mut upper: Radians) 
     (lower + upper) * 0.5
 }
 
-
 /// Solves Kepler's Equation (E - e*sin(E) = M) for the eccentric anomaly E.
 /// Kepler's Equation relates the mean anomaly (MM) to the eccentric anomaly (EE) for an
 /// orbiting body with a given orbital eccentricity (ee). Solving for EE given MM and ee
@@ -198,8 +195,8 @@ fn orbital_period_days(a: AstronomicalUnits) -> Days {
     // T in years, a in AstronomicalUnits
     // 1 year ~ 365.256898326 days
     let year = 365.256898326;
-    let t_years = a.value().powf(1.5);    // T in years
-    Days::new(t_years * year)               // convert years -> days
+    let t_years = a.value().powf(1.5); // T in years
+    Days::new(t_years * year) // convert years -> days
 }
 
 /// Calculates the heliocentric coordinates of a celestial body at a given Julian date,
@@ -215,7 +212,6 @@ pub fn calculate_orbit_position(
     elements: &Orbit,
     julian_date: JulianDate,
 ) -> Ecliptic<AstronomicalUnit> {
-
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);
     let n: RadiansPerDay = Radians::TAU / period;
@@ -232,16 +228,15 @@ pub fn calculate_orbit_position(
 
     // 5) True Anomaly (ν)
     let e = elements.eccentricity;
-    let true_anomaly = 2.0
-        * ((1.0 + e).sqrt() * (e_anomaly * 0.5).tan() / (1.0 - e).sqrt()).atan();
+    let true_anomaly = 2.0 * ((1.0 + e).sqrt() * (e_anomaly * 0.5).tan() / (1.0 - e).sqrt()).atan();
 
     // 6) Heliocentric distance (z)
     let z = elements.semi_major_axis * (1.0 - e * e_anomaly.cos());
 
     // 7) Compute standard rotation angular
-    let i_rad     = elements.inclination.to::<Radian>();
+    let i_rad = elements.inclination.to::<Radian>();
     let omega_rad = elements.longitude_of_ascending_node.to::<Radian>();
-    let w_rad     = elements.argument_of_perihelion.to::<Radian>();
+    let w_rad = elements.argument_of_perihelion.to::<Radian>();
 
     // 8) Textbook formula: position in ecliptic coordinates (X, Y, Z)
     //
@@ -256,7 +251,7 @@ pub fn calculate_orbit_position(
     Ecliptic::new(
         z * (cos_omega * cos_w_nu - sin_omega * sin_w_nu * cos_i),
         z * (sin_omega * cos_w_nu + cos_omega * sin_w_nu * cos_i),
-        z * (sin_w_nu * sin_i)
+        z * (sin_w_nu * sin_i),
     )
 }
 
@@ -271,8 +266,8 @@ impl Orbit {
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::units::{Degrees, Days};
     use crate::macros::assert_cartesian_eq;
+    use crate::units::{Days, Degrees};
 
     /// Helper function to compare two floating-point numbers with a tolerance.
     fn approx_eq(a: f64, y: f64, tol: f64) -> bool {
@@ -307,12 +302,12 @@ mod tests {
     #[test]
     fn test_circular_orbit() {
         let orbit = Orbit::new(
-            1.0*AU,    // a (AstronomicalUnits)
-            0.0,    // e
-            Degrees::new(0.0),    // i 
-            Degrees::new(0.0),    // Ω 
-            Degrees::new(0.0),    // ω 
-            Degrees::new(0.0),    // M0
+            1.0 * AU,          // a (AstronomicalUnits)
+            0.0,               // e
+            Degrees::new(0.0), // i
+            Degrees::new(0.0), // Ω
+            Degrees::new(0.0), // ω
+            Degrees::new(0.0), // M0
             JulianDate::J2000, // epoch (Julian Date)
         );
 
@@ -332,12 +327,12 @@ mod tests {
     #[test]
     fn test_zero_inclination() {
         let elements = Orbit::new(
-            2.0*AU,    // a (AstronomicalUnits)
-            0.1,    // e
-            Degrees::new(0.0),    // i
-            Degrees::new(0.0),    // Ω
-            Degrees::new(0.0),    // ω
-            Degrees::new(0.0),    // M0
+            2.0 * AU,          // a (AstronomicalUnits)
+            0.1,               // e
+            Degrees::new(0.0), // i
+            Degrees::new(0.0), // Ω
+            Degrees::new(0.0), // ω
+            Degrees::new(0.0), // M0
             JulianDate::J2000, // epoch (Julian Date)
         );
 
@@ -350,12 +345,12 @@ mod tests {
     #[test]
     fn test_after_days() {
         let elements = Orbit::new(
-            1.0*AU,    // a (AstronomicalUnits)
-            0.0167, // e
-            Degrees::new(0.0),    // i
-            Degrees::new(0.0),    // Ω
-            Degrees::new(0.0),    // ω
-            Degrees::new(0.0),    // M0
+            1.0 * AU,          // a (AstronomicalUnits)
+            0.0167,            // e
+            Degrees::new(0.0), // i
+            Degrees::new(0.0), // Ω
+            Degrees::new(0.0), // ω
+            Degrees::new(0.0), // M0
             JulianDate::J2000, // epoch (Julian Date)
         );
 
@@ -369,7 +364,9 @@ mod tests {
 
         // For e=0.0167, we can compute expected E and true anomaly
         // However, for simplicity, we'll check that the distance is roughly constant
-        let computed_r = (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2)).sqrt();
+        let computed_r =
+            (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2))
+                .sqrt();
         let expected_r = 1.0 * (1.0 - 0.0167 * m_rad.cos()); // Approximation
 
         assert!(approx_eq(computed_r, expected_r, 1e-3)); // Allow some tolerance
@@ -439,11 +436,7 @@ mod tests {
 
         for planet in &planets {
             let coord = calculate_orbit_position(&planet.planet.orbit, JulianDate::J2000);
-            let expected = Ecliptic::new(
-                planet.expected.0,
-                planet.expected.1,
-                planet.expected.2
-            );
+            let expected = Ecliptic::new(planet.expected.0, planet.expected.1, planet.expected.2);
             assert_cartesian_eq!(coord, expected, planet.tol, "{} at J2000", planet.name);
         }
     }
@@ -534,12 +527,12 @@ mod tests {
         // Test with zero semi-major axis (should handle gracefully)
         let orbit = Orbit::new(
             AstronomicalUnits::new(0.0), // a = 0 AU
-            0.0,    // e
-            Degrees::new(0.0),    // i
-            Degrees::new(0.0),    // Ω
-            Degrees::new(0.0),    // ω
-            Degrees::new(0.0),    // M0
-            JulianDate::J2000, // epoch
+            0.0,                         // e
+            Degrees::new(0.0),           // i
+            Degrees::new(0.0),           // Ω
+            Degrees::new(0.0),           // ω
+            Degrees::new(0.0),           // M0
+            JulianDate::J2000,           // epoch
         );
 
         let coord = calculate_orbit_position(&orbit, JulianDate::J2000);
@@ -551,12 +544,12 @@ mod tests {
     #[test]
     fn test_calculate_orbit_position_different_epochs() {
         let orbit = Orbit::new(
-            1.0*AU,    // a (AU)
-            0.1,    // e
-            Degrees::new(0.0),    // i
-            Degrees::new(0.0),    // Ω
-            Degrees::new(0.0),    // ω
-            Degrees::new(0.0),    // M0
+            1.0 * AU,          // a (AU)
+            0.1,               // e
+            Degrees::new(0.0), // i
+            Degrees::new(0.0), // Ω
+            Degrees::new(0.0), // ω
+            Degrees::new(0.0), // M0
             JulianDate::J2000, // epoch
         );
 
@@ -574,7 +567,9 @@ mod tests {
             assert!(coord.z().value().is_finite());
 
             // Distance should be positive
-            let distance = (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2)).sqrt();
+            let distance =
+                (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2))
+                    .sqrt();
             assert!(distance > 0.0);
         }
     }
@@ -582,12 +577,12 @@ mod tests {
     #[test]
     fn test_orbit_kepler_position_method() {
         let orbit = Orbit::new(
-            1.0*AU,    // a (AU)
-            0.0,    // e (circular)
-            Degrees::new(0.0),    // i
-            Degrees::new(0.0),    // Ω
-            Degrees::new(0.0),    // ω
-            Degrees::new(0.0),    // M0
+            1.0 * AU,          // a (AU)
+            0.0,               // e (circular)
+            Degrees::new(0.0), // i
+            Degrees::new(0.0), // Ω
+            Degrees::new(0.0), // ω
+            Degrees::new(0.0), // M0
             JulianDate::J2000, // epoch
         );
 
@@ -603,13 +598,13 @@ mod tests {
     #[test]
     fn test_high_inclination_orbit() {
         let orbit = Orbit::new(
-            1.0*AU,    // a (AU)
-            0.1,    // e
-            Degrees::new(89.0),    // i (high inclination)
-            Degrees::new(0.0),    // Ω
-            Degrees::new(0.0),    // ω
-            Degrees::new(90.0),    // M0 (90 degrees to get non-zero z)
-            JulianDate::J2000, // epoch
+            1.0 * AU,           // a (AU)
+            0.1,                // e
+            Degrees::new(89.0), // i (high inclination)
+            Degrees::new(0.0),  // Ω
+            Degrees::new(0.0),  // ω
+            Degrees::new(90.0), // M0 (90 degrees to get non-zero z)
+            JulianDate::J2000,  // epoch
         );
 
         let coord = calculate_orbit_position(&orbit, JulianDate::J2000);
@@ -619,7 +614,9 @@ mod tests {
         assert!(coord.z().value().abs() > 0.01);
 
         // Distance should still be reasonable
-        let distance = (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2)).sqrt();
+        let distance =
+            (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2))
+                .sqrt();
         assert!(distance > 0.0);
         assert!(distance < 2.0); // Should be less than 2 AU for this orbit
     }
@@ -627,13 +624,13 @@ mod tests {
     #[test]
     fn test_retrograde_orbit() {
         let orbit = Orbit::new(
-            1.0*AU,    // a (AU)
-            0.1,    // e
-            Degrees::new(180.0),    // i (retrograde)
-            Degrees::new(0.0),    // Ω
-            Degrees::new(0.0),    // ω
-            Degrees::new(0.0),    // M0
-            JulianDate::J2000, // epoch
+            1.0 * AU,            // a (AU)
+            0.1,                 // e
+            Degrees::new(180.0), // i (retrograde)
+            Degrees::new(0.0),   // Ω
+            Degrees::new(0.0),   // ω
+            Degrees::new(0.0),   // M0
+            JulianDate::J2000,   // epoch
         );
 
         let coord = calculate_orbit_position(&orbit, JulianDate::J2000);

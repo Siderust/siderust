@@ -43,7 +43,7 @@
 //! both sidereal objects (stars, galaxies) and solar‑system bodies or static
 //! catalog entries.
 
-mod transform;
 mod target;
+mod transform;
 
 pub use target::Target;

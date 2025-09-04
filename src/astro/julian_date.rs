@@ -6,7 +6,7 @@
 use crate::units::*;
 
 use chrono::{DateTime, Utc};
-use std::ops::{Add, Sub, AddAssign, SubAssign};
+use std::ops::{Add, AddAssign, Sub, SubAssign};
 
 #[derive(Debug, Copy, Clone, PartialEq, PartialOrd)]
 /// Represents a Julian Day number (continuous count of days since the Julian Period).
@@ -96,7 +96,7 @@ impl Add<Years> for JulianDate {
     type Output = JulianDate;
 
     fn add(self, years: Years) -> JulianDate {
-        self + Self::JULIAN_YEAR* years.value()
+        self + Self::JULIAN_YEAR * years.value()
     }
 }
 

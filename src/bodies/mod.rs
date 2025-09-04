@@ -58,17 +58,17 @@
 //! ---
 
 pub mod asteroid;
-pub mod satelite;
-pub mod stars;
+pub mod catalog;
 pub mod comet;
 pub mod planets;
-pub mod catalog;
+pub mod satelite;
 pub mod solar_system;
+pub mod stars;
 
-pub use comet::Comet;
 pub use asteroid::Asteroid;
-pub use satelite::Satellite;
+pub use comet::Comet;
 pub use planets::Planet;
+pub use satelite::Satellite;
 pub use stars::Star;
 
 pub use catalog::*;

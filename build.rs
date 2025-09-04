@@ -4,7 +4,10 @@ mod vsop87_build;
 #[path = "scripts/elp2000/mod.rs"]
 mod elp2000_build;
 
-use std::{env, fs, path::{PathBuf, Path}};
+use std::{
+    env, fs,
+    path::{Path, PathBuf},
+};
 
 fn write_stub_files(out_dir: &Path) {
     // Minimal VSOP87 stub with all required constants but empty data
@@ -12,9 +15,12 @@ fn write_stub_files(out_dir: &Path) {
         use std::fmt::Write;
         let mut s = String::new();
         writeln!(s, "use crate::calculus::vsop87::vsop87_impl::Vsop87;").unwrap();
-        let bodies = ["MERCURY","VENUS","EARTH","MARS","JUPITER","SATURN","URANUS","NEPTUNE","EMB","SUN"];
+        let bodies = [
+            "MERCURY", "VENUS", "EARTH", "MARS", "JUPITER", "SATURN", "URANUS", "NEPTUNE", "EMB",
+            "SUN",
+        ];
         for body in bodies.iter() {
-            for coord in ["X","Y","Z"].iter() {
+            for coord in ["X", "Y", "Z"].iter() {
                 for power in 0..=5 {
                     writeln!(s, "pub static {body}_{coord}{power}: [Vsop87; 0] = [];").unwrap();
                 }
@@ -27,7 +33,11 @@ fn write_stub_files(out_dir: &Path) {
     fn stub_elp() -> String {
         use std::fmt::Write;
         let mut s = String::new();
-        writeln!(s, "use crate::calculus::elp2000::elp_structs::{{MainProblem, EarthPert, PlanetPert}};").unwrap();
+        writeln!(
+            s,
+            "use crate::calculus::elp2000::elp_structs::{{MainProblem, EarthPert, PlanetPert}};"
+        )
+        .unwrap();
         for idx in 1..=36 {
             let typ = if (1..=3).contains(&idx) {
                 "MainProblem"
@@ -47,9 +57,7 @@ fn write_stub_files(out_dir: &Path) {
 }
 
 fn main() {
-    let out_dir = PathBuf::from(
-        env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"),
-    );
+    let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"));
 
     if env::var("SIDERUST_STUBS").is_ok() {
         write_stub_files(&out_dir);
@@ -58,11 +66,9 @@ fn main() {
 
     // VSOP87
     let data_dir = out_dir.join("vsop87_dataset");
-    vsop87_build::run(data_dir.as_path())
-        .expect("VSOP87 codegen failed");
+    vsop87_build::run(data_dir.as_path()).expect("VSOP87 codegen failed");
 
     // ELP2000
     let elp_dir = out_dir.join("elp2000_dataset");
-    elp2000_build::run(elp_dir.as_path())
-        .expect("ELP2000 codegen failed");
+    elp2000_build::run(elp_dir.as_path()).expect("ELP2000 codegen failed");
 }

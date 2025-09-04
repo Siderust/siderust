@@ -1,6 +1,4 @@
-use crate::coordinates::{
-    centers::ReferenceCenter, frames::ReferenceFrame, spherical, cartesian,
-};
+use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
 use crate::units::*;
 
 pub fn spherical_to_cartesian_pos<C, F, U>(
@@ -50,7 +48,7 @@ impl<C, F, U> From<&spherical::Position<C, F, U>> for cartesian::Position<C, F, 
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit
+    U: LengthUnit,
 {
     fn from(sph: &spherical::Position<C, F, U>) -> Self {
         spherical_to_cartesian_pos(sph)
@@ -73,8 +71,7 @@ where
     F: ReferenceFrame,
     U: LengthUnit,
 {
-    pub fn to_cartesian(&self) -> cartesian::Position<C, F, U>
-    {
+    pub fn to_cartesian(&self) -> cartesian::Position<C, F, U> {
         spherical_to_cartesian_pos(self)
     }
 }
@@ -84,8 +81,7 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
 {
-    pub fn to_cartesian(&self) -> cartesian::Direction<C, F>
-    {
+    pub fn to_cartesian(&self) -> cartesian::Direction<C, F> {
         spherical_to_cartesian_dir(self)
     }
 }
@@ -96,8 +92,7 @@ where
     F: ReferenceFrame,
     U: LengthUnit,
 {
-    pub fn from_spherical(sph: &spherical::Position<C, F, U>) -> Self
-    {
+    pub fn from_spherical(sph: &spherical::Position<C, F, U>) -> Self {
         spherical_to_cartesian_pos(sph)
     }
 }
@@ -107,29 +102,32 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
 {
-    pub fn from_spherical(sph: &spherical::Direction<C, F>) -> Self
-    {
+    pub fn from_spherical(sph: &spherical::Direction<C, F>) -> Self {
         spherical_to_cartesian_dir(sph)
     }
 }
 
-
 #[cfg(test)]
 mod tests {
-    use crate::units::{AstronomicalUnit, Degrees};
     use crate::coordinates::{cartesian, spherical};
+    use crate::units::{AstronomicalUnit, Degrees};
 
     #[test]
     fn test_spherical_to_cartesian() {
         use crate::macros::assert_cartesian_eq;
         let sph = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(45.0),
-            Degrees::new(35.26438968275466), 
+            Degrees::new(35.26438968275466),
             1.7320508075688772,
         );
         let cart = cartesian::position::GCRS::<AstronomicalUnit>::from_spherical(&sph);
         let expected = cartesian::position::GCRS::new(1.0, 1.0, 1.0);
-        assert_cartesian_eq!(&cart, &expected, 1e-6, "Cartesian coordinates do not match expected values");
+        assert_cartesian_eq!(
+            &cart,
+            &expected,
+            1e-6,
+            "Cartesian coordinates do not match expected values"
+        );
     }
 
     #[test]
@@ -142,6 +140,11 @@ mod tests {
         );
         let cart = cartesian::position::GCRS::<AstronomicalUnit>::from_spherical(&sph_original);
         let sph_converted = cart.to_spherical();
-        assert_spherical_eq!(&sph_original, &sph_converted, 1e-6, "Spherical coordinates do not match expected values");
+        assert_spherical_eq!(
+            &sph_original,
+            &sph_converted,
+            1e-6,
+            "Spherical coordinates do not match expected values"
+        );
     }
 }

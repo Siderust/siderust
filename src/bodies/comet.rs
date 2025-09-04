@@ -31,12 +31,15 @@
 
 use crate::astro::orbit::Orbit;
 use crate::astro::JulianDate;
-use crate::units::{Kilometers, AstronomicalUnits, Degrees};
+use crate::units::{AstronomicalUnits, Degrees, Kilometers};
 
 /// Indicates whether orbital elements are given **with respect to the Solar‑System barycentre**
 /// or the heliocentre (Sun‑centred).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum OrbitFrame { Heliocentric, Barycentric }
+pub enum OrbitFrame {
+    Heliocentric,
+    Barycentric,
+}
 
 /// Represents a **Comet** characterised by its name, approximate tail length and
 /// orbital elements in a specific reference frame.
@@ -56,11 +59,18 @@ impl<'a> Comet<'a> {
         orbit: Orbit,
         reference: OrbitFrame,
     ) -> Self {
-        Self { name, tail_length, orbit, reference }
+        Self {
+            name,
+            tail_length,
+            orbit,
+            reference,
+        }
     }
 
     /// Fluent builder entry‑point.
-    pub fn builder() -> CometBuilder<'a> { CometBuilder::default() }
+    pub fn builder() -> CometBuilder<'a> {
+        CometBuilder::default()
+    }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -76,10 +86,22 @@ pub struct CometBuilder<'a> {
 }
 
 impl<'a> CometBuilder<'a> {
-    pub fn name(mut self, name: &'a str) -> Self { self.name = Some(name); self }
-    pub fn tail_length(mut self, len: Kilometers) -> Self { self.tail_length = Some(len); self }
-    pub fn orbit(mut self, orbit: Orbit) -> Self { self.orbit = Some(orbit); self }
-    pub fn reference(mut self, frame: OrbitFrame) -> Self { self.reference = Some(frame); self }
+    pub fn name(mut self, name: &'a str) -> Self {
+        self.name = Some(name);
+        self
+    }
+    pub fn tail_length(mut self, len: Kilometers) -> Self {
+        self.tail_length = Some(len);
+        self
+    }
+    pub fn orbit(mut self, orbit: Orbit) -> Self {
+        self.orbit = Some(orbit);
+        self
+    }
+    pub fn reference(mut self, frame: OrbitFrame) -> Self {
+        self.reference = Some(frame);
+        self
+    }
 
     pub fn build(self) -> Comet<'a> {
         Comet {
@@ -157,4 +179,3 @@ pub const HALE_BOPP: Comet = Comet::new_const(
 );
 
 pub const COMET_PRESETS: &[&Comet] = &[&HALLEY, &ENCKE, &HALE_BOPP];
-

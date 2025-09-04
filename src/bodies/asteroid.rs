@@ -52,12 +52,19 @@ impl<'a> Asteroid<'a> {
         class: AsteroidClass,
         orbit: Orbit,
     ) -> Self {
-        Self { name, designation, composition, class, orbit }
+        Self {
+            name,
+            designation,
+            composition,
+            class,
+            orbit,
+        }
     }
 
     /// Fluent builder.
-    pub fn builder() -> AsteroidBuilder<'a> { AsteroidBuilder::default() }
-
+    pub fn builder() -> AsteroidBuilder<'a> {
+        AsteroidBuilder::default()
+    }
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -74,11 +81,26 @@ pub struct AsteroidBuilder<'a> {
 }
 
 impl<'a> AsteroidBuilder<'a> {
-    pub fn name(mut self, name: &'a str) -> Self { self.name = Some(name); self }
-    pub fn designation(mut self, des: &'a str) -> Self { self.designation = Some(des); self }
-    pub fn composition(mut self, comp: &'a str) -> Self { self.composition = Some(comp); self }
-    pub fn class(mut self, class: AsteroidClass) -> Self { self.class = Some(class); self }
-    pub fn orbit(mut self, orbit: Orbit) -> Self { self.orbit = Some(orbit); self }
+    pub fn name(mut self, name: &'a str) -> Self {
+        self.name = Some(name);
+        self
+    }
+    pub fn designation(mut self, des: &'a str) -> Self {
+        self.designation = Some(des);
+        self
+    }
+    pub fn composition(mut self, comp: &'a str) -> Self {
+        self.composition = Some(comp);
+        self
+    }
+    pub fn class(mut self, class: AsteroidClass) -> Self {
+        self.class = Some(class);
+        self
+    }
+    pub fn orbit(mut self, orbit: Orbit) -> Self {
+        self.orbit = Some(orbit);
+        self
+    }
 
     pub fn build(self) -> Asteroid<'a> {
         Asteroid {

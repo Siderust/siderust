@@ -33,8 +33,8 @@
 //! println!("GST = {:.4}°,  LST = {:.4}°", gst, lst);
 //! ```
 
-use crate::units::{Degrees, Days};
 use crate::astro::JulianDate;
+use crate::units::{Days, Degrees};
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
 pub const SIDEREAL_DAY: Days = Days::new(23.934_469_6 / 24.0);
@@ -48,9 +48,7 @@ pub fn unmodded_gst(julian_date: JulianDate) -> Degrees {
     let base = julian_date - JulianDate::J2000;
 
     // IAU 2006 polynomial (units: degrees)
-    let gst = 280.460_618_37
-        + 360.985_647_366_29 * base.value()
-        + 0.000_387_933 * t.powi(2)
+    let gst = 280.460_618_37 + 360.985_647_366_29 * base.value() + 0.000_387_933 * t.powi(2)
         - t.powi(3) / 38_710_000.0;
     Degrees::new(gst)
 }

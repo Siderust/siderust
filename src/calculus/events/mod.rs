@@ -51,7 +51,7 @@
 //! use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 //! use siderust::units::Days;
 //! use siderust::astro::JulianDate;
-//! 
+//!
 //! // Example: Find extrema of a function in a given interval
 //! let extrema = find_static_extremas(
 //!     &SIRIUS.target,                    // Target to be observed
@@ -86,7 +86,6 @@
 //!
 //! This API is designed to be stable and extensible for future Siderust releases.
 
-
 /// Represents a culmination event — the moment a celestial body crosses
 /// the observer’s meridian.
 ///
@@ -100,8 +99,8 @@ pub enum Culmination {
     Lower { jd: crate::astro::JulianDate },
 }
 
-mod find_static_extremas;
 mod find_dynamic_extremas;
+mod find_static_extremas;
 
 pub use find_dynamic_extremas::find_dynamic_extremas;
 pub use find_static_extremas::find_static_extremas;

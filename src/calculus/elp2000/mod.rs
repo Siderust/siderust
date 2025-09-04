@@ -45,5 +45,5 @@
 //!
 //! This module provides the foundation for high-precision lunar calculations in Siderust.
 
-mod elp_structs;
 mod elp_series;
+mod elp_structs;

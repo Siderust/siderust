@@ -61,7 +61,11 @@ pub struct Planet {
 impl Planet {
     /// Compile‑time constructor.
     pub const fn new_const(mass: Kilograms, radius: Kilometers, orbit: Orbit) -> Self {
-        Self { mass, radius, orbit }
+        Self {
+            mass,
+            radius,
+            orbit,
+        }
     }
 
     /// Start building a planet with the fluent [`PlanetBuilder`] API.
@@ -128,7 +132,11 @@ impl PlanetBuilder {
     /// Const‑context helper when all three fields are already present.
     pub const fn build_unchecked(self) -> Planet {
         match (self.mass, self.radius, self.orbit) {
-            (Some(mass), Some(radius), Some(orbit)) => Planet { mass, radius, orbit },
+            (Some(mass), Some(radius), Some(orbit)) => Planet {
+                mass,
+                radius,
+                orbit,
+            },
             _ => panic!("PlanetBuilder::build_unchecked called with missing fields"),
         }
     }
@@ -166,18 +174,21 @@ impl OrbitExt for Orbit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::units::{Kilograms, Kilometers, AstronomicalUnits, Degrees};
     use crate::astro::JulianDate;
+    use crate::units::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
 
     #[test]
     fn builder_roundtrip() {
         let p = Planet::builder()
-            .mass( Kilograms::new(1.0) )
-            .radius( Kilometers::new(1.0) )
-            .orbit( Orbit::new(
-                AstronomicalUnits::new(1.0), 0.0,
-                Degrees::new(0.0), Degrees::new(0.0),
-                Degrees::new(0.0), Degrees::new(0.0),
+            .mass(Kilograms::new(1.0))
+            .radius(Kilometers::new(1.0))
+            .orbit(Orbit::new(
+                AstronomicalUnits::new(1.0),
+                0.0,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
                 JulianDate::J2000,
             ))
             .build();

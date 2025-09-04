@@ -46,11 +46,11 @@
 //! 1. NASA – Planetary Fact Sheet: <https://nssdc.gsfc.nasa.gov/planetary/factsheet/>
 //! 2. Williams, D. R. (2024). *Planetary Fact Sheet – Metric*. NASA Goddard Space Flight Center.
 
-use super::{Satellite, Planet, Star};
-use crate::units::*;
+use super::{Planet, Satellite, Star};
 use crate::astro::{orbit::Orbit, JulianDate};
 use crate::coordinates::spherical::position::{Ecliptic, Equatorial};
 use crate::targets::Target;
+use crate::units::*;
 
 pub struct Sun;
 pub struct Mercury;
@@ -79,11 +79,11 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
     SolarMasses::new(1.0),
     SR,
     L_SUN,
-    Target::<Equatorial::<LightYear>>::new_static(
+    Target::<Equatorial<LightYear>>::new_static(
         Equatorial::<LightYear>::new_const(
             HourAngles::from_hms(18, 44, 48.0).to::<Degree>(), // Aprox at J2000
-            HourAngles::from_hms(-23, 0, 0.0).to::<Degree>(), // Aprox at J2000
-            LightYears::new(1.58125e-5), // 1 AstronomicalUnits in LightYears
+            HourAngles::from_hms(-23, 0, 0.0).to::<Degree>(),  // Aprox at J2000
+            LightYears::new(1.58125e-5),                       // 1 AstronomicalUnits in LightYears
         ),
         JulianDate::J2000,
     ),
@@ -183,7 +183,6 @@ pub const MOON: super::Satellite = super::Satellite::new_const(
     "Moon",
     Kilograms::new(7.346e22),
     Kilometers::new(1_737.4),
-
     Orbit {
         // 384 400 km → AstronomicalUnits
         semi_major_axis: AstronomicalUnits::new(2.566881e-6),
@@ -519,7 +518,6 @@ pub const MAJOR_MOONS: &[&Satellite] = &[
     &TRITON,
 ];
 
-
 // -------------------------------------------------------------------------------------------------
 //  Lagrange‑point helper type
 // -------------------------------------------------------------------------------------------------
@@ -539,16 +537,23 @@ pub struct LagrangePoint {
 const SUN_EARTH_L1: LagrangePoint = LagrangePoint {
     name: "Sun–Earth L1",
     parent_system: "Sun–Earth",
-    position: Ecliptic::<AstronomicalUnit>::new_const(Degrees::new(0.0), Degrees::new(0.0), AstronomicalUnits::new(0.99)),
+    position: Ecliptic::<AstronomicalUnit>::new_const(
+        Degrees::new(0.0),
+        Degrees::new(0.0),
+        AstronomicalUnits::new(0.99),
+    ),
 };
 const SUN_EARTH_L2: LagrangePoint = LagrangePoint {
     name: "Sun–Earth L2",
     parent_system: "Sun–Earth",
-    position: Ecliptic::<AstronomicalUnit>::new_const(Degrees::new(180.0), Degrees::new(0.0), AstronomicalUnits::new(1.01)),
+    position: Ecliptic::<AstronomicalUnit>::new_const(
+        Degrees::new(180.0),
+        Degrees::new(0.0),
+        AstronomicalUnits::new(1.01),
+    ),
 };
 
 pub const LAGRANGE_POINTS: &[&LagrangePoint] = &[&SUN_EARTH_L1, &SUN_EARTH_L2];
-
 
 // -------------------------------------------------------------------------------------------------
 //  Aggregate constant
