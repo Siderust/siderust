@@ -18,7 +18,7 @@ where
     Ecliptic<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
+        let sun_bary_ecl_au = *Sun::vsop87e(jd).get_position();
 
         // VSOP87 gives the Sun's position in AstronomicalUnits
         let sun_bary_ecl = Ecliptic::<U, Barycentric>::new(
@@ -41,7 +41,7 @@ where
     Equatorial<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>> // Required by Aberration
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
+        let earth_bary_ecl_au = *Earth::vsop87e(jd).get_position();
 
         // VSOP87 gives the Earth's position in AstronomicalUnits
         let earth_bary_ecl = Ecliptic::<U, Barycentric>::new(

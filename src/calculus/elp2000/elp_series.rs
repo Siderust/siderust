@@ -2,7 +2,12 @@
 
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::Ecliptic};
 
+#[allow(clippy::approx_constant)]
+mod elp_data {
 include!(concat!(env!("OUT_DIR"), "/elp_data.rs"));
+}
+use elp_data::*;
+use crate::calculus::elp2000::elp_structs::*;
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Moon;
 use crate::units::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians, Simplify};

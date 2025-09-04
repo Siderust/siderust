@@ -98,7 +98,7 @@ where
 {
     pub fn from_spherical(sph: &spherical::Position<C, F, U>) -> Self
     {
-        spherical_to_cartesian_pos(sph).into()
+        spherical_to_cartesian_pos(sph)
     }
 }
 
@@ -109,7 +109,7 @@ where
 {
     pub fn from_spherical(sph: &spherical::Direction<C, F>) -> Self
     {
-        spherical_to_cartesian_dir(sph).into()
+        spherical_to_cartesian_dir(sph)
     }
 }
 

@@ -11,7 +11,7 @@ impl Unit for Unitless {
 }
 impl std::fmt::Display for Quantity<Unitless> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{} {}", self.value(), "")
+        write!(f, "{}", self.value())
     }
 }
 
