@@ -24,7 +24,6 @@ pub struct MainProblem {
     pub b: [f64; 6],
 }
 
-
 // ────────────────────────────────────────────────────────────────────────────
 // Earth–Moon specific perturbations (ELP Earth Perturbation series).
 // A term contributes
@@ -52,7 +51,6 @@ pub struct EarthPert {
     /// Constant phase offset ‘p’ (radians) at epoch J2000.
     pub p: f64,
 }
-
 
 // ────────────────────────────────────────────────────────────────────────────
 // Planetary perturbations acting on the Moon

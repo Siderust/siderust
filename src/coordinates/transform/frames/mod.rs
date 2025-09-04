@@ -1,36 +1,30 @@
 pub mod to_ecliptic;
-pub mod to_icrs;
 pub mod to_equatorial;
+pub mod to_icrs;
 
-use crate::coordinates::{spherical, cartesian};
-use crate::coordinates::cartesian::Vector;
-use crate::coordinates::spherical::SphericalCoord;
-use crate::coordinates::frames::MutableFrame;
-use crate::coordinates::centers::ReferenceCenter;
 use crate::astro::JulianDate;
-use crate::units::{Unit, LengthUnit};
+use crate::coordinates::cartesian::Vector;
+use crate::coordinates::centers::ReferenceCenter;
+use crate::coordinates::frames::MutableFrame;
+use crate::coordinates::spherical::SphericalCoord;
+use crate::coordinates::{cartesian, spherical};
+use crate::units::{LengthUnit, Unit};
 
 use crate::coordinates::transform::Transform;
-
 
 pub trait TransformFrame<Coord> {
     fn to_frame(&self) -> Coord;
 }
 
 // Implement Identity frame transform
-impl<C, F, U> TransformFrame<Vector<C, F, U>>
-    for Vector<C, F, U>
+impl<C, F, U> TransformFrame<Vector<C, F, U>> for Vector<C, F, U>
 where
     U: Unit,
     F: MutableFrame,
     C: ReferenceCenter,
 {
     fn to_frame(&self) -> Vector<C, F, U> {
-        Vector::new(
-            self.x(),
-            self.y(),
-            self.z(),
-        )
+        Vector::new(self.x(), self.y(), self.z())
     }
 }
 
@@ -43,9 +37,7 @@ where
     U: LengthUnit,
 {
     fn to_frame(&self) -> spherical::Position<C, F2, U> {
-        self.to_cartesian()
-            .to_frame()
-            .to_spherical()
+        self.to_cartesian().to_frame().to_spherical()
     }
 }
 
@@ -57,9 +49,7 @@ where
     F2: MutableFrame,
 {
     fn to_frame(&self) -> spherical::Direction<C, F2> {
-        self.to_cartesian()
-            .to_frame()
-            .to_spherical()
+        self.to_cartesian().to_frame().to_spherical()
     }
 }
 

@@ -1,8 +1,4 @@
-use crate::coordinates::{
-    cartesian, spherical,
-    frames::ReferenceFrame,
-    centers::ReferenceCenter,
-};
+use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
 use crate::units::LengthUnit;
 
 impl<C, F, U> From<&spherical::Position<C, F, U>> for spherical::Direction<C, F>

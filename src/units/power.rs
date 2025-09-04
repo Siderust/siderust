@@ -31,9 +31,8 @@ impl Dimension for Power {}
 pub trait PowerUnit: Unit<Dim = Power> {}
 impl<T: Unit<Dim = Power>> PowerUnit for T {}
 
-
 define_unit!("W", Watt, Power, 1.0);
-pub type W     = Watt;
+pub type W = Watt;
 pub type Watts = Quantity<W>;
 pub const WATT: Watts = Watts::new(1.0);
 

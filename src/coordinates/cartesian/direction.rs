@@ -1,5 +1,5 @@
-use crate::coordinates::{frames, centers};
-use crate::units::{Quantity, LengthUnit, Unitless};
+use crate::coordinates::{centers, frames};
+use crate::units::{LengthUnit, Quantity, Unitless};
 
 pub type Direction<C, F> = super::Vector<C, F, Unitless>;
 
@@ -13,7 +13,7 @@ where
         super::Position::new(
             magnitude * self.x().value(),
             magnitude * self.y().value(),
-            magnitude * self.z().value()
+            magnitude * self.z().value(),
         )
     }
 
@@ -22,20 +22,19 @@ where
         Self::new(
             Quantity::<Unitless>::new(norm.x),
             Quantity::<Unitless>::new(norm.y),
-            Quantity::<Unitless>::new(norm.z)
+            Quantity::<Unitless>::new(norm.z),
         )
     }
 }
 
-pub type Ecliptic<C=centers::Heliocentric>  = Direction<C, frames::Ecliptic>;
-pub type Equatorial<C=centers::Geocentric>  = Direction<C, frames::Equatorial>;
-pub type Horizontal<C=centers::Topocentric> = Direction<C, frames::Horizontal>;
-pub type Geographic<C=centers::Geocentric>  = Direction<C, frames::ECEF>;
-pub type ICRS<C=centers::Barycentric>       = Direction<C, frames::ICRS>;
+pub type Ecliptic<C = centers::Heliocentric> = Direction<C, frames::Ecliptic>;
+pub type Equatorial<C = centers::Geocentric> = Direction<C, frames::Equatorial>;
+pub type Horizontal<C = centers::Topocentric> = Direction<C, frames::Horizontal>;
+pub type Geographic<C = centers::Geocentric> = Direction<C, frames::ECEF>;
+pub type ICRS<C = centers::Barycentric> = Direction<C, frames::ICRS>;
 pub type HCRS = Direction<centers::Heliocentric, frames::ICRS>;
-pub type GCRS = Direction<centers::Geocentric,   frames::ICRS>;
-pub type TCRS = Direction<centers::Topocentric,  frames::ICRS>;
-
+pub type GCRS = Direction<centers::Geocentric, frames::ICRS>;
+pub type TCRS = Direction<centers::Topocentric, frames::ICRS>;
 
 impl<C, F> std::fmt::Display for Direction<C, F>
 where
@@ -48,7 +47,9 @@ where
             "Center: {}, Frame: {}, X: {:.6}, Y: {:.6}, Z: {:.6}",
             C::center_name(),
             F::frame_name(),
-            self.x(), self.y(), self.z()
+            self.x(),
+            self.y(),
+            self.z()
         )
     }
 }

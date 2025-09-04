@@ -23,10 +23,7 @@
 //! ```
 
 use super::*;
-use crate::coordinates::{
-    frames::*,
-    centers::*,
-};
+use crate::coordinates::{centers::*, frames::*};
 use crate::units::*;
 
 impl<C: ReferenceCenter> Direction<C, Horizontal> {
@@ -56,10 +53,7 @@ impl<C: ReferenceCenter> Direction<C, Horizontal> {
     where
         T: Into<Degrees>,
     {
-        Self::new_const(
-            alt.into().wrap_quarter_fold(),
-            az.into().normalize()
-        )
+        Self::new_const(alt.into().wrap_quarter_fold(), az.into().normalize())
     }
 }
 
@@ -91,20 +85,24 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Horizontal, U> {
     pub fn new<A, T>(alt: A, az: A, distance: T) -> Self
     where
         A: Into<Degrees>,
-        T: Into<Quantity<U>>
+        T: Into<Quantity<U>>,
     {
         Self::new_const(
             alt.into().wrap_quarter_fold(),
             az.into().normalize(),
-            distance.into())
+            distance.into(),
+        )
     }
-
 }
 
 impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, Horizontal, U> {
     /// Returns the Altitude (α) in degrees.
-    pub fn alt(&self) -> Degrees { self.polar }
+    pub fn alt(&self) -> Degrees {
+        self.polar
+    }
 
     /// Returns the Azimuth (θ) in degrees.
-    pub fn az(&self) -> Degrees { self.azimuth }
+    pub fn az(&self) -> Degrees {
+        self.azimuth
+    }
 }

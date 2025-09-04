@@ -39,7 +39,7 @@
 //! ```
 
 use super::*;
-use std::f64::consts::{TAU, PI};
+use std::f64::consts::{PI, TAU};
 
 /// Dimension tag for angular measures (e.g., degrees, radians, arcseconds).
 pub enum Angular {}
@@ -63,19 +63,18 @@ impl<T: Unit<Dim = Angular>> AngularUnit for T {
     /// Half a revolution (180°) expressed in T unit.
     const HALF_TURN: f64 = Radians::new(TAU).to::<T>().value() * 0.5;
     /// Quarter revolution (90°) expressed in T unit.
-    const QUARTED_TURN: f64 = Radians::new(TAU).to::<T>().value() * 0.25 ;
+    const QUARTED_TURN: f64 = Radians::new(TAU).to::<T>().value() * 0.25;
 }
-
 
 impl<U: AngularUnit + Copy> Quantity<U> {
     /// Constant representing τ radians (2π rad == 360°).
-    pub const TAU: Quantity::<U> = Quantity::<U>::new(U::FULL_TURN);
+    pub const TAU: Quantity<U> = Quantity::<U>::new(U::FULL_TURN);
     /// One full revolution (360°) expressed in Quantity<T> unit.
-    pub const FULL_TURN: Quantity::<U> = Quantity::<U>::new(U::FULL_TURN);
+    pub const FULL_TURN: Quantity<U> = Quantity::<U>::new(U::FULL_TURN);
     /// Half a revolution (180°) expressed in Quantity<T> unit.
-    pub const HALF_TURN: Quantity::<U> = Quantity::<U>::new(U::HALF_TURN);
+    pub const HALF_TURN: Quantity<U> = Quantity::<U>::new(U::HALF_TURN);
     /// Quarter revolution (90°) expressed in Quantity<T> unit.
-    pub const QUARTED_TURN: Quantity::<U> = Quantity::<U>::new(U::QUARTED_TURN);
+    pub const QUARTED_TURN: Quantity<U> = Quantity::<U>::new(U::QUARTED_TURN);
 
     /// Sine of the angle.
     #[inline]
@@ -141,7 +140,8 @@ impl<U: AngularUnit + Copy> Quantity<U> {
     pub fn wrap_signed_lo(self) -> Self {
         let mut y = self.wrap_signed().value(); // now in (-half, half]
         let half = 0.5 * U::FULL_TURN;
-        if y > half { // move +half to -half
+        if y > half {
+            // move +half to -half
             y -= U::FULL_TURN;
         }
         Self::new(y)
@@ -263,13 +263,21 @@ impl Degrees {
     /// `sign` should be −1, 0, or +1 (0 treated as +1 unless all components are zero).
     pub const fn from_dms_sign(sign: i8, deg: u32, min: u32, sec: f64) -> Self {
         let s = if sign < 0 { -1.0 } else { 1.0 };
-        let total = (deg as f64) + (min as f64)/60.0 + (sec/3600.0);
+        let total = (deg as f64) + (min as f64) / 60.0 + (sec / 3600.0);
         Self::new(s * total)
     }
 }
 
-impl From<Degrees> for Radians { fn from(deg: Degrees) -> Self { deg.to::<Radian>() } }
-impl From<Radians> for Degrees { fn from(rad: Radians) -> Self { rad.to::<Degree>() } }
+impl From<Degrees> for Radians {
+    fn from(deg: Degrees) -> Self {
+        deg.to::<Radian>()
+    }
+}
+impl From<Radians> for Degrees {
+    fn from(rad: Radians) -> Self {
+        rad.to::<Degree>()
+    }
+}
 
 #[cfg(test)]
 mod tests {

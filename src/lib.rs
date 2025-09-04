@@ -66,12 +66,12 @@
 //! **Note:** This documentation is generated and reviewed under @vpramon supervision.
 //! For detailed usage and API, see the module-level docs and examples.
 
-pub mod units;
-pub mod coordinates;
-pub mod targets;
 pub mod astro;
-pub mod calculus;
 pub mod bodies;
+pub mod calculus;
+pub mod coordinates;
 pub mod observatories;
+pub mod targets;
+pub mod units;
 
 pub(crate) mod macros;

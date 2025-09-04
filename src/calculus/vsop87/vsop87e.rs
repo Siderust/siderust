@@ -1,16 +1,17 @@
 use super::*;
-use crate::bodies::solar_system::*;
-use crate::targets::Target;
 use crate::astro::JulianDate;
-use crate::units::*;
+use crate::bodies::solar_system::*;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
-    centers::Barycentric, frames::Ecliptic
+    centers::Barycentric,
+    frames::Ecliptic,
 };
+use crate::targets::Target;
+use crate::units::*;
 
 #[allow(clippy::approx_constant)]
 mod vsop_data {
-include!(concat!(env!("OUT_DIR"), "/vsop87e.rs"));
+    include!(concat!(env!("OUT_DIR"), "/vsop87e.rs"));
 }
 use vsop_data::*;
 
@@ -81,13 +82,14 @@ impl Sun {
             jd,
             &[&SUN_X0, &SUN_X1, &SUN_X2, &SUN_X3, &SUN_X4, &SUN_X5],
             &[&SUN_Y0, &SUN_Y1, &SUN_Y2, &SUN_Y3, &SUN_Y4, &SUN_Y5],
-            &[&SUN_Z0, &SUN_Z1, &SUN_Z2, &SUN_Z3, &SUN_Z4, &SUN_Z5]
+            &[&SUN_Z0, &SUN_Z1, &SUN_Z2, &SUN_Z3, &SUN_Z4, &SUN_Z5],
         );
         Target::new_static(
             Position::new(
                 AstronomicalUnits::new(x),
                 AstronomicalUnits::new(y),
-                AstronomicalUnits::new(z)),
+                AstronomicalUnits::new(z),
+            ),
             jd,
         )
     }

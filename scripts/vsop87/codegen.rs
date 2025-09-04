@@ -46,15 +46,12 @@ fn fmt_f(v: f64) -> String {
     }
 }
 
-
 /// Build one source blob per *version* (A, E, …).
 ///
 /// The map key is the version letter so that the caller can immediately decide
 /// a file name (`vsop87{version}.rs`).  We keep a deterministic order thanks to
 /// `BTreeMap` – vital for reproducible builds and clean diffs.
-pub fn generate_modules(
-    versions: &VersionMap,
-) -> anyhow::Result<BTreeMap<char, String>> {
+pub fn generate_modules(versions: &VersionMap) -> anyhow::Result<BTreeMap<char, String>> {
     // Helper closure: 1 → 'X', 2 → 'Y', 3 → 'Z'.  Should never be called with
     // any other value, but we include '?' as a fallback to make the function
     // total.

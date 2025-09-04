@@ -6,14 +6,14 @@ use chrono::{DateTime, Utc};
 pub struct ModifiedJulianDate(f64);
 
 impl ModifiedJulianDate {
-
     pub fn new(mjd: f64) -> Self {
         ModifiedJulianDate(mjd)
     }
 
     /// Returns the inner Modified Julian Day value.
-    pub const fn value(&self) -> f64 { self.0 }
-
+    pub const fn value(&self) -> f64 {
+        self.0
+    }
 
     pub const fn to_julian_day(&self) -> super::JulianDate {
         super::JulianDate::new(self.value() + 2400000.5)
@@ -27,7 +27,6 @@ impl ModifiedJulianDate {
         let nanos = ((seconds_since_epoch - secs as f64) * 1e9) as u32;
         DateTime::<Utc>::from_timestamp(secs, nanos)
     }
-
 
     pub fn from_utc(datetime: DateTime<Utc>) -> Self {
         let unix_epoch_jd = 2440587.5; // Julian Day for Unix epoch (1970-01-01T00:00:00Z)

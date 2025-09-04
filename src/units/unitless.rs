@@ -15,8 +15,7 @@ impl std::fmt::Display for Quantity<Unitless> {
     }
 }
 
-impl<U: LengthUnit> From<Quantity<U>> for Quantity<Unitless>
-{
+impl<U: LengthUnit> From<Quantity<U>> for Quantity<Unitless> {
     fn from(length: Quantity<U>) -> Self {
         Self::new(length.value())
     }

@@ -24,10 +24,7 @@
 //! ```
 
 use super::*;
-use crate::coordinates::{
-    frames::*,
-    centers::*,
-};
+use crate::coordinates::{centers::*, frames::*};
 use crate::units::*;
 
 impl<C: ReferenceCenter> Direction<C, Equatorial> {
@@ -46,13 +43,10 @@ impl<C: ReferenceCenter> Direction<C, Equatorial> {
     /// # Returns
     /// A normalized `Direction` in the equatorial frame.
     pub fn new<T>(ra: T, dec: T) -> Self
-        where
+    where
         T: Into<Degrees>,
     {
-        Self::new_const(
-            ra.into().normalize(),
-            dec.into().wrap_quarter_fold()
-        )
+        Self::new_const(ra.into().normalize(), dec.into().wrap_quarter_fold())
     }
 }
 
@@ -75,19 +69,24 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, Equatorial, U> {
     pub fn new<A, T>(ra: A, dec: A, distance: T) -> Self
     where
         A: Into<Degrees>,
-        T: Into<Quantity<U>>
+        T: Into<Quantity<U>>,
     {
         Self::new_const(
             ra.into().normalize(),
             dec.into().wrap_quarter_fold(),
-            distance.into())
+            distance.into(),
+        )
     }
 }
 
 impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, Equatorial, U> {
     /// Returns the Declination (δ) in degrees.
-    pub fn dec(&self) -> Degrees { self.polar }
+    pub fn dec(&self) -> Degrees {
+        self.polar
+    }
 
     /// Returns the Right Ascension (α) in degrees.
-    pub fn ra(&self)  -> Degrees { self.azimuth }
+    pub fn ra(&self) -> Degrees {
+        self.azimuth
+    }
 }

@@ -61,7 +61,7 @@ new_frame!(ITRF);
 new_frame!(ECEF);
 
 /// MutableFrame defines the Frames that are transformable
-/// between each other in the current release. 
+/// between each other in the current release.
 pub trait MutableFrame: ReferenceFrame {}
 impl MutableFrame for ICRS {}
 impl MutableFrame for Ecliptic {}

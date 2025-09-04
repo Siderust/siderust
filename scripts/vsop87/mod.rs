@@ -42,18 +42,13 @@
 //! generated `.rs` files are then **included** by normal code via `include!` or
 //! by the compiler picking them up as modules.
 
-use std::{
-    collections::BTreeMap,
-    env,
-    path::PathBuf,
-    path::Path,
-};
+use std::{collections::BTreeMap, env, path::Path, path::PathBuf};
 
 use anyhow::Context;
 
-mod fetch;
-mod collect;
 mod codegen;
+mod collect;
+mod fetch;
 mod io;
 
 // ---------------------------------------------------------------------------
@@ -70,11 +65,11 @@ struct Term {
 
 // Readability aliases for the deeply‑nested map structure.
 /// coordinate → T‑power → Vec<Term>
-type CoordMap   = BTreeMap<u8, TPowerMap>;
+type CoordMap = BTreeMap<u8, TPowerMap>;
 /// T‑power → Vec<Term>
-type TPowerMap  = BTreeMap<u8, Vec<Term>>;
+type TPowerMap = BTreeMap<u8, Vec<Term>>;
 /// planet → CoordMap
-type PlanetMap  = BTreeMap<String, CoordMap>;
+type PlanetMap = BTreeMap<String, CoordMap>;
 /// version → PlanetMap
 type VersionMap = BTreeMap<char, PlanetMap>;
 
@@ -98,7 +93,7 @@ pub fn run(data_dir: &Path) -> anyhow::Result<()> {
     // Pipeline: fetch → parse → generate code → write files.
     fetch::ensure_dataset(data_dir)?;
     let versions = collect::collect_terms(data_dir)?;
-    let modules  = codegen::generate_modules(&versions)?;
+    let modules = codegen::generate_modules(&versions)?;
     io::write_modules(&modules, &out_dir)?;
 
     Ok(())

@@ -1,10 +1,7 @@
 use crate::astro::sidereal::*;
-use crate::coordinates::{
-    spherical, cartesian,
-};
-use crate::units::*;
 use crate::astro::JulianDate;
-
+use crate::coordinates::{cartesian, spherical};
+use crate::units::*;
 
 /// Converts geocentric equatorial coordinates to topocentric horizontal coordinates
 /// for a specific observer at a given Julian Date.
@@ -23,68 +20,70 @@ use crate::astro::JulianDate;
 /// - [`calculate_gst`]
 /// - [`calculate_lst`]
 pub fn geocentric_to_horizontal(
-    target:   &spherical::direction::Equatorial,
+    target: &spherical::direction::Equatorial,
     observer: &spherical::position::Geographic,
-    jd:       JulianDate
+    jd: JulianDate,
 ) -> spherical::direction::Horizontal {
-
     let gst = calculate_gst(jd);
     let lst = calculate_lst(gst, observer.lon());
 
-    let ra_deg   = target.ra().normalize();
-    let dec_rad  = target.dec().to::<Radian>();
-    let ha_rad   = (lst - ra_deg).normalize().to::<Radian>();
-    let lat_rad  = observer.lat().to::<Radian>();
+    let ra_deg = target.ra().normalize();
+    let dec_rad = target.dec().to::<Radian>();
+    let ha_rad = (lst - ra_deg).normalize().to::<Radian>();
+    let lat_rad = observer.lat().to::<Radian>();
 
-    let alt_rad = (dec_rad.sin() * lat_rad.sin()
-                 + dec_rad.cos() * lat_rad.cos() * ha_rad.cos()).asin();
+    let alt_rad =
+        (dec_rad.sin() * lat_rad.sin() + dec_rad.cos() * lat_rad.cos() * ha_rad.cos()).asin();
 
-    let az_rad  = (-dec_rad.cos() * ha_rad.sin()).atan2(
-                    dec_rad.sin() * lat_rad.cos()
-                  - dec_rad.cos() * ha_rad.cos() * lat_rad.sin());
+    let az_rad = (-dec_rad.cos() * ha_rad.sin())
+        .atan2(dec_rad.sin() * lat_rad.cos() - dec_rad.cos() * ha_rad.cos() * lat_rad.sin());
 
     spherical::direction::Horizontal::new(
         Degrees::new(alt_rad.to_degrees()),
-        Degrees::new(az_rad.to_degrees())
+        Degrees::new(az_rad.to_degrees()),
     )
 }
 
-impl spherical::direction::Equatorial
-{
-    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDate)
-        -> spherical::direction::Horizontal
-    {
+impl spherical::direction::Equatorial {
+    pub fn to_horizontal(
+        &self,
+        observer: &spherical::position::Geographic,
+        jd: JulianDate,
+    ) -> spherical::direction::Horizontal {
         geocentric_to_horizontal(self, observer, jd)
     }
 }
 
-impl cartesian::direction::Equatorial
-{
-    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDate)
-        -> cartesian::direction::Horizontal
-    {
+impl cartesian::direction::Equatorial {
+    pub fn to_horizontal(
+        &self,
+        observer: &spherical::position::Geographic,
+        jd: JulianDate,
+    ) -> cartesian::direction::Horizontal {
         self.to_spherical()
             .to_horizontal(observer, jd)
             .to_cartesian()
     }
 }
 
-impl<U: LengthUnit> spherical::position::Equatorial<U>
-{
-    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDate)
-        -> spherical::position::Horizontal<U>
-    {
+impl<U: LengthUnit> spherical::position::Equatorial<U> {
+    pub fn to_horizontal(
+        &self,
+        observer: &spherical::position::Geographic,
+        jd: JulianDate,
+    ) -> spherical::position::Horizontal<U> {
         self.direction()
             .to_horizontal(observer, jd)
             .position(self.distance)
     }
 }
 
-impl<U: LengthUnit> cartesian::position::Equatorial<U>
-{
-    pub fn to_horizontal(&self, observer: &spherical::position::Geographic, jd: JulianDate)
-        -> cartesian::position::Horizontal<U>
-    {
+impl<U: LengthUnit> cartesian::position::Equatorial<U> {
+    pub fn to_horizontal(
+        &self,
+        observer: &spherical::position::Geographic,
+        jd: JulianDate,
+    ) -> cartesian::position::Horizontal<U> {
         self.to_spherical()
             .to_horizontal(observer, jd)
             .to_cartesian()
@@ -109,7 +108,10 @@ mod tests {
             SIRIUS.target.get_position().distance,
         );
 
-        let horizontal = SIRIUS.target.get_position().to_horizontal(&ROQUE_DE_LOS_MUCHACHOS, jd);
+        let horizontal = SIRIUS
+            .target
+            .get_position()
+            .to_horizontal(&ROQUE_DE_LOS_MUCHACHOS, jd);
         assert_spherical_eq!(horizontal, expected_horizontal, 1.5);
     }
 }

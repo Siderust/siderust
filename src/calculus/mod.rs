@@ -94,12 +94,12 @@
 //! high-precision ephemerides and general-purpose celestial mechanics._
 //!
 
-pub mod solar;
-pub mod events;
-pub mod vsop87;
 pub mod elp2000;
-pub mod pluto;
+pub mod events;
 pub mod kepler_equations;
+pub mod pluto;
+pub mod solar;
+pub mod vsop87;
 
-pub use vsop87::VSOP87;
 pub use pluto::Pluto;
+pub use vsop87::VSOP87;

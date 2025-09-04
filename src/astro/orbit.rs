@@ -1,6 +1,6 @@
 //! # Keplerian Orbit Model
 //!
-//! This module defines the `Orbit` struct, which encapsulates the **six classical Keplerian orbital elements** 
+//! This module defines the `Orbit` struct, which encapsulates the **six classical Keplerian orbital elements**
 //! used to describe the motion of a celestial object around a central body, such as a planet around the Sun.
 //!
 //! These elements are:
@@ -24,7 +24,7 @@
 //!    - Expressed in degrees.
 //!
 //! 4. **Longitude of the ascending node (`Ω`)**  
-//!    - Angle from a fixed reference direction (e.g., the vernal equinox) to the ascending node — 
+//!    - Angle from a fixed reference direction (e.g., the vernal equinox) to the ascending node —
 //!      the point where the orbit crosses the reference plane going north.
 //!    - Expressed in degrees.
 //!
@@ -40,7 +40,7 @@
 //!
 //! ## Epoch
 //!
-//! The `epoch` is the reference point in time (given in Julian Day) at which the `mean_anomaly_at_epoch` applies. 
+//! The `epoch` is the reference point in time (given in Julian Day) at which the `mean_anomaly_at_epoch` applies.
 //! From this point, the object's position can be propagated using Kepler’s equation.
 //!
 //! ## Coordinate Calculation
@@ -79,19 +79,19 @@
 //! let coords = earth_orbit.kepler_position(JulianDate::new(2459200.5));
 //! ```
 
-use crate::units::*;
 use crate::astro::JulianDate;
+use crate::units::*;
 
 /// Represents the Keplerian orbital elements of a celestial object.
 #[derive(Clone, Copy, Debug)]
 pub struct Orbit {
-    pub semi_major_axis: AstronomicalUnits,   // Semi-major axis (AstronomicalUnits)
-    pub eccentricity: f64,                    // Orbital eccentricity
-    pub inclination: Degrees,                 // Inclination (degrees)
+    pub semi_major_axis: AstronomicalUnits, // Semi-major axis (AstronomicalUnits)
+    pub eccentricity: f64,                  // Orbital eccentricity
+    pub inclination: Degrees,               // Inclination (degrees)
     pub longitude_of_ascending_node: Degrees, // Longitude of ascending node (Ω)
-    pub argument_of_perihelion: Degrees,      // Argument of perihelion (ω)
-    pub mean_anomaly_at_epoch: Degrees,       // Mean anomaly at epoch (M₀)
-    pub epoch: JulianDate,                    // Epoch (Julian Dat
+    pub argument_of_perihelion: Degrees,    // Argument of perihelion (ω)
+    pub mean_anomaly_at_epoch: Degrees,     // Mean anomaly at epoch (M₀)
+    pub epoch: JulianDate,                  // Epoch (Julian Dat
 }
 
 impl Orbit {

@@ -91,9 +91,9 @@
 
 use std::f64::consts::TAU;
 
+use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
 use crate::units::*;
-use crate::astro::JulianDate;
 
 /* -------------------------------------------------------------------------
  * Constants & small utilities
@@ -148,7 +148,6 @@ fn short_series_coefficients(epoch: Centuries, span: Centuries) -> (Radians, Rad
     (as_to_rad(zeta_as), as_to_rad(z_as), as_to_rad(theta_as))
 }
 
-
 /* -------------------------------------------------------------------------
  * Core rotation (Meeus 20‑4)
  * ---------------------------------------------------------------------- */
@@ -156,7 +155,13 @@ fn short_series_coefficients(epoch: Centuries, span: Centuries) -> (Radians, Rad
 /// Rotate a single equatorial coordinate by the precession angles.
 /// Returns *(α, δ)* **in radians**.
 #[inline]
-fn rotate_equatorial(ra: Radians, dec: Radians, zeta: Radians, z: Radians, theta: Radians) -> (Radians, Radians) {
+fn rotate_equatorial(
+    ra: Radians,
+    dec: Radians,
+    zeta: Radians,
+    z: Radians,
+    theta: Radians,
+) -> (Radians, Radians) {
     // Pre‑compute repeated terms with `sin_cos` for a small perf gain.
     let (sin_ra_zeta, cos_ra_zeta) = (ra + zeta).sin_cos();
     let (sin_dec, cos_dec) = dec.sin_cos();
@@ -222,11 +227,7 @@ pub fn precess_equatorial<U: LengthUnit>(
 
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
-    position::Equatorial::<U>::new(
-        ra,
-        dec,
-        position.distance
-    )
+    position::Equatorial::<U>::new(ra, dec, position.distance)
 }
 
 #[cfg(test)]
@@ -238,10 +239,21 @@ mod tests {
         use crate::bodies::catalog::SIRIUS;
 
         // Target epoch: 2025‑05‑12 (JD 2 469 807.5)
-        let prec = precess_from_j2000(SIRIUS.target.get_position().clone(), JulianDate::new(2_460_807.5));
+        let prec = precess_from_j2000(
+            SIRIUS.target.get_position().clone(),
+            JulianDate::new(2_460_807.5),
+        );
 
         // Expected (Meeus short model): α ≈ 101.84557°, δ ≈ −16.77182°
-        assert!((prec.ra().value()  - 101.57047).abs() < 3e-5, "current α ≈ {}", prec.ra());
-        assert!((prec.dec().value() + 16.74409).abs() < 1e-5, "current δ ≈ {}", prec.dec());
+        assert!(
+            (prec.ra().value() - 101.57047).abs() < 3e-5,
+            "current α ≈ {}",
+            prec.ra()
+        );
+        assert!(
+            (prec.dec().value() + 16.74409).abs() < 1e-5,
+            "current δ ≈ {}",
+            prec.dec()
+        );
     }
 }

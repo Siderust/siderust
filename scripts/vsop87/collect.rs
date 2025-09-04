@@ -31,13 +31,13 @@ use super::{Term, VersionMap};
 
 use anyhow::Context;
 use regex::Regex;
-use walkdir::WalkDir;
 use std::{
     collections::BTreeMap,
     fs::File,
     io::{BufRead, BufReader},
     path::Path,
 };
+use walkdir::WalkDir;
 
 // ---------------------------------------------------------------------------
 // Regexes
@@ -55,7 +55,6 @@ const REGEX_FILE: &str = r"^VSOP87([A-Z])\.[A-Za-z]{3}$";
 /// 4. count   (number of terms that follow)
 const HEADER_REGEX: &str =
     r"VSOP87 VERSION [A-Z]?\d+\s+(\S+)\s+VARIABLE\s+(\d+)\s+\(XYZ\)\s+\*T\*\*(\d+)\s+(\d+)\s+TERMS";
-
 
 /// Fold `S·sin(x) + K·cos(x)` into `R·cos(x − α)` where
 /// * `R = √(S² + K²)` and `α = atan2(S, K)`.
@@ -98,7 +97,6 @@ fn parse_data_line(line: &str) -> Option<(f64, f64, f64, f64, f64)> {
     Some((s, k, a, b, c))
 }
 
-
 /// Build a [`VersionMap`] from the dataset found under `data_dir`.
 ///
 /// * Walks every file matching [`REGEX_FILE`].
@@ -108,37 +106,37 @@ fn parse_data_line(line: &str) -> Option<(f64, f64, f64, f64, f64)> {
 /// * Inserts the term at `versions[version][planet][coord][T_power]`.
 pub fn collect_terms(data_dir: &Path) -> anyhow::Result<VersionMap> {
     // --- Compile regexes ---------------------------------------------------
-    let file_re   = Regex::new(REGEX_FILE)?;
+    let file_re = Regex::new(REGEX_FILE)?;
     let header_re = Regex::new(HEADER_REGEX)?;
 
     let mut versions: VersionMap = BTreeMap::new();
 
     // --- Walk every file under `data_dir` ----------------------------------
     for entry in WalkDir::new(data_dir)
-        .min_depth(1)    // skip the root dir itself
+        .min_depth(1) // skip the root dir itself
         .into_iter()
-        .filter_map(Result::ok) // discard IO errors
+        .filter_map(Result::ok)
+    // discard IO errors
     {
-        let path  = entry.path();
+        let path = entry.path();
         let fname = path.file_name().unwrap().to_string_lossy();
 
         // Only keep files whose names match the VSOP87 convention.
         let caps = match file_re.captures(&fname) {
             Some(c) => c,
-            None    => continue,            // not a VSOP87 file → skip
+            None => continue, // not a VSOP87 file → skip
         };
         let v_char = caps[1].chars().next().unwrap(); // e.g. 'A', 'E'
 
         // --- Open current file --------------------------------------------
-        let file   = File::open(path)
-            .with_context(|| format!("Could not open {path:?}"))?;
+        let file = File::open(path).with_context(|| format!("Could not open {path:?}"))?;
         let reader = BufReader::new(file);
 
         // Per‑block state as we scan through the file.
         let mut cur_planet = String::new(); // planet currently being parsed
-        let mut cur_coord  : u8 = 0;        // 1 =s X, 2 = Y, 3 = Z
-        let mut cur_t      : u8 = 0;        // exponent of T
-        let mut remaining  : u32 = 0;       // terms left in current block
+        let mut cur_coord: u8 = 0; // 1 =s X, 2 = Y, 3 = Z
+        let mut cur_t: u8 = 0; // exponent of T
+        let mut remaining: u32 = 0; // terms left in current block
 
         // --- Process every line -------------------------------------------
         for line in reader.lines() {
@@ -147,9 +145,9 @@ pub fn collect_terms(data_dir: &Path) -> anyhow::Result<VersionMap> {
             // 1) Header → update block context and term counter
             if let Some(cap) = header_re.captures(&line) {
                 cur_planet = cap[1].to_uppercase();
-                cur_coord  = cap[2].parse::<u8>().unwrap();
-                cur_t      = cap[3].parse::<u8>().unwrap();
-                remaining  = cap[4].parse::<u32>().unwrap();
+                cur_coord = cap[2].parse::<u8>().unwrap();
+                cur_t = cap[3].parse::<u8>().unwrap();
+                remaining = cap[4].parse::<u32>().unwrap();
                 continue; // header processed, go to next line
             }
 
@@ -159,9 +157,9 @@ pub fn collect_terms(data_dir: &Path) -> anyhow::Result<VersionMap> {
                     if let Some(term) = sk_to_term(s, k, a, b, c) {
                         // Navigate (or create) the nested maps and push the term.
                         let planet_map = versions.entry(v_char).or_default();
-                        let coord_map  = planet_map.entry(cur_planet.clone()).or_default();
-                        let t_map      = coord_map.entry(cur_coord).or_default();
-                        let vec_terms  = t_map.entry(cur_t).or_default();
+                        let coord_map = planet_map.entry(cur_planet.clone()).or_default();
+                        let t_map = coord_map.entry(cur_coord).or_default();
+                        let vec_terms = t_map.entry(cur_t).or_default();
                         vec_terms.push(term);
                     }
                     remaining -= 1; // one less term to read in this block

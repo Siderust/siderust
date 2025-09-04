@@ -12,7 +12,7 @@ use crate::units::*;
 
 #[allow(clippy::approx_constant)]
 mod vsop_data {
-include!(concat!(env!("OUT_DIR"), "/vsop87a.rs"));
+    include!(concat!(env!("OUT_DIR"), "/vsop87a.rs"));
 }
 use vsop_data::*;
 
