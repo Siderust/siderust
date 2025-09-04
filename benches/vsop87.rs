@@ -1,6 +1,7 @@
-use criterion::{black_box, criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, Criterion};
+use std::hint::black_box;
 use siderust::{
-    astro::JuliaDate,
+    astro::JulianDate,
     units::{Days, Years},
     bodies::solar_system::*,
     calculus::vsop87::VSOP87,
@@ -41,7 +42,7 @@ fn bench_vsop87(c: &mut Criterion) {
 }
 criterion_group!{
     name = vsop87_benches;
-    config = Criterion::default().with_plots();
+    config = Criterion::default().without_plots();
     targets = bench_vsop87
 }
 criterion_main!(vsop87_benches);
