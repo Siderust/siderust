@@ -13,13 +13,9 @@
 //! stays private to keep the build script’s surface minimal.
 //!
 //! ```rust
-//! // build.rs
 //! #[path = "scripts/vsop87/mod.rs"]
 //! mod vsop87_build;
-//!
-//! fn main() {
-//!     vsop87_build::run("dataset").unwrap();
-//! }
+//! vsop87_build::run("dataset").unwrap();
 //! ```
 //!
 //! ---
@@ -100,8 +96,8 @@ pub fn run(data_dir: &Path) -> anyhow::Result<()> {
     );
 
     // Pipeline: fetch → parse → generate code → write files.
-    fetch::ensure_dataset(&data_dir)?;
-    let versions = collect::collect_terms(&data_dir)?;
+    fetch::ensure_dataset(data_dir)?;
+    let versions = collect::collect_terms(data_dir)?;
     let modules  = codegen::generate_modules(&versions)?;
     io::write_modules(&modules, &out_dir)?;
 

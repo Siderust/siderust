@@ -20,7 +20,7 @@ where
     Equatorial<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
-        let earth_bary_ecl_au = Earth::vsop87e(jd).get_position().clone();
+        let earth_bary_ecl_au = *Earth::vsop87e(jd).get_position();
         let earth_ecl = Ecliptic::<U, Barycentric>::new(
             earth_bary_ecl_au.x(),
             earth_bary_ecl_au.y(),
@@ -48,7 +48,7 @@ where
     Equatorial<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
-        let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
+        let earth_helio_ecl_au = *Earth::vsop87a(jd).get_position();
         let earth_ecl = Ecliptic::<U>::new(
             earth_helio_ecl_au.x(),
             earth_helio_ecl_au.y(),

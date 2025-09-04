@@ -155,5 +155,5 @@ where
     U: Unit,
 {
     type Output = Self;
-    fn sub(self, other: Self) -> Self::Output { (&self).sub(&other) }
+    fn sub(self, other: Self) -> Self::Output { Self::sub(&self, &other) }
 }

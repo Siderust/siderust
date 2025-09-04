@@ -7,7 +7,12 @@ use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Barycentric, frames::Ecliptic
 };
+
+#[allow(clippy::approx_constant)]
+mod vsop_data {
 include!(concat!(env!("OUT_DIR"), "/vsop87e.rs"));
+}
+use vsop_data::*;
 
 macro_rules! impl_vsop87e {
     (

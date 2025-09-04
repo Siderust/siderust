@@ -20,7 +20,7 @@ where
 {
     fn to_center(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
         //geocentric_to_heliocentric(self, jd)
-        let earth_helio_ecl_au = Earth::vsop87a(jd).get_position().clone();
+        let earth_helio_ecl_au = *Earth::vsop87a(jd).get_position();
         let earth_helio_ecl = Ecliptic::<U, Heliocentric>::new(
             earth_helio_ecl_au.x(),
             earth_helio_ecl_au.y(),
@@ -46,7 +46,7 @@ where
 {
     fn to_center(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
         // Barycentric to Heliocentric
-        let sun_bary_ecl_au = Sun::vsop87e(jd).get_position().clone();
+        let sun_bary_ecl_au = *Sun::vsop87e(jd).get_position();
         let sun_bary_ecl = Ecliptic::<U, Barycentric>::new(
             sun_bary_ecl_au.x(),
             sun_bary_ecl_au.y(),
