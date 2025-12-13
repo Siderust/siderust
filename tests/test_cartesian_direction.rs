@@ -1,7 +1,7 @@
 use siderust::coordinates::cartesian::Direction;
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::frames::Ecliptic;
-use siderust::units::*;
+use qtty::*;
 
 #[test]
 fn direction_position_scales_with_magnitude() {
@@ -29,9 +29,9 @@ fn direction_normalize_returns_unit_vector() {
 #[test]
 fn direction_display_includes_center_frame_and_components() {
     let dir = Direction::<Heliocentric, Ecliptic>::normalize(1.0, 2.0, 2.0);
-    let formatted = format!("{}", dir);
+    let formatted = dir.display();
     assert!(formatted.starts_with("Center: Heliocentric, Frame: Ecliptic"));
     assert!(formatted.contains("X: 0.333333"));
-    assert!(formatted.contains("Y: 0.666666"));
-    assert!(formatted.contains("Z: 0.666666"));
+    assert!(formatted.contains("Y: 0.666667"));
+    assert!(formatted.contains("Z: 0.666667"));
 }

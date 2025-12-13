@@ -31,7 +31,7 @@ use crate::coordinates::{
     cartesian::{direction, position, Velocity},
     frames,
 };
-use crate::units::*;
+use qtty::*;
 
 const AU_PER_DAY_C: AusPerDay = MetersPerSecond::new(299_792_458.0).to::<AuPerDay>(); // Speed Of Light
 
@@ -53,9 +53,9 @@ pub fn apply_aberration_to_direction(
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        (mean.x() + (velocity.x() / AU_PER_DAY_C).simplify()).value(),
-        (mean.y() + (velocity.y() / AU_PER_DAY_C).simplify()).value(),
-        (mean.z() + (velocity.z() / AU_PER_DAY_C).simplify()).value(),
+        mean.x().value() + (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        mean.y().value() + (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        mean.z().value() + (velocity.z() / AU_PER_DAY_C).simplify().value(),
     )
 }
 
@@ -73,9 +73,9 @@ pub fn remove_aberration_from_direction(
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        (app.x() - (velocity.x() / AU_PER_DAY_C).simplify()).value(),
-        (app.y() - (velocity.y() / AU_PER_DAY_C).simplify()).value(),
-        (app.z() - (velocity.z() / AU_PER_DAY_C).simplify()).value(),
+        app.x().value() - (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        app.y().value() - (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        app.z().value() - (velocity.z() / AU_PER_DAY_C).simplify().value(),
     )
 }
 

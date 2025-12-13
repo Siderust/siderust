@@ -2,9 +2,7 @@ use siderust::astro::JulianDate;
 use siderust::bodies::Star;
 use siderust::coordinates::spherical::position::Equatorial;
 use siderust::targets::Target;
-use siderust::units::{
-    Degrees, LightYear, LightYears, SolarLuminosities, SolarMasses, SolarRadiuses,
-};
+use qtty::*;
 use std::borrow::Cow;
 
 #[test]

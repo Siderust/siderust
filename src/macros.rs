@@ -1,6 +1,6 @@
 // src/macros.rs
 use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
-use crate::units::{LengthUnit, Quantity};
+use qtty::{LengthUnit, Quantity};
 use core::f64;
 
 #[doc(hidden)]

@@ -16,7 +16,7 @@
 //!
 //! ## Examples
 //! ```rust
-//! use siderust::units::*;
+//! use qtty::*;
 //! use siderust::targets::Target;
 //! use siderust::astro::ModifiedJulianDate;
 //! use siderust::coordinates::{spherical::Direction, frames::Equatorial, centers::Geocentric};

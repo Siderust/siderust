@@ -15,17 +15,17 @@
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::direction::Ecliptic;
-//! use siderust::units::{Degrees};
+//! use qtty::*;
 //!
 //! let coord = Ecliptic::new(
-//!     Degrees::new(120.0), Degrees::new(5.0)
+//!     120.0 * DEG, 5.0 * DEG
 //! );
 //! println!("lon = {}, lat = {}", coord.lon(), coord.lat());
 //! ```
 
 use super::*;
 use crate::coordinates::{centers::*, frames};
-use crate::units::*;
+use qtty::*;
 
 impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
     pub const fn new_const(lon: Degrees, lat: Degrees, distance: Quantity<U>) -> Self {
@@ -52,7 +52,7 @@ impl<C: ReferenceCenter> Direction<C, frames::Ecliptic> {
     /// - `lon`: Longitude (λ), in degrees.
     /// - `lat`: Latitude (β), in degrees.
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
-        Self::new_raw(lat, lon, Quantity::<Unitless>::new(1.0))
+        Self::new_raw(lat, lon, Quantity::<direction::DirectionUnit>::new(1.0))
     }
 
     /// Constructs a new ecliptic direction with normalized input angular.

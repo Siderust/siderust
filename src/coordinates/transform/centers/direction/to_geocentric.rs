@@ -1,22 +1,24 @@
 use crate::astro::aberration::apply_aberration_to_direction;
 use crate::astro::JulianDate;
+use crate::coordinates::spherical::direction::DirectionUnit;
 use crate::coordinates::{
-    cartesian::direction::{Direction, Equatorial},
+    cartesian::Vector,
+    cartesian::direction::Equatorial,
     centers::*,
     frames::MutableFrame,
     transform::centers::TransformCenter,
     transform::TransformFrame,
 };
 
-// Heliocentric To Geocentric
-impl<F: MutableFrame> TransformCenter<Direction<Geocentric, F>> for Direction<Heliocentric, F>
+// Heliocentric To Geocentric (Direction only - uses DirectionUnit)
+impl<F: MutableFrame> TransformCenter<Vector<Geocentric, F, DirectionUnit>> for Vector<Heliocentric, F, DirectionUnit>
 where
-    Direction<Geocentric, F>: TransformFrame<Equatorial>,
-    Equatorial: TransformFrame<Direction<Geocentric, F>>,
+    Vector<Geocentric, F, DirectionUnit>: TransformFrame<Equatorial>,
+    Equatorial: TransformFrame<Vector<Geocentric, F, DirectionUnit>>,
 {
-    fn to_center(&self, jd: JulianDate) -> Direction<Geocentric, F> {
+    fn to_center(&self, jd: JulianDate) -> Vector<Geocentric, F, DirectionUnit> {
         // 1. Convert to Geocentric coordinates
-        let geocentric = Direction::<Geocentric, F>::from_vec3(self.as_vec3());
+        let geocentric = Vector::<Geocentric, F, DirectionUnit>::from_vec3(self.as_vec3());
         // 2. Transform to Equatorial
         let equatorial: Equatorial<Geocentric> = geocentric.to_frame();
         // 3. Apply aberration
@@ -29,15 +31,15 @@ where
     }
 }
 
-// Barycentric To Geocentric
-impl<F: MutableFrame> TransformCenter<Direction<Geocentric, F>> for Direction<Barycentric, F>
+// Barycentric To Geocentric (Direction only - uses DirectionUnit)
+impl<F: MutableFrame> TransformCenter<Vector<Geocentric, F, DirectionUnit>> for Vector<Barycentric, F, DirectionUnit>
 where
-    Direction<Geocentric, F>: TransformFrame<Equatorial>,
-    Equatorial: TransformFrame<Direction<Geocentric, F>>,
+    Vector<Geocentric, F, DirectionUnit>: TransformFrame<Equatorial>,
+    Equatorial: TransformFrame<Vector<Geocentric, F, DirectionUnit>>,
 {
-    fn to_center(&self, jd: JulianDate) -> Direction<Geocentric, F> {
+    fn to_center(&self, jd: JulianDate) -> Vector<Geocentric, F, DirectionUnit> {
         // 1. Convert to Geocentric coordinates
-        let geocentric = Direction::<Geocentric, F>::from_vec3(self.as_vec3());
+        let geocentric = Vector::<Geocentric, F, DirectionUnit>::from_vec3(self.as_vec3());
         // 2. Transform to Equatorial
         let equatorial: Equatorial<Geocentric> = geocentric.to_frame();
         // 3. Apply aberration

@@ -8,7 +8,7 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::MutableFrame,
 };
-use crate::units::{AstronomicalUnits, LengthUnit, Quantity};
+use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Heliocentric, F, U>>
     for Position<Geocentric, F, U>
@@ -65,7 +65,7 @@ mod tests {
     use crate::coordinates::centers::*;
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
-    use crate::units::Au;
+    use qtty::Au;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 

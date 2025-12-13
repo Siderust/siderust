@@ -26,11 +26,11 @@
 //! use siderust::coordinates::cartesian;
 //! use siderust::coordinates::centers::Heliocentric;
 //! use siderust::coordinates::frames::Ecliptic;
-//! use siderust::units::Degrees;
+//! use qtty::*;
 //!
 //! // Create a heliocentric ecliptic spherical direction
 //! let spherical = spherical::Direction::<Heliocentric, Ecliptic>::new(
-//!     Degrees::new(45.0), Degrees::new(7.0)
+//!     45.0 * DEG, 7.0 * DEG
 //! );
 //!
 //! // Convert to cartesian coordinates

@@ -1,6 +1,6 @@
 use siderust::bodies::EARTH;
 use siderust::coordinates::spherical::{direction, position};
-use siderust::units::*;
+use qtty::*;
 
 const EPS: f64 = 1e-6;
 

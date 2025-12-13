@@ -20,7 +20,7 @@
 
 use crate::astro::orbit::Orbit;
 use crate::astro::JulianDate;
-use crate::units::{AstronomicalUnits, Degrees};
+use qtty::{AstronomicalUnits, Degrees};
 
 /// Taxonomic class of a small Solar‑System body.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
