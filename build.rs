@@ -22,6 +22,7 @@ fn write_stub_files(out_dir: &Path) {
         for body in bodies.iter() {
             for coord in ["X", "Y", "Z"].iter() {
                 for power in 0..=5 {
+                    writeln!(s, "#[allow(dead_code)]").unwrap();
                     writeln!(s, "pub static {body}_{coord}{power}: [Vsop87; 0] = [];").unwrap();
                 }
             }
@@ -57,9 +58,12 @@ fn write_stub_files(out_dir: &Path) {
 }
 
 fn main() {
+    println!("cargo::rustc-check-cfg=cfg(siderust_stubs)");
+
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"));
 
     if env::var("SIDERUST_STUBS").is_ok() {
+        println!("cargo:rustc-cfg=siderust_stubs");
         write_stub_files(&out_dir);
         return;
     }

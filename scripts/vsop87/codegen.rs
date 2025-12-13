@@ -88,6 +88,7 @@ pub fn generate_modules(versions: &VersionMap) -> anyhow::Result<BTreeMap<char, 
                 for (t, terms) in t_powers {
                     let array_name = format!("{planet_up}_{letter}{t}");
 
+                    code.push_str("#[allow(dead_code)]\n");
                     code.push_str(&format!(
                         "pub static {array_name}: [Vsop87; {}] = [\n",
                         terms.len()

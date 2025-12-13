@@ -60,6 +60,7 @@ where
 }
 
 #[test]
+#[cfg_attr(siderust_stubs, ignore)]
 fn test_coord_transformations() {
     use siderust::coordinates::cartesian::Direction;
 
@@ -90,6 +91,7 @@ fn test_coord_transformations() {
 }
 
 #[test]
+#[cfg_attr(siderust_stubs, ignore)]
 fn test_spherical_transformations() {
     let original = Mars::vsop87a(JulianDate::J2000)
         .get_position()
