@@ -9,8 +9,8 @@ mod elp_data {
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;
-use qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians, Simplify};
 use elp_data::*;
+use qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians, Simplify};
 use std::f64::consts::FRAC_PI_2;
 
 // ====================
@@ -612,8 +612,7 @@ mod tests {
         // Sources: NASA/EarthSky/Space.com report this same value.
         // Tolerance is generous to account for UTC/TT, model differences, and rounding.
 
-        let pos =
-            Moon::get_geo_position::<qtty::Kilometer>(make_jd_utc(2019, 2, 19, 9, 6, 0));
+        let pos = Moon::get_geo_position::<qtty::Kilometer>(make_jd_utc(2019, 2, 19, 9, 6, 0));
         let r = {
             let x = pos.x().to::<Kilometer>().value();
             let y = pos.y().to::<Kilometer>().value();
@@ -634,8 +633,7 @@ mod tests {
         // Perigee: 2020-04-07 18:08 UTC, distance ≈ 356,908 km
         // Tolerance same reasoning as above.
 
-        let pos =
-            Moon::get_geo_position::<qtty::Kilometer>(make_jd_utc(2020, 4, 7, 18, 8, 0));
+        let pos = Moon::get_geo_position::<qtty::Kilometer>(make_jd_utc(2020, 4, 7, 18, 8, 0));
         let r = {
             let x = pos.x().to::<Kilometer>().value();
             let y = pos.y().to::<Kilometer>().value();
@@ -656,8 +654,7 @@ mod tests {
         // Apogee: 2020-03-24 15:23 UTC (varies by source within minutes), distance ≈ 406,688 km
         // This checks the far end of the orbit.
 
-        let pos =
-            Moon::get_geo_position::<qtty::Kilometer>(make_jd_utc(2020, 3, 24, 15, 23, 0));
+        let pos = Moon::get_geo_position::<qtty::Kilometer>(make_jd_utc(2020, 3, 24, 15, 23, 0));
         let r = {
             let x = pos.x().to::<Kilometer>().value();
             let y = pos.y().to::<Kilometer>().value();

@@ -2,16 +2,13 @@ use crate::astro::aberration::apply_aberration_to_direction;
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::direction::DirectionUnit;
 use crate::coordinates::{
-    cartesian::Vector,
-    cartesian::direction::Equatorial,
-    centers::*,
-    frames::MutableFrame,
-    transform::centers::TransformCenter,
-    transform::TransformFrame,
+    cartesian::direction::Equatorial, cartesian::Vector, centers::*, frames::MutableFrame,
+    transform::centers::TransformCenter, transform::TransformFrame,
 };
 
 // Heliocentric To Geocentric (Direction only - uses DirectionUnit)
-impl<F: MutableFrame> TransformCenter<Vector<Geocentric, F, DirectionUnit>> for Vector<Heliocentric, F, DirectionUnit>
+impl<F: MutableFrame> TransformCenter<Vector<Geocentric, F, DirectionUnit>>
+    for Vector<Heliocentric, F, DirectionUnit>
 where
     Vector<Geocentric, F, DirectionUnit>: TransformFrame<Equatorial>,
     Equatorial: TransformFrame<Vector<Geocentric, F, DirectionUnit>>,
@@ -32,7 +29,8 @@ where
 }
 
 // Barycentric To Geocentric (Direction only - uses DirectionUnit)
-impl<F: MutableFrame> TransformCenter<Vector<Geocentric, F, DirectionUnit>> for Vector<Barycentric, F, DirectionUnit>
+impl<F: MutableFrame> TransformCenter<Vector<Geocentric, F, DirectionUnit>>
+    for Vector<Barycentric, F, DirectionUnit>
 where
     Vector<Geocentric, F, DirectionUnit>: TransformFrame<Equatorial>,
     Equatorial: TransformFrame<Vector<Geocentric, F, DirectionUnit>>,
