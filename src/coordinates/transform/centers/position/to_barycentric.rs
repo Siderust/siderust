@@ -78,16 +78,16 @@ mod tests {
     #[test] // Heliocentric -> Barycentric
     fn test_helio() {
         let sun_helio = Ecliptic::<Au>::CENTER;
-        let sun_bary: Ecliptic<Au, Barycentric> = (&sun_helio).transform(JulianDate::J2000);
-        let expected_sun_bary = Sun::vsop87e(JulianDate::J2000).get_position().clone();
+        let sun_bary: Ecliptic<Au, Barycentric> = sun_helio.transform(JulianDate::J2000);
+        let expected_sun_bary = *Sun::vsop87e(JulianDate::J2000).get_position();
         assert_cartesian_eq!(sun_bary, expected_sun_bary, EPSILON);
     }
 
     #[test] // Geocentric -> Barycentric
     fn test_geo() {
         let earth_geo = Ecliptic::<Au, Geocentric>::CENTER;
-        let earth_bary: Ecliptic<Au, Barycentric> = (&earth_geo).transform(JulianDate::J2000);
-        let expected_earth_bary = Earth::vsop87e(JulianDate::J2000).get_position().clone();
+        let earth_bary: Ecliptic<Au, Barycentric> = earth_geo.transform(JulianDate::J2000);
+        let expected_earth_bary = *Earth::vsop87e(JulianDate::J2000).get_position();
         assert_cartesian_eq!(&earth_bary, &expected_earth_bary, EPSILON);
     }
 }

@@ -41,7 +41,7 @@ fn orbit_period_computation() {
     let planet = Planet::builder()
         .mass(Kilograms::new(1.0))
         .radius(Kilometers::new(1.0))
-        .orbit(orbit.clone())
+        .orbit(orbit)
         .build();
 
     let p = planet.orbit.period().value();
