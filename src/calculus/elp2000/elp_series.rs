@@ -491,6 +491,7 @@ mod tests {
 
     // ---------- Physical bounds ----------
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn geocentric_distance_within_realistic_lunar_bounds() {
         // Perigee–apogee ~ 356,000–407,000 km; allow slack for model/epoch -> 330k–410k
         let p = pos_j2000_km();
@@ -503,6 +504,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn ecliptic_latitude_within_lunar_inclination() {
         // Lunar ecliptic latitude never exceeds ~5.15° in magnitude; allow safety margin to 6°
         let p = pos_j2000_km();
@@ -517,6 +519,7 @@ mod tests {
 
     // ---------- Regression against reference XYZ (yours) ----------
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn regression_xyz_j2000_against_reference() {
         // Your existing regression numbers
         let pos = pos_j2000_km();
@@ -566,6 +569,7 @@ mod tests {
 
     // ---------- Frame sanity ----------
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn axes_are_ecliptic_of_date_not_equatorial() {
         // Very rough: at J2000, the ecliptic pole is ~23.44° from the z of equatorial.
         // Here we just ensure the returned vector is **not** trivially lying in the
@@ -607,6 +611,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn distance_matches_supermoon_2019_feb19_perigee() {
         // Perigee: 2019-02-19 09:06 UTC, distance ≈ 356,761 km
         // Sources: NASA/EarthSky/Space.com report this same value.
@@ -629,6 +634,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn distance_matches_supermoon_2020_apr07_perigee() {
         // Perigee: 2020-04-07 18:08 UTC, distance ≈ 356,908 km
         // Tolerance same reasoning as above.
@@ -650,6 +656,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn distance_matches_apogee_2020_mar24() {
         // Apogee: 2020-03-24 15:23 UTC (varies by source within minutes), distance ≈ 406,688 km
         // This checks the far end of the orbit.

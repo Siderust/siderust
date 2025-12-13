@@ -162,6 +162,7 @@ mod tests {
 
     /// Mercury barycentric (ecliptic J2000) at epoch J2000.0 (JD_TDB = 2451545.0)
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn test_mercury_at_epoch() {
         use crate::bodies::Mercury;
         let coord = Mercury::vsop87e(JulianDate::J2000).get_position().clone();
@@ -174,6 +175,7 @@ mod tests {
 
     /// Venus barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn test_venus_at_epoch() {
         use crate::bodies::Venus;
         let coord = Venus::vsop87e(JulianDate::J2000).get_position().clone();
@@ -186,6 +188,7 @@ mod tests {
 
     /// Test Earth's barycentric coordinates at epoch J2000.0 (VSOP87E)
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn test_earth_barycentric_at_epoch() {
         use crate::bodies::Earth;
         let coord = Earth::vsop87e(JulianDate::J2000).get_position().clone();
@@ -198,6 +201,7 @@ mod tests {
 
     /// Mars barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn test_mars_at_epoch() {
         use crate::bodies::Mars;
         let coord = Mars::vsop87e(JulianDate::J2000).get_position().clone();
@@ -210,6 +214,7 @@ mod tests {
 
     /// Jupiter barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn test_jupiter_at_epoch() {
         use crate::bodies::Jupiter;
         let coord = Jupiter::vsop87e(JulianDate::J2000).get_position().clone();
@@ -222,6 +227,7 @@ mod tests {
 
     /// Saturn barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn test_saturn_at_epoch() {
         use crate::bodies::Saturn;
         let coord = Saturn::vsop87e(JulianDate::J2000).get_position().clone();
@@ -234,6 +240,7 @@ mod tests {
 
     /// Uranus barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn test_uranus_at_epoch() {
         use crate::bodies::Uranus;
         let coord = Uranus::vsop87e(JulianDate::J2000).get_position().clone();
@@ -246,6 +253,7 @@ mod tests {
 
     /// Neptune barycentric (ecliptic J2000) at epoch J2000.0
     #[test]
+    #[cfg_attr(siderust_stubs, ignore)]
     fn test_neptune_at_epoch() {
         use crate::bodies::Neptune;
         let coord = Neptune::vsop87e(JulianDate::J2000).get_position().clone();
