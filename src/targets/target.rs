@@ -69,7 +69,7 @@ mod tests {
     use crate::astro::JulianDate;
     use crate::bodies::catalog::ALDEBARAN;
     use crate::coordinates::spherical::position::GCRS;
-    use crate::units::*;
+    use qtty::*;
 
     #[test]
     fn test_target_new() {
@@ -83,8 +83,8 @@ mod tests {
     #[test]
     fn test_target_new_with_proper_motion() {
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(45.0),
-            crate::units::Degrees::new(30.0),
+            qtty::Degrees::new(45.0),
+            qtty::Degrees::new(30.0),
             100.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
@@ -102,8 +102,8 @@ mod tests {
     #[test]
     fn test_target_new_static() {
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(60.0),
-            crate::units::Degrees::new(45.0),
+            qtty::Degrees::new(60.0),
+            qtty::Degrees::new(45.0),
             200.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
@@ -117,8 +117,8 @@ mod tests {
     #[test]
     fn test_target_new_raw() {
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(90.0),
-            crate::units::Degrees::new(60.0),
+            qtty::Degrees::new(90.0),
+            qtty::Degrees::new(60.0),
             300.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
@@ -144,8 +144,8 @@ mod tests {
     #[test]
     fn test_target_get_position() {
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(120.0),
-            crate::units::Degrees::new(75.0),
+            qtty::Degrees::new(120.0),
+            qtty::Degrees::new(75.0),
             400.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
@@ -159,8 +159,8 @@ mod tests {
     #[test]
     fn test_target_get_proper_motion() {
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(150.0),
-            crate::units::Degrees::new(80.0),
+            qtty::Degrees::new(150.0),
+            qtty::Degrees::new(80.0),
             500.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
@@ -186,8 +186,8 @@ mod tests {
     #[test]
     fn test_target_get_time() {
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(180.0),
-            crate::units::Degrees::new(85.0),
+            qtty::Degrees::new(180.0),
+            qtty::Degrees::new(85.0),
             600.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
@@ -199,8 +199,8 @@ mod tests {
     #[test]
     fn test_target_update() {
         let initial_position = GCRS::<Au>::new(
-            crate::units::Degrees::new(200.0),
-            crate::units::Degrees::new(90.0),
+            qtty::Degrees::new(200.0),
+            qtty::Degrees::new(90.0),
             700.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
@@ -211,11 +211,11 @@ mod tests {
 
         // Update position and time
         let new_position = GCRS::<Au>::new(
-            crate::units::Degrees::new(220.0),
-            crate::units::Degrees::new(85.0),
+            qtty::Degrees::new(220.0),
+            qtty::Degrees::new(85.0),
             800.0,
         );
-        let new_time = JulianDate::J2000 + crate::units::Days::new(365.25);
+        let new_time = JulianDate::J2000 + qtty::Days::new(365.25);
 
         target.update(new_position.clone(), new_time);
 
@@ -236,8 +236,8 @@ mod tests {
     #[test]
     fn test_target_debug() {
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(240.0),
-            crate::units::Degrees::new(80.0),
+            qtty::Degrees::new(240.0),
+            qtty::Degrees::new(80.0),
             900.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
@@ -249,8 +249,8 @@ mod tests {
     #[test]
     fn test_target_clone() {
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(260.0),
-            crate::units::Degrees::new(75.0),
+            qtty::Degrees::new(260.0),
+            qtty::Degrees::new(75.0),
             1000.0,
         );
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
@@ -279,8 +279,8 @@ mod tests {
     fn test_target_edge_cases() {
         // Test with zero coordinates
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(0.0),
-            crate::units::Degrees::new(0.0),
+            qtty::Degrees::new(0.0),
+            qtty::Degrees::new(0.0),
             0.0,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
@@ -290,8 +290,8 @@ mod tests {
 
         // Test with very large coordinates
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(359.999),
-            crate::units::Degrees::new(89.999),
+            qtty::Degrees::new(359.999),
+            qtty::Degrees::new(89.999),
             1e6,
         );
         let target = Target::new_static(position.clone(), JulianDate::J2000);
@@ -303,8 +303,8 @@ mod tests {
     #[test]
     fn test_target_zero_proper_motion() {
         let position = GCRS::<Au>::new(
-            crate::units::Degrees::new(280.0),
-            crate::units::Degrees::new(70.0),
+            qtty::Degrees::new(280.0),
+            qtty::Degrees::new(70.0),
             1100.0,
         );
         let zero_proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(

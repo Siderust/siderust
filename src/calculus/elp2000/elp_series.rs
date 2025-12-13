@@ -9,7 +9,7 @@ mod elp_data {
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;
-use crate::units::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians, Simplify};
+use qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians, Simplify};
 use elp_data::*;
 use std::f64::consts::FRAC_PI_2;
 
@@ -413,7 +413,7 @@ impl Moon {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::units::{Kilometer, KM};
+    use qtty::{Kilometer, KM};
 
     // ---------- Helpers for tests ----------
     fn pos_j2000_km() -> Position<Geocentric, Ecliptic, Kilometer> {
@@ -613,7 +613,7 @@ mod tests {
         // Tolerance is generous to account for UTC/TT, model differences, and rounding.
 
         let pos =
-            Moon::get_geo_position::<crate::units::Kilometer>(make_jd_utc(2019, 2, 19, 9, 6, 0));
+            Moon::get_geo_position::<qtty::Kilometer>(make_jd_utc(2019, 2, 19, 9, 6, 0));
         let r = {
             let x = pos.x().to::<Kilometer>().value();
             let y = pos.y().to::<Kilometer>().value();
@@ -635,7 +635,7 @@ mod tests {
         // Tolerance same reasoning as above.
 
         let pos =
-            Moon::get_geo_position::<crate::units::Kilometer>(make_jd_utc(2020, 4, 7, 18, 8, 0));
+            Moon::get_geo_position::<qtty::Kilometer>(make_jd_utc(2020, 4, 7, 18, 8, 0));
         let r = {
             let x = pos.x().to::<Kilometer>().value();
             let y = pos.y().to::<Kilometer>().value();
@@ -657,7 +657,7 @@ mod tests {
         // This checks the far end of the orbit.
 
         let pos =
-            Moon::get_geo_position::<crate::units::Kilometer>(make_jd_utc(2020, 3, 24, 15, 23, 0));
+            Moon::get_geo_position::<qtty::Kilometer>(make_jd_utc(2020, 3, 24, 15, 23, 0));
         let r = {
             let x = pos.x().to::<Kilometer>().value();
             let y = pos.y().to::<Kilometer>().value();

@@ -4,8 +4,7 @@ use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, OrbitFrame, HALLEY};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::bodies::{EARTH, MARS, MOON};
-use siderust::units::*;
-use siderust::units::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
+use qtty::*;
 
 #[test]
 fn earth_constants() {

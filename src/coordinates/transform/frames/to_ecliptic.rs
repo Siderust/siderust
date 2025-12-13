@@ -1,6 +1,6 @@
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Vector, centers::ReferenceCenter, frames};
-use crate::units::Unit;
+use qtty::Unit;
 
 // Implement Transform trait for ICRS -> Ecliptic
 impl<C: ReferenceCenter, U> TransformFrame<Vector<C, frames::Ecliptic, U>>
@@ -40,8 +40,8 @@ mod tests {
     use crate::coordinates::*;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
-    use crate::units::Degrees;
-    use crate::units::*;
+    use qtty::Degrees;
+    use qtty::*;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 

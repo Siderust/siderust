@@ -8,7 +8,7 @@ use crate::coordinates::{
     frames::MutableFrame,
     transform::TransformFrame,
 };
-use crate::units::{AstronomicalUnits, LengthUnit, Quantity};
+use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 // Barycentric To Geocentric
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
@@ -68,7 +68,7 @@ mod tests {
     use crate::bodies::solar_system::Earth;
     use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
     use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
-    use crate::units::*;
+    use qtty::*;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 

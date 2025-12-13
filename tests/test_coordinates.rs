@@ -3,32 +3,32 @@ use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
 use siderust::coordinates::*;
-use siderust::units::*;
+use qtty::*;
 
 fn approx_eq<C, F, U>(a: &cartesian::Vector<C, F, U>, b: &cartesian::Vector<C, F, U>)
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: Unit,
-    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
+    Quantity<U>: std::cmp::PartialOrd,
 {
     assert!(
         (a.x() - b.x()).abs() < (1e-6).into(),
         "x mismatch: {} vs {}",
-        a.x(),
-        b.x()
+        a.x().value(),
+        b.x().value()
     );
     assert!(
         (a.y() - b.y()).abs() < (1e-6).into(),
         "y mismatch: {} vs {}",
-        a.y(),
-        b.y()
+        a.y().value(),
+        b.y().value()
     );
     assert!(
         (a.z() - b.z()).abs() < (1e-6).into(),
         "z mismatch: {} vs {}",
-        a.z(),
-        b.z()
+        a.z().value(),
+        b.z().value()
     );
 }
 

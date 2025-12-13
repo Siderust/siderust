@@ -1,6 +1,6 @@
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Vector, centers::ReferenceCenter, frames};
-use crate::units::Unit;
+use qtty::Unit;
 
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
@@ -31,7 +31,7 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Equatorial, U
 mod tests {
     use crate::coordinates::{centers, frames, spherical::Position};
     use crate::macros::assert_spherical_eq;
-    use crate::units::{AstronomicalUnit, Degrees};
+    use qtty::{AstronomicalUnit, Degrees};
 
     const EPS: f64 = 1.0e-12;
 

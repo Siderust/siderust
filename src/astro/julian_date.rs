@@ -3,7 +3,7 @@
 //! This module provides the `JulianDate` struct, representing the Julian Date,
 //! a continuous count of days since the beginning of the Julian Period used in astronomy.
 
-use crate::units::*;
+use qtty::*;
 
 use chrono::{DateTime, Utc};
 use std::ops::{Add, AddAssign, Sub, SubAssign};

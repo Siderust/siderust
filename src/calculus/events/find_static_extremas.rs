@@ -5,7 +5,7 @@ use crate::coordinates::{
     spherical::SphericalCoord,
 };
 use crate::targets::Target;
-use crate::units::*;
+use qtty::*;
 
 /// Returns **all** upper- and lower-culminations (meridian passages) that occur
 /// in the interval `[jd_start, jd_end]` for a target whose right-ascension and

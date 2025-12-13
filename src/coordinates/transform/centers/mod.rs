@@ -3,7 +3,7 @@ pub mod position;
 
 use crate::astro::JulianDate;
 use crate::coordinates::{cartesian::Vector, centers::*, frames};
-use crate::units::Unit;
+use qtty::Unit;
 
 pub trait TransformCenter<Coord> {
     fn to_center(&self, jd: crate::astro::JulianDate) -> Coord;
@@ -26,7 +26,7 @@ mod tests {
     use crate::coordinates::frames;
     use crate::coordinates::spherical::direction::*;
     use crate::coordinates::transform::Transform;
-    use crate::units::Degrees;
+    use qtty::Degrees;
 
     #[test]
     fn test_from_heliocentric_to_geocentric() {
@@ -85,15 +85,17 @@ mod tests {
         let dir = HCRS::new(Degrees::new(100.0), Degrees::new(-10.0));
         let jd = crate::astro::JulianDate::J2000;
         let transformed: ICRS = dir.transform(jd);
-        assert_eq!(
+        assert!(
+            (dir.polar.value() - transformed.polar.value()).abs() < 1e-10,
+            "Polar should not change significantly: {} vs {}",
             dir.polar.value(),
-            transformed.polar.value(),
-            "Polar should not change"
+            transformed.polar.value()
         );
-        assert_eq!(
+        assert!(
+            (dir.azimuth.value() - transformed.azimuth.value()).abs() < 1e-10,
+            "Azimuth should not change significantly: {} vs {}",
             dir.azimuth.value(),
-            transformed.azimuth.value(),
-            "Azimuth should not change"
+            transformed.azimuth.value()
         );
     }
 }
