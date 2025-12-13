@@ -1,6 +1,6 @@
+use qtty::*;
 use siderust::astro::{orbit::Orbit, JulianDate};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
-use qtty::*;
 
 #[test]
 fn planet_builder_errors() {

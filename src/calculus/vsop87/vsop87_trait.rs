@@ -1,13 +1,11 @@
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::*;
-use crate::targets::Target;
-use crate::{
-    coordinates::{
-        cartesian::Position,
-        centers::{Barycentric, Heliocentric},
-        frames::Ecliptic,
-    },
+use crate::coordinates::{
+    cartesian::Position,
+    centers::{Barycentric, Heliocentric},
+    frames::Ecliptic,
 };
+use crate::targets::Target;
 use qtty::AstronomicalUnit;
 
 pub trait VSOP87 {

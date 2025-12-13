@@ -147,13 +147,13 @@ mod tests {
     #[test]
     fn delta_t_ancient_sample() {
         let dt = delta_t_seconds(2_000_000.0);
-        assert!((dt - 2734.342_214_024_879_5).abs() < 1e-6);
+        assert!((dt - 2_734.342_214_024_879_5).abs() < 1e-6);
     }
 
     #[test]
     fn delta_t_medieval_sample() {
         let dt = delta_t_seconds(2_100_000.0);
-        assert!((dt - 1485.280_240_204_242_3).abs() < 1e-6);
+        assert!((dt - 1_485.280_240_204_242_3).abs() < 1e-6);
     }
 
     #[test]

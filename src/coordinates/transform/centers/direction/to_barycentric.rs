@@ -3,22 +3,22 @@ use crate::astro::JulianDate;
 use crate::coordinates::spherical::direction::DirectionUnit;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::{
-    cartesian::Vector,
-    cartesian::direction::Equatorial,
-    centers::*,
-    frames::MutableFrame,
+    cartesian::direction::Equatorial, cartesian::Vector, centers::*, frames::MutableFrame,
     transform::TransformFrame,
 };
 
 // Heliocentric To Barycentric (Direction only - uses DirectionUnit)
-impl<F: MutableFrame> TransformCenter<Vector<Barycentric, F, DirectionUnit>> for Vector<Heliocentric, F, DirectionUnit> {
+impl<F: MutableFrame> TransformCenter<Vector<Barycentric, F, DirectionUnit>>
+    for Vector<Heliocentric, F, DirectionUnit>
+{
     fn to_center(&self, _jd: JulianDate) -> Vector<Barycentric, F, DirectionUnit> {
         Vector::from_vec3(self.as_vec3())
     }
 }
 
 // Geocentric To Barycentric (Direction only - uses DirectionUnit)
-impl<F: MutableFrame> TransformCenter<Vector<Barycentric, F, DirectionUnit>> for Vector<Geocentric, F, DirectionUnit>
+impl<F: MutableFrame> TransformCenter<Vector<Barycentric, F, DirectionUnit>>
+    for Vector<Geocentric, F, DirectionUnit>
 where
     Vector<Geocentric, F, DirectionUnit>: TransformFrame<Equatorial>, // ToEquatorial
     Equatorial: TransformFrame<Vector<Geocentric, F, DirectionUnit>>, // FromEquatorial

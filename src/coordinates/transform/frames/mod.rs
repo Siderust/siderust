@@ -28,7 +28,8 @@ where
     }
 }
 
-impl<C, F1, F2, U> TransformFrame<spherical::SphericalCoord<C, F2, U>> for spherical::SphericalCoord<C, F1, U>
+impl<C, F1, F2, U> TransformFrame<spherical::SphericalCoord<C, F2, U>>
+    for spherical::SphericalCoord<C, F1, U>
 where
     cartesian::Vector<C, F1, U>: TransformFrame<cartesian::Vector<C, F2, U>>,
     C: ReferenceCenter,

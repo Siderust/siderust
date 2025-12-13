@@ -1,7 +1,7 @@
+use qtty::*;
 use siderust::coordinates::cartesian::Direction;
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::frames::Ecliptic;
-use qtty::*;
 
 #[test]
 fn direction_position_scales_with_magnitude() {
