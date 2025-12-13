@@ -839,6 +839,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1171693293099992e19cddea4e8b849964e9846f4acee11b3948bcc337be8776"
 
 [[package]]
+name = "libm"
+version = "0.2.15"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f9fbbcab51052fe104eb5e5d351cf728d30a5be1fe14d9be8a3b097481fb97de"
+
+[[package]]
 name = "litemap"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1090,6 +1096,37 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "02b3e5e68a3a1a02aad3ec490a98007cbc13c37cbe84a3cd7b8e406d76e7f778"
 dependencies = [
  "unicode-ident",
+]
+
+[[package]]
+name = "qtty"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "939aab4086a8dc99d86a8dc761424db027ad50a4d190f94cad99203a9d68b3b7"
+dependencies = [
+ "qtty-core",
+ "qtty-derive",
+]
+
+[[package]]
+name = "qtty-core"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b1ffc4282ad0d156ef4631e90c44660243b2dc3f7dd3ba4b661eac7c11312d06"
+dependencies = [
+ "libm",
+ "qtty-derive",
+]
+
+[[package]]
+name = "qtty-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bbbe021bee01b292c6d6c6fc8f33be3744212a5a9b4c17b557e991b612d42084"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1486,6 +1523,7 @@ dependencies = [
  "chrono",
  "criterion",
  "nalgebra",
+ "qtty",
  "rayon",
  "regex",
  "reqwest",
