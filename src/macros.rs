@@ -1,7 +1,7 @@
 // src/macros.rs
 use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
-use qtty::{LengthUnit, Quantity};
 use core::f64;
+use qtty::{LengthUnit, Quantity};
 
 #[doc(hidden)]
 pub(crate) fn __assert_cartesian_eq<C, F, U>(

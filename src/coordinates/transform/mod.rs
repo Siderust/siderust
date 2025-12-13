@@ -123,7 +123,8 @@ where
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, C2, F1, F2, U> Transform<spherical::SphericalCoord<C2, F2, U>> for spherical::SphericalCoord<C1, F1, U>
+impl<C1, C2, F1, F2, U> Transform<spherical::SphericalCoord<C2, F2, U>>
+    for spherical::SphericalCoord<C1, F1, U>
 where
     cartesian::Vector<C1, F1, U>: Transform<cartesian::Vector<C2, F2, U>>,
     C1: ReferenceCenter,

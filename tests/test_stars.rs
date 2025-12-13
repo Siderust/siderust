@@ -1,8 +1,8 @@
+use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::Star;
 use siderust::coordinates::spherical::position::Equatorial;
 use siderust::targets::Target;
-use qtty::*;
 use std::borrow::Cow;
 
 #[test]

@@ -1,10 +1,10 @@
+use qtty::*;
 use siderust::coordinates::cartesian::{Direction, Position};
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::Ecliptic;
 use siderust::coordinates::frames::*;
 use siderust::coordinates::*;
-use qtty::*;
 
 fn approx_eq<C, F, U>(a: cartesian::Vector<C, F, U>, b: cartesian::Vector<C, F, U>, tol: f64)
 where
