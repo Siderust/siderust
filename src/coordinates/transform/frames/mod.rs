@@ -8,7 +8,7 @@ use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::MutableFrame;
 use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{cartesian, spherical};
-use crate::units::{LengthUnit, Unit};
+use qtty::Unit;
 
 use crate::coordinates::transform::Transform;
 
@@ -28,27 +28,15 @@ where
     }
 }
 
-impl<C, F1, F2, U> TransformFrame<spherical::Position<C, F2, U>> for spherical::Position<C, F1, U>
+impl<C, F1, F2, U> TransformFrame<spherical::SphericalCoord<C, F2, U>> for spherical::SphericalCoord<C, F1, U>
 where
-    cartesian::Position<C, F1, U>: TransformFrame<cartesian::Position<C, F2, U>>,
+    cartesian::Vector<C, F1, U>: TransformFrame<cartesian::Vector<C, F2, U>>,
     C: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: LengthUnit,
+    U: Unit,
 {
-    fn to_frame(&self) -> spherical::Position<C, F2, U> {
-        self.to_cartesian().to_frame().to_spherical()
-    }
-}
-
-impl<C, F1, F2> TransformFrame<spherical::Direction<C, F2>> for spherical::Direction<C, F1>
-where
-    cartesian::Direction<C, F1>: TransformFrame<cartesian::Direction<C, F2>>,
-    C: ReferenceCenter,
-    F1: MutableFrame,
-    F2: MutableFrame,
-{
-    fn to_frame(&self) -> spherical::Direction<C, F2> {
+    fn to_frame(&self) -> spherical::SphericalCoord<C, F2, U> {
         self.to_cartesian().to_frame().to_spherical()
     }
 }
@@ -57,7 +45,7 @@ impl<C, F, U> SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: MutableFrame,
-    U: crate::units::LengthUnit,
+    U: qtty::Unit,
 {
     pub fn to_frame<F2: MutableFrame>(&self) -> SphericalCoord<C, F2, U>
     where
@@ -77,7 +65,7 @@ mod tests {
     use crate::coordinates::centers;
     use crate::coordinates::frames;
     use crate::coordinates::spherical::direction::Direction;
-    use crate::units::DEG;
+    use qtty::DEG;
 
     #[test]
     fn test_to_center() {

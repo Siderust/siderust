@@ -7,8 +7,8 @@ use crate::{
         centers::{Barycentric, Heliocentric},
         frames::Ecliptic,
     },
-    units::AstronomicalUnit,
 };
+use qtty::AstronomicalUnit;
 
 pub trait VSOP87 {
     fn vsop87a(&self, jd: JulianDate)

@@ -4,7 +4,7 @@ use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::Ecliptic;
 use siderust::coordinates::frames::*;
 use siderust::coordinates::*;
-use siderust::units::*;
+use qtty::*;
 
 fn approx_eq<C, F, U>(a: cartesian::Vector<C, F, U>, b: cartesian::Vector<C, F, U>, tol: f64)
 where

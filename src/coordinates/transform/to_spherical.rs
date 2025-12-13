@@ -1,46 +1,31 @@
 use crate::coordinates::{cartesian, centers::*, frames::*, spherical};
-use crate::units::*;
+use qtty::*;
 
-fn cartesian_to_spherical_pos<C, F, U>(
-    cart: &cartesian::Position<C, F, U>,
-) -> spherical::Position<C, F, U>
+fn cartesian_to_spherical<C, F, U>(
+    cart: &cartesian::Vector<C, F, U>,
+) -> spherical::SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
+    U: Unit,
 {
     let r = cart.distance();
-    let x = cart.x();
-    let y = cart.y();
-    let z = cart.z();
-
-    if r == 0.0 {
-        return spherical::Position::CENTER;
-    }
-
-    let polar = Degrees::new((z / r).asin().to_degrees());
-    let azimuth = Degrees::new(y.value().atan2(x.value()).to_degrees());
-    spherical::Position::new_raw(polar, azimuth, cart.distance())
-}
-
-fn cartesian_to_spherical_dir<C, F>(cart: &cartesian::Direction<C, F>) -> spherical::Direction<C, F>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-{
     let x = cart.x().value();
     let y = cart.y().value();
     let z = cart.z().value();
+    let r_val = r.value();
 
-    debug_assert!(
-        (cart.distance().value() - 1.0).abs() < 1e-12,
-        "A Vector<…, DirectionKind> must have a magnitude ≈ 1.0"
-    );
+    if r_val == 0.0 {
+        return spherical::SphericalCoord::new_raw(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Quantity::<U>::new(0.0),
+        );
+    }
 
-    let polar = Degrees::new(z.asin().to_degrees());
+    let polar = Degrees::new((z / r_val).asin().to_degrees());
     let azimuth = Degrees::new(y.atan2(x).to_degrees());
-
-    spherical::Direction::new_raw(polar, azimuth, Quantity::<Unitless>::new(1.0))
+    spherical::SphericalCoord::new_raw(polar, azimuth, r)
 }
 
 /// Implements conversion from Cartesian to Spherical coordinates
@@ -56,73 +41,43 @@ where
 /// # Type Parameters
 /// - `Center`: The reference center (e.g., Geocentric).
 /// - `Frame`: The reference frame (e.g., ICRS).
-impl<C, F, U> From<&cartesian::Position<C, F, U>> for spherical::Position<C, F, U>
+impl<C, F, U> From<&cartesian::Vector<C, F, U>> for spherical::SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
+    U: Unit,
 {
-    fn from(cart: &cartesian::Position<C, F, U>) -> Self {
-        cartesian_to_spherical_pos(cart)
+    fn from(cart: &cartesian::Vector<C, F, U>) -> Self {
+        cartesian_to_spherical(cart)
     }
 }
 
-impl<C, F> From<&cartesian::Direction<C, F>> for spherical::Direction<C, F>
+impl<C, F, U> crate::coordinates::spherical::SphericalCoord<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
+    U: Unit,
 {
-    fn from(cart: &cartesian::Direction<C, F>) -> Self {
-        cartesian_to_spherical_dir(cart)
+    pub fn from_cartesian(cart: &cartesian::Vector<C, F, U>) -> Self {
+        cartesian_to_spherical(cart)
     }
 }
 
-impl<C, F, U> crate::coordinates::spherical::Position<C, F, U>
+impl<C, F, U> crate::coordinates::cartesian::Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: LengthUnit,
+    U: Unit,
 {
-    pub fn from_cartesian(cart: &cartesian::Position<C, F, U>) -> Self {
-        cartesian_to_spherical_pos(cart)
-    }
-}
-
-impl<C, F> crate::coordinates::spherical::Direction<C, F>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-{
-    pub fn from_cartesian(cart: &cartesian::Direction<C, F>) -> Self {
-        cartesian_to_spherical_dir(cart)
-    }
-}
-
-impl<C, F, U> crate::coordinates::cartesian::Position<C, F, U>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-    U: LengthUnit,
-{
-    pub fn to_spherical(&self) -> spherical::Position<C, F, U> {
-        cartesian_to_spherical_pos(self)
-    }
-}
-
-impl<C, F> crate::coordinates::cartesian::Direction<C, F>
-where
-    C: ReferenceCenter,
-    F: ReferenceFrame,
-{
-    pub fn to_spherical(&self) -> spherical::Direction<C, F> {
-        cartesian_to_spherical_dir(self)
+    pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, U> {
+        cartesian_to_spherical(self)
     }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::coordinates::{cartesian, spherical};
-    use crate::units::{AstronomicalUnit, Degrees};
+    use qtty::{AstronomicalUnit, Degrees};
 
     #[test]
     fn test_cartesian_to_spherical() {

@@ -8,7 +8,7 @@ use crate::coordinates::{
     frames::Ecliptic,
 };
 use crate::targets::Target;
-use crate::units::*;
+use qtty::*;
 
 #[allow(clippy::approx_constant)]
 mod vsop_data {
@@ -146,7 +146,7 @@ mod tests {
     use crate::astro::JulianDate;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
-    use crate::units::AU;
+    use qtty::AU;
 
     const PRECISION: f64 = 1e-6;
 
@@ -258,7 +258,7 @@ mod tests {
 
     #[test]
     fn test_vsop87a_velocity_and_combined() {
-        use crate::units::AusPerDay;
+        use qtty::AusPerDay;
         test_vel_and_pos_vel!(Mercury);
         test_vel_and_pos_vel!(Venus);
         test_vel_and_pos_vel!(Earth);

@@ -1,6 +1,6 @@
 use siderust::astro::{orbit::Orbit, JulianDate};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
-use siderust::units::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
+use qtty::*;
 
 #[test]
 fn planet_builder_errors() {

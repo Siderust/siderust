@@ -37,7 +37,7 @@
 //! For future predictions, more accurate IERS-provided curves are recommended.
 
 use crate::astro::JulianDate;
-use crate::units::Days;
+use qtty::Days;
 
 /// Total number of tabulated terms (biennial 1620–1992).
 const TERMS: usize = 187;

@@ -3,7 +3,7 @@
 //!
 //! ## Features
 //! - **Generic Type Safety:** The type system enforces correct pairing of reference centers and frames.
-//! - **Strongly Typed Angles:** Uses [`crate::units::Degrees`] and [`crate::units::Radians`] for angular components to avoid unit confusion.
+//! - **Strongly Typed Angles:** Uses [`qtty::Degrees`] and [`qtty::Radians`] for angular components to avoid unit confusion.
 //! - **LengthUnit and Angular Separation:** Methods for computing Euclidean distances and angular separations.
 //! - **String Representation:** Human-readable formatting for debugging and logging.
 //!
@@ -21,7 +21,7 @@
 //!
 //! ## Example Usage
 //! ```rust
-//! use siderust::units::DEG;
+//! use qtty::*;
 //! use siderust::coordinates::spherical::direction::ICRS;
 //!
 //! let coord = ICRS::new(120.0*DEG, 45.0*DEG);
@@ -51,11 +51,11 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::units::Degrees;
+//! use qtty::*;
 //! use siderust::coordinates::spherical::direction::ICRS;
 //!
 //! let coord = ICRS::new(
-//!     Degrees::new(120.0), Degrees::new(45.0)
+//!     120.0 * DEG, 45.0 * DEG
 //! );
 //! println!("{}", coord.to_string());
 //! ```
