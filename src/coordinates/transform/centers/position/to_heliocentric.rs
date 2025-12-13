@@ -71,8 +71,8 @@ mod tests {
 
     #[test] // Barycentric -> Heliocentric
     fn test_bary() {
-        let sun_bary = Sun::vsop87e(JulianDate::J2000).get_position().clone();
-        let sun_helio: Ecliptic<Au, Heliocentric> = (&sun_bary).transform(JulianDate::J2000);
+        let sun_bary = *Sun::vsop87e(JulianDate::J2000).get_position();
+        let sun_helio: Ecliptic<Au, Heliocentric> = sun_bary.transform(JulianDate::J2000);
         let expected_sun_helio = Ecliptic::<Au>::CENTER;
         assert_cartesian_eq!(
             &sun_helio,
@@ -85,7 +85,7 @@ mod tests {
 
     #[test] // Geocentric -> Heliocentric
     fn test_geo() {
-        let sun = Sun::vsop87e(JulianDate::J2000).get_position().clone();
+        let sun = *Sun::vsop87e(JulianDate::J2000).get_position();
         let sun_geo: Ecliptic<Au, Geocentric> = sun.transform(JulianDate::J2000);
         let sun_helio: Ecliptic<Au> = sun_geo.transform(JulianDate::J2000);
         let expected_sun_helio = Ecliptic::<Au>::CENTER;

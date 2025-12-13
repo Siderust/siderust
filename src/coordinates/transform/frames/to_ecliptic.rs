@@ -50,7 +50,7 @@ mod tests {
         Quantity<U>: From<Quantity<AstronomicalUnit>>,
     {
         let hcrs: ICRS<U> = ecl.transform(JulianDate::J2000); // Convert to ICRS
-        let ecl_back: Ecliptic<U> = (&hcrs).transform(JulianDate::J2000); // Convert back to Ecliptic
+        let ecl_back: Ecliptic<U> = hcrs.transform(JulianDate::J2000); // Convert back to Ecliptic
         ecl_back
     }
 
@@ -146,9 +146,9 @@ mod tests {
             AstronomicalUnit,
         >::new(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
         let ecliptic: spherical::Position<centers::Barycentric, frames::Ecliptic, Au> =
-            (&equatorial_orig).transform(JulianDate::J2000);
+            equatorial_orig.transform(JulianDate::J2000);
         let equatorial_rec: spherical::Position<centers::Barycentric, frames::Equatorial, Au> =
-            (&ecliptic).transform(JulianDate::J2000);
+            ecliptic.transform(JulianDate::J2000);
 
         assert_spherical_eq!(equatorial_orig, equatorial_rec, 1e-10);
     }

@@ -37,7 +37,7 @@ fn velocities_match_combined() {
 #[test]
 fn sun_position_finite() {
     let jd = JulianDate::J2000;
-    let pos = Sun::vsop87e(jd).get_position().clone();
+    let pos = *Sun::vsop87e(jd).get_position();
     assert!(pos.x().value().is_finite());
     assert!(pos.y().value().is_finite());
     assert!(pos.z().value().is_finite());
