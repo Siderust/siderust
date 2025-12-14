@@ -97,7 +97,6 @@ mod tests {
     }
 
     #[test] // ICRS -> GCRS
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_icrs_to_gcrs() {
         const AU_PER_PC: f64 = 206_264.806_f64;
         const SIRIUS_PARALLAX: f64 = 0.37921_f64; // arcsec  (Hipparcos van Leeuwen 2007)

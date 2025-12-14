@@ -1,5 +1,24 @@
 # Siderust
 
+## Development
+
+### Running CI Checks Locally
+
+```bash
+# Run all CI checks (check, fmt, clippy, tests)
+./ci-local.sh
+
+# Run coverage checks (matches GitHub CI workflow)
+./ci-local-coverage.sh
+```
+
+**Note**: Coverage requires the nightly toolchain. Install it with:
+```bash
+rustup toolchain install nightly
+rustup component add llvm-tools-preview --toolchain nightly
+cargo install cargo-llvm-cov
+```
+
 [![Crates.io](https://img.shields.io/crates/v/siderust.svg)](https://crates.io/crates/siderust)
 [![Docs.rs](https://docs.rs/siderust/badge.svg)](https://docs.rs/siderust)
 
