@@ -5,11 +5,14 @@
 ### Running CI Checks Locally
 
 ```bash
-# Run all CI checks (check, fmt, clippy, tests)
+# Run standard CI checks (check, fmt, clippy, tests)
 ./ci-local.sh
 
-# Run coverage checks (matches GitHub CI workflow)
-./ci-local-coverage.sh
+# Run coverage checks only
+./ci-local.sh coverage
+
+# Run both standard checks and coverage
+./ci-local.sh all
 ```
 
 **Note**: Coverage requires the nightly toolchain. Install it with:
