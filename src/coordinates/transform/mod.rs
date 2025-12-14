@@ -40,7 +40,7 @@
 //! ```rust
 //! use siderust::coordinates::{cartesian::Position, frames::*, centers::*};
 //! use siderust::coordinates::transform::{Transform, TransformFrame};
-//! use siderust::units::AstronomicalUnit;
+//! use qtty::AstronomicalUnit;
 //! use siderust::astro::JulianDate;
 //!
 //! let cart_eq = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 2.0, 3.0);
@@ -77,7 +77,6 @@
 mod centers;
 mod frames;
 mod to_cartesian;
-mod to_direction;
 mod to_horizontal;
 mod to_spherical;
 
@@ -89,7 +88,7 @@ use crate::coordinates::{
     cartesian, cartesian::Vector, centers::ReferenceCenter, frames::MutableFrame, spherical,
     spherical::SphericalCoord,
 };
-use crate::units::*;
+use qtty::*;
 
 pub trait Transform<Coord> {
     fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
@@ -119,34 +118,22 @@ where
 
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
-/// This implementation allows converting a [`Vector`] in from one
+/// This implementation allows converting a [`SphericalCoord`] from one
 /// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, C2, F1, F2, U> Transform<spherical::Position<C2, F2, U>> for spherical::Position<C1, F1, U>
+impl<C1, C2, F1, F2, U> Transform<spherical::SphericalCoord<C2, F2, U>>
+    for spherical::SphericalCoord<C1, F1, U>
 where
-    cartesian::Position<C1, F1, U>: Transform<cartesian::Position<C2, F2, U>>,
+    cartesian::Vector<C1, F1, U>: Transform<cartesian::Vector<C2, F2, U>>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: LengthUnit,
+    U: Unit,
 {
-    fn transform(&self, jd: JulianDate) -> spherical::Position<C2, F2, U> {
-        self.to_cartesian().transform(jd).to_spherical()
-    }
-}
-
-impl<C1, C2, F1, F2> Transform<spherical::Direction<C2, F2>> for spherical::Direction<C1, F1>
-where
-    cartesian::Direction<C1, F1>: Transform<cartesian::Direction<C2, F2>>,
-    C1: ReferenceCenter,
-    C2: ReferenceCenter,
-    F1: MutableFrame,
-    F2: MutableFrame,
-{
-    fn transform(&self, jd: JulianDate) -> spherical::Direction<C2, F2> {
+    fn transform(&self, jd: JulianDate) -> spherical::SphericalCoord<C2, F2, U> {
         self.to_cartesian().transform(jd).to_spherical()
     }
 }
@@ -158,33 +145,18 @@ where
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, F1, C2, F2> From<&cartesian::Direction<C1, F1>> for cartesian::Direction<C2, F2>
+impl<C1, F1, C2, F2, U> From<&cartesian::Vector<C1, F1, U>> for cartesian::Vector<C2, F2, U>
 where
-    cartesian::Direction<C1, F1>: TransformFrame<cartesian::Direction<C1, F2>>,
-    cartesian::Direction<C1, F2>: Transform<cartesian::Direction<C2, F2>>,
+    cartesian::Vector<C1, F1, U>: TransformFrame<cartesian::Vector<C1, F2, U>>,
+    cartesian::Vector<C1, F2, U>: Transform<cartesian::Vector<C2, F2, U>>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
+    U: Unit,
 {
-    fn from(orig: &cartesian::Direction<C1, F1>) -> Self {
-        // Step 1: Transform to new frame, keeping the original center.
-        // Step 2: Transform to new center, now using the new frame.
+    fn from(orig: &cartesian::Vector<C1, F1, U>) -> Self {
         orig.to_frame().transform(JulianDate::J2000)
-    }
-}
-
-impl<C, F1, F2, U> From<&cartesian::Position<C, F1, U>> for cartesian::Position<C, F2, U>
-where
-    cartesian::Position<C, F1, U>: TransformFrame<cartesian::Position<C, F2, U>>, // transform frame
-    cartesian::Position<C, F2, U>: Transform<cartesian::Position<C, F2, U>>, // transform center
-    C: ReferenceCenter,
-    F1: MutableFrame,
-    F2: MutableFrame,
-    U: LengthUnit,
-{
-    fn from(orig: &cartesian::Position<C, F1, U>) -> Self {
-        orig.to_frame()
     }
 }
 
@@ -204,7 +176,7 @@ where
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: LengthUnit,
+    U: Unit,
 {
     fn from(orig: &SphericalCoord<C1, F1, U>) -> Self {
         // Step 1: Convert spherical to Cartesian

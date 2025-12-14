@@ -86,16 +86,27 @@ pub fn ensure_dataset(data_dir: &Path) -> Result<()> {
 /// Returns `Ok(true)` if files were copied successfully.
 fn copy_from_repo(dst: &Path) -> Result<bool> {
     let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/vsop87/dataset");
+    eprintln!("Attempting to copy VSOP87 data from: {:?}", src);
+    eprintln!("Target directory: {:?}", dst);
+    eprintln!("Source exists: {}", src.exists());
+
     if !contains_vsop_files(&src)? {
+        eprintln!("No VSOP87 files found in source directory");
         return Ok(false);
     }
+
+    eprintln!("Found VSOP87 files in source, copying...");
     fs::create_dir_all(dst).with_context(|| format!("Could not create directory {dst:?}"))?;
+
+    let mut copied_count = 0;
     for entry in fs::read_dir(&src)? {
         let entry = entry?;
         let target = dst.join(entry.file_name());
         fs::copy(entry.path(), target)
             .with_context(|| format!("copy {:?} -> {:?}", entry.path(), dst))?;
+        copied_count += 1;
     }
+    eprintln!("Successfully copied {} files", copied_count);
     Ok(true)
 }
 

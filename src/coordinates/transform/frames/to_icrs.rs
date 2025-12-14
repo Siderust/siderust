@@ -1,6 +1,6 @@
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Vector, centers::ReferenceCenter, frames};
-use crate::units::Unit;
+use qtty::Unit;
 
 // Implement Transform trait for Ecliptic -> ICRS
 impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>>

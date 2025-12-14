@@ -1,6 +1,8 @@
 name: Siderust CI
 
 on:
+  push:
+    branches: [main, master]
   pull_request:
     types: [opened, synchronize, reopened, ready_for_review]
 
@@ -10,16 +12,67 @@ permissions:
   pull-requests: write   # needed to post PR comments
 
 concurrency:
-  group: coverage-pr-${{ github.event.pull_request.number }}
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
+env:
+  CARGO_TERM_COLOR: always
+
 jobs:
-  test-and-coverage:
-    if: ${{ github.event.pull_request.draft == false }}
+  check:
+    name: Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo check --all-targets
+
+  fmt:
+    name: Format
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt
+      - run: cargo fmt --check
+
+  clippy:
+    name: Clippy
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy
+      - run: cargo clippy --all-targets -- -D warnings
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --all-targets
+      - run: cargo test --doc
+
+  coverage:
+    name: Test & Coverage
+    if: ${{ github.event_name == 'push' || github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
 
     steps:
       - uses: actions/checkout@v4
+        with:
+          lfs: true
 
       - name: Set up Rust (nightly + llvm-tools)
         uses: dtolnay/rust-toolchain@v1
@@ -32,16 +85,22 @@ jobs:
         with:
           tool: cargo-llvm-cov
 
+      # Clean any previous coverage data to ensure fresh results
+      - name: Clean previous coverage data
+        run: |
+          cargo +nightly llvm-cov clean --workspace
+          rm -rf target/llvm-cov-target/*.profraw
+
       # Run tests once and collect coverage data (no report yet)
       - name: Coverage (run, no report)
-        run: cargo llvm-cov --workspace --all-features --doctests --no-report
+        run: cargo +nightly llvm-cov --workspace --all-features --doctests --no-report
 
       # Produce machine-readable + human-readable reports
       - name: Coverage (Cobertura XML)
-        run: cargo llvm-cov report --cobertura --output-path coverage.xml
+        run: cargo +nightly llvm-cov report --cobertura --output-path coverage.xml
 
       - name: Coverage (HTML)
-        run: cargo llvm-cov report --html --output-dir coverage_html
+        run: cargo +nightly llvm-cov report --html --output-dir coverage_html
 
       # Put a nice table + badge into the PR Checks "Summary" tab
       - name: Build coverage summary (Markdown)
@@ -63,9 +122,9 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
 
-      # Gate: fail if total LINE coverage < 85% (no extra test run needed)
-      - name: Coverage gate (≥85% lines)
-        run: cargo llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 85
+      # Gate: fail if total LINE coverage < 90% (no extra test run needed)
+      - name: Coverage gate (≥90% lines)
+        run: cargo +nightly llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 90
 
       - name: Upload coverage HTML
         if: always()

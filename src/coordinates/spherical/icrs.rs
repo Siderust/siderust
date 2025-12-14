@@ -16,18 +16,19 @@
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::direction::GCRS;
-//! use siderust::units::Degrees;
+//! use qtty::*;
 //!
 //! let coord = GCRS::new(
-//!     Degrees::new(120.0), Degrees::new(45.0)
+//!     120.0 * DEG, 45.0 * DEG
 //! );
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
-use super::{Direction, Position};
+use super::Position;
+use super::{direction, Direction};
 use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{centers::*, frames::ICRS};
-use crate::units::*;
+use qtty::*;
 
 impl<C: ReferenceCenter> Direction<C, ICRS> {
     /// Creates a new ICRS spherical coordinate with constant values.
@@ -39,7 +40,7 @@ impl<C: ReferenceCenter> Direction<C, ICRS> {
     /// # Returns
     /// A new `Direction` in the ICRS frame.
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
-        Self::new_raw(dec, ra, Quantity::<Unitless>::new(1.0))
+        Self::new_raw(dec, ra, Quantity::<direction::DirectionUnit>::new(1.0))
     }
 
     /// Constructs a new ICRS spherical coordinate with normalized input angular.

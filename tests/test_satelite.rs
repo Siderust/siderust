@@ -1,7 +1,7 @@
+use qtty::*;
 use siderust::astro::orbit::Orbit;
 use siderust::astro::JulianDate;
 use siderust::bodies::Satellite;
-use siderust::units::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
 use std::borrow::Cow;
 
 #[test]

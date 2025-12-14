@@ -14,9 +14,9 @@
 //! ## Example
 //! ```rust
 //! use siderust::bodies::comet::{HALLEY, OrbitFrame, CometBuilder};
-//! use siderust::units::Kilometers;
+//! use qtty::*;
 //!
-//! println!("Halley's tail is at least {} long", HALLEY.tail_length);
+//! println!("Halley's tail is at least {:?} long", HALLEY.tail_length);
 //!
 //! // Build a custom comet with barycentric elements
 //! let custom = CometBuilder::default()
@@ -31,7 +31,7 @@
 
 use crate::astro::orbit::Orbit;
 use crate::astro::JulianDate;
-use crate::units::{AstronomicalUnits, Degrees, Kilometers};
+use qtty::{AstronomicalUnits, Degrees, Kilometers};
 
 /// Indicates whether orbital elements are given **with respect to the Solar‑System barycentre**
 /// or the heliocentre (Sun‑centred).

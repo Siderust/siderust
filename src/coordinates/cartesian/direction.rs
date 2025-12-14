@@ -1,7 +1,8 @@
+use crate::coordinates::spherical::direction::DirectionUnit;
 use crate::coordinates::{centers, frames};
-use crate::units::{LengthUnit, Quantity, Unitless};
+use qtty::{LengthUnit, Quantity};
 
-pub type Direction<C, F> = super::Vector<C, F, Unitless>;
+pub type Direction<C, F> = super::Vector<C, F, DirectionUnit>;
 
 impl<C, F> Direction<C, F>
 where
@@ -20,9 +21,22 @@ where
     pub fn normalize(x: f64, y: f64, z: f64) -> Self {
         let norm = nalgebra::Vector3::<f64>::new(x, y, z).normalize();
         Self::new(
-            Quantity::<Unitless>::new(norm.x),
-            Quantity::<Unitless>::new(norm.y),
-            Quantity::<Unitless>::new(norm.z),
+            Quantity::<DirectionUnit>::new(norm.x),
+            Quantity::<DirectionUnit>::new(norm.y),
+            Quantity::<DirectionUnit>::new(norm.z),
+        )
+    }
+
+    /// Returns a formatted string representation of this direction vector.
+    /// This is provided as a method because DirectionUnit doesn't implement Display.
+    pub fn display(&self) -> String {
+        format!(
+            "Center: {}, Frame: {}, X: {:.6}, Y: {:.6}, Z: {:.6}",
+            C::center_name(),
+            F::frame_name(),
+            self.x().value(),
+            self.y().value(),
+            self.z().value()
         )
     }
 }
@@ -36,20 +50,4 @@ pub type HCRS = Direction<centers::Heliocentric, frames::ICRS>;
 pub type GCRS = Direction<centers::Geocentric, frames::ICRS>;
 pub type TCRS = Direction<centers::Topocentric, frames::ICRS>;
 
-impl<C, F> std::fmt::Display for Direction<C, F>
-where
-    C: centers::ReferenceCenter,
-    F: frames::ReferenceFrame,
-{
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(
-            f,
-            "Center: {}, Frame: {}, X: {:.6}, Y: {:.6}, Z: {:.6}",
-            C::center_name(),
-            F::frame_name(),
-            self.x(),
-            self.y(),
-            self.z()
-        )
-    }
-}
+// Display is implemented in vector.rs for all Vector<C, F, U> where U: Unit

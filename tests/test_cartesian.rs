@@ -1,7 +1,7 @@
+use qtty::*;
 use siderust::coordinates::cartesian::Vector;
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::frames::Ecliptic;
-use siderust::units::Au;
 
 type VecAu = Vector<Heliocentric, Ecliptic, Au>;
 

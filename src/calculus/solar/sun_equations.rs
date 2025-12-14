@@ -2,7 +2,7 @@ use crate::bodies::solar_system::Sun;
 
 use crate::astro::{nutation::corrected_ra_with_nutation, JulianDate};
 use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
-use crate::units::{AstronomicalUnits, LengthUnit, Quantity};
+use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 impl Sun {
     /// Returns the **apparent geocentric equatorial coordinates** of the Sun
@@ -48,7 +48,7 @@ impl Sun {
 mod tests {
     use crate::astro::JulianDate;
     use crate::bodies::solar_system::Sun;
-    use crate::units::AstronomicalUnit;
+    use qtty::AstronomicalUnit;
 
     #[test]
     fn apparent_sun_position_j2000() {
@@ -59,23 +59,8 @@ mod tests {
         let expected_dec = -23.0; // degrees
         let expected_dist = 1.0; // astronomical units
 
-        assert!(
-            (pos.ra().value() - expected_ra).abs() < 2.0,
-            "RA mismatch: {} vs {}",
-            pos.ra().value(),
-            expected_ra
-        );
-        assert!(
-            (pos.dec().value() - expected_dec).abs() < 2.0,
-            "Dec mismatch: {} vs {}",
-            pos.dec().value(),
-            expected_dec
-        );
-        assert!(
-            (pos.distance.value() - expected_dist).abs() < 0.2,
-            "Distance mismatch: {} vs {}",
-            pos.distance.value(),
-            expected_dist
-        );
+        assert!((pos.ra().value() - expected_ra).abs() < 2.0);
+        assert!((pos.dec().value() - expected_dec).abs() < 2.0);
+        assert!((pos.distance.value() - expected_dist).abs() < 0.2);
     }
 }

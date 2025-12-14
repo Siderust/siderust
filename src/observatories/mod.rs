@@ -4,7 +4,7 @@
 //! represented by their geographic position. (see [`crate::coordinates::spherical::position::Geographic`]).
 
 use crate::coordinates::spherical::position::Geographic;
-use crate::units::{Degrees, Kilometers};
+use qtty::{Degrees, Kilometers};
 
 /// Roque de los Muchachos Observatory (La Palma, Canary Islands, Spain)
 /// - Longitude: −17.8925°

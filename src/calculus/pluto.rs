@@ -32,7 +32,7 @@ use crate::astro::JulianDate;
 use crate::coordinates::{
     cartesian::Vector, centers::Heliocentric, frames::Ecliptic, spherical::SphericalCoord,
 };
-use crate::units::{AstronomicalUnit, Degrees, Radian, AU};
+use qtty::{AstronomicalUnit, Degrees, Radian, AU};
 
 pub struct Pluto;
 
