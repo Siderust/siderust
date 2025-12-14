@@ -76,6 +76,10 @@ jobs:
         with:
           tool: cargo-llvm-cov
 
+      # Clean any previous coverage data to ensure fresh results
+      - name: Clean previous coverage data
+        run: cargo llvm-cov clean --workspace
+
       # Run tests once and collect coverage data (no report yet)
       - name: Coverage (run, no report)
         run: cargo llvm-cov --workspace --all-features --doctests --no-report
@@ -107,9 +111,9 @@ jobs:
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
 
-      # Gate: fail if total LINE coverage < 85% (no extra test run needed)
-      - name: Coverage gate (≥85% lines)
-        run: cargo llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 85
+      # Gate: fail if total LINE coverage < 90% (no extra test run needed)
+      - name: Coverage gate (≥90% lines)
+        run: cargo llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 90
 
       - name: Upload coverage HTML
         if: always()
