@@ -1,4 +1,4 @@
-use siderust::units::angular::{Degrees, HourAngles};
+use qtty::*;
 
 #[test]
 fn hour_angles_from_hms() {
@@ -17,10 +17,6 @@ fn degrees_from_dms() {
     let with_sign = Degrees::from_dms_sign(-1, 33, 52, 0.0);
     assert!((with_sign.value() + 33.86666666666667).abs() < 1e-12);
 }
-
-use siderust::units::{
-    AstronomicalUnits, Km, LightYears, Meter, Meters, Quantity, Seconds, Simplify, Unitless,
-};
 
 #[test]
 fn meters_kilometers_conversion() {

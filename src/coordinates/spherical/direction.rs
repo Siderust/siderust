@@ -23,13 +23,13 @@
 //! ## Quick example
 //! ```rust
 //! use siderust::coordinates::spherical::direction::ICRS;
-//! use siderust::units::Degrees;
+//! use qtty::*;
 //!
 //! // Barycentric pointing direction to Vega (J2000)
-//! let vega: ICRS = ICRS::new(Degrees::new(279.23473479), Degrees::new(38.78368896));
+//! let vega: ICRS = ICRS::new(279.23473479 * DEG, 38.78368896 * DEG);
 //!
 //! // Convert that direction into a position one parsec away:
-//! use siderust::units::PS;
+//! use qtty::Parsec;
 //! let one_pc = 1.0 * PS;
 //! let pos = vega.position(one_pc);
 //! println!("Vega direction  = {vega}\nVega@1pc position = {pos}");
@@ -48,12 +48,29 @@
 
 use super::SphericalCoord;
 use crate::coordinates::{centers, centers::ReferenceCenter, frames, frames::ReferenceFrame};
-use crate::units::{LengthUnit, Quantity, Unitless};
+use qtty::{Dimension, LengthUnit, Quantity, Unit};
+
+/// Marker dimension for direction (dimensionless unit vector).
+pub enum DirectionDim {}
+impl Dimension for DirectionDim {}
+
+/// Marker unit for direction types (unit vectors with implicit radius = 1).
+///
+/// This is a local type distinct from qtty's `Unitless`, which allows
+/// Direction and Position to have non-overlapping impl blocks.
+#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+pub struct DirectionUnit;
+
+impl Unit for DirectionUnit {
+    const RATIO: f64 = 1.0;
+    type Dim = DirectionDim;
+    const SYMBOL: &'static str = "";
+}
 
 /// Generic alias for a *unit vector* (radius = 1).
 ///
-/// The distance unit is fixed to [`Unitless`].
-pub type Direction<C, F> = SphericalCoord<C, F, Unitless>;
+/// The distance unit is fixed to [`DirectionUnit`].
+pub type Direction<C, F> = SphericalCoord<C, F, DirectionUnit>;
 
 /// **Heliocentric ecliptic** direction (longitude *L*, latitude *B*).
 pub type Ecliptic = Direction<centers::Heliocentric, frames::Ecliptic>;
@@ -81,7 +98,7 @@ where
     /// # Example
     /// ```rust
     /// use siderust::coordinates::spherical::direction::Ecliptic;
-    /// use siderust::units::{AU, DEG};
+    /// use qtty::*;
     ///
     /// let dir = Ecliptic::new(0.0*DEG, 0.0*DEG);
     /// let pos = dir.position(1.0*AU); // 1 au
@@ -113,7 +130,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::units::*;
+    use qtty::*;
 
     #[test]
     fn creates_valid_spherical_position() {

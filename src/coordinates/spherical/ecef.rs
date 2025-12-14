@@ -17,7 +17,7 @@
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::position::Geographic;
-//! use siderust::units::{Degrees, KM};
+//! use qtty::*;
 //!
 //! let coord = Geographic::new(Degrees::new(45.0), Degrees::new(7.0), 2.4*KM);
 //! println!("lat = {}, lon = {}", coord.lat(), coord.lon());
@@ -26,11 +26,11 @@
 use super::*;
 use crate::bodies::EARTH;
 use crate::coordinates::{centers::*, frames::*};
-use crate::units::*;
+use qtty::*;
 
 impl<C: ReferenceCenter> Direction<C, ECEF> {
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
-        Self::new_raw(lat, lon, Quantity::<Unitless>::new(1.0))
+        Self::new_raw(lat, lon, Quantity::<direction::DirectionUnit>::new(1.0))
     }
 
     /// Creates a new geographic coordinate with normalized latitude and longitude.

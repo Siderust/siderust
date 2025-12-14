@@ -1,6 +1,6 @@
 use crate::coordinates::{centers, frames};
-use crate::units::Simplify;
-use crate::units::{LengthUnit, Quantity};
+use qtty::Simplify;
+use qtty::{LengthUnit, Quantity};
 
 // TODO: Bound U to LengthUnit
 // see issue #112792 <https://github.com/rust-lang/rust/issues/112792> for more information
@@ -20,11 +20,12 @@ where
     );
 
     pub fn direction(&self) -> super::Direction<C, F> {
+        use crate::coordinates::spherical::direction::DirectionUnit;
         let d = self.distance();
-        super::Direction::<C, F>::new(
-            (self.x() / d).simplify(),
-            (self.y() / d).simplify(),
-            (self.z() / d).simplify(),
+        super::Direction::<C, F>::new_const(
+            Quantity::<DirectionUnit>::new((self.x() / d).simplify().value()),
+            Quantity::<DirectionUnit>::new((self.y() / d).simplify().value()),
+            Quantity::<DirectionUnit>::new((self.z() / d).simplify().value()),
         )
     }
 }

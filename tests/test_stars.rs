@@ -1,16 +1,14 @@
+use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::Star;
 use siderust::coordinates::spherical::position::Equatorial;
 use siderust::targets::Target;
-use siderust::units::{
-    Degrees, LightYear, LightYears, SolarLuminosities, SolarMasses, SolarRadiuses,
-};
 use std::borrow::Cow;
 
 #[test]
 fn star_new_const() {
     let position = Equatorial::<LightYear>::new(Degrees::new(10.0), Degrees::new(20.0), 4.0);
-    let target = Target::new_static(position.clone(), JulianDate::J2000);
+    let target = Target::new_static(position, JulianDate::J2000);
     let star = Star::new_const(
         "Alpha",
         LightYears::new(4.0),
@@ -33,7 +31,7 @@ fn star_new_const() {
 #[test]
 fn star_new_owned() {
     let position = Equatorial::<LightYear>::new(Degrees::new(30.0), Degrees::new(-10.0), 10.0);
-    let target = Target::new_static(position.clone(), JulianDate::J2000);
+    let target = Target::new_static(position, JulianDate::J2000);
     let name = String::from("Beta");
     let star = Star::new(
         name.clone(),

@@ -49,7 +49,7 @@
 //! use siderust::calculus::events::{find_static_extremas, find_dynamic_extremas, Culmination};
 //! use siderust::bodies::catalog::SIRIUS;
 //! use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-//! use siderust::units::Days;
+//! use qtty::*;
 //! use siderust::astro::JulianDate;
 //!
 //! // Example: Find extrema of a function in a given interval

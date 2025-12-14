@@ -16,15 +16,15 @@
 //! # Example
 //! ```rust
 //! use siderust::coordinates::spherical::direction::Horizontal;
-//! use siderust::units::Degrees;
+//! use qtty::*;
 //!
-//! let coord = Horizontal::new(Degrees::new(45.0), Degrees::new(120.0));
-//! println!("alt = {}, az = {}", coord.alt(), coord.az());
+//! let horizontal = Horizontal::new(90.0 * DEG, 30.0 * DEG);
+//! println!("alt = {}, az = {}", horizontal.alt(), horizontal.az());
 //! ```
 
 use super::*;
 use crate::coordinates::{centers::*, frames::*};
-use crate::units::*;
+use qtty::*;
 
 impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// Creates a new horizontal spherical coordinate with constant values.
@@ -34,9 +34,9 @@ impl<C: ReferenceCenter> Direction<C, Horizontal> {
     /// - `az`: Azimuth (θ), in degrees.
     ///
     /// # Returns
-    /// A new `Position` in the horizontal frame.
+    /// A new `Direction` in the horizontal frame.
     pub const fn new_const(alt: Degrees, az: Degrees) -> Self {
-        Self::new_raw(alt, az, Quantity::<Unitless>::new(1.0))
+        Self::new_raw(alt, az, Quantity::<direction::DirectionUnit>::new(1.0))
     }
 
     /// Constructs a new horizontal spherical coordinate with normalized input angular.

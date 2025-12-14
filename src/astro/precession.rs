@@ -93,7 +93,7 @@ use std::f64::consts::TAU;
 
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
-use crate::units::*;
+use qtty::*;
 
 /* -------------------------------------------------------------------------
  * Constants & small utilities
@@ -239,10 +239,7 @@ mod tests {
         use crate::bodies::catalog::SIRIUS;
 
         // Target epoch: 2025‑05‑12 (JD 2 469 807.5)
-        let prec = precess_from_j2000(
-            SIRIUS.target.get_position().clone(),
-            JulianDate::new(2_460_807.5),
-        );
+        let prec = precess_from_j2000(*SIRIUS.target.get_position(), JulianDate::new(2_460_807.5));
 
         // Expected (Meeus short model): α ≈ 101.84557°, δ ≈ −16.77182°
         assert!(
@@ -255,5 +252,21 @@ mod tests {
             "current δ ≈ {}",
             prec.dec()
         );
+    }
+
+    #[test]
+    fn rotate_equatorial_handles_near_pole_branch() {
+        use qtty::Radians;
+
+        let (ra, dec) = super::rotate_equatorial(
+            Radians::new(0.1),
+            Radians::new(-1.5), // |δ| > 85° to trigger special path
+            Radians::new(0.01),
+            Radians::new(0.02),
+            Radians::new(0.03),
+        );
+
+        assert!(ra.value().is_finite());
+        assert!(dec.value().is_sign_negative());
     }
 }

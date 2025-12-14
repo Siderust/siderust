@@ -7,12 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+* External `qtty` crate dependency for dimensional analysis
+* `DirectionUnit` marker type for direction/position type separation
 
 ### Changed
+* Migrated from internal `units` module to external `qtty` crate (v0.1.0)
+* Unit syntax: now uses multiplication syntax (e.g., `45.0 * DEG` instead of `Degrees::new(45.0)`)
+* All documentation examples updated to use `qtty` imports and syntax
 
 ### Deprecated
 
 ### Removed
+* Internal `src/units/` module (angular.rs, frequency.rs, length.rs, mass.rs, power.rs, time.rs, unitless.rs, velocity.rs)
 
 ### Fixed
 

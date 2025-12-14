@@ -1,6 +1,6 @@
+use qtty::*;
 use siderust::astro::{orbit::Orbit, JulianDate};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
-use siderust::units::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
 
 #[test]
 fn planet_builder_errors() {
@@ -41,7 +41,7 @@ fn orbit_period_computation() {
     let planet = Planet::builder()
         .mass(Kilograms::new(1.0))
         .radius(Kilometers::new(1.0))
-        .orbit(orbit.clone())
+        .orbit(orbit)
         .build();
 
     let p = planet.orbit.period().value();

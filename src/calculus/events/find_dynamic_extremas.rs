@@ -5,7 +5,7 @@ use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::coordinates::spherical::*;
 use crate::targets::Target;
-use crate::units::*;
+use qtty::*;
 
 /// Convenience constants.
 use core::f64::consts::PI;
@@ -176,10 +176,10 @@ mod tests {
             find_dynamic_extremas(|_| SIRIUS.target, &ROQUE_DE_LOS_MUCHACHOS, jd_start, jd_end);
 
         let expected_lower = Culmination::Lower {
-            jd: JulianDate::new(2_460_677.05000),
+            jd: JulianDate::new(2_460_677.050_00),
         };
         let expected_upper = Culmination::Upper {
-            jd: JulianDate::new(2_460_677.54860),
+            jd: JulianDate::new(2_460_677.548_60),
         };
 
         assert_eq!(res.len(), 2);

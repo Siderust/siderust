@@ -15,10 +15,10 @@
 //! ## Example
 //! ```rust
 //! use siderust::coordinates::cartesian::position::Ecliptic;
-//! use siderust::units::Au;
+//! use qtty::AstronomicalUnit;
 //!
 //! // Create a heliocentric ecliptic position
-//! let pos = Ecliptic::<Au>::new(1.0, 0.0, 0.0);
+//! let pos = Ecliptic::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
 //! println!("X: {}, Y: {}, Z: {}", pos.x(), pos.y(), pos.z());
 //! ```
 //!
@@ -29,7 +29,7 @@
 //! `type Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>   = Vector<C, F, U>;`
 
 use crate::coordinates::{centers, frames};
-use crate::units::*;
+use qtty::*;
 
 use nalgebra::Vector3;
 use std::marker::PhantomData;
@@ -125,7 +125,7 @@ impl<C, F, U> std::fmt::Display for Vector<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: LengthUnit,
+    U: Unit,
     Quantity<U>: std::fmt::Display,
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

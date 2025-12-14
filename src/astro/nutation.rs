@@ -60,7 +60,7 @@
 use crate::astro::dynamical_time::julian_ephemeris_day;
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::direction::Equatorial;
-use crate::units::*;
+use qtty::*;
 
 /// Nutation components for a given epoch (all **degrees**).
 #[derive(Debug)]

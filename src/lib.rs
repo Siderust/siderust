@@ -72,6 +72,5 @@ pub mod calculus;
 pub mod coordinates;
 pub mod observatories;
 pub mod targets;
-pub mod units;
 
 pub(crate) mod macros;
