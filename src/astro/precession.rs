@@ -253,4 +253,20 @@ mod tests {
             prec.dec()
         );
     }
+
+    #[test]
+    fn rotate_equatorial_handles_near_pole_branch() {
+        use qtty::Radians;
+
+        let (ra, dec) = super::rotate_equatorial(
+            Radians::new(0.1),
+            Radians::new(-1.5), // |δ| > 85° to trigger special path
+            Radians::new(0.01),
+            Radians::new(0.02),
+            Radians::new(0.03),
+        );
+
+        assert!(ra.value().is_finite());
+        assert!(dec.value().is_sign_negative());
+    }
 }
