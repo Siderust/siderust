@@ -51,7 +51,6 @@ mod tests {
     use qtty::AstronomicalUnit;
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn apparent_sun_position_j2000() {
         let pos = Sun::get_apparent_geocentric_equ::<AstronomicalUnit>(JulianDate::J2000);
 
