@@ -17,7 +17,6 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
-  SIDERUST_STUBS: "1"
 
 jobs:
   check:
@@ -78,18 +77,20 @@ jobs:
 
       # Clean any previous coverage data to ensure fresh results
       - name: Clean previous coverage data
-        run: cargo llvm-cov clean --workspace
+        run: |
+          cargo +nightly llvm-cov clean --workspace
+          rm -rf target/llvm-cov-target/*.profraw
 
       # Run tests once and collect coverage data (no report yet)
       - name: Coverage (run, no report)
-        run: cargo llvm-cov --workspace --all-features --doctests --no-report
+        run: cargo +nightly llvm-cov --workspace --all-features --doctests --no-report
 
       # Produce machine-readable + human-readable reports
       - name: Coverage (Cobertura XML)
-        run: cargo llvm-cov report --cobertura --output-path coverage.xml
+        run: cargo +nightly llvm-cov report --cobertura --output-path coverage.xml
 
       - name: Coverage (HTML)
-        run: cargo llvm-cov report --html --output-dir coverage_html
+        run: cargo +nightly llvm-cov report --html --output-dir coverage_html
 
       # Put a nice table + badge into the PR Checks "Summary" tab
       - name: Build coverage summary (Markdown)
@@ -113,7 +114,7 @@ jobs:
 
       # Gate: fail if total LINE coverage < 90% (no extra test run needed)
       - name: Coverage gate (≥90% lines)
-        run: cargo llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 90
+        run: cargo +nightly llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 90
 
       - name: Upload coverage HTML
         if: always()

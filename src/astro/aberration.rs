@@ -131,7 +131,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_aberration_introduces_shift() {
         let jd = JulianDate::new(2451545.0); // J2000.0
         let mean = position::Equatorial::<Au>::new(
@@ -154,7 +153,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_aberration_at_north_pole() {
         let jd = JulianDate::new(2451545.0);
         let mean = position::Equatorial::<Au>::new(

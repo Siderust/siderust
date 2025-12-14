@@ -153,7 +153,6 @@ mod tests {
 
     /// Mercury heliocentric (ecliptic J2000) at epoch J2000.0 (JD_TDB = 2451545.0)
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_mercury_at_epoch() {
         let coord = Mercury::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(
@@ -165,7 +164,6 @@ mod tests {
 
     /// Venus heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_venus_at_epoch() {
         let coord = Venus::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(
@@ -177,7 +175,6 @@ mod tests {
 
     /// Test Earth's heliocentric coordinates at epoch J2000.0
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_earth_at_epoch() {
         let coord = Earth::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(
@@ -189,7 +186,6 @@ mod tests {
 
     /// Mars heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_mars_at_epoch() {
         let coord = Mars::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(
@@ -201,7 +197,6 @@ mod tests {
 
     /// Jupiter heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_jupiter_at_epoch() {
         let coord = Jupiter::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(
@@ -213,7 +208,6 @@ mod tests {
 
     /// Saturn heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_saturn_at_epoch() {
         let coord = Saturn::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(
@@ -225,7 +219,6 @@ mod tests {
 
     /// Uranus heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_uranus_at_epoch() {
         let coord = Uranus::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(
@@ -237,7 +230,6 @@ mod tests {
 
     /// Neptune heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_neptune_at_epoch() {
         let coord = Neptune::vsop87a(JulianDate::J2000).get_position().clone();
         assert_cartesian_eq!(
@@ -266,7 +258,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn test_vsop87a_velocity_and_combined() {
         use qtty::AusPerDay;
         test_vel_and_pos_vel!(Mercury);

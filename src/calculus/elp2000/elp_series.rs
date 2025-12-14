@@ -989,7 +989,6 @@ mod tests {
     // ===========================================================================
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn end_to_end_position_stable_at_far_future() {
         let jd = jd_from_centuries(5.0);
         let pos = Moon::get_geo_position::<Kilometer>(jd);
@@ -1002,7 +1001,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn geocentric_distance_within_realistic_lunar_bounds() {
         let p = pos_j2000_km();
         let r = r_from_xyz_km(&p);
@@ -1014,7 +1012,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn ecliptic_latitude_within_lunar_inclination() {
         let p = pos_j2000_km();
         let (_lon, lat) = lon_lat_from_xyz(&p);
@@ -1023,7 +1020,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn physical_bounds_across_multiple_epochs() {
         for jd in [
             make_jd_utc(1990, 1, 1, 0, 0, 0),
@@ -1047,7 +1043,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn continuity_finite_difference_velocity() {
         // Moon's orbital speed is ~1.0 km/s, check velocity is in reasonable range
         let jd0 = make_jd_utc(2020, 6, 15, 12, 0, 0);
@@ -1074,7 +1069,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn axes_are_ecliptic_of_date_not_equatorial() {
         let p = pos_j2000_km();
         assert!(
@@ -1084,7 +1078,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn long_range_stability_10_year_intervals() {
         for year in (1950..=2050).step_by(10) {
             let jd = make_jd_utc(year, 1, 1, 0, 0, 0);
@@ -1103,7 +1096,6 @@ mod tests {
     // ===========================================================================
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn regression_xyz_j2000_against_reference() {
         let pos = pos_j2000_km();
         let expected_x = -291_608.0 * KM;
@@ -1116,7 +1108,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn regression_j2000_derived_quantities() {
         let pos = pos_j2000_km();
         let r = r_from_xyz_km(&pos);
@@ -1135,7 +1126,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn distance_matches_supermoon_2019_jan21_perigee() {
         // NASA/Space.com: 2019-01-21 perigee ~357,344 km
         let pos = Moon::get_geo_position::<Kilometer>(make_jd_utc(2019, 1, 21, 0, 0, 0));
@@ -1147,7 +1137,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn distance_matches_supermoon_2019_feb19_perigee() {
         // NASA/Space.com: 2019-02-19 09:06 UTC perigee ~356,761 km
         let pos = Moon::get_geo_position::<Kilometer>(make_jd_utc(2019, 2, 19, 9, 6, 0));
@@ -1159,7 +1148,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn distance_matches_supermoon_2019_mar19_perigee() {
         // NASA/Space.com: 2019-03-19 perigee ~359,380 km
         let pos = Moon::get_geo_position::<Kilometer>(make_jd_utc(2019, 3, 19, 0, 0, 0));
@@ -1171,7 +1159,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn distance_matches_supermoon_2020_apr07_perigee() {
         // NASA/Space.com: 2020-04-07 18:08 UTC perigee ~356,908 km
         let pos = Moon::get_geo_position::<Kilometer>(make_jd_utc(2020, 4, 7, 18, 8, 0));
@@ -1183,7 +1170,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn distance_matches_apogee_2019_feb05() {
         // Apogee: 2019-02-05 ~406,555 km
         let pos = Moon::get_geo_position::<Kilometer>(make_jd_utc(2019, 2, 5, 0, 0, 0));
@@ -1195,7 +1181,6 @@ mod tests {
     }
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn distance_matches_apogee_2020_mar24() {
         // Apogee: 2020-03-24 15:23 UTC ~406,688 km
         let pos = Moon::get_geo_position::<Kilometer>(make_jd_utc(2020, 3, 24, 15, 23, 0));
@@ -1211,7 +1196,6 @@ mod tests {
     // ===========================================================================
 
     #[test]
-    #[cfg_attr(siderust_stubs, ignore)]
     fn determinism_bitwise_equality() {
         // Same input must produce identical output (no non-deterministic operations)
         let jd = make_jd_utc(2020, 6, 15, 12, 0, 0);
