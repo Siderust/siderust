@@ -36,14 +36,8 @@ mod tests {
         );
         let jd = crate::astro::JulianDate::J2000;
         let transformed: Equatorial = dir.transform(jd);
-        assert!(
-            !transformed.polar.value().is_nan(),
-            "Polar should not be NaN"
-        );
-        assert!(
-            !transformed.azimuth.value().is_nan(),
-            "Azimuth should not be NaN"
-        );
+        assert!(!transformed.polar.value().is_nan());
+        assert!(!transformed.azimuth.value().is_nan());
     }
 
     #[test]
@@ -54,14 +48,8 @@ mod tests {
         );
         let jd = crate::astro::JulianDate::J2000;
         let transformed: Equatorial = dir.transform(jd);
-        assert!(
-            !transformed.polar.value().is_nan(),
-            "Polar should not be NaN"
-        );
-        assert!(
-            !transformed.azimuth.value().is_nan(),
-            "Azimuth should not be NaN"
-        );
+        assert!(!transformed.polar.value().is_nan());
+        assert!(!transformed.azimuth.value().is_nan());
     }
 
     #[test]
@@ -70,14 +58,8 @@ mod tests {
         let jd = crate::astro::JulianDate::J2000;
         let transformed: Direction<Heliocentric, frames::Equatorial> = dir.transform(jd);
         // Should be close in direction, but not identical due to aberration, so just check type and not NaN
-        assert!(
-            !transformed.polar.value().is_nan(),
-            "Polar should not be NaN"
-        );
-        assert!(
-            !transformed.azimuth.value().is_nan(),
-            "Azimuth should not be NaN"
-        );
+        assert!(!transformed.polar.value().is_nan());
+        assert!(!transformed.azimuth.value().is_nan());
     }
 
     #[test]
@@ -85,17 +67,7 @@ mod tests {
         let dir = HCRS::new(Degrees::new(100.0), Degrees::new(-10.0));
         let jd = crate::astro::JulianDate::J2000;
         let transformed: ICRS = dir.transform(jd);
-        assert!(
-            (dir.polar.value() - transformed.polar.value()).abs() < 1e-10,
-            "Polar should not change significantly: {} vs {}",
-            dir.polar.value(),
-            transformed.polar.value()
-        );
-        assert!(
-            (dir.azimuth.value() - transformed.azimuth.value()).abs() < 1e-10,
-            "Azimuth should not change significantly: {} vs {}",
-            dir.azimuth.value(),
-            transformed.azimuth.value()
-        );
+        assert!((dir.polar.value() - transformed.polar.value()).abs() < 1e-10);
+        assert!((dir.azimuth.value() - transformed.azimuth.value()).abs() < 1e-10);
     }
 }

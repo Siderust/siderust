@@ -70,23 +70,8 @@ mod tests {
         // Convert to barycentric, which should remove aberration
         let bary: direction::Equatorial<centers::Barycentric> = apparent.to_center(jd);
 
-        assert!(
-            (bary.x() - mean.x()).abs().value() < 1e-8,
-            "current {}, expected {}",
-            bary.x().value(),
-            mean.x().value()
-        );
-        assert!(
-            (bary.y() - mean.y()).abs().value() < 1e-8,
-            "current {}, expected {}",
-            bary.y().value(),
-            mean.y().value()
-        );
-        assert!(
-            (bary.z() - mean.z()).abs().value() < 1e-8,
-            "current {}, expected {}",
-            bary.z().value(),
-            mean.z().value()
-        );
+        assert!((bary.x() - mean.x()).abs().value() < 1e-8);
+        assert!((bary.y() - mean.y()).abs().value() < 1e-8);
+        assert!((bary.z() - mean.z()).abs().value() < 1e-8);
     }
 }
