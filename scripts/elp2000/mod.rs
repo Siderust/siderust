@@ -210,15 +210,15 @@ fn copy_from_repo(dst: &Path) -> Result<bool> {
     eprintln!("Attempting to copy ELP2000 data from: {:?}", src);
     eprintln!("Target directory: {:?}", dst);
     eprintln!("Source exists: {}", src.exists());
-    
+
     if !src.is_dir() {
         eprintln!("Source is not a directory");
         return Ok(false);
     }
-    
+
     eprintln!("Found ELP2000 source directory, copying...");
     fs::create_dir_all(dst)?;
-    
+
     let mut copied_count = 0;
     for entry in fs::read_dir(&src)? {
         let entry = entry?;

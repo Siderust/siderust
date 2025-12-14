@@ -89,15 +89,15 @@ fn copy_from_repo(dst: &Path) -> Result<bool> {
     eprintln!("Attempting to copy VSOP87 data from: {:?}", src);
     eprintln!("Target directory: {:?}", dst);
     eprintln!("Source exists: {}", src.exists());
-    
+
     if !contains_vsop_files(&src)? {
         eprintln!("No VSOP87 files found in source directory");
         return Ok(false);
     }
-    
+
     eprintln!("Found VSOP87 files in source, copying...");
     fs::create_dir_all(dst).with_context(|| format!("Could not create directory {dst:?}"))?;
-    
+
     let mut copied_count = 0;
     for entry in fs::read_dir(&src)? {
         let entry = entry?;
