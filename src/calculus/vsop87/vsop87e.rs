@@ -10,6 +10,7 @@ use crate::targets::Target;
 use qtty::*;
 
 #[allow(clippy::approx_constant)]
+#[rustfmt::skip]
 mod vsop_data {
     include!(concat!(env!("OUT_DIR"), "/vsop87e.rs"));
 }
