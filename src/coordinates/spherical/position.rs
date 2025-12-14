@@ -13,7 +13,7 @@
 //! ## Quick example
 //! ```rust
 //! use siderust::coordinates::spherical::position::{Ecliptic, Equatorial};
-//! use siderust::units::{Degrees, AstronomicalUnit, AU};
+//! use qtty::*;
 //!
 //! // Heliocentric ecliptic coordinates of Earth at J2000
 //! let ecl = Ecliptic::<AstronomicalUnit>::new(0.0, 0.0, 1.0*AU);
@@ -38,7 +38,7 @@
 
 use super::SphericalCoord;
 use crate::coordinates::{centers, frames};
-use crate::units::*;
+use qtty::*;
 
 // TODO: Bound U to LengthUnit and VelocityUnit
 // see issue #112792 <https://github.com/rust-lang/rust/issues/112792> for more information
@@ -183,7 +183,7 @@ mod tests {
 
     #[test]
     fn center_constant_is_origin() {
-        use crate::units::Kilometer;
+        use qtty::Kilometer;
 
         let c = Equatorial::<Kilometer>::CENTER;
         assert_eq!(c.polar.value(), 0.0);

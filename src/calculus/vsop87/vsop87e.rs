@@ -7,9 +7,10 @@ use crate::coordinates::{
     frames::Ecliptic,
 };
 use crate::targets::Target;
-use crate::units::*;
+use qtty::*;
 
 #[allow(clippy::approx_constant)]
+#[rustfmt::skip]
 mod vsop_data {
     include!(concat!(env!("OUT_DIR"), "/vsop87e.rs"));
 }
@@ -156,7 +157,7 @@ mod tests {
     use crate::astro::JulianDate;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
-    use crate::units::AU;
+    use qtty::AU;
 
     const PRECISION: f64 = 1.0e-6;
 

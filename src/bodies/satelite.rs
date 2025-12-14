@@ -7,7 +7,7 @@
 //! - `orbit`: Orbital parameters (see [`Orbit`]).
 
 use crate::astro::orbit::Orbit;
-use crate::units::{Kilograms, Kilometers};
+use qtty::{Kilograms, Kilometers};
 
 use std::borrow::Cow;
 

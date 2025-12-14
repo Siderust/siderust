@@ -14,7 +14,7 @@
 
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
-use crate::units::*;
+use qtty::*;
 
 /// Describes the proper motion of a star in equatorial coordinates.
 ///
@@ -94,7 +94,7 @@ mod tests {
     use super::*;
     use crate::astro::JulianDate;
     use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
-    use crate::units::{AstronomicalUnit, Degrees, DegreesPerYear};
+    use qtty::{AstronomicalUnit, Degrees, DegreesPerYear};
 
     #[test]
     fn test_proper_motion_linear_shift() {

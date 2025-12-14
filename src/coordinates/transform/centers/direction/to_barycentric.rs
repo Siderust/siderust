@@ -1,36 +1,38 @@
 use crate::astro::aberration::remove_aberration_from_direction;
 use crate::astro::JulianDate;
+use crate::coordinates::spherical::direction::DirectionUnit;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::{
-    cartesian::direction::{Direction, Equatorial},
-    centers::*,
-    frames::MutableFrame,
+    cartesian::direction::Equatorial, cartesian::Vector, centers::*, frames::MutableFrame,
     transform::TransformFrame,
 };
 
-// Heliocentric To Barycentric
-impl<F: MutableFrame> TransformCenter<Direction<Barycentric, F>> for Direction<Heliocentric, F> {
-    fn to_center(&self, _jd: JulianDate) -> Direction<Barycentric, F> {
-        Direction::from_vec3(self.as_vec3())
+// Heliocentric To Barycentric (Direction only - uses DirectionUnit)
+impl<F: MutableFrame> TransformCenter<Vector<Barycentric, F, DirectionUnit>>
+    for Vector<Heliocentric, F, DirectionUnit>
+{
+    fn to_center(&self, _jd: JulianDate) -> Vector<Barycentric, F, DirectionUnit> {
+        Vector::from_vec3(self.as_vec3())
     }
 }
 
-// Geocentric To Barycentric
-impl<F: MutableFrame> TransformCenter<Direction<Barycentric, F>> for Direction<Geocentric, F>
+// Geocentric To Barycentric (Direction only - uses DirectionUnit)
+impl<F: MutableFrame> TransformCenter<Vector<Barycentric, F, DirectionUnit>>
+    for Vector<Geocentric, F, DirectionUnit>
 where
-    Direction<Geocentric, F>: TransformFrame<Equatorial>, // ToEquatorial
-    Equatorial: TransformFrame<Direction<Geocentric, F>>, // FromEquatorial
+    Vector<Geocentric, F, DirectionUnit>: TransformFrame<Equatorial>, // ToEquatorial
+    Equatorial: TransformFrame<Vector<Geocentric, F, DirectionUnit>>, // FromEquatorial
 {
     #[inline]
-    fn to_center(&self, jd: JulianDate) -> Direction<Barycentric, F> {
+    fn to_center(&self, jd: JulianDate) -> Vector<Barycentric, F, DirectionUnit> {
         // 1. Transform to Equatorial (already in Geocentric)
         let equatorial: Equatorial = self.to_frame();
         // 2. Remove aberration
         let deaberrated = remove_aberration_from_direction(equatorial, jd);
         // 3. Recover target Frame
-        let target_center: Direction<Geocentric, F> = deaberrated.to_frame();
+        let target_center: Vector<Geocentric, F, DirectionUnit> = deaberrated.to_frame();
         // 4. Transform target Center
-        Direction::<Barycentric, F>::from_vec3(target_center.as_vec3())
+        Vector::<Barycentric, F, DirectionUnit>::from_vec3(target_center.as_vec3())
     }
 }
 
@@ -39,7 +41,7 @@ mod tests {
     use super::*;
     use crate::astro::aberration::apply_aberration_to_direction;
     use crate::coordinates::{cartesian::direction, centers};
-    use crate::units::Degrees;
+    use qtty::Degrees;
 
     const EPS: f64 = 1e-12;
 
@@ -68,23 +70,8 @@ mod tests {
         // Convert to barycentric, which should remove aberration
         let bary: direction::Equatorial<centers::Barycentric> = apparent.to_center(jd);
 
-        assert!(
-            (bary.x() - mean.x()).abs().value() < 1e-8,
-            "current {}, expected {}",
-            bary.x(),
-            mean.x()
-        );
-        assert!(
-            (bary.y() - mean.y()).abs().value() < 1e-8,
-            "current {}, expected {}",
-            bary.x(),
-            mean.x()
-        );
-        assert!(
-            (bary.z() - mean.z()).abs().value() < 1e-8,
-            "current {}, expected {}",
-            bary.x(),
-            mean.x()
-        );
+        assert!((bary.x() - mean.x()).abs().value() < 1e-8);
+        assert!((bary.y() - mean.y()).abs().value() < 1e-8);
+        assert!((bary.z() - mean.z()).abs().value() < 1e-8);
     }
 }

@@ -9,7 +9,7 @@
 //! ## Quick start
 //! ```rust
 //! use siderust::bodies::planets::{Planet, PlanetBuilder};
-//! use siderust::units::{Kilograms, Kilometers, AstronomicalUnits, Degrees};
+//! use qtty::*;
 //! use siderust::astro::orbit::Orbit;
 //! use siderust::astro::JulianDate;
 //!
@@ -46,7 +46,7 @@
 //! ---
 
 use crate::astro::orbit::Orbit;
-use crate::units::*;
+use qtty::*;
 
 const GAUSSIAN_GRAVITATIONAL_CONSTANT: RadiansPerDay = RadiansPerDay::new(0.017_202_098_95);
 
@@ -175,7 +175,7 @@ impl OrbitExt for Orbit {
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::units::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
+    use qtty::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
 
     #[test]
     fn builder_roundtrip() {

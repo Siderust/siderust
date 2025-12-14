@@ -1,9 +1,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::{
-    coordinates::{
-        cartesian::Vector, centers::Barycentric, frames::ICRS, spherical::SphericalCoord,
-    },
-    units::{Au, Degrees},
+use qtty::{Au, Degrees};
+use siderust::coordinates::{
+    cartesian::Vector, centers::Barycentric, frames::ICRS, spherical::SphericalCoord,
 };
 use std::{hint::black_box, time::Duration};
 

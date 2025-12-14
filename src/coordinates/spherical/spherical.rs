@@ -18,10 +18,10 @@
 //! use siderust::coordinates::spherical::Position;
 //! use siderust::coordinates::centers::Heliocentric;
 //! use siderust::coordinates::frames::Ecliptic;
-//! use siderust::units::{Degrees, AstronomicalUnit};
+//! use qtty::*;
 //!
 //! // Create a heliocentric ecliptic spherical position
-//! let sph = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(Degrees::new(45.0), Degrees::new(7.0), 1.0);
+//! let sph = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(45.0 * DEG, 7.0 * DEG, 1.0);
 //! println!("θ: {}, φ: {}, r: {:?}", sph.polar, sph.azimuth, sph.distance);
 //! ```
 //!
@@ -38,7 +38,7 @@
 //! Implements `Display` for readable output including center, frame, angles, and distance.
 
 use crate::coordinates::{centers, frames};
-use crate::units::*;
+use qtty::*;
 
 use std::marker::PhantomData;
 
@@ -103,7 +103,11 @@ where
     /// (i.e. same angular coordinates, radius = 1).
     #[must_use]
     pub fn direction(&self) -> super::Direction<C, F> {
-        super::Direction::new_raw(self.polar, self.azimuth, Quantity::<Unitless>::new(1.0))
+        super::Direction::new_raw(
+            self.polar,
+            self.azimuth,
+            Quantity::<super::direction::DirectionUnit>::new(1.0),
+        )
     }
 }
 
