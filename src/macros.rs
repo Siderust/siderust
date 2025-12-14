@@ -103,3 +103,58 @@ macro_rules! assert_spherical_eq {
 pub(crate) use assert_cartesian_eq;
 #[allow(unused_imports)]
 pub(crate) use assert_spherical_eq;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::coordinates::{cartesian, spherical};
+    use qtty::{AstronomicalUnit, Degrees, AU};
+
+    #[test]
+    #[should_panic(expected = "Cartesian coords differ")]
+    fn cartesian_macro_panics_on_mismatch() {
+        let a = cartesian::position::ICRS::<AstronomicalUnit>::new(0.0 * AU, 0.0 * AU, 0.0 * AU);
+        let b = cartesian::position::ICRS::<AstronomicalUnit>::new(1.0 * AU, 0.0 * AU, 0.0 * AU);
+        assert_cartesian_eq!(a, b, 1e-6);
+    }
+
+    #[test]
+    #[should_panic(expected = "custom cart message")]
+    fn cartesian_macro_reports_custom_message() {
+        let a = cartesian::position::ICRS::<AstronomicalUnit>::new(0.0 * AU, 0.0 * AU, 0.0 * AU);
+        let b = cartesian::position::ICRS::<AstronomicalUnit>::new(0.0 * AU, 1.0 * AU, 0.0 * AU);
+        assert_cartesian_eq!(a, b, 1e-8, "custom cart message");
+    }
+
+    #[test]
+    #[should_panic(expected = "Spherical coords differ")]
+    fn spherical_macro_panics_on_mismatch() {
+        let a = spherical::position::Equatorial::<AstronomicalUnit>::new(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            1.0,
+        );
+        let b = spherical::position::Equatorial::<AstronomicalUnit>::new(
+            Degrees::new(10.0),
+            Degrees::new(0.0),
+            1.0,
+        );
+        assert_spherical_eq!(a, b, 1e-6);
+    }
+
+    #[test]
+    #[should_panic(expected = "custom spherical message")]
+    fn spherical_macro_reports_custom_message() {
+        let a = spherical::position::Equatorial::<AstronomicalUnit>::new(
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            1.0,
+        );
+        let b = spherical::position::Equatorial::<AstronomicalUnit>::new(
+            Degrees::new(0.0),
+            Degrees::new(20.0),
+            1.0,
+        );
+        assert_spherical_eq!(a, b, 1e-6, "custom spherical message");
+    }
+}

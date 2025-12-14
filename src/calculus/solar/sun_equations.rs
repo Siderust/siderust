@@ -60,23 +60,8 @@ mod tests {
         let expected_dec = -23.0; // degrees
         let expected_dist = 1.0; // astronomical units
 
-        assert!(
-            (pos.ra().value() - expected_ra).abs() < 2.0,
-            "RA mismatch: {} vs {}",
-            pos.ra().value(),
-            expected_ra
-        );
-        assert!(
-            (pos.dec().value() - expected_dec).abs() < 2.0,
-            "Dec mismatch: {} vs {}",
-            pos.dec().value(),
-            expected_dec
-        );
-        assert!(
-            (pos.distance.value() - expected_dist).abs() < 0.2,
-            "Distance mismatch: {} vs {}",
-            pos.distance.value(),
-            expected_dist
-        );
+        assert!((pos.ra().value() - expected_ra).abs() < 2.0);
+        assert!((pos.dec().value() - expected_dec).abs() < 2.0);
+        assert!((pos.distance.value() - expected_dist).abs() < 0.2);
     }
 }
