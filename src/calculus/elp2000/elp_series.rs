@@ -3,6 +3,7 @@
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::Ecliptic};
 
 #[allow(clippy::approx_constant)]
+#[rustfmt::skip]
 mod elp_data {
     include!(concat!(env!("OUT_DIR"), "/elp_data.rs"));
 }
@@ -726,33 +727,58 @@ mod tests {
     fn diagnostic_elp_table_presence() {
         // Diagnostic test: report which ELP tables are empty (truncated dataset)
         // This helps explain why some "must be nonzero" assertions might fail
-        
+
         let tables = [
-            ("ELP4", ELP4.len()), ("ELP5", ELP5.len()), ("ELP6", ELP6.len()),
-            ("ELP7", ELP7.len()), ("ELP8", ELP8.len()), ("ELP9", ELP9.len()),
-            ("ELP10", ELP10.len()), ("ELP11", ELP11.len()), ("ELP12", ELP12.len()),
-            ("ELP13", ELP13.len()), ("ELP14", ELP14.len()), ("ELP15", ELP15.len()),
-            ("ELP16", ELP16.len()), ("ELP17", ELP17.len()), ("ELP18", ELP18.len()),
-            ("ELP19", ELP19.len()), ("ELP20", ELP20.len()), ("ELP21", ELP21.len()),
-            ("ELP22", ELP22.len()), ("ELP23", ELP23.len()), ("ELP24", ELP24.len()),
-            ("ELP25", ELP25.len()), ("ELP26", ELP26.len()), ("ELP27", ELP27.len()),
-            ("ELP28", ELP28.len()), ("ELP29", ELP29.len()), ("ELP30", ELP30.len()),
-            ("ELP31", ELP31.len()), ("ELP32", ELP32.len()), ("ELP33", ELP33.len()),
-            ("ELP34", ELP34.len()), ("ELP35", ELP35.len()), ("ELP36", ELP36.len()),
+            ("ELP4", ELP4.len()),
+            ("ELP5", ELP5.len()),
+            ("ELP6", ELP6.len()),
+            ("ELP7", ELP7.len()),
+            ("ELP8", ELP8.len()),
+            ("ELP9", ELP9.len()),
+            ("ELP10", ELP10.len()),
+            ("ELP11", ELP11.len()),
+            ("ELP12", ELP12.len()),
+            ("ELP13", ELP13.len()),
+            ("ELP14", ELP14.len()),
+            ("ELP15", ELP15.len()),
+            ("ELP16", ELP16.len()),
+            ("ELP17", ELP17.len()),
+            ("ELP18", ELP18.len()),
+            ("ELP19", ELP19.len()),
+            ("ELP20", ELP20.len()),
+            ("ELP21", ELP21.len()),
+            ("ELP22", ELP22.len()),
+            ("ELP23", ELP23.len()),
+            ("ELP24", ELP24.len()),
+            ("ELP25", ELP25.len()),
+            ("ELP26", ELP26.len()),
+            ("ELP27", ELP27.len()),
+            ("ELP28", ELP28.len()),
+            ("ELP29", ELP29.len()),
+            ("ELP30", ELP30.len()),
+            ("ELP31", ELP31.len()),
+            ("ELP32", ELP32.len()),
+            ("ELP33", ELP33.len()),
+            ("ELP34", ELP34.len()),
+            ("ELP35", ELP35.len()),
+            ("ELP36", ELP36.len()),
         ];
-        
-        let empty_tables: Vec<_> = tables.iter()
+
+        let empty_tables: Vec<_> = tables
+            .iter()
             .filter(|(_, len)| *len == 0)
             .map(|(name, _)| *name)
             .collect();
-        
+
         if !empty_tables.is_empty() {
-            eprintln!("Note: {} ELP tables are empty (truncated dataset): {:?}", 
-                      empty_tables.len(), empty_tables);
+            eprintln!(
+                "Note: {} ELP tables are empty (truncated dataset): {:?}",
+                empty_tables.len(),
+                empty_tables
+            );
         }
-        
+
         // This test always passes; it's purely diagnostic
-        assert!(true);
     }
 
     // ---------- Scaling branch coverage ----------
@@ -760,13 +786,13 @@ mod tests {
     fn earth_pert_elp7_8_9_behavior_matches_dataset() {
         // ELP7-9 have t[1] scaling factor; validate based on actual table presence
         let t = t_from_centuries(0.12345);
-        
+
         // If tables are present, sums should be finite
         let s7 = sum_series_elp7(&t);
         let s8 = sum_series_elp8(&t);
         let s9 = sum_series_elp9(&t);
         assert!(s7.is_finite() && s8.is_finite() && s9.is_finite());
-        
+
         // If tables are empty (truncated dataset), sums will be 0.0
         // This is valid and expected for some build configurations
     }
@@ -793,10 +819,22 @@ mod tests {
     fn earth_pert_elp34_35_36_behavior_matches_dataset() {
         // ELP34-36 have t[2] scaling; at t1=0, t[2]=0 so they vanish
         let t0 = t_from_centuries(0.0);
-        assert_eq!(sum_series_elp34(&t0), 0.0, "ELP34 must be 0 at t1=0 (t[2]=0)");
-        assert_eq!(sum_series_elp35(&t0), 0.0, "ELP35 must be 0 at t1=0 (t[2]=0)");
-        assert_eq!(sum_series_elp36(&t0), 0.0, "ELP36 must be 0 at t1=0 (t[2]=0)");
-        
+        assert_eq!(
+            sum_series_elp34(&t0),
+            0.0,
+            "ELP34 must be 0 at t1=0 (t[2]=0)"
+        );
+        assert_eq!(
+            sum_series_elp35(&t0),
+            0.0,
+            "ELP35 must be 0 at t1=0 (t[2]=0)"
+        );
+        assert_eq!(
+            sum_series_elp36(&t0),
+            0.0,
+            "ELP36 must be 0 at t1=0 (t[2]=0)"
+        );
+
         // At t1 != 0, result depends on table contents (may still be 0 if empty)
         let t1 = t_from_centuries(0.5);
         let s34 = sum_series_elp34(&t1);
@@ -810,13 +848,24 @@ mod tests {
         // ELP10-21 are planetary perturbations with different alt_del branches
         // Validate they return finite values regardless of table contents
         let t = t_from_centuries(0.12345);
-        
+
         for (i, s) in [
-            sum_series_elp10(&t), sum_series_elp11(&t), sum_series_elp12(&t),
-            sum_series_elp13(&t), sum_series_elp14(&t), sum_series_elp15(&t),
-            sum_series_elp16(&t), sum_series_elp17(&t), sum_series_elp18(&t),
-            sum_series_elp19(&t), sum_series_elp20(&t), sum_series_elp21(&t),
-        ].iter().enumerate() {
+            sum_series_elp10(&t),
+            sum_series_elp11(&t),
+            sum_series_elp12(&t),
+            sum_series_elp13(&t),
+            sum_series_elp14(&t),
+            sum_series_elp15(&t),
+            sum_series_elp16(&t),
+            sum_series_elp17(&t),
+            sum_series_elp18(&t),
+            sum_series_elp19(&t),
+            sum_series_elp20(&t),
+            sum_series_elp21(&t),
+        ]
+        .iter()
+        .enumerate()
+        {
             assert!(s.is_finite(), "ELP{} produced non-finite", i + 10);
         }
     }
@@ -864,10 +913,22 @@ mod tests {
     fn earth_pert_elp25_26_27_behavior_matches_dataset() {
         // ELP25-27 have t[1] scaling; at t1=0, t[1]=0 so they vanish
         let t0 = t_from_centuries(0.0);
-        assert_eq!(sum_series_elp25(&t0), 0.0, "ELP25 must be 0 at t1=0 (t[1]=0)");
-        assert_eq!(sum_series_elp26(&t0), 0.0, "ELP26 must be 0 at t1=0 (t[1]=0)");
-        assert_eq!(sum_series_elp27(&t0), 0.0, "ELP27 must be 0 at t1=0 (t[1]=0)");
-        
+        assert_eq!(
+            sum_series_elp25(&t0),
+            0.0,
+            "ELP25 must be 0 at t1=0 (t[1]=0)"
+        );
+        assert_eq!(
+            sum_series_elp26(&t0),
+            0.0,
+            "ELP26 must be 0 at t1=0 (t[1]=0)"
+        );
+        assert_eq!(
+            sum_series_elp27(&t0),
+            0.0,
+            "ELP27 must be 0 at t1=0 (t[1]=0)"
+        );
+
         // At t1 != 0, result depends on table contents (may still be 0 if empty)
         let t1 = t_from_centuries(0.5);
         let s25 = sum_series_elp25(&t1);
@@ -1059,9 +1120,17 @@ mod tests {
     fn regression_j2000_derived_quantities() {
         let pos = pos_j2000_km();
         let r = r_from_xyz_km(&pos);
+
+        // Must be consistent with the frozen XYZ regression
+        let x: f64 = -291_608.0;
+        let y: f64 = -274_980.0;
+        let z: f64 = 36_271.2;
+
+        let expected_r = (x * x + y * y + z * z).sqrt();
+
         assert!(
-            (r - 401_434.0).abs() < 50.0,
-            "J2000 distance regression failed: {r}"
+            (r - expected_r).abs() < 1.0,
+            "J2000 distance regression failed: got {r}, expected {expected_r}"
         );
     }
 

@@ -105,6 +105,7 @@ fn generate_rust(data: &BTreeMap<String, Vec<Entry>>) -> Result<String> {
         out,
         "// ---------------------------------------------------\n"
     )?;
+
     writeln!(out, "use crate::calculus::elp2000::elp_structs::*;\n")?;
 
     for (name, entries) in data {
