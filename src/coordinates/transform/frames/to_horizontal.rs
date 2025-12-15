@@ -81,18 +81,16 @@ fn horizontal_to_equatorial_angles(
 // Equatorial → Horizontal (for Topocentric center)
 // =============================================================================
 
+use crate::coordinates::transform::Transform;
+
 /// Transform from Equatorial to Horizontal frame for Topocentric coordinates.
 ///
 /// This transformation requires the Julian Date to compute the local sidereal time.
 /// The observer's site information is taken from the coordinate's center params.
-pub trait TransformToHorizontal<Coord> {
-    fn to_horizontal(&self, jd: JulianDate) -> Coord;
-}
-
-impl<U: Unit> TransformToHorizontal<Vector<Topocentric, Horizontal, U>>
+impl<U: Unit> Transform<Vector<Topocentric, Horizontal, U>>
     for Vector<Topocentric, Equatorial, U>
 {
-    fn to_horizontal(&self, jd: JulianDate) -> Vector<Topocentric, Horizontal, U> {
+    fn transform(&self, jd: JulianDate) -> Vector<Topocentric, Horizontal, U> {
         let site = self.center_params();
         let r = self.distance();
 
@@ -123,14 +121,10 @@ impl<U: Unit> TransformToHorizontal<Vector<Topocentric, Horizontal, U>>
 // =============================================================================
 
 /// Transform from Horizontal to Equatorial frame for Topocentric coordinates.
-pub trait TransformFromHorizontal<Coord> {
-    fn from_horizontal(&self, jd: JulianDate) -> Coord;
-}
-
-impl<U: Unit> TransformFromHorizontal<Vector<Topocentric, Equatorial, U>>
+impl<U: Unit> Transform<Vector<Topocentric, Equatorial, U>>
     for Vector<Topocentric, Horizontal, U>
 {
-    fn from_horizontal(&self, jd: JulianDate) -> Vector<Topocentric, Equatorial, U> {
+    fn transform(&self, jd: JulianDate) -> Vector<Topocentric, Equatorial, U> {
         let site = self.center_params();
 
         // Get distance and angles from Cartesian vector
@@ -162,19 +156,21 @@ impl<U: Unit> TransformFromHorizontal<Vector<Topocentric, Equatorial, U>>
 
 use crate::coordinates::spherical::SphericalCoord;
 
-impl<U: Unit> TransformToHorizontal<SphericalCoord<Topocentric, Horizontal, U>>
+impl<U: Unit> Transform<SphericalCoord<Topocentric, Horizontal, U>>
     for SphericalCoord<Topocentric, Equatorial, U>
 {
-    fn to_horizontal(&self, jd: JulianDate) -> SphericalCoord<Topocentric, Horizontal, U> {
-        self.to_cartesian().to_horizontal(jd).to_spherical()
+    fn transform(&self, jd: JulianDate) -> SphericalCoord<Topocentric, Horizontal, U> {
+        let cart: Vector<Topocentric, Horizontal, U> = self.to_cartesian().transform(jd);
+        cart.to_spherical()
     }
 }
 
-impl<U: Unit> TransformFromHorizontal<SphericalCoord<Topocentric, Equatorial, U>>
+impl<U: Unit> Transform<SphericalCoord<Topocentric, Equatorial, U>>
     for SphericalCoord<Topocentric, Horizontal, U>
 {
-    fn from_horizontal(&self, jd: JulianDate) -> SphericalCoord<Topocentric, Equatorial, U> {
-        self.to_cartesian().from_horizontal(jd).to_spherical()
+    fn transform(&self, jd: JulianDate) -> SphericalCoord<Topocentric, Equatorial, U> {
+        let cart: Vector<Topocentric, Equatorial, U> = self.to_cartesian().transform(jd);
+        cart.to_spherical()
     }
 }
 
