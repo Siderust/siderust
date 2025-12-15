@@ -1,5 +1,6 @@
 use crate::astro::sidereal::*;
 use crate::astro::JulianDate;
+use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::{cartesian, spherical};
 use qtty::*;
 
@@ -13,6 +14,7 @@ use qtty::*;
 ///
 /// # Returns
 /// The topocentric horizontal coordinates of the target (Altitude/Azimuth).
+/// The returned coordinate embeds the observer's site (converted from the geographic position).
 ///
 /// Azimuth is measured from North (0°) clockwise toward East (90°–360°).
 ///
@@ -38,7 +40,15 @@ pub fn geocentric_to_horizontal(
     let az_rad = (-dec_rad.cos() * ha_rad.sin())
         .atan2(dec_rad.sin() * lat_rad.cos() - dec_rad.cos() * ha_rad.cos() * lat_rad.sin());
 
-    spherical::direction::Horizontal::new(
+    // Create ObserverSite from geographic position
+    // Note: Geographic uses altitude from Earth center in km, ObserverSite uses height above ellipsoid in m
+    // This is a simplified conversion; for precise work, additional corrections may be needed
+    use crate::bodies::EARTH;
+    let height_m = (observer.distance.value() - EARTH.radius.value()) * 1000.0;
+    let site = ObserverSite::new(observer.lon(), observer.lat(), Quantity::<Meter>::new(height_m));
+
+    spherical::direction::Horizontal::with_site(
+        site,
         Degrees::new(alt_rad.to_degrees()),
         Degrees::new(az_rad.to_degrees()),
     )
@@ -93,6 +103,7 @@ impl<U: LengthUnit> cartesian::position::Equatorial<U> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coordinates::centers::ObserverSite;
     use crate::macros::assert_spherical_eq;
 
     #[test]
@@ -102,7 +113,11 @@ mod tests {
 
         let jd: JulianDate = JulianDate::new(2460677.04358);
 
-        let expected_horizontal = spherical::position::Horizontal::<LightYear>::new(
+        // Create ObserverSite from the observatory's Geographic position
+        let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+
+        let expected_horizontal = spherical::position::Horizontal::<LightYear>::with_site(
+            site.clone(),
             Degrees::from_dms(-77, 59, 0.0).to::<Deg>(),
             Degrees::from_dms(349, 24, 0.0).to::<Deg>(),
             SIRIUS.target.get_position().distance,

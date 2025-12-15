@@ -106,7 +106,12 @@ where
     /// ```
     #[must_use]
     pub fn position<U: LengthUnit>(&self, magnitude: Quantity<U>) -> super::Position<C, F, U> {
-        super::Position::new_raw(self.polar, self.azimuth, magnitude)
+        super::Position::new_raw_with_params(
+            self.center_params().clone(),
+            self.polar,
+            self.azimuth,
+            magnitude,
+        )
     }
 }
 

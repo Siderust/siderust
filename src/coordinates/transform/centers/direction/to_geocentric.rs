@@ -15,12 +15,12 @@ where
 {
     fn to_center(&self, jd: JulianDate) -> Vector<Geocentric, F, DirectionUnit> {
         // 1. Convert to Geocentric coordinates
-        let geocentric = Vector::<Geocentric, F, DirectionUnit>::from_vec3(self.as_vec3());
+        let geocentric = Vector::<Geocentric, F, DirectionUnit>::from_vec3_origin(self.as_vec3());
         // 2. Transform to Equatorial
         let equatorial: Equatorial<Geocentric> = geocentric.to_frame();
         // 3. Apply aberration
         let aberrated = apply_aberration_to_direction(
-            Equatorial::<Geocentric>::from_vec3(equatorial.as_vec3()),
+            Equatorial::<Geocentric>::from_vec3_origin(equatorial.as_vec3()),
             jd,
         );
         // 4. Recover target Frame
@@ -37,12 +37,12 @@ where
 {
     fn to_center(&self, jd: JulianDate) -> Vector<Geocentric, F, DirectionUnit> {
         // 1. Convert to Geocentric coordinates
-        let geocentric = Vector::<Geocentric, F, DirectionUnit>::from_vec3(self.as_vec3());
+        let geocentric = Vector::<Geocentric, F, DirectionUnit>::from_vec3_origin(self.as_vec3());
         // 2. Transform to Equatorial
         let equatorial: Equatorial<Geocentric> = geocentric.to_frame();
         // 3. Apply aberration
         let aberrated = apply_aberration_to_direction(
-            Equatorial::<Geocentric>::from_vec3(equatorial.as_vec3()),
+            Equatorial::<Geocentric>::from_vec3_origin(equatorial.as_vec3()),
             jd,
         );
         // 4. Recover target Frame

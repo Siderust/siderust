@@ -27,7 +27,7 @@ use super::*;
 use crate::coordinates::{centers::*, frames::*};
 use qtty::*;
 
-impl<C: ReferenceCenter> Direction<C, Equatorial> {
+impl<C: ReferenceCenter<Params = ()>> Direction<C, Equatorial> {
     pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
         Self::new_raw(dec, ra, Quantity::<direction::DirectionUnit>::new(1.0))
     }
@@ -50,7 +50,7 @@ impl<C: ReferenceCenter> Direction<C, Equatorial> {
     }
 }
 
-impl<C: ReferenceCenter, U: LengthUnit> Position<C, Equatorial, U> {
+impl<C: ReferenceCenter<Params = ()>, U: LengthUnit> Position<C, Equatorial, U> {
     pub const fn new_const(ra: Degrees, dec: Degrees, distance: Quantity<U>) -> Self {
         Self::new_raw(dec, ra, distance)
     }
