@@ -56,7 +56,6 @@
 //! - [`centers`]: Transformations between reference centers (e.g., barycentric <-> heliocentric).
 //! - [`frames`]: Transformations between reference frames (e.g., ecliptic <-> equatorial).
 //! - [`to_cartesian`] and [`to_spherical`] — Conversions between Cartesian and Spherical forms.
-//! - [`to_horizontal`] — Conversion to topocentric horizontal coordinates.
 //!
 //! ## Testing
 //!
@@ -72,12 +71,10 @@
 //! [`frames`]: frames/index.html
 //! [`to_cartesian`]: to_cartesian/index.html
 //! [`to_spherical`]: to_spherical/index.html
-//! [`to_horizontal`]: to_horizontal/index.html
 
 mod centers;
 mod frames;
 mod to_cartesian;
-mod to_horizontal;
 mod to_spherical;
 
 pub use centers::TransformCenter;
