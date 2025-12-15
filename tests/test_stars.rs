@@ -1,3 +1,4 @@
+use qtty::length::nominal::SolarRadiuses;
 use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::Star;

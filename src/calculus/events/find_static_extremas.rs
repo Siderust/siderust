@@ -1,10 +1,11 @@
 use super::Culmination;
-use crate::astro::{nutation::corrected_ra_with_nutation, sidereal::*, JulianDate};
+use crate::astro::{nutation::corrected_ra_with_nutation, sidereal, JulianDate};
 use crate::coordinates::{
     centers::Geocentric, frames::Equatorial, spherical::position::Geographic,
     spherical::SphericalCoord,
 };
 use crate::targets::Target;
+use qtty::Simplify;
 use qtty::*;
 
 /// Returns **all** upper- and lower-culminations (meridian passages) that occur
@@ -56,7 +57,8 @@ pub fn find_static_extremas<U: Unit>(
 ) -> Vec<Culmination> {
     const MAX_ITER: usize = 8;
     const TOLERANCE: Days = Days::new(1e-11);
-    const D_LST_D_JD: DegreesPerDay = DegreesPerDay::new(360.985_647_366_29); // Earth rotation freq.
+    type DegreesPerDay = qtty::Quantity<qtty::Per<Degree, Day>>;
+    const D_LST_D_JD: DegreesPerDay = Quantity::new(360.985_647_366_29); // Earth rotation freq.
 
     let ra: Degrees = corrected_ra_with_nutation(&target.get_position().direction(), jd_start);
 
@@ -66,7 +68,7 @@ pub fn find_static_extremas<U: Unit>(
     // h₀ = 0° (upper) and 180° (lower)
     for &(h0, is_upper) in &[(Degrees::new(0.0), true), (Degrees::HALF_TURN, false)] {
         // Find first culmination ≥ jd_start
-        let lst0: Degrees = unmodded_lst(jd_start, lon);
+        let lst0: Degrees = sidereal::unmodded_lst(jd_start, lon);
         let raw_k = (lst0 - (ra + h0)) / Degrees::FULL_TURN;
         let k0: i32 = raw_k.simplify().value().round() as i32;
 
@@ -76,7 +78,8 @@ pub fn find_static_extremas<U: Unit>(
             let mut t = jd_start;
             // Newton–Raphson refinement
             for _ in 0..MAX_ITER {
-                let f: Degrees = unmodded_lst(t, lon) - (ra + (h0 + Degrees::FULL_TURN * k as f64));
+                let f: Degrees =
+                    sidereal::unmodded_lst(t, lon) - (ra + (h0 + Degrees::FULL_TURN * k as f64));
                 let dt: Days = (f / D_LST_D_JD).simplify();
                 t -= dt;
                 if dt.abs() < TOLERANCE {
@@ -99,7 +102,7 @@ pub fn find_static_extremas<U: Unit>(
                     Culmination::Lower { jd: t }
                 };
                 out.push(event);
-                t += SIDEREAL_DAY; // next passage of the same type
+                t += SIDEREAL_DAY.to::<Day>(); // next passage of the same type
             }
         }
     }

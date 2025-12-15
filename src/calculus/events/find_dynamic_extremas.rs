@@ -5,6 +5,7 @@ use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::coordinates::spherical::*;
 use crate::targets::Target;
+use qtty::Simplify;
 use qtty::*;
 
 /// Convenience constants.
@@ -80,8 +81,9 @@ where
             // Finite-difference dH/dt using ±1 s
             let dt: Days = Days::new(1.0 / 86_400.0);
             let dh: Radians = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_signed();
+            type RadiansPerDay = qtty::frequency::Frequency<Radian, Day>;
             let deriv: RadiansPerDay = dh / (dt * 2.0); // rad / day
-            if deriv.abs() < RadiansPerDay::new(1e-10) {
+            if deriv.abs() < Quantity::new(1e-10) {
                 return None; // derivative ~ 0, avoid blow-up
             }
 

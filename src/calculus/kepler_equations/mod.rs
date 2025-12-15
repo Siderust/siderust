@@ -214,6 +214,7 @@ pub fn calculate_orbit_position(
 ) -> Ecliptic<AstronomicalUnit> {
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);
+    type RadiansPerDay = qtty::frequency::Frequency<Radian, Day>;
     let n: RadiansPerDay = Radians::TAU / period;
 
     // 2) Days since epoch
