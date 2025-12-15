@@ -9,7 +9,7 @@ use crate::coordinates::{
 };
 use crate::targets::Target;
 use qtty::*;
-type AuPerDay = qtty::Per::<AstronomicalUnit, Day>;
+type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
@@ -252,9 +252,18 @@ mod tests {
                 pos2.get_position().clone(),
                 PRECISION
             );
-            assert!((vel.x() - vel2.x()).abs() < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION));
-            assert!((vel.y() - vel2.y()).abs() < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION));
-            assert!((vel.z() - vel2.z()).abs() < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION));
+            assert!(
+                (vel.x() - vel2.x()).abs()
+                    < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)
+            );
+            assert!(
+                (vel.y() - vel2.y()).abs()
+                    < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)
+            );
+            assert!(
+                (vel.z() - vel2.z()).abs()
+                    < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)
+            );
         }};
     }
 

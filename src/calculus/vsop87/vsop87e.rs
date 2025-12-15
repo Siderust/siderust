@@ -8,7 +8,7 @@ use crate::coordinates::{
 };
 use crate::targets::Target;
 use qtty::*;
-type AuPerDay = qtty::Per::<AstronomicalUnit, Day>;
+type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]

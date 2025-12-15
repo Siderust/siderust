@@ -5,8 +5,8 @@ use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::coordinates::spherical::*;
 use crate::targets::Target;
-use qtty::*;
 use qtty::Simplify;
+use qtty::*;
 
 /// Convenience constants.
 use core::f64::consts::PI;

@@ -50,8 +50,8 @@ use super::{Planet, Satellite, Star};
 use crate::astro::{orbit::Orbit, JulianDate};
 use crate::coordinates::spherical::position::{Ecliptic, Equatorial};
 use crate::targets::Target;
-use qtty::*;
 use qtty::length::nominal::RSUN;
+use qtty::*;
 
 pub struct Sun;
 pub struct Mercury;

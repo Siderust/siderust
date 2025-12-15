@@ -5,8 +5,8 @@ use crate::coordinates::{
     spherical::SphericalCoord,
 };
 use crate::targets::Target;
-use qtty::*;
 use qtty::Simplify;
+use qtty::*;
 
 /// Returns **all** upper- and lower-culminations (meridian passages) that occur
 /// in the interval `[jd_start, jd_end]` for a target whose right-ascension and
@@ -78,7 +78,8 @@ pub fn find_static_extremas<U: Unit>(
             let mut t = jd_start;
             // Newton–Raphson refinement
             for _ in 0..MAX_ITER {
-                let f: Degrees = sidereal::unmodded_lst(t, lon) - (ra + (h0 + Degrees::FULL_TURN * k as f64));
+                let f: Degrees =
+                    sidereal::unmodded_lst(t, lon) - (ra + (h0 + Degrees::FULL_TURN * k as f64));
                 let dt: Days = (f / D_LST_D_JD).simplify();
                 t -= dt;
                 if dt.abs() < TOLERANCE {

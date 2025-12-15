@@ -33,8 +33,8 @@ use crate::coordinates::{
 };
 use qtty::*;
 
-type AuPerDay = qtty::Per::<AstronomicalUnit, Day>;
-type AusPerDay = qtty::velocity::Velocity::<AstronomicalUnit, Day>;
+type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
+type AusPerDay = qtty::velocity::Velocity<AstronomicalUnit, Day>;
 
 // Speed of light: c = 299_792_458 m/s
 // Convert to AU/day:
