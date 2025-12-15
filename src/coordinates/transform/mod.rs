@@ -78,7 +78,6 @@ mod to_cartesian;
 mod to_spherical;
 
 pub use centers::TransformCenter;
-pub use centers::TransformToTopocentric;
 pub use frames::TransformFrame;
 
 use crate::astro::JulianDate;

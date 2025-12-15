@@ -33,20 +33,16 @@ impl<F: MutableFrame> TransformCenter<Vector<Topocentric, F, DirectionUnit>>
     }
 }
 
-/// Transform with a specific observer site.
-pub trait TransformToTopocentric<Coord> {
-    fn to_topocentric(&self, site: ObserverSite, jd: JulianDate) -> Coord;
-}
-
-impl<F: MutableFrame> TransformToTopocentric<Vector<Topocentric, F, DirectionUnit>>
-    for Vector<Geocentric, F, DirectionUnit>
-{
-    fn to_topocentric(
+impl<F: MutableFrame> Vector<Geocentric, F, DirectionUnit> {
+    /// Transform to topocentric coordinates with a specific observer site.
+    ///
+    /// For directions of distant objects, this attaches the observer site information
+    /// without applying parallax corrections.
+    pub fn to_topocentric(
         &self,
         site: ObserverSite,
         _jd: JulianDate,
     ) -> Vector<Topocentric, F, DirectionUnit> {
-        // For distant objects, just attach the site info
         Vector::<Topocentric, F, DirectionUnit>::from_vec3(site, self.as_vec3())
     }
 }
@@ -55,13 +51,15 @@ impl<F: MutableFrame> TransformToTopocentric<Vector<Topocentric, F, DirectionUni
 // Geocentric → Topocentric (Position with distance)
 // =============================================================================
 
-impl<F: MutableFrame, U: LengthUnit> TransformToTopocentric<Vector<Topocentric, F, U>>
-    for Vector<Geocentric, F, U>
-{
-    fn to_topocentric(&self, site: ObserverSite, _jd: JulianDate) -> Vector<Topocentric, F, U> {
-        // For positions, we should ideally subtract the observer's position vector
-        // from the geocentric position. For distant objects, this is negligible.
-        // TODO: Implement proper topocentric parallax for nearby objects (Moon, etc.)
+impl<F: MutableFrame, U: LengthUnit> Vector<Geocentric, F, U> {
+    /// Transform to topocentric coordinates with a specific observer site.
+    ///
+    /// For positions, this attaches the observer site information. For distant objects,
+    /// the parallax effect is negligible.
+    ///
+    /// # TODO
+    /// Implement proper topocentric parallax for nearby objects (Moon, satellites, etc.)
+    pub fn to_topocentric(&self, site: ObserverSite, _jd: JulianDate) -> Vector<Topocentric, F, U> {
         Vector::<Topocentric, F, U>::from_vec3(site, self.as_vec3())
     }
 }
