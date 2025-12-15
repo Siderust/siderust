@@ -1,4 +1,5 @@
 use qtty::*;
+use qtty::length::nominal::SolarRadiuses;
 use siderust::astro::JulianDate;
 use siderust::bodies::Star;
 use siderust::coordinates::spherical::position::Equatorial;

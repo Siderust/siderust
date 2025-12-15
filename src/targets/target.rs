@@ -70,6 +70,9 @@ mod tests {
     use crate::bodies::catalog::ALDEBARAN;
     use crate::coordinates::spherical::position::GCRS;
     use qtty::*;
+    
+    type MilliArcsecondPerDay = qtty::Per<qtty::MilliArcsecond, qtty::Day>;
+    type MilliArcsecondsPerDay = qtty::Quantity<MilliArcsecondPerDay>;
 
     #[test]
     fn test_target_new() {

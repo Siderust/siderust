@@ -9,6 +9,7 @@ use crate::coordinates::{
 };
 use crate::targets::Target;
 use qtty::*;
+type AuPerDay = qtty::Per::<AstronomicalUnit, Day>;
 
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
@@ -49,9 +50,9 @@ macro_rules! impl_vsop87a {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    AusPerDay::new(vx),
-                    AusPerDay::new(vy),
-                    AusPerDay::new(vz)
+                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz)
                 )
             }
 
@@ -69,9 +70,9 @@ macro_rules! impl_vsop87a {
                         AstronomicalUnits::new(y),
                         AstronomicalUnits::new(z)), jd,),
                     Velocity::new(
-                        AusPerDay::new(vx),
-                        AusPerDay::new(vy),
-                        AusPerDay::new(vz))
+                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz))
                 )
             }
         }
@@ -251,15 +252,15 @@ mod tests {
                 pos2.get_position().clone(),
                 PRECISION
             );
-            assert!((vel.x() - vel2.x()).abs() < AusPerDay::new(PRECISION));
-            assert!((vel.y() - vel2.y()).abs() < AusPerDay::new(PRECISION));
-            assert!((vel.z() - vel2.z()).abs() < AusPerDay::new(PRECISION));
+            assert!((vel.x() - vel2.x()).abs() < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION));
+            assert!((vel.y() - vel2.y()).abs() < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION));
+            assert!((vel.z() - vel2.z()).abs() < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION));
         }};
     }
 
     #[test]
     fn test_vsop87a_velocity_and_combined() {
-        use qtty::AusPerDay;
+        use qtty::*;
         test_vel_and_pos_vel!(Mercury);
         test_vel_and_pos_vel!(Venus);
         test_vel_and_pos_vel!(Earth);
