@@ -1,5 +1,6 @@
 pub mod to_ecliptic;
 pub mod to_equatorial;
+pub mod to_horizontal;
 pub mod to_icrs;
 
 use crate::astro::JulianDate;
@@ -11,6 +12,8 @@ use crate::coordinates::{cartesian, spherical};
 use qtty::Unit;
 
 use crate::coordinates::transform::Transform;
+
+pub use to_horizontal::{TransformFromHorizontal, TransformToHorizontal};
 
 pub trait TransformFrame<Coord> {
     fn to_frame(&self) -> Coord;

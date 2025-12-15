@@ -81,7 +81,10 @@ mod to_horizontal;
 mod to_spherical;
 
 pub use centers::TransformCenter;
+pub use centers::TransformToTopocentric;
 pub use frames::TransformFrame;
+pub use frames::TransformFromHorizontal;
+pub use frames::TransformToHorizontal;
 
 use crate::astro::JulianDate;
 use crate::coordinates::{

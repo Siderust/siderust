@@ -7,6 +7,17 @@ use qtty::*;
 /// Converts geocentric equatorial coordinates to topocentric horizontal coordinates
 /// for a specific observer at a given Julian Date.
 ///
+/// # Deprecated
+///
+/// This function is deprecated. Use the `TransformToHorizontal` trait instead:
+///
+/// ```ignore
+/// use siderust::coordinates::transform::TransformToHorizontal;
+/// 
+/// let topo_eq = equatorial.to_topocentric(site, jd);
+/// let horizontal = topo_eq.to_horizontal(jd);
+/// ```
+///
 /// # Parameters
 /// - `target`: The celestial target's position in geocentric equatorial coordinates (RA/Dec).
 /// - `observer`: The geographic coordinates (latitude, longitude) of the observer.
@@ -21,6 +32,10 @@ use qtty::*;
 /// # See Also
 /// - [`calculate_gst`]
 /// - [`calculate_lst`]
+#[deprecated(
+    since = "0.4.0",
+    note = "Use TransformToHorizontal trait instead. See module docs for migration guide."
+)]
 pub fn geocentric_to_horizontal(
     target: &spherical::direction::Equatorial,
     observer: &spherical::position::Geographic,
@@ -55,6 +70,16 @@ pub fn geocentric_to_horizontal(
 }
 
 impl spherical::direction::Equatorial {
+    /// Converts geocentric equatorial direction to topocentric horizontal.
+    ///
+    /// # Deprecated
+    ///
+    /// Use `TransformToHorizontal` trait instead for type-safe transforms.
+    #[deprecated(
+        since = "0.4.0",
+        note = "Use TransformToHorizontal trait. Convert to Topocentric center first."
+    )]
+    #[allow(deprecated)]
     pub fn to_horizontal(
         &self,
         observer: &spherical::position::Geographic,
@@ -65,6 +90,16 @@ impl spherical::direction::Equatorial {
 }
 
 impl cartesian::direction::Equatorial {
+    /// Converts geocentric equatorial direction to topocentric horizontal.
+    ///
+    /// # Deprecated
+    ///
+    /// Use `TransformToHorizontal` trait instead for type-safe transforms.
+    #[deprecated(
+        since = "0.4.0",
+        note = "Use TransformToHorizontal trait. Convert to Topocentric center first."
+    )]
+    #[allow(deprecated)]
     pub fn to_horizontal(
         &self,
         observer: &spherical::position::Geographic,
@@ -77,6 +112,16 @@ impl cartesian::direction::Equatorial {
 }
 
 impl<U: LengthUnit> spherical::position::Equatorial<U> {
+    /// Converts geocentric equatorial position to topocentric horizontal.
+    ///
+    /// # Deprecated
+    ///
+    /// Use `TransformToHorizontal` trait instead for type-safe transforms.
+    #[deprecated(
+        since = "0.4.0",
+        note = "Use TransformToHorizontal trait. Convert to Topocentric center first."
+    )]
+    #[allow(deprecated)]
     pub fn to_horizontal(
         &self,
         observer: &spherical::position::Geographic,
@@ -89,6 +134,16 @@ impl<U: LengthUnit> spherical::position::Equatorial<U> {
 }
 
 impl<U: LengthUnit> cartesian::position::Equatorial<U> {
+    /// Converts geocentric equatorial position to topocentric horizontal.
+    ///
+    /// # Deprecated
+    ///
+    /// Use `TransformToHorizontal` trait instead for type-safe transforms.
+    #[deprecated(
+        since = "0.4.0",
+        note = "Use TransformToHorizontal trait. Convert to Topocentric center first."
+    )]
+    #[allow(deprecated)]
     pub fn to_horizontal(
         &self,
         observer: &spherical::position::Geographic,
@@ -107,6 +162,7 @@ mod tests {
     use crate::macros::assert_spherical_eq;
 
     #[test]
+    #[allow(deprecated)]
     fn test_sirius_to_horizontal() {
         use crate::bodies::catalog::SIRIUS;
         use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
