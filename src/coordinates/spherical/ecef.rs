@@ -28,7 +28,7 @@ use crate::bodies::EARTH;
 use crate::coordinates::{centers::*, frames::*};
 use qtty::*;
 
-impl<C: ReferenceCenter> Direction<C, ECEF> {
+impl<C: ReferenceCenter<Params = ()>> Direction<C, ECEF> {
     pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
         Self::new_raw(lat, lon, Quantity::<direction::DirectionUnit>::new(1.0))
     }
@@ -46,7 +46,7 @@ impl<C: ReferenceCenter> Direction<C, ECEF> {
     }
 }
 
-impl<C: ReferenceCenter> Position<C, ECEF, Kilometer> {
+impl<C: ReferenceCenter<Params = ()>> Position<C, ECEF, Kilometer> {
     pub const fn new_const(lon: Degrees, lat: Degrees, alt: Kilometers) -> Self {
         Self::new_raw(
             lat,

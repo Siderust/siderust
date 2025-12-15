@@ -31,7 +31,7 @@ where
         let target_geo_equ: Equatorial<U, Geocentric> = self.to_frame(); // (Geo-F) -> (Geo-Equ)
         let target_geo_equ_no_aberration = remove_aberration(target_geo_equ, jd);
 
-        let helio_equ = Equatorial::<U, Heliocentric>::from_vec3(
+        let helio_equ = Equatorial::<U, Heliocentric>::from_vec3_origin(
             target_geo_equ_no_aberration.as_vec3() + earth_helio_equ.as_vec3(),
         ); // Geocentric -> Heliocentric
         helio_equ.to_frame() // Equatorial -> F
@@ -54,7 +54,7 @@ where
         );
 
         let sun: Position<Barycentric, F, U> = sun_bary_ecl.to_frame();
-        Position::from_vec3(self.as_vec3() - sun.as_vec3())
+        Position::from_vec3_origin(self.as_vec3() - sun.as_vec3())
     }
 }
 

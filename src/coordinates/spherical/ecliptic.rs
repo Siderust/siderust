@@ -27,7 +27,7 @@ use super::*;
 use crate::coordinates::{centers::*, frames};
 use qtty::*;
 
-impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
+impl<C: ReferenceCenter<Params = ()>, U: LengthUnit> Position<C, frames::Ecliptic, U> {
     pub const fn new_const(lon: Degrees, lat: Degrees, distance: Quantity<U>) -> Self {
         Self::new_raw(lat, lon, distance)
     }
@@ -45,7 +45,7 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
     }
 }
 
-impl<C: ReferenceCenter> Direction<C, frames::Ecliptic> {
+impl<C: ReferenceCenter<Params = ()>> Direction<C, frames::Ecliptic> {
     /// Creates a new ecliptic direction with constant values.
     ///
     /// # Arguments

@@ -24,7 +24,7 @@ where
     C: ReferenceCenter,
 {
     fn to_frame(&self) -> Vector<C, F, U> {
-        Vector::new(self.x(), self.y(), self.z())
+        Vector::from_vec3(self.center_params().clone(), self.as_vec3())
     }
 }
 

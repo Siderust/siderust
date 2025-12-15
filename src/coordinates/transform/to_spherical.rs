@@ -16,7 +16,8 @@ where
     let r_val = r.value();
 
     if r_val == 0.0 {
-        return spherical::SphericalCoord::new_raw(
+        return spherical::SphericalCoord::new_raw_with_params(
+            cart.center_params().clone(),
             Degrees::new(0.0),
             Degrees::new(0.0),
             Quantity::<U>::new(0.0),
@@ -25,7 +26,7 @@ where
 
     let polar = Degrees::new((z / r_val).asin().to_degrees());
     let azimuth = Degrees::new(y.atan2(x).to_degrees());
-    spherical::SphericalCoord::new_raw(polar, azimuth, r)
+    spherical::SphericalCoord::new_raw_with_params(cart.center_params().clone(), polar, azimuth, r)
 }
 
 /// Implements conversion from Cartesian to Spherical coordinates

@@ -11,13 +11,20 @@ where
 {
     /// Returns a Position vector in the same direction, scaled by the given magnitude.
     pub fn position<U: LengthUnit>(&self, magnitude: Quantity<U>) -> super::Position<C, F, U> {
-        super::Position::new(
+        super::Position::new_with_params(
+            self.center_params().clone(),
             magnitude * self.x().value(),
             magnitude * self.y().value(),
             magnitude * self.z().value(),
         )
     }
+}
 
+impl<C, F> Direction<C, F>
+where
+    C: centers::ReferenceCenter<Params = ()>,
+    F: frames::ReferenceFrame,
+{
     pub fn normalize(x: f64, y: f64, z: f64) -> Self {
         let norm = nalgebra::Vector3::<f64>::new(x, y, z).normalize();
         Self::new(
