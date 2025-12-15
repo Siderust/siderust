@@ -16,7 +16,7 @@ where
     U: Unit,
 {
     fn to_center(&self, _jd: JulianDate) -> Vector<C, F, U> {
-        Vector::<C, F, U>::from_vec3(self.as_vec3())
+        Vector::<C, F, U>::from_vec3(self.center_params().clone(), self.as_vec3())
     }
 }
 

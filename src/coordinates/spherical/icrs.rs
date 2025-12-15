@@ -30,7 +30,7 @@ use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{centers::*, frames::ICRS};
 use qtty::*;
 
-impl<C: ReferenceCenter> Direction<C, ICRS> {
+impl<C: ReferenceCenter<Params = ()>> Direction<C, ICRS> {
     /// Creates a new ICRS spherical coordinate with constant values.
     ///
     /// # Arguments
@@ -61,7 +61,7 @@ impl<C: ReferenceCenter> Direction<C, ICRS> {
     }
 }
 
-impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
+impl<C: ReferenceCenter<Params = ()>, U: LengthUnit> Position<C, ICRS, U> {
     /// Creates a new ICRS spherical coordinate with constant values.
     ///
     /// # Arguments

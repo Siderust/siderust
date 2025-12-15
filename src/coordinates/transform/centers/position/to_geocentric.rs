@@ -29,7 +29,7 @@ where
 
         let earth_equ: Equatorial<U, Barycentric> = earth_ecl.to_frame(); // (Bary-Ecl) -> (Bary-Equ)
         let bary_equ: Equatorial<U, Barycentric> = self.to_frame(); // (Bary-Any) -> (Bary-Equ)
-        let geo_equ = Equatorial::<U>::from_vec3(bary_equ.as_vec3() - earth_equ.as_vec3()); // Barycentric -> Geocentric
+        let geo_equ = Equatorial::<U>::from_vec3_origin(bary_equ.as_vec3() - earth_equ.as_vec3()); // Barycentric -> Geocentric
 
         let gcrs = apply_aberration(geo_equ, jd);
         gcrs.to_frame() // Equatorial -> F
@@ -55,7 +55,7 @@ where
 
         let earth_equ: Equatorial<U, Heliocentric> = earth_ecl.to_frame(); // (Helio-Ecl) -> (Helio-Equ)
         let helio_equ: Equatorial<U, Heliocentric> = self.to_frame(); // (Helio-any) -> (Helio-Equ)
-        let geo_equ = Equatorial::<U>::from_vec3(helio_equ.as_vec3() - earth_equ.as_vec3()); // Heliocentric -> Geocentric
+        let geo_equ = Equatorial::<U>::from_vec3_origin(helio_equ.as_vec3() - earth_equ.as_vec3()); // Heliocentric -> Geocentric
 
         let gcrs = apply_aberration(geo_equ, jd);
         gcrs.to_frame() // Equatorial -> any

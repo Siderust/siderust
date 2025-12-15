@@ -12,7 +12,7 @@ impl<F: MutableFrame> TransformCenter<Vector<Heliocentric, F, DirectionUnit>>
     for Vector<Barycentric, F, DirectionUnit>
 {
     fn to_center(&self, _jd: JulianDate) -> Vector<Heliocentric, F, DirectionUnit> {
-        Vector::from_vec3(self.as_vec3())
+        Vector::from_vec3_origin(self.as_vec3())
     }
 }
 
@@ -32,6 +32,6 @@ where
         // 3. Recover target Frame
         let target_center: Vector<Geocentric, F, DirectionUnit> = deaberrated.to_frame();
         // 4. Transform target Center
-        Vector::<Heliocentric, F, DirectionUnit>::from_vec3(target_center.as_vec3())
+        Vector::<Heliocentric, F, DirectionUnit>::from_vec3_origin(target_center.as_vec3())
     }
 }

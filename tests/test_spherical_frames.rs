@@ -1,5 +1,6 @@
 use qtty::*;
 use siderust::bodies::EARTH;
+use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::{direction, position};
 
 const EPS: f64 = 1e-6;
@@ -31,11 +32,19 @@ fn ecliptic_normalization() {
 
 #[test]
 fn horizontal_normalization() {
-    let dir = direction::Horizontal::new(120.0 * DEG, -30.0 * DEG);
+    // Create a default observer site for testing
+    let site = ObserverSite::default();
+
+    let dir = direction::Horizontal::with_site(site.clone(), 120.0 * DEG, -30.0 * DEG);
     assert!((dir.alt().value() - 60.0).abs() < EPS);
     assert!((dir.az().value() - 330.0).abs() < EPS);
 
-    let pos = position::Horizontal::<AstronomicalUnit>::new(120.0 * DEG, -30.0 * DEG, 2.0 * AU);
+    let pos = position::Horizontal::<AstronomicalUnit>::with_site(
+        site,
+        120.0 * DEG,
+        -30.0 * DEG,
+        2.0 * AU,
+    );
     assert!((pos.alt().value() - 60.0).abs() < EPS);
     assert!((pos.az().value() - 330.0).abs() < EPS);
     assert!((pos.distance - 2.0 * AU).abs() < EPS * AU);
