@@ -71,6 +71,9 @@ mod tests {
     use crate::coordinates::spherical::position::GCRS;
     use qtty::*;
 
+    type MilliArcsecondPerDay = qtty::Per<qtty::MilliArcsecond, qtty::Day>;
+    type MilliArcsecondsPerDay = qtty::Quantity<MilliArcsecondPerDay>;
+
     #[test]
     fn test_target_new() {
         let target = Target::new_static(*ALDEBARAN.target.get_position(), JulianDate::J2000);

@@ -50,6 +50,7 @@ use super::{Planet, Satellite, Star};
 use crate::astro::{orbit::Orbit, JulianDate};
 use crate::coordinates::spherical::position::{Ecliptic, Equatorial};
 use crate::targets::Target;
+use qtty::length::nominal::RSUN;
 use qtty::*;
 
 pub struct Sun;
@@ -77,7 +78,7 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
     "Sun",
     LightYears::new(1.58125e-5), // 1 AstronomicalUnits in LightYears
     SolarMasses::new(1.0),
-    SR,
+    RSUN,
     L_SUN,
     Target::<Equatorial<LightYear>>::new_static(
         Equatorial::<LightYear>::new_const(
