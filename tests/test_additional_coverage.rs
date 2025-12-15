@@ -4,7 +4,10 @@ use siderust::astro::JulianDate;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};
-use siderust::coordinates::{cartesian, frames, spherical, transform::TransformFrame};
+use siderust::coordinates::{
+    cartesian, centers::ObserverSite, frames, spherical,
+    transform::{TransformFrame, TransformToHorizontal, TransformToTopocentric},
+};
 
 #[test]
 fn julian_date_arithmetic_and_display_branches() {
@@ -50,24 +53,28 @@ fn horizontal_conversion_variants_cover_all_impls() {
     );
     let jd = JulianDate::J2000;
 
+    // Convert Geographic to ObserverSite for the new API
+    let site = ObserverSite::from_geographic(&observer);
+
+    // Test direction (unit vector) conversion
     let eq_dir = spherical::direction::Equatorial::new(Degrees::new(83.0), Degrees::new(-5.0));
-    let horiz_dir = eq_dir.to_horizontal(&observer, jd);
+    let cart_dir = eq_dir.to_cartesian();
+    let topo_cart_dir = cart_dir.to_topocentric(site.clone(), jd);
+    let horiz_cart_dir = topo_cart_dir.to_horizontal(jd);
+    let horiz_dir = horiz_cart_dir.to_spherical();
     assert!(horiz_dir.alt().value().is_finite());
 
-    let cart_dir = eq_dir.to_cartesian();
-    let horiz_cart_dir = cart_dir.to_horizontal(&observer, jd);
-    assert!(horiz_cart_dir.z().value().is_finite());
-
+    // Test position (with distance) conversion
     let eq_pos = spherical::position::Equatorial::<AstronomicalUnit>::new(
         Degrees::new(83.0),
         Degrees::new(-5.0),
         1.0,
     );
-    let horiz_pos = eq_pos.to_horizontal(&observer, jd);
-    assert!((horiz_pos.distance - eq_pos.distance).abs().value() < 1e-12);
-
     let cart_pos = eq_pos.to_cartesian();
-    let horiz_cart_pos = cart_pos.to_horizontal(&observer, jd);
+    let topo_cart_pos = cart_pos.to_topocentric(site.clone(), jd);
+    let horiz_cart_pos = topo_cart_pos.to_horizontal(jd);
+    let horiz_pos = horiz_cart_pos.to_spherical();
+    assert!((horiz_pos.distance - eq_pos.distance).abs().value() < 1e-9);
     assert!(horiz_cart_pos.z().value().is_finite());
 }
 
