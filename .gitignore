@@ -16,3 +16,6 @@ target/
 coverage.xml
 /coverage/
 /coverage_html/
+
+# Dev artifacts
+qtty

@@ -30,7 +30,7 @@
 //!
 //! // Convert that direction into a position one parsec away:
 //! use qtty::Parsec;
-//! let one_pc = 1.0 * PS;
+//! let one_pc = 1.0 * PC;
 //! let pos = vega.position(one_pc);
 //! println!("Vega direction  = {vega}\nVega@1pc position = {pos}");
 //! ```

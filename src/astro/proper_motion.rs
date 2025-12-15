@@ -15,6 +15,8 @@
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
 use qtty::*;
+type DegreePerYear = qtty::Per<Degree, Year>;
+type DegreesPerYear = qtty::frequency::Frequency<Degree, Year>;
 
 /// Describes the proper motion of a star in equatorial coordinates.
 ///
@@ -94,7 +96,9 @@ mod tests {
     use super::*;
     use crate::astro::JulianDate;
     use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
-    use qtty::{AstronomicalUnit, Degrees, DegreesPerYear};
+    use qtty::{AstronomicalUnit, Degrees};
+
+    type DegreesPerYear = qtty::Quantity<qtty::Per<Degree, Year>>;
 
     #[test]
     fn test_proper_motion_linear_shift() {

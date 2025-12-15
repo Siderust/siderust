@@ -48,7 +48,8 @@
 use crate::astro::orbit::Orbit;
 use qtty::*;
 
-const GAUSSIAN_GRAVITATIONAL_CONSTANT: RadiansPerDay = RadiansPerDay::new(0.017_202_098_95);
+type RadiansPerDay = qtty::Quantity<qtty::Per<Radian, Day>>;
+const GAUSSIAN_GRAVITATIONAL_CONSTANT: RadiansPerDay = Quantity::new(0.017_202_098_95);
 
 /// Represents a **Planet** characterised by its mass, mean radius, and orbit.
 #[derive(Clone, Debug)]
@@ -161,7 +162,7 @@ impl OrbitExt for Orbit {
 
         use std::f64::consts::PI;
         let a_au = self.semi_major_axis.to::<AstronomicalUnit>().value();
-        let k = GAUSSIAN_GRAVITATIONAL_CONSTANT.to::<RadianPerDay>().value();
+        let k = GAUSSIAN_GRAVITATIONAL_CONSTANT.value();
 
         let t_days = (2.0 * PI / k) * a_au.powf(1.5);
         Seconds::new(t_days * 86_400.0)

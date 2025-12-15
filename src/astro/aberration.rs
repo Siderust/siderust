@@ -33,7 +33,16 @@ use crate::coordinates::{
 };
 use qtty::*;
 
-const AU_PER_DAY_C: AusPerDay = MetersPerSecond::new(299_792_458.0).to::<AuPerDay>(); // Speed Of Light
+type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
+type AusPerDay = qtty::velocity::Velocity<AstronomicalUnit, Day>;
+
+// Speed of light: c = 299_792_458 m/s
+// Convert to AU/day:
+// 1 AU = 149_597_870_700 m (exact)
+// 1 day = 86_400 s (exact)
+// c [AU/day] = (299_792_458 m/s) * (86_400 s/day) / (149_597_870_700 m/AU)
+//            = 173.144_632_674... AU/day
+const AU_PER_DAY_C: AusPerDay = AusPerDay::new(173.1446334836104);
 
 /// Apply **annual aberration** to a unit direction vector (true‑of‑date).
 ///

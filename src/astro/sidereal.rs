@@ -34,10 +34,10 @@
 //! ```
 
 use crate::astro::JulianDate;
-use qtty::{Days, Degrees};
+use qtty::Degrees;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
-pub const SIDEREAL_DAY: Days = Days::new(23.934_469_6 / 24.0);
+pub use qtty::time::SIDEREAL_DAY;
 
 /// Returns **unwrapped** Greenwich Sidereal Time for the given Julian Day.
 ///

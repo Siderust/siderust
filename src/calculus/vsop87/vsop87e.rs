@@ -8,6 +8,7 @@ use crate::coordinates::{
 };
 use crate::targets::Target;
 use qtty::*;
+type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
@@ -48,9 +49,9 @@ macro_rules! impl_vsop87e {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    AusPerDay::new(vx),
-                    AusPerDay::new(vy),
-                    AusPerDay::new(vz)
+                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz)
                 )
             }
 
@@ -68,9 +69,9 @@ macro_rules! impl_vsop87e {
                         AstronomicalUnits::new(y),
                         AstronomicalUnits::new(z)), jd,),
                     Velocity::new(
-                        AusPerDay::new(vx),
-                        AusPerDay::new(vy),
-                        AusPerDay::new(vz))
+                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz))
                 )
             }
         }
