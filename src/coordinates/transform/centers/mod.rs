@@ -1,6 +1,5 @@
 pub mod direction;
 pub mod position;
-pub mod to_topocentric;
 
 use crate::astro::JulianDate;
 use crate::coordinates::{cartesian::Vector, centers::*, frames};
