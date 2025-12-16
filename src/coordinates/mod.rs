@@ -18,7 +18,7 @@
 //!
 //! ## Supported Reference Frames and Centers
 //! - **Frames**: `Equatorial`, `Ecliptic`, `Horizontal`, `ICRS`, `ECEF`
-//! - **Centers**: `Heliocentric`, `Geocentric`, `Barycentric`, `Topocentric`
+//! - **Centers**: `Heliocentric`, `Geocentric`, `Barycentric`, `Topocentric`, `Bodycentric`
 //!
 //! ## Example
 //! ```rust
