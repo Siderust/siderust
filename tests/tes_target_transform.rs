@@ -55,48 +55,36 @@ fn target_spherical_position_transform() {
 }
 
 #[test]
-fn target_cartesian_direction_transform() {
-    let jd = JulianDate::J2000;
-    let pos = cartesian::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
-        AstronomicalUnits::new(1.0),
-        AstronomicalUnits::new(0.5),
-        AstronomicalUnits::new(0.2),
-    );
-    let dir = pos.direction();
-    let orig: Target<cartesian::Direction<Heliocentric, Ecliptic>> = Target::new_static(dir, jd);
-
-    let converted: Target<cartesian::Direction<Geocentric, Equatorial>> = Target::from(&orig);
-
-    let step: cartesian::Direction<Heliocentric, Equatorial> = orig.position.transform(jd);
-    let expected: cartesian::Direction<Geocentric, Equatorial> = step.transform(jd);
-
-    assert!(converted.position.distance_to(&expected).value() < EPS);
-    assert_eq!(converted.time, orig.time);
-    assert_eq!(
-        converted.proper_motion.is_none(),
-        orig.proper_motion.is_none()
-    );
+fn cartesian_direction_frame_transform() {
+    // Directions are now frame-only (no center parameter).
+    // They can only undergo frame transformations, not center transformations.
+    let dir = cartesian::Direction::<Ecliptic>::normalize(1.0, 0.5, 0.2);
+    
+    // Frame transform from Ecliptic to Equatorial (rotation only)
+    let dir_equatorial: cartesian::Direction<Equatorial> = dir.to_frame();
+    
+    // Verify it's still a unit vector
+    let norm = (dir_equatorial.x().value().powi(2) 
+              + dir_equatorial.y().value().powi(2) 
+              + dir_equatorial.z().value().powi(2)).sqrt();
+    assert!((norm - 1.0).abs() < 1e-12);
+    
+    // X component is unchanged in ecliptic/equatorial rotation
+    assert!((dir_equatorial.x().value() - dir.x().value()).abs() < 1e-12);
 }
 
 #[test]
-fn target_spherical_direction_transform() {
-    let jd = JulianDate::J2000;
-    let sph_dir =
-        spherical::Direction::<Heliocentric, Ecliptic>::new(Degrees::new(10.0), Degrees::new(20.0));
-    let orig: Target<spherical::Direction<Heliocentric, Ecliptic>> =
-        Target::new_static(sph_dir, jd);
-
-    let converted: Target<spherical::Direction<Geocentric, Equatorial>> = Target::from(&orig);
-
-    let step_cart: cartesian::Direction<Heliocentric, Equatorial> =
-        orig.position.to_cartesian().transform(jd);
-    let expected_cart: cartesian::Direction<Geocentric, Equatorial> = step_cart.transform(jd);
-    let converted_cart = converted.position.to_cartesian();
-
-    assert!(converted_cart.distance_to(&expected_cart).value() < EPS);
-    assert_eq!(converted.time, orig.time);
-    assert_eq!(
-        converted.proper_motion.is_none(),
-        orig.proper_motion.is_none()
-    );
+fn spherical_direction_frame_transform() {
+    // Directions are now frame-only (no center parameter).
+    let sph_dir = spherical::Direction::<Ecliptic>::new(Degrees::new(10.0), Degrees::new(20.0));
+    
+    // Convert to cartesian, transform frame, then back
+    let cart_dir = sph_dir.to_cartesian();
+    let cart_equatorial: cartesian::Direction<Equatorial> = cart_dir.to_frame();
+    
+    // Verify the Cartesian direction is still unit vector
+    let norm = (cart_equatorial.x().value().powi(2) 
+              + cart_equatorial.y().value().powi(2) 
+              + cart_equatorial.z().value().powi(2)).sqrt();
+    assert!((norm - 1.0).abs() < 1e-12);
 }

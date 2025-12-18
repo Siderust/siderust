@@ -403,6 +403,82 @@ impl ReferenceCenter for () {
     }
 }
 
+// =============================================================================
+// NoCenter: Marker for translation-invariant (free) vectors
+// =============================================================================
+
+/// Marker type for translation-invariant (free) vectors.
+///
+/// Free vectors like directions and velocities do not have a meaningful
+/// spatial origin. They represent properties that are independent of
+/// any particular coordinate center:
+///
+/// - **Directions** are unit vectors representing orientations in space
+/// - **Velocities** are rates of change that don't depend on position
+///
+/// Using `NoCenter` instead of a regular `ReferenceCenter` prevents
+/// mathematically invalid center transformations at compile time.
+/// Objects with `NoCenter` can only undergo frame transformations (rotations),
+/// not center transformations (translations).
+///
+/// # Mathematical Rationale
+///
+/// In affine geometry:
+/// - **Positions** are points in affine space; changing the origin (center) is a translation.
+/// - **Directions** and **velocities** are elements of the underlying vector space;
+///   they are translation-invariant and do not have an "origin" to change.
+///
+/// # Example
+///
+/// ```rust
+/// use siderust::coordinates::cartesian::Direction;
+/// use siderust::coordinates::frames::Ecliptic;
+/// use siderust::coordinates::centers::NoCenter;
+///
+/// // Directions use NoCenter - they cannot be center-transformed
+/// let dir: Direction<Ecliptic> = Direction::normalize(1.0, 0.0, 0.0);
+///
+/// // Frame transforms (rotations) are still valid for directions
+/// use siderust::coordinates::transform::TransformFrame;
+/// use siderust::coordinates::frames::Equatorial;
+/// let dir_eq: Direction<Equatorial> = dir.to_frame();
+/// ```
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct NoCenter;
+
+/// Marker trait for types that represent genuine spatial centers (origins).
+///
+/// This trait is implemented only for center types that represent actual
+/// coordinate origins (Barycentric, Heliocentric, Geocentric, etc.).
+/// It is NOT implemented for `NoCenter`, which prevents center transformations
+/// from being applied to free vectors (directions, velocities).
+///
+/// # Usage
+///
+/// Use this trait as a bound when implementing center transformations:
+///
+/// ```ignore
+/// impl<F, U> TransformCenter<Position<Geocentric, F, U>> for Position<Heliocentric, F, U>
+/// where
+///     Heliocentric: AffineCenter,
+///     Geocentric: AffineCenter,
+///     // ...
+/// ```
+pub trait AffineCenter: ReferenceCenter {}
+
+// Implement AffineCenter for all actual coordinate centers
+impl AffineCenter for Barycentric {}
+impl AffineCenter for Heliocentric {}
+impl AffineCenter for Geocentric {}
+impl AffineCenter for Topocentric {}
+impl AffineCenter for Bodycentric {}
+
+// NOTE: NoCenter deliberately does NOT implement AffineCenter
+// This prevents center transformations on directions and velocities
+
+// NoCenter does NOT implement ReferenceCenter - it's a separate marker
+// that indicates the object is translation-invariant
+
 #[cfg(test)]
 mod tests {
     use super::*;

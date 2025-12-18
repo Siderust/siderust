@@ -15,49 +15,29 @@
 //!
 //! # Example
 //! ```rust
-//! use siderust::coordinates::spherical::direction::GCRS;
+//! use siderust::coordinates::spherical::direction::ICRS;
 //! use qtty::*;
 //!
-//! let coord = GCRS::new(
-//!     120.0 * DEG, 45.0 * DEG
-//! );
+//! let coord = ICRS::new(120.0 * DEG, 45.0 * DEG);
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
 use super::Position;
-use super::{direction, Direction};
+use super::direction;
 use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{centers::*, frames::ICRS};
 use qtty::*;
 
-impl<C: ReferenceCenter<Params = ()>> Direction<C, ICRS> {
-    /// Creates a new ICRS spherical coordinate with constant values.
+impl direction::Direction<ICRS> {
+    /// Constructs a new ICRS direction with normalized input angles.
+    ///
+    /// Right Ascension is normalized to [0°, 360°], Declination to [-90°, 90°].
     ///
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    ///
-    /// # Returns
-    /// A new `Direction` in the ICRS frame.
-    pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
-        Self::new_raw(dec, ra, Quantity::<direction::DirectionUnit>::new(1.0))
-    }
-
-    /// Constructs a new ICRS spherical coordinate with normalized input angular.
-    ///
-    /// Right Ascension is normalized to the [0°, 360°] range, and Declination to the [-90°, 90°] range.
-    ///
-    /// # Arguments
-    /// - `ra`: Right Ascension (α), in degrees.
-    /// - `dec`: Declination (δ), in degrees.
-    ///
-    /// # Returns
-    /// A normalized `Direction` in the ICRS frame.
-    pub fn new<T>(ra: T, dec: T) -> Self
-    where
-        T: Into<Degrees>,
-    {
-        Self::new_const(ra.into().normalize(), dec.into().wrap_quarter_fold())
+    pub fn new_icrs(ra: Degrees, dec: Degrees) -> Self {
+        Self::new(dec.wrap_quarter_fold(), ra.normalize())
     }
 }
 

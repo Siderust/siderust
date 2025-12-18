@@ -60,24 +60,3 @@ where
             .to_spherical()
     }
 }
-
-/*
-#[cfg(test)]
-mod tests {
-    use crate::coordinates::centers;
-    use crate::coordinates::frames;
-    use crate::coordinates::spherical::direction::Direction;
-    use qtty::DEG;
-
-    #[test]
-    fn test_to_center() {
-        let ecl  =  Direction::<centers::Heliocentric, frames::Ecliptic>::new(90.0*DEG, 45.0*DEG);
-        let equ: Direction<centers::Heliocentric, frames::Equatorial> = ecl.to_frame::<frames::Equatorial>();
-        let expected: Direction<centers::Heliocentric, frames::Equatorial> = (&ecl).into();
-
-        assert_eq!(equ.polar, expected.polar);
-        assert_eq!(equ.azimuth, expected.azimuth);
-        assert_eq!(equ.distance, expected.distance);
-    }
-}
-*/

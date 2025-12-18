@@ -24,20 +24,19 @@
 //! ```rust
 //! use siderust::coordinates::spherical;
 //! use siderust::coordinates::cartesian;
-//! use siderust::coordinates::centers::Heliocentric;
 //! use siderust::coordinates::frames::Ecliptic;
 //! use qtty::*;
 //!
-//! // Create a heliocentric ecliptic spherical direction
-//! let spherical = spherical::Direction::<Heliocentric, Ecliptic>::new(
+//! // Create an ecliptic spherical direction (frame-only, no center)
+//! let spherical = spherical::Direction::<Ecliptic>::new(
 //!     45.0 * DEG, 7.0 * DEG
 //! );
 //!
 //! // Convert to cartesian coordinates
-//! let cartesian: cartesian::Direction<Heliocentric, Ecliptic> = (&spherical).into();
+//! let cartesian: cartesian::Direction<Ecliptic> = spherical.to_cartesian();
 //!
 //! // Convert back to spherical coordinates
-//! let spherical_converted: spherical::Direction<Heliocentric, Ecliptic> = (&cartesian).into();
+//! let spherical_converted: spherical::Direction<Ecliptic> = cartesian.to_spherical();
 //!
 //! println!("Spherical -> Cartesian -> Spherical: {:?}", spherical_converted);
 //! ```

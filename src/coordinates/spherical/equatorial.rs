@@ -27,26 +27,16 @@ use super::*;
 use crate::coordinates::{centers::*, frames::*};
 use qtty::*;
 
-impl<C: ReferenceCenter<Params = ()>> Direction<C, Equatorial> {
-    pub const fn new_const(ra: Degrees, dec: Degrees) -> Self {
-        Self::new_raw(dec, ra, Quantity::<direction::DirectionUnit>::new(1.0))
-    }
-
-    /// Constructs a new equatorial spherical coordinate with normalized input angular.
+impl direction::Direction<Equatorial> {
+    /// Constructs a new equatorial direction with normalized input angles.
     ///
-    /// Right Ascension is normalized to the [0°, 360°] range, and Declination to the [-90°, 90°] range.
+    /// Right Ascension is normalized to [0°, 360°], Declination to [-90°, 90°].
     ///
     /// # Arguments
     /// - `ra`: Right Ascension (α), in degrees.
     /// - `dec`: Declination (δ), in degrees.
-    ///
-    /// # Returns
-    /// A normalized `Direction` in the equatorial frame.
-    pub fn new<T>(ra: T, dec: T) -> Self
-    where
-        T: Into<Degrees>,
-    {
-        Self::new_const(ra.into().normalize(), dec.into().wrap_quarter_fold())
+    pub fn new_equatorial(ra: Degrees, dec: Degrees) -> Self {
+        Self::new(dec.wrap_quarter_fold(), ra.normalize())
     }
 }
 
