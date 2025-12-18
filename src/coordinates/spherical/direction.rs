@@ -218,14 +218,6 @@ pub type ICRS = Direction<frames::ICRS>;
 /// **Geographic** (ECEF) direction: latitude, longitude.
 pub type Geographic = Direction<frames::ECEF>;
 
-// Legacy aliases for backwards compatibility
-#[doc(hidden)]
-pub type HCRS = Direction<frames::ICRS>;
-#[doc(hidden)]
-pub type GCRS = Direction<frames::ICRS>;
-#[doc(hidden)]
-pub type TCRS = Direction<frames::ICRS>;
-
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -39,7 +39,6 @@ use std::marker::PhantomData;
 /// A unit vector representing a direction in 3D space.
 ///
 /// Directions are frame-dependent but center-independent (free vectors).
-/// They cannot undergo center transformations, only frame transformations.
 ///
 /// # Type Parameters
 /// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`)
@@ -166,108 +165,6 @@ impl<F: frames::ReferenceFrame> Direction<F> {
     }
 }
 
-// =============================================================================
-// Frame Transformations for Direction
-// =============================================================================
-
-use crate::coordinates::transform::TransformFrame;
-use crate::coordinates::frames::MutableFrame;
-
-impl<F: MutableFrame> Direction<F> {
-    /// Transforms this direction to a different reference frame.
-    pub fn to_frame<F2: MutableFrame>(&self) -> Direction<F2>
-    where
-        Direction<F>: TransformFrame<Direction<F2>>,
-    {
-        TransformFrame::to_frame(self)
-    }
-}
-
-/// Identity frame transform for directions.
-impl<F: MutableFrame> TransformFrame<Direction<F>> for Direction<F> {
-    fn to_frame(&self) -> Direction<F> {
-        Direction::<F>::from_vec3(self.as_vec3())
-    }
-}
-
-/// Frame transform from Ecliptic to Equatorial for directions.
-/// Rotation about +X by the obliquity ε.
-impl TransformFrame<Direction<frames::Equatorial>> for Direction<frames::Ecliptic> {
-    fn to_frame(&self) -> Direction<frames::Equatorial> {
-        let eps = 23.439281_f64.to_radians(); // obliquity in radians
-        let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
-
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
-
-        let new_x = x;
-        let new_y = y * cos_eps - z * sin_eps;
-        let new_z = y * sin_eps + z * cos_eps;
-
-        Direction::<frames::Equatorial>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
-        ))
-    }
-}
-
-/// Frame transform from Equatorial to Ecliptic for directions.
-/// Inverse rotation about +X by the obliquity ε.
-impl TransformFrame<Direction<frames::Ecliptic>> for Direction<frames::Equatorial> {
-    fn to_frame(&self) -> Direction<frames::Ecliptic> {
-        let eps = 23.439281_f64.to_radians(); // obliquity in radians
-        let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
-
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
-
-        let new_x = x;
-        let new_y = y * cos_eps + z * sin_eps;
-        let new_z = -y * sin_eps + z * cos_eps;
-
-        Direction::<frames::Ecliptic>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
-        ))
-    }
-}
-
-/// Frame transform from ICRS to Equatorial for directions (identity).
-impl TransformFrame<Direction<frames::Equatorial>> for Direction<frames::ICRS> {
-    fn to_frame(&self) -> Direction<frames::Equatorial> {
-        Direction::<frames::Equatorial>::from_vec3(self.as_vec3())
-    }
-}
-
-/// Frame transform from Equatorial to ICRS for directions (identity).
-impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::Equatorial> {
-    fn to_frame(&self) -> Direction<frames::ICRS> {
-        Direction::<frames::ICRS>::from_vec3(self.as_vec3())
-    }
-}
-
-/// Frame transform from Ecliptic to ICRS for directions.
-impl TransformFrame<Direction<frames::ICRS>> for Direction<frames::Ecliptic> {
-    fn to_frame(&self) -> Direction<frames::ICRS> {
-        // Ecliptic -> Equatorial -> ICRS
-        let eq: Direction<frames::Equatorial> = self.to_frame();
-        eq.to_frame()
-    }
-}
-
-/// Frame transform from ICRS to Ecliptic for directions.
-impl TransformFrame<Direction<frames::Ecliptic>> for Direction<frames::ICRS> {
-    fn to_frame(&self) -> Direction<frames::Ecliptic> {
-        // ICRS -> Equatorial -> Ecliptic
-        let eq: Direction<frames::Equatorial> = self.to_frame();
-        eq.to_frame()
-    }
-}
-
 impl<F: frames::ReferenceFrame> std::fmt::Display for Direction<F> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -282,19 +179,8 @@ impl<F: frames::ReferenceFrame> std::fmt::Display for Direction<F> {
 }
 
 /// Type aliases for common direction systems.
-///
-/// Note: These are frame-only types. Directions don't have a center.
 pub type Ecliptic = Direction<frames::Ecliptic>;
 pub type Equatorial = Direction<frames::Equatorial>;
 pub type Horizontal = Direction<frames::Horizontal>;
 pub type Geographic = Direction<frames::ECEF>;
 pub type ICRS = Direction<frames::ICRS>;
-
-// Legacy aliases for backwards compatibility during transition
-// TODO: Deprecate these in a future version
-#[doc(hidden)]
-pub type HCRS = Direction<frames::ICRS>;
-#[doc(hidden)]
-pub type GCRS = Direction<frames::ICRS>;
-#[doc(hidden)]
-pub type TCRS = Direction<frames::ICRS>;

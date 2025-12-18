@@ -82,18 +82,18 @@ fn frame_transform_traits_exercised() {
     
     let vec_ecl =
         cartesian::position::Ecliptic::<AstronomicalUnit>::new(0.1 * AU, 0.2 * AU, 0.3 * AU);
-    let vec_same: cartesian::position::Ecliptic<AstronomicalUnit> = vec_ecl.to_frame();
+    let vec_same: cartesian::position::Ecliptic<AstronomicalUnit> = TransformFrame::to_frame(&vec_ecl);
     assert_eq!(vec_same.x(), vec_ecl.x());
 
     // Spherical direction is now frame-only (no center parameter)
     let sph_ecl = spherical::direction::Ecliptic::new(Degrees::new(10.0), Degrees::new(5.0));
     // Convert to cartesian, transform frame
     let cart_ecl = sph_ecl.to_cartesian();
-    let cart_equatorial: cartesian::direction::Equatorial = cart_ecl.to_frame();
+    let cart_equatorial: cartesian::direction::Equatorial = TransformFrame::to_frame(&cart_ecl);
     assert!(cart_equatorial.x().value().is_finite());
     
     // Test frame transform on position (must preserve center type)
-    let vec_equatorial: cartesian::Position<Heliocentric, frames::Equatorial, AstronomicalUnit> = vec_ecl.to_frame();
+    let vec_equatorial: cartesian::Position<Heliocentric, frames::Equatorial, AstronomicalUnit> = TransformFrame::to_frame(&vec_ecl);
     assert!(vec_equatorial.x().value().is_finite());
 }
 

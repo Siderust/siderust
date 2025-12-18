@@ -4,6 +4,7 @@ use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
 use siderust::coordinates::*;
+use siderust::coordinates::transform::TransformFrame;
 
 fn approx_eq_pos<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
 where
@@ -110,8 +111,8 @@ fn test_direction_frame_transformations() {
         .direction();
 
     // Ecliptic -> Equatorial -> back (frame rotation only)
-    let equatorial: Direction<Equatorial> = original.to_frame();
-    let ecliptic_back: Direction<Ecliptic> = equatorial.to_frame();
+    let equatorial: Direction<Equatorial> = TransformFrame::to_frame(&original);
+    let ecliptic_back: Direction<Ecliptic> = TransformFrame::to_frame(&equatorial);
     approx_eq_dir(&original, &ecliptic_back);
     
     // Verify directions are still unit vectors after transformation

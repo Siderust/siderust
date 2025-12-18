@@ -147,67 +147,6 @@ where
     }
 }
 
-// =============================================================================
-// Frame Transformations for Velocity
-// =============================================================================
-
-/// Identity frame transform for velocities.
-impl<F, U> TransformFrame<Velocity<F, U>> for Velocity<F, U>
-where
-    F: MutableFrame,
-    U: Unit,
-{
-    fn to_frame(&self) -> Velocity<F, U> {
-        Self::from_vec3(self.as_vec3())
-    }
-}
-
-/// Frame transform from Ecliptic to Equatorial for velocities.
-/// Rotation about +X by the obliquity ε.
-impl<U: Unit> TransformFrame<Velocity<frames::Equatorial, U>> for Velocity<frames::Ecliptic, U> {
-    fn to_frame(&self) -> Velocity<frames::Equatorial, U> {
-        let eps = 23.439281_f64.to_radians(); // obliquity in radians
-        let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
-
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
-
-        let new_x = x;
-        let new_y = y * cos_eps - z * sin_eps;
-        let new_z = y * sin_eps + z * cos_eps;
-
-        Velocity::<frames::Equatorial, U>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
-        ))
-    }
-}
-
-/// Frame transform from Equatorial to Ecliptic for velocities.
-/// Inverse rotation about +X by the obliquity ε.
-impl<U: Unit> TransformFrame<Velocity<frames::Ecliptic, U>> for Velocity<frames::Equatorial, U> {
-    fn to_frame(&self) -> Velocity<frames::Ecliptic, U> {
-        let eps = 23.439281_f64.to_radians(); // obliquity in radians
-        let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
-
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
-
-        let new_x = x;
-        let new_y = y * cos_eps + z * sin_eps;
-        let new_z = -y * sin_eps + z * cos_eps;
-
-        Velocity::<frames::Ecliptic, U>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
-        ))
-    }
-}
-
 /// Type aliases for common velocity systems.
 pub type Ecliptic<U> = Velocity<frames::Ecliptic, U>;
 pub type Equatorial<U> = Velocity<frames::Equatorial, U>;

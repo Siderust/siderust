@@ -1,7 +1,10 @@
 use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::Mars;
-use siderust::coordinates::{cartesian, centers::*, frames::*, spherical, transform::Transform};
+use siderust::coordinates::{
+    cartesian, centers::*, frames::*, spherical,
+    transform::{Transform, TransformFrame},
+};
 use siderust::targets::Target;
 
 const EPS: f64 = 1e-9;
@@ -61,7 +64,7 @@ fn cartesian_direction_frame_transform() {
     let dir = cartesian::Direction::<Ecliptic>::normalize(1.0, 0.5, 0.2);
     
     // Frame transform from Ecliptic to Equatorial (rotation only)
-    let dir_equatorial: cartesian::Direction<Equatorial> = dir.to_frame();
+    let dir_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&dir);
     
     // Verify it's still a unit vector
     let norm = (dir_equatorial.x().value().powi(2) 
@@ -80,7 +83,7 @@ fn spherical_direction_frame_transform() {
     
     // Convert to cartesian, transform frame, then back
     let cart_dir = sph_dir.to_cartesian();
-    let cart_equatorial: cartesian::Direction<Equatorial> = cart_dir.to_frame();
+    let cart_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&cart_dir);
     
     // Verify the Cartesian direction is still unit vector
     let norm = (cart_equatorial.x().value().powi(2) 

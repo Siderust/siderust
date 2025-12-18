@@ -1,3 +1,5 @@
+pub mod direction;
+pub mod velocity;
 pub mod to_ecliptic;
 pub mod to_equatorial;
 pub mod to_horizontal;
