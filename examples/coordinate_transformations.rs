@@ -6,12 +6,12 @@
 //! - Combined transformations
 //! - Time-dependent transformations
 
+use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::{Earth, Mars};
 use siderust::coordinates::cartesian::position::{Ecliptic, Equatorial, GCRS, HCRS, ICRS};
 use siderust::coordinates::centers::{Geocentric, Heliocentric};
-use siderust::coordinates::transform::{Transform, TransformFrame, TransformCenter};
-use qtty::*;
+use siderust::coordinates::transform::{Transform, TransformCenter, TransformFrame};
 
 fn main() {
     println!("=== Coordinate Transformations Example ===\n");
@@ -66,7 +66,10 @@ fn main() {
     println!("  X = {:.10} AU", earth_geo.x());
     println!("  Y = {:.10} AU", earth_geo.y());
     println!("  Z = {:.10} AU", earth_geo.z());
-    println!("  Distance = {:.10} AU (should be ~0)\n", earth_geo.distance());
+    println!(
+        "  Distance = {:.10} AU (should be ~0)\n",
+        earth_geo.distance()
+    );
 
     // Get Mars position (heliocentric)
     let mars_helio = *Mars::vsop87a(jd).get_position();
@@ -93,11 +96,11 @@ fn main() {
     // Mars: Heliocentric Ecliptic → Geocentric Equatorial
     println!("Mars transformation chain:");
     println!("  Start: Heliocentric Ecliptic");
-    
+
     // Method 1: Step by step
     let mars_helio_equ: Equatorial<Au, Heliocentric> = mars_helio.to_frame();
     println!("  Step 1: Transform frame → Heliocentric Equatorial");
-    
+
     let mars_geo_equ: Equatorial<Au, Geocentric> = mars_helio_equ.to_center(jd);
     println!("  Step 2: Transform center → Geocentric Equatorial");
     println!("  Result:");
@@ -129,7 +132,10 @@ fn main() {
     // Transform to geocentric
     let earth_geo_from_bary: Ecliptic<Au, Geocentric> = earth_bary.to_center(jd);
     println!("Earth (Geocentric, from Barycentric):");
-    println!("  Distance = {:.10} AU (should be ~0)\n", earth_geo_from_bary.distance());
+    println!(
+        "  Distance = {:.10} AU (should be ~0)\n",
+        earth_geo_from_bary.distance()
+    );
 
     // Transform Mars from barycentric to geocentric
     let mars_bary = *Mars::vsop87e(jd).get_position();
@@ -176,7 +182,7 @@ fn main() {
     // Transform: Helio Ecl → Geo Equ → Helio Ecl
     let temp: Equatorial<Au, Geocentric> = original.transform(jd);
     let recovered: Ecliptic<Au, Heliocentric> = temp.transform(jd);
-    
+
     println!("After round-trip transformation:");
     println!("  X = {:.10} AU", recovered.x());
     println!("  Y = {:.10} AU", recovered.y());

@@ -3,6 +3,7 @@
 //! This example demonstrates the new body-centric coordinate system that allows
 //! viewing positions from arbitrary orbiting bodies (satellites, planets, moons, etc.).
 
+use qtty::*;
 use siderust::astro::orbit::Orbit;
 use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::{Earth, Mars, Venus};
@@ -11,7 +12,6 @@ use siderust::coordinates::cartesian::Direction;
 use siderust::coordinates::centers::{Bodycentric, BodycentricParams, Geocentric, Heliocentric};
 use siderust::coordinates::frames;
 use siderust::coordinates::transform::TransformCenter;
-use qtty::*;
 
 fn main() {
     println!("=== Body-Centric Coordinates Example ===\n");
@@ -27,17 +27,18 @@ fn main() {
 
     // Define an ISS-like orbit (low Earth orbit)
     let iss_orbit = Orbit::new(
-        0.0000426 * AU,         // ~6,378 km (Earth radius) in AU
-        0.001,                  // Nearly circular
-        Degrees::new(51.6),     // ISS inclination
-        Degrees::new(0.0),      // Longitude of ascending node
-        Degrees::new(0.0),      // Argument of perihelion
-        Degrees::new(0.0),      // Mean anomaly at epoch
-        jd,                     // Epoch
+        0.0000426 * AU,     // ~6,378 km (Earth radius) in AU
+        0.001,              // Nearly circular
+        Degrees::new(51.6), // ISS inclination
+        Degrees::new(0.0),  // Longitude of ascending node
+        Degrees::new(0.0),  // Argument of perihelion
+        Degrees::new(0.0),  // Mean anomaly at epoch
+        jd,                 // Epoch
     );
 
     println!("ISS Orbit:");
-    println!("  Semi-major axis: {:.6} AU (~{:.0} km)", 
+    println!(
+        "  Semi-major axis: {:.6} AU (~{:.0} km)",
         iss_orbit.semi_major_axis,
         iss_orbit.semi_major_axis.value() * 149597870.7
     );
@@ -53,30 +54,32 @@ fn main() {
     println!("  X = {:.8} AU", iss_pos_ecl.x());
     println!("  Y = {:.8} AU", iss_pos_ecl.y());
     println!("  Z = {:.8} AU", iss_pos_ecl.z());
-    println!("  Distance from Earth: {:.8} AU (~{:.0} km)\n",
+    println!(
+        "  Distance from Earth: {:.8} AU (~{:.0} km)\n",
         iss_pos_ecl.distance(),
         iss_pos_ecl.distance().value() * 149597870.7
     );
 
     // Moon's approximate position (geocentric)
-    let moon_geo: Position<Geocentric, frames::Ecliptic, Au> = 
-        Position::new(0.00257, 0.0, 0.0); // ~384,400 km
+    let moon_geo: Position<Geocentric, frames::Ecliptic, Au> = Position::new(0.00257, 0.0, 0.0); // ~384,400 km
 
     println!("Moon position (Geocentric):");
-    println!("  Distance from Earth: {:.5} AU (~{:.0} km)\n",
+    println!(
+        "  Distance from Earth: {:.5} AU (~{:.0} km)\n",
         moon_geo.distance(),
         moon_geo.distance().value() * 149597870.7
     );
 
     // Transform to ISS-centric coordinates
-    let moon_from_iss: Position<Bodycentric, frames::Ecliptic, Au> = 
+    let moon_from_iss: Position<Bodycentric, frames::Ecliptic, Au> =
         moon_geo.to_bodycentric(iss_params, jd);
 
     println!("Moon as seen from ISS:");
     println!("  X = {:.6} AU", moon_from_iss.x());
     println!("  Y = {:.6} AU", moon_from_iss.y());
     println!("  Z = {:.6} AU", moon_from_iss.z());
-    println!("  Distance from ISS: {:.5} AU (~{:.0} km)\n",
+    println!(
+        "  Distance from ISS: {:.5} AU (~{:.0} km)\n",
         moon_from_iss.distance(),
         moon_from_iss.distance().value() * 149597870.7
     );
@@ -89,12 +92,12 @@ fn main() {
 
     // Mars orbit (simplified - using real values would need more orbital elements)
     let mars_orbit = Orbit::new(
-        1.524 * AU,             // Semi-major axis
-        0.0934,                 // Eccentricity
-        Degrees::new(1.85),     // Inclination
-        Degrees::new(49.56),    // Longitude of ascending node
-        Degrees::new(286.5),    // Argument of perihelion
-        Degrees::new(19.41),    // Mean anomaly at J2000
+        1.524 * AU,          // Semi-major axis
+        0.0934,              // Eccentricity
+        Degrees::new(1.85),  // Inclination
+        Degrees::new(49.56), // Longitude of ascending node
+        Degrees::new(286.5), // Argument of perihelion
+        Degrees::new(19.41), // Mean anomaly at J2000
         jd,
     );
 
@@ -116,7 +119,7 @@ fn main() {
     println!("  Distance from Sun: {:.6} AU\n", mars_helio.distance());
 
     // View Earth from Mars (using approximate orbit)
-    let earth_from_mars: Position<Bodycentric, frames::Ecliptic, Au> = 
+    let earth_from_mars: Position<Bodycentric, frames::Ecliptic, Au> =
         earth_helio.to_bodycentric(mars_params, jd);
 
     println!("Earth as seen from Mars:");
@@ -148,14 +151,14 @@ fn main() {
     println!("  Distance from Sun: {:.6} AU\n", venus_helio.distance());
 
     // View Earth from Venus
-    let earth_from_venus: Position<Bodycentric, frames::Ecliptic, Au> = 
+    let earth_from_venus: Position<Bodycentric, frames::Ecliptic, Au> =
         earth_helio.to_bodycentric(venus_params, jd);
 
     println!("Earth as seen from Venus:");
     println!("  Distance: {:.6} AU\n", earth_from_venus.distance());
 
     // View Mars from Venus
-    let mars_from_venus: Position<Bodycentric, frames::Ecliptic, Au> = 
+    let mars_from_venus: Position<Bodycentric, frames::Ecliptic, Au> =
         mars_helio.to_bodycentric(venus_params, jd);
 
     println!("Mars as seen from Venus:");
@@ -174,15 +177,18 @@ fn main() {
     println!("  Z = {:.10} AU\n", original_earth.z());
 
     // Transform to Mars-centric
-    let earth_mars_centric: Position<Bodycentric, frames::Ecliptic, Au> = 
+    let earth_mars_centric: Position<Bodycentric, frames::Ecliptic, Au> =
         original_earth.to_bodycentric(mars_params, jd);
-    
+
     println!("Transformed to Mars-centric:");
-    println!("  Distance from Mars: {:.6} AU\n", earth_mars_centric.distance());
+    println!(
+        "  Distance from Mars: {:.6} AU\n",
+        earth_mars_centric.distance()
+    );
 
     // Transform back to geocentric (to match original center)
     let recovered_geo: Ecliptic<Au, Geocentric> = earth_mars_centric.to_geocentric(jd);
-    
+
     // Then to heliocentric to compare
     let recovered_helio: Ecliptic<Au, Heliocentric> = recovered_geo.to_center(jd);
 
@@ -205,8 +211,7 @@ fn main() {
 
     // Directions are now frame-only (no center parameter).
     // They cannot undergo center transformations - only frame rotations.
-    let star_dir: Direction<frames::Equatorial> = 
-        Direction::normalize(0.707, 0.0, 0.707); // 45° declination, 0° RA
+    let star_dir: Direction<frames::Equatorial> = Direction::normalize(0.707, 0.0, 0.707); // 45° declination, 0° RA
 
     println!("Star direction (Equatorial frame):");
     println!("  X = {:.3}", star_dir.x().value());

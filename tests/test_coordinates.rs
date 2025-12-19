@@ -3,8 +3,8 @@ use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
-use siderust::coordinates::*;
 use siderust::coordinates::transform::TransformFrame;
+use siderust::coordinates::*;
 
 fn approx_eq_pos<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
 where
@@ -88,14 +88,14 @@ where
 #[test]
 fn test_position_transformations() {
     use siderust::coordinates::transform::Transform;
-    
-    let original = Mars::vsop87a(JulianDate::J2000)
-        .get_position()
-        .clone();
-    
+
+    let original = *Mars::vsop87a(JulianDate::J2000).get_position();
+
     // Heliocentric Ecliptic -> Heliocentric Equatorial -> back
-    let helio_eq: cartesian::Position<Heliocentric, Equatorial, _> = original.transform(JulianDate::J2000);
-    let helio_from_eq: cartesian::Position<Heliocentric, Ecliptic, _> = helio_eq.transform(JulianDate::J2000);
+    let helio_eq: cartesian::Position<Heliocentric, Equatorial, _> =
+        original.transform(JulianDate::J2000);
+    let helio_from_eq: cartesian::Position<Heliocentric, Ecliptic, _> =
+        helio_eq.transform(JulianDate::J2000);
     approx_eq_pos(&original, &helio_from_eq);
 }
 
@@ -114,12 +114,16 @@ fn test_direction_frame_transformations() {
     let equatorial: Direction<Equatorial> = TransformFrame::to_frame(&original);
     let ecliptic_back: Direction<Ecliptic> = TransformFrame::to_frame(&equatorial);
     approx_eq_dir(&original, &ecliptic_back);
-    
+
     // Verify directions are still unit vectors after transformation
-    let norm = (equatorial.x().value().powi(2) 
-              + equatorial.y().value().powi(2) 
-              + equatorial.z().value().powi(2)).sqrt();
-    assert!((norm - 1.0).abs() < 1e-12, "direction should be unit vector");
+    let norm = (equatorial.x().value().powi(2)
+        + equatorial.y().value().powi(2)
+        + equatorial.z().value().powi(2))
+    .sqrt();
+    assert!(
+        (norm - 1.0).abs() < 1e-12,
+        "direction should be unit vector"
+    );
 }
 
 /// Test spherical direction transformations
@@ -130,7 +134,7 @@ fn test_spherical_direction_transformations() {
         .get_position()
         .clone()
         .direction();
-    
+
     // Convert to spherical and back
     let sph = cart_original.to_spherical();
     let back = sph.to_cartesian();
@@ -154,22 +158,22 @@ fn serialize_cartesian_spherical() {
 #[test]
 fn test_line_of_sight() {
     use siderust::coordinates::cartesian::line_of_sight;
-    
+
     // Create two positions (Earth and Mars at some point)
     let observer = cartesian::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
         AstronomicalUnits::new(1.0),
         AstronomicalUnits::new(0.0),
         AstronomicalUnits::new(0.0),
     );
-    
+
     let target = cartesian::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
         AstronomicalUnits::new(2.0),
         AstronomicalUnits::new(0.0),
         AstronomicalUnits::new(0.0),
     );
-    
+
     let los = line_of_sight(&observer, &target);
-    
+
     // Direction should point in +X direction
     assert!((los.x().value() - 1.0).abs() < 1e-12);
     assert!(los.y().value().abs() < 1e-12);

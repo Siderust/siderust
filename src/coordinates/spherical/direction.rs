@@ -162,7 +162,7 @@ impl<F: ReferenceFrame> Direction<F> {
 
     /// Calculates the angular separation between this direction and another.
     pub fn angular_separation(&self, other: &Self) -> Degrees {
-        use qtty::{Radian, Radians, Degree};
+        use qtty::{Degree, Radian, Radians};
 
         let az1 = self.azimuth.to::<Radian>();
         let po1 = self.polar.to::<Radian>();
@@ -225,13 +225,13 @@ mod tests {
 
     #[test]
     fn creates_valid_spherical_direction() {
-        let polar = Degrees::new(45.0);  // This is Dec
+        let polar = Degrees::new(45.0); // This is Dec
         let azimuth = Degrees::new(90.0); // This is RA
 
         let coord = ICRS::new(polar, azimuth);
 
         // In spherical coords: polar=Dec, azimuth=RA
-        assert_eq!(coord.ra().value(), 90.0);  // RA = azimuth
+        assert_eq!(coord.ra().value(), 90.0); // RA = azimuth
         assert_eq!(coord.dec().value(), 45.0); // Dec = polar
         assert_eq!(coord.distance.value(), 1.0);
     }
@@ -246,7 +246,7 @@ mod tests {
 
     #[test]
     fn maintains_high_precision_on_values() {
-        let polar = Degrees::new(90.654_321);   // Dec
+        let polar = Degrees::new(90.654_321); // Dec
         let azimuth = Degrees::new(45.123_456); // RA
 
         let coord = ICRS::new(polar, azimuth);
@@ -264,11 +264,20 @@ mod tests {
 
         // Using new_icrs(ra, dec) for correct ICRS convention
         let dir: ICRS = ICRS::new_icrs(Degrees::new(120.0), Degrees::new(-30.0));
-        let pos = dir.position::<Barycentric, AstronomicalUnit>(Quantity::<AstronomicalUnit>::new(2.0));
+        let pos =
+            dir.position::<Barycentric, AstronomicalUnit>(Quantity::<AstronomicalUnit>::new(2.0));
 
         // angles are preserved (RA=120, Dec=-30)
-        assert!((pos.ra().value() - 120.0).abs() < EPS, "RA mismatch: got {}", pos.ra().value());
-        assert!((pos.dec().value() - (-30.0)).abs() < EPS, "Dec mismatch: got {}", pos.dec().value());
+        assert!(
+            (pos.ra().value() - 120.0).abs() < EPS,
+            "RA mismatch: got {}",
+            pos.ra().value()
+        );
+        assert!(
+            (pos.dec().value() - (-30.0)).abs() < EPS,
+            "Dec mismatch: got {}",
+            pos.dec().value()
+        );
 
         // distance matches the supplied magnitude
         assert!((pos.distance - 2.0 * AU).abs() < EPS * AU);

@@ -33,7 +33,7 @@ impl direction::Direction<ECEF> {
     pub fn new_geographic(lon: Degrees, lat: Degrees) -> Self {
         Self::new(lat.wrap_quarter_fold(), lon.wrap_signed_lo())
     }
-    
+
     /// Returns the latitude (φ) in degrees.
     pub fn lat(&self) -> Degrees {
         self.polar

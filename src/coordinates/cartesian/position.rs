@@ -20,13 +20,11 @@ where
     pub fn direction(&self) -> super::Direction<F> {
         use crate::coordinates::spherical::direction::DirectionUnit;
         let d = self.distance();
-        super::Direction::<F>::from_vec3(
-            nalgebra::Vector3::new(
-                Quantity::<DirectionUnit>::new((self.x() / d).simplify().value()),
-                Quantity::<DirectionUnit>::new((self.y() / d).simplify().value()),
-                Quantity::<DirectionUnit>::new((self.z() / d).simplify().value()),
-            ),
-        )
+        super::Direction::<F>::from_vec3(nalgebra::Vector3::new(
+            Quantity::<DirectionUnit>::new((self.x() / d).simplify().value()),
+            Quantity::<DirectionUnit>::new((self.y() / d).simplify().value()),
+            Quantity::<DirectionUnit>::new((self.z() / d).simplify().value()),
+        ))
     }
 }
 

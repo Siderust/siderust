@@ -5,11 +5,11 @@
 //! - Horizontal coordinate system (altitude/azimuth)
 //! - Converting between geocentric and topocentric
 
+use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::coordinates::cartesian::position::Equatorial;
 use siderust::coordinates::centers::{Geocentric, ObserverSite};
 use siderust::coordinates::spherical;
-use qtty::*;
 
 fn main() {
     println!("=== Observer-Based Coordinates Example ===\n");
@@ -24,9 +24,9 @@ fn main() {
 
     // Greenwich Observatory (Prime Meridian)
     let greenwich = ObserverSite::new(
-        Degrees::new(0.0),       // Longitude: 0° (by definition)
-        Degrees::new(51.4769),   // Latitude: 51.4769° N
-        0.0 * M,                 // Height: sea level
+        Degrees::new(0.0),     // Longitude: 0° (by definition)
+        Degrees::new(51.4769), // Latitude: 51.4769° N
+        0.0 * M,               // Height: sea level
     );
 
     println!("Greenwich Observatory:");
@@ -36,9 +36,9 @@ fn main() {
 
     // Roque de los Muchachos Observatory (La Palma, Canary Islands)
     let la_palma = ObserverSite::new(
-        Degrees::new(-17.8947),  // Longitude: 17.8947° W
-        Degrees::new(28.7606),   // Latitude: 28.7606° N
-        2396.0 * M,              // Height: 2,396 m
+        Degrees::new(-17.8947), // Longitude: 17.8947° W
+        Degrees::new(28.7606),  // Latitude: 28.7606° N
+        2396.0 * M,             // Height: 2,396 m
     );
 
     println!("Roque de los Muchachos Observatory:");
@@ -60,9 +60,9 @@ fn main() {
 
     // Sydney Opera House (Australia)
     let sydney = ObserverSite::new(
-        Degrees::new(151.2153),  // Longitude: 151.2153° E
-        Degrees::new(-33.8568),  // Latitude: 33.8568° S (negative for south)
-        0.0 * M,                 // Height: sea level
+        Degrees::new(151.2153), // Longitude: 151.2153° E
+        Degrees::new(-33.8568), // Latitude: 33.8568° S (negative for south)
+        0.0 * M,                // Height: sea level
     );
 
     println!("Sydney, Australia:");
@@ -84,8 +84,8 @@ fn main() {
     // Note: Directions are now frame-only (no observer/center parameter)
     // The observer site is used for Positions, not for Directions
     let zenith = spherical::direction::Horizontal::new_horizontal(
-        Degrees::new(90.0),  // Altitude (straight up)
-        Degrees::new(0.0),   // Azimuth (doesn't matter for zenith)
+        Degrees::new(90.0), // Altitude (straight up)
+        Degrees::new(0.0),  // Azimuth (doesn't matter for zenith)
     );
     println!("Zenith direction:");
     println!("  Azimuth:  {:.1}°", zenith.az());
@@ -93,8 +93,8 @@ fn main() {
 
     // North horizon
     let north = spherical::direction::Horizontal::new_horizontal(
-        Degrees::new(0.0),   // On horizon
-        Degrees::new(0.0),   // North
+        Degrees::new(0.0), // On horizon
+        Degrees::new(0.0), // North
     );
     println!("North point on horizon:");
     println!("  Azimuth:  {:.1}° (North)", north.az());
@@ -102,8 +102,8 @@ fn main() {
 
     // East, 30° above horizon
     let east_30 = spherical::direction::Horizontal::new_horizontal(
-        Degrees::new(30.0),  // 30° above horizon
-        Degrees::new(90.0),  // East
+        Degrees::new(30.0), // 30° above horizon
+        Degrees::new(90.0), // East
     );
     println!("30° above eastern horizon:");
     println!("  Azimuth:  {:.1}° (East)", east_30.az());
@@ -117,16 +117,19 @@ fn main() {
 
     // Create a geocentric position (e.g., a satellite)
     let satellite_geo: Equatorial<Kilometer, Geocentric> = Equatorial::new(
-        5000.0,  // X
-        3000.0,  // Y
-        2000.0,  // Z
+        5000.0, // X
+        3000.0, // Y
+        2000.0, // Z
     );
 
     println!("Satellite (Geocentric Equatorial):");
     println!("  X = {:.1} km", satellite_geo.x());
     println!("  Y = {:.1} km", satellite_geo.y());
     println!("  Z = {:.1} km", satellite_geo.z());
-    println!("  Distance from Earth center: {:.1} km\n", satellite_geo.distance());
+    println!(
+        "  Distance from Earth center: {:.1} km\n",
+        satellite_geo.distance()
+    );
 
     // Transform to topocentric (Greenwich)
     let satellite_topo = satellite_geo.to_topocentric(greenwich, jd);
@@ -144,11 +147,7 @@ fn main() {
     println!("---------------------------------");
 
     // Same object viewed from different locations
-    let object_geo: Equatorial<Kilometer, Geocentric> = Equatorial::new(
-        10000.0,
-        0.0,
-        0.0,
-    );
+    let object_geo: Equatorial<Kilometer, Geocentric> = Equatorial::new(10000.0, 0.0, 0.0);
 
     println!("Object position (Geocentric):");
     println!("  Distance: {:.0} km\n", object_geo.distance());
@@ -181,19 +180,11 @@ fn main() {
     println!("- Distance to visible horizon");
     println!("- Time of sunrise/sunset\n");
 
-    let sea_level = ObserverSite::new(
-        Degrees::new(0.0),
-        Degrees::new(0.0),
-        0.0 * M,
-    );
+    let sea_level = ObserverSite::new(Degrees::new(0.0), Degrees::new(0.0), 0.0 * M);
     println!("Sea level observer:");
     println!("  Height: {:.0} m", sea_level.height);
 
-    let mountain_top = ObserverSite::new(
-        Degrees::new(0.0),
-        Degrees::new(0.0),
-        4000.0 * M,
-    );
+    let mountain_top = ObserverSite::new(Degrees::new(0.0), Degrees::new(0.0), 4000.0 * M);
     println!("Mountain top observer:");
     println!("  Height: {:.0} m", mountain_top.height);
 
@@ -224,7 +215,7 @@ fn main() {
 
     // Convert topocentric to horizontal would require additional transforms
     // (currently requires sidereal time calculation for full implementation)
-    
+
     println!("\n=== Example Complete ===");
     println!("\nKey Takeaways:");
     println!("- ObserverSite defines observer location (lon, lat, height)");

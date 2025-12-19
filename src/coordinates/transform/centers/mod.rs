@@ -49,7 +49,7 @@ pub trait TransformCenter<Coord> {
     /// # Arguments
     ///
     /// - `jd`: The Julian Date at which to perform the transformation
-    ///         (needed for time-dependent positions like Earth's location).
+    ///   (needed for time-dependent positions like Earth's location).
     fn to_center(&self, jd: crate::astro::JulianDate) -> Coord;
 }
 
@@ -69,10 +69,10 @@ where
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
+    use crate::bodies::solar_system::Earth;
     use crate::coordinates::cartesian;
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
-    use crate::bodies::solar_system::Earth;
     use qtty::AstronomicalUnit;
 
     const EPSILON: f64 = 1e-9;

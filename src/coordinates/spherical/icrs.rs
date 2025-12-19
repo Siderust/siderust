@@ -22,8 +22,8 @@
 //! println!("RA = {}, Dec = {}", coord.ra(), coord.dec());
 //! ```
 
-use super::Position;
 use super::direction;
+use super::Position;
 use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{centers::*, frames::ICRS};
 use qtty::*;

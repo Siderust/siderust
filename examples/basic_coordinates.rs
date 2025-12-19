@@ -6,11 +6,11 @@
 //! - Cartesian vs Spherical representations
 //! - Type safety and units
 
+use qtty::*;
 use siderust::coordinates::cartesian;
-use siderust::coordinates::spherical;
 use siderust::coordinates::centers::{self, ReferenceCenter};
 use siderust::coordinates::frames::{self, ReferenceFrame};
-use qtty::*;
+use siderust::coordinates::spherical;
 
 fn main() {
     println!("=== Siderust Basic Coordinates Example ===\n");
@@ -22,28 +22,27 @@ fn main() {
     println!("------------------------");
 
     // Create a heliocentric ecliptic position (1 AU along X-axis)
-    let earth_position = cartesian::position::Ecliptic::<AstronomicalUnit>::new(
-        1.0,
-        0.0,
-        0.0,
-    );
+    let earth_position = cartesian::position::Ecliptic::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
     println!("Earth position (Heliocentric Ecliptic):");
     println!("  X = {:.6} AU", earth_position.x());
     println!("  Y = {:.6} AU", earth_position.y());
     println!("  Z = {:.6} AU", earth_position.z());
-    println!("  Distance from Sun = {:.6} AU\n", earth_position.distance());
+    println!(
+        "  Distance from Sun = {:.6} AU\n",
+        earth_position.distance()
+    );
 
     // Create a geocentric equatorial position (Moon at ~384,400 km)
-    let moon_position = cartesian::position::Equatorial::<Kilometer>::new(
-        300_000.0,
-        200_000.0,
-        100_000.0,
-    );
+    let moon_position =
+        cartesian::position::Equatorial::<Kilometer>::new(300_000.0, 200_000.0, 100_000.0);
     println!("Moon position (Geocentric Equatorial):");
     println!("  X = {:.1} km", moon_position.x());
     println!("  Y = {:.1} km", moon_position.y());
     println!("  Z = {:.1} km", moon_position.z());
-    println!("  Distance from Earth = {:.1} km\n", moon_position.distance());
+    println!(
+        "  Distance from Earth = {:.1} km\n",
+        moon_position.distance()
+    );
 
     // =========================================================================
     // 2. Spherical Coordinates
@@ -53,8 +52,8 @@ fn main() {
 
     // Create a star direction (Polaris approximately)
     let polaris = spherical::direction::Equatorial::new(
-        Degrees::new(37.95),    // Right Ascension (converted to degrees)
-        Degrees::new(89.26),    // Declination
+        Degrees::new(37.95), // Right Ascension (converted to degrees)
+        Degrees::new(89.26), // Declination
     );
     println!("Polaris (Geocentric Equatorial Direction):");
     println!("  Right Ascension = {:.2}°", polaris.azimuth);
@@ -63,8 +62,8 @@ fn main() {
     // Create a position with distance (Betelgeuse at ~500 light-years)
     let betelgeuse_distance = 500.0 * 9.461e15 / 1.496e11; // Convert ly to AU
     let betelgeuse = spherical::position::ICRS::<AstronomicalUnit>::new(
-        Degrees::new(88.79),    // RA
-        Degrees::new(7.41),     // Dec
+        Degrees::new(88.79), // RA
+        Degrees::new(7.41),  // Dec
         betelgeuse_distance,
     );
     println!("Betelgeuse (Barycentric ICRS Position):");
@@ -81,8 +80,8 @@ fn main() {
     // Directions are unitless (implicit radius = 1) and frame-only (no center)
     // Note: Directions don't carry observer site - they're pure directions
     let zenith = spherical::direction::Horizontal::new_horizontal(
-        Degrees::new(90.0),     // Altitude (straight up)
-        Degrees::new(0.0),      // Azimuth (North - doesn't matter for zenith)
+        Degrees::new(90.0), // Altitude (straight up)
+        Degrees::new(0.0),  // Azimuth (North - doesn't matter for zenith)
     );
     println!("Zenith direction (Horizontal frame):");
     println!("  Azimuth = {:.1}°", zenith.az());
@@ -103,11 +102,7 @@ fn main() {
     println!("-----------------------------------");
 
     // Start with cartesian
-    let cart_pos = cartesian::position::Equatorial::<AstronomicalUnit>::new(
-        0.5,
-        0.5,
-        0.707,
-    );
+    let cart_pos = cartesian::position::Equatorial::<AstronomicalUnit>::new(0.5, 0.5, 0.707);
     println!("Cartesian position:");
     println!("  X = {:.3} AU", cart_pos.x());
     println!("  Y = {:.3} AU", cart_pos.y());
