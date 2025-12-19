@@ -89,7 +89,7 @@ where
 fn test_position_transformations() {
     use siderust::coordinates::transform::Transform;
 
-    let original = Mars::vsop87a(JulianDate::J2000).get_position().clone();
+    let original = *Mars::vsop87a(JulianDate::J2000).get_position();
 
     // Heliocentric Ecliptic -> Heliocentric Equatorial -> back
     let helio_eq: cartesian::Position<Heliocentric, Equatorial, _> =

@@ -65,7 +65,7 @@ fn horizontal_conversion_variants_cover_all_impls() {
         1.0,
     );
     let cart_pos = eq_pos.to_cartesian();
-    let topo_cart_pos = cart_pos.to_topocentric(site.clone(), jd);
+    let topo_cart_pos = cart_pos.to_topocentric(site, jd);
     let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> =
         topo_cart_pos.transform(jd);
     let horiz_pos = horiz_cart_pos.to_spherical();

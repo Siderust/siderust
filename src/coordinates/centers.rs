@@ -295,20 +295,15 @@ impl ReferenceCenter for Geocentric {
 /// When transforming to/from body-centric coordinates, the orbit must be converted
 /// to match the coordinate system being transformed. This enum indicates which
 /// standard center the orbit is relative to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OrbitReferenceCenter {
     /// Orbit is defined relative to the solar system barycenter.
     Barycentric,
     /// Orbit is defined relative to the Sun (most common for planets, asteroids, comets).
+    #[default]
     Heliocentric,
     /// Orbit is defined relative to Earth (for artificial satellites, the Moon).
     Geocentric,
-}
-
-impl Default for OrbitReferenceCenter {
-    fn default() -> Self {
-        Self::Heliocentric
-    }
 }
 
 /// Parameters for a body-centered coordinate system.

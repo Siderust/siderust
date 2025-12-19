@@ -49,7 +49,7 @@ pub trait TransformCenter<Coord> {
     /// # Arguments
     ///
     /// - `jd`: The Julian Date at which to perform the transformation
-    ///         (needed for time-dependent positions like Earth's location).
+    ///   (needed for time-dependent positions like Earth's location).
     fn to_center(&self, jd: crate::astro::JulianDate) -> Coord;
 }
 

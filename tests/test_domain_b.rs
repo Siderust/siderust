@@ -9,7 +9,7 @@
 use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::coordinates::cartesian::{line_of_sight, Position};
-use siderust::coordinates::centers::{Geocentric, Heliocentric, ObserverSite, Topocentric};
+use siderust::coordinates::centers::{Geocentric, Heliocentric, ObserverSite};
 use siderust::coordinates::frames::Equatorial;
 use siderust::coordinates::observation::{Apparent, Astrometric, ObserverState};
 use siderust::coordinates::spherical;
@@ -214,7 +214,7 @@ fn topocentric_parallax_is_real_translation() {
     // The distance should differ by approximately the observer's geocentric distance
     let geo_dist = moon_geo.distance().value();
     let topo_dist = moon_topo.distance().value();
-    let dist_diff = (geo_dist - topo_dist).abs();
+    let _dist_diff = (geo_dist - topo_dist).abs();
 
     // Observer is ~6371 km from Earth's center
     // Depending on GMST, the parallax shift could be 0 to ~6371 km

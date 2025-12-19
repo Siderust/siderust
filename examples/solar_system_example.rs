@@ -177,7 +177,7 @@ fn main() {
 
     println!("Mars position evolution:");
 
-    let dates = vec![
+    let dates = [
         ("J2000.0", j2000),
         ("6 months later", JulianDate::new(j2000.value() + 182.5)),
         ("1 year later", JulianDate::new(j2000.value() + 365.25)),

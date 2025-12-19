@@ -30,7 +30,7 @@
 //! );
 //! ```
 
-use crate::coordinates::frames::{self, MutableFrame};
+use crate::coordinates::frames::{self};
 use qtty::{Quantity, Unit};
 
 use nalgebra::Vector3;

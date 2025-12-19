@@ -405,7 +405,7 @@ mod tests {
         let _apparent_inner: &spherical::direction::Equatorial = apparent.direction();
 
         // The wrappers make the distinction explicit
-        assert_ne!(format!("{}", astrometric).contains("Astrometric"), false);
-        assert_ne!(format!("{}", apparent).contains("Apparent"), false);
+        assert!(format!("{}", astrometric).contains("Astrometric"));
+        assert!(format!("{}", apparent).contains("Apparent"));
     }
 }

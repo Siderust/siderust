@@ -115,7 +115,7 @@ impl<U: Unit> Transform<Vector<Topocentric, Horizontal, U>> for Vector<Topocentr
         let new_y = -r * alt.cos() * az.sin(); // negative for East-positive azimuth
         let new_z = r * alt.sin();
 
-        Vector::from_vec3(site.clone(), nalgebra::Vector3::new(new_x, new_y, new_z))
+        Vector::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
     }
 }
 
@@ -147,7 +147,7 @@ impl<U: Unit> Transform<Vector<Topocentric, Equatorial, U>> for Vector<Topocentr
         let new_y = r * dec.cos() * ra.sin();
         let new_z = r * dec.sin();
 
-        Vector::from_vec3(site.clone(), nalgebra::Vector3::new(new_x, new_y, new_z))
+        Vector::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
     }
 }
 

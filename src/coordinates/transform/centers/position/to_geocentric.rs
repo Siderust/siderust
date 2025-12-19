@@ -72,7 +72,7 @@ mod tests {
     use crate::astro::JulianDate;
     use crate::bodies::solar_system::Earth;
     use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
-    use crate::macros::{assert_cartesian_eq, assert_spherical_eq};
+    use crate::macros::assert_cartesian_eq;
     use qtty::*;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
