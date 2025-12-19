@@ -103,7 +103,6 @@ where
     F: frames::ReferenceFrame,
     U: LengthUnit,
 {
-
     /// Euclidean distance to another position **in the same centre & frame**.
     ///
     /// The result is expressed in the *same unit `U`* as the inputs.

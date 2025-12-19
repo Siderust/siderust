@@ -32,14 +32,12 @@
 //! assert_eq!(*horizontal.center_params(), greenwich);
 //! ```
 //!
-//! # Example (direction with site)
+//! # Example (direction)
 //! ```rust
-//! use siderust::coordinates::centers::ObserverSite;
 //! use siderust::coordinates::spherical::direction::Horizontal;
 //! use qtty::*;
 //!
-//! let site = ObserverSite::default();
-//! let horizontal = Horizontal::with_site(site, 90.0 * DEG, 30.0 * DEG);
+//! let horizontal = Horizontal::new(30.0 * DEG, 90.0 * DEG);
 //! println!("alt = {}, az = {}", horizontal.alt(), horizontal.az());
 //! ```
 
@@ -48,39 +46,35 @@ use crate::coordinates::{centers::*, frames::*};
 use qtty::*;
 
 // =============================================================================
-// Convenience constructors for centers with Params = ()
+// Direction constructors (frame-only)
 // =============================================================================
 
-impl<C: ReferenceCenter<Params = ()>> Direction<C, Horizontal> {
-    /// Creates a new horizontal spherical coordinate with constant values.
+impl direction::Direction<Horizontal> {
+    /// Constructs a new horizontal direction with normalized input angles.
+    ///
+    /// Altitude is normalized to [-90°, 90°], azimuth to [0°, 360°].
     ///
     /// # Arguments
     /// - `alt`: Altitude (α), in degrees.
     /// - `az`: Azimuth (θ), in degrees.
-    ///
-    /// # Returns
-    /// A new `Direction` in the horizontal frame.
-    pub const fn new_const(alt: Degrees, az: Degrees) -> Self {
-        Self::new_raw(alt, az, Quantity::<direction::DirectionUnit>::new(1.0))
+    pub fn new_horizontal(alt: Degrees, az: Degrees) -> Self {
+        Self::new(alt.wrap_quarter_fold(), az.normalize())
     }
 
-    /// Constructs a new horizontal spherical coordinate with normalized input angular.
-    ///
-    /// Altitude is normalized to the [-90°, 90°] range, and azimuth to the [0°, 360°] range.
-    ///
-    /// # Arguments
-    /// - `alt`: Altitude (α), in degrees.
-    /// - `az`: Azimuth (θ), in degrees.
-    ///
-    /// # Returns
-    /// A `Direction` in the horizontal frame.
-    pub fn new<T>(alt: T, az: T) -> Self
-    where
-        T: Into<Degrees>,
-    {
-        Self::new_const(alt.into().wrap_quarter_fold(), az.into().normalize())
+    /// Returns the Altitude in degrees.
+    pub fn alt(&self) -> Degrees {
+        self.polar
+    }
+
+    /// Returns the Azimuth in degrees.
+    pub fn az(&self) -> Degrees {
+        self.azimuth
     }
 }
+
+// =============================================================================
+// Position constructors for centers with Params = ()
+// =============================================================================
 
 impl<C: ReferenceCenter<Params = ()>, U: LengthUnit> Position<C, Horizontal, U> {
     /// Creates a new horizontal spherical coordinate with constant values.
@@ -123,41 +117,6 @@ impl<C: ReferenceCenter<Params = ()>, U: LengthUnit> Position<C, Horizontal, U> 
 // =============================================================================
 // Topocentric-specific constructors (with ObserverSite)
 // =============================================================================
-
-impl Direction<Topocentric, Horizontal> {
-    /// Creates a new topocentric horizontal direction with observer site.
-    ///
-    /// # Arguments
-    /// - `site`: The observer's geographic location.
-    /// - `alt`: Altitude, in degrees.
-    /// - `az`: Azimuth (from north, clockwise), in degrees.
-    ///
-    /// # Returns
-    /// A `Direction` in the horizontal frame with embedded observer site.
-    pub const fn with_site_const(site: ObserverSite, alt: Degrees, az: Degrees) -> Self {
-        Self::new_raw_with_params(
-            site,
-            alt,
-            az,
-            Quantity::<direction::DirectionUnit>::new(1.0),
-        )
-    }
-
-    /// Creates a new topocentric horizontal direction with observer site and normalized angles.
-    ///
-    /// Altitude is normalized to [-90°, 90°], azimuth to [0°, 360°].
-    ///
-    /// # Arguments
-    /// - `site`: The observer's geographic location.
-    /// - `alt`: Altitude, in degrees.
-    /// - `az`: Azimuth (from north, clockwise), in degrees.
-    pub fn with_site<T>(site: ObserverSite, alt: T, az: T) -> Self
-    where
-        T: Into<Degrees>,
-    {
-        Self::with_site_const(site, alt.into().wrap_quarter_fold(), az.into().normalize())
-    }
-}
 
 impl<U: LengthUnit> Position<Topocentric, Horizontal, U> {
     /// Creates a new topocentric horizontal position with observer site.

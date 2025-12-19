@@ -10,30 +10,36 @@
 //!   for converting a coordinate of one type into another, possibly using additional context such as
 //!   the Julian Date (for time-dependent transformations).
 //!
-//! - **Cartesian and Spherical Coordinates**: The system supports both [`Vector`] and
-//!   [`SphericalCoord`] types, parameterized by their reference center and frame. Transformations
-//!   can occur between these types, as well as between different centers and frames.
+//! - **Center vs Frame Transforms**:
+//!   - **Center transforms** (translations) apply only to **positions**. Changing a center
+//!     moves the origin from which positions are measured.
+//!   - **Frame transforms** (rotations) apply to positions, directions, and velocities.
 //!
-//! - **Reference Centers and Frames**: The transformation system is generic over both the center
-//!   (e.g., Heliocentric, Geocentric) and the frame (e.g., Ecliptic, Equatorial), allowing for
-//!   flexible and type-safe conversions.
+//! ## Mathematical Foundations
 //!
-//! ## Design and Implementation
+//! - **Positions** are affine points - they can undergo both center and frame transforms.
+//! - **Directions** are free vectors (unit vectors) - they can only undergo frame transforms.
+//! - **Velocities** are free vectors - they can only undergo frame transforms.
 //!
-//! - **Trait-based Extensibility**: By implementing the [`Transform`] trait for various combinations
-//!   of coordinate types, centers, and frames, the system allows for seamless chaining and
-//!   composition of transformations.
+//! Attempting to center-transform a direction or velocity is mathematically undefined and
+//! prevented at the type level.
 //!
-//! - **Blanket Implementations**: The module provides blanket implementations for identity
-//!   transformations (where the input and output types are the same), as well as for chaining
-//!   multiple transformations (e.g., changing both center and frame in sequence).
+//! ## Observer-Dependent Directions (Line of Sight)
 //!
-//! - **Conversion Chaining**: The [`From`] trait is implemented for converting between coordinate
-//!   types with different centers and frames by chaining the appropriate [`Transform`] operations.
+//! To compute the direction to a target as seen from an observer, use the
+//! [`line_of_sight`](crate::coordinates::cartesian::line_of_sight) function:
 //!
-//! - **Time Dependency**: Many transformations depend on the Julian Date (e.g., due to precession,
-//!   nutation, or planetary positions). The trait method always receives a `JulianDate` parameter to
-//!   support such cases, even if some transformations are time-independent.
+//! ```rust
+//! use siderust::coordinates::cartesian::{line_of_sight, Position};
+//! use siderust::coordinates::centers::Geocentric;
+//! use siderust::coordinates::frames::Equatorial;
+//! use qtty::*;
+//!
+//! let observer = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(0.0, 0.0, 0.0);
+//! let target = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 1.0, 1.0);
+//!
+//! let direction = line_of_sight(&observer, &target);
+//! ```
 //!
 //! ## Usage Example
 //!
@@ -45,32 +51,16 @@
 //!
 //! let cart_eq = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 2.0, 3.0);
 //! let jd = JulianDate::J2000;
-//! // Transform to Geocentric Ecliptic coordinates
+//! // Transform to Geocentric Ecliptic coordinates (frame transform)
 //! let cart_geo_ecl: Position<Geocentric, Ecliptic, AstronomicalUnit> = cart_eq.to_frame();
-//! // Transform to Heliocentric Ecliptic coordinates
+//! // Transform to Heliocentric Ecliptic coordinates (center transform)
 //! let cart_helio_ecl: Position<Heliocentric, Ecliptic, AstronomicalUnit> = cart_geo_ecl.transform(jd);
 //! ```
 //!
 //! ## Related Modules
 //!
-//! - [`centers`]: Transformations between reference centers (e.g., barycentric <-> heliocentric).
-//! - [`frames`]: Transformations between reference frames (e.g., ecliptic <-> equatorial).
-//! - [`to_cartesian`] and [`to_spherical`] — Conversions between Cartesian and Spherical forms.
-//!
-//! ## Testing
-//!
-//! Each transformation submodule includes comprehensive tests to ensure correctness and
-//! reversibility (where applicable), including edge cases and precision checks.
-//!
-//! ---
-//!
-//! [`Transform`]: trait.Transform.html
-//! [`Vector`]: ../struct.Vector.html
-//! [`SphericalCoord`]: ../struct.SphericalCoord.html
-//! [`centers`]: centers/index.html
-//! [`frames`]: frames/index.html
-//! [`to_cartesian`]: to_cartesian/index.html
-//! [`to_spherical`]: to_spherical/index.html
+//! - [`centers`]: Transformations between reference centers (positions only).
+//! - [`frames`]: Transformations between reference frames (all coordinate types).
 
 mod centers;
 mod frames;
@@ -87,11 +77,20 @@ use crate::coordinates::{
 };
 use qtty::*;
 
+/// Trait for transforming coordinates between different centers and/or frames.
+///
+/// This trait is primarily used for **position** transformations that may involve
+/// both center changes (translations) and frame changes (rotations).
 pub trait Transform<Coord> {
+    /// Transform this coordinate to a different center and/or frame.
+    ///
+    /// # Arguments
+    ///
+    /// - `jd`: The Julian Date at which to perform the transformation.
     fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
 }
 
-/// Blanket implementation to allow chaining two consecutive `From` operations.
+/// Blanket implementation for Position transformations (center + frame changes).
 ///
 /// This implementation allows converting a [`Vector`] in from one
 /// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two

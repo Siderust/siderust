@@ -295,7 +295,7 @@ where
     ///
     /// This adds back the body's position to recover the geocentric position.
     pub fn to_geocentric(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
-        let body_params = self.center_params().clone();
+        let body_params = *self.center_params();
 
         // Get the body's position in ecliptic coordinates at the given time
         let body_ecliptic_au = body_params.orbit.kepler_position(jd);

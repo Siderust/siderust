@@ -28,8 +28,8 @@
 //! ```
 //!
 //! ## Type Aliases
-//! - [`Position<C, F>`]: Spherical position (with distance).
-//! - [`Direction<C, F>`]: Spherical direction (distance is typically `None`).
+//! - [`Position<C, F>`]: Spherical position (with distance and center).
+//! - [`Direction<F>`]: Spherical direction (frame-only, no center or distance).
 //!
 //! ## Methods
 //! - [`new(polar, azimuth, distance)`]: Construct a new coordinate.
@@ -124,16 +124,14 @@ where
         Radians::new(angle_rad).to::<Degree>()
     }
 
-    /// Returns a **direction** (unitless unitary vector) corresponding to this position
+    /// Returns a **direction** (unitless unit vector) corresponding to this position
     /// (i.e. same angular coordinates, radius = 1).
+    ///
+    /// Note: Directions are frame-only types (no center). This extracts the
+    /// normalized direction regardless of the position's center.
     #[must_use]
-    pub fn direction(&self) -> super::Direction<C, F> {
-        super::Direction::new_raw_with_params(
-            self.center_params.clone(),
-            self.polar,
-            self.azimuth,
-            Quantity::<super::direction::DirectionUnit>::new(1.0),
-        )
+    pub fn direction(&self) -> super::direction::Direction<F> {
+        super::direction::Direction::new(self.polar, self.azimuth)
     }
 }
 

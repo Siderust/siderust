@@ -9,7 +9,7 @@ use crate::astro::JulianDate;
 use crate::coordinates::cartesian::Vector;
 use crate::coordinates::centers::{ObserverSite, Topocentric};
 use crate::coordinates::frames::{Equatorial, Horizontal};
-use qtty::{Deg, Degrees, Quantity, Radians, Radian, Unit};
+use qtty::{Deg, Degrees, Quantity, Radian, Radians, Unit};
 
 /// Performs the equatorial to horizontal coordinate transformation.
 ///
@@ -39,7 +39,10 @@ fn equatorial_to_horizontal_angles(
     let az_val = (-dec_rad.cos() * ha.sin())
         .atan2(dec_rad.sin() * lat.cos() - dec_rad.cos() * ha.cos() * lat.sin());
 
-    (Quantity::<Radian>::new(alt_val), Quantity::<Radian>::new(az_val))
+    (
+        Quantity::<Radian>::new(alt_val),
+        Quantity::<Radian>::new(az_val),
+    )
 }
 
 /// Performs the horizontal to equatorial coordinate transformation.
@@ -74,7 +77,10 @@ fn horizontal_to_equatorial_angles(
     let lst: Radians = calculate_lst(gst, site.lon).to::<Radian>();
     let ra_val = (lst.value() - ha_val).rem_euclid(2.0 * std::f64::consts::PI);
 
-    (Quantity::<Radian>::new(ra_val), Quantity::<Radian>::new(dec_val))
+    (
+        Quantity::<Radian>::new(ra_val),
+        Quantity::<Radian>::new(dec_val),
+    )
 }
 
 // =============================================================================
@@ -87,9 +93,7 @@ use crate::coordinates::transform::Transform;
 ///
 /// This transformation requires the Julian Date to compute the local sidereal time.
 /// The observer's site information is taken from the coordinate's center params.
-impl<U: Unit> Transform<Vector<Topocentric, Horizontal, U>>
-    for Vector<Topocentric, Equatorial, U>
-{
+impl<U: Unit> Transform<Vector<Topocentric, Horizontal, U>> for Vector<Topocentric, Equatorial, U> {
     fn transform(&self, jd: JulianDate) -> Vector<Topocentric, Horizontal, U> {
         let site = self.center_params();
         let r = self.distance();
@@ -102,8 +106,7 @@ impl<U: Unit> Transform<Vector<Topocentric, Horizontal, U>>
 
         let ra: Radians = Quantity::<Radian>::new(self.y().value().atan2(self.x().value()));
 
-        let (alt, az) =
-            equatorial_to_horizontal_angles(ra.to::<Deg>(), dec.to::<Deg>(), site, jd);
+        let (alt, az) = equatorial_to_horizontal_angles(ra.to::<Deg>(), dec.to::<Deg>(), site, jd);
 
         // Convert back to Cartesian in horizontal frame
         // In horizontal: x = North, y = West, z = Zenith
@@ -112,7 +115,7 @@ impl<U: Unit> Transform<Vector<Topocentric, Horizontal, U>>
         let new_y = -r * alt.cos() * az.sin(); // negative for East-positive azimuth
         let new_z = r * alt.sin();
 
-        Vector::from_vec3(site.clone(), nalgebra::Vector3::new(new_x, new_y, new_z))
+        Vector::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
     }
 }
 
@@ -121,9 +124,7 @@ impl<U: Unit> Transform<Vector<Topocentric, Horizontal, U>>
 // =============================================================================
 
 /// Transform from Horizontal to Equatorial frame for Topocentric coordinates.
-impl<U: Unit> Transform<Vector<Topocentric, Equatorial, U>>
-    for Vector<Topocentric, Horizontal, U>
-{
+impl<U: Unit> Transform<Vector<Topocentric, Equatorial, U>> for Vector<Topocentric, Horizontal, U> {
     fn transform(&self, jd: JulianDate) -> Vector<Topocentric, Equatorial, U> {
         let site = self.center_params();
 
@@ -146,7 +147,7 @@ impl<U: Unit> Transform<Vector<Topocentric, Equatorial, U>>
         let new_y = r * dec.cos() * ra.sin();
         let new_z = r * dec.sin();
 
-        Vector::from_vec3(site.clone(), nalgebra::Vector3::new(new_x, new_y, new_z))
+        Vector::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
     }
 }
 
