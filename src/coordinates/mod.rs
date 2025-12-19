@@ -16,6 +16,20 @@
 //! - **Type Safety**: Operations between coordinates are only allowed when their type parameters match, preventing accidental mixing of frames, centers or magnitude.
 //! - **Conversions**: Seamless conversion between spherical and cartesian forms, and between different frames and centers, is provided via `From`/`Into` and the `Transform` trait.
 //!
+//! ## Architectural Separation
+//!
+//! The coordinate system maintains a clean separation of concerns:
+//!
+//! - **Center transforms** (translations): Apply only to positions. Moving from geocentric to
+//!   heliocentric is a pure vector subtraction. No observation effects.
+//!
+//! - **Frame transforms** (rotations): Apply to positions, directions, and velocities.
+//!   Changing from ecliptic to equatorial is a pure rotation matrix.
+//!
+//! - **Observation transforms** (in [`observation`] module): Observer-dependent effects like
+//!   aberration. These require explicit `ObserverState` and produce directions with explicit
+//!   observational state (`Astrometric` or `Apparent`).
+//!
 //! ## Supported Reference Frames and Centers
 //! - **Frames**: `Equatorial`, `Ecliptic`, `Horizontal`, `ICRS`, `ECEF`
 //! - **Centers**: `Heliocentric`, `Geocentric`, `Barycentric`, `Topocentric`, `Bodycentric`
@@ -47,9 +61,11 @@
 //! - **spherical**: Spherical coordinate types and operations.
 //! - **frames**: Reference frame marker types (e.g., `Ecliptic`, `Equatorial`, `ICRS`).
 //! - **centers**: Reference center marker types (e.g., `Heliocentric`, `Geocentric`).
+//! - **observation**: Observational state types (`Astrometric`, `Apparent`) and aberration.
 
 pub mod cartesian;
 pub mod centers;
 pub mod frames;
+pub mod observation;
 pub mod spherical;
 pub mod transform;

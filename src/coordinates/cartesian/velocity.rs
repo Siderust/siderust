@@ -31,7 +31,6 @@
 //! ```
 
 use crate::coordinates::frames::{self, MutableFrame};
-use crate::coordinates::transform::TransformFrame;
 use qtty::{Quantity, Unit};
 
 use nalgebra::Vector3;

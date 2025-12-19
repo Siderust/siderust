@@ -69,7 +69,9 @@ fn horizontal_conversion_variants_cover_all_impls() {
     let topo_cart_pos = cart_pos.to_topocentric(site.clone(), jd);
     let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> = topo_cart_pos.transform(jd);
     let horiz_pos = horiz_cart_pos.to_spherical();
-    assert!((horiz_pos.distance - eq_pos.distance).abs().value() < 1e-9);
+    // Distance changes slightly due to real topocentric parallax (observer is ~6000 km from Earth center)
+    // For an object at 1 AU, this is a very small fractional change (Earth radius / 1 AU ≈ 4e-5)
+    assert!((horiz_pos.distance - eq_pos.distance).abs().value() < 1e-4);
     assert!(horiz_cart_pos.z().value().is_finite());
     
     // Note: Directions no longer support center transforms (to_topocentric).
