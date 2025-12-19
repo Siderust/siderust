@@ -113,8 +113,8 @@ mod tests {
 
         // Sirius catalog position (astrometric)
         let sirius_barycentric_spherical = spherical::position::ICRS::<Au>::new(
-            Degrees::new(101.287_155_33),  // RA
-            Degrees::new(-16.716_115_86),  // Dec
+            Degrees::new(101.287_155_33), // RA
+            Degrees::new(-16.716_115_86), // Dec
             sirius_distance_au,
         );
 
@@ -122,10 +122,8 @@ mod tests {
 
         let sirius_barycentric_cartesian =
             cartesian::position::ICRS::<Au>::from(&sirius_barycentric_spherical);
-        let sirius_geocentric_cartesian: cartesian::position::GCRS<Au> = Transform::transform(
-            &sirius_barycentric_cartesian,
-            jd,
-        );
+        let sirius_geocentric_cartesian: cartesian::position::GCRS<Au> =
+            Transform::transform(&sirius_barycentric_cartesian, jd);
         let sirius_geocentric_spherical =
             spherical::position::GCRS::<Au>::from(&sirius_geocentric_cartesian);
 
@@ -139,13 +137,14 @@ mod tests {
         // The shift should be very small for distant stars
         let delta_ra = (sirius_geocentric_spherical.azimuth.value() - 101.287_155_33).abs();
         let delta_dec = (sirius_geocentric_spherical.polar.value() - (-16.716_115_86)).abs();
-        
+
         // For stars at ~500,000 AU, Earth's ~1 AU offset causes ~1/500000 radian ≈ 0.4 arcsec
         // change in direction, or about 0.0001 degrees
         assert!(
             delta_ra < 0.001 && delta_dec < 0.001,
             "Astrometric position should change only slightly due to parallax: dRA={}, dDec={}",
-            delta_ra, delta_dec
+            delta_ra,
+            delta_dec
         );
     }
 }

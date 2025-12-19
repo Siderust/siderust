@@ -83,13 +83,13 @@ impl ObserverState {
     /// ```
     pub fn geocentric(jd: JulianDate) -> Self {
         use crate::coordinates::transform::TransformFrame;
-        
+
         // Get Earth's heliocentric velocity from VSOP87A
         let vel_ecl = Earth::vsop87a_vel(jd);
-        
+
         // Transform to equatorial frame
         let velocity: Velocity<Equatorial, AuPerDay> = vel_ecl.to_frame();
-        
+
         Self { velocity, jd }
     }
 
@@ -109,18 +109,18 @@ impl ObserverState {
     /// Diurnal aberration (~0.3") is not yet implemented.
     pub fn topocentric(site: &ObserverSite, jd: JulianDate) -> Self {
         use crate::coordinates::transform::TransformFrame;
-        
+
         // Get Earth's heliocentric velocity from VSOP87A
         let vel_ecl = Earth::vsop87a_vel(jd);
-        
+
         // Transform to equatorial frame
         let velocity: Velocity<Equatorial, AuPerDay> = vel_ecl.to_frame();
-        
+
         // TODO: Add diurnal velocity from Earth rotation
         // For a complete implementation, we would add the observer's
         // velocity due to Earth's rotation (requires GMST and site position)
         let _ = site; // Suppress unused warning for now
-        
+
         Self { velocity, jd }
     }
 
@@ -132,10 +132,7 @@ impl ObserverState {
     ///
     /// * `velocity` - Observer velocity in equatorial coordinates
     /// * `jd` - The Julian Date of observation
-    pub fn from_velocity(
-        velocity: Velocity<Equatorial, AuPerDay>,
-        jd: JulianDate,
-    ) -> Self {
+    pub fn from_velocity(velocity: Velocity<Equatorial, AuPerDay>, jd: JulianDate) -> Self {
         Self { velocity, jd }
     }
 
@@ -158,12 +155,13 @@ mod tests {
     fn test_geocentric_observer_state() {
         let jd = JulianDate::J2000;
         let obs = ObserverState::geocentric(jd);
-        
+
         // Earth's orbital velocity is approximately 30 km/s
         // In AU/day: ~30 km/s * 86400 s/day / 149597870.7 km/AU ≈ 0.017 AU/day
         let vel = obs.velocity();
-        let speed = (vel.x().value().powi(2) + vel.y().value().powi(2) + vel.z().value().powi(2)).sqrt();
-        
+        let speed =
+            (vel.x().value().powi(2) + vel.y().value().powi(2) + vel.z().value().powi(2)).sqrt();
+
         // Speed should be around 0.017 AU/day (Earth's orbital velocity)
         assert!(speed > 0.015, "Earth orbital speed too low: {}", speed);
         assert!(speed < 0.020, "Earth orbital speed too high: {}", speed);

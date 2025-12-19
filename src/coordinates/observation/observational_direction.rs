@@ -112,24 +112,24 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
     {
         // Convert to cartesian for vector operations
         let cart_dir = self.direction.to_cartesian();
-        
+
         // Transform to equatorial frame for aberration
         let cart_eq: cartesian::Direction<Equatorial> = cart_dir.to_frame();
-        
+
         // Get observer velocity
         let vel = obs.velocity();
-        
+
         // Apply aberration: u' = u + v/c (then renormalize)
         let x = cart_eq.x().value() + vel.x().value() / AU_PER_DAY_C;
         let y = cart_eq.y().value() + vel.y().value() / AU_PER_DAY_C;
         let z = cart_eq.z().value() + vel.z().value() / AU_PER_DAY_C;
-        
+
         let apparent_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
-        
+
         // Transform back to original frame
         let apparent_cart: cartesian::Direction<F> = apparent_eq.to_frame();
         let apparent_sph = apparent_cart.to_spherical();
-        
+
         Apparent::new(apparent_sph)
     }
 }
@@ -145,20 +145,20 @@ impl<F: MutableFrame> Astrometric<cartesian::Direction<F>> {
     {
         // Transform to equatorial frame for aberration
         let cart_eq: cartesian::Direction<Equatorial> = self.direction.to_frame();
-        
+
         // Get observer velocity
         let vel = obs.velocity();
-        
+
         // Apply aberration: u' = u + v/c (then renormalize)
         let x = cart_eq.x().value() + vel.x().value() / AU_PER_DAY_C;
         let y = cart_eq.y().value() + vel.y().value() / AU_PER_DAY_C;
         let z = cart_eq.z().value() + vel.z().value() / AU_PER_DAY_C;
-        
+
         let apparent_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
-        
+
         // Transform back to original frame
         let apparent_cart: cartesian::Direction<F> = apparent_eq.to_frame();
-        
+
         Apparent::new(apparent_cart)
     }
 }
@@ -223,24 +223,24 @@ impl<F: MutableFrame> Apparent<spherical::Direction<F>> {
     {
         // Convert to cartesian for vector operations
         let cart_dir = self.direction.to_cartesian();
-        
+
         // Transform to equatorial frame for aberration
         let cart_eq: cartesian::Direction<Equatorial> = cart_dir.to_frame();
-        
+
         // Get observer velocity
         let vel = obs.velocity();
-        
+
         // Remove aberration: u = u' - v/c (then renormalize)
         let x = cart_eq.x().value() - vel.x().value() / AU_PER_DAY_C;
         let y = cart_eq.y().value() - vel.y().value() / AU_PER_DAY_C;
         let z = cart_eq.z().value() - vel.z().value() / AU_PER_DAY_C;
-        
+
         let astrometric_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
-        
+
         // Transform back to original frame
         let astrometric_cart: cartesian::Direction<F> = astrometric_eq.to_frame();
         let astrometric_sph = astrometric_cart.to_spherical();
-        
+
         Astrometric::new(astrometric_sph)
     }
 }
@@ -256,20 +256,20 @@ impl<F: MutableFrame> Apparent<cartesian::Direction<F>> {
     {
         // Transform to equatorial frame for aberration
         let cart_eq: cartesian::Direction<Equatorial> = self.direction.to_frame();
-        
+
         // Get observer velocity
         let vel = obs.velocity();
-        
+
         // Remove aberration: u = u' - v/c (then renormalize)
         let x = cart_eq.x().value() - vel.x().value() / AU_PER_DAY_C;
         let y = cart_eq.y().value() - vel.y().value() / AU_PER_DAY_C;
         let z = cart_eq.z().value() - vel.z().value() / AU_PER_DAY_C;
-        
+
         let astrometric_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
-        
+
         // Transform back to original frame
         let astrometric_cart: cartesian::Direction<F> = astrometric_eq.to_frame();
-        
+
         Astrometric::new(astrometric_cart)
     }
 }
@@ -304,33 +304,33 @@ mod tests {
     fn test_astrometric_to_apparent_introduces_shift() {
         let jd = JulianDate::J2000;
         let obs = ObserverState::geocentric(jd);
-        
+
         // Create an astrometric direction
-        let astrometric = Astrometric::new(
-            spherical::direction::Equatorial::new(0.0 * DEG, 0.0 * DEG)
-        );
-        
+        let astrometric =
+            Astrometric::new(spherical::direction::Equatorial::new(0.0 * DEG, 0.0 * DEG));
+
         // Convert to apparent
         let apparent: Apparent<spherical::direction::Equatorial> = astrometric.to_apparent(&obs);
-        
+
         // The shift should be on the order of 20 arcseconds (aberration constant)
         let original = astrometric.direction();
         let shifted = apparent.direction();
-        
+
         let delta_ra = (shifted.azimuth.value() - original.azimuth.value()).abs();
         let delta_dec = (shifted.polar.value() - original.polar.value()).abs();
-        
+
         // At least one should have changed
         assert!(
             delta_ra > 0.0 || delta_dec > 0.0,
             "Expected aberration to introduce a shift"
         );
-        
+
         // Shift should be small (less than 1 degree, typically ~20 arcsec = 0.006 deg)
         assert!(
             delta_ra < 0.1 && delta_dec < 0.1,
             "Aberration shift too large: dRA={}, dDec={}",
-            delta_ra, delta_dec
+            delta_ra,
+            delta_dec
         );
     }
 
@@ -338,23 +338,25 @@ mod tests {
     fn test_roundtrip_preserves_direction() {
         let jd = JulianDate::J2000;
         let obs = ObserverState::geocentric(jd);
-        
+
         // Create an astrometric direction
-        let original = Astrometric::new(
-            spherical::direction::Equatorial::new(45.0 * DEG, 30.0 * DEG)
-        );
-        
+        let original = Astrometric::new(spherical::direction::Equatorial::new(
+            45.0 * DEG,
+            30.0 * DEG,
+        ));
+
         // Convert to apparent and back
         let apparent = original.to_apparent(&obs);
-        let recovered: Astrometric<spherical::direction::Equatorial> = apparent.to_astrometric(&obs);
-        
+        let recovered: Astrometric<spherical::direction::Equatorial> =
+            apparent.to_astrometric(&obs);
+
         // Should be very close to original
         let orig_dir = original.direction();
         let rec_dir = recovered.direction();
-        
+
         let delta_ra = (rec_dir.azimuth.value() - orig_dir.azimuth.value()).abs();
         let delta_dec = (rec_dir.polar.value() - orig_dir.polar.value()).abs();
-        
+
         // Tolerance of 1e-6 degrees ≈ 0.003 arcseconds (numerical precision limit)
         assert!(
             delta_ra < 1e-6,
@@ -372,14 +374,13 @@ mod tests {
     fn test_apparent_at_pole() {
         let jd = JulianDate::J2000;
         let obs = ObserverState::geocentric(jd);
-        
+
         // At the north pole
-        let astrometric = Astrometric::new(
-            spherical::direction::Equatorial::new(0.0 * DEG, 90.0 * DEG)
-        );
-        
+        let astrometric =
+            Astrometric::new(spherical::direction::Equatorial::new(0.0 * DEG, 90.0 * DEG));
+
         let apparent = astrometric.to_apparent(&obs);
-        
+
         // Declination should decrease slightly
         assert!(
             apparent.direction().polar.value() < 90.0,
@@ -392,24 +393,19 @@ mod tests {
         // This test verifies that you can't accidentally mix astrometric and apparent
         let jd = JulianDate::J2000;
         let obs = ObserverState::geocentric(jd);
-        
-        let astrometric = Astrometric::new(
-            spherical::direction::Equatorial::new(10.0 * DEG, 20.0 * DEG)
-        );
+
+        let astrometric = Astrometric::new(spherical::direction::Equatorial::new(
+            10.0 * DEG,
+            20.0 * DEG,
+        ));
         let apparent = astrometric.to_apparent(&obs);
-        
+
         // These are different types - can't be confused
         let _astrometric_inner: &spherical::direction::Equatorial = astrometric.direction();
         let _apparent_inner: &spherical::direction::Equatorial = apparent.direction();
-        
+
         // The wrappers make the distinction explicit
-        assert_ne!(
-            format!("{}", astrometric).contains("Astrometric"),
-            false
-        );
-        assert_ne!(
-            format!("{}", apparent).contains("Apparent"),
-            false
-        );
+        assert_ne!(format!("{}", astrometric).contains("Astrometric"), false);
+        assert_ne!(format!("{}", apparent).contains("Apparent"), false);
     }
 }

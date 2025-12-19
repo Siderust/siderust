@@ -13,13 +13,29 @@ fn ecef_normalization_and_altitude() {
     let dir = direction::Geographic::new_geographic(95.0 * DEG, 190.0 * DEG);
     // 190° lat after wrap_quarter_fold: 90 - |280 - 180| = 90 - 100 = -10°
     // 95° lon after wrap_signed_lo stays as 95° (within [-180, 180])
-    assert!((dir.lat().value() - (-10.0)).abs() < EPS, "lat mismatch: {}", dir.lat().value());
-    assert!((dir.lon().value() - 95.0).abs() < EPS, "lon mismatch: {}", dir.lon().value());
+    assert!(
+        (dir.lat().value() - (-10.0)).abs() < EPS,
+        "lat mismatch: {}",
+        dir.lat().value()
+    );
+    assert!(
+        (dir.lon().value() - 95.0).abs() < EPS,
+        "lon mismatch: {}",
+        dir.lon().value()
+    );
 
     // Position::new(lon, lat, alt) uses the same normalization
     let pos = position::Geographic::new(95.0 * DEG, 190.0 * DEG, 10.0 * KM);
-    assert!((pos.lat().value() - (-10.0)).abs() < EPS, "pos lat mismatch: {}", pos.lat().value());
-    assert!((pos.lon().value() - 95.0).abs() < EPS, "pos lon mismatch: {}", pos.lon().value());
+    assert!(
+        (pos.lat().value() - (-10.0)).abs() < EPS,
+        "pos lat mismatch: {}",
+        pos.lat().value()
+    );
+    assert!(
+        (pos.lon().value() - 95.0).abs() < EPS,
+        "pos lon mismatch: {}",
+        pos.lon().value()
+    );
     assert!((pos.distance - (EARTH.radius + 10.0 * KM)).abs() < EPS * KM);
 }
 
@@ -28,13 +44,29 @@ fn ecliptic_normalization() {
     // Direction::new_ecliptic(lon, lat) normalizes both
     let dir = direction::Ecliptic::new_ecliptic(120.0 * DEG, -45.0 * DEG);
     // After normalization: lat = -45° (in [-90, 90]), lon = 120° (in [0, 360))
-    assert!((dir.lon().value() - 120.0).abs() < EPS, "lon mismatch: {}", dir.lon().value());
-    assert!((dir.lat().value() - (-45.0)).abs() < EPS, "lat mismatch: {}", dir.lat().value());
+    assert!(
+        (dir.lon().value() - 120.0).abs() < EPS,
+        "lon mismatch: {}",
+        dir.lon().value()
+    );
+    assert!(
+        (dir.lat().value() - (-45.0)).abs() < EPS,
+        "lat mismatch: {}",
+        dir.lat().value()
+    );
 
     // Position::new(lon, lat, distance) also normalizes
     let pos = position::Ecliptic::<AstronomicalUnit>::new(120.0 * DEG, -45.0 * DEG, 2.0 * AU);
-    assert!((pos.lon().value() - 120.0).abs() < EPS, "pos lon mismatch: {}", pos.lon().value());
-    assert!((pos.lat().value() - (-45.0)).abs() < EPS, "pos lat mismatch: {}", pos.lat().value());
+    assert!(
+        (pos.lon().value() - 120.0).abs() < EPS,
+        "pos lon mismatch: {}",
+        pos.lon().value()
+    );
+    assert!(
+        (pos.lat().value() - (-45.0)).abs() < EPS,
+        "pos lat mismatch: {}",
+        pos.lat().value()
+    );
     assert!((pos.distance - 2.0 * AU).abs() < EPS * AU);
 }
 

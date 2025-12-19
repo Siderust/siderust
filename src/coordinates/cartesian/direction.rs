@@ -29,8 +29,8 @@
 //! let dir = Direction::<Ecliptic>::normalize(1.0, 2.0, 2.0);
 //! ```
 
-use crate::coordinates::spherical::direction::DirectionUnit;
 use crate::coordinates::frames;
+use crate::coordinates::spherical::direction::DirectionUnit;
 use qtty::{LengthUnit, Quantity};
 
 use nalgebra::Vector3;
@@ -134,22 +134,22 @@ impl<F: frames::ReferenceFrame> Direction<F> {
     /// Converts this cartesian direction to a spherical direction.
     pub fn to_spherical(&self) -> crate::coordinates::spherical::Direction<F> {
         use qtty::Degrees;
-        
+
         let x = self.x().value();
         let y = self.y().value();
         let z = self.z().value();
         let r = (x * x + y * y + z * z).sqrt();
-        
+
         if r == 0.0 {
             return crate::coordinates::spherical::Direction::<F>::new_raw(
                 Degrees::new(0.0),
                 Degrees::new(0.0),
             );
         }
-        
+
         let polar = Degrees::new((z / r).asin().to_degrees());
         let azimuth = Degrees::new(y.atan2(x).to_degrees());
-        
+
         crate::coordinates::spherical::Direction::<F>::new_raw(polar, azimuth)
     }
 

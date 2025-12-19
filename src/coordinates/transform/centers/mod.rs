@@ -69,10 +69,10 @@ where
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
+    use crate::bodies::solar_system::Earth;
     use crate::coordinates::cartesian;
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
-    use crate::bodies::solar_system::Earth;
     use qtty::AstronomicalUnit;
 
     const EPSILON: f64 = 1e-9;

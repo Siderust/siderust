@@ -2,7 +2,10 @@ use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::{
-    cartesian, centers::*, frames::*, spherical,
+    cartesian,
+    centers::*,
+    frames::*,
+    spherical,
     transform::{Transform, TransformFrame},
 };
 use siderust::targets::Target;
@@ -62,16 +65,17 @@ fn cartesian_direction_frame_transform() {
     // Directions are now frame-only (no center parameter).
     // They can only undergo frame transformations, not center transformations.
     let dir = cartesian::Direction::<Ecliptic>::normalize(1.0, 0.5, 0.2);
-    
+
     // Frame transform from Ecliptic to Equatorial (rotation only)
     let dir_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&dir);
-    
+
     // Verify it's still a unit vector
-    let norm = (dir_equatorial.x().value().powi(2) 
-              + dir_equatorial.y().value().powi(2) 
-              + dir_equatorial.z().value().powi(2)).sqrt();
+    let norm = (dir_equatorial.x().value().powi(2)
+        + dir_equatorial.y().value().powi(2)
+        + dir_equatorial.z().value().powi(2))
+    .sqrt();
     assert!((norm - 1.0).abs() < 1e-12);
-    
+
     // X component is unchanged in ecliptic/equatorial rotation
     assert!((dir_equatorial.x().value() - dir.x().value()).abs() < 1e-12);
 }
@@ -80,14 +84,15 @@ fn cartesian_direction_frame_transform() {
 fn spherical_direction_frame_transform() {
     // Directions are now frame-only (no center parameter).
     let sph_dir = spherical::Direction::<Ecliptic>::new(Degrees::new(10.0), Degrees::new(20.0));
-    
+
     // Convert to cartesian, transform frame, then back
     let cart_dir = sph_dir.to_cartesian();
     let cart_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&cart_dir);
-    
+
     // Verify the Cartesian direction is still unit vector
-    let norm = (cart_equatorial.x().value().powi(2) 
-              + cart_equatorial.y().value().powi(2) 
-              + cart_equatorial.z().value().powi(2)).sqrt();
+    let norm = (cart_equatorial.x().value().powi(2)
+        + cart_equatorial.y().value().powi(2)
+        + cart_equatorial.z().value().powi(2))
+    .sqrt();
     assert!((norm - 1.0).abs() < 1e-12);
 }

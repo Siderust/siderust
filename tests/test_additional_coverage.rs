@@ -5,10 +5,9 @@ use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};
 use siderust::coordinates::{
-    cartesian, 
-    centers::ObserverSite, 
-    frames, 
-    spherical,
+    cartesian,
+    centers::ObserverSite,
+    frames, spherical,
     transform::{Transform, TransformFrame},
 };
 
@@ -67,13 +66,14 @@ fn horizontal_conversion_variants_cover_all_impls() {
     );
     let cart_pos = eq_pos.to_cartesian();
     let topo_cart_pos = cart_pos.to_topocentric(site.clone(), jd);
-    let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> = topo_cart_pos.transform(jd);
+    let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> =
+        topo_cart_pos.transform(jd);
     let horiz_pos = horiz_cart_pos.to_spherical();
     // Distance changes slightly due to real topocentric parallax (observer is ~6000 km from Earth center)
     // For an object at 1 AU, this is a very small fractional change (Earth radius / 1 AU ≈ 4e-5)
     assert!((horiz_pos.distance - eq_pos.distance).abs().value() < 1e-4);
     assert!(horiz_cart_pos.z().value().is_finite());
-    
+
     // Note: Directions no longer support center transforms (to_topocentric).
     // Directions are free vectors - they can only undergo frame transformations.
 }
@@ -81,10 +81,11 @@ fn horizontal_conversion_variants_cover_all_impls() {
 #[test]
 fn frame_transform_traits_exercised() {
     use siderust::coordinates::centers::Heliocentric;
-    
+
     let vec_ecl =
         cartesian::position::Ecliptic::<AstronomicalUnit>::new(0.1 * AU, 0.2 * AU, 0.3 * AU);
-    let vec_same: cartesian::position::Ecliptic<AstronomicalUnit> = TransformFrame::to_frame(&vec_ecl);
+    let vec_same: cartesian::position::Ecliptic<AstronomicalUnit> =
+        TransformFrame::to_frame(&vec_ecl);
     assert_eq!(vec_same.x(), vec_ecl.x());
 
     // Spherical direction is now frame-only (no center parameter)
@@ -93,9 +94,10 @@ fn frame_transform_traits_exercised() {
     let cart_ecl = sph_ecl.to_cartesian();
     let cart_equatorial: cartesian::direction::Equatorial = TransformFrame::to_frame(&cart_ecl);
     assert!(cart_equatorial.x().value().is_finite());
-    
+
     // Test frame transform on position (must preserve center type)
-    let vec_equatorial: cartesian::Position<Heliocentric, frames::Equatorial, AstronomicalUnit> = TransformFrame::to_frame(&vec_ecl);
+    let vec_equatorial: cartesian::Position<Heliocentric, frames::Equatorial, AstronomicalUnit> =
+        TransformFrame::to_frame(&vec_ecl);
     assert!(vec_equatorial.x().value().is_finite());
 }
 

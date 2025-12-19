@@ -94,12 +94,8 @@ where
 
     /// Calculates the magnitude (speed) of this velocity vector.
     pub fn magnitude(&self) -> Quantity<U> {
-        let mag = Vector3::<f64>::new(
-            self.x().value(),
-            self.y().value(),
-            self.z().value(),
-        )
-        .magnitude();
+        let mag =
+            Vector3::<f64>::new(self.x().value(), self.y().value(), self.z().value()).magnitude();
         Quantity::new(mag)
     }
 }

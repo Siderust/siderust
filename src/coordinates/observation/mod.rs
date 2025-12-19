@@ -65,11 +65,13 @@
 //!
 //! Each step is explicit. The type system tracks observational state.
 
-mod observer_state;
 mod observational_direction;
+mod observer_state;
 
-pub use observer_state::ObserverState;
 pub use observational_direction::{Apparent, Astrometric};
+pub use observer_state::ObserverState;
 
 // Re-export aberration utilities for convenience
-pub use crate::astro::aberration::{apply_aberration_to_direction, remove_aberration_from_direction};
+pub use crate::astro::aberration::{
+    apply_aberration_to_direction, remove_aberration_from_direction,
+};

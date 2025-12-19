@@ -170,12 +170,10 @@ impl ObserverSite {
     ///
     /// let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
     /// ```
-    pub fn from_geographic(
-        geo: &crate::coordinates::spherical::position::Geographic,
-    ) -> Self {
+    pub fn from_geographic(geo: &crate::coordinates::spherical::position::Geographic) -> Self {
         Self {
-            lon: geo.azimuth,   // longitude is stored in the azimuth field
-            lat: geo.polar,     // latitude is stored in the polar field
+            lon: geo.azimuth, // longitude is stored in the azimuth field
+            lat: geo.polar,   // latitude is stored in the polar field
             height: geo.distance.to::<Meter>(),
         }
     }
@@ -201,40 +199,42 @@ impl ObserverSite {
     /// This position is in the ITRF/ECEF frame (rotating with Earth).
     /// To use it with celestial coordinates, you must rotate it to the
     /// appropriate celestial frame using Earth rotation parameters (GMST, etc.).
-    pub fn geocentric_itrf<U: qtty::LengthUnit>(&self) -> crate::coordinates::cartesian::Position<Geocentric, crate::coordinates::frames::ECEF, U>
+    pub fn geocentric_itrf<U: qtty::LengthUnit>(
+        &self,
+    ) -> crate::coordinates::cartesian::Position<Geocentric, crate::coordinates::frames::ECEF, U>
     where
         Quantity<U>: From<Quantity<Meter>>,
     {
         use qtty::Radian;
-        
+
         // WGS84 ellipsoid parameters
-        const A: f64 = 6_378_137.0;  // Semi-major axis in meters
-        const F: f64 = 1.0 / 298.257_223_563;  // Flattening
-        const E2: f64 = 2.0 * F - F * F;  // First eccentricity squared
-        
+        const A: f64 = 6_378_137.0; // Semi-major axis in meters
+        const F: f64 = 1.0 / 298.257_223_563; // Flattening
+        const E2: f64 = 2.0 * F - F * F; // First eccentricity squared
+
         // Convert geodetic to geocentric Cartesian (ECEF)
         let lat_rad = self.lat.to::<Radian>().value();
         let lon_rad = self.lon.to::<Radian>().value();
         let h = self.height.value();
-        
+
         let sin_lat = lat_rad.sin();
         let cos_lat = lat_rad.cos();
         let sin_lon = lon_rad.sin();
         let cos_lon = lon_rad.cos();
-        
+
         // Radius of curvature in the prime vertical
         let n = A / (1.0 - E2 * sin_lat * sin_lat).sqrt();
-        
+
         // Geocentric Cartesian coordinates (meters)
         let x_m = (n + h) * cos_lat * cos_lon;
         let y_m = (n + h) * cos_lat * sin_lon;
         let z_m = (n * (1.0 - E2) + h) * sin_lat;
-        
+
         // Convert to target units
         let x: Quantity<U> = Quantity::<Meter>::new(x_m).into();
         let y: Quantity<U> = Quantity::<Meter>::new(y_m).into();
         let z: Quantity<U> = Quantity::<Meter>::new(z_m).into();
-        
+
         crate::coordinates::cartesian::Position::<Geocentric, crate::coordinates::frames::ECEF, U>::new(
             x, y, z
         )

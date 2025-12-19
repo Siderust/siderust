@@ -1,9 +1,9 @@
 pub mod direction;
-pub mod velocity;
 pub mod to_ecliptic;
 pub mod to_equatorial;
 pub mod to_horizontal;
 pub mod to_icrs;
+pub mod velocity;
 
 use crate::astro::JulianDate;
 use crate::coordinates::cartesian::Vector;
