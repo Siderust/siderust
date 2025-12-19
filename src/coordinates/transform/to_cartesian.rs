@@ -1,3 +1,4 @@
+use crate::coordinates::math::conversions;
 use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
 use qtty::*;
 
@@ -9,14 +10,17 @@ where
     F: ReferenceFrame,
     U: Unit,
 {
-    let ra_rad = sph.azimuth.to::<Radian>();
-    let dec_rad = sph.polar.to::<Radian>();
-    let r = sph.distance;
+    let ra_rad = sph.azimuth.to::<Radian>().value();
+    let dec_rad = sph.polar.to::<Radian>().value();
+    let r = sph.distance.value();
+
+    let result = conversions::spherical_to_cartesian(ra_rad, dec_rad, r);
+
     cartesian::Position::new_with_params(
         sph.center_params().clone(),
-        r * dec_rad.cos() * ra_rad.cos(),
-        r * dec_rad.cos() * ra_rad.sin(),
-        r * dec_rad.sin(),
+        Quantity::<U>::new(result.x),
+        Quantity::<U>::new(result.y),
+        Quantity::<U>::new(result.z),
     )
 }
 

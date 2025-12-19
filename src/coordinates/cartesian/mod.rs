@@ -29,8 +29,9 @@ pub use velocity::Velocity;
 
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::ReferenceFrame;
+use crate::coordinates::math;
 use crate::coordinates::spherical::direction::DirectionUnit;
-use qtty::{LengthUnit, Quantity, Simplify};
+use qtty::{LengthUnit, Quantity};
 
 /// Computes the line-of-sight direction from an observer to a target.
 ///
@@ -77,12 +78,13 @@ where
     U: LengthUnit,
 {
     let diff = target.sub(observer);
-    let d = diff.distance();
 
-    // Compute normalized direction components
-    let x = (diff.x() / d).simplify().value();
-    let y = (diff.y() / d).simplify().value();
-    let z = (diff.z() / d).simplify().value();
+    // Compute normalized direction components using math module
+    let (x, y, z) = math::geometry::normalize(
+        diff.x().value(),
+        diff.y().value(),
+        diff.z().value(),
+    );
 
     Direction::<F>::from_vec3(nalgebra::Vector3::new(
         Quantity::<DirectionUnit>::new(x),
@@ -122,10 +124,12 @@ where
     let diff = target.sub(observer);
     let d = diff.distance();
 
-    // Compute normalized direction components
-    let x = (diff.x() / d).simplify().value();
-    let y = (diff.y() / d).simplify().value();
-    let z = (diff.z() / d).simplify().value();
+    // Compute normalized direction components using math module
+    let (x, y, z) = math::geometry::normalize(
+        diff.x().value(),
+        diff.y().value(),
+        diff.z().value(),
+    );
 
     let dir = Direction::<F>::from_vec3(nalgebra::Vector3::new(
         Quantity::<DirectionUnit>::new(x),

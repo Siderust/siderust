@@ -1,3 +1,4 @@
+use crate::coordinates::math::conversions;
 use crate::coordinates::{cartesian, centers::*, frames::*, spherical};
 use qtty::*;
 
@@ -9,24 +10,18 @@ where
     F: ReferenceFrame,
     U: Unit,
 {
-    let r = cart.distance();
     let x = cart.x().value();
     let y = cart.y().value();
     let z = cart.z().value();
-    let r_val = r.value();
 
-    if r_val == 0.0 {
-        return spherical::SphericalCoord::new_raw_with_params(
-            cart.center_params().clone(),
-            Degrees::new(0.0),
-            Degrees::new(0.0),
-            Quantity::<U>::new(0.0),
-        );
-    }
+    let result = conversions::cartesian_to_spherical(x, y, z);
 
-    let polar = Degrees::new((z / r_val).asin().to_degrees());
-    let azimuth = Degrees::new(y.atan2(x).to_degrees());
-    spherical::SphericalCoord::new_raw_with_params(cart.center_params().clone(), polar, azimuth, r)
+    spherical::SphericalCoord::new_raw_with_params(
+        cart.center_params().clone(),
+        Degrees::new(result.polar_deg()),
+        Degrees::new(result.azimuth_deg()),
+        Quantity::<U>::new(result.radius),
+    )
 }
 
 /// Implements conversion from Cartesian to Spherical coordinates

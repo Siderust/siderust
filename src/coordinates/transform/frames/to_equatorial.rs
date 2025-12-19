@@ -1,4 +1,5 @@
 use super::TransformFrame;
+use crate::coordinates::math::rotations;
 use crate::coordinates::{cartesian::Vector, centers::ReferenceCenter, frames};
 use qtty::Unit;
 
@@ -9,14 +10,18 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Equatorial, U
     for Vector<C, frames::Ecliptic, U>
 {
     fn to_frame(&self) -> Vector<C, frames::Equatorial, U> {
-        let eps = 23.439281_f64.to_radians(); // obliquity in radians
-        let (sin_e, cos_e) = (eps.sin(), eps.cos());
-
-        let y = self.y();
-        let z = self.z();
+        let r = rotations::rotate_ecliptic_to_equatorial(
+            self.x().value(),
+            self.y().value(),
+            self.z().value(),
+        );
         Vector::from_vec3(
             self.center_params().clone(),
-            nalgebra::Vector3::new(self.x(), cos_e * y - sin_e * z, sin_e * y + cos_e * z),
+            nalgebra::Vector3::new(
+                qtty::Quantity::new(r.x),
+                qtty::Quantity::new(r.y),
+                qtty::Quantity::new(r.z),
+            ),
         )
     }
 }

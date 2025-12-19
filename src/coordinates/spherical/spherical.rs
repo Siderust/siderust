@@ -39,7 +39,7 @@
 //! ## Display
 //! Implements `Display` for readable output including center, frame, angles, and distance.
 
-use crate::coordinates::{centers, frames};
+use crate::coordinates::{centers, frames, math};
 use qtty::*;
 
 use std::marker::PhantomData;
@@ -111,16 +111,12 @@ where
     /// # Returns
     /// The angular separation in degrees.
     pub fn angular_separation(&self, other: Self) -> Degrees {
-        let az1 = self.azimuth.to::<Radian>();
-        let po1 = self.polar.to::<Radian>();
-        let az2 = other.azimuth.to::<Radian>();
-        let po2 = other.polar.to::<Radian>();
+        let az1 = self.azimuth.to::<Radian>().value();
+        let po1 = self.polar.to::<Radian>().value();
+        let az2 = other.azimuth.to::<Radian>().value();
+        let po2 = other.polar.to::<Radian>().value();
 
-        let x = (po1.cos() * po2.sin()) - (po1.sin() * po2.cos() * (az2 - az1).cos());
-        let y = po2.cos() * (az2 - az1).sin();
-        let z = (po1.sin() * po2.sin()) + (po1.cos() * po2.cos() * (az2 - az1).cos());
-
-        let angle_rad = (x * x + y * y).sqrt().atan2(z);
+        let angle_rad = math::geometry::angular_separation(az1, po1, az2, po2);
         Radians::new(angle_rad).to::<Degree>()
     }
 

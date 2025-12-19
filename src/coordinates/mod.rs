@@ -66,6 +66,7 @@
 pub mod cartesian;
 pub mod centers;
 pub mod frames;
+pub(crate) mod math;
 pub mod observation;
 pub mod spherical;
 pub mod transform;

@@ -5,6 +5,7 @@
 
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{self, MutableFrame};
+use crate::coordinates::math::rotations;
 use crate::coordinates::transform::TransformFrame;
 use nalgebra::Vector3;
 use qtty::Quantity;
@@ -20,25 +21,15 @@ impl<F: MutableFrame> TransformFrame<Direction<F>> for Direction<F> {
 /// Rotation about +X by the obliquity ε ≈ 23.439281°.
 impl TransformFrame<Direction<frames::Equatorial>> for Direction<frames::Ecliptic> {
     fn to_frame(&self) -> Direction<frames::Equatorial> {
-        let eps = 23.439281_f64.to_radians();
-        let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
-
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
-
-        // Rotation matrix about +X axis:
-        // [ 1    0        0     ] [ x ]
-        // [ 0  cos(ε)  -sin(ε) ] [ y ]
-        // [ 0  sin(ε)   cos(ε) ] [ z ]
-        let new_x = x;
-        let new_y = y * cos_eps - z * sin_eps;
-        let new_z = y * sin_eps + z * cos_eps;
-
+        let r = rotations::rotate_ecliptic_to_equatorial(
+            self.x().value(),
+            self.y().value(),
+            self.z().value(),
+        );
         Direction::<frames::Equatorial>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
+            Quantity::new(r.x),
+            Quantity::new(r.y),
+            Quantity::new(r.z),
         ))
     }
 }
@@ -47,25 +38,15 @@ impl TransformFrame<Direction<frames::Equatorial>> for Direction<frames::Eclipti
 /// Inverse rotation about +X by the obliquity ε.
 impl TransformFrame<Direction<frames::Ecliptic>> for Direction<frames::Equatorial> {
     fn to_frame(&self) -> Direction<frames::Ecliptic> {
-        let eps = 23.439281_f64.to_radians();
-        let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
-
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
-
-        // Inverse rotation matrix (transpose of the forward rotation):
-        // [ 1    0        0     ] [ x ]
-        // [ 0  cos(ε)   sin(ε) ] [ y ]
-        // [ 0 -sin(ε)   cos(ε) ] [ z ]
-        let new_x = x;
-        let new_y = y * cos_eps + z * sin_eps;
-        let new_z = -y * sin_eps + z * cos_eps;
-
+        let r = rotations::rotate_equatorial_to_ecliptic(
+            self.x().value(),
+            self.y().value(),
+            self.z().value(),
+        );
         Direction::<frames::Ecliptic>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
+            Quantity::new(r.x),
+            Quantity::new(r.y),
+            Quantity::new(r.z),
         ))
     }
 }

@@ -30,8 +30,9 @@
 //! ```
 
 use crate::coordinates::frames;
+use crate::coordinates::math;
 use crate::coordinates::spherical::direction::DirectionUnit;
-use qtty::{LengthUnit, Quantity};
+use qtty::{Degrees, LengthUnit, Quantity};
 
 use nalgebra::Vector3;
 use std::marker::PhantomData;
@@ -51,12 +52,12 @@ pub struct Direction<F: frames::ReferenceFrame> {
 impl<F: frames::ReferenceFrame> Direction<F> {
     /// Creates a direction from components (must be pre-normalized or will be normalized).
     pub fn new(x: f64, y: f64, z: f64) -> Self {
-        let norm = Vector3::<f64>::new(x, y, z).normalize();
+        let (nx, ny, nz) = math::geometry::normalize(x, y, z);
         Self {
             xyz: Vector3::new(
-                Quantity::<DirectionUnit>::new(norm.x),
-                Quantity::<DirectionUnit>::new(norm.y),
-                Quantity::<DirectionUnit>::new(norm.z),
+                Quantity::<DirectionUnit>::new(nx),
+                Quantity::<DirectionUnit>::new(ny),
+                Quantity::<DirectionUnit>::new(nz),
             ),
             _frame: PhantomData,
         }
@@ -133,24 +134,16 @@ impl<F: frames::ReferenceFrame> Direction<F> {
 
     /// Converts this cartesian direction to a spherical direction.
     pub fn to_spherical(&self) -> crate::coordinates::spherical::Direction<F> {
-        use qtty::Degrees;
-
         let x = self.x().value();
         let y = self.y().value();
         let z = self.z().value();
-        let r = (x * x + y * y + z * z).sqrt();
 
-        if r == 0.0 {
-            return crate::coordinates::spherical::Direction::<F>::new_raw(
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-            );
-        }
+        let result = math::conversions::cartesian_to_spherical(x, y, z);
 
-        let polar = Degrees::new((z / r).asin().to_degrees());
-        let azimuth = Degrees::new(y.atan2(x).to_degrees());
-
-        crate::coordinates::spherical::Direction::<F>::new_raw(polar, azimuth)
+        crate::coordinates::spherical::Direction::<F>::new_raw(
+            Degrees::new(result.polar_deg()),
+            Degrees::new(result.azimuth_deg()),
+        )
     }
 
     /// Returns a formatted string representation of this direction vector.
