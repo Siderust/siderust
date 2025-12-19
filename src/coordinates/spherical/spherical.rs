@@ -8,6 +8,8 @@
 //! - **Generic over Center and Frame:**
 //!   - `C`: Reference center (e.g., `Heliocentric`, `Geocentric`, `Barycentric`).
 //!   - `F`: Reference frame (e.g., `frames::ICRS`, `Ecliptic`, `Equatorial`).
+//! - **Center Parameters:** Each coordinate stores `C::Params` to support parameterized centers.
+//!   For most centers, `Params = ()` (zero-cost). For `Topocentric`, it stores observer location.
 //! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
 //! - **Units:** Angles are stored as [`Degrees`]; distance is optional and typically in AstronomicalUnits or parsecs (see context).
 //! - **Conversions:** Seamless conversion to and from [`Vector`] via `From`/`Into`.
@@ -20,14 +22,14 @@
 //! use siderust::coordinates::frames::Ecliptic;
 //! use qtty::*;
 //!
-//! // Create a heliocentric ecliptic spherical position
+//! // Create a heliocentric ecliptic spherical position (Params=() is automatic)
 //! let sph = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(45.0 * DEG, 7.0 * DEG, 1.0);
 //! println!("θ: {}, φ: {}, r: {:?}", sph.polar, sph.azimuth, sph.distance);
 //! ```
 //!
 //! ## Type Aliases
-//! - [`Position<C, F>`]: Spherical position (with distance).
-//! - [`Direction<C, F>`]: Spherical direction (distance is typically `None`).
+//! - [`Position<C, F>`]: Spherical position (with distance and center).
+//! - [`Direction<F>`]: Spherical direction (frame-only, no center or distance).
 //!
 //! ## Methods
 //! - [`new(polar, azimuth, distance)`]: Construct a new coordinate.
@@ -45,15 +47,25 @@ use std::marker::PhantomData;
 /// Represents a point in spherical coordinates with a specific reference center and frame.
 ///
 /// # Type Parameters
-/// - `C`: The reference center (e.g., `Barycentric`, `Heliocentric`).
-/// - `F`: The reference frame (e.g., `frames::ICRS`, `Ecliptic`).
+/// - `C`: The reference center (e.g., `Barycentric`, `Heliocentric`, `Topocentric`).
+/// - `F`: The reference frame (e.g., `frames::ICRS`, `Ecliptic`, `Horizontal`).
+/// - `U`: The unit type for distance (e.g., `AstronomicalUnit`, `Kilometer`).
+///
+/// # Center Parameters
+///
+/// The coordinate stores `C::Params` to support parameterized centers:
+/// - For `Barycentric`, `Heliocentric`, `Geocentric`: `Params = ()` (zero overhead)
+/// - For `Topocentric`: `Params = ObserverSite` (stores observer location)
+///
+/// Use `new_raw()` with explicit center_params, or use convenience constructors
+/// for centers with `Params = ()`.
 #[derive(Debug, Clone, Copy)]
 pub struct SphericalCoord<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: Unit> {
     pub polar: Degrees,        // θ (polar/latitude/declination)
     pub azimuth: Degrees,      // φ (azimuth/longitude/right ascension)
     pub distance: Quantity<U>, // Distance (AstronomicalUnits, parsec, etc.)
 
-    _center: PhantomData<C>,
+    center_params: C::Params,
     _frame: PhantomData<F>,
 }
 
@@ -63,19 +75,32 @@ where
     F: frames::ReferenceFrame,
     U: Unit,
 {
-    /// Constructs a new spherical coordinate.
+    /// Constructs a new spherical coordinate with explicit center parameters.
     ///
+    /// * `center_params`: The center parameters (e.g., `()` or `ObserverSite`)
     /// * `polar`: angle from the reference plane, in degrees  
     /// * `azimuth`: angle from the reference direction, in degrees  
     /// * `distance`: radial distance in the same unit `U`
-    pub const fn new_raw(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
+    pub const fn new_raw_with_params(
+        center_params: C::Params,
+        polar: Degrees,
+        azimuth: Degrees,
+        distance: Quantity<U>,
+    ) -> Self {
         Self {
             polar,
             azimuth,
             distance,
-            _center: PhantomData,
+            center_params,
             _frame: PhantomData,
         }
+    }
+
+    /// Returns a reference to the center parameters.
+    ///
+    /// For most centers this returns `&()`. For `Topocentric`, it returns `&ObserverSite`.
+    pub fn center_params(&self) -> &C::Params {
+        &self.center_params
     }
 
     /// Calculates the angular separation between this coordinate and another.
@@ -99,15 +124,37 @@ where
         Radians::new(angle_rad).to::<Degree>()
     }
 
-    /// Returns a **direction** (unitless unitary vector) corresponding to this position
+    /// Returns a **direction** (unitless unit vector) corresponding to this position
     /// (i.e. same angular coordinates, radius = 1).
+    ///
+    /// Note: Directions are frame-only types (no center). This extracts the
+    /// normalized direction regardless of the position's center.
     #[must_use]
-    pub fn direction(&self) -> super::Direction<C, F> {
-        super::Direction::new_raw(
-            self.polar,
-            self.azimuth,
-            Quantity::<super::direction::DirectionUnit>::new(1.0),
-        )
+    pub fn direction(&self) -> super::direction::Direction<F> {
+        super::direction::Direction::new(self.polar, self.azimuth)
+    }
+}
+
+// =============================================================================
+// Convenience constructors for centers with Params = ()
+// =============================================================================
+
+impl<C, F, U> SphericalCoord<C, F, U>
+where
+    C: centers::ReferenceCenter<Params = ()>,
+    F: frames::ReferenceFrame,
+    U: Unit,
+{
+    /// Constructs a new spherical coordinate for centers with `Params = ()`.
+    ///
+    /// This is a convenience constructor that doesn't require passing `()` explicitly.
+    /// Use this for `Barycentric`, `Heliocentric`, `Geocentric`, etc.
+    ///
+    /// * `polar`: angle from the reference plane, in degrees  
+    /// * `azimuth`: angle from the reference direction, in degrees  
+    /// * `distance`: radial distance in the same unit `U`
+    pub const fn new_raw(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
+        Self::new_raw_with_params((), polar, azimuth, distance)
     }
 }
 

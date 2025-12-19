@@ -27,7 +27,7 @@ use super::*;
 use crate::coordinates::{centers::*, frames};
 use qtty::*;
 
-impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
+impl<C: ReferenceCenter<Params = ()>, U: LengthUnit> Position<C, frames::Ecliptic, U> {
     pub const fn new_const(lon: Degrees, lat: Degrees, distance: Quantity<U>) -> Self {
         Self::new_raw(lat, lon, distance)
     }
@@ -45,28 +45,24 @@ impl<C: ReferenceCenter, U: LengthUnit> Position<C, frames::Ecliptic, U> {
     }
 }
 
-impl<C: ReferenceCenter> Direction<C, frames::Ecliptic> {
+impl direction::Direction<frames::Ecliptic> {
     /// Creates a new ecliptic direction with constant values.
     ///
     /// # Arguments
     /// - `lon`: Longitude (λ), in degrees.
     /// - `lat`: Latitude (β), in degrees.
-    pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
-        Self::new_raw(lat, lon, Quantity::<direction::DirectionUnit>::new(1.0))
+    pub fn new_ecliptic(lon: Degrees, lat: Degrees) -> Self {
+        Self::new(lat.wrap_quarter_fold(), lon.normalize())
     }
 
-    /// Constructs a new ecliptic direction with normalized input angular.
-    ///
-    /// Longitude is normalized to [0°, 360°], latitude to [-90°, 90°].
-    ///
-    /// # Arguments
-    /// - `lon`: Longitude (λ), in degrees.
-    /// - `lat`: Latitude (β), in degrees.
-    pub fn new<T>(lon: T, lat: T) -> Self
-    where
-        T: Into<Degrees>,
-    {
-        Self::new_const(lon.into().normalize(), lat.into().wrap_quarter_fold())
+    /// Returns the Latitude (β) in degrees.
+    pub fn lat(&self) -> Degrees {
+        self.polar
+    }
+
+    /// Returns the Longitude (λ) in degrees.
+    pub fn lon(&self) -> Degrees {
+        self.azimuth
     }
 }
 
