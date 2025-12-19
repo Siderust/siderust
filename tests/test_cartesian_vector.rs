@@ -57,9 +57,11 @@ fn vector_add_sub_distance() {
 fn direction_normalize_position() {
     let p = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(3.0 * AU, 0.0 * AU, 4.0 * AU);
     let dir = p.direction();
-    let scaled = dir.position(2.5 * AU);
+    // direction() now returns Direction<F> (frame-only), position() requires explicit center
+    let scaled = dir.position::<Heliocentric, _>(2.5 * AU);
     approx_eq(scaled, Position::new(1.5 * AU, 0.0 * AU, 2.0 * AU), 1e-12);
-    let norm = Direction::<Heliocentric, Ecliptic>::normalize(2.0, 0.0, 0.0);
-    let pos = norm.position(1.0 * AU);
+    // Direction is now frame-only (no center parameter)
+    let norm = Direction::<Ecliptic>::normalize(2.0, 0.0, 0.0);
+    let pos = norm.position::<Heliocentric, _>(1.0 * AU);
     approx_eq(pos, Position::new(1.0 * AU, 0.0 * AU, 0.0 * AU), 1e-12);
 }
