@@ -85,7 +85,7 @@ pub type Geographic = Position<centers::Geocentric, frames::ECEF, Kilometer>;
 
 impl<C, F, U> Position<C, F, U>
 where
-    C: centers::ReferenceCenter,
+    C: centers::ReferenceCenter<Params = ()>,
     F: frames::ReferenceFrame,
     U: LengthUnit,
 {
@@ -95,7 +95,14 @@ where
         Degrees::new(0.0),
         Quantity::<U>::new(0.0),
     );
+}
 
+impl<C, F, U> Position<C, F, U>
+where
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    U: LengthUnit,
+{
     /// Euclidean distance to another position **in the same centre & frame**.
     ///
     /// The result is expressed in the *same unit `U`* as the inputs.
