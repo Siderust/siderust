@@ -13,7 +13,10 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>>
 
         let y = self.y();
         let z = self.z();
-        Vector::new(self.x(), cos_e * y - sin_e * z, sin_e * y + cos_e * z)
+        Vector::from_vec3(
+            self.center_params().clone(),
+            nalgebra::Vector3::new(self.x(), cos_e * y - sin_e * z, sin_e * y + cos_e * z),
+        )
     }
 }
 
@@ -22,6 +25,6 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>>
     for Vector<C, frames::Equatorial, U>
 {
     fn to_frame(&self) -> Vector<C, frames::ICRS, U> {
-        Vector::new(self.x(), self.y(), self.z())
+        Vector::from_vec3(self.center_params().clone(), self.as_vec3())
     }
 }

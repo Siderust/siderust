@@ -12,7 +12,8 @@ where
     let ra_rad = sph.azimuth.to::<Radian>();
     let dec_rad = sph.polar.to::<Radian>();
     let r = sph.distance;
-    cartesian::Position::new(
+    cartesian::Position::new_with_params(
+        sph.center_params().clone(),
         r * dec_rad.cos() * ra_rad.cos(),
         r * dec_rad.cos() * ra_rad.sin(),
         r * dec_rad.sin(),
