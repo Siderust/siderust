@@ -28,21 +28,20 @@ use crate::bodies::EARTH;
 use crate::coordinates::{centers::*, frames::*};
 use qtty::*;
 
-impl<C: ReferenceCenter<Params = ()>> Direction<C, ECEF> {
-    pub const fn new_const(lon: Degrees, lat: Degrees) -> Self {
-        Self::new_raw(lat, lon, Quantity::<direction::DirectionUnit>::new(1.0))
+impl direction::Direction<ECEF> {
+    /// Creates a new geographic direction with normalized latitude and longitude.
+    pub fn new_geographic(lon: Degrees, lat: Degrees) -> Self {
+        Self::new(lat.wrap_quarter_fold(), lon.wrap_signed_lo())
     }
 
-    /// Creates a new geographic coordinate with normalized latitude and longitude.
-    ///
-    /// # Arguments
-    /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
-    /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
-    pub fn new<T>(lon: T, lat: T) -> Self
-    where
-        T: Into<Degrees>,
-    {
-        Self::new_const(lat.into().wrap_quarter_fold(), lon.into().wrap_signed_lo())
+    /// Returns the latitude (φ) in degrees.
+    pub fn lat(&self) -> Degrees {
+        self.polar
+    }
+
+    /// Returns the longitude (λ) in degrees.
+    pub fn lon(&self) -> Degrees {
+        self.azimuth
     }
 }
 
@@ -58,8 +57,8 @@ impl<C: ReferenceCenter<Params = ()>> Position<C, ECEF, Kilometer> {
     /// Creates a new geographic coordinate with normalized latitude and longitude.
     ///
     /// # Arguments
-    /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `lon`: Longitude in degrees, will be normalized to [-180°, 180°].
+    /// - `lat`: Latitude in degrees, will be normalized to [-90°, 90°].
     /// - `alt`: Altitude above the sea, in KM.
     pub fn new<A, T>(lon: A, lat: A, alt: T) -> Self
     where
@@ -67,8 +66,8 @@ impl<C: ReferenceCenter<Params = ()>> Position<C, ECEF, Kilometer> {
         A: Into<Degrees>,
     {
         Self::new_const(
-            lat.into().wrap_quarter_fold(),
             lon.into().wrap_signed_lo(),
+            lat.into().wrap_quarter_fold(),
             alt.into(),
         )
     }

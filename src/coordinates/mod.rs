@@ -16,6 +16,20 @@
 //! - **Type Safety**: Operations between coordinates are only allowed when their type parameters match, preventing accidental mixing of frames, centers or magnitude.
 //! - **Conversions**: Seamless conversion between spherical and cartesian forms, and between different frames and centers, is provided via `From`/`Into` and the `Transform` trait.
 //!
+//! ## Architectural Separation
+//!
+//! The coordinate system maintains a clean separation of concerns:
+//!
+//! - **Center transforms** (translations): Apply only to positions. Moving from geocentric to
+//!   heliocentric is a pure vector subtraction. No observation effects.
+//!
+//! - **Frame transforms** (rotations): Apply to positions, directions, and velocities.
+//!   Changing from ecliptic to equatorial is a pure rotation matrix.
+//!
+//! - **Observation transforms** (in [`observation`] module): Observer-dependent effects like
+//!   aberration. These require explicit `ObserverState` and produce directions with explicit
+//!   observational state (`Astrometric` or `Apparent`).
+//!
 //! ## Supported Reference Frames and Centers
 //! - **Frames**: `Equatorial`, `Ecliptic`, `Horizontal`, `ICRS`, `ECEF`
 //! - **Centers**: `Heliocentric`, `Geocentric`, `Barycentric`, `Topocentric`, `Bodycentric`
@@ -24,20 +38,19 @@
 //! ```rust
 //! use siderust::coordinates::spherical;
 //! use siderust::coordinates::cartesian;
-//! use siderust::coordinates::centers::Heliocentric;
 //! use siderust::coordinates::frames::Ecliptic;
 //! use qtty::*;
 //!
-//! // Create a heliocentric ecliptic spherical direction
-//! let spherical = spherical::Direction::<Heliocentric, Ecliptic>::new(
+//! // Create an ecliptic spherical direction (frame-only, no center)
+//! let spherical = spherical::Direction::<Ecliptic>::new(
 //!     45.0 * DEG, 7.0 * DEG
 //! );
 //!
 //! // Convert to cartesian coordinates
-//! let cartesian: cartesian::Direction<Heliocentric, Ecliptic> = (&spherical).into();
+//! let cartesian: cartesian::Direction<Ecliptic> = spherical.to_cartesian();
 //!
 //! // Convert back to spherical coordinates
-//! let spherical_converted: spherical::Direction<Heliocentric, Ecliptic> = (&cartesian).into();
+//! let spherical_converted: spherical::Direction<Ecliptic> = cartesian.to_spherical();
 //!
 //! println!("Spherical -> Cartesian -> Spherical: {:?}", spherical_converted);
 //! ```
@@ -48,9 +61,11 @@
 //! - **spherical**: Spherical coordinate types and operations.
 //! - **frames**: Reference frame marker types (e.g., `Ecliptic`, `Equatorial`, `ICRS`).
 //! - **centers**: Reference center marker types (e.g., `Heliocentric`, `Geocentric`).
+//! - **observation**: Observational state types (`Astrometric`, `Apparent`) and aberration.
 
 pub mod cartesian;
 pub mod centers;
 pub mod frames;
+pub mod observation;
 pub mod spherical;
 pub mod transform;

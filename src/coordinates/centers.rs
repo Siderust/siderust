@@ -170,14 +170,74 @@ impl ObserverSite {
     ///
     /// let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
     /// ```
-    pub fn from_geographic(
-        geo: &crate::coordinates::spherical::position::Geographic,
-    ) -> Self {
+    pub fn from_geographic(geo: &crate::coordinates::spherical::position::Geographic) -> Self {
         Self {
-            lon: geo.azimuth,   // longitude is stored in the azimuth field
-            lat: geo.polar,     // latitude is stored in the polar field
+            lon: geo.azimuth, // longitude is stored in the azimuth field
+            lat: geo.polar,   // latitude is stored in the polar field
             height: geo.distance.to::<Meter>(),
         }
+    }
+
+    /// Computes the observer's geocentric position in the ITRF/ECEF frame.
+    ///
+    /// This converts geodetic coordinates (latitude, longitude, height) to
+    /// geocentric Cartesian coordinates using the WGS84 ellipsoid.
+    ///
+    /// # WGS84 Parameters
+    ///
+    /// - Semi-major axis (a): 6,378,137.0 m
+    /// - Flattening (f): 1/298.257223563
+    /// - First eccentricity squared (e²): 0.00669437999014
+    ///
+    /// # Returns
+    ///
+    /// A position vector in the ECEF (Earth-Centered Earth-Fixed) frame,
+    /// with the specified length unit.
+    ///
+    /// # Note
+    ///
+    /// This position is in the ITRF/ECEF frame (rotating with Earth).
+    /// To use it with celestial coordinates, you must rotate it to the
+    /// appropriate celestial frame using Earth rotation parameters (GMST, etc.).
+    pub fn geocentric_itrf<U: qtty::LengthUnit>(
+        &self,
+    ) -> crate::coordinates::cartesian::Position<Geocentric, crate::coordinates::frames::ECEF, U>
+    where
+        Quantity<U>: From<Quantity<Meter>>,
+    {
+        use qtty::Radian;
+
+        // WGS84 ellipsoid parameters
+        const A: f64 = 6_378_137.0; // Semi-major axis in meters
+        const F: f64 = 1.0 / 298.257_223_563; // Flattening
+        const E2: f64 = 2.0 * F - F * F; // First eccentricity squared
+
+        // Convert geodetic to geocentric Cartesian (ECEF)
+        let lat_rad = self.lat.to::<Radian>().value();
+        let lon_rad = self.lon.to::<Radian>().value();
+        let h = self.height.value();
+
+        let sin_lat = lat_rad.sin();
+        let cos_lat = lat_rad.cos();
+        let sin_lon = lon_rad.sin();
+        let cos_lon = lon_rad.cos();
+
+        // Radius of curvature in the prime vertical
+        let n = A / (1.0 - E2 * sin_lat * sin_lat).sqrt();
+
+        // Geocentric Cartesian coordinates (meters)
+        let x_m = (n + h) * cos_lat * cos_lon;
+        let y_m = (n + h) * cos_lat * sin_lon;
+        let z_m = (n * (1.0 - E2) + h) * sin_lat;
+
+        // Convert to target units
+        let x: Quantity<U> = Quantity::<Meter>::new(x_m).into();
+        let y: Quantity<U> = Quantity::<Meter>::new(y_m).into();
+        let z: Quantity<U> = Quantity::<Meter>::new(z_m).into();
+
+        crate::coordinates::cartesian::Position::<Geocentric, crate::coordinates::frames::ECEF, U>::new(
+            x, y, z
+        )
     }
 }
 
@@ -235,20 +295,15 @@ impl ReferenceCenter for Geocentric {
 /// When transforming to/from body-centric coordinates, the orbit must be converted
 /// to match the coordinate system being transformed. This enum indicates which
 /// standard center the orbit is relative to.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum OrbitReferenceCenter {
     /// Orbit is defined relative to the solar system barycenter.
     Barycentric,
     /// Orbit is defined relative to the Sun (most common for planets, asteroids, comets).
+    #[default]
     Heliocentric,
     /// Orbit is defined relative to Earth (for artificial satellites, the Moon).
     Geocentric,
-}
-
-impl Default for OrbitReferenceCenter {
-    fn default() -> Self {
-        Self::Heliocentric
-    }
 }
 
 /// Parameters for a body-centered coordinate system.
@@ -402,6 +457,82 @@ impl ReferenceCenter for () {
         ""
     }
 }
+
+// =============================================================================
+// NoCenter: Marker for translation-invariant (free) vectors
+// =============================================================================
+
+/// Marker type for translation-invariant (free) vectors.
+///
+/// Free vectors like directions and velocities do not have a meaningful
+/// spatial origin. They represent properties that are independent of
+/// any particular coordinate center:
+///
+/// - **Directions** are unit vectors representing orientations in space
+/// - **Velocities** are rates of change that don't depend on position
+///
+/// Using `NoCenter` instead of a regular `ReferenceCenter` prevents
+/// mathematically invalid center transformations at compile time.
+/// Objects with `NoCenter` can only undergo frame transformations (rotations),
+/// not center transformations (translations).
+///
+/// # Mathematical Rationale
+///
+/// In affine geometry:
+/// - **Positions** are points in affine space; changing the origin (center) is a translation.
+/// - **Directions** and **velocities** are elements of the underlying vector space;
+///   they are translation-invariant and do not have an "origin" to change.
+///
+/// # Example
+///
+/// ```rust
+/// use siderust::coordinates::cartesian::Direction;
+/// use siderust::coordinates::frames::Ecliptic;
+/// use siderust::coordinates::centers::NoCenter;
+///
+/// // Directions use NoCenter - they cannot be center-transformed
+/// let dir: Direction<Ecliptic> = Direction::normalize(1.0, 0.0, 0.0);
+///
+/// // Frame transforms (rotations) are still valid for directions
+/// use siderust::coordinates::transform::TransformFrame;
+/// use siderust::coordinates::frames::Equatorial;
+/// let dir_eq: Direction<Equatorial> = dir.to_frame();
+/// ```
+#[derive(Debug, Copy, Clone, PartialEq, Eq)]
+pub struct NoCenter;
+
+/// Marker trait for types that represent genuine spatial centers (origins).
+///
+/// This trait is implemented only for center types that represent actual
+/// coordinate origins (Barycentric, Heliocentric, Geocentric, etc.).
+/// It is NOT implemented for `NoCenter`, which prevents center transformations
+/// from being applied to free vectors (directions, velocities).
+///
+/// # Usage
+///
+/// Use this trait as a bound when implementing center transformations:
+///
+/// ```ignore
+/// impl<F, U> TransformCenter<Position<Geocentric, F, U>> for Position<Heliocentric, F, U>
+/// where
+///     Heliocentric: AffineCenter,
+///     Geocentric: AffineCenter,
+///     // ...
+/// ```
+pub trait AffineCenter: ReferenceCenter {}
+
+// Implement AffineCenter for all actual coordinate centers
+impl AffineCenter for Barycentric {}
+impl AffineCenter for Heliocentric {}
+impl AffineCenter for Geocentric {}
+impl AffineCenter for Topocentric {}
+impl AffineCenter for Bodycentric {}
+
+// NOTE: NoCenter deliberately does NOT implement AffineCenter
+// This prevents center transformations on directions and velocities
+
+// NoCenter does NOT implement ReferenceCenter - it's a separate marker
+// that indicates the object is translation-invariant
 
 #[cfg(test)]
 mod tests {

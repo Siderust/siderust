@@ -26,9 +26,9 @@
 //!
 //! ## Type Aliases
 //! We define type aliases for common systems, e.g.,
-//! `type Distance<C: ReferenceCenter, F: ReferenceFrame> = Vector<C, F, Unitless>;`
-//! `type Velocity<C: ReferenceCenter, F: ReferenceFrame, U: VelocityUnit> = Vector<C, F, U>;`
-//! `type Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>   = Vector<C, F, U>;`
+//! `type Direction<F: ReferenceFrame> = Vector<NoCenter, F, DirectionUnit>;`  (free vector)
+//! `type Velocity<F: ReferenceFrame, U: VelocityUnit> = Vector<NoCenter, F, U>;`  (free vector)
+//! `type Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> = Vector<C, F, U>;`  (affine)
 
 use crate::coordinates::{centers, frames};
 use qtty::*;

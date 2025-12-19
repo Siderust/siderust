@@ -13,17 +13,18 @@ where
     F: frames::ReferenceFrame,
     U: LengthUnit,
 {
-    pub fn direction(&self) -> super::Direction<C, F> {
+    /// Returns the direction (unit vector) from the center to this position.
+    ///
+    /// Note: Directions are frame-only types (no center). This extracts the
+    /// normalized direction regardless of the position's center.
+    pub fn direction(&self) -> super::Direction<F> {
         use crate::coordinates::spherical::direction::DirectionUnit;
         let d = self.distance();
-        super::Direction::<C, F>::from_vec3(
-            self.center_params().clone(),
-            nalgebra::Vector3::new(
-                Quantity::<DirectionUnit>::new((self.x() / d).simplify().value()),
-                Quantity::<DirectionUnit>::new((self.y() / d).simplify().value()),
-                Quantity::<DirectionUnit>::new((self.z() / d).simplify().value()),
-            ),
-        )
+        super::Direction::<F>::from_vec3(nalgebra::Vector3::new(
+            Quantity::<DirectionUnit>::new((self.x() / d).simplify().value()),
+            Quantity::<DirectionUnit>::new((self.y() / d).simplify().value()),
+            Quantity::<DirectionUnit>::new((self.z() / d).simplify().value()),
+        ))
     }
 }
 

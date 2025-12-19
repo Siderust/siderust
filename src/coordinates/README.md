@@ -284,18 +284,18 @@ The module provides convenient type aliases to improve usability:
 
 ```rust
 // Cartesian
-pub type Direction<C, F> = Vector<C, F, DirectionUnit>;  // Unitless
-pub type Position<C, F, U> = Vector<C, F, U>;             // Length units
-pub type Velocity<C, F, U> = Vector<C, F, U>;             // Velocity units
+pub type Direction<F> = Vector<NoCenter, F, DirectionUnit>;  // Free vector (unitless)
+pub type Position<C, F, U> = Vector<C, F, U>;                 // Affine (length units)
+pub type Velocity<F, U> = Vector<NoCenter, F, U>;             // Free vector (velocity units)
 
 // Spherical
-pub type Direction<C, F> = SphericalCoord<C, F, DirectionUnit>;
-pub type Position<C, F, U> = SphericalCoord<C, F, U>;
+pub type Direction<F> = SphericalCoord<NoCenter, F, DirectionUnit>;  // Free vector
+pub type Position<C, F, U> = SphericalCoord<C, F, U>;                // Affine
 
-// Frame-specific aliases
-pub type Ecliptic<C = Heliocentric> = Direction<C, frames::Ecliptic>;
-pub type Equatorial<C = Geocentric> = Direction<C, frames::Equatorial>;
-pub type ICRS<C = Barycentric> = Direction<C, frames::ICRS>;
+// Frame-specific direction aliases (no center parameter)
+pub type Ecliptic = Direction<frames::Ecliptic>;
+pub type Equatorial = Direction<frames::Equatorial>;
+pub type ICRS = Direction<frames::ICRS>;
 ```
 
 ### The Phantom Type Pattern
@@ -565,13 +565,13 @@ The module integrates tightly with the `qtty` unit system:
 
 ```rust
 // Different unit types enforced at compile time
-type Direction<C, F> = Vector<C, F, DirectionUnit>;      // Dimensionless
-type Position<C, F> = Vector<C, F, AstronomicalUnit>;    // Length
-type Velocity<C, F> = Vector<C, F, AuPerDay>;            // Velocity
+type Direction<F> = Vector<NoCenter, F, DirectionUnit>;       // Free vector (dimensionless)
+type Position<C, F> = Vector<C, F, AstronomicalUnit>;         // Affine (length)
+type Velocity<F> = Vector<NoCenter, F, AuPerDay>;             // Free vector (velocity)
 
 // Prevents mixing:
-let pos: Position<...> = ...;
-let dir: Direction<...> = ...;
+let pos: Position<Geocentric, Equatorial, _> = ...;
+let dir: Direction<Equatorial> = ...;
 // pos + dir;  // ❌ Compile error: mismatched units
 ```
 
