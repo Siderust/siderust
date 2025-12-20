@@ -24,7 +24,7 @@
 
 use super::direction;
 use super::Position;
-use crate::coordinates::{centers::*, frames::ICRS};
+use crate::coordinates::algebra::{centers::*, frames::ICRS};
 use qtty::*;
 
 impl direction::Direction<ICRS> {

@@ -27,9 +27,9 @@ pub use position::Position;
 pub use vector::*;
 pub use velocity::Velocity;
 
-use crate::coordinates::centers::ReferenceCenter;
-use crate::coordinates::frames::ReferenceFrame;
-use crate::coordinates::spherical::direction::DirectionUnit;
+use crate::coordinates::algebra::centers::ReferenceCenter;
+use crate::coordinates::algebra::frames::ReferenceFrame;
+use crate::coordinates::algebra::spherical::direction::DirectionUnit;
 use qtty::{LengthUnit, Quantity, Simplify};
 
 /// Computes the line-of-sight direction from an observer to a target.
@@ -52,9 +52,9 @@ use qtty::{LengthUnit, Quantity, Simplify};
 /// # Example
 ///
 /// ```rust
-/// use siderust::coordinates::cartesian::{line_of_sight, Position, Direction};
-/// use siderust::coordinates::centers::Geocentric;
-/// use siderust::coordinates::frames::Equatorial;
+/// use siderust::coordinates::algebra::cartesian::{line_of_sight, Position, Direction};
+/// use siderust::coordinates::algebra::centers::Geocentric;
+/// use siderust::coordinates::algebra::frames::Equatorial;
 /// use qtty::*;
 ///
 /// let observer = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(0.0, 0.0, 0.0);
@@ -99,9 +99,9 @@ where
 /// # Example
 ///
 /// ```rust
-/// use siderust::coordinates::cartesian::{line_of_sight_with_distance, Position};
-/// use siderust::coordinates::centers::Geocentric;
-/// use siderust::coordinates::frames::Equatorial;
+/// use siderust::coordinates::algebra::cartesian::{line_of_sight_with_distance, Position};
+/// use siderust::coordinates::algebra::centers::Geocentric;
+/// use siderust::coordinates::algebra::frames::Equatorial;
 /// use qtty::*;
 ///
 /// let observer = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(0.0, 0.0, 0.0);

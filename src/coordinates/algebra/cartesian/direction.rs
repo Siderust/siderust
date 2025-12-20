@@ -29,8 +29,8 @@
 //! let dir = Direction::<Ecliptic>::normalize(1.0, 2.0, 2.0);
 //! ```
 
-use crate::coordinates::frames;
-use crate::coordinates::spherical::direction::DirectionUnit;
+use crate::coordinates::algebra::frames;
+use crate::coordinates::algebra::spherical::direction::DirectionUnit;
 use qtty::{LengthUnit, Quantity};
 
 use nalgebra::Vector3;
@@ -102,7 +102,7 @@ impl<F: frames::ReferenceFrame> Direction<F> {
     /// - `U`: The length unit for the magnitude
     pub fn position<C, U>(&self, magnitude: Quantity<U>) -> super::Position<C, F, U>
     where
-        C: crate::coordinates::centers::ReferenceCenter<Params = ()>,
+        C: crate::coordinates::algebra::centers::ReferenceCenter<Params = ()>,
         U: LengthUnit,
     {
         super::Position::new(
@@ -120,7 +120,7 @@ impl<F: frames::ReferenceFrame> Direction<F> {
         magnitude: Quantity<U>,
     ) -> super::Position<C, F, U>
     where
-        C: crate::coordinates::centers::ReferenceCenter,
+        C: crate::coordinates::algebra::centers::ReferenceCenter,
         U: LengthUnit,
     {
         super::Position::new_with_params(
@@ -132,7 +132,7 @@ impl<F: frames::ReferenceFrame> Direction<F> {
     }
 
     /// Converts this cartesian direction to a spherical direction.
-    pub fn to_spherical(&self) -> crate::coordinates::spherical::Direction<F> {
+    pub fn to_spherical(&self) -> crate::coordinates::algebra::spherical::Direction<F> {
         use qtty::Degrees;
 
         let x = self.x().value();
@@ -150,7 +150,7 @@ impl<F: frames::ReferenceFrame> Direction<F> {
         let polar = Degrees::new((z / r).asin().to_degrees());
         let azimuth = Degrees::new(y.atan2(x).to_degrees());
 
-        crate::coordinates::spherical::Direction::<F>::new_raw(polar, azimuth)
+        crate::coordinates::algebra::spherical::Direction::<F>::new_raw(polar, azimuth)
     }
 
     /// Returns a formatted string representation of this direction vector.
@@ -177,10 +177,3 @@ impl<F: frames::ReferenceFrame> std::fmt::Display for Direction<F> {
         )
     }
 }
-
-/// Type aliases for common direction systems.
-pub type Ecliptic = Direction<frames::Ecliptic>;
-pub type Equatorial = Direction<frames::Equatorial>;
-pub type Horizontal = Direction<frames::Horizontal>;
-pub type Geographic = Direction<frames::ECEF>;
-pub type ICRS = Direction<frames::ICRS>;
