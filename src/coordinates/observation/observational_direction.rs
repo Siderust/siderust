@@ -120,9 +120,9 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
         let vel = obs.velocity();
 
         // Apply aberration: u' = u + v/c (then renormalize)
-        let x = cart_eq.x().value() + vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y().value() + vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z().value() + vel.z().value() / AU_PER_DAY_C;
+        let x = cart_eq.x() + vel.x().value() / AU_PER_DAY_C;
+        let y = cart_eq.y() + vel.y().value() / AU_PER_DAY_C;
+        let z = cart_eq.z() + vel.z().value() / AU_PER_DAY_C;
 
         let apparent_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
 
@@ -150,9 +150,9 @@ impl<F: MutableFrame> Astrometric<cartesian::Direction<F>> {
         let vel = obs.velocity();
 
         // Apply aberration: u' = u + v/c (then renormalize)
-        let x = cart_eq.x().value() + vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y().value() + vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z().value() + vel.z().value() / AU_PER_DAY_C;
+        let x = cart_eq.x() + vel.x().value() / AU_PER_DAY_C;
+        let y = cart_eq.y() + vel.y().value() / AU_PER_DAY_C;
+        let z = cart_eq.z() + vel.z().value() / AU_PER_DAY_C;
 
         let apparent_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
 
@@ -231,9 +231,9 @@ impl<F: MutableFrame> Apparent<spherical::Direction<F>> {
         let vel = obs.velocity();
 
         // Remove aberration: u = u' - v/c (then renormalize)
-        let x = cart_eq.x().value() - vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y().value() - vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z().value() - vel.z().value() / AU_PER_DAY_C;
+        let x = cart_eq.x() - vel.x().value() / AU_PER_DAY_C;
+        let y = cart_eq.y() - vel.y().value() / AU_PER_DAY_C;
+        let z = cart_eq.z() - vel.z().value() / AU_PER_DAY_C;
 
         let astrometric_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
 
@@ -261,9 +261,9 @@ impl<F: MutableFrame> Apparent<cartesian::Direction<F>> {
         let vel = obs.velocity();
 
         // Remove aberration: u = u' - v/c (then renormalize)
-        let x = cart_eq.x().value() - vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y().value() - vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z().value() - vel.z().value() / AU_PER_DAY_C;
+        let x = cart_eq.x() - vel.x().value() / AU_PER_DAY_C;
+        let y = cart_eq.y() - vel.y().value() / AU_PER_DAY_C;
+        let z = cart_eq.z() - vel.z().value() / AU_PER_DAY_C;
 
         let astrometric_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
 

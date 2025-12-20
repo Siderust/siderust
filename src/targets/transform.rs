@@ -1,6 +1,6 @@
 use super::Target;
 use crate::coordinates::{cartesian, centers::*, frames::*, spherical, transform::Transform};
-use qtty::Unit;
+use qtty::LengthUnit;
 
 /// Blanket implementation to allow chaining two consecutive `Transform` operations.
 ///
@@ -18,7 +18,7 @@ where
     C2: ReferenceCenter,
     F1: ReferenceFrame,
     F2: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn from(orig: &Target<cartesian::Vector<C1, F1, U>>) -> Self {
         // Step 1: Transform to new frame, keeping the original center.
@@ -48,7 +48,7 @@ where
     C2: ReferenceCenter,
     F1: ReferenceFrame,
     F2: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn from(orig: &Target<spherical::Position<C1, F1, U>>) -> Self {
         // Step 1: Convert spherical to Cartesian

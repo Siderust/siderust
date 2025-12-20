@@ -33,7 +33,7 @@ pub mod position;
 
 use crate::astro::JulianDate;
 use crate::coordinates::{cartesian::Vector, centers::*, frames};
-use qtty::Unit;
+use qtty::LengthUnit;
 
 /// Trait for transforming coordinates from one center to another.
 ///
@@ -58,10 +58,10 @@ impl<C, F, U> TransformCenter<Vector<C, F, U>> for Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn to_center(&self, _jd: JulianDate) -> Vector<C, F, U> {
-        Vector::<C, F, U>::from_vec3(self.center_params().clone(), self.as_vec3())
+        Vector::<C, F, U>::from_vec3(self.center_params().clone(), *self.as_vec3())
     }
 }
 

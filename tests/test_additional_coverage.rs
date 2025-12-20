@@ -93,7 +93,7 @@ fn frame_transform_traits_exercised() {
     // Convert to cartesian, transform frame
     let cart_ecl = sph_ecl.to_cartesian();
     let cart_equatorial: cartesian::direction::Equatorial = TransformFrame::to_frame(&cart_ecl);
-    assert!(cart_equatorial.x().value().is_finite());
+    assert!(cart_equatorial.x().is_finite());
 
     // Test frame transform on position (must preserve center type)
     let vec_equatorial: cartesian::Position<Heliocentric, frames::Equatorial, AstronomicalUnit> =

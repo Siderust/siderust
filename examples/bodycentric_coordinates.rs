@@ -214,9 +214,9 @@ fn main() {
     let star_dir: Direction<frames::Equatorial> = Direction::normalize(0.707, 0.0, 0.707); // 45° declination, 0° RA
 
     println!("Star direction (Equatorial frame):");
-    println!("  X = {:.3}", star_dir.x().value());
-    println!("  Y = {:.3}", star_dir.y().value());
-    println!("  Z = {:.3}\n", star_dir.z().value());
+    println!("  X = {:.3}", star_dir.x());
+    println!("  Y = {:.3}", star_dir.y());
+    println!("  Z = {:.3}\n", star_dir.z());
 
     // Directions are invariant under center translations (they're free vectors).
     // The direction to a distant star looks the same from Earth or ISS

@@ -1,12 +1,12 @@
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Vector, centers::ReferenceCenter, frames};
-use qtty::Unit;
+use qtty::LengthUnit;
 
 // Implement Transform trait for ICRS -> Ecliptic
 impl<C: ReferenceCenter, U> TransformFrame<Vector<C, frames::Ecliptic, U>>
     for Vector<C, frames::ICRS, U>
 where
-    U: Unit,
+    U: LengthUnit,
 {
     fn to_frame(&self) -> Vector<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians();
@@ -22,7 +22,7 @@ where
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Ecliptic, U>>
+impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Vector<C, frames::Ecliptic, U>>
     for Vector<C, frames::Equatorial, U>
 {
     fn to_frame(&self) -> Vector<C, frames::Ecliptic, U> {
