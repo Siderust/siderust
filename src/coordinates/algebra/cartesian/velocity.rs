@@ -30,7 +30,7 @@
 //! );
 //! ```
 
-use crate::coordinates::frames::{self};
+use crate::coordinates::algebra::frames::{self};
 use qtty::{Quantity, Unit};
 
 use nalgebra::Vector3;
@@ -141,9 +141,3 @@ where
         )
     }
 }
-
-/// Type aliases for common velocity systems.
-pub type Ecliptic<U> = Velocity<frames::Ecliptic, U>;
-pub type Equatorial<U> = Velocity<frames::Equatorial, U>;
-pub type Horizontal<U> = Velocity<frames::Horizontal, U>;
-pub type ICRS<U> = Velocity<frames::ICRS, U>;

@@ -37,7 +37,7 @@
 //!
 //! All aliases are **zero‑cost** at compile time: they are simple `type` synonyms.
 
-use crate::coordinates::{centers, frames};
+use crate::coordinates::algebra::{centers, frames};
 use qtty::*;
 
 use std::marker::PhantomData;
@@ -118,37 +118,6 @@ where
     }
 }
 
-/// **Heliocentric Ecliptic** coordinates *(L, B, R)*.
-///
-/// * `L` – ecliptic longitude, degrees in `[0, 360)`
-/// * `B` – ecliptic latitude,  degrees in `[-90, 90]`
-/// * `R` – heliocentric distance in unit `U` (e.g. `AstronomicalUnit`)
-pub type Ecliptic<U> = Position<centers::Heliocentric, frames::Ecliptic, U>;
-
-/// **Geocentric Equatorial** coordinates *(δ, α, d)*.
-///
-/// * `δ` – declination, degrees in `[-90, 90]`
-/// * `α` – right‑ascension, degrees in `[0, 360)`
-/// * `d` – geocentric distance in unit `U` (e.g. `Kilometer`)
-pub type Equatorial<U> = Position<centers::Geocentric, frames::Equatorial, U>;
-
-/// **Topocentric Horizontal** coordinates *(Alt, Az, d)*.
-///
-/// * `Alt` – altitude above the horizon, degrees in `[-90, 90]`
-/// * `Az`  – azimuth from the north, degrees in `[0, 360)`
-/// * `d`   – straight‑line distance from the observer in unit `U`
-pub type Horizontal<U> = Position<centers::Topocentric, frames::Horizontal, U>;
-
-/// **Barycentric ICRS** coordinates.
-pub type ICRS<U> = Position<centers::Barycentric, frames::ICRS, U>;
-/// **Heliocentric ICRS** coordinates.
-pub type HCRS<U> = Position<centers::Heliocentric, frames::ICRS, U>;
-/// **Geocentric ICRS** coordinates.
-pub type GCRS<U> = Position<centers::Geocentric, frames::ICRS, U>;
-
-/// **Geographic (ECEF)** position: latitude, longitude, altitude (km).
-pub type Geographic = Position<centers::Geocentric, frames::ECEF, Kilometer>;
-
 impl<C, F, U> Position<C, F, U>
 where
     C: centers::ReferenceCenter<Params = ()>,
@@ -210,15 +179,17 @@ mod tests {
 
     #[test]
     fn test_spherical_coord_creation() {
-        let coord = ICRS::<AstronomicalUnit>::new(Degrees::new(45.0), Degrees::new(90.0), 1.0);
-        assert_eq!(coord.ra().value(), 45.0);
-        assert_eq!(coord.dec().value(), 90.0);
+        // new_raw(polar, azimuth, distance)
+        let coord = Position::<centers::Barycentric, frames::ICRS, AstronomicalUnit>::new_raw(Degrees::new(90.0), Degrees::new(45.0), 1.0 * AU);
+        assert_eq!(coord.polar.value(), 90.0);
+        assert_eq!(coord.azimuth.value(), 45.0);
         assert_eq!(coord.distance.value(), 1.0);
     }
 
     #[test]
     fn test_spherical_coord_to_string() {
-        let coord = GCRS::<AstronomicalUnit>::new(Degrees::new(30.0), Degrees::new(60.0), 1000.0);
+        // new_raw(polar, azimuth, distance)
+        let coord = Position::<centers::Geocentric, frames::ICRS, AstronomicalUnit>::new_raw(Degrees::new(60.0), Degrees::new(30.0), 1000.0 * AU);
         let coord_string = coord.to_string();
         assert!(coord_string.contains("θ: 60"));
         assert!(coord_string.contains("φ: 30"));
@@ -227,7 +198,7 @@ mod tests {
 
     #[test]
     fn test_spherical_coord_zero_values() {
-        let coord = HCRS::<AstronomicalUnit>::new(0.0 * DEG, 0.0 * DEG, 0.0);
+        let coord = Position::<centers::Heliocentric, frames::ICRS, AstronomicalUnit>::new_raw(0.0 * DEG, 0.0 * DEG, 0.0 * AU);
         assert_eq!(coord.polar.value(), 0.0);
         assert_eq!(coord.azimuth.value(), 0.0);
         assert_eq!(coord.distance.value(), 0.0);
@@ -235,15 +206,16 @@ mod tests {
 
     #[test]
     fn test_spherical_coord_precision() {
-        let coord = ICRS::<AstronomicalUnit>::new(90.654321 * DEG, 45.123456 * DEG, 1234.56789);
-        assert!((coord.dec().value() - 45.123456).abs() < 1e-6);
-        assert!((coord.ra().value() - 90.654321).abs() < 1e-6);
+        // new_raw(polar, azimuth, distance)
+        let coord = Position::<centers::Barycentric, frames::ICRS, AstronomicalUnit>::new_raw(45.123456 * DEG, 90.654321 * DEG, 1234.56789 * AU);
+        assert!((coord.polar.value() - 45.123456).abs() < 1e-6);
+        assert!((coord.azimuth.value() - 90.654321).abs() < 1e-6);
         assert!((coord.distance - 1234.56789 * AU).abs() < 1e-6 * AU);
     }
 
     #[test]
     fn direction_returns_unit_vector() {
-        let pos = Ecliptic::<AstronomicalUnit>::new_raw(10.0 * DEG, 20.0 * DEG, 2.5 * AU);
+        let pos = Position::<centers::Heliocentric, frames::Ecliptic, AstronomicalUnit>::new_raw(10.0 * DEG, 20.0 * DEG, 2.5 * AU);
         let dir = pos.direction();
 
         // radial component must be exactly 1 (unitless)
@@ -258,7 +230,7 @@ mod tests {
     fn center_constant_is_origin() {
         use qtty::Kilometer;
 
-        let c = Equatorial::<Kilometer>::CENTER;
+        let c = Position::<centers::Geocentric, frames::Equatorial, Kilometer>::CENTER;
         assert_eq!(c.polar.value(), 0.0);
         assert_eq!(c.azimuth.value(), 0.0);
         assert_eq!(c.distance.value(), 0.0);
@@ -266,8 +238,8 @@ mod tests {
 
     #[test]
     fn from_degrees_matches_new_raw() {
-        let a = ICRS::<AstronomicalUnit>::new(45.0 * DEG, 30.0 * DEG, 3.0 * AU);
-        let b = ICRS::<AstronomicalUnit>::new(45.0 * DEG, 30.0 * DEG, 3.0 * AU);
+        let a = Position::<centers::Barycentric, frames::ICRS, AstronomicalUnit>::new_raw(45.0 * DEG, 30.0 * DEG, 3.0 * AU);
+        let b = Position::<centers::Barycentric, frames::ICRS, AstronomicalUnit>::new_raw(45.0 * DEG, 30.0 * DEG, 3.0 * AU);
         assert_eq!(a.polar, b.polar);
         assert_eq!(a.azimuth, b.azimuth);
         assert_eq!(a.distance, b.distance);
@@ -276,12 +248,12 @@ mod tests {
     #[test]
     fn distance_identity_zero_and_orthogonal() {
         // identity
-        let a = ICRS::<AstronomicalUnit>::new(0.0 * DEG, 0.0 * DEG, 1.0 * AU);
+        let a = Position::<centers::Barycentric, frames::ICRS, AstronomicalUnit>::new_raw(0.0 * DEG, 0.0 * DEG, 1.0 * AU);
         let d0 = a.distance_to(&a);
         assert!(d0.abs().value() < EPS);
 
         // orthogonal points on unit sphere → chord length sqrt(2) * r
-        let b = ICRS::<AstronomicalUnit>::new(0.0 * DEG, 90.0 * DEG, 1.0 * AU);
+        let b = Position::<centers::Barycentric, frames::ICRS, AstronomicalUnit>::new_raw(0.0 * DEG, 90.0 * DEG, 1.0 * AU);
         let d = a.distance_to(&b);
         assert!((d.value() - SQRT_2).abs() < EPS);
     }
