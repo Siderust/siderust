@@ -24,7 +24,6 @@
 
 use super::direction;
 use super::Position;
-use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{centers::*, frames::ICRS};
 use qtty::*;
 
@@ -79,7 +78,7 @@ impl<C: ReferenceCenter<Params = ()>, U: LengthUnit> Position<C, ICRS, U> {
     }
 }
 
-impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, ICRS, U> {
+impl<C: ReferenceCenter, U: Unit> Position<C, ICRS, U> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees {
         self.polar

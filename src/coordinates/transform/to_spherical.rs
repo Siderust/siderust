@@ -3,7 +3,7 @@ use qtty::*;
 
 fn cartesian_to_spherical<C, F, U>(
     cart: &cartesian::Vector<C, F, U>,
-) -> spherical::SphericalCoord<C, F, U>
+) -> spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
@@ -16,7 +16,7 @@ where
     let r_val = r.value();
 
     if r_val == 0.0 {
-        return spherical::SphericalCoord::new_raw_with_params(
+        return spherical::Position::new_raw_with_params(
             cart.center_params().clone(),
             Degrees::new(0.0),
             Degrees::new(0.0),
@@ -26,7 +26,7 @@ where
 
     let polar = Degrees::new((z / r_val).asin().to_degrees());
     let azimuth = Degrees::new(y.atan2(x).to_degrees());
-    spherical::SphericalCoord::new_raw_with_params(cart.center_params().clone(), polar, azimuth, r)
+    spherical::Position::new_raw_with_params(cart.center_params().clone(), polar, azimuth, r)
 }
 
 /// Implements conversion from Cartesian to Spherical coordinates
@@ -42,7 +42,7 @@ where
 /// # Type Parameters
 /// - `Center`: The reference center (e.g., Geocentric).
 /// - `Frame`: The reference frame (e.g., ICRS).
-impl<C, F, U> From<&cartesian::Vector<C, F, U>> for spherical::SphericalCoord<C, F, U>
+impl<C, F, U> From<&cartesian::Vector<C, F, U>> for spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
@@ -53,7 +53,7 @@ where
     }
 }
 
-impl<C, F, U> crate::coordinates::spherical::SphericalCoord<C, F, U>
+impl<C, F, U> crate::coordinates::spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
@@ -70,7 +70,7 @@ where
     F: ReferenceFrame,
     U: Unit,
 {
-    pub fn to_spherical(&self) -> spherical::SphericalCoord<C, F, U> {
+    pub fn to_spherical(&self) -> spherical::Position<C, F, U> {
         cartesian_to_spherical(self)
     }
 }

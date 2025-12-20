@@ -56,7 +56,7 @@ pub fn find_dynamic_extremas<F, U: Unit>(
     jd_end: JulianDate,
 ) -> Vec<Culmination>
 where
-    F: Fn(JulianDate) -> Target<SphericalCoord<Geocentric, frames::Equatorial, U>> + Copy,
+    F: Fn(JulianDate) -> Target<Position<Geocentric, frames::Equatorial, U>> + Copy,
 {
     // ────────────────────────────────────────────────────────────
     // Helper: hour angle H(jd) [rad]

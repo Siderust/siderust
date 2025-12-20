@@ -1,6 +1,7 @@
 //! # Position‐type Specialisations
 //!
-//! This module re‑exports [`SphericalCoord`] under domain‑specific type aliases
+//! This module defines the core spherical [`Position`] type (center + frame + distance)
+//! and provides domain‑specific type aliases
 //! (e.g. *heliocentric ecliptic position* or *geocentric equatorial position*)
 //! and provides convenience constructors and helpers that apply equally to
 //! every centre / frame combination.
@@ -36,21 +37,86 @@
 //!
 //! All aliases are **zero‑cost** at compile time: they are simple `type` synonyms.
 
-use super::SphericalCoord;
 use crate::coordinates::{centers, frames};
 use qtty::*;
 
-// TODO: Bound U to LengthUnit and VelocityUnit
-// see issue #112792 <https://github.com/rust-lang/rust/issues/112792> for more information
-//pub type Position<C, F, U: LengthUnit>  = SphericalCoord<C, F, U>;
+use std::marker::PhantomData;
 
-/// Generic *position* alias: a spherical coordinate that **does** carry radial
-/// distance information.
+/// A spherical **position** (center + frame + distance).
 ///
-/// You will seldom use this directly; reach for a more specific alias such as
-/// [`Ecliptic`], [`Equatorial`], etc., to get compile‑time guarantees about the
-/// reference centre / frame.
-pub type Position<C, F, U> = SphericalCoord<C, F, U>;
+/// This is the fundamental spherical coordinate type used across the crate.
+/// Spherical directions are represented separately by [`super::direction::Direction<F>`]
+/// and intentionally have **no** reference center.
+#[derive(Debug, Clone, Copy)]
+pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: Unit> {
+    pub polar: Degrees,        // θ (polar/latitude/declination)
+    pub azimuth: Degrees,      // φ (azimuth/longitude/right ascension)
+    pub distance: Quantity<U>, // radial distance
+
+    center_params: C::Params,
+    _frame: PhantomData<F>,
+}
+
+impl<C, F, U> Position<C, F, U>
+where
+    C: centers::ReferenceCenter,
+    F: frames::ReferenceFrame,
+    U: Unit,
+{
+    /// Constructs a new spherical position with explicit center parameters.
+    pub const fn new_raw_with_params(
+        center_params: C::Params,
+        polar: Degrees,
+        azimuth: Degrees,
+        distance: Quantity<U>,
+    ) -> Self {
+        Self {
+            polar,
+            azimuth,
+            distance,
+            center_params,
+            _frame: PhantomData,
+        }
+    }
+
+    /// Returns a reference to the center parameters.
+    pub fn center_params(&self) -> &C::Params {
+        &self.center_params
+    }
+
+    /// Calculates the angular separation between this position and another.
+    pub fn angular_separation(&self, other: Self) -> Degrees {
+        let az1 = self.azimuth.to::<Radian>();
+        let po1 = self.polar.to::<Radian>();
+        let az2 = other.azimuth.to::<Radian>();
+        let po2 = other.polar.to::<Radian>();
+
+        let x = (po1.cos() * po2.sin()) - (po1.sin() * po2.cos() * (az2 - az1).cos());
+        let y = po2.cos() * (az2 - az1).sin();
+        let z = (po1.sin() * po2.sin()) + (po1.cos() * po2.cos() * (az2 - az1).cos());
+
+        let angle_rad = (x * x + y * y).sqrt().atan2(z);
+        Radians::new(angle_rad).to::<Degree>()
+    }
+
+    /// Extracts the corresponding spherical **direction** (frame-only).
+    #[must_use]
+    pub fn direction(&self) -> super::direction::Direction<F> {
+        super::direction::Direction::new(self.polar, self.azimuth)
+    }
+}
+
+impl<C, F, U> Position<C, F, U>
+where
+    C: centers::ReferenceCenter<Params = ()>,
+    F: frames::ReferenceFrame,
+    U: Unit,
+{
+    /// Convenience constructor for centers with `Params = ()`.
+    pub const fn new_raw(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
+        Self::new_raw_with_params((), polar, azimuth, distance)
+    }
+}
 
 /// **Heliocentric Ecliptic** coordinates *(L, B, R)*.
 ///

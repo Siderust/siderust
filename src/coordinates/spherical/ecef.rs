@@ -73,7 +73,7 @@ impl<C: ReferenceCenter<Params = ()>> Position<C, ECEF, Kilometer> {
     }
 }
 
-impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, ECEF, U> {
+impl<C: ReferenceCenter, U: Unit> Position<C, ECEF, U> {
     /// Returns the latitude (φ) in degrees.
     pub fn lat(&self) -> Degrees {
         self.polar
