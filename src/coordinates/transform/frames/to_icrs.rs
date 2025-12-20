@@ -1,9 +1,9 @@
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Vector, centers::ReferenceCenter, frames};
-use qtty::Unit;
+use qtty::LengthUnit;
 
 // Implement Transform trait for Ecliptic -> ICRS
-impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>>
+impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Vector<C, frames::ICRS, U>>
     for Vector<C, frames::Ecliptic, U>
 {
     fn to_frame(&self) -> Vector<C, frames::ICRS, U> {
@@ -21,10 +21,10 @@ impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>>
 }
 
 // Implement Transform trait for Equatorial -> ICRS (identity)
-impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::ICRS, U>>
+impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Vector<C, frames::ICRS, U>>
     for Vector<C, frames::Equatorial, U>
 {
     fn to_frame(&self) -> Vector<C, frames::ICRS, U> {
-        Vector::from_vec3(self.center_params().clone(), self.as_vec3())
+        Vector::from_vec3(self.center_params().clone(), *self.as_vec3())
     }
 }

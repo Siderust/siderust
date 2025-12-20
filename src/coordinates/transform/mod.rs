@@ -74,7 +74,7 @@ use crate::astro::JulianDate;
 use crate::coordinates::{
     cartesian, cartesian::Vector, centers::ReferenceCenter, frames::MutableFrame, spherical,
 };
-use qtty::*;
+use qtty::LengthUnit;
 
 /// Trait for transforming coordinates between different centers and/or frames.
 ///
@@ -104,7 +104,7 @@ where
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn transform(&self, jd: JulianDate) -> Vector<C2, F2, U> {
         self.to_frame().to_center(jd)
@@ -126,7 +126,7 @@ where
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn transform(&self, jd: JulianDate) -> spherical::Position<C2, F2, U> {
         self.to_cartesian().transform(jd).to_spherical()
@@ -148,7 +148,7 @@ where
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn from(orig: &cartesian::Vector<C1, F1, U>) -> Self {
         orig.to_frame().transform(JulianDate::J2000)
@@ -171,7 +171,7 @@ where
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn from(orig: &spherical::Position<C1, F1, U>) -> Self {
         // Step 1: Convert spherical to Cartesian
