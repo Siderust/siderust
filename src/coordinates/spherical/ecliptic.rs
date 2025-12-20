@@ -66,7 +66,7 @@ impl direction::Direction<frames::Ecliptic> {
     }
 }
 
-impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, frames::Ecliptic, U> {
+impl<C: ReferenceCenter, U: Unit> Position<C, frames::Ecliptic, U> {
     /// Returns the Latitude (β) in degrees.
     pub fn lat(&self) -> Degrees {
         self.polar

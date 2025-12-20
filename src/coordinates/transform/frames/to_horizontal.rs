@@ -152,24 +152,24 @@ impl<U: Unit> Transform<Vector<Topocentric, Equatorial, U>> for Vector<Topocentr
 }
 
 // =============================================================================
-// SphericalCoord implementations
+// Spherical position implementations
 // =============================================================================
 
-use crate::coordinates::spherical::SphericalCoord;
+use crate::coordinates::spherical::Position;
 
-impl<U: Unit> Transform<SphericalCoord<Topocentric, Horizontal, U>>
-    for SphericalCoord<Topocentric, Equatorial, U>
+impl<U: Unit> Transform<Position<Topocentric, Horizontal, U>>
+    for Position<Topocentric, Equatorial, U>
 {
-    fn transform(&self, jd: JulianDate) -> SphericalCoord<Topocentric, Horizontal, U> {
+    fn transform(&self, jd: JulianDate) -> Position<Topocentric, Horizontal, U> {
         let cart: Vector<Topocentric, Horizontal, U> = self.to_cartesian().transform(jd);
         cart.to_spherical()
     }
 }
 
-impl<U: Unit> Transform<SphericalCoord<Topocentric, Equatorial, U>>
-    for SphericalCoord<Topocentric, Horizontal, U>
+impl<U: Unit> Transform<Position<Topocentric, Equatorial, U>>
+    for Position<Topocentric, Horizontal, U>
 {
-    fn transform(&self, jd: JulianDate) -> SphericalCoord<Topocentric, Equatorial, U> {
+    fn transform(&self, jd: JulianDate) -> Position<Topocentric, Equatorial, U> {
         let cart: Vector<Topocentric, Equatorial, U> = self.to_cartesian().transform(jd);
         cart.to_spherical()
     }

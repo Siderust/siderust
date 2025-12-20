@@ -1,225 +1,24 @@
-//! # Spherical Coordinates
+//! # Spherical Coordinates (Positions)
 //!
-//! This module defines the generic [`SphericalCoord<C, F>`] type for representing positions or directions
-//! in spherical coordinates, parameterized by astronomical reference centers and frames for strong type safety.
+//! This module defines [`SphericalCoord<C, F, U>`], the core spherical **position** type: it carries
+//! a reference **center** (`C`), a reference **frame** (`F`), and a radial **distance** (`U`).
+//!
+//! Spherical **directions** (unit vectors) are represented separately by [`crate::coordinates::spherical::Direction<F>`]
+//! and intentionally have **no** reference center.
 //!
 //! ## Overview
+//! Legacy module removed.
 //!
-//! - **Generic over Center and Frame:**
-//!   - `C`: Reference center (e.g., `Heliocentric`, `Geocentric`, `Barycentric`).
-//!   - `F`: Reference frame (e.g., `frames::ICRS`, `Ecliptic`, `Equatorial`).
-//! - **Center Parameters:** Each coordinate stores `C::Params` to support parameterized centers.
-//!   For most centers, `Params = ()` (zero-cost). For `Topocentric`, it stores observer location.
-//! - **Type Safety:** Operations are only allowed between coordinates with matching type parameters.
-//! - **Units:** Angles are stored as [`Degrees`]; distance is optional and typically in AstronomicalUnits or parsecs (see context).
-//! - **Conversions:** Seamless conversion to and from [`Vector`] via `From`/`Into`.
-//! - **Operations:** Compute Euclidean distance and angular separation between coordinates.
+//! The crate used to define `SphericalCoord` here. It has been removed in favor of:
+//! - `crate::coordinates::spherical::Position<C, F, U>` for spherical **positions** (center + frame + distance)
+//! - `crate::coordinates::spherical::Direction<F>` for spherical **directions** (frame-only)
 //!
-//! ## Example
-//! ```rust
-//! use siderust::coordinates::spherical::Position;
-//! use siderust::coordinates::centers::Heliocentric;
-//! use siderust::coordinates::frames::Ecliptic;
-//! use qtty::*;
-//!
-//! // Create a heliocentric ecliptic spherical position (Params=() is automatic)
-//! let sph = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(45.0 * DEG, 7.0 * DEG, 1.0);
-//! println!("θ: {}, φ: {}, r: {:?}", sph.polar, sph.azimuth, sph.distance);
-//! ```
-//!
-//! ## Type Aliases
-//! - [`Position<C, F>`]: Spherical position (with distance and center).
-//! - [`Direction<F>`]: Spherical direction (frame-only, no center or distance).
-//!
-//! ## Methods
-//! - [`new(polar, azimuth, distance)`]: Construct a new coordinate.
-//! - [`distance_to(other)`]: Compute Euclidean distance to another coordinate.
-//! - [`angular_separation(other)`]: Compute angular separation in degrees.
-//!
-//! ## Display
-//! Implements `Display` for readable output including center, frame, angles, and distance.
+//! This file remains only to provide a clear error if someone tries to
+//! re-introduce `mod spherical; pub use spherical::*;`.
 
-use crate::coordinates::{centers, frames};
-use qtty::*;
-
-use std::marker::PhantomData;
-
-/// Represents a point in spherical coordinates with a specific reference center and frame.
-///
-/// # Type Parameters
-/// - `C`: The reference center (e.g., `Barycentric`, `Heliocentric`, `Topocentric`).
-/// - `F`: The reference frame (e.g., `frames::ICRS`, `Ecliptic`, `Horizontal`).
-/// - `U`: The unit type for distance (e.g., `AstronomicalUnit`, `Kilometer`).
-///
-/// # Center Parameters
-///
-/// The coordinate stores `C::Params` to support parameterized centers:
-/// - For `Barycentric`, `Heliocentric`, `Geocentric`: `Params = ()` (zero overhead)
-/// - For `Topocentric`: `Params = ObserverSite` (stores observer location)
-///
-/// Use `new_raw()` with explicit center_params, or use convenience constructors
-/// for centers with `Params = ()`.
-#[derive(Debug, Clone, Copy)]
-pub struct SphericalCoord<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: Unit> {
-    pub polar: Degrees,        // θ (polar/latitude/declination)
-    pub azimuth: Degrees,      // φ (azimuth/longitude/right ascension)
-    pub distance: Quantity<U>, // Distance (AstronomicalUnits, parsec, etc.)
-
-    center_params: C::Params,
-    _frame: PhantomData<F>,
-}
-
-impl<C, F, U> SphericalCoord<C, F, U>
-where
-    C: centers::ReferenceCenter,
-    F: frames::ReferenceFrame,
-    U: Unit,
-{
-    /// Constructs a new spherical coordinate with explicit center parameters.
-    ///
-    /// * `center_params`: The center parameters (e.g., `()` or `ObserverSite`)
-    /// * `polar`: angle from the reference plane, in degrees  
-    /// * `azimuth`: angle from the reference direction, in degrees  
-    /// * `distance`: radial distance in the same unit `U`
-    pub const fn new_raw_with_params(
-        center_params: C::Params,
-        polar: Degrees,
-        azimuth: Degrees,
-        distance: Quantity<U>,
-    ) -> Self {
-        Self {
-            polar,
-            azimuth,
-            distance,
-            center_params,
-            _frame: PhantomData,
-        }
-    }
-
-    /// Returns a reference to the center parameters.
-    ///
-    /// For most centers this returns `&()`. For `Topocentric`, it returns `&ObserverSite`.
-    pub fn center_params(&self) -> &C::Params {
-        &self.center_params
-    }
-
-    /// Calculates the angular separation between this coordinate and another.
-    ///
-    /// # Arguments
-    /// - `other`: The other spherical coordinate.
-    ///
-    /// # Returns
-    /// The angular separation in degrees.
-    pub fn angular_separation(&self, other: Self) -> Degrees {
-        let az1 = self.azimuth.to::<Radian>();
-        let po1 = self.polar.to::<Radian>();
-        let az2 = other.azimuth.to::<Radian>();
-        let po2 = other.polar.to::<Radian>();
-
-        let x = (po1.cos() * po2.sin()) - (po1.sin() * po2.cos() * (az2 - az1).cos());
-        let y = po2.cos() * (az2 - az1).sin();
-        let z = (po1.sin() * po2.sin()) + (po1.cos() * po2.cos() * (az2 - az1).cos());
-
-        let angle_rad = (x * x + y * y).sqrt().atan2(z);
-        Radians::new(angle_rad).to::<Degree>()
-    }
-
-    /// Returns a **direction** (unitless unit vector) corresponding to this position
-    /// (i.e. same angular coordinates, radius = 1).
-    ///
-    /// Note: Directions are frame-only types (no center). This extracts the
-    /// normalized direction regardless of the position's center.
-    #[must_use]
-    pub fn direction(&self) -> super::direction::Direction<F> {
-        super::direction::Direction::new(self.polar, self.azimuth)
-    }
-}
-
-// =============================================================================
-// Convenience constructors for centers with Params = ()
-// =============================================================================
-
-impl<C, F, U> SphericalCoord<C, F, U>
-where
-    C: centers::ReferenceCenter<Params = ()>,
-    F: frames::ReferenceFrame,
-    U: Unit,
-{
-    /// Constructs a new spherical coordinate for centers with `Params = ()`.
-    ///
-    /// This is a convenience constructor that doesn't require passing `()` explicitly.
-    /// Use this for `Barycentric`, `Heliocentric`, `Geocentric`, etc.
-    ///
-    /// * `polar`: angle from the reference plane, in degrees  
-    /// * `azimuth`: angle from the reference direction, in degrees  
-    /// * `distance`: radial distance in the same unit `U`
-    pub const fn new_raw(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
-        Self::new_raw_with_params((), polar, azimuth, distance)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::coordinates::centers::*;
-    use crate::coordinates::frames;
-    use crate::coordinates::spherical::SphericalCoord;
-
-    const EPS: Degrees = Degrees::new(1e-6); // tolerance for the exact geometry cases
-    const EPS_STAR: Degrees = Degrees::new(1e-2); // tolerance for the real‑world catalogue case
-
-    /// Helper to build a unit‑length direction in the frames::ICRS frame.
-    fn dir(dec: f64, ra: f64) -> SphericalCoord<Geocentric, frames::ICRS, Unitless> {
-        SphericalCoord::new_raw(
-            Degrees::new(dec), // polar / declination
-            Degrees::new(ra),  // azimuth / right‑ascension
-            Quantity::<Unitless>::new(1.0),
-        )
-    }
-
-    #[test]
-    fn identity_separation_is_zero() {
-        let a = dir(12.3, 45.6);
-        let sep = a.angular_separation(a);
-        assert!(sep.to::<Degree>().abs() < EPS, "expected 0°, got {}°", sep);
-    }
-
-    #[test]
-    fn orthogonal_points_give_ninety_degrees() {
-        let a = dir(0.0, 0.0);
-        let b = dir(0.0, 90.0);
-        let sep = a.angular_separation(b);
-        assert!(
-            (sep.to::<Degree>() - 90.0 * DEG).abs() < EPS,
-            "expected 90°, got {}°",
-            sep
-        );
-    }
-
-    #[test]
-    fn antipodal_points_give_180_degrees() {
-        let a = dir(0.0, 0.0);
-        let b = dir(0.0, 180.0);
-        let sep = a.angular_separation(b);
-        assert!(
-            (sep.to::<Degree>() - 180.0 * DEG).abs() < EPS,
-            "expected 180°, got {}°",
-            sep
-        );
-    }
-
-    #[test]
-    fn polaris_betelgeuse_real_world() {
-        // Star coordinates (J2000) from SIMBAD
-        let polaris = dir(89.26410897, 37.95456067); // Dec, RA
-        let betel = dir(7.407064, 88.792939); // Dec, RA
-        let sep = polaris.angular_separation(betel);
-        assert!(
-            (sep.to::<Degree>() - 82.1286 * DEG).abs() < EPS_STAR,
-            "expected 224882.13°, got {}°",
-            sep
-        );
-    }
+compile_error!(
+    "`SphericalCoord` has been removed. Use `crate::coordinates::spherical::Position` (positions) or `crate::coordinates::spherical::Direction` (directions)."
+);
 
     #[test]
     fn test_spherical_coord_creation() {

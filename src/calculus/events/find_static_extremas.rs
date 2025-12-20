@@ -2,7 +2,7 @@ use super::Culmination;
 use crate::astro::{nutation::corrected_ra_with_nutation, sidereal, JulianDate};
 use crate::coordinates::{
     centers::Geocentric, frames::Equatorial, spherical::position::Geographic,
-    spherical::SphericalCoord,
+    spherical::Position,
 };
 use crate::targets::Target;
 use qtty::Simplify;
@@ -50,7 +50,7 @@ use qtty::*;
 ///
 /// ---
 pub fn find_static_extremas<U: Unit>(
-    target: &Target<SphericalCoord<Geocentric, Equatorial, U>>,
+    target: &Target<Position<Geocentric, Equatorial, U>>,
     observer: &Geographic,
     jd_start: JulianDate,
     jd_end: JulianDate,
