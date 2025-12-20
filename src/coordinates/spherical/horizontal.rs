@@ -165,7 +165,7 @@ impl<U: LengthUnit> Position<Topocentric, Horizontal, U> {
 // Common accessors for all centers
 // =============================================================================
 
-impl<C: ReferenceCenter, U: Unit> SphericalCoord<C, Horizontal, U> {
+impl<C: ReferenceCenter, U: Unit> Position<C, Horizontal, U> {
     /// Returns the Altitude (α) in degrees.
     pub fn alt(&self) -> Degrees {
         self.polar

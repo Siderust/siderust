@@ -9,7 +9,6 @@ use crate::astro::JulianDate;
 use crate::coordinates::cartesian::Vector;
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::MutableFrame;
-use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{cartesian, spherical};
 use qtty::Unit;
 
@@ -31,8 +30,8 @@ where
     }
 }
 
-impl<C, F1, F2, U> TransformFrame<spherical::SphericalCoord<C, F2, U>>
-    for spherical::SphericalCoord<C, F1, U>
+impl<C, F1, F2, U> TransformFrame<spherical::Position<C, F2, U>>
+    for spherical::Position<C, F1, U>
 where
     cartesian::Vector<C, F1, U>: TransformFrame<cartesian::Vector<C, F2, U>>,
     C: ReferenceCenter,
@@ -40,22 +39,22 @@ where
     F2: MutableFrame,
     U: Unit,
 {
-    fn to_frame(&self) -> spherical::SphericalCoord<C, F2, U> {
+    fn to_frame(&self) -> spherical::Position<C, F2, U> {
         self.to_cartesian().to_frame().to_spherical()
     }
 }
 
-impl<C, F, U> SphericalCoord<C, F, U>
+impl<C, F, U> spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: MutableFrame,
     U: qtty::Unit,
 {
-    pub fn to_frame<F2: MutableFrame>(&self) -> SphericalCoord<C, F2, U>
+    pub fn to_frame<F2: MutableFrame>(&self) -> spherical::Position<C, F2, U>
     where
         Vector<C, F, U>: Transform<Vector<C, F2, U>>,
-        Vector<C, F, U>: for<'a> From<&'a SphericalCoord<C, F, U>>, // to_cartesian
-        SphericalCoord<C, F2, U>: for<'a> From<&'a Vector<C, F2, U>>, // to_spherical
+        Vector<C, F, U>: for<'a> From<&'a spherical::Position<C, F, U>>, // to_cartesian
+        spherical::Position<C, F2, U>: for<'a> From<&'a Vector<C, F2, U>>, // to_spherical
     {
         self.to_cartesian()
             .transform(JulianDate::J2000)

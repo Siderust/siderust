@@ -73,7 +73,6 @@ pub use frames::TransformFrame;
 use crate::astro::JulianDate;
 use crate::coordinates::{
     cartesian, cartesian::Vector, centers::ReferenceCenter, frames::MutableFrame, spherical,
-    spherical::SphericalCoord,
 };
 use qtty::*;
 
@@ -114,13 +113,13 @@ where
 
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
-/// This implementation allows converting a [`SphericalCoord`] from one
+/// This implementation allows converting a [`spherical::Position`] from one
 /// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, C2, F1, F2, U> Transform<spherical::SphericalCoord<C2, F2, U>>
-    for spherical::SphericalCoord<C1, F1, U>
+impl<C1, C2, F1, F2, U> Transform<spherical::Position<C2, F2, U>>
+    for spherical::Position<C1, F1, U>
 where
     cartesian::Vector<C1, F1, U>: Transform<cartesian::Vector<C2, F2, U>>,
     C1: ReferenceCenter,
@@ -129,7 +128,7 @@ where
     F2: MutableFrame,
     U: Unit,
 {
-    fn transform(&self, jd: JulianDate) -> spherical::SphericalCoord<C2, F2, U> {
+    fn transform(&self, jd: JulianDate) -> spherical::Position<C2, F2, U> {
         self.to_cartesian().transform(jd).to_spherical()
     }
 }
@@ -156,7 +155,7 @@ where
     }
 }
 
-/// Blanket implementation for transforming [`SphericalCoord`],
+/// Blanket implementation for transforming [`spherical::Position`],
 /// involving frame and center changes. Internally uses Cartesian conversions.
 ///
 /// The transformation follows these steps:
@@ -164,7 +163,7 @@ where
 /// 2. Apply frame transformation.
 /// 3. Apply center transformation.
 /// 4. Convert back to spherical coordinates.
-impl<C1, F1, C2, F2, U> From<&SphericalCoord<C1, F1, U>> for SphericalCoord<C2, F2, U>
+impl<C1, F1, C2, F2, U> From<&spherical::Position<C1, F1, U>> for spherical::Position<C2, F2, U>
 where
     Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>, // transform frame
     Vector<C1, F2, U>: Transform<Vector<C2, F2, U>>,      // transform center
@@ -174,7 +173,7 @@ where
     F2: MutableFrame,
     U: Unit,
 {
-    fn from(orig: &SphericalCoord<C1, F1, U>) -> Self {
+    fn from(orig: &spherical::Position<C1, F1, U>) -> Self {
         // Step 1: Convert spherical to Cartesian
         // Step 2: Transform to new frame
         // Step 3: Transform to new center

@@ -67,7 +67,7 @@ graph TB
         
         subgraph "Representations"
             CART[cartesian/<br/>Vector&lt;C,F,U&gt;]
-            SPH[spherical/<br/>SphericalCoord&lt;C,F,U&gt;]
+            SPH[spherical/<br/>Position&lt;C,F,U&gt;]
             
             CART_DIR[direction.rs<br/>Direction]
             CART_POS[position.rs<br/>Position]
@@ -145,7 +145,7 @@ classDiagram
         +z() Quantity~U~
     }
     
-    class SphericalCoord~C,F,U~ {
+    class Position~C,F,U~ {
         +polar: Degrees
         +azimuth: Degrees
         +distance: Quantity~U~
@@ -191,9 +191,9 @@ classDiagram
     Vector~C,F,U~ ..> ReferenceFrame : F
     Vector~C,F,U~ ..> Unit : U
     
-    SphericalCoord~C,F,U~ ..> ReferenceCenter : C
-    SphericalCoord~C,F,U~ ..> ReferenceFrame : F
-    SphericalCoord~C,F,U~ ..> Unit : U
+    Position~C,F,U~ ..> ReferenceCenter : C
+    Position~C,F,U~ ..> ReferenceFrame : F
+    Position~C,F,U~ ..> Unit : U
 ```
 
 ### Transformation Flow
@@ -289,8 +289,8 @@ pub type Position<C, F, U> = Vector<C, F, U>;                 // Affine (length 
 pub type Velocity<F, U> = Vector<NoCenter, F, U>;             // Free vector (velocity units)
 
 // Spherical
-pub type Direction<F> = SphericalCoord<NoCenter, F, DirectionUnit>;  // Free vector
-pub type Position<C, F, U> = SphericalCoord<C, F, U>;                // Affine
+pub type Direction<F> = spherical::Direction<F>;                     // Free direction (unit vector)
+pub type Position<C, F, U> = spherical::Position<C, F, U>;           // Affine position (has a center + distance)
 
 // Frame-specific direction aliases (no center parameter)
 pub type Ecliptic = Direction<frames::Ecliptic>;
@@ -345,9 +345,8 @@ coordinates/
 │
 ├── spherical/                # Spherical representation
 │   ├── mod.rs
-│   ├── spherical.rs         # Generic SphericalCoord<C,F,U>
 │   ├── direction.rs         # Direction type alias
-│   ├── position.rs          # Position type alias
+│   ├── position.rs          # Core Position<C,F,U>
 │   ├── equatorial.rs        # Equatorial-specific helpers
 │   ├── ecliptic.rs          # Ecliptic-specific helpers
 │   ├── horizontal.rs        # Horizontal-specific helpers
@@ -541,7 +540,7 @@ xyz: nalgebra::Vector3<Quantity<U>>
 - Natural for physics calculations (velocity, acceleration)
 - Easy to compute distances and angles
 
-#### Spherical (SphericalCoord)
+#### Spherical (Position)
 
 **Storage:**
 ```rust
