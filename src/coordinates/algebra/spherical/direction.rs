@@ -38,14 +38,14 @@
 //! let vega: ICRS = ICRS::new(279.23473479 * DEG, 38.78368896 * DEG);
 //!
 //! // Convert that direction into a position one parsec away:
-//! use siderust::coordinates::centers::Barycentric;
+//! use siderust::coordinates::algebra::centers::Barycentric;
 //! let one_pc = 1.0 * PC;
 //! let pos = vega.position::<Barycentric, _>(one_pc);
 //! println!("Vega direction = {vega}\nVega@1pc position = {pos}");
 //! ```
 
-use crate::coordinates::centers::ReferenceCenter;
-use crate::coordinates::frames::{self, ReferenceFrame};
+use crate::coordinates::algebra::centers::ReferenceCenter;
+use crate::coordinates::algebra::frames::{self, ReferenceFrame};
 use qtty::{Degrees, Dimension, LengthUnit, Quantity, Unit};
 
 use std::marker::PhantomData;
@@ -178,7 +178,7 @@ impl<F: ReferenceFrame> Direction<F> {
     }
 
     /// Converts to cartesian Direction.
-    pub fn to_cartesian(&self) -> crate::coordinates::cartesian::Direction<F>
+    pub fn to_cartesian(&self) -> crate::coordinates::algebra::cartesian::Direction<F>
     where
         F: frames::MutableFrame,
     {
@@ -191,7 +191,7 @@ impl<F: ReferenceFrame> Direction<F> {
         let y = azimuth_rad.sin() * polar_rad.cos();
         let z = polar_rad.sin();
 
-        crate::coordinates::cartesian::Direction::<F>::new(x, y, z)
+        crate::coordinates::algebra::cartesian::Direction::<F>::new(x, y, z)
     }
 }
 
@@ -207,17 +207,6 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
     }
 }
 
-/// **Ecliptic** direction (longitude *L*, latitude *B*).
-pub type Ecliptic = Direction<frames::Ecliptic>;
-/// **Equatorial** direction (right‑ascension *α*, declination *δ*).
-pub type Equatorial = Direction<frames::Equatorial>;
-/// **Horizontal** direction (azimuth *Az*, altitude *Alt*).
-pub type Horizontal = Direction<frames::Horizontal>;
-/// **ICRS** direction.
-pub type ICRS = Direction<frames::ICRS>;
-/// **Geographic** (ECEF) direction: latitude, longitude.
-pub type Geographic = Direction<frames::ECEF>;
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -225,20 +214,19 @@ mod tests {
 
     #[test]
     fn creates_valid_spherical_direction() {
-        let polar = Degrees::new(45.0); // This is Dec
-        let azimuth = Degrees::new(90.0); // This is RA
+        let polar = Degrees::new(45.0);
+        let azimuth = Degrees::new(90.0);
 
-        let coord = ICRS::new(polar, azimuth);
+        let coord = Direction::<frames::ICRS>::new(polar, azimuth);
 
-        // In spherical coords: polar=Dec, azimuth=RA
-        assert_eq!(coord.ra().value(), 90.0); // RA = azimuth
-        assert_eq!(coord.dec().value(), 45.0); // Dec = polar
+        assert_eq!(coord.azimuth.value(), 90.0);
+        assert_eq!(coord.polar.value(), 45.0);
         assert_eq!(coord.distance.value(), 1.0);
     }
 
     #[test]
     fn displays_coordinate_as_string_correctly() {
-        let coord = ICRS::new(Degrees::new(30.0), Degrees::new(60.0));
+        let coord = Direction::<frames::ICRS>::new(Degrees::new(30.0), Degrees::new(60.0));
         let output = coord.to_string();
         assert!(output.contains("θ: 30"), "Missing polar angle");
         assert!(output.contains("φ: 60"), "Missing azimuth");
@@ -246,37 +234,35 @@ mod tests {
 
     #[test]
     fn maintains_high_precision_on_values() {
-        let polar = Degrees::new(90.654_321); // Dec
-        let azimuth = Degrees::new(45.123_456); // RA
+        let polar = Degrees::new(90.654_321);
+        let azimuth = Degrees::new(45.123_456);
 
-        let coord = ICRS::new(polar, azimuth);
+        let coord = Direction::<frames::ICRS>::new(polar, azimuth);
 
-        // ra() = azimuth, dec() = polar
-        assert!((coord.ra().value() - 45.123_456).abs() < 1e-6);
-        assert!((coord.dec().value() - 90.654_321).abs() < 1e-6);
+        assert!((coord.azimuth.value() - 45.123_456).abs() < 1e-6);
+        assert!((coord.polar.value() - 90.654_321).abs() < 1e-6);
     }
 
     const EPS: f64 = 1e-6;
 
     #[test]
     fn position_method_promotes_with_given_radius() {
-        use crate::coordinates::centers::Barycentric;
+        use crate::coordinates::algebra::centers::Barycentric;
 
-        // Using new_icrs(ra, dec) for correct ICRS convention
-        let dir: ICRS = ICRS::new_icrs(Degrees::new(120.0), Degrees::new(-30.0));
+        let dir = Direction::<frames::ICRS>::new(Degrees::new(-30.0), Degrees::new(120.0));
         let pos =
             dir.position::<Barycentric, AstronomicalUnit>(Quantity::<AstronomicalUnit>::new(2.0));
 
-        // angles are preserved (RA=120, Dec=-30)
+        // angles are preserved
         assert!(
-            (pos.ra().value() - 120.0).abs() < EPS,
-            "RA mismatch: got {}",
-            pos.ra().value()
+            (pos.azimuth.value() - 120.0).abs() < EPS,
+            "azimuth mismatch: got {}",
+            pos.azimuth.value()
         );
         assert!(
-            (pos.dec().value() - (-30.0)).abs() < EPS,
-            "Dec mismatch: got {}",
-            pos.dec().value()
+            (pos.polar.value() - (-30.0)).abs() < EPS,
+            "polar mismatch: got {}",
+            pos.polar.value()
         );
 
         // distance matches the supplied magnitude
@@ -285,7 +271,7 @@ mod tests {
 
     #[test]
     fn direction_display_mentions_frame() {
-        let eq: Equatorial = Equatorial::new(Degrees::new(45.0), Degrees::new(10.0));
+        let eq = Direction::<frames::Equatorial>::new(Degrees::new(45.0), Degrees::new(10.0));
         let s = eq.to_string();
         assert!(s.contains("Equatorial"), "missing frame");
         // No center in directions anymore
@@ -294,7 +280,7 @@ mod tests {
 
     #[test]
     fn angular_separation_identity() {
-        let a = ICRS::new(Degrees::new(45.0), Degrees::new(30.0));
+        let a = Direction::<frames::ICRS>::new(Degrees::new(45.0), Degrees::new(30.0));
         let sep = a.angular_separation(&a);
         assert!(sep.abs().value() < 1e-10, "expected 0°, got {}", sep);
     }

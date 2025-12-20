@@ -24,7 +24,7 @@
 //! ```
 
 use super::*;
-use crate::coordinates::{centers::*, frames};
+use crate::coordinates::algebra::{centers::*, frames};
 use qtty::*;
 
 impl<C: ReferenceCenter<Params = ()>, U: LengthUnit> Position<C, frames::Ecliptic, U> {

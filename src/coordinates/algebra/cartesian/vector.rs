@@ -30,7 +30,7 @@
 //! `type Velocity<F: ReferenceFrame, U: VelocityUnit> = Vector<NoCenter, F, U>;`  (free vector)
 //! `type Position<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> = Vector<C, F, U>;`  (affine)
 
-use crate::coordinates::{centers, frames};
+use crate::coordinates::algebra::{centers, frames};
 use qtty::*;
 
 use nalgebra::Vector3;

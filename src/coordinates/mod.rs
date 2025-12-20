@@ -18,6 +18,33 @@
 //!
 //! ## Architectural Separation
 //!
+//! The coordinate system is now organized into two main modules:
+//!
+//! ### `algebra` - Pure Mathematical Structures
+//!
+//! Contains the abstract algebraic coordinate types independent of physical context:
+//! - **Reference frames and centers**: Trait definitions for orientation and origin
+//! - **Cartesian types**: Vector, Direction, Position, Velocity
+//! - **Spherical types**: Direction, Position (base implementations)
+//!
+//! ### `astro` - Physical/Astronomical Implementations
+//!
+//! Contains domain-specific coordinate systems with astronomical conventions:
+//! - Frame-specific convenience constructors (e.g., `new_ecliptic(lon, lat)`)
+//! - Astronomical naming conventions (RA/Dec, lon/lat, alt/az)
+//! - Physical coordinate system extensions
+//!
+//! ### Legacy Compatibility
+//!
+//! For backward compatibility, the original module structure is maintained with
+//! re-exports from the new `algebra` and `astro` modules:
+//! - `coordinates::frames` → `algebra::frames`
+//! - `coordinates::centers` → `algebra::centers`
+//! - `coordinates::cartesian` → `algebra::cartesian`
+//! - `coordinates::spherical` → `astro::spherical`
+//!
+//! ## Coordinate Transform Architecture
+//!
 //! The coordinate system maintains a clean separation of concerns:
 //!
 //! - **Center transforms** (translations): Apply only to positions. Moving from geocentric to
@@ -38,7 +65,7 @@
 //! ```rust
 //! use siderust::coordinates::spherical;
 //! use siderust::coordinates::cartesian;
-//! use siderust::coordinates::frames::Ecliptic;
+//! use siderust::coordinates::algebra::frames::Ecliptic;
 //! use qtty::*;
 //!
 //! // Create an ecliptic spherical direction (frame-only, no center)
@@ -56,16 +83,39 @@
 //! ```
 //!
 //! ## Submodules
-//! - **transform**: Generic transformations between coordinate systems and frames.
-//! - **cartesian**: Cartesian coordinate types and operations.
-//! - **spherical**: Spherical coordinate types and operations.
-//! - **frames**: Reference frame marker types (e.g., `Ecliptic`, `Equatorial`, `ICRS`).
-//! - **centers**: Reference center marker types (e.g., `Heliocentric`, `Geocentric`).
-//! - **observation**: Observational state types (`Astrometric`, `Apparent`) and aberration.
+//! - **algebra**: Pure mathematical coordinate structures (frames, centers, vectors)
+//! - **astro**: Physical/astronomical coordinate implementations
+//! - **transform**: Generic transformations between coordinate systems and frames
+//! - **observation**: Observational state types (`Astrometric`, `Apparent`) and aberration
+//!
+//! ## Legacy Exports (for backward compatibility)
+//! - **cartesian**: Re-export of `algebra::cartesian`
+//! - **spherical**: Re-export of `astro::spherical`
+//! - **frames**: Re-export of `algebra::frames`
+//! - **centers**: Re-export of `algebra::centers`
 
-pub mod cartesian;
-pub mod centers;
-pub mod frames;
+pub mod algebra;
+pub mod astro;
 pub mod observation;
-pub mod spherical;
 pub mod transform;
+
+// Legacy re-exports for backward compatibility
+pub mod cartesian {
+    // Re-export algebraic types
+    pub use crate::coordinates::algebra::cartesian::*;
+    
+    // Re-export astronomical type aliases from astro module
+    pub use crate::coordinates::astro::cartesian::{direction, position, velocity};
+}
+
+pub mod spherical {
+    pub use crate::coordinates::astro::spherical::*;
+}
+
+pub mod frames {
+    pub use crate::coordinates::algebra::frames::*;
+}
+
+pub mod centers {
+    pub use crate::coordinates::algebra::centers::*;
+}

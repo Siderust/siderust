@@ -42,7 +42,7 @@
 //! ```
 
 use super::*;
-use crate::coordinates::{centers::*, frames::*};
+use crate::coordinates::algebra::{centers::*, frames::*};
 use qtty::*;
 
 // =============================================================================

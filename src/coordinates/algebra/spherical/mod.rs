@@ -8,9 +8,3 @@ pub use position::Position;
 
 pub mod direction;
 pub use direction::Direction;
-
-mod ecef;
-mod ecliptic;
-mod equatorial;
-mod horizontal;
-mod icrs;
