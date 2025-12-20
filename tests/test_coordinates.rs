@@ -10,7 +10,7 @@ fn approx_eq_pos<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Posit
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
     Quantity<U>: std::cmp::PartialOrd,
 {
     assert!(
@@ -38,22 +38,22 @@ where
     F: ReferenceFrame,
 {
     assert!(
-        (a.x().value() - b.x().value()).abs() < 1e-6,
+        (a.x() - b.x()).abs() < 1e-6,
         "x mismatch: {} vs {}",
-        a.x().value(),
-        b.x().value()
+        a.x(),
+        b.x()
     );
     assert!(
-        (a.y().value() - b.y().value()).abs() < 1e-6,
+        (a.y() - b.y()).abs() < 1e-6,
         "y mismatch: {} vs {}",
-        a.y().value(),
-        b.y().value()
+        a.y(),
+        b.y()
     );
     assert!(
-        (a.z().value() - b.z().value()).abs() < 1e-6,
+        (a.z() - b.z()).abs() < 1e-6,
         "z mismatch: {} vs {}",
-        a.z().value(),
-        b.z().value()
+        a.z(),
+        b.z()
     );
 }
 
@@ -108,7 +108,8 @@ fn test_direction_frame_transformations() {
     let original: Direction<Ecliptic> = Mars::vsop87a(JulianDate::J2000)
         .get_position()
         .clone()
-        .direction();
+        .direction()
+        .expect("Mars position should have a direction");
 
     // Ecliptic -> Equatorial -> back (frame rotation only)
     let equatorial: Direction<Equatorial> = TransformFrame::to_frame(&original);
@@ -116,9 +117,9 @@ fn test_direction_frame_transformations() {
     approx_eq_dir(&original, &ecliptic_back);
 
     // Verify directions are still unit vectors after transformation
-    let norm = (equatorial.x().value().powi(2)
-        + equatorial.y().value().powi(2)
-        + equatorial.z().value().powi(2))
+    let norm = (equatorial.x().powi(2)
+        + equatorial.y().powi(2)
+        + equatorial.z().powi(2))
     .sqrt();
     assert!(
         (norm - 1.0).abs() < 1e-12,
@@ -133,7 +134,8 @@ fn test_spherical_direction_transformations() {
     let cart_original: cartesian::Direction<Ecliptic> = Mars::vsop87a(JulianDate::J2000)
         .get_position()
         .clone()
-        .direction();
+        .direction()
+        .expect("Mars position should have a direction");
 
     // Convert to spherical and back
     let sph = cart_original.to_spherical();
@@ -175,7 +177,7 @@ fn test_line_of_sight() {
     let los = line_of_sight(&observer, &target);
 
     // Direction should point in +X direction
-    assert!((los.x().value() - 1.0).abs() < 1e-12);
-    assert!(los.y().value().abs() < 1e-12);
-    assert!(los.z().value().abs() < 1e-12);
+    assert!((los.x() - 1.0).abs() < 1e-12);
+    assert!(los.y().abs() < 1e-12);
+    assert!(los.z().abs() < 1e-12);
 }

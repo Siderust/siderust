@@ -70,14 +70,14 @@ fn cartesian_direction_frame_transform() {
     let dir_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&dir);
 
     // Verify it's still a unit vector
-    let norm = (dir_equatorial.x().value().powi(2)
-        + dir_equatorial.y().value().powi(2)
-        + dir_equatorial.z().value().powi(2))
+    let norm = (dir_equatorial.x().powi(2)
+        + dir_equatorial.y().powi(2)
+        + dir_equatorial.z().powi(2))
     .sqrt();
     assert!((norm - 1.0).abs() < 1e-12);
 
     // X component is unchanged in ecliptic/equatorial rotation
-    assert!((dir_equatorial.x().value() - dir.x().value()).abs() < 1e-12);
+    assert!((dir_equatorial.x() - dir.x()).abs() < 1e-12);
 }
 
 #[test]
@@ -90,9 +90,9 @@ fn spherical_direction_frame_transform() {
     let cart_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&cart_dir);
 
     // Verify the Cartesian direction is still unit vector
-    let norm = (cart_equatorial.x().value().powi(2)
-        + cart_equatorial.y().value().powi(2)
-        + cart_equatorial.z().value().powi(2))
+    let norm = (cart_equatorial.x().powi(2)
+        + cart_equatorial.y().powi(2)
+        + cart_equatorial.z().powi(2))
     .sqrt();
     assert!((norm - 1.0).abs() < 1e-12);
 }

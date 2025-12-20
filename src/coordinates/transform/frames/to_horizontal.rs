@@ -9,7 +9,7 @@ use crate::astro::JulianDate;
 use crate::coordinates::cartesian::Vector;
 use crate::coordinates::centers::{ObserverSite, Topocentric};
 use crate::coordinates::frames::{Equatorial, Horizontal};
-use qtty::{Deg, Degrees, Quantity, Radian, Radians, Unit};
+use qtty::{Deg, Degrees, Quantity, Radian, Radians, LengthUnit};
 
 /// Performs the equatorial to horizontal coordinate transformation.
 ///
@@ -93,7 +93,7 @@ use crate::coordinates::transform::Transform;
 ///
 /// This transformation requires the Julian Date to compute the local sidereal time.
 /// The observer's site information is taken from the coordinate's center params.
-impl<U: Unit> Transform<Vector<Topocentric, Horizontal, U>> for Vector<Topocentric, Equatorial, U> {
+impl<U: LengthUnit> Transform<Vector<Topocentric, Horizontal, U>> for Vector<Topocentric, Equatorial, U> {
     fn transform(&self, jd: JulianDate) -> Vector<Topocentric, Horizontal, U> {
         let site = self.center_params();
         let r = self.distance();
@@ -124,7 +124,7 @@ impl<U: Unit> Transform<Vector<Topocentric, Horizontal, U>> for Vector<Topocentr
 // =============================================================================
 
 /// Transform from Horizontal to Equatorial frame for Topocentric coordinates.
-impl<U: Unit> Transform<Vector<Topocentric, Equatorial, U>> for Vector<Topocentric, Horizontal, U> {
+impl<U: LengthUnit> Transform<Vector<Topocentric, Equatorial, U>> for Vector<Topocentric, Horizontal, U> {
     fn transform(&self, jd: JulianDate) -> Vector<Topocentric, Equatorial, U> {
         let site = self.center_params();
 
@@ -157,7 +157,7 @@ impl<U: Unit> Transform<Vector<Topocentric, Equatorial, U>> for Vector<Topocentr
 
 use crate::coordinates::spherical::Position;
 
-impl<U: Unit> Transform<Position<Topocentric, Horizontal, U>>
+impl<U: LengthUnit> Transform<Position<Topocentric, Horizontal, U>>
     for Position<Topocentric, Equatorial, U>
 {
     fn transform(&self, jd: JulianDate) -> Position<Topocentric, Horizontal, U> {
@@ -166,7 +166,7 @@ impl<U: Unit> Transform<Position<Topocentric, Horizontal, U>>
     }
 }
 
-impl<U: Unit> Transform<Position<Topocentric, Equatorial, U>>
+impl<U: LengthUnit> Transform<Position<Topocentric, Equatorial, U>>
     for Position<Topocentric, Horizontal, U>
 {
     fn transform(&self, jd: JulianDate) -> Position<Topocentric, Equatorial, U> {

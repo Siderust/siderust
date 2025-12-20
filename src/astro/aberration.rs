@@ -62,9 +62,9 @@ pub fn apply_aberration_to_direction(
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        mean.x().value() + (velocity.x() / AU_PER_DAY_C).simplify().value(),
-        mean.y().value() + (velocity.y() / AU_PER_DAY_C).simplify().value(),
-        mean.z().value() + (velocity.z() / AU_PER_DAY_C).simplify().value(),
+        mean.x() + (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        mean.y() + (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        mean.z() + (velocity.z() / AU_PER_DAY_C).simplify().value(),
     )
 }
 
@@ -82,9 +82,9 @@ pub fn remove_aberration_from_direction(
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        app.x().value() - (velocity.x() / AU_PER_DAY_C).simplify().value(),
-        app.y().value() - (velocity.y() / AU_PER_DAY_C).simplify().value(),
-        app.z().value() - (velocity.z() / AU_PER_DAY_C).simplify().value(),
+        app.x() - (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        app.y() - (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        app.z() - (velocity.z() / AU_PER_DAY_C).simplify().value(),
     )
 }
 
@@ -100,7 +100,9 @@ pub fn apply_aberration<U: LengthUnit>(
         return mean;
     }
 
-    apply_aberration_to_direction(mean.direction(), jd).position(mean.distance())
+    // Safe to unwrap: we just checked distance is non-zero
+    let dir = mean.direction().expect("non-zero position should have a direction");
+    apply_aberration_to_direction(dir, jd).position(mean.distance())
 }
 
 /// Remove **annual aberration** from a position vector, preserving its
@@ -115,7 +117,9 @@ pub fn remove_aberration<U: LengthUnit>(
         return app;
     }
 
-    remove_aberration_from_direction(app.direction(), jd).position(app.distance())
+    // Safe to unwrap: we just checked distance is non-zero
+    let dir = app.direction().expect("non-zero position should have a direction");
+    remove_aberration_from_direction(dir, jd).position(app.distance())
 }
 
 #[cfg(test)]

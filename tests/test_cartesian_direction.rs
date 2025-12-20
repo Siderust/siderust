@@ -21,11 +21,11 @@ fn direction_position_scales_with_magnitude() {
 #[test]
 fn direction_normalize_returns_unit_vector() {
     let dir = Direction::<Ecliptic>::normalize(3.0, 4.0, 0.0);
-    let norm = (dir.x().value().powi(2) + dir.y().value().powi(2) + dir.z().value().powi(2)).sqrt();
+    let norm = (dir.x().powi(2) + dir.y().powi(2) + dir.z().powi(2)).sqrt();
     assert!((norm - 1.0).abs() < 1e-12);
-    assert!((dir.x().value() - 0.6).abs() < 1e-12);
-    assert!((dir.y().value() - 0.8).abs() < 1e-12);
-    assert!(dir.z().value().abs() < 1e-12);
+    assert!((dir.x() - 0.6).abs() < 1e-12);
+    assert!((dir.y() - 0.8).abs() < 1e-12);
+    assert!(dir.z().abs() < 1e-12);
 }
 
 #[test]

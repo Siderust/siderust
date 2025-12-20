@@ -7,7 +7,7 @@ fn spherical_to_cartesian<C, F, U>(
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     let ra_rad = sph.azimuth.to::<Radian>();
     let dec_rad = sph.polar.to::<Radian>();
@@ -32,7 +32,7 @@ impl<C, F, U> From<&spherical::Position<C, F, U>> for cartesian::Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn from(sph: &spherical::Position<C, F, U>) -> Self {
         spherical_to_cartesian(sph)
@@ -43,7 +43,7 @@ impl<C, F, U> crate::coordinates::spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     pub fn to_cartesian(&self) -> cartesian::Vector<C, F, U> {
         spherical_to_cartesian(self)
@@ -54,7 +54,7 @@ impl<C, F, U> crate::coordinates::cartesian::Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     pub fn from_spherical(sph: &spherical::Position<C, F, U>) -> Self {
         spherical_to_cartesian(sph)

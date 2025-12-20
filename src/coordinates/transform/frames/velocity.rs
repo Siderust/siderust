@@ -16,7 +16,7 @@ where
     U: Unit,
 {
     fn to_frame(&self) -> Velocity<F, U> {
-        Self::from_vec3(self.as_vec3())
+        Self::from_vec3(*self.as_vec3())
     }
 }
 
@@ -71,14 +71,14 @@ impl<U: Unit> TransformFrame<Velocity<frames::Ecliptic, U>> for Velocity<frames:
 /// Frame transform from ICRS to Equatorial for velocities (identity for now).
 impl<U: Unit> TransformFrame<Velocity<frames::Equatorial, U>> for Velocity<frames::ICRS, U> {
     fn to_frame(&self) -> Velocity<frames::Equatorial, U> {
-        Velocity::<frames::Equatorial, U>::from_vec3(self.as_vec3())
+        Velocity::<frames::Equatorial, U>::from_vec3(*self.as_vec3())
     }
 }
 
 /// Frame transform from Equatorial to ICRS for velocities (identity for now).
 impl<U: Unit> TransformFrame<Velocity<frames::ICRS, U>> for Velocity<frames::Equatorial, U> {
     fn to_frame(&self) -> Velocity<frames::ICRS, U> {
-        Velocity::<frames::ICRS, U>::from_vec3(self.as_vec3())
+        Velocity::<frames::ICRS, U>::from_vec3(*self.as_vec3())
     }
 }
 

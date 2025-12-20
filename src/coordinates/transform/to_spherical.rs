@@ -7,7 +7,7 @@ fn cartesian_to_spherical<C, F, U>(
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     let r = cart.distance();
     let x = cart.x().value();
@@ -46,7 +46,7 @@ impl<C, F, U> From<&cartesian::Vector<C, F, U>> for spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn from(cart: &cartesian::Vector<C, F, U>) -> Self {
         cartesian_to_spherical(cart)
@@ -57,7 +57,7 @@ impl<C, F, U> crate::coordinates::spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     pub fn from_cartesian(cart: &cartesian::Vector<C, F, U>) -> Self {
         cartesian_to_spherical(cart)
@@ -68,7 +68,7 @@ impl<C, F, U> crate::coordinates::cartesian::Vector<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     pub fn to_spherical(&self) -> spherical::Position<C, F, U> {
         cartesian_to_spherical(self)

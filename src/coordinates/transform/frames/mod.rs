@@ -10,7 +10,7 @@ use crate::coordinates::cartesian::Vector;
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::MutableFrame;
 use crate::coordinates::{cartesian, spherical};
-use qtty::Unit;
+use qtty::LengthUnit;
 
 use crate::coordinates::transform::Transform;
 
@@ -21,12 +21,12 @@ pub trait TransformFrame<Coord> {
 // Implement Identity frame transform
 impl<C, F, U> TransformFrame<Vector<C, F, U>> for Vector<C, F, U>
 where
-    U: Unit,
+    U: LengthUnit,
     F: MutableFrame,
     C: ReferenceCenter,
 {
     fn to_frame(&self) -> Vector<C, F, U> {
-        Vector::from_vec3(self.center_params().clone(), self.as_vec3())
+        Vector::from_vec3(self.center_params().clone(), *self.as_vec3())
     }
 }
 
@@ -37,7 +37,7 @@ where
     C: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     fn to_frame(&self) -> spherical::Position<C, F2, U> {
         self.to_cartesian().to_frame().to_spherical()
@@ -48,7 +48,7 @@ impl<C, F, U> spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: MutableFrame,
-    U: qtty::Unit,
+    U: qtty::LengthUnit,
 {
     pub fn to_frame<F2: MutableFrame>(&self) -> spherical::Position<C, F2, U>
     where
