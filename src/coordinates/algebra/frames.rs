@@ -22,13 +22,13 @@
 //!
 //! ## Extending
 //!
-//! To define a new reference frame, use the [`affn::new_frame!`] macro:
+//! To define a new reference frame, use the derive macro:
 //!
 //! ```rust
-//! use affn::new_frame;
-//! use affn::ReferenceFrame;
+//! use affn::prelude::*;
 //!
-//! new_frame!(MyCustomFrame);
+//! #[derive(Debug, Copy, Clone, ReferenceFrame)]
+//! struct MyCustomFrame;
 //! assert_eq!(MyCustomFrame::frame_name(), "MyCustomFrame");
 //! ```
 //!
@@ -42,7 +42,9 @@
 //! ```
 
 // Re-export the core trait from affn
-pub use affn::ReferenceFrame;
+pub use affn::frames::ReferenceFrame;
+// Import derive from prelude for use in this module
+use affn::prelude::{ReferenceFrame as DeriveReferenceFrame};
 
 // =============================================================================
 // Astronomical Reference Frames
@@ -53,94 +55,52 @@ pub use affn::ReferenceFrame;
 /// The fundamental celestial reference frame used in modern astronomy.
 /// It is quasi-inertial and centered at the solar system barycenter.
 /// The axes are defined by the positions of distant quasars.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 pub struct ICRS;
-
-impl ReferenceFrame for ICRS {
-    fn frame_name() -> &'static str {
-        "ICRS"
-    }
-}
 
 /// Local horizon coordinate system.
 ///
 /// A topocentric frame based on the observer's local horizon.
 /// Uses altitude (elevation above horizon) and azimuth (bearing from north).
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 pub struct Horizontal;
-
-impl ReferenceFrame for Horizontal {
-    fn frame_name() -> &'static str {
-        "Horizontal"
-    }
-}
 
 /// Equatorial coordinate system.
 ///
 /// Based on Earth's equator and the vernal equinox.
 /// Uses right ascension (RA) and declination (Dec).
 /// May be fixed to a specific epoch (e.g., J2000) or rotating with precession.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 pub struct Equatorial;
-
-impl ReferenceFrame for Equatorial {
-    fn frame_name() -> &'static str {
-        "Equatorial"
-    }
-}
 
 /// Ecliptic coordinate system.
 ///
 /// Based on the plane of Earth's orbit around the Sun.
 /// Uses ecliptic longitude and latitude.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 pub struct Ecliptic;
-
-impl ReferenceFrame for Ecliptic {
-    fn frame_name() -> &'static str {
-        "Ecliptic"
-    }
-}
 
 /// International Terrestrial Reference Frame.
 ///
 /// A geocentric Earth-fixed frame that co-rotates with the Earth.
 /// Used for geodetic and geophysical applications.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 pub struct ITRF;
-
-impl ReferenceFrame for ITRF {
-    fn frame_name() -> &'static str {
-        "ITRF"
-    }
-}
 
 /// Earth-Centered, Earth-Fixed coordinate system.
 ///
 /// A geocentric Cartesian coordinate system that rotates with the Earth.
 /// The X-axis points to the intersection of the prime meridian and equator.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 pub struct ECEF;
-
-impl ReferenceFrame for ECEF {
-    fn frame_name() -> &'static str {
-        "ECEF"
-    }
-}
 
 /// Galactic coordinate system.
 ///
 /// Based on the plane of the Milky Way galaxy.
 /// Uses galactic longitude and latitude, with the center
 /// of the galaxy defining the origin of galactic longitude.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 pub struct Galactic;
-
-impl ReferenceFrame for Galactic {
-    fn frame_name() -> &'static str {
-        "Galactic"
-    }
-}
 
 // =============================================================================
 // MutableFrame: Marker for Transformable Frames

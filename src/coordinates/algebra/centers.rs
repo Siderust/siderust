@@ -28,13 +28,13 @@
 //!
 //! ## Extending
 //!
-//! To define a new reference center, use the [`affn::new_center!`] macro:
+//! To define a new reference center, use the derive macro:
 //!
 //! ```rust
-//! use affn::new_center;
-//! use affn::ReferenceCenter;
+//! use affn::prelude::*;
 //!
-//! new_center!(Lunarcentric);
+//! #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+//! struct Lunarcentric;
 //! assert_eq!(Lunarcentric::center_name(), "Lunarcentric");
 //! ```
 //!
@@ -52,30 +52,17 @@ use qtty::{Degrees, Meter, Quantity};
 use std::fmt::Debug;
 
 // Re-export core traits from affn
-pub use affn::{AffineCenter, NoCenter, ReferenceCenter};
+pub use affn::{AffineCenter, NoCenter};
+pub use affn::centers::ReferenceCenter;
+// Import derives from prelude for use in this module
+use affn::prelude::{ReferenceCenter as DeriveReferenceCenter};
 
 // Required for Transform specialization
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 pub struct Heliocentric;
 
-impl ReferenceCenter for Heliocentric {
-    type Params = ();
-
-    fn center_name() -> &'static str {
-        stringify!(Heliocentric)
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 pub struct Barycentric;
-
-impl ReferenceCenter for Barycentric {
-    type Params = ();
-
-    fn center_name() -> &'static str {
-        stringify!(Barycentric)
-    }
-}
 
 // =============================================================================
 // ObserverSite: Parameters for Topocentric coordinates
@@ -250,26 +237,12 @@ impl ObserverSite {
 /// assert_eq!(std::mem::size_of::<<Topocentric as ReferenceCenter>::Params>(),
 ///            std::mem::size_of::<ObserverSite>());
 /// ```
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[center(params = ObserverSite)]
 pub struct Topocentric;
 
-impl ReferenceCenter for Topocentric {
-    type Params = ObserverSite;
-
-    fn center_name() -> &'static str {
-        "Topocentric"
-    }
-}
-
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 pub struct Geocentric;
-impl ReferenceCenter for Geocentric {
-    type Params = ();
-
-    fn center_name() -> &'static str {
-        "Geocentric"
-    }
-}
 
 // =============================================================================
 // Bodycentric: Generic center for any orbiting celestial body
@@ -425,28 +398,10 @@ impl Default for BodycentricParams {
 ///
 /// let sat_params = BodycentricParams::geocentric(satellite_orbit);
 /// ```
-#[derive(Debug, Copy, Clone)]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[center(params = BodycentricParams)]
 pub struct Bodycentric;
 
-impl ReferenceCenter for Bodycentric {
-    type Params = BodycentricParams;
-
-    fn center_name() -> &'static str {
-        "Bodycentric"
-    }
-}
-
-// =============================================================================
-// AffineCenter implementations for astronomical centers
-// =============================================================================
-
-// Implement AffineCenter for all actual coordinate centers.
-// (AffineCenter trait itself comes from affn.)
-impl AffineCenter for Barycentric {}
-impl AffineCenter for Heliocentric {}
-impl AffineCenter for Geocentric {}
-impl AffineCenter for Topocentric {}
-impl AffineCenter for Bodycentric {}
 
 
 #[cfg(test)]
