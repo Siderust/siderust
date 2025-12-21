@@ -93,7 +93,7 @@ use std::f64::consts::TAU;
 
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
-use crate::coordinates::spherical::ext::EquatorialPositionExt;
+use crate::coordinates::spherical::EquatorialPositionExt;
 use qtty::*;
 
 /* -------------------------------------------------------------------------

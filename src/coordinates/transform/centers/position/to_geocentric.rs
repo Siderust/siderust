@@ -71,7 +71,7 @@ where
 mod tests {
     use crate::astro::JulianDate;
     use crate::bodies::solar_system::Earth;
-    use crate::coordinates::spherical::ext::IcrsPositionExt;
+    use crate::coordinates::spherical::IcrsPositionExt;
     use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
     use crate::macros::assert_cartesian_eq;
     use qtty::*;
