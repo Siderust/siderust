@@ -5,6 +5,8 @@ version = 4
 [[package]]
 name = "affn"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c41a6edafa8623e874327c6ed638a0c122cf54109ca7855635b7be508bb6e84c"
 dependencies = [
  "affn-derive",
  "nalgebra",

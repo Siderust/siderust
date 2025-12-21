@@ -15,7 +15,7 @@ categories = ["science", "aerospace", "simulation"]
 name = "siderust"
 
 [dependencies]
-affn = { path = "../affn" }
+affn = "0.2.0"
 approx = "0.5"
 chrono = "0.4.42"
 nalgebra = "0.34.1"
