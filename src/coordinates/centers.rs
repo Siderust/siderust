@@ -52,10 +52,10 @@ use qtty::{Degrees, Meter, Quantity};
 use std::fmt::Debug;
 
 // Re-export core traits from affn
-pub use affn::{AffineCenter, NoCenter};
 pub use affn::centers::ReferenceCenter;
+pub use affn::{AffineCenter, NoCenter};
 // Import derives from prelude for use in this module
-use affn::prelude::{ReferenceCenter as DeriveReferenceCenter};
+use affn::prelude::ReferenceCenter as DeriveReferenceCenter;
 
 // Required for Transform specialization
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
@@ -401,8 +401,6 @@ impl Default for BodycentricParams {
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 #[center(params = BodycentricParams)]
 pub struct Bodycentric;
-
-
 
 #[cfg(test)]
 mod tests {

@@ -11,7 +11,6 @@ use crate::coordinates::frames::MutableFrame;
 use crate::coordinates::{cartesian, spherical};
 use qtty::LengthUnit;
 
-
 pub trait TransformFrame<Coord> {
     fn to_frame(&self) -> Coord;
 }
@@ -28,8 +27,7 @@ where
     }
 }
 
-impl<C, F1, F2, U> TransformFrame<spherical::Position<C, F2, U>>
-    for spherical::Position<C, F1, U>
+impl<C, F1, F2, U> TransformFrame<spherical::Position<C, F2, U>> for spherical::Position<C, F1, U>
 where
     cartesian::Position<C, F1, U>: TransformFrame<cartesian::Position<C, F2, U>>,
     C: ReferenceCenter,

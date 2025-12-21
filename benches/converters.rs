@@ -6,8 +6,11 @@ use std::{hint::black_box, time::Duration};
 fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     // Test data: one Cartesian and one Spherical point in the ICRS/Barycentric frame
     let icrs_cartesian = cartesian::Position::<Barycentric, ICRS, Au>::new(10.0, 20.0, 30.0);
-    let icrs_spherical =
-        spherical::Position::<Barycentric, ICRS, Au>::new(Degrees::new(10.0), Degrees::new(20.0), 30.0);
+    let icrs_spherical = spherical::Position::<Barycentric, ICRS, Au>::new(
+        Degrees::new(10.0),
+        Degrees::new(20.0),
+        30.0,
+    );
 
     // Create a benchmark group so we can tweak settings just for these benchmarks
     let mut group = c.benchmark_group("converters");

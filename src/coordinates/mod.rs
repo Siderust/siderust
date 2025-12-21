@@ -68,7 +68,7 @@
 //! let cartesian: cartesian::Direction<Ecliptic> = spherical.to_cartesian();
 //!
 //! // Convert back to spherical coordinates
-//! let spherical_converted: spherical::Direction<Ecliptic> = 
+//! let spherical_converted: spherical::Direction<Ecliptic> =
 //!     spherical::Direction::from_cartesian(&cartesian);
 //!
 //! println!("Spherical -> Cartesian -> Spherical: {:?}", spherical_converted);
@@ -89,11 +89,11 @@
 //! use siderust::coordinates::prelude::*;
 //! ```
 
+pub mod cartesian;
 pub mod centers;
 pub mod frames;
-pub mod cartesian;
-pub mod spherical;
 pub mod observation;
+pub mod spherical;
 pub mod transform;
 
 /// Prelude module for convenient imports.
@@ -110,7 +110,5 @@ pub mod transform;
 /// - [`PositionAstroExt`](transform::PositionAstroExt) - Frame and center transforms for positions
 /// - [`AstroContext`](transform::AstroContext) - Context for transformations
 pub mod prelude {
-    pub use super::transform::{
-        AstroContext, DirectionAstroExt, PositionAstroExt, VectorAstroExt,
-    };
+    pub use super::transform::{AstroContext, DirectionAstroExt, PositionAstroExt, VectorAstroExt};
 }

@@ -1,9 +1,7 @@
 use crate::bodies::solar_system::Sun;
 
 use crate::astro::{nutation::corrected_ra_with_nutation, JulianDate};
-use crate::coordinates::{
-    cartesian, centers::*, spherical, transform::Transform,
-};
+use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
 use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 impl Sun {

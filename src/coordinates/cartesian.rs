@@ -21,8 +21,8 @@ pub use affn::cartesian::*;
 // =============================================================================
 
 pub mod direction {
-    pub use super::Direction;
     use super::frames;
+    pub use super::Direction;
 
     /// **Ecliptic** cartesian direction (unit vector).
     pub type Ecliptic = Direction<frames::Ecliptic>;
@@ -41,8 +41,8 @@ pub mod direction {
 // =============================================================================
 
 pub mod displacement {
-    pub use super::Displacement;
     use super::frames;
+    pub use super::Displacement;
 
     /// **Ecliptic** displacement vector.
     pub type Ecliptic<U> = Displacement<frames::Ecliptic, U>;
@@ -85,8 +85,8 @@ pub mod position {
 // =============================================================================
 
 pub mod velocity {
-    pub use super::Velocity;
     use super::frames;
+    pub use super::Velocity;
 
     /// **Ecliptic** cartesian velocity vector.
     pub type Ecliptic<U> = Velocity<frames::Ecliptic, U>;
