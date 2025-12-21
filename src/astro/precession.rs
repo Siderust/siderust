@@ -93,6 +93,7 @@ use std::f64::consts::TAU;
 
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
+use crate::coordinates::astro::spherical::ext::EquatorialPositionExt;
 use qtty::*;
 
 /* -------------------------------------------------------------------------
@@ -227,7 +228,7 @@ pub fn precess_equatorial<U: LengthUnit>(
 
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
-    position::Equatorial::<U>::new(ra, dec, position.distance)
+    position::Equatorial::<U>::new_equatorial(ra, dec, position.distance)
 }
 
 #[cfg(test)]

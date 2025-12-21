@@ -3,19 +3,34 @@
 //! - [`Position<C, F, U>`]: spherical **position** (center + frame + distance)
 //! - [`Direction<F>`]: spherical **direction** (frame-only, no center)
 //!
-//! This module re-exports the algebraic types and provides frame-specific
-//! extensions with convenient constructors (e.g., `new_ecliptic(lon, lat)`,
-//! `new_equatorial(ra, dec)`).
+//! This module re-exports the algebraic types from `affn` and provides
+//! frame-specific extension traits with convenient constructors and accessors
+//! (e.g., `new_icrs(ra, dec)`, `ra()`, `dec()`).
+//!
+//! # Usage
+//!
+//! Import the extension traits to access frame-specific methods:
+//!
+//! ```rust
+//! use siderust::coordinates::astro::spherical::ext::*;
+//! use siderust::coordinates::spherical::direction::ICRS;
+//! use qtty::*;
+//!
+//! // Extension trait method for ICRS
+//! let dir = ICRS::new_icrs(120.0 * DEG, 45.0 * DEG);
+//! assert_eq!(dir.ra(), 120.0 * DEG);
+//! assert_eq!(dir.dec(), 45.0 * DEG);
+//! ```
 
 use crate::coordinates::algebra::{centers, frames};
 
 pub use crate::coordinates::algebra::spherical::{Direction, Position};
 
-mod ecef;
-mod ecliptic;
-mod equatorial;
-mod horizontal;
-mod icrs;
+// Extension traits for frame-specific methods
+pub mod ext;
+
+// Re-export all extension traits for convenience
+pub use ext::*;
 
 // =============================================================================
 // Direction type aliases (frame-only, no center)
