@@ -10,7 +10,6 @@ use siderust::astro::JulianDate;
 use siderust::coordinates::cartesian::position::Equatorial;
 use siderust::coordinates::centers::{Geocentric, ObserverSite};
 use siderust::coordinates::spherical;
-use siderust::coordinates::spherical::HorizontalDirectionExt;
 use siderust::coordinates::transform::centers::ToTopocentricExt;
 
 fn main() {
@@ -85,31 +84,31 @@ fn main() {
     // Zenith (straight up) - a pure direction in horizontal frame
     // Note: Directions are now frame-only (no observer/center parameter)
     // The observer site is used for Positions, not for Directions
-    let zenith = spherical::direction::Horizontal::new_horizontal(
+    let zenith = spherical::direction::Horizontal::new(
         Degrees::new(90.0), // Altitude (straight up)
         Degrees::new(0.0),  // Azimuth (doesn't matter for zenith)
     );
     println!("Zenith direction:");
-    println!("  Azimuth:  {:.1}°", zenith.az());
-    println!("  Altitude: {:.1}° (straight up)\n", zenith.alt());
+    println!("  Altitude: {:.1}° (straight up)", zenith.alt());
+    println!("  Azimuth:  {:.1}°\n", zenith.az());
 
     // North horizon
-    let north = spherical::direction::Horizontal::new_horizontal(
+    let north = spherical::direction::Horizontal::new(
         Degrees::new(0.0), // On horizon
         Degrees::new(0.0), // North
     );
     println!("North point on horizon:");
-    println!("  Azimuth:  {:.1}° (North)", north.az());
-    println!("  Altitude: {:.1}° (horizon)\n", north.alt());
+    println!("  Altitude: {:.1}° (horizon)", north.alt());
+    println!("  Azimuth:  {:.1}° (North)\n", north.az());
 
     // East, 30° above horizon
-    let east_30 = spherical::direction::Horizontal::new_horizontal(
+    let east_30 = spherical::direction::Horizontal::new(
         Degrees::new(30.0), // 30° above horizon
         Degrees::new(90.0), // East
     );
     println!("30° above eastern horizon:");
-    println!("  Azimuth:  {:.1}° (East)", east_30.az());
-    println!("  Altitude: {:.1}°\n", east_30.alt());
+    println!("  Altitude: {:.1}°", east_30.alt());
+    println!("  Azimuth:  {:.1}° (East)\n", east_30.az());
 
     // =========================================================================
     // 3. Topocentric Positions (with distance)

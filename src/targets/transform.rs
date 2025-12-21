@@ -56,11 +56,12 @@ where
         // Step 3: Transform to new center
         // Step 4: Convert back to spherical
         Self::new_raw(
-            orig.position
-                .to_cartesian()
-                .transform(orig.time)
-                .transform(orig.time)
-                .to_spherical(),
+            spherical::Position::from_cartesian(
+                &orig.position
+                    .to_cartesian()
+                    .transform(orig.time)
+                    .transform(orig.time),
+            ),
             orig.time,
             orig.proper_motion.clone(),
         )

@@ -68,7 +68,8 @@
 //! let cartesian: cartesian::Direction<Ecliptic> = spherical.to_cartesian();
 //!
 //! // Convert back to spherical coordinates
-//! let spherical_converted: spherical::Direction<Ecliptic> = cartesian.to_spherical();
+//! let spherical_converted: spherical::Direction<Ecliptic> = 
+//!     spherical::Direction::from_cartesian(&cartesian);
 //!
 //! println!("Spherical -> Cartesian -> Spherical: {:?}", spherical_converted);
 //! ```
