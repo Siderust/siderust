@@ -524,7 +524,7 @@ pub const MAJOR_MOONS: &[&Satellite] = &[
 // -------------------------------------------------------------------------------------------------
 
 /// Simple position wrapper for a restricted‑three‑body Lagrange point.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct LagrangePoint {
     /// Designation, e.g. "Sun–Earth L1".
     pub name: &'static str,

@@ -69,7 +69,6 @@ mod tests {
     use crate::astro::JulianDate;
     use crate::bodies::catalog::ALDEBARAN;
     use crate::coordinates::spherical::position::GCRS;
-    use crate::coordinates::spherical::{EquatorialPositionExt, IcrsPositionExt};
     use qtty::*;
 
     type MilliArcsecondPerDay = qtty::Per<qtty::MilliArcsecond, qtty::Day>;
@@ -77,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_target_new() {
-        let target = Target::new_static(*ALDEBARAN.target.get_position(), JulianDate::J2000);
+        let target = Target::new_static(ALDEBARAN.target.get_position().clone(), JulianDate::J2000);
 
         assert_eq!(target.position.ra(), ALDEBARAN.target.get_position().ra());
         assert_eq!(target.position.dec(), ALDEBARAN.target.get_position().dec());
@@ -86,7 +85,7 @@ mod tests {
 
     #[test]
     fn test_target_new_with_proper_motion() {
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(45.0), qtty::Degrees::new(30.0), 100.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(45.0), qtty::Degrees::new(30.0), 100.0);
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(10.0),
             MilliArcsecondsPerDay::new(5.0),
@@ -101,7 +100,7 @@ mod tests {
 
     #[test]
     fn test_target_new_static() {
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(60.0), qtty::Degrees::new(45.0), 200.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(60.0), qtty::Degrees::new(45.0), 200.0);
         let target = Target::new_static(position, JulianDate::J2000);
 
         assert_eq!(target.position.ra().value(), 60.0);
@@ -112,14 +111,14 @@ mod tests {
 
     #[test]
     fn test_target_new_raw() {
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(90.0), qtty::Degrees::new(60.0), 300.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(90.0), qtty::Degrees::new(60.0), 300.0);
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(15.0),
             MilliArcsecondsPerDay::new(8.0),
         );
 
         // Test with Some(proper_motion)
-        let target = Target::new_raw(position, JulianDate::J2000, Some(proper_motion));
+        let target = Target::new_raw(position.clone(), JulianDate::J2000, Some(proper_motion));
         assert_eq!(target.position.ra().value(), 90.0);
         assert_eq!(target.position.dec().value(), 60.0);
         assert_eq!(target.time, JulianDate::J2000);
@@ -135,25 +134,25 @@ mod tests {
 
     #[test]
     fn test_target_get_position() {
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(120.0), qtty::Degrees::new(75.0), 400.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(120.0), qtty::Degrees::new(75.0), 400.0);
         let target = Target::new_static(position, JulianDate::J2000);
 
         let retrieved_position = target.get_position();
         assert_eq!(retrieved_position.ra().value(), 120.0);
         assert_eq!(retrieved_position.dec().value(), 75.0);
-        assert_eq!(retrieved_position.distance, 400.0);
+        assert_eq!(retrieved_position.distance(), 400.0);
     }
 
     #[test]
     fn test_target_get_proper_motion() {
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(150.0), qtty::Degrees::new(80.0), 500.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(150.0), qtty::Degrees::new(80.0), 500.0);
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(20.0),
             MilliArcsecondsPerDay::new(12.0),
         );
 
         // Test with proper motion
-        let target = Target::new(position, JulianDate::J2000, proper_motion);
+        let target = Target::new(position.clone(), JulianDate::J2000, proper_motion);
         let retrieved_pm = target.get_proper_motion();
         assert!(retrieved_pm.is_some());
         if let Some(pm) = retrieved_pm {
@@ -169,7 +168,7 @@ mod tests {
 
     #[test]
     fn test_target_get_time() {
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(180.0), qtty::Degrees::new(85.0), 600.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(180.0), qtty::Degrees::new(85.0), 600.0);
         let target = Target::new_static(position, JulianDate::J2000);
 
         let retrieved_time = target.get_time();
@@ -179,7 +178,7 @@ mod tests {
     #[test]
     fn test_target_update() {
         let initial_position =
-            GCRS::<Au>::new_icrs(qtty::Degrees::new(200.0), qtty::Degrees::new(90.0), 700.0);
+            GCRS::<Au>::new(qtty::Degrees::new(200.0), qtty::Degrees::new(90.0), 700.0);
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(25.0),
             MilliArcsecondsPerDay::new(15.0),
@@ -188,7 +187,7 @@ mod tests {
 
         // Update position and time
         let new_position =
-            GCRS::<Au>::new_icrs(qtty::Degrees::new(220.0), qtty::Degrees::new(85.0), 800.0);
+            GCRS::<Au>::new(qtty::Degrees::new(220.0), qtty::Degrees::new(85.0), 800.0);
         let new_time = JulianDate::J2000 + qtty::Days::new(365.25);
 
         target.update(new_position, new_time);
@@ -196,7 +195,7 @@ mod tests {
         // Check that position and time were updated
         assert_eq!(target.position.ra().value(), 220.0);
         assert_eq!(target.position.dec().value(), 85.0);
-        assert_eq!(target.position.distance, 800.0);
+        assert_eq!(target.position.distance(), 800.0);
         assert_eq!(target.time, new_time);
 
         // Check that proper motion was preserved
@@ -209,7 +208,7 @@ mod tests {
 
     #[test]
     fn test_target_debug() {
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(240.0), qtty::Degrees::new(80.0), 900.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(240.0), qtty::Degrees::new(80.0), 900.0);
         let target = Target::new_static(position, JulianDate::J2000);
 
         let debug_str = format!("{:?}", target);
@@ -218,7 +217,7 @@ mod tests {
 
     #[test]
     fn test_target_clone() {
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(260.0), qtty::Degrees::new(75.0), 1000.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(260.0), qtty::Degrees::new(75.0), 1000.0);
         let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(30.0),
             MilliArcsecondsPerDay::new(18.0),
@@ -233,7 +232,7 @@ mod tests {
             target1.position.dec().value(),
             target2.position.dec().value()
         );
-        assert_eq!(target1.position.distance, target2.position.distance);
+        assert_eq!(target1.position.distance(), target2.position.distance());
         assert_eq!(target1.time, target2.time);
         assert_eq!(
             target1.proper_motion.is_some(),
@@ -244,24 +243,24 @@ mod tests {
     #[test]
     fn test_target_edge_cases() {
         // Test with zero coordinates
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(0.0), qtty::Degrees::new(0.0), 0.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(0.0), qtty::Degrees::new(0.0), 0.0);
         let target = Target::new_static(position, JulianDate::J2000);
         assert_eq!(target.position.ra().value(), 0.0);
         assert_eq!(target.position.dec().value(), 0.0);
-        assert_eq!(target.position.distance, 0.0);
+        assert_eq!(target.position.distance(), 0.0);
 
         // Test with very large coordinates
         let position =
-            GCRS::<Au>::new_icrs(qtty::Degrees::new(359.999), qtty::Degrees::new(89.999), 1e6);
+            GCRS::<Au>::new(qtty::Degrees::new(359.999), qtty::Degrees::new(89.999), 1e6);
         let target = Target::new_static(position, JulianDate::J2000);
         assert!((target.position.ra().value() - 359.999).abs() < 1e-6);
         assert!((target.position.dec().value() - 89.999).abs() < 1e-6);
-        assert_eq!(target.position.distance, 1e6);
+        assert_eq!(target.position.distance(), 1e6);
     }
 
     #[test]
     fn test_target_zero_proper_motion() {
-        let position = GCRS::<Au>::new_icrs(qtty::Degrees::new(280.0), qtty::Degrees::new(70.0), 1100.0);
+        let position = GCRS::<Au>::new(qtty::Degrees::new(280.0), qtty::Degrees::new(70.0), 1100.0);
         let zero_proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(0.0),
             MilliArcsecondsPerDay::new(0.0),

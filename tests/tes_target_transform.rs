@@ -39,7 +39,8 @@ fn target_spherical_position_transform() {
     let jd = JulianDate::J2000;
     let cart_orig: Target<cartesian::Position<Heliocentric, Ecliptic, AstronomicalUnit>> =
         Mars::vsop87a(jd);
-    let sph_pos = cart_orig.position.to_spherical();
+    let sph_pos: spherical::Position<Heliocentric, Ecliptic, AstronomicalUnit> = 
+        spherical::Position::from_cartesian(&cart_orig.position);
     let orig: Target<spherical::Position<Heliocentric, Ecliptic, AstronomicalUnit>> =
         Target::new_static(sph_pos, jd);
 

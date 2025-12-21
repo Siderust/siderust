@@ -106,7 +106,6 @@ pub(crate) use assert_spherical_eq;
 
 #[cfg(test)]
 mod tests {
-    use crate::coordinates::spherical::EquatorialPositionExt;
     use crate::coordinates::{cartesian, spherical};
     use qtty::{AstronomicalUnit, Degrees, AU};
 
@@ -129,12 +128,12 @@ mod tests {
     #[test]
     #[should_panic(expected = "Spherical coords differ")]
     fn spherical_macro_panics_on_mismatch() {
-        let a = spherical::position::Equatorial::<AstronomicalUnit>::new_equatorial(
+        let a = spherical::position::Equatorial::<AstronomicalUnit>::new(
             Degrees::new(0.0),
             Degrees::new(0.0),
             1.0,
         );
-        let b = spherical::position::Equatorial::<AstronomicalUnit>::new_equatorial(
+        let b = spherical::position::Equatorial::<AstronomicalUnit>::new(
             Degrees::new(10.0),
             Degrees::new(0.0),
             1.0,
@@ -145,12 +144,12 @@ mod tests {
     #[test]
     #[should_panic(expected = "custom spherical message")]
     fn spherical_macro_reports_custom_message() {
-        let a = spherical::position::Equatorial::<AstronomicalUnit>::new_equatorial(
+        let a = spherical::position::Equatorial::<AstronomicalUnit>::new(
             Degrees::new(0.0),
             Degrees::new(0.0),
             1.0,
         );
-        let b = spherical::position::Equatorial::<AstronomicalUnit>::new_equatorial(
+        let b = spherical::position::Equatorial::<AstronomicalUnit>::new(
             Degrees::new(0.0),
             Degrees::new(20.0),
             1.0,

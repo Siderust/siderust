@@ -14,7 +14,6 @@
 
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
-use crate::coordinates::spherical::EquatorialPositionExt;
 use qtty::*;
 type DegreePerYear = qtty::Per<Degree, Year>;
 type DegreesPerYear = qtty::frequency::Frequency<Degree, Year>;
@@ -68,7 +67,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
             .value(),
     );
     // Linearly apply proper motion in RA and DEC
-    position::Equatorial::<U>::new_equatorial(
+    position::Equatorial::<U>::new(
         mean_position.ra() + (proper_motion.ra_μ * t).normalize(),
         (mean_position.dec() + (proper_motion.dec_μ * t)).normalize(),
         mean_position.distance,
@@ -96,7 +95,6 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::coordinates::spherical::EquatorialPositionExt;
     use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
     use qtty::{AstronomicalUnit, Degrees};
 
@@ -105,7 +103,7 @@ mod tests {
     #[test]
     fn test_proper_motion_linear_shift() {
         // Mean position at J2000
-        let mean_position = Position::<Geocentric, Equatorial, AstronomicalUnit>::new_equatorial(
+        let mean_position = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(
             Degrees::new(10.0), // RA = 10°
             Degrees::new(20.0), // DEC = 20°
             1.0,                // arbitrary distance
@@ -120,11 +118,11 @@ mod tests {
         // Target epoch: 50 years after J2000
         let jd_future = JulianDate::J2000 + 50.0 * JulianDate::JULIAN_YEAR;
 
-        let shifted = set_proper_motion_since_j2000(mean_position, mu, jd_future);
-
-        // Expected shifts
+        // Expected shifts (compute before moving mean_position)
         let expected_ra = mean_position.ra() + Degrees::new(0.5);
         let expected_dec = mean_position.dec() - Degrees::new(0.25);
+
+        let shifted = set_proper_motion_since_j2000(mean_position, mu, jd_future);
 
         let ra_err = (shifted.ra() - expected_ra).abs();
         let dec_err = (shifted.dec() - expected_dec).abs();

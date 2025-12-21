@@ -4,7 +4,6 @@ use siderust::astro::JulianDate;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};
-use siderust::coordinates::spherical::{EcefPositionExt, EquatorialPositionExt};
 use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
 use siderust::coordinates::{
     cartesian,
@@ -50,9 +49,9 @@ fn cartesian_vector_display_includes_metadata() {
 
 #[test]
 fn horizontal_conversion_variants_cover_all_impls() {
-    let observer = spherical::position::Geographic::new_geographic(
-        Degrees::new(28.76),
+    let observer = spherical::position::Geographic::new(
         Degrees::new(-17.89),
+        Degrees::new(28.76),
         Kilometers::new(2.4),
     );
     let jd = JulianDate::J2000;
@@ -61,7 +60,7 @@ fn horizontal_conversion_variants_cover_all_impls() {
     let site = ObserverSite::from_geographic(&observer);
 
     // Test position (with distance) conversion - positions still support center transforms
-    let eq_pos = spherical::position::Equatorial::<AstronomicalUnit>::new_equatorial(
+    let eq_pos = spherical::position::Equatorial::<AstronomicalUnit>::new(
         Degrees::new(83.0),
         Degrees::new(-5.0),
         1.0,

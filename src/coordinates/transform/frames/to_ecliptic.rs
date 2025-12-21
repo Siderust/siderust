@@ -44,7 +44,6 @@ mod tests {
     use crate::coordinates::cartesian::position::*;
     use crate::coordinates::transform::Transform;
     use crate::coordinates::*;
-    use crate::coordinates::spherical::EquatorialPositionExt;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
     use qtty::Degrees;
@@ -151,7 +150,7 @@ mod tests {
             centers::Barycentric,
             frames::Equatorial,
             AstronomicalUnit,
-        >::new_equatorial(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
+        >::new(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
         let ecliptic: spherical::Position<centers::Barycentric, frames::Ecliptic, Au> =
             equatorial_orig.transform(JulianDate::J2000);
         let equatorial_rec: spherical::Position<centers::Barycentric, frames::Equatorial, Au> =

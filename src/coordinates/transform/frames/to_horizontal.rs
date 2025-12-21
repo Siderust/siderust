@@ -160,7 +160,7 @@ impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Horizontal, U>>
 {
     fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, Horizontal, U> {
         let cart: cartesian::Position<Topocentric, Horizontal, U> = self.to_cartesian().transform(jd);
-        cart.to_spherical()
+        spherical::Position::from_cartesian(&cart)
     }
 }
 
@@ -169,7 +169,7 @@ impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Equatorial, U>>
 {
     fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, Equatorial, U> {
         let cart: cartesian::Position<Topocentric, Equatorial, U> = self.to_cartesian().transform(jd);
-        cart.to_spherical()
+        spherical::Position::from_cartesian(&cart)
     }
 }
 
