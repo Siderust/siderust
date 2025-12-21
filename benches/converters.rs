@@ -26,7 +26,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
         b.iter(|| {
             // black_box prevents the compiler from optimizing the value away
             let cart = black_box(&icrs_cartesian);
-            let res: Position<_, _, Au> = cart.into();
+            let res = cart.to_spherical();
             black_box(res); // keep the result “alive”
         });
     });
@@ -35,7 +35,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     group.bench_function("to_cartesian (ICRS)", |b| {
         b.iter(|| {
             let sph = black_box(&icrs_spherical);
-            let res: Vector<_, _, Au> = sph.into();
+            let res = sph.to_cartesian();
             black_box(res);
         });
     });
