@@ -125,19 +125,20 @@ pub fn remove_aberration<U: LengthUnit>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coordinates::astro::spherical::ext::EquatorialPositionExt;
     use crate::coordinates::spherical::position;
 
     fn apply_aberration_sph<U: LengthUnit>(
         mean: position::Equatorial<U>,
         jd: JulianDate,
     ) -> position::Equatorial<U> {
-        (&apply_aberration((&mean).into(), jd)).into()
+        apply_aberration(mean.to_cartesian(), jd).to_spherical()
     }
 
     #[test]
     fn test_aberration_preserva_distance_and_epoch() {
         let jd = JulianDate::new(2451545.0); // J2000.0
-        let mean = position::Equatorial::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
+        let mean = position::Equatorial::<Au>::new_equatorial(Degrees::new(10.0), Degrees::new(20.0), 1.23);
         let out = apply_aberration_sph(mean, jd);
 
         assert_eq!(out.distance.value(), mean.distance.value());
@@ -146,7 +147,7 @@ mod tests {
     #[test]
     fn test_aberration_introduces_shift() {
         let jd = JulianDate::new(2451545.0); // J2000.0
-        let mean = position::Equatorial::<Au>::new(
+        let mean = position::Equatorial::<Au>::new_equatorial(
             Degrees::new(0.0), // RA = 0°
             Degrees::new(0.0), // Dec = 0°
             1.0,
@@ -168,7 +169,7 @@ mod tests {
     #[test]
     fn test_aberration_at_north_pole() {
         let jd = JulianDate::new(2451545.0);
-        let mean = position::Equatorial::<Au>::new(
+        let mean = position::Equatorial::<Au>::new_equatorial(
             Degrees::new(123.4), // dummy RA
             Degrees::new(90.0),  // Dec = +90°
             1.0,

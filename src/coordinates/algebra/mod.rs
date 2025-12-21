@@ -4,11 +4,24 @@
 //! - Reference frames and centers (orientation and origin)
 //! - Cartesian and spherical vector types (Position, Direction, Velocity)
 //!
-//! These are the abstract algebraic structures independent of physical/astronomical
-//! context. For physical coordinate systems with convenience constructors and
-//! astronomical conventions, see the `astro` module.
+//! The coordinate types are re-exported from the `affn` crate (the pure geometry kernel).
+//! Astronomy-specific frames and centers are defined locally in this module.
 
-pub mod cartesian;
 pub mod centers;
 pub mod frames;
-pub mod spherical;
+
+// Re-export cartesian and spherical types from affn
+// This provides zero-cost access to affn's coordinate algebra
+pub mod cartesian {
+    //! Cartesian coordinate types.
+    //!
+    //! This module re-exports types from [`affn::cartesian`].
+    pub use affn::cartesian::*;
+}
+
+pub mod spherical {
+    //! Spherical coordinate types.
+    //!
+    //! This module re-exports types from [`affn::spherical`].
+    pub use affn::spherical::*;
+}

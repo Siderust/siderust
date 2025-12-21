@@ -7,6 +7,7 @@
 //! - Type safety and units
 
 use qtty::*;
+use siderust::coordinates::astro::spherical::ext::{HorizontalDirectionExt, IcrsPositionExt};
 use siderust::coordinates::cartesian;
 use siderust::coordinates::centers::{self, ReferenceCenter};
 use siderust::coordinates::frames::{self, ReferenceFrame};
@@ -61,7 +62,7 @@ fn main() {
 
     // Create a position with distance (Betelgeuse at ~500 light-years)
     let betelgeuse_distance = 500.0 * 9.461e15 / 1.496e11; // Convert ly to AU
-    let betelgeuse = spherical::position::ICRS::<AstronomicalUnit>::new(
+    let betelgeuse = spherical::position::ICRS::<AstronomicalUnit>::new_icrs(
         Degrees::new(88.79), // RA
         Degrees::new(7.41),  // Dec
         betelgeuse_distance,
@@ -109,14 +110,14 @@ fn main() {
     println!("  Z = {:.3} AU", cart_pos.z());
 
     // Convert to spherical
-    let sph_pos: spherical::position::Equatorial<AstronomicalUnit> = (&cart_pos).into();
+    let sph_pos = spherical::position::Equatorial::<AstronomicalUnit>::from_cartesian(&cart_pos);
     println!("\nConverted to Spherical:");
     println!("  RA = {:.2}°", sph_pos.azimuth);
     println!("  Dec = {:.2}°", sph_pos.polar);
     println!("  Distance = {:.3} AU", sph_pos.distance);
 
     // Convert back to cartesian
-    let cart_pos_back: cartesian::position::Equatorial<AstronomicalUnit> = (&sph_pos).into();
+    let cart_pos_back = cartesian::position::Equatorial::<AstronomicalUnit>::from_spherical(&sph_pos);
     println!("\nConverted back to Cartesian:");
     println!("  X = {:.3} AU", cart_pos_back.x());
     println!("  Y = {:.3} AU", cart_pos_back.y());

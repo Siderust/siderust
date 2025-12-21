@@ -14,6 +14,7 @@
 
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
+use crate::coordinates::astro::spherical::ext::EquatorialPositionExt;
 use qtty::*;
 type DegreePerYear = qtty::Per<Degree, Year>;
 type DegreesPerYear = qtty::frequency::Frequency<Degree, Year>;
@@ -67,7 +68,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
             .value(),
     );
     // Linearly apply proper motion in RA and DEC
-    position::Equatorial::<U>::new::<Degrees, Quantity<U>>(
+    position::Equatorial::<U>::new_equatorial(
         mean_position.ra() + (proper_motion.ra_μ * t).normalize(),
         (mean_position.dec() + (proper_motion.dec_μ * t)).normalize(),
         mean_position.distance,
@@ -95,6 +96,7 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
+    use crate::coordinates::astro::spherical::ext::EquatorialPositionExt;
     use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
     use qtty::{AstronomicalUnit, Degrees};
 
@@ -103,7 +105,7 @@ mod tests {
     #[test]
     fn test_proper_motion_linear_shift() {
         // Mean position at J2000
-        let mean_position = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(
+        let mean_position = Position::<Geocentric, Equatorial, AstronomicalUnit>::new_equatorial(
             Degrees::new(10.0), // RA = 10°
             Degrees::new(20.0), // DEC = 20°
             1.0,                // arbitrary distance

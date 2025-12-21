@@ -71,6 +71,7 @@ where
 mod tests {
     use crate::astro::JulianDate;
     use crate::bodies::solar_system::Earth;
+    use crate::coordinates::astro::spherical::ext::IcrsPositionExt;
     use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
     use crate::macros::assert_cartesian_eq;
     use qtty::*;
@@ -112,7 +113,7 @@ mod tests {
         let sirius_distance_au = (1.0 / SIRIUS_PARALLAX) * AU_PER_PC;
 
         // Sirius catalog position (astrometric)
-        let sirius_barycentric_spherical = spherical::position::ICRS::<Au>::new(
+        let sirius_barycentric_spherical = spherical::position::ICRS::<Au>::new_icrs(
             Degrees::new(101.287_155_33), // RA
             Degrees::new(-16.716_115_86), // Dec
             sirius_distance_au,
@@ -121,11 +122,11 @@ mod tests {
         let jd = JulianDate::new(2460792.157638889);
 
         let sirius_barycentric_cartesian =
-            cartesian::position::ICRS::<Au>::from(&sirius_barycentric_spherical);
+            cartesian::position::ICRS::<Au>::from_spherical(&sirius_barycentric_spherical);
         let sirius_geocentric_cartesian: cartesian::position::GCRS<Au> =
             Transform::transform(&sirius_barycentric_cartesian, jd);
         let sirius_geocentric_spherical =
-            spherical::position::GCRS::<Au>::from(&sirius_geocentric_cartesian);
+            spherical::position::GCRS::<Au>::from_cartesian(&sirius_geocentric_cartesian);
 
         // Distance should be preserved (approximately - slight change due to Earth's offset)
         assert!(
