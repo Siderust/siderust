@@ -11,8 +11,8 @@ use qtty::{Degrees, Kilometers};
 /// - Latitude:  +28.7543°
 /// - Altitude:  2396 m
 pub const ROQUE_DE_LOS_MUCHACHOS: Geographic = Geographic::new_raw(
-    Degrees::new(28.7543),   // lat (polar)
-    Degrees::new(-17.8925),  // lon (azimuth)
+    Degrees::new(28.7543),  // lat (polar)
+    Degrees::new(-17.8925), // lon (azimuth)
     Kilometers::new(2.396),
 );
 
@@ -21,8 +21,8 @@ pub const ROQUE_DE_LOS_MUCHACHOS: Geographic = Geographic::new_raw(
 /// - Latitude:  −24.6272°
 /// - Altitude:  2635 m
 pub const EL_PARANAL: Geographic = Geographic::new_raw(
-    Degrees::new(-24.6272),  // lat (polar)
-    Degrees::new(-70.4043),  // lon (azimuth)
+    Degrees::new(-24.6272), // lat (polar)
+    Degrees::new(-70.4043), // lon (azimuth)
     Kilometers::new(2.635),
 );
 
@@ -31,8 +31,8 @@ pub const EL_PARANAL: Geographic = Geographic::new_raw(
 /// - Latitude:  +19.8207°
 /// - Altitude:  4207 m
 pub const MAUNA_KEA: Geographic = Geographic::new_raw(
-    Degrees::new(19.8207),    // lat (polar)
-    Degrees::new(-155.4681),  // lon (azimuth)
+    Degrees::new(19.8207),   // lat (polar)
+    Degrees::new(-155.4681), // lon (azimuth)
     Kilometers::new(4.207),
 );
 
@@ -41,7 +41,7 @@ pub const MAUNA_KEA: Geographic = Geographic::new_raw(
 /// - Latitude:  −29.2584°
 /// - Altitude:  2400 m
 pub const LA_SILLA_OBSERVATORY: Geographic = Geographic::new_raw(
-    Degrees::new(-29.2584),  // lat (polar)
-    Degrees::new(-70.7346),  // lon (azimuth)
+    Degrees::new(-29.2584), // lat (polar)
+    Degrees::new(-70.7346), // lon (azimuth)
     Kilometers::new(2.400),
 );

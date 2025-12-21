@@ -1,10 +1,9 @@
-
 // Note: Spherical-to-Cartesian conversion is handled by affn's inherent methods:
 // - spherical::Position::to_cartesian()
 // - cartesian::Position::from_spherical()
 //
 // These are re-exported through siderust's type aliases, so users can call:
-//   sph_position.to_cartesian()  
+//   sph_position.to_cartesian()
 //   cartesian::Position::from_spherical(&sph_position)
 
 #[cfg(test)]

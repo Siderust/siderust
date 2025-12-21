@@ -39,7 +39,7 @@ fn target_spherical_position_transform() {
     let jd = JulianDate::J2000;
     let cart_orig: Target<cartesian::Position<Heliocentric, Ecliptic, AstronomicalUnit>> =
         Mars::vsop87a(jd);
-    let sph_pos: spherical::Position<Heliocentric, Ecliptic, AstronomicalUnit> = 
+    let sph_pos: spherical::Position<Heliocentric, Ecliptic, AstronomicalUnit> =
         spherical::Position::from_cartesian(&cart_orig.position);
     let orig: Target<spherical::Position<Heliocentric, Ecliptic, AstronomicalUnit>> =
         Target::new_static(sph_pos, jd);
@@ -71,10 +71,9 @@ fn cartesian_direction_frame_transform() {
     let dir_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&dir);
 
     // Verify it's still a unit vector
-    let norm = (dir_equatorial.x().powi(2)
-        + dir_equatorial.y().powi(2)
-        + dir_equatorial.z().powi(2))
-    .sqrt();
+    let norm =
+        (dir_equatorial.x().powi(2) + dir_equatorial.y().powi(2) + dir_equatorial.z().powi(2))
+            .sqrt();
     assert!((norm - 1.0).abs() < 1e-12);
 
     // X component is unchanged in ecliptic/equatorial rotation
@@ -91,9 +90,8 @@ fn spherical_direction_frame_transform() {
     let cart_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&cart_dir);
 
     // Verify the Cartesian direction is still unit vector
-    let norm = (cart_equatorial.x().powi(2)
-        + cart_equatorial.y().powi(2)
-        + cart_equatorial.z().powi(2))
-    .sqrt();
+    let norm =
+        (cart_equatorial.x().powi(2) + cart_equatorial.y().powi(2) + cart_equatorial.z().powi(2))
+            .sqrt();
     assert!((norm - 1.0).abs() < 1e-12);
 }
