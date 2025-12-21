@@ -3,6 +3,28 @@
 version = 4
 
 [[package]]
+name = "affn"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c41a6edafa8623e874327c6ed638a0c122cf54109ca7855635b7be508bb6e84c"
+dependencies = [
+ "affn-derive",
+ "nalgebra",
+ "qtty",
+]
+
+[[package]]
+name = "affn-derive"
+version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d16a2493966ba2daf23e9e012b46fd2ab37964e4815ebfec6b1bdb754da2af05"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "aho-corasick"
 version = "1.1.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1458,11 +1480,13 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 name = "siderust"
 version = "0.3.3"
 dependencies = [
+ "affn",
  "anyhow",
  "approx",
  "chrono",
  "criterion",
  "nalgebra",
+ "paste",
  "qtty",
  "rayon",
  "regex",

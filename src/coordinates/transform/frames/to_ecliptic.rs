@@ -1,20 +1,20 @@
 use super::TransformFrame;
-use crate::coordinates::{cartesian::Vector, centers::ReferenceCenter, frames};
-use qtty::Unit;
+use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
+use qtty::LengthUnit;
 
 // Implement Transform trait for ICRS -> Ecliptic
-impl<C: ReferenceCenter, U> TransformFrame<Vector<C, frames::Ecliptic, U>>
-    for Vector<C, frames::ICRS, U>
+impl<C: ReferenceCenter, U> TransformFrame<Position<C, frames::Ecliptic, U>>
+    for Position<C, frames::ICRS, U>
 where
-    U: Unit,
+    U: LengthUnit,
 {
-    fn to_frame(&self) -> Vector<C, frames::Ecliptic, U> {
+    fn to_frame(&self) -> Position<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
         let y = self.y();
         let z = self.z();
-        Vector::from_vec3(
+        Position::from_vec3(
             self.center_params().clone(),
             nalgebra::Vector3::new(self.x(), cos_e * y + sin_e * z, -sin_e * y + cos_e * z),
         )
@@ -22,16 +22,16 @@ where
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Ecliptic, U>>
-    for Vector<C, frames::Equatorial, U>
+impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Ecliptic, U>>
+    for Position<C, frames::Equatorial, U>
 {
-    fn to_frame(&self) -> Vector<C, frames::Ecliptic, U> {
+    fn to_frame(&self) -> Position<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
         let y = self.y();
         let z = self.z();
-        Vector::from_vec3(
+        Position::from_vec3(
             self.center_params().clone(),
             nalgebra::Vector3::new(self.x(), cos_e * y + sin_e * z, -sin_e * y + cos_e * z),
         )

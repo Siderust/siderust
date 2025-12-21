@@ -7,7 +7,6 @@ use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{self, MutableFrame};
 use crate::coordinates::transform::TransformFrame;
 use nalgebra::Vector3;
-use qtty::Quantity;
 
 /// Identity frame transform for directions.
 impl<F: MutableFrame> TransformFrame<Direction<F>> for Direction<F> {
@@ -23,9 +22,9 @@ impl TransformFrame<Direction<frames::Equatorial>> for Direction<frames::Eclipti
         let eps = 23.439281_f64.to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
 
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
+        let x = self.x();
+        let y = self.y();
+        let z = self.z();
 
         // Rotation matrix about +X axis:
         // [ 1    0        0     ] [ x ]
@@ -35,11 +34,7 @@ impl TransformFrame<Direction<frames::Equatorial>> for Direction<frames::Eclipti
         let new_y = y * cos_eps - z * sin_eps;
         let new_z = y * sin_eps + z * cos_eps;
 
-        Direction::<frames::Equatorial>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
-        ))
+        Direction::<frames::Equatorial>::from_vec3(Vector3::new(new_x, new_y, new_z))
     }
 }
 
@@ -50,9 +45,9 @@ impl TransformFrame<Direction<frames::Ecliptic>> for Direction<frames::Equatoria
         let eps = 23.439281_f64.to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
 
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
+        let x = self.x();
+        let y = self.y();
+        let z = self.z();
 
         // Inverse rotation matrix (transpose of the forward rotation):
         // [ 1    0        0     ] [ x ]
@@ -62,11 +57,7 @@ impl TransformFrame<Direction<frames::Ecliptic>> for Direction<frames::Equatoria
         let new_y = y * cos_eps + z * sin_eps;
         let new_z = -y * sin_eps + z * cos_eps;
 
-        Direction::<frames::Ecliptic>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
-        ))
+        Direction::<frames::Ecliptic>::from_vec3(Vector3::new(new_x, new_y, new_z))
     }
 }
 

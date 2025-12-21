@@ -16,7 +16,25 @@
 //! - **Type Safety**: Operations between coordinates are only allowed when their type parameters match, preventing accidental mixing of frames, centers or magnitude.
 //! - **Conversions**: Seamless conversion between spherical and cartesian forms, and between different frames and centers, is provided via `From`/`Into` and the `Transform` trait.
 //!
-//! ## Architectural Separation
+//! ## Module Organization
+//!
+//! The coordinate system is organized into several modules:
+//!
+//! ### Core Modules
+//!
+//! - **Reference frames and centers**: Trait definitions for orientation and origin in [`frames`] and [`centers`]
+//! - **Cartesian types**: Vector, Direction, Position, Velocity in [`cartesian`]
+//! - **Spherical types**: Direction, Position with astronomical extensions in [`spherical`]
+//!
+//! ### Additional Modules
+//!
+//! - **transform**: Generic transformations between coordinate systems and frames
+//! - **observation**: Observer-dependent effects like aberration
+//!
+//! The coordinate types are built on top of the `affn` crate (the pure geometry kernel).
+//! Astronomy-specific frames, centers, and convenience methods are defined in this module.
+//!
+//! ## Coordinate Transform Architecture
 //!
 //! The coordinate system maintains a clean separation of concerns:
 //!
@@ -50,18 +68,26 @@
 //! let cartesian: cartesian::Direction<Ecliptic> = spherical.to_cartesian();
 //!
 //! // Convert back to spherical coordinates
-//! let spherical_converted: spherical::Direction<Ecliptic> = cartesian.to_spherical();
+//! let spherical_converted: spherical::Direction<Ecliptic> =
+//!     spherical::Direction::from_cartesian(&cartesian);
 //!
 //! println!("Spherical -> Cartesian -> Spherical: {:?}", spherical_converted);
 //! ```
 //!
 //! ## Submodules
-//! - **transform**: Generic transformations between coordinate systems and frames.
-//! - **cartesian**: Cartesian coordinate types and operations.
-//! - **spherical**: Spherical coordinate types and operations.
-//! - **frames**: Reference frame marker types (e.g., `Ecliptic`, `Equatorial`, `ICRS`).
-//! - **centers**: Reference center marker types (e.g., `Heliocentric`, `Geocentric`).
-//! - **observation**: Observational state types (`Astrometric`, `Apparent`) and aberration.
+//! - **frames**: Reference frame definitions (Ecliptic, Equatorial, ICRS, etc.)
+//! - **centers**: Reference center definitions (Heliocentric, Geocentric, etc.)
+//! - **cartesian**: Cartesian coordinate types and astronomical type aliases
+//! - **spherical**: Spherical coordinate types and astronomical extensions
+//! - **transform**: Generic transformations between coordinate systems and frames
+//! - **observation**: Observational state types (`Astrometric`, `Apparent`) and aberration
+//!
+//! ## Prelude
+//!
+//! For ergonomic imports of extension traits:
+//! ```rust,ignore
+//! use siderust::coordinates::prelude::*;
+//! ```
 
 pub mod cartesian;
 pub mod centers;
@@ -69,3 +95,20 @@ pub mod frames;
 pub mod observation;
 pub mod spherical;
 pub mod transform;
+
+/// Prelude module for convenient imports.
+///
+/// Import this to get access to all coordinate extension traits:
+///
+/// ```rust
+/// use siderust::coordinates::prelude::*;
+/// ```
+///
+/// This includes:
+/// - [`DirectionAstroExt`](transform::DirectionAstroExt) - Frame transforms for directions
+/// - [`VectorAstroExt`](transform::VectorAstroExt) - Frame transforms for vectors
+/// - [`PositionAstroExt`](transform::PositionAstroExt) - Frame and center transforms for positions
+/// - [`AstroContext`](transform::AstroContext) - Context for transformations
+pub mod prelude {
+    pub use super::transform::{AstroContext, DirectionAstroExt, PositionAstroExt, VectorAstroExt};
+}

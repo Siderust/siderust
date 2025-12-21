@@ -38,9 +38,9 @@ impl Sun {
     {
         let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
         let geo_cart: cartesian::position::Equatorial<U, Geocentric> = helio.transform(jd);
-        let geo_sph = geo_cart.to_spherical();
+        let geo_sph = spherical::Position::from_cartesian(&geo_cart);
         let ra = corrected_ra_with_nutation(&geo_sph.direction(), jd);
-        spherical::position::Equatorial::<U>::new(ra, geo_sph.dec(), geo_sph.distance)
+        spherical::position::Equatorial::<U>::new(ra, geo_sph.dec(), geo_sph.distance())
     }
 }
 

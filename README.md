@@ -51,7 +51,7 @@ Siderust aims to be the reference ephemeris and orbit‑analysis library for emb
 
 | Category                | What you get                                                                                                                                                                                                         |
 | ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Coordinate Systems**  | `Vector` & `SphericalCoord` parametrised by `ReferenceCenter` (Helio, Geo, Bary, …) and `ReferenceFrame` (ICRS, Ecliptic, Equatorial, Topocentric, etc.). Compile‑time guarantees ensure you never mix frames by accident. |
+| **Coordinate Systems**  | `Vector` and spherical `Position` types parameterised by `ReferenceCenter` (Helio, Geo, Bary, …) and `ReferenceFrame` (ICRS, Ecliptic, Equatorial, Topocentric, etc.). Directions are frame-only. Compile‑time guarantees ensure you never mix frames by accident. |
 | **Target Tracking**     | `Target<T>` couples any coordinate with an observation epoch and optional `ProperMotion`, enabling extrapolation & filtering pipelines.                                                                              |
 | **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Time` & more; operator overloading makes math look natural while the compiler guards dimensional correctness.                                             |
 | **Celestial Mechanics** | Kepler solvers, VSOP87 & ELP2000 planetary/lunar theories, light‑time & aberration, nutation & precession matrices, apparent Sun & Moon, culmination searches.                                                       |
@@ -72,19 +72,19 @@ siderust = "0.1"
 
 ## Coordinate Systems
 
-Siderust encodes both the **origin** and the **orientation** of every vector at the type level:
+Siderust encodes both the **origin** and the **orientation** of every coordinate at the type level:
 
 ```rust
-use siderust::coordinates::{Vector, centers::*, frames::*};
+use siderust::coordinates::{cartesian::Position, centers::*, frames::*};
 
 // Position of Mars in the Heliocentric Ecliptic frame
-let mars_helio = Vector::<Heliocentric, Ecliptic>::new(x, y, z);
+let mars_helio = Position::<Heliocentric, Ecliptic>::new(x, y, z);
 
 // Convert to Geocentric Ecliptic Cartesian coordinates
-let mars_geo: Vector::<Geocentric, Ecliptic> = mars_helio.transform(jd);
+let mars_geo: Position::<Geocentric, Ecliptic> = mars_helio.transform(jd);
 ```
 
-Impossible states (e.g. adding heliocentric and geocentric vectors) simply do not compile.
+Impossible states (e.g. adding heliocentric and geocentric positions) simply do not compile.
 
 ---
 

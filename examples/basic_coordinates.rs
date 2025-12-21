@@ -79,13 +79,13 @@ fn main() {
 
     // Directions are unitless (implicit radius = 1) and frame-only (no center)
     // Note: Directions don't carry observer site - they're pure directions
-    let zenith = spherical::direction::Horizontal::new_horizontal(
+    let zenith = spherical::direction::Horizontal::new(
         Degrees::new(90.0), // Altitude (straight up)
         Degrees::new(0.0),  // Azimuth (North - doesn't matter for zenith)
     );
     println!("Zenith direction (Horizontal frame):");
-    println!("  Azimuth = {:.1}°", zenith.az());
-    println!("  Altitude = {:.1}°\n", zenith.alt());
+    println!("  Altitude = {:.1}°", zenith.alt());
+    println!("  Azimuth = {:.1}°\n", zenith.az());
 
     // Convert direction to position at a specific distance
     // Using Geocentric since it has simple Params = ()
@@ -109,14 +109,15 @@ fn main() {
     println!("  Z = {:.3} AU", cart_pos.z());
 
     // Convert to spherical
-    let sph_pos: spherical::position::Equatorial<AstronomicalUnit> = (&cart_pos).into();
+    let sph_pos = spherical::position::Equatorial::<AstronomicalUnit>::from_cartesian(&cart_pos);
     println!("\nConverted to Spherical:");
     println!("  RA = {:.2}°", sph_pos.azimuth);
     println!("  Dec = {:.2}°", sph_pos.polar);
     println!("  Distance = {:.3} AU", sph_pos.distance);
 
     // Convert back to cartesian
-    let cart_pos_back: cartesian::position::Equatorial<AstronomicalUnit> = (&sph_pos).into();
+    let cart_pos_back =
+        cartesian::position::Equatorial::<AstronomicalUnit>::from_spherical(&sph_pos);
     println!("\nConverted back to Cartesian:");
     println!("  X = {:.3} AU", cart_pos_back.x());
     println!("  Y = {:.3} AU", cart_pos_back.y());

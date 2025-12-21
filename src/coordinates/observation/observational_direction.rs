@@ -120,15 +120,15 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
         let vel = obs.velocity();
 
         // Apply aberration: u' = u + v/c (then renormalize)
-        let x = cart_eq.x().value() + vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y().value() + vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z().value() + vel.z().value() / AU_PER_DAY_C;
+        let x = cart_eq.x() + vel.x().value() / AU_PER_DAY_C;
+        let y = cart_eq.y() + vel.y().value() / AU_PER_DAY_C;
+        let z = cart_eq.z() + vel.z().value() / AU_PER_DAY_C;
 
         let apparent_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
 
         // Transform back to original frame
         let apparent_cart: cartesian::Direction<F> = apparent_eq.to_frame();
-        let apparent_sph = apparent_cart.to_spherical();
+        let apparent_sph = spherical::Direction::from_inner(apparent_cart.to_spherical());
 
         Apparent::new(apparent_sph)
     }
@@ -150,9 +150,9 @@ impl<F: MutableFrame> Astrometric<cartesian::Direction<F>> {
         let vel = obs.velocity();
 
         // Apply aberration: u' = u + v/c (then renormalize)
-        let x = cart_eq.x().value() + vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y().value() + vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z().value() + vel.z().value() / AU_PER_DAY_C;
+        let x = cart_eq.x() + vel.x().value() / AU_PER_DAY_C;
+        let y = cart_eq.y() + vel.y().value() / AU_PER_DAY_C;
+        let z = cart_eq.z() + vel.z().value() / AU_PER_DAY_C;
 
         let apparent_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
 
@@ -231,15 +231,15 @@ impl<F: MutableFrame> Apparent<spherical::Direction<F>> {
         let vel = obs.velocity();
 
         // Remove aberration: u = u' - v/c (then renormalize)
-        let x = cart_eq.x().value() - vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y().value() - vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z().value() - vel.z().value() / AU_PER_DAY_C;
+        let x = cart_eq.x() - vel.x().value() / AU_PER_DAY_C;
+        let y = cart_eq.y() - vel.y().value() / AU_PER_DAY_C;
+        let z = cart_eq.z() - vel.z().value() / AU_PER_DAY_C;
 
         let astrometric_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
 
         // Transform back to original frame
         let astrometric_cart: cartesian::Direction<F> = astrometric_eq.to_frame();
-        let astrometric_sph = astrometric_cart.to_spherical();
+        let astrometric_sph = spherical::Direction::from_inner(astrometric_cart.to_spherical());
 
         Astrometric::new(astrometric_sph)
     }
@@ -261,9 +261,9 @@ impl<F: MutableFrame> Apparent<cartesian::Direction<F>> {
         let vel = obs.velocity();
 
         // Remove aberration: u = u' - v/c (then renormalize)
-        let x = cart_eq.x().value() - vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y().value() - vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z().value() - vel.z().value() / AU_PER_DAY_C;
+        let x = cart_eq.x() - vel.x().value() / AU_PER_DAY_C;
+        let y = cart_eq.y() - vel.y().value() / AU_PER_DAY_C;
+        let z = cart_eq.z() - vel.z().value() / AU_PER_DAY_C;
 
         let astrometric_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
 
@@ -316,7 +316,11 @@ mod tests {
         let original = astrometric.direction();
         let shifted = apparent.direction();
 
-        let delta_ra = (shifted.azimuth.value() - original.azimuth.value()).abs();
+        // Handle azimuth wrap-around (e.g., 359.999° vs 0.001° is actually 0.002° apart)
+        let mut delta_ra = (shifted.azimuth.value() - original.azimuth.value()).abs();
+        if delta_ra > 180.0 {
+            delta_ra = 360.0 - delta_ra;
+        }
         let delta_dec = (shifted.polar.value() - original.polar.value()).abs();
 
         // At least one should have changed
