@@ -38,7 +38,7 @@ where
     U: LengthUnit,
 {
     fn to_frame(&self) -> spherical::Position<C, F2, U> {
-        self.to_cartesian().to_frame().to_spherical()
+        spherical::Position::from_cartesian(&self.to_cartesian().to_frame())
     }
 }
 

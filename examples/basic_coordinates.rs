@@ -7,7 +7,6 @@
 //! - Type safety and units
 
 use qtty::*;
-use siderust::coordinates::spherical::{HorizontalDirectionExt, IcrsPositionExt};
 use siderust::coordinates::cartesian;
 use siderust::coordinates::centers::{self, ReferenceCenter};
 use siderust::coordinates::frames::{self, ReferenceFrame};
@@ -62,7 +61,7 @@ fn main() {
 
     // Create a position with distance (Betelgeuse at ~500 light-years)
     let betelgeuse_distance = 500.0 * 9.461e15 / 1.496e11; // Convert ly to AU
-    let betelgeuse = spherical::position::ICRS::<AstronomicalUnit>::new_icrs(
+    let betelgeuse = spherical::position::ICRS::<AstronomicalUnit>::new(
         Degrees::new(88.79), // RA
         Degrees::new(7.41),  // Dec
         betelgeuse_distance,
@@ -80,13 +79,13 @@ fn main() {
 
     // Directions are unitless (implicit radius = 1) and frame-only (no center)
     // Note: Directions don't carry observer site - they're pure directions
-    let zenith = spherical::direction::Horizontal::new_horizontal(
+    let zenith = spherical::direction::Horizontal::new(
         Degrees::new(90.0), // Altitude (straight up)
         Degrees::new(0.0),  // Azimuth (North - doesn't matter for zenith)
     );
     println!("Zenith direction (Horizontal frame):");
-    println!("  Azimuth = {:.1}°", zenith.az());
-    println!("  Altitude = {:.1}°\n", zenith.alt());
+    println!("  Altitude = {:.1}°", zenith.alt());
+    println!("  Azimuth = {:.1}°\n", zenith.az());
 
     // Convert direction to position at a specific distance
     // Using Geocentric since it has simple Params = ()

@@ -8,7 +8,6 @@
 
 use qtty::*;
 use siderust::astro::JulianDate;
-use siderust::coordinates::spherical::EquatorialDirectionExt;
 use siderust::coordinates::cartesian::{line_of_sight, Position};
 use siderust::coordinates::centers::{Geocentric, Heliocentric, ObserverSite};
 use siderust::coordinates::frames::Equatorial;
@@ -342,7 +341,7 @@ fn complete_pipeline_geometric_to_apparent() {
     let los_direction = line_of_sight(&observer, &object_geo);
 
     // Wrap in Astrometric to track observational state
-    let astrometric_dir = Astrometric::new(los_direction.to_spherical());
+    let astrometric_dir = Astrometric::new(spherical::Direction::from_cartesian(&los_direction));
 
     // Step 4: Apply aberration with observer state
     let obs = ObserverState::geocentric(jd);

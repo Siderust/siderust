@@ -138,7 +138,7 @@ where
     U: LengthUnit,
 {
     fn transform(&self, jd: JulianDate) -> spherical::Position<C2, F2, U> {
-        self.to_cartesian().transform(jd).to_spherical()
+        spherical::Position::from_cartesian(&self.to_cartesian().transform(jd))
     }
 }
 

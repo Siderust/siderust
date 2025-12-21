@@ -9,7 +9,6 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::coordinates::spherical::IcrsPositionExt;
     use crate::coordinates::{cartesian, spherical};
     use qtty::{AstronomicalUnit, Degrees};
 
@@ -18,8 +17,8 @@ mod tests {
         use crate::macros::assert_spherical_eq;
         let cart = cartesian::position::GCRS::<AstronomicalUnit>::new(1.0, 1.0, 1.0);
         // Use affn's inherent method
-        let sph: spherical::position::GCRS<AstronomicalUnit> = cart.to_spherical();
-        let expected = spherical::position::GCRS::<AstronomicalUnit>::new_icrs(
+        let sph: spherical::position::GCRS<AstronomicalUnit> = spherical::Position::from_cartesian(&cart);
+        let expected = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(45.0),
             Degrees::new(35.26438968275466),
             1.7320508075688772,

@@ -9,14 +9,13 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::coordinates::spherical::IcrsPositionExt;
     use crate::coordinates::{cartesian, spherical};
     use qtty::{AstronomicalUnit, Degrees};
 
     #[test]
     fn test_spherical_to_cartesian() {
         use crate::macros::assert_cartesian_eq;
-        let sph = spherical::position::GCRS::<AstronomicalUnit>::new_icrs(
+        let sph = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(45.0),
             Degrees::new(35.26438968275466),
             1.7320508075688772,
@@ -35,14 +34,14 @@ mod tests {
     #[test]
     fn test_spherical_cartesian_round_trip() {
         use crate::macros::assert_spherical_eq;
-        let sph_original = spherical::position::GCRS::<AstronomicalUnit>::new_icrs(
+        let sph_original = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(30.0),
             Degrees::new(60.0),
             5.0,
         );
         // Use affn's inherent methods
         let cart = sph_original.to_cartesian();
-        let sph_converted = cart.to_spherical();
+        let sph_converted = spherical::Position::from_cartesian(&cart);
         assert_spherical_eq!(
             &sph_original,
             &sph_converted,

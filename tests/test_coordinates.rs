@@ -1,7 +1,6 @@
 use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::Mars;
-use siderust::coordinates::spherical::IcrsPositionExt;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
 use siderust::coordinates::transform::TransformFrame;
@@ -147,13 +146,13 @@ fn test_spherical_direction_transformations() {
 /// Test spherical position round-trip
 #[test]
 fn serialize_cartesian_spherical() {
-    let sph_orig = spherical::Position::<Barycentric, ICRS, AstronomicalUnit>::new_icrs(
+    let sph_orig = spherical::Position::<Barycentric, ICRS, AstronomicalUnit>::new(
         Degrees::new(101.28715533),
         Degrees::new(-16.71611586),
         1.0,
     );
     let cart = sph_orig.to_cartesian();
-    let sph_rec = cart.to_spherical();
+    let sph_rec = spherical::Position::from_cartesian(&cart);
     sph_approx_eq(&sph_orig, &sph_rec);
 }
 
