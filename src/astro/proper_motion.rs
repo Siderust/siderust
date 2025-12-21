@@ -67,7 +67,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
             .value(),
     );
     // Linearly apply proper motion in RA and DEC
-    position::Equatorial::<U>::new::<Degrees, Quantity<U>>(
+    position::Equatorial::<U>::new(
         mean_position.ra() + (proper_motion.ra_μ * t).normalize(),
         (mean_position.dec() + (proper_motion.dec_μ * t)).normalize(),
         mean_position.distance,
@@ -118,11 +118,11 @@ mod tests {
         // Target epoch: 50 years after J2000
         let jd_future = JulianDate::J2000 + 50.0 * JulianDate::JULIAN_YEAR;
 
-        let shifted = set_proper_motion_since_j2000(mean_position, mu, jd_future);
-
-        // Expected shifts
+        // Expected shifts (compute before moving mean_position)
         let expected_ra = mean_position.ra() + Degrees::new(0.5);
         let expected_dec = mean_position.dec() - Degrees::new(0.25);
+
+        let shifted = set_proper_motion_since_j2000(mean_position, mu, jd_future);
 
         let ra_err = (shifted.ra() - expected_ra).abs();
         let dec_err = (shifted.dec() - expected_dec).abs();

@@ -13,11 +13,10 @@
 //!
 //! ## Usage
 //!
-//! Since body-centric coordinates require runtime parameters (the body's orbit),
-//! transformations use an explicit `to_bodycentric()` method rather than the
-//! blanket `Transform` trait.
+//! Import the extension trait and call `to_bodycentric()`:
 //!
 //! ```rust
+//! use siderust::coordinates::transform::centers::ToBodycentricExt;
 //! use siderust::coordinates::centers::{Bodycentric, BodycentricParams, Geocentric};
 //! use siderust::coordinates::cartesian::Position;
 //! use siderust::coordinates::frames;
@@ -56,56 +55,44 @@ use crate::coordinates::transform::TransformFrame;
 use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 // =============================================================================
-// Geocentric → Bodycentric
+// Extension Trait for Bodycentric Transforms
 // =============================================================================
 
-impl<F: MutableFrame, U: LengthUnit> Position<Geocentric, F, U>
-where
-    Quantity<U>: From<AstronomicalUnits>,
-    Position<Geocentric, F, U>: TransformFrame<Ecliptic<U, Geocentric>>,
-    Ecliptic<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>,
-{
-    /// Transform to body-centric coordinates.
-    ///
-    /// This computes the position relative to an orbiting body (satellite, moon, etc.)
-    /// at the given Julian date.
+/// Extension trait for transforming positions to body-centric coordinates.
+///
+/// This trait is implemented for positions in Geocentric, Heliocentric, and
+/// Barycentric centers, allowing transformation to body-centric coordinates.
+pub trait ToBodycentricExt<F: MutableFrame, U: LengthUnit> {
+    /// Transform this position to body-centric coordinates.
     ///
     /// # Arguments
     ///
     /// - `body_params`: The orbital parameters of the body to use as the new center.
     /// - `jd`: The Julian date at which to compute the body's position.
-    ///
-    /// # Returns
-    ///
-    /// A position in the body-centric coordinate system.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use siderust::coordinates::centers::{BodycentricParams, Geocentric};
-    /// use siderust::coordinates::cartesian::Position;
-    /// use siderust::coordinates::frames;
-    /// use siderust::astro::orbit::Orbit;
-    /// use siderust::astro::JulianDate;
-    /// use qtty::*;
-    ///
-    /// let satellite_orbit = Orbit::new(
-    ///     0.0000426 * AU,
-    ///     0.001,
-    ///     Degrees::new(51.6),
-    ///     Degrees::new(0.0),
-    ///     Degrees::new(0.0),
-    ///     Degrees::new(0.0),
-    ///     JulianDate::J2000,
-    /// );
-    ///
-    /// let target: Position<Geocentric, frames::Ecliptic, AstronomicalUnit> =
-    ///     Position::new(0.00257, 0.0, 0.0);
-    ///
-    /// let sat_params = BodycentricParams::geocentric(satellite_orbit);
-    /// let relative = target.to_bodycentric(sat_params, JulianDate::J2000);
-    /// ```
-    pub fn to_bodycentric(
+    fn to_bodycentric(
+        &self,
+        body_params: BodycentricParams,
+        jd: JulianDate,
+    ) -> Position<Bodycentric, F, U>;
+}
+
+/// Extension trait for transforming from body-centric back to standard centers.
+pub trait FromBodycentricExt<F: MutableFrame, U: LengthUnit> {
+    /// Transform from body-centric to geocentric coordinates.
+    fn to_geocentric(&self, jd: JulianDate) -> Position<Geocentric, F, U>;
+}
+
+// =============================================================================
+// Geocentric → Bodycentric
+// =============================================================================
+
+impl<F: MutableFrame, U: LengthUnit> ToBodycentricExt<F, U> for Position<Geocentric, F, U>
+where
+    Quantity<U>: From<AstronomicalUnits>,
+    Position<Geocentric, F, U>: TransformFrame<Ecliptic<U, Geocentric>>,
+    Ecliptic<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>,
+{
+    fn to_bodycentric(
         &self,
         body_params: BodycentricParams,
         jd: JulianDate,
@@ -126,7 +113,6 @@ where
             }
             OrbitReferenceCenter::Heliocentric => {
                 // Body orbits Sun - need to convert heliocentric to geocentric
-                // First create heliocentric ecliptic, then transform to geocentric
                 let body_helio_ecl: Ecliptic<U, Heliocentric> = Ecliptic::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
@@ -158,7 +144,7 @@ where
 // Heliocentric → Bodycentric
 // =============================================================================
 
-impl<F: MutableFrame, U: LengthUnit> Position<Heliocentric, F, U>
+impl<F: MutableFrame, U: LengthUnit> ToBodycentricExt<F, U> for Position<Heliocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
     Position<Heliocentric, F, U>: TransformFrame<Ecliptic<U, Heliocentric>>,
@@ -166,11 +152,7 @@ where
     Ecliptic<U, Geocentric>: TransformCenter<Ecliptic<U, Heliocentric>>,
     Ecliptic<U, Barycentric>: TransformCenter<Ecliptic<U, Heliocentric>>,
 {
-    /// Transform to body-centric coordinates.
-    ///
-    /// This computes the position relative to an orbiting body (planet, comet, asteroid, etc.)
-    /// at the given Julian date.
-    pub fn to_bodycentric(
+    fn to_bodycentric(
         &self,
         body_params: BodycentricParams,
         jd: JulianDate,
@@ -222,7 +204,7 @@ where
 // Barycentric → Bodycentric
 // =============================================================================
 
-impl<F: MutableFrame, U: LengthUnit> Position<Barycentric, F, U>
+impl<F: MutableFrame, U: LengthUnit> ToBodycentricExt<F, U> for Position<Barycentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
     Position<Barycentric, F, U>: TransformFrame<Ecliptic<U, Barycentric>>,
@@ -230,10 +212,7 @@ where
     Ecliptic<U, Geocentric>: TransformCenter<Ecliptic<U, Barycentric>>,
     Ecliptic<U, Heliocentric>: TransformCenter<Ecliptic<U, Barycentric>>,
 {
-    /// Transform to body-centric coordinates.
-    ///
-    /// This computes the position relative to an orbiting body at the given Julian date.
-    pub fn to_bodycentric(
+    fn to_bodycentric(
         &self,
         body_params: BodycentricParams,
         jd: JulianDate,
@@ -285,16 +264,13 @@ where
 // Bodycentric → Other Centers
 // =============================================================================
 
-impl<F: MutableFrame, U: LengthUnit> Position<Bodycentric, F, U>
+impl<F: MutableFrame, U: LengthUnit> FromBodycentricExt<F, U> for Position<Bodycentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
     Position<Geocentric, F, U>: TransformFrame<Ecliptic<U, Geocentric>>,
     Ecliptic<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>,
 {
-    /// Transform from body-centric to geocentric coordinates.
-    ///
-    /// This adds back the body's position to recover the geocentric position.
-    pub fn to_geocentric(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
+    fn to_geocentric(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         let body_params = *self.center_params();
 
         // Get the body's position in ecliptic coordinates at the given time

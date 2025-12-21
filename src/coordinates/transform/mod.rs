@@ -61,21 +61,29 @@
 //!
 //! - [`centers`]: Transformations between reference centers (positions only).
 //! - [`frames`]: Transformations between reference frames (all coordinate types).
+//! - [`context`]: Astronomical context for transformation configuration.
+//! - [`providers`]: Provider traits for computing time-dependent operators.
+//! - [`ext`]: Extension traits for ergonomic method-style transforms.
 
-mod centers;
+pub mod centers;
+pub mod context;
+pub mod ext;
 mod frames;
+pub mod providers;
 mod to_cartesian;
 mod to_spherical;
 
 pub use centers::TransformCenter;
+pub use context::AstroContext;
+pub use ext::{DirectionAstroExt, PositionAstroExt, VectorAstroExt};
 pub use frames::TransformFrame;
+pub use providers::{center_shift, frame_rotation, CenterShiftProvider, FrameRotationProvider};
 
 use crate::astro::JulianDate;
 use crate::coordinates::{
-    cartesian, cartesian::Vector, centers::ReferenceCenter, frames::MutableFrame, spherical,
-    spherical::SphericalCoord,
+    cartesian, cartesian::Position, centers::ReferenceCenter, frames::MutableFrame, spherical,
 };
-use qtty::*;
+use qtty::LengthUnit;
 
 /// Trait for transforming coordinates between different centers and/or frames.
 ///
@@ -97,91 +105,49 @@ pub trait Transform<Coord> {
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, C2, F1, F2, U> Transform<Vector<C2, F2, U>> for Vector<C1, F1, U>
+impl<C1, C2, F1, F2, U> Transform<Position<C2, F2, U>> for Position<C1, F1, U>
 where
-    Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>,
-    Vector<C1, F2, U>: TransformCenter<Vector<C2, F2, U>>,
+    Position<C1, F1, U>: TransformFrame<Position<C1, F2, U>>,
+    Position<C1, F2, U>: TransformCenter<Position<C2, F2, U>>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Unit,
+    U: LengthUnit,
 {
-    fn transform(&self, jd: JulianDate) -> Vector<C2, F2, U> {
+    fn transform(&self, jd: JulianDate) -> Position<C2, F2, U> {
         self.to_frame().to_center(jd)
     }
 }
 
 /// Blanket implementation to allow chaining two consecutive `From` operations.
 ///
-/// This implementation allows converting a [`SphericalCoord`] from one
+/// This implementation allows converting a [`spherical::Position`] from one
 /// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, C2, F1, F2, U> Transform<spherical::SphericalCoord<C2, F2, U>>
-    for spherical::SphericalCoord<C1, F1, U>
+impl<C1, C2, F1, F2, U> Transform<spherical::Position<C2, F2, U>> for spherical::Position<C1, F1, U>
 where
-    cartesian::Vector<C1, F1, U>: Transform<cartesian::Vector<C2, F2, U>>,
+    cartesian::Position<C1, F1, U>: Transform<cartesian::Position<C2, F2, U>>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Unit,
+    U: LengthUnit,
 {
-    fn transform(&self, jd: JulianDate) -> spherical::SphericalCoord<C2, F2, U> {
-        self.to_cartesian().transform(jd).to_spherical()
+    fn transform(&self, jd: JulianDate) -> spherical::Position<C2, F2, U> {
+        spherical::Position::from_cartesian(&self.to_cartesian().transform(jd))
     }
 }
 
-/// Blanket implementation to allow chaining two consecutive `From` operations.
-///
-/// This implementation allows converting a [`Vector`] in from one
-/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
-/// transformations:
-/// 1. Frame transformation (within the same center)
-/// 2. Center transformation (within the new frame)
-impl<C1, F1, C2, F2, U> From<&cartesian::Vector<C1, F1, U>> for cartesian::Vector<C2, F2, U>
-where
-    cartesian::Vector<C1, F1, U>: TransformFrame<cartesian::Vector<C1, F2, U>>,
-    cartesian::Vector<C1, F2, U>: Transform<cartesian::Vector<C2, F2, U>>,
-    C1: ReferenceCenter,
-    C2: ReferenceCenter,
-    F1: MutableFrame,
-    F2: MutableFrame,
-    U: Unit,
-{
-    fn from(orig: &cartesian::Vector<C1, F1, U>) -> Self {
-        orig.to_frame().transform(JulianDate::J2000)
-    }
-}
-
-/// Blanket implementation for transforming [`SphericalCoord`],
-/// involving frame and center changes. Internally uses Cartesian conversions.
-///
-/// The transformation follows these steps:
-/// 1. Convert spherical coordinates to Cartesian.
-/// 2. Apply frame transformation.
-/// 3. Apply center transformation.
-/// 4. Convert back to spherical coordinates.
-impl<C1, F1, C2, F2, U> From<&SphericalCoord<C1, F1, U>> for SphericalCoord<C2, F2, U>
-where
-    Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>, // transform frame
-    Vector<C1, F2, U>: Transform<Vector<C2, F2, U>>,      // transform center
-    C1: ReferenceCenter,
-    C2: ReferenceCenter,
-    F1: MutableFrame,
-    F2: MutableFrame,
-    U: Unit,
-{
-    fn from(orig: &SphericalCoord<C1, F1, U>) -> Self {
-        // Step 1: Convert spherical to Cartesian
-        // Step 2: Transform to new frame
-        // Step 3: Transform to new center
-        // Step 4: Convert back to spherical
-        orig.to_cartesian()
-            .to_frame()
-            .transform(JulianDate::J2000)
-            .to_spherical()
-    }
-}
+// Note: Frame/center transformations using `From` trait were removed because they
+// violate Rust's orphan rules when using affn types directly.
+//
+// Use the extension traits instead:
+// - `position.to_frame::<NewFrame>(&jd, &ctx)` - for frame transforms
+// - `position.to_center::<NewCenter>(&jd, &ctx)` - for center transforms
+// - `position.to::<NewCenter, NewFrame>(&jd, &ctx)` - for combined transforms
+//
+// Or use the `Transform` trait:
+// - `position.transform(jd)` - uses type inference for target

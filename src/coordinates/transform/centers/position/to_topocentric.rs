@@ -1,31 +1,27 @@
 use crate::astro::sidereal::unmodded_gst;
 use crate::astro::JulianDate;
-use crate::coordinates::cartesian::{Position, Vector};
+use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
 use crate::coordinates::frames::{Equatorial, MutableFrame, ECEF};
 use crate::coordinates::transform::centers::TransformCenter;
 use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity, Radian};
 
 // =============================================================================
-// Geocentric → Topocentric (real parallax translation)
+// Extension Trait for Topocentric Transforms
 // =============================================================================
-//
-// Topocentric coordinates are measured from the observer's location on Earth's
-// surface. This is a real translation:
-//
-//   r_topo = r_geo - r_site
-//
-// where r_site is the observer's geocentric position at the observation time.
-//
-// For nearby objects (Moon, satellites, planets), the parallax is significant.
-// For distant stars, it's negligible but the math is still correct.
 
-impl<F: MutableFrame, U: LengthUnit> Vector<Geocentric, F, U>
-where
-    Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
-    Position<Geocentric, Equatorial, U>:
-        crate::coordinates::transform::TransformFrame<Position<Geocentric, F, U>>,
-{
+/// Extension trait for transforming geocentric positions to topocentric coordinates.
+///
+/// Topocentric coordinates are measured from the observer's location on Earth's
+/// surface. This is a real translation:
+///
+///   r_topo = r_geo - r_site
+///
+/// where r_site is the observer's geocentric position at the observation time.
+///
+/// For nearby objects (Moon, satellites, planets), the parallax is significant.
+/// For distant stars, it's negligible but the math is still correct.
+pub trait ToTopocentricExt<F: MutableFrame, U: LengthUnit> {
     /// Transform to topocentric coordinates with a specific observer site.
     ///
     /// This applies a real parallax correction by translating the geocentric
@@ -40,6 +36,20 @@ where
     /// # Returns
     ///
     /// The position as seen from the observer's location (topocentric).
+    fn to_topocentric(&self, site: ObserverSite, jd: JulianDate) -> Position<Topocentric, F, U>;
+}
+
+// =============================================================================
+// Geocentric → Topocentric (real parallax translation)
+// =============================================================================
+
+impl<F: MutableFrame, U: LengthUnit> ToTopocentricExt<F, U> for Position<Geocentric, F, U>
+where
+    Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
+    Position<Geocentric, Equatorial, U>:
+        crate::coordinates::transform::TransformFrame<Position<Geocentric, F, U>>,
+{
+    /// Transform to topocentric coordinates with a specific observer site.
     ///
     /// # Example
     ///
@@ -47,6 +57,7 @@ where
     /// use siderust::coordinates::cartesian::Position;
     /// use siderust::coordinates::centers::{Geocentric, Topocentric, ObserverSite};
     /// use siderust::coordinates::frames::Equatorial;
+    /// use siderust::coordinates::transform::centers::ToTopocentricExt;
     /// use siderust::astro::JulianDate;
     /// use qtty::*;
     ///
@@ -61,7 +72,7 @@ where
     /// // Get topocentric position (will differ by observer offset)
     /// let moon_topo = moon_geo.to_topocentric(site, JulianDate::J2000);
     /// ```
-    pub fn to_topocentric(&self, site: ObserverSite, jd: JulianDate) -> Vector<Topocentric, F, U> {
+    fn to_topocentric(&self, site: ObserverSite, jd: JulianDate) -> Position<Topocentric, F, U> {
         // Get observer's ITRF position
         let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
 
@@ -97,7 +108,7 @@ where
             self.z() - site_in_frame.z(),
         );
 
-        Vector::<Topocentric, F, U>::from_vec3(site, topo_vec)
+        Position::<Topocentric, F, U>::from_vec3(site, topo_vec)
     }
 }
 
@@ -105,8 +116,8 @@ where
 // Topocentric → Geocentric (inverse parallax translation)
 // =============================================================================
 
-impl<F: MutableFrame, U: LengthUnit> TransformCenter<Vector<Geocentric, F, U>>
-    for Vector<Topocentric, F, U>
+impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
+    for Position<Topocentric, F, U>
 where
     Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
     Position<Geocentric, Equatorial, U>:
@@ -120,7 +131,7 @@ where
     /// # Arguments
     ///
     /// * `jd` - The Julian Date of observation (for Earth rotation)
-    fn to_center(&self, jd: JulianDate) -> Vector<Geocentric, F, U> {
+    fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         // Get the observer site from the stored parameters
         let site = self.center_params();
 
@@ -156,7 +167,7 @@ where
             self.z() + site_in_frame.z(),
         );
 
-        Vector::<Geocentric, F, U>::from_vec3_origin(geo_vec)
+        Position::<Geocentric, F, U>::from_vec3_origin(geo_vec)
     }
 }
 

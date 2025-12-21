@@ -13,6 +13,7 @@ use siderust::coordinates::centers::{Geocentric, Heliocentric, ObserverSite};
 use siderust::coordinates::frames::Equatorial;
 use siderust::coordinates::observation::{Apparent, Astrometric, ObserverState};
 use siderust::coordinates::spherical;
+use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
 use siderust::coordinates::transform::{Transform, TransformCenter};
 
 // =============================================================================
@@ -340,7 +341,7 @@ fn complete_pipeline_geometric_to_apparent() {
     let los_direction = line_of_sight(&observer, &object_geo);
 
     // Wrap in Astrometric to track observational state
-    let astrometric_dir = Astrometric::new(los_direction.to_spherical());
+    let astrometric_dir = Astrometric::new(spherical::Direction::from_cartesian(&los_direction));
 
     // Step 4: Apply aberration with observer state
     let obs = ObserverState::geocentric(jd);

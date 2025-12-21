@@ -227,7 +227,7 @@ pub fn precess_equatorial<U: LengthUnit>(
 
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
-    position::Equatorial::<U>::new(ra, dec, position.distance)
+    position::Equatorial::<U>::new(ra.to::<Degree>(), dec.to::<Degree>(), position.distance())
 }
 
 #[cfg(test)]
@@ -239,7 +239,10 @@ mod tests {
         use crate::bodies::catalog::SIRIUS;
 
         // Target epoch: 2025‑05‑12 (JD 2 469 807.5)
-        let prec = precess_from_j2000(*SIRIUS.target.get_position(), JulianDate::new(2_460_807.5));
+        let prec = precess_from_j2000(
+            SIRIUS.target.get_position().clone(),
+            JulianDate::new(2_460_807.5),
+        );
 
         // Expected (Meeus short model): α ≈ 101.84557°, δ ≈ −16.77182°
         assert!(
