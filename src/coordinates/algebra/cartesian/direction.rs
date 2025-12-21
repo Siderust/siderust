@@ -187,12 +187,6 @@ impl<F: ReferenceFrame> Direction<F> {
         self.storage.xyz.z()
     }
 
-    /// Returns the internal XYZ storage.
-    #[inline]
-    pub(crate) fn xyz(&self) -> &XYZ<f64> {
-        &self.storage.xyz
-    }
-
     /// Returns the underlying nalgebra Vector3.
     #[inline]
     pub fn as_vec3(&self) -> nalgebra::Vector3<f64> {
@@ -381,19 +375,6 @@ impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
 // =============================================================================
 // Legacy API Compatibility
 // =============================================================================
-
-impl<F: ReferenceFrame> Direction<F> {
-    /// Legacy compatibility: creates from a vec3 of Quantity<DirectionUnit>.
-    ///
-    /// This maintains compatibility with older code that used DirectionUnit.
-    /// Prefer using `new()` or `from_vec3()` instead.
-    #[deprecated(note = "Use Direction::new() or Direction::from_vec3() instead")]
-    pub fn from_vec3_quantity(
-        vec: nalgebra::Vector3<Quantity<crate::coordinates::algebra::spherical::direction::DirectionUnit>>,
-    ) -> Self {
-        Self::new_unchecked(vec.x.value(), vec.y.value(), vec.z.value())
-    }
-}
 
 #[cfg(test)]
 mod tests {

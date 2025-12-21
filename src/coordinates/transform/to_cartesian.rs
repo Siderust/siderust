@@ -28,7 +28,7 @@ where
 /// - `x = r * cos(polar) * cos(azimuth)`
 /// - `y = r * cos(polar) * sin(azimuth)`
 /// - `z = r * sin(polar)`
-impl<C, F, U> From<&spherical::Position<C, F, U>> for cartesian::Vector<C, F, U>
+impl<C, F, U> From<&spherical::Position<C, F, U>> for cartesian::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
@@ -45,12 +45,12 @@ where
     F: ReferenceFrame,
     U: LengthUnit,
 {
-    pub fn to_cartesian(&self) -> cartesian::Vector<C, F, U> {
+    pub fn to_cartesian(&self) -> cartesian::Position<C, F, U> {
         spherical_to_cartesian(self)
     }
 }
 
-impl<C, F, U> crate::coordinates::cartesian::Vector<C, F, U>
+impl<C, F, U> crate::coordinates::cartesian::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,

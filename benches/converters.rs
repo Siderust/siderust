@@ -1,13 +1,13 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use qtty::{Au, Degrees};
-use siderust::coordinates::{cartesian::Vector, centers::Barycentric, frames::ICRS, spherical::Position};
+use siderust::coordinates::{cartesian, centers::Barycentric, frames::ICRS, spherical};
 use std::{hint::black_box, time::Duration};
 
 fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     // Test data: one Cartesian and one Spherical point in the ICRS/Barycentric frame
-    let icrs_cartesian = Vector::<Barycentric, ICRS, Au>::new(10.0, 20.0, 30.0);
+    let icrs_cartesian = cartesian::Position::<Barycentric, ICRS, Au>::new(10.0, 20.0, 30.0);
     let icrs_spherical =
-        Position::<Barycentric, ICRS, Au>::new(Degrees::new(10.0), Degrees::new(20.0), 30.0);
+        spherical::Position::<Barycentric, ICRS, Au>::new(Degrees::new(10.0), Degrees::new(20.0), 30.0);
 
     // Create a benchmark group so we can tweak settings just for these benchmarks
     let mut group = c.benchmark_group("converters");

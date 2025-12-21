@@ -216,12 +216,6 @@ impl<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit> Position<C, F, U> {
     pub fn as_vec3(&self) -> &nalgebra::Vector3<Quantity<U>> {
         self.xyz.as_vec3()
     }
-
-    /// Returns the internal XYZ storage (for internal use).
-    #[inline]
-    pub(crate) fn xyz(&self) -> &XYZ<Quantity<U>> {
-        &self.xyz
-    }
 }
 
 // =============================================================================
