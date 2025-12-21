@@ -6,8 +6,18 @@ version = 4
 name = "affn"
 version = "0.1.0"
 dependencies = [
+ "affn-derive",
  "nalgebra",
  "qtty",
+]
+
+[[package]]
+name = "affn-derive"
+version = "0.1.0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
