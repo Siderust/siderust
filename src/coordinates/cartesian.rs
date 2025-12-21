@@ -14,7 +14,7 @@
 use crate::coordinates::{centers, frames};
 
 /// Re-export the algebraic types
-pub use affn::cartesian::{Direction, Displacement, Position, Vector, Velocity};
+pub use affn::cartesian::*;
 
 // =============================================================================
 // Direction type aliases (frame-only, no center, dimensionless)
