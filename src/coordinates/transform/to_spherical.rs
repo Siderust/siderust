@@ -2,7 +2,7 @@ use crate::coordinates::{cartesian, centers::*, frames::*, spherical};
 use qtty::*;
 
 fn cartesian_to_spherical<C, F, U>(
-    cart: &cartesian::Vector<C, F, U>,
+    cart: &cartesian::Position<C, F, U>,
 ) -> spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
@@ -42,13 +42,13 @@ where
 /// # Type Parameters
 /// - `Center`: The reference center (e.g., Geocentric).
 /// - `Frame`: The reference frame (e.g., ICRS).
-impl<C, F, U> From<&cartesian::Vector<C, F, U>> for spherical::Position<C, F, U>
+impl<C, F, U> From<&cartesian::Position<C, F, U>> for spherical::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
     U: LengthUnit,
 {
-    fn from(cart: &cartesian::Vector<C, F, U>) -> Self {
+    fn from(cart: &cartesian::Position<C, F, U>) -> Self {
         cartesian_to_spherical(cart)
     }
 }
@@ -59,12 +59,12 @@ where
     F: ReferenceFrame,
     U: LengthUnit,
 {
-    pub fn from_cartesian(cart: &cartesian::Vector<C, F, U>) -> Self {
+    pub fn from_cartesian(cart: &cartesian::Position<C, F, U>) -> Self {
         cartesian_to_spherical(cart)
     }
 }
 
-impl<C, F, U> crate::coordinates::cartesian::Vector<C, F, U>
+impl<C, F, U> crate::coordinates::cartesian::Position<C, F, U>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,

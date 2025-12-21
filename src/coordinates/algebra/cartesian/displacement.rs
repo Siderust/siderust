@@ -282,7 +282,7 @@ where
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "Vector<{}> X: {:.6}, Y: {:.6}, Z: {:.6}",
+            "Position<{}> X: {:.6}, Y: {:.6}, Z: {:.6}",
             F::frame_name(),
             self.x(),
             self.y(),

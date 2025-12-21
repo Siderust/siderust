@@ -97,18 +97,6 @@ pub use displacement::Displacement;
 pub use direction::Direction;
 pub use velocity::Velocity;
 
-/// Legacy type alias for backward compatibility.
-///
-/// In earlier versions, `Vector<C, F, U>` was the main Cartesian type.
-/// New code should use:
-/// - [`Position<C, F, U>`] for affine points (locations with a center)
-/// - [`Displacement<F, U>`] for free vectors (center-independent)
-#[deprecated(
-    since = "0.4.0",
-    note = "Use Position<C, F, U> for positions or Displacement<F, U> for displacements"
-)]
-pub type Vector<C, F, U> = Position<C, F, U>;
-
 // =============================================================================
 // Line of Sight Functions
 // =============================================================================
