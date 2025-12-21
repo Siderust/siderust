@@ -3,11 +3,8 @@ use siderust::coordinates::cartesian::{Direction, Displacement, Position};
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::frames::Ecliptic;
 
-fn approx_eq_pos<C, F, U>(
-    a: Position<C, F, U>,
-    b: Position<C, F, U>,
-    tol: f64,
-) where
+fn approx_eq_pos<C, F, U>(a: Position<C, F, U>, b: Position<C, F, U>, tol: f64)
+where
     C: siderust::coordinates::centers::ReferenceCenter,
     F: siderust::coordinates::frames::ReferenceFrame,
     U: LengthUnit,
@@ -66,11 +63,11 @@ fn position_sub_distance() {
     let a = Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(1.0 * AU, 2.0 * AU, 2.0 * AU);
     let b =
         Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(0.5 * AU, -1.0 * AU, 1.0 * AU);
-    
+
     // Position - Position = Displacement
     let diff = a - b;
     approx_eq_disp(diff, Displacement::new(0.5 * AU, 3.0 * AU, 1.0 * AU), 1e-12);
-    
+
     let dist = a.distance();
     assert!((dist.value() - (1.0_f64 * 1.0 + 2.0 * 2.0 + 2.0 * 2.0).sqrt()).abs() < 1e-12);
     let dist_to = a.distance_to(&b);
@@ -85,10 +82,10 @@ fn position_sub_distance() {
 fn displacement_add_sub() {
     let v1 = Displacement::<Ecliptic, AstronomicalUnit>::new(1.0 * AU, 2.0 * AU, 2.0 * AU);
     let v2 = Displacement::<Ecliptic, AstronomicalUnit>::new(0.5 * AU, -1.0 * AU, 1.0 * AU);
-    
+
     let sum = v1 + v2;
     approx_eq_disp(sum, Displacement::new(1.5 * AU, 1.0 * AU, 3.0 * AU), 1e-12);
-    
+
     let diff = v1 - v2;
     approx_eq_disp(diff, Displacement::new(0.5 * AU, 3.0 * AU, 1.0 * AU), 1e-12);
 }

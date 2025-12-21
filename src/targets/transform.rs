@@ -57,7 +57,8 @@ where
         // Step 4: Convert back to spherical
         Self::new_raw(
             spherical::Position::from_cartesian(
-                &orig.position
+                &orig
+                    .position
                     .to_cartesian()
                     .transform(orig.time)
                     .transform(orig.time),

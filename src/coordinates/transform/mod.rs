@@ -127,8 +127,7 @@ where
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, C2, F1, F2, U> Transform<spherical::Position<C2, F2, U>>
-    for spherical::Position<C1, F1, U>
+impl<C1, C2, F1, F2, U> Transform<spherical::Position<C2, F2, U>> for spherical::Position<C1, F1, U>
 where
     cartesian::Position<C1, F1, U>: Transform<cartesian::Position<C2, F2, U>>,
     C1: ReferenceCenter,
@@ -147,7 +146,7 @@ where
 //
 // Use the extension traits instead:
 // - `position.to_frame::<NewFrame>(&jd, &ctx)` - for frame transforms
-// - `position.to_center::<NewCenter>(&jd, &ctx)` - for center transforms  
+// - `position.to_center::<NewCenter>(&jd, &ctx)` - for center transforms
 // - `position.to::<NewCenter, NewFrame>(&jd, &ctx)` - for combined transforms
 //
 // Or use the `Transform` trait:

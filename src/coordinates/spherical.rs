@@ -133,7 +133,8 @@ impl<F: frames::ReferenceFrame> Direction<F> {
         U: LengthUnit,
     {
         Position::from_inner(
-            self.inner.position_with_params::<C, U>(center_params, distance),
+            self.inner
+                .position_with_params::<C, U>(center_params, distance),
         )
     }
 
@@ -301,8 +302,8 @@ impl<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit>
     }
 }
 
-impl<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit>
-    From<Position<C, F, U>> for affn::spherical::Position<C, F, U>
+impl<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> From<Position<C, F, U>>
+    for affn::spherical::Position<C, F, U>
 {
     #[inline]
     fn from(wrapper: Position<C, F, U>) -> Self {
@@ -722,8 +723,8 @@ pub mod direction {
     //!
     //! These provide convenient shorthand for common direction types.
 
-    pub use super::Direction;
     use super::frames;
+    pub use super::Direction;
 
     /// **Ecliptic** direction (longitude *λ*, latitude *β*).
     pub type Ecliptic = Direction<frames::Ecliptic>;

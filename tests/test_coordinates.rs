@@ -117,10 +117,7 @@ fn test_direction_frame_transformations() {
     approx_eq_dir(&original, &ecliptic_back);
 
     // Verify directions are still unit vectors after transformation
-    let norm = (equatorial.x().powi(2)
-        + equatorial.y().powi(2)
-        + equatorial.z().powi(2))
-    .sqrt();
+    let norm = (equatorial.x().powi(2) + equatorial.y().powi(2) + equatorial.z().powi(2)).sqrt();
     assert!(
         (norm - 1.0).abs() < 1e-12,
         "direction should be unit vector"

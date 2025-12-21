@@ -44,7 +44,7 @@
 // Re-export the core trait from affn
 pub use affn::frames::ReferenceFrame;
 // Import derive from prelude for use in this module
-use affn::prelude::{ReferenceFrame as DeriveReferenceFrame};
+use affn::prelude::ReferenceFrame as DeriveReferenceFrame;
 
 // =============================================================================
 // Astronomical Reference Frames

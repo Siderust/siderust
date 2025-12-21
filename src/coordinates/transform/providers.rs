@@ -146,8 +146,8 @@ pub trait CenterShiftProvider<C1, C2, F> {
 // Identity Implementations
 // =============================================================================
 
-use crate::coordinates::frames::{Ecliptic, Equatorial, ICRS};
 use crate::coordinates::centers::{Barycentric, Geocentric, Heliocentric};
+use crate::coordinates::frames::{Ecliptic, Equatorial, ICRS};
 
 /// Identity rotation: same frame to same frame.
 impl<F> FrameRotationProvider<F, F> for ()
@@ -257,11 +257,11 @@ impl FrameRotationProvider<Ecliptic, Equatorial> for () {
 impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Barycentric, F> for () {
     fn shift<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
         use crate::bodies::solar_system::Sun;
-        
+
         // Get Sun's position in barycentric ecliptic coordinates
         let sun_bary = Sun::vsop87e(jd);
         let pos = sun_bary.get_position();
-        
+
         // The shift is the Sun's position (in AU)
         [pos.x().value(), pos.y().value(), pos.z().value()]
     }
@@ -284,11 +284,11 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Heliocentric, F> 
 impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Barycentric, F> for () {
     fn shift<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
         use crate::bodies::solar_system::Earth;
-        
+
         // Get Earth's position in barycentric ecliptic coordinates
         let earth_bary = Earth::vsop87e(jd);
         let pos = earth_bary.get_position();
-        
+
         // The shift is the Earth's position (in AU)
         [pos.x().value(), pos.y().value(), pos.z().value()]
     }
@@ -308,7 +308,8 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Geocentric, F> fo
 impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Geocentric, F> for () {
     fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
         // Helio → Bary → Geo
-        let [x1, y1, z1] = <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
+        let [x1, y1, z1] =
+            <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
         let [x2, y2, z2] = <() as CenterShiftProvider<Barycentric, Geocentric, F>>::shift(jd, ctx);
         [x1 + x2, y1 + y2, z1 + z2]
     }
@@ -394,13 +395,13 @@ mod tests {
     #[test]
     fn test_icrs_to_ecliptic_rotation() {
         let rot = frame_rotation::<ICRS, Ecliptic>(JulianDate::J2000, &AstroContext::default());
-        
+
         // X-axis should be unchanged (rotation is around X)
         let x = rot.apply_array([1.0, 0.0, 0.0]);
         assert!((x[0] - 1.0).abs() < EPSILON);
         assert!(x[1].abs() < EPSILON);
         assert!(x[2].abs() < EPSILON);
-        
+
         // Y and Z should be rotated
         let y = rot.apply_array([0.0, 1.0, 0.0]);
         assert!(y[1].abs() < 1.0); // Y component reduced
@@ -411,13 +412,13 @@ mod tests {
     fn test_ecliptic_icrs_roundtrip() {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
-        
+
         let r1 = frame_rotation::<ICRS, Ecliptic>(jd, &ctx);
         let r2 = frame_rotation::<Ecliptic, ICRS>(jd, &ctx);
-        
+
         let v = [1.0, 2.0, 3.0];
         let roundtrip = r2.apply_array(r1.apply_array(v));
-        
+
         assert!((roundtrip[0] - v[0]).abs() < EPSILON);
         assert!((roundtrip[1] - v[1]).abs() < EPSILON);
         assert!((roundtrip[2] - v[2]).abs() < EPSILON);
@@ -438,18 +439,18 @@ mod tests {
     fn test_helio_bary_geo_composition() {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
-        
+
         // Helio → Geo should equal Helio → Bary + Bary → Geo
         let helio_geo = center_shift::<Heliocentric, Geocentric, Ecliptic>(jd, &ctx);
         let helio_bary = center_shift::<Heliocentric, Barycentric, Ecliptic>(jd, &ctx);
         let bary_geo = center_shift::<Barycentric, Geocentric, Ecliptic>(jd, &ctx);
-        
+
         let composed = [
             helio_bary[0] + bary_geo[0],
             helio_bary[1] + bary_geo[1],
             helio_bary[2] + bary_geo[2],
         ];
-        
+
         assert!((helio_geo[0] - composed[0]).abs() < EPSILON);
         assert!((helio_geo[1] - composed[1]).abs() < EPSILON);
         assert!((helio_geo[2] - composed[2]).abs() < EPSILON);
@@ -459,10 +460,10 @@ mod tests {
     fn test_center_shift_antisymmetry() {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
-        
+
         let forward = center_shift::<Heliocentric, Geocentric, Ecliptic>(jd, &ctx);
         let backward = center_shift::<Geocentric, Heliocentric, Ecliptic>(jd, &ctx);
-        
+
         assert!((forward[0] + backward[0]).abs() < EPSILON);
         assert!((forward[1] + backward[1]).abs() < EPSILON);
         assert!((forward[2] + backward[2]).abs() < EPSILON);

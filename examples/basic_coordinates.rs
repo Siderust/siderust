@@ -116,7 +116,8 @@ fn main() {
     println!("  Distance = {:.3} AU", sph_pos.distance);
 
     // Convert back to cartesian
-    let cart_pos_back = cartesian::position::Equatorial::<AstronomicalUnit>::from_spherical(&sph_pos);
+    let cart_pos_back =
+        cartesian::position::Equatorial::<AstronomicalUnit>::from_spherical(&sph_pos);
     println!("\nConverted back to Cartesian:");
     println!("  X = {:.3} AU", cart_pos_back.x());
     println!("  Y = {:.3} AU", cart_pos_back.y());

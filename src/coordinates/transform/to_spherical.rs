@@ -1,4 +1,3 @@
-
 // Note: Cartesian-to-Spherical conversion is handled by affn's inherent methods:
 // - cartesian::Position::to_spherical()
 // - spherical::Position::from_cartesian()
@@ -17,7 +16,8 @@ mod tests {
         use crate::macros::assert_spherical_eq;
         let cart = cartesian::position::GCRS::<AstronomicalUnit>::new(1.0, 1.0, 1.0);
         // Use affn's inherent method
-        let sph: spherical::position::GCRS<AstronomicalUnit> = spherical::Position::from_cartesian(&cart);
+        let sph: spherical::position::GCRS<AstronomicalUnit> =
+            spherical::Position::from_cartesian(&cart);
         let expected = spherical::position::GCRS::<AstronomicalUnit>::new(
             Degrees::new(45.0),
             Degrees::new(35.26438968275466),

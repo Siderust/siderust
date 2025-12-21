@@ -6,10 +6,10 @@
 
 use crate::astro::sidereal::{calculate_gst, calculate_lst};
 use crate::astro::JulianDate;
-use crate::coordinates::{cartesian, spherical};
 use crate::coordinates::centers::{ObserverSite, Topocentric};
 use crate::coordinates::frames::{Equatorial, Horizontal};
-use qtty::{Deg, Degrees, Quantity, Radian, Radians, LengthUnit};
+use crate::coordinates::{cartesian, spherical};
+use qtty::{Deg, Degrees, LengthUnit, Quantity, Radian, Radians};
 
 /// Performs the equatorial to horizontal coordinate transformation.
 ///
@@ -93,7 +93,9 @@ use crate::coordinates::transform::Transform;
 ///
 /// This transformation requires the Julian Date to compute the local sidereal time.
 /// The observer's site information is taken from the coordinate's center params.
-impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>> for cartesian::Position<Topocentric, Equatorial, U> {
+impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
+    for cartesian::Position<Topocentric, Equatorial, U>
+{
     fn transform(&self, jd: JulianDate) -> cartesian::Position<Topocentric, Horizontal, U> {
         let site = self.center_params();
         let r = self.distance();
@@ -124,7 +126,9 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>> f
 // =============================================================================
 
 /// Transform from Horizontal to Equatorial frame for Topocentric coordinates.
-impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Equatorial, U>> for cartesian::Position<Topocentric, Horizontal, U> {
+impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Equatorial, U>>
+    for cartesian::Position<Topocentric, Horizontal, U>
+{
     fn transform(&self, jd: JulianDate) -> cartesian::Position<Topocentric, Equatorial, U> {
         let site = self.center_params();
 
@@ -159,7 +163,8 @@ impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Horizontal, U>>
     for spherical::Position<Topocentric, Equatorial, U>
 {
     fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, Horizontal, U> {
-        let cart: cartesian::Position<Topocentric, Horizontal, U> = self.to_cartesian().transform(jd);
+        let cart: cartesian::Position<Topocentric, Horizontal, U> =
+            self.to_cartesian().transform(jd);
         spherical::Position::from_cartesian(&cart)
     }
 }
@@ -168,7 +173,8 @@ impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Equatorial, U>>
     for spherical::Position<Topocentric, Horizontal, U>
 {
     fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, Equatorial, U> {
-        let cart: cartesian::Position<Topocentric, Equatorial, U> = self.to_cartesian().transform(jd);
+        let cart: cartesian::Position<Topocentric, Equatorial, U> =
+            self.to_cartesian().transform(jd);
         spherical::Position::from_cartesian(&cart)
     }
 }

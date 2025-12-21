@@ -101,7 +101,9 @@ pub fn apply_aberration<U: LengthUnit>(
     }
 
     // Safe to unwrap: we just checked distance is non-zero
-    let dir = mean.direction().expect("non-zero position should have a direction");
+    let dir = mean
+        .direction()
+        .expect("non-zero position should have a direction");
     apply_aberration_to_direction(dir, jd).position(mean.distance())
 }
 
@@ -118,7 +120,9 @@ pub fn remove_aberration<U: LengthUnit>(
     }
 
     // Safe to unwrap: we just checked distance is non-zero
-    let dir = app.direction().expect("non-zero position should have a direction");
+    let dir = app
+        .direction()
+        .expect("non-zero position should have a direction");
     remove_aberration_from_direction(dir, jd).position(app.distance())
 }
 

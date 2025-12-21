@@ -85,11 +85,19 @@ fn horizontal_normalization() {
     // Note: new_with_site takes (site, alt, az, dist) - IAU Alt-Az convention (altitude first)
     let pos = position::Horizontal::<AstronomicalUnit>::new_with_site(
         site,
-        120.0 * DEG,  // alt - wraps to 60
-        -30.0 * DEG,  // az - normalizes to 330
+        120.0 * DEG, // alt - wraps to 60
+        -30.0 * DEG, // az - normalizes to 330
         2.0 * AU,
     );
-    assert!((pos.alt().value() - 60.0).abs() < EPS, "pos alt={}", pos.alt());
-    assert!((pos.az().value() - 330.0).abs() < EPS, "pos az={}", pos.az());
+    assert!(
+        (pos.alt().value() - 60.0).abs() < EPS,
+        "pos alt={}",
+        pos.alt()
+    );
+    assert!(
+        (pos.az().value() - 330.0).abs() < EPS,
+        "pos az={}",
+        pos.az()
+    );
     assert!((pos.distance() - 2.0 * AU).abs() < EPS * AU);
 }

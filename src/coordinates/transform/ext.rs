@@ -47,9 +47,7 @@ use crate::coordinates::cartesian::{Direction, Position, Vector};
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::transform::context::AstroContext;
-use crate::coordinates::transform::providers::{
-    CenterShiftProvider, FrameRotationProvider,
-};
+use crate::coordinates::transform::providers::{CenterShiftProvider, FrameRotationProvider};
 use affn::Rotation3;
 use qtty::{LengthUnit, Quantity, Unit};
 
@@ -77,21 +75,13 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
     ///
     /// A new `Direction<F2>` representing the same physical direction
     /// expressed in frame `F2`.
-    fn to_frame<F2: ReferenceFrame>(
-        &self,
-        jd: &JulianDate,
-        ctx: &AstroContext,
-    ) -> Direction<F2>
+    fn to_frame<F2: ReferenceFrame>(&self, jd: &JulianDate, ctx: &AstroContext) -> Direction<F2>
     where
         (): FrameRotationProvider<F, F2>;
 }
 
 impl<F: ReferenceFrame> DirectionAstroExt<F> for Direction<F> {
-    fn to_frame<F2: ReferenceFrame>(
-        &self,
-        jd: &JulianDate,
-        ctx: &AstroContext,
-    ) -> Direction<F2>
+    fn to_frame<F2: ReferenceFrame>(&self, jd: &JulianDate, ctx: &AstroContext) -> Direction<F2>
     where
         (): FrameRotationProvider<F, F2>,
     {
@@ -126,27 +116,23 @@ pub trait VectorAstroExt<F: ReferenceFrame, U: Unit> {
     ///
     /// A new `Vector<F2, U>` representing the same physical vector
     /// expressed in frame `F2`.
-    fn to_frame<F2: ReferenceFrame>(
-        &self,
-        jd: &JulianDate,
-        ctx: &AstroContext,
-    ) -> Vector<F2, U>
+    fn to_frame<F2: ReferenceFrame>(&self, jd: &JulianDate, ctx: &AstroContext) -> Vector<F2, U>
     where
         (): FrameRotationProvider<F, F2>;
 }
 
 impl<F: ReferenceFrame, U: Unit> VectorAstroExt<F, U> for Vector<F, U> {
-    fn to_frame<F2: ReferenceFrame>(
-        &self,
-        jd: &JulianDate,
-        ctx: &AstroContext,
-    ) -> Vector<F2, U>
+    fn to_frame<F2: ReferenceFrame>(&self, jd: &JulianDate, ctx: &AstroContext) -> Vector<F2, U>
     where
         (): FrameRotationProvider<F, F2>,
     {
         let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, ctx);
         let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
-        Vector::new(Quantity::<U>::new(x), Quantity::<U>::new(y), Quantity::<U>::new(z))
+        Vector::new(
+            Quantity::<U>::new(x),
+            Quantity::<U>::new(y),
+            Quantity::<U>::new(z),
+        )
     }
 }
 
@@ -228,11 +214,7 @@ where
         (): FrameRotationProvider<F, F2>,
     {
         let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, ctx);
-        let [x, y, z] = rot.apply_array([
-            self.x().value(),
-            self.y().value(),
-            self.z().value(),
-        ]);
+        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
         Position::new(
             Quantity::<U>::new(x),
             Quantity::<U>::new(y),
@@ -249,14 +231,14 @@ where
         (): CenterShiftProvider<C, C2, F>,
     {
         let shift = <() as CenterShiftProvider<C, C2, F>>::shift(*jd, ctx);
-        
+
         // The shift is in AU; we need to convert if U is different.
         // For now, assume AU and let the type system handle it.
         // TODO: Add unit conversion if U != AstronomicalUnit
         let x = self.x().value() + shift[0];
         let y = self.y().value() + shift[1];
         let z = self.z().value() + shift[2];
-        
+
         Position::new(
             Quantity::<U>::new(x),
             Quantity::<U>::new(y),
@@ -322,8 +304,7 @@ mod tests {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
 
-        let pos_ecl: Position<Barycentric, Ecliptic, AstronomicalUnit> =
-            pos.to_frame(&jd, &ctx);
+        let pos_ecl: Position<Barycentric, Ecliptic, AstronomicalUnit> = pos.to_frame(&jd, &ctx);
 
         // X-axis should remain unchanged
         assert!((pos_ecl.x().value() - 1.0).abs() < EPSILON);
@@ -342,11 +323,13 @@ mod tests {
             geo_origin.to_center(&jd, &ctx);
 
         // Should be non-zero (Earth is ~1 AU from barycenter)
-        let dist = (bary.x().value().powi(2)
-            + bary.y().value().powi(2)
-            + bary.z().value().powi(2))
-        .sqrt();
-        assert!(dist > 0.9 && dist < 1.1, "Earth should be ~1 AU from barycenter, got {}", dist);
+        let dist =
+            (bary.x().value().powi(2) + bary.y().value().powi(2) + bary.z().value().powi(2)).sqrt();
+        assert!(
+            dist > 0.9 && dist < 1.1,
+            "Earth should be ~1 AU from barycenter, got {}",
+            dist
+        );
     }
 
     #[test]
@@ -375,15 +358,13 @@ mod tests {
         let pos = Position::<Barycentric, ICRS, AstronomicalUnit>::new(1.5, 2.5, 3.5);
 
         // Identity frame transform
-        let same_frame: Position<Barycentric, ICRS, AstronomicalUnit> =
-            pos.to_frame(&jd, &ctx);
+        let same_frame: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_frame(&jd, &ctx);
         assert!((same_frame.x().value() - pos.x().value()).abs() < EPSILON);
         assert!((same_frame.y().value() - pos.y().value()).abs() < EPSILON);
         assert!((same_frame.z().value() - pos.z().value()).abs() < EPSILON);
 
         // Identity center transform
-        let same_center: Position<Barycentric, ICRS, AstronomicalUnit> =
-            pos.to_center(&jd, &ctx);
+        let same_center: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_center(&jd, &ctx);
         assert!((same_center.x().value() - pos.x().value()).abs() < EPSILON);
         assert!((same_center.y().value() - pos.y().value()).abs() < EPSILON);
         assert!((same_center.z().value() - pos.z().value()).abs() < EPSILON);
