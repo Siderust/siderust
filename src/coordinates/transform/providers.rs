@@ -146,8 +146,8 @@ pub trait CenterShiftProvider<C1, C2, F> {
 // Identity Implementations
 // =============================================================================
 
-use crate::coordinates::algebra::frames::{Ecliptic, Equatorial, ICRS};
-use crate::coordinates::algebra::centers::{Barycentric, Geocentric, Heliocentric};
+use crate::coordinates::frames::{Ecliptic, Equatorial, ICRS};
+use crate::coordinates::centers::{Barycentric, Geocentric, Heliocentric};
 
 /// Identity rotation: same frame to same frame.
 impl<F> FrameRotationProvider<F, F> for ()

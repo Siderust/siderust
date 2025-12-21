@@ -12,7 +12,7 @@
 //! Import the extension traits to access frame-specific methods:
 //!
 //! ```rust
-//! use siderust::coordinates::astro::spherical::ext::*;
+//! use siderust::coordinates::spherical::ext::*;
 //! use siderust::coordinates::spherical::direction::ICRS;
 //! use qtty::*;
 //!
@@ -22,15 +22,9 @@
 //! assert_eq!(dir.dec(), 45.0 * DEG);
 //! ```
 
-use crate::coordinates::algebra::{centers, frames};
+use crate::coordinates::{centers, frames};
 
-pub use crate::coordinates::algebra::spherical::{Direction, Position};
-
-// Extension traits for frame-specific methods
-pub mod ext;
-
-// Re-export all extension traits for convenience
-pub use ext::*;
+pub use affn::spherical::{Direction, Position};
 
 // =============================================================================
 // Direction type aliases (frame-only, no center)

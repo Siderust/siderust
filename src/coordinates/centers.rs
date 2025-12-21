@@ -33,7 +33,7 @@
 //! ```rust
 //! use affn::prelude::*;
 //!
-//! #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+//! #[derive(Debug, Copy, Clone, ReferenceCenter)]
 //! struct Lunarcentric;
 //! assert_eq!(Lunarcentric::center_name(), "Lunarcentric");
 //! ```
@@ -137,12 +137,12 @@ impl ObserverSite {
     /// # Example
     ///
     /// ```rust
-    /// use siderust::coordinates::algebra::centers::ObserverSite;
+    /// use siderust::coordinates::centers::ObserverSite;
     /// use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
     ///
     /// let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
     /// ```
-    pub fn from_geographic(geo: &crate::coordinates::astro::spherical::position::Geographic) -> Self {
+    pub fn from_geographic(geo: &crate::coordinates::spherical::position::Geographic) -> Self {
         Self {
             lon: geo.azimuth, // longitude is stored in the azimuth field
             lat: geo.polar,   // latitude is stored in the polar field
@@ -173,7 +173,7 @@ impl ObserverSite {
     /// appropriate celestial frame using Earth rotation parameters (GMST, etc.).
     pub fn geocentric_itrf<U: qtty::LengthUnit>(
         &self,
-    ) -> crate::coordinates::algebra::cartesian::Position<Geocentric, crate::coordinates::algebra::frames::ECEF, U>
+    ) -> crate::coordinates::cartesian::Position<Geocentric, crate::coordinates::frames::ECEF, U>
     where
         Quantity<U>: From<Quantity<Meter>>,
     {
@@ -207,7 +207,7 @@ impl ObserverSite {
         let y: Quantity<U> = Quantity::<Meter>::new(y_m).into();
         let z: Quantity<U> = Quantity::<Meter>::new(z_m).into();
 
-        crate::coordinates::algebra::cartesian::Position::<Geocentric, crate::coordinates::algebra::frames::ECEF, U>::new(
+        crate::coordinates::cartesian::Position::<Geocentric, crate::coordinates::frames::ECEF, U>::new(
             x, y, z
         )
     }
@@ -227,7 +227,7 @@ impl ObserverSite {
 /// # Example
 ///
 /// ```rust
-/// use siderust::coordinates::algebra::centers::{Topocentric, ObserverSite, ReferenceCenter};
+/// use siderust::coordinates::centers::{Topocentric, ObserverSite, ReferenceCenter};
 /// use qtty::*;
 ///
 /// // Topocentric coordinates require an ObserverSite
@@ -278,7 +278,7 @@ pub enum OrbitReferenceCenter {
 /// # Example
 ///
 /// ```rust
-/// use siderust::coordinates::algebra::centers::{BodycentricParams, OrbitReferenceCenter};
+/// use siderust::coordinates::centers::{BodycentricParams, OrbitReferenceCenter};
 /// use siderust::astro::orbit::Orbit;
 /// use siderust::astro::JulianDate;
 /// use qtty::*;
@@ -378,9 +378,9 @@ impl Default for BodycentricParams {
 /// # Example
 ///
 /// ```rust
-/// use siderust::coordinates::algebra::centers::{Bodycentric, BodycentricParams, ReferenceCenter};
-/// use siderust::coordinates::algebra::cartesian::Position;
-/// use siderust::coordinates::algebra::frames;
+/// use siderust::coordinates::centers::{Bodycentric, BodycentricParams, ReferenceCenter};
+/// use siderust::coordinates::cartesian::Position;
+/// use siderust::coordinates::frames;
 /// use siderust::astro::orbit::Orbit;
 /// use siderust::astro::JulianDate;
 /// use qtty::*;

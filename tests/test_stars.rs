@@ -2,7 +2,7 @@ use qtty::length::nominal::SolarRadiuses;
 use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::Star;
-use siderust::coordinates::astro::spherical::ext::EquatorialPositionExt;
+use siderust::coordinates::spherical::ext::EquatorialPositionExt;
 use siderust::coordinates::spherical::position::Equatorial;
 use siderust::targets::Target;
 use std::borrow::Cow;
