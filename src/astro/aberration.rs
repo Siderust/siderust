@@ -125,7 +125,7 @@ pub fn remove_aberration<U: LengthUnit>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::spherical::ext::EquatorialPositionExt;
+    use crate::coordinates::spherical::EquatorialPositionExt;
     use crate::coordinates::spherical::position;
 
     fn apply_aberration_sph<U: LengthUnit>(

@@ -44,7 +44,7 @@ mod tests {
     use crate::coordinates::cartesian::position::*;
     use crate::coordinates::transform::Transform;
     use crate::coordinates::*;
-    use crate::coordinates::spherical::ext::EquatorialPositionExt;
+    use crate::coordinates::spherical::EquatorialPositionExt;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
     use qtty::Degrees;

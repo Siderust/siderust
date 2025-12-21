@@ -1,6 +1,6 @@
 use qtty::*;
 use siderust::bodies::EARTH;
-use siderust::coordinates::spherical::ext::{
+use siderust::coordinates::spherical::{
     EcefDirectionExt, EcefPositionExt, EclipticDirectionExt, EclipticPositionExt,
     HorizontalDirectionExt, HorizontalPositionExt, HorizontalPositionReadExt,
 };

@@ -7,7 +7,7 @@
 //! - Type safety and units
 
 use qtty::*;
-use siderust::coordinates::spherical::ext::{HorizontalDirectionExt, IcrsPositionExt};
+use siderust::coordinates::spherical::{HorizontalDirectionExt, IcrsPositionExt};
 use siderust::coordinates::cartesian;
 use siderust::coordinates::centers::{self, ReferenceCenter};
 use siderust::coordinates::frames::{self, ReferenceFrame};

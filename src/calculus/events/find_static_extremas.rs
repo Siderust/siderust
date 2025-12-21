@@ -1,7 +1,7 @@
 use super::Culmination;
 use crate::astro::{nutation::corrected_ra_with_nutation, sidereal, JulianDate};
 use crate::coordinates::{
-    spherical::ext::EcefPositionExt,
+    spherical::EcefPositionExt,
     centers::Geocentric, frames::Equatorial, spherical::position::Geographic,
     spherical::Position,
 };
