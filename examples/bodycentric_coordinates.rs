@@ -12,6 +12,7 @@ use siderust::coordinates::cartesian::Direction;
 use siderust::coordinates::centers::{Bodycentric, BodycentricParams, Geocentric, Heliocentric};
 use siderust::coordinates::frames;
 use siderust::coordinates::transform::TransformCenter;
+use siderust::coordinates::transform::centers::{ToBodycentricExt, FromBodycentricExt};
 
 fn main() {
     println!("=== Body-Centric Coordinates Example ===\n");

@@ -93,11 +93,37 @@
 //! - **spherical**: Re-export of `astro::spherical`
 //! - **frames**: Re-export of `algebra::frames`
 //! - **centers**: Re-export of `algebra::centers`
+//!
+//! ## Prelude
+//!
+//! For ergonomic imports of extension traits:
+//! ```rust,ignore
+//! use siderust::coordinates::prelude::*;
+//! ```
 
 pub mod algebra;
 pub mod astro;
 pub mod observation;
 pub mod transform;
+
+/// Prelude module for convenient imports.
+///
+/// Import this to get access to all coordinate extension traits:
+///
+/// ```rust
+/// use siderust::coordinates::prelude::*;
+/// ```
+///
+/// This includes:
+/// - [`DirectionAstroExt`](transform::DirectionAstroExt) - Frame transforms for directions
+/// - [`VectorAstroExt`](transform::VectorAstroExt) - Frame transforms for vectors
+/// - [`PositionAstroExt`](transform::PositionAstroExt) - Frame and center transforms for positions
+/// - [`AstroContext`](transform::AstroContext) - Context for transformations
+pub mod prelude {
+    pub use super::transform::{
+        AstroContext, DirectionAstroExt, PositionAstroExt, VectorAstroExt,
+    };
+}
 
 // Legacy re-exports for backward compatibility
 pub mod cartesian {

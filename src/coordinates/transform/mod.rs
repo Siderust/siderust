@@ -61,14 +61,23 @@
 //!
 //! - [`centers`]: Transformations between reference centers (positions only).
 //! - [`frames`]: Transformations between reference frames (all coordinate types).
+//! - [`context`]: Astronomical context for transformation configuration.
+//! - [`providers`]: Provider traits for computing time-dependent operators.
+//! - [`ext`]: Extension traits for ergonomic method-style transforms.
 
-mod centers;
+pub mod centers;
+pub mod context;
+pub mod ext;
 mod frames;
+pub mod providers;
 mod to_cartesian;
 mod to_spherical;
 
 pub use centers::TransformCenter;
+pub use context::AstroContext;
+pub use ext::{DirectionAstroExt, PositionAstroExt, VectorAstroExt};
 pub use frames::TransformFrame;
+pub use providers::{center_shift, frame_rotation, CenterShiftProvider, FrameRotationProvider};
 
 use crate::astro::JulianDate;
 use crate::coordinates::{
@@ -133,54 +142,13 @@ where
     }
 }
 
-/// Blanket implementation to allow chaining two consecutive `From` operations.
-///
-/// This implementation allows converting a [`Vector`] in from one
-/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
-/// transformations:
-/// 1. Frame transformation (within the same center)
-/// 2. Center transformation (within the new frame)
-impl<C1, F1, C2, F2, U> From<&cartesian::Position<C1, F1, U>> for cartesian::Position<C2, F2, U>
-where
-    cartesian::Position<C1, F1, U>: TransformFrame<cartesian::Position<C1, F2, U>>,
-    cartesian::Position<C1, F2, U>: Transform<cartesian::Position<C2, F2, U>>,
-    C1: ReferenceCenter,
-    C2: ReferenceCenter,
-    F1: MutableFrame,
-    F2: MutableFrame,
-    U: LengthUnit,
-{
-    fn from(orig: &cartesian::Position<C1, F1, U>) -> Self {
-        orig.to_frame().transform(JulianDate::J2000)
-    }
-}
-
-/// Blanket implementation for transforming [`spherical::Position`],
-/// involving frame and center changes. Internally uses Cartesian conversions.
-///
-/// The transformation follows these steps:
-/// 1. Convert spherical coordinates to Cartesian.
-/// 2. Apply frame transformation.
-/// 3. Apply center transformation.
-/// 4. Convert back to spherical coordinates.
-impl<C1, F1, C2, F2, U> From<&spherical::Position<C1, F1, U>> for spherical::Position<C2, F2, U>
-where
-    Position<C1, F1, U>: TransformFrame<Position<C1, F2, U>>, // transform frame
-    Position<C1, F2, U>: Transform<Position<C2, F2, U>>,      // transform center
-    C1: ReferenceCenter,
-    C2: ReferenceCenter,
-    F1: MutableFrame,
-    F2: MutableFrame,
-    U: LengthUnit,
-{
-    fn from(orig: &spherical::Position<C1, F1, U>) -> Self {
-        // Step 1: Convert spherical to Cartesian
-        // Step 2: Transform to new frame
-        // Step 3: Transform to new center
-        // Step 4: Convert back to spherical
-        orig.to_cartesian()
-            .to_frame()
-            .transform(JulianDate::J2000)
-            .to_spherical()
-    }
-}
+// Note: Frame/center transformations using `From` trait were removed because they
+// violate Rust's orphan rules when using affn types directly.
+//
+// Use the extension traits instead:
+// - `position.to_frame::<NewFrame>(&jd, &ctx)` - for frame transforms
+// - `position.to_center::<NewCenter>(&jd, &ctx)` - for center transforms  
+// - `position.to::<NewCenter, NewFrame>(&jd, &ctx)` - for combined transforms
+//
+// Or use the `Transform` trait:
+// - `position.transform(jd)` - uses type inference for target

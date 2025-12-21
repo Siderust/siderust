@@ -31,6 +31,9 @@
 
 pub mod position;
 
+// Re-export extension traits for ergonomic imports
+pub use position::{FromBodycentricExt, ToBodycentricExt, ToTopocentricExt};
+
 use crate::astro::JulianDate;
 use crate::coordinates::{cartesian::Position, centers::*, frames};
 use qtty::LengthUnit;

@@ -32,7 +32,10 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equat
 
 #[cfg(test)]
 mod tests {
+    use crate::astro::JulianDate;
     use crate::coordinates::{centers, frames, spherical::Position};
+    use crate::coordinates::astro::spherical::ext::EclipticPositionExt;
+    use crate::coordinates::transform::Transform;
     use crate::macros::assert_spherical_eq;
     use qtty::{AstronomicalUnit, Degrees};
 
@@ -41,17 +44,15 @@ mod tests {
     #[test]
     fn round_trip_ecliptic_equatorial() {
         let ecliptic_orig =
-            Position::<centers::Barycentric, frames::Ecliptic, AstronomicalUnit>::new(
+            Position::<centers::Barycentric, frames::Ecliptic, AstronomicalUnit>::new_ecliptic(
                 Degrees::new(123.4),
                 Degrees::new(-21.0),
                 2.7,
             );
-        let equatorial =
-            Position::<centers::Barycentric, frames::Equatorial, AstronomicalUnit>::from(
-                &ecliptic_orig,
-            );
-        let ecliptic_rec =
-            Position::<centers::Barycentric, frames::Ecliptic, AstronomicalUnit>::from(&equatorial);
+        let equatorial: Position<centers::Barycentric, frames::Equatorial, AstronomicalUnit> =
+            ecliptic_orig.transform(JulianDate::J2000);
+        let ecliptic_rec: Position<centers::Barycentric, frames::Ecliptic, AstronomicalUnit> =
+            equatorial.transform(JulianDate::J2000);
 
         assert_spherical_eq!(ecliptic_orig, ecliptic_rec, EPS);
     }

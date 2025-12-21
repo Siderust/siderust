@@ -30,6 +30,7 @@
 
 use crate::astro::JulianDate;
 use crate::coordinates::{
+    astro::spherical::ext::EclipticPositionExt,
     cartesian, centers::Heliocentric, frames::Ecliptic, spherical,
 };
 use qtty::{AstronomicalUnit, Degrees, Radian, AU};
@@ -73,7 +74,8 @@ impl Pluto {
         let lat = sum_latitude * 0.000001 - Degrees::new(3.908239);
         let rad = sum_radius * 0.0000001 + 40.7241346;
 
-        spherical::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
+        // Ecliptic: lon = azimuth, lat = polar
+        spherical::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new_ecliptic(
             lon.value(),
             lat.value(),
             rad * AU,
