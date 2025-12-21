@@ -8,7 +8,7 @@
 
 use qtty::*;
 use siderust::astro::JulianDate;
-use siderust::coordinates::spherical::ext::EquatorialDirectionExt;
+use siderust::coordinates::spherical::EquatorialDirectionExt;
 use siderust::coordinates::cartesian::{line_of_sight, Position};
 use siderust::coordinates::centers::{Geocentric, Heliocentric, ObserverSite};
 use siderust::coordinates::frames::Equatorial;
