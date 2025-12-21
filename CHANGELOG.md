@@ -8,19 +8,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * External `qtty` crate dependency for dimensional analysis
-* `DirectionUnit` marker type for direction/position type separation
+* New `affn` geometry kernel integration for coordinate algebra (cartesian + spherical)
+* Reference frames (`coordinates::frames`) and centers (`coordinates::centers`), plus astronomical type aliases in `coordinates::{cartesian,spherical}`
+* Body-centric and topocentric transformations (including Geocentric ↔ Topocentric and Horizontal frame support)
+* Transformation context/providers API (`coordinates::transform`) and observer-dependent helpers (`coordinates::observation`)
+* Extensive coordinate documentation (`src/coordinates/README.md`) and new runnable examples under `examples/`
+* Local CI helper script `ci-local.sh`
 
 ### Changed
-* Migrated from internal `units` module to external `qtty` crate (v0.1.0)
-* Unit syntax: now uses multiplication syntax (e.g., `45.0 * DEG` instead of `Degrees::new(45.0)`)
-* All documentation examples updated to use `qtty` imports and syntax
+* Migrated from internal `units` module to external `qtty` crate (v0.2.0), updating APIs, docs, and examples
+* Direction types are now frame-only (no reference center), and the coordinate module layout was consolidated around `Position`, `Displacement`, `Vector`, `Velocity`, and `Direction`
+* Refactored coordinate transformations toward a unified `Transform`-based API with extension traits in `coordinates::prelude`
 
 ### Deprecated
 
 ### Removed
 * Internal `src/units/` module (angular.rs, frequency.rs, length.rs, mass.rs, power.rs, time.rs, unitless.rs, velocity.rs)
+* Deprecated transformation APIs: `TransformToTopocentric` and the legacy `to_horizontal` helper
+* Deprecated spherical coordinate extension modules replaced by the `coordinates::spherical` wrapper types
 
 ### Fixed
+* Build/CI tooling improvements (Git LFS support, stub cleanup, improved local CI scripts)
 
 ### Security
 
@@ -55,7 +63,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Expand bodies catalog (Lagrange Points and other major bodies).
 - Direction implements Display.
 
-
 ### Changed
 - Geographic constructor order.
 - spherical::Direction, cartesian::Direction.
@@ -63,7 +70,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Converstion functions from/to Position/Direction.
 - apply_aberration_to_direction / remove_aberration_from_direction.
 - Compute VSOP87 velocity
-
 
 ### Changed
 - Geogreaphic constructor order.
