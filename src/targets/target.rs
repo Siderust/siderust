@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn test_target_new() {
-        let target = Target::new_static(*ALDEBARAN.target.get_position(), JulianDate::J2000);
+        let target = Target::new_static(ALDEBARAN.target.get_position().clone(), JulianDate::J2000);
 
         assert_eq!(target.position.ra(), ALDEBARAN.target.get_position().ra());
         assert_eq!(target.position.dec(), ALDEBARAN.target.get_position().dec());
@@ -118,7 +118,7 @@ mod tests {
         );
 
         // Test with Some(proper_motion)
-        let target = Target::new_raw(position, JulianDate::J2000, Some(proper_motion));
+        let target = Target::new_raw(position.clone(), JulianDate::J2000, Some(proper_motion));
         assert_eq!(target.position.ra().value(), 90.0);
         assert_eq!(target.position.dec().value(), 60.0);
         assert_eq!(target.time, JulianDate::J2000);
@@ -140,7 +140,7 @@ mod tests {
         let retrieved_position = target.get_position();
         assert_eq!(retrieved_position.ra().value(), 120.0);
         assert_eq!(retrieved_position.dec().value(), 75.0);
-        assert_eq!(retrieved_position.distance, 400.0);
+        assert_eq!(retrieved_position.distance(), 400.0);
     }
 
     #[test]
@@ -152,7 +152,7 @@ mod tests {
         );
 
         // Test with proper motion
-        let target = Target::new(position, JulianDate::J2000, proper_motion);
+        let target = Target::new(position.clone(), JulianDate::J2000, proper_motion);
         let retrieved_pm = target.get_proper_motion();
         assert!(retrieved_pm.is_some());
         if let Some(pm) = retrieved_pm {
@@ -195,7 +195,7 @@ mod tests {
         // Check that position and time were updated
         assert_eq!(target.position.ra().value(), 220.0);
         assert_eq!(target.position.dec().value(), 85.0);
-        assert_eq!(target.position.distance, 800.0);
+        assert_eq!(target.position.distance(), 800.0);
         assert_eq!(target.time, new_time);
 
         // Check that proper motion was preserved
@@ -232,7 +232,7 @@ mod tests {
             target1.position.dec().value(),
             target2.position.dec().value()
         );
-        assert_eq!(target1.position.distance, target2.position.distance);
+        assert_eq!(target1.position.distance(), target2.position.distance());
         assert_eq!(target1.time, target2.time);
         assert_eq!(
             target1.proper_motion.is_some(),
@@ -247,7 +247,7 @@ mod tests {
         let target = Target::new_static(position, JulianDate::J2000);
         assert_eq!(target.position.ra().value(), 0.0);
         assert_eq!(target.position.dec().value(), 0.0);
-        assert_eq!(target.position.distance, 0.0);
+        assert_eq!(target.position.distance(), 0.0);
 
         // Test with very large coordinates
         let position =
@@ -255,7 +255,7 @@ mod tests {
         let target = Target::new_static(position, JulianDate::J2000);
         assert!((target.position.ra().value() - 359.999).abs() < 1e-6);
         assert!((target.position.dec().value() - 89.999).abs() < 1e-6);
-        assert_eq!(target.position.distance, 1e6);
+        assert_eq!(target.position.distance(), 1e6);
     }
 
     #[test]

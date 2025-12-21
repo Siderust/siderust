@@ -121,11 +121,11 @@ mod tests {
         let jd = JulianDate::new(2460792.157638889);
 
         let sirius_barycentric_cartesian =
-            cartesian::position::ICRS::<Au>::from(&sirius_barycentric_spherical);
+            cartesian::position::ICRS::<Au>::from_spherical(&sirius_barycentric_spherical);
         let sirius_geocentric_cartesian: cartesian::position::GCRS<Au> =
             Transform::transform(&sirius_barycentric_cartesian, jd);
         let sirius_geocentric_spherical =
-            spherical::position::GCRS::<Au>::from(&sirius_geocentric_cartesian);
+            spherical::position::GCRS::<Au>::from_cartesian(&sirius_geocentric_cartesian);
 
         // Distance should be preserved (approximately - slight change due to Earth's offset)
         assert!(

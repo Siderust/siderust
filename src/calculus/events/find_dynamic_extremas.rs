@@ -49,14 +49,14 @@ const NEWTON_MAX_ITERS: usize = 15;
 ///    `f(jd) = H(jd) − H_target`,    where `H_target` = `0` or `π`.  
 ///    The derivative `dH/dt` is estimated by a symmetric ±1 s finite-difference.  
 /// 4. Collect all roots in `[jd_start, jd_end)` and sort them.
-pub fn find_dynamic_extremas<F, U: Unit>(
+pub fn find_dynamic_extremas<F, U: LengthUnit>(
     get_equatorial: F,
     observer: &position::Geographic,
     jd_start: JulianDate,
     jd_end: JulianDate,
 ) -> Vec<Culmination>
 where
-    F: Fn(JulianDate) -> Target<SphericalCoord<Geocentric, frames::Equatorial, U>> + Copy,
+    F: Fn(JulianDate) -> Target<Position<Geocentric, frames::Equatorial, U>> + Copy,
 {
     // ────────────────────────────────────────────────────────────
     // Helper: hour angle H(jd) [rad]

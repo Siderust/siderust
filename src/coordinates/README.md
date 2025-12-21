@@ -2,10 +2,10 @@
 
 ## Table of Contents
 1. [Overview](#overview)
-2. [Core Design Principles](#core-design-principles)
-3. [Architecture Diagrams](#architecture-diagrams)
-4. [Type System Design](#type-system-design)
-5. [Module Organization](#module-organization)
+2. [Module Organization](#module-organization)
+3. [Core Design Principles](#core-design-principles)
+4. [Architecture Diagrams](#architecture-diagrams)
+5. [Type System Design](#type-system-design)
 6. [Transformation System](#transformation-system)
 7. [Implementation Details](#implementation-details)
 8. [Pros and Cons](#pros-and-cons)
@@ -24,6 +24,49 @@ The **coordinates module** provides a strongly-typed, compile-time-safe framewor
 - **Flexible Transformations**: Comprehensive transformation system for centers, frames, and coordinate representations
 - **Unit Safety**: Integrates with the `qtty` unit system to enforce dimensional correctness
 - **Multiple Representations**: Supports both Cartesian and Spherical coordinate systems
+- **Clear Separation**: Algebraic structures separated from physical/astronomical implementations
+
+---
+
+## Module Organization
+
+The coordinates module is organized into two main submodules:
+
+### `algebra/` - Pure Mathematical Structures
+
+Contains the abstract algebraic coordinate types independent of physical context:
+
+- **`frames.rs`**: Reference frame trait and implementations (ICRS, Ecliptic, Equatorial, etc.)
+- **`centers.rs`**: Reference center trait and implementations (Heliocentric, Geocentric, etc.)
+- **`cartesian/`**: Cartesian coordinate types
+  - `vector.rs`: Generic Vector<C, F, U>
+  - `direction.rs`: Direction<F> (frame-only, no center)
+  - `position.rs`: Position<C, F, U> (affine point with center)
+  - `velocity.rs`: Velocity<F, U> (frame-only)
+- **`spherical/`**: Spherical coordinate base types
+  - `direction.rs`: Direction<F> (frame-only)
+  - `position.rs`: Position<C, F, U>
+
+### `astro/` - Physical/Astronomical Implementations
+
+Contains domain-specific coordinate systems with astronomical conventions:
+
+- **`spherical/`**: Frame-specific implementations with convenience constructors
+  - `ecliptic.rs`: Ecliptic coordinates (longitude L, latitude B)
+  - `equatorial.rs`: Equatorial coordinates (RA α, Dec δ)
+  - `horizontal.rs`: Horizontal coordinates (altitude, azimuth)
+  - `icrs.rs`: ICRS coordinate extensions
+  - `ecef.rs`: Geographic/ECEF coordinates
+
+### Legacy Compatibility
+
+For backward compatibility, the original module paths are maintained via re-exports:
+- `coordinates::frames` → `algebra::frames`
+- `coordinates::centers` → `algebra::centers`
+- `coordinates::cartesian` → `algebra::cartesian`
+- `coordinates::spherical` → `astro::spherical`
+
+This ensures existing code continues to work without changes.
 
 ---
 
@@ -67,7 +110,7 @@ graph TB
         
         subgraph "Representations"
             CART[cartesian/<br/>Vector&lt;C,F,U&gt;]
-            SPH[spherical/<br/>SphericalCoord&lt;C,F,U&gt;]
+            SPH[spherical/<br/>Position&lt;C,F,U&gt;]
             
             CART_DIR[direction.rs<br/>Direction]
             CART_POS[position.rs<br/>Position]
@@ -145,7 +188,7 @@ classDiagram
         +z() Quantity~U~
     }
     
-    class SphericalCoord~C,F,U~ {
+    class Position~C,F,U~ {
         +polar: Degrees
         +azimuth: Degrees
         +distance: Quantity~U~
@@ -191,9 +234,9 @@ classDiagram
     Vector~C,F,U~ ..> ReferenceFrame : F
     Vector~C,F,U~ ..> Unit : U
     
-    SphericalCoord~C,F,U~ ..> ReferenceCenter : C
-    SphericalCoord~C,F,U~ ..> ReferenceFrame : F
-    SphericalCoord~C,F,U~ ..> Unit : U
+    Position~C,F,U~ ..> ReferenceCenter : C
+    Position~C,F,U~ ..> ReferenceFrame : F
+    Position~C,F,U~ ..> Unit : U
 ```
 
 ### Transformation Flow
@@ -289,8 +332,8 @@ pub type Position<C, F, U> = Vector<C, F, U>;                 // Affine (length 
 pub type Velocity<F, U> = Vector<NoCenter, F, U>;             // Free vector (velocity units)
 
 // Spherical
-pub type Direction<F> = SphericalCoord<NoCenter, F, DirectionUnit>;  // Free vector
-pub type Position<C, F, U> = SphericalCoord<C, F, U>;                // Affine
+pub type Direction<F> = spherical::Direction<F>;                     // Free direction (unit vector)
+pub type Position<C, F, U> = spherical::Position<C, F, U>;           // Affine position (has a center + distance)
 
 // Frame-specific direction aliases (no center parameter)
 pub type Ecliptic = Direction<frames::Ecliptic>;
@@ -333,26 +376,38 @@ graph LR
 ```
 coordinates/
 ├── mod.rs                    # Public API and documentation
-├── centers.rs                # Reference center definitions
-├── frames.rs                 # Reference frame definitions
 │
-├── cartesian/                # Cartesian representation
-│   ├── mod.rs               
-│   ├── vector.rs            # Generic Vector<C,F,U>
-│   ├── direction.rs         # Direction type alias
-│   ├── position.rs          # Position type alias
-│   └── velocity.rs          # Velocity type alias
-│
-├── spherical/                # Spherical representation
+├── algebra/                  # Pure mathematical structures
 │   ├── mod.rs
-│   ├── spherical.rs         # Generic SphericalCoord<C,F,U>
-│   ├── direction.rs         # Direction type alias
-│   ├── position.rs          # Position type alias
-│   ├── equatorial.rs        # Equatorial-specific helpers
-│   ├── ecliptic.rs          # Ecliptic-specific helpers
-│   ├── horizontal.rs        # Horizontal-specific helpers
-│   ├── icrs.rs              # ICRS-specific helpers
-│   └── ecef.rs              # ECEF-specific helpers
+│   ├── centers.rs           # Reference center trait and implementations
+│   ├── frames.rs            # Reference frame trait and implementations
+│   │
+│   ├── cartesian/           # Cartesian representation
+│   │   ├── mod.rs
+│   │   ├── vector.rs        # Generic Vector<C,F,U>
+│   │   ├── direction.rs     # Direction<F> (frame-only)
+│   │   ├── position.rs      # Position<C,F,U> (affine)
+│   │   └── velocity.rs      # Velocity<F,U> (frame-only)
+│   │
+│   └── spherical/           # Spherical base types
+│       ├── mod.rs
+│       ├── direction.rs     # Direction<F> (frame-only)
+│       └── position.rs      # Position<C,F,U>
+│
+├── astro/                    # Physical/astronomical implementations
+│   ├── mod.rs
+│   └── spherical/           # Frame-specific extensions
+│       ├── mod.rs
+│       ├── equatorial.rs    # RA/Dec constructors and helpers
+│       ├── ecliptic.rs      # Lon/Lat constructors and helpers
+│       ├── horizontal.rs    # Alt/Az constructors and helpers
+│       ├── icrs.rs          # ICRS-specific helpers
+│       └── ecef.rs          # Geographic coordinate helpers
+│
+├── observation/              # Observational effects
+│   ├── mod.rs
+│   ├── observer_state.rs    # Observer position and velocity
+│   └── observational_direction.rs  # Astrometric/Apparent directions
 │
 └── transform/                # Transformation system
     ├── mod.rs               # Transform trait and blanket impls
@@ -541,7 +596,7 @@ xyz: nalgebra::Vector3<Quantity<U>>
 - Natural for physics calculations (velocity, acceleration)
 - Easy to compute distances and angles
 
-#### Spherical (SphericalCoord)
+#### Spherical (Position)
 
 **Storage:**
 ```rust

@@ -31,9 +31,12 @@
 
 pub mod position;
 
+// Re-export extension traits for ergonomic imports
+pub use position::{FromBodycentricExt, ToBodycentricExt, ToTopocentricExt};
+
 use crate::astro::JulianDate;
-use crate::coordinates::{cartesian::Vector, centers::*, frames};
-use qtty::Unit;
+use crate::coordinates::{cartesian::Position, centers::*, frames};
+use qtty::LengthUnit;
 
 /// Trait for transforming coordinates from one center to another.
 ///
@@ -54,14 +57,14 @@ pub trait TransformCenter<Coord> {
 }
 
 /// Identity transformation: a position in center C stays in center C.
-impl<C, F, U> TransformCenter<Vector<C, F, U>> for Vector<C, F, U>
+impl<C, F, U> TransformCenter<Position<C, F, U>> for Position<C, F, U>
 where
     C: ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
-    fn to_center(&self, _jd: JulianDate) -> Vector<C, F, U> {
-        Vector::<C, F, U>::from_vec3(self.center_params().clone(), self.as_vec3())
+    fn to_center(&self, _jd: JulianDate) -> Position<C, F, U> {
+        Position::<C, F, U>::from_vec3(self.center_params().clone(), *self.as_vec3())
     }
 }
 

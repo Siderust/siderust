@@ -62,9 +62,9 @@ pub fn apply_aberration_to_direction(
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        mean.x().value() + (velocity.x() / AU_PER_DAY_C).simplify().value(),
-        mean.y().value() + (velocity.y() / AU_PER_DAY_C).simplify().value(),
-        mean.z().value() + (velocity.z() / AU_PER_DAY_C).simplify().value(),
+        mean.x() + (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        mean.y() + (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        mean.z() + (velocity.z() / AU_PER_DAY_C).simplify().value(),
     )
 }
 
@@ -82,9 +82,9 @@ pub fn remove_aberration_from_direction(
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        app.x().value() - (velocity.x() / AU_PER_DAY_C).simplify().value(),
-        app.y().value() - (velocity.y() / AU_PER_DAY_C).simplify().value(),
-        app.z().value() - (velocity.z() / AU_PER_DAY_C).simplify().value(),
+        app.x() - (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        app.y() - (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        app.z() - (velocity.z() / AU_PER_DAY_C).simplify().value(),
     )
 }
 
@@ -100,7 +100,11 @@ pub fn apply_aberration<U: LengthUnit>(
         return mean;
     }
 
-    apply_aberration_to_direction(mean.direction(), jd).position(mean.distance())
+    // Safe to unwrap: we just checked distance is non-zero
+    let dir = mean
+        .direction()
+        .expect("non-zero position should have a direction");
+    apply_aberration_to_direction(dir, jd).position(mean.distance())
 }
 
 /// Remove **annual aberration** from a position vector, preserving its
@@ -115,28 +119,32 @@ pub fn remove_aberration<U: LengthUnit>(
         return app;
     }
 
-    remove_aberration_from_direction(app.direction(), jd).position(app.distance())
+    // Safe to unwrap: we just checked distance is non-zero
+    let dir = app
+        .direction()
+        .expect("non-zero position should have a direction");
+    remove_aberration_from_direction(dir, jd).position(app.distance())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::spherical::position;
+    use crate::coordinates::spherical::{self, position};
 
     fn apply_aberration_sph<U: LengthUnit>(
-        mean: position::Equatorial<U>,
+        mean: &position::Equatorial<U>,
         jd: JulianDate,
     ) -> position::Equatorial<U> {
-        (&apply_aberration((&mean).into(), jd)).into()
+        spherical::Position::from_cartesian(&apply_aberration(mean.to_cartesian(), jd))
     }
 
     #[test]
     fn test_aberration_preserva_distance_and_epoch() {
         let jd = JulianDate::new(2451545.0); // J2000.0
         let mean = position::Equatorial::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
-        let out = apply_aberration_sph(mean, jd);
+        let out = apply_aberration_sph(&mean, jd);
 
-        assert_eq!(out.distance.value(), mean.distance.value());
+        assert_eq!(out.distance().value(), mean.distance().value());
     }
 
     #[test]
@@ -147,7 +155,7 @@ mod tests {
             Degrees::new(0.0), // Dec = 0°
             1.0,
         );
-        let out = apply_aberration_sph(mean, jd);
+        let out = apply_aberration_sph(&mean, jd);
 
         let delta_ra = out.ra().abs_separation(mean.ra());
         let delta_dec = out.dec().abs_separation(mean.dec());
@@ -169,7 +177,7 @@ mod tests {
             Degrees::new(90.0),  // Dec = +90°
             1.0,
         );
-        let out = apply_aberration_sph(mean, jd);
+        let out = apply_aberration_sph(&mean, jd);
 
         assert!(
             out.dec().value() < 90.0,

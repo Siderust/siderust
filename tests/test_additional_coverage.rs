@@ -4,6 +4,7 @@ use siderust::astro::JulianDate;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};
+use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
 use siderust::coordinates::{
     cartesian,
     centers::ObserverSite,
@@ -49,8 +50,8 @@ fn cartesian_vector_display_includes_metadata() {
 #[test]
 fn horizontal_conversion_variants_cover_all_impls() {
     let observer = spherical::position::Geographic::new(
-        Degrees::new(28.76),
         Degrees::new(-17.89),
+        Degrees::new(28.76),
         Kilometers::new(2.4),
     );
     let jd = JulianDate::J2000;
@@ -93,7 +94,7 @@ fn frame_transform_traits_exercised() {
     // Convert to cartesian, transform frame
     let cart_ecl = sph_ecl.to_cartesian();
     let cart_equatorial: cartesian::direction::Equatorial = TransformFrame::to_frame(&cart_ecl);
-    assert!(cart_equatorial.x().value().is_finite());
+    assert!(cart_equatorial.x().is_finite());
 
     // Test frame transform on position (must preserve center type)
     let vec_equatorial: cartesian::Position<Heliocentric, frames::Equatorial, AstronomicalUnit> =

@@ -5,60 +5,41 @@ pub mod to_horizontal;
 pub mod to_icrs;
 pub mod velocity;
 
-use crate::astro::JulianDate;
-use crate::coordinates::cartesian::Vector;
+use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::MutableFrame;
-use crate::coordinates::spherical::SphericalCoord;
 use crate::coordinates::{cartesian, spherical};
-use qtty::Unit;
-
-use crate::coordinates::transform::Transform;
+use qtty::LengthUnit;
 
 pub trait TransformFrame<Coord> {
     fn to_frame(&self) -> Coord;
 }
 
 // Implement Identity frame transform
-impl<C, F, U> TransformFrame<Vector<C, F, U>> for Vector<C, F, U>
+impl<C, F, U> TransformFrame<Position<C, F, U>> for Position<C, F, U>
 where
-    U: Unit,
+    U: LengthUnit,
     F: MutableFrame,
     C: ReferenceCenter,
 {
-    fn to_frame(&self) -> Vector<C, F, U> {
-        Vector::from_vec3(self.center_params().clone(), self.as_vec3())
+    fn to_frame(&self) -> Position<C, F, U> {
+        Position::from_vec3(self.center_params().clone(), *self.as_vec3())
     }
 }
 
-impl<C, F1, F2, U> TransformFrame<spherical::SphericalCoord<C, F2, U>>
-    for spherical::SphericalCoord<C, F1, U>
+impl<C, F1, F2, U> TransformFrame<spherical::Position<C, F2, U>> for spherical::Position<C, F1, U>
 where
-    cartesian::Vector<C, F1, U>: TransformFrame<cartesian::Vector<C, F2, U>>,
+    cartesian::Position<C, F1, U>: TransformFrame<cartesian::Position<C, F2, U>>,
     C: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
-    U: Unit,
+    U: LengthUnit,
 {
-    fn to_frame(&self) -> spherical::SphericalCoord<C, F2, U> {
-        self.to_cartesian().to_frame().to_spherical()
+    fn to_frame(&self) -> spherical::Position<C, F2, U> {
+        spherical::Position::from_cartesian(&self.to_cartesian().to_frame())
     }
 }
 
-impl<C, F, U> SphericalCoord<C, F, U>
-where
-    C: ReferenceCenter,
-    F: MutableFrame,
-    U: qtty::Unit,
-{
-    pub fn to_frame<F2: MutableFrame>(&self) -> SphericalCoord<C, F2, U>
-    where
-        Vector<C, F, U>: Transform<Vector<C, F2, U>>,
-        Vector<C, F, U>: for<'a> From<&'a SphericalCoord<C, F, U>>, // to_cartesian
-        SphericalCoord<C, F2, U>: for<'a> From<&'a Vector<C, F2, U>>, // to_spherical
-    {
-        self.to_cartesian()
-            .transform(JulianDate::J2000)
-            .to_spherical()
-    }
-}
+// Note: The to_frame() method for spherical::Position is provided by the
+// TransformFrame trait implementation above. Users can call:
+//   sph_pos.to_frame::<NewFrame>()
