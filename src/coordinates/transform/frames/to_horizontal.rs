@@ -6,7 +6,7 @@
 
 use crate::astro::sidereal::{calculate_gst, calculate_lst};
 use crate::astro::JulianDate;
-use crate::coordinates::cartesian::Vector;
+use crate::coordinates::{cartesian, spherical};
 use crate::coordinates::centers::{ObserverSite, Topocentric};
 use crate::coordinates::frames::{Equatorial, Horizontal};
 use qtty::{Deg, Degrees, Quantity, Radian, Radians, LengthUnit};
@@ -93,8 +93,8 @@ use crate::coordinates::transform::Transform;
 ///
 /// This transformation requires the Julian Date to compute the local sidereal time.
 /// The observer's site information is taken from the coordinate's center params.
-impl<U: LengthUnit> Transform<Vector<Topocentric, Horizontal, U>> for Vector<Topocentric, Equatorial, U> {
-    fn transform(&self, jd: JulianDate) -> Vector<Topocentric, Horizontal, U> {
+impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>> for cartesian::Position<Topocentric, Equatorial, U> {
+    fn transform(&self, jd: JulianDate) -> cartesian::Position<Topocentric, Horizontal, U> {
         let site = self.center_params();
         let r = self.distance();
 
@@ -115,7 +115,7 @@ impl<U: LengthUnit> Transform<Vector<Topocentric, Horizontal, U>> for Vector<Top
         let new_y = -r * alt.cos() * az.sin(); // negative for East-positive azimuth
         let new_z = r * alt.sin();
 
-        Vector::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
+        cartesian::Position::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
     }
 }
 
@@ -124,8 +124,8 @@ impl<U: LengthUnit> Transform<Vector<Topocentric, Horizontal, U>> for Vector<Top
 // =============================================================================
 
 /// Transform from Horizontal to Equatorial frame for Topocentric coordinates.
-impl<U: LengthUnit> Transform<Vector<Topocentric, Equatorial, U>> for Vector<Topocentric, Horizontal, U> {
-    fn transform(&self, jd: JulianDate) -> Vector<Topocentric, Equatorial, U> {
+impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Equatorial, U>> for cartesian::Position<Topocentric, Horizontal, U> {
+    fn transform(&self, jd: JulianDate) -> cartesian::Position<Topocentric, Equatorial, U> {
         let site = self.center_params();
 
         // Get distance and angles from Cartesian vector
@@ -147,7 +147,7 @@ impl<U: LengthUnit> Transform<Vector<Topocentric, Equatorial, U>> for Vector<Top
         let new_y = r * dec.cos() * ra.sin();
         let new_z = r * dec.sin();
 
-        Vector::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
+        cartesian::Position::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
     }
 }
 
@@ -155,22 +155,20 @@ impl<U: LengthUnit> Transform<Vector<Topocentric, Equatorial, U>> for Vector<Top
 // Spherical position implementations
 // =============================================================================
 
-use crate::coordinates::spherical::Position;
-
-impl<U: LengthUnit> Transform<Position<Topocentric, Horizontal, U>>
-    for Position<Topocentric, Equatorial, U>
+impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Horizontal, U>>
+    for spherical::Position<Topocentric, Equatorial, U>
 {
-    fn transform(&self, jd: JulianDate) -> Position<Topocentric, Horizontal, U> {
-        let cart: Vector<Topocentric, Horizontal, U> = self.to_cartesian().transform(jd);
+    fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, Horizontal, U> {
+        let cart: cartesian::Position<Topocentric, Horizontal, U> = self.to_cartesian().transform(jd);
         cart.to_spherical()
     }
 }
 
-impl<U: LengthUnit> Transform<Position<Topocentric, Equatorial, U>>
-    for Position<Topocentric, Horizontal, U>
+impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Equatorial, U>>
+    for spherical::Position<Topocentric, Horizontal, U>
 {
-    fn transform(&self, jd: JulianDate) -> Position<Topocentric, Equatorial, U> {
-        let cart: Vector<Topocentric, Equatorial, U> = self.to_cartesian().transform(jd);
+    fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, Equatorial, U> {
+        let cart: cartesian::Position<Topocentric, Equatorial, U> = self.to_cartesian().transform(jd);
         cart.to_spherical()
     }
 }

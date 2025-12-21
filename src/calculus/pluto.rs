@@ -30,14 +30,14 @@
 
 use crate::astro::JulianDate;
 use crate::coordinates::{
-    cartesian::Vector, centers::Heliocentric, frames::Ecliptic, spherical::Position,
+    cartesian, centers::Heliocentric, frames::Ecliptic, spherical,
 };
 use qtty::{AstronomicalUnit, Degrees, Radian, AU};
 
 pub struct Pluto;
 
 impl Pluto {
-    pub fn get_heliocentric(jd: JulianDate) -> Vector<Heliocentric, Ecliptic, AstronomicalUnit> {
+    pub fn get_heliocentric(jd: JulianDate) -> cartesian::Position<Heliocentric, Ecliptic, AstronomicalUnit> {
         let t = jd.julian_centuries().value();
 
         // 2. Calculate mean longitudes (in degrees) for Jupiter, Saturn, and Pluto.
@@ -73,7 +73,7 @@ impl Pluto {
         let lat = sum_latitude * 0.000001 - Degrees::new(3.908239);
         let rad = sum_radius * 0.0000001 + 40.7241346;
 
-        Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
+        spherical::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
             lon.value(),
             lat.value(),
             rad * AU,

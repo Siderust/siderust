@@ -53,26 +53,6 @@ pub mod displacement {
     pub type ICRS<U> = Displacement<frames::ICRS, U>;
 }
 
-/// Deprecated: use `displacement` module instead.
-#[deprecated(note = "Use `displacement` module instead")]
-pub mod vector {
-    pub use crate::coordinates::algebra::cartesian::Displacement;
-    use super::frames;
-
-    /// Deprecated: use `displacement::Ecliptic<U>` instead.
-    #[deprecated(note = "Use `displacement::Ecliptic<U>` instead")]
-    pub type Ecliptic<U> = Displacement<frames::Ecliptic, U>;
-    /// Deprecated: use `displacement::Equatorial<U>` instead.
-    #[deprecated(note = "Use `displacement::Equatorial<U>` instead")]
-    pub type Equatorial<U> = Displacement<frames::Equatorial, U>;
-    /// Deprecated: use `displacement::Horizontal<U>` instead.
-    #[deprecated(note = "Use `displacement::Horizontal<U>` instead")]
-    pub type Horizontal<U> = Displacement<frames::Horizontal, U>;
-    /// Deprecated: use `displacement::ICRS<U>` instead.
-    #[deprecated(note = "Use `displacement::ICRS<U>` instead")]
-    pub type ICRS<U> = Displacement<frames::ICRS, U>;
-}
-
 // =============================================================================
 // Position type aliases (center + frame + unit)
 // =============================================================================

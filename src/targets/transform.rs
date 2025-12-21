@@ -9,18 +9,18 @@ use qtty::LengthUnit;
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, F1, C2, F2, U> From<&Target<cartesian::Vector<C1, F1, U>>>
-    for Target<cartesian::Vector<C2, F2, U>>
+impl<C1, F1, C2, F2, U> From<&Target<cartesian::Position<C1, F1, U>>>
+    for Target<cartesian::Position<C2, F2, U>>
 where
-    cartesian::Vector<C1, F1, U>: Transform<cartesian::Vector<C1, F2, U>>, // transform frame
-    cartesian::Vector<C1, F2, U>: Transform<cartesian::Vector<C2, F2, U>>, // transform center
+    cartesian::Position<C1, F1, U>: Transform<cartesian::Position<C1, F2, U>>, // transform frame
+    cartesian::Position<C1, F2, U>: Transform<cartesian::Position<C2, F2, U>>, // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: ReferenceFrame,
     F2: ReferenceFrame,
     U: LengthUnit,
 {
-    fn from(orig: &Target<cartesian::Vector<C1, F1, U>>) -> Self {
+    fn from(orig: &Target<cartesian::Position<C1, F1, U>>) -> Self {
         // Step 1: Transform to new frame, keeping the original center.
         // Step 2: Transform to new center, now using the new frame.
         Self::new_raw(
@@ -42,8 +42,8 @@ where
 impl<C1, F1, C2, F2, U> From<&Target<spherical::Position<C1, F1, U>>>
     for Target<spherical::Position<C2, F2, U>>
 where
-    cartesian::Vector<C1, F1, U>: Transform<cartesian::Vector<C1, F2, U>>, // transform frame
-    cartesian::Vector<C1, F2, U>: Transform<cartesian::Vector<C2, F2, U>>, // transform center
+    cartesian::Position<C1, F1, U>: Transform<cartesian::Position<C1, F2, U>>, // transform frame
+    cartesian::Position<C1, F2, U>: Transform<cartesian::Position<C2, F2, U>>, // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: ReferenceFrame,

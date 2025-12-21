@@ -72,7 +72,7 @@ pub use frames::TransformFrame;
 
 use crate::astro::JulianDate;
 use crate::coordinates::{
-    cartesian, cartesian::Vector, centers::ReferenceCenter, frames::MutableFrame, spherical,
+    cartesian, cartesian::Position, centers::ReferenceCenter, frames::MutableFrame, spherical,
 };
 use qtty::LengthUnit;
 
@@ -96,17 +96,17 @@ pub trait Transform<Coord> {
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, C2, F1, F2, U> Transform<Vector<C2, F2, U>> for Vector<C1, F1, U>
+impl<C1, C2, F1, F2, U> Transform<Position<C2, F2, U>> for Position<C1, F1, U>
 where
-    Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>,
-    Vector<C1, F2, U>: TransformCenter<Vector<C2, F2, U>>,
+    Position<C1, F1, U>: TransformFrame<Position<C1, F2, U>>,
+    Position<C1, F2, U>: TransformCenter<Position<C2, F2, U>>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
     U: LengthUnit,
 {
-    fn transform(&self, jd: JulianDate) -> Vector<C2, F2, U> {
+    fn transform(&self, jd: JulianDate) -> Position<C2, F2, U> {
         self.to_frame().to_center(jd)
     }
 }
@@ -121,7 +121,7 @@ where
 impl<C1, C2, F1, F2, U> Transform<spherical::Position<C2, F2, U>>
     for spherical::Position<C1, F1, U>
 where
-    cartesian::Vector<C1, F1, U>: Transform<cartesian::Vector<C2, F2, U>>,
+    cartesian::Position<C1, F1, U>: Transform<cartesian::Position<C2, F2, U>>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
@@ -140,17 +140,17 @@ where
 /// transformations:
 /// 1. Frame transformation (within the same center)
 /// 2. Center transformation (within the new frame)
-impl<C1, F1, C2, F2, U> From<&cartesian::Vector<C1, F1, U>> for cartesian::Vector<C2, F2, U>
+impl<C1, F1, C2, F2, U> From<&cartesian::Position<C1, F1, U>> for cartesian::Position<C2, F2, U>
 where
-    cartesian::Vector<C1, F1, U>: TransformFrame<cartesian::Vector<C1, F2, U>>,
-    cartesian::Vector<C1, F2, U>: Transform<cartesian::Vector<C2, F2, U>>,
+    cartesian::Position<C1, F1, U>: TransformFrame<cartesian::Position<C1, F2, U>>,
+    cartesian::Position<C1, F2, U>: Transform<cartesian::Position<C2, F2, U>>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
     U: LengthUnit,
 {
-    fn from(orig: &cartesian::Vector<C1, F1, U>) -> Self {
+    fn from(orig: &cartesian::Position<C1, F1, U>) -> Self {
         orig.to_frame().transform(JulianDate::J2000)
     }
 }
@@ -165,8 +165,8 @@ where
 /// 4. Convert back to spherical coordinates.
 impl<C1, F1, C2, F2, U> From<&spherical::Position<C1, F1, U>> for spherical::Position<C2, F2, U>
 where
-    Vector<C1, F1, U>: TransformFrame<Vector<C1, F2, U>>, // transform frame
-    Vector<C1, F2, U>: Transform<Vector<C2, F2, U>>,      // transform center
+    Position<C1, F1, U>: TransformFrame<Position<C1, F2, U>>, // transform frame
+    Position<C1, F2, U>: Transform<Position<C2, F2, U>>,      // transform center
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
