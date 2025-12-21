@@ -1,41 +1,42 @@
 //! # Reference Centers Module
 //!
-//! This module defines the concept of a *reference center* (origin) for astronomical and geodetic coordinate systems.
+//! This module defines astronomical reference centers (origins) for coordinate systems.
 //! A reference center specifies the origin point from which positions are measured.
 //!
-//! ## Overview
+//! ## Architecture
 //!
-//! The [`ReferenceCenter`] trait provides a common interface for all reference center types. Each center is
-//! represented as a zero-sized struct and implements the trait to provide its canonical name.
-//!
-//! The `new_center!` macro is used to conveniently declare new reference center types, ensuring consistency
-//! and reducing boilerplate.
+//! All center types implement the [`ReferenceCenter`] trait from `affn`, which provides
+//! a common interface. The trait itself is re-exported from `affn` for convenience.
 //!
 //! ## Predefined Centers
 //!
-//! The following reference centers are provided out of the box:
+//! The following reference centers are provided:
 //!
-//! - `Barycentric`: Center of mass of the solar system.
-//! - `Heliocentric`: Center of the Sun.
-//! - `Geocentric`: Center of the Earth.
-//! - `Topocentric`: Observer's location on the surface of the Earth (parameterized by [`ObserverSite`]).
+//! - [`Barycentric`]: Center of mass of the solar system.
+//! - [`Heliocentric`]: Center of the Sun.
+//! - [`Geocentric`]: Center of the Earth.
+//! - [`Topocentric`]: Observer's location on the surface of the Earth (parameterized by [`ObserverSite`]).
+//! - [`Bodycentric`]: Generic center for any orbiting celestial body (parameterized by [`BodycentricParams`]).
 //!
 //! ## Parameterized Centers
 //!
-//! Some reference centers require runtime parameters. For example, [`Topocentric`] coordinates
-//! need to know the observer's geographic location. This is achieved through the associated
-//! `Params` type on [`ReferenceCenter`]:
+//! Some reference centers require runtime parameters:
 //!
 //! - For most centers (Barycentric, Heliocentric, Geocentric), `Params = ()` (zero-cost).
-//! - For [`Topocentric`], `Params = ObserverSite` which stores longitude, latitude, and height.
-//!
-//! This allows coordinate values to carry their reference information inline without external context.
+//! - For [`Topocentric`], `Params = ObserverSite` which stores the observer's geographic location.
+//! - For [`Bodycentric`], `Params = BodycentricParams` which stores the body's orbital elements.
 //!
 //! ## Extending
 //!
-//! To define a new reference center, use the `new_center!` macro.
+//! To define a new reference center, use the [`affn::new_center!`] macro:
 //!
-//! This creates a new zero-sized type `Lunarcentric` that implements [`ReferenceCenter`].
+//! ```rust
+//! use affn::new_center;
+//! use affn::ReferenceCenter;
+//!
+//! new_center!(Lunarcentric);
+//! assert_eq!(Lunarcentric::center_name(), "Lunarcentric");
+//! ```
 //!
 //! ## Example
 //!
@@ -50,24 +51,8 @@ use crate::astro::orbit::Orbit;
 use qtty::{Degrees, Meter, Quantity};
 use std::fmt::Debug;
 
-/// A trait for defining a reference center (coordinate origin).
-///
-/// # Associated Types
-///
-/// - `Params`: Runtime parameters for this center. For most centers this is `()` (zero-cost).
-///   For parameterized centers like [`Topocentric`], this carries observer location.
-///
-/// # Migration Note (v0.x → v0.y)
-///
-/// The `Params` associated type was added to support parameterized centers.
-/// Existing code using `Barycentric`, `Heliocentric`, or `Geocentric` should continue
-/// to work unchanged since their `Params = ()`.
-pub trait ReferenceCenter {
-    /// Runtime parameters for this center. Use `()` for centers that don't need parameters.
-    type Params: Clone + Debug + Default + PartialEq;
-
-    fn center_name() -> &'static str;
-}
+// Re-export core traits from affn
+pub use affn::{AffineCenter, NoCenter, ReferenceCenter};
 
 // Required for Transform specialization
 #[derive(Debug, Copy, Clone)]
@@ -451,88 +436,18 @@ impl ReferenceCenter for Bodycentric {
     }
 }
 
-impl ReferenceCenter for () {
-    type Params = ();
-    fn center_name() -> &'static str {
-        ""
-    }
-}
-
 // =============================================================================
-// NoCenter: Marker for translation-invariant (free) vectors
+// AffineCenter implementations for astronomical centers
 // =============================================================================
 
-/// Marker type for translation-invariant (free) vectors.
-///
-/// Free vectors like directions and velocities do not have a meaningful
-/// spatial origin. They represent properties that are independent of
-/// any particular coordinate center:
-///
-/// - **Directions** are unit vectors representing orientations in space
-/// - **Velocities** are rates of change that don't depend on position
-///
-/// Using `NoCenter` instead of a regular `ReferenceCenter` prevents
-/// mathematically invalid center transformations at compile time.
-/// Objects with `NoCenter` can only undergo frame transformations (rotations),
-/// not center transformations (translations).
-///
-/// # Mathematical Rationale
-///
-/// In affine geometry:
-/// - **Positions** are points in affine space; changing the origin (center) is a translation.
-/// - **Directions** and **velocities** are elements of the underlying vector space;
-///   they are translation-invariant and do not have an "origin" to change.
-///
-/// # Example
-///
-/// ```rust
-/// use siderust::coordinates::algebra::cartesian::Direction;
-/// use siderust::coordinates::algebra::frames::Ecliptic;
-/// use siderust::coordinates::algebra::centers::NoCenter;
-///
-/// // Directions use NoCenter - they cannot be center-transformed
-/// let dir: Direction<Ecliptic> = Direction::normalize(1.0, 0.0, 0.0);
-///
-/// // Frame transforms (rotations) are still valid for directions
-/// use siderust::coordinates::transform::TransformFrame;
-/// use siderust::coordinates::algebra::frames::Equatorial;
-/// let dir_eq: Direction<Equatorial> = dir.to_frame();
-/// ```
-#[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub struct NoCenter;
-
-/// Marker trait for types that represent genuine spatial centers (origins).
-///
-/// This trait is implemented only for center types that represent actual
-/// coordinate origins (Barycentric, Heliocentric, Geocentric, etc.).
-/// It is NOT implemented for `NoCenter`, which prevents center transformations
-/// from being applied to free vectors (directions, velocities).
-///
-/// # Usage
-///
-/// Use this trait as a bound when implementing center transformations:
-///
-/// ```ignore
-/// impl<F, U> TransformCenter<Position<Geocentric, F, U>> for Position<Heliocentric, F, U>
-/// where
-///     Heliocentric: AffineCenter,
-///     Geocentric: AffineCenter,
-///     // ...
-/// ```
-pub trait AffineCenter: ReferenceCenter {}
-
-// Implement AffineCenter for all actual coordinate centers
+// Implement AffineCenter for all actual coordinate centers.
+// (AffineCenter trait itself comes from affn.)
 impl AffineCenter for Barycentric {}
 impl AffineCenter for Heliocentric {}
 impl AffineCenter for Geocentric {}
 impl AffineCenter for Topocentric {}
 impl AffineCenter for Bodycentric {}
 
-// NOTE: NoCenter deliberately does NOT implement AffineCenter
-// This prevents center transformations on directions and velocities
-
-// NoCenter does NOT implement ReferenceCenter - it's a separate marker
-// that indicates the object is translation-invariant
 
 #[cfg(test)]
 mod tests {
