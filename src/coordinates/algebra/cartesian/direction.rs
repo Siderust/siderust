@@ -48,7 +48,7 @@
 //! let vec = dir.scale(10.0 * AU);
 //! ```
 
-use super::displacement::Displacement;
+use super::vector::Displacement;
 use super::xyz::XYZ;
 use crate::coordinates::algebra::centers::ReferenceCenter;
 use crate::coordinates::algebra::frames::ReferenceFrame;
