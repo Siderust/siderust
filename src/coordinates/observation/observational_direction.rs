@@ -316,7 +316,11 @@ mod tests {
         let original = astrometric.direction();
         let shifted = apparent.direction();
 
-        let delta_ra = (shifted.azimuth.value() - original.azimuth.value()).abs();
+        // Handle azimuth wrap-around (e.g., 359.999° vs 0.001° is actually 0.002° apart)
+        let mut delta_ra = (shifted.azimuth.value() - original.azimuth.value()).abs();
+        if delta_ra > 180.0 {
+            delta_ra = 360.0 - delta_ra;
+        }
         let delta_dec = (shifted.polar.value() - original.polar.value()).abs();
 
         // At least one should have changed

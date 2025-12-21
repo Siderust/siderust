@@ -325,7 +325,9 @@ impl<F: ReferenceFrame> Direction<F> {
     /// Converts this Cartesian direction to spherical coordinates.
     ///
     /// Returns a spherical direction with polar (latitude) and azimuth (longitude)
-    /// angles in degrees.
+    /// angles in degrees. Angles are canonicalized to:
+    /// - polar in `[-90°, +90°]`
+    /// - azimuth in `[0°, 360°)`
     pub fn to_spherical(&self) -> crate::coordinates::algebra::spherical::Direction<F> {
         use qtty::Degrees;
 
@@ -338,7 +340,8 @@ impl<F: ReferenceFrame> Direction<F> {
         let polar = Degrees::new(z_clamped.asin().to_degrees());
         let azimuth = Degrees::new(y.atan2(x).to_degrees());
 
-        crate::coordinates::algebra::spherical::Direction::<F>::new_raw(polar, azimuth)
+        // Use new() to canonicalize angles (azimuth from atan2 may be negative)
+        crate::coordinates::algebra::spherical::Direction::<F>::new(polar, azimuth)
     }
 }
 
