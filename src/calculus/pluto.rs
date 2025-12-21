@@ -30,7 +30,7 @@
 
 use crate::astro::JulianDate;
 use crate::coordinates::{
-    astro::spherical::ext::EclipticPositionExt,
+    spherical::ext::EclipticPositionExt,
     cartesian, centers::Heliocentric, frames::Ecliptic, spherical,
 };
 use qtty::{AstronomicalUnit, Degrees, Radian, AU};

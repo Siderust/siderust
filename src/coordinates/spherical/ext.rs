@@ -23,9 +23,9 @@
 //!
 //! This is zero-cost (all methods are inlined) and respects coherence rules.
 
-use crate::coordinates::algebra::centers::ReferenceCenter;
-use crate::coordinates::algebra::frames::{Ecliptic, Equatorial, Horizontal, ECEF, ICRS};
-use crate::coordinates::algebra::spherical::{Direction, Position};
+use crate::coordinates::centers::ReferenceCenter;
+use crate::coordinates::frames::{Ecliptic, Equatorial, Horizontal, ECEF, ICRS};
+use affn::spherical::{Direction, Position};
 use qtty::{Degrees, LengthUnit, Quantity};
 
 // =============================================================================

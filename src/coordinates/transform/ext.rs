@@ -43,9 +43,9 @@
 //! ```
 
 use crate::astro::JulianDate;
-use crate::coordinates::algebra::cartesian::{Direction, Position, Vector};
-use crate::coordinates::algebra::centers::ReferenceCenter;
-use crate::coordinates::algebra::frames::ReferenceFrame;
+use crate::coordinates::cartesian::{Direction, Position, Vector};
+use crate::coordinates::centers::ReferenceCenter;
+use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::{
     CenterShiftProvider, FrameRotationProvider,
@@ -281,8 +281,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::algebra::centers::{Barycentric, Geocentric};
-    use crate::coordinates::algebra::frames::{Ecliptic, ICRS};
+    use crate::coordinates::centers::{Barycentric, Geocentric};
+    use crate::coordinates::frames::{Ecliptic, ICRS};
     use qtty::AstronomicalUnit;
 
     const EPSILON: f64 = 1e-10;

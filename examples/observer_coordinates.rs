@@ -10,7 +10,7 @@ use siderust::astro::JulianDate;
 use siderust::coordinates::cartesian::position::Equatorial;
 use siderust::coordinates::centers::{Geocentric, ObserverSite};
 use siderust::coordinates::spherical;
-use siderust::coordinates::astro::spherical::ext::HorizontalDirectionExt;
+use siderust::coordinates::spherical::ext::HorizontalDirectionExt;
 use siderust::coordinates::transform::centers::ToTopocentricExt;
 
 fn main() {
