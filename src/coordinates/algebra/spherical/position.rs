@@ -47,8 +47,18 @@ use std::marker::PhantomData;
 /// This is the fundamental spherical coordinate type used across the crate.
 /// Spherical directions are represented separately by [`super::direction::Direction<F>`]
 /// and intentionally have **no** reference center.
+///
+/// # Type Parameters
+/// - `C`: The reference center (e.g., `Heliocentric`, `Geocentric`)
+/// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`)
+/// - `U`: The length unit for the distance (e.g., `AstronomicalUnit`, `Kilometer`)
+///
+/// # Note
+///
+/// `U` must be a [`LengthUnit`], not just any `Unit`. This ensures that spherical
+/// positions always represent physical locations with a meaningful distance.
 #[derive(Debug, Clone, Copy)]
-pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: Unit> {
+pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> {
     pub polar: Degrees,        // θ (polar/latitude/declination)
     pub azimuth: Degrees,      // φ (azimuth/longitude/right ascension)
     pub distance: Quantity<U>, // radial distance
@@ -61,7 +71,7 @@ impl<C, F, U> Position<C, F, U>
 where
     C: centers::ReferenceCenter,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     /// Constructs a new spherical position with explicit center parameters.
     pub const fn new_raw_with_params(
@@ -110,20 +120,13 @@ impl<C, F, U> Position<C, F, U>
 where
     C: centers::ReferenceCenter<Params = ()>,
     F: frames::ReferenceFrame,
-    U: Unit,
+    U: LengthUnit,
 {
     /// Convenience constructor for centers with `Params = ()`.
     pub const fn new_raw(polar: Degrees, azimuth: Degrees, distance: Quantity<U>) -> Self {
         Self::new_raw_with_params((), polar, azimuth, distance)
     }
-}
 
-impl<C, F, U> Position<C, F, U>
-where
-    C: centers::ReferenceCenter<Params = ()>,
-    F: frames::ReferenceFrame,
-    U: LengthUnit,
-{
     /// The *origin* of this coordinate system (all angles 0, radius 0). AKA Null Vector.
     pub const CENTER: Self = Self::new_raw(
         Degrees::new(0.0),
@@ -218,8 +221,11 @@ mod tests {
         let pos = Position::<centers::Heliocentric, frames::Ecliptic, AstronomicalUnit>::new_raw(10.0 * DEG, 20.0 * DEG, 2.5 * AU);
         let dir = pos.direction();
 
-        // radial component must be exactly 1 (unitless)
-        assert_eq!(dir.distance.value(), 1.0);
+        // Direction no longer has a distance field - the implicit radius is 1.
+        // We verify by converting to cartesian and checking the magnitude.
+        let cart = dir.to_cartesian();
+        let magnitude = (cart.x().powi(2) + cart.y().powi(2) + cart.z().powi(2)).sqrt();
+        assert!((magnitude - 1.0).abs() < EPS, "magnitude should be 1.0, got {}", magnitude);
 
         // angular components are preserved
         assert!((dir.polar - 10.0 * DEG).abs() < EPS * DEG);
