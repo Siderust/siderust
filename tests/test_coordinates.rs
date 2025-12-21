@@ -1,7 +1,7 @@
 use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::Mars;
-use siderust::coordinates::astro::spherical::ext::IcrsPositionExt;
+use siderust::coordinates::spherical::ext::IcrsPositionExt;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
 use siderust::coordinates::transform::TransformFrame;

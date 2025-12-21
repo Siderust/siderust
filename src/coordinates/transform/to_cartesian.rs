@@ -9,7 +9,7 @@
 
 #[cfg(test)]
 mod tests {
-    use crate::coordinates::astro::spherical::ext::IcrsPositionExt;
+    use crate::coordinates::spherical::ext::IcrsPositionExt;
     use crate::coordinates::{cartesian, spherical};
     use qtty::{AstronomicalUnit, Degrees};
 

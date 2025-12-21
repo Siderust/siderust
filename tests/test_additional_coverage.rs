@@ -4,7 +4,7 @@ use siderust::astro::JulianDate;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};
-use siderust::coordinates::astro::spherical::ext::{EcefPositionExt, EquatorialPositionExt};
+use siderust::coordinates::spherical::ext::{EcefPositionExt, EquatorialPositionExt};
 use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
 use siderust::coordinates::{
     cartesian,

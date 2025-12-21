@@ -2,7 +2,7 @@ use crate::bodies::solar_system::Sun;
 
 use crate::astro::{nutation::corrected_ra_with_nutation, JulianDate};
 use crate::coordinates::{
-    astro::spherical::ext::EquatorialPositionExt,
+    spherical::ext::EquatorialPositionExt,
     cartesian, centers::*, spherical, transform::Transform,
 };
 use qtty::{AstronomicalUnits, LengthUnit, Quantity};
@@ -51,7 +51,7 @@ impl Sun {
 mod tests {
     use crate::astro::JulianDate;
     use crate::bodies::solar_system::Sun;
-    use crate::coordinates::astro::spherical::ext::EquatorialPositionExt;
+    use crate::coordinates::spherical::ext::EquatorialPositionExt;
     use qtty::AstronomicalUnit;
 
     #[test]

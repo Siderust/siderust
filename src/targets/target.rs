@@ -69,7 +69,7 @@ mod tests {
     use crate::astro::JulianDate;
     use crate::bodies::catalog::ALDEBARAN;
     use crate::coordinates::spherical::position::GCRS;
-    use crate::coordinates::astro::spherical::ext::{EquatorialPositionExt, IcrsPositionExt};
+    use crate::coordinates::spherical::ext::{EquatorialPositionExt, IcrsPositionExt};
     use qtty::*;
 
     type MilliArcsecondPerDay = qtty::Per<qtty::MilliArcsecond, qtty::Day>;

@@ -14,7 +14,7 @@
 
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
-use crate::coordinates::astro::spherical::ext::EquatorialPositionExt;
+use crate::coordinates::spherical::ext::EquatorialPositionExt;
 use qtty::*;
 type DegreePerYear = qtty::Per<Degree, Year>;
 type DegreesPerYear = qtty::frequency::Frequency<Degree, Year>;
@@ -96,7 +96,7 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::coordinates::astro::spherical::ext::EquatorialPositionExt;
+    use crate::coordinates::spherical::ext::EquatorialPositionExt;
     use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
     use qtty::{AstronomicalUnit, Degrees};
 

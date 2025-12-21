@@ -106,7 +106,7 @@ pub(crate) use assert_spherical_eq;
 
 #[cfg(test)]
 mod tests {
-    use crate::coordinates::astro::spherical::ext::EquatorialPositionExt;
+    use crate::coordinates::spherical::ext::EquatorialPositionExt;
     use crate::coordinates::{cartesian, spherical};
     use qtty::{AstronomicalUnit, Degrees, AU};
 
