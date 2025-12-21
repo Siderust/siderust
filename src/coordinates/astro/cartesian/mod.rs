@@ -9,11 +9,12 @@
 //! - [`Displacement`]: Displacement vectors with frame and unit (center-independent)
 //! - [`Direction`]: Unit vectors with frame only (dimensionless)
 //! - [`Velocity`]: Rate-of-change vectors with frame and unit
+//! - [`Vector`]: Generic free vector (base type for Displacement and Velocity)
 
 use crate::coordinates::algebra::{centers, frames};
 
 /// Re-export the algebraic types
-pub use crate::coordinates::algebra::cartesian::{Direction, Displacement, Position, Velocity};
+pub use crate::coordinates::algebra::cartesian::{Direction, Displacement, Position, Vector, Velocity};
 
 // =============================================================================
 // Direction type aliases (frame-only, no center, dimensionless)

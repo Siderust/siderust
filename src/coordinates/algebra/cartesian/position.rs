@@ -49,7 +49,7 @@
 //! assert!((result.x().value() - 1.5).abs() < 1e-12);
 //! ```
 
-use super::displacement::Displacement;
+use super::vector::Displacement;
 use super::xyz::XYZ;
 use crate::coordinates::algebra::centers::ReferenceCenter;
 use crate::coordinates::algebra::frames::ReferenceFrame;
@@ -322,7 +322,7 @@ where
     /// Translates the position by a displacement vector.
     #[inline]
     fn add(self, displacement: Displacement<F, U>) -> Self::Output {
-        Self::from_xyz_with_params(self.center_params.clone(), self.xyz + *displacement.xyz())
+        Self::from_xyz_with_params(self.center_params.clone(), self.xyz + XYZ::from_vec3(*displacement.as_vec3()))
     }
 }
 
@@ -337,7 +337,7 @@ where
     /// Translates the position backwards by a displacement vector.
     #[inline]
     fn sub(self, displacement: Displacement<F, U>) -> Self::Output {
-        Self::from_xyz_with_params(self.center_params.clone(), self.xyz - *displacement.xyz())
+        Self::from_xyz_with_params(self.center_params.clone(), self.xyz - XYZ::from_vec3(*displacement.as_vec3()))
     }
 }
 

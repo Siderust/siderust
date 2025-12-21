@@ -83,19 +83,17 @@
 mod xyz;
 
 // Semantic types
-mod position;      // Position<C, F, U> - Affine point
-mod displacement;  // Displacement<F, U> - Free displacement vector
-mod direction;     // Direction<F> - Unit vector
-mod velocity;      // Velocity<F, U> - Rate of change
+mod position;   // Position<C, F, U> - Affine point
+mod vector;     // Vector<F, U> - Free vector (base for Displacement, Velocity)
+mod direction;  // Direction<F> - Unit vector
 
 // =============================================================================
 // Public Re-exports
 // =============================================================================
 
 pub use position::Position;
-pub use displacement::Displacement;
+pub use vector::{Vector, Displacement, Velocity};
 pub use direction::Direction;
-pub use velocity::Velocity;
 
 // =============================================================================
 // Line of Sight Functions
