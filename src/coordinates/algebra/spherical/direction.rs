@@ -13,11 +13,24 @@
 //!
 //! Therefore, `Direction<F>` has no center parameter, only a frame `F`.
 //!
+//! ## Storage
+//!
+//! A spherical direction stores only the two angles (polar, azimuth). The implicit
+//! radius is always 1. This contrasts with [`Position`](super::Position), which
+//! stores a radial distance in addition to the angles.
+//!
 //! ## Observer-Dependent Directions
 //!
 //! To compute the direction from an observer to a target (line of sight), use
 //! [`line_of_sight`](crate::coordinates::cartesian::line_of_sight) with two
 //! positions. This correctly accounts for the observer's location.
+//!
+//! ## Angle Convention
+//!
+//! - **polar (θ)**: Latitude / declination / altitude — range `[-90°, +90°]`
+//! - **azimuth (φ)**: Longitude / right ascension / azimuth — normalized to `[0°, 360°)`
+//!
+//! Constructors canonicalize angles to these ranges.
 //!
 //! ## Type Aliases
 //!
@@ -34,8 +47,9 @@
 //! use siderust::coordinates::spherical::direction::ICRS;
 //! use qtty::*;
 //!
-//! // Direction to Vega (J2000)
-//! let vega: ICRS = ICRS::new(279.23473479 * DEG, 38.78368896 * DEG);
+//! // Direction to Vega (J2000) using frame-specific constructor
+//! // Note: new_icrs takes (RA, Dec) in astronomical convention
+//! let vega: ICRS = ICRS::new_icrs(279.23473479 * DEG, 38.78368896 * DEG);
 //!
 //! // Convert that direction into a position one parsec away:
 //! use siderust::coordinates::algebra::centers::Barycentric;
@@ -46,25 +60,31 @@
 
 use crate::coordinates::algebra::centers::ReferenceCenter;
 use crate::coordinates::algebra::frames::{self, ReferenceFrame};
-use qtty::{Degrees, Dimension, LengthUnit, Quantity, Unit};
+use qtty::{Degrees, LengthUnit, Quantity};
 
 use std::marker::PhantomData;
 
-/// Marker dimension for direction (dimensionless unit vector).
-pub enum DirectionDim {}
-impl Dimension for DirectionDim {}
+// =============================================================================
+// Angle Canonicalization Helpers
+// =============================================================================
 
-/// Marker unit for direction types (unit vectors with implicit radius = 1).
+/// Normalizes an azimuth angle to the range `[0°, 360°)`.
+#[inline]
+fn canonicalize_azimuth(azimuth: Degrees) -> Degrees {
+    let mut val = azimuth.value() % 360.0;
+    if val < 0.0 {
+        val += 360.0;
+    }
+    Degrees::new(val)
+}
+
+/// Clamps a polar angle to `[-90°, +90°]`.
 ///
-/// This is a local type distinct from qtty's `Unitless`, which allows
-/// Direction and Position to have non-overlapping impl blocks.
-#[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
-pub struct DirectionUnit;
-
-impl Unit for DirectionUnit {
-    const RATIO: f64 = 1.0;
-    type Dim = DirectionDim;
-    const SYMBOL: &'static str = "";
+/// This is the mathematically correct range for latitude/declination.
+/// Values outside this range are clamped (not wrapped).
+#[inline]
+fn canonicalize_polar(polar: Degrees) -> Degrees {
+    Degrees::new(polar.value().clamp(-90.0, 90.0))
 }
 
 /// A spherical direction (unit vector) in a specific reference frame.
@@ -72,39 +92,63 @@ impl Unit for DirectionUnit {
 /// Directions are frame-dependent but center-independent (free vectors).
 /// They cannot undergo center transformations, only frame transformations.
 ///
+/// The direction stores only angles; the implicit radius is always 1.
+/// For a spherical coordinate with explicit distance, use [`Position`](super::Position).
+///
 /// # Type Parameters
 /// - `F`: The reference frame (e.g., `ICRS`, `Ecliptic`, `Equatorial`)
+///
+/// # Invariants
+///
+/// - `polar` is in `[-90°, +90°]`
+/// - `azimuth` is in `[0°, 360°)`
 #[derive(Debug, Clone, Copy)]
 pub struct Direction<F: ReferenceFrame> {
     /// Polar angle (θ) - latitude, declination, or altitude, in degrees.
+    /// Range: `[-90°, +90°]`
     pub polar: Degrees,
     /// Azimuthal angle (φ) - longitude, right ascension, or azimuth, in degrees.
+    /// Range: `[0°, 360°)`
     pub azimuth: Degrees,
-    /// Distance (always 1 for unit vectors).
-    pub distance: Quantity<DirectionUnit>,
     _frame: PhantomData<F>,
 }
 
 impl<F: ReferenceFrame> Direction<F> {
     /// Creates a new direction from polar and azimuth angles.
     ///
-    /// * `polar`: angle from the reference plane, in degrees
-    /// * `azimuth`: angle from the reference direction, in degrees
+    /// Angles are canonicalized:
+    /// - `polar` is clamped to `[-90°, +90°]`
+    /// - `azimuth` is normalized to `[0°, 360°)`
+    ///
+    /// * `polar`: angle from the reference plane (latitude, declination), in degrees
+    /// * `azimuth`: angle from the reference direction (longitude, RA), in degrees
+    ///
+    /// # Note
+    ///
+    /// For frame-specific constructors with more intuitive parameter order
+    /// (e.g., `new_icrs(ra, dec)`, `new_ecliptic(lon, lat)`), see the extension
+    /// methods in [`crate::coordinates::astro::spherical`].
     pub fn new(polar: Degrees, azimuth: Degrees) -> Self {
         Self {
-            polar,
-            azimuth,
-            distance: Quantity::<DirectionUnit>::new(1.0),
+            polar: canonicalize_polar(polar),
+            azimuth: canonicalize_azimuth(azimuth),
             _frame: PhantomData,
         }
     }
 
-    /// Creates a direction from raw angle values.
+    /// Creates a direction from raw angle values without canonicalization.
+    ///
+    /// # Safety
+    ///
+    /// The caller must ensure angles are within canonical ranges:
+    /// - `polar` in `[-90°, +90°]`
+    /// - `azimuth` in `[0°, 360°)`
+    ///
+    /// Use [`new`](Self::new) for automatic canonicalization.
     pub const fn new_raw(polar: Degrees, azimuth: Degrees) -> Self {
         Self {
             polar,
             azimuth,
-            distance: Quantity::<DirectionUnit>::new(1.0),
             _frame: PhantomData,
         }
     }
@@ -193,6 +237,27 @@ impl<F: ReferenceFrame> Direction<F> {
 
         crate::coordinates::algebra::cartesian::Direction::<F>::new(x, y, z)
     }
+
+    /// Constructs a spherical direction from a cartesian Direction.
+    ///
+    /// The resulting angles are canonicalized:
+    /// - `polar` in `[-90°, +90°]`
+    /// - `azimuth` in `[0°, 360°)`
+    pub fn from_cartesian(cart: &crate::coordinates::algebra::cartesian::Direction<F>) -> Self
+    where
+        F: frames::MutableFrame,
+    {
+        let x = cart.x();
+        let y = cart.y();
+        let z = cart.z();
+
+        // Clamp z to prevent asin domain errors from floating-point imprecision
+        let z_clamped = z.clamp(-1.0, 1.0);
+        let polar = Degrees::new(z_clamped.asin().to_degrees());
+        let azimuth = Degrees::new(y.atan2(x).to_degrees());
+
+        Self::new(polar, azimuth)
+    }
 }
 
 impl<F: ReferenceFrame> std::fmt::Display for Direction<F> {
@@ -221,7 +286,7 @@ mod tests {
 
         assert_eq!(coord.azimuth.value(), 90.0);
         assert_eq!(coord.polar.value(), 45.0);
-        assert_eq!(coord.distance.value(), 1.0);
+        // Direction no longer has a distance field - it's implicitly 1
     }
 
     #[test]
@@ -234,13 +299,14 @@ mod tests {
 
     #[test]
     fn maintains_high_precision_on_values() {
-        let polar = Degrees::new(90.654_321);
-        let azimuth = Degrees::new(45.123_456);
+        // Note: polar will be clamped to [-90, 90]
+        let polar = Degrees::new(45.123_456);
+        let azimuth = Degrees::new(90.654_321);
 
         let coord = Direction::<frames::ICRS>::new(polar, azimuth);
 
-        assert!((coord.azimuth.value() - 45.123_456).abs() < 1e-6);
-        assert!((coord.polar.value() - 90.654_321).abs() < 1e-6);
+        assert!((coord.polar.value() - 45.123_456).abs() < 1e-6);
+        assert!((coord.azimuth.value() - 90.654_321).abs() < 1e-6);
     }
 
     const EPS: f64 = 1e-6;
@@ -283,5 +349,89 @@ mod tests {
         let a = Direction::<frames::ICRS>::new(Degrees::new(45.0), Degrees::new(30.0));
         let sep = a.angular_separation(&a);
         assert!(sep.abs().value() < 1e-10, "expected 0°, got {}", sep);
+    }
+
+    // =============================================================================
+    // Canonicalization Tests
+    // =============================================================================
+
+    #[test]
+    fn canonicalizes_azimuth_to_positive_range() {
+        // Negative azimuth
+        let dir = Direction::<frames::ICRS>::new(Degrees::new(0.0), Degrees::new(-90.0));
+        assert!((dir.azimuth.value() - 270.0).abs() < EPS);
+
+        // Azimuth > 360
+        let dir2 = Direction::<frames::ICRS>::new(Degrees::new(0.0), Degrees::new(450.0));
+        assert!((dir2.azimuth.value() - 90.0).abs() < EPS);
+
+        // Large negative
+        let dir3 = Direction::<frames::ICRS>::new(Degrees::new(0.0), Degrees::new(-720.0));
+        assert!(dir3.azimuth.value().abs() < EPS);
+    }
+
+    #[test]
+    fn clamps_polar_to_valid_range() {
+        // Polar > 90 gets clamped
+        let dir = Direction::<frames::ICRS>::new(Degrees::new(100.0), Degrees::new(0.0));
+        assert!((dir.polar.value() - 90.0).abs() < EPS);
+
+        // Polar < -90 gets clamped
+        let dir2 = Direction::<frames::ICRS>::new(Degrees::new(-100.0), Degrees::new(0.0));
+        assert!((dir2.polar.value() - (-90.0)).abs() < EPS);
+    }
+
+    // =============================================================================
+    // Roundtrip Tests
+    // =============================================================================
+
+    #[test]
+    fn roundtrip_spherical_cartesian_direction() {
+        let original = Direction::<frames::ICRS>::new(Degrees::new(45.0), Degrees::new(30.0));
+        let cartesian = original.to_cartesian();
+        let recovered = Direction::from_cartesian(&cartesian);
+
+        assert!(
+            (recovered.polar.value() - original.polar.value()).abs() < EPS,
+            "polar mismatch: {} vs {}",
+            recovered.polar.value(),
+            original.polar.value()
+        );
+        assert!(
+            (recovered.azimuth.value() - original.azimuth.value()).abs() < EPS,
+            "azimuth mismatch: {} vs {}",
+            recovered.azimuth.value(),
+            original.azimuth.value()
+        );
+    }
+
+    #[test]
+    fn roundtrip_at_poles() {
+        // North pole
+        let north = Direction::<frames::ICRS>::new(Degrees::new(90.0), Degrees::new(0.0));
+        let cart_n = north.to_cartesian();
+        let recovered_n = Direction::from_cartesian(&cart_n);
+        assert!((recovered_n.polar.value() - 90.0).abs() < EPS);
+
+        // South pole
+        let south = Direction::<frames::ICRS>::new(Degrees::new(-90.0), Degrees::new(0.0));
+        let cart_s = south.to_cartesian();
+        let recovered_s = Direction::from_cartesian(&cart_s);
+        assert!((recovered_s.polar.value() - (-90.0)).abs() < EPS);
+    }
+
+    #[test]
+    fn roundtrip_at_azimuth_boundaries() {
+        // At azimuth = 0
+        let dir0 = Direction::<frames::ICRS>::new(Degrees::new(30.0), Degrees::new(0.0));
+        let cart0 = dir0.to_cartesian();
+        let rec0 = Direction::from_cartesian(&cart0);
+        assert!((rec0.azimuth.value() - 0.0).abs() < EPS);
+
+        // Near azimuth = 360 (should wrap to near 0)
+        let dir360 = Direction::<frames::ICRS>::new(Degrees::new(30.0), Degrees::new(359.9));
+        let cart360 = dir360.to_cartesian();
+        let rec360 = Direction::from_cartesian(&cart360);
+        assert!((rec360.azimuth.value() - 359.9).abs() < EPS);
     }
 }

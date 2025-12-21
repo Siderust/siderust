@@ -49,7 +49,7 @@ use qtty::*;
 ///   value.
 ///
 /// ---
-pub fn find_static_extremas<U: Unit>(
+pub fn find_static_extremas<U: LengthUnit>(
     target: &Target<Position<Geocentric, Equatorial, U>>,
     observer: &Geographic,
     jd_start: JulianDate,

@@ -78,7 +78,7 @@ impl<C: ReferenceCenter<Params = ()>, U: LengthUnit> Position<C, ICRS, U> {
     }
 }
 
-impl<C: ReferenceCenter, U: Unit> Position<C, ICRS, U> {
+impl<C: ReferenceCenter, U: LengthUnit> Position<C, ICRS, U> {
     /// Returns the Declination (δ) in degrees.
     pub fn dec(&self) -> Degrees {
         self.polar
