@@ -17,6 +17,7 @@ name = "siderust"
 [features]
 default = ["serde"]
 serde = ["dep:serde"]
+python = ["dep:pyo3"]
 
 [dependencies]
 approx = "0.5"
@@ -24,6 +25,7 @@ chrono = "0.4"
 nalgebra = "0.34"
 rayon = "1.10"
 serde = { version = "1.0", optional = true, features = ["derive"] }
+pyo3 = { version = "0.27", optional = true, features = ["macros", "extension-module"] }
 
 [dev-dependencies]
 rstest = "0.26"
