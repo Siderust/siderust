@@ -1,8 +1,13 @@
 use chrono::{DateTime, Utc};
 
+#[cfg(feature = "python")]
+use pyo3::pyclass;
+
 /// Represents Modified Julian Date (MJD), which is the Julian Date
 /// minus 2400000.5, used in various scientific and technical applications.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
+#[cfg_attr(feature = "python", pyo3::pyclass)]
 pub struct ModifiedJulianDate(f64);
 
 impl ModifiedJulianDate {
