@@ -48,12 +48,15 @@ use std::marker::PhantomData;
 /// - `C`: The reference center (e.g., `Barycentric`, `Heliocentric`).
 /// - `F`: The reference frame (e.g., `frames::ICRS`, `Ecliptic`).
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct SphericalCoord<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: Unit> {
     pub polar: Degrees,        // θ (polar/latitude/declination)
     pub azimuth: Degrees,      // φ (azimuth/longitude/right ascension)
     pub distance: Quantity<U>, // Distance (AstronomicalUnits, parsec, etc.)
 
+    #[cfg_attr(feature = "serde", serde(skip))]
     _center: PhantomData<C>,
+    #[cfg_attr(feature = "serde", serde(skip))]
     _frame: PhantomData<F>,
 }
 

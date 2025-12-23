@@ -14,11 +14,16 @@ categories = ["science", "aerospace", "simulation"]
 [lib]
 name = "siderust"
 
+[features]
+default = ["serde"]
+serde = ["dep:serde"]
+
 [dependencies]
 approx = "0.5"
 chrono = "0.4"
 nalgebra = "0.34"
 rayon = "1.10"
+serde = { version = "1.0", optional = true, features = ["derive"] }
 
 [dev-dependencies]
 rstest = "0.26"

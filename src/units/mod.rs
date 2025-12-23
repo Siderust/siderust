@@ -132,6 +132,7 @@ impl<N: Unit, D: Unit> Display for Quantity<Per<N, D>> {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(serde::Deserialize, serde::Serialize))]
 pub struct Quantity<U: Unit>(f64, PhantomData<U>);
 
 impl<U: Unit + Copy> Quantity<U> {
