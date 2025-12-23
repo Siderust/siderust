@@ -105,6 +105,7 @@ fn generate_rust(data: &BTreeMap<String, Vec<Entry>>) -> Result<String> {
         out,
         "// ---------------------------------------------------\n"
     )?;
+
     writeln!(out, "use crate::calculus::elp2000::elp_structs::*;\n")?;
 
     for (name, entries) in data {
@@ -206,16 +207,27 @@ fn ensure_dataset(dir: &Path) -> Result<()> {
 
 fn copy_from_repo(dst: &Path) -> Result<bool> {
     let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/elp2000/dataset");
+    eprintln!("Attempting to copy ELP2000 data from: {:?}", src);
+    eprintln!("Target directory: {:?}", dst);
+    eprintln!("Source exists: {}", src.exists());
+
     if !src.is_dir() {
+        eprintln!("Source is not a directory");
         return Ok(false);
     }
+
+    eprintln!("Found ELP2000 source directory, copying...");
     fs::create_dir_all(dst)?;
+
+    let mut copied_count = 0;
     for entry in fs::read_dir(&src)? {
         let entry = entry?;
         let target = dst.join(entry.file_name());
         fs::copy(entry.path(), target)
             .with_context(|| format!("copy {:?} -> {:?}", entry.path(), dst))?;
+        copied_count += 1;
     }
+    eprintln!("Successfully copied {} ELP2000 files", copied_count);
     Ok(true)
 }
 

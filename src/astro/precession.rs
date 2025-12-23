@@ -93,7 +93,7 @@ use std::f64::consts::TAU;
 
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
-use crate::units::*;
+use qtty::*;
 
 /* -------------------------------------------------------------------------
  * Constants & small utilities
@@ -227,7 +227,7 @@ pub fn precess_equatorial<U: LengthUnit>(
 
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
-    position::Equatorial::<U>::new(ra, dec, position.distance)
+    position::Equatorial::<U>::new(ra.to::<Degree>(), dec.to::<Degree>(), position.distance())
 }
 
 #[cfg(test)]
@@ -255,5 +255,21 @@ mod tests {
             "current δ ≈ {}",
             prec.dec()
         );
+    }
+
+    #[test]
+    fn rotate_equatorial_handles_near_pole_branch() {
+        use qtty::Radians;
+
+        let (ra, dec) = super::rotate_equatorial(
+            Radians::new(0.1),
+            Radians::new(-1.5), // |δ| > 85° to trigger special path
+            Radians::new(0.01),
+            Radians::new(0.02),
+            Radians::new(0.03),
+        );
+
+        assert!(ra.value().is_finite());
+        assert!(dec.value().is_sign_negative());
     }
 }

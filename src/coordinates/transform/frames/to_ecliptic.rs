@@ -1,34 +1,40 @@
 use super::TransformFrame;
-use crate::coordinates::{cartesian::Vector, centers::ReferenceCenter, frames};
-use crate::units::Unit;
+use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
+use qtty::LengthUnit;
 
 // Implement Transform trait for ICRS -> Ecliptic
-impl<C: ReferenceCenter, U> TransformFrame<Vector<C, frames::Ecliptic, U>>
-    for Vector<C, frames::ICRS, U>
+impl<C: ReferenceCenter, U> TransformFrame<Position<C, frames::Ecliptic, U>>
+    for Position<C, frames::ICRS, U>
 where
-    U: Unit,
+    U: LengthUnit,
 {
-    fn to_frame(&self) -> Vector<C, frames::Ecliptic, U> {
+    fn to_frame(&self) -> Position<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
         let y = self.y();
         let z = self.z();
-        Vector::new(self.x(), cos_e * y + sin_e * z, -sin_e * y + cos_e * z)
+        Position::from_vec3(
+            self.center_params().clone(),
+            nalgebra::Vector3::new(self.x(), cos_e * y + sin_e * z, -sin_e * y + cos_e * z),
+        )
     }
 }
 
 // Implement Transform trait for Equatorial -> Ecliptic
-impl<C: ReferenceCenter, U: Unit> TransformFrame<Vector<C, frames::Ecliptic, U>>
-    for Vector<C, frames::Equatorial, U>
+impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Ecliptic, U>>
+    for Position<C, frames::Equatorial, U>
 {
-    fn to_frame(&self) -> Vector<C, frames::Ecliptic, U> {
+    fn to_frame(&self) -> Position<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
         let y = self.y();
         let z = self.z();
-        Vector::new(self.x(), cos_e * y + sin_e * z, -sin_e * y + cos_e * z)
+        Position::from_vec3(
+            self.center_params().clone(),
+            nalgebra::Vector3::new(self.x(), cos_e * y + sin_e * z, -sin_e * y + cos_e * z),
+        )
     }
 }
 
@@ -40,8 +46,8 @@ mod tests {
     use crate::coordinates::*;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
-    use crate::units::Degrees;
-    use crate::units::*;
+    use qtty::Degrees;
+    use qtty::*;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
@@ -50,7 +56,7 @@ mod tests {
         Quantity<U>: From<Quantity<AstronomicalUnit>>,
     {
         let hcrs: ICRS<U> = ecl.transform(JulianDate::J2000); // Convert to ICRS
-        let ecl_back: Ecliptic<U> = (&hcrs).transform(JulianDate::J2000); // Convert back to Ecliptic
+        let ecl_back: Ecliptic<U> = hcrs.transform(JulianDate::J2000); // Convert back to Ecliptic
         ecl_back
     }
 
@@ -146,9 +152,9 @@ mod tests {
             AstronomicalUnit,
         >::new(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
         let ecliptic: spherical::Position<centers::Barycentric, frames::Ecliptic, Au> =
-            (&equatorial_orig).transform(JulianDate::J2000);
+            equatorial_orig.transform(JulianDate::J2000);
         let equatorial_rec: spherical::Position<centers::Barycentric, frames::Equatorial, Au> =
-            (&ecliptic).transform(JulianDate::J2000);
+            ecliptic.transform(JulianDate::J2000);
 
         assert_spherical_eq!(equatorial_orig, equatorial_rec, 1e-10);
     }

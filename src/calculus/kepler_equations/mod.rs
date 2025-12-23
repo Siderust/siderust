@@ -45,9 +45,9 @@
 //!
 //! ```rust
 //! use siderust::calculus::kepler_equations::solve_keplers_equation;
-//! use siderust::units::Radians;
+//! use qtty::*;
 //!
-//! let m = Radians::new(1.047); // mean anomaly
+//! let m = 1.047 * RAD; // mean anomaly
 //! let e = 0.0167;             // eccentricity
 //! let e_anomaly = solve_keplers_equation(m, e);
 //! ```
@@ -84,7 +84,7 @@
 use crate::astro::orbit::Orbit;
 use crate::astro::JulianDate;
 use crate::coordinates::cartesian::position::Ecliptic;
-use crate::units::*;
+use qtty::*;
 use std::f64::consts::PI;
 
 const TOLERANCE: Radians = Radians::new(1e-14);
@@ -214,6 +214,7 @@ pub fn calculate_orbit_position(
 ) -> Ecliptic<AstronomicalUnit> {
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);
+    type RadiansPerDay = qtty::frequency::Frequency<Radian, Day>;
     let n: RadiansPerDay = Radians::TAU / period;
 
     // 2) Days since epoch
@@ -267,7 +268,7 @@ mod tests {
     use super::*;
     use crate::astro::JulianDate;
     use crate::macros::assert_cartesian_eq;
-    use crate::units::{Days, Degrees};
+    use qtty::{Days, Degrees};
 
     /// Helper function to compare two floating-point numbers with a tolerance.
     fn approx_eq(a: f64, y: f64, tol: f64) -> bool {

@@ -24,20 +24,20 @@
 //! ```rust
 //! use chrono::prelude::*;
 //! use siderust::astro::JulianDate;
-//! use siderust::units::Degrees;
+//! use qtty::*;
 //! use siderust::astro::sidereal::{calculate_gst, calculate_lst};
 //!
 //! let jd = JulianDate::from_utc(Utc::now());
 //! let gst = calculate_gst(jd);
-//! let lst = calculate_lst(gst, Degrees::new(-3.7038)); // Madrid ≈ ‑3.70°
+//! let lst = calculate_lst(gst, -3.7038 * DEG); // Madrid ≈ ‑3.70°
 //! println!("GST = {:.4}°,  LST = {:.4}°", gst, lst);
 //! ```
 
 use crate::astro::JulianDate;
-use crate::units::{Days, Degrees};
+use qtty::Degrees;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
-pub const SIDEREAL_DAY: Days = Days::new(23.934_469_6 / 24.0);
+pub use qtty::time::SIDEREAL_DAY;
 
 /// Returns **unwrapped** Greenwich Sidereal Time for the given Julian Day.
 ///

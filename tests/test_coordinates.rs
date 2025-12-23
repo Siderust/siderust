@@ -1,31 +1,56 @@
+use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
+use siderust::coordinates::transform::TransformFrame;
 use siderust::coordinates::*;
-use siderust::units::*;
 
-fn approx_eq<C, F, U>(a: &cartesian::Vector<C, F, U>, b: &cartesian::Vector<C, F, U>)
+fn approx_eq_pos<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
-    U: Unit,
-    Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
+    U: LengthUnit,
+    Quantity<U>: std::cmp::PartialOrd,
 {
     assert!(
         (a.x() - b.x()).abs() < (1e-6).into(),
+        "x mismatch: {} vs {}",
+        a.x().value(),
+        b.x().value()
+    );
+    assert!(
+        (a.y() - b.y()).abs() < (1e-6).into(),
+        "y mismatch: {} vs {}",
+        a.y().value(),
+        b.y().value()
+    );
+    assert!(
+        (a.z() - b.z()).abs() < (1e-6).into(),
+        "z mismatch: {} vs {}",
+        a.z().value(),
+        b.z().value()
+    );
+}
+
+fn approx_eq_dir<F>(a: &cartesian::Direction<F>, b: &cartesian::Direction<F>)
+where
+    F: ReferenceFrame,
+{
+    assert!(
+        (a.x() - b.x()).abs() < 1e-6,
         "x mismatch: {} vs {}",
         a.x(),
         b.x()
     );
     assert!(
-        (a.y() - b.y()).abs() < (1e-6).into(),
+        (a.y() - b.y()).abs() < 1e-6,
         "y mismatch: {} vs {}",
         a.y(),
         b.y()
     );
     assert!(
-        (a.z() - b.z()).abs() < (1e-6).into(),
+        (a.z() - b.z()).abs() < 1e-6,
         "z mismatch: {} vs {}",
         a.z(),
         b.z()
@@ -59,72 +84,97 @@ where
     );
 }
 
+/// Test position coordinate transformations (positions support both center and frame transforms)
 #[test]
-fn test_coord_transformations() {
-    use siderust::coordinates::cartesian::Direction;
+fn test_position_transformations() {
+    use siderust::coordinates::transform::Transform;
 
-    let original: Direction<Heliocentric, Ecliptic> = Mars::vsop87a(JulianDate::J2000)
-        .get_position()
-        .clone()
-        .direction(); // Heliocentric, Ecliptic
-
-    // Heliocentric Ecliptic -> Geocentric Ecliptic -> back
-    let geo_ecl = Direction::<Geocentric, Ecliptic>::from(&original);
-    let helio_ecl = Direction::<Heliocentric, Ecliptic>::from(&geo_ecl);
-    approx_eq(&original, &helio_ecl);
-
-    // Heliocentric Ecliptic -> Barycentric Ecliptic -> back
-    let bary_ecl = Direction::<Barycentric, Ecliptic>::from(&original);
-    let helio_from_bary = Direction::<Heliocentric, Ecliptic>::from(&bary_ecl);
-    approx_eq(&original, &helio_from_bary);
+    let original = *Mars::vsop87a(JulianDate::J2000).get_position();
 
     // Heliocentric Ecliptic -> Heliocentric Equatorial -> back
-    let helio_eq = Direction::<Heliocentric, Equatorial>::from(&original);
-    let helio_from_eq = Direction::<Heliocentric, Ecliptic>::from(&helio_eq);
-    approx_eq(&original, &helio_from_eq);
-
-    // Heliocentric Equatorial -> ICRS -> back
-    let icrs = Direction::<Heliocentric, frames::ICRS>::from(&helio_eq);
-    let helio_eq_back = Direction::<Heliocentric, Equatorial>::from(&icrs);
-    approx_eq(&helio_eq, &helio_eq_back);
+    let helio_eq: cartesian::Position<Heliocentric, Equatorial, _> =
+        original.transform(JulianDate::J2000);
+    let helio_from_eq: cartesian::Position<Heliocentric, Ecliptic, _> =
+        helio_eq.transform(JulianDate::J2000);
+    approx_eq_pos(&original, &helio_from_eq);
 }
 
+/// Test direction frame transformations (directions only support frame transforms, not center transforms)
 #[test]
-fn test_spherical_transformations() {
-    let original = Mars::vsop87a(JulianDate::J2000)
+fn test_direction_frame_transformations() {
+    use siderust::coordinates::cartesian::Direction;
+
+    // Create a direction from Mars position
+    let original: Direction<Ecliptic> = Mars::vsop87a(JulianDate::J2000)
         .get_position()
         .clone()
-        .direction(); // Heliocentric, Ecliptic
+        .direction()
+        .expect("Mars position should have a direction");
 
-    let geo_eq = cartesian::Direction::<Geocentric, Equatorial>::from(&original);
-    let helio_icrs = cartesian::Direction::<Heliocentric, frames::ICRS>::from(&original);
-    let bary_eq = cartesian::Direction::<Barycentric, Equatorial>::from(&original);
+    // Ecliptic -> Equatorial -> back (frame rotation only)
+    let equatorial: Direction<Equatorial> = TransformFrame::to_frame(&original);
+    let ecliptic_back: Direction<Ecliptic> = TransformFrame::to_frame(&equatorial);
+    approx_eq_dir(&original, &ecliptic_back);
 
-    let sph_helio_ecl = original.to_spherical();
-    let back_helio_ecl = sph_helio_ecl.to_cartesian();
-    approx_eq(&original, &back_helio_ecl);
-
-    let sph_geo_eq = spherical::Direction::from_cartesian(&geo_eq);
-    let back_geo_eq = sph_geo_eq.to_cartesian();
-    approx_eq(&geo_eq, &back_geo_eq);
-
-    let sph_helio_icrs = spherical::Direction::from_cartesian(&helio_icrs);
-    let back_helio_icrs = sph_helio_icrs.to_cartesian();
-    approx_eq(&helio_icrs, &back_helio_icrs);
-
-    let sph_bary_eq = spherical::Direction::from_cartesian(&bary_eq);
-    let back_bary_eq = sph_bary_eq.to_cartesian();
-    approx_eq(&bary_eq, &back_bary_eq);
+    // Verify directions are still unit vectors after transformation
+    let norm = (equatorial.x().powi(2) + equatorial.y().powi(2) + equatorial.z().powi(2)).sqrt();
+    assert!(
+        (norm - 1.0).abs() < 1e-12,
+        "direction should be unit vector"
+    );
 }
 
+/// Test spherical direction transformations
+#[test]
+fn test_spherical_direction_transformations() {
+    // Create a direction from Mars position
+    let cart_original: cartesian::Direction<Ecliptic> = Mars::vsop87a(JulianDate::J2000)
+        .get_position()
+        .clone()
+        .direction()
+        .expect("Mars position should have a direction");
+
+    // Convert to spherical and back
+    let sph = cart_original.to_spherical();
+    let back = sph.to_cartesian();
+    approx_eq_dir(&cart_original, &back);
+}
+
+/// Test spherical position round-trip
 #[test]
 fn serialize_cartesian_spherical() {
-    let sph_orig = spherical::Position::<Barycentric, frames::ICRS, AstronomicalUnit>::new(
+    let sph_orig = spherical::Position::<Barycentric, ICRS, AstronomicalUnit>::new(
         Degrees::new(101.28715533),
         Degrees::new(-16.71611586),
         1.0,
     );
     let cart = sph_orig.to_cartesian();
-    let sph_rec = cart.to_spherical();
+    let sph_rec = spherical::Position::from_cartesian(&cart);
     sph_approx_eq(&sph_orig, &sph_rec);
+}
+
+/// Test line_of_sight function for computing direction from observer to target
+#[test]
+fn test_line_of_sight() {
+    use siderust::coordinates::cartesian::line_of_sight;
+
+    // Create two positions (Earth and Mars at some point)
+    let observer = cartesian::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
+        AstronomicalUnits::new(1.0),
+        AstronomicalUnits::new(0.0),
+        AstronomicalUnits::new(0.0),
+    );
+
+    let target = cartesian::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
+        AstronomicalUnits::new(2.0),
+        AstronomicalUnits::new(0.0),
+        AstronomicalUnits::new(0.0),
+    );
+
+    let los = line_of_sight(&observer, &target);
+
+    // Direction should point in +X direction
+    assert!((los.x() - 1.0).abs() < 1e-12);
+    assert!(los.y().abs() < 1e-12);
+    assert!(los.z().abs() < 1e-12);
 }

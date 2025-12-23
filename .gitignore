@@ -11,3 +11,11 @@ target/
 
 # artifacts
 .vscode
+
+## Coverage
+coverage.xml
+/coverage/
+/coverage_html/
+
+# Dev artifacts
+qtty

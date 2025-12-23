@@ -55,9 +55,9 @@
 //!
 //! ```rust
 //! use siderust::calculus::kepler_equations::solve_keplers_equation;
-//! use siderust::units::Radians;
+//! use qtty::*;
 //!
-//! let m = Radians::new(1.0);
+//! let m = 1.0 * RAD;
 //! let e = 0.0167;
 //! let eccentric_anomaly = solve_keplers_equation(m, e);
 //! ```

@@ -2,7 +2,7 @@ use crate::bodies::solar_system::Sun;
 
 use crate::astro::{nutation::corrected_ra_with_nutation, JulianDate};
 use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
-use crate::units::{AstronomicalUnits, LengthUnit, Quantity};
+use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 impl Sun {
     /// Returns the **apparent geocentric equatorial coordinates** of the Sun
@@ -38,9 +38,9 @@ impl Sun {
     {
         let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
         let geo_cart: cartesian::position::Equatorial<U, Geocentric> = helio.transform(jd);
-        let geo_sph = geo_cart.to_spherical();
+        let geo_sph = spherical::Position::from_cartesian(&geo_cart);
         let ra = corrected_ra_with_nutation(&geo_sph.direction(), jd);
-        spherical::position::Equatorial::<U>::new(ra, geo_sph.dec(), geo_sph.distance)
+        spherical::position::Equatorial::<U>::new(ra, geo_sph.dec(), geo_sph.distance())
     }
 }
 
@@ -48,7 +48,7 @@ impl Sun {
 mod tests {
     use crate::astro::JulianDate;
     use crate::bodies::solar_system::Sun;
-    use crate::units::AstronomicalUnit;
+    use qtty::AstronomicalUnit;
 
     #[test]
     fn apparent_sun_position_j2000() {
@@ -59,23 +59,25 @@ mod tests {
         let expected_dec = -23.0; // degrees
         let expected_dist = 1.0; // astronomical units
 
+        eprintln!(
+            "Got RA: {}, Dec: {}, Dist: {}",
+            pos.ra().value(),
+            pos.dec().value(),
+            pos.distance.value()
+        );
+
         assert!(
             (pos.ra().value() - expected_ra).abs() < 2.0,
-            "RA mismatch: {} vs {}",
+            "RA mismatch: got {}, expected ~{}",
             pos.ra().value(),
             expected_ra
         );
         assert!(
             (pos.dec().value() - expected_dec).abs() < 2.0,
-            "Dec mismatch: {} vs {}",
+            "Dec mismatch: got {}, expected ~{}",
             pos.dec().value(),
             expected_dec
         );
-        assert!(
-            (pos.distance.value() - expected_dist).abs() < 0.2,
-            "Distance mismatch: {} vs {}",
-            pos.distance.value(),
-            expected_dist
-        );
+        assert!((pos.distance.value() - expected_dist).abs() < 0.2);
     }
 }

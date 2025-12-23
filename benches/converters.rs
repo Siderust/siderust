@@ -1,17 +1,16 @@
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::{
-    coordinates::{
-        cartesian::Vector, centers::Barycentric, frames::ICRS, spherical::SphericalCoord,
-    },
-    units::{Au, Degrees},
-};
+use qtty::{Au, Degrees};
+use siderust::coordinates::{cartesian, centers::Barycentric, frames::ICRS, spherical};
 use std::{hint::black_box, time::Duration};
 
 fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     // Test data: one Cartesian and one Spherical point in the ICRS/Barycentric frame
-    let icrs_cartesian = Vector::<Barycentric, ICRS, Au>::new(10.0, 20.0, 30.0);
-    let icrs_spherical =
-        SphericalCoord::<Barycentric, ICRS, Au>::new(Degrees::new(10.0), Degrees::new(20.0), 30.0);
+    let icrs_cartesian = cartesian::Position::<Barycentric, ICRS, Au>::new(10.0, 20.0, 30.0);
+    let icrs_spherical = spherical::Position::<Barycentric, ICRS, Au>::new(
+        Degrees::new(10.0),
+        Degrees::new(20.0),
+        30.0,
+    );
 
     // Create a benchmark group so we can tweak settings just for these benchmarks
     let mut group = c.benchmark_group("converters");
@@ -27,7 +26,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
         b.iter(|| {
             // black_box prevents the compiler from optimizing the value away
             let cart = black_box(&icrs_cartesian);
-            let res: SphericalCoord<_, _, Au> = cart.into();
+            let res = cart.to_spherical();
             black_box(res); // keep the result “alive”
         });
     });
@@ -36,7 +35,7 @@ fn bench_cartesian_spherical_converters(c: &mut Criterion) {
     group.bench_function("to_cartesian (ICRS)", |b| {
         b.iter(|| {
             let sph = black_box(&icrs_spherical);
-            let res: Vector<_, _, Au> = sph.into();
+            let res = sph.to_cartesian();
             black_box(res);
         });
     });

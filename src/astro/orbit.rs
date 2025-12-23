@@ -64,7 +64,7 @@
 //! ```rust
 //! use siderust::astro::orbit::Orbit;
 //! use siderust::astro::JulianDate;
-//! use siderust::units::*;
+//! use qtty::*;
 //!
 //! let earth_orbit = Orbit::new(
 //!     1.0*AU,                    // a
@@ -80,10 +80,10 @@
 //! ```
 
 use crate::astro::JulianDate;
-use crate::units::*;
+use qtty::*;
 
 /// Represents the Keplerian orbital elements of a celestial object.
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Orbit {
     pub semi_major_axis: AstronomicalUnits, // Semi-major axis (AstronomicalUnits)
     pub eccentricity: f64,                  // Orbital eccentricity

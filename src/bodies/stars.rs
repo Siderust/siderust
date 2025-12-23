@@ -10,7 +10,8 @@
 
 use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
 use crate::targets::Target;
-use crate::units::*;
+use qtty::length::nominal::SolarRadiuses;
+use qtty::*;
 
 use std::borrow::Cow;
 

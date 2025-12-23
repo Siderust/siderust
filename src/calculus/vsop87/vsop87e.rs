@@ -7,9 +7,11 @@ use crate::coordinates::{
     frames::Ecliptic,
 };
 use crate::targets::Target;
-use crate::units::*;
+use qtty::*;
+type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 
 #[allow(clippy::approx_constant)]
+#[rustfmt::skip]
 mod vsop_data {
     include!(concat!(env!("OUT_DIR"), "/vsop87e.rs"));
 }
@@ -47,9 +49,9 @@ macro_rules! impl_vsop87e {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    AusPerDay::new(vx),
-                    AusPerDay::new(vy),
-                    AusPerDay::new(vz)
+                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz)
                 )
             }
 
@@ -67,9 +69,9 @@ macro_rules! impl_vsop87e {
                         AstronomicalUnits::new(y),
                         AstronomicalUnits::new(z)), jd,),
                     Velocity::new(
-                        AusPerDay::new(vx),
-                        AusPerDay::new(vy),
-                        AusPerDay::new(vz))
+                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz))
                 )
             }
         }
@@ -156,7 +158,7 @@ mod tests {
     use crate::astro::JulianDate;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
-    use crate::units::AU;
+    use qtty::AU;
 
     const PRECISION: f64 = 1.0e-6;
 

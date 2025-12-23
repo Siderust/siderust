@@ -1,25 +1,30 @@
-use crate::astro::aberration::remove_aberration;
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::{Earth, Sun};
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{
-    cartesian::position::{Ecliptic, Equatorial, Position},
+    cartesian::position::{Ecliptic, Position},
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::MutableFrame,
 };
-use crate::units::{AstronomicalUnits, LengthUnit, Quantity};
+use qtty::{AstronomicalUnits, LengthUnit, Quantity};
+
+// =============================================================================
+// Geocentric → Heliocentric (pure translation, no aberration)
+// =============================================================================
+//
+// Center transforms are pure geometry: they only translate positions from one
+// origin to another. Aberration is an observation-model effect that depends on
+// observer velocity and must be applied explicitly via the observation module.
 
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Heliocentric, F, U>>
     for Position<Geocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
-    Ecliptic<U>: TransformFrame<Equatorial<U, Heliocentric>>, // Required by VSOP
-    Position<Geocentric, F, U>: TransformFrame<Equatorial<U, Geocentric>>, // Required by Aberration
-    Equatorial<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>, // Required by Aberration
+    Ecliptic<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
-        //geocentric_to_heliocentric(self, jd)
+        // Get Earth's position in heliocentric ecliptic coordinates
         let earth_helio_ecl_au = *Earth::vsop87a(jd).get_position();
         let earth_helio_ecl = Ecliptic::<U, Heliocentric>::new(
             earth_helio_ecl_au.x(),
@@ -27,14 +32,11 @@ where
             earth_helio_ecl_au.z(),
         );
 
-        let earth_helio_equ: Equatorial<U, Heliocentric> = earth_helio_ecl.to_frame(); // (Helio-Ecl) -> (Helio-Equ)
-        let target_geo_equ: Equatorial<U, Geocentric> = self.to_frame(); // (Geo-F) -> (Geo-Equ)
-        let target_geo_equ_no_aberration = remove_aberration(target_geo_equ, jd);
+        // Transform Earth to the target frame
+        let earth: Position<Heliocentric, F, U> = earth_helio_ecl.to_frame();
 
-        let helio_equ = Equatorial::<U, Heliocentric>::from_vec3(
-            target_geo_equ_no_aberration.as_vec3() + earth_helio_equ.as_vec3(),
-        ); // Geocentric -> Heliocentric
-        helio_equ.to_frame() // Equatorial -> F
+        // Pure translation: heliocentric = geocentric + earth_position
+        Position::<Heliocentric, F, U>::from_vec3_origin(self.as_vec3() + earth.as_vec3())
     }
 }
 
@@ -54,7 +56,7 @@ where
         );
 
         let sun: Position<Barycentric, F, U> = sun_bary_ecl.to_frame();
-        Position::from_vec3(self.as_vec3() - sun.as_vec3())
+        Position::from_vec3_origin(self.as_vec3() - sun.as_vec3())
     }
 }
 
@@ -65,14 +67,14 @@ mod tests {
     use crate::coordinates::centers::*;
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
-    use crate::units::Au;
+    use qtty::Au;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
     #[test] // Barycentric -> Heliocentric
     fn test_bary() {
-        let sun_bary = Sun::vsop87e(JulianDate::J2000).get_position().clone();
-        let sun_helio: Ecliptic<Au, Heliocentric> = (&sun_bary).transform(JulianDate::J2000);
+        let sun_bary = *Sun::vsop87e(JulianDate::J2000).get_position();
+        let sun_helio: Ecliptic<Au, Heliocentric> = sun_bary.transform(JulianDate::J2000);
         let expected_sun_helio = Ecliptic::<Au>::CENTER;
         assert_cartesian_eq!(
             &sun_helio,
@@ -85,7 +87,7 @@ mod tests {
 
     #[test] // Geocentric -> Heliocentric
     fn test_geo() {
-        let sun = Sun::vsop87e(JulianDate::J2000).get_position().clone();
+        let sun = *Sun::vsop87e(JulianDate::J2000).get_position();
         let sun_geo: Ecliptic<Au, Geocentric> = sun.transform(JulianDate::J2000);
         let sun_helio: Ecliptic<Au> = sun_geo.transform(JulianDate::J2000);
         let expected_sun_helio = Ecliptic::<Au>::CENTER;

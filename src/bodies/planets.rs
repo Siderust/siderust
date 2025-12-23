@@ -9,7 +9,7 @@
 //! ## Quick start
 //! ```rust
 //! use siderust::bodies::planets::{Planet, PlanetBuilder};
-//! use siderust::units::{Kilograms, Kilometers, AstronomicalUnits, Degrees};
+//! use qtty::*;
 //! use siderust::astro::orbit::Orbit;
 //! use siderust::astro::JulianDate;
 //!
@@ -46,9 +46,10 @@
 //! ---
 
 use crate::astro::orbit::Orbit;
-use crate::units::*;
+use qtty::*;
 
-const GAUSSIAN_GRAVITATIONAL_CONSTANT: RadiansPerDay = RadiansPerDay::new(0.017_202_098_95);
+type RadiansPerDay = qtty::Quantity<qtty::Per<Radian, Day>>;
+const GAUSSIAN_GRAVITATIONAL_CONSTANT: RadiansPerDay = Quantity::new(0.017_202_098_95);
 
 /// Represents a **Planet** characterised by its mass, mean radius, and orbit.
 #[derive(Clone, Debug)]
@@ -161,7 +162,7 @@ impl OrbitExt for Orbit {
 
         use std::f64::consts::PI;
         let a_au = self.semi_major_axis.to::<AstronomicalUnit>().value();
-        let k = GAUSSIAN_GRAVITATIONAL_CONSTANT.to::<RadianPerDay>().value();
+        let k = GAUSSIAN_GRAVITATIONAL_CONSTANT.value();
 
         let t_days = (2.0 * PI / k) * a_au.powf(1.5);
         Seconds::new(t_days * 86_400.0)
@@ -175,7 +176,7 @@ impl OrbitExt for Orbit {
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::units::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
+    use qtty::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
 
     #[test]
     fn builder_roundtrip() {

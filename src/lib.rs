@@ -7,7 +7,7 @@
 //!
 //! ## Features
 //!
-//! - **Coordinate Systems**: Strongly-typed `Vector` and `SphericalCoord` types,
+//! - **Coordinate Systems**: Strongly-typed `Vector` and spherical `Position`/`Direction` types,
 //!   parameterized by phantom `ReferenceCenter` (e.g., Sun, Earth) and
 //!   `ReferenceFrame` (e.g., ICRS, Ecliptic, Equatorial, Horizontal), and
 //!   `Kind` (Position, Direction), enabling compile-time protection
@@ -72,6 +72,5 @@ pub mod calculus;
 pub mod coordinates;
 pub mod observatories;
 pub mod targets;
-pub mod units;
 
 pub(crate) mod macros;

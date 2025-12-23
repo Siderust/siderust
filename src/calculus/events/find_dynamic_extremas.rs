@@ -5,7 +5,8 @@ use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::coordinates::spherical::*;
 use crate::targets::Target;
-use crate::units::*;
+use qtty::Simplify;
+use qtty::*;
 
 /// Convenience constants.
 use core::f64::consts::PI;
@@ -48,14 +49,14 @@ const NEWTON_MAX_ITERS: usize = 15;
 ///    `f(jd) = H(jd) − H_target`,    where `H_target` = `0` or `π`.  
 ///    The derivative `dH/dt` is estimated by a symmetric ±1 s finite-difference.  
 /// 4. Collect all roots in `[jd_start, jd_end)` and sort them.
-pub fn find_dynamic_extremas<F, U: Unit>(
+pub fn find_dynamic_extremas<F, U: LengthUnit>(
     get_equatorial: F,
     observer: &position::Geographic,
     jd_start: JulianDate,
     jd_end: JulianDate,
 ) -> Vec<Culmination>
 where
-    F: Fn(JulianDate) -> Target<SphericalCoord<Geocentric, frames::Equatorial, U>> + Copy,
+    F: Fn(JulianDate) -> Target<Position<Geocentric, frames::Equatorial, U>> + Copy,
 {
     // ────────────────────────────────────────────────────────────
     // Helper: hour angle H(jd) [rad]
@@ -80,8 +81,9 @@ where
             // Finite-difference dH/dt using ±1 s
             let dt: Days = Days::new(1.0 / 86_400.0);
             let dh: Radians = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_signed();
+            type RadiansPerDay = qtty::frequency::Frequency<Radian, Day>;
             let deriv: RadiansPerDay = dh / (dt * 2.0); // rad / day
-            if deriv.abs() < RadiansPerDay::new(1e-10) {
+            if deriv.abs() < Quantity::new(1e-10) {
                 return None; // derivative ~ 0, avoid blow-up
             }
 
@@ -176,10 +178,10 @@ mod tests {
             find_dynamic_extremas(|_| SIRIUS.target, &ROQUE_DE_LOS_MUCHACHOS, jd_start, jd_end);
 
         let expected_lower = Culmination::Lower {
-            jd: JulianDate::new(2_460_677.05000),
+            jd: JulianDate::new(2_460_677.050_00),
         };
         let expected_upper = Culmination::Upper {
-            jd: JulianDate::new(2_460_677.54860),
+            jd: JulianDate::new(2_460_677.548_60),
         };
 
         assert_eq!(res.len(), 2);

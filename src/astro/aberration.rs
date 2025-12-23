@@ -31,9 +31,18 @@ use crate::coordinates::{
     cartesian::{direction, position, Velocity},
     frames,
 };
-use crate::units::*;
+use qtty::*;
 
-const AU_PER_DAY_C: AusPerDay = MetersPerSecond::new(299_792_458.0).to::<AuPerDay>(); // Speed Of Light
+type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
+type AusPerDay = qtty::velocity::Velocity<AstronomicalUnit, Day>;
+
+// Speed of light: c = 299_792_458 m/s
+// Convert to AU/day:
+// 1 AU = 149_597_870_700 m (exact)
+// 1 day = 86_400 s (exact)
+// c [AU/day] = (299_792_458 m/s) * (86_400 s/day) / (149_597_870_700 m/AU)
+//            = 173.144_632_674... AU/day
+const AU_PER_DAY_C: AusPerDay = AusPerDay::new(173.1446334836104);
 
 /// Apply **annual aberration** to a unit direction vector (true‑of‑date).
 ///
@@ -53,9 +62,9 @@ pub fn apply_aberration_to_direction(
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        (mean.x() + (velocity.x() / AU_PER_DAY_C).simplify()).value(),
-        (mean.y() + (velocity.y() / AU_PER_DAY_C).simplify()).value(),
-        (mean.z() + (velocity.z() / AU_PER_DAY_C).simplify()).value(),
+        mean.x() + (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        mean.y() + (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        mean.z() + (velocity.z() / AU_PER_DAY_C).simplify().value(),
     )
 }
 
@@ -73,9 +82,9 @@ pub fn remove_aberration_from_direction(
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
     direction::Equatorial::normalize(
-        (app.x() - (velocity.x() / AU_PER_DAY_C).simplify()).value(),
-        (app.y() - (velocity.y() / AU_PER_DAY_C).simplify()).value(),
-        (app.z() - (velocity.z() / AU_PER_DAY_C).simplify()).value(),
+        app.x() - (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        app.y() - (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        app.z() - (velocity.z() / AU_PER_DAY_C).simplify().value(),
     )
 }
 
@@ -91,7 +100,11 @@ pub fn apply_aberration<U: LengthUnit>(
         return mean;
     }
 
-    apply_aberration_to_direction(mean.direction(), jd).position(mean.distance())
+    // Safe to unwrap: we just checked distance is non-zero
+    let dir = mean
+        .direction()
+        .expect("non-zero position should have a direction");
+    apply_aberration_to_direction(dir, jd).position(mean.distance())
 }
 
 /// Remove **annual aberration** from a position vector, preserving its
@@ -106,28 +119,32 @@ pub fn remove_aberration<U: LengthUnit>(
         return app;
     }
 
-    remove_aberration_from_direction(app.direction(), jd).position(app.distance())
+    // Safe to unwrap: we just checked distance is non-zero
+    let dir = app
+        .direction()
+        .expect("non-zero position should have a direction");
+    remove_aberration_from_direction(dir, jd).position(app.distance())
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::spherical::position;
+    use crate::coordinates::spherical::{self, position};
 
     fn apply_aberration_sph<U: LengthUnit>(
-        mean: position::Equatorial<U>,
+        mean: &position::Equatorial<U>,
         jd: JulianDate,
     ) -> position::Equatorial<U> {
-        (&apply_aberration((&mean).into(), jd)).into()
+        spherical::Position::from_cartesian(&apply_aberration(mean.to_cartesian(), jd))
     }
 
     #[test]
     fn test_aberration_preserva_distance_and_epoch() {
         let jd = JulianDate::new(2451545.0); // J2000.0
         let mean = position::Equatorial::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
-        let out = apply_aberration_sph(mean, jd);
+        let out = apply_aberration_sph(&mean, jd);
 
-        assert_eq!(out.distance.value(), mean.distance.value());
+        assert_eq!(out.distance().value(), mean.distance().value());
     }
 
     #[test]
@@ -138,7 +155,7 @@ mod tests {
             Degrees::new(0.0), // Dec = 0°
             1.0,
         );
-        let out = apply_aberration_sph(mean, jd);
+        let out = apply_aberration_sph(&mean, jd);
 
         let delta_ra = out.ra().abs_separation(mean.ra());
         let delta_dec = out.dec().abs_separation(mean.dec());
@@ -160,7 +177,7 @@ mod tests {
             Degrees::new(90.0),  // Dec = +90°
             1.0,
         );
-        let out = apply_aberration_sph(mean, jd);
+        let out = apply_aberration_sph(&mean, jd);
 
         assert!(
             out.dec().value() < 90.0,
