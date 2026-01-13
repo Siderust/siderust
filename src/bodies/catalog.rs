@@ -51,7 +51,7 @@
 
 use super::Star;
 use crate::astro::JulianDate;
-use crate::coordinates::spherical::position::Equatorial;
+use crate::coordinates::spherical::position::EquatorialMeanJ2000;
 use crate::targets::Target;
 use qtty::length::nominal::SolarRadiuses;
 use qtty::*;
@@ -70,8 +70,8 @@ pub const VEGA: Star<'static> = Star::new_const(
     SolarMasses::new(2.135),
     SolarRadiuses::new(2.59),
     SolarLuminosities::new(40.12),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(38.7837),  // Dec (polar)
             Degrees::new(279.2347), // RA (azimuth)
             LightYears::new(25.0),
@@ -94,8 +94,8 @@ pub const POLARIS: Star<'static> = Star::new_const(
     SolarMasses::new(6.5),
     SolarRadiuses::new(46.0),
     SolarLuminosities::new(2500.0),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(89.26410897), // Dec (polar)
             Degrees::new(37.95456067), // RA (azimuth)
             LightYears::new(433.0),
@@ -118,8 +118,8 @@ pub const SIRIUS: Star<'static> = Star::new_const(
     SolarMasses::new(2.063),
     SolarRadiuses::new(1.713),
     SolarLuminosities::new(24.7),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(-16.716115867), // Dec (polar)
             Degrees::new(101.28715533),  // RA (azimuth)
             LightYears::new(8.6),
@@ -142,8 +142,8 @@ pub const CANOPUS: Star<'static> = Star::new_const(
     SolarMasses::new(8.0),
     SolarRadiuses::new(71.0),
     SolarLuminosities::new(13_600.0),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(-52.69566111), // Dec (polar)
             Degrees::new(95.98787778),  // RA (azimuth)
             LightYears::new(310.0),
@@ -166,8 +166,8 @@ pub const ARCTURUS: Star<'static> = Star::new_const(
     SolarMasses::new(1.1),
     SolarRadiuses::new(26.0),
     SolarLuminosities::new(170.0),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(19.1825),  // Dec (polar)
             Degrees::new(213.9153), // RA (azimuth)
             LightYears::new(36.7),
@@ -190,8 +190,8 @@ pub const RIGEL: Star<'static> = Star::new_const(
     SolarMasses::new(17.0),
     SolarRadiuses::new(78.9),
     SolarLuminosities::new(120_000.0),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(-8.20163889), // Dec (polar)
             Degrees::new(78.634467),   // RA (azimuth)
             LightYears::new(860.0),
@@ -214,8 +214,8 @@ pub const BETELGEUSE: Star<'static> = Star::new_const(
     SolarMasses::new(11.6),
     SolarRadiuses::new(724.0),
     SolarLuminosities::new(14_000.0),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(7.407064),  // Dec (polar)
             Degrees::new(88.792939), // RA (azimuth)
             LightYears::new(548.0),
@@ -238,8 +238,8 @@ pub const PROCYON: Star<'static> = Star::new_const(
     SolarMasses::new(1.499),
     SolarRadiuses::new(2.048),
     SolarLuminosities::new(6.93),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(5.224993),   // Dec (polar)
             Degrees::new(114.825493), // RA (azimuth)
             LightYears::new(11.5),
@@ -262,8 +262,8 @@ pub const ALDEBARAN: Star<'static> = Star::new_const(
     SolarMasses::new(1.16),
     SolarRadiuses::new(45.1),
     SolarLuminosities::new(439.0),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(16.509302), // Dec (polar)
             Degrees::new(68.980163), // RA (azimuth)
             LightYears::new(65.1),
@@ -286,8 +286,8 @@ pub const ALTAIR: Star<'static> = Star::new_const(
     SolarMasses::new(1.86),
     SolarRadiuses::new(1.79),
     SolarLuminosities::new(10.6),
-    Target::<Equatorial<LightYear>>::new_static(
-        Equatorial::<LightYear>::new_raw(
+    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+        EquatorialMeanJ2000::<LightYear>::new_raw(
             Degrees::new(8.868321),   // Dec (polar)
             Degrees::new(297.695827), // RA (azimuth)
             LightYears::new(16.7),

@@ -7,7 +7,7 @@
 
 use qtty::*;
 use siderust::astro::JulianDate;
-use siderust::coordinates::cartesian::position::Equatorial;
+use siderust::coordinates::cartesian::position::EquatorialMeanJ2000;
 use siderust::coordinates::centers::{Geocentric, ObserverSite};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::centers::ToTopocentricExt;
@@ -117,13 +117,13 @@ fn main() {
     println!("------------------------");
 
     // Create a geocentric position (e.g., a satellite)
-    let satellite_geo: Equatorial<Kilometer, Geocentric> = Equatorial::new(
+    let satellite_geo: EquatorialMeanJ2000<Kilometer, Geocentric> = EquatorialMeanJ2000::new(
         5000.0, // X
         3000.0, // Y
         2000.0, // Z
     );
 
-    println!("Satellite (Geocentric Equatorial):");
+    println!("Satellite (Geocentric EquatorialMeanJ2000):");
     println!("  X = {:.1} km", satellite_geo.x());
     println!("  Y = {:.1} km", satellite_geo.y());
     println!("  Z = {:.1} km", satellite_geo.z());
@@ -148,7 +148,8 @@ fn main() {
     println!("---------------------------------");
 
     // Same object viewed from different locations
-    let object_geo: Equatorial<Kilometer, Geocentric> = Equatorial::new(10000.0, 0.0, 0.0);
+    let object_geo: EquatorialMeanJ2000<Kilometer, Geocentric> =
+        EquatorialMeanJ2000::new(10000.0, 0.0, 0.0);
 
     println!("Object position (Geocentric):");
     println!("  Distance: {:.0} km\n", object_geo.distance());
@@ -205,13 +206,13 @@ fn main() {
     println!("--------------------------------");
 
     // Geocentric equatorial position
-    let pos_geo = Equatorial::<Kilometer, Geocentric>::new(7000.0, 0.0, 0.0);
-    println!("Position (Geocentric Equatorial):");
+    let pos_geo = EquatorialMeanJ2000::<Kilometer, Geocentric>::new(7000.0, 0.0, 0.0);
+    println!("Position (Geocentric EquatorialMeanJ2000):");
     println!("  Distance: {:.0} km", pos_geo.distance());
 
     // Convert to topocentric
     let pos_topo = pos_geo.to_topocentric(greenwich, jd);
-    println!("\nPosition (Topocentric Equatorial from Greenwich):");
+    println!("\nPosition (Topocentric EquatorialMeanJ2000 from Greenwich):");
     println!("  Distance: {:.0} km", pos_topo.distance());
 
     // Convert topocentric to horizontal would require additional transforms

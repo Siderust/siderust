@@ -4,7 +4,7 @@ use crate::bodies::solar_system::{Earth, Sun};
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{
-    cartesian::position::{Ecliptic, Equatorial},
+    cartesian::position::{Ecliptic, EquatorialMeanJ2000},
     cartesian::Position,
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::MutableFrame,
@@ -38,9 +38,9 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>
     for Position<Geocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Ecliptic<U, Barycentric>: TransformFrame<Equatorial<U, Barycentric>>, // Required by VSOP
-    Position<Geocentric, F, U>: TransformFrame<Equatorial<U, Geocentric>>, // Required by Aberration
-    Equatorial<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>, // Required by Aberration
+    Ecliptic<U, Barycentric>: TransformFrame<EquatorialMeanJ2000<U, Barycentric>>, // Required by VSOP
+    Position<Geocentric, F, U>: TransformFrame<EquatorialMeanJ2000<U, Geocentric>>, // Required by Aberration
+    EquatorialMeanJ2000<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>, // Required by Aberration
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let earth_bary_ecl_au = *Earth::vsop87e(jd).get_position();
@@ -52,14 +52,14 @@ where
             earth_bary_ecl_au.z(),
         );
 
-        let earth_bary_equ: Equatorial<U, Barycentric> = earth_bary_ecl.to_frame(); // (Bary-Ecl) -> (Bary-Equ)
-        let target_geo_equ: Equatorial<U, Geocentric> = self.to_frame(); // (Geo-F) -> (Geo-Equ)
+        let earth_bary_equ: EquatorialMeanJ2000<U, Barycentric> = earth_bary_ecl.to_frame(); // (Bary-Ecl) -> (Bary-Equ)
+        let target_geo_equ: EquatorialMeanJ2000<U, Geocentric> = self.to_frame(); // (Geo-F) -> (Geo-Equ)
         let target_geo_equ_no_aberration = remove_aberration(target_geo_equ, jd);
 
-        let bary_equ = Equatorial::<U, Barycentric>::from_vec3_origin(
+        let bary_equ = EquatorialMeanJ2000::<U, Barycentric>::from_vec3_origin(
             target_geo_equ_no_aberration.as_vec3() + earth_bary_equ.as_vec3(),
         ); // Geocentric -> Barycentric
-        bary_equ.to_frame() // Equatorial -> F
+        bary_equ.to_frame() // EquatorialMeanJ2000 -> F
     }
 }
 

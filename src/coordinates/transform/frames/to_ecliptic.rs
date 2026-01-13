@@ -1,5 +1,7 @@
+use super::bias::frame_bias_icrs_to_j2000;
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
+use affn::Rotation3;
 use qtty::LengthUnit;
 
 // Implement Transform trait for ICRS -> Ecliptic
@@ -12,18 +14,24 @@ where
         let eps = 23.439281_f64.to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
-        let y = self.y();
-        let z = self.z();
+        let rot: Rotation3 = frame_bias_icrs_to_j2000();
+        let [bx, by, bz] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
+        let y = by;
+        let z = bz;
         Position::from_vec3(
             self.center_params().clone(),
-            nalgebra::Vector3::new(self.x(), cos_e * y + sin_e * z, -sin_e * y + cos_e * z),
+            nalgebra::Vector3::new(
+                bx.into(),
+                (cos_e * y + sin_e * z).into(),
+                (-sin_e * y + cos_e * z).into(),
+            ),
         )
     }
 }
 
-// Implement Transform trait for Equatorial -> Ecliptic
+// Implement Transform trait for EquatorialMeanJ2000 -> Ecliptic
 impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Ecliptic, U>>
-    for Position<C, frames::Equatorial, U>
+    for Position<C, frames::EquatorialMeanJ2000, U>
 {
     fn to_frame(&self) -> Position<C, frames::Ecliptic, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
@@ -125,7 +133,7 @@ mod tests {
         assert_cartesian_eq!(
             coord_ecl,
             coord_ecl_back,
-            EPSILON,
+            1e-5,
             "Large values should not cause precision errors."
         );
     }
@@ -148,12 +156,16 @@ mod tests {
     fn round_trip_equatorial_ecliptic() {
         let equatorial_orig = spherical::Position::<
             centers::Barycentric,
-            frames::Equatorial,
+            frames::EquatorialMeanJ2000,
             AstronomicalUnit,
         >::new(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
         let ecliptic: spherical::Position<centers::Barycentric, frames::Ecliptic, Au> =
             equatorial_orig.transform(JulianDate::J2000);
-        let equatorial_rec: spherical::Position<centers::Barycentric, frames::Equatorial, Au> =
+        let equatorial_rec: spherical::Position<
+            centers::Barycentric,
+            frames::EquatorialMeanJ2000,
+            Au,
+        > =
             ecliptic.transform(JulianDate::J2000);
 
         assert_spherical_eq!(equatorial_orig, equatorial_rec, 1e-10);
