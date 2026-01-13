@@ -18,23 +18,23 @@
 //!
 //! ```rust
 //! use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
-//! use siderust::coordinates::spherical::direction::Equatorial;
+//! use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
 //! use siderust::astro::JulianDate;
 //! use qtty::*;
 //!
-//! let geo_dir = Astrometric::new(Equatorial::new(45.0 * DEG, 20.0 * DEG));
+//! let geo_dir = Astrometric::new(EquatorialMeanJ2000::new(45.0 * DEG, 20.0 * DEG));
 //! let obs = ObserverState::geocentric(JulianDate::J2000);
 //!
 //! // Explicit conversion with observer state
-//! let app_dir: Apparent<Equatorial> = geo_dir.to_apparent(&obs);
+//! let app_dir: Apparent<EquatorialMeanJ2000> = geo_dir.to_apparent(&obs);
 //!
 //! // Can convert back
-//! let geo_again: Astrometric<Equatorial> = app_dir.to_astrometric(&obs);
+//! let geo_again: Astrometric<EquatorialMeanJ2000> = app_dir.to_astrometric(&obs);
 //! ```
 
 use super::ObserverState;
 use crate::coordinates::cartesian;
-use crate::coordinates::frames::{Equatorial, MutableFrame};
+use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame};
 use crate::coordinates::spherical;
 use crate::coordinates::transform::TransformFrame;
 
@@ -57,7 +57,7 @@ const AU_PER_DAY_C: f64 = 173.1446334836104;
 ///
 /// # Type Parameter
 ///
-/// - `D`: The underlying direction type (e.g., `spherical::direction::Equatorial`)
+/// - `D`: The underlying direction type (e.g., `spherical::direction::EquatorialMeanJ2000`)
 #[derive(Debug, Clone, Copy)]
 pub struct Astrometric<D> {
     direction: D,
@@ -97,24 +97,24 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
     ///
     /// ```rust
     /// use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
-    /// use siderust::coordinates::spherical::direction::Equatorial;
+    /// use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
     /// use siderust::astro::JulianDate;
     /// use qtty::*;
     ///
-    /// let astrometric = Astrometric::new(Equatorial::new(0.0 * DEG, 0.0 * DEG));
+    /// let astrometric = Astrometric::new(EquatorialMeanJ2000::new(0.0 * DEG, 0.0 * DEG));
     /// let obs = ObserverState::geocentric(JulianDate::J2000);
-    /// let apparent: Apparent<Equatorial> = astrometric.to_apparent(&obs);
+    /// let apparent: Apparent<EquatorialMeanJ2000> = astrometric.to_apparent(&obs);
     /// ```
     pub fn to_apparent(self, obs: &ObserverState) -> Apparent<spherical::Direction<F>>
     where
-        cartesian::Direction<Equatorial>: TransformFrame<cartesian::Direction<F>>,
-        cartesian::Direction<F>: TransformFrame<cartesian::Direction<Equatorial>>,
+        cartesian::Direction<EquatorialMeanJ2000>: TransformFrame<cartesian::Direction<F>>,
+        cartesian::Direction<F>: TransformFrame<cartesian::Direction<EquatorialMeanJ2000>>,
     {
         // Convert to cartesian for vector operations
         let cart_dir = self.direction.to_cartesian();
 
         // Transform to equatorial frame for aberration
-        let cart_eq: cartesian::Direction<Equatorial> = cart_dir.to_frame();
+        let cart_eq: cartesian::Direction<EquatorialMeanJ2000> = cart_dir.to_frame();
 
         // Get observer velocity
         let vel = obs.velocity();
@@ -124,7 +124,7 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
         let y = cart_eq.y() + vel.y().value() / AU_PER_DAY_C;
         let z = cart_eq.z() + vel.z().value() / AU_PER_DAY_C;
 
-        let apparent_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
+        let apparent_eq = cartesian::Direction::<EquatorialMeanJ2000>::normalize(x, y, z);
 
         // Transform back to original frame
         let apparent_cart: cartesian::Direction<F> = apparent_eq.to_frame();
@@ -140,11 +140,11 @@ impl<F: MutableFrame> Astrometric<cartesian::Direction<F>> {
     /// This applies aberration based on the observer's velocity.
     pub fn to_apparent(self, obs: &ObserverState) -> Apparent<cartesian::Direction<F>>
     where
-        cartesian::Direction<Equatorial>: TransformFrame<cartesian::Direction<F>>,
-        cartesian::Direction<F>: TransformFrame<cartesian::Direction<Equatorial>>,
+        cartesian::Direction<EquatorialMeanJ2000>: TransformFrame<cartesian::Direction<F>>,
+        cartesian::Direction<F>: TransformFrame<cartesian::Direction<EquatorialMeanJ2000>>,
     {
         // Transform to equatorial frame for aberration
-        let cart_eq: cartesian::Direction<Equatorial> = self.direction.to_frame();
+        let cart_eq: cartesian::Direction<EquatorialMeanJ2000> = self.direction.to_frame();
 
         // Get observer velocity
         let vel = obs.velocity();
@@ -154,7 +154,7 @@ impl<F: MutableFrame> Astrometric<cartesian::Direction<F>> {
         let y = cart_eq.y() + vel.y().value() / AU_PER_DAY_C;
         let z = cart_eq.z() + vel.z().value() / AU_PER_DAY_C;
 
-        let apparent_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
+        let apparent_eq = cartesian::Direction::<EquatorialMeanJ2000>::normalize(x, y, z);
 
         // Transform back to original frame
         let apparent_cart: cartesian::Direction<F> = apparent_eq.to_frame();
@@ -179,7 +179,7 @@ impl<F: MutableFrame> Astrometric<cartesian::Direction<F>> {
 ///
 /// # Type Parameter
 ///
-/// - `D`: The underlying direction type (e.g., `spherical::direction::Equatorial`)
+/// - `D`: The underlying direction type (e.g., `spherical::direction::EquatorialMeanJ2000`)
 #[derive(Debug, Clone, Copy)]
 pub struct Apparent<D> {
     direction: D,
@@ -218,14 +218,14 @@ impl<F: MutableFrame> Apparent<spherical::Direction<F>> {
     /// * `obs` - The observer state (provides velocity for aberration removal)
     pub fn to_astrometric(self, obs: &ObserverState) -> Astrometric<spherical::Direction<F>>
     where
-        cartesian::Direction<Equatorial>: TransformFrame<cartesian::Direction<F>>,
-        cartesian::Direction<F>: TransformFrame<cartesian::Direction<Equatorial>>,
+        cartesian::Direction<EquatorialMeanJ2000>: TransformFrame<cartesian::Direction<F>>,
+        cartesian::Direction<F>: TransformFrame<cartesian::Direction<EquatorialMeanJ2000>>,
     {
         // Convert to cartesian for vector operations
         let cart_dir = self.direction.to_cartesian();
 
         // Transform to equatorial frame for aberration
-        let cart_eq: cartesian::Direction<Equatorial> = cart_dir.to_frame();
+        let cart_eq: cartesian::Direction<EquatorialMeanJ2000> = cart_dir.to_frame();
 
         // Get observer velocity
         let vel = obs.velocity();
@@ -235,7 +235,7 @@ impl<F: MutableFrame> Apparent<spherical::Direction<F>> {
         let y = cart_eq.y() - vel.y().value() / AU_PER_DAY_C;
         let z = cart_eq.z() - vel.z().value() / AU_PER_DAY_C;
 
-        let astrometric_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
+        let astrometric_eq = cartesian::Direction::<EquatorialMeanJ2000>::normalize(x, y, z);
 
         // Transform back to original frame
         let astrometric_cart: cartesian::Direction<F> = astrometric_eq.to_frame();
@@ -251,11 +251,11 @@ impl<F: MutableFrame> Apparent<cartesian::Direction<F>> {
     /// This removes aberration based on the observer's velocity.
     pub fn to_astrometric(self, obs: &ObserverState) -> Astrometric<cartesian::Direction<F>>
     where
-        cartesian::Direction<Equatorial>: TransformFrame<cartesian::Direction<F>>,
-        cartesian::Direction<F>: TransformFrame<cartesian::Direction<Equatorial>>,
+        cartesian::Direction<EquatorialMeanJ2000>: TransformFrame<cartesian::Direction<F>>,
+        cartesian::Direction<F>: TransformFrame<cartesian::Direction<EquatorialMeanJ2000>>,
     {
         // Transform to equatorial frame for aberration
-        let cart_eq: cartesian::Direction<Equatorial> = self.direction.to_frame();
+        let cart_eq: cartesian::Direction<EquatorialMeanJ2000> = self.direction.to_frame();
 
         // Get observer velocity
         let vel = obs.velocity();
@@ -265,7 +265,7 @@ impl<F: MutableFrame> Apparent<cartesian::Direction<F>> {
         let y = cart_eq.y() - vel.y().value() / AU_PER_DAY_C;
         let z = cart_eq.z() - vel.z().value() / AU_PER_DAY_C;
 
-        let astrometric_eq = cartesian::Direction::<Equatorial>::normalize(x, y, z);
+        let astrometric_eq = cartesian::Direction::<EquatorialMeanJ2000>::normalize(x, y, z);
 
         // Transform back to original frame
         let astrometric_cart: cartesian::Direction<F> = astrometric_eq.to_frame();
@@ -307,10 +307,11 @@ mod tests {
 
         // Create an astrometric direction
         let astrometric =
-            Astrometric::new(spherical::direction::Equatorial::new(0.0 * DEG, 0.0 * DEG));
+            Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(0.0 * DEG, 0.0 * DEG));
 
         // Convert to apparent
-        let apparent: Apparent<spherical::direction::Equatorial> = astrometric.to_apparent(&obs);
+        let apparent: Apparent<spherical::direction::EquatorialMeanJ2000> =
+            astrometric.to_apparent(&obs);
 
         // The shift should be on the order of 20 arcseconds (aberration constant)
         let original = astrometric.direction();
@@ -344,14 +345,14 @@ mod tests {
         let obs = ObserverState::geocentric(jd);
 
         // Create an astrometric direction
-        let original = Astrometric::new(spherical::direction::Equatorial::new(
+        let original = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
             45.0 * DEG,
             30.0 * DEG,
         ));
 
         // Convert to apparent and back
         let apparent = original.to_apparent(&obs);
-        let recovered: Astrometric<spherical::direction::Equatorial> =
+        let recovered: Astrometric<spherical::direction::EquatorialMeanJ2000> =
             apparent.to_astrometric(&obs);
 
         // Should be very close to original
@@ -381,7 +382,7 @@ mod tests {
 
         // At the north pole
         let astrometric =
-            Astrometric::new(spherical::direction::Equatorial::new(0.0 * DEG, 90.0 * DEG));
+            Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(0.0 * DEG, 90.0 * DEG));
 
         let apparent = astrometric.to_apparent(&obs);
 
@@ -398,15 +399,16 @@ mod tests {
         let jd = JulianDate::J2000;
         let obs = ObserverState::geocentric(jd);
 
-        let astrometric = Astrometric::new(spherical::direction::Equatorial::new(
+        let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
             10.0 * DEG,
             20.0 * DEG,
         ));
         let apparent = astrometric.to_apparent(&obs);
 
         // These are different types - can't be confused
-        let _astrometric_inner: &spherical::direction::Equatorial = astrometric.direction();
-        let _apparent_inner: &spherical::direction::Equatorial = apparent.direction();
+        let _astrometric_inner: &spherical::direction::EquatorialMeanJ2000 =
+            astrometric.direction();
+        let _apparent_inner: &spherical::direction::EquatorialMeanJ2000 = apparent.direction();
 
         // The wrappers make the distinction explicit
         assert!(format!("{}", astrometric).contains("Astrometric"));

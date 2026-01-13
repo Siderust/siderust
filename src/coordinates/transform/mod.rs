@@ -2,7 +2,7 @@
 //!
 //! This module provides a unified and extensible framework for transforming astronomical coordinates
 //! between different reference centers (e.g., Barycentric, Heliocentric, Geocentric, Topocentric)
-//! and reference frames (e.g., Ecliptic, Equatorial, ICRS, Horizontal).
+//! and reference frames (e.g., Ecliptic, EquatorialMeanJ2000, ICRS, Horizontal).
 //!
 //! ## Core Concepts
 //!
@@ -32,11 +32,13 @@
 //! ```rust
 //! use siderust::coordinates::cartesian::{line_of_sight, Position};
 //! use siderust::coordinates::centers::Geocentric;
-//! use siderust::coordinates::frames::Equatorial;
+//! use siderust::coordinates::frames::EquatorialMeanJ2000;
 //! use qtty::*;
 //!
-//! let observer = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(0.0, 0.0, 0.0);
-//! let target = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 1.0, 1.0);
+//! let observer =
+//!     Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
+//! let target =
+//!     Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 1.0, 1.0);
 //!
 //! let direction = line_of_sight(&observer, &target);
 //! ```
@@ -49,7 +51,7 @@
 //! use qtty::AstronomicalUnit;
 //! use siderust::astro::JulianDate;
 //!
-//! let cart_eq = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 2.0, 3.0);
+//! let cart_eq = Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 2.0, 3.0);
 //! let jd = JulianDate::J2000;
 //! // Transform to Geocentric Ecliptic coordinates (frame transform)
 //! let cart_geo_ecl: Position<Geocentric, Ecliptic, AstronomicalUnit> = cart_eq.to_frame();

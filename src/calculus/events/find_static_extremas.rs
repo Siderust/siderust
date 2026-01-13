@@ -1,7 +1,8 @@
 use super::Culmination;
-use crate::astro::{nutation::corrected_ra_with_nutation, sidereal, JulianDate};
+use crate::astro::{nutation::corrected_ra_with_nutation, precession, sidereal, JulianDate};
 use crate::coordinates::{
-    centers::Geocentric, frames::Equatorial, spherical::position::Geographic, spherical::Position,
+    centers::Geocentric, frames::EquatorialMeanJ2000, spherical::position::Geographic,
+    spherical::Position,
 };
 use crate::targets::Target;
 use qtty::Simplify;
@@ -49,7 +50,7 @@ use qtty::*;
 ///
 /// ---
 pub fn find_static_extremas<U: LengthUnit>(
-    target: &Target<Position<Geocentric, Equatorial, U>>,
+    target: &Target<Position<Geocentric, EquatorialMeanJ2000, U>>,
     observer: &Geographic,
     jd_start: JulianDate,
     jd_end: JulianDate,
@@ -59,7 +60,8 @@ pub fn find_static_extremas<U: LengthUnit>(
     type DegreesPerDay = qtty::Quantity<qtty::Per<Degree, Day>>;
     const D_LST_D_JD: DegreesPerDay = Quantity::new(360.985_647_366_29); // Earth rotation freq.
 
-    let ra: Degrees = corrected_ra_with_nutation(&target.get_position().direction(), jd_start);
+    let mean_of_date = precession::precess_from_j2000(target.get_position().clone(), jd_start);
+    let ra: Degrees = corrected_ra_with_nutation(&mean_of_date.direction(), jd_start);
 
     let lon: Degrees = observer.lon();
     let mut out = Vec::new();

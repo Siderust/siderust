@@ -1,4 +1,5 @@
 pub mod direction;
+mod bias;
 pub mod to_ecliptic;
 pub mod to_equatorial;
 pub mod to_horizontal;

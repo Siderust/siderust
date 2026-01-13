@@ -14,7 +14,9 @@
 //!
 //! - [`ICRS`]: International Celestial Reference System (quasi-inertial, fundamental reference).
 //! - [`Horizontal`]: Local horizon system (altitude-azimuth).
-//! - [`Equatorial`]: Equatorial coordinate system (right ascension and declination).
+//! - [`EquatorialMeanJ2000`]: Mean equator/equinox of J2000 (FK5/J2000 mean).
+//! - [`EquatorialMeanOfDate`]: Mean equator/equinox of date (precessed, no nutation).
+//! - [`EquatorialTrueOfDate`]: True equator/equinox of date (precession + nutation).
 //! - [`Ecliptic`]: Ecliptic coordinate system (based on the plane of Earth's orbit).
 //! - [`ITRF`]: International Terrestrial Reference Frame (Earth-fixed).
 //! - [`ECEF`]: Earth-Centered, Earth-Fixed (geocentric, rotating with the Earth).
@@ -65,13 +67,26 @@ pub struct ICRS;
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
 pub struct Horizontal;
 
-/// Equatorial coordinate system.
+/// Mean equator and equinox of J2000.0 (FK5/J2000 mean).
 ///
-/// Based on Earth's equator and the vernal equinox.
-/// Uses right ascension (RA) and declination (Dec).
-/// May be fixed to a specific epoch (e.g., J2000) or rotating with precession.
+/// Earth-based mean equator/equinox at epoch J2000.0, with nutation removed.
+/// This is the classic "J2000 equatorial" frame used by many catalogs.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct Equatorial;
+pub struct EquatorialMeanJ2000;
+
+/// Mean equator and equinox of date.
+///
+/// Earth-based mean equator/equinox at a given epoch (precession applied,
+/// nutation removed). Requires a TT epoch for transformations.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+pub struct EquatorialMeanOfDate;
+
+/// True equator and equinox of date.
+///
+/// Earth-based true equator/equinox at a given epoch (precession + nutation).
+/// Requires a TT epoch for transformations.
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+pub struct EquatorialTrueOfDate;
 
 /// Ecliptic coordinate system.
 ///
@@ -106,12 +121,12 @@ pub struct Galactic;
 // MutableFrame: Marker for Transformable Frames
 // =============================================================================
 
-/// Marker trait for frames that support mutual transformations.
+/// Marker trait for frames that support time-independent mutual transformations.
 ///
 /// This trait is implemented for frames between which coordinate
-/// transformations are currently supported (ICRS, Ecliptic, Equatorial).
+/// transformations are currently supported (ICRS, Ecliptic, EquatorialMeanJ2000).
 pub trait MutableFrame: ReferenceFrame {}
 
 impl MutableFrame for ICRS {}
 impl MutableFrame for Ecliptic {}
-impl MutableFrame for Equatorial {}
+impl MutableFrame for EquatorialMeanJ2000 {}

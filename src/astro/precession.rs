@@ -93,6 +93,7 @@ use std::f64::consts::TAU;
 
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
+use affn::Rotation3;
 use qtty::*;
 
 /* -------------------------------------------------------------------------
@@ -198,12 +199,18 @@ fn rotate_equatorial(
 ///
 /// Transforms mean right ascension & declination supplied at the standard
 /// reference epoch (JD 2 451 545.0) to the mean equator & equinox of `to_jd`.
+/// The `JulianDate` input is interpreted as TT.
 #[inline]
 pub fn precess_from_j2000<U: LengthUnit>(
-    mean_position: position::Equatorial<U>,
+    mean_position: position::EquatorialMeanJ2000<U>,
     to_jd: JulianDate,
-) -> position::Equatorial<U> {
-    precess_equatorial(mean_position, JulianDate::J2000, to_jd)
+) -> position::EquatorialMeanOfDate<U> {
+    let mean_of_date = position::EquatorialMeanOfDate::<U>::new(
+        mean_position.ra(),
+        mean_position.dec(),
+        mean_position.distance(),
+    );
+    precess_equatorial(mean_of_date, JulianDate::J2000, to_jd)
 }
 
 /// **Epoch → epoch** precession.
@@ -212,11 +219,12 @@ pub fn precess_from_j2000<U: LengthUnit>(
 /// * `from_jd`, `to_jd` – Julian Days of source and target epochs.
 ///
 /// Returns the coordinates referred to `to_jd`.
+/// The `JulianDate` inputs are interpreted as TT.
 pub fn precess_equatorial<U: LengthUnit>(
-    position: position::Equatorial<U>,
+    position: position::EquatorialMeanOfDate<U>,
     from_jd: JulianDate,
     to_jd: JulianDate,
-) -> position::Equatorial<U> {
+) -> position::EquatorialMeanOfDate<U> {
     let ra0 = position.ra().to::<Radian>();
     let dec0 = position.dec().to::<Radian>();
 
@@ -227,12 +235,43 @@ pub fn precess_equatorial<U: LengthUnit>(
 
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
-    position::Equatorial::<U>::new(ra.to::<Degree>(), dec.to::<Degree>(), position.distance())
+    position::EquatorialMeanOfDate::<U>::new(
+        ra.to::<Degree>(),
+        dec.to::<Degree>(),
+        position.distance(),
+    )
+}
+
+/// Precession rotation matrix from `from_jd` mean equator/equinox to `to_jd`.
+///
+/// The input and output frames are **mean equator/equinox** (nutation removed).
+/// The `JulianDate` inputs are interpreted as TT.
+pub fn precession_rotation(from_jd: JulianDate, to_jd: JulianDate) -> Rotation3 {
+    let from_centuries = from_jd.julian_centuries();
+    let centuries_span = to_jd.julian_centuries() - from_centuries;
+
+    let (zeta, z, theta) = short_series_coefficients(from_centuries, centuries_span);
+
+    // Meeus Eq. 20.4 corresponds to Rz(z) * Ry(-theta) * Rz(zeta).
+    Rotation3::from_z_rotation(z.value())
+        * Rotation3::from_y_rotation(-theta.value())
+        * Rotation3::from_z_rotation(zeta.value())
+}
+
+/// Convenience precession rotation from J2000.0 mean equator/equinox to `to_jd`.
+///
+/// The `JulianDate` input is interpreted as TT.
+#[inline]
+pub fn precession_rotation_from_j2000(to_jd: JulianDate) -> Rotation3 {
+    precession_rotation(JulianDate::J2000, to_jd)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coordinates::{cartesian, centers, frames, spherical};
+    use qtty::{AstronomicalUnit, Degrees, Quantity};
+
     #[test]
     fn sirius_2025() {
         // Sirius: α0 ≈ 101.287°, δ0 ≈ −16.716° (J2000.0, Hipparcos)
@@ -271,5 +310,42 @@ mod tests {
 
         assert!(ra.value().is_finite());
         assert!(dec.value().is_sign_negative());
+    }
+
+    #[test]
+    fn precession_rotation_matches_spherical() {
+        let jd = JulianDate::new(2_460_000.5);
+        let pos = spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(
+            Degrees::new(120.0),
+            Degrees::new(-30.0),
+            1.0,
+        );
+
+        let prec = precess_from_j2000(pos.clone(), jd);
+        let cart = pos.to_cartesian();
+        let rot = precession_rotation_from_j2000(jd);
+        let [x, y, z] = rot.apply_array([
+            cart.x().value(),
+            cart.y().value(),
+            cart.z().value(),
+        ]);
+
+        let cart_rot = cartesian::Position::<
+            centers::Geocentric,
+            frames::EquatorialMeanOfDate,
+            AstronomicalUnit,
+        >::new_with_params(
+            (),
+            Quantity::<AstronomicalUnit>::new(x),
+            Quantity::<AstronomicalUnit>::new(y),
+            Quantity::<AstronomicalUnit>::new(z),
+        );
+        let sph_rot = spherical::Position::from_cartesian(&cart_rot);
+
+        let ra_diff = sph_rot.ra().abs_separation(prec.ra()).value();
+        let dec_diff = (sph_rot.dec() - prec.dec()).abs().value();
+
+        assert!(ra_diff < 1e-10, "RA mismatch: {}", ra_diff);
+        assert!(dec_diff < 1e-10, "Dec mismatch: {}", dec_diff);
     }
 }

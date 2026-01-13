@@ -8,7 +8,7 @@ This directory contains examples demonstrating how to use the siderust coordinat
 Introduction to creating and using different coordinate systems:
 - Cartesian coordinates (Position and Direction)
 - Spherical coordinates
-- Different reference frames (Ecliptic, Equatorial, ICRS)
+- Different reference frames (Ecliptic, EquatorialMeanJ2000, ICRS)
 - Different reference centers (Heliocentric, Geocentric, Barycentric)
 
 **Run with:**
@@ -18,7 +18,7 @@ cargo run --example basic_coordinates
 
 ### 2. Coordinate Transformations (`coordinate_transformations.rs`)
 Demonstrates transformations between different coordinate systems:
-- Frame transformations (Ecliptic ↔ Equatorial ↔ ICRS)
+- Frame transformations (Ecliptic ↔ EquatorialMeanJ2000 ↔ ICRS)
 - Center transformations (Heliocentric ↔ Geocentric ↔ Barycentric)
 - Combined transformations
 - Time-dependent transformations
@@ -77,7 +77,9 @@ cargo run --example solar_system_example
 ### Reference Frames
 
 - **Ecliptic**: The plane of Earth's orbit around the Sun
-- **Equatorial**: Earth's equatorial plane extended to infinity
+- **EquatorialMeanJ2000**: mean equator/equinox of J2000.0 (FK5/J2000 mean)
+- **EquatorialMeanOfDate**: mean equator/equinox of date (precession applied)
+- **EquatorialTrueOfDate**: true equator/equinox of date (precession + nutation)
 - **Horizontal**: Local horizon plane (altitude/azimuth)
 - **ICRS**: International Celestial Reference System (fixed to distant quasars)
 - **ECEF**: Earth-Centered Earth-Fixed (rotates with Earth)
@@ -93,8 +95,8 @@ This ensures compile-time safety - you can't accidentally mix incompatible coord
 
 ```rust
 // Type-safe - won't compile if centers/frames don't match
-let pos1: Position<Geocentric, Equatorial, Km> = ...;
-let pos2: Position<Geocentric, Equatorial, Km> = ...;
+let pos1: Position<Geocentric, EquatorialMeanJ2000, Km> = ...;
+let pos2: Position<Geocentric, EquatorialMeanJ2000, Km> = ...;
 let distance = pos1.distance_to(&pos2);  // ✓ OK
 
 let pos3: Position<Heliocentric, Ecliptic, Au> = ...;

@@ -1,4 +1,4 @@
-//! Frame transformation: Equatorial → Horizontal
+//! Frame transformation: EquatorialMeanOfDate → Horizontal
 //!
 //! This module implements the transformation from the equatorial frame to the
 //! horizontal (alt-az) frame for topocentric coordinates. The transformation
@@ -7,7 +7,7 @@
 use crate::astro::sidereal::{calculate_gst, calculate_lst};
 use crate::astro::JulianDate;
 use crate::coordinates::centers::{ObserverSite, Topocentric};
-use crate::coordinates::frames::{Equatorial, Horizontal};
+use crate::coordinates::frames::{EquatorialMeanOfDate, Horizontal};
 use crate::coordinates::{cartesian, spherical};
 use qtty::{Deg, Degrees, LengthUnit, Quantity, Radian, Radians};
 
@@ -84,17 +84,17 @@ fn horizontal_to_equatorial_angles(
 }
 
 // =============================================================================
-// Equatorial → Horizontal (for Topocentric center)
+// EquatorialMeanOfDate → Horizontal (for Topocentric center)
 // =============================================================================
 
 use crate::coordinates::transform::Transform;
 
-/// Transform from Equatorial to Horizontal frame for Topocentric coordinates.
+/// Transform from EquatorialMeanOfDate to Horizontal frame for Topocentric coordinates.
 ///
 /// This transformation requires the Julian Date to compute the local sidereal time.
 /// The observer's site information is taken from the coordinate's center params.
 impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
-    for cartesian::Position<Topocentric, Equatorial, U>
+    for cartesian::Position<Topocentric, EquatorialMeanOfDate, U>
 {
     fn transform(&self, jd: JulianDate) -> cartesian::Position<Topocentric, Horizontal, U> {
         let site = self.center_params();
@@ -122,14 +122,14 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
 }
 
 // =============================================================================
-// Horizontal → Equatorial (for Topocentric center)
+// Horizontal → EquatorialMeanOfDate (for Topocentric center)
 // =============================================================================
 
-/// Transform from Horizontal to Equatorial frame for Topocentric coordinates.
-impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Equatorial, U>>
+/// Transform from Horizontal to EquatorialMeanOfDate frame for Topocentric coordinates.
+impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, EquatorialMeanOfDate, U>>
     for cartesian::Position<Topocentric, Horizontal, U>
 {
-    fn transform(&self, jd: JulianDate) -> cartesian::Position<Topocentric, Equatorial, U> {
+    fn transform(&self, jd: JulianDate) -> cartesian::Position<Topocentric, EquatorialMeanOfDate, U> {
         let site = self.center_params();
 
         // Get distance and angles from Cartesian vector
@@ -160,7 +160,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Equatorial, U>>
 // =============================================================================
 
 impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Horizontal, U>>
-    for spherical::Position<Topocentric, Equatorial, U>
+    for spherical::Position<Topocentric, EquatorialMeanOfDate, U>
 {
     fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, Horizontal, U> {
         let cart: cartesian::Position<Topocentric, Horizontal, U> =
@@ -169,11 +169,11 @@ impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Horizontal, U>>
     }
 }
 
-impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Equatorial, U>>
+impl<U: LengthUnit> Transform<spherical::Position<Topocentric, EquatorialMeanOfDate, U>>
     for spherical::Position<Topocentric, Horizontal, U>
 {
-    fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, Equatorial, U> {
-        let cart: cartesian::Position<Topocentric, Equatorial, U> =
+    fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, EquatorialMeanOfDate, U> {
+        let cart: cartesian::Position<Topocentric, EquatorialMeanOfDate, U> =
             self.to_cartesian().transform(jd);
         spherical::Position::from_cartesian(&cart)
     }

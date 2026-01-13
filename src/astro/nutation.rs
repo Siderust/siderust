@@ -44,12 +44,14 @@
 //! use siderust::astro::JulianDate;
 //! use siderust::bodies::catalog::SIRIUS;
 //! use siderust::astro::nutation::{get_nutation, corrected_ra_with_nutation};
+//! use siderust::astro::precession::precess_from_j2000;
 //!
 //! let jd = JulianDate::from_utc(Utc::now());
 //! let n = get_nutation(jd);
 //! println!("Δψ = {:.4}°, Δε = {:.4}°", n.longitude, n.obliquity);
 //!
-//! let ra_app = corrected_ra_with_nutation(&SIRIUS.target.get_position().direction(), jd);
+//! let mean_of_date = precess_from_j2000(SIRIUS.target.get_position().clone(), jd);
+//! let ra_app = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
 //! println!("Apparent RA = {ra_app:.4}°");
 //! ```
 //!
@@ -59,7 +61,8 @@
 
 use crate::astro::dynamical_time::julian_ephemeris_day;
 use crate::astro::JulianDate;
-use crate::coordinates::spherical::direction::Equatorial;
+use crate::coordinates::spherical::direction::EquatorialMeanOfDate;
+use affn::Rotation3;
 use qtty::*;
 
 /// Nutation components for a given epoch (all **degrees**).
@@ -143,38 +146,60 @@ pub fn get_nutation(jd: JulianDate) -> Nutation {
 
 /// Rotate a mean position (RA, Dec) into **apparent** right ascension, applying nutation.
 #[inline]
-pub fn corrected_ra_with_nutation(target: &Equatorial, jd: JulianDate) -> Degrees {
-    // 1) Fetch nutation terms in radians
+pub fn corrected_ra_with_nutation(target: &EquatorialMeanOfDate, jd: JulianDate) -> Degrees {
+    let rot = nutation_rotation(jd);
+    let cart = target.to_cartesian();
+    let [x, y, _z] = rot.apply_array([cart.x(), cart.y(), cart.z()]);
+    Degrees::new(y.atan2(x).to_degrees().rem_euclid(360.0))
+}
+
+/// Nutation rotation matrix from mean-of-date to true-of-date.
+///
+/// The `JulianDate` input is interpreted as TT.
+pub fn nutation_rotation(jd: JulianDate) -> Rotation3 {
     let Nutation {
         longitude,
         obliquity,
         ecliptic,
     } = get_nutation(jd);
-    let dpsi = longitude.to::<Radian>();
-    let deps = obliquity.to::<Radian>();
-    let eps0 = ecliptic.to::<Radian>();
 
-    // 2) Mean equatorial coordinates → Cartesian vector
-    let (alpha, delta) = (target.ra().to::<Radian>(), target.dec().to::<Radian>());
-    let (x, y, z) = (
-        delta.cos() * alpha.cos(),
-        delta.cos() * alpha.sin(),
-        delta.sin(),
-    );
+    let dpsi = longitude.to::<Radian>().value();
+    let deps = obliquity.to::<Radian>().value();
+    let eps0 = ecliptic.to::<Radian>().value();
 
-    // 3) Rotate R1(ε₀+Δε) · R3(Δψ) · R1(−ε₀)
-    let (y1, z1) = (
-        y * (eps0 + deps).cos() - z * (eps0 + deps).sin(),
-        y * (eps0 + deps).sin() + z * (eps0 + deps).cos(),
-    );
-    let (x2, y2) = (
-        x * dpsi.cos() + y1 * dpsi.sin(),
-        -x * dpsi.sin() + y1 * dpsi.cos(),
-    );
-    let y3 = y2 * eps0.cos() + z1 * eps0.sin();
+    // R1(ε0+Δε) · R3(Δψ) · R1(−ε0)
+    Rotation3::from_x_rotation(eps0 + deps)
+        * Rotation3::from_z_rotation(dpsi)
+        * Rotation3::from_x_rotation(-eps0)
+}
 
-    // 4) Apparent RA
-    Degrees::new(y3.atan2(x2).to_degrees())
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::coordinates::spherical;
+    use qtty::{Degrees, Radian};
+
+    #[test]
+    fn nutation_rotation_matches_ra_correction() {
+        let jd = JulianDate::new(2_459_000.5);
+        let mean = spherical::direction::EquatorialMeanOfDate::new(
+            Degrees::new(123.0),
+            Degrees::new(-10.0),
+        );
+
+        let rot = nutation_rotation(jd);
+        let cart = mean.to_cartesian();
+        let [x, y, z] = rot.apply_array([cart.x(), cart.y(), cart.z()]);
+
+        let ra = y.atan2(x).to_degrees().rem_euclid(360.0);
+        let ra = Degrees::new(ra);
+        let ra_corr = corrected_ra_with_nutation(&mean, jd);
+
+        let diff = ra.abs_separation(ra_corr).to::<Radian>().value();
+        assert!(diff < 1e-10, "RA mismatch: {}", diff);
+
+        let _ = z; // preserve unused warning if additional checks are added later
+    }
 }
 
 const ARGUMENTS: [NutationArguments; TERMS] = [
