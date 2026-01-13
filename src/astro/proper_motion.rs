@@ -55,11 +55,11 @@ impl ProperMotion {
 ///
 /// Assumes motion is linear (valid for most stars over <1000 year timescales).
 fn set_proper_motion_since_epoch<U: LengthUnit>(
-    mean_position: position::Equatorial<U>,
+    mean_position: position::EquatorialMeanJ2000<U>,
     proper_motion: ProperMotion,
     jd: JulianDate,
     epoch_jd: JulianDate,
-) -> position::Equatorial<U> {
+) -> position::EquatorialMeanJ2000<U> {
     // Time difference in Julian years
     let t: Years = Years::new(
         ((jd - epoch_jd) / JulianDate::JULIAN_YEAR)
@@ -67,7 +67,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
             .value(),
     );
     // Linearly apply proper motion in RA and DEC
-    position::Equatorial::<U>::new(
+    position::EquatorialMeanJ2000::<U>::new(
         mean_position.ra() + (proper_motion.ra_μ * t).normalize(),
         (mean_position.dec() + (proper_motion.dec_μ * t)).normalize(),
         mean_position.distance,
@@ -84,10 +84,10 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
 /// # Returns
 /// Updated position after applying proper motion since J2000.0
 pub fn set_proper_motion_since_j2000<U: LengthUnit>(
-    mean_position: position::Equatorial<U>,
+    mean_position: position::EquatorialMeanJ2000<U>,
     proper_motion: ProperMotion,
     jd: JulianDate,
-) -> position::Equatorial<U> {
+) -> position::EquatorialMeanJ2000<U> {
     set_proper_motion_since_epoch(mean_position, proper_motion, jd, JulianDate::J2000)
 }
 
@@ -95,7 +95,7 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
+    use crate::coordinates::{centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position};
     use qtty::{AstronomicalUnit, Degrees};
 
     type DegreesPerYear = qtty::Quantity<qtty::Per<Degree, Year>>;
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn test_proper_motion_linear_shift() {
         // Mean position at J2000
-        let mean_position = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(
+        let mean_position = Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(
             Degrees::new(10.0), // RA = 10°
             Degrees::new(20.0), // DEC = 20°
             1.0,                // arbitrary distance

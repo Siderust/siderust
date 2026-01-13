@@ -1,5 +1,6 @@
 use super::Culmination;
 use crate::astro::nutation::corrected_ra_with_nutation;
+use crate::astro::precession;
 use crate::astro::JulianDate;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
@@ -56,13 +57,14 @@ pub fn find_dynamic_extremas<F, U: LengthUnit>(
     jd_end: JulianDate,
 ) -> Vec<Culmination>
 where
-    F: Fn(JulianDate) -> Target<Position<Geocentric, frames::Equatorial, U>> + Copy,
+    F: Fn(JulianDate) -> Target<Position<Geocentric, frames::EquatorialMeanJ2000, U>> + Copy,
 {
     // ────────────────────────────────────────────────────────────
     // Helper: hour angle H(jd) [rad]
     // ────────────────────────────────────────────────────────────
     let hour_angle = |jd: JulianDate| -> Radians {
-        let ra_nut = corrected_ra_with_nutation(&get_equatorial(jd).get_position().direction(), jd);
+        let mean_of_date = precession::precess_from_j2000(get_equatorial(jd).get_position().clone(), jd);
+        let ra_nut = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
         let ra = ra_nut.to::<Radian>();
         let theta = gast_fast(jd).to::<Radian>() + observer.lon().to::<Radian>(); // local sidereal time
         (theta - ra).wrap_signed() // H in (−π, π]
@@ -149,6 +151,21 @@ where
             Culmination::Upper { jd } | Culmination::Lower { jd } => jd,
         };
         jd_a.partial_cmp(jd_b).unwrap()
+    });
+
+    // Deduplicate: coarse scan can bracket the same root twice when the step
+    // boundaries land very close to the crossing.
+    const DEDUPE_EPS: f64 = 1e-6; // days (~0.0864 s)
+    out.dedup_by(|a, b| match (a, b) {
+        (
+            Culmination::Upper { jd: jd_a },
+            Culmination::Upper { jd: jd_b },
+        )
+        | (
+            Culmination::Lower { jd: jd_a },
+            Culmination::Lower { jd: jd_b },
+        ) => (jd_a.value() - jd_b.value()).abs() < DEDUPE_EPS,
+        _ => false,
     });
     out
 }

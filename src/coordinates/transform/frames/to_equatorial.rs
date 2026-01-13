@@ -1,14 +1,17 @@
+use super::bias::frame_bias_icrs_to_j2000;
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
+use affn::Rotation3;
 use qtty::LengthUnit;
 
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
-impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equatorial, U>>
+impl<C: ReferenceCenter, U: LengthUnit>
+    TransformFrame<Position<C, frames::EquatorialMeanJ2000, U>>
     for Position<C, frames::Ecliptic, U>
 {
-    fn to_frame(&self) -> Position<C, frames::Equatorial, U> {
+    fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
         let eps = 23.439281_f64.to_radians(); // obliquity in radians
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
@@ -21,12 +24,17 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equat
     }
 }
 
-// Implement Transform trait for ICRS -> Equatorial (identity)
-impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equatorial, U>>
-    for Position<C, frames::ICRS, U>
+// Implement Transform trait for ICRS -> EquatorialMeanJ2000 (frame bias)
+impl<C: ReferenceCenter, U: LengthUnit>
+    TransformFrame<Position<C, frames::EquatorialMeanJ2000, U>> for Position<C, frames::ICRS, U>
 {
-    fn to_frame(&self) -> Position<C, frames::Equatorial, U> {
-        Position::from_vec3(self.center_params().clone(), *self.as_vec3())
+    fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
+        let rot: Rotation3 = frame_bias_icrs_to_j2000();
+        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
+        Position::from_vec3(
+            self.center_params().clone(),
+            nalgebra::Vector3::new(x.into(), y.into(), z.into()),
+        )
     }
 }
 
@@ -48,8 +56,11 @@ mod tests {
                 Degrees::new(-21.0),
                 2.7,
             );
-        let equatorial: Position<centers::Barycentric, frames::Equatorial, AstronomicalUnit> =
-            ecliptic_orig.transform(JulianDate::J2000);
+        let equatorial: Position<
+            centers::Barycentric,
+            frames::EquatorialMeanJ2000,
+            AstronomicalUnit,
+        > = ecliptic_orig.transform(JulianDate::J2000);
         let ecliptic_rec: Position<centers::Barycentric, frames::Ecliptic, AstronomicalUnit> =
             equatorial.transform(JulianDate::J2000);
 

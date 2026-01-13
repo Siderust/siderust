@@ -2,7 +2,7 @@ use crate::astro::sidereal::unmodded_gst;
 use crate::astro::JulianDate;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
-use crate::coordinates::frames::{Equatorial, MutableFrame, ECEF};
+use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
 use crate::coordinates::transform::centers::TransformCenter;
 use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity, Radian};
 
@@ -46,7 +46,7 @@ pub trait ToTopocentricExt<F: MutableFrame, U: LengthUnit> {
 impl<F: MutableFrame, U: LengthUnit> ToTopocentricExt<F, U> for Position<Geocentric, F, U>
 where
     Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
-    Position<Geocentric, Equatorial, U>:
+    Position<Geocentric, EquatorialMeanJ2000, U>:
         crate::coordinates::transform::TransformFrame<Position<Geocentric, F, U>>,
 {
     /// Transform to topocentric coordinates with a specific observer site.
@@ -56,13 +56,13 @@ where
     /// ```rust
     /// use siderust::coordinates::cartesian::Position;
     /// use siderust::coordinates::centers::{Geocentric, Topocentric, ObserverSite};
-    /// use siderust::coordinates::frames::Equatorial;
+    /// use siderust::coordinates::frames::EquatorialMeanJ2000;
     /// use siderust::coordinates::transform::centers::ToTopocentricExt;
     /// use siderust::astro::JulianDate;
     /// use qtty::*;
     ///
     /// // Moon at roughly 384,400 km from Earth's center
-    /// let moon_geo = Position::<Geocentric, Equatorial, Kilometer>::new(
+    /// let moon_geo = Position::<Geocentric, EquatorialMeanJ2000, Kilometer>::new(
     ///     384_400.0, 0.0, 0.0
     /// );
     ///
@@ -90,7 +90,7 @@ where
         let y_eq = site_itrf.x().value() * sin_g + site_itrf.y().value() * cos_g;
         let z_eq = site_itrf.z().value();
 
-        let site_equatorial = Position::<Geocentric, Equatorial, U>::new_with_params(
+        let site_equatorial = Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params(
             (),
             Quantity::<U>::new(x_eq),
             Quantity::<U>::new(y_eq),
@@ -120,7 +120,7 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
     for Position<Topocentric, F, U>
 where
     Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
-    Position<Geocentric, Equatorial, U>:
+    Position<Geocentric, EquatorialMeanJ2000, U>:
         crate::coordinates::transform::TransformFrame<Position<Geocentric, F, U>>,
 {
     /// Transform back to geocentric coordinates.
@@ -149,7 +149,7 @@ where
         let y_eq = site_itrf.x().value() * sin_g + site_itrf.y().value() * cos_g;
         let z_eq = site_itrf.z().value();
 
-        let site_equatorial = Position::<Geocentric, Equatorial, U>::new_with_params(
+        let site_equatorial = Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params(
             (),
             Quantity::<U>::new(x_eq),
             Quantity::<U>::new(y_eq),
@@ -205,7 +205,8 @@ mod tests {
     #[test]
     fn test_topocentric_parallax_moon_like() {
         // Simulate Moon-like object at 384,400 km along x-axis
-        let moon_geo = position::Equatorial::<Kilometer, Geocentric>::new(384_400.0, 0.0, 0.0);
+        let moon_geo =
+            position::EquatorialMeanJ2000::<Kilometer, Geocentric>::new(384_400.0, 0.0, 0.0);
 
         // Observer at equator, prime meridian
         let site = ObserverSite::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
@@ -228,14 +229,17 @@ mod tests {
     #[test]
     fn test_topocentric_roundtrip() {
         // Create a geocentric position
-        let geo = position::Equatorial::<Kilometer, Geocentric>::new(100_000.0, 50_000.0, 25_000.0);
+        let geo = position::EquatorialMeanJ2000::<Kilometer, Geocentric>::new(
+            100_000.0, 50_000.0, 25_000.0,
+        );
 
         let site = ObserverSite::new(10.0 * DEG, 45.0 * DEG, 100.0 * M);
         let jd = JulianDate::J2000;
 
         // Convert to topocentric and back
         let topo = geo.to_topocentric(site, jd);
-        let geo_recovered: position::Equatorial<Kilometer, Geocentric> = topo.to_center(jd);
+        let geo_recovered: position::EquatorialMeanJ2000<Kilometer, Geocentric> =
+            topo.to_center(jd);
 
         // Should recover original position
         assert!(
@@ -261,7 +265,7 @@ mod tests {
     #[test]
     fn test_distant_object_small_parallax() {
         // Very distant object (star-like, 100 pc = ~3e15 km)
-        let star_geo = position::Equatorial::<Au, Geocentric>::new(
+        let star_geo = position::EquatorialMeanJ2000::<Au, Geocentric>::new(
             206265.0, 0.0, 0.0, // ~1 parsec
         );
 

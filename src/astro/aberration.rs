@@ -13,7 +13,7 @@
 //! * **Heliocentric velocity** of the Earth is computed analytically from its
 //!   VSOP87A coefficients (exact derivative of the 6 power‑series per axis).
 //! * Output is **AU day⁻¹** in the *ecliptic J2000* frame and then rotated to
-//!   the **true equator & equinox of date** to match the target vector.
+//!   the **mean equator & equinox of J2000** to match the target vector.
 //!
 //! ## References
 //! * Bretagnon & Simon (1988) – VSOP87
@@ -44,24 +44,24 @@ type AusPerDay = qtty::velocity::Velocity<AstronomicalUnit, Day>;
 //            = 173.144_632_674... AU/day
 const AU_PER_DAY_C: AusPerDay = AusPerDay::new(173.1446334836104);
 
-/// Apply **annual aberration** to a unit direction vector (true‑of‑date).
+/// Apply **annual aberration** to a unit direction vector (mean J2000).
 ///
-/// * `mean` – Geocentric unit vector in the true equator & equinox of date.
+/// * `mean` – Geocentric unit vector in the mean equator & equinox of J2000.
 /// * `jd`   – Epoch TT (*Julian Day*).
 ///
 /// Returns a new [`Direction`] including annual aberration.
 #[must_use]
 pub fn apply_aberration_to_direction(
-    mean: direction::Equatorial,
+    mean: direction::EquatorialMeanJ2000,
     jd: JulianDate,
-) -> direction::Equatorial {
+) -> direction::EquatorialMeanJ2000 {
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.to_frame();
+    let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity.to_frame();
 
     //--------------------------------------------------------------------
     // Apply û' = û + v/c
     //--------------------------------------------------------------------
-    direction::Equatorial::normalize(
+    direction::EquatorialMeanJ2000::normalize(
         mean.x() + (velocity.x() / AU_PER_DAY_C).simplify().value(),
         mean.y() + (velocity.y() / AU_PER_DAY_C).simplify().value(),
         mean.z() + (velocity.z() / AU_PER_DAY_C).simplify().value(),
@@ -72,16 +72,16 @@ pub fn apply_aberration_to_direction(
 /// Inverse operation of [`apply_aberration_to_direction`].
 #[must_use]
 pub fn remove_aberration_from_direction(
-    app: direction::Equatorial,
+    app: direction::EquatorialMeanJ2000,
     jd: JulianDate,
-) -> direction::Equatorial {
+) -> direction::EquatorialMeanJ2000 {
     let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<frames::Equatorial, AuPerDay> = velocity.to_frame();
+    let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity.to_frame();
 
     //--------------------------------------------------------------------
     //  Apply û' = û - v/c
     //--------------------------------------------------------------------
-    direction::Equatorial::normalize(
+    direction::EquatorialMeanJ2000::normalize(
         app.x() - (velocity.x() / AU_PER_DAY_C).simplify().value(),
         app.y() - (velocity.y() / AU_PER_DAY_C).simplify().value(),
         app.z() - (velocity.z() / AU_PER_DAY_C).simplify().value(),
@@ -92,9 +92,9 @@ pub fn remove_aberration_from_direction(
 /// geocentric distance.
 #[must_use]
 pub fn apply_aberration<U: LengthUnit>(
-    mean: position::Equatorial<U>,
+    mean: position::EquatorialMeanJ2000<U>,
     jd: JulianDate,
-) -> position::Equatorial<U> {
+) -> position::EquatorialMeanJ2000<U> {
     if mean.distance() == 0.0 {
         // Don't look at your feet!
         return mean;
@@ -111,9 +111,9 @@ pub fn apply_aberration<U: LengthUnit>(
 /// geocentric distance.
 #[must_use]
 pub fn remove_aberration<U: LengthUnit>(
-    app: position::Equatorial<U>,
+    app: position::EquatorialMeanJ2000<U>,
     jd: JulianDate,
-) -> position::Equatorial<U> {
+) -> position::EquatorialMeanJ2000<U> {
     if app.distance() == 0.0 {
         // Don't look at your feet!
         return app;
@@ -132,16 +132,17 @@ mod tests {
     use crate::coordinates::spherical::{self, position};
 
     fn apply_aberration_sph<U: LengthUnit>(
-        mean: &position::Equatorial<U>,
+        mean: &position::EquatorialMeanJ2000<U>,
         jd: JulianDate,
-    ) -> position::Equatorial<U> {
+    ) -> position::EquatorialMeanJ2000<U> {
         spherical::Position::from_cartesian(&apply_aberration(mean.to_cartesian(), jd))
     }
 
     #[test]
     fn test_aberration_preserva_distance_and_epoch() {
         let jd = JulianDate::new(2451545.0); // J2000.0
-        let mean = position::Equatorial::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
+        let mean =
+            position::EquatorialMeanJ2000::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
         let out = apply_aberration_sph(&mean, jd);
 
         assert_eq!(out.distance().value(), mean.distance().value());
@@ -150,7 +151,7 @@ mod tests {
     #[test]
     fn test_aberration_introduces_shift() {
         let jd = JulianDate::new(2451545.0); // J2000.0
-        let mean = position::Equatorial::<Au>::new(
+        let mean = position::EquatorialMeanJ2000::<Au>::new(
             Degrees::new(0.0), // RA = 0°
             Degrees::new(0.0), // Dec = 0°
             1.0,
@@ -172,7 +173,7 @@ mod tests {
     #[test]
     fn test_aberration_at_north_pole() {
         let jd = JulianDate::new(2451545.0);
-        let mean = position::Equatorial::<Au>::new(
+        let mean = position::EquatorialMeanJ2000::<Au>::new(
             Degrees::new(123.4), // dummy RA
             Degrees::new(90.0),  // Dec = +90°
             1.0,

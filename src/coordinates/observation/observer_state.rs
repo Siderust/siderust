@@ -23,7 +23,7 @@ use crate::astro::JulianDate;
 use crate::bodies::solar_system::Earth;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::ObserverSite;
-use crate::coordinates::frames::Equatorial;
+use crate::coordinates::frames::EquatorialMeanJ2000;
 use qtty::{AstronomicalUnit, Day};
 
 /// Velocity unit: AU per day
@@ -58,7 +58,7 @@ pub type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 #[derive(Debug, Clone)]
 pub struct ObserverState {
     /// Observer velocity in equatorial coordinates (AU/day)
-    velocity: Velocity<Equatorial, AuPerDay>,
+    velocity: Velocity<EquatorialMeanJ2000, AuPerDay>,
     /// Julian Date of observation
     jd: JulianDate,
 }
@@ -88,7 +88,7 @@ impl ObserverState {
         let vel_ecl = Earth::vsop87a_vel(jd);
 
         // Transform to equatorial frame
-        let velocity: Velocity<Equatorial, AuPerDay> = vel_ecl.to_frame();
+        let velocity: Velocity<EquatorialMeanJ2000, AuPerDay> = vel_ecl.to_frame();
 
         Self { velocity, jd }
     }
@@ -114,7 +114,7 @@ impl ObserverState {
         let vel_ecl = Earth::vsop87a_vel(jd);
 
         // Transform to equatorial frame
-        let velocity: Velocity<Equatorial, AuPerDay> = vel_ecl.to_frame();
+        let velocity: Velocity<EquatorialMeanJ2000, AuPerDay> = vel_ecl.to_frame();
 
         // TODO: Add diurnal velocity from Earth rotation
         // For a complete implementation, we would add the observer's
@@ -132,12 +132,15 @@ impl ObserverState {
     ///
     /// * `velocity` - Observer velocity in equatorial coordinates
     /// * `jd` - The Julian Date of observation
-    pub fn from_velocity(velocity: Velocity<Equatorial, AuPerDay>, jd: JulianDate) -> Self {
+    pub fn from_velocity(
+        velocity: Velocity<EquatorialMeanJ2000, AuPerDay>,
+        jd: JulianDate,
+    ) -> Self {
         Self { velocity, jd }
     }
 
     /// Returns the observer's velocity in equatorial coordinates.
-    pub fn velocity(&self) -> &Velocity<Equatorial, AuPerDay> {
+    pub fn velocity(&self) -> &Velocity<EquatorialMeanJ2000, AuPerDay> {
         &self.velocity
     }
 
