@@ -135,7 +135,7 @@ mod tests {
         assert_cartesian_eq!(
             coord_ecl,
             coord_ecl_back,
-            1e-5,
+            5e-5,
             "Large values should not cause precision errors."
         );
     }

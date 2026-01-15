@@ -1,12 +1,12 @@
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::{Earth, Sun};
 use crate::coordinates::transform::centers::TransformCenter;
-use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{
     cartesian::position::Ecliptic,
     cartesian::Position,
     centers::{Barycentric, Geocentric, Heliocentric},
-    frames::MutableFrame,
+    frames::{self, MutableFrame},
+    transform::Transform,
 };
 use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
@@ -15,7 +15,7 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>
     for Position<Heliocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Ecliptic<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>,
+    (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let sun_bary_ecl_au = *Sun::vsop87e(jd).get_position();
@@ -27,7 +27,7 @@ where
             sun_bary_ecl_au.z(),
         );
 
-        let sun_bary_f: Position<Barycentric, F, U> = sun_bary_ecl.to_frame(); // (Bary-Ecl) -> (Bary-F)
+        let sun_bary_f: Position<Barycentric, F, U> = sun_bary_ecl.transform(jd); // (Bary-Ecl) -> (Bary-F)
         Position::from_vec3_origin(self.as_vec3() + sun_bary_f.as_vec3())
     }
 }
@@ -37,7 +37,7 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>
     for Position<Geocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Ecliptic<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>,
+    (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let earth_bary_ecl_au = *Earth::vsop87e(jd).get_position();
@@ -49,7 +49,7 @@ where
             earth_bary_ecl_au.z(),
         );
 
-        let earth_bary_f: Position<Barycentric, F, U> = earth_bary_ecl.to_frame();
+        let earth_bary_f: Position<Barycentric, F, U> = earth_bary_ecl.transform(jd);
         Position::from_vec3_origin(self.as_vec3() + earth_bary_f.as_vec3())
     }
 }

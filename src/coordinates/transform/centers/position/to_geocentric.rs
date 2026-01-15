@@ -4,8 +4,8 @@ use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::{
     cartesian::position::{Ecliptic, Position},
     centers::{Barycentric, Geocentric, Heliocentric},
-    frames::MutableFrame,
-    transform::TransformFrame,
+    frames::{self, MutableFrame},
+    transform::Transform,
 };
 use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
@@ -21,7 +21,7 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
     for Position<Barycentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Ecliptic<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>,
+    (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         // Get Earth's position in barycentric ecliptic coordinates
@@ -33,7 +33,7 @@ where
         );
 
         // Transform Earth to the target frame
-        let earth: Position<Barycentric, F, U> = earth_ecl.to_frame();
+        let earth: Position<Barycentric, F, U> = earth_ecl.transform(jd);
 
         // Pure translation: geocentric = barycentric - earth_position
         Position::<Geocentric, F, U>::from_vec3_origin(self.as_vec3() - earth.as_vec3())
@@ -48,7 +48,7 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
     for Position<Heliocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Ecliptic<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>,
+    (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         // Get Earth's position in heliocentric ecliptic coordinates
@@ -60,7 +60,7 @@ where
         );
 
         // Transform Earth to the target frame
-        let earth: Position<Heliocentric, F, U> = earth_ecl.to_frame();
+        let earth: Position<Heliocentric, F, U> = earth_ecl.transform(jd);
 
         // Pure translation: geocentric = heliocentric - earth_position
         Position::<Geocentric, F, U>::from_vec3_origin(self.as_vec3() - earth.as_vec3())
