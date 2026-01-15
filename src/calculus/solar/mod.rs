@@ -31,7 +31,4 @@ mod sun_equations;
 
 pub mod altitude_periods;
 
-pub use altitude_periods::{
-	find_sun_above_altitude, find_sun_below_altitude, find_sun_in_altitude_range, sun_altitude_rad,
-	twilight,
-};
+pub use altitude_periods::*;

@@ -144,15 +144,14 @@ impl AltitudeCondition {
 /// 5. Pair crossings to form contiguous intervals
 pub fn find_altitude_periods<F>(
     altitude_fn: F,
-    mjd_start: ModifiedJulianDate,
-    mjd_end: ModifiedJulianDate,
+    period: Period<ModifiedJulianDate>,
     condition: AltitudeCondition,
 ) -> Option<Vec<AltitudePeriod>>
 where
     F: Fn(JulianDate) -> f64,
 {
-    let jd_start = mjd_start.to_julian_day();
-    let jd_end = mjd_end.to_julian_day();
+    let jd_start = period.start.to_julian_day();
+    let jd_end = period.end.to_julian_day();
 
     // Collect all boundary crossings (may be 1 or 2 boundaries depending on condition)
     let boundaries = match condition {
@@ -232,7 +231,7 @@ where
         // No crossings found
         if start_inside {
             // Entire interval is valid
-            return Some(vec![AltitudePeriod::new(mjd_start, mjd_end)]);
+            return Some(vec![period]);
         } else {
             // Never valid
             return None;
@@ -249,7 +248,7 @@ where
         let mid = JulianDate::new((jd_start.value() + labeled[0].0.value()) * 0.5);
         let mid_inside = condition.is_inside(altitude_fn(mid));
         if mid_inside {
-            periods.push(AltitudePeriod::new(mjd_start, exit_mjd));
+            periods.push(AltitudePeriod::new(period.start, exit_mjd));
         }
         i = 1;
     }
@@ -269,7 +268,7 @@ where
             } else {
                 // No exit found, extends to end of interval
                 i += 1;
-                mjd_end
+                period.end
             };
 
             // Verify midpoint is actually inside the range
@@ -330,8 +329,7 @@ mod tests {
 
         let periods = find_altitude_periods(
             altitude_fn,
-            mjd_start,
-            mjd_end,
+            Period::new(mjd_start, mjd_end),
             AltitudeCondition::below(Degrees::new(0.0)),
         );
         assert!(periods.is_some());
