@@ -22,14 +22,14 @@
 use crate::astro::JulianDate;
 use crate::coordinates::centers::ObserverSite;
 use crate::time::{ModifiedJulianDate, Period};
-use qtty::{Days, Degrees, Radian};
+use qtty::{Day, Days, Degrees, Minutes, Radian};
 
 // =============================================================================
 // Constants
 // =============================================================================
 
-/// Scan step for coarse bracket detection (10 minutes)
-const SCAN_STEP_DAYS: f64 = 10.0 / (24.0 * 60.0);
+/// Scan step for coarse bracket detection (10 minutes).
+const SCAN_STEP: Minutes = Minutes::new(10.0);
 
 // Root-finding constants and implementations have been moved to
 // `crate::calculus::root_finding` for reuse.
@@ -121,7 +121,7 @@ impl AltitudeThreshold {
 /// - `None`: If the altitude never crosses the threshold (always in or always out)
 ///
 /// # Algorithm
-/// 1. Coarse scan the interval at `SCAN_STEP_DAYS` intervals
+/// 1. Coarse scan the interval at `SCAN_STEP` intervals
 /// 2. Detect sign changes of `altitude - threshold`
 /// 3. Refine each crossing using Newton-Raphson + bisection fallback
 /// 4. Classify crossings as "entering" or "exiting" the valid range
@@ -145,7 +145,7 @@ where
     // We'll find all crossings, then classify them based on derivative sign.
     
     // Coarse scan to find brackets
-    let step = Days::new(SCAN_STEP_DAYS);
+    let step: Days = SCAN_STEP.to::<Day>();
     let mut jd = jd_start;
     let mut prev_f = altitude_fn(jd) - threshold_rad;
     let mut crossings: Vec<JulianDate> = Vec::new();
