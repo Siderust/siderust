@@ -38,7 +38,7 @@
 //! let sat_params = BodycentricParams::geocentric(satellite_orbit);
 //!
 //! // Transform a geocentric position to satellite-centric
-//! let target_geo: Position<Geocentric, frames::Equatorial, AstronomicalUnit> =
+//! let target_geo: Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
 //!     Position::new(0.00257, 0.0, 0.0); // Moon distance in AU
 //!
 //! let target_from_sat = target_geo.to_bodycentric(sat_params, JulianDate::J2000);

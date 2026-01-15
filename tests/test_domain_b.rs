@@ -10,7 +10,7 @@ use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::coordinates::cartesian::{line_of_sight, Position};
 use siderust::coordinates::centers::{Geocentric, Heliocentric, ObserverSite};
-use siderust::coordinates::frames::Equatorial;
+use siderust::coordinates::frames::EquatorialMeanJ2000;
 use siderust::coordinates::observation::{Apparent, Astrometric, ObserverState};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
@@ -23,14 +23,14 @@ use siderust::coordinates::transform::{Transform, TransformCenter};
 #[test]
 fn center_transforms_do_not_apply_aberration() {
     // Create a distant star in heliocentric coordinates
-    let star_helio = Position::<Heliocentric, Equatorial, Au>::new(
+    let star_helio = Position::<Heliocentric, EquatorialMeanJ2000, Au>::new(
         10000.0, 0.0, 0.0, // 10000 AU along x-axis
     );
 
     let jd = JulianDate::J2000;
 
     // Transform to geocentric - should be pure translation
-    let star_geo: Position<Geocentric, Equatorial, Au> = star_helio.transform(jd);
+    let star_geo: Position<Geocentric, EquatorialMeanJ2000, Au> = star_helio.transform(jd);
 
     // The position should be shifted by approximately Earth's position (~1 AU)
     // but the direction should NOT have aberration applied
@@ -54,13 +54,14 @@ fn center_transforms_do_not_apply_aberration() {
 #[test]
 fn roundtrip_center_transform_preserves_position() {
     // This test verifies center transforms are reversible (pure geometry)
-    let pos_helio = Position::<Heliocentric, Equatorial, Au>::new(1000.0, 500.0, -200.0);
+    let pos_helio = Position::<Heliocentric, EquatorialMeanJ2000, Au>::new(1000.0, 500.0, -200.0);
 
     let jd = JulianDate::J2000;
 
     // Helio -> Geo -> Helio should recover original position
-    let pos_geo: Position<Geocentric, Equatorial, Au> = pos_helio.transform(jd);
-    let pos_helio_recovered: Position<Heliocentric, Equatorial, Au> = pos_geo.transform(jd);
+    let pos_geo: Position<Geocentric, EquatorialMeanJ2000, Au> = pos_helio.transform(jd);
+    let pos_helio_recovered: Position<Heliocentric, EquatorialMeanJ2000, Au> =
+        pos_geo.transform(jd);
 
     // Should recover within floating-point precision
     assert!(
@@ -89,18 +90,19 @@ fn astrometric_and_apparent_are_distinct_types() {
     let obs = ObserverState::geocentric(jd);
 
     // Create an astrometric direction
-    let astrometric = Astrometric::new(spherical::direction::Equatorial::new(
+    let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
         180.0 * DEG,
         45.0 * DEG,
     ));
 
     // Convert to apparent
-    let apparent: Apparent<spherical::direction::Equatorial> = astrometric.to_apparent(&obs);
+    let apparent: Apparent<spherical::direction::EquatorialMeanJ2000> =
+        astrometric.to_apparent(&obs);
 
     // The two types are distinct at compile time
     // We can access the underlying directions
-    let _astro_dir: &spherical::direction::Equatorial = astrometric.direction();
-    let _app_dir: &spherical::direction::Equatorial = apparent.direction();
+    let _astro_dir: &spherical::direction::EquatorialMeanJ2000 = astrometric.direction();
+    let _app_dir: &spherical::direction::EquatorialMeanJ2000 = apparent.direction();
 
     // The directions should differ due to aberration
     // Use angular_separation for proper comparison
@@ -126,7 +128,10 @@ fn aberration_requires_observer_state() {
     // (This is enforced by the type system - to_apparent() requires &ObserverState)
 
     let jd = JulianDate::J2000;
-    let astrometric = Astrometric::new(spherical::direction::Equatorial::new(0.0 * DEG, 0.0 * DEG));
+    let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
+        0.0 * DEG,
+        0.0 * DEG,
+    ));
 
     // Without an observer state, we cannot convert to apparent
     // (uncommenting the next line would be a compile error)
@@ -142,7 +147,7 @@ fn aberration_roundtrip_preserves_direction() {
     let jd = JulianDate::J2000;
     let obs = ObserverState::geocentric(jd);
 
-    let original = Astrometric::new(spherical::direction::Equatorial::new(
+    let original = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
         45.0 * DEG,
         30.0 * DEG,
     ));
@@ -176,7 +181,7 @@ fn aberration_maximum_near_ecliptic_pole() {
 
     // Direction toward north ecliptic pole (roughly)
     let astrometric = Astrometric::new(
-        spherical::direction::Equatorial::new(270.0 * DEG, 66.56 * DEG), // Near NEP
+        spherical::direction::EquatorialMeanJ2000::new(270.0 * DEG, 66.56 * DEG), // Near NEP
     );
 
     let apparent = astrometric.to_apparent(&obs);
@@ -204,7 +209,7 @@ fn topocentric_parallax_is_real_translation() {
     // For a nearby object like the Moon, topocentric parallax is significant
 
     // Moon at ~384,400 km from Earth's center (along x-axis for simplicity)
-    let moon_geo = Position::<Geocentric, Equatorial, Kilometer>::new(384_400.0, 0.0, 0.0);
+    let moon_geo = Position::<Geocentric, EquatorialMeanJ2000, Kilometer>::new(384_400.0, 0.0, 0.0);
 
     // Observer at equator, prime meridian
     let site = ObserverSite::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
@@ -232,14 +237,15 @@ fn topocentric_parallax_is_real_translation() {
 
 #[test]
 fn topocentric_roundtrip_preserves_geocentric_position() {
-    let geo = Position::<Geocentric, Equatorial, Kilometer>::new(100_000.0, 50_000.0, 25_000.0);
+    let geo =
+        Position::<Geocentric, EquatorialMeanJ2000, Kilometer>::new(100_000.0, 50_000.0, 25_000.0);
 
     let site = ObserverSite::new(10.0 * DEG, 45.0 * DEG, 100.0 * M);
     let jd = JulianDate::J2000;
 
     // Geocentric -> Topocentric -> Geocentric
     let topo = geo.to_topocentric(site, jd);
-    let geo_recovered: Position<Geocentric, Equatorial, Kilometer> = topo.to_center(jd);
+    let geo_recovered: Position<Geocentric, EquatorialMeanJ2000, Kilometer> = topo.to_center(jd);
 
     // Should recover within floating-point precision
     assert!(
@@ -263,7 +269,7 @@ fn topocentric_parallax_negligible_for_stars() {
     // For distant stars, topocentric parallax should be negligible
 
     // Star at 1 parsec = 206265 AU
-    let star_geo = Position::<Geocentric, Equatorial, Au>::new(206265.0, 0.0, 0.0);
+    let star_geo = Position::<Geocentric, EquatorialMeanJ2000, Au>::new(206265.0, 0.0, 0.0);
 
     let site = ObserverSite::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
     let jd = JulianDate::J2000;
@@ -331,13 +337,13 @@ fn complete_pipeline_geometric_to_apparent() {
     let jd = JulianDate::J2000;
 
     // A fictitious object at 10 AU from the Sun
-    let object_helio = Position::<Heliocentric, Equatorial, Au>::new(10.0, 0.0, 0.0);
+    let object_helio = Position::<Heliocentric, EquatorialMeanJ2000, Au>::new(10.0, 0.0, 0.0);
 
     // Step 1-2: Transform to geocentric (pure translation, no aberration)
-    let object_geo: Position<Geocentric, Equatorial, Au> = object_helio.transform(jd);
+    let object_geo: Position<Geocentric, EquatorialMeanJ2000, Au> = object_helio.transform(jd);
 
     // Step 3: Compute line of sight from geocenter to object
-    let observer = Position::<Geocentric, Equatorial, Au>::new(0.0, 0.0, 0.0);
+    let observer = Position::<Geocentric, EquatorialMeanJ2000, Au>::new(0.0, 0.0, 0.0);
     let los_direction = line_of_sight(&observer, &object_geo);
 
     // Wrap in Astrometric to track observational state

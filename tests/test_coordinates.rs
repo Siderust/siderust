@@ -91,8 +91,8 @@ fn test_position_transformations() {
 
     let original = *Mars::vsop87a(JulianDate::J2000).get_position();
 
-    // Heliocentric Ecliptic -> Heliocentric Equatorial -> back
-    let helio_eq: cartesian::Position<Heliocentric, Equatorial, _> =
+    // Heliocentric Ecliptic -> Heliocentric EquatorialMeanJ2000 -> back
+    let helio_eq: cartesian::Position<Heliocentric, EquatorialMeanJ2000, _> =
         original.transform(JulianDate::J2000);
     let helio_from_eq: cartesian::Position<Heliocentric, Ecliptic, _> =
         helio_eq.transform(JulianDate::J2000);
@@ -111,8 +111,8 @@ fn test_direction_frame_transformations() {
         .direction()
         .expect("Mars position should have a direction");
 
-    // Ecliptic -> Equatorial -> back (frame rotation only)
-    let equatorial: Direction<Equatorial> = TransformFrame::to_frame(&original);
+    // Ecliptic -> EquatorialMeanJ2000 -> back (frame rotation only)
+    let equatorial: Direction<EquatorialMeanJ2000> = TransformFrame::to_frame(&original);
     let ecliptic_back: Direction<Ecliptic> = TransformFrame::to_frame(&equatorial);
     approx_eq_dir(&original, &ecliptic_back);
 
