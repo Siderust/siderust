@@ -18,10 +18,10 @@ impl<F: MutableFrame> TransformFrame<Direction<F>> for Direction<F> {
 }
 
 /// Frame transform from Ecliptic to EquatorialMeanJ2000 for directions.
-/// Rotation about +X by the obliquity ε ≈ 23.439281°.
+/// Rotation about +X by the J2000 mean obliquity ε₀ (IAU 2006): 84381.406″.
 impl TransformFrame<Direction<frames::EquatorialMeanJ2000>> for Direction<frames::Ecliptic> {
     fn to_frame(&self) -> Direction<frames::EquatorialMeanJ2000> {
-        let eps = 23.439281_f64.to_radians();
+        let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
 
         let x = self.x();
@@ -44,7 +44,7 @@ impl TransformFrame<Direction<frames::EquatorialMeanJ2000>> for Direction<frames
 /// Inverse rotation about +X by the obliquity ε.
 impl TransformFrame<Direction<frames::Ecliptic>> for Direction<frames::EquatorialMeanJ2000> {
     fn to_frame(&self) -> Direction<frames::Ecliptic> {
-        let eps = 23.439281_f64.to_radians();
+        let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
 
         let x = self.x();

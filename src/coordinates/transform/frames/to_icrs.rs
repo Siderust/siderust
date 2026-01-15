@@ -9,7 +9,8 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS,
     for Position<C, frames::Ecliptic, U>
 {
     fn to_frame(&self) -> Position<C, frames::ICRS, U> {
-        let eps = 23.439281_f64.to_radians(); // obliquity in radians
+        // J2000 mean obliquity ε₀ (IAU 2006): 84381.406″
+        let eps = (84381.406_f64 / 3600.0).to_radians();
         let cos_e = eps.cos();
         let sin_e = eps.sin();
 

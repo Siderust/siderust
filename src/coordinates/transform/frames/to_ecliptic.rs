@@ -11,7 +11,8 @@ where
     U: LengthUnit,
 {
     fn to_frame(&self) -> Position<C, frames::Ecliptic, U> {
-        let eps = 23.439281_f64.to_radians();
+        // J2000 mean obliquity ε₀ (IAU 2006): 84381.406″
+        let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
         let rot: Rotation3 = frame_bias_icrs_to_j2000();
@@ -34,7 +35,8 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Eclip
     for Position<C, frames::EquatorialMeanJ2000, U>
 {
     fn to_frame(&self) -> Position<C, frames::Ecliptic, U> {
-        let eps = 23.439281_f64.to_radians(); // obliquity in radians
+        // J2000 mean obliquity ε₀ (IAU 2006): 84381.406″
+        let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
         let y = self.y();
