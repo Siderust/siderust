@@ -189,9 +189,21 @@ const OBLIQUITY_J2000: f64 = 0.409092804222329; // 23.4392911° in radians
 ///
 /// Values from IERS Conventions (2003), expressed as a small rotation matrix.
 const FRAME_BIAS_ICRS_TO_J2000: Rotation3 = Rotation3::from_matrix([
-    [0.999_999_999_999_994_2, 0.000_000_070_782_794_8, -0.000_000_080_562_171_5],
-    [-0.000_000_070_782_797_4, 0.999_999_999_999_996_9, -0.000_000_033_060_408_8],
-    [0.000_000_080_562_169_6, 0.000_000_033_060_414_5, 0.999_999_999_999_993_2],
+    [
+        0.999_999_999_999_994_2,
+        0.000_000_070_782_794_8,
+        -0.000_000_080_562_171_5,
+    ],
+    [
+        -0.000_000_070_782_797_4,
+        0.999_999_999_999_996_9,
+        -0.000_000_033_060_408_8,
+    ],
+    [
+        0.000_000_080_562_169_6,
+        0.000_000_033_060_414_5,
+        0.999_999_999_999_993_2,
+    ],
 ]);
 
 /// ICRS → Ecliptic rotation (J2000 mean ecliptic).
@@ -305,10 +317,10 @@ impl FrameRotationProvider<ICRS, EquatorialMeanOfDate> for () {
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
         let r1: Rotation3 =
             <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation(jd, ctx);
-        let r2: Rotation3 =
-            <() as FrameRotationProvider<EquatorialMeanJ2000, EquatorialMeanOfDate>>::rotation(
-                jd, ctx,
-            );
+        let r2: Rotation3 = <() as FrameRotationProvider<
+            EquatorialMeanJ2000,
+            EquatorialMeanOfDate,
+        >>::rotation(jd, ctx);
         r2 * r1
     }
 }
@@ -327,10 +339,10 @@ impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
         let r1: Rotation3 =
             <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation(jd, ctx);
-        let r2: Rotation3 =
-            <() as FrameRotationProvider<EquatorialMeanJ2000, EquatorialTrueOfDate>>::rotation(
-                jd, ctx,
-            );
+        let r2: Rotation3 = <() as FrameRotationProvider<
+            EquatorialMeanJ2000,
+            EquatorialTrueOfDate,
+        >>::rotation(jd, ctx);
         r2 * r1
     }
 }

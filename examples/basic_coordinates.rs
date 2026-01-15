@@ -33,9 +33,8 @@ fn main() {
     );
 
     // Create a geocentric equatorial position (Moon at ~384,400 km)
-    let moon_position = cartesian::position::EquatorialMeanJ2000::<Kilometer>::new(
-        300_000.0, 200_000.0, 100_000.0,
-    );
+    let moon_position =
+        cartesian::position::EquatorialMeanJ2000::<Kilometer>::new(300_000.0, 200_000.0, 100_000.0);
     println!("Moon position (Geocentric EquatorialMeanJ2000):");
     println!("  X = {:.1} km", moon_position.x());
     println!("  Y = {:.1} km", moon_position.y());
@@ -134,8 +133,7 @@ fn main() {
 
     // Different coordinate types are incompatible
     let helio_pos = cartesian::position::Ecliptic::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
-    let geo_pos =
-        cartesian::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(0.0, 1.0, 0.0);
+    let geo_pos = cartesian::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(0.0, 1.0, 0.0);
 
     println!("Type-safe coordinates prevent mixing incompatible systems:");
     println!("  Heliocentric Ecliptic: {}", helio_pos);

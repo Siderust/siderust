@@ -7,8 +7,7 @@ use qtty::LengthUnit;
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
-impl<C: ReferenceCenter, U: LengthUnit>
-    TransformFrame<Position<C, frames::EquatorialMeanJ2000, U>>
+impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::EquatorialMeanJ2000, U>>
     for Position<C, frames::Ecliptic, U>
 {
     fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
@@ -26,8 +25,8 @@ impl<C: ReferenceCenter, U: LengthUnit>
 }
 
 // Implement Transform trait for ICRS -> EquatorialMeanJ2000 (frame bias)
-impl<C: ReferenceCenter, U: LengthUnit>
-    TransformFrame<Position<C, frames::EquatorialMeanJ2000, U>> for Position<C, frames::ICRS, U>
+impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::EquatorialMeanJ2000, U>>
+    for Position<C, frames::ICRS, U>
 {
     fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
         let rot: Rotation3 = frame_bias_icrs_to_j2000();

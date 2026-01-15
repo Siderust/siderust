@@ -890,8 +890,7 @@ pub mod position {
     /// * `α` – right‑ascension, degrees in `[0, 360)`
     /// * `δ` – declination, degrees in `[-90, 90]`
     /// * `d` – geocentric distance in unit `U` (e.g. `Kilometer`)
-    pub type EquatorialMeanJ2000<U> =
-        Position<centers::Geocentric, frames::EquatorialMeanJ2000, U>;
+    pub type EquatorialMeanJ2000<U> = Position<centers::Geocentric, frames::EquatorialMeanJ2000, U>;
 
     /// **Geocentric Equatorial mean of date** coordinates *(α, δ, d)*.
     pub type EquatorialMeanOfDate<U> =

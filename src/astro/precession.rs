@@ -324,11 +324,7 @@ mod tests {
         let prec = precess_from_j2000(pos.clone(), jd);
         let cart = pos.to_cartesian();
         let rot = precession_rotation_from_j2000(jd);
-        let [x, y, z] = rot.apply_array([
-            cart.x().value(),
-            cart.y().value(),
-            cart.z().value(),
-        ]);
+        let [x, y, z] = rot.apply_array([cart.x().value(), cart.y().value(), cart.z().value()]);
 
         let cart_rot = cartesian::Position::<
             centers::Geocentric,

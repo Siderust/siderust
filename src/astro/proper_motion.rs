@@ -95,7 +95,9 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 mod tests {
     use super::*;
     use crate::astro::JulianDate;
-    use crate::coordinates::{centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position};
+    use crate::coordinates::{
+        centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position,
+    };
     use qtty::{AstronomicalUnit, Degrees};
 
     type DegreesPerYear = qtty::Quantity<qtty::Per<Degree, Year>>;

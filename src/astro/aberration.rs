@@ -43,7 +43,10 @@ pub const AU_PER_DAY_C_F64: f64 = 173.144_632_674_240_33_f64;
 pub const AU_PER_DAY_C: AusPerDay = AusPerDay::new(AU_PER_DAY_C_F64);
 
 #[inline]
-fn aberrate_unit_vector_lorentz(u: nalgebra::Vector3<f64>, beta: nalgebra::Vector3<f64>) -> nalgebra::Vector3<f64> {
+fn aberrate_unit_vector_lorentz(
+    u: nalgebra::Vector3<f64>,
+    beta: nalgebra::Vector3<f64>,
+) -> nalgebra::Vector3<f64> {
     let beta2 = beta.dot(&beta);
     if beta2 == 0.0 {
         return u;

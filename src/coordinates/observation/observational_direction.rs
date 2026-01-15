@@ -286,8 +286,10 @@ mod tests {
         let obs = ObserverState::geocentric(jd);
 
         // Create an astrometric direction
-        let astrometric =
-            Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(0.0 * DEG, 0.0 * DEG));
+        let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
+            0.0 * DEG,
+            0.0 * DEG,
+        ));
 
         // Convert to apparent
         let apparent: Apparent<spherical::direction::EquatorialMeanJ2000> =
@@ -361,8 +363,10 @@ mod tests {
         let obs = ObserverState::geocentric(jd);
 
         // At the north pole
-        let astrometric =
-            Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(0.0 * DEG, 90.0 * DEG));
+        let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
+            0.0 * DEG,
+            90.0 * DEG,
+        ));
 
         let apparent = astrometric.to_apparent(&obs);
 

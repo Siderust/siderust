@@ -19,12 +19,12 @@
 //! By encapsulating this in `ObserverState`, we ensure that aberration cannot be
 //! applied without explicit observer information.
 
+use crate::astro::sidereal::unmodded_gst;
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Earth;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::frames::EquatorialMeanJ2000;
-use crate::astro::sidereal::unmodded_gst;
 use qtty::{AstronomicalUnit, Day};
 
 /// Velocity unit: AU per day

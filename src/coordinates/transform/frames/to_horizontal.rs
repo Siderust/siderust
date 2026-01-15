@@ -129,7 +129,10 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
 impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, EquatorialMeanOfDate, U>>
     for cartesian::Position<Topocentric, Horizontal, U>
 {
-    fn transform(&self, jd: JulianDate) -> cartesian::Position<Topocentric, EquatorialMeanOfDate, U> {
+    fn transform(
+        &self,
+        jd: JulianDate,
+    ) -> cartesian::Position<Topocentric, EquatorialMeanOfDate, U> {
         let site = self.center_params();
 
         // Get distance and angles from Cartesian vector
@@ -172,7 +175,10 @@ impl<U: LengthUnit> Transform<spherical::Position<Topocentric, Horizontal, U>>
 impl<U: LengthUnit> Transform<spherical::Position<Topocentric, EquatorialMeanOfDate, U>>
     for spherical::Position<Topocentric, Horizontal, U>
 {
-    fn transform(&self, jd: JulianDate) -> spherical::Position<Topocentric, EquatorialMeanOfDate, U> {
+    fn transform(
+        &self,
+        jd: JulianDate,
+    ) -> spherical::Position<Topocentric, EquatorialMeanOfDate, U> {
         let cart: cartesian::Position<Topocentric, EquatorialMeanOfDate, U> =
             self.to_cartesian().transform(jd);
         spherical::Position::from_cartesian(&cart)
