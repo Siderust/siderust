@@ -41,7 +41,7 @@ where
 
         // Newton step
         let delta_days = f / deriv;
-        jd = jd - Days::new(delta_days);
+        jd -= Days::new(delta_days);
 
         if delta_days.abs() < NEWTON_TOL_DAYS {
             return Some(jd);
@@ -116,6 +116,6 @@ where
 {
     let guess = JulianDate::new((jd_a.value() + jd_b.value()) * 0.5);
 
-    refine_root_newton(guess, |jd| scalar_fn(jd), threshold)
-        .or_else(|| refine_root_bisection(jd_a, jd_b, |jd| scalar_fn(jd), threshold))
+    refine_root_newton(guess, scalar_fn, threshold)
+        .or_else(|| refine_root_bisection(jd_a, jd_b, scalar_fn, threshold))
 }
