@@ -26,8 +26,12 @@ pub mod direction {
 
     /// **Ecliptic** cartesian direction (unit vector).
     pub type Ecliptic = Direction<frames::Ecliptic>;
-    /// **Equatorial** cartesian direction (unit vector).
-    pub type Equatorial = Direction<frames::Equatorial>;
+    /// **Equatorial mean J2000** cartesian direction (unit vector).
+    pub type EquatorialMeanJ2000 = Direction<frames::EquatorialMeanJ2000>;
+    /// **Equatorial mean of date** cartesian direction (unit vector).
+    pub type EquatorialMeanOfDate = Direction<frames::EquatorialMeanOfDate>;
+    /// **Equatorial true of date** cartesian direction (unit vector).
+    pub type EquatorialTrueOfDate = Direction<frames::EquatorialTrueOfDate>;
     /// **Horizontal** cartesian direction (unit vector).
     pub type Horizontal = Direction<frames::Horizontal>;
     /// **Geographic (ECEF)** cartesian direction (unit vector).
@@ -46,8 +50,12 @@ pub mod displacement {
 
     /// **Ecliptic** displacement vector.
     pub type Ecliptic<U> = Displacement<frames::Ecliptic, U>;
-    /// **Equatorial** displacement vector.
-    pub type Equatorial<U> = Displacement<frames::Equatorial, U>;
+    /// **Equatorial mean J2000** displacement vector.
+    pub type EquatorialMeanJ2000<U> = Displacement<frames::EquatorialMeanJ2000, U>;
+    /// **Equatorial mean of date** displacement vector.
+    pub type EquatorialMeanOfDate<U> = Displacement<frames::EquatorialMeanOfDate, U>;
+    /// **Equatorial true of date** displacement vector.
+    pub type EquatorialTrueOfDate<U> = Displacement<frames::EquatorialTrueOfDate, U>;
     /// **Horizontal** displacement vector.
     pub type Horizontal<U> = Displacement<frames::Horizontal, U>;
     /// **ICRS** displacement vector.
@@ -64,8 +72,15 @@ pub mod position {
 
     /// **Heliocentric Ecliptic** cartesian position.
     pub type Ecliptic<U, C = centers::Heliocentric> = Position<C, frames::Ecliptic, U>;
-    /// **Geocentric Equatorial** cartesian position.
-    pub type Equatorial<U, C = centers::Geocentric> = Position<C, frames::Equatorial, U>;
+    /// **Geocentric Equatorial mean J2000** cartesian position.
+    pub type EquatorialMeanJ2000<U, C = centers::Geocentric> =
+        Position<C, frames::EquatorialMeanJ2000, U>;
+    /// **Geocentric Equatorial mean of date** cartesian position.
+    pub type EquatorialMeanOfDate<U, C = centers::Geocentric> =
+        Position<C, frames::EquatorialMeanOfDate, U>;
+    /// **Geocentric Equatorial true of date** cartesian position.
+    pub type EquatorialTrueOfDate<U, C = centers::Geocentric> =
+        Position<C, frames::EquatorialTrueOfDate, U>;
     /// **Topocentric Horizontal** cartesian position.
     pub type Horizontal<U, C = centers::Topocentric> = Position<C, frames::Horizontal, U>;
     /// **Geocentric Geographic (ECEF)** cartesian position.
@@ -90,8 +105,12 @@ pub mod velocity {
 
     /// **Ecliptic** cartesian velocity vector.
     pub type Ecliptic<U> = Velocity<frames::Ecliptic, U>;
-    /// **Equatorial** cartesian velocity vector.
-    pub type Equatorial<U> = Velocity<frames::Equatorial, U>;
+    /// **Equatorial mean J2000** cartesian velocity vector.
+    pub type EquatorialMeanJ2000<U> = Velocity<frames::EquatorialMeanJ2000, U>;
+    /// **Equatorial mean of date** cartesian velocity vector.
+    pub type EquatorialMeanOfDate<U> = Velocity<frames::EquatorialMeanOfDate, U>;
+    /// **Equatorial true of date** cartesian velocity vector.
+    pub type EquatorialTrueOfDate<U> = Velocity<frames::EquatorialTrueOfDate, U>;
     /// **Horizontal** cartesian velocity vector.
     pub type Horizontal<U> = Velocity<frames::Horizontal, U>;
     /// **ICRS** cartesian velocity vector.

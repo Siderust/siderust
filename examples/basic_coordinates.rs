@@ -34,8 +34,8 @@ fn main() {
 
     // Create a geocentric equatorial position (Moon at ~384,400 km)
     let moon_position =
-        cartesian::position::Equatorial::<Kilometer>::new(300_000.0, 200_000.0, 100_000.0);
-    println!("Moon position (Geocentric Equatorial):");
+        cartesian::position::EquatorialMeanJ2000::<Kilometer>::new(300_000.0, 200_000.0, 100_000.0);
+    println!("Moon position (Geocentric EquatorialMeanJ2000):");
     println!("  X = {:.1} km", moon_position.x());
     println!("  Y = {:.1} km", moon_position.y());
     println!("  Z = {:.1} km", moon_position.z());
@@ -51,11 +51,11 @@ fn main() {
     println!("------------------------");
 
     // Create a star direction (Polaris approximately)
-    let polaris = spherical::direction::Equatorial::new(
+    let polaris = spherical::direction::EquatorialMeanJ2000::new(
         Degrees::new(37.95), // Right Ascension (converted to degrees)
         Degrees::new(89.26), // Declination
     );
-    println!("Polaris (Geocentric Equatorial Direction):");
+    println!("Polaris (Geocentric EquatorialMeanJ2000 Direction):");
     println!("  Right Ascension = {:.2}°", polaris.azimuth);
     println!("  Declination = {:.2}°\n", polaris.polar);
 
@@ -102,14 +102,16 @@ fn main() {
     println!("-----------------------------------");
 
     // Start with cartesian
-    let cart_pos = cartesian::position::Equatorial::<AstronomicalUnit>::new(0.5, 0.5, 0.707);
+    let cart_pos =
+        cartesian::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(0.5, 0.5, 0.707);
     println!("Cartesian position:");
     println!("  X = {:.3} AU", cart_pos.x());
     println!("  Y = {:.3} AU", cart_pos.y());
     println!("  Z = {:.3} AU", cart_pos.z());
 
     // Convert to spherical
-    let sph_pos = spherical::position::Equatorial::<AstronomicalUnit>::from_cartesian(&cart_pos);
+    let sph_pos =
+        spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::from_cartesian(&cart_pos);
     println!("\nConverted to Spherical:");
     println!("  RA = {:.2}°", sph_pos.azimuth);
     println!("  Dec = {:.2}°", sph_pos.polar);
@@ -117,7 +119,7 @@ fn main() {
 
     // Convert back to cartesian
     let cart_pos_back =
-        cartesian::position::Equatorial::<AstronomicalUnit>::from_spherical(&sph_pos);
+        cartesian::position::EquatorialMeanJ2000::<AstronomicalUnit>::from_spherical(&sph_pos);
     println!("\nConverted back to Cartesian:");
     println!("  X = {:.3} AU", cart_pos_back.x());
     println!("  Y = {:.3} AU", cart_pos_back.y());
@@ -131,11 +133,11 @@ fn main() {
 
     // Different coordinate types are incompatible
     let helio_pos = cartesian::position::Ecliptic::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
-    let geo_pos = cartesian::position::Equatorial::<AstronomicalUnit>::new(0.0, 1.0, 0.0);
+    let geo_pos = cartesian::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(0.0, 1.0, 0.0);
 
     println!("Type-safe coordinates prevent mixing incompatible systems:");
     println!("  Heliocentric Ecliptic: {}", helio_pos);
-    println!("  Geocentric Equatorial: {}", geo_pos);
+    println!("  Geocentric EquatorialMeanJ2000: {}", geo_pos);
     println!("\n  Cannot directly compute distance between them!");
     println!("  (Must transform to same center/frame first)\n");
 
@@ -161,7 +163,10 @@ fn main() {
 
     println!("Reference Frames:");
     println!("  Ecliptic:   {}", frames::Ecliptic::frame_name());
-    println!("  Equatorial: {}", frames::Equatorial::frame_name());
+    println!(
+        "  EquatorialMeanJ2000: {}",
+        frames::EquatorialMeanJ2000::frame_name()
+    );
     println!("  Horizontal: {}", frames::Horizontal::frame_name());
     println!("  ICRS:       {}", frames::ICRS::frame_name());
     println!("  ECEF:       {}\n", frames::ECEF::frame_name());

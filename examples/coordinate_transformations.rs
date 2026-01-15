@@ -1,7 +1,7 @@
 //! Coordinate Transformations Example
 //!
 //! This example demonstrates transformations between different coordinate systems:
-//! - Frame transformations (Ecliptic ↔ Equatorial ↔ ICRS)
+//! - Frame transformations (Ecliptic ↔ EquatorialMeanJ2000 ↔ ICRS)
 //! - Center transformations (Heliocentric ↔ Geocentric ↔ Barycentric)
 //! - Combined transformations
 //! - Time-dependent transformations
@@ -9,7 +9,7 @@
 use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::{Earth, Mars};
-use siderust::coordinates::cartesian::position::{Ecliptic, Equatorial, GCRS, HCRS, ICRS};
+use siderust::coordinates::cartesian::position::{Ecliptic, EquatorialMeanJ2000, GCRS, HCRS, ICRS};
 use siderust::coordinates::centers::{Geocentric, Heliocentric};
 use siderust::coordinates::transform::{Transform, TransformCenter, TransformFrame};
 
@@ -33,8 +33,8 @@ fn main() {
     println!("  Z = {:.6} AU\n", pos_ecliptic.z());
 
     // Transform to equatorial frame (same heliocentric center)
-    let pos_equatorial: Equatorial<Au, Heliocentric> = pos_ecliptic.to_frame();
-    println!("Transformed to Equatorial frame:");
+    let pos_equatorial: EquatorialMeanJ2000<Au, Heliocentric> = pos_ecliptic.to_frame();
+    println!("Transformed to EquatorialMeanJ2000 frame:");
     println!("  X = {:.6} AU", pos_equatorial.x());
     println!("  Y = {:.6} AU", pos_equatorial.y());
     println!("  Z = {:.6} AU\n", pos_equatorial.z());
@@ -93,23 +93,23 @@ fn main() {
     println!("3. COMBINED TRANSFORMATIONS");
     println!("---------------------------");
 
-    // Mars: Heliocentric Ecliptic → Geocentric Equatorial
+    // Mars: Heliocentric Ecliptic → Geocentric EquatorialMeanJ2000
     println!("Mars transformation chain:");
     println!("  Start: Heliocentric Ecliptic");
 
     // Method 1: Step by step
-    let mars_helio_equ: Equatorial<Au, Heliocentric> = mars_helio.to_frame();
-    println!("  Step 1: Transform frame → Heliocentric Equatorial");
+    let mars_helio_equ: EquatorialMeanJ2000<Au, Heliocentric> = mars_helio.to_frame();
+    println!("  Step 1: Transform frame → Heliocentric EquatorialMeanJ2000");
 
-    let mars_geo_equ: Equatorial<Au, Geocentric> = mars_helio_equ.to_center(jd);
-    println!("  Step 2: Transform center → Geocentric Equatorial");
+    let mars_geo_equ: EquatorialMeanJ2000<Au, Geocentric> = mars_helio_equ.to_center(jd);
+    println!("  Step 2: Transform center → Geocentric EquatorialMeanJ2000");
     println!("  Result:");
     println!("    X = {:.6} AU", mars_geo_equ.x());
     println!("    Y = {:.6} AU", mars_geo_equ.y());
     println!("    Z = {:.6} AU\n", mars_geo_equ.z());
 
     // Method 2: Using the Transform trait (does both)
-    let mars_geo_equ_direct: Equatorial<Au, Geocentric> = mars_helio.transform(jd);
+    let mars_geo_equ_direct: EquatorialMeanJ2000<Au, Geocentric> = mars_helio.transform(jd);
     println!("  Or using .transform(jd) directly:");
     println!("    X = {:.6} AU", mars_geo_equ_direct.x());
     println!("    Y = {:.6} AU", mars_geo_equ_direct.y());
@@ -179,8 +179,8 @@ fn main() {
     println!("  Y = {:.10} AU", original.y());
     println!("  Z = {:.10} AU\n", original.z());
 
-    // Transform: Helio Ecl → Geo Equ → Helio Ecl
-    let temp: Equatorial<Au, Geocentric> = original.transform(jd);
+    // Transform: Helio Ecl → Geo EquatorialMeanJ2000 → Helio Ecl
+    let temp: EquatorialMeanJ2000<Au, Geocentric> = original.transform(jd);
     let recovered: Ecliptic<Au, Heliocentric> = temp.transform(jd);
 
     println!("After round-trip transformation:");

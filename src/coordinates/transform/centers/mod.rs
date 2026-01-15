@@ -20,11 +20,13 @@
 //! ```rust
 //! use siderust::coordinates::cartesian::{line_of_sight, Position};
 //! use siderust::coordinates::centers::Geocentric;
-//! use siderust::coordinates::frames::Equatorial;
+//! use siderust::coordinates::frames::EquatorialMeanJ2000;
 //! use qtty::*;
 //!
-//! let observer = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(0.0, 0.0, 0.0);
-//! let target = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 1.0, 1.0);
+//! let observer =
+//!     Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
+//! let target =
+//!     Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 1.0, 1.0);
 //!
 //! let direction = line_of_sight(&observer, &target);
 //! ```

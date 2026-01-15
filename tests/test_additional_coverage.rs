@@ -9,7 +9,7 @@ use siderust::coordinates::{
     cartesian,
     centers::ObserverSite,
     frames, spherical,
-    transform::{Transform, TransformFrame},
+    transform::{providers::frame_rotation, AstroContext, Transform, TransformFrame},
 };
 
 #[test]
@@ -60,15 +60,33 @@ fn horizontal_conversion_variants_cover_all_impls() {
     let site = ObserverSite::from_geographic(&observer);
 
     // Test position (with distance) conversion - positions still support center transforms
-    let eq_pos = spherical::position::Equatorial::<AstronomicalUnit>::new(
+    let eq_pos = spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(
         Degrees::new(83.0),
         Degrees::new(-5.0),
         1.0,
     );
+    // Topocentric translation currently requires a MutableFrame, so do it in J2000...
     let cart_pos = eq_pos.to_cartesian();
-    let topo_cart_pos = cart_pos.to_topocentric(site, jd);
+    let topo_cart_j2000 = cart_pos.to_topocentric(site, jd);
+
+    // ...then rotate J2000 -> mean-of-date using the provider rotation matrix.
+    let ctx = AstroContext::default();
+    let rot = frame_rotation::<frames::EquatorialMeanJ2000, frames::EquatorialMeanOfDate>(jd, &ctx);
+    let [x, y, z] = rot.apply_array([
+        topo_cart_j2000.x().value(),
+        topo_cart_j2000.y().value(),
+        topo_cart_j2000.z().value(),
+    ]);
+    let topo_cart_mod =
+        cartesian::Position::<
+            siderust::coordinates::centers::Topocentric,
+            frames::EquatorialMeanOfDate,
+            AstronomicalUnit,
+        >::new_with_params(*topo_cart_j2000.center_params(), x * AU, y * AU, z * AU);
+
+    // Now the dedicated Horizontal transform applies.
     let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> =
-        topo_cart_pos.transform(jd);
+        topo_cart_mod.transform(jd);
     let horiz_pos = horiz_cart_pos.to_spherical();
     // Distance changes slightly due to real topocentric parallax (observer is ~6000 km from Earth center)
     // For an object at 1 AU, this is a very small fractional change (Earth radius / 1 AU ≈ 4e-5)
@@ -93,12 +111,16 @@ fn frame_transform_traits_exercised() {
     let sph_ecl = spherical::direction::Ecliptic::new(Degrees::new(10.0), Degrees::new(5.0));
     // Convert to cartesian, transform frame
     let cart_ecl = sph_ecl.to_cartesian();
-    let cart_equatorial: cartesian::direction::Equatorial = TransformFrame::to_frame(&cart_ecl);
+    let cart_equatorial: cartesian::direction::EquatorialMeanJ2000 =
+        TransformFrame::to_frame(&cart_ecl);
     assert!(cart_equatorial.x().is_finite());
 
     // Test frame transform on position (must preserve center type)
-    let vec_equatorial: cartesian::Position<Heliocentric, frames::Equatorial, AstronomicalUnit> =
-        TransformFrame::to_frame(&vec_ecl);
+    let vec_equatorial: cartesian::Position<
+        Heliocentric,
+        frames::EquatorialMeanJ2000,
+        AstronomicalUnit,
+    > = TransformFrame::to_frame(&vec_ecl);
     assert!(vec_equatorial.x().value().is_finite());
 }
 

@@ -24,10 +24,10 @@
 //!
 //! ```rust
 //! use siderust::coordinates::spherical::Direction;
-//! use siderust::coordinates::frames::Equatorial;
+//! use siderust::coordinates::frames::EquatorialMeanJ2000;
 //! use qtty::*;
 //!
-//! let dir = Direction::<Equatorial>::new(120.0 * DEG, 45.0 * DEG);
+//! let dir = Direction::<EquatorialMeanJ2000>::new(120.0 * DEG, 45.0 * DEG);
 //! ```
 
 use crate::coordinates::{centers, frames};
@@ -61,7 +61,7 @@ fn clamp_polar(polar: Degrees) -> Degrees {
 /// providing frame-specific inherent constructors with astronomical conventions.
 ///
 /// # Type Parameters
-/// - `F`: The reference frame (e.g., `ICRS`, `Equatorial`, `Ecliptic`, `Horizontal`)
+/// - `F`: The reference frame (e.g., `ICRS`, `EquatorialMeanJ2000`, `Ecliptic`, `Horizontal`)
 ///
 /// # Angular Conventions
 ///
@@ -70,10 +70,13 @@ fn clamp_polar(polar: Degrees) -> Degrees {
 /// | Frame       | First Arg         | Second Arg      | Constructor       |
 /// |-------------|-------------------|-----------------|-------------------|
 /// | ICRS        | Right Ascension α | Declination δ   | `new(ra, dec)`    |
-/// | Equatorial  | Right Ascension α | Declination δ   | `new(ra, dec)`    |
+/// | Equatorial* | Right Ascension α | Declination δ   | `new(ra, dec)`    |
 /// | Ecliptic    | Longitude λ       | Latitude β      | `new(lon, lat)`   |
 /// | Horizontal  | Altitude Alt      | Azimuth Az      | `new(alt, az)`    |
 /// | Geographic  | Longitude λ       | Latitude φ      | `new(lon, lat)`   |
+///
+/// *Equatorial* refers to `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, or
+/// `EquatorialTrueOfDate`, which share the same angular convention.
 #[derive(Debug, Clone, Copy)]
 #[repr(transparent)]
 pub struct Direction<F: frames::ReferenceFrame> {
@@ -191,7 +194,7 @@ impl<F: frames::ReferenceFrame> std::fmt::Display for Direction<F> {
 ///
 /// # Type Parameters
 /// - `C`: The reference center (e.g., `Barycentric`, `Heliocentric`, `Geocentric`)
-/// - `F`: The reference frame (e.g., `ICRS`, `Equatorial`, `Ecliptic`)
+/// - `F`: The reference frame (e.g., `ICRS`, `EquatorialMeanJ2000`, `Ecliptic`)
 /// - `U`: The length unit (e.g., `AstronomicalUnit`, `Kilometer`)
 #[derive(Debug, Clone)]
 #[repr(transparent)]
@@ -369,8 +372,62 @@ impl Direction<frames::ICRS> {
 // Frame-Specific Direction Constructors: Equatorial
 // =============================================================================
 
-impl Direction<frames::Equatorial> {
-    /// Creates an Equatorial direction from Right Ascension and Declination.
+impl Direction<frames::EquatorialMeanJ2000> {
+    /// Creates a mean-J2000 equatorial direction from Right Ascension and Declination.
+    ///
+    /// # Arguments
+    /// - `ra`: Right Ascension (α), eastward from vernal equinox, normalized to [0°, 360°)
+    /// - `dec`: Declination (δ), from celestial equator, clamped to [-90°, +90°]
+    #[inline]
+    pub fn new(ra: Degrees, dec: Degrees) -> Self {
+        Self::from_inner(affn::spherical::Direction::new(
+            clamp_polar(dec),
+            normalize_azimuth(ra),
+        ))
+    }
+
+    /// Returns the Right Ascension (α) in degrees.
+    #[inline]
+    pub fn ra(&self) -> Degrees {
+        self.inner.azimuth
+    }
+
+    /// Returns the Declination (δ) in degrees.
+    #[inline]
+    pub fn dec(&self) -> Degrees {
+        self.inner.polar
+    }
+}
+
+impl Direction<frames::EquatorialMeanOfDate> {
+    /// Creates a mean-of-date equatorial direction from Right Ascension and Declination.
+    ///
+    /// # Arguments
+    /// - `ra`: Right Ascension (α), eastward from vernal equinox, normalized to [0°, 360°)
+    /// - `dec`: Declination (δ), from celestial equator, clamped to [-90°, +90°]
+    #[inline]
+    pub fn new(ra: Degrees, dec: Degrees) -> Self {
+        Self::from_inner(affn::spherical::Direction::new(
+            clamp_polar(dec),
+            normalize_azimuth(ra),
+        ))
+    }
+
+    /// Returns the Right Ascension (α) in degrees.
+    #[inline]
+    pub fn ra(&self) -> Degrees {
+        self.inner.azimuth
+    }
+
+    /// Returns the Declination (δ) in degrees.
+    #[inline]
+    pub fn dec(&self) -> Degrees {
+        self.inner.polar
+    }
+}
+
+impl Direction<frames::EquatorialTrueOfDate> {
+    /// Creates a true-of-date equatorial direction from Right Ascension and Declination.
     ///
     /// # Arguments
     /// - `ra`: Right Ascension (α), eastward from vernal equinox, normalized to [0°, 360°)
@@ -530,12 +587,78 @@ where
 // Frame-Specific Position Constructors: Equatorial (for centers with Params = ())
 // =============================================================================
 
-impl<C, U> Position<C, frames::Equatorial, U>
+impl<C, U> Position<C, frames::EquatorialMeanJ2000, U>
 where
     C: centers::ReferenceCenter<Params = ()>,
     U: LengthUnit,
 {
-    /// Creates an Equatorial position from Right Ascension, Declination, and distance.
+    /// Creates a mean-J2000 equatorial position from Right Ascension, Declination, and distance.
+    ///
+    /// # Arguments
+    /// - `ra`: Right Ascension (α), normalized to [0°, 360°)
+    /// - `dec`: Declination (δ), clamped to [-90°, +90°]
+    /// - `distance`: Radial distance from the center
+    #[inline]
+    pub fn new<T: Into<Quantity<U>>>(ra: Degrees, dec: Degrees, distance: T) -> Self {
+        Self::from_inner(affn::spherical::Position::new_raw(
+            clamp_polar(dec),
+            normalize_azimuth(ra),
+            distance.into(),
+        ))
+    }
+
+    /// Returns the Right Ascension (α) in degrees.
+    #[inline]
+    pub fn ra(&self) -> Degrees {
+        self.inner.azimuth
+    }
+
+    /// Returns the Declination (δ) in degrees.
+    #[inline]
+    pub fn dec(&self) -> Degrees {
+        self.inner.polar
+    }
+}
+
+impl<C, U> Position<C, frames::EquatorialMeanOfDate, U>
+where
+    C: centers::ReferenceCenter<Params = ()>,
+    U: LengthUnit,
+{
+    /// Creates a mean-of-date equatorial position from Right Ascension, Declination, and distance.
+    ///
+    /// # Arguments
+    /// - `ra`: Right Ascension (α), normalized to [0°, 360°)
+    /// - `dec`: Declination (δ), clamped to [-90°, +90°]
+    /// - `distance`: Radial distance from the center
+    #[inline]
+    pub fn new<T: Into<Quantity<U>>>(ra: Degrees, dec: Degrees, distance: T) -> Self {
+        Self::from_inner(affn::spherical::Position::new_raw(
+            clamp_polar(dec),
+            normalize_azimuth(ra),
+            distance.into(),
+        ))
+    }
+
+    /// Returns the Right Ascension (α) in degrees.
+    #[inline]
+    pub fn ra(&self) -> Degrees {
+        self.inner.azimuth
+    }
+
+    /// Returns the Declination (δ) in degrees.
+    #[inline]
+    pub fn dec(&self) -> Degrees {
+        self.inner.polar
+    }
+}
+
+impl<C, U> Position<C, frames::EquatorialTrueOfDate, U>
+where
+    C: centers::ReferenceCenter<Params = ()>,
+    U: LengthUnit,
+{
+    /// Creates a true-of-date equatorial position from Right Ascension, Declination, and distance.
     ///
     /// # Arguments
     /// - `ra`: Right Ascension (α), normalized to [0°, 360°)
@@ -728,8 +851,12 @@ pub mod direction {
 
     /// **Ecliptic** direction (longitude *λ*, latitude *β*).
     pub type Ecliptic = Direction<frames::Ecliptic>;
-    /// **Equatorial** direction (right‑ascension *α*, declination *δ*).
-    pub type Equatorial = Direction<frames::Equatorial>;
+    /// **Equatorial mean J2000** direction (right‑ascension *α*, declination *δ*).
+    pub type EquatorialMeanJ2000 = Direction<frames::EquatorialMeanJ2000>;
+    /// **Equatorial mean of date** direction (right‑ascension *α*, declination *δ*).
+    pub type EquatorialMeanOfDate = Direction<frames::EquatorialMeanOfDate>;
+    /// **Equatorial true of date** direction (right‑ascension *α*, declination *δ*).
+    pub type EquatorialTrueOfDate = Direction<frames::EquatorialTrueOfDate>;
     /// **Horizontal** direction (altitude *Alt*, azimuth *Az*).
     pub type Horizontal = Direction<frames::Horizontal>;
     /// **ICRS** direction.
@@ -758,12 +885,20 @@ pub mod position {
     /// * `R` – heliocentric distance in unit `U` (e.g. `AstronomicalUnit`)
     pub type Ecliptic<U> = Position<centers::Heliocentric, frames::Ecliptic, U>;
 
-    /// **Geocentric Equatorial** coordinates *(α, δ, d)*.
+    /// **Geocentric Equatorial mean J2000** coordinates *(α, δ, d)*.
     ///
     /// * `α` – right‑ascension, degrees in `[0, 360)`
     /// * `δ` – declination, degrees in `[-90, 90]`
     /// * `d` – geocentric distance in unit `U` (e.g. `Kilometer`)
-    pub type Equatorial<U> = Position<centers::Geocentric, frames::Equatorial, U>;
+    pub type EquatorialMeanJ2000<U> = Position<centers::Geocentric, frames::EquatorialMeanJ2000, U>;
+
+    /// **Geocentric Equatorial mean of date** coordinates *(α, δ, d)*.
+    pub type EquatorialMeanOfDate<U> =
+        Position<centers::Geocentric, frames::EquatorialMeanOfDate, U>;
+
+    /// **Geocentric Equatorial true of date** coordinates *(α, δ, d)*.
+    pub type EquatorialTrueOfDate<U> =
+        Position<centers::Geocentric, frames::EquatorialTrueOfDate, U>;
 
     /// **Topocentric Horizontal** coordinates *(Alt, Az, d)*.
     ///

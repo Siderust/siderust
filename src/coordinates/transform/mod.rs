@@ -2,7 +2,7 @@
 //!
 //! This module provides a unified and extensible framework for transforming astronomical coordinates
 //! between different reference centers (e.g., Barycentric, Heliocentric, Geocentric, Topocentric)
-//! and reference frames (e.g., Ecliptic, Equatorial, ICRS, Horizontal).
+//! and reference frames (e.g., Ecliptic, EquatorialMeanJ2000, ICRS, Horizontal).
 //!
 //! ## Core Concepts
 //!
@@ -32,11 +32,13 @@
 //! ```rust
 //! use siderust::coordinates::cartesian::{line_of_sight, Position};
 //! use siderust::coordinates::centers::Geocentric;
-//! use siderust::coordinates::frames::Equatorial;
+//! use siderust::coordinates::frames::EquatorialMeanJ2000;
 //! use qtty::*;
 //!
-//! let observer = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(0.0, 0.0, 0.0);
-//! let target = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 1.0, 1.0);
+//! let observer =
+//!     Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
+//! let target =
+//!     Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 1.0, 1.0);
 //!
 //! let direction = line_of_sight(&observer, &target);
 //! ```
@@ -49,7 +51,7 @@
 //! use qtty::AstronomicalUnit;
 //! use siderust::astro::JulianDate;
 //!
-//! let cart_eq = Position::<Geocentric, Equatorial, AstronomicalUnit>::new(1.0, 2.0, 3.0);
+//! let cart_eq = Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 2.0, 3.0);
 //! let jd = JulianDate::J2000;
 //! // Transform to Geocentric Ecliptic coordinates (frame transform)
 //! let cart_geo_ecl: Position<Geocentric, Ecliptic, AstronomicalUnit> = cart_eq.to_frame();
@@ -83,6 +85,7 @@ use crate::astro::JulianDate;
 use crate::coordinates::{
     cartesian, cartesian::Position, centers::ReferenceCenter, frames::MutableFrame, spherical,
 };
+use affn::Rotation3;
 use qtty::LengthUnit;
 
 /// Trait for transforming coordinates between different centers and/or frames.
@@ -107,8 +110,8 @@ pub trait Transform<Coord> {
 /// 2. Center transformation (within the new frame)
 impl<C1, C2, F1, F2, U> Transform<Position<C2, F2, U>> for Position<C1, F1, U>
 where
-    Position<C1, F1, U>: TransformFrame<Position<C1, F2, U>>,
     Position<C1, F2, U>: TransformCenter<Position<C2, F2, U>>,
+    (): FrameRotationProvider<F1, F2>,
     C1: ReferenceCenter,
     C2: ReferenceCenter,
     F1: MutableFrame,
@@ -116,7 +119,18 @@ where
     U: LengthUnit,
 {
     fn transform(&self, jd: JulianDate) -> Position<C2, F2, U> {
-        self.to_frame().to_center(jd)
+        // Apply the frame rotation at the requested epoch, then shift centers.
+        let rot: Rotation3 = frame_rotation::<F1, F2>(jd, &AstroContext::default());
+        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
+        let rotated = Position::<C1, F2, U>::from_vec3(
+            self.center_params().clone(),
+            nalgebra::Vector3::new(
+                qtty::Quantity::<U>::new(x),
+                qtty::Quantity::<U>::new(y),
+                qtty::Quantity::<U>::new(z),
+            ),
+        );
+        rotated.to_center(jd)
     }
 }
 
@@ -137,7 +151,8 @@ where
     U: LengthUnit,
 {
     fn transform(&self, jd: JulianDate) -> spherical::Position<C2, F2, U> {
-        spherical::Position::from_cartesian(&self.to_cartesian().transform(jd))
+        let rotated: cartesian::Position<C2, F2, U> = self.to_cartesian().transform(jd);
+        spherical::Position::from_cartesian(&rotated)
     }
 }
 

@@ -34,20 +34,20 @@
 //!
 //! ```rust
 //! use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
-//! use siderust::coordinates::spherical::direction::Equatorial;
+//! use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
 //! use siderust::astro::JulianDate;
 //! use qtty::*;
 //!
 //! // A geometric direction to a star
-//! let astrometric_dir: Astrometric<Equatorial> = Astrometric::new(
-//!     Equatorial::new(45.0 * DEG, 20.0 * DEG)
+//! let astrometric_dir: Astrometric<EquatorialMeanJ2000> = Astrometric::new(
+//!     EquatorialMeanJ2000::new(45.0 * DEG, 20.0 * DEG)
 //! );
 //!
 //! // Get observer state (Earth-bound observer at J2000)
 //! let obs = ObserverState::geocentric(JulianDate::J2000);
 //!
 //! // Convert to apparent direction (applies aberration)
-//! let apparent_dir: Apparent<Equatorial> = astrometric_dir.to_apparent(&obs);
+//! let apparent_dir: Apparent<EquatorialMeanJ2000> = astrometric_dir.to_apparent(&obs);
 //!
 //! // The transformation is explicit - you can't confuse the two types
 //! ```
