@@ -20,26 +20,50 @@ fn sun_altitude_rad(jd: JulianDate, site: &ObserverSite) -> f64 {
     horiz.alt().to::<Radian>().value()
 }
 
+/// Common twilight types for ergonomic APIs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum Twilight {
+    Civil,
+    Nautical,
+    Astronomical,
+    Horizon,
+    ApparentHorizon,
+}
+
+impl From<Twilight> for Degrees {
+    fn from(t: Twilight) -> Degrees {
+        match t {
+            Twilight::Civil => Degrees::new(-6.0),
+            Twilight::Nautical => Degrees::new(-12.0),
+            Twilight::Astronomical => Degrees::new(-18.0),
+            Twilight::Horizon => Degrees::new(0.0),
+            Twilight::ApparentHorizon => Degrees::new(-0.833),
+        }
+    }
+}
+
 /// Finds night periods (Sun below `twilight`) inside `period`.
-pub fn find_night_periods(
+pub fn find_night_periods<T: Into<Degrees>>(
     site: ObserverSite,
     period: (ModifiedJulianDate, ModifiedJulianDate),
-    twilight: Degrees,
+    twilight: T,
 ) -> Option<Vec<AltitudePeriod>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
     let (mjd_start, mjd_end) = period;
-    find_altitude_periods(altitude_fn, mjd_start, mjd_end, AltitudeCondition::below(twilight))
+    let tw: Degrees = twilight.into();
+    find_altitude_periods(altitude_fn, mjd_start, mjd_end, AltitudeCondition::below(tw))
 }
 
 /// Finds day periods (Sun above `twilight`) inside `period`.
-pub fn find_day_periods(
+pub fn find_day_periods<T: Into<Degrees>>(
     site: ObserverSite,
     period: (ModifiedJulianDate, ModifiedJulianDate),
-    twilight: Degrees,
+    twilight: T,
 ) -> Option<Vec<AltitudePeriod>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
     let (mjd_start, mjd_end) = period;
-    find_altitude_periods(altitude_fn, mjd_start, mjd_end, AltitudeCondition::above(twilight))
+    let tw: Degrees = twilight.into();
+    find_altitude_periods(altitude_fn, mjd_start, mjd_end, AltitudeCondition::above(tw))
 }
 
 /// Finds periods where Sun altitude is within `range` (min, max) inside `period`.
