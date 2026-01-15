@@ -173,35 +173,6 @@ pub fn nutation_rotation(jd: JulianDate) -> Rotation3 {
         * Rotation3::from_x_rotation(-eps0)
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use crate::coordinates::spherical;
-    use qtty::{Degrees, Radian};
-
-    #[test]
-    fn nutation_rotation_matches_ra_correction() {
-        let jd = JulianDate::new(2_459_000.5);
-        let mean = spherical::direction::EquatorialMeanOfDate::new(
-            Degrees::new(123.0),
-            Degrees::new(-10.0),
-        );
-
-        let rot = nutation_rotation(jd);
-        let cart = mean.to_cartesian();
-        let [x, y, z] = rot.apply_array([cart.x(), cart.y(), cart.z()]);
-
-        let ra = y.atan2(x).to_degrees().rem_euclid(360.0);
-        let ra = Degrees::new(ra);
-        let ra_corr = corrected_ra_with_nutation(&mean, jd);
-
-        let diff = ra.abs_separation(ra_corr).to::<Radian>().value();
-        assert!(diff < 1e-10, "RA mismatch: {}", diff);
-
-        let _ = z; // preserve unused warning if additional checks are added later
-    }
-}
-
 const ARGUMENTS: [NutationArguments; TERMS] = [
     NutationArguments {
         d: 0.0,
@@ -1026,3 +997,32 @@ const COEFFICIENTS: [NutationCoefficients; TERMS] = [
         obliquity2: 0.0,
     },
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::coordinates::spherical;
+    use qtty::{Degrees, Radian};
+
+    #[test]
+    fn nutation_rotation_matches_ra_correction() {
+        let jd = JulianDate::new(2_459_000.5);
+        let mean = spherical::direction::EquatorialMeanOfDate::new(
+            Degrees::new(123.0),
+            Degrees::new(-10.0),
+        );
+
+        let rot = nutation_rotation(jd);
+        let cart = mean.to_cartesian();
+        let [x, y, z] = rot.apply_array([cart.x(), cart.y(), cart.z()]);
+
+        let ra = y.atan2(x).to_degrees().rem_euclid(360.0);
+        let ra = Degrees::new(ra);
+        let ra_corr = corrected_ra_with_nutation(&mean, jd);
+
+        let diff = ra.abs_separation(ra_corr).to::<Radian>().value();
+        assert!(diff < 1e-10, "RA mismatch: {}", diff);
+
+        let _ = z; // preserve unused warning if additional checks are added later
+    }
+}
