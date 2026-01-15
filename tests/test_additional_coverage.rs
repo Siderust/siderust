@@ -77,19 +77,16 @@ fn horizontal_conversion_variants_cover_all_impls() {
         topo_cart_j2000.y().value(),
         topo_cart_j2000.z().value(),
     ]);
-    let topo_cart_mod = cartesian::Position::<
-        siderust::coordinates::centers::Topocentric,
-        frames::EquatorialMeanOfDate,
-        AstronomicalUnit,
-    >::new_with_params(
-        *topo_cart_j2000.center_params(),
-        x * AU,
-        y * AU,
-        z * AU,
-    );
+    let topo_cart_mod =
+        cartesian::Position::<
+            siderust::coordinates::centers::Topocentric,
+            frames::EquatorialMeanOfDate,
+            AstronomicalUnit,
+        >::new_with_params(*topo_cart_j2000.center_params(), x * AU, y * AU, z * AU);
 
     // Now the dedicated Horizontal transform applies.
-    let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> = topo_cart_mod.transform(jd);
+    let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> =
+        topo_cart_mod.transform(jd);
     let horiz_pos = horiz_cart_pos.to_spherical();
     // Distance changes slightly due to real topocentric parallax (observer is ~6000 km from Earth center)
     // For an object at 1 AU, this is a very small fractional change (Earth radius / 1 AU ≈ 4e-5)

@@ -5,7 +5,9 @@
 
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{self, MutableFrame};
-use crate::coordinates::transform::frames::bias::{frame_bias_icrs_to_j2000, frame_bias_j2000_to_icrs};
+use crate::coordinates::transform::frames::bias::{
+    frame_bias_icrs_to_j2000, frame_bias_j2000_to_icrs,
+};
 use crate::coordinates::transform::TransformFrame;
 use affn::Rotation3;
 use nalgebra::Vector3;

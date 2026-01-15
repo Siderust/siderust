@@ -167,8 +167,7 @@ mod tests {
             centers::Barycentric,
             frames::EquatorialMeanJ2000,
             Au,
-        > =
-            ecliptic.transform(JulianDate::J2000);
+        > = ecliptic.transform(JulianDate::J2000);
 
         assert_spherical_eq!(equatorial_orig, equatorial_rec, 1e-10);
     }

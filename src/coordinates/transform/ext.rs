@@ -281,7 +281,9 @@ mod tests {
         // Must be finite and length-preserving.
         assert!(dir_ecl.x().is_finite() && dir_ecl.y().is_finite() && dir_ecl.z().is_finite());
         let n0 = (dir.x() * dir.x() + dir.y() * dir.y() + dir.z() * dir.z()).sqrt();
-        let n1 = (dir_ecl.x() * dir_ecl.x() + dir_ecl.y() * dir_ecl.y() + dir_ecl.z() * dir_ecl.z()).sqrt();
+        let n1 =
+            (dir_ecl.x() * dir_ecl.x() + dir_ecl.y() * dir_ecl.y() + dir_ecl.z() * dir_ecl.z())
+                .sqrt();
         assert!((n0 - n1).abs() < 1e-12);
     }
 
@@ -317,11 +319,11 @@ mod tests {
         let n0 = (pos.x().value() * pos.x().value()
             + pos.y().value() * pos.y().value()
             + pos.z().value() * pos.z().value())
-            .sqrt();
+        .sqrt();
         let n1 = (pos_ecl.x().value() * pos_ecl.x().value()
             + pos_ecl.y().value() * pos_ecl.y().value()
             + pos_ecl.z().value() * pos_ecl.z().value())
-            .sqrt();
+        .sqrt();
         assert!((n0 - n1).abs() < 1e-12);
     }
 
