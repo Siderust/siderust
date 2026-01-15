@@ -182,7 +182,10 @@ where
 /// Mean obliquity ε₀ at the requested epoch (radians).
 #[inline]
 fn mean_obliquity(jd: JulianDate) -> f64 {
-    nutation::get_nutation(jd).ecliptic.to::<qtty::Radian>().value()
+    nutation::get_nutation(jd)
+        .ecliptic
+        .to::<qtty::Radian>()
+        .value()
 }
 
 /// Frame bias rotation from ICRS to mean equator/equinox of J2000.0.
