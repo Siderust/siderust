@@ -1,10 +1,10 @@
 use crate::bodies::solar_system::Sun;
 
-use crate::astro::{nutation::corrected_ra_with_nutation, precession, JulianDate};
 use crate::astro::nutation::nutation_rotation;
-use crate::coordinates::{cartesian, centers::*, frames, spherical, transform::Transform};
+use crate::astro::{nutation::corrected_ra_with_nutation, precession, JulianDate};
 use crate::coordinates::transform::centers::ToTopocentricExt;
-use qtty::{AstronomicalUnits, LengthUnit, Quantity, Meter};
+use crate::coordinates::{cartesian, centers::*, frames, spherical, transform::Transform};
+use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 
 impl Sun {
     /// Returns the **apparent geocentric equatorial coordinates** of the Sun
@@ -75,11 +75,13 @@ impl Sun {
             topo_cart_j2000.z().value(),
         ]);
 
-        let topo_cart_mod = cartesian::Position::<
-            Topocentric,
-            frames::EquatorialMeanOfDate,
-            U,
-        >::new_with_params(*topo_cart_j2000.center_params(), Quantity::<U>::new(x_m), Quantity::<U>::new(y_m), Quantity::<U>::new(z_m));
+        let topo_cart_mod =
+            cartesian::Position::<Topocentric, frames::EquatorialMeanOfDate, U>::new_with_params(
+                *topo_cart_j2000.center_params(),
+                Quantity::<U>::new(x_m),
+                Quantity::<U>::new(y_m),
+                Quantity::<U>::new(z_m),
+            );
 
         // 4) Apply nutation rotation (mean-of-date -> true-of-date)
         let rot_nut = nutation_rotation(jd);
@@ -89,11 +91,13 @@ impl Sun {
             topo_cart_mod.z().value(),
         ]);
 
-        let topo_cart_true = cartesian::Position::<
-            Topocentric,
-            frames::EquatorialTrueOfDate,
-            U,
-        >::new_with_params(*topo_cart_mod.center_params(), Quantity::<U>::new(x_t), Quantity::<U>::new(y_t), Quantity::<U>::new(z_t));
+        let topo_cart_true =
+            cartesian::Position::<Topocentric, frames::EquatorialTrueOfDate, U>::new_with_params(
+                *topo_cart_mod.center_params(),
+                Quantity::<U>::new(x_t),
+                Quantity::<U>::new(y_t),
+                Quantity::<U>::new(z_t),
+            );
 
         // 5) Convert to spherical topocentric equatorial (true of date)
         spherical::Position::from_cartesian(&topo_cart_true)

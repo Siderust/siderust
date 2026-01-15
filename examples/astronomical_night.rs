@@ -20,8 +20,8 @@ use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
 use qtty::{Degrees, Meter, Quantity};
 use siderust::astro::ModifiedJulianDate;
 use siderust::calculus::solar::altitude_periods::{find_night_periods, twilight};
-use siderust::time::Period;
 use siderust::coordinates::centers::ObserverSite;
+use siderust::time::Period;
 
 fn main() {
     let args: Vec<String> = std::env::args().collect();
