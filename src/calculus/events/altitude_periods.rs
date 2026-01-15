@@ -19,8 +19,9 @@
 //! Timing precision is ~1 microsecond using Newton-Raphson with a tight
 //! convergence criterion (`1e-11` days ≈ 0.86 µs).
 
-use crate::astro::{JulianDate, ModifiedJulianDate};
+use crate::astro::JulianDate;
 use crate::coordinates::centers::ObserverSite;
+use crate::time::{ModifiedJulianDate, Period};
 use qtty::{Days, Degrees, Radian};
 
 // =============================================================================
@@ -49,28 +50,12 @@ const FD_STEP_DAYS: f64 = 1.0 / 86_400.0;
 // Public Types
 // =============================================================================
 
-/// Represents a time interval where altitude is within the specified range.
+/// Type alias for altitude periods using Modified Julian Date.
 ///
-/// Both `start` and `end` are in Modified Julian Date format.
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct AltitudePeriod {
-    /// Start of the period (MJD)
-    pub start: ModifiedJulianDate,
-    /// End of the period (MJD)
-    pub end: ModifiedJulianDate,
-}
+/// This provides backward compatibility with the previous `AltitudePeriod` struct
+/// while using the generic `Period<T>` implementation.
+pub type AltitudePeriod = Period<ModifiedJulianDate>;
 
-impl AltitudePeriod {
-    /// Creates a new altitude period.
-    pub fn new(start: ModifiedJulianDate, end: ModifiedJulianDate) -> Self {
-        Self { start, end }
-    }
-
-    /// Returns the duration of the period in days.
-    pub fn duration_days(&self) -> f64 {
-        self.end.value() - self.start.value()
-    }
-}
 
 /// Altitude threshold specification for period finding.
 #[derive(Debug, Clone, Copy)]
