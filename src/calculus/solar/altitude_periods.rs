@@ -14,50 +14,43 @@ use crate::time::ModifiedJulianDate;
 use qtty::{AstronomicalUnit, Degrees, Radian};
 
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
-///
-/// Positive above the horizon, negative below.
-pub fn sun_altitude_rad(jd: JulianDate, site: &ObserverSite) -> f64 {
+/// Positive above the horizon, negative below. (private helper)
+fn sun_altitude_rad(jd: JulianDate, site: &ObserverSite) -> f64 {
     let horiz = Sun::get_horizontal::<AstronomicalUnit>(jd, *site);
     horiz.alt().to::<Radian>().value()
 }
 
-/// Finds periods where Sun altitude is below `threshold_deg`.
-pub fn find_sun_below_altitude(
+/// Finds night periods (Sun below `twilight`) inside `period`.
+pub fn find_night_periods(
     site: ObserverSite,
-    mjd_start: ModifiedJulianDate,
-    mjd_end: ModifiedJulianDate,
-    threshold_deg: Degrees,
+    period: (ModifiedJulianDate, ModifiedJulianDate),
+    twilight: Degrees,
 ) -> Option<Vec<AltitudePeriod>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
-    find_altitude_periods(altitude_fn, mjd_start, mjd_end, AltitudeCondition::below(threshold_deg))
+    let (mjd_start, mjd_end) = period;
+    find_altitude_periods(altitude_fn, mjd_start, mjd_end, AltitudeCondition::below(twilight))
 }
 
-/// Finds periods where Sun altitude is above `threshold_deg`.
-pub fn find_sun_above_altitude(
+/// Finds day periods (Sun above `twilight`) inside `period`.
+pub fn find_day_periods(
     site: ObserverSite,
-    mjd_start: ModifiedJulianDate,
-    mjd_end: ModifiedJulianDate,
-    threshold_deg: Degrees,
+    period: (ModifiedJulianDate, ModifiedJulianDate),
+    twilight: Degrees,
 ) -> Option<Vec<AltitudePeriod>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
-    find_altitude_periods(altitude_fn, mjd_start, mjd_end, AltitudeCondition::above(threshold_deg))
+    let (mjd_start, mjd_end) = period;
+    find_altitude_periods(altitude_fn, mjd_start, mjd_end, AltitudeCondition::above(twilight))
 }
 
-/// Finds periods where Sun altitude is within `[min_altitude, max_altitude]`.
-pub fn find_sun_in_altitude_range(
+/// Finds periods where Sun altitude is within `range` (min, max) inside `period`.
+pub fn find_sun_range_periods(
     site: ObserverSite,
-    mjd_start: ModifiedJulianDate,
-    mjd_end: ModifiedJulianDate,
-    min_altitude: Degrees,
-    max_altitude: Degrees,
+    period: (ModifiedJulianDate, ModifiedJulianDate),
+    range: (Degrees, Degrees),
 ) -> Option<Vec<AltitudePeriod>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
-    find_altitude_periods(
-        altitude_fn,
-        mjd_start,
-        mjd_end,
-        AltitudeCondition::between(min_altitude, max_altitude),
-    )
+    let (mjd_start, mjd_end) = period;
+    find_altitude_periods(altitude_fn, mjd_start, mjd_end, AltitudeCondition::between(range.0, range.1))
 }
 
 /// Standard twilight threshold definitions (Sun center altitude).
@@ -103,8 +96,9 @@ mod tests {
         let site = greenwich_site();
         let mjd_start = ModifiedJulianDate::new(60000.0);
         let mjd_end = ModifiedJulianDate::new(60007.0);
+        let period = (mjd_start, mjd_end);
 
-        let nights = find_sun_below_altitude(site, mjd_start, mjd_end, twilight::ASTRONOMICAL);
+        let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
         assert!(nights.is_some(), "Should find night periods at 51° latitude");
 
         let nights = nights.unwrap();
@@ -122,24 +116,22 @@ mod tests {
         let mjd_start = ModifiedJulianDate::new(60000.0);
         let mjd_end = ModifiedJulianDate::new(60007.0);
 
-        let nights = find_sun_in_altitude_range(
+        let period = (mjd_start, mjd_end);
+
+        let nights = find_sun_range_periods(
             site,
-            mjd_start,
-            mjd_end,
-            Degrees::new(-90.0),
-            Degrees::new(-18.0),
+            period,
+            (Degrees::new(-90.0), Degrees::new(-18.0)),
         );
 
         assert!(nights.is_some(), "Should find night periods using range");
         let nights = nights.unwrap();
         assert!(!nights.is_empty(), "Should have at least one night period");
 
-        let nautical = find_sun_in_altitude_range(
+        let nautical = find_sun_range_periods(
             site,
-            mjd_start,
-            mjd_end,
-            Degrees::new(-18.0),
-            Degrees::new(-12.0),
+            period,
+            (Degrees::new(-18.0), Degrees::new(-12.0)),
         );
 
         assert!(nautical.is_some(), "Should find nautical twilight periods");
