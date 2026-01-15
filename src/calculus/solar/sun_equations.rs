@@ -37,12 +37,15 @@ impl Sun {
         Quantity<U>: From<AstronomicalUnits>,
     {
         let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
-        let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> =
-            helio.transform(jd);
+        let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> = helio.transform(jd);
         let geo_sph = spherical::Position::from_cartesian(&geo_cart);
         let mean_of_date = precession::precess_from_j2000(geo_sph, jd);
         let ra = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
-        spherical::position::EquatorialTrueOfDate::<U>::new(ra, mean_of_date.dec(), mean_of_date.distance())
+        spherical::position::EquatorialTrueOfDate::<U>::new(
+            ra,
+            mean_of_date.dec(),
+            mean_of_date.distance(),
+        )
     }
 }
 

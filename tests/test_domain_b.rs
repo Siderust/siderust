@@ -60,7 +60,8 @@ fn roundtrip_center_transform_preserves_position() {
 
     // Helio -> Geo -> Helio should recover original position
     let pos_geo: Position<Geocentric, EquatorialMeanJ2000, Au> = pos_helio.transform(jd);
-    let pos_helio_recovered: Position<Heliocentric, EquatorialMeanJ2000, Au> = pos_geo.transform(jd);
+    let pos_helio_recovered: Position<Heliocentric, EquatorialMeanJ2000, Au> =
+        pos_geo.transform(jd);
 
     // Should recover within floating-point precision
     assert!(
@@ -95,7 +96,8 @@ fn astrometric_and_apparent_are_distinct_types() {
     ));
 
     // Convert to apparent
-    let apparent: Apparent<spherical::direction::EquatorialMeanJ2000> = astrometric.to_apparent(&obs);
+    let apparent: Apparent<spherical::direction::EquatorialMeanJ2000> =
+        astrometric.to_apparent(&obs);
 
     // The two types are distinct at compile time
     // We can access the underlying directions
@@ -126,8 +128,10 @@ fn aberration_requires_observer_state() {
     // (This is enforced by the type system - to_apparent() requires &ObserverState)
 
     let jd = JulianDate::J2000;
-    let astrometric =
-        Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(0.0 * DEG, 0.0 * DEG));
+    let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
+        0.0 * DEG,
+        0.0 * DEG,
+    ));
 
     // Without an observer state, we cannot convert to apparent
     // (uncommenting the next line would be a compile error)

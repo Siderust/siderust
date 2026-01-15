@@ -212,8 +212,7 @@ fn main() {
 
     // Directions are now frame-only (no center parameter).
     // They cannot undergo center transformations - only frame rotations.
-    let star_dir: Direction<frames::EquatorialMeanJ2000> =
-        Direction::normalize(0.707, 0.0, 0.707); // 45° declination, 0° RA
+    let star_dir: Direction<frames::EquatorialMeanJ2000> = Direction::normalize(0.707, 0.0, 0.707); // 45° declination, 0° RA
 
     println!("Star direction (EquatorialMeanJ2000 frame):");
     println!("  X = {:.3}", star_dir.x());

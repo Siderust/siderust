@@ -44,9 +44,7 @@ fn target_spherical_position_transform() {
     let orig: Target<spherical::Position<Heliocentric, Ecliptic, AstronomicalUnit>> =
         Target::new_static(sph_pos, jd);
 
-    let converted: Target<
-        spherical::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>,
-    > =
+    let converted: Target<spherical::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>> =
         Target::from(&orig);
 
     let step_cart: cartesian::Position<Heliocentric, EquatorialMeanJ2000, AstronomicalUnit> =

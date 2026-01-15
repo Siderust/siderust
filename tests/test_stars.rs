@@ -8,11 +8,8 @@ use std::borrow::Cow;
 
 #[test]
 fn star_new_const() {
-    let position = EquatorialMeanJ2000::<LightYear>::new(
-        Degrees::new(10.0),
-        Degrees::new(20.0),
-        4.0,
-    );
+    let position =
+        EquatorialMeanJ2000::<LightYear>::new(Degrees::new(10.0), Degrees::new(20.0), 4.0);
     let expected_ra = position.ra();
     let expected_dec = position.dec();
     let target = Target::new_static(position, JulianDate::J2000);
@@ -37,11 +34,8 @@ fn star_new_const() {
 
 #[test]
 fn star_new_owned() {
-    let position = EquatorialMeanJ2000::<LightYear>::new(
-        Degrees::new(30.0),
-        Degrees::new(-10.0),
-        10.0,
-    );
+    let position =
+        EquatorialMeanJ2000::<LightYear>::new(Degrees::new(30.0), Degrees::new(-10.0), 10.0);
     let expected_ra = position.ra();
     let expected_dec = position.dec();
     let target = Target::new_static(position, JulianDate::J2000);
