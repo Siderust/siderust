@@ -24,4 +24,3 @@ pub mod sidereal;
 
 // Re-export time types for backward compatibility
 pub use crate::time::{JulianDate, ModifiedJulianDate};
-

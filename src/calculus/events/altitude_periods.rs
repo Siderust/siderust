@@ -43,7 +43,6 @@ const SCAN_STEP: Minutes = Minutes::new(10.0);
 /// while using the generic `Period<T>` implementation.
 pub type AltitudePeriod = Period<ModifiedJulianDate>;
 
-
 /// Altitude condition specification for period finding.
 ///
 /// Supports three types of conditions:
@@ -115,7 +114,6 @@ impl AltitudeCondition {
         }
     }
 }
-
 
 // =============================================================================
 // Main API: Find Altitude Periods
