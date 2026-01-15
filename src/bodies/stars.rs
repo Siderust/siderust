@@ -8,7 +8,7 @@
 //! - `luminosity`: Stellar luminosity in solar luminosities (`SolarLuminosity`).
 //! - `target`: [`Target`] pointing to a Spherical coordinates (see [`Position`]), using degrees and Julian Day.
 
-use crate::coordinates::{centers::Geocentric, frames::Equatorial, spherical::Position};
+use crate::coordinates::{centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position};
 use crate::targets::Target;
 use qtty::length::nominal::SolarRadiuses;
 use qtty::*;
@@ -23,7 +23,7 @@ pub struct Star<'a> {
     pub mass: SolarMasses,
     pub radius: SolarRadiuses,
     pub luminosity: SolarLuminosities,
-    pub target: Target<Position<Geocentric, Equatorial, LightYear>>,
+    pub target: Target<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
 }
 
 impl<'a> Star<'a> {
@@ -34,7 +34,7 @@ impl<'a> Star<'a> {
         mass: SolarMasses,
         radius: SolarRadiuses,
         luminosity: SolarLuminosities,
-        target: Target<Position<Geocentric, Equatorial, LightYear>>,
+        target: Target<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
     ) -> Star<'static> {
         Star {
             name: Cow::Borrowed(name),
@@ -53,7 +53,7 @@ impl<'a> Star<'a> {
         mass: SolarMasses,
         radius: SolarRadiuses,
         luminosity: SolarLuminosities,
-        target: Target<Position<Geocentric, Equatorial, LightYear>>,
+        target: Target<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
     ) -> Star<'a>
     where
         N: Into<Cow<'a, str>>,

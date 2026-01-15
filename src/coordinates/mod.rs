@@ -10,7 +10,7 @@
 
 //! ## Key Concepts
 //! - **Position, Direction and Velocity Types**: Both spherical and cartesian coordinates are parameterized
-//!   by a reference center (e.g., `Heliocentric`, `Geocentric`), a reference frame (e.g., `Ecliptic`, `Equatorial`, `ICRS`),
+//!   by a reference center (e.g., `Heliocentric`, `Geocentric`), a reference frame (e.g., `Ecliptic`, `EquatorialMeanJ2000`, `ICRS`),
 //!   and a measure unit (`Unitless`, `LengthUnit`, `VelocityUnit`). This ensures that only compatible coordinates can be used together.
 //! - **Phantom Types**: The `Center`, `Frame` and `Unit`types are zero-cost markers that encode coordinate semantics at compile time.
 //! - **Type Safety**: Operations between coordinates are only allowed when their type parameters match, preventing accidental mixing of frames, centers or magnitude.
@@ -49,7 +49,7 @@
 //!   observational state (`Astrometric` or `Apparent`).
 //!
 //! ## Supported Reference Frames and Centers
-//! - **Frames**: `Equatorial`, `Ecliptic`, `Horizontal`, `ICRS`, `ECEF`
+//! - **Frames**: `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, `EquatorialTrueOfDate`, `Ecliptic`, `Horizontal`, `ICRS`, `ECEF`
 //! - **Centers**: `Heliocentric`, `Geocentric`, `Barycentric`, `Topocentric`, `Bodycentric`
 //!
 //! ## Example
@@ -75,7 +75,7 @@
 //! ```
 //!
 //! ## Submodules
-//! - **frames**: Reference frame definitions (Ecliptic, Equatorial, ICRS, etc.)
+//! - **frames**: Reference frame definitions (Ecliptic, EquatorialMeanJ2000, ICRS, etc.)
 //! - **centers**: Reference center definitions (Heliocentric, Geocentric, etc.)
 //! - **cartesian**: Cartesian coordinate types and astronomical type aliases
 //! - **spherical**: Spherical coordinate types and astronomical extensions

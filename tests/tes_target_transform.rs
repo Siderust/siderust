@@ -18,12 +18,12 @@ fn target_cartesian_position_transform() {
     let orig: Target<cartesian::Position<Heliocentric, Ecliptic, AstronomicalUnit>> =
         Mars::vsop87a(jd);
 
-    let converted: Target<cartesian::Position<Geocentric, Equatorial, AstronomicalUnit>> =
+    let converted: Target<cartesian::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>> =
         Target::from(&orig);
 
-    let step: cartesian::Position<Heliocentric, Equatorial, AstronomicalUnit> =
+    let step: cartesian::Position<Heliocentric, EquatorialMeanJ2000, AstronomicalUnit> =
         orig.position.transform(jd);
-    let expected: cartesian::Position<Geocentric, Equatorial, AstronomicalUnit> =
+    let expected: cartesian::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit> =
         step.transform(jd);
 
     assert!(converted.position.distance_to(&expected).value() < EPS);
@@ -44,12 +44,12 @@ fn target_spherical_position_transform() {
     let orig: Target<spherical::Position<Heliocentric, Ecliptic, AstronomicalUnit>> =
         Target::new_static(sph_pos, jd);
 
-    let converted: Target<spherical::Position<Geocentric, Equatorial, AstronomicalUnit>> =
+    let converted: Target<spherical::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>> =
         Target::from(&orig);
 
-    let step_cart: cartesian::Position<Heliocentric, Equatorial, AstronomicalUnit> =
+    let step_cart: cartesian::Position<Heliocentric, EquatorialMeanJ2000, AstronomicalUnit> =
         orig.position.to_cartesian().transform(jd);
-    let expected_cart: cartesian::Position<Geocentric, Equatorial, AstronomicalUnit> =
+    let expected_cart: cartesian::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit> =
         step_cart.transform(jd);
     let converted_cart = converted.position.to_cartesian();
 
@@ -67,8 +67,8 @@ fn cartesian_direction_frame_transform() {
     // They can only undergo frame transformations, not center transformations.
     let dir = cartesian::Direction::<Ecliptic>::normalize(1.0, 0.5, 0.2);
 
-    // Frame transform from Ecliptic to Equatorial (rotation only)
-    let dir_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&dir);
+    // Frame transform from Ecliptic to EquatorialMeanJ2000 (rotation only)
+    let dir_equatorial: cartesian::Direction<EquatorialMeanJ2000> = TransformFrame::to_frame(&dir);
 
     // Verify it's still a unit vector
     let norm =
@@ -87,7 +87,8 @@ fn spherical_direction_frame_transform() {
 
     // Convert to cartesian, transform frame, then back
     let cart_dir = sph_dir.to_cartesian();
-    let cart_equatorial: cartesian::Direction<Equatorial> = TransformFrame::to_frame(&cart_dir);
+    let cart_equatorial: cartesian::Direction<EquatorialMeanJ2000> =
+        TransformFrame::to_frame(&cart_dir);
 
     // Verify the Cartesian direction is still unit vector
     let norm =

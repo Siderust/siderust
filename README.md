@@ -57,6 +57,11 @@ Siderust aims to be the reference ephemeris and orbit‑analysis library for emb
 | **Celestial Mechanics** | Kepler solvers, VSOP87 & ELP2000 planetary/lunar theories, light‑time & aberration, nutation & precession matrices, apparent Sun & Moon, culmination searches.                                                       |
 | **Catalogs & Bodies**   | Built‑in Sun→Neptune, major moons, a starter star catalog, + helper builders to load *Gaia*, *Hipparcos* or custom datasets.                                                                                         |
 
+### Astrometry Compliance Note
+
+- Stellar aberration uses the full special-relativistic (Lorentz) formula per IERS Conventions (2020, §7.2); annual uses VSOP87E barycentric Earth velocity and topocentric adds a diurnal `ω×r` term (GMST-based Earth rotation).
+- This is not yet a full IAU 2000/2006 “apparent place” pipeline (missing CIO/CIP, polar motion, and gravitational light deflection; time scales are not strongly typed).
+
 ---
 
 ## Installation

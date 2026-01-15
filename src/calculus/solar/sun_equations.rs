@@ -1,6 +1,6 @@
 use crate::bodies::solar_system::Sun;
 
-use crate::astro::{nutation::corrected_ra_with_nutation, JulianDate};
+use crate::astro::{nutation::corrected_ra_with_nutation, precession, JulianDate};
 use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
 use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
@@ -16,7 +16,7 @@ impl Sun {
     /// - `jd`: Julian Day for which to compute the Sun’s apparent position.
     ///
     /// ### Returns
-    /// - A `spherical::Position<Geocentric, Equatorial>` representing the Sun’s
+    /// - A `spherical::Position<Geocentric, EquatorialTrueOfDate>` representing the Sun’s
     ///   apparent right ascension and declination, in degrees.
     ///
     /// ### Notes
@@ -32,15 +32,20 @@ impl Sun {
     /// visualization.
     pub fn get_apparent_geocentric_equ<U: LengthUnit>(
         jd: JulianDate,
-    ) -> spherical::position::Equatorial<U>
+    ) -> spherical::position::EquatorialTrueOfDate<U>
     where
         Quantity<U>: From<AstronomicalUnits>,
     {
         let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
-        let geo_cart: cartesian::position::Equatorial<U, Geocentric> = helio.transform(jd);
+        let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> = helio.transform(jd);
         let geo_sph = spherical::Position::from_cartesian(&geo_cart);
-        let ra = corrected_ra_with_nutation(&geo_sph.direction(), jd);
-        spherical::position::Equatorial::<U>::new(ra, geo_sph.dec(), geo_sph.distance())
+        let mean_of_date = precession::precess_from_j2000(geo_sph, jd);
+        let ra = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
+        spherical::position::EquatorialTrueOfDate::<U>::new(
+            ra,
+            mean_of_date.dec(),
+            mean_of_date.distance(),
+        )
     }
 }
 

@@ -26,6 +26,14 @@ The **coordinates module** provides a strongly-typed, compile-time-safe framewor
 - **Multiple Representations**: Supports both Cartesian and Spherical coordinate systems
 - **Clear Separation**: Algebraic structures separated from physical/astronomical implementations
 
+### Equatorial Frames
+Equatorial frames are explicit and non-interchangeable:
+- `EquatorialMeanJ2000`: mean equator/equinox of J2000.0 (FK5/J2000 mean).
+- `EquatorialMeanOfDate`: mean equator/equinox of date (precession applied, nutation removed).
+- `EquatorialTrueOfDate`: true equator/equinox of date (precession + nutation).
+
+Time-dependent transformations involving `*OfDate` frames require a TT epoch.
+
 ---
 
 ## Module Organization
@@ -36,7 +44,7 @@ The coordinates module is organized into two main submodules:
 
 Contains the abstract algebraic coordinate types independent of physical context:
 
-- **`frames.rs`**: Reference frame trait and implementations (ICRS, Ecliptic, Equatorial, etc.)
+- **`frames.rs`**: Reference frame trait and implementations (ICRS, Ecliptic, EquatorialMeanJ2000/OfDate/TrueOfDate, etc.)
 - **`centers.rs`**: Reference center trait and implementations (Heliocentric, Geocentric, etc.)
 - **`cartesian/`**: Cartesian coordinate types
   - `vector.rs`: Generic Vector<C, F, U>
@@ -53,7 +61,7 @@ Contains domain-specific coordinate systems with astronomical conventions:
 
 - **`spherical/`**: Frame-specific implementations with convenience constructors
   - `ecliptic.rs`: Ecliptic coordinates (longitude L, latitude B)
-  - `equatorial.rs`: Equatorial coordinates (RA α, Dec δ)
+  - `equatorial.rs`: Equatorial coordinates (RA α, Dec δ) with explicit mean/true variants
   - `horizontal.rs`: Horizontal coordinates (altitude, azimuth)
   - `icrs.rs`: ICRS coordinate extensions
   - `ecef.rs`: Geographic/ECEF coordinates
@@ -75,7 +83,7 @@ This ensures existing code continues to work without changes.
 ### 1. **Type-Level Encoding**
 The module uses **phantom types** to encode coordinate system properties:
 - `C: ReferenceCenter` - Origin of the coordinate system (e.g., Heliocentric, Geocentric)
-- `F: ReferenceFrame` - Orientation of axes (e.g., Ecliptic, Equatorial, ICRS)
+- `F: ReferenceFrame` - Orientation of axes (e.g., Ecliptic, EquatorialMeanJ2000, ICRS)
 - `U: Unit` - Physical units (e.g., AstronomicalUnit for position, Unitless for direction)
 
 ### 2. **Separation of Concerns**
@@ -105,7 +113,7 @@ graph TB
         
         subgraph "Type Definitions"
             CENTERS[centers.rs<br/>ReferenceCenter trait<br/>Heliocentric, Geocentric, etc.]
-            FRAMES[frames.rs<br/>ReferenceFrame trait<br/>Ecliptic, Equatorial, ICRS, etc.]
+            FRAMES[frames.rs<br/>ReferenceFrame trait<br/>Ecliptic, EquatorialMeanJ2000, ICRS, etc.]
         end
         
         subgraph "Representations"
@@ -214,7 +222,7 @@ classDiagram
         <<zero-sized struct>>
     }
     
-    class Equatorial {
+    class EquatorialMeanJ2000 {
         <<zero-sized struct>>
     }
     
@@ -227,7 +235,7 @@ classDiagram
     Barycentric ..|> ReferenceCenter
     
     Ecliptic ..|> ReferenceFrame
-    Equatorial ..|> ReferenceFrame
+    EquatorialMeanJ2000 ..|> ReferenceFrame
     ICRS ..|> ReferenceFrame
     
     Vector~C,F,U~ ..> ReferenceCenter : C
@@ -246,9 +254,9 @@ graph LR
     subgraph "Coordinate Representations"
         SPH_HE[Spherical<br/>Heliocentric<br/>Ecliptic]
         CART_HE[Cartesian<br/>Heliocentric<br/>Ecliptic]
-        CART_HE2[Cartesian<br/>Heliocentric<br/>Equatorial]
-        CART_GE[Cartesian<br/>Geocentric<br/>Equatorial]
-        SPH_GE[Spherical<br/>Geocentric<br/>Equatorial]
+        CART_HE2[Cartesian<br/>Heliocentric<br/>EquatorialMeanJ2000]
+        CART_GE[Cartesian<br/>Geocentric<br/>EquatorialMeanJ2000]
+        SPH_GE[Spherical<br/>Geocentric<br/>EquatorialMeanJ2000]
     end
     
     SPH_HE -->|to_cartesian| CART_HE
@@ -276,7 +284,7 @@ graph TB
         end
         
         subgraph "Implementations"
-            FRAME_IMPL[Frame Transformations<br/>Ecliptic ↔ Equatorial<br/>ICRS ↔ Equatorial<br/>etc.]
+            FRAME_IMPL[Frame Transformations<br/>Ecliptic ↔ EquatorialMeanJ2000<br/>ICRS ↔ EquatorialMeanJ2000<br/>etc.]
             CENTER_IMPL[Center Transformations<br/>Heliocentric ↔ Geocentric<br/>Barycentric ↔ Geocentric<br/>etc.]
             REPR_IMPL[Representation Transforms<br/>Spherical ↔ Cartesian]
             HORIZ_IMPL[Horizontal Transform<br/>Any → Topocentric Horizontal]
@@ -337,7 +345,9 @@ pub type Position<C, F, U> = spherical::Position<C, F, U>;           // Affine p
 
 // Frame-specific direction aliases (no center parameter)
 pub type Ecliptic = Direction<frames::Ecliptic>;
-pub type Equatorial = Direction<frames::Equatorial>;
+pub type EquatorialMeanJ2000 = Direction<frames::EquatorialMeanJ2000>;
+pub type EquatorialMeanOfDate = Direction<frames::EquatorialMeanOfDate>;
+pub type EquatorialTrueOfDate = Direction<frames::EquatorialTrueOfDate>;
 pub type ICRS = Direction<frames::ICRS>;
 ```
 
@@ -417,7 +427,7 @@ coordinates/
     │
     ├── frames/              # Frame transformations
     │   ├── mod.rs          
-    │   ├── to_equatorial.rs # → Equatorial
+    │   ├── to_equatorial.rs # → EquatorialMeanJ2000
     │   ├── to_ecliptic.rs   # → Ecliptic
     │   └── to_icrs.rs       # → ICRS
     │
@@ -532,18 +542,16 @@ impl TransformCenter<Position<Geocentric, F, U>>
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         let earth_helio = Earth::vsop87a(jd).get_position();
-        let earth_equ: Equatorial<Heliocentric> = earth_helio.to_frame();
-        let self_equ: Equatorial<Heliocentric> = self.to_frame();
+        let earth_equ: EquatorialMeanJ2000<Heliocentric> = earth_helio.to_frame();
+        let self_equ: EquatorialMeanJ2000<Heliocentric> = self.to_frame();
         let geo_equ = self_equ - earth_equ;  // Vector subtraction
-        let result = apply_aberration(geo_equ, jd);
-        result.to_frame()  // Back to original frame F
+        geo_equ.to_frame()  // Back to original frame F
     }
 }
 ```
 
 **Key Points:**
-- Converts to a common frame (Equatorial) for subtraction
-- Applies aberration correction (light-time effect)
+- Converts to a common frame (EquatorialMeanJ2000) for subtraction
 - Converts back to the original frame
 
 ### Frame Transformations (Time-Independent)
@@ -551,13 +559,13 @@ impl TransformCenter<Position<Geocentric, F, U>>
 Frame transformations are rotation matrices:
 
 ```rust
-impl TransformFrame<Vector<C, Equatorial, U>> 
+impl TransformFrame<Vector<C, EquatorialMeanJ2000, U>> 
     for Vector<C, Ecliptic, U>
 {
-    fn to_frame(&self) -> Vector<C, Equatorial, U> {
-        let eps = 23.439281_f64.to_radians();  // Obliquity
+    fn to_frame(&self) -> Vector<C, EquatorialMeanJ2000, U> {
+        let eps = (84381.406_f64 / 3600.0).to_radians();  // J2000 mean obliquity (IAU 2006)
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
-        
+
         Vector::new(
             self.x(),
             cos_e * self.y() - sin_e * self.z(),
@@ -625,8 +633,8 @@ type Position<C, F> = Vector<C, F, AstronomicalUnit>;         // Affine (length)
 type Velocity<F> = Vector<NoCenter, F, AuPerDay>;             // Free vector (velocity)
 
 // Prevents mixing:
-let pos: Position<Geocentric, Equatorial, _> = ...;
-let dir: Direction<Equatorial> = ...;
+let pos: Position<Geocentric, EquatorialMeanJ2000, _> = ...;
+let dir: Direction<EquatorialMeanJ2000> = ...;
 // pos + dir;  // ❌ Compile error: mismatched units
 ```
 
@@ -668,7 +676,7 @@ new_center!(Barycentric);
 ```rust
 // ✅ Type-safe operations
 let helio_ecl: Position<Heliocentric, Ecliptic> = ...;
-let helio_equ: Position<Heliocentric, Equatorial> = helio_ecl.to_frame();
+let helio_equ: Position<Heliocentric, EquatorialMeanJ2000> = helio_ecl.to_frame();
 
 // ❌ Compile error: incompatible types
 let geo_ecl: Position<Geocentric, Ecliptic> = ...;
@@ -691,7 +699,7 @@ Benchmark results:
 #### 3. **Self-Documenting Code**
 ```rust
 fn compute_parallax(
-    observer: Position<Geocentric, Equatorial>,
+    observer: Position<Geocentric, EquatorialMeanJ2000>,
     star: Position<Barycentric, ICRS>
 ) -> Degrees {
     // Function signature clearly indicates coordinate systems
@@ -753,7 +761,7 @@ All coordinates are immutable by default, preventing accidental modifications an
 ```rust
 // Can become unwieldy for complex operations
 fn complex_transform(
-    coord: Vector<Geocentric, Equatorial, AstronomicalUnit>
+    coord: Vector<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>
 ) -> Vector<Heliocentric, Ecliptic, Parsec> {
     // Type aliases help, but still verbose
 }
@@ -809,7 +817,7 @@ While phantom types have no runtime cost, they can affect generic code:
 ```rust
 // All these have the same memory layout but are different types
 let v1: Vector<Heliocentric, Ecliptic> = ...;
-let v2: Vector<Geocentric, Equatorial> = ...;
+let v2: Vector<Geocentric, EquatorialMeanJ2000> = ...;
 
 // Can't store in a homogeneous collection without wrapping
 // let vec = vec![v1, v2];  // ❌ Won't compile
@@ -869,10 +877,10 @@ let pos = HelioEcliptic::<Au>::new(1.0, 0.5, 0.1);
 
 // Spherical coordinates
 use siderust::coordinates::spherical::Direction;
-use siderust::coordinates::frames::Equatorial;
+use siderust::coordinates::frames::EquatorialMeanJ2000;
 use siderust::coordinates::centers::Geocentric;
 
-let dir = Direction::<Geocentric, Equatorial>::new(
+let dir = Direction::<Geocentric, EquatorialMeanJ2000>::new(
     120.0 * DEG,  // Right ascension
     45.0 * DEG,   // Declination
 );
@@ -883,12 +891,12 @@ let dir = Direction::<Geocentric, Equatorial>::new(
 ```rust
 use siderust::coordinates::transform::TransformFrame;
 
-// Ecliptic → Equatorial (time-independent)
+// Ecliptic → EquatorialMeanJ2000 (time-independent)
 let ecl: Position<Heliocentric, Ecliptic, Au> = ...;
-let equ: Position<Heliocentric, Equatorial, Au> = ecl.to_frame();
+let equ: Position<Heliocentric, EquatorialMeanJ2000, Au> = ecl.to_frame();
 
 // Using Into trait
-let equ: Position<Heliocentric, Equatorial, Au> = (&ecl).into();
+let equ: Position<Heliocentric, EquatorialMeanJ2000, Au> = (&ecl).into();
 ```
 
 ### Center Transformations
@@ -909,7 +917,7 @@ let geo: Position<Geocentric, Ecliptic, Au> = helio.transform(jd);
 ```rust
 // Change both center and frame in one call
 let helio_ecl: Position<Heliocentric, Ecliptic, Au> = ...;
-let geo_equ: Position<Geocentric, Equatorial, Au> = helio_ecl.transform(jd);
+let geo_equ: Position<Geocentric, EquatorialMeanJ2000, Au> = helio_ecl.transform(jd);
 
 // Internally chains: helio_ecl.to_frame().to_center(jd)
 ```
@@ -918,27 +926,27 @@ let geo_equ: Position<Geocentric, Equatorial, Au> = helio_ecl.transform(jd);
 
 ```rust
 // Spherical → Cartesian
-let sph: spherical::Position<Geocentric, Equatorial, Au> = ...;
-let cart: cartesian::Position<Geocentric, Equatorial, Au> = (&sph).into();
+let sph: spherical::Position<Geocentric, EquatorialMeanJ2000, Au> = ...;
+let cart: cartesian::Position<Geocentric, EquatorialMeanJ2000, Au> = (&sph).into();
 
 // Cartesian → Spherical
-let sph_back: spherical::Position<Geocentric, Equatorial, Au> = (&cart).into();
+let sph_back: spherical::Position<Geocentric, EquatorialMeanJ2000, Au> = (&cart).into();
 ```
 
 ### Direction vs Position
 
 ```rust
 // Direction: unitless, represents a pointing vector
-let dir: cartesian::Direction<Geocentric, Equatorial> = 
+let dir: cartesian::Direction<Geocentric, EquatorialMeanJ2000> = 
     cartesian::Direction::new(0.8, 0.6, 0.0);  // Normalized to unit length
 
 // Convert direction to position at specific distance
-let pos: cartesian::Position<Geocentric, Equatorial, Au> = 
+let pos: cartesian::Position<Geocentric, EquatorialMeanJ2000, Au> = 
     dir.position(10.0 * AU);
 
 // Extract direction from position
-let pos: cartesian::Position<Geocentric, Equatorial, Au> = ...;
-let dir: cartesian::Direction<Geocentric, Equatorial> = pos.direction();
+let pos: cartesian::Position<Geocentric, EquatorialMeanJ2000, Au> = ...;
+let dir: cartesian::Direction<Geocentric, EquatorialMeanJ2000> = pos.direction();
 ```
 
 ### Working with Observatories (Topocentric)
@@ -948,7 +956,7 @@ use siderust::coordinates::centers::Topocentric;
 use siderust::coordinates::frames::Horizontal;
 
 // Convert to observer's horizontal frame
-let geo_equ: Position<Geocentric, Equatorial, Au> = ...;
+let geo_equ: Position<Geocentric, EquatorialMeanJ2000, Au> = ...;
 let observer_lat = 40.0 * DEG;
 let observer_lon = -75.0 * DEG;
 let lst = calculate_local_sidereal_time(jd, observer_lon);
@@ -1032,7 +1040,7 @@ println!("Altitude: {}, Azimuth: {}",
 
 ```rust
 enum Center { Heliocentric, Geocentric, Barycentric }
-enum Frame { Ecliptic, Equatorial, ICRS }
+enum Frame { Ecliptic, EquatorialMeanJ2000, ICRS }
 
 struct Vector {
     x: f64,
@@ -1057,7 +1065,7 @@ struct Vector {
 
 ```rust
 struct HeliocentricEcliptic { x: f64, y: f64, z: f64 }
-struct GeocentricEquatorial { x: f64, y: f64, z: f64 }
+struct GeocentricEquatorialMeanJ2000 { x: f64, y: f64, z: f64 }
 // ... hundreds of combinations
 ```
 
