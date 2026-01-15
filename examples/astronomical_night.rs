@@ -19,7 +19,8 @@
 use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
 use qtty::{Degrees, Meter, Quantity};
 use siderust::astro::ModifiedJulianDate;
-use siderust::calculus::events::{find_sun_below_altitude, twilight};
+use siderust::calculus::solar::altitude_periods::{find_night_periods, twilight};
+use siderust::time::Period;
 use siderust::coordinates::centers::ObserverSite;
 
 fn main() {
@@ -52,7 +53,8 @@ fn main() {
     let mjd_end = ModifiedJulianDate::new(mjd_start.value() + 7.0);
 
     // Find astronomical night periods (Sun altitude < -18°)
-    let nights = find_sun_below_altitude(site, mjd_start, mjd_end, twilight::ASTRONOMICAL);
+    let period = Period::new(mjd_start, mjd_end);
+    let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
 
     // Print results
     println!("Astronomical Night Periods (Sun altitude < -18°)");
