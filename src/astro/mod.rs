@@ -13,18 +13,15 @@
 //! - [`dynamical_time`]: Converts between Universal Time (UT) and Terrestrial Time (TT).
 //! - [`aberration`]: Applies annual aberration corrections to celestial coordinates.
 //! - [`orbit`]: Provides utilities for orbital mechanics and celestial object tracking.
-//! - [`julian_date`]: Implements Julian Date calculations.
-//! - [`modified_julian_date`]: Implements Modified Julian Date calculations.
 
 pub mod aberration;
 pub mod dynamical_time;
-pub mod julian_date;
-pub mod modified_julian_date;
 pub mod nutation;
 pub mod orbit;
 pub mod precession;
 pub mod proper_motion;
 pub mod sidereal;
 
-pub use julian_date::*;
-pub use modified_julian_date::*;
+// Re-export time types for backward compatibility
+pub use crate::time::{JulianDate, ModifiedJulianDate};
+

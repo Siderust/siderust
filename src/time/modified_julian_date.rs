@@ -1,8 +1,10 @@
 use chrono::{DateTime, Utc};
+use qtty::Days;
+use std::ops::{Add, Sub};
 
 /// Represents Modified Julian Date (MJD), which is the Julian Date
 /// minus 2400000.5, used in various scientific and technical applications.
-#[derive(Debug, Clone, Copy, PartialEq)]
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub struct ModifiedJulianDate(f64);
 
 impl ModifiedJulianDate {
@@ -43,6 +45,37 @@ impl From<ModifiedJulianDate> for super::JulianDate {
     }
 }
 
+// Arithmetic operations
+impl Add<Days> for ModifiedJulianDate {
+    type Output = ModifiedJulianDate;
+
+    fn add(self, rhs: Days) -> Self::Output {
+        ModifiedJulianDate::new(self.0 + rhs.value())
+    }
+}
+
+impl Sub<Days> for ModifiedJulianDate {
+    type Output = ModifiedJulianDate;
+
+    fn sub(self, rhs: Days) -> Self::Output {
+        ModifiedJulianDate::new(self.0 - rhs.value())
+    }
+}
+
+impl Sub<ModifiedJulianDate> for ModifiedJulianDate {
+    type Output = Days;
+
+    fn sub(self, rhs: ModifiedJulianDate) -> Self::Output {
+        Days::new(self.0 - rhs.0)
+    }
+}
+
+impl std::fmt::Display for ModifiedJulianDate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "MJD {}", self.0)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -72,5 +105,35 @@ mod tests {
         let datetime = DateTime::from_timestamp(946728000, 0);
         let mjd = ModifiedJulianDate::from_utc(datetime.unwrap());
         assert_eq!(mjd.value(), 51544.5);
+    }
+
+    #[test]
+    fn test_add_days() {
+        let mjd = ModifiedJulianDate::new(59000.0);
+        let result = mjd + Days::new(1.5);
+        assert_eq!(result.value(), 59001.5);
+    }
+
+    #[test]
+    fn test_sub_days() {
+        let mjd = ModifiedJulianDate::new(59000.0);
+        let result = mjd - Days::new(1.5);
+        assert_eq!(result.value(), 58998.5);
+    }
+
+    #[test]
+    fn test_sub_mjd() {
+        let mjd1 = ModifiedJulianDate::new(59001.0);
+        let mjd2 = ModifiedJulianDate::new(59000.0);
+        let diff = mjd1 - mjd2;
+        assert_eq!(diff.value(), 1.0);
+    }
+
+    #[test]
+    fn test_comparison() {
+        let mjd1 = ModifiedJulianDate::new(59000.0);
+        let mjd2 = ModifiedJulianDate::new(59001.0);
+        assert!(mjd1 < mjd2);
+        assert!(mjd2 > mjd1);
     }
 }
