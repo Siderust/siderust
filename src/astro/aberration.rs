@@ -1,31 +1,30 @@
-//! # Annual Aberration (VSOP87‑based)
+//! # Aberration (observer-velocity)
 //!
-//! This module converts **mean (geometric) coordinates** into **apparent**
-//! coordinates by adding the relativistic correction due to the Earth's
-//! orbital motion (annual aberration).
+//! This module applies the special-relativistic aberration of light due to an
+//! observer's velocity.
 //!
 //! ```text
 //! max effect   ≃ 20.5″
-//! accuracy     < 0.1 mas   (1900‑2100)
+//! annual (Earth orbital) ≃ 20.5″
+//! diurnal (Earth rotation) ≃ 0.3″
 //! ```
 //!
 //! ## Velocity model
-//! * **Heliocentric velocity** of the Earth is computed analytically from its
-//!   VSOP87A coefficients (exact derivative of the 6 power‑series per axis).
-//! * Output is **AU day⁻¹** in the *ecliptic J2000* frame and then rotated to
-//!   the **mean equator & equinox of J2000** to match the target vector.
+//! * The convenience functions in this module use **VSOP87E barycentric Earth
+//!   velocity** (SSB-referenced), rotated from the dynamical *ecliptic J2000*
+//!   frame into [`frames::EquatorialMeanJ2000`].
 //!
 //! ## References
-//! * Bretagnon & Simon (1988) – VSOP87
 //! * IERS Conventions 2020, §7.2 (aberration)
-//! * Kaplan & Soffel, *USNO Circular 179* (2005)
+//! * SOFA/ERFA: stellar aberration is a full SR (Lorentz) transform (see e.g.
+//!   `iauAb` / `eraAb` behavior)
 //!
 //! ## Implementation notes
-//! * Speed of light used: **173.144 632 674 AstronomicalUnits day⁻¹** (`AU_PER_DAY_C`).
-//! * Vector formulation: `u' = u + v / c` then renormalised.
-//! * Verified against JPL DE440: <0.08 mas over 1900‑2100.
+//! * Uses the full special-relativistic aberration formula (Lorentz transform).
+//! * Uses exact SI definitions for `c`, day, and AU to compute `c` in AU/day.
 
 use crate::astro::JulianDate;
+use crate::bodies::solar_system::Earth;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{
     cartesian::{direction, position, Velocity},
@@ -36,18 +35,68 @@ use qtty::*;
 type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 type AusPerDay = qtty::velocity::Velocity<AstronomicalUnit, Day>;
 
-// Speed of light: c = 299_792_458 m/s
-// Convert to AU/day:
-// 1 AU = 149_597_870_700 m (exact)
-// 1 day = 86_400 s (exact)
-// c [AU/day] = (299_792_458 m/s) * (86_400 s/day) / (149_597_870_700 m/AU)
-//            = 173.144_632_674... AU/day
-const AU_PER_DAY_C: AusPerDay = AusPerDay::new(173.1446334836104);
+/// Speed of light in AU/day from exact SI definitions:
+/// `c = 299_792_458 m/s`, `day = 86_400 s`, `AU = 149_597_870_700 m`.
+pub const AU_PER_DAY_C_F64: f64 = 173.144_632_674_240_33_f64;
+
+/// Same as [`AU_PER_DAY_C_F64`], as a quantity.
+pub const AU_PER_DAY_C: AusPerDay = AusPerDay::new(AU_PER_DAY_C_F64);
+
+#[inline]
+fn aberrate_unit_vector_lorentz(u: nalgebra::Vector3<f64>, beta: nalgebra::Vector3<f64>) -> nalgebra::Vector3<f64> {
+    let beta2 = beta.dot(&beta);
+    if beta2 == 0.0 {
+        return u;
+    }
+
+    // gamma = 1 / sqrt(1 - |beta|^2)
+    let gamma = 1.0 / (1.0 - beta2).sqrt();
+    let beta_dot_u = beta.dot(&u);
+
+    // u' = [ u/gamma + beta + (gamma/(gamma+1)) (beta·u) beta ] / (1 + beta·u)
+    let factor = gamma / (gamma + 1.0);
+    let numerator = (u / gamma) + beta * (1.0 + factor * beta_dot_u);
+    let denom = 1.0 + beta_dot_u;
+    numerator / denom
+}
+
+/// Apply aberration to a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.
+#[must_use]
+pub fn apply_aberration_to_direction_with_velocity(
+    mean: direction::EquatorialMeanJ2000,
+    velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
+) -> direction::EquatorialMeanJ2000 {
+    let beta = nalgebra::Vector3::new(
+        velocity.x().value() / AU_PER_DAY_C_F64,
+        velocity.y().value() / AU_PER_DAY_C_F64,
+        velocity.z().value() / AU_PER_DAY_C_F64,
+    );
+    let u = nalgebra::Vector3::new(mean.x(), mean.y(), mean.z());
+    let up = aberrate_unit_vector_lorentz(u, beta);
+    direction::EquatorialMeanJ2000::normalize(up.x, up.y, up.z)
+}
+
+/// Remove aberration from a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.
+#[must_use]
+pub fn remove_aberration_from_direction_with_velocity(
+    app: direction::EquatorialMeanJ2000,
+    velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
+) -> direction::EquatorialMeanJ2000 {
+    // Inverse is the same Lorentz transform with negated velocity.
+    let beta = nalgebra::Vector3::new(
+        -velocity.x().value() / AU_PER_DAY_C_F64,
+        -velocity.y().value() / AU_PER_DAY_C_F64,
+        -velocity.z().value() / AU_PER_DAY_C_F64,
+    );
+    let u = nalgebra::Vector3::new(app.x(), app.y(), app.z());
+    let up = aberrate_unit_vector_lorentz(u, beta);
+    direction::EquatorialMeanJ2000::normalize(up.x, up.y, up.z)
+}
 
 /// Apply **annual aberration** to a unit direction vector (mean J2000).
 ///
 /// * `mean` – Geocentric unit vector in the mean equator & equinox of J2000.
-/// * `jd`   – Epoch TT (*Julian Day*).
+/// * `jd`   – Epoch for Earth state evaluation (VSOP87 expects TDB; TT is a close approximation).
 ///
 /// Returns a new [`Direction`] including annual aberration.
 #[must_use]
@@ -55,17 +104,10 @@ pub fn apply_aberration_to_direction(
     mean: direction::EquatorialMeanJ2000,
     jd: JulianDate,
 ) -> direction::EquatorialMeanJ2000 {
-    let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity.to_frame();
-
-    //--------------------------------------------------------------------
-    // Apply û' = û + v/c
-    //--------------------------------------------------------------------
-    direction::EquatorialMeanJ2000::normalize(
-        mean.x() + (velocity.x() / AU_PER_DAY_C).simplify().value(),
-        mean.y() + (velocity.y() / AU_PER_DAY_C).simplify().value(),
-        mean.z() + (velocity.z() / AU_PER_DAY_C).simplify().value(),
-    )
+    // Use SSB-referenced (barycentric) Earth velocity for annual aberration.
+    let velocity_ecl = Earth::vsop87e_vel(jd);
+    let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity_ecl.to_frame();
+    apply_aberration_to_direction_with_velocity(mean, &velocity)
 }
 
 /// Remove **annual aberration** from an apparent direction.
@@ -75,17 +117,9 @@ pub fn remove_aberration_from_direction(
     app: direction::EquatorialMeanJ2000,
     jd: JulianDate,
 ) -> direction::EquatorialMeanJ2000 {
-    let velocity = crate::bodies::solar_system::Earth::vsop87a_vel(jd);
-    let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity.to_frame();
-
-    //--------------------------------------------------------------------
-    //  Apply û' = û - v/c
-    //--------------------------------------------------------------------
-    direction::EquatorialMeanJ2000::normalize(
-        app.x() - (velocity.x() / AU_PER_DAY_C).simplify().value(),
-        app.y() - (velocity.y() / AU_PER_DAY_C).simplify().value(),
-        app.z() - (velocity.z() / AU_PER_DAY_C).simplify().value(),
-    )
+    let velocity_ecl = Earth::vsop87e_vel(jd);
+    let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity_ecl.to_frame();
+    remove_aberration_from_direction_with_velocity(app, &velocity)
 }
 
 /// Apply **annual aberration** to a position vector, preserving its
@@ -130,6 +164,7 @@ pub fn remove_aberration<U: LengthUnit>(
 mod tests {
     use super::*;
     use crate::coordinates::spherical::{self, position};
+    use nalgebra::Vector3;
 
     fn apply_aberration_sph<U: LengthUnit>(
         mean: &position::EquatorialMeanJ2000<U>,
@@ -189,6 +224,33 @@ mod tests {
 
     #[test]
     fn test_speed_of_light() {
-        assert_eq!(AU_PER_DAY_C.value(), 173.1446334836104);
+        // Exact from SI definitions (to ~1e-15 relative precision in f64):
+        // 299792458 * 86400 / 149597870700 = 173.14463267424033...
+        assert!((AU_PER_DAY_C.value() - 173.144_632_674_240_33).abs() < 1e-12);
+    }
+
+    #[test]
+    fn aberration_roundtrip_is_machine_precision() {
+        let jd = JulianDate::new(2458850.0); // 2020-ish
+        let velocity_ecl = Earth::vsop87e_vel(jd);
+        let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity_ecl.to_frame();
+
+        let directions = [
+            Vector3::new(1.0, 0.0, 0.0),
+            Vector3::new(0.0, 1.0, 0.0),
+            Vector3::new(0.0, 0.0, 1.0),
+            Vector3::new(0.3, -0.7, 0.64),
+            Vector3::new(-0.8, 0.2, -0.56),
+        ];
+
+        for u in directions {
+            let mean = direction::EquatorialMeanJ2000::from_vec3(u.normalize());
+            let app = apply_aberration_to_direction_with_velocity(mean, &velocity);
+            let rec = remove_aberration_from_direction_with_velocity(app, &velocity);
+
+            let dot = mean.x() * rec.x() + mean.y() * rec.y() + mean.z() * rec.z();
+            let ang = dot.clamp(-1.0, 1.0).acos();
+            assert!(ang < 5e-15, "roundtrip angle too large: {}", ang);
+        }
     }
 }

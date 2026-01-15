@@ -23,12 +23,12 @@ where
 }
 
 /// Frame transform from Ecliptic to EquatorialMeanJ2000 for velocities.
-/// Rotation about +X by the obliquity ε ≈ 23.439281°.
+/// Rotation about +X by the J2000 mean obliquity ε₀ (IAU 2006): 84381.406″.
 impl<U: Unit> TransformFrame<Velocity<frames::EquatorialMeanJ2000, U>>
     for Velocity<frames::Ecliptic, U>
 {
     fn to_frame(&self) -> Velocity<frames::EquatorialMeanJ2000, U> {
-        let eps = 23.439281_f64.to_radians();
+        let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
 
         let x = self.x().value();
@@ -54,7 +54,7 @@ impl<U: Unit> TransformFrame<Velocity<frames::Ecliptic, U>>
     for Velocity<frames::EquatorialMeanJ2000, U>
 {
     fn to_frame(&self) -> Velocity<frames::Ecliptic, U> {
-        let eps = 23.439281_f64.to_radians();
+        let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
 
         let x = self.x().value();
