@@ -31,20 +31,8 @@ use qtty::{Days, Degrees, Radian};
 /// Scan step for coarse bracket detection (10 minutes)
 const SCAN_STEP_DAYS: f64 = 10.0 / (24.0 * 60.0);
 
-/// Newton-Raphson tolerance (≈ 0.86 µs)
-const NEWTON_TOL_DAYS: f64 = 1e-11;
-
-/// Maximum Newton iterations
-const NEWTON_MAX_ITERS: usize = 20;
-
-/// Bisection tolerance (≈ 0.086 ms) 
-const BISECTION_TOL_DAYS: f64 = 1e-9;
-
-/// Maximum bisection iterations
-const BISECTION_MAX_ITERS: usize = 80;
-
-/// Finite-difference step for derivative estimation (1 second)
-const FD_STEP_DAYS: f64 = 1.0 / 86_400.0;
+// Root-finding constants and implementations have been moved to
+// `crate::calculus::root_finding` for reuse.
 
 // =============================================================================
 // Public Types
@@ -112,111 +100,6 @@ impl AltitudeThreshold {
     }
 }
 
-// =============================================================================
-// Core Algorithm: Root Finding
-// =============================================================================
-
-/// Newton-Raphson refinement for altitude threshold crossing.
-///
-/// Returns `Some(jd)` if a root is found, `None` if refinement fails.
-fn refine_root_newton<F>(mut jd: JulianDate, altitude_fn: F, threshold_rad: f64) -> Option<JulianDate>
-where
-    F: Fn(JulianDate) -> f64,
-{
-    for _ in 0..NEWTON_MAX_ITERS {
-        let f = altitude_fn(jd) - threshold_rad;
-        
-        // Check if already converged
-        if f.abs() < 1e-12 {
-            return Some(jd);
-        }
-
-        // Symmetric finite-difference derivative
-        let dt = Days::new(FD_STEP_DAYS);
-        let f_plus = altitude_fn(jd + dt);
-        let f_minus = altitude_fn(jd - dt);
-        let deriv = (f_plus - f_minus) / (2.0 * FD_STEP_DAYS); // rad/day
-
-        // Protect against near-zero derivative
-        if deriv.abs() < 1e-14 {
-            return None;
-        }
-
-        // Newton step
-        let delta_days = f / deriv;
-        jd = jd - Days::new(delta_days);
-
-        if delta_days.abs() < NEWTON_TOL_DAYS {
-            return Some(jd);
-        }
-    }
-    None
-}
-
-/// Bisection fallback for altitude threshold crossing.
-///
-/// Requires `altitude_fn(a) - threshold` and `altitude_fn(b) - threshold` to have opposite signs.
-fn refine_root_bisection<F>(
-    mut lo: JulianDate,
-    mut hi: JulianDate,
-    altitude_fn: F,
-    threshold_rad: f64,
-) -> Option<JulianDate>
-where
-    F: Fn(JulianDate) -> f64,
-{
-    let mut f_lo = altitude_fn(lo) - threshold_rad;
-    let f_hi = altitude_fn(hi) - threshold_rad;
-
-    // Check endpoints
-    if f_lo.abs() < 1e-12 {
-        return Some(lo);
-    }
-    if f_hi.abs() < 1e-12 {
-        return Some(hi);
-    }
-
-    // Verify bracket
-    if f_lo * f_hi > 0.0 {
-        return None;
-    }
-
-    for _ in 0..BISECTION_MAX_ITERS {
-        let mid = JulianDate::new((lo.value() + hi.value()) * 0.5);
-        let f_mid = altitude_fn(mid) - threshold_rad;
-
-        if f_mid.abs() < 1e-12 || (hi.value() - lo.value()).abs() < BISECTION_TOL_DAYS {
-            return Some(mid);
-        }
-
-        if f_lo * f_mid <= 0.0 {
-            hi = mid;
-        } else {
-            lo = mid;
-            f_lo = f_mid;
-        }
-    }
-
-    Some(JulianDate::new((lo.value() + hi.value()) * 0.5))
-}
-
-/// Finds a threshold crossing between two JD values.
-///
-/// Tries Newton-Raphson first, falls back to bisection if Newton fails.
-fn find_crossing<F>(
-    jd_a: JulianDate,
-    jd_b: JulianDate,
-    altitude_fn: &F,
-    threshold_rad: f64,
-) -> Option<JulianDate>
-where
-    F: Fn(JulianDate) -> f64,
-{
-    let guess = JulianDate::new((jd_a.value() + jd_b.value()) * 0.5);
-    
-    refine_root_newton(guess, altitude_fn, threshold_rad)
-        .or_else(|| refine_root_bisection(jd_a, jd_b, altitude_fn, threshold_rad))
-}
 
 // =============================================================================
 // Main API: Find Altitude Periods
@@ -273,7 +156,7 @@ where
 
         // Sign change indicates a crossing
         if prev_f * next_f < 0.0 {
-            if let Some(root) = find_crossing(jd, next_jd, &altitude_fn, threshold_rad) {
+            if let Some(root) = crate::calculus::root_finding::find_crossing(jd, next_jd, &altitude_fn, threshold_rad) {
                 // Only include if within our interval
                 if root >= jd_start && root <= jd_end {
                     crossings.push(root);
@@ -297,10 +180,10 @@ where
     // For "above": entering when derivative > 0 (altitude increasing through threshold)
     let mut labeled: Vec<(JulianDate, i32)> = Vec::new();
     for &root in &crossings {
-        let dt = Days::new(10.0 * FD_STEP_DAYS); // 10 seconds for robust derivative
+        let dt = Days::new(10.0 * crate::calculus::root_finding::FD_STEP_DAYS); // 10 seconds for robust derivative
         let f_plus = altitude_fn(root + dt);
         let f_minus = altitude_fn(root - dt);
-        let deriv = (f_plus - f_minus) / (2.0 * 10.0 * FD_STEP_DAYS);
+        let deriv = (f_plus - f_minus) / (2.0 * 10.0 * crate::calculus::root_finding::FD_STEP_DAYS);
 
         let entering = if threshold.is_below() {
             deriv < 0.0 // altitude decreasing → entering "below" region
