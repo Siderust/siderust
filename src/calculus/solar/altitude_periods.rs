@@ -8,7 +8,9 @@
 
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Sun;
-use crate::calculus::events::altitude_periods::{find_altitude_periods, AltitudeCondition, AltitudePeriod};
+use crate::calculus::events::altitude_periods::{
+    find_altitude_periods, AltitudeCondition, AltitudePeriod,
+};
 use crate::coordinates::centers::ObserverSite;
 use crate::time::{ModifiedJulianDate, Period};
 use qtty::{AstronomicalUnit, Degrees, Radian};
@@ -65,7 +67,11 @@ pub fn find_day_periods<T: Into<Degrees>>(
 }
 
 /// Backwards-compatible alias expected by `calculus::solar::mod.rs`.
-pub fn find_sun_above_altitude<T: Into<Degrees>>(site: ObserverSite, period: Period<ModifiedJulianDate>, twilight: T) -> Option<Vec<AltitudePeriod>> {
+pub fn find_sun_above_altitude<T: Into<Degrees>>(
+    site: ObserverSite,
+    period: Period<ModifiedJulianDate>,
+    twilight: T,
+) -> Option<Vec<AltitudePeriod>> {
     find_day_periods(site, period, twilight)
 }
 
@@ -76,11 +82,19 @@ pub fn find_sun_range_periods(
     range: (Degrees, Degrees),
 ) -> Option<Vec<AltitudePeriod>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
-    find_altitude_periods(altitude_fn, period, AltitudeCondition::between(range.0, range.1))
+    find_altitude_periods(
+        altitude_fn,
+        period,
+        AltitudeCondition::between(range.0, range.1),
+    )
 }
 
 /// Backwards-compatible alias expected by `calculus::solar::mod.rs`.
-pub fn find_sun_in_altitude_range(site: ObserverSite, period: Period<ModifiedJulianDate>, range: (Degrees, Degrees)) -> Option<Vec<AltitudePeriod>> {
+pub fn find_sun_in_altitude_range(
+    site: ObserverSite,
+    period: Period<ModifiedJulianDate>,
+    range: (Degrees, Degrees),
+) -> Option<Vec<AltitudePeriod>> {
     find_sun_range_periods(site, period, range)
 }
 
@@ -111,7 +125,11 @@ mod tests {
     use qtty::*;
 
     fn greenwich_site() -> ObserverSite {
-        ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Quantity::<Meter>::new(0.0))
+        ObserverSite::new(
+            Degrees::new(0.0),
+            Degrees::new(51.4769),
+            Quantity::<Meter>::new(0.0),
+        )
     }
 
     #[test]
@@ -130,14 +148,23 @@ mod tests {
         let period = Period::new(mjd_start, mjd_end);
 
         let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
-        assert!(nights.is_some(), "Should find night periods at 51° latitude");
+        assert!(
+            nights.is_some(),
+            "Should find night periods at 51° latitude"
+        );
 
         let nights = nights.unwrap();
         assert!(!nights.is_empty(), "Should have at least one night period");
 
         for night in &nights {
-            assert!(night.duration_days() > 0.0, "Night duration should be positive");
-            assert!(night.duration_days() < 1.0, "Night should be less than 24 hours");
+            assert!(
+                night.duration_days() > 0.0,
+                "Night duration should be positive"
+            );
+            assert!(
+                night.duration_days() < 1.0,
+                "Night should be less than 24 hours"
+            );
         }
     }
 
@@ -149,21 +176,15 @@ mod tests {
 
         let period = Period::new(mjd_start, mjd_end);
 
-        let nights = find_sun_range_periods(
-            site,
-            period,
-            (Degrees::new(-90.0), Degrees::new(-18.0)),
-        );
+        let nights =
+            find_sun_range_periods(site, period, (Degrees::new(-90.0), Degrees::new(-18.0)));
 
         assert!(nights.is_some(), "Should find night periods using range");
         let nights = nights.unwrap();
         assert!(!nights.is_empty(), "Should have at least one night period");
 
-        let nautical = find_sun_range_periods(
-            site,
-            period,
-            (Degrees::new(-18.0), Degrees::new(-12.0)),
-        );
+        let nautical =
+            find_sun_range_periods(site, period, (Degrees::new(-18.0), Degrees::new(-12.0)));
 
         assert!(nautical.is_some(), "Should find nautical twilight periods");
     }
