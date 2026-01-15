@@ -14,11 +14,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Transformation context/providers API (`coordinates::transform`) and observer-dependent helpers (`coordinates::observation`)
 * Extensive coordinate documentation (`src/coordinates/README.md`) and new runnable examples under `examples/`
 * Local CI helper script `ci-local.sh`
+* Explicit equatorial frame split into `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, and `EquatorialTrueOfDate`, including frame-bias (ICRS↔J2000), precession, and nutation rotations with helper matrices (e.g., `precession_rotation_from_j2000`)
+* Velocity-aware aberration helpers (`apply/remove_aberration_*_with_velocity`) for supplying arbitrary observer velocities alongside the VSOP87E annual model
 
 ### Changed
 * Migrated from internal `units` module to external `qtty` crate (v0.2.0), updating APIs, docs, and examples
 * Direction types are now frame-only (no reference center), and the coordinate module layout was consolidated around `Position`, `Displacement`, `Vector`, `Velocity`, and `Direction`
 * Refactored coordinate transformations toward a unified `Transform`-based API with extension traits in `coordinates::prelude`
+* Annual aberration now uses a Lorentz transform with exact AU/day light speed and the barycentric VSOP87E Earth velocity, operating in mean-J2000 equatorial space with machine-precision round-trips
+* Frame rotations now include the ICRS↔J2000 frame bias, use mean obliquity of date for ecliptic transforms, and route equatorial transforms through the new mean-of-date/true-of-date frames
 
 ### Deprecated
 
