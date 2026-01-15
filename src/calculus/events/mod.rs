@@ -99,8 +99,13 @@ pub enum Culmination {
     Lower { jd: crate::astro::JulianDate },
 }
 
+pub mod altitude_periods;
 mod find_dynamic_extremas;
 mod find_static_extremas;
 
+pub use altitude_periods::{
+    find_altitude_periods, find_sun_above_altitude, find_sun_below_altitude,
+    sun_altitude_rad, twilight, AltitudePeriod, AltitudeThreshold,
+};
 pub use find_dynamic_extremas::find_dynamic_extremas;
 pub use find_static_extremas::find_static_extremas;

@@ -37,6 +37,12 @@ impl ModifiedJulianDate {
     }
 }
 
+impl From<ModifiedJulianDate> for super::JulianDate {
+    fn from(mjd: ModifiedJulianDate) -> Self {
+        mjd.to_julian_day()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
