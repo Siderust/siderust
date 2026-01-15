@@ -96,6 +96,7 @@
 
 pub mod elp2000;
 pub mod events;
+pub mod root_finding;
 pub mod kepler_equations;
 pub mod pluto;
 pub mod solar;
