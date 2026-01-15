@@ -105,7 +105,7 @@ mod find_static_extremas;
 
 pub use altitude_periods::{
     find_altitude_periods, find_sun_above_altitude, find_sun_below_altitude,
-    sun_altitude_rad, twilight, AltitudePeriod, AltitudeThreshold,
+    find_sun_in_altitude_range, sun_altitude_rad, twilight, AltitudeCondition, AltitudePeriod,
 };
 pub use find_dynamic_extremas::find_dynamic_extremas;
 pub use find_static_extremas::find_static_extremas;
