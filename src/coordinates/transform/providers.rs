@@ -179,11 +179,11 @@ where
 // Frame Rotation Implementations (Hub: ICRS)
 // =============================================================================
 
-/// Mean obliquity of the ecliptic at J2000.0 (radians).
-///
-/// This is the angle between the ecliptic and equatorial planes.
-/// Value: 23.439291111° = 84381.448" (IAU 1976)
-const OBLIQUITY_J2000: f64 = 0.409092804222329; // 23.4392911° in radians
+/// Mean obliquity ε₀ at the requested epoch (radians).
+#[inline]
+fn mean_obliquity(jd: JulianDate) -> f64 {
+    nutation::get_nutation(jd).ecliptic.to::<qtty::Radian>().value()
+}
 
 /// Frame bias rotation from ICRS to mean equator/equinox of J2000.0.
 ///
@@ -211,9 +211,9 @@ const FRAME_BIAS_ICRS_TO_J2000: Rotation3 = Rotation3::from_matrix([
 /// This composes the ICRS → J2000 mean equator bias with the J2000 obliquity.
 impl FrameRotationProvider<ICRS, Ecliptic> for () {
     #[inline]
-    fn rotation<Eph, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
         let bias = FRAME_BIAS_ICRS_TO_J2000;
-        let mean_eq_to_ecl = Rotation3::from_x_rotation(OBLIQUITY_J2000);
+        let mean_eq_to_ecl = Rotation3::from_x_rotation(-mean_obliquity(jd));
         mean_eq_to_ecl * bias
     }
 }
@@ -221,8 +221,8 @@ impl FrameRotationProvider<ICRS, Ecliptic> for () {
 /// Ecliptic → ICRS rotation.
 impl FrameRotationProvider<Ecliptic, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        <() as FrameRotationProvider<ICRS, Ecliptic>>::rotation(JulianDate::J2000, _ctx).inverse()
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, Ecliptic>>::rotation(jd, ctx).inverse()
     }
 }
 
@@ -246,8 +246,8 @@ impl FrameRotationProvider<EquatorialMeanJ2000, ICRS> for () {
 impl FrameRotationProvider<EquatorialMeanJ2000, Ecliptic> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        let _ = (jd, ctx);
-        Rotation3::from_x_rotation(OBLIQUITY_J2000)
+        let _ = ctx;
+        Rotation3::from_x_rotation(-mean_obliquity(jd))
     }
 }
 
@@ -255,8 +255,8 @@ impl FrameRotationProvider<EquatorialMeanJ2000, Ecliptic> for () {
 impl FrameRotationProvider<Ecliptic, EquatorialMeanJ2000> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        let _ = (jd, ctx);
-        Rotation3::from_x_rotation(-OBLIQUITY_J2000)
+        let _ = ctx;
+        Rotation3::from_x_rotation(mean_obliquity(jd))
     }
 }
 
@@ -589,6 +589,24 @@ mod tests {
 
         let delta = (out[0] - v[0]).abs() + (out[1] - v[1]).abs() + (out[2] - v[2]).abs();
         assert!(delta > 1e-12, "frame bias should not be identity");
+    }
+
+    #[test]
+    fn test_icrs_ecliptic_roundtrip_is_identity() {
+        let ctx = AstroContext::default();
+        let jd = JulianDate::J2000;
+
+        let r = frame_rotation::<ICRS, Ecliptic>(jd, &ctx);
+        let rinv = frame_rotation::<Ecliptic, ICRS>(jd, &ctx);
+
+        let v = [1.0, 0.0, 0.0];
+        let round = rinv.apply_array(r.apply_array(v));
+        let err = (round[0] - v[0]).abs() + (round[1] - v[1]).abs() + (round[2] - v[2]).abs();
+        assert!(
+            err < 1e-12,
+            "ICRS↔Ecliptic roundtrip should be identity, got {:?}",
+            round
+        );
     }
 
     #[test]
