@@ -12,7 +12,8 @@ impl<C: ReferenceCenter, U: LengthUnit>
     for Position<C, frames::Ecliptic, U>
 {
     fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
-        let eps = 23.439281_f64.to_radians(); // obliquity in radians
+        // J2000 mean obliquity ε₀ (IAU 2006): 84381.406″
+        let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
         let y = self.y();

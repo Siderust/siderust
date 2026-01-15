@@ -545,15 +545,13 @@ impl TransformCenter<Position<Geocentric, F, U>>
         let earth_equ: EquatorialMeanJ2000<Heliocentric> = earth_helio.to_frame();
         let self_equ: EquatorialMeanJ2000<Heliocentric> = self.to_frame();
         let geo_equ = self_equ - earth_equ;  // Vector subtraction
-        let result = apply_aberration(geo_equ, jd);
-        result.to_frame()  // Back to original frame F
+        geo_equ.to_frame()  // Back to original frame F
     }
 }
 ```
 
 **Key Points:**
 - Converts to a common frame (EquatorialMeanJ2000) for subtraction
-- Applies aberration correction (light-time effect)
 - Converts back to the original frame
 
 ### Frame Transformations (Time-Independent)
@@ -565,9 +563,9 @@ impl TransformFrame<Vector<C, EquatorialMeanJ2000, U>>
     for Vector<C, Ecliptic, U>
 {
     fn to_frame(&self) -> Vector<C, EquatorialMeanJ2000, U> {
-        let eps = 23.439281_f64.to_radians();  // Obliquity
+        let eps = (84381.406_f64 / 3600.0).to_radians();  // J2000 mean obliquity (IAU 2006)
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
-        
+
         Vector::new(
             self.x(),
             cos_e * self.y() - sin_e * self.z(),

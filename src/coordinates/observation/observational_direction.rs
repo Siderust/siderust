@@ -33,13 +33,13 @@
 //! ```
 
 use super::ObserverState;
+use crate::astro::aberration::{
+    apply_aberration_to_direction_with_velocity, remove_aberration_from_direction_with_velocity,
+};
 use crate::coordinates::cartesian;
 use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame};
 use crate::coordinates::spherical;
 use crate::coordinates::transform::TransformFrame;
-
-/// Speed of light in AU/day
-const AU_PER_DAY_C: f64 = 173.1446334836104;
 
 // =============================================================================
 // Astrometric Direction
@@ -119,12 +119,7 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
         // Get observer velocity
         let vel = obs.velocity();
 
-        // Apply aberration: u' = u + v/c (then renormalize)
-        let x = cart_eq.x() + vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y() + vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z() + vel.z().value() / AU_PER_DAY_C;
-
-        let apparent_eq = cartesian::Direction::<EquatorialMeanJ2000>::normalize(x, y, z);
+        let apparent_eq = apply_aberration_to_direction_with_velocity(cart_eq, vel);
 
         // Transform back to original frame
         let apparent_cart: cartesian::Direction<F> = apparent_eq.to_frame();
@@ -149,12 +144,7 @@ impl<F: MutableFrame> Astrometric<cartesian::Direction<F>> {
         // Get observer velocity
         let vel = obs.velocity();
 
-        // Apply aberration: u' = u + v/c (then renormalize)
-        let x = cart_eq.x() + vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y() + vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z() + vel.z().value() / AU_PER_DAY_C;
-
-        let apparent_eq = cartesian::Direction::<EquatorialMeanJ2000>::normalize(x, y, z);
+        let apparent_eq = apply_aberration_to_direction_with_velocity(cart_eq, vel);
 
         // Transform back to original frame
         let apparent_cart: cartesian::Direction<F> = apparent_eq.to_frame();
@@ -230,12 +220,7 @@ impl<F: MutableFrame> Apparent<spherical::Direction<F>> {
         // Get observer velocity
         let vel = obs.velocity();
 
-        // Remove aberration: u = u' - v/c (then renormalize)
-        let x = cart_eq.x() - vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y() - vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z() - vel.z().value() / AU_PER_DAY_C;
-
-        let astrometric_eq = cartesian::Direction::<EquatorialMeanJ2000>::normalize(x, y, z);
+        let astrometric_eq = remove_aberration_from_direction_with_velocity(cart_eq, vel);
 
         // Transform back to original frame
         let astrometric_cart: cartesian::Direction<F> = astrometric_eq.to_frame();
@@ -260,12 +245,7 @@ impl<F: MutableFrame> Apparent<cartesian::Direction<F>> {
         // Get observer velocity
         let vel = obs.velocity();
 
-        // Remove aberration: u = u' - v/c (then renormalize)
-        let x = cart_eq.x() - vel.x().value() / AU_PER_DAY_C;
-        let y = cart_eq.y() - vel.y().value() / AU_PER_DAY_C;
-        let z = cart_eq.z() - vel.z().value() / AU_PER_DAY_C;
-
-        let astrometric_eq = cartesian::Direction::<EquatorialMeanJ2000>::normalize(x, y, z);
+        let astrometric_eq = remove_aberration_from_direction_with_velocity(cart_eq, vel);
 
         // Transform back to original frame
         let astrometric_cart: cartesian::Direction<F> = astrometric_eq.to_frame();
