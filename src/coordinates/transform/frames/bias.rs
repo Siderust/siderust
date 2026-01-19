@@ -30,3 +30,36 @@ pub(super) fn frame_bias_icrs_to_j2000() -> Rotation3 {
 pub(super) fn frame_bias_j2000_to_icrs() -> Rotation3 {
     FRAME_BIAS_ICRS_TO_J2000.inverse()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn bias_inverse_roundtrip_is_identity() {
+        let forward = frame_bias_icrs_to_j2000();
+        let inverse = frame_bias_j2000_to_icrs();
+        let v = [0.1, -0.2, 0.3];
+
+        let rotated = forward.apply_array(v);
+        let back = inverse.apply_array(rotated);
+
+        let eps = 1e-10;
+        assert!((back[0] - v[0]).abs() < eps);
+        assert!((back[1] - v[1]).abs() < eps);
+        assert!((back[2] - v[2]).abs() < eps);
+    }
+
+    #[test]
+    fn bias_matrix_is_close_to_identity() {
+        let rot = frame_bias_icrs_to_j2000();
+        let mat = rot.as_matrix();
+        let eps = 1e-7;
+        for i in 0..3 {
+            for j in 0..3 {
+                let expected = if i == j { 1.0 } else { 0.0 };
+                assert!((mat[i][j] - expected).abs() < eps);
+            }
+        }
+    }
+}
