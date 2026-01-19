@@ -15,9 +15,11 @@ fn test_astronomical_nights_roque_2026() {
     let f = File::open("tests/reference_data/astro_night_periods_2026.json")
         .expect("Missing tests/reference_data/astro_night_periods_2026.json");
     let reader = BufReader::new(f);
-    let json: serde_json::Value = serde_json::from_reader(reader).expect("Invalid JSON in reference file");
-    let expected_periods: Vec<Period<ModifiedJulianDate>> = serde_json::from_value(json["periods"].clone())
-        .expect("Invalid or missing `periods` in reference file");
+    let json: serde_json::Value =
+        serde_json::from_reader(reader).expect("Invalid JSON in reference file");
+    let expected_periods: Vec<Period<ModifiedJulianDate>> =
+        serde_json::from_value(json["periods"].clone())
+            .expect("Invalid or missing `periods` in reference file");
 
     // Build observer site from catalog constant
     let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
@@ -30,7 +32,8 @@ fn test_astronomical_nights_roque_2026() {
         .unwrap()
         .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
 
-    let start_dt = Utc.from_utc_datetime(&NaiveDateTime::new(start_naive.date(), start_naive.time()));
+    let start_dt =
+        Utc.from_utc_datetime(&NaiveDateTime::new(start_naive.date(), start_naive.time()));
     let end_dt = Utc.from_utc_datetime(&NaiveDateTime::new(end_naive.date(), end_naive.time()));
 
     let mjd_start = ModifiedJulianDate::from_utc(start_dt);
@@ -38,10 +41,17 @@ fn test_astronomical_nights_roque_2026() {
     let period = Period::new(mjd_start, mjd_end);
 
     let computed_opt = find_night_periods(site, period, twilight::ASTRONOMICAL);
-    assert!(computed_opt.is_some(), "siderust did not find any astronomical nights");
+    assert!(
+        computed_opt.is_some(),
+        "siderust did not find any astronomical nights"
+    );
     let computed = computed_opt.unwrap();
 
-    assert_eq!(expected_periods.len(), computed.len(), "Different number of intervals between expected and siderust computation");
+    assert_eq!(
+        expected_periods.len(),
+        computed.len(),
+        "Different number of intervals between expected and siderust computation"
+    );
 
     // Tolerance: 3 seconds (expressed in days)
     let tol_seconds = 3.0_f64;
