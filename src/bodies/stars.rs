@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Star type and related functionality.
 //!
 //! Represents stars with name, distance, mass, radius, luminosity, and target.

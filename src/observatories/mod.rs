@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Observatory Catalog Module
 //!
 //! This module provides a set of constant definitions for well-known observatories,

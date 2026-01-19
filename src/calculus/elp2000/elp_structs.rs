@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 // ────────────────────────────────────────────────────────────────────────────
 // Main term of the lunar theory (ELP “Main Problem” series).
 // Each record governs one sine term of the form:

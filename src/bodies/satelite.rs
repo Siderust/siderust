@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Satellite type and related functionality.
 //!
 //! Represents natural or artificial satellites with name, mass, radius, and orbital parameters.

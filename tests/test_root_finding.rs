@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use siderust::astro::JulianDate;
 use siderust::calculus::root_finding::{find_crossing, refine_root_bisection, refine_root_newton};
 use std::cell::Cell;

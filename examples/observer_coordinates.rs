@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Observer-Based Coordinates Example
 //!
 //! This example demonstrates topocentric (observer-based) coordinates:

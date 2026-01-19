@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Solar Altitude Window Periods
 //!
 //! Sun-specific convenience wrappers around the generic altitude-window routines

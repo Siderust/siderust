@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Kepler Equations Module
 //!
 //! This module provides fast, reliable solutions of Kepler’s equation and the

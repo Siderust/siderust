@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Observational Direction Types
 //!
 //! This module defines direction types with explicit observational state markers.

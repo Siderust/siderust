@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Pluto ephemeris computation using the Meeus/Williams abbreviated series.
 //!
 //! This module provides a single public function [`Pluto::get_heliocentric`] that

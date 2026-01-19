@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! VSOP87 data collector
 //!
 //! Walks over every text file under `data_dir`, recognises the VSOP87 data format

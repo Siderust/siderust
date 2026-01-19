@@ -161,7 +161,7 @@ All numeric kernels are cross‑checked against JPL Horizons (see **siderust-py*
 
 ## Roadmap
 
-* [ ] Custom dynamic reference centers (topocentric)
+* [x] Custom dynamic reference centers (topocentric)
 * [ ] DE440/441 ephemerides (barycentric)
 * [ ] Gaia DR3 star ingestion & cone search
 * [ ] Relativistic light‑time & gravitational deflection
@@ -184,6 +184,8 @@ By participating you agree to follow the [Rust Code of Conduct](https://www.r
 ---
 
 ## License
+
+Copyright (C) 2026 Vallés Puig, Ramon
 
 This project is licensed under the **GNU Affero General Public License v3.0 (AGPL-3.0)**.
 The AGPL-3.0 ensures that:

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Frame transformations for Velocity types.
 //!
 //! Velocities are free vectors, so frame transformations are pure rotations

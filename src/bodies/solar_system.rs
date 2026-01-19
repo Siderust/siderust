@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Solar System
 //!
 //! This module exposes a type‑safe, canonical description of our Solar System

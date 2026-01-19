@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! VSOP87 **dataset fetcher**
 //!
 //! First stage of the build pipeline: make sure the raw data files are present

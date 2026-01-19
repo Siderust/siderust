@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # ΔT (Delta T) Calculation Module
 //!
 //! This module estimates the difference between **Universal Time (UT)** — the civil time based on the Earth's rotation —

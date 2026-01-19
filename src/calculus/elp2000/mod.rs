@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # ELP2000 Lunar Theory Module
 //!
 //! This module implements the ELP2000-82B theory, a high-precision analytical model for the motion of the Moon.

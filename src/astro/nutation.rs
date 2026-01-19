@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Earth Nutation Module
 //!
 //! **Nutation** describes short‑period wobbles of the Earth’s rotation axis that
