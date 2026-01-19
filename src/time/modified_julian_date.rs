@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use qtty::Days;
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::ops::{Add, Sub};
 
 /// Represents Modified Julian Date (MJD), which is the Julian Date
@@ -36,6 +37,25 @@ impl ModifiedJulianDate {
         let nanos = datetime.timestamp_subsec_nanos() as f64 / 1e9;
         let jd = unix_epoch_jd + (seconds_since_epoch + nanos) / 86400.0;
         ModifiedJulianDate::new(jd - 2400000.5)
+    }
+}
+
+impl Serialize for ModifiedJulianDate {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        serializer.serialize_f64(self.value())
+    }
+}
+
+impl<'de> Deserialize<'de> for ModifiedJulianDate {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        let v = f64::deserialize(deserializer)?;
+        Ok(ModifiedJulianDate::new(v))
     }
 }
 

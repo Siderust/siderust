@@ -1492,6 +1492,8 @@ dependencies = [
  "regex",
  "reqwest",
  "rstest",
+ "serde",
+ "serde_json",
  "walkdir",
 ]
 
