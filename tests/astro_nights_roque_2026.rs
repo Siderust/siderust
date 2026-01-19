@@ -2,7 +2,6 @@ use std::fs::File;
 use std::io::BufReader;
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use serde::Deserialize;
 use siderust::calculus::solar::altitude_periods::{find_night_periods, twilight};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
