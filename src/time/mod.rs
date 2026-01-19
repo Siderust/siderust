@@ -138,8 +138,7 @@ mod tests {
         assert_eq!(mjd.difference(&mjd), Days::new(0.0));
         assert_eq!(mjd.add_duration(Days::new(1.0)).value(), mjd.value() + 1.0);
         assert_eq!(mjd.sub_duration(Days::new(0.5)).value(), mjd.value() - 0.5);
-        let delta_ns =
-            back.timestamp_nanos_opt().unwrap() - dt.timestamp_nanos_opt().unwrap();
+        let delta_ns = back.timestamp_nanos_opt().unwrap() - dt.timestamp_nanos_opt().unwrap();
         assert!(delta_ns.abs() < 10_000, "nanos differ by {}", delta_ns);
     }
 
@@ -150,7 +149,10 @@ mod tests {
         let diff = later.difference(&base);
 
         assert_eq!(diff.num_hours(), 30);
-        assert_eq!(base.add_duration(diff + chrono::Duration::hours(6)), later + chrono::Duration::hours(6));
+        assert_eq!(
+            base.add_duration(diff + chrono::Duration::hours(6)),
+            later + chrono::Duration::hours(6)
+        );
         assert_eq!(later.sub_duration(diff), base);
         assert_eq!(TimeInstant::to_utc(&later), Some(later));
     }
