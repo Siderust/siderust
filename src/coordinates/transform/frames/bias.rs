@@ -55,10 +55,10 @@ mod tests {
         let rot = frame_bias_icrs_to_j2000();
         let mat = rot.as_matrix();
         let eps = 1e-7;
-        for i in 0..3 {
-            for j in 0..3 {
+        for (i, row) in mat.iter().enumerate() {
+            for (j, &val) in row.iter().enumerate() {
                 let expected = if i == j { 1.0 } else { 0.0 };
-                assert!((mat[i][j] - expected).abs() < eps);
+                assert!((val - expected).abs() < eps);
             }
         }
     }
