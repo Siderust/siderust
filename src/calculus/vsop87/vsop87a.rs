@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use super::*;
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Moon;

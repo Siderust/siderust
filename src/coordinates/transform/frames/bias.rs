@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use affn::Rotation3;
 
 /// Frame bias rotation from ICRS to mean equator/equinox of J2000.0.

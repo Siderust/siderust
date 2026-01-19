@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Events Module
 //!
 //! This module provides generic tools for detecting and analyzing astronomical events

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Spherical coordinate types with astronomical conventions.
 //!
 //! - [`Position<C, F, U>`]: spherical **position** (center + frame + distance)

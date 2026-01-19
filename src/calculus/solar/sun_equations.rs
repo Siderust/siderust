@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use crate::bodies::solar_system::Sun;
 
 use crate::astro::nutation::nutation_rotation;

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use criterion::{criterion_group, criterion_main, Criterion};
 use qtty::{Au, Degrees};
 use siderust::coordinates::{cartesian, centers::Barycentric, frames::ICRS, spherical};

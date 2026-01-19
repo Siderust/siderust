@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 // Note: Spherical-to-Cartesian conversion is handled by affn's inherent methods:
 // - spherical::Position::to_cartesian()
 // - cartesian::Position::from_spherical()

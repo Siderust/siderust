@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Cartesian coordinate type aliases for common astronomical systems.
 //!
 //! This module provides convenient type aliases that combine algebraic cartesian

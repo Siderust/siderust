@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Equatorial Precession utilities
 //!
 //! This module implements **precession of the Earth’s mean equator and equinox**

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Coordinate Transformations Module
 //!
 //! This module provides a unified and extensible framework for transforming astronomical coordinates

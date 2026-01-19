@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Frame transformation: EquatorialMeanOfDate → Horizontal
 //!
 //! This module implements the transformation from the equatorial frame to the

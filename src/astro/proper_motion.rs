@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Proper Motion Correction
 //!
 //! This module applies **proper motion** to a star’s mean position

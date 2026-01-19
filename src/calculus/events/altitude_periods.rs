@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Altitude Window Periods
 //!
 //! This module provides generic tools for finding time intervals where a celestial
