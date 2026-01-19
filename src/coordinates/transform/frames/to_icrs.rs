@@ -45,14 +45,13 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS,
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::macros::assert_cartesian_eq;
     use crate::coordinates::centers::Barycentric;
+    use crate::macros::assert_cartesian_eq;
     use qtty::AstronomicalUnit;
 
     #[test]
     fn ecliptic_roundtrip_through_icrs_preserves_vector() {
-        let ecl =
-            Position::<Barycentric, frames::Ecliptic, AstronomicalUnit>::new(0.0, 1.0, 1.0);
+        let ecl = Position::<Barycentric, frames::Ecliptic, AstronomicalUnit>::new(0.0, 1.0, 1.0);
         let icrs: Position<_, frames::ICRS, AstronomicalUnit> = ecl.to_frame();
         let back: Position<_, frames::Ecliptic, AstronomicalUnit> = icrs.to_frame();
 
