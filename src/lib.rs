@@ -37,10 +37,9 @@
 //!
 //! ## Crate Modules
 //!
-//! - [`units`]         : Strongly-typed physical quantities and angles
 //! - [`coordinates`]   : Cartesian & Spherical coordinate types and transformations between reference centers & frames
 //! - [`targets`]       : `Target<T>` tracking with time and proper motion
-//! - [`time`]          : Time types (JulianDate, ModifiedJulianDate) and generic Period<T>
+//! - [`time`]          : Time types (JulianDate, ModifiedJulianDate) and generic `Period<T>`
 //! - [`astro`]         : Utilities for aberration, nutation, precession, sidereal time, and event searches
 //! - [`calculus`]      : Numerical kernels (Kepler, VSOP87, ELP2000, etc.)
 //! - [`bodies`]        : Data structures for planets, comets, stars, satellites, and built-in catalogs

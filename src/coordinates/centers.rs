@@ -131,7 +131,7 @@ impl ObserverSite {
         Self { lon, lat, height }
     }
 
-    /// Creates an `ObserverSite` from a [`Geographic`] spherical position.
+    /// Creates an `ObserverSite` from a [`crate::coordinates::spherical::position::Geographic`] spherical position.
     ///
     /// This is a convenience method for converting observatory locations
     /// (typically defined as `Geographic` positions) into the parameterized

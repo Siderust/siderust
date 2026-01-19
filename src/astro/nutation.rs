@@ -38,7 +38,7 @@
 //! * [`get_nutation`] → [`Nutation`].  Computes Δψ, Δε, ε₀ for a given
 //!   [`JulianDate`].  All outputs are **degrees**.
 //! * [`corrected_ra_with_nutation`]  
-//!   Input: a mean [`Position`] (RA/Dec) and the same date.  Output: the
+//!   Input: a mean [`crate::coordinates::spherical::Position`] (RA/Dec) and the same date.  Output: the
 //!   apparent right ascension *αₜ* (°) after a 3‑1‑3 rotation using Δψ, Δε, ε₀.
 //!
 //! ## Quick example
