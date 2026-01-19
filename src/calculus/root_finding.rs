@@ -150,7 +150,7 @@ mod tests {
     fn newton_returns_none_for_constant_function() {
         let threshold = 0.0;
         let guess = JulianDate::J2000;
-        let scalar = |_jd: JulianDate| 3.14;
+        let scalar = |_jd: JulianDate| std::f64::consts::PI;
 
         assert!(refine_root_newton(guess, scalar, threshold).is_none());
     }
