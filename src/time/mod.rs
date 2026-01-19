@@ -113,3 +113,45 @@ impl TimeInstant for DateTime<Utc> {
         *self - duration
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::TimeZone;
+
+    #[test]
+    fn timeinstant_for_julian_date_handles_arithmetic() {
+        let jd = JulianDate::new(2_451_545.0);
+        let other = jd + Days::new(2.0);
+
+        assert_eq!(jd.difference(&other), Days::new(-2.0));
+        assert_eq!(jd.add_duration(Days::new(1.5)).value(), 2_451_546.5);
+        assert_eq!(other.sub_duration(Days::new(0.5)).value(), 2_451_546.5);
+    }
+
+    #[test]
+    fn timeinstant_for_modified_julian_date_roundtrips_utc() {
+        let dt = DateTime::from_timestamp(946_684_800, 123_000_000).unwrap(); // 2000-01-01T00:00:00.123Z
+        let mjd = ModifiedJulianDate::from_utc(dt);
+        let back = mjd.to_utc().expect("mjd to utc");
+
+        assert_eq!(mjd.difference(&mjd), Days::new(0.0));
+        assert_eq!(mjd.add_duration(Days::new(1.0)).value(), mjd.value() + 1.0);
+        assert_eq!(mjd.sub_duration(Days::new(0.5)).value(), mjd.value() - 0.5);
+        let delta_ns =
+            back.timestamp_nanos_opt().unwrap() - dt.timestamp_nanos_opt().unwrap();
+        assert!(delta_ns.abs() < 10_000, "nanos differ by {}", delta_ns);
+    }
+
+    #[test]
+    fn timeinstant_for_datetime_uses_chrono_durations() {
+        let base = Utc.with_ymd_and_hms(2024, 1, 1, 0, 0, 0).unwrap();
+        let later = Utc.with_ymd_and_hms(2024, 1, 2, 6, 0, 0).unwrap();
+        let diff = later.difference(&base);
+
+        assert_eq!(diff.num_hours(), 30);
+        assert_eq!(base.add_duration(diff + chrono::Duration::hours(6)), later + chrono::Duration::hours(6));
+        assert_eq!(later.sub_duration(diff), base);
+        assert_eq!(TimeInstant::to_utc(&later), Some(later));
+    }
+}

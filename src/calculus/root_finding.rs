@@ -119,3 +119,137 @@ where
     refine_root_newton(guess, scalar_fn, threshold)
         .or_else(|| refine_root_bisection(jd_a, jd_b, scalar_fn, threshold))
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+
+    #[test]
+    fn newton_returns_guess_when_root_already_exact() {
+        let threshold = 25_000.0;
+        let guess = JulianDate::new(threshold);
+
+        let scalar = |jd: JulianDate| jd.value();
+        let found = refine_root_newton(guess, scalar, threshold);
+
+        assert_eq!(found, Some(guess));
+    }
+
+    #[test]
+    fn newton_refines_linear_root() {
+        let threshold = 2_458_850.0;
+        let guess = JulianDate::new(threshold + 0.5);
+        let scalar = |jd: JulianDate| jd.value();
+
+        let found = refine_root_newton(guess, scalar, threshold).expect("Newton should converge");
+        assert!((found.value() - threshold).abs() < 1e-9);
+    }
+
+    #[test]
+    fn newton_returns_none_for_constant_function() {
+        let threshold = 0.0;
+        let guess = JulianDate::J2000;
+        let scalar = |_jd: JulianDate| 3.14;
+
+        assert!(refine_root_newton(guess, scalar, threshold).is_none());
+    }
+
+    #[test]
+    fn newton_returns_none_after_max_iterations() {
+        let calls = Cell::new(0usize);
+        let scalar = |_jd: JulianDate| {
+            let count = calls.get() + 1;
+            calls.set(count);
+            count as f64
+        };
+
+        let guess = JulianDate::J2000;
+        assert!(refine_root_newton(guess, scalar, 0.0).is_none());
+    }
+
+    #[test]
+    fn bisection_returns_lo_when_endpoint_matches_root() {
+        let threshold = 12_345.678;
+        let lo = JulianDate::new(threshold);
+        let hi = JulianDate::new(threshold + 4.0);
+        let scalar = |jd: JulianDate| jd.value();
+
+        assert_eq!(refine_root_bisection(lo, hi, scalar, threshold), Some(lo));
+    }
+
+    #[test]
+    fn bisection_returns_hi_when_endpoint_matches_root() {
+        let threshold = 54_321.0;
+        let lo = JulianDate::new(threshold - 4.0);
+        let hi = JulianDate::new(threshold);
+        let scalar = |jd: JulianDate| jd.value();
+
+        assert_eq!(refine_root_bisection(lo, hi, scalar, threshold), Some(hi));
+    }
+
+    #[test]
+    fn bisection_finds_root_between_brackets() {
+        let threshold = 42.0;
+        let lo = JulianDate::new(threshold - 1.0);
+        let hi = JulianDate::new(threshold + 1.0);
+        let scalar = |jd: JulianDate| jd.value();
+
+        let found = refine_root_bisection(lo, hi, scalar, threshold).expect("bisection failed");
+        assert!((found.value() - threshold).abs() < 1e-9);
+    }
+
+    #[test]
+    fn bisection_returns_midpoint_after_max_iterations() {
+        let calls = Cell::new(0usize);
+        let threshold = 1.0e15 + 1.0;
+        let lo = JulianDate::new(0.0);
+        let hi = JulianDate::new(2.0e15);
+        let scalar = |jd: JulianDate| {
+            calls.set(calls.get() + 1);
+            jd.value()
+        };
+
+        let found = refine_root_bisection(lo, hi, scalar, threshold).expect("bisection failed");
+        // Ensure we iterated at least once and terminated early due to tolerance
+        // being tighter than the floating precision at this magnitude.
+        assert!(calls.get() > 2 && calls.get() <= BISECTION_MAX_ITERS + 2);
+        assert!(found.value().is_finite());
+    }
+
+    #[test]
+    fn bisection_returns_none_for_invalid_bracket() {
+        let scalar = |_jd: JulianDate| 99.0;
+        let lo = JulianDate::new(0.0);
+        let hi = JulianDate::new(1.0);
+
+        assert!(refine_root_bisection(lo, hi, scalar, 0.0).is_none());
+    }
+
+    #[test]
+    fn find_crossing_prefers_newton_and_returns_root() {
+        let threshold = 200.0;
+        let lo = JulianDate::new(threshold - 2.0);
+        let hi = JulianDate::new(threshold + 2.0);
+        let scalar = |jd: JulianDate| jd.value();
+
+        let found = find_crossing(lo, hi, &scalar, threshold);
+        assert!((found.unwrap().value() - threshold).abs() < 1e-9);
+    }
+
+    #[test]
+    fn find_crossing_falls_back_to_bisection_on_spiky_function() {
+        let lo = JulianDate::new(-1.0);
+        let hi = JulianDate::new(1.0);
+        let scalar = |jd: JulianDate| {
+            if jd.value() < 0.0 {
+                -1.0
+            } else {
+                1.0
+            }
+        };
+
+        let found = find_crossing(lo, hi, &scalar, 0.0).expect("expected fallback to succeed");
+        assert!(found.value().abs() < 1e-6);
+    }
+}
