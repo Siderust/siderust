@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! **VSOP87 build‑pipeline entry point**
 //!
 //! This is the public façade that `build.rs` sees.  All heavy lifting is

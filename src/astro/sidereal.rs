@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Sidereal Time Module
 //!
 //! **Sidereal time** is the hour angle of the vernal equinox: a clock that tells us

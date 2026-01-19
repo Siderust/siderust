@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Basic Coordinates Example
 //!
 //! This example demonstrates the fundamental concepts of the siderust coordinate system:

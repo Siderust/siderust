@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Comet module
 //!
 //! Represents comets with their name, tail length, and orbital parameters.

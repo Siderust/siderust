@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Domain B Integration Tests
 //!
 //! These tests verify the correct implementation of Domain B (Physical/Astronomical Semantics):

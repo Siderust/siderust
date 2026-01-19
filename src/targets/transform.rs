@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use super::Target;
 use crate::coordinates::{cartesian, centers::*, frames::*, spherical, transform::Transform};
 use qtty::LengthUnit;

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Astro Module
 //!
 //! This module provides astronomical calculations and utilities, including:

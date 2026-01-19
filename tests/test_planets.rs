@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use qtty::*;
 use siderust::astro::{orbit::Orbit, JulianDate};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};

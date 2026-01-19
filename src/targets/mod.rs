@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Astronomical target representation
 //!
 //! This module defines [`Target`], a lightweight container that couples a position

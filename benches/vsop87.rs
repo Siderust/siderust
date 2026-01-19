@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use criterion::{criterion_group, criterion_main, Criterion};
 use qtty::{Days, Years};
 use siderust::{astro::JulianDate, bodies::solar_system::*, calculus::vsop87::VSOP87};

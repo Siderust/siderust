@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use crate::astro::sidereal::unmodded_gst;
 use crate::astro::JulianDate;
 use crate::coordinates::cartesian::Position;

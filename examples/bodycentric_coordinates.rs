@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Body-Centric Coordinates Example
 //!
 //! This example demonstrates the new body-centric coordinate system that allows

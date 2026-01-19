@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Keplerian Orbit Model
 //!
 //! This module defines the `Orbit` struct, which encapsulates the **six classical Keplerian orbital elements**

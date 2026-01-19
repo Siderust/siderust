@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Star Catalog Module
 //!
 //! This module defines a **compile‑time** catalog of some of the brightest and most

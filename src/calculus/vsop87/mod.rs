@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # VSOP87 Planetary Theory Module
 //!
 //! This module provides high-precision planetary positions using the VSOP87 theory.

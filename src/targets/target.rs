@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 use crate::astro::proper_motion::ProperMotion;
 use crate::astro::JulianDate;
 

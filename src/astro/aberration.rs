@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Aberration (observer-velocity)
 //!
 //! This module applies the special-relativistic aberration of light due to an

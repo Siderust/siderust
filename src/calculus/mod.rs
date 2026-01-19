@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Celestial Mechanics Calculus Module
 //!
 //! This module provides the core algorithms and data structures for high-precision

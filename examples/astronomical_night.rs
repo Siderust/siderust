@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! # Astronomical Night Example
 //!
 //! Demonstrates finding astronomical night periods using the siderust library.

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 //! Example demonstrating the generic Period<T> with different time types
 //!
 //! This example shows how to use Period with JulianDate, ModifiedJulianDate,

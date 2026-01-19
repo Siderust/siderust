@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
 // src/macros.rs
 use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
 use core::f64;
