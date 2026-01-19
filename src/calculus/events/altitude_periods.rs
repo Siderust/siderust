@@ -101,7 +101,7 @@ impl AltitudeCondition {
     }
 
     /// Checks if an altitude value (in radians) satisfies this condition.
-    fn is_inside(&self, altitude_rad: f64) -> bool {
+    pub(crate) fn is_inside(&self, altitude_rad: f64) -> bool {
         match self {
             Self::Below(threshold) => altitude_rad < threshold.to::<Radian>().value(),
             Self::Above(threshold) => altitude_rad > threshold.to::<Radian>().value(),
