@@ -123,3 +123,61 @@ impl<U: Unit> TransformFrame<Velocity<frames::Ecliptic, U>> for Velocity<frames:
         eq.to_frame()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use qtty::{AstronomicalUnit, Day, Per, Quantity};
+
+    type AuPerDay = Per<AstronomicalUnit, Day>;
+
+    fn vel_ecl(x: f64, y: f64, z: f64) -> Velocity<frames::Ecliptic, AuPerDay> {
+        Velocity::from_vec3(Vector3::new(
+            Quantity::new(x),
+            Quantity::new(y),
+            Quantity::new(z),
+        ))
+    }
+
+    fn assert_velocity_close<F, U>(a: &Velocity<F, U>, b: &Velocity<F, U>, eps: f64)
+    where
+        F: frames::MutableFrame,
+        U: Unit,
+    {
+        assert!((a.x().value() - b.x().value()).abs() < eps);
+        assert!((a.y().value() - b.y().value()).abs() < eps);
+        assert!((a.z().value() - b.z().value()).abs() < eps);
+    }
+
+    #[test]
+    fn ecliptic_to_equatorial_and_back_preserves_velocity() {
+        let v_ecl = vel_ecl(0.1, -0.2, 0.3);
+        let v_eq: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = v_ecl.to_frame();
+        let back: Velocity<frames::Ecliptic, AuPerDay> = v_eq.to_frame();
+
+        assert_velocity_close(&v_ecl, &back, 1e-12);
+    }
+
+    #[test]
+    fn icrs_bias_roundtrip_for_velocity_is_identity() {
+        let icrs = Velocity::<frames::ICRS, AuPerDay>::from_vec3(Vector3::new(
+            Quantity::new(-1.0),
+            Quantity::new(0.5),
+            Quantity::new(0.25),
+        ));
+
+        let eq: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = icrs.to_frame();
+        let back: Velocity<frames::ICRS, AuPerDay> = eq.to_frame();
+
+        assert_velocity_close(&icrs, &back, 1e-14);
+    }
+
+    #[test]
+    fn ecliptic_to_icrs_composition_matches_direct_roundtrip() {
+        let v_ecl = vel_ecl(0.01, 0.02, -0.05);
+        let icrs: Velocity<frames::ICRS, AuPerDay> = v_ecl.to_frame();
+        let back: Velocity<frames::Ecliptic, AuPerDay> = icrs.to_frame();
+
+        assert_velocity_close(&v_ecl, &back, 1e-12);
+    }
+}

@@ -102,3 +102,40 @@ impl TransformFrame<Direction<frames::Ecliptic>> for Direction<frames::ICRS> {
         eq.to_frame()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use nalgebra::Vector3;
+
+    fn assert_vec3_close(a: &Vector3<f64>, b: &Vector3<f64>, eps: f64) {
+        assert!((a.x - b.x).abs() < eps);
+        assert!((a.y - b.y).abs() < eps);
+        assert!((a.z - b.z).abs() < eps);
+    }
+
+    #[test]
+    fn identity_direction_transform_is_noop() {
+        let dir = Direction::<frames::Ecliptic>::from_vec3(Vector3::new(0.0, 0.6, 0.8));
+        let same: Direction<frames::Ecliptic> = dir.to_frame();
+        assert_vec3_close(&dir.as_vec3(), &same.as_vec3(), 1e-15);
+    }
+
+    #[test]
+    fn ecliptic_to_icrs_roundtrip_matches_original() {
+        let dir_ecl = Direction::<frames::Ecliptic>::from_vec3(Vector3::new(0.1, 0.2, 0.3));
+        let icrs: Direction<frames::ICRS> = dir_ecl.to_frame();
+        let back: Direction<frames::Ecliptic> = icrs.to_frame();
+
+        assert_vec3_close(&dir_ecl.as_vec3(), &back.as_vec3(), 1e-12);
+    }
+
+    #[test]
+    fn icrs_to_equatorial_bias_and_back_is_stable() {
+        let icrs = Direction::<frames::ICRS>::from_vec3(Vector3::new(-0.3, 0.4, -0.5));
+        let eq: Direction<frames::EquatorialMeanJ2000> = icrs.to_frame();
+        let back: Direction<frames::ICRS> = eq.to_frame();
+
+        assert_vec3_close(&icrs.as_vec3(), &back.as_vec3(), 1e-12);
+    }
+}
