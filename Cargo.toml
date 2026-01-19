@@ -1,6 +1,6 @@
 [package]
 name = "siderust"
-version = "0.3.3"
+version = "0.4.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -17,7 +17,7 @@ name = "siderust"
 [dependencies]
 affn = "0.2.0"
 approx = "0.5"
-chrono = "0.4.42"
+chrono = "0.4.43"
 nalgebra = "0.34.1"
 paste = "1.0"
 rayon = "1.11"
@@ -33,7 +33,7 @@ serde_json = "1.0"
 walkdir = "2"
 regex = "1.12.2"
 anyhow = "1.0.100"
-reqwest = { version = "0.12.26", default-features = false, features = ["blocking", "rustls-tls"] }
+reqwest = { version = "0.13.1", default-features = false, features = ["blocking"] }
 
 [[bench]]
 name = "converters"
