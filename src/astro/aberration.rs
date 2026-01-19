@@ -104,7 +104,7 @@ pub fn remove_aberration_from_direction_with_velocity(
 /// * `mean` – Geocentric unit vector in the mean equator & equinox of J2000.
 /// * `jd`   – Epoch for Earth state evaluation (VSOP87 expects TDB; TT is a close approximation).
 ///
-/// Returns a new [`Direction`] including annual aberration.
+/// Returns a new [`crate::coordinates::cartesian::direction::EquatorialMeanJ2000`] including annual aberration.
 #[must_use]
 pub fn apply_aberration_to_direction(
     mean: direction::EquatorialMeanJ2000,

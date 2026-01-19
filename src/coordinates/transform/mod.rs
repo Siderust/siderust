@@ -65,7 +65,7 @@
 //! ## Related Modules
 //!
 //! - [`centers`]: Transformations between reference centers (positions only).
-//! - [`frames`]: Transformations between reference frames (all coordinate types).
+//! - [`crate::coordinates::frames`]: Transformations between reference frames (all coordinate types).
 //! - [`context`]: Astronomical context for transformation configuration.
 //! - [`providers`]: Provider traits for computing time-dependent operators.
 //! - [`ext`]: Extension traits for ergonomic method-style transforms.
@@ -106,7 +106,7 @@ pub trait Transform<Coord> {
 
 /// Blanket implementation for Position transformations (center + frame changes).
 ///
-/// This implementation allows converting a [`Vector`] in from one
+/// This implementation allows converting a [`crate::coordinates::cartesian::Vector`] from one
 /// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
 /// transformations:
 /// 1. Frame transformation (within the same center)
