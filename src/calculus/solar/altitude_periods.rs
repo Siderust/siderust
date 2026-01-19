@@ -85,7 +85,7 @@ pub fn find_sun_altitude_periods_via_culminations(
         for window in key_times.windows(2) {
             let a = window[0];
             let b = window[1];
-            if !(a < b) {
+            if a.partial_cmp(&b) != Some(std::cmp::Ordering::Less) {
                 continue;
             }
 
