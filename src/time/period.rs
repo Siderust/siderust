@@ -6,7 +6,7 @@
 use super::TimeInstant;
 use chrono::{DateTime, Utc};
 use qtty::Days;
-use serde::{Deserialize, Deserializer, Serialize, Serializer, ser::SerializeStruct};
+use serde::{ser::SerializeStruct, Deserialize, Deserializer, Serialize, Serializer};
 
 /// Represents a time period between two instants.
 ///
@@ -111,37 +111,37 @@ impl Period<DateTime<Utc>> {
     }
 }
 
-    // Serde support for Period<ModifiedJulianDate>
-    impl Serialize for Period<crate::time::ModifiedJulianDate> {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            let mut s = serializer.serialize_struct("Period", 2)?;
-            s.serialize_field("start_mjd", &self.start.value())?;
-            s.serialize_field("end_mjd", &self.end.value())?;
-            s.end()
-        }
+// Serde support for Period<ModifiedJulianDate>
+impl Serialize for Period<crate::time::ModifiedJulianDate> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut s = serializer.serialize_struct("Period", 2)?;
+        s.serialize_field("start_mjd", &self.start.value())?;
+        s.serialize_field("end_mjd", &self.end.value())?;
+        s.end()
     }
+}
 
-    impl<'de> Deserialize<'de> for Period<crate::time::ModifiedJulianDate> {
-        fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-        where
-            D: Deserializer<'de>,
-        {
-            #[derive(Deserialize)]
-            struct Raw {
-                start_mjd: f64,
-                end_mjd: f64,
-            }
-
-            let raw = Raw::deserialize(deserializer)?;
-            Ok(Period::new(
-                crate::time::ModifiedJulianDate::new(raw.start_mjd),
-                crate::time::ModifiedJulianDate::new(raw.end_mjd),
-            ))
+impl<'de> Deserialize<'de> for Period<crate::time::ModifiedJulianDate> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Raw {
+            start_mjd: f64,
+            end_mjd: f64,
         }
+
+        let raw = Raw::deserialize(deserializer)?;
+        Ok(Period::new(
+            crate::time::ModifiedJulianDate::new(raw.start_mjd),
+            crate::time::ModifiedJulianDate::new(raw.end_mjd),
+        ))
     }
+}
 
 #[cfg(test)]
 mod tests {
