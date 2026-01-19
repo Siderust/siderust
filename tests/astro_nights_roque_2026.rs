@@ -2,28 +2,30 @@ use std::fs::File;
 use std::io::BufReader;
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use siderust::calculus::solar::altitude_periods::{find_night_periods, twilight};
+use serde_json::Value;
+use siderust::calculus::events::altitude_periods::AltitudeCondition;
+use siderust::calculus::solar::altitude_periods::{
+    find_night_periods, find_sun_altitude_periods_via_culminations, twilight,
+};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period};
 
-/// Compares siderust-computed astronomical nights for Roque de los Muchachos
-/// against the JSON file placed at `tests/reference_data/astro_night_periods_2026.json`.
-#[test]
-fn test_astronomical_nights_roque_2026() {
-    let f = File::open("tests/reference_data/astro_night_periods_2026.json")
-        .expect("Missing tests/reference_data/astro_night_periods_2026.json");
-    let reader = BufReader::new(f);
-    let json: serde_json::Value =
-        serde_json::from_reader(reader).expect("Invalid JSON in reference file");
-    let expected_periods: Vec<Period<ModifiedJulianDate>> =
-        serde_json::from_value(json["periods"].clone())
-            .expect("Invalid or missing `periods` in reference file");
+const REFERENCE_PATH: &str = "tests/reference_data/astro_night_periods_2026.json";
+const TOL_SECONDS: f64 = 3.0;
+const TOL_DAYS: f64 = TOL_SECONDS / 86_400.0;
 
-    // Build observer site from catalog constant
+fn load_reference_periods() -> Vec<Period<ModifiedJulianDate>> {
+    let f = File::open(REFERENCE_PATH).expect("Missing astro_night_periods_2026.json");
+    let reader = BufReader::new(f);
+    let json: Value = serde_json::from_reader(reader).expect("Invalid JSON in reference file");
+    serde_json::from_value(json["periods"].clone())
+        .expect("Invalid or missing `periods` in reference file")
+}
+
+fn build_roque_period() -> (ObserverSite, Period<ModifiedJulianDate>) {
     let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
 
-    // Build search period: 2026-01-01T00:00:00Z -> 2027-01-01T00:00:00Z
     let start_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
         .unwrap()
         .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
@@ -37,47 +39,71 @@ fn test_astronomical_nights_roque_2026() {
 
     let mjd_start = ModifiedJulianDate::from_utc(start_dt);
     let mjd_end = ModifiedJulianDate::from_utc(end_dt);
-    let period = Period::new(mjd_start, mjd_end);
 
-    let computed_opt = find_night_periods(site, period, twilight::ASTRONOMICAL);
-    assert!(
-        computed_opt.is_some(),
-        "siderust did not find any astronomical nights"
-    );
-    let computed = computed_opt.unwrap();
+    (site, Period::new(mjd_start, mjd_end))
+}
 
+fn assert_periods_close(
+    expected: &[Period<ModifiedJulianDate>],
+    computed: &[Period<ModifiedJulianDate>],
+) {
     assert_eq!(
-        expected_periods.len(),
+        expected.len(),
         computed.len(),
         "Different number of intervals between expected and siderust computation"
     );
 
-    // Tolerance: 3 seconds (expressed in days)
-    let tol_seconds = 3.0_f64;
-    let tol_days = tol_seconds / 86400.0;
-
-    for (i, (exp_p, calc_p)) in expected_periods.iter().zip(computed.iter()).enumerate() {
+    for (i, (exp_p, calc_p)) in expected.iter().zip(computed.iter()).enumerate() {
         let ds = (exp_p.start.value() - calc_p.start.value()).abs();
         let de = (exp_p.end.value() - calc_p.end.value()).abs();
 
         assert!(
-            ds <= tol_days,
+            ds <= TOL_DAYS,
             "Start MJD mismatch at index {}: expected {} got {} (diff {} days ~ {} s)",
             i,
             exp_p.start.value(),
             calc_p.start.value(),
             ds,
-            ds * 86400.0
+            ds * 86_400.0
         );
 
         assert!(
-            de <= tol_days,
+            de <= TOL_DAYS,
             "End MJD mismatch at index {}: expected {} got {} (diff {} days ~ {} s)",
             i,
             exp_p.end.value(),
             calc_p.end.value(),
             de,
-            de * 86400.0
+            de * 86_400.0
         );
     }
+}
+
+/// Compares siderust-computed astronomical nights for Roque de los Muchachos
+/// against the JSON reference data.
+#[test]
+fn test_astronomical_nights_roque_2026() {
+    let expected_periods = load_reference_periods();
+    let (site, period) = build_roque_period();
+
+    let computed = find_night_periods(site, period, twilight::ASTRONOMICAL)
+        .expect("siderust did not find any astronomical nights");
+
+    assert_periods_close(&expected_periods, &computed);
+}
+
+/// Same as the default test but exercises the culmination-based altitude search.
+#[test]
+fn test_astronomical_nights_roque_2026_culminations() {
+    let expected_periods = load_reference_periods();
+    let (site, period) = build_roque_period();
+
+    let computed = find_sun_altitude_periods_via_culminations(
+        site,
+        period,
+        AltitudeCondition::below(twilight::ASTRONOMICAL),
+    )
+    .expect("Culmination-based search did not find any astronomical nights");
+
+    assert_periods_close(&expected_periods, &computed);
 }
