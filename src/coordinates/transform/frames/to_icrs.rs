@@ -41,3 +41,31 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS,
         )
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::coordinates::centers::Barycentric;
+    use crate::macros::assert_cartesian_eq;
+    use qtty::AstronomicalUnit;
+
+    #[test]
+    fn ecliptic_roundtrip_through_icrs_preserves_vector() {
+        let ecl = Position::<Barycentric, frames::Ecliptic, AstronomicalUnit>::new(0.0, 1.0, 1.0);
+        let icrs: Position<_, frames::ICRS, AstronomicalUnit> = ecl.to_frame();
+        let back: Position<_, frames::Ecliptic, AstronomicalUnit> = icrs.to_frame();
+
+        assert_cartesian_eq!(ecl, back, 1e-12);
+    }
+
+    #[test]
+    fn equatorial_mean_j2000_to_icrs_is_bias_only() {
+        let eq = Position::<Barycentric, frames::EquatorialMeanJ2000, AstronomicalUnit>::new(
+            1.0, -2.0, 0.5,
+        );
+        let icrs: Position<_, frames::ICRS, AstronomicalUnit> = eq.to_frame();
+        let back: Position<_, frames::EquatorialMeanJ2000, AstronomicalUnit> = icrs.to_frame();
+
+        assert_cartesian_eq!(eq, back, 1e-12);
+    }
+}
