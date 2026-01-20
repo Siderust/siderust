@@ -5,12 +5,11 @@ version = 4
 [[package]]
 name = "affn"
 version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c41a6edafa8623e874327c6ed638a0c122cf54109ca7855635b7be508bb6e84c"
 dependencies = [
  "affn-derive",
  "nalgebra",
  "qtty",
+ "serde",
 ]
 
 [[package]]
@@ -837,6 +836,7 @@ dependencies = [
  "num-complex",
  "num-rational",
  "num-traits",
+ "serde",
  "simba",
  "typenum",
 ]
@@ -869,6 +869,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
 dependencies = [
  "num-traits",
+ "serde",
 ]
 
 [[package]]
@@ -1019,6 +1020,7 @@ checksum = "d4169b4a5124f5399d9a88fa8e5998a28bf22bd1bd67469bf9dfe9291bab0bef"
 dependencies = [
  "libm",
  "qtty-derive",
+ "serde",
 ]
 
 [[package]]

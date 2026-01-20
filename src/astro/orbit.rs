@@ -85,8 +85,12 @@
 use crate::astro::JulianDate;
 use qtty::*;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 /// Represents the Keplerian orbital elements of a celestial object.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Orbit {
     pub semi_major_axis: AstronomicalUnits, // Semi-major axis (AstronomicalUnits)
     pub eccentricity: f64,                  // Orbital eccentricity
