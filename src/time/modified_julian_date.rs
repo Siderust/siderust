@@ -3,6 +3,7 @@
 
 use chrono::{DateTime, Utc};
 use qtty::Days;
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::ops::{Add, Sub};
 
@@ -43,6 +44,7 @@ impl ModifiedJulianDate {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for ModifiedJulianDate {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -52,6 +54,7 @@ impl Serialize for ModifiedJulianDate {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for ModifiedJulianDate {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

@@ -33,6 +33,41 @@ pub struct ProperMotion {
     pub dec_μ: DegreesPerYear,
 }
 
+// Serde support for ProperMotion
+#[cfg(feature = "serde")]
+impl serde::Serialize for ProperMotion {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut s = serializer.serialize_struct("ProperMotion", 2)?;
+        s.serialize_field("ra_deg_per_year", &self.ra_μ.value())?;
+        s.serialize_field("dec_deg_per_year", &self.dec_μ.value())?;
+        s.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for ProperMotion {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(serde::Deserialize)]
+        struct Raw {
+            ra_deg_per_year: f64,
+            dec_deg_per_year: f64,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+        Ok(Self {
+            ra_μ: DegreesPerYear::new(raw.ra_deg_per_year),
+            dec_μ: DegreesPerYear::new(raw.dec_deg_per_year),
+        })
+    }
+}
+
 impl ProperMotion {
     pub fn new<T>(ra_v: Quantity<T>, dec_v: Quantity<T>) -> Self
     where

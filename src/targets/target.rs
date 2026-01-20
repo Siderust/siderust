@@ -5,12 +5,14 @@ use crate::astro::proper_motion::ProperMotion;
 use crate::astro::JulianDate;
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
 pub struct Target<T> {
     /// Position of the object at epoch `time`.
     pub position: T,
     /// Epoch of the position expressed as a [Julian Day].
     pub time: JulianDate,
-    /// Proper‑motion model (e.g. mas yr⁻¹); `None` for objects assumed static.
+    /// Proper‑motion model (e.g. mas yr⁻¹); `None` for objects assumed static.
+    #[cfg_attr(feature = "serde", serde(skip_serializing_if = "Option::is_none"))]
     pub proper_motion: Option<ProperMotion>,
 }
 

@@ -9,6 +9,7 @@
 use qtty::*;
 
 use chrono::{DateTime, Utc};
+#[cfg(feature = "serde")]
 use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::ops::{Add, AddAssign, Sub, SubAssign};
 
@@ -76,6 +77,7 @@ impl JulianDate {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for JulianDate {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -85,6 +87,7 @@ impl Serialize for JulianDate {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for JulianDate {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

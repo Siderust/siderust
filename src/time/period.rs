@@ -9,6 +9,7 @@
 use super::TimeInstant;
 use chrono::{DateTime, Utc};
 use qtty::Days;
+#[cfg(feature = "serde")]
 use serde::{ser::SerializeStruct, Deserialize, Deserializer, Serialize, Serializer};
 
 /// Represents a time period between two instants.
@@ -115,6 +116,7 @@ impl Period<DateTime<Utc>> {
 }
 
 // Serde support for Period<ModifiedJulianDate>
+#[cfg(feature = "serde")]
 impl Serialize for Period<crate::time::ModifiedJulianDate> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -127,12 +129,13 @@ impl Serialize for Period<crate::time::ModifiedJulianDate> {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for Period<crate::time::ModifiedJulianDate> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
-        #[derive(Deserialize)]
+        #[derive(serde::Deserialize)]
         struct Raw {
             start_mjd: f64,
             end_mjd: f64,

@@ -371,6 +371,38 @@ impl Direction<frames::ICRS> {
     }
 }
 
+// ICRS Direction Serde: uses ra_deg/dec_deg field names
+#[cfg(feature = "serde")]
+impl serde::Serialize for Direction<frames::ICRS> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut s = serializer.serialize_struct("DirectionICRS", 2)?;
+        s.serialize_field("ra_deg", &self.ra().value())?;
+        s.serialize_field("dec_deg", &self.dec().value())?;
+        s.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> serde::Deserialize<'de> for Direction<frames::ICRS> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(serde::Deserialize)]
+        struct Raw {
+            ra_deg: f64,
+            dec_deg: f64,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+        Ok(Self::new(Degrees::new(raw.ra_deg), Degrees::new(raw.dec_deg)))
+    }
+}
+
 // =============================================================================
 // Frame-Specific Direction Constructors: Equatorial
 // =============================================================================
@@ -837,6 +869,53 @@ where
     #[inline]
     pub fn lat(&self) -> Degrees {
         self.inner.polar
+    }
+}
+
+// Geographic Position Serde: uses lat_deg/lon_deg/elevation_km field names
+#[cfg(feature = "serde")]
+impl<C, U> serde::Serialize for Position<C, frames::ECEF, U>
+where
+    C: centers::ReferenceCenter,
+    U: LengthUnit,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeStruct;
+        let mut s = serializer.serialize_struct("Geographic", 3)?;
+        // polar = latitude, azimuth = longitude for ECEF frame
+        s.serialize_field("lat_deg", &self.inner.polar.value())?;
+        s.serialize_field("lon_deg", &self.inner.azimuth.value())?;
+        s.serialize_field("elevation_km", &self.inner.distance.value())?;
+        s.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, C, U> serde::Deserialize<'de> for Position<C, frames::ECEF, U>
+where
+    C: centers::ReferenceCenter<Params = ()>,
+    U: LengthUnit,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        #[derive(serde::Deserialize)]
+        struct Raw {
+            lat_deg: f64,
+            lon_deg: f64,
+            elevation_km: f64,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+        Ok(Self::new(
+            Degrees::new(raw.lon_deg),
+            Degrees::new(raw.lat_deg),
+            Quantity::<U>::new(raw.elevation_km),
+        ))
     }
 }
 
