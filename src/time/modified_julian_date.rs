@@ -3,8 +3,10 @@
 
 use chrono::{DateTime, Utc};
 use qtty::Days;
-use serde::{Deserialize, Deserializer, Serialize, Serializer};
 use std::ops::{Add, Sub};
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Deserializer, Serialize, Serializer};
 
 /// Represents Modified Julian Date (MJD), which is the Julian Date
 /// minus 2400000.5, used in various scientific and technical applications.
@@ -43,6 +45,7 @@ impl ModifiedJulianDate {
     }
 }
 
+#[cfg(feature = "serde")]
 impl Serialize for ModifiedJulianDate {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
@@ -52,6 +55,7 @@ impl Serialize for ModifiedJulianDate {
     }
 }
 
+#[cfg(feature = "serde")]
 impl<'de> Deserialize<'de> for ModifiedJulianDate {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where

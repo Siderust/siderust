@@ -64,6 +64,20 @@ Working with solar system bodies and their positions:
 cargo run --example solar_system_example
 ```
 
+### 6. Serialization and Deserialization (`serde_serialization.rs`)
+Learn how to serialize and deserialize siderust types:
+- Julian dates and time types
+- Cartesian coordinates (positions and directions)
+- Spherical coordinates
+- Complex observation data structures
+- Saving/loading astronomical data to/from JSON files
+- Working with collections of astronomical data
+
+**Run with:**
+```bash
+cargo run --example serde_serialization --features serde
+```
+
 ## Key Concepts
 
 ### Reference Centers
@@ -113,6 +127,7 @@ cargo run --example coordinate_transformations
 cargo run --example bodycentric_coordinates
 cargo run --example observer_coordinates
 cargo run --example solar_system_example
+cargo run --example serde_serialization --features serde
 ```
 
 ## Tips
