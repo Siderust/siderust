@@ -38,6 +38,9 @@ use std::ops::Deref;
 
 use qtty::{Degrees, LengthUnit, Quantity};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 // =============================================================================
 // Helper: Angle Canonicalization
 // =============================================================================
@@ -81,6 +84,8 @@ fn clamp_polar(polar: Degrees) -> Degrees {
 /// *Equatorial* refers to `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, or
 /// `EquatorialTrueOfDate`, which share the same angular convention.
 #[derive(Debug, Clone, Copy)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(serialize = "F: frames::ReferenceFrame", deserialize = "F: frames::ReferenceFrame")))]
 #[repr(transparent)]
 pub struct Direction<F: frames::ReferenceFrame> {
     inner: affn::spherical::Direction<F>,
@@ -200,6 +205,11 @@ impl<F: frames::ReferenceFrame> std::fmt::Display for Direction<F> {
 /// - `F`: The reference frame (e.g., `ICRS`, `EquatorialMeanJ2000`, `Ecliptic`)
 /// - `U`: The length unit (e.g., `AstronomicalUnit`, `Kilometer`)
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+#[cfg_attr(feature = "serde", serde(bound(
+    serialize = "C::Params: Serialize, U: LengthUnit",
+    deserialize = "C::Params: Deserialize<'de>, U: LengthUnit"
+)))]
 #[repr(transparent)]
 pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> {
     inner: affn::spherical::Position<C, F, U>,

@@ -51,6 +51,9 @@ pub use affn::frames::ReferenceFrame;
 // Import derive from prelude for use in this module
 use affn::prelude::ReferenceFrame as DeriveReferenceFrame;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 // =============================================================================
 // Astronomical Reference Frames
 // =============================================================================
@@ -61,6 +64,7 @@ use affn::prelude::ReferenceFrame as DeriveReferenceFrame;
 /// It is quasi-inertial and centered at the solar system barycenter.
 /// The axes are defined by the positions of distant quasars.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ICRS;
 
 /// Local horizon coordinate system.
@@ -68,6 +72,7 @@ pub struct ICRS;
 /// A topocentric frame based on the observer's local horizon.
 /// Uses altitude (elevation above horizon) and azimuth (bearing from north).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Horizontal;
 
 /// Mean equator and equinox of J2000.0 (FK5/J2000 mean).
@@ -75,6 +80,7 @@ pub struct Horizontal;
 /// Earth-based mean equator/equinox at epoch J2000.0, with nutation removed.
 /// This is the classic "J2000 equatorial" frame used by many catalogs.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EquatorialMeanJ2000;
 
 /// Mean equator and equinox of date.
@@ -82,6 +88,7 @@ pub struct EquatorialMeanJ2000;
 /// Earth-based mean equator/equinox at a given epoch (precession applied,
 /// nutation removed). Requires a TT epoch for transformations.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EquatorialMeanOfDate;
 
 /// True equator and equinox of date.
@@ -89,6 +96,7 @@ pub struct EquatorialMeanOfDate;
 /// Earth-based true equator/equinox at a given epoch (precession + nutation).
 /// Requires a TT epoch for transformations.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EquatorialTrueOfDate;
 
 /// Ecliptic coordinate system.
@@ -96,6 +104,7 @@ pub struct EquatorialTrueOfDate;
 /// Based on the plane of Earth's orbit around the Sun.
 /// Uses ecliptic longitude and latitude.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Ecliptic;
 
 /// International Terrestrial Reference Frame.
@@ -103,6 +112,7 @@ pub struct Ecliptic;
 /// A geocentric Earth-fixed frame that co-rotates with the Earth.
 /// Used for geodetic and geophysical applications.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ITRF;
 
 /// Earth-Centered, Earth-Fixed coordinate system.
@@ -110,6 +120,7 @@ pub struct ITRF;
 /// A geocentric Cartesian coordinate system that rotates with the Earth.
 /// The X-axis points to the intersection of the prime meridian and equator.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ECEF;
 
 /// Galactic coordinate system.
@@ -118,6 +129,7 @@ pub struct ECEF;
 /// Uses galactic longitude and latitude, with the center
 /// of the galaxy defining the origin of galactic longitude.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Galactic;
 
 // =============================================================================
