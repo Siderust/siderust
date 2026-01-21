@@ -84,11 +84,8 @@ fn clamp_polar(polar: Degrees) -> Degrees {
 /// *Equatorial* refers to `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, or
 /// `EquatorialTrueOfDate`, which share the same angular convention.
 #[derive(Debug, Clone, Copy)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(serialize = "F: frames::ReferenceFrame", deserialize = "F: frames::ReferenceFrame")))]
 #[repr(transparent)]
 pub struct Direction<F: frames::ReferenceFrame> {
-    #[cfg_attr(feature = "serde", serde(flatten))]
     inner: affn::spherical::Direction<F>,
 }
 
@@ -192,6 +189,27 @@ impl<F: frames::ReferenceFrame> std::fmt::Display for Direction<F> {
     }
 }
 
+// Serde: delegate to inner type which has frame-specific field names
+#[cfg(feature = "serde")]
+impl<F: frames::SphericalNaming> Serialize for Direction<F> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.inner.serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, F: frames::SphericalNaming> Deserialize<'de> for Direction<F> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        affn::spherical::Direction::<F>::deserialize(deserializer).map(Self::from_inner)
+    }
+}
+
 // =============================================================================
 // Position Wrapper Type
 // =============================================================================
@@ -206,14 +224,8 @@ impl<F: frames::ReferenceFrame> std::fmt::Display for Direction<F> {
 /// - `F`: The reference frame (e.g., `ICRS`, `EquatorialMeanJ2000`, `Ecliptic`)
 /// - `U`: The length unit (e.g., `AstronomicalUnit`, `Kilometer`)
 #[derive(Debug, Clone)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[cfg_attr(feature = "serde", serde(bound(
-    serialize = "C::Params: Serialize, U: LengthUnit",
-    deserialize = "C::Params: Deserialize<'de>, U: LengthUnit"
-)))]
 #[repr(transparent)]
 pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> {
-    #[cfg_attr(feature = "serde", serde(flatten))]
     inner: affn::spherical::Position<C, F, U>,
 }
 
@@ -349,6 +361,39 @@ where
 {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}", self.inner)
+    }
+}
+
+// Serde: delegate to inner type which has frame-specific field names
+#[cfg(feature = "serde")]
+impl<C, F, U> Serialize for Position<C, F, U>
+where
+    C: centers::ReferenceCenter,
+    C::Params: Serialize,
+    F: frames::SphericalNaming,
+    U: LengthUnit,
+{
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.inner.serialize(serializer)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de, C, F, U> Deserialize<'de> for Position<C, F, U>
+where
+    C: centers::ReferenceCenter,
+    C::Params: Deserialize<'de> + Default,
+    F: frames::SphericalNaming,
+    U: LengthUnit,
+{
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        affn::spherical::Position::<C, F, U>::deserialize(deserializer).map(Self::from_inner)
     }
 }
 

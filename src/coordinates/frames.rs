@@ -46,8 +46,8 @@
 //! assert_eq!(name, "ICRS");
 //! ```
 
-// Re-export the core trait from affn
-pub use affn::frames::ReferenceFrame;
+// Re-export the core traits from affn
+pub use affn::frames::{ReferenceFrame, SphericalNaming};
 // Import derive from prelude for use in this module
 use affn::prelude::ReferenceFrame as DeriveReferenceFrame;
 
@@ -145,3 +145,93 @@ pub trait MutableFrame: ReferenceFrame {}
 impl MutableFrame for ICRS {}
 impl MutableFrame for Ecliptic {}
 impl MutableFrame for EquatorialMeanJ2000 {}
+
+// =============================================================================
+// SphericalNaming: Frame-Specific Field Names for Serde
+// =============================================================================
+
+// Equatorial frames use Right Ascension (ra) and Declination (dec)
+impl SphericalNaming for ICRS {
+    fn polar_name() -> &'static str {
+        "dec"
+    }
+    fn azimuth_name() -> &'static str {
+        "ra"
+    }
+}
+
+impl SphericalNaming for EquatorialMeanJ2000 {
+    fn polar_name() -> &'static str {
+        "dec"
+    }
+    fn azimuth_name() -> &'static str {
+        "ra"
+    }
+}
+
+impl SphericalNaming for EquatorialMeanOfDate {
+    fn polar_name() -> &'static str {
+        "dec"
+    }
+    fn azimuth_name() -> &'static str {
+        "ra"
+    }
+}
+
+impl SphericalNaming for EquatorialTrueOfDate {
+    fn polar_name() -> &'static str {
+        "dec"
+    }
+    fn azimuth_name() -> &'static str {
+        "ra"
+    }
+}
+
+// Ecliptic uses longitude (lon) and latitude (lat)
+impl SphericalNaming for Ecliptic {
+    fn polar_name() -> &'static str {
+        "lat"
+    }
+    fn azimuth_name() -> &'static str {
+        "lon"
+    }
+}
+
+// Horizontal uses altitude (alt) and azimuth (az)
+impl SphericalNaming for Horizontal {
+    fn polar_name() -> &'static str {
+        "alt"
+    }
+    fn azimuth_name() -> &'static str {
+        "az"
+    }
+}
+
+// Geographic/terrestrial frames use longitude (lon) and latitude (lat)
+impl SphericalNaming for ITRF {
+    fn polar_name() -> &'static str {
+        "lat"
+    }
+    fn azimuth_name() -> &'static str {
+        "lon"
+    }
+}
+
+impl SphericalNaming for ECEF {
+    fn polar_name() -> &'static str {
+        "lat"
+    }
+    fn azimuth_name() -> &'static str {
+        "lon"
+    }
+}
+
+// Galactic uses galactic longitude (l) and galactic latitude (b)
+impl SphericalNaming for Galactic {
+    fn polar_name() -> &'static str {
+        "b"
+    }
+    fn azimuth_name() -> &'static str {
+        "l"
+    }
+}
