@@ -88,6 +88,7 @@ fn clamp_polar(polar: Degrees) -> Degrees {
 #[cfg_attr(feature = "serde", serde(bound(serialize = "F: frames::ReferenceFrame", deserialize = "F: frames::ReferenceFrame")))]
 #[repr(transparent)]
 pub struct Direction<F: frames::ReferenceFrame> {
+    #[cfg_attr(feature = "serde", serde(flatten))]
     inner: affn::spherical::Direction<F>,
 }
 
@@ -212,6 +213,7 @@ impl<F: frames::ReferenceFrame> std::fmt::Display for Direction<F> {
 )))]
 #[repr(transparent)]
 pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> {
+    #[cfg_attr(feature = "serde", serde(flatten))]
     inner: affn::spherical::Position<C, F, U>,
 }
 
