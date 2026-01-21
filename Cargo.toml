@@ -46,3 +46,7 @@ harness = false
 [[bench]]
 name = "vsop87"
 harness = false
+
+[[example]]
+name = "serde_serialization"
+required-features = ["serde"]
