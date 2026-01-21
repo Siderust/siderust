@@ -127,7 +127,7 @@ fn main() {
 
     let json =
         serde_json::to_string_pretty(&spherical_pos).expect("Failed to serialize spherical");
-    println!("Spherical position serialized to JSON:");
+    println!("ICRS spherical position serialized to JSON (uses 'ra'/'dec'):");
     println!("{}", json);
 
     let recovered: spherical::Position<
@@ -139,6 +139,60 @@ fn main() {
     println!("  RA  = {:.3}°", recovered.ra().value());
     println!("  Dec = {:.3}°", recovered.dec().value());
     println!("  Distance = {:.3} AU", recovered.distance().value());
+    println!();
+
+    // =========================================================================
+    // 4b. Frame-Specific Field Names
+    // =========================================================================
+    println!("4b. FRAME-SPECIFIC FIELD NAMES");
+    println!("------------------------------");
+    println!("Different coordinate frames use domain-appropriate JSON field names:\n");
+
+    // Ecliptic coordinates use lon/lat
+    let ecliptic_pos = spherical::Position::<
+        siderust::coordinates::centers::Heliocentric,
+        frames::Ecliptic,
+        AstronomicalUnit,
+    >::new(
+        120.0 * DEG, // Ecliptic longitude
+        30.0 * DEG,  // Ecliptic latitude
+        2.5 * AU,
+    );
+    let json = serde_json::to_string_pretty(&ecliptic_pos).unwrap();
+    println!("Ecliptic coordinates (uses 'lon'/'lat'):");
+    println!("{}\n", json);
+
+    // Horizontal coordinates use az/alt
+    let horizontal_dir = spherical::Direction::<frames::Horizontal>::new(
+        45.0 * DEG,  // Altitude
+        180.0 * DEG, // Azimuth (South)
+    );
+    let json = serde_json::to_string_pretty(&horizontal_dir).unwrap();
+    println!("Horizontal direction (uses 'az'/'alt'):");
+    println!("{}\n", json);
+
+    // Galactic coordinates use l/b
+    let galactic_pos = spherical::Position::<
+        siderust::coordinates::centers::Barycentric,
+        frames::Galactic,
+        Parsec,
+    >::new_raw(
+        0.0 * DEG,   // Galactic latitude (b) - in plane
+        0.0 * DEG,   // Galactic longitude (l) - toward center
+        8000.0 * PC, // Distance to galactic center
+    );
+    let json = serde_json::to_string_pretty(&galactic_pos).unwrap();
+    println!("Galactic coordinates (uses 'l'/'b'):");
+    println!("{}\n", json);
+
+    // Demonstrate round-trip with ecliptic
+    let recovered: spherical::Position<
+        siderust::coordinates::centers::Heliocentric,
+        frames::Ecliptic,
+        AstronomicalUnit,
+    > = serde_json::from_str(&serde_json::to_string(&ecliptic_pos).unwrap()).unwrap();
+    println!("Ecliptic round-trip successful:");
+    println!("  lon = {:.1}°, lat = {:.1}°", recovered.lon().value(), recovered.lat().value());
     println!();
 
     // =========================================================================
