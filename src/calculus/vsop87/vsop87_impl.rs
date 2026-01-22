@@ -53,11 +53,12 @@ fn coord<M: Mode>(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
         if M::NEED_VAL || M::NEED_DER {
             for term in *terms {
                 let arg = term.b + term.c * t;
-                let cos_arg = arg.cos();
-                // We need S(T) even in Der mode for the k*T^{k-1}*S(T) term.
-                serie_val += term.a * cos_arg;
                 if M::NEED_DER {
-                    serie_der += -term.a * term.c * arg.sin();
+                    let (sin_arg, cos_arg) = arg.sin_cos();
+                    serie_val += term.a * cos_arg;
+                    serie_der += -term.a * term.c * sin_arg;
+                } else {
+                    serie_val += term.a * arg.cos();
                 }
             }
         }
