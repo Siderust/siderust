@@ -9,7 +9,6 @@
 //! * [`position_velocity`] – both in one pass (≈30 % faster in 2 calls)
 
 use crate::astro::JulianDate;
-use rayon::join;
 
 /// One VSOP87 coefficient term  _a · cos(b + c·T)_
 #[derive(Debug, Clone, Copy)]
@@ -88,14 +87,10 @@ pub fn position(
 ) -> (f64, f64, f64) {
     let t = JulianDate::tt_to_tdb(jd).julian_millennias();
 
-    let (x, (y, z)) = join(
-        || coord::<Val>(x_series, t).0,
-        || {
-            let y = coord::<Val>(y_series, t).0;
-            let z = coord::<Val>(z_series, t).0;
-            (y, z)
-        },
-    );
+    let x = coord::<Val>(x_series, t).0;
+    let y = coord::<Val>(y_series, t).0;
+    let z = coord::<Val>(z_series, t).0;
+
     (x, y, z)
 }
 
@@ -107,14 +102,10 @@ pub fn velocity(
 ) -> (f64, f64, f64) {
     let t = JulianDate::tt_to_tdb(jd).julian_millennias();
 
-    let (xdot, (ydot, zdot)) = join(
-        || coord::<Der>(x_series, t).1,
-        || {
-            let ydot = coord::<Der>(y_series, t).1;
-            let zdot = coord::<Der>(z_series, t).1;
-            (ydot, zdot)
-        },
-    );
+    let xdot = coord::<Der>(x_series, t).1;
+    let ydot = coord::<Der>(y_series, t).1;
+    let zdot = coord::<Der>(z_series, t).1;
+
     (xdot, ydot, zdot)
 }
 
@@ -128,14 +119,9 @@ pub fn position_velocity(
 ) -> ((f64, f64, f64), (f64, f64, f64)) {
     let t = JulianDate::tt_to_tdb(jd).julian_millennias();
 
-    let ((x, xdot), (y, ydot, z, zdot)) = join(
-        || coord::<Both>(x_series, t),
-        || {
-            let (y, ydot) = coord::<Both>(y_series, t);
-            let (z, zdot) = coord::<Both>(z_series, t);
-            (y, ydot, z, zdot)
-        },
-    );
+    let (x, xdot) = coord::<Both>(x_series, t);
+    let (y, ydot) = coord::<Both>(y_series, t);
+    let (z, zdot) = coord::<Both>(z_series, t);
 
     ((x, y, z), (xdot, ydot, zdot))
 }
