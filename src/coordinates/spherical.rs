@@ -874,13 +874,13 @@ where
     /// # Arguments
     /// - `lon`: Geodetic longitude, positive eastward, normalized to [0°, 360°)
     /// - `lat`: Geodetic latitude, positive northward, clamped to [-90°, +90°]
-    /// - `distance`: Distance from the center (e.g., Earth radius + altitude)
+    /// - `altitude`: Height above the WGS84 ellipsoid (e.g., observatory altitude)
     #[inline]
-    pub fn new<T: Into<Quantity<U>>>(lon: Degrees, lat: Degrees, distance: T) -> Self {
+    pub fn new<T: Into<Quantity<U>>>(lon: Degrees, lat: Degrees, altitude: T) -> Self {
         Self::from_inner(affn::spherical::Position::new_raw(
             clamp_polar(lat),
             normalize_azimuth(lon),
-            distance.into(),
+            altitude.into(),
         ))
     }
 
