@@ -26,6 +26,7 @@ nalgebra = "0.34.1"
 paste = "1.0"
 qtty = "0.2.2"
 serde = { version = "1.0", features = ["derive"], optional = true }
+wide = "0.7"
 
 [dev-dependencies]
 rstest = "0.26"
@@ -57,3 +58,7 @@ required-features = ["serde"]
 [profile.release]
 debug = true
 strip = "none"   # or remove any strip setting
+lto = "thin"
+
+[profile.release.build-override]
+opt-level = 3
