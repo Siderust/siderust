@@ -24,7 +24,6 @@ approx = "0.5"
 chrono = "0.4.43"
 nalgebra = "0.34.1"
 paste = "1.0"
-rayon = "1.11"
 qtty = "0.2.2"
 serde = { version = "1.0", features = ["derive"], optional = true }
 
@@ -47,6 +46,14 @@ harness = false
 name = "vsop87"
 harness = false
 
+[[bench]]
+name = "solar_altitude"
+harness = false
+
 [[example]]
 name = "serde_serialization"
 required-features = ["serde"]
+
+[profile.release]
+debug = true
+strip = "none"   # or remove any strip setting
