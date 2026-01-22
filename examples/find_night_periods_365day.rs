@@ -17,7 +17,6 @@
 //! - Site: Roque de los Muchachos Observatory
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
-use qtty::{Degrees, Meter, Quantity};
 use siderust::calculus::solar::altitude_periods::{find_night_periods, twilight};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
