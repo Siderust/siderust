@@ -4,6 +4,7 @@
 #![allow(clippy::needless_range_loop)]
 
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::Ecliptic};
+use wide::f64x4;
 
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
@@ -149,180 +150,608 @@ const W1: [Radians; 5] = [
 // ====================
 
 /// Normalize an angle to the range [-π, π].
+/// Kept for test compatibility; not used in hot paths.
 #[inline(always)]
+#[cfg(test)]
 fn normalize_angle(angle: Radians) -> Radians {
     angle.wrap_signed()
+}
+
+/// Precomputed context for ELP series evaluation.
+/// Uses raw f64 internally for performance; Quantity types only at API boundaries.
+#[derive(Clone, Copy)]
+struct ElpPrecomputed {
+    t: [f64; 5],
+    /// Full 5th-order polynomials for the 4 Delaunay arguments [D, M, M′, F] (radians).
+    del_full: [f64; 4],
+    /// Linear (k=0..1) part for the 4 Delaunay arguments [D, M, M′, F] (radians).
+    del_lin: [f64; 4],
+    /// Linear (k=0..1) part for ζ (radians).
+    zeta_lin: f64,
+    /// Linear (k=0..1) part for the 8 planetary arguments (radians).
+    p_args_lin: [f64; 8],
+}
+
+impl ElpPrecomputed {
+    #[inline(always)]
+    fn from_t(t: &[f64; 5]) -> Self {
+        let mut del_full = [0.0_f64; 4];
+        for i in 0..4 {
+            let mut acc = DEL[i][0].value();
+            for k in 1..5 {
+                acc += DEL[i][k].value() * t[k];
+            }
+            del_full[i] = acc;
+        }
+
+        let mut del_lin = [0.0_f64; 4];
+        for i in 0..4 {
+            del_lin[i] = DEL[i][0].value() + DEL[i][1].value() * t[1];
+        }
+
+        let zeta_lin = ZETA[0].value() + ZETA[1].value() * t[1];
+
+        let mut p_args_lin = [0.0_f64; 8];
+        for i in 0..8 {
+            p_args_lin[i] = P_ARGS[i][0].value() + P_ARGS[i][1].value() * t[1];
+        }
+
+        Self {
+            t: *t,
+            del_full,
+            del_lin,
+            zeta_lin,
+            p_args_lin,
+        }
+    }
 }
 
 // ====================
 // Main problem series (ELP1-3)
 // ====================
 
+/// Sum main problem series with SIMD batching.
+/// No per-term angle normalization needed since sin() is 2π-periodic.
 #[inline(always)]
-fn sum_main_problem_series(series: &[MainProblem], t: &[f64; 5], y_offset: Radians) -> f64 {
+fn sum_main_problem_series(series: &[MainProblem], pc: &ElpPrecomputed, y_offset: f64) -> f64 {
     // Precompute combined coefficient
     let delta_aux = DELNP - AM * DELNU;
 
-    series.iter().fold(0.0, |accum, entry| {
+    let d = pc.del_full[0];
+    let m = pc.del_full[1];
+    let mp = pc.del_full[2];
+    let f = pc.del_full[3];
+
+    let mut sum = 0.0_f64;
+    let len = series.len();
+    let chunks = len / 4;
+    let remainder = len % 4;
+
+    // SIMD: process 4 terms at a time
+    for i in 0..chunks {
+        let base = i * 4;
+        let e0 = &series[base];
+        let e1 = &series[base + 1];
+        let e2 = &series[base + 2];
+        let e3 = &series[base + 3];
+
+        // Compute coefficients
+        let tgv0 = e0.b[0] + DTASM * e0.b[4];
+        let tgv1 = e1.b[0] + DTASM * e1.b[4];
+        let tgv2 = e2.b[0] + DTASM * e2.b[4];
+        let tgv3 = e3.b[0] + DTASM * e3.b[4];
+
+        let c0 = e0.a + tgv0 * delta_aux + e0.b[1] * DELG + e0.b[2] * DELE + e0.b[3] * DELEP;
+        let c1 = e1.a + tgv1 * delta_aux + e1.b[1] * DELG + e1.b[2] * DELE + e1.b[3] * DELEP;
+        let c2 = e2.a + tgv2 * delta_aux + e2.b[1] * DELG + e2.b[2] * DELE + e2.b[3] * DELEP;
+        let c3 = e3.a + tgv3 * delta_aux + e3.b[1] * DELG + e3.b[2] * DELE + e3.b[3] * DELEP;
+
+        // Compute arguments
+        let y0 = y_offset
+            + d * (e0.ilu[0] as f64)
+            + m * (e0.ilu[1] as f64)
+            + mp * (e0.ilu[2] as f64)
+            + f * (e0.ilu[3] as f64);
+        let y1 = y_offset
+            + d * (e1.ilu[0] as f64)
+            + m * (e1.ilu[1] as f64)
+            + mp * (e1.ilu[2] as f64)
+            + f * (e1.ilu[3] as f64);
+        let y2 = y_offset
+            + d * (e2.ilu[0] as f64)
+            + m * (e2.ilu[1] as f64)
+            + mp * (e2.ilu[2] as f64)
+            + f * (e2.ilu[3] as f64);
+        let y3 = y_offset
+            + d * (e3.ilu[0] as f64)
+            + m * (e3.ilu[1] as f64)
+            + mp * (e3.ilu[2] as f64)
+            + f * (e3.ilu[3] as f64);
+
+        let args = f64x4::new([y0, y1, y2, y3]);
+        let sins = args.sin().to_array();
+
+        sum += c0 * sins[0] + c1 * sins[1] + c2 * sins[2] + c3 * sins[3];
+    }
+
+    // Handle remainder with scalar operations
+    for entry in &series[chunks * 4..chunks * 4 + remainder] {
         let tgv = entry.b[0] + DTASM * entry.b[4];
         let coeff =
             entry.a + tgv * delta_aux + entry.b[1] * DELG + entry.b[2] * DELE + entry.b[3] * DELEP;
 
-        // Compute argument y
-        let mut y = y_offset;
-        for k in 0..5 {
-            for i in 0..4 {
-                y += entry.ilu[i] as f64 * DEL[i][k] * t[k];
-            }
-        }
+        let y = y_offset
+            + d * (entry.ilu[0] as f64)
+            + m * (entry.ilu[1] as f64)
+            + mp * (entry.ilu[2] as f64)
+            + f * (entry.ilu[3] as f64);
 
-        accum + coeff * normalize_angle(y).sin()
-    })
+        sum += coeff * y.sin();
+    }
+
+    sum
 }
 
 macro_rules! define_main_series {
     ($fn_name:ident, $series:path, $offset:expr) => {
         #[inline(always)]
-        pub fn $fn_name(t: &[f64; 5]) -> f64 {
-            sum_main_problem_series($series, t, $offset)
+        fn $fn_name(pc: &ElpPrecomputed) -> f64 {
+            sum_main_problem_series($series, pc, $offset)
         }
     };
 }
 
-define_main_series!(sum_series_elp1, ELP1, Radians::new(0.0));
-define_main_series!(sum_series_elp2, ELP2, Radians::new(0.0));
-define_main_series!(sum_series_elp3, ELP3, Radians::new(FRAC_PI_2));
+define_main_series!(sum_series_elp1_ctx, ELP1, 0.0_f64);
+define_main_series!(sum_series_elp2_ctx, ELP2, 0.0_f64);
+define_main_series!(sum_series_elp3_ctx, ELP3, FRAC_PI_2);
 
 // ====================
 // Earth perturbation series (ELP4-9,22-29,30-36)
 // ====================
 
-/// Sum Earth perturbation series; `scale_idx` multiplies amplitude by t[i] if Some(i)
+/// Sum Earth perturbation series with SIMD batching.
+/// `scale_idx` multiplies amplitude by t[i] if Some(i).
+/// No per-term angle normalization needed since sin() is 2π-periodic.
 #[inline(always)]
-fn sum_earth_pert_series(series: &[EarthPert], t: &[f64; 5], scale_idx: Option<usize>) -> f64 {
-    series.iter().fold(0.0, |accum, entry| {
-        // Compute argument y
-        let mut y = Degrees::new(entry.o).to::<Radian>();
-        for k in 0..2 {
-            y += entry.iz * ZETA[k] * t[k];
-            for i in 0..4 {
-                y += entry.ilu[i] as f64 * DEL[i][k] * t[k];
-            }
-        }
+fn sum_earth_pert_series(
+    series: &[EarthPert],
+    pc: &ElpPrecomputed,
+    scale_idx: Option<usize>,
+) -> f64 {
+    let d = pc.del_lin[0];
+    let m = pc.del_lin[1];
+    let mp = pc.del_lin[2];
+    let f = pc.del_lin[3];
+
+    let mut sum = 0.0_f64;
+    let len = series.len();
+    let chunks = len / 4;
+    let remainder = len % 4;
+
+    // SIMD: process 4 terms at a time
+    for i in 0..chunks {
+        let base = i * 4;
+        let e0 = &series[base];
+        let e1 = &series[base + 1];
+        let e2 = &series[base + 2];
+        let e3 = &series[base + 3];
+
+        // Compute amplitudes
+        let (a0, a1, a2, a3) = if let Some(idx) = scale_idx {
+            let scale = pc.t[idx];
+            (e0.a * scale, e1.a * scale, e2.a * scale, e3.a * scale)
+        } else {
+            (e0.a, e1.a, e2.a, e3.a)
+        };
+
+        // Compute arguments (using raw radians)
+        let y0 = e0.o.to_radians()
+            + pc.zeta_lin * e0.iz
+            + d * (e0.ilu[0] as f64)
+            + m * (e0.ilu[1] as f64)
+            + mp * (e0.ilu[2] as f64)
+            + f * (e0.ilu[3] as f64);
+        let y1 = e1.o.to_radians()
+            + pc.zeta_lin * e1.iz
+            + d * (e1.ilu[0] as f64)
+            + m * (e1.ilu[1] as f64)
+            + mp * (e1.ilu[2] as f64)
+            + f * (e1.ilu[3] as f64);
+        let y2 = e2.o.to_radians()
+            + pc.zeta_lin * e2.iz
+            + d * (e2.ilu[0] as f64)
+            + m * (e2.ilu[1] as f64)
+            + mp * (e2.ilu[2] as f64)
+            + f * (e2.ilu[3] as f64);
+        let y3 = e3.o.to_radians()
+            + pc.zeta_lin * e3.iz
+            + d * (e3.ilu[0] as f64)
+            + m * (e3.ilu[1] as f64)
+            + mp * (e3.ilu[2] as f64)
+            + f * (e3.ilu[3] as f64);
+
+        let args = f64x4::new([y0, y1, y2, y3]);
+        let sins = args.sin().to_array();
+
+        sum += a0 * sins[0] + a1 * sins[1] + a2 * sins[2] + a3 * sins[3];
+    }
+
+    // Handle remainder with scalar operations
+    for entry in &series[chunks * 4..chunks * 4 + remainder] {
         let amplitude = if let Some(idx) = scale_idx {
-            entry.a * t[idx]
+            entry.a * pc.t[idx]
         } else {
             entry.a
         };
-        accum + amplitude * normalize_angle(y).sin()
-    })
+        if amplitude == 0.0 {
+            continue;
+        }
+
+        let y = entry.o.to_radians()
+            + pc.zeta_lin * entry.iz
+            + d * (entry.ilu[0] as f64)
+            + m * (entry.ilu[1] as f64)
+            + mp * (entry.ilu[2] as f64)
+            + f * (entry.ilu[3] as f64);
+
+        sum += amplitude * y.sin();
+    }
+
+    sum
 }
 
 macro_rules! define_earth_series {
     ($fn_name:ident, $series:path, $scale:expr) => {
         #[inline(always)]
-        pub fn $fn_name(t: &[f64; 5]) -> f64 {
-            sum_earth_pert_series($series, t, $scale)
+        fn $fn_name(pc: &ElpPrecomputed) -> f64 {
+            sum_earth_pert_series($series, pc, $scale)
         }
     };
 }
 
 // ELP4-9
-define_earth_series!(sum_series_elp4, ELP4, None);
-define_earth_series!(sum_series_elp5, ELP5, None);
-define_earth_series!(sum_series_elp6, ELP6, None);
-define_earth_series!(sum_series_elp7, ELP7, Some(1));
-define_earth_series!(sum_series_elp8, ELP8, Some(1));
-define_earth_series!(sum_series_elp9, ELP9, Some(1));
+define_earth_series!(sum_series_elp4_ctx, ELP4, None);
+define_earth_series!(sum_series_elp5_ctx, ELP5, None);
+define_earth_series!(sum_series_elp6_ctx, ELP6, None);
+define_earth_series!(sum_series_elp7_ctx, ELP7, Some(1));
+define_earth_series!(sum_series_elp8_ctx, ELP8, Some(1));
+define_earth_series!(sum_series_elp9_ctx, ELP9, Some(1));
 
 // ELP22-29,30-33 (no scaling)
-define_earth_series!(sum_series_elp22, ELP22, None);
-define_earth_series!(sum_series_elp23, ELP23, None);
-define_earth_series!(sum_series_elp24, ELP24, None);
-define_earth_series!(sum_series_elp28, ELP28, None);
-define_earth_series!(sum_series_elp29, ELP29, None);
-define_earth_series!(sum_series_elp30, ELP30, None);
-define_earth_series!(sum_series_elp31, ELP31, None);
-define_earth_series!(sum_series_elp32, ELP32, None);
-define_earth_series!(sum_series_elp33, ELP33, None);
+define_earth_series!(sum_series_elp22_ctx, ELP22, None);
+define_earth_series!(sum_series_elp23_ctx, ELP23, None);
+define_earth_series!(sum_series_elp24_ctx, ELP24, None);
+define_earth_series!(sum_series_elp28_ctx, ELP28, None);
+define_earth_series!(sum_series_elp29_ctx, ELP29, None);
+define_earth_series!(sum_series_elp30_ctx, ELP30, None);
+define_earth_series!(sum_series_elp31_ctx, ELP31, None);
+define_earth_series!(sum_series_elp32_ctx, ELP32, None);
+define_earth_series!(sum_series_elp33_ctx, ELP33, None);
 
 // ELP25-27 (scale on t[1])
-define_earth_series!(sum_series_elp25, ELP25, Some(1));
-define_earth_series!(sum_series_elp26, ELP26, Some(1));
-define_earth_series!(sum_series_elp27, ELP27, Some(1));
+define_earth_series!(sum_series_elp25_ctx, ELP25, Some(1));
+define_earth_series!(sum_series_elp26_ctx, ELP26, Some(1));
+define_earth_series!(sum_series_elp27_ctx, ELP27, Some(1));
 
 // ELP34-36 (scale on t[2])
-define_earth_series!(sum_series_elp34, ELP34, Some(2));
-define_earth_series!(sum_series_elp35, ELP35, Some(2));
-define_earth_series!(sum_series_elp36, ELP36, Some(2));
+define_earth_series!(sum_series_elp34_ctx, ELP34, Some(2));
+define_earth_series!(sum_series_elp35_ctx, ELP35, Some(2));
+define_earth_series!(sum_series_elp36_ctx, ELP36, Some(2));
 
 // ====================
 // Planet perturbation series (ELP10-21)
 // ====================
 
-/// Sum planetary perturbation series; `scale_o` multiplies `o` by t[1], `use_alt_del` switches argument terms
+/// Compute planetary argument for a single term (inline helper for SIMD loop).
+#[inline(always)]
+fn compute_planet_arg(entry: &PlanetPert, pc: &ElpPrecomputed, use_alt_del: bool) -> f64 {
+    let d = pc.del_lin[0];
+    let m = pc.del_lin[1];
+    let mp = pc.del_lin[2];
+    let f = pc.del_lin[3];
+
+    let mut y = entry.theta.to_radians();
+
+    if use_alt_del {
+        y += d * (entry.ipla[7] as f64)
+            + m * (entry.ipla[8] as f64)
+            + mp * (entry.ipla[9] as f64)
+            + f * (entry.ipla[10] as f64);
+
+        // Matches the original alt_del branch: only 7 planetary arguments are present.
+        for i in 0..7 {
+            y += pc.p_args_lin[i] * (entry.ipla[i] as f64);
+        }
+    } else {
+        y += d * (entry.ipla[8] as f64)
+            + mp * (entry.ipla[9] as f64)
+            + f * (entry.ipla[10] as f64);
+
+        for i in 0..8 {
+            y += pc.p_args_lin[i] * (entry.ipla[i] as f64);
+        }
+    }
+    y
+}
+
+/// Sum planetary perturbation series with SIMD batching.
+/// `scale_o` multiplies `o` by t[1], `use_alt_del` switches argument terms.
+/// No per-term angle normalization needed since sin() is 2π-periodic.
 #[inline(always)]
 fn sum_planet_pert_series(
     series: &[PlanetPert],
-    t: &[f64; 5],
+    pc: &ElpPrecomputed,
     scale_o: bool,
     use_alt_del: bool,
 ) -> f64 {
-    series.iter().fold(0.0, |accum, entry| {
-        let mut y = Degrees::new(entry.theta).to::<Radian>();
-        for k in 0..2 {
-            let delta = if use_alt_del {
-                // restored original two-loop alt_del branch
-                let mut delta = Radians::new(0.0);
-                for i in 0..4 {
-                    delta += entry.ipla[i + 7] as f64 * DEL[i][k] * t[k];
-                }
-                for i in 0..7 {
-                    delta += entry.ipla[i] as f64 * P_ARGS[i][k] * t[k];
-                }
-                delta
-            } else {
-                // original formula
-                (entry.ipla[8] as f64 * DEL[0][k]
-                    + entry.ipla[9] as f64 * DEL[2][k]
-                    + entry.ipla[10] as f64 * DEL[3][k])
-                    * t[k]
-                    + (0..8).fold(Radians::new(0.0), |sum, i| {
-                        sum + entry.ipla[i] as f64 * P_ARGS[i][k] * t[k]
-                    })
-            };
-            y += delta;
+    let mut sum = 0.0_f64;
+    let len = series.len();
+    let chunks = len / 4;
+    let remainder = len % 4;
+
+    // SIMD: process 4 terms at a time
+    for i in 0..chunks {
+        let base = i * 4;
+        let e0 = &series[base];
+        let e1 = &series[base + 1];
+        let e2 = &series[base + 2];
+        let e3 = &series[base + 3];
+
+        // Compute output coefficients
+        let (o0, o1, o2, o3) = if scale_o {
+            let scale = pc.t[1];
+            (e0.o * scale, e1.o * scale, e2.o * scale, e3.o * scale)
+        } else {
+            (e0.o, e1.o, e2.o, e3.o)
+        };
+
+        // Compute arguments
+        let y0 = compute_planet_arg(e0, pc, use_alt_del);
+        let y1 = compute_planet_arg(e1, pc, use_alt_del);
+        let y2 = compute_planet_arg(e2, pc, use_alt_del);
+        let y3 = compute_planet_arg(e3, pc, use_alt_del);
+
+        let args = f64x4::new([y0, y1, y2, y3]);
+        let sins = args.sin().to_array();
+
+        sum += o0 * sins[0] + o1 * sins[1] + o2 * sins[2] + o3 * sins[3];
+    }
+
+    // Handle remainder with scalar operations
+    for entry in &series[chunks * 4..chunks * 4 + remainder] {
+        let o_val = if scale_o { entry.o * pc.t[1] } else { entry.o };
+        if o_val == 0.0 {
+            continue;
         }
-        let o_val = if scale_o { entry.o * t[1] } else { entry.o };
-        accum + o_val * normalize_angle(y).sin()
-    })
+
+        let y = compute_planet_arg(entry, pc, use_alt_del);
+        sum += o_val * y.sin();
+    }
+
+    sum
 }
 
 macro_rules! define_planet_series {
     ($fn_name:ident, $series:path, $scale_o:expr, $alt:expr) => {
         #[inline(always)]
-        pub fn $fn_name(t: &[f64; 5]) -> f64 {
-            sum_planet_pert_series($series, t, $scale_o, $alt)
+        fn $fn_name(pc: &ElpPrecomputed) -> f64 {
+            sum_planet_pert_series($series, pc, $scale_o, $alt)
         }
     };
 }
 
 // No scale, no alt
-define_planet_series!(sum_series_elp10, ELP10, false, false);
-define_planet_series!(sum_series_elp11, ELP11, false, false);
-define_planet_series!(sum_series_elp12, ELP12, false, false);
+define_planet_series!(sum_series_elp10_ctx, ELP10, false, false);
+define_planet_series!(sum_series_elp11_ctx, ELP11, false, false);
+define_planet_series!(sum_series_elp12_ctx, ELP12, false, false);
 // scale, no alt
-define_planet_series!(sum_series_elp13, ELP13, true, false);
-define_planet_series!(sum_series_elp14, ELP14, true, false);
-define_planet_series!(sum_series_elp15, ELP15, true, false);
+define_planet_series!(sum_series_elp13_ctx, ELP13, true, false);
+define_planet_series!(sum_series_elp14_ctx, ELP14, true, false);
+define_planet_series!(sum_series_elp15_ctx, ELP15, true, false);
 // no scale, alt
-define_planet_series!(sum_series_elp16, ELP16, false, true);
-define_planet_series!(sum_series_elp17, ELP17, false, true);
-define_planet_series!(sum_series_elp18, ELP18, false, true);
+define_planet_series!(sum_series_elp16_ctx, ELP16, false, true);
+define_planet_series!(sum_series_elp17_ctx, ELP17, false, true);
+define_planet_series!(sum_series_elp18_ctx, ELP18, false, true);
 // scale, alt
-define_planet_series!(sum_series_elp19, ELP19, true, true);
-define_planet_series!(sum_series_elp20, ELP20, true, true);
-define_planet_series!(sum_series_elp21, ELP21, true, true);
+define_planet_series!(sum_series_elp19_ctx, ELP19, true, true);
+define_planet_series!(sum_series_elp20_ctx, ELP20, true, true);
+define_planet_series!(sum_series_elp21_ctx, ELP21, true, true);
+
+// ====================
+// Public wrappers (single-series entrypoints)
+// ====================
+
+#[allow(dead_code)]
+mod series_wrappers {
+    use super::*;
+
+    #[inline(always)]
+    pub fn sum_series_elp1(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp1_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp2(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp2_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp3(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp3_ctx(&pc)
+    }
+
+    #[inline(always)]
+    pub fn sum_series_elp4(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp4_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp5(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp5_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp6(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp6_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp7(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp7_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp8(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp8_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp9(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp9_ctx(&pc)
+    }
+
+    #[inline(always)]
+    pub fn sum_series_elp10(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp10_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp11(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp11_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp12(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp12_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp13(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp13_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp14(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp14_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp15(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp15_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp16(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp16_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp17(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp17_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp18(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp18_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp19(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp19_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp20(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp20_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp21(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp21_ctx(&pc)
+    }
+
+    #[inline(always)]
+    pub fn sum_series_elp22(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp22_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp23(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp23_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp24(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp24_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp25(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp25_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp26(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp26_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp27(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp27_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp28(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp28_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp29(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp29_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp30(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp30_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp31(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp31_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp32(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp32_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp33(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp33_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp34(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp34_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp35(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp35_ctx(&pc)
+    }
+    #[inline(always)]
+    pub fn sum_series_elp36(t: &[f64; 5]) -> f64 {
+        let pc = ElpPrecomputed::from_t(t);
+        sum_series_elp36_ctx(&pc)
+    }
+}
+
+#[allow(unused_imports)]
+pub use series_wrappers::*;
 
 // ====================
 // Lunar position computation
@@ -335,82 +764,93 @@ impl Moon {
         U: LengthUnit,
     {
         let t1 = jd.julian_centuries().value();
-        let t = [1.0, t1, t1.powi(2), t1.powi(3), t1.powi(4)];
+        let t2 = t1 * t1;
+        let t3 = t2 * t1;
+        let t4 = t2 * t2;
+        let t = [1.0, t1, t2, t3, t4];
+        let pc = ElpPrecomputed::from_t(&t);
 
-        // Sum all series (36 values)
-        let elp_values: [f64; 36] = [
-            sum_series_elp1(&t),
-            sum_series_elp2(&t),
-            sum_series_elp3(&t),
-            sum_series_elp4(&t),
-            sum_series_elp5(&t),
-            sum_series_elp6(&t),
-            sum_series_elp7(&t),
-            sum_series_elp8(&t),
-            sum_series_elp9(&t),
-            sum_series_elp10(&t),
-            sum_series_elp11(&t),
-            sum_series_elp12(&t),
-            sum_series_elp13(&t),
-            sum_series_elp14(&t),
-            sum_series_elp15(&t),
-            sum_series_elp16(&t),
-            sum_series_elp17(&t),
-            sum_series_elp18(&t),
-            sum_series_elp19(&t),
-            sum_series_elp20(&t),
-            sum_series_elp21(&t),
-            sum_series_elp22(&t),
-            sum_series_elp23(&t),
-            sum_series_elp24(&t),
-            sum_series_elp25(&t),
-            sum_series_elp26(&t),
-            sum_series_elp27(&t),
-            sum_series_elp28(&t),
-            sum_series_elp29(&t),
-            sum_series_elp30(&t),
-            sum_series_elp31(&t),
-            sum_series_elp32(&t),
-            sum_series_elp33(&t),
-            sum_series_elp34(&t),
-            sum_series_elp35(&t),
-            sum_series_elp36(&t),
-        ];
+        // Aggregate longitude, latitude, distance (avoid building a 36-element array)
+        let mut a = 0.0;
+        let mut b = 0.0;
+        let mut c = 0.0;
 
-        // Aggregate longitude, latitude, distance
-        let a: f64 = elp_values.iter().step_by(3).sum();
-        let b: f64 = elp_values.iter().skip(1).step_by(3).sum();
-        let c: f64 = elp_values.iter().skip(2).step_by(3).sum();
+        a += sum_series_elp1_ctx(&pc);
+        b += sum_series_elp2_ctx(&pc);
+        c += sum_series_elp3_ctx(&pc);
+        a += sum_series_elp4_ctx(&pc);
+        b += sum_series_elp5_ctx(&pc);
+        c += sum_series_elp6_ctx(&pc);
+        a += sum_series_elp7_ctx(&pc);
+        b += sum_series_elp8_ctx(&pc);
+        c += sum_series_elp9_ctx(&pc);
+        a += sum_series_elp10_ctx(&pc);
+        b += sum_series_elp11_ctx(&pc);
+        c += sum_series_elp12_ctx(&pc);
+        a += sum_series_elp13_ctx(&pc);
+        b += sum_series_elp14_ctx(&pc);
+        c += sum_series_elp15_ctx(&pc);
+        a += sum_series_elp16_ctx(&pc);
+        b += sum_series_elp17_ctx(&pc);
+        c += sum_series_elp18_ctx(&pc);
+        a += sum_series_elp19_ctx(&pc);
+        b += sum_series_elp20_ctx(&pc);
+        c += sum_series_elp21_ctx(&pc);
+        a += sum_series_elp22_ctx(&pc);
+        b += sum_series_elp23_ctx(&pc);
+        c += sum_series_elp24_ctx(&pc);
+        a += sum_series_elp25_ctx(&pc);
+        b += sum_series_elp26_ctx(&pc);
+        c += sum_series_elp27_ctx(&pc);
+        a += sum_series_elp28_ctx(&pc);
+        b += sum_series_elp29_ctx(&pc);
+        c += sum_series_elp30_ctx(&pc);
+        a += sum_series_elp31_ctx(&pc);
+        b += sum_series_elp32_ctx(&pc);
+        c += sum_series_elp33_ctx(&pc);
+        a += sum_series_elp34_ctx(&pc);
+        b += sum_series_elp35_ctx(&pc);
+        c += sum_series_elp36_ctx(&pc);
 
-        let lon = Arcseconds::new(a).to::<Radian>()
-            + W1[0]
-            + W1[1] * t[1]
-            + W1[2] * t[2]
-            + W1[3] * t[3]
-            + W1[4] * t[4];
-        let lat = Arcseconds::new(b).to::<Radian>();
+        let lon_rad = Arcseconds::new(a).to::<Radian>().value()
+            + W1[0].value()
+            + W1[1].value() * t[1]
+            + W1[2].value() * t[2]
+            + W1[3].value() * t[3]
+            + W1[4].value() * t[4];
+        let lat_rad = Arcseconds::new(b).to::<Radian>().value();
         let ratio = (A0 / ATH).simplify().value();
-        let distance = Kilometers::new(c * ratio);
+        let distance_km = c * ratio;
 
-        let x = distance * lat.cos();
-        let y = x * lon.sin();
-        let x = x * lon.cos();
-        let z = distance * lat.sin();
+        // Use sin_cos for efficiency (2 combined calls instead of 4 separate)
+        let (sin_lat, cos_lat) = lat_rad.sin_cos();
+        let (sin_lon, cos_lon) = lon_rad.sin_cos();
+        let x = Kilometers::new(distance_km * cos_lat * cos_lon);
+        let y = Kilometers::new(distance_km * cos_lat * sin_lon);
+        let z = Kilometers::new(distance_km * sin_lat);
 
-        // Apply Laskar rotation
+        // Apply Laskar rotation (using raw f64 for performance)
         let pw = (P1 + P2 * t[1] + P3 * t[2] + P4 * t[3] + P5 * t[4]) * t[1];
         let qw = (Q1 + Q2 * t[1] + Q3 * t[2] + Q4 * t[3] + Q5 * t[4]) * t[1];
         let ra = 2.0 * (1.0 - pw * pw - qw * qw).sqrt();
         let (pw2, qw2) = (1.0 - 2.0 * pw * pw, 1.0 - 2.0 * qw * qw);
         let pwqw = 2.0 * pw * qw;
-        let pw = pw * ra;
-        let qw = qw * ra;
+        let pw_ra = pw * ra;
+        let qw_ra = qw * ra;
 
-        let x2 = pw2 * x + pwqw * y + pw * z;
-        let y2 = pwqw * x + qw2 * y - qw * z;
-        let z2 = -pw * x + qw * y + (pw2 + qw2 - 1.0) * z;
+        let x_val = x.value();
+        let y_val = y.value();
+        let z_val = z.value();
 
-        Position::<Geocentric, Ecliptic, U>::new(x2.to::<U>(), y2.to::<U>(), z2.to::<U>())
+        let x2 = pw2 * x_val + pwqw * y_val + pw_ra * z_val;
+        let y2 = pwqw * x_val + qw2 * y_val - qw_ra * z_val;
+        let z2 = -pw_ra * x_val + qw_ra * y_val + (pw2 + qw2 - 1.0) * z_val;
+
+        Position::<Geocentric, Ecliptic, U>::new(
+            Kilometers::new(x2).to::<U>(),
+            Kilometers::new(y2).to::<U>(),
+            Kilometers::new(z2).to::<U>(),
+        )
     }
 }
 
@@ -1327,5 +1767,281 @@ mod tests {
             "Mercury mean lon = {} deg, expected ~252 degrees",
             mercury_deg
         );
+    }
+
+    // ===========================================================================
+    // LAYER 7: REFRACTOR REGRESSION (keep numerical results)
+    // ===========================================================================
+
+    fn sum_main_problem_series_reference(
+        series: &[MainProblem],
+        t: &[f64; 5],
+        y_offset: Radians,
+    ) -> f64 {
+        let delta_aux = DELNP - AM * DELNU;
+        let mut sum = 0.0;
+
+        for entry in series {
+            let tgv = entry.b[0] + DTASM * entry.b[4];
+            let coeff = entry.a
+                + tgv * delta_aux
+                + entry.b[1] * DELG
+                + entry.b[2] * DELE
+                + entry.b[3] * DELEP;
+
+            let mut y = y_offset;
+            for k in 0..5 {
+                for i in 0..4 {
+                    y += entry.ilu[i] as f64 * DEL[i][k] * t[k];
+                }
+            }
+
+            sum += coeff * normalize_angle(y).sin();
+        }
+
+        sum
+    }
+
+    fn sum_earth_pert_series_reference(
+        series: &[EarthPert],
+        t: &[f64; 5],
+        scale_idx: Option<usize>,
+    ) -> f64 {
+        let mut sum = 0.0;
+
+        for entry in series {
+            let amplitude = if let Some(idx) = scale_idx {
+                entry.a * t[idx]
+            } else {
+                entry.a
+            };
+
+            let mut y = Degrees::new(entry.o).to::<Radian>();
+            for k in 0..2 {
+                y += entry.iz * ZETA[k] * t[k];
+                for i in 0..4 {
+                    y += entry.ilu[i] as f64 * DEL[i][k] * t[k];
+                }
+            }
+
+            sum += amplitude * normalize_angle(y).sin();
+        }
+
+        sum
+    }
+
+    fn sum_planet_pert_series_reference(
+        series: &[PlanetPert],
+        t: &[f64; 5],
+        scale_o: bool,
+        use_alt_del: bool,
+    ) -> f64 {
+        let mut sum = 0.0;
+
+        for entry in series {
+            let mut y = Degrees::new(entry.theta).to::<Radian>();
+            for k in 0..2 {
+                let delta = if use_alt_del {
+                    let mut delta = Radians::new(0.0);
+                    for i in 0..4 {
+                        delta += entry.ipla[i + 7] as f64 * DEL[i][k] * t[k];
+                    }
+                    for i in 0..7 {
+                        delta += entry.ipla[i] as f64 * P_ARGS[i][k] * t[k];
+                    }
+                    delta
+                } else {
+                    let mut delta = (entry.ipla[8] as f64 * DEL[0][k]
+                        + entry.ipla[9] as f64 * DEL[2][k]
+                        + entry.ipla[10] as f64 * DEL[3][k])
+                        * t[k];
+                    for i in 0..8 {
+                        delta += entry.ipla[i] as f64 * P_ARGS[i][k] * t[k];
+                    }
+                    delta
+                };
+                y += delta;
+            }
+
+            let o_val = if scale_o { entry.o * t[1] } else { entry.o };
+            sum += o_val * normalize_angle(y).sin();
+        }
+
+        sum
+    }
+
+    fn assert_close(new: f64, reference: f64) {
+        // Tolerance relaxed to 5e-9 to accommodate SIMD/non-normalized computation order
+        // differences. This is still sub-milliarcsecond precision (1 mas ≈ 4.85e-9 rad).
+        let abs_tol: f64 = 5e-9;
+        let rel_tol: f64 = 1e-12;
+        let tol = abs_tol.max(rel_tol * (1.0 + reference.abs()));
+        assert!(
+            (new - reference).abs() <= tol,
+            "mismatch: new={new:.16e} ref={reference:.16e} diff={:.3e} tol={tol:.3e}",
+            (new - reference).abs()
+        );
+    }
+
+    #[test]
+    fn elp_series_refactor_matches_reference() {
+        for t1 in [0.0, 0.12345, -0.5] {
+            let t2 = t1 * t1;
+            let t3 = t2 * t1;
+            let t4 = t2 * t2;
+            let t = [1.0, t1, t2, t3, t4];
+            let pc = ElpPrecomputed::from_t(&t);
+
+            // Main problem path.
+            assert_close(
+                sum_series_elp1_ctx(&pc),
+                sum_main_problem_series_reference(ELP1, &t, Radians::new(0.0)),
+            );
+            assert_close(
+                sum_series_elp3_ctx(&pc),
+                sum_main_problem_series_reference(ELP3, &t, Radians::new(FRAC_PI_2)),
+            );
+
+            // Earth-perturbation path (with and without scaling).
+            assert_close(
+                sum_series_elp4_ctx(&pc),
+                sum_earth_pert_series_reference(ELP4, &t, None),
+            );
+            assert_close(
+                sum_series_elp34_ctx(&pc),
+                sum_earth_pert_series_reference(ELP34, &t, Some(2)),
+            );
+
+            // Planet-perturbation path (alt and non-alt variants).
+            assert_close(
+                sum_series_elp10_ctx(&pc),
+                sum_planet_pert_series_reference(ELP10, &t, false, false),
+            );
+            assert_close(
+                sum_series_elp16_ctx(&pc),
+                sum_planet_pert_series_reference(ELP16, &t, false, true),
+            );
+            assert_close(
+                sum_series_elp19_ctx(&pc),
+                sum_planet_pert_series_reference(ELP19, &t, true, true),
+            );
+        }
+    }
+
+    // =========================================================================
+    // SIMD/Raw f64 Optimization Regression Tests
+    // =========================================================================
+
+    /// Verify the optimized implementation matches expected J2000 reference position.
+    /// Reference values are from the existing regression_xyz_j2000_against_reference test.
+    #[test]
+    fn simd_optimization_regression_positions() {
+        // Test J2000 epoch (primary reference)
+        let pos = pos_j2000_km();
+        let expected_x = -291_608.0;
+        let expected_y = -274_980.0;
+        let expected_z = 36_271.2;
+        let tol = 1.0; // 1 km tolerance
+
+        let x = pos.x().to::<Kilometer>().value();
+        let y = pos.y().to::<Kilometer>().value();
+        let z = pos.z().to::<Kilometer>().value();
+
+        assert!(
+            (x - expected_x).abs() < tol,
+            "X mismatch at J2000: got {x:.1}, expected {expected_x:.1}"
+        );
+        assert!(
+            (y - expected_y).abs() < tol,
+            "Y mismatch at J2000: got {y:.1}, expected {expected_y:.1}"
+        );
+        assert!(
+            (z - expected_z).abs() < tol,
+            "Z mismatch at J2000: got {z:.1}, expected {expected_z:.1}"
+        );
+
+        // Additional epoch tests - verify reasonable lunar distances
+        let epochs = [-0.5, -0.1, 0.1, 0.5];
+        for t1 in epochs {
+            let jd = jd_from_centuries(t1);
+            let pos = Moon::get_geo_position::<Kilometer>(jd);
+            let px = pos.x().value();
+            let py = pos.y().value();
+            let pz = pos.z().value();
+            let r = (px * px + py * py + pz * pz).sqrt();
+
+            // Lunar distance should be 356,000-407,000 km
+            assert!(
+                (356_000.0..=407_000.0).contains(&r),
+                "Unrealistic lunar distance {r:.0} km at t1={t1}"
+            );
+        }
+    }
+
+    /// Verify finite, stable output across a range of epochs.
+    #[test]
+    fn simd_optimization_finiteness_and_stability() {
+        let epochs: [f64; 9] = [-1.0, -0.5, -0.1, -0.01, 0.0, 0.01, 0.1, 0.5, 1.0];
+        let mut prev_r: Option<f64> = None;
+
+        for t1 in epochs {
+            let jd = jd_from_centuries(t1);
+            let pos = Moon::get_geo_position::<Kilometer>(jd);
+            let x = pos.x().value();
+            let y = pos.y().value();
+            let z = pos.z().value();
+            let r = (x * x + y * y + z * z).sqrt();
+
+            // Check finiteness
+            assert!(x.is_finite(), "x is not finite at t1={t1}");
+            assert!(y.is_finite(), "y is not finite at t1={t1}");
+            assert!(z.is_finite(), "z is not finite at t1={t1}");
+
+            // Check realistic lunar distance bounds (350,000 - 410,000 km)
+            assert!(
+                (350_000.0..=410_000.0).contains(&r),
+                "Unrealistic lunar distance {r:.1} km at t1={t1}"
+            );
+
+            // Check no wild jumps between adjacent epochs
+            if let Some(pr) = prev_r {
+                let dr = (r - pr).abs();
+                // Max orbital velocity ~1 km/s, max dt ~0.5 century ≈ 1.58e9 s
+                // But we're sampling discrete epochs, so allow reasonable variation
+                assert!(
+                    dr < 60_000.0,
+                    "Suspicious distance jump {dr:.1} km between epochs"
+                );
+            }
+            prev_r = Some(r);
+        }
+    }
+
+    /// Verify determinism: same input always produces identical output.
+    #[test]
+    fn simd_optimization_determinism() {
+        for t1 in [-0.5, 0.0, 0.5] {
+            let jd = jd_from_centuries(t1);
+
+            let pos1 = Moon::get_geo_position::<Kilometer>(jd);
+            let pos2 = Moon::get_geo_position::<Kilometer>(jd);
+
+            // Bitwise equality
+            assert_eq!(
+                pos1.x().value().to_bits(),
+                pos2.x().value().to_bits(),
+                "Non-deterministic x at t1={t1}"
+            );
+            assert_eq!(
+                pos1.y().value().to_bits(),
+                pos2.y().value().to_bits(),
+                "Non-deterministic y at t1={t1}"
+            );
+            assert_eq!(
+                pos1.z().value().to_bits(),
+                pos2.z().value().to_bits(),
+                "Non-deterministic z at t1={t1}"
+            );
+        }
     }
 }
