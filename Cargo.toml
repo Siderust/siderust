@@ -51,6 +51,15 @@ harness = false
 name = "solar_altitude"
 harness = false
 
+[[bench]]
+name = "moon_altitude"
+harness = false
+
+[[bench]]
+name = "elp2000"
+harness = false
+
+
 [[example]]
 name = "serde_serialization"
 required-features = ["serde"]
