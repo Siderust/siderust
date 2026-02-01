@@ -1,0 +1,3 @@
+[submodule "affn"]
+	path = affn
+	url = git@github.com:Siderust/affn.git
