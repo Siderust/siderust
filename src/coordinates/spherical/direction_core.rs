@@ -34,23 +34,6 @@ pub struct Direction<F: frames::ReferenceFrame> {
 }
 
 impl<F: frames::ReferenceFrame> Direction<F> {
-    /// Creates a direction from the underlying `affn` type.
-    #[inline]
-    pub const fn from_inner(inner: affn::spherical::Direction<F>) -> Self {
-        Self { inner }
-    }
-
-    /// Returns the underlying `affn` direction.
-    #[inline]
-    pub const fn into_inner(self) -> affn::spherical::Direction<F> {
-        self.inner
-    }
-
-    /// Returns a reference to the underlying `affn` direction.
-    #[inline]
-    pub const fn as_inner(&self) -> &affn::spherical::Direction<F> {
-        &self.inner
-    }
 
     /// Returns the polar angle (latitude, declination, or altitude) in degrees.
     #[inline]
@@ -71,7 +54,7 @@ impl<F: frames::ReferenceFrame> Direction<F> {
         C: centers::ReferenceCenter<Params = ()>,
         U: LengthUnit,
     {
-        Position::from_inner(self.inner.position::<C, U>(distance))
+        self.inner.position::<C, U>(distance).into()
     }
 
     /// Promotes this direction to a position with the given distance and center parameters.
@@ -85,10 +68,9 @@ impl<F: frames::ReferenceFrame> Direction<F> {
         C: centers::ReferenceCenter,
         U: LengthUnit,
     {
-        Position::from_inner(
-            self.inner
-                .position_with_params::<C, U>(center_params, distance),
-        )
+        self.inner
+            .position_with_params::<C, U>(center_params, distance)
+            .into()
     }
 
     /// Converts to Cartesian direction.
@@ -100,7 +82,7 @@ impl<F: frames::ReferenceFrame> Direction<F> {
     /// Constructs from a Cartesian direction.
     #[inline]
     pub fn from_cartesian(cart: &crate::coordinates::cartesian::Direction<F>) -> Self {
-        Self::from_inner(affn::spherical::Direction::from_cartesian(cart))
+        affn::spherical::Direction::from_cartesian(cart).into()
     }
 }
 

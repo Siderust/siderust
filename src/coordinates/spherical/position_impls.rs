@@ -38,11 +38,11 @@ macro_rules! impl_position_frame {
             #[doc = "- `distance`: Radial distance from the center"]
             #[inline]
             pub fn new<T: Into<Quantity<U>>>($az_name: Degrees, $polar_name: Degrees, distance: T) -> Self {
-                Self::from_inner(affn::spherical::Position::new_raw(
+                affn::spherical::Position::new_raw(
                     clamp_polar($polar_name),
                     normalize_azimuth($az_name),
                     distance.into(),
-                ))
+                ).into()
             }
 
             #[doc = concat!("Returns the ", $az_sym, " in degrees.")]
@@ -135,11 +135,11 @@ where
     /// - `distance`: Radial distance from the observer
     #[inline]
     pub fn new<T: Into<Quantity<U>>>(alt: Degrees, az: Degrees, distance: T) -> Self {
-        Self::from_inner(affn::spherical::Position::new_raw(
+        affn::spherical::Position::new_raw(
             clamp_polar(alt),
             normalize_azimuth(az),
             distance.into(),
-        ))
+        ).into()
     }
 
     /// Returns the altitude in degrees.
@@ -170,12 +170,12 @@ impl<U: LengthUnit> Position<centers::Topocentric, frames::Horizontal, U> {
         az: Degrees,
         distance: T,
     ) -> Self {
-        Self::from_inner(affn::spherical::Position::new_raw_with_params(
+        affn::spherical::Position::new_raw_with_params(
             site,
             clamp_polar(alt),
             normalize_azimuth(az),
             distance.into(),
-        ))
+        ).into()
     }
 
     /// Returns the altitude in degrees.

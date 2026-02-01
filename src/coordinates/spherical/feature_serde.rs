@@ -24,7 +24,7 @@ impl<'de, F: frames::SphericalNaming> Deserialize<'de> for Direction<F> {
     where
         D: serde::Deserializer<'de>,
     {
-        affn::spherical::Direction::<F>::deserialize(deserializer).map(Self::from_inner)
+        affn::spherical::Direction::<F>::deserialize(deserializer).map(Self::from)
     }
 }
 
@@ -58,6 +58,6 @@ where
     where
         D: serde::Deserializer<'de>,
     {
-        affn::spherical::Position::<C, F, U>::deserialize(deserializer).map(Self::from_inner)
+        affn::spherical::Position::<C, F, U>::deserialize(deserializer).map(Self::from)
     }
 }
