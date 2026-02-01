@@ -115,14 +115,33 @@ impl_direction_frame!(
 // Horizontal
 // =============================================================================
 
-impl_direction_frame!(
-    frames::Horizontal => (
-        az, alt,
-        "Azimuth, measured from North through East",
-        "Altitude (elevation) above the horizon",
-        "Horizontal (Alt-Az)"
-    )
-);
+// Custom implementation for Horizontal to follow IAU Alt-Az convention (altitude first)
+impl Direction<frames::Horizontal> {
+    /// Creates a Horizontal (Alt-Az) direction (IAU Alt-Az convention: altitude first).
+    ///
+    /// # Arguments
+    /// - `alt`: Altitude (elevation) above the horizon, clamped to [-90°, +90°]
+    /// - `az`: Azimuth, measured from North through East, normalized to [0°, 360°)
+    #[inline]
+    pub fn new(alt: Degrees, az: Degrees) -> Self {
+        affn::spherical::Direction::new(
+            clamp_polar(alt),
+            normalize_azimuth(az),
+        ).into()
+    }
+
+    /// Returns the altitude (elevation) in degrees.
+    #[inline]
+    pub fn alt(&self) -> Degrees {
+        self.inner.polar
+    }
+
+    /// Returns the azimuth (from North through East) in degrees.
+    #[inline]
+    pub fn az(&self) -> Degrees {
+        self.inner.azimuth
+    }
+}
 
 // =============================================================================
 // Geographic (ECEF)
