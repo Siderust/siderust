@@ -4,7 +4,11 @@
 use crate::astro::proper_motion::ProperMotion;
 use crate::astro::JulianDate;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Target<T> {
     /// Position of the object at epoch `time`.
     pub position: T,
