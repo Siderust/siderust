@@ -21,12 +21,10 @@ pub type Ecliptic<U> = Position<centers::Heliocentric, frames::Ecliptic, U>;
 pub type EquatorialMeanJ2000<U> = Position<centers::Geocentric, frames::EquatorialMeanJ2000, U>;
 
 /// **Geocentric Equatorial mean of date** coordinates *(α, δ, d)*.
-pub type EquatorialMeanOfDate<U> =
-    Position<centers::Geocentric, frames::EquatorialMeanOfDate, U>;
+pub type EquatorialMeanOfDate<U> = Position<centers::Geocentric, frames::EquatorialMeanOfDate, U>;
 
 /// **Geocentric Equatorial true of date** coordinates *(α, δ, d)*.
-pub type EquatorialTrueOfDate<U> =
-    Position<centers::Geocentric, frames::EquatorialTrueOfDate, U>;
+pub type EquatorialTrueOfDate<U> = Position<centers::Geocentric, frames::EquatorialTrueOfDate, U>;
 
 /// **Topocentric Horizontal** coordinates *(Alt, Az, d)*.
 ///

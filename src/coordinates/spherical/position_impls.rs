@@ -1,7 +1,7 @@
 //! Frame-specific Position constructors with astronomical conventions.
 
-use super::{clamp_polar, normalize_azimuth};
 use super::position_core::Position;
+use super::{clamp_polar, normalize_azimuth};
 use crate::coordinates::{centers, frames};
 use qtty::{Degrees, LengthUnit, Quantity};
 
@@ -135,11 +135,8 @@ where
     /// - `distance`: Radial distance from the observer
     #[inline]
     pub fn new<T: Into<Quantity<U>>>(alt: Degrees, az: Degrees, distance: T) -> Self {
-        affn::spherical::Position::new_raw(
-            clamp_polar(alt),
-            normalize_azimuth(az),
-            distance.into(),
-        ).into()
+        affn::spherical::Position::new_raw(clamp_polar(alt), normalize_azimuth(az), distance.into())
+            .into()
     }
 
     /// Returns the altitude in degrees.
@@ -175,7 +172,8 @@ impl<U: LengthUnit> Position<centers::Topocentric, frames::Horizontal, U> {
             clamp_polar(alt),
             normalize_azimuth(az),
             distance.into(),
-        ).into()
+        )
+        .into()
     }
 
     /// Returns the altitude in degrees.
