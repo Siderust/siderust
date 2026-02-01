@@ -54,6 +54,9 @@ use crate::astro::orbit::Orbit;
 use qtty::{Degrees, Meter, Quantity};
 use std::fmt::Debug;
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 // Re-export core traits from affn
 pub use affn::centers::ReferenceCenter;
 pub use affn::{AffineCenter, NoCenter};
@@ -62,9 +65,11 @@ use affn::prelude::ReferenceCenter as DeriveReferenceCenter;
 
 // Required for Transform specialization
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Heliocentric;
 
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Barycentric;
 
 // =============================================================================
@@ -96,6 +101,7 @@ pub struct Barycentric;
 /// };
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ObserverSite {
     /// Geodetic longitude (positive eastward), in degrees.
     pub lon: Degrees,
@@ -241,10 +247,12 @@ impl ObserverSite {
 ///            std::mem::size_of::<ObserverSite>());
 /// ```
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[center(params = ObserverSite)]
 pub struct Topocentric;
 
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Geocentric;
 
 // =============================================================================
@@ -257,6 +265,7 @@ pub struct Geocentric;
 /// to match the coordinate system being transformed. This enum indicates which
 /// standard center the orbit is relative to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum OrbitReferenceCenter {
     /// Orbit is defined relative to the solar system barycenter.
     Barycentric,
@@ -300,6 +309,7 @@ pub enum OrbitReferenceCenter {
 /// let mars_params = BodycentricParams::heliocentric(mars_orbit);
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BodycentricParams {
     /// The Keplerian orbital elements of the body.
     pub orbit: Orbit,
@@ -402,6 +412,7 @@ impl Default for BodycentricParams {
 /// let sat_params = BodycentricParams::geocentric(satellite_orbit);
 /// ```
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[center(params = BodycentricParams)]
 pub struct Bodycentric;
 

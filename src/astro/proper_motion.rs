@@ -18,6 +18,10 @@
 use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
 use qtty::*;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 type DegreePerYear = qtty::Per<Degree, Year>;
 type DegreesPerYear = qtty::frequency::Frequency<Degree, Year>;
 
@@ -28,6 +32,7 @@ type DegreesPerYear = qtty::frequency::Frequency<Degree, Year>;
 ///
 /// Units: both fields are in **degrees per Julian year**
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProperMotion {
     pub ra_μ: DegreesPerYear,
     pub dec_μ: DegreesPerYear,
