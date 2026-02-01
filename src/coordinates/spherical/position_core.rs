@@ -21,7 +21,6 @@ pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: L
 }
 
 impl<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> Position<C, F, U> {
-
     /// Returns the polar angle (latitude, declination, or altitude) in degrees.
     #[inline]
     pub fn polar(&self) -> Degrees {

@@ -34,7 +34,6 @@ pub struct Direction<F: frames::ReferenceFrame> {
 }
 
 impl<F: frames::ReferenceFrame> Direction<F> {
-
     /// Returns the polar angle (latitude, declination, or altitude) in degrees.
     #[inline]
     pub fn polar(&self) -> Degrees {
