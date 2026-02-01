@@ -124,10 +124,7 @@ impl Direction<frames::Horizontal> {
     /// - `az`: Azimuth, measured from North through East, normalized to [0°, 360°)
     #[inline]
     pub fn new(alt: Degrees, az: Degrees) -> Self {
-        affn::spherical::Direction::new(
-            clamp_polar(alt),
-            normalize_azimuth(az),
-        ).into()
+        affn::spherical::Direction::new(clamp_polar(alt), normalize_azimuth(az)).into()
     }
 
     /// Returns the altitude (elevation) in degrees.
