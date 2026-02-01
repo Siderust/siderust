@@ -9,6 +9,14 @@
 //! This module provides siderust-owned wrapper types around `affn` with
 //! frame-specific inherent constructors following IAU conventions.
 //!
+//! # Architecture Note
+//!
+//! **Core spherical coordinate functionality is in the `affn` crate** (domain-agnostic
+//! geometry kernel). This module provides thin wrappers with:
+//! - Astronomical-specific frame types (ICRS, Ecliptic, Horizontal, etc.)
+//! - Frame-specific constructors with IAU naming (e.g., `ra`/`dec`, `lon`/`lat`, `az`/`alt`)
+//! - Getter methods with astronomical field names (instead of generic `polar`/`azimuth`)
+//!
 //! # Usage
 //!
 //! No trait imports needed—just use the types directly:
