@@ -21,23 +21,6 @@ pub struct Position<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: L
 }
 
 impl<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> Position<C, F, U> {
-    /// Creates a position from the underlying `affn` type.
-    #[inline]
-    pub const fn from_inner(inner: affn::spherical::Position<C, F, U>) -> Self {
-        Self { inner }
-    }
-
-    /// Returns the underlying `affn` position.
-    #[inline]
-    pub fn into_inner(self) -> affn::spherical::Position<C, F, U> {
-        self.inner
-    }
-
-    /// Returns a reference to the underlying `affn` position.
-    #[inline]
-    pub const fn as_inner(&self) -> &affn::spherical::Position<C, F, U> {
-        &self.inner
-    }
 
     /// Returns the polar angle (latitude, declination, or altitude) in degrees.
     #[inline]
@@ -66,7 +49,7 @@ impl<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> Posi
     /// Extracts the direction (discarding distance).
     #[inline]
     pub fn direction(&self) -> Direction<F> {
-        Direction::from_inner(self.inner.direction())
+        self.inner.direction().into()
     }
 
     /// Converts to Cartesian position.
@@ -78,7 +61,7 @@ impl<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> Posi
     /// Constructs from a Cartesian position.
     #[inline]
     pub fn from_cartesian(cart: &crate::coordinates::cartesian::Position<C, F, U>) -> Self {
-        Self::from_inner(affn::spherical::Position::from_cartesian(cart))
+        affn::spherical::Position::from_cartesian(cart).into()
     }
 
     /// Calculates the angular separation between this position and another.
@@ -110,7 +93,9 @@ impl<C: centers::ReferenceCenter, F: frames::ReferenceFrame, U: LengthUnit> Posi
     where
         C: centers::ReferenceCenter<Params = ()>,
     {
-        Self::from_inner(affn::spherical::Position::new_raw(polar, azimuth, distance))
+        Self {
+            inner: affn::spherical::Position::new_raw(polar, azimuth, distance),
+        }
     }
 }
 
