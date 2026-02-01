@@ -33,10 +33,10 @@ macro_rules! impl_direction_frame {
             #[doc = concat!("- `", stringify!($polar_name), "`: ", $polar_sym, ", clamped to [-90°, +90°]")]
             #[inline]
             pub fn new($az_name: Degrees, $polar_name: Degrees) -> Self {
-                Self::from_inner(affn::spherical::Direction::new(
+                affn::spherical::Direction::new(
                     clamp_polar($polar_name),
                     normalize_azimuth($az_name),
-                ))
+                ).into()
             }
 
             #[doc = concat!("Returns the ", $az_sym, " in degrees.")]
