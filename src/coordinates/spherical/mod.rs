@@ -56,8 +56,8 @@ fn clamp_polar(polar: Degrees) -> Degrees {
 
 // Core type modules
 mod direction_core;
-mod position_core;
 mod direction_impls;
+mod position_core;
 mod position_impls;
 
 #[cfg(feature = "serde")]

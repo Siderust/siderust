@@ -1,7 +1,7 @@
 //! Frame-specific Direction constructors with astronomical conventions.
 
-use super::{clamp_polar, normalize_azimuth};
 use super::direction_core::Direction;
+use super::{clamp_polar, normalize_azimuth};
 use crate::coordinates::frames;
 use qtty::Degrees;
 
