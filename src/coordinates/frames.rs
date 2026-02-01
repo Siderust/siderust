@@ -215,6 +215,9 @@ impl SphericalNaming for ITRF {
     fn azimuth_name() -> &'static str {
         "lon"
     }
+    fn distance_name() -> &'static str {
+        "altitude"
+    }
 }
 
 impl SphericalNaming for ECEF {
@@ -223,6 +226,9 @@ impl SphericalNaming for ECEF {
     }
     fn azimuth_name() -> &'static str {
         "lon"
+    }
+    fn distance_name() -> &'static str {
+        "altitude"
     }
 }
 
