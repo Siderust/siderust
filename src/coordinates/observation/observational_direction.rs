@@ -126,7 +126,7 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
 
         // Transform back to original frame
         let apparent_cart: cartesian::Direction<F> = apparent_eq.to_frame();
-        let apparent_sph = spherical::Direction::from_inner(apparent_cart.to_spherical());
+        let apparent_sph = apparent_cart.to_spherical().into();
 
         Apparent::new(apparent_sph)
     }
@@ -227,7 +227,7 @@ impl<F: MutableFrame> Apparent<spherical::Direction<F>> {
 
         // Transform back to original frame
         let astrometric_cart: cartesian::Direction<F> = astrometric_eq.to_frame();
-        let astrometric_sph = spherical::Direction::from_inner(astrometric_cart.to_spherical());
+        let astrometric_sph = astrometric_cart.to_spherical().into();
 
         Astrometric::new(astrometric_sph)
     }
