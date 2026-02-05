@@ -13,13 +13,13 @@
 //!
 //! The module uses a bracket-and-refine approach:
 //! 1. Coarse scan to find brackets where altitude crosses threshold boundaries
-//! 2. Newton-Raphson refinement with bisection fallback for high accuracy
+//! 2. Brent's method refinement for high accuracy (derivative-free, ~1-2 evals/iter)
 //! 3. Classification of crossings (entering vs exiting the altitude range)
 //! 4. Pairing of crossings to form contiguous intervals
 //!
 //! ## Accuracy
 //!
-//! Timing precision is ~1 microsecond using Newton-Raphson with a tight
+//! Timing precision is ~1 microsecond using Brent's method with a tight
 //! convergence criterion (`1e-11` days ≈ 0.86 µs).
 
 use crate::astro::JulianDate;
@@ -178,7 +178,8 @@ where
 
             // Sign change indicates a crossing
             if prev_f * next_f < 0.0 {
-                if let Some(root) = crate::calculus::root_finding::find_crossing(
+                // Use Brent's method: derivative-free, ~1-2 evals/iter vs Newton's ~3
+                if let Some(root) = crate::calculus::root_finding::find_crossing_brent(
                     jd,
                     next_jd,
                     &altitude_fn,
@@ -206,7 +207,7 @@ where
     // Classify each crossing: +1 = entering valid range, -1 = exiting valid range
     let mut labeled: Vec<(JulianDate, i32)> = Vec::new();
     for &root in &all_crossings {
-        let dt = Days::new(10.0 * crate::calculus::root_finding::FD_STEP_DAYS);
+        let dt = Days::new(10.0 * crate::calculus::root_finding::DERIVATIVE_STEP.value());
         let alt_before = altitude_fn(root - dt);
         let alt_after = altitude_fn(root + dt);
 
