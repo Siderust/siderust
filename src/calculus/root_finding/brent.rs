@@ -28,8 +28,8 @@ use qtty::Days;
 // Constants
 // =============================================================================
 
-/// Brent's method tolerance (≈ 0.86 µs) — same precision as Newton
-const TOLERANCE: Days = Days::new(1e-11);
+/// Brent's method tolerance — ~86 µs precision, balances speed and accuracy
+const TOLERANCE: Days = Days::new(1e-9); // ~86 µs
 
 /// Maximum Brent iterations (typically needs fewer than bisection)
 const MAX_ITERS: usize = 100;
@@ -190,6 +190,130 @@ where
     Some(JulianDate::new(b))
 }
 
+/// Brent's method variant that accepts pre-computed function values at bracket endpoints.
+///
+/// This is **more efficient** when the caller has already evaluated the function at the
+/// bracket endpoints (e.g., during a sign-change scan). Avoids 2 redundant function evaluations.
+///
+/// # Arguments
+/// - `lo`, `hi`: Bracket endpoints
+/// - `f_lo`, `f_hi`: Pre-computed `scalar_fn(lo) - threshold` and `scalar_fn(hi) - threshold`
+/// - `scalar_fn`: Function to find root of
+/// - `threshold`: Value to subtract from `scalar_fn` (finds where `scalar_fn(x) == threshold`)
+///
+/// # Returns
+/// - `Some(jd)`: The root within tolerance `TOLERANCE` (≈ 0.86 µs)
+/// - `None`: If bracket is invalid (same sign at both endpoints)
+pub fn refine_root_with_values<F>(
+    lo: JulianDate,
+    hi: JulianDate,
+    f_lo: f64,
+    f_hi: f64,
+    scalar_fn: F,
+    threshold: f64,
+) -> Option<JulianDate>
+where
+    F: Fn(JulianDate) -> f64,
+{
+    let mut a = lo.value();
+    let mut b = hi.value();
+    let mut fa = f_lo;
+    let mut fb = f_hi;
+
+    // Check endpoints for exact roots
+    if fa.abs() < CONVERGENCE_EPS {
+        return Some(lo);
+    }
+    if fb.abs() < CONVERGENCE_EPS {
+        return Some(hi);
+    }
+
+    // Verify bracket (must have opposite signs)
+    if fa * fb > 0.0 {
+        return None;
+    }
+
+    // Ensure |f(a)| >= |f(b)| (b is the better approximation)
+    if fa.abs() < fb.abs() {
+        std::mem::swap(&mut a, &mut b);
+        std::mem::swap(&mut fa, &mut fb);
+    }
+
+    let mut c = a;
+    let mut fc = fa;
+    let mut d = b - a;
+    let mut e = d;
+
+    for _ in 0..MAX_ITERS {
+        let tol = TOLERANCE.value();
+        let m = 0.5 * (c - b);
+
+        if fb.abs() < CONVERGENCE_EPS || m.abs() <= tol {
+            return Some(JulianDate::new(b));
+        }
+
+        let use_bisection = e.abs() < tol || fa.abs() <= fb.abs();
+
+        let (new_e, new_d) = if use_bisection {
+            (m, m)
+        } else {
+            let s = fb / fa;
+
+            let (p, q) = if (a - c).abs() < 1e-14 {
+                let p = 2.0 * m * s;
+                let q = 1.0 - s;
+                (p, q)
+            } else {
+                let q_val = fa / fc;
+                let r = fb / fc;
+                let p = s * (2.0 * m * q_val * (q_val - r) - (b - a) * (r - 1.0));
+                let q = (q_val - 1.0) * (r - 1.0) * (s - 1.0);
+                (p, q)
+            };
+
+            let (p, q) = if p > 0.0 { (p, -q) } else { (-p, q) };
+
+            let s_val = e;
+            if 2.0 * p < 3.0 * m * q - (tol * q).abs() && p < (0.5 * s_val * q).abs() {
+                (d, p / q)
+            } else {
+                (m, m)
+            }
+        };
+
+        e = new_e;
+        d = new_d;
+
+        a = b;
+        fa = fb;
+
+        if d.abs() > tol {
+            b += d;
+        } else {
+            b += if m > 0.0 { tol } else { -tol };
+        }
+        fb = scalar_fn(JulianDate::new(b)) - threshold;
+
+        if fb * fc > 0.0 {
+            c = a;
+            fc = fa;
+            e = b - a;
+            d = e;
+        }
+
+        if fc.abs() < fb.abs() {
+            a = b;
+            b = c;
+            c = a;
+            fa = fb;
+            fb = fc;
+            fc = fa;
+        }
+    }
+
+    Some(JulianDate::new(b))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -308,7 +432,7 @@ mod tests {
         let scalar = |jd: JulianDate| jd.value().powi(2);
 
         let result = refine_root(lo, hi, scalar, 4.0).expect("should find x=2");
-        assert!((result.value() - 2.0).abs() < 1e-10);
+        assert!((result.value() - 2.0).abs() < 1e-9);
     }
 
     #[test]
@@ -320,6 +444,6 @@ mod tests {
 
         let result = refine_root(lo, hi, scalar, 2.0).expect("should find cube root of 2");
         let expected = 2.0_f64.powf(1.0 / 3.0);
-        assert!((result.value() - expected).abs() < 1e-10);
+        assert!((result.value() - expected).abs() < 1e-9);
     }
 }

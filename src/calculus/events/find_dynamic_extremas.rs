@@ -5,11 +5,11 @@ use super::Culmination;
 use crate::astro::nutation::corrected_ra_with_nutation;
 use crate::astro::precession;
 use crate::astro::JulianDate;
+use crate::calculus::root_finding::brent;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::coordinates::spherical::*;
 use crate::targets::Target;
-use qtty::Simplify;
 use qtty::*;
 
 /// Convenience constants.
@@ -30,8 +30,6 @@ fn gast_fast(jd: JulianDate) -> Degrees {
 
 /// Scan step: 20 min in days.  Adjust for the usual speed/robustness trade-off.
 const STEP_DAYS: Days = Minutes::new(20.0).to::<Day>();
-const NEWTON_EPS: Days = Milliseconds::new(0.9).to::<Day>();
-const NEWTON_MAX_ITERS: usize = 15;
 
 /// Finds every altitude extremum (**upper** and **lower** culmination) of a
 /// *time-dependent* target in the half-open interval
@@ -74,33 +72,15 @@ where
         (theta - ra).wrap_signed() // H in (−π, π]
     };
 
-    // ────────────────────────────────────────────────────────────
-    // Newton-Raphson root-refinement for H(jd) − target = 0
-    // ────────────────────────────────────────────────────────────
-    let refine = |mut jd: JulianDate, target: Radians| -> Option<JulianDate> {
-        for _ in 0..NEWTON_MAX_ITERS {
-            let h: Radians = (hour_angle(jd) - target).wrap_signed();
-            if h.abs() < Radians::new(1e-12) {
-                return Some(jd); // already precise enough
-            }
-
-            // Finite-difference dH/dt using ±1 s
-            let dt: Days = Days::new(1.0 / 86_400.0);
-            let dh: Radians = (hour_angle(jd + dt) - hour_angle(jd - dt)).wrap_signed();
-            type RadiansPerDay = qtty::frequency::Frequency<Radian, Day>;
-            let deriv: RadiansPerDay = dh / (dt * 2.0); // rad / day
-            if deriv.abs() < Quantity::new(1e-10) {
-                return None; // derivative ~ 0, avoid blow-up
-            }
-
-            // Newton step
-            let delta: Days = (h / deriv).simplify();
-            jd -= delta;
-            if delta.abs() < NEWTON_EPS {
-                return Some(jd);
-            }
-        }
-        None
+    // Scalar functions for Brent's method:
+    // - For upper culmination (H=0): use H directly (well-behaved near 0)
+    // - For lower culmination (H=π): use (H-π) wrapped (crosses 0 at H=π)
+    // Using the hour angle directly instead of sin(H) improves convergence rate.
+    let h_upper = |jd: JulianDate| -> f64 {
+        hour_angle(jd).value() // H in (-π, π], crosses 0 at upper culmination
+    };
+    let h_lower = |jd: JulianDate| -> f64 {
+        (hour_angle(jd) - Radians::new(PI)).wrap_signed().value() // crosses 0 at H=π
     };
 
     // ────────────────────────────────────────────────────────────
@@ -110,31 +90,34 @@ where
     let mut jd0 = jd_start;
 
     let h0: Radians = hour_angle(jd0);
+    // For sign-change detection, we still use sin() which is monotonic in (-π/2, π/2)
+    // but for refinement we use the hour angle directly for faster convergence
     let mut s0 = h0.sin(); // for H = 0
     let mut s0_pi = (h0 - Radians::new(PI)).sin(); // for H = π
+    // Pre-compute bracket values for Brent (hour angle based)
+    let mut h0_val = h0.value();
+    let mut h0_lower = (h0 - Radians::new(PI)).wrap_signed().value();
 
     while jd0 < jd_end {
         let jd1 = (jd0 + STEP_DAYS).min(jd_end);
         let h1 = hour_angle(jd1);
         let s1 = h1.sin();
         let s1_pi = (h1 - Radians::new(PI)).sin();
+        let h1_val = h1.value();
+        let h1_lower = (h1 - Radians::new(PI)).wrap_signed().value();
 
-        // Sign change ⇒ a root lies in (jd0, jd1)
+        // Sign change in sin(H) ⇒ H crosses 0 (upper culmination)
+        // Use Brent with pre-computed hour angle values for faster convergence
         if s0 * s1 < 0.0 {
-            if let Some(root) = refine(
-                JulianDate::new((jd0.value() + jd1.value()) * 0.5),
-                Radians::new(0.0),
-            ) {
+            if let Some(root) = brent::refine_root_with_values(jd0, jd1, h0_val, h1_val, &h_upper, 0.0) {
                 if root >= jd_start && root < jd_end {
                     out.push(Culmination::Upper { jd: root });
                 }
             }
         }
+        // Sign change in sin(H-π) ⇒ H crosses π (lower culmination)
         if s0_pi * s1_pi < 0.0 {
-            if let Some(root) = refine(
-                JulianDate::new((jd0.value() + jd1.value()) * 0.5),
-                Radians::new(PI),
-            ) {
+            if let Some(root) = brent::refine_root_with_values(jd0, jd1, h0_lower, h1_lower, &h_lower, 0.0) {
                 if root >= jd_start && root < jd_end {
                     out.push(Culmination::Lower { jd: root });
                 }
@@ -144,6 +127,8 @@ where
         jd0 = jd1;
         s0 = s1;
         s0_pi = s1_pi;
+        h0_val = h1_val;
+        h0_lower = h1_lower;
     }
 
     // Stable chronological sort
