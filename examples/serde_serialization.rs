@@ -12,10 +12,10 @@
 //! - Saving/loading astronomical data to/from files
 
 use qtty::*;
-use siderust::coordinates::{cartesian, frames, spherical};
-use siderust::time::JulianDate;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use siderust::coordinates::{cartesian, frames, spherical};
+use siderust::time::JulianDate;
 use std::fs;
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -23,19 +23,13 @@ struct ObservationData {
     /// Julian date of the observation
     julian_date: JulianDate,
     /// Observer position in geocentric ICRS coordinates
-    observer_position: cartesian::Position<
-        siderust::coordinates::centers::Geocentric,
-        frames::ICRS,
-        Kilometer,
-    >,
+    observer_position:
+        cartesian::Position<siderust::coordinates::centers::Geocentric, frames::ICRS, Kilometer>,
     /// Target direction in ICRS frame
     target_direction: cartesian::Direction<frames::ICRS>,
     /// Target spherical coordinates (RA/Dec)
-    target_spherical: spherical::Position<
-        siderust::coordinates::centers::Geocentric,
-        frames::ICRS,
-        Kilometer,
-    >,
+    target_spherical:
+        spherical::Position<siderust::coordinates::centers::Geocentric, frames::ICRS, Kilometer>,
 }
 
 fn main() {
@@ -71,8 +65,8 @@ fn main() {
         Kilometer,
     >::new(6_700.0, 0.0, 0.0);
 
-    let json = serde_json::to_string_pretty(&position)
-        .expect("Failed to serialize cartesian position");
+    let json =
+        serde_json::to_string_pretty(&position).expect("Failed to serialize cartesian position");
     println!("Cartesian position serialized to JSON:");
     println!("{}", json);
 
@@ -95,8 +89,7 @@ fn main() {
 
     let direction = cartesian::Direction::<frames::ICRS>::new(1.0, 0.0, 0.0);
 
-    let json =
-        serde_json::to_string_pretty(&direction).expect("Failed to serialize direction");
+    let json = serde_json::to_string_pretty(&direction).expect("Failed to serialize direction");
     println!("Direction vector serialized to JSON:");
     println!("{}", json);
 
@@ -120,13 +113,12 @@ fn main() {
         frames::ICRS,
         AstronomicalUnit,
     >::new(
-        0.0 * DEG,   // RA
-        45.0 * DEG,  // Dec
-        1.0 * AU,    // distance
+        0.0 * DEG,  // RA
+        45.0 * DEG, // Dec
+        1.0 * AU,   // distance
     );
 
-    let json =
-        serde_json::to_string_pretty(&spherical_pos).expect("Failed to serialize spherical");
+    let json = serde_json::to_string_pretty(&spherical_pos).expect("Failed to serialize spherical");
     println!("ICRS spherical position serialized to JSON (uses 'ra'/'dec'):");
     println!("{}", json);
 
@@ -192,7 +184,11 @@ fn main() {
         AstronomicalUnit,
     > = serde_json::from_str(&serde_json::to_string(&ecliptic_pos).unwrap()).unwrap();
     println!("Ecliptic round-trip successful:");
-    println!("  lon = {:.1}°, lat = {:.1}°", recovered.lon().value(), recovered.lat().value());
+    println!(
+        "  lon = {:.1}°, lat = {:.1}°",
+        recovered.lon().value(),
+        recovered.lat().value()
+    );
     println!();
 
     // =========================================================================
@@ -204,28 +200,25 @@ fn main() {
     let observation = ObservationData {
         julian_date: JulianDate::new(2_459_580.5), // 2022-01-01 00:00:00 TT
         observer_position: cartesian::Position::new(
-            6_371.0,  // Earth radius at equator
-            0.0,
-            0.0,
+            6_371.0, // Earth radius at equator
+            0.0, 0.0,
         ),
         target_direction: cartesian::Direction::new(
             0.707, // Pointing roughly northeast
-            0.707,
-            0.0,
+            0.707, 0.0,
         ),
         target_spherical: spherical::Position::<
             siderust::coordinates::centers::Geocentric,
             frames::ICRS,
             Kilometer,
         >::new(
-            45.0 * DEG,   // RA = 45°
-            30.0 * DEG,   // Dec = 30°
-            384_400.0 * KM,  // Moon distance
+            45.0 * DEG,     // RA = 45°
+            30.0 * DEG,     // Dec = 30°
+            384_400.0 * KM, // Moon distance
         ),
     };
 
-    let json =
-        serde_json::to_string_pretty(&observation).expect("Failed to serialize observation");
+    let json = serde_json::to_string_pretty(&observation).expect("Failed to serialize observation");
     println!("Complete observation data serialized:");
     println!("{}", json);
 
@@ -233,13 +226,20 @@ fn main() {
         serde_json::from_str(&json).expect("Failed to deserialize observation");
     println!("\nDeserialized observation:");
     println!("  JD = {:.6}", recovered.julian_date.value());
-    println!("  Observer at ({:.1}, {:.1}, {:.1}) km",
+    println!(
+        "  Observer at ({:.1}, {:.1}, {:.1}) km",
         recovered.observer_position.x().value(),
         recovered.observer_position.y().value(),
         recovered.observer_position.z().value()
     );
-    println!("  Target RA  = {:.1}°", recovered.target_spherical.ra().value());
-    println!("  Target Dec = {:.1}°", recovered.target_spherical.dec().value());
+    println!(
+        "  Target RA  = {:.1}°",
+        recovered.target_spherical.ra().value()
+    );
+    println!(
+        "  Target Dec = {:.1}°",
+        recovered.target_spherical.dec().value()
+    );
     println!();
 
     // =========================================================================
@@ -249,10 +249,9 @@ fn main() {
     println!("-----------");
 
     let filename = "/tmp/siderust_observation.json";
-    
+
     // Save to file
-    let json = serde_json::to_string_pretty(&observation)
-        .expect("Failed to serialize for file");
+    let json = serde_json::to_string_pretty(&observation).expect("Failed to serialize for file");
     fs::write(filename, json).expect("Failed to write file");
     println!("Observation data saved to: {}", filename);
 
@@ -262,7 +261,8 @@ fn main() {
         serde_json::from_str(&file_content).expect("Failed to deserialize from file");
     println!("Data loaded from file:");
     println!("  JD = {:.6}", loaded.julian_date.value());
-    println!("  Match: {}", 
+    println!(
+        "  Match: {}",
         (loaded.julian_date.value() - observation.julian_date.value()).abs() < 1e-12
     );
     println!();
@@ -279,8 +279,7 @@ fn main() {
         JulianDate::new(2_459_582.5),
     ];
 
-    let json = serde_json::to_string_pretty(&observations)
-        .expect("Failed to serialize vector");
+    let json = serde_json::to_string_pretty(&observations).expect("Failed to serialize vector");
     println!("Multiple Julian dates:");
     println!("{}", json);
 

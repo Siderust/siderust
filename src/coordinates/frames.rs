@@ -64,6 +64,7 @@ use serde::{Deserialize, Serialize};
 /// It is quasi-inertial and centered at the solar system barycenter.
 /// The axes are defined by the positions of distant quasars.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ICRS;
 
@@ -72,6 +73,7 @@ pub struct ICRS;
 /// A topocentric frame based on the observer's local horizon.
 /// Uses altitude (elevation above horizon) and azimuth (bearing from north).
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "alt", azimuth = "az")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Horizontal;
 
@@ -80,6 +82,7 @@ pub struct Horizontal;
 /// Earth-based mean equator/equinox at epoch J2000.0, with nutation removed.
 /// This is the classic "J2000 equatorial" frame used by many catalogs.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EquatorialMeanJ2000;
 
@@ -88,6 +91,7 @@ pub struct EquatorialMeanJ2000;
 /// Earth-based mean equator/equinox at a given epoch (precession applied,
 /// nutation removed). Requires a TT epoch for transformations.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EquatorialMeanOfDate;
 
@@ -96,6 +100,7 @@ pub struct EquatorialMeanOfDate;
 /// Earth-based true equator/equinox at a given epoch (precession + nutation).
 /// Requires a TT epoch for transformations.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "dec", azimuth = "ra")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct EquatorialTrueOfDate;
 
@@ -104,6 +109,7 @@ pub struct EquatorialTrueOfDate;
 /// Based on the plane of Earth's orbit around the Sun.
 /// Uses ecliptic longitude and latitude.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Ecliptic;
 
@@ -112,6 +118,7 @@ pub struct Ecliptic;
 /// A geocentric Earth-fixed frame that co-rotates with the Earth.
 /// Used for geodetic and geophysical applications.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "altitude")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ITRF;
 
@@ -120,6 +127,7 @@ pub struct ITRF;
 /// A geocentric Cartesian coordinate system that rotates with the Earth.
 /// The X-axis points to the intersection of the prime meridian and equator.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "lat", azimuth = "lon", distance = "altitude")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ECEF;
 
@@ -129,6 +137,7 @@ pub struct ECEF;
 /// Uses galactic longitude and latitude, with the center
 /// of the galaxy defining the origin of galactic longitude.
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
+#[frame(polar = "b", azimuth = "l")]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Galactic;
 
@@ -145,93 +154,3 @@ pub trait MutableFrame: ReferenceFrame {}
 impl MutableFrame for ICRS {}
 impl MutableFrame for Ecliptic {}
 impl MutableFrame for EquatorialMeanJ2000 {}
-
-// =============================================================================
-// SphericalNaming: Frame-Specific Field Names for Serde
-// =============================================================================
-
-// Equatorial frames use Right Ascension (ra) and Declination (dec)
-impl SphericalNaming for ICRS {
-    fn polar_name() -> &'static str {
-        "dec"
-    }
-    fn azimuth_name() -> &'static str {
-        "ra"
-    }
-}
-
-impl SphericalNaming for EquatorialMeanJ2000 {
-    fn polar_name() -> &'static str {
-        "dec"
-    }
-    fn azimuth_name() -> &'static str {
-        "ra"
-    }
-}
-
-impl SphericalNaming for EquatorialMeanOfDate {
-    fn polar_name() -> &'static str {
-        "dec"
-    }
-    fn azimuth_name() -> &'static str {
-        "ra"
-    }
-}
-
-impl SphericalNaming for EquatorialTrueOfDate {
-    fn polar_name() -> &'static str {
-        "dec"
-    }
-    fn azimuth_name() -> &'static str {
-        "ra"
-    }
-}
-
-// Ecliptic uses longitude (lon) and latitude (lat)
-impl SphericalNaming for Ecliptic {
-    fn polar_name() -> &'static str {
-        "lat"
-    }
-    fn azimuth_name() -> &'static str {
-        "lon"
-    }
-}
-
-// Horizontal uses altitude (alt) and azimuth (az)
-impl SphericalNaming for Horizontal {
-    fn polar_name() -> &'static str {
-        "alt"
-    }
-    fn azimuth_name() -> &'static str {
-        "az"
-    }
-}
-
-// Geographic/terrestrial frames use longitude (lon) and latitude (lat)
-impl SphericalNaming for ITRF {
-    fn polar_name() -> &'static str {
-        "lat"
-    }
-    fn azimuth_name() -> &'static str {
-        "lon"
-    }
-}
-
-impl SphericalNaming for ECEF {
-    fn polar_name() -> &'static str {
-        "lat"
-    }
-    fn azimuth_name() -> &'static str {
-        "lon"
-    }
-}
-
-// Galactic uses galactic longitude (l) and galactic latitude (b)
-impl SphericalNaming for Galactic {
-    fn polar_name() -> &'static str {
-        "b"
-    }
-    fn azimuth_name() -> &'static str {
-        "l"
-    }
-}
