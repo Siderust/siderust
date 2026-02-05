@@ -561,7 +561,7 @@ define_planet_series!(sum_series_elp21_ctx, ELP21, true, true);
 // Public wrappers (single-series entrypoints)
 // ====================
 
-#[allow(dead_code)]
+#[cfg(test)]
 mod series_wrappers {
     use super::*;
 
@@ -750,7 +750,7 @@ mod series_wrappers {
     }
 }
 
-#[allow(unused_imports)]
+#[cfg(test)]
 pub use series_wrappers::*;
 
 // ====================
