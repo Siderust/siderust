@@ -106,8 +106,9 @@ pub fn find_sun_altitude_periods_via_culminations(
             }
 
             if f_a * f_b < 0.0 {
+                // Use Brent's method with pre-computed values: avoids 2 redundant VSOP evaluations
                 if let Some(root) =
-                    crate::calculus::root_finding::find_crossing(a, b, &altitude_fn, boundary_rad)
+                    crate::calculus::root_finding::find_crossing_brent_with_values(a, b, f_a, f_b, &altitude_fn, boundary_rad)
                 {
                     if root >= jd_start && root <= jd_end {
                         all_crossings.push(root);

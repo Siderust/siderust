@@ -178,10 +178,11 @@ where
 
             // Sign change indicates a crossing
             if prev_f * next_f < 0.0 {
-                // Use Brent's method: derivative-free, ~1-2 evals/iter vs Newton's ~3
-                if let Some(root) = crate::calculus::root_finding::find_crossing_brent(
+                if let Some(root) = crate::calculus::root_finding::find_crossing_brent_with_values(
                     jd,
                     next_jd,
+                    prev_f,
+                    next_f,
                     &altitude_fn,
                     boundary_rad,
                 ) {

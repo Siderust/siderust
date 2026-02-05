@@ -110,6 +110,31 @@ where
     brent::refine_root(jd_a, jd_b, scalar_fn, threshold)
 }
 
+/// Finds a threshold crossing using Brent's method with pre-computed endpoint values.
+///
+/// This variant is **more efficient** when the caller has already evaluated
+/// `scalar_fn(jd_a) - threshold` and `scalar_fn(jd_b) - threshold` (e.g., during
+/// a sign-change scan). Avoids 2 redundant function evaluations.
+///
+/// # Arguments
+/// - `jd_a`, `jd_b`: Bracket endpoints
+/// - `f_a`, `f_b`: Pre-computed `scalar_fn(jd_a) - threshold` and `scalar_fn(jd_b) - threshold`
+/// - `scalar_fn`: Function to find root of
+/// - `threshold`: Target value (finds where `scalar_fn(x) == threshold`)
+pub fn find_crossing_brent_with_values<F>(
+    jd_a: JulianDate,
+    jd_b: JulianDate,
+    f_a: f64,
+    f_b: f64,
+    scalar_fn: &F,
+    threshold: f64,
+) -> Option<JulianDate>
+where
+    F: Fn(JulianDate) -> f64,
+{
+    brent::refine_root_with_values(jd_a, jd_b, f_a, f_b, scalar_fn, threshold)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
