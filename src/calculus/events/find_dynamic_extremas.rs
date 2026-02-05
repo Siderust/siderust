@@ -90,10 +90,6 @@ where
     let mut jd0 = jd_start;
 
     let h0: Radians = hour_angle(jd0);
-    // For sign-change detection, we still use sin() which is monotonic in (-π/2, π/2)
-    // but for refinement we use the hour angle directly for faster convergence
-    let mut s0 = h0.sin(); // for H = 0
-    let mut s0_pi = (h0 - Radians::new(PI)).sin(); // for H = π
     // Pre-compute bracket values for Brent (hour angle based)
     let mut h0_val = h0.value();
     let mut h0_lower = (h0 - Radians::new(PI)).wrap_signed().value();
@@ -101,23 +97,37 @@ where
     while jd0 < jd_end {
         let jd1 = (jd0 + STEP_DAYS).min(jd_end);
         let h1 = hour_angle(jd1);
-        let s1 = h1.sin();
-        let s1_pi = (h1 - Radians::new(PI)).sin();
         let h1_val = h1.value();
         let h1_lower = (h1 - Radians::new(PI)).wrap_signed().value();
 
-        // Sign change in sin(H) ⇒ H crosses 0 (upper culmination)
-        // Use Brent with pre-computed hour angle values for faster convergence
-        if s0 * s1 < 0.0 {
-            if let Some(root) = brent::refine_root_with_values(jd0, jd1, h0_val, h1_val, &h_upper, 0.0) {
+        // IMPORTANT: hour angle values returned by `wrap_signed()` have a discontinuity at ±π.
+        // A naive sign-change check can therefore detect a false “root” when the value wraps.
+        // Brent assumes continuity on the bracket, so we only refine when the function is
+        // continuous over the step interval.
+        let upper_continuous = (h1_val - h0_val).abs() < PI;
+        let lower_continuous = (h1_lower - h0_lower).abs() < PI;
+
+        // Upper culmination: H(jd) crosses 0
+        if upper_continuous && h0_val * h1_val < 0.0 {
+            if let Some(root) =
+                brent::refine_root_with_values(jd0, jd1, h0_val, h1_val, &h_upper, 0.0)
+            {
                 if root >= jd_start && root < jd_end {
                     out.push(Culmination::Upper { jd: root });
                 }
             }
         }
-        // Sign change in sin(H-π) ⇒ H crosses π (lower culmination)
-        if s0_pi * s1_pi < 0.0 {
-            if let Some(root) = brent::refine_root_with_values(jd0, jd1, h0_lower, h1_lower, &h_lower, 0.0) {
+
+        // Lower culmination: wrap_signed(H(jd) - π) crosses 0
+        if lower_continuous && h0_lower * h1_lower < 0.0 {
+            if let Some(root) = brent::refine_root_with_values(
+                jd0,
+                jd1,
+                h0_lower,
+                h1_lower,
+                &h_lower,
+                0.0,
+            ) {
                 if root >= jd_start && root < jd_end {
                     out.push(Culmination::Lower { jd: root });
                 }
@@ -125,8 +135,6 @@ where
         }
 
         jd0 = jd1;
-        s0 = s1;
-        s0_pi = s1_pi;
         h0_val = h1_val;
         h0_lower = h1_lower;
     }
