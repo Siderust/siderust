@@ -127,7 +127,7 @@ pub fn find_sun_altitude_periods_via_culminations(
     // Classify each crossing: +1 = entering valid range, -1 = exiting valid range
     let mut labeled: Vec<(JulianDate, i32)> = Vec::new();
     for &root in &all_crossings {
-        let dt = qtty::Days::new(10.0 * crate::calculus::root_finding::FD_STEP_DAYS);
+        let dt = qtty::Days::new(10.0 * crate::calculus::root_finding::DERIVATIVE_STEP.value());
         let alt_before = altitude_fn(root - dt);
         let alt_after = altitude_fn(root + dt);
 
