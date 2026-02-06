@@ -78,3 +78,12 @@ pub mod targets;
 pub mod time;
 
 pub(crate) mod macros;
+
+// ---------------------------------------------------------------------------
+// Convenience re‑exports: unified altitude API
+// ---------------------------------------------------------------------------
+pub use calculus::altitude::{
+    above_threshold, altitude_at, altitude_ranges, below_threshold, crossings, culminations,
+    AltitudeTarget, CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind,
+    SearchOpts,
+};

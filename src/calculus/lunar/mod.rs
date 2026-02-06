@@ -11,21 +11,20 @@
 //! - Calculation of the Moon's geocentric and topocentric coordinates using ELP2000-82B theory
 //! - Optimized moon altitude calculations with topocentric parallax correction
 //! - Finding periods when Moon is above/below specific altitude thresholds
-//! - Moon culmination detection (upper/lower meridian transits)
+//! - Altitude range detection (`find_moon_altitude_range`)
 //!
 //! ## Design Notes
 //!
-//! This module provides optimized lunar position routines that account for:
-//! - **Topocentric parallax correction**: Critical for Moon due to its proximity (~1° at horizon)
-//! - **Culmination-based search**: Partitions time into monotonic segments for efficient root-finding
-//! - **Brent's method with endpoint reuse**: Avoids redundant ELP2000 evaluations
+//! All period-finding delegates to [`crate::calculus::math_core::intervals`]
+//! which provides scan + Brent refinement + interval assembly.  This module
+//! supplies the Moon-altitude closure and JD↔MJD conversions.
 //!
 //! ## Usage
 //!
 //! The main entry points are:
 //! - [`moon_altitude_rad`]: Compute Moon altitude at a given Julian Date
-//! - [`find_moon_altitude_periods_via_culminations`]: Find periods where Moon altitude satisfies a condition
-//! - [`find_moon_above_horizon`] / [`find_moon_below_horizon`]: Convenience wrappers
+//! - [`find_moon_above_horizon`] / [`find_moon_below_horizon`]: Above/below threshold
+//! - [`find_moon_altitude_range`]: Within a min/max altitude band
 //!
 //! ---
 //! _This module is under active development and will be expanded in future releases._
