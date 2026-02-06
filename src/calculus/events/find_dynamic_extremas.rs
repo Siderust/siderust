@@ -4,6 +4,7 @@
 use super::Culmination;
 use crate::astro::nutation::corrected_ra_with_nutation;
 use crate::astro::precession;
+use crate::astro::sidereal::gast_fast;
 use crate::astro::JulianDate;
 use crate::calculus::root_finding::brent;
 use crate::coordinates::centers::*;
@@ -14,19 +15,6 @@ use qtty::*;
 
 /// Convenience constants.
 use core::f64::consts::PI;
-
-/// A **quick-and-dirty** JD → GAST approximation
-/// (error < 0.1″ for ±50 yr around 2025).  
-/// Swap for a rigorous routine if you need sub-arc-second accuracy.
-fn gast_fast(jd: JulianDate) -> Degrees {
-    // Duffett-Smith & Zwart, *Practical Astronomy*, 4 th ed.
-    let t = (jd.value() - 2_451_545.0) / 36_525.0; // centuries since J2000.0
-    let gast = 280.460_618_37
-        + 360.985_647_366_29 * (jd.value() - 2_451_545.0)   // mean rotation
-        + 0.000_387_933 * t * t
-        - t * t * t / 38_710.0;
-    Degrees::new(gast)
-}
 
 /// Scan step: 20 min in days.  Adjust for the usual speed/robustness trade-off.
 const STEP_DAYS: Days = Minutes::new(20.0).to::<Day>();
