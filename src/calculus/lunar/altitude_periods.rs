@@ -72,7 +72,7 @@ const MOON_BRENT_TOLERANCE: f64 = 1.4e-3;
 // Core Altitude Function
 // =============================================================================
 
-/// Computes the Moon's **topocentric** altitude in **radians** at a given Julian Date.
+/// Computes the Moon's **topocentric** altitude at a given Julian Date.
 ///
 /// This function properly accounts for:
 /// - **Topocentric parallax**: The Moon's ~1° horizontal parallax is significant
@@ -84,18 +84,10 @@ const MOON_BRENT_TOLERANCE: f64 = 1.4e-3;
 /// * `site` - Observer's geographic location
 ///
 /// # Returns
-/// Altitude in radians (positive above horizon, negative below)
-pub fn moon_altitude_rad(jd: JulianDate, site: &ObserverSite) -> f64 {
+/// Altitude as `Quantity<Radian>` (positive above horizon, negative below)
+pub fn moon_altitude_rad(jd: JulianDate, site: &ObserverSite) -> Quantity<Radian> {
     let horiz = Moon::get_horizontal::<Kilometer>(jd, *site);
-    horiz.alt().to::<Radian>().value()
-}
-
-/// Returns a closure that computes Moon altitude for a specific site.
-///
-/// This is useful for passing to generic altitude-finding functions.
-#[inline]
-pub fn moon_altitude_fn(site: ObserverSite) -> impl Fn(JulianDate) -> f64 {
-    move |jd| moon_altitude_rad(jd, &site)
+    horiz.alt().to::<Radian>()
 }
 
 // =============================================================================
@@ -115,24 +107,23 @@ fn get_moon_equatorial(jd: JulianDate) -> Target<spherical::Position<Geocentric,
 
 /// Finds Moon culminations using a coarse scan optimized for ELP2000 performance.
 ///
-/// Uses 6-hour scan steps (vs 20 minutes for generic `find_dynamic_extremas`)
-/// reducing ELP2000 calls by ~18x while still safely bracketing culminations.
+/// Uses 12-hour scan steps reducing ELP2000 calls significantly while still 
+/// safely bracketing culminations.
 fn find_moon_culminations_fast(
     observer_geo: &spherical::position::Geographic,
     jd_start: JulianDate,
     jd_end: JulianDate,
 ) -> Vec<Culmination> {
-    // Hour angle calculation
+    // Hour angle calculation - returns qtty Radians
     let hour_angle = |jd: JulianDate| -> Radians {
         let target = get_moon_equatorial(jd);
         let mean_of_date = precession::precess_from_j2000(target.get_position().clone(), jd);
         let ra_nut = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
-        let ra = ra_nut.to::<Radian>();
-        let theta = gast_fast(jd).to::<Radian>() + observer_geo.lon().to::<Radian>();
-        (theta - ra).wrap_signed()
+        let theta = gast_fast(jd) + observer_geo.lon();
+        (theta.to::<Radian>() - ra_nut.to::<Radian>()).wrap_signed()
     };
 
-    // Hour angle functions for Brent refinement
+    // Hour angle functions for Brent refinement (return f64 for root finding)
     let h_upper = |jd: JulianDate| -> f64 {
         hour_angle(jd).value() // crosses 0 at upper culmination
     };
@@ -270,7 +261,7 @@ pub fn find_moon_altitude_periods_via_culminations<T: Into<Degrees>>(
     let jd_end = period.end.to_julian_day();
     let threshold_rad = threshold.into().to::<Radian>().value();
 
-    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site);
+    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site).value();
 
     // Find Moon culminations using the optimized Moon-specific finder
     let observer_geo = spherical::position::Geographic::new(
@@ -318,7 +309,7 @@ pub fn find_moon_altitude_periods_fast<T: Into<Degrees>>(
     let jd_end = period.end.to_julian_day();
     let threshold_rad = threshold.into().to::<Radian>().value();
 
-    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site);
+    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site).value();
 
     // Scan with direction tracking:
     // prev_f < 0 means altitude was below threshold → crossing into "above" (direction = +1)
@@ -448,7 +439,7 @@ pub fn find_moon_altitude_range(
     let min_rad = range.0.to::<Radian>().value();
     let max_rad = range.1.to::<Radian>().value();
 
-    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site);
+    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site).value();
 
     let observer_geo = spherical::position::Geographic::new(
         site.lon, site.lat, Kilometers::new(0.0),
@@ -482,7 +473,7 @@ pub fn find_moon_above_horizon_scan<T: Into<Degrees>>(
     period: Period<ModifiedJulianDate>,
     threshold: T,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let altitude_fn = moon_altitude_fn(site);
+    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site).value();
     crate::calculus::events::altitude_periods::find_above_altitude_periods(
         altitude_fn,
         period,
@@ -523,7 +514,8 @@ mod tests {
         let jd = JulianDate::J2000;
         let alt = moon_altitude_rad(jd, &site);
         // Moon altitude should be within valid range
-        assert!(alt > -std::f64::consts::FRAC_PI_2 && alt < std::f64::consts::FRAC_PI_2);
+        let alt_val = alt.value();
+        assert!(alt_val > -std::f64::consts::FRAC_PI_2 && alt_val < std::f64::consts::FRAC_PI_2);
     }
 
     #[test]
