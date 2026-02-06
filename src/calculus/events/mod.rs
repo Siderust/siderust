@@ -106,6 +106,6 @@ pub mod altitude_periods;
 mod find_dynamic_extremas;
 mod find_static_extremas;
 
-pub use altitude_periods::{find_altitude_periods, AltitudeCondition, AltitudePeriod};
+pub use altitude_periods::{find_altitude_periods, AltitudeCondition};
 pub use find_dynamic_extremas::find_dynamic_extremas;
 pub use find_static_extremas::find_static_extremas;

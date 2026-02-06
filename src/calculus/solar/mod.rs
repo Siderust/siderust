@@ -33,5 +33,6 @@
 mod sun_equations;
 
 pub mod altitude_periods;
+pub mod night_types;
 
 pub use altitude_periods::*;
