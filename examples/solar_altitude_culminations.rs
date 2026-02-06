@@ -13,9 +13,8 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use siderust::calculus::events::altitude_periods::{AltitudeCondition};
-use siderust::calculus::solar::altitude_periods::{
-    find_sun_altitude_periods_via_culminations, twilight,
-};
+use siderust::calculus::solar::altitude_periods::find_sun_altitude_periods_via_culminations;
+use siderust::calculus::solar::night_types::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period};

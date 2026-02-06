@@ -199,11 +199,6 @@ pub fn find_sun_altitude_periods_via_culminations(
     }
 }
 
-/// Common twilight types.
-///
-/// Re-exported from [`crate::calculus::solar::night_types`].
-pub use super::night_types::Twilight;
-
 /// Finds night periods (Sun below `twilight`) inside `period`.
 pub fn find_night_periods<T: Into<Degrees>>(
     site: ObserverSite,
@@ -279,27 +274,6 @@ pub fn find_sun_range_periods_scan(
     )
 }
 
-/// Standard twilight threshold definitions (Sun center altitude).
-pub mod twilight {
-    use qtty::Degrees;
-
-    /// Civil twilight: Sun center 6° below horizon (-6°)
-    pub const CIVIL: Degrees = Degrees::new(-6.0);
-
-    /// Nautical twilight: Sun center 12° below horizon (-12°)
-    pub const NAUTICAL: Degrees = Degrees::new(-12.0);
-
-    /// Astronomical twilight: Sun center 18° below horizon (-18°)
-    pub const ASTRONOMICAL: Degrees = Degrees::new(-18.0);
-
-    /// Sunrise/sunset: Sun center at geometric horizon (0°)
-    /// Note: For apparent sunrise/sunset, use -0.833° to account for refraction
-    pub const HORIZON: Degrees = Degrees::new(0.0);
-
-    /// Apparent sunrise/sunset accounting for atmospheric refraction (-0.833°)
-    pub const APPARENT_HORIZON: Degrees = Degrees::new(-0.833);
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -323,6 +297,8 @@ mod tests {
 
     #[test]
     fn test_find_night_periods() {
+        use crate::calculus::solar::twilight;
+
         let site = greenwich_site();
         let mjd_start = ModifiedJulianDate::new(60000.0);
         let mjd_end = ModifiedJulianDate::new(60007.0);
