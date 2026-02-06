@@ -43,29 +43,27 @@ fn main() {
     println!("Roque de los Muchachos (La Palma) – astronomical night 2026");
     println!("Interval: {} → {} UTC", start_dt.format("%Y-%m-%d"), end_dt.format("%Y-%m-%d"));
 
-    match find_sun_altitude_periods_via_culminations(site, period, condition) {
-        Some(periods) if !periods.is_empty() => {
-            let total_days: f64 = periods.iter().map(|p| p.duration_days()).sum();
-            println!("Found {} astronomical-night windows spanning {:.1} hours", periods.len(), total_days * 24.0);
+    let periods = find_sun_altitude_periods_via_culminations(site, period, condition);
+    if !periods.is_empty() {
+        let total_days: f64 = periods.iter().map(|p| p.duration_days()).sum();
+        println!("Found {} astronomical-night windows spanning {:.1} hours", periods.len(), total_days * 24.0);
 
-            for (idx, period) in periods.iter().take(5).enumerate() {
-                let start = period.start.to_utc().unwrap();
-                let end = period.end.to_utc().unwrap();
-                println!(
-                    "  #{:<2} {:<19} → {:<19} ({:.1} h)",
-                    idx + 1,
-                    start.format("%Y-%m-%dT%H:%M:%S"),
-                    end.format("%Y-%m-%dT%H:%M:%S"),
-                    period.duration_days() * 24.0
-                );
-            }
+        for (idx, period) in periods.iter().take(5).enumerate() {
+            let start = period.start.to_utc().unwrap();
+            let end = period.end.to_utc().unwrap();
+            println!(
+                "  #{:<2} {:<19} → {:<19} ({:.1} h)",
+                idx + 1,
+                start.format("%Y-%m-%dT%H:%M:%S"),
+                end.format("%Y-%m-%dT%H:%M:%S"),
+                period.duration_days() * 24.0
+            );
+        }
 
-            if periods.len() > 5 {
-                println!("  ... ({} more nights)", periods.len() - 5);
-            }
+        if periods.len() > 5 {
+            println!("  ... ({} more nights)", periods.len() - 5);
         }
-        _ => {
-            println!("No astronomical night windows found on the selected interval.");
-        }
+    } else {
+        println!("No astronomical night windows found on the selected interval.");
     }
 }

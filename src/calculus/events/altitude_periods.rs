@@ -128,8 +128,7 @@ impl AltitudeCondition {
 /// - `condition`: The altitude condition specification (Below, Above, or Between)
 ///
 /// # Returns
-/// - `Some(Vec<Period<ModifiedJulianDate>>)`: Periods where condition is satisfied
-/// - `None`: If the altitude never satisfies the condition
+/// - `Vec<Period<ModifiedJulianDate>>`: Periods where condition is satisfied (empty if none)
 ///
 /// # Algorithm
 /// 1. Coarse scan the interval at `SCAN_STEP` intervals
@@ -141,7 +140,7 @@ pub fn find_altitude_periods<F>(
     altitude_fn: F,
     period: Period<ModifiedJulianDate>,
     condition: AltitudeCondition,
-) -> Option<Vec<Period<ModifiedJulianDate>>>
+) -> Vec<Period<ModifiedJulianDate>>
 where
     F: Fn(JulianDate) -> f64,
 {
@@ -228,10 +227,10 @@ where
         // No crossings found
         if start_inside {
             // Entire interval is valid
-            return Some(vec![period]);
+            return vec![period];
         } else {
             // Never valid
-            return None;
+            return Vec::new();
         }
     }
 
@@ -280,11 +279,7 @@ where
         }
     }
 
-    if periods.is_empty() {
-        None
-    } else {
-        Some(periods)
-    }
+    periods
 }
 
 #[cfg(test)]
@@ -329,8 +324,6 @@ mod tests {
             Period::new(mjd_start, mjd_end),
             AltitudeCondition::below(Degrees::new(0.0)),
         );
-        assert!(periods.is_some());
-        let periods = periods.unwrap();
         assert!(!periods.is_empty());
         for p in &periods {
             assert!(p.duration_days() > 0.0);
