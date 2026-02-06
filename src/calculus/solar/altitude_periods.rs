@@ -20,13 +20,13 @@ use crate::coordinates::transform::Transform;
 use crate::coordinates::{cartesian, spherical};
 use crate::targets::Target;
 use crate::time::{ModifiedJulianDate, Period};
-use qtty::{AstronomicalUnit, Degrees, Kilometers, Radian};
+use qtty::{AstronomicalUnit, Degrees, Kilometers, Quantity, Radian};
 
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
 /// Positive above the horizon, negative below.
-pub fn sun_altitude_rad(jd: JulianDate, site: &ObserverSite) -> f64 {
+pub fn sun_altitude_rad(jd: JulianDate, site: &ObserverSite) -> Quantity<Radian> {
     let horiz = Sun::get_horizontal::<AstronomicalUnit>(jd, *site);
-    horiz.alt().to::<Radian>().value()
+    horiz.alt().to::<Radian>()
 }
 
 pub fn find_sun_altitude_periods_via_culminations(
@@ -37,7 +37,7 @@ pub fn find_sun_altitude_periods_via_culminations(
     let jd_start = period.start.to_julian_day();
     let jd_end = period.end.to_julian_day();
 
-    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
+    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
 
     // Collect all boundary crossings (may be 1 or 2 boundaries depending on condition)
     let boundaries = match condition {
@@ -222,7 +222,7 @@ pub fn find_night_periods_scan<T: Into<Degrees>>(
     period: Period<ModifiedJulianDate>,
     twilight: T,
 ) -> Option<Vec<Period<ModifiedJulianDate>>> {
-    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
+    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
     let tw: Degrees = twilight.into();
     find_altitude_periods(altitude_fn, period, AltitudeCondition::below(tw))
 }
@@ -245,7 +245,7 @@ pub fn find_day_periods_scan<T: Into<Degrees>>(
     period: Period<ModifiedJulianDate>,
     twilight: T,
 ) -> Option<Vec<Period<ModifiedJulianDate>>> {
-    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
+    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
     let tw: Degrees = twilight.into();
     find_altitude_periods(altitude_fn, period, AltitudeCondition::above(tw))
 }
@@ -271,7 +271,7 @@ pub fn find_sun_range_periods_scan(
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
 ) -> Option<Vec<Period<ModifiedJulianDate>>> {
-    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
+    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
     find_altitude_periods(
         altitude_fn,
         period,
@@ -318,7 +318,7 @@ mod tests {
         let site = greenwich_site();
         let jd = JulianDate::J2000;
         let alt = sun_altitude_rad(jd, &site);
-        assert!(alt > -std::f64::consts::FRAC_PI_2 && alt < std::f64::consts::FRAC_PI_2);
+        assert!(alt.value() > -std::f64::consts::FRAC_PI_2 && alt.value() < std::f64::consts::FRAC_PI_2);
     }
 
     #[test]
