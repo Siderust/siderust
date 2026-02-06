@@ -43,6 +43,7 @@
 //! Timing precision is ~1 µs (Brent convergence criterion `1e-11` days ≈ 0.86 µs).
 
 use crate::astro::JulianDate;
+use crate::calculus::math_core;
 use crate::time::{ModifiedJulianDate, Period};
 use qtty::{Day, Days, Degrees, Minutes, Radian};
 
@@ -75,42 +76,21 @@ pub(crate) fn find_threshold_crossings_in_segments<F>(
 where
     F: Fn(JulianDate) -> f64,
 {
-    let mut crossings = Vec::new();
+    // Convert JulianDate key_times to f64 for math_core
+    let key_f64: Vec<f64> = key_times.iter().map(|jd| jd.value()).collect();
 
-    for window in key_times.windows(2) {
-        let a = window[0];
-        let b = window[1];
-        if a.partial_cmp(&b) != Some(std::cmp::Ordering::Less) {
-            continue;
-        }
+    // Wrap the altitude_fn to operate on plain f64
+    let f = |t: f64| altitude_fn(JulianDate::new(t));
 
-        let f_a = altitude_fn(a) - threshold_rad;
-        let f_b = altitude_fn(b) - threshold_rad;
+    let raw = math_core::intervals::find_crossings_in_segments(
+        &key_f64,
+        &f,
+        threshold_rad,
+        jd_start.value(),
+        jd_end.value(),
+    );
 
-        const ROOT_EPS: f64 = 1e-12;
-        if f_a.abs() < ROOT_EPS {
-            crossings.push(a);
-            continue;
-        }
-        if f_b.abs() < ROOT_EPS {
-            crossings.push(b);
-            continue;
-        }
-
-        if f_a * f_b < 0.0 {
-            if let Some(root) =
-                crate::calculus::root_finding::find_crossing_brent_with_values(
-                    a, b, f_a, f_b, altitude_fn, threshold_rad,
-                )
-            {
-                if root >= jd_start && root <= jd_end {
-                    crossings.push(root);
-                }
-            }
-        }
-    }
-
-    crossings
+    raw.into_iter().map(JulianDate::new).collect()
 }
 
 /// Converts a list of threshold crossings into "above threshold" periods.
@@ -144,7 +124,9 @@ where
     let is_above = |alt: f64| alt > threshold_rad;
 
     // Classify each crossing: +1 = entering above, -1 = exiting above
-    let dt = Days::new(10.0 * crate::calculus::root_finding::DERIVATIVE_STEP.value());
+    // Probe ±10 seconds away from the crossing to determine direction.
+    const PROBE_DT: Days = Days::new(10.0 / 86_400.0);
+    let dt = PROBE_DT;
     let mut labeled: Vec<(JulianDate, i32)> = Vec::with_capacity(crossings.len());
     for &root in &crossings {
         let above_before = is_above(altitude_fn(root - dt));
@@ -275,37 +257,25 @@ pub fn find_above_altitude_periods<F>(
 where
     F: Fn(JulianDate) -> f64,
 {
-    let jd_start = period.start.to_julian_day();
-    let jd_end = period.end.to_julian_day();
+    let jd_start = period.start.to_julian_day().value();
+    let jd_end = period.end.to_julian_day().value();
     let threshold_rad = threshold.to::<Radian>().value();
 
     let step: Days = SCAN_STEP.to::<Day>();
-    let mut crossings: Vec<JulianDate> = Vec::new();
+    let f = |t: f64| altitude_fn(JulianDate::new(t));
 
-    let mut jd = jd_start;
-    let mut prev_f = altitude_fn(jd) - threshold_rad;
+    let raw = math_core::intervals::above_threshold_periods(
+        jd_start, jd_end, step.value(), &f, threshold_rad,
+    );
 
-    while jd < jd_end {
-        let next_jd = (jd + step).min(jd_end);
-        let next_f = altitude_fn(next_jd) - threshold_rad;
-
-        if prev_f * next_f < 0.0 {
-            if let Some(root) =
-                crate::calculus::root_finding::find_crossing_brent_with_values(
-                    jd, next_jd, prev_f, next_f, &altitude_fn, threshold_rad,
-                )
-            {
-                if root >= jd_start && root <= jd_end {
-                    crossings.push(root);
-                }
-            }
-        }
-
-        jd = next_jd;
-        prev_f = next_f;
-    }
-
-    crossings_to_above_periods(crossings, period, &altitude_fn, threshold_rad)
+    raw.into_iter()
+        .map(|iv| {
+            Period::new(
+                ModifiedJulianDate::new(iv.start - 2_400_000.5),
+                ModifiedJulianDate::new(iv.end - 2_400_000.5),
+            )
+        })
+        .collect()
 }
 
 #[cfg(test)]
