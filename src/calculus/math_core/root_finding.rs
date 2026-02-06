@@ -4,8 +4,13 @@
 //! # Root Finding — Brent & Bisection
 //!
 //! Robust, astronomy‑agnostic root solvers for scalar functions of one
-//! variable.  All routines work on plain `f64` inputs/outputs so they can be
-//! composed with any domain‑specific wrapper.
+//! variable.  All routines are **generic over [`qtty`] unit types** so the
+//! compiler enforces dimensional consistency: the domain parameter carries
+//! unit `T` (e.g. `Day`, `JulianCentury`, …) and the function value carries
+//! unit `V` (e.g. `Radian`, `Degree`, …).
+//!
+//! The user decides which concrete units to use; `math_core` only requires
+//! the [`Unit`] trait bound.
 //!
 //! ## Provided solvers
 //!
@@ -19,11 +24,14 @@
 //! All functions return `Some(root)` on success, `None` when the bracket is
 //! invalid (same sign at both endpoints).
 
+use qtty::{Quantity, Unit};
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
 
-/// Default convergence tolerance (days).  ≈ 0.86 µs.
+/// Default convergence tolerance (dimensionless, applied to the raw value).
+/// ≈ 0.86 µs when the domain is days.
 const DEFAULT_TOL: f64 = 1e-9;
 
 /// Maximum iterations for Brent.
@@ -32,7 +40,7 @@ const BRENT_MAX_ITER: usize = 100;
 /// Maximum iterations for bisection.
 const BISECT_MAX_ITER: usize = 80;
 
-/// Function‑value convergence threshold.
+/// Function‑value convergence threshold (dimensionless).
 const F_EPS: f64 = 1e-12;
 
 // ---------------------------------------------------------------------------
@@ -44,9 +52,11 @@ const F_EPS: f64 = 1e-12;
 ///
 /// Returns `Some(t)` where `|f(t)| < ε` or the bracket width < tolerance,
 /// `None` if the bracket is invalid.
-pub fn brent<F>(lo: f64, hi: f64, f: F) -> Option<f64>
+pub fn brent<T, V, F>(lo: Quantity<T>, hi: Quantity<T>, f: F) -> Option<Quantity<T>>
 where
-    F: Fn(f64) -> f64,
+    T: Unit,
+    V: Unit,
+    F: Fn(Quantity<T>) -> Quantity<V>,
 {
     let fa = f(lo);
     let fb = f(hi);
@@ -57,9 +67,17 @@ where
 ///
 /// Saves two function evaluations when the values are already available
 /// (e.g. from a sign‑change scan).
-pub fn brent_with_values<F>(lo: f64, hi: f64, f_lo: f64, f_hi: f64, f: F) -> Option<f64>
+pub fn brent_with_values<T, V, F>(
+    lo: Quantity<T>,
+    hi: Quantity<T>,
+    f_lo: Quantity<V>,
+    f_hi: Quantity<V>,
+    f: F,
+) -> Option<Quantity<T>>
 where
-    F: Fn(f64) -> f64,
+    T: Unit,
+    V: Unit,
+    F: Fn(Quantity<T>) -> Quantity<V>,
 {
     brent_core(lo, hi, f_lo, f_hi, &f, DEFAULT_TOL)
 }
@@ -68,43 +86,50 @@ where
 ///
 /// Useful for trading precision for speed in performance‑critical loops
 /// (e.g. lunar altitude with 2‑minute tolerance).
-pub fn brent_tol<F>(
-    lo: f64,
-    hi: f64,
-    f_lo: f64,
-    f_hi: f64,
+pub fn brent_tol<T, V, F>(
+    lo: Quantity<T>,
+    hi: Quantity<T>,
+    f_lo: Quantity<V>,
+    f_hi: Quantity<V>,
     f: F,
-    tolerance: f64,
-) -> Option<f64>
+    tolerance: Quantity<T>,
+) -> Option<Quantity<T>>
 where
-    F: Fn(f64) -> f64,
+    T: Unit,
+    V: Unit,
+    F: Fn(Quantity<T>) -> Quantity<V>,
 {
-    brent_core(lo, hi, f_lo, f_hi, &f, tolerance)
+    brent_core(lo, hi, f_lo, f_hi, &f, tolerance.value())
 }
 
 /// Core Brent implementation shared by all public entry points.
-fn brent_core<F>(
-    lo: f64,
-    hi: f64,
-    f_lo: f64,
-    f_hi: f64,
+///
+/// Internally operates on raw `f64` extracted via `.value()` and rewraps
+/// the result into `Quantity<T>`.
+fn brent_core<T, V, F>(
+    lo: Quantity<T>,
+    hi: Quantity<T>,
+    f_lo: Quantity<V>,
+    f_hi: Quantity<V>,
     f: &F,
     tol: f64,
-) -> Option<f64>
+) -> Option<Quantity<T>>
 where
-    F: Fn(f64) -> f64,
+    T: Unit,
+    V: Unit,
+    F: Fn(Quantity<T>) -> Quantity<V>,
 {
-    let mut a = lo;
-    let mut b = hi;
-    let mut fa = f_lo;
-    let mut fb = f_hi;
+    let mut a = lo.value();
+    let mut b = hi.value();
+    let mut fa = f_lo.value();
+    let mut fb = f_hi.value();
 
     // Exact roots at endpoints
     if fa.abs() < F_EPS {
-        return Some(a);
+        return Some(Quantity::new(a));
     }
     if fb.abs() < F_EPS {
-        return Some(b);
+        return Some(Quantity::new(b));
     }
     // Valid bracket?
     if fa * fb > 0.0 {
@@ -126,7 +151,7 @@ where
         let m = 0.5 * (c - b);
 
         if fb.abs() < F_EPS || m.abs() <= tol {
-            return Some(b);
+            return Some(Quantity::new(b));
         }
 
         let use_bisection = e.abs() < tol || fa.abs() <= fb.abs();
@@ -170,7 +195,7 @@ where
         } else {
             -tol
         };
-        fb = f(b);
+        fb = f(Quantity::new(b)).value();
 
         if fb * fc > 0.0 {
             c = a;
@@ -189,7 +214,7 @@ where
         }
     }
 
-    Some(b)
+    Some(Quantity::new(b))
 }
 
 // ---------------------------------------------------------------------------
@@ -199,20 +224,22 @@ where
 /// Find a root of `f(t) = 0` in `[lo, hi]` using classic bisection.
 ///
 /// Guaranteed convergence for valid brackets; linear rate.
-pub fn bisection<F>(lo: f64, hi: f64, f: F) -> Option<f64>
+pub fn bisection<T, V, F>(lo: Quantity<T>, hi: Quantity<T>, f: F) -> Option<Quantity<T>>
 where
-    F: Fn(f64) -> f64,
+    T: Unit,
+    V: Unit,
+    F: Fn(Quantity<T>) -> Quantity<V>,
 {
-    let mut a = lo;
-    let mut b = hi;
-    let mut fa = f(a);
-    let fb = f(b);
+    let mut a = lo.value();
+    let mut b = hi.value();
+    let mut fa = f(Quantity::new(a)).value();
+    let fb = f(Quantity::new(b)).value();
 
     if fa.abs() < F_EPS {
-        return Some(a);
+        return Some(Quantity::new(a));
     }
     if fb.abs() < F_EPS {
-        return Some(b);
+        return Some(Quantity::new(b));
     }
     if fa * fb > 0.0 {
         return None;
@@ -220,11 +247,11 @@ where
 
     for _ in 0..BISECT_MAX_ITER {
         let mid = 0.5 * (a + b);
-        let fm = f(mid);
+        let fm = f(Quantity::new(mid)).value();
         let width = (b - a).abs();
 
         if fm.abs() < F_EPS || width < DEFAULT_TOL {
-            return Some(mid);
+            return Some(Quantity::new(mid));
         }
 
         if fa * fm <= 0.0 {
@@ -235,7 +262,7 @@ where
         }
     }
 
-    Some(0.5 * (a + b))
+    Some(Quantity::new(0.5 * (a + b)))
 }
 
 // ---------------------------------------------------------------------------
@@ -245,45 +272,63 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use qtty::{Day, Radian};
+
+    type Days = Quantity<Day>;
+    type Radians = Quantity<Radian>;
 
     #[test]
     fn brent_finds_sine_root_near_pi() {
-        let root = brent(3.0, 4.0, |t| t.sin()).expect("should find π");
-        assert!((root - std::f64::consts::PI).abs() < 1e-10);
+        let root = brent(Days::new(3.0), Days::new(4.0), |t: Days| {
+            Radians::new(t.value().sin())
+        })
+        .expect("should find π");
+        assert!((root.value() - std::f64::consts::PI).abs() < 1e-10);
     }
 
     #[test]
     fn brent_finds_linear_root() {
-        let root = brent(0.0, 10.0, |t| t - 5.0).expect("should find 5");
-        assert!((root - 5.0).abs() < 1e-10);
+        let root = brent(Days::new(0.0), Days::new(10.0), |t: Days| {
+            Radians::new(t.value() - 5.0)
+        })
+        .expect("should find 5");
+        assert!((root.value() - 5.0).abs() < 1e-10);
     }
 
     #[test]
     fn brent_returns_none_for_invalid_bracket() {
-        assert!(brent(0.0, 1.0, |_| 42.0).is_none());
+        assert!(
+            brent(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(
+                42.0
+            ))
+            .is_none()
+        );
     }
 
     #[test]
     fn brent_returns_endpoint_when_exact() {
-        let root = brent(0.0, 5.0, |t| t - 5.0).expect("endpoint");
-        assert!((root - 5.0).abs() < F_EPS);
+        let root = brent(Days::new(0.0), Days::new(5.0), |t: Days| {
+            Radians::new(t.value() - 5.0)
+        })
+        .expect("endpoint");
+        assert!((root.value() - 5.0).abs() < F_EPS);
     }
 
     #[test]
     fn brent_with_values_saves_evaluations() {
         use std::cell::Cell;
         let count = Cell::new(0usize);
-        let f = |t: f64| {
+        let f = |t: Days| -> Radians {
             count.set(count.get() + 1);
-            t.sin()
+            Radians::new(t.value().sin())
         };
-        let f_lo = (3.0_f64).sin();
-        let f_hi = (4.0_f64).sin();
-        let _ = brent_with_values(3.0, 4.0, f_lo, f_hi, &f);
+        let f_lo = Radians::new((3.0_f64).sin());
+        let f_hi = Radians::new((4.0_f64).sin());
+        let _ = brent_with_values(Days::new(3.0), Days::new(4.0), f_lo, f_hi, &f);
         let with_vals = count.get();
 
         count.set(0);
-        let _ = brent(3.0, 4.0, &f);
+        let _ = brent(Days::new(3.0), Days::new(4.0), &f);
         let without = count.get();
 
         // with_values should use at least 2 fewer evals (the endpoints)
@@ -292,43 +337,70 @@ mod tests {
 
     #[test]
     fn brent_tol_respects_relaxed_tolerance() {
-        let root = brent_tol(3.0, 4.0, (3.0_f64).sin(), (4.0_f64).sin(), |t| t.sin(), 1e-3)
-            .expect("relaxed");
-        assert!((root - std::f64::consts::PI).abs() < 2e-3);
+        let root = brent_tol(
+            Days::new(3.0),
+            Days::new(4.0),
+            Radians::new((3.0_f64).sin()),
+            Radians::new((4.0_f64).sin()),
+            |t: Days| Radians::new(t.value().sin()),
+            Days::new(1e-3),
+        )
+        .expect("relaxed");
+        assert!((root.value() - std::f64::consts::PI).abs() < 2e-3);
     }
 
     #[test]
     fn brent_handles_step_function() {
-        let root = brent(-1.0, 1.0, |t| if t < 0.0 { -1.0 } else { 1.0 }).expect("step");
-        assert!(root.abs() < 1e-6);
+        let root = brent(Days::new(-1.0), Days::new(1.0), |t: Days| {
+            Radians::new(if t.value() < 0.0 { -1.0 } else { 1.0 })
+        })
+        .expect("step");
+        assert!(root.value().abs() < 1e-6);
     }
 
     #[test]
     fn brent_cubic() {
-        let root = brent(1.0, 2.0, |t| t.powi(3) - 2.0).expect("cbrt 2");
-        assert!((root - 2.0_f64.powf(1.0 / 3.0)).abs() < 1e-9);
+        let root = brent(Days::new(1.0), Days::new(2.0), |t: Days| {
+            Radians::new(t.value().powi(3) - 2.0)
+        })
+        .expect("cbrt 2");
+        assert!((root.value() - 2.0_f64.powf(1.0 / 3.0)).abs() < 1e-9);
     }
 
     #[test]
     fn bisection_finds_sine_root() {
-        let root = bisection(3.0, 4.0, |t| t.sin()).expect("π");
-        assert!((root - std::f64::consts::PI).abs() < 1e-8);
+        let root = bisection(Days::new(3.0), Days::new(4.0), |t: Days| {
+            Radians::new(t.value().sin())
+        })
+        .expect("π");
+        assert!((root.value() - std::f64::consts::PI).abs() < 1e-8);
     }
 
     #[test]
     fn bisection_returns_none_for_invalid_bracket() {
-        assert!(bisection(0.0, 1.0, |_| 42.0).is_none());
+        assert!(
+            bisection(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(
+                42.0
+            ))
+            .is_none()
+        );
     }
 
     #[test]
     fn bisection_handles_step_function() {
-        let root = bisection(-1.0, 1.0, |t| if t < 0.0 { -5.0 } else { 5.0 }).expect("step");
-        assert!(root.abs() < 1e-6);
+        let root = bisection(Days::new(-1.0), Days::new(1.0), |t: Days| {
+            Radians::new(if t.value() < 0.0 { -5.0 } else { 5.0 })
+        })
+        .expect("step");
+        assert!(root.value().abs() < 1e-6);
     }
 
     #[test]
     fn bisection_endpoint_root() {
-        let root = bisection(0.0, 5.0, |t| t).expect("root at 0");
-        assert!(root.abs() < F_EPS);
+        let root = bisection(Days::new(0.0), Days::new(5.0), |t: Days| {
+            Radians::new(t.value())
+        })
+        .expect("root at 0");
+        assert!(root.value().abs() < F_EPS);
     }
 }

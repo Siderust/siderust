@@ -34,7 +34,7 @@ use qtty::*;
 /// Scan step for Moon altitude threshold detection (2 hours in days).
 /// Moon rises/sets are separated by ~12+ hours, so 2-hour steps
 /// safely detect all horizon crossings (~12 altitude calls per day).
-const SCAN_STEP: f64 = 2.0 / 24.0;
+const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
 
 // =============================================================================
 // Core Altitude Function
@@ -52,26 +52,9 @@ const SCAN_STEP: f64 = 2.0 / 24.0;
 /// # Returns
 /// Altitude as `Quantity<Radian>` (positive above horizon, negative below)
 pub fn moon_altitude_rad(jd: JulianDate, site: &ObserverSite) -> Quantity<Radian> {
-    Moon::get_horizontal::<Kilometer>(jd, *site).alt().to::<Radian>()
-}
-
-// =============================================================================
-// Internal helper: Interval → Period<MJD> conversion
-// =============================================================================
-
-/// JD offset to MJD: `MJD = JD − 2_400_000.5`.
-const JD_TO_MJD: f64 = 2_400_000.5;
-
-/// Convert `math_core` `Interval`s (JD f64) to `Period<ModifiedJulianDate>`.
-fn intervals_to_periods(ivs: Vec<intervals::Interval>) -> Vec<Period<ModifiedJulianDate>> {
-    ivs.into_iter()
-        .map(|iv| {
-            Period::new(
-                ModifiedJulianDate::new(iv.start - JD_TO_MJD),
-                ModifiedJulianDate::new(iv.end - JD_TO_MJD),
-            )
-        })
-        .collect()
+    Moon::get_horizontal::<Kilometer>(jd, *site)
+        .alt()
+        .to::<Radian>()
 }
 
 // =============================================================================
@@ -91,20 +74,18 @@ fn intervals_to_periods(ivs: Vec<intervals::Interval>) -> Vec<Period<ModifiedJul
 /// ```ignore
 /// let moonrise_periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
 /// ```
-pub fn find_moon_above_horizon<T: Into<Degrees>>(
+pub fn find_moon_above_horizon(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
-    threshold: T,
+    threshold: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day().value();
-    let jd_end = period.end.to_julian_day().value();
-    let thr = threshold.into().to::<Radian>().value();
+    let thr = threshold.to::<Radian>();
 
-    let f = |t: f64| moon_altitude_rad(JulianDate::new(t), &site).value();
+    let f = |t: ModifiedJulianDate| -> Radians {
+        moon_altitude_rad(t.to_julian_day(), &site)
+    };
 
-    intervals_to_periods(intervals::above_threshold_periods(
-        jd_start, jd_end, SCAN_STEP, &f, thr,
-    ))
+    intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
 }
 
 /// Finds periods when the Moon is below the given altitude threshold.
@@ -115,10 +96,10 @@ pub fn find_moon_above_horizon<T: Into<Degrees>>(
 /// ```ignore
 /// let moonless_periods = find_moon_below_horizon(site, period, Degrees::new(-0.5));
 /// ```
-pub fn find_moon_below_horizon<T: Into<Degrees>>(
+pub fn find_moon_below_horizon(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
-    threshold: T,
+    threshold: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
     let above = find_moon_above_horizon(site, period, threshold);
     complement_within(period, &above)
@@ -138,16 +119,14 @@ pub fn find_moon_altitude_range(
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day().value();
-    let jd_end = period.end.to_julian_day().value();
-    let h_min = range.0.to::<Radian>().value();
-    let h_max = range.1.to::<Radian>().value();
+    let h_min = range.0.to::<Radian>();
+    let h_max = range.1.to::<Radian>();
 
-    let f = |t: f64| moon_altitude_rad(JulianDate::new(t), &site).value();
+    let f = |t: ModifiedJulianDate| -> Radians {
+        moon_altitude_rad(t.to_julian_day(), &site)
+    };
 
-    intervals_to_periods(intervals::in_range_periods(
-        jd_start, jd_end, SCAN_STEP, &f, h_min, h_max,
-    ))
+    intervals::in_range_periods(period, SCAN_STEP, &f, h_min, h_max)
 }
 
 // =============================================================================
@@ -155,31 +134,31 @@ pub fn find_moon_altitude_range(
 // =============================================================================
 
 /// Scan step for 10-minute scan variants (days).
-const SCAN_STEP_10MIN: f64 = 10.0 / 1440.0;
+const SCAN_STEP_10MIN: Days = Quantity::new(10.0 / 1440.0);
 
 /// Finds periods using the generic scan-based algorithm (above threshold).
 ///
 /// Uses 10-minute steps via the generic scan engine. Slower but useful
 /// for comparison / validation.
-pub fn find_moon_above_horizon_scan<T: Into<Degrees>>(
+pub fn find_moon_above_horizon_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
-    threshold: T,
+    threshold: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day().value();
-    let jd_end = period.end.to_julian_day().value();
-    let thr = threshold.into().to::<Radian>().value();
-    let f = |t: f64| moon_altitude_rad(JulianDate::new(t), &site).value();
-    intervals_to_periods(intervals::above_threshold_periods(
-        jd_start, jd_end, SCAN_STEP_10MIN, &f, thr,
-    ))
+    let thr = threshold.to::<Radian>();
+
+    let f = |t: ModifiedJulianDate| -> Radians {
+        moon_altitude_rad(t.to_julian_day(), &site)
+    };
+
+    intervals::above_threshold_periods(period, SCAN_STEP_10MIN, &f, thr)
 }
 
 /// Finds periods using the generic scan-based algorithm (below threshold).
-pub fn find_moon_below_horizon_scan<T: Into<Degrees>>(
+pub fn find_moon_below_horizon_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
-    threshold: T,
+    threshold: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
     let above = find_moon_above_horizon_scan(site, period, threshold);
     complement_within(period, &above)
@@ -220,8 +199,6 @@ mod tests {
 
         let periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
         assert!(!periods.is_empty(), "Should find moon-up periods over 7 days");
-
-        assert!(!periods.is_empty());
 
         for p in &periods {
             assert!(p.duration_days() > 0.0, "Period duration should be positive");
