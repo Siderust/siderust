@@ -35,11 +35,10 @@ use crate::calculus::events::altitude_periods::{
 use crate::calculus::events::Culmination;
 use crate::calculus::root_finding::brent;
 use crate::coordinates::cartesian;
-use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
+use crate::coordinates::centers::{Geocentric, ObserverSite};
 use crate::coordinates::frames::{self, Ecliptic};
-use crate::coordinates::spherical::{self, Position};
-use crate::coordinates::transform::centers::ToTopocentricExt;
-use crate::coordinates::transform::{Transform, TransformFrame};
+use crate::coordinates::spherical;
+use crate::coordinates::transform::TransformFrame;
 use crate::targets::Target;
 use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period};
 use qtty::*;
@@ -86,48 +85,8 @@ const MOON_BRENT_TOLERANCE: f64 = 1.4e-3;
 /// # Returns
 /// Altitude in radians (positive above horizon, negative below)
 pub fn moon_altitude_rad(jd: JulianDate, site: &ObserverSite) -> f64 {
-    // Get Moon's geocentric ecliptic position from ELP2000 (cartesian)
-    let moon_geo_ecliptic: cartesian::Position<Geocentric, Ecliptic, Kilometer> =
-        Moon::get_geo_position(jd);
-
-    // Transform: Ecliptic → EquatorialMeanJ2000
-    let moon_geo_eq_j2000: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, Kilometer> =
-        TransformFrame::to_frame(&moon_geo_ecliptic);
-
-    // Apply topocentric parallax correction (critical for Moon!)
-    let moon_topo_eq_j2000: cartesian::Position<
-        Topocentric,
-        frames::EquatorialMeanJ2000,
-        Kilometer,
-    > = moon_geo_eq_j2000.to_topocentric(*site, jd);
-
-    // Apply precession: J2000 → mean-of-date
-    let rot = crate::coordinates::transform::frame_rotation::<
-        frames::EquatorialMeanJ2000,
-        frames::EquatorialMeanOfDate,
-    >(jd, &crate::coordinates::transform::AstroContext::default());
-
-    let [x, y, z] = rot.apply_array([
-        moon_topo_eq_j2000.x().value(),
-        moon_topo_eq_j2000.y().value(),
-        moon_topo_eq_j2000.z().value(),
-    ]);
-
-    let moon_topo_eq_date: cartesian::Position<Topocentric, frames::EquatorialMeanOfDate, Kilometer> =
-        cartesian::Position::from_vec3(
-            *site,
-            nalgebra::Vector3::new(x * KM, y * KM, z * KM),
-        );
-
-    // Transform to horizontal coordinates
-    let moon_horizontal: cartesian::Position<Topocentric, frames::Horizontal, Kilometer> =
-        moon_topo_eq_date.transform(jd);
-
-    // Convert to spherical to extract altitude
-    let moon_horizontal_sph: Position<Topocentric, frames::Horizontal, Kilometer> =
-        Position::from_cartesian(&moon_horizontal);
-
-    moon_horizontal_sph.alt().to::<Radian>().value()
+    let horiz = Moon::get_horizontal::<Kilometer>(jd, *site);
+    horiz.alt().to::<Radian>().value()
 }
 
 /// Returns a closure that computes Moon altitude for a specific site.
