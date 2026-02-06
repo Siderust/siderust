@@ -4,28 +4,34 @@
 //! # Lunar Altitude Window Periods
 //!
 //! Moon-specific optimized routines for finding time intervals where the Moon's
-//! altitude satisfies a given condition (above, below, or within a range).
+//! altitude is above, below, or within a given range.
+//!
+//! The core algorithm finds **above-threshold** periods. Below and between
+//! variants are derived via [`crate::time::complement_within`] and
+//! [`crate::time::intersect_periods`] at negligible cost.
 //!
 //! ## Key Optimizations
 //!
 //! 1. **Topocentric parallax correction**: Critical for Moon (~1° at horizon)
 //! 2. **Culmination-based search**: Partitions time into monotonic altitude segments
 //! 3. **Brent's method with endpoint reuse**: Avoids redundant ELP2000 evaluations
-//! 4. **Reuses `find_dynamic_extremas`**: Leverages the generic, optimized culmination finder
+//! 4. **Fast direct-scan variant**: 2-hour steps with relaxed Brent tolerance
 //!
 //! ## Performance Notes
 //!
-//! The culmination-based algorithm achieves sub-second performance for 365-day
-//! searches by:
-//! - Using `find_dynamic_extremas` to find Moon culminations efficiently
-//! - Reusing endpoint altitude values when calling Brent's method
-//! - Avoiding derivative evaluations (Brent is derivative-free)
+//! The fast-scan algorithm achieves best performance for long periods by
+//! tracking crossing direction during the scan phase, feeding pre-labelled
+//! crossings into the shared [`crate::calculus::events::altitude_periods::build_above_periods`]
+//! helper to avoid redundant ELP2000 evaluations.
 
 use crate::astro::nutation::corrected_ra_with_nutation;
 use crate::astro::precession;
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Moon;
-use crate::calculus::events::altitude_periods::AltitudeCondition;
+use crate::calculus::events::altitude_periods::{
+    build_above_periods, crossings_to_above_periods,
+    find_threshold_crossings_in_segments,
+};
 use crate::calculus::events::Culmination;
 use crate::calculus::root_finding::brent;
 use crate::coordinates::cartesian;
@@ -35,7 +41,7 @@ use crate::coordinates::spherical::{self, Position};
 use crate::coordinates::transform::centers::ToTopocentricExt;
 use crate::coordinates::transform::{Transform, TransformFrame};
 use crate::targets::Target;
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period};
 use qtty::*;
 use std::f64::consts::PI;
 
@@ -57,9 +63,6 @@ const DEDUPE_EPS: f64 = 1e-10;
 
 /// Epsilon for deduplicating crossings (~1 ms).
 const CROSS_DEDUPE_EPS: f64 = 1e-8;
-
-/// Root-finding precision (~0.86 µs).
-const ROOT_EPS: f64 = 1e-12;
 
 /// Relaxed tolerance for fast Moon altitude root finding (~2 minute precision).
 /// 2 minutes = 2/(24*60) days ≈ 1.39e-3 days
@@ -378,70 +381,13 @@ fn find_moon_culminations_fast(
     out
 }
 
-// =============================================================================
-// Main API: Optimized Altitude Period Finding
-// =============================================================================
-
-/// Finds all periods where Moon altitude satisfies the given condition,
-/// using culmination-based partitioning for optimal performance.
-///
-/// This is the **optimized** algorithm that achieves sub-second performance
-/// for 365-day searches by:
-/// 1. Using `find_dynamic_extremas` to find Moon culminations efficiently
-/// 2. Using Brent's method with pre-computed endpoint values
-/// 3. Avoiding redundant ELP2000 evaluations
-///
-/// # Arguments
-/// * `site` - Observer's geographic location
-/// * `period` - Time period to search (MJD)
-/// * `condition` - Altitude condition (below, above, or between)
-///
-/// # Returns
-/// * `Some(Vec<Period<ModifiedJulianDate>>)` - Periods where condition is satisfied
-/// * `None` - If condition is never satisfied
-///
-/// # Example
-/// ```ignore
-/// use siderust::calculus::lunar::*;
-/// use siderust::calculus::events::altitude_periods::AltitudeCondition;
-/// use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-/// use qtty::Degrees;
-///
-/// let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
-/// let period = /* your period */;
-/// let condition = AltitudeCondition::above(Degrees::new(0.0));
-/// let periods = find_moon_altitude_periods_via_culminations(site, period, condition);
-/// ```
-pub fn find_moon_altitude_periods_via_culminations(
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    condition: AltitudeCondition,
-) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day();
-    let jd_end = period.end.to_julian_day();
-
-    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site);
-
-    // Get boundaries from condition
-    let boundaries = match condition {
-        AltitudeCondition::Below(threshold) | AltitudeCondition::Above(threshold) => {
-            vec![threshold.to::<Radian>().value()]
-        }
-        AltitudeCondition::Between { min, max } => {
-            vec![min.to::<Radian>().value(), max.to::<Radian>().value()]
-        }
-    };
-
-    // Find Moon culminations using the optimized Moon-specific finder
-    let observer_geo = spherical::position::Geographic::new(
-        site.lon,
-        site.lat,
-        Kilometers::new(0.0),
-    );
-
-    let culminations = find_moon_culminations_fast(&observer_geo, jd_start, jd_end);
-
-    // Build key times: start, culminations, end
+/// Computes sorted, deduplicated key times (start, culminations, end) for the Moon.
+fn compute_moon_key_times(
+    observer_geo: &spherical::position::Geographic,
+    jd_start: JulianDate,
+    jd_end: JulianDate,
+) -> Vec<JulianDate> {
+    let culminations = find_moon_culminations_fast(observer_geo, jd_start, jd_end);
     let mut key_times: Vec<JulianDate> = Vec::with_capacity(culminations.len() + 2);
     key_times.push(jd_start);
     for c in culminations {
@@ -455,278 +401,153 @@ pub fn find_moon_altitude_periods_via_culminations(
     key_times.push(jd_end);
     key_times.sort_by(|a, b| a.partial_cmp(b).unwrap());
     key_times.dedup_by(|a, b| (a.value() - b.value()).abs() < DEDUPE_EPS);
+    key_times
+}
 
-    // Find all boundary crossings
-    let mut all_crossings: Vec<JulianDate> = Vec::new();
+// =============================================================================
+// Main API: Optimized Altitude Period Finding
+// =============================================================================
 
-    for &boundary_rad in &boundaries {
-        for window in key_times.windows(2) {
-            let a = window[0];
-            let b = window[1];
-            if a.partial_cmp(&b) != Some(std::cmp::Ordering::Less) {
-                continue;
-            }
+/// Finds all periods where the Moon's altitude is **above** the given threshold,
+/// using culmination-based partitioning for optimal performance.
+///
+/// This is the **optimized** algorithm that achieves sub-second performance
+/// for 365-day searches by:
+/// 1. Using `find_dynamic_extremas` to find Moon culminations efficiently
+/// 2. Using Brent's method with pre-computed endpoint values
+/// 3. Avoiding redundant ELP2000 evaluations
+///
+/// # Arguments
+/// * `site` - Observer's geographic location
+/// * `period` - Time period to search (MJD)
+/// * `threshold` - Altitude threshold
+///
+/// # Returns
+/// Periods where the Moon's altitude is **above** the threshold.
+///
+/// # Example
+/// ```ignore
+/// use siderust::calculus::lunar::*;
+/// use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
+/// use qtty::Degrees;
+///
+/// let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+/// let period = /* your period */;
+/// let above = find_moon_altitude_periods_via_culminations(site, period, Degrees::new(0.0));
+/// ```
+pub fn find_moon_altitude_periods_via_culminations<T: Into<Degrees>>(
+    site: ObserverSite,
+    period: Period<ModifiedJulianDate>,
+    threshold: T,
+) -> Vec<Period<ModifiedJulianDate>> {
+    let jd_start = period.start.to_julian_day();
+    let jd_end = period.end.to_julian_day();
+    let threshold_rad = threshold.into().to::<Radian>().value();
 
-            let f_a = altitude_fn(a) - boundary_rad;
-            let f_b = altitude_fn(b) - boundary_rad;
+    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site);
 
-            // Check for root at endpoints
-            if f_a.abs() < ROOT_EPS {
-                all_crossings.push(a);
-                continue;
-            }
-            if f_b.abs() < ROOT_EPS {
-                all_crossings.push(b);
-                continue;
-            }
+    // Find Moon culminations using the optimized Moon-specific finder
+    let observer_geo = spherical::position::Geographic::new(
+        site.lon,
+        site.lat,
+        Kilometers::new(0.0),
+    );
 
-            // Sign change indicates a crossing
-            if f_a * f_b < 0.0 {
-                // Use Brent's method with pre-computed endpoint values
-                if let Some(root) =
-                    crate::calculus::root_finding::find_crossing_brent_with_values(
-                        a, b, f_a, f_b, &altitude_fn, boundary_rad,
-                    )
-                {
-                    if root >= jd_start && root <= jd_end {
-                        all_crossings.push(root);
-                    }
-                }
-            }
-        }
-    }
+    let key_times = compute_moon_key_times(&observer_geo, jd_start, jd_end);
 
-    // Sort and deduplicate crossings
-    all_crossings.sort_by(|a, b| a.partial_cmp(b).unwrap());
-    all_crossings.dedup_by(|a, b| (a.value() - b.value()).abs() < CROSS_DEDUPE_EPS);
+    let crossings = find_threshold_crossings_in_segments(
+        &key_times,
+        &altitude_fn,
+        threshold_rad,
+        jd_start,
+        jd_end,
+    );
 
-    // Classify crossings: +1 = entering, -1 = exiting
-    let mut labeled: Vec<(JulianDate, i32)> = Vec::new();
-    let dt = Days::new(10.0 * crate::calculus::root_finding::DERIVATIVE_STEP.value());
-
-    for &root in &all_crossings {
-        let alt_before = altitude_fn(root - dt);
-        let alt_after = altitude_fn(root + dt);
-
-        let inside_before = condition.is_inside(alt_before);
-        let inside_after = condition.is_inside(alt_after);
-
-        if !inside_before && inside_after {
-            labeled.push((root, 1)); // entering
-        } else if inside_before && !inside_after {
-            labeled.push((root, -1)); // exiting
-        }
-    }
-
-    // Check if we start inside the valid range
-    let start_altitude = altitude_fn(jd_start);
-    let start_inside = condition.is_inside(start_altitude);
-
-    // Build intervals
-    let mut periods: Vec<Period<ModifiedJulianDate>> = Vec::new();
-
-    if labeled.is_empty() {
-        if start_inside {
-            return vec![period];
-        }
-        return Vec::new();
-    }
-
-    let mut i = 0;
-
-    // If we start inside and first crossing is an exit, add initial interval
-    if start_inside && labeled[0].1 == -1 {
-        let exit_mjd = ModifiedJulianDate::new(labeled[0].0.value() - 2400000.5);
-        let mid = JulianDate::new((jd_start.value() + labeled[0].0.value()) * 0.5);
-        if condition.is_inside(altitude_fn(mid)) {
-            periods.push(Period::<ModifiedJulianDate>::new(period.start, exit_mjd));
-        }
-        i = 1;
-    }
-
-    // Process remaining crossings as enter/exit pairs
-    while i < labeled.len() {
-        if labeled[i].1 == 1 {
-            let enter_jd = labeled[i].0;
-            let enter_mjd = ModifiedJulianDate::new(enter_jd.value() - 2400000.5);
-
-            let exit_mjd = if i + 1 < labeled.len() && labeled[i + 1].1 == -1 {
-                let exit_jd = labeled[i + 1].0;
-                i += 2;
-                ModifiedJulianDate::new(exit_jd.value() - 2400000.5)
-            } else {
-                i += 1;
-                period.end
-            };
-
-            let mid = JulianDate::new((enter_jd.value() + exit_mjd.to_julian_day().value()) * 0.5);
-            if condition.is_inside(altitude_fn(mid)) {
-                periods.push(Period::<ModifiedJulianDate>::new(enter_mjd, exit_mjd));
-            }
-        } else {
-            i += 1;
-        }
-    }
-
-    periods
+    crossings_to_above_periods(crossings, period, &altitude_fn, threshold_rad)
 }
 
 // =============================================================================
 // Fast Direct Scan Algorithm (Optimized for Performance)
 // =============================================================================
 
-/// Finds Moon altitude periods using direct 2-hour scan without culmination detection.
+/// Finds periods where Moon altitude is **above** the given threshold using
+/// direct 2-hour scan without culmination detection.
 ///
 /// This is the **fastest** algorithm for long periods, achieving significant
 /// performance improvements for 365-day searches by:
 /// 1. Using 2-hour scan steps (~12 calls/day)
 /// 2. Reusing endpoint values for Brent refinement
-/// 3. Tracking sign changes to avoid extra altitude evaluations
-/// 4. Avoiding the culmination detection overhead entirely
+/// 3. Tracking crossing direction during the scan to avoid extra evaluations
+/// 4. Feeding pre-labelled crossings into [`build_above_periods`]
 ///
 /// # Trade-off
 /// Slightly less numerically precise at boundaries compared to culmination-based
 /// approach, but the difference is negligible (<1 minute) for practical use.
-pub fn find_moon_altitude_periods_fast(
+pub fn find_moon_altitude_periods_fast<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
-    condition: AltitudeCondition,
+    threshold: T,
 ) -> Vec<Period<ModifiedJulianDate>> {
     let jd_start = period.start.to_julian_day();
     let jd_end = period.end.to_julian_day();
+    let threshold_rad = threshold.into().to::<Radian>().value();
 
     let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site);
 
-    // Get boundaries from condition
-    let boundaries = match condition {
-        AltitudeCondition::Below(threshold) | AltitudeCondition::Above(threshold) => {
-            vec![threshold.to::<Radian>().value()]
-        }
-        AltitudeCondition::Between { min, max } => {
-            vec![min.to::<Radian>().value(), max.to::<Radian>().value()]
-        }
-    };
-
-    // Store crossings with their direction: (jd, +1=rising, -1=falling)
-    // "rising" means altitude is increasing through boundary (going from below to above)
+    // Scan with direction tracking:
+    // prev_f < 0 means altitude was below threshold → crossing into "above" (direction = +1)
+    // prev_f > 0 means altitude was above threshold → crossing out of "above" (direction = −1)
     let mut labeled_crossings: Vec<(JulianDate, i32)> = Vec::new();
 
-    for &boundary_rad in &boundaries {
-        let mut jd = jd_start;
-        let mut prev_f = altitude_fn(jd) - boundary_rad;
+    let mut jd = jd_start;
+    let mut prev_f = altitude_fn(jd) - threshold_rad;
 
-        while jd < jd_end {
-            let next_jd = (jd + MOON_ALTITUDE_SCAN_STEP).min(jd_end);
-            let next_f = altitude_fn(next_jd) - boundary_rad;
+    while jd < jd_end {
+        let next_jd = (jd + MOON_ALTITUDE_SCAN_STEP).min(jd_end);
+        let next_f = altitude_fn(next_jd) - threshold_rad;
 
-            // Sign change indicates a crossing
-            if prev_f * next_f < 0.0 {
-                // Direction: prev_f < 0 && next_f > 0 means rising (altitude increasing)
-                let direction = if prev_f < 0.0 { 1 } else { -1 };
-                
-                if let Some(root) = brent_fast_with_values(
-                    jd, next_jd, prev_f, next_f, &altitude_fn, boundary_rad,
-                ) {
-                    if root >= jd_start && root <= jd_end {
-                        labeled_crossings.push((root, direction));
-                    }
+        if prev_f * next_f < 0.0 {
+            let direction = if prev_f < 0.0 { 1 } else { -1 };
+
+            if let Some(root) = brent_fast_with_values(
+                jd, next_jd, prev_f, next_f, &altitude_fn, threshold_rad,
+            ) {
+                if root >= jd_start && root <= jd_end {
+                    labeled_crossings.push((root, direction));
                 }
             }
-
-            jd = next_jd;
-            prev_f = next_f;
         }
+
+        jd = next_jd;
+        prev_f = next_f;
     }
 
-    // Sort crossings by time
+    // Sort + deduplicate
     labeled_crossings.sort_by(|a, b| a.0.partial_cmp(&b.0).unwrap());
-    
-    // Deduplicate (keep first occurrence)
-    let mut i = 0;
-    while i + 1 < labeled_crossings.len() {
-        if (labeled_crossings[i].0.value() - labeled_crossings[i + 1].0.value()).abs() < CROSS_DEDUPE_EPS {
-            labeled_crossings.remove(i + 1);
-        } else {
-            i += 1;
-        }
-    }
-
-    // Now convert direction (rising/falling through boundary) to entering/exiting condition
-    // For AltitudeCondition::Above: entering = rising (+1), exiting = falling (-1)
-    // For AltitudeCondition::Below: entering = falling (-1), exiting = rising (+1)
-    let labeled: Vec<(JulianDate, i32)> = match condition {
-        AltitudeCondition::Above(_) => {
-            // Rising through boundary = entering "above" condition
-            labeled_crossings.iter().map(|&(jd, dir)| (jd, dir)).collect()
-        }
-        AltitudeCondition::Below(_) => {
-            // Falling through boundary = entering "below" condition  
-            labeled_crossings.iter().map(|&(jd, dir)| (jd, -dir)).collect()
-        }
-        AltitudeCondition::Between { .. } => {
-            // For Between, we need more complex logic - fall back to evaluation
-            let dt = Days::new(10.0 * crate::calculus::root_finding::DERIVATIVE_STEP.value());
-            labeled_crossings.iter().map(|&(root, _)| {
-                let alt_before = altitude_fn(root - dt);
-                let alt_after = altitude_fn(root + dt);
-                let inside_before = condition.is_inside(alt_before);
-                let inside_after = condition.is_inside(alt_after);
-                if !inside_before && inside_after {
-                    (root, 1) // entering
-                } else if inside_before && !inside_after {
-                    (root, -1) // exiting
-                } else {
-                    (root, 0) // tangent, skip
-                }
-            }).filter(|&(_, d)| d != 0).collect()
-        }
-    };
-
-    // Check if we start inside the valid range (already computed during scan)
-    let start_altitude = altitude_fn(jd_start);
-    let start_inside = condition.is_inside(start_altitude);
-
-    // Build intervals
-    let mut periods: Vec<Period<ModifiedJulianDate>> = Vec::new();
-
-    if labeled.is_empty() {
-        if start_inside {
-            return vec![period];
-        }
-        return Vec::new();
-    }
-
-    let mut i = 0;
-
-    // If we start inside and first crossing is an exit, add initial interval
-    if start_inside && labeled[0].1 == -1 {
-        let exit_mjd = ModifiedJulianDate::new(labeled[0].0.value() - 2400000.5);
-        periods.push(Period::<ModifiedJulianDate>::new(period.start, exit_mjd));
-        i = 1;
-    }
-
-    // Process remaining crossings as enter/exit pairs
-    while i < labeled.len() {
-        if labeled[i].1 == 1 {
-            let enter_jd = labeled[i].0;
-            let enter_mjd = ModifiedJulianDate::new(enter_jd.value() - 2400000.5);
-
-            let exit_mjd = if i + 1 < labeled.len() && labeled[i + 1].1 == -1 {
-                let exit_jd = labeled[i + 1].0;
-                i += 2;
-                ModifiedJulianDate::new(exit_jd.value() - 2400000.5)
+    {
+        let mut i = 0;
+        while i + 1 < labeled_crossings.len() {
+            if (labeled_crossings[i].0.value() - labeled_crossings[i + 1].0.value()).abs()
+                < CROSS_DEDUPE_EPS
+            {
+                labeled_crossings.remove(i + 1);
             } else {
                 i += 1;
-                period.end
-            };
-
-            periods.push(Period::<ModifiedJulianDate>::new(enter_mjd, exit_mjd));
-        } else {
-            i += 1;
+            }
         }
     }
 
-    periods
+    let start_above = altitude_fn(jd_start) > threshold_rad;
+
+    build_above_periods(
+        &labeled_crossings,
+        period,
+        jd_start,
+        jd_end,
+        start_above,
+        &altitude_fn,
+        threshold_rad,
+    )
 }
 
 // =============================================================================
@@ -751,16 +572,12 @@ pub fn find_moon_above_horizon<T: Into<Degrees>>(
     period: Period<ModifiedJulianDate>,
     threshold: T,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    find_moon_altitude_periods_fast(
-        site,
-        period,
-        AltitudeCondition::above(threshold.into()),
-    )
+    find_moon_altitude_periods_fast(site, period, threshold)
 }
 
 /// Finds periods when Moon is below the given altitude threshold.
 ///
-/// Uses the fast direct-scan algorithm optimized for performance.
+/// Equivalent to the complement of [`find_moon_above_horizon`] within `period`.
 ///
 /// # Arguments
 /// * `site` - Observer's geographic location
@@ -776,14 +593,14 @@ pub fn find_moon_below_horizon<T: Into<Degrees>>(
     period: Period<ModifiedJulianDate>,
     threshold: T,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    find_moon_altitude_periods_fast(
-        site,
-        period,
-        AltitudeCondition::below(threshold.into()),
-    )
+    let above = find_moon_altitude_periods_fast(site, period, threshold);
+    complement_within(period, &above)
 }
 
 /// Finds periods when Moon altitude is within a range.
+///
+/// Computed as `above(min) ∩ complement(above(max))`. The culmination
+/// key-times are computed only once and reused for both thresholds.
 ///
 /// # Arguments
 /// * `site` - Observer's geographic location
@@ -800,20 +617,39 @@ pub fn find_moon_altitude_range(
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
 ) -> Vec<Period<ModifiedJulianDate>> {
-    find_moon_altitude_periods_via_culminations(
-        site,
-        period,
-        AltitudeCondition::between(range.0, range.1),
-    )
+    let jd_start = period.start.to_julian_day();
+    let jd_end = period.end.to_julian_day();
+    let min_rad = range.0.to::<Radian>().value();
+    let max_rad = range.1.to::<Radian>().value();
+
+    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site);
+
+    let observer_geo = spherical::position::Geographic::new(
+        site.lon, site.lat, Kilometers::new(0.0),
+    );
+    let key_times = compute_moon_key_times(&observer_geo, jd_start, jd_end);
+
+    let crossings_min = find_threshold_crossings_in_segments(
+        &key_times, &altitude_fn, min_rad, jd_start, jd_end,
+    );
+    let above_min = crossings_to_above_periods(crossings_min, period, &altitude_fn, min_rad);
+
+    let crossings_max = find_threshold_crossings_in_segments(
+        &key_times, &altitude_fn, max_rad, jd_start, jd_end,
+    );
+    let above_max = crossings_to_above_periods(crossings_max, period, &altitude_fn, max_rad);
+
+    let below_max = complement_within(period, &above_max);
+    intersect_periods(&above_min, &below_max)
 }
 
 // =============================================================================
 // Scan-based Algorithm (for comparison/fallback)
 // =============================================================================
 
-/// Finds periods using the generic scan-based algorithm.
+/// Finds periods using the generic scan-based algorithm (above threshold).
 ///
-/// This is slower than the culmination-based approach but can be useful for
+/// This is slower than the fast-scan approach but can be useful for
 /// comparison or as a fallback.
 pub fn find_moon_above_horizon_scan<T: Into<Degrees>>(
     site: ObserverSite,
@@ -821,25 +657,21 @@ pub fn find_moon_above_horizon_scan<T: Into<Degrees>>(
     threshold: T,
 ) -> Vec<Period<ModifiedJulianDate>> {
     let altitude_fn = moon_altitude_fn(site);
-    crate::calculus::events::altitude_periods::find_altitude_periods(
+    crate::calculus::events::altitude_periods::find_above_altitude_periods(
         altitude_fn,
         period,
-        AltitudeCondition::above(threshold.into()),
+        threshold.into(),
     )
 }
 
-/// Finds periods using the generic scan-based algorithm (below threshold variant).
+/// Finds periods using the generic scan-based algorithm (below threshold).
 pub fn find_moon_below_horizon_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let altitude_fn = moon_altitude_fn(site);
-    crate::calculus::events::altitude_periods::find_altitude_periods(
-        altitude_fn,
-        period,
-        AltitudeCondition::below(threshold.into()),
-    )
+    let above = find_moon_above_horizon_scan(site, period, threshold);
+    complement_within(period, &above)
 }
 
 // =============================================================================

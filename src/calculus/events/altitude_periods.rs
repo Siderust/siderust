@@ -3,24 +3,44 @@
 
 //! # Altitude Window Periods
 //!
-//! This module provides generic tools for finding time intervals where a celestial
-//! body's altitude is within a specified range. This is useful for:
-//! - Finding astronomical night periods (Sun altitude < -18°)
-//! - Finding civil/nautical/astronomical twilight windows
-//! - Planning observations when a target is above a minimum altitude
+//! Generic, body-agnostic tools for finding time intervals where a celestial
+//! body's altitude is above a given threshold.
+//!
+//! ## Core Idea
+//!
+//! Every algorithm in this module (and in the solar / lunar modules) reduces to
+//! a single primitive: **find periods where `altitude > threshold`**.
+//!
+//! * *Below*-threshold periods (e.g. night) are the **complement** of
+//!   above-threshold periods — see [`crate::time::complement_within`].
+//! * *Between*-range periods (e.g. twilight bands) are the **intersection** of
+//!   `above(min)` with the complement of `above(max)` — see
+//!   [`crate::time::intersect_periods`].
+//!
+//! The set operations run in O(n) on the resulting period vectors, adding zero
+//! ephemeris cost.
 //!
 //! ## Algorithm
 //!
-//! The module uses a bracket-and-refine approach:
-//! 1. Coarse scan to find brackets where altitude crosses threshold boundaries
-//! 2. Brent's method refinement for high accuracy (derivative-free, ~1-2 evals/iter)
-//! 3. Classification of crossings (entering vs exiting the altitude range)
-//! 4. Pairing of crossings to form contiguous intervals
+//! The public [`find_above_altitude_periods`] function uses a **scan + refine**
+//! approach:
+//!
+//! 1. Coarse scan at 10-minute steps to detect sign changes of
+//!    `altitude(t) − threshold`.
+//! 2. Brent's method refinement for each bracket (derivative-free, ~1–2
+//!    evaluations / iteration).
+//! 3. Classification of each crossing as *entering* or *exiting* the
+//!    above-threshold region.
+//! 4. Pairing of crossings into contiguous intervals with midpoint validation.
+//!
+//! Body-specific modules (solar, lunar) provide faster variants that replace
+//! step 1 with culmination-based partitioning, sharing steps 2–4 through the
+//! [`crossings_to_above_periods`] and [`find_threshold_crossings_in_segments`]
+//! helpers exported here at `pub(crate)` visibility.
 //!
 //! ## Accuracy
 //!
-//! Timing precision is ~1 microsecond using Brent's method with a tight
-//! convergence criterion (`1e-11` days ≈ 0.86 µs).
+//! Timing precision is ~1 µs (Brent convergence criterion `1e-11` days ≈ 0.86 µs).
 
 use crate::astro::JulianDate;
 use crate::time::{ModifiedJulianDate, Period};
@@ -33,113 +53,80 @@ use qtty::{Day, Days, Degrees, Minutes, Radian};
 /// Scan step for coarse bracket detection (10 minutes).
 const SCAN_STEP: Minutes = Minutes::new(10.0);
 
-// Root-finding constants and implementations have been moved to
-// `crate::calculus::root_finding` for reuse.
-
 // =============================================================================
-// Public Types
+// Shared Helpers (pub(crate))
 // =============================================================================
 
-/// Altitude condition specification for period finding.
+/// Finds all crossings of a threshold within pre-computed time segments.
 ///
-/// Supports three types of conditions:
-/// - `Below`: altitude < threshold (e.g., night periods)
-/// - `Above`: altitude > threshold (e.g., daytime periods)
-/// - `Between`: min ≤ altitude ≤ max (e.g., twilight zones)
-#[derive(Debug, Clone, Copy)]
-pub enum AltitudeCondition {
-    /// Find periods where altitude is below a threshold (altitude < threshold).
-    Below(Degrees),
-    /// Find periods where altitude is above a threshold (altitude > threshold).
-    Above(Degrees),
-    /// Find periods where altitude is within a range (min ≤ altitude ≤ max).
-    Between { min: Degrees, max: Degrees },
-}
+/// Each consecutive pair in `key_times` defines a quasi-monotonic segment
+/// (e.g. between successive culminations), so at most one crossing per segment
+/// is expected. Crossings are found via Brent's method with pre-computed
+/// endpoint values, avoiding two redundant altitude evaluations per segment.
+///
+/// Returns the raw (unsorted) list of crossing JDs.
+pub(crate) fn find_threshold_crossings_in_segments<F>(
+    key_times: &[JulianDate],
+    altitude_fn: &F,
+    threshold_rad: f64,
+    jd_start: JulianDate,
+    jd_end: JulianDate,
+) -> Vec<JulianDate>
+where
+    F: Fn(JulianDate) -> f64,
+{
+    let mut crossings = Vec::new();
 
-impl AltitudeCondition {
-    /// Creates a condition for finding periods where altitude is BELOW a value.
-    ///
-    /// # Example
-    /// ```ignore
-    /// // Find periods where Sun is below -18° (astronomical night)
-    /// let condition = AltitudeCondition::below(Degrees::new(-18.0));
-    /// ```
-    pub fn below(degrees: Degrees) -> Self {
-        Self::Below(degrees)
-    }
+    for window in key_times.windows(2) {
+        let a = window[0];
+        let b = window[1];
+        if a.partial_cmp(&b) != Some(std::cmp::Ordering::Less) {
+            continue;
+        }
 
-    /// Creates a condition for finding periods where altitude is ABOVE a value.
-    ///
-    /// # Example
-    /// ```ignore
-    /// // Find periods where a star is above 30°
-    /// let condition = AltitudeCondition::above(Degrees::new(30.0));
-    /// ```
-    pub fn above(degrees: Degrees) -> Self {
-        Self::Above(degrees)
-    }
+        let f_a = altitude_fn(a) - threshold_rad;
+        let f_b = altitude_fn(b) - threshold_rad;
 
-    /// Creates a condition for finding periods where altitude is within a range.
-    ///
-    /// # Arguments
-    /// - `min`: Minimum altitude (inclusive)
-    /// - `max`: Maximum altitude (inclusive)
-    ///
-    /// # Example
-    /// ```ignore
-    /// // Find astronomical night: altitude between -90° and -18°
-    /// let condition = AltitudeCondition::between(
-    ///     Degrees::new(-90.0),
-    ///     Degrees::new(-18.0)
-    /// );
-    /// ```
-    pub fn between(min: Degrees, max: Degrees) -> Self {
-        Self::Between { min, max }
-    }
+        const ROOT_EPS: f64 = 1e-12;
+        if f_a.abs() < ROOT_EPS {
+            crossings.push(a);
+            continue;
+        }
+        if f_b.abs() < ROOT_EPS {
+            crossings.push(b);
+            continue;
+        }
 
-    /// Checks if an altitude value (in radians) satisfies this condition.
-    pub(crate) fn is_inside(&self, altitude_rad: f64) -> bool {
-        match self {
-            Self::Below(threshold) => altitude_rad < threshold.to::<Radian>().value(),
-            Self::Above(threshold) => altitude_rad > threshold.to::<Radian>().value(),
-            Self::Between { min, max } => {
-                let alt = altitude_rad;
-                let min_rad = min.to::<Radian>().value();
-                let max_rad = max.to::<Radian>().value();
-                alt >= min_rad && alt <= max_rad
+        if f_a * f_b < 0.0 {
+            if let Some(root) =
+                crate::calculus::root_finding::find_crossing_brent_with_values(
+                    a, b, f_a, f_b, altitude_fn, threshold_rad,
+                )
+            {
+                if root >= jd_start && root <= jd_end {
+                    crossings.push(root);
+                }
             }
         }
     }
+
+    crossings
 }
 
-// =============================================================================
-// Main API: Find Altitude Periods
-// =============================================================================
-
-/// Finds all time periods where altitude satisfies the given condition.
+/// Converts a list of threshold crossings into "above threshold" periods.
 ///
-/// This is a generic function that works with any altitude evaluator closure.
-/// For specific use cases like Sun altitude, use the convenience functions.
+/// This is the shared pipeline used by all altitude-finding algorithms:
 ///
-/// # Arguments
-/// - `altitude_fn`: Closure that returns altitude in **radians** at a given JD
-/// - `mjd_start`: Start of search interval (MJD)
-/// - `mjd_end`: End of search interval (MJD)
-/// - `condition`: The altitude condition specification (Below, Above, or Between)
-///
-/// # Returns
-/// - `Vec<Period<ModifiedJulianDate>>`: Periods where condition is satisfied (empty if none)
-///
-/// # Algorithm
-/// 1. Coarse scan the interval at `SCAN_STEP` intervals
-/// 2. Detect sign changes crossing the boundary/boundaries
-/// 3. Refine each crossing using Newton-Raphson + bisection fallback
-/// 4. Classify crossings as "entering" or "exiting" the valid range
-/// 5. Pair crossings to form contiguous intervals
-pub fn find_altitude_periods<F>(
-    altitude_fn: F,
+/// 1. Sort and deduplicate crossings chronologically.
+/// 2. Classify each crossing as *entering above* (+1) or *exiting above* (−1)
+///    by probing the altitude just before and after the root.
+/// 3. Pair crossings into contiguous `Period`s, validating each with a
+///    midpoint check.
+pub(crate) fn crossings_to_above_periods<F>(
+    mut crossings: Vec<JulianDate>,
     period: Period<ModifiedJulianDate>,
-    condition: AltitudeCondition,
+    altitude_fn: &F,
+    threshold_rad: f64,
 ) -> Vec<Period<ModifiedJulianDate>>
 where
     F: Fn(JulianDate) -> f64,
@@ -147,104 +134,81 @@ where
     let jd_start = period.start.to_julian_day();
     let jd_end = period.end.to_julian_day();
 
-    // Collect all boundary crossings (may be 1 or 2 boundaries depending on condition)
-    let boundaries = match condition {
-        AltitudeCondition::Below(threshold) | AltitudeCondition::Above(threshold) => {
-            vec![threshold.to::<Radian>().value()]
-        }
-        AltitudeCondition::Between { min, max } => {
-            vec![min.to::<Radian>().value(), max.to::<Radian>().value()]
-        }
-    };
-
-    let mut all_crossings: Vec<JulianDate> = Vec::new();
-
-    // Find crossings for each boundary
-    for &boundary_rad in &boundaries {
-        let step: Days = SCAN_STEP.to::<Day>();
-        let mut jd = jd_start;
-        let mut prev_f = altitude_fn(jd) - boundary_rad;
-
-        while jd < jd_end {
-            let next_jd = (jd + step).min(jd_end);
-            let next_f = altitude_fn(next_jd) - boundary_rad;
-
-            // Sign change indicates a crossing
-            if prev_f * next_f < 0.0 {
-                if let Some(root) = crate::calculus::root_finding::find_crossing_brent_with_values(
-                    jd,
-                    next_jd,
-                    prev_f,
-                    next_f,
-                    &altitude_fn,
-                    boundary_rad,
-                ) {
-                    // Only include if within our interval
-                    if root >= jd_start && root <= jd_end {
-                        all_crossings.push(root);
-                    }
-                }
-            }
-
-            jd = next_jd;
-            prev_f = next_f;
-        }
-    }
-
     // Sort crossings chronologically
-    all_crossings.sort_by(|a, b| a.partial_cmp(b).unwrap());
+    crossings.sort_by(|a, b| a.partial_cmp(b).unwrap());
 
-    // Deduplicate crossings that are very close (can happen at interval boundaries)
-    const DEDUPE_EPS: f64 = 1e-8; // ~1 ms
-    all_crossings.dedup_by(|a, b| (a.value() - b.value()).abs() < DEDUPE_EPS);
+    // Deduplicate crossings that are very close (~1 ms)
+    const DEDUPE_EPS: f64 = 1e-8;
+    crossings.dedup_by(|a, b| (a.value() - b.value()).abs() < DEDUPE_EPS);
 
-    // Classify each crossing: +1 = entering valid range, -1 = exiting valid range
-    let mut labeled: Vec<(JulianDate, i32)> = Vec::new();
-    for &root in &all_crossings {
-        let dt = Days::new(10.0 * crate::calculus::root_finding::DERIVATIVE_STEP.value());
-        let alt_before = altitude_fn(root - dt);
-        let alt_after = altitude_fn(root + dt);
+    let is_above = |alt: f64| alt > threshold_rad;
 
-        let inside_before = condition.is_inside(alt_before);
-        let inside_after = condition.is_inside(alt_after);
+    // Classify each crossing: +1 = entering above, -1 = exiting above
+    let dt = Days::new(10.0 * crate::calculus::root_finding::DERIVATIVE_STEP.value());
+    let mut labeled: Vec<(JulianDate, i32)> = Vec::with_capacity(crossings.len());
+    for &root in &crossings {
+        let above_before = is_above(altitude_fn(root - dt));
+        let above_after = is_above(altitude_fn(root + dt));
 
-        if !inside_before && inside_after {
-            labeled.push((root, 1)); // entering
-        } else if inside_before && !inside_after {
-            labeled.push((root, -1)); // exiting
+        if !above_before && above_after {
+            labeled.push((root, 1)); // entering above
+        } else if above_before && !above_after {
+            labeled.push((root, -1)); // exiting above
         }
-        // Ignore crossings that don't change inside/outside status
+        // tangent (same side) → skip
     }
 
-    // Check if we start inside the valid range
-    let start_altitude = altitude_fn(jd_start);
-    let start_inside = condition.is_inside(start_altitude);
+    let start_above = is_above(altitude_fn(jd_start));
 
-    // Build intervals by pairing enter/exit crossings
+    build_above_periods(&labeled, period, jd_start, jd_end, start_above, altitude_fn, threshold_rad)
+}
+
+/// Builds "above threshold" periods from pre-labelled crossings.
+///
+/// Separated from [`crossings_to_above_periods`] so that algorithms which
+/// already know the crossing direction (e.g. lunar fast-scan) can skip the
+/// classification step and avoid extra altitude evaluations.
+///
+/// # Arguments
+///
+/// * `labeled` – `(jd, direction)` pairs where `+1` = entering above,
+///   `−1` = exiting above. Must be sorted chronologically.
+/// * `period` – bounding search interval.
+/// * `jd_start`, `jd_end` – Julian-Day equivalents of `period.start` / `.end`.
+/// * `start_above` – whether the altitude at `jd_start` is above the threshold.
+/// * `altitude_fn` – altitude evaluator (used only for midpoint validation).
+/// * `threshold_rad` – threshold in radians.
+pub(crate) fn build_above_periods<F>(
+    labeled: &[(JulianDate, i32)],
+    period: Period<ModifiedJulianDate>,
+    jd_start: JulianDate,
+    jd_end: JulianDate,
+    start_above: bool,
+    altitude_fn: &F,
+    threshold_rad: f64,
+) -> Vec<Period<ModifiedJulianDate>>
+where
+    F: Fn(JulianDate) -> f64,
+{
+    let is_above = |alt: f64| alt > threshold_rad;
+
     let mut periods: Vec<Period<ModifiedJulianDate>> = Vec::new();
 
     if labeled.is_empty() {
-        // No crossings found
-        if start_inside {
-            // Entire interval is valid
+        if start_above {
             return vec![period];
-        } else {
-            // Never valid
-            return Vec::new();
         }
+        return Vec::new();
     }
 
-    // Handle intervals
     let mut i = 0;
 
-    // If we start inside and first crossing is an exit, add initial interval
-    if start_inside && labeled[0].1 == -1 {
+    // If we start above and first crossing is an exit, add initial interval
+    if start_above && labeled[0].1 == -1 {
         let exit_mjd = ModifiedJulianDate::new(labeled[0].0.value() - 2400000.5);
-        // Verify midpoint is actually inside the range
         let mid = JulianDate::new((jd_start.value() + labeled[0].0.value()) * 0.5);
-        let mid_inside = condition.is_inside(altitude_fn(mid));
-        if mid_inside {
-            periods.push(Period::<ModifiedJulianDate>::new(period.start, exit_mjd));
+        if is_above(altitude_fn(mid)) {
+            periods.push(Period::new(period.start, exit_mjd));
         }
         i = 1;
     }
@@ -252,29 +216,25 @@ where
     // Process remaining crossings as enter/exit pairs
     while i < labeled.len() {
         if labeled[i].1 == 1 {
-            // This is an entry crossing
             let enter_jd = labeled[i].0;
             let enter_mjd = ModifiedJulianDate::new(enter_jd.value() - 2400000.5);
 
-            // Find the corresponding exit
             let exit_mjd = if i + 1 < labeled.len() && labeled[i + 1].1 == -1 {
                 let exit_jd = labeled[i + 1].0;
                 i += 2;
                 ModifiedJulianDate::new(exit_jd.value() - 2400000.5)
             } else {
-                // No exit found, extends to end of interval
                 i += 1;
                 period.end
             };
 
-            // Verify midpoint is actually inside the range
-            let mid = JulianDate::new((enter_jd.value() + exit_mjd.to_julian_day().value()) * 0.5);
-            let mid_inside = condition.is_inside(altitude_fn(mid));
-            if mid_inside {
-                periods.push(Period::<ModifiedJulianDate>::new(enter_mjd, exit_mjd));
+            let mid_jd = (enter_jd.value() + exit_mjd.to_julian_day().value()) * 0.5;
+            if mid_jd >= jd_start.value() && mid_jd <= jd_end.value()
+                && is_above(altitude_fn(JulianDate::new(mid_jd)))
+            {
+                periods.push(Period::new(enter_mjd, exit_mjd));
             }
         } else {
-            // Unexpected exit without entry (should not happen if start_inside handled correctly)
             i += 1;
         }
     }
@@ -282,51 +242,111 @@ where
     periods
 }
 
+// =============================================================================
+// Public API
+// =============================================================================
+
+/// Finds all time periods where altitude is **above** the given threshold.
+///
+/// This is a generic, body-agnostic function that works with any altitude
+/// evaluator closure. For Sun / Moon specific helpers, see the
+/// [`crate::calculus::solar`] and [`crate::calculus::lunar`] modules.
+///
+/// To obtain *below*-threshold or *between*-range periods, compose with
+/// [`crate::time::complement_within`] and [`crate::time::intersect_periods`].
+///
+/// # Arguments
+///
+/// * `altitude_fn` – returns altitude in **radians** at a given JD.
+/// * `period` – the search interval.
+/// * `threshold` – the altitude threshold.
+///
+/// # Algorithm
+///
+/// 1. Coarse scan at 10-minute intervals.
+/// 2. Brent refinement for each sign-change bracket.
+/// 3. Crossing classification and interval construction via
+///    [`crossings_to_above_periods`].
+pub fn find_above_altitude_periods<F>(
+    altitude_fn: F,
+    period: Period<ModifiedJulianDate>,
+    threshold: Degrees,
+) -> Vec<Period<ModifiedJulianDate>>
+where
+    F: Fn(JulianDate) -> f64,
+{
+    let jd_start = period.start.to_julian_day();
+    let jd_end = period.end.to_julian_day();
+    let threshold_rad = threshold.to::<Radian>().value();
+
+    let step: Days = SCAN_STEP.to::<Day>();
+    let mut crossings: Vec<JulianDate> = Vec::new();
+
+    let mut jd = jd_start;
+    let mut prev_f = altitude_fn(jd) - threshold_rad;
+
+    while jd < jd_end {
+        let next_jd = (jd + step).min(jd_end);
+        let next_f = altitude_fn(next_jd) - threshold_rad;
+
+        if prev_f * next_f < 0.0 {
+            if let Some(root) =
+                crate::calculus::root_finding::find_crossing_brent_with_values(
+                    jd, next_jd, prev_f, next_f, &altitude_fn, threshold_rad,
+                )
+            {
+                if root >= jd_start && root <= jd_end {
+                    crossings.push(root);
+                }
+            }
+        }
+
+        jd = next_jd;
+        prev_f = next_f;
+    }
+
+    crossings_to_above_periods(crossings, period, &altitude_fn, threshold_rad)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn test_condition_creation() {
-        let below = AltitudeCondition::below(Degrees::new(-18.0));
-        assert!(matches!(below, AltitudeCondition::Below(_)));
-        assert!(below.is_inside(-19.0_f64.to_radians()));
-        assert!(!below.is_inside(-17.0_f64.to_radians()));
-
-        let above = AltitudeCondition::above(Degrees::new(30.0));
-        assert!(matches!(above, AltitudeCondition::Above(_)));
-        assert!(above.is_inside(31.0_f64.to_radians()));
-        assert!(!above.is_inside(29.0_f64.to_radians()));
-
-        let between = AltitudeCondition::between(Degrees::new(-90.0), Degrees::new(-18.0));
-        assert!(matches!(between, AltitudeCondition::Between { .. }));
-        assert!(between.is_inside(-50.0_f64.to_radians()));
-        assert!(between.is_inside(-18.0_f64.to_radians())); // max boundary inclusive
-        assert!(between.is_inside(-90.0_f64.to_radians())); // min boundary inclusive
-        assert!(!between.is_inside(-10.0_f64.to_radians()));
-        assert!(!between.is_inside(-100.0_f64.to_radians()));
-    }
-
-    #[test]
-    fn test_find_altitude_periods_synthetic_below() {
-        // Synthetic altitude: a smooth sine wave over 1 day.
-        // We expect periods where alt < 0 to cover half a cycle.
+    fn test_find_above_altitude_periods_synthetic() {
+        // Synthetic altitude: a smooth sine wave over 1 day, shifted so that
+        // the zero-crossings fall well inside the interval (not at endpoints).
         let altitude_fn = |jd: JulianDate| {
-            let phase = (jd.value() - JulianDate::J2000.value()) * core::f64::consts::TAU;
+            let t = jd.value() - JulianDate::J2000.value();
+            let phase = (t + 0.25) * core::f64::consts::TAU; // shift by ¼ day
             phase.sin()
         };
 
         let mjd_start = ModifiedJulianDate::new(JulianDate::J2000.value() - 2400000.5);
         let mjd_end = ModifiedJulianDate::new(mjd_start.value() + 1.0);
 
-        let periods = find_altitude_periods(
+        let above = find_above_altitude_periods(
             altitude_fn,
             Period::new(mjd_start, mjd_end),
-            AltitudeCondition::below(Degrees::new(0.0)),
+            Degrees::new(0.0),
         );
-        assert!(!periods.is_empty());
-        for p in &periods {
+        assert!(!above.is_empty());
+        for p in &above {
             assert!(p.duration_days() > 0.0);
         }
+
+        // Complement should give "below 0" periods
+        let below = crate::time::complement_within(
+            Period::new(mjd_start, mjd_end),
+            &above,
+        );
+        assert!(!below.is_empty());
+        for p in &below {
+            assert!(p.duration_days() > 0.0);
+        }
+
+        // Total coverage should sum to ~1.0 day
+        let total: f64 = above.iter().chain(below.iter()).map(|p| p.duration_days()).sum();
+        assert!((total - 1.0).abs() < 1e-6);
     }
 }
