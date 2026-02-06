@@ -151,24 +151,28 @@ pub fn find_moon_altitude_range(
 }
 
 // =============================================================================
-// Scan-based variants (delegate to events::altitude_periods)
+// Scan-based variants (10-minute step, for comparison / validation)
 // =============================================================================
+
+/// Scan step for 10-minute scan variants (days).
+const SCAN_STEP_10MIN: f64 = 10.0 / 1440.0;
 
 /// Finds periods using the generic scan-based algorithm (above threshold).
 ///
-/// Uses 10-minute steps via the generic events engine. Slower but useful
+/// Uses 10-minute steps via the generic scan engine. Slower but useful
 /// for comparison / validation.
 pub fn find_moon_above_horizon_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let altitude_fn = |jd: JulianDate| moon_altitude_rad(jd, &site).value();
-    crate::calculus::events::altitude_periods::find_above_altitude_periods(
-        altitude_fn,
-        period,
-        threshold.into(),
-    )
+    let jd_start = period.start.to_julian_day().value();
+    let jd_end = period.end.to_julian_day().value();
+    let thr = threshold.into().to::<Radian>().value();
+    let f = |t: f64| moon_altitude_rad(JulianDate::new(t), &site).value();
+    intervals_to_periods(intervals::above_threshold_periods(
+        jd_start, jd_end, SCAN_STEP_10MIN, &f, thr,
+    ))
 }
 
 /// Finds periods using the generic scan-based algorithm (below threshold).
