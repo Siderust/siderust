@@ -101,7 +101,7 @@ fn bench_find_night_periods(c: &mut Criterion) {
         });
     });
 
-    // Compare with culmination-based algorithm for 7 days
+    // Compare with 2-hour scan algorithm for 7 days
     group.bench_function("find_day_periods_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {

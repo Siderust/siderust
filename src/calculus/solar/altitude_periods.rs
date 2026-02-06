@@ -26,7 +26,6 @@
 
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Sun;
-use crate::calculus::events::altitude_periods::find_above_altitude_periods;
 use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::ObserverSite;
 use crate::time::{complement_within, ModifiedJulianDate, Period};
@@ -130,6 +129,9 @@ pub fn find_sun_range_periods(
 // Scan-based variants (10-minute step, for comparison / validation)
 // =============================================================================
 
+/// Scan step for 10-minute scan variants (days).
+const SCAN_STEP_10MIN: f64 = 10.0 / 1440.0;
+
 /// Finds day periods using the generic 10-minute scan+refine algorithm.
 ///
 /// Prefer [`find_day_periods`] for better performance.
@@ -138,8 +140,13 @@ pub fn find_day_periods_scan<T: Into<Degrees>>(
     period: Period<ModifiedJulianDate>,
     twilight: T,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
-    find_above_altitude_periods(altitude_fn, period, twilight.into())
+    let jd_start = period.start.to_julian_day().value();
+    let jd_end = period.end.to_julian_day().value();
+    let thr = twilight.into().to::<Radian>().value();
+    let f = |t: f64| sun_altitude_rad(JulianDate::new(t), &site).value();
+    intervals_to_periods(intervals::above_threshold_periods(
+        jd_start, jd_end, SCAN_STEP_10MIN, &f, thr,
+    ))
 }
 
 /// Finds night periods using the generic 10-minute scan+refine algorithm.
@@ -163,11 +170,14 @@ pub fn find_sun_range_periods_scan(
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
-    let above_min = find_above_altitude_periods(&altitude_fn, period, range.0);
-    let above_max = find_above_altitude_periods(&altitude_fn, period, range.1);
-    let below_max = complement_within(period, &above_max);
-    crate::time::intersect_periods(&above_min, &below_max)
+    let jd_start = period.start.to_julian_day().value();
+    let jd_end = period.end.to_julian_day().value();
+    let h_min = range.0.to::<Radian>().value();
+    let h_max = range.1.to::<Radian>().value();
+    let f = |t: f64| sun_altitude_rad(JulianDate::new(t), &site).value();
+    intervals_to_periods(intervals::in_range_periods(
+        jd_start, jd_end, SCAN_STEP_10MIN, &f, h_min, h_max,
+    ))
 }
 
 #[cfg(test)]
