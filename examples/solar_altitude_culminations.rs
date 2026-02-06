@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Culmination-Based Solar Altitude Example
-//! Demonstrates how to use `find_sun_altitude_periods_via_culminations` to
-//! compute astronomical night (Sun altitude < -18°) for a whole year at the
-//! Roque de los Muchachos observatory.
+//! # Solar Altitude Periods Example
+//! Demonstrates how to use `find_night_periods` to compute astronomical
+//! night (Sun altitude < -18°) for a whole year at the Roque de los
+//! Muchachos observatory.
 //!
 //! ## Usage
 //! ```

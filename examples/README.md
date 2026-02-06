@@ -78,9 +78,9 @@ Learn how to serialize and deserialize siderust types:
 cargo run --example serde_serialization --features serde
 ```
 
-### 7. Solar Altitude Culminations (`solar_altitude_culminations.rs`)
+### 7. Solar Altitude Periods (`solar_altitude_culminations.rs`)
 Computes a full year (2026) of astronomical night intervals at Roque de los
-Muchachos using the culmination-based solar altitude finder.
+Muchachos using `find_night_periods`.
 
 **Run with:**
 ```bash

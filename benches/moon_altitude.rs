@@ -8,14 +8,15 @@
 //!
 //! ## Algorithms Compared
 //!
-//! - **Scan-based**: Generic `find_altitude_periods` with coarse scan + Brent refinement
-//! - **Culmination-based**: Optimized `find_moon_altitude_periods_via_culminations`
-//!   using Moon culminations to partition time into monotonic segments
+//! - **2-hour scan** (recommended): `find_moon_above_horizon` — fast, ~12 evals/day
+//! - **10-minute scan** (validation): `find_moon_above_horizon_scan` — finer step
+//!
+//! Both delegate to `math_core::intervals` for scan + Brent refinement.
 //!
 //! ## Performance Targets
 //!
 //! - Single altitude computation: <1ms
-//! - 365-day culmination-based search: <1s
+//! - 365-day search: <1s
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
@@ -71,7 +72,7 @@ fn bench_moon_altitude_computation(c: &mut Criterion) {
 }
 
 // =============================================================================
-// Moon Above Horizon Benchmarks (Culmination-based - Optimized)
+// Moon Above Horizon Benchmarks (2-hour scan — recommended)
 // =============================================================================
 
 fn bench_moon_above_horizon(c: &mut Criterion) {
@@ -131,7 +132,7 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
 }
 
 // =============================================================================
-// Moon Below Horizon Benchmarks (Culmination-based - Optimized)
+// Moon Below Horizon Benchmarks (2-hour scan — recommended)
 // =============================================================================
 
 fn bench_moon_below_horizon(c: &mut Criterion) {
@@ -227,7 +228,7 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
 }
 
 // =============================================================================
-// Algorithm Comparison: Culmination vs Scan
+// Algorithm Comparison: 2-hour vs 10-minute Scan
 // =============================================================================
 
 fn bench_algorithm_comparison(c: &mut Criterion) {
@@ -236,7 +237,7 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
     let mut group = c.benchmark_group("moon_algorithm_comparison");
     group.measurement_time(Duration::from_secs(15));
 
-    // 7-day comparison: scan vs culmination
+    // 7-day comparison: 10-min scan vs 2-hour scan
     group.bench_function("moon_above_horizon_scan_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
@@ -248,7 +249,7 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("moon_above_horizon_culminations_7day", |b| {
+    group.bench_function("moon_above_horizon_2h_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
             let _result = find_moon_above_horizon(
@@ -271,7 +272,7 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("moon_above_horizon_culminations_30day", |b| {
+    group.bench_function("moon_above_horizon_2h_30day", |b| {
         let period = black_box(build_period(30));
         b.iter(|| {
             let _result = find_moon_above_horizon(
@@ -294,7 +295,7 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
         });
     });
 
-    group.bench_function("moon_above_horizon_culminations_365day", |b| {
+    group.bench_function("moon_above_horizon_2h_365day", |b| {
         let period = black_box(build_period(365));
         b.iter(|| {
             let _result = find_moon_above_horizon(

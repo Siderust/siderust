@@ -1,6 +1,6 @@
 # `calculus::solar` — day/night & twilight periods
 
-This folder contains Sun-specific helpers for computing **time windows** where the Sun’s
+This folder contains Sun-specific helpers for computing **time windows** where the Sun's
 altitude satisfies some condition (night, day, twilight bands, etc.).
 
 The public entrypoints live in:
@@ -8,11 +8,10 @@ The public entrypoints live in:
 - `src/calculus/solar/altitude_periods.rs`
 - `src/calculus/solar/night_types.rs`
 
-Under the hood they reuse generic infrastructure from:
+Under the hood they delegate to the generic numerical engine in:
 
-- `src/calculus/events/altitude_periods.rs` (scan + refine)
-- `src/calculus/events/find_dynamic_extremas.rs` (culminations / extrema)
-- `src/calculus/root_finding/` (Brent, Newton, bisection)
+- `src/calculus/math_core/intervals.rs` (scan + Brent refinement + crossing classification)
+- `src/calculus/math_core/root_finding.rs` (Brent, bisection)
 
 ---
 
@@ -47,53 +46,33 @@ See runnable examples:
 ### Altitude evaluator
 
 - `sun_altitude_rad(jd, &site) -> Quantity<Radian>`
-  - Computes the Sun’s **topocentric geometric altitude** (no refraction) at a given `JulianDate`.
+  - Computes the Sun's **topocentric geometric altitude** (no refraction) at a given `JulianDate`.
   - Implementation: calls `Sun::get_horizontal::<AstronomicalUnit>(jd, site)` and reads `.alt()`.
-  - Used by all the period finders as the “truth” function to be thresholded.
+  - Used by all the period finders as the "truth" function to be thresholded.
 
-### Period finders (recommended)
-
-All return `Option<Vec<Period<ModifiedJulianDate>>>`:
-
-- `Some(periods)` when at least one interval satisfies the condition.
-- `Some(vec![period])` when the whole input interval satisfies the condition.
-- `None` when the condition is never satisfied.
+### Period finders (recommended — 2-hour scan step)
 
 Functions:
 
-- `find_night_periods(site, period, twilight)`
-  - Night = Sun altitude **below** `twilight` (e.g. `twilight::ASTRONOMICAL` = -18°).
 - `find_day_periods(site, period, twilight)`
   - Day = Sun altitude **above** `twilight` (often `twilight::HORIZON` or `twilight::APPARENT_HORIZON`).
+- `find_night_periods(site, period, twilight)`
+  - Night = Sun altitude **below** `twilight` (e.g. `twilight::ASTRONOMICAL` = -18°).
 - `find_sun_range_periods(site, period, (min, max))`
   - Finds windows where Sun altitude is **between** `(min, max)` (inclusive).
-  - Useful for twilight “bands”, e.g. nautical twilight could be `(-18°, -12°)`.
+  - Useful for twilight "bands", e.g. nautical twilight could be `(-18°, -12°)`.
 
-Implementation note: these three are thin wrappers around
-`find_sun_altitude_periods_via_culminations(...)` (see below).
+Implementation: all three delegate to `math_core::intervals` with a **2-hour** scan step,
+yielding ~12 VSOP87 evaluations per day — fast enough for multi-year sweeps.
 
-### Period finders (scan-based, mostly for comparison)
+### Period finders (scan-based — 10-minute step, for comparison)
 
-- `find_night_periods_scan(...)`
 - `find_day_periods_scan(...)`
+- `find_night_periods_scan(...)`
 - `find_sun_range_periods_scan(...)`
 
-These delegate to the **generic** routine:
-`calculus::events::altitude_periods::find_above_altitude_periods(...)`.
-
-Prefer the non-`_scan` variants unless you're:
-
-- comparing algorithms/behavior,
-- using a custom altitude function (non-solar) via the generic API, or
-- validating assumptions near edge cases.
-
-### Low-level building block
-
-- `find_sun_altitude_periods_via_culminations(site, period, threshold)`
-  - "Core" Sun-specific routine that finds periods where the Sun is **above**
-    the given threshold, using culmination-based partitioning.
-  - Night/below is obtained via `complement_within`, and range queries via
-    `intersect_periods`.
+These use a finer **10-minute** scan step via `math_core::intervals`.
+Prefer the 2-hour variants unless you're comparing algorithms or validating edge cases.
 
 ---
 
@@ -113,95 +92,34 @@ models, treat `APPARENT_HORIZON` as a convenient approximation rather than a gua
 
 ---
 
-## Algorithms (what’s different, and why)
+## Algorithm
 
-Both approaches ultimately:
+All period finders share the same pipeline from `math_core::intervals`:
 
-1. **bracket** threshold crossings, then
-2. **refine** each crossing time with Brent’s method, then
-3. **classify** crossings (enter vs exit), and
-4. **pair** crossings into contiguous `Period`s.
+1. **Coarse scan** at fixed time steps to detect sign changes in
+   `altitude(t) − threshold`.
+2. **Brent refinement** of each bracket to ~1 µs precision.
+3. **Crossing classification** (rising vs setting).
+4. **Interval assembly** from consecutive crossing pairs.
 
-The difference is how they obtain good brackets with *few* expensive Sun position evaluations.
+For `Between {min, max}` queries, the range is computed as
+`above(min) ∩ complement(above(max))` — two interval-algebra passes at near-zero cost.
 
-### 1) Generic scan + refine (`find_*_scan`, and `calculus::events::find_altitude_periods`)
+### Scan step choice
 
-File: `src/calculus/events/altitude_periods.rs`
+| Variant      | Step     | Evals/day | Use case                    |
+|--------------|----------|-----------|-----------------------------|
+| `find_*`     | 2 hours  | ~12       | Production (fast)           |
+| `find_*_scan`| 10 min   | ~144      | Validation / comparison     |
 
-How it works:
-
-- Sample the altitude function in fixed steps (`SCAN_STEP = 10 minutes`).
-- For each boundary (1 for `Below/Above`, 2 for `Between`), watch for `f(t)` sign changes.
-- When a sign change is found, refine the root with
-  `calculus::root_finding::find_crossing_brent_with_values(...)`.
-
-Pros:
-
-- generic: works for any altitude function you can provide;
-- simple mental model;
-- refinement is high precision once a crossing is bracketed.
-
-Cons:
-
-- performance scales with `(interval length) / SCAN_STEP`;
-- for `Between {min, max}` it scans *twice* (two boundaries);
-- any scan-based method can miss events that do **not** produce a sign change
-  (a grazing/tangent contact with the threshold).
-
-### 2) Culmination-partition + refine (`find_*` and `find_sun_altitude_periods_via_culminations`)
-
-File: `src/calculus/solar/altitude_periods.rs`
-
-How it works:
-
-1. Find the Sun’s **upper and lower culminations** (meridian crossings) over the interval
-   using `calculus::events::find_dynamic_extremas(...)`.
-2. Use `[start, culm..., end]` as “key times” and iterate over adjacent pairs.
-   Between an upper and a lower culmination the Sun’s altitude is (to a very good
-   approximation) **monotonic**, so there can be at most one crossing per boundary.
-3. For each boundary and each segment:
-   - evaluate altitude at the segment endpoints;
-   - refine with Brent only when there is a sign change.
-
-Why this helps:
-
-- For the Sun you expect roughly **two** altitude extrema per day (upper/lower transit),
-  so the number of segments grows like `~2 * days`, not `~144 * days`.
-
-Trade-offs / caveats:
-
-- There is extra work up front to find culminations (itself implemented as a scan+refine
-  on hour angle in `find_dynamic_extremas`).
-- Like the scan method, it primarily detects **sign-changing** crossings; purely tangential
-  contacts can be missed unless they occur exactly at segment boundaries.
+The 2-hour step is safe because the shortest daylight arc at 65° latitude is ~5 h,
+so every sunrise/sunset is guaranteed to fall within at least one bracket.
 
 ---
 
-## Performance comparison (rule of thumb)
+## Performance
 
-The dominant cost is usually “Sun position evaluation” (VSOP87 + transforms + trig), not
-allocation or bookkeeping. See `doc/solar_altitude_perf_report.md` for a deeper profile.
-
-### Scaling
-
-Let:
-
-- `D` = days in the search period
-- `B` = number of boundaries (`1` for `Below/Above`, `2` for `Between`)
-
-Then the *coarse bracketing* evaluation counts scale approximately as:
-
-- **Scan-based**: `~ 144 * D * B` altitude evaluations (`10 min` step)
-- **Culmination-based**:
-  - `~ 72 * D` evaluations to locate culminations (`20 min` step in `find_dynamic_extremas`)
-  - plus `~ O(2 * D * B)` endpoint checks for threshold crossings
-  - plus refinement iterations near each actual crossing (typically a small constant factor)
-
-Practical implication:
-
-- For short horizons (≈ 1 day) both can be similar (fixed overheads matter).
-- For longer horizons and/or `Between {min, max}` conditions, the culmination-based
-  method typically wins because it avoids doing a fixed 10-minute scan for *each* boundary.
+The dominant cost is Sun position evaluation (VSOP87 + transforms + trig).
 
 ### Measuring on your machine
 
@@ -211,29 +129,14 @@ Benchmarks live in `benches/solar_altitude.rs`:
 cargo bench --bench solar_altitude
 ```
 
-To focus on a subset, pass a filter string:
-
-```bash
-cargo bench --bench solar_altitude find_night_periods_scan_7day
-```
-
-Example (AMD Ryzen 7 5700X, 2026-02-06; Criterion shortened run):
-
-- `find_night_periods_7day` (culminations): ~14.7 ms
-- `find_night_periods_scan_7day` (scan): ~23.5 ms
-- speedup: ~1.6×
-
 ---
 
-## Accuracy comparison (what “accuracy” means here)
+## Accuracy
 
 ### Event-time precision (numerics)
 
-Both methods refine crossings using Brent’s method with tight tolerances, so **numerical**
-root timing precision is typically far below 1 millisecond.
-
-If both algorithms detect the same crossings, they should agree closely because they refine
-against the same `sun_altitude_rad` function.
+Both scan steps refine crossings using Brent's method with tight tolerances, so
+**numerical** root timing precision is typically far below 1 millisecond.
 
 ### Physical/model accuracy (dominant in practice)
 
@@ -246,8 +149,7 @@ Your limiting factors are usually:
 
 ### Edge cases to be aware of
 
-- **Polar day / polar night**: it’s normal to get `None` for “night” during summer at high
-  latitudes (Sun never goes below the requested threshold) or `Some(vec![period])` when
-  the Sun never goes above it.
+- **Polar day / polar night**: it's normal to get an empty result for "night" during summer
+  at high latitudes (Sun never goes below the requested threshold).
 - **Grazing events**: when the Sun *just touches* a threshold (double root / tangent),
   sign-change bracketing can miss the event. This happens near the boundary of polar day/night.
