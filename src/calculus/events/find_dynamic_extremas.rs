@@ -6,7 +6,7 @@ use crate::astro::nutation::corrected_ra_with_nutation;
 use crate::astro::precession;
 use crate::astro::sidereal::gast_fast;
 use crate::astro::JulianDate;
-use crate::calculus::root_finding::brent;
+use crate::calculus::math_core::root_finding;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::coordinates::spherical::*;
@@ -97,9 +97,12 @@ where
 
         // Upper culmination: H(jd) crosses 0
         if upper_continuous && h0_val * h1_val < 0.0 {
-            if let Some(root) =
-                brent::refine_root_with_values(jd0, jd1, h0_val, h1_val, &h_upper, 0.0)
+            if let Some(root_val) =
+                root_finding::brent_with_values(jd0.value(), jd1.value(), h0_val, h1_val, |t| {
+                    h_upper(JulianDate::new(t))
+                })
             {
+                let root = JulianDate::new(root_val);
                 if root >= jd_start && root < jd_end {
                     out.push(Culmination::Upper { jd: root });
                 }
@@ -108,14 +111,14 @@ where
 
         // Lower culmination: wrap_signed(H(jd) - π) crosses 0
         if lower_continuous && h0_lower * h1_lower < 0.0 {
-            if let Some(root) = brent::refine_root_with_values(
-                jd0,
-                jd1,
+            if let Some(root_val) = root_finding::brent_with_values(
+                jd0.value(),
+                jd1.value(),
                 h0_lower,
                 h1_lower,
-                &h_lower,
-                0.0,
+                |t| h_lower(JulianDate::new(t)),
             ) {
+                let root = JulianDate::new(root_val);
                 if root >= jd_start && root < jd_end {
                     out.push(Culmination::Lower { jd: root });
                 }
