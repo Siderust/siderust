@@ -53,18 +53,15 @@ fn main() {
 
     let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
 
-    match nights {
-        Some(list) if !list.is_empty() => {
-            println!("Found {} night periods:\n", list.len());
-            for p in list {
-                if let (Some(s), Some(e)) = (p.start.to_utc(), p.end.to_utc()) {
-                    let mins = (p.duration_days() * 24.0 * 60.0).round() as i64;
-                    println!("{} → {}  ({} min)", s.format("%Y-%m-%dT%H:%M:%S"), e.format("%Y-%m-%dT%H:%M:%S"), mins);
-                }
+    if !nights.is_empty() {
+        println!("Found {} night periods:\n", nights.len());
+        for p in nights {
+            if let (Some(s), Some(e)) = (p.start.to_utc(), p.end.to_utc()) {
+                let mins = (p.duration_days() * 24.0 * 60.0).round() as i64;
+                println!("{} → {}  ({} min)", s.format("%Y-%m-%dT%H:%M:%S"), e.format("%Y-%m-%dT%H:%M:%S"), mins);
             }
         }
-        _ => {
-            println!("No astronomical night periods found for this year at this site.");
-        }
+    } else {
+        println!("No astronomical night periods found for this year at this site.");
     }
 }

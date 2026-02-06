@@ -416,7 +416,7 @@ pub fn find_moon_altitude_periods_via_culminations(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     condition: AltitudeCondition,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let jd_start = period.start.to_julian_day();
     let jd_end = period.end.to_julian_day();
 
@@ -527,9 +527,9 @@ pub fn find_moon_altitude_periods_via_culminations(
 
     if labeled.is_empty() {
         if start_inside {
-            return Some(vec![period]);
+            return vec![period];
         }
-        return None;
+        return Vec::new();
     }
 
     let mut i = 0;
@@ -568,11 +568,7 @@ pub fn find_moon_altitude_periods_via_culminations(
         }
     }
 
-    if periods.is_empty() {
-        None
-    } else {
-        Some(periods)
-    }
+    periods
 }
 
 // =============================================================================
@@ -595,7 +591,7 @@ pub fn find_moon_altitude_periods_fast(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     condition: AltitudeCondition,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let jd_start = period.start.to_julian_day();
     let jd_end = period.end.to_julian_day();
 
@@ -695,9 +691,9 @@ pub fn find_moon_altitude_periods_fast(
 
     if labeled.is_empty() {
         if start_inside {
-            return Some(vec![period]);
+            return vec![period];
         }
-        return None;
+        return Vec::new();
     }
 
     let mut i = 0;
@@ -730,11 +726,7 @@ pub fn find_moon_altitude_periods_fast(
         }
     }
 
-    if periods.is_empty() {
-        None
-    } else {
-        Some(periods)
-    }
+    periods
 }
 
 // =============================================================================
@@ -758,7 +750,7 @@ pub fn find_moon_above_horizon<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     find_moon_altitude_periods_fast(
         site,
         period,
@@ -783,7 +775,7 @@ pub fn find_moon_below_horizon<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     find_moon_altitude_periods_fast(
         site,
         period,
@@ -807,7 +799,7 @@ pub fn find_moon_altitude_range(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     find_moon_altitude_periods_via_culminations(
         site,
         period,
@@ -827,7 +819,7 @@ pub fn find_moon_above_horizon_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let altitude_fn = moon_altitude_fn(site);
     crate::calculus::events::altitude_periods::find_altitude_periods(
         altitude_fn,
@@ -841,7 +833,7 @@ pub fn find_moon_below_horizon_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let altitude_fn = moon_altitude_fn(site);
     crate::calculus::events::altitude_periods::find_altitude_periods(
         altitude_fn,
@@ -895,9 +887,8 @@ mod tests {
         let period = Period::new(mjd_start, mjd_end);
 
         let periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
-        assert!(periods.is_some(), "Should find moon-up periods over 7 days");
+        assert!(!periods.is_empty(), "Should find moon-up periods over 7 days");
 
-        let periods = periods.unwrap();
         assert!(!periods.is_empty());
 
         for p in &periods {
@@ -913,9 +904,8 @@ mod tests {
         let period = Period::new(mjd_start, mjd_end);
 
         let periods = find_moon_below_horizon(site, period, Degrees::new(-0.5));
-        assert!(periods.is_some(), "Should find moon-down periods");
+        assert!(!periods.is_empty(), "Should find moon-down periods");
 
-        let periods = periods.unwrap();
         assert!(!periods.is_empty());
     }
 
@@ -933,11 +923,11 @@ mod tests {
             find_moon_above_horizon_scan(site, period, Degrees::new(0.0));
 
         // Both should find periods
-        assert!(culmination_result.is_some());
-        assert!(scan_result.is_some());
+        assert!(!culmination_result.is_empty());
+        assert!(!scan_result.is_empty());
 
-        let culm_periods = culmination_result.unwrap();
-        let scan_periods = scan_result.unwrap();
+        let culm_periods = culmination_result;
+        let scan_periods = scan_result;
 
         // Should have similar number of periods
         assert_eq!(

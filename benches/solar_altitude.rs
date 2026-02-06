@@ -10,8 +10,8 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use siderust::calculus::solar::altitude_periods::{
     find_night_periods, find_night_periods_scan, find_sun_altitude_periods_via_culminations,
-    twilight,
 };
+use siderust::calculus::solar::twilight;
 use siderust::calculus::events::altitude_periods::AltitudeCondition;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;

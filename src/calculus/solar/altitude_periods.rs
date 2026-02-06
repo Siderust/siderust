@@ -33,7 +33,7 @@ pub fn find_sun_altitude_periods_via_culminations(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     condition: AltitudeCondition,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let jd_start = period.start.to_julian_day();
     let jd_end = period.end.to_julian_day();
 
@@ -151,9 +151,9 @@ pub fn find_sun_altitude_periods_via_culminations(
 
     if labeled.is_empty() {
         if start_inside {
-            return Some(vec![period]);
+            return vec![period];
         }
-        return None;
+        return Vec::new();
     }
 
     let mut i = 0;
@@ -192,11 +192,7 @@ pub fn find_sun_altitude_periods_via_culminations(
         }
     }
 
-    if periods.is_empty() {
-        None
-    } else {
-        Some(periods)
-    }
+    periods
 }
 
 /// Finds night periods (Sun below `twilight`) inside `period`.
@@ -204,7 +200,7 @@ pub fn find_night_periods<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: T,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let tw: Degrees = twilight.into();
     find_sun_altitude_periods_via_culminations(site, period, AltitudeCondition::below(tw))
 }
@@ -216,7 +212,7 @@ pub fn find_night_periods_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: T,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
     let tw: Degrees = twilight.into();
     find_altitude_periods(altitude_fn, period, AltitudeCondition::below(tw))
@@ -227,7 +223,7 @@ pub fn find_day_periods<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: T,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let tw: Degrees = twilight.into();
     find_sun_altitude_periods_via_culminations(site, period, AltitudeCondition::above(tw))
 }
@@ -239,7 +235,7 @@ pub fn find_day_periods_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: T,
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
     let tw: Degrees = twilight.into();
     find_altitude_periods(altitude_fn, period, AltitudeCondition::above(tw))
@@ -250,7 +246,7 @@ pub fn find_sun_range_periods(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     find_sun_altitude_periods_via_culminations(
         site,
         period,
@@ -265,7 +261,7 @@ pub fn find_sun_range_periods_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Option<Vec<Period<ModifiedJulianDate>>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
     find_altitude_periods(
         altitude_fn,
@@ -306,11 +302,10 @@ mod tests {
 
         let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
         assert!(
-            nights.is_some(),
+            !nights.is_empty(),
             "Should find night periods at 51° latitude"
         );
 
-        let nights = nights.unwrap();
         assert!(!nights.is_empty(), "Should have at least one night period");
 
         for night in &nights {
@@ -336,13 +331,12 @@ mod tests {
         let nights =
             find_sun_range_periods(site, period, (Degrees::new(-90.0), Degrees::new(-18.0)));
 
-        assert!(nights.is_some(), "Should find night periods using range");
-        let nights = nights.unwrap();
+        assert!(!nights.is_empty(), "Should find night periods using range");
         assert!(!nights.is_empty(), "Should have at least one night period");
 
         let nautical =
             find_sun_range_periods(site, period, (Degrees::new(-18.0), Degrees::new(-12.0)));
 
-        assert!(nautical.is_some(), "Should find nautical twilight periods");
+        assert!(!nautical.is_empty(), "Should find nautical twilight periods");
     }
 }
