@@ -12,7 +12,7 @@
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Sun;
 use crate::calculus::events::altitude_periods::{
-    find_altitude_periods, AltitudeCondition, AltitudePeriod,
+    find_altitude_periods, AltitudeCondition,
 };
 use crate::calculus::events::{find_dynamic_extremas, Culmination};
 use crate::coordinates::centers::ObserverSite;
@@ -33,7 +33,7 @@ pub fn find_sun_altitude_periods_via_culminations(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     condition: AltitudeCondition,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let jd_start = period.start.to_julian_day();
     let jd_end = period.end.to_julian_day();
 
@@ -147,7 +147,7 @@ pub fn find_sun_altitude_periods_via_culminations(
     let start_inside = condition.is_inside(start_altitude);
 
     // Build intervals by pairing enter/exit crossings
-    let mut periods: Vec<AltitudePeriod> = Vec::new();
+    let mut periods: Vec<Period<ModifiedJulianDate>> = Vec::new();
 
     if labeled.is_empty() {
         if start_inside {
@@ -163,7 +163,7 @@ pub fn find_sun_altitude_periods_via_culminations(
         let exit_mjd = ModifiedJulianDate::new(labeled[0].0.value() - 2400000.5);
         let mid = JulianDate::new((jd_start.value() + labeled[0].0.value()) * 0.5);
         if condition.is_inside(altitude_fn(mid)) {
-            periods.push(AltitudePeriod::new(period.start, exit_mjd));
+            periods.push(Period::<ModifiedJulianDate>::new(period.start, exit_mjd));
         }
         i = 1;
     }
@@ -185,7 +185,7 @@ pub fn find_sun_altitude_periods_via_culminations(
 
             let mid = JulianDate::new((enter_jd.value() + exit_mjd.to_julian_day().value()) * 0.5);
             if condition.is_inside(altitude_fn(mid)) {
-                periods.push(AltitudePeriod::new(enter_mjd, exit_mjd));
+                periods.push(Period::<ModifiedJulianDate>::new(enter_mjd, exit_mjd));
             }
         } else {
             i += 1;
@@ -200,33 +200,16 @@ pub fn find_sun_altitude_periods_via_culminations(
 }
 
 /// Common twilight types.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum Twilight {
-    Civil,
-    Nautical,
-    Astronomical,
-    Horizon,
-    ApparentHorizon,
-}
-
-impl From<Twilight> for Degrees {
-    fn from(t: Twilight) -> Degrees {
-        match t {
-            Twilight::Civil => Degrees::new(-6.0),
-            Twilight::Nautical => Degrees::new(-12.0),
-            Twilight::Astronomical => Degrees::new(-18.0),
-            Twilight::Horizon => Degrees::new(0.0),
-            Twilight::ApparentHorizon => Degrees::new(-0.833),
-        }
-    }
-}
+///
+/// Re-exported from [`crate::calculus::solar::night_types`].
+pub use super::night_types::Twilight;
 
 /// Finds night periods (Sun below `twilight`) inside `period`.
 pub fn find_night_periods<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: T,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let tw: Degrees = twilight.into();
     find_sun_altitude_periods_via_culminations(site, period, AltitudeCondition::below(tw))
 }
@@ -238,7 +221,7 @@ pub fn find_night_periods_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: T,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
     let tw: Degrees = twilight.into();
     find_altitude_periods(altitude_fn, period, AltitudeCondition::below(tw))
@@ -249,7 +232,7 @@ pub fn find_day_periods<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: T,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let tw: Degrees = twilight.into();
     find_sun_altitude_periods_via_culminations(site, period, AltitudeCondition::above(tw))
 }
@@ -261,19 +244,10 @@ pub fn find_day_periods_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: T,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
     let tw: Degrees = twilight.into();
     find_altitude_periods(altitude_fn, period, AltitudeCondition::above(tw))
-}
-
-/// Backwards-compatible alias expected by `calculus::solar::mod.rs`.
-pub fn find_sun_above_altitude<T: Into<Degrees>>(
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    twilight: T,
-) -> Option<Vec<AltitudePeriod>> {
-    find_day_periods(site, period, twilight)
 }
 
 /// Finds periods where Sun altitude is within `range` (min, max) inside `period`.
@@ -281,7 +255,7 @@ pub fn find_sun_range_periods(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     find_sun_altitude_periods_via_culminations(
         site,
         period,
@@ -296,22 +270,13 @@ pub fn find_sun_range_periods_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site);
     find_altitude_periods(
         altitude_fn,
         period,
         AltitudeCondition::between(range.0, range.1),
     )
-}
-
-/// Backwards-compatible alias expected by `calculus::solar::mod.rs`.
-pub fn find_sun_in_altitude_range(
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    range: (Degrees, Degrees),
-) -> Option<Vec<AltitudePeriod>> {
-    find_sun_range_periods(site, period, range)
 }
 
 /// Standard twilight threshold definitions (Sun center altitude).

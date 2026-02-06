@@ -25,7 +25,7 @@ use crate::astro::nutation::corrected_ra_with_nutation;
 use crate::astro::precession;
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Moon;
-use crate::calculus::events::altitude_periods::{AltitudeCondition, AltitudePeriod};
+use crate::calculus::events::altitude_periods::AltitudeCondition;
 use crate::calculus::events::Culmination;
 use crate::calculus::root_finding::brent;
 use crate::coordinates::cartesian;
@@ -397,7 +397,7 @@ fn find_moon_culminations_fast(
 /// * `condition` - Altitude condition (below, above, or between)
 ///
 /// # Returns
-/// * `Some(Vec<AltitudePeriod>)` - Periods where condition is satisfied
+/// * `Some(Vec<Period<ModifiedJulianDate>>)` - Periods where condition is satisfied
 /// * `None` - If condition is never satisfied
 ///
 /// # Example
@@ -416,7 +416,7 @@ pub fn find_moon_altitude_periods_via_culminations(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     condition: AltitudeCondition,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let jd_start = period.start.to_julian_day();
     let jd_end = period.end.to_julian_day();
 
@@ -523,7 +523,7 @@ pub fn find_moon_altitude_periods_via_culminations(
     let start_inside = condition.is_inside(start_altitude);
 
     // Build intervals
-    let mut periods: Vec<AltitudePeriod> = Vec::new();
+    let mut periods: Vec<Period<ModifiedJulianDate>> = Vec::new();
 
     if labeled.is_empty() {
         if start_inside {
@@ -539,7 +539,7 @@ pub fn find_moon_altitude_periods_via_culminations(
         let exit_mjd = ModifiedJulianDate::new(labeled[0].0.value() - 2400000.5);
         let mid = JulianDate::new((jd_start.value() + labeled[0].0.value()) * 0.5);
         if condition.is_inside(altitude_fn(mid)) {
-            periods.push(AltitudePeriod::new(period.start, exit_mjd));
+            periods.push(Period::<ModifiedJulianDate>::new(period.start, exit_mjd));
         }
         i = 1;
     }
@@ -561,7 +561,7 @@ pub fn find_moon_altitude_periods_via_culminations(
 
             let mid = JulianDate::new((enter_jd.value() + exit_mjd.to_julian_day().value()) * 0.5);
             if condition.is_inside(altitude_fn(mid)) {
-                periods.push(AltitudePeriod::new(enter_mjd, exit_mjd));
+                periods.push(Period::<ModifiedJulianDate>::new(enter_mjd, exit_mjd));
             }
         } else {
             i += 1;
@@ -595,7 +595,7 @@ pub fn find_moon_altitude_periods_fast(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     condition: AltitudeCondition,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let jd_start = period.start.to_julian_day();
     let jd_end = period.end.to_julian_day();
 
@@ -691,7 +691,7 @@ pub fn find_moon_altitude_periods_fast(
     let start_inside = condition.is_inside(start_altitude);
 
     // Build intervals
-    let mut periods: Vec<AltitudePeriod> = Vec::new();
+    let mut periods: Vec<Period<ModifiedJulianDate>> = Vec::new();
 
     if labeled.is_empty() {
         if start_inside {
@@ -705,7 +705,7 @@ pub fn find_moon_altitude_periods_fast(
     // If we start inside and first crossing is an exit, add initial interval
     if start_inside && labeled[0].1 == -1 {
         let exit_mjd = ModifiedJulianDate::new(labeled[0].0.value() - 2400000.5);
-        periods.push(AltitudePeriod::new(period.start, exit_mjd));
+        periods.push(Period::<ModifiedJulianDate>::new(period.start, exit_mjd));
         i = 1;
     }
 
@@ -724,7 +724,7 @@ pub fn find_moon_altitude_periods_fast(
                 period.end
             };
 
-            periods.push(AltitudePeriod::new(enter_mjd, exit_mjd));
+            periods.push(Period::<ModifiedJulianDate>::new(enter_mjd, exit_mjd));
         } else {
             i += 1;
         }
@@ -758,7 +758,7 @@ pub fn find_moon_above_horizon<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     find_moon_altitude_periods_fast(
         site,
         period,
@@ -783,7 +783,7 @@ pub fn find_moon_below_horizon<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     find_moon_altitude_periods_fast(
         site,
         period,
@@ -807,7 +807,7 @@ pub fn find_moon_altitude_range(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     find_moon_altitude_periods_via_culminations(
         site,
         period,
@@ -827,7 +827,7 @@ pub fn find_moon_above_horizon_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let altitude_fn = moon_altitude_fn(site);
     crate::calculus::events::altitude_periods::find_altitude_periods(
         altitude_fn,
@@ -841,7 +841,7 @@ pub fn find_moon_below_horizon_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
-) -> Option<Vec<AltitudePeriod>> {
+) -> Option<Vec<Period<ModifiedJulianDate>>> {
     let altitude_fn = moon_altitude_fn(site);
     crate::calculus::events::altitude_periods::find_altitude_periods(
         altitude_fn,

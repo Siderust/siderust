@@ -40,12 +40,6 @@ const SCAN_STEP: Minutes = Minutes::new(10.0);
 // Public Types
 // =============================================================================
 
-/// Type alias for altitude periods using Modified Julian Date.
-///
-/// This provides backward compatibility with the previous `AltitudePeriod` struct
-/// while using the generic `Period<T>` implementation.
-pub type AltitudePeriod = Period<ModifiedJulianDate>;
-
 /// Altitude condition specification for period finding.
 ///
 /// Supports three types of conditions:
@@ -134,7 +128,7 @@ impl AltitudeCondition {
 /// - `condition`: The altitude condition specification (Below, Above, or Between)
 ///
 /// # Returns
-/// - `Some(Vec<AltitudePeriod>)`: Periods where condition is satisfied
+/// - `Some(Vec<Period<ModifiedJulianDate>>)`: Periods where condition is satisfied
 /// - `None`: If the altitude never satisfies the condition
 ///
 /// # Algorithm
@@ -147,7 +141,7 @@ pub fn find_altitude_periods<F>(
     altitude_fn: F,
     period: Period<ModifiedJulianDate>,
     condition: AltitudeCondition,
-) -> Option<Vec<AltitudePeriod>>
+) -> Option<Vec<Period<ModifiedJulianDate>>>
 where
     F: Fn(JulianDate) -> f64,
 {
@@ -228,7 +222,7 @@ where
     let start_inside = condition.is_inside(start_altitude);
 
     // Build intervals by pairing enter/exit crossings
-    let mut periods: Vec<AltitudePeriod> = Vec::new();
+    let mut periods: Vec<Period<ModifiedJulianDate>> = Vec::new();
 
     if labeled.is_empty() {
         // No crossings found
@@ -251,7 +245,7 @@ where
         let mid = JulianDate::new((jd_start.value() + labeled[0].0.value()) * 0.5);
         let mid_inside = condition.is_inside(altitude_fn(mid));
         if mid_inside {
-            periods.push(AltitudePeriod::new(period.start, exit_mjd));
+            periods.push(Period::<ModifiedJulianDate>::new(period.start, exit_mjd));
         }
         i = 1;
     }
@@ -278,7 +272,7 @@ where
             let mid = JulianDate::new((enter_jd.value() + exit_mjd.to_julian_day().value()) * 0.5);
             let mid_inside = condition.is_inside(altitude_fn(mid));
             if mid_inside {
-                periods.push(AltitudePeriod::new(enter_mjd, exit_mjd));
+                periods.push(Period::<ModifiedJulianDate>::new(enter_mjd, exit_mjd));
             }
         } else {
             // Unexpected exit without entry (should not happen if start_inside handled correctly)
