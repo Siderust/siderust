@@ -31,5 +31,6 @@
 //! _This module is under active development and will be expanded in future releases._
 
 mod altitude_periods;
+mod moon_equations;
 
 pub use altitude_periods::*;
