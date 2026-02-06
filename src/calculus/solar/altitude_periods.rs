@@ -3,141 +3,99 @@
 
 //! # Solar Altitude Window Periods
 //!
-//! Sun-specific convenience wrappers around the generic altitude-window routines
-//! in [`crate::calculus::events::altitude_periods`].
+//! Sun-specific routines for finding time intervals where the Sun's
+//! altitude is above, below, or within a given range.
 //!
-//! The core algorithm finds **above-threshold** periods. Below and between
-//! variants are derived via [`crate::time::complement_within`] and
-//! [`crate::time::intersect_periods`] at negligible cost.
+//! All period-finding is delegated to [`crate::calculus::math_core::intervals`]
+//! which provides scan + Brent refinement + crossing classification + interval
+//! assembly.  This module supplies the altitude closure and JD↔f64 / MJD
+//! conversions.
+//!
+//! ## Key Points
+//!
+//! * A 2-hour scan step safely brackets every sunrise/sunset
+//!   (the shortest daylight arc at 65° latitude is ~5 h).
+//! * Below-threshold and range variants are derived at negligible cost
+//!   via [`crate::time::complement_within`] / set intersection.
 //!
 //! ## Performance
 //!
-//! The culmination-based variants (`find_day_periods`, `find_night_periods`,
-//! `find_sun_range_periods`) partition the time axis using solar culminations,
-//! then bracket threshold crossings within each monotonic segment.
-//! This avoids the coarse 10-minute scan and reduces the number of VSOP87
-//! evaluations significantly.
-//!
-//! The `_scan` variants fall back to the generic scan+refine algorithm from
-//! [`crate::calculus::events::altitude_periods`].
+//! The 2-hour scan uses ~12 VSOP87 evaluations per day, compared to ~72
+//! for the previous culmination-based approach (20-min hour-angle scan).
+//! This yields a ~6× reduction in ephemeris evaluations.
 
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Sun;
-use crate::calculus::events::altitude_periods::{
-    crossings_to_above_periods, find_above_altitude_periods,
-    find_threshold_crossings_in_segments,
-};
-use crate::calculus::events::{find_dynamic_extremas, Culmination};
+use crate::calculus::events::altitude_periods::find_above_altitude_periods;
+use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::ObserverSite;
-use crate::coordinates::transform::Transform;
-use crate::coordinates::{cartesian, spherical};
-use crate::targets::Target;
-use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period};
-use qtty::{AstronomicalUnit, Degrees, Kilometers, Quantity, Radian};
+use crate::time::{complement_within, ModifiedJulianDate, Period};
+use qtty::{AstronomicalUnit, Degrees, Quantity, Radian};
+
+// =============================================================================
+// Constants
+// =============================================================================
+
+/// Scan step for Sun altitude threshold detection (2 hours in days).
+/// Sunrise/sunset events are separated by ≥5 h even at high latitudes,
+/// so 2-hour steps safely detect all crossings (~12 altitude calls per day).
+const SCAN_STEP: f64 = 2.0 / 24.0;
+
+// =============================================================================
+// Core Altitude Function
+// =============================================================================
 
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
 /// Positive above the horizon, negative below.
 pub fn sun_altitude_rad(jd: JulianDate, site: &ObserverSite) -> Quantity<Radian> {
-    let horiz = Sun::get_horizontal::<AstronomicalUnit>(jd, *site);
-    horiz.alt().to::<Radian>()
+    Sun::get_horizontal::<AstronomicalUnit>(jd, *site).alt().to::<Radian>()
 }
 
 // =============================================================================
-// Internal: Culmination-based key-times computation
+// Internal helper: Interval → Period<MJD> conversion
 // =============================================================================
 
-/// Computes the sorted, deduplicated list of key times (start, culminations, end)
-/// that partition the time axis into quasi-monotonic altitude segments for the Sun.
-fn compute_solar_key_times(
-    site: &ObserverSite,
-    jd_start: JulianDate,
-    jd_end: JulianDate,
-) -> Vec<JulianDate> {
-    let observer_geo =
-        spherical::position::Geographic::new(site.lon, site.lat, Kilometers::new(0.0));
+/// JD offset to MJD: `MJD = JD − 2_400_000.5`.
+const JD_TO_MJD: f64 = 2_400_000.5;
 
-    let get_equatorial = |jd: JulianDate| {
-        let helio = cartesian::position::Ecliptic::<AstronomicalUnit>::CENTER;
-        let geo_cart: cartesian::position::EquatorialMeanJ2000<AstronomicalUnit> =
-            helio.transform(jd);
-        let geo_sph: spherical::position::EquatorialMeanJ2000<AstronomicalUnit> =
-            spherical::Position::from_cartesian(&geo_cart);
-        Target::new_static(geo_sph, jd)
-    };
-
-    let culminations = find_dynamic_extremas(get_equatorial, &observer_geo, jd_start, jd_end);
-
-    let mut key_times: Vec<JulianDate> = Vec::with_capacity(culminations.len() + 2);
-    key_times.push(jd_start);
-    for c in culminations {
-        let jd = match c {
-            Culmination::Upper { jd } | Culmination::Lower { jd } => jd,
-        };
-        if jd > jd_start && jd < jd_end {
-            key_times.push(jd);
-        }
-    }
-    key_times.push(jd_end);
-    key_times.sort_by(|a, b| a.partial_cmp(b).unwrap());
-
-    const DEDUPE_EPS: f64 = 1e-10; // ~0.86 ms
-    key_times.dedup_by(|a, b| (a.value() - b.value()).abs() < DEDUPE_EPS);
-
-    key_times
+/// Convert `math_core` `Interval`s (JD f64) to `Period<ModifiedJulianDate>`.
+fn intervals_to_periods(ivs: Vec<intervals::Interval>) -> Vec<Period<ModifiedJulianDate>> {
+    ivs.into_iter()
+        .map(|iv| {
+            Period::new(
+                ModifiedJulianDate::new(iv.start - JD_TO_MJD),
+                ModifiedJulianDate::new(iv.end - JD_TO_MJD),
+            )
+        })
+        .collect()
 }
 
 // =============================================================================
-// Core: Culmination-based above-threshold finder
+// Main API
 // =============================================================================
 
-/// Finds periods where Sun altitude is **above** `threshold` using
-/// culmination-based partitioning.
+/// Finds day periods (Sun **above** `threshold`) inside `period`.
 ///
-/// This is the primary building block. All other solar altitude finders
-/// (day, night, range, and their scan variants) are thin wrappers around
-/// this function and the set operations on period vectors.
-pub fn find_sun_altitude_periods_via_culminations<T: Into<Degrees>>(
+/// Uses a 2-hour scan + Brent refinement via [`math_core::intervals`].
+pub fn find_day_periods<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: T,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day();
-    let jd_end = period.end.to_julian_day();
-    let threshold_rad = threshold.into().to::<Radian>().value();
+    let jd_start = period.start.to_julian_day().value();
+    let jd_end = period.end.to_julian_day().value();
+    let thr = threshold.into().to::<Radian>().value();
 
-    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
+    let f = |t: f64| sun_altitude_rad(JulianDate::new(t), &site).value();
 
-    let key_times = compute_solar_key_times(&site, jd_start, jd_end);
-
-    let crossings = find_threshold_crossings_in_segments(
-        &key_times,
-        &altitude_fn,
-        threshold_rad,
-        jd_start,
-        jd_end,
-    );
-
-    crossings_to_above_periods(crossings, period, &altitude_fn, threshold_rad)
-}
-
-// =============================================================================
-// Public convenience wrappers
-// =============================================================================
-
-/// Finds day periods (Sun **above** `twilight`) inside `period`.
-///
-/// Uses culmination-based partitioning for optimal performance.
-pub fn find_day_periods<T: Into<Degrees>>(
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    twilight: T,
-) -> Vec<Period<ModifiedJulianDate>> {
-    find_sun_altitude_periods_via_culminations(site, period, twilight)
+    intervals_to_periods(intervals::above_threshold_periods(
+        jd_start, jd_end, SCAN_STEP, &f, thr,
+    ))
 }
 
 /// Finds night periods (Sun **below** `twilight`) inside `period`.
 ///
-/// Equivalent to the complement of [`find_day_periods`] within `period`.
+/// Complement of [`find_day_periods`] within `period`.
 pub fn find_night_periods<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
@@ -147,49 +105,34 @@ pub fn find_night_periods<T: Into<Degrees>>(
     complement_within(period, &days)
 }
 
-/// Finds periods where Sun altitude is within `range` `(min, max)`.
+/// Finds periods where Sun altitude is within `range` `[min, max]`.
 ///
-/// Computed as `above(min) ∩ complement(above(max))`. The culmination
-/// key-times are computed only once and reused for both thresholds.
+/// Computed as `above(min) ∩ complement(above(max))` via
+/// [`math_core::intervals::in_range_periods`].
 pub fn find_sun_range_periods(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day();
-    let jd_end = period.end.to_julian_day();
-    let min_rad = range.0.to::<Radian>().value();
-    let max_rad = range.1.to::<Radian>().value();
+    let jd_start = period.start.to_julian_day().value();
+    let jd_end = period.end.to_julian_day().value();
+    let h_min = range.0.to::<Radian>().value();
+    let h_max = range.1.to::<Radian>().value();
 
-    let altitude_fn = |jd: JulianDate| sun_altitude_rad(jd, &site).value();
+    let f = |t: f64| sun_altitude_rad(JulianDate::new(t), &site).value();
 
-    // Compute key_times ONCE
-    let key_times = compute_solar_key_times(&site, jd_start, jd_end);
-
-    // Find above-min periods
-    let crossings_min = find_threshold_crossings_in_segments(
-        &key_times, &altitude_fn, min_rad, jd_start, jd_end,
-    );
-    let above_min = crossings_to_above_periods(crossings_min, period, &altitude_fn, min_rad);
-
-    // Find above-max periods
-    let crossings_max = find_threshold_crossings_in_segments(
-        &key_times, &altitude_fn, max_rad, jd_start, jd_end,
-    );
-    let above_max = crossings_to_above_periods(crossings_max, period, &altitude_fn, max_rad);
-
-    // Between(min, max) = above(min) ∩ complement(above(max))
-    let below_max = complement_within(period, &above_max);
-    intersect_periods(&above_min, &below_max)
+    intervals_to_periods(intervals::in_range_periods(
+        jd_start, jd_end, SCAN_STEP, &f, h_min, h_max,
+    ))
 }
 
 // =============================================================================
-// Scan-based variants (for comparison / fallback)
+// Scan-based variants (10-minute step, for comparison / validation)
 // =============================================================================
 
-/// Finds day periods using the generic scan+refine algorithm.
+/// Finds day periods using the generic 10-minute scan+refine algorithm.
 ///
-/// Prefer [`find_day_periods`] unless you specifically want to compare behavior.
+/// Prefer [`find_day_periods`] for better performance.
 pub fn find_day_periods_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
@@ -199,9 +142,9 @@ pub fn find_day_periods_scan<T: Into<Degrees>>(
     find_above_altitude_periods(altitude_fn, period, twilight.into())
 }
 
-/// Finds night periods using the generic scan+refine algorithm.
+/// Finds night periods using the generic 10-minute scan+refine algorithm.
 ///
-/// Prefer [`find_night_periods`] unless you specifically want to compare behavior.
+/// Prefer [`find_night_periods`] for better performance.
 pub fn find_night_periods_scan<T: Into<Degrees>>(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
@@ -211,9 +154,10 @@ pub fn find_night_periods_scan<T: Into<Degrees>>(
     complement_within(period, &days)
 }
 
-/// Finds periods where Sun altitude is within `range` using the generic scan+refine algorithm.
+/// Finds periods where Sun altitude is within `range` using the generic
+/// 10-minute scan+refine algorithm.
 ///
-/// Prefer [`find_sun_range_periods`] unless you specifically want to compare behavior.
+/// Prefer [`find_sun_range_periods`] for better performance.
 pub fn find_sun_range_periods_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
@@ -223,7 +167,7 @@ pub fn find_sun_range_periods_scan(
     let above_min = find_above_altitude_periods(&altitude_fn, period, range.0);
     let above_max = find_above_altitude_periods(&altitude_fn, period, range.1);
     let below_max = complement_within(period, &above_max);
-    intersect_periods(&above_min, &below_max)
+    crate::time::intersect_periods(&above_min, &below_max)
 }
 
 #[cfg(test)]

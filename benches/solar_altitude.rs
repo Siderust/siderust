@@ -9,7 +9,7 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use siderust::calculus::solar::altitude_periods::{
-    find_night_periods, find_night_periods_scan, find_sun_altitude_periods_via_culminations,
+    find_day_periods, find_night_periods, find_night_periods_scan,
 };
 use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::ObserverSite;
@@ -102,10 +102,10 @@ fn bench_find_night_periods(c: &mut Criterion) {
     });
 
     // Compare with culmination-based algorithm for 7 days
-    group.bench_function("find_night_periods_culminations_7day", |b| {
+    group.bench_function("find_day_periods_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
-            let _result = find_sun_altitude_periods_via_culminations(
+            let _result = find_day_periods(
                 black_box(site),
                 black_box(period),
                 black_box(twilight::ASTRONOMICAL),

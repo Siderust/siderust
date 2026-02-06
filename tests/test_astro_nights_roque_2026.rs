@@ -9,7 +9,7 @@ use std::io::BufReader;
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use serde_json::Value;
 use siderust::calculus::solar::altitude_periods::{
-    find_night_periods, find_sun_altitude_periods_via_culminations,
+    find_day_periods, find_night_periods,
 };
 use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::ObserverSite;
@@ -104,9 +104,8 @@ fn test_astronomical_nights_roque_2026_culminations() {
     let expected_periods = load_reference_periods();
     let (site, period) = build_roque_period();
 
-    // find_sun_altitude_periods_via_culminations now finds "above" periods;
-    // complement gives us the nights.
-    let day_periods = find_sun_altitude_periods_via_culminations(
+    // find_day_periods finds "above" periods; complement gives us the nights.
+    let day_periods = find_day_periods(
         site,
         period,
         twilight::ASTRONOMICAL,
