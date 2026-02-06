@@ -12,8 +12,7 @@
 //! ```
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
-use siderust::calculus::events::altitude_periods::{AltitudeCondition};
-use siderust::calculus::solar::altitude_periods::find_sun_altitude_periods_via_culminations;
+use siderust::calculus::solar::altitude_periods::find_night_periods;
 use siderust::calculus::solar::night_types::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
@@ -38,12 +37,11 @@ fn main() {
     let mjd_end = ModifiedJulianDate::from_utc(end_dt);
 
     let period = Period::new(mjd_start, mjd_end);
-    let condition = AltitudeCondition::below(twilight::ASTRONOMICAL);
 
     println!("Roque de los Muchachos (La Palma) – astronomical night 2026");
     println!("Interval: {} → {} UTC", start_dt.format("%Y-%m-%d"), end_dt.format("%Y-%m-%d"));
 
-    let periods = find_sun_altitude_periods_via_culminations(site, period, condition);
+    let periods = find_night_periods(site, period, twilight::ASTRONOMICAL);
     if !periods.is_empty() {
         let total_days: f64 = periods.iter().map(|p| p.duration_days()).sum();
         println!("Found {} astronomical-night windows spanning {:.1} hours", periods.len(), total_days * 24.0);

@@ -12,7 +12,6 @@ use siderust::calculus::solar::altitude_periods::{
     find_night_periods, find_night_periods_scan, find_sun_altitude_periods_via_culminations,
 };
 use siderust::calculus::solar::twilight;
-use siderust::calculus::events::altitude_periods::AltitudeCondition;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period};
@@ -109,7 +108,7 @@ fn bench_find_night_periods(c: &mut Criterion) {
             let _result = find_sun_altitude_periods_via_culminations(
                 black_box(site),
                 black_box(period),
-                black_box(AltitudeCondition::below(twilight::ASTRONOMICAL)),
+                black_box(twilight::ASTRONOMICAL),
             );
         });
     });

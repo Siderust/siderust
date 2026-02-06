@@ -21,10 +21,9 @@ use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
 use qtty::*;
 use siderust::astro::JulianDate;
-use siderust::calculus::events::altitude_periods::AltitudeCondition;
 use siderust::calculus::lunar::{
     find_moon_above_horizon, find_moon_above_horizon_scan,
-    find_moon_altitude_periods_via_culminations, find_moon_below_horizon,
+    find_moon_altitude_range, find_moon_below_horizon,
     moon_altitude_rad,
 };
 use siderust::coordinates::centers::ObserverSite;
@@ -204,13 +203,10 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
     group.bench_function("find_moon_low_altitude_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
-            let _result = find_moon_altitude_periods_via_culminations(
+            let _result = find_moon_altitude_range(
                 black_box(site),
                 black_box(period),
-                black_box(AltitudeCondition::Between {
-                    min: Degrees::new(0.0),
-                    max: Degrees::new(30.0),
-                }),
+                black_box((Degrees::new(0.0), Degrees::new(30.0))),
             );
         });
     });
@@ -219,13 +215,10 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
     group.bench_function("find_moon_high_altitude_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
-            let _result = find_moon_altitude_periods_via_culminations(
+            let _result = find_moon_altitude_range(
                 black_box(site),
                 black_box(period),
-                black_box(AltitudeCondition::Between {
-                    min: Degrees::new(60.0),
-                    max: Degrees::new(90.0),
-                }),
+                black_box((Degrees::new(60.0), Degrees::new(90.0))),
             );
         });
     });

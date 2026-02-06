@@ -79,9 +79,9 @@ Implementation note: these three are thin wrappers around
 - `find_sun_range_periods_scan(...)`
 
 These delegate to the **generic** routine:
-`calculus::events::altitude_periods::find_altitude_periods(...)`.
+`calculus::events::altitude_periods::find_above_altitude_periods(...)`.
 
-Prefer the non-`_scan` variants unless you’re:
+Prefer the non-`_scan` variants unless you're:
 
 - comparing algorithms/behavior,
 - using a custom altitude function (non-solar) via the generic API, or
@@ -89,9 +89,11 @@ Prefer the non-`_scan` variants unless you’re:
 
 ### Low-level building block
 
-- `find_sun_altitude_periods_via_culminations(site, period, condition)`
-  - “Core” Sun-specific routine that supports `Below`, `Above`, and `Between` via
-    `calculus::events::altitude_periods::AltitudeCondition`.
+- `find_sun_altitude_periods_via_culminations(site, period, threshold)`
+  - "Core" Sun-specific routine that finds periods where the Sun is **above**
+    the given threshold, using culmination-based partitioning.
+  - Night/below is obtained via `complement_within`, and range queries via
+    `intersect_periods`.
 
 ---
 
