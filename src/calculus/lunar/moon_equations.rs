@@ -8,7 +8,7 @@ use crate::astro::{precession, JulianDate};
 use crate::coordinates::transform::centers::ToTopocentricExt;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
-use qtty::{Kilometer, Kilometers, LengthUnit, Meter, Quantity};
+use qtty::{Degree, Kilometer, Kilometers, LengthUnit, Meter, Quantity, Radians};
 
 impl Moon {
     /// Returns the **apparent topocentric equatorial coordinates** of the Moon
@@ -80,7 +80,7 @@ impl Moon {
                 Kilometers::new(z_t),
             );
 
-        // 6) Convert to target unit U
+        // 6) Convert to target unit U and return spherical position
         let x_u: Quantity<U> = moon_topo_true.x().into();
         let y_u: Quantity<U> = moon_topo_true.y().into();
         let z_u: Quantity<U> = moon_topo_true.z().into();
@@ -150,20 +150,21 @@ impl Moon {
         // Compute hour angle
         let gst = calculate_gst(jd);
         let lst = calculate_lst(gst, site.lon);
-        let ha = (lst - ra).normalize().to::<Radian>();
+        let ha = (lst - ra).normalize();
 
-        // Convert equatorial to horizontal
-        let lat = site.lat.to::<Radian>();
+        // Convert equatorial to horizontal using qtty units
+        let lat_rad = site.lat.to::<Radian>();
         let dec_rad = dec.to::<Radian>();
+        let ha_rad = ha.to::<Radian>();
 
         // Altitude: sin(alt) = sin(dec)*sin(lat) + cos(dec)*cos(lat)*cos(HA)
-        let sin_alt = dec_rad.sin() * lat.sin() + dec_rad.cos() * lat.cos() * ha.cos();
-        let alt = qtty::Degrees::new(sin_alt.asin().to_degrees());
+        let sin_alt = dec_rad.sin() * lat_rad.sin() + dec_rad.cos() * lat_rad.cos() * ha_rad.cos();
+        let alt = Radians::new(sin_alt.asin()).to::<Degree>();
 
         // Azimuth: computed from hour angle and declination
-        let az_rad = (-dec_rad.cos() * ha.sin())
-            .atan2(dec_rad.sin() * lat.cos() - dec_rad.cos() * ha.cos() * lat.sin());
-        let az = qtty::Degrees::new(az_rad.to_degrees()).normalize();
+        let az_rad = (-dec_rad.cos() * ha_rad.sin())
+            .atan2(dec_rad.sin() * lat_rad.cos() - dec_rad.cos() * ha_rad.cos() * lat_rad.sin());
+        let az = Radians::new(az_rad).normalize().to::<Degree>();
 
         spherical::Position::<Topocentric, frames::Horizontal, U>::new_with_site(
             site, alt, az, distance,
