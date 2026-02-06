@@ -215,6 +215,30 @@ pub fn refine_root_with_values<F>(
 where
     F: Fn(JulianDate) -> f64,
 {
+    refine_root_with_values_and_tolerance(
+        lo, hi, f_lo, f_hi, scalar_fn, threshold, TOLERANCE.value(),
+    )
+}
+
+/// Like [`refine_root_with_values`], but with custom tolerance.
+///
+/// Useful for trading precision for speed in performance-critical loops
+/// (e.g., lunar altitude with 2-minute tolerance reduces iterations by ~50%).
+///
+/// # Arguments
+/// - `tolerance`: Convergence tolerance in days (e.g., 1.4e-3 ≈ 2 minutes)
+pub fn refine_root_with_values_and_tolerance<F>(
+    lo: JulianDate,
+    hi: JulianDate,
+    f_lo: f64,
+    f_hi: f64,
+    scalar_fn: F,
+    threshold: f64,
+    tolerance: f64,
+) -> Option<JulianDate>
+where
+    F: Fn(JulianDate) -> f64,
+{
     let mut a = lo.value();
     let mut b = hi.value();
     let mut fa = f_lo;
@@ -245,7 +269,7 @@ where
     let mut e = d;
 
     for _ in 0..MAX_ITERS {
-        let tol = TOLERANCE.value();
+        let tol = tolerance;
         let m = 0.5 * (c - b);
 
         if fb.abs() < CONVERGENCE_EPS || m.abs() <= tol {
