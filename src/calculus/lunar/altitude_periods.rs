@@ -68,130 +68,6 @@ const CROSS_DEDUPE_EPS: f64 = 1e-8;
 /// 2 minutes = 2/(24*60) days ≈ 1.39e-3 days
 const MOON_BRENT_TOLERANCE: f64 = 1.4e-3;
 
-/// Fast Brent root finding with relaxed tolerance for Moon altitude.
-///
-/// Uses ~1 minute precision instead of ~86µs, reducing iterations from ~8 to ~3-4.
-fn brent_fast_with_values<F>(
-    lo: JulianDate,
-    hi: JulianDate,
-    f_lo: f64,
-    f_hi: f64,
-    scalar_fn: F,
-    threshold: f64,
-) -> Option<JulianDate>
-where
-    F: Fn(JulianDate) -> f64,
-{
-    const CONVERGENCE_EPS: f64 = 1e-10;
-    const MAX_ITERS: usize = 20;
-    
-    let mut a = lo.value();
-    let mut b = hi.value();
-    let mut fa = f_lo;
-    let mut fb = f_hi;
-
-    // Check endpoints for exact roots
-    if fa.abs() < CONVERGENCE_EPS {
-        return Some(lo);
-    }
-    if fb.abs() < CONVERGENCE_EPS {
-        return Some(hi);
-    }
-
-    // Verify bracket (must have opposite signs)
-    if fa * fb > 0.0 {
-        return None;
-    }
-
-    // Ensure |f(a)| >= |f(b)| (b is the better approximation)
-    if fa.abs() < fb.abs() {
-        std::mem::swap(&mut a, &mut b);
-        std::mem::swap(&mut fa, &mut fb);
-    }
-
-    let mut c = a;
-    let mut fc = fa;
-    let mut d = b - a;
-    let mut e = d;
-
-    for _ in 0..MAX_ITERS {
-        // Keep c as the contrapoint (opposite sign to b)
-        if (fb > 0.0) == (fc > 0.0) {
-            c = a;
-            fc = fa;
-            d = b - a;
-            e = d;
-        }
-        
-        // Ensure |f(b)| <= |f(c)|
-        if fc.abs() < fb.abs() {
-            a = b;
-            b = c;
-            c = a;
-            fa = fb;
-            fb = fc;
-            fc = fa;
-        }
-
-        let tol = MOON_BRENT_TOLERANCE;
-        let m = 0.5 * (c - b);
-
-        if fb.abs() < CONVERGENCE_EPS || m.abs() <= tol {
-            return Some(JulianDate::new(b));
-        }
-
-        // Decide whether to use bisection or interpolation
-        let use_bisection = e.abs() < tol || fa.abs() <= fb.abs();
-
-        let (new_e, new_d) = if use_bisection {
-            (m, m)
-        } else {
-            let s = fb / fa;
-
-            let (p, q) = if (a - c).abs() < 1e-14 {
-                // Secant method
-                let p = 2.0 * m * s;
-                let q = 1.0 - s;
-                (p, q)
-            } else {
-                // Inverse quadratic interpolation
-                let q_val = fa / fc;
-                let r = fb / fc;
-                let p = s * (2.0 * m * q_val * (q_val - r) - (b - a) * (r - 1.0));
-                let q = (q_val - 1.0) * (r - 1.0) * (s - 1.0);
-                (p, q)
-            };
-
-            let (p, q) = if p > 0.0 { (p, -q) } else { (-p, q) };
-
-            let s_val = e;
-            if 2.0 * p < 3.0 * m * q - (tol * q).abs() && p < (0.5 * s_val * q).abs() {
-                (d, p / q)
-            } else {
-                (m, m)
-            }
-        };
-
-        e = new_e;
-        d = new_d;
-
-        a = b;
-        fa = fb;
-
-        if d.abs() > tol {
-            b += d;
-        } else if m > 0.0 {
-            b += tol;
-        } else {
-            b -= tol;
-        }
-
-        fb = scalar_fn(JulianDate::new(b)) - threshold;
-    }
-
-    Some(JulianDate::new(b))
-}
-
 // =============================================================================
 // Core Altitude Function
 // =============================================================================
@@ -509,8 +385,8 @@ pub fn find_moon_altitude_periods_fast<T: Into<Degrees>>(
         if prev_f * next_f < 0.0 {
             let direction = if prev_f < 0.0 { 1 } else { -1 };
 
-            if let Some(root) = brent_fast_with_values(
-                jd, next_jd, prev_f, next_f, &altitude_fn, threshold_rad,
+            if let Some(root) = brent::refine_root_with_values_and_tolerance(
+                jd, next_jd, prev_f, next_f, &altitude_fn, threshold_rad, MOON_BRENT_TOLERANCE,
             ) {
                 if root >= jd_start && root <= jd_end {
                     labeled_crossings.push((root, direction));
