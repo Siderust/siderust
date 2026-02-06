@@ -29,7 +29,11 @@ use crate::bodies::solar_system::Sun;
 use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::ObserverSite;
 use crate::time::{complement_within, ModifiedJulianDate, Period};
-use qtty::{AstronomicalUnit, Degrees, Quantity, Radian};
+use qtty::{AstronomicalUnit, Day, Degrees, Quantity, Radian};
+
+/// Type aliases for typed quantities used throughout this module.
+type Days = Quantity<Day>;
+type Radians = Quantity<Radian>;
 
 // =============================================================================
 // Constants
@@ -38,7 +42,7 @@ use qtty::{AstronomicalUnit, Degrees, Quantity, Radian};
 /// Scan step for Sun altitude threshold detection (2 hours in days).
 /// Sunrise/sunset events are separated by ≥5 h even at high latitudes,
 /// so 2-hour steps safely detect all crossings (~12 altitude calls per day).
-const SCAN_STEP: f64 = 2.0 / 24.0;
+const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
 
 // =============================================================================
 // Core Altitude Function
@@ -47,26 +51,9 @@ const SCAN_STEP: f64 = 2.0 / 24.0;
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
 /// Positive above the horizon, negative below.
 pub fn sun_altitude_rad(jd: JulianDate, site: &ObserverSite) -> Quantity<Radian> {
-    Sun::get_horizontal::<AstronomicalUnit>(jd, *site).alt().to::<Radian>()
-}
-
-// =============================================================================
-// Internal helper: Interval → Period<MJD> conversion
-// =============================================================================
-
-/// JD offset to MJD: `MJD = JD − 2_400_000.5`.
-const JD_TO_MJD: f64 = 2_400_000.5;
-
-/// Convert `math_core` `Interval`s (JD f64) to `Period<ModifiedJulianDate>`.
-fn intervals_to_periods(ivs: Vec<intervals::Interval>) -> Vec<Period<ModifiedJulianDate>> {
-    ivs.into_iter()
-        .map(|iv| {
-            Period::new(
-                ModifiedJulianDate::new(iv.start - JD_TO_MJD),
-                ModifiedJulianDate::new(iv.end - JD_TO_MJD),
-            )
-        })
-        .collect()
+    Sun::get_horizontal::<AstronomicalUnit>(jd, *site)
+        .alt()
+        .to::<Radian>()
 }
 
 // =============================================================================
@@ -76,29 +63,27 @@ fn intervals_to_periods(ivs: Vec<intervals::Interval>) -> Vec<Period<ModifiedJul
 /// Finds day periods (Sun **above** `threshold`) inside `period`.
 ///
 /// Uses a 2-hour scan + Brent refinement via [`math_core::intervals`].
-pub fn find_day_periods<T: Into<Degrees>>(
+pub fn find_day_periods(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
-    threshold: T,
+    threshold: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day().value();
-    let jd_end = period.end.to_julian_day().value();
-    let thr = threshold.into().to::<Radian>().value();
+    let thr = threshold.to::<Radian>();
 
-    let f = |t: f64| sun_altitude_rad(JulianDate::new(t), &site).value();
+    let f = |t: ModifiedJulianDate| -> Radians {
+        Radians::new(sun_altitude_rad(t.to_julian_day(), &site).value())
+    };
 
-    intervals_to_periods(intervals::above_threshold_periods(
-        jd_start, jd_end, SCAN_STEP, &f, thr,
-    ))
+    intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
 }
 
 /// Finds night periods (Sun **below** `twilight`) inside `period`.
 ///
 /// Complement of [`find_day_periods`] within `period`.
-pub fn find_night_periods<T: Into<Degrees>>(
+pub fn find_night_periods(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
-    twilight: T,
+    twilight: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
     let days = find_day_periods(site, period, twilight);
     complement_within(period, &days)
@@ -113,16 +98,14 @@ pub fn find_sun_range_periods(
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day().value();
-    let jd_end = period.end.to_julian_day().value();
-    let h_min = range.0.to::<Radian>().value();
-    let h_max = range.1.to::<Radian>().value();
+    let h_min = range.0.to::<Radian>();
+    let h_max = range.1.to::<Radian>();
 
-    let f = |t: f64| sun_altitude_rad(JulianDate::new(t), &site).value();
+    let f = |t: ModifiedJulianDate| -> Radians {
+        Radians::new(sun_altitude_rad(t.to_julian_day(), &site).value())
+    };
 
-    intervals_to_periods(intervals::in_range_periods(
-        jd_start, jd_end, SCAN_STEP, &f, h_min, h_max,
-    ))
+    intervals::in_range_periods(period, SCAN_STEP, &f, h_min, h_max)
 }
 
 // =============================================================================
@@ -130,32 +113,32 @@ pub fn find_sun_range_periods(
 // =============================================================================
 
 /// Scan step for 10-minute scan variants (days).
-const SCAN_STEP_10MIN: f64 = 10.0 / 1440.0;
+const SCAN_STEP_10MIN: Days = Quantity::new(10.0 / 1440.0);
 
 /// Finds day periods using the generic 10-minute scan+refine algorithm.
 ///
 /// Prefer [`find_day_periods`] for better performance.
-pub fn find_day_periods_scan<T: Into<Degrees>>(
+pub fn find_day_periods_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
-    twilight: T,
+    twilight: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day().value();
-    let jd_end = period.end.to_julian_day().value();
-    let thr = twilight.into().to::<Radian>().value();
-    let f = |t: f64| sun_altitude_rad(JulianDate::new(t), &site).value();
-    intervals_to_periods(intervals::above_threshold_periods(
-        jd_start, jd_end, SCAN_STEP_10MIN, &f, thr,
-    ))
+    let thr = twilight.to::<Radian>();
+
+    let f = |t: ModifiedJulianDate| -> Radians {
+        Radians::new(sun_altitude_rad(t.to_julian_day(), &site).value())
+    };
+
+    intervals::above_threshold_periods(period, SCAN_STEP_10MIN, &f, thr)
 }
 
 /// Finds night periods using the generic 10-minute scan+refine algorithm.
 ///
 /// Prefer [`find_night_periods`] for better performance.
-pub fn find_night_periods_scan<T: Into<Degrees>>(
+pub fn find_night_periods_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
-    twilight: T,
+    twilight: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
     let days = find_day_periods_scan(site, period, twilight);
     complement_within(period, &days)
@@ -170,14 +153,14 @@ pub fn find_sun_range_periods_scan(
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let jd_start = period.start.to_julian_day().value();
-    let jd_end = period.end.to_julian_day().value();
-    let h_min = range.0.to::<Radian>().value();
-    let h_max = range.1.to::<Radian>().value();
-    let f = |t: f64| sun_altitude_rad(JulianDate::new(t), &site).value();
-    intervals_to_periods(intervals::in_range_periods(
-        jd_start, jd_end, SCAN_STEP_10MIN, &f, h_min, h_max,
-    ))
+    let h_min = range.0.to::<Radian>();
+    let h_max = range.1.to::<Radian>();
+
+    let f = |t: ModifiedJulianDate| -> Radians {
+        Radians::new(sun_altitude_rad(t.to_julian_day(), &site).value())
+    };
+
+    intervals::in_range_periods(period, SCAN_STEP_10MIN, &f, h_min, h_max)
 }
 
 #[cfg(test)]
@@ -198,7 +181,10 @@ mod tests {
         let site = greenwich_site();
         let jd = JulianDate::J2000;
         let alt = sun_altitude_rad(jd, &site);
-        assert!(alt.value() > -std::f64::consts::FRAC_PI_2 && alt.value() < std::f64::consts::FRAC_PI_2);
+        assert!(
+            alt.value() > -std::f64::consts::FRAC_PI_2
+                && alt.value() < std::f64::consts::FRAC_PI_2
+        );
     }
 
     #[test]
@@ -215,8 +201,6 @@ mod tests {
             !nights.is_empty(),
             "Should find night periods at 51° latitude"
         );
-
-        assert!(!nights.is_empty(), "Should have at least one night period");
 
         for night in &nights {
             assert!(
@@ -242,7 +226,6 @@ mod tests {
             find_sun_range_periods(site, period, (Degrees::new(-90.0), Degrees::new(-18.0)));
 
         assert!(!nights.is_empty(), "Should find night periods using range");
-        assert!(!nights.is_empty(), "Should have at least one night period");
 
         let nautical =
             find_sun_range_periods(site, period, (Degrees::new(-18.0), Degrees::new(-12.0)));
