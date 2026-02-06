@@ -70,26 +70,23 @@ fn main() {
     println!("Week starting: {} UTC", start_date);
     println!();
 
-    match nights {
-        Some(periods) if !periods.is_empty() => {
-            for period in periods {
-                let start_utc = period.start.to_utc();
-                let end_utc = period.end.to_utc();
+    if !nights.is_empty() {
+        for period in nights {
+            let start_utc = period.start.to_utc();
+            let end_utc = period.end.to_utc();
 
-                if let (Some(s), Some(e)) = (start_utc, end_utc) {
-                    let duration_mins = (period.duration_days() * 24.0 * 60.0).round() as i64;
-                    println!(
-                        "{} → {}  ({} min)",
-                        s.format("%Y-%m-%dT%H:%M:%S"),
-                        e.format("%Y-%m-%dT%H:%M:%S"),
-                        duration_mins
-                    );
-                }
+            if let (Some(s), Some(e)) = (start_utc, end_utc) {
+                let duration_mins = (period.duration_days() * 24.0 * 60.0).round() as i64;
+                println!(
+                    "{} → {}  ({} min)",
+                    s.format("%Y-%m-%dT%H:%M:%S"),
+                    e.format("%Y-%m-%dT%H:%M:%S"),
+                    duration_mins
+                );
             }
         }
-        _ => {
-            println!("No astronomical night periods found in this week.");
-            println!("(This can happen at high latitudes during summer.)");
-        }
+    } else {
+        println!("No astronomical night periods found in this week.");
+        println!("(This can happen at high latitudes during summer.)");
     }
 }
