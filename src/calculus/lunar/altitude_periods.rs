@@ -26,6 +26,7 @@
 
 use crate::astro::nutation::corrected_ra_with_nutation;
 use crate::astro::precession;
+use crate::astro::sidereal::gast_fast;
 use crate::astro::JulianDate;
 use crate::bodies::solar_system::Moon;
 use crate::calculus::events::altitude_periods::{
@@ -100,16 +101,6 @@ pub fn moon_altitude_fn(site: ObserverSite) -> impl Fn(JulianDate) -> f64 {
 // =============================================================================
 // Moon-Specific Culmination Finder (Optimized for ELP2000)
 // =============================================================================
-
-/// Fast GAST approximation (error < 0.1″ for ±50 yr around 2025).
-fn gast_fast(jd: JulianDate) -> Degrees {
-    let t = (jd.value() - 2_451_545.0) / 36_525.0;
-    let gast = 280.460_618_37
-        + 360.985_647_366_29 * (jd.value() - 2_451_545.0)
-        + 0.000_387_933 * t * t
-        - t * t * t / 38_710.0;
-    Degrees::new(gast)
-}
 
 /// Returns the Moon's geocentric equatorial position wrapped in a Target.
 fn get_moon_equatorial(jd: JulianDate) -> Target<spherical::Position<Geocentric, frames::EquatorialMeanJ2000, Kilometer>> {
