@@ -31,7 +31,7 @@ use crate::calculus::math_core::{extrema, intervals};
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::spherical;
 use crate::time::{complement_within, ModifiedJulianDate, Period};
-use qtty::{AstronomicalUnit, Degrees, Kilometer, Radian};
+use qtty::*;
 
 // ---------------------------------------------------------------------------
 // Types
@@ -125,32 +125,30 @@ const EXTREMA_SCAN_STEP: f64 = 20.0 / 1440.0;
 // Internal: altitude function factory
 // ---------------------------------------------------------------------------
 
-/// Build an `f64 → f64` altitude function (JD.value() → altitude in radians).
+/// Build a typed altitude function: `ModifiedJulianDate → Quantity<Radian>`.
 fn make_altitude_fn<'a>(
     target: &'a AltitudeTarget,
     site: &'a ObserverSite,
-) -> Box<dyn Fn(f64) -> f64 + 'a> {
+) -> Box<dyn Fn(ModifiedJulianDate) -> Radians + 'a> {
     let site = *site;
     match target {
-        AltitudeTarget::Sun => Box::new(move |jd_val: f64| {
-            let jd = JulianDate::new(jd_val);
+        AltitudeTarget::Sun => Box::new(move |t: ModifiedJulianDate| {
+            let jd = t.to_julian_day();
             Sun::get_horizontal::<AstronomicalUnit>(jd, site)
                 .alt()
                 .to::<Radian>()
-                .value()
         }),
-        AltitudeTarget::Moon => Box::new(move |jd_val: f64| {
-            let jd = JulianDate::new(jd_val);
+        AltitudeTarget::Moon => Box::new(move |t: ModifiedJulianDate| {
+            let jd = t.to_julian_day();
             Moon::get_horizontal::<Kilometer>(jd, site)
                 .alt()
                 .to::<Radian>()
-                .value()
         }),
         AltitudeTarget::FixedEquatorial { ra, dec } => {
             let ra = *ra;
             let dec = *dec;
-            Box::new(move |jd_val: f64| {
-                let jd = JulianDate::new(jd_val);
+            Box::new(move |t: ModifiedJulianDate| {
+                let jd = t.to_julian_day();
                 fixed_star_altitude_rad(jd, &site, ra, dec)
             })
         }
@@ -166,7 +164,7 @@ fn fixed_star_altitude_rad(
     site: &ObserverSite,
     ra_j2000: Degrees,
     dec_j2000: Degrees,
-) -> f64 {
+) -> Radians {
     use crate::astro::nutation::corrected_ra_with_nutation;
     use crate::astro::precession;
     use crate::astro::sidereal::{calculate_gst, calculate_lst};
@@ -195,7 +193,7 @@ fn fixed_star_altitude_rad(
     let lat = site.lat.to::<Radian>();
     let dec_rad = dec.to::<Radian>();
     let sin_alt = dec_rad.sin() * lat.sin() + dec_rad.cos() * lat.cos() * ha.cos();
-    sin_alt.asin()
+    Radians::new(sin_alt.asin())
 }
 
 /// Choose the best scan step for the target.
@@ -227,8 +225,8 @@ fn scan_step_for(target: &AltitudeTarget, opts: &SearchOpts) -> f64 {
 /// ```
 pub fn altitude_at(target: &AltitudeTarget, observer: &ObserverSite, t: JulianDate) -> Degrees {
     let f = make_altitude_fn(target, observer);
-    let rad = f(t.value());
-    Degrees::new(rad.to_degrees())
+    let rad = f(t.into());
+    rad.to::<Degree>()
 }
 
 /// Find all threshold crossings of `target` altitude in the given `window`.
@@ -261,19 +259,17 @@ pub fn crossings(
     opts: SearchOpts,
 ) -> Vec<CrossingEvent> {
     let f = make_altitude_fn(target, observer);
-    let t_start = window.start.to_julian_day().value();
-    let t_end = window.end.to_julian_day().value();
-    let thr_rad = threshold.to::<Radian>().value();
-    let step = scan_step_for(target, &opts);
+    let thr_rad = threshold.to::<Radian>();
+    let step = Days::new(scan_step_for(target, &opts));
 
     // Use the fast scan + label approach from math_core
-    let mut raw_crossings = intervals::find_crossings(t_start, t_end, step, &f, thr_rad);
+    let mut raw_crossings = intervals::find_crossings(window, step, &f, thr_rad);
     let labeled = intervals::label_crossings(&mut raw_crossings, &f, thr_rad);
 
     labeled
         .iter()
         .map(|lc| CrossingEvent {
-            jd: JulianDate::new(lc.t),
+            jd: lc.t.to_julian_day(),
             direction: if lc.direction > 0 {
                 CrossingDirection::Rising
             } else {
@@ -293,21 +289,20 @@ pub fn culminations(
     opts: SearchOpts,
 ) -> Vec<CulminationEvent> {
     let f = make_altitude_fn(target, observer);
-    let t_start = window.start.to_julian_day().value();
-    let t_end = window.end.to_julian_day().value();
-    let step = match target {
+    let step = Days::new(match target {
         AltitudeTarget::Moon => MOON_SCAN_STEP,
         _ => EXTREMA_SCAN_STEP,
-    };
+    });
     let tol = opts.time_tolerance_days;
 
-    let raw = extrema::find_extrema_tol(t_start, t_end, step, &f, tol);
+    let raw: Vec<extrema::Extremum<Radian>> =
+        extrema::find_extrema_tol(window, step, &f, tol);
 
     raw.iter()
         .map(|ext| {
-            let alt_deg = Degrees::new(ext.value.to_degrees());
+            let alt_deg = ext.value.to::<Degree>();
             CulminationEvent {
-                jd: JulianDate::new(ext.t),
+                jd: ext.t.to_julian_day(),
                 altitude: alt_deg,
                 kind: match ext.kind {
                     extrema::ExtremumKind::Maximum => CulminationKind::Max,
@@ -348,23 +343,11 @@ pub fn altitude_ranges(
     opts: SearchOpts,
 ) -> Vec<Period<ModifiedJulianDate>> {
     let f = make_altitude_fn(target, observer);
-    let t_start = window.start.to_julian_day().value();
-    let t_end = window.end.to_julian_day().value();
-    let min_rad = h_min.to::<Radian>().value();
-    let max_rad = h_max.to::<Radian>().value();
-    let step = scan_step_for(target, &opts);
+    let min_rad = h_min.to::<Radian>();
+    let max_rad = h_max.to::<Radian>();
+    let step = Days::new(scan_step_for(target, &opts));
 
-    let raw_intervals = intervals::in_range_periods(t_start, t_end, step, &f, min_rad, max_rad);
-
-    raw_intervals
-        .iter()
-        .map(|iv| {
-            Period::new(
-                ModifiedJulianDate::new(iv.start - 2_400_000.5),
-                ModifiedJulianDate::new(iv.end - 2_400_000.5),
-            )
-        })
-        .collect()
+    intervals::in_range_periods(window, step, &f, min_rad, max_rad)
 }
 
 /// Convenience: find periods where altitude is **above** a threshold.
@@ -378,21 +361,10 @@ pub fn above_threshold(
     opts: SearchOpts,
 ) -> Vec<Period<ModifiedJulianDate>> {
     let f = make_altitude_fn(target, observer);
-    let t_start = window.start.to_julian_day().value();
-    let t_end = window.end.to_julian_day().value();
-    let thr_rad = threshold.to::<Radian>().value();
-    let step = scan_step_for(target, &opts);
+    let thr_rad = threshold.to::<Radian>();
+    let step = Days::new(scan_step_for(target, &opts));
 
-    let raw = intervals::above_threshold_periods(t_start, t_end, step, &f, thr_rad);
-
-    raw.iter()
-        .map(|iv| {
-            Period::new(
-                ModifiedJulianDate::new(iv.start - 2_400_000.5),
-                ModifiedJulianDate::new(iv.end - 2_400_000.5),
-            )
-        })
-        .collect()
+    intervals::above_threshold_periods(window, step, &f, thr_rad)
 }
 
 /// Convenience: find periods where altitude is **below** a threshold.
@@ -416,10 +388,13 @@ pub fn below_threshold(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
 
     fn greenwich() -> ObserverSite {
-        ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Quantity::<Meter>::new(0.0))
+        ObserverSite::new(
+            Degrees::new(0.0),
+            Degrees::new(51.4769),
+            Quantity::<Meter>::new(0.0),
+        )
     }
 
     #[test]
@@ -463,9 +438,18 @@ mod tests {
 
         // In a normal 24h window at ~51°N, expect 1 rise + 1 set
         assert!(!events.is_empty(), "should find crossings");
-        let rises = events.iter().filter(|e| e.direction == CrossingDirection::Rising).count();
-        let sets = events.iter().filter(|e| e.direction == CrossingDirection::Setting).count();
-        assert!(rises >= 1 || sets >= 1, "should find at least one rise or set");
+        let rises = events
+            .iter()
+            .filter(|e| e.direction == CrossingDirection::Rising)
+            .count();
+        let sets = events
+            .iter()
+            .filter(|e| e.direction == CrossingDirection::Setting)
+            .count();
+        assert!(
+            rises >= 1 || sets >= 1,
+            "should find at least one rise or set"
+        );
     }
 
     #[test]
@@ -475,17 +459,18 @@ mod tests {
         let mjd_end = ModifiedJulianDate::new(60001.0);
         let window = Period::new(mjd_start, mjd_end);
 
-        let culms = culminations(
-            &AltitudeTarget::Sun,
-            &site,
-            window,
-            SearchOpts::default(),
-        );
+        let culms = culminations(&AltitudeTarget::Sun, &site, window, SearchOpts::default());
 
         // Expect upper and lower culmination in 24h
         assert!(!culms.is_empty(), "should find culminations");
-        let maxima = culms.iter().filter(|c| c.kind == CulminationKind::Max).count();
-        let minima = culms.iter().filter(|c| c.kind == CulminationKind::Min).count();
+        let maxima = culms
+            .iter()
+            .filter(|c| c.kind == CulminationKind::Max)
+            .count();
+        let minima = culms
+            .iter()
+            .filter(|c| c.kind == CulminationKind::Min)
+            .count();
         assert!(maxima >= 1, "should find at least one upper culmination");
         assert!(minima >= 1, "should find at least one lower culmination");
     }
@@ -565,6 +550,9 @@ mod tests {
             SearchOpts::default(),
         );
 
-        assert!(!periods.is_empty(), "should find moon-up periods over 7 days");
+        assert!(
+            !periods.is_empty(),
+            "should find moon-up periods over 7 days"
+        );
     }
 }

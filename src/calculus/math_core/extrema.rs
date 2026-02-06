@@ -6,16 +6,25 @@
 //! Derivative‑free optimisation for scalar functions of one variable.
 //! Finds local minima, maxima, and classifies stationary points.
 //!
+//! All routines operate on `Period<ModifiedJulianDate>` time windows and
+//! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
+//!
 //! ## Provided routines
 //!
 //! | Function | Purpose |
 //! |----------|---------|
 //! | [`minimize`] | Find the *t* that minimises *f(t)* in a bracket |
 //! | [`maximize`] | Find the *t* that maximises *f(t)* in a bracket |
-//! | [`find_extrema`] | Scan an interval, find all local min/max |
+//! | [`find_extrema`] | Scan a period, find all local min/max |
 //! | [`classify`] | Determine if a point is a local max, min, or neither |
 
+use crate::time::{ModifiedJulianDate, Period};
+use qtty::{Day, Quantity, Unit};
+
 use super::root_finding;
+
+type MJD = ModifiedJulianDate;
+type Days = Quantity<Day>;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -45,10 +54,12 @@ pub enum ExtremumKind {
 }
 
 /// A located extremum: time, function value, and kind.
+///
+/// Generic over `V` (value unit).
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Extremum {
-    pub t: f64,
-    pub value: f64,
+pub struct Extremum<V: Unit> {
+    pub t: ModifiedJulianDate,
+    pub value: Quantity<V>,
     pub kind: ExtremumKind,
 }
 
@@ -56,20 +67,37 @@ pub struct Extremum {
 // Golden‑section search
 // ---------------------------------------------------------------------------
 
-/// Find the value of *t* in `[a, b]` that **minimises** `f(t)`.
+/// Find the value of *t* in `period` that **minimises** `f(t)`.
 ///
 /// Uses golden‑section search (derivative‑free, guaranteed convergence).
 /// Returns `(t_min, f(t_min))`.
-pub fn minimize<F: Fn(f64) -> f64>(a: f64, b: f64, f: &F) -> (f64, f64) {
-    minimize_tol(a, b, f, DEFAULT_TOL)
+pub fn minimize<V, F>(
+    period: Period<MJD>,
+    f: &F,
+) -> (ModifiedJulianDate, Quantity<V>)
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    minimize_tol(period, f, DEFAULT_TOL)
 }
 
 /// Like [`minimize`] but with a caller‑chosen tolerance.
-pub fn minimize_tol<F: Fn(f64) -> f64>(mut a: f64, mut b: f64, f: &F, tol: f64) -> (f64, f64) {
+pub fn minimize_tol<V, F>(
+    period: Period<MJD>,
+    f: &F,
+    tol: f64,
+) -> (ModifiedJulianDate, Quantity<V>)
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    let mut a = period.start.value();
+    let mut b = period.end.value();
     let mut x1 = b - PHI * (b - a);
     let mut x2 = a + PHI * (b - a);
-    let mut f1 = f(x1);
-    let mut f2 = f(x2);
+    let mut f1 = f(MJD::new(x1)).value();
+    let mut f2 = f(MJD::new(x2)).value();
 
     for _ in 0..MAX_ITER {
         if (b - a).abs() < tol {
@@ -80,31 +108,46 @@ pub fn minimize_tol<F: Fn(f64) -> f64>(mut a: f64, mut b: f64, f: &F, tol: f64) 
             x2 = x1;
             f2 = f1;
             x1 = b - PHI * (b - a);
-            f1 = f(x1);
+            f1 = f(MJD::new(x1)).value();
         } else {
             a = x1;
             x1 = x2;
             f1 = f2;
             x2 = a + PHI * (b - a);
-            f2 = f(x2);
+            f2 = f(MJD::new(x2)).value();
         }
     }
 
     let t = 0.5 * (a + b);
-    (t, f(t))
+    (MJD::new(t), f(MJD::new(t)))
 }
 
-/// Find the value of *t* in `[a, b]` that **maximises** `f(t)`.
+/// Find the value of *t* in `period` that **maximises** `f(t)`.
 ///
 /// Implemented as `minimize(-f)`.  Returns `(t_max, f(t_max))`.
-pub fn maximize<F: Fn(f64) -> f64>(a: f64, b: f64, f: &F) -> (f64, f64) {
-    maximize_tol(a, b, f, DEFAULT_TOL)
+pub fn maximize<V, F>(
+    period: Period<MJD>,
+    f: &F,
+) -> (ModifiedJulianDate, Quantity<V>)
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    maximize_tol(period, f, DEFAULT_TOL)
 }
 
 /// Like [`maximize`] but with a caller‑chosen tolerance.
-pub fn maximize_tol<F: Fn(f64) -> f64>(a: f64, b: f64, f: &F, tol: f64) -> (f64, f64) {
-    let neg_f = |t: f64| -f(t);
-    let (t, _neg_val) = minimize_tol(a, b, &neg_f, tol);
+pub fn maximize_tol<V, F>(
+    period: Period<MJD>,
+    f: &F,
+    tol: f64,
+) -> (ModifiedJulianDate, Quantity<V>)
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    let neg_f = |t: MJD| -f(t);
+    let (t, _neg_val) = minimize_tol(period, &neg_f, tol);
     (t, f(t))
 }
 
@@ -116,10 +159,15 @@ pub fn maximize_tol<F: Fn(f64) -> f64>(a: f64, b: f64, f: &F, tol: f64) -> (f64,
 ///
 /// Returns `Some(ExtremumKind)` if the point is a local max or min,
 /// `None` if inconclusive (e.g. inflection point or saddle).
-pub fn classify<F: Fn(f64) -> f64>(t: f64, f: &F) -> Option<ExtremumKind> {
-    let fc = f(t);
-    let fl = f(t - PROBE_EPS);
-    let fr = f(t + PROBE_EPS);
+pub fn classify<V, F>(t: ModifiedJulianDate, f: &F) -> Option<ExtremumKind>
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    let tv = t.value();
+    let fc = f(t).value();
+    let fl = f(MJD::new(tv - PROBE_EPS)).value();
+    let fr = f(MJD::new(tv + PROBE_EPS)).value();
 
     if fc >= fl && fc >= fr {
         Some(ExtremumKind::Maximum)
@@ -134,49 +182,60 @@ pub fn classify<F: Fn(f64) -> f64>(t: f64, f: &F) -> Option<ExtremumKind> {
 // Scan‑based extrema finder
 // ---------------------------------------------------------------------------
 
-/// Scan `[t_start, t_end]` at `step` intervals, detect monotonicity changes,
+/// Scan `period` at `step` intervals, detect monotonicity changes,
 /// and refine each extremum with golden‑section.
 ///
 /// Returns a chronologically sorted list of [`Extremum`] values.
-pub fn find_extrema<F: Fn(f64) -> f64>(
-    t_start: f64,
-    t_end: f64,
-    step: f64,
+pub fn find_extrema<V, F>(
+    period: Period<MJD>,
+    step: Days,
     f: &F,
-) -> Vec<Extremum> {
-    find_extrema_tol(t_start, t_end, step, f, DEFAULT_TOL)
+) -> Vec<Extremum<V>>
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    find_extrema_tol(period, step, f, DEFAULT_TOL)
 }
 
 /// Like [`find_extrema`] but with a caller‑chosen tolerance.
-pub fn find_extrema_tol<F: Fn(f64) -> f64>(
-    t_start: f64,
-    t_end: f64,
-    step: f64,
+pub fn find_extrema_tol<V, F>(
+    period: Period<MJD>,
+    step: Days,
     f: &F,
     tol: f64,
-) -> Vec<Extremum> {
+) -> Vec<Extremum<V>>
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    let step_v = step.value();
+    let t_start_v = period.start.value();
+    let t_end_v = period.end.value();
+
     let mut result = Vec::new();
-    if step <= 0.0 || t_start >= t_end {
+    if step_v <= 0.0 || t_start_v >= t_end_v {
         return result;
     }
 
-    let mut t0 = t_start;
-    let mut f0 = f(t0);
-    let mut t1 = (t0 + step).min(t_end);
-    let mut f1 = f(t1);
+    let mut t0 = t_start_v;
+    let mut f0 = f(MJD::new(t0)).value();
+    let mut t1 = (t0 + step_v).min(t_end_v);
+    let mut f1 = f(MJD::new(t1)).value();
     let mut prev_rising = f1 > f0;
 
     loop {
-        let t2 = (t1 + step).min(t_end);
+        let t2 = (t1 + step_v).min(t_end_v);
         if t2 <= t1 {
             break;
         }
-        let f2 = f(t2);
+        let f2 = f(MJD::new(t2)).value();
         let now_rising = f2 > f1;
 
         if prev_rising && !now_rising {
             // Was rising, now falling → local maximum in [t0, t2]
-            let (t_max, v_max) = maximize_tol(t0, t2, f, tol);
+            let (t_max, v_max) =
+                maximize_tol(Period::new(MJD::new(t0), MJD::new(t2)), f, tol);
             result.push(Extremum {
                 t: t_max,
                 value: v_max,
@@ -184,7 +243,8 @@ pub fn find_extrema_tol<F: Fn(f64) -> f64>(
             });
         } else if !prev_rising && now_rising {
             // Was falling, now rising → local minimum in [t0, t2]
-            let (t_min, v_min) = minimize_tol(t0, t2, f, tol);
+            let (t_min, v_min) =
+                minimize_tol(Period::new(MJD::new(t0), MJD::new(t2)), f, tol);
             result.push(Extremum {
                 t: t_min,
                 value: v_min,
@@ -202,7 +262,7 @@ pub fn find_extrema_tol<F: Fn(f64) -> f64>(
     // Suppress the unused-variable warning for f0
     let _ = f0;
 
-    result.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+    result.sort_by(|a, b| a.t.value().partial_cmp(&b.t.value()).unwrap());
     result
 }
 
@@ -211,39 +271,61 @@ pub fn find_extrema_tol<F: Fn(f64) -> f64>(
 /// sign changes in the finite‑difference derivative.
 ///
 /// The derivative is estimated as: f'(t) ≈ (f(t+h) − f(t−h)) / (2h)
-pub fn find_extrema_via_derivative<F: Fn(f64) -> f64>(
-    t_start: f64,
-    t_end: f64,
-    step: f64,
+pub fn find_extrema_via_derivative<V, F>(
+    period: Period<MJD>,
+    step: Days,
     f: &F,
-    fd_step: f64,
-) -> Vec<Extremum> {
-    let deriv = |t: f64| (f(t + fd_step) - f(t - fd_step)) / (2.0 * fd_step);
+    fd_step: Days,
+) -> Vec<Extremum<V>>
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    let step_v = step.value();
+    let t_start_v = period.start.value();
+    let t_end_v = period.end.value();
+    let fd_v = fd_step.value();
+
+    let deriv = |t: MJD| -> Quantity<V> {
+        let tv = t.value();
+        let fwd = f(MJD::new(tv + fd_v)).value();
+        let bwd = f(MJD::new(tv - fd_v)).value();
+        Quantity::new((fwd - bwd) / (2.0 * fd_v))
+    };
+
+    // Wrapper for root_finding (which expects Quantity<Day>)
+    let deriv_day = |d: Days| -> Quantity<V> { deriv(MJD::new(d.value())) };
 
     let mut result = Vec::new();
-    let mut t = t_start;
-    let mut prev_d = deriv(t);
+    let mut t = t_start_v;
+    let mut prev_d = deriv(MJD::new(t));
 
-    while t < t_end {
-        let next_t = (t + step).min(t_end);
-        let next_d = deriv(next_t);
+    while t < t_end_v {
+        let next_t = (t + step_v).min(t_end_v);
+        let next_d = deriv(MJD::new(next_t));
 
-        if prev_d * next_d < 0.0 {
-            if let Some(root) = root_finding::brent_with_values(t, next_t, prev_d, next_d, &deriv)
-            {
-                let val = f(root);
-                let kind = if let Some(k) = classify(root, f) {
+        if prev_d.value() * next_d.value() < 0.0 {
+            if let Some(root) = root_finding::brent_with_values(
+                Days::new(t),
+                Days::new(next_t),
+                prev_d,
+                next_d,
+                &deriv_day,
+            ) {
+                let root_mjd = MJD::new(root.value());
+                let val = f(root_mjd);
+                let kind = if let Some(k) = classify::<V, _>(root_mjd, f) {
                     k
                 } else {
                     // Default based on derivative sign change direction
-                    if prev_d > 0.0 {
+                    if prev_d.value() > 0.0 {
                         ExtremumKind::Maximum
                     } else {
                         ExtremumKind::Minimum
                     }
                 };
                 result.push(Extremum {
-                    t: root,
+                    t: root_mjd,
                     value: val,
                     kind,
                 });
@@ -254,7 +336,7 @@ pub fn find_extrema_via_derivative<F: Fn(f64) -> f64>(
         prev_d = next_d;
     }
 
-    result.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+    result.sort_by(|a, b| a.t.value().partial_cmp(&b.t.value()).unwrap());
     result
 }
 
@@ -265,93 +347,164 @@ pub fn find_extrema_via_derivative<F: Fn(f64) -> f64>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use qtty::Radian;
+
+    type Radians = Quantity<Radian>;
+
+    fn mjd(v: f64) -> MJD {
+        MJD::new(v)
+    }
+    fn period(a: f64, b: f64) -> Period<MJD> {
+        Period::new(mjd(a), mjd(b))
+    }
 
     #[test]
     fn minimize_finds_parabola_vertex() {
-        let (t, v) = minimize(-5.0, 5.0, &|t: f64| (t - 2.0).powi(2));
-        assert!((t - 2.0).abs() < 1e-7, "t = {t}");
-        assert!(v < 1e-12, "v = {v}");
+        let (t, v) = minimize(period(-5.0, 5.0), &|t: MJD| {
+            Radians::new((t.value() - 2.0).powi(2))
+        });
+        assert!((t.value() - 2.0).abs() < 1e-7, "t = {}", t.value());
+        assert!(v.value() < 1e-12, "v = {}", v.value());
     }
 
     #[test]
     fn maximize_finds_negative_parabola_peak() {
-        let (t, v) = maximize(-5.0, 5.0, &|t: f64| -(t - 3.0).powi(2) + 10.0);
-        assert!((t - 3.0).abs() < 1e-7, "t = {t}");
-        assert!((v - 10.0).abs() < 1e-6, "v = {v}");
+        let (t, v) = maximize(period(-5.0, 5.0), &|t: MJD| {
+            Radians::new(-(t.value() - 3.0).powi(2) + 10.0)
+        });
+        assert!((t.value() - 3.0).abs() < 1e-7, "t = {}", t.value());
+        assert!((v.value() - 10.0).abs() < 1e-6, "v = {}", v.value());
     }
 
     #[test]
     fn classify_detects_maximum() {
-        let f = |t: f64| -(t * t);
-        assert_eq!(classify(0.0, &f), Some(ExtremumKind::Maximum));
+        let f = |t: MJD| Radians::new(-(t.value() * t.value()));
+        assert_eq!(
+            classify::<Radian, _>(mjd(0.0), &f),
+            Some(ExtremumKind::Maximum)
+        );
     }
 
     #[test]
     fn classify_detects_minimum() {
-        let f = |t: f64| t * t;
-        assert_eq!(classify(0.0, &f), Some(ExtremumKind::Minimum));
+        let f = |t: MJD| Radians::new(t.value() * t.value());
+        assert_eq!(
+            classify::<Radian, _>(mjd(0.0), &f),
+            Some(ExtremumKind::Minimum)
+        );
     }
 
     #[test]
     fn classify_returns_none_for_inflection() {
-        let f = |t: f64| t * t * t;
+        let f = |t: MJD| Radians::new(t.value() * t.value() * t.value());
         // At t=0 the cubic has an inflection point, not a max/min
-        assert_eq!(classify(0.0, &f), None);
+        assert_eq!(classify::<Radian, _>(mjd(0.0), &f), None);
     }
 
     #[test]
     fn find_extrema_sine_wave() {
         // sin(2πt) over [0, 1] has max at t=0.25, min at t=0.75
-        let f = |t: f64| (2.0 * std::f64::consts::PI * t).sin();
-        let extrema = find_extrema(0.0, 1.0, 0.05, &f);
+        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
+        let extrema: Vec<Extremum<Radian>> =
+            find_extrema(period(0.0, 1.0), Days::new(0.05), &f);
 
         assert_eq!(extrema.len(), 2, "expected 2 extrema, got {:?}", extrema);
 
-        let max_ext = extrema.iter().find(|e| e.kind == ExtremumKind::Maximum).unwrap();
-        let min_ext = extrema.iter().find(|e| e.kind == ExtremumKind::Minimum).unwrap();
+        let max_ext = extrema
+            .iter()
+            .find(|e| e.kind == ExtremumKind::Maximum)
+            .unwrap();
+        let min_ext = extrema
+            .iter()
+            .find(|e| e.kind == ExtremumKind::Minimum)
+            .unwrap();
 
-        assert!((max_ext.t - 0.25).abs() < 1e-6, "max at {}", max_ext.t);
-        assert!((max_ext.value - 1.0).abs() < 1e-6);
-        assert!((min_ext.t - 0.75).abs() < 1e-6, "min at {}", min_ext.t);
-        assert!((min_ext.value + 1.0).abs() < 1e-6);
+        assert!(
+            (max_ext.t.value() - 0.25).abs() < 1e-6,
+            "max at {}",
+            max_ext.t.value()
+        );
+        assert!((max_ext.value.value() - 1.0).abs() < 1e-6);
+        assert!(
+            (min_ext.t.value() - 0.75).abs() < 1e-6,
+            "min at {}",
+            min_ext.t.value()
+        );
+        assert!((min_ext.value.value() + 1.0).abs() < 1e-6);
     }
 
     #[test]
     fn find_extrema_via_derivative_sine() {
         // Shift slightly to avoid derivative sign-change at endpoints
-        let f = |t: f64| (2.0 * std::f64::consts::PI * t).sin();
+        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
         // Use a step that doesn't align with extrema at t=0.25, 0.75
-        let extrema = find_extrema_via_derivative(0.01, 0.99, 0.035, &f, 1e-5);
+        let extrema: Vec<Extremum<Radian>> = find_extrema_via_derivative(
+            period(0.01, 0.99),
+            Days::new(0.035),
+            &f,
+            Days::new(1e-5),
+        );
 
-        assert!(extrema.len() >= 2, "expected ≥2 extrema, got {:?}", extrema);
+        assert!(
+            extrema.len() >= 2,
+            "expected ≥2 extrema, got {:?}",
+            extrema
+        );
 
-        let max_ext = extrema.iter().find(|e| e.kind == ExtremumKind::Maximum).unwrap();
-        let min_ext = extrema.iter().find(|e| e.kind == ExtremumKind::Minimum).unwrap();
+        let max_ext = extrema
+            .iter()
+            .find(|e| e.kind == ExtremumKind::Maximum)
+            .unwrap();
+        let min_ext = extrema
+            .iter()
+            .find(|e| e.kind == ExtremumKind::Minimum)
+            .unwrap();
 
-        assert!((max_ext.t - 0.25).abs() < 1e-3, "max at {}", max_ext.t);
-        assert!((min_ext.t - 0.75).abs() < 1e-3, "min at {}", min_ext.t);
+        assert!(
+            (max_ext.t.value() - 0.25).abs() < 1e-3,
+            "max at {}",
+            max_ext.t.value()
+        );
+        assert!(
+            (min_ext.t.value() - 0.75).abs() < 1e-3,
+            "min at {}",
+            min_ext.t.value()
+        );
     }
 
     #[test]
     fn find_extrema_constant_returns_empty() {
-        let extrema = find_extrema(0.0, 10.0, 1.0, &|_| 42.0);
+        let extrema: Vec<Extremum<Radian>> =
+            find_extrema(period(0.0, 10.0), Days::new(1.0), &|_: MJD| {
+                Radians::new(42.0)
+            });
         assert!(extrema.is_empty());
     }
 
     #[test]
     fn find_extrema_monotone_returns_empty() {
-        let extrema = find_extrema(0.0, 10.0, 0.5, &|t| t);
+        let extrema: Vec<Extremum<Radian>> =
+            find_extrema(period(0.0, 10.0), Days::new(0.5), &|t: MJD| {
+                Radians::new(t.value())
+            });
         assert!(extrema.is_empty());
     }
 
     #[test]
     fn find_extrema_multiple_oscillations() {
         // sin(6πt) over [0,1] → 3 maxima, 2–3 minima
-        let f = |t: f64| (6.0 * std::f64::consts::PI * t).sin();
-        let extrema = find_extrema(0.0, 1.0, 0.02, &f);
+        let f = |t: MJD| Radians::new((6.0 * std::f64::consts::PI * t.value()).sin());
+        let extrema: Vec<Extremum<Radian>> =
+            find_extrema(period(0.0, 1.0), Days::new(0.02), &f);
 
-        let n_max = extrema.iter().filter(|e| e.kind == ExtremumKind::Maximum).count();
-        let n_min = extrema.iter().filter(|e| e.kind == ExtremumKind::Minimum).count();
+        let n_max = extrema
+            .iter()
+            .filter(|e| e.kind == ExtremumKind::Maximum)
+            .count();
+        let n_min = extrema
+            .iter()
+            .filter(|e| e.kind == ExtremumKind::Minimum)
+            .count();
 
         assert!(n_max >= 2, "expected ≥2 maxima, got {n_max}");
         assert!(n_min >= 2, "expected ≥2 minima, got {n_min}");
