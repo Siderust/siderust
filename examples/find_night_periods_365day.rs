@@ -17,7 +17,8 @@
 //! - Site: Roque de los Muchachos Observatory
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
-use siderust::calculus::solar::altitude_periods::{find_night_periods, twilight};
+use siderust::calculus::solar::altitude_periods::find_night_periods;
+use siderust::calculus::solar::night_types::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period};
