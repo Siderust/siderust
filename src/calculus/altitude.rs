@@ -93,16 +93,16 @@ pub struct CulminationEvent {
 pub struct SearchOpts {
     /// Time tolerance for root/extremum refinement (days).
     /// Default: ~1 µs (1e-11 days).
-    pub time_tolerance_days: f64,
+    pub time_tolerance: Days,
     /// Scan step for coarse bracket detection (days).
     /// Default: 10 minutes for generic, 2 hours for Moon.
-    pub scan_step_days: Option<f64>,
+    pub scan_step_days: Option<Days>,
 }
 
 impl Default for SearchOpts {
     fn default() -> Self {
         Self {
-            time_tolerance_days: 1e-9,
+            time_tolerance: Days::new(1e-9),
             scan_step_days: None,
         }
     }
@@ -113,13 +113,13 @@ impl Default for SearchOpts {
 // ---------------------------------------------------------------------------
 
 /// Default scan step: 10 minutes in days.
-const DEFAULT_SCAN_STEP: f64 = 10.0 / 1440.0;
+const DEFAULT_SCAN_STEP: Days = Minutes::new(10.0).to::<Day>();
 
 /// Moon scan step: 2 hours in days.
-const MOON_SCAN_STEP: f64 = 2.0 / 24.0;
+const MOON_SCAN_STEP: Days = Hours::new(2.0).to::<Day>();
 
 /// Extrema scan step: 20 minutes in days (for culmination detection).
-const EXTREMA_SCAN_STEP: f64 = 20.0 / 1440.0;
+const EXTREMA_SCAN_STEP: Days = Minutes::new(20.0).to::<Day>();
 
 // ---------------------------------------------------------------------------
 // Internal: altitude function factory
@@ -197,7 +197,7 @@ fn fixed_star_altitude_rad(
 }
 
 /// Choose the best scan step for the target.
-fn scan_step_for(target: &AltitudeTarget, opts: &SearchOpts) -> f64 {
+fn scan_step_for(target: &AltitudeTarget, opts: &SearchOpts) -> Days {
     opts.scan_step_days.unwrap_or(match target {
         AltitudeTarget::Moon => MOON_SCAN_STEP,
         _ => DEFAULT_SCAN_STEP,
@@ -260,7 +260,7 @@ pub fn crossings(
 ) -> Vec<CrossingEvent> {
     let f = make_altitude_fn(target, observer);
     let thr_rad = threshold.to::<Radian>();
-    let step = Days::new(scan_step_for(target, &opts));
+    let step = scan_step_for(target, &opts);
 
     // Use the fast scan + label approach from math_core
     let mut raw_crossings = intervals::find_crossings(window, step, &f, thr_rad);
@@ -289,11 +289,11 @@ pub fn culminations(
     opts: SearchOpts,
 ) -> Vec<CulminationEvent> {
     let f = make_altitude_fn(target, observer);
-    let step = Days::new(match target {
+    let step = match target {
         AltitudeTarget::Moon => MOON_SCAN_STEP,
         _ => EXTREMA_SCAN_STEP,
-    });
-    let tol = opts.time_tolerance_days;
+    };
+    let tol = opts.time_tolerance;
 
     let raw: Vec<extrema::Extremum<Radian>> =
         extrema::find_extrema_tol(window, step, &f, tol);
@@ -345,7 +345,7 @@ pub fn altitude_ranges(
     let f = make_altitude_fn(target, observer);
     let min_rad = h_min.to::<Radian>();
     let max_rad = h_max.to::<Radian>();
-    let step = Days::new(scan_step_for(target, &opts));
+    let step = scan_step_for(target, &opts);
 
     intervals::in_range_periods(window, step, &f, min_rad, max_rad)
 }
@@ -362,7 +362,7 @@ pub fn above_threshold(
 ) -> Vec<Period<ModifiedJulianDate>> {
     let f = make_altitude_fn(target, observer);
     let thr_rad = threshold.to::<Radian>();
-    let step = Days::new(scan_step_for(target, &opts));
+    let step = scan_step_for(target, &opts);
 
     intervals::above_threshold_periods(window, step, &f, thr_rad)
 }
