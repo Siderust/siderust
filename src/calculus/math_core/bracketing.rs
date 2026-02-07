@@ -116,7 +116,7 @@ where
                 brackets.push(frame.period);
             } else {
                 // Subdivide to find tighter bracket
-                let mid = frame.period.start + Days::new(width.value() * 0.5);
+                let mid = frame.period.start + width * 0.5;
                 let g_mid = g(mid);
                 // Push both halves (will be processed)
                 stack.push(Frame {
@@ -166,13 +166,21 @@ where
             // This maximum is above threshold → there must be a rising crossing
             // before it and a setting crossing after it.
             // Search backward from the extremum for the rising crossing
-            let rise_bracket = search_crossing_backward(period.start, ext.t, f, threshold);
+            let rise_bracket = search_crossing_backward(
+                Period::new(period.start, ext.t),
+                f,
+                threshold,
+            );
             if let Some(br) = rise_bracket {
                 brackets.push(br);
             }
 
             // Search forward from the extremum for the setting crossing
-            let set_bracket = search_crossing_forward(ext.t, period.end, f, threshold);
+            let set_bracket = search_crossing_forward(
+                Period::new(ext.t, period.end),
+                f,
+                threshold,
+            );
             if let Some(br) = set_bracket {
                 brackets.push(br);
             }
@@ -190,10 +198,9 @@ where
     brackets
 }
 
-/// Search backward from `t_max` to `t_start` for a sign change in `f(t) − threshold`.
+/// Search backward from `search_period.end` to `search_period.start` for a sign change in `f(t) − threshold`.
 fn search_crossing_backward<V, F>(
-    t_start: MJD,
-    t_max: MJD,
+    search_period: Period<MJD>,
     f: &F,
     threshold: Quantity<V>,
 ) -> Option<Period<MJD>>
@@ -202,26 +209,26 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let g = |t: MJD| f(t).value() - threshold.value();
-    let range = t_max - t_start;
+    let range = search_period.duration();
 
     // Expanding search: start near the extremum and step backward
-    let mut bracket = Period::new(t_max, t_max);
+    let mut bracket = Period::new(search_period.end, search_period.end);
     let mut g_hi = g(bracket.end);
     let mut step = Days::new(range.value() * 0.1);
     if step.value() < 1e-10 {
         step = Days::new(range.value() * 0.5);
     }
 
-    bracket.start = (bracket.end - step).max(t_start);
+    bracket.start = (bracket.end - step).max(search_period.start);
     let mut g_lo = g(bracket.start);
 
-    while bracket.start > t_start {
+    while bracket.start > search_period.start {
         if g_lo * g_hi < 0.0 {
             return Some(bracket);
         }
         bracket.end = bracket.start;
         g_hi = g_lo;
-        bracket.start = (bracket.start - step).max(t_start);
+        bracket.start = (bracket.start - step).max(search_period.start);
         g_lo = g(bracket.start);
     }
 
@@ -233,10 +240,9 @@ where
     }
 }
 
-/// Search forward from `t_min` to `t_end` for a sign change.
+/// Search forward from `search_period.start` to `search_period.end` for a sign change.
 fn search_crossing_forward<V, F>(
-    t_min: MJD,
-    t_end: MJD,
+    search_period: Period<MJD>,
     f: &F,
     threshold: Quantity<V>,
 ) -> Option<Period<MJD>>
@@ -245,25 +251,25 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let g = |t: MJD| f(t).value() - threshold.value();
-    let range = t_end - t_min;
+    let range = search_period.duration();
 
-    let mut bracket = Period::new(t_min, t_min);
+    let mut bracket = Period::new(search_period.start, search_period.start);
     let mut g_lo = g(bracket.start);
     let mut step = Days::new(range.value() * 0.1);
     if step.value() < 1e-10 {
         step = Days::new(range.value() * 0.5);
     }
 
-    bracket.end = (bracket.start + step).min(t_end);
+    bracket.end = (bracket.start + step).min(search_period.end);
     let mut g_hi = g(bracket.end);
 
-    while bracket.end < t_end {
+    while bracket.end < search_period.end {
         if g_lo * g_hi < 0.0 {
             return Some(bracket);
         }
         bracket.start = bracket.end;
         g_lo = g_hi;
-        bracket.end = (bracket.end + step).min(t_end);
+        bracket.end = (bracket.end + step).min(search_period.end);
         g_hi = g(bracket.end);
     }
 
