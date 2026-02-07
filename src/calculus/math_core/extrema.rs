@@ -19,12 +19,11 @@
 //! | [`classify`] | Determine if a point is a local max, min, or neither |
 
 use crate::time::{ModifiedJulianDate, Period};
-use qtty::{Day, Quantity, Unit};
+use qtty::*;
 
 use super::root_finding;
 
 type MJD = ModifiedJulianDate;
-type Days = Quantity<Day>;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -34,7 +33,7 @@ type Days = Quantity<Day>;
 const PHI: f64 = 0.618_033_988_749_895;
 
 /// Default tolerance for golden‑section convergence.
-const DEFAULT_TOL: f64 = 1e-9;
+const DEFAULT_TOL: Days = Days::new(1e-9);
 
 /// Maximum iterations for golden‑section.
 const MAX_ITER: usize = 100;
@@ -86,40 +85,39 @@ where
 pub fn minimize_tol<V, F>(
     period: Period<MJD>,
     f: &F,
-    tol: f64,
+    tol: Days,
 ) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let mut a = period.start.value();
-    let mut b = period.end.value();
-    let mut x1 = b - PHI * (b - a);
-    let mut x2 = a + PHI * (b - a);
-    let mut f1 = f(MJD::new(x1)).value();
-    let mut f2 = f(MJD::new(x2)).value();
+    let mut p = period;
+    let mut x1 = MJD::new((p.end - PHI * p.duration()).value());
+    let mut x2 = MJD::new((p.start + PHI * p.duration()).value());
+    let mut f1: Quantity<V> = f(x1);
+    let mut f2: Quantity<V> = f(x2);
 
     for _ in 0..MAX_ITER {
-        if (b - a).abs() < tol {
+        if p.duration() < tol {
             break;
         }
-        if f1 < f2 {
-            b = x2;
+        if f1.value() < f2.value() {
+            p.end = x2;
             x2 = x1;
             f2 = f1;
-            x1 = b - PHI * (b - a);
-            f1 = f(MJD::new(x1)).value();
+            x1 = p.end - PHI * p.duration();
+            f1 = f(x1);
         } else {
-            a = x1;
+            p.start = x1;
             x1 = x2;
             f1 = f2;
-            x2 = a + PHI * (b - a);
-            f2 = f(MJD::new(x2)).value();
+            x2 = p.start + PHI * p.duration();
+            f2 = f(x2);
         }
     }
 
-    let t = 0.5 * (a + b);
-    (MJD::new(t), f(MJD::new(t)))
+    let t = MJD::new(0.5 * (p.start.value() + p.end.value()));
+    (t, f(t))
 }
 
 /// Find the value of *t* in `period` that **maximises** `f(t)`.
@@ -140,7 +138,7 @@ where
 pub fn maximize_tol<V, F>(
     period: Period<MJD>,
     f: &F,
-    tol: f64,
+    tol: Days,
 ) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
@@ -203,7 +201,7 @@ pub fn find_extrema_tol<V, F>(
     period: Period<MJD>,
     step: Days,
     f: &F,
-    tol: f64,
+    tol: Days,
 ) -> Vec<Extremum<V>>
 where
     V: Unit,
