@@ -159,7 +159,7 @@ fn make_altitude_fn<'a>(
 ///
 /// Uses precession + nutation-corrected RA, GAST, and the standard
 /// equatorial→horizontal formula.
-fn fixed_star_altitude_rad(
+pub(crate) fn fixed_star_altitude_rad(
     jd: JulianDate,
     site: &ObserverSite,
     ra_j2000: Degrees,
@@ -342,6 +342,13 @@ pub fn altitude_ranges(
     h_max: Degrees,
     opts: SearchOpts,
 ) -> Vec<Period<ModifiedJulianDate>> {
+    // Analytical fast-path for fixed stars (see calculus::stellar)
+    if let AltitudeTarget::FixedEquatorial { ra, dec } = target {
+        return crate::calculus::stellar::find_star_range_periods(
+            *ra, *dec, *observer, window, (h_min, h_max),
+        );
+    }
+
     let f = make_altitude_fn(target, observer);
     let min_rad = h_min.to::<Radian>();
     let max_rad = h_max.to::<Radian>();
@@ -360,6 +367,13 @@ pub fn above_threshold(
     threshold: Degrees,
     opts: SearchOpts,
 ) -> Vec<Period<ModifiedJulianDate>> {
+    // Analytical fast-path for fixed stars (see calculus::stellar)
+    if let AltitudeTarget::FixedEquatorial { ra, dec } = target {
+        return crate::calculus::stellar::find_star_above_periods(
+            *ra, *dec, *observer, window, threshold,
+        );
+    }
+
     let f = make_altitude_fn(target, observer);
     let thr_rad = threshold.to::<Radian>();
     let step = scan_step_for(target, &opts);
