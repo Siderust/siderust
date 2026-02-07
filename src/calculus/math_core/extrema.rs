@@ -39,7 +39,7 @@ const DEFAULT_TOL: Days = Days::new(1e-9);
 const MAX_ITER: usize = 100;
 
 /// Small probe offset for classification (in the caller's time unit).
-const PROBE_EPS: f64 = 1e-7;
+const PROBE_EPS: Days = Days::new(1e-7);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -162,14 +162,14 @@ where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let tv = t.value();
-    let fc = f(t).value();
-    let fl = f(MJD::new(tv - PROBE_EPS)).value();
-    let fr = f(MJD::new(tv + PROBE_EPS)).value();
+    let tv = t;
+    let fc = f(t);
+    let fl = f(tv - PROBE_EPS);
+    let fr = f(tv + PROBE_EPS);
 
-    if fc >= fl && fc >= fr {
+    if fc.value() >= fl.value() && fc.value() >= fr.value() {
         Some(ExtremumKind::Maximum)
-    } else if fc <= fl && fc <= fr {
+    } else if fc.value() <= fl.value() && fc.value() <= fr.value() {
         Some(ExtremumKind::Minimum)
     } else {
         None
@@ -207,33 +207,33 @@ where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let step_v = step.value();
-    let t_start_v = period.start.value();
-    let t_end_v = period.end.value();
+    let step_v = step;
+    let t_start_v = period.start;
+    let t_end_v = period.end;
 
     let mut result = Vec::new();
-    if step_v <= 0.0 || t_start_v >= t_end_v {
+    if step_v <= Days::new(0.0) || t_start_v >= t_end_v {
         return result;
     }
 
     let mut t0 = t_start_v;
-    let mut f0 = f(MJD::new(t0)).value();
+    let mut f0 = f(t0);
     let mut t1 = (t0 + step_v).min(t_end_v);
-    let mut f1 = f(MJD::new(t1)).value();
-    let mut prev_rising = f1 > f0;
+    let mut f1 = f(t1);
+    let mut prev_rising = f1.value() > f0.value();
 
     loop {
         let t2 = (t1 + step_v).min(t_end_v);
         if t2 <= t1 {
             break;
         }
-        let f2 = f(MJD::new(t2)).value();
-        let now_rising = f2 > f1;
+        let f2 = f(t2);
+        let now_rising = f2.value() > f1.value();
 
         if prev_rising && !now_rising {
             // Was rising, now falling → local maximum in [t0, t2]
             let (t_max, v_max) =
-                maximize_tol(Period::new(MJD::new(t0), MJD::new(t2)), f, tol);
+                maximize_tol(Period::new(t0, t2), f, tol);
             result.push(Extremum {
                 t: t_max,
                 value: v_max,
@@ -242,7 +242,7 @@ where
         } else if !prev_rising && now_rising {
             // Was falling, now rising → local minimum in [t0, t2]
             let (t_min, v_min) =
-                minimize_tol(Period::new(MJD::new(t0), MJD::new(t2)), f, tol);
+                minimize_tol(Period::new(t0, t2), f, tol);
             result.push(Extremum {
                 t: t_min,
                 value: v_min,
@@ -279,16 +279,16 @@ where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let step_v = step.value();
-    let t_start_v = period.start.value();
-    let t_end_v = period.end.value();
-    let fd_v = fd_step.value();
+    let step_v = step;
+    let t_start_v = period.start;
+    let t_end_v = period.end;
+    let fd_v = fd_step;
 
     let deriv = |t: MJD| -> Quantity<V> {
-        let tv = t.value();
-        let fwd = f(MJD::new(tv + fd_v)).value();
-        let bwd = f(MJD::new(tv - fd_v)).value();
-        Quantity::new((fwd - bwd) / (2.0 * fd_v))
+        let tv = t;
+        let fwd = f(tv + fd_v);
+        let bwd = f(tv - fd_v);
+        (fwd - bwd) / (2.0 * fd_v).value()
     };
 
     // Wrapper for root_finding (which expects Quantity<Day>)
@@ -296,16 +296,15 @@ where
 
     let mut result = Vec::new();
     let mut t = t_start_v;
-    let mut prev_d = deriv(MJD::new(t));
+    let mut prev_d = deriv(t);
 
     while t < t_end_v {
         let next_t = (t + step_v).min(t_end_v);
-        let next_d = deriv(MJD::new(next_t));
-
+        let next_d = deriv(next_t);
         if prev_d.value() * next_d.value() < 0.0 {
             if let Some(root) = root_finding::brent_with_values(
-                Days::new(t),
-                Days::new(next_t),
+                Days::new(t.value()),
+                Days::new(next_t.value()),
                 prev_d,
                 next_d,
                 &deriv_day,
