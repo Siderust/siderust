@@ -27,10 +27,10 @@ type Days = Quantity<Day>;
 // ---------------------------------------------------------------------------
 
 /// Tiny probe offset for classifying crossing direction.
-const PROBE_DT: f64 = 1e-7;
+const PROBE_DT: Days = Days::new(1e-7);
 
 /// Deduplication epsilon for crossings.
-const DEDUPE_EPS: f64 = 1e-8;
+const DEDUPE_EPS: Days = Days::new(1e-8);
 
 // ---------------------------------------------------------------------------
 // Types
@@ -63,28 +63,27 @@ where
     let g = |t: MJD| -> Quantity<V> { f(t) - threshold };
     let g_day = |d: Days| -> Quantity<V> { g(MJD::new(d.value())) };
 
-    let step_v = step.value();
-    let t_start_v = period.start.value();
-    let t_end_v = period.end.value();
+    let step_v = step;
+    let t_start_v = period.start;
+    let t_end_v = period.end;
 
     let mut crossings = Vec::new();
     let mut t = t_start_v;
-    let mut prev = g(MJD::new(t)).value();
-
+    let mut prev = g(t);
     while t < t_end_v {
         let next_t = (t + step_v).min(t_end_v);
-        let next_v = g(MJD::new(next_t)).value();
+        let next_v = g(next_t);
 
-        if prev * next_v < 0.0 {
+        if prev.value() * next_v.value() < 0.0 {
             if let Some(root) = root_finding::brent_with_values(
-                Days::new(t),
-                Days::new(next_t),
-                Quantity::<V>::new(prev),
-                Quantity::<V>::new(next_v),
+                Days::new(t.value()),
+                Days::new(next_t.value()),
+                prev,
+                next_v,
                 &g_day,
             ) {
                 let rv = root.value();
-                if rv >= t_start_v && rv <= t_end_v {
+                if rv >= t_start_v.value() && rv <= t_end_v.value() {
                     crossings.push(MJD::new(rv));
                 }
             }
@@ -111,42 +110,42 @@ where
 {
     let g = |t: MJD| -> Quantity<V> { f(t) - threshold };
     let g_day = |d: Days| -> Quantity<V> { g(MJD::new(d.value())) };
-    let t_start_v = period.start.value();
-    let t_end_v = period.end.value();
+    let t_start_v = period.start;
+    let t_end_v = period.end;
 
     let mut crossings = Vec::new();
 
     for window in key_times.windows(2) {
         let a = window[0];
         let b = window[1];
-        if a.value() >= b.value() {
+        if a >= b {
             continue;
         }
 
-        let fa = g(a).value();
-        let fb = g(b).value();
+        let fa = g(a);
+        let fb = g(b);
 
         const ROOT_EPS: f64 = 1e-12;
-        if fa.abs() < ROOT_EPS {
+        if fa.abs().value() < ROOT_EPS {
             crossings.push(a);
             continue;
         }
-        if fb.abs() < ROOT_EPS {
+        if fb.abs().value() < ROOT_EPS {
             crossings.push(b);
             continue;
         }
 
-        if fa * fb < 0.0 {
+        if fa.value() * fb.value() < 0.0 {
             if let Some(root) = root_finding::brent_with_values(
                 Days::new(a.value()),
                 Days::new(b.value()),
-                Quantity::<V>::new(fa),
-                Quantity::<V>::new(fb),
+                fa,
+                fb,
                 &g_day,
             ) {
-                let rv = root.value();
+                let rv = ModifiedJulianDate::new(root.value());
                 if rv >= t_start_v && rv <= t_end_v {
-                    crossings.push(MJD::new(rv));
+                    crossings.push(rv);
                 }
             }
         }
@@ -171,18 +170,17 @@ where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let thr_v = threshold.value();
-    crossings.sort_by(|a, b| a.value().partial_cmp(&b.value()).unwrap());
-    crossings.dedup_by(|a, b| (a.value() - b.value()).abs() < DEDUPE_EPS);
+    crossings.sort_by(|a, b| a.partial_cmp(&b).unwrap());
+    crossings.dedup_by(|a, b| (*a - *b).abs() < DEDUPE_EPS);
 
-    let is_above = |v: f64| v > thr_v;
+    let is_above = |v: Quantity<V>| v.value() > threshold.value();
 
     crossings
         .iter()
         .filter_map(|&t| {
-            let tv = t.value();
-            let before = is_above(f(MJD::new(tv - PROBE_DT)).value());
-            let after = is_above(f(MJD::new(tv + PROBE_DT)).value());
+            let tv = t;
+            let before = is_above(f(tv - PROBE_DT));
+            let after = is_above(f(tv + PROBE_DT));
             if !before && after {
                 Some(LabeledCrossing { t, direction: 1 })
             } else if before && !after {
@@ -218,8 +216,7 @@ where
 {
     let t_start = period.start;
     let t_end = period.end;
-    let thr_v = threshold.value();
-    let is_above = |v: f64| v > thr_v;
+    let is_above = |v: Quantity<V>| v.value() > threshold.value();
     let mut periods = Vec::new();
 
     if labeled.is_empty() {
@@ -234,9 +231,9 @@ where
     // Leading partial period: we start above and first crossing exits
     if start_above && labeled[0].direction == -1 {
         let exit_t = labeled[0].t;
-        let mid_v = 0.5 * (t_start.value() + exit_t.value());
-        if is_above(f(MJD::new(mid_v)).value()) {
-            periods.push(Period::new(t_start, exit_t));
+        let mid_v = MJD::new(0.5 * (t_start.value() + exit_t.value()));
+        if is_above(f(mid_v)) {
+            periods.push(Period::new(period.start, exit_t));
         }
         i = 1;
     }
@@ -254,10 +251,10 @@ where
                 t_end
             };
 
-            let mid_v = 0.5 * (enter_t.value() + exit_t.value());
-            if mid_v >= t_start.value()
-                && mid_v <= t_end.value()
-                && is_above(f(MJD::new(mid_v)).value())
+            let mid_v = MJD::new(0.5 * (enter_t.value() + exit_t.value()));
+            if mid_v >= t_start
+                && mid_v <= t_end
+                && is_above(f(mid_v))
             {
                 periods.push(Period::new(enter_t, exit_t));
             }
