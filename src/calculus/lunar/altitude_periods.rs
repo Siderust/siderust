@@ -27,6 +27,8 @@ use crate::coordinates::centers::ObserverSite;
 use crate::time::{complement_within, ModifiedJulianDate, Period};
 use qtty::*;
 
+use super::moon_cache::{MoonAltitudeContext, find_and_label_crossings};
+
 // =============================================================================
 // Constants
 // =============================================================================
@@ -81,11 +83,18 @@ pub fn find_moon_above_horizon(
 ) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
+    // Build Chebyshev + nutation caches for the period
+    let jd_start = period.start.to_julian_day().value();
+    let jd_end = period.end.to_julian_day().value();
+    let ctx = MoonAltitudeContext::new(jd_start, jd_end, site);
+
     let f = |t: ModifiedJulianDate| -> Radians {
-        moon_altitude_rad(t.to_julian_day(), &site)
+        ctx.altitude_rad(t.to_julian_day())
     };
 
-    intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
+    // Use find_and_label_crossings to avoid probe evaluations
+    let (labeled, start_above) = find_and_label_crossings(period, SCAN_STEP, &f, thr);
+    intervals::build_above_periods(&labeled, period, start_above, &f, thr)
 }
 
 /// Finds periods when the Moon is below the given altitude threshold.
@@ -105,6 +114,25 @@ pub fn find_moon_below_horizon(
     complement_within(period, &above)
 }
 
+/// Finds periods when the Moon is above the given altitude threshold,
+/// **without caching**. Useful for validation and comparison benchmarks.
+///
+/// This is the original implementation that evaluates the full ELP2000 +
+/// nutation chain at every query point.
+pub fn find_moon_above_horizon_uncached(
+    site: ObserverSite,
+    period: Period<ModifiedJulianDate>,
+    threshold: Degrees,
+) -> Vec<Period<ModifiedJulianDate>> {
+    let thr = threshold.to::<Radian>();
+
+    let f = |t: ModifiedJulianDate| -> Radians {
+        moon_altitude_rad(t.to_julian_day(), &site)
+    };
+
+    intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
+}
+
 /// Finds periods when Moon altitude is within a range `[min, max]`.
 ///
 /// Computed as `above(min) ∩ complement(above(max))` via
@@ -122,8 +150,13 @@ pub fn find_moon_altitude_range(
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
+    // Build Chebyshev + nutation caches for the period
+    let jd_start = period.start.to_julian_day().value();
+    let jd_end = period.end.to_julian_day().value();
+    let ctx = MoonAltitudeContext::new(jd_start, jd_end, site);
+
     let f = |t: ModifiedJulianDate| -> Radians {
-        moon_altitude_rad(t.to_julian_day(), &site)
+        ctx.altitude_rad(t.to_julian_day())
     };
 
     intervals::in_range_periods(period, SCAN_STEP, &f, h_min, h_max)

@@ -24,6 +24,7 @@ use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::calculus::lunar::{
     find_moon_above_horizon, find_moon_above_horizon_scan,
+    find_moon_above_horizon_uncached,
     find_moon_altitude_range, find_moon_below_horizon,
     moon_altitude_rad,
 };
@@ -288,6 +289,17 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
         let period = black_box(build_period(365));
         b.iter(|| {
             let _result = find_moon_above_horizon_scan(
+                black_box(site),
+                black_box(period),
+                black_box(Degrees::new(0.0)),
+            );
+        });
+    });
+
+    group.bench_function("moon_above_horizon_uncached_365day", |b| {
+        let period = black_box(build_period(365));
+        b.iter(|| {
+            let _result = find_moon_above_horizon_uncached(
                 black_box(site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
