@@ -84,6 +84,7 @@
 //! - `elp2000/`        — ELP2000 lunar theory implementation
 //! - `solar/`          — Solar coordinate calculations
 //! - `lunar/`          — Lunar coordinate calculations
+//! - `stellar/`        — Stellar altitude period finding (analytical sinusoidal model)
 //! - `kepler_equations/`— General orbital mechanics
 //! - `math_core/`      — Reusable numerical primitives
 //! - `altitude.rs`     — Unified altitude computation & event API
@@ -106,6 +107,7 @@ pub mod lunar;
 pub mod math_core;
 pub mod pluto;
 pub mod solar;
+pub mod stellar;
 pub mod vsop87;
 
 pub use pluto::Pluto;
