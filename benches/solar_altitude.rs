@@ -6,8 +6,8 @@
 //! Tests the performance of finding astronomical night periods using different
 //! algorithms and time horizons.
 
-use criterion::{criterion_group, criterion_main, Criterion};
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
+use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::calculus::solar::altitude_periods::{
     find_day_periods, find_night_periods, find_night_periods_scan,
 };

@@ -166,21 +166,14 @@ where
             // This maximum is above threshold → there must be a rising crossing
             // before it and a setting crossing after it.
             // Search backward from the extremum for the rising crossing
-            let rise_bracket = search_crossing_backward(
-                Period::new(period.start, ext.t),
-                f,
-                threshold,
-            );
+            let rise_bracket =
+                search_crossing_backward(Period::new(period.start, ext.t), f, threshold);
             if let Some(br) = rise_bracket {
                 brackets.push(br);
             }
 
             // Search forward from the extremum for the setting crossing
-            let set_bracket = search_crossing_forward(
-                Period::new(ext.t, period.end),
-                f,
-                threshold,
-            );
+            let set_bracket = search_crossing_forward(Period::new(ext.t, period.end), f, threshold);
             if let Some(br) = set_bracket {
                 brackets.push(br);
             }
@@ -302,12 +295,8 @@ mod tests {
     fn fixed_step_finds_sine_crossings() {
         // Shift to avoid exact zeros at grid points
         let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.03)).sin());
-        let brackets = fixed_step_brackets(
-            period(0.0, 1.0),
-            Days::new(0.05),
-            &f,
-            Radians::new(0.0),
-        );
+        let brackets =
+            fixed_step_brackets(period(0.0, 1.0), Days::new(0.05), &f, Radians::new(0.0));
         // Shifted sin crosses 0 twice in [0,1] (near 0.47 and 0.97)
         assert!(
             brackets.len() >= 2,
@@ -334,12 +323,8 @@ mod tests {
     fn extrema_based_finds_satellite_pass() {
         // Simulate a satellite pass: altitude peaks at t=5 with max=30°
         let f = |t: MJD| Radians::new(-2.0 * (t.value() - 5.0).powi(2) + 30.0);
-        let brackets = extrema_based_brackets(
-            period(0.0, 10.0),
-            Days::new(0.5),
-            &f,
-            Radians::new(10.0),
-        );
+        let brackets =
+            extrema_based_brackets(period(0.0, 10.0), Days::new(0.5), &f, Radians::new(10.0));
 
         // Should find rise and set brackets around the peak
         assert!(brackets.len() >= 2, "got {} brackets", brackets.len());
@@ -363,12 +348,8 @@ mod tests {
     fn extrema_based_no_pass_above_threshold() {
         // Satellite never reaches threshold
         let f = |t: MJD| Radians::new(-2.0 * (t.value() - 5.0).powi(2) + 5.0);
-        let brackets = extrema_based_brackets(
-            period(0.0, 10.0),
-            Days::new(0.5),
-            &f,
-            Radians::new(10.0),
-        );
+        let brackets =
+            extrema_based_brackets(period(0.0, 10.0), Days::new(0.5), &f, Radians::new(10.0));
         assert!(brackets.is_empty(), "no passes above threshold");
     }
 

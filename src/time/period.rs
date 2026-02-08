@@ -194,10 +194,7 @@ pub fn complement_within<T: TimeInstant>(
 ///
 /// # Returns
 /// Periods where both `a` and `b` overlap, in chronological order.
-pub fn intersect_periods<T: TimeInstant>(
-    a: &[Period<T>],
-    b: &[Period<T>],
-) -> Vec<Period<T>> {
+pub fn intersect_periods<T: TimeInstant>(a: &[Period<T>], b: &[Period<T>]) -> Vec<Period<T>> {
     let mut result = Vec::new();
     let (mut i, mut j) = (0, 0);
     while i < a.len() && j < b.len() {
@@ -278,10 +275,7 @@ mod tests {
 
     #[test]
     fn test_complement_within_gaps() {
-        let outer = Period::new(
-            ModifiedJulianDate::new(0.0),
-            ModifiedJulianDate::new(10.0),
-        );
+        let outer = Period::new(ModifiedJulianDate::new(0.0), ModifiedJulianDate::new(10.0));
         let periods = vec![
             Period::new(ModifiedJulianDate::new(2.0), ModifiedJulianDate::new(4.0)),
             Period::new(ModifiedJulianDate::new(6.0), ModifiedJulianDate::new(8.0)),
@@ -298,10 +292,7 @@ mod tests {
 
     #[test]
     fn test_complement_within_empty() {
-        let outer = Period::new(
-            ModifiedJulianDate::new(0.0),
-            ModifiedJulianDate::new(10.0),
-        );
+        let outer = Period::new(ModifiedJulianDate::new(0.0), ModifiedJulianDate::new(10.0));
         let gaps = complement_within(outer, &[]);
         assert_eq!(gaps.len(), 1);
         assert_eq!(gaps[0].start.value(), 0.0);
@@ -310,10 +301,7 @@ mod tests {
 
     #[test]
     fn test_complement_within_full() {
-        let outer = Period::new(
-            ModifiedJulianDate::new(0.0),
-            ModifiedJulianDate::new(10.0),
-        );
+        let outer = Period::new(ModifiedJulianDate::new(0.0), ModifiedJulianDate::new(10.0));
         let periods = vec![Period::new(
             ModifiedJulianDate::new(0.0),
             ModifiedJulianDate::new(10.0),
@@ -355,10 +343,7 @@ mod tests {
     #[test]
     fn test_complement_intersect_roundtrip() {
         // above(min) ∩ complement(above(max)) = between(min, max)
-        let outer = Period::new(
-            ModifiedJulianDate::new(0.0),
-            ModifiedJulianDate::new(10.0),
-        );
+        let outer = Period::new(ModifiedJulianDate::new(0.0), ModifiedJulianDate::new(10.0));
         let above_min = vec![
             Period::new(ModifiedJulianDate::new(1.0), ModifiedJulianDate::new(3.0)),
             Period::new(ModifiedJulianDate::new(5.0), ModifiedJulianDate::new(9.0)),

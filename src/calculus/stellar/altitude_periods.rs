@@ -35,17 +35,14 @@
 //! error over a full year, well within the ±15‑minute Brent bracket.
 
 use crate::astro::JulianDate;
-use crate::calculus::altitude::fixed_star_altitude_rad;
 use crate::calculus::math_core::{intervals, root_finding};
 use crate::coordinates::centers::ObserverSite;
 use crate::time::{complement_within, ModifiedJulianDate, Period};
-use qtty::{Day, Degrees, Quantity, Radian};
+use qtty::*;
 
 use super::star_equations::{StarAltitudeParams, ThresholdResult};
 
 /// Type aliases.
-type Days = Quantity<Day>;
-type Radians = Quantity<Radian>;
 type MJD = ModifiedJulianDate;
 
 // =============================================================================
@@ -59,6 +56,52 @@ const BRACKET_HALF: Days = Quantity::new(15.0 / 1440.0);
 
 /// Scan step for the fallback / validation scan path (10 minutes).
 const SCAN_STEP_FALLBACK: Days = Quantity::new(10.0 / 1440.0);
+
+// ---------------------------------------------------------------------------
+// Fixed Star Altitude
+// ---------------------------------------------------------------------------
+
+/// Compute altitude of a fixed RA/Dec object from an observer site.
+///
+/// Uses precession + nutation-corrected RA, GAST, and the standard
+/// equatorial→horizontal formula.
+pub fn fixed_star_altitude_rad(
+    jd: crate::astro::JulianDate,
+    site: &crate::coordinates::centers::ObserverSite,
+    ra_j2000: qtty::Degrees,
+    dec_j2000: qtty::Degrees,
+) -> qtty::Radians {
+    use crate::astro::nutation::corrected_ra_with_nutation;
+    use crate::astro::precession;
+    use crate::astro::sidereal::{calculate_gst, calculate_lst};
+    use crate::coordinates::frames::EquatorialMeanJ2000;
+    use crate::coordinates::spherical;
+    use qtty::Radian;
+
+    // Build a spherical position in EquatorialMeanJ2000
+    let pos = spherical::Position::<
+        crate::coordinates::centers::Geocentric,
+        EquatorialMeanJ2000,
+        qtty::LightYear,
+    >::new(ra_j2000, dec_j2000, qtty::LightYears::new(1.0));
+
+    // Precess J2000 → mean-of-date
+    let mean_of_date = precession::precess_from_j2000(pos, jd);
+    // Apply nutation correction to RA
+    let ra_corrected = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
+    let dec = mean_of_date.polar();
+
+    // Compute hour angle
+    let gst = calculate_gst(jd);
+    let lst = calculate_lst(gst, site.lon);
+    let ha = (lst - ra_corrected).normalize().to::<Radian>();
+
+    // Equatorial → horizontal altitude
+    let lat = site.lat.to::<Radian>();
+    let dec_rad = dec.to::<Radian>();
+    let sin_alt = dec_rad.sin() * lat.sin() + dec_rad.cos() * lat.cos() * ha.cos();
+    qtty::Radians::new(sin_alt.asin())
+}
 
 // =============================================================================
 // Core: analytical bracket + Brent refinement
@@ -121,8 +164,7 @@ fn find_crossings_analytical(
             } else {
                 // Precession drift moved the star across the threshold —
                 // fall back to uniform scan for this edge case.
-                let mut crossings =
-                    intervals::find_crossings(period, SCAN_STEP_FALLBACK, &f, thr);
+                let mut crossings = intervals::find_crossings(period, SCAN_STEP_FALLBACK, &f, thr);
                 let labeled = intervals::label_crossings(&mut crossings, &f, thr);
                 (labeled, start_above)
             }
@@ -132,8 +174,7 @@ fn find_crossings_analytical(
             if !start_above && !end_above {
                 (Vec::new(), false)
             } else {
-                let mut crossings =
-                    intervals::find_crossings(period, SCAN_STEP_FALLBACK, &f, thr);
+                let mut crossings = intervals::find_crossings(period, SCAN_STEP_FALLBACK, &f, thr);
                 let labeled = intervals::label_crossings(&mut crossings, &f, thr);
                 (labeled, start_above)
             }
@@ -148,10 +189,8 @@ fn find_crossings_analytical(
             let mut refined: Vec<MJD> = Vec::with_capacity(predicted.len());
 
             for (t_pred, _dir) in &predicted {
-                let lo_v =
-                    (t_pred.value() - BRACKET_HALF.value()).max(period.start.value());
-                let hi_v =
-                    (t_pred.value() + BRACKET_HALF.value()).min(period.end.value());
+                let lo_v = (t_pred.value() - BRACKET_HALF.value()).max(period.start.value());
+                let hi_v = (t_pred.value() + BRACKET_HALF.value()).min(period.end.value());
 
                 if (hi_v - lo_v) < 1e-12 {
                     continue; // degenerate bracket at boundary

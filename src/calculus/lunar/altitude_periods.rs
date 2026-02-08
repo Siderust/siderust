@@ -27,7 +27,7 @@ use crate::coordinates::centers::ObserverSite;
 use crate::time::{complement_within, ModifiedJulianDate, Period};
 use qtty::*;
 
-use super::moon_cache::{MoonAltitudeContext, find_and_label_crossings};
+use super::moon_cache::{find_and_label_crossings, MoonAltitudeContext};
 
 // =============================================================================
 // Constants
@@ -88,9 +88,7 @@ pub fn find_moon_above_horizon(
     let jd_end = period.end.to_julian_day().value();
     let ctx = MoonAltitudeContext::new(jd_start, jd_end, site);
 
-    let f = |t: ModifiedJulianDate| -> Radians {
-        ctx.altitude_rad(t.to_julian_day())
-    };
+    let f = |t: ModifiedJulianDate| -> Radians { ctx.altitude_rad(t.to_julian_day()) };
 
     // Use find_and_label_crossings to avoid probe evaluations
     let (labeled, start_above) = find_and_label_crossings(period, SCAN_STEP, &f, thr);
@@ -126,9 +124,7 @@ pub fn find_moon_above_horizon_uncached(
 ) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
-    let f = |t: ModifiedJulianDate| -> Radians {
-        moon_altitude_rad(t.to_julian_day(), &site)
-    };
+    let f = |t: ModifiedJulianDate| -> Radians { moon_altitude_rad(t.to_julian_day(), &site) };
 
     intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
 }
@@ -155,9 +151,7 @@ pub fn find_moon_altitude_range(
     let jd_end = period.end.to_julian_day().value();
     let ctx = MoonAltitudeContext::new(jd_start, jd_end, site);
 
-    let f = |t: ModifiedJulianDate| -> Radians {
-        ctx.altitude_rad(t.to_julian_day())
-    };
+    let f = |t: ModifiedJulianDate| -> Radians { ctx.altitude_rad(t.to_julian_day()) };
 
     intervals::in_range_periods(period, SCAN_STEP, &f, h_min, h_max)
 }
@@ -180,9 +174,7 @@ pub fn find_moon_above_horizon_scan(
 ) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
-    let f = |t: ModifiedJulianDate| -> Radians {
-        moon_altitude_rad(t.to_julian_day(), &site)
-    };
+    let f = |t: ModifiedJulianDate| -> Radians { moon_altitude_rad(t.to_julian_day(), &site) };
 
     intervals::above_threshold_periods(period, SCAN_STEP_10MIN, &f, thr)
 }
@@ -207,11 +199,7 @@ mod tests {
     use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
 
     fn greenwich_site() -> ObserverSite {
-        ObserverSite::new(
-            Degrees::new(0.0),
-            Degrees::new(51.4769),
-            Meters::new(0.0),
-        )
+        ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
     #[test]
@@ -231,10 +219,16 @@ mod tests {
         let period = Period::new(mjd_start, mjd_end);
 
         let periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
-        assert!(!periods.is_empty(), "Should find moon-up periods over 7 days");
+        assert!(
+            !periods.is_empty(),
+            "Should find moon-up periods over 7 days"
+        );
 
         for p in &periods {
-            assert!(p.duration_days() > 0.0, "Period duration should be positive");
+            assert!(
+                p.duration_days() > 0.0,
+                "Period duration should be positive"
+            );
         }
     }
 

@@ -49,8 +49,7 @@ fn brent_handles_step_function() {
 #[test]
 fn brent_returns_none_for_invalid_bracket() {
     assert!(
-        root_finding::brent(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(42.0))
-            .is_none()
+        root_finding::brent(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(42.0)).is_none()
     );
 }
 
@@ -73,13 +72,7 @@ fn brent_with_values_saves_evaluations() {
     let f_lo = Radians::new((3.0_f64).sin());
     let f_hi = Radians::new((4.0_f64).sin());
 
-    let _ = root_finding::brent_with_values(
-        Days::new(3.0),
-        Days::new(4.0),
-        f_lo,
-        f_hi,
-        &f,
-    );
+    let _ = root_finding::brent_with_values(Days::new(3.0), Days::new(4.0), f_lo, f_hi, &f);
     let with_vals = count.get();
 
     count.set(0);

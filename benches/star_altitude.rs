@@ -10,10 +10,11 @@ use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
 use qtty::*;
 use siderust::calculus::altitude::{
-    above_threshold, altitude_at, altitude_ranges, crossings, AltitudeTarget, SearchOpts,
+    above_threshold, altitude_ranges, crossings, AltitudePeriodsProvider, SearchOpts,
 };
 use siderust::calculus::stellar;
 use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::spherical::direction;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period};
 use std::hint::black_box;
@@ -37,11 +38,8 @@ fn build_period(days: u32) -> Period<ModifiedJulianDate> {
     Period::new(mjd_start, mjd_end)
 }
 
-fn sirius_target() -> AltitudeTarget {
-    AltitudeTarget::FixedEquatorial {
-        ra: Degrees::new(101.287),
-        dec: Degrees::new(-16.716),
-    }
+fn sirius_target() -> direction::ICRS {
+    direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716))
 }
 
 // =============================================================================
@@ -57,7 +55,7 @@ fn bench_star_altitude_computation(c: &mut Criterion) {
 
     group.bench_function("compute_altitude", |b| {
         b.iter(|| {
-            let _altitude = altitude_at(black_box(&target), black_box(&site), black_box(jd));
+            let _altitude = target.altitude_at(black_box(&site), black_box(jd));
         });
     });
 

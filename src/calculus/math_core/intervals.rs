@@ -252,10 +252,7 @@ where
             };
 
             let mid_v = MJD::new(0.5 * (enter_t.value() + exit_t.value()));
-            if mid_v >= t_start
-                && mid_v <= t_end
-                && is_above(f(mid_v))
-            {
+            if mid_v >= t_start && mid_v <= t_end && is_above(f(mid_v)) {
                 periods.push(Period::new(enter_t, exit_t));
             }
         } else {
@@ -354,10 +351,7 @@ where
 // ---------------------------------------------------------------------------
 
 /// Complement of `periods` within `within`.
-pub fn complement(
-    within: Period<MJD>,
-    periods: &[Period<MJD>],
-) -> Vec<Period<MJD>> {
+pub fn complement(within: Period<MJD>, periods: &[Period<MJD>]) -> Vec<Period<MJD>> {
     let mut gaps = Vec::new();
     let mut cursor = within.start.value();
     let t_end_v = within.end.value();
@@ -417,17 +411,16 @@ mod tests {
         // sin(2π(t+0.05)) > 0 roughly on (−0.05, 0.45) → within [0,1]: (0, ~0.45) and (~0.95, 1)
         // Use a shift to avoid exact zero at t=0
         let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
-        let periods = above_threshold_periods(
-            period(0.0, 1.0),
-            Days::new(0.01),
-            &f,
-            Radians::new(0.0),
-        );
+        let periods =
+            above_threshold_periods(period(0.0, 1.0), Days::new(0.01), &f, Radians::new(0.0));
 
         // Should find at least one above-threshold period
         assert!(!periods.is_empty(), "got {:?}", periods);
         // Total above duration should be roughly 0.5
-        let total: f64 = periods.iter().map(|p| p.end.value() - p.start.value()).sum();
+        let total: f64 = periods
+            .iter()
+            .map(|p| p.end.value() - p.start.value())
+            .sum();
         assert!((total - 0.5).abs() < 0.05, "total = {total}");
     }
 
@@ -470,7 +463,10 @@ mod tests {
 
         assert!(!periods.is_empty(), "should find some in-range periods");
 
-        let total: f64 = periods.iter().map(|p| p.end.value() - p.start.value()).sum();
+        let total: f64 = periods
+            .iter()
+            .map(|p| p.end.value() - p.start.value())
+            .sum();
         // Analytically, sin(x) ∈ (-0.5, 0.5) for 1/3 of each full cycle ≈ 0.333
         assert!(total > 0.25 && total < 0.45, "total = {total}");
     }
@@ -526,12 +522,8 @@ mod tests {
     fn multiple_crossings_per_window() {
         // Fast oscillation: sin(20πt) > 0  → 10 positive intervals in [0,1]
         let f = |t: MJD| Radians::new((20.0 * std::f64::consts::PI * t.value()).sin());
-        let periods = above_threshold_periods(
-            period(0.0, 1.0),
-            Days::new(0.005),
-            &f,
-            Radians::new(0.0),
-        );
+        let periods =
+            above_threshold_periods(period(0.0, 1.0), Days::new(0.005), &f, Radians::new(0.0));
         assert!(
             periods.len() >= 8,
             "expected ≥8 intervals for fast oscillation, got {}",
@@ -552,7 +544,11 @@ mod tests {
         let scan = above_threshold_periods(p, Days::new(0.01), &f, Radians::new(0.0));
         let segmented = above_threshold_periods_segmented(&key_times, p, &f, Radians::new(0.0));
 
-        assert_eq!(scan.len(), segmented.len(), "scan={scan:?} seg={segmented:?}");
+        assert_eq!(
+            scan.len(),
+            segmented.len(),
+            "scan={scan:?} seg={segmented:?}"
+        );
         for (s, g) in scan.iter().zip(segmented.iter()) {
             assert!((s.start.value() - g.start.value()).abs() < 0.05);
             assert!((s.end.value() - g.end.value()).abs() < 0.05);
@@ -581,10 +577,22 @@ mod tests {
     #[test]
     fn build_above_periods_from_labeled() {
         let labeled = vec![
-            LabeledCrossing { t: mjd(2.0), direction: 1 },
-            LabeledCrossing { t: mjd(5.0), direction: -1 },
-            LabeledCrossing { t: mjd(7.0), direction: 1 },
-            LabeledCrossing { t: mjd(9.0), direction: -1 },
+            LabeledCrossing {
+                t: mjd(2.0),
+                direction: 1,
+            },
+            LabeledCrossing {
+                t: mjd(5.0),
+                direction: -1,
+            },
+            LabeledCrossing {
+                t: mjd(7.0),
+                direction: 1,
+            },
+            LabeledCrossing {
+                t: mjd(9.0),
+                direction: -1,
+            },
         ];
         let f = |t: MJD| -> Radians {
             let tv = t.value();
@@ -594,13 +602,8 @@ mod tests {
                 Radians::new(-1.0)
             }
         };
-        let periods = build_above_periods(
-            &labeled,
-            period(0.0, 10.0),
-            false,
-            &f,
-            Radians::new(0.0),
-        );
+        let periods =
+            build_above_periods(&labeled, period(0.0, 10.0), false, &f, Radians::new(0.0));
         assert_eq!(periods.len(), 2);
         assert!((periods[0].start.value() - 2.0).abs() < 1e-10);
         assert!((periods[0].end.value() - 5.0).abs() < 1e-10);

@@ -8,9 +8,7 @@ use std::io::BufReader;
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use serde_json::Value;
-use siderust::calculus::solar::altitude_periods::{
-    find_day_periods, find_night_periods,
-};
+use siderust::calculus::solar::altitude_periods::{find_day_periods, find_night_periods};
 use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
@@ -92,7 +90,10 @@ fn test_astronomical_nights_roque_2026() {
     let (site, period) = build_roque_period();
 
     let computed = find_night_periods(site, period, twilight::ASTRONOMICAL);
-    assert!(!computed.is_empty(), "siderust did not find any astronomical nights");
+    assert!(
+        !computed.is_empty(),
+        "siderust did not find any astronomical nights"
+    );
 
     assert_periods_close(&expected_periods, &computed);
 }
@@ -105,13 +106,12 @@ fn test_astronomical_nights_roque_2026_culminations() {
     let (site, period) = build_roque_period();
 
     // find_day_periods finds "above" periods; complement gives us the nights.
-    let day_periods = find_day_periods(
-        site,
-        period,
-        twilight::ASTRONOMICAL,
-    );
+    let day_periods = find_day_periods(site, period, twilight::ASTRONOMICAL);
     let computed = siderust::time::complement_within(period, &day_periods);
-    assert!(!computed.is_empty(), "Culmination-based search did not find any astronomical nights");
+    assert!(
+        !computed.is_empty(),
+        "Culmination-based search did not find any astronomical nights"
+    );
 
     assert_periods_close(&expected_periods, &computed);
 }

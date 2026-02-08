@@ -30,7 +30,7 @@
 //! ## See Also
 //!
 //! - [`crate::calculus::altitude`] — unified API (dispatches here for
-//!   [`AltitudeTarget::FixedEquatorial`](crate::calculus::altitude::AltitudeTarget::FixedEquatorial))
+//!   [`direction::ICRS`](crate::coordinates::spherical::direction::ICRS) and [`Star`](crate::bodies::Star))
 //! - [`crate::calculus::solar`] — analogous module for the Sun
 //! - [`crate::calculus::lunar`] — analogous module for the Moon
 

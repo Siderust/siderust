@@ -3,11 +3,13 @@
 
 //! Integration tests for the unified altitude API (`calculus::altitude`).
 
+use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::altitude::{
-    above_threshold, altitude_at, altitude_ranges, below_threshold, crossings, culminations,
-    AltitudeTarget, CrossingDirection, CulminationKind, SearchOpts,
+    above_threshold, altitude_ranges, below_threshold, crossings, culminations,
+    AltitudePeriodsProvider, CrossingDirection, CulminationKind, SearchOpts,
 };
 use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::spherical::direction;
 use siderust::time::{ModifiedJulianDate, Period};
 
 use qtty::*;
@@ -31,49 +33,34 @@ fn greenwich() -> ObserverSite {
 }
 
 // ===========================================================================
-// altitude_at — single-point smoke tests
+// altitude_at — single-point smoke tests (via trait)
 // ===========================================================================
 
 #[test]
 fn altitude_at_sun_j2000_greenwich() {
-    let alt = altitude_at(
-        &AltitudeTarget::Sun,
-        &greenwich(),
-        siderust::astro::JulianDate::J2000,
-    );
+    let alt = Sun.altitude_at(&greenwich(), siderust::astro::JulianDate::J2000);
     // J2000 = 2000-01-01 12:00 TT, winter in northern hemisphere,
     // sun should be low but above horizon around local noon (UTC ≈ TT-64s).
-    // Accept any value in [-90, +90].
+    // Accept any value in [-π/2, +π/2] radians.
     assert!(
-        alt.value() > -90.0 && alt.value() < 90.0,
-        "Sun altitude out of range: {}°",
+        alt.value().abs() < std::f64::consts::FRAC_PI_2,
+        "Sun altitude out of range: {} rad",
         alt.value()
     );
 }
 
 #[test]
 fn altitude_at_moon_j2000_greenwich() {
-    let alt = altitude_at(
-        &AltitudeTarget::Moon,
-        &greenwich(),
-        siderust::astro::JulianDate::J2000,
-    );
-    assert!(alt.value() > -90.0 && alt.value() < 90.0);
+    let alt = Moon.altitude_at(&greenwich(), siderust::astro::JulianDate::J2000);
+    assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_sirius_reasonable() {
     // Sirius (α CMa): RA ≈ 101.287°, Dec ≈ −16.716° (J2000)
-    let target = AltitudeTarget::FixedEquatorial {
-        ra: Degrees::new(101.287),
-        dec: Degrees::new(-16.716),
-    };
-    let alt = altitude_at(
-        &target,
-        &greenwich(),
-        siderust::astro::JulianDate::J2000,
-    );
-    assert!(alt.value() > -90.0 && alt.value() < 90.0);
+    let sirius = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
+    let alt = sirius.altitude_at(&greenwich(), siderust::astro::JulianDate::J2000);
+    assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
 }
 
 // ===========================================================================
@@ -88,10 +75,22 @@ fn crossings_sun_one_day_greenwich() {
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60001.0),
     );
-    let events = crossings(&AltitudeTarget::Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
+    let events = crossings(
+        &Sun,
+        &site,
+        window,
+        Degrees::new(0.0),
+        SearchOpts::default(),
+    );
 
-    let rises: Vec<_> = events.iter().filter(|e| e.direction == CrossingDirection::Rising).collect();
-    let sets: Vec<_> = events.iter().filter(|e| e.direction == CrossingDirection::Setting).collect();
+    let rises: Vec<_> = events
+        .iter()
+        .filter(|e| e.direction == CrossingDirection::Rising)
+        .collect();
+    let sets: Vec<_> = events
+        .iter()
+        .filter(|e| e.direction == CrossingDirection::Setting)
+        .collect();
 
     assert_eq!(rises.len(), 1, "expect 1 sunrise in 24h at 51°N");
     assert_eq!(sets.len(), 1, "expect 1 sunset in 24h at 51°N");
@@ -108,14 +107,17 @@ fn crossings_sun_astronomical_twilight() {
         ModifiedJulianDate::new(60001.0),
     );
     let events = crossings(
-        &AltitudeTarget::Sun,
+        &Sun,
         &site,
         window,
         Degrees::new(-18.0),
         SearchOpts::default(),
     );
     // Should find 2 crossings (evening crossing below -18° and morning crossing above -18°)
-    assert!(!events.is_empty(), "should find astronomical twilight crossings");
+    assert!(
+        !events.is_empty(),
+        "should find astronomical twilight crossings"
+    );
 }
 
 // ===========================================================================
@@ -129,10 +131,16 @@ fn culminations_sun_one_day() {
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60001.0),
     );
-    let culms = culminations(&AltitudeTarget::Sun, &site, window, SearchOpts::default());
+    let culms = culminations(&Sun, &site, window, SearchOpts::default());
 
-    let upper: Vec<_> = culms.iter().filter(|c| c.kind == CulminationKind::Max).collect();
-    let lower: Vec<_> = culms.iter().filter(|c| c.kind == CulminationKind::Min).collect();
+    let upper: Vec<_> = culms
+        .iter()
+        .filter(|c| c.kind == CulminationKind::Max)
+        .collect();
+    let lower: Vec<_> = culms
+        .iter()
+        .filter(|c| c.kind == CulminationKind::Min)
+        .collect();
 
     assert!(upper.len() >= 1, "should find upper culmination");
     assert!(lower.len() >= 1, "should find lower culmination");
@@ -153,7 +161,7 @@ fn culminations_moon_one_day() {
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60001.0),
     );
-    let culms = culminations(&AltitudeTarget::Moon, &site, window, SearchOpts::default());
+    let culms = culminations(&Moon, &site, window, SearchOpts::default());
     assert!(!culms.is_empty(), "should find Moon culminations in 24h");
 }
 
@@ -168,9 +176,20 @@ fn above_threshold_sun_week() {
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60007.0),
     );
-    let days = above_threshold(&AltitudeTarget::Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
+    let days = above_threshold(
+        &Sun,
+        &site,
+        window,
+        Degrees::new(0.0),
+        SearchOpts::default(),
+    );
 
-    assert_eq!(days.len(), 7, "should find 7 daytime periods in a week, found {}", days.len());
+    assert_eq!(
+        days.len(),
+        7,
+        "should find 7 daytime periods in a week, found {}",
+        days.len()
+    );
     for (i, p) in days.iter().enumerate() {
         let hours = p.duration_days() * 24.0;
         assert!(
@@ -190,7 +209,7 @@ fn below_threshold_astronomical_night_week() {
         ModifiedJulianDate::new(60007.0),
     );
     let nights = below_threshold(
-        &AltitudeTarget::Sun,
+        &Sun,
         &site,
         window,
         Degrees::new(-18.0),
@@ -217,7 +236,7 @@ fn altitude_ranges_nautical_to_astro_twilight() {
         ModifiedJulianDate::new(60002.0),
     );
     let bands = altitude_ranges(
-        &AltitudeTarget::Sun,
+        &Sun,
         &site,
         window,
         Degrees::new(-18.0),
@@ -254,7 +273,7 @@ fn moon_above_horizon_week() {
         ModifiedJulianDate::new(60007.0),
     );
     let periods = above_threshold(
-        &AltitudeTarget::Moon,
+        &Moon,
         &site,
         window,
         Degrees::new(0.0),
@@ -271,10 +290,7 @@ fn moon_above_horizon_week() {
 #[test]
 fn polaris_always_above_horizon_at_greenwich() {
     // Polaris: RA ≈ 37.95°, Dec ≈ +89.26° (J2000)
-    let target = AltitudeTarget::FixedEquatorial {
-        ra: Degrees::new(37.95),
-        dec: Degrees::new(89.26),
-    };
+    let polaris = direction::ICRS::new(Degrees::new(37.95), Degrees::new(89.26));
     let site = greenwich(); // 51.5°N — Polaris is circumpolar here
 
     let window = Period::new(
@@ -283,7 +299,13 @@ fn polaris_always_above_horizon_at_greenwich() {
     );
 
     // Should have no horizon crossings (circumpolar)
-    let events = crossings(&target, &site, window, Degrees::new(0.0), SearchOpts::default());
+    let events = crossings(
+        &polaris,
+        &site,
+        window,
+        Degrees::new(0.0),
+        SearchOpts::default(),
+    );
     assert!(
         events.is_empty(),
         "Polaris should be circumpolar at 51.5°N — found {} crossings",
@@ -291,7 +313,13 @@ fn polaris_always_above_horizon_at_greenwich() {
     );
 
     // Should be above horizon 100% of the time
-    let up = above_threshold(&target, &site, window, Degrees::new(0.0), SearchOpts::default());
+    let up = above_threshold(
+        &polaris,
+        &site,
+        window,
+        Degrees::new(0.0),
+        SearchOpts::default(),
+    );
     assert_eq!(
         up.len(),
         1,

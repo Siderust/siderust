@@ -62,8 +62,13 @@ const POLARIS_DEC: Degrees = Degrees::new(89.26);
 
 #[test]
 fn polaris_circumpolar_at_greenwich() {
-    let periods =
-        find_star_above_periods(POLARIS_RA, POLARIS_DEC, greenwich(), period_7d(), Degrees::new(0.0));
+    let periods = find_star_above_periods(
+        POLARIS_RA,
+        POLARIS_DEC,
+        greenwich(),
+        period_7d(),
+        Degrees::new(0.0),
+    );
 
     assert_eq!(
         periods.len(),
@@ -81,8 +86,13 @@ fn polaris_circumpolar_at_greenwich() {
 #[test]
 fn polaris_circumpolar_at_roque() {
     // Roque (28.7°N) — Polaris has Dec ≈ +89.26°, so it's circumpolar
-    let periods =
-        find_star_above_periods(POLARIS_RA, POLARIS_DEC, roque(), period_7d(), Degrees::new(0.0));
+    let periods = find_star_above_periods(
+        POLARIS_RA,
+        POLARIS_DEC,
+        roque(),
+        period_7d(),
+        Degrees::new(0.0),
+    );
 
     assert_eq!(periods.len(), 1, "Polaris circumpolar at 28.7°N");
 }
@@ -93,8 +103,13 @@ fn polaris_circumpolar_at_roque() {
 
 #[test]
 fn sirius_above_horizon_greenwich_7d() {
-    let periods =
-        find_star_above_periods(SIRIUS_RA, SIRIUS_DEC, greenwich(), period_7d(), Degrees::new(0.0));
+    let periods = find_star_above_periods(
+        SIRIUS_RA,
+        SIRIUS_DEC,
+        greenwich(),
+        period_7d(),
+        Degrees::new(0.0),
+    );
 
     assert!(
         periods.len() >= 6 && periods.len() <= 8,
@@ -114,8 +129,13 @@ fn sirius_above_horizon_greenwich_7d() {
 
 #[test]
 fn sirius_above_horizon_roque_7d() {
-    let periods =
-        find_star_above_periods(SIRIUS_RA, SIRIUS_DEC, roque(), period_7d(), Degrees::new(0.0));
+    let periods = find_star_above_periods(
+        SIRIUS_RA,
+        SIRIUS_DEC,
+        roque(),
+        period_7d(),
+        Degrees::new(0.0),
+    );
 
     assert!(
         periods.len() >= 6 && periods.len() <= 8,
@@ -260,29 +280,34 @@ fn analytical_matches_scan_range() {
 
 #[test]
 fn stellar_matches_unified_api() {
-    use siderust::calculus::altitude::{above_threshold, AltitudeTarget, SearchOpts};
+    use siderust::calculus::altitude::AltitudePeriodsProvider;
+    use siderust::coordinates::spherical::direction;
 
     let site = roque();
     let period = period_3d();
     let thr = Degrees::new(0.0);
 
     let stellar = find_star_above_periods(SIRIUS_RA, SIRIUS_DEC, site, period, thr);
-    let unified = above_threshold(
-        &AltitudeTarget::FixedEquatorial {
-            ra: SIRIUS_RA,
-            dec: SIRIUS_DEC,
-        },
-        &site,
-        period,
-        thr,
-        SearchOpts::default(),
-    );
 
-    // Since the unified API now dispatches to the stellar module, these
-    // should be identical.
+    // Use direction::ICRS which implements AltitudePeriodsProvider
+    // The trait's above_threshold method dispatches to the analytical stellar engine
+    let sirius = direction::ICRS::new(SIRIUS_RA, SIRIUS_DEC);
+    let unified = sirius.above_threshold(site, period, thr);
+
+    // Since the trait impl dispatches to the stellar module, these should be identical.
     assert_eq!(stellar.len(), unified.len());
     for (s, u) in stellar.iter().zip(unified.iter()) {
-        assert!((s.start.value() - u.start.value()).abs() < 1e-12);
-        assert!((s.end.value() - u.end.value()).abs() < 1e-12);
+        assert!(
+            (s.start.value() - u.start.value()).abs() < 1e-12,
+            "Start mismatch: stellar={}, unified={}",
+            s.start.value(),
+            u.start.value()
+        );
+        assert!(
+            (s.end.value() - u.end.value()).abs() < 1e-12,
+            "End mismatch: stellar={}, unified={}",
+            s.end.value(),
+            u.end.value()
+        );
     }
 }
