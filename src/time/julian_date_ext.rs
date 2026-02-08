@@ -6,8 +6,8 @@
 use qtty::*;
 use std::ops::Add;
 
+use super::instant::Time;
 use super::scales::{JD, MJD};
-use super::time::Time;
 
 impl Time<JD> {
     /// J2000.0 epoch: 2000-01-01T12:00:00 TT  (JD 2 451 545.0).
