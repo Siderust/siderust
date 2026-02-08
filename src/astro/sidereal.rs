@@ -41,8 +41,6 @@ use qtty::Degrees;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
 pub use qtty::time::SIDEREAL_DAY;
-// TODO use qtty
-const DAYS_PER_JULIAN_CENTURY: f64 = 36_525.0;
 
 /// Returns **unwrapped** Greenwich Sidereal Time for the given Julian Day.
 ///
@@ -50,7 +48,7 @@ const DAYS_PER_JULIAN_CENTURY: f64 = 36_525.0;
 #[inline]
 pub fn unmodded_gst(julian_date: JulianDate) -> Degrees {
     let base = julian_date.julian_day_value() - JulianDate::J2000.julian_day_value();
-    let t = base / DAYS_PER_JULIAN_CENTURY;
+    let t = julian_date.julian_centuries().value();
 
     // IAU 2006 polynomial (units: degrees)
     let gst = 280.460_618_37 + 360.985_647_366_29 * base + 0.000_387_933 * t.powi(2)
