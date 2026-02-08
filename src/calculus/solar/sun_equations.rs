@@ -113,7 +113,7 @@ impl Sun {
     /// position and transforms it to horizontal coordinates.
     ///
     /// ### Parameters
-    /// - `time`: Any type that can be converted to `JulianDate` (JD or MJD)
+    /// - `time`: Any type that can be converted to `JulianDate` (JD or Mjd)
     /// - `site`: Observer location on Earth
     ///
     /// ### Returns

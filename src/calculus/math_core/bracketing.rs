@@ -22,7 +22,7 @@ use qtty::*;
 
 use super::extrema::{self, ExtremumKind};
 
-type MJD = ModifiedJulianDate;
+type Mjd = ModifiedJulianDate;
 
 // ---------------------------------------------------------------------------
 // Fixed‑step seeding
@@ -32,16 +32,16 @@ type MJD = ModifiedJulianDate;
 ///
 /// Returns sign‑change brackets for `f(t) − threshold`.
 pub fn fixed_step_brackets<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let g = |t: MJD| -> Quantity<V> { f(t) - threshold };
+    let g = |t: Mjd| -> Quantity<V> { f(t) - threshold };
 
     let mut brackets = Vec::new();
     let mut t = period.start;
@@ -71,22 +71,22 @@ where
 ///
 /// `min_step` prevents infinite subdivision.
 pub fn adaptive_step_brackets<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     initial_step: Days,
     min_step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let g = |t: MJD| -> Quantity<V> { f(t) - threshold };
+    let g = |t: Mjd| -> Quantity<V> { f(t) - threshold };
 
     let mut brackets = Vec::new();
 
     struct Frame<V: Unit> {
-        period: Period<MJD>,
+        period: Period<Mjd>,
         g_lo: Quantity<V>,
         g_hi: Quantity<V>,
     }
@@ -148,11 +148,11 @@ where
 /// This is ideal for satellite pass detection: find the altitude peak of each
 /// pass, then bracket the rise/set crossings on either side.
 pub fn extrema_based_brackets<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     extrema_step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -193,15 +193,15 @@ where
 
 /// Search backward from `search_period.end` to `search_period.start` for a sign change in `f(t) − threshold`.
 fn search_crossing_backward<V, F>(
-    search_period: Period<MJD>,
+    search_period: Period<Mjd>,
     f: &F,
     threshold: Quantity<V>,
-) -> Option<Period<MJD>>
+) -> Option<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let g = |t: MJD| f(t).value() - threshold.value();
+    let g = |t: Mjd| f(t).value() - threshold.value();
     let range = search_period.duration();
 
     // Expanding search: start near the extremum and step backward
@@ -235,15 +235,15 @@ where
 
 /// Search forward from `search_period.start` to `search_period.end` for a sign change.
 fn search_crossing_forward<V, F>(
-    search_period: Period<MJD>,
+    search_period: Period<Mjd>,
     f: &F,
     threshold: Quantity<V>,
-) -> Option<Period<MJD>>
+) -> Option<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let g = |t: MJD| f(t).value() - threshold.value();
+    let g = |t: Mjd| f(t).value() - threshold.value();
     let range = search_period.duration();
 
     let mut bracket = Period::new(search_period.start, search_period.start);
@@ -284,17 +284,17 @@ mod tests {
 
     type Radians = Quantity<Radian>;
 
-    fn mjd(v: f64) -> MJD {
-        MJD::new(v)
+    fn mjd(v: f64) -> Mjd {
+        Mjd::new(v)
     }
-    fn period(a: f64, b: f64) -> Period<MJD> {
+    fn period(a: f64, b: f64) -> Period<Mjd> {
         Period::new(mjd(a), mjd(b))
     }
 
     #[test]
     fn fixed_step_finds_sine_crossings() {
         // Shift to avoid exact zeros at grid points
-        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.03)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.03)).sin());
         let brackets =
             fixed_step_brackets(period(0.0, 1.0), Days::new(0.05), &f, Radians::new(0.0));
         // Shifted sin crosses 0 twice in [0,1] (near 0.47 and 0.97)
@@ -308,7 +308,7 @@ mod tests {
 
     #[test]
     fn adaptive_step_finds_crossings() {
-        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.03)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.03)).sin());
         let brackets = adaptive_step_brackets(
             period(0.0, 1.0),
             Days::new(0.2),
@@ -322,7 +322,7 @@ mod tests {
     #[test]
     fn extrema_based_finds_satellite_pass() {
         // Simulate a satellite pass: altitude peaks at t=5 with max=30°
-        let f = |t: MJD| Radians::new(-2.0 * (t.value() - 5.0).powi(2) + 30.0);
+        let f = |t: Mjd| Radians::new(-2.0 * (t.value() - 5.0).powi(2) + 30.0);
         let brackets =
             extrema_based_brackets(period(0.0, 10.0), Days::new(0.5), &f, Radians::new(10.0));
 
@@ -347,7 +347,7 @@ mod tests {
     #[test]
     fn extrema_based_no_pass_above_threshold() {
         // Satellite never reaches threshold
-        let f = |t: MJD| Radians::new(-2.0 * (t.value() - 5.0).powi(2) + 5.0);
+        let f = |t: Mjd| Radians::new(-2.0 * (t.value() - 5.0).powi(2) + 5.0);
         let brackets =
             extrema_based_brackets(period(0.0, 10.0), Days::new(0.5), &f, Radians::new(10.0));
         assert!(brackets.is_empty(), "no passes above threshold");
@@ -358,7 +358,7 @@ mod tests {
         let brackets = fixed_step_brackets(
             period(0.0, 10.0),
             Days::new(1.0),
-            &|_: MJD| Radians::new(5.0),
+            &|_: Mjd| Radians::new(5.0),
             Radians::new(0.0),
         );
         assert!(brackets.is_empty());

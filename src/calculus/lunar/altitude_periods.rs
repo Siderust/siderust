@@ -8,7 +8,7 @@
 //!
 //! All period-finding is delegated to [`crate::calculus::math_core::intervals`]
 //! which provides scan + Brent refinement + crossing classification + interval
-//! assembly.  This module supplies the altitude closure and JD↔f64 / MJD
+//! assembly.  This module supplies the altitude closure and JD↔f64 / Mjd
 //! conversions.
 //!
 //! ## Key Points

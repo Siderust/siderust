@@ -18,7 +18,7 @@
 //!
 //! All period-finding delegates to [`crate::calculus::math_core::intervals`]
 //! which provides scan + Brent refinement + interval assembly.  This module
-//! supplies the Sun-altitude closure and JD↔MJD conversions.
+//! supplies the Sun-altitude closure and JD↔Mjd conversions.
 //!
 //! ## Usage
 //!

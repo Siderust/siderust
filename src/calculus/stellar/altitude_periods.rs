@@ -16,7 +16,7 @@
 //!    (precession drift < 0.01″/day — one evaluation suffices).
 //! 2. Solve `cos(H₀) = (sin(h) − sin(δ)sin(φ)) / (cos(δ)cos(φ))`
 //!    to find threshold crossing hour angles analytically.
-//! 3. Convert H₀ to MJD crossing times via the GST rate.
+//! 3. Convert H₀ to Mjd crossing times via the GST rate.
 //! 4. Refine each predicted crossing with Brent's method on the
 //!    **full‑precision** evaluator (precession + nutation + GAST).
 //! 5. Label crossings and assemble periods via [`math_core::intervals`].
@@ -43,7 +43,7 @@ use qtty::*;
 use super::star_equations::{StarAltitudeParams, ThresholdResult};
 
 /// Type aliases.
-type MJD = ModifiedJulianDate;
+type Mjd = ModifiedJulianDate;
 
 // =============================================================================
 // Constants
@@ -113,8 +113,8 @@ fn make_star_fn<'a>(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: &'a ObserverSite,
-) -> impl Fn(MJD) -> Radians + 'a {
-    move |t: MJD| -> Radians {
+) -> impl Fn(Mjd) -> Radians + 'a {
+    move |t: Mjd| -> Radians {
         fixed_star_altitude_rad(t.to_julian_day(), site, ra_j2000, dec_j2000)
     }
 }
@@ -141,7 +141,7 @@ fn find_crossings_analytical(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: &ObserverSite,
-    period: Period<MJD>,
+    period: Period<Mjd>,
     threshold_rad: f64,
 ) -> (Vec<intervals::LabeledCrossing>, bool) {
     let thr = Radians::new(threshold_rad);
@@ -183,10 +183,10 @@ fn find_crossings_analytical(
             let predicted = params.predict_crossings(period, h0_rad);
 
             // Shifted altitude: g(t) = f(t) − threshold
-            let g = |t: MJD| -> Radians { f(t) - thr };
-            let g_day = |d: Days| -> Radians { g(MJD::new(d.value())) };
+            let g = |t: Mjd| -> Radians { f(t) - thr };
+            let g_day = |d: Days| -> Radians { g(Mjd::new(d.value())) };
 
-            let mut refined: Vec<MJD> = Vec::with_capacity(predicted.len());
+            let mut refined: Vec<Mjd> = Vec::with_capacity(predicted.len());
 
             for (t_pred, _dir) in &predicted {
                 let lo_v = (t_pred.value() - BRACKET_HALF.value()).max(period.start.value());
@@ -196,8 +196,8 @@ fn find_crossings_analytical(
                     continue; // degenerate bracket at boundary
                 }
 
-                let lo = MJD::new(lo_v);
-                let hi = MJD::new(hi_v);
+                let lo = Mjd::new(lo_v);
+                let hi = Mjd::new(hi_v);
                 let g_lo = g(lo);
                 let g_hi = g(hi);
 
@@ -207,11 +207,11 @@ fn find_crossings_analytical(
                         Days::new(hi_v),
                         g_lo,
                         g_hi,
-                        &g_day,
+                        g_day,
                     ) {
                         let rv = root.value();
                         if rv >= period.start.value() && rv <= period.end.value() {
-                            refined.push(MJD::new(rv));
+                            refined.push(Mjd::new(rv));
                         }
                     }
                 }
