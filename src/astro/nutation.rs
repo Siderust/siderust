@@ -44,7 +44,7 @@
 //! ## Quick example
 //! ```rust
 //! use chrono::prelude::*;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use siderust::bodies::catalog::SIRIUS;
 //! use siderust::astro::nutation::{get_nutation, corrected_ra_with_nutation};
 //! use siderust::astro::precession::precess_from_j2000;
@@ -63,8 +63,8 @@
 //! series (1365 terms) or IERS tabulated Δψ/Δε values.  
 
 use crate::astro::dynamical_time::julian_ephemeris_day;
-use crate::astro::JulianDate;
 use crate::coordinates::spherical::direction::EquatorialMeanOfDate;
+use crate::time::JulianDate;
 use affn::Rotation3;
 use qtty::*;
 

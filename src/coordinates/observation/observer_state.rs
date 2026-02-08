@@ -23,7 +23,7 @@
 //! applied without explicit observer information.
 
 use crate::astro::sidereal::unmodded_gst;
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::bodies::solar_system::Earth;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::ObserverSite;
@@ -51,7 +51,7 @@ pub type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 ///
 /// ```rust
 /// use siderust::coordinates::observation::ObserverState;
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 ///
 /// // Create observer state for a geocentric observer
 /// let obs = ObserverState::geocentric(JulianDate::J2000);
@@ -81,7 +81,7 @@ impl ObserverState {
     ///
     /// ```rust
     /// use siderust::coordinates::observation::ObserverState;
-    /// use siderust::astro::JulianDate;
+    /// use siderust::time::JulianDate;
     ///
     /// let obs = ObserverState::geocentric(JulianDate::J2000);
     /// ```

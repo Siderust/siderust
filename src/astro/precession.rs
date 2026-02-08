@@ -94,8 +94,8 @@
 
 use std::f64::consts::TAU;
 
-use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
+use crate::time::JulianDate;
 use affn::Rotation3;
 use qtty::*;
 

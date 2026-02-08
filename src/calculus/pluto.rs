@@ -31,7 +31,7 @@
 //! * Williams, T. G. (1991). "An optimized algorithm for Pluto", *Mem. Brit.
 //!   Astron. Assoc.* **99** (2), 75–82.
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::coordinates::{cartesian, centers::Heliocentric, frames::Ecliptic, spherical};
 use qtty::{AstronomicalUnit, Degrees, Radian, AU};
 
@@ -629,7 +629,7 @@ const RADIUS_TERMS: &[PlutoTerm] = &[
 
 #[cfg(test)]
 mod tests {
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use crate::calculus::pluto::Pluto;
 
     #[test]

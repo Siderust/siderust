@@ -14,7 +14,7 @@
 //! use siderust::bodies::planets::{Planet, PlanetBuilder};
 //! use qtty::*;
 //! use siderust::astro::orbit::Orbit;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //!
 //! // Build a custom exoplanet in two steps:
 //! let kepler_452b = Planet::builder()
@@ -178,7 +178,7 @@ impl OrbitExt for Orbit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use qtty::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
 
     #[test]

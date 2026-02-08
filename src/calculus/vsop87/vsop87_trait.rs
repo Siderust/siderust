@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
     cartesian::Position,
@@ -49,7 +49,7 @@ impl_vsop87_for_planet!(Neptune);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use crate::macros::assert_cartesian_eq;
 
     const PRECISION: f64 = 1.0e-12;

@@ -85,7 +85,7 @@
 //! | `kepler_equation_residual`, `kepler_equation_derivative` | crate-private | Helpers |
 
 use crate::astro::orbit::Orbit;
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::coordinates::cartesian::position::Ecliptic;
 use qtty::*;
 use std::f64::consts::PI;
@@ -269,7 +269,7 @@ impl Orbit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use crate::macros::assert_cartesian_eq;
     use qtty::{Days, Degrees};
 

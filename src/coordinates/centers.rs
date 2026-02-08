@@ -290,7 +290,7 @@ pub enum OrbitReferenceCenter {
 /// ```rust
 /// use siderust::coordinates::centers::{BodycentricParams, OrbitReferenceCenter};
 /// use siderust::astro::orbit::Orbit;
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 /// use qtty::*;
 ///
 /// // Mars-like orbit (heliocentric)
@@ -355,7 +355,7 @@ impl Default for BodycentricParams {
     /// Note: This default is primarily for internal use. In practice, you should
     /// always provide meaningful orbital elements for body-centric calculations.
     fn default() -> Self {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
         use qtty::AstronomicalUnits;
 
         Self {
@@ -393,7 +393,7 @@ impl Default for BodycentricParams {
 /// use siderust::coordinates::cartesian::Position;
 /// use siderust::coordinates::frames;
 /// use siderust::astro::orbit::Orbit;
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 /// use qtty::*;
 ///
 /// // Create orbital parameters for an Earth-orbiting satellite
@@ -482,7 +482,7 @@ mod tests {
 
     #[test]
     fn bodycentric_has_params() {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
 
         // Create a simple orbit
         let orbit = Orbit::new(
@@ -504,7 +504,7 @@ mod tests {
 
     #[test]
     fn bodycentric_params_constructors() {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
 
         let orbit = Orbit::new(
             1.0 * AU,
@@ -535,7 +535,7 @@ mod tests {
 
     #[test]
     fn bodycentric_params_equality() {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
 
         let orbit1 = Orbit::new(
             1.0 * AU,

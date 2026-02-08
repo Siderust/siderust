@@ -3,7 +3,7 @@
 
 use qtty::{AstronomicalUnit, AstronomicalUnits, Days, Degrees, Kilograms, Kilometers, Years, AU};
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};

@@ -22,7 +22,7 @@
 //! ---
 
 use crate::astro::orbit::Orbit;
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, Degrees};
 
 /// Taxonomic class of a small Solar‑System body.

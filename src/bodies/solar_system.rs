@@ -50,7 +50,8 @@
 //! 2. Williams, D. R. (2024). *Planetary Fact Sheet – Metric*. NASA Goddard Space Flight Center.
 
 use super::{Planet, Satellite, Star};
-use crate::astro::{orbit::Orbit, JulianDate};
+use crate::astro::orbit::Orbit;
+use crate::time::JulianDate;
 use crate::coordinates::spherical::position::{Ecliptic, EquatorialMeanJ2000};
 use crate::targets::Target;
 use qtty::length::nominal::RSUN;

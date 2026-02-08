@@ -22,7 +22,7 @@
 //! ```rust
 //! use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
 //! use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::*;
 //!
 //! let geo_dir = Astrometric::new(EquatorialMeanJ2000::new(45.0 * DEG, 20.0 * DEG));
@@ -101,7 +101,7 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
     /// ```rust
     /// use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
     /// use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
-    /// use siderust::astro::JulianDate;
+    /// use siderust::time::JulianDate;
     /// use qtty::*;
     ///
     /// let astrometric = Astrometric::new(EquatorialMeanJ2000::new(0.0 * DEG, 0.0 * DEG));
@@ -280,7 +280,7 @@ impl<D: std::fmt::Display> std::fmt::Display for Apparent<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use qtty::*;
 
     #[test]

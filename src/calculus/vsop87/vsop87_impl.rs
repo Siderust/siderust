@@ -14,7 +14,7 @@
 //! - `#[inline(always)]` on hot paths
 //! - SIMD batching via `wide` crate for sin/cos operations
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use wide::f64x4;
 
 /// One VSOP87 coefficient term  _a · cos(b + c·T)_
@@ -282,7 +282,7 @@ pub fn position_velocity(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
 
     const X0: [Vsop87; 1] = [Vsop87 {
         a: 1.0,

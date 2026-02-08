@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use crate::astro::proper_motion::ProperMotion;
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -73,7 +73,7 @@ impl<T> Target<T> {
 mod tests {
     use super::*;
     use crate::astro::proper_motion::ProperMotion;
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use crate::bodies::catalog::ALDEBARAN;
     use crate::coordinates::spherical::position::GCRS;
     use qtty::*;

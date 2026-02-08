@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use qtty::*;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;

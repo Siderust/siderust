@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::bodies::solar_system::Earth;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::{
@@ -72,7 +72,7 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use crate::bodies::solar_system::Earth;
     use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
     use crate::macros::assert_cartesian_eq;
