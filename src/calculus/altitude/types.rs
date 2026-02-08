@@ -5,7 +5,6 @@
 //!
 //! Core types for altitude computation, crossings, and culminations.
 
-use crate::astro::JulianDate;
 use crate::time::{ModifiedJulianDate, Period};
 use qtty::*;
 
@@ -23,8 +22,8 @@ pub enum CrossingDirection {
 /// A threshold crossing event.
 #[derive(Debug, Clone, Copy)]
 pub struct CrossingEvent {
-    /// Julian Date of the crossing.
-    pub jd: JulianDate,
+    /// Modified Julian Date of the crossing.
+    pub jd: ModifiedJulianDate,
     /// Direction: rising above or setting below the threshold.
     pub direction: CrossingDirection,
 }
@@ -45,8 +44,8 @@ pub enum CulminationKind {
 /// A culmination event.
 #[derive(Debug, Clone, Copy)]
 pub struct CulminationEvent {
-    /// Julian Date of the extremum.
-    pub jd: JulianDate,
+    /// Modified Julian Date of the extremum.
+    pub jd: ModifiedJulianDate,
     /// Altitude at the extremum.
     pub altitude: Degrees,
     /// Maximum or minimum.
