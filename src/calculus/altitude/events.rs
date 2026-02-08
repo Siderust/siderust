@@ -119,7 +119,7 @@ pub fn culminations<T: AltitudePeriodsProvider>(
         .map(|ext| {
             let alt_deg = ext.value.to::<Degree>();
             CulminationEvent {
-                jd: ext.t,
+                mjd: ext.t,
                 altitude: alt_deg,
                 kind: match ext.kind {
                     extrema::ExtremumKind::Maximum => CulminationKind::Max,
