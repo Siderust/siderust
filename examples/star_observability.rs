@@ -111,10 +111,10 @@ fn main() {
 
             // Show peak altitude during the night
             if let Some(period) = visible_periods.first() {
-                let mid_jd = siderust::astro::JulianDate::new(
+                let mid_mjd = siderust::time::ModifiedJulianDate::new(
                     (period.start.value() + period.end.value()) / 2.0,
                 );
-                let peak_alt = star.altitude_at(&observatory, mid_jd).to::<Degree>();
+                let peak_alt = star.altitude_at(&observatory, mid_mjd).to::<Degree>();
                 println!("             Peak altitude: {:.1}°", peak_alt.value());
             }
         }
@@ -128,14 +128,14 @@ fn main() {
     println!("Best observing window: middle of astronomical night");
 
     if let Some(dark) = dark_periods.first() {
-        let mid_jd =
-            siderust::astro::JulianDate::new((dark.start.value() + dark.end.value()) / 2.0);
+        let mid_mjd =
+            siderust::time::ModifiedJulianDate::new((dark.start.value() + dark.end.value()) / 2.0);
 
-        println!("  Around JD {:.4}\n", mid_jd.value());
+        println!("  Around MJD {:.4}\n", mid_mjd.value());
         println!("Altitudes at this time:");
 
         for &(name, star) in &targets {
-            let alt = star.altitude_at(&observatory, mid_jd).to::<Degree>();
+            let alt = star.altitude_at(&observatory, mid_mjd).to::<Degree>();
             let status = if alt.value() > 30.0 {
                 "✓ Good"
             } else if alt.value() > 0.0 {

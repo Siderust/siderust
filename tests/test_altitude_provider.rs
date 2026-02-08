@@ -278,26 +278,26 @@ fn free_function_direction() {
 
 #[test]
 fn altitude_at_sun_in_range() {
-    let alt = Sun.altitude_at(&greenwich(), siderust::astro::JulianDate::J2000);
+    let alt = Sun.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
     assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_moon_in_range() {
-    let alt = Moon.altitude_at(&greenwich(), siderust::astro::JulianDate::J2000);
+    let alt = Moon.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
     assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_star_in_range() {
-    let alt = SIRIUS.altitude_at(&greenwich(), siderust::astro::JulianDate::J2000);
+    let alt = SIRIUS.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
     assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_icrs_direction_in_range() {
     let dir = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
-    let alt = dir.altitude_at(&greenwich(), siderust::astro::JulianDate::J2000);
+    let alt = dir.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
     assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
 }
 

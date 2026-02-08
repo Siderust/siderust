@@ -49,13 +49,13 @@ fn sirius_target() -> direction::ICRS {
 fn bench_star_altitude_computation(c: &mut Criterion) {
     let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
     let target = sirius_target();
-    let jd = siderust::astro::JulianDate::J2000;
+    let mjd = siderust::time::ModifiedJulianDate::new(51544.5); // J2000 epoch
 
     let mut group = c.benchmark_group("star_altitude_single");
 
     group.bench_function("compute_altitude", |b| {
         b.iter(|| {
-            let _altitude = target.altitude_at(black_box(&site), black_box(jd));
+            let _altitude = target.altitude_at(black_box(&site), black_box(mjd));
         });
     });
 

@@ -147,7 +147,9 @@ impl MoonPositionCache {
     ///
     /// Adds a small padding on each side to accommodate Brent probes
     /// near the boundaries.
-    pub fn new(jd_start: f64, jd_end: f64) -> Self {
+    pub fn new(mjd_start: ModifiedJulianDate, mjd_end: ModifiedJulianDate) -> Self {
+        let jd_start = JulianDate::from(mjd_start).value();
+        let jd_end = JulianDate::from(mjd_end).value();
         let pad = 1.0; // 1-day padding on each side
         let t0 = jd_start - pad;
         let span = (jd_end + pad) - t0;
@@ -193,7 +195,8 @@ impl MoonPositionCache {
     ///
     /// Falls back to full ELP2000 if `jd` is outside the cached range.
     #[inline]
-    pub fn get_position_km(&self, jd: f64) -> (f64, f64, f64) {
+    pub fn get_position_km(&self, mjd: ModifiedJulianDate) -> (f64, f64, f64) {
+        let jd = JulianDate::from(mjd).value();
         let offset = jd - self.jd_start;
         let seg_idx = (offset / SEGMENT_DAYS) as usize;
 
@@ -232,7 +235,9 @@ pub struct NutationCache {
 
 impl NutationCache {
     /// Build the nutation cache covering `[jd_start, jd_end]`.
-    pub fn new(jd_start: f64, jd_end: f64) -> Self {
+    pub fn new(mjd_start: ModifiedJulianDate, mjd_end: ModifiedJulianDate) -> Self {
+        let jd_start = JulianDate::from(mjd_start).value();
+        let jd_end = JulianDate::from(mjd_end).value();
         let pad = 1.0; // 1-day padding
         let t0 = jd_start - pad;
         let t1 = jd_end + pad;
@@ -327,12 +332,13 @@ pub struct MoonAltitudeContext {
 }
 
 impl MoonAltitudeContext {
-    /// Build an altitude context covering the Mjd period for a given site.
+    /// Build an altitude context covering the MJD period for a given site.
     ///
     /// The caches are padded by 1 day on each side to accommodate Brent probes.
-    pub fn new(jd_start: f64, jd_end: f64, site: ObserverSite) -> Self {
-        let pos_cache = MoonPositionCache::new(jd_start, jd_end);
-        let nut_cache = NutationCache::new(jd_start, jd_end);
+    pub fn new(mjd_start: ModifiedJulianDate, mjd_end: ModifiedJulianDate, site: ObserverSite) -> Self {
+        // Convert ModifiedJulianDate to JulianDate for internal cache usage
+        let pos_cache = MoonPositionCache::new(mjd_start, mjd_end);
+        let nut_cache = NutationCache::new(mjd_start, mjd_end);
 
         // Precompute site ITRF position in km
         let site_ecef = site.geocentric_itrf::<Kilometer>();
@@ -351,19 +357,18 @@ impl MoonAltitudeContext {
         }
     }
 
-    /// Compute the Moon's topocentric altitude in radians at `jd`.
+    /// Compute the Moon's topocentric altitude in radians at `mjd`.
     ///
     /// Replicates the full transform chain of
     /// [`Moon::get_horizontal`] → [`Moon::get_apparent_topocentric_equ`]
     /// but replaces ELP2000 and nutation with cached interpolations.
     #[inline]
-    pub fn altitude_rad(&self, jd: JulianDate) -> Quantity<Radian> {
-        let jd_val = jd.value();
-
+    pub fn altitude_rad(&self, mjd: ModifiedJulianDate) -> Quantity<Radian> {
+        let jd = JulianDate::from(mjd);
         // ---------------------------------------------------------------
         // 1. Geocentric ecliptic Cartesian (km) — from Chebyshev cache
         // ---------------------------------------------------------------
-        let (x_ecl, y_ecl, z_ecl) = self.pos_cache.get_position_km(jd_val);
+        let (x_ecl, y_ecl, z_ecl) = self.pos_cache.get_position_km(mjd);
 
         // ---------------------------------------------------------------
         // 2. Ecliptic → EquatorialMeanJ2000 (constant rotation about +X)
@@ -401,7 +406,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 5. Nutation: mean-of-date → true-of-date (from cache)
         // ---------------------------------------------------------------
-        let rot_nut = self.nut_cache.nutation_rotation(jd_val);
+        let rot_nut = self.nut_cache.nutation_rotation(jd.value());
         let [x_tod, y_tod, z_tod] = rot_nut.apply_array([x_mod, y_mod, z_mod]);
 
         // ---------------------------------------------------------------
@@ -525,21 +530,21 @@ mod tests {
     #[test]
     fn chebyshev_position_accuracy() {
         // Compare cached vs. direct ELP2000 at random times within a segment
-        let jd_start = JulianDate::J2000.value();
-        let jd_end = jd_start + 30.0;
-        let cache = MoonPositionCache::new(jd_start, jd_end);
+        let mjd_start: ModifiedJulianDate = JulianDate::J2000.into();
+        let mjd_end = mjd_start + Days::new(30.0);
+        let cache = MoonPositionCache::new(mjd_start, mjd_end);
 
         for i in 0..100 {
-            let jd = jd_start + (i as f64) * 0.3 + 0.1; // sample every ~7 hours
-            let (cx, cy, cz) = cache.get_position_km(jd);
-            let direct = Moon::get_geo_position::<Kilometer>(JulianDate::new(jd));
+            let mjd = mjd_start + Days::new((i as f64) * 0.3 + 0.1); // sample every ~7 hours
+            let (cx, cy, cz) = cache.get_position_km(mjd);
+            let direct = Moon::get_geo_position::<Kilometer>(JulianDate::from(mjd));
             let (dx, dy, dz) = (direct.x().value(), direct.y().value(), direct.z().value());
 
             let err = ((cx - dx).powi(2) + (cy - dy).powi(2) + (cz - dz).powi(2)).sqrt();
             // Error should be < 1 km (≈ 0.5 arcsecond at Moon distance)
             assert!(
                 err < 1.0,
-                "Chebyshev error at JD {jd}: {err:.6} km (x:{} vs {}, y:{} vs {}, z:{} vs {})",
+                "Chebyshev error at MJD {mjd}: {err:.6} km (x:{} vs {}, y:{} vs {}, z:{} vs {})",
                 cx,
                 dx,
                 cy,
@@ -552,14 +557,15 @@ mod tests {
 
     #[test]
     fn nutation_cache_accuracy() {
-        let jd_start = JulianDate::J2000.value();
-        let jd_end = jd_start + 30.0;
-        let cache = NutationCache::new(jd_start, jd_end);
+        let mjd_start: ModifiedJulianDate = JulianDate::J2000.into();
+        let mjd_end: ModifiedJulianDate = mjd_start + Days::new(30.0);
+        let cache = NutationCache::new(mjd_start, mjd_end);
 
         for i in 0..100 {
-            let jd = jd_start + (i as f64) * 0.3 + 0.05;
-            let (dpsi, deps, eps0) = cache.get_nutation_rad(jd);
-            let direct = get_nutation(JulianDate::new(jd));
+            let mjd = mjd_start + Days::new((i as f64) * 0.3 + 0.05);
+            let jd = JulianDate::from(mjd);
+            let (dpsi, deps, eps0) = cache.get_nutation_rad(jd.value());
+            let direct = get_nutation(jd);
             let d_dpsi = direct.longitude.to::<Radian>().value();
             let d_deps = direct.obliquity.to::<Radian>().value();
             let d_eps0 = direct.ecliptic.to::<Radian>().value();
@@ -571,15 +577,15 @@ mod tests {
             // Errors should be < 5e-10 radians (≈ 0.1 milliarcseconds)
             assert!(
                 err_dpsi < 5e-10,
-                "Nutation dpsi error at JD {jd}: {err_dpsi:.2e}"
+                "Nutation dpsi error at MJD {mjd}: {err_dpsi:.2e}"
             );
             assert!(
                 err_deps < 5e-10,
-                "Nutation deps error at JD {jd}: {err_deps:.2e}"
+                "Nutation deps error at MJD {mjd}: {err_deps:.2e}"
             );
             assert!(
                 err_eps0 < 5e-10,
-                "Nutation eps0 error at JD {jd}: {err_eps0:.2e}"
+                "Nutation eps0 error at MJD {mjd}: {err_eps0:.2e}"
             );
         }
     }
@@ -587,21 +593,21 @@ mod tests {
     #[test]
     fn cached_altitude_matches_direct() {
         let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
-        let jd_start = JulianDate::J2000.value();
-        let jd_end = jd_start + 7.0;
-        let ctx = MoonAltitudeContext::new(jd_start, jd_end, site);
+        let mjd_start: ModifiedJulianDate = JulianDate::J2000.into();
+        let mjd_end = mjd_start + Days::new(7.0);
+        let ctx = MoonAltitudeContext::new(mjd_start, mjd_end, site);
 
         for i in 0..50 {
-            let jd = JulianDate::new(jd_start + (i as f64) * 0.14 + 0.01);
-            let cached_alt = ctx.altitude_rad(jd).value();
-            let direct_alt = moon_altitude_rad(jd, &site).value();
+            let mjd = ModifiedJulianDate::new(mjd_start.value() + (i as f64) * 0.14 + 0.01);
+            let cached_alt = ctx.altitude_rad(mjd).value();
+            let direct_alt = moon_altitude_rad(mjd, &site).value();
 
             let err_deg = (cached_alt - direct_alt).to_degrees().abs();
             // Should match within ~0.01° (limited by interpolation + nutation cache)
             assert!(
                 err_deg < 0.02,
-                "Altitude error at JD {}: cached={:.4}° direct={:.4}° err={:.6}°",
-                jd.value(),
+                "Altitude error at MJD {}: cached={:.4}° direct={:.4}° err={:.6}°",
+                mjd.value(),
                 cached_alt.to_degrees(),
                 direct_alt.to_degrees(),
                 err_deg

@@ -62,9 +62,9 @@ fn analyze_body<B: AltitudePeriodsProvider>(
     );
 
     // Peak altitude during window
-    let mid_jd =
-        siderust::astro::JulianDate::new((window.start.value() + window.end.value()) / 2.0);
-    let alt = body.altitude_at(&observer, mid_jd).to::<Degree>();
+    let mid_mjd =
+        siderust::time::ModifiedJulianDate::new((window.start.value() + window.end.value()) / 2.0);
+    let alt = body.altitude_at(&observer, mid_mjd).to::<Degree>();
     println!("  Altitude at window midpoint: {:.2}°", alt.value());
     println!();
 }

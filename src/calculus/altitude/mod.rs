@@ -55,7 +55,7 @@
 //! let events = crossings(&Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
 //!
 //! // Or use the trait methods directly
-//! let alt_rad = Sun.altitude_at(&site, siderust::astro::JulianDate::J2000);
+//! let alt_rad = Sun.altitude_at(&site, siderust::time::ModifiedJulianDate::new(60000.0));
 //! ```
 
 // ---------------------------------------------------------------------------
