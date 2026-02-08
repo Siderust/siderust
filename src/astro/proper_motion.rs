@@ -76,8 +76,8 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
     );
     // Linearly apply proper motion in RA and DEC
     position::EquatorialMeanJ2000::<U>::new(
-        mean_position.ra() + (proper_motion.ra_μ * t).normalize(),
-        (mean_position.dec() + (proper_motion.dec_μ * t)).normalize(),
+        mean_position.ra() + (proper_motion.ra_μ * t).to(),
+        mean_position.dec() + (proper_motion.dec_μ * t).to(),
         mean_position.distance,
     )
 }

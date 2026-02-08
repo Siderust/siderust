@@ -225,7 +225,7 @@ pub fn calculate_orbit_position(
 
     // 3) Mean Anomaly (M) in radians
     let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
-    let m_rad = (m0_rad + n * dt) % std::f64::consts::TAU;
+    let m_rad = (m0_rad + (n * dt).to::<Radian>()) % std::f64::consts::TAU;
 
     // 4) Solve Kepler's Equation (E) for the eccentric anomaly
     let e_anomaly = solve_keplers_equation(m_rad, elements.eccentricity);
