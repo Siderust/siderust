@@ -19,7 +19,7 @@ mod period;
 
 pub use julian_date::JulianDate;
 pub use modified_julian_date::ModifiedJulianDate;
-pub use period::Period;
+pub use period::{complement_within, intersect_periods, Period};
 
 /// Trait for types that represent a point in time.
 ///
