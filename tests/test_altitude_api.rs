@@ -142,8 +142,8 @@ fn culminations_sun_one_day() {
         .filter(|c| c.kind == CulminationKind::Min)
         .collect();
 
-    assert!(upper.len() >= 1, "should find upper culmination");
-    assert!(lower.len() >= 1, "should find lower culmination");
+    assert!(!upper.is_empty(), "should find upper culmination");
+    assert!(!lower.is_empty(), "should find lower culmination");
 
     // Upper culmination altitude at 51°N in late February should be ~25-35°
     let max_alt = upper[0].altitude.value();

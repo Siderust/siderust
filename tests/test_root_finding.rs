@@ -72,11 +72,11 @@ fn brent_with_values_saves_evaluations() {
     let f_lo = Radians::new((3.0_f64).sin());
     let f_hi = Radians::new((4.0_f64).sin());
 
-    let _ = root_finding::brent_with_values(Days::new(3.0), Days::new(4.0), f_lo, f_hi, &f);
+    let _ = root_finding::brent_with_values(Days::new(3.0), Days::new(4.0), f_lo, f_hi, f);
     let with_vals = count.get();
 
     count.set(0);
-    let _ = root_finding::brent(Days::new(3.0), Days::new(4.0), &f);
+    let _ = root_finding::brent(Days::new(3.0), Days::new(4.0), f);
     let without = count.get();
 
     // brent_with_values saves the 2 endpoint evaluations

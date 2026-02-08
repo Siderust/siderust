@@ -319,11 +319,11 @@ mod tests {
         };
         let f_lo = Radians::new((3.0_f64).sin());
         let f_hi = Radians::new((4.0_f64).sin());
-        let _ = brent_with_values(Days::new(3.0), Days::new(4.0), f_lo, f_hi, &f);
+        let _ = brent_with_values(Days::new(3.0), Days::new(4.0), f_lo, f_hi, f);
         let with_vals = count.get();
 
         count.set(0);
-        let _ = brent(Days::new(3.0), Days::new(4.0), &f);
+        let _ = brent(Days::new(3.0), Days::new(4.0), f);
         let without = count.get();
 
         // with_values should use at least 2 fewer evals (the endpoints)

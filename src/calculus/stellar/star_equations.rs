@@ -167,7 +167,7 @@ impl StarAltitudeParams {
         }
     }
 
-    /// Unwrapped hour angle (degrees) at a given MJD.
+    /// Unwrapped hour angle (degrees) at a given Mjd.
     ///
     /// `HA = GST(t) + λ − α`
     #[inline]
@@ -176,7 +176,7 @@ impl StarAltitudeParams {
         gst.value() + self.lon_deg - self.ra_corrected_deg
     }
 
-    /// Predict all threshold crossing MJD times within `period` for a
+    /// Predict all threshold crossing Mjd times within `period` for a
     /// given threshold hour angle H₀.
     ///
     /// Returns `(mjd, direction)` pairs sorted chronologically, where

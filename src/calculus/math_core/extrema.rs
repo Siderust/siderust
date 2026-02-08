@@ -23,7 +23,7 @@ use qtty::*;
 
 use super::root_finding;
 
-type MJD = ModifiedJulianDate;
+type Mjd = ModifiedJulianDate;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -70,7 +70,7 @@ pub struct Extremum<V: Unit> {
 ///
 /// Uses golden‑section search (derivative‑free, guaranteed convergence).
 /// Returns `(t_min, f(t_min))`.
-pub fn minimize<V, F>(period: Period<MJD>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
+pub fn minimize<V, F>(period: Period<Mjd>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -80,7 +80,7 @@ where
 
 /// Like [`minimize`] but with a caller‑chosen tolerance.
 pub fn minimize_tol<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     f: &F,
     tol: Days,
 ) -> (ModifiedJulianDate, Quantity<V>)
@@ -89,8 +89,8 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let mut p = period;
-    let mut x1 = MJD::new((p.end - PHI * p.duration()).value());
-    let mut x2 = MJD::new((p.start + PHI * p.duration()).value());
+    let mut x1 = Mjd::new((p.end - PHI * p.duration()).value());
+    let mut x2 = Mjd::new((p.start + PHI * p.duration()).value());
     let mut f1: Quantity<V> = f(x1);
     let mut f2: Quantity<V> = f(x2);
 
@@ -113,14 +113,14 @@ where
         }
     }
 
-    let t = MJD::new(0.5 * (p.start.value() + p.end.value()));
+    let t = Mjd::new(0.5 * (p.start.value() + p.end.value()));
     (t, f(t))
 }
 
 /// Find the value of *t* in `period` that **maximises** `f(t)`.
 ///
 /// Implemented as `minimize(-f)`.  Returns `(t_max, f(t_max))`.
-pub fn maximize<V, F>(period: Period<MJD>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
+pub fn maximize<V, F>(period: Period<Mjd>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -130,7 +130,7 @@ where
 
 /// Like [`maximize`] but with a caller‑chosen tolerance.
 pub fn maximize_tol<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     f: &F,
     tol: Days,
 ) -> (ModifiedJulianDate, Quantity<V>)
@@ -138,7 +138,7 @@ where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let neg_f = |t: MJD| -f(t);
+    let neg_f = |t: Mjd| -f(t);
     let (t, _neg_val) = minimize_tol(period, &neg_f, tol);
     (t, f(t))
 }
@@ -178,7 +178,7 @@ where
 /// and refine each extremum with golden‑section.
 ///
 /// Returns a chronologically sorted list of [`Extremum`] values.
-pub fn find_extrema<V, F>(period: Period<MJD>, step: Days, f: &F) -> Vec<Extremum<V>>
+pub fn find_extrema<V, F>(period: Period<Mjd>, step: Days, f: &F) -> Vec<Extremum<V>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -187,7 +187,7 @@ where
 }
 
 /// Like [`find_extrema`] but with a caller‑chosen tolerance.
-pub fn find_extrema_tol<V, F>(period: Period<MJD>, step: Days, f: &F, tol: Days) -> Vec<Extremum<V>>
+pub fn find_extrema_tol<V, F>(period: Period<Mjd>, step: Days, f: &F, tol: Days) -> Vec<Extremum<V>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -253,7 +253,7 @@ where
 ///
 /// The derivative is estimated as: f'(t) ≈ (f(t+h) − f(t−h)) / (2h)
 pub fn find_extrema_via_derivative<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     step: Days,
     f: &F,
     fd_step: Days,
@@ -267,7 +267,7 @@ where
     let t_end_v = period.end;
     let fd_v = fd_step;
 
-    let deriv = |t: MJD| -> Quantity<V> {
+    let deriv = |t: Mjd| -> Quantity<V> {
         let tv = t;
         let fwd = f(tv + fd_v);
         let bwd = f(tv - fd_v);
@@ -275,7 +275,7 @@ where
     };
 
     // Wrapper for root_finding (which expects Quantity<Day>)
-    let deriv_day = |d: Days| -> Quantity<V> { deriv(MJD::new(d.value())) };
+    let deriv_day = |d: Days| -> Quantity<V> { deriv(Mjd::new(d.value())) };
 
     let mut result = Vec::new();
     let mut t = t_start_v;
@@ -290,9 +290,9 @@ where
                 Days::new(next_t.value()),
                 prev_d,
                 next_d,
-                &deriv_day,
+                deriv_day,
             ) {
-                let root_mjd = MJD::new(root.value());
+                let root_mjd = Mjd::new(root.value());
                 let val = f(root_mjd);
                 let kind = if let Some(k) = classify::<V, _>(root_mjd, f) {
                     k
@@ -331,16 +331,16 @@ mod tests {
 
     type Radians = Quantity<Radian>;
 
-    fn mjd(v: f64) -> MJD {
-        MJD::new(v)
+    fn mjd(v: f64) -> Mjd {
+        Mjd::new(v)
     }
-    fn period(a: f64, b: f64) -> Period<MJD> {
+    fn period(a: f64, b: f64) -> Period<Mjd> {
         Period::new(mjd(a), mjd(b))
     }
 
     #[test]
     fn minimize_finds_parabola_vertex() {
-        let (t, v) = minimize(period(-5.0, 5.0), &|t: MJD| {
+        let (t, v) = minimize(period(-5.0, 5.0), &|t: Mjd| {
             Radians::new((t.value() - 2.0).powi(2))
         });
         assert!((t.value() - 2.0).abs() < 1e-7, "t = {}", t.value());
@@ -349,7 +349,7 @@ mod tests {
 
     #[test]
     fn maximize_finds_negative_parabola_peak() {
-        let (t, v) = maximize(period(-5.0, 5.0), &|t: MJD| {
+        let (t, v) = maximize(period(-5.0, 5.0), &|t: Mjd| {
             Radians::new(-(t.value() - 3.0).powi(2) + 10.0)
         });
         assert!((t.value() - 3.0).abs() < 1e-7, "t = {}", t.value());
@@ -358,7 +358,7 @@ mod tests {
 
     #[test]
     fn classify_detects_maximum() {
-        let f = |t: MJD| Radians::new(-(t.value() * t.value()));
+        let f = |t: Mjd| Radians::new(-(t.value() * t.value()));
         assert_eq!(
             classify::<Radian, _>(mjd(0.0), &f),
             Some(ExtremumKind::Maximum)
@@ -367,7 +367,7 @@ mod tests {
 
     #[test]
     fn classify_detects_minimum() {
-        let f = |t: MJD| Radians::new(t.value() * t.value());
+        let f = |t: Mjd| Radians::new(t.value() * t.value());
         assert_eq!(
             classify::<Radian, _>(mjd(0.0), &f),
             Some(ExtremumKind::Minimum)
@@ -376,7 +376,7 @@ mod tests {
 
     #[test]
     fn classify_returns_none_for_inflection() {
-        let f = |t: MJD| Radians::new(t.value() * t.value() * t.value());
+        let f = |t: Mjd| Radians::new(t.value() * t.value() * t.value());
         // At t=0 the cubic has an inflection point, not a max/min
         assert_eq!(classify::<Radian, _>(mjd(0.0), &f), None);
     }
@@ -384,7 +384,7 @@ mod tests {
     #[test]
     fn find_extrema_sine_wave() {
         // sin(2πt) over [0, 1] has max at t=0.25, min at t=0.75
-        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
         let extrema: Vec<Extremum<Radian>> = find_extrema(period(0.0, 1.0), Days::new(0.05), &f);
 
         assert_eq!(extrema.len(), 2, "expected 2 extrema, got {:?}", extrema);
@@ -415,7 +415,7 @@ mod tests {
     #[test]
     fn find_extrema_via_derivative_sine() {
         // Shift slightly to avoid derivative sign-change at endpoints
-        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
         // Use a step that doesn't align with extrema at t=0.25, 0.75
         let extrema: Vec<Extremum<Radian>> =
             find_extrema_via_derivative(period(0.01, 0.99), Days::new(0.035), &f, Days::new(1e-5));
@@ -446,7 +446,7 @@ mod tests {
     #[test]
     fn find_extrema_constant_returns_empty() {
         let extrema: Vec<Extremum<Radian>> =
-            find_extrema(period(0.0, 10.0), Days::new(1.0), &|_: MJD| {
+            find_extrema(period(0.0, 10.0), Days::new(1.0), &|_: Mjd| {
                 Radians::new(42.0)
             });
         assert!(extrema.is_empty());
@@ -455,7 +455,7 @@ mod tests {
     #[test]
     fn find_extrema_monotone_returns_empty() {
         let extrema: Vec<Extremum<Radian>> =
-            find_extrema(period(0.0, 10.0), Days::new(0.5), &|t: MJD| {
+            find_extrema(period(0.0, 10.0), Days::new(0.5), &|t: Mjd| {
                 Radians::new(t.value())
             });
         assert!(extrema.is_empty());
@@ -464,7 +464,7 @@ mod tests {
     #[test]
     fn find_extrema_multiple_oscillations() {
         // sin(6πt) over [0,1] → 3 maxima, 2–3 minima
-        let f = |t: MJD| Radians::new((6.0 * std::f64::consts::PI * t.value()).sin());
+        let f = |t: Mjd| Radians::new((6.0 * std::f64::consts::PI * t.value()).sin());
         let extrema: Vec<Extremum<Radian>> = find_extrema(period(0.0, 1.0), Days::new(0.02), &f);
 
         let n_max = extrema

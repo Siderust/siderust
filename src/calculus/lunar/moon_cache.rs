@@ -64,9 +64,9 @@ const NUT_STEP_DAYS: f64 = 2.0 / 24.0;
 fn cheb_nodes_on_unit() -> [f64; CHEB_NODES] {
     let mut nodes = [0.0_f64; CHEB_NODES];
     let n = CHEB_NODES as f64;
-    for k in 0..CHEB_NODES {
+    for (k, node) in nodes.iter_mut().enumerate().take(CHEB_NODES) {
         let arg = std::f64::consts::PI * (2.0 * k as f64 + 1.0) / (2.0 * n);
-        nodes[k] = arg.cos();
+        *node = arg.cos();
     }
     nodes
 }
@@ -86,13 +86,13 @@ fn compute_cheb_coeffs(values: &[f64; CHEB_NODES]) -> [f64; CHEB_NODES] {
     let mut coeffs = [0.0_f64; CHEB_NODES];
     let n = CHEB_NODES as f64;
 
-    for j in 0..CHEB_NODES {
+    for (j, coeff) in coeffs.iter_mut().enumerate().take(CHEB_NODES) {
         let mut sum = 0.0_f64;
-        for k in 0..CHEB_NODES {
+        for (k, value) in values.iter().enumerate().take(CHEB_NODES) {
             let arg = std::f64::consts::PI * (j as f64) * (2.0 * k as f64 + 1.0) / (2.0 * n);
-            sum += values[k] * arg.cos();
+            sum += value * arg.cos();
         }
-        coeffs[j] = if j == 0 { sum / n } else { 2.0 * sum / n };
+        *coeff = if j == 0 { sum / n } else { 2.0 * sum / n };
     }
     coeffs
 }
@@ -327,7 +327,7 @@ pub struct MoonAltitudeContext {
 }
 
 impl MoonAltitudeContext {
-    /// Build an altitude context covering the MJD period for a given site.
+    /// Build an altitude context covering the Mjd period for a given site.
     ///
     /// The caches are padded by 1 day on each side to accommodate Brent probes.
     pub fn new(jd_start: f64, jd_end: f64, site: ObserverSite) -> Self {
@@ -434,7 +434,7 @@ use crate::calculus::math_core::intervals::LabeledCrossing;
 use crate::calculus::math_core::root_finding;
 use crate::time::{ModifiedJulianDate, Period};
 
-type MJD = ModifiedJulianDate;
+type Mjd = ModifiedJulianDate;
 type Days = qtty::Quantity<qtty::Day>;
 
 /// Tiny epsilon for deduplication (same as intervals.rs).
@@ -447,7 +447,7 @@ const DEDUPE_EPS: Days = Days::new(1e-8);
 /// from the sign change that triggered the Brent solve — **eliminating
 /// the 2 extra probe evaluations per crossing**.
 pub fn find_and_label_crossings<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     step: Days,
     f: &F,
     threshold: qtty::Quantity<V>,
@@ -456,8 +456,8 @@ where
     V: qtty::Unit,
     F: Fn(ModifiedJulianDate) -> qtty::Quantity<V>,
 {
-    let g = |t: MJD| -> qtty::Quantity<V> { f(t) - threshold };
-    let g_day = |d: Days| -> qtty::Quantity<V> { g(MJD::new(d.value())) };
+    let g = |t: Mjd| -> qtty::Quantity<V> { f(t) - threshold };
+    let g_day = |d: Days| -> qtty::Quantity<V> { g(Mjd::new(d.value())) };
 
     let t_start = period.start;
     let t_end = period.end;
@@ -479,14 +479,14 @@ where
                 Days::new(next_t.value()),
                 prev,
                 next_v,
-                &g_day,
+                g_day,
             ) {
                 let rv = root.value();
                 if rv >= t_start.value() && rv <= t_end.value() {
                     // Direction from sign change: prev < 0 → next > 0 means entering (+1)
                     let direction = if prev.value() < 0.0 { 1 } else { -1 };
                     labeled.push(LabeledCrossing {
-                        t: MJD::new(rv),
+                        t: Mjd::new(rv),
                         direction,
                     });
                 }
@@ -612,8 +612,8 @@ mod tests {
     #[test]
     fn find_and_label_crossings_sine_wave() {
         // Test with a known sine wave: sin(2π(t+0.05)) crosses 0 at known times
-        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
-        let period = Period::new(MJD::new(0.0), MJD::new(1.0));
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
+        let period = Period::new(Mjd::new(0.0), Mjd::new(1.0));
         let step = Days::new(0.01);
 
         let (labeled, _start_above) = find_and_label_crossings(period, step, &f, Radians::new(0.0));

@@ -45,7 +45,7 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// # Arguments
 /// * `target` — any body implementing [`AltitudePeriodsProvider`]
 /// * `observer` — site on Earth
-/// * `window` — search interval (MJD)
+/// * `window` — search interval (Mjd)
 /// * `threshold` — altitude threshold
 /// * `opts` — search options (tolerances, scan step)
 ///
