@@ -31,14 +31,14 @@
 //! let betelgeuse_pm = ProperMotion::new(ra_in_mas_per_year, dec_in_mas_per_year);
 //! let betelgeuse = Target::new(
 //!     Direction::<EquatorialMeanJ2000>::new(88.792939*DEG, 7.407064*DEG),
-//!     ModifiedJulianDate::new(60200.0).to_julian_day(),
+//!     ModifiedJulianDate::new(60200.0).into(),
 //!     betelgeuse_pm,
 //! );
 //!
 //! // Jupiter’s geocentric position at a given epoch (no proper motion)
 //! let jupiter = Target::new_static(
 //!     Direction::<EquatorialMeanJ2000>::new(23.123*DEG, -5.321*DEG),
-//!     ModifiedJulianDate::new(60200.0).to_julian_day(),
+//!     ModifiedJulianDate::new(60200.0).into(),
 //! );
 //! ```
 //!

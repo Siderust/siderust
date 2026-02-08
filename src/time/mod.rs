@@ -208,9 +208,9 @@ mod tests {
     }
 
     #[test]
-    fn backward_compat_to_julian_day() {
+    fn cross_scale_conversion_mjd_into_jd() {
         let mjd = ModifiedJulianDate::new(51_544.5);
-        let jd = mjd.to_julian_day();
+        let jd: JulianDate = mjd.into();
         assert_eq!(jd.value(), 2_451_545.0);
     }
 }
