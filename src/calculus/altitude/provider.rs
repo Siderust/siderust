@@ -363,11 +363,11 @@ mod tests {
         );
         for (sp, dp) in star_periods.iter().zip(dir_periods.iter()) {
             assert!(
-                (sp.start.value() - dp.start.value()).abs() < 1e-6,
+                (sp.start - dp.start).abs() < Days::new(1e-6),
                 "Period starts should match"
             );
             assert!(
-                (sp.end.value() - dp.end.value()).abs() < 1e-6,
+                (sp.end - dp.end).abs() < Days::new(1e-6),
                 "Period ends should match"
             );
         }
@@ -518,7 +518,7 @@ mod tests {
         let periods = sirius_dir.above_threshold(greenwich(), one_week_window(), Degrees::new(0.0));
         for w in periods.windows(2) {
             assert!(
-                w[0].end.value() <= w[1].start.value(),
+                w[0].end <= w[1].start,
                 "Periods should be non-overlapping and sorted: {:?} vs {:?}",
                 w[0],
                 w[1]
