@@ -194,14 +194,12 @@ impl ObserverSite {
         const E2: f64 = 2.0 * F - F * F; // First eccentricity squared
 
         // Convert geodetic to geocentric Cartesian (ECEF)
-        let lat_rad = self.lat.to::<Radian>().value();
-        let lon_rad = self.lon.to::<Radian>().value();
+        let lat_rad = self.lat.to::<Radian>();
+        let lon_rad = self.lon.to::<Radian>();
         let h = self.height.value();
 
-        let sin_lat = lat_rad.sin();
-        let cos_lat = lat_rad.cos();
-        let sin_lon = lon_rad.sin();
-        let cos_lon = lon_rad.cos();
+        let (sin_lat, cos_lat) = lat_rad.sin_cos();
+        let (sin_lon, cos_lon) = lon_rad.sin_cos();
 
         // Radius of curvature in the prime vertical
         let n = A / (1.0 - E2 * sin_lat * sin_lat).sqrt();

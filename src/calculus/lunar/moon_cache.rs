@@ -50,7 +50,8 @@ const SEGMENT_DAYS: f64 = 4.0;
 
 /// J2000 mean obliquity ε₀ (IAU 2006): 84381.406″ converted to radians.
 /// Used for ecliptic → equatorial rotation (constant for J2000 frame).
-const J2000_OBLIQUITY_RAD: f64 = 84381.406 / 3600.0 * std::f64::consts::PI / 180.0;
+const J2000_OBLIQUITY_RAD: qtty::Quantity<Radian> =
+    qtty::Quantity::<Radian>::new(84381.406 / 3600.0 * std::f64::consts::PI / 180.0);
 
 /// Nutation cache step in days (2 hours).
 const NUT_STEP_DAYS: f64 = 2.0 / 24.0;
@@ -472,7 +473,7 @@ where
     let t_end = period.end;
 
     let start_val = g(t_start);
-    let start_above = start_val.value() > 0.0;
+    let start_above = start_val > 0.0;
 
     let mut labeled = Vec::new();
     let mut t = t_start;
@@ -493,7 +494,7 @@ where
                 let rv = root.value();
                 if rv >= t_start.value() && rv <= t_end.value() {
                     // Direction from sign change: prev < 0 → next > 0 means entering (+1)
-                    let direction = if prev.value() < 0.0 { 1 } else { -1 };
+                    let direction = if prev < 0.0 { 1 } else { -1 };
                     labeled.push(LabeledCrossing {
                         t: Mjd::new(rv),
                         direction,

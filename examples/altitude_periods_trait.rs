@@ -91,7 +91,7 @@ fn main() {
     println!("  Found {} periods in 7 days", betelgeuse_visible.len());
     let total_hours: f64 = betelgeuse_visible
         .iter()
-        .map(|p| p.duration_days() * 24.0)
+        .map(|p| p.duration_days().value() * 24.0)
         .sum();
     println!("  Total visible time: {:.1} hours", total_hours);
     println!();
@@ -123,13 +123,13 @@ fn main() {
     let polaris_up = POLARIS.above_threshold(observer, window, Degrees::new(0.0));
 
     println!("Polaris above horizon at {:.1}°N:", observer.lat.value());
-    if polaris_up.len() == 1 && (polaris_up[0].duration_days() - 7.0).abs() < 0.1 {
+    if polaris_up.len() == 1 && (polaris_up[0].duration_days() - Days::new(7.0)).abs() < 0.1 {
         println!("  ✓ Circumpolar (continuously visible for entire week)");
     } else {
         println!(
             "  Found {} periods (total {:.2} days)",
             polaris_up.len(),
-            polaris_up.iter().map(|p| p.duration_days()).sum::<f64>()
+            polaris_up.iter().map(|p| p.duration_days().value()).sum::<f64>()
         );
     }
     println!();

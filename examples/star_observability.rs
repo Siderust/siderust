@@ -52,7 +52,7 @@ fn main() {
         return;
     }
 
-    let total_dark_hours: f64 = dark_periods.iter().map(|p| p.duration_days() * 24.0).sum();
+    let total_dark_hours: f64 = dark_periods.iter().map(|p| p.duration_days().value() * 24.0).sum();
     println!(
         "✓ Astronomical night duration: {:.2} hours\n",
         total_dark_hours
@@ -89,7 +89,7 @@ fn main() {
         // Filter to only dark periods (intersection would be better, but this demonstrates the API)
         let observable_hours: f64 = visible_periods
             .iter()
-            .map(|p| p.duration_days() * 24.0)
+            .map(|p| p.duration_days().value() * 24.0)
             .sum();
 
         print!("{:12} ", name);

@@ -30,11 +30,11 @@ fn score_night(night_start: ModifiedJulianDate, observer: ObserverSite) -> Night
 
     // Astronomical darkness (Sun below -18°)
     let dark_periods = Sun.below_threshold(observer, window, Degrees::new(-18.0));
-    let dark_hours: f64 = dark_periods.iter().map(|p| p.duration_days() * 24.0).sum();
+    let dark_hours: f64 = dark_periods.iter().map(|p| p.duration_days().value() * 24.0).sum();
 
     // Moon above horizon during dark time
     let moon_up = Moon.above_threshold(observer, window, Degrees::new(0.0));
-    let moon_hours: f64 = moon_up.iter().map(|p| p.duration_days() * 24.0).sum();
+    let moon_hours: f64 = moon_up.iter().map(|p| p.duration_days().value() * 24.0).sum();
 
     // Simple scoring: darkness good, Moon bad
     // Score = dark_hours * (1 - moon_interference_factor)

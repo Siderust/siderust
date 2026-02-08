@@ -131,7 +131,7 @@ fn find_crossings_analytical(
     let thr = Radians::new(threshold_rad);
     let f = make_star_fn(ra_j2000, dec_j2000, site);
 
-    let start_above = f(period.start).value() > threshold_rad;
+    let start_above = f(period.start) > thr;
 
     // Build analytical model at the period midpoint
     let start_jd: JulianDate = period.start.into();
@@ -142,7 +142,7 @@ fn find_crossings_analytical(
     match params.threshold_ha(threshold_rad) {
         ThresholdResult::AlwaysAbove => {
             // Verify at both endpoints with the full evaluator
-            let end_above = f(period.end).value() > threshold_rad;
+            let end_above = f(period.end) > thr;
             if start_above && end_above {
                 (Vec::new(), true)
             } else {
@@ -154,7 +154,7 @@ fn find_crossings_analytical(
             }
         }
         ThresholdResult::NeverAbove => {
-            let end_above = f(period.end).value() > threshold_rad;
+            let end_above = f(period.end) > thr;
             if !start_above && !end_above {
                 (Vec::new(), false)
             } else {
@@ -336,7 +336,7 @@ mod tests {
         assert_eq!(periods.len(), 1, "Polaris should be continuously above");
         let dur = periods[0].duration_days();
         assert!(
-            (dur - 7.0).abs() < 0.01,
+            (dur - Days::new(7.0)).abs() < Days::new(0.01),
             "should span full 7 days, got {}",
             dur
         );
@@ -357,7 +357,7 @@ mod tests {
             periods.len()
         );
         for p in &periods {
-            let hours = p.duration_days() * 24.0;
+            let hours = p.duration_days().value() * 24.0;
             // First/last period may be truncated by the window boundary
             assert!(
                 hours > 0.1 && hours < 18.0,
@@ -389,8 +389,8 @@ mod tests {
         let above = find_star_above_periods(ra, dec, site, period, Degrees::new(0.0));
         let below = find_star_below_periods(ra, dec, site, period, Degrees::new(0.0));
 
-        let total_above: f64 = above.iter().map(|p| p.duration_days()).sum();
-        let total_below: f64 = below.iter().map(|p| p.duration_days()).sum();
+        let total_above: f64 = above.iter().map(|p| p.duration_days().value()).sum();
+        let total_below: f64 = below.iter().map(|p| p.duration_days().value()).sum();
         assert!(
             (total_above + total_below - 7.0).abs() < 0.01,
             "above + below should cover 7 days, got {}",

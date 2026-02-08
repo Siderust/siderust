@@ -30,7 +30,7 @@ fn analyze_body<B: AltitudePeriodsProvider>(
 
     // Above horizon
     let up_periods = body.above_threshold(observer, window, Degrees::new(0.0));
-    let total_up: f64 = up_periods.iter().map(|p| p.duration_days() * 24.0).sum();
+    let total_up: f64 = up_periods.iter().map(|p| p.duration_days().value() * 24.0).sum();
     println!(
         "  Above horizon: {:.1} hours in {} periods",
         total_up,
@@ -39,7 +39,7 @@ fn analyze_body<B: AltitudePeriodsProvider>(
 
     // High altitude (> 45°)
     let high_periods = body.above_threshold(observer, window, Degrees::new(45.0));
-    let total_high: f64 = high_periods.iter().map(|p| p.duration_days() * 24.0).sum();
+    let total_high: f64 = high_periods.iter().map(|p| p.duration_days().value() * 24.0).sum();
     println!(
         "  Above 45°:     {:.1} hours in {} periods",
         total_high,
@@ -54,7 +54,7 @@ fn analyze_body<B: AltitudePeriodsProvider>(
         max_altitude: Degrees::new(10.0),
     };
     let low_periods = body.altitude_periods(&query);
-    let total_low: f64 = low_periods.iter().map(|p| p.duration_days() * 24.0).sum();
+    let total_low: f64 = low_periods.iter().map(|p| p.duration_days().value() * 24.0).sum();
     println!(
         "  Low (0-10°):   {:.1} hours in {} periods",
         total_low,

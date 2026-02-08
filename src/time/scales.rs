@@ -63,12 +63,12 @@ impl TimeScale for MJD {
 
     #[inline(always)]
     fn to_jd_tt(value: Days) -> Days {
-        Days::new(value.value() + MJD_EPOCH.value())
+        value + MJD_EPOCH
     }
 
     #[inline(always)]
     fn from_jd_tt(jd_tt: Days) -> Days {
-        Days::new(jd_tt.value() - MJD_EPOCH.value())
+        jd_tt - MJD_EPOCH
     }
 }
 
@@ -137,13 +137,13 @@ impl TimeScale for TAI {
     #[inline(always)]
     fn to_jd_tt(value: Days) -> Days {
         // TAI → TT: add 32.184 s
-        Days::new(value.value() + TT_MINUS_TAI.value())
+        value + TT_MINUS_TAI
     }
 
     #[inline(always)]
     fn from_jd_tt(jd_tt: Days) -> Days {
         // TT → TAI: subtract 32.184 s
-        Days::new(jd_tt.value() - TT_MINUS_TAI.value())
+        jd_tt - TT_MINUS_TAI
     }
 }
 
@@ -167,12 +167,12 @@ impl TimeScale for GPS {
 
     #[inline(always)]
     fn to_jd_tt(value: Days) -> Days {
-        Days::new(value.value() + GPS_EPOCH_JD_TT.value())
+        value + GPS_EPOCH_JD_TT
     }
 
     #[inline(always)]
     fn from_jd_tt(jd_tt: Days) -> Days {
-        Days::new(jd_tt.value() - GPS_EPOCH_JD_TT.value())
+        jd_tt - GPS_EPOCH_JD_TT
     }
 }
 
@@ -193,12 +193,12 @@ impl TimeScale for UnixTime {
 
     #[inline(always)]
     fn to_jd_tt(value: Days) -> Days {
-        Days::new(value.value() + UNIX_EPOCH_JD.value())
+        value + UNIX_EPOCH_JD
     }
 
     #[inline(always)]
     fn from_jd_tt(jd_tt: Days) -> Days {
-        Days::new(jd_tt.value() - UNIX_EPOCH_JD.value())
+        jd_tt - UNIX_EPOCH_JD
     }
 }
 
