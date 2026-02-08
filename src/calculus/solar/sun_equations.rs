@@ -91,7 +91,7 @@ impl Sun {
     /// ```rust
     /// use siderust::bodies::solar_system::Sun;
     /// use siderust::coordinates::centers::ObserverSite;
-    /// use siderust::astro::{JulianDate, ModifiedJulianDate};
+    /// use siderust::time::{JulianDate, ModifiedJulianDate};
     /// use qtty::*;
     ///
     /// let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
