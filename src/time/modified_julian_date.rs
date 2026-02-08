@@ -11,16 +11,16 @@ use serde::{Deserialize, Deserializer, Serialize, Serializer};
 /// Represents Modified Julian Date (MJD), which is the Julian Date
 /// minus 2400000.5, used in various scientific and technical applications.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub struct ModifiedJulianDate(f64);
+pub struct ModifiedJulianDate(Days);
 
 impl ModifiedJulianDate {
-    pub fn new(mjd: f64) -> Self {
-        ModifiedJulianDate(mjd)
+    pub const fn new(mjd: f64) -> Self {
+        ModifiedJulianDate(Days::new(mjd))
     }
 
     /// Returns the inner Modified Julian Day value.
     pub const fn value(&self) -> f64 {
-        self.0
+        self.0.value()
     }
 
     pub const fn to_julian_day(&self) -> super::JulianDate {
@@ -46,20 +46,12 @@ impl ModifiedJulianDate {
 
     /// Returns the minimum of two MJD values.
     pub const fn min(self, other: ModifiedJulianDate) -> ModifiedJulianDate {
-        if self.0 < other.0 {
-            self
-        } else {
-            other
-        }
+        ModifiedJulianDate(self.0.min_const(other.0))
     }
 
     /// Returns the maximum of two MJD values.
     pub const fn max(self, other: ModifiedJulianDate) -> ModifiedJulianDate {
-        if self.0 > other.0 {
-            self
-        } else {
-            other
-        }
+        ModifiedJulianDate(self.0.max_const(other.0))
     }
 }
 
@@ -101,7 +93,7 @@ impl Add<Days> for ModifiedJulianDate {
     type Output = ModifiedJulianDate;
 
     fn add(self, rhs: Days) -> Self::Output {
-        ModifiedJulianDate::new(self.0 + rhs.value())
+        ModifiedJulianDate(self.0 + rhs)
     }
 }
 
@@ -109,7 +101,7 @@ impl Sub<Days> for ModifiedJulianDate {
     type Output = ModifiedJulianDate;
 
     fn sub(self, rhs: Days) -> Self::Output {
-        ModifiedJulianDate::new(self.0 - rhs.value())
+        ModifiedJulianDate(self.0 - rhs)
     }
 }
 
@@ -117,7 +109,7 @@ impl Sub<ModifiedJulianDate> for ModifiedJulianDate {
     type Output = Days;
 
     fn sub(self, rhs: ModifiedJulianDate) -> Self::Output {
-        Days::new(self.0 - rhs.0)
+        self.0 - rhs.0
     }
 }
 
