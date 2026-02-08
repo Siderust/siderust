@@ -96,15 +96,12 @@ struct NutationCoefficients {
 }
 
 const TERMS: usize = 63;
-//TODO: use qtty
-const DAYS_PER_JULIAN_CENTURY: f64 = 36_525.0;
 
 /// Compute Δψ, Δε and ε₀ for the supplied Julian Day (JD).
 #[inline]
 pub fn get_nutation(jd: JulianDate) -> Nutation {
     let jde = julian_ephemeris_day(jd);
-    let t =
-        (jde.julian_day_value() - JulianDate::J2000.julian_day_value()) / DAYS_PER_JULIAN_CENTURY;
+    let t = jde.julian_centuries().value();
     let t2 = t * t;
     let t3 = t2 * t;
 
