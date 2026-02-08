@@ -9,7 +9,7 @@
 //! - Converting between geocentric and topocentric
 
 use qtty::*;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::coordinates::cartesian::position::EquatorialMeanJ2000;
 use siderust::coordinates::centers::{Geocentric, ObserverSite};
 use siderust::coordinates::spherical;
