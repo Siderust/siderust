@@ -33,5 +33,4 @@ mod altitude_periods;
 pub(crate) mod moon_cache;
 mod moon_equations;
 
-pub use altitude_periods::*;
-pub use moon_cache::MoonAltitudeContext;
+pub(crate) use altitude_periods::*;

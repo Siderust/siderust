@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Integration tests for the `calculus::stellar` module.
+//! Integration tests for the stellar altitude engine via the unified
+//! [`AltitudePeriodsProvider`] trait API.
 //!
-//! Validates the analytical sinusoidal model against the generic scan engine
-//! and checks correctness for circumpolar, rise/set, and never‑visible cases.
+//! Validates correctness for circumpolar, rise/set, and never-visible cases.
+//! Scan-vs-analytical consistency is tested inside the `calculus::stellar`
+//! module's own `#[cfg(test)]` block.
 
 use qtty::*;
-use siderust::calculus::stellar::{
-    find_star_above_periods, find_star_above_periods_scan, find_star_below_periods,
-    find_star_range_periods, find_star_range_periods_scan,
-};
+use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::spherical::direction;
 use siderust::time::{ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
@@ -56,19 +56,21 @@ const SIRIUS_DEC: Degrees = Degrees::new(-16.716);
 const POLARIS_RA: Degrees = Degrees::new(37.95);
 const POLARIS_DEC: Degrees = Degrees::new(89.26);
 
+fn sirius() -> direction::ICRS {
+    direction::ICRS::new(SIRIUS_RA, SIRIUS_DEC)
+}
+
+fn polaris() -> direction::ICRS {
+    direction::ICRS::new(POLARIS_RA, POLARIS_DEC)
+}
+
 // ===========================================================================
 // Circumpolar case: Polaris at mid-latitudes
 // ===========================================================================
 
 #[test]
 fn polaris_circumpolar_at_greenwich() {
-    let periods = find_star_above_periods(
-        POLARIS_RA,
-        POLARIS_DEC,
-        greenwich(),
-        period_7d(),
-        Degrees::new(0.0),
-    );
+    let periods = polaris().above_threshold(greenwich(), period_7d(), Degrees::new(0.0));
 
     assert_eq!(
         periods.len(),
@@ -86,13 +88,7 @@ fn polaris_circumpolar_at_greenwich() {
 #[test]
 fn polaris_circumpolar_at_roque() {
     // Roque (28.7°N) — Polaris has Dec ≈ +89.26°, so it's circumpolar
-    let periods = find_star_above_periods(
-        POLARIS_RA,
-        POLARIS_DEC,
-        roque(),
-        period_7d(),
-        Degrees::new(0.0),
-    );
+    let periods = polaris().above_threshold(roque(), period_7d(), Degrees::new(0.0));
 
     assert_eq!(periods.len(), 1, "Polaris circumpolar at 28.7°N");
 }
@@ -103,13 +99,7 @@ fn polaris_circumpolar_at_roque() {
 
 #[test]
 fn sirius_above_horizon_greenwich_7d() {
-    let periods = find_star_above_periods(
-        SIRIUS_RA,
-        SIRIUS_DEC,
-        greenwich(),
-        period_7d(),
-        Degrees::new(0.0),
-    );
+    let periods = sirius().above_threshold(greenwich(), period_7d(), Degrees::new(0.0));
 
     assert!(
         periods.len() >= 6 && periods.len() <= 8,
@@ -129,13 +119,7 @@ fn sirius_above_horizon_greenwich_7d() {
 
 #[test]
 fn sirius_above_horizon_roque_7d() {
-    let periods = find_star_above_periods(
-        SIRIUS_RA,
-        SIRIUS_DEC,
-        roque(),
-        period_7d(),
-        Degrees::new(0.0),
-    );
+    let periods = sirius().above_threshold(roque(), period_7d(), Degrees::new(0.0));
 
     assert!(
         periods.len() >= 6 && periods.len() <= 8,
@@ -151,13 +135,8 @@ fn sirius_above_horizon_roque_7d() {
 #[test]
 fn deep_south_star_never_visible_at_greenwich() {
     // Dec = −80° at 51°N → max altitude ≈ −20° → never above horizon
-    let periods = find_star_above_periods(
-        Degrees::new(0.0),
-        Degrees::new(-80.0),
-        greenwich(),
-        period_7d(),
-        Degrees::new(0.0),
-    );
+    let star = direction::ICRS::new(Degrees::new(0.0), Degrees::new(-80.0));
+    let periods = star.above_threshold(greenwich(), period_7d(), Degrees::new(0.0));
     assert!(
         periods.is_empty(),
         "Star at Dec=−80° should never be visible at 51°N"
@@ -174,8 +153,8 @@ fn above_plus_below_covers_full_period() {
     let period = period_7d();
     let thr = Degrees::new(0.0);
 
-    let above = find_star_above_periods(SIRIUS_RA, SIRIUS_DEC, site, period, thr);
-    let below = find_star_below_periods(SIRIUS_RA, SIRIUS_DEC, site, period, thr);
+    let above = sirius().above_threshold(site, period, thr);
+    let below = sirius().below_threshold(site, period, thr);
 
     let total_above: f64 = above.iter().map(|p| p.duration_days()).sum();
     let total_below: f64 = below.iter().map(|p| p.duration_days()).sum();
@@ -193,13 +172,12 @@ fn above_plus_below_covers_full_period() {
 
 #[test]
 fn range_periods_sirius_roque() {
-    let periods = find_star_range_periods(
-        SIRIUS_RA,
-        SIRIUS_DEC,
-        roque(),
-        period_7d(),
-        (Degrees::new(10.0), Degrees::new(30.0)),
-    );
+    let periods = sirius().altitude_periods(&AltitudeQuery {
+        observer: roque(),
+        window: period_7d(),
+        min_altitude: Degrees::new(10.0),
+        max_altitude: Degrees::new(30.0),
+    });
     assert!(
         !periods.is_empty(),
         "should find altitude-range periods for Sirius at Roque"
@@ -207,107 +185,48 @@ fn range_periods_sirius_roque() {
 }
 
 // ===========================================================================
-// Analytical ↔ scan consistency
+// Consistency: trait API dispatches to the same engine
 // ===========================================================================
 
 #[test]
-fn analytical_matches_scan_above_threshold() {
+fn trait_api_above_below_consistent() {
     let site = roque();
     let period = period_3d();
-    let thr = Degrees::new(0.0);
+    let thr = Degrees::new(5.0);
 
-    let analytical = find_star_above_periods(SIRIUS_RA, SIRIUS_DEC, site, period, thr);
-    let scan = find_star_above_periods_scan(SIRIUS_RA, SIRIUS_DEC, site, period, thr);
+    let above = sirius().above_threshold(site, period, thr);
+    let below = sirius().below_threshold(site, period, thr);
 
-    assert_eq!(
-        analytical.len(),
-        scan.len(),
-        "analytical({}) and scan({}) should agree on period count",
-        analytical.len(),
-        scan.len(),
+    let total_above: f64 = above.iter().map(|p| p.duration_days()).sum();
+    let total_below: f64 = below.iter().map(|p| p.duration_days()).sum();
+    assert!(
+        (total_above + total_below - 3.0).abs() < 0.01,
+        "above({:.4}) + below({:.4}) should sum to 3.0 days",
+        total_above,
+        total_below,
     );
-
-    let tol = 1.0 / 1440.0; // 1 minute
-    for (a, s) in analytical.iter().zip(scan.iter()) {
-        assert!(
-            (a.start.value() - s.start.value()).abs() < tol,
-            "start times differ by {:.6} d",
-            (a.start.value() - s.start.value()).abs()
-        );
-        assert!(
-            (a.end.value() - s.end.value()).abs() < tol,
-            "end times differ by {:.6} d",
-            (a.end.value() - s.end.value()).abs()
-        );
-    }
 }
 
 #[test]
-fn analytical_matches_scan_range() {
+fn trait_api_range_within_above() {
     let site = roque();
     let period = period_3d();
-    let range = (Degrees::new(10.0), Degrees::new(40.0));
 
-    let analytical = find_star_range_periods(SIRIUS_RA, SIRIUS_DEC, site, period, range);
-    let scan = find_star_range_periods_scan(SIRIUS_RA, SIRIUS_DEC, site, period, range);
+    let above_10 = sirius().above_threshold(site, period, Degrees::new(10.0));
+    let range_10_30 = sirius().altitude_periods(&AltitudeQuery {
+        observer: site,
+        window: period,
+        min_altitude: Degrees::new(10.0),
+        max_altitude: Degrees::new(30.0),
+    });
 
-    assert_eq!(
-        analytical.len(),
-        scan.len(),
-        "analytical({}) and scan({}) range periods should agree",
-        analytical.len(),
-        scan.len(),
+    // Range [10°, 30°] periods should be subsets of above(10°) periods
+    let total_range: f64 = range_10_30.iter().map(|p| p.duration_days()).sum();
+    let total_above: f64 = above_10.iter().map(|p| p.duration_days()).sum();
+    assert!(
+        total_range <= total_above + 0.01,
+        "range time ({:.4}) should not exceed above time ({:.4})",
+        total_range,
+        total_above,
     );
-
-    let tol = 1.0 / 1440.0;
-    for (a, s) in analytical.iter().zip(scan.iter()) {
-        assert!(
-            (a.start.value() - s.start.value()).abs() < tol,
-            "range start times differ by {:.6} d",
-            (a.start.value() - s.start.value()).abs()
-        );
-        assert!(
-            (a.end.value() - s.end.value()).abs() < tol,
-            "range end times differ by {:.6} d",
-            (a.end.value() - s.end.value()).abs()
-        );
-    }
-}
-
-// ===========================================================================
-// Consistency with the unified altitude API
-// ===========================================================================
-
-#[test]
-fn stellar_matches_unified_api() {
-    use siderust::calculus::altitude::AltitudePeriodsProvider;
-    use siderust::coordinates::spherical::direction;
-
-    let site = roque();
-    let period = period_3d();
-    let thr = Degrees::new(0.0);
-
-    let stellar = find_star_above_periods(SIRIUS_RA, SIRIUS_DEC, site, period, thr);
-
-    // Use direction::ICRS which implements AltitudePeriodsProvider
-    // The trait's above_threshold method dispatches to the analytical stellar engine
-    let sirius = direction::ICRS::new(SIRIUS_RA, SIRIUS_DEC);
-    let unified = sirius.above_threshold(site, period, thr);
-
-    // Since the trait impl dispatches to the stellar module, these should be identical.
-    assert_eq!(stellar.len(), unified.len());
-    for (s, u) in stellar.iter().zip(unified.iter()) {
-        assert!(
-            (s.start.value() - u.start.value()).abs() < 1e-12,
-            "Start mismatch: stellar={}, unified={}",
-            s.start.value(),
-            u.start.value()
-        );
-        assert!(
-            (s.end.value() - u.end.value()).abs() < 1e-12,
-            "End mismatch: stellar={}, unified={}",
-            s.end.value(),
-            u.end.value()
-        );
-    }
 }

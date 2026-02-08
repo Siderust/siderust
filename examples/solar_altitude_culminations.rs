@@ -12,7 +12,8 @@
 //! ```
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
-use siderust::calculus::solar::altitude_periods::find_night_periods;
+use siderust::bodies::Sun;
+use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::night_types::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
@@ -45,7 +46,7 @@ fn main() {
         end_dt.format("%Y-%m-%d")
     );
 
-    let periods = find_night_periods(site, period, twilight::ASTRONOMICAL);
+    let periods = Sun.below_threshold(site, period, twilight::ASTRONOMICAL);
     if !periods.is_empty() {
         let total_days: f64 = periods.iter().map(|p| p.duration_days()).sum();
         println!(

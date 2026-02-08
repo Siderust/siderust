@@ -12,7 +12,6 @@ use qtty::*;
 use siderust::calculus::altitude::{
     above_threshold, altitude_ranges, crossings, AltitudePeriodsProvider, SearchOpts,
 };
-use siderust::calculus::stellar;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::direction;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
@@ -143,77 +142,11 @@ fn bench_star_crossings(c: &mut Criterion) {
     group.finish();
 }
 
-// =============================================================================
-// Analytical vs Scan Comparison
-// =============================================================================
-
-fn bench_stellar_analytical_vs_scan(c: &mut Criterion) {
-    let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
-    let ra = Degrees::new(101.287);
-    let dec = Degrees::new(-16.716);
-
-    let mut group = c.benchmark_group("stellar_analytical_vs_scan");
-
-    group.bench_function("analytical_above_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = stellar::find_star_above_periods(
-                black_box(ra),
-                black_box(dec),
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
-            );
-        });
-    });
-
-    group.bench_function("scan_above_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = stellar::find_star_above_periods_scan(
-                black_box(ra),
-                black_box(dec),
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
-            );
-        });
-    });
-
-    group.bench_function("analytical_range_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = stellar::find_star_range_periods(
-                black_box(ra),
-                black_box(dec),
-                black_box(site),
-                black_box(period),
-                black_box((Degrees::new(10.0), Degrees::new(50.0))),
-            );
-        });
-    });
-
-    group.bench_function("scan_range_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = stellar::find_star_range_periods_scan(
-                black_box(ra),
-                black_box(dec),
-                black_box(site),
-                black_box(period),
-                black_box((Degrees::new(10.0), Degrees::new(50.0))),
-            );
-        });
-    });
-
-    group.finish();
-}
-
 criterion_group! {
     name = star_benches;
     config = Criterion::default()
         .measurement_time(Duration::from_secs(5))
         .sample_size(20);
-    targets = bench_star_altitude_computation, bench_star_thresholds, bench_star_crossings, bench_stellar_analytical_vs_scan
+    targets = bench_star_altitude_computation, bench_star_thresholds, bench_star_crossings
 }
 criterion_main!(star_benches);

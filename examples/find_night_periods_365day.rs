@@ -17,7 +17,8 @@
 //! - Site: Roque de los Muchachos Observatory
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
-use siderust::calculus::solar::altitude_periods::find_night_periods;
+use siderust::bodies::Sun;
+use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::night_types::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
@@ -54,7 +55,7 @@ fn main() {
 
     let period = build_period(start_date, 365);
 
-    let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
+    let nights = Sun.below_threshold(site, period, twilight::ASTRONOMICAL);
 
     if !nights.is_empty() {
         println!("Found {} night periods:\n", nights.len());
