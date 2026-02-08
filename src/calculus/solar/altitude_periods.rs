@@ -69,9 +69,7 @@ pub(crate) fn find_day_periods(
 ) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
-    let f = |t: ModifiedJulianDate| -> Radians {
-        Radians::new(sun_altitude_rad(t, &site).value())
-    };
+    let f = |t: ModifiedJulianDate| -> Radians { Radians::new(sun_altitude_rad(t, &site).value()) };
 
     intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
 }
@@ -100,70 +98,9 @@ pub(crate) fn find_sun_range_periods(
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
-    let f = |t: ModifiedJulianDate| -> Radians {
-        Radians::new(sun_altitude_rad(t, &site).value())
-    };
+    let f = |t: ModifiedJulianDate| -> Radians { Radians::new(sun_altitude_rad(t, &site).value()) };
 
     intervals::in_range_periods(period, SCAN_STEP, &f, h_min, h_max)
-}
-
-// =============================================================================
-// Scan-based variants (10-minute step, for comparison / validation)
-// =============================================================================
-
-#[cfg(test)]
-/// Scan step for 10-minute scan variants (days).
-const SCAN_STEP_10MIN: Days = Quantity::new(10.0 / 1440.0);
-
-#[cfg(test)]
-/// Finds day periods using the generic 10-minute scan+refine algorithm.
-///
-/// Prefer [`find_day_periods`] for better performance.
-fn find_day_periods_scan(
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    twilight: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
-    let thr = twilight.to::<Radian>();
-
-    let f = |t: ModifiedJulianDate| -> Radians {
-        Radians::new(sun_altitude_rad(t, &site).value())
-    };
-
-    intervals::above_threshold_periods(period, SCAN_STEP_10MIN, &f, thr)
-}
-
-#[cfg(test)]
-/// Finds night periods using the generic 10-minute scan+refine algorithm.
-///
-/// Prefer [`find_night_periods`] for better performance.
-fn find_night_periods_scan(
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    twilight: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
-    let days = find_day_periods_scan(site, period, twilight);
-    complement_within(period, &days)
-}
-
-#[cfg(test)]
-/// Finds periods where Sun altitude is within `range` using the generic
-/// 10-minute scan+refine algorithm.
-///
-/// Prefer [`find_sun_range_periods`] for better performance.
-fn find_sun_range_periods_scan(
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    range: (Degrees, Degrees),
-) -> Vec<Period<ModifiedJulianDate>> {
-    let h_min = range.0.to::<Radian>();
-    let h_max = range.1.to::<Radian>();
-
-    let f = |t: ModifiedJulianDate| -> Radians {
-        Radians::new(sun_altitude_rad(t, &site).value())
-    };
-
-    intervals::in_range_periods(period, SCAN_STEP_10MIN, &f, h_min, h_max)
 }
 
 #[cfg(test)]

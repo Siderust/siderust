@@ -335,7 +335,11 @@ impl MoonAltitudeContext {
     /// Build an altitude context covering the MJD period for a given site.
     ///
     /// The caches are padded by 1 day on each side to accommodate Brent probes.
-    pub fn new(mjd_start: ModifiedJulianDate, mjd_end: ModifiedJulianDate, site: ObserverSite) -> Self {
+    pub fn new(
+        mjd_start: ModifiedJulianDate,
+        mjd_end: ModifiedJulianDate,
+        site: ObserverSite,
+    ) -> Self {
         // Convert ModifiedJulianDate to JulianDate for internal cache usage
         let pos_cache = MoonPositionCache::new(mjd_start, mjd_end);
         let nut_cache = NutationCache::new(mjd_start, mjd_end);
