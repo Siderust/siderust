@@ -27,7 +27,7 @@
 use crate::bodies::solar_system::Sun;
 use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::ObserverSite;
-use crate::time::{complement_within, ModifiedJulianDate, Period};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
 use qtty::*;
 
 // =============================================================================
@@ -46,7 +46,8 @@ const SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
 /// Positive above the horizon, negative below.
 pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quantity<Radian> {
-    Sun::get_horizontal::<AstronomicalUnit>(mjd.to_julian_day(), *site)
+    let jd: JulianDate = mjd.into();
+    Sun::get_horizontal::<AstronomicalUnit>(jd, *site)
         .alt()
         .to::<Radian>()
 }

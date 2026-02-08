@@ -77,7 +77,7 @@ pub(crate) fn fixed_star_altitude_rad(
     use crate::coordinates::frames::EquatorialMeanJ2000;
     use crate::coordinates::spherical;
     use qtty::Radian;
-    let jd = mjd.to_julian_day();
+    let jd: JulianDate = mjd.into();
     // Build a spherical position in EquatorialMeanJ2000
     let pos = spherical::Position::<
         crate::coordinates::centers::Geocentric,
@@ -134,9 +134,9 @@ fn find_crossings_analytical(
     let start_above = f(period.start).value() > threshold_rad;
 
     // Build analytical model at the period midpoint
-    let mid_jd = JulianDate::new(
-        0.5 * (period.start.to_julian_day().value() + period.end.to_julian_day().value()),
-    );
+    let start_jd: JulianDate = period.start.into();
+    let end_jd: JulianDate = period.end.into();
+    let mid_jd = JulianDate::new(0.5 * (start_jd.value() + end_jd.value()));
     let params = StarAltitudeParams::from_j2000(ra_j2000, dec_j2000, site, mid_jd);
 
     match params.threshold_ha(threshold_rad) {
