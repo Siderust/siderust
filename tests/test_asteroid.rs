@@ -3,7 +3,7 @@
 
 use qtty::*;
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::bodies::asteroid::{
     Asteroid, AsteroidClass, APOPHIS, ASTEROID_PRESETS, BENNU, CERES_AST,
 };

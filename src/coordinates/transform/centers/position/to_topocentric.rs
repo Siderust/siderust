@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use crate::astro::sidereal::unmodded_gst;
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
@@ -61,7 +61,7 @@ where
     /// use siderust::coordinates::centers::{Geocentric, Topocentric, ObserverSite};
     /// use siderust::coordinates::frames::EquatorialMeanJ2000;
     /// use siderust::coordinates::transform::centers::ToTopocentricExt;
-    /// use siderust::astro::JulianDate;
+    /// use siderust::time::JulianDate;
     /// use qtty::*;
     ///
     /// // Moon at roughly 384,400 km from Earth's center

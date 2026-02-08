@@ -3,7 +3,7 @@
 
 use qtty::*;
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::bodies::Satellite;
 use std::borrow::Cow;
 

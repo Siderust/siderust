@@ -53,7 +53,7 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Eclip
 
 #[cfg(test)]
 mod tests {
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use crate::coordinates::cartesian::position::*;
     use crate::coordinates::transform::Transform;
     use crate::coordinates::*;

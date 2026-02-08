@@ -10,7 +10,7 @@
 //! - Time-dependent transformations
 
 use qtty::*;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::bodies::solar_system::{Earth, Mars};
 use siderust::coordinates::cartesian::position::{Ecliptic, EquatorialMeanJ2000, GCRS, HCRS, ICRS};
 use siderust::coordinates::centers::{Geocentric, Heliocentric};

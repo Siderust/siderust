@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use super::*;
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::bodies::solar_system::Moon;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
@@ -148,7 +148,7 @@ impl_vsop87a!(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
     use qtty::AU;

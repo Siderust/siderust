@@ -903,7 +903,7 @@ let equ: Position<Heliocentric, EquatorialMeanJ2000, Au> = (&ecl).into();
 
 ```rust
 use siderust::coordinates::transform::Transform;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 
 // Heliocentric → Geocentric (time-dependent)
 let helio: Position<Heliocentric, Ecliptic, Au> = ...;

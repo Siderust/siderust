@@ -24,7 +24,7 @@
 //! use siderust::coordinates::cartesian::Position;
 //! use siderust::coordinates::frames;
 //! use siderust::astro::orbit::Orbit;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::*;
 //!
 //! // Define satellite orbit
@@ -47,7 +47,7 @@
 //! let target_from_sat = target_geo.to_bodycentric(sat_params, JulianDate::J2000);
 //! ```
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::coordinates::cartesian::position::{Ecliptic, Position};
 use crate::coordinates::centers::{
     Barycentric, Bodycentric, BodycentricParams, Geocentric, Heliocentric, OrbitReferenceCenter,

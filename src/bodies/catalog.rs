@@ -53,7 +53,7 @@
 //! ---
 
 use super::Star;
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::coordinates::spherical::position::EquatorialMeanJ2000;
 use crate::targets::Target;
 use qtty::length::nominal::SolarRadiuses;

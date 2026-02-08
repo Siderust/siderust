@@ -13,7 +13,7 @@
 use crate::astro::nutation::nutation_rotation;
 use crate::astro::precession;
 use crate::astro::sidereal::{calculate_gst, calculate_lst};
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use qtty::{AstronomicalUnits, Degree, LengthUnit, Meter, Quantity, Radian, Radians};

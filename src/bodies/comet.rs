@@ -33,7 +33,7 @@
 //! ---
 
 use crate::astro::orbit::Orbit;
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, Degrees, Kilometers};
 
 /// Indicates whether orbital elements are given **with respect to the Solar‑System barycentre**

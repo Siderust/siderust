@@ -26,7 +26,7 @@
 //! ## Example
 //! ```rust
 //! use chrono::prelude::*;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::*;
 //! use siderust::astro::sidereal::{calculate_gst, calculate_lst};
 //!
@@ -36,7 +36,7 @@
 //! println!("GST = {:.4}°,  LST = {:.4}°", gst, lst);
 //! ```
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use qtty::Degrees;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
@@ -93,7 +93,7 @@ mod tests {
         let jd = JulianDate::new(2_459_945.5); // 2023‑01‑01 00 UT
         let gst = calculate_gst(jd);
         let lst = calculate_lst(gst, Degrees::new(-75.0));
-        assert!(gst.value() >= 0.0 && gst.value() < 360.0);
-        assert!(lst.value() >= 0.0 && lst.value() < 360.0);
+        assert!(gst >= 0.0 && gst < 360.0);
+        assert!(lst >= 0.0 && lst < 360.0);
     }
 }
