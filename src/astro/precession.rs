@@ -114,11 +114,6 @@ fn t_powers(t: f64) -> (f64, f64, f64) {
     (t, t2, t2 * t)
 }
 
-#[inline]
-fn centuries_since_j2000(jd: JulianDate) -> f64 {
-    jd.julian_centuries().value()
-}
-
 /* -------------------------------------------------------------------------
  * Precession coefficients (Meeus 20‑2/20‑3)
  * ---------------------------------------------------------------------- */
@@ -132,10 +127,10 @@ fn centuries_since_j2000(jd: JulianDate) -> f64 {
 /// avoiding one extra division.
 #[inline]
 #[allow(non_snake_case)]
-fn short_series_coefficients(epoch: f64, span: f64) -> (Radians, Radians, Radians) {
+fn short_series_coefficients(epoch: Centuries, span: Centuries) -> (Radians, Radians, Radians) {
     // Meeus uses full Julian centuries, *not* divided by 3600.
-    let T = epoch;
-    let (t, t2, t3) = t_powers(span);
+    let T = epoch.value();
+    let (t, t2, t3) = t_powers(span.value());
 
     // 20.2 / 20.3 – all results in **arc-seconds**.
     let zeta_as = (2306.2181 + 1.39656 * T - 0.000139 * T * T) * t
@@ -153,6 +148,13 @@ fn short_series_coefficients(epoch: f64, span: f64) -> (Radians, Radians, Radian
     // arc-seconds → degrees → radians
     let as_to_rad = |a: f64| Degrees::new(a / 3600.0).to::<Radian>();
     (as_to_rad(zeta_as), as_to_rad(z_as), as_to_rad(theta_as))
+}
+
+#[inline]
+fn precession_angles(from_jd: JulianDate, to_jd: JulianDate) -> (Radians, Radians, Radians) {
+    let epoch = from_jd.julian_centuries();
+    let span = to_jd.julian_centuries() - epoch;
+    short_series_coefficients(epoch, span)
 }
 
 /* -------------------------------------------------------------------------
@@ -245,9 +247,7 @@ pub fn precess_equatorial<U: LengthUnit>(
     let ra0 = position.ra().to::<Radian>();
     let dec0 = position.dec().to::<Radian>();
 
-    let from_centuries = centuries_since_j2000(from_jd);
-    let to_centuries = centuries_since_j2000(to_jd);
-    let (zeta, z, theta) = short_series_coefficients(from_centuries, to_centuries - from_centuries);
+    let (zeta, z, theta) = precession_angles(from_jd, to_jd);
 
     let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
 
@@ -263,9 +263,7 @@ pub fn precess_equatorial<U: LengthUnit>(
 /// The input and output frames are **mean equator/equinox** (nutation removed).
 /// The `JulianDate` inputs are interpreted as TT.
 pub fn precession_rotation(from_jd: JulianDate, to_jd: JulianDate) -> Rotation3 {
-    let from_centuries = centuries_since_j2000(from_jd);
-    let to_centuries = centuries_since_j2000(to_jd);
-    let (zeta, z, theta) = short_series_coefficients(from_centuries, to_centuries - from_centuries);
+    let (zeta, z, theta) = precession_angles(from_jd, to_jd);
 
     // Meeus Eq. 20.4 corresponds to Rz(z) * Ry(-theta) * Rz(zeta).
     rotation_z(z) * rotation_y(-theta) * rotation_z(zeta)
