@@ -8,7 +8,7 @@
 
 use qtty::*;
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::bodies::solar_system::{Earth, Mars, Venus};
 use siderust::coordinates::cartesian::position::{Ecliptic, Position};
 use siderust::coordinates::cartesian::Direction;

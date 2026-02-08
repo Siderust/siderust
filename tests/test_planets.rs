@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use qtty::*;
-use siderust::astro::{orbit::Orbit, JulianDate};
+use siderust::astro::orbit::Orbit;
+use siderust::time::JulianDate;
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 
 #[test]
