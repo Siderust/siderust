@@ -1021,6 +1021,7 @@ dependencies = [
  "libm",
  "qtty-derive",
  "serde",
+ "typenum",
 ]
 
 [[package]]

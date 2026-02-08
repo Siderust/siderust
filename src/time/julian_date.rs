@@ -74,7 +74,7 @@ impl JulianDate {
     }
 
     pub const fn min(&self, other: JulianDate) -> JulianDate {
-        JulianDate(self.0.min(other.0))
+        JulianDate(self.0.min_const(other.0))
     }
 }
 
