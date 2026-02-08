@@ -66,7 +66,7 @@ const SCAN_STEP_FALLBACK: Days = Quantity::new(10.0 / 1440.0);
 /// Uses precession + nutation-corrected RA, GAST, and the standard
 /// equatorial→horizontal formula.
 pub fn fixed_star_altitude_rad(
-    jd: crate::astro::JulianDate,
+    mjd: ModifiedJulianDate,
     site: &crate::coordinates::centers::ObserverSite,
     ra_j2000: qtty::Degrees,
     dec_j2000: qtty::Degrees,
@@ -77,7 +77,7 @@ pub fn fixed_star_altitude_rad(
     use crate::coordinates::frames::EquatorialMeanJ2000;
     use crate::coordinates::spherical;
     use qtty::Radian;
-
+    let jd = mjd.to_julian_day();
     // Build a spherical position in EquatorialMeanJ2000
     let pos = spherical::Position::<
         crate::coordinates::centers::Geocentric,
@@ -115,7 +115,7 @@ fn make_star_fn<'a>(
     site: &'a ObserverSite,
 ) -> impl Fn(Mjd) -> Radians + 'a {
     move |t: Mjd| -> Radians {
-        fixed_star_altitude_rad(t.to_julian_day(), site, ra_j2000, dec_j2000)
+        fixed_star_altitude_rad(t, site, ra_j2000, dec_j2000)
     }
 }
 
@@ -125,12 +125,12 @@ fn make_star_fn<'a>(
 /// [`crate::calculus::solar::sun_altitude_rad`] and
 /// [`crate::calculus::lunar::moon_altitude_rad`].
 pub fn star_altitude_rad(
-    jd: JulianDate,
+    mjd: ModifiedJulianDate,
     site: &ObserverSite,
     ra_j2000: Degrees,
     dec_j2000: Degrees,
 ) -> Radians {
-    fixed_star_altitude_rad(jd, site, ra_j2000, dec_j2000)
+    fixed_star_altitude_rad(mjd, site, ra_j2000, dec_j2000)
 }
 
 /// Find all crossings of a single threshold, refined to full precision.

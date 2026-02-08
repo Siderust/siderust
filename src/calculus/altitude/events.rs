@@ -24,7 +24,7 @@ fn make_altitude_fn<'a, T: AltitudePeriodsProvider>(
     site: &'a ObserverSite,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let site = *site;
-    move |t: ModifiedJulianDate| target.altitude_at(&site, t.to_julian_day())
+    move |t: ModifiedJulianDate| target.altitude_at(&site, t)
 }
 
 /// Choose the best scan step for the target.
@@ -82,7 +82,7 @@ pub fn crossings<T: AltitudePeriodsProvider>(
     labeled
         .iter()
         .map(|lc| CrossingEvent {
-            jd: lc.t.to_julian_day(),
+            jd: lc.t,
             direction: if lc.direction > 0 {
                 CrossingDirection::Rising
             } else {
@@ -119,7 +119,7 @@ pub fn culminations<T: AltitudePeriodsProvider>(
         .map(|ext| {
             let alt_deg = ext.value.to::<Degree>();
             CulminationEvent {
-                jd: ext.t.to_julian_day(),
+                jd: ext.t,
                 altitude: alt_deg,
                 kind: match ext.kind {
                     extrema::ExtremumKind::Maximum => CulminationKind::Max,

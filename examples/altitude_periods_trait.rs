@@ -158,11 +158,10 @@ fn main() {
     // Example 7: Point altitude evaluation
     // -----------------------------------------------------------------------
     println!("--- Example 7: Single-Point Altitude Queries ---");
-    let jd = start.to_julian_day();
 
-    let sun_alt = Sun.altitude_at(&observer, jd).to::<Degree>();
-    let moon_alt = Moon.altitude_at(&observer, jd).to::<Degree>();
-    let vega_alt = VEGA.altitude_at(&observer, jd).to::<Degree>();
+    let sun_alt = Sun.altitude_at(&observer, start).to::<Degree>();
+    let moon_alt = Moon.altitude_at(&observer, start).to::<Degree>();
+    let vega_alt = VEGA.altitude_at(&observer, start).to::<Degree>();
 
     println!("Altitudes at MJD {:.1}:", start.value());
     println!("  Sun:  {:.2}°", sun_alt.value());
@@ -178,7 +177,7 @@ fn main() {
     println!("  • Sun, Moon, and any Star from the catalog");
     println!("  • Lightweight direction::ICRS for custom RA/Dec coordinates");
     println!("  • Consistent API: above_threshold, below_threshold, altitude_periods");
-    println!("  • Single-point queries: altitude_at(observer, jd)");
+    println!("  • Single-point queries: altitude_at(observer, mjd)");
 }
 
 fn _print_period_details(periods: &[Period<ModifiedJulianDate>], label: &str) {

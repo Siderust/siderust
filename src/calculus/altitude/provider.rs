@@ -46,7 +46,6 @@
 //! ```
 
 use super::types::AltitudeQuery;
-use crate::astro::JulianDate;
 use crate::bodies::solar_system;
 use crate::bodies::Star;
 use crate::coordinates::centers::ObserverSite;
@@ -111,7 +110,7 @@ pub trait AltitudePeriodsProvider {
     /// Compute the altitude of this body at a single instant.
     ///
     /// Returns the topocentric altitude in radians.
-    fn altitude_at(&self, observer: &ObserverSite, jd: JulianDate) -> Radians;
+    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians;
 
     /// Hint for the scan step to use when searching for events.
     ///
@@ -185,8 +184,8 @@ impl AltitudePeriodsProvider for solar_system::Sun {
         }
     }
 
-    fn altitude_at(&self, observer: &ObserverSite, jd: JulianDate) -> Radians {
-        crate::calculus::solar::sun_altitude_rad(jd, observer)
+    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians {
+        crate::calculus::solar::sun_altitude_rad(mjd, observer)
     }
 }
 
@@ -211,8 +210,8 @@ impl AltitudePeriodsProvider for solar_system::Moon {
         }
     }
 
-    fn altitude_at(&self, observer: &ObserverSite, jd: JulianDate) -> Radians {
-        crate::calculus::lunar::moon_altitude_rad(jd, observer)
+    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians {
+        crate::calculus::lunar::moon_altitude_rad(mjd, observer)
     }
 
     fn scan_step_hint(&self) -> Option<Days> {
@@ -229,9 +228,9 @@ impl AltitudePeriodsProvider for Star<'_> {
         dir.altitude_periods(query)
     }
 
-    fn altitude_at(&self, observer: &ObserverSite, jd: JulianDate) -> Radians {
+    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians {
         let dir = direction::ICRS::from(self);
-        dir.altitude_at(observer, jd)
+        dir.altitude_at(observer, mjd)
     }
 }
 
@@ -270,8 +269,8 @@ impl AltitudePeriodsProvider for direction::ICRS {
         }
     }
 
-    fn altitude_at(&self, observer: &ObserverSite, jd: JulianDate) -> Radians {
-        crate::calculus::stellar::fixed_star_altitude_rad(jd, observer, self.ra(), self.dec())
+    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians {
+        crate::calculus::stellar::fixed_star_altitude_rad(mjd, observer, self.ra(), self.dec())
     }
 }
 
@@ -406,16 +405,16 @@ mod tests {
     #[test]
     fn altitude_at_consistent_across_types() {
         let observer = greenwich();
-        let jd = JulianDate::J2000;
+        let mjd = ModifiedJulianDate::new(51544.5); // J2000 epoch in MJD
 
-        let sun_alt = solar_system::Sun.altitude_at(&observer, jd);
+        let sun_alt = solar_system::Sun.altitude_at(&observer, mjd);
         assert!(sun_alt.value().abs() < std::f64::consts::FRAC_PI_2);
 
-        let moon_alt = solar_system::Moon.altitude_at(&observer, jd);
+        let moon_alt = solar_system::Moon.altitude_at(&observer, mjd);
         assert!(moon_alt.value().abs() < std::f64::consts::FRAC_PI_2);
 
         let sirius_dir = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
-        let star_alt = sirius_dir.altitude_at(&observer, jd);
+        let star_alt = sirius_dir.altitude_at(&observer, mjd);
         assert!(star_alt.value().abs() < std::f64::consts::FRAC_PI_2);
     }
 
