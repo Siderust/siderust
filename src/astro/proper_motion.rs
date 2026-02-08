@@ -69,11 +69,8 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
     epoch_jd: JulianDate,
 ) -> position::EquatorialMeanJ2000<U> {
     // Time difference in Julian years
-    let t: Years = Years::new(
-        ((jd - epoch_jd) / JulianDate::JULIAN_YEAR)
-            .simplify()
-            .value(),
-    );
+    let t: Years =
+        Years::new((jd / JulianDate::JULIAN_YEAR) - (epoch_jd / JulianDate::JULIAN_YEAR));
     // Linearly apply proper motion in RA and DEC
     position::EquatorialMeanJ2000::<U>::new(
         mean_position.ra() + (proper_motion.ra_μ * t).to(),
@@ -138,13 +135,13 @@ mod tests {
         let dec_err = (shifted.dec() - expected_dec).abs();
 
         assert!(
-            ra_err.value() < 1e-6,
+            ra_err < 1e-6,
             "RA shifted incorrectly: got {}, expected {}",
             shifted.ra(),
             expected_ra
         );
         assert!(
-            dec_err.value() < 1e-6,
+            dec_err < 1e-6,
             "DEC shifted incorrectly: got {}, expected {}",
             shifted.dec(),
             expected_dec

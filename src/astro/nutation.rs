@@ -96,12 +96,15 @@ struct NutationCoefficients {
 }
 
 const TERMS: usize = 63;
+//TODO: use qtty
+const DAYS_PER_JULIAN_CENTURY: f64 = 36_525.0;
 
 /// Compute Δψ, Δε and ε₀ for the supplied Julian Day (JD).
 #[inline]
 pub fn get_nutation(jd: JulianDate) -> Nutation {
     let jde = julian_ephemeris_day(jd);
-    let t = jde.julian_centuries().value();
+    let t =
+        (jde.julian_day_value() - JulianDate::J2000.julian_day_value()) / DAYS_PER_JULIAN_CENTURY;
     let t2 = t * t;
     let t3 = t2 * t;
 
@@ -147,6 +150,18 @@ pub fn get_nutation(jd: JulianDate) -> Nutation {
     }
 }
 
+#[inline]
+fn rotation_x(angle: Radians) -> Rotation3 {
+    let (s, c) = angle.sin_cos();
+    Rotation3::from_matrix([[1.0, 0.0, 0.0], [0.0, c, -s], [0.0, s, c]])
+}
+
+#[inline]
+fn rotation_z(angle: Radians) -> Rotation3 {
+    let (s, c) = angle.sin_cos();
+    Rotation3::from_matrix([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
+}
+
 /// Rotate a mean position (RA, Dec) into **apparent** right ascension, applying nutation.
 #[inline]
 pub fn corrected_ra_with_nutation(target: &EquatorialMeanOfDate, jd: JulianDate) -> Degrees {
@@ -166,14 +181,12 @@ pub fn nutation_rotation(jd: JulianDate) -> Rotation3 {
         ecliptic,
     } = get_nutation(jd);
 
-    let dpsi = longitude.to::<Radian>().value();
-    let deps = obliquity.to::<Radian>().value();
-    let eps0 = ecliptic.to::<Radian>().value();
+    let dpsi = longitude.to::<Radian>();
+    let deps = obliquity.to::<Radian>();
+    let eps0 = ecliptic.to::<Radian>();
 
     // R1(ε0+Δε) · R3(Δψ) · R1(−ε0)
-    Rotation3::from_x_rotation(eps0 + deps)
-        * Rotation3::from_z_rotation(dpsi)
-        * Rotation3::from_x_rotation(-eps0)
+    rotation_x(eps0 + deps) * rotation_z(dpsi) * rotation_x(-eps0)
 }
 
 const ARGUMENTS: [NutationArguments; TERMS] = [
@@ -1005,7 +1018,7 @@ const COEFFICIENTS: [NutationCoefficients; TERMS] = [
 mod tests {
     use super::*;
     use crate::coordinates::spherical;
-    use qtty::{Degrees, Radian};
+    use qtty::{Degrees, Radian, Radians};
 
     #[test]
     fn nutation_rotation_matches_ra_correction() {
@@ -1023,8 +1036,8 @@ mod tests {
         let ra = Degrees::new(ra);
         let ra_corr = corrected_ra_with_nutation(&mean, jd);
 
-        let diff = ra.abs_separation(ra_corr).to::<Radian>().value();
-        assert!(diff < 1e-10, "RA mismatch: {}", diff);
+        let diff = ra.abs_separation(ra_corr).to::<Radian>();
+        assert!(diff < Radians::new(1e-10), "RA mismatch: {}", diff);
 
         let _ = z; // preserve unused warning if additional checks are added later
     }

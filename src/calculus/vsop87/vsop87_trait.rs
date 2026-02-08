@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::time::JulianDate;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
     cartesian::Position,
@@ -9,6 +8,7 @@ use crate::coordinates::{
     frames::Ecliptic,
 };
 use crate::targets::Target;
+use crate::time::JulianDate;
 use qtty::AstronomicalUnit;
 
 pub trait VSOP87 {
@@ -49,8 +49,8 @@ impl_vsop87_for_planet!(Neptune);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::JulianDate;
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
 
     const PRECISION: f64 = 1.0e-12;
 

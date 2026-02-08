@@ -186,7 +186,7 @@ mod tests {
             position::EquatorialMeanJ2000::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
         let out = apply_aberration_sph(&mean, jd);
 
-        assert_eq!(out.distance().value(), mean.distance().value());
+        assert_eq!(out.distance(), mean.distance());
     }
 
     #[test]
@@ -202,13 +202,10 @@ mod tests {
         let delta_ra = out.ra().abs_separation(mean.ra());
         let delta_dec = out.dec().abs_separation(mean.dec());
         assert!(
-            delta_ra.value() > 0.0 || delta_dec.value() > 0.0,
+            delta_ra > 0.0 || delta_dec > 0.0,
             "Expected a change in RA or Dec"
         );
-        assert!(
-            delta_ra.value() < 0.01 && delta_dec.value() < 0.01,
-            "Shift is too large"
-        )
+        assert!(delta_ra < 0.01 && delta_dec < 0.01, "Shift is too large")
     }
 
     #[test]
@@ -222,17 +219,18 @@ mod tests {
         let out = apply_aberration_sph(&mean, jd);
 
         assert!(
-            out.dec().value() < 90.0,
+            out.dec() < 90.0,
             "Declination should decrease slightly at pole"
         );
-        assert!(!out.ra().value().is_nan(), "RA must not be NaN at the pole");
+        assert!(!out.ra().is_nan(), "RA must not be NaN at the pole");
     }
 
     #[test]
     fn test_speed_of_light() {
         // Exact from SI definitions (to ~1e-15 relative precision in f64):
         // 299792458 * 86400 / 149597870700 = 173.14463267424033...
-        assert!((AU_PER_DAY_C.value() - 173.144_632_674_240_33).abs() < 1e-12);
+        let expected = AusPerDay::new(173.144_632_674_240_33);
+        assert!((AU_PER_DAY_C - expected).abs() < AusPerDay::new(1e-12));
     }
 
     #[test]
