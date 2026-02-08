@@ -234,8 +234,8 @@ mod tests {
     #[test]
     fn polaris_circumpolar_at_greenwich() {
         let params = StarAltitudeParams::from_j2000(
-            Degrees::new(37.95),  // Polaris RA
-            Degrees::new(89.26),  // Polaris Dec
+            Degrees::new(37.95), // Polaris RA
+            Degrees::new(89.26), // Polaris Dec
             &greenwich(),
             JulianDate::J2000,
         );
@@ -257,7 +257,10 @@ mod tests {
             ThresholdResult::Crossings { h0_rad } => {
                 assert!(h0_rad > 0.0 && h0_rad < std::f64::consts::PI);
             }
-            other => panic!("Sirius should have horizon crossings at 51°N, got {:?}", other),
+            other => panic!(
+                "Sirius should have horizon crossings at 51°N, got {:?}",
+                other
+            ),
         }
     }
 
@@ -274,7 +277,10 @@ mod tests {
         );
         match params.threshold_ha(0.0) {
             ThresholdResult::NeverAbove => {} // expected
-            other => panic!("Star at Dec=−80° should never be visible at 51°N, got {:?}", other),
+            other => panic!(
+                "Star at Dec=−80° should never be visible at 51°N, got {:?}",
+                other
+            ),
         }
     }
 

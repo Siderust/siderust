@@ -297,12 +297,7 @@ mod tests {
 
     #[test]
     fn brent_returns_none_for_invalid_bracket() {
-        assert!(
-            brent(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(
-                42.0
-            ))
-            .is_none()
-        );
+        assert!(brent(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(42.0)).is_none());
     }
 
     #[test]
@@ -378,12 +373,7 @@ mod tests {
 
     #[test]
     fn bisection_returns_none_for_invalid_bracket() {
-        assert!(
-            bisection(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(
-                42.0
-            ))
-            .is_none()
-        );
+        assert!(bisection(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(42.0)).is_none());
     }
 
     #[test]

@@ -92,11 +92,7 @@ fn compute_cheb_coeffs(values: &[f64; CHEB_NODES]) -> [f64; CHEB_NODES] {
             let arg = std::f64::consts::PI * (j as f64) * (2.0 * k as f64 + 1.0) / (2.0 * n);
             sum += values[k] * arg.cos();
         }
-        coeffs[j] = if j == 0 {
-            sum / n
-        } else {
-            2.0 * sum / n
-        };
+        coeffs[j] = if j == 0 { sum / n } else { 2.0 * sum / n };
     }
     coeffs
 }
@@ -334,17 +330,12 @@ impl MoonAltitudeContext {
     /// Build an altitude context covering the MJD period for a given site.
     ///
     /// The caches are padded by 1 day on each side to accommodate Brent probes.
-    pub fn new(
-        jd_start: f64,
-        jd_end: f64,
-        site: ObserverSite,
-    ) -> Self {
+    pub fn new(jd_start: f64, jd_end: f64, site: ObserverSite) -> Self {
         let pos_cache = MoonPositionCache::new(jd_start, jd_end);
         let nut_cache = NutationCache::new(jd_start, jd_end);
 
         // Precompute site ITRF position in km
-        let site_ecef =
-            site.geocentric_itrf::<Kilometer>();
+        let site_ecef = site.geocentric_itrf::<Kilometer>();
         let site_itrf_km = [
             site_ecef.x().value(),
             site_ecef.y().value(),
@@ -405,15 +396,13 @@ impl MoonAltitudeContext {
         // 4. Precession: J2000 → mean-of-date
         // ---------------------------------------------------------------
         let rot_prec = precession_rotation_from_j2000(jd);
-        let [x_mod, y_mod, z_mod] =
-            rot_prec.apply_array([x_topo, y_topo, z_topo]);
+        let [x_mod, y_mod, z_mod] = rot_prec.apply_array([x_topo, y_topo, z_topo]);
 
         // ---------------------------------------------------------------
         // 5. Nutation: mean-of-date → true-of-date (from cache)
         // ---------------------------------------------------------------
         let rot_nut = self.nut_cache.nutation_rotation(jd_val);
-        let [x_tod, y_tod, z_tod] =
-            rot_nut.apply_array([x_mod, y_mod, z_mod]);
+        let [x_tod, y_tod, z_tod] = rot_nut.apply_array([x_mod, y_mod, z_mod]);
 
         // ---------------------------------------------------------------
         // 6. Equatorial true-of-date → RA, Dec
@@ -430,8 +419,8 @@ impl MoonAltitudeContext {
         let ra_deg = qtty::Degrees::new(ra_rad.to_degrees());
         let ha_rad = (lst - ra_deg).normalize().to::<Radian>().value();
 
-        let sin_alt = dec_rad.sin() * self.lat_rad.sin()
-            + dec_rad.cos() * self.lat_rad.cos() * ha_rad.cos();
+        let sin_alt =
+            dec_rad.sin() * self.lat_rad.sin() + dec_rad.cos() * self.lat_rad.cos() * ha_rad.cos();
 
         Quantity::<Radian>::new(sin_alt.asin())
     }
@@ -528,9 +517,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::calculus::lunar::moon_altitude_rad;
     use crate::coordinates::centers::ObserverSite;
     use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
-    use crate::calculus::lunar::moon_altitude_rad;
     use qtty::Radians;
 
     #[test]
@@ -551,7 +540,12 @@ mod tests {
             assert!(
                 err < 1.0,
                 "Chebyshev error at JD {jd}: {err:.6} km (x:{} vs {}, y:{} vs {}, z:{} vs {})",
-                cx, dx, cy, dy, cz, dz
+                cx,
+                dx,
+                cy,
+                dy,
+                cz,
+                dz
             );
         }
     }
@@ -622,8 +616,7 @@ mod tests {
         let period = Period::new(MJD::new(0.0), MJD::new(1.0));
         let step = Days::new(0.01);
 
-        let (labeled, _start_above) =
-            find_and_label_crossings(period, step, &f, Radians::new(0.0));
+        let (labeled, _start_above) = find_and_label_crossings(period, step, &f, Radians::new(0.0));
 
         // Should find 2 crossings (at t ≈ -0.05 + 0.5 = 0.45 and t ≈ -0.05 + 1.0 = 0.95)
         assert_eq!(labeled.len(), 2, "Expected 2 crossings, got {:?}", labeled);

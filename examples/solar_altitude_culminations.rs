@@ -39,12 +39,20 @@ fn main() {
     let period = Period::new(mjd_start, mjd_end);
 
     println!("Roque de los Muchachos (La Palma) – astronomical night 2026");
-    println!("Interval: {} → {} UTC", start_dt.format("%Y-%m-%d"), end_dt.format("%Y-%m-%d"));
+    println!(
+        "Interval: {} → {} UTC",
+        start_dt.format("%Y-%m-%d"),
+        end_dt.format("%Y-%m-%d")
+    );
 
     let periods = find_night_periods(site, period, twilight::ASTRONOMICAL);
     if !periods.is_empty() {
         let total_days: f64 = periods.iter().map(|p| p.duration_days()).sum();
-        println!("Found {} astronomical-night windows spanning {:.1} hours", periods.len(), total_days * 24.0);
+        println!(
+            "Found {} astronomical-night windows spanning {:.1} hours",
+            periods.len(),
+            total_days * 24.0
+        );
 
         for (idx, period) in periods.iter().take(5).enumerate() {
             let start = period.start.to_utc().unwrap();

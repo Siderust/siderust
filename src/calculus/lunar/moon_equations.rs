@@ -42,8 +42,11 @@ impl Moon {
             Moon::get_geo_position(jd);
 
         // 2) Transform: Ecliptic → EquatorialMeanJ2000
-        let moon_geo_eq_j2000: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, Kilometer> =
-            TransformFrame::to_frame(&moon_geo_ecliptic);
+        let moon_geo_eq_j2000: cartesian::Position<
+            Geocentric,
+            frames::EquatorialMeanJ2000,
+            Kilometer,
+        > = TransformFrame::to_frame(&moon_geo_ecliptic);
 
         // 3) Apply topocentric parallax correction (critical for Moon!)
         let moon_topo_eq_j2000 = moon_geo_eq_j2000.to_topocentric(site, jd);
@@ -56,13 +59,16 @@ impl Moon {
             moon_topo_eq_j2000.z().value(),
         ]);
 
-        let moon_topo_mod =
-            cartesian::Position::<Topocentric, frames::EquatorialMeanOfDate, Kilometer>::new_with_params(
-                *moon_topo_eq_j2000.center_params(),
-                Kilometers::new(x_m),
-                Kilometers::new(y_m),
-                Kilometers::new(z_m),
-            );
+        let moon_topo_mod = cartesian::Position::<
+            Topocentric,
+            frames::EquatorialMeanOfDate,
+            Kilometer,
+        >::new_with_params(
+            *moon_topo_eq_j2000.center_params(),
+            Kilometers::new(x_m),
+            Kilometers::new(y_m),
+            Kilometers::new(z_m),
+        );
 
         // 5) Apply nutation rotation (mean-of-date → true-of-date)
         let rot_nut = nutation_rotation(jd);
@@ -72,19 +78,22 @@ impl Moon {
             moon_topo_mod.z().value(),
         ]);
 
-        let moon_topo_true =
-            cartesian::Position::<Topocentric, frames::EquatorialTrueOfDate, Kilometer>::new_with_params(
-                *moon_topo_mod.center_params(),
-                Kilometers::new(x_t),
-                Kilometers::new(y_t),
-                Kilometers::new(z_t),
-            );
+        let moon_topo_true = cartesian::Position::<
+            Topocentric,
+            frames::EquatorialTrueOfDate,
+            Kilometer,
+        >::new_with_params(
+            *moon_topo_mod.center_params(),
+            Kilometers::new(x_t),
+            Kilometers::new(y_t),
+            Kilometers::new(z_t),
+        );
 
         // 6) Convert to target unit U and return spherical position
         let x_u: Quantity<U> = moon_topo_true.x().into();
         let y_u: Quantity<U> = moon_topo_true.y().into();
         let z_u: Quantity<U> = moon_topo_true.z().into();
-        
+
         let moon_topo_true_u =
             cartesian::Position::<Topocentric, frames::EquatorialTrueOfDate, U>::new_with_params(
                 *moon_topo_true.center_params(),

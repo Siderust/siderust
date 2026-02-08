@@ -463,9 +463,7 @@ fn compute_planet_arg(entry: &PlanetPert, pc: &ElpPrecomputed, use_alt_del: bool
             y += pc.p_args_lin[i] * (entry.ipla[i] as f64);
         }
     } else {
-        y += d * (entry.ipla[8] as f64)
-            + mp * (entry.ipla[9] as f64)
-            + f * (entry.ipla[10] as f64);
+        y += d * (entry.ipla[8] as f64) + mp * (entry.ipla[9] as f64) + f * (entry.ipla[10] as f64);
 
         for i in 0..8 {
             y += pc.p_args_lin[i] * (entry.ipla[i] as f64);
