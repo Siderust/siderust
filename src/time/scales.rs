@@ -237,8 +237,8 @@ impl_time_conversions!(JD, MJD, TDB, TT, TAI, GPS, UnixTime);
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::time::Time;
+    use super::*;
 
     #[test]
     fn jd_mjd_roundtrip() {

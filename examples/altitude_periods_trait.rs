@@ -129,7 +129,10 @@ fn main() {
         println!(
             "  Found {} periods (total {:.2} days)",
             polaris_up.len(),
-            polaris_up.iter().map(|p| p.duration_days().value()).sum::<f64>()
+            polaris_up
+                .iter()
+                .map(|p| p.duration_days().value())
+                .sum::<f64>()
         );
     }
     println!();
