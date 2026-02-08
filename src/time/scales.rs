@@ -24,7 +24,7 @@
 //! | [`TT`]  | Terrestrial Time |
 //! | [`TAI`] | International Atomic Time |
 
-use super::time::TimeScale;
+use super::instant::TimeScale;
 use qtty::Days;
 
 // ---------------------------------------------------------------------------
@@ -214,16 +214,16 @@ macro_rules! impl_time_conversions {
     // Recursive: generate pairs between $first and every $rest, then recurse.
     ($first:ty, $($rest:ty),+ $(,)?) => {
         $(
-            impl From<super::time::Time<$first>> for super::time::Time<$rest> {
+            impl From<super::instant::Time<$first>> for super::instant::Time<$rest> {
                 #[inline]
-                fn from(t: super::time::Time<$first>) -> Self {
+                fn from(t: super::instant::Time<$first>) -> Self {
                     t.to::<$rest>()
                 }
             }
 
-            impl From<super::time::Time<$rest>> for super::time::Time<$first> {
+            impl From<super::instant::Time<$rest>> for super::instant::Time<$first> {
                 #[inline]
-                fn from(t: super::time::Time<$rest>) -> Self {
+                fn from(t: super::instant::Time<$rest>) -> Self {
                     t.to::<$first>()
                 }
             }
@@ -237,7 +237,7 @@ impl_time_conversions!(JD, MJD, TDB, TT, TAI, GPS, UnixTime);
 
 #[cfg(test)]
 mod tests {
-    use super::super::time::Time;
+    use super::super::instant::Time;
     use super::*;
 
     #[test]
