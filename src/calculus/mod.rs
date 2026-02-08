@@ -16,7 +16,7 @@
 //! - **ELP2000 lunar theory**: Accurate lunar positions using the ELP2000-82B model.
 //! - **Solar calculations**: Solar coordinates and related phenomena.
 //! - **Keplerian orbits**: General elliptical orbit propagation and Kepler's equation solvers.
-//! - **Extremas finding**: Algorithms to find maxima/minima (e.g., culmination, rise/set).
+//! - **Math core**: Reusable root-finding, extrema, intervals, and bracketing algorithms.
 //!
 //! ## Submodules
 //!
@@ -45,11 +45,12 @@
 //! - Conversion between orbital elements and Cartesian coordinates.
 //! - Orbital period and mean motion calculations.
 //!
-//! ### `events`
-//! Algorithms to catch astro events such as:
-//! - Finding upper/lower culmination (transit) times for celestial objects.
-//! - Root-finding and refinement routines for event timing.
-//! - Support for both static and dynamic targets (e.g., stars, planets).
+//! ### `math_core`
+//! Reusable numerical primitives shared by all body-specific modules:
+//! - Root-finding (Brent, bisection).
+//! - Extremum detection (golden-section, scan+refine).
+//! - Interval algebra (crossing detection, above/below/range periods, complement, intersect).
+//! - Bracketing/seeding policies.
 //!
 //! ## Usage
 //!
@@ -70,7 +71,6 @@
 //! The module re-exports the most important functions and types from its submodules for convenience:
 //! - `kepler_equations::*`
 //! - `solar::*`
-//! - `find_extremas::*`
 //!
 //! ## References
 //!
@@ -83,8 +83,11 @@
 //! - `vsop87/`         — VSOP87 planetary theory implementation
 //! - `elp2000/`        — ELP2000 lunar theory implementation
 //! - `solar/`          — Solar coordinate calculations
+//! - `lunar/`          — Lunar coordinate calculations
+//! - `stellar/`        — Stellar altitude period finding (analytical sinusoidal model)
 //! - `kepler_equations/`— General orbital mechanics
-//! - `find_extremas/`  — Extremum-finding algorithms
+//! - `math_core/`      — Reusable numerical primitives
+//! - `altitude.rs`     — Unified altitude computation & event API
 //!
 //! ## See Also
 //!
@@ -97,12 +100,15 @@
 //! high-precision ephemerides and general-purpose celestial mechanics._
 //!
 
+pub mod altitude;
 pub mod elp2000;
-pub mod events;
+pub mod horizontal;
 pub mod kepler_equations;
+pub mod lunar;
+pub mod math_core;
 pub mod pluto;
-pub mod root_finding;
 pub mod solar;
+pub mod stellar;
 pub mod vsop87;
 
 pub use pluto::Pluto;

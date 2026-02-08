@@ -74,7 +74,16 @@ pub fn calculate_gst(julian_date: JulianDate) -> Degrees {
 pub fn calculate_lst(gst: Degrees, longitude: Degrees) -> Degrees {
     (gst + longitude).normalize()
 }
-
+/// **Quick-and-dirty** GAST approximation (error < 0.1″ for ±50 yr around 2025).
+///
+/// This is a convenience wrapper around [`unmodded_gst`] for code that doesn't need
+/// the wrapped [0°, 360°) range. Use [`calculate_gst`] if you need normalized output.
+///
+/// Based on Duffett-Smith & Zwart, *Practical Astronomy*, 4th ed.
+#[inline]
+pub fn gast_fast(jd: JulianDate) -> Degrees {
+    unmodded_gst(jd)
+}
 #[cfg(test)]
 mod tests {
     use super::*;

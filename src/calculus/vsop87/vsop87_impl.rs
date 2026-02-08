@@ -1,15 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! VSOP87 position / velocity computation (stable‑Rust version)
+//! VSOP87 position / velocity computation (optimized version)
 //!
 //! Exposes three public helpers:
 //! * [`position`]  – only X,Y,Z (AstronomicalUnits)
 //! * [`velocity`]  – only Ẋ,Ẏ,Ż (AstronomicalUnits/day)
-//! * [`position_velocity`] – both in one pass (≈30 % faster in 2 calls)
+//! * [`position_velocity`] – both in one pass (≈30 % faster than 2 calls)
+//!
+//! ## Optimizations applied
+//! - Separate specialized functions eliminate inner-loop branching
+//! - `mul_add` for FMA precision and potential performance
+//! - `#[inline(always)]` on hot paths
+//! - SIMD batching via `wide` crate for sin/cos operations
 
 use crate::astro::JulianDate;
-use rayon::join;
+use wide::f64x4;
 
 /// One VSOP87 coefficient term  _a · cos(b + c·T)_
 #[derive(Debug, Clone, Copy)]
@@ -19,67 +25,213 @@ pub struct Vsop87 {
     pub c: f64,
 }
 
-trait Mode {
-    const NEED_VAL: bool;
-    const NEED_DER: bool;
-}
-struct Val;
-struct Der;
-struct Both;
-impl Mode for Val {
-    const NEED_VAL: bool = true;
-    const NEED_DER: bool = false;
-}
-impl Mode for Der {
-    const NEED_VAL: bool = false;
-    const NEED_DER: bool = true;
-}
-impl Mode for Both {
-    const NEED_VAL: bool = true;
-    const NEED_DER: bool = true;
+/// Conversion factor: dT/dt (T in Julian millennia per day)
+const DT_DT: f64 = 1.0 / 365_250.0;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// SIMD helpers for batched sin/cos using wide crate
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Compute sin and cos for 4 values simultaneously using SIMD.
+#[inline(always)]
+fn sin_cos_x4(args: f64x4) -> (f64x4, f64x4) {
+    // wide's sin/cos use polynomial approximations vectorized across lanes
+    (args.sin(), args.cos())
 }
 
-// computes (value, d/dt) according to `M`.
-#[inline]
-fn coord<M: Mode>(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
-    let mut t_pow = 1.0; // T^0
-    let mut t_pow_der = 0.0; // d/dT T^k
-    let mut value = 0.0;
-    let mut deriv_t = 0.0;
+// ═══════════════════════════════════════════════════════════════════════════
+// Specialized coordinate functions (no branching in hot loops)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Compute position value only (no derivative).
+/// Uses SIMD batching for cos operations.
+#[inline(always)]
+fn coord_value(series_by_power: &[&[Vsop87]], t: f64) -> f64 {
+    let mut t_pow = 1.0_f64;
+    let mut value = 0.0_f64;
+
+    for terms in series_by_power.iter() {
+        let mut serie_val = 0.0_f64;
+        let len = terms.len();
+
+        // Process 4 terms at a time with SIMD
+        let chunks = len / 4;
+        let remainder = len % 4;
+
+        for i in 0..chunks {
+            let base = i * 4;
+            let t0 = &terms[base];
+            let t1 = &terms[base + 1];
+            let t2 = &terms[base + 2];
+            let t3 = &terms[base + 3];
+
+            // Compute arguments using mul_add: arg = c * t + b
+            let args = f64x4::new([
+                t0.c.mul_add(t, t0.b),
+                t1.c.mul_add(t, t1.b),
+                t2.c.mul_add(t, t2.b),
+                t3.c.mul_add(t, t3.b),
+            ]);
+
+            let cos_args = args.cos();
+            let cos_arr = cos_args.to_array();
+
+            // Accumulate: a * cos(arg)
+            serie_val += t0.a * cos_arr[0];
+            serie_val += t1.a * cos_arr[1];
+            serie_val += t2.a * cos_arr[2];
+            serie_val += t3.a * cos_arr[3];
+        }
+
+        // Handle remaining terms (0-3) with scalar operations
+        for term in &terms[chunks * 4..chunks * 4 + remainder] {
+            let arg = term.c.mul_add(t, term.b);
+            serie_val += term.a * arg.cos();
+        }
+
+        value = t_pow.mul_add(serie_val, value);
+        t_pow *= t;
+    }
+
+    value
+}
+
+/// Compute derivative only (no position value).
+/// Uses SIMD batching for sin_cos operations.
+#[inline(always)]
+fn coord_deriv(series_by_power: &[&[Vsop87]], t: f64) -> f64 {
+    let mut t_pow = 1.0_f64;
+    let mut t_pow_der = 0.0_f64;
+    let mut deriv_t = 0.0_f64;
 
     for (k, terms) in series_by_power.iter().enumerate() {
-        let mut serie_val = 0.0;
-        let mut serie_der = 0.0;
+        let mut serie_val = 0.0_f64;
+        let mut serie_der = 0.0_f64;
+        let len = terms.len();
 
-        if M::NEED_VAL || M::NEED_DER {
-            for term in *terms {
-                let arg = term.b + term.c * t;
-                let cos_arg = arg.cos();
-                // We need S(T) even in Der mode for the k*T^{k-1}*S(T) term.
-                serie_val += term.a * cos_arg;
-                if M::NEED_DER {
-                    serie_der += -term.a * term.c * arg.sin();
-                }
-            }
+        // Process 4 terms at a time with SIMD
+        let chunks = len / 4;
+        let remainder = len % 4;
+
+        for i in 0..chunks {
+            let base = i * 4;
+            let t0 = &terms[base];
+            let t1 = &terms[base + 1];
+            let t2 = &terms[base + 2];
+            let t3 = &terms[base + 3];
+
+            let args = f64x4::new([
+                t0.c.mul_add(t, t0.b),
+                t1.c.mul_add(t, t1.b),
+                t2.c.mul_add(t, t2.b),
+                t3.c.mul_add(t, t3.b),
+            ]);
+
+            let (sin_args, cos_args) = sin_cos_x4(args);
+            let sin_arr = sin_args.to_array();
+            let cos_arr = cos_args.to_array();
+
+            // serie_val += a * cos(arg)
+            // serie_der += -a * c * sin(arg)
+            serie_val += t0.a * cos_arr[0];
+            serie_val += t1.a * cos_arr[1];
+            serie_val += t2.a * cos_arr[2];
+            serie_val += t3.a * cos_arr[3];
+
+            serie_der -= t0.a * t0.c * sin_arr[0];
+            serie_der -= t1.a * t1.c * sin_arr[1];
+            serie_der -= t2.a * t2.c * sin_arr[2];
+            serie_der -= t3.a * t3.c * sin_arr[3];
         }
 
-        if M::NEED_VAL {
-            value += t_pow * serie_val;
-        }
-        if M::NEED_DER {
-            deriv_t += t_pow * serie_der + t_pow_der * serie_val;
+        // Handle remaining terms with scalar operations
+        for term in &terms[chunks * 4..chunks * 4 + remainder] {
+            let arg = term.c.mul_add(t, term.b);
+            let (sin_arg, cos_arg) = arg.sin_cos();
+            serie_val += term.a * cos_arg;
+            serie_der -= term.a * term.c * sin_arg;
         }
 
-        // Prepare for next k: d/dT T^{k+1} = (k+1) * T^k
+        deriv_t = t_pow.mul_add(serie_der, deriv_t);
+        deriv_t = t_pow_der.mul_add(serie_val, deriv_t);
+
         t_pow_der = (k as f64 + 1.0) * t_pow;
         t_pow *= t;
     }
 
-    const DT_DT: f64 = 1.0 / 365_250.0; // dT/dt (T per day)
+    deriv_t * DT_DT
+}
+
+/// Compute both position value and derivative in one pass.
+/// Uses SIMD batching for sin_cos operations.
+#[inline(always)]
+fn coord_both(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
+    let mut t_pow = 1.0_f64;
+    let mut t_pow_der = 0.0_f64;
+    let mut value = 0.0_f64;
+    let mut deriv_t = 0.0_f64;
+
+    for (k, terms) in series_by_power.iter().enumerate() {
+        let mut serie_val = 0.0_f64;
+        let mut serie_der = 0.0_f64;
+        let len = terms.len();
+
+        // Process 4 terms at a time with SIMD
+        let chunks = len / 4;
+        let remainder = len % 4;
+
+        for i in 0..chunks {
+            let base = i * 4;
+            let t0 = &terms[base];
+            let t1 = &terms[base + 1];
+            let t2 = &terms[base + 2];
+            let t3 = &terms[base + 3];
+
+            let args = f64x4::new([
+                t0.c.mul_add(t, t0.b),
+                t1.c.mul_add(t, t1.b),
+                t2.c.mul_add(t, t2.b),
+                t3.c.mul_add(t, t3.b),
+            ]);
+
+            let (sin_args, cos_args) = sin_cos_x4(args);
+            let sin_arr = sin_args.to_array();
+            let cos_arr = cos_args.to_array();
+
+            serie_val += t0.a * cos_arr[0];
+            serie_val += t1.a * cos_arr[1];
+            serie_val += t2.a * cos_arr[2];
+            serie_val += t3.a * cos_arr[3];
+
+            serie_der -= t0.a * t0.c * sin_arr[0];
+            serie_der -= t1.a * t1.c * sin_arr[1];
+            serie_der -= t2.a * t2.c * sin_arr[2];
+            serie_der -= t3.a * t3.c * sin_arr[3];
+        }
+
+        // Handle remaining terms with scalar operations
+        for term in &terms[chunks * 4..chunks * 4 + remainder] {
+            let arg = term.c.mul_add(t, term.b);
+            let (sin_arg, cos_arg) = arg.sin_cos();
+            serie_val += term.a * cos_arg;
+            serie_der -= term.a * term.c * sin_arg;
+        }
+
+        value = t_pow.mul_add(serie_val, value);
+        deriv_t = t_pow.mul_add(serie_der, deriv_t);
+        deriv_t = t_pow_der.mul_add(serie_val, deriv_t);
+
+        t_pow_der = (k as f64 + 1.0) * t_pow;
+        t_pow *= t;
+    }
+
     (value, deriv_t * DT_DT)
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
 // Public façade
+// ═══════════════════════════════════════════════════════════════════════════
+
 pub fn position(
     jd: JulianDate,
     x_series: &[&[Vsop87]],
@@ -88,14 +240,10 @@ pub fn position(
 ) -> (f64, f64, f64) {
     let t = JulianDate::tt_to_tdb(jd).julian_millennias();
 
-    let (x, (y, z)) = join(
-        || coord::<Val>(x_series, t).0,
-        || {
-            let y = coord::<Val>(y_series, t).0;
-            let z = coord::<Val>(z_series, t).0;
-            (y, z)
-        },
-    );
+    let x = coord_value(x_series, t);
+    let y = coord_value(y_series, t);
+    let z = coord_value(z_series, t);
+
     (x, y, z)
 }
 
@@ -107,18 +255,14 @@ pub fn velocity(
 ) -> (f64, f64, f64) {
     let t = JulianDate::tt_to_tdb(jd).julian_millennias();
 
-    let (xdot, (ydot, zdot)) = join(
-        || coord::<Der>(x_series, t).1,
-        || {
-            let ydot = coord::<Der>(y_series, t).1;
-            let zdot = coord::<Der>(z_series, t).1;
-            (ydot, zdot)
-        },
-    );
+    let xdot = coord_deriv(x_series, t);
+    let ydot = coord_deriv(y_series, t);
+    let zdot = coord_deriv(z_series, t);
+
     (xdot, ydot, zdot)
 }
 
-/// Position **and** velocity in a single pass (≈30 % faster than calling
+/// Position **and** velocity in a single pass (≈30 % faster than calling
 /// the two previous helpers).
 pub fn position_velocity(
     jd: JulianDate,
@@ -128,14 +272,9 @@ pub fn position_velocity(
 ) -> ((f64, f64, f64), (f64, f64, f64)) {
     let t = JulianDate::tt_to_tdb(jd).julian_millennias();
 
-    let ((x, xdot), (y, ydot, z, zdot)) = join(
-        || coord::<Both>(x_series, t),
-        || {
-            let (y, ydot) = coord::<Both>(y_series, t);
-            let (z, zdot) = coord::<Both>(z_series, t);
-            (y, ydot, z, zdot)
-        },
-    );
+    let (x, xdot) = coord_both(x_series, t);
+    let (y, ydot) = coord_both(y_series, t);
+    let (z, zdot) = coord_both(z_series, t);
 
     ((x, y, z), (xdot, ydot, zdot))
 }
@@ -194,18 +333,5 @@ mod tests {
         assert!((v2.0 - vel.0).abs() < 1e-12);
         assert!((v2.1 - vel.1).abs() < 1e-12);
         assert!((v2.2 - vel.2).abs() < 1e-12);
-    }
-
-    #[test]
-    fn test_coord_without_value_or_derivative() {
-        struct NoneMode;
-        impl super::Mode for NoneMode {
-            const NEED_VAL: bool = false;
-            const NEED_DER: bool = false;
-        }
-        let empty: [&[Vsop87]; 0] = [];
-        let (v, d) = super::coord::<NoneMode>(&empty, 0.1);
-        assert_eq!(v, 0.0);
-        assert_eq!(d, 0.0);
     }
 }

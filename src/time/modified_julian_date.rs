@@ -43,6 +43,24 @@ impl ModifiedJulianDate {
         let jd = unix_epoch_jd + (seconds_since_epoch + nanos) / 86400.0;
         ModifiedJulianDate::new(jd - 2400000.5)
     }
+
+    /// Returns the minimum of two MJD values.
+    pub const fn min(self, other: ModifiedJulianDate) -> ModifiedJulianDate {
+        if self.0 < other.0 {
+            self
+        } else {
+            other
+        }
+    }
+
+    /// Returns the maximum of two MJD values.
+    pub const fn max(self, other: ModifiedJulianDate) -> ModifiedJulianDate {
+        if self.0 > other.0 {
+            self
+        } else {
+            other
+        }
+    }
 }
 
 #[cfg(feature = "serde")]
@@ -69,6 +87,12 @@ impl<'de> Deserialize<'de> for ModifiedJulianDate {
 impl From<ModifiedJulianDate> for super::JulianDate {
     fn from(mjd: ModifiedJulianDate) -> Self {
         mjd.to_julian_day()
+    }
+}
+
+impl From<super::JulianDate> for ModifiedJulianDate {
+    fn from(jd: super::JulianDate) -> Self {
+        ModifiedJulianDate::new(jd.value() - 2400000.5)
     }
 }
 

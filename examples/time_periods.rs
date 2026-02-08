@@ -50,10 +50,9 @@ fn main() {
     println!("   JD:  {}", jd.value());
     println!("   UTC: {}\n", utc);
 
-    // Example 5: Backward compatibility with AltitudePeriod type alias
-    println!("5. AltitudePeriod (type alias for Period<ModifiedJulianDate>):");
-    use siderust::calculus::events::AltitudePeriod;
-    let night_period = AltitudePeriod::new(
+    // Example 5: Backward compatibility with Period<ModifiedJulianDate> type alias
+    println!("5. Period<ModifiedJulianDate> (type alias for Period<ModifiedJulianDate>):");
+    let night_period = Period::<ModifiedJulianDate>::new(
         ModifiedJulianDate::new(59000.0),
         ModifiedJulianDate::new(59000.5),
     );
