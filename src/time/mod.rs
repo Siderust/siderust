@@ -31,16 +31,16 @@
 use chrono::{DateTime, Utc};
 use qtty::Days;
 
-pub(crate) mod scales;
-pub(crate) mod time;
 mod julian_date_ext;
 mod period;
+pub(crate) mod scales;
+pub(crate) mod time;
 
 // ── Re-exports ────────────────────────────────────────────────────────────
 
-pub use time::{Time, TimeScale};
-pub use scales::{JD, MJD, TDB, TT, TAI, GPS, UnixTime};
 pub use period::{complement_within, intersect_periods, Period};
+pub use scales::{UnixTime, GPS, JD, MJD, TAI, TDB, TT};
+pub use time::{Time, TimeScale};
 
 // ── Backward-compatible type aliases ──────────────────────────────────────
 
