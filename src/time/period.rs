@@ -116,7 +116,10 @@ impl Period<DateTime<Utc>> {
     }
 }
 
-// Serde support for Period<ModifiedJulianDate>
+// Serde support for Period<ModifiedJulianDate> (= Period<Time<MJD>>)
+//
+// Uses the historical field names `start_mjd` / `end_mjd` for backward
+// compatibility with existing JSON reference data.
 #[cfg(feature = "serde")]
 impl Serialize for Period<crate::time::ModifiedJulianDate> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -146,6 +149,40 @@ impl<'de> Deserialize<'de> for Period<crate::time::ModifiedJulianDate> {
         Ok(Period::new(
             crate::time::ModifiedJulianDate::new(raw.start_mjd),
             crate::time::ModifiedJulianDate::new(raw.end_mjd),
+        ))
+    }
+}
+
+// Serde support for Period<JulianDate> (= Period<Time<JD>>)
+#[cfg(feature = "serde")]
+impl Serialize for Period<crate::time::JulianDate> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut s = serializer.serialize_struct("Period", 2)?;
+        s.serialize_field("start_jd", &self.start.value())?;
+        s.serialize_field("end_jd", &self.end.value())?;
+        s.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for Period<crate::time::JulianDate> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Raw {
+            start_jd: f64,
+            end_jd: f64,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+        Ok(Period::new(
+            crate::time::JulianDate::new(raw.start_jd),
+            crate::time::JulianDate::new(raw.end_jd),
         ))
     }
 }
