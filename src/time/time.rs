@@ -285,8 +285,8 @@ impl<S: TimeScale> From<Time<S>> for Days {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::super::scales::{JD, MJD};
+    use super::*;
 
     #[test]
     fn test_julian_day_creation() {
