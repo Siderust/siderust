@@ -82,15 +82,15 @@ fn cheb_nodes_on_unit() -> [f64; CHEB_NODES] {
 ///   c_j = (2/n) Σ_{k=0}^{n-1} f(x_k) · cos(j·π·(2k+1)/(2n))
 /// with c_0 scaled by 1/n instead of 2/n.
 #[inline]
-fn compute_cheb_coeffs(values: &[f64; CHEB_NODES]) -> [f64; CHEB_NODES] {
-    let mut coeffs = [0.0_f64; CHEB_NODES];
+fn compute_cheb_coeffs(values: &[Kilometers; CHEB_NODES]) -> [Kilometers; CHEB_NODES] {
+    let mut coeffs = [Kilometers::zero(); CHEB_NODES];
     let n = CHEB_NODES as f64;
 
     for (j, coeff) in coeffs.iter_mut().enumerate().take(CHEB_NODES) {
-        let mut sum = 0.0_f64;
+        let mut sum = Kilometers::zero();
         for (k, value) in values.iter().enumerate().take(CHEB_NODES) {
             let arg = std::f64::consts::PI * (j as f64) * (2.0 * k as f64 + 1.0) / (2.0 * n);
-            sum += value * arg.cos();
+            sum += *value * arg.cos();
         }
         *coeff = if j == 0 { sum / n } else { 2.0 * sum / n };
     }
@@ -102,10 +102,10 @@ fn compute_cheb_coeffs(values: &[f64; CHEB_NODES]) -> [f64; CHEB_NODES] {
 /// f(x) ≈ c_0 + x·d_1 − d_2
 /// where d_k = c_k + 2x·d_{k+1} − d_{k+2}, k = n-1, ..., 1.
 #[inline]
-fn clenshaw_eval(coeffs: &[f64; CHEB_NODES], x: f64) -> f64 {
+fn clenshaw_eval(coeffs: &[Kilometers; CHEB_NODES], x: f64) -> Kilometers {
     let two_x = 2.0 * x;
-    let mut d_k1 = 0.0_f64; // d_{k+1}
-    let mut d_k2 = 0.0_f64; // d_{k+2}
+    let mut d_k1 = Kilometers::zero(); // d_{k+1}
+    let mut d_k2 = Kilometers::zero(); // d_{k+2}
 
     // k = CHEB_DEGREE down to 1
     let mut k = CHEB_DEGREE;
@@ -135,11 +135,11 @@ pub struct MoonPositionCache {
     /// Number of segments.
     num_segments: usize,
     /// Chebyshev coefficients for X coordinate: [segment][CHEB_NODES].
-    cx: Vec<[f64; CHEB_NODES]>,
+    cx: Vec<[Kilometers; CHEB_NODES]>,
     /// Chebyshev coefficients for Y coordinate.
-    cy: Vec<[f64; CHEB_NODES]>,
+    cy: Vec<[Kilometers; CHEB_NODES]>,
     /// Chebyshev coefficients for Z coordinate.
-    cz: Vec<[f64; CHEB_NODES]>,
+    cz: Vec<[Kilometers; CHEB_NODES]>,
 }
 
 impl MoonPositionCache {
@@ -165,16 +165,16 @@ impl MoonPositionCache {
             let seg_mid = seg_start + SEGMENT_DAYS * 0.5;
             let seg_half = SEGMENT_DAYS * 0.5;
 
-            let mut vx = [0.0_f64; CHEB_NODES];
-            let mut vy = [0.0_f64; CHEB_NODES];
-            let mut vz = [0.0_f64; CHEB_NODES];
+            let mut vx = [Kilometers::zero(); CHEB_NODES];
+            let mut vy = [Kilometers::zero(); CHEB_NODES];
+            let mut vz = [Kilometers::zero(); CHEB_NODES];
 
             for k in 0..CHEB_NODES {
                 let mjd_k = seg_mid + seg_half * nodes[k];
                 let pos = Moon::get_geo_position::<Kilometer>(mjd_k.into());
-                vx[k] = pos.x().value();
-                vy[k] = pos.y().value();
-                vz[k] = pos.z().value();
+                vx[k] = pos.x();
+                vy[k] = pos.y();
+                vz[k] = pos.z();
             }
 
             cx.push(compute_cheb_coeffs(&vx));
@@ -195,14 +195,14 @@ impl MoonPositionCache {
     ///
     /// Falls back to full ELP2000 if `jd` is outside the cached range.
     #[inline]
-    pub fn get_position_km(&self, mjd: ModifiedJulianDate) -> (f64, f64, f64) {
+    pub fn get_position_km(&self, mjd: ModifiedJulianDate) -> (Kilometers, Kilometers, Kilometers) {
         let offset = mjd - self.mjd_start;
         let seg_idx = (offset / SEGMENT_DAYS).value() as usize;
 
         if seg_idx >= self.num_segments {
             // Fallback: outside cache range
             let pos = Moon::get_geo_position::<Kilometer>(mjd.into());
-            return (pos.x().value(), pos.y().value(), pos.z().value());
+            return (pos.x(), pos.y(), pos.z());
         }
 
         // Map jd into [-1, 1] within the segment
@@ -229,7 +229,7 @@ pub struct NutationCache {
     /// Number of entries.
     num_entries: usize,
     /// Pre-evaluated [dpsi_rad, deps_rad, eps0_rad] at each node.
-    values: Vec<[f64; 3]>,
+    values: Vec<[Radians; 3]>,
 }
 
 impl NutationCache {
@@ -246,9 +246,9 @@ impl NutationCache {
             let mjd = t0 + i as f64 * NUT_STEP_DAYS;
             let nut = get_nutation(mjd.into());
             values.push([
-                nut.longitude.to::<Radian>().value(),
-                nut.obliquity.to::<Radian>().value(),
-                nut.ecliptic.to::<Radian>().value(),
+                nut.longitude.to::<Radian>(),
+                nut.obliquity.to::<Radian>(),
+                nut.ecliptic.to::<Radian>(),
             ]);
         }
 
@@ -261,7 +261,7 @@ impl NutationCache {
 
     /// Interpolate (Δψ, Δε, ε₀) in radians at `jd`.
     #[inline]
-    pub fn get_nutation_rad(&self, mjd: ModifiedJulianDate) -> (f64, f64, f64) {
+    pub fn get_nutation_rad(&self, mjd: ModifiedJulianDate) -> (Radians, Radians, Radians) {
         let offset = mjd - self.mjd_start;
         let frac = (offset / NUT_STEP_DAYS).value();
         let idx = frac as usize;
@@ -270,9 +270,9 @@ impl NutationCache {
             // Fallback: outside cache range — compute directly
             let nut = get_nutation(mjd.into());
             return (
-                nut.longitude.to::<Radian>().value(),
-                nut.obliquity.to::<Radian>().value(),
-                nut.ecliptic.to::<Radian>().value(),
+                nut.longitude.to::<Radian>(),
+                nut.obliquity.to::<Radian>(),
+                nut.ecliptic.to::<Radian>(),
             );
         }
 
@@ -294,6 +294,9 @@ impl NutationCache {
     #[inline]
     pub fn nutation_rotation(&self, mjd: ModifiedJulianDate) -> affn::Rotation3 {
         let (dpsi, deps, eps0) = self.get_nutation_rad(mjd);
+        let dpsi = dpsi.value();
+        let deps = deps.value();
+        let eps0 = eps0.value();
 
         // R1(ε0+Δε) · R3(Δψ) · R1(−ε0)
         affn::Rotation3::from_x_rotation(eps0 + deps)
@@ -321,7 +324,7 @@ pub struct MoonAltitudeContext {
     pos_cache: MoonPositionCache,
     nut_cache: NutationCache,
     /// Observer ITRF position in km: [x, y, z].
-    site_itrf_km: [f64; 3],
+    site_itrf_km: [Kilometers; 3],
     /// Observer geodetic latitude in radians.
     lat_rad: f64,
     /// Observer geodetic longitude in degrees (for LST computation).
@@ -343,11 +346,7 @@ impl MoonAltitudeContext {
 
         // Precompute site ITRF position in km
         let site_ecef = site.geocentric_itrf::<Kilometer>();
-        let site_itrf_km = [
-            site_ecef.x().value(),
-            site_ecef.y().value(),
-            site_ecef.z().value(),
-        ];
+        let site_itrf_km = [site_ecef.x(), site_ecef.y(), site_ecef.z()];
 
         Self {
             pos_cache,
@@ -401,7 +400,8 @@ impl MoonAltitudeContext {
         // 4. Precession: J2000 → mean-of-date
         // ---------------------------------------------------------------
         let rot_prec = precession_rotation_from_j2000(mjd.into());
-        let [x_mod, y_mod, z_mod] = rot_prec.apply_array([x_topo, y_topo, z_topo]);
+        let [x_mod, y_mod, z_mod] =
+            rot_prec.apply_array([x_topo.value(), y_topo.value(), z_topo.value()]);
 
         // ---------------------------------------------------------------
         // 5. Nutation: mean-of-date → true-of-date (from cache)
@@ -525,8 +525,8 @@ mod tests {
     use crate::calculus::lunar::moon_altitude_rad;
     use crate::coordinates::centers::ObserverSite;
     use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
-    use qtty::Radians;
     use crate::time::JulianDate;
+    use qtty::Radians;
 
     #[test]
     fn chebyshev_position_accuracy() {
@@ -539,19 +539,20 @@ mod tests {
             let mjd = mjd_start + Days::new((i as f64) * 0.3 + 0.1); // sample every ~7 hours
             let (cx, cy, cz) = cache.get_position_km(mjd);
             let direct = Moon::get_geo_position::<Kilometer>(JulianDate::from(mjd));
-            let (dx, dy, dz) = (direct.x().value(), direct.y().value(), direct.z().value());
-
-            let err = ((cx - dx).powi(2) + (cy - dy).powi(2) + (cz - dz).powi(2)).sqrt();
+            let (dx, dy, dz) = (direct.x(), direct.y(), direct.z());
+            let err =
+                ((cx - dx).value().powi(2) + (cy - dy).value().powi(2) + (cz - dz).value().powi(2))
+                    .sqrt();
             // Error should be < 1 km (≈ 0.5 arcsecond at Moon distance)
             assert!(
                 err < 1.0,
                 "Chebyshev error at MJD {mjd}: {err:.6} km (x:{} vs {}, y:{} vs {}, z:{} vs {})",
-                cx,
-                dx,
-                cy,
-                dy,
-                cz,
-                dz
+                cx.value(),
+                dx.value(),
+                cy.value(),
+                dy.value(),
+                cz.value(),
+                dz.value()
             );
         }
     }
@@ -570,9 +571,9 @@ mod tests {
             let d_deps = direct.obliquity.to::<Radian>().value();
             let d_eps0 = direct.ecliptic.to::<Radian>().value();
 
-            let err_dpsi = (dpsi - d_dpsi).abs();
-            let err_deps = (deps - d_deps).abs();
-            let err_eps0 = (eps0 - d_eps0).abs();
+            let err_dpsi = (dpsi.value() - d_dpsi).abs();
+            let err_deps = (deps.value() - d_deps).abs();
+            let err_eps0 = (eps0.value() - d_eps0).abs();
 
             // Errors should be < 5e-10 radians (≈ 0.1 milliarcseconds)
             assert!(
