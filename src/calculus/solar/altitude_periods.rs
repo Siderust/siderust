@@ -102,7 +102,6 @@ pub(crate) fn find_sun_range_periods(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
 
     fn greenwich_site() -> ObserverSite {
         ObserverSite::new(
