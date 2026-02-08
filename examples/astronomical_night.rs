@@ -21,7 +21,7 @@
 
 use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
 use qtty::{Degrees, Meter, Quantity};
-use siderust::astro::ModifiedJulianDate;
+use siderust::time::ModifiedJulianDate;
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::night_types::twilight;

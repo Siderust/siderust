@@ -9,7 +9,7 @@
 //! - Distances and relative positions
 
 use qtty::*;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::bodies::solar_system::*;
 use siderust::coordinates::cartesian::position::Ecliptic;
 use siderust::coordinates::centers::Geocentric;
