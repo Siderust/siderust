@@ -38,7 +38,10 @@ fn greenwich() -> ObserverSite {
 
 #[test]
 fn altitude_at_sun_j2000_greenwich() {
-    let alt = Sun.altitude_at(&greenwich(), siderust::time::ModifiedJulianDate::new(51544.5));
+    let alt = Sun.altitude_at(
+        &greenwich(),
+        siderust::time::ModifiedJulianDate::new(51544.5),
+    );
     // J2000 = 2000-01-01 12:00 TT, winter in northern hemisphere,
     // sun should be low but above horizon around local noon (UTC ≈ TT-64s).
     // Accept any value in [-π/2, +π/2] radians.
@@ -51,7 +54,10 @@ fn altitude_at_sun_j2000_greenwich() {
 
 #[test]
 fn altitude_at_moon_j2000_greenwich() {
-    let alt = Moon.altitude_at(&greenwich(), siderust::time::ModifiedJulianDate::new(51544.5));
+    let alt = Moon.altitude_at(
+        &greenwich(),
+        siderust::time::ModifiedJulianDate::new(51544.5),
+    );
     assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
 }
 
@@ -59,7 +65,10 @@ fn altitude_at_moon_j2000_greenwich() {
 fn altitude_at_sirius_reasonable() {
     // Sirius (α CMa): RA ≈ 101.287°, Dec ≈ −16.716° (J2000)
     let sirius = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
-    let alt = sirius.altitude_at(&greenwich(), siderust::time::ModifiedJulianDate::new(51544.5));
+    let alt = sirius.altitude_at(
+        &greenwich(),
+        siderust::time::ModifiedJulianDate::new(51544.5),
+    );
     assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
 }
 
