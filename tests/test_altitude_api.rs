@@ -96,7 +96,7 @@ fn crossings_sun_one_day_greenwich() {
     assert_eq!(sets.len(), 1, "expect 1 sunset in 24h at 51°N");
 
     // Sunrise should be before sunset
-    assert!(rises[0].jd.value() < sets[0].jd.value());
+    assert!(rises[0].mjd < sets[0].mjd);
 }
 
 #[test]
