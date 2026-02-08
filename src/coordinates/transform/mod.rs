@@ -52,7 +52,7 @@
 //! use siderust::coordinates::{cartesian::Position, frames::*, centers::*};
 //! use siderust::coordinates::transform::{Transform, TransformFrame};
 //! use qtty::AstronomicalUnit;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //!
 //! let cart_eq = Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 2.0, 3.0);
 //! let jd = JulianDate::J2000;
@@ -84,7 +84,7 @@ pub use ext::{DirectionAstroExt, PositionAstroExt, VectorAstroExt};
 pub use frames::TransformFrame;
 pub use providers::{center_shift, frame_rotation, CenterShiftProvider, FrameRotationProvider};
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::coordinates::{
     cartesian, cartesian::Position, centers::ReferenceCenter, frames::MutableFrame, spherical,
 };
@@ -101,7 +101,7 @@ pub trait Transform<Coord> {
     /// # Arguments
     ///
     /// - `jd`: The Julian Date at which to perform the transformation.
-    fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
+    fn transform(&self, jd: crate::time::JulianDate) -> Coord;
 }
 
 /// Blanket implementation for Position transformations (center + frame changes).

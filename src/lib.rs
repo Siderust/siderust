@@ -50,7 +50,7 @@
 //! ```rust
 //! use siderust::{
 //!     bodies::Mars,
-//!     astro::JulianDate,
+//!     time::JulianDate,
 //! };
 //! use chrono::prelude::*;
 //!

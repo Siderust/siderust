@@ -21,7 +21,7 @@
 //! ```rust
 //! use qtty::*;
 //! use siderust::targets::Target;
-//! use siderust::astro::ModifiedJulianDate;
+//! use siderust::time::ModifiedJulianDate;
 //! use siderust::coordinates::{spherical::Direction, frames::EquatorialMeanJ2000, };
 //! use siderust::astro::proper_motion::ProperMotion;
 //!

@@ -26,13 +26,13 @@
 //! * Uses the full special-relativistic aberration formula (Lorentz transform).
 //! * Uses exact SI definitions for `c`, day, and AU to compute `c` in AU/day.
 
-use crate::astro::JulianDate;
 use crate::bodies::solar_system::Earth;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{
     cartesian::{direction, position, Velocity},
     frames,
 };
+use crate::time::JulianDate;
 use qtty::*;
 
 type AuPerDay = qtty::Per<AstronomicalUnit, Day>;

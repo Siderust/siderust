@@ -11,7 +11,7 @@ use wide::f64x4;
 mod elp_data {
     include!(concat!(env!("OUT_DIR"), "/elp_data.rs"));
 }
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;
 use elp_data::*;

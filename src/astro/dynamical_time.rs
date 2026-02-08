@@ -26,7 +26,7 @@
 //!
 //! ## Quick Example
 //! ```rust
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use siderust::astro::dynamical_time::julian_ephemeris_day;
 //!
 //! let jd = JulianDate::new(2_451_545.0); // January 1, 2000 (Epoch J2000)
@@ -39,7 +39,7 @@
 //! ≤ ±2 s before 1800 CE, and ≤ ±0.5 s since 1900.
 //! For future predictions, more accurate IERS-provided curves are recommended.
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use qtty::Days;
 
 /// Total number of tabulated terms (biennial 1620–1992).

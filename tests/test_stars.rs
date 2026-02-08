@@ -3,7 +3,7 @@
 
 use qtty::length::nominal::SolarRadiuses;
 use qtty::*;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::bodies::Star;
 use siderust::coordinates::spherical::position::EquatorialMeanJ2000;
 use siderust::targets::Target;

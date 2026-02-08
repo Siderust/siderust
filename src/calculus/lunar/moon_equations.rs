@@ -3,7 +3,7 @@
 
 use crate::bodies::solar_system::Moon;
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::calculus::horizontal;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};

@@ -15,8 +15,8 @@
 //! positions at a reference epoch (usually J2000.0), we need to correct
 //! for proper motion when computing positions at a later date.
 
-use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
+use crate::time::JulianDate;
 use qtty::*;
 
 #[cfg(feature = "serde")]
@@ -102,10 +102,10 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
     use crate::coordinates::{
         centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position,
     };
+    use crate::time::JulianDate;
     use qtty::{AstronomicalUnit, Degrees};
 
     type DegreesPerYear = qtty::Quantity<qtty::Per<Degree, Year>>;

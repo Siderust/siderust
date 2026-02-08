@@ -34,7 +34,7 @@
 //! use siderust::coordinates::cartesian::Position;
 //! use siderust::coordinates::centers::{Barycentric, Geocentric};
 //! use siderust::coordinates::frames::{Ecliptic, ICRS};
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::AstronomicalUnit;
 //!
 //! let pos = Position::<Barycentric, Ecliptic, AstronomicalUnit>::new(1.0, 0.5, 0.2);
@@ -45,7 +45,7 @@
 //! let geo_icrs: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd, &ctx);
 //! ```
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use crate::coordinates::cartesian::{Direction, Position, Vector};
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::ReferenceFrame;

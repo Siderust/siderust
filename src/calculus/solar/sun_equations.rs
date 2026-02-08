@@ -3,7 +3,8 @@
 
 use crate::bodies::solar_system::Sun;
 
-use crate::astro::{nutation::corrected_ra_with_nutation, precession, JulianDate};
+use crate::astro::{nutation::corrected_ra_with_nutation, precession};
+use crate::time::JulianDate;
 use crate::calculus::horizontal;
 use crate::coordinates::{cartesian, centers::*, frames, spherical, transform::Transform};
 use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
@@ -118,7 +119,7 @@ impl Sun {
 
 #[cfg(test)]
 mod tests {
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
     use crate::bodies::solar_system::Sun;
     use qtty::AstronomicalUnit;
 

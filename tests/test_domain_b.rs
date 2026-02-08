@@ -10,7 +10,7 @@
 //! - B3: Topocentric center applies real parallax
 
 use qtty::*;
-use siderust::astro::JulianDate;
+use siderust::time::JulianDate;
 use siderust::coordinates::cartesian::{line_of_sight, Position};
 use siderust::coordinates::centers::{Geocentric, Heliocentric, ObserverSite};
 use siderust::coordinates::frames::EquatorialMeanJ2000;
