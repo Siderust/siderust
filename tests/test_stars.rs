@@ -3,10 +3,10 @@
 
 use qtty::length::nominal::SolarRadiuses;
 use qtty::*;
-use siderust::time::JulianDate;
 use siderust::bodies::Star;
 use siderust::coordinates::spherical::position::EquatorialMeanJ2000;
 use siderust::targets::Target;
+use siderust::time::JulianDate;
 use std::borrow::Cow;
 
 #[test]

@@ -53,12 +53,12 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Eclip
 
 #[cfg(test)]
 mod tests {
-    use crate::time::JulianDate;
     use crate::coordinates::cartesian::position::*;
     use crate::coordinates::transform::Transform;
     use crate::coordinates::*;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
+    use crate::time::JulianDate;
     use qtty::Degrees;
     use qtty::*;
 

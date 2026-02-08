@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::time::JulianDate;
 use crate::bodies::solar_system::Earth;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::{
@@ -10,6 +9,7 @@ use crate::coordinates::{
     frames::{self, MutableFrame},
     transform::Transform,
 };
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 // =============================================================================
@@ -72,10 +72,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::time::JulianDate;
     use crate::bodies::solar_system::Earth;
     use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
     use qtty::*;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons

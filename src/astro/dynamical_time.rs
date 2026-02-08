@@ -140,7 +140,7 @@ pub fn delta_t_seconds(jd: f64) -> f64 {
 #[inline]
 pub fn julian_ephemeris_day(jd: JulianDate) -> JulianDate {
     pub const SECONDS_PER_DAY: f64 = 86_400.0;
-    jd + Days::new(delta_t_seconds(jd.value())) / SECONDS_PER_DAY
+    jd + Days::new(delta_t_seconds(jd.julian_day_value()) / SECONDS_PER_DAY)
 }
 
 #[cfg(test)]
@@ -174,7 +174,7 @@ mod tests {
     #[test]
     fn delta_t_2000() {
         // IERS reference value: ~63.83 ±0.1 s
-        let dt = delta_t_seconds(JulianDate::J2000.value());
+        let dt = delta_t_seconds(JulianDate::J2000.julian_day_value());
         assert!((dt - 63.83).abs() < 0.5);
     }
 
@@ -194,8 +194,8 @@ mod tests {
     fn jde_offset_matches_delta_t() {
         let jd = JulianDate::J2000;
         let jde = julian_ephemeris_day(jd);
-        let offset = (jde - jd).value();
-        let expected = delta_t_seconds(jd.value()) / 86_400.0;
-        assert!((offset - expected).abs() < 1e-9);
+        let offset = jde - jd;
+        let expected = Days::new(delta_t_seconds(jd.julian_day_value()) / 86_400.0);
+        assert!((offset - expected).abs() < Days::new(1e-9));
     }
 }

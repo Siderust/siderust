@@ -73,9 +73,9 @@ impl<T> Target<T> {
 mod tests {
     use super::*;
     use crate::astro::proper_motion::ProperMotion;
-    use crate::time::JulianDate;
     use crate::bodies::catalog::ALDEBARAN;
     use crate::coordinates::spherical::position::GCRS;
+    use crate::time::JulianDate;
     use qtty::*;
 
     type MilliArcsecondPerDay = qtty::Per<qtty::MilliArcsecond, qtty::Day>;

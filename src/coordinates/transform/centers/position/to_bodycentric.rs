@@ -47,7 +47,6 @@
 //! let target_from_sat = target_geo.to_bodycentric(sat_params, JulianDate::J2000);
 //! ```
 
-use crate::time::JulianDate;
 use crate::coordinates::cartesian::position::{Ecliptic, Position};
 use crate::coordinates::centers::{
     Barycentric, Bodycentric, BodycentricParams, Geocentric, Heliocentric, OrbitReferenceCenter,
@@ -55,6 +54,7 @@ use crate::coordinates::centers::{
 use crate::coordinates::frames::MutableFrame;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::TransformFrame;
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 // =============================================================================

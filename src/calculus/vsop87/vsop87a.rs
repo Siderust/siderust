@@ -2,7 +2,6 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use super::*;
-use crate::time::JulianDate;
 use crate::bodies::solar_system::Moon;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
@@ -11,6 +10,7 @@ use crate::coordinates::{
     frames::Ecliptic,
 };
 use crate::targets::Target;
+use crate::time::JulianDate;
 use qtty::*;
 type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 
@@ -148,9 +148,9 @@ impl_vsop87a!(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::JulianDate;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
     use qtty::AU;
 
     const PRECISION: f64 = 1e-6;

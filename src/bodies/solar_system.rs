@@ -51,9 +51,9 @@
 
 use super::{Planet, Satellite, Star};
 use crate::astro::orbit::Orbit;
-use crate::time::JulianDate;
 use crate::coordinates::spherical::position::{Ecliptic, EquatorialMeanJ2000};
 use crate::targets::Target;
+use crate::time::JulianDate;
 use qtty::length::nominal::RSUN;
 use qtty::*;
 

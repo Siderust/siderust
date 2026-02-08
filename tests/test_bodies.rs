@@ -3,11 +3,11 @@
 
 use qtty::*;
 use siderust::astro::orbit::Orbit;
-use siderust::time::JulianDate;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, OrbitFrame, HALLEY};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::bodies::{EARTH, MARS, MOON};
+use siderust::time::JulianDate;
 
 #[test]
 fn earth_constants() {
