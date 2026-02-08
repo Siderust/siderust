@@ -85,8 +85,8 @@
 //! | `kepler_equation_residual`, `kepler_equation_derivative` | crate-private | Helpers |
 
 use crate::astro::orbit::Orbit;
-use crate::time::JulianDate;
 use crate::coordinates::cartesian::position::Ecliptic;
+use crate::time::JulianDate;
 use qtty::*;
 use std::f64::consts::PI;
 
@@ -269,8 +269,8 @@ impl Orbit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::JulianDate;
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
     use qtty::{Days, Degrees};
 
     /// Helper function to compare two floating-point numbers with a tolerance.

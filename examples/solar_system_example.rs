@@ -9,11 +9,11 @@
 //! - Distances and relative positions
 
 use qtty::*;
-use siderust::time::JulianDate;
 use siderust::bodies::solar_system::*;
 use siderust::coordinates::cartesian::position::Ecliptic;
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::transform::TransformCenter;
+use siderust::time::JulianDate;
 
 fn main() {
     println!("=== Solar System Bodies Example ===\n");

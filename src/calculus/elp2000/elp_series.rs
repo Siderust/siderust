@@ -11,9 +11,9 @@ use wide::f64x4;
 mod elp_data {
     include!(concat!(env!("OUT_DIR"), "/elp_data.rs"));
 }
-use crate::time::JulianDate;
 use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;
+use crate::time::JulianDate;
 use elp_data::*;
 use qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians, Simplify};
 use std::f64::consts::FRAC_PI_2;

@@ -34,9 +34,9 @@
 //! (default ≈ 86 µs).  Precession at the midpoint introduces < 25″ of RA
 //! error over a full year, well within the ±15‑minute Brent bracket.
 
-use crate::time::JulianDate;
 use crate::calculus::math_core::{intervals, root_finding};
 use crate::coordinates::centers::ObserverSite;
+use crate::time::JulianDate;
 use crate::time::{complement_within, ModifiedJulianDate, Period};
 use qtty::*;
 

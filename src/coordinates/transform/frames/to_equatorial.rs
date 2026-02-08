@@ -43,10 +43,10 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equat
 
 #[cfg(test)]
 mod tests {
-    use crate::time::JulianDate;
     use crate::coordinates::transform::Transform;
     use crate::coordinates::{centers, frames, spherical::Position};
     use crate::macros::assert_spherical_eq;
+    use crate::time::JulianDate;
     use qtty::{AstronomicalUnit, Degrees};
 
     const EPS: f64 = 1.0e-12;

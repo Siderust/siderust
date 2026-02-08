@@ -23,11 +23,11 @@
 //! applied without explicit observer information.
 
 use crate::astro::sidereal::unmodded_gst;
-use crate::time::JulianDate;
 use crate::bodies::solar_system::Earth;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::frames::EquatorialMeanJ2000;
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Day};
 
 /// Velocity unit: AU per day

@@ -21,11 +21,11 @@
 
 use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
 use qtty::{Degrees, Meter, Quantity};
-use siderust::time::ModifiedJulianDate;
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::night_types::twilight;
 use siderust::coordinates::centers::ObserverSite;
+use siderust::time::ModifiedJulianDate;
 use siderust::time::Period;
 
 fn main() {

@@ -3,8 +3,8 @@
 
 use qtty::*;
 use siderust::astro::orbit::Orbit;
-use siderust::time::JulianDate;
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
+use siderust::time::JulianDate;
 
 #[test]
 fn planet_builder_errors() {
