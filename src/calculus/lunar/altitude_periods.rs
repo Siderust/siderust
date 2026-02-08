@@ -109,24 +109,6 @@ pub(crate) fn find_moon_below_horizon(
     complement_within(period, &above)
 }
 
-#[cfg(test)]
-/// Finds periods when the Moon is above the given altitude threshold,
-/// **without caching**. Useful for validation and comparison benchmarks.
-///
-/// This is the original implementation that evaluates the full ELP2000 +
-/// nutation chain at every query point.
-fn find_moon_above_horizon_uncached(
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
-    let thr = threshold.to::<Radian>();
-
-    let f = |t: ModifiedJulianDate| -> Radians { moon_altitude_rad(t, &site) };
-
-    intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
-}
-
 /// Finds periods when Moon altitude is within a range `[min, max]`.
 ///
 /// Computed as `above(min) ∩ complement(above(max))` via
@@ -175,17 +157,6 @@ fn find_moon_above_horizon_scan(
     let f = |t: ModifiedJulianDate| -> Radians { moon_altitude_rad(t, &site) };
 
     intervals::above_threshold_periods(period, SCAN_STEP_10MIN, &f, thr)
-}
-
-#[cfg(test)]
-/// Finds periods using the generic scan-based algorithm (below threshold).
-fn find_moon_below_horizon_scan(
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
-    let above = find_moon_above_horizon_scan(site, period, threshold);
-    complement_within(period, &above)
 }
 
 // =============================================================================

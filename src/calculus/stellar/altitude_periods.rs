@@ -114,9 +114,7 @@ fn make_star_fn<'a>(
     dec_j2000: Degrees,
     site: &'a ObserverSite,
 ) -> impl Fn(Mjd) -> Radians + 'a {
-    move |t: Mjd| -> Radians {
-        fixed_star_altitude_rad(t, site, ra_j2000, dec_j2000)
-    }
+    move |t: Mjd| -> Radians { fixed_star_altitude_rad(t, site, ra_j2000, dec_j2000) }
 }
 
 /// Find all crossings of a single threshold, refined to full precision.
@@ -293,38 +291,6 @@ fn find_star_above_periods_scan(
     let thr = threshold.to::<Radian>();
     let f = make_star_fn(ra_j2000, dec_j2000, &site);
     intervals::above_threshold_periods(period, SCAN_STEP_FALLBACK, &f, thr)
-}
-
-#[cfg(test)]
-/// Finds periods where star is below threshold using the generic scan.
-///
-/// Prefer [`find_star_below_periods`] for production use.
-fn find_star_below_periods_scan(
-    ra_j2000: Degrees,
-    dec_j2000: Degrees,
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
-    let above = find_star_above_periods_scan(ra_j2000, dec_j2000, site, period, threshold);
-    complement_within(period, &above)
-}
-
-#[cfg(test)]
-/// Finds altitude range periods using the generic scan.
-///
-/// Prefer [`find_star_range_periods`] for production use.
-fn find_star_range_periods_scan(
-    ra_j2000: Degrees,
-    dec_j2000: Degrees,
-    site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
-    range: (Degrees, Degrees),
-) -> Vec<Period<ModifiedJulianDate>> {
-    let h_min = range.0.to::<Radian>();
-    let h_max = range.1.to::<Radian>();
-    let f = make_star_fn(ra_j2000, dec_j2000, &site);
-    intervals::in_range_periods(period, SCAN_STEP_FALLBACK, &f, h_min, h_max)
 }
 
 // =============================================================================
