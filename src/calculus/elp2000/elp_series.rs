@@ -27,7 +27,7 @@ const ATH: Kilometers = Kilometers::new(384_747.980_674_316_5);
 const AM: f64 = 0.074_801_329_518;
 const ALPHA: f64 = 0.002_571_881_335;
 const DTASM: f64 = 2.0 * ALPHA / (3.0 * AM);
-const PRECES: Radians = Arcseconds::new(5_029.096_6).to::<Radian>();
+const PRECES: Radians = Arcseconds::new(5_029.096_6).to_const::<Radian>();
 
 // LengthUnit conversions
 const C1: f64 = 60.0;
@@ -47,16 +47,24 @@ const Q5: f64 = -0.320334e-14;
 
 // Corrections
 const DELNU: f64 = Arcseconds::new(0.55604)
-    .to::<Radian>()
-    .div(Arcseconds::new(1_732_559_343.736_04).to::<Radian>())
+    .to_const::<Radian>()
+    .const_div(
+        Arcseconds::new(1_732_559_343.736_04)
+            .to_const::<Radian>()
+            .value(),
+    )
     .value();
-const DELE: f64 = Arcseconds::new(0.01789).to::<Radian>().value();
-const DELG: f64 = Arcseconds::new(-0.08066).to::<Radian>().value();
+const DELE: f64 = Arcseconds::new(0.01789).to_const::<Radian>().value();
+const DELG: f64 = Arcseconds::new(-0.08066).to_const::<Radian>().value();
 const DELNP: f64 = Arcseconds::new(-0.06424)
-    .to::<Radian>()
-    .div(Arcseconds::new(1_732_559_343.736_04).to::<Radian>())
+    .to_const::<Radian>()
+    .const_div(
+        Arcseconds::new(1_732_559_343.736_04)
+            .to_const::<Radian>()
+            .value(),
+    )
     .value();
-const DELEP: f64 = Arcseconds::new(-0.12879).to::<Radian>().value();
+const DELEP: f64 = Arcseconds::new(-0.12879).to_const::<Radian>().value();
 
 // Delaunay arguments (series coefficients)
 #[allow(clippy::all)]
@@ -93,56 +101,56 @@ const DEL: [[Radians; 5]; 4] = [
 
 // Fundamental lunar arguments: longitude offset and rate
 const ZETA: [Radians; 2] = [
-    Degrees::new(218.0 + 18.0 / 60.0 + 59.955_71 / 3_600.0).to::<Radian>(),
+    Degrees::new(218.0 + 18.0 / 60.0 + 59.955_71 / 3_600.0).to_const::<Radian>(),
     Arcseconds::new(1_732_559_343.736_04)
-        .to::<Radian>()
-        .add(PRECES),
+        .to_const::<Radian>()
+        .const_add(PRECES),
 ];
 
 // Planetary argument coefficients
 #[allow(clippy::all)]
 const P_ARGS: [[Radians; 2]; 8] = [
     [
-        Degrees::new(252.0 + 15.0 / C1 + 3.25986 / C2).to::<Radian>(),
-        Arcseconds::new(538_101_628.68898).to::<Radian>(),
+        Degrees::new(252.0 + 15.0 / C1 + 3.25986 / C2).to_const::<Radian>(),
+        Arcseconds::new(538_101_628.68898).to_const::<Radian>(),
     ],
     [
-        Degrees::new(181.0 + 58.0 / C1 + 47.28305 / C2).to::<Radian>(),
-        Arcseconds::new(210_664_136.43355).to::<Radian>(),
+        Degrees::new(181.0 + 58.0 / C1 + 47.28305 / C2).to_const::<Radian>(),
+        Arcseconds::new(210_664_136.43355).to_const::<Radian>(),
     ],
     [
-        Degrees::new(100.0 + 27.0 / 60.0 + 59.22059 / 3600.0).to::<Radian>(),
-        Arcseconds::new(129_597_742.27580).to::<Radian>(),
+        Degrees::new(100.0 + 27.0 / 60.0 + 59.22059 / 3600.0).to_const::<Radian>(),
+        Arcseconds::new(129_597_742.27580).to_const::<Radian>(),
     ],
     [
-        Degrees::new(355.0 + 25.0 / C1 + 59.78866 / C2).to::<Radian>(),
-        Arcseconds::new(68_905_077.59284).to::<Radian>(),
+        Degrees::new(355.0 + 25.0 / C1 + 59.78866 / C2).to_const::<Radian>(),
+        Arcseconds::new(68_905_077.59284).to_const::<Radian>(),
     ],
     [
-        Degrees::new(34.0 + 21.0 / C1 + 5.34212 / C2).to::<Radian>(),
-        Arcseconds::new(10_925_660.42861).to::<Radian>(),
+        Degrees::new(34.0 + 21.0 / C1 + 5.34212 / C2).to_const::<Radian>(),
+        Arcseconds::new(10_925_660.42861).to_const::<Radian>(),
     ],
     [
-        Degrees::new(50.0 + 4.0 / C1 + 38.89694 / C2).to::<Radian>(),
-        Arcseconds::new(4_399_609.65932).to::<Radian>(),
+        Degrees::new(50.0 + 4.0 / C1 + 38.89694 / C2).to_const::<Radian>(),
+        Arcseconds::new(4_399_609.65932).to_const::<Radian>(),
     ],
     [
-        Degrees::new(314.0 + 3.0 / C1 + 18.01841 / C2).to::<Radian>(),
-        Arcseconds::new(1_542_481.19393).to::<Radian>(),
+        Degrees::new(314.0 + 3.0 / C1 + 18.01841 / C2).to_const::<Radian>(),
+        Arcseconds::new(1_542_481.19393).to_const::<Radian>(),
     ],
     [
-        Degrees::new(304.0 + 20.0 / C1 + 55.19575 / C2).to::<Radian>(),
-        Arcseconds::new(786_550.32074).to::<Radian>(),
+        Degrees::new(304.0 + 20.0 / C1 + 55.19575 / C2).to_const::<Radian>(),
+        Arcseconds::new(786_550.32074).to_const::<Radian>(),
     ],
 ];
 
 // Lunar rotation series terms
 const W1: [Radians; 5] = [
-    Degrees::new(218.0 + 18.0 / 60.0 + 59.955_71 / 3_600.0).to::<Radian>(),
-    Arcseconds::new(1_732_559_343.736_04).to::<Radian>(),
-    Arcseconds::new(-5.888_3).to::<Radian>(),
-    Arcseconds::new(0.006_604).to::<Radian>(),
-    Arcseconds::new(-0.000_031_69).to::<Radian>(),
+    Degrees::new(218.0 + 18.0 / 60.0 + 59.955_71 / 3_600.0).to_const::<Radian>(),
+    Arcseconds::new(1_732_559_343.736_04).to_const::<Radian>(),
+    Arcseconds::new(-5.888_3).to_const::<Radian>(),
+    Arcseconds::new(0.006_604).to_const::<Radian>(),
+    Arcseconds::new(-0.000_031_69).to_const::<Radian>(),
 ];
 
 // ====================
