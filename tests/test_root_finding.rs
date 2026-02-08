@@ -1,56 +1,151 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use siderust::astro::JulianDate;
-use siderust::calculus::root_finding::{find_crossing, refine_root_bisection, refine_root_newton};
+//! Integration tests for `math_core::root_finding` — the astronomy-agnostic
+//! Brent & bisection solvers that use typed [`qtty`] quantities.
+
+use qtty::{Day, Quantity, Radian};
+use siderust::calculus::math_core::root_finding;
 use std::cell::Cell;
 
-#[test]
-fn finds_sine_root_near_pi() {
-    let lo = JulianDate::new(3.0);
-    let hi = JulianDate::new(4.0);
-    let scalar = |jd: JulianDate| jd.value().sin();
+type Days = Quantity<Day>;
+type Radians = Quantity<Radian>;
 
-    let result = find_crossing(lo, hi, &scalar, 0.0).expect("should find pi");
-    assert!((result.value() - std::f64::consts::PI).abs() < 1e-9);
+// =============================================================================
+// Brent's method
+// =============================================================================
+
+#[test]
+fn brent_finds_sine_root_near_pi() {
+    let root = root_finding::brent(Days::new(3.0), Days::new(4.0), |t: Days| {
+        Radians::new(t.value().sin())
+    })
+    .expect("should find π");
+    assert!(
+        (root.value() - std::f64::consts::PI).abs() < 1e-9,
+        "expected root near π, got {}",
+        root.value()
+    );
 }
 
 #[test]
-fn step_function_crossing_returns_zero() {
-    let lo = JulianDate::new(-2.0);
-    let hi = JulianDate::new(2.0);
-    let scalar = |jd: JulianDate| {
-        if jd.value() < 0.0 {
-            -5.0
-        } else {
-            5.0
-        }
+fn brent_finds_linear_root() {
+    let root = root_finding::brent(Days::new(0.0), Days::new(10.0), |t: Days| {
+        Radians::new(t.value() - 5.0)
+    })
+    .expect("should find 5");
+    assert!((root.value() - 5.0).abs() < 1e-10);
+}
+
+#[test]
+fn brent_handles_step_function() {
+    let root = root_finding::brent(Days::new(-2.0), Days::new(2.0), |t: Days| {
+        Radians::new(if t.value() < 0.0 { -5.0 } else { 5.0 })
+    })
+    .expect("step crossing");
+    assert!(root.value().abs() < 1e-6);
+}
+
+#[test]
+fn brent_returns_none_for_invalid_bracket() {
+    assert!(
+        root_finding::brent(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(42.0)).is_none()
+    );
+}
+
+#[test]
+fn brent_returns_endpoint_when_exact() {
+    let root = root_finding::brent(Days::new(0.0), Days::new(5.0), |t: Days| {
+        Radians::new(t.value() - 5.0)
+    })
+    .expect("endpoint root");
+    assert!((root.value() - 5.0).abs() < 1e-12);
+}
+
+#[test]
+fn brent_with_values_saves_evaluations() {
+    let count = Cell::new(0usize);
+    let f = |t: Days| -> Radians {
+        count.set(count.get() + 1);
+        Radians::new(t.value().sin())
     };
+    let f_lo = Radians::new((3.0_f64).sin());
+    let f_hi = Radians::new((4.0_f64).sin());
 
-    let result = find_crossing(lo, hi, &scalar, 0.0).expect("step crossing should succeed");
-    assert!(result.value().abs() < 1e-6);
+    let _ = root_finding::brent_with_values(Days::new(3.0), Days::new(4.0), f_lo, f_hi, f);
+    let with_vals = count.get();
+
+    count.set(0);
+    let _ = root_finding::brent(Days::new(3.0), Days::new(4.0), f);
+    let without = count.get();
+
+    // brent_with_values saves the 2 endpoint evaluations
+    assert!(
+        with_vals <= without,
+        "with_values used {} calls, plain brent used {}",
+        with_vals,
+        without
+    );
 }
 
 #[test]
-fn bisection_endpoint_match_returns_hi() {
-    let threshold = 10_000.0;
-    let lo = JulianDate::new(threshold - 10.0);
-    let hi = JulianDate::new(threshold);
-    let scalar = |jd: JulianDate| jd.value();
-
-    let result = refine_root_bisection(lo, hi, scalar, threshold);
-    assert_eq!(result, Some(hi));
+fn brent_tol_respects_relaxed_tolerance() {
+    let root = root_finding::brent_tol(
+        Days::new(3.0),
+        Days::new(4.0),
+        Radians::new((3.0_f64).sin()),
+        Radians::new((4.0_f64).sin()),
+        |t: Days| Radians::new(t.value().sin()),
+        Days::new(1e-3),
+    )
+    .expect("relaxed tolerance");
+    assert!((root.value() - std::f64::consts::PI).abs() < 2e-3);
 }
 
 #[test]
-fn newton_hits_max_iterations_with_stateful_scalar() {
-    let calls = Cell::new(0usize);
-    let scalar = |_jd: JulianDate| {
-        let count = calls.get() + 1;
-        calls.set(count);
-        count as f64
-    };
+fn brent_cubic() {
+    let root = root_finding::brent(Days::new(1.0), Days::new(2.0), |t: Days| {
+        Radians::new(t.value().powi(3) - 2.0)
+    })
+    .expect("cbrt 2");
+    assert!((root.value() - 2.0_f64.powf(1.0 / 3.0)).abs() < 1e-9);
+}
 
-    let guess = JulianDate::J2000;
-    assert!(refine_root_newton(guess, scalar, 0.0).is_none());
+// =============================================================================
+// Bisection
+// =============================================================================
+
+#[test]
+fn bisection_finds_sine_root() {
+    let root = root_finding::bisection(Days::new(3.0), Days::new(4.0), |t: Days| {
+        Radians::new(t.value().sin())
+    })
+    .expect("π via bisection");
+    assert!((root.value() - std::f64::consts::PI).abs() < 1e-8);
+}
+
+#[test]
+fn bisection_returns_none_for_invalid_bracket() {
+    assert!(
+        root_finding::bisection(Days::new(0.0), Days::new(1.0), |_: Days| Radians::new(42.0))
+            .is_none()
+    );
+}
+
+#[test]
+fn bisection_handles_step_function() {
+    let root = root_finding::bisection(Days::new(-1.0), Days::new(1.0), |t: Days| {
+        Radians::new(if t.value() < 0.0 { -5.0 } else { 5.0 })
+    })
+    .expect("step crossing via bisection");
+    assert!(root.value().abs() < 1e-6);
+}
+
+#[test]
+fn bisection_endpoint_root() {
+    let root = root_finding::bisection(Days::new(0.0), Days::new(5.0), |t: Days| {
+        Radians::new(t.value())
+    })
+    .expect("root at 0");
+    assert!(root.value().abs() < 1e-12);
 }

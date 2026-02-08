@@ -8,10 +8,9 @@ use std::io::BufReader;
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
 use serde_json::Value;
-use siderust::calculus::events::altitude_periods::AltitudeCondition;
-use siderust::calculus::solar::altitude_periods::{
-    find_night_periods, find_sun_altitude_periods_via_culminations, twilight,
-};
+use siderust::bodies::Sun;
+use siderust::calculus::altitude::AltitudePeriodsProvider;
+use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period};
@@ -91,24 +90,29 @@ fn test_astronomical_nights_roque_2026() {
     let expected_periods = load_reference_periods();
     let (site, period) = build_roque_period();
 
-    let computed = find_night_periods(site, period, twilight::ASTRONOMICAL)
-        .expect("siderust did not find any astronomical nights");
+    let computed = Sun.below_threshold(site, period, twilight::ASTRONOMICAL);
+    assert!(
+        !computed.is_empty(),
+        "siderust did not find any astronomical nights"
+    );
 
     assert_periods_close(&expected_periods, &computed);
 }
 
-/// Same as the default test but exercises the culmination-based altitude search.
+/// Same as the default test but exercises the culmination-based altitude search
+/// followed by complement to obtain night periods.
 #[test]
 fn test_astronomical_nights_roque_2026_culminations() {
     let expected_periods = load_reference_periods();
     let (site, period) = build_roque_period();
 
-    let computed = find_sun_altitude_periods_via_culminations(
-        site,
-        period,
-        AltitudeCondition::below(twilight::ASTRONOMICAL),
-    )
-    .expect("Culmination-based search did not find any astronomical nights");
+    // above_threshold finds "above" periods; complement gives us the nights.
+    let day_periods = Sun.above_threshold(site, period, twilight::ASTRONOMICAL);
+    let computed = siderust::time::complement_within(period, &day_periods);
+    assert!(
+        !computed.is_empty(),
+        "Culmination-based search did not find any astronomical nights"
+    );
 
     assert_periods_close(&expected_periods, &computed);
 }
