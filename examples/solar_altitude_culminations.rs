@@ -48,7 +48,7 @@ fn main() {
 
     let periods = Sun.below_threshold(site, period, twilight::ASTRONOMICAL);
     if !periods.is_empty() {
-        let total_days: f64 = periods.iter().map(|p| p.duration_days()).sum();
+        let total_days: f64 = periods.iter().map(|p| p.duration_days().value()).sum();
         println!(
             "Found {} astronomical-night windows spanning {:.1} hours",
             periods.len(),

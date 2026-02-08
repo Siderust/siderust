@@ -106,7 +106,7 @@ use qtty::*;
 /// 85 ° in radians: threshold above which the `asin` formula for δ loses
 /// precision.  Switching to the alternative formula earlier does no harm
 /// and guarantees full numerical stability even closer to the pole.
-const NEAR_POLE_LIMIT: f64 = 85.0_f64.to_radians();
+const NEAR_POLE_LIMIT: Radians = Degrees::new(85.0).to_const::<Radian>();
 
 /// Return (*t*, *t²*, *t³*).  Saves three multiplications when the caller
 /// needs all powers.
@@ -181,9 +181,9 @@ fn rotate_equatorial(
     new_ra = new_ra.rem_euclid(TAU);
 
     // New declination: pole‑safe formula when |δ| > 85 °.
-    let new_dec = if dec.value().abs() > NEAR_POLE_LIMIT {
+    let new_dec = if dec.abs() > NEAR_POLE_LIMIT {
         let mut d = (a * a + b * b).sqrt().acos();
-        if dec.value().is_sign_negative() {
+        if dec < Radians::new(0.0) {
             d = -d;
         }
         d

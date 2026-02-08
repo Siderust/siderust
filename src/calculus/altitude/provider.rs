@@ -170,9 +170,9 @@ impl AltitudePeriodsProvider for solar_system::Sun {
         use crate::calculus::solar;
 
         // Fast path: full above query (max ≈ 90°)
-        if query.max_altitude.value() >= 89.99 {
+        if query.max_altitude >= Degrees::new(89.99) {
             solar::find_day_periods(query.observer, query.window, query.min_altitude)
-        } else if query.min_altitude.value() <= -89.99 {
+        } else if query.min_altitude <= Degrees::new(-89.99) {
             // Full below query
             solar::find_night_periods(query.observer, query.window, query.max_altitude)
         } else {
@@ -197,9 +197,9 @@ impl AltitudePeriodsProvider for solar_system::Moon {
         }
         use crate::calculus::lunar;
 
-        if query.max_altitude.value() >= 89.99 {
+        if query.max_altitude >= Degrees::new(89.99) {
             lunar::find_moon_above_horizon(query.observer, query.window, query.min_altitude)
-        } else if query.min_altitude.value() <= -89.99 {
+        } else if query.min_altitude <= Degrees::new(-89.99) {
             lunar::find_moon_below_horizon(query.observer, query.window, query.max_altitude)
         } else {
             lunar::find_moon_altitude_range(
@@ -242,7 +242,7 @@ impl AltitudePeriodsProvider for direction::ICRS {
         }
         use crate::calculus::stellar;
 
-        if query.max_altitude.value() >= 89.99 {
+        if query.max_altitude >= Degrees::new(89.99) {
             stellar::find_star_above_periods(
                 self.ra(),
                 self.dec(),
@@ -250,7 +250,7 @@ impl AltitudePeriodsProvider for direction::ICRS {
                 query.window,
                 query.min_altitude,
             )
-        } else if query.min_altitude.value() <= -89.99 {
+        } else if query.min_altitude <= Degrees::new(-89.99) {
             stellar::find_star_below_periods(
                 self.ra(),
                 self.dec(),
@@ -434,7 +434,7 @@ mod tests {
             !periods.is_empty(),
             "Full sky range should return at least one period"
         );
-        let total: f64 = periods.iter().map(|p| p.duration_days()).sum();
+        let total: f64 = periods.iter().map(|p| p.duration_days().value()).sum();
         assert!(
             (total - 1.0).abs() < 0.01,
             "Full sky range should span ~1 day, got {} days",
@@ -452,7 +452,7 @@ mod tests {
             "Polaris should be continuously above horizon at 51°N"
         );
         assert!(
-            (periods[0].duration_days() - 1.0).abs() < 0.01,
+            (periods[0].duration_days() - Days::new(1.0)).abs() < Days::new(0.01),
             "Polaris up-period should span the full day"
         );
     }

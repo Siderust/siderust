@@ -138,8 +138,8 @@ impl ObserverState {
         let vz_ecef_mps = 0.0;
 
         // Rotate ECEF velocity into the mean equator/equinox of J2000 using GMST about +Z.
-        let gmst_rad = unmodded_gst(jd).to::<Radian>().value();
-        let (sin_g, cos_g) = gmst_rad.sin_cos();
+        let gmst = unmodded_gst(jd).to::<Radian>();
+        let (sin_g, cos_g) = gmst.sin_cos();
 
         let vx_eq_mps = vx_ecef_mps * cos_g - vy_ecef_mps * sin_g;
         let vy_eq_mps = vx_ecef_mps * sin_g + vy_ecef_mps * cos_g;

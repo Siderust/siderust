@@ -66,7 +66,7 @@ pub(crate) fn find_day_periods(
 ) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
-    let f = |t: ModifiedJulianDate| -> Radians { Radians::new(sun_altitude_rad(t, &site).value()) };
+    let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
 
     intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
 }
@@ -95,7 +95,7 @@ pub(crate) fn find_sun_range_periods(
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
-    let f = |t: ModifiedJulianDate| -> Radians { Radians::new(sun_altitude_rad(t, &site).value()) };
+    let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
 
     intervals::in_range_periods(period, SCAN_STEP, &f, h_min, h_max)
 }
@@ -118,7 +118,8 @@ mod tests {
         let mjd: ModifiedJulianDate = crate::time::JulianDate::J2000.into();
         let alt = sun_altitude_rad(mjd, &site);
         assert!(
-            alt.value() > -std::f64::consts::FRAC_PI_2 && alt.value() < std::f64::consts::FRAC_PI_2
+            alt > Radians::new(-std::f64::consts::FRAC_PI_2)
+                && alt < Radians::new(std::f64::consts::FRAC_PI_2)
         );
     }
 

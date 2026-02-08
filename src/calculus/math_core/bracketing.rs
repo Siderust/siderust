@@ -162,7 +162,7 @@ where
     let mut brackets = Vec::new();
 
     for ext in &extrema {
-        if ext.kind == ExtremumKind::Maximum && ext.value.value() > threshold.value() {
+        if ext.kind == ExtremumKind::Maximum && ext.value > threshold {
             // This maximum is above threshold → there must be a rising crossing
             // before it and a setting crossing after it.
             // Search backward from the extremum for the rising crossing
@@ -207,9 +207,9 @@ where
     // Expanding search: start near the extremum and step backward
     let mut bracket = Period::new(search_period.end, search_period.end);
     let mut g_hi = g(bracket.end);
-    let mut step = Days::new(range.value() * 0.1);
-    if step.value() < 1e-10 {
-        step = Days::new(range.value() * 0.5);
+    let mut step = range * 0.1;
+    if step < 1e-10 {
+        step = range * 0.5;
     }
 
     bracket.start = (bracket.end - step).max(search_period.start);
@@ -248,9 +248,9 @@ where
 
     let mut bracket = Period::new(search_period.start, search_period.start);
     let mut g_lo = g(bracket.start);
-    let mut step = Days::new(range.value() * 0.1);
-    if step.value() < 1e-10 {
-        step = Days::new(range.value() * 0.5);
+    let mut step = range * 0.1;
+    if step < 1e-10 {
+        step = range * 0.5;
     }
 
     bracket.end = (bracket.start + step).min(search_period.end);
