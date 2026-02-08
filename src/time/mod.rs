@@ -33,6 +33,7 @@ use qtty::Days;
 
 pub(crate) mod scales;
 pub(crate) mod time;
+mod julian_date_ext;
 mod period;
 
 // ── Re-exports ────────────────────────────────────────────────────────────
