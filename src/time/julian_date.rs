@@ -23,24 +23,30 @@ impl JulianDate {
 
     pub const J2000: JulianDate = JulianDate(Self::_J2000_); // Reference JD for J2000.0 epoch
     pub const JULIAN_YEAR: Days = Days::new(365.25);
+    pub const JULIAN_CENTURY: Days = Days::new(36_525.0);
+    pub const JULIAN_MILLENNIUM: Days = Days::new(365_250.0);
 
     pub const fn new(jd: f64) -> Self {
         JulianDate(Days::new(jd))
     }
 
+    pub const fn value(&self) -> f64 {
+        self.0.value()
+    }
+
     #[inline]
-    pub fn julian_millennias(&self) -> f64 {
-        (self.0 - Self::_J2000_).value() / 365_250.0
+    pub fn julian_millennias(&self) -> Millennia {
+        Millennia::new((self.0 - Self::_J2000_).value() / Self::JULIAN_MILLENNIUM.value())
     }
 
     #[inline]
     pub fn julian_centuries(&self) -> Centuries {
-        Centuries::new((self.0 - Self::_J2000_).value() / 36_525.0)
+        Centuries::new((self.0 - Self::_J2000_).value() / Self::JULIAN_CENTURY.value())
     }
 
     #[inline]
     pub fn julian_years(&self) -> JulianYears {
-        JulianYears::new((self.value() - Self::J2000.value()) / 365.25)
+        JulianYears::new((self.value() - Self::J2000.value()) / Self::JULIAN_YEAR.value())
     }
 
     /// Converts JD(TT) to JD(TDB)
@@ -50,11 +56,6 @@ impl JulianDate {
 
         let delta_t = Days::new((1.658e-3 * e.sin() + 1.4e-6 * (2.0 * e).sin()) / 86400.0); // Convert to days
         jd_tt + delta_t
-    }
-
-    #[inline]
-    pub fn value(&self) -> f64 {
-        self.0.value()
     }
 
     pub fn to_utc(&self) -> Option<DateTime<Utc>> {
@@ -124,6 +125,54 @@ impl Add<Years> for JulianDate {
 
     fn add(self, years: Years) -> JulianDate {
         self + Self::JULIAN_YEAR * years.value()
+    }
+}
+
+impl From<Days> for JulianDate {
+    fn from(days: Days) -> Self {
+        JulianDate(days)
+    }
+}
+
+impl From<JulianDate> for Days {
+    fn from(jd: JulianDate) -> Self {
+        jd.0
+    }
+}
+
+impl From<JulianYears> for JulianDate {
+    fn from(years: JulianYears) -> Self {
+        Self::J2000 + Self::JULIAN_YEAR * years.value()
+    }
+}
+
+impl From<JulianDate> for JulianYears {
+    fn from(jd: JulianDate) -> Self {
+        jd.julian_years()
+    }
+}
+
+impl From<Centuries> for JulianDate {
+    fn from(centuries: Centuries) -> Self {
+        Self::J2000 + Self::JULIAN_CENTURY * centuries.value()
+    }
+}
+
+impl From<JulianDate> for Centuries {
+    fn from(jd: JulianDate) -> Self {
+        jd.julian_centuries()
+    }
+}
+
+impl From<Millennia> for JulianDate {
+    fn from(millennia: Millennia) -> Self {
+        Self::J2000 + Self::JULIAN_MILLENNIUM * millennia.value()
+    }
+}
+
+impl From<JulianDate> for Millennia {
+    fn from(jd: JulianDate) -> Self {
+        jd.julian_millennias()
     }
 }
 
@@ -203,5 +252,45 @@ mod tests {
 
         let later = JulianDate::J2000 + Days::new(1.0);
         assert_eq!(JulianDate::J2000.min(later), JulianDate::J2000);
+    }
+
+    #[test]
+    fn test_into_days() {
+        let jd = JulianDate::new(2_451_547.5);
+        let days: Days = jd.into();
+        assert_eq!(days.value(), 2_451_547.5);
+
+        let roundtrip = JulianDate::from(days);
+        assert_eq!(roundtrip, jd);
+    }
+
+    #[test]
+    fn test_into_julian_years() {
+        let jd = JulianDate::J2000 + Days::new(365.25 * 2.0);
+        let years: JulianYears = jd.into();
+        assert!((years.value() - 2.0).abs() < 1e-12);
+
+        let roundtrip = JulianDate::from(years);
+        assert!((roundtrip.value() - jd.value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_into_centuries() {
+        let jd = JulianDate::J2000 + Days::new(36_525.0 * 3.0);
+        let centuries: Centuries = jd.into();
+        assert!((centuries.value() - 3.0).abs() < 1e-12);
+
+        let roundtrip = JulianDate::from(centuries);
+        assert!((roundtrip.value() - jd.value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_into_millennia() {
+        let jd = JulianDate::J2000 + Days::new(365_250.0 * 1.5);
+        let millennia: Millennia = jd.into();
+        assert!((millennia.value() - 1.5).abs() < 1e-12);
+
+        let roundtrip = JulianDate::from(millennia);
+        assert!((roundtrip.value() - jd.value()).abs() < 1e-9);
     }
 }
