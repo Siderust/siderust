@@ -105,8 +105,6 @@ use qtty::*;
 /// precision.  Switching to the alternative formula earlier does no harm
 /// and guarantees full numerical stability even closer to the pole.
 const NEAR_POLE_LIMIT: Radians = Degrees::new(85.0).to_const::<Radian>();
-// TODO use qtty
-const DAYS_PER_JULIAN_CENTURY: f64 = 36_525.0;
 
 /// Return (*t*, *t²*, *t³*).  Saves three multiplications when the caller
 /// needs all powers.
@@ -118,7 +116,7 @@ fn t_powers(t: f64) -> (f64, f64, f64) {
 
 #[inline]
 fn centuries_since_j2000(jd: JulianDate) -> f64 {
-    (jd.julian_day_value() - JulianDate::J2000.julian_day_value()) / DAYS_PER_JULIAN_CENTURY
+    jd.julian_centuries().value()
 }
 
 /* -------------------------------------------------------------------------
