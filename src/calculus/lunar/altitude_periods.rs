@@ -52,7 +52,7 @@ const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
 ///
 /// # Returns
 /// Altitude as `Quantity<Radian>` (positive above horizon, negative below)
-pub fn moon_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quantity<Radian> {
+pub(crate) fn moon_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quantity<Radian> {
     Moon::get_horizontal::<Kilometer>(mjd.to_julian_day(), *site)
         .alt()
         .to::<Radian>()
@@ -75,7 +75,7 @@ pub fn moon_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quanti
 /// ```ignore
 /// let moonrise_periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
 /// ```
-pub fn find_moon_above_horizon(
+pub(crate) fn find_moon_above_horizon(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: Degrees,
@@ -100,7 +100,7 @@ pub fn find_moon_above_horizon(
 /// ```ignore
 /// let moonless_periods = find_moon_below_horizon(site, period, Degrees::new(-0.5));
 /// ```
-pub fn find_moon_below_horizon(
+pub(crate) fn find_moon_below_horizon(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: Degrees,
@@ -109,12 +109,13 @@ pub fn find_moon_below_horizon(
     complement_within(period, &above)
 }
 
+#[cfg(test)]
 /// Finds periods when the Moon is above the given altitude threshold,
 /// **without caching**. Useful for validation and comparison benchmarks.
 ///
 /// This is the original implementation that evaluates the full ELP2000 +
 /// nutation chain at every query point.
-pub fn find_moon_above_horizon_uncached(
+fn find_moon_above_horizon_uncached(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: Degrees,
@@ -135,7 +136,7 @@ pub fn find_moon_above_horizon_uncached(
 /// ```ignore
 /// let low_moon = find_moon_altitude_range(site, period, (Degrees::new(0.0), Degrees::new(30.0)));
 /// ```
-pub fn find_moon_altitude_range(
+pub(crate) fn find_moon_altitude_range(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
@@ -155,14 +156,16 @@ pub fn find_moon_altitude_range(
 // Scan-based variants (10-minute step, for comparison / validation)
 // =============================================================================
 
+#[cfg(test)]
 /// Scan step for 10-minute scan variants (days).
 const SCAN_STEP_10MIN: Days = Quantity::new(10.0 / 1440.0);
 
+#[cfg(test)]
 /// Finds periods using the generic scan-based algorithm (above threshold).
 ///
 /// Uses 10-minute steps via the generic scan engine. Slower but useful
 /// for comparison / validation.
-pub fn find_moon_above_horizon_scan(
+fn find_moon_above_horizon_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: Degrees,
@@ -174,8 +177,9 @@ pub fn find_moon_above_horizon_scan(
     intervals::above_threshold_periods(period, SCAN_STEP_10MIN, &f, thr)
 }
 
+#[cfg(test)]
 /// Finds periods using the generic scan-based algorithm (below threshold).
-pub fn find_moon_below_horizon_scan(
+fn find_moon_below_horizon_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: Degrees,

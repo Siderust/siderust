@@ -49,7 +49,7 @@ const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
 
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
 /// Positive above the horizon, negative below.
-pub fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quantity<Radian> {
+pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quantity<Radian> {
     Sun::get_horizontal::<AstronomicalUnit>(mjd.to_julian_day(), *site)
         .alt()
         .to::<Radian>()
@@ -62,7 +62,7 @@ pub fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quantit
 /// Finds day periods (Sun **above** `threshold`) inside `period`.
 ///
 /// Uses a 2-hour scan + Brent refinement via [`math_core::intervals`].
-pub fn find_day_periods(
+pub(crate) fn find_day_periods(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     threshold: Degrees,
@@ -79,7 +79,7 @@ pub fn find_day_periods(
 /// Finds night periods (Sun **below** `twilight`) inside `period`.
 ///
 /// Complement of [`find_day_periods`] within `period`.
-pub fn find_night_periods(
+pub(crate) fn find_night_periods(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: Degrees,
@@ -92,7 +92,7 @@ pub fn find_night_periods(
 ///
 /// Computed as `above(min) ∩ complement(above(max))` via
 /// [`math_core::intervals::in_range_periods`].
-pub fn find_sun_range_periods(
+pub(crate) fn find_sun_range_periods(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
@@ -111,13 +111,15 @@ pub fn find_sun_range_periods(
 // Scan-based variants (10-minute step, for comparison / validation)
 // =============================================================================
 
+#[cfg(test)]
 /// Scan step for 10-minute scan variants (days).
 const SCAN_STEP_10MIN: Days = Quantity::new(10.0 / 1440.0);
 
+#[cfg(test)]
 /// Finds day periods using the generic 10-minute scan+refine algorithm.
 ///
 /// Prefer [`find_day_periods`] for better performance.
-pub fn find_day_periods_scan(
+fn find_day_periods_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: Degrees,
@@ -131,10 +133,11 @@ pub fn find_day_periods_scan(
     intervals::above_threshold_periods(period, SCAN_STEP_10MIN, &f, thr)
 }
 
+#[cfg(test)]
 /// Finds night periods using the generic 10-minute scan+refine algorithm.
 ///
 /// Prefer [`find_night_periods`] for better performance.
-pub fn find_night_periods_scan(
+fn find_night_periods_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     twilight: Degrees,
@@ -143,11 +146,12 @@ pub fn find_night_periods_scan(
     complement_within(period, &days)
 }
 
+#[cfg(test)]
 /// Finds periods where Sun altitude is within `range` using the generic
 /// 10-minute scan+refine algorithm.
 ///
 /// Prefer [`find_sun_range_periods`] for better performance.
-pub fn find_sun_range_periods_scan(
+fn find_sun_range_periods_scan(
     site: ObserverSite,
     period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),

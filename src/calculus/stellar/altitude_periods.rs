@@ -65,7 +65,7 @@ const SCAN_STEP_FALLBACK: Days = Quantity::new(10.0 / 1440.0);
 ///
 /// Uses precession + nutation-corrected RA, GAST, and the standard
 /// equatorial→horizontal formula.
-pub fn fixed_star_altitude_rad(
+pub(crate) fn fixed_star_altitude_rad(
     mjd: ModifiedJulianDate,
     site: &crate::coordinates::centers::ObserverSite,
     ra_j2000: qtty::Degrees,
@@ -117,20 +117,6 @@ fn make_star_fn<'a>(
     move |t: Mjd| -> Radians {
         fixed_star_altitude_rad(t, site, ra_j2000, dec_j2000)
     }
-}
-
-/// Full‑precision star altitude at a given Julian Date.
-///
-/// Thin wrapper around the core evaluator for API consistency with
-/// [`crate::calculus::solar::sun_altitude_rad`] and
-/// [`crate::calculus::lunar::moon_altitude_rad`].
-pub fn star_altitude_rad(
-    mjd: ModifiedJulianDate,
-    site: &ObserverSite,
-    ra_j2000: Degrees,
-    dec_j2000: Degrees,
-) -> Radians {
-    fixed_star_altitude_rad(mjd, site, ra_j2000, dec_j2000)
 }
 
 /// Find all crossings of a single threshold, refined to full precision.
@@ -240,7 +226,7 @@ fn find_crossings_analytical(
 /// * `site`      — observer location on Earth
 /// * `period`    — time window to search
 /// * `threshold` — altitude threshold (e.g. 0° for the geometric horizon)
-pub fn find_star_above_periods(
+pub(crate) fn find_star_above_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: ObserverSite,
@@ -260,7 +246,7 @@ pub fn find_star_above_periods(
 /// Finds periods when a fixed star is **below** `threshold` inside `period`.
 ///
 /// Complement of [`find_star_above_periods`] within `period`.
-pub fn find_star_below_periods(
+pub(crate) fn find_star_below_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: ObserverSite,
@@ -274,7 +260,7 @@ pub fn find_star_below_periods(
 /// Finds periods when a fixed star's altitude is within `[min, max]`.
 ///
 /// Computed as `above(min) ∩ complement(above(max))`.
-pub fn find_star_range_periods(
+pub(crate) fn find_star_range_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: ObserverSite,
@@ -291,12 +277,13 @@ pub fn find_star_range_periods(
 // Scan‑based variants (for comparison / validation)
 // =============================================================================
 
+#[cfg(test)]
 /// Finds periods where star is above threshold using the **generic
 /// 10‑minute scan** + Brent approach.
 ///
 /// Prefer [`find_star_above_periods`] for production use; this function
 /// is provided for validation and performance comparison.
-pub fn find_star_above_periods_scan(
+fn find_star_above_periods_scan(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: ObserverSite,
@@ -308,10 +295,11 @@ pub fn find_star_above_periods_scan(
     intervals::above_threshold_periods(period, SCAN_STEP_FALLBACK, &f, thr)
 }
 
+#[cfg(test)]
 /// Finds periods where star is below threshold using the generic scan.
 ///
 /// Prefer [`find_star_below_periods`] for production use.
-pub fn find_star_below_periods_scan(
+fn find_star_below_periods_scan(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: ObserverSite,
@@ -322,10 +310,11 @@ pub fn find_star_below_periods_scan(
     complement_within(period, &above)
 }
 
+#[cfg(test)]
 /// Finds altitude range periods using the generic scan.
 ///
 /// Prefer [`find_star_range_periods`] for production use.
-pub fn find_star_range_periods_scan(
+fn find_star_range_periods_scan(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: ObserverSite,

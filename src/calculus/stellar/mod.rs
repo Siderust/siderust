@@ -36,6 +36,6 @@
 
 pub(crate) mod star_equations;
 
-pub mod altitude_periods;
+pub(crate) mod altitude_periods;
 
-pub use altitude_periods::*;
+pub(crate) use altitude_periods::*;

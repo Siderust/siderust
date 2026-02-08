@@ -8,9 +8,8 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::calculus::solar::altitude_periods::{
-    find_day_periods, find_night_periods, find_night_periods_scan,
-};
+use siderust::bodies::Sun;
+use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
@@ -45,7 +44,7 @@ fn bench_find_night_periods(c: &mut Criterion) {
     group.bench_function("find_night_periods_1day", |b| {
         let period = black_box(build_period(1));
         b.iter(|| {
-            let _result = find_night_periods(
+            let _result = Sun.below_threshold(
                 black_box(site),
                 black_box(period),
                 black_box(twilight::ASTRONOMICAL),
@@ -57,7 +56,7 @@ fn bench_find_night_periods(c: &mut Criterion) {
     group.bench_function("find_night_periods_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
-            let _result = find_night_periods(
+            let _result = Sun.below_threshold(
                 black_box(site),
                 black_box(period),
                 black_box(twilight::ASTRONOMICAL),
@@ -69,7 +68,7 @@ fn bench_find_night_periods(c: &mut Criterion) {
     group.bench_function("find_night_periods_30day", |b| {
         let period = black_box(build_period(30));
         b.iter(|| {
-            let _result = find_night_periods(
+            let _result = Sun.below_threshold(
                 black_box(site),
                 black_box(period),
                 black_box(twilight::ASTRONOMICAL),
@@ -81,7 +80,7 @@ fn bench_find_night_periods(c: &mut Criterion) {
     group.bench_function("find_night_periods_365day", |b| {
         let period = black_box(build_period(365));
         b.iter(|| {
-            let _result = find_night_periods(
+            let _result = Sun.below_threshold(
                 black_box(site),
                 black_box(period),
                 black_box(twilight::ASTRONOMICAL),
@@ -89,23 +88,11 @@ fn bench_find_night_periods(c: &mut Criterion) {
         });
     });
 
-    // Compare with scan-based algorithm for 7 days
-    group.bench_function("find_night_periods_scan_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = find_night_periods_scan(
-                black_box(site),
-                black_box(period),
-                black_box(twilight::ASTRONOMICAL),
-            );
-        });
-    });
-
-    // Compare with 2-hour scan algorithm for 7 days
+    // Compare with above-threshold algorithm for 7 days
     group.bench_function("find_day_periods_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
-            let _result = find_day_periods(
+            let _result = Sun.above_threshold(
                 black_box(site),
                 black_box(period),
                 black_box(twilight::ASTRONOMICAL),
