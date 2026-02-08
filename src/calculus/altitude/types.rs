@@ -23,7 +23,7 @@ pub enum CrossingDirection {
 #[derive(Debug, Clone, Copy)]
 pub struct CrossingEvent {
     /// Modified Julian Date of the crossing.
-    pub jd: ModifiedJulianDate,
+    pub mjd: ModifiedJulianDate,
     /// Direction: rising above or setting below the threshold.
     pub direction: CrossingDirection,
 }

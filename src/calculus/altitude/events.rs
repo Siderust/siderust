@@ -61,7 +61,7 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
 /// let events = crossings(&Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
 /// for e in events {
-///     println!("{:?} at JD {}", e.direction, e.jd.value());
+///     println!("{:?} at MJD {}", e.direction, e.mjd);
 /// }
 /// ```
 pub fn crossings<T: AltitudePeriodsProvider>(
@@ -82,7 +82,7 @@ pub fn crossings<T: AltitudePeriodsProvider>(
     labeled
         .iter()
         .map(|lc| CrossingEvent {
-            jd: lc.t,
+            mjd: lc.t,
             direction: if lc.direction > 0 {
                 CrossingDirection::Rising
             } else {
