@@ -333,7 +333,7 @@ fn full_sky_range_returns_full_window() {
     };
     let periods = Sun.altitude_periods(&query);
     assert!(!periods.is_empty());
-    let total: f64 = periods.iter().map(|p| p.duration_days()).sum();
+    let total: f64 = periods.iter().map(|p| p.duration_days().value()).sum();
     assert!(
         (total - 1.0).abs() < 0.01,
         "Full sky range should span ~1 day, got {}",
@@ -350,7 +350,7 @@ fn circumpolar_star_always_above() {
         "Polaris should be continuously above horizon at 51°N"
     );
     assert!(
-        (periods[0].duration_days() - 1.0).abs() < 0.01,
+        (periods[0].duration_days() - Days::new(1.0)).abs() < 0.01,
         "Polaris period should span full day, got {} days",
         periods[0].duration_days()
     );
@@ -396,8 +396,8 @@ fn above_and_below_cover_full_window() {
     let above = Sun.above_threshold(observer, window, threshold);
     let below = Sun.below_threshold(observer, window, threshold);
 
-    let total_above: f64 = above.iter().map(|p| p.duration_days()).sum();
-    let total_below: f64 = below.iter().map(|p| p.duration_days()).sum();
+    let total_above: f64 = above.iter().map(|p| p.duration_days().value()).sum();
+    let total_below: f64 = below.iter().map(|p| p.duration_days().value()).sum();
     let total = total_above + total_below;
 
     assert!(

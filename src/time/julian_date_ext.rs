@@ -25,19 +25,19 @@ impl Time<JD> {
     /// Julian millennia since J2000.0 (used by VSOP87).
     #[inline]
     pub fn julian_millennias(&self) -> Millennia {
-        Millennia::new((self.value() - Self::J2000.value()) / Self::JULIAN_MILLENNIUM.value())
+        Millennia::new((*self - Self::J2000).value() / Self::JULIAN_MILLENNIUM.value())
     }
 
     /// Julian centuries since J2000.0 (used by nutation, precession, sidereal time).
     #[inline]
     pub fn julian_centuries(&self) -> Centuries {
-        Centuries::new((self.value() - Self::J2000.value()) / Self::JULIAN_CENTURY.value())
+        Centuries::new((*self - Self::J2000).value() / Self::JULIAN_CENTURY.value())
     }
 
     /// Julian years since J2000.0.
     #[inline]
     pub fn julian_years(&self) -> JulianYears {
-        JulianYears::new((self.value() - Self::J2000.value()) / Self::JULIAN_YEAR.value())
+        JulianYears::new((*self - Self::J2000).value() / Self::JULIAN_YEAR.value())
     }
 
     /// Converts JD(TT) → JD(TDB) by applying the Fairhead & Bretagnon

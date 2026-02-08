@@ -89,15 +89,16 @@ impl<T: TimeInstant<Duration = Days>> Period<T> {
     ///
     /// ```
     /// use siderust::time::{Period, ModifiedJulianDate};
+    /// use qtty::Days;
     ///
     /// let start = ModifiedJulianDate::new(59000.0);
     /// let end = ModifiedJulianDate::new(59001.5);
     /// let period = Period::new(start, end);
     ///
-    /// assert_eq!(period.duration_days(), 1.5);
+    /// assert_eq!(period.duration_days(), Days::new(1.5));
     /// ```
-    pub fn duration_days(&self) -> f64 {
-        self.duration().value()
+    pub fn duration_days(&self) -> Days {
+        self.duration()
     }
 }
 
@@ -288,7 +289,7 @@ mod tests {
         let end = JulianDate::new(2451546.5);
         let period = Period::new(start, end);
 
-        assert_eq!(period.duration_days(), 1.5);
+        assert_eq!(period.duration_days(), Days::new(1.5));
     }
 
     #[test]
@@ -297,7 +298,7 @@ mod tests {
         let end = ModifiedJulianDate::new(59001.5);
         let period = Period::new(start, end);
 
-        assert_eq!(period.duration_days(), 1.5);
+        assert_eq!(period.duration_days(), Days::new(1.5));
     }
 
     #[test]

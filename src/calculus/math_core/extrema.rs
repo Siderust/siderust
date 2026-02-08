@@ -98,7 +98,7 @@ where
         if p.duration() < tol {
             break;
         }
-        if f1.value() < f2.value() {
+        if f1 < f2 {
             p.end = x2;
             x2 = x1;
             f2 = f1;
@@ -161,9 +161,9 @@ where
     let fl = f(tv - PROBE_EPS);
     let fr = f(tv + PROBE_EPS);
 
-    if fc.value() >= fl.value() && fc.value() >= fr.value() {
+    if fc >= fl && fc >= fr {
         Some(ExtremumKind::Maximum)
-    } else if fc.value() <= fl.value() && fc.value() <= fr.value() {
+    } else if fc <= fl && fc <= fr {
         Some(ExtremumKind::Minimum)
     } else {
         None
@@ -205,7 +205,7 @@ where
     let mut f0 = f(t0);
     let mut t1 = (t0 + step_v).min(t_end_v);
     let mut f1 = f(t1);
-    let mut prev_rising = f1.value() > f0.value();
+    let mut prev_rising = f1 > f0;
 
     loop {
         let t2 = (t1 + step_v).min(t_end_v);
@@ -213,7 +213,7 @@ where
             break;
         }
         let f2 = f(t2);
-        let now_rising = f2.value() > f1.value();
+        let now_rising = f2 > f1;
 
         if prev_rising && !now_rising {
             // Was rising, now falling → local maximum in [t0, t2]
@@ -243,7 +243,7 @@ where
     // Suppress the unused-variable warning for f0
     let _ = f0;
 
-    result.sort_by(|a, b| a.t.value().partial_cmp(&b.t.value()).unwrap());
+    result.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
     result
 }
 
@@ -298,7 +298,7 @@ where
                     k
                 } else {
                     // Default based on derivative sign change direction
-                    if prev_d.value() > 0.0 {
+                    if prev_d > 0.0 {
                         ExtremumKind::Maximum
                     } else {
                         ExtremumKind::Minimum
@@ -316,7 +316,7 @@ where
         prev_d = next_d;
     }
 
-    result.sort_by(|a, b| a.t.value().partial_cmp(&b.t.value()).unwrap());
+    result.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
     result
 }
 

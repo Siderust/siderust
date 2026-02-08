@@ -126,11 +126,11 @@ where
         let fb = g(b);
 
         const ROOT_EPS: f64 = 1e-12;
-        if fa.abs().value() < ROOT_EPS {
+        if fa.abs() < ROOT_EPS {
             crossings.push(a);
             continue;
         }
-        if fb.abs().value() < ROOT_EPS {
+        if fb.abs() < ROOT_EPS {
             crossings.push(b);
             continue;
         }
@@ -173,7 +173,7 @@ where
     crossings.sort_by(|a, b| a.partial_cmp(b).unwrap());
     crossings.dedup_by(|a, b| (*a - *b).abs() < DEDUPE_EPS);
 
-    let is_above = |v: Quantity<V>| v.value() > threshold.value();
+    let is_above = |v: Quantity<V>| v > threshold;
 
     crossings
         .iter()
@@ -216,7 +216,7 @@ where
 {
     let t_start = period.start;
     let t_end = period.end;
-    let is_above = |v: Quantity<V>| v.value() > threshold.value();
+    let is_above = |v: Quantity<V>| v > threshold;
     let mut periods = Vec::new();
 
     if labeled.is_empty() {
@@ -282,7 +282,7 @@ where
 {
     let mut crossings = find_crossings(period, step, f, threshold);
     let labeled = label_crossings(&mut crossings, f, threshold);
-    let start_above = f(period.start).value() > threshold.value();
+    let start_above = f(period.start) > threshold;
     build_above_periods(&labeled, period, start_above, f, threshold)
 }
 
@@ -300,7 +300,7 @@ where
 {
     let mut crossings = find_crossings_in_segments(key_times, f, threshold, period);
     let labeled = label_crossings(&mut crossings, f, threshold);
-    let start_above = f(period.start).value() > threshold.value();
+    let start_above = f(period.start) > threshold;
     build_above_periods(&labeled, period, start_above, f, threshold)
 }
 

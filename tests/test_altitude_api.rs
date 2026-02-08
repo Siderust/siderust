@@ -337,7 +337,7 @@ fn polaris_always_above_horizon_at_greenwich() {
     );
     let duration = up[0].duration_days();
     assert!(
-        (duration - 1.0).abs() < 0.01,
+        (duration - Days::new(1.0)).abs() < 0.01,
         "Polaris up-period should span the full day, got {} days",
         duration
     );

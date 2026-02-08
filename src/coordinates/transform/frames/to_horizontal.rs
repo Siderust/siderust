@@ -103,7 +103,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
         let site = self.center_params();
         let r = self.distance();
 
-        let dec: Radians = if r.value() > 0.0 {
+        let dec: Radians = if r > 0.0 {
             Quantity::<Radian>::new((self.z() / r).asin())
         } else {
             Quantity::<Radian>::new(0.0)
@@ -141,7 +141,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, EquatorialMeanOfD
         // Get distance and angles from Cartesian vector
         let r = self.distance();
         // Division of same units gives Per<U,U> which has .asin() returning f64
-        let alt: Radians = if r.value() > 0.0 {
+        let alt: Radians = if r > 0.0 {
             Quantity::<Radian>::new((self.z() / r).asin())
         } else {
             Quantity::<Radian>::new(0.0)
