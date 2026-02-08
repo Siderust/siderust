@@ -172,7 +172,8 @@ impl StarAltitudeParams {
     /// `HA = GST(t) + λ − α`
     #[inline]
     fn hour_angle_deg(&self, mjd: ModifiedJulianDate) -> f64 {
-        let gst = unmodded_gst(mjd.to_julian_day());
+        let jd: JulianDate = mjd.into();
+        let gst = unmodded_gst(jd);
         gst.value() + self.lon_deg - self.ra_corrected_deg
     }
 

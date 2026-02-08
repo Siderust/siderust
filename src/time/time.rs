@@ -337,8 +337,7 @@ impl Time<JD> {
 
     /// Convenience: MJD value corresponding to this JD.
     ///
-    /// Kept for backward compatibility with code that called
-    /// `ModifiedJulianDate::to_julian_day()`.
+    /// Kept as a convenience wrapper for `self.to::<MJD>()`.
     #[inline]
     pub fn to_mjd(&self) -> Time<super::scales::MJD> {
         self.to::<super::scales::MJD>()
@@ -387,20 +386,6 @@ impl From<Millennia> for Time<JD> {
 impl From<Time<JD>> for Millennia {
     fn from(jd: Time<JD>) -> Self {
         jd.julian_millennias()
-    }
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// MJD-specific inherent methods (backward-compatibility helpers)
-// ═══════════════════════════════════════════════════════════════════════════
-
-impl Time<super::scales::MJD> {
-    /// Convert to a `JulianDate` (`Time<JD>`).
-    ///
-    /// This is the replacement for the old `ModifiedJulianDate::to_julian_day()`.
-    #[inline]
-    pub const fn to_julian_day(&self) -> Time<JD> {
-        Time::<JD>::new(self.value() + 2_400_000.5)
     }
 }
 
@@ -497,9 +482,10 @@ mod tests {
     }
 
     #[test]
-    fn test_mjd_to_julian_day() {
+    fn test_mjd_into_jd() {
         let mjd = Time::<MJD>::new(51_544.5);
-        assert_eq!(mjd.to_julian_day().value(), 2_451_545.0);
+        let jd: Time<JD> = mjd.into();
+        assert_eq!(jd.value(), 2_451_545.0);
     }
 
     #[test]
