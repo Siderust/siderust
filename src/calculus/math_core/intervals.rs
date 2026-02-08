@@ -19,7 +19,7 @@ use qtty::{Day, Quantity, Unit};
 
 use super::root_finding;
 
-type MJD = ModifiedJulianDate;
+type Mjd = ModifiedJulianDate;
 type Days = Quantity<Day>;
 
 // ---------------------------------------------------------------------------
@@ -51,7 +51,7 @@ pub struct LabeledCrossing {
 /// Scan `period` at `step` intervals, find all roots of
 /// `f(t) − threshold` using Brent's method.  Returns unsorted crossing times.
 pub fn find_crossings<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     step: Days,
     f: &F,
     threshold: Quantity<V>,
@@ -60,8 +60,8 @@ where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let g = |t: MJD| -> Quantity<V> { f(t) - threshold };
-    let g_day = |d: Days| -> Quantity<V> { g(MJD::new(d.value())) };
+    let g = |t: Mjd| -> Quantity<V> { f(t) - threshold };
+    let g_day = |d: Days| -> Quantity<V> { g(Mjd::new(d.value())) };
 
     let step_v = step;
     let t_start_v = period.start;
@@ -80,11 +80,11 @@ where
                 Days::new(next_t.value()),
                 prev,
                 next_v,
-                &g_day,
+                g_day,
             ) {
                 let rv = root.value();
                 if rv >= t_start_v.value() && rv <= t_end_v.value() {
-                    crossings.push(MJD::new(rv));
+                    crossings.push(Mjd::new(rv));
                 }
             }
         }
@@ -102,14 +102,14 @@ pub fn find_crossings_in_segments<V, F>(
     key_times: &[ModifiedJulianDate],
     f: &F,
     threshold: Quantity<V>,
-    period: Period<MJD>,
+    period: Period<Mjd>,
 ) -> Vec<ModifiedJulianDate>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let g = |t: MJD| -> Quantity<V> { f(t) - threshold };
-    let g_day = |d: Days| -> Quantity<V> { g(MJD::new(d.value())) };
+    let g = |t: Mjd| -> Quantity<V> { f(t) - threshold };
+    let g_day = |d: Days| -> Quantity<V> { g(Mjd::new(d.value())) };
     let t_start_v = period.start;
     let t_end_v = period.end;
 
@@ -141,7 +141,7 @@ where
                 Days::new(b.value()),
                 fa,
                 fb,
-                &g_day,
+                g_day,
             ) {
                 let rv = ModifiedJulianDate::new(root.value());
                 if rv >= t_start_v && rv <= t_end_v {
@@ -170,7 +170,7 @@ where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    crossings.sort_by(|a, b| a.partial_cmp(&b).unwrap());
+    crossings.sort_by(|a, b| a.partial_cmp(b).unwrap());
     crossings.dedup_by(|a, b| (*a - *b).abs() < DEDUPE_EPS);
 
     let is_above = |v: Quantity<V>| v.value() > threshold.value();
@@ -205,11 +205,11 @@ where
 /// A midpoint validation check is performed for each candidate period.
 pub fn build_above_periods<V, F>(
     labeled: &[LabeledCrossing],
-    period: Period<MJD>,
+    period: Period<Mjd>,
     start_above: bool,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -231,7 +231,7 @@ where
     // Leading partial period: we start above and first crossing exits
     if start_above && labeled[0].direction == -1 {
         let exit_t = labeled[0].t;
-        let mid_v = MJD::new(0.5 * (t_start.value() + exit_t.value()));
+        let mid_v = Mjd::new(0.5 * (t_start.value() + exit_t.value()));
         if is_above(f(mid_v)) {
             periods.push(Period::new(period.start, exit_t));
         }
@@ -251,7 +251,7 @@ where
                 t_end
             };
 
-            let mid_v = MJD::new(0.5 * (enter_t.value() + exit_t.value()));
+            let mid_v = Mjd::new(0.5 * (enter_t.value() + exit_t.value()));
             if mid_v >= t_start && mid_v <= t_end && is_above(f(mid_v)) {
                 periods.push(Period::new(enter_t, exit_t));
             }
@@ -271,11 +271,11 @@ where
 /// using a coarse scan at `step` followed by Brent refinement and
 /// crossing classification.
 pub fn above_threshold_periods<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -290,10 +290,10 @@ where
 /// segments (culmination‑based).
 pub fn above_threshold_periods_segmented<V, F>(
     key_times: &[ModifiedJulianDate],
-    period: Period<MJD>,
+    period: Period<Mjd>,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -312,12 +312,12 @@ where
 ///
 /// Computed as `above(h_min) ∩ complement(above(h_max))`.
 pub fn in_range_periods<V, F>(
-    period: Period<MJD>,
+    period: Period<Mjd>,
     step: Days,
     f: &F,
     h_min: Quantity<V>,
     h_max: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -331,11 +331,11 @@ where
 /// Like [`in_range_periods`] but using key‑time segments.
 pub fn in_range_periods_segmented<V, F>(
     key_times: &[ModifiedJulianDate],
-    period: Period<MJD>,
+    period: Period<Mjd>,
     f: &F,
     h_min: Quantity<V>,
     h_max: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<Mjd>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -351,33 +351,33 @@ where
 // ---------------------------------------------------------------------------
 
 /// Complement of `periods` within `within`.
-pub fn complement(within: Period<MJD>, periods: &[Period<MJD>]) -> Vec<Period<MJD>> {
+pub fn complement(within: Period<Mjd>, periods: &[Period<Mjd>]) -> Vec<Period<Mjd>> {
     let mut gaps = Vec::new();
     let mut cursor = within.start.value();
     let t_end_v = within.end.value();
     for p in periods {
         if p.start.value() > cursor {
-            gaps.push(Period::new(MJD::new(cursor), p.start));
+            gaps.push(Period::new(Mjd::new(cursor), p.start));
         }
         if p.end.value() > cursor {
             cursor = p.end.value();
         }
     }
     if cursor < t_end_v {
-        gaps.push(Period::new(MJD::new(cursor), within.end));
+        gaps.push(Period::new(Mjd::new(cursor), within.end));
     }
     gaps
 }
 
 /// Intersection of two sorted, non‑overlapping period lists.
-pub fn intersect(a: &[Period<MJD>], b: &[Period<MJD>]) -> Vec<Period<MJD>> {
+pub fn intersect(a: &[Period<Mjd>], b: &[Period<Mjd>]) -> Vec<Period<Mjd>> {
     let mut result = Vec::new();
     let (mut i, mut j) = (0, 0);
     while i < a.len() && j < b.len() {
         let start = a[i].start.value().max(b[j].start.value());
         let end = a[i].end.value().min(b[j].end.value());
         if start < end {
-            result.push(Period::new(MJD::new(start), MJD::new(end)));
+            result.push(Period::new(Mjd::new(start), Mjd::new(end)));
         }
         if a[i].end.value() <= b[j].end.value() {
             i += 1;
@@ -399,10 +399,10 @@ mod tests {
 
     type Radians = Quantity<Radian>;
 
-    fn mjd(v: f64) -> MJD {
-        MJD::new(v)
+    fn mjd(v: f64) -> Mjd {
+        Mjd::new(v)
     }
-    fn period(a: f64, b: f64) -> Period<MJD> {
+    fn period(a: f64, b: f64) -> Period<Mjd> {
         Period::new(mjd(a), mjd(b))
     }
 
@@ -410,7 +410,7 @@ mod tests {
     fn above_threshold_sine_wave() {
         // sin(2π(t+0.05)) > 0 roughly on (−0.05, 0.45) → within [0,1]: (0, ~0.45) and (~0.95, 1)
         // Use a shift to avoid exact zero at t=0
-        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
         let periods =
             above_threshold_periods(period(0.0, 1.0), Days::new(0.01), &f, Radians::new(0.0));
 
@@ -429,7 +429,7 @@ mod tests {
         let periods = above_threshold_periods(
             period(0.0, 10.0),
             Days::new(1.0),
-            &|_: MJD| Radians::new(5.0),
+            &|_: Mjd| Radians::new(5.0),
             Radians::new(0.0),
         );
         assert_eq!(periods.len(), 1);
@@ -442,7 +442,7 @@ mod tests {
         let periods = above_threshold_periods(
             period(0.0, 10.0),
             Days::new(1.0),
-            &|_: MJD| Radians::new(-5.0),
+            &|_: Mjd| Radians::new(-5.0),
             Radians::new(0.0),
         );
         assert!(periods.is_empty());
@@ -452,7 +452,7 @@ mod tests {
     fn in_range_periods_band() {
         // sin(2π(t+0.05)) in range [-0.5, 0.5]
         // The band where |sin| < 0.5 occupies 1/3 of each cycle.
-        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
         let periods = in_range_periods(
             period(0.0, 1.0),
             Days::new(0.01),
@@ -521,7 +521,7 @@ mod tests {
     #[test]
     fn multiple_crossings_per_window() {
         // Fast oscillation: sin(20πt) > 0  → 10 positive intervals in [0,1]
-        let f = |t: MJD| Radians::new((20.0 * std::f64::consts::PI * t.value()).sin());
+        let f = |t: Mjd| Radians::new((20.0 * std::f64::consts::PI * t.value()).sin());
         let periods =
             above_threshold_periods(period(0.0, 1.0), Days::new(0.005), &f, Radians::new(0.0));
         assert!(
@@ -534,10 +534,10 @@ mod tests {
     #[test]
     fn segmented_matches_scan() {
         // Use shifted sine to avoid exact zeros at grid points
-        let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
 
         // Build key times at 0.1 intervals
-        let key_times: Vec<MJD> = (0..=10).map(|i| mjd(i as f64 * 0.1)).collect();
+        let key_times: Vec<Mjd> = (0..=10).map(|i| mjd(i as f64 * 0.1)).collect();
 
         let p = period(0.0, 1.0);
 
@@ -557,8 +557,8 @@ mod tests {
 
     #[test]
     fn find_crossings_in_segments_basic() {
-        let f = |t: MJD| Radians::new(t.value() - 5.0);
-        let keys: Vec<MJD> = vec![mjd(0.0), mjd(3.0), mjd(7.0), mjd(10.0)];
+        let f = |t: Mjd| Radians::new(t.value() - 5.0);
+        let keys: Vec<Mjd> = vec![mjd(0.0), mjd(3.0), mjd(7.0), mjd(10.0)];
         let crossings = find_crossings_in_segments(&keys, &f, Radians::new(0.0), period(0.0, 10.0));
         assert_eq!(crossings.len(), 1);
         assert!((crossings[0].value() - 5.0).abs() < 1e-8);
@@ -567,7 +567,7 @@ mod tests {
     #[test]
     fn label_crossings_skips_tangency() {
         // f(t) = t^2 touches 0 at t=0 but doesn't cross
-        let f = |t: MJD| Radians::new(t.value() * t.value());
+        let f = |t: Mjd| Radians::new(t.value() * t.value());
         let mut crossings = vec![mjd(0.0)];
         let labeled = label_crossings(&mut crossings, &f, Radians::new(0.0));
         // t=0 is a tangency (above on both sides), should be skipped
@@ -594,7 +594,7 @@ mod tests {
                 direction: -1,
             },
         ];
-        let f = |t: MJD| -> Radians {
+        let f = |t: Mjd| -> Radians {
             let tv = t.value();
             if (tv > 2.0 && tv < 5.0) || (tv > 7.0 && tv < 9.0) {
                 Radians::new(1.0)
