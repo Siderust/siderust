@@ -45,7 +45,7 @@ pub enum CulminationKind {
 #[derive(Debug, Clone, Copy)]
 pub struct CulminationEvent {
     /// Modified Julian Date of the extremum.
-    pub jd: ModifiedJulianDate,
+    pub mjd: ModifiedJulianDate,
     /// Altitude at the extremum.
     pub altitude: Degrees,
     /// Maximum or minimum.
