@@ -23,10 +23,8 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use qtty::*;
 use siderust::astro::JulianDate;
 use siderust::calculus::lunar::{
-    find_moon_above_horizon, find_moon_above_horizon_scan,
-    find_moon_above_horizon_uncached,
-    find_moon_altitude_range, find_moon_below_horizon,
-    moon_altitude_rad,
+    find_moon_above_horizon, find_moon_above_horizon_scan, find_moon_above_horizon_uncached,
+    find_moon_altitude_range, find_moon_below_horizon, moon_altitude_rad,
 };
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;

@@ -11,6 +11,7 @@
 //! - `luminosity`: Stellar luminosity in solar luminosities (`SolarLuminosity`).
 //! - `target`: [`Target`] pointing to a Spherical coordinates (see [`Position`]), using degrees and Julian Day.
 
+use crate::coordinates::spherical::direction;
 use crate::coordinates::{centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position};
 use crate::targets::Target;
 use qtty::length::nominal::SolarRadiuses;
@@ -69,5 +70,16 @@ impl<'a> Star<'a> {
             luminosity,
             target,
         }
+    }
+}
+
+impl From<&Star<'_>> for direction::ICRS {
+    /// Extracts the J2000 RA/Dec from a [`Star`]'s target position.
+    ///
+    /// The position's *azimuth* is RA and *polar* is Dec in the
+    /// `EquatorialMeanJ2000` frame convention used throughout the crate.
+    fn from(star: &Star<'_>) -> Self {
+        let pos = star.target.get_position();
+        Self::new(pos.azimuth(), pos.polar())
     }
 }

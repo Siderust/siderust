@@ -87,6 +87,59 @@ Muchachos using `find_night_periods`.
 cargo run --example solar_altitude_culminations
 ```
 
+### 8. Altitude Periods API (`altitude_periods_trait.rs`)
+Comprehensive demonstration of the unified `AltitudePeriodsProvider` trait:
+- Finding astronomical night periods (Sun below -18°)
+- Computing star visibility windows above specific altitudes
+- Using `direction::ICRS` for custom targets
+- Moon altitude range queries
+- Detecting circumpolar stars
+- Twilight band calculations
+- Single-point altitude evaluation
+
+**Run with:**
+```bash
+cargo run --example altitude_periods_trait
+```
+
+### 9. Star Observability Planner (`star_observability.rs`)
+Practical observing planner that analyzes star visibility:
+- Finds best observing windows for multiple stars
+- Considers astronomical darkness and altitude constraints
+- Computes peak altitudes during observation window
+- Provides observing strategy recommendations
+- Identifies circumpolar vs. rising/setting stars
+
+**Run with:**
+```bash
+cargo run --example star_observability
+```
+
+### 10. Generic Body Comparison (`compare_sun_moon_star.rs`)
+Shows the power of the trait-based API by analyzing Sun, Moon, and stars
+using the **same generic function**:
+- Demonstrates unified interface across different body types
+- Compares Sun (VSOP87), Moon (ELP2000), and Stars (analytical)
+- Shows `direction::ICRS` as the lightweight path
+- Illustrates how the trait abstracts implementation details
+
+**Run with:**
+```bash
+cargo run --example compare_sun_moon_star
+```
+
+### 11. Night Quality Scoring (`night_quality_scoring.rs`)
+Practical tool for planning observing sessions over a month:
+- Scores each night based on darkness duration and Moon interference
+- Finds optimal nights for deep-sky observation
+- Combines Sun and Moon altitude periods
+- Demonstrates building real-world planning tools with minimal code
+
+**Run with:**
+```bash
+cargo run --example night_quality_scoring
+```
+
 ## Key Concepts
 
 ### Reference Centers

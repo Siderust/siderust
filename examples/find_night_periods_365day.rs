@@ -44,7 +44,10 @@ fn main() {
         .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
         .unwrap_or_else(|| NaiveDate::from_ymd_opt(2026, 1, 1).unwrap());
 
-    println!("Find astronomical night periods for 365 days starting {} UTC", start_date);
+    println!(
+        "Find astronomical night periods for 365 days starting {} UTC",
+        start_date
+    );
     println!("Observer: Roque de los Muchachos Observatory (La Palma)");
 
     let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
@@ -58,7 +61,12 @@ fn main() {
         for p in nights {
             if let (Some(s), Some(e)) = (p.start.to_utc(), p.end.to_utc()) {
                 let mins = (p.duration_days() * 24.0 * 60.0).round() as i64;
-                println!("{} → {}  ({} min)", s.format("%Y-%m-%dT%H:%M:%S"), e.format("%Y-%m-%dT%H:%M:%S"), mins);
+                println!(
+                    "{} → {}  ({} min)",
+                    s.format("%Y-%m-%dT%H:%M:%S"),
+                    e.format("%Y-%m-%dT%H:%M:%S"),
+                    mins
+                );
             }
         }
     } else {

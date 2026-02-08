@@ -182,8 +182,7 @@ mod tests {
         let jd = JulianDate::J2000;
         let alt = sun_altitude_rad(jd, &site);
         assert!(
-            alt.value() > -std::f64::consts::FRAC_PI_2
-                && alt.value() < std::f64::consts::FRAC_PI_2
+            alt.value() > -std::f64::consts::FRAC_PI_2 && alt.value() < std::f64::consts::FRAC_PI_2
         );
     }
 
@@ -230,6 +229,9 @@ mod tests {
         let nautical =
             find_sun_range_periods(site, period, (Degrees::new(-18.0), Degrees::new(-12.0)));
 
-        assert!(!nautical.is_empty(), "Should find nautical twilight periods");
+        assert!(
+            !nautical.is_empty(),
+            "Should find nautical twilight periods"
+        );
     }
 }

@@ -70,10 +70,7 @@ pub struct Extremum<V: Unit> {
 ///
 /// Uses golden‑section search (derivative‑free, guaranteed convergence).
 /// Returns `(t_min, f(t_min))`.
-pub fn minimize<V, F>(
-    period: Period<MJD>,
-    f: &F,
-) -> (ModifiedJulianDate, Quantity<V>)
+pub fn minimize<V, F>(period: Period<MJD>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -123,10 +120,7 @@ where
 /// Find the value of *t* in `period` that **maximises** `f(t)`.
 ///
 /// Implemented as `minimize(-f)`.  Returns `(t_max, f(t_max))`.
-pub fn maximize<V, F>(
-    period: Period<MJD>,
-    f: &F,
-) -> (ModifiedJulianDate, Quantity<V>)
+pub fn maximize<V, F>(period: Period<MJD>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -184,11 +178,7 @@ where
 /// and refine each extremum with golden‑section.
 ///
 /// Returns a chronologically sorted list of [`Extremum`] values.
-pub fn find_extrema<V, F>(
-    period: Period<MJD>,
-    step: Days,
-    f: &F,
-) -> Vec<Extremum<V>>
+pub fn find_extrema<V, F>(period: Period<MJD>, step: Days, f: &F) -> Vec<Extremum<V>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -197,12 +187,7 @@ where
 }
 
 /// Like [`find_extrema`] but with a caller‑chosen tolerance.
-pub fn find_extrema_tol<V, F>(
-    period: Period<MJD>,
-    step: Days,
-    f: &F,
-    tol: Days,
-) -> Vec<Extremum<V>>
+pub fn find_extrema_tol<V, F>(period: Period<MJD>, step: Days, f: &F, tol: Days) -> Vec<Extremum<V>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -232,8 +217,7 @@ where
 
         if prev_rising && !now_rising {
             // Was rising, now falling → local maximum in [t0, t2]
-            let (t_max, v_max) =
-                maximize_tol(Period::new(t0, t2), f, tol);
+            let (t_max, v_max) = maximize_tol(Period::new(t0, t2), f, tol);
             result.push(Extremum {
                 t: t_max,
                 value: v_max,
@@ -241,8 +225,7 @@ where
             });
         } else if !prev_rising && now_rising {
             // Was falling, now rising → local minimum in [t0, t2]
-            let (t_min, v_min) =
-                minimize_tol(Period::new(t0, t2), f, tol);
+            let (t_min, v_min) = minimize_tol(Period::new(t0, t2), f, tol);
             result.push(Extremum {
                 t: t_min,
                 value: v_min,
@@ -402,8 +385,7 @@ mod tests {
     fn find_extrema_sine_wave() {
         // sin(2πt) over [0, 1] has max at t=0.25, min at t=0.75
         let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
-        let extrema: Vec<Extremum<Radian>> =
-            find_extrema(period(0.0, 1.0), Days::new(0.05), &f);
+        let extrema: Vec<Extremum<Radian>> = find_extrema(period(0.0, 1.0), Days::new(0.05), &f);
 
         assert_eq!(extrema.len(), 2, "expected 2 extrema, got {:?}", extrema);
 
@@ -435,18 +417,10 @@ mod tests {
         // Shift slightly to avoid derivative sign-change at endpoints
         let f = |t: MJD| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
         // Use a step that doesn't align with extrema at t=0.25, 0.75
-        let extrema: Vec<Extremum<Radian>> = find_extrema_via_derivative(
-            period(0.01, 0.99),
-            Days::new(0.035),
-            &f,
-            Days::new(1e-5),
-        );
+        let extrema: Vec<Extremum<Radian>> =
+            find_extrema_via_derivative(period(0.01, 0.99), Days::new(0.035), &f, Days::new(1e-5));
 
-        assert!(
-            extrema.len() >= 2,
-            "expected ≥2 extrema, got {:?}",
-            extrema
-        );
+        assert!(extrema.len() >= 2, "expected ≥2 extrema, got {:?}", extrema);
 
         let max_ext = extrema
             .iter()
@@ -491,8 +465,7 @@ mod tests {
     fn find_extrema_multiple_oscillations() {
         // sin(6πt) over [0,1] → 3 maxima, 2–3 minima
         let f = |t: MJD| Radians::new((6.0 * std::f64::consts::PI * t.value()).sin());
-        let extrema: Vec<Extremum<Radian>> =
-            find_extrema(period(0.0, 1.0), Days::new(0.02), &f);
+        let extrema: Vec<Extremum<Radian>> = find_extrema(period(0.0, 1.0), Days::new(0.02), &f);
 
         let n_max = extrema
             .iter()
