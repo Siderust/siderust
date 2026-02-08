@@ -28,11 +28,7 @@ use crate::bodies::solar_system::Sun;
 use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::ObserverSite;
 use crate::time::{complement_within, ModifiedJulianDate, Period};
-use qtty::{AstronomicalUnit, Day, Degrees, Quantity, Radian};
-
-/// Type aliases for typed quantities used throughout this module.
-type Days = Quantity<Day>;
-type Radians = Quantity<Radian>;
+use qtty::*;
 
 // =============================================================================
 // Constants
@@ -41,7 +37,7 @@ type Radians = Quantity<Radian>;
 /// Scan step for Sun altitude threshold detection (2 hours in days).
 /// Sunrise/sunset events are separated by ≥5 h even at high latitudes,
 /// so 2-hour steps safely detect all crossings (~12 altitude calls per day).
-const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
+const SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
 
 // =============================================================================
 // Core Altitude Function
