@@ -5,6 +5,8 @@ version = 4
 [[package]]
 name = "affn"
 version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "733e3c5441a15dff3f84bc2e97a22b3292c048d851940b8a218c97b59cd209d9"
 dependencies = [
  "affn-derive",
  "nalgebra",
@@ -15,6 +17,8 @@ dependencies = [
 [[package]]
 name = "affn-derive"
 version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec1cea3e85d12dd9cba77ea8c7f7260b0b848c1b7417871239180290688b67b9"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1009,6 +1013,8 @@ dependencies = [
 [[package]]
 name = "qtty"
 version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec18b86dcb4c777f979a171699a5f552675bbbfd7406d3d002403a26d7bd3215"
 dependencies = [
  "qtty-core",
  "qtty-derive",
@@ -1017,6 +1023,8 @@ dependencies = [
 [[package]]
 name = "qtty-core"
 version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02271e8e4889de336896d2b690ad40ef811e68a81726885a7ddfbccf7e35b19c"
 dependencies = [
  "libm",
  "qtty-derive",
@@ -1027,6 +1035,8 @@ dependencies = [
 [[package]]
 name = "qtty-derive"
 version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6b1435ce1b31534c420c9b7c08dc7cf1d4a39f18748e7c7f29b71296d558a51"
 dependencies = [
  "proc-macro2",
  "quote",
