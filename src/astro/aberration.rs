@@ -40,10 +40,7 @@ type AusPerDay = qtty::velocity::Velocity<AstronomicalUnit, Day>;
 
 /// Speed of light in AU/day from exact SI definitions:
 /// `c = 299_792_458 m/s`, `day = 86_400 s`, `AU = 149_597_870_700 m`.
-pub const AU_PER_DAY_C_F64: f64 = 173.144_632_674_240_33_f64;
-
-/// Same as [`AU_PER_DAY_C_F64`], as a quantity.
-pub const AU_PER_DAY_C: AusPerDay = AusPerDay::new(AU_PER_DAY_C_F64);
+pub const AU_PER_DAY_C: AusPerDay = AusPerDay::new(173.144_632_674_240_33);
 
 #[inline]
 fn aberrate_unit_vector_lorentz(
@@ -66,17 +63,24 @@ fn aberrate_unit_vector_lorentz(
     numerator / denom
 }
 
+#[inline]
+fn velocity_to_beta(
+    velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
+) -> nalgebra::Vector3<f64> {
+    nalgebra::Vector3::new(
+        (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        (velocity.z() / AU_PER_DAY_C).simplify().value(),
+    )
+}
+
 /// Apply aberration to a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.
 #[must_use]
 pub fn apply_aberration_to_direction_with_velocity(
     mean: direction::EquatorialMeanJ2000,
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
-    let beta = nalgebra::Vector3::new(
-        velocity.x().value() / AU_PER_DAY_C_F64,
-        velocity.y().value() / AU_PER_DAY_C_F64,
-        velocity.z().value() / AU_PER_DAY_C_F64,
-    );
+    let beta = velocity_to_beta(velocity);
     let u = nalgebra::Vector3::new(mean.x(), mean.y(), mean.z());
     let up = aberrate_unit_vector_lorentz(u, beta);
     direction::EquatorialMeanJ2000::normalize(up.x, up.y, up.z)
@@ -89,11 +93,7 @@ pub fn remove_aberration_from_direction_with_velocity(
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
     // Inverse is the same Lorentz transform with negated velocity.
-    let beta = nalgebra::Vector3::new(
-        -velocity.x().value() / AU_PER_DAY_C_F64,
-        -velocity.y().value() / AU_PER_DAY_C_F64,
-        -velocity.z().value() / AU_PER_DAY_C_F64,
-    );
+    let beta = -velocity_to_beta(velocity);
     let u = nalgebra::Vector3::new(app.x(), app.y(), app.z());
     let up = aberrate_unit_vector_lorentz(u, beta);
     direction::EquatorialMeanJ2000::normalize(up.x, up.y, up.z)
