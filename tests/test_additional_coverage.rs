@@ -75,17 +75,17 @@ fn horizontal_conversion_variants_cover_all_impls() {
     // ...then rotate J2000 -> mean-of-date using the provider rotation matrix.
     let ctx = AstroContext::default();
     let rot = frame_rotation::<frames::EquatorialMeanJ2000, frames::EquatorialMeanOfDate>(jd, &ctx);
-    let [x, y, z] = rot.apply_array([
-        topo_cart_j2000.x().value(),
-        topo_cart_j2000.y().value(),
-        topo_cart_j2000.z().value(),
-    ]);
-    let topo_cart_mod =
-        cartesian::Position::<
-            siderust::coordinates::centers::Topocentric,
-            frames::EquatorialMeanOfDate,
-            AstronomicalUnit,
-        >::new_with_params(*topo_cart_j2000.center_params(), x * AU, y * AU, z * AU);
+    let [x, y, z] = rot
+        * [
+            topo_cart_j2000.x(),
+            topo_cart_j2000.y(),
+            topo_cart_j2000.z(),
+        ];
+    let topo_cart_mod = cartesian::Position::<
+        siderust::coordinates::centers::Topocentric,
+        frames::EquatorialMeanOfDate,
+        AstronomicalUnit,
+    >::new_with_params(*topo_cart_j2000.center_params(), x, y, z);
 
     // Now the dedicated Horizontal transform applies.
     let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> =
