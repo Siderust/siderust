@@ -343,22 +343,30 @@ mod tests {
     type Mjd = ModifiedJulianDate;
     type Radians = Quantity<Radian>;
 
+    fn day_f64(t: Days) -> f64 {
+        t.value()
+    }
+
+    fn mjd_f64(t: Mjd) -> f64 {
+        t.quantity().value()
+    }
+
     #[test]
     fn brent_finds_sine_root_near_pi() {
         let root = brent(Days::new(3.0), Days::new(4.0), |t: Days| {
-            Radians::new(t.value().sin())
+            Radians::new(day_f64(t).sin())
         })
         .expect("should find π");
-        assert!((root.value() - std::f64::consts::PI).abs() < 1e-10);
+        assert!((root - Days::new(std::f64::consts::PI)).abs() < Days::new(1e-10));
     }
 
     #[test]
     fn brent_finds_linear_root() {
         let root = brent(Days::new(0.0), Days::new(10.0), |t: Days| {
-            Radians::new(t.value() - 5.0)
+            Radians::new(day_f64(t) - 5.0)
         })
         .expect("should find 5");
-        assert!((root.value() - 5.0).abs() < 1e-10);
+        assert!((root - Days::new(5.0)).abs() < Days::new(1e-10));
     }
 
     #[test]
@@ -369,10 +377,10 @@ mod tests {
     #[test]
     fn brent_returns_endpoint_when_exact() {
         let root = brent(Days::new(0.0), Days::new(5.0), |t: Days| {
-            Radians::new(t.value() - 5.0)
+            Radians::new(day_f64(t) - 5.0)
         })
         .expect("endpoint");
-        assert!((root.value() - 5.0).abs() < F_EPS);
+        assert!((root - Days::new(5.0)).abs() < Days::new(F_EPS));
     }
 
     #[test]
@@ -381,7 +389,7 @@ mod tests {
         let count = Cell::new(0usize);
         let f = |t: Mjd| -> Radians {
             count.set(count.get() + 1);
-            Radians::new(t.value().sin())
+            Radians::new(mjd_f64(t).sin())
         };
         let f_lo = Radians::new((3.0_f64).sin());
         let f_hi = Radians::new((4.0_f64).sin());
@@ -391,7 +399,7 @@ mod tests {
         count.set(0);
         let _ = brent(Days::new(3.0), Days::new(4.0), |t: Days| {
             count.set(count.get() + 1);
-            Radians::new(t.value().sin())
+            Radians::new(day_f64(t).sin())
         });
         let without = count.get();
 
@@ -405,11 +413,11 @@ mod tests {
             Period::new(Mjd::new(3.0), Mjd::new(4.0)),
             Radians::new((3.0_f64).sin()),
             Radians::new((4.0_f64).sin()),
-            |t: Mjd| Radians::new(t.value().sin()),
+            |t: Mjd| Radians::new(mjd_f64(t).sin()),
             Days::new(1e-3),
         )
         .expect("relaxed");
-        assert!((root.value() - std::f64::consts::PI).abs() < 2e-3);
+        assert!((root - Mjd::new(std::f64::consts::PI)).abs() < Days::new(2e-3));
     }
 
     #[test]
@@ -424,19 +432,19 @@ mod tests {
     #[test]
     fn brent_cubic() {
         let root = brent(Days::new(1.0), Days::new(2.0), |t: Days| {
-            Radians::new(t.value().powi(3) - 2.0)
+            Radians::new(day_f64(t).powi(3) - 2.0)
         })
         .expect("cbrt 2");
-        assert!((root.value() - 2.0_f64.powf(1.0 / 3.0)).abs() < 1e-9);
+        assert!((root - Days::new(2.0_f64.powf(1.0 / 3.0))).abs() < Days::new(1e-9));
     }
 
     #[test]
     fn bisection_finds_sine_root() {
         let root = bisection(Days::new(3.0), Days::new(4.0), |t: Days| {
-            Radians::new(t.value().sin())
+            Radians::new(day_f64(t).sin())
         })
         .expect("π");
-        assert!((root.value() - std::f64::consts::PI).abs() < 1e-8);
+        assert!((root - Days::new(std::f64::consts::PI)).abs() < Days::new(1e-8));
     }
 
     #[test]
@@ -456,9 +464,9 @@ mod tests {
     #[test]
     fn bisection_endpoint_root() {
         let root = bisection(Days::new(0.0), Days::new(5.0), |t: Days| {
-            Radians::new(t.value())
+            Radians::new(day_f64(t))
         })
         .expect("root at 0");
-        assert!(root.abs() < F_EPS);
+        assert!(root.abs() < Days::new(F_EPS));
     }
 }

@@ -372,9 +372,9 @@ mod tests {
             earth_helio.to_bodycentric(mars_params, JulianDate::J2000);
 
         // Mars is further from the Sun than Earth, so the relative position should exist
-        assert!(!earth_from_mars.x().value().is_nan());
-        assert!(!earth_from_mars.y().value().is_nan());
-        assert!(!earth_from_mars.z().value().is_nan());
+        assert!(earth_from_mars.x().is_finite());
+        assert!(earth_from_mars.y().is_finite());
+        assert!(earth_from_mars.z().is_finite());
     }
 
     #[test]
@@ -426,11 +426,8 @@ mod tests {
 
         // Get the body's geocentric position
         let body_geo_ecl = orbit.kepler_position(JulianDate::J2000);
-        let body_geo: Position<Geocentric, frames::Ecliptic, AstronomicalUnit> = Position::new(
-            body_geo_ecl.x().value(),
-            body_geo_ecl.y().value(),
-            body_geo_ecl.z().value(),
-        );
+        let body_geo: Position<Geocentric, frames::Ecliptic, AstronomicalUnit> =
+            Position::from_vec3_origin(*body_geo_ecl.as_vec3());
 
         // Transform to body-centric
         let body_from_body = body_geo.to_bodycentric(params, JulianDate::J2000);
@@ -439,7 +436,7 @@ mod tests {
         assert!(
             body_from_body.distance().abs() < 1e-10,
             "Body's own position in body-centric should be at origin, got distance {}",
-            body_from_body.distance().value()
+            body_from_body.distance()
         );
     }
 }

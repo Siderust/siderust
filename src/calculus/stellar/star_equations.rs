@@ -191,7 +191,7 @@ impl StarAltitudeParams {
             // Time offset from t_start to the first occurrence
             let dha = (ha_target - ha_start).normalize();
             let phase = (dha / Degrees::FULL_TURN).simplify();
-            let dt_first = SIDEREAL_DAY_DAYS * phase.value();
+            let dt_first: Days = (SIDEREAL_DAY_DAYS * phase).to::<Day>();
 
             let mut dt = dt_first;
             while period.start + dt <= period.end + CROSSING_EDGE_EPS {
