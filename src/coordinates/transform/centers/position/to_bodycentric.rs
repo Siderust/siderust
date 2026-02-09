@@ -346,8 +346,8 @@ mod tests {
 
         // The satellite is at 0.0001 AU, target at 0.001 AU
         // Relative position should be ~0.0009 AU
-        assert!(result.x().value() > 0.0);
-        assert!(result.x().value() < 0.001);
+        assert!(result.x() > 0.0);
+        assert!(result.x() < 0.001);
     }
 
     #[test]
@@ -437,7 +437,7 @@ mod tests {
 
         // Should be at origin
         assert!(
-            body_from_body.distance().value().abs() < 1e-10,
+            body_from_body.distance().abs() < 1e-10,
             "Body's own position in body-centric should be at origin, got distance {}",
             body_from_body.distance().value()
         );

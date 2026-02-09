@@ -196,6 +196,6 @@ mod tests {
                 JulianDate::J2000,
             ))
             .build();
-        assert_eq!(p.mass.value(), 1.0);
+        assert_eq!(p.mass, 1.0);
     }
 }

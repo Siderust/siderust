@@ -29,7 +29,7 @@ fn target_cartesian_position_transform() {
     let expected: cartesian::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit> =
         step.transform(jd);
 
-    assert!(converted.position.distance_to(&expected).value() < EPS);
+    assert!(converted.position.distance_to(&expected) < EPS);
     assert_eq!(converted.time, orig.time);
     assert_eq!(
         converted.proper_motion.is_none(),
@@ -56,7 +56,7 @@ fn target_spherical_position_transform() {
         step_cart.transform(jd);
     let converted_cart = converted.position.to_cartesian();
 
-    assert!(converted_cart.distance_to(&expected_cart).value() < EPS);
+    assert!(converted_cart.distance_to(&expected_cart) < EPS);
     assert_eq!(converted.time, orig.time);
     assert_eq!(
         converted.proper_motion.is_none(),

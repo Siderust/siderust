@@ -68,19 +68,19 @@ where
     Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
     assert!(
-        (a.polar - b.polar).abs().value() < 1e-6,
+        (a.polar - b.polar).abs() < 1e-6,
         "polar mismatch: {} vs {}",
         a.polar,
         b.polar
     );
     assert!(
-        (a.azimuth - b.azimuth).abs().value() < 1e-6,
+        (a.azimuth - b.azimuth).abs() < 1e-6,
         "polar mismatch: {} vs {}",
         a.azimuth,
         b.azimuth
     );
     assert!(
-        (a.distance - b.distance).abs().value() < 1e-6,
+        (a.distance - b.distance).abs() < (1e-6).into(),
         "polar mismatch: {} vs {}",
         a.distance,
         b.distance
