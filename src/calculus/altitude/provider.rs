@@ -434,7 +434,7 @@ mod tests {
             !periods.is_empty(),
             "Full sky range should return at least one period"
         );
-        let total: f64 = periods.iter().map(|p| p.duration_days().value()).sum();
+        let total: f64 = periods.iter().map(|p| p.duration_days()).sum();
         assert!(
             (total - 1.0).abs() < 0.01,
             "Full sky range should span ~1 day, got {} days",
