@@ -274,9 +274,6 @@ where
         (fwd - bwd) / (2.0 * fd_v).value()
     };
 
-    // Wrapper for root_finding (which expects Quantity<Day>)
-    let deriv_day = |d: Days| -> Quantity<V> { deriv(Mjd::new(d.value())) };
-
     let mut result = Vec::new();
     let mut t = t_start_v;
     let mut prev_d = deriv(t);
@@ -285,14 +282,9 @@ where
         let next_t = (t + step_v).min(t_end_v);
         let next_d = deriv(next_t);
         if prev_d.value() * next_d.value() < 0.0 {
-            if let Some(root) = root_finding::brent_with_values(
-                Days::new(t.value()),
-                Days::new(next_t.value()),
-                prev_d,
-                next_d,
-                deriv_day,
-            ) {
-                let root_mjd = Mjd::new(root.value());
+            if let Some(root_mjd) =
+                root_finding::brent_with_values(Period::new(t, next_t), prev_d, next_d, deriv)
+            {
                 let val = f(root_mjd);
                 let kind = if let Some(k) = classify::<V, _>(root_mjd, f) {
                     k

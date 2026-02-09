@@ -61,7 +61,6 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let g = |t: Mjd| -> Quantity<V> { f(t) - threshold };
-    let g_day = |d: Days| -> Quantity<V> { g(Mjd::from_days(d)) };
 
     let step_v = step;
     let t_start_v = period.start;
@@ -76,14 +75,9 @@ where
         let next_v = g(next_t);
 
         if (prev < zero && next_v > zero) || (prev > zero && next_v < zero) {
-            if let Some(root) = root_finding::brent_with_values(
-                t.quantity(),
-                next_t.quantity(),
-                prev,
-                next_v,
-                g_day,
-            ) {
-                let root_t = Mjd::from_days(root);
+            if let Some(root_t) =
+                root_finding::brent_with_values(Period::new(t, next_t), prev, next_v, g)
+            {
                 if root_t >= t_start_v && root_t <= t_end_v {
                     crossings.push(root_t);
                 }
@@ -110,7 +104,6 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let g = |t: Mjd| -> Quantity<V> { f(t) - threshold };
-    let g_day = |d: Days| -> Quantity<V> { g(Mjd::from_days(d)) };
     let t_start_v = period.start;
     let t_end_v = period.end;
     let zero = Quantity::<V>::new(0.0);
@@ -138,10 +131,7 @@ where
         }
 
         if (fa < zero && fb > zero) || (fa > zero && fb < zero) {
-            if let Some(root) =
-                root_finding::brent_with_values(a.quantity(), b.quantity(), fa, fb, g_day)
-            {
-                let rv = ModifiedJulianDate::from_days(root);
+            if let Some(rv) = root_finding::brent_with_values(Period::new(a, b), fa, fb, g) {
                 if rv >= t_start_v && rv <= t_end_v {
                     crossings.push(rv);
                 }
