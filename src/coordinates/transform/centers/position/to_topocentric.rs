@@ -193,7 +193,7 @@ mod tests {
             "x={}",
             pos.x().value()
         );
-        assert!(pos.y().value().abs() < 10.0, "y={}", pos.y().value()); // Near prime meridian
+        assert!(pos.y().abs() < 10.0, "y={}", pos.y().value()); // Near prime meridian
         assert!(
             (pos.z().value() - 4970.0).abs() < 100.0,
             "z={}",

@@ -19,7 +19,7 @@ fn earth_constants() {
             < AstronomicalUnits::new(1e-8)
     );
     assert!((orbit.eccentricity - 0.01671022).abs() < 1e-8);
-    assert!((orbit.inclination - Degrees::new(0.00005)).abs().value() < 1e-8);
+    assert!((orbit.inclination - Degrees::new(0.00005)).abs() < 1e-8);
 }
 
 #[test]

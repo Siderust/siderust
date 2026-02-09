@@ -375,7 +375,7 @@ mod tests {
 
         // Declination should decrease slightly
         assert!(
-            apparent.direction().polar.value() < 90.0,
+            apparent.direction().polar < 90.0,
             "Declination at pole should decrease due to aberration"
         );
     }
