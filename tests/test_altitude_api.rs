@@ -46,7 +46,7 @@ fn altitude_at_sun_j2000_greenwich() {
     // sun should be low but above horizon around local noon (UTC ≈ TT-64s).
     // Accept any value in [-π/2, +π/2] radians.
     assert!(
-        alt.value().abs() < std::f64::consts::FRAC_PI_2,
+        alt.abs() < std::f64::consts::FRAC_PI_2,
         "Sun altitude out of range: {} rad",
         alt.value()
     );
@@ -58,7 +58,7 @@ fn altitude_at_moon_j2000_greenwich() {
         &greenwich(),
         siderust::time::ModifiedJulianDate::new(51544.5),
     );
-    assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
+    assert!(alt.abs() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
@@ -69,7 +69,7 @@ fn altitude_at_sirius_reasonable() {
         &greenwich(),
         siderust::time::ModifiedJulianDate::new(51544.5),
     );
-    assert!(alt.value().abs() < std::f64::consts::FRAC_PI_2);
+    assert!(alt.abs() < std::f64::consts::FRAC_PI_2);
 }
 
 // ===========================================================================
@@ -337,7 +337,7 @@ fn polaris_always_above_horizon_at_greenwich() {
     );
     let duration = up[0].duration_days();
     assert!(
-        (duration - 1.0).abs() < 0.01,
+        (duration - Days::new(1.0)).abs() < 0.01,
         "Polaris up-period should span the full day, got {} days",
         duration
     );

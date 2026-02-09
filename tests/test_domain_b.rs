@@ -10,7 +10,6 @@
 //! - B3: Topocentric center applies real parallax
 
 use qtty::*;
-use siderust::astro::JulianDate;
 use siderust::coordinates::cartesian::{line_of_sight, Position};
 use siderust::coordinates::centers::{Geocentric, Heliocentric, ObserverSite};
 use siderust::coordinates::frames::EquatorialMeanJ2000;
@@ -18,6 +17,7 @@ use siderust::coordinates::observation::{Apparent, Astrometric, ObserverState};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
 use siderust::coordinates::transform::{Transform, TransformCenter};
+use siderust::time::JulianDate;
 
 // =============================================================================
 // B1: Aberration is NOT part of center transforms
@@ -115,11 +115,11 @@ fn astrometric_and_apparent_are_distinct_types() {
 
     // Aberration is ~20 arcsec ≈ 0.006 degrees
     assert!(
-        separation.value() > 0.0,
+        separation > 0.0,
         "Apparent direction should differ from astrometric"
     );
     assert!(
-        separation.value() < 0.1,
+        separation < 0.1,
         "Aberration shift should be small (< 0.1 deg), got {} deg",
         separation.value()
     );
@@ -197,7 +197,7 @@ fn aberration_maximum_near_ecliptic_pole() {
 
     // Aberration constant is ~20.5 arcsec = 0.0057 degrees
     assert!(
-        separation.value() > 0.001 && separation.value() < 0.02,
+        separation > 0.001 && separation < 0.02,
         "Aberration should be around 20 arcsec, got {} deg",
         separation.value()
     );
@@ -306,7 +306,7 @@ fn observer_site_provides_geocentric_position() {
         pos.x().value()
     );
     assert!(
-        pos.y().value().abs() < 10.0,
+        pos.y().abs() < 10.0,
         "y = {} km, expected ~0 km (prime meridian)",
         pos.y().value()
     );
@@ -364,7 +364,7 @@ fn complete_pipeline_geometric_to_apparent() {
 
     // Aberration should be ~20 arcsec
     assert!(
-        delta.value() > 0.001,
+        delta > 0.001,
         "Apparent should differ from astrometric by aberration"
     );
 }

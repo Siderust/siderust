@@ -51,7 +51,7 @@
 //! ```
 
 use crate::astro::orbit::Orbit;
-use qtty::{Degrees, Meter, Quantity};
+use qtty::*;
 use std::fmt::Debug;
 
 #[cfg(feature = "serde")]
@@ -194,30 +194,25 @@ impl ObserverSite {
         const E2: f64 = 2.0 * F - F * F; // First eccentricity squared
 
         // Convert geodetic to geocentric Cartesian (ECEF)
-        let lat_rad = self.lat.to::<Radian>().value();
-        let lon_rad = self.lon.to::<Radian>().value();
-        let h = self.height.value();
+        let lat_rad = self.lat.to::<Radian>();
+        let lon_rad = self.lon.to::<Radian>();
+        let h = self.height;
 
-        let sin_lat = lat_rad.sin();
-        let cos_lat = lat_rad.cos();
-        let sin_lon = lon_rad.sin();
-        let cos_lon = lon_rad.cos();
+        let (sin_lat, cos_lat) = lat_rad.sin_cos();
+        let (sin_lon, cos_lon) = lon_rad.sin_cos();
 
         // Radius of curvature in the prime vertical
-        let n = A / (1.0 - E2 * sin_lat * sin_lat).sqrt();
+        let n = Meters::new(A / (1.0 - E2 * sin_lat * sin_lat).sqrt());
 
         // Geocentric Cartesian coordinates (meters)
         let x_m = (n + h) * cos_lat * cos_lon;
         let y_m = (n + h) * cos_lat * sin_lon;
         let z_m = (n * (1.0 - E2) + h) * sin_lat;
 
-        // Convert to target units
-        let x: Quantity<U> = Quantity::<Meter>::new(x_m).into();
-        let y: Quantity<U> = Quantity::<Meter>::new(y_m).into();
-        let z: Quantity<U> = Quantity::<Meter>::new(z_m).into();
-
         crate::coordinates::cartesian::Position::<Geocentric, crate::coordinates::frames::ECEF, U>::new(
-            x, y, z
+            x_m.to_const::<U>(),
+            y_m.to_const::<U>(),
+            z_m.to_const::<U>(),
         )
     }
 }
@@ -292,7 +287,7 @@ pub enum OrbitReferenceCenter {
 /// ```rust
 /// use siderust::coordinates::centers::{BodycentricParams, OrbitReferenceCenter};
 /// use siderust::astro::orbit::Orbit;
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 /// use qtty::*;
 ///
 /// // Mars-like orbit (heliocentric)
@@ -357,7 +352,7 @@ impl Default for BodycentricParams {
     /// Note: This default is primarily for internal use. In practice, you should
     /// always provide meaningful orbital elements for body-centric calculations.
     fn default() -> Self {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
         use qtty::AstronomicalUnits;
 
         Self {
@@ -395,7 +390,7 @@ impl Default for BodycentricParams {
 /// use siderust::coordinates::cartesian::Position;
 /// use siderust::coordinates::frames;
 /// use siderust::astro::orbit::Orbit;
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 /// use qtty::*;
 ///
 /// // Create orbital parameters for an Earth-orbiting satellite
@@ -419,7 +414,6 @@ pub struct Bodycentric;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
 
     #[test]
     fn center_names_are_correct() {
@@ -467,9 +461,9 @@ mod tests {
     #[test]
     fn observer_site_default() {
         let site = ObserverSite::default();
-        assert_eq!(site.lon.value(), 0.0);
-        assert_eq!(site.lat.value(), 0.0);
-        assert_eq!(site.height.value(), 0.0);
+        assert_eq!(site.lon, 0.0);
+        assert_eq!(site.lat, 0.0);
+        assert_eq!(site.height, 0.0);
     }
 
     #[test]
@@ -484,7 +478,7 @@ mod tests {
 
     #[test]
     fn bodycentric_has_params() {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
 
         // Create a simple orbit
         let orbit = Orbit::new(
@@ -506,7 +500,7 @@ mod tests {
 
     #[test]
     fn bodycentric_params_constructors() {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
 
         let orbit = Orbit::new(
             1.0 * AU,
@@ -537,7 +531,7 @@ mod tests {
 
     #[test]
     fn bodycentric_params_equality() {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
 
         let orbit1 = Orbit::new(
             1.0 * AU,

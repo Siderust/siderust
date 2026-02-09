@@ -3,7 +3,6 @@
 
 use qtty::{AstronomicalUnit, AstronomicalUnits, Days, Degrees, Kilograms, Kilometers, Years, AU};
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};
@@ -14,6 +13,7 @@ use siderust::coordinates::{
     frames, spherical,
     transform::{providers::frame_rotation, AstroContext, Transform, TransformFrame},
 };
+use siderust::time::JulianDate;
 
 #[test]
 fn julian_date_arithmetic_and_display_branches() {
@@ -75,17 +75,17 @@ fn horizontal_conversion_variants_cover_all_impls() {
     // ...then rotate J2000 -> mean-of-date using the provider rotation matrix.
     let ctx = AstroContext::default();
     let rot = frame_rotation::<frames::EquatorialMeanJ2000, frames::EquatorialMeanOfDate>(jd, &ctx);
-    let [x, y, z] = rot.apply_array([
-        topo_cart_j2000.x().value(),
-        topo_cart_j2000.y().value(),
-        topo_cart_j2000.z().value(),
-    ]);
-    let topo_cart_mod =
-        cartesian::Position::<
-            siderust::coordinates::centers::Topocentric,
-            frames::EquatorialMeanOfDate,
-            AstronomicalUnit,
-        >::new_with_params(*topo_cart_j2000.center_params(), x * AU, y * AU, z * AU);
+    let [x, y, z] = rot
+        * [
+            topo_cart_j2000.x(),
+            topo_cart_j2000.y(),
+            topo_cart_j2000.z(),
+        ];
+    let topo_cart_mod = cartesian::Position::<
+        siderust::coordinates::centers::Topocentric,
+        frames::EquatorialMeanOfDate,
+        AstronomicalUnit,
+    >::new_with_params(*topo_cart_j2000.center_params(), x, y, z);
 
     // Now the dedicated Horizontal transform applies.
     let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> =
@@ -93,7 +93,7 @@ fn horizontal_conversion_variants_cover_all_impls() {
     let horiz_pos = horiz_cart_pos.to_spherical();
     // Distance changes slightly due to real topocentric parallax (observer is ~6000 km from Earth center)
     // For an object at 1 AU, this is a very small fractional change (Earth radius / 1 AU ≈ 4e-5)
-    assert!((horiz_pos.distance - eq_pos.distance).abs().value() < 1e-4);
+    assert!((horiz_pos.distance - eq_pos.distance).abs() < 1e-4);
     assert!(horiz_cart_pos.z().value().is_finite());
 
     // Note: Directions no longer support center transforms (to_topocentric).

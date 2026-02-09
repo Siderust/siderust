@@ -1,3 +1,6 @@
 [submodule "affn"]
 	path = affn
 	url = git@github.com:Siderust/affn.git
+[submodule "qtty"]
+	path = qtty
+	url = git@github.com:Siderust/qtty.git

@@ -39,8 +39,8 @@ pub mod position;
 // Re-export extension traits for ergonomic imports
 pub use position::{FromBodycentricExt, ToBodycentricExt, ToTopocentricExt};
 
-use crate::astro::JulianDate;
 use crate::coordinates::{cartesian::Position, centers::*, frames};
+use crate::time::JulianDate;
 use qtty::LengthUnit;
 
 /// Trait for transforming coordinates from one center to another.
@@ -58,7 +58,7 @@ pub trait TransformCenter<Coord> {
     ///
     /// - `jd`: The Julian Date at which to perform the transformation
     ///   (needed for time-dependent positions like Earth's location).
-    fn to_center(&self, jd: crate::astro::JulianDate) -> Coord;
+    fn to_center(&self, jd: crate::time::JulianDate) -> Coord;
 }
 
 /// Identity transformation: a position in center C stays in center C.
@@ -76,11 +76,11 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
     use crate::bodies::solar_system::Earth;
     use crate::coordinates::cartesian;
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
     use qtty::AstronomicalUnit;
 
     const EPSILON: f64 = 1e-9;

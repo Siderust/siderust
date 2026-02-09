@@ -164,15 +164,15 @@ pub fn altitude_periods<B: AltitudePeriodsProvider>(
 /// **Sun** — delegates to [`calculus::solar`].
 impl AltitudePeriodsProvider for solar_system::Sun {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if query.window.duration_days() <= 0.0 {
+        if query.window.duration() <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::solar;
 
         // Fast path: full above query (max ≈ 90°)
-        if query.max_altitude.value() >= 89.99 {
+        if query.max_altitude >= Degrees::new(89.99) {
             solar::find_day_periods(query.observer, query.window, query.min_altitude)
-        } else if query.min_altitude.value() <= -89.99 {
+        } else if query.min_altitude <= Degrees::new(-89.99) {
             // Full below query
             solar::find_night_periods(query.observer, query.window, query.max_altitude)
         } else {
@@ -192,14 +192,14 @@ impl AltitudePeriodsProvider for solar_system::Sun {
 /// **Moon** — delegates to [`calculus::lunar`].
 impl AltitudePeriodsProvider for solar_system::Moon {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if query.window.duration_days() <= 0.0 {
+        if query.window.duration() <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::lunar;
 
-        if query.max_altitude.value() >= 89.99 {
+        if query.max_altitude >= Degrees::new(89.99) {
             lunar::find_moon_above_horizon(query.observer, query.window, query.min_altitude)
-        } else if query.min_altitude.value() <= -89.99 {
+        } else if query.min_altitude <= Degrees::new(-89.99) {
             lunar::find_moon_below_horizon(query.observer, query.window, query.max_altitude)
         } else {
             lunar::find_moon_altitude_range(
@@ -237,12 +237,12 @@ impl AltitudePeriodsProvider for Star<'_> {
 /// **direction::ICRS** — the lightest path: raw RA/Dec → stellar engine.
 impl AltitudePeriodsProvider for direction::ICRS {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if query.window.duration_days() <= 0.0 {
+        if query.window.duration() <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::stellar;
 
-        if query.max_altitude.value() >= 89.99 {
+        if query.max_altitude >= Degrees::new(89.99) {
             stellar::find_star_above_periods(
                 self.ra(),
                 self.dec(),
@@ -250,7 +250,7 @@ impl AltitudePeriodsProvider for direction::ICRS {
                 query.window,
                 query.min_altitude,
             )
-        } else if query.min_altitude.value() <= -89.99 {
+        } else if query.min_altitude <= Degrees::new(-89.99) {
             stellar::find_star_below_periods(
                 self.ra(),
                 self.dec(),
@@ -408,14 +408,14 @@ mod tests {
         let mjd = ModifiedJulianDate::new(51544.5); // J2000 epoch in MJD
 
         let sun_alt = solar_system::Sun.altitude_at(&observer, mjd);
-        assert!(sun_alt.value().abs() < std::f64::consts::FRAC_PI_2);
+        assert!(sun_alt.abs() < std::f64::consts::FRAC_PI_2);
 
         let moon_alt = solar_system::Moon.altitude_at(&observer, mjd);
-        assert!(moon_alt.value().abs() < std::f64::consts::FRAC_PI_2);
+        assert!(moon_alt.abs() < std::f64::consts::FRAC_PI_2);
 
         let sirius_dir = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
         let star_alt = sirius_dir.altitude_at(&observer, mjd);
-        assert!(star_alt.value().abs() < std::f64::consts::FRAC_PI_2);
+        assert!(star_alt.abs() < std::f64::consts::FRAC_PI_2);
     }
 
     // --- Edge cases ---
@@ -452,7 +452,7 @@ mod tests {
             "Polaris should be continuously above horizon at 51°N"
         );
         assert!(
-            (periods[0].duration_days() - 1.0).abs() < 0.01,
+            (periods[0].duration_days() - Days::new(1.0)).abs() < Days::new(0.01),
             "Polaris up-period should span the full day"
         );
     }

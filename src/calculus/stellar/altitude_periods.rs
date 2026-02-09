@@ -34,9 +34,9 @@
 //! (default ≈ 86 µs).  Precession at the midpoint introduces < 25″ of RA
 //! error over a full year, well within the ±15‑minute Brent bracket.
 
-use crate::astro::JulianDate;
 use crate::calculus::math_core::{intervals, root_finding};
 use crate::coordinates::centers::ObserverSite;
+use crate::time::JulianDate;
 use crate::time::{complement_within, ModifiedJulianDate, Period};
 use qtty::*;
 
@@ -44,6 +44,11 @@ use super::star_equations::{StarAltitudeParams, ThresholdResult};
 
 /// Type aliases.
 type Mjd = ModifiedJulianDate;
+
+#[inline]
+fn opposite_sign(a: Radians, b: Radians) -> bool {
+    a.signum() * b.signum() < 0.0
+}
 
 // =============================================================================
 // Constants
@@ -77,7 +82,7 @@ pub(crate) fn fixed_star_altitude_rad(
     use crate::coordinates::frames::EquatorialMeanJ2000;
     use crate::coordinates::spherical;
     use qtty::Radian;
-    let jd = mjd.to_julian_day();
+    let jd: JulianDate = mjd.into();
     // Build a spherical position in EquatorialMeanJ2000
     let pos = spherical::Position::<
         crate::coordinates::centers::Geocentric,
@@ -126,23 +131,25 @@ fn find_crossings_analytical(
     dec_j2000: Degrees,
     site: &ObserverSite,
     period: Period<Mjd>,
-    threshold_rad: f64,
+    threshold: Radians,
 ) -> (Vec<intervals::LabeledCrossing>, bool) {
-    let thr = Radians::new(threshold_rad);
+    let thr = threshold;
     let f = make_star_fn(ra_j2000, dec_j2000, site);
 
-    let start_above = f(period.start).value() > threshold_rad;
+    let start_above = f(period.start) > thr;
 
     // Build analytical model at the period midpoint
-    let mid_jd = JulianDate::new(
-        0.5 * (period.start.to_julian_day().value() + period.end.to_julian_day().value()),
-    );
-    let params = StarAltitudeParams::from_j2000(ra_j2000, dec_j2000, site, mid_jd);
+    let start_jd: JulianDate = period.start.into();
+    let end_jd: JulianDate = period.end.into();
+    let mid_jd = start_jd.mean(end_jd);
+    let equatorial_j2000 =
+        crate::coordinates::spherical::direction::EquatorialMeanJ2000::new(ra_j2000, dec_j2000);
+    let params = StarAltitudeParams::from_j2000(equatorial_j2000, site, mid_jd);
 
-    match params.threshold_ha(threshold_rad) {
+    match params.threshold_ha(thr) {
         ThresholdResult::AlwaysAbove => {
             // Verify at both endpoints with the full evaluator
-            let end_above = f(period.end).value() > threshold_rad;
+            let end_above = f(period.end) > thr;
             if start_above && end_above {
                 (Vec::new(), true)
             } else {
@@ -154,7 +161,7 @@ fn find_crossings_analytical(
             }
         }
         ThresholdResult::NeverAbove => {
-            let end_above = f(period.end).value() > threshold_rad;
+            let end_above = f(period.end) > thr;
             if !start_above && !end_above {
                 (Vec::new(), false)
             } else {
@@ -163,39 +170,31 @@ fn find_crossings_analytical(
                 (labeled, start_above)
             }
         }
-        ThresholdResult::Crossings { h0_rad } => {
-            let predicted = params.predict_crossings(period, h0_rad);
+        ThresholdResult::Crossings { h0 } => {
+            let predicted = params.predict_crossings(period, h0);
 
             // Shifted altitude: g(t) = f(t) − threshold
             let g = |t: Mjd| -> Radians { f(t) - thr };
-            let g_day = |d: Days| -> Radians { g(Mjd::new(d.value())) };
 
             let mut refined: Vec<Mjd> = Vec::with_capacity(predicted.len());
 
             for (t_pred, _dir) in &predicted {
-                let lo_v = (t_pred.value() - BRACKET_HALF.value()).max(period.start.value());
-                let hi_v = (t_pred.value() + BRACKET_HALF.value()).min(period.end.value());
+                let lo = (*t_pred - BRACKET_HALF).max(period.start);
+                let hi = (*t_pred + BRACKET_HALF).min(period.end);
 
-                if (hi_v - lo_v) < 1e-12 {
+                if (hi - lo) < Days::new(1e-12) {
                     continue; // degenerate bracket at boundary
                 }
 
-                let lo = Mjd::new(lo_v);
-                let hi = Mjd::new(hi_v);
                 let g_lo = g(lo);
                 let g_hi = g(hi);
 
-                if g_lo.value() * g_hi.value() < 0.0 {
-                    if let Some(root) = root_finding::brent_with_values(
-                        Days::new(lo_v),
-                        Days::new(hi_v),
-                        g_lo,
-                        g_hi,
-                        g_day,
-                    ) {
-                        let rv = root.value();
-                        if rv >= period.start.value() && rv <= period.end.value() {
-                            refined.push(Mjd::new(rv));
+                if opposite_sign(g_lo, g_hi) {
+                    if let Some(root) =
+                        root_finding::brent_with_values(Period::new(lo, hi), g_lo, g_hi, g)
+                    {
+                        if root >= period.start && root <= period.end {
+                            refined.push(root);
                         }
                     }
                 }
@@ -231,12 +230,10 @@ pub(crate) fn find_star_above_periods(
     period: Period<ModifiedJulianDate>,
     threshold: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let thr_rad = threshold.to::<Radian>().value();
-    let thr = Radians::new(thr_rad);
+    let thr = threshold.to::<Radian>();
     let f = make_star_fn(ra_j2000, dec_j2000, &site);
 
-    let (labeled, start_above) =
-        find_crossings_analytical(ra_j2000, dec_j2000, &site, period, thr_rad);
+    let (labeled, start_above) = find_crossings_analytical(ra_j2000, dec_j2000, &site, period, thr);
 
     intervals::build_above_periods(&labeled, period, start_above, &f, thr)
 }
@@ -336,7 +333,7 @@ mod tests {
         assert_eq!(periods.len(), 1, "Polaris should be continuously above");
         let dur = periods[0].duration_days();
         assert!(
-            (dur - 7.0).abs() < 0.01,
+            (dur - Days::new(7.0)).abs() < Days::new(0.01),
             "should span full 7 days, got {}",
             dur
         );
@@ -357,7 +354,7 @@ mod tests {
             periods.len()
         );
         for p in &periods {
-            let hours = p.duration_days() * 24.0;
+            let hours = p.duration_days().to::<Hour>();
             // First/last period may be truncated by the window boundary
             assert!(
                 hours > 0.1 && hours < 18.0,
@@ -389,10 +386,10 @@ mod tests {
         let above = find_star_above_periods(ra, dec, site, period, Degrees::new(0.0));
         let below = find_star_below_periods(ra, dec, site, period, Degrees::new(0.0));
 
-        let total_above: f64 = above.iter().map(|p| p.duration_days()).sum();
-        let total_below: f64 = below.iter().map(|p| p.duration_days()).sum();
+        let total_above: Days = above.iter().map(|p| p.duration_days()).sum();
+        let total_below: Days = below.iter().map(|p| p.duration_days()).sum();
         assert!(
-            (total_above + total_below - 7.0).abs() < 0.01,
+            (total_above + total_below - Days::new(7.0)).abs() < Days::new(0.01),
             "above + below should cover 7 days, got {}",
             total_above + total_below
         );
@@ -432,17 +429,17 @@ mod tests {
             scan.len()
         );
 
-        let tolerance = 1.0 / 1440.0; // 1 minute
+        let tolerance = Minutes::new(1.0).to::<Day>();
         for (a, s) in analytical.iter().zip(scan.iter()) {
             assert!(
-                (a.start.value() - s.start.value()).abs() < tolerance,
+                (a.start - s.start).abs() < tolerance,
                 "start times differ by {} d",
-                (a.start.value() - s.start.value()).abs()
+                (a.start - s.start).abs()
             );
             assert!(
-                (a.end.value() - s.end.value()).abs() < tolerance,
+                (a.end - s.end).abs() < tolerance,
                 "end times differ by {} d",
-                (a.end.value() - s.end.value()).abs()
+                (a.end - s.end).abs()
             );
         }
     }

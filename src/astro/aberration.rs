@@ -26,13 +26,13 @@
 //! * Uses the full special-relativistic aberration formula (Lorentz transform).
 //! * Uses exact SI definitions for `c`, day, and AU to compute `c` in AU/day.
 
-use crate::astro::JulianDate;
 use crate::bodies::solar_system::Earth;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{
     cartesian::{direction, position, Velocity},
     frames,
 };
+use crate::time::JulianDate;
 use qtty::*;
 
 type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
@@ -40,10 +40,7 @@ type AusPerDay = qtty::velocity::Velocity<AstronomicalUnit, Day>;
 
 /// Speed of light in AU/day from exact SI definitions:
 /// `c = 299_792_458 m/s`, `day = 86_400 s`, `AU = 149_597_870_700 m`.
-pub const AU_PER_DAY_C_F64: f64 = 173.144_632_674_240_33_f64;
-
-/// Same as [`AU_PER_DAY_C_F64`], as a quantity.
-pub const AU_PER_DAY_C: AusPerDay = AusPerDay::new(AU_PER_DAY_C_F64);
+pub const AU_PER_DAY_C: AusPerDay = AusPerDay::new(173.144_632_674_240_33);
 
 #[inline]
 fn aberrate_unit_vector_lorentz(
@@ -66,17 +63,24 @@ fn aberrate_unit_vector_lorentz(
     numerator / denom
 }
 
+#[inline]
+fn velocity_to_beta(
+    velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
+) -> nalgebra::Vector3<f64> {
+    nalgebra::Vector3::new(
+        (velocity.x() / AU_PER_DAY_C).simplify().value(),
+        (velocity.y() / AU_PER_DAY_C).simplify().value(),
+        (velocity.z() / AU_PER_DAY_C).simplify().value(),
+    )
+}
+
 /// Apply aberration to a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.
 #[must_use]
 pub fn apply_aberration_to_direction_with_velocity(
     mean: direction::EquatorialMeanJ2000,
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
-    let beta = nalgebra::Vector3::new(
-        velocity.x().value() / AU_PER_DAY_C_F64,
-        velocity.y().value() / AU_PER_DAY_C_F64,
-        velocity.z().value() / AU_PER_DAY_C_F64,
-    );
+    let beta = velocity_to_beta(velocity);
     let u = nalgebra::Vector3::new(mean.x(), mean.y(), mean.z());
     let up = aberrate_unit_vector_lorentz(u, beta);
     direction::EquatorialMeanJ2000::normalize(up.x, up.y, up.z)
@@ -89,11 +93,7 @@ pub fn remove_aberration_from_direction_with_velocity(
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
     // Inverse is the same Lorentz transform with negated velocity.
-    let beta = nalgebra::Vector3::new(
-        -velocity.x().value() / AU_PER_DAY_C_F64,
-        -velocity.y().value() / AU_PER_DAY_C_F64,
-        -velocity.z().value() / AU_PER_DAY_C_F64,
-    );
+    let beta = -velocity_to_beta(velocity);
     let u = nalgebra::Vector3::new(app.x(), app.y(), app.z());
     let up = aberrate_unit_vector_lorentz(u, beta);
     direction::EquatorialMeanJ2000::normalize(up.x, up.y, up.z)
@@ -186,7 +186,7 @@ mod tests {
             position::EquatorialMeanJ2000::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
         let out = apply_aberration_sph(&mean, jd);
 
-        assert_eq!(out.distance().value(), mean.distance().value());
+        assert_eq!(out.distance(), mean.distance());
     }
 
     #[test]
@@ -202,13 +202,10 @@ mod tests {
         let delta_ra = out.ra().abs_separation(mean.ra());
         let delta_dec = out.dec().abs_separation(mean.dec());
         assert!(
-            delta_ra.value() > 0.0 || delta_dec.value() > 0.0,
+            delta_ra > 0.0 || delta_dec > 0.0,
             "Expected a change in RA or Dec"
         );
-        assert!(
-            delta_ra.value() < 0.01 && delta_dec.value() < 0.01,
-            "Shift is too large"
-        )
+        assert!(delta_ra < 0.01 && delta_dec < 0.01, "Shift is too large")
     }
 
     #[test]
@@ -222,17 +219,18 @@ mod tests {
         let out = apply_aberration_sph(&mean, jd);
 
         assert!(
-            out.dec().value() < 90.0,
+            out.dec() < 90.0,
             "Declination should decrease slightly at pole"
         );
-        assert!(!out.ra().value().is_nan(), "RA must not be NaN at the pole");
+        assert!(!out.ra().is_nan(), "RA must not be NaN at the pole");
     }
 
     #[test]
     fn test_speed_of_light() {
         // Exact from SI definitions (to ~1e-15 relative precision in f64):
         // 299792458 * 86400 / 149597870700 = 173.14463267424033...
-        assert!((AU_PER_DAY_C.value() - 173.144_632_674_240_33).abs() < 1e-12);
+        let expected = AusPerDay::new(173.144_632_674_240_33);
+        assert!((AU_PER_DAY_C - expected).abs() < AusPerDay::new(1e-12));
     }
 
     #[test]

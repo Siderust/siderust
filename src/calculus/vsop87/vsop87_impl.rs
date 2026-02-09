@@ -14,7 +14,7 @@
 //! - `#[inline(always)]` on hot paths
 //! - SIMD batching via `wide` crate for sin/cos operations
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use wide::f64x4;
 
 /// One VSOP87 coefficient term  _a · cos(b + c·T)_
@@ -238,7 +238,7 @@ pub fn position(
     y_series: &[&[Vsop87]],
     z_series: &[&[Vsop87]],
 ) -> (f64, f64, f64) {
-    let t = JulianDate::tt_to_tdb(jd).julian_millennias();
+    let t = JulianDate::tt_to_tdb(jd).julian_millennias().value();
 
     let x = coord_value(x_series, t);
     let y = coord_value(y_series, t);
@@ -253,7 +253,7 @@ pub fn velocity(
     y_series: &[&[Vsop87]],
     z_series: &[&[Vsop87]],
 ) -> (f64, f64, f64) {
-    let t = JulianDate::tt_to_tdb(jd).julian_millennias();
+    let t = JulianDate::tt_to_tdb(jd).julian_millennias().value();
 
     let xdot = coord_deriv(x_series, t);
     let ydot = coord_deriv(y_series, t);
@@ -270,7 +270,7 @@ pub fn position_velocity(
     y_series: &[&[Vsop87]],
     z_series: &[&[Vsop87]],
 ) -> ((f64, f64, f64), (f64, f64, f64)) {
-    let t = JulianDate::tt_to_tdb(jd).julian_millennias();
+    let t = JulianDate::tt_to_tdb(jd).julian_millennias().value();
 
     let (x, xdot) = coord_both(x_series, t);
     let (y, ydot) = coord_both(y_series, t);
@@ -282,7 +282,7 @@ pub fn position_velocity(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
+    use crate::time::JulianDate;
 
     const X0: [Vsop87; 1] = [Vsop87 {
         a: 1.0,

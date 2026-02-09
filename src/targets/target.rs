@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use crate::astro::proper_motion::ProperMotion;
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -73,9 +73,9 @@ impl<T> Target<T> {
 mod tests {
     use super::*;
     use crate::astro::proper_motion::ProperMotion;
-    use crate::astro::JulianDate;
     use crate::bodies::catalog::ALDEBARAN;
     use crate::coordinates::spherical::position::GCRS;
+    use crate::time::JulianDate;
     use qtty::*;
 
     type MilliArcsecondPerDay = qtty::Per<qtty::MilliArcsecond, qtty::Day>;
@@ -99,8 +99,8 @@ mod tests {
         );
         let target = Target::new(position, JulianDate::J2000, proper_motion);
 
-        assert_eq!(target.position.ra().value(), 45.0);
-        assert_eq!(target.position.dec().value(), 30.0);
+        assert_eq!(target.position.ra(), 45.0);
+        assert_eq!(target.position.dec(), 30.0);
         assert_eq!(target.time, JulianDate::J2000);
         assert!(target.proper_motion.is_some());
     }
@@ -110,8 +110,8 @@ mod tests {
         let position = GCRS::<Au>::new(qtty::Degrees::new(60.0), qtty::Degrees::new(45.0), 200.0);
         let target = Target::new_static(position, JulianDate::J2000);
 
-        assert_eq!(target.position.ra().value(), 60.0);
-        assert_eq!(target.position.dec().value(), 45.0);
+        assert_eq!(target.position.ra(), 60.0);
+        assert_eq!(target.position.dec(), 45.0);
         assert_eq!(target.time, JulianDate::J2000);
         assert!(target.proper_motion.is_none());
     }
@@ -126,15 +126,15 @@ mod tests {
 
         // Test with Some(proper_motion)
         let target = Target::new_raw(position.clone(), JulianDate::J2000, Some(proper_motion));
-        assert_eq!(target.position.ra().value(), 90.0);
-        assert_eq!(target.position.dec().value(), 60.0);
+        assert_eq!(target.position.ra(), 90.0);
+        assert_eq!(target.position.dec(), 60.0);
         assert_eq!(target.time, JulianDate::J2000);
         assert!(target.proper_motion.is_some());
 
         // Test with None proper_motion
         let target = Target::new_raw(position, JulianDate::J2000, None);
-        assert_eq!(target.position.ra().value(), 90.0);
-        assert_eq!(target.position.dec().value(), 60.0);
+        assert_eq!(target.position.ra(), 90.0);
+        assert_eq!(target.position.dec(), 60.0);
         assert_eq!(target.time, JulianDate::J2000);
         assert!(target.proper_motion.is_none());
     }
@@ -145,8 +145,8 @@ mod tests {
         let target = Target::new_static(position, JulianDate::J2000);
 
         let retrieved_position = target.get_position();
-        assert_eq!(retrieved_position.ra().value(), 120.0);
-        assert_eq!(retrieved_position.dec().value(), 75.0);
+        assert_eq!(retrieved_position.ra(), 120.0);
+        assert_eq!(retrieved_position.dec(), 75.0);
         assert_eq!(retrieved_position.distance(), 400.0);
     }
 
@@ -163,8 +163,8 @@ mod tests {
         let retrieved_pm = target.get_proper_motion();
         assert!(retrieved_pm.is_some());
         if let Some(pm) = retrieved_pm {
-            assert_eq!(pm.ra_μ.value(), 0.0020291249999999997);
-            assert_eq!(pm.dec_μ.value(), 0.001217475);
+            assert_eq!(pm.ra_μ, 0.0020291249999999997);
+            assert_eq!(pm.dec_μ, 0.001217475);
         }
 
         // Test without proper motion
@@ -200,16 +200,16 @@ mod tests {
         target.update(new_position, new_time);
 
         // Check that position and time were updated
-        assert_eq!(target.position.ra().value(), 220.0);
-        assert_eq!(target.position.dec().value(), 85.0);
+        assert_eq!(target.position.ra(), 220.0);
+        assert_eq!(target.position.dec(), 85.0);
         assert_eq!(target.position.distance(), 800.0);
         assert_eq!(target.time, new_time);
 
         // Check that proper motion was preserved
         assert!(target.proper_motion.is_some());
         if let Some(pm) = target.get_proper_motion() {
-            assert_eq!(pm.ra_μ.value(), 0.0025364062499999996);
-            assert_eq!(pm.dec_μ.value(), 0.0015218437499999998);
+            assert_eq!(pm.ra_μ, 0.0025364062499999996);
+            assert_eq!(pm.dec_μ, 0.0015218437499999998);
         }
     }
 
@@ -234,7 +234,7 @@ mod tests {
         let target2 = target1.clone();
 
         // Check that all fields were cloned correctly
-        assert_eq!(target1.position.ra().value(), target2.position.ra().value());
+        assert_eq!(target1.position.ra(), target2.position.ra());
         assert_eq!(
             target1.position.dec().value(),
             target2.position.dec().value()
@@ -252,8 +252,8 @@ mod tests {
         // Test with zero coordinates
         let position = GCRS::<Au>::new(qtty::Degrees::new(0.0), qtty::Degrees::new(0.0), 0.0);
         let target = Target::new_static(position, JulianDate::J2000);
-        assert_eq!(target.position.ra().value(), 0.0);
-        assert_eq!(target.position.dec().value(), 0.0);
+        assert_eq!(target.position.ra(), 0.0);
+        assert_eq!(target.position.dec(), 0.0);
         assert_eq!(target.position.distance(), 0.0);
 
         // Test with very large coordinates
@@ -276,8 +276,8 @@ mod tests {
 
         assert!(target.proper_motion.is_some());
         if let Some(pm) = target.get_proper_motion() {
-            assert_eq!(pm.ra_μ.value(), 0.0);
-            assert_eq!(pm.dec_μ.value(), 0.0);
+            assert_eq!(pm.ra_μ, 0.0);
+            assert_eq!(pm.dec_μ, 0.0);
         }
     }
 }

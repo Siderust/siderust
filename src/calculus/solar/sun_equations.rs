@@ -3,9 +3,10 @@
 
 use crate::bodies::solar_system::Sun;
 
-use crate::astro::{nutation::corrected_ra_with_nutation, precession, JulianDate};
+use crate::astro::{nutation::corrected_ra_with_nutation, precession};
 use crate::calculus::horizontal;
 use crate::coordinates::{cartesian, centers::*, frames, spherical, transform::Transform};
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 
 impl Sun {
@@ -90,14 +91,14 @@ impl Sun {
     /// ```rust
     /// use siderust::bodies::solar_system::Sun;
     /// use siderust::coordinates::centers::ObserverSite;
-    /// use siderust::astro::{JulianDate, ModifiedJulianDate};
+    /// use siderust::time::{JulianDate, ModifiedJulianDate};
     /// use qtty::*;
     ///
     /// let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     ///
     /// // Using JulianDate
     /// let sun_pos = Sun::get_horizontal::<AstronomicalUnit>(JulianDate::J2000, site);
-    /// println!("Sun altitude: {:.2}°", sun_pos.alt().value());
+    /// println!("Sun altitude: {}", sun_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
     /// let mjd = ModifiedJulianDate::new(60000.0);
@@ -118,9 +119,9 @@ impl Sun {
 
 #[cfg(test)]
 mod tests {
-    use crate::astro::JulianDate;
     use crate::bodies::solar_system::Sun;
-    use qtty::AstronomicalUnit;
+    use crate::time::JulianDate;
+    use qtty::{AstronomicalUnit, AstronomicalUnits, Degrees};
 
     #[test]
     fn apparent_sun_position_j2000() {
@@ -133,23 +134,26 @@ mod tests {
 
         eprintln!(
             "Got RA: {}, Dec: {}, Dist: {}",
-            pos.ra().value(),
-            pos.dec().value(),
-            pos.distance.value()
+            pos.ra(),
+            pos.dec(),
+            pos.distance
         );
 
         assert!(
-            (pos.ra().value() - expected_ra).abs() < 2.0,
+            (pos.ra() - Degrees::new(expected_ra)).abs() < Degrees::new(2.0),
             "RA mismatch: got {}, expected ~{}",
-            pos.ra().value(),
+            pos.ra(),
             expected_ra
         );
         assert!(
-            (pos.dec().value() - expected_dec).abs() < 2.0,
+            (pos.dec() - Degrees::new(expected_dec)).abs() < Degrees::new(2.0),
             "Dec mismatch: got {}, expected ~{}",
-            pos.dec().value(),
+            pos.dec(),
             expected_dec
         );
-        assert!((pos.distance.value() - expected_dist).abs() < 0.2);
+        assert!(
+            (pos.distance - AstronomicalUnits::new(expected_dist)).abs()
+                < AstronomicalUnits::new(0.2)
+        );
     }
 }

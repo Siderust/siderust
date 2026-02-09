@@ -8,10 +8,10 @@
 //! uses the observer's site information embedded in the coordinate's center params.
 
 use crate::astro::sidereal::{calculate_gst, calculate_lst};
-use crate::astro::JulianDate;
 use crate::coordinates::centers::{ObserverSite, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanOfDate, Horizontal};
 use crate::coordinates::{cartesian, spherical};
+use crate::time::JulianDate;
 use qtty::{Deg, Degrees, LengthUnit, Quantity, Radian, Radians};
 
 /// Performs the equatorial to horizontal coordinate transformation.
@@ -78,12 +78,10 @@ fn horizontal_to_equatorial_angles(
     // Convert hour angle to right ascension
     let gst = calculate_gst(jd);
     let lst: Radians = calculate_lst(gst, site.lon).to::<Radian>();
-    let ra_val = (lst.value() - ha_val).rem_euclid(2.0 * std::f64::consts::PI);
+    let ha: Radians = Quantity::<Radian>::new(ha_val);
+    let ra = (lst - ha).normalize();
 
-    (
-        Quantity::<Radian>::new(ra_val),
-        Quantity::<Radian>::new(dec_val),
-    )
+    (ra, Quantity::<Radian>::new(dec_val))
 }
 
 // =============================================================================
@@ -103,7 +101,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
         let site = self.center_params();
         let r = self.distance();
 
-        let dec: Radians = if r.value() > 0.0 {
+        let dec: Radians = if r > 0.0 {
             Quantity::<Radian>::new((self.z() / r).asin())
         } else {
             Quantity::<Radian>::new(0.0)
@@ -141,7 +139,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, EquatorialMeanOfD
         // Get distance and angles from Cartesian vector
         let r = self.distance();
         // Division of same units gives Per<U,U> which has .asin() returning f64
-        let alt: Radians = if r.value() > 0.0 {
+        let alt: Radians = if r > 0.0 {
             Quantity::<Radian>::new((self.z() / r).asin())
         } else {
             Quantity::<Radian>::new(0.0)

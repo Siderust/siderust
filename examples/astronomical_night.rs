@@ -21,11 +21,11 @@
 
 use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
 use qtty::{Degrees, Meter, Quantity};
-use siderust::astro::ModifiedJulianDate;
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::night_types::twilight;
 use siderust::coordinates::centers::ObserverSite;
+use siderust::time::ModifiedJulianDate;
 use siderust::time::Period;
 
 fn main() {
@@ -77,7 +77,7 @@ fn main() {
             let end_utc = period.end.to_utc();
 
             if let (Some(s), Some(e)) = (start_utc, end_utc) {
-                let duration_mins = (period.duration_days() * 24.0 * 60.0).round() as i64;
+                let duration_mins = (period.duration_days().value() * 24.0 * 60.0).round() as i64;
                 println!(
                     "{} → {}  ({} min)",
                     s.format("%Y-%m-%dT%H:%M:%S"),

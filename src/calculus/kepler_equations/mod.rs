@@ -85,8 +85,8 @@
 //! | `kepler_equation_residual`, `kepler_equation_derivative` | crate-private | Helpers |
 
 use crate::astro::orbit::Orbit;
-use crate::astro::JulianDate;
 use crate::coordinates::cartesian::position::Ecliptic;
+use crate::time::JulianDate;
 use qtty::*;
 use std::f64::consts::PI;
 
@@ -225,7 +225,7 @@ pub fn calculate_orbit_position(
 
     // 3) Mean Anomaly (M) in radians
     let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
-    let m_rad = (m0_rad + n * dt) % std::f64::consts::TAU;
+    let m_rad = (m0_rad + (n * dt).to::<Radian>()) % std::f64::consts::TAU;
 
     // 4) Solve Kepler's Equation (E) for the eccentric anomaly
     let e_anomaly = solve_keplers_equation(m_rad, elements.eccentricity);
@@ -269,8 +269,8 @@ impl Orbit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
     use qtty::{Days, Degrees};
 
     /// Helper function to compare two floating-point numbers with a tolerance.
@@ -286,20 +286,20 @@ mod tests {
         let m = Radians::new(0.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = 0.0;
-        assert!(approx_eq(computed_e.value(), expected_e, 1e-10));
+        assert!((computed_e - Radians::new(expected_e)).abs() < Radians::new(1e-10));
 
         // Test Case 2: e = 0.0, M = PI/2 radians
         let m = Radians::new(PI / 2.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = PI / 2.0;
-        assert!(approx_eq(computed_e.value(), expected_e, 1e-10));
+        assert!((computed_e - Radians::new(expected_e)).abs() < Radians::new(1e-10));
 
         // Test Case 3: e = 0.1, M = PI/2 radians
         let e = 0.1;
         let m = Radians::new(PI / 2.0);
         let computed_e = solve_keplers_equation(m, e);
         let expected_e = 1.670302; // Corrected expected value from previous step
-        assert!(approx_eq(computed_e.value(), expected_e, 1e-6));
+        assert!((computed_e - Radians::new(expected_e)).abs() < Radians::new(1e-6));
     }
 
     /// Test circular orbit where eccentricity is zero.
@@ -368,12 +368,12 @@ mod tests {
 
         // For e=0.0167, we can compute expected E and true anomaly
         // However, for simplicity, we'll check that the distance is roughly constant
-        let computed_r =
-            (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2))
-                .sqrt();
+        let computed_r = coord.distance();
         let expected_r = 1.0 * (1.0 - 0.0167 * m_rad.cos()); // Approximation
 
-        assert!(approx_eq(computed_r, expected_r, 1e-3)); // Allow some tolerance
+        assert!(
+            (computed_r - AstronomicalUnits::new(expected_r)).abs() < AstronomicalUnits::new(1e-3)
+        ); // Allow some tolerance
     }
 
     #[test]
@@ -457,7 +457,7 @@ mod tests {
         // For E = π/2, e = 0.1, M = π/2
         // Residual = E - e*sin(E) - M = π/2 - 0.1*1 - π/2 = -0.1
         let residual = kepler_equation_residual(e_anomaly, e, m);
-        assert!(approx_eq(residual.value(), -0.1, 1e-10));
+        assert!((residual - Radians::new(-0.1)).abs() < Radians::new(1e-10));
     }
 
     #[test]
@@ -478,16 +478,16 @@ mod tests {
         let e = 1e-10;
         let m = Radians::new(PI / 4.0);
         let computed_e = solve_keplers_equation(m, e);
-        assert!(approx_eq(computed_e.value(), m.value(), 1e-10));
+        assert!((computed_e - m).abs() < Radians::new(1e-10));
 
         // Test with high eccentricity (near 1.0)
         let e = 0.99;
         let m = Radians::new(PI / 2.0);
         let computed_e = solve_keplers_equation(m, e);
         // Should still converge and give a reasonable result
-        assert!(computed_e.value().is_finite());
-        assert!(computed_e.value() >= 0.0);
-        assert!(computed_e.value() <= 2.0 * PI);
+        assert!(computed_e.is_finite());
+        assert!(computed_e >= 0.0);
+        assert!(computed_e <= 2.0 * PI);
     }
 
     #[test]
@@ -499,13 +499,13 @@ mod tests {
             let computed_e = solve_keplers_equation(m, e);
 
             // Check that result is finite and in reasonable range
-            assert!(computed_e.value().is_finite());
-            assert!(computed_e.value() >= 0.0);
-            assert!(computed_e.value() <= 2.0 * PI);
+            assert!(computed_e.is_finite());
+            assert!(computed_e >= 0.0);
+            assert!(computed_e <= 2.0 * PI);
 
             // Check that it satisfies Kepler's equation approximately
             let residual = kepler_equation_residual(computed_e, e, m);
-            assert!(residual.value().abs() < 1e-10);
+            assert!(residual.abs() < 1e-10);
         }
     }
 
@@ -516,14 +516,14 @@ mod tests {
         let period = orbital_period_days(a);
 
         // For 1 AU, period should be approximately 365.256898326 days
-        assert!(approx_eq(period.value(), 365.256898326, 1e-6));
+        assert!((period - Days::new(365.256898326)).abs() < Days::new(1e-6));
 
         // Test with different semi-major axes
         let a = AstronomicalUnits::new(4.0); // 4 AU
         let period = orbital_period_days(a);
 
         // For 4 AU, period should be approximately 8 years = 2922.055186608 days
-        assert!(approx_eq(period.value(), 2922.055186608, 1e-6));
+        assert!((period - Days::new(2922.055186608)).abs() < Days::new(1e-6));
     }
 
     #[test]
@@ -540,9 +540,9 @@ mod tests {
         );
 
         let coord = calculate_orbit_position(&orbit, JulianDate::J2000);
-        assert!(coord.x().value().is_finite());
-        assert!(coord.y().value().is_finite());
-        assert!(coord.z().value().is_finite());
+        assert!(coord.x().is_finite());
+        assert!(coord.y().is_finite());
+        assert!(coord.z().is_finite());
     }
 
     #[test]
@@ -566,14 +566,12 @@ mod tests {
 
         for &date in &dates {
             let coord = calculate_orbit_position(&orbit, date);
-            assert!(coord.x().value().is_finite());
-            assert!(coord.y().value().is_finite());
-            assert!(coord.z().value().is_finite());
+            assert!(coord.x().is_finite());
+            assert!(coord.y().is_finite());
+            assert!(coord.z().is_finite());
 
             // Distance should be positive
-            let distance =
-                (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2))
-                    .sqrt();
+            let distance = coord.distance();
             assert!(distance > 0.0);
         }
     }
@@ -594,9 +592,9 @@ mod tests {
         let coord1 = orbit.kepler_position(JulianDate::J2000);
         let coord2 = calculate_orbit_position(&orbit, JulianDate::J2000);
 
-        assert!(approx_eq(coord1.x().value(), coord2.x().value(), 1e-10));
-        assert!(approx_eq(coord1.y().value(), coord2.y().value(), 1e-10));
-        assert!(approx_eq(coord1.z().value(), coord2.z().value(), 1e-10));
+        assert!((coord1.x() - coord2.x()).abs() < AstronomicalUnits::new(1e-10));
+        assert!((coord1.y() - coord2.y()).abs() < AstronomicalUnits::new(1e-10));
+        assert!((coord1.z() - coord2.z()).abs() < AstronomicalUnits::new(1e-10));
     }
 
     #[test]
@@ -615,12 +613,10 @@ mod tests {
 
         // With high inclination, z component should be significant
         // For 89° inclination, z should be close to the radial distance
-        assert!(coord.z().value().abs() > 0.01);
+        assert!(coord.z().abs() > 0.01);
 
         // Distance should still be reasonable
-        let distance =
-            (coord.x().value().powi(2) + coord.y().value().powi(2) + coord.z().value().powi(2))
-                .sqrt();
+        let distance = coord.distance();
         assert!(distance > 0.0);
         assert!(distance < 2.0); // Should be less than 2 AU for this orbit
     }
@@ -640,8 +636,8 @@ mod tests {
         let coord = calculate_orbit_position(&orbit, JulianDate::J2000);
 
         // Should still give valid coordinates
-        assert!(coord.x().value().is_finite());
-        assert!(coord.y().value().is_finite());
-        assert!(coord.z().value().is_finite());
+        assert!(coord.x().is_finite());
+        assert!(coord.y().is_finite());
+        assert!(coord.z().is_finite());
     }
 }

@@ -27,12 +27,8 @@
 use crate::bodies::solar_system::Sun;
 use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::ObserverSite;
-use crate::time::{complement_within, ModifiedJulianDate, Period};
-use qtty::{AstronomicalUnit, Day, Degrees, Quantity, Radian};
-
-/// Type aliases for typed quantities used throughout this module.
-type Days = Quantity<Day>;
-type Radians = Quantity<Radian>;
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
+use qtty::*;
 
 // =============================================================================
 // Constants
@@ -41,7 +37,7 @@ type Radians = Quantity<Radian>;
 /// Scan step for Sun altitude threshold detection (2 hours in days).
 /// Sunrise/sunset events are separated by ≥5 h even at high latitudes,
 /// so 2-hour steps safely detect all crossings (~12 altitude calls per day).
-const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
+const SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
 
 // =============================================================================
 // Core Altitude Function
@@ -50,7 +46,8 @@ const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
 /// Positive above the horizon, negative below.
 pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quantity<Radian> {
-    Sun::get_horizontal::<AstronomicalUnit>(mjd.to_julian_day(), *site)
+    let jd: JulianDate = mjd.into();
+    Sun::get_horizontal::<AstronomicalUnit>(jd, *site)
         .alt()
         .to::<Radian>()
 }
@@ -69,7 +66,7 @@ pub(crate) fn find_day_periods(
 ) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
-    let f = |t: ModifiedJulianDate| -> Radians { Radians::new(sun_altitude_rad(t, &site).value()) };
+    let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
 
     intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
 }
@@ -98,7 +95,7 @@ pub(crate) fn find_sun_range_periods(
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
-    let f = |t: ModifiedJulianDate| -> Radians { Radians::new(sun_altitude_rad(t, &site).value()) };
+    let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
 
     intervals::in_range_periods(period, SCAN_STEP, &f, h_min, h_max)
 }
@@ -106,7 +103,6 @@ pub(crate) fn find_sun_range_periods(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
 
     fn greenwich_site() -> ObserverSite {
         ObserverSite::new(
@@ -122,7 +118,8 @@ mod tests {
         let mjd: ModifiedJulianDate = crate::time::JulianDate::J2000.into();
         let alt = sun_altitude_rad(mjd, &site);
         assert!(
-            alt.value() > -std::f64::consts::FRAC_PI_2 && alt.value() < std::f64::consts::FRAC_PI_2
+            alt > Radians::new(-std::f64::consts::FRAC_PI_2)
+                && alt < Radians::new(std::f64::consts::FRAC_PI_2)
         );
     }
 
