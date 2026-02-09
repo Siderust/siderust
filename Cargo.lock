@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "affn"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "affn-derive",
  "nalgebra",
@@ -14,7 +14,7 @@ dependencies = [
 
 [[package]]
 name = "affn-derive"
-version = "0.1.0"
+version = "0.1.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1008,7 +1008,7 @@ dependencies = [
 
 [[package]]
 name = "qtty"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "qtty-core",
  "qtty-derive",
@@ -1016,7 +1016,7 @@ dependencies = [
 
 [[package]]
 name = "qtty-core"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "libm",
  "qtty-derive",
@@ -1026,7 +1026,7 @@ dependencies = [
 
 [[package]]
 name = "qtty-derive"
-version = "0.2.2"
+version = "0.3.0"
 dependencies = [
  "proc-macro2",
  "quote",
