@@ -45,6 +45,11 @@ use super::star_equations::{StarAltitudeParams, ThresholdResult};
 /// Type aliases.
 type Mjd = ModifiedJulianDate;
 
+#[inline]
+fn opposite_sign(a: Radians, b: Radians) -> bool {
+    a.signum() * b.signum() < 0.0
+}
+
 // =============================================================================
 // Constants
 // =============================================================================
@@ -184,7 +189,7 @@ fn find_crossings_analytical(
                 let g_lo = g(lo);
                 let g_hi = g(hi);
 
-                if g_lo.value() * g_hi.value() < 0.0 {
+                if opposite_sign(g_lo, g_hi) {
                     if let Some(root) =
                         root_finding::brent_with_values(Period::new(lo, hi), g_lo, g_hi, g)
                     {

@@ -78,12 +78,10 @@ fn horizontal_to_equatorial_angles(
     // Convert hour angle to right ascension
     let gst = calculate_gst(jd);
     let lst: Radians = calculate_lst(gst, site.lon).to::<Radian>();
-    let ra_val = (lst.value() - ha_val).rem_euclid(2.0 * std::f64::consts::PI);
+    let ha: Radians = Quantity::<Radian>::new(ha_val);
+    let ra = (lst - ha).normalize();
 
-    (
-        Quantity::<Radian>::new(ra_val),
-        Quantity::<Radian>::new(dec_val),
-    )
+    (ra, Quantity::<Radian>::new(dec_val))
 }
 
 // =============================================================================

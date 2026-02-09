@@ -25,19 +25,31 @@ impl Time<JD> {
     /// Julian millennia since J2000.0 (used by VSOP87).
     #[inline]
     pub fn julian_millennias(&self) -> Millennia {
-        Millennia::new((*self - Self::J2000).value() / Self::JULIAN_MILLENNIUM.value())
+        Millennia::new(
+            ((*self - Self::J2000) / Self::JULIAN_MILLENNIUM)
+                .simplify()
+                .value(),
+        )
     }
 
     /// Julian centuries since J2000.0 (used by nutation, precession, sidereal time).
     #[inline]
     pub fn julian_centuries(&self) -> Centuries {
-        Centuries::new((*self - Self::J2000).value() / Self::JULIAN_CENTURY.value())
+        Centuries::new(
+            ((*self - Self::J2000) / Self::JULIAN_CENTURY)
+                .simplify()
+                .value(),
+        )
     }
 
     /// Julian years since J2000.0.
     #[inline]
     pub fn julian_years(&self) -> JulianYears {
-        JulianYears::new((*self - Self::J2000).value() / Self::JULIAN_YEAR.value())
+        JulianYears::new(
+            ((*self - Self::J2000) / Self::JULIAN_YEAR)
+                .simplify()
+                .value(),
+        )
     }
 
     /// Converts JD(TT) → JD(TDB) by applying the Fairhead & Bretagnon
@@ -67,13 +79,13 @@ impl Time<JD> {
 impl Add<Years> for Time<JD> {
     type Output = Self;
     fn add(self, years: Years) -> Self {
-        self + Self::JULIAN_YEAR * years.value()
+        self + years.to::<Day>()
     }
 }
 
 impl From<JulianYears> for Time<JD> {
     fn from(years: JulianYears) -> Self {
-        Self::J2000 + Self::JULIAN_YEAR * years.value()
+        Self::J2000 + years.to::<Day>()
     }
 }
 
@@ -85,7 +97,7 @@ impl From<Time<JD>> for JulianYears {
 
 impl From<Centuries> for Time<JD> {
     fn from(centuries: Centuries) -> Self {
-        Self::J2000 + Self::JULIAN_CENTURY * centuries.value()
+        Self::J2000 + centuries.to::<Day>()
     }
 }
 
@@ -97,7 +109,7 @@ impl From<Time<JD>> for Centuries {
 
 impl From<Millennia> for Time<JD> {
     fn from(millennia: Millennia) -> Self {
-        Self::J2000 + Self::JULIAN_MILLENNIUM * millennia.value()
+        Self::J2000 + millennia.to::<Day>()
     }
 }
 

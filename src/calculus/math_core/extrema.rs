@@ -25,6 +25,11 @@ use super::root_finding;
 
 type Mjd = ModifiedJulianDate;
 
+#[inline]
+fn opposite_sign<V: Unit>(a: Quantity<V>, b: Quantity<V>) -> bool {
+    a.signum() * b.signum() < 0.0
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
@@ -89,8 +94,8 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let mut p = period;
-    let mut x1 = Mjd::new((p.end - PHI * p.duration()).value());
-    let mut x2 = Mjd::new((p.start + PHI * p.duration()).value());
+    let mut x1 = p.end - PHI * p.duration();
+    let mut x2 = p.start + PHI * p.duration();
     let mut f1: Quantity<V> = f(x1);
     let mut f2: Quantity<V> = f(x2);
 
@@ -113,7 +118,7 @@ where
         }
     }
 
-    let t = Mjd::new(0.5 * (p.start.value() + p.end.value()));
+    let t = p.start.mean(p.end);
     (t, f(t))
 }
 
@@ -271,7 +276,7 @@ where
         let tv = t;
         let fwd = f(tv + fd_v);
         let bwd = f(tv - fd_v);
-        (fwd - bwd) / (2.0 * fd_v).value()
+        (fwd - bwd) / (fd_v + fd_v).value()
     };
 
     let mut result = Vec::new();
@@ -281,7 +286,7 @@ where
     while t < t_end_v {
         let next_t = (t + step_v).min(t_end_v);
         let next_d = deriv(next_t);
-        if prev_d.value() * next_d.value() < 0.0 {
+        if opposite_sign(prev_d, next_d) {
             if let Some(root_mjd) =
                 root_finding::brent_with_values(Period::new(t, next_t), prev_d, next_d, deriv)
             {

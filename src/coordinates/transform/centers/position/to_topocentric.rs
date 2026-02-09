@@ -81,24 +81,18 @@ where
 
         // Rotate ITRF to celestial frame using GMST
         // GMST gives the angle between the vernal equinox and the Greenwich meridian
-        let gmst_angle = unmodded_gst(jd);
-        let gmst_rad = gmst_angle.to::<Radian>().value();
+        let gmst_rad = unmodded_gst(jd).to::<Radian>();
 
         // Rotate from ECEF (x toward Greenwich, z toward pole) to equatorial
         // R_z(-GMST) transforms ECEF to equatorial
-        let cos_g = gmst_rad.cos();
-        let sin_g = gmst_rad.sin();
+        let (sin_g, cos_g) = gmst_rad.sin_cos();
 
-        let x_eq = site_itrf.x().value() * cos_g - site_itrf.y().value() * sin_g;
-        let y_eq = site_itrf.x().value() * sin_g + site_itrf.y().value() * cos_g;
-        let z_eq = site_itrf.z().value();
+        let x_eq = site_itrf.x() * cos_g - site_itrf.y() * sin_g;
+        let y_eq = site_itrf.x() * sin_g + site_itrf.y() * cos_g;
+        let z_eq = site_itrf.z();
 
-        let site_equatorial = Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params(
-            (),
-            Quantity::<U>::new(x_eq),
-            Quantity::<U>::new(y_eq),
-            Quantity::<U>::new(z_eq),
-        );
+        let site_equatorial =
+            Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params((), x_eq, y_eq, z_eq);
 
         // Transform observer position to target frame
         let site_in_frame: Position<Geocentric, F, U> =
@@ -142,22 +136,16 @@ where
         let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
 
         // Rotate ITRF to celestial frame using GMST
-        let gmst_angle = unmodded_gst(jd);
-        let gmst_rad = gmst_angle.to::<Radian>().value();
+        let gmst_rad = unmodded_gst(jd).to::<Radian>();
 
-        let cos_g = gmst_rad.cos();
-        let sin_g = gmst_rad.sin();
+        let (sin_g, cos_g) = gmst_rad.sin_cos();
 
-        let x_eq = site_itrf.x().value() * cos_g - site_itrf.y().value() * sin_g;
-        let y_eq = site_itrf.x().value() * sin_g + site_itrf.y().value() * cos_g;
-        let z_eq = site_itrf.z().value();
+        let x_eq = site_itrf.x() * cos_g - site_itrf.y() * sin_g;
+        let y_eq = site_itrf.x() * sin_g + site_itrf.y() * cos_g;
+        let z_eq = site_itrf.z();
 
-        let site_equatorial = Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params(
-            (),
-            Quantity::<U>::new(x_eq),
-            Quantity::<U>::new(y_eq),
-            Quantity::<U>::new(z_eq),
-        );
+        let site_equatorial =
+            Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params((), x_eq, y_eq, z_eq);
 
         // Transform observer position to target frame
         let site_in_frame: Position<Geocentric, F, U> =
