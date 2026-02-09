@@ -223,8 +223,7 @@ where
                 // Inverse quadratic interpolation
                 let q_val = dimensionless_ratio(fa, fc);
                 let r = dimensionless_ratio(fb, fc);
-                let p = m * (2.0 * s * q_val * (q_val - r))
-                    - (b - a) * (s * (r - 1.0));
+                let p = m * (2.0 * s * q_val * (q_val - r)) - (b - a) * (s * (r - 1.0));
                 let q = (q_val - 1.0) * (r - 1.0) * (s - 1.0);
                 (p, q)
             };
@@ -237,9 +236,7 @@ where
             };
 
             let s_val = e;
-            if p * 2.0 < m * (3.0 * q) - (tol * q).abs()
-                && p < (s_val * (0.5 * q)).abs()
-            {
+            if p * 2.0 < m * (3.0 * q) - (tol * q).abs() && p < (s_val * (0.5 * q)).abs() {
                 (d, p / q) // accept interpolation
             } else {
                 (m, m) // fallback to bisection
