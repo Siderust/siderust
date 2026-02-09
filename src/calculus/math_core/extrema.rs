@@ -336,7 +336,7 @@ mod tests {
             Radians::new((t.value() - 2.0).powi(2))
         });
         assert!((t.value() - 2.0).abs() < 1e-7, "t = {}", t.value());
-        assert!(v.value() < 1e-12, "v = {}", v.value());
+        assert!(v < 1e-12, "v = {}", v.value());
     }
 
     #[test]

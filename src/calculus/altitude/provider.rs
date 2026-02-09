@@ -408,14 +408,14 @@ mod tests {
         let mjd = ModifiedJulianDate::new(51544.5); // J2000 epoch in MJD
 
         let sun_alt = solar_system::Sun.altitude_at(&observer, mjd);
-        assert!(sun_alt.value().abs() < std::f64::consts::FRAC_PI_2);
+        assert!(sun_alt.abs() < std::f64::consts::FRAC_PI_2);
 
         let moon_alt = solar_system::Moon.altitude_at(&observer, mjd);
-        assert!(moon_alt.value().abs() < std::f64::consts::FRAC_PI_2);
+        assert!(moon_alt.abs() < std::f64::consts::FRAC_PI_2);
 
         let sirius_dir = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
         let star_alt = sirius_dir.altitude_at(&observer, mjd);
-        assert!(star_alt.value().abs() < std::f64::consts::FRAC_PI_2);
+        assert!(star_alt.abs() < std::f64::consts::FRAC_PI_2);
     }
 
     // --- Edge cases ---

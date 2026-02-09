@@ -486,8 +486,8 @@ mod tests {
         let computed_e = solve_keplers_equation(m, e);
         // Should still converge and give a reasonable result
         assert!(computed_e.value().is_finite());
-        assert!(computed_e.value() >= 0.0);
-        assert!(computed_e.value() <= 2.0 * PI);
+        assert!(computed_e >= 0.0);
+        assert!(computed_e <= 2.0 * PI);
     }
 
     #[test]
@@ -500,12 +500,12 @@ mod tests {
 
             // Check that result is finite and in reasonable range
             assert!(computed_e.value().is_finite());
-            assert!(computed_e.value() >= 0.0);
-            assert!(computed_e.value() <= 2.0 * PI);
+            assert!(computed_e >= 0.0);
+            assert!(computed_e <= 2.0 * PI);
 
             // Check that it satisfies Kepler's equation approximately
             let residual = kepler_equation_residual(computed_e, e, m);
-            assert!(residual.value().abs() < 1e-10);
+            assert!(residual.abs() < 1e-10);
         }
     }
 
@@ -615,7 +615,7 @@ mod tests {
 
         // With high inclination, z component should be significant
         // For 89° inclination, z should be close to the radial distance
-        assert!(coord.z().value().abs() > 0.01);
+        assert!(coord.z().abs() > 0.01);
 
         // Distance should still be reasonable
         let distance =

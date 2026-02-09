@@ -415,10 +415,10 @@ mod tests {
     #[test]
     fn brent_handles_step_function() {
         let root = brent(Days::new(-1.0), Days::new(1.0), |t: Days| {
-            Radians::new(if t.value() < 0.0 { -1.0 } else { 1.0 })
+            Radians::new(if t < 0.0 { -1.0 } else { 1.0 })
         })
         .expect("step");
-        assert!(root.value().abs() < 1e-6);
+        assert!(root.abs() < 1e-6);
     }
 
     #[test]
@@ -447,10 +447,10 @@ mod tests {
     #[test]
     fn bisection_handles_step_function() {
         let root = bisection(Days::new(-1.0), Days::new(1.0), |t: Days| {
-            Radians::new(if t.value() < 0.0 { -5.0 } else { 5.0 })
+            Radians::new(if t < 0.0 { -5.0 } else { 5.0 })
         })
         .expect("step");
-        assert!(root.value().abs() < 1e-6);
+        assert!(root.abs() < 1e-6);
     }
 
     #[test]
@@ -459,6 +459,6 @@ mod tests {
             Radians::new(t.value())
         })
         .expect("root at 0");
-        assert!(root.value().abs() < F_EPS);
+        assert!(root.abs() < F_EPS);
     }
 }

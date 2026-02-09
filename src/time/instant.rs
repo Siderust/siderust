@@ -424,7 +424,7 @@ mod tests {
     #[test]
     fn test_tt_to_tdb_and_min_max() {
         let jd_tdb = Time::<JD>::tt_to_tdb(Time::<JD>::J2000);
-        assert!((jd_tdb - Time::<JD>::J2000).value().abs() < 1e-6);
+        assert!((jd_tdb - Time::<JD>::J2000).abs() < 1e-6);
 
         let earlier = Time::<JD>::J2000;
         let later = earlier + Days::new(1.0);
@@ -457,7 +457,7 @@ mod tests {
     fn test_into_days() {
         let jd = Time::<JD>::new(2_451_547.5);
         let days: Days = jd.into();
-        assert_eq!(days.value(), 2_451_547.5);
+        assert_eq!(days, 2_451_547.5);
 
         let roundtrip = Time::<JD>::from(days);
         assert_eq!(roundtrip, jd);
@@ -547,7 +547,7 @@ mod tests {
         let mjd1 = Time::<MJD>::new(59_001.0);
         let mjd2 = Time::<MJD>::new(59_000.0);
         let diff = mjd1 - mjd2;
-        assert_eq!(diff.value(), 1.0);
+        assert_eq!(diff, 1.0);
     }
 
     #[test]
