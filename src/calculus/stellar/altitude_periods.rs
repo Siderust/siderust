@@ -354,7 +354,7 @@ mod tests {
             periods.len()
         );
         for p in &periods {
-            let hours = p.duration_days().value() * 24.0;
+            let hours = p.duration_days().to::<Hour>();
             // First/last period may be truncated by the window boundary
             assert!(
                 hours > 0.1 && hours < 18.0,
@@ -386,10 +386,10 @@ mod tests {
         let above = find_star_above_periods(ra, dec, site, period, Degrees::new(0.0));
         let below = find_star_below_periods(ra, dec, site, period, Degrees::new(0.0));
 
-        let total_above: f64 = above.iter().map(|p| p.duration_days().value()).sum();
-        let total_below: f64 = below.iter().map(|p| p.duration_days().value()).sum();
+        let total_above: Days = above.iter().map(|p| p.duration_days()).sum();
+        let total_below: Days = below.iter().map(|p| p.duration_days()).sum();
         assert!(
-            (total_above + total_below - 7.0).abs() < 0.01,
+            (total_above + total_below - Days::new(7.0)).abs() < Days::new(0.01),
             "above + below should cover 7 days, got {}",
             total_above + total_below
         );
@@ -429,17 +429,17 @@ mod tests {
             scan.len()
         );
 
-        let tolerance = 1.0 / 1440.0; // 1 minute
+        let tolerance = Minutes::new(1.0).to::<Day>();
         for (a, s) in analytical.iter().zip(scan.iter()) {
             assert!(
-                (a.start.value() - s.start.value()).abs() < tolerance,
+                (a.start - s.start).abs() < tolerance,
                 "start times differ by {} d",
-                (a.start.value() - s.start.value()).abs()
+                (a.start - s.start).abs()
             );
             assert!(
-                (a.end.value() - s.end.value()).abs() < tolerance,
+                (a.end - s.end).abs() < tolerance,
                 "end times differ by {} d",
-                (a.end.value() - s.end.value()).abs()
+                (a.end - s.end).abs()
             );
         }
     }

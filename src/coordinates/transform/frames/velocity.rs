@@ -131,9 +131,10 @@ mod tests {
         F: frames::MutableFrame,
         U: Unit,
     {
-        assert!((a.x().value() - b.x().value()).abs() < eps);
-        assert!((a.y().value() - b.y().value()).abs() < eps);
-        assert!((a.z().value() - b.z().value()).abs() < eps);
+        let tol = Quantity::<U>::new(eps);
+        assert!((a.x() - b.x()).abs() < tol);
+        assert!((a.y() - b.y()).abs() < tol);
+        assert!((a.z() - b.z()).abs() < tol);
     }
 
     #[test]

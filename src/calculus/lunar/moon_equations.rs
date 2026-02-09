@@ -94,7 +94,7 @@ impl Moon {
     ///
     /// // Using JulianDate
     /// let moon_pos = Moon::get_horizontal::<Kilometer>(JulianDate::J2000, site);
-    /// println!("Moon altitude: {:.2}°", moon_pos.alt().value());
+    /// println!("Moon altitude: {}", moon_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
     /// let mjd = ModifiedJulianDate::new(60000.0);

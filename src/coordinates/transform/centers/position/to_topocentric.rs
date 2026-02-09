@@ -177,20 +177,24 @@ mod tests {
         // Greenwich is at ~3980 km from center in x, ~0 in y, ~4970 km in z
         // (roughly, for latitude ~51.5°)
         assert!(
-            (pos.x().value() - 3980.0).abs() < 100.0,
+            (pos.x() - Kilometers::new(3980.0)).abs() < Kilometers::new(100.0),
             "x={}",
-            pos.x().value()
+            pos.x()
         );
-        assert!(pos.y().abs() < 10.0, "y={}", pos.y().value()); // Near prime meridian
+        assert!(pos.y().abs() < 10.0, "y={}", pos.y()); // Near prime meridian
         assert!(
-            (pos.z().value() - 4970.0).abs() < 100.0,
+            (pos.z() - Kilometers::new(4970.0)).abs() < Kilometers::new(100.0),
             "z={}",
-            pos.z().value()
+            pos.z()
         );
 
         // Distance should be roughly Earth's radius
-        let r = pos.distance().value();
-        assert!((r - 6371.0).abs() < 50.0, "distance={}", r);
+        let r = pos.distance();
+        assert!(
+            (r - Kilometers::new(6371.0)).abs() < Kilometers::new(50.0),
+            "distance={}",
+            r
+        );
     }
 
     #[test]
@@ -206,7 +210,7 @@ mod tests {
         let moon_topo = moon_geo.to_topocentric(site, jd);
 
         // Topocentric and geocentric should differ by about Earth's radius (~6371 km)
-        let diff = (moon_geo.x().value() - moon_topo.x().value()).abs();
+        let diff = (moon_geo.x() - moon_topo.x()).abs();
 
         // The difference should be on the order of Earth's radius
         // (exact value depends on GMST at J2000)
@@ -234,22 +238,22 @@ mod tests {
 
         // Should recover original position
         assert!(
-            (geo.x().value() - geo_recovered.x().value()).abs() < 1e-6,
+            (geo.x() - geo_recovered.x()).abs() < 1e-6,
             "x: {} vs {}",
-            geo.x().value(),
-            geo_recovered.x().value()
+            geo.x(),
+            geo_recovered.x()
         );
         assert!(
-            (geo.y().value() - geo_recovered.y().value()).abs() < 1e-6,
+            (geo.y() - geo_recovered.y()).abs() < 1e-6,
             "y: {} vs {}",
-            geo.y().value(),
-            geo_recovered.y().value()
+            geo.y(),
+            geo_recovered.y()
         );
         assert!(
-            (geo.z().value() - geo_recovered.z().value()).abs() < 1e-6,
+            (geo.z() - geo_recovered.z()).abs() < 1e-6,
             "z: {} vs {}",
-            geo.z().value(),
-            geo_recovered.z().value()
+            geo.z(),
+            geo_recovered.z()
         );
     }
 
@@ -266,7 +270,7 @@ mod tests {
         let star_topo = star_geo.to_topocentric(site, jd);
 
         // Relative difference should be tiny (~Earth_radius / 1_pc)
-        let rel_diff = (star_geo.x().value() - star_topo.x().value()).abs() / star_geo.x().value();
+        let rel_diff = ((star_geo.x() - star_topo.x()).abs() / star_geo.x()).simplify();
 
         // Earth radius / 1 pc ≈ 6371 km / (3.086e13 km) ≈ 2e-10
         assert!(rel_diff < 1e-6, "Relative parallax too large: {}", rel_diff);

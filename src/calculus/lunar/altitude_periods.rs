@@ -178,8 +178,9 @@ mod tests {
         let site = greenwich_site();
         let mjd: ModifiedJulianDate = JulianDate::J2000.into();
         let alt = moon_altitude_rad(mjd, &site);
-        let alt_val = alt.value();
-        assert!(alt_val > -std::f64::consts::FRAC_PI_2 && alt_val < std::f64::consts::FRAC_PI_2);
+        assert!(
+            alt > -std::f64::consts::FRAC_PI_2 * RAD && alt < std::f64::consts::FRAC_PI_2 * RAD
+        );
     }
 
     #[test]
@@ -235,14 +236,14 @@ mod tests {
         );
 
         // Boundaries should match within tolerance (~1 minute)
-        let tolerance = 1.0 / 1440.0;
+        let tolerance = Days::new(1.0 / 1440.0);
         for (m, s) in main_result.iter().zip(scan_result.iter()) {
             assert!(
-                (m.start.value() - s.start.value()).abs() < tolerance,
+                (m.start - s.start).abs() < tolerance,
                 "Start times should match within 1 minute"
             );
             assert!(
-                (m.end.value() - s.end.value()).abs() < tolerance,
+                (m.end - s.end).abs() < tolerance,
                 "End times should match within 1 minute"
             );
         }

@@ -320,12 +320,12 @@ mod tests {
         ];
         let gaps = complement_within(outer, &periods);
         assert_eq!(gaps.len(), 3);
-        assert_eq!(gaps[0].start.value(), 0.0);
-        assert_eq!(gaps[0].end.value(), 2.0);
-        assert_eq!(gaps[1].start.value(), 4.0);
-        assert_eq!(gaps[1].end.value(), 6.0);
-        assert_eq!(gaps[2].start.value(), 8.0);
-        assert_eq!(gaps[2].end.value(), 10.0);
+        assert_eq!(gaps[0].start.quantity(), Days::new(0.0));
+        assert_eq!(gaps[0].end.quantity(), Days::new(2.0));
+        assert_eq!(gaps[1].start.quantity(), Days::new(4.0));
+        assert_eq!(gaps[1].end.quantity(), Days::new(6.0));
+        assert_eq!(gaps[2].start.quantity(), Days::new(8.0));
+        assert_eq!(gaps[2].end.quantity(), Days::new(10.0));
     }
 
     #[test]
@@ -333,8 +333,8 @@ mod tests {
         let outer = Period::new(ModifiedJulianDate::new(0.0), ModifiedJulianDate::new(10.0));
         let gaps = complement_within(outer, &[]);
         assert_eq!(gaps.len(), 1);
-        assert_eq!(gaps[0].start.value(), 0.0);
-        assert_eq!(gaps[0].end.value(), 10.0);
+        assert_eq!(gaps[0].start.quantity(), Days::new(0.0));
+        assert_eq!(gaps[0].end.quantity(), Days::new(10.0));
     }
 
     #[test]
@@ -360,8 +360,8 @@ mod tests {
         )];
         let overlap = intersect_periods(&a, &b);
         assert_eq!(overlap.len(), 1);
-        assert_eq!(overlap[0].start.value(), 3.0);
-        assert_eq!(overlap[0].end.value(), 5.0);
+        assert_eq!(overlap[0].start.quantity(), Days::new(3.0));
+        assert_eq!(overlap[0].end.quantity(), Days::new(5.0));
     }
 
     #[test]
@@ -397,11 +397,11 @@ mod tests {
         // below_max (complement): [0,2), [4,7), [8,10)
         // intersection: [1,2), [5,7), [8,9)
         assert_eq!(between.len(), 3);
-        assert_eq!(between[0].start.value(), 1.0);
-        assert_eq!(between[0].end.value(), 2.0);
-        assert_eq!(between[1].start.value(), 5.0);
-        assert_eq!(between[1].end.value(), 7.0);
-        assert_eq!(between[2].start.value(), 8.0);
-        assert_eq!(between[2].end.value(), 9.0);
+        assert_eq!(between[0].start.quantity(), Days::new(1.0));
+        assert_eq!(between[0].end.quantity(), Days::new(2.0));
+        assert_eq!(between[1].start.quantity(), Days::new(5.0));
+        assert_eq!(between[1].end.quantity(), Days::new(7.0));
+        assert_eq!(between[2].start.quantity(), Days::new(8.0));
+        assert_eq!(between[2].end.quantity(), Days::new(9.0));
     }
 }

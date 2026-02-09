@@ -387,7 +387,7 @@ mod tests {
     #[test]
     fn test_julian_day_creation() {
         let jd = Time::<JD>::new(2_451_545.0);
-        assert_eq!(jd.value(), 2_451_545.0);
+        assert_eq!(jd.quantity(), Days::new(2_451_545.0));
     }
 
     #[test]
@@ -406,10 +406,11 @@ mod tests {
         // 2000-01-01 12:00:00 UTC → JD(UT)=2451545.0; ΔT≈63.83 s
         let datetime = DateTime::from_timestamp(946_728_000, 0).unwrap();
         let jd = Time::<JD>::from_utc(datetime);
-        let delta_t_secs = (jd.value() - 2_451_545.0) * 86_400.0;
+        let delta_t_secs = (jd.quantity() - Days::new(2_451_545.0)).to::<Second>();
         assert!(
-            (delta_t_secs - 63.83).abs() < 1.0,
-            "ΔT correction = {delta_t_secs:.2} s, expected ~63.83 s"
+            (delta_t_secs - Seconds::new(63.83)).abs() < Seconds::new(1.0),
+            "ΔT correction = {} s, expected ~63.83 s",
+            delta_t_secs
         );
     }
 
@@ -417,8 +418,8 @@ mod tests {
     fn test_julian_conversions() {
         let jd = Time::<JD>::J2000 + Days::new(365_250.0);
         assert!((jd.julian_millennias() - Millennia::new(1.0)).abs() < 1e-12);
-        assert!((jd.julian_centuries().value() - 10.0).abs() < 1e-12);
-        assert!((jd.julian_years().value() - 1000.0).abs() < 1e-9);
+        assert!((jd.julian_centuries() - Centuries::new(10.0)).abs() < Centuries::new(1e-12));
+        assert!((jd.julian_years() - JulianYears::new(1000.0)).abs() < JulianYears::new(1e-9));
     }
 
     #[test]
@@ -438,19 +439,19 @@ mod tests {
         const B: Time<JD> = Time::<JD>::new(14.0);
         const MIN: Time<JD> = A.min(B);
         const MAX: Time<JD> = A.max(B);
-        assert_eq!(MIN.value(), 10.0);
-        assert_eq!(MAX.value(), 14.0);
+        assert_eq!(MIN.quantity(), Days::new(10.0));
+        assert_eq!(MAX.quantity(), Days::new(14.0));
     }
 
     #[test]
     fn test_mean_and_const_mean() {
         let a = Time::<JD>::new(10.0);
         let b = Time::<JD>::new(14.0);
-        assert_eq!(a.mean(b).value(), 12.0);
-        assert_eq!(b.mean(a).value(), 12.0);
+        assert_eq!(a.mean(b).quantity(), Days::new(12.0));
+        assert_eq!(b.mean(a).quantity(), Days::new(12.0));
 
         const MID: Time<JD> = Time::<JD>::new(10.0).mean(Time::<JD>::new(14.0));
-        assert_eq!(MID.value(), 12.0);
+        assert_eq!(MID.quantity(), Days::new(12.0));
     }
 
     #[test]
@@ -467,43 +468,43 @@ mod tests {
     fn test_into_julian_years() {
         let jd = Time::<JD>::J2000 + Days::new(365.25 * 2.0);
         let years: JulianYears = jd.into();
-        assert!((years.value() - 2.0).abs() < 1e-12);
+        assert!((years - JulianYears::new(2.0)).abs() < JulianYears::new(1e-12));
 
         let roundtrip = Time::<JD>::from(years);
-        assert!((roundtrip.value() - jd.value()).abs() < 1e-12);
+        assert!((roundtrip.quantity() - jd.quantity()).abs() < Days::new(1e-12));
     }
 
     #[test]
     fn test_into_centuries() {
         let jd = Time::<JD>::J2000 + Days::new(36_525.0 * 3.0);
         let centuries: Centuries = jd.into();
-        assert!((centuries.value() - 3.0).abs() < 1e-12);
+        assert!((centuries - Centuries::new(3.0)).abs() < Centuries::new(1e-12));
 
         let roundtrip = Time::<JD>::from(centuries);
-        assert!((roundtrip.value() - jd.value()).abs() < 1e-12);
+        assert!((roundtrip.quantity() - jd.quantity()).abs() < Days::new(1e-12));
     }
 
     #[test]
     fn test_into_millennia() {
         let jd = Time::<JD>::J2000 + Days::new(365_250.0 * 1.5);
         let millennia: Millennia = jd.into();
-        assert!((millennia.value() - 1.5).abs() < 1e-12);
+        assert!((millennia - Millennia::new(1.5)).abs() < Millennia::new(1e-12));
 
         let roundtrip = Time::<JD>::from(millennia);
-        assert!((roundtrip.value() - jd.value()).abs() < 1e-9);
+        assert!((roundtrip.quantity() - jd.quantity()).abs() < Days::new(1e-9));
     }
 
     #[test]
     fn test_mjd_creation() {
         let mjd = Time::<MJD>::new(51_544.5);
-        assert_eq!(mjd.value(), 51_544.5);
+        assert_eq!(mjd.quantity(), Days::new(51_544.5));
     }
 
     #[test]
     fn test_mjd_into_jd() {
         let mjd = Time::<MJD>::new(51_544.5);
         let jd: Time<JD> = mjd.into();
-        assert_eq!(jd.value(), 2_451_545.0);
+        assert_eq!(jd.quantity(), Days::new(2_451_545.0));
     }
 
     #[test]
@@ -521,10 +522,11 @@ mod tests {
         // MJD epoch is JD − 2400000.5; ΔT should shift value by ~63.83/86400 days
         let datetime = DateTime::from_timestamp(946_728_000, 0).unwrap();
         let mjd = Time::<MJD>::from_utc(datetime);
-        let delta_t_secs = (mjd.value() - 51_544.5) * 86_400.0;
+        let delta_t_secs = (mjd.quantity() - Days::new(51_544.5)).to::<Second>();
         assert!(
-            (delta_t_secs - 63.83).abs() < 1.0,
-            "ΔT correction = {delta_t_secs:.2} s, expected ~63.83 s"
+            (delta_t_secs - Seconds::new(63.83)).abs() < Seconds::new(1.0),
+            "ΔT correction = {} s, expected ~63.83 s",
+            delta_t_secs
         );
     }
 
@@ -532,14 +534,14 @@ mod tests {
     fn test_mjd_add_days() {
         let mjd = Time::<MJD>::new(59_000.0);
         let result = mjd + Days::new(1.5);
-        assert_eq!(result.value(), 59_001.5);
+        assert_eq!(result.quantity(), Days::new(59_001.5));
     }
 
     #[test]
     fn test_mjd_sub_days() {
         let mjd = Time::<MJD>::new(59_000.0);
         let result = mjd - Days::new(1.5);
-        assert_eq!(result.value(), 58_998.5);
+        assert_eq!(result.quantity(), Days::new(58_998.5));
     }
 
     #[test]
@@ -576,9 +578,9 @@ mod tests {
     fn test_add_assign_sub_assign() {
         let mut jd = Time::<JD>::new(2_451_545.0);
         jd += Days::new(1.0);
-        assert_eq!(jd.value(), 2_451_546.0);
+        assert_eq!(jd.quantity(), Days::new(2_451_546.0));
         jd -= Days::new(0.5);
-        assert_eq!(jd.value(), 2_451_545.5);
+        assert_eq!(jd.quantity(), Days::new(2_451_545.5));
     }
 
     #[test]
@@ -586,7 +588,7 @@ mod tests {
         let jd = Time::<JD>::new(2_450_000.0);
         let with_years = jd + Years::new(1.0);
         let span: Days = with_years - jd;
-        assert!((span.value() - Time::<JD>::JULIAN_YEAR.value()).abs() < 1e-9);
+        assert!((span - Time::<JD>::JULIAN_YEAR).abs() < Days::new(1e-9));
     }
 
     #[test]
@@ -600,7 +602,7 @@ mod tests {
     fn test_to_method_jd_mjd() {
         let jd = Time::<JD>::new(2_451_545.0);
         let mjd = jd.to::<MJD>();
-        assert!((mjd.value() - 51_544.5).abs() < 1e-10);
+        assert!((mjd.quantity() - Days::new(51_544.5)).abs() < Days::new(1e-10));
     }
 
     #[test]
@@ -609,8 +611,14 @@ mod tests {
         let other = jd + Days::new(2.0);
 
         assert_eq!(jd.difference(&other), Days::new(-2.0));
-        assert_eq!(jd.add_duration(Days::new(1.5)).value(), 2_451_546.5);
-        assert_eq!(other.sub_duration(Days::new(0.5)).value(), 2_451_546.5);
+        assert_eq!(
+            jd.add_duration(Days::new(1.5)).quantity(),
+            Days::new(2_451_546.5)
+        );
+        assert_eq!(
+            other.sub_duration(Days::new(0.5)).quantity(),
+            Days::new(2_451_546.5)
+        );
     }
 
     #[test]
@@ -620,8 +628,14 @@ mod tests {
         let back = mjd.to_utc().expect("mjd to utc");
 
         assert_eq!(mjd.difference(&mjd), Days::new(0.0));
-        assert_eq!(mjd.add_duration(Days::new(1.0)).value(), mjd.value() + 1.0);
-        assert_eq!(mjd.sub_duration(Days::new(0.5)).value(), mjd.value() - 0.5);
+        assert_eq!(
+            mjd.add_duration(Days::new(1.0)).quantity(),
+            mjd.quantity() + Days::new(1.0)
+        );
+        assert_eq!(
+            mjd.sub_duration(Days::new(0.5)).quantity(),
+            mjd.quantity() - Days::new(0.5)
+        );
         let delta_ns = back.timestamp_nanos_opt().unwrap() - dt.timestamp_nanos_opt().unwrap();
         assert!(delta_ns.abs() < 10_000, "nanos differ by {}", delta_ns);
     }
