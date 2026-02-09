@@ -14,7 +14,7 @@ use crate::coordinates::transform::frames::bias::{
 use crate::coordinates::transform::TransformFrame;
 use affn::Rotation3;
 use nalgebra::Vector3;
-use qtty::{Quantity, Unit};
+use qtty::Unit;
 
 /// Identity frame transform for velocities.
 impl<F, U> TransformFrame<Velocity<F, U>> for Velocity<F, U>
@@ -36,20 +36,16 @@ impl<U: Unit> TransformFrame<Velocity<frames::EquatorialMeanJ2000, U>>
         let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
 
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
+        let x = self.x();
+        let y = self.y();
+        let z = self.z();
 
         // Same rotation as Direction: about +X axis
         let new_x = x;
         let new_y = y * cos_eps - z * sin_eps;
         let new_z = y * sin_eps + z * cos_eps;
 
-        Velocity::<frames::EquatorialMeanJ2000, U>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
-        ))
+        Velocity::<frames::EquatorialMeanJ2000, U>::from_vec3(Vector3::new(new_x, new_y, new_z))
     }
 }
 
@@ -62,20 +58,16 @@ impl<U: Unit> TransformFrame<Velocity<frames::Ecliptic, U>>
         let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
 
-        let x = self.x().value();
-        let y = self.y().value();
-        let z = self.z().value();
+        let x = self.x();
+        let y = self.y();
+        let z = self.z();
 
         // Inverse rotation (transpose)
         let new_x = x;
         let new_y = y * cos_eps + z * sin_eps;
         let new_z = -y * sin_eps + z * cos_eps;
 
-        Velocity::<frames::Ecliptic, U>::from_vec3(Vector3::new(
-            Quantity::new(new_x),
-            Quantity::new(new_y),
-            Quantity::new(new_z),
-        ))
+        Velocity::<frames::Ecliptic, U>::from_vec3(Vector3::new(new_x, new_y, new_z))
     }
 }
 

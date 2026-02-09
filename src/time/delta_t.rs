@@ -166,7 +166,7 @@ impl Time<UT> {
     /// automatically when converting to any TT-based scale (`.to::<JD>()`).
     #[inline]
     pub fn delta_t(&self) -> Seconds {
-        delta_t_seconds_from_ut(JulianDate::new(self.value()))
+        delta_t_seconds_from_ut(JulianDate::from_days(self.quantity()))
     }
 }
 

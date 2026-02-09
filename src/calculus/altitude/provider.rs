@@ -164,7 +164,7 @@ pub fn altitude_periods<B: AltitudePeriodsProvider>(
 /// **Sun** — delegates to [`calculus::solar`].
 impl AltitudePeriodsProvider for solar_system::Sun {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if query.window.duration_days() <= 0.0 {
+        if query.window.duration() <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::solar;
@@ -192,7 +192,7 @@ impl AltitudePeriodsProvider for solar_system::Sun {
 /// **Moon** — delegates to [`calculus::lunar`].
 impl AltitudePeriodsProvider for solar_system::Moon {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if query.window.duration_days() <= 0.0 {
+        if query.window.duration() <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::lunar;
@@ -237,7 +237,7 @@ impl AltitudePeriodsProvider for Star<'_> {
 /// **direction::ICRS** — the lightest path: raw RA/Dec → stellar engine.
 impl AltitudePeriodsProvider for direction::ICRS {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if query.window.duration_days() <= 0.0 {
+        if query.window.duration() <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::stellar;
