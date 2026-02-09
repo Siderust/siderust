@@ -136,7 +136,7 @@ fn find_crossings_analytical(
     // Build analytical model at the period midpoint
     let start_jd: JulianDate = period.start.into();
     let end_jd: JulianDate = period.end.into();
-    let mid_jd = JulianDate::new(0.5 * (start_jd.value() + end_jd.value()));
+    let mid_jd = start_jd.mean(end_jd);
     let params = StarAltitudeParams::from_j2000(ra_j2000, dec_j2000, site, mid_jd);
 
     match params.threshold_ha(threshold_rad) {
