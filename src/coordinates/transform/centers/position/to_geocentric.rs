@@ -132,19 +132,21 @@ mod tests {
 
         // Distance should be preserved (approximately - slight change due to Earth's offset)
         assert!(
-            (sirius_geocentric_spherical.distance.value() - sirius_distance_au).abs() < 100.0,
+            (sirius_geocentric_spherical.distance - AstronomicalUnits::new(sirius_distance_au))
+                .abs()
+                < AstronomicalUnits::new(100.0),
             "Distance should be approximately preserved"
         );
 
         // Coordinates should be close to the original (small parallax at stellar distances)
         // The shift should be very small for distant stars
-        let delta_ra = (sirius_geocentric_spherical.azimuth.value() - 101.287_155_33).abs();
-        let delta_dec = (sirius_geocentric_spherical.polar.value() - (-16.716_115_86)).abs();
+        let delta_ra = (sirius_geocentric_spherical.azimuth - Degrees::new(101.287_155_33)).abs();
+        let delta_dec = (sirius_geocentric_spherical.polar - Degrees::new(-16.716_115_86)).abs();
 
         // For stars at ~500,000 AU, Earth's ~1 AU offset causes ~1/500000 radian ≈ 0.4 arcsec
         // change in direction, or about 0.0001 degrees
         assert!(
-            delta_ra < 0.001 && delta_dec < 0.001,
+            delta_ra < Degrees::new(0.001) && delta_dec < Degrees::new(0.001),
             "Astrometric position should change only slightly due to parallax: dRA={}, dDec={}",
             delta_ra,
             delta_dec

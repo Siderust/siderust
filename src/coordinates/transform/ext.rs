@@ -321,8 +321,7 @@ mod tests {
             geo_origin.to_center(&jd, &ctx);
 
         // Should be non-zero (Earth is ~1 AU from barycenter)
-        let dist =
-            (bary.x().value().powi(2) + bary.y().value().powi(2) + bary.z().value().powi(2)).sqrt();
+        let dist = bary.distance();
         assert!(
             dist > 0.9 && dist < 1.1,
             "Earth should be ~1 AU from barycenter, got {}",
@@ -342,9 +341,9 @@ mod tests {
 
         // Verify it's not the same as the input (transformation happened)
         assert!(
-            (result.x().value() - pos.x().value()).abs() > EPSILON
-                || (result.y().value() - pos.y().value()).abs() > EPSILON
-                || (result.z().value() - pos.z().value()).abs() > EPSILON
+            (result.x() - pos.x()).abs() > EPSILON
+                || (result.y() - pos.y()).abs() > EPSILON
+                || (result.z() - pos.z()).abs() > EPSILON
         );
     }
 
@@ -357,14 +356,14 @@ mod tests {
 
         // Identity frame transform
         let same_frame: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_frame(&jd, &ctx);
-        assert!((same_frame.x().value() - pos.x().value()).abs() < EPSILON);
-        assert!((same_frame.y().value() - pos.y().value()).abs() < EPSILON);
-        assert!((same_frame.z().value() - pos.z().value()).abs() < EPSILON);
+        assert!((same_frame.x() - pos.x()).abs() < EPSILON);
+        assert!((same_frame.y() - pos.y()).abs() < EPSILON);
+        assert!((same_frame.z() - pos.z()).abs() < EPSILON);
 
         // Identity center transform
         let same_center: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_center(&jd, &ctx);
-        assert!((same_center.x().value() - pos.x().value()).abs() < EPSILON);
-        assert!((same_center.y().value() - pos.y().value()).abs() < EPSILON);
-        assert!((same_center.z().value() - pos.z().value()).abs() < EPSILON);
+        assert!((same_center.x() - pos.x()).abs() < EPSILON);
+        assert!((same_center.y() - pos.y()).abs() < EPSILON);
+        assert!((same_center.z() - pos.z()).abs() < EPSILON);
     }
 }

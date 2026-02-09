@@ -335,27 +335,35 @@ mod tests {
         Period::new(mjd(a), mjd(b))
     }
 
+    fn mjd_f64(t: Mjd) -> f64 {
+        t.quantity().value()
+    }
+
     #[test]
     fn minimize_finds_parabola_vertex() {
         let (t, v) = minimize(period(-5.0, 5.0), &|t: Mjd| {
-            Radians::new((t.value() - 2.0).powi(2))
+            Radians::new((mjd_f64(t) - 2.0).powi(2))
         });
-        assert!((t.value() - 2.0).abs() < 1e-7, "t = {}", t.value());
-        assert!(v < 1e-12, "v = {}", v.value());
+        assert!((t - mjd(2.0)).abs() < Days::new(1e-7), "t = {}", t);
+        assert!(v < Radians::new(1e-12), "v = {}", v);
     }
 
     #[test]
     fn maximize_finds_negative_parabola_peak() {
         let (t, v) = maximize(period(-5.0, 5.0), &|t: Mjd| {
-            Radians::new(-(t.value() - 3.0).powi(2) + 10.0)
+            Radians::new(-(mjd_f64(t) - 3.0).powi(2) + 10.0)
         });
-        assert!((t.value() - 3.0).abs() < 1e-7, "t = {}", t.value());
-        assert!((v.value() - 10.0).abs() < 1e-6, "v = {}", v.value());
+        assert!((t - mjd(3.0)).abs() < Days::new(1e-7), "t = {}", t);
+        assert!(
+            (v - Radians::new(10.0)).abs() < Radians::new(1e-6),
+            "v = {}",
+            v
+        );
     }
 
     #[test]
     fn classify_detects_maximum() {
-        let f = |t: Mjd| Radians::new(-(t.value() * t.value()));
+        let f = |t: Mjd| Radians::new(-(mjd_f64(t) * mjd_f64(t)));
         assert_eq!(
             classify::<Radian, _>(mjd(0.0), &f),
             Some(ExtremumKind::Maximum)
@@ -364,7 +372,7 @@ mod tests {
 
     #[test]
     fn classify_detects_minimum() {
-        let f = |t: Mjd| Radians::new(t.value() * t.value());
+        let f = |t: Mjd| Radians::new(mjd_f64(t) * mjd_f64(t));
         assert_eq!(
             classify::<Radian, _>(mjd(0.0), &f),
             Some(ExtremumKind::Minimum)
@@ -373,7 +381,7 @@ mod tests {
 
     #[test]
     fn classify_returns_none_for_inflection() {
-        let f = |t: Mjd| Radians::new(t.value() * t.value() * t.value());
+        let f = |t: Mjd| Radians::new(mjd_f64(t) * mjd_f64(t) * mjd_f64(t));
         // At t=0 the cubic has an inflection point, not a max/min
         assert_eq!(classify::<Radian, _>(mjd(0.0), &f), None);
     }
@@ -381,7 +389,7 @@ mod tests {
     #[test]
     fn find_extrema_sine_wave() {
         // sin(2πt) over [0, 1] has max at t=0.25, min at t=0.75
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * mjd_f64(t)).sin());
         let extrema: Vec<Extremum<Radian>> = find_extrema(period(0.0, 1.0), Days::new(0.05), &f);
 
         assert_eq!(extrema.len(), 2, "expected 2 extrema, got {:?}", extrema);
@@ -396,23 +404,23 @@ mod tests {
             .unwrap();
 
         assert!(
-            (max_ext.t.value() - 0.25).abs() < 1e-6,
+            (max_ext.t - mjd(0.25)).abs() < Days::new(1e-6),
             "max at {}",
-            max_ext.t.value()
+            max_ext.t
         );
-        assert!((max_ext.value.value() - 1.0).abs() < 1e-6);
+        assert!((max_ext.value - Radians::new(1.0)).abs() < Radians::new(1e-6));
         assert!(
-            (min_ext.t.value() - 0.75).abs() < 1e-6,
+            (min_ext.t - mjd(0.75)).abs() < Days::new(1e-6),
             "min at {}",
-            min_ext.t.value()
+            min_ext.t
         );
-        assert!((min_ext.value.value() + 1.0).abs() < 1e-6);
+        assert!((min_ext.value + Radians::new(1.0)).abs() < Radians::new(1e-6));
     }
 
     #[test]
     fn find_extrema_via_derivative_sine() {
         // Shift slightly to avoid derivative sign-change at endpoints
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * t.value()).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * mjd_f64(t)).sin());
         // Use a step that doesn't align with extrema at t=0.25, 0.75
         let extrema: Vec<Extremum<Radian>> =
             find_extrema_via_derivative(period(0.01, 0.99), Days::new(0.035), &f, Days::new(1e-5));
@@ -429,14 +437,14 @@ mod tests {
             .unwrap();
 
         assert!(
-            (max_ext.t.value() - 0.25).abs() < 1e-3,
+            (max_ext.t - mjd(0.25)).abs() < Days::new(1e-3),
             "max at {}",
-            max_ext.t.value()
+            max_ext.t
         );
         assert!(
-            (min_ext.t.value() - 0.75).abs() < 1e-3,
+            (min_ext.t - mjd(0.75)).abs() < Days::new(1e-3),
             "min at {}",
-            min_ext.t.value()
+            min_ext.t
         );
     }
 
@@ -453,7 +461,7 @@ mod tests {
     fn find_extrema_monotone_returns_empty() {
         let extrema: Vec<Extremum<Radian>> =
             find_extrema(period(0.0, 10.0), Days::new(0.5), &|t: Mjd| {
-                Radians::new(t.value())
+                Radians::new(mjd_f64(t))
             });
         assert!(extrema.is_empty());
     }
@@ -461,7 +469,7 @@ mod tests {
     #[test]
     fn find_extrema_multiple_oscillations() {
         // sin(6πt) over [0,1] → 3 maxima, 2–3 minima
-        let f = |t: Mjd| Radians::new((6.0 * std::f64::consts::PI * t.value()).sin());
+        let f = |t: Mjd| Radians::new((6.0 * std::f64::consts::PI * mjd_f64(t)).sin());
         let extrema: Vec<Extremum<Radian>> = find_extrema(period(0.0, 1.0), Days::new(0.02), &f);
 
         let n_max = extrema

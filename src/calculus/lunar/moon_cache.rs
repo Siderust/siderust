@@ -148,8 +148,6 @@ impl MoonPositionCache {
     /// Adds a small padding on each side to accommodate Brent probes
     /// near the boundaries.
     pub fn new(mjd_start: ModifiedJulianDate, mjd_end: ModifiedJulianDate) -> Self {
-        //let jd_start = JulianDate::from(mjd_start).value();
-        //let jd_end = JulianDate::from(mjd_end).value();
         let pad = Days::new(1.0); // 1-day padding on each side
         let t0 = mjd_start - pad;
         let span = mjd_end + pad - t0;
@@ -530,19 +528,17 @@ mod tests {
             let (cx, cy, cz) = cache.get_position_km(mjd);
             let direct = Moon::get_geo_position::<Kilometer>(JulianDate::from(mjd));
             let (dx, dy, dz) = (direct.x(), direct.y(), direct.z());
-            let err =
-                ((cx - dx).value().powi(2) + (cy - dy).value().powi(2) + (cz - dz).value().powi(2))
-                    .sqrt();
+            let err = (cx - dx).abs().max((cy - dy).abs()).max((cz - dz).abs());
             // Error should be < 1 km (≈ 0.5 arcsecond at Moon distance)
             assert!(
-                err < 1.0,
-                "Chebyshev error at MJD {mjd}: {err:.6} km (x:{} vs {}, y:{} vs {}, z:{} vs {})",
-                cx.value(),
-                dx.value(),
-                cy.value(),
-                dy.value(),
-                cz.value(),
-                dz.value()
+                err < Kilometers::new(1.0),
+                "Chebyshev max-axis error at MJD {mjd}: {err} (x:{} vs {}, y:{} vs {}, z:{} vs {})",
+                cx,
+                dx,
+                cy,
+                dy,
+                cz,
+                dz
             );
         }
     }
@@ -557,26 +553,26 @@ mod tests {
             let mjd = mjd_start + Days::new((i as f64) * 0.3 + 0.05);
             let (dpsi, deps, eps0) = cache.get_nutation_rad(mjd);
             let direct = get_nutation(mjd.into());
-            let d_dpsi = direct.longitude.to::<Radian>().value();
-            let d_deps = direct.obliquity.to::<Radian>().value();
-            let d_eps0 = direct.ecliptic.to::<Radian>().value();
+            let d_dpsi = direct.longitude.to::<Radian>();
+            let d_deps = direct.obliquity.to::<Radian>();
+            let d_eps0 = direct.ecliptic.to::<Radian>();
 
-            let err_dpsi = (dpsi.value() - d_dpsi).abs();
-            let err_deps = (deps.value() - d_deps).abs();
-            let err_eps0 = (eps0.value() - d_eps0).abs();
+            let err_dpsi = (dpsi - d_dpsi).abs();
+            let err_deps = (deps - d_deps).abs();
+            let err_eps0 = (eps0 - d_eps0).abs();
 
             // Errors should be < 5e-10 radians (≈ 0.1 milliarcseconds)
             assert!(
-                err_dpsi < 5e-10,
-                "Nutation dpsi error at MJD {mjd}: {err_dpsi:.2e}"
+                err_dpsi < Radians::new(5e-10),
+                "Nutation dpsi error at MJD {mjd}: {err_dpsi}"
             );
             assert!(
-                err_deps < 5e-10,
-                "Nutation deps error at MJD {mjd}: {err_deps:.2e}"
+                err_deps < Radians::new(5e-10),
+                "Nutation deps error at MJD {mjd}: {err_deps}"
             );
             assert!(
-                err_eps0 < 5e-10,
-                "Nutation eps0 error at MJD {mjd}: {err_eps0:.2e}"
+                err_eps0 < Radians::new(5e-10),
+                "Nutation eps0 error at MJD {mjd}: {err_eps0}"
             );
         }
     }
@@ -589,18 +585,18 @@ mod tests {
         let ctx = MoonAltitudeContext::new(mjd_start, mjd_end, site);
 
         for i in 0..50 {
-            let mjd = ModifiedJulianDate::new(mjd_start.value() + (i as f64) * 0.14 + 0.01);
-            let cached_alt = ctx.altitude_rad(mjd).value();
-            let direct_alt = moon_altitude_rad(mjd, &site).value();
+            let mjd = mjd_start + Days::new((i as f64) * 0.14 + 0.01);
+            let cached_alt = ctx.altitude_rad(mjd);
+            let direct_alt = moon_altitude_rad(mjd, &site);
 
-            let err_deg = (cached_alt - direct_alt).to_degrees().abs();
+            let err_deg = (cached_alt - direct_alt).abs().to::<Degree>();
             // Should match within ~0.01° (limited by interpolation + nutation cache)
             assert!(
-                err_deg < 0.02,
-                "Altitude error at MJD {}: cached={:.4}° direct={:.4}° err={:.6}°",
-                mjd.value(),
-                cached_alt.to_degrees(),
-                direct_alt.to_degrees(),
+                err_deg < Degrees::new(0.02),
+                "Altitude error at MJD {}: cached={} direct={} err={}",
+                mjd,
+                cached_alt.to::<Degree>(),
+                direct_alt.to::<Degree>(),
                 err_deg
             );
         }
