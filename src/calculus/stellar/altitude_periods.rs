@@ -126,9 +126,9 @@ fn find_crossings_analytical(
     dec_j2000: Degrees,
     site: &ObserverSite,
     period: Period<Mjd>,
-    threshold_rad: f64,
+    threshold: Radians,
 ) -> (Vec<intervals::LabeledCrossing>, bool) {
-    let thr = Radians::new(threshold_rad);
+    let thr = threshold;
     let f = make_star_fn(ra_j2000, dec_j2000, site);
 
     let start_above = f(period.start) > thr;
@@ -137,9 +137,11 @@ fn find_crossings_analytical(
     let start_jd: JulianDate = period.start.into();
     let end_jd: JulianDate = period.end.into();
     let mid_jd = start_jd.mean(end_jd);
-    let params = StarAltitudeParams::from_j2000(ra_j2000, dec_j2000, site, mid_jd);
+    let equatorial_j2000 =
+        crate::coordinates::spherical::direction::EquatorialMeanJ2000::new(ra_j2000, dec_j2000);
+    let params = StarAltitudeParams::from_j2000(equatorial_j2000, site, mid_jd);
 
-    match params.threshold_ha(threshold_rad) {
+    match params.threshold_ha(thr) {
         ThresholdResult::AlwaysAbove => {
             // Verify at both endpoints with the full evaluator
             let end_above = f(period.end) > thr;
@@ -163,8 +165,8 @@ fn find_crossings_analytical(
                 (labeled, start_above)
             }
         }
-        ThresholdResult::Crossings { h0_rad } => {
-            let predicted = params.predict_crossings(period, h0_rad);
+        ThresholdResult::Crossings { h0 } => {
+            let predicted = params.predict_crossings(period, h0);
 
             // Shifted altitude: g(t) = f(t) − threshold
             let g = |t: Mjd| -> Radians { f(t) - thr };
@@ -175,7 +177,7 @@ fn find_crossings_analytical(
                 let lo = (*t_pred - BRACKET_HALF).max(period.start);
                 let hi = (*t_pred + BRACKET_HALF).min(period.end);
 
-                if (hi - lo) < 1e-12 {
+                if (hi - lo) < Days::new(1e-12) {
                     continue; // degenerate bracket at boundary
                 }
 
@@ -223,12 +225,10 @@ pub(crate) fn find_star_above_periods(
     period: Period<ModifiedJulianDate>,
     threshold: Degrees,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    let thr_rad = threshold.to::<Radian>().value();
-    let thr = Radians::new(thr_rad);
+    let thr = threshold.to::<Radian>();
     let f = make_star_fn(ra_j2000, dec_j2000, &site);
 
-    let (labeled, start_above) =
-        find_crossings_analytical(ra_j2000, dec_j2000, &site, period, thr_rad);
+    let (labeled, start_above) = find_crossings_analytical(ra_j2000, dec_j2000, &site, period, thr);
 
     intervals::build_above_periods(&labeled, period, start_above, &f, thr)
 }
