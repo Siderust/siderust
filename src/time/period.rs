@@ -76,6 +76,30 @@ impl<T: TimeInstant> Period<T> {
     pub fn duration(&self) -> T::Duration {
         self.end.difference(&self.start)
     }
+
+    /// Returns the overlapping sub-period between `self` and `other`.
+    ///
+    /// Periods are treated as half-open ranges `[start, end)`: if one period
+    /// ends exactly when the other starts, the intersection is empty and `None`
+    /// is returned.
+    pub fn intersection(&self, other: &Self) -> Option<Self> {
+        let start = if self.start >= other.start {
+            self.start
+        } else {
+            other.start
+        };
+        let end = if self.end <= other.end {
+            self.end
+        } else {
+            other.end
+        };
+
+        if start < end {
+            Some(Self::new(start, end))
+        } else {
+            None
+        }
+    }
 }
 
 // Specific implementation for periods with Days duration (JD and MJD)
@@ -309,6 +333,32 @@ mod tests {
 
         assert_eq!(period.duration_days(), 1.0);
         assert_eq!(period.duration_seconds(), 86400);
+    }
+
+    #[test]
+    fn test_period_intersection_overlap() {
+        let a = Period::new(ModifiedJulianDate::new(0.0), ModifiedJulianDate::new(5.0));
+        let b = Period::new(ModifiedJulianDate::new(3.0), ModifiedJulianDate::new(8.0));
+
+        let overlap = a.intersection(&b).expect("expected overlap");
+        assert_eq!(overlap.start.quantity(), Days::new(3.0));
+        assert_eq!(overlap.end.quantity(), Days::new(5.0));
+    }
+
+    #[test]
+    fn test_period_intersection_disjoint() {
+        let a = Period::new(ModifiedJulianDate::new(0.0), ModifiedJulianDate::new(3.0));
+        let b = Period::new(ModifiedJulianDate::new(5.0), ModifiedJulianDate::new(8.0));
+
+        assert_eq!(a.intersection(&b), None);
+    }
+
+    #[test]
+    fn test_period_intersection_touching_edges() {
+        let a = Period::new(ModifiedJulianDate::new(0.0), ModifiedJulianDate::new(3.0));
+        let b = Period::new(ModifiedJulianDate::new(3.0), ModifiedJulianDate::new(8.0));
+
+        assert_eq!(a.intersection(&b), None);
     }
 
     #[test]
