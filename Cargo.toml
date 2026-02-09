@@ -19,8 +19,8 @@ default = []
 serde = ["dep:serde", "qtty/serde", "affn/serde"]
 
 [dependencies]
-affn = { version="0.2.1", path = "affn" }
-qtty = { version="0.3.0", path = "qtty/qtty" }
+affn = "0.2.1"
+qtty = "0.3.0"
 approx = "0.5"
 chrono = "0.4.43"
 nalgebra = "0.34.1"
@@ -75,8 +75,3 @@ lto = "thin"
 
 [profile.release.build-override]
 opt-level = 3
-
-[patch.crates-io]
-qtty = { path = "qtty/qtty" }
-qtty-core = { path = "qtty/qtty-core" }
-qtty-derive = { path = "qtty/qtty-derive" }
