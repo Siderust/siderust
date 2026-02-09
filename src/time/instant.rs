@@ -178,6 +178,12 @@ impl<S: TimeScale> Time<S> {
     pub const fn max(self, other: Self) -> Self {
         Self::from_days(self.quantity.max_const(other.quantity))
     }
+
+    /// Mean (midpoint) between two instants on the same time scale.
+    #[inline]
+    pub const fn mean(self, other: Self) -> Self {
+        Self::from_days(self.quantity.const_add(other.quantity).const_div(2.0))
+    }
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -422,6 +428,17 @@ mod tests {
 
         let later = Time::<JD>::J2000 + Days::new(1.0);
         assert_eq!(Time::<JD>::J2000.min(later), Time::<JD>::J2000);
+    }
+
+    #[test]
+    fn test_mean_and_const_mean() {
+        let a = Time::<JD>::new(10.0);
+        let b = Time::<JD>::new(14.0);
+        assert_eq!(a.mean(b).value(), 12.0);
+        assert_eq!(b.mean(a).value(), 12.0);
+
+        const MID: Time<JD> = Time::<JD>::new(10.0).mean(Time::<JD>::new(14.0));
+        assert_eq!(MID.value(), 12.0);
     }
 
     #[test]
