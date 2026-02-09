@@ -66,7 +66,7 @@
 //!
 //! ```rust
 //! use siderust::astro::orbit::Orbit;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::*;
 //!
 //! let earth_orbit = Orbit::new(
@@ -82,7 +82,7 @@
 //! let coords = earth_orbit.kepler_position(JulianDate::new(2459200.5));
 //! ```
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use qtty::*;
 
 #[cfg(feature = "serde")]

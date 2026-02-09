@@ -6,7 +6,7 @@
 use std::fs::File;
 use std::io::BufReader;
 
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveDate, NaiveTime, TimeZone, Utc};
 use serde_json::Value;
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
@@ -27,6 +27,13 @@ fn load_reference_periods() -> Vec<Period<ModifiedJulianDate>> {
         .expect("Invalid or missing `periods` in reference file")
 }
 
+fn utc_to_mjd_utc(dt: DateTime<Utc>) -> ModifiedJulianDate {
+    // Reference data stores UTC-based MJD values (without a TT-UT delta shift).
+    const UNIX_EPOCH_MJD: f64 = 40_587.0;
+    let seconds = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 * 1e-9;
+    ModifiedJulianDate::new(UNIX_EPOCH_MJD + seconds / 86_400.0)
+}
+
 fn build_roque_period() -> (ObserverSite, Period<ModifiedJulianDate>) {
     let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
 
@@ -37,12 +44,11 @@ fn build_roque_period() -> (ObserverSite, Period<ModifiedJulianDate>) {
         .unwrap()
         .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
 
-    let start_dt =
-        Utc.from_utc_datetime(&NaiveDateTime::new(start_naive.date(), start_naive.time()));
-    let end_dt = Utc.from_utc_datetime(&NaiveDateTime::new(end_naive.date(), end_naive.time()));
+    let start_dt = Utc.from_utc_datetime(&start_naive);
+    let end_dt = Utc.from_utc_datetime(&end_naive);
 
-    let mjd_start = ModifiedJulianDate::from_utc(start_dt);
-    let mjd_end = ModifiedJulianDate::from_utc(end_dt);
+    let mjd_start = utc_to_mjd_utc(start_dt);
+    let mjd_end = utc_to_mjd_utc(end_dt);
 
     (site, Period::new(mjd_start, mjd_end))
 }

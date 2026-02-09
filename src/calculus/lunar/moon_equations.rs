@@ -3,10 +3,10 @@
 
 use crate::bodies::solar_system::Moon;
 
-use crate::astro::JulianDate;
 use crate::calculus::horizontal;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, Kilometer, LengthUnit, Meter, Quantity};
 
 impl Moon {
@@ -87,14 +87,14 @@ impl Moon {
     /// ```rust
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::coordinates::centers::ObserverSite;
-    /// use siderust::astro::{JulianDate, ModifiedJulianDate};
+    /// use siderust::time::{JulianDate, ModifiedJulianDate};
     /// use qtty::*;
     ///
     /// let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     ///
     /// // Using JulianDate
     /// let moon_pos = Moon::get_horizontal::<Kilometer>(JulianDate::J2000, site);
-    /// println!("Moon altitude: {:.2}°", moon_pos.alt().value());
+    /// println!("Moon altitude: {}", moon_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
     /// let mjd = ModifiedJulianDate::new(60000.0);

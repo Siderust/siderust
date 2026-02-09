@@ -15,12 +15,12 @@ fn displacement_basic_operations() {
     let v2 = DispAu::new(0.0, 1.0, 0.0);
 
     let sum = v1 + v2;
-    assert_eq!(sum.x().value(), 1.0);
-    assert_eq!(sum.y().value(), 1.0);
+    assert_eq!(sum.x(), 1.0);
+    assert_eq!(sum.y(), 1.0);
 
     let diff = v1 - v2;
-    assert_eq!(diff.x().value(), 1.0);
-    assert_eq!(diff.y().value(), -1.0);
+    assert_eq!(diff.x(), 1.0);
+    assert_eq!(diff.y(), -1.0);
 
     let dist = v1.magnitude();
     assert!((dist.value() - 1.0).abs() < 1e-12);
@@ -33,8 +33,8 @@ fn position_affine_operations() {
 
     // Position - Position = Displacement
     let disp = p1 - p2;
-    assert_eq!(disp.x().value(), 1.0);
-    assert_eq!(disp.y().value(), -1.0);
+    assert_eq!(disp.x(), 1.0);
+    assert_eq!(disp.y(), -1.0);
 
     let dist = p1.distance();
     assert!((dist.value() - 1.0).abs() < 1e-12);

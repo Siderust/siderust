@@ -2,11 +2,11 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use crate::astro::sidereal::unmodded_gst;
-use crate::astro::JulianDate;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
 use crate::coordinates::transform::centers::TransformCenter;
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity, Radian};
 
 // =============================================================================
@@ -61,7 +61,7 @@ where
     /// use siderust::coordinates::centers::{Geocentric, Topocentric, ObserverSite};
     /// use siderust::coordinates::frames::EquatorialMeanJ2000;
     /// use siderust::coordinates::transform::centers::ToTopocentricExt;
-    /// use siderust::astro::JulianDate;
+    /// use siderust::time::JulianDate;
     /// use qtty::*;
     ///
     /// // Moon at roughly 384,400 km from Earth's center
@@ -81,24 +81,18 @@ where
 
         // Rotate ITRF to celestial frame using GMST
         // GMST gives the angle between the vernal equinox and the Greenwich meridian
-        let gmst_angle = unmodded_gst(jd);
-        let gmst_rad = gmst_angle.to::<Radian>().value();
+        let gmst_rad = unmodded_gst(jd).to::<Radian>();
 
         // Rotate from ECEF (x toward Greenwich, z toward pole) to equatorial
         // R_z(-GMST) transforms ECEF to equatorial
-        let cos_g = gmst_rad.cos();
-        let sin_g = gmst_rad.sin();
+        let (sin_g, cos_g) = gmst_rad.sin_cos();
 
-        let x_eq = site_itrf.x().value() * cos_g - site_itrf.y().value() * sin_g;
-        let y_eq = site_itrf.x().value() * sin_g + site_itrf.y().value() * cos_g;
-        let z_eq = site_itrf.z().value();
+        let x_eq = site_itrf.x() * cos_g - site_itrf.y() * sin_g;
+        let y_eq = site_itrf.x() * sin_g + site_itrf.y() * cos_g;
+        let z_eq = site_itrf.z();
 
-        let site_equatorial = Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params(
-            (),
-            Quantity::<U>::new(x_eq),
-            Quantity::<U>::new(y_eq),
-            Quantity::<U>::new(z_eq),
-        );
+        let site_equatorial =
+            Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params((), x_eq, y_eq, z_eq);
 
         // Transform observer position to target frame
         let site_in_frame: Position<Geocentric, F, U> =
@@ -142,22 +136,16 @@ where
         let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
 
         // Rotate ITRF to celestial frame using GMST
-        let gmst_angle = unmodded_gst(jd);
-        let gmst_rad = gmst_angle.to::<Radian>().value();
+        let gmst_rad = unmodded_gst(jd).to::<Radian>();
 
-        let cos_g = gmst_rad.cos();
-        let sin_g = gmst_rad.sin();
+        let (sin_g, cos_g) = gmst_rad.sin_cos();
 
-        let x_eq = site_itrf.x().value() * cos_g - site_itrf.y().value() * sin_g;
-        let y_eq = site_itrf.x().value() * sin_g + site_itrf.y().value() * cos_g;
-        let z_eq = site_itrf.z().value();
+        let x_eq = site_itrf.x() * cos_g - site_itrf.y() * sin_g;
+        let y_eq = site_itrf.x() * sin_g + site_itrf.y() * cos_g;
+        let z_eq = site_itrf.z();
 
-        let site_equatorial = Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params(
-            (),
-            Quantity::<U>::new(x_eq),
-            Quantity::<U>::new(y_eq),
-            Quantity::<U>::new(z_eq),
-        );
+        let site_equatorial =
+            Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params((), x_eq, y_eq, z_eq);
 
         // Transform observer position to target frame
         let site_in_frame: Position<Geocentric, F, U> =
@@ -189,20 +177,24 @@ mod tests {
         // Greenwich is at ~3980 km from center in x, ~0 in y, ~4970 km in z
         // (roughly, for latitude ~51.5°)
         assert!(
-            (pos.x().value() - 3980.0).abs() < 100.0,
+            (pos.x() - Kilometers::new(3980.0)).abs() < Kilometers::new(100.0),
             "x={}",
-            pos.x().value()
+            pos.x()
         );
-        assert!(pos.y().value().abs() < 10.0, "y={}", pos.y().value()); // Near prime meridian
+        assert!(pos.y().abs() < 10.0, "y={}", pos.y()); // Near prime meridian
         assert!(
-            (pos.z().value() - 4970.0).abs() < 100.0,
+            (pos.z() - Kilometers::new(4970.0)).abs() < Kilometers::new(100.0),
             "z={}",
-            pos.z().value()
+            pos.z()
         );
 
         // Distance should be roughly Earth's radius
-        let r = pos.distance().value();
-        assert!((r - 6371.0).abs() < 50.0, "distance={}", r);
+        let r = pos.distance();
+        assert!(
+            (r - Kilometers::new(6371.0)).abs() < Kilometers::new(50.0),
+            "distance={}",
+            r
+        );
     }
 
     #[test]
@@ -218,7 +210,7 @@ mod tests {
         let moon_topo = moon_geo.to_topocentric(site, jd);
 
         // Topocentric and geocentric should differ by about Earth's radius (~6371 km)
-        let diff = (moon_geo.x().value() - moon_topo.x().value()).abs();
+        let diff = (moon_geo.x() - moon_topo.x()).abs();
 
         // The difference should be on the order of Earth's radius
         // (exact value depends on GMST at J2000)
@@ -246,22 +238,22 @@ mod tests {
 
         // Should recover original position
         assert!(
-            (geo.x().value() - geo_recovered.x().value()).abs() < 1e-6,
+            (geo.x() - geo_recovered.x()).abs() < 1e-6,
             "x: {} vs {}",
-            geo.x().value(),
-            geo_recovered.x().value()
+            geo.x(),
+            geo_recovered.x()
         );
         assert!(
-            (geo.y().value() - geo_recovered.y().value()).abs() < 1e-6,
+            (geo.y() - geo_recovered.y()).abs() < 1e-6,
             "y: {} vs {}",
-            geo.y().value(),
-            geo_recovered.y().value()
+            geo.y(),
+            geo_recovered.y()
         );
         assert!(
-            (geo.z().value() - geo_recovered.z().value()).abs() < 1e-6,
+            (geo.z() - geo_recovered.z()).abs() < 1e-6,
             "z: {} vs {}",
-            geo.z().value(),
-            geo_recovered.z().value()
+            geo.z(),
+            geo_recovered.z()
         );
     }
 
@@ -278,7 +270,7 @@ mod tests {
         let star_topo = star_geo.to_topocentric(site, jd);
 
         // Relative difference should be tiny (~Earth_radius / 1_pc)
-        let rel_diff = (star_geo.x().value() - star_topo.x().value()).abs() / star_geo.x().value();
+        let rel_diff = ((star_geo.x() - star_topo.x()).abs() / star_geo.x()).simplify();
 
         // Earth radius / 1 pc ≈ 6371 km / (3.086e13 km) ≈ 2e-10
         assert!(rel_diff < 1e-6, "Relative parallax too large: {}", rel_diff);
