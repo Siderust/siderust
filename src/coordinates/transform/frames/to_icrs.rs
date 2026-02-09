@@ -17,16 +17,16 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS,
         let cos_e = eps.cos();
         let sin_e = eps.sin();
 
-        let x0 = self.x().value();
-        let y0 = self.y().value();
-        let z0 = self.z().value();
+        let x0 = self.x();
+        let y0 = self.y();
+        let z0 = self.z();
         let mean_y = cos_e * y0 - sin_e * z0;
         let mean_z = sin_e * y0 + cos_e * z0;
         let rot: Rotation3 = frame_bias_j2000_to_icrs();
-        let [x, y, z] = rot.apply_array([x0, mean_y, mean_z]);
+        let [x, y, z] = rot * [x0, mean_y, mean_z];
         Position::from_vec3(
             self.center_params().clone(),
-            nalgebra::Vector3::new(x.into(), y.into(), z.into()),
+            nalgebra::Vector3::new(x, y, z),
         )
     }
 }
@@ -37,10 +37,10 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS,
 {
     fn to_frame(&self) -> Position<C, frames::ICRS, U> {
         let rot: Rotation3 = frame_bias_j2000_to_icrs();
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         Position::from_vec3(
             self.center_params().clone(),
-            nalgebra::Vector3::new(x.into(), y.into(), z.into()),
+            nalgebra::Vector3::new(x, y, z),
         )
     }
 }

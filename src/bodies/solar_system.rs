@@ -50,9 +50,10 @@
 //! 2. Williams, D. R. (2024). *Planetary Fact Sheet – Metric*. NASA Goddard Space Flight Center.
 
 use super::{Planet, Satellite, Star};
-use crate::astro::{orbit::Orbit, JulianDate};
+use crate::astro::orbit::Orbit;
 use crate::coordinates::spherical::position::{Ecliptic, EquatorialMeanJ2000};
 use crate::targets::Target;
+use crate::time::JulianDate;
 use qtty::length::nominal::RSUN;
 use qtty::*;
 
@@ -85,9 +86,9 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
     L_SUN,
     Target::<EquatorialMeanJ2000<LightYear>>::new_static(
         EquatorialMeanJ2000::<LightYear>::new_raw(
-            HourAngles::from_hms(-23, 0, 0.0).to::<Degree>(), // Dec (polar) Approx at J2000
-            HourAngles::from_hms(18, 44, 48.0).to::<Degree>(), // RA (azimuth) Approx at J2000
-            LightYears::new(1.58125e-5),                      // 1 AstronomicalUnits in LightYears
+            HourAngles::from_hms(-23, 0, 0.0).to_const::<Degree>(), // Dec (polar) Approx at J2000
+            HourAngles::from_hms(18, 44, 48.0).to_const::<Degree>(), // RA (azimuth) Approx at J2000
+            LightYears::new(1.58125e-5), // 1 AstronomicalUnits in LightYears
         ),
         JulianDate::J2000,
     ),

@@ -24,7 +24,7 @@
 //! use siderust::coordinates::cartesian::Position;
 //! use siderust::coordinates::frames;
 //! use siderust::astro::orbit::Orbit;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::*;
 //!
 //! // Define satellite orbit
@@ -47,7 +47,6 @@
 //! let target_from_sat = target_geo.to_bodycentric(sat_params, JulianDate::J2000);
 //! ```
 
-use crate::astro::JulianDate;
 use crate::coordinates::cartesian::position::{Ecliptic, Position};
 use crate::coordinates::centers::{
     Barycentric, Bodycentric, BodycentricParams, Geocentric, Heliocentric, OrbitReferenceCenter,
@@ -55,6 +54,7 @@ use crate::coordinates::centers::{
 use crate::coordinates::frames::MutableFrame;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::TransformFrame;
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 // =============================================================================
@@ -346,8 +346,8 @@ mod tests {
 
         // The satellite is at 0.0001 AU, target at 0.001 AU
         // Relative position should be ~0.0009 AU
-        assert!(result.x().value() > 0.0);
-        assert!(result.x().value() < 0.001);
+        assert!(result.x() > 0.0);
+        assert!(result.x() < 0.001);
     }
 
     #[test]
@@ -372,9 +372,9 @@ mod tests {
             earth_helio.to_bodycentric(mars_params, JulianDate::J2000);
 
         // Mars is further from the Sun than Earth, so the relative position should exist
-        assert!(!earth_from_mars.x().value().is_nan());
-        assert!(!earth_from_mars.y().value().is_nan());
-        assert!(!earth_from_mars.z().value().is_nan());
+        assert!(earth_from_mars.x().is_finite());
+        assert!(earth_from_mars.y().is_finite());
+        assert!(earth_from_mars.z().is_finite());
     }
 
     #[test]
@@ -426,20 +426,17 @@ mod tests {
 
         // Get the body's geocentric position
         let body_geo_ecl = orbit.kepler_position(JulianDate::J2000);
-        let body_geo: Position<Geocentric, frames::Ecliptic, AstronomicalUnit> = Position::new(
-            body_geo_ecl.x().value(),
-            body_geo_ecl.y().value(),
-            body_geo_ecl.z().value(),
-        );
+        let body_geo: Position<Geocentric, frames::Ecliptic, AstronomicalUnit> =
+            Position::from_vec3_origin(*body_geo_ecl.as_vec3());
 
         // Transform to body-centric
         let body_from_body = body_geo.to_bodycentric(params, JulianDate::J2000);
 
         // Should be at origin
         assert!(
-            body_from_body.distance().value().abs() < 1e-10,
+            body_from_body.distance().abs() < 1e-10,
             "Body's own position in body-centric should be at origin, got distance {}",
-            body_from_body.distance().value()
+            body_from_body.distance()
         );
     }
 }

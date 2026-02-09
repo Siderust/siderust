@@ -37,7 +37,7 @@ impl Default for SearchOpts {
 // ---------------------------------------------------------------------------
 
 /// Default scan step: 10 minutes in days.
-pub(crate) const DEFAULT_SCAN_STEP: Days = Minutes::new(10.0).to::<Day>();
+pub(crate) const DEFAULT_SCAN_STEP: Days = Minutes::new(10.0).to_const::<Day>();
 
 /// Extrema scan step: 20 minutes in days (for culmination detection).
-pub(crate) const EXTREMA_SCAN_STEP: Days = Minutes::new(20.0).to::<Day>();
+pub(crate) const EXTREMA_SCAN_STEP: Days = Minutes::new(20.0).to_const::<Day>();

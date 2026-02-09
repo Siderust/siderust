@@ -19,16 +19,10 @@ where
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
 
         let rot: Rotation3 = frame_bias_icrs_to_j2000();
-        let [bx, by, bz] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
-        let y = by;
-        let z = bz;
+        let [bx, by, bz] = rot * [self.x(), self.y(), self.z()];
         Position::from_vec3(
             self.center_params().clone(),
-            nalgebra::Vector3::new(
-                bx.into(),
-                (cos_e * y + sin_e * z).into(),
-                (-sin_e * y + cos_e * z).into(),
-            ),
+            nalgebra::Vector3::new(bx, cos_e * by + sin_e * bz, -sin_e * by + cos_e * bz),
         )
     }
 }
@@ -53,12 +47,12 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Eclip
 
 #[cfg(test)]
 mod tests {
-    use crate::astro::JulianDate;
     use crate::coordinates::cartesian::position::*;
     use crate::coordinates::transform::Transform;
     use crate::coordinates::*;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
+    use crate::time::JulianDate;
     use qtty::Degrees;
     use qtty::*;
 

@@ -11,8 +11,8 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use qtty::{Days, Kilometer};
-use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::Moon;
+use siderust::time::JulianDate;
 use std::hint::black_box;
 
 fn bench_moon_geo_position(c: &mut Criterion) {

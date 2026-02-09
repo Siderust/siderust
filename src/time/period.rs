@@ -89,15 +89,16 @@ impl<T: TimeInstant<Duration = Days>> Period<T> {
     ///
     /// ```
     /// use siderust::time::{Period, ModifiedJulianDate};
+    /// use qtty::Days;
     ///
     /// let start = ModifiedJulianDate::new(59000.0);
     /// let end = ModifiedJulianDate::new(59001.5);
     /// let period = Period::new(start, end);
     ///
-    /// assert_eq!(period.duration_days(), 1.5);
+    /// assert_eq!(period.duration_days(), Days::new(1.5));
     /// ```
-    pub fn duration_days(&self) -> f64 {
-        self.duration().value()
+    pub fn duration_days(&self) -> Days {
+        self.duration()
     }
 }
 
@@ -116,7 +117,10 @@ impl Period<DateTime<Utc>> {
     }
 }
 
-// Serde support for Period<ModifiedJulianDate>
+// Serde support for Period<ModifiedJulianDate> (= Period<Time<MJD>>)
+//
+// Uses the historical field names `start_mjd` / `end_mjd` for backward
+// compatibility with existing JSON reference data.
 #[cfg(feature = "serde")]
 impl Serialize for Period<crate::time::ModifiedJulianDate> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
@@ -124,8 +128,8 @@ impl Serialize for Period<crate::time::ModifiedJulianDate> {
         S: Serializer,
     {
         let mut s = serializer.serialize_struct("Period", 2)?;
-        s.serialize_field("start_mjd", &self.start.value())?;
-        s.serialize_field("end_mjd", &self.end.value())?;
+        s.serialize_field("start_mjd", &self.start.quantity())?;
+        s.serialize_field("end_mjd", &self.end.quantity())?;
         s.end()
     }
 }
@@ -146,6 +150,40 @@ impl<'de> Deserialize<'de> for Period<crate::time::ModifiedJulianDate> {
         Ok(Period::new(
             crate::time::ModifiedJulianDate::new(raw.start_mjd),
             crate::time::ModifiedJulianDate::new(raw.end_mjd),
+        ))
+    }
+}
+
+// Serde support for Period<JulianDate> (= Period<Time<JD>>)
+#[cfg(feature = "serde")]
+impl Serialize for Period<crate::time::JulianDate> {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: Serializer,
+    {
+        let mut s = serializer.serialize_struct("Period", 2)?;
+        s.serialize_field("start_jd", &self.start.quantity())?;
+        s.serialize_field("end_jd", &self.end.quantity())?;
+        s.end()
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for Period<crate::time::JulianDate> {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: Deserializer<'de>,
+    {
+        #[derive(Deserialize)]
+        struct Raw {
+            start_jd: f64,
+            end_jd: f64,
+        }
+
+        let raw = Raw::deserialize(deserializer)?;
+        Ok(Period::new(
+            crate::time::JulianDate::new(raw.start_jd),
+            crate::time::JulianDate::new(raw.end_jd),
         ))
     }
 }
@@ -251,7 +289,7 @@ mod tests {
         let end = JulianDate::new(2451546.5);
         let period = Period::new(start, end);
 
-        assert_eq!(period.duration_days(), 1.5);
+        assert_eq!(period.duration_days(), Days::new(1.5));
     }
 
     #[test]
@@ -260,7 +298,7 @@ mod tests {
         let end = ModifiedJulianDate::new(59001.5);
         let period = Period::new(start, end);
 
-        assert_eq!(period.duration_days(), 1.5);
+        assert_eq!(period.duration_days(), Days::new(1.5));
     }
 
     #[test]
@@ -282,12 +320,12 @@ mod tests {
         ];
         let gaps = complement_within(outer, &periods);
         assert_eq!(gaps.len(), 3);
-        assert_eq!(gaps[0].start.value(), 0.0);
-        assert_eq!(gaps[0].end.value(), 2.0);
-        assert_eq!(gaps[1].start.value(), 4.0);
-        assert_eq!(gaps[1].end.value(), 6.0);
-        assert_eq!(gaps[2].start.value(), 8.0);
-        assert_eq!(gaps[2].end.value(), 10.0);
+        assert_eq!(gaps[0].start.quantity(), Days::new(0.0));
+        assert_eq!(gaps[0].end.quantity(), Days::new(2.0));
+        assert_eq!(gaps[1].start.quantity(), Days::new(4.0));
+        assert_eq!(gaps[1].end.quantity(), Days::new(6.0));
+        assert_eq!(gaps[2].start.quantity(), Days::new(8.0));
+        assert_eq!(gaps[2].end.quantity(), Days::new(10.0));
     }
 
     #[test]
@@ -295,8 +333,8 @@ mod tests {
         let outer = Period::new(ModifiedJulianDate::new(0.0), ModifiedJulianDate::new(10.0));
         let gaps = complement_within(outer, &[]);
         assert_eq!(gaps.len(), 1);
-        assert_eq!(gaps[0].start.value(), 0.0);
-        assert_eq!(gaps[0].end.value(), 10.0);
+        assert_eq!(gaps[0].start.quantity(), Days::new(0.0));
+        assert_eq!(gaps[0].end.quantity(), Days::new(10.0));
     }
 
     #[test]
@@ -322,8 +360,8 @@ mod tests {
         )];
         let overlap = intersect_periods(&a, &b);
         assert_eq!(overlap.len(), 1);
-        assert_eq!(overlap[0].start.value(), 3.0);
-        assert_eq!(overlap[0].end.value(), 5.0);
+        assert_eq!(overlap[0].start.quantity(), Days::new(3.0));
+        assert_eq!(overlap[0].end.quantity(), Days::new(5.0));
     }
 
     #[test]
@@ -359,11 +397,11 @@ mod tests {
         // below_max (complement): [0,2), [4,7), [8,10)
         // intersection: [1,2), [5,7), [8,9)
         assert_eq!(between.len(), 3);
-        assert_eq!(between[0].start.value(), 1.0);
-        assert_eq!(between[0].end.value(), 2.0);
-        assert_eq!(between[1].start.value(), 5.0);
-        assert_eq!(between[1].end.value(), 7.0);
-        assert_eq!(between[2].start.value(), 8.0);
-        assert_eq!(between[2].end.value(), 9.0);
+        assert_eq!(between[0].start.quantity(), Days::new(1.0));
+        assert_eq!(between[0].end.quantity(), Days::new(2.0));
+        assert_eq!(between[1].start.quantity(), Days::new(5.0));
+        assert_eq!(between[1].end.quantity(), Days::new(7.0));
+        assert_eq!(between[2].start.quantity(), Days::new(8.0));
+        assert_eq!(between[2].end.quantity(), Days::new(9.0));
     }
 }

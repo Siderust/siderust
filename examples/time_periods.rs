@@ -44,7 +44,7 @@ fn main() {
     // Example 4: Converting between time systems
     println!("4. Converting between time systems:");
     let mjd = ModifiedJulianDate::new(51544.5); // MJD at J2000.0
-    let jd = mjd.to_julian_day();
+    let jd: JulianDate = mjd.into();
     let utc = mjd.to_utc().unwrap();
     println!("   MJD: {}", mjd.value());
     println!("   JD:  {}", jd.value());

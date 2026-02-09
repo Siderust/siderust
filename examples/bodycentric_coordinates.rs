@@ -8,7 +8,6 @@
 
 use qtty::*;
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::{Earth, Mars, Venus};
 use siderust::coordinates::cartesian::position::{Ecliptic, Position};
 use siderust::coordinates::cartesian::Direction;
@@ -16,6 +15,7 @@ use siderust::coordinates::centers::{Bodycentric, BodycentricParams, Geocentric,
 use siderust::coordinates::frames;
 use siderust::coordinates::transform::centers::{FromBodycentricExt, ToBodycentricExt};
 use siderust::coordinates::transform::TransformCenter;
+use siderust::time::JulianDate;
 
 fn main() {
     println!("=== Body-Centric Coordinates Example ===\n");

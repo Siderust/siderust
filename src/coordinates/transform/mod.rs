@@ -52,7 +52,7 @@
 //! use siderust::coordinates::{cartesian::Position, frames::*, centers::*};
 //! use siderust::coordinates::transform::{Transform, TransformFrame};
 //! use qtty::AstronomicalUnit;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //!
 //! let cart_eq = Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 2.0, 3.0);
 //! let jd = JulianDate::J2000;
@@ -84,10 +84,10 @@ pub use ext::{DirectionAstroExt, PositionAstroExt, VectorAstroExt};
 pub use frames::TransformFrame;
 pub use providers::{center_shift, frame_rotation, CenterShiftProvider, FrameRotationProvider};
 
-use crate::astro::JulianDate;
 use crate::coordinates::{
     cartesian, cartesian::Position, centers::ReferenceCenter, frames::MutableFrame, spherical,
 };
+use crate::time::JulianDate;
 use affn::Rotation3;
 use qtty::LengthUnit;
 
@@ -101,7 +101,7 @@ pub trait Transform<Coord> {
     /// # Arguments
     ///
     /// - `jd`: The Julian Date at which to perform the transformation.
-    fn transform(&self, jd: crate::astro::JulianDate) -> Coord;
+    fn transform(&self, jd: crate::time::JulianDate) -> Coord;
 }
 
 /// Blanket implementation for Position transformations (center + frame changes).
@@ -124,14 +124,10 @@ where
     fn transform(&self, jd: JulianDate) -> Position<C2, F2, U> {
         // Apply the frame rotation at the requested epoch, then shift centers.
         let rot: Rotation3 = frame_rotation::<F1, F2>(jd, &AstroContext::default());
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         let rotated = Position::<C1, F2, U>::from_vec3(
             self.center_params().clone(),
-            nalgebra::Vector3::new(
-                qtty::Quantity::<U>::new(x),
-                qtty::Quantity::<U>::new(y),
-                qtty::Quantity::<U>::new(z),
-            ),
+            nalgebra::Vector3::new(x, y, z),
         );
         rotated.to_center(jd)
     }
