@@ -51,7 +51,7 @@
 //! ```
 
 use crate::astro::orbit::Orbit;
-use qtty::{Degrees, Meter, Quantity};
+use qtty::*;
 use std::fmt::Debug;
 
 #[cfg(feature = "serde")]
@@ -196,26 +196,23 @@ impl ObserverSite {
         // Convert geodetic to geocentric Cartesian (ECEF)
         let lat_rad = self.lat.to::<Radian>();
         let lon_rad = self.lon.to::<Radian>();
-        let h = self.height.value();
+        let h = self.height;
 
         let (sin_lat, cos_lat) = lat_rad.sin_cos();
         let (sin_lon, cos_lon) = lon_rad.sin_cos();
 
         // Radius of curvature in the prime vertical
-        let n = A / (1.0 - E2 * sin_lat * sin_lat).sqrt();
+        let n = Meters::new(A / (1.0 - E2 * sin_lat * sin_lat).sqrt());
 
         // Geocentric Cartesian coordinates (meters)
         let x_m = (n + h) * cos_lat * cos_lon;
         let y_m = (n + h) * cos_lat * sin_lon;
         let z_m = (n * (1.0 - E2) + h) * sin_lat;
 
-        // Convert to target units
-        let x: Quantity<U> = Quantity::<Meter>::new(x_m).into();
-        let y: Quantity<U> = Quantity::<Meter>::new(y_m).into();
-        let z: Quantity<U> = Quantity::<Meter>::new(z_m).into();
-
         crate::coordinates::cartesian::Position::<Geocentric, crate::coordinates::frames::ECEF, U>::new(
-            x, y, z
+            x_m.to_const::<U>(),
+            y_m.to_const::<U>(),
+            z_m.to_const::<U>(),
         )
     }
 }
@@ -417,7 +414,6 @@ pub struct Bodycentric;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
 
     #[test]
     fn center_names_are_correct() {
@@ -465,9 +461,9 @@ mod tests {
     #[test]
     fn observer_site_default() {
         let site = ObserverSite::default();
-        assert_eq!(site.lon.value(), 0.0);
-        assert_eq!(site.lat.value(), 0.0);
-        assert_eq!(site.height.value(), 0.0);
+        assert_eq!(site.lon, 0.0);
+        assert_eq!(site.lat, 0.0);
+        assert_eq!(site.height, 0.0);
     }
 
     #[test]
