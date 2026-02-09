@@ -28,8 +28,11 @@
 //! Δψ = Σ (A₁ + A₂·T) · sin(arg)   (in 0.0001″)
 //! Δε = Σ (B₁ + B₂·T) · cos(arg)   (in 0.0001″)
 //! arg = D·D + M·M + M′·M′ + F·F + Ω·Ω   (all in radians)
-//! T   = (JDE − J2000) / 36525   (Julian centuries)
+//! T   = (JD(TT) − J2000) / 36525   (Julian centuries)
 //! ```
+//!
+//! Here `JDE` and `JD(TT)` are numerically identical; the distinction is
+//! semantic (ephemeris context), not an extra scale offset.
 //!
 //! The fundamental arguments *D, M, M′, F, Ω* follow IERS 2003 expressions and
 //! are evaluated in radians for numerical stability.
@@ -49,12 +52,13 @@
 //! use siderust::astro::nutation::{get_nutation, corrected_ra_with_nutation};
 //! use siderust::astro::precession::precess_from_j2000;
 //!
-//! let jd = JulianDate::from_utc(Utc::now());
-//! let n = get_nutation(jd);
+//! // from_utc applies ΔT automatically → jd_tt is on the TT axis
+//! let jd_tt = JulianDate::from_utc(Utc::now());
+//! let n = get_nutation(jd_tt);
 //! println!("Δψ = {:.4}°, Δε = {:.4}°", n.longitude, n.obliquity);
 //!
-//! let mean_of_date = precess_from_j2000(SIRIUS.target.get_position().clone(), jd);
-//! let ra_app = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
+//! let mean_of_date = precess_from_j2000(SIRIUS.target.get_position().clone(), jd_tt);
+//! let ra_app = corrected_ra_with_nutation(&mean_of_date.direction(), jd_tt);
 //! println!("Apparent RA = {ra_app:.4}°");
 //! ```
 //!
@@ -62,7 +66,6 @@
 //! *Accuracy*: ≤ 0.1″ for 1800–2050; outside that span consider the full IAU 2000A
 //! series (1365 terms) or IERS tabulated Δψ/Δε values.  
 
-use crate::astro::dynamical_time::julian_ephemeris_day;
 use crate::coordinates::spherical::direction::EquatorialMeanOfDate;
 use crate::time::JulianDate;
 use affn::Rotation3;
@@ -100,8 +103,8 @@ const TERMS: usize = 63;
 /// Compute Δψ, Δε and ε₀ for the supplied Julian Day (JD).
 #[inline]
 pub fn get_nutation(jd: JulianDate) -> Nutation {
-    let jde = julian_ephemeris_day(jd);
-    let t = jde.julian_centuries().value();
+    // Input is interpreted as JD(TT), as required by the IAU 1980 model.
+    let t = jd.julian_centuries().value();
     let t2 = t * t;
     let t3 = t2 * t;
 

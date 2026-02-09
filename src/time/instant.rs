@@ -139,22 +139,30 @@ impl<S: TimeScale> Time<S> {
 
     /// Convert to a `chrono::DateTime<Utc>`.
     ///
+    /// Inverts the ΔT correction to recover the UTC / UT timestamp.
     /// Returns `None` if the value falls outside chrono's representable range.
     pub fn to_utc(&self) -> Option<DateTime<Utc>> {
+        use super::scales::UT;
         const UNIX_EPOCH_JD: f64 = 2_440_587.5;
-        let seconds_since_epoch = (self.julian_day_value() - UNIX_EPOCH_JD) * 86_400.0;
+        let jd_ut = self.to::<UT>().value();
+        let seconds_since_epoch = (jd_ut - UNIX_EPOCH_JD) * 86_400.0;
         let secs = seconds_since_epoch.floor() as i64;
         let nanos = ((seconds_since_epoch - secs as f64) * 1e9) as u32;
         DateTime::<Utc>::from_timestamp(secs, nanos)
     }
 
     /// Build an instant from a `chrono::DateTime<Utc>`.
+    ///
+    /// The UTC timestamp is interpreted as Universal Time (≈ UT1) and the
+    /// epoch-dependent **ΔT** correction is applied automatically, so the
+    /// resulting `Time<S>` is on the target scale's axis.
     pub fn from_utc(datetime: DateTime<Utc>) -> Self {
+        use super::scales::UT;
         const UNIX_EPOCH_JD: f64 = 2_440_587.5;
         let seconds_since_epoch = datetime.timestamp() as f64;
         let nanos = datetime.timestamp_subsec_nanos() as f64 / 1e9;
-        let jd = UNIX_EPOCH_JD + (seconds_since_epoch + nanos) / 86_400.0;
-        Self::from_julian_day(Days::new(jd))
+        let jd_ut = UNIX_EPOCH_JD + (seconds_since_epoch + nanos) / 86_400.0;
+        Time::<UT>::from_days(Days::new(jd_ut)).to::<S>()
     }
 
     // ── min / max ─────────────────────────────────────────────────────
@@ -377,17 +385,26 @@ mod tests {
     }
 
     #[test]
-    fn test_to_utc() {
-        let jd = Time::<JD>::new(2_451_545.0);
-        let datetime = jd.to_utc();
-        assert_eq!(datetime, DateTime::from_timestamp(946_728_000, 0));
+    fn test_jd_utc_roundtrip() {
+        // from_utc applies ΔT (UT→TT); to_utc inverts it (TT→UT).
+        let datetime = DateTime::from_timestamp(946_728_000, 0).unwrap();
+        let jd = Time::<JD>::from_utc(datetime);
+        let back = jd.to_utc().expect("to_utc");
+        let delta_ns =
+            back.timestamp_nanos_opt().unwrap() - datetime.timestamp_nanos_opt().unwrap();
+        assert!(delta_ns.abs() < 1_000, "roundtrip error: {} ns", delta_ns);
     }
 
     #[test]
-    fn test_from_utc() {
+    fn test_from_utc_applies_delta_t() {
+        // 2000-01-01 12:00:00 UTC → JD(UT)=2451545.0; ΔT≈63.83 s
         let datetime = DateTime::from_timestamp(946_728_000, 0).unwrap();
         let jd = Time::<JD>::from_utc(datetime);
-        assert_eq!(jd.value(), 2_451_545.0);
+        let delta_t_secs = (jd.value() - 2_451_545.0) * 86_400.0;
+        assert!(
+            (delta_t_secs - 63.83).abs() < 1.0,
+            "ΔT correction = {delta_t_secs:.2} s, expected ~63.83 s"
+        );
     }
 
     #[test]
@@ -461,17 +478,25 @@ mod tests {
     }
 
     #[test]
-    fn test_mjd_to_utc() {
-        let mjd = Time::<MJD>::new(51_544.5);
-        let datetime = mjd.to_utc();
-        assert_eq!(datetime, DateTime::from_timestamp(946_728_000, 0));
+    fn test_mjd_utc_roundtrip() {
+        let datetime = DateTime::from_timestamp(946_728_000, 0).unwrap();
+        let mjd = Time::<MJD>::from_utc(datetime);
+        let back = mjd.to_utc().expect("to_utc");
+        let delta_ns =
+            back.timestamp_nanos_opt().unwrap() - datetime.timestamp_nanos_opt().unwrap();
+        assert!(delta_ns.abs() < 1_000, "roundtrip error: {} ns", delta_ns);
     }
 
     #[test]
-    fn test_mjd_from_utc() {
+    fn test_mjd_from_utc_applies_delta_t() {
+        // MJD epoch is JD − 2400000.5; ΔT should shift value by ~63.83/86400 days
         let datetime = DateTime::from_timestamp(946_728_000, 0).unwrap();
         let mjd = Time::<MJD>::from_utc(datetime);
-        assert_eq!(mjd.value(), 51_544.5);
+        let delta_t_secs = (mjd.value() - 51_544.5) * 86_400.0;
+        assert!(
+            (delta_t_secs - 63.83).abs() < 1.0,
+            "ΔT correction = {delta_t_secs:.2} s, expected ~63.83 s"
+        );
     }
 
     #[test]

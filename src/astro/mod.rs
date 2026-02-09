@@ -18,7 +18,6 @@
 //! - [`orbit`]: Provides utilities for orbital mechanics and celestial object tracking.
 
 pub mod aberration;
-pub mod dynamical_time;
 pub mod nutation;
 pub mod orbit;
 pub mod precession;
