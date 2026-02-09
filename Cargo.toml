@@ -19,8 +19,8 @@ default = []
 serde = ["dep:serde", "qtty/serde", "affn/serde"]
 
 [dependencies]
-affn = { path = "affn" }
-qtty = { path = "qtty/qtty" }
+affn = { version="0.2.1", path = "affn" }
+qtty = { version="0.3.0", path = "qtty/qtty" }
 approx = "0.5"
 chrono = "0.4.43"
 nalgebra = "0.34.1"
