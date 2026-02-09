@@ -422,12 +422,24 @@ mod tests {
     }
 
     #[test]
-    fn test_tt_to_tdb_and_min() {
+    fn test_tt_to_tdb_and_min_max() {
         let jd_tdb = Time::<JD>::tt_to_tdb(Time::<JD>::J2000);
         assert!((jd_tdb - Time::<JD>::J2000).value().abs() < 1e-6);
 
-        let later = Time::<JD>::J2000 + Days::new(1.0);
-        assert_eq!(Time::<JD>::J2000.min(later), Time::<JD>::J2000);
+        let earlier = Time::<JD>::J2000;
+        let later = earlier + Days::new(1.0);
+        assert_eq!(earlier.min(later), earlier);
+        assert_eq!(earlier.max(later), later);
+    }
+
+    #[test]
+    fn test_const_min_max() {
+        const A: Time<JD> = Time::<JD>::new(10.0);
+        const B: Time<JD> = Time::<JD>::new(14.0);
+        const MIN: Time<JD> = A.min(B);
+        const MAX: Time<JD> = A.max(B);
+        assert_eq!(MIN.value(), 10.0);
+        assert_eq!(MAX.value(), 14.0);
     }
 
     #[test]

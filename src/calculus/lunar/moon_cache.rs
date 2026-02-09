@@ -462,7 +462,6 @@ where
     F: Fn(ModifiedJulianDate) -> qtty::Quantity<V>,
 {
     let g = |t: Mjd| -> qtty::Quantity<V> { f(t) - threshold };
-    let g_day = |d: Days| -> qtty::Quantity<V> { g(Mjd::new(d.value())) };
 
     let t_start = period.start;
     let t_end = period.end;
@@ -479,21 +478,13 @@ where
         let next_v = g(next_t);
 
         if prev.value() * next_v.value() < 0.0 {
-            if let Some(root) = root_finding::brent_with_values(
-                Days::new(t.value()),
-                Days::new(next_t.value()),
-                prev,
-                next_v,
-                g_day,
-            ) {
-                let rv = root.value();
-                if rv >= t_start.value() && rv <= t_end.value() {
+            if let Some(root) =
+                root_finding::brent_with_values(Period::new(t, next_t), prev, next_v, g)
+            {
+                if root >= t_start && root <= t_end {
                     // Direction from sign change: prev < 0 → next > 0 means entering (+1)
                     let direction = if prev < 0.0 { 1 } else { -1 };
-                    labeled.push(LabeledCrossing {
-                        t: Mjd::new(rv),
-                        direction,
-                    });
+                    labeled.push(LabeledCrossing { t: root, direction });
                 }
             }
         }

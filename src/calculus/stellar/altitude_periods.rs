@@ -168,34 +168,26 @@ fn find_crossings_analytical(
 
             // Shifted altitude: g(t) = f(t) − threshold
             let g = |t: Mjd| -> Radians { f(t) - thr };
-            let g_day = |d: Days| -> Radians { g(Mjd::new(d.value())) };
 
             let mut refined: Vec<Mjd> = Vec::with_capacity(predicted.len());
 
             for (t_pred, _dir) in &predicted {
-                let lo_v = (t_pred.value() - BRACKET_HALF.value()).max(period.start.value());
-                let hi_v = (t_pred.value() + BRACKET_HALF.value()).min(period.end.value());
+                let lo = (*t_pred - BRACKET_HALF).max(period.start);
+                let hi = (*t_pred + BRACKET_HALF).min(period.end);
 
-                if (hi_v - lo_v) < 1e-12 {
+                if (hi - lo) < 1e-12 {
                     continue; // degenerate bracket at boundary
                 }
 
-                let lo = Mjd::new(lo_v);
-                let hi = Mjd::new(hi_v);
                 let g_lo = g(lo);
                 let g_hi = g(hi);
 
                 if g_lo.value() * g_hi.value() < 0.0 {
-                    if let Some(root) = root_finding::brent_with_values(
-                        Days::new(lo_v),
-                        Days::new(hi_v),
-                        g_lo,
-                        g_hi,
-                        g_day,
-                    ) {
-                        let rv = root.value();
-                        if rv >= period.start.value() && rv <= period.end.value() {
-                            refined.push(Mjd::new(rv));
+                    if let Some(root) =
+                        root_finding::brent_with_values(Period::new(lo, hi), g_lo, g_hi, g)
+                    {
+                        if root >= period.start && root <= period.end {
+                            refined.push(root);
                         }
                     }
                 }
