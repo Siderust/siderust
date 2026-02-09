@@ -303,11 +303,11 @@ mod tests {
         let shifted = apparent.direction();
 
         // Handle azimuth wrap-around (e.g., 359.999° vs 0.001° is actually 0.002° apart)
-        let mut delta_ra = (shifted.azimuth.value() - original.azimuth.value()).abs();
+        let mut delta_ra = (shifted.azimuth - original.azimuth).abs();
         if delta_ra > 180.0 {
-            delta_ra = 360.0 - delta_ra;
+            delta_ra = Degrees::new(360.0) - delta_ra;
         }
-        let delta_dec = (shifted.polar.value() - original.polar.value()).abs();
+        let delta_dec = (shifted.polar - original.polar).abs();
 
         // At least one should have changed
         assert!(
@@ -344,8 +344,8 @@ mod tests {
         let orig_dir = original.direction();
         let rec_dir = recovered.direction();
 
-        let delta_ra = (rec_dir.azimuth.value() - orig_dir.azimuth.value()).abs();
-        let delta_dec = (rec_dir.polar.value() - orig_dir.polar.value()).abs();
+        let delta_ra = (rec_dir.azimuth - orig_dir.azimuth).abs();
+        let delta_dec = (rec_dir.polar - orig_dir.polar).abs();
 
         // Tolerance of 1e-6 degrees ≈ 0.003 arcseconds (numerical precision limit)
         assert!(
