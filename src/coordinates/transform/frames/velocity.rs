@@ -85,12 +85,8 @@ impl<U: Unit> TransformFrame<Velocity<frames::EquatorialMeanJ2000, U>>
 {
     fn to_frame(&self) -> Velocity<frames::EquatorialMeanJ2000, U> {
         let rot: Rotation3 = frame_bias_icrs_to_j2000();
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
-        Velocity::<frames::EquatorialMeanJ2000, U>::from_vec3(Vector3::new(
-            Quantity::new(x),
-            Quantity::new(y),
-            Quantity::new(z),
-        ))
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Velocity::<frames::EquatorialMeanJ2000, U>::from_vec3(Vector3::new(x, y, z))
     }
 }
 
@@ -100,12 +96,8 @@ impl<U: Unit> TransformFrame<Velocity<frames::ICRS, U>>
 {
     fn to_frame(&self) -> Velocity<frames::ICRS, U> {
         let rot: Rotation3 = frame_bias_j2000_to_icrs();
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
-        Velocity::<frames::ICRS, U>::from_vec3(Vector3::new(
-            Quantity::new(x),
-            Quantity::new(y),
-            Quantity::new(z),
-        ))
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Velocity::<frames::ICRS, U>::from_vec3(Vector3::new(x, y, z))
     }
 }
 

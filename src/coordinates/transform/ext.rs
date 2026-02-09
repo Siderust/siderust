@@ -130,12 +130,8 @@ impl<F: ReferenceFrame, U: Unit> VectorAstroExt<F, U> for Vector<F, U> {
         (): FrameRotationProvider<F, F2>,
     {
         let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, ctx);
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
-        Vector::new(
-            Quantity::<U>::new(x),
-            Quantity::<U>::new(y),
-            Quantity::<U>::new(z),
-        )
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Vector::new(x, y, z)
     }
 }
 
@@ -217,12 +213,8 @@ where
         (): FrameRotationProvider<F, F2>,
     {
         let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, ctx);
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
-        Position::new(
-            Quantity::<U>::new(x),
-            Quantity::<U>::new(y),
-            Quantity::<U>::new(z),
-        )
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Position::new(x, y, z)
     }
 
     fn to_center<C2: ReferenceCenter<Params = ()>>(
@@ -312,21 +304,13 @@ mod tests {
 
         let pos_ecl: Position<Barycentric, Ecliptic, AstronomicalUnit> = pos.to_frame(&jd, &ctx);
 
-        assert!(
-            pos_ecl.x().is_finite()
-                && pos_ecl.y().is_finite()
-                && pos_ecl.z().is_finite()
-        );
+        assert!(pos_ecl.x().is_finite() && pos_ecl.y().is_finite() && pos_ecl.z().is_finite());
 
         // Length must be preserved under pure rotation.
-        let n0 = (pos.x() * pos.x()
-            + pos.y() * pos.y()
-            + pos.z() * pos.z())
-        .sqrt();
-        let n1 = (pos_ecl.x() * pos_ecl.x()
-            + pos_ecl.y() * pos_ecl.y()
-            + pos_ecl.z() * pos_ecl.z())
-        .sqrt();
+        let n0 = (pos.x() * pos.x() + pos.y() * pos.y() + pos.z() * pos.z()).sqrt();
+        let n1 =
+            (pos_ecl.x() * pos_ecl.x() + pos_ecl.y() * pos_ecl.y() + pos_ecl.z() * pos_ecl.z())
+                .sqrt();
         assert!((n0 - n1).abs() < 1e-12);
     }
 

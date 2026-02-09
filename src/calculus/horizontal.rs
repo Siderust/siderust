@@ -50,34 +50,31 @@ where
 
     // 2) Rotate J2000 → mean-of-date using precession rotation
     let rot_prec = precession::precession_rotation_from_j2000(jd);
-    let [x_m, y_m, z_m] = rot_prec.apply_array([
-        topo_cart_j2000.x().value(),
-        topo_cart_j2000.y().value(),
-        topo_cart_j2000.z().value(),
-    ]);
+    let [x_m, y_m, z_m] = rot_prec
+        * [
+            topo_cart_j2000.x(),
+            topo_cart_j2000.y(),
+            topo_cart_j2000.z(),
+        ];
 
     let topo_cart_mod =
         cartesian::Position::<Topocentric, frames::EquatorialMeanOfDate, U>::new_with_params(
             *topo_cart_j2000.center_params(),
-            Quantity::<U>::new(x_m),
-            Quantity::<U>::new(y_m),
-            Quantity::<U>::new(z_m),
+            x_m,
+            y_m,
+            z_m,
         );
 
     // 3) Apply nutation rotation (mean-of-date → true-of-date)
     let rot_nut = nutation_rotation(jd);
-    let [x_t, y_t, z_t] = rot_nut.apply_array([
-        topo_cart_mod.x().value(),
-        topo_cart_mod.y().value(),
-        topo_cart_mod.z().value(),
-    ]);
+    let [x_t, y_t, z_t] = rot_nut * [topo_cart_mod.x(), topo_cart_mod.y(), topo_cart_mod.z()];
 
     let topo_cart_true =
         cartesian::Position::<Topocentric, frames::EquatorialTrueOfDate, U>::new_with_params(
             *topo_cart_mod.center_params(),
-            Quantity::<U>::new(x_t),
-            Quantity::<U>::new(y_t),
-            Quantity::<U>::new(z_t),
+            x_t,
+            y_t,
+            z_t,
         );
 
     // 4) Convert to spherical topocentric equatorial (true of date)

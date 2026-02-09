@@ -124,14 +124,10 @@ where
     fn transform(&self, jd: JulianDate) -> Position<C2, F2, U> {
         // Apply the frame rotation at the requested epoch, then shift centers.
         let rot: Rotation3 = frame_rotation::<F1, F2>(jd, &AstroContext::default());
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         let rotated = Position::<C1, F2, U>::from_vec3(
             self.center_params().clone(),
-            nalgebra::Vector3::new(
-                qtty::Quantity::<U>::new(x),
-                qtty::Quantity::<U>::new(y),
-                qtty::Quantity::<U>::new(z),
-            ),
+            nalgebra::Vector3::new(x, y, z),
         );
         rotated.to_center(jd)
     }

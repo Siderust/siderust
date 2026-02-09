@@ -249,7 +249,7 @@ where
         a = b;
         fa = fb;
 
-        b = b + if d.abs() > tol {
+        b += if d.abs() > tol {
             d
         } else if m > Quantity::<T>::zero() {
             tol

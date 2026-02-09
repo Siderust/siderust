@@ -33,10 +33,10 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equat
 {
     fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
         let rot: Rotation3 = frame_bias_icrs_to_j2000();
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         Position::from_vec3(
             self.center_params().clone(),
-            nalgebra::Vector3::new(x.into(), y.into(), z.into()),
+            nalgebra::Vector3::new(x, y, z),
         )
     }
 }
