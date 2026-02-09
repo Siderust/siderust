@@ -246,23 +246,22 @@ impl TimeScale for UT {
 
     #[inline]
     fn to_jd_tt(ut_value: Days) -> Days {
-        let jd_ut = super::instant::Time::<JD>::new(ut_value.value());
+        let jd_ut = super::instant::Time::<JD>::from_days(ut_value);
         let dt_secs = super::delta_t::delta_t_seconds_from_ut(jd_ut);
-        ut_value + Days::new(dt_secs.value() / 86_400.0)
+        ut_value + dt_secs.to::<qtty::Day>()
     }
 
     #[inline]
     fn from_jd_tt(jd_tt: Days) -> Days {
         // Solve ut + ΔT(ut)/86400 = tt via fixed-point iteration.
         // dΔT/dJD ≈ 3×10⁻⁸, so convergence is immediate.
-        let tt = jd_tt.value();
-        let mut ut = tt;
+        let mut ut = jd_tt;
         for _ in 0..3 {
-            let jd_ut = super::instant::Time::<JD>::new(ut);
-            let dt_secs = super::delta_t::delta_t_seconds_from_ut(jd_ut).value();
-            ut = tt - dt_secs / 86_400.0;
+            let jd_ut = super::instant::Time::<JD>::from_days(ut);
+            let dt_days = super::delta_t::delta_t_seconds_from_ut(jd_ut).to::<qtty::Day>();
+            ut = jd_tt - dt_days;
         }
-        Days::new(ut)
+        ut
     }
 }
 

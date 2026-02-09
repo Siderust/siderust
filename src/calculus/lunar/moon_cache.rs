@@ -325,8 +325,8 @@ pub struct MoonAltitudeContext {
     nut_cache: NutationCache,
     /// Observer ITRF position in km: [x, y, z].
     site_itrf_km: [Kilometers; 3],
-    /// Observer geodetic latitude in radians.
-    lat_rad: f64,
+    /// Observer geodetic latitude.
+    lat: qtty::Radians,
     /// Observer geodetic longitude in degrees (for LST computation).
     lon: qtty::Degrees,
 }
@@ -352,7 +352,7 @@ impl MoonAltitudeContext {
             pos_cache,
             nut_cache,
             site_itrf_km,
-            lat_rad: site.lat.to::<Radian>().value(),
+            lat: site.lat.to::<Radian>(),
             lon: site.lon,
         }
     }
@@ -380,8 +380,8 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 3. Topocentric correction: subtract observer position in J2000 eq
         // ---------------------------------------------------------------
-        let gmst_rad = unmodded_gst(mjd.into()).to::<Radian>().value();
-        let (sin_g, cos_g) = gmst_rad.sin_cos();
+        let gmst = unmodded_gst(mjd.into()).to::<Radian>();
+        let (sin_g, cos_g) = gmst.sin_cos();
 
         let sx = self.site_itrf_km[0];
         let sy = self.site_itrf_km[1];
@@ -422,10 +422,9 @@ impl MoonAltitudeContext {
         let gst = calculate_gst(mjd.into());
         let lst = calculate_lst(gst, self.lon);
         let ra_deg = qtty::Degrees::new(ra_rad.to_degrees());
-        let ha_rad = (lst - ra_deg).normalize().to::<Radian>().value();
+        let ha = (lst - ra_deg).normalize().to::<Radian>();
 
-        let sin_alt =
-            dec_rad.sin() * self.lat_rad.sin() + dec_rad.cos() * self.lat_rad.cos() * ha_rad.cos();
+        let sin_alt = dec_rad.sin() * self.lat.sin() + dec_rad.cos() * self.lat.cos() * ha.cos();
 
         Quantity::<Radian>::new(sin_alt.asin())
     }
@@ -477,7 +476,7 @@ where
         let next_t = (t + step).min(t_end);
         let next_v = g(next_t);
 
-        if prev.value() * next_v.value() < 0.0 {
+        if prev.signum() * next_v.signum() < 0.0 {
             if let Some(root) =
                 root_finding::brent_with_values(Period::new(t, next_t), prev, next_v, g)
             {

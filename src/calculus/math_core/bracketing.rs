@@ -24,6 +24,11 @@ use super::extrema::{self, ExtremumKind};
 
 type Mjd = ModifiedJulianDate;
 
+#[inline]
+fn opposite_sign<V: Unit>(a: Quantity<V>, b: Quantity<V>) -> bool {
+    a.signum() * b.signum() < 0.0
+}
+
 // ---------------------------------------------------------------------------
 // Fixed‑step seeding
 // ---------------------------------------------------------------------------
@@ -51,7 +56,7 @@ where
         let next_t = (t + step).min(period.end);
         let next_v = g(next_t);
 
-        if prev.value() * next_v.value() < 0.0 {
+        if opposite_sign(prev, next_v) {
             brackets.push(Period::new(t, next_t));
         }
 
@@ -110,7 +115,7 @@ where
 
     // Process stack: subdivide large steps where sign change detected
     while let Some(frame) = stack.pop() {
-        if frame.g_lo.value() * frame.g_hi.value() < 0.0 {
+        if opposite_sign(frame.g_lo, frame.g_hi) {
             let width = frame.period.end - frame.period.start;
             if width <= min_step + min_step {
                 brackets.push(frame.period);
@@ -201,7 +206,7 @@ where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let g = |t: Mjd| f(t).value() - threshold.value();
+    let g = |t: Mjd| f(t) - threshold;
     let range = search_period.duration();
 
     // Expanding search: start near the extremum and step backward
@@ -216,7 +221,7 @@ where
     let mut g_lo = g(bracket.start);
 
     while bracket.start > search_period.start {
-        if g_lo * g_hi < 0.0 {
+        if opposite_sign(g_lo, g_hi) {
             return Some(bracket);
         }
         bracket.end = bracket.start;
@@ -226,7 +231,7 @@ where
     }
 
     // Check the final segment
-    if g_lo * g_hi < 0.0 {
+    if opposite_sign(g_lo, g_hi) {
         Some(bracket)
     } else {
         None
@@ -243,7 +248,7 @@ where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
-    let g = |t: Mjd| f(t).value() - threshold.value();
+    let g = |t: Mjd| f(t) - threshold;
     let range = search_period.duration();
 
     let mut bracket = Period::new(search_period.start, search_period.start);
@@ -257,7 +262,7 @@ where
     let mut g_hi = g(bracket.end);
 
     while bracket.end < search_period.end {
-        if g_lo * g_hi < 0.0 {
+        if opposite_sign(g_lo, g_hi) {
             return Some(bracket);
         }
         bracket.start = bracket.end;
@@ -266,7 +271,7 @@ where
         g_hi = g(bracket.end);
     }
 
-    if g_lo * g_hi < 0.0 {
+    if opposite_sign(g_lo, g_hi) {
         Some(bracket)
     } else {
         None

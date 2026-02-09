@@ -230,15 +230,11 @@ where
         // The shift is in AU; we need to convert if U is different.
         // For now, assume AU and let the type system handle it.
         // TODO: Add unit conversion if U != AstronomicalUnit
-        let x = self.x().value() + shift[0];
-        let y = self.y().value() + shift[1];
-        let z = self.z().value() + shift[2];
+        let shift_x = Quantity::<U>::new(shift[0]);
+        let shift_y = Quantity::<U>::new(shift[1]);
+        let shift_z = Quantity::<U>::new(shift[2]);
 
-        Position::new(
-            Quantity::<U>::new(x),
-            Quantity::<U>::new(y),
-            Quantity::<U>::new(z),
-        )
+        Position::new(self.x() + shift_x, self.y() + shift_y, self.z() + shift_z)
     }
 
     fn to<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame>(

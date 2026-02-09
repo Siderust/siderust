@@ -144,8 +144,8 @@ impl<S: TimeScale> Time<S> {
     pub fn to_utc(&self) -> Option<DateTime<Utc>> {
         use super::scales::UT;
         const UNIX_EPOCH_JD: f64 = 2_440_587.5;
-        let jd_ut = self.to::<UT>().value();
-        let seconds_since_epoch = (jd_ut - UNIX_EPOCH_JD) * 86_400.0;
+        let jd_ut = self.to::<UT>().quantity();
+        let seconds_since_epoch = (jd_ut - Days::new(UNIX_EPOCH_JD)).to::<Second>().value();
         let secs = seconds_since_epoch.floor() as i64;
         let nanos = ((seconds_since_epoch - secs as f64) * 1e9) as u32;
         DateTime::<Utc>::from_timestamp(secs, nanos)
@@ -159,10 +159,10 @@ impl<S: TimeScale> Time<S> {
     pub fn from_utc(datetime: DateTime<Utc>) -> Self {
         use super::scales::UT;
         const UNIX_EPOCH_JD: f64 = 2_440_587.5;
-        let seconds_since_epoch = datetime.timestamp() as f64;
-        let nanos = datetime.timestamp_subsec_nanos() as f64 / 1e9;
-        let jd_ut = UNIX_EPOCH_JD + (seconds_since_epoch + nanos) / 86_400.0;
-        Time::<UT>::from_days(Days::new(jd_ut)).to::<S>()
+        let seconds_since_epoch = Seconds::new(datetime.timestamp() as f64);
+        let nanos = Seconds::new(datetime.timestamp_subsec_nanos() as f64 / 1e9);
+        let jd_ut = Days::new(UNIX_EPOCH_JD) + (seconds_since_epoch + nanos).to::<Day>();
+        Time::<UT>::from_days(jd_ut).to::<S>()
     }
 
     // ── min / max ─────────────────────────────────────────────────────
@@ -265,7 +265,7 @@ impl<S: TimeScale> std::ops::Div<Days> for Time<S> {
     type Output = f64;
     #[inline]
     fn div(self, rhs: Days) -> Self::Output {
-        self.value() / rhs.value()
+        (self.quantity / rhs).simplify().value()
     }
 }
 
@@ -273,7 +273,7 @@ impl<S: TimeScale> std::ops::Div<f64> for Time<S> {
     type Output = f64;
     #[inline]
     fn div(self, rhs: f64) -> Self::Output {
-        self.value() / rhs
+        (self.quantity / rhs).value()
     }
 }
 
