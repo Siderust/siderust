@@ -14,7 +14,7 @@
 //! All routines operate on `Period<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
 
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period};
 use qtty::{Day, Quantity, Unit};
 
 use super::root_finding;
@@ -61,11 +61,12 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let g = |t: Mjd| -> Quantity<V> { f(t) - threshold };
-    let g_day = |d: Days| -> Quantity<V> { g(Mjd::new(d.value())) };
+    let g_day = |d: Days| -> Quantity<V> { g(Mjd::from_days(d)) };
 
     let step_v = step;
     let t_start_v = period.start;
     let t_end_v = period.end;
+    let zero = Quantity::<V>::new(0.0);
 
     let mut crossings = Vec::new();
     let mut t = t_start_v;
@@ -74,17 +75,17 @@ where
         let next_t = (t + step_v).min(t_end_v);
         let next_v = g(next_t);
 
-        if prev.value() * next_v.value() < 0.0 {
+        if (prev < zero && next_v > zero) || (prev > zero && next_v < zero) {
             if let Some(root) = root_finding::brent_with_values(
-                Days::new(t.value()),
-                Days::new(next_t.value()),
+                t.quantity(),
+                next_t.quantity(),
                 prev,
                 next_v,
                 g_day,
             ) {
-                let rv = root.value();
-                if rv >= t_start_v.value() && rv <= t_end_v.value() {
-                    crossings.push(Mjd::new(rv));
+                let root_t = Mjd::from_days(root);
+                if root_t >= t_start_v && root_t <= t_end_v {
+                    crossings.push(root_t);
                 }
             }
         }
@@ -109,9 +110,10 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let g = |t: Mjd| -> Quantity<V> { f(t) - threshold };
-    let g_day = |d: Days| -> Quantity<V> { g(Mjd::new(d.value())) };
+    let g_day = |d: Days| -> Quantity<V> { g(Mjd::from_days(d)) };
     let t_start_v = period.start;
     let t_end_v = period.end;
+    let zero = Quantity::<V>::new(0.0);
 
     let mut crossings = Vec::new();
 
@@ -135,15 +137,11 @@ where
             continue;
         }
 
-        if fa.value() * fb.value() < 0.0 {
-            if let Some(root) = root_finding::brent_with_values(
-                Days::new(a.value()),
-                Days::new(b.value()),
-                fa,
-                fb,
-                g_day,
-            ) {
-                let rv = ModifiedJulianDate::new(root.value());
+        if (fa < zero && fb > zero) || (fa > zero && fb < zero) {
+            if let Some(root) =
+                root_finding::brent_with_values(a.quantity(), b.quantity(), fa, fb, g_day)
+            {
+                let rv = ModifiedJulianDate::from_days(root);
                 if rv >= t_start_v && rv <= t_end_v {
                     crossings.push(rv);
                 }
@@ -231,7 +229,7 @@ where
     // Leading partial period: we start above and first crossing exits
     if start_above && labeled[0].direction == -1 {
         let exit_t = labeled[0].t;
-        let mid_v = Mjd::new(0.5 * (t_start.value() + exit_t.value()));
+        let mid_v = t_start + (exit_t - t_start) * 0.5;
         if is_above(f(mid_v)) {
             periods.push(Period::new(period.start, exit_t));
         }
@@ -251,7 +249,7 @@ where
                 t_end
             };
 
-            let mid_v = Mjd::new(0.5 * (enter_t.value() + exit_t.value()));
+            let mid_v = enter_t + (exit_t - enter_t) * 0.5;
             if mid_v >= t_start && mid_v <= t_end && is_above(f(mid_v)) {
                 periods.push(Period::new(enter_t, exit_t));
             }
@@ -352,40 +350,12 @@ where
 
 /// Complement of `periods` within `within`.
 pub fn complement(within: Period<Mjd>, periods: &[Period<Mjd>]) -> Vec<Period<Mjd>> {
-    let mut gaps = Vec::new();
-    let mut cursor = within.start.value();
-    let t_end_v = within.end.value();
-    for p in periods {
-        if p.start.value() > cursor {
-            gaps.push(Period::new(Mjd::new(cursor), p.start));
-        }
-        if p.end.value() > cursor {
-            cursor = p.end.value();
-        }
-    }
-    if cursor < t_end_v {
-        gaps.push(Period::new(Mjd::new(cursor), within.end));
-    }
-    gaps
+    complement_within(within, periods)
 }
 
 /// Intersection of two sorted, non‑overlapping period lists.
 pub fn intersect(a: &[Period<Mjd>], b: &[Period<Mjd>]) -> Vec<Period<Mjd>> {
-    let mut result = Vec::new();
-    let (mut i, mut j) = (0, 0);
-    while i < a.len() && j < b.len() {
-        let start = a[i].start.value().max(b[j].start.value());
-        let end = a[i].end.value().min(b[j].end.value());
-        if start < end {
-            result.push(Period::new(Mjd::new(start), Mjd::new(end)));
-        }
-        if a[i].end.value() <= b[j].end.value() {
-            i += 1;
-        } else {
-            j += 1;
-        }
-    }
-    result
+    intersect_periods(a, b)
 }
 
 // ---------------------------------------------------------------------------
@@ -406,22 +376,28 @@ mod tests {
         Period::new(mjd(a), mjd(b))
     }
 
+    fn mjd_scalar(t: Mjd) -> f64 {
+        t / Days::new(1.0)
+    }
+
     #[test]
     fn above_threshold_sine_wave() {
         // sin(2π(t+0.05)) > 0 roughly on (−0.05, 0.45) → within [0,1]: (0, ~0.45) and (~0.95, 1)
         // Use a shift to avoid exact zero at t=0
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
         let periods =
             above_threshold_periods(period(0.0, 1.0), Days::new(0.01), &f, Radians::new(0.0));
 
         // Should find at least one above-threshold period
         assert!(!periods.is_empty(), "got {:?}", periods);
         // Total above duration should be roughly 0.5
-        let total: f64 = periods
+        let total = periods
             .iter()
-            .map(|p| p.end.value() - p.start.value())
-            .sum();
-        assert!((total - 0.5).abs() < 0.05, "total = {total}");
+            .fold(Days::new(0.0), |sum, p| sum + p.duration_days());
+        assert!(
+            (total - Days::new(0.5)).abs() < Days::new(0.05),
+            "total = {total}"
+        );
     }
 
     #[test]
@@ -433,8 +409,7 @@ mod tests {
             Radians::new(0.0),
         );
         assert_eq!(periods.len(), 1);
-        assert!((periods[0].start.value() - 0.0).abs() < 1e-10);
-        assert!((periods[0].end.value() - 10.0).abs() < 1e-10);
+        assert_eq!(periods[0], period(0.0, 10.0));
     }
 
     #[test]
@@ -452,7 +427,7 @@ mod tests {
     fn in_range_periods_band() {
         // sin(2π(t+0.05)) in range [-0.5, 0.5]
         // The band where |sin| < 0.5 occupies 1/3 of each cycle.
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
         let periods = in_range_periods(
             period(0.0, 1.0),
             Days::new(0.01),
@@ -463,12 +438,14 @@ mod tests {
 
         assert!(!periods.is_empty(), "should find some in-range periods");
 
-        let total: f64 = periods
+        let total = periods
             .iter()
-            .map(|p| p.end.value() - p.start.value())
-            .sum();
+            .fold(Days::new(0.0), |sum, p| sum + p.duration_days());
         // Analytically, sin(x) ∈ (-0.5, 0.5) for 1/3 of each full cycle ≈ 0.333
-        assert!(total > 0.25 && total < 0.45, "total = {total}");
+        assert!(
+            total > Days::new(0.25) && total < Days::new(0.45),
+            "total = {total}"
+        );
     }
 
     #[test]
@@ -477,19 +454,16 @@ mod tests {
         let gaps = complement(period(0.0, 10.0), &intervals);
 
         assert_eq!(gaps.len(), 3);
-        assert!((gaps[0].start.value() - 0.0).abs() < 1e-10);
-        assert!((gaps[0].end.value() - 2.0).abs() < 1e-10);
-        assert!((gaps[1].start.value() - 4.0).abs() < 1e-10);
-        assert!((gaps[1].end.value() - 6.0).abs() < 1e-10);
-        assert!((gaps[2].start.value() - 8.0).abs() < 1e-10);
-        assert!((gaps[2].end.value() - 10.0).abs() < 1e-10);
+        assert_eq!(gaps[0], period(0.0, 2.0));
+        assert_eq!(gaps[1], period(4.0, 6.0));
+        assert_eq!(gaps[2], period(8.0, 10.0));
     }
 
     #[test]
     fn complement_empty_input() {
         let gaps = complement(period(0.0, 10.0), &[]);
         assert_eq!(gaps.len(), 1);
-        assert!((gaps[0].end.value() - gaps[0].start.value() - 10.0).abs() < 1e-10);
+        assert!((gaps[0].duration_days() - Days::new(10.0)).abs() < Days::new(1e-10));
     }
 
     #[test]
@@ -505,10 +479,8 @@ mod tests {
         let result = intersect(&a, &b);
 
         assert_eq!(result.len(), 2);
-        assert!((result[0].start.value() - 3.0).abs() < 1e-10);
-        assert!((result[0].end.value() - 5.0).abs() < 1e-10);
-        assert!((result[1].start.value() - 7.0).abs() < 1e-10);
-        assert!((result[1].end.value() - 8.0).abs() < 1e-10);
+        assert_eq!(result[0], period(3.0, 5.0));
+        assert_eq!(result[1], period(7.0, 8.0));
     }
 
     #[test]
@@ -521,7 +493,7 @@ mod tests {
     #[test]
     fn multiple_crossings_per_window() {
         // Fast oscillation: sin(20πt) > 0  → 10 positive intervals in [0,1]
-        let f = |t: Mjd| Radians::new((20.0 * std::f64::consts::PI * t.value()).sin());
+        let f = |t: Mjd| Radians::new((20.0 * std::f64::consts::PI * mjd_scalar(t)).sin());
         let periods =
             above_threshold_periods(period(0.0, 1.0), Days::new(0.005), &f, Radians::new(0.0));
         assert!(
@@ -534,7 +506,7 @@ mod tests {
     #[test]
     fn segmented_matches_scan() {
         // Use shifted sine to avoid exact zeros at grid points
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
 
         // Build key times at 0.1 intervals
         let key_times: Vec<Mjd> = (0..=10).map(|i| mjd(i as f64 * 0.1)).collect();
@@ -550,24 +522,27 @@ mod tests {
             "scan={scan:?} seg={segmented:?}"
         );
         for (s, g) in scan.iter().zip(segmented.iter()) {
-            assert!((s.start.value() - g.start.value()).abs() < 0.05);
-            assert!((s.end.value() - g.end.value()).abs() < 0.05);
+            assert!((s.start - g.start).abs() < Days::new(0.05));
+            assert!((s.end - g.end).abs() < Days::new(0.05));
         }
     }
 
     #[test]
     fn find_crossings_in_segments_basic() {
-        let f = |t: Mjd| Radians::new(t.value() - 5.0);
+        let f = |t: Mjd| Radians::new(mjd_scalar(t) - 5.0);
         let keys: Vec<Mjd> = vec![mjd(0.0), mjd(3.0), mjd(7.0), mjd(10.0)];
         let crossings = find_crossings_in_segments(&keys, &f, Radians::new(0.0), period(0.0, 10.0));
         assert_eq!(crossings.len(), 1);
-        assert!((crossings[0].value() - 5.0).abs() < 1e-8);
+        assert!((crossings[0] - mjd(5.0)).abs() < Days::new(1e-8));
     }
 
     #[test]
     fn label_crossings_skips_tangency() {
         // f(t) = t^2 touches 0 at t=0 but doesn't cross
-        let f = |t: Mjd| Radians::new(t.value() * t.value());
+        let f = |t: Mjd| {
+            let t = mjd_scalar(t);
+            Radians::new(t * t)
+        };
         let mut crossings = vec![mjd(0.0)];
         let labeled = label_crossings(&mut crossings, &f, Radians::new(0.0));
         // t=0 is a tangency (above on both sides), should be skipped
@@ -595,7 +570,7 @@ mod tests {
             },
         ];
         let f = |t: Mjd| -> Radians {
-            let tv = t.value();
+            let tv = mjd_scalar(t);
             if (tv > 2.0 && tv < 5.0) || (tv > 7.0 && tv < 9.0) {
                 Radians::new(1.0)
             } else {
@@ -605,9 +580,7 @@ mod tests {
         let periods =
             build_above_periods(&labeled, period(0.0, 10.0), false, &f, Radians::new(0.0));
         assert_eq!(periods.len(), 2);
-        assert!((periods[0].start.value() - 2.0).abs() < 1e-10);
-        assert!((periods[0].end.value() - 5.0).abs() < 1e-10);
-        assert!((periods[1].start.value() - 7.0).abs() < 1e-10);
-        assert!((periods[1].end.value() - 9.0).abs() < 1e-10);
+        assert_eq!(periods[0], period(2.0, 5.0));
+        assert_eq!(periods[1], period(7.0, 9.0));
     }
 }
