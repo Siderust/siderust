@@ -79,7 +79,8 @@ impl Time<JD> {
 impl Add<Years> for Time<JD> {
     type Output = Self;
     fn add(self, years: Years) -> Self {
-        self + years.to::<Day>()
+        // Treat `Years` here as Julian years for JD arithmetic stability.
+        self + Days::new(years.value() * Self::JULIAN_YEAR.value())
     }
 }
 
@@ -97,7 +98,8 @@ impl From<Time<JD>> for JulianYears {
 
 impl From<Centuries> for Time<JD> {
     fn from(centuries: Centuries) -> Self {
-        Self::J2000 + centuries.to::<Day>()
+        // `Centuries` are interpreted as Julian centuries relative to J2000.
+        Self::J2000 + Days::new(centuries.value() * Self::JULIAN_CENTURY.value())
     }
 }
 
@@ -109,7 +111,8 @@ impl From<Time<JD>> for Centuries {
 
 impl From<Millennia> for Time<JD> {
     fn from(millennia: Millennia) -> Self {
-        Self::J2000 + millennia.to::<Day>()
+        // `Millennia` are interpreted as Julian millennia relative to J2000.
+        Self::J2000 + Days::new(millennia.value() * Self::JULIAN_MILLENNIUM.value())
     }
 }
 
