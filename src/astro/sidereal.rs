@@ -47,7 +47,7 @@ pub use qtty::time::SIDEREAL_DAY;
 /// *Output*: angle in degrees, may be < 0° or > 360°.
 #[inline]
 pub fn unmodded_gst(julian_date: JulianDate) -> Degrees {
-    let base = julian_date.julian_day_value() - JulianDate::J2000.julian_day_value();
+    let base = (julian_date - JulianDate::J2000).value();
     let t = julian_date.julian_centuries().value();
 
     // IAU 2006 polynomial (units: degrees)

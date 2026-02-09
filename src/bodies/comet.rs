@@ -124,8 +124,8 @@ impl<'a> Comet<'a> {
     /// Approximate orbital period in Julian years (`365.25 d`) using Kepler’s third law.
     pub fn period_years(&self) -> f64 {
         // μ_sun ≈ 1 (when a in AU, P in years): P = sqrt(a^3)
-        let a = self.orbit.semi_major_axis.value();
-        a.powf(1.5)
+        let a = self.orbit.semi_major_axis;
+        a.value().powf(1.5)
     }
 }
 

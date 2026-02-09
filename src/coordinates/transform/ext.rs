@@ -313,19 +313,19 @@ mod tests {
         let pos_ecl: Position<Barycentric, Ecliptic, AstronomicalUnit> = pos.to_frame(&jd, &ctx);
 
         assert!(
-            pos_ecl.x().value().is_finite()
-                && pos_ecl.y().value().is_finite()
-                && pos_ecl.z().value().is_finite()
+            pos_ecl.x().is_finite()
+                && pos_ecl.y().is_finite()
+                && pos_ecl.z().is_finite()
         );
 
         // Length must be preserved under pure rotation.
-        let n0 = (pos.x().value() * pos.x().value()
-            + pos.y().value() * pos.y().value()
-            + pos.z().value() * pos.z().value())
+        let n0 = (pos.x() * pos.x()
+            + pos.y() * pos.y()
+            + pos.z() * pos.z())
         .sqrt();
-        let n1 = (pos_ecl.x().value() * pos_ecl.x().value()
-            + pos_ecl.y().value() * pos_ecl.y().value()
-            + pos_ecl.z().value() * pos_ecl.z().value())
+        let n1 = (pos_ecl.x() * pos_ecl.x()
+            + pos_ecl.y() * pos_ecl.y()
+            + pos_ecl.z() * pos_ecl.z())
         .sqrt();
         assert!((n0 - n1).abs() < 1e-12);
     }
