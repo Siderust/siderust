@@ -131,30 +131,6 @@ impl<T: TimeInstant> Period<T> {
             None
         }
     }
-
-    /// Convert this period to use a different time instant type.
-    ///
-    /// This method converts both the start and end times to the target type `U`
-    /// by routing through UTC as an intermediate representation.
-    ///
-    /// # Examples
-    ///
-    /// ```
-    /// use siderust::time::{Period, ModifiedJulianDate};
-    /// use chrono::{DateTime, Utc};
-    ///
-    /// let mjd_period = Period::new(
-    ///     ModifiedJulianDate::new(59000.0),
-    ///     ModifiedJulianDate::new(59001.0)
-    /// );
-    /// let utc_period = mjd_period.to::<DateTime<Utc>>();
-    /// ```
-    pub fn to<U: TimeInstant>(&self) -> Period<U> {
-        Period::new(
-            U::from_utc(self.start.to_utc().unwrap()),
-            U::from_utc(self.end.to_utc().unwrap()),
-        )
-    }
 }
 
 // Display implementation
@@ -192,12 +168,6 @@ impl<S: TimeScale> Period<Time<S>> {
         Target: PeriodTimeTarget<S>,
     {
         Period::new(Target::convert(self.start), Target::convert(self.end))
-    }
-}
-
-impl<T: TimeInstant + fmt::Display> fmt::Display for Period<T> {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        write!(f, "[{}, {})", self.start, self.end)
     }
 }
 
