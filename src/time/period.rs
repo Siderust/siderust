@@ -6,13 +6,43 @@
 //! This module provides the `Period<T>` type, representing a time interval
 //! between two time instants.
 
-use super::TimeInstant;
+use super::{Time, TimeInstant, TimeScale};
 use chrono::{DateTime, Utc};
 use qtty::Days;
 use std::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{ser::SerializeStruct, Deserialize, Deserializer, Serialize, Serializer};
+
+/// Target type adapter for [`Period<Time<S>>::to`].
+///
+/// This allows converting a period of `Time<S>` either to another time scale
+/// marker (`MJD`, `JD`, `UT`, ...) or directly to `chrono::DateTime<Utc>`.
+pub trait PeriodTimeTarget<S: TimeScale> {
+    type Instant: TimeInstant;
+
+    fn convert(value: Time<S>) -> Self::Instant;
+}
+
+impl<S: TimeScale, T: TimeScale> PeriodTimeTarget<S> for T {
+    type Instant = Time<T>;
+
+    #[inline]
+    fn convert(value: Time<S>) -> Self::Instant {
+        value.to::<T>()
+    }
+}
+
+impl<S: TimeScale> PeriodTimeTarget<S> for DateTime<Utc> {
+    type Instant = DateTime<Utc>;
+
+    #[inline]
+    fn convert(value: Time<S>) -> Self::Instant {
+        value
+            .to_utc()
+            .expect("time instant out of chrono::DateTime<Utc> representable range")
+    }
+}
 
 /// Represents a time period between two instants.
 ///
@@ -131,6 +161,43 @@ impl<T: TimeInstant> Period<T> {
 impl<T: TimeInstant + fmt::Display> fmt::Display for Period<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} to {}", self.start, self.end)
+    }
+}
+
+impl<S: TimeScale> Period<Time<S>> {
+    /// Convert this period to another time scale.
+    ///
+    /// Each endpoint is converted preserving the represented absolute interval.
+    ///
+    /// Supported targets:
+    /// - Any time-scale marker (`JD`, `MJD`, `UT`, ...)
+    /// - `chrono::DateTime<Utc>`
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use chrono::{DateTime, Utc};
+    /// use siderust::time::{JD, MJD, Period, Time};
+    ///
+    /// let period_jd = Period::new(Time::<JD>::new(2451545.0), Time::<JD>::new(2451546.0));
+    /// let period_mjd = period_jd.to::<MJD>();
+    /// let _period_utc: Period<DateTime<Utc>> = period_jd.to::<DateTime<Utc>>();
+    ///
+    /// assert!((period_mjd.start.value() - 51544.5).abs() < 1e-12);
+    /// assert!((period_mjd.end.value() - 51545.5).abs() < 1e-12);
+    /// ```
+    #[inline]
+    pub fn to<Target>(&self) -> Period<<Target as PeriodTimeTarget<S>>::Instant>
+    where
+        Target: PeriodTimeTarget<S>,
+    {
+        Period::new(Target::convert(self.start), Target::convert(self.end))
+    }
+}
+
+impl<T: TimeInstant + fmt::Display> fmt::Display for Period<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "[{}, {})", self.start, self.end)
     }
 }
 
@@ -317,7 +384,7 @@ pub fn intersect_periods<T: TimeInstant>(a: &[Period<T>], b: &[Period<T>]) -> Ve
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::{JulianDate, ModifiedJulianDate};
+    use crate::time::{JulianDate, ModifiedJulianDate, JD, MJD};
 
     #[test]
     fn test_period_creation_jd() {
@@ -327,6 +394,42 @@ mod tests {
 
         assert_eq!(period.start, start);
         assert_eq!(period.end, end);
+    }
+
+    #[test]
+    fn test_period_scale_conversion_jd_to_mjd() {
+        let period_jd = Period::new(Time::<JD>::new(2_451_545.0), Time::<JD>::new(2_451_546.0));
+        let period_mjd = period_jd.to::<MJD>();
+
+        assert!((period_mjd.start.value() - 51_544.5).abs() < 1e-12);
+        assert!((period_mjd.end.value() - 51_545.5).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_period_scale_conversion_roundtrip() {
+        let original = Period::new(Time::<MJD>::new(59_000.125), Time::<MJD>::new(59_001.75));
+        let roundtrip = original.to::<JD>().to::<MJD>();
+
+        assert!((roundtrip.start.value() - original.start.value()).abs() < 1e-12);
+        assert!((roundtrip.end.value() - original.end.value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_period_scale_conversion_to_utc() {
+        let start_utc = DateTime::from_timestamp(1_700_000_000, 0).unwrap();
+        let end_utc = DateTime::from_timestamp(1_700_000_600, 0).unwrap();
+        let period_jd = Period::new(
+            Time::<JD>::from_utc(start_utc),
+            Time::<JD>::from_utc(end_utc),
+        );
+
+        let period_utc = period_jd.to::<DateTime<Utc>>();
+        let start_delta_ns = period_utc.start.timestamp_nanos_opt().unwrap()
+            - start_utc.timestamp_nanos_opt().unwrap();
+        let end_delta_ns =
+            period_utc.end.timestamp_nanos_opt().unwrap() - end_utc.timestamp_nanos_opt().unwrap();
+        assert!(start_delta_ns.abs() < 10_000);
+        assert!(end_delta_ns.abs() < 10_000);
     }
 
     #[test]
