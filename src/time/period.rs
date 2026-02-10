@@ -9,6 +9,7 @@
 use super::TimeInstant;
 use chrono::{DateTime, Utc};
 use qtty::Days;
+use std::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{ser::SerializeStruct, Deserialize, Deserializer, Serialize, Serializer};
@@ -99,6 +100,37 @@ impl<T: TimeInstant> Period<T> {
         } else {
             None
         }
+    }
+
+    /// Convert this period to use a different time instant type.
+    ///
+    /// This method converts both the start and end times to the target type `U`
+    /// by routing through UTC as an intermediate representation.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use siderust::time::{Period, ModifiedJulianDate};
+    /// use chrono::{DateTime, Utc};
+    ///
+    /// let mjd_period = Period::new(
+    ///     ModifiedJulianDate::new(59000.0),
+    ///     ModifiedJulianDate::new(59001.0)
+    /// );
+    /// let utc_period = mjd_period.to::<DateTime<Utc>>();
+    /// ```
+    pub fn to<U: TimeInstant>(&self) -> Period<U> {
+        Period::new(
+            U::from_utc(self.start.to_utc().unwrap()),
+            U::from_utc(self.end.to_utc().unwrap()),
+        )
+    }
+}
+
+// Display implementation
+impl<T: TimeInstant + fmt::Display> fmt::Display for Period<T> {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(f, "{} to {}", self.start, self.end)
     }
 }
 
@@ -333,6 +365,38 @@ mod tests {
 
         assert_eq!(period.duration_days(), 1.0);
         assert_eq!(period.duration_seconds(), 86400);
+    }
+
+    #[test]
+    fn test_period_to_conversion() {
+        let mjd_start = ModifiedJulianDate::new(59000.0);
+        let mjd_end = ModifiedJulianDate::new(59001.0);
+        let mjd_period = Period::new(mjd_start, mjd_end);
+
+        let utc_period = mjd_period.to::<DateTime<Utc>>();
+        
+        // The converted period should have approximately the same duration (within 1 second due to ΔT)
+        let duration_secs = utc_period.duration().num_seconds();
+        assert!((duration_secs - 86400).abs() <= 1, "Duration was {} seconds", duration_secs);
+        
+        // Convert back and check that it's close (within small tolerance due to floating point)
+        let back_to_mjd = utc_period.to::<ModifiedJulianDate>();
+        let start_diff = (back_to_mjd.start.quantity() - mjd_start.quantity()).value().abs();
+        let end_diff = (back_to_mjd.end.quantity() - mjd_end.quantity()).value().abs();
+        assert!(start_diff < 1e-6, "Start difference: {}", start_diff);
+        assert!(end_diff < 1e-6, "End difference: {}", end_diff);
+    }
+
+    #[test]
+    fn test_period_display() {
+        let start = ModifiedJulianDate::new(59000.0);
+        let end = ModifiedJulianDate::new(59001.0);
+        let period = Period::new(start, end);
+
+        let display = format!("{}", period);
+        assert!(display.contains("MJD 59000"));
+        assert!(display.contains("MJD 59001"));
+        assert!(display.contains("to"));
     }
 
     #[test]
