@@ -120,7 +120,7 @@ fn icrf_to_ecliptic_velocity(
 /// Sun barycentric position in Ecliptic J2000 (AU).
 pub fn sun_barycentric(jd: JulianDate) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>
 {
-    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
     let sun_icrf = data::SUN.position(jd_tdb);
     Target::new_static(icrf_km_to_ecliptic_au_position(sun_icrf), jd)
 }
@@ -131,7 +131,7 @@ pub fn sun_barycentric(jd: JulianDate) -> Target<Position<Barycentric, Ecliptic,
 pub fn earth_barycentric(
     jd: JulianDate,
 ) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
     let emb = data::EMB.position(jd_tdb);
     let moon_off = data::MOON.position(jd_tdb);
     let earth_icrf = emb - moon_off.scale(FRAC_MOON);
@@ -144,7 +144,7 @@ pub fn earth_barycentric(
 pub fn earth_heliocentric(
     jd: JulianDate,
 ) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
     let emb = data::EMB.position(jd_tdb);
     let moon_off = data::MOON.position(jd_tdb);
     let sun = data::SUN.position(jd_tdb);
@@ -156,7 +156,7 @@ pub fn earth_heliocentric(
 ///
 /// `v_Earth = v_EMB − v_Moon_offset × FRAC_MOON`
 pub fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
     let v_emb = data::EMB.velocity(jd_tdb);
     let v_moon_off = data::MOON.velocity(jd_tdb);
     let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
@@ -167,7 +167,7 @@ pub fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay
 ///
 /// `Moon_geo = Moon_offset × FRAC_EARTH`
 pub fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, Ecliptic, Kilometer> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
     let moon_off = data::MOON.position(jd_tdb);
     let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
     let rot = icrf_to_ecliptic_rotation();
