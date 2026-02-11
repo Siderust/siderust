@@ -4,19 +4,17 @@ version = 4
 
 [[package]]
 name = "affn"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "affn-derive",
  "nalgebra",
- "qtty",
+ "qtty 0.3.0",
  "serde",
 ]
 
 [[package]]
 name = "affn-derive"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d16a2493966ba2daf23e9e012b46fd2ab37964e4815ebfec6b1bdb754da2af05"
+version = "0.1.1"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1008,8 +1006,18 @@ version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5f65b64d2dbc01dbcc4e7a1dc211d24be0644ab71ff937493f8a7335636e7a43"
 dependencies = [
- "qtty-core",
- "qtty-derive",
+ "qtty-core 0.2.2",
+ "qtty-derive 0.2.2",
+]
+
+[[package]]
+name = "qtty"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec18b86dcb4c777f979a171699a5f552675bbbfd7406d3d002403a26d7bd3215"
+dependencies = [
+ "qtty-core 0.3.0",
+ "qtty-derive 0.3.0",
 ]
 
 [[package]]
@@ -1019,8 +1027,20 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d4169b4a5124f5399d9a88fa8e5998a28bf22bd1bd67469bf9dfe9291bab0bef"
 dependencies = [
  "libm",
- "qtty-derive",
+ "qtty-derive 0.2.2",
  "serde",
+]
+
+[[package]]
+name = "qtty-core"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "02271e8e4889de336896d2b690ad40ef811e68a81726885a7ddfbccf7e35b19c"
+dependencies = [
+ "libm",
+ "qtty-derive 0.3.0",
+ "serde",
+ "typenum",
 ]
 
 [[package]]
@@ -1028,6 +1048,17 @@ name = "qtty-derive"
 version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1c328e5de738fb8da020b086b9aa6dfc9336a7b5ff3438857de9b3c7e453117"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "qtty-derive"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a6b1435ce1b31534c420c9b7c08dc7cf1d4a39f18748e7c7f29b71296d558a51"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1258,7 +1289,7 @@ dependencies = [
  "criterion",
  "nalgebra",
  "paste",
- "qtty",
+ "qtty 0.2.2",
  "rayon",
  "regex",
  "reqwest",
