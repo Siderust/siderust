@@ -100,10 +100,12 @@ pub mod horizontal;
 pub mod observation;
 pub mod spherical;
 pub mod transform;
+pub mod types;
 
 /// Prelude module for convenient imports.
 ///
-/// Import this to get access to all coordinate extension traits:
+/// Import this to get access to all coordinate extension traits and common
+/// coordinate type aliases:
 ///
 /// ```rust
 /// use siderust::coordinates::prelude::*;
@@ -114,6 +116,8 @@ pub mod transform;
 /// - [`VectorAstroExt`](transform::VectorAstroExt) - Frame transforms for vectors
 /// - [`PositionAstroExt`](transform::PositionAstroExt) - Frame and center transforms for positions
 /// - [`AstroContext`](transform::AstroContext) - Context for transformations
+/// - All concise type aliases from [`types`] (e.g. `IcrsDir`, `GeographicPos`, etc.)
 pub mod prelude {
     pub use super::transform::{AstroContext, DirectionAstroExt, PositionAstroExt, VectorAstroExt};
+    pub use super::types::*;
 }
