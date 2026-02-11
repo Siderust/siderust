@@ -19,7 +19,7 @@ use super::chebyshev;
 use crate::coordinates::frames::ICRF;
 use crate::time::JulianDate;
 use affn::{Displacement, Velocity};
-use qtty::{Day, Kilometer, Kilometers, Per};
+use qtty::*;
 
 /// Velocity unit: km/day.
 type KmPerDay = Per<Kilometer, Day>;
@@ -28,9 +28,6 @@ type KmPerDayQ = qtty::Quantity<KmPerDay>;
 
 /// Seconds per day — sourced from `qtty` (single source of truth).
 const SECONDS_PER_DAY: f64 = qtty::time::SECONDS_PER_DAY;
-
-/// J2000.0 epoch as a raw JD value — sourced from `JulianDate::J2000`.
-const J2000_JD: f64 = JulianDate::J2000.value();
 
 // ── Segment descriptor ──────────────────────────────────────────────────
 
@@ -57,16 +54,16 @@ pub struct SegmentDescriptor {
 
 /// Convert a Julian Date (TDB) to TDB seconds past J2000.
 #[inline]
-fn jd_to_et(jd: f64) -> f64 {
-    (jd - J2000_JD) * SECONDS_PER_DAY
+fn jd_to_et(jd_tdb: JulianDate) -> Seconds {
+    (jd_tdb - JulianDate::J2000).to::<Second>()
 }
 
 // ── Internal: locate record + normalise time ────────────────────────────
 
 /// Shared helper: given an epoch return the record, tau, and radius.
 #[inline]
-fn locate(seg: &SegmentDescriptor, jd: f64) -> (&'static [f64], f64, f64) {
-    let et = jd_to_et(jd);
+fn locate(seg: &SegmentDescriptor, jd_tdb: JulianDate) -> (&'static [f64], f64, f64) {
+    let et = jd_to_et(jd_tdb).value();
     let idx = ((et - seg.init) / seg.intlen) as usize;
     let idx = idx.min(seg.n_records - 1);
     let record = (seg.record_fn)(idx);
@@ -94,8 +91,8 @@ impl SegmentDescriptor {
     /// Returns a typed `Displacement<ICRF, Kilometer>` carrying both the
     /// reference frame (ICRF) and the length unit (km) in the type.
     #[inline]
-    pub fn position(&self, jd: f64) -> Displacement<ICRF, Kilometer> {
-        let (record, tau, _) = locate(self, jd);
+    pub fn position(&self, jd_tdb: JulianDate) -> Displacement<ICRF, Kilometer> {
+        let (record, tau, _) = locate(self, jd_tdb);
         let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
         Displacement::new(
             Kilometers::new(chebyshev::evaluate(cx, tau)),
@@ -111,8 +108,8 @@ impl SegmentDescriptor {
     /// The Chebyshev derivative gives `df/dτ`; we multiply by `dτ/dt = 1/radius`
     /// (km/s) then by `SECONDS_PER_DAY` to obtain km/day.
     #[inline]
-    pub fn velocity(&self, jd: f64) -> Velocity<ICRF, KmPerDay> {
-        let (record, tau, radius) = locate(self, jd);
+    pub fn velocity(&self, jd_tdb: JulianDate) -> Velocity<ICRF, KmPerDay> {
+        let (record, tau, radius) = locate(self, jd_tdb);
         let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
         let scale = SECONDS_PER_DAY / radius;
         Velocity::new(
@@ -128,9 +125,9 @@ impl SegmentDescriptor {
     #[inline]
     pub fn position_velocity(
         &self,
-        jd: f64,
+        jd_tdb: JulianDate,
     ) -> (Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>) {
-        let (record, tau, radius) = locate(self, jd);
+        let (record, tau, radius) = locate(self, jd_tdb);
         let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
         let scale = SECONDS_PER_DAY / radius;
 
