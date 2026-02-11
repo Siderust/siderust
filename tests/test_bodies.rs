@@ -3,11 +3,11 @@
 
 use qtty::*;
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, OrbitFrame, HALLEY};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::bodies::{EARTH, MARS, MOON};
+use siderust::time::JulianDate;
 
 #[test]
 fn earth_constants() {
@@ -19,7 +19,7 @@ fn earth_constants() {
             < AstronomicalUnits::new(1e-8)
     );
     assert!((orbit.eccentricity - 0.01671022).abs() < 1e-8);
-    assert!((orbit.inclination - Degrees::new(0.00005)).abs().value() < 1e-8);
+    assert!((orbit.inclination - Degrees::new(0.00005)).abs() < 1e-8);
 }
 
 #[test]

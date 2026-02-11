@@ -15,9 +15,13 @@
 //! positions at a reference epoch (usually J2000.0), we need to correct
 //! for proper motion when computing positions at a later date.
 
-use crate::astro::JulianDate;
 use crate::coordinates::spherical::position;
+use crate::time::JulianDate;
 use qtty::*;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 type DegreePerYear = qtty::Per<Degree, Year>;
 type DegreesPerYear = qtty::frequency::Frequency<Degree, Year>;
 
@@ -28,6 +32,7 @@ type DegreesPerYear = qtty::frequency::Frequency<Degree, Year>;
 ///
 /// Units: both fields are in **degrees per Julian year**
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProperMotion {
     pub ra_μ: DegreesPerYear,
     pub dec_μ: DegreesPerYear,
@@ -64,15 +69,12 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
     epoch_jd: JulianDate,
 ) -> position::EquatorialMeanJ2000<U> {
     // Time difference in Julian years
-    let t: Years = Years::new(
-        ((jd - epoch_jd) / JulianDate::JULIAN_YEAR)
-            .simplify()
-            .value(),
-    );
+    let t: Years =
+        Years::new((jd / JulianDate::JULIAN_YEAR) - (epoch_jd / JulianDate::JULIAN_YEAR));
     // Linearly apply proper motion in RA and DEC
     position::EquatorialMeanJ2000::<U>::new(
-        mean_position.ra() + (proper_motion.ra_μ * t).normalize(),
-        (mean_position.dec() + (proper_motion.dec_μ * t)).normalize(),
+        mean_position.ra() + (proper_motion.ra_μ * t).to(),
+        mean_position.dec() + (proper_motion.dec_μ * t).to(),
         mean_position.distance,
     )
 }
@@ -97,10 +99,10 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
     use crate::coordinates::{
         centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position,
     };
+    use crate::time::JulianDate;
     use qtty::{AstronomicalUnit, Degrees};
 
     type DegreesPerYear = qtty::Quantity<qtty::Per<Degree, Year>>;
@@ -133,13 +135,13 @@ mod tests {
         let dec_err = (shifted.dec() - expected_dec).abs();
 
         assert!(
-            ra_err.value() < 1e-6,
+            ra_err < 1e-6,
             "RA shifted incorrectly: got {}, expected {}",
             shifted.ra(),
             expected_ra
         );
         assert!(
-            dec_err.value() < 1e-6,
+            dec_err < 1e-6,
             "DEC shifted incorrectly: got {}, expected {}",
             shifted.dec(),
             expected_dec

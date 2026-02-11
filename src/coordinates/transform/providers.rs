@@ -40,7 +40,7 @@
 //! ```rust,ignore
 //! use siderust::coordinates::transform::providers::*;
 //! use siderust::coordinates::frames::{Ecliptic, ICRS};
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use affn::Rotation3;
 //!
 //! // Get the rotation from ICRS to Ecliptic at J2000
@@ -50,8 +50,8 @@
 //! );
 //! ```
 
-use crate::astro::JulianDate;
 use crate::coordinates::transform::context::AstroContext;
+use crate::time::JulianDate;
 use affn::Rotation3;
 
 // =============================================================================
@@ -500,7 +500,7 @@ where
 /// use siderust::coordinates::transform::providers::frame_rotation;
 /// use siderust::coordinates::transform::context::AstroContext;
 /// use siderust::coordinates::frames::{ICRS, Ecliptic};
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 ///
 /// let rot = frame_rotation::<ICRS, Ecliptic>(JulianDate::J2000, &AstroContext::default());
 /// ```
@@ -523,7 +523,7 @@ where
 /// use siderust::coordinates::transform::context::AstroContext;
 /// use siderust::coordinates::centers::{Heliocentric, Geocentric};
 /// use siderust::coordinates::frames::Ecliptic;
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 ///
 /// let shift = center_shift::<Heliocentric, Geocentric, Ecliptic>(
 ///     JulianDate::J2000,

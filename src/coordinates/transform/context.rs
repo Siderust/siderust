@@ -124,7 +124,7 @@ impl<Eph, Eop, Nut> AstroContext<Eph, Eop, Nut> {
     /// ```rust
     /// use siderust::coordinates::transform::context::AstroContext;
     /// use siderust::coordinates::transform::ephemeris::{BodyId, BodyEphemeris};
-    /// use siderust::astro::JulianDate;
+    /// use siderust::time::JulianDate;
     ///
     /// let ctx = AstroContext::new();
     /// let earth_pos = ctx.ephemeris().position_barycentric(BodyId::Earth, JulianDate::J2000);
@@ -168,8 +168,8 @@ impl<Eop, Nut> AstroContext<DefaultEphemeris, Eop, Nut> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
     use crate::coordinates::transform::ephemeris::{BodyEphemeris, BodyId};
+    use crate::time::JulianDate;
 
     #[test]
     fn test_context_creation() {
@@ -186,7 +186,9 @@ mod tests {
     #[test]
     fn test_ephemeris_accessor() {
         let ctx = AstroContext::new();
-        let pos = ctx.ephemeris().position_barycentric(BodyId::Earth, JulianDate::J2000);
+        let pos = ctx
+            .ephemeris()
+            .position_barycentric(BodyId::Earth, JulianDate::J2000);
 
         // Earth should be roughly 1 AU from barycenter
         let dist = (pos[0].powi(2) + pos[1].powi(2) + pos[2].powi(2)).sqrt();

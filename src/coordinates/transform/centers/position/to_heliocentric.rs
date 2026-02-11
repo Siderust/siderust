@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::astro::JulianDate;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::CenterShiftProvider;
@@ -10,7 +9,8 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::{self, MutableFrame},
 };
-use qtty::{LengthUnit, Quantity};
+use crate::time::JulianDate;
+use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 // =============================================================================
 // Geocentric → Heliocentric (pure translation, no aberration)
@@ -26,7 +26,7 @@ use qtty::{LengthUnit, Quantity};
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Heliocentric, F, U>>
     for Position<Geocentric, F, U>
 where
-    Quantity<U>: From<qtty::AstronomicalUnits> + PartialEq + std::fmt::Debug,
+    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
     (): CenterShiftProvider<Geocentric, Heliocentric, F>,
 {
@@ -51,7 +51,7 @@ where
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Heliocentric, F, U>>
     for Position<Barycentric, F, U>
 where
-    Quantity<U>: From<qtty::AstronomicalUnits> + PartialEq + std::fmt::Debug,
+    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
     (): CenterShiftProvider<Barycentric, Heliocentric, F>,
 {

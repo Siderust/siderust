@@ -7,8 +7,10 @@
 //! VSOP87 planetary theory.
 
 use super::{BodyEphemeris, BodyId, VelocityEphemeris};
-use crate::astro::JulianDate;
-use crate::bodies::solar_system::{Earth, Jupiter, Mars, Mercury, Neptune, Saturn, Sun, Uranus, Venus};
+use crate::bodies::solar_system::{
+    Earth, Jupiter, Mars, Mercury, Neptune, Saturn, Sun, Uranus, Venus,
+};
+use crate::time::JulianDate;
 
 /// The default ephemeris implementation using VSOP87 planetary theory.
 ///
@@ -28,7 +30,7 @@ use crate::bodies::solar_system::{Earth, Jupiter, Mars, Mercury, Neptune, Saturn
 ///
 /// ```rust
 /// use siderust::coordinates::transform::ephemeris::{BodyId, BodyEphemeris, Vsop87Ephemeris};
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 ///
 /// let eph = Vsop87Ephemeris;
 /// let earth_pos = eph.position_barycentric(BodyId::Earth, JulianDate::J2000);

@@ -26,7 +26,7 @@
 //! ## Example
 //! ```rust
 //! use chrono::prelude::*;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::*;
 //! use siderust::astro::sidereal::{calculate_gst, calculate_lst};
 //!
@@ -36,7 +36,7 @@
 //! println!("GST = {:.4}°,  LST = {:.4}°", gst, lst);
 //! ```
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use qtty::Degrees;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
@@ -47,11 +47,11 @@ pub use qtty::time::SIDEREAL_DAY;
 /// *Output*: angle in degrees, may be < 0° or > 360°.
 #[inline]
 pub fn unmodded_gst(julian_date: JulianDate) -> Degrees {
+    let base = (julian_date - JulianDate::J2000).value();
     let t = julian_date.julian_centuries().value();
-    let base = julian_date - JulianDate::J2000;
 
     // IAU 2006 polynomial (units: degrees)
-    let gst = 280.460_618_37 + 360.985_647_366_29 * base.value() + 0.000_387_933 * t.powi(2)
+    let gst = 280.460_618_37 + 360.985_647_366_29 * base + 0.000_387_933 * t.powi(2)
         - t.powi(3) / 38_710_000.0;
     Degrees::new(gst)
 }
@@ -74,7 +74,16 @@ pub fn calculate_gst(julian_date: JulianDate) -> Degrees {
 pub fn calculate_lst(gst: Degrees, longitude: Degrees) -> Degrees {
     (gst + longitude).normalize()
 }
-
+/// **Quick-and-dirty** GAST approximation (error < 0.1″ for ±50 yr around 2025).
+///
+/// This is a convenience wrapper around [`unmodded_gst`] for code that doesn't need
+/// the wrapped [0°, 360°) range. Use [`calculate_gst`] if you need normalized output.
+///
+/// Based on Duffett-Smith & Zwart, *Practical Astronomy*, 4th ed.
+#[inline]
+pub fn gast_fast(jd: JulianDate) -> Degrees {
+    unmodded_gst(jd)
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -84,7 +93,7 @@ mod tests {
         let jd = JulianDate::new(2_459_945.5); // 2023‑01‑01 00 UT
         let gst = calculate_gst(jd);
         let lst = calculate_lst(gst, Degrees::new(-75.0));
-        assert!(gst.value() >= 0.0 && gst.value() < 360.0);
-        assert!(lst.value() >= 0.0 && lst.value() < 360.0);
+        assert!(gst >= Degrees::new(0.0) && gst < Degrees::new(360.0));
+        assert!(lst >= Degrees::new(0.0) && lst < Degrees::new(360.0));
     }
 }

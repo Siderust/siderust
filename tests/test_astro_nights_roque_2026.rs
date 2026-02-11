@@ -6,21 +6,20 @@
 use std::fs::File;
 use std::io::BufReader;
 
-use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
+use chrono::{DateTime, NaiveDate, NaiveTime, TimeZone, Utc};
 use serde_json::Value;
-use siderust::calculus::events::altitude_periods::AltitudeCondition;
-use siderust::calculus::solar::altitude_periods::{
-    find_night_periods, find_sun_altitude_periods_via_culminations, twilight,
-};
+use siderust::bodies::Sun;
+use siderust::calculus::altitude::AltitudePeriodsProvider;
+use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Period, MJD};
 
 const REFERENCE_PATH: &str = "tests/reference_data/astro_night_periods_2026.json";
 const TOL_SECONDS: f64 = 3.0;
 const TOL_DAYS: f64 = TOL_SECONDS / 86_400.0;
 
-fn load_reference_periods() -> Vec<Period<ModifiedJulianDate>> {
+fn load_reference_periods() -> Vec<Period<MJD>> {
     let f = File::open(REFERENCE_PATH).expect("Missing astro_night_periods_2026.json");
     let reader = BufReader::new(f);
     let json: Value = serde_json::from_reader(reader).expect("Invalid JSON in reference file");
@@ -28,7 +27,14 @@ fn load_reference_periods() -> Vec<Period<ModifiedJulianDate>> {
         .expect("Invalid or missing `periods` in reference file")
 }
 
-fn build_roque_period() -> (ObserverSite, Period<ModifiedJulianDate>) {
+fn utc_to_mjd_utc(dt: DateTime<Utc>) -> ModifiedJulianDate {
+    // Reference data stores UTC-based MJD values (without a TT-UT delta shift).
+    const UNIX_EPOCH_MJD: f64 = 40_587.0;
+    let seconds = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 * 1e-9;
+    ModifiedJulianDate::new(UNIX_EPOCH_MJD + seconds / 86_400.0)
+}
+
+fn build_roque_period() -> (ObserverSite, Period<MJD>) {
     let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
 
     let start_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
@@ -38,20 +44,16 @@ fn build_roque_period() -> (ObserverSite, Period<ModifiedJulianDate>) {
         .unwrap()
         .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
 
-    let start_dt =
-        Utc.from_utc_datetime(&NaiveDateTime::new(start_naive.date(), start_naive.time()));
-    let end_dt = Utc.from_utc_datetime(&NaiveDateTime::new(end_naive.date(), end_naive.time()));
+    let start_dt = Utc.from_utc_datetime(&start_naive);
+    let end_dt = Utc.from_utc_datetime(&end_naive);
 
-    let mjd_start = ModifiedJulianDate::from_utc(start_dt);
-    let mjd_end = ModifiedJulianDate::from_utc(end_dt);
+    let mjd_start = utc_to_mjd_utc(start_dt);
+    let mjd_end = utc_to_mjd_utc(end_dt);
 
     (site, Period::new(mjd_start, mjd_end))
 }
 
-fn assert_periods_close(
-    expected: &[Period<ModifiedJulianDate>],
-    computed: &[Period<ModifiedJulianDate>],
-) {
+fn assert_periods_close(expected: &[Period<MJD>], computed: &[Period<MJD>]) {
     assert_eq!(
         expected.len(),
         computed.len(),
@@ -91,24 +93,29 @@ fn test_astronomical_nights_roque_2026() {
     let expected_periods = load_reference_periods();
     let (site, period) = build_roque_period();
 
-    let computed = find_night_periods(site, period, twilight::ASTRONOMICAL)
-        .expect("siderust did not find any astronomical nights");
+    let computed = Sun.below_threshold(site, period, twilight::ASTRONOMICAL);
+    assert!(
+        !computed.is_empty(),
+        "siderust did not find any astronomical nights"
+    );
 
     assert_periods_close(&expected_periods, &computed);
 }
 
-/// Same as the default test but exercises the culmination-based altitude search.
+/// Same as the default test but exercises the culmination-based altitude search
+/// followed by complement to obtain night periods.
 #[test]
 fn test_astronomical_nights_roque_2026_culminations() {
     let expected_periods = load_reference_periods();
     let (site, period) = build_roque_period();
 
-    let computed = find_sun_altitude_periods_via_culminations(
-        site,
-        period,
-        AltitudeCondition::below(twilight::ASTRONOMICAL),
-    )
-    .expect("Culmination-based search did not find any astronomical nights");
+    // above_threshold finds "above" periods; complement gives us the nights.
+    let day_periods = Sun.above_threshold(site, period, twilight::ASTRONOMICAL);
+    let computed = siderust::time::complement_within(period, &day_periods);
+    assert!(
+        !computed.is_empty(),
+        "Culmination-based search did not find any astronomical nights"
+    );
 
     assert_periods_close(&expected_periods, &computed);
 }

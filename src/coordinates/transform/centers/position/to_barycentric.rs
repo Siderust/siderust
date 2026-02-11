@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::astro::JulianDate;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::CenterShiftProvider;
@@ -10,7 +9,8 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::{self, MutableFrame},
 };
-use qtty::{LengthUnit, Quantity};
+use crate::time::JulianDate;
+use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 // =============================================================================
 // Heliocentric → Barycentric (pure translation)
@@ -22,7 +22,7 @@ use qtty::{LengthUnit, Quantity};
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>>
     for Position<Heliocentric, F, U>
 where
-    Quantity<U>: From<qtty::AstronomicalUnits>,
+    Quantity<U>: From<AstronomicalUnits>,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
     (): CenterShiftProvider<Heliocentric, Barycentric, F>,
 {
@@ -51,14 +51,13 @@ where
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>>
     for Position<Geocentric, F, U>
 where
-    Quantity<U>: From<qtty::AstronomicalUnits>,
+    Quantity<U>: From<AstronomicalUnits>,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
     (): CenterShiftProvider<Geocentric, Barycentric, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let ctx = AstroContext::default();
-        let [sx, sy, sz] =
-            <() as CenterShiftProvider<Geocentric, Barycentric, F>>::shift(jd, &ctx);
+        let [sx, sy, sz] = <() as CenterShiftProvider<Geocentric, Barycentric, F>>::shift(jd, &ctx);
 
         // Apply the shift
         let x = self.x().value() + sx;

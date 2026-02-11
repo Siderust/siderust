@@ -19,14 +19,14 @@ default = []
 serde = ["dep:serde", "qtty/serde", "affn/serde"]
 
 [dependencies]
-affn = { path = "affn" }
+affn = { path = "affn", features = ["astro"] }
+qtty = "0.3.0"
 approx = "0.5"
 chrono = "0.4.43"
 nalgebra = "0.34.1"
 paste = "1.0"
-rayon = "1.11"
-qtty = "0.2.2"
 serde = { version = "1.0", features = ["derive"], optional = true }
+wide = "0.7"
 
 [dev-dependencies]
 rstest = "0.26"
@@ -47,6 +47,31 @@ harness = false
 name = "vsop87"
 harness = false
 
+[[bench]]
+name = "solar_altitude"
+harness = false
+
+[[bench]]
+name = "moon_altitude"
+harness = false
+
+[[bench]]
+name = "star_altitude"
+harness = false
+
+[[bench]]
+name = "elp2000"
+harness = false
+
+
 [[example]]
 name = "serde_serialization"
 required-features = ["serde"]
+
+[profile.release]
+debug = true
+strip = "none"   # or remove any strip setting
+lto = "thin"
+
+[profile.release.build-override]
+opt-level = 3

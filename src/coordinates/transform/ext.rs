@@ -34,7 +34,7 @@
 //! use siderust::coordinates::cartesian::Position;
 //! use siderust::coordinates::centers::{Barycentric, Geocentric};
 //! use siderust::coordinates::frames::{Ecliptic, ICRS};
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::AstronomicalUnit;
 //!
 //! let pos = Position::<Barycentric, Ecliptic, AstronomicalUnit>::new(1.0, 0.5, 0.2);
@@ -45,12 +45,12 @@
 //! let geo_icrs: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd, &ctx);
 //! ```
 
-use crate::astro::JulianDate;
 use crate::coordinates::cartesian::{Direction, Position, Vector};
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::{CenterShiftProvider, FrameRotationProvider};
+use crate::time::JulianDate;
 use affn::Rotation3;
 use qtty::{LengthUnit, Quantity, Unit};
 
@@ -130,12 +130,8 @@ impl<F: ReferenceFrame, U: Unit> VectorAstroExt<F, U> for Vector<F, U> {
         (): FrameRotationProvider<F, F2>,
     {
         let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, ctx);
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
-        Vector::new(
-            Quantity::<U>::new(x),
-            Quantity::<U>::new(y),
-            Quantity::<U>::new(z),
-        )
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Vector::new(x, y, z)
     }
 }
 
@@ -217,12 +213,8 @@ where
         (): FrameRotationProvider<F, F2>,
     {
         let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, ctx);
-        let [x, y, z] = rot.apply_array([self.x().value(), self.y().value(), self.z().value()]);
-        Position::new(
-            Quantity::<U>::new(x),
-            Quantity::<U>::new(y),
-            Quantity::<U>::new(z),
-        )
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Position::new(x, y, z)
     }
 
     fn to_center<C2: ReferenceCenter<Params = ()>>(
@@ -238,15 +230,11 @@ where
         // The shift is in AU; we need to convert if U is different.
         // For now, assume AU and let the type system handle it.
         // TODO: Add unit conversion if U != AstronomicalUnit
-        let x = self.x().value() + shift[0];
-        let y = self.y().value() + shift[1];
-        let z = self.z().value() + shift[2];
+        let shift_x = Quantity::<U>::new(shift[0]);
+        let shift_y = Quantity::<U>::new(shift[1]);
+        let shift_z = Quantity::<U>::new(shift[2]);
 
-        Position::new(
-            Quantity::<U>::new(x),
-            Quantity::<U>::new(y),
-            Quantity::<U>::new(z),
-        )
+        Position::new(self.x() + shift_x, self.y() + shift_y, self.z() + shift_z)
     }
 
     fn to<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame>(
@@ -312,21 +300,13 @@ mod tests {
 
         let pos_ecl: Position<Barycentric, Ecliptic, AstronomicalUnit> = pos.to_frame(&jd, &ctx);
 
-        assert!(
-            pos_ecl.x().value().is_finite()
-                && pos_ecl.y().value().is_finite()
-                && pos_ecl.z().value().is_finite()
-        );
+        assert!(pos_ecl.x().is_finite() && pos_ecl.y().is_finite() && pos_ecl.z().is_finite());
 
         // Length must be preserved under pure rotation.
-        let n0 = (pos.x().value() * pos.x().value()
-            + pos.y().value() * pos.y().value()
-            + pos.z().value() * pos.z().value())
-        .sqrt();
-        let n1 = (pos_ecl.x().value() * pos_ecl.x().value()
-            + pos_ecl.y().value() * pos_ecl.y().value()
-            + pos_ecl.z().value() * pos_ecl.z().value())
-        .sqrt();
+        let n0 = (pos.x() * pos.x() + pos.y() * pos.y() + pos.z() * pos.z()).sqrt();
+        let n1 =
+            (pos_ecl.x() * pos_ecl.x() + pos_ecl.y() * pos_ecl.y() + pos_ecl.z() * pos_ecl.z())
+                .sqrt();
         assert!((n0 - n1).abs() < 1e-12);
     }
 
@@ -341,8 +321,7 @@ mod tests {
             geo_origin.to_center(&jd, &ctx);
 
         // Should be non-zero (Earth is ~1 AU from barycenter)
-        let dist =
-            (bary.x().value().powi(2) + bary.y().value().powi(2) + bary.z().value().powi(2)).sqrt();
+        let dist = bary.distance();
         assert!(
             dist > 0.9 && dist < 1.1,
             "Earth should be ~1 AU from barycenter, got {}",
@@ -362,9 +341,9 @@ mod tests {
 
         // Verify it's not the same as the input (transformation happened)
         assert!(
-            (result.x().value() - pos.x().value()).abs() > EPSILON
-                || (result.y().value() - pos.y().value()).abs() > EPSILON
-                || (result.z().value() - pos.z().value()).abs() > EPSILON
+            (result.x() - pos.x()).abs() > EPSILON
+                || (result.y() - pos.y()).abs() > EPSILON
+                || (result.z() - pos.z()).abs() > EPSILON
         );
     }
 
@@ -377,14 +356,14 @@ mod tests {
 
         // Identity frame transform
         let same_frame: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_frame(&jd, &ctx);
-        assert!((same_frame.x().value() - pos.x().value()).abs() < EPSILON);
-        assert!((same_frame.y().value() - pos.y().value()).abs() < EPSILON);
-        assert!((same_frame.z().value() - pos.z().value()).abs() < EPSILON);
+        assert!((same_frame.x() - pos.x()).abs() < EPSILON);
+        assert!((same_frame.y() - pos.y()).abs() < EPSILON);
+        assert!((same_frame.z() - pos.z()).abs() < EPSILON);
 
         // Identity center transform
         let same_center: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_center(&jd, &ctx);
-        assert!((same_center.x().value() - pos.x().value()).abs() < EPSILON);
-        assert!((same_center.y().value() - pos.y().value()).abs() < EPSILON);
-        assert!((same_center.z().value() - pos.z().value()).abs() < EPSILON);
+        assert!((same_center.x() - pos.x()).abs() < EPSILON);
+        assert!((same_center.y() - pos.y()).abs() < EPSILON);
+        assert!((same_center.z() - pos.z()).abs() < EPSILON);
     }
 }

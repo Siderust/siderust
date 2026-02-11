@@ -20,7 +20,7 @@
 //!
 //! ```rust
 //! use siderust::coordinates::transform::ephemeris::{BodyId, BodyEphemeris, Vsop87Ephemeris};
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //!
 //! let eph = Vsop87Ephemeris;
 //! let earth_pos = eph.position_barycentric(BodyId::Earth, JulianDate::J2000);
@@ -45,7 +45,7 @@ mod vsop87;
 
 pub use vsop87::Vsop87Ephemeris;
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 
 /// Identifies a solar system body for ephemeris queries.
 ///

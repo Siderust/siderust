@@ -2,12 +2,12 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use qtty::*;
-use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
 use siderust::coordinates::transform::TransformFrame;
 use siderust::coordinates::*;
+use siderust::time::JulianDate;
 
 fn approx_eq_pos<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
 where
@@ -68,19 +68,19 @@ where
     Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
     assert!(
-        (a.polar - b.polar).abs().value() < 1e-6,
+        (a.polar - b.polar).abs() < 1e-6,
         "polar mismatch: {} vs {}",
         a.polar,
         b.polar
     );
     assert!(
-        (a.azimuth - b.azimuth).abs().value() < 1e-6,
+        (a.azimuth - b.azimuth).abs() < 1e-6,
         "polar mismatch: {} vs {}",
         a.azimuth,
         b.azimuth
     );
     assert!(
-        (a.distance - b.distance).abs().value() < 1e-6,
+        (a.distance - b.distance).abs() < (1e-6).into(),
         "polar mismatch: {} vs {}",
         a.distance,
         b.distance

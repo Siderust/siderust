@@ -9,11 +9,11 @@
 //! - Converting between geocentric and topocentric
 
 use qtty::*;
-use siderust::astro::JulianDate;
 use siderust::coordinates::cartesian::position::EquatorialMeanJ2000;
 use siderust::coordinates::centers::{Geocentric, ObserverSite};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::centers::ToTopocentricExt;
+use siderust::time::JulianDate;
 
 fn main() {
     println!("=== Observer-Based Coordinates Example ===\n");

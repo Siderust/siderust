@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::astro::JulianDate;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::CenterShiftProvider;
@@ -10,7 +9,8 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::{self, MutableFrame},
 };
-use qtty::{LengthUnit, Quantity};
+use crate::time::JulianDate;
+use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 // =============================================================================
 // Barycentric → Geocentric (pure translation, no aberration)
@@ -26,14 +26,13 @@ use qtty::{LengthUnit, Quantity};
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
     for Position<Barycentric, F, U>
 where
-    Quantity<U>: From<qtty::AstronomicalUnits>,
+    Quantity<U>: From<AstronomicalUnits>,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
     (): CenterShiftProvider<Barycentric, Geocentric, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         let ctx = AstroContext::default();
-        let [sx, sy, sz] =
-            <() as CenterShiftProvider<Barycentric, Geocentric, F>>::shift(jd, &ctx);
+        let [sx, sy, sz] = <() as CenterShiftProvider<Barycentric, Geocentric, F>>::shift(jd, &ctx);
 
         // The shift is in AU; convert to unit U
         let x = self.x().value() + sx;
@@ -55,7 +54,7 @@ where
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
     for Position<Heliocentric, F, U>
 where
-    Quantity<U>: From<qtty::AstronomicalUnits>,
+    Quantity<U>: From<AstronomicalUnits>,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
     (): CenterShiftProvider<Heliocentric, Geocentric, F>,
 {
@@ -79,10 +78,10 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::astro::JulianDate;
     use crate::bodies::solar_system::Earth;
     use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
     use qtty::*;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
@@ -142,19 +141,21 @@ mod tests {
 
         // Distance should be preserved (approximately - slight change due to Earth's offset)
         assert!(
-            (sirius_geocentric_spherical.distance.value() - sirius_distance_au).abs() < 100.0,
+            (sirius_geocentric_spherical.distance - AstronomicalUnits::new(sirius_distance_au))
+                .abs()
+                < AstronomicalUnits::new(100.0),
             "Distance should be approximately preserved"
         );
 
         // Coordinates should be close to the original (small parallax at stellar distances)
         // The shift should be very small for distant stars
-        let delta_ra = (sirius_geocentric_spherical.azimuth.value() - 101.287_155_33).abs();
-        let delta_dec = (sirius_geocentric_spherical.polar.value() - (-16.716_115_86)).abs();
+        let delta_ra = (sirius_geocentric_spherical.azimuth - Degrees::new(101.287_155_33)).abs();
+        let delta_dec = (sirius_geocentric_spherical.polar - Degrees::new(-16.716_115_86)).abs();
 
         // For stars at ~500,000 AU, Earth's ~1 AU offset causes ~1/500000 radian ≈ 0.4 arcsec
         // change in direction, or about 0.0001 degrees
         assert!(
-            delta_ra < 0.001 && delta_dec < 0.001,
+            delta_ra < Degrees::new(0.001) && delta_dec < Degrees::new(0.001),
             "Astrometric position should change only slightly due to parallax: dRA={}, dDec={}",
             delta_ra,
             delta_dec

@@ -1,0 +1,152 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
+//! Benchmarks for fixed-star altitude calculations.
+//!
+//! Uses the unified altitude API with a static J2000 RA/Dec target
+//! (Sirius) to measure single‑point altitude and range/threshold searches.
+
+use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
+use criterion::{criterion_group, criterion_main, Criterion};
+use qtty::*;
+use siderust::calculus::altitude::{
+    above_threshold, altitude_ranges, crossings, AltitudePeriodsProvider, SearchOpts,
+};
+use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::spherical::direction;
+use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
+use siderust::time::{ModifiedJulianDate, Period, MJD};
+use std::hint::black_box;
+use std::time::Duration;
+
+fn build_period(days: u32) -> Period<MJD> {
+    let start_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
+        .unwrap()
+        .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
+    let end_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
+        .unwrap()
+        .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
+        + chrono::Duration::days(days as i64);
+
+    let start_dt = Utc.from_utc_datetime(&start_naive);
+    let end_dt = Utc.from_utc_datetime(&end_naive);
+
+    let mjd_start = ModifiedJulianDate::from_utc(start_dt);
+    let mjd_end = ModifiedJulianDate::from_utc(end_dt);
+
+    Period::new(mjd_start, mjd_end)
+}
+
+fn sirius_target() -> direction::ICRS {
+    direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716))
+}
+
+// =============================================================================
+// Single Altitude Computation Benchmark
+// =============================================================================
+
+fn bench_star_altitude_computation(c: &mut Criterion) {
+    let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    let target = sirius_target();
+    let mjd = siderust::time::ModifiedJulianDate::new(51544.5); // J2000 epoch
+
+    let mut group = c.benchmark_group("star_altitude_single");
+
+    group.bench_function("compute_altitude", |b| {
+        b.iter(|| {
+            let _altitude = target.altitude_at(black_box(&site), black_box(mjd));
+        });
+    });
+
+    group.finish();
+}
+
+// =============================================================================
+// Threshold + Range Benchmarks
+// =============================================================================
+
+fn bench_star_thresholds(c: &mut Criterion) {
+    let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    let target = sirius_target();
+    let opts = SearchOpts::default();
+
+    let mut group = c.benchmark_group("star_altitude_thresholds");
+
+    group.bench_function("above_horizon_7day", |b| {
+        let period = black_box(build_period(7));
+        b.iter(|| {
+            let _result = above_threshold(
+                black_box(&target),
+                black_box(&site),
+                black_box(period),
+                black_box(Degrees::new(0.0)),
+                black_box(opts),
+            );
+        });
+    });
+
+    group.bench_function("above_30deg_7day", |b| {
+        let period = black_box(build_period(7));
+        b.iter(|| {
+            let _result = above_threshold(
+                black_box(&target),
+                black_box(&site),
+                black_box(period),
+                black_box(Degrees::new(30.0)),
+                black_box(opts),
+            );
+        });
+    });
+
+    group.bench_function("altitude_range_7day", |b| {
+        let period = black_box(build_period(7));
+        b.iter(|| {
+            let _result = altitude_ranges(
+                black_box(&target),
+                black_box(&site),
+                black_box(period),
+                black_box(Degrees::new(10.0)),
+                black_box(Degrees::new(50.0)),
+                black_box(opts),
+            );
+        });
+    });
+
+    group.finish();
+}
+
+// =============================================================================
+// Crossing Benchmarks
+// =============================================================================
+
+fn bench_star_crossings(c: &mut Criterion) {
+    let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    let target = sirius_target();
+    let opts = SearchOpts::default();
+
+    let mut group = c.benchmark_group("star_altitude_crossings");
+
+    group.bench_function("crossings_horizon_7day", |b| {
+        let period = black_box(build_period(7));
+        b.iter(|| {
+            let _result = crossings(
+                black_box(&target),
+                black_box(&site),
+                black_box(period),
+                black_box(Degrees::new(0.0)),
+                black_box(opts),
+            );
+        });
+    });
+
+    group.finish();
+}
+
+criterion_group! {
+    name = star_benches;
+    config = Criterion::default()
+        .measurement_time(Duration::from_secs(5))
+        .sample_size(20);
+    targets = bench_star_altitude_computation, bench_star_thresholds, bench_star_crossings
+}
+criterion_main!(star_benches);

@@ -39,7 +39,7 @@
 //!
 //! - [`coordinates`]   : Cartesian & Spherical coordinate types and transformations between reference centers & frames
 //! - [`targets`]       : `Target<T>` tracking with time and proper motion
-//! - [`time`]          : Time types (JulianDate, ModifiedJulianDate) and generic `Period<T>`
+//! - [`time`]          : Time types and scale-based `Period<S>` / generic `Interval<T>`
 //! - [`astro`]         : Utilities for aberration, nutation, precession, sidereal time, and event searches
 //! - [`calculus`]      : Numerical kernels (Kepler, VSOP87, ELP2000, etc.)
 //! - [`bodies`]        : Data structures for planets, comets, stars, satellites, and built-in catalogs
@@ -50,7 +50,7 @@
 //! ```rust
 //! use siderust::{
 //!     bodies::Mars,
-//!     astro::JulianDate,
+//!     time::JulianDate,
 //! };
 //! use chrono::prelude::*;
 //!
@@ -78,3 +78,12 @@ pub mod targets;
 pub mod time;
 
 pub(crate) mod macros;
+
+// ---------------------------------------------------------------------------
+// Convenience re‑exports: unified altitude API
+// ---------------------------------------------------------------------------
+pub use calculus::altitude::{
+    above_threshold, altitude_periods as compute_altitude_periods, altitude_ranges,
+    below_threshold, crossings, culminations, AltitudePeriodsProvider, AltitudeQuery,
+    CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind, SearchOpts,
+};
