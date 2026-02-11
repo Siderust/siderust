@@ -50,9 +50,15 @@ pub use affn::frames::{ReferenceFrame, SphericalNaming};
 
 // Re-export all astronomical frame types from affn
 pub use affn::frames::{
-    ECEF, Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
-    Horizontal, ICRS, ITRF,
+    Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
+    Horizontal, ECEF, ICRS, ITRF,
 };
+
+// NOTE: The `Horizontal` frame type uses the **North-clockwise** azimuth convention
+// (0° = North, increasing through East). If you are importing data that uses a
+// different convention (e.g. South-origin or counter-clockwise), use the helpers in
+// [`crate::coordinates::horizontal`] to convert before constructing `Horizontal`
+// coordinates.
 
 // =============================================================================
 // MutableFrame: Marker for Transformable Frames
