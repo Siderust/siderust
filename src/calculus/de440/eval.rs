@@ -15,7 +15,6 @@
 //! parameters.  Static descriptors for each embedded body are exported
 //! from the [`data`](super::data) sub-module.
 
-use super::chebyshev;
 use crate::coordinates::frames::ICRF;
 use crate::time::JulianDate;
 use affn::{Displacement, Velocity};
@@ -95,9 +94,9 @@ impl SegmentDescriptor {
         let (record, tau, _) = locate(self, jd_tdb);
         let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
         Displacement::new(
-            Kilometers::new(chebyshev::evaluate(cx, tau)),
-            Kilometers::new(chebyshev::evaluate(cy, tau)),
-            Kilometers::new(chebyshev::evaluate(cz, tau)),
+            Kilometers::new(cheby::evaluate(cx, tau)),
+            Kilometers::new(cheby::evaluate(cy, tau)),
+            Kilometers::new(cheby::evaluate(cz, tau)),
         )
     }
 
@@ -113,9 +112,9 @@ impl SegmentDescriptor {
         let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
         let scale = SECONDS_PER_DAY / radius;
         Velocity::new(
-            KmPerDayQ::new(chebyshev::evaluate_derivative(cx, tau) * scale),
-            KmPerDayQ::new(chebyshev::evaluate_derivative(cy, tau) * scale),
-            KmPerDayQ::new(chebyshev::evaluate_derivative(cz, tau) * scale),
+            KmPerDayQ::new(cheby::evaluate_derivative(cx, tau) * scale),
+            KmPerDayQ::new(cheby::evaluate_derivative(cy, tau) * scale),
+            KmPerDayQ::new(cheby::evaluate_derivative(cz, tau) * scale),
         )
     }
 
@@ -131,9 +130,9 @@ impl SegmentDescriptor {
         let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
         let scale = SECONDS_PER_DAY / radius;
 
-        let (px, vx) = chebyshev::evaluate_both(cx, tau);
-        let (py, vy) = chebyshev::evaluate_both(cy, tau);
-        let (pz, vz) = chebyshev::evaluate_both(cz, tau);
+        let (px, vx) = cheby::evaluate_both(cx, tau);
+        let (py, vy) = cheby::evaluate_both(cy, tau);
+        let (pz, vz) = cheby::evaluate_both(cz, tau);
 
         (
             Displacement::new(

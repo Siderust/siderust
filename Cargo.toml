@@ -21,6 +21,7 @@ de440 = []
 
 [dependencies]
 affn = { path = "affn", features = ["astro"] }
+cheby = { path = "cheby" }
 qtty = "0.3.0"
 approx = "0.5"
 chrono = "0.4.43"
