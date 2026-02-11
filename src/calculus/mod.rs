@@ -100,8 +100,11 @@
 //! high-precision ephemerides and general-purpose celestial mechanics._
 //!
 
+#[cfg(feature = "de440")]
+pub mod de440;
 pub mod altitude;
 pub mod elp2000;
+pub mod ephemeris;
 pub mod horizontal;
 pub mod kepler_equations;
 pub mod lunar;
