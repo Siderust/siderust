@@ -54,6 +54,12 @@ pub use affn::frames::{
     Horizontal, ICRS, ITRF,
 };
 
+// NOTE: The `Horizontal` frame type uses the **North-clockwise** azimuth convention
+// (0° = North, increasing through East). If you are importing data that uses a
+// different convention (e.g. South-origin or counter-clockwise), use the helpers in
+// [`crate::coordinates::horizontal`] to convert before constructing `Horizontal`
+// coordinates.
+
 // =============================================================================
 // MutableFrame: Marker for Transformable Frames
 // =============================================================================
