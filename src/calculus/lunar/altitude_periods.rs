@@ -23,7 +23,7 @@
 use crate::bodies::solar_system::Moon;
 use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::ObserverSite;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
 use qtty::*;
 
 use super::moon_cache::{find_and_label_crossings, MoonAltitudeContext};
@@ -78,9 +78,9 @@ pub(crate) fn moon_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) ->
 /// ```
 pub(crate) fn find_moon_above_horizon(
     site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
+    period: Period<MJD>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Period<MJD>> {
     let thr = threshold.to::<Radian>();
 
     // Build Chebyshev + nutation caches for the period
@@ -103,9 +103,9 @@ pub(crate) fn find_moon_above_horizon(
 /// ```
 pub(crate) fn find_moon_below_horizon(
     site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
+    period: Period<MJD>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Period<MJD>> {
     let above = find_moon_above_horizon(site, period, threshold);
     complement_within(period, &above)
 }
@@ -121,9 +121,9 @@ pub(crate) fn find_moon_below_horizon(
 /// ```
 pub(crate) fn find_moon_altitude_range(
     site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
+    period: Period<MJD>,
     range: (Degrees, Degrees),
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Period<MJD>> {
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
@@ -150,9 +150,9 @@ const SCAN_STEP_10MIN: Days = Quantity::new(10.0 / 1440.0);
 /// for comparison / validation.
 fn find_moon_above_horizon_scan(
     site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
+    period: Period<MJD>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Period<MJD>> {
     let thr = threshold.to::<Radian>();
 
     let f = |t: ModifiedJulianDate| -> Radians { moon_altitude_rad(t, &site) };

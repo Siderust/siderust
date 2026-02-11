@@ -26,7 +26,7 @@
 //! use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 //! use siderust::coordinates::centers::ObserverSite;
 //! use siderust::coordinates::spherical::direction;
-//! use siderust::time::{ModifiedJulianDate, Period};
+//! use siderust::time::{ModifiedJulianDate, MJD, Period};
 //! use qtty::*;
 //!
 //! let site = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
@@ -50,7 +50,7 @@ use crate::bodies::solar_system;
 use crate::bodies::Star;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::spherical::direction;
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{ModifiedJulianDate, Period, MJD};
 use qtty::*;
 
 // ---------------------------------------------------------------------------
@@ -69,7 +69,7 @@ pub trait AltitudePeriodsProvider {
     ///
     /// The returned vector is sorted chronologically.  An empty vector
     /// means the body never enters the requested band during the window.
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>>;
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>>;
 
     /// Convenience: intervals where altitude is **above** `threshold`.
     ///
@@ -78,9 +78,9 @@ pub trait AltitudePeriodsProvider {
     fn above_threshold(
         &self,
         observer: ObserverSite,
-        window: Period<ModifiedJulianDate>,
+        window: Period<MJD>,
         threshold: Degrees,
-    ) -> Vec<Period<ModifiedJulianDate>> {
+    ) -> Vec<Period<MJD>> {
         self.altitude_periods(&AltitudeQuery {
             observer,
             window,
@@ -96,9 +96,9 @@ pub trait AltitudePeriodsProvider {
     fn below_threshold(
         &self,
         observer: ObserverSite,
-        window: Period<ModifiedJulianDate>,
+        window: Period<MJD>,
         threshold: Degrees,
-    ) -> Vec<Period<ModifiedJulianDate>> {
+    ) -> Vec<Period<MJD>> {
         self.altitude_periods(&AltitudeQuery {
             observer,
             window,
@@ -136,7 +136,7 @@ pub trait AltitudePeriodsProvider {
 /// use siderust::calculus::altitude::{altitude_periods, AltitudeQuery};
 /// use siderust::bodies::Sun;
 /// use siderust::coordinates::centers::ObserverSite;
-/// use siderust::time::{ModifiedJulianDate, Period};
+/// use siderust::time::{ModifiedJulianDate, MJD, Period};
 /// use qtty::*;
 ///
 /// let site = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
@@ -153,7 +153,7 @@ pub trait AltitudePeriodsProvider {
 pub fn altitude_periods<B: AltitudePeriodsProvider>(
     body: &B,
     query: &AltitudeQuery,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Period<MJD>> {
     body.altitude_periods(query)
 }
 
@@ -163,7 +163,7 @@ pub fn altitude_periods<B: AltitudePeriodsProvider>(
 
 /// **Sun** — delegates to [`calculus::solar`].
 impl AltitudePeriodsProvider for solar_system::Sun {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
         if query.window.duration() <= Days::zero() {
             return Vec::new();
         }
@@ -191,7 +191,7 @@ impl AltitudePeriodsProvider for solar_system::Sun {
 
 /// **Moon** — delegates to [`calculus::lunar`].
 impl AltitudePeriodsProvider for solar_system::Moon {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
         if query.window.duration() <= Days::zero() {
             return Vec::new();
         }
@@ -223,7 +223,7 @@ impl AltitudePeriodsProvider for solar_system::Moon {
 /// **Star** — extracts RA/Dec from the star's target, delegates to
 /// [`calculus::stellar`].
 impl AltitudePeriodsProvider for Star<'_> {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
         let dir = direction::ICRS::from(self);
         dir.altitude_periods(query)
     }
@@ -236,7 +236,7 @@ impl AltitudePeriodsProvider for Star<'_> {
 
 /// **direction::ICRS** — the lightest path: raw RA/Dec → stellar engine.
 impl AltitudePeriodsProvider for direction::ICRS {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
         if query.window.duration() <= Days::zero() {
             return Vec::new();
         }
@@ -287,14 +287,14 @@ mod tests {
         ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
-    fn one_day_window() -> Period<ModifiedJulianDate> {
+    fn one_day_window() -> Period<MJD> {
         Period::new(
             ModifiedJulianDate::new(60000.0),
             ModifiedJulianDate::new(60001.0),
         )
     }
 
-    fn one_week_window() -> Period<ModifiedJulianDate> {
+    fn one_week_window() -> Period<MJD> {
         Period::new(
             ModifiedJulianDate::new(60000.0),
             ModifiedJulianDate::new(60007.0),
