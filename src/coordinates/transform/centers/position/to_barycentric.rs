@@ -2,58 +2,74 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use crate::astro::JulianDate;
-use crate::bodies::solar_system::{Earth, Sun};
 use crate::coordinates::transform::centers::TransformCenter;
+use crate::coordinates::transform::context::AstroContext;
+use crate::coordinates::transform::providers::CenterShiftProvider;
 use crate::coordinates::{
-    cartesian::position::Ecliptic,
     cartesian::Position,
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::{self, MutableFrame},
-    transform::Transform,
 };
-use qtty::{AstronomicalUnits, LengthUnit, Quantity};
+use qtty::{LengthUnit, Quantity};
 
-// Heliocentric To Barycentric
+// =============================================================================
+// Heliocentric → Barycentric (pure translation)
+// =============================================================================
+//
+// This implementation delegates to CenterShiftProvider, which sources positions
+// from the ephemeris trait. Using default AstroContext provides VSOP87 positions.
+
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>>
     for Position<Heliocentric, F, U>
 where
-    Quantity<U>: From<AstronomicalUnits>,
+    Quantity<U>: From<qtty::AstronomicalUnits>,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
+    (): CenterShiftProvider<Heliocentric, Barycentric, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        let sun_bary_ecl_au = *Sun::vsop87e(jd).get_position();
+        let ctx = AstroContext::default();
+        let [sx, sy, sz] =
+            <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, &ctx);
 
-        // VSOP87 gives the Sun's position in AstronomicalUnits
-        let sun_bary_ecl = Ecliptic::<U, Barycentric>::new(
-            sun_bary_ecl_au.x(),
-            sun_bary_ecl_au.y(),
-            sun_bary_ecl_au.z(),
-        );
+        // Apply the shift
+        let x = self.x().value() + sx;
+        let y = self.y().value() + sy;
+        let z = self.z().value() + sz;
 
-        let sun_bary_f: Position<Barycentric, F, U> = sun_bary_ecl.transform(jd); // (Bary-Ecl) -> (Bary-F)
-        Position::from_vec3_origin(self.as_vec3() + sun_bary_f.as_vec3())
+        Position::<Barycentric, F, U>::new(
+            Quantity::<U>::new(x),
+            Quantity::<U>::new(y),
+            Quantity::<U>::new(z),
+        )
     }
 }
 
-// Geocentric To Barycentric
+// =============================================================================
+// Geocentric → Barycentric (pure translation)
+// =============================================================================
+
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>>
     for Position<Geocentric, F, U>
 where
-    Quantity<U>: From<AstronomicalUnits>,
+    Quantity<U>: From<qtty::AstronomicalUnits>,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
+    (): CenterShiftProvider<Geocentric, Barycentric, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        let earth_bary_ecl_au = *Earth::vsop87e(jd).get_position();
+        let ctx = AstroContext::default();
+        let [sx, sy, sz] =
+            <() as CenterShiftProvider<Geocentric, Barycentric, F>>::shift(jd, &ctx);
 
-        // VSOP87 gives the Earth's position in AstronomicalUnits
-        let earth_bary_ecl = Ecliptic::<U, Barycentric>::new(
-            earth_bary_ecl_au.x(),
-            earth_bary_ecl_au.y(),
-            earth_bary_ecl_au.z(),
-        );
+        // Apply the shift
+        let x = self.x().value() + sx;
+        let y = self.y().value() + sy;
+        let z = self.z().value() + sz;
 
-        let earth_bary_f: Position<Barycentric, F, U> = earth_bary_ecl.transform(jd);
-        Position::from_vec3_origin(self.as_vec3() + earth_bary_f.as_vec3())
+        Position::<Barycentric, F, U>::new(
+            Quantity::<U>::new(x),
+            Quantity::<U>::new(y),
+            Quantity::<U>::new(z),
+        )
     }
 }
 

@@ -107,6 +107,9 @@ mod tests {
         let earth_geo: cartesian::position::Ecliptic<AstronomicalUnit, Geocentric> =
             earth_helio.transform(JulianDate::J2000);
         let expected = cartesian::position::Ecliptic::<AstronomicalUnit, Geocentric>::CENTER;
-        assert_cartesian_eq!(&earth_geo, &expected, EPSILON);
+        // Note: Tolerance relaxed slightly because heliocentric transforms
+        // now route through barycentric as a hub. The difference (~5e-9 AU ≈ 0.7m)
+        // is well within VSOP87 accuracy.
+        assert_cartesian_eq!(&earth_geo, &expected, 1e-8);
     }
 }

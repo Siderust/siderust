@@ -2,15 +2,15 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use crate::astro::JulianDate;
-use crate::bodies::solar_system::{Earth, Sun};
 use crate::coordinates::transform::centers::TransformCenter;
+use crate::coordinates::transform::context::AstroContext;
+use crate::coordinates::transform::providers::CenterShiftProvider;
 use crate::coordinates::{
-    cartesian::position::{Ecliptic, Position},
+    cartesian::Position,
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::{self, MutableFrame},
-    transform::Transform,
 };
-use qtty::{AstronomicalUnits, LengthUnit, Quantity};
+use qtty::{LengthUnit, Quantity};
 
 // =============================================================================
 // Geocentric → Heliocentric (pure translation, no aberration)
@@ -19,47 +19,57 @@ use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 // Center transforms are pure geometry: they only translate positions from one
 // origin to another. Aberration is an observation-model effect that depends on
 // observer velocity and must be applied explicitly via the observation module.
+//
+// This implementation delegates to CenterShiftProvider, which sources positions
+// from the ephemeris trait. Using default AstroContext provides VSOP87 positions.
 
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Heliocentric, F, U>>
     for Position<Geocentric, F, U>
 where
-    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
+    Quantity<U>: From<qtty::AstronomicalUnits> + PartialEq + std::fmt::Debug,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
+    (): CenterShiftProvider<Geocentric, Heliocentric, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
-        // Get Earth's position in heliocentric ecliptic coordinates
-        let earth_helio_ecl_au = *Earth::vsop87a(jd).get_position();
-        let earth_helio_ecl = Ecliptic::<U, Heliocentric>::new(
-            earth_helio_ecl_au.x(),
-            earth_helio_ecl_au.y(),
-            earth_helio_ecl_au.z(),
-        );
+        let ctx = AstroContext::default();
+        let [sx, sy, sz] =
+            <() as CenterShiftProvider<Geocentric, Heliocentric, F>>::shift(jd, &ctx);
 
-        // Transform Earth to the target frame
-        let earth: Position<Heliocentric, F, U> = earth_helio_ecl.transform(jd);
+        // Apply the shift
+        let x = self.x().value() + sx;
+        let y = self.y().value() + sy;
+        let z = self.z().value() + sz;
 
-        // Pure translation: heliocentric = geocentric + earth_position
-        Position::<Heliocentric, F, U>::from_vec3_origin(self.as_vec3() + earth.as_vec3())
+        Position::<Heliocentric, F, U>::new(
+            Quantity::<U>::new(x),
+            Quantity::<U>::new(y),
+            Quantity::<U>::new(z),
+        )
     }
 }
 
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Heliocentric, F, U>>
     for Position<Barycentric, F, U>
 where
-    Quantity<U>: From<AstronomicalUnits> + PartialEq + std::fmt::Debug,
+    Quantity<U>: From<qtty::AstronomicalUnits> + PartialEq + std::fmt::Debug,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
+    (): CenterShiftProvider<Barycentric, Heliocentric, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Heliocentric, F, U> {
-        // Barycentric to Heliocentric
-        let sun_bary_ecl_au = *Sun::vsop87e(jd).get_position();
-        let sun_bary_ecl = Ecliptic::<U, Barycentric>::new(
-            sun_bary_ecl_au.x(),
-            sun_bary_ecl_au.y(),
-            sun_bary_ecl_au.z(),
-        );
+        let ctx = AstroContext::default();
+        let [sx, sy, sz] =
+            <() as CenterShiftProvider<Barycentric, Heliocentric, F>>::shift(jd, &ctx);
 
-        let sun: Position<Barycentric, F, U> = sun_bary_ecl.transform(jd);
-        Position::from_vec3_origin(self.as_vec3() - sun.as_vec3())
+        // Apply the shift
+        let x = self.x().value() + sx;
+        let y = self.y().value() + sy;
+        let z = self.z().value() + sz;
+
+        Position::<Heliocentric, F, U>::new(
+            Quantity::<U>::new(x),
+            Quantity::<U>::new(y),
+            Quantity::<U>::new(z),
+        )
     }
 }
 
@@ -67,6 +77,7 @@ where
 mod tests {
     use super::*;
     use crate::bodies::solar_system::Sun;
+    use crate::coordinates::cartesian::position::Ecliptic;
     use crate::coordinates::centers::*;
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;

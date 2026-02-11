@@ -21,13 +21,20 @@
 //!
 //! By encapsulating this in `ObserverState`, we ensure that aberration cannot be
 //! applied without explicit observer information.
+//!
+//! ## Ephemeris Support
+//!
+//! The observer state can be created using different ephemeris providers via
+//! the `_with_context` variants. The simple methods (`geocentric`, `topocentric`)
+//! use the default VSOP87 ephemeris.
 
 use crate::astro::sidereal::unmodded_gst;
 use crate::astro::JulianDate;
-use crate::bodies::solar_system::Earth;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::ObserverSite;
-use crate::coordinates::frames::EquatorialMeanJ2000;
+use crate::coordinates::frames::{Ecliptic, EquatorialMeanJ2000};
+use crate::coordinates::transform::context::AstroContext;
+use crate::coordinates::transform::ephemeris::{BodyId, VelocityEphemeris};
 use qtty::{AstronomicalUnit, Day};
 
 /// Velocity unit: AU per day
@@ -71,7 +78,7 @@ impl ObserverState {
     /// Creates an observer state for an observer at Earth's center.
     ///
     /// This is the standard case for computing annual aberration. The velocity
-    /// is Earth's heliocentric orbital velocity.
+    /// is Earth's barycentric orbital velocity (uses default VSOP87 ephemeris).
     ///
     /// # Arguments
     ///
@@ -86,10 +93,42 @@ impl ObserverState {
     /// let obs = ObserverState::geocentric(JulianDate::J2000);
     /// ```
     pub fn geocentric(jd: JulianDate) -> Self {
+        Self::geocentric_with_context(jd, &AstroContext::default())
+    }
+
+    /// Creates an observer state for a geocentric observer using a custom ephemeris.
+    ///
+    /// This variant allows using alternative ephemeris providers (e.g., JPL DE)
+    /// instead of the default VSOP87.
+    ///
+    /// # Arguments
+    ///
+    /// * `jd` - The Julian Date of observation
+    /// * `ctx` - The astronomical context with ephemeris configuration
+    ///
+    /// # Example
+    ///
+    /// ```rust,ignore
+    /// let ctx = AstroContext::with_ephemeris(jpl_eph);
+    /// let obs = ObserverState::geocentric_with_context(jd, &ctx);
+    /// ```
+    pub fn geocentric_with_context<Eph, Eop, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Self
+    where
+        Eph: VelocityEphemeris,
+    {
         use crate::coordinates::transform::TransformFrame;
 
-        // Use SSB-referenced (barycentric) Earth velocity for annual aberration.
-        let vel_ecl = Earth::vsop87e_vel(jd);
+        // Get Earth's velocity in barycentric ecliptic coordinates from the ephemeris
+        let [vx, vy, vz] = ctx.ephemeris().velocity_barycentric(BodyId::Earth, jd);
+
+        let vel_ecl = Velocity::<Ecliptic, AuPerDay>::new(
+            qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+            qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+            qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz),
+        );
 
         // Transform to equatorial frame
         let velocity: Velocity<EquatorialMeanJ2000, AuPerDay> = vel_ecl.to_frame();
@@ -112,11 +151,36 @@ impl ObserverState {
     /// Currently this only includes Earth's orbital velocity (annual aberration).
     /// Diurnal aberration (~0.3") is included via an Earth-rotation model based on GMST.
     pub fn topocentric(site: &ObserverSite, jd: JulianDate) -> Self {
+        Self::topocentric_with_context(site, jd, &AstroContext::default())
+    }
+
+    /// Creates a topocentric observer state using a custom `AstroContext`.
+    ///
+    /// This allows using alternative ephemeris backends (e.g., JPL DE).
+    ///
+    /// # Arguments
+    ///
+    /// * `site` - The observer's location on Earth
+    /// * `jd` - The Julian Date of observation
+    /// * `ctx` - The astronomical context providing ephemeris data
+    pub fn topocentric_with_context<Eph, Eop, Nut>(
+        site: &ObserverSite,
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Self
+    where
+        Eph: VelocityEphemeris,
+    {
         use crate::coordinates::transform::TransformFrame;
         use qtty::{Meter, Radian};
 
-        // Annual (orbital) component: barycentric Earth velocity (VSOP87E).
-        let vel_ecl = Earth::vsop87e_vel(jd);
+        // Annual (orbital) component: barycentric Earth velocity via ephemeris.
+        let [vx, vy, vz] = ctx.ephemeris().velocity_barycentric(BodyId::Earth, jd);
+        let vel_ecl = Velocity::<Ecliptic, AuPerDay>::new(
+            qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+            qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+            qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz),
+        );
 
         // Transform to equatorial frame
         let mut velocity: Velocity<EquatorialMeanJ2000, AuPerDay> = vel_ecl.to_frame();

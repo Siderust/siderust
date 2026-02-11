@@ -142,7 +142,15 @@ pub trait CenterShiftProvider<C1, C2, F> {
     /// A 3-element array `[x, y, z]` representing the shift in frame `F`,
     /// in astronomical units (AU). The caller should convert to the
     /// appropriate unit if needed.
-    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3];
+    ///
+    /// # Type Bounds
+    ///
+    /// The `Eph` type parameter must implement [`BodyEphemeris`] to provide
+    /// planetary position data. This decouples the transform from any specific
+    /// ephemeris implementation (VSOP87, JPL DE, etc.).
+    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3]
+    where
+        Eph: super::ephemeris::BodyEphemeris;
 }
 
 // =============================================================================
@@ -364,29 +372,47 @@ impl FrameRotationProvider<EquatorialTrueOfDate, ICRS> for () {
 // =============================================================================
 // Center Shift Implementations (Hub: Barycentric)
 // =============================================================================
+//
+// These implementations use the ephemeris provider from AstroContext rather
+// than hardcoding VSOP87 calls. This enables pluggable ephemeris backends
+// (e.g., JPL DE) while maintaining zero-cost abstraction for the default case.
+//
+// IMPORTANT: Ephemeris returns positions in Ecliptic J2000.0 coordinates.
+// The shift must be transformed to frame F before returning.
+
+use super::ephemeris::{BodyEphemeris, BodyId};
 
 /// Heliocentric → Barycentric shift.
 ///
-/// Returns the position of the Sun in barycentric coordinates.
-/// Uses VSOP87E for the Sun's position.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Barycentric, F> for () {
-    fn shift<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
-        use crate::bodies::solar_system::Sun;
-
+/// Returns the position of the Sun in barycentric coordinates, expressed in frame F.
+/// Uses the ephemeris provider from the context.
+impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Barycentric, F> for ()
+where
+    (): FrameRotationProvider<Ecliptic, F>,
+{
+    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3]
+    where
+        Eph: BodyEphemeris,
+    {
         // Get Sun's position in barycentric ecliptic coordinates
-        let sun_bary = Sun::vsop87e(jd);
-        let pos = sun_bary.get_position();
-
-        // The shift is the Sun's position (in AU)
-        [pos.x().value(), pos.y().value(), pos.z().value()]
+        let ecl = ctx.ephemeris().position_barycentric(BodyId::Sun, jd);
+        // Transform from Ecliptic to frame F
+        let rot = <() as FrameRotationProvider<Ecliptic, F>>::rotation(jd, ctx);
+        rot.apply_array(ecl)
     }
 }
 
 /// Barycentric → Heliocentric shift.
 ///
 /// Returns the negation of the Sun's barycentric position.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Heliocentric, F> for () {
-    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Heliocentric, F> for ()
+where
+    (): FrameRotationProvider<Ecliptic, F>,
+{
+    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3]
+    where
+        Eph: BodyEphemeris,
+    {
         let [x, y, z] = <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
         [-x, -y, -z]
     }
@@ -394,24 +420,33 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Heliocentric, F> 
 
 /// Geocentric → Barycentric shift.
 ///
-/// Returns the position of the Earth in barycentric coordinates.
-/// Uses VSOP87E for the Earth's position.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Barycentric, F> for () {
-    fn shift<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
-        use crate::bodies::solar_system::Earth;
-
+/// Returns the position of the Earth in barycentric coordinates, expressed in frame F.
+/// Uses the ephemeris provider from the context.
+impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Barycentric, F> for ()
+where
+    (): FrameRotationProvider<Ecliptic, F>,
+{
+    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3]
+    where
+        Eph: BodyEphemeris,
+    {
         // Get Earth's position in barycentric ecliptic coordinates
-        let earth_bary = Earth::vsop87e(jd);
-        let pos = earth_bary.get_position();
-
-        // The shift is the Earth's position (in AU)
-        [pos.x().value(), pos.y().value(), pos.z().value()]
+        let ecl = ctx.ephemeris().position_barycentric(BodyId::Earth, jd);
+        // Transform from Ecliptic to frame F
+        let rot = <() as FrameRotationProvider<Ecliptic, F>>::rotation(jd, ctx);
+        rot.apply_array(ecl)
     }
 }
 
 /// Barycentric → Geocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Geocentric, F> for () {
-    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Geocentric, F> for ()
+where
+    (): FrameRotationProvider<Ecliptic, F>,
+{
+    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3]
+    where
+        Eph: BodyEphemeris,
+    {
         let [x, y, z] = <() as CenterShiftProvider<Geocentric, Barycentric, F>>::shift(jd, ctx);
         [-x, -y, -z]
     }
@@ -420,8 +455,14 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Geocentric, F> fo
 /// Heliocentric → Geocentric shift.
 ///
 /// Composed via Barycentric hub.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Geocentric, F> for () {
-    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Geocentric, F> for ()
+where
+    (): FrameRotationProvider<Ecliptic, F>,
+{
+    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3]
+    where
+        Eph: BodyEphemeris,
+    {
         // Helio → Bary → Geo
         let [x1, y1, z1] =
             <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
@@ -431,8 +472,14 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Geocentric, F> f
 }
 
 /// Geocentric → Heliocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Heliocentric, F> for () {
-    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Heliocentric, F> for ()
+where
+    (): FrameRotationProvider<Ecliptic, F>,
+{
+    fn shift<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3]
+    where
+        Eph: BodyEphemeris,
+    {
         let [x, y, z] = <() as CenterShiftProvider<Heliocentric, Geocentric, F>>::shift(jd, ctx);
         [-x, -y, -z]
     }
@@ -643,5 +690,93 @@ mod tests {
         assert!((roundtrip[0] - v[0]).abs() < 1e-12);
         assert!((roundtrip[1] - v[1]).abs() < 1e-12);
         assert!((roundtrip[2] - v[2]).abs() < 1e-12);
+    }
+
+    /// Test that center shifts use the provided ephemeris trait, not hardcoded VSOP87.
+    ///
+    /// This test verifies the decoupling by using a mock ephemeris with known values.
+    #[test]
+    fn test_center_shift_uses_ephemeris_trait() {
+        use super::super::ephemeris::tests::MockEphemeris;
+        use crate::coordinates::transform::context::{DefaultEop, DefaultNutationModel};
+
+        // Create a mock ephemeris with known positions
+        let mock = MockEphemeris {
+            sun_pos: [0.001, 0.002, 0.0001],
+            earth_pos: [1.0, 0.5, 0.1],
+        };
+        let ctx: AstroContext<MockEphemeris, DefaultEop, DefaultNutationModel> =
+            AstroContext::<MockEphemeris, DefaultEop, DefaultNutationModel>::with_ephemeris(
+                mock.clone(),
+            );
+        let jd = JulianDate::J2000;
+
+        // Test Barycentric → Heliocentric shift
+        // The shift should be -sun_pos (position of barycenter relative to Sun)
+        let shift_to_helio =
+            <() as CenterShiftProvider<Barycentric, Heliocentric, Ecliptic>>::shift(jd, &ctx);
+
+        // shift = -sun_pos (Sun is at sun_pos in barycentric, so barycenter is at -sun_pos in heliocentric)
+        assert!(
+            (shift_to_helio[0] - (-0.001)).abs() < 1e-12,
+            "x: expected {}, got {}",
+            -0.001,
+            shift_to_helio[0]
+        );
+        assert!(
+            (shift_to_helio[1] - (-0.002)).abs() < 1e-12,
+            "y: expected {}, got {}",
+            -0.002,
+            shift_to_helio[1]
+        );
+        assert!(
+            (shift_to_helio[2] - (-0.0001)).abs() < 1e-12,
+            "z: expected {}, got {}",
+            -0.0001,
+            shift_to_helio[2]
+        );
+
+        // Test Barycentric → Geocentric shift
+        // The shift should be -earth_pos (position of barycenter relative to Earth)
+        let shift_to_geo =
+            <() as CenterShiftProvider<Barycentric, Geocentric, Ecliptic>>::shift(jd, &ctx);
+
+        assert!(
+            (shift_to_geo[0] - (-1.0)).abs() < 1e-12,
+            "x: expected {}, got {}",
+            -1.0,
+            shift_to_geo[0]
+        );
+        assert!(
+            (shift_to_geo[1] - (-0.5)).abs() < 1e-12,
+            "y: expected {}, got {}",
+            -0.5,
+            shift_to_geo[1]
+        );
+        assert!(
+            (shift_to_geo[2] - (-0.1)).abs() < 1e-12,
+            "z: expected {}, got {}",
+            -0.1,
+            shift_to_geo[2]
+        );
+    }
+
+    /// Test that the default context uses VSOP87 and returns reasonable values.
+    #[test]
+    fn test_default_ephemeris_gives_vsop87_values() {
+        let ctx = AstroContext::default();
+        let jd = JulianDate::J2000;
+
+        // At J2000, Earth should be roughly 1 AU from the Sun
+        let shift =
+            <() as CenterShiftProvider<Heliocentric, Geocentric, Ecliptic>>::shift(jd, &ctx);
+        let dist = (shift[0].powi(2) + shift[1].powi(2) + shift[2].powi(2)).sqrt();
+
+        // Earth is approximately 1 AU from Sun, so the magnitude should be close to 1
+        assert!(
+            (dist - 1.0).abs() < 0.02,
+            "Earth-Sun distance should be ~1 AU, got {}",
+            dist
+        );
     }
 }

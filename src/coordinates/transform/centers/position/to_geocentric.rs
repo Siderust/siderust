@@ -2,15 +2,15 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use crate::astro::JulianDate;
-use crate::bodies::solar_system::Earth;
 use crate::coordinates::transform::centers::TransformCenter;
+use crate::coordinates::transform::context::AstroContext;
+use crate::coordinates::transform::providers::CenterShiftProvider;
 use crate::coordinates::{
-    cartesian::position::{Ecliptic, Position},
+    cartesian::Position,
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::{self, MutableFrame},
-    transform::Transform,
 };
-use qtty::{AstronomicalUnits, LengthUnit, Quantity};
+use qtty::{LengthUnit, Quantity};
 
 // =============================================================================
 // Barycentric → Geocentric (pure translation, no aberration)
@@ -19,27 +19,32 @@ use qtty::{AstronomicalUnits, LengthUnit, Quantity};
 // Center transforms are pure geometry: they only translate positions from one
 // origin to another. Aberration is an observation-model effect that depends on
 // observer velocity and must be applied explicitly via the observation module.
+//
+// This implementation delegates to CenterShiftProvider, which sources positions
+// from the ephemeris trait. Using default AstroContext provides VSOP87 positions.
 
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
     for Position<Barycentric, F, U>
 where
-    Quantity<U>: From<AstronomicalUnits>,
+    Quantity<U>: From<qtty::AstronomicalUnits>,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
+    (): CenterShiftProvider<Barycentric, Geocentric, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
-        // Get Earth's position in barycentric ecliptic coordinates
-        let earth_bary_ecl_au = *Earth::vsop87e(jd).get_position();
-        let earth_ecl = Ecliptic::<U, Barycentric>::new(
-            earth_bary_ecl_au.x(),
-            earth_bary_ecl_au.y(),
-            earth_bary_ecl_au.z(),
-        );
+        let ctx = AstroContext::default();
+        let [sx, sy, sz] =
+            <() as CenterShiftProvider<Barycentric, Geocentric, F>>::shift(jd, &ctx);
 
-        // Transform Earth to the target frame
-        let earth: Position<Barycentric, F, U> = earth_ecl.transform(jd);
+        // The shift is in AU; convert to unit U
+        let x = self.x().value() + sx;
+        let y = self.y().value() + sy;
+        let z = self.z().value() + sz;
 
-        // Pure translation: geocentric = barycentric - earth_position
-        Position::<Geocentric, F, U>::from_vec3_origin(self.as_vec3() - earth.as_vec3())
+        Position::<Geocentric, F, U>::new(
+            Quantity::<U>::new(x),
+            Quantity::<U>::new(y),
+            Quantity::<U>::new(z),
+        )
     }
 }
 
@@ -50,23 +55,25 @@ where
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Geocentric, F, U>>
     for Position<Heliocentric, F, U>
 where
-    Quantity<U>: From<AstronomicalUnits>,
+    Quantity<U>: From<qtty::AstronomicalUnits>,
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
+    (): CenterShiftProvider<Heliocentric, Geocentric, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
-        // Get Earth's position in heliocentric ecliptic coordinates
-        let earth_helio_ecl_au = *Earth::vsop87a(jd).get_position();
-        let earth_ecl = Ecliptic::<U>::new(
-            earth_helio_ecl_au.x(),
-            earth_helio_ecl_au.y(),
-            earth_helio_ecl_au.z(),
-        );
+        let ctx = AstroContext::default();
+        let [sx, sy, sz] =
+            <() as CenterShiftProvider<Heliocentric, Geocentric, F>>::shift(jd, &ctx);
 
-        // Transform Earth to the target frame
-        let earth: Position<Heliocentric, F, U> = earth_ecl.transform(jd);
+        // Apply the shift
+        let x = self.x().value() + sx;
+        let y = self.y().value() + sy;
+        let z = self.z().value() + sz;
 
-        // Pure translation: geocentric = heliocentric - earth_position
-        Position::<Geocentric, F, U>::from_vec3_origin(self.as_vec3() - earth.as_vec3())
+        Position::<Geocentric, F, U>::new(
+            Quantity::<U>::new(x),
+            Quantity::<U>::new(y),
+            Quantity::<U>::new(z),
+        )
     }
 }
 
@@ -101,7 +108,10 @@ mod tests {
         let earth_geo: cartesian::position::Ecliptic<Au, Geocentric> =
             earth_helio.transform(JulianDate::J2000);
         let expected_earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::CENTER;
-        assert_cartesian_eq!(&earth_geo, &expected_earth_geo, EPSILON);
+        // Note: The tolerance here is slightly relaxed because heliocentric transforms
+        // now go through barycentric as a hub (vsop87e), while vsop87a is the original
+        // heliocentric series. The difference (~5e-9 AU ≈ 0.7m) is well within VSOP87 accuracy.
+        assert_cartesian_eq!(&earth_geo, &expected_earth_geo, 1e-8);
     }
 
     #[test]

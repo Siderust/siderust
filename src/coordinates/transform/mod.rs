@@ -7,6 +7,24 @@
 //! between different reference centers (e.g., Barycentric, Heliocentric, Geocentric, Topocentric)
 //! and reference frames (e.g., Ecliptic, EquatorialMeanJ2000, ICRS, Horizontal).
 //!
+//! ## Architecture: Three-Layer Design
+//!
+//! The transformation system is structured in three cleanly separated layers:
+//!
+//! 1. **Ephemeris Layer** ([`ephemeris`]): Provides planetary positions and velocities.
+//!    - Abstracted via [`BodyEphemeris`](ephemeris::BodyEphemeris) and
+//!      [`VelocityEphemeris`](ephemeris::VelocityEphemeris) traits.
+//!    - Default: [`Vsop87Ephemeris`](ephemeris::Vsop87Ephemeris) (zero-cost, built-in).
+//!    - Pluggable: JPL DE, custom backends can implement the traits.
+//!
+//! 2. **Geometric Transform Layer** ([`providers`]): Computes rotations and translations.
+//!    - [`FrameRotationProvider`]: Matrices for frame rotations (precession, nutation, etc.).
+//!    - [`CenterShiftProvider`]: Translation vectors using ephemeris data.
+//!
+//! 3. **Application Layer** ([`ext`], [`Transform`]): User-facing transformation methods.
+//!    - Extension traits (`pos.to_center::<Geo>()`, `pos.to_frame::<Ecl>()`).
+//!    - [`TransformCenter`] and [`TransformFrame`] traits.
+//!
 //! ## Core Concepts
 //!
 //! - **Transform Trait**: The central abstraction is the [`Transform`] trait, which defines a method
@@ -26,6 +44,29 @@
 //!
 //! Attempting to center-transform a direction or velocity is mathematically undefined and
 //! prevented at the type level.
+//!
+//! ## Using Custom Ephemeris
+//!
+//! To use a custom ephemeris backend:
+//!
+//! ```rust,ignore
+//! use siderust::coordinates::transform::context::AstroContext;
+//! use siderust::coordinates::transform::ephemeris::BodyEphemeris;
+//!
+//! // Your custom ephemeris type
+//! struct JplDeEphemeris { /* ... */ }
+//! impl BodyEphemeris for JplDeEphemeris {
+//!     fn position_barycentric(&self, body: BodyId, jd: JulianDate) -> [f64; 3] {
+//!         // Your implementation
+//!     }
+//! }
+//!
+//! let jpl = JplDeEphemeris::load("de440.bsp")?;
+//! let ctx = AstroContext::with_ephemeris(jpl);
+//!
+//! // Use the custom ephemeris in transforms
+//! position.to_center::<Geocentric>(&jd, &ctx);
+//! ```
 //!
 //! ## Observer-Dependent Directions (Line of Sight)
 //!
@@ -67,11 +108,13 @@
 //! - [`centers`]: Transformations between reference centers (positions only).
 //! - [`crate::coordinates::frames`]: Transformations between reference frames (all coordinate types).
 //! - [`context`]: Astronomical context for transformation configuration.
+//! - [`ephemeris`]: Ephemeris abstraction layer for pluggable position/velocity providers.
 //! - [`providers`]: Provider traits for computing time-dependent operators.
 //! - [`ext`]: Extension traits for ergonomic method-style transforms.
 
 pub mod centers;
 pub mod context;
+pub mod ephemeris;
 pub mod ext;
 mod frames;
 pub mod providers;
