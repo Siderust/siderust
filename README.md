@@ -91,6 +91,22 @@ let mars_geo: Position::<Geocentric, Ecliptic> = mars_helio.transform(jd);
 
 Impossible states (e.g. adding heliocentric and geocentric positions) simply do not compile.
 
+### Compile-Time vs Runtime Safety
+
+For most centers (`Barycentric`, `Heliocentric`, `Geocentric`) all invariants are
+enforced at **compile time** with zero runtime cost (`Params = ()`).
+
+**Parameterized centers** (`Topocentric`, `Bodycentric`) carry runtime data
+(e.g., `ObserverSite`). The *center type* is still checked at compile time, but
+*parameter equality* (e.g., "are these two positions at the same site?") is
+checked at **runtime**:
+
+| API | Behaviour on mismatch |
+|-----|-----------------------|
+| `pos_a - pos_b` / `distance_to` | `assert!` (panics in all builds) |
+| `checked_sub` / `try_distance_to` | Returns `Err(CenterParamsMismatchError)` |
+| `ObserverSite::try_new` | Validates lat/lon ranges, returns `Result` |
+
 ---
 
 ## Units & Physical Quantities

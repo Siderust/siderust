@@ -21,13 +21,35 @@
 //! - [`Topocentric`]: Observer's location on the surface of the Earth (parameterized by [`ObserverSite`]).
 //! - [`Bodycentric`]: Generic center for any orbiting celestial body (parameterized by [`BodycentricParams`]).
 //!
-//! ## Parameterized Centers
+//! ## Compile-Time vs Runtime Safety
 //!
-//! Some reference centers require runtime parameters:
+//! | Center            | `Params`           | Safety level                        |
+//! |-------------------|--------------------|-------------------------------------|
+//! | `Barycentric`     | `()`               | **Compile-time** — zero cost        |
+//! | `Heliocentric`    | `()`               | **Compile-time** — zero cost        |
+//! | `Geocentric`      | `()`               | **Compile-time** — zero cost        |
+//! | `Topocentric`     | [`ObserverSite`]   | **Runtime-parameterized** (see below) |
+//! | `Bodycentric`     | [`BodycentricParams`] | **Runtime-parameterized** (see below) |
 //!
-//! - For most centers (Barycentric, Heliocentric, Geocentric), `Params = ()` (zero-cost).
-//! - For [`Topocentric`], `Params = ObserverSite` which stores the observer's geographic location.
-//! - For [`Bodycentric`], `Params = BodycentricParams` which stores the body's orbital elements.
+//! For centers with `Params = ()`, the type system guarantees correctness at
+//! compile time with no runtime overhead.
+//!
+//! For **parameterized centers**, the *center type* is still enforced at compile
+//! time (you cannot mix `Topocentric` and `Geocentric` positions), but operations
+//! that require *matching parameters* — such as `Position - Position` and
+//! `distance_to` — verify parameter equality at **runtime**:
+//!
+//! - **Panicking API** — the default operators (`Sub`, `distance_to`) `assert!`
+//!   in all build profiles.
+//! - **Checked API** — [`Position::checked_sub`](affn::Position::checked_sub) and
+//!   [`Position::try_distance_to`](affn::Position::try_distance_to) return
+//!   `Result<_, CenterParamsMismatchError>`.
+//!
+//! ### Validated Construction
+//!
+//! Use [`ObserverSite::try_new`] to validate geographic coordinates (latitude,
+//! longitude) before constructing a site. The unchecked [`ObserverSite::new`]
+//! is retained for convenience but does not validate ranges.
 //!
 //! ## Extending
 //!
@@ -59,7 +81,7 @@ use serde::{Deserialize, Serialize};
 
 // Re-export core traits from affn
 pub use affn::centers::ReferenceCenter;
-pub use affn::{AffineCenter, NoCenter};
+pub use affn::{AffineCenter, CenterParamsMismatchError, NoCenter};
 // Import derives from prelude for use in this module
 use affn::prelude::ReferenceCenter as DeriveReferenceCenter;
 
@@ -75,6 +97,39 @@ pub struct Barycentric;
 // =============================================================================
 // ObserverSite: Parameters for Topocentric coordinates
 // =============================================================================
+
+/// Error returned when [`ObserverSite::try_new`] receives invalid geographic coordinates.
+#[derive(Debug, Clone)]
+pub enum ObserverSiteError {
+    /// Latitude is outside the valid range `[-90°, +90°]`.
+    LatitudeOutOfRange {
+        /// The invalid latitude value, in degrees.
+        value: f64,
+    },
+    /// Longitude is outside the valid range `[-360°, +360°]`.
+    LongitudeOutOfRange {
+        /// The invalid longitude value, in degrees.
+        value: f64,
+    },
+}
+
+impl std::fmt::Display for ObserverSiteError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::LatitudeOutOfRange { value } => {
+                write!(f, "latitude {value}° is outside valid range [-90°, +90°]")
+            }
+            Self::LongitudeOutOfRange { value } => {
+                write!(
+                    f,
+                    "longitude {value}° is outside valid range [-360°, +360°]"
+                )
+            }
+        }
+    }
+}
+
+impl std::error::Error for ObserverSiteError {}
 
 /// Geographic location of an observer, used as parameters for [`Topocentric`] coordinates.
 ///
@@ -133,8 +188,54 @@ impl ObserverSite {
     /// - `lon`: Geodetic longitude (positive eastward), in degrees.
     /// - `lat`: Geodetic latitude (positive northward), in degrees.
     /// - `height`: Height above the WGS84 ellipsoid, in meters.
+    ///
+    /// # Note
+    ///
+    /// This constructor does **not** validate the input ranges. For validated
+    /// construction, use [`try_new`](Self::try_new).
     pub fn new(lon: Degrees, lat: Degrees, height: Quantity<Meter>) -> Self {
         Self { lon, lat, height }
+    }
+
+    /// Validated constructor that returns `Err` for out-of-range coordinates.
+    ///
+    /// # Validation Rules
+    ///
+    /// - `lat` must be in `[-90°, +90°]`.
+    /// - `lon` must be in `[-360°, +360°]`.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use siderust::coordinates::centers::ObserverSite;
+    /// use qtty::*;
+    ///
+    /// // Valid site
+    /// let site = ObserverSite::try_new(
+    ///     -17.89 * DEG, 28.76 * DEG, 2200.0 * M
+    /// );
+    /// assert!(site.is_ok());
+    ///
+    /// // Invalid latitude
+    /// let bad = ObserverSite::try_new(
+    ///     0.0 * DEG, 100.0 * DEG, 0.0 * M
+    /// );
+    /// assert!(bad.is_err());
+    /// ```
+    pub fn try_new(
+        lon: Degrees,
+        lat: Degrees,
+        height: Quantity<Meter>,
+    ) -> Result<Self, ObserverSiteError> {
+        let lat_val = lat.value();
+        if !(-90.0..=90.0).contains(&lat_val) {
+            return Err(ObserverSiteError::LatitudeOutOfRange { value: lat_val });
+        }
+        let lon_val = lon.value();
+        if !(-360.0..=360.0).contains(&lon_val) {
+            return Err(ObserverSiteError::LongitudeOutOfRange { value: lon_val });
+        }
+        Ok(Self { lon, lat, height })
     }
 
     /// Creates an `ObserverSite` from a [`crate::coordinates::spherical::position::Geographic`] spherical position.
@@ -580,5 +681,63 @@ mod tests {
 
         assert_eq!(params1, params2);
         assert_ne!(params1, params3);
+    }
+
+    // =========================================================================
+    // ObserverSite::try_new validation tests
+    // =========================================================================
+
+    #[test]
+    fn observer_site_try_new_valid() {
+        let site = ObserverSite::try_new(-17.89 * DEG, 28.76 * DEG, 2200.0 * M);
+        assert!(site.is_ok());
+        let site = site.unwrap();
+        assert!((site.lon.value() - (-17.89)).abs() < 1e-12);
+        assert!((site.lat.value() - 28.76).abs() < 1e-12);
+    }
+
+    #[test]
+    fn observer_site_try_new_boundary_values() {
+        // Exact boundary values should pass
+        assert!(ObserverSite::try_new(0.0 * DEG, 90.0 * DEG, 0.0 * M).is_ok());
+        assert!(ObserverSite::try_new(0.0 * DEG, -90.0 * DEG, 0.0 * M).is_ok());
+        assert!(ObserverSite::try_new(360.0 * DEG, 0.0 * DEG, 0.0 * M).is_ok());
+        assert!(ObserverSite::try_new(-360.0 * DEG, 0.0 * DEG, 0.0 * M).is_ok());
+    }
+
+    #[test]
+    fn observer_site_try_new_invalid_latitude() {
+        let result = ObserverSite::try_new(0.0 * DEG, 91.0 * DEG, 0.0 * M);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, ObserverSiteError::LatitudeOutOfRange { .. }));
+        assert!(err.to_string().contains("91"));
+
+        let result = ObserverSite::try_new(0.0 * DEG, -90.1 * DEG, 0.0 * M);
+        assert!(result.is_err());
+    }
+
+    #[test]
+    fn observer_site_try_new_invalid_longitude() {
+        let result = ObserverSite::try_new(361.0 * DEG, 0.0 * DEG, 0.0 * M);
+        assert!(result.is_err());
+        let err = result.unwrap_err();
+        assert!(matches!(err, ObserverSiteError::LongitudeOutOfRange { .. }));
+        assert!(err.to_string().contains("361"));
+    }
+
+    #[test]
+    fn observer_site_error_is_std_error() {
+        let err = ObserverSiteError::LatitudeOutOfRange { value: 100.0 };
+        let _: &dyn std::error::Error = &err;
+    }
+
+    #[test]
+    fn center_params_mismatch_error_reexported() {
+        // Verify CenterParamsMismatchError is accessible through centers module
+        let err = CenterParamsMismatchError {
+            operation: "test",
+        };
+        let _: &dyn std::error::Error = &err;
     }
 }
