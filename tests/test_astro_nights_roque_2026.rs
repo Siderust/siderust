@@ -13,13 +13,13 @@ use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{MJD, ModifiedJulianDate, Period};
 
 const REFERENCE_PATH: &str = "tests/reference_data/astro_night_periods_2026.json";
 const TOL_SECONDS: f64 = 3.0;
 const TOL_DAYS: f64 = TOL_SECONDS / 86_400.0;
 
-fn load_reference_periods() -> Vec<Period<ModifiedJulianDate>> {
+fn load_reference_periods() -> Vec<Period<MJD>> {
     let f = File::open(REFERENCE_PATH).expect("Missing astro_night_periods_2026.json");
     let reader = BufReader::new(f);
     let json: Value = serde_json::from_reader(reader).expect("Invalid JSON in reference file");
@@ -34,7 +34,7 @@ fn utc_to_mjd_utc(dt: DateTime<Utc>) -> ModifiedJulianDate {
     ModifiedJulianDate::new(UNIX_EPOCH_MJD + seconds / 86_400.0)
 }
 
-fn build_roque_period() -> (ObserverSite, Period<ModifiedJulianDate>) {
+fn build_roque_period() -> (ObserverSite, Period<MJD>) {
     let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
 
     let start_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
@@ -53,10 +53,7 @@ fn build_roque_period() -> (ObserverSite, Period<ModifiedJulianDate>) {
     (site, Period::new(mjd_start, mjd_end))
 }
 
-fn assert_periods_close(
-    expected: &[Period<ModifiedJulianDate>],
-    computed: &[Period<ModifiedJulianDate>],
-) {
+fn assert_periods_close(expected: &[Period<MJD>], computed: &[Period<MJD>]) {
     assert_eq!(
         expected.len(),
         computed.len(),
