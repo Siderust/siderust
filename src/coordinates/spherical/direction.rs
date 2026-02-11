@@ -19,3 +19,5 @@ pub type Horizontal = Direction<frames::Horizontal>;
 pub type ICRS = Direction<frames::ICRS>;
 /// **Geographic** (ECEF) direction: longitude, latitude.
 pub type Geographic = Direction<frames::ECEF>;
+/// **Galactic** direction (l, b).
+pub type Galactic = Direction<frames::Galactic>;

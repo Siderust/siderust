@@ -40,7 +40,7 @@ fn ecef_normalization_and_altitude() {
         pos.lon().value()
     );
     // Note: distance is now just the third coordinate, not radius + altitude
-    assert!((pos.distance() - 10.0 * KM).abs() < EPS * KM);
+    assert!((pos.distance - 10.0 * KM).abs() < EPS * KM);
 }
 
 #[test]
@@ -71,7 +71,7 @@ fn ecliptic_normalization() {
         "pos lat mismatch: {}",
         pos.lat().value()
     );
-    assert!((pos.distance() - 2.0 * AU).abs() < EPS * AU);
+    assert!((pos.distance - 2.0 * AU).abs() < EPS * AU);
 }
 
 #[test]
@@ -86,7 +86,7 @@ fn horizontal_normalization() {
     // Positions use new_with_site for Topocentric center
     let site = ObserverSite::default();
     // Note: new_with_site takes (site, alt, az, dist) - IAU Alt-Az convention (altitude first)
-    let pos = position::Horizontal::<AstronomicalUnit>::new_with_site(
+    let pos = siderust::coordinates::centers::Topocentric::horizontal(
         site,
         120.0 * DEG, // alt - wraps to 60
         -30.0 * DEG, // az - normalizes to 330
@@ -102,5 +102,5 @@ fn horizontal_normalization() {
         "pos az={}",
         pos.az()
     );
-    assert!((pos.distance() - 2.0 * AU).abs() < EPS * AU);
+    assert!((pos.distance - 2.0 * AU).abs() < EPS * AU);
 }

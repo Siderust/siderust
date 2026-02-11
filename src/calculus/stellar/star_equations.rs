@@ -114,7 +114,7 @@ impl StarAltitudeParams {
 
         // 3. Apply nutation to RA
         let ra_corrected = corrected_ra_with_nutation(&mod_pos.direction(), epoch_jd);
-        let dec = mod_pos.polar();
+        let dec = mod_pos.polar;
 
         // 4. Precompute trig constants
         let lat_rad = site.lat.to::<Radian>();

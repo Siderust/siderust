@@ -227,7 +227,7 @@ pub fn precess_from_j2000<U: LengthUnit>(
     let mean_of_date = position::EquatorialMeanOfDate::<U>::new(
         mean_position.ra(),
         mean_position.dec(),
-        mean_position.distance(),
+        mean_position.distance,
     );
     precess_equatorial(mean_of_date, JulianDate::J2000, to_jd)
 }
@@ -254,7 +254,7 @@ pub fn precess_equatorial<U: LengthUnit>(
     position::EquatorialMeanOfDate::<U>::new(
         ra.to::<Degree>(),
         dec.to::<Degree>(),
-        position.distance(),
+        position.distance,
     )
 }
 
