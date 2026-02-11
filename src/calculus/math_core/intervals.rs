@@ -11,10 +11,10 @@
 //! * Always‑above / always‑below cases
 //! * Single‑threshold (above only) as a special case
 //!
-//! All routines operate on `Period<ModifiedJulianDate>` time windows and
+//! All routines operate on `Period<MJD>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
 
-use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period};
+use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period, MJD};
 use qtty::{Day, Quantity, Unit};
 
 use super::root_finding;
@@ -51,7 +51,7 @@ pub struct LabeledCrossing {
 /// Scan `period` at `step` intervals, find all roots of
 /// `f(t) − threshold` using Brent's method.  Returns unsorted crossing times.
 pub fn find_crossings<V, F>(
-    period: Period<Mjd>,
+    period: Period<MJD>,
     step: Days,
     f: &F,
     threshold: Quantity<V>,
@@ -97,7 +97,7 @@ pub fn find_crossings_in_segments<V, F>(
     key_times: &[ModifiedJulianDate],
     f: &F,
     threshold: Quantity<V>,
-    period: Period<Mjd>,
+    period: Period<MJD>,
 ) -> Vec<ModifiedJulianDate>
 where
     V: Unit,
@@ -193,11 +193,11 @@ where
 /// A midpoint validation check is performed for each candidate period.
 pub fn build_above_periods<V, F>(
     labeled: &[LabeledCrossing],
-    period: Period<Mjd>,
+    period: Period<MJD>,
     start_above: bool,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<Mjd>>
+) -> Vec<Period<MJD>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -259,11 +259,11 @@ where
 /// using a coarse scan at `step` followed by Brent refinement and
 /// crossing classification.
 pub fn above_threshold_periods<V, F>(
-    period: Period<Mjd>,
+    period: Period<MJD>,
     step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<Mjd>>
+) -> Vec<Period<MJD>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -278,10 +278,10 @@ where
 /// segments (culmination‑based).
 pub fn above_threshold_periods_segmented<V, F>(
     key_times: &[ModifiedJulianDate],
-    period: Period<Mjd>,
+    period: Period<MJD>,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<Mjd>>
+) -> Vec<Period<MJD>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -300,12 +300,12 @@ where
 ///
 /// Computed as `above(h_min) ∩ complement(above(h_max))`.
 pub fn in_range_periods<V, F>(
-    period: Period<Mjd>,
+    period: Period<MJD>,
     step: Days,
     f: &F,
     h_min: Quantity<V>,
     h_max: Quantity<V>,
-) -> Vec<Period<Mjd>>
+) -> Vec<Period<MJD>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -319,11 +319,11 @@ where
 /// Like [`in_range_periods`] but using key‑time segments.
 pub fn in_range_periods_segmented<V, F>(
     key_times: &[ModifiedJulianDate],
-    period: Period<Mjd>,
+    period: Period<MJD>,
     f: &F,
     h_min: Quantity<V>,
     h_max: Quantity<V>,
-) -> Vec<Period<Mjd>>
+) -> Vec<Period<MJD>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -339,12 +339,12 @@ where
 // ---------------------------------------------------------------------------
 
 /// Complement of `periods` within `within`.
-pub fn complement(within: Period<Mjd>, periods: &[Period<Mjd>]) -> Vec<Period<Mjd>> {
+pub fn complement(within: Period<MJD>, periods: &[Period<MJD>]) -> Vec<Period<MJD>> {
     complement_within(within, periods)
 }
 
 /// Intersection of two sorted, non‑overlapping period lists.
-pub fn intersect(a: &[Period<Mjd>], b: &[Period<Mjd>]) -> Vec<Period<Mjd>> {
+pub fn intersect(a: &[Period<MJD>], b: &[Period<MJD>]) -> Vec<Period<MJD>> {
     intersect_periods(a, b)
 }
 
@@ -362,7 +362,7 @@ mod tests {
     fn mjd(v: f64) -> Mjd {
         Mjd::new(v)
     }
-    fn period(a: f64, b: f64) -> Period<Mjd> {
+    fn period(a: f64, b: f64) -> Period<MJD> {
         Period::new(mjd(a), mjd(b))
     }
 

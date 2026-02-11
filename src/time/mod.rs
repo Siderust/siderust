@@ -12,8 +12,9 @@
 //! - [`JulianDate`] — type alias for `Time<JD>`.
 //! - [`JulianEphemerisDay`] — type alias for `Time<JDE>`.
 //! - [`ModifiedJulianDate`] — type alias for `Time<MJD>`.
-//! - [`Period<T>`] — a time interval between two [`TimeInstant`]s.
-//! - [`TimeInstant`] — trait for points in time usable with [`Period`].
+//! - [`Period<S>`] — a time interval parameterised by a [`TimeScale`] marker.
+//! - [`Interval<T>`] — a generic interval over any [`TimeInstant`].
+//! - [`TimeInstant`] — trait for points in time usable with [`Interval`].
 //!
 //! # Time scales
 //!
@@ -47,7 +48,7 @@ pub(crate) mod scales;
 // ── Re-exports ────────────────────────────────────────────────────────────
 
 pub use instant::{Time, TimeInstant, TimeScale};
-pub use period::{complement_within, intersect_periods, Period};
+pub use period::{complement_within, intersect_periods, Interval, Period, UtcPeriod};
 pub use scales::{UnixTime, GPS, JD, JDE, MJD, TAI, TDB, TT, UT};
 
 // ── Backward-compatible type aliases ──────────────────────────────────────
