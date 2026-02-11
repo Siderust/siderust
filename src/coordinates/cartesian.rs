@@ -41,6 +41,8 @@ pub mod direction {
     pub type Geographic = Direction<frames::ECEF>;
     /// **ICRS** cartesian direction (unit vector).
     pub type ICRS = Direction<frames::ICRS>;
+    /// **ICRF** cartesian direction (unit vector).
+    pub type ICRF = Direction<frames::ICRF>;
 }
 
 // =============================================================================
@@ -63,6 +65,8 @@ pub mod displacement {
     pub type Horizontal<U> = Displacement<frames::Horizontal, U>;
     /// **ICRS** displacement vector.
     pub type ICRS<U> = Displacement<frames::ICRS, U>;
+    /// **ICRF** displacement vector.
+    pub type ICRF<U> = Displacement<frames::ICRF, U>;
 }
 
 // =============================================================================
@@ -118,4 +122,6 @@ pub mod velocity {
     pub type Horizontal<U> = Velocity<frames::Horizontal, U>;
     /// **ICRS** cartesian velocity vector.
     pub type ICRS<U> = Velocity<frames::ICRS, U>;
+    /// **ICRF** cartesian velocity vector.
+    pub type ICRF<U> = Velocity<frames::ICRF, U>;
 }

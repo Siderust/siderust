@@ -3,17 +3,57 @@
 
 //! Segment lookup and coordinate evaluation for DE440 data.
 //!
-//! Given a Julian Date, locates the correct Chebyshev record and evaluates
-//! the polynomial to produce position [x, y, z] in km (ICRF) and optionally
-//! velocity [vx, vy, vz] in km/s.
+//! Given a Julian Date (TDB), locates the correct Chebyshev record and
+//! evaluates the polynomial to produce position `[x, y, z]` in km (ICRF)
+//! and optionally velocity `[vx, vy, vz]` in km/day.
+//!
+//! ## Design — `SegmentDescriptor`
+//!
+//! All per-body metadata (epoch, interval length, coefficient count, record
+//! accessor) is bundled into [`SegmentDescriptor`] so that the evaluation
+//! routines are called with a single typed handle instead of 6+ loose
+//! parameters.  Static descriptors for each embedded body are exported
+//! from the [`data`](super::data) sub-module.
 
 use super::chebyshev;
+use crate::coordinates::frames::ICRF;
+use crate::time::JulianDate;
+use affn::{Displacement, Velocity};
+use qtty::{Day, Kilometer, Kilometers, Per};
 
-/// J2000 epoch as Julian Date (TT/TDB).
-const J2000_JD: f64 = 2_451_545.0;
+/// Velocity unit: km/day.
+type KmPerDay = Per<Kilometer, Day>;
+/// Typed km/day quantity.
+type KmPerDayQ = qtty::Quantity<KmPerDay>;
 
-/// Seconds per day.
-const SECONDS_PER_DAY: f64 = 86_400.0;
+/// Seconds per day — sourced from `qtty` (single source of truth).
+const SECONDS_PER_DAY: f64 = qtty::time::SECONDS_PER_DAY;
+
+/// J2000.0 epoch as a raw JD value — sourced from `JulianDate::J2000`.
+const J2000_JD: f64 = JulianDate::J2000.value();
+
+// ── Segment descriptor ──────────────────────────────────────────────────
+
+/// All metadata needed to evaluate a single DE440 body segment.
+///
+/// This bundles the per-body constants that were previously passed as
+/// six loose parameters (`init`, `intlen`, `ncoeff`, `rsize`,
+/// `n_records`, `record_fn`), improving call-site ergonomics and
+/// eliminating the risk of mismatched arguments.
+pub struct SegmentDescriptor {
+    /// Initial epoch of the segment (TDB seconds past J2000).
+    pub init: f64,
+    /// Length of each Chebyshev sub-interval (seconds).
+    pub intlen: f64,
+    /// Number of Chebyshev coefficients per coordinate (x, y, z).
+    pub ncoeff: usize,
+    /// Number of coefficient records in the segment.
+    pub n_records: usize,
+    /// Accessor for the `i`-th coefficient record.
+    pub record_fn: fn(usize) -> &'static [f64],
+}
+
+// ── Time conversion ─────────────────────────────────────────────────────
 
 /// Convert a Julian Date (TDB) to TDB seconds past J2000.
 #[inline]
@@ -21,129 +61,94 @@ fn jd_to_et(jd: f64) -> f64 {
     (jd - J2000_JD) * SECONDS_PER_DAY
 }
 
-/// Evaluate position [x, y, z] in km (ICRF) for a single body at epoch `jd`.
-///
-/// # Arguments
-/// - `jd`: Julian Date (TDB scale). The caller should apply TT→TDB if needed.
-/// - `init`: segment initial epoch (TDB seconds past J2000)
-/// - `intlen`: interval length (seconds)
-/// - `ncoeff`: Chebyshev coefficients per coordinate
-/// - `rsize`: doubles per record
-/// - `n_records`: number of records
-/// - `record_fn`: function to get the i-th record as a &[f64] slice
-///
-/// # Panics
-/// Panics if `jd` is outside the segment's time span.
-pub fn position(
-    jd: f64,
-    init: f64,
-    intlen: f64,
-    ncoeff: usize,
-    _rsize: usize,
-    n_records: usize,
-    record_fn: fn(usize) -> &'static [f64],
-) -> [f64; 3] {
+// ── Internal: locate record + normalise time ────────────────────────────
+
+/// Shared helper: given an epoch return the record, tau, and radius.
+#[inline]
+fn locate(seg: &SegmentDescriptor, jd: f64) -> (&'static [f64], f64, f64) {
     let et = jd_to_et(jd);
-
-    // Find the record index
-    let idx_f = (et - init) / intlen;
-    let idx = (idx_f as usize).min(n_records - 1);
-
-    let record = record_fn(idx);
-
-    // First two values are MID and RADIUS
+    let idx = ((et - seg.init) / seg.intlen) as usize;
+    let idx = idx.min(seg.n_records - 1);
+    let record = (seg.record_fn)(idx);
     let mid = record[0];
     let radius = record[1];
-
-    // Normalize time to tau ∈ [-1, 1]
     let tau = (et - mid) / radius;
-
-    // Coefficients for X, Y, Z start at offset 2
-    let x_coeffs = &record[2..2 + ncoeff];
-    let y_coeffs = &record[2 + ncoeff..2 + 2 * ncoeff];
-    let z_coeffs = &record[2 + 2 * ncoeff..2 + 3 * ncoeff];
-
-    [
-        chebyshev::evaluate(x_coeffs, tau),
-        chebyshev::evaluate(y_coeffs, tau),
-        chebyshev::evaluate(z_coeffs, tau),
-    ]
+    (record, tau, radius)
 }
 
-/// Evaluate velocity [vx, vy, vz] in km/day (ICRF) for a single body.
-///
-/// The derivative of the Chebyshev polynomial gives df/dtau. We multiply
-/// by dtau/dt = 1/RADIUS to get df/dt in km/s, then by SECONDS_PER_DAY
-/// to get km/day.
-pub fn velocity(
-    jd: f64,
-    init: f64,
-    intlen: f64,
-    ncoeff: usize,
-    _rsize: usize,
-    n_records: usize,
-    record_fn: fn(usize) -> &'static [f64],
-) -> [f64; 3] {
-    let et = jd_to_et(jd);
-
-    let idx_f = (et - init) / intlen;
-    let idx = (idx_f as usize).min(n_records - 1);
-
-    let record = record_fn(idx);
-    let mid = record[0];
-    let radius = record[1];
-    let tau = (et - mid) / radius;
-
-    let x_coeffs = &record[2..2 + ncoeff];
-    let y_coeffs = &record[2 + ncoeff..2 + 2 * ncoeff];
-    let z_coeffs = &record[2 + 2 * ncoeff..2 + 3 * ncoeff];
-
-    // df/dt = (df/dtau) * (dtau/dt) = (df/dtau) / radius
-    // DE440 radius is in seconds, so df/dt is in km/s.
-    // Convert to km/day by multiplying by SECONDS_PER_DAY.
-    let scale = SECONDS_PER_DAY / radius;
-
-    [
-        chebyshev::evaluate_derivative(x_coeffs, tau) * scale,
-        chebyshev::evaluate_derivative(y_coeffs, tau) * scale,
-        chebyshev::evaluate_derivative(z_coeffs, tau) * scale,
-    ]
-}
-
-/// Evaluate both position and velocity in one pass.
-///
-/// Returns `([x, y, z] km, [vx, vy, vz] km/day)`.
-pub fn position_velocity(
-    jd: f64,
-    init: f64,
-    intlen: f64,
-    ncoeff: usize,
-    _rsize: usize,
-    n_records: usize,
-    record_fn: fn(usize) -> &'static [f64],
-) -> ([f64; 3], [f64; 3]) {
-    let et = jd_to_et(jd);
-
-    let idx_f = (et - init) / intlen;
-    let idx = (idx_f as usize).min(n_records - 1);
-
-    let record = record_fn(idx);
-    let mid = record[0];
-    let radius = record[1];
-    let tau = (et - mid) / radius;
-
-    let x_coeffs = &record[2..2 + ncoeff];
-    let y_coeffs = &record[2 + ncoeff..2 + 2 * ncoeff];
-    let z_coeffs = &record[2 + 2 * ncoeff..2 + 3 * ncoeff];
-
-    let scale = SECONDS_PER_DAY / radius;
-
-    let (px, vx) = chebyshev::evaluate_both(x_coeffs, tau);
-    let (py, vy) = chebyshev::evaluate_both(y_coeffs, tau);
-    let (pz, vz) = chebyshev::evaluate_both(z_coeffs, tau);
-
+/// Extract X/Y/Z coefficient slices from a record.
+#[inline]
+fn xyz_coeffs(record: &[f64], ncoeff: usize) -> (&[f64], &[f64], &[f64]) {
     (
-        [px, py, pz],
-        [vx * scale, vy * scale, vz * scale],
+        &record[2..2 + ncoeff],
+        &record[2 + ncoeff..2 + 2 * ncoeff],
+        &record[2 + 2 * ncoeff..2 + 3 * ncoeff],
     )
+}
+
+// ── Public evaluation API ───────────────────────────────────────────────
+
+impl SegmentDescriptor {
+    /// Evaluate position in km (ICRF) at Julian Date (TDB).
+    ///
+    /// Returns a typed `Displacement<ICRF, Kilometer>` carrying both the
+    /// reference frame (ICRF) and the length unit (km) in the type.
+    #[inline]
+    pub fn position(&self, jd: f64) -> Displacement<ICRF, Kilometer> {
+        let (record, tau, _) = locate(self, jd);
+        let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
+        Displacement::new(
+            Kilometers::new(chebyshev::evaluate(cx, tau)),
+            Kilometers::new(chebyshev::evaluate(cy, tau)),
+            Kilometers::new(chebyshev::evaluate(cz, tau)),
+        )
+    }
+
+    /// Evaluate velocity in km/day (ICRF) at Julian Date (TDB).
+    ///
+    /// Returns a typed `Velocity<ICRF, Per<Kilometer, Day>>`.
+    ///
+    /// The Chebyshev derivative gives `df/dτ`; we multiply by `dτ/dt = 1/radius`
+    /// (km/s) then by `SECONDS_PER_DAY` to obtain km/day.
+    #[inline]
+    pub fn velocity(&self, jd: f64) -> Velocity<ICRF, KmPerDay> {
+        let (record, tau, radius) = locate(self, jd);
+        let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
+        let scale = SECONDS_PER_DAY / radius;
+        Velocity::new(
+            KmPerDayQ::new(chebyshev::evaluate_derivative(cx, tau) * scale),
+            KmPerDayQ::new(chebyshev::evaluate_derivative(cy, tau) * scale),
+            KmPerDayQ::new(chebyshev::evaluate_derivative(cz, tau) * scale),
+        )
+    }
+
+    /// Evaluate both position and velocity in one pass.
+    ///
+    /// Returns `(Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>)`.
+    #[inline]
+    pub fn position_velocity(
+        &self,
+        jd: f64,
+    ) -> (Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>) {
+        let (record, tau, radius) = locate(self, jd);
+        let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
+        let scale = SECONDS_PER_DAY / radius;
+
+        let (px, vx) = chebyshev::evaluate_both(cx, tau);
+        let (py, vy) = chebyshev::evaluate_both(cy, tau);
+        let (pz, vz) = chebyshev::evaluate_both(cz, tau);
+
+        (
+            Displacement::new(
+                Kilometers::new(px),
+                Kilometers::new(py),
+                Kilometers::new(pz),
+            ),
+            Velocity::new(
+                KmPerDayQ::new(vx * scale),
+                KmPerDayQ::new(vy * scale),
+                KmPerDayQ::new(vz * scale),
+            ),
+        )
+    }
 }

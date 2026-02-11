@@ -51,7 +51,7 @@ pub use affn::frames::{ReferenceFrame, SphericalNaming};
 // Re-export all astronomical frame types from affn
 pub use affn::frames::{
     Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
-    Horizontal, ECEF, ICRS, ITRF,
+    Horizontal, ECEF, ICRF, ICRS, ITRF,
 };
 
 // NOTE: The `Horizontal` frame type uses the **North-clockwise** azimuth convention
