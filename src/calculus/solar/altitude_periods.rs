@@ -27,7 +27,7 @@
 use crate::bodies::solar_system::Sun;
 use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::ObserverSite;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
 use qtty::*;
 
 // =============================================================================
@@ -61,9 +61,9 @@ pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> 
 /// Uses a 2-hour scan + Brent refinement via [`math_core::intervals`].
 pub(crate) fn find_day_periods(
     site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
+    period: Period<MJD>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Period<MJD>> {
     let thr = threshold.to::<Radian>();
 
     let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
@@ -76,9 +76,9 @@ pub(crate) fn find_day_periods(
 /// Complement of [`find_day_periods`] within `period`.
 pub(crate) fn find_night_periods(
     site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
+    period: Period<MJD>,
     twilight: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Period<MJD>> {
     let days = find_day_periods(site, period, twilight);
     complement_within(period, &days)
 }
@@ -89,9 +89,9 @@ pub(crate) fn find_night_periods(
 /// [`math_core::intervals::in_range_periods`].
 pub(crate) fn find_sun_range_periods(
     site: ObserverSite,
-    period: Period<ModifiedJulianDate>,
+    period: Period<MJD>,
     range: (Degrees, Degrees),
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Period<MJD>> {
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 

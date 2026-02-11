@@ -299,7 +299,7 @@ impl<S: TimeScale> From<Time<S>> for Days {
 
 /// Trait for types that represent a point in time.
 ///
-/// Types implementing this trait can be used as time instants in `Period<T>`
+/// Types implementing this trait can be used as time instants in `Interval<T>`
 /// and provide conversions to/from UTC plus basic arithmetic operations.
 pub trait TimeInstant: Copy + Clone + PartialEq + PartialOrd + Sized {
     /// The duration type used for arithmetic operations.
