@@ -7,7 +7,7 @@
 //! and DateTime<Utc>.
 
 use chrono::DateTime;
-use siderust::time::{JulianDate, ModifiedJulianDate, Period};
+use siderust::time::{JulianDate, ModifiedJulianDate, Period, UtcPeriod, MJD};
 
 fn main() {
     println!("Generic Time Period Examples");
@@ -35,7 +35,7 @@ fn main() {
     println!("3. Period with UTC DateTime:");
     let utc_start = DateTime::from_timestamp(0, 0).unwrap(); // Unix epoch
     let utc_end = DateTime::from_timestamp(86400 * 2, 0).unwrap(); // 2 days later
-    let utc_period = Period::new(utc_start, utc_end);
+    let utc_period = UtcPeriod::new(utc_start, utc_end);
     println!("   Start: {}", utc_start);
     println!("   End:   {}", utc_end);
     println!("   Duration: {} days", utc_period.duration_days());
@@ -50,9 +50,9 @@ fn main() {
     println!("   JD:  {}", jd.value());
     println!("   UTC: {}\n", utc);
 
-    // Example 5: Backward compatibility with Period<ModifiedJulianDate> type alias
-    println!("5. Period<ModifiedJulianDate> (type alias for Period<ModifiedJulianDate>):");
-    let night_period = Period::<ModifiedJulianDate>::new(
+    // Example 5: Explicit MJD period type
+    println!("5. Period<MJD>:");
+    let night_period = Period::<MJD>::new(
         ModifiedJulianDate::new(59000.0),
         ModifiedJulianDate::new(59000.5),
     );

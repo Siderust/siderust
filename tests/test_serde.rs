@@ -116,8 +116,8 @@ fn test_spherical_direction_ecliptic_roundtrip() {
     let recovered: spherical::Direction<frames::Ecliptic> =
         serde_json::from_str(&json).expect("deserialize spherical direction");
 
-    assert!((dir.polar().value() - recovered.polar().value()).abs() < 1e-12);
-    assert!((dir.azimuth().value() - recovered.azimuth().value()).abs() < 1e-12);
+    assert!((dir.polar.value() - recovered.polar.value()).abs() < 1e-12);
+    assert!((dir.azimuth.value() - recovered.azimuth.value()).abs() < 1e-12);
 }
 
 // =============================================================================
@@ -137,9 +137,9 @@ fn test_spherical_position_heliocentric_roundtrip() {
     let recovered: spherical::Position<centers::Heliocentric, frames::Ecliptic, AstronomicalUnit> =
         serde_json::from_str(&json).expect("deserialize spherical position");
 
-    assert!((pos.polar().value() - recovered.polar().value()).abs() < 1e-12);
-    assert!((pos.azimuth().value() - recovered.azimuth().value()).abs() < 1e-12);
-    assert!((pos.distance().value() - recovered.distance().value()).abs() < 1e-12);
+    assert!((pos.polar.value() - recovered.polar.value()).abs() < 1e-12);
+    assert!((pos.azimuth.value() - recovered.azimuth.value()).abs() < 1e-12);
+    assert!((pos.distance.value() - recovered.distance.value()).abs() < 1e-12);
 }
 
 // =============================================================================

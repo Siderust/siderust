@@ -289,10 +289,7 @@ mod tests {
         use crate::bodies::catalog::SIRIUS;
 
         // Target epoch: 2025‑05‑12 (JD 2 469 807.5)
-        let prec = precess_from_j2000(
-            SIRIUS.target.get_position().clone(),
-            JulianDate::new(2_460_807.5),
-        );
+        let prec = precess_from_j2000(*SIRIUS.target.get_position(), JulianDate::new(2_460_807.5));
 
         // Expected (Meeus short model): α ≈ 101.84557°, δ ≈ −16.77182°
         assert!(
@@ -332,7 +329,7 @@ mod tests {
             1.0,
         );
 
-        let prec = precess_from_j2000(pos.clone(), jd);
+        let prec = precess_from_j2000(pos, jd);
         let dir = pos.direction().to_cartesian();
         let rot = precession_rotation_from_j2000(jd);
         let [x, y, z] = rot.apply_array([dir.x(), dir.y(), dir.z()]);

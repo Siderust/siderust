@@ -12,7 +12,7 @@ use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::altitude::{altitude_periods, AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::direction;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Period, MJD};
 
 use qtty::*;
 
@@ -39,14 +39,14 @@ fn north_pole() -> ObserverSite {
     ObserverSite::new(Degrees::new(0.0), Degrees::new(89.0), Meters::new(0.0))
 }
 
-fn one_day() -> Period<ModifiedJulianDate> {
+fn one_day() -> Period<MJD> {
     Period::new(
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60001.0),
     )
 }
 
-fn one_week() -> Period<ModifiedJulianDate> {
+fn one_week() -> Period<MJD> {
     Period::new(
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60007.0),
@@ -54,10 +54,7 @@ fn one_week() -> Period<ModifiedJulianDate> {
 }
 
 /// Generic assertion helper: verifies basic structural invariants of periods.
-fn assert_periods_valid(
-    periods: &[Period<ModifiedJulianDate>],
-    window: Period<ModifiedJulianDate>,
-) {
+fn assert_periods_valid(periods: &[Period<MJD>], window: Period<MJD>) {
     let win_start = window.start.value();
     let win_end = window.end.value();
 
