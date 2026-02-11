@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::bodies::solar_system::{Earth, Sun};
+use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::transform::centers::TransformCenter;
+use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::{
     cartesian::position::Ecliptic,
     cartesian::Position,
@@ -21,9 +22,9 @@ where
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        let sun_bary_ecl_au = *Sun::vsop87e(jd).get_position();
+        let sun_bary_ecl_au = *DefaultEphemeris::sun_barycentric(jd).get_position();
 
-        // VSOP87 gives the Sun's position in AstronomicalUnits
+        // Ephemeris gives the Sun's position in AstronomicalUnits
         let sun_bary_ecl = Ecliptic::<U, Barycentric>::new(
             sun_bary_ecl_au.x(),
             sun_bary_ecl_au.y(),
@@ -43,9 +44,9 @@ where
     (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        let earth_bary_ecl_au = *Earth::vsop87e(jd).get_position();
+        let earth_bary_ecl_au = *DefaultEphemeris::earth_barycentric(jd).get_position();
 
-        // VSOP87 gives the Earth's position in AstronomicalUnits
+        // Ephemeris gives the Earth's position in AstronomicalUnits
         let earth_bary_ecl = Ecliptic::<U, Barycentric>::new(
             earth_bary_ecl_au.x(),
             earth_bary_ecl_au.y(),
@@ -60,7 +61,6 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bodies::solar_system::{Earth, Sun};
     use crate::coordinates::cartesian::position::Ecliptic;
     use crate::coordinates::centers::*;
     use crate::coordinates::transform::Transform;
@@ -73,7 +73,7 @@ mod tests {
     fn test_helio() {
         let sun_helio = Ecliptic::<Au>::CENTER;
         let sun_bary: Ecliptic<Au, Barycentric> = sun_helio.transform(JulianDate::J2000);
-        let expected_sun_bary = *Sun::vsop87e(JulianDate::J2000).get_position();
+        let expected_sun_bary = *DefaultEphemeris::sun_barycentric(JulianDate::J2000).get_position();
         assert_cartesian_eq!(sun_bary, expected_sun_bary, EPSILON);
     }
 
@@ -81,7 +81,7 @@ mod tests {
     fn test_geo() {
         let earth_geo = Ecliptic::<Au, Geocentric>::CENTER;
         let earth_bary: Ecliptic<Au, Barycentric> = earth_geo.transform(JulianDate::J2000);
-        let expected_earth_bary = *Earth::vsop87e(JulianDate::J2000).get_position();
+        let expected_earth_bary = *DefaultEphemeris::earth_barycentric(JulianDate::J2000).get_position();
         assert_cartesian_eq!(&earth_bary, &expected_earth_bary, EPSILON);
     }
 }

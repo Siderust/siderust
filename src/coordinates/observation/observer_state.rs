@@ -23,10 +23,11 @@
 //! applied without explicit observer information.
 
 use crate::astro::sidereal::unmodded_gst;
-use crate::bodies::solar_system::Earth;
+use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::frames::EquatorialMeanJ2000;
+use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Day};
 
@@ -89,7 +90,7 @@ impl ObserverState {
         use crate::coordinates::transform::TransformFrame;
 
         // Use SSB-referenced (barycentric) Earth velocity for annual aberration.
-        let vel_ecl = Earth::vsop87e_vel(jd);
+        let vel_ecl = DefaultEphemeris::earth_barycentric_velocity(jd);
 
         // Transform to equatorial frame
         let velocity: Velocity<EquatorialMeanJ2000, AuPerDay> = vel_ecl.to_frame();
@@ -115,8 +116,8 @@ impl ObserverState {
         use crate::coordinates::transform::TransformFrame;
         use qtty::{Meter, Radian, Second, Seconds};
 
-        // Annual (orbital) component: barycentric Earth velocity (VSOP87E).
-        let vel_ecl = Earth::vsop87e_vel(jd);
+        // Annual (orbital) component: barycentric Earth velocity.
+        let vel_ecl = DefaultEphemeris::earth_barycentric_velocity(jd);
 
         // Transform to equatorial frame
         let mut velocity: Velocity<EquatorialMeanJ2000, AuPerDay> = vel_ecl.to_frame();
