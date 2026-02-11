@@ -43,7 +43,7 @@ use crate::calculus::ephemeris::Vsop87Ephemeris;
 pub type DefaultEphemeris = Vsop87Ephemeris;
 
 #[cfg(feature = "de440")]
-pub type DefaultEphemeris = crate::calculus::de440::De440Ephemeris;
+pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
 
 /// Default Earth orientation model marker.
 #[derive(Debug, Clone, Copy, Default)]

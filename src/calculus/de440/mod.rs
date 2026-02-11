@@ -27,7 +27,4 @@
 pub mod bodies;
 pub mod chebyshev;
 pub mod data;
-pub mod de440_backend;
 pub mod eval;
-
-pub use de440_backend::De440Ephemeris;

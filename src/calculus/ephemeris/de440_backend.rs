@@ -7,7 +7,7 @@
 //! It uses JPL DE440 Chebyshev polynomial data embedded at compile time,
 //! covering the Sun, Earth-Moon barycenter and Moon (1550–2650 CE).
 
-use super::super::ephemeris::{AuPerDay, Ephemeris};
+use super::{AuPerDay, Ephemeris};
 use crate::calculus::de440::bodies;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
