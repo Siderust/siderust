@@ -32,7 +32,9 @@
 //! ### Additional Modules
 //!
 //! - **transform**: Generic transformations between coordinate systems and frames
-//! - **observation**: Observer-dependent effects like aberration/// - **horizontal**: Convention conversion helpers for horizontal (alt-az) coordinates//!
+//! - **observation**: Observer-dependent effects like aberration
+//! - **horizontal**: Convention conversion helpers for horizontal (alt-az) coordinates
+//!
 //! The coordinate types are built on top of the `affn` crate (the pure geometry kernel).
 //! Astronomy-specific frames, centers, and convenience methods are defined in this module.
 //!
