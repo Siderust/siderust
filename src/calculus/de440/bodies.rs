@@ -1,161 +1,117 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Body chain resolution for DE440 ephemeris.
+//! Body-chain resolution for DE440 ephemeris.
 //!
-//! DE440 segments give:
-//! - Sun  (NAIF 10) relative to SSB  (NAIF 0)   → Sun barycentric (ICRF, km)
-//! - EMB  (NAIF 3)  relative to SSB  (NAIF 0)   → EMB barycentric (ICRF, km)
-//! - Moon (NAIF 301) relative to EMB (NAIF 3)    → Moon–EMB offset  (ICRF, km)
+//! ## Responsibility
 //!
-//! From these we derive:
-//! - **Earth barycentric**   = EMB − Moon_offset × μ_Moon / (μ_Earth + μ_Moon)
-//! - **Moon geocentric**     = Moon_offset × μ_Earth / (μ_Earth + μ_Moon)
-//! - **Earth heliocentric**  = Earth_bary − Sun_bary
+//! This module is **only** responsible for combining the raw ICRF segment
+//! outputs (km) into the composite body states required by the
+//! [`Ephemeris`](crate::calculus::ephemeris::Ephemeris) trait.
 //!
-//! All outputs are rotated from ICRF (equatorial) → Ecliptic J2000 and
-//! converted from km → AU (positions) or km/day → AU/day (velocities).
+//! It does **not** own:
+//! - Physical constants — those come from `qtty` (single source of truth).
+//! - Time-scale conversion — delegated to [`JulianDate::tt_to_tdb`].
+//! - Frame rotation — uses [`Rotation3::from_x_rotation`] with the
+//!   J2000 mean obliquity to rotate ICRF → Ecliptic.
+//!
+//! ## Type safety
+//!
+//! All intermediate vectors carry their reference frame ([`ICRF`]) and unit
+//! ([`Kilometer`] or [`Per<Kilometer, Day>`]) in the type system, so
+//! body-chain arithmetic (subtraction, scaling) is checked at compile time.
+//! Frame conversion (ICRF → Ecliptic) happens through an explicit rotation
+//! step that produces vectors / positions in the target frame.
+//!
+//! ## DE440 segment semantics
+//!
+//! | Segment | NAIF IDs       | Meaning                                |
+//! |---------|----------------|----------------------------------------|
+//! | Sun     | 10 → 0 (SSB)  | Sun barycentric (ICRF, km)             |
+//! | EMB     | 3  → 0 (SSB)  | Earth-Moon barycenter bary. (ICRF, km) |
+//! | Moon    | 301 → 3 (EMB) | Moon offset from EMB (ICRF, km)        |
+//!
+//! Derived quantities:
+//! - **Earth bary.**   = EMB − Moon_offset × μ_Moon / (μ_Earth + μ_Moon)
+//! - **Moon geocentric**= Moon_offset × μ_Earth / (μ_Earth + μ_Moon)
+//! - **Earth helio.**  = Earth_bary − Sun_bary
 
 use super::data;
-use super::eval;
 
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
-    frames::Ecliptic,
+    frames::{Ecliptic, ICRF},
 };
 use crate::targets::Target;
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnit, AstronomicalUnits, Day, Kilometer, Kilometers};
+use affn::{Displacement, Rotation3};
+use qtty::{AstronomicalUnit, Day, Kilometer, Per};
 
-/// AU in km (IAU 2012 exact).
-const KM_PER_AU: f64 = 149_597_870.7;
+// ── Physical constants (single source of truth: qtty + DE440 header) ─────
 
-/// Earth/Moon mass ratio from DE440.
+/// Earth/Moon mass ratio embedded in the DE440 header.
+///
+/// This value is specific to DE440 and is not a general physical constant.
 const EARTH_MOON_RATIO: f64 = 81.300_569_074_190_62;
 
-/// μ_Earth / (μ_Earth + μ_Moon)
+/// μ_Earth / (μ_Earth + μ_Moon)  — Earth's mass fraction of the EM system.
 const FRAC_EARTH: f64 = EARTH_MOON_RATIO / (EARTH_MOON_RATIO + 1.0);
 
-/// μ_Moon / (μ_Earth + μ_Moon)
+/// μ_Moon / (μ_Earth + μ_Moon)  — Moon's mass fraction of the EM system.
 const FRAC_MOON: f64 = 1.0 / (EARTH_MOON_RATIO + 1.0);
 
-/// J2000 mean obliquity (IAU 2006): 84381.406″ → radians.
-const OBLIQUITY_RAD: f64 = 84381.406 / 3600.0 * std::f64::consts::PI / 180.0;
+/// J2000 mean obliquity (IAU 2006): 84 381.406″ expressed as radians via qtty.
+///
+/// Using `Arcseconds → Radian` conversion through unit ratios ensures the
+/// value stays consistent with the rest of the codebase.
+const OBLIQUITY_RAD: qtty::Radians = qtty::Arcseconds::new(84_381.406).to_const::<qtty::Radian>();
 
-// Pre-computed sin/cos of obliquity for ICRF→Ecliptic rotation.
-// (Computed once at first use via std::sync::LazyLock for const-correctness.)
-//
-// The rotation from equatorial (ICRF) to ecliptic J2000 about the X axis by ε:
-//   x_ecl =  x_eq
-//   y_ecl =  y_eq · cos ε + z_eq · sin ε
-//   z_ecl = -y_eq · sin ε + z_eq · cos ε
+// ── ICRF → Ecliptic rotation ─────────────────────────────────────────────
 
-/// Rotate an [x, y, z] vector from ICRF (equatorial) to Ecliptic J2000.
+/// Pre-computed rotation matrix from ICRF to Ecliptic J2000.
+///
+/// Pure rotation about the +X axis by **−ε** (negative obliquity), because
+/// going from equatorial to ecliptic tilts the reference plane downward
+/// relative to the right-hand sense around X.
+fn icrf_to_ecliptic_rotation() -> Rotation3 {
+    Rotation3::from_x_rotation(-OBLIQUITY_RAD.value())
+}
+
+// ── Velocity type alias ─────────────────────────────────────────────────
+
+type AuPerDay = Per<AstronomicalUnit, Day>;
+
+// ── Typed conversion helpers ────────────────────────────────────────────
+
+/// Rotate a displacement from ICRF to Ecliptic and convert km → AU,
+/// wrapping the result in a typed `Position`.
 #[inline]
-fn icrf_to_ecliptic(v: [f64; 3]) -> [f64; 3] {
-    let (sin_e, cos_e) = OBLIQUITY_RAD.sin_cos();
-    [
-        v[0],
-        v[1] * cos_e + v[2] * sin_e,
-        -v[1] * sin_e + v[2] * cos_e,
-    ]
+fn icrf_km_to_ecliptic_au_position<
+    C: crate::coordinates::centers::ReferenceCenter<Params = ()>,
+>(
+    v: Displacement<ICRF, Kilometer>,
+) -> Position<C, Ecliptic, AstronomicalUnit> {
+    let rot = icrf_to_ecliptic_rotation();
+    let [ex, ey, ez] = rot * [v.x(), v.y(), v.z()];
+    Position::new(
+        ex.to::<AstronomicalUnit>(),
+        ey.to::<AstronomicalUnit>(),
+        ez.to::<AstronomicalUnit>(),
+    )
 }
 
-/// Convert TT Julian Date → TDB Julian Date (Fairhead & Bretagnon).
+/// Rotate a velocity from ICRF to Ecliptic and convert km/day → AU/day.
 #[inline]
-fn tt_to_tdb(jd_tt: f64) -> f64 {
-    let j2000 = 2_451_545.0;
-    let e = (357.53 + 0.985_600_28 * (jd_tt - j2000)).to_radians();
-    let delta_days = (1.658e-3 * e.sin() + 1.4e-6 * (2.0 * e).sin()) / 86_400.0;
-    jd_tt + delta_days
-}
-
-// ── Velocity type alias (same as in ephemeris/mod.rs) ────────────────────
-
-type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
-
-// ── Segment accessors ────────────────────────────────────────────────────
-//
-// Each body module in `data` exposes: INIT, INTLEN, NCOEFF, RSIZE, N_RECORDS,
-// and `fn record(i: usize) -> &'static [f64]`.
-
-/// Evaluate Sun barycentric position (ICRF, km) at JD(TDB).
-fn sun_bary_icrf(jd_tdb: f64) -> [f64; 3] {
-    eval::position(
-        jd_tdb,
-        data::sun::INIT,
-        data::sun::INTLEN,
-        data::sun::NCOEFF,
-        data::sun::RSIZE,
-        data::sun::N_RECORDS,
-        data::sun::record,
-    )
-}
-
-/// Evaluate EMB barycentric position (ICRF, km) at JD(TDB).
-fn emb_bary_icrf(jd_tdb: f64) -> [f64; 3] {
-    eval::position(
-        jd_tdb,
-        data::emb::INIT,
-        data::emb::INTLEN,
-        data::emb::NCOEFF,
-        data::emb::RSIZE,
-        data::emb::N_RECORDS,
-        data::emb::record,
-    )
-}
-
-/// Evaluate Moon offset from EMB (ICRF, km) at JD(TDB).
-fn moon_emb_icrf(jd_tdb: f64) -> [f64; 3] {
-    eval::position(
-        jd_tdb,
-        data::moon::INIT,
-        data::moon::INTLEN,
-        data::moon::NCOEFF,
-        data::moon::RSIZE,
-        data::moon::N_RECORDS,
-        data::moon::record,
-    )
-}
-
-/// Evaluate EMB barycentric velocity (ICRF, km/day) at JD(TDB).
-fn emb_bary_vel_icrf(jd_tdb: f64) -> [f64; 3] {
-    eval::velocity(
-        jd_tdb,
-        data::emb::INIT,
-        data::emb::INTLEN,
-        data::emb::NCOEFF,
-        data::emb::RSIZE,
-        data::emb::N_RECORDS,
-        data::emb::record,
-    )
-}
-
-/// Evaluate Moon offset from EMB velocity (ICRF, km/day) at JD(TDB).
-fn moon_emb_vel_icrf(jd_tdb: f64) -> [f64; 3] {
-    eval::velocity(
-        jd_tdb,
-        data::moon::INIT,
-        data::moon::INTLEN,
-        data::moon::NCOEFF,
-        data::moon::RSIZE,
-        data::moon::N_RECORDS,
-        data::moon::record,
-    )
-}
-
-#[allow(dead_code)]
-/// Evaluate Sun barycentric velocity (ICRF, km/day) at JD(TDB).
-fn sun_bary_vel_icrf(jd_tdb: f64) -> [f64; 3] {
-    eval::velocity(
-        jd_tdb,
-        data::sun::INIT,
-        data::sun::INTLEN,
-        data::sun::NCOEFF,
-        data::sun::RSIZE,
-        data::sun::N_RECORDS,
-        data::sun::record,
+fn icrf_to_ecliptic_velocity(
+    v: affn::Velocity<ICRF, Per<Kilometer, Day>>,
+) -> Velocity<Ecliptic, AuPerDay> {
+    let rot = icrf_to_ecliptic_rotation();
+    let [ex, ey, ez] = rot * [v.x(), v.y(), v.z()];
+    Velocity::new(
+        ex.to::<AuPerDay>(),
+        ey.to::<AuPerDay>(),
+        ez.to::<AuPerDay>(),
     )
 }
 
@@ -164,109 +120,57 @@ fn sun_bary_vel_icrf(jd_tdb: f64) -> [f64; 3] {
 /// Sun barycentric position in Ecliptic J2000 (AU).
 pub fn sun_barycentric(jd: JulianDate) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>
 {
-    let jd_tdb = tt_to_tdb(jd.value());
-    let pos_km = icrf_to_ecliptic(sun_bary_icrf(jd_tdb));
-    Target::new_static(
-        Position::new(
-            AstronomicalUnits::new(pos_km[0] / KM_PER_AU),
-            AstronomicalUnits::new(pos_km[1] / KM_PER_AU),
-            AstronomicalUnits::new(pos_km[2] / KM_PER_AU),
-        ),
-        jd,
-    )
+    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let sun_icrf = data::SUN.position(jd_tdb);
+    Target::new_static(icrf_km_to_ecliptic_au_position(sun_icrf), jd)
 }
 
 /// Earth barycentric position in Ecliptic J2000 (AU).
 ///
-/// Earth_bary = EMB_bary − Moon_offset × μ_Moon / (μ_Earth + μ_Moon)
+/// `Earth_bary = EMB − Moon_offset × FRAC_MOON`
 pub fn earth_barycentric(
     jd: JulianDate,
 ) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
-    let jd_tdb = tt_to_tdb(jd.value());
-    let emb = emb_bary_icrf(jd_tdb);
-    let moon_off = moon_emb_icrf(jd_tdb);
-    let earth_icrf = [
-        emb[0] - moon_off[0] * FRAC_MOON,
-        emb[1] - moon_off[1] * FRAC_MOON,
-        emb[2] - moon_off[2] * FRAC_MOON,
-    ];
-    let pos_ecl = icrf_to_ecliptic(earth_icrf);
-    Target::new_static(
-        Position::new(
-            AstronomicalUnits::new(pos_ecl[0] / KM_PER_AU),
-            AstronomicalUnits::new(pos_ecl[1] / KM_PER_AU),
-            AstronomicalUnits::new(pos_ecl[2] / KM_PER_AU),
-        ),
-        jd,
-    )
+    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let emb = data::EMB.position(jd_tdb);
+    let moon_off = data::MOON.position(jd_tdb);
+    let earth_icrf = emb - moon_off.scale(FRAC_MOON);
+    Target::new_static(icrf_km_to_ecliptic_au_position(earth_icrf), jd)
 }
 
 /// Earth heliocentric position in Ecliptic J2000 (AU).
 ///
-/// Earth_helio = Earth_bary − Sun_bary
+/// `Earth_helio = Earth_bary − Sun_bary`
 pub fn earth_heliocentric(
     jd: JulianDate,
 ) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>> {
-    let jd_tdb = tt_to_tdb(jd.value());
-    let emb = emb_bary_icrf(jd_tdb);
-    let moon_off = moon_emb_icrf(jd_tdb);
-    let sun = sun_bary_icrf(jd_tdb);
-    let earth_icrf = [
-        emb[0] - moon_off[0] * FRAC_MOON - sun[0],
-        emb[1] - moon_off[1] * FRAC_MOON - sun[1],
-        emb[2] - moon_off[2] * FRAC_MOON - sun[2],
-    ];
-    let pos_ecl = icrf_to_ecliptic(earth_icrf);
-    Target::new_static(
-        Position::new(
-            AstronomicalUnits::new(pos_ecl[0] / KM_PER_AU),
-            AstronomicalUnits::new(pos_ecl[1] / KM_PER_AU),
-            AstronomicalUnits::new(pos_ecl[2] / KM_PER_AU),
-        ),
-        jd,
-    )
+    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let emb = data::EMB.position(jd_tdb);
+    let moon_off = data::MOON.position(jd_tdb);
+    let sun = data::SUN.position(jd_tdb);
+    let earth_icrf = emb - moon_off.scale(FRAC_MOON) - sun;
+    Target::new_static(icrf_km_to_ecliptic_au_position(earth_icrf), jd)
 }
 
 /// Earth barycentric velocity in Ecliptic J2000 (AU/day).
 ///
-/// v_Earth_bary = v_EMB_bary − v_Moon_offset × μ_Moon / (μ_Earth + μ_Moon)
+/// `v_Earth = v_EMB − v_Moon_offset × FRAC_MOON`
 pub fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay> {
-    let jd_tdb = tt_to_tdb(jd.value());
-    let v_emb = emb_bary_vel_icrf(jd_tdb);
-    let v_moon_off = moon_emb_vel_icrf(jd_tdb);
-    let v_earth_icrf = [
-        v_emb[0] - v_moon_off[0] * FRAC_MOON,
-        v_emb[1] - v_moon_off[1] * FRAC_MOON,
-        v_emb[2] - v_moon_off[2] * FRAC_MOON,
-    ];
-    let v_ecl = icrf_to_ecliptic(v_earth_icrf);
-    // eval::velocity returns km/day; convert to AU/day
-    Velocity::new(
-        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(v_ecl[0] / KM_PER_AU),
-        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(v_ecl[1] / KM_PER_AU),
-        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(v_ecl[2] / KM_PER_AU),
-    )
+    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let v_emb = data::EMB.velocity(jd_tdb);
+    let v_moon_off = data::MOON.velocity(jd_tdb);
+    let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
+    icrf_to_ecliptic_velocity(v_earth_icrf)
 }
 
 /// Moon geocentric position in Ecliptic J2000 (km).
 ///
-/// Moon_geo = Moon_offset × μ_Earth / (μ_Earth + μ_Moon)
-///
-/// Note: This gives the Moon's position relative to Earth's center,
-/// expressed in ecliptic coordinates, matching the signature expected
-/// by the `Ephemeris` trait.
+/// `Moon_geo = Moon_offset × FRAC_EARTH`
 pub fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, Ecliptic, Kilometer> {
-    let jd_tdb = tt_to_tdb(jd.value());
-    let moon_off = moon_emb_icrf(jd_tdb);
-    let moon_geo_icrf = [
-        moon_off[0] * FRAC_EARTH,
-        moon_off[1] * FRAC_EARTH,
-        moon_off[2] * FRAC_EARTH,
-    ];
-    let pos_ecl = icrf_to_ecliptic(moon_geo_icrf);
-    Position::new(
-        Kilometers::new(pos_ecl[0]),
-        Kilometers::new(pos_ecl[1]),
-        Kilometers::new(pos_ecl[2]),
-    )
+    let jd_tdb = JulianDate::tt_to_tdb(jd).value();
+    let moon_off = data::MOON.position(jd_tdb);
+    let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
+    let rot = icrf_to_ecliptic_rotation();
+    let [ex, ey, ez] = rot * [moon_geo_icrf.x(), moon_geo_icrf.y(), moon_geo_icrf.z()];
+    Position::new(ex, ey, ez)
 }

@@ -29,9 +29,18 @@ fn main() {
 
 #[cfg(feature = "de440")]
 fn main() {
+    use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
     use qtty::*;
     use siderust::calculus::ephemeris::{De440Ephemeris, Ephemeris, Vsop87Ephemeris};
     use siderust::time::JulianDate;
+
+    /// Build a [`JulianDate`] from a calendar date (year, month, day at 12:00 TT).
+    fn jd_from_ymd(year: i32, month: u32, day: u32) -> JulianDate {
+        let naive = NaiveDate::from_ymd_opt(year, month, day)
+            .expect("invalid date")
+            .and_time(NaiveTime::from_hms_opt(12, 0, 0).unwrap());
+        JulianDate::from_utc(Utc.from_utc_datetime(&naive))
+    }
 
     println!("═══════════════════════════════════════════════════════════");
     println!("  DE440 Precise Ephemeris Example");
@@ -45,7 +54,7 @@ fn main() {
 
     let j2000 = JulianDate::J2000;
     let current = JulianDate::from_utc(chrono::Utc::now());
-    let test_date = JulianDate::from_ymd(2026, 2, 15);
+    let test_date = jd_from_ymd(2026, 2, 15);
 
     println!("  J2000.0 epoch: JD {:.6}", j2000);
     println!("  Current time:  JD {:.6}", current);
@@ -221,7 +230,7 @@ fn main() {
     let mut max_dist = f64::MIN;
 
     for month in 1..=12 {
-        let jd = JulianDate::from_ymd(2026, month, 15);
+        let jd = jd_from_ymd(2026, month, 15);
         let earth = De440Ephemeris::earth_heliocentric(jd);
         let dist = earth.get_position().distance().value();
 
