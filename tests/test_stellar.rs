@@ -34,14 +34,14 @@ fn roque() -> ObserverSite {
     )
 }
 
-fn period_7d() -> Period<ModifiedJulianDate> {
+fn period_7d() -> Period<MJD> {
     Period::new(
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60007.0),
     )
 }
 
-fn period_3d() -> Period<ModifiedJulianDate> {
+fn period_3d() -> Period<MJD> {
     Period::new(
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60003.0),

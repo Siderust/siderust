@@ -7,8 +7,8 @@
 //! variable.
 //!
 //! [`brent`] and [`bisection`] are generic over [`qtty`] unit types.
-//! [`brent_with_values`] and [`brent_tol`] operate on time
-//! [`Period`]s (`TimeInstant` with day durations).
+//! [`brent_with_values`] and [`brent_tol`] operate on
+//! [`Interval`]s (`TimeInstant` with day durations).
 //!
 //! ## Provided solvers
 //!
@@ -22,7 +22,7 @@
 //! All functions return `Some(root)` on success, `None` when the bracket is
 //! invalid (same sign at both endpoints).
 
-use crate::time::{Period, TimeInstant};
+use crate::time::{Interval, TimeInstant};
 use qtty::{Days, Quantity, Unit};
 
 // ---------------------------------------------------------------------------
@@ -91,7 +91,7 @@ where
 /// Saves two function evaluations when the values are already available
 /// (e.g. from a sign‑change scan).
 pub fn brent_with_values<T, V, F>(
-    period: Period<T>,
+    period: Interval<T>,
     f_lo: Quantity<V>,
     f_hi: Quantity<V>,
     f: F,
@@ -109,7 +109,7 @@ where
 /// Useful for trading precision for speed in performance‑critical loops
 /// (e.g. lunar altitude with 2‑minute tolerance).
 pub fn brent_tol<T, V, F>(
-    period: Period<T>,
+    period: Interval<T>,
     f_lo: Quantity<V>,
     f_hi: Quantity<V>,
     f: F,
@@ -123,12 +123,12 @@ where
     brent_core(period, f_lo, f_hi, &f, tolerance)
 }
 
-/// Core Brent implementation for [`Period`]‑based entry points.
+/// Core Brent implementation for [`Interval`]‑based entry points.
 ///
 /// Maps the period `[start, end]` to [`Days`] offsets, solves in that
 /// typed space, then maps the root back to `T`.
 fn brent_core<T, V, F>(
-    period: Period<T>,
+    period: Interval<T>,
     f_lo: Quantity<V>,
     f_hi: Quantity<V>,
     f: &F,
@@ -336,7 +336,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::{ModifiedJulianDate, Period};
+    use crate::time::{Interval, ModifiedJulianDate};
     use qtty::{Day, Radian};
 
     type Days = Quantity<Day>;
@@ -393,7 +393,7 @@ mod tests {
         };
         let f_lo = Radians::new((3.0_f64).sin());
         let f_hi = Radians::new((4.0_f64).sin());
-        let _ = brent_with_values(Period::new(Mjd::new(3.0), Mjd::new(4.0)), f_lo, f_hi, f);
+        let _ = brent_with_values(Interval::new(Mjd::new(3.0), Mjd::new(4.0)), f_lo, f_hi, f);
         let with_vals = count.get();
 
         count.set(0);
@@ -410,7 +410,7 @@ mod tests {
     #[test]
     fn brent_tol_respects_relaxed_tolerance() {
         let root = brent_tol(
-            Period::new(Mjd::new(3.0), Mjd::new(4.0)),
+            Interval::new(Mjd::new(3.0), Mjd::new(4.0)),
             Radians::new((3.0_f64).sin()),
             Radians::new((4.0_f64).sin()),
             |t: Mjd| Radians::new(mjd_f64(t).sin()),

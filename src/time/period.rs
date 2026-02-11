@@ -1,10 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Time Period implementation
+//! Time period / interval implementation.
 //!
-//! This module provides the `Period<T>` type, representing a time interval
-//! between two time instants.
+//! This module provides:
+//! - [`Interval<T>`]: generic interval over any [`TimeInstant`]
+//! - [`Period<S>`]: scale-based alias for `Interval<Time<S>>`
 
 use super::{Time, TimeInstant, TimeScale};
 use chrono::{DateTime, Utc};
@@ -14,7 +15,7 @@ use std::fmt;
 #[cfg(feature = "serde")]
 use serde::{ser::SerializeStruct, Deserialize, Deserializer, Serialize, Serializer};
 
-/// Target type adapter for [`Period<Time<S>>::to`].
+/// Target type adapter for [`Interval<Time<S>>::to`].
 ///
 /// This allows converting a period of `Time<S>` either to another time scale
 /// marker (`MJD`, `JD`, `UT`, ...) or directly to `chrono::DateTime<Utc>`.
@@ -25,6 +26,15 @@ pub trait PeriodTimeTarget<S: TimeScale> {
 }
 
 impl<S: TimeScale, T: TimeScale> PeriodTimeTarget<S> for T {
+    type Instant = Time<T>;
+
+    #[inline]
+    fn convert(value: Time<S>) -> Self::Instant {
+        value.to::<T>()
+    }
+}
+
+impl<S: TimeScale, T: TimeScale> PeriodTimeTarget<S> for Time<T> {
     type Instant = Time<T>;
 
     #[inline]
@@ -44,31 +54,74 @@ impl<S: TimeScale> PeriodTimeTarget<S> for DateTime<Utc> {
     }
 }
 
-/// Represents a time period between two instants.
+/// Target type adapter for [`Interval<DateTime<Utc>>::to`].
+pub trait PeriodUtcTarget {
+    type Instant: TimeInstant;
+
+    fn convert(value: DateTime<Utc>) -> Self::Instant;
+}
+
+impl<S: TimeScale> PeriodUtcTarget for S {
+    type Instant = Time<S>;
+
+    #[inline]
+    fn convert(value: DateTime<Utc>) -> Self::Instant {
+        Time::<S>::from_utc(value)
+    }
+}
+
+impl<S: TimeScale> PeriodUtcTarget for Time<S> {
+    type Instant = Time<S>;
+
+    #[inline]
+    fn convert(value: DateTime<Utc>) -> Self::Instant {
+        Time::<S>::from_utc(value)
+    }
+}
+
+impl PeriodUtcTarget for DateTime<Utc> {
+    type Instant = DateTime<Utc>;
+
+    #[inline]
+    fn convert(value: DateTime<Utc>) -> Self::Instant {
+        value
+    }
+}
+
+/// Represents an interval between two instants.
 ///
-/// A `Period` is defined by a start and end time instant of type `T`,
+/// An `Interval` is defined by a start and end time instant of type `T`,
 /// where `T` implements the `TimeInstant` trait. This allows for periods
 /// defined in different time systems (Julian Date, Modified Julian Date, UTC, etc.).
 ///
 /// # Examples
 ///
 /// ```
-/// use siderust::time::{Period, ModifiedJulianDate};
+/// use siderust::time::{Interval, ModifiedJulianDate};
 ///
 /// let start = ModifiedJulianDate::new(59000.0);
 /// let end = ModifiedJulianDate::new(59001.0);
-/// let period = Period::new(start, end);
+/// let period = Interval::new(start, end);
 ///
 /// // Duration in days
 /// let duration = period.duration();
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct Period<T: TimeInstant> {
+pub struct Interval<T: TimeInstant> {
     pub start: T,
     pub end: T,
 }
 
-impl<T: TimeInstant> Period<T> {
+/// Time-scale period alias.
+///
+/// This follows the same marker pattern as [`Time<S>`], so callers can write:
+/// `Period<MJD>`, `Period<JD>`, etc.
+pub type Period<S> = Interval<Time<S>>;
+
+/// UTC interval alias.
+pub type UtcPeriod = Interval<DateTime<Utc>>;
+
+impl<T: TimeInstant> Interval<T> {
     /// Creates a new period between two time instants.
     ///
     /// # Arguments
@@ -79,14 +132,14 @@ impl<T: TimeInstant> Period<T> {
     /// # Examples
     ///
     /// ```
-    /// use siderust::time::{Period, JulianDate};
+    /// use siderust::time::{Interval, JulianDate};
     ///
     /// let start = JulianDate::new(2451545.0);
     /// let end = JulianDate::new(2451546.0);
-    /// let period = Period::new(start, end);
+    /// let period = Interval::new(start, end);
     /// ```
     pub fn new(start: T, end: T) -> Self {
-        Period { start, end }
+        Interval { start, end }
     }
 
     /// Returns the duration of the period as the difference between end and start.
@@ -94,12 +147,12 @@ impl<T: TimeInstant> Period<T> {
     /// # Examples
     ///
     /// ```
-    /// use siderust::time::{Period, JulianDate};
+    /// use siderust::time::{Interval, JulianDate};
     /// use qtty::Days;
     ///
     /// let start = JulianDate::new(2451545.0);
     /// let end = JulianDate::new(2451546.5);
-    /// let period = Period::new(start, end);
+    /// let period = Interval::new(start, end);
     ///
     /// let duration = period.duration();
     /// assert_eq!(duration, Days::new(1.5));
@@ -134,13 +187,13 @@ impl<T: TimeInstant> Period<T> {
 }
 
 // Display implementation
-impl<T: TimeInstant + fmt::Display> fmt::Display for Period<T> {
+impl<T: TimeInstant + fmt::Display> fmt::Display for Interval<T> {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         write!(f, "{} to {}", self.start, self.end)
     }
 }
 
-impl<S: TimeScale> Period<Time<S>> {
+impl<S: TimeScale> Interval<Time<S>> {
     /// Convert this period to another time scale.
     ///
     /// Each endpoint is converted preserving the represented absolute interval.
@@ -153,26 +206,26 @@ impl<S: TimeScale> Period<Time<S>> {
     ///
     /// ```
     /// use chrono::{DateTime, Utc};
-    /// use siderust::time::{JD, MJD, Period, Time};
+    /// use siderust::time::{Interval, JD, MJD, Period, Time};
     ///
     /// let period_jd = Period::new(Time::<JD>::new(2451545.0), Time::<JD>::new(2451546.0));
     /// let period_mjd = period_jd.to::<MJD>();
-    /// let _period_utc: Period<DateTime<Utc>> = period_jd.to::<DateTime<Utc>>();
+    /// let _period_utc: Interval<DateTime<Utc>> = period_jd.to::<DateTime<Utc>>();
     ///
     /// assert!((period_mjd.start.value() - 51544.5).abs() < 1e-12);
     /// assert!((period_mjd.end.value() - 51545.5).abs() < 1e-12);
     /// ```
     #[inline]
-    pub fn to<Target>(&self) -> Period<<Target as PeriodTimeTarget<S>>::Instant>
+    pub fn to<Target>(&self) -> Interval<<Target as PeriodTimeTarget<S>>::Instant>
     where
         Target: PeriodTimeTarget<S>,
     {
-        Period::new(Target::convert(self.start), Target::convert(self.end))
+        Interval::new(Target::convert(self.start), Target::convert(self.end))
     }
 }
 
 // Specific implementation for periods with Days duration (JD and MJD)
-impl<T: TimeInstant<Duration = Days>> Period<T> {
+impl<T: TimeInstant<Duration = Days>> Interval<T> {
     /// Returns the duration of the period in days as a floating-point value.
     ///
     /// This method is available for time instants with `Days` as their duration type
@@ -181,12 +234,12 @@ impl<T: TimeInstant<Duration = Days>> Period<T> {
     /// # Examples
     ///
     /// ```
-    /// use siderust::time::{Period, ModifiedJulianDate};
+    /// use siderust::time::{Interval, ModifiedJulianDate};
     /// use qtty::Days;
     ///
     /// let start = ModifiedJulianDate::new(59000.0);
     /// let end = ModifiedJulianDate::new(59001.5);
-    /// let period = Period::new(start, end);
+    /// let period = Interval::new(start, end);
     ///
     /// assert_eq!(period.duration_days(), Days::new(1.5));
     /// ```
@@ -196,7 +249,21 @@ impl<T: TimeInstant<Duration = Days>> Period<T> {
 }
 
 // Specific implementation for UTC periods
-impl Period<DateTime<Utc>> {
+impl Interval<DateTime<Utc>> {
+    /// Convert this UTC interval to another target.
+    ///
+    /// Supported targets:
+    /// - Any time-scale marker (`JD`, `MJD`, `UT`, ...)
+    /// - Any `Time<...>` alias (`JulianDate`, `ModifiedJulianDate`, ...)
+    /// - `chrono::DateTime<Utc>`
+    #[inline]
+    pub fn to<Target>(&self) -> Interval<<Target as PeriodUtcTarget>::Instant>
+    where
+        Target: PeriodUtcTarget,
+    {
+        Interval::new(Target::convert(self.start), Target::convert(self.end))
+    }
+
     /// Returns the duration in days as a floating-point value.
     ///
     /// This converts the chrono::Duration to days.
@@ -210,12 +277,12 @@ impl Period<DateTime<Utc>> {
     }
 }
 
-// Serde support for Period<ModifiedJulianDate> (= Period<Time<MJD>>)
+// Serde support for Period<MJD> (= Interval<Time<MJD>>)
 //
 // Uses the historical field names `start_mjd` / `end_mjd` for backward
 // compatibility with existing JSON reference data.
 #[cfg(feature = "serde")]
-impl Serialize for Period<crate::time::ModifiedJulianDate> {
+impl Serialize for Interval<crate::time::ModifiedJulianDate> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -228,7 +295,7 @@ impl Serialize for Period<crate::time::ModifiedJulianDate> {
 }
 
 #[cfg(feature = "serde")]
-impl<'de> Deserialize<'de> for Period<crate::time::ModifiedJulianDate> {
+impl<'de> Deserialize<'de> for Interval<crate::time::ModifiedJulianDate> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -240,16 +307,16 @@ impl<'de> Deserialize<'de> for Period<crate::time::ModifiedJulianDate> {
         }
 
         let raw = Raw::deserialize(deserializer)?;
-        Ok(Period::new(
+        Ok(Interval::new(
             crate::time::ModifiedJulianDate::new(raw.start_mjd),
             crate::time::ModifiedJulianDate::new(raw.end_mjd),
         ))
     }
 }
 
-// Serde support for Period<JulianDate> (= Period<Time<JD>>)
+// Serde support for Period<JD> (= Interval<Time<JD>>)
 #[cfg(feature = "serde")]
-impl Serialize for Period<crate::time::JulianDate> {
+impl Serialize for Interval<crate::time::JulianDate> {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: Serializer,
@@ -262,7 +329,7 @@ impl Serialize for Period<crate::time::JulianDate> {
 }
 
 #[cfg(feature = "serde")]
-impl<'de> Deserialize<'de> for Period<crate::time::JulianDate> {
+impl<'de> Deserialize<'de> for Interval<crate::time::JulianDate> {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -274,7 +341,7 @@ impl<'de> Deserialize<'de> for Period<crate::time::JulianDate> {
         }
 
         let raw = Raw::deserialize(deserializer)?;
-        Ok(Period::new(
+        Ok(Interval::new(
             crate::time::JulianDate::new(raw.start_jd),
             crate::time::JulianDate::new(raw.end_jd),
         ))
@@ -296,21 +363,21 @@ impl<'de> Deserialize<'de> for Period<crate::time::JulianDate> {
 /// # Returns
 /// The complement periods (gaps) in chronological order.
 pub fn complement_within<T: TimeInstant>(
-    outer: Period<T>,
-    periods: &[Period<T>],
-) -> Vec<Period<T>> {
+    outer: Interval<T>,
+    periods: &[Interval<T>],
+) -> Vec<Interval<T>> {
     let mut gaps = Vec::new();
     let mut cursor = outer.start;
     for p in periods {
         if p.start > cursor {
-            gaps.push(Period::new(cursor, p.start));
+            gaps.push(Interval::new(cursor, p.start));
         }
         if p.end > cursor {
             cursor = p.end;
         }
     }
     if cursor < outer.end {
-        gaps.push(Period::new(cursor, outer.end));
+        gaps.push(Interval::new(cursor, outer.end));
     }
     gaps
 }
@@ -325,7 +392,7 @@ pub fn complement_within<T: TimeInstant>(
 ///
 /// # Returns
 /// Periods where both `a` and `b` overlap, in chronological order.
-pub fn intersect_periods<T: TimeInstant>(a: &[Period<T>], b: &[Period<T>]) -> Vec<Period<T>> {
+pub fn intersect_periods<T: TimeInstant>(a: &[Interval<T>], b: &[Interval<T>]) -> Vec<Interval<T>> {
     let mut result = Vec::new();
     let (mut i, mut j) = (0, 0);
     while i < a.len() && j < b.len() {
@@ -340,7 +407,7 @@ pub fn intersect_periods<T: TimeInstant>(a: &[Period<T>], b: &[Period<T>]) -> Ve
             b[j].end
         };
         if start < end {
-            result.push(Period::new(start, end));
+            result.push(Interval::new(start, end));
         }
         if a[i].end <= b[j].end {
             i += 1;
@@ -434,16 +501,39 @@ mod tests {
     fn test_period_duration_utc() {
         let start = DateTime::from_timestamp(0, 0).unwrap();
         let end = DateTime::from_timestamp(86400, 0).unwrap(); // 1 day later
-        let period = Period::new(start, end);
+        let period = Interval::new(start, end);
 
         assert_eq!(period.duration_days(), 1.0);
         assert_eq!(period.duration_seconds(), 86400);
     }
 
-    // TODO: Fix pre-existing bug — Period<DateTime<Utc>> lacks .to() method
-    // (removed in commit 68fca9f). Re-enable when Period<DateTime<Utc>>::to is implemented.
-    // #[test]
-    // fn test_period_to_conversion() { ... }
+    #[test]
+    fn test_period_to_conversion() {
+        let mjd_start = ModifiedJulianDate::new(59000.0);
+        let mjd_end = ModifiedJulianDate::new(59001.0);
+        let mjd_period = Period::new(mjd_start, mjd_end);
+
+        let utc_period = mjd_period.to::<DateTime<Utc>>();
+
+        // The converted period should have approximately the same duration (within 1 second due to ΔT)
+        let duration_secs = utc_period.duration().num_seconds();
+        assert!(
+            (duration_secs - 86400).abs() <= 1,
+            "Duration was {} seconds",
+            duration_secs
+        );
+
+        // Convert back and check that it's close (within small tolerance due to floating point)
+        let back_to_mjd = utc_period.to::<ModifiedJulianDate>();
+        let start_diff = (back_to_mjd.start.quantity() - mjd_start.quantity())
+            .value()
+            .abs();
+        let end_diff = (back_to_mjd.end.quantity() - mjd_end.quantity())
+            .value()
+            .abs();
+        assert!(start_diff < 1e-6, "Start difference: {}", start_diff);
+        assert!(end_diff < 1e-6, "End difference: {}", end_diff);
+    }
 
     #[test]
     fn test_period_display() {
