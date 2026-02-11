@@ -735,9 +735,7 @@ mod tests {
     #[test]
     fn center_params_mismatch_error_reexported() {
         // Verify CenterParamsMismatchError is accessible through centers module
-        let err = CenterParamsMismatchError {
-            operation: "test",
-        };
+        let err = CenterParamsMismatchError { operation: "test" };
         let _: &dyn std::error::Error = &err;
     }
 }
