@@ -72,7 +72,8 @@ pub trait Ephemeris {
     /// Sun's position in barycentric ecliptic coordinates (AU).
     ///
     /// Used by: Heliocentric ↔ Barycentric center shifts.
-    fn sun_barycentric(jd: JulianDate) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>;
+    fn sun_barycentric(jd: JulianDate)
+        -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>;
 
     /// Earth's position in barycentric ecliptic coordinates (AU).
     ///

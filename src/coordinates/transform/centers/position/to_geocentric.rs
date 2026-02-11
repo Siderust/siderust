@@ -73,8 +73,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::coordinates::transform::context::DefaultEphemeris;
     use crate::calculus::ephemeris::Ephemeris;
+    use crate::coordinates::transform::context::DefaultEphemeris;
     use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
     use crate::macros::assert_cartesian_eq;
     use crate::time::JulianDate;

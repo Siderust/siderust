@@ -28,14 +28,17 @@ pub struct Daf {
 /// A single segment summary extracted from the DAF.
 pub struct Summary {
     /// Start epoch (TDB seconds past J2000).
+    #[allow(dead_code)]
     pub start_et: f64,
     /// End epoch (TDB seconds past J2000).
+    #[allow(dead_code)]
     pub end_et: f64,
     /// NAIF body ID of the target.
     pub target_id: i32,
     /// NAIF body ID of the center.
     pub center_id: i32,
     /// Reference frame ID (typically 1 = J2000).
+    #[allow(dead_code)]
     pub frame_id: i32,
     /// SPK segment type (2 = Chebyshev position, 3 = Chebyshev pos+vel).
     pub data_type: i32,
@@ -54,9 +57,7 @@ impl Daf {
 
         // --- File Record (bytes 0..1023) ---
         // Bytes 0..7: file ID locator ("DAF/SPK" padded)
-        let locid = std::str::from_utf8(&data[0..8])
-            .unwrap_or("")
-            .trim();
+        let locid = std::str::from_utf8(&data[0..8]).unwrap_or("").trim();
         if !locid.starts_with("DAF") {
             anyhow::bail!("Not a DAF file (locator = {:?})", locid);
         }
@@ -76,7 +77,10 @@ impl Daf {
         } else {
             anyhow::bail!(
                 "Cannot determine DAF endianness: ND/NI LE=({},{}), BE=({},{})",
-                nd_le, ni_le, nd_be, ni_be
+                nd_le,
+                ni_le,
+                nd_be,
+                ni_be
             );
         };
 
@@ -100,7 +104,12 @@ impl Daf {
         let _free = read_i32(data, 84) as usize;
 
         // SPK files: ND=2, NI=6
-        assert!(nd == 2 && ni == 6, "Expected SPK format (ND=2, NI=6), got ND={}, NI={}", nd, ni);
+        assert!(
+            nd == 2 && ni == 6,
+            "Expected SPK format (ND=2, NI=6), got ND={}, NI={}",
+            nd,
+            ni
+        );
 
         // Summary size in doubles (how many doubles per summary)
         let ss = nd + (ni + 1) / 2; // = 2 + 3 = 5 for SPK

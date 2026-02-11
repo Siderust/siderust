@@ -9,8 +9,7 @@
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
-const DE440_URL: &str =
-    "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp";
+const DE440_URL: &str = "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp";
 const BSP_FILENAME: &str = "de440.bsp";
 
 /// Minimum plausible size for a valid DE440 BSP file (~114 MB).
@@ -56,8 +55,7 @@ pub fn ensure_bsp(data_dir: &Path) -> anyhow::Result<PathBuf> {
     eprintln!("  URL: {}", DE440_URL);
 
     // Try curl first, then wget as fallback
-    let result = download_with_curl(&bsp_path)
-        .or_else(|_| download_with_wget(&bsp_path));
+    let result = download_with_curl(&bsp_path).or_else(|_| download_with_wget(&bsp_path));
 
     match result {
         Ok(()) => {
@@ -93,9 +91,9 @@ fn copy_from_repo(dst: &Path) -> anyhow::Result<bool> {
     let src = Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("scripts/de440/dataset")
         .join(BSP_FILENAME);
-    
+
     eprintln!("  Attempting to copy DE440 BSP from Git LFS: {:?}", src);
-    
+
     if !src.exists() {
         eprintln!("  No local BSP found in source tree");
         return Ok(false);
@@ -103,10 +101,7 @@ fn copy_from_repo(dst: &Path) -> anyhow::Result<bool> {
 
     let meta = std::fs::metadata(&src)?;
     if meta.len() < MIN_BSP_SIZE {
-        eprintln!(
-            "  Local BSP file too small ({} B), skipping",
-            meta.len()
-        );
+        eprintln!("  Local BSP file too small ({} B), skipping", meta.len());
         return Ok(false);
     }
 
@@ -126,8 +121,9 @@ fn download_with_curl(dest: &Path) -> anyhow::Result<()> {
             "--fail",
             "--silent",
             "--show-error",
-            "--location",           // follow redirects
-            "--max-time", "900",    // 15 min timeout
+            "--location", // follow redirects
+            "--max-time",
+            "900", // 15 min timeout
             "--output",
         ])
         .arg(dest.as_os_str())
@@ -143,11 +139,7 @@ fn download_with_curl(dest: &Path) -> anyhow::Result<()> {
 fn download_with_wget(dest: &Path) -> anyhow::Result<()> {
     eprintln!("  Trying wget...");
     let status = Command::new("wget")
-        .args([
-            "--quiet",
-            "--timeout=900",
-            "--output-document",
-        ])
+        .args(["--quiet", "--timeout=900", "--output-document"])
         .arg(dest.as_os_str())
         .arg(DE440_URL)
         .status()?;
