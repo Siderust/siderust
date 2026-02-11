@@ -94,7 +94,7 @@ pub(crate) fn fixed_star_altitude_rad(
     let mean_of_date = precession::precess_from_j2000(pos, jd);
     // Apply nutation correction to RA
     let ra_corrected = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
-    let dec = mean_of_date.polar();
+    let dec = mean_of_date.polar;
 
     // Compute hour angle
     let gst = calculate_gst(jd);

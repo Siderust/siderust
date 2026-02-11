@@ -49,7 +49,7 @@ impl Sun {
         spherical::position::EquatorialTrueOfDate::<U>::new(
             ra,
             mean_of_date.dec(),
-            mean_of_date.distance(),
+            mean_of_date.distance,
         )
     }
 

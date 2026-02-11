@@ -5,8 +5,6 @@ version = 4
 [[package]]
 name = "affn"
 version = "0.2.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "733e3c5441a15dff3f84bc2e97a22b3292c048d851940b8a218c97b59cd209d9"
 dependencies = [
  "affn-derive",
  "nalgebra",
@@ -17,8 +15,6 @@ dependencies = [
 [[package]]
 name = "affn-derive"
 version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec1cea3e85d12dd9cba77ea8c7f7260b0b848c1b7417871239180290688b67b9"
 dependencies = [
  "proc-macro2",
  "quote",

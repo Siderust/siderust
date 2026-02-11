@@ -19,7 +19,7 @@ default = []
 serde = ["dep:serde", "qtty/serde", "affn/serde"]
 
 [dependencies]
-affn = "0.2.1"
+affn = { path = "affn", features = ["astro"] }
 qtty = "0.3.0"
 approx = "0.5"
 chrono = "0.4.43"

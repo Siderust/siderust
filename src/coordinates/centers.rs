@@ -246,6 +246,28 @@ impl ObserverSite {
 #[center(params = ObserverSite)]
 pub struct Topocentric;
 
+impl Topocentric {
+    /// Creates a Topocentric Horizontal position with observer site.
+    ///
+    /// Angles are canonicalized:
+    /// - `alt` is folded to `[-90°, +90°]`
+    /// - `az` is normalized to `[0°, 360°)`
+    #[inline]
+    pub fn horizontal<U: qtty::LengthUnit, T: Into<qtty::Quantity<U>>>(
+        site: ObserverSite,
+        alt: qtty::Degrees,
+        az: qtty::Degrees,
+        distance: T,
+    ) -> affn::spherical::Position<Topocentric, super::frames::Horizontal, U> {
+        affn::spherical::Position::new_raw_with_params(
+            site,
+            alt.wrap_quarter_fold(),
+            az.normalize(),
+            distance.into(),
+        )
+    }
+}
+
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Geocentric;

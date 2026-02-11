@@ -56,12 +56,12 @@ impl Moon {
             );
 
         // 6) Convert from Kilometer to target unit U
-        let dist_u: Quantity<U> = topo_sph_km.distance().into();
+        let dist_u: Quantity<U> = topo_sph_km.distance.into();
 
         affn::spherical::Position::<Topocentric, frames::EquatorialTrueOfDate, U>::new_raw_with_params(
             *topo_sph_km.center_params(),
-            topo_sph_km.polar(),
-            topo_sph_km.azimuth(),
+            topo_sph_km.polar,
+            topo_sph_km.azimuth,
             dist_u,
         )
         .into()

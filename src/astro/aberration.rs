@@ -186,7 +186,7 @@ mod tests {
             position::EquatorialMeanJ2000::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
         let out = apply_aberration_sph(&mean, jd);
 
-        assert_eq!(out.distance(), mean.distance());
+        assert_eq!(out.distance, mean.distance);
     }
 
     #[test]
