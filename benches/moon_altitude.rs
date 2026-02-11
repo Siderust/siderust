@@ -25,7 +25,7 @@ use siderust::bodies::Moon;
 use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{MJD, ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Period, MJD};
 use std::hint::black_box;
 use std::time::Duration;
 
