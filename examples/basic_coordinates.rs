@@ -59,8 +59,8 @@ fn main() {
         Degrees::new(89.26), // Declination
     );
     println!("Polaris (Geocentric EquatorialMeanJ2000 Direction):");
-    println!("  Right Ascension = {:.2}°", polaris.azimuth);
-    println!("  Declination = {:.2}°\n", polaris.polar);
+    println!("  Right Ascension = {:.2}°", polaris.ra());
+    println!("  Declination = {:.2}°\n", polaris.dec());
 
     // Create a position with distance (Betelgeuse at ~500 light-years)
     let betelgeuse_distance = 500.0 * 9.461e15 / 1.496e11; // Convert ly to AU

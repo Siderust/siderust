@@ -80,6 +80,6 @@ impl From<&Star<'_>> for direction::ICRS {
     /// `EquatorialMeanJ2000` frame convention used throughout the crate.
     fn from(star: &Star<'_>) -> Self {
         let pos = star.target.get_position();
-        Self::new(pos.azimuth(), pos.polar())
+        Self::new(pos.azimuth, pos.polar)
     }
 }

@@ -99,9 +99,9 @@ pub fn equatorial_to_horizontal<U: LengthUnit>(
     jd: JulianDate,
 ) -> spherical::Position<Topocentric, frames::Horizontal, U> {
     // Extract RA, Dec, distance from the equatorial position
-    let ra = eq_position.azimuth();
-    let dec = eq_position.polar();
-    let distance = eq_position.distance();
+    let ra = eq_position.azimuth;
+    let dec = eq_position.polar;
+    let distance = eq_position.distance;
 
     // Compute hour angle: HA = LST - RA
     let gst = calculate_gst(jd);
@@ -121,9 +121,7 @@ pub fn equatorial_to_horizontal<U: LengthUnit>(
         .atan2(dec_rad.sin() * lat.cos() - dec_rad.cos() * ha.cos() * lat.sin());
     let az = Radians::new(az_rad).normalize().to::<Degree>();
 
-    spherical::Position::<Topocentric, frames::Horizontal, U>::new_with_site(
-        site, alt, az, distance,
-    )
+    Topocentric::horizontal(site, alt, az, distance)
 }
 
 /// Computes the **horizontal direction** (altitude, azimuth) for a fixed-star
@@ -158,7 +156,7 @@ pub fn star_horizontal(
     let mean_of_date = precession::precess_from_j2000(pos, jd);
     // Apply nutation correction to RA
     let ra_corrected = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
-    let dec = mean_of_date.polar();
+    let dec = mean_of_date.polar;
 
     // Compute hour angle
     let gst = calculate_gst(jd);
