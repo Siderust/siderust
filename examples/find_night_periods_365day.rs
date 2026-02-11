@@ -22,9 +22,9 @@ use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::night_types::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{MJD, ModifiedJulianDate, Period};
 
-fn build_period(start_date: NaiveDate, days: u32) -> Period<ModifiedJulianDate> {
+fn build_period(start_date: NaiveDate, days: u32) -> Period<MJD> {
     let start_naive = start_date.and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
     let end_naive = start_naive + chrono::Duration::days(days as i64);
 
