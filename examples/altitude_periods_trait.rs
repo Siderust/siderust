@@ -14,7 +14,7 @@ use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::direction;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{MJD, ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Period, MJD};
 
 use qtty::*;
 

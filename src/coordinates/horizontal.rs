@@ -638,8 +638,11 @@ mod tests {
     #[test]
     fn direction_roundtrip() {
         let original = spherical::Direction::<Horizontal>::new(60.0 * DEG, 123.0 * DEG);
-        let converted =
-            convert_direction(&original, &HorizontalConvention::NORTH_CLOCKWISE, &HorizontalConvention::EAST_COUNTERCLOCKWISE);
+        let converted = convert_direction(
+            &original,
+            &HorizontalConvention::NORTH_CLOCKWISE,
+            &HorizontalConvention::EAST_COUNTERCLOCKWISE,
+        );
         let back = convert_direction(
             &converted,
             &HorizontalConvention::EAST_COUNTERCLOCKWISE,

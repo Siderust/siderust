@@ -12,7 +12,7 @@ use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::altitude::{altitude_periods, AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::direction;
-use siderust::time::{MJD, ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Period, MJD};
 
 use qtty::*;
 
