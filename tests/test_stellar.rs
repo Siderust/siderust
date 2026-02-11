@@ -12,7 +12,7 @@ use qtty::*;
 use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::direction;
-use siderust::time::{MJD, ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Period, MJD};
 
 // ---------------------------------------------------------------------------
 // Helpers

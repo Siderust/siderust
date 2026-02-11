@@ -13,7 +13,7 @@ use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{MJD, ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Period, MJD};
 
 const REFERENCE_PATH: &str = "tests/reference_data/astro_night_periods_2026.json";
 const TOL_SECONDS: f64 = 3.0;

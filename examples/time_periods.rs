@@ -7,7 +7,7 @@
 //! and DateTime<Utc>.
 
 use chrono::DateTime;
-use siderust::time::{JulianDate, MJD, ModifiedJulianDate, Period, UtcPeriod};
+use siderust::time::{JulianDate, ModifiedJulianDate, Period, UtcPeriod, MJD};
 
 fn main() {
     println!("Generic Time Period Examples");
