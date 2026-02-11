@@ -130,7 +130,7 @@ fn main() {
     println!("\nDeserialized spherical coordinates:");
     println!("  RA  = {:.3}°", recovered.ra().value());
     println!("  Dec = {:.3}°", recovered.dec().value());
-    println!("  Distance = {:.3} AU", recovered.distance().value());
+    println!("  Distance = {:.3} AU", recovered.distance.value());
     println!();
 
     // =========================================================================

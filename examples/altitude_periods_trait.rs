@@ -14,7 +14,7 @@ use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::direction;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Period, MJD};
 
 use qtty::*;
 
@@ -183,7 +183,7 @@ fn main() {
     println!("  • Single-point queries: altitude_at(observer, mjd)");
 }
 
-fn _print_period_details(periods: &[Period<ModifiedJulianDate>], label: &str) {
+fn _print_period_details(periods: &[Period<MJD>], label: &str) {
     println!("{}: {} periods", label, periods.len());
     for (i, p) in periods.iter().enumerate() {
         println!(

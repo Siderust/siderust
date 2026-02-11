@@ -64,7 +64,6 @@ impl Moon {
             topo_sph_km.azimuth,
             dist_u,
         )
-        .into()
     }
 
     /// Returns the Moon's **horizontal coordinates** (altitude, azimuth) as seen

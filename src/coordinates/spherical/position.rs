@@ -31,6 +31,10 @@ pub type EquatorialTrueOfDate<U> = Position<centers::Geocentric, frames::Equator
 /// * `Alt` – altitude above the horizon, degrees in `[-90, 90]`
 /// * `Az`  – azimuth from the north, degrees in `[0, 360)`
 /// * `d`   – straight‑line distance from the observer in unit `U`
+///
+/// Azimuth follows the **North-clockwise** convention (0° = North, increasing
+/// through East). For data that uses a different convention, see
+/// [`crate::coordinates::horizontal`] for conversion helpers.
 pub type Horizontal<U> = Position<centers::Topocentric, frames::Horizontal, U>;
 
 /// **Barycentric ICRS** coordinates.

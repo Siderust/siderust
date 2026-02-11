@@ -83,7 +83,7 @@ mod tests {
 
     #[test]
     fn test_target_new() {
-        let target = Target::new_static(ALDEBARAN.target.get_position().clone(), JulianDate::J2000);
+        let target = Target::new_static(*ALDEBARAN.target.get_position(), JulianDate::J2000);
 
         assert_eq!(target.position.ra(), ALDEBARAN.target.get_position().ra());
         assert_eq!(target.position.dec(), ALDEBARAN.target.get_position().dec());
@@ -125,7 +125,7 @@ mod tests {
         );
 
         // Test with Some(proper_motion)
-        let target = Target::new_raw(position.clone(), JulianDate::J2000, Some(proper_motion));
+        let target = Target::new_raw(position, JulianDate::J2000, Some(proper_motion));
         assert_eq!(target.position.ra(), 90.0);
         assert_eq!(target.position.dec(), 60.0);
         assert_eq!(target.time, JulianDate::J2000);
@@ -159,7 +159,7 @@ mod tests {
         );
 
         // Test with proper motion
-        let target = Target::new(position.clone(), JulianDate::J2000, proper_motion);
+        let target = Target::new(position, JulianDate::J2000, proper_motion);
         let retrieved_pm = target.get_proper_motion();
         assert!(retrieved_pm.is_some());
         if let Some(pm) = retrieved_pm {
