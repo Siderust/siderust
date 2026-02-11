@@ -19,10 +19,16 @@ const MIN_BSP_SIZE: u64 = 100_000_000;
 /// Ensure `de440.bsp` exists in `data_dir`, downloading if necessary.
 ///
 /// Returns the path to the BSP file.
+///
+/// Algorithm:
+/// 1. If file already exists in data_dir with valid size → return early
+/// 2. Try to copy from `scripts/de440/dataset/` (Git LFS backup)
+/// 3. Download from NAIF as fallback
 pub fn ensure_bsp(data_dir: &Path) -> anyhow::Result<PathBuf> {
     std::fs::create_dir_all(data_dir)?;
     let bsp_path = data_dir.join(BSP_FILENAME);
 
+    // 1) Early return if already present with valid size
     if bsp_path.exists() {
         let meta = std::fs::metadata(&bsp_path)?;
         if meta.len() > MIN_BSP_SIZE {
@@ -32,14 +38,20 @@ pub fn ensure_bsp(data_dir: &Path) -> anyhow::Result<PathBuf> {
             );
             return Ok(bsp_path);
         }
-        // Too small — probably a partial download. Re-download.
+        // Too small — probably a partial download. Remove and re-acquire.
         eprintln!(
-            "  DE440 BSP exists but too small ({} B), re-downloading...",
+            "  DE440 BSP exists but too small ({} B), re-acquiring...",
             meta.len()
         );
         std::fs::remove_file(&bsp_path)?;
     }
 
+    // 2) Try local checkout (Git LFS)
+    if let Ok(true) = copy_from_repo(&bsp_path) {
+        return Ok(bsp_path);
+    }
+
+    // 3) Download from NAIF as fallback
     eprintln!("  Downloading DE440 BSP from NAIF (~120 MB)...");
     eprintln!("  URL: {}", DE440_URL);
 
@@ -72,6 +84,39 @@ pub fn ensure_bsp(data_dir: &Path) -> anyhow::Result<PathBuf> {
             );
         }
     }
+}
+
+/// Copy de440.bsp from the repository if available.
+///
+/// Returns `Ok(true)` if the file was copied successfully with valid size.
+fn copy_from_repo(dst: &Path) -> anyhow::Result<bool> {
+    let src = Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join("scripts/de440/dataset")
+        .join(BSP_FILENAME);
+    
+    eprintln!("  Attempting to copy DE440 BSP from Git LFS: {:?}", src);
+    
+    if !src.exists() {
+        eprintln!("  No local BSP found in source tree");
+        return Ok(false);
+    }
+
+    let meta = std::fs::metadata(&src)?;
+    if meta.len() < MIN_BSP_SIZE {
+        eprintln!(
+            "  Local BSP file too small ({} B), skipping",
+            meta.len()
+        );
+        return Ok(false);
+    }
+
+    eprintln!(
+        "  Found valid BSP in source ({:.1} MB), copying...",
+        meta.len() as f64 / 1_000_000.0
+    );
+    std::fs::copy(&src, dst)?;
+    eprintln!("  Successfully copied from Git LFS");
+    Ok(true)
 }
 
 fn download_with_curl(dest: &Path) -> anyhow::Result<()> {
