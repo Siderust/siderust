@@ -13,7 +13,7 @@ use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::direction;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::*;
 
 use qtty::*;
 
@@ -22,7 +22,7 @@ fn analyze_body<B: AltitudePeriodsProvider>(
     body: &B,
     name: &str,
     observer: ObserverSite,
-    window: Period<ModifiedJulianDate>,
+    window: Period<MJD>,
 ) {
     println!("─────────────────────────────────────────────────");
     println!("  {}", name);
