@@ -31,6 +31,8 @@ use crate::astro::nutation::get_nutation;
 use crate::astro::precession::precession_rotation_from_j2000;
 use crate::astro::sidereal::{calculate_gst, calculate_lst, unmodded_gst};
 use crate::bodies::solar_system::Moon;
+use crate::calculus::ephemeris::Ephemeris;
+use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::centers::ObserverSite;
 use qtty::*;
 
@@ -169,7 +171,7 @@ impl MoonPositionCache {
 
             for k in 0..CHEB_NODES {
                 let mjd_k = seg_mid + seg_half * nodes[k];
-                let pos = Moon::get_geo_position::<Kilometer>(mjd_k.into());
+                let pos = DefaultEphemeris::moon_geocentric(mjd_k.into());
                 vx[k] = pos.x();
                 vy[k] = pos.y();
                 vz[k] = pos.z();
@@ -199,7 +201,7 @@ impl MoonPositionCache {
 
         if seg_idx >= self.num_segments {
             // Fallback: outside cache range
-            let pos = Moon::get_geo_position::<Kilometer>(mjd.into());
+            let pos = DefaultEphemeris::moon_geocentric(mjd.into());
             return (pos.x(), pos.y(), pos.z());
         }
 
@@ -526,7 +528,7 @@ mod tests {
         for i in 0..100 {
             let mjd = mjd_start + Days::new((i as f64) * 0.3 + 0.1); // sample every ~7 hours
             let (cx, cy, cz) = cache.get_position_km(mjd);
-            let direct = Moon::get_geo_position::<Kilometer>(JulianDate::from(mjd));
+            let direct = DefaultEphemeris::moon_geocentric(JulianDate::from(mjd));
             let (dx, dy, dz) = (direct.x(), direct.y(), direct.z());
             let err = (cx - dx).abs().max((cy - dy).abs()).max((cz - dz).abs());
             // Error should be < 1 km (≈ 0.5 arcsecond at Moon distance)

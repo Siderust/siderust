@@ -17,6 +17,7 @@ name = "siderust"
 [features]
 default = []
 serde = ["dep:serde", "qtty/serde", "affn/serde"]
+de440 = []
 
 [dependencies]
 affn = { path = "affn", features = ["astro"] }

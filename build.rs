@@ -7,6 +7,10 @@ mod vsop87_build;
 #[path = "scripts/elp2000/mod.rs"]
 mod elp2000_build;
 
+#[cfg(feature = "de440")]
+#[path = "scripts/de440/mod.rs"]
+mod de440_build;
+
 use std::{env, path::PathBuf};
 
 fn main() {
@@ -27,4 +31,15 @@ fn main() {
         panic!("ELP2000 codegen failed: {}", e);
     });
     eprintln!("ELP2000 data generation complete");
+
+    // DE440 (only with feature)
+    #[cfg(feature = "de440")]
+    {
+        eprintln!("Building DE440 data...");
+        let de440_dir = out_dir.join("de440_dataset");
+        de440_build::run(de440_dir.as_path()).unwrap_or_else(|e| {
+            panic!("DE440 codegen failed: {}", e);
+        });
+        eprintln!("DE440 data generation complete");
+    }
 }
