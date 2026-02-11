@@ -33,6 +33,5 @@
 //! `Ephemeris` trait signature used by the rest of siderust.
 
 pub mod bodies;
-pub mod chebyshev;
 pub mod data;
 pub mod eval;
