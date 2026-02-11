@@ -5,7 +5,7 @@
 //!
 //! Core types for altitude computation, crossings, and culminations.
 
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{ModifiedJulianDate, Period, MJD};
 use qtty::*;
 
 // ---------------------------------------------------------------------------
@@ -65,7 +65,7 @@ pub struct AltitudeQuery {
     /// Observer location on Earth.
     pub observer: crate::coordinates::centers::ObserverSite,
     /// Time window to search (Modified Julian Date).
-    pub window: Period<ModifiedJulianDate>,
+    pub window: Period<MJD>,
     /// Lower bound of the altitude band (inclusive).
     pub min_altitude: Degrees,
     /// Upper bound of the altitude band (inclusive).
