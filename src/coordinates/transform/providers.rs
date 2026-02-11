@@ -143,7 +143,10 @@ pub trait CenterShiftProvider<C1, C2, F> {
     /// A 3-element array `[x, y, z]` representing the shift in frame `F`,
     /// in astronomical units (AU). The caller should convert to the
     /// appropriate unit if needed.
-    fn shift<Eph: Ephemeris, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3];
+    fn shift<Eph: Ephemeris, Eop, Nut>(
+        jd: JulianDate,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> [f64; 3];
 }
 
 // =============================================================================
@@ -153,7 +156,7 @@ pub trait CenterShiftProvider<C1, C2, F> {
 use crate::astro::{nutation, precession};
 use crate::coordinates::centers::{Barycentric, Geocentric, Heliocentric};
 use crate::coordinates::frames::{
-    Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRS,
+    Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRF, ICRS,
 };
 
 /// Identity rotation: same frame to same frame.
@@ -174,7 +177,10 @@ where
     F: affn::ReferenceFrame,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+    fn shift<Eph: Ephemeris, Eop, Nut>(
+        _jd: JulianDate,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> [f64; 3] {
         [0.0, 0.0, 0.0]
     }
 }
@@ -362,6 +368,89 @@ impl FrameRotationProvider<EquatorialTrueOfDate, ICRS> for () {
     }
 }
 
+/// ICRF → ICRS rotation.
+///
+/// ICRF is the physical realization of ICRS and is treated as coincident
+/// in this provider layer.
+impl FrameRotationProvider<ICRF, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        Rotation3::IDENTITY
+    }
+}
+
+/// ICRS → ICRF rotation.
+impl FrameRotationProvider<ICRS, ICRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRF, ICRS>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// ICRF → EquatorialMeanJ2000 rotation.
+impl FrameRotationProvider<ICRF, EquatorialMeanJ2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation(jd, ctx)
+    }
+}
+
+/// EquatorialMeanJ2000 → ICRF rotation.
+impl FrameRotationProvider<EquatorialMeanJ2000, ICRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRF, EquatorialMeanJ2000>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// ICRF → Ecliptic rotation.
+impl FrameRotationProvider<ICRF, Ecliptic> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, Ecliptic>>::rotation(jd, ctx)
+    }
+}
+
+/// Ecliptic → ICRF rotation.
+impl FrameRotationProvider<Ecliptic, ICRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRF, Ecliptic>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// ICRF → EquatorialMeanOfDate rotation.
+impl FrameRotationProvider<ICRF, EquatorialMeanOfDate> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, EquatorialMeanOfDate>>::rotation(jd, ctx)
+    }
+}
+
+/// EquatorialMeanOfDate → ICRF rotation.
+impl FrameRotationProvider<EquatorialMeanOfDate, ICRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRF, EquatorialMeanOfDate>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// ICRF → EquatorialTrueOfDate rotation.
+impl FrameRotationProvider<ICRF, EquatorialTrueOfDate> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, EquatorialTrueOfDate>>::rotation(jd, ctx)
+    }
+}
+
+/// EquatorialTrueOfDate → ICRF rotation.
+impl FrameRotationProvider<EquatorialTrueOfDate, ICRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        <() as FrameRotationProvider<ICRF, EquatorialTrueOfDate>>::rotation(jd, ctx).inverse()
+    }
+}
+
 // =============================================================================
 // Center Shift Implementations (Hub: Barycentric)
 // =============================================================================
@@ -371,7 +460,10 @@ impl FrameRotationProvider<EquatorialTrueOfDate, ICRS> for () {
 /// Returns the position of the Sun in barycentric coordinates.
 /// Uses the active ephemeris backend for the Sun's position.
 impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Barycentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+    fn shift<Eph: Ephemeris, Eop, Nut>(
+        jd: JulianDate,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> [f64; 3] {
         // Get Sun's position in barycentric ecliptic coordinates
         let sun_bary = Eph::sun_barycentric(jd);
         let pos = sun_bary.get_position();
@@ -385,7 +477,10 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Barycentric, F> 
 ///
 /// Returns the negation of the Sun's barycentric position.
 impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Heliocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+    fn shift<Eph: Ephemeris, Eop, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> [f64; 3] {
         let [x, y, z] = <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
         [-x, -y, -z]
     }
@@ -396,7 +491,10 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Heliocentric, F> 
 /// Returns the position of the Earth in barycentric coordinates.
 /// Uses the active ephemeris backend for the Earth's position.
 impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Barycentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+    fn shift<Eph: Ephemeris, Eop, Nut>(
+        jd: JulianDate,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> [f64; 3] {
         // Get Earth's position in barycentric ecliptic coordinates
         let earth_bary = Eph::earth_barycentric(jd);
         let pos = earth_bary.get_position();
@@ -408,7 +506,10 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Barycentric, F> fo
 
 /// Barycentric → Geocentric shift.
 impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Geocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+    fn shift<Eph: Ephemeris, Eop, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> [f64; 3] {
         let [x, y, z] = <() as CenterShiftProvider<Geocentric, Barycentric, F>>::shift(jd, ctx);
         [-x, -y, -z]
     }
@@ -418,7 +519,10 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Geocentric, F> fo
 ///
 /// Composed via Barycentric hub.
 impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Geocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+    fn shift<Eph: Ephemeris, Eop, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> [f64; 3] {
         // Helio → Bary → Geo
         let [x1, y1, z1] =
             <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
@@ -429,7 +533,10 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Geocentric, F> f
 
 /// Geocentric → Heliocentric shift.
 impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Heliocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> [f64; 3] {
+    fn shift<Eph: Ephemeris, Eop, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> [f64; 3] {
         let [x, y, z] = <() as CenterShiftProvider<Heliocentric, Geocentric, F>>::shift(jd, ctx);
         [-x, -y, -z]
     }
@@ -640,5 +747,46 @@ mod tests {
         assert!((roundtrip[0] - v[0]).abs() < 1e-12);
         assert!((roundtrip[1] - v[1]).abs() < 1e-12);
         assert!((roundtrip[2] - v[2]).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_icrf_icrs_identity_rotation() {
+        let ctx = AstroContext::default();
+        let jd = JulianDate::J2000;
+        let rot = frame_rotation::<ICRF, ICRS>(jd, &ctx);
+        let v = [0.1, -0.2, 0.3];
+        let out = rot.apply_array(v);
+        assert!((out[0] - v[0]).abs() < 1e-15);
+        assert!((out[1] - v[1]).abs() < 1e-15);
+        assert!((out[2] - v[2]).abs() < 1e-15);
+    }
+
+    #[test]
+    fn test_icrf_ecliptic_roundtrip() {
+        let ctx = AstroContext::default();
+        let jd = JulianDate::J2000;
+        let r = frame_rotation::<ICRF, Ecliptic>(jd, &ctx);
+        let rinv = frame_rotation::<Ecliptic, ICRF>(jd, &ctx);
+
+        let v = [1.0, 2.0, 3.0];
+        let round = rinv.apply_array(r.apply_array(v));
+        assert!((round[0] - v[0]).abs() < 1e-12);
+        assert!((round[1] - v[1]).abs() < 1e-12);
+        assert!((round[2] - v[2]).abs() < 1e-12);
+    }
+
+    #[test]
+    fn test_icrf_to_ecliptic_matches_icrs_to_ecliptic() {
+        let ctx = AstroContext::default();
+        let jd = JulianDate::J2000;
+        let via_icrf = frame_rotation::<ICRF, Ecliptic>(jd, &ctx);
+        let via_icrs = frame_rotation::<ICRS, Ecliptic>(jd, &ctx);
+
+        let v = [0.3, -0.1, 0.8];
+        let a = via_icrf.apply_array(v);
+        let b = via_icrs.apply_array(v);
+        assert!((a[0] - b[0]).abs() < 1e-15);
+        assert!((a[1] - b[1]).abs() < 1e-15);
+        assert!((a[2] - b[2]).abs() < 1e-15);
     }
 }

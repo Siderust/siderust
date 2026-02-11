@@ -73,7 +73,8 @@ mod tests {
     fn test_helio() {
         let sun_helio = Ecliptic::<Au>::CENTER;
         let sun_bary: Ecliptic<Au, Barycentric> = sun_helio.transform(JulianDate::J2000);
-        let expected_sun_bary = *DefaultEphemeris::sun_barycentric(JulianDate::J2000).get_position();
+        let expected_sun_bary =
+            *DefaultEphemeris::sun_barycentric(JulianDate::J2000).get_position();
         assert_cartesian_eq!(sun_bary, expected_sun_bary, EPSILON);
     }
 
@@ -81,7 +82,8 @@ mod tests {
     fn test_geo() {
         let earth_geo = Ecliptic::<Au, Geocentric>::CENTER;
         let earth_bary: Ecliptic<Au, Barycentric> = earth_geo.transform(JulianDate::J2000);
-        let expected_earth_bary = *DefaultEphemeris::earth_barycentric(JulianDate::J2000).get_position();
+        let expected_earth_bary =
+            *DefaultEphemeris::earth_barycentric(JulianDate::J2000).get_position();
         assert_cartesian_eq!(&earth_bary, &expected_earth_bary, EPSILON);
     }
 }

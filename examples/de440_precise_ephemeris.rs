@@ -144,7 +144,10 @@ fn main() {
         + earth_vel.z().value().powi(2))
     .sqrt();
     let speed_km_s = speed_au_day * AU_TO_KM / DAY_TO_SECONDS;
-    println!("    Speed: {:.6} AU/day = {:.3} km/s\n", speed_au_day, speed_km_s);
+    println!(
+        "    Speed: {:.6} AU/day = {:.3} km/s\n",
+        speed_au_day, speed_km_s
+    );
 
     // =========================================================================
     // 6. Precision Comparison: DE440 vs VSOP87
