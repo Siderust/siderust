@@ -64,7 +64,21 @@ Working with solar system bodies and their positions:
 cargo run --example solar_system_example
 ```
 
-### 6. Serialization and Deserialization (`serde_serialization.rs`)
+### 6. DE440 Precise Ephemeris (`de440_precise_ephemeris.rs`)
+Demonstrates high-precision ephemeris calculations using JPL DE440:
+- Computing Sun, Earth, and Moon positions with meter-level precision
+- Working with different coordinate centers (barycentric, heliocentric, geocentric)
+- Computing velocities for aberration corrections
+- Comparing DE440 accuracy vs VSOP87/ELP2000
+- Time series analysis of Earth-Sun distance
+- Understanding when to use DE440 vs analytical theories
+
+**Requires the `de440` feature:**
+```bash
+cargo run --example de440_precise_ephemeris --features de440
+```
+
+### 7. Serialization and Deserialization (`serde_serialization.rs`)
 Learn how to serialize and deserialize siderust types:
 - Julian dates and time types
 - Cartesian coordinates (positions and directions)
@@ -128,7 +142,7 @@ using the **same generic function**:
 cargo run --example compare_sun_moon_star
 ```
 
-### 11. Night Quality Scoring (`night_quality_scoring.rs`)
+### 12. Night Quality Scoring (`night_quality_scoring.rs`)
 Practical tool for planning observing sessions over a month:
 - Scores each night based on darkness duration and Moon interference
 - Finds optimal nights for deep-sky observation
