@@ -103,10 +103,6 @@
 pub mod altitude;
 #[cfg(any(feature = "de440", feature = "de441"))]
 pub mod jpl;
-#[cfg(feature = "de440")]
-pub mod de440;
-#[cfg(feature = "de441")]
-pub mod de441;
 pub mod elp2000;
 pub mod ephemeris;
 pub mod horizontal;

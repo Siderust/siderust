@@ -14,6 +14,11 @@
 pub mod bodies;
 pub mod eval;
 
+#[cfg(feature = "de440")]
+pub mod de440;
+#[cfg(feature = "de441")]
+pub mod de441;
+
 use eval::SegmentDescriptor;
 
 use crate::calculus::ephemeris::{AuPerDay, Ephemeris};

@@ -18,6 +18,7 @@ mod de441_build;
 use std::{env, path::PathBuf};
 
 fn main() {
+    println!("cargo:rerun-if-env-changed=SIDERUST_JPL_STUB");
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"));
 
     // VSOP87

@@ -43,6 +43,24 @@ When building with `--features de441`, the build script:
 5. Writes binary blobs (`de441_{sun,emb,moon}.bin`)
 6. Generates `de441_data.rs` with 8-byte aligned `include_bytes!` accessors
 
+## Skipping the Download (Typecheck Only)
+
+To make local `cargo check --all-features` fast without downloading the BSP,
+set `SIDERUST_JPL_STUB` to `de441`:
+
+```bash
+SIDERUST_JPL_STUB=de441 cargo check --all-features
+```
+
+To stub all JPL datasets (DE440 + DE441), use:
+
+```bash
+SIDERUST_JPL_STUB=all cargo check --all-features
+```
+
+This generates a small stub `de441_data.rs` so the crate compiles, but any
+attempt to use DE441 at runtime will panic.
+
 ## Git LFS
 
 The kernel is tracked by the repository-wide dataset rules in `.gitattributes`:
