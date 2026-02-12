@@ -16,11 +16,12 @@ name = "siderust"
 
 [features]
 default = []
-serde = ["dep:serde", "qtty/serde", "affn/serde"]
+serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
 [dependencies]
 affn = { path = "affn", features = ["astro"] }
 qtty = "0.3.0"
+tempoch = { path = "tempoch" }
 approx = "0.5"
 chrono = "0.4.43"
 nalgebra = "0.34.1"
