@@ -7,3 +7,6 @@
 [submodule "cheby"]
 	path = cheby
 	url = git@github.com:Siderust/cheby.git
+[submodule "tempoch"]
+	path = tempoch
+	url = git@github.com:Siderust/tempoch.git
