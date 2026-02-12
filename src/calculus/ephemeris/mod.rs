@@ -40,13 +40,16 @@
 //! ```
 
 mod vsop87_backend;
+#[cfg(feature = "de440")]
+mod de440_backend;
+#[cfg(feature = "de441")]
+mod de441_backend;
 
 pub use vsop87_backend::Vsop87Ephemeris;
-
 #[cfg(feature = "de440")]
-pub type De440Ephemeris = crate::calculus::jpl::DeEphemeris<crate::calculus::jpl::de440::De440Data>;
+pub use de440_backend::De440Ephemeris;
 #[cfg(feature = "de441")]
-pub type De441Ephemeris = crate::calculus::jpl::DeEphemeris<crate::calculus::jpl::de441::De441Data>;
+pub use de441_backend::De441Ephemeris;
 
 use crate::coordinates::{
     cartesian::{Position, Velocity},
