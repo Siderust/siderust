@@ -200,12 +200,15 @@ fn generate_stub_rust_module(cfg: &DeConfig, path: &Path) -> anyhow::Result<()> 
         "/// Pre-built segment descriptors for the {} bodies.",
         cfg.label
     )?;
-    writeln!(f, "/// These require `SegmentDescriptor` to be in scope via `use`.")?;
+    writeln!(
+        f,
+        "/// These require `SegmentDescriptor` to be in scope via `use`."
+    )?;
     writeln!(f)?;
 
     writeln!(f, "pub const SUN: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: sun::INIT,")?;
-    writeln!(f, "    intlen: sun::INTLEN,")?;
+    writeln!(f, "    init: qtty::Seconds::new(sun::INIT),")?;
+    writeln!(f, "    intlen: qtty::Seconds::new(sun::INTLEN),")?;
     writeln!(f, "    ncoeff: sun::NCOEFF,")?;
     writeln!(f, "    n_records: sun::N_RECORDS,")?;
     writeln!(f, "    record_fn: sun::record,")?;
@@ -213,17 +216,20 @@ fn generate_stub_rust_module(cfg: &DeConfig, path: &Path) -> anyhow::Result<()> 
     writeln!(f)?;
 
     writeln!(f, "pub const EMB: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: emb::INIT,")?;
-    writeln!(f, "    intlen: emb::INTLEN,")?;
+    writeln!(f, "    init: qtty::Seconds::new(emb::INIT),")?;
+    writeln!(f, "    intlen: qtty::Seconds::new(emb::INTLEN),")?;
     writeln!(f, "    ncoeff: emb::NCOEFF,")?;
     writeln!(f, "    n_records: emb::N_RECORDS,")?;
     writeln!(f, "    record_fn: emb::record,")?;
     writeln!(f, "}};")?;
     writeln!(f)?;
 
-    writeln!(f, "pub const MOON: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: moon::INIT,")?;
-    writeln!(f, "    intlen: moon::INTLEN,")?;
+    writeln!(
+        f,
+        "pub const MOON: SegmentDescriptor = SegmentDescriptor {{"
+    )?;
+    writeln!(f, "    init: qtty::Seconds::new(moon::INIT),")?;
+    writeln!(f, "    intlen: qtty::Seconds::new(moon::INTLEN),")?;
     writeln!(f, "    ncoeff: moon::NCOEFF,")?;
     writeln!(f, "    n_records: moon::N_RECORDS,")?;
     writeln!(f, "    record_fn: moon::record,")?;
@@ -327,12 +333,15 @@ fn generate_rust_module(
         "/// Pre-built segment descriptors for the {} bodies.",
         cfg.label
     )?;
-    writeln!(f, "/// These require `SegmentDescriptor` to be in scope via `use`.")?;
+    writeln!(
+        f,
+        "/// These require `SegmentDescriptor` to be in scope via `use`."
+    )?;
     writeln!(f)?;
     writeln!(f, "/// Segment descriptor for the Sun (NAIF 10 → SSB).")?;
     writeln!(f, "pub const SUN: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: sun::INIT,")?;
-    writeln!(f, "    intlen: sun::INTLEN,")?;
+    writeln!(f, "    init: qtty::Seconds::new(sun::INIT),")?;
+    writeln!(f, "    intlen: qtty::Seconds::new(sun::INTLEN),")?;
     writeln!(f, "    ncoeff: sun::NCOEFF,")?;
     writeln!(f, "    n_records: sun::N_RECORDS,")?;
     writeln!(f, "    record_fn: sun::record,")?;
@@ -343,20 +352,20 @@ fn generate_rust_module(
         "/// Segment descriptor for the Earth-Moon Barycenter (NAIF 3 → SSB)."
     )?;
     writeln!(f, "pub const EMB: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: emb::INIT,")?;
-    writeln!(f, "    intlen: emb::INTLEN,")?;
+    writeln!(f, "    init: qtty::Seconds::new(emb::INIT),")?;
+    writeln!(f, "    intlen: qtty::Seconds::new(emb::INTLEN),")?;
     writeln!(f, "    ncoeff: emb::NCOEFF,")?;
     writeln!(f, "    n_records: emb::N_RECORDS,")?;
     writeln!(f, "    record_fn: emb::record,")?;
     writeln!(f, "}};")?;
     writeln!(f)?;
+    writeln!(f, "/// Segment descriptor for the Moon (NAIF 301 → EMB).")?;
     writeln!(
         f,
-        "/// Segment descriptor for the Moon (NAIF 301 → EMB)."
+        "pub const MOON: SegmentDescriptor = SegmentDescriptor {{"
     )?;
-    writeln!(f, "pub const MOON: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: moon::INIT,")?;
-    writeln!(f, "    intlen: moon::INTLEN,")?;
+    writeln!(f, "    init: qtty::Seconds::new(moon::INIT),")?;
+    writeln!(f, "    intlen: qtty::Seconds::new(moon::INTLEN),")?;
     writeln!(f, "    ncoeff: moon::NCOEFF,")?;
     writeln!(f, "    n_records: moon::N_RECORDS,")?;
     writeln!(f, "    record_fn: moon::record,")?;
@@ -404,8 +413,7 @@ fn ensure_bsp(cfg: &DeConfig, data_dir: &Path) -> anyhow::Result<std::path::Path
     );
     eprintln!("  URL: {}", cfg.bsp_url);
 
-    let result =
-        download_with_curl(cfg, &bsp_path).or_else(|_| download_with_wget(cfg, &bsp_path));
+    let result = download_with_curl(cfg, &bsp_path).or_else(|_| download_with_wget(cfg, &bsp_path));
 
     match result {
         Ok(()) => {
