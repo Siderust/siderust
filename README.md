@@ -70,7 +70,51 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.1"
+siderust = "0.4"
+```
+
+### Ephemeris Backends (Enable / Disable / Combine)
+
+Siderust always includes `Vsop87Ephemeris` (VSOP87 + ELP2000-82B).
+The optional `de440` feature adds `De440Ephemeris` and makes
+`DefaultEphemeris` point to DE440.
+
+1. Disable DE440 (VSOP87-only, explicit)
+
+```toml
+[dependencies]
+siderust = { version = "0.4", default-features = false }
+```
+
+2. Enable DE440
+
+```toml
+[dependencies]
+siderust = { version = "0.4", features = ["de440"] }
+```
+
+With `de440` enabled, `AstroContext::new()` uses `De440Ephemeris` as `DefaultEphemeris`.
+
+3. Combine backends in one binary (requires `de440`)
+
+```rust
+use siderust::calculus::ephemeris::{De440Ephemeris, Ephemeris, Vsop87Ephemeris};
+use siderust::time::JulianDate;
+
+let jd = JulianDate::J2000;
+
+// Series backend (VSOP87/ELP2000)
+let earth_vsop = Vsop87Ephemeris::earth_heliocentric(jd);
+
+// High-precision JPL backend
+let earth_de440 = De440Ephemeris::earth_heliocentric(jd);
+```
+
+You can combine `de440` with other features (for example `serde`):
+
+```toml
+[dependencies]
+siderust = { version = "0.4", features = ["de440", "serde"] }
 ```
 
 ---
