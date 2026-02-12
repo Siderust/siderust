@@ -5,40 +5,42 @@
 
 > **Precision astronomy & satellite mechanics in safe, fast Rust.**
 
-Siderust aims to be the reference ephemeris and orbit‑analysis library for embedded flight‑software as well as research‐grade pipelines. Every algorithm ships with validation tests against authoritative data (JPL Horizons, IMCCE, SOFA). No unsafe blocks, no hidden allocations.
+Siderust aims to be the reference ephemeris and orbit‑analysis library for embedded flight‑software as well as research‐grade pipelines. Every algorithm ships with validation tests against authoritative data (JPL Horizons, IMCCE, SOFA). No unsafe blocks, no hidden allocations.
 
 ---
 
-## Table of Contents
+## Table of Contents
 
 1. [Features](#features)
 2. [Installation](#installation)
-3. [Coordinate Systems](#coordinate-systems)
-4. [Units & Physical Quantities](#units--physical-quantities)
-5. [Quick Start](#quick-start)
-6. [Accuracy & Benchmarks](#accuracy--benchmarks)
-7. [Crate Layout](#crate-layout)
-8. [Roadmap](#roadmap)
-9. [Contributing](#contributing)
-10. [License](#license)
-11. [Acknowledgments](#acknowledgments)
+3. [Coordinate Systems](#coordinate-systems)
+4. [Units & Physical Quantities](#units--physical-quantities)
+5. [Quick Start](#quick-start)
+6. [Crate Layout](#crate-layout)
+7. [Roadmap](#roadmap)
+8. [Contributing](#contributing)
+9. [License](#license)
+10. [Acknowledgments](#acknowledgments)
 
 ---
 
 ## Features
 
-| Category                | What you get                                                                                                                                                                                                         |
-| ----------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Coordinate Systems**  | `Vector` and spherical `Position` types parameterised by `ReferenceCenter` (Helio, Geo, Bary, …) and `ReferenceFrame` (ICRS, Ecliptic, Equatorial, Topocentric, etc.). Directions are frame-only. Compile‑time guarantees ensure you never mix frames by accident. |
-| **Target Tracking**     | `Target<T>` couples any coordinate with an observation epoch and optional `ProperMotion`, enabling extrapolation & filtering pipelines.                                                                              |
-| **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Time` & more; operator overloading makes math look natural while the compiler guards dimensional correctness.                                             |
-| **Celestial Mechanics** | Kepler solvers, VSOP87 & ELP2000 planetary/lunar theories, light‑time & aberration, nutation & precession matrices, apparent Sun & Moon, culmination searches.                                                       |
-| **Catalogs & Bodies**   | Built‑in Sun→Neptune, major moons, a starter star catalog, + helper builders to load *Gaia*, *Hipparcos* or custom datasets.                                                                                         |
+| Category                | What you get                                                                                                                                                                  |
+| ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Coordinate Systems**  | `Position` and spherical `Direction` types parameterised by `ReferenceCenter`, `ReferenceFrame`, and `Unit`. Compile‑time guarantees prevent mixing frames by accident.       |
+| **Target Tracking**     | `Target<T>` couples any coordinate with an observation epoch and optional `ProperMotion`, enabling extrapolation & filtering.                                                  |
+| **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Duration` & more via the [`qtty`](https://crates.io/crates/qtty) crate — dimensional correctness at compile time.       |
+| **Celestial Mechanics** | Kepler solvers, VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches.                |
+| **Ephemeris Backends**  | Pluggable `Ephemeris` trait with three backends — `Vsop87Ephemeris` (always available), `De440Ephemeris`, and `De441Ephemeris` (feature-gated JPL DE4xx).                     |
+| **Altitude API**        | Unified `AltitudePeriodsProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions — find crossings, culminations, altitude ranges, and above/below‑threshold periods.|
+| **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, + helpers for custom datasets.                           |
+| **Observatories**       | Predefined sites (Roque de los Muchachos, El Paranal, Mauna Kea, La Silla) with `ObserverSite` for topocentric transforms.                                                  |
 
 ### Astrometry Compliance Note
 
 - Stellar aberration uses the full special-relativistic (Lorentz) formula per IERS Conventions (2020, §7.2); annual uses VSOP87E barycentric Earth velocity and topocentric adds a diurnal `ω×r` term (GMST-based Earth rotation).
-- This is not yet a full IAU 2000/2006 “apparent place” pipeline (missing CIO/CIP, polar motion, and gravitational light deflection; time scales are not strongly typed).
+- This is not yet a full IAU 2000/2006 "apparent place" pipeline (missing CIO/CIP, polar motion, and gravitational light deflection).
 
 ---
 
@@ -48,17 +50,17 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.4"
+siderust = "0.5"
 ```
 
 ### Ephemeris Backends (Enable / Disable / Combine)
 
 Siderust always includes `Vsop87Ephemeris` (VSOP87 + ELP2000-82B).
 Optional features add JPL backends:
-- `de440` -> `De440Ephemeris`
-- `de441` -> `De441Ephemeris` (from NAIF `de441_part-2.bsp`)
+- `de440` → `De440Ephemeris` (1550–2650 CE)
+- `de441` → `De441Ephemeris` (extended coverage from NAIF `de441_part-2.bsp`)
 
-`DefaultEphemeris` selects:
+`DefaultEphemeris` selects the best available:
 - `De441Ephemeris` when `de441` is enabled
 - otherwise `De440Ephemeris` when `de440` is enabled
 - otherwise `Vsop87Ephemeris`
@@ -67,47 +69,47 @@ Optional features add JPL backends:
 
 ```toml
 [dependencies]
-siderust = { version = "0.4", default-features = false }
+siderust = { version = "0.5", default-features = false }
 ```
 
 2. Enable DE440
 
 ```toml
 [dependencies]
-siderust = { version = "0.4", features = ["de440"] }
+siderust = { version = "0.5", features = ["de440"] }
 ```
-
-With `de440` enabled, `AstroContext::new()` uses `De440Ephemeris` as `DefaultEphemeris`.
 
 3. Enable DE441
 
 ```toml
 [dependencies]
-siderust = { version = "0.4", features = ["de441"] }
+siderust = { version = "0.5", features = ["de441"] }
 ```
 
-With `de441` enabled, `AstroContext::new()` uses `De441Ephemeris` as `DefaultEphemeris`.
-
-4. Combine backends in one binary (requires either `de440` or `de441`)
+4. Combine backends in one binary
 
 ```rust
-use siderust::calculus::ephemeris::{De441Ephemeris, Ephemeris, Vsop87Ephemeris};
+use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::time::JulianDate;
 
 let jd = JulianDate::J2000;
 
-// Series backend (VSOP87/ELP2000)
+// Analytical series (always available)
 let earth_vsop = Vsop87Ephemeris::earth_heliocentric(jd);
+```
 
-// High-precision JPL backend
-let earth_de441 = De441Ephemeris::earth_heliocentric(jd);
+```rust
+// With `de441` feature enabled:
+use siderust::calculus::ephemeris::De441Ephemeris;
+
+let earth_jpl = De441Ephemeris::earth_heliocentric(jd);
 ```
 
 You can combine ephemeris features with others (for example `serde`):
 
 ```toml
 [dependencies]
-siderust = { version = "0.4", features = ["de441", "serde"] }
+siderust = { version = "0.5", features = ["de441", "serde"] }
 ```
 
 ---
@@ -117,13 +119,11 @@ siderust = { version = "0.4", features = ["de441", "serde"] }
 Siderust encodes both the **origin** and the **orientation** of every coordinate at the type level:
 
 ```rust
-use siderust::coordinates::{cartesian::Position, centers::*, frames::*};
+use siderust::coordinates::{cartesian, centers::*, frames::*};
+use qtty::Au;
 
 // Position of Mars in the Heliocentric Ecliptic frame
-let mars_helio = Position::<Heliocentric, Ecliptic>::new(x, y, z);
-
-// Convert to Geocentric Ecliptic Cartesian coordinates
-let mars_geo: Position::<Geocentric, Ecliptic> = mars_helio.transform(jd);
+let mars_helio = cartesian::Position::<Heliocentric, Ecliptic, Au>::new(1.5, 0.0, 0.0);
 ```
 
 Impossible states (e.g. adding heliocentric and geocentric positions) simply do not compile.
@@ -148,15 +148,20 @@ checked at **runtime**:
 
 ## Units & Physical Quantities
 
-```rust
-use siderust::units::{AU, KM, DEG, DAY};
-use siderust::units::*;
+Siderust uses the [`qtty`](https://crates.io/crates/qtty) crate for dimensionally
+typed quantities. The compiler prevents mixing incompatible units:
 
-let distance = 1.523 * AU; // Mars semi‑major axis
-let period   = 686.97 * DAY;
+```rust
+use qtty::*;
+
+let distance = AstronomicalUnits::new(1.523); // Mars semi-major axis
+let period   = Days::new(686.97);
+
+// distance + period → compile error (length + time)
 ```
 
-The compiler will refuse `distance + period` – dimensional analysis at compile time.
+Common unit types: `AstronomicalUnit` (`Au`), `Kilometer` (`Km`), `Meter`,
+`Degree`, `Radian`, `Day`, `Second`, `AuPerDay`, and many more.
 
 ---
 
@@ -165,58 +170,54 @@ The compiler will refuse `distance + period` – dimensional analysis at compile
 ```rust
 use siderust::{
     bodies::Mars,
-    astro::JulianDate,
+    time::JulianDate,
 };
 use chrono::prelude::*;
 
-// 1. Select an epoch (UTC now to JD)
+// 1. Select an epoch (UTC now → JD)
 let jd = JulianDate::from_utc(Utc::now());
 
 // 2. Compute barycentric ecliptic coordinates via VSOP87
 let mars = Mars::vsop87e(jd);
 
-// 3. Print mars
-
+// 3. Print Mars's barycentric ecliptic position
 println!("{}", mars.position);
 ```
 
 ---
 
-## Accuracy & Benchmarks
-
-All numeric kernels are cross‑checked against JPL Horizons (see **siderust-py** #TODO):<br/>
-`|Δα|, |Δδ| < #TBD mas` for planets (1800–2200 CE). Full tables in `#TBD`.
-
-| Routine              | Mean time (ns) | Note                         | HW            |
-| -------------------- | -------------- | ---------------------------- | ------------- |
-| VSOP87 planet        | **120**        | SIMD auto‑vectorised by LLVM | Ryzen 7 5800X |
-| ELP2000 Moon         | **310**        |                              |               |
-| Coordinate transform | **<50**        | center+frame change          |               |
-
---  This is just a placeholder to put the real data --
-
----
-
-
 ## Crate Layout
 
 ```
-├─ astro/         # Astronomical properties (nutation, precession, …)
-├─ bodies/        # Data structures for celestial bodies (planet, star, satellite, …)
-├─ calculus/      # Numerical kernels (kepler, vsop87, …)
-├─ coordinates/   # Coordinate types & transforms
-├─ observatories/ # Ground stations & observer helpers
-├─ targets/       # Target<T> & ProperMotion
-└─ units/         # Dimensional quantities
+├─ astro/         # Aberration, nutation, precession, sidereal time
+├─ bodies/        # Planet, Star, Satellite, Asteroid, Comet + built-in catalogs
+├─ calculus/
+│   ├─ altitude/     # Unified altitude API (AltitudePeriodsProvider trait)
+│   ├─ ephemeris/    # Ephemeris trait + VSOP87/DE440/DE441 backends
+│   ├─ jpl/          # Shared JPL DE4xx infrastructure (Chebyshev evaluation)
+│   ├─ math_core/    # Root-finding (Brent/bisection), extrema, interval assembly
+│   ├─ solar/        # Sun altitude, night/day/twilight periods
+│   ├─ lunar/        # Moon altitude with topocentric parallax
+│   ├─ stellar/      # Analytical star altitude engine
+│   ├─ vsop87/       # VSOP87 planetary theory
+│   ├─ elp2000/      # ELP2000-82B lunar theory
+│   ├─ kepler_equations/  # Kepler equation solvers
+│   └─ pluto         # Meeus/Williams Pluto ephemeris
+├─ coordinates/   # Cartesian/Spherical types, frames, centers, transforms
+├─ observatories/ # Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
+├─ targets/       # Target<T> with time & ProperMotion
+└─ time           # Re-export of tempoch: JulianDate, MJD, Period<S>, time scales
 ```
 
 ---
 
 ## Roadmap
 
-* [x] Custom dynamic reference centers (topocentric)
-* [x] DE440/DE441 ephemerides (barycentric)
-* [ ] Gaia DR3 star ingestion & cone search
+* [x] Custom dynamic reference centers (topocentric, bodycentric)
+* [x] DE440/DE441 JPL ephemerides
+* [x] Unified altitude API (`AltitudePeriodsProvider` trait)
+* [x] Serde serialization support
+* [ ] Gaia DR3 star ingestion & cone search
 * [ ] Relativistic light‑time & gravitational deflection
 * [ ] Batch orbit determination helpers (LSQ & EKF)
 * [ ] GPU acceleration via `wgpu` (experiment)
@@ -232,7 +233,7 @@ Contributions of algorithms, bug fixes or docs are welcome! Please:
 3. Run **all** tests & clippy (`cargo test && cargo clippy -- -D warnings`)
 4. Open a PR with a clear description
 
-By participating you agree to follow the [Rust Code of Conduct](https://www.rust-lang.org/policies/code-of-conduct).
+By participating you agree to follow the [Rust Code of Conduct](https://www.rust-lang.org/policies/code-of-conduct).
 
 ---
 
@@ -248,7 +249,6 @@ The AGPL-3.0 ensures that:
 
 > **Note for commercial or proprietary use:**
 > If you wish to incorporate this code into a closed-source or otherwise differently licensed project, a **dual-licensing** arrangement can be negotiated. Please contact the authors to discuss terms and conditions for a commercial or proprietary license that suits your needs.
-
 
 ---
 

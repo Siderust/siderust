@@ -1,234 +1,226 @@
-# Siderust Coordinate System Examples
+# Siderust Examples
 
-This directory contains examples demonstrating how to use the siderust coordinate system and transformations.
+Runnable examples organized by theme. Each demonstrates a specific aspect of
+the library — from basic coordinate algebra to full observing-session planners.
 
-## Available Examples
+> **Tip**: Run any example with `cargo run --example <name>`.
+> Feature-gated examples require `--features <feat>` (noted below).
+
+---
+
+## Getting Started
+
+These introduce the core types and concepts you will use everywhere else.
 
 ### 1. Basic Coordinates (`basic_coordinates.rs`)
-Introduction to creating and using different coordinate systems:
-- Cartesian coordinates (Position and Direction)
-- Spherical coordinates
-- Different reference frames (Ecliptic, EquatorialMeanJ2000, ICRS)
-- Different reference centers (Heliocentric, Geocentric, Barycentric)
+Cartesian and spherical coordinate types, reference frames (Ecliptic,
+EquatorialMeanJ2000, ICRS) and reference centers (Helio-, Geo-, Barycentric).
 
-**Run with:**
 ```bash
 cargo run --example basic_coordinates
 ```
 
 ### 2. Coordinate Transformations (`coordinate_transformations.rs`)
-Demonstrates transformations between different coordinate systems:
-- Frame transformations (Ecliptic ↔ EquatorialMeanJ2000 ↔ ICRS)
-- Center transformations (Heliocentric ↔ Geocentric ↔ Barycentric)
-- Combined transformations
-- Time-dependent transformations
+Frame transforms (Ecliptic ↔ Equatorial ↔ ICRS), center transforms
+(Helio ↔ Geo ↔ Bary), combined transforms and round-trip verification.
 
-**Run with:**
 ```bash
 cargo run --example coordinate_transformations
 ```
 
-### 3. Body-Centric Coordinates (`bodycentric_coordinates.rs`)
-Shows how to use the body-centric coordinate system for viewing from arbitrary orbiting bodies:
-- Satellite-centric coordinates (ISS example)
-- Planet-centric coordinates (Mars view of Earth)
-- Comet-centric coordinates
-- Round-trip transformations
+### 3. Time Periods (`time_periods.rs`)
+`Period<T>` for JulianDate, MJD, UTC DateTime — conversions, arithmetic,
+and duration queries.
 
-**Run with:**
 ```bash
-cargo run --example bodycentric_coordinates
+cargo run --example time_periods
 ```
 
-### 4. Observer-Based Coordinates (`observer_coordinates.rs`)
-Demonstrates topocentric (observer-based) coordinates:
-- Defining observer locations
-- Horizontal coordinate system (altitude/azimuth)
-- Converting between geocentric and topocentric
-- Real observatory examples
+---
 
-**Run with:**
+## Observational Astronomy
+
+These focus on altitude calculations, night-period finding, and observing
+session planning at real observatory sites.
+
+### 4. Astronomical Night (`astronomical_night.rs`)
+CLI tool: finds astronomical night periods (Sun < −18°) for 7 days from
+a given date/location. Accepts CLI arguments with defaults to Greenwich.
+
 ```bash
-cargo run --example observer_coordinates
+cargo run --example astronomical_night
+cargo run --example astronomical_night -- 2026-06-21 51.4769 -0.0005 80
 ```
 
-### 5. Solar System Bodies (`solar_system_example.rs`)
-Working with solar system bodies and their positions:
-- Computing planetary positions
-- Planet-to-planet views
-- Using VSOP87 ephemerides
-- Orbital mechanics
+### 5. Night Periods — Full Year (`find_night_periods_365day.rs`)
+Computes all astronomical night windows for a 365-day horizon at Roque de
+los Muchachos. Accepts an optional start-date CLI argument.
 
-**Run with:**
 ```bash
-cargo run --example solar_system_example
+cargo run --example find_night_periods_365day
+cargo run --example find_night_periods_365day -- 2026-01-01
 ```
 
-### 6. DE440 Precise Ephemeris (`de440_precise_ephemeris.rs`)
-Demonstrates high-precision ephemeris calculations using JPL DE440:
-- Computing Sun, Earth, and Moon positions with meter-level precision
-- Working with different coordinate centers (barycentric, heliocentric, geocentric)
-- Computing velocities for aberration corrections
-- Comparing DE440 accuracy vs VSOP87/ELP2000
-- Time series analysis of Earth-Sun distance
-- Understanding when to use DE440 vs analytical theories
+### 6. Night Quality Scoring (`night_quality_scoring.rs`)
+Practical observing planner: scores 30 consecutive nights at Mauna Kea
+based on darkness duration and Moon interference.
 
-**Requires the `de440` feature:**
-```bash
-cargo run --example de440_precise_ephemeris --features de440
-```
-
-### 7. DE441 Precise Ephemeris (`de441_precise_ephemeris.rs`)
-Demonstrates high-precision ephemeris calculations using JPL DE441 (part-2):
-- Computing Sun, Earth, and Moon positions with DE441
-- Working with barycentric, heliocentric, and geocentric centers
-- Computing Earth barycentric velocity
-- Comparing DE441 output against VSOP87/ELP2000 references
-
-**Requires the `de441` feature:**
-```bash
-cargo run --example de441_precise_ephemeris --features de441
-```
-
-### 8. Serialization and Deserialization (`serde_serialization.rs`)
-Learn how to serialize and deserialize siderust types:
-- Julian dates and time types
-- Cartesian coordinates (positions and directions)
-- Spherical coordinates
-- Complex observation data structures
-- Saving/loading astronomical data to/from JSON files
-- Working with collections of astronomical data
-
-**Run with:**
-```bash
-cargo run --example serde_serialization --features serde
-```
-
-### 9. Solar Altitude Periods (`solar_altitude_culminations.rs`)
-Computes a full year (2026) of astronomical night intervals at Roque de los
-Muchachos using `find_night_periods`.
-
-**Run with:**
-```bash
-cargo run --example solar_altitude_culminations
-```
-
-### 10. Altitude Periods API (`altitude_periods_trait.rs`)
-Comprehensive demonstration of the unified `AltitudePeriodsProvider` trait:
-- Finding astronomical night periods (Sun below -18°)
-- Computing star visibility windows above specific altitudes
-- Using `direction::ICRS` for custom targets
-- Moon altitude range queries
-- Detecting circumpolar stars
-- Twilight band calculations
-- Single-point altitude evaluation
-
-**Run with:**
-```bash
-cargo run --example altitude_periods_trait
-```
-
-### 11. Star Observability Planner (`star_observability.rs`)
-Practical observing planner that analyzes star visibility:
-- Finds best observing windows for multiple stars
-- Considers astronomical darkness and altitude constraints
-- Computes peak altitudes during observation window
-- Provides observing strategy recommendations
-- Identifies circumpolar vs. rising/setting stars
-
-**Run with:**
-```bash
-cargo run --example star_observability
-```
-
-### 12. Generic Body Comparison (`compare_sun_moon_star.rs`)
-Shows the power of the trait-based API by analyzing Sun, Moon, and stars
-using the **same generic function**:
-- Demonstrates unified interface across different body types
-- Compares Sun (VSOP87), Moon (ELP2000), and Stars (analytical)
-- Shows `direction::ICRS` as the lightweight path
-- Illustrates how the trait abstracts implementation details
-
-**Run with:**
-```bash
-cargo run --example compare_sun_moon_star
-```
-
-### 13. Night Quality Scoring (`night_quality_scoring.rs`)
-Practical tool for planning observing sessions over a month:
-- Scores each night based on darkness duration and Moon interference
-- Finds optimal nights for deep-sky observation
-- Combines Sun and Moon altitude periods
-- Demonstrates building real-world planning tools with minimal code
-
-**Run with:**
 ```bash
 cargo run --example night_quality_scoring
 ```
 
-## Key Concepts
-
-### Reference Centers
-
-- **Barycentric**: Center of mass of the solar system
-- **Heliocentric**: Center of the Sun
-- **Geocentric**: Center of the Earth
-- **Topocentric**: Observer's location on Earth's surface
-- **Bodycentric**: Generic center for any orbiting body
-
-### Reference Frames
-
-- **Ecliptic**: The plane of Earth's orbit around the Sun
-- **EquatorialMeanJ2000**: mean equator/equinox of J2000.0 (FK5/J2000 mean)
-- **EquatorialMeanOfDate**: mean equator/equinox of date (precession applied)
-- **EquatorialTrueOfDate**: true equator/equinox of date (precession + nutation)
-- **Horizontal**: Local horizon plane (altitude/azimuth)
-- **ICRS**: International Celestial Reference System (fixed to distant quasars)
-- **ECEF**: Earth-Centered Earth-Fixed (rotates with Earth)
-
-### Type Safety
-
-All coordinate types are parameterized by:
-- **Center** (`C`): Where the origin is located
-- **Frame** (`F`): How the axes are oriented
-- **Unit** (`U`): What kind of vector (Position with length, Direction unitless, Velocity)
-
-This ensures compile-time safety - you can't accidentally mix incompatible coordinate systems!
-
-```rust
-// Type-safe - won't compile if centers/frames don't match
-let pos1: Position<Geocentric, EquatorialMeanJ2000, Km> = ...;
-let pos2: Position<Geocentric, EquatorialMeanJ2000, Km> = ...;
-let distance = pos1.distance_to(&pos2);  // ✓ OK
-
-let pos3: Position<Heliocentric, Ecliptic, Au> = ...;
-// pos1.distance_to(&pos3);  // ✗ Compile error - different types!
-```
-
-## Running All Examples
-
-To run all examples:
+### 7. Star Observability (`star_observability.rs`)
+Observing planner: 6 stars at Greenwich — visibility windows during
+astronomical night, peak altitudes, and observing strategy.
 
 ```bash
-cargo run --example basic_coordinates
-cargo run --example coordinate_transformations
-cargo run --example bodycentric_coordinates
-cargo run --example observer_coordinates
+cargo run --example star_observability
+```
+
+### 8. Altitude Periods API (`altitude_periods_trait.rs`)
+Comprehensive tour of the unified `AltitudePeriodsProvider` trait:
+astronomical nights, star visibility, custom ICRS targets, Moon range
+queries, circumpolar detection, twilight bands, single-point altitude.
+
+```bash
+cargo run --example altitude_periods_trait
+```
+
+### 9. Generic Body Comparison (`compare_sun_moon_star.rs`)
+Analyzes Sun, Moon, and a star using the **same generic function**,
+showcasing the polymorphic trait-based API.
+
+```bash
+cargo run --example compare_sun_moon_star
+```
+
+---
+
+## Solar System & Coordinates
+
+Working with planets, body-centric views, observer locations, and
+the full solar-system coordinate machinery.
+
+### 10. Solar System Bodies (`solar_system_example.rs`)
+All 8 planets at J2000, inter-planetary distances, geocentric positions,
+time evolution, barycentric vs heliocentric comparison.
+
+```bash
 cargo run --example solar_system_example
-cargo run --example de440_precise_ephemeris --features de440
-cargo run --example de441_precise_ephemeris --features de441
+```
+
+### 11. Observer Coordinates (`observer_coordinates.rs`)
+Defining observer locations, horizontal frames, topocentric transforms,
+multi-observer parallax, and altitude effects.
+
+```bash
+cargo run --example observer_coordinates
+```
+
+### 12. Body-Centric Coordinates (`bodycentric_coordinates.rs`)
+ISS-centric, Mars-centric, Venus-centric views, round-trip transforms,
+and directions as free vectors.
+
+```bash
+cargo run --example bodycentric_coordinates
+```
+
+---
+
+## Ephemeris Backends
+
+### 13. JPL Precise Ephemeris (`jpl_precise_ephemeris.rs`)
+Compares VSOP87/ELP2000 with JPL DE440 and/or DE441 — Earth and Moon
+positions, velocities, and precision differences side-by-side.
+
+Requires at least one JPL feature:
+```bash
+cargo run --example jpl_precise_ephemeris --features de440
+cargo run --example jpl_precise_ephemeris --features de441
+cargo run --example jpl_precise_ephemeris --features de440,de441
+```
+
+---
+
+## Serialization
+
+### 14. Serde Serialization (`serde_serialization.rs`)
+JSON round-trips for JulianDate, cartesian positions, spherical
+directions (with frame-specific field names), complex structs,
+file I/O, and collections.
+
+Requires the `serde` feature:
+```bash
 cargo run --example serde_serialization --features serde
 ```
 
-## Tips
+---
 
-1. **Units**: The `qtty` crate provides unit-safe quantities. Use `AU`, `KM`, `M`, `DEG`, etc.
-2. **Time**: Most transformations require a `JulianDate` for time-dependent calculations
-3. **Conversions**: Use `.to_frame()`, `.to_center(jd)`, or `.transform(jd)` for conversions
-4. **Precision**: Astronomical calculations use f64 precision throughout
+## Key Concepts
 
-## Further Reading
+### Reference Centers
+| Center | Origin |
+|--------|--------|
+| `Barycentric` | Solar system barycenter |
+| `Heliocentric` | Center of the Sun |
+| `Geocentric` | Center of the Earth |
+| `Topocentric` | Observer's location on Earth's surface |
+| `Bodycentric` | Any orbiting body (parameterized) |
 
-- See the main library documentation: `cargo doc --open`
-- Check the test files in `tests/` for more usage patterns
-- Read the module documentation in `src/coordinates/`
+### Reference Frames
+| Frame | Orientation |
+|-------|------------|
+| `ICRS` | Fixed to distant quasars (IAU standard) |
+| `Ecliptic` | Plane of Earth's orbit |
+| `EquatorialMeanJ2000` | Mean equator/equinox of J2000.0 |
+| `EquatorialMeanOfDate` | Precession applied |
+| `EquatorialTrueOfDate` | Precession + nutation applied |
+| `Horizontal` | Local horizon (Alt/Az, IAU convention) |
+| `Galactic` | Galactic coordinate system |
+| `ECEF` | Earth-Centered Earth-Fixed |
+
+### Type Safety
+
+All coordinate types are parameterized by **Center** (`C`), **Frame** (`F`),
+and **Unit** (`U`). The compiler enforces that you never mix incompatible
+coordinate systems:
+
+```rust
+let pos1: Position<Geocentric, EquatorialMeanJ2000, Km> = /* ... */;
+let pos2: Position<Geocentric, EquatorialMeanJ2000, Km> = /* ... */;
+let d = pos1.distance_to(&pos2);  // ✓ compiles
+
+let pos3: Position<Heliocentric, Ecliptic, Au> = /* ... */;
+// pos1.distance_to(&pos3);  // ✗ compile error — different types!
+```
+
+---
+
+## Running All Examples
+
+```bash
+# Getting started
+cargo run --example basic_coordinates
+cargo run --example coordinate_transformations
+cargo run --example time_periods
+
+# Observational astronomy
+cargo run --example astronomical_night
+cargo run --example find_night_periods_365day
+cargo run --example night_quality_scoring
+cargo run --example star_observability
+cargo run --example altitude_periods_trait
+cargo run --example compare_sun_moon_star
+
+# Solar system & coordinates
+cargo run --example solar_system_example
+cargo run --example observer_coordinates
+cargo run --example bodycentric_coordinates
+
+# Ephemeris backends (feature-gated)
+cargo run --example jpl_precise_ephemeris --features de440
+cargo run --example jpl_precise_ephemeris --features de441
+
+# Serialization (feature-gated)
+cargo run --example serde_serialization --features serde
+```

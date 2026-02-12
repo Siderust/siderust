@@ -32,14 +32,14 @@ fn score_night(night_start: ModifiedJulianDate, observer: ObserverSite) -> Night
     let dark_periods = Sun.below_threshold(observer, window, Degrees::new(-18.0));
     let dark_hours: f64 = dark_periods
         .iter()
-        .map(|p| p.duration_days().value() * 24.0)
+        .map(|p| p.duration_days().to::<Hour>())
         .sum();
 
     // Moon above horizon during dark time
     let moon_up = Moon.above_threshold(observer, window, Degrees::new(0.0));
     let moon_hours: f64 = moon_up
         .iter()
-        .map(|p| p.duration_days().value() * 24.0)
+        .map(|p| p.duration_days().to::<Hour>())
         .sum();
 
     // Simple scoring: darkness good, Moon bad
@@ -68,10 +68,8 @@ fn main() {
     );
     println!("Observatory: Mauna Kea, Hawaii");
     println!(
-        "  Location: {:.2}°N, {:.2}°E, {} m elevation\n",
-        observatory.lat.value(),
-        observatory.lon.value(),
-        observatory.height.value()
+        "  Location: {}, {}, {} elevation\n",
+        observatory.lat, observatory.lon, observatory.height
     );
 
     // Score 30 consecutive nights
@@ -105,9 +103,9 @@ fn main() {
         };
 
         println!(
-            " {:5} │ {:8.1} │ {:6.2} │ {:6.2} │ {:5.2} │ {}",
+            " {:5} │ {:>8} │ {:6.2} │ {:6.2} │ {:5.2} │ {}",
             i + 1,
-            score.date.value(),
+            score.date,
             score.dark_hours,
             score.moon_up_hours,
             score.score,
@@ -125,10 +123,10 @@ fn main() {
     for (i, score) in sorted_scores.iter().take(5).enumerate() {
         let night_num = ((score.date.value() - start_mjd) as usize) + 1;
         println!(
-            "  {}. Night {} (MJD {:.1}): {:.2} hours dark, {:.2} hours Moon",
+            "  {}. Night {} ({}): {:.2} hours dark, {:.2} hours Moon",
             i + 1,
             night_num,
-            score.date.value(),
+            score.date,
             score.dark_hours,
             score.moon_up_hours
         );

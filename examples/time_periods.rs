@@ -18,8 +18,8 @@ fn main() {
     let jd_start = JulianDate::new(2451545.0); // J2000.0
     let jd_end = JulianDate::new(2451546.5); // 1.5 days later
     let jd_period = Period::new(jd_start, jd_end);
-    println!("   Start: JD {}", jd_start.value());
-    println!("   End:   JD {}", jd_end.value());
+    println!("   Start: {}", jd_start);
+    println!("   End:   {}", jd_end);
     println!("   Duration: {} days\n", jd_period.duration_days());
 
     // Example 2: Period with ModifiedJulianDate
@@ -27,8 +27,8 @@ fn main() {
     let mjd_start = ModifiedJulianDate::new(59000.0);
     let mjd_end = ModifiedJulianDate::new(59002.5);
     let mjd_period = Period::new(mjd_start, mjd_end);
-    println!("   Start: MJD {}", mjd_start.value());
-    println!("   End:   MJD {}", mjd_end.value());
+    println!("   Start: {}", mjd_start);
+    println!("   End:   {}", mjd_end);
     println!("   Duration: {} days\n", mjd_period.duration_days());
 
     // Example 3: Period with UTC DateTime
@@ -46,8 +46,8 @@ fn main() {
     let mjd = ModifiedJulianDate::new(51544.5); // MJD at J2000.0
     let jd: JulianDate = mjd.into();
     let utc = mjd.to_utc().unwrap();
-    println!("   MJD: {}", mjd.value());
-    println!("   JD:  {}", jd.value());
+    println!("   MJD: {}", mjd);
+    println!("   JD:  {}", jd);
     println!("   UTC: {}\n", utc);
 
     // Example 5: Explicit MJD period type
