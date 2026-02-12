@@ -41,6 +41,24 @@ When building with `--features de440`, the build script:
 5. **Extracts segments**: Type 2 Chebyshev segments for Sun, Earth-Moon barycenter, Moon
 6. **Generates code**: Creates `de440_data.rs` with embedded coefficients aligned to 8 bytes
 
+## Skipping the Download (Typecheck Only)
+
+To make local `cargo check --all-features` fast without downloading BSP files,
+set `SIDERUST_JPL_STUB`:
+
+```bash
+SIDERUST_JPL_STUB=de440 cargo check --all-features
+```
+
+To stub all JPL datasets (DE440 + DE441), use:
+
+```bash
+SIDERUST_JPL_STUB=all cargo check --all-features
+```
+
+This generates a small stub `de440_data.rs` so the crate compiles, but any
+attempt to use DE440 at runtime will panic.
+
 ## Git LFS
 
 The `de440.bsp` file is tracked via Git LFS to avoid:
