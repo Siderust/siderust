@@ -7,6 +7,6 @@
 //! `sun`, `emb`, and `moon`, plus pre-built `SUN`, `EMB`, `MOON`
 //! [`SegmentDescriptor`] constants.
 
-use crate::calculus::jpl::eval::SegmentDescriptor;
+use super::super::eval::SegmentDescriptor;
 
 include!(concat!(env!("OUT_DIR"), "/de440_data.rs"));
