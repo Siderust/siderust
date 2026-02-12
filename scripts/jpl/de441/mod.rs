@@ -3,14 +3,14 @@
 
 //! DE441 build-time pipeline — thin configuration wrapper.
 //!
-//! All logic lives in [`pipeline`](../jpl/pipeline.rs).
+//! All logic lives in [`pipeline`](../pipeline.rs).
 //! Only activated when the `de441` Cargo feature is enabled.
 
-#[path = "../jpl/daf.rs"]
+#[path = "../daf.rs"]
 mod daf;
-#[path = "../jpl/spk.rs"]
+#[path = "../spk.rs"]
 mod spk;
-#[path = "../jpl/pipeline.rs"]
+#[path = "../pipeline.rs"]
 mod pipeline;
 
 use std::path::Path;
