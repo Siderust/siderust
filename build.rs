@@ -11,6 +11,10 @@ mod elp2000_build;
 #[path = "scripts/de440/mod.rs"]
 mod de440_build;
 
+#[cfg(feature = "de441")]
+#[path = "scripts/de441/mod.rs"]
+mod de441_build;
+
 use std::{env, path::PathBuf};
 
 fn main() {
@@ -41,5 +45,16 @@ fn main() {
             panic!("DE440 codegen failed: {}", e);
         });
         eprintln!("DE440 data generation complete");
+    }
+
+    // DE441 (only with feature)
+    #[cfg(feature = "de441")]
+    {
+        eprintln!("Building DE441 data...");
+        let de441_dir = out_dir.join("de441_dataset");
+        de441_build::run(de441_dir.as_path()).unwrap_or_else(|e| {
+            panic!("DE441 codegen failed: {}", e);
+        });
+        eprintln!("DE441 data generation complete");
     }
 }

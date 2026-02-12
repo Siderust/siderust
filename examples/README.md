@@ -78,7 +78,19 @@ Demonstrates high-precision ephemeris calculations using JPL DE440:
 cargo run --example de440_precise_ephemeris --features de440
 ```
 
-### 7. Serialization and Deserialization (`serde_serialization.rs`)
+### 7. DE441 Precise Ephemeris (`de441_precise_ephemeris.rs`)
+Demonstrates high-precision ephemeris calculations using JPL DE441 (part-2):
+- Computing Sun, Earth, and Moon positions with DE441
+- Working with barycentric, heliocentric, and geocentric centers
+- Computing Earth barycentric velocity
+- Comparing DE441 output against VSOP87/ELP2000 references
+
+**Requires the `de441` feature:**
+```bash
+cargo run --example de441_precise_ephemeris --features de441
+```
+
+### 8. Serialization and Deserialization (`serde_serialization.rs`)
 Learn how to serialize and deserialize siderust types:
 - Julian dates and time types
 - Cartesian coordinates (positions and directions)
@@ -92,7 +104,7 @@ Learn how to serialize and deserialize siderust types:
 cargo run --example serde_serialization --features serde
 ```
 
-### 7. Solar Altitude Periods (`solar_altitude_culminations.rs`)
+### 9. Solar Altitude Periods (`solar_altitude_culminations.rs`)
 Computes a full year (2026) of astronomical night intervals at Roque de los
 Muchachos using `find_night_periods`.
 
@@ -101,7 +113,7 @@ Muchachos using `find_night_periods`.
 cargo run --example solar_altitude_culminations
 ```
 
-### 8. Altitude Periods API (`altitude_periods_trait.rs`)
+### 10. Altitude Periods API (`altitude_periods_trait.rs`)
 Comprehensive demonstration of the unified `AltitudePeriodsProvider` trait:
 - Finding astronomical night periods (Sun below -18°)
 - Computing star visibility windows above specific altitudes
@@ -116,7 +128,7 @@ Comprehensive demonstration of the unified `AltitudePeriodsProvider` trait:
 cargo run --example altitude_periods_trait
 ```
 
-### 9. Star Observability Planner (`star_observability.rs`)
+### 11. Star Observability Planner (`star_observability.rs`)
 Practical observing planner that analyzes star visibility:
 - Finds best observing windows for multiple stars
 - Considers astronomical darkness and altitude constraints
@@ -129,7 +141,7 @@ Practical observing planner that analyzes star visibility:
 cargo run --example star_observability
 ```
 
-### 10. Generic Body Comparison (`compare_sun_moon_star.rs`)
+### 12. Generic Body Comparison (`compare_sun_moon_star.rs`)
 Shows the power of the trait-based API by analyzing Sun, Moon, and stars
 using the **same generic function**:
 - Demonstrates unified interface across different body types
@@ -142,7 +154,7 @@ using the **same generic function**:
 cargo run --example compare_sun_moon_star
 ```
 
-### 12. Night Quality Scoring (`night_quality_scoring.rs`)
+### 13. Night Quality Scoring (`night_quality_scoring.rs`)
 Practical tool for planning observing sessions over a month:
 - Scores each night based on darkness duration and Moon interference
 - Finds optimal nights for deep-sky observation
@@ -203,6 +215,8 @@ cargo run --example coordinate_transformations
 cargo run --example bodycentric_coordinates
 cargo run --example observer_coordinates
 cargo run --example solar_system_example
+cargo run --example de440_precise_ephemeris --features de440
+cargo run --example de441_precise_ephemeris --features de441
 cargo run --example serde_serialization --features serde
 ```
 

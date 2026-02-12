@@ -21,6 +21,7 @@ cargo bench --bench solar_altitude
 cargo bench --bench moon_altitude
 cargo bench --bench star_altitude
 cargo bench --bench elp2000
+cargo bench --bench de441 --features de441
 ```
 
 ## Filter to specific benchmarks inside a bench
@@ -46,3 +47,4 @@ cargo bench --bench moon_altitude -- --sample-size 20
 - `moon_altitude`: lunar altitude + horizon/altitude search benchmarks.
 - `star_altitude`: fixed-star (J2000 RA/Dec) altitude + period/crossing benchmarks.
 - `elp2000`: ELP2000 lunar position evaluation benchmarks.
+- `de441`: DE441 ephemeris backend body-query benchmarks (requires `de441`).
