@@ -76,8 +76,9 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bodies::solar_system::Earth;
+    use crate::calculus::ephemeris::Ephemeris;
     use crate::coordinates::cartesian;
+    use crate::coordinates::transform::context::DefaultEphemeris;
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
     use crate::time::JulianDate;
@@ -87,7 +88,7 @@ mod tests {
 
     #[test]
     fn test_position_barycentric_to_geocentric() {
-        let earth_bary = *Earth::vsop87e(JulianDate::J2000).get_position();
+        let earth_bary = *DefaultEphemeris::earth_barycentric(JulianDate::J2000).get_position();
         let earth_geo: cartesian::position::Ecliptic<AstronomicalUnit, Geocentric> =
             earth_bary.transform(JulianDate::J2000);
         let expected_earth_geo =
@@ -103,7 +104,7 @@ mod tests {
 
     #[test]
     fn test_position_heliocentric_to_geocentric() {
-        let earth_helio = *Earth::vsop87a(JulianDate::J2000).get_position();
+        let earth_helio = *DefaultEphemeris::earth_heliocentric(JulianDate::J2000).get_position();
         let earth_geo: cartesian::position::Ecliptic<AstronomicalUnit, Geocentric> =
             earth_helio.transform(JulianDate::J2000);
         let expected = cartesian::position::Ecliptic::<AstronomicalUnit, Geocentric>::CENTER;

@@ -30,8 +30,10 @@
 use crate::astro::nutation::get_nutation;
 use crate::astro::precession::precession_rotation_from_j2000;
 use crate::astro::sidereal::{calculate_gst, calculate_lst, unmodded_gst};
-use crate::bodies::solar_system::Moon;
+use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::transform::context::DefaultEphemeris;
+use cheby;
 use qtty::*;
 
 // =============================================================================
@@ -54,70 +56,6 @@ const J2000_OBLIQUITY_RAD: qtty::Quantity<Radian> =
 
 /// Nutation cache step in days (2 hours).
 const NUT_STEP_DAYS: Days = Hours::new(2.0).to_const::<Day>();
-
-// =============================================================================
-// Chebyshev nodes (precomputed for CHEB_NODES = 9)
-// =============================================================================
-
-/// Compute Chebyshev nodes on [-1, 1] at runtime.
-#[inline]
-fn cheb_nodes_on_unit() -> [f64; CHEB_NODES] {
-    let mut nodes = [0.0_f64; CHEB_NODES];
-    let n = CHEB_NODES as f64;
-    for (k, node) in nodes.iter_mut().enumerate().take(CHEB_NODES) {
-        let arg = std::f64::consts::PI * (2.0 * k as f64 + 1.0) / (2.0 * n);
-        *node = arg.cos();
-    }
-    nodes
-}
-
-// =============================================================================
-// Chebyshev coefficient computation & evaluation
-// =============================================================================
-
-/// Compute Chebyshev coefficients c_0..c_{n-1} from function values at
-/// the n Chebyshev nodes.
-///
-/// Uses the DCT-like formula:
-///   c_j = (2/n) Σ_{k=0}^{n-1} f(x_k) · cos(j·π·(2k+1)/(2n))
-/// with c_0 scaled by 1/n instead of 2/n.
-#[inline]
-fn compute_cheb_coeffs(values: &[Kilometers; CHEB_NODES]) -> [Kilometers; CHEB_NODES] {
-    let mut coeffs = [Kilometers::zero(); CHEB_NODES];
-    let n = CHEB_NODES as f64;
-
-    for (j, coeff) in coeffs.iter_mut().enumerate().take(CHEB_NODES) {
-        let mut sum = Kilometers::zero();
-        for (k, value) in values.iter().enumerate().take(CHEB_NODES) {
-            let arg = std::f64::consts::PI * (j as f64) * (2.0 * k as f64 + 1.0) / (2.0 * n);
-            sum += *value * arg.cos();
-        }
-        *coeff = if j == 0 { sum / n } else { 2.0 * sum / n };
-    }
-    coeffs
-}
-
-/// Evaluate a Chebyshev expansion at x ∈ [-1, 1] via Clenshaw recurrence.
-///
-/// f(x) ≈ c_0 + x·d_1 − d_2
-/// where d_k = c_k + 2x·d_{k+1} − d_{k+2}, k = n-1, ..., 1.
-#[inline]
-fn clenshaw_eval(coeffs: &[Kilometers; CHEB_NODES], x: f64) -> Kilometers {
-    let two_x = 2.0 * x;
-    let mut d_k1 = Kilometers::zero(); // d_{k+1}
-    let mut d_k2 = Kilometers::zero(); // d_{k+2}
-
-    // k = CHEB_DEGREE down to 1
-    let mut k = CHEB_DEGREE;
-    while k >= 1 {
-        let d_k = coeffs[k] + two_x * d_k1 - d_k2;
-        d_k2 = d_k1;
-        d_k1 = d_k;
-        k -= 1;
-    }
-
-    coeffs[0] + x * d_k1 - d_k2
-}
 
 // =============================================================================
 // MoonPositionCache
@@ -153,7 +91,7 @@ impl MoonPositionCache {
         let span = mjd_end + pad - t0;
         let num_segments = ((span / SEGMENT_DAYS).value().ceil() as usize).max(1);
 
-        let nodes = cheb_nodes_on_unit();
+        let nodes: [f64; CHEB_NODES] = cheby::nodes();
         let mut cx = Vec::with_capacity(num_segments);
         let mut cy = Vec::with_capacity(num_segments);
         let mut cz = Vec::with_capacity(num_segments);
@@ -169,15 +107,15 @@ impl MoonPositionCache {
 
             for k in 0..CHEB_NODES {
                 let mjd_k = seg_mid + seg_half * nodes[k];
-                let pos = Moon::get_geo_position::<Kilometer>(mjd_k.into());
+                let pos = DefaultEphemeris::moon_geocentric(mjd_k.into());
                 vx[k] = pos.x();
                 vy[k] = pos.y();
                 vz[k] = pos.z();
             }
 
-            cx.push(compute_cheb_coeffs(&vx));
-            cy.push(compute_cheb_coeffs(&vy));
-            cz.push(compute_cheb_coeffs(&vz));
+            cx.push(cheby::fit_coeffs(&vx));
+            cy.push(cheby::fit_coeffs(&vy));
+            cz.push(cheby::fit_coeffs(&vz));
         }
 
         Self {
@@ -199,7 +137,7 @@ impl MoonPositionCache {
 
         if seg_idx >= self.num_segments {
             // Fallback: outside cache range
-            let pos = Moon::get_geo_position::<Kilometer>(mjd.into());
+            let pos = DefaultEphemeris::moon_geocentric(mjd.into());
             return (pos.x(), pos.y(), pos.z());
         }
 
@@ -208,9 +146,9 @@ impl MoonPositionCache {
         let seg_mid = seg_start + SEGMENT_DAYS * 0.5;
         let x = (mjd - seg_mid) / (SEGMENT_DAYS * 0.5);
         let x = x.value(); // dimensionless
-        let px = clenshaw_eval(&self.cx[seg_idx], x);
-        let py = clenshaw_eval(&self.cy[seg_idx], x);
-        let pz = clenshaw_eval(&self.cz[seg_idx], x);
+        let px = cheby::evaluate(&self.cx[seg_idx], x);
+        let py = cheby::evaluate(&self.cy[seg_idx], x);
+        let pz = cheby::evaluate(&self.cz[seg_idx], x);
         (px, py, pz)
     }
 }
@@ -526,7 +464,7 @@ mod tests {
         for i in 0..100 {
             let mjd = mjd_start + Days::new((i as f64) * 0.3 + 0.1); // sample every ~7 hours
             let (cx, cy, cz) = cache.get_position_km(mjd);
-            let direct = Moon::get_geo_position::<Kilometer>(JulianDate::from(mjd));
+            let direct = DefaultEphemeris::moon_geocentric(JulianDate::from(mjd));
             let (dx, dy, dz) = (direct.x(), direct.y(), direct.z());
             let err = (cx - dx).abs().max((cy - dy).abs()).max((cz - dz).abs());
             // Error should be < 1 km (≈ 0.5 arcsecond at Moon distance)
