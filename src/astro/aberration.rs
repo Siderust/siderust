@@ -26,7 +26,8 @@
 //! * Uses the full special-relativistic aberration formula (Lorentz transform).
 //! * Uses exact SI definitions for `c`, day, and AU to compute `c` in AU/day.
 
-use crate::bodies::solar_system::Earth;
+use crate::calculus::ephemeris::Ephemeris;
+use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{
     cartesian::{direction, position, Velocity},
@@ -111,7 +112,7 @@ pub fn apply_aberration_to_direction(
     jd: JulianDate,
 ) -> direction::EquatorialMeanJ2000 {
     // Use SSB-referenced (barycentric) Earth velocity for annual aberration.
-    let velocity_ecl = Earth::vsop87e_vel(jd);
+    let velocity_ecl = DefaultEphemeris::earth_barycentric_velocity(jd);
     let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity_ecl.to_frame();
     apply_aberration_to_direction_with_velocity(mean, &velocity)
 }
@@ -123,7 +124,7 @@ pub fn remove_aberration_from_direction(
     app: direction::EquatorialMeanJ2000,
     jd: JulianDate,
 ) -> direction::EquatorialMeanJ2000 {
-    let velocity_ecl = Earth::vsop87e_vel(jd);
+    let velocity_ecl = DefaultEphemeris::earth_barycentric_velocity(jd);
     let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity_ecl.to_frame();
     remove_aberration_from_direction_with_velocity(app, &velocity)
 }
@@ -186,7 +187,13 @@ mod tests {
             position::EquatorialMeanJ2000::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
         let out = apply_aberration_sph(&mean, jd);
 
-        assert_eq!(out.distance, mean.distance);
+        // Distance should be preserved to within floating-point rounding
+        assert!(
+            (out.distance - mean.distance).abs() < AstronomicalUnits::new(1e-12),
+            "Distance should be preserved: got {:?}, expected {:?}",
+            out.distance,
+            mean.distance
+        );
     }
 
     #[test]
@@ -235,6 +242,7 @@ mod tests {
 
     #[test]
     fn aberration_roundtrip_is_machine_precision() {
+        use crate::bodies::solar_system::Earth;
         let jd = JulianDate::new(2458850.0); // 2020-ish
         let velocity_ecl = Earth::vsop87e_vel(jd);
         let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity_ecl.to_frame();

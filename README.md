@@ -70,7 +70,66 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.1"
+siderust = "0.4"
+```
+
+### Ephemeris Backends (Enable / Disable / Combine)
+
+Siderust always includes `Vsop87Ephemeris` (VSOP87 + ELP2000-82B).
+Optional features add JPL backends:
+- `de440` -> `De440Ephemeris`
+- `de441` -> `De441Ephemeris` (from NAIF `de441_part-2.bsp`)
+
+`DefaultEphemeris` selects:
+- `De441Ephemeris` when `de441` is enabled
+- otherwise `De440Ephemeris` when `de440` is enabled
+- otherwise `Vsop87Ephemeris`
+
+1. VSOP87-only (explicit)
+
+```toml
+[dependencies]
+siderust = { version = "0.4", default-features = false }
+```
+
+2. Enable DE440
+
+```toml
+[dependencies]
+siderust = { version = "0.4", features = ["de440"] }
+```
+
+With `de440` enabled, `AstroContext::new()` uses `De440Ephemeris` as `DefaultEphemeris`.
+
+3. Enable DE441
+
+```toml
+[dependencies]
+siderust = { version = "0.4", features = ["de441"] }
+```
+
+With `de441` enabled, `AstroContext::new()` uses `De441Ephemeris` as `DefaultEphemeris`.
+
+4. Combine backends in one binary (requires either `de440` or `de441`)
+
+```rust
+use siderust::calculus::ephemeris::{De441Ephemeris, Ephemeris, Vsop87Ephemeris};
+use siderust::time::JulianDate;
+
+let jd = JulianDate::J2000;
+
+// Series backend (VSOP87/ELP2000)
+let earth_vsop = Vsop87Ephemeris::earth_heliocentric(jd);
+
+// High-precision JPL backend
+let earth_de441 = De441Ephemeris::earth_heliocentric(jd);
+```
+
+You can combine ephemeris features with others (for example `serde`):
+
+```toml
+[dependencies]
+siderust = { version = "0.4", features = ["de441", "serde"] }
 ```
 
 ---
@@ -178,7 +237,7 @@ All numeric kernels are cross‑checked against JPL Horizons (see **siderust-py*
 ## Roadmap
 
 * [x] Custom dynamic reference centers (topocentric)
-* [ ] DE440/441 ephemerides (barycentric)
+* [x] DE440/DE441 ephemerides (barycentric)
 * [ ] Gaia DR3 star ingestion & cone search
 * [ ] Relativistic light‑time & gravitational deflection
 * [ ] Batch orbit determination helpers (LSQ & EKF)

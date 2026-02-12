@@ -3,7 +3,9 @@
 
 use crate::bodies::solar_system::Moon;
 
+use crate::calculus::ephemeris::Ephemeris;
 use crate::calculus::horizontal;
+use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::time::JulianDate;
@@ -36,9 +38,9 @@ impl Moon {
     where
         Quantity<U>: From<Quantity<Meter>> + From<Quantity<Kilometer>> + From<AstronomicalUnits>,
     {
-        // 1) Get Moon's geocentric ecliptic position from ELP2000
+        // 1) Get Moon's geocentric ecliptic position from the active ephemeris backend
         let moon_geo_ecliptic: cartesian::Position<Geocentric, frames::Ecliptic, Kilometer> =
-            Moon::get_geo_position(jd);
+            DefaultEphemeris::moon_geocentric(jd);
 
         // 2) Transform: Ecliptic → EquatorialMeanJ2000
         let moon_geo_eq_j2000: cartesian::Position<

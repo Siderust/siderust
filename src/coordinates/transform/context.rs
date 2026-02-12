@@ -28,9 +28,26 @@
 
 use std::marker::PhantomData;
 
-/// Default ephemeris marker (uses built-in VSOP87/ELP2000).
-#[derive(Debug, Clone, Copy, Default)]
-pub struct DefaultEphemeris;
+#[cfg(not(any(feature = "de440", feature = "de441")))]
+use crate::calculus::ephemeris::Vsop87Ephemeris;
+
+/// Default ephemeris type.
+///
+/// - Without `de440`/`de441` features: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
+/// - With `de440` feature: `De440Ephemeris` (JPL DE440).
+/// - With `de441` feature: `De441Ephemeris` (JPL DE441 part-2).
+///
+/// This type alias is used as the default `Eph` parameter in [`AstroContext`],
+/// so all code using `AstroContext::default()` will automatically use the
+/// selected backend.
+#[cfg(not(any(feature = "de440", feature = "de441")))]
+pub type DefaultEphemeris = Vsop87Ephemeris;
+
+#[cfg(all(feature = "de440", not(feature = "de441")))]
+pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
+
+#[cfg(feature = "de441")]
+pub type DefaultEphemeris = crate::calculus::ephemeris::De441Ephemeris;
 
 /// Default Earth orientation model marker.
 #[derive(Debug, Clone, Copy, Default)]
