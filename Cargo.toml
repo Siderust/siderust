@@ -18,6 +18,7 @@ name = "siderust"
 default = []
 serde = ["dep:serde", "qtty/serde", "affn/serde"]
 de440 = []
+de441 = []
 
 [dependencies]
 affn = { path = "affn", features = ["astro"] }
@@ -65,10 +66,18 @@ harness = false
 name = "elp2000"
 harness = false
 
+[[bench]]
+name = "de441"
+harness = false
+required-features = ["de441"]
 
 [[example]]
 name = "serde_serialization"
 required-features = ["serde"]
+
+[[example]]
+name = "de441_precise_ephemeris"
+required-features = ["de441"]
 
 [profile.release]
 debug = true

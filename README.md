@@ -76,10 +76,16 @@ siderust = "0.4"
 ### Ephemeris Backends (Enable / Disable / Combine)
 
 Siderust always includes `Vsop87Ephemeris` (VSOP87 + ELP2000-82B).
-The optional `de440` feature adds `De440Ephemeris` and makes
-`DefaultEphemeris` point to DE440.
+Optional features add JPL backends:
+- `de440` -> `De440Ephemeris`
+- `de441` -> `De441Ephemeris` (from NAIF `de441_part-2.bsp`)
 
-1. Disable DE440 (VSOP87-only, explicit)
+`DefaultEphemeris` selects:
+- `De441Ephemeris` when `de441` is enabled
+- otherwise `De440Ephemeris` when `de440` is enabled
+- otherwise `Vsop87Ephemeris`
+
+1. VSOP87-only (explicit)
 
 ```toml
 [dependencies]
@@ -95,10 +101,19 @@ siderust = { version = "0.4", features = ["de440"] }
 
 With `de440` enabled, `AstroContext::new()` uses `De440Ephemeris` as `DefaultEphemeris`.
 
-3. Combine backends in one binary (requires `de440`)
+3. Enable DE441
+
+```toml
+[dependencies]
+siderust = { version = "0.4", features = ["de441"] }
+```
+
+With `de441` enabled, `AstroContext::new()` uses `De441Ephemeris` as `DefaultEphemeris`.
+
+4. Combine backends in one binary (requires either `de440` or `de441`)
 
 ```rust
-use siderust::calculus::ephemeris::{De440Ephemeris, Ephemeris, Vsop87Ephemeris};
+use siderust::calculus::ephemeris::{De441Ephemeris, Ephemeris, Vsop87Ephemeris};
 use siderust::time::JulianDate;
 
 let jd = JulianDate::J2000;
@@ -107,14 +122,14 @@ let jd = JulianDate::J2000;
 let earth_vsop = Vsop87Ephemeris::earth_heliocentric(jd);
 
 // High-precision JPL backend
-let earth_de440 = De440Ephemeris::earth_heliocentric(jd);
+let earth_de441 = De441Ephemeris::earth_heliocentric(jd);
 ```
 
-You can combine `de440` with other features (for example `serde`):
+You can combine ephemeris features with others (for example `serde`):
 
 ```toml
 [dependencies]
-siderust = { version = "0.4", features = ["de440", "serde"] }
+siderust = { version = "0.4", features = ["de441", "serde"] }
 ```
 
 ---
@@ -222,7 +237,7 @@ All numeric kernels are cross‑checked against JPL Horizons (see **siderust-py*
 ## Roadmap
 
 * [x] Custom dynamic reference centers (topocentric)
-* [ ] DE440/441 ephemerides (barycentric)
+* [x] DE440/DE441 ephemerides (barycentric)
 * [ ] Gaia DR3 star ingestion & cone search
 * [ ] Relativistic light‑time & gravitational deflection
 * [ ] Batch orbit determination helpers (LSQ & EKF)
