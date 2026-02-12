@@ -39,17 +39,17 @@
 //! let ctx: AstroContext<Vsop87Ephemeris> = AstroContext::with_types();
 //! ```
 
-mod vsop87_backend;
 #[cfg(feature = "de440")]
 mod de440_backend;
 #[cfg(feature = "de441")]
 mod de441_backend;
+mod vsop87_backend;
 
-pub use vsop87_backend::Vsop87Ephemeris;
 #[cfg(feature = "de440")]
 pub use de440_backend::De440Ephemeris;
 #[cfg(feature = "de441")]
 pub use de441_backend::De441Ephemeris;
+pub use vsop87_backend::Vsop87Ephemeris;
 
 use crate::coordinates::{
     cartesian::{Position, Velocity},
