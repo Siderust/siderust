@@ -17,8 +17,37 @@ mod de441_build;
 
 use std::{env, path::PathBuf};
 
+fn stub_enabled_for(prefix: &str) -> bool {
+    let Ok(raw) = env::var("SIDERUST_JPL_STUB") else {
+        return false;
+    };
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return false;
+    }
+
+    let lower = raw.to_ascii_lowercase();
+    if lower == "all" || lower == "1" || lower == "true" || lower == "yes" || lower == "on" {
+        return true;
+    }
+
+    lower
+        .split(|c: char| c == ',' || c.is_whitespace())
+        .filter(|s| !s.is_empty())
+        .any(|tok| tok == prefix)
+}
+
 fn main() {
     println!("cargo:rerun-if-env-changed=SIDERUST_JPL_STUB");
+    println!("cargo:rustc-check-cfg=cfg(siderust_mock_de441)");
+
+    if stub_enabled_for("de441") {
+        println!("cargo:rustc-cfg=siderust_mock_de441");
+        println!(
+            "cargo:warning=Using DE441 mock ephemeris backend (VSOP87/ELP2000) because SIDERUST_JPL_STUB includes de441"
+        );
+    }
+
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"));
 
     // VSOP87
