@@ -112,6 +112,53 @@ You can combine ephemeris features with others (for example `serde`):
 siderust = { version = "0.5", features = ["de441", "serde"] }
 ```
 
+### Fast Builds/Tests: JPL Stub (Mock) Mode
+
+When JPL features are enabled, build scripts may download:
+- `de440.bsp` (~120 MB)
+- `de441_part-2.bsp` (~1.65 GB)
+
+To skip those downloads for local typecheck/CI loops, set `SIDERUST_JPL_STUB`:
+
+```bash
+SIDERUST_JPL_STUB=all cargo check --all-features
+```
+
+Supported values:
+- `de441`: stubs DE441 only. `De441Ephemeris` is mocked to `Vsop87Ephemeris`.
+- `de440`: stubs DE440 only.
+- `de440,de441` or `all` (also `1`, `true`, `yes`, `on`): stubs both.
+
+Recommended commands:
+
+```bash
+# Fastest all-feature compile (no DE440/DE441 download)
+SIDERUST_JPL_STUB=all cargo check --all-features
+
+# Keep DE440 real, mock only DE441 (this repo default via .cargo/config.toml)
+SIDERUST_JPL_STUB=de441 cargo check --all-features
+```
+
+Persist it in this workspace:
+
+```toml
+# .cargo/config.toml
+[env]
+SIDERUST_JPL_STUB = "all"
+```
+
+Disable stubbing to force real JPL data/codegen:
+
+```bash
+unset SIDERUST_JPL_STUB
+cargo check --all-features
+```
+
+Caveat:
+- Stubbed DE datasets compile successfully, but low-level DE calls are unavailable at runtime.
+- `de441` has a high-level mock backend (`De441Ephemeris -> Vsop87Ephemeris`).
+- `de440` is compile-only when stubbed; direct runtime calls to `De440Ephemeris` will panic.
+
 ---
 
 ## Coordinate Systems

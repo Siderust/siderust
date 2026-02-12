@@ -21,7 +21,7 @@ de441 = []
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
 [dependencies]
-affn = { path = "affn", features = ["astro"] }
+affn = { version="0.3.0", features = ["astro"] }
 cheby = "0.1.0"
 qtty = "0.3.0"
 tempoch = "0.1.0"
@@ -30,7 +30,7 @@ chrono = "0.4.43"
 nalgebra = "0.34.1"
 paste = "1.0"
 serde = { version = "1.0", features = ["derive"], optional = true }
-wide = "0.7"
+wide = "1.1.1"
 
 [dev-dependencies]
 rstest = "0.26"
@@ -40,8 +40,8 @@ serde_json = "1.0"
 [build-dependencies]
 walkdir = "2"
 regex = "1.12.2"
-anyhow = "1.0.100"
-reqwest = { version = "0.13.1", default-features = false, features = ["blocking"] }
+anyhow = "1.0.101"
+reqwest = { version = "0.13.2", default-features = false, features = ["blocking"] }
 
 [[bench]]
 name = "converters"
@@ -86,11 +86,3 @@ required-features = ["serde"]
 
 [[example]]
 name = "jpl_precise_ephemeris"
-
-[profile.release]
-debug = true
-strip = "none"   # or remove any strip setting
-lto = "thin"
-
-[profile.release.build-override]
-opt-level = 3
