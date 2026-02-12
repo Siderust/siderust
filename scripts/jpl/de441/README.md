@@ -52,6 +52,12 @@ set `SIDERUST_JPL_STUB` to `de441`:
 SIDERUST_JPL_STUB=de441 cargo check --all-features
 ```
 
+For tests, you can use the same variable:
+
+```bash
+SIDERUST_JPL_STUB=de441 cargo test --features de441
+```
+
 To stub all JPL datasets (DE440 + DE441), use:
 
 ```bash
@@ -59,7 +65,11 @@ SIDERUST_JPL_STUB=all cargo check --all-features
 ```
 
 This generates a small stub `de441_data.rs` so the crate compiles, but any
-attempt to use DE441 at runtime will panic.
+direct use of low-level DE441 JPL data will panic.
+
+For the public ephemeris backend (`calculus::ephemeris::De441Ephemeris`), the
+same setting enables a mock backend that falls back to VSOP87/ELP2000 so tests
+can execute without downloading DE441.
 
 ## Git LFS
 
