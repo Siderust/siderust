@@ -1,26 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! SPK Type 2 segment reader.
-//!
-//! Each SPK Type 2 segment stores Chebyshev polynomial coefficients for
-//! position (x, y, z). Velocity is derived from the polynomial derivative.
-//!
-//! ## Segment Layout (word-addressed)
-//!
-//! ```text
-//! words[start .. end-3]:  coefficient records  (n_records × rsize doubles)
-//! words[end-3]:           init    — initial epoch (TDB seconds past J2000)
-//! words[end-2]:           intlen  — interval length (seconds)
-//! words[end-1]:           rsize   — record size (doubles per record)
-//! words[end]:             n       — number of records
-//! ```
-//!
-//! Each record has `rsize` doubles:
-//! ```text
-//! [MID, RADIUS, X0..X_{ncoeff-1}, Y0..Y_{ncoeff-1}, Z0..Z_{ncoeff-1}]
-//! ```
-//! where `ncoeff = (rsize - 2) / 3`.
+//! Shared SPK Type 2 segment reader for DE440/DE441 build pipelines.
 
 use super::daf::{Daf, Summary};
 use std::path::Path;
@@ -49,7 +30,6 @@ pub fn read_type2_segment(
 ) -> anyhow::Result<SegmentMeta> {
     let end = summary.end_word;
 
-    // Read the 4 metadata values at the end of the segment
     let n_records = daf.read_f64_at_word(file_data, end) as usize;
     let rsize = daf.read_f64_at_word(file_data, end - 1) as usize;
     let intlen = daf.read_f64_at_word(file_data, end - 2);
@@ -72,7 +52,6 @@ pub fn read_type2_segment(
         anyhow::bail!("Implausible n_records={}", n_records);
     }
 
-    // Read all coefficient records
     let total_doubles = n_records * rsize;
     let mut records = Vec::with_capacity(total_doubles);
 

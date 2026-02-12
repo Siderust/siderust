@@ -3,35 +3,27 @@
 
 //! # DE441 Ephemeris Module
 //!
-//! This module provides a runtime evaluator for JPL DE441 ephemeris data,
-//! which is embedded at compile time (Chebyshev polynomial coefficients
-//! for Sun, Earth-Moon barycenter, and Moon).
+//! Thin configuration layer over the shared JPL DE4xx infrastructure.
+//! Provides [`De441Data`] — the marker type that selects DE441 coefficients
+//! for use with [`DeEphemeris`](crate::calculus::jpl::DeEphemeris).
 //!
-//! ## Architecture
-//!
-//! - **[`data`]** — Coefficient tables extracted from `de441_part-2.bsp` by the build
-//!   script and embedded via `include_bytes!()`.  Pre-built
-//!   [`SegmentDescriptor`](eval::SegmentDescriptor)s (`SUN`, `EMB`, `MOON`)
-//!   bundle per-body metadata for ergonomic evaluation.
-//! - **[`chebyshev`]** — Clenshaw-recurrence Chebyshev polynomial evaluator
-//!   (value, derivative, or both in one pass).
-//! - **[`eval`]** — [`SegmentDescriptor`](eval::SegmentDescriptor): segment
-//!   lookup, time-normalisation, and 3-D position / velocity evaluation.
-//!   Physical constants (`SECONDS_PER_DAY`, `J2000_JD`) are sourced from
-//!   `qtty` and `JulianDate`, not duplicated.
-//! - **[`bodies`]** — Body-chain resolution (EMB → Earth, Moon geocentric,
-//!   Earth heliocentric).  Time-scale conversion delegates to
-//!   `JulianDate::tt_to_tdb()`. Unit conversion (`km → AU`) uses `qtty`
-//!   unit ratios as the single source of truth.
+//! All evaluation logic, body-chain arithmetic, and frame/unit conversions
+//! are handled by [`calculus::jpl`](crate::calculus::jpl).
 //!
 //! ## Reference Frame & Units
 //!
-//! DE441 data is in ICRF (≈ J2000 equatorial), units of km and km/s,
-//! on the TDB timescale (seconds past J2000 epoch).
-//!
-//! The public API converts to ecliptic coordinates and AU to match the
-//! `Ephemeris` trait signature used by the rest of siderust.
+//! DE441 data is in ICRF (≈ J2000 equatorial), km and km/s, on TDB.
+//! The public API converts to ecliptic AU via the `Ephemeris` trait.
 
-pub mod bodies;
 pub mod data;
-pub mod eval;
+
+use crate::calculus::jpl::{eval::SegmentDescriptor, DeData};
+
+/// Marker type selecting DE441 embedded coefficient data.
+pub struct De441Data;
+
+impl DeData for De441Data {
+    const SUN: SegmentDescriptor = data::SUN;
+    const EMB: SegmentDescriptor = data::EMB;
+    const MOON: SegmentDescriptor = data::MOON;
+}

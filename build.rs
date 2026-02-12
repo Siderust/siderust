@@ -8,11 +8,11 @@ mod vsop87_build;
 mod elp2000_build;
 
 #[cfg(feature = "de440")]
-#[path = "scripts/de440/mod.rs"]
+#[path = "scripts/jpl/de440/mod.rs"]
 mod de440_build;
 
 #[cfg(feature = "de441")]
-#[path = "scripts/de441/mod.rs"]
+#[path = "scripts/jpl/de441/mod.rs"]
 mod de441_build;
 
 use std::{env, path::PathBuf};
