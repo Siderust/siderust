@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::bodies::solar_system::Earth;
+use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::transform::centers::TransformCenter;
+use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::{
     cartesian::position::{Ecliptic, Position},
     centers::{Barycentric, Geocentric, Heliocentric},
@@ -28,7 +29,7 @@ where
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         // Get Earth's position in barycentric ecliptic coordinates
-        let earth_bary_ecl_au = *Earth::vsop87e(jd).get_position();
+        let earth_bary_ecl_au = *DefaultEphemeris::earth_barycentric(jd).get_position();
         let earth_ecl = Ecliptic::<U, Barycentric>::new(
             earth_bary_ecl_au.x(),
             earth_bary_ecl_au.y(),
@@ -55,7 +56,7 @@ where
 {
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         // Get Earth's position in heliocentric ecliptic coordinates
-        let earth_helio_ecl_au = *Earth::vsop87a(jd).get_position();
+        let earth_helio_ecl_au = *DefaultEphemeris::earth_heliocentric(jd).get_position();
         let earth_ecl = Ecliptic::<U>::new(
             earth_helio_ecl_au.x(),
             earth_helio_ecl_au.y(),
@@ -72,7 +73,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use crate::bodies::solar_system::Earth;
+    use crate::calculus::ephemeris::Ephemeris;
+    use crate::coordinates::transform::context::DefaultEphemeris;
     use crate::coordinates::{cartesian, centers::*, spherical, transform::Transform};
     use crate::macros::assert_cartesian_eq;
     use crate::time::JulianDate;
@@ -82,7 +84,7 @@ mod tests {
 
     #[test] // Barycentric -> Geocentric
     fn test_bary_to_geo() {
-        let earth_bary = *Earth::vsop87e(JulianDate::J2000).get_position();
+        let earth_bary = *DefaultEphemeris::earth_barycentric(JulianDate::J2000).get_position();
         let earth_geo: cartesian::position::Ecliptic<Au, Geocentric> =
             earth_bary.transform(JulianDate::J2000);
         let expected_earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::CENTER;
@@ -97,7 +99,7 @@ mod tests {
 
     #[test] // Heliocentric -> Geocentric
     fn test_helio_to_geo() {
-        let earth_helio = *Earth::vsop87a(JulianDate::J2000).get_position();
+        let earth_helio = *DefaultEphemeris::earth_heliocentric(JulianDate::J2000).get_position();
         let earth_geo: cartesian::position::Ecliptic<Au, Geocentric> =
             earth_helio.transform(JulianDate::J2000);
         let expected_earth_geo = cartesian::position::Ecliptic::<Au, Geocentric>::CENTER;

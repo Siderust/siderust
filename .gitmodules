@@ -4,3 +4,6 @@
 [submodule "qtty"]
 	path = qtty
 	url = git@github.com:Siderust/qtty.git
+[submodule "cheby"]
+	path = cheby
+	url = git@github.com:Siderust/cheby.git
