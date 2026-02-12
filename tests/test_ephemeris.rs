@@ -416,26 +416,29 @@ mod vsop87_tests {
     #[test]
     fn vsop87_ephemeris_default() {
         // Test that Vsop87Ephemeris implements Default
-        let _eph = Vsop87Ephemeris::default();
+        fn assert_default<T: Default>() {}
+        assert_default::<Vsop87Ephemeris>();
     }
 
     #[test]
     fn vsop87_ephemeris_clone_copy() {
         // Test Clone and Copy traits
-        let eph1 = Vsop87Ephemeris::default();
+        fn assert_clone<T: Clone>() {}
+        fn assert_copy<T: Copy>() {}
+        assert_clone::<Vsop87Ephemeris>();
+        assert_copy::<Vsop87Ephemeris>();
+
+        let eph1 = Vsop87Ephemeris;
         let eph2 = eph1;
-        let eph3 = eph1.clone();
+        let eph3 = eph1;
         // All are the same ZST
-        assert_eq!(
-            std::mem::size_of_val(&eph2),
-            std::mem::size_of_val(&eph3)
-        );
+        assert_eq!(std::mem::size_of_val(&eph2), std::mem::size_of_val(&eph3));
     }
 
     #[test]
     fn vsop87_ephemeris_debug() {
         // Test Debug trait
-        let eph = Vsop87Ephemeris::default();
+        let eph = Vsop87Ephemeris;
         let debug_str = format!("{:?}", eph);
         assert!(debug_str.contains("Vsop87Ephemeris"));
     }
@@ -800,18 +803,9 @@ mod generic_ephemeris_tests {
         let vy_expected = AstronomicalUnits::new(vel.y().value());
         let vz_expected = AstronomicalUnits::new(vel.z().value());
 
-        assert!(
-            (dx - vx_expected).abs() < tol,
-            "dx should match vx * 1 day"
-        );
-        assert!(
-            (dy - vy_expected).abs() < tol,
-            "dy should match vy * 1 day"
-        );
-        assert!(
-            (dz - vz_expected).abs() < tol,
-            "dz should match vz * 1 day"
-        );
+        assert!((dx - vx_expected).abs() < tol, "dx should match vx * 1 day");
+        assert!((dy - vy_expected).abs() < tol, "dy should match vy * 1 day");
+        assert!((dz - vz_expected).abs() < tol, "dz should match vz * 1 day");
     }
 
     #[test]
