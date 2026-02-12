@@ -16,9 +16,9 @@ const SECONDS_PER_DAY: f64 = qtty::time::SECONDS_PER_DAY;
 /// All metadata needed to evaluate one body segment.
 pub struct SegmentDescriptor {
     /// Initial epoch of the segment (TDB seconds past J2000).
-    pub init: f64,
+    pub init: Seconds,
     /// Length of each Chebyshev sub-interval (seconds).
-    pub intlen: f64,
+    pub intlen: Seconds,
     /// Number of Chebyshev coefficients per coordinate (x, y, z).
     pub ncoeff: usize,
     /// Number of coefficient records in the segment.
@@ -33,14 +33,14 @@ fn jd_to_et(jd_tdb: JulianDate) -> Seconds {
 }
 
 #[inline]
-fn locate(seg: &SegmentDescriptor, jd_tdb: JulianDate) -> (&'static [f64], f64, f64) {
-    let et = jd_to_et(jd_tdb).value();
-    let idx = ((et - seg.init) / seg.intlen) as usize;
+fn locate(seg: &SegmentDescriptor, jd_tdb: JulianDate) -> (&'static [f64], f64, Seconds) {
+    let et = jd_to_et(jd_tdb);
+    let idx = ((et - seg.init) / seg.intlen).value() as usize;
     let idx = idx.min(seg.n_records - 1);
     let record = (seg.record_fn)(idx);
-    let mid = record[0];
-    let radius = record[1];
-    let tau = (et - mid) / radius;
+    let mid = Seconds::new(record[0]);
+    let radius = Seconds::new(record[1]);
+    let tau = ((et - mid) / radius).value();
     (record, tau, radius)
 }
 
@@ -71,7 +71,7 @@ impl SegmentDescriptor {
     pub fn velocity(&self, jd_tdb: JulianDate) -> Velocity<ICRF, KmPerDay> {
         let (record, tau, radius) = locate(self, jd_tdb);
         let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
-        let scale = SECONDS_PER_DAY / radius;
+        let scale = SECONDS_PER_DAY / radius.value();
         Velocity::new(
             KmPerDayQ::new(cheby::evaluate_derivative(cx, tau) * scale),
             KmPerDayQ::new(cheby::evaluate_derivative(cy, tau) * scale),
@@ -87,7 +87,7 @@ impl SegmentDescriptor {
     ) -> (Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>) {
         let (record, tau, radius) = locate(self, jd_tdb);
         let (cx, cy, cz) = xyz_coeffs(record, self.ncoeff);
-        let scale = SECONDS_PER_DAY / radius;
+        let scale = SECONDS_PER_DAY / radius.value();
 
         let (px, vx) = cheby::evaluate_both(cx, tau);
         let (py, vy) = cheby::evaluate_both(cy, tau);

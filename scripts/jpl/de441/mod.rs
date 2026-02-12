@@ -8,10 +8,10 @@
 
 #[path = "../daf.rs"]
 mod daf;
-#[path = "../spk.rs"]
-mod spk;
 #[path = "../pipeline.rs"]
 mod pipeline;
+#[path = "../spk.rs"]
+mod spk;
 
 use std::path::Path;
 
