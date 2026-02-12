@@ -1282,6 +1282,7 @@ dependencies = [
  "rstest",
  "serde",
  "serde_json",
+ "tempoch",
  "walkdir",
  "wide",
 ]
@@ -1356,6 +1357,15 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "tempoch"
+version = "0.1.0"
+dependencies = [
+ "chrono",
+ "qtty",
+ "serde",
 ]
 
 [[package]]
