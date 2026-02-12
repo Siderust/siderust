@@ -75,7 +75,7 @@ pub mod calculus;
 pub mod coordinates;
 pub mod observatories;
 pub mod targets;
-pub mod time;
+pub use tempoch as time;
 
 pub(crate) mod macros;
 
