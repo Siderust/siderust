@@ -30,27 +30,17 @@ fn analyze_body<B: AltitudePeriodsProvider>(
 
     // Above horizon
     let up_periods = body.above_threshold(observer, window, Degrees::new(0.0));
-    let total_up: f64 = up_periods
+    let total_up = up_periods
         .iter()
-        .map(|p| p.duration_days().value() * 24.0)
-        .sum();
-    println!(
-        "  Above horizon: {:.1} hours in {} periods",
-        total_up,
-        up_periods.len()
-    );
+        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
+    println!("  Above horizon: {} in {} periods", total_up, up_periods.len());
 
     // High altitude (> 45°)
     let high_periods = body.above_threshold(observer, window, Degrees::new(45.0));
-    let total_high: f64 = high_periods
+    let total_high = high_periods
         .iter()
-        .map(|p| p.duration_days().value() * 24.0)
-        .sum();
-    println!(
-        "  Above 45°:     {:.1} hours in {} periods",
-        total_high,
-        high_periods.len()
-    );
+        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
+    println!("  Above 45°:     {} in {} periods", total_high, high_periods.len());
 
     // Twilight/low band (0° to 10°)
     let query = AltitudeQuery {
@@ -60,21 +50,16 @@ fn analyze_body<B: AltitudePeriodsProvider>(
         max_altitude: Degrees::new(10.0),
     };
     let low_periods = body.altitude_periods(&query);
-    let total_low: f64 = low_periods
+    let total_low = low_periods
         .iter()
-        .map(|p| p.duration_days().value() * 24.0)
-        .sum();
-    println!(
-        "  Low (0-10°):   {:.1} hours in {} periods",
-        total_low,
-        low_periods.len()
-    );
+        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
+    println!("  Low (0-10°):   {} in {} periods", total_low, low_periods.len());
 
     // Peak altitude during window
     let mid_mjd =
         siderust::time::ModifiedJulianDate::new((window.start.value() + window.end.value()) / 2.0);
     let alt = body.altitude_at(&observer, mid_mjd).to::<Degree>();
-    println!("  Altitude at window midpoint: {:.2}°", alt.value());
+    println!("  Altitude at window midpoint: {}", alt);
     println!();
 }
 
@@ -85,20 +70,16 @@ fn main() {
 
     let observatory = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
     println!(
-        "Observatory: Greenwich ({:.2}°N, {:.2}°E)",
-        observatory.lat.value(),
-        observatory.lon.value()
+        "Observatory: Greenwich ({}, {})",
+        observatory.lat,
+        observatory.lon
     );
 
     let window = Period::new(
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60001.0),
     );
-    println!(
-        "Window: 24 hours (MJD {:.1} to {:.1})\n",
-        window.start.value(),
-        window.end.value()
-    );
+    println!("Window: 24 hours ({} to {})\n", window.start, window.end);
 
     println!("═════════════════════════════════════════════════════════");
 

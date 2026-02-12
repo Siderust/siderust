@@ -194,8 +194,10 @@ fn main() {
     println!("  Height: {:.0} m", mountain_top.height);
 
     // Approximate horizon distance formula: d ≈ 3.57 × √h (km)
-    let horizon_sea = 3.57 * (sea_level.height.value() / 1000.0).sqrt();
-    let horizon_mountain = 3.57 * (mountain_top.height.value() / 1000.0).sqrt();
+    let sea_height_km = sea_level.height.to::<Kilometer>() / Kilometers::new(1.0);
+    let mountain_height_km = mountain_top.height.to::<Kilometer>() / Kilometers::new(1.0);
+    let horizon_sea = 3.57 * sea_height_km.sqrt();
+    let horizon_mountain = 3.57 * mountain_height_km.sqrt();
 
     println!("\nApproximate distance to horizon:");
     println!("  From sea level: {:.1} km", horizon_sea);

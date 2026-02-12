@@ -142,6 +142,8 @@ checksum = "9330f8b2ff13f34540b44e946ef35111825727b38d33286ef986142615121801"
 [[package]]
 name = "cheby"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3af87a2f4182a67a08e5618b52859ef58cca770526061f0f43eaa754f12ecd30"
 dependencies = [
  "qtty",
 ]
@@ -1266,7 +1268,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "siderust"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "affn",
  "anyhow",
@@ -1362,6 +1364,8 @@ dependencies = [
 [[package]]
 name = "tempoch"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "edd6945c4385e58706585ccb1662db990e73cb62b8c87d13810a8b7b5172d386"
 dependencies = [
  "chrono",
  "qtty",

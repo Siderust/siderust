@@ -65,8 +65,8 @@ fn main() {
     println!("Astronomical Night Periods (Sun altitude < -18°)");
     println!("================================================");
     println!(
-        "Observer: lat = {:.4}°, lon = {:.4}°, height = {} m",
-        lat_deg, lon_deg, height_m
+        "Observer: lat = {}, lon = {}, height = {}",
+        site.lat, site.lon, site.height
     );
     println!("Week starting: {} UTC", start_date);
     println!();
@@ -77,9 +77,9 @@ fn main() {
             let end_utc = period.end.to_utc();
 
             if let (Some(s), Some(e)) = (start_utc, end_utc) {
-                let duration_mins = (period.duration_days().value() * 24.0 * 60.0).round() as i64;
+                let duration_mins = period.duration_days().to::<qtty::Minute>();
                 println!(
-                    "{} → {}  ({} min)",
+                    "{} → {}  ({})",
                     s.format("%Y-%m-%dT%H:%M:%S"),
                     e.format("%Y-%m-%dT%H:%M:%S"),
                     duration_mins

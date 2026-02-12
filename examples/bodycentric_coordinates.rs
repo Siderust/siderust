@@ -42,9 +42,9 @@ fn main() {
 
     println!("ISS Orbit:");
     println!(
-        "  Semi-major axis: {:.6} AU (~{:.0} km)",
+        "  Semi-major axis: {} (~{})",
         iss_orbit.semi_major_axis,
-        iss_orbit.semi_major_axis.value() * 149597870.7
+        iss_orbit.semi_major_axis.to::<Kilometer>()
     );
     println!("  Eccentricity: {:.4}", iss_orbit.eccentricity);
     println!("  Inclination: {:.2}°\n", iss_orbit.inclination);
@@ -59,9 +59,9 @@ fn main() {
     println!("  Y = {:.8} AU", iss_pos_ecl.y());
     println!("  Z = {:.8} AU", iss_pos_ecl.z());
     println!(
-        "  Distance from Earth: {:.8} AU (~{:.0} km)\n",
+        "  Distance from Earth: {} (~{})\n",
         iss_pos_ecl.distance(),
-        iss_pos_ecl.distance().value() * 149597870.7
+        iss_pos_ecl.distance().to::<Kilometer>()
     );
 
     // Moon's approximate position (geocentric)
@@ -69,9 +69,9 @@ fn main() {
 
     println!("Moon position (Geocentric):");
     println!(
-        "  Distance from Earth: {:.5} AU (~{:.0} km)\n",
+        "  Distance from Earth: {} (~{})\n",
         moon_geo.distance(),
-        moon_geo.distance().value() * 149597870.7
+        moon_geo.distance().to::<Kilometer>()
     );
 
     // Transform to ISS-centric coordinates
@@ -83,9 +83,9 @@ fn main() {
     println!("  Y = {:.6} AU", moon_from_iss.y());
     println!("  Z = {:.6} AU", moon_from_iss.z());
     println!(
-        "  Distance from ISS: {:.5} AU (~{:.0} km)\n",
+        "  Distance from ISS: {} (~{})\n",
         moon_from_iss.distance(),
-        moon_from_iss.distance().value() * 149597870.7
+        moon_from_iss.distance().to::<Kilometer>()
     );
 
     // =========================================================================
@@ -201,11 +201,11 @@ fn main() {
     println!("  Y = {:.10} AU", recovered_helio.y());
     println!("  Z = {:.10} AU\n", recovered_helio.z());
 
-    let diff_x = (original_earth.x() - recovered_helio.x()).value();
-    let diff_y = (original_earth.y() - recovered_helio.y()).value();
-    let diff_z = (original_earth.z() - recovered_helio.z()).value();
+    let diff_x = (original_earth.x() - recovered_helio.x()).abs();
+    let diff_y = (original_earth.y() - recovered_helio.y()).abs();
+    let diff_z = (original_earth.z() - recovered_helio.z()).abs();
     let diff = (diff_x * diff_x + diff_y * diff_y + diff_z * diff_z).sqrt();
-    println!("Total difference: {:.2e} AU (should be small)\n", diff);
+    println!("Total difference: {} (should be small)\n", diff);
 
     // =========================================================================
     // 5. Directions in Different Reference Frames
