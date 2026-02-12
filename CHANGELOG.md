@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+* New `de441` Cargo feature and `De441Ephemeris` backend integration
+* New build-time DE441 pipeline under `scripts/de441/` with NAIF `de441_part-2.bsp` support and Git LFS dataset path
+* New `calculus::de441` runtime evaluator module (Sun/EMB/Moon segment extraction and evaluation)
+* New example `examples/de441_precise_ephemeris.rs`
+* New Criterion benchmark `benches/de441.rs` (feature-gated with `de441`)
+
+### Changed
+* `DefaultEphemeris` selection now prefers DE441 when `de441` is enabled, then DE440 when `de440` is enabled, otherwise VSOP87
+* Documentation updated to include DE441 feature usage and benchmark/example commands
+
 ## [0.4.0] - 19/01/2026
 
 ### Added

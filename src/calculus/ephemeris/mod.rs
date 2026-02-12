@@ -4,15 +4,15 @@
 //! # Ephemeris Provider Abstraction
 //!
 //! This module defines the [`Ephemeris`] trait, which abstracts over different
-//! ephemeris backends (VSOP87/ELP2000, DE440, etc.) for computing fundamental
+//! ephemeris backends (VSOP87/ELP2000, DE440/DE441, etc.) for computing fundamental
 //! solar-system body positions and velocities.
 //!
 //! ## Design
 //!
 //! - **Compile-time selection**: Backends are zero-sized marker types; all
 //!   dispatch is monomorphized away.
-//! - **Feature-gated**: VSOP87 is always available. DE440 requires the `de440`
-//!   Cargo feature.
+//! - **Feature-gated**: VSOP87 is always available. DE440 and DE441 require
+//!   the `de440`/`de441` Cargo features.
 //! - **Body-centric user API preserved**: `Earth::vsop87e(jd)` etc. remain
 //!   unchanged. The `Ephemeris` trait is used internally by the coordinate
 //!   transform pipeline.
@@ -22,7 +22,8 @@
 //! | Backend              | Feature   | Source                  |
 //! |----------------------|-----------|-------------------------|
 //! | [`Vsop87Ephemeris`]  | (always)  | VSOP87 + ELP2000-82B    |
-//! | `De440Ephemeris`     | `de440`   | JPL DE440 (planned)     |
+//! | `De440Ephemeris`     | `de440`   | JPL DE440               |
+//! | `De441Ephemeris`     | `de441`   | JPL DE441 (part-2 BSP)  |
 //!
 //! ## Usage
 //!
@@ -42,11 +43,15 @@ mod vsop87_backend;
 
 #[cfg(feature = "de440")]
 mod de440_backend;
+#[cfg(feature = "de441")]
+mod de441_backend;
 
 pub use vsop87_backend::Vsop87Ephemeris;
 
 #[cfg(feature = "de440")]
 pub use de440_backend::De440Ephemeris;
+#[cfg(feature = "de441")]
+pub use de441_backend::De441Ephemeris;
 
 use crate::coordinates::{
     cartesian::{Position, Velocity},
