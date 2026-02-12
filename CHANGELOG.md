@@ -4,18 +4,90 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.5.0] - 12/02/2026
 
 ### Added
-* New `de441` Cargo feature and `De441Ephemeris` backend integration
-* New build-time DE441 pipeline under `scripts/de441/` with NAIF `de441_part-2.bsp` support and Git LFS dataset path
-* New `calculus::de441` runtime evaluator module (Sun/EMB/Moon segment extraction and evaluation)
-* New example `examples/de441_precise_ephemeris.rs`
-* New Criterion benchmark `benches/de441.rs` (feature-gated with `de441`)
+
+#### Ephemeris Backends
+* `Ephemeris` trait abstraction (`calculus::ephemeris`) with pluggable backends and `DefaultEphemeris` auto-selection (DE441 > DE440 > VSOP87)
+* `de440` Cargo feature with `De440Ephemeris` backend (JPL DE440, 1550–2650 CE)
+* `de441` Cargo feature with `De441Ephemeris` backend (JPL DE441 part-2, extended coverage)
+* Build-time DE440/DE441 pipelines under `scripts/jpl/` with NAIF `.bsp` support and Git LFS datasets
+* `calculus::jpl` shared DE4xx infrastructure: `DeData` trait, `DeEphemeris<D>` generic backend, Chebyshev segment evaluation
+* `cheby` workspace crate — Chebyshev polynomial toolkit (DCT fitting, Clenshaw evaluation, segment tables)
+* Build system `SIDERUST_JPL_STUB` env var and `siderust_mock_de441` cfg flag for CI stub backends
+
+#### Unified Altitude API
+* `calculus::altitude` module: `AltitudePeriodsProvider` trait for finding time intervals when celestial bodies are within specific altitude ranges
+* `AltitudePeriodsProvider` implementations for `Sun`, `Moon`, `Star<'_>`, and `direction::ICRS`
+* Free functions: `crossings()`, `culminations()`, `altitude_ranges()`, `above_threshold()`, `below_threshold()`, `altitude_periods()`
+* `AltitudeQuery`, `SearchOpts`, `CrossingEvent`, `CrossingDirection`, `CulminationEvent`, `CulminationKind` types
+* Crate-root re-exports of the entire altitude API (`siderust::{above_threshold, crossings, ...}`)
+
+#### Body-Specific Altitude Engines
+* `calculus::stellar` — analytical sinusoidal model exploiting Earth's rotation for fixed-star altitude periods
+* `calculus::lunar` — Moon altitude functions with topocentric parallax (`find_moon_above_horizon`, `find_moon_below_horizon`, `find_moon_altitude_range`)
+* Moon Chebyshev cache (`moon_cache`) for optimized repeated ephemeris evaluation
+* `calculus::horizontal` — shared equatorial→horizontal coordinate pipeline factored out of Sun/Moon engines
+
+#### Numerical Engine
+* `calculus::math_core` module: astronomy-agnostic numerical algorithms
+  - `root_finding`: Brent's method with pre-computed endpoint values, plus bisection solver
+  - `extrema`: golden-section minimiser/maximiser
+  - `intervals`: interval assembly from roots
+  - `bracketing`: seed/bracket generation policies
+
+#### Celestial Bodies
+* `bodies::Asteroid` type with `AsteroidBuilder`, `AsteroidClass` enum, and presets: `CERES_AST`, `BENNU`, `APOPHIS`
+* `bodies::Comet` type with `CometBuilder`, `OrbitFrame` enum, `period_years()` helper, and presets: `HALLEY`, `ENCKE`, `HALE_BOPP`
+* `calculus::pluto` — Meeus/Williams Pluto heliocentric ephemeris (42-43 periodic terms, ~0.5″ accuracy 1885–2099)
+
+#### Coordinates & Frames
+* `Galactic` reference frame (re-exported from `affn`)
+* `coordinates::types` module with concise type aliases (`IcrsDir`, `EclipticDir`, `GeographicPos`, `HorizontalPos`, etc.) and prelude
+* `coordinates::observation` module: `Astrometric<D>` / `Apparent<D>` wrapper types and `ObserverState` for explicit geometric/observed direction separation
+* Horizontal coordinate convention helpers following IAU Alt-Az convention
+
+#### Observatories
+* La Silla Observatory (`observatories::LA_SILLA_OBSERVATORY` — ESO, Chile: −29.2584°, −70.7346°, 2400 m)
+
+#### Examples
+* New `jpl_precise_ephemeris` — unified DE440/DE441 backend comparison (replaces separate DE440/DE441 examples)
+* New `altitude_periods_trait` — comprehensive `AltitudePeriodsProvider` trait demonstration
+* New `compare_sun_moon_star` — generic body comparison via trait polymorphism
+* New `night_quality_scoring` — practical observing planner scoring nights by darkness and Moon interference
+* New `star_observability` — multi-star observing planner with visibility windows and peak altitudes
+* New `find_night_periods_365day` — full-year astronomical night search with CLI support
+
+#### Benchmarks
+* New `ephemeris_comparison` — comparative benchmark: VSOP87 vs DE440 vs DE441 across all `Ephemeris` trait methods
+* New `altitude_comparison` — comparative benchmark: Sun vs Moon vs Star for single-point eval and period searches (7/30/365-day)
+* New `moon_altitude` — detailed lunar altitude benchmarks (single eval, above/below horizon, altitude ranges, algorithm comparison)
+* New `star_altitude` — fixed-star altitude benchmarks (single eval, thresholds, crossings)
+* New `elp2000` — ELP2000-82B evaluation benchmarks at multiple epochs
+* New `de441` — DE441 ephemeris body-query benchmarks (feature-gated)
+
+#### Tests
+* Comprehensive ephemeris backend tests (`test_ephemeris.rs`, 879 lines) covering all backends and multiple epochs
+* Unified altitude API tests (`test_altitude_api.rs`, `test_altitude_provider.rs`) — crossings, culminations, thresholds, ranges
+* Domain B invariant tests (`test_domain_b.rs`) — aberration separation, Astrometric/Apparent states, topocentric parallax
+* Stellar engine tests (`test_stellar.rs`) — circumpolar, rise/set, never-visible edge cases
+* Asteroid/Comet body tests (`test_asteroid.rs`)
 
 ### Changed
-* `DefaultEphemeris` selection now prefers DE441 when `de441` is enabled, then DE440 when `de440` is enabled, otherwise VSOP87
-* Documentation updated to include DE441 feature usage and benchmark/example commands
+* `Satellite` type now uses `Cow<'a, str>` for the name field with `new_const()` and `new()` constructors
+* `DefaultEphemeris` selection prefers DE441 when `de441` is enabled, then DE440, then VSOP87
+* DE440/DE441 examples consolidated into single `jpl_precise_ephemeris.rs` with `#[cfg]` gates
+* `solar_altitude_culminations` example removed (functionality covered by `find_night_periods_365day`)
+* Examples README reorganized by theme: Getting Started, Observational Astronomy, Solar System, Ephemeris Backends, Serialization
+* Benchmarks README updated to document comparative vs per-module benchmarks
+* `time` module fully migrated to `tempoch` crate with typed time scales (`Time<S>`)
+* Quantities throughout the codebase migrated from raw `f64` to `qtty` typed quantities
+
+### Fixed
+* README: stale import paths (`astro::JulianDate` → `time::JulianDate`), placeholder `#TBD` accuracy data removed, removed references to deleted `units` module, updated crate layout to reflect actual module structure
+* `src/lib.rs` docs: removed false claims about `#![no_std]` support and `f128` quad precision
+* CHANGELOG 0.3.0: merged duplicate "Changed" section, fixed typos ("Geographic", "Conversion")
 
 ## [0.4.0] - 19/01/2026
 
@@ -39,8 +111,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Annual aberration now uses a Lorentz transform with exact AU/day light speed and the barycentric VSOP87E Earth velocity, operating in mean-J2000 equatorial space with machine-precision round-trips
 * Frame rotations now include the ICRS↔J2000 frame bias, use mean obliquity of date for ecliptic transforms, and route equatorial transforms through the new mean-of-date/true-of-date frames
 
-### Deprecated
-
 ### Removed
 * Internal `src/units/` module (angular.rs, frequency.rs, length.rs, mass.rs, power.rs, time.rs, unitless.rs, velocity.rs)
 * Deprecated transformation APIs: `TransformToTopocentric` and the legacy `to_horizontal` helper
@@ -48,8 +118,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 * Build/CI tooling improvements (Git LFS support, stub cleanup, improved local CI scripts)
-
-### Security
 
 ## [0.3.1-3] - 04/09/2025
 
@@ -59,71 +127,55 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 * Build process offline
 
-### Deprecated
-
 ### Removed
-* unused imports
+* Unused imports
 
 ### Fixed
 * Doc compilation
 
-### Security
-
 ## [0.3.0] - 04/09/2025
 
 ### Added
-- Coordinate macro checkers.
-- spherical::Direction, cartesian::Direction, cartesian::Velocity.
-- build scripts to fetch VSOP87 coeffs and auto-generate static rust arrays.
-- Converstion functions from/to Position/Direction.
-- apply_aberration_to_direction / remove_aberration_from_direction.
-- Compute VSOP87 velocity.
-- Implement Unit trait.
-- Expand bodies catalog (Lagrange Points and other major bodies).
-- Direction implements Display.
-
-### Changed
-- Geographic constructor order.
-- spherical::Direction, cartesian::Direction.
-- build scripts to fetch VSOP87 coeffs and auto-generate static rust arrays.
-- Converstion functions from/to Position/Direction.
-- apply_aberration_to_direction / remove_aberration_from_direction.
+- Coordinate macro checkers
+- `spherical::Direction`, `cartesian::Direction`, `cartesian::Velocity`
+- Build scripts to fetch VSOP87 coefficients and auto-generate static Rust arrays
+- Conversion functions from/to `Position`/`Direction`
+- `apply_aberration_to_direction` / `remove_aberration_from_direction`
 - Compute VSOP87 velocity
+- Implement `Unit` trait
+- Expand bodies catalog (Lagrange Points and other major bodies)
+- `Direction` implements `Display`
 
 ### Changed
-- Geogreaphic constructor order.
-- Refactor radial_distance -> distance.
-- Refactor distance_from_origin() -> distance().
-- SphericalCoord -> spherical::Position.
-- CartesianCoord -> cartesian::Position.
-- Compute Aberration using VSOP87 earth velocity.
-- Spherical distance is no longer Optional.
-- JulianDay & ModifiedJulianDay -> JuliaDate & ModifiedJulianDate.
-- Coordinate constructors handle any angular/distance unit.
-
-### Deprecated
+- Geographic constructor order
+- Refactor `radial_distance` → `distance`
+- Refactor `distance_from_origin()` → `distance()`
+- `SphericalCoord` → `spherical::Position`
+- `CartesianCoord` → `cartesian::Position`
+- Compute aberration using VSOP87 Earth velocity
+- Spherical distance is no longer `Optional`
+- `JulianDay` & `ModifiedJulianDay` → `JulianDate` & `ModifiedJulianDate`
+- Coordinate constructors handle any angular/distance unit
 
 ### Removed
-- SphericalBuilder.
-- Hardcoded vsop coefficients.
-- Ron–Vondrák velocity series.
+- `SphericalBuilder`
+- Hardcoded VSOP coefficients
+- Ron–Vondrák velocity series
 
 ### Fixed
-- Missmatch addition of units in Coordinate center transformation.
-
-### Security
+- Mismatch addition of units in coordinate center transformation
 
 ## [0.2.0] - 31/05/2025
 
 ### Added
-- Implement Arithmetic Operator Add, Sub, Div, Mult in CartesianCoord.
+- Implement arithmetic operators `Add`, `Sub`, `Div`, `Mul` for `CartesianCoord`
 
 ### Changed
-- Geocentric coordinates now account for Aberration.
+- Geocentric coordinates now account for aberration
 
 ## [0.1.0] - 15/05/2025
 
 ### Added
-- Initial commit.
-- Target, Coordinates, Astro, Calculus, Observatories and Units modules.
-- AGPL-3 license.
+- Initial commit
+- Target, Coordinates, Astro, Calculus, Observatories and Units modules
+- AGPL-3 license

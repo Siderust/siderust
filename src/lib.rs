@@ -41,9 +41,9 @@
 //! - [`targets`]       : `Target<T>` tracking with time and proper motion
 //! - [`time`]          : Time types and scale-based `Period<S>` / generic `Interval<T>`
 //! - [`astro`]         : Utilities for aberration, nutation, precession, sidereal time, and event searches
-//! - [`calculus`]      : Numerical kernels (Kepler, VSOP87, ELP2000, etc.)
-//! - [`bodies`]        : Data structures for planets, comets, stars, satellites, and built-in catalogs
-//! - [`observatories`] : Predefined observatory locations and helpers
+//! - [`calculus`]      : Numerical kernels (VSOP87, ELP2000, Pluto, DE4xx, altitude API, root-finding)
+//! - [`bodies`]        : Planets, stars, satellites, asteroids, comets, and built-in catalogs
+//! - [`observatories`] : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 //!
 //! ## Minimal Example
 //!

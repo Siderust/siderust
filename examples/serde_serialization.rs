@@ -76,9 +76,9 @@ fn main() {
         Kilometer,
     > = serde_json::from_str(&json).expect("Failed to deserialize cartesian position");
     println!("\nDeserialized position:");
-    println!("  X = {:.3} km", recovered.x().value());
-    println!("  Y = {:.3} km", recovered.y().value());
-    println!("  Z = {:.3} km", recovered.z().value());
+    println!("  X = {}", recovered.x());
+    println!("  Y = {}", recovered.y());
+    println!("  Z = {}", recovered.z());
     println!();
 
     // =========================================================================
@@ -128,9 +128,9 @@ fn main() {
         AstronomicalUnit,
     > = serde_json::from_str(&json).expect("Failed to deserialize spherical");
     println!("\nDeserialized spherical coordinates:");
-    println!("  RA  = {:.3}°", recovered.ra().value());
-    println!("  Dec = {:.3}°", recovered.dec().value());
-    println!("  Distance = {:.3} AU", recovered.distance.value());
+    println!("  RA  = {}", recovered.ra());
+    println!("  Dec = {}", recovered.dec());
+    println!("  Distance = {}", recovered.distance);
     println!();
 
     // =========================================================================
@@ -184,11 +184,7 @@ fn main() {
         AstronomicalUnit,
     > = serde_json::from_str(&serde_json::to_string(&ecliptic_pos).unwrap()).unwrap();
     println!("Ecliptic round-trip successful:");
-    println!(
-        "  lon = {:.1}°, lat = {:.1}°",
-        recovered.lon().value(),
-        recovered.lat().value()
-    );
+    println!("  lon = {}, lat = {}", recovered.lon(), recovered.lat());
     println!();
 
     // =========================================================================
@@ -227,19 +223,13 @@ fn main() {
     println!("\nDeserialized observation:");
     println!("  JD = {:.6}", recovered.julian_date.value());
     println!(
-        "  Observer at ({:.1}, {:.1}, {:.1}) km",
-        recovered.observer_position.x().value(),
-        recovered.observer_position.y().value(),
-        recovered.observer_position.z().value()
+        "  Observer at ({}, {}, {})",
+        recovered.observer_position.x(),
+        recovered.observer_position.y(),
+        recovered.observer_position.z()
     );
-    println!(
-        "  Target RA  = {:.1}°",
-        recovered.target_spherical.ra().value()
-    );
-    println!(
-        "  Target Dec = {:.1}°",
-        recovered.target_spherical.dec().value()
-    );
+    println!("  Target RA  = {}", recovered.target_spherical.ra());
+    println!("  Target Dec = {}", recovered.target_spherical.dec());
     println!();
 
     // =========================================================================

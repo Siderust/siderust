@@ -61,9 +61,9 @@ fn main() {
         println!("Found {} night periods:\n", nights.len());
         for p in nights {
             if let (Some(s), Some(e)) = (p.start.to_utc(), p.end.to_utc()) {
-                let mins = (p.duration_days().value() * 24.0 * 60.0).round() as i64;
+                let mins = p.duration_days().to::<qtty::Minute>();
                 println!(
-                    "{} → {}  ({} min)",
+                    "{} → {}  ({})",
                     s.format("%Y-%m-%dT%H:%M:%S"),
                     e.format("%Y-%m-%dT%H:%M:%S"),
                     mins

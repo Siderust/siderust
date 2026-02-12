@@ -195,9 +195,9 @@ fn main() {
     let diff_y = (original.y() - recovered.y()).abs();
     let diff_z = (original.z() - recovered.z()).abs();
     println!("Differences (should be tiny):");
-    println!("  ΔX = {:.2e} AU", diff_x.value());
-    println!("  ΔY = {:.2e} AU", diff_y.value());
-    println!("  ΔZ = {:.2e} AU\n", diff_z.value());
+    println!("  ΔX = {}", diff_x);
+    println!("  ΔY = {}", diff_y);
+    println!("  ΔZ = {}\n", diff_z);
 
     println!("=== Example Complete ===");
 }

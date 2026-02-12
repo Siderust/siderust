@@ -14,7 +14,7 @@ use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::direction;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{ModifiedJulianDate, Period, MJD};
+use siderust::time::{ModifiedJulianDate, Period};
 
 use qtty::*;
 
@@ -24,22 +24,13 @@ fn main() {
     // Observer: Roque de los Muchachos Observatory (La Palma)
     let observer = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
     println!("Observer: Roque de los Muchachos Observatory");
-    println!(
-        "  Location: {:.3}°N, {:.3}°E, {} m\n",
-        observer.lat.value(),
-        observer.lon.value(),
-        observer.height.value()
-    );
+    println!("  Location: {}, {}, {}\n", observer.lat, observer.lon, observer.height);
 
     // Time window: one week starting from MJD 60000
     let start = ModifiedJulianDate::new(60000.0);
     let end = ModifiedJulianDate::new(60007.0);
     let window = Period::new(start, end);
-    println!(
-        "Time window: MJD {:.1} to {:.1} (7 days)\n",
-        start.value(),
-        end.value()
-    );
+    println!("Time window: {} ({})\n", window, window.duration_days());
 
     // -----------------------------------------------------------------------
     // Example 1: Find astronomical night periods (Sun below -18°)
@@ -49,14 +40,8 @@ fn main() {
 
     println!("Found {} astronomical night periods:", astro_nights.len());
     for (i, period) in astro_nights.iter().enumerate().take(3) {
-        let hours = period.duration_days() * 24.0;
-        println!(
-            "  Night {}: {:.2} hours (JD {:.4} to {:.4})",
-            i + 1,
-            hours,
-            period.start.value(),
-            period.end.value()
-        );
+        let hours = period.duration_days().to::<Hour>();
+        println!("  Night {}: {} (JD {})", i + 1, hours, period);
     }
     println!();
 
@@ -69,8 +54,8 @@ fn main() {
     println!("Sirius above 30° altitude:");
     println!("  Found {} periods", sirius_high.len());
     if let Some(first) = sirius_high.first() {
-        let hours = first.duration_days() * 24.0;
-        println!("  First period: {:.2} hours", hours);
+        let hours = first.duration_days().to::<Hour>();
+        println!("  First period: {}", hours);
     }
     println!();
 
@@ -89,11 +74,10 @@ fn main() {
 
     println!("Betelgeuse above horizon:");
     println!("  Found {} periods in 7 days", betelgeuse_visible.len());
-    let total_hours: f64 = betelgeuse_visible
+    let total_hours = betelgeuse_visible
         .iter()
-        .map(|p| p.duration_days().value() * 24.0)
-        .sum();
-    println!("  Total visible time: {:.1} hours", total_hours);
+        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
+    println!("  Total visible time: {}", total_hours);
     println!();
 
     // -----------------------------------------------------------------------
@@ -111,8 +95,8 @@ fn main() {
     println!("Moon between 0° and 20° altitude:");
     println!("  Found {} periods", low_moon.len());
     for (i, period) in low_moon.iter().enumerate().take(2) {
-        let minutes = period.duration_days() * 1440.0;
-        println!("  Period {}: {:.1} minutes", i + 1, minutes);
+        let minutes = period.duration_days().to::<Minute>();
+        println!("  Period {}: {}", i + 1, minutes);
     }
     println!();
 
@@ -122,17 +106,16 @@ fn main() {
     println!("--- Example 5: Circumpolar Star (Polaris) ---");
     let polaris_up = POLARIS.above_threshold(observer, window, Degrees::new(0.0));
 
-    println!("Polaris above horizon at {:.1}°N:", observer.lat.value());
+    println!("Polaris above horizon at {}:", observer.lat);
     if polaris_up.len() == 1 && (polaris_up[0].duration_days() - Days::new(7.0)).abs() < 0.1 {
         println!("  ✓ Circumpolar (continuously visible for entire week)");
     } else {
         println!(
-            "  Found {} periods (total {:.2} days)",
+            "  Found {} periods (total {})",
             polaris_up.len(),
             polaris_up
                 .iter()
-                .map(|p| p.duration_days().value())
-                .sum::<f64>()
+                .fold(Days::new(0.0), |acc, p| acc + p.duration_days())
         );
     }
     println!();
@@ -152,8 +135,8 @@ fn main() {
     println!("Sun in nautical-to-astronomical twilight band:");
     println!("  Found {} twilight periods in 2 days", twilight.len());
     for (i, period) in twilight.iter().enumerate() {
-        let minutes = period.duration_days() * 1440.0;
-        println!("  Period {}: {:.1} minutes", i + 1, minutes);
+        let minutes = period.duration_days().to::<Minute>();
+        println!("  Period {}: {}", i + 1, minutes);
     }
     println!();
 
@@ -166,10 +149,10 @@ fn main() {
     let moon_alt = Moon.altitude_at(&observer, start).to::<Degree>();
     let vega_alt = VEGA.altitude_at(&observer, start).to::<Degree>();
 
-    println!("Altitudes at MJD {:.1}:", start.value());
-    println!("  Sun:  {:.2}°", sun_alt.value());
-    println!("  Moon: {:.2}°", moon_alt.value());
-    println!("  Vega: {:.2}°", vega_alt.value());
+    println!("Altitudes at {}:", start);
+    println!("  Sun:  {}", sun_alt);
+    println!("  Moon: {}", moon_alt);
+    println!("  Vega: {}", vega_alt);
     println!();
 
     // -----------------------------------------------------------------------
@@ -181,17 +164,4 @@ fn main() {
     println!("  • Lightweight direction::ICRS for custom RA/Dec coordinates");
     println!("  • Consistent API: above_threshold, below_threshold, altitude_periods");
     println!("  • Single-point queries: altitude_at(observer, mjd)");
-}
-
-fn _print_period_details(periods: &[Period<MJD>], label: &str) {
-    println!("{}: {} periods", label, periods.len());
-    for (i, p) in periods.iter().enumerate() {
-        println!(
-            "  {}: MJD {:.4} → {:.4} ({:.2} hours)",
-            i + 1,
-            p.start.value(),
-            p.end.value(),
-            p.duration_days() * 24.0
-        );
-    }
 }

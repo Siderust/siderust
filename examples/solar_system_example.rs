@@ -112,32 +112,35 @@ fn main() {
     let earth_pos = *earth.get_position();
     let mars_pos = *mars.get_position();
     let earth_mars_distance = earth_pos.distance_to(&mars_pos);
+    let earth_mars_distance_km = earth_mars_distance.to::<Kilometer>();
     println!("Earth to Mars:");
     println!(
-        "  Distance: {:.6} AU ({:.1e} km)\n",
+        "  Distance: {} ({})\n",
         earth_mars_distance,
-        earth_mars_distance.value() * 149597870.7
+        earth_mars_distance_km
     );
 
     // Earth to Jupiter
     let jupiter_pos = *jupiter.get_position();
     let earth_jupiter_distance = earth_pos.distance_to(&jupiter_pos);
+    let earth_jupiter_distance_km = earth_jupiter_distance.to::<Kilometer>();
     println!("Earth to Jupiter:");
     println!(
-        "  Distance: {:.6} AU ({:.1e} km)\n",
+        "  Distance: {} ({})\n",
         earth_jupiter_distance,
-        earth_jupiter_distance.value() * 149597870.7
+        earth_jupiter_distance_km
     );
 
     // Venus to Mercury (inner planets)
     let venus_pos = *venus.get_position();
     let mercury_pos = *mercury.get_position();
     let venus_mercury_distance = venus_pos.distance_to(&mercury_pos);
+    let venus_mercury_distance_km = venus_mercury_distance.to::<Kilometer>();
     println!("Venus to Mercury:");
     println!(
-        "  Distance: {:.6} AU ({:.1e} km)\n",
+        "  Distance: {} ({})\n",
         venus_mercury_distance,
-        venus_mercury_distance.value() * 149597870.7
+        venus_mercury_distance_km
     );
 
     // =========================================================================
@@ -275,10 +278,11 @@ fn main() {
     );
 
     let now_mars_geo: Ecliptic<Au, Geocentric> = now_mars.get_position().to_center(current);
+    let now_mars_geo_km = now_mars_geo.distance().to::<Kilometer>();
     println!(
-        "Current Mars distance from Earth: {:.6} AU ({:.1e} km)\n",
+        "Current Mars distance from Earth: {} ({})\n",
         now_mars_geo.distance(),
-        now_mars_geo.distance().value() * 149597870.7
+        now_mars_geo_km
     );
 
     println!("=== Example Complete ===");
