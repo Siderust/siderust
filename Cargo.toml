@@ -86,3 +86,8 @@ required-features = ["serde"]
 
 [[example]]
 name = "jpl_precise_ephemeris"
+
+# Local path overrides for IAU compliance work
+[patch.crates-io]
+affn = { path = "affn" }
+tempoch = { path = "tempoch" }

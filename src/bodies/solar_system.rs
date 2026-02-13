@@ -73,7 +73,7 @@ pub struct Neptune;
 /// | Parameter       | Value                |
 /// |-----------------|----------------------|
 /// | Mass            | 1.9885 × 10³⁰ kg     |
-/// | Radius          | 696,340 km           |
+/// | Radius          | 695,700 km (IAU 2015 nominal) |
 /// | Luminosity      | 3.828 × 10²⁶ W       |
 /// | Right Ascension | 18h 44m 48s (J2000)  |
 /// | Declination     | −23° 00′ 00″ (J2000) |
