@@ -721,6 +721,9 @@ mod tests {
 
     #[test]
     fn test_precession_identity_at_j2000() {
+        // The IAU 2006 precession matrix includes frame bias (ICRS→J2000,
+        // ~23 mas ≈ 1.1e-7 rad), so at J2000 it's not exactly identity.
+        // Tolerance must accommodate the frame bias offset.
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
 
@@ -728,9 +731,9 @@ mod tests {
         let v = [1.0, 0.0, 0.0];
         let out = rot.apply_array(v);
 
-        assert!((out[0] - v[0]).abs() < 1e-12);
-        assert!((out[1] - v[1]).abs() < 1e-12);
-        assert!((out[2] - v[2]).abs() < 1e-12);
+        assert!((out[0] - v[0]).abs() < 1e-6);
+        assert!((out[1] - v[1]).abs() < 1e-6);
+        assert!((out[2] - v[2]).abs() < 1e-6);
     }
 
     #[test]
