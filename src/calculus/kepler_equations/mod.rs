@@ -90,8 +90,8 @@ use crate::time::JulianDate;
 use qtty::*;
 use std::f64::consts::PI;
 
-const TOLERANCE: Radians = Radians::new(1e-14);
-const MAX_NEWTON_ITERS: usize = 30;
+const TOLERANCE: Radians = Radians::new(1e-15);
+const MAX_NEWTON_ITERS: usize = 100;
 const MAX_BISECTION_ITERS: usize = 100;
 
 /// Computes the residual f(E) = E - e*sin(E) - M for a given E.
@@ -118,7 +118,7 @@ fn newton_kepler(m: Radians, e: f64, initial_guess: Radians) -> Option<Radians> 
         let f = kepler_equation_residual(e_anomaly, e, m);
         let f_prime = kepler_equation_derivative(e_anomaly, e);
 
-        if f_prime.abs() < 1e-14 {
+        if f_prime.abs() < 1e-30 {
             // Derivative too small -> bail out
             return None;
         }
@@ -180,16 +180,15 @@ fn bisection_kepler(m: Radians, e: f64, mut lower: Radians, mut upper: Radians) 
 /// # Returns
 /// - `E`: The eccentric anomaly in radians, guaranteed to converge.
 pub fn solve_keplers_equation(m: Radians, e: f64) -> Radians {
-    // Pick an initial guess:
-    // For moderate e, start with E = M; for higher e, E = π.
-    let initial_guess = if e < 0.8 { m } else { Radians::new(PI) };
+    // Start with E = M (matching ERFA convention for consistency).
+    let initial_guess = m;
 
     // 1) Try Newton-Raphson
     if let Some(e_newton) = newton_kepler(m, e, initial_guess) {
         e_newton
     } else {
         // 2) Fallback to bisection
-        bisection_kepler(m, e, Radians::new(-2.0 * PI), Radians::new(4.0 * PI))
+        bisection_kepler(m, e, m - Radians::new(PI), m + Radians::new(PI))
     }
 }
 
