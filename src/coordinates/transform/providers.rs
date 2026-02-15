@@ -153,7 +153,8 @@ pub trait CenterShiftProvider<C1, C2, F> {
 // Identity Implementations
 // =============================================================================
 
-use crate::astro::{nutation, precession};
+use crate::astro::{nutation, nutation_iau2000b, precession};
+use crate::astro::precession_iau2006;
 use crate::coordinates::centers::{Barycentric, Geocentric, Heliocentric};
 use crate::coordinates::frames::{
     Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRF, ICRS,
@@ -189,13 +190,14 @@ where
 // Frame Rotation Implementations (Hub: ICRS)
 // =============================================================================
 
-/// Mean obliquity ε₀ at the requested epoch (radians).
+/// Mean obliquity ε₀ at J2000.0 (IAU 2006): 84381.406″, in radians.
+///
+/// This is a constant used for the J2000 ecliptic frame, which is fixed
+/// and does not vary with epoch.
 #[inline]
-fn mean_obliquity(jd: JulianDate) -> f64 {
-    nutation::get_nutation(jd)
-        .ecliptic
-        .to::<qtty::Radian>()
-        .value()
+fn j2000_obliquity() -> f64 {
+    // 84381.406 arcseconds → radians = 84381.406 * π / 648000
+    precession_iau2006::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648000.0
 }
 
 /// Frame bias rotation from ICRS to mean equator/equinox of J2000.0.
@@ -222,11 +224,13 @@ const FRAME_BIAS_ICRS_TO_J2000: Rotation3 = Rotation3::from_matrix([
 /// ICRS → Ecliptic rotation (J2000 mean ecliptic).
 ///
 /// This composes the ICRS → J2000 mean equator bias with the J2000 obliquity.
+/// The `Ecliptic` frame represents the ecliptic plane of J2000 (fixed),
+/// consistent with VSOP87 ephemeris data.
 impl FrameRotationProvider<ICRS, Ecliptic> for () {
     #[inline]
-    fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+    fn rotation<Eph, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
         let bias = FRAME_BIAS_ICRS_TO_J2000;
-        let mean_eq_to_ecl = Rotation3::from_x_rotation(-mean_obliquity(jd));
+        let mean_eq_to_ecl = Rotation3::from_x_rotation(-j2000_obliquity());
         mean_eq_to_ecl * bias
     }
 }
@@ -255,21 +259,19 @@ impl FrameRotationProvider<EquatorialMeanJ2000, ICRS> for () {
     }
 }
 
-/// EquatorialMeanJ2000 → Ecliptic rotation.
+/// EquatorialMeanJ2000 → Ecliptic rotation (J2000 obliquity only).
 impl FrameRotationProvider<EquatorialMeanJ2000, Ecliptic> for () {
     #[inline]
-    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        let _ = ctx;
-        Rotation3::from_x_rotation(-mean_obliquity(jd))
+    fn rotation<Eph, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        Rotation3::from_x_rotation(-j2000_obliquity())
     }
 }
 
 /// Ecliptic → EquatorialMeanJ2000 rotation.
 impl FrameRotationProvider<Ecliptic, EquatorialMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        let _ = ctx;
-        Rotation3::from_x_rotation(mean_obliquity(jd))
+    fn rotation<Eph, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        Rotation3::from_x_rotation(j2000_obliquity())
     }
 }
 
@@ -289,28 +291,39 @@ impl FrameRotationProvider<EquatorialMeanOfDate, EquatorialMeanJ2000> for () {
     }
 }
 
-/// EquatorialMeanOfDate → EquatorialTrueOfDate (nutation).
+/// EquatorialMeanOfDate → EquatorialTrueOfDate (nutation, IAU 2000B).
 impl FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        nutation::nutation_rotation(jd)
+        // IAU 2000B nutation matrix (ERFA eraNumat convention):
+        //   ERFA formula: N = Rx_e(-(ε+Δε)) · Rz_e(-Δψ) · Rx_e(ε)
+        //   In standard rotation convention:
+        //   N = Rx(ε+Δε) · Rz(Δψ) · Rx(-ε)
+        let nut = nutation_iau2000b::nutation_iau2000b(jd);
+        let eps = nut.mean_obliquity.value();
+        let dpsi = nut.dpsi.value();
+        let deps = nut.deps.value();
+        let r_eps = Rotation3::from_x_rotation(-eps);
+        let r_dpsi = Rotation3::from_z_rotation(dpsi);
+        let r_eps_true = Rotation3::from_x_rotation(eps + deps);
+        r_eps_true * r_dpsi * r_eps
     }
 }
 
-/// EquatorialTrueOfDate → EquatorialMeanOfDate (inverse nutation).
+/// EquatorialTrueOfDate → EquatorialMeanOfDate (inverse nutation, IAU 2000B).
 impl FrameRotationProvider<EquatorialTrueOfDate, EquatorialMeanOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        nutation::nutation_rotation(jd).inverse()
+        <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation(jd, _ctx).inverse()
     }
 }
 
-/// EquatorialMeanJ2000 → EquatorialTrueOfDate (precession + nutation).
+/// EquatorialMeanJ2000 → EquatorialTrueOfDate (IAU 2006 precession + IAU 2000B nutation).
 impl FrameRotationProvider<EquatorialMeanJ2000, EquatorialTrueOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
         let prec = precession::precession_rotation_from_j2000(jd);
-        let nut = nutation::nutation_rotation(jd);
+        let nut = <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation(jd, _ctx);
         nut * prec
     }
 }
@@ -346,17 +359,16 @@ impl FrameRotationProvider<EquatorialMeanOfDate, ICRS> for () {
     }
 }
 
-/// ICRS → EquatorialTrueOfDate (frame bias + precession + nutation).
+/// ICRS → EquatorialTrueOfDate (IAU 2006/2000B NPB matrix).
+///
+/// Uses the combined Fukushima-Williams precession-nutation matrix
+/// which includes frame bias, IAU 2006 precession, and IAU 2000B nutation.
+/// Equivalent to ERFA's `eraPnm06a` (but with IAU 2000B instead of 2000A).
 impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        let r1: Rotation3 =
-            <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation(jd, ctx);
-        let r2: Rotation3 = <() as FrameRotationProvider<
-            EquatorialMeanJ2000,
-            EquatorialTrueOfDate,
-        >>::rotation(jd, ctx);
-        r2 * r1
+    fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
+        let nut = nutation_iau2000b::nutation_iau2000b(jd);
+        precession_iau2006::precession_nutation_matrix(jd, nut.dpsi, nut.deps)
     }
 }
 
