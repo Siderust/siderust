@@ -204,8 +204,6 @@ fn rotate_equatorial(
     (new_ra, Radians::new(new_dec))
 }
 
-
-
 /* -------------------------------------------------------------------------
  * Public API
  * ---------------------------------------------------------------------- */
@@ -352,7 +350,15 @@ mod tests {
         let dec_diff = (sph_rot.dec() - prec.dec()).abs();
 
         // Models agree to within ~1° (actual diff ~0.02° for 23 years)
-        assert!(ra_diff < Degrees::new(1.0), "RA mismatch too large: {}", ra_diff);
-        assert!(dec_diff < Degrees::new(1.0), "Dec mismatch too large: {}", dec_diff);
+        assert!(
+            ra_diff < Degrees::new(1.0),
+            "RA mismatch too large: {}",
+            ra_diff
+        );
+        assert!(
+            dec_diff < Degrees::new(1.0),
+            "Dec mismatch too large: {}",
+            dec_diff
+        );
     }
 }

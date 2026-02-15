@@ -214,6 +214,15 @@ pub fn calculate_orbit_position(
     elements: &Orbit,
     julian_date: JulianDate,
 ) -> Ecliptic<AstronomicalUnit> {
+    // Handle degenerate case: if semi-major axis is zero or negligible, return origin
+    if elements.semi_major_axis.value().abs() < 1e-30 {
+        return Ecliptic::new(
+            AstronomicalUnits::new(0.0),
+            AstronomicalUnits::new(0.0),
+            AstronomicalUnits::new(0.0),
+        );
+    }
+
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.semi_major_axis);
     type RadiansPerDay = qtty::frequency::Frequency<Radian, Day>;

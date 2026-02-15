@@ -187,8 +187,14 @@ fn main() {
     type KmPerSecond = qtty::Per<Kilometer, Second>;
 
     let vel_vsop = Vsop87Ephemeris::earth_barycentric_velocity(test_date);
-    let speed_vsop = (vel_vsop.x() * vel_vsop.x() + vel_vsop.y() * vel_vsop.y() + vel_vsop.z() * vel_vsop.z()).sqrt();
-    println!("  VSOP87:  {} = {}", speed_vsop, speed_vsop.to::<KmPerSecond>());
+    let speed_vsop =
+        (vel_vsop.x() * vel_vsop.x() + vel_vsop.y() * vel_vsop.y() + vel_vsop.z() * vel_vsop.z())
+            .sqrt();
+    println!(
+        "  VSOP87:  {} = {}",
+        speed_vsop,
+        speed_vsop.to::<KmPerSecond>()
+    );
 
     #[cfg(feature = "de440")]
     {
@@ -236,7 +242,8 @@ fn main() {
             max_dist = Some(dist);
         }
 
-        let variation = ((dist - AstronomicalUnits::new(1.0)) / AstronomicalUnits::new(1.0)) * 100.0;
+        let variation =
+            ((dist - AstronomicalUnits::new(1.0)) / AstronomicalUnits::new(1.0)) * 100.0;
         println!(
             "   {:2}       {:.2}    {}   {:+6.3}%",
             month, jd, dist, variation

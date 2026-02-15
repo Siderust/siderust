@@ -46,7 +46,7 @@
 //! * Klioner, S. A. (2003), AJ 125, 1580
 
 use crate::coordinates::cartesian::direction;
-use qtty::{AstronomicalUnits, Arcseconds, Radians};
+use qtty::{Arcseconds, AstronomicalUnits, Radians};
 
 /// Schwarzschild radius of the Sun in AU: 2 G M☉ / c².
 ///

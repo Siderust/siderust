@@ -207,11 +207,13 @@ mod tests {
         // At J2000 with zero nutation, Q should be near-identity (only frame bias)
         let q = gcrs_to_cirs_matrix(0.0, 0.0, Radians::new(0.0));
         let m = q.as_matrix();
-        for i in 0..3 {
+        for (i, row) in m.iter().enumerate().take(3) {
             assert!(
-                (m[i][i] - 1.0).abs() < 1e-6,
+                (row[i] - 1.0).abs() < 1e-6,
                 "Q[{}][{}] = {}, expected ≈ 1",
-                i, i, m[i][i]
+                i,
+                i,
+                row[i]
             );
         }
     }
@@ -228,10 +230,6 @@ mod tests {
         let det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
             - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
             + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
-        assert!(
-            (det - 1.0).abs() < 1e-12,
-            "det(Q) = {}, expected ≈ 1",
-            det
-        );
+        assert!((det - 1.0).abs() < 1e-12, "det(Q) = {}, expected ≈ 1", det);
     }
 }

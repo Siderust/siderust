@@ -37,10 +37,7 @@ fn score_night(night_start: ModifiedJulianDate, observer: ObserverSite) -> Night
 
     // Moon above horizon during dark time
     let moon_up = Moon.above_threshold(observer, window, Degrees::new(0.0));
-    let moon_hours: f64 = moon_up
-        .iter()
-        .map(|p| p.duration_days().to::<Hour>())
-        .sum();
+    let moon_hours: f64 = moon_up.iter().map(|p| p.duration_days().to::<Hour>()).sum();
 
     // Simple scoring: darkness good, Moon bad
     // Score = dark_hours * (1 - moon_interference_factor)

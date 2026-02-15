@@ -30,17 +30,25 @@ fn analyze_body<B: AltitudePeriodsProvider>(
 
     // Above horizon
     let up_periods = body.above_threshold(observer, window, Degrees::new(0.0));
-    let total_up = up_periods
-        .iter()
-        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
-    println!("  Above horizon: {} in {} periods", total_up, up_periods.len());
+    let total_up = up_periods.iter().fold(Hours::new(0.0), |acc, p| {
+        acc + p.duration_days().to::<Hour>()
+    });
+    println!(
+        "  Above horizon: {} in {} periods",
+        total_up,
+        up_periods.len()
+    );
 
     // High altitude (> 45°)
     let high_periods = body.above_threshold(observer, window, Degrees::new(45.0));
-    let total_high = high_periods
-        .iter()
-        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
-    println!("  Above 45°:     {} in {} periods", total_high, high_periods.len());
+    let total_high = high_periods.iter().fold(Hours::new(0.0), |acc, p| {
+        acc + p.duration_days().to::<Hour>()
+    });
+    println!(
+        "  Above 45°:     {} in {} periods",
+        total_high,
+        high_periods.len()
+    );
 
     // Twilight/low band (0° to 10°)
     let query = AltitudeQuery {
@@ -50,10 +58,14 @@ fn analyze_body<B: AltitudePeriodsProvider>(
         max_altitude: Degrees::new(10.0),
     };
     let low_periods = body.altitude_periods(&query);
-    let total_low = low_periods
-        .iter()
-        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
-    println!("  Low (0-10°):   {} in {} periods", total_low, low_periods.len());
+    let total_low = low_periods.iter().fold(Hours::new(0.0), |acc, p| {
+        acc + p.duration_days().to::<Hour>()
+    });
+    println!(
+        "  Low (0-10°):   {} in {} periods",
+        total_low,
+        low_periods.len()
+    );
 
     // Peak altitude during window
     let mid_mjd =
@@ -71,8 +83,7 @@ fn main() {
     let observatory = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
     println!(
         "Observatory: Greenwich ({}, {})",
-        observatory.lat,
-        observatory.lon
+        observatory.lat, observatory.lon
     );
 
     let window = Period::new(

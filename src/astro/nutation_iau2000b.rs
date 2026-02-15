@@ -116,8 +116,7 @@ fn delaunay_arguments(t: f64) -> [f64; 5] {
         / 648_000.0;
 
     // Ω: Mean longitude of ascending node (IERS 2003)
-    let om = (450160.398036 - 6962890.5431 * t + 7.4722 * t2 + 0.007702 * t3
-        - 0.000_059_39 * t4)
+    let om = (450160.398036 - 6962890.5431 * t + 7.4722 * t2 + 0.007702 * t3 - 0.000_059_39 * t4)
         .rem_euclid(1_296_000.0)
         * std::f64::consts::PI
         / 648_000.0;
@@ -265,7 +264,7 @@ pub fn nutation_iau2000b(jd: JulianDate) -> Nutation2000B {
             + row[1] * fa[1]     // l'
             + row[2] * fa[2]     // F
             + row[3] * fa[3]     // D
-            + row[4] * fa[4];    // Ω
+            + row[4] * fa[4]; // Ω
 
         let (sin_arg, cos_arg) = arg.sin_cos();
 
@@ -349,20 +348,16 @@ mod tests {
 
         let nut_1980 = crate::astro::nutation::get_nutation(jd);
 
-        let dpsi_diff = (nut_2000b.dpsi.to::<Degree>() - nut_1980.longitude).value().abs();
-        let deps_diff = (nut_2000b.deps.to::<Degree>() - nut_1980.obliquity).value().abs();
+        let dpsi_diff = (nut_2000b.dpsi.to::<Degree>() - nut_1980.longitude)
+            .value()
+            .abs();
+        let deps_diff = (nut_2000b.deps.to::<Degree>() - nut_1980.obliquity)
+            .value()
+            .abs();
 
         // They should agree within ~0.5″ ≈ 0.000139°
-        assert!(
-            dpsi_diff < 0.001,
-            "Δψ difference too large: {}°",
-            dpsi_diff
-        );
-        assert!(
-            deps_diff < 0.001,
-            "Δε difference too large: {}°",
-            deps_diff
-        );
+        assert!(dpsi_diff < 0.001, "Δψ difference too large: {}°", dpsi_diff);
+        assert!(deps_diff < 0.001, "Δε difference too large: {}°", deps_diff);
     }
 
     #[test]
@@ -372,12 +367,12 @@ mod tests {
         let m = rot.as_matrix();
 
         // Nutation is small: off-diagonal < 0.001
-        for i in 0..3 {
+        for (i, row) in m.iter().enumerate().take(3) {
             assert!(
-                (m[i][i] - 1.0).abs() < 1e-4,
+                (row[i] - 1.0).abs() < 1e-4,
                 "diagonal[{}] too far from 1: {}",
                 i,
-                m[i][i]
+                row[i]
             );
         }
     }
@@ -401,7 +396,12 @@ mod tests {
             let t = (jd_val - 2_451_545.0) / 36525.0;
             let fa = delaunay_arguments(t);
             for (i, &a) in fa.iter().enumerate() {
-                assert!(a.is_finite(), "fundamental arg {} is not finite at JD {}", i, jd_val);
+                assert!(
+                    a.is_finite(),
+                    "fundamental arg {} is not finite at JD {}",
+                    i,
+                    jd_val
+                );
             }
         }
     }
