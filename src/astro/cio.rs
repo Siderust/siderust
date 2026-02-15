@@ -53,12 +53,12 @@ use qtty::*;
 /// CIP (X, Y) coordinates and CIO locator s.
 #[derive(Debug, Clone, Copy)]
 pub struct CipCio {
-    /// X coordinate of CIP in GCRS (dimensionless, radians).
+    /// X coordinate of CIP in GCRS (dimensionless direction cosine).
     pub x: f64,
-    /// Y coordinate of CIP in GCRS (dimensionless, radians).
+    /// Y coordinate of CIP in GCRS (dimensionless direction cosine).
     pub y: f64,
-    /// CIO locator s (radians).
-    pub s: f64,
+    /// CIO locator s.
+    pub s: Radians,
 }
 
 /// Compute CIP (X, Y) coordinates from the Fukushima-Williams precession angles
@@ -98,21 +98,20 @@ pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (f64, f64) {
 /// `jd`: Julian Date (TT).
 /// `x`, `y`: CIP coordinates.
 ///
-/// Returns s in radians.
+/// Returns s as [`Radians`].
 ///
 /// ## References
 /// * IERS Conventions (2010), §5.5.4
 /// * Capitaine, Wallace & Chapront (2003)
 /// * SOFA routine `iauS06`
-pub fn cio_locator_s(jd: JulianDate, x: f64, y: f64) -> f64 {
+pub fn cio_locator_s(jd: JulianDate, x: f64, y: f64) -> Radians {
     let t = jd.julian_centuries().value();
-    let as2rad = std::f64::consts::PI / (180.0 * 3600.0);
 
-    // Polynomial part (arcseconds), from IERS Conventions (2010) eq. 5.15
-    // s = −X·Y/2 + 94 + 3808.65 t − 122.68 t² − 72574.11 t³ + ...  (μas)
+    // Polynomial part (μas), from IERS Conventions (2010) eq. 5.15
     let poly_uas = 94.0 + 3808.65 * t - 122.68 * t.powi(2) - 72574.11 * t.powi(3);
 
-    -0.5 * x * y + poly_uas * 1e-6 * as2rad
+    let s_rad = -0.5 * x * y + MicroArcseconds::new(poly_uas).to::<Radian>().value();
+    Radians::new(s_rad)
 }
 
 /// Compute the full CIP/CIO triplet (X, Y, s).
@@ -138,18 +137,17 @@ pub fn cip_cio(jd: JulianDate, dpsi: Radians, deps: Radians) -> CipCio {
 /// ## References
 /// * SOFA routine `iauC2ixys`
 /// * IERS Conventions (2010), eq. 5.8
-pub fn gcrs_to_cirs_matrix(x: f64, y: f64, s: f64) -> Rotation3 {
+pub fn gcrs_to_cirs_matrix(x: f64, y: f64, s: Radians) -> Rotation3 {
     let r2 = x * x + y * y;
     let e = y.atan2(x);
     let d = r2.sqrt().atan2((1.0 - r2).max(0.0).sqrt());
 
     let (se, ce) = e.sin_cos();
     let (sd, cd) = d.sin_cos();
-    let (ss, cs) = s.sin_cos();
 
     // R₃(-(E+s)) · R₂(-d) · R₃(E)
     // Following SOFA's iauC2ixys construction:
-    let es = e + s;
+    let es = e + s.value();
     let (ses, ces) = es.sin_cos();
 
     #[rustfmt::skip]
@@ -196,7 +194,7 @@ mod tests {
     fn cio_locator_small() {
         // The CIO locator s is very small (< 1 mas for current epochs)
         let s = cio_locator_s(JulianDate::J2000, 0.0, 0.0);
-        let s_mas = s * 206_264_806.0; // rad → mas
+        let s_mas = s.value() * 206_264_806.0; // rad → mas
         assert!(
             s_mas.abs() < 100.0,
             "s at J2000 should be < 100 mas, got {} mas",
@@ -207,7 +205,7 @@ mod tests {
     #[test]
     fn gcrs_to_cirs_near_identity_at_j2000() {
         // At J2000 with zero nutation, Q should be near-identity (only frame bias)
-        let q = gcrs_to_cirs_matrix(0.0, 0.0, 0.0);
+        let q = gcrs_to_cirs_matrix(0.0, 0.0, Radians::new(0.0));
         let m = q.as_matrix();
         for i in 0..3 {
             assert!(

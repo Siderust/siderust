@@ -80,55 +80,6 @@ impl Nutation2000B {
 // Fundamental arguments (IERS Conventions 2003, Table 5.2e)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Mean anomaly of the Moon, l (radians).
-/// IERS Conventions (2003), Table 5.2e.
-#[inline]
-fn fund_arg_l(t: f64) -> f64 {
-    // l = 134°.963 402 51 + (1717915923.2178 × t + 31.8792 × t² + 0.051635 × t³
-    //     − 0.000 244 70 × t⁴) / 3600 (arcseconds → degrees)
-    // Simplified to radians directly:
-    let arcsec = 485868.249036
-        + (1717915923.2178
-            + (31.8792 + (0.051635 - 0.000_244_70 * t) * t) * t)
-            * t;
-    (arcsec % 1296000.0).to_radians() / 3600.0 * 3600.0 // normalize then convert
-}
-
-/// Mean anomaly of the Sun, l' (radians).
-#[inline]
-fn fund_arg_lp(t: f64) -> f64 {
-    let arcsec = 1287104.793048
-        + (129596581.0481 + (-0.5532 + (0.000_136 - 0.000_011_49 * t) * t) * t) * t;
-    (arcsec % 1296000.0).to_radians() / 3600.0 * 3600.0
-}
-
-/// Mean argument of latitude of the Moon, F (radians).
-#[inline]
-fn fund_arg_f(t: f64) -> f64 {
-    let arcsec = 335779.526232
-        + (1739527262.8478 + (-12.7512 + (-0.001037 + 0.000_000_417 * t) * t) * t) * t;
-    (arcsec % 1296000.0).to_radians() / 3600.0 * 3600.0
-}
-
-/// Mean elongation of the Moon from the Sun, D (radians).
-#[inline]
-fn fund_arg_d(t: f64) -> f64 {
-    let arcsec = 1072260.703692
-        + (1602961601.2090 + (-6.3706 + (0.006593 - 0.000_031_69 * t) * t) * t) * t;
-    (arcsec % 1296000.0).to_radians() / 3600.0 * 3600.0
-}
-
-/// Mean longitude of the ascending node of the Moon, Ω (radians).
-#[inline]
-fn fund_arg_om(t: f64) -> f64 {
-    let arcsec = 450160.398036
-        + (-6962890.5431 + (7.4722 + (0.007702 - 0.000_059_39 * t) * t) * t) * t;
-    (arcsec % 1296000.0).to_radians() / 3600.0 * 3600.0
-}
-
-// Use a simpler, well-tested approach for the fundamental arguments:
-// Convert arcseconds to radians directly.
-
 /// Compute all five Delaunay arguments (radians) for Julian centuries `t` from J2000.
 #[inline]
 fn delaunay_arguments(t: f64) -> [f64; 5] {
@@ -348,18 +299,6 @@ pub fn nutation_iau2000b(jd: JulianDate) -> Nutation2000B {
 // Rotation matrices
 // ═══════════════════════════════════════════════════════════════════════════
 
-#[inline]
-fn rotation_x(angle: Radians) -> Rotation3 {
-    let (s, c) = angle.sin_cos();
-    Rotation3::from_matrix([[1.0, 0.0, 0.0], [0.0, c, -s], [0.0, s, c]])
-}
-
-#[inline]
-fn rotation_z(angle: Radians) -> Rotation3 {
-    let (s, c) = angle.sin_cos();
-    Rotation3::from_matrix([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
-}
-
 /// Nutation rotation matrix from mean-of-date to true-of-date.
 ///
 /// Uses IAU 2000B nutation with IAU 2006 mean obliquity.
@@ -372,15 +311,14 @@ fn rotation_z(angle: Radians) -> Rotation3 {
 /// * SOFA routine `iauNum00b`
 pub fn nutation_rotation_iau2000b(jd: JulianDate) -> Rotation3 {
     let nut = nutation_iau2000b(jd);
-    rotation_x(nut.mean_obliquity + nut.deps)
-        * rotation_z(nut.dpsi)
-        * rotation_x(-nut.mean_obliquity)
+    Rotation3::rx(nut.mean_obliquity + nut.deps)
+        * Rotation3::rz(nut.dpsi)
+        * Rotation3::rx(-nut.mean_obliquity)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::{Arcsecond, Degrees, Radians};
 
     #[test]
     fn nutation_at_j2000_dominant_term() {
