@@ -151,17 +151,7 @@ pub const J2000_MEAN_OBLIQUITY_ARCSEC: f64 = 84381.406;
 // Rotation matrix construction
 // ═══════════════════════════════════════════════════════════════════════════
 
-#[inline]
-fn rotation_x(angle: Radians) -> Rotation3 {
-    let (s, c) = angle.sin_cos();
-    Rotation3::from_matrix([[1.0, 0.0, 0.0], [0.0, c, -s], [0.0, s, c]])
-}
 
-#[inline]
-fn rotation_z(angle: Radians) -> Rotation3 {
-    let (s, c) = angle.sin_cos();
-    Rotation3::from_matrix([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
-}
 
 /// Construct the Fukushima-Williams precession matrix from four angles.
 ///
@@ -186,7 +176,7 @@ fn rotation_z(angle: Radians) -> Rotation3 {
 /// * SOFA routine `iauFw2m`
 #[inline]
 pub fn fw_matrix(gamb: Radians, phib: Radians, psib: Radians, epsa: Radians) -> Rotation3 {
-    rotation_x(epsa) * rotation_z(psib) * rotation_x(-phib) * rotation_z(-gamb)
+    Rotation3::rx(epsa) * Rotation3::rz(psib) * Rotation3::rx(-phib) * Rotation3::rz(-gamb)
 }
 
 /// IAU 2006 precession matrix from GCRS to mean equator/equinox of `jd`.
@@ -223,10 +213,41 @@ pub fn precession_nutation_matrix(jd: JulianDate, dpsi: Radians, deps: Radians) 
     fw_matrix(gamb, phib, psib + dpsi, epsa + deps)
 }
 
+/// Rotation matrix from GCRS (≈ ICRS) equatorial to ecliptic-of-date.
+///
+/// Combines the IAU 2006 precession matrix with a rotation about the X-axis
+/// by the **of-date** mean obliquity:
+///
+/// ```text
+/// R = Rx(−ε_A) · P_iau2006
+/// ```
+///
+/// This converts a Cartesian vector in GCRS equatorial coordinates to
+/// ecliptic-of-date coordinates. This is the transform used by benchmark
+/// experiments for equatorial ↔ ecliptic conversions.
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn gcrs_to_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
+    let prec = precession_matrix_iau2006(jd);
+    let eps_a = mean_obliquity_iau2006(jd);
+    Rotation3::rx(-eps_a) * prec
+}
+
+/// Rotation matrix from ecliptic-of-date to GCRS (≈ ICRS) equatorial.
+///
+/// This is the transpose (inverse) of [`gcrs_to_ecliptic_of_date_matrix`].
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn ecliptic_of_date_to_gcrs_matrix(jd: JulianDate) -> Rotation3 {
+    gcrs_to_ecliptic_of_date_matrix(jd).transpose()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::{Degrees, Radians};
+    use qtty::Radians;
 
     #[test]
     fn mean_obliquity_at_j2000() {

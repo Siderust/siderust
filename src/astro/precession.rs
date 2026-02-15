@@ -204,17 +204,7 @@ fn rotate_equatorial(
     (new_ra, Radians::new(new_dec))
 }
 
-#[inline]
-fn rotation_y(angle: Radians) -> Rotation3 {
-    let (s, c) = angle.sin_cos();
-    Rotation3::from_matrix([[c, 0.0, s], [0.0, 1.0, 0.0], [-s, 0.0, c]])
-}
 
-#[inline]
-fn rotation_z(angle: Radians) -> Rotation3 {
-    let (s, c) = angle.sin_cos();
-    Rotation3::from_matrix([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
-}
 
 /* -------------------------------------------------------------------------
  * Public API
@@ -275,7 +265,7 @@ pub fn precession_rotation(from_jd: JulianDate, to_jd: JulianDate) -> Rotation3 
     let (zeta, z, theta) = precession_angles(from_jd, to_jd);
 
     // Meeus Eq. 20.4 corresponds to Rz(z) * Ry(-theta) * Rz(zeta).
-    rotation_z(z) * rotation_y(-theta) * rotation_z(zeta)
+    Rotation3::rz(z) * Rotation3::ry(-theta) * Rotation3::rz(zeta)
 }
 
 /// Precession rotation from J2000.0 to `to_jd` using **IAU 2006** model.
