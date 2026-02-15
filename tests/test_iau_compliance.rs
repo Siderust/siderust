@@ -7,19 +7,18 @@
 //! by cross-checking module interactions: precession + nutation,
 //! ERA + GMST, CIO-based GCRS→CIRS, polar motion, and light deflection.
 
+use qtty::*;
 use siderust::astro::cio::{cip_cio, gcrs_to_cirs_matrix};
-use siderust::astro::era::earth_rotation_angle;
 use siderust::astro::eop::{EopProvider, NullEop};
+use siderust::astro::era::earth_rotation_angle;
 use siderust::astro::light_deflection::{solar_deflection, solar_deflection_inverse};
 use siderust::astro::nutation_iau2000b::nutation_iau2000b;
 use siderust::astro::polar_motion::{polar_motion_matrix, tio_locator_sp};
 use siderust::astro::precession_iau2006::{
-    fw_matrix, mean_obliquity_iau2006, precession_fw_angles, precession_matrix_iau2006,
-    precession_nutation_matrix,
+    mean_obliquity_iau2006, precession_matrix_iau2006, precession_nutation_matrix,
 };
-use siderust::astro::sidereal::{gmst_iau2006, gast_iau2006};
+use siderust::astro::sidereal::{gast_iau2006, gmst_iau2006};
 use siderust::time::JulianDate;
-use qtty::*;
 use std::f64::consts::TAU;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -50,11 +49,8 @@ fn full_gcrs_to_itrs_chain() {
 
     // Step 5: CIRS → TIRS (apply ERA as R₃(-ERA))
     let (s_era, c_era) = (-era.value()).sin_cos();
-    let r3_era = affn::Rotation3::from_matrix([
-        [c_era, -s_era, 0.0],
-        [s_era, c_era, 0.0],
-        [0.0, 0.0, 1.0],
-    ]);
+    let r3_era =
+        affn::Rotation3::from_matrix([[c_era, -s_era, 0.0], [s_era, c_era, 0.0], [0.0, 0.0, 1.0]]);
 
     // Step 6: Polar motion (TIRS → ITRS)
     let sp = tio_locator_sp(jd_tt);
@@ -100,7 +96,12 @@ fn precession_nutation_matrix_is_consistent() {
             assert!(
                 (p_m[i][j] - npb_m[i][j]).abs() < 1e-14,
                 "P[{}][{}] = {}, NPB(0,0)[{}][{}] = {}",
-                i, j, p_m[i][j], i, j, npb_m[i][j]
+                i,
+                j,
+                p_m[i][j],
+                i,
+                j,
+                npb_m[i][j]
             );
         }
     }
@@ -168,7 +169,8 @@ fn gast_minus_gmst_equals_equation_of_equinoxes() {
     assert!(
         (ee_actual - ee_expected).abs() < 1e-12,
         "GAST−GMST = {}, Δψ·cos(ε) = {}",
-        ee_actual, ee_expected
+        ee_actual,
+        ee_expected
     );
 }
 
@@ -193,7 +195,7 @@ fn null_eop_produces_ut1_equal_utc() {
 fn light_deflection_roundtrip_accuracy() {
     // Apply and remove solar deflection; result should match original to < 1 μas
     use siderust::coordinates::cartesian::direction;
-    
+
     let star_arr = [0.3f64, 0.8, 0.5];
     let mag = (star_arr[0].powi(2) + star_arr[1].powi(2) + star_arr[2].powi(2)).sqrt();
     let star = direction::EquatorialMeanJ2000::new(
@@ -246,7 +248,8 @@ fn obliquity_consistent_across_modules() {
     assert!(
         (eps_prec_as - eps_nut_as).abs() < 1e-10,
         "obliquity mismatch between modules: {} vs {}",
-        eps_prec_as, eps_nut_as
+        eps_prec_as,
+        eps_nut_as
     );
 }
 
@@ -272,7 +275,9 @@ fn polar_motion_roundtrip() {
         assert!(
             (recovered[i] - v[i]).abs() < 1e-14,
             "polar motion roundtrip [{}]: {} vs {}",
-            i, recovered[i], v[i]
+            i,
+            recovered[i],
+            v[i]
         );
     }
 }
@@ -295,7 +300,9 @@ fn era_monotonic_over_sidereal_day() {
             assert!(
                 diff > 0.0 && diff < std::f64::consts::PI,
                 "ERA not monotonically increasing at step {}: prev={}, curr={}",
-                i, prev, era
+                i,
+                prev,
+                era
             );
         }
         prev = era;

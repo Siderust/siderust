@@ -232,9 +232,7 @@ impl NutationCache {
         let (dpsi, deps, eps0) = self.get_nutation_rad(mjd);
 
         // R1(ε0+Δε) · R3(Δψ) · R1(−ε0)
-        affn::Rotation3::rx(eps0 + deps)
-            * affn::Rotation3::rz(dpsi)
-            * affn::Rotation3::rx(-eps0)
+        affn::Rotation3::rx(eps0 + deps) * affn::Rotation3::rz(dpsi) * affn::Rotation3::rx(-eps0)
     }
 }
 

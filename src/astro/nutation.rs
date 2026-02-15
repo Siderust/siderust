@@ -150,8 +150,6 @@ pub fn get_nutation(jd: JulianDate) -> Nutation {
     }
 }
 
-
-
 /// Rotate a mean position (RA, Dec) into **apparent** right ascension, applying nutation.
 #[inline]
 pub fn corrected_ra_with_nutation(target: &EquatorialMeanOfDate, jd: JulianDate) -> Degrees {

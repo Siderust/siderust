@@ -119,9 +119,7 @@ pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
 
     // Polynomial: accumulated precession of equinox in arcseconds
     // Coefficients from Capitaine et al. (2003), eq. 42
-    let poly_as = 0.014_506
-        + 4612.156_534 * t
-        + 1.391_581_7 * t.powi(2)
+    let poly_as = 0.014_506 + 4_612.156_534 * t + 1.391_581_7 * t.powi(2)
         - 0.000_000_44 * t.powi(3)
         - 0.000_029_956 * t.powi(4)
         - 0.000_000_036_8 * t.powi(5);
@@ -202,9 +200,9 @@ mod tests {
         let jd = JulianDate::new(2_460_000.5); // 2023-02-25
         let legacy_gst = calculate_gst(jd).to::<Radian>();
         let era_gmst = gmst_iau2006(jd, jd);
-        let diff_as = ((era_gmst - legacy_gst).value().rem_euclid(TAU)).min(
-            (TAU - (era_gmst - legacy_gst).value().rem_euclid(TAU)).abs(),
-        ) * 206_264.806; // rad → arcsec
+        let diff_as = ((era_gmst - legacy_gst).value().rem_euclid(TAU))
+            .min((TAU - (era_gmst - legacy_gst).value().rem_euclid(TAU)).abs())
+            * 206_264.806; // rad → arcsec
         assert!(
             diff_as < 2.0,
             "Legacy vs ERA-based GMST differ by {:.3}″ (should be < 2″)",

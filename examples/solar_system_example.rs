@@ -116,8 +116,7 @@ fn main() {
     println!("Earth to Mars:");
     println!(
         "  Distance: {} ({})\n",
-        earth_mars_distance,
-        earth_mars_distance_km
+        earth_mars_distance, earth_mars_distance_km
     );
 
     // Earth to Jupiter
@@ -127,8 +126,7 @@ fn main() {
     println!("Earth to Jupiter:");
     println!(
         "  Distance: {} ({})\n",
-        earth_jupiter_distance,
-        earth_jupiter_distance_km
+        earth_jupiter_distance, earth_jupiter_distance_km
     );
 
     // Venus to Mercury (inner planets)
@@ -139,8 +137,7 @@ fn main() {
     println!("Venus to Mercury:");
     println!(
         "  Distance: {} ({})\n",
-        venus_mercury_distance,
-        venus_mercury_distance_km
+        venus_mercury_distance, venus_mercury_distance_km
     );
 
     // =========================================================================
