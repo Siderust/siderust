@@ -9,10 +9,10 @@
 
 use siderust::astro::cio::{cip_cio, gcrs_to_cirs_matrix};
 use siderust::astro::era::earth_rotation_angle;
-use siderust::astro::eop::{EopProvider, EopValues, NullEop};
+use siderust::astro::eop::{EopProvider, NullEop};
 use siderust::astro::light_deflection::{solar_deflection, solar_deflection_inverse};
 use siderust::astro::nutation_iau2000b::nutation_iau2000b;
-use siderust::astro::polar_motion::{polar_motion_matrix, polar_motion_matrix_from_arcsec, tio_locator_sp};
+use siderust::astro::polar_motion::{polar_motion_matrix, tio_locator_sp};
 use siderust::astro::precession_iau2006::{
     fw_matrix, mean_obliquity_iau2006, precession_fw_angles, precession_matrix_iau2006,
     precession_nutation_matrix,
@@ -58,7 +58,7 @@ fn full_gcrs_to_itrs_chain() {
 
     // Step 6: Polar motion (TIRS → ITRS)
     let sp = tio_locator_sp(jd_tt);
-    let w = polar_motion_matrix(0.0, 0.0, sp); // zero pole coords (NullEop)
+    let w = polar_motion_matrix(Radians::new(0.0), Radians::new(0.0), sp); // zero pole coords (NullEop)
 
     // Full chain: W · R₃(-ERA) · Q
     let cirs_to_tirs = r3_era;
@@ -192,18 +192,24 @@ fn null_eop_produces_ut1_equal_utc() {
 #[test]
 fn light_deflection_roundtrip_accuracy() {
     // Apply and remove solar deflection; result should match original to < 1 μas
-    let star = [0.3f64, 0.8, 0.5];
-    let mag = (star[0].powi(2) + star[1].powi(2) + star[2].powi(2)).sqrt();
-    let star = [star[0] / mag, star[1] / mag, star[2] / mag];
+    use siderust::coordinates::cartesian::direction;
+    
+    let star_arr = [0.3f64, 0.8, 0.5];
+    let mag = (star_arr[0].powi(2) + star_arr[1].powi(2) + star_arr[2].powi(2)).sqrt();
+    let star = direction::EquatorialMeanJ2000::new(
+        star_arr[0] / mag,
+        star_arr[1] / mag,
+        star_arr[2] / mag,
+    );
 
     let earth_sun = [0.9, -0.3, 0.1]; // ~1 AU from Sun
 
     let apparent = solar_deflection(star, earth_sun);
     let recovered = solar_deflection_inverse(apparent, earth_sun);
 
-    let angular_err = ((recovered[0] - star[0]).powi(2)
-        + (recovered[1] - star[1]).powi(2)
-        + (recovered[2] - star[2]).powi(2))
+    let angular_err = ((recovered.x() - star.x()).powi(2)
+        + (recovered.y() - star.y()).powi(2)
+        + (recovered.z() - star.z()).powi(2))
     .sqrt();
     let err_uas = angular_err * 206_264_806_000.0; // rad → μas
 
@@ -251,9 +257,9 @@ fn obliquity_consistent_across_modules() {
 #[test]
 fn polar_motion_roundtrip() {
     let as2rad = std::f64::consts::PI / (180.0 * 3600.0);
-    let xp = 0.2 * as2rad;
-    let yp = 0.35 * as2rad;
-    let sp = -1.2e-9; // ~small s'
+    let xp = Radians::new(0.2 * as2rad);
+    let yp = Radians::new(0.35 * as2rad);
+    let sp = Radians::new(-1.2e-9); // ~small s'
 
     let w = polar_motion_matrix(xp, yp, sp);
     let w_inv = w.inverse();

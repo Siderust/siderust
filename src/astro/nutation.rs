@@ -150,17 +150,7 @@ pub fn get_nutation(jd: JulianDate) -> Nutation {
     }
 }
 
-#[inline]
-fn rotation_x(angle: Radians) -> Rotation3 {
-    let (s, c) = angle.sin_cos();
-    Rotation3::from_matrix([[1.0, 0.0, 0.0], [0.0, c, -s], [0.0, s, c]])
-}
 
-#[inline]
-fn rotation_z(angle: Radians) -> Rotation3 {
-    let (s, c) = angle.sin_cos();
-    Rotation3::from_matrix([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
-}
 
 /// Rotate a mean position (RA, Dec) into **apparent** right ascension, applying nutation.
 #[inline]
@@ -186,7 +176,7 @@ pub fn nutation_rotation(jd: JulianDate) -> Rotation3 {
     let eps0 = ecliptic.to::<Radian>();
 
     // R1(ε0+Δε) · R3(Δψ) · R1(−ε0)
-    rotation_x(eps0 + deps) * rotation_z(dpsi) * rotation_x(-eps0)
+    Rotation3::rx(eps0 + deps) * Rotation3::rz(dpsi) * Rotation3::rx(-eps0)
 }
 
 const ARGUMENTS: [NutationArguments; TERMS] = [
