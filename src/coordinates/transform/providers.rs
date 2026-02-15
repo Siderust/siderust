@@ -153,8 +153,8 @@ pub trait CenterShiftProvider<C1, C2, F> {
 // Identity Implementations
 // =============================================================================
 
-use crate::astro::{nutation_iau2000b, precession};
 use crate::astro::precession_iau2006;
+use crate::astro::{nutation_iau2000b, precession};
 use crate::coordinates::centers::{Barycentric, Geocentric, Heliocentric};
 use crate::coordinates::frames::{
     Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRF, ICRS,
@@ -197,7 +197,9 @@ where
 #[inline]
 fn j2000_obliquity() -> qtty::Radians {
     // 84381.406 arcseconds → radians = 84381.406 * π / 648000
-    qtty::Radians::new(precession_iau2006::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648000.0)
+    qtty::Radians::new(
+        precession_iau2006::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648000.0,
+    )
 }
 
 /// Frame bias rotation from ICRS to mean equator/equinox of J2000.0.
@@ -314,7 +316,10 @@ impl FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate> for () {
 impl FrameRotationProvider<EquatorialTrueOfDate, EquatorialMeanOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation(jd, _ctx).inverse()
+        <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation(
+            jd, _ctx,
+        )
+        .inverse()
     }
 }
 
@@ -323,7 +328,10 @@ impl FrameRotationProvider<EquatorialMeanJ2000, EquatorialTrueOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
         let prec = precession::precession_rotation_from_j2000(jd);
-        let nut = <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation(jd, _ctx);
+        let nut =
+            <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation(
+                jd, _ctx,
+            );
         nut * prec
     }
 }

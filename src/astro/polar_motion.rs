@@ -75,7 +75,11 @@ pub fn polar_motion_matrix(xp: Radians, yp: Radians, sp: Radians) -> Rotation3 {
 ///
 /// This handles the unit conversion and TIO locator computation.
 #[inline]
-pub fn polar_motion_matrix_from_eop(xp: Arcseconds, yp: Arcseconds, jd_tt: JulianDate) -> Rotation3 {
+pub fn polar_motion_matrix_from_eop(
+    xp: Arcseconds,
+    yp: Arcseconds,
+    jd_tt: JulianDate,
+) -> Rotation3 {
     let sp = tio_locator_sp(jd_tt);
     polar_motion_matrix(xp.to::<Radian>(), yp.to::<Radian>(), sp)
 }
@@ -87,7 +91,11 @@ mod tests {
     #[test]
     fn tio_locator_at_j2000_is_zero() {
         let sp = tio_locator_sp(JulianDate::J2000);
-        assert!(sp.value().abs() < 1e-15, "s' at J2000 should be ~0, got {}", sp);
+        assert!(
+            sp.value().abs() < 1e-15,
+            "s' at J2000 should be ~0, got {}",
+            sp
+        );
     }
 
     #[test]
@@ -108,11 +116,13 @@ mod tests {
         let zero = Radians::new(0.0);
         let w = polar_motion_matrix(zero, zero, zero);
         let m = w.as_matrix();
-        for i in 0..3 {
+        for (i, row) in m.iter().enumerate().take(3) {
             assert!(
-                (m[i][i] - 1.0).abs() < 1e-15,
+                (row[i] - 1.0).abs() < 1e-15,
                 "W[{}][{}] = {}, expected 1",
-                i, i, m[i][i]
+                i,
+                i,
+                row[i]
             );
         }
     }
@@ -129,11 +139,7 @@ mod tests {
         let det = m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1])
             - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0])
             + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
-        assert!(
-            (det - 1.0).abs() < 1e-14,
-            "det(W) = {}, expected ≈ 1",
-            det
-        );
+        assert!((det - 1.0).abs() < 1e-14, "det(W) = {}, expected ≈ 1", det);
     }
 
     #[test]
@@ -147,11 +153,13 @@ mod tests {
         let m = w.as_matrix();
 
         // Diagonal elements should be very close to 1
-        for i in 0..3 {
+        for (i, row) in m.iter().enumerate().take(3) {
             assert!(
-                (m[i][i] - 1.0).abs() < 1e-10,
+                (row[i] - 1.0).abs() < 1e-10,
                 "W[{}][{}] = {}, should be ≈ 1 for small poles",
-                i, i, m[i][i]
+                i,
+                i,
+                row[i]
             );
         }
     }

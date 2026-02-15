@@ -70,35 +70,23 @@ pub fn precession_fw_angles(jd: JulianDate) -> (Radians, Radians, Radians, Radia
     let t5 = t4 * t;
 
     // γ̄ (gamb) — arcseconds
-    let gamb_as = -0.052_928
-        + 10.556_378 * t
-        + 0.493_2044 * t2
-        - 0.000_312_38 * t3
-        - 2.788e-6 * t4
+    let gamb_as = -0.052_928 + 10.556_378 * t + 0.493_204_4 * t2 - 0.000_312_38 * t3 - 2.788e-6 * t4
         + 2.60e-8 * t5;
 
     // φ̄ (phib) — arcseconds
-    let phib_as = 84381.412_819
-        - 46.811_016 * t
-        + 0.051_1268 * t2
-        + 0.000_532_89 * t3
+    let phib_as = 84_381.412_819 - 46.811_016 * t + 0.051_126_8 * t2 + 0.000_532_89 * t3
         - 4.40e-7 * t4
         - 1.76e-8 * t5;
 
     // ψ̄ (psib) — arcseconds
-    let psib_as = -0.041_775
-        + 5038.481_484 * t
-        + 1.558_4175 * t2
+    let psib_as = -0.041_775 + 5_038.481_484 * t + 1.558_417_5 * t2
         - 0.000_185_22 * t3
         - 2.6452e-5 * t4
         - 1.48e-8 * t5;
 
     // ε_A (epsa) — mean obliquity of date, arcseconds
     // IAU 2006 obliquity (Hilton et al. 2006 / SOFA iauObl06)
-    let epsa_as = 84381.406
-        - 46.836_769 * t
-        - 0.000_1831 * t2
-        + 0.002_003_40 * t3
+    let epsa_as = 84381.406 - 46.836_769 * t - 0.000_183_1 * t2 + 0.002_003_40 * t3
         - 5.76e-7 * t4
         - 4.34e-8 * t5;
 
@@ -131,10 +119,7 @@ pub fn mean_obliquity_iau2006(jd: JulianDate) -> Radians {
     let t4 = t3 * t;
     let t5 = t4 * t;
 
-    let epsa_as = 84381.406
-        - 46.836_769 * t
-        - 0.000_1831 * t2
-        + 0.002_003_40 * t3
+    let epsa_as = 84381.406 - 46.836_769 * t - 0.000_183_1 * t2 + 0.002_003_40 * t3
         - 5.76e-7 * t4
         - 4.34e-8 * t5;
 
@@ -150,8 +135,6 @@ pub const J2000_MEAN_OBLIQUITY_ARCSEC: f64 = 84381.406;
 // ═══════════════════════════════════════════════════════════════════════════
 // Rotation matrix construction
 // ═══════════════════════════════════════════════════════════════════════════
-
-
 
 /// Construct the Fukushima-Williams precession matrix from four angles.
 ///
@@ -269,12 +252,12 @@ mod tests {
         let mat = precession_matrix_iau2006(JulianDate::J2000);
         let m = mat.as_matrix();
         // Diagonal should be very close to 1
-        for i in 0..3 {
+        for (i, row) in m.iter().enumerate().take(3) {
             assert!(
-                (m[i][i] - 1.0).abs() < 1e-7,
+                (row[i] - 1.0).abs() < 1e-7,
                 "diagonal[{}] = {}, expected ~1.0",
                 i,
-                m[i][i]
+                row[i]
             );
         }
     }
@@ -287,23 +270,23 @@ mod tests {
         let m = mat.as_matrix();
 
         // Precession over 25 years is small: off-diagonal < 0.01
-        for i in 0..3 {
-            for j in 0..3 {
+        for (i, row) in m.iter().enumerate().take(3) {
+            for (j, &val) in row.iter().enumerate().take(3) {
                 if i == j {
                     assert!(
-                        (m[i][j] - 1.0).abs() < 0.001,
+                        (val - 1.0).abs() < 0.001,
                         "diagonal[{}][{}] too far from 1: {}",
                         i,
                         j,
-                        m[i][j]
+                        val
                     );
                 } else {
                     assert!(
-                        m[i][j].abs() < 0.01,
+                        val.abs() < 0.01,
                         "off-diagonal[{}][{}] too large: {}",
                         i,
                         j,
-                        m[i][j]
+                        val
                     );
                 }
             }
@@ -314,8 +297,7 @@ mod tests {
     fn precession_nutation_matrix_includes_corrections() {
         let jd = JulianDate::new(2_460_000.5);
         let mat_prec = precession_matrix_iau2006(jd);
-        let mat_pn =
-            precession_nutation_matrix(jd, Radians::new(1e-5), Radians::new(1e-5));
+        let mat_pn = precession_nutation_matrix(jd, Radians::new(1e-5), Radians::new(1e-5));
 
         // The matrices should differ slightly due to nutation
         let m1 = mat_prec.as_matrix();
