@@ -165,8 +165,18 @@ fn rotation_z(angle: Radians) -> Rotation3 {
 
 /// Construct the Fukushima-Williams precession matrix from four angles.
 ///
+/// The SOFA/ERFA formula is:
 /// ```text
 /// P = R₁(−ε_A) · R₃(−ψ̄) · R₁(φ̄) · R₃(γ̄)
+/// ```
+/// where R₁, R₃ are ERFA's rotation functions.
+///
+/// ERFA's Rx/Rz use the **opposite sign convention** from the standard
+/// math rotation matrices:  `Rx_ERFA(θ) = Rx_standard(−θ)`.
+///
+/// Translated to **standard** (siderust) convention:
+/// ```text
+/// P = Rx(ε_A) · Rz(ψ̄) · Rx(−φ̄) · Rz(−γ̄)
 /// ```
 ///
 /// This matrix transforms vectors from the GCRS (≈ ICRS) to the mean
@@ -176,7 +186,7 @@ fn rotation_z(angle: Radians) -> Rotation3 {
 /// * SOFA routine `iauFw2m`
 #[inline]
 pub fn fw_matrix(gamb: Radians, phib: Radians, psib: Radians, epsa: Radians) -> Rotation3 {
-    rotation_x(-epsa) * rotation_z(-psib) * rotation_x(phib) * rotation_z(gamb)
+    rotation_x(epsa) * rotation_z(psib) * rotation_x(-phib) * rotation_z(-gamb)
 }
 
 /// IAU 2006 precession matrix from GCRS to mean equator/equinox of `jd`.
