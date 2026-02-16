@@ -45,7 +45,7 @@
 //! * IERS Conventions (2010), §5.4.4, §5.5.4
 //! * SOFA routines `iauXy06`, `iauS06`, `iauC2ixys`
 
-use crate::astro::precession_iau2006;
+use crate::astro::precession;
 use crate::time::JulianDate;
 use affn::Rotation3;
 use qtty::*;
@@ -78,7 +78,7 @@ pub struct CipCio {
 /// * IERS Conventions (2010), §5.4.1
 pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (f64, f64) {
     // Build the full NPB matrix (bias + precession + nutation)
-    let npb = precession_iau2006::precession_nutation_matrix(jd, dpsi, deps);
+    let npb = precession::precession_nutation_matrix(jd, dpsi, deps);
     let m = npb.as_matrix();
 
     // X = sin(d)·cos(E) = m[2][0], Y = sin(d)·sin(E) = m[2][1]
@@ -221,7 +221,7 @@ mod tests {
     #[test]
     fn gcrs_to_cirs_is_proper_rotation() {
         let jd = JulianDate::new(2_460_000.5);
-        let nut = crate::astro::nutation_iau2000b::nutation_iau2000b(jd);
+        let nut = crate::astro::nutation::nutation_iau2000b(jd);
         let cip = cip_cio(jd, nut.dpsi, nut.deps);
         let q = gcrs_to_cirs_matrix(cip.x, cip.y, cip.s);
         let m = q.as_matrix();

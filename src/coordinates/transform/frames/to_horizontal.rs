@@ -7,7 +7,7 @@
 //! horizontal (alt-az) frame for topocentric coordinates. The transformation
 //! uses the observer's site information embedded in the coordinate's center params.
 
-use crate::astro::sidereal::{calculate_gst, calculate_lst};
+use crate::astro::sidereal::gmst_iau2006;
 use crate::coordinates::centers::{ObserverSite, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanOfDate, Horizontal};
 use crate::coordinates::{cartesian, spherical};
@@ -53,18 +53,18 @@ fn equatorial_to_horizontal_angles(
     site_trig: &SiteTrig,
     jd: JulianDate,
 ) -> (Radians, Radians) {
-    let gst = calculate_gst(jd);
-    let lst = calculate_lst(gst, site.lon);
+    let gmst = gmst_iau2006(jd, jd);
+    let lst_rad = gmst.value() + site.lon.to::<Radian>().value();
 
-    let ha: Radians = (lst - ra).normalize().to::<Radian>();
+    let ra_rad: Radians = ra.to::<Radian>();
+    let ha = Quantity::<Radian>::new((lst_rad - ra_rad.value()).rem_euclid(std::f64::consts::TAU));
     let dec_rad: Radians = dec.to::<Radian>();
 
     let (sin_dec, cos_dec) = dec_rad.sin_cos();
     let cos_ha = ha.cos();
 
     // Use precomputed sin/cos of latitude
-    let alt_val =
-        (sin_dec * site_trig.sin_lat + cos_dec * site_trig.cos_lat * cos_ha).asin();
+    let alt_val = (sin_dec * site_trig.sin_lat + cos_dec * site_trig.cos_lat * cos_ha).asin();
     let az_val = (-cos_dec * ha.sin())
         .atan2(sin_dec * site_trig.cos_lat - cos_dec * cos_ha * site_trig.sin_lat);
 
@@ -106,8 +106,8 @@ fn horizontal_to_equatorial_angles(
     let ha_val = sin_ha.atan2(cos_ha);
 
     // Convert hour angle to right ascension
-    let gst = calculate_gst(jd);
-    let lst: Radians = calculate_lst(gst, site.lon).to::<Radian>();
+    let gmst = gmst_iau2006(jd, jd);
+    let lst = gmst + site.lon.to::<Radian>();
     let ha: Radians = Quantity::<Radian>::new(ha_val);
     let ra = (lst - ha).normalize();
 
@@ -140,7 +140,8 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
         let ra: Radians = Quantity::<Radian>::new(self.y().value().atan2(self.x().value()));
 
         let site_trig = SiteTrig::from_site(site);
-        let (alt, az) = equatorial_to_horizontal_angles(ra.to::<Deg>(), dec.to::<Deg>(), site, &site_trig, jd);
+        let (alt, az) =
+            equatorial_to_horizontal_angles(ra.to::<Deg>(), dec.to::<Deg>(), site, &site_trig, jd);
 
         // Convert back to Cartesian in horizontal frame
         // In horizontal: x = North, y = West, z = Zenith
@@ -231,14 +232,15 @@ mod tests {
 
         // At the zenith, the object's declination equals the latitude
         // and hour angle is 0 (on the meridian)
-        let gst = calculate_gst(jd);
-        let lst = calculate_lst(gst, site.lon);
+        let gmst = gmst_iau2006(jd, jd);
+        let lst_rad = gmst.value() + site.lon.to::<Radian>().value();
 
         // RA = LST means HA = 0 (on meridian)
-        let ra: Degrees = lst;
+        let ra: Degrees = Quantity::<Deg>::new(lst_rad.to_degrees());
         let dec: Degrees = site.lat;
 
-        let (alt, _az) = equatorial_to_horizontal_angles(ra, dec, &site, &SiteTrig::from_site(&site), jd);
+        let (alt, _az) =
+            equatorial_to_horizontal_angles(ra, dec, &site, &SiteTrig::from_site(&site), jd);
 
         let expected_alt = std::f64::consts::FRAC_PI_2 * RAD;
         assert!(

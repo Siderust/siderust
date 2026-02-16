@@ -22,7 +22,7 @@
 //! By encapsulating this in `ObserverState`, we ensure that aberration cannot be
 //! applied without explicit observer information.
 
-use crate::astro::sidereal::unmodded_gst;
+use crate::astro::sidereal::gmst_iau2006;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::ObserverSite;
@@ -114,7 +114,7 @@ impl ObserverState {
     /// Diurnal aberration (~0.3") is included via an Earth-rotation model based on GMST.
     pub fn topocentric(site: &ObserverSite, jd: JulianDate) -> Self {
         use crate::coordinates::transform::TransformFrame;
-        use qtty::{Meter, Radian, Second, Seconds};
+        use qtty::{Meter, Second, Seconds};
 
         // Annual (orbital) component: barycentric Earth velocity.
         let vel_ecl = DefaultEphemeris::earth_barycentric_velocity(jd);
@@ -137,8 +137,8 @@ impl ObserverState {
         let vy_ecef: qtty::Quantity<MetersPerSecond> = (site_itrf_m.x() * OMEGA_EARTH) / one_second;
         let vz_ecef: qtty::Quantity<MetersPerSecond> = qtty::Quantity::zero();
 
-        // Rotate ECEF velocity into the mean equator/equinox of J2000 using GMST about +Z.
-        let gmst = unmodded_gst(jd).to::<Radian>();
+        // Rotate ECEF velocity into the mean equator/equinox of J2000 using GMST (IAU 2006 ERA-based).
+        let gmst = gmst_iau2006(jd, jd);
         let (sin_g, cos_g) = gmst.sin_cos();
 
         let vx_eq = vx_ecef * cos_g - vy_ecef * sin_g;
