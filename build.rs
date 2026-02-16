@@ -7,6 +7,9 @@ mod vsop87_build;
 #[path = "scripts/elp2000/mod.rs"]
 mod elp2000_build;
 
+#[path = "scripts/iers/mod.rs"]
+mod iers_build;
+
 #[cfg(feature = "de440")]
 #[path = "scripts/jpl/de440/mod.rs"]
 mod de440_build;
@@ -65,6 +68,14 @@ fn main() {
         panic!("ELP2000 codegen failed: {}", e);
     });
     eprintln!("ELP2000 data generation complete");
+
+    // IERS EOP (finals2000A.all)
+    eprintln!("Building IERS EOP data...");
+    let iers_dir = out_dir.join("iers_dataset");
+    iers_build::run(iers_dir.as_path()).unwrap_or_else(|e| {
+        panic!("IERS EOP codegen failed: {}", e);
+    });
+    eprintln!("IERS EOP data generation complete");
 
     // DE440 (only with feature)
     #[cfg(feature = "de440")]

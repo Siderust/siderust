@@ -24,7 +24,7 @@ serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 affn = { version="0.3.0", features = ["astro"] }
 cheby = "0.1.0"
 qtty = "0.3.0"
-tempoch = "0.1.0"
+tempoch = "0.2.0"
 approx = "0.5"
 chrono = "0.4.43"
 nalgebra = "0.34.1"
