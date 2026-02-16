@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+* IERS Earth Orientation Parameters integration via `astro::eop` with `IersEop`, `EopProvider`, `EopValues`, and `NullEop`
+* Build-time IERS `finals2000A.all` ingestion pipeline under `scripts/iers/`, with generated embedded EOP tables
+* `astro::earth_rotation` helpers for TT→UT1 conversion and GMST wrappers (`jd_ut1_from_tt`, `gmst_from_tt`, `gmst_from_tt_eop`)
+* New Earth-orientation modules in `astro`: `cio`, `era`, `polar_motion`, and `light_deflection`
+* IAU integration coverage in `tests/test_iau_compliance.rs` for the full GCRS→ITRS chain and model consistency checks
+
+### Changed
+* Migrated precession to IAU 2006 and nutation to IAU 2000B across core astronomy and transform pipelines
+* Updated sidereal-time computation to ERA-based IAU 2006 functions (`gmst_iau2006`, `gast_iau2006`) with explicit UT1/TT handling
+* `AstroContext` now defaults to `IersEop` (`DefaultEop`) for EOP-aware transformations
+* Horizontal/topocentric, lunar, and stellar calculations now consume the updated IAU/EOP-based Earth-rotation flow
+
 ## [0.5.0] - 12/02/2026
 
 ### Added
