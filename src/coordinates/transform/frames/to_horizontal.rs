@@ -7,7 +7,7 @@
 //! horizontal (alt-az) frame for topocentric coordinates. The transformation
 //! uses the observer's site information embedded in the coordinate's center params.
 
-use crate::astro::sidereal::gmst_iau2006;
+use crate::astro::earth_rotation::gmst_from_tt;
 use crate::coordinates::centers::{ObserverSite, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanOfDate, Horizontal};
 use crate::coordinates::{cartesian, spherical};
@@ -53,7 +53,7 @@ fn equatorial_to_horizontal_angles(
     site_trig: &SiteTrig,
     jd: JulianDate,
 ) -> (Radians, Radians) {
-    let gmst = gmst_iau2006(jd, jd);
+    let gmst = gmst_from_tt(jd);
     let lst_rad = gmst.value() + site.lon.to::<Radian>().value();
 
     let ra_rad: Radians = ra.to::<Radian>();
@@ -106,7 +106,7 @@ fn horizontal_to_equatorial_angles(
     let ha_val = sin_ha.atan2(cos_ha);
 
     // Convert hour angle to right ascension
-    let gmst = gmst_iau2006(jd, jd);
+    let gmst = gmst_from_tt(jd);
     let lst = gmst + site.lon.to::<Radian>();
     let ha: Radians = Quantity::<Radian>::new(ha_val);
     let ra = (lst - ha).normalize();
@@ -232,7 +232,7 @@ mod tests {
 
         // At the zenith, the object's declination equals the latitude
         // and hour angle is 0 (on the meridian)
-        let gmst = gmst_iau2006(jd, jd);
+        let gmst = gmst_from_tt(jd);
         let lst_rad = gmst.value() + site.lon.to::<Radian>().value();
 
         // RA = LST means HA = 0 (on meridian)

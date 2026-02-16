@@ -33,7 +33,7 @@ fn full_gcrs_to_itrs_chain() {
     // We verify that the chain produces a proper rotation (det = 1, orthogonal).
 
     let jd_tt = JulianDate::new(2_460_000.5); // 2023-02-25 TT
-    let jd_ut1 = jd_tt; // approximation: UT1 ≈ TT (valid to < 1 s)
+    let jd_ut1 = jd_tt; // approximation: UT1 ≈ TT (placeholder pending real EOP; ΔT ≈ 69 s in 2025)
 
     // Step 1: Nutation
     let nut = nutation_iau2000b(jd_tt);

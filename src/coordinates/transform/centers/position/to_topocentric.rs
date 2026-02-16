@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::astro::sidereal::gmst_iau2006;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
@@ -80,8 +79,8 @@ where
         let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
 
         // Rotate ITRF to celestial frame using GMST (IAU 2006 ERA-based)
-        // For now, jd_ut1 ≈ jd_tt (NullEop equivalent); Phase 4 threads real EOP.
-        let gmst_rad = gmst_iau2006(jd, jd).value();
+        // Uses tempoch ΔT for proper TT→UT1 conversion.
+        let gmst_rad = crate::astro::earth_rotation::gmst_from_tt(jd).value();
 
         // Rotate from ECEF (x toward Greenwich, z toward pole) to equatorial
         // R_z(-GMST) transforms ECEF to equatorial
@@ -136,7 +135,8 @@ where
         let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
 
         // Rotate ITRF to celestial frame using GMST (IAU 2006 ERA-based)
-        let gmst_rad = gmst_iau2006(jd, jd).value();
+        // Uses tempoch ΔT for proper TT→UT1 conversion.
+        let gmst_rad = crate::astro::earth_rotation::gmst_from_tt(jd).value();
 
         let (sin_g, cos_g) = gmst_rad.sin_cos();
 

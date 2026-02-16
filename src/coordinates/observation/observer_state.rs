@@ -22,7 +22,7 @@
 //! By encapsulating this in `ObserverState`, we ensure that aberration cannot be
 //! applied without explicit observer information.
 
-use crate::astro::sidereal::gmst_iau2006;
+use crate::astro::earth_rotation::gmst_from_tt;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::ObserverSite;
@@ -138,7 +138,8 @@ impl ObserverState {
         let vz_ecef: qtty::Quantity<MetersPerSecond> = qtty::Quantity::zero();
 
         // Rotate ECEF velocity into the mean equator/equinox of J2000 using GMST (IAU 2006 ERA-based).
-        let gmst = gmst_iau2006(jd, jd);
+        // Uses tempoch ΔT for proper TT→UT1 conversion.
+        let gmst = gmst_from_tt(jd);
         let (sin_g, cos_g) = gmst.sin_cos();
 
         let vx_eq = vx_ecef * cos_g - vy_ecef * sin_g;

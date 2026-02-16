@@ -27,9 +27,9 @@
 //! below 1 arcsecond in geocentric position — far smaller than the ~0.5°
 //! atmospheric refraction uncertainty at the horizon.
 
+use crate::astro::earth_rotation::gmst_from_tt;
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession::precession_matrix_iau2006;
-use crate::astro::sidereal::gmst_iau2006;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::transform::context::DefaultEphemeris;
@@ -303,7 +303,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 3. Topocentric correction: subtract observer position in J2000 eq
         // ---------------------------------------------------------------
-        let gmst = gmst_iau2006(mjd.into(), mjd.into());
+        let gmst = gmst_from_tt(mjd.into());
         let (sin_g, cos_g) = gmst.sin_cos();
 
         let sx = self.site_itrf_km[0];
@@ -342,7 +342,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 7. GAST → LST → HA → altitude
         // ---------------------------------------------------------------
-        let gmst2 = gmst_iau2006(mjd.into(), mjd.into());
+        let gmst2 = gmst_from_tt(mjd.into());
         let lst_rad = gmst2 + self.lon_rad;
         let ha = (lst_rad.value() - ra_rad).rem_euclid(std::f64::consts::TAU);
 
