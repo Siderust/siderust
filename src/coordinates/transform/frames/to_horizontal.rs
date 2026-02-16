@@ -14,12 +14,34 @@ use crate::coordinates::{cartesian, spherical};
 use crate::time::JulianDate;
 use qtty::{Deg, Degrees, LengthUnit, Quantity, Radian, Radians};
 
+/// Precomputed trigonometric values for an observer's latitude.
+///
+/// Computing `sin(lat)` and `cos(lat)` is expensive relative to the
+/// rest of the horizontal transform. This struct caches these values
+/// for repeated use with the same site.
+#[derive(Debug, Clone, Copy)]
+struct SiteTrig {
+    sin_lat: f64,
+    cos_lat: f64,
+}
+
+impl SiteTrig {
+    /// Precompute sin/cos of latitude from an observer site.
+    #[inline]
+    fn from_site(site: &ObserverSite) -> Self {
+        let lat_rad: Radians = site.lat.to::<Radian>();
+        let (sin_lat, cos_lat) = lat_rad.sin_cos();
+        Self { sin_lat, cos_lat }
+    }
+}
+
 /// Performs the equatorial to horizontal coordinate transformation.
 ///
 /// # Arguments
 /// - `ra`: Right ascension
 /// - `dec`: Declination
 /// - `site`: Observer's geographic location
+/// - `site_trig`: Precomputed sin/cos of observer latitude
 /// - `jd`: Julian Date of observation
 ///
 /// # Returns
@@ -28,19 +50,23 @@ fn equatorial_to_horizontal_angles(
     ra: Degrees,
     dec: Degrees,
     site: &ObserverSite,
+    site_trig: &SiteTrig,
     jd: JulianDate,
 ) -> (Radians, Radians) {
     let gst = calculate_gst(jd);
     let lst = calculate_lst(gst, site.lon);
 
     let ha: Radians = (lst - ra).normalize().to::<Radian>();
-    let lat: Radians = site.lat.to::<Radian>();
     let dec_rad: Radians = dec.to::<Radian>();
 
-    // Trig functions return f64, wrap results back into Radians
-    let alt_val = (dec_rad.sin() * lat.sin() + dec_rad.cos() * lat.cos() * ha.cos()).asin();
-    let az_val = (-dec_rad.cos() * ha.sin())
-        .atan2(dec_rad.sin() * lat.cos() - dec_rad.cos() * ha.cos() * lat.sin());
+    let (sin_dec, cos_dec) = dec_rad.sin_cos();
+    let cos_ha = ha.cos();
+
+    // Use precomputed sin/cos of latitude
+    let alt_val =
+        (sin_dec * site_trig.sin_lat + cos_dec * site_trig.cos_lat * cos_ha).asin();
+    let az_val = (-cos_dec * ha.sin())
+        .atan2(sin_dec * site_trig.cos_lat - cos_dec * cos_ha * site_trig.sin_lat);
 
     (
         Quantity::<Radian>::new(alt_val),
@@ -54,6 +80,7 @@ fn equatorial_to_horizontal_angles(
 /// - `alt`: Altitude
 /// - `az`: Azimuth (from North, clockwise)
 /// - `site`: Observer's geographic location
+/// - `site_trig`: Precomputed sin/cos of observer latitude
 /// - `jd`: Julian Date of observation
 ///
 /// # Returns
@@ -62,17 +89,20 @@ fn horizontal_to_equatorial_angles(
     alt: Radians,
     az: Radians,
     site: &ObserverSite,
+    site_trig: &SiteTrig,
     jd: JulianDate,
 ) -> (Radians, Radians) {
-    let lat: Radians = site.lat.to::<Radian>();
+    // Use precomputed sin/cos of latitude
+    let (sin_alt, cos_alt) = alt.sin_cos();
 
-    // Calculate declination - trig functions return f64
-    let sin_dec = alt.sin() * lat.sin() + alt.cos() * lat.cos() * az.cos();
+    // Calculate declination
+    let sin_dec = sin_alt * site_trig.sin_lat + cos_alt * site_trig.cos_lat * az.cos();
     let dec_val = sin_dec.asin();
 
     // Calculate hour angle
-    let cos_ha = (alt.sin() - lat.sin() * dec_val.sin()) / (lat.cos() * dec_val.cos());
-    let sin_ha = -alt.cos() * az.sin() / dec_val.cos();
+    let cos_ha =
+        (sin_alt - site_trig.sin_lat * dec_val.sin()) / (site_trig.cos_lat * dec_val.cos());
+    let sin_ha = -cos_alt * az.sin() / dec_val.cos();
     let ha_val = sin_ha.atan2(cos_ha);
 
     // Convert hour angle to right ascension
@@ -109,7 +139,8 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
 
         let ra: Radians = Quantity::<Radian>::new(self.y().value().atan2(self.x().value()));
 
-        let (alt, az) = equatorial_to_horizontal_angles(ra.to::<Deg>(), dec.to::<Deg>(), site, jd);
+        let site_trig = SiteTrig::from_site(site);
+        let (alt, az) = equatorial_to_horizontal_angles(ra.to::<Deg>(), dec.to::<Deg>(), site, &site_trig, jd);
 
         // Convert back to Cartesian in horizontal frame
         // In horizontal: x = North, y = West, z = Zenith
@@ -147,7 +178,8 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, EquatorialMeanOfD
         // atan2 on Quantity<U> values - extract raw values for atan2
         let az: Radians = Quantity::<Radian>::new((-self.y()).value().atan2(self.x().value()));
 
-        let (ra, dec) = horizontal_to_equatorial_angles(alt, az, site, jd);
+        let site_trig = SiteTrig::from_site(site);
+        let (ra, dec) = horizontal_to_equatorial_angles(alt, az, site, &site_trig, jd);
 
         // Convert back to Cartesian in equatorial frame
         // Trig functions return f64, multiply by Quantity<U> to get Quantity<U>
@@ -206,7 +238,7 @@ mod tests {
         let ra: Degrees = lst;
         let dec: Degrees = site.lat;
 
-        let (alt, _az) = equatorial_to_horizontal_angles(ra, dec, &site, jd);
+        let (alt, _az) = equatorial_to_horizontal_angles(ra, dec, &site, &SiteTrig::from_site(&site), jd);
 
         let expected_alt = std::f64::consts::FRAC_PI_2 * RAD;
         assert!(
@@ -225,8 +257,9 @@ mod tests {
         let ra = 101.29 * DEG;
         let dec = -16.72 * DEG;
 
-        let (alt, az) = equatorial_to_horizontal_angles(ra, dec, &site, jd);
-        let (ra_back, dec_back) = horizontal_to_equatorial_angles(alt, az, &site, jd);
+        let site_trig = SiteTrig::from_site(&site);
+        let (alt, az) = equatorial_to_horizontal_angles(ra, dec, &site, &site_trig, jd);
+        let (ra_back, dec_back) = horizontal_to_equatorial_angles(alt, az, &site, &site_trig, jd);
 
         let ra_rad: Radians = ra.to::<Radian>();
         let dec_rad: Radians = dec.to::<Radian>();
