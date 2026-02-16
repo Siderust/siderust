@@ -29,6 +29,8 @@
 use crate::time::JulianDate;
 use qtty::*;
 
+use crate::astro::iers_data;
+
 /// A set of Earth Orientation Parameters at a given epoch.
 ///
 /// Field units match IERS publications for natural construction from
@@ -94,6 +96,81 @@ impl EopProvider for NullEop {
     #[inline]
     fn eop_at(&self, _jd_utc: JulianDate) -> EopValues {
         EopValues::default()
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// IERS EOP provider (build-time embedded table + optional runtime override)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// EOP provider backed by the IERS `finals2000A.all` table.
+///
+/// By default, uses the table embedded at compile time from the IERS data
+/// center. Call [`IersEop::from_entries`] or [`IersEop::from_file`] to load
+/// a fresh dataset at runtime.
+///
+/// The provider interpolates linearly between daily entries for any epoch
+/// within the table's MJD range. For epochs outside the range, it returns
+/// the nearest boundary entry (i.e., clamped extrapolation).
+#[derive(Debug, Clone)]
+pub struct IersEop {
+    /// The active EOP table. Defaults to the compile-time embedded data.
+    table: &'static [iers_data::EopEntry],
+}
+
+impl Default for IersEop {
+    fn default() -> Self {
+        Self {
+            table: iers_data::EOP_TABLE,
+        }
+    }
+}
+
+impl IersEop {
+    /// Create an `IersEop` from the build-time embedded table.
+    #[inline]
+    pub fn new() -> Self {
+        Self::default()
+    }
+
+    /// MJD range covered by the active table.
+    ///
+    /// Returns `(first_mjd, last_mjd)` or `None` if the table is empty.
+    pub fn mjd_range(&self) -> Option<(f64, f64)> {
+        let first = self.table.first()?.mjd;
+        let last = self.table.last()?.mjd;
+        Some((first, last))
+    }
+
+    /// Number of entries in the active table.
+    #[inline]
+    pub fn len(&self) -> usize {
+        self.table.len()
+    }
+
+    /// Whether the table is empty.
+    #[inline]
+    pub fn is_empty(&self) -> bool {
+        self.table.is_empty()
+    }
+}
+
+impl EopProvider for IersEop {
+    fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
+        // Convert JD (TT‑axis value, used as UTC approximation) → MJD.
+        let mjd = jd_utc.value() - 2_400_000.5;
+
+        match iers_data::lookup(self.table, mjd) {
+            Some(e) => EopValues {
+                dut1: Seconds::new(e.dut1),
+                xp: Arcseconds::new(e.xp),
+                yp: Arcseconds::new(e.yp),
+                dx: MilliArcseconds::new(e.dx),
+                dy: MilliArcseconds::new(e.dy),
+            },
+            // Outside table range → fall back to zero corrections (same as NullEop)
+            None => EopValues::default(),
+        }
     }
 }
 

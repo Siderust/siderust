@@ -31,7 +31,8 @@
 
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
-use crate::astro::sidereal::{gmst_iau2006, SIDEREAL_DAY};
+use crate::astro::earth_rotation::gmst_from_tt;
+use crate::astro::sidereal::SIDEREAL_DAY;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::spherical;
 use crate::time::JulianDate;
@@ -176,7 +177,7 @@ impl StarAltitudeParams {
     #[inline]
     fn hour_angle(&self, mjd: ModifiedJulianDate) -> Degrees {
         let jd: JulianDate = mjd.into();
-        let gmst = gmst_iau2006(jd, jd);
+        let gmst = gmst_from_tt(jd);
         let lst_rad = gmst + self.lon.to::<Radian>();
         let ha_rad = lst_rad - self.ra_corrected.to::<Radian>();
         ha_rad.to::<Degree>()

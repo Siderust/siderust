@@ -10,9 +10,9 @@
 //! that previously existed independently in `solar::sun_equations` and
 //! `lunar::moon_equations`.
 
+use crate::astro::earth_rotation::gmst_from_tt;
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
-use crate::astro::sidereal::gmst_iau2006;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::time::JulianDate;
@@ -106,8 +106,8 @@ pub fn equatorial_to_horizontal<U: LengthUnit>(
     let distance = eq_position.distance;
 
     // Compute hour angle: HA = LST - RA (using IAU 2006 GMST)
-    // For now, jd_ut1 ≈ jd_tt (NullEop equivalent); Phase 4 will thread real EOP.
-    let gmst = gmst_iau2006(jd, jd);
+    // Uses tempoch ΔT for proper TT→UT1 conversion.
+    let gmst = gmst_from_tt(jd);
     let lst = gmst + site.lon.to::<Radian>();
     let ha = (lst - ra.to::<Radian>())
         .value()
@@ -174,7 +174,8 @@ pub fn star_horizontal(
     let dec_tod = Radians::new(z_t.asin());
 
     // GMST (IAU 2006 ERA-based) → LST → HA
-    let gmst = gmst_iau2006(jd, jd);
+    // Uses tempoch ΔT for proper TT→UT1 conversion.
+    let gmst = gmst_from_tt(jd);
     let lst = gmst + site.lon.to::<Radian>();
     let ha = Radians::new((lst - ra_tod).value().rem_euclid(std::f64::consts::TAU));
 
