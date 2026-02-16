@@ -80,7 +80,7 @@ mod to_spherical;
 
 pub use centers::TransformCenter;
 pub use context::AstroContext;
-pub use ext::{DirectionAstroExt, PositionAstroExt, VectorAstroExt};
+pub use ext::{DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt, VectorAstroExt};
 pub use frames::TransformFrame;
 pub use providers::{center_shift, frame_rotation, CenterShiftProvider, FrameRotationProvider};
 

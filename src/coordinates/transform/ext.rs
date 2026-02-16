@@ -48,6 +48,7 @@
 use crate::coordinates::cartesian::{Direction, Position, Vector};
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::ReferenceFrame;
+use crate::coordinates::spherical;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::{CenterShiftProvider, FrameRotationProvider};
 use crate::time::JulianDate;
@@ -92,6 +93,56 @@ impl<F: ReferenceFrame> DirectionAstroExt<F> for Direction<F> {
         let [x, y, z] = rot.apply_array([self.x(), self.y(), self.z()]);
         // The result is still normalized (rotations preserve length)
         Direction::new_unchecked(x, y, z)
+    }
+}
+
+// =============================================================================
+// SphericalDirectionAstroExt - Extension trait for spherical::Direction<F>
+// =============================================================================
+
+/// Extension trait for `spherical::Direction<F>` providing time-dependent
+/// frame transformations via the provider system.
+///
+/// This is the spherical counterpart of [`DirectionAstroExt`]. Internally,
+/// it converts to a cartesian [`Direction`], applies the rotation, and converts
+/// back.
+pub trait SphericalDirectionAstroExt<F: ReferenceFrame> {
+    /// Rotates this spherical direction to a new reference frame.
+    ///
+    /// # Type Parameters
+    ///
+    /// - `F2`: The target reference frame.
+    ///
+    /// # Arguments
+    ///
+    /// - `jd`: The Julian Date for time-dependent rotations.
+    /// - `ctx`: The astronomical context with model configuration.
+    ///
+    /// # Returns
+    ///
+    /// A new `spherical::Direction<F2>` representing the same physical
+    /// direction expressed in frame `F2`.
+    fn to_frame<F2: ReferenceFrame>(
+        &self,
+        jd: &JulianDate,
+        ctx: &AstroContext,
+    ) -> spherical::Direction<F2>
+    where
+        (): FrameRotationProvider<F, F2>;
+}
+
+impl<F: ReferenceFrame> SphericalDirectionAstroExt<F> for spherical::Direction<F> {
+    fn to_frame<F2: ReferenceFrame>(
+        &self,
+        jd: &JulianDate,
+        ctx: &AstroContext,
+    ) -> spherical::Direction<F2>
+    where
+        (): FrameRotationProvider<F, F2>,
+    {
+        let cart: Direction<F> = self.to_cartesian();
+        let cart_f2: Direction<F2> = cart.to_frame(jd, ctx);
+        spherical::Direction::from_cartesian(&cart_f2)
     }
 }
 
