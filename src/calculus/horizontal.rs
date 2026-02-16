@@ -10,9 +10,9 @@
 //! that previously existed independently in `solar::sun_equations` and
 //! `lunar::moon_equations`.
 
-use crate::astro::nutation::nutation_rotation;
+use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
-use crate::astro::sidereal::{calculate_gst, calculate_lst};
+use crate::astro::sidereal::gmst_iau2006;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::time::JulianDate;
@@ -48,8 +48,8 @@ where
     // 1) Translate geocentric → topocentric in J2000 frame (applies parallax)
     let topo_cart_j2000 = geo_cart_j2000.to_topocentric(site, jd);
 
-    // 2) Rotate J2000 → mean-of-date using precession rotation
-    let rot_prec = precession::precession_rotation_from_j2000(jd);
+    // 2) Rotate J2000 → mean-of-date using IAU 2006 precession
+    let rot_prec = precession::precession_matrix_iau2006(jd);
     let [x_m, y_m, z_m] = rot_prec
         * [
             topo_cart_j2000.x(),
@@ -65,8 +65,10 @@ where
             z_m,
         );
 
-    // 3) Apply nutation rotation (mean-of-date → true-of-date)
-    let rot_nut = nutation_rotation(jd);
+    // 3) Apply nutation rotation (mean-of-date → true-of-date) — IAU 2000B
+    let nut = nutation_iau2000b(jd);
+    let rot_nut = crate::astro::nutation::nutation_rotation_iau2000b(jd);
+    let _ = nut; // nut used by equatorial_to_horizontal if we need GAST later
     let [x_t, y_t, z_t] = rot_nut * [topo_cart_mod.x(), topo_cart_mod.y(), topo_cart_mod.z()];
 
     let topo_cart_true =
@@ -103,10 +105,14 @@ pub fn equatorial_to_horizontal<U: LengthUnit>(
     let dec = eq_position.polar;
     let distance = eq_position.distance;
 
-    // Compute hour angle: HA = LST - RA
-    let gst = calculate_gst(jd);
-    let lst = calculate_lst(gst, site.lon);
-    let ha = (lst - ra).normalize().to::<Radian>();
+    // Compute hour angle: HA = LST - RA (using IAU 2006 GMST)
+    // For now, jd_ut1 ≈ jd_tt (NullEop equivalent); Phase 4 will thread real EOP.
+    let gmst = gmst_iau2006(jd, jd);
+    let lst = gmst + site.lon.to::<Radian>();
+    let ha = (lst - ra.to::<Radian>())
+        .value()
+        .rem_euclid(std::f64::consts::TAU);
+    let ha = Radians::new(ha);
 
     // Convert equatorial to horizontal using standard spherical trig
     let lat = site.lat.to::<Radian>();
@@ -142,35 +148,43 @@ pub fn star_horizontal(
     site: &ObserverSite,
     jd: JulianDate,
 ) -> spherical::Direction<frames::Horizontal> {
-    use crate::astro::nutation::corrected_ra_with_nutation;
-    use crate::coordinates::frames::EquatorialMeanJ2000;
+    // Full IAU 2006/2000B NPB matrix-based approach:
+    // 1. Convert J2000 direction to Cartesian unit vector
+    // 2. Apply full precession-nutation-bias (NPB) matrix → true-of-date
+    // 3. Convert back to spherical → RA/Dec of date
+    // 4. Compute GMST (IAU 2006) → LST → HA → altitude/azimuth
 
-    // Build a spherical position in EquatorialMeanJ2000 (unit distance, irrelevant)
-    let pos = spherical::Position::<Geocentric, EquatorialMeanJ2000, qtty::LightYear>::new(
-        ra_j2000,
-        dec_j2000,
-        qtty::LightYears::new(1.0),
-    );
+    let ra_rad = ra_j2000.to::<Radian>();
+    let dec_rad = dec_j2000.to::<Radian>();
 
-    // Precess J2000 → mean-of-date
-    let mean_of_date = precession::precess_from_j2000(pos, jd);
-    // Apply nutation correction to RA
-    let ra_corrected = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
-    let dec = mean_of_date.polar;
+    // J2000 direction as unit vector
+    let (sin_ra, cos_ra) = ra_rad.sin_cos();
+    let (sin_dec, cos_dec) = dec_rad.sin_cos();
+    let x0 = cos_dec * cos_ra;
+    let y0 = cos_dec * sin_ra;
+    let z0 = sin_dec;
 
-    // Compute hour angle
-    let gst = calculate_gst(jd);
-    let lst = calculate_lst(gst, site.lon);
-    let ha = (lst - ra_corrected).normalize().to::<Radian>();
+    // Full NPB matrix: GCRS → true equator/equinox of date
+    let nut = nutation_iau2000b(jd);
+    let npb = precession::precession_nutation_matrix(jd, nut.dpsi, nut.deps);
+    let [x_t, y_t, z_t] = npb.apply_array([x0, y0, z0]);
+
+    // True-of-date RA/Dec
+    let ra_tod = Radians::new(y_t.atan2(x_t));
+    let dec_tod = Radians::new(z_t.asin());
+
+    // GMST (IAU 2006 ERA-based) → LST → HA
+    let gmst = gmst_iau2006(jd, jd);
+    let lst = gmst + site.lon.to::<Radian>();
+    let ha = Radians::new((lst - ra_tod).value().rem_euclid(std::f64::consts::TAU));
 
     // Equatorial → horizontal
     let lat = site.lat.to::<Radian>();
-    let dec_rad = dec.to::<Radian>();
-    let sin_alt = dec_rad.sin() * lat.sin() + dec_rad.cos() * lat.cos() * ha.cos();
+    let sin_alt = dec_tod.sin() * lat.sin() + dec_tod.cos() * lat.cos() * ha.cos();
     let alt = Radians::new(sin_alt.asin()).to::<Degree>();
 
-    let az_rad = (-dec_rad.cos() * ha.sin())
-        .atan2(dec_rad.sin() * lat.cos() - dec_rad.cos() * ha.cos() * lat.sin());
+    let az_rad = (-dec_tod.cos() * ha.sin())
+        .atan2(dec_tod.sin() * lat.cos() - dec_tod.cos() * ha.cos() * lat.sin());
     let az = Radians::new(az_rad).normalize().to::<Degree>();
 
     spherical::Direction::<frames::Horizontal>::new(alt, az)

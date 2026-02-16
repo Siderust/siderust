@@ -153,8 +153,8 @@ pub trait CenterShiftProvider<C1, C2, F> {
 // Identity Implementations
 // =============================================================================
 
-use crate::astro::precession_iau2006;
-use crate::astro::{nutation_iau2000b, precession};
+use crate::astro::nutation;
+use crate::astro::precession;
 use crate::coordinates::centers::{Barycentric, Geocentric, Heliocentric};
 use crate::coordinates::frames::{
     Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRF, ICRS,
@@ -197,9 +197,7 @@ where
 #[inline]
 fn j2000_obliquity() -> qtty::Radians {
     // 84381.406 arcseconds → radians = 84381.406 * π / 648000
-    qtty::Radians::new(
-        precession_iau2006::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648000.0,
-    )
+    qtty::Radians::new(precession::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648000.0)
 }
 
 /// Frame bias rotation from ICRS to mean equator/equinox of J2000.0.
@@ -277,19 +275,19 @@ impl FrameRotationProvider<Ecliptic, EquatorialMeanJ2000> for () {
     }
 }
 
-/// EquatorialMeanJ2000 → EquatorialMeanOfDate (precession).
+/// EquatorialMeanJ2000 → EquatorialMeanOfDate (IAU 2006 precession).
 impl FrameRotationProvider<EquatorialMeanJ2000, EquatorialMeanOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        precession::precession_rotation_from_j2000(jd)
+        precession::precession_matrix_iau2006(jd)
     }
 }
 
-/// EquatorialMeanOfDate → EquatorialMeanJ2000 (inverse precession).
+/// EquatorialMeanOfDate → EquatorialMeanJ2000 (inverse IAU 2006 precession).
 impl FrameRotationProvider<EquatorialMeanOfDate, EquatorialMeanJ2000> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        precession::precession_rotation_from_j2000(jd).inverse()
+        precession::precession_matrix_iau2006(jd).inverse()
     }
 }
 
@@ -300,7 +298,7 @@ impl FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate> for () {
         // IAU 2000B nutation matrix (ERFA eraNumat convention):
         //   N = Rx(ε+Δε) · Rz(Δψ) · Rx(−ε)
         // Fused 3-rotation constructor: ~17% faster than sequential composition
-        let nut = nutation_iau2000b::nutation_iau2000b(jd);
+        let nut = nutation::nutation_iau2000b(jd);
         let eps = nut.mean_obliquity;
         let dpsi = nut.dpsi;
         let deps = nut.deps;
@@ -323,7 +321,7 @@ impl FrameRotationProvider<EquatorialTrueOfDate, EquatorialMeanOfDate> for () {
 impl FrameRotationProvider<EquatorialMeanJ2000, EquatorialTrueOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        let prec = precession::precession_rotation_from_j2000(jd);
+        let prec = precession::precession_matrix_iau2006(jd);
         let nut =
             <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation(
                 jd, _ctx,
@@ -371,8 +369,8 @@ impl FrameRotationProvider<EquatorialMeanOfDate, ICRS> for () {
 impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        let nut = nutation_iau2000b::nutation_iau2000b(jd);
-        precession_iau2006::precession_nutation_matrix(jd, nut.dpsi, nut.deps)
+        let nut = nutation::nutation_iau2000b(jd);
+        precession::precession_nutation_matrix(jd, nut.dpsi, nut.deps)
     }
 }
 

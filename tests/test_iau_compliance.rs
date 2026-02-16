@@ -12,9 +12,9 @@ use siderust::astro::cio::{cip_cio, gcrs_to_cirs_matrix};
 use siderust::astro::eop::{EopProvider, NullEop};
 use siderust::astro::era::earth_rotation_angle;
 use siderust::astro::light_deflection::{solar_deflection, solar_deflection_inverse};
-use siderust::astro::nutation_iau2000b::nutation_iau2000b;
+use siderust::astro::nutation::nutation_iau2000b;
 use siderust::astro::polar_motion::{polar_motion_matrix, tio_locator_sp};
-use siderust::astro::precession_iau2006::{
+use siderust::astro::precession::{
     mean_obliquity_iau2006, precession_matrix_iau2006, precession_nutation_matrix,
 };
 use siderust::astro::sidereal::{gast_iau2006, gmst_iau2006};

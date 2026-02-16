@@ -13,7 +13,7 @@
 //! ## References
 //! * Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Ch. 47.
 
-use crate::astro::precession_iau2006;
+use crate::astro::precession;
 use crate::time::JulianDate;
 use qtty::{Kilometers, Radians};
 
@@ -89,7 +89,7 @@ pub fn moon_position_meeus_ch47(jd_tt: JulianDate) -> MoonMeeusCh47 {
     let dist_km = 385_000.56 + sum_r / 1_000.0;
 
     // Ecliptic → equatorial with IAU 2006 mean obliquity
-    let eps = precession_iau2006::mean_obliquity_iau2006(jd_tt).value();
+    let eps = precession::mean_obliquity_iau2006(jd_tt).value();
     let ce = eps.cos();
     let se = eps.sin();
     let ra = (ecl_lon_rad.sin() * ce - ecl_lat_rad.tan() * se).atan2(ecl_lon_rad.cos());
