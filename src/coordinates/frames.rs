@@ -15,7 +15,8 @@
 //! - [`EquatorialMeanJ2000`]: Mean equator/equinox of J2000 (FK5/J2000 mean).
 //! - [`EquatorialMeanOfDate`]: Mean equator/equinox of date (precessed, no nutation).
 //! - [`EquatorialTrueOfDate`]: True equator/equinox of date (precession + nutation).
-//! - [`Ecliptic`]: Ecliptic coordinate system (based on the plane of Earth's orbit).
+//! - [`Ecliptic`]: Ecliptic coordinate system (based on the plane of Earth's orbit at J2000).
+//! - [`EclipticOfDate`]: Mean ecliptic coordinate system of date (siderust-specific).
 //! - [`ITRF`]: International Terrestrial Reference Frame (Earth-fixed).
 //! - [`ECEF`]: Earth-Centered, Earth-Fixed (geocentric, rotating with the Earth).
 //! - [`Galactic`]: Galactic coordinate system.
@@ -59,6 +60,26 @@ pub use affn::frames::{
 // different convention (e.g. South-origin or counter-clockwise), use the helpers in
 // [`crate::coordinates::horizontal`] to convert before constructing `Horizontal`
 // coordinates.
+
+// =============================================================================
+// Siderust-Specific Frame Definitions
+// =============================================================================
+
+use affn::prelude::ReferenceFrame as DeriveReferenceFrame;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
+/// Mean ecliptic coordinate system of date.
+///
+/// This frame uses the mean ecliptic plane (obliquity of date) without nutation.
+/// Transformations to this frame are time-dependent and require IAU 2006 precession.
+///
+/// Use the traits in [`crate::coordinates::transform::ecliptic_of_date`] to convert
+/// between this frame and equatorial frames.
+#[derive(Debug, Copy, Clone, DeriveReferenceFrame)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct EclipticOfDate;
 
 // =============================================================================
 // MutableFrame: Marker for Transformable Frames
