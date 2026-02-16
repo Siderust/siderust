@@ -44,6 +44,22 @@ where
     }
 }
 
-// Note: The to_frame() method for spherical::Position is provided by the
-// TransformFrame trait implementation above. Users can call:
+/// Blanket `TransformFrame` for spherical **directions** via cartesian round-trip.
+///
+/// Any pair `(F1, F2)` for which `cartesian::Direction<F1>: TransformFrame<cartesian::Direction<F2>>`
+/// is satisfied automatically gets a spherical direction transform.
+impl<F1, F2> TransformFrame<spherical::Direction<F2>> for spherical::Direction<F1>
+where
+    cartesian::Direction<F1>: TransformFrame<cartesian::Direction<F2>>,
+    F1: MutableFrame,
+    F2: MutableFrame,
+{
+    fn to_frame(&self) -> spherical::Direction<F2> {
+        spherical::Direction::from_cartesian(&self.to_cartesian().to_frame())
+    }
+}
+
+// Note: The to_frame() method for spherical::Position and spherical::Direction
+// is provided by the TransformFrame trait implementations above. Users can call:
 //   sph_pos.to_frame::<NewFrame>()
+//   sph_dir.to_frame::<NewFrame>()
