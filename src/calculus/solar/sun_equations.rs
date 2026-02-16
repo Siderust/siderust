@@ -3,7 +3,8 @@
 
 use crate::bodies::solar_system::Sun;
 
-use crate::astro::{nutation::corrected_ra_with_nutation, precession};
+use crate::astro::nutation::nutation_iau2000b;
+use crate::astro::precession;
 use crate::calculus::horizontal;
 use crate::coordinates::{cartesian, centers::*, frames, spherical, transform::Transform};
 use crate::time::JulianDate;
@@ -43,14 +44,15 @@ impl Sun {
     {
         let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
         let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> = helio.transform(jd);
-        let geo_sph = spherical::Position::from_cartesian(&geo_cart);
-        let mean_of_date = precession::precess_from_j2000(geo_sph, jd);
-        let ra = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
-        spherical::position::EquatorialTrueOfDate::<U>::new(
-            ra,
-            mean_of_date.dec(),
-            mean_of_date.distance,
-        )
+
+        // Apply full IAU 2006/2000B NPB matrix (GCRS → true equator/equinox of date)
+        let nut = nutation_iau2000b(jd);
+        let npb = precession::precession_nutation_matrix(jd, nut.dpsi, nut.deps);
+        let [x_t, y_t, z_t] = npb * [geo_cart.x(), geo_cart.y(), geo_cart.z()];
+
+        let true_cart =
+            cartesian::Position::<Geocentric, frames::EquatorialTrueOfDate, U>::new(x_t, y_t, z_t);
+        spherical::Position::from_cartesian(&true_cart)
     }
 
     /// Returns the Sun's apparent topocentric equatorial coordinates as seen
