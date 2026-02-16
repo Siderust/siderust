@@ -72,16 +72,23 @@
 
 pub mod centers;
 pub mod context;
+pub mod ecliptic_of_date;
 pub mod ext;
 mod frames;
+pub mod horizontal;
 pub mod providers;
 mod to_cartesian;
 mod to_spherical;
 
 pub use centers::TransformCenter;
 pub use context::AstroContext;
+pub use ecliptic_of_date::{FromEclipticOfDate, ToEclipticOfDate};
 pub use ext::{DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt, VectorAstroExt};
+pub use ext::{UsingEngine, WithEngine};
 pub use frames::TransformFrame;
+pub use horizontal::{
+    FromHorizontal, ToHorizontal, TopocentricEquatorialExt, TopocentricHorizontalExt,
+};
 pub use providers::{center_shift, frame_rotation, CenterShiftProvider, FrameRotationProvider};
 
 use crate::coordinates::{

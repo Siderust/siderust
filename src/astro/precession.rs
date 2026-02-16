@@ -277,6 +277,29 @@ pub fn ecliptic_of_date_to_gcrs_matrix(jd: JulianDate) -> Rotation3 {
     gcrs_to_ecliptic_of_date_matrix(jd).transpose()
 }
 
+/// Rotation matrix from mean equatorial of date to ecliptic of date.
+///
+/// This transformation applies only the obliquity rotation (without precession),
+/// converting from the mean equatorial frame (precessed but not nutated) to the
+/// mean ecliptic frame of the same epoch.
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn mean_equatorial_to_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
+    let eps_a = mean_obliquity_iau2006(jd);
+    Rotation3::rx(-eps_a)
+}
+
+/// Rotation matrix from ecliptic of date to mean equatorial of date.
+///
+/// This is the transpose (inverse) of [`mean_equatorial_to_ecliptic_of_date_matrix`].
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn ecliptic_of_date_to_mean_equatorial_matrix(jd: JulianDate) -> Rotation3 {
+    mean_equatorial_to_ecliptic_of_date_matrix(jd).transpose()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
