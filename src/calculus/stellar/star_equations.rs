@@ -29,12 +29,14 @@
 //! yielding O(1) bracket discovery per sidereal cycle — much faster than the
 //! uniform scan used for bodies with non‑trivial orbital motion (Sun, Moon).
 
-use crate::astro::earth_rotation::gmst_from_tt;
+use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
+use crate::astro::sidereal::gast_iau2006;
 use crate::astro::sidereal::SIDEREAL_DAY;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::spherical;
+use crate::coordinates::transform::AstroContext;
 use crate::time::JulianDate;
 use crate::time::{ModifiedJulianDate, Period, MJD};
 use qtty::*;
@@ -173,12 +175,16 @@ impl StarAltitudeParams {
 
     /// Unwrapped hour angle (degrees) at a given Mjd.
     ///
-    /// `HA = GMST(t) + λ − α` (using IAU 2006 ERA-based GMST)
+    /// `HA = GAST(t) + λ − α` for true-of-date right ascension.
     #[inline]
     fn hour_angle(&self, mjd: ModifiedJulianDate) -> Degrees {
         let jd: JulianDate = mjd.into();
-        let gmst = gmst_from_tt(jd);
-        let lst_rad = gmst + self.lon.to::<Radian>();
+        let ctx: AstroContext = AstroContext::default();
+        let eop = ctx.eop_at(jd);
+        let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
+        let nut = nutation_iau2000b(jd);
+        let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
+        let lst_rad = gast + self.lon.to::<Radian>();
         let ha_rad = lst_rad - self.ra_corrected.to::<Radian>();
         ha_rad.to::<Degree>()
     }
