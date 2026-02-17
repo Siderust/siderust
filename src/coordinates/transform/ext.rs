@@ -64,7 +64,7 @@ use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::{CenterShiftProvider, FrameRotationProvider};
 use crate::time::JulianDate;
 use affn::Rotation3;
-use qtty::{LengthUnit, Quantity, Unit};
+use qtty::{AstronomicalUnit, LengthUnit, Quantity, Unit};
 
 // =============================================================================
 // DirectionAstroExt - Extension trait for Direction<F>
@@ -384,12 +384,10 @@ where
     {
         let shift = <() as CenterShiftProvider<C, C2, F>>::shift(*jd, ctx);
 
-        // The shift is in AU; we need to convert if U is different.
-        // For now, assume AU and let the type system handle it.
-        // TODO: Add unit conversion if U != AstronomicalUnit
-        let shift_x = Quantity::<U>::new(shift[0]);
-        let shift_y = Quantity::<U>::new(shift[1]);
-        let shift_z = Quantity::<U>::new(shift[2]);
+        // The shift is in AU; convert to the target unit U.
+        let shift_x = Quantity::<AstronomicalUnit>::new(shift[0]).to::<U>();
+        let shift_y = Quantity::<AstronomicalUnit>::new(shift[1]).to::<U>();
+        let shift_z = Quantity::<AstronomicalUnit>::new(shift[2]).to::<U>();
 
         Position::new(self.x() + shift_x, self.y() + shift_y, self.z() + shift_z)
     }

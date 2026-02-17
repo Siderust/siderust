@@ -255,9 +255,9 @@ pub fn precession_nutation_matrix(jd: JulianDate, dpsi: Radians, deps: Radians) 
 /// R = Rx(−ε_A) · P_iau2006
 /// ```
 ///
-/// This converts a Cartesian vector in GCRS equatorial coordinates to
-/// ecliptic-of-date coordinates. This is the transform used by benchmark
-/// experiments for equatorial ↔ ecliptic conversions.
+/// This converts a Cartesian vector in GCRS equatorial coordinates to the
+/// **mean** ecliptic of date (no nutation).  Ecliptic longitude is measured
+/// from the mean equinox.
 ///
 /// ## Parameters
 /// * `jd`: Julian Date in TT scale.
@@ -265,6 +265,34 @@ pub fn gcrs_to_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
     let prec = precession_matrix_iau2006(jd);
     let eps_a = mean_obliquity_iau2006(jd);
     Rotation3::rx(-eps_a) * prec
+}
+
+/// Rotation matrix from GCRS to the **true** ecliptic of date.
+///
+/// Combines the IAU 2006/2000B precession-nutation (NPB) matrix with a
+/// rotation by the **true** obliquity (ε_A + Δε):
+///
+/// ```text
+/// R = Rx(−ε_true) · NPB
+/// ```
+///
+/// Ecliptic longitude is measured from the **true** equinox (precession +
+/// nutation in longitude applied).
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn gcrs_to_true_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
+    let nut = crate::astro::nutation::nutation_iau2000b(jd);
+    let npb = precession_nutation_matrix(jd, nut.dpsi, nut.deps);
+    let eps_true = nut.mean_obliquity + nut.deps;
+    Rotation3::rx(-eps_true) * npb
+}
+
+/// Rotation matrix from the **true** ecliptic of date to GCRS.
+///
+/// Transpose (inverse) of [`gcrs_to_true_ecliptic_of_date_matrix`].
+pub fn true_ecliptic_of_date_to_gcrs_matrix(jd: JulianDate) -> Rotation3 {
+    gcrs_to_true_ecliptic_of_date_matrix(jd).transpose()
 }
 
 /// Rotation matrix from ecliptic-of-date to GCRS (≈ ICRS) equatorial.
@@ -277,9 +305,9 @@ pub fn ecliptic_of_date_to_gcrs_matrix(jd: JulianDate) -> Rotation3 {
     gcrs_to_ecliptic_of_date_matrix(jd).transpose()
 }
 
-/// Rotation matrix from mean equatorial of date to ecliptic of date.
+/// Rotation matrix from mean equatorial of date to mean ecliptic of date.
 ///
-/// This transformation applies only the obliquity rotation (without precession),
+/// This transformation applies only the obliquity rotation (without nutation),
 /// converting from the mean equatorial frame (precessed but not nutated) to the
 /// mean ecliptic frame of the same epoch.
 ///
@@ -288,6 +316,35 @@ pub fn ecliptic_of_date_to_gcrs_matrix(jd: JulianDate) -> Rotation3 {
 pub fn mean_equatorial_to_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
     let eps_a = mean_obliquity_iau2006(jd);
     Rotation3::rx(-eps_a)
+}
+
+/// Rotation matrix from mean equatorial of date to **true** ecliptic of date.
+///
+/// Applies the IAU 2000B nutation matrix and rotates by the true obliquity:
+///
+/// ```text
+/// R = Rx(−ε_true) · N
+/// ```
+///
+/// where N is the equinox-based nutation matrix and ε_true = ε_A + Δε.
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn mean_equatorial_to_true_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
+    let nut = crate::astro::nutation::nutation_iau2000b(jd);
+    let eps = nut.mean_obliquity;
+    let dpsi = nut.dpsi;
+    let deps = nut.deps;
+    let nutation_matrix = affn::Rotation3::fused_rx_rz_rx(eps + deps, dpsi, -eps);
+    let eps_true = eps + deps;
+    Rotation3::rx(-eps_true) * nutation_matrix
+}
+
+/// Rotation matrix from true ecliptic of date to mean equatorial of date.
+///
+/// Transpose (inverse) of [`mean_equatorial_to_true_ecliptic_of_date_matrix`].
+pub fn true_ecliptic_of_date_to_mean_equatorial_matrix(jd: JulianDate) -> Rotation3 {
+    mean_equatorial_to_true_ecliptic_of_date_matrix(jd).transpose()
 }
 
 /// Rotation matrix from ecliptic of date to mean equatorial of date.
