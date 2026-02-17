@@ -51,6 +51,7 @@ fn epoch_2100() -> JulianDate {
 }
 
 /// Returns true when build/test runs are configured to stub JPL datasets.
+#[cfg(feature = "de440")]
 fn jpl_stub_enabled_for(prefix: &str) -> bool {
     let Ok(raw) = std::env::var("SIDERUST_JPL_STUB") else {
         return false;
