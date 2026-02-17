@@ -76,9 +76,11 @@ pub(crate) fn fixed_star_altitude_rad(
     ra_j2000: qtty::Degrees,
     dec_j2000: qtty::Degrees,
 ) -> qtty::Radians {
-    use crate::astro::earth_rotation::gmst_from_tt;
+    use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
     use crate::astro::nutation::nutation_iau2000b;
     use crate::astro::precession::precession_nutation_matrix;
+    use crate::astro::sidereal::gast_iau2006;
+    use crate::coordinates::transform::AstroContext;
     use qtty::Radian;
 
     let jd: JulianDate = mjd.into();
@@ -102,9 +104,12 @@ pub(crate) fn fixed_star_altitude_rad(
     let r_xy = (x_tod * x_tod + y_tod * y_tod).sqrt();
     let dec_tod = z_tod.atan2(r_xy);
 
-    // Compute hour angle using ERA-based GMST (proper TT→UT1 via tempoch ΔT)
-    let gmst = gmst_from_tt(jd);
-    let lst_rad = gmst.value() + site.lon.to::<Radian>().value();
+    // True-of-date RA/Dec requires apparent sidereal time (GAST).
+    let ctx: AstroContext = AstroContext::default();
+    let eop = ctx.eop_at(jd);
+    let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
+    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
+    let lst_rad = gast.value() + site.lon.to::<Radian>().value();
     let ha = (lst_rad - ra_tod).rem_euclid(std::f64::consts::TAU);
 
     // Equatorial → horizontal altitude

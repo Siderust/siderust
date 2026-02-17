@@ -16,12 +16,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Ecliptic-of-date direction transforms via `coordinates::transform::ecliptic_of_date::{ToEclipticTrueOfDate, FromEclipticTrueOfDate}`
 * `SphericalDirectionAstroExt` for time-dependent frame transformations on `spherical::Direction<F>`
 * New conversion examples: `examples/all_center_conversions.rs` and `examples/all_frame_conversions.rs`
+* Regression suite `tests/test_high_precision_earth_rotation_regression.rs` with ERFA/SOFA reference vectors for true-of-date horizontal and topocentric site-vector paths
 
 ### Changed
 * Migrated precession to IAU 2006 and nutation to IAU 2000B across core astronomy and transform pipelines
 * Updated sidereal-time computation to ERA-based IAU 2006 functions (`gmst_iau2006`, `gast_iau2006`) with explicit UT1/TT handling
 * `AstroContext` now defaults to `IersEop` (`DefaultEop`) for EOP-aware transformations
 * Horizontal/topocentric, lunar, and stellar calculations now consume the updated IAU/EOP-based Earth-rotation flow
+* `calculus::horizontal` true-of-date conversion now uses `GAST` (via `gast_iau2006`) instead of `GMST` for `EquatorialTrueOfDate` inputs
+* New context-aware APIs: `ToTopocentricExt::to_topocentric_with_ctx(...)`
+* New context-aware APIs: `ObserverState::topocentric_with_ctx(...)`
+* New context-aware APIs: `calculus::horizontal::{geocentric_j2000_to_apparent_topocentric_with_ctx, equatorial_to_horizontal_true_of_date_with_ctx}`
+* Topocentric translation and diurnal-velocity rotation now default to the full IAU 2006 terrestrial→celestial chain (`W · R3(ERA) · Q`) with EOP (`dut1`, `xp`, `yp`, `dx`, `dy`) from `AstroContext::default()`
+* Fast/approx behavior remains selectable by supplying a context with `NullEop`
 * Coordinate extension traits (`DirectionAstroExt`, `PositionAstroExt`, `VectorAstroExt`) now provide context-free IAU defaults, plus `_with` variants and `.using(&AstroContext)` for overrides
 * Coordinate transformation APIs and examples migrated to `EclipticMeanJ2000` naming
 * Coordinate transformation examples now primarily use spherical coordinates for frame/center conversions
@@ -30,8 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 * Center-shift transforms now correctly convert AU shifts into the destination length unit
 * Fixed `tests/test_astro_nights_roque_2026.rs` UTC-vs-TT regression by converting reference UTC-MJD endpoints (and test windows) to TT before comparison
-
-### Fixed
 * Corrected `astro::light_deflection::solar_deflection_magnitude` normalization to the physically consistent first-order model `Δθ = (2GM/c²R) * cot(θ/2)`:
   - at `90°` elongation and `1 AU`: `~0.00407″` (4.07 mas), not `~1.75″`
   - at the solar limb (`~959.63″`): `~1.75″`
