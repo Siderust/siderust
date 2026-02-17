@@ -23,7 +23,7 @@
 //! let ctx = AstroContext::new();
 //!
 //! // Use with transforms:
-//! // position.to_frame::<Ecliptic>(&jd, &ctx);
+//! // position.to_frame::<EclipticMeanJ2000>(&jd, &ctx);
 //! ```
 
 use std::marker::PhantomData;

@@ -15,8 +15,10 @@
 //! - [`EquatorialMeanJ2000`]: Mean equator/equinox of J2000 (FK5/J2000 mean).
 //! - [`EquatorialMeanOfDate`]: Mean equator/equinox of date (precessed, no nutation).
 //! - [`EquatorialTrueOfDate`]: True equator/equinox of date (precession + nutation).
-//! - [`Ecliptic`]: Ecliptic coordinate system (based on the plane of Earth's orbit at J2000).
-//! - [`EclipticOfDate`]: Mean ecliptic coordinate system of date (siderust-specific).
+//! - [`EclipticMeanJ2000`]: Mean ecliptic coordinate system at J2000.
+//! - [`EclipticOfDate`]: Mean ecliptic coordinate system of date.
+//! - [`EclipticMeanOfDate`]: Alias for [`EclipticOfDate`] (naming parity).
+//! - [`EclipticTrueOfDate`]: True ecliptic coordinate system of date.
 //! - [`ITRF`]: International Terrestrial Reference Frame (Earth-fixed).
 //! - [`ECEF`]: Earth-Centered, Earth-Fixed (geocentric, rotating with the Earth).
 //! - [`Galactic`]: Galactic coordinate system.
@@ -51,8 +53,9 @@ pub use affn::frames::{ReferenceFrame, SphericalNaming};
 
 // Re-export all astronomical frame types from affn
 pub use affn::frames::{
-    Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic,
-    Horizontal, CIRS, ECEF, GCRS, ICRF, ICRS, ITRF, TIRS,
+    EclipticMeanJ2000, EclipticMeanOfDate, EclipticOfDate, EclipticTrueOfDate,
+    EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic, Horizontal, CIRS,
+    ECEF, GCRS, ICRF, ICRS, ITRF, TIRS,
 };
 
 // NOTE: The `Horizontal` frame type uses the **North-clockwise** azimuth convention
@@ -62,35 +65,15 @@ pub use affn::frames::{
 // coordinates.
 
 // =============================================================================
-// Siderust-Specific Frame Definitions
-// =============================================================================
-
-use affn::prelude::ReferenceFrame as DeriveReferenceFrame;
-
-#[cfg(feature = "serde")]
-use serde::{Deserialize, Serialize};
-
-/// Mean ecliptic coordinate system of date.
-///
-/// This frame uses the mean ecliptic plane (obliquity of date) without nutation.
-/// Transformations to this frame are time-dependent and require IAU 2006 precession.
-///
-/// Use the traits in [`crate::coordinates::transform::ecliptic_of_date`] to convert
-/// between this frame and equatorial frames.
-#[derive(Debug, Copy, Clone, DeriveReferenceFrame)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct EclipticOfDate;
-
-// =============================================================================
 // MutableFrame: Marker for Transformable Frames
 // =============================================================================
 
 /// Marker trait for frames that support time-independent mutual transformations.
 ///
 /// This trait is implemented for frames between which coordinate
-/// transformations are currently supported (ICRS, Ecliptic, EquatorialMeanJ2000).
+/// transformations are currently supported (ICRS, EclipticMeanJ2000, EquatorialMeanJ2000).
 pub trait MutableFrame: ReferenceFrame {}
 
 impl MutableFrame for ICRS {}
-impl MutableFrame for Ecliptic {}
+impl MutableFrame for EclipticMeanJ2000 {}
 impl MutableFrame for EquatorialMeanJ2000 {}

@@ -47,7 +47,7 @@
 //! let target_from_sat = target_geo.to_bodycentric(sat_params, JulianDate::J2000);
 //! ```
 
-use crate::coordinates::cartesian::position::{Ecliptic, Position};
+use crate::coordinates::cartesian::position::{EclipticMeanJ2000, Position};
 use crate::coordinates::centers::{
     Barycentric, Bodycentric, BodycentricParams, Geocentric, Heliocentric, OrbitReferenceCenter,
 };
@@ -92,8 +92,8 @@ pub trait FromBodycentricExt<F: MutableFrame, U: LengthUnit> {
 impl<F: MutableFrame, U: LengthUnit> ToBodycentricExt<F, U> for Position<Geocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Position<Geocentric, F, U>: TransformFrame<Ecliptic<U, Geocentric>>,
-    Ecliptic<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>,
+    Position<Geocentric, F, U>: TransformFrame<EclipticMeanJ2000<U, Geocentric>>,
+    EclipticMeanJ2000<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>,
 {
     fn to_bodycentric(
         &self,
@@ -107,7 +107,7 @@ where
         let body_in_our_center: Position<Geocentric, F, U> = match body_params.orbit_center {
             OrbitReferenceCenter::Geocentric => {
                 // Body orbits Earth - position is already geocentric
-                let body_ecl: Ecliptic<U, Geocentric> = Ecliptic::new(
+                let body_ecl: EclipticMeanJ2000<U, Geocentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
@@ -116,22 +116,22 @@ where
             }
             OrbitReferenceCenter::Heliocentric => {
                 // Body orbits Sun - need to convert heliocentric to geocentric
-                let body_helio_ecl: Ecliptic<U, Heliocentric> = Ecliptic::new(
+                let body_helio_ecl: EclipticMeanJ2000<U, Heliocentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
                 );
-                let body_geo_ecl: Ecliptic<U, Geocentric> = body_helio_ecl.to_center(jd);
+                let body_geo_ecl: EclipticMeanJ2000<U, Geocentric> = body_helio_ecl.to_center(jd);
                 body_geo_ecl.to_frame()
             }
             OrbitReferenceCenter::Barycentric => {
                 // Body orbits barycenter - transform to geocentric
-                let body_bary_ecl: Ecliptic<U, Barycentric> = Ecliptic::new(
+                let body_bary_ecl: EclipticMeanJ2000<U, Barycentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
                 );
-                let body_geo_ecl: Ecliptic<U, Geocentric> = body_bary_ecl.to_center(jd);
+                let body_geo_ecl: EclipticMeanJ2000<U, Geocentric> = body_bary_ecl.to_center(jd);
                 body_geo_ecl.to_frame()
             }
         };
@@ -150,10 +150,10 @@ where
 impl<F: MutableFrame, U: LengthUnit> ToBodycentricExt<F, U> for Position<Heliocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Position<Heliocentric, F, U>: TransformFrame<Ecliptic<U, Heliocentric>>,
-    Ecliptic<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>,
-    Ecliptic<U, Geocentric>: TransformCenter<Ecliptic<U, Heliocentric>>,
-    Ecliptic<U, Barycentric>: TransformCenter<Ecliptic<U, Heliocentric>>,
+    Position<Heliocentric, F, U>: TransformFrame<EclipticMeanJ2000<U, Heliocentric>>,
+    EclipticMeanJ2000<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>,
+    EclipticMeanJ2000<U, Geocentric>: TransformCenter<EclipticMeanJ2000<U, Heliocentric>>,
+    EclipticMeanJ2000<U, Barycentric>: TransformCenter<EclipticMeanJ2000<U, Heliocentric>>,
 {
     fn to_bodycentric(
         &self,
@@ -167,7 +167,7 @@ where
         let body_in_our_center: Position<Heliocentric, F, U> = match body_params.orbit_center {
             OrbitReferenceCenter::Heliocentric => {
                 // Body orbits Sun - position is already heliocentric
-                let body_ecl: Ecliptic<U, Heliocentric> = Ecliptic::new(
+                let body_ecl: EclipticMeanJ2000<U, Heliocentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
@@ -176,22 +176,22 @@ where
             }
             OrbitReferenceCenter::Geocentric => {
                 // Body orbits Earth - need to convert geocentric to heliocentric
-                let body_geo_ecl: Ecliptic<U, Geocentric> = Ecliptic::new(
+                let body_geo_ecl: EclipticMeanJ2000<U, Geocentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
                 );
-                let body_helio_ecl: Ecliptic<U, Heliocentric> = body_geo_ecl.to_center(jd);
+                let body_helio_ecl: EclipticMeanJ2000<U, Heliocentric> = body_geo_ecl.to_center(jd);
                 body_helio_ecl.to_frame()
             }
             OrbitReferenceCenter::Barycentric => {
                 // Body orbits barycenter - transform to heliocentric
-                let body_bary_ecl: Ecliptic<U, Barycentric> = Ecliptic::new(
+                let body_bary_ecl: EclipticMeanJ2000<U, Barycentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
                 );
-                let body_helio_ecl: Ecliptic<U, Heliocentric> = body_bary_ecl.to_center(jd);
+                let body_helio_ecl: EclipticMeanJ2000<U, Heliocentric> = body_bary_ecl.to_center(jd);
                 body_helio_ecl.to_frame()
             }
         };
@@ -210,10 +210,10 @@ where
 impl<F: MutableFrame, U: LengthUnit> ToBodycentricExt<F, U> for Position<Barycentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Position<Barycentric, F, U>: TransformFrame<Ecliptic<U, Barycentric>>,
-    Ecliptic<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>,
-    Ecliptic<U, Geocentric>: TransformCenter<Ecliptic<U, Barycentric>>,
-    Ecliptic<U, Heliocentric>: TransformCenter<Ecliptic<U, Barycentric>>,
+    Position<Barycentric, F, U>: TransformFrame<EclipticMeanJ2000<U, Barycentric>>,
+    EclipticMeanJ2000<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>,
+    EclipticMeanJ2000<U, Geocentric>: TransformCenter<EclipticMeanJ2000<U, Barycentric>>,
+    EclipticMeanJ2000<U, Heliocentric>: TransformCenter<EclipticMeanJ2000<U, Barycentric>>,
 {
     fn to_bodycentric(
         &self,
@@ -227,7 +227,7 @@ where
         let body_in_our_center: Position<Barycentric, F, U> = match body_params.orbit_center {
             OrbitReferenceCenter::Barycentric => {
                 // Body orbits barycenter - position is already barycentric
-                let body_ecl: Ecliptic<U, Barycentric> = Ecliptic::new(
+                let body_ecl: EclipticMeanJ2000<U, Barycentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
@@ -236,22 +236,22 @@ where
             }
             OrbitReferenceCenter::Heliocentric => {
                 // Body orbits Sun - need to convert heliocentric to barycentric
-                let body_helio_ecl: Ecliptic<U, Heliocentric> = Ecliptic::new(
+                let body_helio_ecl: EclipticMeanJ2000<U, Heliocentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
                 );
-                let body_bary_ecl: Ecliptic<U, Barycentric> = body_helio_ecl.to_center(jd);
+                let body_bary_ecl: EclipticMeanJ2000<U, Barycentric> = body_helio_ecl.to_center(jd);
                 body_bary_ecl.to_frame()
             }
             OrbitReferenceCenter::Geocentric => {
                 // Body orbits Earth - need to convert geocentric to barycentric
-                let body_geo_ecl: Ecliptic<U, Geocentric> = Ecliptic::new(
+                let body_geo_ecl: EclipticMeanJ2000<U, Geocentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
                 );
-                let body_bary_ecl: Ecliptic<U, Barycentric> = body_geo_ecl.to_center(jd);
+                let body_bary_ecl: EclipticMeanJ2000<U, Barycentric> = body_geo_ecl.to_center(jd);
                 body_bary_ecl.to_frame()
             }
         };
@@ -270,8 +270,8 @@ where
 impl<F: MutableFrame, U: LengthUnit> FromBodycentricExt<F, U> for Position<Bodycentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    Position<Geocentric, F, U>: TransformFrame<Ecliptic<U, Geocentric>>,
-    Ecliptic<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>,
+    Position<Geocentric, F, U>: TransformFrame<EclipticMeanJ2000<U, Geocentric>>,
+    EclipticMeanJ2000<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>,
 {
     fn to_geocentric(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         let body_params = *self.center_params();
@@ -282,7 +282,7 @@ where
         // Convert the body's position to geocentric
         let body_geo: Position<Geocentric, F, U> = match body_params.orbit_center {
             OrbitReferenceCenter::Geocentric => {
-                let body_ecl: Ecliptic<U, Geocentric> = Ecliptic::new(
+                let body_ecl: EclipticMeanJ2000<U, Geocentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
@@ -290,21 +290,21 @@ where
                 body_ecl.to_frame()
             }
             OrbitReferenceCenter::Heliocentric => {
-                let body_helio_ecl: Ecliptic<U, Heliocentric> = Ecliptic::new(
+                let body_helio_ecl: EclipticMeanJ2000<U, Heliocentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
                 );
-                let body_geo_ecl: Ecliptic<U, Geocentric> = body_helio_ecl.to_center(jd);
+                let body_geo_ecl: EclipticMeanJ2000<U, Geocentric> = body_helio_ecl.to_center(jd);
                 body_geo_ecl.to_frame()
             }
             OrbitReferenceCenter::Barycentric => {
-                let body_bary_ecl: Ecliptic<U, Barycentric> = Ecliptic::new(
+                let body_bary_ecl: EclipticMeanJ2000<U, Barycentric> = EclipticMeanJ2000::new(
                     body_ecliptic_au.x(),
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
                 );
-                let body_geo_ecl: Ecliptic<U, Geocentric> = body_bary_ecl.to_center(jd);
+                let body_geo_ecl: EclipticMeanJ2000<U, Geocentric> = body_bary_ecl.to_center(jd);
                 body_geo_ecl.to_frame()
             }
         };
@@ -339,7 +339,7 @@ mod tests {
         let sat_params = BodycentricParams::geocentric(satellite_orbit);
 
         // Target at 0.001 AU from Earth
-        let target: Position<Geocentric, frames::Ecliptic, AstronomicalUnit> =
+        let target: Position<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
             Position::new(0.001, 0.0, 0.0);
 
         let result = target.to_bodycentric(sat_params, JulianDate::J2000);
@@ -368,7 +368,7 @@ mod tests {
         // Earth's position (heliocentric)
         let earth_helio = *Earth::vsop87a(JulianDate::J2000).get_position();
 
-        let earth_from_mars: Position<Bodycentric, frames::Ecliptic, Au> =
+        let earth_from_mars: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
             earth_helio.to_bodycentric(mars_params, JulianDate::J2000);
 
         // Mars is further from the Sun than Earth, so the relative position should exist
@@ -393,7 +393,7 @@ mod tests {
         let sat_params = BodycentricParams::geocentric(satellite_orbit);
 
         // Original geocentric position
-        let original: Position<Geocentric, frames::Ecliptic, AstronomicalUnit> =
+        let original: Position<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
             Position::new(0.001, 0.002, 0.003);
 
         // Transform to bodycentric and back
@@ -426,7 +426,7 @@ mod tests {
 
         // Get the body's geocentric position
         let body_geo_ecl = orbit.kepler_position(JulianDate::J2000);
-        let body_geo: Position<Geocentric, frames::Ecliptic, AstronomicalUnit> =
+        let body_geo: Position<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
             Position::from_vec3_origin(*body_geo_ecl.as_vec3());
 
         // Transform to body-centric

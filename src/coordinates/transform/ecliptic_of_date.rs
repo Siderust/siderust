@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Of-Date Ecliptic Coordinate Transformations
+//! # Of-Date EclipticMeanJ2000 Coordinate Transformations
 //!
 //! This module provides traits for converting between equatorial and ecliptic
 //! coordinates using the mean ecliptic plane of date (time-dependent obliquity).
@@ -15,26 +15,26 @@
 //!
 //! ## Time Requirements
 //!
-//! Ecliptic-of-date transformations require **TT** (Terrestrial Time) for:
+//! EclipticMeanJ2000-of-date transformations require **TT** (Terrestrial Time) for:
 //! - Precession calculations (IAU 2006 Fukushima-Williams)
 //! - Mean obliquity evaluation
 //!
 //! ## Frame Compatibility
 //!
 //! These transformations connect:
-//! - [`EquatorialMeanOfDate`] ↔ [`EclipticOfDate`]
-//! - [`ICRS`]/[`GCRS`] ↔ [`EclipticOfDate`] (via precession matrix)
+//! - [`EquatorialMeanOfDate`] ↔ [`EclipticTrueOfDate`]
+//! - [`ICRS`]/[`GCRS`] ↔ [`EclipticTrueOfDate`] (via precession matrix)
 //!
-//! Note: For J2000 ecliptic coordinates, use the time-independent [`Ecliptic`]
+//! Note: For J2000 ecliptic coordinates, use the time-independent [`EclipticMeanJ2000`]
 //! frame with [`TransformFrame`](crate::coordinates::transform::TransformFrame).
 //!
 //! ## Usage
 //!
 //! ```rust
 //! use siderust::coordinates::cartesian::Direction;
-//! use siderust::coordinates::frames::{EquatorialMeanOfDate, EclipticOfDate};
+//! use siderust::coordinates::frames::{EquatorialMeanOfDate, EclipticTrueOfDate};
 //! use siderust::coordinates::spherical;
-//! use siderust::coordinates::transform::ecliptic_of_date::ToEclipticOfDate;
+//! use siderust::coordinates::transform::ecliptic_of_date::ToEclipticTrueOfDate;
 //! use siderust::time::JulianDate;
 //! use qtty::*;
 //!
@@ -42,25 +42,25 @@
 //! let equatorial = spherical::Direction::<EquatorialMeanOfDate>::new(45.0 * DEG, 30.0 * DEG)
 //!     .to_cartesian();
 //!
-//! let ecliptic: Direction<EclipticOfDate> = equatorial.to_ecliptic_of_date(&jd_tt);
+//! let ecliptic: Direction<EclipticTrueOfDate> = equatorial.to_ecliptic_of_date(&jd_tt);
 //! ```
 
 use crate::astro::precession;
 use crate::coordinates::cartesian::Direction;
-use crate::coordinates::frames::{EclipticOfDate, EquatorialMeanOfDate, GCRS, ICRS};
+use crate::coordinates::frames::{EclipticTrueOfDate, EquatorialMeanOfDate, GCRS, ICRS};
 use crate::time::JulianDate;
 use qtty::{Degrees, Radians};
 use std::f64::consts::TAU;
 
 // =============================================================================
-// ToEclipticOfDate Trait
+// ToEclipticTrueOfDate Trait
 // =============================================================================
 
 /// Convert coordinates to ecliptic-of-date frame using IAU 2006 precession.
 ///
 /// This trait transforms directions to the mean ecliptic plane of date,
 /// which is time-dependent due to precession.
-pub trait ToEclipticOfDate {
+pub trait ToEclipticTrueOfDate {
     /// Convert this direction to ecliptic-of-date coordinates.
     ///
     /// # Arguments
@@ -69,15 +69,15 @@ pub trait ToEclipticOfDate {
     ///
     /// # Returns
     ///
-    /// A [`Direction<EclipticOfDate>`] with:
-    /// - Ecliptic longitude normalized to `[0°, 360°)`
-    /// - Ecliptic latitude in `[-90°, +90°]`
-    fn to_ecliptic_of_date(&self, jd_tt: &JulianDate) -> Direction<EclipticOfDate>;
+    /// A [`Direction<EclipticTrueOfDate>`] with:
+    /// - EclipticMeanJ2000 longitude normalized to `[0°, 360°)`
+    /// - EclipticMeanJ2000 latitude in `[-90°, +90°]`
+    fn to_ecliptic_of_date(&self, jd_tt: &JulianDate) -> Direction<EclipticTrueOfDate>;
 }
 
-impl ToEclipticOfDate for Direction<EquatorialMeanOfDate> {
+impl ToEclipticTrueOfDate for Direction<EquatorialMeanOfDate> {
     #[inline]
-    fn to_ecliptic_of_date(&self, jd_tt: &JulianDate) -> Direction<EclipticOfDate> {
+    fn to_ecliptic_of_date(&self, jd_tt: &JulianDate) -> Direction<EclipticTrueOfDate> {
         // Extract RA/Dec
         let spherical = self.to_spherical();
         let ra = Radians::from(spherical.azimuth);
@@ -96,7 +96,7 @@ impl ToEclipticOfDate for Direction<EquatorialMeanOfDate> {
         let lon = v_ecl[1].atan2(v_ecl[0]).rem_euclid(TAU);
         let lat = v_ecl[2].clamp(-1.0, 1.0).asin();
 
-        let spherical_ecl = affn::spherical::Direction::<EclipticOfDate>::new_raw(
+        let spherical_ecl = affn::spherical::Direction::<EclipticTrueOfDate>::new_raw(
             Degrees::new(lat.to_degrees()),
             Degrees::new(lon.to_degrees()),
         );
@@ -104,9 +104,9 @@ impl ToEclipticOfDate for Direction<EquatorialMeanOfDate> {
     }
 }
 
-impl ToEclipticOfDate for Direction<ICRS> {
+impl ToEclipticTrueOfDate for Direction<ICRS> {
     #[inline]
-    fn to_ecliptic_of_date(&self, jd_tt: &JulianDate) -> Direction<EclipticOfDate> {
+    fn to_ecliptic_of_date(&self, jd_tt: &JulianDate) -> Direction<EclipticTrueOfDate> {
         // Extract RA/Dec
         let spherical = self.to_spherical();
         let ra = Radians::from(spherical.azimuth);
@@ -125,7 +125,7 @@ impl ToEclipticOfDate for Direction<ICRS> {
         let lon = v_ecl[1].atan2(v_ecl[0]).rem_euclid(TAU);
         let lat = v_ecl[2].clamp(-1.0, 1.0).asin();
 
-        let spherical_ecl = affn::spherical::Direction::<EclipticOfDate>::new_raw(
+        let spherical_ecl = affn::spherical::Direction::<EclipticTrueOfDate>::new_raw(
             Degrees::new(lat.to_degrees()),
             Degrees::new(lon.to_degrees()),
         );
@@ -133,9 +133,9 @@ impl ToEclipticOfDate for Direction<ICRS> {
     }
 }
 
-impl ToEclipticOfDate for Direction<GCRS> {
+impl ToEclipticTrueOfDate for Direction<GCRS> {
     #[inline]
-    fn to_ecliptic_of_date(&self, jd_tt: &JulianDate) -> Direction<EclipticOfDate> {
+    fn to_ecliptic_of_date(&self, jd_tt: &JulianDate) -> Direction<EclipticTrueOfDate> {
         // Extract RA/Dec
         let spherical = self.to_spherical();
         let ra = Radians::from(spherical.azimuth);
@@ -154,7 +154,7 @@ impl ToEclipticOfDate for Direction<GCRS> {
         let lon = v_ecl[1].atan2(v_ecl[0]).rem_euclid(TAU);
         let lat = v_ecl[2].clamp(-1.0, 1.0).asin();
 
-        let spherical_ecl = affn::spherical::Direction::<EclipticOfDate>::new_raw(
+        let spherical_ecl = affn::spherical::Direction::<EclipticTrueOfDate>::new_raw(
             Degrees::new(lat.to_degrees()),
             Degrees::new(lon.to_degrees()),
         );
@@ -163,14 +163,14 @@ impl ToEclipticOfDate for Direction<GCRS> {
 }
 
 // =============================================================================
-// FromEclipticOfDate Trait
+// FromEclipticTrueOfDate Trait
 // =============================================================================
 
 /// Convert coordinates from ecliptic-of-date frame using IAU 2006 precession.
 ///
 /// This trait transforms directions from the mean ecliptic plane of date
 /// back to equatorial frames.
-pub trait FromEclipticOfDate {
+pub trait FromEclipticTrueOfDate {
     /// Convert this ecliptic-of-date direction to equatorial mean-of-date coordinates.
     ///
     /// # Arguments
@@ -198,7 +198,7 @@ pub trait FromEclipticOfDate {
     fn to_icrs(&self, jd_tt: &JulianDate) -> Direction<ICRS>;
 }
 
-impl FromEclipticOfDate for Direction<EclipticOfDate> {
+impl FromEclipticTrueOfDate for Direction<EclipticTrueOfDate> {
     #[inline]
     fn to_equatorial_mean_of_date(&self, jd_tt: &JulianDate) -> Direction<EquatorialMeanOfDate> {
         // Extract lon/lat
@@ -334,7 +334,7 @@ mod tests {
 
         assert!(
             (Radians::from(sph_north.polar).value() - expected_lat).abs() < 1e-6,
-            "Ecliptic latitude mismatch at north pole"
+            "EclipticMeanJ2000 latitude mismatch at north pole"
         );
     }
 }

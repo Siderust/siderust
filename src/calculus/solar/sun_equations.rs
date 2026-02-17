@@ -42,7 +42,7 @@ impl Sun {
     where
         Quantity<U>: From<AstronomicalUnits>,
     {
-        let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
+        let helio = cartesian::position::EclipticMeanJ2000::<U, Heliocentric>::CENTER;
         let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> = helio.transform(jd);
 
         // Apply full IAU 2006/2000B NPB matrix (GCRS → true equator/equinox of date)
@@ -65,7 +65,7 @@ impl Sun {
         Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
     {
         // 1) Compute geocentric cartesian in J2000 (mean) as base
-        let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
+        let helio = cartesian::position::EclipticMeanJ2000::<U, Heliocentric>::CENTER;
         let geo_cart_j2000: cartesian::position::EquatorialMeanJ2000<U, Geocentric> =
             helio.transform(jd);
 

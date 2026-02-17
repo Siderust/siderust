@@ -6,12 +6,12 @@ use super::Position;
 use crate::coordinates::{centers, frames};
 use qtty::Kilometer;
 
-/// **Heliocentric Ecliptic** coordinates *(λ, β, R)*.
+/// **Heliocentric EclipticMeanJ2000** coordinates *(λ, β, R)*.
 ///
 /// * `λ` – ecliptic longitude, degrees in `[0, 360)`
 /// * `β` – ecliptic latitude,  degrees in `[-90, 90]`
 /// * `R` – heliocentric distance in unit `U` (e.g. `AstronomicalUnit`)
-pub type Ecliptic<U> = Position<centers::Heliocentric, frames::Ecliptic, U>;
+pub type EclipticMeanJ2000<U> = Position<centers::Heliocentric, frames::EclipticMeanJ2000, U>;
 
 /// **Geocentric Equatorial mean J2000** coordinates *(α, δ, d)*.
 ///

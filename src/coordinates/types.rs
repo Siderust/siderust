@@ -25,7 +25,7 @@
 //! ```rust,ignore
 //! use siderust::coordinates::spherical::direction::ICRS;
 //! use siderust::coordinates::spherical::position::Geographic;
-//! use siderust::coordinates::cartesian::position::Ecliptic;
+//! use siderust::coordinates::cartesian::position::EclipticMeanJ2000;
 //! ```
 //!
 //! After:
@@ -42,8 +42,8 @@
 // Spherical direction aliases (frame-only, no center, dimensionless)
 // =============================================================================
 
-/// **Ecliptic** spherical direction (longitude, latitude).
-pub use super::spherical::direction::Ecliptic as EclipticDir;
+/// **EclipticMeanJ2000** spherical direction (longitude, latitude).
+pub use super::spherical::direction::EclipticMeanJ2000 as EclipticDir;
 /// **Equatorial mean J2000** spherical direction (right-ascension, declination).
 pub use super::spherical::direction::EquatorialMeanJ2000 as EquatorialJ2000Dir;
 /// **Equatorial mean of date** spherical direction (right-ascension, declination).
@@ -63,8 +63,8 @@ pub use super::spherical::direction::ICRS as IcrsDir;
 // Spherical position aliases (center + frame + distance unit)
 // =============================================================================
 
-/// **Heliocentric Ecliptic** spherical position (λ, β, R).
-pub use super::spherical::position::Ecliptic as EclipticPos;
+/// **Heliocentric EclipticMeanJ2000** spherical position (λ, β, R).
+pub use super::spherical::position::EclipticMeanJ2000 as EclipticPos;
 /// **Geocentric Equatorial mean J2000** spherical position (α, δ, d).
 pub use super::spherical::position::EquatorialMeanJ2000 as EquatorialJ2000Pos;
 /// **Geocentric Equatorial mean of date** spherical position.
@@ -86,8 +86,8 @@ pub use super::spherical::position::ICRS as IcrsPos;
 // Cartesian direction aliases (unit vector, frame-only)
 // =============================================================================
 
-/// **Ecliptic** cartesian direction (unit vector).
-pub use super::cartesian::direction::Ecliptic as EclipticCartDir;
+/// **EclipticMeanJ2000** cartesian direction (unit vector).
+pub use super::cartesian::direction::EclipticMeanJ2000 as EclipticCartDir;
 /// **Equatorial mean J2000** cartesian direction (unit vector).
 pub use super::cartesian::direction::EquatorialMeanJ2000 as EquatorialJ2000CartDir;
 /// **Equatorial mean of date** cartesian direction (unit vector).
@@ -105,8 +105,8 @@ pub use super::cartesian::direction::ICRS as IcrsCartDir;
 // Cartesian position aliases (affine point, center + frame + unit)
 // =============================================================================
 
-/// **Heliocentric Ecliptic** cartesian position.
-pub use super::cartesian::position::Ecliptic as EclipticCartPos;
+/// **Heliocentric EclipticMeanJ2000** cartesian position.
+pub use super::cartesian::position::EclipticMeanJ2000 as EclipticCartPos;
 /// **Geocentric Equatorial mean J2000** cartesian position.
 pub use super::cartesian::position::EquatorialMeanJ2000 as EquatorialJ2000CartPos;
 /// **Geocentric Equatorial mean of date** cartesian position.
@@ -135,7 +135,7 @@ pub use super::cartesian::position::TCRS as TcrsCartPos;
 /// This preserves imports like:
 /// `use siderust::coordinates::types::direction::ICRS;`
 pub mod direction {
-    pub use super::EclipticDir as Ecliptic;
+    pub use super::EclipticDir as EclipticMeanJ2000;
     pub use super::EquatorialJ2000Dir as EquatorialMeanJ2000;
     pub use super::EquatorialMeanOfDateDir as EquatorialMeanOfDate;
     pub use super::EquatorialTrueOfDateDir as EquatorialTrueOfDate;
@@ -150,7 +150,7 @@ pub mod direction {
 /// This preserves imports like:
 /// `use siderust::coordinates::types::position::ICRS;`
 pub mod position {
-    pub use super::EclipticPos as Ecliptic;
+    pub use super::EclipticPos as EclipticMeanJ2000;
     pub use super::EquatorialJ2000Pos as EquatorialMeanJ2000;
     pub use super::EquatorialMeanOfDatePos as EquatorialMeanOfDate;
     pub use super::EquatorialTrueOfDatePos as EquatorialTrueOfDate;

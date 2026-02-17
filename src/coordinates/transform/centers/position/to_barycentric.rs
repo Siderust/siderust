@@ -5,7 +5,7 @@ use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::{
-    cartesian::position::Ecliptic,
+    cartesian::position::EclipticMeanJ2000,
     cartesian::Position,
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::{self, MutableFrame},
@@ -19,13 +19,13 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>
     for Position<Heliocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
+    (): crate::coordinates::transform::FrameRotationProvider<frames::EclipticMeanJ2000, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let sun_bary_ecl_au = *DefaultEphemeris::sun_barycentric(jd).get_position();
 
         // Ephemeris gives the Sun's position in AstronomicalUnits
-        let sun_bary_ecl = Ecliptic::<U, Barycentric>::new(
+        let sun_bary_ecl = EclipticMeanJ2000::<U, Barycentric>::new(
             sun_bary_ecl_au.x(),
             sun_bary_ecl_au.y(),
             sun_bary_ecl_au.z(),
@@ -41,13 +41,13 @@ impl<F: MutableFrame, U: LengthUnit> TransformCenter<Position<Barycentric, F, U>
     for Position<Geocentric, F, U>
 where
     Quantity<U>: From<AstronomicalUnits>,
-    (): crate::coordinates::transform::FrameRotationProvider<frames::Ecliptic, F>,
+    (): crate::coordinates::transform::FrameRotationProvider<frames::EclipticMeanJ2000, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
         let earth_bary_ecl_au = *DefaultEphemeris::earth_barycentric(jd).get_position();
 
         // Ephemeris gives the Earth's position in AstronomicalUnits
-        let earth_bary_ecl = Ecliptic::<U, Barycentric>::new(
+        let earth_bary_ecl = EclipticMeanJ2000::<U, Barycentric>::new(
             earth_bary_ecl_au.x(),
             earth_bary_ecl_au.y(),
             earth_bary_ecl_au.z(),
@@ -61,7 +61,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::cartesian::position::Ecliptic;
+    use crate::coordinates::cartesian::position::EclipticMeanJ2000;
     use crate::coordinates::centers::*;
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
@@ -71,8 +71,8 @@ mod tests {
 
     #[test] // Heliocentric -> Barycentric
     fn test_helio() {
-        let sun_helio = Ecliptic::<Au>::CENTER;
-        let sun_bary: Ecliptic<Au, Barycentric> = sun_helio.transform(JulianDate::J2000);
+        let sun_helio = EclipticMeanJ2000::<Au>::CENTER;
+        let sun_bary: EclipticMeanJ2000<Au, Barycentric> = sun_helio.transform(JulianDate::J2000);
         let expected_sun_bary =
             *DefaultEphemeris::sun_barycentric(JulianDate::J2000).get_position();
         assert_cartesian_eq!(sun_bary, expected_sun_bary, EPSILON);
@@ -80,8 +80,8 @@ mod tests {
 
     #[test] // Geocentric -> Barycentric
     fn test_geo() {
-        let earth_geo = Ecliptic::<Au, Geocentric>::CENTER;
-        let earth_bary: Ecliptic<Au, Barycentric> = earth_geo.transform(JulianDate::J2000);
+        let earth_geo = EclipticMeanJ2000::<Au, Geocentric>::CENTER;
+        let earth_bary: EclipticMeanJ2000<Au, Barycentric> = earth_geo.transform(JulianDate::J2000);
         let expected_earth_bary =
             *DefaultEphemeris::earth_barycentric(JulianDate::J2000).get_position();
         assert_cartesian_eq!(&earth_bary, &expected_earth_bary, EPSILON);
