@@ -20,5 +20,8 @@ coverage.xml
 # Dev artifacts
 artifacts
 
+# Local Cargo overrides (intentionally untracked)
+.cargo/config.local.toml
+
 ## Python env
 .venv/

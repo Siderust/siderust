@@ -112,46 +112,45 @@ You can combine ephemeris features with others (for example `serde`):
 siderust = { version = "0.5", features = ["de441", "serde"] }
 ```
 
-### Fast Builds/Tests: JPL Stub (Mock) Mode
+### JPL Build Modes: Real vs Stubbed
 
 When JPL features are enabled, build scripts may download:
 - `de440.bsp` (~120 MB)
 - `de441_part-2.bsp` (~1.65 GB)
 
-To skip those downloads for local typecheck/CI loops, set `SIDERUST_JPL_STUB`:
+Default checked-in behavior is **real JPL builds** (no global stubbing).
+
+Real JPL mode (recommended for representative DE440/DE441 behavior):
+
+```bash
+unset SIDERUST_JPL_STUB
+cargo test --features de440
+cargo test --features de441
+```
+
+Offline/stub mode (explicit opt-in for fast local loops):
 
 ```bash
 SIDERUST_JPL_STUB=all cargo check --all-features
 ```
 
-Supported values:
-- `de441`: stubs DE441 only. `De441Ephemeris` is mocked to `Vsop87Ephemeris`.
+Supported stub values:
+- `de441`: stubs DE441 only (`De441Ephemeris` is mocked to `Vsop87Ephemeris`).
 - `de440`: stubs DE440 only.
 - `de440,de441` or `all` (also `1`, `true`, `yes`, `on`): stubs both.
 
-Recommended commands:
-
-```bash
-# Fastest all-feature compile (no DE440/DE441 download)
-SIDERUST_JPL_STUB=all cargo check --all-features
-
-# Keep DE440 real, mock only DE441 (this repo default via .cargo/config.toml)
-SIDERUST_JPL_STUB=de441 cargo check --all-features
-```
-
-Persist it in this workspace:
+Optional local override file (keep untracked):
 
 ```toml
-# .cargo/config.toml
+# .cargo/config.local.toml
 [env]
 SIDERUST_JPL_STUB = "all"
 ```
 
-Disable stubbing to force real JPL data/codegen:
+Use it explicitly:
 
 ```bash
-unset SIDERUST_JPL_STUB
-cargo check --all-features
+cargo --config .cargo/config.local.toml check --all-features
 ```
 
 Caveat:
