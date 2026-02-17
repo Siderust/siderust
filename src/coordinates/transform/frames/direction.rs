@@ -24,7 +24,9 @@ impl<F: MutableFrame> TransformFrame<Direction<F>> for Direction<F> {
 
 /// Frame transform from EclipticMeanJ2000 to EquatorialMeanJ2000 for directions.
 /// Rotation about +X by the J2000 mean obliquity ε₀ (IAU 2006): 84381.406″.
-impl TransformFrame<Direction<frames::EquatorialMeanJ2000>> for Direction<frames::EclipticMeanJ2000> {
+impl TransformFrame<Direction<frames::EquatorialMeanJ2000>>
+    for Direction<frames::EclipticMeanJ2000>
+{
     fn to_frame(&self) -> Direction<frames::EquatorialMeanJ2000> {
         let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
@@ -47,7 +49,9 @@ impl TransformFrame<Direction<frames::EquatorialMeanJ2000>> for Direction<frames
 
 /// Frame transform from EquatorialMeanJ2000 to EclipticMeanJ2000 for directions.
 /// Inverse rotation about +X by the obliquity ε.
-impl TransformFrame<Direction<frames::EclipticMeanJ2000>> for Direction<frames::EquatorialMeanJ2000> {
+impl TransformFrame<Direction<frames::EclipticMeanJ2000>>
+    for Direction<frames::EquatorialMeanJ2000>
+{
     fn to_frame(&self) -> Direction<frames::EclipticMeanJ2000> {
         let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
@@ -126,7 +130,8 @@ mod tests {
 
     #[test]
     fn ecliptic_to_icrs_roundtrip_matches_original() {
-        let dir_ecl = Direction::<frames::EclipticMeanJ2000>::from_vec3(Vector3::new(0.1, 0.2, 0.3));
+        let dir_ecl =
+            Direction::<frames::EclipticMeanJ2000>::from_vec3(Vector3::new(0.1, 0.2, 0.3));
         let icrs: Direction<frames::ICRS> = dir_ecl.to_frame();
         let back: Direction<frames::EclipticMeanJ2000> = icrs.to_frame();
 
