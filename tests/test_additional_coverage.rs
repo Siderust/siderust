@@ -104,14 +104,18 @@ fn horizontal_conversion_variants_cover_all_impls() {
 fn frame_transform_traits_exercised() {
     use siderust::coordinates::centers::Heliocentric;
 
-    let vec_ecl =
-        cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(0.1 * AU, 0.2 * AU, 0.3 * AU);
+    let vec_ecl = cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(
+        0.1 * AU,
+        0.2 * AU,
+        0.3 * AU,
+    );
     let vec_same: cartesian::position::EclipticMeanJ2000<AstronomicalUnit> =
         TransformFrame::to_frame(&vec_ecl);
     assert_eq!(vec_same.x(), vec_ecl.x());
 
     // Spherical direction is now frame-only (no center parameter)
-    let sph_ecl = spherical::direction::EclipticMeanJ2000::new(Degrees::new(10.0), Degrees::new(5.0));
+    let sph_ecl =
+        spherical::direction::EclipticMeanJ2000::new(Degrees::new(10.0), Degrees::new(5.0));
     // Convert to cartesian, transform frame
     let cart_ecl = sph_ecl.to_cartesian();
     let cart_equatorial: cartesian::direction::EquatorialMeanJ2000 =

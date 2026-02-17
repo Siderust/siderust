@@ -63,9 +63,16 @@ where
 
 #[test]
 fn position_sub_distance() {
-    let a = Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0 * AU, 2.0 * AU, 2.0 * AU);
-    let b =
-        Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(0.5 * AU, -1.0 * AU, 1.0 * AU);
+    let a = Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(
+        1.0 * AU,
+        2.0 * AU,
+        2.0 * AU,
+    );
+    let b = Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(
+        0.5 * AU,
+        -1.0 * AU,
+        1.0 * AU,
+    );
 
     // Position - Position = Displacement
     let diff = a - b;
@@ -84,7 +91,8 @@ fn position_sub_distance() {
 #[test]
 fn displacement_add_sub() {
     let v1 = Displacement::<EclipticMeanJ2000, AstronomicalUnit>::new(1.0 * AU, 2.0 * AU, 2.0 * AU);
-    let v2 = Displacement::<EclipticMeanJ2000, AstronomicalUnit>::new(0.5 * AU, -1.0 * AU, 1.0 * AU);
+    let v2 =
+        Displacement::<EclipticMeanJ2000, AstronomicalUnit>::new(0.5 * AU, -1.0 * AU, 1.0 * AU);
 
     let sum = v1 + v2;
     approx_eq_disp(sum, Displacement::new(1.5 * AU, 1.0 * AU, 3.0 * AU), 1e-12);
@@ -95,7 +103,11 @@ fn displacement_add_sub() {
 
 #[test]
 fn direction_normalize_position() {
-    let p = Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(3.0 * AU, 0.0 * AU, 4.0 * AU);
+    let p = Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(
+        3.0 * AU,
+        0.0 * AU,
+        4.0 * AU,
+    );
     let dir = p.direction().expect("position should have a direction");
     // direction() now returns Direction<F> (frame-only), position() requires explicit center
     let scaled = dir.position::<Heliocentric, _>(2.5 * AU);

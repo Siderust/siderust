@@ -29,10 +29,9 @@
 //!
 //! ## Time Scale
 //!
-//! All `ModifiedJulianDate` / `Period<MJD>` values in this module are on
-//! tempoch's canonical JD(TT) axis (not raw UTC-MJD counters).
-//! Convert UTC timestamps with `ModifiedJulianDate::from_utc(...)`
-//! before calling these APIs.
+//! `ModifiedJulianDate` / `Period<MJD>` values in this API are interpreted on
+//! the TT axis (`tempoch` canonical JD(TT) semantics). If your inputs are UTC
+//! timestamps, convert them with `ModifiedJulianDate::from_utc(...)` first.
 //!
 //! ## Trait-Based API
 //!

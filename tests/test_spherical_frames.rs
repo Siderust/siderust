@@ -60,7 +60,8 @@ fn ecliptic_normalization() {
     );
 
     // Position::new(lon, lat, distance) also normalizes
-    let pos = position::EclipticMeanJ2000::<AstronomicalUnit>::new(120.0 * DEG, -45.0 * DEG, 2.0 * AU);
+    let pos =
+        position::EclipticMeanJ2000::<AstronomicalUnit>::new(120.0 * DEG, -45.0 * DEG, 2.0 * AU);
     assert!(
         (pos.lon().value() - 120.0).abs() < EPS,
         "pos lon mismatch: {}",

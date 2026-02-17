@@ -13,7 +13,7 @@
 //! value). For a source at angular distance **θ** from the Sun:
 //!
 //! ```text
-//! Δθ ≈ (1.75″ / sin θ) × (1 + cos θ) / 2
+//! Δθ ≈ (2 G M☉ / c² R) × cot(θ/2)
 //! ```
 //!
 //! or equivalently in the vector formulation (IERS Conventions 2010, §7.1.1):
@@ -26,6 +26,11 @@
 //! - **s**: unit direction vector toward the source (BCRS)
 //! - **q**: vector from the deflecting body to the observer (BCRS)
 //! - **q̂** = q / |q|
+//! - **R** = |q| (observer-body distance)
+//!
+//! At **R = 1 AU**, this gives:
+//! - **θ = 90°**  → Δθ ≈ **0.00407″** (4.07 mas)
+//! - **θ ≈ 959.63″** (solar limb) → Δθ ≈ **1.75″**
 //!
 //! ## Effect magnitudes
 //!
@@ -143,28 +148,31 @@ pub fn solar_deflection(
 ///
 /// ## Notes
 ///
-/// Uses the classical formula: Δθ = 1.75″ × (1/tan(θ/2)) × (1/R)
-/// where R is the Sun distance in AU.
+/// Uses the weak-field first-order expression:
+///
+/// `Δθ = (2GM☉ / c²R) × cot(θ/2)`
+///
+/// where `R` is the Sun-observer distance and `θ` is the Sun-source elongation.
+/// At `R = 1 AU` and `θ = 90°`, `Δθ ≈ 0.00407″` (4.07 mas).
 #[inline]
 pub fn solar_deflection_magnitude(
     sun_angle: Radians,
     sun_distance: AstronomicalUnits,
 ) -> Arcseconds {
-    // Maximum deflection at limb at 1 AU: 1.7512 arcsec
-    // (From 2 G M☉ / (c² R☉_angle))
-    const LIMB_DEFLECTION_1AU: f64 = 1.7512;
+    const RAD_TO_ARCSEC: f64 = 206_264.806_247_096_36;
 
     let angle = sun_angle.value();
     let dist = sun_distance.value();
 
-    if angle.abs() < 1e-10 {
+    if angle <= 0.0 || dist <= 0.0 {
         return Arcseconds::new(0.0); // directly at the Sun — meaningless
     }
 
-    // Δθ = (1.75″/R) × cos(θ/2) / sin(θ/2)  [cotangent form]
-    // This avoids singularity at θ = 0 better than 1/sinθ form
+    // Δθ = (2GM/c²R) × cot(θ/2)
     let half = angle / 2.0;
-    Arcseconds::new(LIMB_DEFLECTION_1AU / dist * half.cos() / half.sin().max(1e-10))
+    let cot_half = half.cos() / half.sin().abs().max(1e-10);
+    let scale_arcsec = (SOLAR_SCHWARZSCHILD_AU / dist) * RAD_TO_ARCSEC;
+    Arcseconds::new(scale_arcsec * cot_half)
 }
 
 /// Remove solar deflection from an apparent direction to get the geometric
@@ -206,26 +214,32 @@ mod tests {
     use super::*;
     use qtty::Radians;
 
+    const RAD_TO_ARCSEC: f64 = 206_264.806_247_096_36;
+
     #[test]
-    fn deflection_at_limb() {
-        // Source 90° from Sun, observer at 1 AU
-        // Deflection should be ≈ 1.75″ / tan(45°) ≈ 1.75″
+    fn deflection_at_ninety_deg_is_milliarcseconds() {
+        // At 90° elongation and 1 AU: Δθ = (2GM/c²R) ≈ 0.00407″
         let angle = Radians::new(std::f64::consts::FRAC_PI_2);
         let defl = solar_deflection_magnitude(angle, AstronomicalUnits::new(1.0));
+        let expected = SOLAR_SCHWARZSCHILD_AU * RAD_TO_ARCSEC;
         assert!(
-            (defl.value() - 1.75).abs() < 0.1,
-            "deflection at 90° = {}″, expected ≈ 1.75″",
-            defl.value()
+            (defl.value() - expected).abs() < 1e-9,
+            "deflection at 90° = {}″, expected {}″",
+            defl.value(),
+            expected
         );
     }
 
     #[test]
-    fn deflection_far_from_sun() {
-        // Source 90° away from the Sun
-        let angle = Radians::new(std::f64::consts::FRAC_PI_2);
+    fn deflection_at_limb_is_about_1_75_arcsec() {
+        // Solar angular radius at 1 AU is ~959.63 arcsec.
+        let angle = Radians::new(959.63 / RAD_TO_ARCSEC);
         let defl = solar_deflection_magnitude(angle, AstronomicalUnits::new(1.0));
-        // At 90°, cot(45°) = 1.0, so deflection ≈ 1.75″
-        assert!(defl.value() > 0.0 && defl.value() < 10.0);
+        assert!(
+            (defl.value() - 1.75).abs() < 0.03,
+            "limb deflection = {}″, expected ~1.75″",
+            defl.value()
+        );
     }
 
     #[test]
@@ -252,17 +266,43 @@ mod tests {
 
         let deflected = solar_deflection(star, earth_sun_au);
 
-        // Deflection should be tiny: ~1.75″ ≈ 8.5e-6 rad
-        // The source is 90° from the Sun, so deflection ≈ 1.75″
+        // At 90° elongation and 1 AU, deflection is ~2GM/(c²R) ≈ 1.97e-8 rad.
         let angular_diff = (deflected.x() - star.x()).powi(2)
             + (deflected.y() - star.y()).powi(2)
             + (deflected.z() - star.z()).powi(2);
         let angular_diff = angular_diff.sqrt();
-        // Should be on the order of microradians
+        let expected = SOLAR_SCHWARZSCHILD_AU;
         assert!(
-            angular_diff > 1e-9 && angular_diff < 1e-4,
-            "deflection magnitude = {} rad, expected ~8.5e-6",
-            angular_diff
+            (angular_diff - expected).abs() < expected * 1e-3,
+            "deflection magnitude = {} rad, expected {} rad",
+            angular_diff,
+            expected
+        );
+    }
+
+    #[test]
+    fn scalar_magnitude_matches_vector_case_at_ninety_deg() {
+        let star = direction::EquatorialMeanJ2000::new(1.0, 0.0, 0.0);
+        let earth_sun_au = [0.0, 0.0, -1.0];
+
+        let deflected = solar_deflection(star, earth_sun_au);
+        let chord = ((deflected.x() - star.x()).powi(2)
+            + (deflected.y() - star.y()).powi(2)
+            + (deflected.z() - star.z()).powi(2))
+        .sqrt();
+        let vec_deflection_arcsec = (2.0 * (0.5 * chord).asin()) * RAD_TO_ARCSEC;
+
+        let scalar_deflection = solar_deflection_magnitude(
+            Radians::new(std::f64::consts::FRAC_PI_2),
+            AstronomicalUnits::new(1.0),
+        )
+        .value();
+
+        assert!(
+            (vec_deflection_arcsec - scalar_deflection).abs() < 1e-9,
+            "vector={} arcsec, scalar={} arcsec",
+            vec_deflection_arcsec,
+            scalar_deflection
         );
     }
 
