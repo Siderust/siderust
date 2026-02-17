@@ -274,7 +274,8 @@ fn main() {
         now_jupiter.get_position().distance()
     );
 
-    let now_mars_geo: EclipticMeanJ2000<Au, Geocentric> = now_mars.get_position().to_center(current);
+    let now_mars_geo: EclipticMeanJ2000<Au, Geocentric> =
+        now_mars.get_position().to_center(current);
     let now_mars_geo_km = now_mars_geo.distance().to::<Kilometer>();
     println!(
         "Current Mars distance from Earth: {} ({})\n",

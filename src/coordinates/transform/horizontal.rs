@@ -38,7 +38,7 @@
 //! use qtty::*;
 //!
 //! let jd_ut1 = JulianDate::new(2_451_545.0);
-//! let jd_tt = JulianDate::new(2_451_545.000_800_740_7);
+//! let jd_tt = JulianDate::new(2_451_545.000_800_741);
 //!
 //! let equatorial = spherical::Direction::<EquatorialTrueOfDate>::new(45.0 * DEG, 30.0 * DEG)
 //!     .to_cartesian();
@@ -124,11 +124,10 @@ impl ToHorizontal for Direction<EquatorialTrueOfDate> {
         let alt = z.atan2(r);
 
         // Construct horizontal direction from spherical coordinates
-        let spherical_horiz =
-            affn::spherical::Direction::<Horizontal>::new_raw(
-                Degrees::new(alt.to_degrees()),
-                Degrees::new(az.to_degrees())
-            );
+        let spherical_horiz = affn::spherical::Direction::<Horizontal>::new_raw(
+            Degrees::new(alt.to_degrees()),
+            Degrees::new(az.to_degrees()),
+        );
         spherical_horiz.to_cartesian()
     }
 }
@@ -197,11 +196,10 @@ impl FromHorizontal for Direction<Horizontal> {
         let ra = (last - ha).rem_euclid(TAU);
 
         // Construct equatorial direction from spherical coordinates
-        let spherical_equ =
-            affn::spherical::Direction::<EquatorialTrueOfDate>::new_raw(
-                Degrees::new(dec.to_degrees()),
-                Degrees::new(ra.to_degrees())
-            );
+        let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_raw(
+            Degrees::new(dec.to_degrees()),
+            Degrees::new(ra.to_degrees()),
+        );
         spherical_equ.to_cartesian()
     }
 }
@@ -314,15 +312,19 @@ mod tests {
     #[test]
     fn roundtrip_equatorial_horizontal_is_stable() {
         let jd_ut1 = JulianDate::new(2_451_545.0);
-        let jd_tt = JulianDate::new(2_451_545.000_800_740_7);
+        let jd_tt = JulianDate::new(2_451_545.000_800_741);
 
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
-        let site = ObserverSite::new(0.0 * DEG, Degrees::new((0.6 * RAD).value().to_degrees()), 0.0 * M);
+        let site = ObserverSite::new(
+            0.0 * DEG,
+            Degrees::new((0.6 * RAD).value().to_degrees()),
+            0.0 * M,
+        );
 
         let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_raw(
             Degrees::new(dec.value().to_degrees()),
-            Degrees::new(ra.value().to_degrees())
+            Degrees::new(ra.value().to_degrees()),
         );
         let equatorial = spherical_equ.to_cartesian();
         let horizontal = equatorial.to_horizontal(&jd_ut1, &jd_tt, &site);
@@ -331,9 +333,13 @@ mod tests {
         let spherical = equatorial.to_spherical();
         let back_spherical = back.to_spherical();
 
-        let dra = (Radians::from(back_spherical.azimuth).value() - Radians::from(spherical.azimuth).value()).abs();
+        let dra = (Radians::from(back_spherical.azimuth).value()
+            - Radians::from(spherical.azimuth).value())
+        .abs();
         let dra = dra.min(TAU - dra);
-        let ddec = (Radians::from(back_spherical.polar).value() - Radians::from(spherical.polar).value()).abs();
+        let ddec = (Radians::from(back_spherical.polar).value()
+            - Radians::from(spherical.polar).value())
+        .abs();
 
         assert!(dra < 1e-12, "RA roundtrip error too large: {dra}");
         assert!(ddec < 1e-12, "Dec roundtrip error too large: {ddec}");
@@ -343,15 +349,19 @@ mod tests {
     fn matches_erfa_reference_case() {
         // Reference generated from ERFA adapter in the lab benchmark suite
         let jd_ut1 = JulianDate::new(2_451_545.0);
-        let jd_tt = JulianDate::new(2_451_545.000_800_740_7);
+        let jd_tt = JulianDate::new(2_451_545.000_800_741);
 
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
-        let site = ObserverSite::new(0.0 * DEG, Degrees::new((0.6 * RAD).value().to_degrees()), 0.0 * M);
+        let site = ObserverSite::new(
+            0.0 * DEG,
+            Degrees::new((0.6 * RAD).value().to_degrees()),
+            0.0 * M,
+        );
 
         let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_raw(
             Degrees::new(dec.value().to_degrees()),
-            Degrees::new(ra.value().to_degrees())
+            Degrees::new(ra.value().to_degrees()),
         );
         let equatorial = spherical_equ.to_cartesian();
         let horizontal = equatorial.to_horizontal(&jd_ut1, &jd_tt, &site);
@@ -376,17 +386,21 @@ mod tests {
         use qtty::Kilometer;
 
         let jd_ut1 = JulianDate::new(2_451_545.0);
-        let jd_tt = JulianDate::new(2_451_545.000_800_740_7);
+        let jd_tt = JulianDate::new(2_451_545.000_800_741);
 
         let site = ObserverSite::new(0.0 * DEG, 51.5 * DEG, 100.0 * M);
         let ra = 45.0 * DEG;
         let dec = 30.0 * DEG;
         let distance = 1000.0 * KM;
 
-        // Create equatorial position via spherical  
+        // Create equatorial position via spherical
         let equ_sph_dir = spherical::Direction::<EquatorialTrueOfDate>::new_raw(dec, ra);
-        let equ_pos_sph = equ_sph_dir.position_with_params::<Topocentric, Kilometer>(site, distance);
-        let equ_pos = affn::Position::<Topocentric, EquatorialTrueOfDate, Kilometer>::from_spherical(&equ_pos_sph);
+        let equ_pos_sph =
+            equ_sph_dir.position_with_params::<Topocentric, Kilometer>(site, distance);
+        let equ_pos =
+            affn::Position::<Topocentric, EquatorialTrueOfDate, Kilometer>::from_spherical(
+                &equ_pos_sph,
+            );
 
         // Transform to horizontal
         let horiz_pos = equ_pos.to_horizontal_position(&jd_ut1, &jd_tt);
@@ -396,7 +410,10 @@ mod tests {
 
         // Verify distance preservation (convert to comparable units)
         let horiz_dist = horiz_pos.distance();
-        assert!((horiz_dist.value() - distance.value()).abs() < 1e-10, "Distance mismatch");
+        assert!(
+            (horiz_dist.value() - distance.value()).abs() < 1e-10,
+            "Distance mismatch"
+        );
 
         // Transform back
         let back_pos = horiz_pos.to_equatorial_position(&jd_ut1, &jd_tt);
@@ -404,6 +421,9 @@ mod tests {
         // Verify roundtrip
         assert_eq!(back_pos.center_params(), &site);
         let back_dist = back_pos.distance();
-        assert!((back_dist.value() - distance.value()).abs() < 1e-10, "Roundtrip distance mismatch");
+        assert!(
+            (back_dist.value() - distance.value()).abs() < 1e-10,
+            "Roundtrip distance mismatch"
+        );
     }
 }
