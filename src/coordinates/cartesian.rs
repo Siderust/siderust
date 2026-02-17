@@ -78,7 +78,8 @@ pub mod position {
     use super::{centers, frames};
 
     /// **Heliocentric EclipticMeanJ2000** cartesian position.
-    pub type EclipticMeanJ2000<U, C = centers::Heliocentric> = Position<C, frames::EclipticMeanJ2000, U>;
+    pub type EclipticMeanJ2000<U, C = centers::Heliocentric> =
+        Position<C, frames::EclipticMeanJ2000, U>;
     /// **Geocentric Equatorial mean J2000** cartesian position.
     pub type EquatorialMeanJ2000<U, C = centers::Geocentric> =
         Position<C, frames::EquatorialMeanJ2000, U>;

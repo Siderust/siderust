@@ -25,7 +25,8 @@ fn main() {
     println!("------------------------");
 
     // Create a heliocentric ecliptic position (1 AU along X-axis)
-    let earth_position = cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
+    let earth_position =
+        cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
     println!("Earth position (Heliocentric EclipticMeanJ2000):");
     println!("  X = {:.6} AU", earth_position.x());
     println!("  Y = {:.6} AU", earth_position.y());
@@ -165,7 +166,10 @@ fn main() {
     println!("  Bodycentric:  {}\n", centers::Bodycentric::center_name());
 
     println!("Reference Frames:");
-    println!("  EclipticMeanJ2000:   {}", frames::EclipticMeanJ2000::frame_name());
+    println!(
+        "  EclipticMeanJ2000:   {}",
+        frames::EclipticMeanJ2000::frame_name()
+    );
     println!(
         "  EquatorialMeanJ2000: {}",
         frames::EquatorialMeanJ2000::frame_name()
