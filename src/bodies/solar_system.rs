@@ -51,7 +51,7 @@
 
 use super::{Planet, Satellite, Star};
 use crate::astro::orbit::Orbit;
-use crate::coordinates::spherical::position::{Ecliptic, EquatorialMeanJ2000};
+use crate::coordinates::spherical::position::{EclipticMeanJ2000, EquatorialMeanJ2000};
 use crate::targets::Target;
 use crate::time::JulianDate;
 use qtty::length::nominal::RSUN;
@@ -535,14 +535,14 @@ pub struct LagrangePoint {
     /// Primary–secondary pair the point belongs to (for information only).
     pub parent_system: &'static str,
     /// Heliocentric ecliptic coordinates referenced to J2000.0.
-    pub position: Ecliptic<AstronomicalUnit>,
+    pub position: EclipticMeanJ2000<AstronomicalUnit>,
 }
 
 // For demonstration purposes we approximate L1/L2 as ±0.01 AU along the Sun–Earth line.
 const SUN_EARTH_L1: LagrangePoint = LagrangePoint {
     name: "Sun–Earth L1",
     parent_system: "Sun–Earth",
-    position: Ecliptic::<AstronomicalUnit>::new_raw(
+    position: EclipticMeanJ2000::<AstronomicalUnit>::new_raw(
         Degrees::new(0.0), // lat (polar)
         Degrees::new(0.0), // lon (azimuth)
         AstronomicalUnits::new(0.99),
@@ -551,7 +551,7 @@ const SUN_EARTH_L1: LagrangePoint = LagrangePoint {
 const SUN_EARTH_L2: LagrangePoint = LagrangePoint {
     name: "Sun–Earth L2",
     parent_system: "Sun–Earth",
-    position: Ecliptic::<AstronomicalUnit>::new_raw(
+    position: EclipticMeanJ2000::<AstronomicalUnit>::new_raw(
         Degrees::new(0.0),   // lat (polar)
         Degrees::new(180.0), // lon (azimuth)
         AstronomicalUnits::new(1.01),

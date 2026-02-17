@@ -26,9 +26,9 @@ pub struct MoonMeeusCh47 {
     pub dec: Radians,
     /// Geocentric distance.
     pub dist: Kilometers,
-    /// Ecliptic longitude (of date).
+    /// EclipticMeanJ2000 longitude (of date).
     pub ecl_lon: Radians,
-    /// Ecliptic latitude (of date).
+    /// EclipticMeanJ2000 latitude (of date).
     pub ecl_lat: Radians,
 }
 
@@ -88,7 +88,7 @@ pub fn moon_position_meeus_ch47(jd_tt: JulianDate) -> MoonMeeusCh47 {
     let ecl_lat_rad = (sum_b / 1_000_000.0).to_radians();
     let dist_km = 385_000.56 + sum_r / 1_000.0;
 
-    // Ecliptic → equatorial with IAU 2006 mean obliquity
+    // EclipticMeanJ2000 → equatorial with IAU 2006 mean obliquity
     let eps = precession::mean_obliquity_iau2006(jd_tt).value();
     let ce = eps.cos();
     let se = eps.sin();

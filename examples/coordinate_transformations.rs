@@ -4,14 +4,14 @@
 //! Coordinate Transformations Example
 //!
 //! This example demonstrates transformations between different coordinate systems:
-//! - Frame transformations (Ecliptic ↔ EquatorialMeanJ2000 ↔ ICRS)
+//! - Frame transformations (EclipticMeanJ2000 ↔ EquatorialMeanJ2000 ↔ ICRS)
 //! - Center transformations (Heliocentric ↔ Geocentric ↔ Barycentric)
 //! - Combined transformations
 //! - Time-dependent transformations
 
 use qtty::*;
 use siderust::bodies::solar_system::{Earth, Mars};
-use siderust::coordinates::cartesian::position::{Ecliptic, EquatorialMeanJ2000, GCRS, HCRS, ICRS};
+use siderust::coordinates::cartesian::position::{EclipticMeanJ2000, EquatorialMeanJ2000, GCRS, HCRS, ICRS};
 use siderust::coordinates::centers::{Geocentric, Heliocentric};
 use siderust::coordinates::transform::{Transform, TransformCenter, TransformFrame};
 use siderust::time::JulianDate;
@@ -29,8 +29,8 @@ fn main() {
     println!("------------------------");
 
     // Start with ecliptic coordinates (heliocentric)
-    let pos_ecliptic = Ecliptic::<Au>::new(1.0, 0.0, 0.0);
-    println!("Original (Heliocentric Ecliptic):");
+    let pos_ecliptic = EclipticMeanJ2000::<Au>::new(1.0, 0.0, 0.0);
+    println!("Original (Heliocentric EclipticMeanJ2000):");
     println!("  X = {:.6} AU", pos_ecliptic.x());
     println!("  Y = {:.6} AU", pos_ecliptic.y());
     println!("  Z = {:.6} AU\n", pos_ecliptic.z());
@@ -57,15 +57,15 @@ fn main() {
 
     // Get Earth's position (heliocentric ecliptic)
     let earth_helio = *Earth::vsop87a(jd).get_position();
-    println!("Earth (Heliocentric Ecliptic):");
+    println!("Earth (Heliocentric EclipticMeanJ2000):");
     println!("  X = {:.6} AU", earth_helio.x());
     println!("  Y = {:.6} AU", earth_helio.y());
     println!("  Z = {:.6} AU", earth_helio.z());
     println!("  Distance = {:.6} AU\n", earth_helio.distance());
 
     // Transform to geocentric (Earth becomes origin)
-    let earth_geo: Ecliptic<Au, Geocentric> = earth_helio.to_center(jd);
-    println!("Earth (Geocentric Ecliptic) - at origin:");
+    let earth_geo: EclipticMeanJ2000<Au, Geocentric> = earth_helio.to_center(jd);
+    println!("Earth (Geocentric EclipticMeanJ2000) - at origin:");
     println!("  X = {:.10} AU", earth_geo.x());
     println!("  Y = {:.10} AU", earth_geo.y());
     println!("  Z = {:.10} AU", earth_geo.z());
@@ -76,15 +76,15 @@ fn main() {
 
     // Get Mars position (heliocentric)
     let mars_helio = *Mars::vsop87a(jd).get_position();
-    println!("Mars (Heliocentric Ecliptic):");
+    println!("Mars (Heliocentric EclipticMeanJ2000):");
     println!("  X = {:.6} AU", mars_helio.x());
     println!("  Y = {:.6} AU", mars_helio.y());
     println!("  Z = {:.6} AU", mars_helio.z());
     println!("  Distance = {:.6} AU\n", mars_helio.distance());
 
     // Transform Mars to geocentric
-    let mars_geo: Ecliptic<Au, Geocentric> = mars_helio.to_center(jd);
-    println!("Mars (Geocentric Ecliptic) - as seen from Earth:");
+    let mars_geo: EclipticMeanJ2000<Au, Geocentric> = mars_helio.to_center(jd);
+    println!("Mars (Geocentric EclipticMeanJ2000) - as seen from Earth:");
     println!("  X = {:.6} AU", mars_geo.x());
     println!("  Y = {:.6} AU", mars_geo.y());
     println!("  Z = {:.6} AU", mars_geo.z());
@@ -96,9 +96,9 @@ fn main() {
     println!("3. COMBINED TRANSFORMATIONS");
     println!("---------------------------");
 
-    // Mars: Heliocentric Ecliptic → Geocentric EquatorialMeanJ2000
+    // Mars: Heliocentric EclipticMeanJ2000 → Geocentric EquatorialMeanJ2000
     println!("Mars transformation chain:");
-    println!("  Start: Heliocentric Ecliptic");
+    println!("  Start: Heliocentric EclipticMeanJ2000");
 
     // Method 1: Step by step
     let mars_helio_equ: EquatorialMeanJ2000<Au, Heliocentric> = mars_helio.to_frame();
@@ -126,14 +126,14 @@ fn main() {
 
     // Get Earth in barycentric coordinates
     let earth_bary = *Earth::vsop87e(jd).get_position();
-    println!("Earth (Barycentric Ecliptic):");
+    println!("Earth (Barycentric EclipticMeanJ2000):");
     println!("  X = {:.6} AU", earth_bary.x());
     println!("  Y = {:.6} AU", earth_bary.y());
     println!("  Z = {:.6} AU", earth_bary.z());
     println!("  Distance from SSB = {:.6} AU\n", earth_bary.distance());
 
     // Transform to geocentric
-    let earth_geo_from_bary: Ecliptic<Au, Geocentric> = earth_bary.to_center(jd);
+    let earth_geo_from_bary: EclipticMeanJ2000<Au, Geocentric> = earth_bary.to_center(jd);
     println!("Earth (Geocentric, from Barycentric):");
     println!(
         "  Distance = {:.10} AU (should be ~0)\n",
@@ -142,7 +142,7 @@ fn main() {
 
     // Transform Mars from barycentric to geocentric
     let mars_bary = *Mars::vsop87e(jd).get_position();
-    let mars_geo_from_bary: Ecliptic<Au, Geocentric> = mars_bary.to_center(jd);
+    let mars_geo_from_bary: EclipticMeanJ2000<Au, Geocentric> = mars_bary.to_center(jd);
     println!("Mars (Geocentric, from Barycentric):");
     println!("  X = {:.6} AU", mars_geo_from_bary.x());
     println!("  Y = {:.6} AU", mars_geo_from_bary.y());
@@ -177,14 +177,14 @@ fn main() {
     println!("----------------------------");
 
     let original = mars_helio;
-    println!("Original Mars (Heliocentric Ecliptic):");
+    println!("Original Mars (Heliocentric EclipticMeanJ2000):");
     println!("  X = {:.10} AU", original.x());
     println!("  Y = {:.10} AU", original.y());
     println!("  Z = {:.10} AU\n", original.z());
 
     // Transform: Helio Ecl → Geo EquatorialMeanJ2000 → Helio Ecl
     let temp: EquatorialMeanJ2000<Au, Geocentric> = original.transform(jd);
-    let recovered: Ecliptic<Au, Heliocentric> = temp.transform(jd);
+    let recovered: EclipticMeanJ2000<Au, Heliocentric> = temp.transform(jd);
 
     println!("After round-trip transformation:");
     println!("  X = {:.10} AU", recovered.x());

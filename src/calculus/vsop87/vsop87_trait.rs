@@ -5,7 +5,7 @@ use crate::bodies::solar_system::*;
 use crate::coordinates::{
     cartesian::Position,
     centers::{Barycentric, Heliocentric},
-    frames::Ecliptic,
+    frames::EclipticMeanJ2000,
 };
 use crate::targets::Target;
 use crate::time::JulianDate;
@@ -13,8 +13,8 @@ use qtty::AstronomicalUnit;
 
 pub trait VSOP87 {
     fn vsop87a(&self, jd: JulianDate)
-        -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>>;
-    fn vsop87e(&self, jd: JulianDate) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>;
+        -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>>;
+    fn vsop87e(&self, jd: JulianDate) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>;
 }
 
 macro_rules! impl_vsop87_for_planet {
@@ -23,14 +23,14 @@ macro_rules! impl_vsop87_for_planet {
             fn vsop87a(
                 &self,
                 jd: JulianDate,
-            ) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>> {
+            ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> {
                 $planet::vsop87a(jd)
             }
 
             fn vsop87e(
                 &self,
                 jd: JulianDate,
-            ) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
+            ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
                 $planet::vsop87e(jd)
             }
         }

@@ -293,7 +293,7 @@ impl MoonAltitudeContext {
         let (x_ecl, y_ecl, z_ecl) = self.pos_cache.get_position_km(mjd);
 
         // ---------------------------------------------------------------
-        // 2. Ecliptic → EquatorialMeanJ2000 (constant rotation about +X)
+        // 2. EclipticMeanJ2000 → EquatorialMeanJ2000 (constant rotation about +X)
         // ---------------------------------------------------------------
         let (sin_e, cos_e) = J2000_OBLIQUITY_RAD.sin_cos();
         let x_eq = x_ecl;
