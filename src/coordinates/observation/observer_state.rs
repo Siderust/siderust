@@ -22,12 +22,13 @@
 //! By encapsulating this in `ObserverState`, we ensure that aberration cannot be
 //! applied without explicit observer information.
 
-use crate::astro::earth_rotation::gmst_from_tt;
+use crate::astro::eop::EopProvider;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::frames::EquatorialMeanJ2000;
-use crate::coordinates::transform::context::DefaultEphemeris;
+use crate::coordinates::transform::centers::position::to_topocentric::itrs_to_equatorial_mean_j2000_rotation;
+use crate::coordinates::transform::context::{AstroContext, DefaultEphemeris};
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Day};
 
@@ -111,8 +112,18 @@ impl ObserverState {
     /// # Note
     ///
     /// Currently this only includes Earth's orbital velocity (annual aberration).
-    /// Diurnal aberration (~0.3") is included via an Earth-rotation model based on GMST.
+    /// Diurnal aberration (~0.3") uses the default EOP-backed Earth-rotation chain.
     pub fn topocentric(site: &ObserverSite, jd: JulianDate) -> Self {
+        let ctx: AstroContext = AstroContext::default();
+        Self::topocentric_with_ctx(site, jd, &ctx)
+    }
+
+    /// Context-aware topocentric observer state.
+    pub fn topocentric_with_ctx<Eph, Eop: EopProvider, Nut>(
+        site: &ObserverSite,
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Self {
         use crate::coordinates::transform::TransformFrame;
         use qtty::{Meter, Second, Seconds};
 
@@ -122,8 +133,9 @@ impl ObserverState {
         // Transform to equatorial frame
         let mut velocity: Velocity<EquatorialMeanJ2000, AuPerDay> = vel_ecl.to_frame();
 
-        // Diurnal (rotational) component: v = ω × r, computed in ECEF then rotated to equatorial.
-        // This uses GMST as a first-order Earth rotation model (UT1 should be supplied via `jd`).
+        // Diurnal (rotational) component: v = ω × r, computed in ECEF then
+        // rotated through the same high-precision terrestrial->celestial chain
+        // used by topocentric position transforms.
         // IERS Conventions 2010/2020: Earth rotation rate (rad/s), nominal.
         const OMEGA_EARTH: f64 = 7.292_115_0e-5;
 
@@ -137,14 +149,8 @@ impl ObserverState {
         let vy_ecef: qtty::Quantity<MetersPerSecond> = (site_itrf_m.x() * OMEGA_EARTH) / one_second;
         let vz_ecef: qtty::Quantity<MetersPerSecond> = qtty::Quantity::zero();
 
-        // Rotate ECEF velocity into the mean equator/equinox of J2000 using GMST (IAU 2006 ERA-based).
-        // Uses tempoch ΔT for proper TT→UT1 conversion.
-        let gmst = gmst_from_tt(jd);
-        let (sin_g, cos_g) = gmst.sin_cos();
-
-        let vx_eq = vx_ecef * cos_g - vy_ecef * sin_g;
-        let vy_eq = vx_ecef * sin_g + vy_ecef * cos_g;
-        let vz_eq = vz_ecef;
+        let rot = itrs_to_equatorial_mean_j2000_rotation(jd, ctx);
+        let [vx_eq, vy_eq, vz_eq] = rot * [vx_ecef, vy_ecef, vz_ecef];
 
         let v_diurnal = Velocity::<EquatorialMeanJ2000, AuPerDay>::new(
             vx_eq.to::<AuPerDay>(),
