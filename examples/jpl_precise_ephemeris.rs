@@ -44,6 +44,26 @@ fn main() {
     #[cfg(feature = "de441")]
     use siderust::calculus::ephemeris::De441Ephemeris;
 
+    fn stub_enabled_for(prefix: &str) -> bool {
+        let Ok(raw) = std::env::var("SIDERUST_JPL_STUB") else {
+            return false;
+        };
+        let raw = raw.trim();
+        if raw.is_empty() {
+            return false;
+        }
+
+        let lower = raw.to_ascii_lowercase();
+        if lower == "all" || lower == "1" || lower == "true" || lower == "yes" || lower == "on" {
+            return true;
+        }
+
+        lower
+            .split(|c: char| c == ',' || c.is_whitespace())
+            .filter(|s| !s.is_empty())
+            .any(|tok| tok == prefix)
+    }
+
     /// Build a [`JulianDate`] from a calendar date (year, month, day at 12:00 TT).
     fn jd_from_ymd(year: i32, month: u32, day: u32) -> JulianDate {
         let naive = NaiveDate::from_ymd_opt(year, month, day)
@@ -61,13 +81,29 @@ fn main() {
     // =========================================================================
     println!("1. AVAILABLE BACKENDS");
     println!("─────────────────────");
+
+    let stub_de440 = stub_enabled_for("de440");
+    let stub_de441_env = stub_enabled_for("de441");
+    let stub_de441_cfg = cfg!(siderust_mock_de441);
+    let stub_de441 = stub_de441_env || stub_de441_cfg;
+
     println!("  VSOP87/ELP2000 : always available (analytical series)");
     #[cfg(feature = "de440")]
-    println!("  DE440          : enabled (JPL, 1550–2650 CE)");
+    println!(
+        "  DE440          : enabled (JPL, 1550–2650 CE){}",
+        if stub_de440 { " — STUBBED via SIDERUST_JPL_STUB (runtime calls skipped)" } else { "" }
+    );
     #[cfg(not(feature = "de440"))]
     println!("  DE440          : not enabled");
     #[cfg(feature = "de441")]
-    println!("  DE441          : enabled (JPL, extended coverage)");
+    println!(
+        "  DE441          : enabled (JPL, extended coverage){}",
+        if stub_de441 {
+            " — STUBBED/MOCKED (runtime calls compare against VSOP87/ELP2000)"
+        } else {
+            ""
+        }
+    );
     #[cfg(not(feature = "de441"))]
     println!("  DE441          : not enabled");
     println!();
@@ -97,44 +133,58 @@ fn main() {
 
     #[cfg(feature = "de440")]
     {
-        let earth_de440 = De440Ephemeris::earth_heliocentric(j2000);
-        println!("\n  DE440:");
-        println!("    X = {:15.10} AU", earth_de440.get_position().x());
-        println!("    Y = {:15.10} AU", earth_de440.get_position().y());
-        println!("    Z = {:15.10} AU", earth_de440.get_position().z());
+        if stub_de440 {
+            println!("\n  DE440:");
+            println!("    (stubbed) Skipping DE440 runtime calls to avoid panics.");
+        } else {
+            let earth_de440 = De440Ephemeris::earth_heliocentric(j2000);
+            println!("\n  DE440:");
+            println!("    X = {:15.10} AU", earth_de440.get_position().x());
+            println!("    Y = {:15.10} AU", earth_de440.get_position().y());
+            println!("    Z = {:15.10} AU", earth_de440.get_position().z());
 
-        let diff_km = earth_vsop
-            .get_position()
-            .distance_to(earth_de440.get_position())
-            .to::<Kilometer>();
-        println!("    Δ(VSOP87−DE440) = {}", diff_km);
+            let diff_km = earth_vsop
+                .get_position()
+                .distance_to(earth_de440.get_position())
+                .to::<Kilometer>();
+            println!("    Δ(VSOP87−DE440) = {}", diff_km);
+        }
     }
 
     #[cfg(feature = "de441")]
     {
-        let earth_de441 = De441Ephemeris::earth_heliocentric(j2000);
-        println!("\n  DE441:");
-        println!("    X = {:15.10} AU", earth_de441.get_position().x());
-        println!("    Y = {:15.10} AU", earth_de441.get_position().y());
-        println!("    Z = {:15.10} AU", earth_de441.get_position().z());
+        if stub_de441 {
+            println!("\n  DE441:");
+            println!("    (stubbed/mocked) Skipping DE441 runtime calls.");
+        } else {
+            let earth_de441 = De441Ephemeris::earth_heliocentric(j2000);
+            println!("\n  DE441:");
+            println!("    X = {:15.10} AU", earth_de441.get_position().x());
+            println!("    Y = {:15.10} AU", earth_de441.get_position().y());
+            println!("    Z = {:15.10} AU", earth_de441.get_position().z());
 
-        let diff_km = earth_vsop
-            .get_position()
-            .distance_to(earth_de441.get_position())
-            .to::<Kilometer>();
-        println!("    Δ(VSOP87−DE441) = {}", diff_km);
+            let diff_km = earth_vsop
+                .get_position()
+                .distance_to(earth_de441.get_position())
+                .to::<Kilometer>();
+            println!("    Δ(VSOP87−DE441) = {}", diff_km);
+        }
     }
 
     // When both are available, compare DE440 vs DE441
     #[cfg(all(feature = "de440", feature = "de441"))]
     {
-        let e440 = De440Ephemeris::earth_heliocentric(j2000);
-        let e441 = De441Ephemeris::earth_heliocentric(j2000);
-        let diff_km = e440
-            .get_position()
-            .distance_to(e441.get_position())
-            .to::<Kilometer>();
-        println!("\n  Δ(DE440−DE441) = {}", diff_km);
+        if stub_de440 || stub_de441 {
+            println!("\n  Δ(DE440−DE441) = (skipped: stubbed/mocked backend enabled)");
+        } else {
+            let e440 = De440Ephemeris::earth_heliocentric(j2000);
+            let e441 = De441Ephemeris::earth_heliocentric(j2000);
+            let diff_km = e440
+                .get_position()
+                .distance_to(e441.get_position())
+                .to::<Kilometer>();
+            println!("\n  Δ(DE440−DE441) = {}", diff_km);
+        }
     }
     println!();
 
@@ -153,28 +203,38 @@ fn main() {
 
     #[cfg(feature = "de440")]
     {
-        let moon_de440 = De440Ephemeris::moon_geocentric(j2000);
-        println!("\n  DE440:");
-        println!("    X = {:15.6} km", moon_de440.x());
-        println!("    Y = {:15.6} km", moon_de440.y());
-        println!("    Z = {:15.6} km", moon_de440.z());
-        println!("    Distance: {:.6} km", moon_de440.distance());
+        if stub_de440 {
+            println!("\n  DE440:");
+            println!("    (stubbed) Skipping DE440 runtime calls to avoid panics.");
+        } else {
+            let moon_de440 = De440Ephemeris::moon_geocentric(j2000);
+            println!("\n  DE440:");
+            println!("    X = {:15.6} km", moon_de440.x());
+            println!("    Y = {:15.6} km", moon_de440.y());
+            println!("    Z = {:15.6} km", moon_de440.z());
+            println!("    Distance: {:.6} km", moon_de440.distance());
 
-        let diff_km = moon_vsop.distance_to(&moon_de440);
-        println!("    Δ(ELP2000−DE440) = {}", diff_km);
+            let diff_km = moon_vsop.distance_to(&moon_de440);
+            println!("    Δ(ELP2000−DE440) = {}", diff_km);
+        }
     }
 
     #[cfg(feature = "de441")]
     {
-        let moon_de441 = De441Ephemeris::moon_geocentric(j2000);
-        println!("\n  DE441:");
-        println!("    X = {:15.6} km", moon_de441.x());
-        println!("    Y = {:15.6} km", moon_de441.y());
-        println!("    Z = {:15.6} km", moon_de441.z());
-        println!("    Distance: {:.6} km", moon_de441.distance());
+        if stub_de441 {
+            println!("\n  DE441:");
+            println!("    (stubbed/mocked) Skipping DE441 runtime calls.");
+        } else {
+            let moon_de441 = De441Ephemeris::moon_geocentric(j2000);
+            println!("\n  DE441:");
+            println!("    X = {:15.6} km", moon_de441.x());
+            println!("    Y = {:15.6} km", moon_de441.y());
+            println!("    Z = {:15.6} km", moon_de441.z());
+            println!("    Distance: {:.6} km", moon_de441.distance());
 
-        let diff_km = moon_vsop.distance_to(&moon_de441);
-        println!("    Δ(ELP2000−DE441) = {}", diff_km);
+            let diff_km = moon_vsop.distance_to(&moon_de441);
+            println!("    Δ(ELP2000−DE441) = {}", diff_km);
+        }
     }
     println!();
 
@@ -196,16 +256,24 @@ fn main() {
 
     #[cfg(feature = "de440")]
     {
-        let vel = De440Ephemeris::earth_barycentric_velocity(test_date);
-        let speed = vel.magnitude();
-        println!("  DE440:   {} = {}", speed, speed.to::<KmPerSecond>());
+        if stub_de440 {
+            println!("  DE440:   (stubbed) Skipping DE440 runtime calls to avoid panics.");
+        } else {
+            let vel = De440Ephemeris::earth_barycentric_velocity(test_date);
+            let speed = vel.magnitude();
+            println!("  DE440:   {} = {}", speed, speed.to::<KmPerSecond>());
+        }
     }
 
     #[cfg(feature = "de441")]
     {
-        let vel = De441Ephemeris::earth_barycentric_velocity(test_date);
-        let speed = vel.magnitude();
-        println!("  DE441:   {} = {}", speed, speed.to::<KmPerSecond>());
+        if stub_de441 {
+            println!("  DE441:   (stubbed/mocked) Skipping DE441 runtime calls.");
+        } else {
+            let vel = De441Ephemeris::earth_barycentric_velocity(test_date);
+            let speed = vel.magnitude();
+            println!("  DE441:   {} = {}", speed, speed.to::<KmPerSecond>());
+        }
     }
     println!();
 
@@ -223,15 +291,19 @@ fn main() {
     for month in 1..=12 {
         let jd = jd_from_ymd(2026, month, 15);
 
-        // Use the highest-precision backend available
+        // Use the highest-fidelity backend that is actually available at runtime.
         #[cfg(feature = "de441")]
-        let dist = De441Ephemeris::earth_heliocentric(jd)
-            .get_position()
-            .distance();
+        let dist = if !stub_de441 {
+            De441Ephemeris::earth_heliocentric(jd).get_position().distance()
+        } else {
+            Vsop87Ephemeris::earth_heliocentric(jd).get_position().distance()
+        };
         #[cfg(all(feature = "de440", not(feature = "de441")))]
-        let dist = De440Ephemeris::earth_heliocentric(jd)
-            .get_position()
-            .distance();
+        let dist = if !stub_de440 {
+            De440Ephemeris::earth_heliocentric(jd).get_position().distance()
+        } else {
+            Vsop87Ephemeris::earth_heliocentric(jd).get_position().distance()
+        };
 
         if min_dist.map_or(true, |min| dist < min) {
             min_dist = Some(dist);
@@ -268,15 +340,13 @@ fn main() {
     println!("  Summary");
     println!("═══════════════════════════════════════════════════════════");
     println!();
-    println!("  JPL DE4xx backends provide:");
-    println!("  • Kilometer-level precision for planetary positions");
-    println!("  • Meter-level precision for lunar positions");
-    println!("  • Based on JPL's latest planetary ephemerides");
+    println!("  DE4xx backends provide higher-fidelity solar-system ephemerides");
+    println!("  than the analytical VSOP87/ELP2000 series (at the cost of larger datasets).");
     println!();
     println!("  Backend selection:");
     println!("  • DE440: 1550–2650 CE (modern focus)");
     println!("  • DE441: Extended coverage (deep past/future)");
-    println!("  • VSOP87/ELP2000: Always available, sub-km precision");
+    println!("  • VSOP87/ELP2000: Always available analytical series");
     println!();
     println!("  DefaultEphemeris auto-selects: DE441 > DE440 > VSOP87");
     println!();

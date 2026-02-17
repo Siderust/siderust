@@ -5,35 +5,21 @@
 //!
 //! **Precision astronomy & satellite mechanics in Rust.**
 //!
-//! The `siderust` crate provides high-accuracy celestial and orbital
-//! calculations with zero-allocation performance and strong type safety.
+//! `siderust` is a research-grade astronomy toolkit focused on:
+//! - Strongly-typed coordinates (center + frame + unit encoded in the type system)
+//! - Ephemerides (VSOP87/ELP2000 always available; optional JPL DE4xx backends)
+//! - Observation planning utilities (altitude periods, crossings, culminations)
+//! - Time handling (via the `tempoch` crate, re-exported as [`time`])
 //!
 //! ## Features
 //!
-//! - **Coordinate Systems**: Strongly-typed `Vector` and spherical `Position`/`Direction` types,
-//!   parameterized by phantom `ReferenceCenter` (e.g., Sun, Earth) and
-//!   `ReferenceFrame` (e.g., ICRS, EclipticMeanJ2000, EquatorialMeanJ2000, Horizontal), and
-//!   `Kind` (Position, Direction), enabling compile-time protection
-//!   against mismatched frames and origins. Seamless conversions between
-//!   coordinate systems are supported via `From`/`Into` and the `Transform` trait.
-//! - **Target Tracking**: `Target<T>` couples any coordinate type with
-//!   an observation `JulianDate` and optional `ProperMotion` for
-//!   extrapolation and movement analysis.
-//! - **Units & Quantities**: Strongly-typed `Mass`, `Length`, `Angle`,
-//!   `Velocity`, `Duration`, etc., with operator overloading for
-//!   natural arithmetic while preventing unit mistakes.
-//! - **Astronomical Utilities**: Aberration, nutation, precession,
-//!   sidereal time, apparent Sun/Moon positions, and rise/culmination
-//!   search routines for celestial bodies and satellites.
-//! - **Celestial Bodies & Catalogs**: Built-in data for Sun through
-//!   Neptune, major moons, a starter star catalog, and helpers to load
-//!   Gaia/Hipparcos datasets or custom star catalogs.
-//! - **Numerical Kernels**: Kepler equation solvers, VSOP87 & ELP2000
-//!   theories for planetary & lunar coordinates, and light-time
-//!   corrections, validated against JPL Horizons & IMCCE to <1 mas.
-//! - **Performance**: Zero heap allocations in core routines, SIMD
-//!   optimizations via `wide`, and compile-time feature gates for
-//!   JPL DE4xx ephemerides (`de440` / `de441`) and `serde` serialization.
+//! - **Coordinates**: `cartesian::{Position, Direction, Velocity, ...}` and
+//!   `spherical::{Position, Direction}` parameterized by `Center`, `Frame`, and `Unit`.
+//! - **Transforms**: frame rotations + center shifts with compile-time guarantees.
+//! - **Altitude API**: `AltitudePeriodsProvider` + free functions to compute crossings,
+//!   culminations, altitude ranges, and above/below-threshold windows.
+//! - **Ephemeris backends**: `Ephemeris` trait with VSOP87/ELP2000 and optional DE440/DE441.
+//! - **Serde**: optional `serde` feature for public types.
 //!
 //! ## Crate Modules
 //!
@@ -64,10 +50,7 @@
 //! println!("{}", mars.position);
 //! ```
 //!
-//! ---
-//!
-//! **Note:** This documentation is generated and reviewed under @vpramon supervision.
-//! For detailed usage and API, see the module-level docs and examples.
+//! For a runnable tour of the library, see the `examples/` directory.
 
 pub mod astro;
 pub mod bodies;

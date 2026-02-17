@@ -17,11 +17,12 @@ Siderust aims to be a reference ephemeris and orbit‑analysis library for resea
 4. [Coordinate Systems](#coordinate-systems)
 5. [Units & Physical Quantities](#units--physical-quantities)
 6. [Quick Start](#quick-start)
-7. [Crate Layout](#crate-layout)
-8. [Roadmap](#roadmap)
-9. [Contributing](#contributing)
-10. [License](#license)
-11. [Acknowledgments](#acknowledgments)
+7. [Examples](#examples)
+8. [Crate Layout](#crate-layout)
+9. [Roadmap](#roadmap)
+10. [Contributing](#contributing)
+11. [License](#license)
+12. [Acknowledgments](#acknowledgments)
 
 ---
 
@@ -185,7 +186,7 @@ use siderust::coordinates::{cartesian, centers::*, frames::*};
 use qtty::Au;
 
 // Position of Mars in the Heliocentric Ecliptic frame
-let mars_helio = cartesian::Position::<Heliocentric, Ecliptic, Au>::new(1.5, 0.0, 0.0);
+let mars_helio = cartesian::Position::<Heliocentric, EclipticMeanJ2000, Au>::new(1.5, 0.0, 0.0);
 ```
 
 Impossible states (e.g. adding heliocentric and geocentric positions) simply do not compile.
@@ -247,6 +248,28 @@ println!("{}", mars.position);
 ```
 
 ---
+
+## Examples
+
+The `examples/` directory is a curated tour of the crate’s major building blocks
+(coordinates, transforms, altitude periods, ephemeris backends, serialization).
+
+- Browse: `examples/README.md`
+- Run one: `cargo run --example basic_coordinates`
+
+Feature-gated examples:
+
+```bash
+# JPL DE4xx (may download large BSP datasets unless you explicitly stub)
+cargo run --example jpl_precise_ephemeris --features de440
+cargo run --example jpl_precise_ephemeris --features de441
+
+# Fast/offline loop: compile JPL features but skip runtime DE calls
+SIDERUST_JPL_STUB=all cargo run --example jpl_precise_ephemeris --features de440,de441
+
+# Serde
+cargo run --example serde_serialization --features serde
+```
 
 ## Crate Layout
 

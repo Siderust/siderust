@@ -1,18 +1,17 @@
 # Moon Altitude Speedup (365-day): Chebyshev Ephemeris Cache + Nutation Interpolation
 
-This document explains the new method implemented in:
+> Note: This report lives under `benches/reports/` because it documents
+> benchmark-driven performance work.
 
-- [src/calculus/lunar/moon_cache.rs](../src/calculus/lunar/moon_cache.rs)
-- [src/calculus/lunar/altitude_periods.rs](../src/calculus/lunar/altitude_periods.rs)
+This document explains the method implemented in:
 
-It covers:
+- `../../src/calculus/lunar/moon_cache.rs`
+- `../../src/calculus/lunar/altitude_periods.rs`
 
-- What was slow before, and why
-- The math behind Chebyshev segment interpolation (JPL-style ephemeris idea)
-- The astro chain being approximated (ELP2000 + frame transforms)
-- How nutation is cached/interpolated
-- How crossing direction is labeled without extra probes
-- A benchmark comparison vs prior approaches
+The goal is to keep long-horizon Moon altitude window finding fast by replacing
+“recompute a heavy ephemeris at every sample time” with “precompute and
+interpolate smoothly within short segments”, while preserving the physical
+meaning of “topocentric Moon altitude”.
 
 ---
 
@@ -25,16 +24,12 @@ The “Moon above horizon for 365 days” workflow is an **interval finding** pr
 2. Refine each bracketed root with Brent’s method.
 3. Assemble [enter, exit] time intervals.
 
-The expensive part is **evaluating \(f(t)\)**.
-
-In the uncached implementation, each altitude evaluation calls the full chain:
-
-- ELP2000-82B lunar theory (large trigonometric series, dominant cost)
-- Ecliptic → EquatorialMeanJ2000 rotation
-- Topocentric parallax translation (site position rotated by GMST)
-- Precession (Meeus short series)
-- Nutation (IAU 1980, 63 terms)
-- Equatorial → Horizontal
+The expensive part is **evaluating \(f(t)\)**. In the uncached implementation,
+each altitude evaluation runs the full chain: ELP2000-82B lunar theory (the
+dominant cost), then a sequence of transforms (ecliptic→equatorial J2000, an
+observer-dependent topocentric parallax translation using Earth-rotation terms,
+IAU 2006 precession, IAU 2000B nutation) and finally equatorial→horizontal to
+extract altitude.
 
 Even with the improved 2-hour scan step, a 365-day search still requires **thousands** of altitude evaluations (scan points + Brent refinement + classification). That dominated runtime.
 
@@ -101,7 +96,7 @@ Evaluating \(\sum c_jT_j(x)\) is done efficiently and stably by Clenshaw recurre
 - It is \(O(d)\)
 - It avoids explicitly constructing high-degree polynomials
 
-Implementation: `clenshaw_eval()` in [moon_cache.rs](../src/calculus/lunar/moon_cache.rs).
+Implementation: `clenshaw_eval()` in `../../src/calculus/lunar/moon_cache.rs`.
 
 ---
 
@@ -111,7 +106,7 @@ Implementation: `clenshaw_eval()` in [moon_cache.rs](../src/calculus/lunar/moon_
 
 We cache the output of:
 
-- `Moon::get_geo_position::<Kilometer>(jd)` (ELP2000) from [src/calculus/elp2000/elp_series.rs](../src/calculus/elp2000/elp_series.rs)
+- `Moon::get_geo_position::<Kilometer>(jd)` (ELP2000) from `../../src/calculus/elp2000/elp_series.rs`
 
 But instead of returning a `Position` object, the cache stores three scalar series:
 
@@ -122,22 +117,17 @@ This is what ELP2000 computes most expensively.
 ### 4.2 Not interpolated: topocentric corrections and Earth rotation
 
 Some parts depend strongly on the observer and Earth rotation:
-
-- Site vector rotation by GMST
-- Parallax translation
-- LST / hour angle
+site-vector rotation (UT1 + sidereal time terms), parallax translation, and
+local-sidereal-time / hour-angle computations.
 
 Those are computed per query. They are comparatively cheap.
 
 ### 4.3 Also interpolated: nutation parameters
 
-IAU 1980 nutation (63 terms) is not huge compared to ELP2000, but it’s still a meaningful cost at the scale of thousands of evaluations.
-
-We cache and linearly interpolate the nutation triplet:
-
-- \(\Delta\psi\) (longitude)
-- \(\Delta\epsilon\) (obliquity)
-- \(\epsilon_0\) (mean obliquity)
+IAU 2000B nutation (77 terms) is not huge compared to ELP2000, but it is still
+a meaningful cost at the scale of thousands of evaluations. We cache and
+linearly interpolate the nutation triplet \((\Delta\psi, \Delta\epsilon, \epsilon_0)\)
+to keep those series evaluations out of the per-sample hot path.
 
 The nutation rotation matrix is built from these values:
 
@@ -145,7 +135,7 @@ $$
 R = R_1(\epsilon_0 + \Delta\epsilon)\;R_3(\Delta\psi)\;R_1(-\epsilon_0)
 $$
 
-See `NutationCache::nutation_rotation()` in [moon_cache.rs](../src/calculus/lunar/moon_cache.rs).
+See `NutationCache::nutation_rotation()` in `../../src/calculus/lunar/moon_cache.rs`.
 
 ---
 
@@ -171,15 +161,16 @@ $$
 $$
 
 3. **Topocentric parallax**  
-   Compute observer ECEF vector from WGS84, rotate by GMST into the equatorial frame, then:
+   Compute observer ECEF vector from WGS84, rotate it into the relevant equatorial
+   basis using Earth-orientation terms (UT1/EOP), then:
 
 $$
 \vec r_{topo} = \vec r_{geo} - \vec r_{site}
 $$
 
-4. **Precession (J2000 → mean-of-date)** via `precession_rotation_from_j2000()`
+4. **Precession (IAU 2006)** to move from J2000 to date-dependent equatorial axes
 
-5. **Nutation (mean-of-date → true-of-date)**  
+5. **Nutation (IAU 2000B)** to obtain true-of-date axes  
    - Before: compute nutation series every call  
    - Now: interpolated nutation parameters
 
@@ -196,20 +187,17 @@ This keeps the scientific meaning of “Moon altitude” unchanged; we only acce
 
 ## 6) Interval finding improvement: label crossing direction without probes
 
-The generic interval engine in [src/calculus/math_core/intervals.rs](../src/calculus/math_core/intervals.rs) labels crossings by probing \(f(t\pm\varepsilon)\), which costs **two extra altitude evaluations per crossing**.
+The generic interval engine in `../../src/calculus/math_core/intervals.rs` labels
+crossings by probing \(f(t\pm\varepsilon)\), which costs **two extra altitude
+evaluations per crossing**.
 
 In the Moon case, we can infer direction from the scan bracket:
 
 - If \(g(t_a)=f(t_a)-h_{thr} < 0\) and \(g(t_b) > 0\), then the function entered “above threshold” → direction \(+1\).
 - If \(g(t_a) > 0\) and \(g(t_b) < 0\), it exited → direction \(-1\).
 
-The function `find_and_label_crossings()` (in [moon_cache.rs](../src/calculus/lunar/moon_cache.rs)) performs:
-
-- Scan
-- Brent root refine
-- Direction labeling
-
-in one pass.
+The function `find_and_label_crossings()` (in `../../src/calculus/lunar/moon_cache.rs`)
+does scan, Brent refinement, and direction labeling in one pass.
 
 ---
 
@@ -217,9 +205,11 @@ in one pass.
 
 From `cargo bench --bench moon_altitude "365day"`:
 
-- **10-minute scan (validation)**: ~17.33 s  
-- **2-hour scan, uncached (previous)**: ~2.81 s  
-- **2-hour scan + Chebyshev cache (new)**: **~0.257 s**
+| Method | Time (approx.) |
+|---|---:|
+| 10-minute scan (validation baseline) | ~17.33 s |
+| 2-hour scan, uncached (previous) | ~2.81 s |
+| 2-hour scan + Chebyshev cache (new) | **~0.257 s** |
 
 That’s a **~10.9×** speedup vs the previous optimized approach and **~67×** vs the 10-minute scan baseline.
 
@@ -227,16 +217,17 @@ That’s a **~10.9×** speedup vs the previous optimized approach and **~67×** 
 
 ## 8) Parameter choices and tuning knobs
 
-Current defaults (see [moon_cache.rs](../src/calculus/lunar/moon_cache.rs)):
+Current defaults (see `../../src/calculus/lunar/moon_cache.rs`):
 
-- Segment length: **4 days**
-- Chebyshev degree: **8** (9 nodes)
-- Nutation step: **2 hours**
+| Parameter | Default |
+|---|---|
+| Segment length | 4 days |
+| Chebyshev degree | 8 (9 nodes) |
+| Nutation step | 2 hours |
 
-Trade-offs:
-
-- Shorter segments or higher degree → more precompute time, slightly better accuracy.
-- Longer segments or lower degree → fewer ELP2000 evaluations, but accuracy can degrade.
+Shorter segments or higher degree increase precompute work (and usually improve
+accuracy). Longer segments or lower degree reduce precompute work but can
+degrade interpolation accuracy, which then destabilizes root times.
 
 For horizon crossing detection, you generally want altitude errors well below ~0.01–0.05° to keep root times stable to within ~seconds to tens of seconds.
 
@@ -283,24 +274,27 @@ Chebyshev caching composes well with SIMD: the precompute stage still benefits f
 
 ## 10) Notes / limitations
 
-- The cache is currently built per `find_moon_*` call. If you run many queries for the same time span/site, we can expose the context publicly and reuse it.
-- We interpolate geocentric position, not topocentric. This keeps caches site-agnostic and accurate.
-- Nutation is interpolated linearly; over 2 hours that’s extremely safe for IAU 1980.
+Today the cache is built per `find_moon_*` call. If an application issues many
+queries over the same span/site, exposing a reusable context would avoid
+rebuilding. The cache interpolates *geocentric* position (not topocentric),
+which keeps it site-agnostic and preserves correctness; observer-dependent
+parallax is applied after interpolation. Nutation is interpolated linearly; on
+a 2-hour grid this is conservative for the smooth IAU 2000B corrections.
 
 ---
 
 ## 11) Where to look in code
 
 - Chebyshev coefficients + evaluation:
-  - `compute_cheb_coeffs()` and `clenshaw_eval()` in [moon_cache.rs](../src/calculus/lunar/moon_cache.rs)
+  - `compute_cheb_coeffs()` and `clenshaw_eval()` in `../../src/calculus/lunar/moon_cache.rs`
 - Position cache builder:
-  - `MoonPositionCache::new()` in [moon_cache.rs](../src/calculus/lunar/moon_cache.rs)
+  - `MoonPositionCache::new()` in `../../src/calculus/lunar/moon_cache.rs`
 - Nutation interpolation:
-  - `NutationCache` in [moon_cache.rs](../src/calculus/lunar/moon_cache.rs)
+  - `NutationCache` in `../../src/calculus/lunar/moon_cache.rs`
 - Fast altitude evaluator:
-  - `MoonAltitudeContext::altitude_rad()` in [moon_cache.rs](../src/calculus/lunar/moon_cache.rs)
+  - `MoonAltitudeContext::altitude_rad()` in `../../src/calculus/lunar/moon_cache.rs`
 - Wiring into API:
-  - `find_moon_above_horizon()` in [altitude_periods.rs](../src/calculus/lunar/altitude_periods.rs)
+  - `find_moon_above_horizon()` in `../../src/calculus/lunar/altitude_periods.rs`
 
 ---
 

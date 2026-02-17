@@ -22,13 +22,17 @@
 //! use qtty::*;
 //! use siderust::targets::Target;
 //! use siderust::time::ModifiedJulianDate;
-//! use siderust::coordinates::{spherical::Direction, frames::EquatorialMeanJ2000, };
+//! use siderust::coordinates::frames::EquatorialMeanJ2000;
+//! use siderust::coordinates::spherical::Direction;
 //! use siderust::astro::proper_motion::ProperMotion;
 //!
 //! // A star with known proper motion
-//! let ra_in_mas_per_year = MilliArcseconds::new(-3.10) / DAY;
-//! let dec_in_mas_per_year = MilliArcseconds::new(9.56) / DAY;
-//! let betelgeuse_pm = ProperMotion::from_mu_alpha_star(ra_in_mas_per_year, dec_in_mas_per_year);
+//! type MasPerYear = qtty::Per<qtty::MilliArcsecond, qtty::Year>;
+//! type MasPerYearQ = qtty::Quantity<MasPerYear>;
+//! let betelgeuse_pm = ProperMotion::from_mu_alpha_star::<MasPerYear>(
+//!     MasPerYearQ::new(27.54),  // µα⋆ (Gaia/Hipparcos convention)
+//!     MasPerYearQ::new(10.86),  // µδ
+//! );
 //! let betelgeuse = Target::new(
 //!     Direction::<EquatorialMeanJ2000>::new(88.792939*DEG, 7.407064*DEG),
 //!     ModifiedJulianDate::new(60200.0).into(),
