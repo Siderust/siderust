@@ -47,7 +47,7 @@ fn main() {
     if stub_enabled_for("de441") {
         println!("cargo:rustc-cfg=siderust_mock_de441");
         println!(
-            "cargo:warning=Using DE441 mock ephemeris backend (VSOP87/ELP2000) because SIDERUST_JPL_STUB includes de441"
+            "cargo:warning=Using DE441 mock ephemeris backend (VSOP87/ELP2000) because SIDERUST_JPL_STUB includes de441; real-DE441 tests are skipped"
         );
     }
 

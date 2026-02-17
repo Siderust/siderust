@@ -51,7 +51,7 @@ fn epoch_2100() -> JulianDate {
 }
 
 /// Returns true when build/test runs are configured to stub JPL datasets.
-#[cfg(feature = "de440")]
+#[cfg(any(feature = "de440", feature = "de441"))]
 fn jpl_stub_enabled_for(prefix: &str) -> bool {
     let Ok(raw) = std::env::var("SIDERUST_JPL_STUB") else {
         return false;
@@ -658,8 +658,19 @@ mod de441_tests {
     use super::*;
     use siderust::calculus::ephemeris::De441Ephemeris;
 
+    fn skip_if_de441_stubbed() -> bool {
+        if jpl_stub_enabled_for("de441") {
+            eprintln!("Skipping DE441 test: SIDERUST_JPL_STUB enables DE441 stubbing.");
+            return true;
+        }
+        false
+    }
+
     #[test]
     fn de441_sun_barycentric_at_j2000() {
+        if skip_if_de441_stubbed() {
+            return;
+        }
         let jd = j2000();
         let sun = De441Ephemeris::sun_barycentric(jd);
         let pos = sun.get_position();
@@ -673,6 +684,9 @@ mod de441_tests {
 
     #[test]
     fn de441_earth_barycentric_at_j2000() {
+        if skip_if_de441_stubbed() {
+            return;
+        }
         let jd = j2000();
         let earth = De441Ephemeris::earth_barycentric(jd);
         let pos = earth.get_position();
@@ -686,6 +700,9 @@ mod de441_tests {
 
     #[test]
     fn de441_earth_heliocentric_at_j2000() {
+        if skip_if_de441_stubbed() {
+            return;
+        }
         let jd = j2000();
         let earth = De441Ephemeris::earth_heliocentric(jd);
         let pos = earth.get_position();
@@ -699,6 +716,9 @@ mod de441_tests {
 
     #[test]
     fn de441_earth_barycentric_velocity_at_j2000() {
+        if skip_if_de441_stubbed() {
+            return;
+        }
         let jd = j2000();
         let vel = De441Ephemeris::earth_barycentric_velocity(jd);
 
@@ -715,6 +735,9 @@ mod de441_tests {
 
     #[test]
     fn de441_moon_geocentric_at_j2000() {
+        if skip_if_de441_stubbed() {
+            return;
+        }
         let jd = j2000();
         let moon = De441Ephemeris::moon_geocentric(jd);
 
@@ -727,6 +750,9 @@ mod de441_tests {
 
     #[test]
     fn de441_consistency_earth_versus_vsop87() {
+        if skip_if_de441_stubbed() {
+            return;
+        }
         let jd = j2000();
         let earth_de441 = De441Ephemeris::earth_barycentric(jd);
         let earth_vsop = Vsop87Ephemeris::earth_barycentric(jd);
@@ -744,6 +770,9 @@ mod de441_tests {
 
     #[test]
     fn de441_at_epoch_2020() {
+        if skip_if_de441_stubbed() {
+            return;
+        }
         let jd = epoch_2020();
 
         let sun = De441Ephemeris::sun_barycentric(jd);
@@ -761,6 +790,9 @@ mod de441_tests {
 
     #[test]
     fn de441_at_epoch_2026() {
+        if skip_if_de441_stubbed() {
+            return;
+        }
         let jd = epoch_2026();
 
         let sun = De441Ephemeris::sun_barycentric(jd);
@@ -778,6 +810,9 @@ mod de441_tests {
 
     #[test]
     fn de441_long_time_span() {
+        if skip_if_de441_stubbed() {
+            return;
+        }
         // DE441 supports a long time span (-13200 to +17191 years)
         // Test a historical date
         let jd_historical = jd_from_value(2415020.0); // ~1900
@@ -838,6 +873,10 @@ mod generic_ephemeris_tests {
     #[cfg(feature = "de441")]
     #[test]
     fn de441_basic_properties() {
+        if jpl_stub_enabled_for("de441") {
+            eprintln!("Skipping DE441 generic test: SIDERUST_JPL_STUB enables DE441 stubbing.");
+            return;
+        }
         use siderust::calculus::ephemeris::De441Ephemeris;
         test_ephemeris_basic_properties::<De441Ephemeris>();
     }
@@ -888,6 +927,10 @@ mod generic_ephemeris_tests {
     #[cfg(feature = "de441")]
     #[test]
     fn de441_velocity_consistency() {
+        if jpl_stub_enabled_for("de441") {
+            eprintln!("Skipping DE441 generic test: SIDERUST_JPL_STUB enables DE441 stubbing.");
+            return;
+        }
         use siderust::calculus::ephemeris::De441Ephemeris;
         test_velocity_consistency::<De441Ephemeris>();
     }
