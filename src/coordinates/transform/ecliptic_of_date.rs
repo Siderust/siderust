@@ -274,7 +274,7 @@ mod tests {
 
         let spherical_equ = affn::spherical::Direction::<EquatorialMeanOfDate>::new_raw(
             Degrees::new(dec.value().to_degrees()),
-            Degrees::new(ra.value().to_degrees())
+            Degrees::new(ra.value().to_degrees()),
         );
         let equatorial = spherical_equ.to_cartesian();
         let ecliptic = equatorial.to_ecliptic_of_date(&jd_tt);
@@ -283,9 +283,12 @@ mod tests {
         let orig_sph = equatorial.to_spherical();
         let back_sph = back.to_spherical();
 
-        let dra = (Radians::from(back_sph.azimuth).value() - Radians::from(orig_sph.azimuth).value()).abs();
+        let dra = (Radians::from(back_sph.azimuth).value()
+            - Radians::from(orig_sph.azimuth).value())
+        .abs();
         let dra = dra.min(TAU - dra);
-        let ddec = (Radians::from(back_sph.polar).value() - Radians::from(orig_sph.polar).value()).abs();
+        let ddec =
+            (Radians::from(back_sph.polar).value() - Radians::from(orig_sph.polar).value()).abs();
 
         assert!(dra < 1e-12, "RA roundtrip error too large: {dra}");
         assert!(ddec < 1e-12, "Dec roundtrip error too large: {ddec}");
@@ -298,7 +301,10 @@ mod tests {
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
 
-        let spherical_icrs = affn::spherical::Direction::<ICRS>::new_raw(Degrees::new(dec.value().to_degrees()), Degrees::new(ra.value().to_degrees()));
+        let spherical_icrs = affn::spherical::Direction::<ICRS>::new_raw(
+            Degrees::new(dec.value().to_degrees()),
+            Degrees::new(ra.value().to_degrees()),
+        );
         let icrs = spherical_icrs.to_cartesian();
         let ecliptic = icrs.to_ecliptic_of_date(&jd_tt);
         let back = ecliptic.to_icrs(&jd_tt);
@@ -306,9 +312,12 @@ mod tests {
         let orig_sph = icrs.to_spherical();
         let back_sph = back.to_spherical();
 
-        let dra = (Radians::from(back_sph.azimuth).value() - Radians::from(orig_sph.azimuth).value()).abs();
+        let dra = (Radians::from(back_sph.azimuth).value()
+            - Radians::from(orig_sph.azimuth).value())
+        .abs();
         let dra = dra.min(TAU - dra);
-        let ddec = (Radians::from(back_sph.polar).value() - Radians::from(orig_sph.polar).value()).abs();
+        let ddec =
+            (Radians::from(back_sph.polar).value() - Radians::from(orig_sph.polar).value()).abs();
 
         assert!(dra < 1e-12, "RA roundtrip error too large: {dra}");
         assert!(ddec < 1e-12, "Dec roundtrip error too large: {ddec}");
@@ -320,16 +329,21 @@ mod tests {
         let jd_tt = JulianDate::J2000;
 
         // A point on the equatorial equator (RA = 0°, Dec = 0°) should be on the ecliptic
-        let spherical_equ = affn::spherical::Direction::<EquatorialMeanOfDate>::new_raw(0.0 * DEG, 0.0 * DEG);
+        let spherical_equ =
+            affn::spherical::Direction::<EquatorialMeanOfDate>::new_raw(0.0 * DEG, 0.0 * DEG);
         let equatorial = spherical_equ.to_cartesian();
         let ecliptic = equatorial.to_ecliptic_of_date(&jd_tt);
 
         let sph = ecliptic.to_spherical();
         // Should be at ecliptic longitude ~0°, latitude ~0°
-        assert!(Radians::from(sph.polar).abs() < 1e-10 * RAD, "Expected ecliptic latitude near 0");
+        assert!(
+            Radians::from(sph.polar).abs() < 1e-10 * RAD,
+            "Expected ecliptic latitude near 0"
+        );
 
         // A point at the north celestial pole (Dec = 90°) should be at the ecliptic pole
-        let spherical_north = affn::spherical::Direction::<EquatorialMeanOfDate>::new_raw(90.0 * DEG, 0.0 * DEG);
+        let spherical_north =
+            affn::spherical::Direction::<EquatorialMeanOfDate>::new_raw(90.0 * DEG, 0.0 * DEG);
         let north_pole = spherical_north.to_cartesian();
         let ecl_north = north_pole.to_ecliptic_of_date(&jd_tt);
 

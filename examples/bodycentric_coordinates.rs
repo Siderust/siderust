@@ -65,7 +65,8 @@ fn main() {
     );
 
     // Moon's approximate position (geocentric)
-    let moon_geo: Position<Geocentric, frames::EclipticMeanJ2000, Au> = Position::new(0.00257, 0.0, 0.0); // ~384,400 km
+    let moon_geo: Position<Geocentric, frames::EclipticMeanJ2000, Au> =
+        Position::new(0.00257, 0.0, 0.0); // ~384,400 km
 
     println!("Moon position (Geocentric):");
     println!(

@@ -77,8 +77,12 @@ impl Pluto {
         let rad = sum_radius * 0.0000001 + 40.7241346;
 
         // EclipticMeanJ2000: lon = azimuth, lat = polar
-        spherical::Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(lon, lat, rad * AU)
-            .to_cartesian()
+        spherical::Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(
+            lon,
+            lat,
+            rad * AU,
+        )
+        .to_cartesian()
     }
 }
 

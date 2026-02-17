@@ -191,7 +191,8 @@ where
                     body_ecliptic_au.y(),
                     body_ecliptic_au.z(),
                 );
-                let body_helio_ecl: EclipticMeanJ2000<U, Heliocentric> = body_bary_ecl.to_center(jd);
+                let body_helio_ecl: EclipticMeanJ2000<U, Heliocentric> =
+                    body_bary_ecl.to_center(jd);
                 body_helio_ecl.to_frame()
             }
         };

@@ -107,7 +107,8 @@ mod tests {
         let earth_helio = *DefaultEphemeris::earth_heliocentric(JulianDate::J2000).get_position();
         let earth_geo: cartesian::position::EclipticMeanJ2000<AstronomicalUnit, Geocentric> =
             earth_helio.transform(JulianDate::J2000);
-        let expected = cartesian::position::EclipticMeanJ2000::<AstronomicalUnit, Geocentric>::CENTER;
+        let expected =
+            cartesian::position::EclipticMeanJ2000::<AstronomicalUnit, Geocentric>::CENTER;
         assert_cartesian_eq!(&earth_geo, &expected, EPSILON);
     }
 }

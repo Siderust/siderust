@@ -82,7 +82,9 @@ macro_rules! impl_vsop87e {
 }
 
 impl Sun {
-    pub fn vsop87e(jd: JulianDate) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
+    pub fn vsop87e(
+        jd: JulianDate,
+    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
         let (x, y, z) = position(
             jd,
             &[&SUN_X0, &SUN_X1, &SUN_X2, &SUN_X3, &SUN_X4, &SUN_X5],
