@@ -10,10 +10,13 @@
 //! that previously existed independently in `solar::sun_equations` and
 //! `lunar::moon_equations`.
 
-use crate::astro::earth_rotation::gmst_from_tt;
+use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
+use crate::astro::eop::EopProvider;
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
+use crate::astro::sidereal::gast_iau2006;
 use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::transform::AstroContext;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, Degree, LengthUnit, Meter, Quantity, Radian, Radians};
@@ -43,10 +46,29 @@ pub fn geocentric_j2000_to_apparent_topocentric<U: LengthUnit>(
 where
     Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
 {
+    let ctx: AstroContext = AstroContext::default();
+    geocentric_j2000_to_apparent_topocentric_with_ctx(geo_cart_j2000, site, jd, &ctx)
+}
+
+/// Context-aware variant of [`geocentric_j2000_to_apparent_topocentric`].
+pub fn geocentric_j2000_to_apparent_topocentric_with_ctx<
+    U: LengthUnit,
+    Eph,
+    Eop: EopProvider,
+    Nut,
+>(
+    geo_cart_j2000: &cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, U>,
+    site: ObserverSite,
+    jd: JulianDate,
+    ctx: &AstroContext<Eph, Eop, Nut>,
+) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>
+where
+    Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
+{
     use crate::coordinates::transform::centers::ToTopocentricExt;
 
     // 1) Translate geocentric → topocentric in J2000 frame (applies parallax)
-    let topo_cart_j2000 = geo_cart_j2000.to_topocentric(site, jd);
+    let topo_cart_j2000 = geo_cart_j2000.to_topocentric_with_ctx(site, jd, ctx);
 
     // 2) Rotate J2000 → mean-of-date using IAU 2006 precession
     let rot_prec = precession::precession_matrix_iau2006(jd);
@@ -66,9 +88,7 @@ where
         );
 
     // 3) Apply nutation rotation (mean-of-date → true-of-date) — IAU 2000B
-    let nut = nutation_iau2000b(jd);
     let rot_nut = crate::astro::nutation::nutation_rotation_iau2000b(jd);
-    let _ = nut; // nut used by equatorial_to_horizontal if we need GAST later
     let [x_t, y_t, z_t] = rot_nut * [topo_cart_mod.x(), topo_cart_mod.y(), topo_cart_mod.z()];
 
     let topo_cart_true =
@@ -91,7 +111,7 @@ where
 /// coordinates (altitude, azimuth, distance).
 ///
 /// This is the standard equatorial-to-horizontal transform using the observer's
-/// latitude and the local sidereal time (GST → LST → HA).
+/// latitude and the local apparent sidereal time (GAST → LAST → HA).
 ///
 /// Both Sun and Moon `get_horizontal` methods delegate here after computing
 /// their body-specific apparent topocentric equatorial coordinates.
@@ -100,15 +120,40 @@ pub fn equatorial_to_horizontal<U: LengthUnit>(
     site: ObserverSite,
     jd: JulianDate,
 ) -> spherical::Position<Topocentric, frames::Horizontal, U> {
+    equatorial_to_horizontal_true_of_date(eq_position, site, jd)
+}
+
+/// Converts apparent topocentric **true-of-date** equatorial coordinates to
+/// horizontal coordinates using IAU 2006 GAST.
+pub fn equatorial_to_horizontal_true_of_date<U: LengthUnit>(
+    eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
+    site: ObserverSite,
+    jd: JulianDate,
+) -> spherical::Position<Topocentric, frames::Horizontal, U> {
+    let ctx: AstroContext = AstroContext::default();
+    equatorial_to_horizontal_true_of_date_with_ctx(eq_position, site, jd, &ctx)
+}
+
+/// Context-aware variant of [`equatorial_to_horizontal_true_of_date`].
+///
+/// Uses the context EOP provider to derive UT1 for GAST.
+pub fn equatorial_to_horizontal_true_of_date_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
+    eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
+    site: ObserverSite,
+    jd: JulianDate,
+    ctx: &AstroContext<Eph, Eop, Nut>,
+) -> spherical::Position<Topocentric, frames::Horizontal, U> {
     // Extract RA, Dec, distance from the equatorial position
     let ra = eq_position.azimuth;
     let dec = eq_position.polar;
     let distance = eq_position.distance;
 
-    // Compute hour angle: HA = LST - RA (using IAU 2006 GMST)
-    // Uses tempoch ΔT for proper TT→UT1 conversion.
-    let gmst = gmst_from_tt(jd);
-    let lst = gmst + site.lon.to::<Radian>();
+    // True-of-date RA/Dec must use apparent sidereal time (GAST).
+    let eop = ctx.eop_at(jd);
+    let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
+    let nut = nutation_iau2000b(jd);
+    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
+    let lst = gast + site.lon.to::<Radian>();
     let ha = (lst - ra.to::<Radian>())
         .value()
         .rem_euclid(std::f64::consts::TAU);
@@ -130,6 +175,17 @@ pub fn equatorial_to_horizontal<U: LengthUnit>(
     Topocentric::horizontal(site, alt, az, distance)
 }
 
+/// Backward-compatible context-aware wrapper.
+#[inline]
+pub fn equatorial_to_horizontal_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
+    eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
+    site: ObserverSite,
+    jd: JulianDate,
+    ctx: &AstroContext<Eph, Eop, Nut>,
+) -> spherical::Position<Topocentric, frames::Horizontal, U> {
+    equatorial_to_horizontal_true_of_date_with_ctx(eq_position, site, jd, ctx)
+}
+
 /// Computes the **horizontal direction** (altitude, azimuth) for a fixed-star
 /// RA/Dec (J2000) from an observer site at a given Julian Date.
 ///
@@ -140,7 +196,7 @@ pub fn equatorial_to_horizontal<U: LengthUnit>(
 ///
 /// 1. Precess J2000 → mean-of-date
 /// 2. Apply nutation correction to RA
-/// 3. Compute GST → LST → HA
+/// 3. Compute GAST → LAST → HA
 /// 4. Standard equatorial→horizontal altitude/azimuth formula
 pub fn star_horizontal(
     ra_j2000: qtty::Degrees,
@@ -152,7 +208,7 @@ pub fn star_horizontal(
     // 1. Convert J2000 direction to Cartesian unit vector
     // 2. Apply full precession-nutation-bias (NPB) matrix → true-of-date
     // 3. Convert back to spherical → RA/Dec of date
-    // 4. Compute GMST (IAU 2006) → LST → HA → altitude/azimuth
+    // 4. Compute GAST (IAU 2006) → LAST → HA → altitude/azimuth
 
     let ra_rad = ra_j2000.to::<Radian>();
     let dec_rad = dec_j2000.to::<Radian>();
@@ -173,10 +229,12 @@ pub fn star_horizontal(
     let ra_tod = Radians::new(y_t.atan2(x_t));
     let dec_tod = Radians::new(z_t.asin());
 
-    // GMST (IAU 2006 ERA-based) → LST → HA
-    // Uses tempoch ΔT for proper TT→UT1 conversion.
-    let gmst = gmst_from_tt(jd);
-    let lst = gmst + site.lon.to::<Radian>();
+    // True-of-date RA/Dec requires apparent sidereal time (GAST).
+    let ctx: AstroContext = AstroContext::default();
+    let eop = ctx.eop_at(jd);
+    let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
+    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
+    let lst = gast + site.lon.to::<Radian>();
     let ha = Radians::new((lst - ra_tod).value().rem_euclid(std::f64::consts::TAU));
 
     // Equatorial → horizontal

@@ -1,10 +1,18 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+use crate::astro::cio;
+use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
+use crate::astro::eop::{EopProvider, EopValues};
+use crate::astro::era::earth_rotation_angle;
+use crate::astro::nutation::nutation_iau2000b;
+use crate::astro::polar_motion::polar_motion_matrix_from_eop;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
-use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
+use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF, ICRS};
 use crate::coordinates::transform::centers::TransformCenter;
+use crate::coordinates::transform::context::AstroContext;
+use crate::coordinates::transform::providers::FrameRotationProvider;
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 
@@ -24,11 +32,23 @@ use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 /// For nearby objects (Moon, satellites, planets), the parallax is significant.
 /// For distant stars, it's negligible but the math is still correct.
 pub trait ToTopocentricExt<F: MutableFrame, U: LengthUnit> {
+    /// Transform to topocentric coordinates with a specific observer site and context.
+    ///
+    /// Uses the full IAU 2006 terrestrial→celestial chain:
+    /// polar motion `W(xp, yp, s')`, Earth rotation `ERA(UT1)`, and CIO/CIP
+    /// orientation `Q(X, Y, s)` with optional EOP `dX/dY` corrections.
+    fn to_topocentric_with_ctx<Eph, Eop: EopProvider, Nut>(
+        &self,
+        site: ObserverSite,
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Position<Topocentric, F, U>;
+
     /// Transform to topocentric coordinates with a specific observer site.
     ///
     /// This applies a real parallax correction by translating the geocentric
     /// position by the observer's location. The observer's ITRF position is
-    /// rotated to the celestial frame using Greenwich Mean Sidereal Time.
+    /// rotated to the celestial frame using the default EOP-backed context.
     ///
     /// # Arguments
     ///
@@ -38,7 +58,74 @@ pub trait ToTopocentricExt<F: MutableFrame, U: LengthUnit> {
     /// # Returns
     ///
     /// The position as seen from the observer's location (topocentric).
-    fn to_topocentric(&self, site: ObserverSite, jd: JulianDate) -> Position<Topocentric, F, U>;
+    fn to_topocentric(&self, site: ObserverSite, jd: JulianDate) -> Position<Topocentric, F, U> {
+        let ctx: AstroContext = AstroContext::default();
+        self.to_topocentric_with_ctx(site, jd, &ctx)
+    }
+}
+
+#[inline]
+fn nutation_with_celestial_pole_offsets(
+    jd: JulianDate,
+    eop: EopValues,
+) -> (qtty::Radians, qtty::Radians) {
+    let nut = nutation_iau2000b(jd);
+    let mut dpsi = nut.dpsi;
+    let mut deps = nut.deps;
+
+    // Apply IERS celestial pole offsets dX,dY as first-order corrections.
+    // dψ_eop = dX/sin(εA), dε_eop = dY.
+    let dx_rad = qtty::Radians::from(eop.dx);
+    let dy_rad = qtty::Radians::from(eop.dy);
+    if dx_rad.value() != 0.0 || dy_rad.value() != 0.0 {
+        let sin_eps = nut.mean_obliquity.sin();
+        if sin_eps.abs() > 1e-15 {
+            dpsi += qtty::Radians::new(dx_rad.value() / sin_eps);
+        }
+        deps += dy_rad;
+    }
+
+    (dpsi, deps)
+}
+
+/// Rotation from ITRF/ECEF to EquatorialMeanJ2000 at `jd`.
+///
+/// Chain: `ITRS -> TIRS -> CIRS -> GCRS/ICRS -> EquatorialMeanJ2000`.
+pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut>(
+    jd: JulianDate,
+    ctx: &AstroContext<Eph, Eop, Nut>,
+) -> affn::Rotation3 {
+    let eop = ctx.eop_at(jd);
+    let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
+
+    let (dpsi, deps) = nutation_with_celestial_pole_offsets(jd, eop);
+    let cip = cio::cip_cio(jd, dpsi, deps);
+    let q = cio::gcrs_to_cirs_matrix(cip.x, cip.y, cip.s);
+    let w = polar_motion_matrix_from_eop(eop.xp, eop.yp, jd);
+    let era = earth_rotation_angle(jd_ut1);
+
+    // NOTE: `cio::gcrs_to_cirs_matrix` and `Rotation3::rz` conventions are
+    // aligned such that this composition matches the ERFA/SOFA chain for
+    // ITRS -> GCRS in this codebase.
+    let itrs_to_gcrs = q * affn::Rotation3::rz(-era) * w.inverse();
+    let icrs_to_j2000 = <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation(jd, ctx);
+
+    icrs_to_j2000 * itrs_to_gcrs
+}
+
+#[inline]
+fn observer_site_equatorial_mean_j2000_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
+    site: ObserverSite,
+    jd: JulianDate,
+    ctx: &AstroContext<Eph, Eop, Nut>,
+) -> Position<Geocentric, EquatorialMeanJ2000, U>
+where
+    Quantity<U>: From<Quantity<Meter>>,
+{
+    let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
+    let rot = itrs_to_equatorial_mean_j2000_rotation(jd, ctx);
+    let [x_eq, y_eq, z_eq] = rot * [site_itrf.x(), site_itrf.y(), site_itrf.z()];
+    Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params((), x_eq, y_eq, z_eq)
 }
 
 // =============================================================================
@@ -74,24 +161,13 @@ where
     /// // Get topocentric position (will differ by observer offset)
     /// let moon_topo = moon_geo.to_topocentric(site, JulianDate::J2000);
     /// ```
-    fn to_topocentric(&self, site: ObserverSite, jd: JulianDate) -> Position<Topocentric, F, U> {
-        // Get observer's ITRF position
-        let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
-
-        // Rotate ITRF to celestial frame using GMST (IAU 2006 ERA-based)
-        // Uses tempoch ΔT for proper TT→UT1 conversion.
-        let gmst_rad = crate::astro::earth_rotation::gmst_from_tt(jd).value();
-
-        // Rotate from ECEF (x toward Greenwich, z toward pole) to equatorial
-        // R_z(-GMST) transforms ECEF to equatorial
-        let (sin_g, cos_g) = gmst_rad.sin_cos();
-
-        let x_eq = site_itrf.x() * cos_g - site_itrf.y() * sin_g;
-        let y_eq = site_itrf.x() * sin_g + site_itrf.y() * cos_g;
-        let z_eq = site_itrf.z();
-
-        let site_equatorial =
-            Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params((), x_eq, y_eq, z_eq);
+    fn to_topocentric_with_ctx<Eph, Eop: EopProvider, Nut>(
+        &self,
+        site: ObserverSite,
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Position<Topocentric, F, U> {
+        let site_equatorial = observer_site_equatorial_mean_j2000_with_ctx(site, jd, ctx);
 
         // Transform observer position to target frame
         let site_in_frame: Position<Geocentric, F, U> =
@@ -130,22 +206,8 @@ where
     fn to_center(&self, jd: JulianDate) -> Position<Geocentric, F, U> {
         // Get the observer site from the stored parameters
         let site = self.center_params();
-
-        // Get observer's ITRF position
-        let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
-
-        // Rotate ITRF to celestial frame using GMST (IAU 2006 ERA-based)
-        // Uses tempoch ΔT for proper TT→UT1 conversion.
-        let gmst_rad = crate::astro::earth_rotation::gmst_from_tt(jd).value();
-
-        let (sin_g, cos_g) = gmst_rad.sin_cos();
-
-        let x_eq = site_itrf.x() * cos_g - site_itrf.y() * sin_g;
-        let y_eq = site_itrf.x() * sin_g + site_itrf.y() * cos_g;
-        let z_eq = site_itrf.z();
-
-        let site_equatorial =
-            Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params((), x_eq, y_eq, z_eq);
+        let ctx: AstroContext = AstroContext::default();
+        let site_equatorial = observer_site_equatorial_mean_j2000_with_ctx(*site, jd, &ctx);
 
         // Transform observer position to target frame
         let site_in_frame: Position<Geocentric, F, U> =
@@ -213,7 +275,7 @@ mod tests {
         let diff = (moon_geo.x() - moon_topo.x()).abs();
 
         // The difference should be on the order of Earth's radius
-        // (exact value depends on GMST at J2000)
+        // (exact value depends on Earth-rotation angle at J2000)
         assert!(
             diff > 1000.0 && diff < 10000.0,
             "Parallax shift = {} km, expected ~6371 km",
