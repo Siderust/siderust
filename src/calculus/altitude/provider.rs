@@ -62,6 +62,10 @@ use qtty::*;
 /// Implementors delegate to the appropriate analytical/numerical engine in
 /// the `calculus` layer.  The trait is intentionally small — one required
 /// method plus convenience defaults.
+///
+/// Time scale note: all `ModifiedJulianDate` and `Period<MJD>` values are on
+/// the canonical JD(TT) axis (`tempoch` semantics). Convert UTC instants with
+/// `ModifiedJulianDate::from_utc(...)` before using this API.
 pub trait AltitudePeriodsProvider {
     /// Returns all contiguous intervals inside `query.window` where the
     /// body's topocentric altitude is within
