@@ -32,8 +32,8 @@
 //!   theories for planetary & lunar coordinates, and light-time
 //!   corrections, validated against JPL Horizons & IMCCE to <1 mas.
 //! - **Performance**: Zero heap allocations in core routines, SIMD
-//!   optimizations, optional `f128` quad precision, and `#![no_std]`
-//!   support with `libm` fallback.
+//!   optimizations via `wide`, and compile-time feature gates for
+//!   JPL DE4xx ephemerides (`de440` / `de441`) and `serde` serialization.
 //!
 //! ## Crate Modules
 //!
