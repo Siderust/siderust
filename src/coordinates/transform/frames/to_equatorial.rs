@@ -53,19 +53,21 @@ mod tests {
 
     #[test]
     fn round_trip_ecliptic_equatorial() {
-        let ecliptic_orig =
-            Position::<centers::Barycentric, frames::EclipticMeanJ2000, AstronomicalUnit>::new(
-                Degrees::new(123.4),
-                Degrees::new(-21.0),
-                2.7,
-            );
+        let ecliptic_orig = Position::<
+            centers::Barycentric,
+            frames::EclipticMeanJ2000,
+            AstronomicalUnit,
+        >::new(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
         let equatorial: Position<
             centers::Barycentric,
             frames::EquatorialMeanJ2000,
             AstronomicalUnit,
         > = ecliptic_orig.transform(JulianDate::J2000);
-        let ecliptic_rec: Position<centers::Barycentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
-            equatorial.transform(JulianDate::J2000);
+        let ecliptic_rec: Position<
+            centers::Barycentric,
+            frames::EclipticMeanJ2000,
+            AstronomicalUnit,
+        > = equatorial.transform(JulianDate::J2000);
 
         assert_spherical_eq!(ecliptic_orig, ecliptic_rec, EPS);
     }

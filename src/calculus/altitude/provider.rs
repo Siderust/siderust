@@ -71,6 +71,9 @@ pub trait AltitudePeriodsProvider {
     /// body's topocentric altitude is within
     /// `[query.min_altitude, query.max_altitude]`.
     ///
+    /// `query.window` is interpreted on the TT axis (`Period<MJD>` with
+    /// canonical `JD(TT)` semantics).
+    ///
     /// The returned vector is sorted chronologically.  An empty vector
     /// means the body never enters the requested band during the window.
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>>;

@@ -12,9 +12,14 @@ use crate::time::JulianDate;
 use qtty::AstronomicalUnit;
 
 pub trait VSOP87 {
-    fn vsop87a(&self, jd: JulianDate)
-        -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>>;
-    fn vsop87e(&self, jd: JulianDate) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>;
+    fn vsop87a(
+        &self,
+        jd: JulianDate,
+    ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>>;
+    fn vsop87e(
+        &self,
+        jd: JulianDate,
+    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>;
 }
 
 macro_rules! impl_vsop87_for_planet {

@@ -182,10 +182,7 @@ impl<F: ReferenceFrame> DirectionAstroExt<F> for Direction<F> {
 /// back.
 pub trait SphericalDirectionAstroExt<F: ReferenceFrame> {
     /// Rotates this spherical direction to a new reference frame (IAU defaults).
-    fn to_frame<F2: ReferenceFrame>(
-        &self,
-        jd: &JulianDate,
-    ) -> spherical::Direction<F2>
+    fn to_frame<F2: ReferenceFrame>(&self, jd: &JulianDate) -> spherical::Direction<F2>
     where
         (): FrameRotationProvider<F, F2>;
 
@@ -200,10 +197,7 @@ pub trait SphericalDirectionAstroExt<F: ReferenceFrame> {
 }
 
 impl<F: ReferenceFrame> SphericalDirectionAstroExt<F> for spherical::Direction<F> {
-    fn to_frame<F2: ReferenceFrame>(
-        &self,
-        jd: &JulianDate,
-    ) -> spherical::Direction<F2>
+    fn to_frame<F2: ReferenceFrame>(&self, jd: &JulianDate) -> spherical::Direction<F2>
     where
         (): FrameRotationProvider<F, F2>,
     {
@@ -297,10 +291,7 @@ pub trait PositionAstroExt<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
         (): FrameRotationProvider<F, F2>;
 
     /// Translates this position to a new reference center (IAU defaults).
-    fn to_center<C2: ReferenceCenter<Params = ()>>(
-        &self,
-        jd: &JulianDate,
-    ) -> Position<C2, F, U>
+    fn to_center<C2: ReferenceCenter<Params = ()>>(&self, jd: &JulianDate) -> Position<C2, F, U>
     where
         (): CenterShiftProvider<C, C2, F>;
 
@@ -364,10 +355,7 @@ where
         Position::new(x, y, z)
     }
 
-    fn to_center<C2: ReferenceCenter<Params = ()>>(
-        &self,
-        jd: &JulianDate,
-    ) -> Position<C2, F, U>
+    fn to_center<C2: ReferenceCenter<Params = ()>>(&self, jd: &JulianDate) -> Position<C2, F, U>
     where
         (): CenterShiftProvider<C, C2, F>,
     {
@@ -480,10 +468,7 @@ where
     }
 
     /// Translates this position to a new reference center using the wrapped context.
-    pub fn to_center<C2: ReferenceCenter<Params = ()>>(
-        &self,
-        jd: &JulianDate,
-    ) -> Position<C2, F, U>
+    pub fn to_center<C2: ReferenceCenter<Params = ()>>(&self, jd: &JulianDate) -> Position<C2, F, U>
     where
         (): CenterShiftProvider<C, C2, F>,
     {
@@ -578,7 +563,8 @@ mod tests {
         let jd = JulianDate::J2000;
 
         // A point at the Geocentric origin should map to Earth's position in Barycentric
-        let geo_origin = Position::<Geocentric, EclipticMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
+        let geo_origin =
+            Position::<Geocentric, EclipticMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
         let bary: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
             geo_origin.to_center(&jd);
 
