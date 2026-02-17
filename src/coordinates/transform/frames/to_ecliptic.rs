@@ -7,13 +7,13 @@ use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
 use affn::Rotation3;
 use qtty::LengthUnit;
 
-// Implement Transform trait for ICRS -> Ecliptic
-impl<C: ReferenceCenter, U> TransformFrame<Position<C, frames::Ecliptic, U>>
+// Implement Transform trait for ICRS -> EclipticMeanJ2000
+impl<C: ReferenceCenter, U> TransformFrame<Position<C, frames::EclipticMeanJ2000, U>>
     for Position<C, frames::ICRS, U>
 where
     U: LengthUnit,
 {
-    fn to_frame(&self) -> Position<C, frames::Ecliptic, U> {
+    fn to_frame(&self) -> Position<C, frames::EclipticMeanJ2000, U> {
         // J2000 mean obliquity ε₀ (IAU 2006): 84381.406″
         let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
@@ -27,11 +27,11 @@ where
     }
 }
 
-// Implement Transform trait for EquatorialMeanJ2000 -> Ecliptic
-impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Ecliptic, U>>
+// Implement Transform trait for EquatorialMeanJ2000 -> EclipticMeanJ2000
+impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::EclipticMeanJ2000, U>>
     for Position<C, frames::EquatorialMeanJ2000, U>
 {
-    fn to_frame(&self) -> Position<C, frames::Ecliptic, U> {
+    fn to_frame(&self) -> Position<C, frames::EclipticMeanJ2000, U> {
         // J2000 mean obliquity ε₀ (IAU 2006): 84381.406″
         let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_e, cos_e) = (eps.sin(), eps.cos());
@@ -58,19 +58,19 @@ mod tests {
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
-    fn serialize<U: LengthUnit>(ecl: &Ecliptic<U>) -> Ecliptic<U>
+    fn serialize<U: LengthUnit>(ecl: &EclipticMeanJ2000<U>) -> EclipticMeanJ2000<U>
     where
         Quantity<U>: From<Quantity<AstronomicalUnit>>,
     {
         let hcrs: ICRS<U> = ecl.transform(JulianDate::J2000); // Convert to ICRS
-        let ecl_back: Ecliptic<U> = hcrs.transform(JulianDate::J2000); // Convert back to Ecliptic
+        let ecl_back: EclipticMeanJ2000<U> = hcrs.transform(JulianDate::J2000); // Convert back to EclipticMeanJ2000
         ecl_back
     }
 
     /// **Test 1: Identity transformation (Zero vector)**
     #[test]
     fn test_zero_vector_transformation() {
-        let zero_ecl = Ecliptic::<AstronomicalUnit>::CENTER;
+        let zero_ecl = EclipticMeanJ2000::<AstronomicalUnit>::CENTER;
         let zero_ecl_back = serialize(&zero_ecl);
 
         assert_cartesian_eq!(
@@ -84,7 +84,7 @@ mod tests {
     /// **Test 3: Edge case - Aligned along X-axis (Should not change)**
     #[test]
     fn test_x_axis_aligned() {
-        let coord_ecl = Ecliptic::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
+        let coord_ecl = EclipticMeanJ2000::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
         let coord_ecl_back = serialize(&coord_ecl);
 
         assert_cartesian_eq!(
@@ -98,7 +98,7 @@ mod tests {
     /// **Test 4: Edge case - Aligned along Y-axis**
     #[test]
     fn test_y_axis_aligned() {
-        let coord_ecl = Ecliptic::<AstronomicalUnit>::new(0.0, 1.0, 0.0);
+        let coord_ecl = EclipticMeanJ2000::<AstronomicalUnit>::new(0.0, 1.0, 0.0);
         let coord_ecl_back = serialize(&coord_ecl);
 
         assert_cartesian_eq!(
@@ -112,7 +112,7 @@ mod tests {
     /// **Test 5: Edge case - Aligned along Z-axis**
     #[test]
     fn test_z_axis_aligned() {
-        let coord_ecl = Ecliptic::<AstronomicalUnit>::new(0.0, 0.0, 1.0);
+        let coord_ecl = EclipticMeanJ2000::<AstronomicalUnit>::new(0.0, 0.0, 1.0);
         let coord_ecl_back = serialize(&coord_ecl);
 
         assert_cartesian_eq!(
@@ -126,7 +126,7 @@ mod tests {
     /// **Test 6: Transformation with extreme values**
     #[test]
     fn test_large_values() {
-        let coord_ecl = Ecliptic::<AstronomicalUnit>::new(1e10, -1e10, 5e9);
+        let coord_ecl = EclipticMeanJ2000::<AstronomicalUnit>::new(1e10, -1e10, 5e9);
         let coord_ecl_back = serialize(&coord_ecl);
 
         assert_cartesian_eq!(
@@ -140,7 +140,7 @@ mod tests {
     /// **Test 7: Transformation with small values (Precision test)**
     #[test]
     fn test_small_values() {
-        let coord_ecl = Ecliptic::<AstronomicalUnit>::new(1e-10, -1e-10, 5e-11);
+        let coord_ecl = EclipticMeanJ2000::<AstronomicalUnit>::new(1e-10, -1e-10, 5e-11);
         let coord_ecl_back = serialize(&coord_ecl);
 
         assert_cartesian_eq!(
@@ -158,7 +158,7 @@ mod tests {
             frames::EquatorialMeanJ2000,
             AstronomicalUnit,
         >::new(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
-        let ecliptic: spherical::Position<centers::Barycentric, frames::Ecliptic, Au> =
+        let ecliptic: spherical::Position<centers::Barycentric, frames::EclipticMeanJ2000, Au> =
             equatorial_orig.transform(JulianDate::J2000);
         let equatorial_rec: spherical::Position<
             centers::Barycentric,

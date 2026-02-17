@@ -9,7 +9,7 @@
 //! The core spherical coordinate functionality lives in the `affn` crate
 //! (domain-agnostic geometry kernel). This module provides:
 //!
-//! - Astronomical reference frame types (ICRS, Ecliptic, Horizontal, etc.)
+//! - Astronomical reference frame types (ICRS, EclipticMeanJ2000, Horizontal, etc.)
 //! - Inherent named constructors and getters (`ra`/`dec`, `lon`/`lat`, `alt`/`az`)
 //! - Convenient type aliases for common coordinate combinations
 //!

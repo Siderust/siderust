@@ -11,7 +11,7 @@ use crate::bodies::solar_system::{Earth, Moon, Sun};
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
-    frames::Ecliptic,
+    frames::EclipticMeanJ2000,
 };
 use crate::targets::Target;
 use crate::time::JulianDate;
@@ -28,31 +28,31 @@ impl Ephemeris for Vsop87Ephemeris {
     #[inline]
     fn sun_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
+    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
         Sun::vsop87e(jd)
     }
 
     #[inline]
     fn earth_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
+    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
         Earth::vsop87e(jd)
     }
 
     #[inline]
     fn earth_heliocentric(
         jd: JulianDate,
-    ) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>> {
+    ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> {
         Earth::vsop87a(jd)
     }
 
     #[inline]
-    fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay> {
+    fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
         Earth::vsop87e_vel(jd)
     }
 
     #[inline]
-    fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, Ecliptic, Kilometer> {
+    fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
         Moon::get_geo_position(jd)
     }
 }

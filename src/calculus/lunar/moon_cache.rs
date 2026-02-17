@@ -10,7 +10,7 @@
 //!
 //! A companion [`NutationCache`] stores pre-evaluated nutation triplets
 //! (Δψ, Δε, ε₀) at regular intervals and linearly interpolates, removing
-//! the 63-term IAU 1980 series from the per-query hot path.
+//! the 77-term IAU 2000B series from the per-query hot path.
 //!
 //! ## Design
 //!
@@ -27,9 +27,9 @@
 //! below 1 arcsecond in geocentric position — far smaller than the ~0.5°
 //! atmospheric refraction uncertainty at the horizon.
 
-use crate::astro::nutation::get_nutation;
-use crate::astro::precession::precession_rotation_from_j2000;
-use crate::astro::sidereal::{calculate_gst, calculate_lst, unmodded_gst};
+use crate::astro::earth_rotation::gmst_from_tt;
+use crate::astro::nutation::nutation_iau2000b;
+use crate::astro::precession::precession_matrix_iau2006;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::transform::context::DefaultEphemeris;
@@ -180,12 +180,8 @@ impl NutationCache {
         let mut values = Vec::with_capacity(num_entries);
         for i in 0..num_entries {
             let mjd = t0 + i as f64 * NUT_STEP_DAYS;
-            let nut = get_nutation(mjd.into());
-            values.push([
-                nut.longitude.to::<Radian>(),
-                nut.obliquity.to::<Radian>(),
-                nut.ecliptic.to::<Radian>(),
-            ]);
+            let nut = nutation_iau2000b(mjd.into());
+            values.push([nut.dpsi, nut.deps, nut.mean_obliquity]);
         }
 
         Self {
@@ -204,12 +200,8 @@ impl NutationCache {
 
         if idx + 1 >= self.num_entries {
             // Fallback: outside cache range — compute directly
-            let nut = get_nutation(mjd.into());
-            return (
-                nut.longitude.to::<Radian>(),
-                nut.obliquity.to::<Radian>(),
-                nut.ecliptic.to::<Radian>(),
-            );
+            let nut = nutation_iau2000b(mjd.into());
+            return (nut.dpsi, nut.deps, nut.mean_obliquity);
         }
 
         let t = frac - idx as f64; // interpolation parameter [0, 1)
@@ -225,19 +217,14 @@ impl NutationCache {
 
     /// Build the nutation rotation matrix from cached values at `jd`.
     ///
-    /// Equivalent to [`crate::astro::nutation::nutation_rotation`] but uses
-    /// interpolated nutation parameters instead of the full 63-term series.
+    /// Equivalent to [`crate::astro::nutation::nutation_rotation_iau2000b`] but uses
+    /// interpolated nutation parameters instead of the full 77-term series.
     #[inline]
     pub fn nutation_rotation(&self, mjd: ModifiedJulianDate) -> affn::Rotation3 {
         let (dpsi, deps, eps0) = self.get_nutation_rad(mjd);
-        let dpsi = dpsi.value();
-        let deps = deps.value();
-        let eps0 = eps0.value();
 
         // R1(ε0+Δε) · R3(Δψ) · R1(−ε0)
-        affn::Rotation3::from_x_rotation(eps0 + deps)
-            * affn::Rotation3::from_z_rotation(dpsi)
-            * affn::Rotation3::from_x_rotation(-eps0)
+        affn::Rotation3::rx(eps0 + deps) * affn::Rotation3::rz(dpsi) * affn::Rotation3::rx(-eps0)
     }
 }
 
@@ -249,7 +236,7 @@ impl NutationCache {
 ///
 /// Holds:
 /// * [`MoonPositionCache`] — Chebyshev interpolation of ELP2000 geocentric XYZ
-/// * [`NutationCache`] — linear interpolation of IAU 1980 nutation values
+/// * [`NutationCache`] — linear interpolation of IAU 2000B nutation values
 /// * Precomputed observer ITRF position in km
 ///
 /// The [`altitude_rad`] method reproduces the full transform chain
@@ -263,8 +250,8 @@ pub struct MoonAltitudeContext {
     site_itrf_km: [Kilometers; 3],
     /// Observer geodetic latitude.
     lat: qtty::Radians,
-    /// Observer geodetic longitude in degrees (for LST computation).
-    lon: qtty::Degrees,
+    /// Observer geodetic longitude in radians (for LST computation).
+    lon_rad: qtty::Radians,
 }
 
 impl MoonAltitudeContext {
@@ -289,7 +276,7 @@ impl MoonAltitudeContext {
             nut_cache,
             site_itrf_km,
             lat: site.lat.to::<Radian>(),
-            lon: site.lon,
+            lon_rad: site.lon.to::<Radian>(),
         }
     }
 
@@ -306,7 +293,7 @@ impl MoonAltitudeContext {
         let (x_ecl, y_ecl, z_ecl) = self.pos_cache.get_position_km(mjd);
 
         // ---------------------------------------------------------------
-        // 2. Ecliptic → EquatorialMeanJ2000 (constant rotation about +X)
+        // 2. EclipticMeanJ2000 → EquatorialMeanJ2000 (constant rotation about +X)
         // ---------------------------------------------------------------
         let (sin_e, cos_e) = J2000_OBLIQUITY_RAD.sin_cos();
         let x_eq = x_ecl;
@@ -316,7 +303,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 3. Topocentric correction: subtract observer position in J2000 eq
         // ---------------------------------------------------------------
-        let gmst = unmodded_gst(mjd.into()).to::<Radian>();
+        let gmst = gmst_from_tt(mjd.into());
         let (sin_g, cos_g) = gmst.sin_cos();
 
         let sx = self.site_itrf_km[0];
@@ -335,7 +322,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 4. Precession: J2000 → mean-of-date
         // ---------------------------------------------------------------
-        let rot_prec = precession_rotation_from_j2000(mjd.into());
+        let rot_prec = precession_matrix_iau2006(mjd.into());
         let [x_mod, y_mod, z_mod] =
             rot_prec.apply_array([x_topo.value(), y_topo.value(), z_topo.value()]);
 
@@ -355,10 +342,9 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 7. GAST → LST → HA → altitude
         // ---------------------------------------------------------------
-        let gst = calculate_gst(mjd.into());
-        let lst = calculate_lst(gst, self.lon);
-        let ra_deg = qtty::Degrees::new(ra_rad.to_degrees());
-        let ha = (lst - ra_deg).normalize().to::<Radian>();
+        let gmst2 = gmst_from_tt(mjd.into());
+        let lst_rad = gmst2 + self.lon_rad;
+        let ha = (lst_rad.value() - ra_rad).rem_euclid(std::f64::consts::TAU);
 
         let sin_alt = dec_rad.sin() * self.lat.sin() + dec_rad.cos() * self.lat.cos() * ha.cos();
 
@@ -490,10 +476,10 @@ mod tests {
         for i in 0..100 {
             let mjd = mjd_start + Days::new((i as f64) * 0.3 + 0.05);
             let (dpsi, deps, eps0) = cache.get_nutation_rad(mjd);
-            let direct = get_nutation(mjd.into());
-            let d_dpsi = direct.longitude.to::<Radian>();
-            let d_deps = direct.obliquity.to::<Radian>();
-            let d_eps0 = direct.ecliptic.to::<Radian>();
+            let direct = nutation_iau2000b(mjd.into());
+            let d_dpsi = direct.dpsi;
+            let d_deps = direct.deps;
+            let d_eps0 = direct.mean_obliquity;
 
             let err_dpsi = (dpsi - d_dpsi).abs();
             let err_deps = (deps - d_deps).abs();

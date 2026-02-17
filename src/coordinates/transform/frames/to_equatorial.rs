@@ -11,7 +11,7 @@ use qtty::LengthUnit;
 ///
 /// The transformation is a right‐hand rotation about +X by the obliquity ε.
 impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::EquatorialMeanJ2000, U>>
-    for Position<C, frames::Ecliptic, U>
+    for Position<C, frames::EclipticMeanJ2000, U>
 {
     fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
         // J2000 mean obliquity ε₀ (IAU 2006): 84381.406″
@@ -53,19 +53,21 @@ mod tests {
 
     #[test]
     fn round_trip_ecliptic_equatorial() {
-        let ecliptic_orig =
-            Position::<centers::Barycentric, frames::Ecliptic, AstronomicalUnit>::new(
-                Degrees::new(123.4),
-                Degrees::new(-21.0),
-                2.7,
-            );
+        let ecliptic_orig = Position::<
+            centers::Barycentric,
+            frames::EclipticMeanJ2000,
+            AstronomicalUnit,
+        >::new(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
         let equatorial: Position<
             centers::Barycentric,
             frames::EquatorialMeanJ2000,
             AstronomicalUnit,
         > = ecliptic_orig.transform(JulianDate::J2000);
-        let ecliptic_rec: Position<centers::Barycentric, frames::Ecliptic, AstronomicalUnit> =
-            equatorial.transform(JulianDate::J2000);
+        let ecliptic_rec: Position<
+            centers::Barycentric,
+            frames::EclipticMeanJ2000,
+            AstronomicalUnit,
+        > = equatorial.transform(JulianDate::J2000);
 
         assert_spherical_eq!(ecliptic_orig, ecliptic_rec, EPS);
     }

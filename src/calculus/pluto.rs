@@ -31,7 +31,7 @@
 //! * Williams, T. G. (1991). "An optimized algorithm for Pluto", *Mem. Brit.
 //!   Astron. Assoc.* **99** (2), 75–82.
 
-use crate::coordinates::{cartesian, centers::Heliocentric, frames::Ecliptic, spherical};
+use crate::coordinates::{cartesian, centers::Heliocentric, frames::EclipticMeanJ2000, spherical};
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Degrees, Radian, AU};
 
@@ -40,7 +40,7 @@ pub struct Pluto;
 impl Pluto {
     pub fn get_heliocentric(
         jd: JulianDate,
-    ) -> cartesian::Position<Heliocentric, Ecliptic, AstronomicalUnit> {
+    ) -> cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
         let t = jd.julian_centuries().value();
 
         // 2. Calculate mean longitudes (in degrees) for Jupiter, Saturn, and Pluto.
@@ -76,9 +76,13 @@ impl Pluto {
         let lat = sum_latitude * 0.000001 - Degrees::new(3.908239);
         let rad = sum_radius * 0.0000001 + 40.7241346;
 
-        // Ecliptic: lon = azimuth, lat = polar
-        spherical::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(lon, lat, rad * AU)
-            .to_cartesian()
+        // EclipticMeanJ2000: lon = azimuth, lat = polar
+        spherical::Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(
+            lon,
+            lat,
+            rad * AU,
+        )
+        .to_cartesian()
     }
 }
 

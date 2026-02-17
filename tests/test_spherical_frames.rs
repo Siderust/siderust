@@ -46,7 +46,7 @@ fn ecef_normalization_and_altitude() {
 #[test]
 fn ecliptic_normalization() {
     // Direction::new(lon, lat) normalizes both
-    let dir = direction::Ecliptic::new(120.0 * DEG, -45.0 * DEG);
+    let dir = direction::EclipticMeanJ2000::new(120.0 * DEG, -45.0 * DEG);
     // After normalization: lat = -45° (in [-90, 90]), lon = 120° (in [0, 360))
     assert!(
         (dir.lon().value() - 120.0).abs() < EPS,
@@ -60,7 +60,8 @@ fn ecliptic_normalization() {
     );
 
     // Position::new(lon, lat, distance) also normalizes
-    let pos = position::Ecliptic::<AstronomicalUnit>::new(120.0 * DEG, -45.0 * DEG, 2.0 * AU);
+    let pos =
+        position::EclipticMeanJ2000::<AstronomicalUnit>::new(120.0 * DEG, -45.0 * DEG, 2.0 * AU);
     assert!(
         (pos.lon().value() - 120.0).abs() < EPS,
         "pos lon mismatch: {}",

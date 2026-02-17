@@ -23,10 +23,13 @@
 //! let ctx = AstroContext::new();
 //!
 //! // Use with transforms:
-//! // position.to_frame::<Ecliptic>(&jd, &ctx);
+//! // position.to_frame::<EclipticMeanJ2000>(&jd, &ctx);
 //! ```
 
 use std::marker::PhantomData;
+
+use crate::astro::eop::{EopProvider, EopValues, IersEop};
+use crate::time::JulianDate;
 
 #[cfg(not(any(feature = "de440", feature = "de441")))]
 use crate::calculus::ephemeris::Vsop87Ephemeris;
@@ -49,9 +52,12 @@ pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
 #[cfg(feature = "de441")]
 pub type DefaultEphemeris = crate::calculus::ephemeris::De441Ephemeris;
 
-/// Default Earth orientation model marker.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct DefaultEop;
+/// Default Earth orientation model: [`IersEop`], backed by the
+/// build-time embedded `finals2000A.all` table.
+///
+/// For zero-overhead use (no EOP corrections), substitute
+/// [`NullEop`](crate::astro::eop::NullEop) as the `Eop` type parameter.
+pub type DefaultEop = IersEop;
 
 /// Default nutation/precession model marker.
 #[derive(Debug, Clone, Copy, Default)]
@@ -82,15 +88,16 @@ pub struct DefaultNutationModel;
 #[derive(Debug, Clone)]
 pub struct AstroContext<Eph = DefaultEphemeris, Eop = DefaultEop, Nut = DefaultNutationModel> {
     _ephemeris: PhantomData<Eph>,
-    _eop: PhantomData<Eop>,
+    /// Earth Orientation Parameters provider.
+    eop: Eop,
     _nutation: PhantomData<Nut>,
 }
 
-impl<Eph, Eop, Nut> Default for AstroContext<Eph, Eop, Nut> {
+impl<Eph, Eop: Default, Nut> Default for AstroContext<Eph, Eop, Nut> {
     fn default() -> Self {
         Self {
             _ephemeris: PhantomData,
-            _eop: PhantomData,
+            eop: Eop::default(),
             _nutation: PhantomData,
         }
     }
@@ -107,13 +114,29 @@ impl AstroContext {
     }
 }
 
-impl<Eph, Eop, Nut> AstroContext<Eph, Eop, Nut> {
+impl<Eph, Eop: Default, Nut> AstroContext<Eph, Eop, Nut> {
     /// Creates a context with custom type parameters.
     ///
     /// Use this when you need to specify custom ephemeris or model types.
     #[inline]
     pub fn with_types() -> Self {
         Self::default()
+    }
+}
+
+impl<Eph, Eop: EopProvider, Nut> AstroContext<Eph, Eop, Nut> {
+    /// Look up EOP values for the given Julian Date (UTC).
+    ///
+    /// Delegates to the context's [`EopProvider`].
+    #[inline]
+    pub fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
+        self.eop.eop_at(jd_utc)
+    }
+
+    /// Reference to the underlying EOP provider.
+    #[inline]
+    pub fn eop(&self) -> &Eop {
+        &self.eop
     }
 }
 

@@ -50,6 +50,28 @@ fn epoch_2100() -> JulianDate {
     jd_from_value(2488069.5)
 }
 
+/// Returns true when build/test runs are configured to stub JPL datasets.
+#[cfg(feature = "de440")]
+fn jpl_stub_enabled_for(prefix: &str) -> bool {
+    let Ok(raw) = std::env::var("SIDERUST_JPL_STUB") else {
+        return false;
+    };
+    let raw = raw.trim();
+    if raw.is_empty() {
+        return false;
+    }
+
+    let lower = raw.to_ascii_lowercase();
+    if matches!(lower.as_str(), "all" | "1" | "true" | "yes" | "on") {
+        return true;
+    }
+
+    lower
+        .split(|c: char| c == ',' || c.is_whitespace())
+        .filter(|s| !s.is_empty())
+        .any(|tok| tok == prefix)
+}
+
 // ============================================================================
 // VSOP87 Ephemeris Tests
 // ============================================================================
@@ -453,8 +475,19 @@ mod de440_tests {
     use super::*;
     use siderust::calculus::ephemeris::De440Ephemeris;
 
+    fn skip_if_de440_stubbed() -> bool {
+        if jpl_stub_enabled_for("de440") {
+            eprintln!("Skipping DE440 test: SIDERUST_JPL_STUB enables DE440 stubbing.");
+            return true;
+        }
+        false
+    }
+
     #[test]
     fn de440_sun_barycentric_at_j2000() {
+        if skip_if_de440_stubbed() {
+            return;
+        }
         let jd = j2000();
         let sun = De440Ephemeris::sun_barycentric(jd);
         let pos = sun.get_position();
@@ -469,6 +502,9 @@ mod de440_tests {
 
     #[test]
     fn de440_earth_barycentric_at_j2000() {
+        if skip_if_de440_stubbed() {
+            return;
+        }
         let jd = j2000();
         let earth = De440Ephemeris::earth_barycentric(jd);
         let pos = earth.get_position();
@@ -482,6 +518,9 @@ mod de440_tests {
 
     #[test]
     fn de440_earth_heliocentric_at_j2000() {
+        if skip_if_de440_stubbed() {
+            return;
+        }
         let jd = j2000();
         let earth = De440Ephemeris::earth_heliocentric(jd);
         let pos = earth.get_position();
@@ -495,6 +534,9 @@ mod de440_tests {
 
     #[test]
     fn de440_earth_barycentric_velocity_at_j2000() {
+        if skip_if_de440_stubbed() {
+            return;
+        }
         let jd = j2000();
         let vel = De440Ephemeris::earth_barycentric_velocity(jd);
 
@@ -511,6 +553,9 @@ mod de440_tests {
 
     #[test]
     fn de440_moon_geocentric_at_j2000() {
+        if skip_if_de440_stubbed() {
+            return;
+        }
         let jd = j2000();
         let moon = De440Ephemeris::moon_geocentric(jd);
 
@@ -523,6 +568,9 @@ mod de440_tests {
 
     #[test]
     fn de440_consistency_sun_versus_vsop87() {
+        if skip_if_de440_stubbed() {
+            return;
+        }
         let jd = j2000();
         let sun_de440 = De440Ephemeris::sun_barycentric(jd);
         let sun_vsop = Vsop87Ephemeris::sun_barycentric(jd);
@@ -541,6 +589,9 @@ mod de440_tests {
 
     #[test]
     fn de440_consistency_earth_versus_vsop87() {
+        if skip_if_de440_stubbed() {
+            return;
+        }
         let jd = j2000();
         let earth_de440 = De440Ephemeris::earth_barycentric(jd);
         let earth_vsop = Vsop87Ephemeris::earth_barycentric(jd);
@@ -558,6 +609,9 @@ mod de440_tests {
 
     #[test]
     fn de440_at_epoch_2020() {
+        if skip_if_de440_stubbed() {
+            return;
+        }
         let jd = epoch_2020();
 
         let sun = De440Ephemeris::sun_barycentric(jd);
@@ -576,6 +630,9 @@ mod de440_tests {
 
     #[test]
     fn de440_at_epoch_2026() {
+        if skip_if_de440_stubbed() {
+            return;
+        }
         let jd = epoch_2026();
 
         let sun = De440Ephemeris::sun_barycentric(jd);
@@ -770,6 +827,10 @@ mod generic_ephemeris_tests {
     #[cfg(feature = "de440")]
     #[test]
     fn de440_basic_properties() {
+        if jpl_stub_enabled_for("de440") {
+            eprintln!("Skipping DE440 generic test: SIDERUST_JPL_STUB enables DE440 stubbing.");
+            return;
+        }
         use siderust::calculus::ephemeris::De440Ephemeris;
         test_ephemeris_basic_properties::<De440Ephemeris>();
     }
@@ -816,6 +877,10 @@ mod generic_ephemeris_tests {
     #[cfg(feature = "de440")]
     #[test]
     fn de440_velocity_consistency() {
+        if jpl_stub_enabled_for("de440") {
+            eprintln!("Skipping DE440 generic test: SIDERUST_JPL_STUB enables DE440 stubbing.");
+            return;
+        }
         use siderust::calculus::ephemeris::De440Ephemeris;
         test_velocity_consistency::<De440Ephemeris>();
     }

@@ -39,10 +39,13 @@ impl Moon {
         Quantity<U>: From<Quantity<Meter>> + From<Quantity<Kilometer>> + From<AstronomicalUnits>,
     {
         // 1) Get Moon's geocentric ecliptic position from the active ephemeris backend
-        let moon_geo_ecliptic: cartesian::Position<Geocentric, frames::Ecliptic, Kilometer> =
-            DefaultEphemeris::moon_geocentric(jd);
+        let moon_geo_ecliptic: cartesian::Position<
+            Geocentric,
+            frames::EclipticMeanJ2000,
+            Kilometer,
+        > = DefaultEphemeris::moon_geocentric(jd);
 
-        // 2) Transform: Ecliptic → EquatorialMeanJ2000
+        // 2) Transform: EclipticMeanJ2000 → EquatorialMeanJ2000
         let moon_geo_eq_j2000: cartesian::Position<
             Geocentric,
             frames::EquatorialMeanJ2000,

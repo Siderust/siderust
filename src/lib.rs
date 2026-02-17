@@ -12,7 +12,7 @@
 //!
 //! - **Coordinate Systems**: Strongly-typed `Vector` and spherical `Position`/`Direction` types,
 //!   parameterized by phantom `ReferenceCenter` (e.g., Sun, Earth) and
-//!   `ReferenceFrame` (e.g., ICRS, Ecliptic, EquatorialMeanJ2000, Horizontal), and
+//!   `ReferenceFrame` (e.g., ICRS, EclipticMeanJ2000, EquatorialMeanJ2000, Horizontal), and
 //!   `Kind` (Position, Direction), enabling compile-time protection
 //!   against mismatched frames and origins. Seamless conversions between
 //!   coordinate systems are supported via `From`/`Into` and the `Transform` trait.

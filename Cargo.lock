@@ -5,8 +5,6 @@ version = 4
 [[package]]
 name = "affn"
 version = "0.3.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d11938139cf5c44b0ce420edd5989862ed03eef138fd44767511cd2d03dc9f1"
 dependencies = [
  "affn-derive",
  "nalgebra",
@@ -17,8 +15,6 @@ dependencies = [
 [[package]]
 name = "affn-derive"
 version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "585cc5a2297d15d1e6a0ba6c7db149c90afe833aa650bbb70b29102345379552"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1376,9 +1372,7 @@ dependencies = [
 
 [[package]]
 name = "tempoch"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edd6945c4385e58706585ccb1662db990e73cb62b8c87d13810a8b7b5172d386"
+version = "0.2.0"
 dependencies = [
  "chrono",
  "qtty",

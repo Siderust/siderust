@@ -54,7 +54,7 @@ pub use vsop87_backend::Vsop87Ephemeris;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
-    frames::Ecliptic,
+    frames::EclipticMeanJ2000,
 };
 use crate::targets::Target;
 use crate::time::JulianDate;
@@ -75,30 +75,31 @@ pub trait Ephemeris {
     /// Sun's position in barycentric ecliptic coordinates (AU).
     ///
     /// Used by: Heliocentric ↔ Barycentric center shifts.
-    fn sun_barycentric(jd: JulianDate)
-        -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>;
+    fn sun_barycentric(
+        jd: JulianDate,
+    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>;
 
     /// Earth's position in barycentric ecliptic coordinates (AU).
     ///
     /// Used by: Geocentric ↔ Barycentric center shifts.
     fn earth_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>;
+    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>;
 
     /// Earth's position in heliocentric ecliptic coordinates (AU).
     ///
     /// Used by: Geocentric ↔ Heliocentric center shifts.
     fn earth_heliocentric(
         jd: JulianDate,
-    ) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>>;
+    ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>>;
 
     /// Earth's velocity in barycentric ecliptic coordinates (AU/day).
     ///
     /// Used by: annual aberration, observer state velocity.
-    fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay>;
+    fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay>;
 
     /// Moon's position in geocentric ecliptic coordinates (km).
     ///
     /// Used by: Moon topocentric/horizontal pipeline.
-    fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, Ecliptic, Kilometer>;
+    fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, EclipticMeanJ2000, Kilometer>;
 }
