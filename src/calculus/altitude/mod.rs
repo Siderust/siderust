@@ -27,6 +27,12 @@
 //!
 //! All inputs/outputs are typed with `qtty` (`Degrees`, `JulianDate`, etc.).
 //!
+//! ## Time Scale
+//!
+//! `ModifiedJulianDate` / `Period<MJD>` values in this API are interpreted on
+//! the TT axis (`tempoch` canonical JD(TT) semantics). If your inputs are UTC
+//! timestamps, convert them with `ModifiedJulianDate::from_utc(...)` first.
+//!
 //! ## Trait-Based API
 //!
 //! The [`AltitudePeriodsProvider`] trait provides a unified interface for

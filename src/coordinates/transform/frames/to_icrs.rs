@@ -54,7 +54,9 @@ mod tests {
 
     #[test]
     fn ecliptic_roundtrip_through_icrs_preserves_vector() {
-        let ecl = Position::<Barycentric, frames::EclipticMeanJ2000, AstronomicalUnit>::new(0.0, 1.0, 1.0);
+        let ecl = Position::<Barycentric, frames::EclipticMeanJ2000, AstronomicalUnit>::new(
+            0.0, 1.0, 1.0,
+        );
         let icrs: Position<_, frames::ICRS, AstronomicalUnit> = ecl.to_frame();
         let back: Position<_, frames::EclipticMeanJ2000, AstronomicalUnit> = icrs.to_frame();
 
