@@ -37,12 +37,12 @@
 //! ### Numerical strategy
 //! * **Newton–Raphson** – quadratic convergence, typically 3–5 iterations.  
 //!   Falls back if the derivative becomes too small or the iteration cap
-//!   (`MAX_NEWTON_ITERS = 30`) is reached.  
+//!   (`MAX_NEWTON_ITERS = 100`) is reached.  
 //! * **Bisection** – linear but monotonic convergence, guaranteed within
 //!   `MAX_BISECTION_ITERS = 100` iterations.  
 //!
 //! Both methods share the absolute tolerance  
-//! `TOLERANCE = 1 × 10⁻¹⁴ rad` (≈ 3 mm on 1 AstronomicalUnits).
+//! `TOLERANCE = 1 × 10⁻¹⁵ rad` (≈ 0.3 mm on 1 AstronomicalUnits).
 //!
 //! ## Public API
 //!

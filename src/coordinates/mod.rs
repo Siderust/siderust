@@ -8,7 +8,7 @@
 //! to enforce compile-time safety. These phantom types represent the **frame** and **center** of
 //! the coordinate system, ensuring that operations between incompatible coordinate systems are
 //! disallowed unless explicitly converted. Moreover, thanks to the Unit module we can distinguish
-//! the different vector types such as Directions (unitless), Position (Lenght Units) and Velocity
+//! the different vector types such as Directions (unitless), Position (length units) and Velocity
 //! (Velocity Units), that enforce the compiler to validate any transformation of coordinates.
 
 //! ## Key Concepts

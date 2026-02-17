@@ -48,10 +48,10 @@
 //!
 //! ## Coordinate Calculation
 //!
-//! The `Orbit::heliocentric_coordinates(jd)` method returns the **heliocentric ecliptic Cartesian coordinates**
-//! of the orbiting body at a given Julian Day (`jd`), based on the orbital elements and epoch.
-//! Internally, this method calls `calculate_orbit_position`, which solves Kepler's equation and performs
-//! necessary coordinate transformations.
+//! The `Orbit::kepler_position(jd)` method (implemented in
+//! [`calculus::kepler_equations`](crate::calculus::kepler_equations)) returns the
+//! **heliocentric ecliptic Cartesian coordinates** of the orbiting body at a given
+//! Julian Day (`jd`), based on the orbital elements and epoch.
 //!
 //! ## Units
 //!
@@ -98,7 +98,7 @@ pub struct Orbit {
     pub longitude_of_ascending_node: Degrees, // Longitude of ascending node (Ω)
     pub argument_of_perihelion: Degrees,    // Argument of perihelion (ω)
     pub mean_anomaly_at_epoch: Degrees,     // Mean anomaly at epoch (M₀)
-    pub epoch: JulianDate,                  // Epoch (Julian Dat
+    pub epoch: JulianDate,                  // Epoch (Julian Date)
 }
 
 impl Orbit {
