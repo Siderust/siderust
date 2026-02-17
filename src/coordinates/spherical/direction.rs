@@ -5,8 +5,8 @@
 use super::Direction;
 use crate::coordinates::frames;
 
-/// **Ecliptic** direction (longitude *λ*, latitude *β*).
-pub type Ecliptic = Direction<frames::Ecliptic>;
+/// **EclipticMeanJ2000** direction (longitude *λ*, latitude *β*).
+pub type EclipticMeanJ2000 = Direction<frames::EclipticMeanJ2000>;
 /// **Equatorial mean J2000** direction (right‑ascension *α*, declination *δ*).
 pub type EquatorialMeanJ2000 = Direction<frames::EquatorialMeanJ2000>;
 /// **Equatorial mean of date** direction (right‑ascension *α*, declination *δ*).

@@ -68,43 +68,48 @@ const SCAN_STEP_FALLBACK: Days = Quantity::new(10.0 / 1440.0);
 
 /// Compute altitude of a fixed RA/Dec object from an observer site.
 ///
-/// Uses precession + nutation-corrected RA, GAST, and the standard
-/// equatorial→horizontal formula.
+/// Uses IAU 2006 precession + IAU 2000B nutation (via NPB matrix),
+/// ERA-based GMST, and the standard equatorial→horizontal formula.
 pub(crate) fn fixed_star_altitude_rad(
     mjd: ModifiedJulianDate,
     site: &crate::coordinates::centers::ObserverSite,
     ra_j2000: qtty::Degrees,
     dec_j2000: qtty::Degrees,
 ) -> qtty::Radians {
-    use crate::astro::nutation::corrected_ra_with_nutation;
-    use crate::astro::precession;
-    use crate::astro::sidereal::{calculate_gst, calculate_lst};
-    use crate::coordinates::frames::EquatorialMeanJ2000;
-    use crate::coordinates::spherical;
+    use crate::astro::earth_rotation::gmst_from_tt;
+    use crate::astro::nutation::nutation_iau2000b;
+    use crate::astro::precession::precession_nutation_matrix;
     use qtty::Radian;
+
     let jd: JulianDate = mjd.into();
-    // Build a spherical position in EquatorialMeanJ2000
-    let pos = spherical::Position::<
-        crate::coordinates::centers::Geocentric,
-        EquatorialMeanJ2000,
-        qtty::LightYear,
-    >::new(ra_j2000, dec_j2000, qtty::LightYears::new(1.0));
 
-    // Precess J2000 → mean-of-date
-    let mean_of_date = precession::precess_from_j2000(pos, jd);
-    // Apply nutation correction to RA
-    let ra_corrected = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
-    let dec = mean_of_date.polar;
+    // Convert J2000 RA/Dec → unit Cartesian
+    let ra_rad = ra_j2000.to::<Radian>().value();
+    let dec_rad = dec_j2000.to::<Radian>().value();
+    let (sin_dec, cos_dec) = dec_rad.sin_cos();
+    let (sin_ra, cos_ra) = ra_rad.sin_cos();
+    let x_j2000 = cos_dec * cos_ra;
+    let y_j2000 = cos_dec * sin_ra;
+    let z_j2000 = sin_dec;
 
-    // Compute hour angle
-    let gst = calculate_gst(jd);
-    let lst = calculate_lst(gst, site.lon);
-    let ha = (lst - ra_corrected).normalize().to::<Radian>();
+    // Apply full NPB matrix (IAU 2006 precession + IAU 2000B nutation)
+    let nut = nutation_iau2000b(jd);
+    let npb = precession_nutation_matrix(jd, nut.dpsi, nut.deps);
+    let [x_tod, y_tod, z_tod] = npb.apply_array([x_j2000, y_j2000, z_j2000]);
+
+    // Extract true-of-date RA and Dec
+    let ra_tod = y_tod.atan2(x_tod);
+    let r_xy = (x_tod * x_tod + y_tod * y_tod).sqrt();
+    let dec_tod = z_tod.atan2(r_xy);
+
+    // Compute hour angle using ERA-based GMST (proper TT→UT1 via tempoch ΔT)
+    let gmst = gmst_from_tt(jd);
+    let lst_rad = gmst.value() + site.lon.to::<Radian>().value();
+    let ha = (lst_rad - ra_tod).rem_euclid(std::f64::consts::TAU);
 
     // Equatorial → horizontal altitude
-    let lat = site.lat.to::<Radian>();
-    let dec_rad = dec.to::<Radian>();
-    let sin_alt = dec_rad.sin() * lat.sin() + dec_rad.cos() * lat.cos() * ha.cos();
+    let lat = site.lat.to::<Radian>().value();
+    let sin_alt = dec_tod.sin() * lat.sin() + dec_tod.cos() * lat.cos() * ha.cos();
     qtty::Radians::new(sin_alt.asin())
 }
 

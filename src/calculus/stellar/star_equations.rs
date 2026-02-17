@@ -29,10 +29,11 @@
 //! yielding O(1) bracket discovery per sidereal cycle — much faster than the
 //! uniform scan used for bodies with non‑trivial orbital motion (Sun, Moon).
 
-use crate::astro::nutation::corrected_ra_with_nutation;
+use crate::astro::earth_rotation::gmst_from_tt;
+use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
-use crate::astro::sidereal::{unmodded_gst, SIDEREAL_DAY};
-use crate::coordinates::centers::{Geocentric, ObserverSite};
+use crate::astro::sidereal::SIDEREAL_DAY;
+use crate::coordinates::centers::ObserverSite;
 use crate::coordinates::spherical;
 use crate::time::JulianDate;
 use crate::time::{ModifiedJulianDate, Period, MJD};
@@ -106,23 +107,34 @@ impl StarAltitudeParams {
         site: &ObserverSite,
         epoch_jd: JulianDate,
     ) -> Self {
-        // 1. Build a J2000 spherical position (unit distance is irrelevant)
-        let pos = equatorial_j2000.position::<Geocentric, LightYear>(LightYears::new(1.0));
+        // Full IAU 2006/2000B NPB matrix approach:
+        // 1. Convert J2000 direction to Cartesian unit vector
+        // 2. Apply NPB matrix → true-of-date direction
+        // 3. Extract RA/Dec of date
 
-        // 2. Precess to mean‑of‑date
-        let mod_pos = precession::precess_from_j2000(pos, epoch_jd);
+        let ra_rad = equatorial_j2000.ra().to::<Radian>();
+        let dec_rad = equatorial_j2000.dec().to::<Radian>();
 
-        // 3. Apply nutation to RA
-        let ra_corrected = corrected_ra_with_nutation(&mod_pos.direction(), epoch_jd);
-        let dec = mod_pos.polar;
+        let (sin_ra, cos_ra) = ra_rad.sin_cos();
+        let (sin_dec, cos_dec) = dec_rad.sin_cos();
+        let x0 = cos_dec * cos_ra;
+        let y0 = cos_dec * sin_ra;
+        let z0 = sin_dec;
 
-        // 4. Precompute trig constants
+        // Full NPB matrix: GCRS → true equator/equinox of date
+        let nut = nutation_iau2000b(epoch_jd);
+        let npb = precession::precession_nutation_matrix(epoch_jd, nut.dpsi, nut.deps);
+        let [x_t, y_t, z_t] = npb.apply_array([x0, y0, z0]);
+
+        let ra_corrected = Degrees::new(y_t.atan2(x_t).to_degrees());
+        let dec = Radians::new(z_t.asin());
+
+        // Precompute trig constants
         let lat_rad = site.lat.to::<Radian>();
-        let dec_rad = dec.to::<Radian>();
 
         Self {
-            a: Quantity::new(dec_rad.sin() * lat_rad.sin()),
-            b: Quantity::new(dec_rad.cos() * lat_rad.cos()),
+            a: Quantity::new(dec.sin() * lat_rad.sin()),
+            b: Quantity::new(dec.cos() * lat_rad.cos()),
             ra_corrected,
             lon: site.lon,
         }
@@ -161,11 +173,14 @@ impl StarAltitudeParams {
 
     /// Unwrapped hour angle (degrees) at a given Mjd.
     ///
-    /// `HA = GST(t) + λ − α`
+    /// `HA = GMST(t) + λ − α` (using IAU 2006 ERA-based GMST)
     #[inline]
     fn hour_angle(&self, mjd: ModifiedJulianDate) -> Degrees {
         let jd: JulianDate = mjd.into();
-        unmodded_gst(jd) + self.lon - self.ra_corrected
+        let gmst = gmst_from_tt(jd);
+        let lst_rad = gmst + self.lon.to::<Radian>();
+        let ha_rad = lst_rad - self.ra_corrected.to::<Radian>();
+        ha_rad.to::<Degree>()
     }
 
     /// Predict all threshold crossing Mjd times within `period` for a

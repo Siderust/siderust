@@ -7,9 +7,9 @@ use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
 use affn::Rotation3;
 use qtty::LengthUnit;
 
-// Implement Transform trait for Ecliptic -> ICRS
+// Implement Transform trait for EclipticMeanJ2000 -> ICRS
 impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS, U>>
-    for Position<C, frames::Ecliptic, U>
+    for Position<C, frames::EclipticMeanJ2000, U>
 {
     fn to_frame(&self) -> Position<C, frames::ICRS, U> {
         // J2000 mean obliquity ε₀ (IAU 2006): 84381.406″
@@ -54,9 +54,11 @@ mod tests {
 
     #[test]
     fn ecliptic_roundtrip_through_icrs_preserves_vector() {
-        let ecl = Position::<Barycentric, frames::Ecliptic, AstronomicalUnit>::new(0.0, 1.0, 1.0);
+        let ecl = Position::<Barycentric, frames::EclipticMeanJ2000, AstronomicalUnit>::new(
+            0.0, 1.0, 1.0,
+        );
         let icrs: Position<_, frames::ICRS, AstronomicalUnit> = ecl.to_frame();
-        let back: Position<_, frames::Ecliptic, AstronomicalUnit> = icrs.to_frame();
+        let back: Position<_, frames::EclipticMeanJ2000, AstronomicalUnit> = icrs.to_frame();
 
         assert_cartesian_eq!(ecl, back, 1e-12);
     }

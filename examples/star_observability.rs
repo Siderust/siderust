@@ -44,9 +44,9 @@ fn main() {
         return;
     }
 
-    let total_dark_hours = dark_periods
-        .iter()
-        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
+    let total_dark_hours = dark_periods.iter().fold(Hours::new(0.0), |acc, p| {
+        acc + p.duration_days().to::<Hour>()
+    });
     println!("✓ Astronomical night duration: {}\n", total_dark_hours);
 
     // Target stars
@@ -78,9 +78,9 @@ fn main() {
         let visible_periods = star.above_threshold(observatory, night, min_altitude);
 
         // Filter to only dark periods (intersection would be better, but this demonstrates the API)
-        let observable_hours = visible_periods
-            .iter()
-            .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
+        let observable_hours = visible_periods.iter().fold(Hours::new(0.0), |acc, p| {
+            acc + p.duration_days().to::<Hour>()
+        });
 
         print!("{:12} ", name);
 
@@ -95,8 +95,7 @@ fn main() {
         } else {
             println!(
                 "✓  Observable for {} above {}",
-                observable_hours,
-                min_altitude
+                observable_hours, min_altitude
             );
 
             // Show peak altitude during the night

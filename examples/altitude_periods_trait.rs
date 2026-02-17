@@ -24,7 +24,10 @@ fn main() {
     // Observer: Roque de los Muchachos Observatory (La Palma)
     let observer = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
     println!("Observer: Roque de los Muchachos Observatory");
-    println!("  Location: {}, {}, {}\n", observer.lat, observer.lon, observer.height);
+    println!(
+        "  Location: {}, {}, {}\n",
+        observer.lat, observer.lon, observer.height
+    );
 
     // Time window: one week starting from MJD 60000
     let start = ModifiedJulianDate::new(60000.0);
@@ -74,9 +77,9 @@ fn main() {
 
     println!("Betelgeuse above horizon:");
     println!("  Found {} periods in 7 days", betelgeuse_visible.len());
-    let total_hours = betelgeuse_visible
-        .iter()
-        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
+    let total_hours = betelgeuse_visible.iter().fold(Hours::new(0.0), |acc, p| {
+        acc + p.duration_days().to::<Hour>()
+    });
     println!("  Total visible time: {}", total_hours);
     println!();
 

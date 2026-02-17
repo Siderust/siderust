@@ -3,7 +3,8 @@
 
 use crate::bodies::solar_system::Sun;
 
-use crate::astro::{nutation::corrected_ra_with_nutation, precession};
+use crate::astro::nutation::nutation_iau2000b;
+use crate::astro::precession;
 use crate::calculus::horizontal;
 use crate::coordinates::{cartesian, centers::*, frames, spherical, transform::Transform};
 use crate::time::JulianDate;
@@ -15,21 +16,12 @@ impl Sun {
     ///
     /// This method accounts for:
     /// - **Nutation** in longitude (due to lunar/solar perturbations of Earth's axis).
-    /// - **Aberration** of light caused by Earth's orbital velocity.
     ///
-    /// ### Parameters
-    /// - `jd`: Julian Day for which to compute the Sun’s apparent position.
-    ///
-    /// ### Returns
-    /// - A `spherical::Position<Geocentric, EquatorialTrueOfDate>` representing the Sun’s
-    ///   apparent right ascension and declination, in degrees.
-    ///
-    /// ### Notes
-    /// - This is a simplified model:
-    ///   - The heliocentric position of the Sun is treated as the origin.
-    ///   - Light-time corrections and relativistic effects are not applied.
-    ///   - Nutation and aberration are applied as scalar corrections to the
-    ///     azimuthal (longitude) coordinate.
+    /// ### What is **not** included
+    /// - **Aberration** of light: the ~20.5″ displacement caused by Earth's
+    ///   orbital velocity is not subtracted.  For most applications the
+    ///   geometric direction is sufficient; add aberration separately if needed.
+    /// - **Light-time** corrections and relativistic effects.
     ///
     /// ### Accuracy
     /// Suitable for applications where approximate solar position is acceptable,
@@ -41,16 +33,17 @@ impl Sun {
     where
         Quantity<U>: From<AstronomicalUnits>,
     {
-        let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
+        let helio = cartesian::position::EclipticMeanJ2000::<U, Heliocentric>::CENTER;
         let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> = helio.transform(jd);
-        let geo_sph = spherical::Position::from_cartesian(&geo_cart);
-        let mean_of_date = precession::precess_from_j2000(geo_sph, jd);
-        let ra = corrected_ra_with_nutation(&mean_of_date.direction(), jd);
-        spherical::position::EquatorialTrueOfDate::<U>::new(
-            ra,
-            mean_of_date.dec(),
-            mean_of_date.distance,
-        )
+
+        // Apply full IAU 2006/2000B NPB matrix (GCRS → true equator/equinox of date)
+        let nut = nutation_iau2000b(jd);
+        let npb = precession::precession_nutation_matrix(jd, nut.dpsi, nut.deps);
+        let [x_t, y_t, z_t] = npb * [geo_cart.x(), geo_cart.y(), geo_cart.z()];
+
+        let true_cart =
+            cartesian::Position::<Geocentric, frames::EquatorialTrueOfDate, U>::new(x_t, y_t, z_t);
+        spherical::Position::from_cartesian(&true_cart)
     }
 
     /// Returns the Sun's apparent topocentric equatorial coordinates as seen
@@ -63,7 +56,7 @@ impl Sun {
         Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
     {
         // 1) Compute geocentric cartesian in J2000 (mean) as base
-        let helio = cartesian::position::Ecliptic::<U, Heliocentric>::CENTER;
+        let helio = cartesian::position::EclipticMeanJ2000::<U, Heliocentric>::CENTER;
         let geo_cart_j2000: cartesian::position::EquatorialMeanJ2000<U, Geocentric> =
             helio.transform(jd);
 
