@@ -25,9 +25,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Coordinate extension traits (`DirectionAstroExt`, `PositionAstroExt`, `VectorAstroExt`) now provide context-free IAU defaults, plus `_with` variants and `.using(&AstroContext)` for overrides
 * Coordinate transformation APIs and examples migrated to `EclipticMeanJ2000` naming
 * Coordinate transformation examples now primarily use spherical coordinates for frame/center conversions
+* Altitude API docs now explicitly state that `ModifiedJulianDate` / `Period<MJD>` are interpreted on the TT axis
 
 ### Fixed
 * Center-shift transforms now correctly convert AU shifts into the destination length unit
+* Fixed `tests/test_astro_nights_roque_2026.rs` UTC-vs-TT regression by converting reference UTC-MJD endpoints (and test windows) to TT before comparison
 
 ### Fixed
 * Corrected `astro::light_deflection::solar_deflection_magnitude` normalization to the physically consistent first-order model `Δθ = (2GM/c²R) * cot(θ/2)`:
