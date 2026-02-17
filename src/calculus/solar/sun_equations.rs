@@ -16,21 +16,12 @@ impl Sun {
     ///
     /// This method accounts for:
     /// - **Nutation** in longitude (due to lunar/solar perturbations of Earth's axis).
-    /// - **Aberration** of light caused by Earth's orbital velocity.
     ///
-    /// ### Parameters
-    /// - `jd`: Julian Day for which to compute the Sun’s apparent position.
-    ///
-    /// ### Returns
-    /// - A `spherical::Position<Geocentric, EquatorialTrueOfDate>` representing the Sun’s
-    ///   apparent right ascension and declination, in degrees.
-    ///
-    /// ### Notes
-    /// - This is a simplified model:
-    ///   - The heliocentric position of the Sun is treated as the origin.
-    ///   - Light-time corrections and relativistic effects are not applied.
-    ///   - Nutation and aberration are applied as scalar corrections to the
-    ///     azimuthal (longitude) coordinate.
+    /// ### What is **not** included
+    /// - **Aberration** of light: the ~20.5″ displacement caused by Earth's
+    ///   orbital velocity is not subtracted.  For most applications the
+    ///   geometric direction is sufficient; add aberration separately if needed.
+    /// - **Light-time** corrections and relativistic effects.
     ///
     /// ### Accuracy
     /// Suitable for applications where approximate solar position is acceptable,

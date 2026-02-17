@@ -35,30 +35,42 @@ pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
 
 /// Compute JD(UT1) from JD(TT) with IERS EOP refinement.
 ///
-/// Starts from tempoch's ΔT model to get approximate UT1, then applies
-/// the IERS dUT1 = UT1 − UTC correction if available.
+/// Uses the IERS leap-second table (via `tempoch::tai_minus_utc`) and the
+/// EOP `dUT1 = UT1 − UTC` value to compute UT1 via the exact chain:
+///
+/// ```text
+/// UTC = TT − (ΔAT + 32.184 s)
+/// UT1 = UTC + dUT1
+/// ```
+///
+/// When `dUT1` is zero (e.g. from [`NullEop`](crate::astro::eop::NullEop)),
+/// this falls back to the tempoch ΔT model via [`jd_ut1_from_tt`].
 ///
 /// For epochs within the IERS `finals2000A.all` table, this is accurate
-/// to ~1 ms. For epochs outside the table, falls back to tempoch ΔT alone.
+/// to ~1 ms (limited by the EOP table's sampling and interpolation).
 #[inline]
 pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> JulianDate {
-    // Base UT1 from tempoch ΔT
-    let jd_ut1_base = jd_ut1_from_tt(jd_tt);
+    // If EOP dUT1 is exactly zero, fall back to the ΔT model.
+    // This handles NullEop gracefully and avoids a subtle bias:
+    // the leap-second chain with dUT1=0 gives UTC, not UT1.
+    if eop.dut1.value() == 0.0 {
+        return jd_ut1_from_tt(jd_tt);
+    }
 
-    // The EOP dUT1 correction: dUT1 = UT1 - UTC.
-    // tempoch's ΔT model gives UT1 ≈ TT - ΔT, which may differ from
-    // the true UT1 by the model error (typically < 0.5 s for modern epochs).
+    // Exact chain: TT → UTC → UT1
+    //   TT = TAI + 32.184 s
+    //   TAI = UTC + ΔAT            (ΔAT = cumulative leap seconds)
+    //   ⇒ UTC = TT − (ΔAT + 32.184) / 86400        (in days)
+    //   UT1 = UTC + dUT1 / 86400                     (in days)
     //
-    // The proper chain is: UT1 = UTC + dUT1, where UTC = TT - ΔAT,
-    // and ΔAT = TAI - UTC + 32.184s. But since we don't have a leap-second
-    // table separate from ΔT, we apply dUT1 as a refinement to the ΔT-based UT1.
-    //
-    // For the current epoch (2025–2026): tempoch's observed ΔT is close to
-    // the true ΔT, so the net correction from dUT1 is < 0.5 s.
-    // The main benefit is eliminating the ~69s error from using jd_tt directly.
-    let _ = eop; // dUT1 refinement deferred to Phase 3 (requires leap-second table)
+    // We approximate JD(UTC) to look up ΔAT, then refine.
+    const TT_MINUS_TAI: f64 = 32.184; // seconds
+    let approx_utc = jd_tt.value() - (37.0 + TT_MINUS_TAI) / 86_400.0;
+    let dat = tempoch::tai_minus_utc(approx_utc);
+    let jd_utc = jd_tt.value() - (dat + TT_MINUS_TAI) / 86_400.0;
+    let jd_ut1 = jd_utc + eop.dut1.value() / 86_400.0;
 
-    jd_ut1_base
+    JulianDate::new(jd_ut1)
 }
 
 /// Compute GMST with proper UT1/TT separation.
