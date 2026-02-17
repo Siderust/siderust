@@ -5,6 +5,9 @@
 //!
 //! Functions for finding altitude events: crossings, culminations,
 //! and periods above/below thresholds or within ranges.
+//!
+//! All `Period<MJD>` inputs/outputs are interpreted on the TT axis.
+//! Convert UTC timestamps with `ModifiedJulianDate::from_utc(...)` first.
 
 use super::provider::AltitudePeriodsProvider;
 use super::search::{SearchOpts, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};
@@ -45,7 +48,7 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// # Arguments
 /// * `target` — any body implementing [`AltitudePeriodsProvider`]
 /// * `observer` — site on Earth
-/// * `window` — search interval (Mjd)
+/// * `window` — search interval (MJD on TT axis)
 /// * `threshold` — altitude threshold
 /// * `opts` — search options (tolerances, scan step)
 ///
