@@ -5,7 +5,7 @@
 //!
 //! This module provides a unified and extensible framework for transforming astronomical coordinates
 //! between different reference centers (e.g., Barycentric, Heliocentric, Geocentric, Topocentric)
-//! and reference frames (e.g., Ecliptic, EquatorialMeanJ2000, ICRS, Horizontal).
+//! and reference frames (e.g., EclipticMeanJ2000, EquatorialMeanJ2000, ICRS, Horizontal).
 //!
 //! ## Core Concepts
 //!
@@ -56,10 +56,10 @@
 //!
 //! let cart_eq = Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 2.0, 3.0);
 //! let jd = JulianDate::J2000;
-//! // Transform to Geocentric Ecliptic coordinates (frame transform)
-//! let cart_geo_ecl: Position<Geocentric, Ecliptic, AstronomicalUnit> = cart_eq.to_frame();
-//! // Transform to Heliocentric Ecliptic coordinates (center transform)
-//! let cart_helio_ecl: Position<Heliocentric, Ecliptic, AstronomicalUnit> = cart_geo_ecl.transform(jd);
+//! // Transform to Geocentric EclipticMeanJ2000 coordinates (frame transform)
+//! let cart_geo_ecl: Position<Geocentric, EclipticMeanJ2000, AstronomicalUnit> = cart_eq.to_frame();
+//! // Transform to Heliocentric EclipticMeanJ2000 coordinates (center transform)
+//! let cart_helio_ecl: Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> = cart_geo_ecl.transform(jd);
 //! ```
 //!
 //! ## Related Modules
@@ -72,16 +72,23 @@
 
 pub mod centers;
 pub mod context;
+pub mod ecliptic_of_date;
 pub mod ext;
 mod frames;
+pub mod horizontal;
 pub mod providers;
 mod to_cartesian;
 mod to_spherical;
 
 pub use centers::TransformCenter;
 pub use context::AstroContext;
-pub use ext::{DirectionAstroExt, PositionAstroExt, VectorAstroExt};
+pub use ecliptic_of_date::{FromEclipticTrueOfDate, ToEclipticTrueOfDate};
+pub use ext::{DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt, VectorAstroExt};
+pub use ext::{UsingEngine, WithEngine};
 pub use frames::TransformFrame;
+pub use horizontal::{
+    FromHorizontal, ToHorizontal, TopocentricEquatorialExt, TopocentricHorizontalExt,
+};
 pub use providers::{center_shift, frame_rotation, CenterShiftProvider, FrameRotationProvider};
 
 use crate::coordinates::{

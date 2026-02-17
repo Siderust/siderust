@@ -13,7 +13,7 @@
 
 //! ## Key Concepts
 //! - **Position, Direction and Velocity Types**: Both spherical and cartesian coordinates are parameterized
-//!   by a reference center (e.g., `Heliocentric`, `Geocentric`), a reference frame (e.g., `Ecliptic`, `EquatorialMeanJ2000`, `ICRS`),
+//!   by a reference center (e.g., `Heliocentric`, `Geocentric`), a reference frame (e.g., `EclipticMeanJ2000`, `EquatorialMeanJ2000`, `ICRS`),
 //!   and a measure unit (`Unitless`, `LengthUnit`, `VelocityUnit`). This ensures that only compatible coordinates can be used together.
 //! - **Phantom Types**: The `Center`, `Frame` and `Unit`types are zero-cost markers that encode coordinate semantics at compile time.
 //! - **Type Safety**: Operations between coordinates are only allowed when their type parameters match, preventing accidental mixing of frames, centers or magnitude.
@@ -76,33 +76,33 @@
 //!   observational state (`Astrometric` or `Apparent`).
 //!
 //! ## Supported Reference Frames and Centers
-//! - **Frames**: `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, `EquatorialTrueOfDate`, `Ecliptic`, `Horizontal`, `ICRS`, `ECEF`
+//! - **Frames**: `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, `EquatorialTrueOfDate`, `EclipticMeanJ2000`, `Horizontal`, `ICRS`, `ECEF`
 //! - **Centers**: `Heliocentric`, `Geocentric`, `Barycentric`, `Topocentric`, `Bodycentric`
 //!
 //! ## Example
 //! ```rust
 //! use siderust::coordinates::spherical;
 //! use siderust::coordinates::cartesian;
-//! use siderust::coordinates::frames::Ecliptic;
+//! use siderust::coordinates::frames::EclipticMeanJ2000;
 //! use qtty::*;
 //!
 //! // Create an ecliptic spherical direction (frame-only, no center)
-//! let spherical = spherical::Direction::<Ecliptic>::new(
+//! let spherical = spherical::Direction::<EclipticMeanJ2000>::new(
 //!     45.0 * DEG, 7.0 * DEG
 //! );
 //!
 //! // Convert to cartesian coordinates
-//! let cartesian: cartesian::Direction<Ecliptic> = spherical.to_cartesian();
+//! let cartesian: cartesian::Direction<EclipticMeanJ2000> = spherical.to_cartesian();
 //!
 //! // Convert back to spherical coordinates
-//! let spherical_converted: spherical::Direction<Ecliptic> =
+//! let spherical_converted: spherical::Direction<EclipticMeanJ2000> =
 //!     spherical::Direction::from_cartesian(&cartesian);
 //!
 //! println!("Spherical -> Cartesian -> Spherical: {:?}", spherical_converted);
 //! ```
 //!
 //! ## Submodules
-//! - **frames**: Reference frame definitions (Ecliptic, EquatorialMeanJ2000, ICRS, etc.)
+//! - **frames**: Reference frame definitions (EclipticMeanJ2000, EquatorialMeanJ2000, ICRS, etc.)
 //! - **centers**: Reference center definitions (Heliocentric, Geocentric, etc.)
 //! - **cartesian**: Cartesian coordinate types and astronomical type aliases
 //! - **spherical**: Spherical coordinate types and astronomical extensions

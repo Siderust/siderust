@@ -30,6 +30,7 @@
 //! _This module is under active development and will be expanded in future releases._
 
 mod altitude_periods;
+pub mod meeus_ch47;
 pub(crate) mod moon_cache;
 mod moon_equations;
 

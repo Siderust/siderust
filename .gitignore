@@ -19,3 +19,6 @@ coverage.xml
 
 # Dev artifacts
 artifacts
+
+## Python env
+.venv/

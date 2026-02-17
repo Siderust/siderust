@@ -25,7 +25,7 @@ use crate::calculus::ephemeris::{AuPerDay, Ephemeris};
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
-    frames::Ecliptic,
+    frames::EclipticMeanJ2000,
 };
 use crate::targets::Target;
 use crate::time::JulianDate;
@@ -66,31 +66,31 @@ impl<D: DeData> Ephemeris for DeEphemeris<D> {
     #[inline]
     fn sun_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
+    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
         bodies::sun_barycentric(jd, &D::SUN)
     }
 
     #[inline]
     fn earth_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
+    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
         bodies::earth_barycentric(jd, &D::EMB, &D::MOON)
     }
 
     #[inline]
     fn earth_heliocentric(
         jd: JulianDate,
-    ) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>> {
+    ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> {
         bodies::earth_heliocentric(jd, &D::SUN, &D::EMB, &D::MOON)
     }
 
     #[inline]
-    fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay> {
+    fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
         bodies::earth_barycentric_velocity(jd, &D::EMB, &D::MOON)
     }
 
     #[inline]
-    fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, Ecliptic, Kilometer> {
+    fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
         bodies::moon_geocentric(jd, &D::MOON)
     }
 }

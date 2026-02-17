@@ -1,13 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::astro::sidereal::unmodded_gst;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity, Radian};
+use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 
 // =============================================================================
 // Extension Trait for Topocentric Transforms
@@ -79,9 +78,9 @@ where
         // Get observer's ITRF position
         let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
 
-        // Rotate ITRF to celestial frame using GMST
-        // GMST gives the angle between the vernal equinox and the Greenwich meridian
-        let gmst_rad = unmodded_gst(jd).to::<Radian>();
+        // Rotate ITRF to celestial frame using GMST (IAU 2006 ERA-based)
+        // Uses tempoch ΔT for proper TT→UT1 conversion.
+        let gmst_rad = crate::astro::earth_rotation::gmst_from_tt(jd).value();
 
         // Rotate from ECEF (x toward Greenwich, z toward pole) to equatorial
         // R_z(-GMST) transforms ECEF to equatorial
@@ -135,8 +134,9 @@ where
         // Get observer's ITRF position
         let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
 
-        // Rotate ITRF to celestial frame using GMST
-        let gmst_rad = unmodded_gst(jd).to::<Radian>();
+        // Rotate ITRF to celestial frame using GMST (IAU 2006 ERA-based)
+        // Uses tempoch ΔT for proper TT→UT1 conversion.
+        let gmst_rad = crate::astro::earth_rotation::gmst_from_tt(jd).value();
 
         let (sin_g, cos_g) = gmst_rad.sin_cos();
 

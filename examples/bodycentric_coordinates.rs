@@ -9,7 +9,7 @@
 use qtty::*;
 use siderust::astro::orbit::Orbit;
 use siderust::bodies::solar_system::{Earth, Mars, Venus};
-use siderust::coordinates::cartesian::position::{Ecliptic, Position};
+use siderust::coordinates::cartesian::position::{EclipticMeanJ2000, Position};
 use siderust::coordinates::cartesian::Direction;
 use siderust::coordinates::centers::{Bodycentric, BodycentricParams, Geocentric, Heliocentric};
 use siderust::coordinates::frames;
@@ -54,7 +54,7 @@ fn main() {
 
     // Get ISS position in geocentric coordinates
     let iss_pos_ecl = iss_orbit.kepler_position(jd);
-    println!("ISS position (Geocentric Ecliptic):");
+    println!("ISS position (Geocentric EclipticMeanJ2000):");
     println!("  X = {:.8} AU", iss_pos_ecl.x());
     println!("  Y = {:.8} AU", iss_pos_ecl.y());
     println!("  Z = {:.8} AU", iss_pos_ecl.z());
@@ -65,7 +65,8 @@ fn main() {
     );
 
     // Moon's approximate position (geocentric)
-    let moon_geo: Position<Geocentric, frames::Ecliptic, Au> = Position::new(0.00257, 0.0, 0.0); // ~384,400 km
+    let moon_geo: Position<Geocentric, frames::EclipticMeanJ2000, Au> =
+        Position::new(0.00257, 0.0, 0.0); // ~384,400 km
 
     println!("Moon position (Geocentric):");
     println!(
@@ -75,7 +76,7 @@ fn main() {
     );
 
     // Transform to ISS-centric coordinates
-    let moon_from_iss: Position<Bodycentric, frames::Ecliptic, Au> =
+    let moon_from_iss: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         moon_geo.to_bodycentric(iss_params, jd);
 
     println!("Moon as seen from ISS:");
@@ -123,7 +124,7 @@ fn main() {
     println!("  Distance from Sun: {:.6} AU\n", mars_helio.distance());
 
     // View Earth from Mars (using approximate orbit)
-    let earth_from_mars: Position<Bodycentric, frames::Ecliptic, Au> =
+    let earth_from_mars: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         earth_helio.to_bodycentric(mars_params, jd);
 
     println!("Earth as seen from Mars:");
@@ -155,14 +156,14 @@ fn main() {
     println!("  Distance from Sun: {:.6} AU\n", venus_helio.distance());
 
     // View Earth from Venus
-    let earth_from_venus: Position<Bodycentric, frames::Ecliptic, Au> =
+    let earth_from_venus: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         earth_helio.to_bodycentric(venus_params, jd);
 
     println!("Earth as seen from Venus:");
     println!("  Distance: {:.6} AU\n", earth_from_venus.distance());
 
     // View Mars from Venus
-    let mars_from_venus: Position<Bodycentric, frames::Ecliptic, Au> =
+    let mars_from_venus: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         mars_helio.to_bodycentric(venus_params, jd);
 
     println!("Mars as seen from Venus:");
@@ -181,7 +182,7 @@ fn main() {
     println!("  Z = {:.10} AU\n", original_earth.z());
 
     // Transform to Mars-centric
-    let earth_mars_centric: Position<Bodycentric, frames::Ecliptic, Au> =
+    let earth_mars_centric: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         original_earth.to_bodycentric(mars_params, jd);
 
     println!("Transformed to Mars-centric:");
@@ -191,10 +192,10 @@ fn main() {
     );
 
     // Transform back to geocentric (to match original center)
-    let recovered_geo: Ecliptic<Au, Geocentric> = earth_mars_centric.to_geocentric(jd);
+    let recovered_geo: EclipticMeanJ2000<Au, Geocentric> = earth_mars_centric.to_geocentric(jd);
 
     // Then to heliocentric to compare
-    let recovered_helio: Ecliptic<Au, Heliocentric> = recovered_geo.to_center(jd);
+    let recovered_helio: EclipticMeanJ2000<Au, Heliocentric> = recovered_geo.to_center(jd);
 
     println!("Recovered position (Heliocentric):");
     println!("  X = {:.10} AU", recovered_helio.x());

@@ -18,8 +18,15 @@
 //! - [`orbit`]: Provides utilities for orbital mechanics and celestial object tracking.
 
 pub mod aberration;
+pub mod cio;
+pub mod earth_rotation;
+pub mod eop;
+pub mod era;
+pub mod iers_data;
+pub mod light_deflection;
 pub mod nutation;
 pub mod orbit;
+pub mod polar_motion;
 pub mod precession;
 pub mod proper_motion;
 pub mod sidereal;
