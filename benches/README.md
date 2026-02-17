@@ -43,3 +43,9 @@ cargo bench --bench moon_altitude compute_altitude
 cargo bench --bench ephemeris_comparison -- --help
 cargo bench --bench ephemeris_comparison -- --sample-size 50
 ```
+
+## Reports
+
+Benchmark-driven performance investigations and profiling notes live under:
+
+- `benches/reports/README.md`
