@@ -5,22 +5,38 @@
 
 > **Precision astronomy & satellite mechanics in safe, fast Rust.**
 
-Siderust aims to be the reference ephemeris and orbit‑analysis library for embedded flight‑software as well as research‐grade pipelines. Every algorithm ships with validation tests against authoritative data (JPL Horizons, IMCCE, SOFA). No unsafe blocks, no hidden allocations.
+Siderust aims to be a reference ephemeris and orbit‑analysis library for research‐grade pipelines and ground‑segment tooling. Every algorithm ships with validation tests against authoritative data (JPL Horizons, IMCCE, SOFA). No unsafe blocks, no hidden allocations.
 
 ---
 
 ## Table of Contents
 
-1. [Features](#features)
-2. [Installation](#installation)
-3. [Coordinate Systems](#coordinate-systems)
-4. [Units & Physical Quantities](#units--physical-quantities)
-5. [Quick Start](#quick-start)
-6. [Crate Layout](#crate-layout)
-7. [Roadmap](#roadmap)
-8. [Contributing](#contributing)
-9. [License](#license)
-10. [Acknowledgments](#acknowledgments)
+1. [Supported Feature Flags](#supported-feature-flags)
+2. [Features](#features)
+3. [Installation](#installation)
+4. [Coordinate Systems](#coordinate-systems)
+5. [Units & Physical Quantities](#units--physical-quantities)
+6. [Quick Start](#quick-start)
+7. [Crate Layout](#crate-layout)
+8. [Roadmap](#roadmap)
+9. [Contributing](#contributing)
+10. [License](#license)
+11. [Acknowledgments](#acknowledgments)
+
+---
+
+## Supported Feature Flags
+
+| Feature  | Default | What it enables |
+|----------|---------|-----------------|
+| *(none)* | ✔       | VSOP87 + ELP2000-82B analytical ephemerides, full coordinate/altitude API |
+| `de440`  |         | JPL DE440 Chebyshev ephemeris backend (1550–2650 CE) |
+| `de441`  |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
+| `serde`  |         | `Serialize` / `Deserialize` on public types |
+
+> **Note:** `no_std` and `f128` quad‑precision are **not** supported today.
+> The crate depends on `std`‑only libraries (`chrono`, `nalgebra`).
+> Sub‑crates `qtty` and `qtty-core` do offer `no_std` support independently.
 
 ---
 
