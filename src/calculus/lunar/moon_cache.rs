@@ -27,12 +27,16 @@
 //! below 1 arcsecond in geocentric position — far smaller than the ~0.5°
 //! atmospheric refraction uncertainty at the horizon.
 
-use crate::astro::earth_rotation::gmst_from_tt;
+use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession::precession_matrix_iau2006;
+use crate::astro::sidereal::gast_iau2006;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::transform::centers::position::to_topocentric::itrs_to_equatorial_mean_j2000_rotation;
 use crate::coordinates::transform::context::DefaultEphemeris;
+use crate::coordinates::transform::AstroContext;
+use crate::time::JulianDate;
 use cheby;
 use qtty::*;
 
@@ -287,6 +291,9 @@ impl MoonAltitudeContext {
     /// but replaces ELP2000 and nutation with cached interpolations.
     #[inline]
     pub fn altitude_rad(&self, mjd: ModifiedJulianDate) -> Quantity<Radian> {
+        let jd: JulianDate = mjd.into();
+        let ctx: AstroContext = AstroContext::default();
+
         // ---------------------------------------------------------------
         // 1. Geocentric ecliptic Cartesian (km) — from Chebyshev cache
         // ---------------------------------------------------------------
@@ -303,17 +310,13 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 3. Topocentric correction: subtract observer position in J2000 eq
         // ---------------------------------------------------------------
-        let gmst = gmst_from_tt(mjd.into());
-        let (sin_g, cos_g) = gmst.sin_cos();
-
         let sx = self.site_itrf_km[0];
         let sy = self.site_itrf_km[1];
         let sz = self.site_itrf_km[2];
 
-        // ITRF → EquatorialMeanJ2000 via R_z(-GMST)
-        let site_eq_x = sx * cos_g - sy * sin_g;
-        let site_eq_y = sx * sin_g + sy * cos_g;
-        let site_eq_z = sz;
+        // ITRF → EquatorialMeanJ2000 via full IAU 2006 + EOP chain.
+        let rot_itrs = itrs_to_equatorial_mean_j2000_rotation(jd, &ctx);
+        let [site_eq_x, site_eq_y, site_eq_z] = rot_itrs * [sx, sy, sz];
 
         let x_topo = x_eq - site_eq_x;
         let y_topo = y_eq - site_eq_y;
@@ -329,6 +332,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 5. Nutation: mean-of-date → true-of-date (from cache)
         // ---------------------------------------------------------------
+        let (dpsi, deps, eps0) = self.nut_cache.get_nutation_rad(mjd);
         let rot_nut = self.nut_cache.nutation_rotation(mjd);
         let [x_tod, y_tod, z_tod] = rot_nut.apply_array([x_mod, y_mod, z_mod]);
 
@@ -342,8 +346,10 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 7. GAST → LST → HA → altitude
         // ---------------------------------------------------------------
-        let gmst2 = gmst_from_tt(mjd.into());
-        let lst_rad = gmst2 + self.lon_rad;
+        let eop = ctx.eop_at(jd);
+        let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
+        let gast = gast_iau2006(jd_ut1, jd, dpsi, eps0 + deps);
+        let lst_rad = gast + self.lon_rad;
         let ha = (lst_rad.value() - ra_rad).rem_euclid(std::f64::consts::TAU);
 
         let sin_alt = dec_rad.sin() * self.lat.sin() + dec_rad.cos() * self.lat.cos() * ha.cos();
