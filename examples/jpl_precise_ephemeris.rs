@@ -187,9 +187,7 @@ fn main() {
     type KmPerSecond = qtty::Per<Kilometer, Second>;
 
     let vel_vsop = Vsop87Ephemeris::earth_barycentric_velocity(test_date);
-    let speed_vsop =
-        (vel_vsop.x() * vel_vsop.x() + vel_vsop.y() * vel_vsop.y() + vel_vsop.z() * vel_vsop.z())
-            .sqrt();
+    let speed_vsop = vel_vsop.magnitude();
     println!(
         "  VSOP87:  {} = {}",
         speed_vsop,
@@ -199,14 +197,14 @@ fn main() {
     #[cfg(feature = "de440")]
     {
         let vel = De440Ephemeris::earth_barycentric_velocity(test_date);
-        let speed = (vel.x() * vel.x() + vel.y() * vel.y() + vel.z() * vel.z()).sqrt();
+        let speed = vel.magnitude();
         println!("  DE440:   {} = {}", speed, speed.to::<KmPerSecond>());
     }
 
     #[cfg(feature = "de441")]
     {
         let vel = De441Ephemeris::earth_barycentric_velocity(test_date);
-        let speed = (vel.x() * vel.x() + vel.y() * vel.y() + vel.z() * vel.z()).sqrt();
+        let speed = vel.magnitude();
         println!("  DE441:   {} = {}", speed, speed.to::<KmPerSecond>());
     }
     println!();
