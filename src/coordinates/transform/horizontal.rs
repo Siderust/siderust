@@ -32,6 +32,7 @@
 //! use siderust::coordinates::cartesian::Direction;
 //! use siderust::coordinates::centers::ObserverSite;
 //! use siderust::coordinates::frames::{EquatorialTrueOfDate, Horizontal};
+//! use siderust::coordinates::spherical;
 //! use siderust::coordinates::transform::horizontal::ToHorizontal;
 //! use siderust::time::JulianDate;
 //! use qtty::*;
@@ -39,7 +40,8 @@
 //! let jd_ut1 = JulianDate::new(2_451_545.0);
 //! let jd_tt = JulianDate::new(2_451_545.000_800_740_7);
 //!
-//! let equatorial = Direction::<EquatorialTrueOfDate>::new(45.0 * DEG, 30.0 * DEG);
+//! let equatorial = spherical::Direction::<EquatorialTrueOfDate>::new(45.0 * DEG, 30.0 * DEG)
+//!     .to_cartesian();
 //! let site = ObserverSite::new(0.0 * DEG, 51.5 * DEG, 0.0 * M);
 //!
 //! let horizontal: Direction<Horizontal> = equatorial.to_horizontal(&jd_ut1, &jd_tt, &site);

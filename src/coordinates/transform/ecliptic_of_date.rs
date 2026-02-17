@@ -33,12 +33,14 @@
 //! ```rust
 //! use siderust::coordinates::cartesian::Direction;
 //! use siderust::coordinates::frames::{EquatorialMeanOfDate, EclipticOfDate};
+//! use siderust::coordinates::spherical;
 //! use siderust::coordinates::transform::ecliptic_of_date::ToEclipticOfDate;
 //! use siderust::time::JulianDate;
 //! use qtty::*;
 //!
 //! let jd_tt = JulianDate::new(2_451_545.0);
-//! let equatorial = Direction::<EquatorialMeanOfDate>::new(45.0 * DEG, 30.0 * DEG);
+//! let equatorial = spherical::Direction::<EquatorialMeanOfDate>::new(45.0 * DEG, 30.0 * DEG)
+//!     .to_cartesian();
 //!
 //! let ecliptic: Direction<EclipticOfDate> = equatorial.to_ecliptic_of_date(&jd_tt);
 //! ```
