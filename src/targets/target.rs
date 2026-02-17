@@ -72,7 +72,7 @@ impl<T> Target<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::proper_motion::ProperMotion;
+    use crate::astro::proper_motion::{ProperMotion, RaProperMotionConvention};
     use crate::bodies::catalog::ALDEBARAN;
     use crate::coordinates::spherical::position::GCRS;
     use crate::time::JulianDate;
@@ -93,7 +93,7 @@ mod tests {
     #[test]
     fn test_target_new_with_proper_motion() {
         let position = GCRS::<Au>::new(qtty::Degrees::new(45.0), qtty::Degrees::new(30.0), 100.0);
-        let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
+        let proper_motion = ProperMotion::from_mu_alpha_star::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(10.0),
             MilliArcsecondsPerDay::new(5.0),
         );
@@ -119,7 +119,7 @@ mod tests {
     #[test]
     fn test_target_new_raw() {
         let position = GCRS::<Au>::new(qtty::Degrees::new(90.0), qtty::Degrees::new(60.0), 300.0);
-        let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
+        let proper_motion = ProperMotion::from_mu_alpha_star::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(15.0),
             MilliArcsecondsPerDay::new(8.0),
         );
@@ -153,7 +153,7 @@ mod tests {
     #[test]
     fn test_target_get_proper_motion() {
         let position = GCRS::<Au>::new(qtty::Degrees::new(150.0), qtty::Degrees::new(80.0), 500.0);
-        let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
+        let proper_motion = ProperMotion::from_mu_alpha_star::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(20.0),
             MilliArcsecondsPerDay::new(12.0),
         );
@@ -163,8 +163,9 @@ mod tests {
         let retrieved_pm = target.get_proper_motion();
         assert!(retrieved_pm.is_some());
         if let Some(pm) = retrieved_pm {
-            assert_eq!(pm.ra_μ, 0.0020291249999999997);
-            assert_eq!(pm.dec_μ, 0.001217475);
+            assert_eq!(pm.pm_ra, 0.0020291249999999997);
+            assert_eq!(pm.pm_dec, 0.001217475);
+            assert_eq!(pm.ra_convention, RaProperMotionConvention::MuAlphaStar);
         }
 
         // Test without proper motion
@@ -186,7 +187,7 @@ mod tests {
     fn test_target_update() {
         let initial_position =
             GCRS::<Au>::new(qtty::Degrees::new(200.0), qtty::Degrees::new(90.0), 700.0);
-        let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
+        let proper_motion = ProperMotion::from_mu_alpha_star::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(25.0),
             MilliArcsecondsPerDay::new(15.0),
         );
@@ -208,8 +209,9 @@ mod tests {
         // Check that proper motion was preserved
         assert!(target.proper_motion.is_some());
         if let Some(pm) = target.get_proper_motion() {
-            assert_eq!(pm.ra_μ, 0.0025364062499999996);
-            assert_eq!(pm.dec_μ, 0.0015218437499999998);
+            assert_eq!(pm.pm_ra, 0.0025364062499999996);
+            assert_eq!(pm.pm_dec, 0.0015218437499999998);
+            assert_eq!(pm.ra_convention, RaProperMotionConvention::MuAlphaStar);
         }
     }
 
@@ -225,7 +227,7 @@ mod tests {
     #[test]
     fn test_target_clone() {
         let position = GCRS::<Au>::new(qtty::Degrees::new(260.0), qtty::Degrees::new(75.0), 1000.0);
-        let proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
+        let proper_motion = ProperMotion::from_mu_alpha_star::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(30.0),
             MilliArcsecondsPerDay::new(18.0),
         );
@@ -268,7 +270,7 @@ mod tests {
     #[test]
     fn test_target_zero_proper_motion() {
         let position = GCRS::<Au>::new(qtty::Degrees::new(280.0), qtty::Degrees::new(70.0), 1100.0);
-        let zero_proper_motion = ProperMotion::new::<MilliArcsecondPerDay>(
+        let zero_proper_motion = ProperMotion::from_mu_alpha_star::<MilliArcsecondPerDay>(
             MilliArcsecondsPerDay::new(0.0),
             MilliArcsecondsPerDay::new(0.0),
         );
@@ -276,8 +278,9 @@ mod tests {
 
         assert!(target.proper_motion.is_some());
         if let Some(pm) = target.get_proper_motion() {
-            assert_eq!(pm.ra_μ, 0.0);
-            assert_eq!(pm.dec_μ, 0.0);
+            assert_eq!(pm.pm_ra, 0.0);
+            assert_eq!(pm.pm_dec, 0.0);
+            assert_eq!(pm.ra_convention, RaProperMotionConvention::MuAlphaStar);
         }
     }
 }
