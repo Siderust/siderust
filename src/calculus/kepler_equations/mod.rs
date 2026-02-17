@@ -448,7 +448,8 @@ mod tests {
 
         for planet in &planets {
             let coord = calculate_orbit_position(&planet.planet.orbit, JulianDate::J2000);
-            let expected = EclipticMeanJ2000::new(planet.expected.0, planet.expected.1, planet.expected.2);
+            let expected =
+                EclipticMeanJ2000::new(planet.expected.0, planet.expected.1, planet.expected.2);
             assert_cartesian_eq!(coord, expected, planet.tol, "{} at J2000", planet.name);
         }
     }

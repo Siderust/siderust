@@ -41,7 +41,7 @@ use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
-    transform::{AstroContext, VectorAstroExt},
+    transform::VectorAstroExt,
 };
 use crate::targets::Target;
 use crate::time::JulianDate;
@@ -77,7 +77,7 @@ pub fn sun_barycentric(
     let jd_tdb = JulianDate::tt_to_tdb(jd);
     let sun_icrf = sun.position(jd_tdb);
     let sun_ecl_au = sun_icrf
-        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000, &AstroContext::default())
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
         .to_unit::<AstronomicalUnit>();
     Target::new_static(
         Position::new(sun_ecl_au.x(), sun_ecl_au.y(), sun_ecl_au.z()),
@@ -101,7 +101,7 @@ pub fn earth_barycentric(
     let moon_off = moon.position(jd_tdb);
     let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON);
     let earth_ecl_au = earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000, &AstroContext::default())
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
         .to_unit::<AstronomicalUnit>();
     Target::new_static(
         Position::new(earth_ecl_au.x(), earth_ecl_au.y(), earth_ecl_au.z()),
@@ -127,7 +127,7 @@ pub fn earth_heliocentric(
     let sun_pos = sun.position(jd_tdb);
     let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON) - sun_pos;
     let earth_ecl_au = earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000, &AstroContext::default())
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
         .to_unit::<AstronomicalUnit>();
     Target::new_static(
         Position::new(earth_ecl_au.x(), earth_ecl_au.y(), earth_ecl_au.z()),
@@ -151,7 +151,7 @@ pub fn earth_barycentric_velocity(
     let v_moon_off = moon.velocity(jd_tdb);
     let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
     v_earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000, &AstroContext::default())
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
         .to_unit::<AuPerDay>()
 }
 
@@ -168,7 +168,6 @@ pub fn moon_geocentric(
     let jd_tdb = JulianDate::tt_to_tdb(jd);
     let moon_off = moon.position(jd_tdb);
     let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
-    let moon_geo_ecl =
-        moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&JulianDate::J2000, &AstroContext::default());
+    let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&JulianDate::J2000);
     Position::new(moon_geo_ecl.x(), moon_geo_ecl.y(), moon_geo_ecl.z())
 }

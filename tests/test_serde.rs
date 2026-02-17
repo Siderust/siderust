@@ -50,13 +50,17 @@ fn test_cartesian_position_geocentric_roundtrip() {
 
 #[test]
 fn test_cartesian_position_heliocentric_roundtrip() {
-    let pos = cartesian::Position::<centers::Heliocentric, frames::EclipticMeanJ2000, Kilometer>::new(
-        1.496e8, 0.0, 0.0,
-    );
+    let pos =
+        cartesian::Position::<centers::Heliocentric, frames::EclipticMeanJ2000, Kilometer>::new(
+            1.496e8, 0.0, 0.0,
+        );
 
     let json = serde_json::to_string(&pos).expect("serialize position");
-    let recovered: cartesian::Position<centers::Heliocentric, frames::EclipticMeanJ2000, Kilometer> =
-        serde_json::from_str(&json).expect("deserialize position");
+    let recovered: cartesian::Position<
+        centers::Heliocentric,
+        frames::EclipticMeanJ2000,
+        Kilometer,
+    > = serde_json::from_str(&json).expect("deserialize position");
 
     assert!((pos.x().value() - recovered.x().value()).abs() < 1e-6);
 }
@@ -126,16 +130,22 @@ fn test_spherical_direction_ecliptic_roundtrip() {
 
 #[test]
 fn test_spherical_position_heliocentric_roundtrip() {
-    let pos =
-        spherical::Position::<centers::Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit>::new_raw(
-            7.0 * DEG,   // latitude
-            120.0 * DEG, // longitude
-            1.5 * AU,    // distance
-        );
+    let pos = spherical::Position::<
+        centers::Heliocentric,
+        frames::EclipticMeanJ2000,
+        AstronomicalUnit,
+    >::new_raw(
+        7.0 * DEG,   // latitude
+        120.0 * DEG, // longitude
+        1.5 * AU,    // distance
+    );
 
     let json = serde_json::to_string(&pos).expect("serialize spherical position");
-    let recovered: spherical::Position<centers::Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
-        serde_json::from_str(&json).expect("deserialize spherical position");
+    let recovered: spherical::Position<
+        centers::Heliocentric,
+        frames::EclipticMeanJ2000,
+        AstronomicalUnit,
+    > = serde_json::from_str(&json).expect("deserialize spherical position");
 
     assert!((pos.polar.value() - recovered.polar.value()).abs() < 1e-12);
     assert!((pos.azimuth.value() - recovered.azimuth.value()).abs() < 1e-12);
@@ -194,7 +204,8 @@ fn test_frame_types_roundtrip() {
     assert_eq!(json_horizontal, "null");
 
     let _: frames::ICRS = serde_json::from_str(&json_icrs).expect("deserialize ICRS");
-    let _: frames::EclipticMeanJ2000 = serde_json::from_str(&json_ecliptic).expect("deserialize EclipticMeanJ2000");
+    let _: frames::EclipticMeanJ2000 =
+        serde_json::from_str(&json_ecliptic).expect("deserialize EclipticMeanJ2000");
     let _: frames::Horizontal =
         serde_json::from_str(&json_horizontal).expect("deserialize Horizontal");
 }

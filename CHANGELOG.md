@@ -31,6 +31,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Center-shift transforms now correctly convert AU shifts into the destination length unit
 * Fixed `tests/test_astro_nights_roque_2026.rs` UTC-vs-TT regression by converting reference UTC-MJD endpoints (and test windows) to TT before comparison
 
+### Fixed
+* Corrected `astro::light_deflection::solar_deflection_magnitude` normalization to the physically consistent first-order model `Δθ = (2GM/c²R) * cot(θ/2)`:
+  - at `90°` elongation and `1 AU`: `~0.00407″` (4.07 mas), not `~1.75″`
+  - at the solar limb (`~959.63″`): `~1.75″`
+* Updated light-deflection documentation and tests to match the corrected physics, including scalar-vs-vector consistency checks
+
 ## [0.5.0] - 12/02/2026
 
 ### Added
