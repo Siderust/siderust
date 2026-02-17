@@ -27,6 +27,13 @@
 //!
 //! All inputs/outputs are typed with `qtty` (`Degrees`, `JulianDate`, etc.).
 //!
+//! ## Time Scale
+//!
+//! All `ModifiedJulianDate` / `Period<MJD>` values in this module are on
+//! tempoch's canonical JD(TT) axis (not raw UTC-MJD counters).
+//! Convert UTC timestamps with `ModifiedJulianDate::from_utc(...)`
+//! before calling these APIs.
+//!
 //! ## Trait-Based API
 //!
 //! The [`AltitudePeriodsProvider`] trait provides a unified interface for
