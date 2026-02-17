@@ -86,7 +86,8 @@ fn cartesian_direction_frame_transform() {
 #[test]
 fn spherical_direction_frame_transform() {
     // Directions are now frame-only (no center parameter).
-    let sph_dir = spherical::Direction::<EclipticMeanJ2000>::new(Degrees::new(10.0), Degrees::new(20.0));
+    let sph_dir =
+        spherical::Direction::<EclipticMeanJ2000>::new(Degrees::new(10.0), Degrees::new(20.0));
 
     // Convert to cartesian, transform frame, then back
     let cart_dir = sph_dir.to_cartesian();

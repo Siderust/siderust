@@ -6,14 +6,14 @@
 use std::fs::File;
 use std::io::BufReader;
 
-use chrono::{DateTime, NaiveDate, NaiveTime, TimeZone, Utc};
+use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use serde_json::Value;
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{ModifiedJulianDate, Period, MJD};
+use siderust::time::{ModifiedJulianDate, Period, UniversalTime, MJD};
 
 const REFERENCE_PATH: &str = "tests/reference_data/astro_night_periods_2026.json";
 const TOL_SECONDS: f64 = 3.0;
@@ -23,15 +23,25 @@ fn load_reference_periods() -> Vec<Period<MJD>> {
     let f = File::open(REFERENCE_PATH).expect("Missing astro_night_periods_2026.json");
     let reader = BufReader::new(f);
     let json: Value = serde_json::from_reader(reader).expect("Invalid JSON in reference file");
-    serde_json::from_value(json["periods"].clone())
-        .expect("Invalid or missing `periods` in reference file")
+    let periods_utc_axis: Vec<Period<MJD>> = serde_json::from_value(json["periods"].clone())
+        .expect("Invalid or missing `periods` in reference file");
+
+    // JSON stores UTC-based MJD values; this API expects MJD values on the TT axis.
+    periods_utc_axis
+        .into_iter()
+        .map(|p| {
+            Period::new(
+                mjd_utc_axis_to_mjd_tt(p.start.value()),
+                mjd_utc_axis_to_mjd_tt(p.end.value()),
+            )
+        })
+        .collect()
 }
 
-fn utc_to_mjd_utc(dt: DateTime<Utc>) -> ModifiedJulianDate {
-    // Reference data stores UTC-based MJD values (without a TT-UT delta shift).
-    const UNIX_EPOCH_MJD: f64 = 40_587.0;
-    let seconds = dt.timestamp() as f64 + dt.timestamp_subsec_nanos() as f64 * 1e-9;
-    ModifiedJulianDate::new(UNIX_EPOCH_MJD + seconds / 86_400.0)
+fn mjd_utc_axis_to_mjd_tt(mjd_utc: f64) -> ModifiedJulianDate {
+    // tempoch uses JD(TT) as canonical axis. Convert JD(UT/UTC-like) -> JD(TT).
+    const MJD_OFFSET: f64 = 2_400_000.5;
+    UniversalTime::new(mjd_utc + MJD_OFFSET).to::<MJD>()
 }
 
 fn build_roque_period() -> (ObserverSite, Period<MJD>) {
@@ -47,8 +57,9 @@ fn build_roque_period() -> (ObserverSite, Period<MJD>) {
     let start_dt = Utc.from_utc_datetime(&start_naive);
     let end_dt = Utc.from_utc_datetime(&end_naive);
 
-    let mjd_start = utc_to_mjd_utc(start_dt);
-    let mjd_end = utc_to_mjd_utc(end_dt);
+    // Query window endpoints are expressed in UTC, then converted to the TT axis.
+    let mjd_start = ModifiedJulianDate::from_utc(start_dt);
+    let mjd_end = ModifiedJulianDate::from_utc(end_dt);
 
     (site, Period::new(mjd_start, mjd_end))
 }
