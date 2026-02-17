@@ -3,7 +3,7 @@
 
 #![allow(clippy::needless_range_loop)]
 
-use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::Ecliptic};
+use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};
 use wide::f64x4;
 
 #[allow(clippy::approx_constant)]
@@ -765,7 +765,7 @@ pub use series_wrappers::*;
 
 impl Moon {
     /// Get the geocentric ecliptic coordinates of the Moon for a given Julian date
-    pub fn get_geo_position<U>(jd: JulianDate) -> Position<Geocentric, Ecliptic, U>
+    pub fn get_geo_position<U>(jd: JulianDate) -> Position<Geocentric, EclipticMeanJ2000, U>
     where
         U: LengthUnit,
     {
@@ -852,7 +852,7 @@ impl Moon {
         let y2 = pwqw * x_val + qw2 * y_val - qw_ra * z_val;
         let z2 = -pw_ra * x_val + qw_ra * y_val + (pw2 + qw2 - 1.0) * z_val;
 
-        Position::<Geocentric, Ecliptic, U>::new(
+        Position::<Geocentric, EclipticMeanJ2000, U>::new(
             Kilometers::new(x2).to::<U>(),
             Kilometers::new(y2).to::<U>(),
             Kilometers::new(z2).to::<U>(),
@@ -870,18 +870,18 @@ mod tests {
     // HELPERS
     // ===========================================================================
 
-    fn pos_j2000_km() -> Position<Geocentric, Ecliptic, Kilometer> {
+    fn pos_j2000_km() -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
         Moon::get_geo_position::<Kilometer>(JulianDate::J2000)
     }
 
-    fn r_from_xyz_km(p: &Position<Geocentric, Ecliptic, Kilometer>) -> f64 {
+    fn r_from_xyz_km(p: &Position<Geocentric, EclipticMeanJ2000, Kilometer>) -> f64 {
         let x = p.x().to::<Kilometer>().value();
         let y = p.y().to::<Kilometer>().value();
         let z = p.z().to::<Kilometer>().value();
         (x * x + y * y + z * z).sqrt()
     }
 
-    fn lon_lat_from_xyz(p: &Position<Geocentric, Ecliptic, Kilometer>) -> (f64, f64) {
+    fn lon_lat_from_xyz(p: &Position<Geocentric, EclipticMeanJ2000, Kilometer>) -> (f64, f64) {
         let x = p.x().to::<Kilometer>().value();
         let y = p.y().to::<Kilometer>().value();
         let z = p.z().to::<Kilometer>().value();

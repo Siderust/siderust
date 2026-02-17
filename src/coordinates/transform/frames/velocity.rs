@@ -27,10 +27,10 @@ where
     }
 }
 
-/// Frame transform from Ecliptic to EquatorialMeanJ2000 for velocities.
+/// Frame transform from EclipticMeanJ2000 to EquatorialMeanJ2000 for velocities.
 /// Rotation about +X by the J2000 mean obliquity ε₀ (IAU 2006): 84381.406″.
 impl<U: Unit> TransformFrame<Velocity<frames::EquatorialMeanJ2000, U>>
-    for Velocity<frames::Ecliptic, U>
+    for Velocity<frames::EclipticMeanJ2000, U>
 {
     fn to_frame(&self) -> Velocity<frames::EquatorialMeanJ2000, U> {
         let eps = (84381.406_f64 / 3600.0).to_radians();
@@ -49,12 +49,12 @@ impl<U: Unit> TransformFrame<Velocity<frames::EquatorialMeanJ2000, U>>
     }
 }
 
-/// Frame transform from EquatorialMeanJ2000 to Ecliptic for velocities.
+/// Frame transform from EquatorialMeanJ2000 to EclipticMeanJ2000 for velocities.
 /// Inverse rotation about +X by the obliquity ε.
-impl<U: Unit> TransformFrame<Velocity<frames::Ecliptic, U>>
+impl<U: Unit> TransformFrame<Velocity<frames::EclipticMeanJ2000, U>>
     for Velocity<frames::EquatorialMeanJ2000, U>
 {
-    fn to_frame(&self) -> Velocity<frames::Ecliptic, U> {
+    fn to_frame(&self) -> Velocity<frames::EclipticMeanJ2000, U> {
         let eps = (84381.406_f64 / 3600.0).to_radians();
         let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
 
@@ -67,7 +67,7 @@ impl<U: Unit> TransformFrame<Velocity<frames::Ecliptic, U>>
         let new_y = y * cos_eps + z * sin_eps;
         let new_z = -y * sin_eps + z * cos_eps;
 
-        Velocity::<frames::Ecliptic, U>::from_vec3(Vector3::new(new_x, new_y, new_z))
+        Velocity::<frames::EclipticMeanJ2000, U>::from_vec3(Vector3::new(new_x, new_y, new_z))
     }
 }
 
@@ -93,19 +93,19 @@ impl<U: Unit> TransformFrame<Velocity<frames::ICRS, U>>
     }
 }
 
-/// Frame transform from Ecliptic to ICRS for velocities.
-impl<U: Unit> TransformFrame<Velocity<frames::ICRS, U>> for Velocity<frames::Ecliptic, U> {
+/// Frame transform from EclipticMeanJ2000 to ICRS for velocities.
+impl<U: Unit> TransformFrame<Velocity<frames::ICRS, U>> for Velocity<frames::EclipticMeanJ2000, U> {
     fn to_frame(&self) -> Velocity<frames::ICRS, U> {
-        // Ecliptic -> EquatorialMeanJ2000 -> ICRS
+        // EclipticMeanJ2000 -> EquatorialMeanJ2000 -> ICRS
         let eq: Velocity<frames::EquatorialMeanJ2000, U> = self.to_frame();
         eq.to_frame()
     }
 }
 
-/// Frame transform from ICRS to Ecliptic for velocities.
-impl<U: Unit> TransformFrame<Velocity<frames::Ecliptic, U>> for Velocity<frames::ICRS, U> {
-    fn to_frame(&self) -> Velocity<frames::Ecliptic, U> {
-        // ICRS -> EquatorialMeanJ2000 -> Ecliptic
+/// Frame transform from ICRS to EclipticMeanJ2000 for velocities.
+impl<U: Unit> TransformFrame<Velocity<frames::EclipticMeanJ2000, U>> for Velocity<frames::ICRS, U> {
+    fn to_frame(&self) -> Velocity<frames::EclipticMeanJ2000, U> {
+        // ICRS -> EquatorialMeanJ2000 -> EclipticMeanJ2000
         let eq: Velocity<frames::EquatorialMeanJ2000, U> = self.to_frame();
         eq.to_frame()
     }
@@ -118,7 +118,7 @@ mod tests {
 
     type AuPerDay = Per<AstronomicalUnit, Day>;
 
-    fn vel_ecl(x: f64, y: f64, z: f64) -> Velocity<frames::Ecliptic, AuPerDay> {
+    fn vel_ecl(x: f64, y: f64, z: f64) -> Velocity<frames::EclipticMeanJ2000, AuPerDay> {
         Velocity::from_vec3(Vector3::new(
             Quantity::new(x),
             Quantity::new(y),
@@ -141,7 +141,7 @@ mod tests {
     fn ecliptic_to_equatorial_and_back_preserves_velocity() {
         let v_ecl = vel_ecl(0.1, -0.2, 0.3);
         let v_eq: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = v_ecl.to_frame();
-        let back: Velocity<frames::Ecliptic, AuPerDay> = v_eq.to_frame();
+        let back: Velocity<frames::EclipticMeanJ2000, AuPerDay> = v_eq.to_frame();
 
         assert_velocity_close(&v_ecl, &back, 1e-12);
     }
@@ -164,7 +164,7 @@ mod tests {
     fn ecliptic_to_icrs_composition_matches_direct_roundtrip() {
         let v_ecl = vel_ecl(0.01, 0.02, -0.05);
         let icrs: Velocity<frames::ICRS, AuPerDay> = v_ecl.to_frame();
-        let back: Velocity<frames::Ecliptic, AuPerDay> = icrs.to_frame();
+        let back: Velocity<frames::EclipticMeanJ2000, AuPerDay> = icrs.to_frame();
 
         assert_velocity_close(&v_ecl, &back, 1e-12);
     }

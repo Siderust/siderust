@@ -4,10 +4,10 @@
 use qtty::*;
 use siderust::coordinates::cartesian::{Displacement, Position};
 use siderust::coordinates::centers::Heliocentric;
-use siderust::coordinates::frames::Ecliptic;
+use siderust::coordinates::frames::EclipticMeanJ2000;
 
-type DispAu = Displacement<Ecliptic, Au>;
-type PosAu = Position<Heliocentric, Ecliptic, Au>;
+type DispAu = Displacement<EclipticMeanJ2000, Au>;
+type PosAu = Position<Heliocentric, EclipticMeanJ2000, Au>;
 
 #[test]
 fn displacement_basic_operations() {

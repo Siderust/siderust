@@ -140,18 +140,18 @@ fn main() {
     println!("------------------------------");
     println!("Different coordinate frames use domain-appropriate JSON field names:\n");
 
-    // Ecliptic coordinates use lon/lat
+    // EclipticMeanJ2000 coordinates use lon/lat
     let ecliptic_pos = spherical::Position::<
         siderust::coordinates::centers::Heliocentric,
-        frames::Ecliptic,
+        frames::EclipticMeanJ2000,
         AstronomicalUnit,
     >::new(
-        120.0 * DEG, // Ecliptic longitude
-        30.0 * DEG,  // Ecliptic latitude
+        120.0 * DEG, // EclipticMeanJ2000 longitude
+        30.0 * DEG,  // EclipticMeanJ2000 latitude
         2.5 * AU,
     );
     let json = serde_json::to_string_pretty(&ecliptic_pos).unwrap();
-    println!("Ecliptic coordinates (uses 'lon'/'lat'):");
+    println!("EclipticMeanJ2000 coordinates (uses 'lon'/'lat'):");
     println!("{}\n", json);
 
     // Horizontal coordinates use az/alt
@@ -180,10 +180,10 @@ fn main() {
     // Demonstrate round-trip with ecliptic
     let recovered: spherical::Position<
         siderust::coordinates::centers::Heliocentric,
-        frames::Ecliptic,
+        frames::EclipticMeanJ2000,
         AstronomicalUnit,
     > = serde_json::from_str(&serde_json::to_string(&ecliptic_pos).unwrap()).unwrap();
-    println!("Ecliptic round-trip successful:");
+    println!("EclipticMeanJ2000 round-trip successful:");
     println!("  lon = {}, lat = {}", recovered.lon(), recovered.lat());
     println!();
 

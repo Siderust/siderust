@@ -45,11 +45,11 @@
 //! use siderust::coordinates::transform::ext::PositionAstroExt;
 //! use siderust::coordinates::cartesian::Position;
 //! use siderust::coordinates::centers::{Barycentric, Geocentric};
-//! use siderust::coordinates::frames::{Ecliptic, ICRS};
+//! use siderust::coordinates::frames::{EclipticMeanJ2000, ICRS};
 //! use siderust::time::JulianDate;
 //! use qtty::AstronomicalUnit;
 //!
-//! let pos = Position::<Barycentric, Ecliptic, AstronomicalUnit>::new(1.0, 0.5, 0.2);
+//! let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
 //! let jd = JulianDate::J2000;
 //!
 //! // Transform to Geocentric ICRS — no context needed
@@ -103,11 +103,11 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
     fn to_ecliptic_of_date(
         &self,
         jd_tt: &JulianDate,
-    ) -> Direction<crate::coordinates::frames::EclipticOfDate>
+    ) -> Direction<crate::coordinates::frames::EclipticTrueOfDate>
     where
-        Self: crate::coordinates::transform::ecliptic_of_date::ToEclipticOfDate,
+        Self: crate::coordinates::transform::ecliptic_of_date::ToEclipticTrueOfDate,
     {
-        crate::coordinates::transform::ecliptic_of_date::ToEclipticOfDate::to_ecliptic_of_date(
+        crate::coordinates::transform::ecliptic_of_date::ToEclipticTrueOfDate::to_ecliptic_of_date(
             self, jd_tt,
         )
     }
@@ -431,7 +431,7 @@ where
 ///
 /// ```rust,ignore
 /// let engine = AstroContext::new();
-/// let result = direction.using(&engine).to_frame::<Ecliptic>(&jd);
+/// let result = direction.using(&engine).to_frame::<EclipticMeanJ2000>(&jd);
 /// ```
 pub struct WithEngine<'a, T> {
     inner: &'a T,
@@ -509,7 +509,7 @@ where
 mod tests {
     use super::*;
     use crate::coordinates::centers::{Barycentric, Geocentric};
-    use crate::coordinates::frames::{Ecliptic, ICRS};
+    use crate::coordinates::frames::{EclipticMeanJ2000, ICRS};
     use qtty::AstronomicalUnit;
 
     const EPSILON: f64 = 1e-10;
@@ -519,8 +519,8 @@ mod tests {
         let dir = Direction::<ICRS>::new(1.0, 0.0, 0.0);
         let jd = JulianDate::J2000;
 
-        // ICRS to Ecliptic includes a small frame-bias; don't assume exact axis invariance.
-        let dir_ecl: Direction<Ecliptic> = dir.to_frame(&jd);
+        // ICRS to EclipticMeanJ2000 includes a small frame-bias; don't assume exact axis invariance.
+        let dir_ecl: Direction<EclipticMeanJ2000> = dir.to_frame(&jd);
 
         // Must be finite and length-preserving.
         assert!(dir_ecl.x().is_finite() && dir_ecl.y().is_finite() && dir_ecl.z().is_finite());
@@ -537,8 +537,8 @@ mod tests {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
 
-        let dir_ecl: Direction<Ecliptic> = dir.to_frame_with(&jd, &ctx);
-        let dir_ecl_default: Direction<Ecliptic> = dir.to_frame(&jd);
+        let dir_ecl: Direction<EclipticMeanJ2000> = dir.to_frame_with(&jd, &ctx);
+        let dir_ecl_default: Direction<EclipticMeanJ2000> = dir.to_frame(&jd);
 
         assert!((dir_ecl.x() - dir_ecl_default.x()).abs() < 1e-15);
         assert!((dir_ecl.y() - dir_ecl_default.y()).abs() < 1e-15);
@@ -550,7 +550,7 @@ mod tests {
         let dir = Direction::<ICRS>::new(1.0, 2.0, 3.0);
         let jd = JulianDate::J2000;
 
-        let dir_ecl: Direction<Ecliptic> = dir.to_frame(&jd);
+        let dir_ecl: Direction<EclipticMeanJ2000> = dir.to_frame(&jd);
         let dir_back: Direction<ICRS> = dir_ecl.to_frame(&jd);
 
         assert!((dir_back.x() - dir.x()).abs() < EPSILON);
@@ -563,7 +563,7 @@ mod tests {
         let pos = Position::<Barycentric, ICRS, AstronomicalUnit>::new(1.0, 0.0, 0.0);
         let jd = JulianDate::J2000;
 
-        let pos_ecl: Position<Barycentric, Ecliptic, AstronomicalUnit> = pos.to_frame(&jd);
+        let pos_ecl: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> = pos.to_frame(&jd);
 
         assert!(pos_ecl.x().is_finite() && pos_ecl.y().is_finite() && pos_ecl.z().is_finite());
 
@@ -580,8 +580,8 @@ mod tests {
         let jd = JulianDate::J2000;
 
         // A point at the Geocentric origin should map to Earth's position in Barycentric
-        let geo_origin = Position::<Geocentric, Ecliptic, AstronomicalUnit>::new(0.0, 0.0, 0.0);
-        let bary: Position<Barycentric, Ecliptic, AstronomicalUnit> =
+        let geo_origin = Position::<Geocentric, EclipticMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
+        let bary: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
             geo_origin.to_center(&jd);
 
         // Should be non-zero (Earth is ~1 AU from barycenter)
@@ -597,9 +597,9 @@ mod tests {
     fn test_position_combined_transform() {
         let jd = JulianDate::J2000;
 
-        let pos = Position::<Barycentric, Ecliptic, AstronomicalUnit>::new(1.0, 0.5, 0.2);
+        let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
 
-        // Combined transform: Barycentric Ecliptic -> Geocentric ICRS
+        // Combined transform: Barycentric EclipticMeanJ2000 -> Geocentric ICRS
         let result: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd);
 
         // Verify it's not the same as the input (transformation happened)
@@ -635,8 +635,8 @@ mod tests {
         let engine = AstroContext::default();
         let jd = JulianDate::J2000;
 
-        let dir_ecl: Direction<Ecliptic> = dir.using(&engine).to_frame(&jd);
-        let dir_ecl_direct: Direction<Ecliptic> = dir.to_frame(&jd);
+        let dir_ecl: Direction<EclipticMeanJ2000> = dir.using(&engine).to_frame(&jd);
+        let dir_ecl_direct: Direction<EclipticMeanJ2000> = dir.to_frame(&jd);
 
         assert!((dir_ecl.x() - dir_ecl_direct.x()).abs() < 1e-15);
         assert!((dir_ecl.y() - dir_ecl_direct.y()).abs() < 1e-15);

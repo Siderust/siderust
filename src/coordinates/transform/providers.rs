@@ -39,12 +39,12 @@
 //!
 //! ```rust,ignore
 //! use siderust::coordinates::transform::providers::*;
-//! use siderust::coordinates::frames::{Ecliptic, ICRS};
+//! use siderust::coordinates::frames::{EclipticMeanJ2000, ICRS};
 //! use siderust::time::JulianDate;
 //! use affn::Rotation3;
 //!
-//! // Get the rotation from ICRS to Ecliptic at J2000
-//! let rot: Rotation3 = FrameRotationProvider::<ICRS, Ecliptic>::rotation(
+//! // Get the rotation from ICRS to EclipticMeanJ2000 at J2000
+//! let rot: Rotation3 = FrameRotationProvider::<ICRS, EclipticMeanJ2000>::rotation(
 //!     JulianDate::J2000,
 //!     &AstroContext::default(),
 //! );
@@ -157,7 +157,7 @@ use crate::astro::nutation;
 use crate::astro::precession;
 use crate::coordinates::centers::{Barycentric, Geocentric, Heliocentric};
 use crate::coordinates::frames::{
-    Ecliptic, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRF, ICRS,
+    EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRF, ICRS,
 };
 
 /// Identity rotation: same frame to same frame.
@@ -221,12 +221,12 @@ const FRAME_BIAS_ICRS_TO_J2000: Rotation3 = Rotation3::from_matrix([
     ],
 ]);
 
-/// ICRS → Ecliptic rotation (J2000 mean ecliptic).
+/// ICRS → EclipticMeanJ2000 rotation (J2000 mean ecliptic).
 ///
 /// This composes the ICRS → J2000 mean equator bias with the J2000 obliquity.
-/// The `Ecliptic` frame represents the ecliptic plane of J2000 (fixed),
+/// The `EclipticMeanJ2000` frame represents the ecliptic plane of J2000 (fixed),
 /// consistent with VSOP87 ephemeris data.
-impl FrameRotationProvider<ICRS, Ecliptic> for () {
+impl FrameRotationProvider<ICRS, EclipticMeanJ2000> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
         let bias = FRAME_BIAS_ICRS_TO_J2000;
@@ -235,11 +235,11 @@ impl FrameRotationProvider<ICRS, Ecliptic> for () {
     }
 }
 
-/// Ecliptic → ICRS rotation.
-impl FrameRotationProvider<Ecliptic, ICRS> for () {
+/// EclipticMeanJ2000 → ICRS rotation.
+impl FrameRotationProvider<EclipticMeanJ2000, ICRS> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        <() as FrameRotationProvider<ICRS, Ecliptic>>::rotation(jd, ctx).inverse()
+        <() as FrameRotationProvider<ICRS, EclipticMeanJ2000>>::rotation(jd, ctx).inverse()
     }
 }
 
@@ -259,16 +259,16 @@ impl FrameRotationProvider<EquatorialMeanJ2000, ICRS> for () {
     }
 }
 
-/// EquatorialMeanJ2000 → Ecliptic rotation (J2000 obliquity only).
-impl FrameRotationProvider<EquatorialMeanJ2000, Ecliptic> for () {
+/// EquatorialMeanJ2000 → EclipticMeanJ2000 rotation (J2000 obliquity only).
+impl FrameRotationProvider<EquatorialMeanJ2000, EclipticMeanJ2000> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
         Rotation3::rx(-j2000_obliquity())
     }
 }
 
-/// Ecliptic → EquatorialMeanJ2000 rotation.
-impl FrameRotationProvider<Ecliptic, EquatorialMeanJ2000> for () {
+/// EclipticMeanJ2000 → EquatorialMeanJ2000 rotation.
+impl FrameRotationProvider<EclipticMeanJ2000, EquatorialMeanJ2000> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(_jd: JulianDate, _ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
         Rotation3::rx(j2000_obliquity())
@@ -417,19 +417,19 @@ impl FrameRotationProvider<EquatorialMeanJ2000, ICRF> for () {
     }
 }
 
-/// ICRF → Ecliptic rotation.
-impl FrameRotationProvider<ICRF, Ecliptic> for () {
+/// ICRF → EclipticMeanJ2000 rotation.
+impl FrameRotationProvider<ICRF, EclipticMeanJ2000> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        <() as FrameRotationProvider<ICRS, Ecliptic>>::rotation(jd, ctx)
+        <() as FrameRotationProvider<ICRS, EclipticMeanJ2000>>::rotation(jd, ctx)
     }
 }
 
-/// Ecliptic → ICRF rotation.
-impl FrameRotationProvider<Ecliptic, ICRF> for () {
+/// EclipticMeanJ2000 → ICRF rotation.
+impl FrameRotationProvider<EclipticMeanJ2000, ICRF> for () {
     #[inline]
     fn rotation<Eph, Eop, Nut>(jd: JulianDate, ctx: &AstroContext<Eph, Eop, Nut>) -> Rotation3 {
-        <() as FrameRotationProvider<ICRF, Ecliptic>>::rotation(jd, ctx).inverse()
+        <() as FrameRotationProvider<ICRF, EclipticMeanJ2000>>::rotation(jd, ctx).inverse()
     }
 }
 
@@ -570,10 +570,10 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Heliocentric, F> f
 /// ```rust
 /// use siderust::coordinates::transform::providers::frame_rotation;
 /// use siderust::coordinates::transform::context::AstroContext;
-/// use siderust::coordinates::frames::{ICRS, Ecliptic};
+/// use siderust::coordinates::frames::{ICRS, EclipticMeanJ2000};
 /// use siderust::time::JulianDate;
 ///
-/// let rot = frame_rotation::<ICRS, Ecliptic>(JulianDate::J2000, &AstroContext::default());
+/// let rot = frame_rotation::<ICRS, EclipticMeanJ2000>(JulianDate::J2000, &AstroContext::default());
 /// ```
 #[inline]
 pub fn frame_rotation<F1, F2>(jd: JulianDate, ctx: &AstroContext) -> Rotation3
@@ -593,10 +593,10 @@ where
 /// use siderust::coordinates::transform::providers::center_shift;
 /// use siderust::coordinates::transform::context::AstroContext;
 /// use siderust::coordinates::centers::{Heliocentric, Geocentric};
-/// use siderust::coordinates::frames::Ecliptic;
+/// use siderust::coordinates::frames::EclipticMeanJ2000;
 /// use siderust::time::JulianDate;
 ///
-/// let shift = center_shift::<Heliocentric, Geocentric, Ecliptic>(
+/// let shift = center_shift::<Heliocentric, Geocentric, EclipticMeanJ2000>(
 ///     JulianDate::J2000,
 ///     &AstroContext::default(),
 /// );
@@ -627,7 +627,7 @@ mod tests {
 
     #[test]
     fn test_icrs_to_ecliptic_rotation() {
-        let rot = frame_rotation::<ICRS, Ecliptic>(JulianDate::J2000, &AstroContext::default());
+        let rot = frame_rotation::<ICRS, EclipticMeanJ2000>(JulianDate::J2000, &AstroContext::default());
 
         // Includes a small frame-bias (ICRS↔J2000), so don't assume a pure X-axis rotation.
         // Instead: verify it behaves like a proper rotation (finite + length-preserving).
@@ -646,8 +646,8 @@ mod tests {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
 
-        let r1 = frame_rotation::<ICRS, Ecliptic>(jd, &ctx);
-        let r2 = frame_rotation::<Ecliptic, ICRS>(jd, &ctx);
+        let r1 = frame_rotation::<ICRS, EclipticMeanJ2000>(jd, &ctx);
+        let r2 = frame_rotation::<EclipticMeanJ2000, ICRS>(jd, &ctx);
 
         let v = [1.0, 2.0, 3.0];
         let roundtrip = r2.apply_array(r1.apply_array(v));
@@ -659,7 +659,7 @@ mod tests {
 
     #[test]
     fn test_identity_center_shift() {
-        let shift = center_shift::<Barycentric, Barycentric, Ecliptic>(
+        let shift = center_shift::<Barycentric, Barycentric, EclipticMeanJ2000>(
             JulianDate::J2000,
             &AstroContext::default(),
         );
@@ -674,9 +674,9 @@ mod tests {
         let jd = JulianDate::J2000;
 
         // Helio → Geo should equal Helio → Bary + Bary → Geo
-        let helio_geo = center_shift::<Heliocentric, Geocentric, Ecliptic>(jd, &ctx);
-        let helio_bary = center_shift::<Heliocentric, Barycentric, Ecliptic>(jd, &ctx);
-        let bary_geo = center_shift::<Barycentric, Geocentric, Ecliptic>(jd, &ctx);
+        let helio_geo = center_shift::<Heliocentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
+        let helio_bary = center_shift::<Heliocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
+        let bary_geo = center_shift::<Barycentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
 
         let composed = [
             helio_bary[0] + bary_geo[0],
@@ -694,8 +694,8 @@ mod tests {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
 
-        let forward = center_shift::<Heliocentric, Geocentric, Ecliptic>(jd, &ctx);
-        let backward = center_shift::<Geocentric, Heliocentric, Ecliptic>(jd, &ctx);
+        let forward = center_shift::<Heliocentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
+        let backward = center_shift::<Geocentric, Heliocentric, EclipticMeanJ2000>(jd, &ctx);
 
         assert!((forward[0] + backward[0]).abs() < EPSILON);
         assert!((forward[1] + backward[1]).abs() < EPSILON);
@@ -720,15 +720,15 @@ mod tests {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
 
-        let r = frame_rotation::<ICRS, Ecliptic>(jd, &ctx);
-        let rinv = frame_rotation::<Ecliptic, ICRS>(jd, &ctx);
+        let r = frame_rotation::<ICRS, EclipticMeanJ2000>(jd, &ctx);
+        let rinv = frame_rotation::<EclipticMeanJ2000, ICRS>(jd, &ctx);
 
         let v = [1.0, 0.0, 0.0];
         let round = rinv.apply_array(r.apply_array(v));
         let err = (round[0] - v[0]).abs() + (round[1] - v[1]).abs() + (round[2] - v[2]).abs();
         assert!(
             err < 1e-12,
-            "ICRS↔Ecliptic roundtrip should be identity, got {:?}",
+            "ICRS↔EclipticMeanJ2000 roundtrip should be identity, got {:?}",
             round
         );
     }
@@ -782,8 +782,8 @@ mod tests {
     fn test_icrf_ecliptic_roundtrip() {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
-        let r = frame_rotation::<ICRF, Ecliptic>(jd, &ctx);
-        let rinv = frame_rotation::<Ecliptic, ICRF>(jd, &ctx);
+        let r = frame_rotation::<ICRF, EclipticMeanJ2000>(jd, &ctx);
+        let rinv = frame_rotation::<EclipticMeanJ2000, ICRF>(jd, &ctx);
 
         let v = [1.0, 2.0, 3.0];
         let round = rinv.apply_array(r.apply_array(v));
@@ -796,8 +796,8 @@ mod tests {
     fn test_icrf_to_ecliptic_matches_icrs_to_ecliptic() {
         let ctx = AstroContext::default();
         let jd = JulianDate::J2000;
-        let via_icrf = frame_rotation::<ICRF, Ecliptic>(jd, &ctx);
-        let via_icrs = frame_rotation::<ICRS, Ecliptic>(jd, &ctx);
+        let via_icrf = frame_rotation::<ICRF, EclipticMeanJ2000>(jd, &ctx);
+        let via_icrs = frame_rotation::<ICRS, EclipticMeanJ2000>(jd, &ctx);
 
         let v = [0.3, -0.1, 0.8];
         let a = via_icrf.apply_array(v);
