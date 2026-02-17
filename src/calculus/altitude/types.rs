@@ -64,7 +64,7 @@ pub struct CulminationEvent {
 pub struct AltitudeQuery {
     /// Observer location on Earth.
     pub observer: crate::coordinates::centers::ObserverSite,
-    /// Time window to search (Modified Julian Date).
+    /// Time window to search (MJD on the TT axis).
     pub window: Period<MJD>,
     /// Lower bound of the altitude band (inclusive).
     pub min_altitude: Degrees,
