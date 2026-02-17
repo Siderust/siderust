@@ -18,6 +18,7 @@ use siderust::coordinates::frames::{
 };
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::ecliptic_of_date::FromEclipticTrueOfDate;
+use siderust::coordinates::transform::FromHorizontal;
 use siderust::coordinates::transform::{DirectionAstroExt, FrameRotationProvider};
 use siderust::time::JulianDate;
 
