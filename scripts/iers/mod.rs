@@ -274,8 +274,7 @@ const USNO_URL: &str = "https://maia.usno.navy.mil/ser7/finals2000A.all";
 ///
 /// Tries, in order:
 /// 1. Re-use existing file in `dir`
-/// 2. Copy from repository checkout (`scripts/iers/dataset/`)
-/// 3. Download from IERS (primary) then USNO (fallback)
+/// 2. Download from IERS (primary) then USNO (fallback)
 fn ensure_dataset(dir: &Path) -> Result<PathBuf> {
     let target = dir.join(FINALS_FILENAME);
 
@@ -285,29 +284,10 @@ fn ensure_dataset(dir: &Path) -> Result<PathBuf> {
         return Ok(target);
     }
 
-    // Try local repo copy (e.g., committed via Git LFS or manual download)
-    let repo_dataset = Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/iers/dataset");
-    if let Ok(true) = copy_from_repo(&repo_dataset, &target) {
-        return Ok(target);
-    }
-
     // Download
     fs::create_dir_all(dir)?;
     download_finals(&target)?;
     Ok(target)
-}
-
-fn copy_from_repo(src_dir: &Path, dst: &Path) -> Result<bool> {
-    let src = src_dir.join(FINALS_FILENAME);
-    if !src.is_file() {
-        return Ok(false);
-    }
-    eprintln!("IERS EOP: copying from {:?}", src);
-    if let Some(parent) = dst.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    fs::copy(&src, dst).with_context(|| format!("copy {src:?} → {dst:?}"))?;
-    Ok(true)
 }
 
 fn download_finals(dst: &Path) -> Result<()> {
@@ -344,7 +324,8 @@ fn download_finals(dst: &Path) -> Result<()> {
     }
     anyhow::bail!(
         "Could not download finals2000A.all from IERS or USNO. \
-         You can manually place the file in scripts/iers/dataset/"
+         You can manually download it and place it at: {}",
+        dst.display()
     );
 }
 

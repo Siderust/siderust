@@ -25,3 +25,7 @@ artifacts
 
 ## Python env
 .venv/
+
+# Build-time datasets are downloaded on demand (not tracked in git).
+scripts/**/dataset/
+.siderust_datasets/
