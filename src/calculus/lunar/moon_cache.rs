@@ -33,7 +33,7 @@ use crate::astro::precession::precession_matrix_iau2006;
 use crate::astro::sidereal::gast_iau2006;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::centers::ObserverSite;
-use crate::coordinates::transform::centers::position::to_topocentric::itrs_to_equatorial_mean_j2000_rotation;
+use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::AstroContext;
 use crate::time::JulianDate;
@@ -509,7 +509,7 @@ mod tests {
 
     #[test]
     fn cached_altitude_matches_direct() {
-        let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+        let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
         let mjd_start: ModifiedJulianDate = JulianDate::J2000.into();
         let mjd_end = mjd_start + Days::new(7.0);
         let ctx = MoonAltitudeContext::new(mjd_start, mjd_end, site);

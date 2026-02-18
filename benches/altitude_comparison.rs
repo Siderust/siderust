@@ -51,7 +51,7 @@ fn sirius_icrs() -> direction::ICRS {
 // =============================================================================
 
 fn bench_single_altitude(c: &mut Criterion) {
-    let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
     let mjd = ModifiedJulianDate::new(51544.5); // J2000
     let sirius = sirius_icrs();
 
@@ -77,7 +77,7 @@ fn bench_single_altitude(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_above_horizon_7day(c: &mut Criterion) {
-    let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
     let period = build_period(7);
     let sirius = sirius_icrs();
 
@@ -121,7 +121,7 @@ fn bench_above_horizon_7day(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_below_threshold_30day(c: &mut Criterion) {
-    let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
     let period = build_period(30);
     let sirius = sirius_icrs();
 
@@ -165,7 +165,7 @@ fn bench_below_threshold_30day(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_period_search_365day(c: &mut Criterion) {
-    let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
     let period = build_period(365);
     let sirius = sirius_icrs();
 

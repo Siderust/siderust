@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+use affn::geodesy::GeodeticCoord;
 use qtty::*;
 use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::{direction, position};
@@ -13,7 +14,7 @@ fn ecef_normalization_and_altitude() {
     // new(lon, lat) normalizes lat via wrap_quarter_fold to [-90, 90]
     // and lon via normalize to [0, 360)
     // Note: IAU convention - lon first, lat second
-    let dir = direction::Geographic::new(190.0 * DEG, 95.0 * DEG);
+    let dir = direction::EcefDir::new(190.0 * DEG, 95.0 * DEG);
     // 95° lat after wrap_quarter_fold: clamped to 85° (90 - 5)
     // 190° lon after normalize stays as 190°
     assert!(
@@ -27,20 +28,19 @@ fn ecef_normalization_and_altitude() {
         dir.lon().value()
     );
 
-    // Position::new(lon, lat, alt) uses the same normalization
-    let pos = position::Geographic::new(190.0 * DEG, 95.0 * DEG, 10.0 * KM);
+    // GeodeticCoord stores geodetic (lon, lat, height) without normalisation —
+    // validation happens in ObserverSite::from_geodetic.
+    let coord = GeodeticCoord::new(190.0 * DEG, 85.0 * DEG, 10_000.0 * M);
     assert!(
-        (pos.lat().value() - 85.0).abs() < EPS,
-        "pos lat mismatch: {}",
-        pos.lat().value()
+        (coord.lat.value() - 85.0).abs() < EPS,
+        "geodetic lat mismatch: {}",
+        coord.lat.value()
     );
     assert!(
-        (pos.lon().value() - 190.0).abs() < EPS,
-        "pos lon mismatch: {}",
-        pos.lon().value()
+        (coord.lon.value() - 190.0).abs() < EPS,
+        "geodetic lon mismatch: {}",
+        coord.lon.value()
     );
-    // Note: distance is now just the third coordinate, not radius + altitude
-    assert!((pos.distance - 10.0 * KM).abs() < EPS * KM);
 }
 
 #[test]

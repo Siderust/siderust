@@ -51,6 +51,10 @@
 //! longitude) before constructing a site. The unchecked [`ObserverSite::new`]
 //! is retained for convenience but does not validate ranges.
 //!
+//! Observatory catalog constants (e.g., in [`crate::observatories`]) are of
+//! type [`GeodeticCoord`], which is a plain data container with no conversion
+//! logic. Use [`ObserverSite::from_geodetic`] to convert them:
+//!
 //! ## Extending
 //!
 //! To define a new reference center, use the derive macro:
@@ -82,6 +86,8 @@ use serde::{Deserialize, Serialize};
 // Re-export core traits from affn
 pub use affn::centers::ReferenceCenter;
 pub use affn::{AffineCenter, CenterParamsMismatchError, NoCenter};
+// Re-export GeodeticCoord so downstream code can access it via this module
+pub use affn::geodesy::GeodeticCoord;
 // Import derives from prelude for use in this module
 use affn::prelude::ReferenceCenter as DeriveReferenceCenter;
 
@@ -238,25 +244,25 @@ impl ObserverSite {
         Ok(Self { lon, lat, height })
     }
 
-    /// Creates an `ObserverSite` from a [`crate::coordinates::spherical::position::Geographic`] spherical position.
+    /// Creates an `ObserverSite` from a [`GeodeticCoord`].
     ///
-    /// This is a convenience method for converting observatory locations
-    /// (typically defined as `Geographic` positions) into the parameterized
-    /// site representation used by `Topocentric` coordinates.
+    /// This is the canonical way to convert a geodetic coordinate (as stored
+    /// in observatory catalog constants) into the parameterized site
+    /// representation used by `Topocentric` coordinates.
     ///
     /// # Example
     ///
     /// ```rust
-    /// use siderust::coordinates::centers::ObserverSite;
+    /// use siderust::coordinates::centers::{ObserverSite, GeodeticCoord};
     /// use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
     ///
-    /// let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    /// let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
     /// ```
-    pub fn from_geographic(geo: &crate::coordinates::spherical::position::Geographic) -> Self {
+    pub fn from_geodetic(coord: &GeodeticCoord) -> Self {
         Self {
-            lon: geo.azimuth, // longitude is stored in the azimuth field
-            lat: geo.polar,   // latitude is stored in the polar field
-            height: geo.distance.to::<Meter>(),
+            lon: coord.lon,
+            lat: coord.lat,
+            height: coord.height,
         }
     }
 

@@ -51,7 +51,7 @@ fn main() {
     );
     println!("Observer: Roque de los Muchachos Observatory (La Palma)");
 
-    let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
 
     let period = build_period(start_date, 365);
 
