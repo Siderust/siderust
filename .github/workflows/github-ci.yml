@@ -17,6 +17,7 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  SIDERUST_DATASETS_DIR: ${{ github.workspace }}/.siderust_datasets
 
 jobs:
   check:
@@ -25,9 +26,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          lfs: true
           submodules: recursive
           fetch-depth: 0
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.SIDERUST_DATASETS_DIR }}
+          key: siderust-datasets-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            siderust-datasets-${{ runner.os }}-
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo check --all-targets
 
@@ -37,7 +43,6 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          lfs: true
           submodules: recursive
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
@@ -51,9 +56,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          lfs: true
           submodules: recursive
           fetch-depth: 0
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.SIDERUST_DATASETS_DIR }}
+          key: siderust-datasets-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            siderust-datasets-${{ runner.os }}-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -65,9 +75,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          lfs: true
           submodules: recursive
           fetch-depth: 0
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.SIDERUST_DATASETS_DIR }}
+          key: siderust-datasets-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            siderust-datasets-${{ runner.os }}-
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --all-targets
       - run: cargo test --doc
@@ -76,13 +91,20 @@ jobs:
     name: Test & Coverage
     if: ${{ github.event_name == 'push' || github.event.pull_request.draft == false }}
     runs-on: ubuntu-latest
+    env:
+      SIDERUST_JPL_STUB: all
 
     steps:
       - uses: actions/checkout@v4
         with:
-          lfs: true
           submodules: recursive
           fetch-depth: 0
+      - uses: actions/cache@v4
+        with:
+          path: ${{ env.SIDERUST_DATASETS_DIR }}
+          key: siderust-datasets-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          restore-keys: |
+            siderust-datasets-${{ runner.os }}-
 
       - name: Set up Rust (nightly + llvm-tools)
         uses: dtolnay/rust-toolchain@v1

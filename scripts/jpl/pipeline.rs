@@ -40,8 +40,6 @@ pub struct DeConfig {
     pub download_timeout: u64,
     /// Human-readable size hint for log messages, e.g. `"~120 MB"`.
     pub size_hint: &'static str,
-    /// Relative repo directory for Git LFS fallback, e.g. `"scripts/de440/dataset"`.
-    pub repo_subdir: &'static str,
 }
 
 fn jpl_stub_enabled(cfg: &DeConfig) -> bool {
@@ -401,12 +399,7 @@ fn ensure_bsp(cfg: &DeConfig, data_dir: &Path) -> anyhow::Result<std::path::Path
         std::fs::remove_file(&bsp_path)?;
     }
 
-    // 2) Try local checkout (Git LFS)
-    if let Ok(true) = copy_from_repo(cfg, &bsp_path) {
-        return Ok(bsp_path);
-    }
-
-    // 3) Download from NAIF as fallback
+    // Download from NAIF
     eprintln!(
         "  Downloading {} BSP from NAIF ({})...",
         cfg.label, cfg.size_hint
@@ -441,37 +434,6 @@ fn ensure_bsp(cfg: &DeConfig, data_dir: &Path) -> anyhow::Result<std::path::Path
             );
         }
     }
-}
-
-/// Copy BSP from the repository if available (Git LFS fallback).
-fn copy_from_repo(cfg: &DeConfig, dst: &Path) -> anyhow::Result<bool> {
-    let src = Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join(cfg.repo_subdir)
-        .join(cfg.bsp_filename);
-
-    eprintln!(
-        "  Attempting to copy {} BSP from Git LFS: {:?}",
-        cfg.label, src
-    );
-
-    if !src.exists() {
-        eprintln!("  No local BSP found in source tree");
-        return Ok(false);
-    }
-
-    let meta = std::fs::metadata(&src)?;
-    if meta.len() < cfg.min_bsp_size {
-        eprintln!("  Local BSP file too small ({} B), skipping", meta.len());
-        return Ok(false);
-    }
-
-    eprintln!(
-        "  Found valid BSP in source ({:.1} MB), copying...",
-        meta.len() as f64 / 1_000_000.0
-    );
-    std::fs::copy(&src, dst)?;
-    eprintln!("  Successfully copied from Git LFS");
-    Ok(true)
 }
 
 fn download_with_curl(cfg: &DeConfig, dest: &Path) -> anyhow::Result<()> {

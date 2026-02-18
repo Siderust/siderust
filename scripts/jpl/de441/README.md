@@ -8,7 +8,7 @@ NAIF's `de441_part-2.bsp` kernel.
 DE441 is a long-span numerical integration ephemeris from NASA JPL. This
 pipeline mirrors the DE440 workflow:
 
-1. Acquire the DE441 SPK (from Git LFS backup or NAIF fallback)
+1. Acquire the DE441 SPK (download or reuse a cached copy)
 2. Parse the DAF (Double Precision Array File) container
 3. Extract SPK Type 2 Chebyshev segments for Sun, EMB, and Moon
 4. Generate statically-embedded Rust data and accessors
@@ -21,12 +21,10 @@ pipeline mirrors the DE440 workflow:
 | `../jpl/pipeline.rs` | Shared build pipeline (download, parse, codegen) |
 | `../jpl/daf.rs` | Shared DAF parser |
 | `../jpl/spk.rs` | Shared SPK Type 2 segment reader |
-| `dataset/de441_part-2.bsp` | Git LFS backup of DE441 part-2 kernel |
 
 ## Data Source
 
-Preferred: Git LFS backup at `dataset/de441_part-2.bsp`.
-Fallback: NAIF HTTPS download.
+NAIF HTTPS download:
 
 ```text
 https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de441_part-2.bsp
@@ -36,12 +34,11 @@ https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de441_part-2.bsp
 
 When building with `--features de441`, the build script:
 
-1. Reuses `$OUT_DIR/de441_dataset/de441_part-2.bsp` when valid
-2. Tries `scripts/de441/dataset/de441_part-2.bsp` (Git LFS)
-3. Downloads from NAIF as fallback
-4. Parses DAF summaries and extracts Sun/EMB/Moon Type-2 segments
-5. Writes binary blobs (`de441_{sun,emb,moon}.bin`)
-6. Generates `de441_data.rs` with 8-byte aligned `include_bytes!` accessors
+1. Reuses `de441_part-2.bsp` if already present in the dataset directory (see `doc/datasets.md`)
+2. Downloads from NAIF if missing
+3. Parses DAF summaries and extracts Sun/EMB/Moon Type-2 segments
+4. Writes binary blobs (`de441_{sun,emb,moon}.bin`)
+5. Generates `de441_data.rs` with 8-byte aligned `include_bytes!` accessors
 
 ## Skipping the Download (Typecheck Only)
 
@@ -71,28 +68,24 @@ For the public ephemeris backend (`calculus::ephemeris::De441Ephemeris`), the
 same setting enables a mock backend that falls back to VSOP87/ELP2000 so tests
 can execute without downloading DE441.
 
-## Git LFS
-
-The kernel is tracked by the repository-wide dataset rules in `.gitattributes`:
-
-```gitattributes
-scripts/**/dataset/** filter=lfs diff=lfs merge=lfs -text
-```
-
 ## Manual Download
 
 ```bash
+export SIDERUST_DATASETS_DIR="$PWD/.siderust_datasets"
+mkdir -p "$SIDERUST_DATASETS_DIR/de441_dataset"
 curl -fSL --max-time 5400 \
   https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de441_part-2.bsp \
-  -o scripts/de441/dataset/de441_part-2.bsp
+  -o "$SIDERUST_DATASETS_DIR/de441_dataset/de441_part-2.bsp"
 ```
 
 Or with `wget`:
 
 ```bash
+export SIDERUST_DATASETS_DIR="$PWD/.siderust_datasets"
+mkdir -p "$SIDERUST_DATASETS_DIR/de441_dataset"
 wget --timeout=5400 \
   https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de441_part-2.bsp \
-  -O scripts/de441/dataset/de441_part-2.bsp
+  -O "$SIDERUST_DATASETS_DIR/de441_dataset/de441_part-2.bsp"
 ```
 
 ## References

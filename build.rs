@@ -42,6 +42,7 @@ fn stub_enabled_for(prefix: &str) -> bool {
 
 fn main() {
     println!("cargo:rerun-if-env-changed=SIDERUST_JPL_STUB");
+    println!("cargo:rerun-if-env-changed=SIDERUST_DATASETS_DIR");
     println!("cargo:rustc-check-cfg=cfg(siderust_mock_de441)");
 
     if stub_enabled_for("de441") {
@@ -52,10 +53,13 @@ fn main() {
     }
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"));
+    let datasets_base_dir = env::var_os("SIDERUST_DATASETS_DIR")
+        .map(PathBuf::from)
+        .unwrap_or_else(|| out_dir.clone());
 
     // VSOP87
     eprintln!("Building VSOP87 data...");
-    let data_dir = out_dir.join("vsop87_dataset");
+    let data_dir = datasets_base_dir.join("vsop87_dataset");
     vsop87_build::run(data_dir.as_path()).unwrap_or_else(|e| {
         panic!("VSOP87 codegen failed: {}", e);
     });
@@ -63,7 +67,7 @@ fn main() {
 
     // ELP2000
     eprintln!("Building ELP2000 data...");
-    let elp_dir = out_dir.join("elp2000_dataset");
+    let elp_dir = datasets_base_dir.join("elp2000_dataset");
     elp2000_build::run(elp_dir.as_path()).unwrap_or_else(|e| {
         panic!("ELP2000 codegen failed: {}", e);
     });
@@ -71,7 +75,7 @@ fn main() {
 
     // IERS EOP (finals2000A.all)
     eprintln!("Building IERS EOP data...");
-    let iers_dir = out_dir.join("iers_dataset");
+    let iers_dir = datasets_base_dir.join("iers_dataset");
     iers_build::run(iers_dir.as_path()).unwrap_or_else(|e| {
         panic!("IERS EOP codegen failed: {}", e);
     });
@@ -81,7 +85,7 @@ fn main() {
     #[cfg(feature = "de440")]
     {
         eprintln!("Building DE440 data...");
-        let de440_dir = out_dir.join("de440_dataset");
+        let de440_dir = datasets_base_dir.join("de440_dataset");
         de440_build::run(de440_dir.as_path()).unwrap_or_else(|e| {
             panic!("DE440 codegen failed: {}", e);
         });
@@ -92,7 +96,7 @@ fn main() {
     #[cfg(feature = "de441")]
     {
         eprintln!("Building DE441 data...");
-        let de441_dir = out_dir.join("de441_dataset");
+        let de441_dir = datasets_base_dir.join("de441_dataset");
         de441_build::run(de441_dir.as_path()).unwrap_or_else(|e| {
             panic!("DE441 codegen failed: {}", e);
         });

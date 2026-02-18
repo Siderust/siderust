@@ -23,7 +23,6 @@ const CONFIG: pipeline::DeConfig = pipeline::DeConfig {
     min_bsp_size: 1_500_000_000,
     download_timeout: 5400,
     size_hint: "~1.65 GB",
-    repo_subdir: "scripts/de441/dataset",
 };
 
 /// Run the DE441 build pipeline.
