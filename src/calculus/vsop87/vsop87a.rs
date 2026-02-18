@@ -2,15 +2,15 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use super::*;
-use crate::astro::JulianDate;
 use crate::bodies::solar_system::Moon;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Heliocentric,
-    frames::Ecliptic,
+    frames::EclipticMeanJ2000,
 };
 use crate::targets::Target;
+use crate::time::JulianDate;
 use qtty::*;
 type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 
@@ -29,7 +29,7 @@ macro_rules! impl_vsop87a {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            pub fn vsop87a(jd: JulianDate) -> Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>> {
+            pub fn vsop87a(jd: JulianDate) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> {
                 let (x, y, z) = position(
                     jd,
                     &[$( &$x ),+],
@@ -45,7 +45,7 @@ macro_rules! impl_vsop87a {
                 )
             }
 
-            pub fn vsop87a_vel(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay> {
+            pub fn vsop87a_vel(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
                 let (vx, vy, vz) = velocity(
                     jd,
                     &[$( &$x ),+],
@@ -60,7 +60,7 @@ macro_rules! impl_vsop87a {
             }
 
             pub fn vsop87a_pos_vel(jd: JulianDate)
-                -> (Target<Position<Heliocentric, Ecliptic, AstronomicalUnit>>, Velocity<Ecliptic, AuPerDay>) {
+                -> (Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>>, Velocity<EclipticMeanJ2000, AuPerDay>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
                     &[$( &$x ),+],
@@ -148,9 +148,9 @@ impl_vsop87a!(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
     use qtty::AU;
 
     const PRECISION: f64 = 1e-6;

@@ -38,7 +38,7 @@
 //! ```rust
 //! use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
 //! use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::*;
 //!
 //! // A geometric direction to a star

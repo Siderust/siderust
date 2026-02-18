@@ -2,14 +2,14 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use super::*;
-use crate::astro::JulianDate;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Barycentric,
-    frames::Ecliptic,
+    frames::EclipticMeanJ2000,
 };
 use crate::targets::Target;
+use crate::time::JulianDate;
 use qtty::*;
 type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 
@@ -28,7 +28,7 @@ macro_rules! impl_vsop87e {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            pub fn vsop87e(jd: JulianDate) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
+            pub fn vsop87e(jd: JulianDate) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
                 let (x, y, z) = position(
                     jd,
                     &[$( &$x ),+],
@@ -44,7 +44,7 @@ macro_rules! impl_vsop87e {
                 )
             }
 
-            pub fn vsop87e_vel(jd: JulianDate) -> Velocity<Ecliptic, AuPerDay> {
+            pub fn vsop87e_vel(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
                 let (vx, vy, vz) = velocity(
                     jd,
                     &[$( &$x ),+],
@@ -59,7 +59,7 @@ macro_rules! impl_vsop87e {
             }
 
             pub fn vsop87e_pos_vel(jd: JulianDate)
-                -> (Target<Position<Barycentric, Ecliptic, AstronomicalUnit>>, Velocity<Ecliptic, AuPerDay>) {
+                -> (Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>, Velocity<EclipticMeanJ2000, AuPerDay>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
                     &[$( &$x ),+],
@@ -82,7 +82,9 @@ macro_rules! impl_vsop87e {
 }
 
 impl Sun {
-    pub fn vsop87e(jd: JulianDate) -> Target<Position<Barycentric, Ecliptic, AstronomicalUnit>> {
+    pub fn vsop87e(
+        jd: JulianDate,
+    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
         let (x, y, z) = position(
             jd,
             &[&SUN_X0, &SUN_X1, &SUN_X2, &SUN_X3, &SUN_X4, &SUN_X5],
@@ -158,9 +160,9 @@ impl_vsop87e!(
 
 #[cfg(test)]
 mod tests {
-    use crate::astro::JulianDate;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
     use qtty::AU;
 
     const PRECISION: f64 = 1.0e-6;

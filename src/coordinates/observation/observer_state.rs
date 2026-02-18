@@ -22,12 +22,15 @@
 //! By encapsulating this in `ObserverState`, we ensure that aberration cannot be
 //! applied without explicit observer information.
 
-use crate::astro::sidereal::unmodded_gst;
-use crate::astro::JulianDate;
-use crate::bodies::solar_system::Earth;
+use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
+use crate::astro::eop::EopProvider;
+use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Velocity;
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::EquatorialMeanJ2000;
+use crate::coordinates::frames::ECEF;
+use crate::coordinates::transform::context::{AstroContext, DefaultEphemeris};
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Day};
 
 /// Velocity unit: AU per day
@@ -51,7 +54,7 @@ pub type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 ///
 /// ```rust
 /// use siderust::coordinates::observation::ObserverState;
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 ///
 /// // Create observer state for a geocentric observer
 /// let obs = ObserverState::geocentric(JulianDate::J2000);
@@ -81,7 +84,7 @@ impl ObserverState {
     ///
     /// ```rust
     /// use siderust::coordinates::observation::ObserverState;
-    /// use siderust::astro::JulianDate;
+    /// use siderust::time::JulianDate;
     ///
     /// let obs = ObserverState::geocentric(JulianDate::J2000);
     /// ```
@@ -89,7 +92,7 @@ impl ObserverState {
         use crate::coordinates::transform::TransformFrame;
 
         // Use SSB-referenced (barycentric) Earth velocity for annual aberration.
-        let vel_ecl = Earth::vsop87e_vel(jd);
+        let vel_ecl = DefaultEphemeris::earth_barycentric_velocity(jd);
 
         // Transform to equatorial frame
         let velocity: Velocity<EquatorialMeanJ2000, AuPerDay> = vel_ecl.to_frame();
@@ -110,46 +113,50 @@ impl ObserverState {
     /// # Note
     ///
     /// Currently this only includes Earth's orbital velocity (annual aberration).
-    /// Diurnal aberration (~0.3") is included via an Earth-rotation model based on GMST.
-    pub fn topocentric(site: &ObserverSite, jd: JulianDate) -> Self {
-        use crate::coordinates::transform::TransformFrame;
-        use qtty::{Meter, Radian};
+    /// Diurnal aberration (~0.3") uses the default EOP-backed Earth-rotation chain.
+    pub fn topocentric(site: &Geodetic<ECEF>, jd: JulianDate) -> Self {
+        let ctx: AstroContext = AstroContext::default();
+        Self::topocentric_with_ctx(site, jd, &ctx)
+    }
 
-        // Annual (orbital) component: barycentric Earth velocity (VSOP87E).
-        let vel_ecl = Earth::vsop87e_vel(jd);
+    /// Context-aware topocentric observer state.
+    pub fn topocentric_with_ctx<Eph, Eop: EopProvider, Nut>(
+        site: &Geodetic<ECEF>,
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Self {
+        use crate::coordinates::transform::TransformFrame;
+        use qtty::{Meter, Second, Seconds};
+
+        // Annual (orbital) component: barycentric Earth velocity.
+        let vel_ecl = DefaultEphemeris::earth_barycentric_velocity(jd);
 
         // Transform to equatorial frame
         let mut velocity: Velocity<EquatorialMeanJ2000, AuPerDay> = vel_ecl.to_frame();
 
-        // Diurnal (rotational) component: v = ω × r, computed in ECEF then rotated to equatorial.
-        // This uses GMST as a first-order Earth rotation model (UT1 should be supplied via `jd`).
-        const AU_M: f64 = 149_597_870_700.0;
-        const SECONDS_PER_DAY: f64 = 86_400.0;
+        // Diurnal (rotational) component: v = ω × r, computed in ECEF then
+        // rotated through the same high-precision terrestrial->celestial chain
+        // used by topocentric position transforms.
         // IERS Conventions 2010/2020: Earth rotation rate (rad/s), nominal.
         const OMEGA_EARTH: f64 = 7.292_115_0e-5;
 
-        let site_itrf_m = site.geocentric_itrf::<Meter>();
-        let rx = site_itrf_m.x().value();
-        let ry = site_itrf_m.y().value();
+        let site_itrf_m = site.to_cartesian::<Meter>();
+        type MetersPerSecond = qtty::Per<Meter, Second>;
+        let one_second = Seconds::new(1.0);
 
         // ω = (0,0,OMEGA_EARTH) in ECEF => ω×r = (-ω*y, ω*x, 0)
-        let vx_ecef_mps = -OMEGA_EARTH * ry;
-        let vy_ecef_mps = OMEGA_EARTH * rx;
-        let vz_ecef_mps = 0.0;
+        let vx_ecef: qtty::Quantity<MetersPerSecond> =
+            (-site_itrf_m.y() * OMEGA_EARTH) / one_second;
+        let vy_ecef: qtty::Quantity<MetersPerSecond> = (site_itrf_m.x() * OMEGA_EARTH) / one_second;
+        let vz_ecef: qtty::Quantity<MetersPerSecond> = qtty::Quantity::zero();
 
-        // Rotate ECEF velocity into the mean equator/equinox of J2000 using GMST about +Z.
-        let gmst_rad = unmodded_gst(jd).to::<Radian>().value();
-        let (sin_g, cos_g) = gmst_rad.sin_cos();
+        let rot = itrs_to_equatorial_mean_j2000_rotation(jd, ctx);
+        let [vx_eq, vy_eq, vz_eq] = rot * [vx_ecef, vy_ecef, vz_ecef];
 
-        let vx_eq_mps = vx_ecef_mps * cos_g - vy_ecef_mps * sin_g;
-        let vy_eq_mps = vx_ecef_mps * sin_g + vy_ecef_mps * cos_g;
-        let vz_eq_mps = vz_ecef_mps;
-
-        let mps_to_au_per_day = |v_mps: f64| v_mps * SECONDS_PER_DAY / AU_M;
         let v_diurnal = Velocity::<EquatorialMeanJ2000, AuPerDay>::new(
-            qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(mps_to_au_per_day(vx_eq_mps)),
-            qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(mps_to_au_per_day(vy_eq_mps)),
-            qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(mps_to_au_per_day(vz_eq_mps)),
+            vx_eq.to::<AuPerDay>(),
+            vy_eq.to::<AuPerDay>(),
+            vz_eq.to::<AuPerDay>(),
         );
 
         velocity = Velocity::<EquatorialMeanJ2000, AuPerDay>::new(
@@ -200,8 +207,7 @@ mod tests {
         // Earth's orbital velocity is approximately 30 km/s
         // In AU/day: ~30 km/s * 86400 s/day / 149597870.7 km/AU ≈ 0.017 AU/day
         let vel = obs.velocity();
-        let speed =
-            (vel.x().value().powi(2) + vel.y().value().powi(2) + vel.z().value().powi(2)).sqrt();
+        let speed = (vel.x() * vel.x() + vel.y() * vel.y() + vel.z() * vel.z()).sqrt();
 
         // Speed should be around 0.017 AU/day (Earth's orbital velocity)
         assert!(speed > 0.015, "Earth orbital speed too low: {}", speed);
@@ -212,19 +218,19 @@ mod tests {
     fn test_observer_jd() {
         let jd = JulianDate::new(2451545.0);
         let obs = ObserverState::geocentric(jd);
-        assert_eq!(obs.jd().value(), 2451545.0);
+        assert_eq!(obs.jd(), jd);
     }
 
     #[test]
     fn test_topocentric_includes_diurnal_velocity() {
         let jd = JulianDate::J2000;
         let geo = ObserverState::geocentric(jd);
-        let site = ObserverSite::new(0.0 * DEG, 0.0 * DEG, 0.0 * M); // equator
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M); // equator
         let topo = ObserverState::topocentric(&site, jd);
 
-        let dvx = topo.velocity().x().value() - geo.velocity().x().value();
-        let dvy = topo.velocity().y().value() - geo.velocity().y().value();
-        let dvz = topo.velocity().z().value() - geo.velocity().z().value();
+        let dvx = topo.velocity().x() - geo.velocity().x();
+        let dvy = topo.velocity().y() - geo.velocity().y();
+        let dvz = topo.velocity().z() - geo.velocity().z();
         let dv = (dvx * dvx + dvy * dvy + dvz * dvz).sqrt();
 
         // Equatorial surface speed is ~465 m/s ≈ 2.685e-4 AU/day.

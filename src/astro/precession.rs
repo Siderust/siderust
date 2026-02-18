@@ -1,350 +1,465 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Equatorial Precession utilities
+//! # IAU 2006 Precession
 //!
-//! This module implements **precession of the Earth’s mean equator and equinox**
-//! following the *short series* formulation in chapter&nbsp;20 of Jean&nbsp;Meeus’
-//! *Astronomical Algorithms* (2nd ed.).  The algorithm is sufficient for most
-//! practical astronomical work: its errors remain below **0.1 arc‑second** for
-//! epochs within ±5 Julian centuries of **J2000.0**. That is, the years
-//! **1500 → 2500**.
+//! This module provides **precession of the Earth's mean equator and equinox**
+//! using the **IAU 2006** precession model (Capitaine et al. 2003, P03) with the
+//! Fukushima-Williams four-angle parameterization.
 //!
 //! ## What is precession?
+//!
 //! The rotation axis of the Earth is not fixed in inertial space: the torques
 //! produced by the gravitational attraction of the Sun and the Moon on the
-//! Earth’s equatorial bulge make the axis describe a **slow conical motion**, a
-//! gyroscope under external torque.  The effect is known as **lunisolar
-//! precession** and has a period of about **25 770 years** (*the Platonic year*).
+//! Earth's equatorial bulge make the axis describe a **slow conical motion**,
+//! like a gyroscope under external torque. This effect is known as **lunisolar
+//! precession** and has a period of about **25,770 years** (the *Platonic year*).
 //! A smaller contribution, **planetary precession**, is produced by the tidal
 //! forces of the other planets.
 //!
-//! In equatorial coordinates (right ascension *α*, declination *δ*) this causes
-//! the celestial poles and the equinox to *drift* at roughly **50″ · yr⁻¹**. If
-//! the apparent or mean position of a star is referred to two different epochs
-//! it must therefore be **precessed** to the desired date before it can be
-//! compared with catalogued data or with another observation.
+//! In equatorial coordinates (right ascension α, declination δ), this causes
+//! the celestial poles and the equinox to *drift* at roughly **50″·yr⁻¹**. When
+//! comparing stellar positions from different epochs, coordinates must be
+//! **precessed** to a common reference date.
 //!
-//! ## Why do we need a numerical model?
-//! Astronomical catalogues adopt a fixed **reference epoch** (e.g. B1950.0 or
-//! J2000.0). Precise pointing, orbit determination or reduction of
-//! observational data to standard coordinates all require a transformation
-//! between the catalogue epoch and the observation epoch.  Performing that
-//! transformation with an accuracy of a few milliarc‑seconds – small enough for
-//! sub‑arc‑second telescopes and for most amateur‑level applications, is the
-//! purpose of the present code.
+//! ## Why IAU 2006?
 //!
-//! ## How is precession computed here?
-//! Meeus expresses precession as three **Euler‑like rotation angles**
-//! (ζ *zeta*, *z* and θ *theta*) around the axes *z → x → z*.  For a time span of
-//! *t* Julian centuries (*T* denotes the starting epoch measured from J2000.0)
-//! the angles are expanded as low‑order polynomials in *t* and *T* (**eqs.&nbsp;20.2
-//! and 20.3**).  They are first given in arc‑seconds:
+//! The IAU 2006 precession model supersedes earlier formulations (e.g., IAU 1976,
+//! Lieske) and provides:
+//! - **Sub-milliarcsecond accuracy** for epochs within ±200 years of J2000.0
+//! - Proper incorporation of the **frame bias** between GCRS and J2000 mean equator
+//! - Consistency with the **IAU 2000/2006 nutation** models
+//! - Compliance with modern VLBI and space astrometry requirements
+//!
+//! ## Precession vs Nutation
+//!
+//! | Aspect            | **Precession**                                      | **Nutation**                                        |
+//! |-------------------|-----------------------------------------------------|-----------------------------------------------------|
+//! | Physical cause    | Long-term torque on equatorial bulge               | Short-term periodic torque variations               |
+//! | Character         | **Secular** (monotonic drift, ≈50″·yr⁻¹)          | **Periodic** (18.6 yr dominant, ±9″ amplitude)      |
+//! | Time scale        | ~25,770 year cycle                                  | Hours → decades (hundreds of terms)                 |
+//! | Typical magnitude | ~0.014° per year                                    | Up to 9″ peak-to-peak                               |
+//! | Modeling          | Polynomial series (IAU 2006)                        | Trigonometric series (IAU 2000B/2006, 77-680 terms) |
+//! | When to apply?    | **Always** when transforming between epochs         | When sub-arcsecond or true-of-date coords required  |
+//!
+//! **Precession** is the steady drift of the reference frame; **nutation** is the
+//! superposed wobble. Both must be applied to obtain the *true equator and equinox
+//! of date*.
+//!
+//! ## Implementation
+//!
+//! The precession matrix is constructed from four Fukushima-Williams angles
+//! (γ̄, φ̄, ψ̄, ε_A), all expressed as 5th-order polynomials in Julian centuries `t`
+//! from J2000.0 TT:
 //!
 //! ```text
-//! ζ  = ( 2306.2181 + 1.39656 T − 0.000139 T² ) t
-//!      + ( 0.30188 − 0.000344 T ) t² + 0.017998 t³
-//! z  = ( 2306.2181 + 1.39656 T − 0.000139 T² ) t
-//!      + ( 1.09468 + 0.000066 T ) t² + 0.018203 t³
-//! θ  = ( 2004.3109 − 0.85330 T − 0.000217 T² ) t
-//!      − ( 0.42665 + 0.000217 T ) t² − 0.041833 t³
+//! P = R₁(−ε_A) · R₃(−ψ̄) · R₁(φ̄) · R₃(γ̄)
 //! ```
 //!
-//! Those angles are converted to radians and the **right‑hand rotation
-//! (ζ, θ, −z)** is applied to the input equatorial coordinates using
-//! Meeus eq.&nbsp;20.4.
-//!
-//! ## Precession vs Nutation
-//! | Aspect            | **Precession**                                   | **Nutation**                                   |
-//! |-------------------|--------------------------------------------------|------------------------------------------------|
-//! | Physical cause    | Long‑term torque on the equatorial bulge by Sun and Moon, plus planetary tidal forces | Short‑term periodic torque variations mainly from the Moon’s changing distance, inclination and the Sun’s apparent motion |
-//! | Character         | **Secular** (monotonic drift, ≈ 50″ · yr⁻¹)       | **Periodic** (dominant 18.6 yr term of ±9″, plus many smaller terms) |
-//! | Time scale        | ~25 770 yr cycle                                 | Hours → decades (hundreds of terms)            |
-//! | Typical magnitude | 0.014° per year                                  | up to 9 arc‑seconds peak‑to‑peak               |
-//! | Modelling         | Low‑order polynomials (this module)              | Large trigonometric series (IAU 1980/2000B, ELP 2000) |
-//! | When to apply?    | **Always** when comparing coordinates referred to different epochs | When sub‑arc‑second precision or true‑of‑date coordinates are required |
-//!
-//! In other words, **precession is the steady drift** of the reference frame;
-//! **nutation is the superposed wobble**. The two effects must be added to
-//! obtain the *true* or *apparent* equator and equinox of date.  This module
-//! provides the precession step; nutation would be applied subsequently by a
-//! dedicated routine.
+//! This naturally incorporates the frame bias between GCRS and the J2000.0 mean
+//! equator/equinox.
 //!
 //! ## Public API
-//! * [`precess_from_j2000`] – common convenience for the transformation
-//!   *J2000.0 → date*.
-//! * [`precess_equatorial`] – general *epoch → epoch* interface.
 //!
-//! ## Accuracy & limitations
-//! The short series is adequate for most handbook‑level work (<0.1″ error up
-//! to ±5 centuries).  For **modern astrometry below the milli‑arc‑second
-//! level** the full IAU 2006 precession‑nutation model should be preferred.
+//! - [`precession_fw_angles`] – Fukushima-Williams angles (γ̄, φ̄, ψ̄, ε_A)
+//! - [`fw_matrix`] – Precession rotation matrix from F-W angles
+//! - [`precession_matrix_iau2006`] – Direct precession matrix for a given epoch
+//! - [`precession_nutation_matrix`] – Combined precession-nutation matrix
+//! - [`mean_obliquity_iau2006`] – Mean obliquity of the ecliptic (ε_A)
+//! - [`J2000_MEAN_OBLIQUITY_ARCSEC`] – J2000.0 obliquity constant (84381.406″)
 //!
-//! Equatorial precession utilities (Meeus, *Astronomical Algorithms*,
-//! 2nd ed., ch. 20).  Accuracy of the **short model** is better than
-//! 0.1″ for |T| ≤ 5 centuries.  All angles are handled via the crate’s
-//! `Degrees` / `Radians` wrappers; right ascension is wrapped to
-//! **0 ≤ α < 2π**.
+//! ## Accuracy & Limitations
 //!
-//! Public API
-//! ----------
-//! - [`precess_from_j2000`] – convenience layer for the common case
-//!   “mean J2000.0 → given date”.
-//! - [`precess_equatorial`] – precess between *any* two epochs.
+//! - **Better than 0.1 mas** for ±200 years from J2000.0
+//! - Polynomial series has no formal time limit, but accuracy degrades for epochs
+//!   far from J2000.0
+//! - For epochs before 1800 or after 2200, residual errors may exceed 1 mas
+//!
+//! ## References
+//!
+//! - **IAU 2006 Resolution B1** (precession)
+//! - Hilton et al. (2006), *Celestial Mechanics* **94**, 351–367
+//! - Capitaine et al. (2003), *A&A* **412**, 567–586
+//! - SOFA/ERFA routines: `iauPfw06`, `iauObl06`, `iauPmat06`
+//!
+//! ## See Also
+//!
+//! - [`crate::astro::nutation`] – IAU 2000B nutation (77 terms)
 
-use std::f64::consts::TAU;
-
-use crate::astro::JulianDate;
-use crate::coordinates::spherical::position;
+use crate::time::JulianDate;
 use affn::Rotation3;
 use qtty::*;
 
-/* -------------------------------------------------------------------------
- * Constants & small utilities
- * ---------------------------------------------------------------------- */
+// ═══════════════════════════════════════════════════════════════════════════
+// Fukushima-Williams precession angles (SOFA iauPfw06)
+// ═══════════════════════════════════════════════════════════════════════════
 
-/// 85 ° in radians: threshold above which the `asin` formula for δ loses
-/// precision.  Switching to the alternative formula earlier does no harm
-/// and guarantees full numerical stability even closer to the pole.
-const NEAR_POLE_LIMIT: f64 = 85.0_f64.to_radians();
-
-/// Return (*t*, *t²*, *t³*).  Saves three multiplications when the caller
-/// needs all powers.
+/// Fukushima-Williams precession angles for a given Julian Date (TT).
+///
+/// Returns `(gamb, phib, psib, epsa)` in **radians**, where:
+/// * `gamb` (γ̄): F-W angle from GCRS to ecliptic pole (x)
+/// * `phib` (φ̄): F-W angle from GCRS to ecliptic pole (y), with frame bias
+/// * `psib` (ψ̄): F-W angle for equator pole, with frame bias
+/// * `epsa` (ε_A): obliquity of the ecliptic (mean obliquity of date)
+///
+/// Polynomials from Hilton et al. (2006), Table 1.
+/// Coefficients match SOFA `iauPfw06` / ERFA `eraPfw06`.
+///
+/// ## References
+/// * IAU 2006 Resolution B1
+/// * Hilton et al. (2006), Celestial Mechanics 94, 351–367
+/// * SOFA routine `iauPfw06`
 #[inline]
-fn t_powers(t: f64) -> (f64, f64, f64) {
+pub fn precession_fw_angles(jd: JulianDate) -> (Radians, Radians, Radians, Radians) {
+    let t = jd.julian_centuries().value();
     let t2 = t * t;
-    (t, t2, t2 * t)
-}
+    let t3 = t2 * t;
+    let t4 = t3 * t;
+    let t5 = t4 * t;
 
-/* -------------------------------------------------------------------------
- * Precession coefficients (Meeus 20‑2/20‑3)
- * ---------------------------------------------------------------------- */
+    // γ̄ (gamb) — arcseconds
+    let gamb_as =
+        -0.052_928 + 10.556_378 * t + 0.493_204_4 * t2 - 0.000_312_38 * t3 - 2.788e-6 * t4
+            + 2.60e-8 * t5;
 
-/// Compute the *short‑series* precession angles `ζ`, `z` and `θ` *(radians)*
-/// for a span of `span` Julian centuries, starting at epoch
-/// `epoch` (both measured from J2000.0).
-///
-/// Follows Meeus Eq. 20.2/20.3.  The trick of dividing **T** and *t* by
-/// 3600 converts the published coefficients (arcseconds) into *degrees*,
-/// avoiding one extra division.
-#[inline]
-#[allow(non_snake_case)]
-fn short_series_coefficients(epoch: Centuries, span: Centuries) -> (Radians, Radians, Radians) {
-    // Meeus uses full Julian centuries, *not* divided by 3600.
-    let T = epoch.value();
-    let (t, t2, t3) = t_powers(span.value());
+    // φ̄ (phib) — arcseconds
+    let phib_as = 84_381.412_819 - 46.811_016 * t + 0.051_126_8 * t2 + 0.000_532_89 * t3
+        - 4.40e-7 * t4
+        - 1.76e-8 * t5;
 
-    // 20.2 / 20.3 – all results in **arc-seconds**.
-    let zeta_as = (2306.2181 + 1.39656 * T - 0.000139 * T * T) * t
-        + (0.30188 - 0.000344 * T) * t2
-        + 0.017_998 * t3;
+    // ψ̄ (psib) — arcseconds
+    let psib_as = -0.041_775 + 5_038.481_484 * t + 1.558_417_5 * t2
+        - 0.000_185_22 * t3
+        - 2.6452e-5 * t4
+        - 1.48e-8 * t5;
 
-    let z_as = (2306.2181 + 1.39656 * T - 0.000139 * T * T) * t
-        + (1.09468 + 0.000066 * T) * t2
-        + 0.018_203 * t3;
+    // ε_A (epsa) — mean obliquity of date, arcseconds
+    // IAU 2006 obliquity (Hilton et al. 2006 / SOFA iauObl06)
+    let epsa_as = 84381.406 - 46.836_769 * t - 0.000_183_1 * t2 + 0.002_003_40 * t3
+        - 5.76e-7 * t4
+        - 4.34e-8 * t5;
 
-    let theta_as = (2004.3109 - 0.85330 * T - 0.000217 * T * T) * t
-        - (0.42665 + 0.000217 * T) * t2
-        - 0.041_833 * t3;
-
-    // arc-seconds → degrees → radians
-    let as_to_rad = |a: f64| Degrees::new(a / 3600.0).to::<Radian>();
-    (as_to_rad(zeta_as), as_to_rad(z_as), as_to_rad(theta_as))
-}
-
-/* -------------------------------------------------------------------------
- * Core rotation (Meeus 20‑4)
- * ---------------------------------------------------------------------- */
-
-/// Rotate a single equatorial coordinate by the precession angles.
-/// Returns *(α, δ)* **in radians**.
-#[inline]
-fn rotate_equatorial(
-    ra: Radians,
-    dec: Radians,
-    zeta: Radians,
-    z: Radians,
-    theta: Radians,
-) -> (Radians, Radians) {
-    // Pre‑compute repeated terms with `sin_cos` for a small perf gain.
-    let (sin_ra_zeta, cos_ra_zeta) = (ra + zeta).sin_cos();
-    let (sin_dec, cos_dec) = dec.sin_cos();
-    let (sin_th, cos_th) = theta.sin_cos();
-
-    // Meeus Eq. 20.4
-    let a = cos_dec * sin_ra_zeta;
-    let b = cos_th * cos_dec * cos_ra_zeta - sin_th * sin_dec;
-    let c = sin_th * cos_dec * cos_ra_zeta + cos_th * sin_dec;
-
-    // New right ascension, wrapped to 0–2π.
-    let mut new_ra = a.atan2(b) + z.value();
-    new_ra = new_ra.rem_euclid(TAU);
-
-    // New declination: pole‑safe formula when |δ| > 85 °.
-    let new_dec = if dec.value().abs() > NEAR_POLE_LIMIT {
-        let mut d = (a * a + b * b).sqrt().acos();
-        if dec.value().is_sign_negative() {
-            d = -d;
-        }
-        d
-    } else {
-        c.asin()
-    };
-
-    (Radians::new(new_ra), Radians::new(new_dec))
-}
-
-/* -------------------------------------------------------------------------
- * Public API
- * ---------------------------------------------------------------------- */
-
-/// **J2000.0 → to_jd** shortcut.
-///
-/// Transforms mean right ascension & declination supplied at the standard
-/// reference epoch (JD 2 451 545.0) to the mean equator & equinox of `to_jd`.
-/// The `JulianDate` input is interpreted as TT.
-#[inline]
-pub fn precess_from_j2000<U: LengthUnit>(
-    mean_position: position::EquatorialMeanJ2000<U>,
-    to_jd: JulianDate,
-) -> position::EquatorialMeanOfDate<U> {
-    let mean_of_date = position::EquatorialMeanOfDate::<U>::new(
-        mean_position.ra(),
-        mean_position.dec(),
-        mean_position.distance(),
-    );
-    precess_equatorial(mean_of_date, JulianDate::J2000, to_jd)
-}
-
-/// **Epoch → epoch** precession.
-///
-/// * `position` – (α, δ, r) referred to the mean equator/equinox of `from_jd`.
-/// * `from_jd`, `to_jd` – Julian Days of source and target epochs.
-///
-/// Returns the coordinates referred to `to_jd`.
-/// The `JulianDate` inputs are interpreted as TT.
-pub fn precess_equatorial<U: LengthUnit>(
-    position: position::EquatorialMeanOfDate<U>,
-    from_jd: JulianDate,
-    to_jd: JulianDate,
-) -> position::EquatorialMeanOfDate<U> {
-    let ra0 = position.ra().to::<Radian>();
-    let dec0 = position.dec().to::<Radian>();
-
-    let from_centuries = from_jd.julian_centuries();
-    let centuries_span = to_jd.julian_centuries() - from_centuries;
-
-    let (zeta, z, theta) = short_series_coefficients(from_centuries, centuries_span);
-
-    let (ra, dec) = rotate_equatorial(ra0, dec0, zeta, z, theta);
-
-    position::EquatorialMeanOfDate::<U>::new(
-        ra.to::<Degree>(),
-        dec.to::<Degree>(),
-        position.distance(),
+    let as_to_rad = |a: f64| Radians::new(a.to_radians() / 3600.0);
+    (
+        as_to_rad(gamb_as),
+        as_to_rad(phib_as),
+        as_to_rad(psib_as),
+        as_to_rad(epsa_as),
     )
 }
 
-/// Precession rotation matrix from `from_jd` mean equator/equinox to `to_jd`.
+/// Mean obliquity of the ecliptic (IAU 2006).
 ///
-/// The input and output frames are **mean equator/equinox** (nutation removed).
-/// The `JulianDate` inputs are interpreted as TT.
-pub fn precession_rotation(from_jd: JulianDate, to_jd: JulianDate) -> Rotation3 {
-    let from_centuries = from_jd.julian_centuries();
-    let centuries_span = to_jd.julian_centuries() - from_centuries;
+/// Returns ε_A in **radians** for the given Julian Date (TT).
+///
+/// ```text
+/// ε_A = 84381.406″ − 46.836769″·t − 0.0001831″·t² + 0.00200340″·t³
+///       − 0.000000576″·t⁴ − 0.0000000434″·t⁵
+/// ```
+///
+/// ## References
+/// * IAU 2006 Resolution B1
+/// * SOFA routine `iauObl06`
+#[inline]
+pub fn mean_obliquity_iau2006(jd: JulianDate) -> Radians {
+    let t = jd.julian_centuries().value();
+    let t2 = t * t;
+    let t3 = t2 * t;
+    let t4 = t3 * t;
+    let t5 = t4 * t;
 
-    let (zeta, z, theta) = short_series_coefficients(from_centuries, centuries_span);
+    let epsa_as = 84381.406 - 46.836_769 * t - 0.000_183_1 * t2 + 0.002_003_40 * t3
+        - 5.76e-7 * t4
+        - 4.34e-8 * t5;
 
-    // Meeus Eq. 20.4 corresponds to Rz(z) * Ry(-theta) * Rz(zeta).
-    Rotation3::from_z_rotation(z.value())
-        * Rotation3::from_y_rotation(-theta.value())
-        * Rotation3::from_z_rotation(zeta.value())
+    Radians::new(epsa_as.to_radians() / 3600.0)
 }
 
-/// Convenience precession rotation from J2000.0 mean equator/equinox to `to_jd`.
+/// Mean obliquity of the ecliptic at J2000.0 (IAU 2006): 84381.406″.
+///
+/// ## References
+/// * IAU 2006 Resolution B1
+pub const J2000_MEAN_OBLIQUITY_ARCSEC: f64 = 84381.406;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Rotation matrix construction
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Construct the Fukushima-Williams precession matrix from four angles.
+///
+/// The SOFA/ERFA formula is:
+/// ```text
+/// P = R₁(−ε_A) · R₃(−ψ̄) · R₁(φ̄) · R₃(γ̄)
+/// ```
+/// where R₁, R₃ are ERFA's rotation functions.
+///
+/// ERFA's Rx/Rz use the **opposite sign convention** from the standard
+/// math rotation matrices:  `Rx_ERFA(θ) = Rx_standard(−θ)`.
+///
+/// Translated to **standard** (siderust) convention:
+/// ```text
+/// P = Rx(ε_A) · Rz(ψ̄) · Rx(−φ̄) · Rz(−γ̄)
+/// ```
+///
+/// This matrix transforms vectors from the GCRS (≈ ICRS) to the mean
+/// equator and equinox of date. Frame bias is included.
+///
+/// ## References
+/// * SOFA routine `iauFw2m`
+#[inline]
+pub fn fw_matrix(gamb: Radians, phib: Radians, psib: Radians, epsa: Radians) -> Rotation3 {
+    // Fused 4-rotation constructor: ~35% faster than sequential composition
+    Rotation3::fused_rx_rz_rx_rz(epsa, psib, -phib, -gamb)
+}
+
+/// IAU 2006 precession matrix from GCRS to mean equator/equinox of `jd`.
+///
+/// This matrix includes the frame bias, so it transforms directly from
+/// GCRS (≈ ICRS) to the mean equatorial frame of date.
 ///
 /// The `JulianDate` input is interpreted as TT.
-#[inline]
-pub fn precession_rotation_from_j2000(to_jd: JulianDate) -> Rotation3 {
-    precession_rotation(JulianDate::J2000, to_jd)
+///
+/// ## References
+/// * IAU 2006 Resolution B1
+/// * SOFA routine `iauPmat06`
+pub fn precession_matrix_iau2006(jd: JulianDate) -> Rotation3 {
+    let (gamb, phib, psib, epsa) = precession_fw_angles(jd);
+    fw_matrix(gamb, phib, psib, epsa)
+}
+
+/// Precession-nutation matrix (NPB) from GCRS to true equator/equinox of date.
+///
+/// Given nutation corrections Δψ and Δε (in radians), this constructs:
+///
+/// ```text
+/// NPB = R₁(−(ε_A + Δε)) · R₃(−(ψ̄ + Δψ)) · R₁(φ̄) · R₃(γ̄)
+/// ```
+///
+/// This is the complete frame rotation from GCRS to the true (apparent)
+/// equatorial frame, including frame bias, precession, and nutation.
+///
+/// ## References
+/// * IERS Conventions (2010), §5.6
+/// * SOFA routine `iauPnm06a`
+pub fn precession_nutation_matrix(jd: JulianDate, dpsi: Radians, deps: Radians) -> Rotation3 {
+    let (gamb, phib, psib, epsa) = precession_fw_angles(jd);
+    fw_matrix(gamb, phib, psib + dpsi, epsa + deps)
+}
+
+/// Rotation matrix from GCRS (≈ ICRS) equatorial to ecliptic-of-date.
+///
+/// Combines the IAU 2006 precession matrix with a rotation about the X-axis
+/// by the **of-date** mean obliquity:
+///
+/// ```text
+/// R = Rx(−ε_A) · P_iau2006
+/// ```
+///
+/// This converts a Cartesian vector in GCRS equatorial coordinates to the
+/// **mean** ecliptic of date (no nutation).  Ecliptic longitude is measured
+/// from the mean equinox.
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn gcrs_to_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
+    let prec = precession_matrix_iau2006(jd);
+    let eps_a = mean_obliquity_iau2006(jd);
+    Rotation3::rx(-eps_a) * prec
+}
+
+/// Rotation matrix from GCRS to the **true** ecliptic of date.
+///
+/// Combines the IAU 2006/2000B precession-nutation (NPB) matrix with a
+/// rotation by the **true** obliquity (ε_A + Δε):
+///
+/// ```text
+/// R = Rx(−ε_true) · NPB
+/// ```
+///
+/// Ecliptic longitude is measured from the **true** equinox (precession +
+/// nutation in longitude applied).
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn gcrs_to_true_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
+    let nut = crate::astro::nutation::nutation_iau2000b(jd);
+    let npb = precession_nutation_matrix(jd, nut.dpsi, nut.deps);
+    let eps_true = nut.mean_obliquity + nut.deps;
+    Rotation3::rx(-eps_true) * npb
+}
+
+/// Rotation matrix from the **true** ecliptic of date to GCRS.
+///
+/// Transpose (inverse) of [`gcrs_to_true_ecliptic_of_date_matrix`].
+pub fn true_ecliptic_of_date_to_gcrs_matrix(jd: JulianDate) -> Rotation3 {
+    gcrs_to_true_ecliptic_of_date_matrix(jd).transpose()
+}
+
+/// Rotation matrix from ecliptic-of-date to GCRS (≈ ICRS) equatorial.
+///
+/// This is the transpose (inverse) of [`gcrs_to_ecliptic_of_date_matrix`].
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn ecliptic_of_date_to_gcrs_matrix(jd: JulianDate) -> Rotation3 {
+    gcrs_to_ecliptic_of_date_matrix(jd).transpose()
+}
+
+/// Rotation matrix from mean equatorial of date to mean ecliptic of date.
+///
+/// This transformation applies only the obliquity rotation (without nutation),
+/// converting from the mean equatorial frame (precessed but not nutated) to the
+/// mean ecliptic frame of the same epoch.
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn mean_equatorial_to_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
+    let eps_a = mean_obliquity_iau2006(jd);
+    Rotation3::rx(-eps_a)
+}
+
+/// Rotation matrix from mean equatorial of date to **true** ecliptic of date.
+///
+/// Applies the IAU 2000B nutation matrix and rotates by the true obliquity:
+///
+/// ```text
+/// R = Rx(−ε_true) · N
+/// ```
+///
+/// where N is the equinox-based nutation matrix and ε_true = ε_A + Δε.
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn mean_equatorial_to_true_ecliptic_of_date_matrix(jd: JulianDate) -> Rotation3 {
+    let nut = crate::astro::nutation::nutation_iau2000b(jd);
+    let eps = nut.mean_obliquity;
+    let dpsi = nut.dpsi;
+    let deps = nut.deps;
+    let nutation_matrix = affn::Rotation3::fused_rx_rz_rx(eps + deps, dpsi, -eps);
+    let eps_true = eps + deps;
+    Rotation3::rx(-eps_true) * nutation_matrix
+}
+
+/// Rotation matrix from true ecliptic of date to mean equatorial of date.
+///
+/// Transpose (inverse) of [`mean_equatorial_to_true_ecliptic_of_date_matrix`].
+pub fn true_ecliptic_of_date_to_mean_equatorial_matrix(jd: JulianDate) -> Rotation3 {
+    mean_equatorial_to_true_ecliptic_of_date_matrix(jd).transpose()
+}
+
+/// Rotation matrix from ecliptic of date to mean equatorial of date.
+///
+/// This is the transpose (inverse) of [`mean_equatorial_to_ecliptic_of_date_matrix`].
+///
+/// ## Parameters
+/// * `jd`: Julian Date in TT scale.
+pub fn ecliptic_of_date_to_mean_equatorial_matrix(jd: JulianDate) -> Rotation3 {
+    mean_equatorial_to_ecliptic_of_date_matrix(jd).transpose()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::coordinates::{cartesian, centers, frames, spherical};
-    use qtty::{AstronomicalUnit, Degrees, Quantity};
+    use qtty::Radians;
 
     #[test]
-    fn sirius_2025() {
-        // Sirius: α0 ≈ 101.287°, δ0 ≈ −16.716° (J2000.0, Hipparcos)
-        use crate::bodies::catalog::SIRIUS;
-
-        // Target epoch: 2025‑05‑12 (JD 2 469 807.5)
-        let prec = precess_from_j2000(
-            SIRIUS.target.get_position().clone(),
-            JulianDate::new(2_460_807.5),
-        );
-
-        // Expected (Meeus short model): α ≈ 101.84557°, δ ≈ −16.77182°
+    fn mean_obliquity_at_j2000() {
+        let eps = mean_obliquity_iau2006(JulianDate::J2000);
+        // IAU 2006: 84381.406″ = 23.4392911111...°
+        let expected_deg = 84381.406 / 3600.0;
         assert!(
-            (prec.ra().value() - 101.57047).abs() < 3e-5,
-            "current α ≈ {}",
-            prec.ra()
-        );
-        assert!(
-            (prec.dec().value() + 16.74409).abs() < 1e-5,
-            "current δ ≈ {}",
-            prec.dec()
+            (eps.to::<Degree>().value() - expected_deg).abs() < 1e-10,
+            "obliquity at J2000 = {}°, expected {}°",
+            eps.to::<Degree>(),
+            expected_deg
         );
     }
 
     #[test]
-    fn rotate_equatorial_handles_near_pole_branch() {
-        use qtty::Radians;
-
-        let (ra, dec) = super::rotate_equatorial(
-            Radians::new(0.1),
-            Radians::new(-1.5), // |δ| > 85° to trigger special path
-            Radians::new(0.01),
-            Radians::new(0.02),
-            Radians::new(0.03),
-        );
-
-        assert!(ra.value().is_finite());
-        assert!(dec.value().is_sign_negative());
+    fn fw_angles_at_j2000_are_approximately_identity() {
+        // At J2000, t=0: gamb≈-0.053″, phib≈84381.413″, psib≈-0.042″, epsa=84381.406″
+        // The precession matrix at J2000 should be close to identity (with frame bias).
+        let mat = precession_matrix_iau2006(JulianDate::J2000);
+        let m = mat.as_matrix();
+        // Diagonal should be very close to 1
+        for (i, row) in m.iter().enumerate().take(3) {
+            assert!(
+                (row[i] - 1.0).abs() < 1e-7,
+                "diagonal[{}] = {}, expected ~1.0",
+                i,
+                row[i]
+            );
+        }
     }
 
     #[test]
-    fn precession_rotation_matches_spherical() {
+    fn precession_matrix_j2025_reasonable() {
+        // JD of approximately 2025-01-01
+        let jd = JulianDate::new(2_460_676.5);
+        let mat = precession_matrix_iau2006(jd);
+        let m = mat.as_matrix();
+
+        // Precession over 25 years is small: off-diagonal < 0.01
+        for (i, row) in m.iter().enumerate().take(3) {
+            for (j, &val) in row.iter().enumerate().take(3) {
+                if i == j {
+                    assert!(
+                        (val - 1.0).abs() < 0.001,
+                        "diagonal[{}][{}] too far from 1: {}",
+                        i,
+                        j,
+                        val
+                    );
+                } else {
+                    assert!(
+                        val.abs() < 0.01,
+                        "off-diagonal[{}][{}] too large: {}",
+                        i,
+                        j,
+                        val
+                    );
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn precession_nutation_matrix_includes_corrections() {
         let jd = JulianDate::new(2_460_000.5);
-        let pos = spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(
-            Degrees::new(120.0),
-            Degrees::new(-30.0),
-            1.0,
+        let mat_prec = precession_matrix_iau2006(jd);
+        let mat_pn = precession_nutation_matrix(jd, Radians::new(1e-5), Radians::new(1e-5));
+
+        // The matrices should differ slightly due to nutation
+        let m1 = mat_prec.as_matrix();
+        let m2 = mat_pn.as_matrix();
+        let mut max_diff = 0.0f64;
+        for i in 0..3 {
+            for j in 0..3 {
+                max_diff = max_diff.max((m1[i][j] - m2[i][j]).abs());
+            }
+        }
+        assert!(
+            max_diff > 1e-8,
+            "nutation should cause detectable difference"
         );
-
-        let prec = precess_from_j2000(pos.clone(), jd);
-        let cart = pos.to_cartesian();
-        let rot = precession_rotation_from_j2000(jd);
-        let [x, y, z] = rot.apply_array([cart.x().value(), cart.y().value(), cart.z().value()]);
-
-        let cart_rot = cartesian::Position::<
-            centers::Geocentric,
-            frames::EquatorialMeanOfDate,
-            AstronomicalUnit,
-        >::new_with_params(
-            (),
-            Quantity::<AstronomicalUnit>::new(x),
-            Quantity::<AstronomicalUnit>::new(y),
-            Quantity::<AstronomicalUnit>::new(z),
+        assert!(
+            max_diff < 1e-3,
+            "nutation difference too large: {}",
+            max_diff
         );
-        let sph_rot = spherical::Position::from_cartesian(&cart_rot);
+    }
 
-        let ra_diff = sph_rot.ra().abs_separation(prec.ra()).value();
-        let dec_diff = (sph_rot.dec() - prec.dec()).abs().value();
-
-        assert!(ra_diff < 1e-10, "RA mismatch: {}", ra_diff);
-        assert!(dec_diff < 1e-10, "Dec mismatch: {}", dec_diff);
+    #[test]
+    fn mean_obliquity_decreases_with_time() {
+        let eps_2000 = mean_obliquity_iau2006(JulianDate::J2000);
+        let eps_2100 = mean_obliquity_iau2006(JulianDate::new(2_488_069.5));
+        // Obliquity is currently decreasing at ~47″/century
+        assert!(eps_2100 < eps_2000, "obliquity should decrease over time");
+        let diff_arcsec = (eps_2000 - eps_2100).to::<Degree>().value() * 3600.0;
+        assert!(
+            (diff_arcsec - 47.0_f64).abs() < 2.0,
+            "obliquity change over 1 century ≈ 47″, got {}″",
+            diff_arcsec
+        );
     }
 }

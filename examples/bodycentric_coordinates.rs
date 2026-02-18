@@ -8,14 +8,14 @@
 
 use qtty::*;
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::{Earth, Mars, Venus};
-use siderust::coordinates::cartesian::position::{Ecliptic, Position};
+use siderust::coordinates::cartesian::position::{EclipticMeanJ2000, Position};
 use siderust::coordinates::cartesian::Direction;
 use siderust::coordinates::centers::{Bodycentric, BodycentricParams, Geocentric, Heliocentric};
 use siderust::coordinates::frames;
 use siderust::coordinates::transform::centers::{FromBodycentricExt, ToBodycentricExt};
 use siderust::coordinates::transform::TransformCenter;
+use siderust::time::JulianDate;
 
 fn main() {
     println!("=== Body-Centric Coordinates Example ===\n");
@@ -42,9 +42,9 @@ fn main() {
 
     println!("ISS Orbit:");
     println!(
-        "  Semi-major axis: {:.6} AU (~{:.0} km)",
+        "  Semi-major axis: {} (~{})",
         iss_orbit.semi_major_axis,
-        iss_orbit.semi_major_axis.value() * 149597870.7
+        iss_orbit.semi_major_axis.to::<Kilometer>()
     );
     println!("  Eccentricity: {:.4}", iss_orbit.eccentricity);
     println!("  Inclination: {:.2}°\n", iss_orbit.inclination);
@@ -54,28 +54,29 @@ fn main() {
 
     // Get ISS position in geocentric coordinates
     let iss_pos_ecl = iss_orbit.kepler_position(jd);
-    println!("ISS position (Geocentric Ecliptic):");
+    println!("ISS position (Geocentric EclipticMeanJ2000):");
     println!("  X = {:.8} AU", iss_pos_ecl.x());
     println!("  Y = {:.8} AU", iss_pos_ecl.y());
     println!("  Z = {:.8} AU", iss_pos_ecl.z());
     println!(
-        "  Distance from Earth: {:.8} AU (~{:.0} km)\n",
+        "  Distance from Earth: {} (~{})\n",
         iss_pos_ecl.distance(),
-        iss_pos_ecl.distance().value() * 149597870.7
+        iss_pos_ecl.distance().to::<Kilometer>()
     );
 
     // Moon's approximate position (geocentric)
-    let moon_geo: Position<Geocentric, frames::Ecliptic, Au> = Position::new(0.00257, 0.0, 0.0); // ~384,400 km
+    let moon_geo: Position<Geocentric, frames::EclipticMeanJ2000, Au> =
+        Position::new(0.00257, 0.0, 0.0); // ~384,400 km
 
     println!("Moon position (Geocentric):");
     println!(
-        "  Distance from Earth: {:.5} AU (~{:.0} km)\n",
+        "  Distance from Earth: {} (~{})\n",
         moon_geo.distance(),
-        moon_geo.distance().value() * 149597870.7
+        moon_geo.distance().to::<Kilometer>()
     );
 
     // Transform to ISS-centric coordinates
-    let moon_from_iss: Position<Bodycentric, frames::Ecliptic, Au> =
+    let moon_from_iss: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         moon_geo.to_bodycentric(iss_params, jd);
 
     println!("Moon as seen from ISS:");
@@ -83,9 +84,9 @@ fn main() {
     println!("  Y = {:.6} AU", moon_from_iss.y());
     println!("  Z = {:.6} AU", moon_from_iss.z());
     println!(
-        "  Distance from ISS: {:.5} AU (~{:.0} km)\n",
+        "  Distance from ISS: {} (~{})\n",
         moon_from_iss.distance(),
-        moon_from_iss.distance().value() * 149597870.7
+        moon_from_iss.distance().to::<Kilometer>()
     );
 
     // =========================================================================
@@ -123,7 +124,7 @@ fn main() {
     println!("  Distance from Sun: {:.6} AU\n", mars_helio.distance());
 
     // View Earth from Mars (using approximate orbit)
-    let earth_from_mars: Position<Bodycentric, frames::Ecliptic, Au> =
+    let earth_from_mars: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         earth_helio.to_bodycentric(mars_params, jd);
 
     println!("Earth as seen from Mars:");
@@ -155,14 +156,14 @@ fn main() {
     println!("  Distance from Sun: {:.6} AU\n", venus_helio.distance());
 
     // View Earth from Venus
-    let earth_from_venus: Position<Bodycentric, frames::Ecliptic, Au> =
+    let earth_from_venus: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         earth_helio.to_bodycentric(venus_params, jd);
 
     println!("Earth as seen from Venus:");
     println!("  Distance: {:.6} AU\n", earth_from_venus.distance());
 
     // View Mars from Venus
-    let mars_from_venus: Position<Bodycentric, frames::Ecliptic, Au> =
+    let mars_from_venus: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         mars_helio.to_bodycentric(venus_params, jd);
 
     println!("Mars as seen from Venus:");
@@ -181,7 +182,7 @@ fn main() {
     println!("  Z = {:.10} AU\n", original_earth.z());
 
     // Transform to Mars-centric
-    let earth_mars_centric: Position<Bodycentric, frames::Ecliptic, Au> =
+    let earth_mars_centric: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
         original_earth.to_bodycentric(mars_params, jd);
 
     println!("Transformed to Mars-centric:");
@@ -191,21 +192,21 @@ fn main() {
     );
 
     // Transform back to geocentric (to match original center)
-    let recovered_geo: Ecliptic<Au, Geocentric> = earth_mars_centric.to_geocentric(jd);
+    let recovered_geo: EclipticMeanJ2000<Au, Geocentric> = earth_mars_centric.to_geocentric(jd);
 
     // Then to heliocentric to compare
-    let recovered_helio: Ecliptic<Au, Heliocentric> = recovered_geo.to_center(jd);
+    let recovered_helio: EclipticMeanJ2000<Au, Heliocentric> = recovered_geo.to_center(jd);
 
     println!("Recovered position (Heliocentric):");
     println!("  X = {:.10} AU", recovered_helio.x());
     println!("  Y = {:.10} AU", recovered_helio.y());
     println!("  Z = {:.10} AU\n", recovered_helio.z());
 
-    let diff_x = (original_earth.x() - recovered_helio.x()).value();
-    let diff_y = (original_earth.y() - recovered_helio.y()).value();
-    let diff_z = (original_earth.z() - recovered_helio.z()).value();
+    let diff_x = (original_earth.x() - recovered_helio.x()).abs();
+    let diff_y = (original_earth.y() - recovered_helio.y()).abs();
+    let diff_z = (original_earth.z() - recovered_helio.z()).abs();
     let diff = (diff_x * diff_x + diff_y * diff_y + diff_z * diff_z).sqrt();
-    println!("Total difference: {:.2e} AU (should be small)\n", diff);
+    println!("Total difference: {} (should be small)\n", diff);
 
     // =========================================================================
     // 5. Directions in Different Reference Frames

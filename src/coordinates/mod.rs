@@ -8,16 +8,39 @@
 //! to enforce compile-time safety. These phantom types represent the **frame** and **center** of
 //! the coordinate system, ensuring that operations between incompatible coordinate systems are
 //! disallowed unless explicitly converted. Moreover, thanks to the Unit module we can distinguish
-//! the different vector types such as Directions (unitless), Position (Lenght Units) and Velocity
+//! the different vector types such as Directions (unitless), Position (length units) and Velocity
 //! (Velocity Units), that enforce the compiler to validate any transformation of coordinates.
 
 //! ## Key Concepts
 //! - **Position, Direction and Velocity Types**: Both spherical and cartesian coordinates are parameterized
-//!   by a reference center (e.g., `Heliocentric`, `Geocentric`), a reference frame (e.g., `Ecliptic`, `EquatorialMeanJ2000`, `ICRS`),
+//!   by a reference center (e.g., `Heliocentric`, `Geocentric`), a reference frame (e.g., `EclipticMeanJ2000`, `EquatorialMeanJ2000`, `ICRS`),
 //!   and a measure unit (`Unitless`, `LengthUnit`, `VelocityUnit`). This ensures that only compatible coordinates can be used together.
 //! - **Phantom Types**: The `Center`, `Frame` and `Unit`types are zero-cost markers that encode coordinate semantics at compile time.
 //! - **Type Safety**: Operations between coordinates are only allowed when their type parameters match, preventing accidental mixing of frames, centers or magnitude.
 //! - **Conversions**: Seamless conversion between spherical and cartesian forms, and between different frames and centers, is provided via `From`/`Into` and the `Transform` trait.
+//!
+//! ## Compile-Time vs Runtime Safety
+//!
+//! **Most** reference centers (`Barycentric`, `Heliocentric`, `Geocentric`) use `Params = ()`,
+//! so all coordinate invariants are enforced at **compile time** with no runtime overhead.
+//!
+//! **Parameterized** centers (`Topocentric`, `Bodycentric`) carry runtime data (e.g.,
+//! [`Geodetic<ECEF>`](centers::Geodetic), [`BodycentricParams`](centers::BodycentricParams)).
+//! For these, the *center type* is still checked at compile time (you can't mix `Topocentric`
+//! and `Geocentric` positions), but the specific *site/body parameters* are checked at **runtime**.
+//!
+//! | Center kind         | Params    | Frame/Center type safety | Parameter equality  |
+//! |---------------------|-----------|--------------------------|---------------------|
+//! | `Geocentric` etc.   | `()`      | compile-time             | compile-time (trivial `()`) |
+//! | `Topocentric`       | `Geodetic<ECEF>`    | compile-time     | **runtime** (`assert!` or `Result`) |
+//! | `Bodycentric`       | `BodycentricParams` | compile-time   | **runtime** (`assert!` or `Result`) |
+//!
+//! Operations that require matching parameters (e.g., `Position - Position`, `distance_to`)
+//! **panic** by default on mismatch in all build profiles. Non-panicking alternatives are
+//! available via `checked_sub()` and `try_distance_to()`.
+//!
+//! Use [`Geodetic::<ECEF>::try_new`](affn::ellipsoidal::Position::try_new)
+//! to validate geographic coordinates before constructing topocentric positions.
 //!
 //! ## Module Organization
 //!
@@ -33,6 +56,7 @@
 //!
 //! - **transform**: Generic transformations between coordinate systems and frames
 //! - **observation**: Observer-dependent effects like aberration
+//! - **horizontal**: Convention conversion helpers for horizontal (alt-az) coordinates
 //!
 //! The coordinate types are built on top of the `affn` crate (the pure geometry kernel).
 //! Astronomy-specific frames, centers, and convenience methods are defined in this module.
@@ -52,33 +76,33 @@
 //!   observational state (`Astrometric` or `Apparent`).
 //!
 //! ## Supported Reference Frames and Centers
-//! - **Frames**: `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, `EquatorialTrueOfDate`, `Ecliptic`, `Horizontal`, `ICRS`, `ECEF`
+//! - **Frames**: `EquatorialMeanJ2000`, `EquatorialMeanOfDate`, `EquatorialTrueOfDate`, `EclipticMeanJ2000`, `Horizontal`, `ICRS`, `ECEF`
 //! - **Centers**: `Heliocentric`, `Geocentric`, `Barycentric`, `Topocentric`, `Bodycentric`
 //!
 //! ## Example
 //! ```rust
 //! use siderust::coordinates::spherical;
 //! use siderust::coordinates::cartesian;
-//! use siderust::coordinates::frames::Ecliptic;
+//! use siderust::coordinates::frames::EclipticMeanJ2000;
 //! use qtty::*;
 //!
 //! // Create an ecliptic spherical direction (frame-only, no center)
-//! let spherical = spherical::Direction::<Ecliptic>::new(
+//! let spherical = spherical::Direction::<EclipticMeanJ2000>::new(
 //!     45.0 * DEG, 7.0 * DEG
 //! );
 //!
 //! // Convert to cartesian coordinates
-//! let cartesian: cartesian::Direction<Ecliptic> = spherical.to_cartesian();
+//! let cartesian: cartesian::Direction<EclipticMeanJ2000> = spherical.to_cartesian();
 //!
 //! // Convert back to spherical coordinates
-//! let spherical_converted: spherical::Direction<Ecliptic> =
+//! let spherical_converted: spherical::Direction<EclipticMeanJ2000> =
 //!     spherical::Direction::from_cartesian(&cartesian);
 //!
 //! println!("Spherical -> Cartesian -> Spherical: {:?}", spherical_converted);
 //! ```
 //!
 //! ## Submodules
-//! - **frames**: Reference frame definitions (Ecliptic, EquatorialMeanJ2000, ICRS, etc.)
+//! - **frames**: Reference frame definitions (EclipticMeanJ2000, EquatorialMeanJ2000, ICRS, etc.)
 //! - **centers**: Reference center definitions (Heliocentric, Geocentric, etc.)
 //! - **cartesian**: Cartesian coordinate types and astronomical type aliases
 //! - **spherical**: Spherical coordinate types and astronomical extensions
@@ -95,13 +119,16 @@
 pub mod cartesian;
 pub mod centers;
 pub mod frames;
+pub mod horizontal;
 pub mod observation;
 pub mod spherical;
 pub mod transform;
+pub mod types;
 
 /// Prelude module for convenient imports.
 ///
-/// Import this to get access to all coordinate extension traits:
+/// Import this to get access to all coordinate extension traits and common
+/// coordinate type aliases:
 ///
 /// ```rust
 /// use siderust::coordinates::prelude::*;
@@ -112,6 +139,8 @@ pub mod transform;
 /// - [`VectorAstroExt`](transform::VectorAstroExt) - Frame transforms for vectors
 /// - [`PositionAstroExt`](transform::PositionAstroExt) - Frame and center transforms for positions
 /// - [`AstroContext`](transform::AstroContext) - Context for transformations
+/// - All concise type aliases from [`types`] (e.g. `IcrsDir`, `GeographicPos`, etc.)
 pub mod prelude {
     pub use super::transform::{AstroContext, DirectionAstroExt, PositionAstroExt, VectorAstroExt};
+    pub use super::types::*;
 }

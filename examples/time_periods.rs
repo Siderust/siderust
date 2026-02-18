@@ -7,7 +7,7 @@
 //! and DateTime<Utc>.
 
 use chrono::DateTime;
-use siderust::time::{JulianDate, ModifiedJulianDate, Period};
+use siderust::time::{JulianDate, ModifiedJulianDate, Period, UtcPeriod, MJD};
 
 fn main() {
     println!("Generic Time Period Examples");
@@ -18,8 +18,8 @@ fn main() {
     let jd_start = JulianDate::new(2451545.0); // J2000.0
     let jd_end = JulianDate::new(2451546.5); // 1.5 days later
     let jd_period = Period::new(jd_start, jd_end);
-    println!("   Start: JD {}", jd_start.value());
-    println!("   End:   JD {}", jd_end.value());
+    println!("   Start: {}", jd_start);
+    println!("   End:   {}", jd_end);
     println!("   Duration: {} days\n", jd_period.duration_days());
 
     // Example 2: Period with ModifiedJulianDate
@@ -27,15 +27,15 @@ fn main() {
     let mjd_start = ModifiedJulianDate::new(59000.0);
     let mjd_end = ModifiedJulianDate::new(59002.5);
     let mjd_period = Period::new(mjd_start, mjd_end);
-    println!("   Start: MJD {}", mjd_start.value());
-    println!("   End:   MJD {}", mjd_end.value());
+    println!("   Start: {}", mjd_start);
+    println!("   End:   {}", mjd_end);
     println!("   Duration: {} days\n", mjd_period.duration_days());
 
     // Example 3: Period with UTC DateTime
     println!("3. Period with UTC DateTime:");
     let utc_start = DateTime::from_timestamp(0, 0).unwrap(); // Unix epoch
     let utc_end = DateTime::from_timestamp(86400 * 2, 0).unwrap(); // 2 days later
-    let utc_period = Period::new(utc_start, utc_end);
+    let utc_period = UtcPeriod::new(utc_start, utc_end);
     println!("   Start: {}", utc_start);
     println!("   End:   {}", utc_end);
     println!("   Duration: {} days", utc_period.duration_days());
@@ -44,16 +44,15 @@ fn main() {
     // Example 4: Converting between time systems
     println!("4. Converting between time systems:");
     let mjd = ModifiedJulianDate::new(51544.5); // MJD at J2000.0
-    let jd = mjd.to_julian_day();
+    let jd: JulianDate = mjd.into();
     let utc = mjd.to_utc().unwrap();
-    println!("   MJD: {}", mjd.value());
-    println!("   JD:  {}", jd.value());
+    println!("   MJD: {}", mjd);
+    println!("   JD:  {}", jd);
     println!("   UTC: {}\n", utc);
 
-    // Example 5: Backward compatibility with AltitudePeriod type alias
-    println!("5. AltitudePeriod (type alias for Period<ModifiedJulianDate>):");
-    use siderust::calculus::events::AltitudePeriod;
-    let night_period = AltitudePeriod::new(
+    // Example 5: Explicit MJD period type
+    println!("5. Period<MJD>:");
+    let night_period = Period::<MJD>::new(
         ModifiedJulianDate::new(59000.0),
         ModifiedJulianDate::new(59000.5),
     );

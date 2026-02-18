@@ -23,18 +23,41 @@
 //! let ctx = AstroContext::new();
 //!
 //! // Use with transforms:
-//! // position.to_frame::<Ecliptic>(&jd, &ctx);
+//! // position.to_frame::<EclipticMeanJ2000>(&jd, &ctx);
 //! ```
 
 use std::marker::PhantomData;
 
-/// Default ephemeris marker (uses built-in VSOP87/ELP2000).
-#[derive(Debug, Clone, Copy, Default)]
-pub struct DefaultEphemeris;
+use crate::astro::eop::{EopProvider, EopValues, IersEop};
+use crate::time::JulianDate;
 
-/// Default Earth orientation model marker.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct DefaultEop;
+#[cfg(not(any(feature = "de440", feature = "de441")))]
+use crate::calculus::ephemeris::Vsop87Ephemeris;
+
+/// Default ephemeris type.
+///
+/// - Without `de440`/`de441` features: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
+/// - With `de440` feature: `De440Ephemeris` (JPL DE440).
+/// - With `de441` feature: `De441Ephemeris` (JPL DE441 part-2).
+///
+/// This type alias is used as the default `Eph` parameter in [`AstroContext`],
+/// so all code using `AstroContext::default()` will automatically use the
+/// selected backend.
+#[cfg(not(any(feature = "de440", feature = "de441")))]
+pub type DefaultEphemeris = Vsop87Ephemeris;
+
+#[cfg(all(feature = "de440", not(feature = "de441")))]
+pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
+
+#[cfg(feature = "de441")]
+pub type DefaultEphemeris = crate::calculus::ephemeris::De441Ephemeris;
+
+/// Default Earth orientation model: [`IersEop`], backed by the
+/// build-time embedded `finals2000A.all` table.
+///
+/// For zero-overhead use (no EOP corrections), substitute
+/// [`NullEop`](crate::astro::eop::NullEop) as the `Eop` type parameter.
+pub type DefaultEop = IersEop;
 
 /// Default nutation/precession model marker.
 #[derive(Debug, Clone, Copy, Default)]
@@ -65,15 +88,16 @@ pub struct DefaultNutationModel;
 #[derive(Debug, Clone)]
 pub struct AstroContext<Eph = DefaultEphemeris, Eop = DefaultEop, Nut = DefaultNutationModel> {
     _ephemeris: PhantomData<Eph>,
-    _eop: PhantomData<Eop>,
+    /// Earth Orientation Parameters provider.
+    eop: Eop,
     _nutation: PhantomData<Nut>,
 }
 
-impl<Eph, Eop, Nut> Default for AstroContext<Eph, Eop, Nut> {
+impl<Eph, Eop: Default, Nut> Default for AstroContext<Eph, Eop, Nut> {
     fn default() -> Self {
         Self {
             _ephemeris: PhantomData,
-            _eop: PhantomData,
+            eop: Eop::default(),
             _nutation: PhantomData,
         }
     }
@@ -90,13 +114,35 @@ impl AstroContext {
     }
 }
 
-impl<Eph, Eop, Nut> AstroContext<Eph, Eop, Nut> {
+impl<Eph, Eop: Default, Nut> AstroContext<Eph, Eop, Nut> {
     /// Creates a context with custom type parameters.
     ///
     /// Use this when you need to specify custom ephemeris or model types.
     #[inline]
     pub fn with_types() -> Self {
         Self::default()
+    }
+}
+
+impl<Eph, Eop: EopProvider, Nut> AstroContext<Eph, Eop, Nut> {
+    /// Look up EOP values for the given **UTC** Julian Date.
+    ///
+    /// # Time-scale contract
+    /// `jd_utc` **must** be a UTC Julian Date.  Passing TT or UT1 values will
+    /// corrupt the interpolated `dUT1`, `xp`, and `yp` values because the IERS
+    /// tables are indexed by UTC civil date (see [`crate::astro::eop`] for
+    /// details).
+    ///
+    /// Delegates to the context's [`EopProvider`].
+    #[inline]
+    pub fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
+        self.eop.eop_at(jd_utc)
+    }
+
+    /// Reference to the underlying EOP provider.
+    #[inline]
+    pub fn eop(&self) -> &Eop {
+        &self.eop
     }
 }
 

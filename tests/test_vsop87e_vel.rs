@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::{
     Earth, Jupiter, Mars, Mercury, Neptune, Saturn, Sun, Uranus, Venus,
 };
+use siderust::time::JulianDate;
 
 const PRECISION: f64 = 1.0e-6;
 
