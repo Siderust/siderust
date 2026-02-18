@@ -171,16 +171,8 @@ fn generate_rust(data: &BTreeMap<String, Vec<Entry>>) -> Result<String> {
 /// ----------------------  DATASET HANDLING  ----------------------
 /// Ensure the 36 `ELPn` files are present under `dir`.
 ///
-/// The function first tries to copy the dataset from the repository checkout
-/// (Git LFS). If that fails it falls back to downloading the files from the
-/// remote source.
 fn ensure_dataset(dir: &Path) -> Result<()> {
     use reqwest::blocking::Client;
-
-    // Try local dataset first -------------------------------------------------
-    if let Ok(true) = copy_from_repo(dir) {
-        return Ok(());
-    }
 
     fs::create_dir_all(dir)?;
 
@@ -206,32 +198,6 @@ fn ensure_dataset(dir: &Path) -> Result<()> {
         fs::write(&path, &bytes).with_context(|| format!("write {path:?}"))?;
     }
     Ok(())
-}
-
-fn copy_from_repo(dst: &Path) -> Result<bool> {
-    let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/elp2000/dataset");
-    eprintln!("Attempting to copy ELP2000 data from: {:?}", src);
-    eprintln!("Target directory: {:?}", dst);
-    eprintln!("Source exists: {}", src.exists());
-
-    if !src.is_dir() {
-        eprintln!("Source is not a directory");
-        return Ok(false);
-    }
-
-    eprintln!("Found ELP2000 source directory, copying...");
-    fs::create_dir_all(dst)?;
-
-    let mut copied_count = 0;
-    for entry in fs::read_dir(&src)? {
-        let entry = entry?;
-        let target = dst.join(entry.file_name());
-        fs::copy(entry.path(), target)
-            .with_context(|| format!("copy {:?} -> {:?}", entry.path(), dst))?;
-        copied_count += 1;
-    }
-    eprintln!("Successfully copied {} ELP2000 files", copied_count);
-    Ok(true)
 }
 
 /// ---------------------------  ENTRYPOINT  -----------------------

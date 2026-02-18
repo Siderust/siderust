@@ -19,12 +19,10 @@ DE440 is a high-precision numerical integration ephemeris from NASA JPL, providi
 | `../jpl/pipeline.rs` | Shared build pipeline (download, parse, codegen) |
 | `../jpl/daf.rs` | Shared DAF file format parser (NAIF Double Precision Array File) |
 | `../jpl/spk.rs` | Shared SPK Type 2 segment reader (Chebyshev polynomials) |
-| `dataset/de440.bsp` | **Git LFS backup** of the 115 MB ephemeris file |
 
 ## Data Source
 
-**Primary**: Git LFS backup in `dataset/de440.bsp` (115 MB)  
-**Fallback**: NAIF HTTPS download
+NAIF HTTPS download:
 
 ```
 https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp
@@ -34,12 +32,11 @@ https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp
 
 When building with `--features de440`, the build script:
 
-1. **Checks cache**: If `$OUT_DIR/de440_dataset/de440.bsp` exists with valid size (>100 MB), uses it
-2. **Tries Git LFS**: Copies from `scripts/de440/dataset/de440.bsp` if present
-3. **Downloads fallback**: Uses `curl`/`wget` to download from NAIF (900s timeout)
-4. **Parses DAF**: Reads file records, summary records, name records
-5. **Extracts segments**: Type 2 Chebyshev segments for Sun, Earth-Moon barycenter, Moon
-6. **Generates code**: Creates `de440_data.rs` with embedded coefficients aligned to 8 bytes
+1. **Checks cache**: Reuses `de440.bsp` if already present in the dataset directory (see `doc/datasets.md`)
+2. **Downloads**: Uses `curl`/`wget` to download from NAIF (900s timeout) if missing
+3. **Parses DAF**: Reads file records, summary records, name records
+4. **Extracts segments**: Type 2 Chebyshev segments for Sun, Earth-Moon barycenter, Moon
+5. **Generates code**: Creates `de440_data.rs` with embedded coefficients aligned to 8 bytes
 
 ## Skipping the Download (Typecheck Only)
 
@@ -59,39 +56,26 @@ SIDERUST_JPL_STUB=all cargo check --all-features
 This generates a small stub `de440_data.rs` so the crate compiles, but any
 attempt to use DE440 at runtime will panic.
 
-## Git LFS
-
-The `de440.bsp` file is tracked via Git LFS to avoid:
-- Slow CI builds (115 MB HTTPS download on every clean build)
-- Network failures interrupting builds
-- NAIF server rate limiting
-
-Configuration in `.gitattributes`:
-```gitattributes
-scripts/**/dataset/** filter=lfs diff=lfs merge=lfs -text
-```
-
-This pattern automatically tracks all files in `scripts/{theory}/dataset/` directories, including:
-- `scripts/vsop87/dataset/` (VSOP87 theory data, ~27 MB)
-- `scripts/elp2000/dataset/` (ELP2000-82B lunar theory, ~2.5 MB)
-- `scripts/de440/dataset/` (DE440 ephemeris, ~115 MB)
-
 ## Manual Download
 
 If you need to manually download the file:
 
 ```bash
+export SIDERUST_DATASETS_DIR="$PWD/.siderust_datasets"
+mkdir -p "$SIDERUST_DATASETS_DIR/de440_dataset"
 curl -fSL --max-time 900 \
   https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp \
-  -o scripts/de440/dataset/de440.bsp
+  -o "$SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp"
 ```
 
 Or with `wget`:
 
 ```bash
+export SIDERUST_DATASETS_DIR="$PWD/.siderust_datasets"
+mkdir -p "$SIDERUST_DATASETS_DIR/de440_dataset"
 wget --timeout=900 \
   https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp \
-  -O scripts/de440/dataset/de440.bsp
+  -O "$SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp"
 ```
 
 ## References

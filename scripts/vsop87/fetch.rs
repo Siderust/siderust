@@ -27,18 +27,15 @@
 //! ## High‑level algorithm
 //! 1. **Quick check**: if `data_dir` already contains at least one
 //!    `VSOP87X.xxx` file → return early.
-//! 2. **Local copy**: attempt to copy the dataset from `scripts/vsop87/dataset`
-//!    (checked in via Git LFS).
-//! 3. **Fetch directory listing** from the host and extract all matching file
+//! 2. **Fetch directory listing** from the host and extract all matching file
 //!    names via regex (only if local copy was missing).
-//! 4. **Download** each file only if it does not yet exist (makes rebuilds
+//! 3. **Download** each file only if it does not yet exist (makes rebuilds
 //!    faster).
 //!
 //! Any network or filesystem error bubbles up as `anyhow::Error` so the build
 //! fails loudly instead of producing incomplete tables.
 
 use std::{
-    env,
     fs::{self, File},
     io::Write,
     path::{Path, PathBuf},
@@ -53,26 +50,20 @@ const FILE_RE_STR: &str = r"VSOP87[A-Z]\.[A-Za-z]{3}"; // e.g. VSOP87A.ear
 /// Public entry: ensure that `data_dir` contains the VSOP87 dataset.
 ///
 /// * Creates the directory if it doesn’t exist.
-/// * Tries to copy files from the repo’s `dataset/` folder (Git LFS).
-/// * Downloads any missing file from the internet as a fallback.
+/// * Downloads any missing file from the internet.
 pub fn ensure_dataset(data_dir: &Path) -> Result<()> {
     // 1) Early‑out if dataset already present -----------------------------
     if contains_vsop_files(data_dir)? {
         return Ok(());
     }
 
-    // 2) Try local checkout (Git LFS) ------------------------------------
-    if let Ok(true) = copy_from_repo(data_dir) {
-        return Ok(());
-    }
-
     fs::create_dir_all(data_dir)
         .with_context(|| format!("Could not create directory {data_dir:?}"))?;
 
-    // 3) Obtain remote file list ------------------------------------------
+    // 2) Obtain remote file list ------------------------------------------
     let files = remote_file_list().context("Fetching VSOP87 directory listing")?;
 
-    // 4) Download each file (skipping those already present) --------------
+    // 3) Download each file (skipping those already present) --------------
     for file in files {
         let dst = data_dir.join(&file);
         if dst.exists() {
@@ -82,35 +73,6 @@ pub fn ensure_dataset(data_dir: &Path) -> Result<()> {
         download_file(&url, &dst)?;
     }
     Ok(())
-}
-
-/// Copy dataset files from the repository if available.
-///
-/// Returns `Ok(true)` if files were copied successfully.
-fn copy_from_repo(dst: &Path) -> Result<bool> {
-    let src = Path::new(env!("CARGO_MANIFEST_DIR")).join("scripts/vsop87/dataset");
-    eprintln!("Attempting to copy VSOP87 data from: {:?}", src);
-    eprintln!("Target directory: {:?}", dst);
-    eprintln!("Source exists: {}", src.exists());
-
-    if !contains_vsop_files(&src)? {
-        eprintln!("No VSOP87 files found in source directory");
-        return Ok(false);
-    }
-
-    eprintln!("Found VSOP87 files in source, copying...");
-    fs::create_dir_all(dst).with_context(|| format!("Could not create directory {dst:?}"))?;
-
-    let mut copied_count = 0;
-    for entry in fs::read_dir(&src)? {
-        let entry = entry?;
-        let target = dst.join(entry.file_name());
-        fs::copy(entry.path(), target)
-            .with_context(|| format!("copy {:?} -> {:?}", entry.path(), dst))?;
-        copied_count += 1;
-    }
-    eprintln!("Successfully copied {} files", copied_count);
-    Ok(true)
 }
 
 /// Check quickly whether the directory already contains at least one VSOP87

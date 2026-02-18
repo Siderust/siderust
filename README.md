@@ -70,6 +70,8 @@ Add to your `Cargo.toml`:
 siderust = "0.5"
 ```
 
+Build-time datasets (VSOP87/ELP2000/IERS and optional JPL kernels) are downloaded on demand; see `doc/datasets.md`.
+
 ### Ephemeris Backends (Enable / Disable / Combine)
 
 Siderust always includes `Vsop87Ephemeris` (VSOP87 + ELP2000-82B).
