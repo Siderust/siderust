@@ -3,8 +3,7 @@
 
 #![cfg(feature = "serde")]
 
-use std::fs::File;
-use std::io::BufReader;
+use std::fs;
 
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
@@ -70,10 +69,14 @@ fn utc_mjd_to_tt_mjd(mjd_utc: f64) -> ModifiedJulianDate {
 }
 
 fn load_reference_data() -> ReferenceData {
-    let f = File::open(REFERENCE_PATH).expect("Missing astro_night_periods_2026.json");
-    let reader = BufReader::new(f);
+    let raw = fs::read_to_string(REFERENCE_PATH).expect("Missing astro_night_periods_2026.json");
+    if raw.starts_with("version https://git-lfs.github.com/spec/v1") {
+        panic!(
+            "Reference file is a Git LFS pointer, not JSON. Commit raw JSON at `{REFERENCE_PATH}`."
+        );
+    }
     let reference: ReferenceDataFile =
-        serde_json::from_reader(reader).expect("Invalid JSON in reference file");
+        serde_json::from_str(&raw).expect("Invalid JSON in reference file");
 
     assert_eq!(
         reference.period_mjd_scale.as_str(),

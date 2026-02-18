@@ -20,8 +20,28 @@ env:
   SIDERUST_DATASETS_DIR: ${{ github.workspace }}/.siderust_datasets
 
 jobs:
+  datasets:
+    name: Datasets Cache
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+      - id: datasets-cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SIDERUST_DATASETS_DIR }}
+          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
+          restore-keys: |
+            siderust-datasets-${{ runner.os }}-v1-
+      - name: Prefetch minimal datasets
+        if: steps.datasets-cache.outputs.cache-hit != 'true'
+        run: ./scripts/prefetch_datasets.sh --minimal
+
   check:
     name: Check
+    needs: datasets
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -31,9 +51,9 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ${{ env.SIDERUST_DATASETS_DIR }}
-          key: siderust-datasets-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
           restore-keys: |
-            siderust-datasets-${{ runner.os }}-
+            siderust-datasets-${{ runner.os }}-v1-
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo check --all-targets
 
@@ -52,6 +72,7 @@ jobs:
 
   clippy:
     name: Clippy
+    needs: datasets
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -61,9 +82,9 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ${{ env.SIDERUST_DATASETS_DIR }}
-          key: siderust-datasets-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
           restore-keys: |
-            siderust-datasets-${{ runner.os }}-
+            siderust-datasets-${{ runner.os }}-v1-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
@@ -71,6 +92,7 @@ jobs:
 
   test:
     name: Test
+    needs: datasets
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -80,9 +102,9 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ${{ env.SIDERUST_DATASETS_DIR }}
-          key: siderust-datasets-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
           restore-keys: |
-            siderust-datasets-${{ runner.os }}-
+            siderust-datasets-${{ runner.os }}-v1-
       - uses: dtolnay/rust-toolchain@stable
       - run: cargo test --all-targets
       - run: cargo test --doc
@@ -90,6 +112,7 @@ jobs:
   coverage:
     name: Test & Coverage
     if: ${{ github.event_name == 'push' || github.event.pull_request.draft == false }}
+    needs: datasets
     runs-on: ubuntu-latest
     env:
       SIDERUST_JPL_STUB: all
@@ -102,9 +125,9 @@ jobs:
       - uses: actions/cache@v4
         with:
           path: ${{ env.SIDERUST_DATASETS_DIR }}
-          key: siderust-datasets-${{ runner.os }}-${{ hashFiles('Cargo.lock') }}
+          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
           restore-keys: |
-            siderust-datasets-${{ runner.os }}-
+            siderust-datasets-${{ runner.os }}-v1-
 
       - name: Set up Rust (nightly + llvm-tools)
         uses: dtolnay/rust-toolchain@v1
