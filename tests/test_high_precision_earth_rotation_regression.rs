@@ -28,7 +28,7 @@ fn wrapped_arcsec_error(actual_deg: f64, expected_deg: f64) -> f64 {
 }
 
 fn tod_unit_position(
-    site: Geodetic::<ECEF>,
+    site: Geodetic<ECEF>,
     ra_deg: f64,
     dec_deg: f64,
 ) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit> {

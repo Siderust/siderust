@@ -8,10 +8,10 @@
 //! accuracy across multiple geodetic positions.
 
 use affn::ellipsoid::{Ellipsoid, Grs80, HasEllipsoid, Wgs84};
-use siderust::coordinates::centers::Geodetic;
 use qtty::*;
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::Geocentric;
+use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::{ECEF, ITRF};
 
 // =============================================================================
@@ -63,9 +63,17 @@ const TOL_M: f64 = 1.0;
 fn to_ecef_greenwich() {
     let coord = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 65.0 * M);
     let pos: Position<Geocentric, ECEF, Meter> = coord.to_cartesian();
-    assert!((pos.x().value() - 3_980_700.035).abs() < TOL_M, "X={}", pos.x().value());
+    assert!(
+        (pos.x().value() - 3_980_700.035).abs() < TOL_M,
+        "X={}",
+        pos.x().value()
+    );
     assert!(pos.y().value().abs() < TOL_M, "Y={}", pos.y().value());
-    assert!((pos.z().value() - 4_966_813.011).abs() < TOL_M, "Z={}", pos.z().value());
+    assert!(
+        (pos.z().value() - 4_966_813.011).abs() < TOL_M,
+        "Z={}",
+        pos.z().value()
+    );
 }
 
 #[test]
@@ -107,8 +115,7 @@ fn geodetic_coord_generic_kilometer_height() {
 fn to_ecef_from_kilometer_height() {
     // Geodetic::<ECEF> with height in km should produce the same ECEF as one in metres
     let coord_m = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, Meters::new(1000.0));
-    let coord_km =
-        Geodetic::<ECEF, Kilometer>::new(0.0 * DEG, 45.0 * DEG, Kilometers::new(1.0));
+    let coord_km = Geodetic::<ECEF, Kilometer>::new(0.0 * DEG, 45.0 * DEG, Kilometers::new(1.0));
 
     let pos_m: Position<Geocentric, ECEF, Meter> = coord_m.to_cartesian();
     let pos_km: Position<Geocentric, ECEF, Meter> = coord_km.to_cartesian();
@@ -237,5 +244,8 @@ fn itrf_vs_ecef_equator_differ_due_to_ellipsoid() {
     assert!(diff_z < 0.01, "z diff = {diff_z}");
     // But they should not be exactly equal (they use different ellipsoids)
     let total_diff = diff_x + diff_z;
-    assert!(total_diff > 1e-10, "total diff should be >0, got {total_diff}");
+    assert!(
+        total_diff > 1e-10,
+        "total diff should be >0, got {total_diff}"
+    );
 }

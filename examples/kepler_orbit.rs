@@ -26,7 +26,10 @@ fn main() {
     println!("  M  = {}", m);
     println!("  e  = {:.6}", e);
     println!("  E  = {}", e_anom);
-    println!("  residual = {:.3e}\n", (e_anom - Radians::new(e * e_anom.sin()) - m).value());
+    println!(
+        "  residual = {:.3e}\n",
+        (e_anom - Radians::new(e * e_anom.sin()) - m).value()
+    );
 
     // ---------------------------------------------------------------------
     // 2) Simple orbit propagation in heliocentric ecliptic coordinates
@@ -48,7 +51,22 @@ fn main() {
     let p1 = earth_like.kepler_position(jd1);
 
     println!("Orbit propagation (heliocentric ecliptic Cartesian):");
-    println!("  at JD {:.1}: (x,y,z) = ({:+.6}, {:+.6}, {:+.6}) AU", jd0, p0.x(), p0.y(), p0.z());
-    println!("  at JD {:.1}: (x,y,z) = ({:+.6}, {:+.6}, {:+.6}) AU", jd1, p1.x(), p1.y(), p1.z());
-    println!("  |Δr| = {}", (p1 - p0).magnitude().to::<AstronomicalUnit>());
+    println!(
+        "  at JD {:.1}: (x,y,z) = ({:+.6}, {:+.6}, {:+.6}) AU",
+        jd0,
+        p0.x(),
+        p0.y(),
+        p0.z()
+    );
+    println!(
+        "  at JD {:.1}: (x,y,z) = ({:+.6}, {:+.6}, {:+.6}) AU",
+        jd1,
+        p1.x(),
+        p1.y(),
+        p1.z()
+    );
+    println!(
+        "  |Δr| = {}",
+        (p1 - p0).magnitude().to::<AstronomicalUnit>()
+    );
 }

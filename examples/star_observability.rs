@@ -24,7 +24,8 @@ fn main() {
     println!("╚════════════════════════════════════════════════════════╝\n");
 
     // Observatory: Greenwich
-    let observatory = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
+    let observatory =
+        Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
     println!("Observatory: Greenwich Royal Observatory");
     println!("  Location: {}, {}\n", observatory.lat, observatory.lon);
 

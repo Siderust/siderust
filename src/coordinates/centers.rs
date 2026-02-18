@@ -106,7 +106,6 @@ pub struct Heliocentric;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Barycentric;
 
-
 // =============================================================================
 // Topocentric Center (parameterized)
 // =============================================================================
