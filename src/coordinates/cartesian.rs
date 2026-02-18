@@ -27,8 +27,8 @@ pub mod direction {
     use super::frames;
     pub use super::Direction;
 
-    /// **Ecliptic** cartesian direction (unit vector).
-    pub type Ecliptic = Direction<frames::Ecliptic>;
+    /// **EclipticMeanJ2000** cartesian direction (unit vector).
+    pub type EclipticMeanJ2000 = Direction<frames::EclipticMeanJ2000>;
     /// **Equatorial mean J2000** cartesian direction (unit vector).
     pub type EquatorialMeanJ2000 = Direction<frames::EquatorialMeanJ2000>;
     /// **Equatorial mean of date** cartesian direction (unit vector).
@@ -37,10 +37,16 @@ pub mod direction {
     pub type EquatorialTrueOfDate = Direction<frames::EquatorialTrueOfDate>;
     /// **Horizontal** cartesian direction (unit vector).
     pub type Horizontal = Direction<frames::Horizontal>;
-    /// **Geographic (ECEF)** cartesian direction (unit vector).
-    pub type Geographic = Direction<frames::ECEF>;
+    /// **Geocentric Earth-fixed (ECEF)** cartesian direction (unit vector).
+    ///
+    /// For geodetic (lon/lat/h) positions, use [`Geodetic<ECEF>`](crate::coordinates::centers::Geodetic)
+    /// instead; this type is for unit vectors in the Earth-fixed frame.
+    /// Cartesian unit vector in the **Earth-Centred Earth-Fixed** frame.
+    pub type EcefCartDir = Direction<frames::ECEF>;
     /// **ICRS** cartesian direction (unit vector).
     pub type ICRS = Direction<frames::ICRS>;
+    /// **ICRF** cartesian direction (unit vector).
+    pub type ICRF = Direction<frames::ICRF>;
 }
 
 // =============================================================================
@@ -51,8 +57,8 @@ pub mod displacement {
     use super::frames;
     pub use super::Displacement;
 
-    /// **Ecliptic** displacement vector.
-    pub type Ecliptic<U> = Displacement<frames::Ecliptic, U>;
+    /// **EclipticMeanJ2000** displacement vector.
+    pub type EclipticMeanJ2000<U> = Displacement<frames::EclipticMeanJ2000, U>;
     /// **Equatorial mean J2000** displacement vector.
     pub type EquatorialMeanJ2000<U> = Displacement<frames::EquatorialMeanJ2000, U>;
     /// **Equatorial mean of date** displacement vector.
@@ -63,6 +69,8 @@ pub mod displacement {
     pub type Horizontal<U> = Displacement<frames::Horizontal, U>;
     /// **ICRS** displacement vector.
     pub type ICRS<U> = Displacement<frames::ICRS, U>;
+    /// **ICRF** displacement vector.
+    pub type ICRF<U> = Displacement<frames::ICRF, U>;
 }
 
 // =============================================================================
@@ -73,8 +81,9 @@ pub mod position {
     pub use super::Position;
     use super::{centers, frames};
 
-    /// **Heliocentric Ecliptic** cartesian position.
-    pub type Ecliptic<U, C = centers::Heliocentric> = Position<C, frames::Ecliptic, U>;
+    /// **Heliocentric EclipticMeanJ2000** cartesian position.
+    pub type EclipticMeanJ2000<U, C = centers::Heliocentric> =
+        Position<C, frames::EclipticMeanJ2000, U>;
     /// **Geocentric Equatorial mean J2000** cartesian position.
     pub type EquatorialMeanJ2000<U, C = centers::Geocentric> =
         Position<C, frames::EquatorialMeanJ2000, U>;
@@ -86,13 +95,25 @@ pub mod position {
         Position<C, frames::EquatorialTrueOfDate, U>;
     /// **Topocentric Horizontal** cartesian position.
     pub type Horizontal<U, C = centers::Topocentric> = Position<C, frames::Horizontal, U>;
-    /// **Geocentric Geographic (ECEF)** cartesian position.
-    pub type Geographic<U, C = centers::Geocentric> = Position<C, frames::ECEF, U>;
+    /// **Geocentric Earth-Centered Earth-Fixed (ECEF)** cartesian position.
+    ///
+    /// For geodetic (lon/lat/h) positions, use [`Geodetic<ECEF>`](crate::coordinates::centers::Geodetic)
+    /// instead; this type is for Cartesian XYZ in the Earth-fixed frame.
+    /// The ellipsoid-correct conversion is [`to_cartesian`](affn::ellipsoidal::Position::to_cartesian).
+    pub type EcefPos<U, C = centers::Geocentric> = Position<C, frames::ECEF, U>;
     /// **Barycentric ICRS** cartesian position.
     pub type ICRS<U, C = centers::Barycentric> = Position<C, frames::ICRS, U>;
     /// **Heliocentric ICRS** cartesian position.
     pub type HCRS<U> = Position<centers::Heliocentric, frames::ICRS, U>;
     /// **Geocentric ICRS** cartesian position.
+    ///
+    /// # Approximation
+    ///
+    /// This alias uses [`frames::ICRS`] as a first-order approximation for
+    /// the Geocentric Celestial Reference System ([`frames::GCRS`]). The
+    /// difference is < 1 mas for typical astronomical directions (neglected:
+    /// geocentre offset, relativistic terms). For strictly IAU-correct GCRS,
+    /// use `Position<Geocentric, frames::GCRS, U>` directly.
     pub type GCRS<U> = Position<centers::Geocentric, frames::ICRS, U>;
     /// **Topocentric ICRS** cartesian position.
     pub type TCRS<U> = Position<centers::Topocentric, frames::ICRS, U>;
@@ -106,8 +127,8 @@ pub mod velocity {
     use super::frames;
     pub use super::Velocity;
 
-    /// **Ecliptic** cartesian velocity vector.
-    pub type Ecliptic<U> = Velocity<frames::Ecliptic, U>;
+    /// **EclipticMeanJ2000** cartesian velocity vector.
+    pub type EclipticMeanJ2000<U> = Velocity<frames::EclipticMeanJ2000, U>;
     /// **Equatorial mean J2000** cartesian velocity vector.
     pub type EquatorialMeanJ2000<U> = Velocity<frames::EquatorialMeanJ2000, U>;
     /// **Equatorial mean of date** cartesian velocity vector.
@@ -118,4 +139,6 @@ pub mod velocity {
     pub type Horizontal<U> = Velocity<frames::Horizontal, U>;
     /// **ICRS** cartesian velocity vector.
     pub type ICRS<U> = Velocity<frames::ICRS, U>;
+    /// **ICRF** cartesian velocity vector.
+    pub type ICRF<U> = Velocity<frames::ICRF, U>;
 }

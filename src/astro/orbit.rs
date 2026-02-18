@@ -48,10 +48,10 @@
 //!
 //! ## Coordinate Calculation
 //!
-//! The `Orbit::heliocentric_coordinates(jd)` method returns the **heliocentric ecliptic Cartesian coordinates**
-//! of the orbiting body at a given Julian Day (`jd`), based on the orbital elements and epoch.
-//! Internally, this method calls `calculate_orbit_position`, which solves Kepler's equation and performs
-//! necessary coordinate transformations.
+//! The `Orbit::kepler_position(jd)` method (implemented in
+//! [`calculus::kepler_equations`](crate::calculus::kepler_equations)) returns the
+//! **heliocentric ecliptic Cartesian coordinates** of the orbiting body at a given
+//! Julian Day (`jd`), based on the orbital elements and epoch.
 //!
 //! ## Units
 //!
@@ -66,7 +66,7 @@
 //!
 //! ```rust
 //! use siderust::astro::orbit::Orbit;
-//! use siderust::astro::JulianDate;
+//! use siderust::time::JulianDate;
 //! use qtty::*;
 //!
 //! let earth_orbit = Orbit::new(
@@ -82,11 +82,15 @@
 //! let coords = earth_orbit.kepler_position(JulianDate::new(2459200.5));
 //! ```
 
-use crate::astro::JulianDate;
+use crate::time::JulianDate;
 use qtty::*;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 /// Represents the Keplerian orbital elements of a celestial object.
 #[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Orbit {
     pub semi_major_axis: AstronomicalUnits, // Semi-major axis (AstronomicalUnits)
     pub eccentricity: f64,                  // Orbital eccentricity
@@ -94,7 +98,7 @@ pub struct Orbit {
     pub longitude_of_ascending_node: Degrees, // Longitude of ascending node (Ω)
     pub argument_of_perihelion: Degrees,    // Argument of perihelion (ω)
     pub mean_anomaly_at_epoch: Degrees,     // Mean anomaly at epoch (M₀)
-    pub epoch: JulianDate,                  // Epoch (Julian Dat
+    pub epoch: JulianDate,                  // Epoch (Julian Date)
 }
 
 impl Orbit {

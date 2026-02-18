@@ -1,6 +1,6 @@
 [package]
 name = "siderust"
-version = "0.4.0"
+version = "0.5.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -14,15 +14,23 @@ categories = ["science", "aerospace", "simulation"]
 [lib]
 name = "siderust"
 
+[features]
+default = []
+de440 = []
+de441 = []
+serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
+
 [dependencies]
-affn = "0.2.0"
+affn = { version="0.3.0", features = ["astro"] }
+cheby = "0.1.0"
+qtty = "0.3.0"
+tempoch = "0.2.0"
 approx = "0.5"
 chrono = "0.4.43"
 nalgebra = "0.34.1"
 paste = "1.0"
-rayon = "1.11"
-qtty = "0.2.2"
-serde = { version = "1.0", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"], optional = true }
+wide = "1.1.1"
 
 [dev-dependencies]
 rstest = "0.26"
@@ -32,8 +40,8 @@ serde_json = "1.0"
 [build-dependencies]
 walkdir = "2"
 regex = "1.12.2"
-anyhow = "1.0.100"
-reqwest = { version = "0.13.1", default-features = false, features = ["blocking"] }
+anyhow = "1.0.101"
+reqwest = { version = "0.13.2", default-features = false, features = ["blocking"] }
 
 [[bench]]
 name = "converters"
@@ -42,3 +50,44 @@ harness = false
 [[bench]]
 name = "vsop87"
 harness = false
+
+[[bench]]
+name = "solar_altitude"
+harness = false
+
+[[bench]]
+name = "moon_altitude"
+harness = false
+
+[[bench]]
+name = "star_altitude"
+harness = false
+
+[[bench]]
+name = "elp2000"
+harness = false
+
+[[bench]]
+name = "de441"
+harness = false
+required-features = ["de441"]
+
+[[bench]]
+name = "ephemeris_comparison"
+harness = false
+
+[[bench]]
+name = "altitude_comparison"
+harness = false
+
+[[example]]
+name = "serde_serialization"
+required-features = ["serde"]
+
+[[example]]
+name = "jpl_precise_ephemeris"
+
+# Local path overrides for IAU compliance work
+[patch.crates-io]
+affn = { path = "affn" }
+tempoch = { path = "tempoch" }

@@ -3,17 +3,18 @@
 
 use qtty::{AstronomicalUnit, AstronomicalUnits, Days, Degrees, Kilograms, Kilometers, Years, AU};
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};
 use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
 use siderust::coordinates::{
     cartesian,
-    centers::ObserverSite,
-    frames, spherical,
+    centers::Geodetic,
+    frames::{self, ECEF},
+    spherical,
     transform::{providers::frame_rotation, AstroContext, Transform, TransformFrame},
 };
+use siderust::time::JulianDate;
 
 #[test]
 fn julian_date_arithmetic_and_display_branches() {
@@ -52,15 +53,15 @@ fn cartesian_vector_display_includes_metadata() {
 
 #[test]
 fn horizontal_conversion_variants_cover_all_impls() {
-    let observer = spherical::position::Geographic::new(
-        Degrees::new(-17.89),
-        Degrees::new(28.76),
-        Kilometers::new(2.4),
+    let observer = Geodetic::<ECEF>::new(
+        Degrees::new(-17.89), // lon
+        Degrees::new(28.76),  // lat
+        qtty::Meters::new(2400.0),
     );
     let jd = JulianDate::J2000;
 
-    // Convert Geographic to ObserverSite for the new API
-    let site = ObserverSite::from_geographic(&observer);
+    // site is already Geodetic::<ECEF> from affn
+    let site = observer;
 
     // Test position (with distance) conversion - positions still support center transforms
     let eq_pos = spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(
@@ -75,17 +76,17 @@ fn horizontal_conversion_variants_cover_all_impls() {
     // ...then rotate J2000 -> mean-of-date using the provider rotation matrix.
     let ctx = AstroContext::default();
     let rot = frame_rotation::<frames::EquatorialMeanJ2000, frames::EquatorialMeanOfDate>(jd, &ctx);
-    let [x, y, z] = rot.apply_array([
-        topo_cart_j2000.x().value(),
-        topo_cart_j2000.y().value(),
-        topo_cart_j2000.z().value(),
-    ]);
-    let topo_cart_mod =
-        cartesian::Position::<
-            siderust::coordinates::centers::Topocentric,
-            frames::EquatorialMeanOfDate,
-            AstronomicalUnit,
-        >::new_with_params(*topo_cart_j2000.center_params(), x * AU, y * AU, z * AU);
+    let [x, y, z] = rot
+        * [
+            topo_cart_j2000.x(),
+            topo_cart_j2000.y(),
+            topo_cart_j2000.z(),
+        ];
+    let topo_cart_mod = cartesian::Position::<
+        siderust::coordinates::centers::Topocentric,
+        frames::EquatorialMeanOfDate,
+        AstronomicalUnit,
+    >::new_with_params(*topo_cart_j2000.center_params(), x, y, z);
 
     // Now the dedicated Horizontal transform applies.
     let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> =
@@ -93,7 +94,7 @@ fn horizontal_conversion_variants_cover_all_impls() {
     let horiz_pos = horiz_cart_pos.to_spherical();
     // Distance changes slightly due to real topocentric parallax (observer is ~6000 km from Earth center)
     // For an object at 1 AU, this is a very small fractional change (Earth radius / 1 AU ≈ 4e-5)
-    assert!((horiz_pos.distance - eq_pos.distance).abs().value() < 1e-4);
+    assert!((horiz_pos.distance - eq_pos.distance).abs() < 1e-4);
     assert!(horiz_cart_pos.z().value().is_finite());
 
     // Note: Directions no longer support center transforms (to_topocentric).
@@ -104,14 +105,18 @@ fn horizontal_conversion_variants_cover_all_impls() {
 fn frame_transform_traits_exercised() {
     use siderust::coordinates::centers::Heliocentric;
 
-    let vec_ecl =
-        cartesian::position::Ecliptic::<AstronomicalUnit>::new(0.1 * AU, 0.2 * AU, 0.3 * AU);
-    let vec_same: cartesian::position::Ecliptic<AstronomicalUnit> =
+    let vec_ecl = cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(
+        0.1 * AU,
+        0.2 * AU,
+        0.3 * AU,
+    );
+    let vec_same: cartesian::position::EclipticMeanJ2000<AstronomicalUnit> =
         TransformFrame::to_frame(&vec_ecl);
     assert_eq!(vec_same.x(), vec_ecl.x());
 
     // Spherical direction is now frame-only (no center parameter)
-    let sph_ecl = spherical::direction::Ecliptic::new(Degrees::new(10.0), Degrees::new(5.0));
+    let sph_ecl =
+        spherical::direction::EclipticMeanJ2000::new(Degrees::new(10.0), Degrees::new(5.0));
     // Convert to cartesian, transform frame
     let cart_ecl = sph_ecl.to_cartesian();
     let cart_equatorial: cartesian::direction::EquatorialMeanJ2000 =

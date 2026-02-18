@@ -3,10 +3,10 @@
 
 use qtty::*;
 use siderust::astro::orbit::Orbit;
-use siderust::astro::JulianDate;
 use siderust::bodies::asteroid::{
     Asteroid, AsteroidClass, APOPHIS, ASTEROID_PRESETS, BENNU, CERES_AST,
 };
+use siderust::time::JulianDate;
 
 const TEST_ORBIT: Orbit = Orbit::new(
     AstronomicalUnits::new(1.0),

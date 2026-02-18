@@ -3,7 +3,7 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use qtty::{Days, Years};
-use siderust::{astro::JulianDate, bodies::solar_system::*, calculus::vsop87::VSOP87};
+use siderust::{bodies::solar_system::*, calculus::vsop87::VSOP87, time::JulianDate};
 use std::hint::black_box;
 
 fn bench_vsop87(c: &mut Criterion) {

@@ -31,8 +31,8 @@
 //! * Williams, T. G. (1991). "An optimized algorithm for Pluto", *Mem. Brit.
 //!   Astron. Assoc.* **99** (2), 75–82.
 
-use crate::astro::JulianDate;
-use crate::coordinates::{cartesian, centers::Heliocentric, frames::Ecliptic, spherical};
+use crate::coordinates::{cartesian, centers::Heliocentric, frames::EclipticMeanJ2000, spherical};
+use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Degrees, Radian, AU};
 
 pub struct Pluto;
@@ -40,7 +40,7 @@ pub struct Pluto;
 impl Pluto {
     pub fn get_heliocentric(
         jd: JulianDate,
-    ) -> cartesian::Position<Heliocentric, Ecliptic, AstronomicalUnit> {
+    ) -> cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
         let t = jd.julian_centuries().value();
 
         // 2. Calculate mean longitudes (in degrees) for Jupiter, Saturn, and Pluto.
@@ -76,9 +76,13 @@ impl Pluto {
         let lat = sum_latitude * 0.000001 - Degrees::new(3.908239);
         let rad = sum_radius * 0.0000001 + 40.7241346;
 
-        // Ecliptic: lon = azimuth, lat = polar
-        spherical::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(lon, lat, rad * AU)
-            .to_cartesian()
+        // EclipticMeanJ2000: lon = azimuth, lat = polar
+        spherical::Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(
+            lon,
+            lat,
+            rad * AU,
+        )
+        .to_cartesian()
     }
 }
 
@@ -629,14 +633,15 @@ const RADIUS_TERMS: &[PlutoTerm] = &[
 
 #[cfg(test)]
 mod tests {
-    use crate::astro::JulianDate;
     use crate::calculus::pluto::Pluto;
+    use crate::time::JulianDate;
+    use qtty::AstronomicalUnits;
 
     #[test]
     fn pluto_heliocentric_position_j2000() {
         let pos = Pluto::get_heliocentric(JulianDate::J2000);
-        assert!((pos.x().value() - (-9.875333629852145)).abs() < 1e-6);
-        assert!((pos.y().value() - (-27.958786187190157)).abs() < 1e-6);
-        assert!((pos.z().value() - 5.850444258527083).abs() < 1e-6);
+        assert!((pos.x() - AstronomicalUnits::new(-9.875333629852145)).abs() < 1e-6);
+        assert!((pos.y() - AstronomicalUnits::new(-27.958786187190157)).abs() < 1e-6);
+        assert!((pos.z() - AstronomicalUnits::new(5.850444258527083)).abs() < 1e-6);
     }
 }

@@ -50,8 +50,8 @@ pub(crate) fn __assert_spherical_eq<C, F, U>(
 {
     let d1 = a.distance;
     let d2 = b.distance;
-    let dp = (a.polar.value() - b.polar.value()).abs();
-    let da = (a.azimuth.value() - b.azimuth.value()).abs();
+    let dp = (a.polar - b.polar).abs();
+    let da = (a.azimuth - b.azimuth).abs();
     if (d1 - d2).abs() >= Quantity::<U>::new(epsilon) || dp >= epsilon || da >= epsilon {
         if let Some(m) = msg {
             panic!(
