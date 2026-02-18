@@ -13,7 +13,8 @@ use super::provider::AltitudePeriodsProvider;
 use super::search::{SearchOpts, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};
 use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind};
 use crate::calculus::math_core::{extrema, intervals};
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
+use crate::coordinates::frames::ECEF;
 use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
 use qtty::*;
 
@@ -24,7 +25,7 @@ use qtty::*;
 /// Build an altitude function from any `AltitudePeriodsProvider`.
 fn make_altitude_fn<'a, T: AltitudePeriodsProvider>(
     target: &'a T,
-    site: &'a ObserverSite,
+    site: &'a Geodetic<ECEF>,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let site = *site;
     move |t: ModifiedJulianDate| target.altitude_at(&site, t)
@@ -56,11 +57,12 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// ```rust
 /// use siderust::calculus::altitude::{crossings, SearchOpts};
 /// use siderust::bodies::Sun;
-/// use siderust::coordinates::centers::ObserverSite;
+/// use siderust::coordinates::centers::Geodetic;
+/// use siderust::coordinates::frames::ECEF;
 /// use siderust::time::{ModifiedJulianDate, MJD, Period};
 /// use qtty::*;
 ///
-/// let site = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
+/// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 /// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
 /// let events = crossings(&Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
 /// for e in events {
@@ -69,7 +71,7 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// ```
 pub fn crossings<T: AltitudePeriodsProvider>(
     target: &T,
-    observer: &ObserverSite,
+    observer: &Geodetic<ECEF>,
     window: Period<MJD>,
     threshold: Degrees,
     opts: SearchOpts,
@@ -104,7 +106,7 @@ pub fn crossings<T: AltitudePeriodsProvider>(
 /// Returns a chronologically sorted list of [`CulminationEvent`]s.
 pub fn culminations<T: AltitudePeriodsProvider>(
     target: &T,
-    observer: &ObserverSite,
+    observer: &Geodetic<ECEF>,
     window: Period<MJD>,
     opts: SearchOpts,
 ) -> Vec<CulminationEvent> {
@@ -160,7 +162,7 @@ pub fn culminations<T: AltitudePeriodsProvider>(
 /// ```
 pub fn altitude_ranges<T: AltitudePeriodsProvider>(
     target: &T,
-    observer: &ObserverSite,
+    observer: &Geodetic<ECEF>,
     window: Period<MJD>,
     h_min: Degrees,
     h_max: Degrees,
@@ -183,7 +185,7 @@ pub fn altitude_ranges<T: AltitudePeriodsProvider>(
 /// Equivalent to `altitude_ranges(target, observer, window, threshold, 90°, opts)`.
 pub fn above_threshold<T: AltitudePeriodsProvider>(
     target: &T,
-    observer: &ObserverSite,
+    observer: &Geodetic<ECEF>,
     window: Period<MJD>,
     threshold: Degrees,
     opts: SearchOpts,
@@ -200,7 +202,7 @@ pub fn above_threshold<T: AltitudePeriodsProvider>(
 /// Equivalent to complement of [`above_threshold`].
 pub fn below_threshold<T: AltitudePeriodsProvider>(
     target: &T,
-    observer: &ObserverSite,
+    observer: &Geodetic<ECEF>,
     window: Period<MJD>,
     threshold: Degrees,
     opts: SearchOpts,
@@ -218,8 +220,8 @@ mod tests {
     use super::*;
     use crate::bodies::solar_system::{Moon, Sun};
 
-    fn greenwich() -> ObserverSite {
-        ObserverSite::new(
+    fn greenwich() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
             Degrees::new(0.0),
             Degrees::new(51.4769),
             Quantity::<Meter>::new(0.0),

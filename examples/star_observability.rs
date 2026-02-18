@@ -12,7 +12,8 @@ use siderust::bodies::catalog::{ALTAIR, BETELGEUSE, POLARIS, RIGEL, SIRIUS, VEGA
 use siderust::bodies::solar_system::Sun;
 use siderust::bodies::Star;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
-use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use siderust::time::{ModifiedJulianDate, Period};
 
 use qtty::*;
@@ -23,7 +24,7 @@ fn main() {
     println!("╚════════════════════════════════════════════════════════╝\n");
 
     // Observatory: Greenwich
-    let observatory = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
+    let observatory = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
     println!("Observatory: Greenwich Royal Observatory");
     println!("  Location: {}, {}\n", observatory.lat, observatory.lon);
 

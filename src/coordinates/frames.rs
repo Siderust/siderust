@@ -51,6 +51,12 @@
 // Re-export trait infrastructure from affn
 pub use affn::frames::{ReferenceFrame, SphericalNaming};
 
+// Re-export ellipsoid traits and predefined ellipsoids from affn
+pub use affn::ellipsoid::{Ellipsoid, Grs80, HasEllipsoid, Wgs84};
+
+// Re-export the generic ellipsoidal Position type for direct use
+pub use affn::ellipsoidal::Position as EllipsoidalPosition;
+
 // Re-export all astronomical frame types from affn
 pub use affn::frames::{
     EclipticMeanJ2000, EclipticMeanOfDate, EclipticOfDate, EclipticTrueOfDate, EquatorialMeanJ2000,

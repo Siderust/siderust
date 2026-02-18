@@ -15,7 +15,8 @@ use crate::astro::eop::EopProvider;
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
 use crate::astro::sidereal::gast_iau2006;
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
+use crate::coordinates::frames::ECEF;
 use crate::coordinates::transform::AstroContext;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::time::JulianDate;
@@ -40,7 +41,7 @@ use qtty::{AstronomicalUnits, Degree, LengthUnit, Meter, Quantity, Radian, Radia
 /// 4. **Spherical conversion**: Cartesian → Spherical (RA, Dec, distance)
 pub fn geocentric_j2000_to_apparent_topocentric<U: LengthUnit>(
     geo_cart_j2000: &cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, U>,
-    site: ObserverSite,
+    site: Geodetic<frames::ECEF>,
     jd: JulianDate,
 ) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>
 where
@@ -58,7 +59,7 @@ pub fn geocentric_j2000_to_apparent_topocentric_with_ctx<
     Nut,
 >(
     geo_cart_j2000: &cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, U>,
-    site: ObserverSite,
+    site: Geodetic<frames::ECEF>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>
@@ -117,7 +118,7 @@ where
 /// their body-specific apparent topocentric equatorial coordinates.
 pub fn equatorial_to_horizontal<U: LengthUnit>(
     eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
-    site: ObserverSite,
+    site: Geodetic<frames::ECEF>,
     jd: JulianDate,
 ) -> spherical::Position<Topocentric, frames::Horizontal, U> {
     equatorial_to_horizontal_true_of_date(eq_position, site, jd)
@@ -127,7 +128,7 @@ pub fn equatorial_to_horizontal<U: LengthUnit>(
 /// horizontal coordinates using IAU 2006 GAST.
 pub fn equatorial_to_horizontal_true_of_date<U: LengthUnit>(
     eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
-    site: ObserverSite,
+    site: Geodetic<frames::ECEF>,
     jd: JulianDate,
 ) -> spherical::Position<Topocentric, frames::Horizontal, U> {
     let ctx: AstroContext = AstroContext::default();
@@ -139,7 +140,7 @@ pub fn equatorial_to_horizontal_true_of_date<U: LengthUnit>(
 /// Uses the context EOP provider to derive UT1 for GAST.
 pub fn equatorial_to_horizontal_true_of_date_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
     eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> spherical::Position<Topocentric, frames::Horizontal, U> {
@@ -179,7 +180,7 @@ pub fn equatorial_to_horizontal_true_of_date_with_ctx<U: LengthUnit, Eph, Eop: E
 #[inline]
 pub fn equatorial_to_horizontal_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
     eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
-    site: ObserverSite,
+    site: Geodetic<frames::ECEF>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> spherical::Position<Topocentric, frames::Horizontal, U> {
@@ -201,7 +202,7 @@ pub fn equatorial_to_horizontal_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, N
 pub fn star_horizontal(
     ra_j2000: qtty::Degrees,
     dec_j2000: qtty::Degrees,
-    site: &ObserverSite,
+    site: &Geodetic<frames::ECEF>,
     jd: JulianDate,
 ) -> spherical::Direction<frames::Horizontal> {
     // Full IAU 2006/2000B NPB matrix-based approach:

@@ -73,7 +73,7 @@ pub use super::spherical::position::EquatorialTrueOfDate as EquatorialTrueOfDate
 // NOTE: `GeographicPos` (spherical position alias) has been removed.
 // The old `Geographic = Position<Geocentric, ECEF, Kilometer>` was a correctness
 // footgun: spherical `distance` is radial distance, not ellipsoidal height.
-// Use `affn::geodesy::GeodeticCoord` for geodetic (lon/lat/h) constants.
+// Use `Geodetic<ECEF>` (= `ellipsoidal::Position<Geocentric, ECEF, U>`) for geodetic (lon/lat/h) positions.
 /// **Topocentric Horizontal** spherical position (Alt, Az, d).
 pub use super::spherical::position::Horizontal as HorizontalPos;
 /// **Geocentric ICRS** spherical position.

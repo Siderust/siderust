@@ -39,7 +39,7 @@ pub mod direction {
     pub type Horizontal = Direction<frames::Horizontal>;
     /// **Geocentric Earth-fixed (ECEF)** cartesian direction (unit vector).
     ///
-    /// For geodetic (lon/lat/h) positions, use [`affn::geodesy::GeodeticCoord`]
+    /// For geodetic (lon/lat/h) positions, use [`Geodetic<ECEF>`](crate::coordinates::centers::Geodetic)
     /// instead; this type is for unit vectors in the Earth-fixed frame.
     /// Cartesian unit vector in the **Earth-Centred Earth-Fixed** frame.
     pub type EcefCartDir = Direction<frames::ECEF>;
@@ -97,9 +97,9 @@ pub mod position {
     pub type Horizontal<U, C = centers::Topocentric> = Position<C, frames::Horizontal, U>;
     /// **Geocentric Earth-Centered Earth-Fixed (ECEF)** cartesian position.
     ///
-    /// For geodetic (lon/lat/h) positions, use [`affn::geodesy::GeodeticCoord`]
+    /// For geodetic (lon/lat/h) positions, use [`Geodetic<ECEF>`](crate::coordinates::centers::Geodetic)
     /// instead; this type is for Cartesian XYZ in the Earth-fixed frame.
-    /// The ellipsoid-correct WGS84 conversion is `ObserverSite::geocentric_itrf()`.
+    /// The ellipsoid-correct conversion is [`to_cartesian`](affn::ellipsoidal::Position::to_cartesian).
     pub type EcefPos<U, C = centers::Geocentric> = Position<C, frames::ECEF, U>;
     /// **Barycentric ICRS** cartesian position.
     pub type ICRS<U, C = centers::Barycentric> = Position<C, frames::ICRS, U>;

@@ -11,7 +11,8 @@
 
 use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::altitude::AltitudePeriodsProvider;
-use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use siderust::time::{ModifiedJulianDate, Period};
 
 use qtty::*;
@@ -24,7 +25,7 @@ struct NightScore {
     score: f64,
 }
 
-fn score_night(night_start: ModifiedJulianDate, observer: ObserverSite) -> NightScore {
+fn score_night(night_start: ModifiedJulianDate, observer: Geodetic::<ECEF>) -> NightScore {
     let night_end = ModifiedJulianDate::new(night_start.value() + 1.0);
     let window = Period::new(night_start, night_end);
 
@@ -58,7 +59,7 @@ fn main() {
     println!("╚════════════════════════════════════════════════════════╝\n");
 
     // Mauna Kea Observatory, Hawaii
-    let observatory = ObserverSite::new(
+    let observatory = Geodetic::<ECEF>::new(
         Degrees::new(-155.472),
         Degrees::new(19.826),
         Meters::new(4207.0),

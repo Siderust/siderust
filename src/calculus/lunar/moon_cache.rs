@@ -32,8 +32,9 @@ use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession::precession_matrix_iau2006;
 use crate::astro::sidereal::gast_iau2006;
 use crate::calculus::ephemeris::Ephemeris;
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
+use crate::coordinates::frames::ECEF;
 use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::AstroContext;
 use crate::time::JulianDate;
@@ -265,14 +266,14 @@ impl MoonAltitudeContext {
     pub fn new(
         mjd_start: ModifiedJulianDate,
         mjd_end: ModifiedJulianDate,
-        site: ObserverSite,
+        site: Geodetic<ECEF>,
     ) -> Self {
         // Convert ModifiedJulianDate to JulianDate for internal cache usage
         let pos_cache = MoonPositionCache::new(mjd_start, mjd_end);
         let nut_cache = NutationCache::new(mjd_start, mjd_end);
 
         // Precompute site ITRF position in km
-        let site_ecef = site.geocentric_itrf::<Kilometer>();
+        let site_ecef = site.to_cartesian::<Kilometer>();
         let site_itrf_km = [site_ecef.x(), site_ecef.y(), site_ecef.z()];
 
         Self {
@@ -441,7 +442,6 @@ where
 mod tests {
     use super::*;
     use crate::calculus::lunar::moon_altitude_rad;
-    use crate::coordinates::centers::ObserverSite;
     use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
     use crate::time::JulianDate;
     use qtty::Radians;
@@ -509,7 +509,7 @@ mod tests {
 
     #[test]
     fn cached_altitude_matches_direct() {
-        let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
+        let site = ROQUE_DE_LOS_MUCHACHOS;
         let mjd_start: ModifiedJulianDate = JulianDate::J2000.into();
         let mjd_end = mjd_start + Days::new(7.0);
         let ctx = MoonAltitudeContext::new(mjd_start, mjd_end, site);

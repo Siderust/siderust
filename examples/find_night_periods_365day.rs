@@ -20,7 +20,6 @@ use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::night_types::twilight;
-use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period, MJD};
 
@@ -51,7 +50,7 @@ fn main() {
     );
     println!("Observer: Roque de los Muchachos Observatory (La Palma)");
 
-    let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
+    let site = ROQUE_DE_LOS_MUCHACHOS;
 
     let period = build_period(start_date, 365);
 

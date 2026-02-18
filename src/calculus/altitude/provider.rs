@@ -24,12 +24,13 @@
 //! ```rust
 //! use siderust::bodies::Sun;
 //! use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
-//! use siderust::coordinates::centers::ObserverSite;
+//! use siderust::coordinates::centers::Geodetic;
+//! use siderust::coordinates::frames::ECEF;
 //! use siderust::coordinates::spherical::direction;
 //! use siderust::time::{ModifiedJulianDate, MJD, Period};
 //! use qtty::*;
 //!
-//! let site = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
+//! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 //! let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
 //!
 //! let query = AltitudeQuery {
@@ -48,7 +49,8 @@
 use super::types::AltitudeQuery;
 use crate::bodies::solar_system;
 use crate::bodies::Star;
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
+use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical::direction;
 use crate::time::{ModifiedJulianDate, Period, MJD};
 use qtty::*;
@@ -84,7 +86,7 @@ pub trait AltitudePeriodsProvider {
     /// with `max_altitude = 90°`.
     fn above_threshold(
         &self,
-        observer: ObserverSite,
+        observer: Geodetic<ECEF>,
         window: Period<MJD>,
         threshold: Degrees,
     ) -> Vec<Period<MJD>> {
@@ -102,7 +104,7 @@ pub trait AltitudePeriodsProvider {
     /// with `min_altitude = −90°`.
     fn below_threshold(
         &self,
-        observer: ObserverSite,
+        observer: Geodetic<ECEF>,
         window: Period<MJD>,
         threshold: Degrees,
     ) -> Vec<Period<MJD>> {
@@ -117,7 +119,7 @@ pub trait AltitudePeriodsProvider {
     /// Compute the altitude of this body at a single instant.
     ///
     /// Returns the topocentric altitude in radians.
-    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians;
+    fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians;
 
     /// Hint for the scan step to use when searching for events.
     ///
@@ -142,11 +144,12 @@ pub trait AltitudePeriodsProvider {
 /// ```rust
 /// use siderust::calculus::altitude::{altitude_periods, AltitudeQuery};
 /// use siderust::bodies::Sun;
-/// use siderust::coordinates::centers::ObserverSite;
+/// use siderust::coordinates::centers::Geodetic;
+/// use siderust::coordinates::frames::ECEF;
 /// use siderust::time::{ModifiedJulianDate, MJD, Period};
 /// use qtty::*;
 ///
-/// let site = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
+/// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 /// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
 /// let query = AltitudeQuery {
 ///     observer: site,
@@ -191,7 +194,7 @@ impl AltitudePeriodsProvider for solar_system::Sun {
         }
     }
 
-    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians {
+    fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::calculus::solar::sun_altitude_rad(mjd, observer)
     }
 }
@@ -217,7 +220,7 @@ impl AltitudePeriodsProvider for solar_system::Moon {
         }
     }
 
-    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians {
+    fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::calculus::lunar::moon_altitude_rad(mjd, observer)
     }
 
@@ -235,7 +238,7 @@ impl AltitudePeriodsProvider for Star<'_> {
         dir.altitude_periods(query)
     }
 
-    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians {
+    fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         let dir = direction::ICRS::from(self);
         dir.altitude_at(observer, mjd)
     }
@@ -276,7 +279,7 @@ impl AltitudePeriodsProvider for direction::ICRS {
         }
     }
 
-    fn altitude_at(&self, observer: &ObserverSite, mjd: ModifiedJulianDate) -> Radians {
+    fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::calculus::stellar::fixed_star_altitude_rad(mjd, observer, self.ra(), self.dec())
     }
 }
@@ -290,8 +293,8 @@ mod tests {
     use super::*;
     use crate::bodies::catalog;
 
-    fn greenwich() -> ObserverSite {
-        ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
+    fn greenwich() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
     fn one_day_window() -> Period<MJD> {

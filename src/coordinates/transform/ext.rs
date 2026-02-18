@@ -57,8 +57,8 @@
 //! ```
 
 use crate::coordinates::cartesian::{Direction, Position, Vector};
-use crate::coordinates::centers::{ObserverSite, ReferenceCenter};
-use crate::coordinates::frames::ReferenceFrame;
+use crate::coordinates::centers::{Geodetic, ReferenceCenter};
+use crate::coordinates::frames::{ECEF, ReferenceFrame};
 use crate::coordinates::spherical;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::{CenterShiftProvider, FrameRotationProvider};
@@ -118,7 +118,7 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
     fn to_horizontal(
         &self,
         jd_tt: &JulianDate,
-        site: &ObserverSite,
+        site: &Geodetic<ECEF>,
     ) -> Direction<crate::coordinates::frames::Horizontal>
     where
         Self: crate::coordinates::transform::horizontal::ToHorizontal,
@@ -136,7 +136,7 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
         &self,
         jd_tt: &JulianDate,
         jd_ut1: &JulianDate,
-        site: &ObserverSite,
+        site: &Geodetic<ECEF>,
     ) -> Direction<crate::coordinates::frames::Horizontal>
     where
         Self: crate::coordinates::transform::horizontal::ToHorizontal,

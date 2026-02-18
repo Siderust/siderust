@@ -24,7 +24,8 @@ use qtty::{Degrees, Meter, Quantity};
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::night_types::twilight;
-use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use siderust::time::ModifiedJulianDate;
 use siderust::time::Period;
 
@@ -43,7 +44,7 @@ fn main() {
     let height_m: f64 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.0);
 
     // Create observer site
-    let site = ObserverSite::new(
+    let site = Geodetic::<ECEF>::new(
         Degrees::new(lon_deg),
         Degrees::new(lat_deg),
         Quantity::<Meter>::new(height_m),

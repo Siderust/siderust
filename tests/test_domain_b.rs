@@ -11,8 +11,8 @@
 
 use qtty::*;
 use siderust::coordinates::cartesian::{line_of_sight, Position};
-use siderust::coordinates::centers::{Geocentric, Heliocentric, ObserverSite};
-use siderust::coordinates::frames::EquatorialMeanJ2000;
+use siderust::coordinates::centers::{Geocentric, Heliocentric, Geodetic};
+use siderust::coordinates::frames::{ECEF, EquatorialMeanJ2000};
 use siderust::coordinates::observation::{Apparent, Astrometric, ObserverState};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
@@ -215,7 +215,7 @@ fn topocentric_parallax_is_real_translation() {
     let moon_geo = Position::<Geocentric, EquatorialMeanJ2000, Kilometer>::new(384_400.0, 0.0, 0.0);
 
     // Observer at equator, prime meridian
-    let site = ObserverSite::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
+    let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
     let jd = JulianDate::J2000;
 
     let moon_topo = moon_geo.to_topocentric(site, jd);
@@ -243,7 +243,7 @@ fn topocentric_roundtrip_preserves_geocentric_position() {
     let geo =
         Position::<Geocentric, EquatorialMeanJ2000, Kilometer>::new(100_000.0, 50_000.0, 25_000.0);
 
-    let site = ObserverSite::new(10.0 * DEG, 45.0 * DEG, 100.0 * M);
+    let site = Geodetic::<ECEF>::new(10.0 * DEG, 45.0 * DEG, 100.0 * M);
     let jd = JulianDate::J2000;
 
     // Geocentric -> Topocentric -> Geocentric
@@ -274,7 +274,7 @@ fn topocentric_parallax_negligible_for_stars() {
     // Star at 1 parsec = 206265 AU
     let star_geo = Position::<Geocentric, EquatorialMeanJ2000, Au>::new(206265.0, 0.0, 0.0);
 
-    let site = ObserverSite::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
+    let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
     let jd = JulianDate::J2000;
 
     let star_topo = star_geo.to_topocentric(site, jd);
@@ -291,13 +291,13 @@ fn topocentric_parallax_negligible_for_stars() {
 }
 
 #[test]
-fn observer_site_provides_geocentric_position() {
-    // Verify that ObserverSite computes a reasonable geocentric position
+fn wgs84_geodetic_to_ecef_provides_geocentric_position() {
+    // Verify that to_ecef computes a reasonable geocentric position
 
     // Greenwich Observatory
-    let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+    let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     let pos: Position<Geocentric, siderust::coordinates::frames::ECEF, Kilometer> =
-        site.geocentric_itrf();
+        site.to_cartesian();
 
     // Greenwich should be at roughly (3980, 0, 4970) km in ECEF
     assert!(

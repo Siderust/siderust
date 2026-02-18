@@ -35,7 +35,8 @@
 //! error over a full year, well within the ±15‑minute Brent bracket.
 
 use crate::calculus::math_core::{intervals, root_finding};
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
+use crate::coordinates::frames::ECEF;
 use crate::time::JulianDate;
 use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
 use qtty::*;
@@ -72,7 +73,7 @@ const SCAN_STEP_FALLBACK: Days = Quantity::new(10.0 / 1440.0);
 /// ERA-based GMST, and the standard equatorial→horizontal formula.
 pub(crate) fn fixed_star_altitude_rad(
     mjd: ModifiedJulianDate,
-    site: &crate::coordinates::centers::ObserverSite,
+    site: &crate::coordinates::centers::Geodetic<crate::coordinates::frames::ECEF>,
     ra_j2000: qtty::Degrees,
     dec_j2000: qtty::Degrees,
 ) -> qtty::Radians {
@@ -127,7 +128,7 @@ pub(crate) fn fixed_star_altitude_rad(
 fn make_star_fn<'a>(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
-    site: &'a ObserverSite,
+    site: &'a Geodetic<ECEF>,
 ) -> impl Fn(Mjd) -> Radians + 'a {
     move |t: Mjd| -> Radians { fixed_star_altitude_rad(t, site, ra_j2000, dec_j2000) }
 }
@@ -139,7 +140,7 @@ fn make_star_fn<'a>(
 fn find_crossings_analytical(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
-    site: &ObserverSite,
+    site: &Geodetic<ECEF>,
     period: Period<MJD>,
     threshold: Radians,
 ) -> (Vec<intervals::LabeledCrossing>, bool) {
@@ -236,7 +237,7 @@ fn find_crossings_analytical(
 pub(crate) fn find_star_above_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     threshold: Degrees,
 ) -> Vec<Period<MJD>> {
@@ -254,7 +255,7 @@ pub(crate) fn find_star_above_periods(
 pub(crate) fn find_star_below_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     threshold: Degrees,
 ) -> Vec<Period<MJD>> {
@@ -268,7 +269,7 @@ pub(crate) fn find_star_below_periods(
 pub(crate) fn find_star_range_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     range: (Degrees, Degrees),
 ) -> Vec<Period<MJD>> {
@@ -291,7 +292,7 @@ pub(crate) fn find_star_range_periods(
 fn find_star_above_periods_scan(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     threshold: Degrees,
 ) -> Vec<Period<MJD>> {
@@ -308,16 +309,16 @@ fn find_star_above_periods_scan(
 mod tests {
     use super::*;
 
-    fn greenwich() -> ObserverSite {
-        ObserverSite::new(
+    fn greenwich() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
             Degrees::new(0.0),
             Degrees::new(51.4769),
             Quantity::<qtty::Meter>::new(0.0),
         )
     }
 
-    fn roque() -> ObserverSite {
-        ObserverSite::new(
+    fn roque() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
             Degrees::new(-17.892),
             Degrees::new(28.762),
             Quantity::<qtty::Meter>::new(2396.0),

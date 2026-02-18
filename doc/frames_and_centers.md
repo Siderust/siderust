@@ -18,7 +18,7 @@ A *center* is the origin of a coordinate system.  In siderust every
 | `Heliocentric` | `centers::Heliocentric` | Sun's centre of mass |
 | `Bodycentric` | `centers::Bodycentric` | Centre of a named Solar-System body |
 
-`Topocentric` is *parameterised*: it carries an `ObserverSite` so horizontal
+`Topocentric` is *parameterised*: it carries a `Geodetic<ECEF>` so horizontal
 coordinates know their own observation point without external context.
 
 ---
@@ -44,8 +44,8 @@ ERA / GMST but intentionally **does not** apply the IERS polar-motion matrix
 **Accuracy note:**  Omitting polar motion introduces an error of roughly
 ±10 m (up to ~30 m at solar maximum) in geocentric Cartesian coordinates.
 For observatory positioning at the metre level or better, store observatory
-data in `GeodeticCoord` and call `ObserverSite::geocentric_itrf()`, which
-uses WGS84 but documents that the output is ECEF (not ITRF-realised).
+data in `Geodetic<ECEF>` and call `.to_cartesian::<Meter>()`, which uses the
+WGS84 ellipsoid encoded in the `ECEF` frame.
 
 ### 2.2 ITRF — International Terrestrial Reference Frame (EOP-realised)
 
@@ -130,8 +130,8 @@ Local horizontal frame centred on the observer.  Spherical coordinates are
 **(altitude, azimuth)** — altitude measured from the horizon (+90° = zenith),
 azimuth measured from North through East.
 
-Every `Position<Topocentric, Horizontal, U>` implicitly carries an
-`ObserverSite` via the `Topocentric` center parameter.
+Every `Position<Topocentric, Horizontal, U>` implicitly carries a
+`Geodetic<ECEF>` via the `Topocentric` center parameter.
 
 ---
 
@@ -156,38 +156,35 @@ is a **Terrestrial Time (TT)** Julian Date.
 
 ---
 
-## 6. GeodeticCoord and ObserverSite
+## 6. Geodetic Coordinates and Ellipsoid Conversion
 
-### 6.1 GeodeticCoord (affn crate, `geodesy` feature)
-
-```rust
-pub struct GeodeticCoord {
-    pub lon: Degrees,   // geodetic longitude, East positive
-    pub lat: Degrees,   // geodetic latitude, +90 = North Pole
-    pub height: Quantity<Meter>,  // height above WGS84 ellipsoid
-}
-```
-
-`GeodeticCoord` is the **lingua franca** for specifying an Earth surface location.
-It carries no datum baked in and provides no `.to_cartesian()` method by design —
-the datum-specific conversion belongs to the domain layer (`ObserverSite`).
-
-Field order is **(lon, lat, height)** — the IAU convention (East first).
-
-### 6.2 ObserverSite (siderust crate)
-
-`ObserverSite` wraps `GeodeticCoord` and adds WGS84 validation.  Create one with:
+### 6.1 `Geodetic<F, U>` (siderust) / `ellipsoidal::Position<C, F, U>` (affn)
 
 ```rust
-// From raw angles + height
-let site = ObserverSite::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
-
-// From a GeodeticCoord
-let coord = GeodeticCoord { lon: -17.8925 * DEG, lat: 28.7543 * DEG, height: 2396.0 * M };
-let site = ObserverSite::from_geodetic(&coord);
+pub type Geodetic<F, U = Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
 ```
 
-Call `site.geocentric_itrf::<Meter>()` to get the WGS84→ECEF Cartesian vector.
+`Geodetic<F>` is the first-class type for Earth-surface positions.  The ellipsoid
+is encoded in the frame `F` via `HasEllipsoid`:
+
+- `Geodetic<ECEF>` — WGS84
+- `Geodetic<ITRF>` — GRS80
+
+### 6.2 Converting to/from Cartesian ECEF
+
+```rust
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
+use qtty::*;
+
+let coord = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
+let ecef = coord.to_cartesian::<Meter>();
+// Round-trip
+let back = Geodetic::<ECEF>::from_cartesian(&ecef);
+```
+
+Named getters (`lat()`, `lon()`, `altitude()`) are generated automatically by the
+`#[frame(inherent, ellipsoid = "...")]` derive attribute on each frame.
 
 ---
 
