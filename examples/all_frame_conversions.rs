@@ -11,7 +11,8 @@
 
 use qtty::*;
 use siderust::coordinates::cartesian::Direction;
-use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::frames::{
     EclipticMeanJ2000, EclipticTrueOfDate, EquatorialMeanJ2000, EquatorialMeanOfDate,
     EquatorialTrueOfDate, Horizontal, ReferenceFrame, ICRF, ICRS,
@@ -121,7 +122,7 @@ fn show_specialized_conversions(jd_tt: &JulianDate) {
     );
 
     // EquatorialTrueOfDate <-> Horizontal (observer-dependent)
-    let site = ObserverSite::new(2.3522 * DEG, 48.8566 * DEG, 35.0 * M);
+    let site = Geodetic::<ECEF>::new(2.3522 * DEG, 48.8566 * DEG, 35.0 * M);
     let jd_ut1 = siderust::astro::earth_rotation::jd_ut1_from_tt(*jd_tt);
     let eq_tod =
         spherical::Direction::<EquatorialTrueOfDate>::new(210.0 * DEG, -10.0 * DEG).to_cartesian();

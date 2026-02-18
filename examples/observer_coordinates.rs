@@ -10,7 +10,8 @@
 
 use qtty::*;
 use siderust::coordinates::cartesian::position::EquatorialMeanJ2000;
-use siderust::coordinates::centers::{Geocentric, ObserverSite};
+use siderust::coordinates::centers::{Geocentric, Geodetic};
+use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::centers::ToTopocentricExt;
 use siderust::time::JulianDate;
@@ -27,7 +28,7 @@ fn main() {
     println!("------------------------------");
 
     // Greenwich Observatory (Prime Meridian)
-    let greenwich = ObserverSite::new(
+    let greenwich = Geodetic::<ECEF>::new(
         Degrees::new(0.0),     // Longitude: 0° (by definition)
         Degrees::new(51.4769), // Latitude: 51.4769° N
         0.0 * M,               // Height: sea level
@@ -39,7 +40,7 @@ fn main() {
     println!("  Height:    {:.0} m\n", greenwich.height);
 
     // Roque de los Muchachos Observatory (La Palma, Canary Islands)
-    let la_palma = ObserverSite::new(
+    let la_palma = Geodetic::<ECEF>::new(
         Degrees::new(-17.8947), // Longitude: 17.8947° W
         Degrees::new(28.7606),  // Latitude: 28.7606° N
         2396.0 * M,             // Height: 2,396 m
@@ -51,7 +52,7 @@ fn main() {
     println!("  Height:    {:.0} m\n", la_palma.height);
 
     // Mauna Kea Observatory (Hawaii)
-    let mauna_kea = ObserverSite::new(
+    let mauna_kea = Geodetic::<ECEF>::new(
         Degrees::new(-155.4783), // Longitude: 155.4783° W
         Degrees::new(19.8207),   // Latitude: 19.8207° N
         4207.0 * M,              // Height: 4,207 m
@@ -63,7 +64,7 @@ fn main() {
     println!("  Height:    {:.0} m\n", mauna_kea.height);
 
     // Sydney Opera House (Australia)
-    let sydney = ObserverSite::new(
+    let sydney = Geodetic::<ECEF>::new(
         Degrees::new(151.2153), // Longitude: 151.2153° E
         Degrees::new(-33.8568), // Latitude: 33.8568° S (negative for south)
         0.0 * M,                // Height: sea level
@@ -185,11 +186,11 @@ fn main() {
     println!("- Distance to visible horizon");
     println!("- Time of sunrise/sunset\n");
 
-    let sea_level = ObserverSite::new(Degrees::new(0.0), Degrees::new(0.0), 0.0 * M);
+    let sea_level = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(0.0), 0.0 * M);
     println!("Sea level observer:");
     println!("  Height: {:.0} m", sea_level.height);
 
-    let mountain_top = ObserverSite::new(Degrees::new(0.0), Degrees::new(0.0), 4000.0 * M);
+    let mountain_top = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(0.0), 4000.0 * M);
     println!("Mountain top observer:");
     println!("  Height: {:.0} m", mountain_top.height);
 
@@ -225,7 +226,7 @@ fn main() {
 
     println!("\n=== Example Complete ===");
     println!("\nKey Takeaways:");
-    println!("- ObserverSite defines observer location (lon, lat, height)");
+    println!("- Geodetic::<ECEF> defines observer location (lon, lat, height)");
     println!("- Topocentric coordinates are relative to observer's location");
     println!("- Horizontal coordinates (altitude/azimuth) are observer-specific");
     println!("- Observer altitude affects horizon distance and observations");

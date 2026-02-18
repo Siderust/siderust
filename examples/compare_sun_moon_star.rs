@@ -11,7 +11,8 @@
 use siderust::bodies::catalog::SIRIUS;
 use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
-use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::time::*;
 
@@ -21,7 +22,7 @@ use qtty::*;
 fn analyze_body<B: AltitudePeriodsProvider>(
     body: &B,
     name: &str,
-    observer: ObserverSite,
+    observer: Geodetic::<ECEF>,
     window: Period<MJD>,
 ) {
     println!("─────────────────────────────────────────────────");
@@ -80,7 +81,7 @@ fn main() {
     println!("║    Generic Altitude Analysis: Sun, Moon, Star         ║");
     println!("╚════════════════════════════════════════════════════════╝\n");
 
-    let observatory = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
+    let observatory = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
     println!(
         "Observatory: Greenwich ({}, {})",
         observatory.lat, observatory.lon

@@ -26,8 +26,9 @@ use crate::astro::eop::EopProvider;
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Velocity;
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::EquatorialMeanJ2000;
+use crate::coordinates::frames::ECEF;
 use crate::coordinates::transform::context::{AstroContext, DefaultEphemeris};
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Day};
@@ -113,14 +114,14 @@ impl ObserverState {
     ///
     /// Currently this only includes Earth's orbital velocity (annual aberration).
     /// Diurnal aberration (~0.3") uses the default EOP-backed Earth-rotation chain.
-    pub fn topocentric(site: &ObserverSite, jd: JulianDate) -> Self {
+    pub fn topocentric(site: &Geodetic<ECEF>, jd: JulianDate) -> Self {
         let ctx: AstroContext = AstroContext::default();
         Self::topocentric_with_ctx(site, jd, &ctx)
     }
 
     /// Context-aware topocentric observer state.
     pub fn topocentric_with_ctx<Eph, Eop: EopProvider, Nut>(
-        site: &ObserverSite,
+        site: &Geodetic<ECEF>,
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Self {
@@ -139,7 +140,7 @@ impl ObserverState {
         // IERS Conventions 2010/2020: Earth rotation rate (rad/s), nominal.
         const OMEGA_EARTH: f64 = 7.292_115_0e-5;
 
-        let site_itrf_m = site.geocentric_itrf::<Meter>();
+        let site_itrf_m = site.to_cartesian::<Meter>();
         type MetersPerSecond = qtty::Per<Meter, Second>;
         let one_second = Seconds::new(1.0);
 
@@ -224,7 +225,7 @@ mod tests {
     fn test_topocentric_includes_diurnal_velocity() {
         let jd = JulianDate::J2000;
         let geo = ObserverState::geocentric(jd);
-        let site = ObserverSite::new(0.0 * DEG, 0.0 * DEG, 0.0 * M); // equator
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M); // equator
         let topo = ObserverState::topocentric(&site, jd);
 
         let dvx = topo.velocity().x() - geo.velocity().x();

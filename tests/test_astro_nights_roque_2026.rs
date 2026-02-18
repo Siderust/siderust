@@ -11,7 +11,8 @@ use serde::Deserialize;
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::twilight;
-use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period, MJD};
 
@@ -106,8 +107,8 @@ fn load_reference_data() -> ReferenceData {
     }
 }
 
-fn roque_site() -> ObserverSite {
-    ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS)
+fn roque_site() -> Geodetic::<ECEF> {
+    ROQUE_DE_LOS_MUCHACHOS
 }
 
 fn assert_periods_close(expected: &[Period<MJD>], computed: &[Period<MJD>]) {

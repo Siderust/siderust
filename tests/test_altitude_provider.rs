@@ -10,7 +10,8 @@
 use siderust::bodies::catalog::{POLARIS, SIRIUS, VEGA};
 use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::altitude::{altitude_periods, AltitudePeriodsProvider, AltitudeQuery};
-use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::time::{ModifiedJulianDate, Period, MJD};
 
@@ -21,13 +22,13 @@ use qtty::*;
 // ===========================================================================
 
 /// Greenwich, ~51.48°N, 0°E, sea level
-fn greenwich() -> ObserverSite {
-    ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
+fn greenwich() -> Geodetic::<ECEF> {
+    Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
 }
 
 /// La Palma (Roque de los Muchachos), ~28.76°N, -17.89°E, 2396 m
-fn roque() -> ObserverSite {
-    ObserverSite::new(
+fn roque() -> Geodetic::<ECEF> {
+    Geodetic::<ECEF>::new(
         Degrees::new(-17.892),
         Degrees::new(28.762),
         Meters::new(2396.0),
@@ -35,8 +36,8 @@ fn roque() -> ObserverSite {
 }
 
 /// Near the North Pole, ~89°N
-fn north_pole() -> ObserverSite {
-    ObserverSite::new(Degrees::new(0.0), Degrees::new(89.0), Meters::new(0.0))
+fn north_pole() -> Geodetic::<ECEF> {
+    Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(89.0), Meters::new(0.0))
 }
 
 fn one_day() -> Period<MJD> {

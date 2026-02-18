@@ -18,17 +18,17 @@
 //! - [`Barycentric`]: Center of mass of the solar system.
 //! - [`Heliocentric`]: Center of the Sun.
 //! - [`Geocentric`]: Center of the Earth.
-//! - [`Topocentric`]: Observer's location on the surface of the Earth (parameterized by [`ObserverSite`]).
+//! - [`Topocentric`]: Observer's location on the surface of the Earth (parameterized by [`Geodetic<ECEF>`]).
 //! - [`Bodycentric`]: Generic center for any orbiting celestial body (parameterized by [`BodycentricParams`]).
 //!
 //! ## Compile-Time vs Runtime Safety
 //!
-//! | Center            | `Params`           | Safety level                        |
-//! |-------------------|--------------------|-------------------------------------|
-//! | `Barycentric`     | `()`               | **Compile-time** — zero cost        |
-//! | `Heliocentric`    | `()`               | **Compile-time** — zero cost        |
-//! | `Geocentric`      | `()`               | **Compile-time** — zero cost        |
-//! | `Topocentric`     | [`ObserverSite`]   | **Runtime-parameterized** (see below) |
+//! | Center            | `Params`              | Safety level                        |
+//! |-------------------|-----------------------|-------------------------------------|
+//! | `Barycentric`     | `()`                  | **Compile-time** — zero cost        |
+//! | `Heliocentric`    | `()`                  | **Compile-time** — zero cost        |
+//! | `Geocentric`      | `()`                  | **Compile-time** — zero cost        |
+//! | `Topocentric`     | [`Geodetic<ECEF>`]    | **Runtime-parameterized** (see below) |
 //! | `Bodycentric`     | [`BodycentricParams`] | **Runtime-parameterized** (see below) |
 //!
 //! For centers with `Params = ()`, the type system guarantees correctness at
@@ -47,13 +47,10 @@
 //!
 //! ### Validated Construction
 //!
-//! Use [`ObserverSite::try_new`] to validate geographic coordinates (latitude,
-//! longitude) before constructing a site. The unchecked [`ObserverSite::new`]
-//! is retained for convenience but does not validate ranges.
-//!
 //! Observatory catalog constants (e.g., in [`crate::observatories`]) are of
-//! type [`GeodeticCoord`], which is a plain data container with no conversion
-//! logic. Use [`ObserverSite::from_geodetic`] to convert them:
+//! type [`Geodetic<ECEF>`] and can be used directly as `Topocentric` parameters.
+//! Use [`Geodetic::<ECEF>::new`] to construct validated geodetic coordinates
+//! (longitude and latitude are normalised automatically).
 //!
 //! ## Extending
 //!
@@ -86,10 +83,19 @@ use serde::{Deserialize, Serialize};
 // Re-export core traits from affn
 pub use affn::centers::ReferenceCenter;
 pub use affn::{AffineCenter, CenterParamsMismatchError, NoCenter};
-// Re-export GeodeticCoord so downstream code can access it via this module
-pub use affn::geodesy::GeodeticCoord;
 // Import derives from prelude for use in this module
 use affn::prelude::ReferenceCenter as DeriveReferenceCenter;
+
+use super::frames::ECEF;
+
+/// A geodetic position: an ellipsoidal coordinate with a geocentric origin.
+///
+/// The frame `F` determines which ellipsoid is used via
+/// [`HasEllipsoid`](affn::ellipsoid::HasEllipsoid):
+///
+/// - `Geodetic<ECEF>` — WGS84 ellipsoid
+/// - `Geodetic<ITRF>` — GRS80 ellipsoid
+pub type Geodetic<F, U = qtty::Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
 
 // Required for Transform specialization
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
@@ -100,229 +106,6 @@ pub struct Heliocentric;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Barycentric;
 
-// =============================================================================
-// ObserverSite: Parameters for Topocentric coordinates
-// =============================================================================
-
-/// Error returned when [`ObserverSite::try_new`] receives invalid geographic coordinates.
-#[derive(Debug, Clone)]
-pub enum ObserverSiteError {
-    /// Latitude is outside the valid range `[-90°, +90°]`.
-    LatitudeOutOfRange {
-        /// The invalid latitude value, in degrees.
-        value: f64,
-    },
-    /// Longitude is outside the valid range `[-360°, +360°]`.
-    LongitudeOutOfRange {
-        /// The invalid longitude value, in degrees.
-        value: f64,
-    },
-}
-
-impl std::fmt::Display for ObserverSiteError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::LatitudeOutOfRange { value } => {
-                write!(f, "latitude {value}° is outside valid range [-90°, +90°]")
-            }
-            Self::LongitudeOutOfRange { value } => {
-                write!(
-                    f,
-                    "longitude {value}° is outside valid range [-360°, +360°]"
-                )
-            }
-        }
-    }
-}
-
-impl std::error::Error for ObserverSiteError {}
-
-/// Geographic location of an observer, used as parameters for [`Topocentric`] coordinates.
-///
-/// This struct stores the observer's position on or above Earth's surface.
-/// It is embedded in coordinate values when the center is [`Topocentric`],
-/// allowing transformations to use the site information without external context.
-///
-/// # Fields
-///
-/// - `lon`: Geodetic longitude, positive eastward, in degrees.
-/// - `lat`: Geodetic latitude, positive northward, in degrees.
-/// - `height`: Height above the reference ellipsoid (WGS84), in meters.
-///
-/// # Example
-///
-/// ```rust
-/// use siderust::coordinates::centers::ObserverSite;
-/// use qtty::*;
-///
-/// let greenwich = ObserverSite {
-///     lon: 0.0 * DEG,
-///     lat: 51.4769 * DEG,
-///     height: 0.0 * M,
-/// };
-/// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct ObserverSite {
-    /// Geodetic longitude (positive eastward), in degrees.
-    pub lon: Degrees,
-    /// Geodetic latitude (positive northward), in degrees.
-    pub lat: Degrees,
-    /// Height above the WGS84 ellipsoid, in meters.
-    pub height: Quantity<Meter>,
-}
-
-impl Default for ObserverSite {
-    /// Returns an observer at the origin (0°, 0°, 0m).
-    ///
-    /// Note: This default is primarily for internal use. In practice, you should
-    /// always provide meaningful site coordinates for topocentric calculations.
-    fn default() -> Self {
-        Self {
-            lon: Degrees::new(0.0),
-            lat: Degrees::new(0.0),
-            height: Quantity::<Meter>::new(0.0),
-        }
-    }
-}
-
-impl ObserverSite {
-    /// Creates a new observer site from longitude, latitude, and height.
-    ///
-    /// # Arguments
-    ///
-    /// - `lon`: Geodetic longitude (positive eastward), in degrees.
-    /// - `lat`: Geodetic latitude (positive northward), in degrees.
-    /// - `height`: Height above the WGS84 ellipsoid, in meters.
-    ///
-    /// # Note
-    ///
-    /// This constructor does **not** validate the input ranges. For validated
-    /// construction, use [`try_new`](Self::try_new).
-    pub fn new(lon: Degrees, lat: Degrees, height: Quantity<Meter>) -> Self {
-        Self { lon, lat, height }
-    }
-
-    /// Validated constructor that returns `Err` for out-of-range coordinates.
-    ///
-    /// # Validation Rules
-    ///
-    /// - `lat` must be in `[-90°, +90°]`.
-    /// - `lon` must be in `[-360°, +360°]`.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use siderust::coordinates::centers::ObserverSite;
-    /// use qtty::*;
-    ///
-    /// // Valid site
-    /// let site = ObserverSite::try_new(
-    ///     -17.89 * DEG, 28.76 * DEG, 2200.0 * M
-    /// );
-    /// assert!(site.is_ok());
-    ///
-    /// // Invalid latitude
-    /// let bad = ObserverSite::try_new(
-    ///     0.0 * DEG, 100.0 * DEG, 0.0 * M
-    /// );
-    /// assert!(bad.is_err());
-    /// ```
-    pub fn try_new(
-        lon: Degrees,
-        lat: Degrees,
-        height: Quantity<Meter>,
-    ) -> Result<Self, ObserverSiteError> {
-        let lat_val = lat.value();
-        if !(-90.0..=90.0).contains(&lat_val) {
-            return Err(ObserverSiteError::LatitudeOutOfRange { value: lat_val });
-        }
-        let lon_val = lon.value();
-        if !(-360.0..=360.0).contains(&lon_val) {
-            return Err(ObserverSiteError::LongitudeOutOfRange { value: lon_val });
-        }
-        Ok(Self { lon, lat, height })
-    }
-
-    /// Creates an `ObserverSite` from a [`GeodeticCoord`].
-    ///
-    /// This is the canonical way to convert a geodetic coordinate (as stored
-    /// in observatory catalog constants) into the parameterized site
-    /// representation used by `Topocentric` coordinates.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use siderust::coordinates::centers::{ObserverSite, GeodeticCoord};
-    /// use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-    ///
-    /// let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
-    /// ```
-    pub fn from_geodetic(coord: &GeodeticCoord) -> Self {
-        Self {
-            lon: coord.lon,
-            lat: coord.lat,
-            height: coord.height,
-        }
-    }
-
-    /// Computes the observer's geocentric position in the ITRF/ECEF frame.
-    ///
-    /// This converts geodetic coordinates (latitude, longitude, height) to
-    /// geocentric Cartesian coordinates using the WGS84 ellipsoid.
-    ///
-    /// # WGS84 Parameters
-    ///
-    /// - Semi-major axis (a): 6,378,137.0 m
-    /// - Flattening (f): 1/298.257223563
-    /// - First eccentricity squared (e²): 0.00669437999014
-    ///
-    /// # Returns
-    ///
-    /// A position vector in the ECEF (Earth-Centered Earth-Fixed) frame,
-    /// with the specified length unit.
-    ///
-    /// # Note
-    ///
-    /// This position is in the ITRF/ECEF frame (rotating with Earth).
-    /// To use it with celestial coordinates, you must rotate it to the
-    /// appropriate celestial frame using Earth rotation parameters (GMST, etc.).
-    pub fn geocentric_itrf<U: qtty::LengthUnit>(
-        &self,
-    ) -> crate::coordinates::cartesian::Position<Geocentric, crate::coordinates::frames::ECEF, U>
-    where
-        Quantity<U>: From<Quantity<Meter>>,
-    {
-        use qtty::Radian;
-
-        // WGS84 ellipsoid parameters
-        const A: f64 = 6_378_137.0; // Semi-major axis in meters
-        const F: f64 = 1.0 / 298.257_223_563; // Flattening
-        const E2: f64 = 2.0 * F - F * F; // First eccentricity squared
-
-        // Convert geodetic to geocentric Cartesian (ECEF)
-        let lat_rad = self.lat.to::<Radian>();
-        let lon_rad = self.lon.to::<Radian>();
-        let h = self.height;
-
-        let (sin_lat, cos_lat) = lat_rad.sin_cos();
-        let (sin_lon, cos_lon) = lon_rad.sin_cos();
-
-        // Radius of curvature in the prime vertical
-        let n = Meters::new(A / (1.0 - E2 * sin_lat * sin_lat).sqrt());
-
-        // Geocentric Cartesian coordinates (meters)
-        let x_m = (n + h) * cos_lat * cos_lon;
-        let y_m = (n + h) * cos_lat * sin_lon;
-        let z_m = (n * (1.0 - E2) + h) * sin_lat;
-
-        crate::coordinates::cartesian::Position::<Geocentric, crate::coordinates::frames::ECEF, U>::new(
-            x_m.to_const::<U>(),
-            y_m.to_const::<U>(),
-            z_m.to_const::<U>(),
-        )
-    }
-}
 
 // =============================================================================
 // Topocentric Center (parameterized)
@@ -331,27 +114,35 @@ impl ObserverSite {
 /// Observer's location on the surface of the Earth.
 ///
 /// Unlike other reference centers, `Topocentric` is *parameterized*: coordinates
-/// with this center carry an [`ObserverSite`] that specifies the observer's
-/// geographic location. This allows horizontal coordinates to know their
+/// with this center carry a [`Geodetic<ECEF>`] that specifies the observer's
+/// geographic location.  This allows horizontal coordinates to know their
 /// observation site without external context.
 ///
 /// # Example
 ///
 /// ```rust
-/// use siderust::coordinates::centers::{Topocentric, ObserverSite, ReferenceCenter};
+/// use siderust::coordinates::centers::{Topocentric, Geodetic, ReferenceCenter};
+/// use siderust::coordinates::frames::ECEF;
 /// use qtty::*;
 ///
-/// // Topocentric coordinates require an ObserverSite
-/// let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+/// // Topocentric coordinates require a geodetic site
+/// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
 ///
 /// // The site is stored as Topocentric::Params
 /// assert_eq!(std::mem::size_of::<<Topocentric as ReferenceCenter>::Params>(),
-///            std::mem::size_of::<ObserverSite>());
+///            std::mem::size_of::<Geodetic<ECEF>>());
 /// ```
-#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-#[center(params = ObserverSite)]
 pub struct Topocentric;
+
+impl ReferenceCenter for Topocentric {
+    type Params = Geodetic<ECEF>;
+    fn center_name() -> &'static str {
+        "Topocentric"
+    }
+}
+impl affn::AffineCenter for Topocentric {}
 
 impl Topocentric {
     /// Creates a Topocentric Horizontal position with observer site.
@@ -361,7 +152,7 @@ impl Topocentric {
     /// - `az` is normalized to `[0°, 360°)`
     #[inline]
     pub fn horizontal<U: qtty::LengthUnit, T: Into<qtty::Quantity<U>>>(
-        site: ObserverSite,
+        site: Geodetic<ECEF>,
         alt: qtty::Degrees,
         az: qtty::Degrees,
         distance: T,
@@ -578,9 +369,9 @@ mod tests {
     }
 
     #[test]
-    fn topocentric_has_observer_site_params() {
-        // Verify Topocentric uses ObserverSite as Params
-        let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+    fn topocentric_has_geodetic_coord_params() {
+        // Verify Topocentric uses Geodetic<ECEF> as Params
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
         let _: <Topocentric as ReferenceCenter>::Params = site;
 
         // Verify non-zero size (stores actual data)
@@ -588,21 +379,20 @@ mod tests {
     }
 
     #[test]
-    fn observer_site_default() {
-        let site = ObserverSite::default();
-        assert_eq!(site.lon, 0.0);
-        assert_eq!(site.lat, 0.0);
-        assert_eq!(site.height, 0.0);
+    fn geodetic_coord_default() {
+        let coord = Geodetic::<ECEF>::default();
+        assert_eq!(coord.lon, 0.0);
+        assert_eq!(coord.lat, 0.0);
+        assert_eq!(coord.height, 0.0);
     }
 
     #[test]
-    fn observer_site_equality() {
-        let site1 = ObserverSite::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
-        let site2 = ObserverSite::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
-        let site3 = ObserverSite::new(10.0 * DEG, 20.0 * DEG, 200.0 * M);
-
-        assert_eq!(site1, site2);
-        assert_ne!(site1, site3);
+    fn geodetic_coord_equality() {
+        let c1 = Geodetic::<ECEF>::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
+        let c2 = Geodetic::<ECEF>::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
+        let c3 = Geodetic::<ECEF>::new(10.0 * DEG, 20.0 * DEG, 200.0 * M);
+        assert_eq!(c1, c2);
+        assert_ne!(c1, c3);
     }
 
     #[test]
@@ -687,55 +477,6 @@ mod tests {
 
         assert_eq!(params1, params2);
         assert_ne!(params1, params3);
-    }
-
-    // =========================================================================
-    // ObserverSite::try_new validation tests
-    // =========================================================================
-
-    #[test]
-    fn observer_site_try_new_valid() {
-        let site = ObserverSite::try_new(-17.89 * DEG, 28.76 * DEG, 2200.0 * M);
-        assert!(site.is_ok());
-        let site = site.unwrap();
-        assert!((site.lon.value() - (-17.89)).abs() < 1e-12);
-        assert!((site.lat.value() - 28.76).abs() < 1e-12);
-    }
-
-    #[test]
-    fn observer_site_try_new_boundary_values() {
-        // Exact boundary values should pass
-        assert!(ObserverSite::try_new(0.0 * DEG, 90.0 * DEG, 0.0 * M).is_ok());
-        assert!(ObserverSite::try_new(0.0 * DEG, -90.0 * DEG, 0.0 * M).is_ok());
-        assert!(ObserverSite::try_new(360.0 * DEG, 0.0 * DEG, 0.0 * M).is_ok());
-        assert!(ObserverSite::try_new(-360.0 * DEG, 0.0 * DEG, 0.0 * M).is_ok());
-    }
-
-    #[test]
-    fn observer_site_try_new_invalid_latitude() {
-        let result = ObserverSite::try_new(0.0 * DEG, 91.0 * DEG, 0.0 * M);
-        assert!(result.is_err());
-        let err = result.unwrap_err();
-        assert!(matches!(err, ObserverSiteError::LatitudeOutOfRange { .. }));
-        assert!(err.to_string().contains("91"));
-
-        let result = ObserverSite::try_new(0.0 * DEG, -90.1 * DEG, 0.0 * M);
-        assert!(result.is_err());
-    }
-
-    #[test]
-    fn observer_site_try_new_invalid_longitude() {
-        let result = ObserverSite::try_new(361.0 * DEG, 0.0 * DEG, 0.0 * M);
-        assert!(result.is_err());
-        let err = result.unwrap_err();
-        assert!(matches!(err, ObserverSiteError::LongitudeOutOfRange { .. }));
-        assert!(err.to_string().contains("361"));
-    }
-
-    #[test]
-    fn observer_site_error_is_std_error() {
-        let err = ObserverSiteError::LatitudeOutOfRange { value: 100.0 };
-        let _: &dyn std::error::Error = &err;
     }
 
     #[test]

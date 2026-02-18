@@ -11,7 +11,6 @@
 use siderust::bodies::catalog::{POLARIS, SIRIUS, VEGA};
 use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
-use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::direction;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period};
@@ -22,7 +21,7 @@ fn main() {
     println!("=== Altitude Periods API Examples ===\n");
 
     // Observer: Roque de los Muchachos Observatory (La Palma)
-    let observer = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
+    let observer = ROQUE_DE_LOS_MUCHACHOS;
     println!("Observer: Roque de los Muchachos Observatory");
     println!(
         "  Location: {}, {}, {}\n",

@@ -8,15 +8,16 @@ use siderust::calculus::altitude::{
     above_threshold, altitude_ranges, below_threshold, crossings, culminations,
     AltitudePeriodsProvider, CrossingDirection, CulminationKind, SearchOpts,
 };
-use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::time::{ModifiedJulianDate, Period};
 
 use qtty::*;
 
 /// La Palma (Roque de los Muchachos), ~28.76°N, -17.89°E, 2396 m
-fn roque() -> ObserverSite {
-    ObserverSite::new(
+fn roque() -> Geodetic::<ECEF> {
+    Geodetic::<ECEF>::new(
         Degrees::new(-17.892),
         Degrees::new(28.762),
         Quantity::<Meter>::new(2396.0),
@@ -24,8 +25,8 @@ fn roque() -> ObserverSite {
 }
 
 /// Greenwich, ~51.48°N, 0°E, sea level
-fn greenwich() -> ObserverSite {
-    ObserverSite::new(
+fn greenwich() -> Geodetic::<ECEF> {
+    Geodetic::<ECEF>::new(
         Degrees::new(0.0),
         Degrees::new(51.4769),
         Quantity::<Meter>::new(0.0),

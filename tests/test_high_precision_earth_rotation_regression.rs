@@ -12,8 +12,8 @@ use qtty::*;
 use siderust::astro::eop::NullEop;
 use siderust::calculus::horizontal::equatorial_to_horizontal_true_of_date_with_ctx;
 use siderust::coordinates::cartesian::position;
-use siderust::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
-use siderust::coordinates::frames;
+use siderust::coordinates::centers::{Geocentric, Geodetic, Topocentric};
+use siderust::coordinates::frames::{self, ECEF};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
 use siderust::coordinates::transform::context::{
@@ -28,7 +28,7 @@ fn wrapped_arcsec_error(actual_deg: f64, expected_deg: f64) -> f64 {
 }
 
 fn tod_unit_position(
-    site: ObserverSite,
+    site: Geodetic::<ECEF>,
     ra_deg: f64,
     dec_deg: f64,
 ) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit> {
@@ -43,7 +43,7 @@ fn tod_unit_position(
 #[test]
 fn horizontal_true_of_date_matches_erfa_roque_sirius_2020() {
     let jd_tt = JulianDate::new(2_459_015.5);
-    let site = ObserverSite::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
+    let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
     let eq = tod_unit_position(site, 101.287, -16.716);
     let ctx: AstroContext = AstroContext::default();
 
@@ -67,7 +67,7 @@ fn horizontal_true_of_date_matches_erfa_roque_sirius_2020() {
 #[test]
 fn horizontal_true_of_date_matches_erfa_greenwich_2024() {
     let jd_tt = JulianDate::new(2_460_310.25);
-    let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+    let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     let eq = tod_unit_position(site, 210.1234, 35.6789);
     let ctx: AstroContext = AstroContext::default();
 
@@ -91,7 +91,7 @@ fn horizontal_true_of_date_matches_erfa_greenwich_2024() {
 #[test]
 fn topocentric_site_vector_matches_erfa_chain_roque_2020() {
     let jd_tt = JulianDate::new(2_459_015.5);
-    let site = ObserverSite::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
+    let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
     let origin = position::EquatorialMeanJ2000::<Kilometer, Geocentric>::new(0.0, 0.0, 0.0);
 
     let topo_default = origin.to_topocentric(site, jd_tt);

@@ -10,7 +10,7 @@
 
 use qtty::*;
 use serde_json;
-use siderust::coordinates::{cartesian, centers, frames, spherical};
+use siderust::coordinates::{cartesian, centers, frames, frames::ECEF, spherical};
 
 // =============================================================================
 // Cartesian Direction Tests
@@ -158,14 +158,14 @@ fn test_spherical_position_heliocentric_roundtrip() {
 
 #[test]
 fn test_observer_site_roundtrip() {
-    let site = centers::ObserverSite::new(
+    let site = centers::Geodetic::<ECEF>::new(
         -17.8947 * DEG, // longitude (La Palma)
         28.7636 * DEG,  // latitude
         2396.0 * M,     // height
     );
 
     let json = serde_json::to_string(&site).expect("serialize observer site");
-    let recovered: centers::ObserverSite =
+    let recovered: centers::Geodetic::<ECEF> =
         serde_json::from_str(&json).expect("deserialize observer site");
 
     assert!((site.lon.value() - recovered.lon.value()).abs() < 1e-12);

@@ -4,7 +4,7 @@
 use crate::astro::eop::EopProvider;
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::coordinates::cartesian::Position;
-use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
+use crate::coordinates::centers::{Geodetic, Geocentric, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::AstroContext;
@@ -34,7 +34,7 @@ pub trait ToTopocentricExt<F: MutableFrame, U: LengthUnit> {
     /// orientation `Q(X, Y, s)` with optional EOP `dX/dY` corrections.
     fn to_topocentric_with_ctx<Eph, Eop: EopProvider, Nut>(
         &self,
-        site: ObserverSite,
+        site: Geodetic<ECEF>,
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Position<Topocentric, F, U>;
@@ -53,7 +53,7 @@ pub trait ToTopocentricExt<F: MutableFrame, U: LengthUnit> {
     /// # Returns
     ///
     /// The position as seen from the observer's location (topocentric).
-    fn to_topocentric(&self, site: ObserverSite, jd: JulianDate) -> Position<Topocentric, F, U> {
+    fn to_topocentric(&self, site: Geodetic<ECEF>, jd: JulianDate) -> Position<Topocentric, F, U> {
         let ctx: AstroContext = AstroContext::default();
         self.to_topocentric_with_ctx(site, jd, &ctx)
     }
@@ -61,14 +61,14 @@ pub trait ToTopocentricExt<F: MutableFrame, U: LengthUnit> {
 
 #[inline]
 fn observer_site_equatorial_mean_j2000_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> Position<Geocentric, EquatorialMeanJ2000, U>
 where
     Quantity<U>: From<Quantity<Meter>>,
 {
-    let site_itrf: Position<Geocentric, ECEF, U> = site.geocentric_itrf();
+    let site_itrf: Position<Geocentric, ECEF, U> = site.to_cartesian();
     let rot = itrs_to_equatorial_mean_j2000_rotation(jd, ctx);
     let [x_eq, y_eq, z_eq] = rot * [site_itrf.x(), site_itrf.y(), site_itrf.z()];
     Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params((), x_eq, y_eq, z_eq)
@@ -90,8 +90,8 @@ where
     ///
     /// ```rust
     /// use siderust::coordinates::cartesian::Position;
-    /// use siderust::coordinates::centers::{Geocentric, Topocentric, ObserverSite};
-    /// use siderust::coordinates::frames::EquatorialMeanJ2000;
+    /// use siderust::coordinates::centers::{Geocentric, Topocentric, Geodetic};
+    /// use siderust::coordinates::frames::{ECEF, EquatorialMeanJ2000};
     /// use siderust::coordinates::transform::centers::ToTopocentricExt;
     /// use siderust::time::JulianDate;
     /// use qtty::*;
@@ -102,14 +102,14 @@ where
     /// );
     ///
     /// // Observer in Greenwich
-    /// let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+    /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     ///
     /// // Get topocentric position (will differ by observer offset)
     /// let moon_topo = moon_geo.to_topocentric(site, JulianDate::J2000);
     /// ```
     fn to_topocentric_with_ctx<Eph, Eop: EopProvider, Nut>(
         &self,
-        site: ObserverSite,
+        site: Geodetic<ECEF>,
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Position<Topocentric, F, U> {
@@ -179,8 +179,8 @@ mod tests {
     #[test]
     fn test_observer_site_geocentric_position() {
         // Greenwich at sea level
-        let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
-        let pos: Position<Geocentric, ECEF, Kilometer> = site.geocentric_itrf();
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+        let pos: Position<Geocentric, ECEF, Kilometer> = site.to_cartesian();
 
         // Greenwich is at ~3980 km from center in x, ~0 in y, ~4970 km in z
         // (roughly, for latitude ~51.5°)
@@ -212,7 +212,7 @@ mod tests {
             position::EquatorialMeanJ2000::<Kilometer, Geocentric>::new(384_400.0, 0.0, 0.0);
 
         // Observer at equator, prime meridian
-        let site = ObserverSite::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
         let jd = JulianDate::J2000;
 
         let moon_topo = moon_geo.to_topocentric(site, jd);
@@ -236,7 +236,7 @@ mod tests {
             100_000.0, 50_000.0, 25_000.0,
         );
 
-        let site = ObserverSite::new(10.0 * DEG, 45.0 * DEG, 100.0 * M);
+        let site = Geodetic::<ECEF>::new(10.0 * DEG, 45.0 * DEG, 100.0 * M);
         let jd = JulianDate::J2000;
 
         // Convert to topocentric and back
@@ -272,7 +272,7 @@ mod tests {
             206265.0, 0.0, 0.0, // ~1 parsec
         );
 
-        let site = ObserverSite::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
         let jd = JulianDate::J2000;
 
         let star_topo = star_geo.to_topocentric(site, jd);

@@ -8,8 +8,8 @@
 //! uses the observer's site information embedded in the coordinate's center params.
 
 use crate::astro::earth_rotation::gmst_from_tt;
-use crate::coordinates::centers::{ObserverSite, Topocentric};
-use crate::coordinates::frames::{EquatorialMeanOfDate, Horizontal};
+use crate::coordinates::centers::{Geodetic, Topocentric};
+use crate::coordinates::frames::{ECEF, EquatorialMeanOfDate, Horizontal};
 use crate::coordinates::{cartesian, spherical};
 use crate::time::JulianDate;
 use qtty::{Deg, Degrees, LengthUnit, Quantity, Radian, Radians};
@@ -28,7 +28,7 @@ struct SiteTrig {
 impl SiteTrig {
     /// Precompute sin/cos of latitude from an observer site.
     #[inline]
-    fn from_site(site: &ObserverSite) -> Self {
+    fn from_site(site: &Geodetic<ECEF>) -> Self {
         let lat_rad: Radians = site.lat.to::<Radian>();
         let (sin_lat, cos_lat) = lat_rad.sin_cos();
         Self { sin_lat, cos_lat }
@@ -49,7 +49,7 @@ impl SiteTrig {
 fn equatorial_to_horizontal_angles(
     ra: Degrees,
     dec: Degrees,
-    site: &ObserverSite,
+    site: &Geodetic<ECEF>,
     site_trig: &SiteTrig,
     jd: JulianDate,
 ) -> (Radians, Radians) {
@@ -88,7 +88,7 @@ fn equatorial_to_horizontal_angles(
 fn horizontal_to_equatorial_angles(
     alt: Radians,
     az: Radians,
-    site: &ObserverSite,
+    site: &Geodetic<ECEF>,
     site_trig: &SiteTrig,
     jd: JulianDate,
 ) -> (Radians, Radians) {
@@ -227,7 +227,7 @@ mod tests {
     #[test]
     fn test_equatorial_to_horizontal_zenith() {
         // An object at the zenith should have altitude 90°
-        let site = ObserverSite::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
         let jd = JulianDate::J2000;
 
         // At the zenith, the object's declination equals the latitude
@@ -253,7 +253,7 @@ mod tests {
     #[test]
     fn test_roundtrip_angles() {
         // Test that the angle conversion functions are inverses of each other
-        let site = ObserverSite::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
+        let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
         let jd = JulianDate::new(2460677.0);
 
         let ra = 101.29 * DEG;

@@ -63,7 +63,7 @@ pub struct CulminationEvent {
 #[derive(Debug, Clone, Copy)]
 pub struct AltitudeQuery {
     /// Observer location on Earth.
-    pub observer: crate::coordinates::centers::ObserverSite,
+    pub observer: crate::coordinates::centers::Geodetic<crate::coordinates::frames::ECEF>,
     /// Time window to search (MJD on the TT axis).
     pub window: Period<MJD>,
     /// Lower bound of the altitude band (inclusive).

@@ -34,7 +34,8 @@ use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
 use crate::astro::sidereal::gast_iau2006;
 use crate::astro::sidereal::SIDEREAL_DAY;
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
+use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical;
 use crate::coordinates::transform::AstroContext;
 use crate::time::JulianDate;
@@ -106,7 +107,7 @@ impl StarAltitudeParams {
     /// Over a full year the drift is < 50″ of RA, i.e. < 3 s of time.
     pub fn from_j2000(
         equatorial_j2000: spherical::direction::EquatorialMeanJ2000,
-        site: &ObserverSite,
+        site: &Geodetic<ECEF>,
         epoch_jd: JulianDate,
     ) -> Self {
         // Full IAU 2006/2000B NPB matrix approach:
@@ -239,8 +240,8 @@ mod tests {
         spherical::direction::EquatorialMeanJ2000::new(ra, dec)
     }
 
-    fn greenwich() -> ObserverSite {
-        ObserverSite::new(
+    fn greenwich() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
             Degrees::new(0.0),
             Degrees::new(51.4769),
             Quantity::<Meter>::new(0.0),
