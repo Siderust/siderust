@@ -17,12 +17,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `SphericalDirectionAstroExt` for time-dependent frame transformations on `spherical::Direction<F>`
 * New conversion examples: `examples/all_center_conversions.rs` and `examples/all_frame_conversions.rs`
 * Regression suite `tests/test_high_precision_earth_rotation_regression.rs` with ERFA/SOFA reference vectors for true-of-date horizontal and topocentric site-vector paths
+* ECEF-first coordinate aliases in `coordinates::types`: `EcefSphericalDir` and `EcefPos`
 
 ### Changed
 * Migrated precession to IAU 2006 and nutation to IAU 2000B across core astronomy and transform pipelines
 * Updated sidereal-time computation to ERA-based IAU 2006 functions (`gmst_iau2006`, `gast_iau2006`) with explicit UT1/TT handling
 * `AstroContext` now defaults to `IersEop` (`DefaultEop`) for EOP-aware transformations
 * Horizontal/topocentric, lunar, and stellar calculations now consume the updated IAU/EOP-based Earth-rotation flow
+* Geodetic/topocentric APIs now use `Geodetic<ECEF>` directly (including `to_topocentric*`, horizontal transforms, altitude providers, and observatory constants)
+* Earth-fixed → equatorial rotation is now centralized in `astro::earth_rotation_provider` and shared across topocentric/observer pipelines
 * `calculus::horizontal` true-of-date conversion now uses `GAST` (via `gast_iau2006`) instead of `GMST` for `EquatorialTrueOfDate` inputs
 * New context-aware APIs: `ToTopocentricExt::to_topocentric_with_ctx(...)`
 * New context-aware APIs: `ObserverState::topocentric_with_ctx(...)`
@@ -34,6 +37,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Coordinate transformation examples now primarily use spherical coordinates for frame/center conversions
 * Altitude API docs now explicitly state that `ModifiedJulianDate` / `Period<MJD>` are interpreted on the TT axis
 * Proper-motion API now requires explicit RA convention selection via `ProperMotion::from_mu_alpha(...)` (`µα`) or `ProperMotion::from_mu_alpha_star(...)` (`µα⋆ = µα cosδ`)
+
+### Removed
+* Legacy geodetic site type `coordinates::centers::ObserverSite` (and `ObserverSiteError`) in favor of `Geodetic<ECEF>`
+* Legacy spherical geographic aliases (`Geographic`, `GeographicDir`, `GeographicPos`, `GeographicCartDir`, `GeographicCartPos`) in favor of `Geodetic<ECEF>` and `Ecef*` aliases
 
 ### Fixed
 * Center-shift transforms now correctly convert AU shifts into the destination length unit
