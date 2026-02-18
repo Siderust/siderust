@@ -9,7 +9,7 @@ use siderust::bodies::planets::{Planet, PlanetBuilder};
 use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
 use siderust::coordinates::{
     cartesian,
-    centers::ObserverSite,
+    centers::{GeodeticCoord, ObserverSite},
     frames, spherical,
     transform::{providers::frame_rotation, AstroContext, Transform, TransformFrame},
 };
@@ -52,15 +52,15 @@ fn cartesian_vector_display_includes_metadata() {
 
 #[test]
 fn horizontal_conversion_variants_cover_all_impls() {
-    let observer = spherical::position::Geographic::new(
-        Degrees::new(-17.89),
-        Degrees::new(28.76),
-        Kilometers::new(2.4),
+    let observer = GeodeticCoord::new(
+        Degrees::new(-17.89), // lon
+        Degrees::new(28.76),  // lat
+        qtty::Meters::new(2400.0),
     );
     let jd = JulianDate::J2000;
 
-    // Convert Geographic to ObserverSite for the new API
-    let site = ObserverSite::from_geographic(&observer);
+    // Convert to ObserverSite for the topocentric API
+    let site = ObserverSite::from_geodetic(&observer);
 
     // Test position (with distance) conversion - positions still support center transforms
     let eq_pos = spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(

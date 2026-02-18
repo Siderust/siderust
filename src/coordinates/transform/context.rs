@@ -125,7 +125,13 @@ impl<Eph, Eop: Default, Nut> AstroContext<Eph, Eop, Nut> {
 }
 
 impl<Eph, Eop: EopProvider, Nut> AstroContext<Eph, Eop, Nut> {
-    /// Look up EOP values for the given Julian Date (UTC).
+    /// Look up EOP values for the given **UTC** Julian Date.
+    ///
+    /// # Time-scale contract
+    /// `jd_utc` **must** be a UTC Julian Date.  Passing TT or UT1 values will
+    /// corrupt the interpolated `dUT1`, `xp`, and `yp` values because the IERS
+    /// tables are indexed by UTC civil date (see [`crate::astro::eop`] for
+    /// details).
     ///
     /// Delegates to the context's [`EopProvider`].
     #[inline]

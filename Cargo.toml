@@ -21,7 +21,7 @@ de441 = []
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
 [dependencies]
-affn = { version="0.3.0", features = ["astro"] }
+affn = { version="0.3.0", features = ["astro", "geodesy"] }
 cheby = "0.1.0"
 qtty = "0.3.0"
 tempoch = "0.2.0"

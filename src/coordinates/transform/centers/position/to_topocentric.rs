@@ -1,18 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use crate::astro::cio;
-use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
-use crate::astro::eop::{EopProvider, EopValues};
-use crate::astro::era::earth_rotation_angle;
-use crate::astro::nutation::nutation_iau2000b;
-use crate::astro::polar_motion::polar_motion_matrix_from_eop;
+use crate::astro::eop::EopProvider;
+use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, ObserverSite, Topocentric};
-use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF, ICRS};
+use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::AstroContext;
-use crate::coordinates::transform::providers::FrameRotationProvider;
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 
@@ -62,55 +57,6 @@ pub trait ToTopocentricExt<F: MutableFrame, U: LengthUnit> {
         let ctx: AstroContext = AstroContext::default();
         self.to_topocentric_with_ctx(site, jd, &ctx)
     }
-}
-
-#[inline]
-fn nutation_with_celestial_pole_offsets(
-    jd: JulianDate,
-    eop: EopValues,
-) -> (qtty::Radians, qtty::Radians) {
-    let nut = nutation_iau2000b(jd);
-    let mut dpsi = nut.dpsi;
-    let mut deps = nut.deps;
-
-    // Apply IERS celestial pole offsets dX,dY as first-order corrections.
-    // dψ_eop = dX/sin(εA), dε_eop = dY.
-    let dx_rad = qtty::Radians::from(eop.dx);
-    let dy_rad = qtty::Radians::from(eop.dy);
-    if dx_rad.value() != 0.0 || dy_rad.value() != 0.0 {
-        let sin_eps = nut.mean_obliquity.sin();
-        if sin_eps.abs() > 1e-15 {
-            dpsi += qtty::Radians::new(dx_rad.value() / sin_eps);
-        }
-        deps += dy_rad;
-    }
-
-    (dpsi, deps)
-}
-
-/// Rotation from ITRF/ECEF to EquatorialMeanJ2000 at `jd`.
-///
-/// Chain: `ITRS -> TIRS -> CIRS -> GCRS/ICRS -> EquatorialMeanJ2000`.
-pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut>(
-    jd: JulianDate,
-    ctx: &AstroContext<Eph, Eop, Nut>,
-) -> affn::Rotation3 {
-    let eop = ctx.eop_at(jd);
-    let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
-
-    let (dpsi, deps) = nutation_with_celestial_pole_offsets(jd, eop);
-    let cip = cio::cip_cio(jd, dpsi, deps);
-    let q = cio::gcrs_to_cirs_matrix(cip.x, cip.y, cip.s);
-    let w = polar_motion_matrix_from_eop(eop.xp, eop.yp, jd);
-    let era = earth_rotation_angle(jd_ut1);
-
-    // NOTE: `cio::gcrs_to_cirs_matrix` and `Rotation3::rz` conventions are
-    // aligned such that this composition matches the ERFA/SOFA chain for
-    // ITRS -> GCRS in this codebase.
-    let itrs_to_gcrs = q * affn::Rotation3::rz(-era) * w.inverse();
-    let icrs_to_j2000 = <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation(jd, ctx);
-
-    icrs_to_j2000 * itrs_to_gcrs
 }
 
 #[inline]

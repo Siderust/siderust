@@ -107,7 +107,7 @@ fn load_reference_data() -> ReferenceData {
 }
 
 fn roque_site() -> ObserverSite {
-    ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS)
+    ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS)
 }
 
 fn assert_periods_close(expected: &[Period<MJD>], computed: &[Period<MJD>]) {

@@ -22,7 +22,7 @@ fn main() {
     println!("=== Altitude Periods API Examples ===\n");
 
     // Observer: Roque de los Muchachos Observatory (La Palma)
-    let observer = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+    let observer = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
     println!("Observer: Roque de los Muchachos Observatory");
     println!(
         "  Location: {}, {}, {}\n",
