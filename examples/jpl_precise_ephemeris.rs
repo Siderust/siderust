@@ -91,7 +91,11 @@ fn main() {
     #[cfg(feature = "de440")]
     println!(
         "  DE440          : enabled (JPL, 1550–2650 CE){}",
-        if stub_de440 { " — STUBBED via SIDERUST_JPL_STUB (runtime calls skipped)" } else { "" }
+        if stub_de440 {
+            " — STUBBED via SIDERUST_JPL_STUB (runtime calls skipped)"
+        } else {
+            ""
+        }
     );
     #[cfg(not(feature = "de440"))]
     println!("  DE440          : not enabled");
@@ -294,15 +298,23 @@ fn main() {
         // Use the highest-fidelity backend that is actually available at runtime.
         #[cfg(feature = "de441")]
         let dist = if !stub_de441 {
-            De441Ephemeris::earth_heliocentric(jd).get_position().distance()
+            De441Ephemeris::earth_heliocentric(jd)
+                .get_position()
+                .distance()
         } else {
-            Vsop87Ephemeris::earth_heliocentric(jd).get_position().distance()
+            Vsop87Ephemeris::earth_heliocentric(jd)
+                .get_position()
+                .distance()
         };
         #[cfg(all(feature = "de440", not(feature = "de441")))]
         let dist = if !stub_de440 {
-            De440Ephemeris::earth_heliocentric(jd).get_position().distance()
+            De440Ephemeris::earth_heliocentric(jd)
+                .get_position()
+                .distance()
         } else {
-            Vsop87Ephemeris::earth_heliocentric(jd).get_position().distance()
+            Vsop87Ephemeris::earth_heliocentric(jd)
+                .get_position()
+                .distance()
         };
 
         if min_dist.map_or(true, |min| dist < min) {

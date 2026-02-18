@@ -45,7 +45,7 @@ fn main() {
 
     // Propagate 25 Julian years into the future.
     let t1 = t0 + 25.0 * JulianDate::JULIAN_YEAR;
-    let moved = set_proper_motion_since_j2000(target.position.clone(), pm, t1)
+    let moved = set_proper_motion_since_j2000(target.position, pm, t1)
         .expect("proper motion propagation failed");
 
     target.update(moved, t1);
@@ -55,4 +55,3 @@ fn main() {
     println!("  RA  = {:.6} deg", target.position.ra());
     println!("  Dec = {:.6} deg", target.position.dec());
 }
-

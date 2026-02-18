@@ -22,8 +22,8 @@
 //! By encapsulating this in `ObserverState`, we ensure that aberration cannot be
 //! applied without explicit observer information.
 
-use crate::astro::eop::EopProvider;
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
+use crate::astro::eop::EopProvider;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::Geodetic;

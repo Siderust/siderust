@@ -17,8 +17,10 @@ fn main() {
     let lo = Radians::new(0.0);
     let hi = Radians::new(2.0);
 
-    let root = brent(lo, hi, |x: Radians| Quantity::<Unitless>::new(x.sin() - 0.5))
-        .expect("bracket does not contain a root");
+    let root = brent(lo, hi, |x: Radians| {
+        Quantity::<Unitless>::new(x.sin() - 0.5)
+    })
+    .expect("bracket does not contain a root");
 
     let residual = (root.sin() - 0.5).abs();
 
@@ -26,4 +28,3 @@ fn main() {
     println!("  x ≈ {}", root);
     println!("  residual = {:.3e}", residual);
 }
-

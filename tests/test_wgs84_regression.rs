@@ -37,7 +37,13 @@ use siderust::coordinates::frames::ECEF;
 /// Absolute tolerance: 1 metre in ECEF XYZ.
 const TOL_M: f64 = 1.0;
 
-fn check_ecef(coord: Geodetic::<ECEF>, expected_x: f64, expected_y: f64, expected_z: f64, label: &str) {
+fn check_ecef(
+    coord: Geodetic<ECEF>,
+    expected_x: f64,
+    expected_y: f64,
+    expected_z: f64,
+    label: &str,
+) {
     let pos: Position<Geocentric, ECEF, Meter> = coord.to_cartesian();
     let (x, y, z) = (pos.x().value(), pos.y().value(), pos.z().value());
     assert!(
@@ -90,7 +96,13 @@ fn roque_de_los_muchachos_ecef() {
 #[test]
 fn mauna_kea_ecef() {
     let coord = Geodetic::<ECEF>::new(-155.4681 * DEG, 19.8207 * DEG, 4205.0 * M);
-    check_ecef(coord, -5_464_341.898, -2_493_919.182, 2_150_459.985, "MaunaKea");
+    check_ecef(
+        coord,
+        -5_464_341.898,
+        -2_493_919.182,
+        2_150_459.985,
+        "MaunaKea",
+    );
 }
 
 /// Sanity check: a point at the equator on the prime meridian with zero height

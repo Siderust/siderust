@@ -107,7 +107,7 @@ fn load_reference_data() -> ReferenceData {
     }
 }
 
-fn roque_site() -> Geodetic::<ECEF> {
+fn roque_site() -> Geodetic<ECEF> {
     ROQUE_DE_LOS_MUCHACHOS
 }
 
