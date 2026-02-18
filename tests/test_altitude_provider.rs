@@ -22,12 +22,12 @@ use qtty::*;
 // ===========================================================================
 
 /// Greenwich, ~51.48°N, 0°E, sea level
-fn greenwich() -> Geodetic::<ECEF> {
+fn greenwich() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
 }
 
 /// La Palma (Roque de los Muchachos), ~28.76°N, -17.89°E, 2396 m
-fn roque() -> Geodetic::<ECEF> {
+fn roque() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(
         Degrees::new(-17.892),
         Degrees::new(28.762),
@@ -36,7 +36,7 @@ fn roque() -> Geodetic::<ECEF> {
 }
 
 /// Near the North Pole, ~89°N
-fn north_pole() -> Geodetic::<ECEF> {
+fn north_pole() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(89.0), Meters::new(0.0))
 }
 

@@ -22,7 +22,7 @@ use qtty::*;
 fn analyze_body<B: AltitudePeriodsProvider>(
     body: &B,
     name: &str,
-    observer: Geodetic::<ECEF>,
+    observer: Geodetic<ECEF>,
     window: Period<MJD>,
 ) {
     println!("─────────────────────────────────────────────────");
@@ -81,7 +81,8 @@ fn main() {
     println!("║    Generic Altitude Analysis: Sun, Moon, Star         ║");
     println!("╚════════════════════════════════════════════════════════╝\n");
 
-    let observatory = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
+    let observatory =
+        Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0));
     println!(
         "Observatory: Greenwich ({}, {})",
         observatory.lat, observatory.lon

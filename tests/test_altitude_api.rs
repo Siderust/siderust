@@ -16,7 +16,7 @@ use siderust::time::{ModifiedJulianDate, Period};
 use qtty::*;
 
 /// La Palma (Roque de los Muchachos), ~28.76°N, -17.89°E, 2396 m
-fn roque() -> Geodetic::<ECEF> {
+fn roque() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(
         Degrees::new(-17.892),
         Degrees::new(28.762),
@@ -25,7 +25,7 @@ fn roque() -> Geodetic::<ECEF> {
 }
 
 /// Greenwich, ~51.48°N, 0°E, sea level
-fn greenwich() -> Geodetic::<ECEF> {
+fn greenwich() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(
         Degrees::new(0.0),
         Degrees::new(51.4769),

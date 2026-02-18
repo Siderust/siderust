@@ -19,7 +19,7 @@ use siderust::time::{ModifiedJulianDate, Period, MJD};
 // Helpers
 // ---------------------------------------------------------------------------
 
-fn greenwich() -> Geodetic::<ECEF> {
+fn greenwich() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(
         Degrees::new(0.0),
         Degrees::new(51.4769),
@@ -27,7 +27,7 @@ fn greenwich() -> Geodetic::<ECEF> {
     )
 }
 
-fn roque() -> Geodetic::<ECEF> {
+fn roque() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(
         Degrees::new(-17.892),
         Degrees::new(28.762),

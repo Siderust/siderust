@@ -53,7 +53,10 @@ const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
 ///
 /// # Returns
 /// Altitude as `Quantity<Radian>` (positive above horizon, negative below)
-pub(crate) fn moon_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Quantity<Radian> {
+pub(crate) fn moon_altitude_rad(
+    mjd: ModifiedJulianDate,
+    site: &Geodetic<ECEF>,
+) -> Quantity<Radian> {
     let jd: JulianDate = mjd.into();
     Moon::get_horizontal::<Kilometer>(jd, *site)
         .alt()

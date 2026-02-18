@@ -41,6 +41,8 @@
 // Spherical direction aliases (frame-only, no center, dimensionless)
 // =============================================================================
 
+/// **ECEF** spherical direction (unit vector in Earth-fixed frame).
+pub use super::spherical::direction::EcefDir as EcefSphericalDir;
 /// **EclipticMeanJ2000** spherical direction (longitude, latitude).
 pub use super::spherical::direction::EclipticMeanJ2000 as EclipticDir;
 /// **Equatorial mean J2000** spherical direction (right-ascension, declination).
@@ -51,8 +53,6 @@ pub use super::spherical::direction::EquatorialMeanOfDate as EquatorialMeanOfDat
 pub use super::spherical::direction::EquatorialTrueOfDate as EquatorialTrueOfDateDir;
 /// **Galactic** spherical direction (l, b).
 pub use super::spherical::direction::Galactic as GalacticDir;
-/// **ECEF** spherical direction (unit vector in Earth-fixed frame).
-pub use super::spherical::direction::EcefDir as EcefSphericalDir;
 /// **Horizontal** spherical direction (altitude, azimuth).
 pub use super::spherical::direction::Horizontal as HorizontalDir;
 /// **ICRS** spherical direction (right-ascension, declination).
@@ -87,6 +87,8 @@ pub use super::spherical::position::ICRS as IcrsPos;
 // Cartesian direction aliases (unit vector, frame-only)
 // =============================================================================
 
+/// **ECEF** cartesian direction (unit vector in Earth-fixed frame).
+pub use super::cartesian::direction::EcefCartDir;
 /// **EclipticMeanJ2000** cartesian direction (unit vector).
 pub use super::cartesian::direction::EclipticMeanJ2000 as EclipticCartDir;
 /// **Equatorial mean J2000** cartesian direction (unit vector).
@@ -95,8 +97,6 @@ pub use super::cartesian::direction::EquatorialMeanJ2000 as EquatorialJ2000CartD
 pub use super::cartesian::direction::EquatorialMeanOfDate as EquatorialMeanOfDateCartDir;
 /// **Equatorial true of date** cartesian direction (unit vector).
 pub use super::cartesian::direction::EquatorialTrueOfDate as EquatorialTrueOfDateCartDir;
-/// **ECEF** cartesian direction (unit vector in Earth-fixed frame).
-pub use super::cartesian::direction::EcefCartDir;
 /// **Horizontal** cartesian direction (unit vector).
 pub use super::cartesian::direction::Horizontal as HorizontalCartDir;
 /// **ICRS** cartesian direction (unit vector).
@@ -106,6 +106,8 @@ pub use super::cartesian::direction::ICRS as IcrsCartDir;
 // Cartesian position aliases (affine point, center + frame + unit)
 // =============================================================================
 
+/// **Geocentric ECEF** cartesian position (Earth-Centered Earth-Fixed).
+pub use super::cartesian::position::EcefPos;
 /// **Heliocentric EclipticMeanJ2000** cartesian position.
 pub use super::cartesian::position::EclipticMeanJ2000 as EclipticCartPos;
 /// **Geocentric Equatorial mean J2000** cartesian position.
@@ -114,8 +116,6 @@ pub use super::cartesian::position::EquatorialMeanJ2000 as EquatorialJ2000CartPo
 pub use super::cartesian::position::EquatorialMeanOfDate as EquatorialMeanOfDateCartPos;
 /// **Geocentric Equatorial true of date** cartesian position.
 pub use super::cartesian::position::EquatorialTrueOfDate as EquatorialTrueOfDateCartPos;
-/// **Geocentric ECEF** cartesian position (Earth-Centered Earth-Fixed).
-pub use super::cartesian::position::EcefPos;
 /// **Topocentric Horizontal** cartesian position.
 pub use super::cartesian::position::Horizontal as HorizontalCartPos;
 /// **Geocentric ICRS** cartesian position.

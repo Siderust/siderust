@@ -165,7 +165,7 @@ fn test_observer_site_roundtrip() {
     );
 
     let json = serde_json::to_string(&site).expect("serialize observer site");
-    let recovered: centers::Geodetic::<ECEF> =
+    let recovered: centers::Geodetic<ECEF> =
         serde_json::from_str(&json).expect("deserialize observer site");
 
     assert!((site.lon.value() - recovered.lon.value()).abs() < 1e-12);

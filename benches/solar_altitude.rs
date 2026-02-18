@@ -11,7 +11,6 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::calculus::solar::twilight;
-use siderust::coordinates::centers::ObserverSite;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period, MJD};
 use std::hint::black_box;
@@ -36,7 +35,7 @@ fn build_period(days: u32) -> Period<MJD> {
 }
 
 fn bench_find_night_periods(c: &mut Criterion) {
-    let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
+    let site = ROQUE_DE_LOS_MUCHACHOS;
 
     let mut group = c.benchmark_group("solar_altitude_periods");
 
