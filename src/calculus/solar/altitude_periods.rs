@@ -26,7 +26,8 @@
 
 use crate::bodies::solar_system::Sun;
 use crate::calculus::math_core::intervals;
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
+use crate::coordinates::frames::ECEF;
 use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
 use qtty::*;
 
@@ -45,7 +46,7 @@ const SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
 
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
 /// Positive above the horizon, negative below.
-pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quantity<Radian> {
+pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Quantity<Radian> {
     let jd: JulianDate = mjd.into();
     Sun::get_horizontal::<AstronomicalUnit>(jd, *site)
         .alt()
@@ -60,7 +61,7 @@ pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> 
 ///
 /// Uses a 2-hour scan + Brent refinement via [`math_core::intervals`].
 pub(crate) fn find_day_periods(
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     threshold: Degrees,
 ) -> Vec<Period<MJD>> {
@@ -75,7 +76,7 @@ pub(crate) fn find_day_periods(
 ///
 /// Complement of [`find_day_periods`] within `period`.
 pub(crate) fn find_night_periods(
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     twilight: Degrees,
 ) -> Vec<Period<MJD>> {
@@ -88,7 +89,7 @@ pub(crate) fn find_night_periods(
 /// Computed as `above(min) ∩ complement(above(max))` via
 /// [`math_core::intervals::in_range_periods`].
 pub(crate) fn find_sun_range_periods(
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     range: (Degrees, Degrees),
 ) -> Vec<Period<MJD>> {
@@ -104,8 +105,8 @@ pub(crate) fn find_sun_range_periods(
 mod tests {
     use super::*;
 
-    fn greenwich_site() -> ObserverSite {
-        ObserverSite::new(
+    fn greenwich_site() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
             Degrees::new(0.0),
             Degrees::new(51.4769),
             Quantity::<Meter>::new(0.0),

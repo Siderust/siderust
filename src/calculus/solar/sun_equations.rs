@@ -47,10 +47,10 @@ impl Sun {
     }
 
     /// Returns the Sun's apparent topocentric equatorial coordinates as seen
-    /// from a given `ObserverSite` at the specified Julian Date.
+    /// from a given `Geodetic<ECEF>` at the specified Julian Date.
     pub fn get_apparent_topocentric_equ<U: LengthUnit>(
         jd: JulianDate,
-        site: ObserverSite,
+        site: Geodetic<frames::ECEF>,
     ) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>
     where
         Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
@@ -65,7 +65,7 @@ impl Sun {
     }
 
     /// Returns the Sun's **horizontal coordinates** (altitude, azimuth) as seen
-    /// from a given `ObserverSite` at the specified Julian Date or Modified Julian Date.
+    /// from a given `Geodetic<ECEF>` at the specified Julian Date or Modified Julian Date.
     ///
     /// This is a convenience wrapper that computes the apparent topocentric equatorial
     /// position and transforms it to horizontal coordinates.
@@ -83,11 +83,12 @@ impl Sun {
     /// ### Example
     /// ```rust
     /// use siderust::bodies::solar_system::Sun;
-    /// use siderust::coordinates::centers::ObserverSite;
+    /// use siderust::coordinates::centers::Geodetic;
+    /// use siderust::coordinates::frames::ECEF;
     /// use siderust::time::{JulianDate, ModifiedJulianDate};
     /// use qtty::*;
     ///
-    /// let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+    /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     ///
     /// // Using JulianDate
     /// let sun_pos = Sun::get_horizontal::<AstronomicalUnit>(JulianDate::J2000, site);
@@ -99,7 +100,7 @@ impl Sun {
     /// ```
     pub fn get_horizontal<U: LengthUnit>(
         time: impl Into<JulianDate>,
-        site: ObserverSite,
+        site: Geodetic<frames::ECEF>,
     ) -> spherical::Position<Topocentric, frames::Horizontal, U>
     where
         Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,

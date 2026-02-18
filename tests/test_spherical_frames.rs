@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use affn::geodesy::GeodeticCoord;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use qtty::*;
-use siderust::coordinates::centers::ObserverSite;
 use siderust::coordinates::spherical::{direction, position};
 
 const EPS: f64 = 1e-6;
@@ -28,16 +28,16 @@ fn ecef_normalization_and_altitude() {
         dir.lon().value()
     );
 
-    // GeodeticCoord stores geodetic (lon, lat, height) without normalisation —
-    // validation happens in ObserverSite::from_geodetic.
-    let coord = GeodeticCoord::new(190.0 * DEG, 85.0 * DEG, 10_000.0 * M);
+    // Geodetic::<ECEF>::new() normalises longitude to [-180, 180).
+    // 190° wraps to -170°.
+    let coord = Geodetic::<ECEF>::new(190.0 * DEG, 85.0 * DEG, 10_000.0 * M);
     assert!(
         (coord.lat.value() - 85.0).abs() < EPS,
         "geodetic lat mismatch: {}",
         coord.lat.value()
     );
     assert!(
-        (coord.lon.value() - 190.0).abs() < EPS,
+        (coord.lon.value() - (-170.0)).abs() < EPS,
         "geodetic lon mismatch: {}",
         coord.lon.value()
     );
@@ -85,7 +85,7 @@ fn horizontal_normalization() {
     assert!((dir.az().value() - 330.0).abs() < EPS, "az={}", dir.az());
 
     // Positions use new_with_site for Topocentric center
-    let site = ObserverSite::default();
+    let site = Geodetic::<ECEF>::default();
     // Note: new_with_site takes (site, alt, az, dist) - IAU Alt-Az convention (altitude first)
     let pos = siderust::coordinates::centers::Topocentric::horizontal(
         site,

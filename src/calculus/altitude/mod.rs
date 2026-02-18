@@ -50,11 +50,12 @@
 //! ```rust
 //! use siderust::calculus::altitude::{crossings, AltitudePeriodsProvider, SearchOpts};
 //! use siderust::bodies::Sun;
-//! use siderust::coordinates::centers::ObserverSite;
+//! use siderust::coordinates::centers::Geodetic;
+//! use siderust::coordinates::frames::ECEF;
 //! use siderust::time::{ModifiedJulianDate, Period};
 //! use qtty::*;
 //!
-//! let site = ObserverSite::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
+//! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 //! let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
 //!
 //! // Pass any body that implements AltitudePeriodsProvider

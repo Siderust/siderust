@@ -22,7 +22,8 @@
 
 use crate::bodies::solar_system::Moon;
 use crate::calculus::math_core::intervals;
-use crate::coordinates::centers::ObserverSite;
+use crate::coordinates::centers::Geodetic;
+use crate::coordinates::frames::ECEF;
 use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
 use qtty::*;
 
@@ -52,7 +53,7 @@ const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
 ///
 /// # Returns
 /// Altitude as `Quantity<Radian>` (positive above horizon, negative below)
-pub(crate) fn moon_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) -> Quantity<Radian> {
+pub(crate) fn moon_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Quantity<Radian> {
     let jd: JulianDate = mjd.into();
     Moon::get_horizontal::<Kilometer>(jd, *site)
         .alt()
@@ -77,7 +78,7 @@ pub(crate) fn moon_altitude_rad(mjd: ModifiedJulianDate, site: &ObserverSite) ->
 /// let moonrise_periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
 /// ```
 pub(crate) fn find_moon_above_horizon(
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     threshold: Degrees,
 ) -> Vec<Period<MJD>> {
@@ -102,7 +103,7 @@ pub(crate) fn find_moon_above_horizon(
 /// let moonless_periods = find_moon_below_horizon(site, period, Degrees::new(-0.5));
 /// ```
 pub(crate) fn find_moon_below_horizon(
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     threshold: Degrees,
 ) -> Vec<Period<MJD>> {
@@ -120,7 +121,7 @@ pub(crate) fn find_moon_below_horizon(
 /// let low_moon = find_moon_altitude_range(site, period, (Degrees::new(0.0), Degrees::new(30.0)));
 /// ```
 pub(crate) fn find_moon_altitude_range(
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     range: (Degrees, Degrees),
 ) -> Vec<Period<MJD>> {
@@ -149,7 +150,7 @@ const SCAN_STEP_10MIN: Days = Quantity::new(10.0 / 1440.0);
 /// Uses 10-minute steps via the generic scan engine. Slower but useful
 /// for comparison / validation.
 fn find_moon_above_horizon_scan(
-    site: ObserverSite,
+    site: Geodetic<ECEF>,
     period: Period<MJD>,
     threshold: Degrees,
 ) -> Vec<Period<MJD>> {
@@ -169,8 +170,8 @@ mod tests {
     use super::*;
     use crate::{observatories::ROQUE_DE_LOS_MUCHACHOS, time::JulianDate};
 
-    fn greenwich_site() -> ObserverSite {
-        ObserverSite::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
+    fn greenwich_site() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
     #[test]
@@ -206,7 +207,7 @@ mod tests {
 
     #[test]
     fn test_find_moon_below_horizon() {
-        let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
+        let site = ROQUE_DE_LOS_MUCHACHOS;
         let mjd_start = ModifiedJulianDate::new(60676.0);
         let mjd_end = ModifiedJulianDate::new(60683.0);
         let period = Period::new(mjd_start, mjd_end);

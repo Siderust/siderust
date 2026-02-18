@@ -45,7 +45,7 @@ pub mod direction {
 	pub type ICRS = Direction<frames::ICRS>;
 	/// **ECEF** direction: unit vector in the Earth-fixed frame.
 	///
-	/// For geodetic (lon/lat/h) positions, use [`affn::geodesy::GeodeticCoord`] instead;
+	/// For geodetic (lon/lat/h) positions, use [`Geodetic::<ECEF>`](crate::coordinates::centers::Geodetic) instead;
 	/// this type is for unit vectors, not geodetic positions.
 	pub type EcefDir = Direction<frames::ECEF>;
 	/// **Galactic** direction (l, b).
@@ -113,7 +113,6 @@ pub mod position {
 	// distance, not ellipsoidal height, so `.to_cartesian()` produced
 	// geometrically wrong results for geodetic coordinates.
 	//
-	// Use `affn::geodesy::GeodeticCoord` for geodetic (lon/lat/h) constants
-	// and `ObserverSite::geocentric_itrf()` for the ellipsoid-correct
-	// WGS84 -> ECEF conversion.
+	// Use `affn::ellipsoidal::Position` for geodetic (lon/lat/h) constants
+	// and `to_cartesian()` for the ellipsoid-correct geodetic -> ECEF conversion.
 }

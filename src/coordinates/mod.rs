@@ -25,22 +25,22 @@
 //! so all coordinate invariants are enforced at **compile time** with no runtime overhead.
 //!
 //! **Parameterized** centers (`Topocentric`, `Bodycentric`) carry runtime data (e.g.,
-//! [`ObserverSite`](centers::ObserverSite), [`BodycentricParams`](centers::BodycentricParams)).
+//! [`Geodetic<ECEF>`](centers::Geodetic), [`BodycentricParams`](centers::BodycentricParams)).
 //! For these, the *center type* is still checked at compile time (you can't mix `Topocentric`
 //! and `Geocentric` positions), but the specific *site/body parameters* are checked at **runtime**.
 //!
 //! | Center kind         | Params    | Frame/Center type safety | Parameter equality  |
 //! |---------------------|-----------|--------------------------|---------------------|
 //! | `Geocentric` etc.   | `()`      | compile-time             | compile-time (trivial `()`) |
-//! | `Topocentric`       | `ObserverSite`    | compile-time     | **runtime** (`assert!` or `Result`) |
+//! | `Topocentric`       | `Geodetic<ECEF>`    | compile-time     | **runtime** (`assert!` or `Result`) |
 //! | `Bodycentric`       | `BodycentricParams` | compile-time   | **runtime** (`assert!` or `Result`) |
 //!
 //! Operations that require matching parameters (e.g., `Position - Position`, `distance_to`)
 //! **panic** by default on mismatch in all build profiles. Non-panicking alternatives are
 //! available via `checked_sub()` and `try_distance_to()`.
 //!
-//! Use [`ObserverSite::try_new`](centers::ObserverSite::try_new) to validate geographic
-//! coordinates before constructing topocentric positions.
+//! Use [`Geodetic::<ECEF>::try_new`](affn::ellipsoidal::Position::try_new)
+//! to validate geographic coordinates before constructing topocentric positions.
 //!
 //! ## Module Organization
 //!

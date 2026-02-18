@@ -13,7 +13,7 @@ use qtty::{AstronomicalUnits, Kilometer, LengthUnit, Meter, Quantity};
 
 impl Moon {
     /// Returns the **apparent topocentric equatorial coordinates** of the Moon
-    /// as seen from a given `ObserverSite` at the specified Julian Date.
+    /// as seen from a given `Geodetic<ECEF>` at the specified Julian Date.
     ///
     /// This method accounts for:
     /// - **Topocentric parallax**: Critical for the Moon due to its proximity (~1° at horizon)
@@ -33,7 +33,7 @@ impl Moon {
     /// due to its proximity to Earth (average distance ~384,400 km).
     pub fn get_apparent_topocentric_equ<U: LengthUnit>(
         jd: JulianDate,
-        site: ObserverSite,
+        site: Geodetic<frames::ECEF>,
     ) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>
     where
         Quantity<U>: From<Quantity<Meter>> + From<Quantity<Kilometer>> + From<AstronomicalUnits>,
@@ -72,7 +72,7 @@ impl Moon {
     }
 
     /// Returns the Moon's **horizontal coordinates** (altitude, azimuth) as seen
-    /// from a given `ObserverSite` at the specified Julian Date or Modified Julian Date.
+    /// from a given `Geodetic<ECEF>` at the specified Julian Date or Modified Julian Date.
     ///
     /// This is a convenience wrapper that computes the apparent topocentric equatorial
     /// position and transforms it to horizontal coordinates.
@@ -90,11 +90,12 @@ impl Moon {
     /// ### Example
     /// ```rust
     /// use siderust::bodies::solar_system::Moon;
-    /// use siderust::coordinates::centers::ObserverSite;
+    /// use siderust::coordinates::centers::Geodetic;
+    /// use siderust::coordinates::frames::ECEF;
     /// use siderust::time::{JulianDate, ModifiedJulianDate};
     /// use qtty::*;
     ///
-    /// let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+    /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     ///
     /// // Using JulianDate
     /// let moon_pos = Moon::get_horizontal::<Kilometer>(JulianDate::J2000, site);
@@ -106,7 +107,7 @@ impl Moon {
     /// ```
     pub fn get_horizontal<U: LengthUnit>(
         time: impl Into<JulianDate>,
-        site: ObserverSite,
+        site: Geodetic<frames::ECEF>,
     ) -> spherical::Position<Topocentric, frames::Horizontal, U>
     where
         Quantity<U>: From<Quantity<Meter>> + From<Quantity<Kilometer>> + From<AstronomicalUnits>,

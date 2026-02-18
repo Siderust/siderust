@@ -21,7 +21,7 @@
 //!
 //! ## Observer Location
 //!
-//! The observer's geodetic location is provided via [`ObserverSite`], which contains:
+//! The observer's geodetic location is provided via [`Geodetic<ECEF>`], which contains:
 //! - Longitude (positive eastward)
 //! - Latitude (positive northward)  
 //! - Height above WGS84 ellipsoid
@@ -30,8 +30,8 @@
 //!
 //! ```rust
 //! use siderust::coordinates::cartesian::Direction;
-//! use siderust::coordinates::centers::ObserverSite;
-//! use siderust::coordinates::frames::{EquatorialTrueOfDate, Horizontal};
+//! use siderust::coordinates::centers::Geodetic;
+//! use siderust::coordinates::frames::{ECEF, EquatorialTrueOfDate, Horizontal};
 //! use siderust::coordinates::spherical;
 //! use siderust::coordinates::transform::horizontal::ToHorizontal;
 //! use siderust::time::JulianDate;
@@ -42,15 +42,15 @@
 //!
 //! let equatorial = spherical::Direction::<EquatorialTrueOfDate>::new(45.0 * DEG, 30.0 * DEG)
 //!     .to_cartesian();
-//! let site = ObserverSite::new(0.0 * DEG, 51.5 * DEG, 0.0 * M);
+//! let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.5 * DEG, 0.0 * M);
 //!
 //! let horizontal: Direction<Horizontal> = equatorial.to_horizontal(&jd_ut1, &jd_tt, &site);
 //! ```
 
 use crate::astro::{nutation, sidereal};
 use crate::coordinates::cartesian::{Direction, Position};
-use crate::coordinates::centers::{ObserverSite, Topocentric};
-use crate::coordinates::frames::{EquatorialTrueOfDate, Horizontal};
+use crate::coordinates::centers::{Geodetic, Topocentric};
+use crate::coordinates::frames::{ECEF, EquatorialTrueOfDate, Horizontal};
 use crate::time::JulianDate;
 use qtty::{Degrees, LengthUnit, Radians};
 use std::f64::consts::TAU;
@@ -83,7 +83,7 @@ pub trait ToHorizontal {
         &self,
         jd_ut1: &JulianDate,
         jd_tt: &JulianDate,
-        site: &ObserverSite,
+        site: &Geodetic<ECEF>,
     ) -> Direction<Horizontal>;
 }
 
@@ -93,7 +93,7 @@ impl ToHorizontal for Direction<EquatorialTrueOfDate> {
         &self,
         jd_ut1: &JulianDate,
         jd_tt: &JulianDate,
-        site: &ObserverSite,
+        site: &Geodetic<ECEF>,
     ) -> Direction<Horizontal> {
         // Extract RA/Dec from direction
         let spherical = self.to_spherical();
@@ -160,7 +160,7 @@ pub trait FromHorizontal {
         &self,
         jd_ut1: &JulianDate,
         jd_tt: &JulianDate,
-        site: &ObserverSite,
+        site: &Geodetic<ECEF>,
     ) -> Direction<EquatorialTrueOfDate>;
 }
 
@@ -170,7 +170,7 @@ impl FromHorizontal for Direction<Horizontal> {
         &self,
         jd_ut1: &JulianDate,
         jd_tt: &JulianDate,
-        site: &ObserverSite,
+        site: &Geodetic<ECEF>,
     ) -> Direction<EquatorialTrueOfDate> {
         // Extract Az/Alt from direction
         let spherical = self.to_spherical();
@@ -316,7 +316,7 @@ mod tests {
 
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
-        let site = ObserverSite::new(
+        let site = Geodetic::<ECEF>::new(
             0.0 * DEG,
             Degrees::new((0.6 * RAD).value().to_degrees()),
             0.0 * M,
@@ -353,7 +353,7 @@ mod tests {
 
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
-        let site = ObserverSite::new(
+        let site = Geodetic::<ECEF>::new(
             0.0 * DEG,
             Degrees::new((0.6 * RAD).value().to_degrees()),
             0.0 * M,
@@ -388,7 +388,7 @@ mod tests {
         let jd_ut1 = JulianDate::new(2_451_545.0);
         let jd_tt = JulianDate::new(2_451_545.000_800_741);
 
-        let site = ObserverSite::new(0.0 * DEG, 51.5 * DEG, 100.0 * M);
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.5 * DEG, 100.0 * M);
         let ra = 45.0 * DEG;
         let dec = 30.0 * DEG;
         let distance = 1000.0 * KM;
