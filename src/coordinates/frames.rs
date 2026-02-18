@@ -3,27 +3,38 @@
 
 //! # Reference Frames Module
 //!
-//! This module defines astronomical reference frames for coordinate systems.
-//! A reference frame specifies the orientation of the axes used to describe positions in space.
-//!
-//! ## Architecture
-//!
-//! All frame types implement the [`ReferenceFrame`] trait from `affn`, which provides
-//! a common interface. The trait itself is re-exported from `affn` for convenience.
+//! This module re-exports astronomical reference frames defined in `affn`
+//! and adds siderust-specific extensions.
 //!
 //! ## Predefined Frames
 //!
-//! The following reference frames are provided:
+//! The following reference frames are available (from `affn`):
 //!
 //! - [`ICRS`]: International Celestial Reference System (quasi-inertial, fundamental reference).
 //! - [`Horizontal`]: Local horizon system (altitude-azimuth).
 //! - [`EquatorialMeanJ2000`]: Mean equator/equinox of J2000 (FK5/J2000 mean).
 //! - [`EquatorialMeanOfDate`]: Mean equator/equinox of date (precessed, no nutation).
 //! - [`EquatorialTrueOfDate`]: True equator/equinox of date (precession + nutation).
-//! - [`Ecliptic`]: Ecliptic coordinate system (based on the plane of Earth's orbit).
+//! - [`EclipticMeanJ2000`]: Mean ecliptic coordinate system at J2000.
+//! - [`EclipticOfDate`]: Mean ecliptic coordinate system of date.
+//! - [`EclipticMeanOfDate`]: Alias for [`EclipticOfDate`] (naming parity).
+//! - [`EclipticTrueOfDate`]: True ecliptic coordinate system of date.
 //! - [`ITRF`]: International Terrestrial Reference Frame (Earth-fixed).
 //! - [`ECEF`]: Earth-Centered, Earth-Fixed (geocentric, rotating with the Earth).
 //! - [`Galactic`]: Galactic coordinate system.
+//!
+//! Each frame type provides inherent named constructors and getters on
+//! `Direction<F>` and `Position<C, F, U>`. For example:
+//!
+//! ```rust
+//! use siderust::coordinates::frames::ICRS;
+//! use affn::spherical::Direction;
+//! use qtty::*;
+//!
+//! let d = Direction::<ICRS>::new(120.0 * DEG, 45.0 * DEG);
+//! assert_eq!(d.ra(), 120.0 * DEG);
+//! assert_eq!(d.dec(), 45.0 * DEG);
+//! ```
 //!
 //! ## Extending
 //!
@@ -36,89 +47,28 @@
 //! struct MyCustomFrame;
 //! assert_eq!(MyCustomFrame::frame_name(), "MyCustomFrame");
 //! ```
-//!
-//! ## Example
-//!
-//! ```rust
-//! use siderust::coordinates::frames::{ReferenceFrame, ICRS};
-//!
-//! let name = ICRS::frame_name();
-//! assert_eq!(name, "ICRS");
-//! ```
 
-// Re-export the core trait from affn
-pub use affn::frames::ReferenceFrame;
-// Import derive from prelude for use in this module
-use affn::prelude::ReferenceFrame as DeriveReferenceFrame;
+// Re-export trait infrastructure from affn
+pub use affn::frames::{ReferenceFrame, SphericalNaming};
 
-// =============================================================================
-// Astronomical Reference Frames
-// =============================================================================
+// Re-export ellipsoid traits and predefined ellipsoids from affn
+pub use affn::ellipsoid::{Ellipsoid, Grs80, HasEllipsoid, Wgs84};
 
-/// International Celestial Reference System.
-///
-/// The fundamental celestial reference frame used in modern astronomy.
-/// It is quasi-inertial and centered at the solar system barycenter.
-/// The axes are defined by the positions of distant quasars.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct ICRS;
+// Re-export the generic ellipsoidal Position type for direct use
+pub use affn::ellipsoidal::Position as EllipsoidalPosition;
 
-/// Local horizon coordinate system.
-///
-/// A topocentric frame based on the observer's local horizon.
-/// Uses altitude (elevation above horizon) and azimuth (bearing from north).
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct Horizontal;
+// Re-export all astronomical frame types from affn
+pub use affn::frames::{
+    EclipticMeanJ2000, EclipticMeanOfDate, EclipticOfDate, EclipticTrueOfDate, EquatorialMeanJ2000,
+    EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic, Horizontal, CIRS, ECEF, GCRS, ICRF, ICRS,
+    ITRF, TIRS,
+};
 
-/// Mean equator and equinox of J2000.0 (FK5/J2000 mean).
-///
-/// Earth-based mean equator/equinox at epoch J2000.0, with nutation removed.
-/// This is the classic "J2000 equatorial" frame used by many catalogs.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct EquatorialMeanJ2000;
-
-/// Mean equator and equinox of date.
-///
-/// Earth-based mean equator/equinox at a given epoch (precession applied,
-/// nutation removed). Requires a TT epoch for transformations.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct EquatorialMeanOfDate;
-
-/// True equator and equinox of date.
-///
-/// Earth-based true equator/equinox at a given epoch (precession + nutation).
-/// Requires a TT epoch for transformations.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct EquatorialTrueOfDate;
-
-/// Ecliptic coordinate system.
-///
-/// Based on the plane of Earth's orbit around the Sun.
-/// Uses ecliptic longitude and latitude.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct Ecliptic;
-
-/// International Terrestrial Reference Frame.
-///
-/// A geocentric Earth-fixed frame that co-rotates with the Earth.
-/// Used for geodetic and geophysical applications.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct ITRF;
-
-/// Earth-Centered, Earth-Fixed coordinate system.
-///
-/// A geocentric Cartesian coordinate system that rotates with the Earth.
-/// The X-axis points to the intersection of the prime meridian and equator.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct ECEF;
-
-/// Galactic coordinate system.
-///
-/// Based on the plane of the Milky Way galaxy.
-/// Uses galactic longitude and latitude, with the center
-/// of the galaxy defining the origin of galactic longitude.
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Default, DeriveReferenceFrame)]
-pub struct Galactic;
+// NOTE: The `Horizontal` frame type uses the **North-clockwise** azimuth convention
+// (0° = North, increasing through East). If you are importing data that uses a
+// different convention (e.g. South-origin or counter-clockwise), use the helpers in
+// [`crate::coordinates::horizontal`] to convert before constructing `Horizontal`
+// coordinates.
 
 // =============================================================================
 // MutableFrame: Marker for Transformable Frames
@@ -127,9 +77,9 @@ pub struct Galactic;
 /// Marker trait for frames that support time-independent mutual transformations.
 ///
 /// This trait is implemented for frames between which coordinate
-/// transformations are currently supported (ICRS, Ecliptic, EquatorialMeanJ2000).
+/// transformations are currently supported (ICRS, EclipticMeanJ2000, EquatorialMeanJ2000).
 pub trait MutableFrame: ReferenceFrame {}
 
 impl MutableFrame for ICRS {}
-impl MutableFrame for Ecliptic {}
+impl MutableFrame for EclipticMeanJ2000 {}
 impl MutableFrame for EquatorialMeanJ2000 {}

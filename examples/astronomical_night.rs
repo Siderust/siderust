@@ -21,9 +21,12 @@
 
 use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
 use qtty::{Degrees, Meter, Quantity};
-use siderust::astro::ModifiedJulianDate;
-use siderust::calculus::solar::altitude_periods::{find_night_periods, twilight};
-use siderust::coordinates::centers::ObserverSite;
+use siderust::bodies::Sun;
+use siderust::calculus::altitude::AltitudePeriodsProvider;
+use siderust::calculus::solar::night_types::twilight;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
+use siderust::time::ModifiedJulianDate;
 use siderust::time::Period;
 
 fn main() {
@@ -41,7 +44,7 @@ fn main() {
     let height_m: f64 = args.get(4).and_then(|s| s.parse().ok()).unwrap_or(0.0);
 
     // Create observer site
-    let site = ObserverSite::new(
+    let site = Geodetic::<ECEF>::new(
         Degrees::new(lon_deg),
         Degrees::new(lat_deg),
         Quantity::<Meter>::new(height_m),
@@ -57,38 +60,35 @@ fn main() {
 
     // Find astronomical night periods (Sun altitude < -18°)
     let period = Period::new(mjd_start, mjd_end);
-    let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
+    let nights = Sun.below_threshold(site, period, twilight::ASTRONOMICAL);
 
     // Print results
     println!("Astronomical Night Periods (Sun altitude < -18°)");
     println!("================================================");
     println!(
-        "Observer: lat = {:.4}°, lon = {:.4}°, height = {} m",
-        lat_deg, lon_deg, height_m
+        "Observer: lat = {}, lon = {}, height = {}",
+        site.lat, site.lon, site.height
     );
     println!("Week starting: {} UTC", start_date);
     println!();
 
-    match nights {
-        Some(periods) if !periods.is_empty() => {
-            for period in periods {
-                let start_utc = period.start.to_utc();
-                let end_utc = period.end.to_utc();
+    if !nights.is_empty() {
+        for period in nights {
+            let start_utc = period.start.to_utc();
+            let end_utc = period.end.to_utc();
 
-                if let (Some(s), Some(e)) = (start_utc, end_utc) {
-                    let duration_mins = (period.duration_days() * 24.0 * 60.0).round() as i64;
-                    println!(
-                        "{} → {}  ({} min)",
-                        s.format("%Y-%m-%dT%H:%M:%S"),
-                        e.format("%Y-%m-%dT%H:%M:%S"),
-                        duration_mins
-                    );
-                }
+            if let (Some(s), Some(e)) = (start_utc, end_utc) {
+                let duration_mins = period.duration_days().to::<qtty::Minute>();
+                println!(
+                    "{} → {}  ({})",
+                    s.format("%Y-%m-%dT%H:%M:%S"),
+                    e.format("%Y-%m-%dT%H:%M:%S"),
+                    duration_mins
+                );
             }
         }
-        _ => {
-            println!("No astronomical night periods found in this week.");
-            println!("(This can happen at high latitudes during summer.)");
-        }
+    } else {
+        println!("No astronomical night periods found in this week.");
+        println!("(This can happen at high latitudes during summer.)");
     }
 }

@@ -1,0 +1,12 @@
+[submodule "affn"]
+	path = affn
+	url = git@github.com:Siderust/affn.git
+[submodule "qtty"]
+	path = qtty
+	url = git@github.com:Siderust/qtty.git
+[submodule "cheby"]
+	path = cheby
+	url = git@github.com:Siderust/cheby.git
+[submodule "tempoch"]
+	path = tempoch
+	url = git@github.com:Siderust/tempoch.git

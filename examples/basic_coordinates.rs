@@ -25,8 +25,9 @@ fn main() {
     println!("------------------------");
 
     // Create a heliocentric ecliptic position (1 AU along X-axis)
-    let earth_position = cartesian::position::Ecliptic::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
-    println!("Earth position (Heliocentric Ecliptic):");
+    let earth_position =
+        cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
+    println!("Earth position (Heliocentric EclipticMeanJ2000):");
     println!("  X = {:.6} AU", earth_position.x());
     println!("  Y = {:.6} AU", earth_position.y());
     println!("  Z = {:.6} AU", earth_position.z());
@@ -59,8 +60,8 @@ fn main() {
         Degrees::new(89.26), // Declination
     );
     println!("Polaris (Geocentric EquatorialMeanJ2000 Direction):");
-    println!("  Right Ascension = {:.2}°", polaris.azimuth);
-    println!("  Declination = {:.2}°\n", polaris.polar);
+    println!("  Right Ascension = {:.2}°", polaris.ra());
+    println!("  Declination = {:.2}°\n", polaris.dec());
 
     // Create a position with distance (Betelgeuse at ~500 light-years)
     let betelgeuse_distance = 500.0 * 9.461e15 / 1.496e11; // Convert ly to AU
@@ -135,20 +136,20 @@ fn main() {
     println!("--------------");
 
     // Different coordinate types are incompatible
-    let helio_pos = cartesian::position::Ecliptic::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
+    let helio_pos = cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
     let geo_pos = cartesian::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(0.0, 1.0, 0.0);
 
     println!("Type-safe coordinates prevent mixing incompatible systems:");
-    println!("  Heliocentric Ecliptic: {}", helio_pos);
+    println!("  Heliocentric EclipticMeanJ2000: {}", helio_pos);
     println!("  Geocentric EquatorialMeanJ2000: {}", geo_pos);
     println!("\n  Cannot directly compute distance between them!");
     println!("  (Must transform to same center/frame first)\n");
 
     // But operations within the same type are allowed
-    let pos1 = cartesian::position::Ecliptic::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
-    let pos2 = cartesian::position::Ecliptic::<AstronomicalUnit>::new(1.5, 0.0, 0.0);
+    let pos1 = cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
+    let pos2 = cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(1.5, 0.0, 0.0);
     let distance = pos1.distance_to(&pos2);
-    println!("Distance between two Heliocentric Ecliptic positions:");
+    println!("Distance between two Heliocentric EclipticMeanJ2000 positions:");
     println!("  {:.3} AU\n", distance);
 
     // =========================================================================
@@ -165,7 +166,10 @@ fn main() {
     println!("  Bodycentric:  {}\n", centers::Bodycentric::center_name());
 
     println!("Reference Frames:");
-    println!("  Ecliptic:   {}", frames::Ecliptic::frame_name());
+    println!(
+        "  EclipticMeanJ2000:   {}",
+        frames::EclipticMeanJ2000::frame_name()
+    );
     println!(
         "  EquatorialMeanJ2000: {}",
         frames::EquatorialMeanJ2000::frame_name()

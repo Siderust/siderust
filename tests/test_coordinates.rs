@@ -2,12 +2,12 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use qtty::*;
-use siderust::astro::JulianDate;
 use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
 use siderust::coordinates::transform::TransformFrame;
 use siderust::coordinates::*;
+use siderust::time::JulianDate;
 
 fn approx_eq_pos<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
 where
@@ -68,19 +68,19 @@ where
     Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
     assert!(
-        (a.polar - b.polar).abs().value() < 1e-6,
+        (a.polar - b.polar).abs() < 1e-6,
         "polar mismatch: {} vs {}",
         a.polar,
         b.polar
     );
     assert!(
-        (a.azimuth - b.azimuth).abs().value() < 1e-6,
+        (a.azimuth - b.azimuth).abs() < 1e-6,
         "polar mismatch: {} vs {}",
         a.azimuth,
         b.azimuth
     );
     assert!(
-        (a.distance - b.distance).abs().value() < 1e-6,
+        (a.distance - b.distance).abs() < (1e-6).into(),
         "polar mismatch: {} vs {}",
         a.distance,
         b.distance
@@ -94,10 +94,10 @@ fn test_position_transformations() {
 
     let original = *Mars::vsop87a(JulianDate::J2000).get_position();
 
-    // Heliocentric Ecliptic -> Heliocentric EquatorialMeanJ2000 -> back
+    // Heliocentric EclipticMeanJ2000 -> Heliocentric EquatorialMeanJ2000 -> back
     let helio_eq: cartesian::Position<Heliocentric, EquatorialMeanJ2000, _> =
         original.transform(JulianDate::J2000);
-    let helio_from_eq: cartesian::Position<Heliocentric, Ecliptic, _> =
+    let helio_from_eq: cartesian::Position<Heliocentric, EclipticMeanJ2000, _> =
         helio_eq.transform(JulianDate::J2000);
     approx_eq_pos(&original, &helio_from_eq);
 }
@@ -108,15 +108,15 @@ fn test_direction_frame_transformations() {
     use siderust::coordinates::cartesian::Direction;
 
     // Create a direction from Mars position
-    let original: Direction<Ecliptic> = Mars::vsop87a(JulianDate::J2000)
+    let original: Direction<EclipticMeanJ2000> = Mars::vsop87a(JulianDate::J2000)
         .get_position()
         .clone()
         .direction()
         .expect("Mars position should have a direction");
 
-    // Ecliptic -> EquatorialMeanJ2000 -> back (frame rotation only)
+    // EclipticMeanJ2000 -> EquatorialMeanJ2000 -> back (frame rotation only)
     let equatorial: Direction<EquatorialMeanJ2000> = TransformFrame::to_frame(&original);
-    let ecliptic_back: Direction<Ecliptic> = TransformFrame::to_frame(&equatorial);
+    let ecliptic_back: Direction<EclipticMeanJ2000> = TransformFrame::to_frame(&equatorial);
     approx_eq_dir(&original, &ecliptic_back);
 
     // Verify directions are still unit vectors after transformation
@@ -131,7 +131,7 @@ fn test_direction_frame_transformations() {
 #[test]
 fn test_spherical_direction_transformations() {
     // Create a direction from Mars position
-    let cart_original: cartesian::Direction<Ecliptic> = Mars::vsop87a(JulianDate::J2000)
+    let cart_original: cartesian::Direction<EclipticMeanJ2000> = Mars::vsop87a(JulianDate::J2000)
         .get_position()
         .clone()
         .direction()
@@ -162,13 +162,13 @@ fn test_line_of_sight() {
     use siderust::coordinates::cartesian::line_of_sight;
 
     // Create two positions (Earth and Mars at some point)
-    let observer = cartesian::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
+    let observer = cartesian::Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(
         AstronomicalUnits::new(1.0),
         AstronomicalUnits::new(0.0),
         AstronomicalUnits::new(0.0),
     );
 
-    let target = cartesian::Position::<Heliocentric, Ecliptic, AstronomicalUnit>::new(
+    let target = cartesian::Position::<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>::new(
         AstronomicalUnits::new(2.0),
         AstronomicalUnits::new(0.0),
         AstronomicalUnits::new(0.0),

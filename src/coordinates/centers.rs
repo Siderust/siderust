@@ -18,16 +18,39 @@
 //! - [`Barycentric`]: Center of mass of the solar system.
 //! - [`Heliocentric`]: Center of the Sun.
 //! - [`Geocentric`]: Center of the Earth.
-//! - [`Topocentric`]: Observer's location on the surface of the Earth (parameterized by [`ObserverSite`]).
+//! - [`Topocentric`]: Observer's location on the surface of the Earth (parameterized by [`Geodetic<ECEF>`]).
 //! - [`Bodycentric`]: Generic center for any orbiting celestial body (parameterized by [`BodycentricParams`]).
 //!
-//! ## Parameterized Centers
+//! ## Compile-Time vs Runtime Safety
 //!
-//! Some reference centers require runtime parameters:
+//! | Center            | `Params`              | Safety level                        |
+//! |-------------------|-----------------------|-------------------------------------|
+//! | `Barycentric`     | `()`                  | **Compile-time** — zero cost        |
+//! | `Heliocentric`    | `()`                  | **Compile-time** — zero cost        |
+//! | `Geocentric`      | `()`                  | **Compile-time** — zero cost        |
+//! | `Topocentric`     | [`Geodetic<ECEF>`]    | **Runtime-parameterized** (see below) |
+//! | `Bodycentric`     | [`BodycentricParams`] | **Runtime-parameterized** (see below) |
 //!
-//! - For most centers (Barycentric, Heliocentric, Geocentric), `Params = ()` (zero-cost).
-//! - For [`Topocentric`], `Params = ObserverSite` which stores the observer's geographic location.
-//! - For [`Bodycentric`], `Params = BodycentricParams` which stores the body's orbital elements.
+//! For centers with `Params = ()`, the type system guarantees correctness at
+//! compile time with no runtime overhead.
+//!
+//! For **parameterized centers**, the *center type* is still enforced at compile
+//! time (you cannot mix `Topocentric` and `Geocentric` positions), but operations
+//! that require *matching parameters* — such as `Position - Position` and
+//! `distance_to` — verify parameter equality at **runtime**:
+//!
+//! - **Panicking API** — the default operators (`Sub`, `distance_to`) `assert!`
+//!   in all build profiles.
+//! - **Checked API** — [`Position::checked_sub`](affn::Position::checked_sub) and
+//!   [`Position::try_distance_to`](affn::Position::try_distance_to) return
+//!   `Result<_, CenterParamsMismatchError>`.
+//!
+//! ### Validated Construction
+//!
+//! Observatory catalog constants (e.g., in [`crate::observatories`]) are of
+//! type [`Geodetic<ECEF>`] and can be used directly as `Topocentric` parameters.
+//! Use [`Geodetic::<ECEF>::new`] to construct validated geodetic coordinates
+//! (longitude and latitude are normalised automatically).
 //!
 //! ## Extending
 //!
@@ -51,170 +74,37 @@
 //! ```
 
 use crate::astro::orbit::Orbit;
-use qtty::{Degrees, Meter, Quantity};
+use qtty::*;
 use std::fmt::Debug;
+
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
 // Re-export core traits from affn
 pub use affn::centers::ReferenceCenter;
-pub use affn::{AffineCenter, NoCenter};
+pub use affn::{AffineCenter, CenterParamsMismatchError, NoCenter};
 // Import derives from prelude for use in this module
 use affn::prelude::ReferenceCenter as DeriveReferenceCenter;
 
+use super::frames::ECEF;
+
+/// A geodetic position: an ellipsoidal coordinate with a geocentric origin.
+///
+/// The frame `F` determines which ellipsoid is used via
+/// [`HasEllipsoid`](affn::ellipsoid::HasEllipsoid):
+///
+/// - `Geodetic<ECEF>` — WGS84 ellipsoid
+/// - `Geodetic<ITRF>` — GRS80 ellipsoid
+pub type Geodetic<F, U = qtty::Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
+
 // Required for Transform specialization
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Heliocentric;
 
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Barycentric;
-
-// =============================================================================
-// ObserverSite: Parameters for Topocentric coordinates
-// =============================================================================
-
-/// Geographic location of an observer, used as parameters for [`Topocentric`] coordinates.
-///
-/// This struct stores the observer's position on or above Earth's surface.
-/// It is embedded in coordinate values when the center is [`Topocentric`],
-/// allowing transformations to use the site information without external context.
-///
-/// # Fields
-///
-/// - `lon`: Geodetic longitude, positive eastward, in degrees.
-/// - `lat`: Geodetic latitude, positive northward, in degrees.
-/// - `height`: Height above the reference ellipsoid (WGS84), in meters.
-///
-/// # Example
-///
-/// ```rust
-/// use siderust::coordinates::centers::ObserverSite;
-/// use qtty::*;
-///
-/// let greenwich = ObserverSite {
-///     lon: 0.0 * DEG,
-///     lat: 51.4769 * DEG,
-///     height: 0.0 * M,
-/// };
-/// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct ObserverSite {
-    /// Geodetic longitude (positive eastward), in degrees.
-    pub lon: Degrees,
-    /// Geodetic latitude (positive northward), in degrees.
-    pub lat: Degrees,
-    /// Height above the WGS84 ellipsoid, in meters.
-    pub height: Quantity<Meter>,
-}
-
-impl Default for ObserverSite {
-    /// Returns an observer at the origin (0°, 0°, 0m).
-    ///
-    /// Note: This default is primarily for internal use. In practice, you should
-    /// always provide meaningful site coordinates for topocentric calculations.
-    fn default() -> Self {
-        Self {
-            lon: Degrees::new(0.0),
-            lat: Degrees::new(0.0),
-            height: Quantity::<Meter>::new(0.0),
-        }
-    }
-}
-
-impl ObserverSite {
-    /// Creates a new observer site from longitude, latitude, and height.
-    ///
-    /// # Arguments
-    ///
-    /// - `lon`: Geodetic longitude (positive eastward), in degrees.
-    /// - `lat`: Geodetic latitude (positive northward), in degrees.
-    /// - `height`: Height above the WGS84 ellipsoid, in meters.
-    pub fn new(lon: Degrees, lat: Degrees, height: Quantity<Meter>) -> Self {
-        Self { lon, lat, height }
-    }
-
-    /// Creates an `ObserverSite` from a [`crate::coordinates::spherical::position::Geographic`] spherical position.
-    ///
-    /// This is a convenience method for converting observatory locations
-    /// (typically defined as `Geographic` positions) into the parameterized
-    /// site representation used by `Topocentric` coordinates.
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use siderust::coordinates::centers::ObserverSite;
-    /// use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-    ///
-    /// let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
-    /// ```
-    pub fn from_geographic(geo: &crate::coordinates::spherical::position::Geographic) -> Self {
-        Self {
-            lon: geo.azimuth, // longitude is stored in the azimuth field
-            lat: geo.polar,   // latitude is stored in the polar field
-            height: geo.distance.to::<Meter>(),
-        }
-    }
-
-    /// Computes the observer's geocentric position in the ITRF/ECEF frame.
-    ///
-    /// This converts geodetic coordinates (latitude, longitude, height) to
-    /// geocentric Cartesian coordinates using the WGS84 ellipsoid.
-    ///
-    /// # WGS84 Parameters
-    ///
-    /// - Semi-major axis (a): 6,378,137.0 m
-    /// - Flattening (f): 1/298.257223563
-    /// - First eccentricity squared (e²): 0.00669437999014
-    ///
-    /// # Returns
-    ///
-    /// A position vector in the ECEF (Earth-Centered Earth-Fixed) frame,
-    /// with the specified length unit.
-    ///
-    /// # Note
-    ///
-    /// This position is in the ITRF/ECEF frame (rotating with Earth).
-    /// To use it with celestial coordinates, you must rotate it to the
-    /// appropriate celestial frame using Earth rotation parameters (GMST, etc.).
-    pub fn geocentric_itrf<U: qtty::LengthUnit>(
-        &self,
-    ) -> crate::coordinates::cartesian::Position<Geocentric, crate::coordinates::frames::ECEF, U>
-    where
-        Quantity<U>: From<Quantity<Meter>>,
-    {
-        use qtty::Radian;
-
-        // WGS84 ellipsoid parameters
-        const A: f64 = 6_378_137.0; // Semi-major axis in meters
-        const F: f64 = 1.0 / 298.257_223_563; // Flattening
-        const E2: f64 = 2.0 * F - F * F; // First eccentricity squared
-
-        // Convert geodetic to geocentric Cartesian (ECEF)
-        let lat_rad = self.lat.to::<Radian>().value();
-        let lon_rad = self.lon.to::<Radian>().value();
-        let h = self.height.value();
-
-        let sin_lat = lat_rad.sin();
-        let cos_lat = lat_rad.cos();
-        let sin_lon = lon_rad.sin();
-        let cos_lon = lon_rad.cos();
-
-        // Radius of curvature in the prime vertical
-        let n = A / (1.0 - E2 * sin_lat * sin_lat).sqrt();
-
-        // Geocentric Cartesian coordinates (meters)
-        let x_m = (n + h) * cos_lat * cos_lon;
-        let y_m = (n + h) * cos_lat * sin_lon;
-        let z_m = (n * (1.0 - E2) + h) * sin_lat;
-
-        // Convert to target units
-        let x: Quantity<U> = Quantity::<Meter>::new(x_m).into();
-        let y: Quantity<U> = Quantity::<Meter>::new(y_m).into();
-        let z: Quantity<U> = Quantity::<Meter>::new(z_m).into();
-
-        crate::coordinates::cartesian::Position::<Geocentric, crate::coordinates::frames::ECEF, U>::new(
-            x, y, z
-        )
-    }
-}
 
 // =============================================================================
 // Topocentric Center (parameterized)
@@ -223,28 +113,60 @@ impl ObserverSite {
 /// Observer's location on the surface of the Earth.
 ///
 /// Unlike other reference centers, `Topocentric` is *parameterized*: coordinates
-/// with this center carry an [`ObserverSite`] that specifies the observer's
-/// geographic location. This allows horizontal coordinates to know their
+/// with this center carry a [`Geodetic<ECEF>`] that specifies the observer's
+/// geographic location.  This allows horizontal coordinates to know their
 /// observation site without external context.
 ///
 /// # Example
 ///
 /// ```rust
-/// use siderust::coordinates::centers::{Topocentric, ObserverSite, ReferenceCenter};
+/// use siderust::coordinates::centers::{Topocentric, Geodetic, ReferenceCenter};
+/// use siderust::coordinates::frames::ECEF;
 /// use qtty::*;
 ///
-/// // Topocentric coordinates require an ObserverSite
-/// let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+/// // Topocentric coordinates require a geodetic site
+/// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
 ///
 /// // The site is stored as Topocentric::Params
 /// assert_eq!(std::mem::size_of::<<Topocentric as ReferenceCenter>::Params>(),
-///            std::mem::size_of::<ObserverSite>());
+///            std::mem::size_of::<Geodetic<ECEF>>());
 /// ```
-#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
-#[center(params = ObserverSite)]
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Topocentric;
 
+impl ReferenceCenter for Topocentric {
+    type Params = Geodetic<ECEF>;
+    fn center_name() -> &'static str {
+        "Topocentric"
+    }
+}
+impl affn::AffineCenter for Topocentric {}
+
+impl Topocentric {
+    /// Creates a Topocentric Horizontal position with observer site.
+    ///
+    /// Angles are canonicalized:
+    /// - `alt` is folded to `[-90°, +90°]`
+    /// - `az` is normalized to `[0°, 360°)`
+    #[inline]
+    pub fn horizontal<U: qtty::LengthUnit, T: Into<qtty::Quantity<U>>>(
+        site: Geodetic<ECEF>,
+        alt: qtty::Degrees,
+        az: qtty::Degrees,
+        distance: T,
+    ) -> affn::spherical::Position<Topocentric, super::frames::Horizontal, U> {
+        affn::spherical::Position::new_raw_with_params(
+            site,
+            alt.wrap_quarter_fold(),
+            az.normalize(),
+            distance.into(),
+        )
+    }
+}
+
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Geocentric;
 
 // =============================================================================
@@ -257,6 +179,7 @@ pub struct Geocentric;
 /// to match the coordinate system being transformed. This enum indicates which
 /// standard center the orbit is relative to.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum OrbitReferenceCenter {
     /// Orbit is defined relative to the solar system barycenter.
     Barycentric,
@@ -283,7 +206,7 @@ pub enum OrbitReferenceCenter {
 /// ```rust
 /// use siderust::coordinates::centers::{BodycentricParams, OrbitReferenceCenter};
 /// use siderust::astro::orbit::Orbit;
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 /// use qtty::*;
 ///
 /// // Mars-like orbit (heliocentric)
@@ -300,6 +223,7 @@ pub enum OrbitReferenceCenter {
 /// let mars_params = BodycentricParams::heliocentric(mars_orbit);
 /// ```
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BodycentricParams {
     /// The Keplerian orbital elements of the body.
     pub orbit: Orbit,
@@ -347,7 +271,7 @@ impl Default for BodycentricParams {
     /// Note: This default is primarily for internal use. In practice, you should
     /// always provide meaningful orbital elements for body-centric calculations.
     fn default() -> Self {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
         use qtty::AstronomicalUnits;
 
         Self {
@@ -385,7 +309,7 @@ impl Default for BodycentricParams {
 /// use siderust::coordinates::cartesian::Position;
 /// use siderust::coordinates::frames;
 /// use siderust::astro::orbit::Orbit;
-/// use siderust::astro::JulianDate;
+/// use siderust::time::JulianDate;
 /// use qtty::*;
 ///
 /// // Create orbital parameters for an Earth-orbiting satellite
@@ -402,13 +326,13 @@ impl Default for BodycentricParams {
 /// let sat_params = BodycentricParams::geocentric(satellite_orbit);
 /// ```
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[center(params = BodycentricParams)]
 pub struct Bodycentric;
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
 
     #[test]
     fn center_names_are_correct() {
@@ -444,9 +368,9 @@ mod tests {
     }
 
     #[test]
-    fn topocentric_has_observer_site_params() {
-        // Verify Topocentric uses ObserverSite as Params
-        let site = ObserverSite::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
+    fn topocentric_has_geodetic_coord_params() {
+        // Verify Topocentric uses Geodetic<ECEF> as Params
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
         let _: <Topocentric as ReferenceCenter>::Params = site;
 
         // Verify non-zero size (stores actual data)
@@ -454,26 +378,25 @@ mod tests {
     }
 
     #[test]
-    fn observer_site_default() {
-        let site = ObserverSite::default();
-        assert_eq!(site.lon.value(), 0.0);
-        assert_eq!(site.lat.value(), 0.0);
-        assert_eq!(site.height.value(), 0.0);
+    fn geodetic_coord_default() {
+        let coord = Geodetic::<ECEF>::default();
+        assert_eq!(coord.lon, 0.0);
+        assert_eq!(coord.lat, 0.0);
+        assert_eq!(coord.height, 0.0);
     }
 
     #[test]
-    fn observer_site_equality() {
-        let site1 = ObserverSite::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
-        let site2 = ObserverSite::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
-        let site3 = ObserverSite::new(10.0 * DEG, 20.0 * DEG, 200.0 * M);
-
-        assert_eq!(site1, site2);
-        assert_ne!(site1, site3);
+    fn geodetic_coord_equality() {
+        let c1 = Geodetic::<ECEF>::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
+        let c2 = Geodetic::<ECEF>::new(10.0 * DEG, 20.0 * DEG, 100.0 * M);
+        let c3 = Geodetic::<ECEF>::new(10.0 * DEG, 20.0 * DEG, 200.0 * M);
+        assert_eq!(c1, c2);
+        assert_ne!(c1, c3);
     }
 
     #[test]
     fn bodycentric_has_params() {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
 
         // Create a simple orbit
         let orbit = Orbit::new(
@@ -495,7 +418,7 @@ mod tests {
 
     #[test]
     fn bodycentric_params_constructors() {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
 
         let orbit = Orbit::new(
             1.0 * AU,
@@ -526,7 +449,7 @@ mod tests {
 
     #[test]
     fn bodycentric_params_equality() {
-        use crate::astro::JulianDate;
+        use crate::time::JulianDate;
 
         let orbit1 = Orbit::new(
             1.0 * AU,
@@ -553,5 +476,12 @@ mod tests {
 
         assert_eq!(params1, params2);
         assert_ne!(params1, params3);
+    }
+
+    #[test]
+    fn center_params_mismatch_error_reexported() {
+        // Verify CenterParamsMismatchError is accessible through centers module
+        let err = CenterParamsMismatchError { operation: "test" };
+        let _: &dyn std::error::Error = &err;
     }
 }

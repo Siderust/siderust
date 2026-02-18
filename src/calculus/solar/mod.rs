@@ -10,28 +10,30 @@
 //!
 //! - Calculation of the Sun's apparent geocentric equatorial coordinates, including
 //!   corrections for nutation and aberration.
+//! - Optimized sun altitude calculations
+//! - Finding periods when Sun is above/below specific altitude thresholds (day/night)
+//! - Altitude range detection (`find_sun_range_periods`)
 //!
 //! ## Design Notes
 //!
-//! This module is intentionally minimal in its current form, providing only the most
-//! essential solar position routines. It is designed for extensibility and will be expanded
-//! in future releases to include:
-//! - Solar elongation and phase angle calculations
-//! - Solar limb darkening and apparent diameter
-//! - Solar ephemerides for arbitrary epochs
-//! - Solar system barycenter computations
-//! - Additional solar-related phenomena and corrections
+//! All period-finding delegates to [`crate::calculus::math_core::intervals`]
+//! which provides scan + Brent refinement + interval assembly.  This module
+//! supplies the Sun-altitude closure and JD↔Mjd conversions.
 //!
 //! ## Usage
 //!
-//! The main entry point is the [`crate::bodies::solar_system::Sun`] type, which exposes methods for obtaining the Sun's
-//! apparent position `get_apparent_geocentric_equ`.
+//! The main entry points are:
+//! - [`sun_altitude_rad`]: Compute Sun altitude at a given Julian Date
+//! - [`find_day_periods`] / [`find_night_periods`]: Above/below threshold
+//! - [`find_sun_range_periods`]: Within a min/max altitude band
 //!
 //! ---
 //! _This module is under active development and will be expanded in future releases._
 
 mod sun_equations;
 
-pub mod altitude_periods;
+pub(crate) mod altitude_periods;
+pub mod night_types;
 
-pub use altitude_periods::*;
+pub(crate) use altitude_periods::*;
+pub use night_types::*;

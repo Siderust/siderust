@@ -2,7 +2,8 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use qtty::*;
-use siderust::coordinates::centers::ObserverSite;
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::{direction, position};
 
 const EPS: f64 = 1e-6;
@@ -13,7 +14,7 @@ fn ecef_normalization_and_altitude() {
     // new(lon, lat) normalizes lat via wrap_quarter_fold to [-90, 90]
     // and lon via normalize to [0, 360)
     // Note: IAU convention - lon first, lat second
-    let dir = direction::Geographic::new(190.0 * DEG, 95.0 * DEG);
+    let dir = direction::EcefDir::new(190.0 * DEG, 95.0 * DEG);
     // 95° lat after wrap_quarter_fold: clamped to 85° (90 - 5)
     // 190° lon after normalize stays as 190°
     assert!(
@@ -27,26 +28,25 @@ fn ecef_normalization_and_altitude() {
         dir.lon().value()
     );
 
-    // Position::new(lon, lat, alt) uses the same normalization
-    let pos = position::Geographic::new(190.0 * DEG, 95.0 * DEG, 10.0 * KM);
+    // Geodetic::<ECEF>::new() normalises longitude to [-180, 180).
+    // 190° wraps to -170°.
+    let coord = Geodetic::<ECEF>::new(190.0 * DEG, 85.0 * DEG, 10_000.0 * M);
     assert!(
-        (pos.lat().value() - 85.0).abs() < EPS,
-        "pos lat mismatch: {}",
-        pos.lat().value()
+        (coord.lat.value() - 85.0).abs() < EPS,
+        "geodetic lat mismatch: {}",
+        coord.lat.value()
     );
     assert!(
-        (pos.lon().value() - 190.0).abs() < EPS,
-        "pos lon mismatch: {}",
-        pos.lon().value()
+        (coord.lon.value() - (-170.0)).abs() < EPS,
+        "geodetic lon mismatch: {}",
+        coord.lon.value()
     );
-    // Note: distance is now just the third coordinate, not radius + altitude
-    assert!((pos.distance() - 10.0 * KM).abs() < EPS * KM);
 }
 
 #[test]
 fn ecliptic_normalization() {
     // Direction::new(lon, lat) normalizes both
-    let dir = direction::Ecliptic::new(120.0 * DEG, -45.0 * DEG);
+    let dir = direction::EclipticMeanJ2000::new(120.0 * DEG, -45.0 * DEG);
     // After normalization: lat = -45° (in [-90, 90]), lon = 120° (in [0, 360))
     assert!(
         (dir.lon().value() - 120.0).abs() < EPS,
@@ -60,7 +60,8 @@ fn ecliptic_normalization() {
     );
 
     // Position::new(lon, lat, distance) also normalizes
-    let pos = position::Ecliptic::<AstronomicalUnit>::new(120.0 * DEG, -45.0 * DEG, 2.0 * AU);
+    let pos =
+        position::EclipticMeanJ2000::<AstronomicalUnit>::new(120.0 * DEG, -45.0 * DEG, 2.0 * AU);
     assert!(
         (pos.lon().value() - 120.0).abs() < EPS,
         "pos lon mismatch: {}",
@@ -71,7 +72,7 @@ fn ecliptic_normalization() {
         "pos lat mismatch: {}",
         pos.lat().value()
     );
-    assert!((pos.distance() - 2.0 * AU).abs() < EPS * AU);
+    assert!((pos.distance - 2.0 * AU).abs() < EPS * AU);
 }
 
 #[test]
@@ -84,9 +85,9 @@ fn horizontal_normalization() {
     assert!((dir.az().value() - 330.0).abs() < EPS, "az={}", dir.az());
 
     // Positions use new_with_site for Topocentric center
-    let site = ObserverSite::default();
+    let site = Geodetic::<ECEF>::default();
     // Note: new_with_site takes (site, alt, az, dist) - IAU Alt-Az convention (altitude first)
-    let pos = position::Horizontal::<AstronomicalUnit>::new_with_site(
+    let pos = siderust::coordinates::centers::Topocentric::horizontal(
         site,
         120.0 * DEG, // alt - wraps to 60
         -30.0 * DEG, // az - normalizes to 330
@@ -102,5 +103,5 @@ fn horizontal_normalization() {
         "pos az={}",
         pos.az()
     );
-    assert!((pos.distance() - 2.0 * AU).abs() < EPS * AU);
+    assert!((pos.distance - 2.0 * AU).abs() < EPS * AU);
 }

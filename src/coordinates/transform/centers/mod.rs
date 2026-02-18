@@ -39,8 +39,8 @@ pub mod position;
 // Re-export extension traits for ergonomic imports
 pub use position::{FromBodycentricExt, ToBodycentricExt, ToTopocentricExt};
 
-use crate::astro::JulianDate;
 use crate::coordinates::{cartesian::Position, centers::*, frames};
+use crate::time::JulianDate;
 use qtty::LengthUnit;
 
 /// Trait for transforming coordinates from one center to another.
@@ -58,7 +58,7 @@ pub trait TransformCenter<Coord> {
     ///
     /// - `jd`: The Julian Date at which to perform the transformation
     ///   (needed for time-dependent positions like Earth's location).
-    fn to_center(&self, jd: crate::astro::JulianDate) -> Coord;
+    fn to_center(&self, jd: crate::time::JulianDate) -> Coord;
 }
 
 /// Identity transformation: a position in center C stays in center C.
@@ -76,22 +76,23 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::JulianDate;
-    use crate::bodies::solar_system::Earth;
+    use crate::calculus::ephemeris::Ephemeris;
     use crate::coordinates::cartesian;
+    use crate::coordinates::transform::context::DefaultEphemeris;
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
+    use crate::time::JulianDate;
     use qtty::AstronomicalUnit;
 
     const EPSILON: f64 = 1e-9;
 
     #[test]
     fn test_position_barycentric_to_geocentric() {
-        let earth_bary = *Earth::vsop87e(JulianDate::J2000).get_position();
-        let earth_geo: cartesian::position::Ecliptic<AstronomicalUnit, Geocentric> =
+        let earth_bary = *DefaultEphemeris::earth_barycentric(JulianDate::J2000).get_position();
+        let earth_geo: cartesian::position::EclipticMeanJ2000<AstronomicalUnit, Geocentric> =
             earth_bary.transform(JulianDate::J2000);
         let expected_earth_geo =
-            cartesian::position::Ecliptic::<AstronomicalUnit, Geocentric>::CENTER;
+            cartesian::position::EclipticMeanJ2000::<AstronomicalUnit, Geocentric>::CENTER;
         assert_cartesian_eq!(
             &earth_geo,
             &expected_earth_geo,
@@ -103,10 +104,11 @@ mod tests {
 
     #[test]
     fn test_position_heliocentric_to_geocentric() {
-        let earth_helio = *Earth::vsop87a(JulianDate::J2000).get_position();
-        let earth_geo: cartesian::position::Ecliptic<AstronomicalUnit, Geocentric> =
+        let earth_helio = *DefaultEphemeris::earth_heliocentric(JulianDate::J2000).get_position();
+        let earth_geo: cartesian::position::EclipticMeanJ2000<AstronomicalUnit, Geocentric> =
             earth_helio.transform(JulianDate::J2000);
-        let expected = cartesian::position::Ecliptic::<AstronomicalUnit, Geocentric>::CENTER;
+        let expected =
+            cartesian::position::EclipticMeanJ2000::<AstronomicalUnit, Geocentric>::CENTER;
         assert_cartesian_eq!(&earth_geo, &expected, EPSILON);
     }
 }

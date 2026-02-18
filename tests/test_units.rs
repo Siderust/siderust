@@ -65,6 +65,6 @@ fn quantity_arithmetic_and_simplify() {
 fn unitless_from_length_and_display() {
     let meters = Meters::new(42.0);
     let unitless: Quantity<Unitless> = meters.into();
-    assert_eq!(unitless.value(), 42.0);
+    assert_eq!(unitless, 42.0);
     assert_eq!(format!("{}", unitless), "42");
 }
