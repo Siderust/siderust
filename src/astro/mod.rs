@@ -20,6 +20,7 @@
 pub mod aberration;
 pub mod cio;
 pub mod earth_rotation;
+pub mod earth_rotation_provider;
 pub mod eop;
 pub mod era;
 pub mod iers_data;

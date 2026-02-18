@@ -37,8 +37,12 @@ pub mod direction {
     pub type EquatorialTrueOfDate = Direction<frames::EquatorialTrueOfDate>;
     /// **Horizontal** cartesian direction (unit vector).
     pub type Horizontal = Direction<frames::Horizontal>;
-    /// **Geographic (ECEF)** cartesian direction (unit vector).
-    pub type Geographic = Direction<frames::ECEF>;
+    /// **Geocentric Earth-fixed (ECEF)** cartesian direction (unit vector).
+    ///
+    /// For geodetic (lon/lat/h) positions, use [`affn::geodesy::GeodeticCoord`]
+    /// instead; this type is for unit vectors in the Earth-fixed frame.
+    /// Cartesian unit vector in the **Earth-Centred Earth-Fixed** frame.
+    pub type EcefCartDir = Direction<frames::ECEF>;
     /// **ICRS** cartesian direction (unit vector).
     pub type ICRS = Direction<frames::ICRS>;
     /// **ICRF** cartesian direction (unit vector).
@@ -91,13 +95,25 @@ pub mod position {
         Position<C, frames::EquatorialTrueOfDate, U>;
     /// **Topocentric Horizontal** cartesian position.
     pub type Horizontal<U, C = centers::Topocentric> = Position<C, frames::Horizontal, U>;
-    /// **Geocentric Geographic (ECEF)** cartesian position.
-    pub type Geographic<U, C = centers::Geocentric> = Position<C, frames::ECEF, U>;
+    /// **Geocentric Earth-Centered Earth-Fixed (ECEF)** cartesian position.
+    ///
+    /// For geodetic (lon/lat/h) positions, use [`affn::geodesy::GeodeticCoord`]
+    /// instead; this type is for Cartesian XYZ in the Earth-fixed frame.
+    /// The ellipsoid-correct WGS84 conversion is `ObserverSite::geocentric_itrf()`.
+    pub type EcefPos<U, C = centers::Geocentric> = Position<C, frames::ECEF, U>;
     /// **Barycentric ICRS** cartesian position.
     pub type ICRS<U, C = centers::Barycentric> = Position<C, frames::ICRS, U>;
     /// **Heliocentric ICRS** cartesian position.
     pub type HCRS<U> = Position<centers::Heliocentric, frames::ICRS, U>;
     /// **Geocentric ICRS** cartesian position.
+    ///
+    /// # Approximation
+    ///
+    /// This alias uses [`frames::ICRS`] as a first-order approximation for
+    /// the Geocentric Celestial Reference System ([`frames::GCRS`]). The
+    /// difference is < 1 mas for typical astronomical directions (neglected:
+    /// geocentre offset, relativistic terms). For strictly IAU-correct GCRS,
+    /// use `Position<Geocentric, frames::GCRS, U>` directly.
     pub type GCRS<U> = Position<centers::Geocentric, frames::ICRS, U>;
     /// **Topocentric ICRS** cartesian position.
     pub type TCRS<U> = Position<centers::Topocentric, frames::ICRS, U>;

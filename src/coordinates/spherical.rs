@@ -43,8 +43,11 @@ pub mod direction {
 	pub type Horizontal = Direction<frames::Horizontal>;
 	/// **ICRS** direction.
 	pub type ICRS = Direction<frames::ICRS>;
-	/// **Geographic** (ECEF) direction: longitude, latitude.
-	pub type Geographic = Direction<frames::ECEF>;
+	/// **ECEF** direction: unit vector in the Earth-fixed frame.
+	///
+	/// For geodetic (lon/lat/h) positions, use [`affn::geodesy::GeodeticCoord`] instead;
+	/// this type is for unit vectors, not geodetic positions.
+	pub type EcefDir = Direction<frames::ECEF>;
 	/// **Galactic** direction (l, b).
 	pub type Galactic = Direction<frames::Galactic>;
 }
@@ -57,7 +60,6 @@ pub mod position {
 
 	use super::Position;
 	use crate::coordinates::{centers, frames};
-	use qtty::Kilometer;
 
 	/// **Heliocentric EclipticMeanJ2000** coordinates *(λ, β, R)*.
 	///
@@ -95,8 +97,23 @@ pub mod position {
 	/// **Heliocentric ICRS** coordinates.
 	pub type HCRS<U> = Position<centers::Heliocentric, frames::ICRS, U>;
 	/// **Geocentric ICRS** coordinates.
+	///
+	/// # Approximation
+	///
+	/// This alias uses [`frames::ICRS`] as a first-order approximation for
+	/// the Geocentric Celestial Reference System ([`frames::GCRS`]). The
+	/// difference is < 1 mas for typical astronomical directions (neglected:
+	/// geocentre offset, relativistic terms). For strictly IAU-correct GCRS,
+	/// use `Position<Geocentric, frames::GCRS, U>` directly.
 	pub type GCRS<U> = Position<centers::Geocentric, frames::ICRS, U>;
 
-	/// **Geographic (ECEF)** position: longitude, latitude, altitude (km).
-	pub type Geographic = Position<centers::Geocentric, frames::ECEF, Kilometer>;
+	// NOTE: The `Geographic` spherical-position alias has been removed.
+	// The old definition `Geographic = Position<Geocentric, ECEF, Kilometer>`
+	// was a correctness footgun: in a spherical position `distance` is radial
+	// distance, not ellipsoidal height, so `.to_cartesian()` produced
+	// geometrically wrong results for geodetic coordinates.
+	//
+	// Use `affn::geodesy::GeodeticCoord` for geodetic (lon/lat/h) constants
+	// and `ObserverSite::geocentric_itrf()` for the ellipsoid-correct
+	// WGS84 -> ECEF conversion.
 }

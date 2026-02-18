@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn test_find_moon_below_horizon() {
-        let site = ObserverSite::from_geographic(&ROQUE_DE_LOS_MUCHACHOS);
+        let site = ObserverSite::from_geodetic(&ROQUE_DE_LOS_MUCHACHOS);
         let mjd_start = ModifiedJulianDate::new(60676.0);
         let mjd_end = ModifiedJulianDate::new(60683.0);
         let period = Period::new(mjd_start, mjd_end);

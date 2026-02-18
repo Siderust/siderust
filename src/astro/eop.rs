@@ -15,6 +15,14 @@
 //! | **dX, dY** | Celestial pole offsets — corrections to the IAU precession-nutation model |
 //! | **LOD** | Length Of Day excess (deviation from 86400 SI seconds) |
 //!
+//! ## Time-scale contract
+//!
+//! **All Julian Dates passed to EOP lookups are in UTC.**
+//! IERS Bulletin A/B tables are indexed by UTC civil date; passing TT or UT1
+//! would introduce an error of up to ~70 s in the interpolation index,
+//! corrupting the returned `dUT1`, `xp`, `yp` values.  Always convert to UTC
+//! before calling [`EopProvider::eop_at`].
+//!
 //! ## Architecture
 //!
 //! The [`EopProvider`] trait abstracts over different EOP data sources:
@@ -78,8 +86,24 @@ impl EopValues {
 ///
 /// Implementors might read from IERS data files, interpolate tables,
 /// or return zero corrections for simplified calculations.
+///
+/// # Time-scale contract
+///
+/// **All `jd_*` arguments throughout this trait and its implementations are
+/// UTC Julian Dates.**  Callers must not pass TT, TDB, or UT1 Julian Dates
+/// without first converting to UTC (via the appropriate Δt tables).
+///
+/// The reason is that IERS Bulletin A/B tables are indexed by UTC civil date;
+/// using the wrong time scale introduces a bias of up to ~70 s (≈ accumulated
+/// leap seconds + TT–TAI) in the interpolation, which can shift the looked-up
+/// `dUT1` by several milliseconds and shift `xp`/`yp` by a perceptible amount.
 pub trait EopProvider {
-    /// Look up (or interpolate) EOP values for the given Julian Date (UTC).
+    /// Look up (or interpolate) EOP values for the given **UTC** Julian Date.
+    ///
+    /// # Time-scale contract
+    /// `jd_utc` **must** be a UTC Julian Date.  Passing a TT or UT1 Julian
+    /// Date will silently produce incorrect EOP values due to the offset
+    /// between UTC and those scales (up to ~70 s accumulated).
     fn eop_at(&self, jd_utc: JulianDate) -> EopValues;
 }
 
