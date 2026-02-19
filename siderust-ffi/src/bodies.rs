@@ -5,8 +5,8 @@
 
 use crate::error::SiderustStatus;
 use crate::types::{SiderustPlanet, SiderustProperMotion, SiderustRaConvention};
-use qtty::*;
 use qtty::length::nominal::SolarRadiuses;
+use qtty::*;
 use siderust::astro::proper_motion::{ProperMotion, RaProperMotionConvention};
 use siderust::bodies::{self, Star};
 use siderust::coordinates::centers::Geocentric;
@@ -65,9 +65,7 @@ pub extern "C" fn siderust_star_catalog(
 
     match star {
         Some(s) => {
-            let handle = Box::new(SiderustStar {
-                inner: s.clone(),
-            });
+            let handle = Box::new(SiderustStar { inner: s.clone() });
             unsafe { *out = Box::into_raw(handle) };
             SiderustStatus::Ok
         }
@@ -229,7 +227,9 @@ pub extern "C" fn siderust_star_luminosity_solar(handle: *const SiderustStar) ->
 /// Get Mercury's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_mercury(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() { return SiderustStatus::NullPointer; }
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     unsafe { *out = SiderustPlanet::from_rust(&bodies::MERCURY) };
     SiderustStatus::Ok
 }
@@ -237,7 +237,9 @@ pub extern "C" fn siderust_planet_mercury(out: *mut SiderustPlanet) -> SiderustS
 /// Get Venus's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_venus(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() { return SiderustStatus::NullPointer; }
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     unsafe { *out = SiderustPlanet::from_rust(&bodies::VENUS) };
     SiderustStatus::Ok
 }
@@ -245,7 +247,9 @@ pub extern "C" fn siderust_planet_venus(out: *mut SiderustPlanet) -> SiderustSta
 /// Get Earth's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_earth(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() { return SiderustStatus::NullPointer; }
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     unsafe { *out = SiderustPlanet::from_rust(&bodies::EARTH) };
     SiderustStatus::Ok
 }
@@ -253,7 +257,9 @@ pub extern "C" fn siderust_planet_earth(out: *mut SiderustPlanet) -> SiderustSta
 /// Get Mars's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_mars(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() { return SiderustStatus::NullPointer; }
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     unsafe { *out = SiderustPlanet::from_rust(&bodies::MARS) };
     SiderustStatus::Ok
 }
@@ -261,7 +267,9 @@ pub extern "C" fn siderust_planet_mars(out: *mut SiderustPlanet) -> SiderustStat
 /// Get Jupiter's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_jupiter(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() { return SiderustStatus::NullPointer; }
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     unsafe { *out = SiderustPlanet::from_rust(&bodies::JUPITER) };
     SiderustStatus::Ok
 }
@@ -269,7 +277,9 @@ pub extern "C" fn siderust_planet_jupiter(out: *mut SiderustPlanet) -> SiderustS
 /// Get Saturn's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_saturn(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() { return SiderustStatus::NullPointer; }
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     unsafe { *out = SiderustPlanet::from_rust(&bodies::SATURN) };
     SiderustStatus::Ok
 }
@@ -277,7 +287,9 @@ pub extern "C" fn siderust_planet_saturn(out: *mut SiderustPlanet) -> SiderustSt
 /// Get Uranus's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_uranus(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() { return SiderustStatus::NullPointer; }
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     unsafe { *out = SiderustPlanet::from_rust(&bodies::URANUS) };
     SiderustStatus::Ok
 }
@@ -285,7 +297,9 @@ pub extern "C" fn siderust_planet_uranus(out: *mut SiderustPlanet) -> SiderustSt
 /// Get Neptune's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_neptune(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() { return SiderustStatus::NullPointer; }
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     unsafe { *out = SiderustPlanet::from_rust(&bodies::NEPTUNE) };
     SiderustStatus::Ok
 }
