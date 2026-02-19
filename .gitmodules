@@ -1,12 +1,12 @@
 [submodule "affn"]
-	path = affn
+	path = dev-deps/affn
 	url = git@github.com:Siderust/affn.git
 [submodule "qtty"]
-	path = qtty
+	path = dev-deps/qtty
 	url = git@github.com:Siderust/qtty.git
 [submodule "cheby"]
-	path = cheby
+	path = dev-deps/cheby
 	url = git@github.com:Siderust/cheby.git
 [submodule "tempoch"]
-	path = tempoch
+	path = dev-deps/tempoch
 	url = git@github.com:Siderust/tempoch.git
