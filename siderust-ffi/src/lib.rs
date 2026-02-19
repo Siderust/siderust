@@ -10,13 +10,13 @@
 // Ensure the tempoch-ffi crate is linked so re-exports resolve.
 extern crate tempoch_ffi;
 
-pub mod error;
-pub mod types;
-pub mod observatories;
+pub mod altitude;
 pub mod bodies;
 pub mod coordinates;
-pub mod altitude;
 pub mod ephemeris;
+pub mod error;
+pub mod observatories;
+pub mod types;
 
 /// Returns the siderust-ffi ABI version (semver-encoded: major*10000 + minor*100 + patch).
 #[no_mangle]

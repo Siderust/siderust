@@ -12,8 +12,8 @@ use crate::types::*;
 use qtty::*;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::{
-    ECEF, EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate,
-    EquatorialTrueOfDate, ReferenceFrame, ICRS,
+    EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate,
+    ReferenceFrame, ECEF, ICRS,
 };
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::{DirectionAstroExt, SphericalDirectionAstroExt};
@@ -82,7 +82,8 @@ macro_rules! impl_sph_dir_proxy {
             fn to_horizontal(&self, jd: &JulianDate, site: &Geodetic<ECEF>) -> (f64, f64) {
                 // Route: F → ICRS → EquatorialTrueOfDate (cartesian) → Horizontal
                 let icrs = SphericalDirectionAstroExt::to_frame::<ICRS>(self, jd);
-                let eq_tod = SphericalDirectionAstroExt::to_frame::<EquatorialTrueOfDate>(&icrs, jd);
+                let eq_tod =
+                    SphericalDirectionAstroExt::to_frame::<EquatorialTrueOfDate>(&icrs, jd);
                 let cart = eq_tod.to_cartesian();
                 let hz = DirectionAstroExt::to_horizontal(&cart, jd, site);
                 let hz_sph = spherical::Direction::from_cartesian(&hz);
@@ -105,21 +106,34 @@ fn make_sph_dir_in_frame(
     lat_deg: f64,
 ) -> Result<Box<dyn SphericalDirProxy>, SiderustStatus> {
     match frame {
-        SiderustFrame::ICRS => Ok(Box::new(
-            spherical::Direction::<ICRS>::new(Degrees::new(lon_deg), Degrees::new(lat_deg)),
-        )),
-        SiderustFrame::EclipticMeanJ2000 => Ok(Box::new(
-            spherical::Direction::<EclipticMeanJ2000>::new(Degrees::new(lon_deg), Degrees::new(lat_deg)),
-        )),
-        SiderustFrame::EquatorialMeanJ2000 => Ok(Box::new(
-            spherical::Direction::<EquatorialMeanJ2000>::new(Degrees::new(lon_deg), Degrees::new(lat_deg)),
-        )),
-        SiderustFrame::EquatorialMeanOfDate => Ok(Box::new(
-            spherical::Direction::<EquatorialMeanOfDate>::new(Degrees::new(lon_deg), Degrees::new(lat_deg)),
-        )),
-        SiderustFrame::EquatorialTrueOfDate => Ok(Box::new(
-            spherical::Direction::<EquatorialTrueOfDate>::new(Degrees::new(lon_deg), Degrees::new(lat_deg)),
-        )),
+        SiderustFrame::ICRS => Ok(Box::new(spherical::Direction::<ICRS>::new(
+            Degrees::new(lon_deg),
+            Degrees::new(lat_deg),
+        ))),
+        SiderustFrame::EclipticMeanJ2000 => {
+            Ok(Box::new(spherical::Direction::<EclipticMeanJ2000>::new(
+                Degrees::new(lon_deg),
+                Degrees::new(lat_deg),
+            )))
+        }
+        SiderustFrame::EquatorialMeanJ2000 => {
+            Ok(Box::new(spherical::Direction::<EquatorialMeanJ2000>::new(
+                Degrees::new(lon_deg),
+                Degrees::new(lat_deg),
+            )))
+        }
+        SiderustFrame::EquatorialMeanOfDate => {
+            Ok(Box::new(spherical::Direction::<EquatorialMeanOfDate>::new(
+                Degrees::new(lon_deg),
+                Degrees::new(lat_deg),
+            )))
+        }
+        SiderustFrame::EquatorialTrueOfDate => {
+            Ok(Box::new(spherical::Direction::<EquatorialTrueOfDate>::new(
+                Degrees::new(lon_deg),
+                Degrees::new(lat_deg),
+            )))
+        }
         _ => Err(SiderustStatus::InvalidFrame),
     }
 }

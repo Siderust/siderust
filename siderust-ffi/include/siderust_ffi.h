@@ -11,6 +11,32 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+// Crossing event direction.
+enum siderust_crossing_direction_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  SIDERUST_CROSSING_DIRECTION_T_RISING = 0,
+  SIDERUST_CROSSING_DIRECTION_T_SETTING = 1,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_crossing_direction_t;
+#endif // __cplusplus
+
+// Culmination event kind.
+enum siderust_culmination_kind_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  SIDERUST_CULMINATION_KIND_T_MAX = 0,
+  SIDERUST_CULMINATION_KIND_T_MIN = 1,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_culmination_kind_t;
+#endif // __cplusplus
+
 // Status codes returned by siderust-ffi functions.
 enum siderust_status_t
 #ifdef __cplusplus
@@ -99,35 +125,27 @@ enum siderust_center_t
 typedef int32_t siderust_center_t;
 #endif // __cplusplus
 
-// Crossing event direction.
-enum siderust_crossing_direction_t
-#ifdef __cplusplus
-  : int32_t
-#endif // __cplusplus
- {
-  SIDERUST_CROSSING_DIRECTION_T_RISING = 0,
-  SIDERUST_CROSSING_DIRECTION_T_SETTING = 1,
-};
-#ifndef __cplusplus
-typedef int32_t siderust_crossing_direction_t;
-#endif // __cplusplus
-
-// Culmination event kind.
-enum siderust_culmination_kind_t
-#ifdef __cplusplus
-  : int32_t
-#endif // __cplusplus
- {
-  SIDERUST_CULMINATION_KIND_T_MAX = 0,
-  SIDERUST_CULMINATION_KIND_T_MIN = 1,
-};
-#ifndef __cplusplus
-typedef int32_t siderust_culmination_kind_t;
-#endif // __cplusplus
-
 // Opaque handle to a Star. Created via `siderust_star_*` functions, freed
 // with `siderust_star_free`.
 typedef struct SiderustStar SiderustStar;
+
+// A threshold-crossing event.
+typedef struct siderust_crossing_event_t {
+  // Time of the crossing (Modified Julian Date).
+  double mjd;
+  // Direction of the crossing.
+  siderust_crossing_direction_t direction;
+} siderust_crossing_event_t;
+
+// A culmination (local extremum in altitude) event.
+typedef struct siderust_culmination_event_t {
+  // Time of the culmination (Modified Julian Date).
+  double mjd;
+  // Altitude at the extremum in degrees.
+  double altitude_deg;
+  // Kind of extremum.
+  siderust_culmination_kind_t kind;
+} siderust_culmination_event_t;
 
 // Geodetic position (WGS84) for C interop.
 typedef struct siderust_geodetic_t {
@@ -138,6 +156,25 @@ typedef struct siderust_geodetic_t {
   // Height above ellipsoid in metres.
   double height_m;
 } siderust_geodetic_t;
+
+// Search options for altitude computations.
+typedef struct siderust_search_opts_t {
+  // Time tolerance in days (default: ~1 µs = 1e-9 days).
+  double time_tolerance_days;
+  // Scan step in days. Set to 0 or negative to use the body's default.
+  double scan_step_days;
+  // Whether `scan_step_days` is valid (non-zero).
+  bool has_scan_step;
+} siderust_search_opts_t;
+
+// Altitude computation query parameters.
+typedef struct siderust_altitude_query_t {
+  struct siderust_geodetic_t observer;
+  double start_mjd;
+  double end_mjd;
+  double min_altitude_deg;
+  double max_altitude_deg;
+} siderust_altitude_query_t;
 
 // Proper motion of a star (equatorial).
 typedef struct siderust_proper_motion_t {
@@ -186,184 +223,12 @@ typedef struct siderust_cartesian_pos_t {
   siderust_center_t center;
 } siderust_cartesian_pos_t;
 
-// A threshold-crossing event.
-typedef struct siderust_crossing_event_t {
-  // Time of the crossing (Modified Julian Date).
-  double mjd;
-  // Direction of the crossing.
-  siderust_crossing_direction_t direction;
-} siderust_crossing_event_t;
-
-// A culmination (local extremum in altitude) event.
-typedef struct siderust_culmination_event_t {
-  // Time of the culmination (Modified Julian Date).
-  double mjd;
-  // Altitude at the extremum in degrees.
-  double altitude_deg;
-  // Kind of extremum.
-  siderust_culmination_kind_t kind;
-} siderust_culmination_event_t;
-
-// Search options for altitude computations.
-typedef struct siderust_search_opts_t {
-  // Time tolerance in days (default: ~1 µs = 1e-9 days).
-  double time_tolerance_days;
-  // Scan step in days. Set to 0 or negative to use the body's default.
-  double scan_step_days;
-  // Whether `scan_step_days` is valid (non-zero).
-  bool has_scan_step;
-} siderust_search_opts_t;
-
-// Altitude computation query parameters.
-typedef struct siderust_altitude_query_t {
-  struct siderust_geodetic_t observer;
-  double start_mjd;
-  double end_mjd;
-  double min_altitude_deg;
-  double max_altitude_deg;
-} siderust_altitude_query_t;
-
 #ifdef __cplusplus
 extern "C" {
 #endif // __cplusplus
 
 // Returns the siderust-ffi ABI version (semver-encoded: major*10000 + minor*100 + patch).
  uint32_t siderust_ffi_version(void);
-
-// Fill `out` with the Roque de los Muchachos observatory (La Palma, Spain).
- siderust_status_t siderust_observatory_roque_de_los_muchachos(struct siderust_geodetic_t *out);
-
-// Fill `out` with the El Paranal observatory (Chile).
- siderust_status_t siderust_observatory_el_paranal(struct siderust_geodetic_t *out);
-
-// Fill `out` with the Mauna Kea observatory (Hawaiʻi, USA).
- siderust_status_t siderust_observatory_mauna_kea(struct siderust_geodetic_t *out);
-
-// Fill `out` with the La Silla observatory (Chile).
- siderust_status_t siderust_observatory_la_silla(struct siderust_geodetic_t *out);
-
-// Create a custom geodetic position (WGS84/ECEF).
-
-siderust_status_t siderust_geodetic_new(double lon_deg,
-                                        double lat_deg,
-                                        double height_m,
-                                        struct siderust_geodetic_t *out);
-
-// Look up a star from the built-in catalog by name.
-//
-// Supported names: "VEGA", "SIRIUS", "POLARIS", "CANOPUS", "ARCTURUS",
-// "RIGEL", "BETELGEUSE", "PROCYON", "ALDEBARAN", "ALTAIR".
-//
-// On success, `*out` receives a newly allocated handle.
-// The caller must free it with `siderust_star_free`.
- siderust_status_t siderust_star_catalog(const char *name, struct SiderustStar **out);
-
-// Create a custom star.
-//
-// `name` — UTF-8 null-terminated string.
-// `ra_deg`, `dec_deg` — J2000 equatorial coordinates in degrees.
-// `distance_ly` — distance in light-years.
-// `epoch_jd` — epoch of the given coordinates (Julian Date).
-// `proper_motion` — optional: pass null for a fixed star.
-
-siderust_status_t siderust_star_create(const char *name,
-                                       double distance_ly,
-                                       double mass_solar,
-                                       double radius_solar,
-                                       double luminosity_solar,
-                                       double ra_deg,
-                                       double dec_deg,
-                                       double epoch_jd,
-                                       const struct siderust_proper_motion_t *proper_motion,
-                                       struct SiderustStar **out);
-
-// Free a Star handle.
-//
-// # Safety
-// The handle must have been allocated by `siderust_star_catalog` or
-// `siderust_star_create`, and must not be used after this call.
- void siderust_star_free(struct SiderustStar *handle);
-
-// Get the star's name. Copies into `buf` up to `buf_len` bytes (including NUL).
-// Sets `*written` to the number of bytes written (excluding NUL).
-// Returns InvalidArgument if the buffer is too small.
-
-siderust_status_t siderust_star_name(const struct SiderustStar *handle,
-                                     char *buf,
-                                     uintptr_t buf_len,
-                                     uintptr_t *written);
-
-// Get the star's distance in light-years.
- double siderust_star_distance_ly(const struct SiderustStar *handle);
-
-// Get the star's mass in solar masses.
- double siderust_star_mass_solar(const struct SiderustStar *handle);
-
-// Get the star's radius in solar radii.
- double siderust_star_radius_solar(const struct SiderustStar *handle);
-
-// Get the star's luminosity in solar luminosities.
- double siderust_star_luminosity_solar(const struct SiderustStar *handle);
-
-// Get Mercury's orbital and physical parameters.
- siderust_status_t siderust_planet_mercury(struct siderust_planet_t *out);
-
-// Get Venus's orbital and physical parameters.
- siderust_status_t siderust_planet_venus(struct siderust_planet_t *out);
-
-// Get Earth's orbital and physical parameters.
- siderust_status_t siderust_planet_earth(struct siderust_planet_t *out);
-
-// Get Mars's orbital and physical parameters.
- siderust_status_t siderust_planet_mars(struct siderust_planet_t *out);
-
-// Get Jupiter's orbital and physical parameters.
- siderust_status_t siderust_planet_jupiter(struct siderust_planet_t *out);
-
-// Get Saturn's orbital and physical parameters.
- siderust_status_t siderust_planet_saturn(struct siderust_planet_t *out);
-
-// Get Uranus's orbital and physical parameters.
- siderust_status_t siderust_planet_uranus(struct siderust_planet_t *out);
-
-// Get Neptune's orbital and physical parameters.
- siderust_status_t siderust_planet_neptune(struct siderust_planet_t *out);
-
-// Transform a spherical direction from one frame to another.
-//
-// `jd` is required for time-dependent frames (mean/true of date, horizontal).
-// For time-independent transforms between fixed-epoch frames, the JD value
-// is ignored but must still be provided.
-//
-// Supported source/target frames: ICRS, EclipticMeanJ2000, EquatorialMeanJ2000,
-// EquatorialMeanOfDate, EquatorialTrueOfDate.
-//
-// For conversion to Horizontal, use `siderust_spherical_dir_to_horizontal`.
-
-siderust_status_t siderust_spherical_dir_transform_frame(double lon_deg,
-                                                         double lat_deg,
-                                                         siderust_frame_t src_frame,
-                                                         siderust_frame_t dst_frame,
-                                                         double jd,
-                                                         struct siderust_spherical_dir_t *out);
-
-// Transform a spherical direction to the horizontal (alt-az) frame.
-//
-// Requires an observer location (geodetic WGS84) and a Julian Date.
-// Supported source frames: ICRS, EclipticMeanJ2000, EquatorialMeanJ2000,
-// EquatorialMeanOfDate, EquatorialTrueOfDate.
-
-siderust_status_t siderust_spherical_dir_to_horizontal(double lon_deg,
-                                                       double lat_deg,
-                                                       siderust_frame_t src_frame,
-                                                       double jd,
-                                                       struct siderust_geodetic_t observer,
-                                                       struct siderust_spherical_dir_t *out);
-
-// Create a geodetic position and convert to ECEF Cartesian.
-
-siderust_status_t siderust_geodetic_to_cartesian_ecef(struct siderust_geodetic_t geodetic,
-                                                      struct siderust_cartesian_pos_t *out);
 
 // Free an array of crossing events.
  void siderust_crossings_free(struct siderust_crossing_event_t *ptr, uintptr_t count);
@@ -555,6 +420,122 @@ siderust_status_t siderust_icrs_dir_below_threshold(double ra_deg,
                                                     tempoch_period_mjd_t **out,
                                                     uintptr_t *count);
 
+// Look up a star from the built-in catalog by name.
+//
+// Supported names: "VEGA", "SIRIUS", "POLARIS", "CANOPUS", "ARCTURUS",
+// "RIGEL", "BETELGEUSE", "PROCYON", "ALDEBARAN", "ALTAIR".
+//
+// On success, `*out` receives a newly allocated handle.
+// The caller must free it with `siderust_star_free`.
+ siderust_status_t siderust_star_catalog(const char *name, struct SiderustStar **out);
+
+// Create a custom star.
+//
+// `name` — UTF-8 null-terminated string.
+// `ra_deg`, `dec_deg` — J2000 equatorial coordinates in degrees.
+// `distance_ly` — distance in light-years.
+// `epoch_jd` — epoch of the given coordinates (Julian Date).
+// `proper_motion` — optional: pass null for a fixed star.
+
+siderust_status_t siderust_star_create(const char *name,
+                                       double distance_ly,
+                                       double mass_solar,
+                                       double radius_solar,
+                                       double luminosity_solar,
+                                       double ra_deg,
+                                       double dec_deg,
+                                       double epoch_jd,
+                                       const struct siderust_proper_motion_t *proper_motion,
+                                       struct SiderustStar **out);
+
+// Free a Star handle.
+//
+// # Safety
+// The handle must have been allocated by `siderust_star_catalog` or
+// `siderust_star_create`, and must not be used after this call.
+ void siderust_star_free(struct SiderustStar *handle);
+
+// Get the star's name. Copies into `buf` up to `buf_len` bytes (including NUL).
+// Sets `*written` to the number of bytes written (excluding NUL).
+// Returns InvalidArgument if the buffer is too small.
+
+siderust_status_t siderust_star_name(const struct SiderustStar *handle,
+                                     char *buf,
+                                     uintptr_t buf_len,
+                                     uintptr_t *written);
+
+// Get the star's distance in light-years.
+ double siderust_star_distance_ly(const struct SiderustStar *handle);
+
+// Get the star's mass in solar masses.
+ double siderust_star_mass_solar(const struct SiderustStar *handle);
+
+// Get the star's radius in solar radii.
+ double siderust_star_radius_solar(const struct SiderustStar *handle);
+
+// Get the star's luminosity in solar luminosities.
+ double siderust_star_luminosity_solar(const struct SiderustStar *handle);
+
+// Get Mercury's orbital and physical parameters.
+ siderust_status_t siderust_planet_mercury(struct siderust_planet_t *out);
+
+// Get Venus's orbital and physical parameters.
+ siderust_status_t siderust_planet_venus(struct siderust_planet_t *out);
+
+// Get Earth's orbital and physical parameters.
+ siderust_status_t siderust_planet_earth(struct siderust_planet_t *out);
+
+// Get Mars's orbital and physical parameters.
+ siderust_status_t siderust_planet_mars(struct siderust_planet_t *out);
+
+// Get Jupiter's orbital and physical parameters.
+ siderust_status_t siderust_planet_jupiter(struct siderust_planet_t *out);
+
+// Get Saturn's orbital and physical parameters.
+ siderust_status_t siderust_planet_saturn(struct siderust_planet_t *out);
+
+// Get Uranus's orbital and physical parameters.
+ siderust_status_t siderust_planet_uranus(struct siderust_planet_t *out);
+
+// Get Neptune's orbital and physical parameters.
+ siderust_status_t siderust_planet_neptune(struct siderust_planet_t *out);
+
+// Transform a spherical direction from one frame to another.
+//
+// `jd` is required for time-dependent frames (mean/true of date, horizontal).
+// For time-independent transforms between fixed-epoch frames, the JD value
+// is ignored but must still be provided.
+//
+// Supported source/target frames: ICRS, EclipticMeanJ2000, EquatorialMeanJ2000,
+// EquatorialMeanOfDate, EquatorialTrueOfDate.
+//
+// For conversion to Horizontal, use `siderust_spherical_dir_to_horizontal`.
+
+siderust_status_t siderust_spherical_dir_transform_frame(double lon_deg,
+                                                         double lat_deg,
+                                                         siderust_frame_t src_frame,
+                                                         siderust_frame_t dst_frame,
+                                                         double jd,
+                                                         struct siderust_spherical_dir_t *out);
+
+// Transform a spherical direction to the horizontal (alt-az) frame.
+//
+// Requires an observer location (geodetic WGS84) and a Julian Date.
+// Supported source frames: ICRS, EclipticMeanJ2000, EquatorialMeanJ2000,
+// EquatorialMeanOfDate, EquatorialTrueOfDate.
+
+siderust_status_t siderust_spherical_dir_to_horizontal(double lon_deg,
+                                                       double lat_deg,
+                                                       siderust_frame_t src_frame,
+                                                       double jd,
+                                                       struct siderust_geodetic_t observer,
+                                                       struct siderust_spherical_dir_t *out);
+
+// Create a geodetic position and convert to ECEF Cartesian.
+
+siderust_status_t siderust_geodetic_to_cartesian_ecef(struct siderust_geodetic_t geodetic,
+                                                      struct siderust_cartesian_pos_t *out);
+
 // Get the Sun's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
  siderust_status_t siderust_vsop87_sun_barycentric(double jd, struct siderust_cartesian_pos_t *out);
 
@@ -570,6 +551,25 @@ siderust_status_t siderust_vsop87_earth_heliocentric(double jd,
 
 // Get the Moon's geocentric position (EclipticMeanJ2000, km) via ELP2000.
  siderust_status_t siderust_vsop87_moon_geocentric(double jd, struct siderust_cartesian_pos_t *out);
+
+// Fill `out` with the Roque de los Muchachos observatory (La Palma, Spain).
+ siderust_status_t siderust_observatory_roque_de_los_muchachos(struct siderust_geodetic_t *out);
+
+// Fill `out` with the El Paranal observatory (Chile).
+ siderust_status_t siderust_observatory_el_paranal(struct siderust_geodetic_t *out);
+
+// Fill `out` with the Mauna Kea observatory (Hawaiʻi, USA).
+ siderust_status_t siderust_observatory_mauna_kea(struct siderust_geodetic_t *out);
+
+// Fill `out` with the La Silla observatory (Chile).
+ siderust_status_t siderust_observatory_la_silla(struct siderust_geodetic_t *out);
+
+// Create a custom geodetic position (WGS84/ECEF).
+
+siderust_status_t siderust_geodetic_new(double lon_deg,
+                                        double lat_deg,
+                                        double height_m,
+                                        struct siderust_geodetic_t *out);
 
 #ifdef __cplusplus
 }  // extern "C"

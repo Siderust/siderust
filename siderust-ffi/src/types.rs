@@ -6,9 +6,9 @@
 //! These `#[repr(C)]` types are the data bridge between C/C++ callers and
 //! the rich generic Rust types in siderust.
 
+use qtty::*;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
-use qtty::*;
 use tempoch::{Interval, JulianDate, ModifiedJulianDate};
 
 // Re-export tempoch-ffi types so the generated header can reference them.
