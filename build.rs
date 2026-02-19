@@ -77,9 +77,8 @@ fn main() {
 
     if regen {
         // Compute the path to src/generated/ relative to CARGO_MANIFEST_DIR.
-        let manifest_dir = PathBuf::from(
-            env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"),
-        );
+        let manifest_dir =
+            PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
         let gen_dir = manifest_dir.join("src/generated");
 
         // VSOP87
