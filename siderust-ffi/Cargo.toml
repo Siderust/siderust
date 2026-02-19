@@ -1,0 +1,28 @@
+[package]
+name = "siderust-ffi"
+version = "0.1.0"
+edition = "2021"
+authors = ["VPRamon <vallespuigramon@gmail.com>"]
+description = "C FFI bindings for siderust — high-precision astronomy library."
+license = "AGPL-3.0-only"
+repository = "https://github.com/Siderust/siderust"
+
+[lib]
+name = "siderust_ffi"
+crate-type = ["cdylib", "staticlib"]
+
+[features]
+default = []
+serde = ["siderust/serde", "tempoch-ffi/serde"]
+de440 = ["siderust/de440"]
+de441 = ["siderust/de441"]
+
+[dependencies]
+siderust = { version="0.5.2", path=".." }
+tempoch-ffi = "0.1.0"
+tempoch = "0.3.0"
+affn = { version="0.3.2" , features = ["astro"] }
+qtty = "0.3.0"
+
+[build-dependencies]
+cbindgen = "0.29.2"
