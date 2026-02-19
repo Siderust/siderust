@@ -1,6 +1,6 @@
 [package]
 name = "siderust"
-version = "0.5.0"
+version = "0.5.1"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -10,6 +10,7 @@ repository = "https://github.com/Siderust/siderust"
 homepage = "https://github.com/Siderust/siderust"
 keywords = ["astronomy", "satellite", "orbital-mechanics", "vsop87", "rust"]
 categories = ["science", "aerospace", "simulation"]
+exclude = ["dev-deps/**"]
 
 [lib]
 name = "siderust"

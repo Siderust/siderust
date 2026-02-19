@@ -51,6 +51,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - at the solar limb (`~959.63″`): `~1.75″`
 * Updated light-deflection documentation and tests to match the corrected physics, including scalar-vs-vector consistency checks
 
+## [0.5.1] - 19/02/2026
+
+### Changed
+* Development-only git submodules (`affn`, `cheby`, `qtty`, `tempoch`) are now under `dev-deps/` and excluded from the published crate package.
+* Added `dev-deps/README.md` clarifying that published `siderust` must always use crates.io dependencies (no committed `path` overrides).
+
 ## [0.5.0] - 12/02/2026
 
 ### Added
