@@ -201,6 +201,7 @@ fn ensure_dataset(dir: &Path) -> Result<()> {
 }
 
 /// ---------------------------  ENTRYPOINT  -----------------------
+#[allow(dead_code)]
 pub fn run(data_dir: &Path) -> Result<()> {
     ensure_dataset(data_dir)?;
 
@@ -216,5 +217,18 @@ pub fn run(data_dir: &Path) -> Result<()> {
     fs::write(out_dir.join("elp_data.rs"), code.as_bytes())?;
     println!("cargo:info=elp_data.rs generated");
 
+    Ok(())
+}
+
+/// Like [`run`] but writes `elp_data.rs` to `gen_dir` instead of `OUT_DIR`.
+///
+/// Used by `build.rs` when `SIDERUST_REGEN=1` to overwrite the committed
+/// table in `src/generated/`.
+pub fn run_regen(data_dir: &Path, gen_dir: &Path) -> Result<()> {
+    ensure_dataset(data_dir)?;
+    let parsed = parse_all_elps(data_dir)?;
+    let code = generate_rust(&parsed)?;
+    fs::create_dir_all(gen_dir)?;
+    fs::write(gen_dir.join("elp_data.rs"), code.as_bytes())?;
     Ok(())
 }

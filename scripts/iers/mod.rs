@@ -334,6 +334,7 @@ fn download_finals(dst: &Path) -> Result<()> {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Build-time entrypoint: fetch, parse, and generate EOP Rust source.
+#[allow(dead_code)]
 pub fn run(data_dir: &Path) -> Result<()> {
     let finals_path = ensure_dataset(data_dir)?;
 
@@ -353,6 +354,30 @@ pub fn run(data_dir: &Path) -> Result<()> {
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
     fs::write(out_dir.join("iers_eop_data.rs"), code.as_bytes())?;
     eprintln!("IERS EOP: iers_eop_data.rs generated");
+
+    Ok(())
+}
+
+/// Like [`run`] but writes `iers_eop_data.rs` to `gen_dir` instead of `OUT_DIR`.
+///
+/// Used by `build.rs` when `SIDERUST_REGEN=1` to overwrite the committed
+/// table in `src/generated/`.
+pub fn run_regen(data_dir: &Path, gen_dir: &Path) -> Result<()> {
+    let finals_path = ensure_dataset(data_dir)?;
+
+    let rows = parse_finals(&finals_path)?;
+    eprintln!(
+        "IERS EOP: parsed {} rows (MJD {:.1}–{:.1})",
+        rows.len(),
+        rows.first().unwrap().mjd,
+        rows.last().unwrap().mjd,
+    );
+
+    let code = generate_rust(&rows)?;
+
+    fs::create_dir_all(gen_dir)?;
+    fs::write(gen_dir.join("iers_eop_data.rs"), code.as_bytes())?;
+    eprintln!("IERS EOP: iers_eop_data.rs regenerated in {:?}", gen_dir);
 
     Ok(())
 }

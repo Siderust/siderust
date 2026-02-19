@@ -1,0 +1,25 @@
+{
+  "generated_at": "2026-02-19T00:00:00Z",
+  "sources": {
+    "vsop87": {
+      "url": "https://ftp.imcce.fr/pub/ephem/planets/vsop87/",
+      "output": "vsop87a.rs",
+      "sha256": "466683f1d01f4ac002e5e71a66e210de6fee2b55a9f8afedd1fba542cceb9306"
+    },
+    "vsop87e": {
+      "url": "https://ftp.imcce.fr/pub/ephem/planets/vsop87/",
+      "output": "vsop87e.rs",
+      "sha256": "89406c177e48c7d61b61d320e83f23d2dfe359fd1b5d4183fab4e6db85e263bd"
+    },
+    "elp2000": {
+      "url": "https://cdsarc.cds.unistra.fr/ftp/VI/79/",
+      "output": "elp_data.rs",
+      "sha256": "d5881e06b6aae7836d95b695facee290575d71ae83fda47fa5ca0cd455bd2939"
+    },
+    "iers_eop": {
+      "url": "https://datacenter.iers.org/products/eop/rapid/standard/finals2000A.all",
+      "output": "iers_eop_data.rs",
+      "sha256": "9f3567ab36a0bc3439e0a04f6686848954227ac9b63a2868d59787632a5c7269"
+    }
+  }
+}

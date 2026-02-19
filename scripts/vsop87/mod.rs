@@ -88,6 +88,7 @@ type VersionMap = BTreeMap<char, PlanetMap>;
 ///
 /// # Errors
 /// Returns any I/O or parsing error wrapped in `anyhow::Error`.
+#[allow(dead_code)]
 pub fn run(data_dir: &Path) -> anyhow::Result<()> {
     let out_dir = PathBuf::from(
         env::var("OUT_DIR").context("OUT_DIR not set (missing Cargo build context)")?,
@@ -99,5 +100,17 @@ pub fn run(data_dir: &Path) -> anyhow::Result<()> {
     let modules = codegen::generate_modules(&versions)?;
     io::write_modules(&modules, &out_dir)?;
 
+    Ok(())
+}
+
+/// Like [`run`] but writes generated files to `gen_dir` instead of `OUT_DIR`.
+///
+/// Used by `build.rs` when `SIDERUST_REGEN=1` to overwrite the committed
+/// tables in `src/generated/`.
+pub fn run_regen(data_dir: &Path, gen_dir: &Path) -> anyhow::Result<()> {
+    fetch::ensure_dataset(data_dir)?;
+    let versions = collect::collect_terms(data_dir)?;
+    let modules = codegen::generate_modules(&versions)?;
+    io::write_modules(&modules, gen_dir)?;
     Ok(())
 }

@@ -10,7 +10,7 @@
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
 mod iers_eop_data {
-    include!(concat!(env!("OUT_DIR"), "/iers_eop_data.rs"));
+    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/generated/iers_eop_data.rs"));
 }
 
 pub use iers_eop_data::{EopEntry, EOP_TABLE};
