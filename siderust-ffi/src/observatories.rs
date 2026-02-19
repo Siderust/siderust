@@ -22,9 +22,7 @@ pub extern "C" fn siderust_observatory_roque_de_los_muchachos(
 
 /// Fill `out` with the El Paranal observatory (Chile).
 #[no_mangle]
-pub extern "C" fn siderust_observatory_el_paranal(
-    out: *mut SiderustGeodetict,
-) -> SiderustStatus {
+pub extern "C" fn siderust_observatory_el_paranal(out: *mut SiderustGeodetict) -> SiderustStatus {
     if out.is_null() {
         return SiderustStatus::NullPointer;
     }
@@ -36,9 +34,7 @@ pub extern "C" fn siderust_observatory_el_paranal(
 
 /// Fill `out` with the Mauna Kea observatory (Hawaiʻi, USA).
 #[no_mangle]
-pub extern "C" fn siderust_observatory_mauna_kea(
-    out: *mut SiderustGeodetict,
-) -> SiderustStatus {
+pub extern "C" fn siderust_observatory_mauna_kea(out: *mut SiderustGeodetict) -> SiderustStatus {
     if out.is_null() {
         return SiderustStatus::NullPointer;
     }
@@ -50,9 +46,7 @@ pub extern "C" fn siderust_observatory_mauna_kea(
 
 /// Fill `out` with the La Silla observatory (Chile).
 #[no_mangle]
-pub extern "C" fn siderust_observatory_la_silla(
-    out: *mut SiderustGeodetict,
-) -> SiderustStatus {
+pub extern "C" fn siderust_observatory_la_silla(out: *mut SiderustGeodetict) -> SiderustStatus {
     if out.is_null() {
         return SiderustStatus::NullPointer;
     }

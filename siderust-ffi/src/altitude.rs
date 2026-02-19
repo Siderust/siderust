@@ -96,10 +96,7 @@ fn culminations_to_c(
 
 /// Free an array of crossing events.
 #[no_mangle]
-pub unsafe extern "C" fn siderust_crossings_free(
-    ptr: *mut SiderustCrossingEvent,
-    count: usize,
-) {
+pub unsafe extern "C" fn siderust_crossings_free(ptr: *mut SiderustCrossingEvent, count: usize) {
     if !ptr.is_null() && count > 0 {
         let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
     }
@@ -127,7 +124,9 @@ pub extern "C" fn siderust_sun_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    if out_rad.is_null() { return SiderustStatus::NullPointer; }
+    if out_rad.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     let obs = observer.to_rust();
     let t = ModifiedJulianDate::new(mjd);
     let alt = Sun.altitude_at(&obs, t);
@@ -147,8 +146,17 @@ pub extern "C" fn siderust_sun_above_threshold(
     count: *mut usize,
 ) -> SiderustStatus {
     let obs = observer.to_rust();
-    let window = Interval::new(ModifiedJulianDate::new(start_mjd), ModifiedJulianDate::new(end_mjd));
-    let periods = siderust::above_threshold(&Sun, &obs, window, Degrees::new(threshold_deg), opts.to_rust());
+    let window = Interval::new(
+        ModifiedJulianDate::new(start_mjd),
+        ModifiedJulianDate::new(end_mjd),
+    );
+    let periods = siderust::above_threshold(
+        &Sun,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
+    );
     periods_to_c(periods, out, count)
 }
 
@@ -164,8 +172,17 @@ pub extern "C" fn siderust_sun_below_threshold(
     count: *mut usize,
 ) -> SiderustStatus {
     let obs = observer.to_rust();
-    let window = Interval::new(ModifiedJulianDate::new(start_mjd), ModifiedJulianDate::new(end_mjd));
-    let periods = siderust::below_threshold(&Sun, &obs, window, Degrees::new(threshold_deg), opts.to_rust());
+    let window = Interval::new(
+        ModifiedJulianDate::new(start_mjd),
+        ModifiedJulianDate::new(end_mjd),
+    );
+    let periods = siderust::below_threshold(
+        &Sun,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
+    );
     periods_to_c(periods, out, count)
 }
 
@@ -181,8 +198,17 @@ pub extern "C" fn siderust_sun_crossings(
     count: *mut usize,
 ) -> SiderustStatus {
     let obs = observer.to_rust();
-    let window = Interval::new(ModifiedJulianDate::new(start_mjd), ModifiedJulianDate::new(end_mjd));
-    let events = siderust::crossings(&Sun, &obs, window, Degrees::new(threshold_deg), opts.to_rust());
+    let window = Interval::new(
+        ModifiedJulianDate::new(start_mjd),
+        ModifiedJulianDate::new(end_mjd),
+    );
+    let events = siderust::crossings(
+        &Sun,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
+    );
     crossings_to_c(events, out, count)
 }
 
@@ -197,7 +223,10 @@ pub extern "C" fn siderust_sun_culminations(
     count: *mut usize,
 ) -> SiderustStatus {
     let obs = observer.to_rust();
-    let window = Interval::new(ModifiedJulianDate::new(start_mjd), ModifiedJulianDate::new(end_mjd));
+    let window = Interval::new(
+        ModifiedJulianDate::new(start_mjd),
+        ModifiedJulianDate::new(end_mjd),
+    );
     let events = siderust::culminations(&Sun, &obs, window, opts.to_rust());
     culminations_to_c(events, out, count)
 }
@@ -225,7 +254,9 @@ pub extern "C" fn siderust_moon_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    if out_rad.is_null() { return SiderustStatus::NullPointer; }
+    if out_rad.is_null() {
+        return SiderustStatus::NullPointer;
+    }
     let obs = observer.to_rust();
     let t = ModifiedJulianDate::new(mjd);
     let alt = Moon.altitude_at(&obs, t);
@@ -245,8 +276,17 @@ pub extern "C" fn siderust_moon_above_threshold(
     count: *mut usize,
 ) -> SiderustStatus {
     let obs = observer.to_rust();
-    let window = Interval::new(ModifiedJulianDate::new(start_mjd), ModifiedJulianDate::new(end_mjd));
-    let periods = siderust::above_threshold(&Moon, &obs, window, Degrees::new(threshold_deg), opts.to_rust());
+    let window = Interval::new(
+        ModifiedJulianDate::new(start_mjd),
+        ModifiedJulianDate::new(end_mjd),
+    );
+    let periods = siderust::above_threshold(
+        &Moon,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
+    );
     periods_to_c(periods, out, count)
 }
 
@@ -262,8 +302,17 @@ pub extern "C" fn siderust_moon_below_threshold(
     count: *mut usize,
 ) -> SiderustStatus {
     let obs = observer.to_rust();
-    let window = Interval::new(ModifiedJulianDate::new(start_mjd), ModifiedJulianDate::new(end_mjd));
-    let periods = siderust::below_threshold(&Moon, &obs, window, Degrees::new(threshold_deg), opts.to_rust());
+    let window = Interval::new(
+        ModifiedJulianDate::new(start_mjd),
+        ModifiedJulianDate::new(end_mjd),
+    );
+    let periods = siderust::below_threshold(
+        &Moon,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
+    );
     periods_to_c(periods, out, count)
 }
 
@@ -279,8 +328,17 @@ pub extern "C" fn siderust_moon_crossings(
     count: *mut usize,
 ) -> SiderustStatus {
     let obs = observer.to_rust();
-    let window = Interval::new(ModifiedJulianDate::new(start_mjd), ModifiedJulianDate::new(end_mjd));
-    let events = siderust::crossings(&Moon, &obs, window, Degrees::new(threshold_deg), opts.to_rust());
+    let window = Interval::new(
+        ModifiedJulianDate::new(start_mjd),
+        ModifiedJulianDate::new(end_mjd),
+    );
+    let events = siderust::crossings(
+        &Moon,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
+    );
     crossings_to_c(events, out, count)
 }
 
@@ -295,7 +353,10 @@ pub extern "C" fn siderust_moon_culminations(
     count: *mut usize,
 ) -> SiderustStatus {
     let obs = observer.to_rust();
-    let window = Interval::new(ModifiedJulianDate::new(start_mjd), ModifiedJulianDate::new(end_mjd));
+    let window = Interval::new(
+        ModifiedJulianDate::new(start_mjd),
+        ModifiedJulianDate::new(end_mjd),
+    );
     let events = siderust::culminations(&Moon, &obs, window, opts.to_rust());
     culminations_to_c(events, out, count)
 }
@@ -357,7 +418,11 @@ pub extern "C" fn siderust_star_above_threshold(
         ModifiedJulianDate::new(end_mjd),
     );
     let periods = siderust::above_threshold(
-        star, &obs, window, Degrees::new(threshold_deg), opts.to_rust(),
+        star,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
     );
     periods_to_c(periods, out, count)
 }
@@ -384,7 +449,11 @@ pub extern "C" fn siderust_star_below_threshold(
         ModifiedJulianDate::new(end_mjd),
     );
     let periods = siderust::below_threshold(
-        star, &obs, window, Degrees::new(threshold_deg), opts.to_rust(),
+        star,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
     );
     periods_to_c(periods, out, count)
 }
@@ -411,7 +480,11 @@ pub extern "C" fn siderust_star_crossings(
         ModifiedJulianDate::new(end_mjd),
     );
     let events = siderust::crossings(
-        star, &obs, window, Degrees::new(threshold_deg), opts.to_rust(),
+        star,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
     );
     crossings_to_c(events, out, count)
 }
@@ -484,7 +557,11 @@ pub extern "C" fn siderust_icrs_dir_above_threshold(
         ModifiedJulianDate::new(end_mjd),
     );
     let periods = siderust::above_threshold(
-        &dir, &obs, window, Degrees::new(threshold_deg), opts.to_rust(),
+        &dir,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
     );
     periods_to_c(periods, out, count)
 }
@@ -509,7 +586,11 @@ pub extern "C" fn siderust_icrs_dir_below_threshold(
         ModifiedJulianDate::new(end_mjd),
     );
     let periods = siderust::below_threshold(
-        &dir, &obs, window, Degrees::new(threshold_deg), opts.to_rust(),
+        &dir,
+        &obs,
+        window,
+        Degrees::new(threshold_deg),
+        opts.to_rust(),
     );
     periods_to_c(periods, out, count)
 }
