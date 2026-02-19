@@ -1,0 +1,137 @@
+# SPDX-License-Identifier: AGPL-3.0-or-later
+# Copyright (C) 2026 Vallés Puig, Ramon
+#
+# update-datasets.yml
+#
+# Periodically regenerates the committed Rust tables in src/generated/ from
+# the latest upstream source data (VSOP87, ELP2000, IERS EOP) and opens a
+# pull request if anything has changed.
+#
+# Triggers:
+#   - Weekly on Monday at 02:00 UTC (schedule)
+#   - On-demand via workflow_dispatch
+
+name: Update Generated Dataset Tables
+
+on:
+  schedule:
+    # Every Monday at 02:00 UTC
+    - cron: "0 2 * * 1"
+  workflow_dispatch:
+    inputs:
+      force_pr:
+        description: "Open a PR even if nothing changed"
+        required: false
+        default: "false"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+env:
+  CARGO_TERM_COLOR: always
+  SIDERUST_DATASETS_DIR: ${{ github.workspace }}/.siderust_datasets
+
+jobs:
+  update-datasets:
+    name: Regenerate tables
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          # Use a PAT so the push step can trigger CI on the new branch.
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache datasets
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.SIDERUST_DATASETS_DIR }}
+          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
+          restore-keys: |
+            siderust-datasets-${{ runner.os }}-v1-
+
+      - name: Download source datasets
+        run: ./scripts/prefetch_datasets.sh --minimal
+
+      - name: Regenerate Rust tables
+        run: |
+          SIDERUST_REGEN=1 cargo build 2>&1
+
+      - name: Write datasets.lock.json
+        run: |
+          TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          GEN="src/generated"
+
+          sha256_of() { sha256sum "$1" | awk '{print $1}'; }
+
+          VSOP87A_SHA="$(sha256_of "$GEN/vsop87a.rs")"
+          VSOP87E_SHA="$(sha256_of "$GEN/vsop87e.rs")"
+          ELP_SHA="$(sha256_of "$GEN/elp_data.rs")"
+          IERS_SHA="$(sha256_of "$GEN/iers_eop_data.rs")"
+
+          cat > "$GEN/datasets.lock.json" <<EOF
+          {
+            "generated_at": "${TIMESTAMP}",
+            "sources": {
+              "vsop87": {
+                "url": "https://ftp.imcce.fr/pub/ephem/planets/vsop87/",
+                "output": "vsop87a.rs",
+                "sha256": "${VSOP87A_SHA}"
+              },
+              "vsop87e": {
+                "url": "https://ftp.imcce.fr/pub/ephem/planets/vsop87/",
+                "output": "vsop87e.rs",
+                "sha256": "${VSOP87E_SHA}"
+              },
+              "elp2000": {
+                "url": "https://cdsarc.cds.unistra.fr/ftp/VI/79/",
+                "output": "elp_data.rs",
+                "sha256": "${ELP_SHA}"
+              },
+              "iers_eop": {
+                "url": "https://datacenter.iers.org/products/eop/rapid/standard/finals2000A.all",
+                "output": "iers_eop_data.rs",
+                "sha256": "${IERS_SHA}"
+              }
+            }
+          }
+          EOF
+
+      - name: Check for changes
+        id: changed
+        run: |
+          if git diff --quiet src/generated/; then
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Create pull request
+        if: steps.changed.outputs.changed == 'true' || github.event.inputs.force_pr == 'true'
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: refresh generated dataset tables"
+          branch: "auto/refresh-generated-tables"
+          delete-branch: true
+          title: "chore: refresh generated dataset tables"
+          body: |
+            Automated refresh of pre-generated Rust tables in `src/generated/`.
+
+            Updated files:
+            - `src/generated/vsop87a.rs` — VSOP87A planetary theory
+            - `src/generated/vsop87e.rs` — VSOP87E planetary theory  
+            - `src/generated/elp_data.rs` — ELP2000 lunar theory
+            - `src/generated/iers_eop_data.rs` — IERS Earth Orientation Parameters
+            - `src/generated/datasets.lock.json` — source checksums and timestamp
+
+            Triggered by: ${{ github.event_name }}
+          labels: "dependencies,automated"
+          assignees: ""
+          reviewers: ""

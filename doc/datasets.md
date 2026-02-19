@@ -1,69 +1,102 @@
-# Datasets, Codegen, and JPL Backends (no Git LFS)
+# Datasets, Codegen, and JPL Backends (offline-by-default)
 
-Siderust relies on several datasets that are generated/embedded at build time.
-This document explains what is embedded, when downloads happen, and how to do
-fast/offline development loops.
+Siderust relies on several datasets that are embedded at compile time.
+This document explains what is embedded, how the offline-first strategy works,
+and how to refresh or extend the pre-generated data.
 
-This repository previously stored large datasets via **Git LFS**, but GitHub
-applies LFS bandwidth limits. The project does not strictly need LFS because
-the build pipeline can fetch the raw datasets on demand. As a result, datasets
-are **not committed** anymore.
+## Offline-by-default: committed generated tables
 
-## Always-generated datasets (build-time)
+The three core datasets are **pre-generated and committed** under
+`src/generated/`.  Normal builds — including docs.rs — do **not** download
+anything:
 
-- **VSOP87** (planetary analytical series)
-- **ELP2000-82B** (lunar analytical series)
-- **IERS EOP** (`finals2000A.all`) for Earth-orientation parameters
+| File | Source dataset | Update frequency |
+|------|---------------|-----------------|
+| `src/generated/vsop87a.rs` | VSOP87A (planetary theory) | ~stable |
+| `src/generated/vsop87e.rs` | VSOP87E (planetary theory) | ~stable |
+| `src/generated/elp_data.rs` | ELP2000-82B (lunar theory) | ~stable |
+| `src/generated/iers_eop_data.rs` | IERS finals2000A.all (EOP) | weekly |
 
-These are generated into `OUT_DIR` by `build.rs` and included by the crate at
-compile time.
+The library includes these files directly:
+```rust
+include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/generated/vsop87a.rs"));
+```
+
+`src/generated/datasets.lock.json` records the generation timestamp and
+SHA-256 checksums of each file.
 
 ## Optional JPL DE4xx datasets (feature-gated)
 
-When `de440` and/or `de441` features are enabled, the build scripts may download
-large NAIF `.bsp` kernels and extract the segments required by the library.
+When `de440` and/or `de441` features are enabled, the build scripts **still**
+download large NAIF `.bsp` kernels (these cannot be committed due to size).
 
 Typical sizes:
 - DE440: ~120 MB
 - DE441 part-2: ~1.65 GB
 
-## Where downloads go (caching)
+## How to regenerate locally
 
-By default, downloads are stored under Cargo’s `OUT_DIR` (so they may be wiped
-by `cargo clean`).
-
-To reuse datasets across clean builds and to support offline builds after a
-one-time download, set a persistent cache directory:
+Use the helper script to download source datasets and regenerate all committed
+Rust tables in one step:
 
 ```bash
-export SIDERUST_DATASETS_DIR="$PWD/.siderust_datasets"
+# From the siderust crate root:
+./scripts/update_generated_tables.sh
 ```
 
-The build will then store datasets under that directory (e.g.
-`$SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp`).
+This does three things:
+1. Downloads the source datasets via `scripts/prefetch_datasets.sh --minimal`.
+2. Runs `SIDERUST_REGEN=1 cargo build` which overwrites `src/generated/`.
+3. Writes an updated `src/generated/datasets.lock.json`.
 
-## Manual prefetch (recommended)
+Review with `git diff src/generated/`, then commit:
 
-Use the helper script to download datasets into `SIDERUST_DATASETS_DIR`:
+```bash
+git add src/generated/
+git commit -m "chore: refresh generated dataset tables"
+```
+
+Alternatively, you can drive the regen directly without the script:
 
 ```bash
 export SIDERUST_DATASETS_DIR="$PWD/.siderust_datasets"
 ./scripts/prefetch_datasets.sh --minimal
+SIDERUST_REGEN=1 cargo build
 ```
 
-Optional (large):
+## How `SIDERUST_REGEN=1` works
+
+`build.rs` checks the `SIDERUST_REGEN` environment variable at compile time:
+
+- **Not set (default):** The build script is a no-op for VSOP87/ELP2000/IERS.
+  The library reads the committed files from `src/generated/`.
+- **`SIDERUST_REGEN=1`:** The build script downloads (or reuses cached) source
+  datasets, parses them, and overwrites `src/generated/*.rs`.
+
+## Automated CI refresh
+
+A GitHub Actions workflow (`.github/workflows/update-datasets.yml`) runs every
+Monday and on `workflow_dispatch`.  If any generated file changes (typically
+`iers_eop_data.rs` is updated weekly with new IERS data), it opens a pull
+request automatically.
+
+## Where downloads go (caching for SIDERUST_REGEN and JPL)
+
+By default, downloads are stored under Cargo's `OUT_DIR` (wiped by
+`cargo clean`).
+
+To reuse datasets across clean builds, set a persistent cache directory:
 
 ```bash
-./scripts/prefetch_datasets.sh --de440
-./scripts/prefetch_datasets.sh --de441
+export SIDERUST_DATASETS_DIR="$PWD/.siderust_datasets"
 ```
 
 ## Manual download (direct URLs)
 
-If you prefer downloading by hand, place files here:
+If you prefer downloading by hand, place files in the cache directory:
 
 - VSOP87 → `$SIDERUST_DATASETS_DIR/vsop87_dataset/`
-  - Source listing: `https://ftp.imcce.fr/pub/ephem/planets/vsop87/`
+  - Source: `https://ftp.imcce.fr/pub/ephem/planets/vsop87/`
 - ELP2000 → `$SIDERUST_DATASETS_DIR/elp2000_dataset/` (files `ELP1`…`ELP36`)
   - Base URL: `https://cdsarc.cds.unistra.fr/ftp/VI/79/`
 - IERS EOP → `$SIDERUST_DATASETS_DIR/iers_dataset/finals2000A.all`

@@ -1779,9 +1779,18 @@ dependencies = [
 
 [[package]]
 name = "tempoch"
-version = "0.2.1"
+version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "578c6ba402c7445c53bd263bc04881434047ff1ee35a853de7826d024f39ca3a"
+checksum = "5cc5832c6ddb60e1f036d2da477c2e0ed9c746216572622d8b173161e0b52e1f"
+dependencies = [
+ "tempoch-core",
+]
+
+[[package]]
+name = "tempoch-core"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "177ea7acdd17b490cebcc8d15e73f49d71b34a340587b7ca9b3157bc78003900"
 dependencies = [
  "chrono",
  "qtty",
