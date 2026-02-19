@@ -21,10 +21,10 @@ de441 = []
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
 [dependencies]
-affn = { version="0.3.0", features = ["astro"] }
+affn = { version="0.3.2", features = ["astro"] }
 cheby = "0.1.0"
 qtty = "0.3.0"
-tempoch = "0.2.0"
+tempoch = "0.2.1"
 approx = "0.5"
 chrono = "0.4.43"
 nalgebra = "0.34.1"
@@ -86,8 +86,3 @@ required-features = ["serde"]
 
 [[example]]
 name = "jpl_precise_ephemeris"
-
-# Local path overrides for IAU compliance work
-[patch.crates-io]
-affn = { path = "affn" }
-tempoch = { path = "tempoch" }
