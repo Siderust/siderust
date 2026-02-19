@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.5.2] - 19/02/2026
+
 ### Added
 * IERS Earth Orientation Parameters integration via `astro::eop` with `IersEop`, `EopProvider`, `EopValues`, and `NullEop`
 * Build-time IERS `finals2000A.all` ingestion pipeline under `scripts/iers/`, with generated embedded EOP tables
@@ -50,6 +52,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - at `90°` elongation and `1 AU`: `~0.00407″` (4.07 mas), not `~1.75″`
   - at the solar limb (`~959.63″`): `~1.75″`
 * Updated light-deflection documentation and tests to match the corrected physics, including scalar-vs-vector consistency checks
+* **Offline-by-default build**: VSOP87, ELP2000, and IERS EOP tables are now pre-generated and committed under `src/generated/`; `build.rs` no longer downloads anything during a normal build (fixes docs.rs build failure)
+* Generated files are refreshed via `SIDERUST_REGEN=1 cargo build` or the helper script `scripts/update_generated_tables.sh`
+* Added `.github/workflows/update-datasets.yml` — scheduled (weekly) workflow that regenerates committed tables and opens a PR when sources change
 
 ## [0.5.1] - 19/02/2026
 
