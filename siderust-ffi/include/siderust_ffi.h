@@ -230,6 +230,9 @@ extern "C" {
 // Returns the siderust-ffi ABI version (semver-encoded: major*10000 + minor*100 + patch).
  uint32_t siderust_ffi_version(void);
 
+// Free an array of MJD periods.
+ void siderust_periods_free(tempoch_period_mjd_t *ptr, uintptr_t count);
+
 // Free an array of crossing events.
  void siderust_crossings_free(struct siderust_crossing_event_t *ptr, uintptr_t count);
 

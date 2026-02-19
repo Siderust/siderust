@@ -94,6 +94,14 @@ fn culminations_to_c(
 // Free functions for dynamic arrays
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// Free an array of MJD periods.
+#[no_mangle]
+pub unsafe extern "C" fn siderust_periods_free(ptr: *mut TempochPeriodMjd, count: usize) {
+    if !ptr.is_null() && count > 0 {
+        let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
+    }
+}
+
 /// Free an array of crossing events.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_crossings_free(ptr: *mut SiderustCrossingEvent, count: usize) {
