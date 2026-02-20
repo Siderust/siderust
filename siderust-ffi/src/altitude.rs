@@ -15,11 +15,19 @@ use siderust::coordinates::spherical;
 use siderust::AltitudePeriodsProvider;
 use tempoch::{Interval, ModifiedJulianDate, Period, MJD};
 
-// Re-use the TempochPeriodMjd from our types module (re-exported from tempoch_ffi).
+// ═══════════════════════════════════════════════════════════════════════════
+// Helpers
+// ═══════════════════════════════════════════════════════════════════════════
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Helper: convert Vec<Period<MJD>> to allocated C array
-// ═══════════════════════════════════════════════════════════════════════════
+fn window_from_c(w: TempochPeriodMjd) -> Result<Period<MJD>, SiderustStatus> {
+    if w.start_mjd > w.end_mjd {
+        return Err(SiderustStatus::InvalidPeriod);
+    }
+    Ok(Interval::new(
+        ModifiedJulianDate::new(w.start_mjd),
+        ModifiedJulianDate::new(w.end_mjd),
+    ))
+}
 
 fn periods_to_c(
     periods: Vec<Period<MJD>>,
@@ -29,18 +37,16 @@ fn periods_to_c(
     if out.is_null() || count.is_null() {
         return SiderustStatus::NullPointer;
     }
-    let c_periods: Vec<TempochPeriodMjd> = periods
+    let v: Vec<TempochPeriodMjd> = periods
         .iter()
         .map(|p| TempochPeriodMjd {
             start_mjd: p.start.value(),
             end_mjd: p.end.value(),
         })
         .collect();
-    let len = c_periods.len();
-    let boxed = c_periods.into_boxed_slice();
-    let ptr = Box::into_raw(boxed) as *mut TempochPeriodMjd;
+    let len = v.len();
     unsafe {
-        *out = ptr;
+        *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
         *count = len;
     }
     SiderustStatus::Ok
@@ -54,15 +60,13 @@ fn crossings_to_c(
     if out.is_null() || count.is_null() {
         return SiderustStatus::NullPointer;
     }
-    let c_events: Vec<SiderustCrossingEvent> = events
+    let v: Vec<SiderustCrossingEvent> = events
         .iter()
         .map(SiderustCrossingEvent::from_rust)
         .collect();
-    let len = c_events.len();
-    let boxed = c_events.into_boxed_slice();
-    let ptr = Box::into_raw(boxed) as *mut SiderustCrossingEvent;
+    let len = v.len();
     unsafe {
-        *out = ptr;
+        *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
         *count = len;
     }
     SiderustStatus::Ok
@@ -76,18 +80,26 @@ fn culminations_to_c(
     if out.is_null() || count.is_null() {
         return SiderustStatus::NullPointer;
     }
-    let c_events: Vec<SiderustCulminationEvent> = events
+    let v: Vec<SiderustCulminationEvent> = events
         .iter()
         .map(SiderustCulminationEvent::from_rust)
         .collect();
-    let len = c_events.len();
-    let boxed = c_events.into_boxed_slice();
-    let ptr = Box::into_raw(boxed) as *mut SiderustCulminationEvent;
+    let len = v.len();
     unsafe {
-        *out = ptr;
+        *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
         *count = len;
     }
     SiderustStatus::Ok
+}
+
+fn icrs_from_c(dir: SiderustSphericalDir) -> Result<spherical::direction::ICRS, SiderustStatus> {
+    if dir.frame != SiderustFrame::ICRS {
+        return Err(SiderustStatus::InvalidFrame);
+    }
+    Ok(spherical::direction::ICRS::new(
+        Degrees::new(dir.lon_deg),
+        Degrees::new(dir.lat_deg),
+    ))
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -122,10 +134,10 @@ pub unsafe extern "C" fn siderust_culminations_free(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Sun altitude functions
+// Sun
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Compute the altitude of the Sun at a given instant (radians).
+/// Altitude of the Sun at an instant (radians).
 #[no_mangle]
 pub extern "C" fn siderust_sun_altitude_at(
     observer: SiderustGeodetict,
@@ -135,127 +147,130 @@ pub extern "C" fn siderust_sun_altitude_at(
     if out_rad.is_null() {
         return SiderustStatus::NullPointer;
     }
-    let obs = observer.to_rust();
-    let t = ModifiedJulianDate::new(mjd);
-    let alt = Sun.altitude_at(&obs, t);
-    unsafe { *out_rad = alt.value() };
+    unsafe {
+        *out_rad = Sun
+            .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+            .value();
+    }
     SiderustStatus::Ok
 }
 
-/// Find periods when the Sun is above a threshold altitude.
+/// Periods when the Sun is above a threshold altitude.
 #[no_mangle]
 pub extern "C" fn siderust_sun_above_threshold(
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let periods = siderust::above_threshold(
-        &Sun,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    periods_to_c(periods, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    periods_to_c(
+        siderust::above_threshold(
+            &Sun,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find periods when the Sun is below a threshold altitude.
+/// Periods when the Sun is below a threshold altitude.
 #[no_mangle]
 pub extern "C" fn siderust_sun_below_threshold(
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let periods = siderust::below_threshold(
-        &Sun,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    periods_to_c(periods, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    periods_to_c(
+        siderust::below_threshold(
+            &Sun,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find threshold-crossing events for the Sun.
+/// Threshold-crossing events for the Sun.
 #[no_mangle]
 pub extern "C" fn siderust_sun_crossings(
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let events = siderust::crossings(
-        &Sun,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    crossings_to_c(events, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    crossings_to_c(
+        siderust::crossings(
+            &Sun,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find culmination (local extrema) events for the Sun.
+/// Culmination (local extrema) events for the Sun.
 #[no_mangle]
 pub extern "C" fn siderust_sun_culminations(
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     opts: SiderustSearchOpts,
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let events = siderust::culminations(&Sun, &obs, window, opts.to_rust());
-    culminations_to_c(events, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    culminations_to_c(
+        siderust::culminations(&Sun, &observer.to_rust(), window, opts.to_rust()),
+        out,
+        count,
+    )
 }
 
-/// Find periods when the Sun's altitude is within [min, max].
+/// Periods when the Sun's altitude is within [min, max].
 #[no_mangle]
 pub extern "C" fn siderust_sun_altitude_periods(
     query: SiderustAltitudeQuery,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let q = query.to_rust();
-    let periods = Sun.altitude_periods(&q);
-    periods_to_c(periods, out, count)
+    periods_to_c(Sun.altitude_periods(&query.to_rust()), out, count)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Moon altitude functions
+// Moon
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Compute the altitude of the Moon at a given instant (radians).
+/// Altitude of the Moon at an instant (radians).
 #[no_mangle]
 pub extern "C" fn siderust_moon_altitude_at(
     observer: SiderustGeodetict,
@@ -265,127 +280,130 @@ pub extern "C" fn siderust_moon_altitude_at(
     if out_rad.is_null() {
         return SiderustStatus::NullPointer;
     }
-    let obs = observer.to_rust();
-    let t = ModifiedJulianDate::new(mjd);
-    let alt = Moon.altitude_at(&obs, t);
-    unsafe { *out_rad = alt.value() };
+    unsafe {
+        *out_rad = Moon
+            .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+            .value();
+    }
     SiderustStatus::Ok
 }
 
-/// Find periods when the Moon is above a threshold altitude.
+/// Periods when the Moon is above a threshold altitude.
 #[no_mangle]
 pub extern "C" fn siderust_moon_above_threshold(
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let periods = siderust::above_threshold(
-        &Moon,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    periods_to_c(periods, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    periods_to_c(
+        siderust::above_threshold(
+            &Moon,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find periods when the Moon is below a threshold altitude.
+/// Periods when the Moon is below a threshold altitude.
 #[no_mangle]
 pub extern "C" fn siderust_moon_below_threshold(
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let periods = siderust::below_threshold(
-        &Moon,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    periods_to_c(periods, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    periods_to_c(
+        siderust::below_threshold(
+            &Moon,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find threshold-crossing events for the Moon.
+/// Threshold-crossing events for the Moon.
 #[no_mangle]
 pub extern "C" fn siderust_moon_crossings(
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let events = siderust::crossings(
-        &Moon,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    crossings_to_c(events, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    crossings_to_c(
+        siderust::crossings(
+            &Moon,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find culmination (local extrema) events for the Moon.
+/// Culmination (local extrema) events for the Moon.
 #[no_mangle]
 pub extern "C" fn siderust_moon_culminations(
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     opts: SiderustSearchOpts,
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let events = siderust::culminations(&Moon, &obs, window, opts.to_rust());
-    culminations_to_c(events, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    culminations_to_c(
+        siderust::culminations(&Moon, &observer.to_rust(), window, opts.to_rust()),
+        out,
+        count,
+    )
 }
 
-/// Find periods when the Moon's altitude is within [min, max].
+/// Periods when the Moon's altitude is within [min, max].
 #[no_mangle]
 pub extern "C" fn siderust_moon_altitude_periods(
     query: SiderustAltitudeQuery,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let q = query.to_rust();
-    let periods = Moon.altitude_periods(&q);
-    periods_to_c(periods, out, count)
+    periods_to_c(Moon.altitude_periods(&query.to_rust()), out, count)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Star altitude functions (take an opaque handle)
+// Star (opaque handle)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Compute the altitude of a star at a given instant (radians).
+/// Altitude of a star at an instant (radians).
 #[no_mangle]
 pub extern "C" fn siderust_star_altitude_at(
     handle: *const SiderustStar,
@@ -397,20 +415,20 @@ pub extern "C" fn siderust_star_altitude_at(
         return SiderustStatus::NullPointer;
     }
     let star = unsafe { &(*handle).inner };
-    let obs = observer.to_rust();
-    let t = ModifiedJulianDate::new(mjd);
-    let alt = star.altitude_at(&obs, t);
-    unsafe { *out_rad = alt.value() };
+    unsafe {
+        *out_rad = star
+            .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+            .value();
+    }
     SiderustStatus::Ok
 }
 
-/// Find periods when a star is above a threshold altitude.
+/// Periods when a star is above a threshold altitude.
 #[no_mangle]
 pub extern "C" fn siderust_star_above_threshold(
     handle: *const SiderustStar,
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
@@ -420,28 +438,29 @@ pub extern "C" fn siderust_star_above_threshold(
         return SiderustStatus::NullPointer;
     }
     let star = unsafe { &(*handle).inner };
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let periods = siderust::above_threshold(
-        star,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    periods_to_c(periods, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    periods_to_c(
+        siderust::above_threshold(
+            star,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find periods when a star is below a threshold altitude.
+/// Periods when a star is below a threshold altitude.
 #[no_mangle]
 pub extern "C" fn siderust_star_below_threshold(
     handle: *const SiderustStar,
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
@@ -451,28 +470,29 @@ pub extern "C" fn siderust_star_below_threshold(
         return SiderustStatus::NullPointer;
     }
     let star = unsafe { &(*handle).inner };
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let periods = siderust::below_threshold(
-        star,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    periods_to_c(periods, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    periods_to_c(
+        siderust::below_threshold(
+            star,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find crossing events for a star.
+/// Threshold-crossing events for a star.
 #[no_mangle]
 pub extern "C" fn siderust_star_crossings(
     handle: *const SiderustStar,
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut SiderustCrossingEvent,
@@ -482,28 +502,29 @@ pub extern "C" fn siderust_star_crossings(
         return SiderustStatus::NullPointer;
     }
     let star = unsafe { &(*handle).inner };
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let events = siderust::crossings(
-        star,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    crossings_to_c(events, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    crossings_to_c(
+        siderust::crossings(
+            star,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find culmination events for a star.
+/// Culmination events for a star.
 #[no_mangle]
 pub extern "C" fn siderust_star_culminations(
     handle: *const SiderustStar,
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     opts: SiderustSearchOpts,
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
@@ -512,24 +533,25 @@ pub extern "C" fn siderust_star_culminations(
         return SiderustStatus::NullPointer;
     }
     let star = unsafe { &(*handle).inner };
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let events = siderust::culminations(star, &obs, window, opts.to_rust());
-    culminations_to_c(events, out, count)
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    culminations_to_c(
+        siderust::culminations(star, &observer.to_rust(), window, opts.to_rust()),
+        out,
+        count,
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ICRS direction altitude functions (lightweight — no body object)
+// ICRS direction
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Compute the altitude of a fixed ICRS direction at a given instant (radians).
+/// Altitude of an ICRS direction at an instant (radians).
 #[no_mangle]
-pub extern "C" fn siderust_icrs_dir_altitude_at(
-    ra_deg: f64,
-    dec_deg: f64,
+pub extern "C" fn siderust_icrs_altitude_at(
+    dir: SiderustSphericalDir,
     observer: SiderustGeodetict,
     mjd: f64,
     out_rad: *mut f64,
@@ -537,68 +559,78 @@ pub extern "C" fn siderust_icrs_dir_altitude_at(
     if out_rad.is_null() {
         return SiderustStatus::NullPointer;
     }
-    let dir = spherical::direction::ICRS::new(Degrees::new(ra_deg), Degrees::new(dec_deg));
-    let obs = observer.to_rust();
-    let t = ModifiedJulianDate::new(mjd);
-    let alt = dir.altitude_at(&obs, t);
-    unsafe { *out_rad = alt.value() };
+    let dir = match icrs_from_c(dir) {
+        Ok(d) => d,
+        Err(e) => return e,
+    };
+    unsafe {
+        *out_rad = dir
+            .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+            .value();
+    }
     SiderustStatus::Ok
 }
 
-/// Find periods when an ICRS direction is above a threshold altitude.
+/// Periods when an ICRS direction is above a threshold altitude.
 #[no_mangle]
-pub extern "C" fn siderust_icrs_dir_above_threshold(
-    ra_deg: f64,
-    dec_deg: f64,
+pub extern "C" fn siderust_icrs_above_threshold(
+    dir: SiderustSphericalDir,
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let dir = spherical::direction::ICRS::new(Degrees::new(ra_deg), Degrees::new(dec_deg));
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let periods = siderust::above_threshold(
-        &dir,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    periods_to_c(periods, out, count)
+    let dir = match icrs_from_c(dir) {
+        Ok(d) => d,
+        Err(e) => return e,
+    };
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    periods_to_c(
+        siderust::above_threshold(
+            &dir,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
 
-/// Find periods when an ICRS direction is below a threshold altitude.
+/// Periods when an ICRS direction is below a threshold altitude.
 #[no_mangle]
-pub extern "C" fn siderust_icrs_dir_below_threshold(
-    ra_deg: f64,
-    dec_deg: f64,
+pub extern "C" fn siderust_icrs_below_threshold(
+    dir: SiderustSphericalDir,
     observer: SiderustGeodetict,
-    start_mjd: f64,
-    end_mjd: f64,
+    window: TempochPeriodMjd,
     threshold_deg: f64,
     opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let dir = spherical::direction::ICRS::new(Degrees::new(ra_deg), Degrees::new(dec_deg));
-    let obs = observer.to_rust();
-    let window = Interval::new(
-        ModifiedJulianDate::new(start_mjd),
-        ModifiedJulianDate::new(end_mjd),
-    );
-    let periods = siderust::below_threshold(
-        &dir,
-        &obs,
-        window,
-        Degrees::new(threshold_deg),
-        opts.to_rust(),
-    );
-    periods_to_c(periods, out, count)
+    let dir = match icrs_from_c(dir) {
+        Ok(d) => d,
+        Err(e) => return e,
+    };
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    periods_to_c(
+        siderust::below_threshold(
+            &dir,
+            &observer.to_rust(),
+            window,
+            Degrees::new(threshold_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
 }
