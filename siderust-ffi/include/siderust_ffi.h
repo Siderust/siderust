@@ -68,21 +68,6 @@ enum siderust_status_t
 typedef int32_t siderust_status_t;
 #endif // __cplusplus
 
-// Proper motion RA convention.
-enum siderust_ra_convention_t
-#ifdef __cplusplus
-  : int32_t
-#endif // __cplusplus
- {
-  // True RA rate µα (deg/yr).
-  SIDERUST_RA_CONVENTION_T_MU_ALPHA = 0,
-  // Catalog rate µα★ = µα cos(δ) (deg/yr).
-  SIDERUST_RA_CONVENTION_T_MU_ALPHA_STAR = 1,
-};
-#ifndef __cplusplus
-typedef int32_t siderust_ra_convention_t;
-#endif // __cplusplus
-
 // Reference frame identifier for C interop.
 enum siderust_frame_t
 #ifdef __cplusplus
@@ -107,6 +92,21 @@ enum siderust_frame_t
 };
 #ifndef __cplusplus
 typedef int32_t siderust_frame_t;
+#endif // __cplusplus
+
+// Proper motion RA convention.
+enum siderust_ra_convention_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // True RA rate µα (deg/yr).
+  SIDERUST_RA_CONVENTION_T_MU_ALPHA = 0,
+  // Catalog rate µα★ = µα cos(δ) (deg/yr).
+  SIDERUST_RA_CONVENTION_T_MU_ALPHA_STAR = 1,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_ra_convention_t;
 #endif // __cplusplus
 
 // Reference center identifier for C interop.
@@ -176,6 +176,16 @@ typedef struct siderust_altitude_query_t {
   double max_altitude_deg;
 } siderust_altitude_query_t;
 
+// Spherical direction (lon/lat or RA/Dec) in degrees.
+typedef struct siderust_spherical_dir_t {
+  // Longitude / Right Ascension in degrees.
+  double lon_deg;
+  // Latitude / Declination in degrees.
+  double lat_deg;
+  // Reference frame.
+  siderust_frame_t frame;
+} siderust_spherical_dir_t;
+
 // Proper motion of a star (equatorial).
 typedef struct siderust_proper_motion_t {
   // RA proper motion in degrees per Julian year.
@@ -204,16 +214,6 @@ typedef struct siderust_planet_t {
   struct siderust_orbit_t orbit;
 } siderust_planet_t;
 
-// Spherical direction (lon/lat or RA/Dec) in degrees.
-typedef struct siderust_spherical_dir_t {
-  // Longitude / Right Ascension in degrees.
-  double lon_deg;
-  // Latitude / Declination in degrees.
-  double lat_deg;
-  // Reference frame.
-  siderust_frame_t frame;
-} siderust_spherical_dir_t;
-
 // Cartesian position (x, y, z + metadata).
 typedef struct siderust_cartesian_pos_t {
   double x;
@@ -239,189 +239,172 @@ extern "C" {
 // Free an array of culmination events.
  void siderust_culminations_free(struct siderust_culmination_event_t *ptr, uintptr_t count);
 
-// Compute the altitude of the Sun at a given instant (radians).
+// Altitude of the Sun at an instant (radians).
 
 siderust_status_t siderust_sun_altitude_at(struct siderust_geodetic_t observer,
                                            double mjd,
                                            double *out_rad);
 
-// Find periods when the Sun is above a threshold altitude.
+// Periods when the Sun is above a threshold altitude.
 
 siderust_status_t siderust_sun_above_threshold(struct siderust_geodetic_t observer,
-                                               double start_mjd,
-                                               double end_mjd,
+                                               tempoch_period_mjd_t window,
                                                double threshold_deg,
                                                struct siderust_search_opts_t opts,
                                                tempoch_period_mjd_t **out,
                                                uintptr_t *count);
 
-// Find periods when the Sun is below a threshold altitude.
+// Periods when the Sun is below a threshold altitude.
 
 siderust_status_t siderust_sun_below_threshold(struct siderust_geodetic_t observer,
-                                               double start_mjd,
-                                               double end_mjd,
+                                               tempoch_period_mjd_t window,
                                                double threshold_deg,
                                                struct siderust_search_opts_t opts,
                                                tempoch_period_mjd_t **out,
                                                uintptr_t *count);
 
-// Find threshold-crossing events for the Sun.
+// Threshold-crossing events for the Sun.
 
 siderust_status_t siderust_sun_crossings(struct siderust_geodetic_t observer,
-                                         double start_mjd,
-                                         double end_mjd,
+                                         tempoch_period_mjd_t window,
                                          double threshold_deg,
                                          struct siderust_search_opts_t opts,
                                          struct siderust_crossing_event_t **out,
                                          uintptr_t *count);
 
-// Find culmination (local extrema) events for the Sun.
+// Culmination (local extrema) events for the Sun.
 
 siderust_status_t siderust_sun_culminations(struct siderust_geodetic_t observer,
-                                            double start_mjd,
-                                            double end_mjd,
+                                            tempoch_period_mjd_t window,
                                             struct siderust_search_opts_t opts,
                                             struct siderust_culmination_event_t **out,
                                             uintptr_t *count);
 
-// Find periods when the Sun's altitude is within [min, max].
+// Periods when the Sun's altitude is within [min, max].
 
 siderust_status_t siderust_sun_altitude_periods(struct siderust_altitude_query_t query,
                                                 tempoch_period_mjd_t **out,
                                                 uintptr_t *count);
 
-// Compute the altitude of the Moon at a given instant (radians).
+// Altitude of the Moon at an instant (radians).
 
 siderust_status_t siderust_moon_altitude_at(struct siderust_geodetic_t observer,
                                             double mjd,
                                             double *out_rad);
 
-// Find periods when the Moon is above a threshold altitude.
+// Periods when the Moon is above a threshold altitude.
 
 siderust_status_t siderust_moon_above_threshold(struct siderust_geodetic_t observer,
-                                                double start_mjd,
-                                                double end_mjd,
+                                                tempoch_period_mjd_t window,
                                                 double threshold_deg,
                                                 struct siderust_search_opts_t opts,
                                                 tempoch_period_mjd_t **out,
                                                 uintptr_t *count);
 
-// Find periods when the Moon is below a threshold altitude.
+// Periods when the Moon is below a threshold altitude.
 
 siderust_status_t siderust_moon_below_threshold(struct siderust_geodetic_t observer,
-                                                double start_mjd,
-                                                double end_mjd,
+                                                tempoch_period_mjd_t window,
                                                 double threshold_deg,
                                                 struct siderust_search_opts_t opts,
                                                 tempoch_period_mjd_t **out,
                                                 uintptr_t *count);
 
-// Find threshold-crossing events for the Moon.
+// Threshold-crossing events for the Moon.
 
 siderust_status_t siderust_moon_crossings(struct siderust_geodetic_t observer,
-                                          double start_mjd,
-                                          double end_mjd,
+                                          tempoch_period_mjd_t window,
                                           double threshold_deg,
                                           struct siderust_search_opts_t opts,
                                           struct siderust_crossing_event_t **out,
                                           uintptr_t *count);
 
-// Find culmination (local extrema) events for the Moon.
+// Culmination (local extrema) events for the Moon.
 
 siderust_status_t siderust_moon_culminations(struct siderust_geodetic_t observer,
-                                             double start_mjd,
-                                             double end_mjd,
+                                             tempoch_period_mjd_t window,
                                              struct siderust_search_opts_t opts,
                                              struct siderust_culmination_event_t **out,
                                              uintptr_t *count);
 
-// Find periods when the Moon's altitude is within [min, max].
+// Periods when the Moon's altitude is within [min, max].
 
 siderust_status_t siderust_moon_altitude_periods(struct siderust_altitude_query_t query,
                                                  tempoch_period_mjd_t **out,
                                                  uintptr_t *count);
 
-// Compute the altitude of a star at a given instant (radians).
+// Altitude of a star at an instant (radians).
 
 siderust_status_t siderust_star_altitude_at(const struct SiderustStar *handle,
                                             struct siderust_geodetic_t observer,
                                             double mjd,
                                             double *out_rad);
 
-// Find periods when a star is above a threshold altitude.
+// Periods when a star is above a threshold altitude.
 
 siderust_status_t siderust_star_above_threshold(const struct SiderustStar *handle,
                                                 struct siderust_geodetic_t observer,
-                                                double start_mjd,
-                                                double end_mjd,
+                                                tempoch_period_mjd_t window,
                                                 double threshold_deg,
                                                 struct siderust_search_opts_t opts,
                                                 tempoch_period_mjd_t **out,
                                                 uintptr_t *count);
 
-// Find periods when a star is below a threshold altitude.
+// Periods when a star is below a threshold altitude.
 
 siderust_status_t siderust_star_below_threshold(const struct SiderustStar *handle,
                                                 struct siderust_geodetic_t observer,
-                                                double start_mjd,
-                                                double end_mjd,
+                                                tempoch_period_mjd_t window,
                                                 double threshold_deg,
                                                 struct siderust_search_opts_t opts,
                                                 tempoch_period_mjd_t **out,
                                                 uintptr_t *count);
 
-// Find crossing events for a star.
+// Threshold-crossing events for a star.
 
 siderust_status_t siderust_star_crossings(const struct SiderustStar *handle,
                                           struct siderust_geodetic_t observer,
-                                          double start_mjd,
-                                          double end_mjd,
+                                          tempoch_period_mjd_t window,
                                           double threshold_deg,
                                           struct siderust_search_opts_t opts,
                                           struct siderust_crossing_event_t **out,
                                           uintptr_t *count);
 
-// Find culmination events for a star.
+// Culmination events for a star.
 
 siderust_status_t siderust_star_culminations(const struct SiderustStar *handle,
                                              struct siderust_geodetic_t observer,
-                                             double start_mjd,
-                                             double end_mjd,
+                                             tempoch_period_mjd_t window,
                                              struct siderust_search_opts_t opts,
                                              struct siderust_culmination_event_t **out,
                                              uintptr_t *count);
 
-// Compute the altitude of a fixed ICRS direction at a given instant (radians).
+// Altitude of an ICRS direction at an instant (radians).
 
-siderust_status_t siderust_icrs_dir_altitude_at(double ra_deg,
-                                                double dec_deg,
+siderust_status_t siderust_icrs_altitude_at(struct siderust_spherical_dir_t dir,
+                                            struct siderust_geodetic_t observer,
+                                            double mjd,
+                                            double *out_rad);
+
+// Periods when an ICRS direction is above a threshold altitude.
+
+siderust_status_t siderust_icrs_above_threshold(struct siderust_spherical_dir_t dir,
                                                 struct siderust_geodetic_t observer,
-                                                double mjd,
-                                                double *out_rad);
+                                                tempoch_period_mjd_t window,
+                                                double threshold_deg,
+                                                struct siderust_search_opts_t opts,
+                                                tempoch_period_mjd_t **out,
+                                                uintptr_t *count);
 
-// Find periods when an ICRS direction is above a threshold altitude.
+// Periods when an ICRS direction is below a threshold altitude.
 
-siderust_status_t siderust_icrs_dir_above_threshold(double ra_deg,
-                                                    double dec_deg,
-                                                    struct siderust_geodetic_t observer,
-                                                    double start_mjd,
-                                                    double end_mjd,
-                                                    double threshold_deg,
-                                                    struct siderust_search_opts_t opts,
-                                                    tempoch_period_mjd_t **out,
-                                                    uintptr_t *count);
-
-// Find periods when an ICRS direction is below a threshold altitude.
-
-siderust_status_t siderust_icrs_dir_below_threshold(double ra_deg,
-                                                    double dec_deg,
-                                                    struct siderust_geodetic_t observer,
-                                                    double start_mjd,
-                                                    double end_mjd,
-                                                    double threshold_deg,
-                                                    struct siderust_search_opts_t opts,
-                                                    tempoch_period_mjd_t **out,
-                                                    uintptr_t *count);
+siderust_status_t siderust_icrs_below_threshold(struct siderust_spherical_dir_t dir,
+                                                struct siderust_geodetic_t observer,
+                                                tempoch_period_mjd_t window,
+                                                double threshold_deg,
+                                                struct siderust_search_opts_t opts,
+                                                tempoch_period_mjd_t **out,
+                                                uintptr_t *count);
 
 // Look up a star from the built-in catalog by name.
 //
