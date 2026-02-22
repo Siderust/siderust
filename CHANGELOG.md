@@ -6,6 +6,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* **Moon phase module** (`calculus::lunar::phase`) with continuous photometric geometry and discrete 8-label classification
+  * `moon_phase_geocentric<E>()` — phase angle, illuminated fraction, elongation, waxing flag (generic over `Ephemeris` backend)
+  * `moon_phase_topocentric<E>()` — same with observer parallax correction
+  * `MoonPhaseGeometry` struct with `.label()` → `MoonPhaseLabel` (8 classical names)
+  * `find_phase_events<E>()` — locate New Moon, First Quarter, Full Moon, Last Quarter instants via scan + Brent root-finding
+  * `MoonPhaseSeries<E>::sample()` / `sample_topocentric()` — batch sampling for plotting
+  * `PhaseThresholds` for customizable label bin widths
+  * `PhaseKind`, `PhaseEvent`, `PhaseSearchOpts` types
+* Re-exports of the full phase API at crate root for ergonomic access
+* Integration test suite `tests/test_moon_phase.rs` with layered validation (L1–L7)
+
 ## [0.5.2] - 19/02/2026
 
 ### Added
