@@ -33,5 +33,6 @@ mod altitude_periods;
 pub mod meeus_ch47;
 pub(crate) mod moon_cache;
 mod moon_equations;
+pub mod phase;
 
 pub(crate) use altitude_periods::*;
