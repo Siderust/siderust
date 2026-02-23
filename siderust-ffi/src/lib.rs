@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! C FFI bindings for **siderust** — precision astronomy library.
+//! C FFI bindings for **siderust** — high-precision astronomy library.
 //!
 //! This crate exposes a flat, `#[no_mangle] extern "C"` API that can be consumed
 //! from C, C++, or any language with a C FFI bridge.  All heap-allocated types
@@ -10,19 +10,19 @@
 //! The matching C header lives at `include/siderust_ffi.h` and must be included
 //! **after** `tempoch_ffi.h` (for `tempoch_period_mjd_t`).
 
-mod altitude;
-mod azimuth;
-mod bodies;
-mod coordinates;
-mod ephemeris;
-mod error;
-mod observatories;
-mod phase;
-mod target;
-mod types;
-
 // Ensure the tempoch-ffi crate is linked so the TempochPeriodMjd re-export resolves.
 extern crate tempoch_ffi;
+
+pub mod altitude;
+pub mod azimuth;
+pub mod bodies;
+pub mod coordinates;
+pub mod ephemeris;
+pub mod error;
+pub mod observatories;
+pub mod phase;
+pub mod target;
+pub mod types;
 
 pub use altitude::*;
 pub use azimuth::*;
