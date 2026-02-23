@@ -37,5 +37,7 @@
 pub(crate) mod star_equations;
 
 pub(crate) mod altitude_periods;
+pub(crate) mod azimuth;
 
 pub(crate) use altitude_periods::*;
+pub(crate) use azimuth::*;

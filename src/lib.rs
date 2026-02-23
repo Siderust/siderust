@@ -63,6 +63,15 @@ pub use tempoch as time;
 pub(crate) mod macros;
 
 // ---------------------------------------------------------------------------
+// Convenience re‑exports: unified azimuth API
+// ---------------------------------------------------------------------------
+pub use calculus::azimuth::{
+    azimuth_crossings, azimuth_extrema, azimuth_periods as compute_azimuth_periods, azimuth_ranges,
+    in_azimuth_range, outside_azimuth_range, AzimuthCrossingDirection, AzimuthCrossingEvent,
+    AzimuthExtremum, AzimuthExtremumKind, AzimuthProvider, AzimuthQuery,
+};
+
+// ---------------------------------------------------------------------------
 // Convenience re‑exports: unified altitude API
 // ---------------------------------------------------------------------------
 pub use calculus::altitude::{
