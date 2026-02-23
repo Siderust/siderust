@@ -6,10 +6,14 @@
 //! These `#[repr(C)]` types are the data bridge between C/C++ callers and
 //! the rich generic Rust types in siderust.
 
+use crate::ffi_utils::FfiFrom;
 use qtty::*;
+use siderust::calculus::azimuth::{
+    AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
+};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
-use tempoch::{Interval, JulianDate, ModifiedJulianDate};
+use tempoch::{Interval, JulianDate, ModifiedJulianDate, Period, MJD};
 
 // Re-export tempoch-ffi types so the generated header can reference them.
 // The extern crate declaration is needed because the dep name maps through a hyphen.
@@ -445,4 +449,56 @@ pub struct SiderustPhaseEvent {
     /// Phase kind.
     pub kind: SiderustPhaseKind,
     pub _pad: [u8; 4],
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// FfiFrom implementations
+// ═══════════════════════════════════════════════════════════════════════════
+
+impl FfiFrom<Period<MJD>> for TempochPeriodMjd {
+    fn ffi_from(p: &Period<MJD>) -> Self {
+        TempochPeriodMjd {
+            start_mjd: p.start.value(),
+            end_mjd: p.end.value(),
+        }
+    }
+}
+
+impl FfiFrom<siderust::CrossingEvent> for SiderustCrossingEvent {
+    fn ffi_from(e: &siderust::CrossingEvent) -> Self {
+        SiderustCrossingEvent::from_rust(e)
+    }
+}
+
+impl FfiFrom<siderust::CulminationEvent> for SiderustCulminationEvent {
+    fn ffi_from(e: &siderust::CulminationEvent) -> Self {
+        SiderustCulminationEvent::from_rust(e)
+    }
+}
+
+impl FfiFrom<AzimuthCrossingEvent> for SiderustAzimuthCrossingEvent {
+    fn ffi_from(e: &AzimuthCrossingEvent) -> Self {
+        SiderustAzimuthCrossingEvent {
+            mjd: e.mjd.value(),
+            direction: match e.direction {
+                AzimuthCrossingDirection::Rising => SiderustCrossingDirection::Rising,
+                AzimuthCrossingDirection::Setting => SiderustCrossingDirection::Setting,
+            },
+            _pad: [0; 4],
+        }
+    }
+}
+
+impl FfiFrom<AzimuthExtremum> for SiderustAzimuthExtremum {
+    fn ffi_from(e: &AzimuthExtremum) -> Self {
+        SiderustAzimuthExtremum {
+            mjd: e.mjd.value(),
+            azimuth_deg: e.azimuth.value(),
+            kind: match e.kind {
+                AzimuthExtremumKind::Max => SiderustAzimuthExtremumKind::Max,
+                AzimuthExtremumKind::Min => SiderustAzimuthExtremumKind::Min,
+            },
+            _pad: [0; 4],
+        }
+    }
 }

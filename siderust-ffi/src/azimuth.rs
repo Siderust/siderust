@@ -6,12 +6,12 @@
 use crate::altitude::{periods_to_c, window_from_c};
 use crate::bodies::SiderustStar;
 use crate::error::SiderustStatus;
+use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
 use qtty::*;
 use siderust::bodies::{Moon, Sun};
 use siderust::calculus::azimuth::{
-    azimuth_crossings, azimuth_extrema, in_azimuth_range, AzimuthCrossingDirection,
-    AzimuthExtremumKind,
+    azimuth_crossings, azimuth_extrema, in_azimuth_range, AzimuthCrossingEvent, AzimuthExtremum,
 };
 use siderust::coordinates::spherical;
 use siderust::time::ModifiedJulianDate;
@@ -21,65 +21,20 @@ use siderust::AzimuthProvider;
 // Conversion helpers
 // ═══════════════════════════════════════════════════════════════════════════
 
-fn az_crossing_from_rust(
-    e: &siderust::calculus::azimuth::AzimuthCrossingEvent,
-) -> SiderustAzimuthCrossingEvent {
-    SiderustAzimuthCrossingEvent {
-        mjd: e.mjd.value(),
-        direction: match e.direction {
-            AzimuthCrossingDirection::Rising => SiderustCrossingDirection::Rising,
-            AzimuthCrossingDirection::Setting => SiderustCrossingDirection::Setting,
-        },
-        _pad: [0; 4],
-    }
-}
-
-fn az_extremum_from_rust(
-    e: &siderust::calculus::azimuth::AzimuthExtremum,
-) -> SiderustAzimuthExtremum {
-    SiderustAzimuthExtremum {
-        mjd: e.mjd.value(),
-        azimuth_deg: e.azimuth.value(),
-        kind: match e.kind {
-            AzimuthExtremumKind::Max => SiderustAzimuthExtremumKind::Max,
-            AzimuthExtremumKind::Min => SiderustAzimuthExtremumKind::Min,
-        },
-        _pad: [0; 4],
-    }
-}
-
 pub(crate) fn vec_az_crossings_to_c(
-    events: Vec<siderust::calculus::azimuth::AzimuthCrossingEvent>,
+    events: Vec<AzimuthCrossingEvent>,
     out: *mut *mut SiderustAzimuthCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    if out.is_null() || count.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let v: Vec<SiderustAzimuthCrossingEvent> = events.iter().map(az_crossing_from_rust).collect();
-    let len = v.len();
-    unsafe {
-        *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
-        *count = len;
-    }
-    SiderustStatus::Ok
+    vec_to_c(events, SiderustAzimuthCrossingEvent::ffi_from, out, count)
 }
 
 pub(crate) fn vec_az_extrema_to_c(
-    events: Vec<siderust::calculus::azimuth::AzimuthExtremum>,
+    events: Vec<AzimuthExtremum>,
     out: *mut *mut SiderustAzimuthExtremum,
     count: *mut usize,
 ) -> SiderustStatus {
-    if out.is_null() || count.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let v: Vec<SiderustAzimuthExtremum> = events.iter().map(az_extremum_from_rust).collect();
-    let len = v.len();
-    unsafe {
-        *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
-        *count = len;
-    }
-    SiderustStatus::Ok
+    vec_to_c(events, SiderustAzimuthExtremum::ffi_from, out, count)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -92,9 +47,7 @@ pub unsafe extern "C" fn siderust_azimuth_crossings_free(
     ptr: *mut SiderustAzimuthCrossingEvent,
     count: usize,
 ) {
-    if !ptr.is_null() && count > 0 {
-        let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
-    }
+    free_boxed_slice(ptr, count);
 }
 
 /// Free an array of azimuth extrema.
@@ -103,9 +56,7 @@ pub unsafe extern "C" fn siderust_azimuth_extrema_free(
     ptr: *mut SiderustAzimuthExtremum,
     count: usize,
 ) {
-    if !ptr.is_null() && count > 0 {
-        let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
-    }
+    free_boxed_slice(ptr, count);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
