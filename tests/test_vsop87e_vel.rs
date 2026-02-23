@@ -14,8 +14,8 @@ macro_rules! check_body {
         let pos = $body::vsop87e(jd);
         let vel = $body::vsop87e_vel(jd);
         let (pos2, vel2) = $body::vsop87e_pos_vel(jd);
-        let p1 = pos.get_position();
-        let p2 = pos2.get_position();
+        let p1 = pos;
+        let p2 = pos2;
         assert!((p1.x().value() - p2.x().value()).abs() < PRECISION);
         assert!((p1.y().value() - p2.y().value()).abs() < PRECISION);
         assert!((p1.z().value() - p2.z().value()).abs() < PRECISION);
@@ -40,7 +40,7 @@ fn velocities_match_combined() {
 #[test]
 fn sun_position_finite() {
     let jd = JulianDate::J2000;
-    let pos = *Sun::vsop87e(jd).get_position();
+    let pos = Sun::vsop87e(jd);
     assert!(pos.x().value().is_finite());
     assert!(pos.y().value().is_finite());
     assert!(pos.z().value().is_finite());

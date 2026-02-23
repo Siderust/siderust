@@ -27,7 +27,6 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use crate::targets::Target;
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Kilometer};
 
@@ -66,21 +65,21 @@ impl<D: DeData> Ephemeris for DeEphemeris<D> {
     #[inline]
     fn sun_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
+    ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
         bodies::sun_barycentric(jd, &D::SUN)
     }
 
     #[inline]
     fn earth_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
+    ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
         bodies::earth_barycentric(jd, &D::EMB, &D::MOON)
     }
 
     #[inline]
     fn earth_heliocentric(
         jd: JulianDate,
-    ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> {
+    ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
         bodies::earth_heliocentric(jd, &D::SUN, &D::EMB, &D::MOON)
     }
 

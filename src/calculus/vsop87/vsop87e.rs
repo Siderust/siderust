@@ -8,7 +8,6 @@ use crate::coordinates::{
     centers::Barycentric,
     frames::EclipticMeanJ2000,
 };
-use crate::targets::Target;
 use crate::time::JulianDate;
 use qtty::*;
 type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
@@ -28,19 +27,17 @@ macro_rules! impl_vsop87e {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            pub fn vsop87e(jd: JulianDate) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
+            pub fn vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
                 let (x, y, z) = position(
                     jd,
                     &[$( &$x ),+],
                     &[$( &$y ),+],
                     &[$( &$z ),+]
                 );
-                Target::new_static(
-                    Position::new(
-                        AstronomicalUnits::new(x),
-                        AstronomicalUnits::new(y),
-                        AstronomicalUnits::new(z)),
-                    jd,
+                Position::new(
+                    AstronomicalUnits::new(x),
+                    AstronomicalUnits::new(y),
+                    AstronomicalUnits::new(z),
                 )
             }
 
@@ -59,7 +56,7 @@ macro_rules! impl_vsop87e {
             }
 
             pub fn vsop87e_pos_vel(jd: JulianDate)
-                -> (Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>, Velocity<EclipticMeanJ2000, AuPerDay>) {
+                -> (Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, Velocity<EclipticMeanJ2000, AuPerDay>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
                     &[$( &$x ),+],
@@ -67,10 +64,11 @@ macro_rules! impl_vsop87e {
                     &[$( &$z ),+]
                 );
                 (
-                    Target::new_static(Position::new(
+                    Position::new(
                         AstronomicalUnits::new(x),
                         AstronomicalUnits::new(y),
-                        AstronomicalUnits::new(z)), jd,),
+                        AstronomicalUnits::new(z),
+                    ),
                     Velocity::new(
                         qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
                         qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
@@ -82,22 +80,17 @@ macro_rules! impl_vsop87e {
 }
 
 impl Sun {
-    pub fn vsop87e(
-        jd: JulianDate,
-    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
+    pub fn vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
         let (x, y, z) = position(
             jd,
             &[&SUN_X0, &SUN_X1, &SUN_X2, &SUN_X3, &SUN_X4, &SUN_X5],
             &[&SUN_Y0, &SUN_Y1, &SUN_Y2, &SUN_Y3, &SUN_Y4, &SUN_Y5],
             &[&SUN_Z0, &SUN_Z1, &SUN_Z2, &SUN_Z3, &SUN_Z4, &SUN_Z5],
         );
-        Target::new_static(
-            Position::new(
-                AstronomicalUnits::new(x),
-                AstronomicalUnits::new(y),
-                AstronomicalUnits::new(z),
-            ),
-            jd,
+        Position::new(
+            AstronomicalUnits::new(x),
+            AstronomicalUnits::new(y),
+            AstronomicalUnits::new(z),
         )
     }
 }
@@ -171,7 +164,7 @@ mod tests {
     #[test]
     fn test_mercury_at_epoch() {
         use crate::bodies::Mercury;
-        let coord = Mercury::vsop87e(JulianDate::J2000).get_position().clone();
+        let coord = Mercury::vsop87e(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.1372349394 * AU, -0.4500758422 * AU, -0.0243922379 * AU),
@@ -183,7 +176,7 @@ mod tests {
     #[test]
     fn test_venus_at_epoch() {
         use crate::bodies::Venus;
-        let coord = Venus::vsop87e(JulianDate::J2000).get_position().clone();
+        let coord = Venus::vsop87e(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.7254438061 * AU, -0.0354427729 * AU, 0.0412204390 * AU),
@@ -195,7 +188,7 @@ mod tests {
     #[test]
     fn test_earth_barycentric_at_epoch() {
         use crate::bodies::Earth;
-        let coord = Earth::vsop87e(JulianDate::J2000).get_position().clone();
+        let coord = Earth::vsop87e(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.1842769894 * AU, 0.9644534522 * AU, 0.0002021000 * AU),
@@ -207,7 +200,7 @@ mod tests {
     #[test]
     fn test_mars_at_epoch() {
         use crate::bodies::Mars;
-        let coord = Mars::vsop87e(JulianDate::J2000).get_position().clone();
+        let coord = Mars::vsop87e(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(1.3835744053 * AU, -0.0162038666 * AU, -0.0342616574 * AU),
@@ -219,7 +212,7 @@ mod tests {
     #[test]
     fn test_jupiter_at_epoch() {
         use crate::bodies::Jupiter;
-        let coord = Jupiter::vsop87e(JulianDate::J2000).get_position().clone();
+        let coord = Jupiter::vsop87e(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(3.9940325025 * AU, 2.9357928287 * AU, -0.1015776146 * AU),
@@ -231,7 +224,7 @@ mod tests {
     #[test]
     fn test_saturn_at_epoch() {
         use crate::bodies::Saturn;
-        let coord = Saturn::vsop87e(JulianDate::J2000).get_position().clone();
+        let coord = Saturn::vsop87e(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(6.3992653459 * AU, 6.5672047374 * AU, -0.3688706482 * AU),
@@ -243,7 +236,7 @@ mod tests {
     #[test]
     fn test_uranus_at_epoch() {
         use crate::bodies::Uranus;
-        let coord = Uranus::vsop87e(JulianDate::J2000).get_position().clone();
+        let coord = Uranus::vsop87e(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(14.4247519568 * AU, -13.7371045087 * AU, -0.2379360887 * AU),
@@ -255,7 +248,7 @@ mod tests {
     #[test]
     fn test_neptune_at_epoch() {
         use crate::bodies::Neptune;
-        let coord = Neptune::vsop87e(JulianDate::J2000).get_position().clone();
+        let coord = Neptune::vsop87e(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(16.8049701269 * AU, -24.9944513569 * AU, 0.1274251215 * AU),

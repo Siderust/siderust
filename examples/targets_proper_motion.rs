@@ -4,14 +4,14 @@
 //! Targets + Proper Motion Example
 //!
 //! Demonstrates:
-//! - `Target<T>` as a (position, epoch, proper-motion) bundle
+//! - `CoordinateWithPM<T>` as a (position, epoch, proper-motion) bundle
 //! - `ProperMotion` construction for Gaia/Hipparcos-style `µα⋆`
 //! - Applying proper motion from J2000.0 to a future epoch
 
 use qtty::*;
 use siderust::astro::proper_motion::{set_proper_motion_since_j2000, ProperMotion};
 use siderust::coordinates::spherical::position;
-use siderust::targets::Target;
+use siderust::targets::CoordinateWithPM;
 use siderust::time::JulianDate;
 
 fn main() {
@@ -35,7 +35,7 @@ fn main() {
     );
 
     let t0 = JulianDate::J2000;
-    let mut target = Target::new(mean_j2000, t0, pm.clone());
+    let mut target = CoordinateWithPM::new(mean_j2000, t0, pm.clone());
 
     println!("At J2000.0:");
     println!("  RA  = {:.6} deg", target.position.ra());

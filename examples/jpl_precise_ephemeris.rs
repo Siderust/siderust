@@ -131,9 +131,9 @@ fn main() {
 
     let earth_vsop = Vsop87Ephemeris::earth_heliocentric(j2000);
     println!("  VSOP87:");
-    println!("    X = {:15.10} AU", earth_vsop.get_position().x());
-    println!("    Y = {:15.10} AU", earth_vsop.get_position().y());
-    println!("    Z = {:15.10} AU", earth_vsop.get_position().z());
+    println!("    X = {:15.10} AU", earth_vsop.x());
+    println!("    Y = {:15.10} AU", earth_vsop.y());
+    println!("    Z = {:15.10} AU", earth_vsop.z());
 
     #[cfg(feature = "de440")]
     {
@@ -143,14 +143,11 @@ fn main() {
         } else {
             let earth_de440 = De440Ephemeris::earth_heliocentric(j2000);
             println!("\n  DE440:");
-            println!("    X = {:15.10} AU", earth_de440.get_position().x());
-            println!("    Y = {:15.10} AU", earth_de440.get_position().y());
-            println!("    Z = {:15.10} AU", earth_de440.get_position().z());
+            println!("    X = {:15.10} AU", earth_de440.x());
+            println!("    Y = {:15.10} AU", earth_de440.y());
+            println!("    Z = {:15.10} AU", earth_de440.z());
 
-            let diff_km = earth_vsop
-                .get_position()
-                .distance_to(earth_de440.get_position())
-                .to::<Kilometer>();
+            let diff_km = earth_vsop.distance_to(&earth_de440).to::<Kilometer>();
             println!("    Δ(VSOP87−DE440) = {}", diff_km);
         }
     }
@@ -163,14 +160,11 @@ fn main() {
         } else {
             let earth_de441 = De441Ephemeris::earth_heliocentric(j2000);
             println!("\n  DE441:");
-            println!("    X = {:15.10} AU", earth_de441.get_position().x());
-            println!("    Y = {:15.10} AU", earth_de441.get_position().y());
-            println!("    Z = {:15.10} AU", earth_de441.get_position().z());
+            println!("    X = {:15.10} AU", earth_de441.x());
+            println!("    Y = {:15.10} AU", earth_de441.y());
+            println!("    Z = {:15.10} AU", earth_de441.z());
 
-            let diff_km = earth_vsop
-                .get_position()
-                .distance_to(earth_de441.get_position())
-                .to::<Kilometer>();
+            let diff_km = earth_vsop.distance_to(&earth_de441).to::<Kilometer>();
             println!("    Δ(VSOP87−DE441) = {}", diff_km);
         }
     }
@@ -183,10 +177,7 @@ fn main() {
         } else {
             let e440 = De440Ephemeris::earth_heliocentric(j2000);
             let e441 = De441Ephemeris::earth_heliocentric(j2000);
-            let diff_km = e440
-                .get_position()
-                .distance_to(e441.get_position())
-                .to::<Kilometer>();
+            let diff_km = e440.distance_to(&e441).to::<Kilometer>();
             println!("\n  Δ(DE440−DE441) = {}", diff_km);
         }
     }
@@ -298,23 +289,15 @@ fn main() {
         // Use the highest-fidelity backend that is actually available at runtime.
         #[cfg(feature = "de441")]
         let dist = if !stub_de441 {
-            De441Ephemeris::earth_heliocentric(jd)
-                .get_position()
-                .distance()
+            De441Ephemeris::earth_heliocentric(jd).distance()
         } else {
-            Vsop87Ephemeris::earth_heliocentric(jd)
-                .get_position()
-                .distance()
+            Vsop87Ephemeris::earth_heliocentric(jd).distance()
         };
         #[cfg(all(feature = "de440", not(feature = "de441")))]
         let dist = if !stub_de440 {
-            De440Ephemeris::earth_heliocentric(jd)
-                .get_position()
-                .distance()
+            De440Ephemeris::earth_heliocentric(jd).distance()
         } else {
-            Vsop87Ephemeris::earth_heliocentric(jd)
-                .get_position()
-                .distance()
+            Vsop87Ephemeris::earth_heliocentric(jd).distance()
         };
 
         if min_dist.map_or(true, |min| dist < min) {
