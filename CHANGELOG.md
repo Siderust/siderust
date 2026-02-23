@@ -18,6 +18,27 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Re-exports of the full phase API at crate root for ergonomic access
 * Integration test suite `tests/test_moon_phase.rs` with layered validation (L1–L7)
 
+* **Unified Azimuth API** (`calculus::azimuth`) providing azimuth-based
+  event finding and interval queries analogous to the existing altitude API
+  (crossings, extrema, and in-range periods).
+  * `AzimuthProvider` trait: `azimuth_at(...)` and `azimuth_periods(&AzimuthQuery)`.
+  * Free functions: `azimuth_periods()`, `azimuth_crossings()`, `azimuth_extrema()`,
+    `azimuth_ranges()`, `in_azimuth_range()`, `outside_azimuth_range()`.
+  * Types: `AzimuthQuery`, `AzimuthCrossingEvent`, `AzimuthExtremum`,
+    `AzimuthExtremumKind`, and re-use of `CrossingDirection` semantics.
+  * Body implementations for `Sun`, `Moon`, `Star<'_>`, and `direction::ICRS`.
+  * Per-body scalar engines: `calculus::solar::sun_azimuth_rad`,
+    `calculus::lunar::moon_azimuth_rad`, and
+    `calculus::stellar::fixed_star_azimuth_rad` (delegates to
+    `calculus::horizontal::star_horizontal`).
+  * Robust handling of the 0°/360° discontinuity:
+    - Crossing detection uses `sin(az − bearing)` to avoid wrap artifacts.
+    - Range queries use a midpoint-cosine transform `cos(az − mid)`.
+    - Extrema detection uses a stateful unwrapping closure that accumulates
+      ±2π offsets and wraps results back into `[0°,360°)`.
+  * Crate-root re-exports for ergonomic access and a new integration test
+    suite `tests/test_azimuth_api.rs` covering trait and free-function APIs.
+
 ## [0.5.2] - 19/02/2026
 
 ### Added

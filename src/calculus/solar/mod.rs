@@ -33,7 +33,9 @@
 mod sun_equations;
 
 pub(crate) mod altitude_periods;
+pub(crate) mod azimuth;
 pub mod night_types;
 
 pub(crate) use altitude_periods::*;
+pub(crate) use azimuth::*;
 pub use night_types::*;
