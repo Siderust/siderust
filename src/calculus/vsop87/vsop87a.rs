@@ -9,7 +9,6 @@ use crate::coordinates::{
     centers::Heliocentric,
     frames::EclipticMeanJ2000,
 };
-use crate::targets::Target;
 use crate::time::JulianDate;
 use qtty::*;
 type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
@@ -29,19 +28,17 @@ macro_rules! impl_vsop87a {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
-            pub fn vsop87a(jd: JulianDate) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> {
+            pub fn vsop87a(jd: JulianDate) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
                 let (x, y, z) = position(
                     jd,
                     &[$( &$x ),+],
                     &[$( &$y ),+],
                     &[$( &$z ),+]
                 );
-                Target::new_static(
-                    Position::new(
-                        AstronomicalUnits::new(x),
-                        AstronomicalUnits::new(y),
-                        AstronomicalUnits::new(z)),
-                    jd,
+                Position::new(
+                    AstronomicalUnits::new(x),
+                    AstronomicalUnits::new(y),
+                    AstronomicalUnits::new(z),
                 )
             }
 
@@ -60,7 +57,7 @@ macro_rules! impl_vsop87a {
             }
 
             pub fn vsop87a_pos_vel(jd: JulianDate)
-                -> (Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>>, Velocity<EclipticMeanJ2000, AuPerDay>) {
+                -> (Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, Velocity<EclipticMeanJ2000, AuPerDay>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
                     jd,
                     &[$( &$x ),+],
@@ -68,10 +65,11 @@ macro_rules! impl_vsop87a {
                     &[$( &$z ),+]
                 );
                 (
-                    Target::new_static(Position::new(
+                    Position::new(
                         AstronomicalUnits::new(x),
                         AstronomicalUnits::new(y),
-                        AstronomicalUnits::new(z)), jd,),
+                        AstronomicalUnits::new(z),
+                    ),
                     Velocity::new(
                         qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
                         qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
@@ -158,7 +156,7 @@ mod tests {
     /// Mercury heliocentric (ecliptic J2000) at epoch J2000.0 (JD_TDB = 2451545.0)
     #[test]
     fn test_mercury_at_epoch() {
-        let coord = Mercury::vsop87a(JulianDate::J2000).get_position().clone();
+        let coord = Mercury::vsop87a(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.1300934115 * AU, -0.4472876716 * AU, -0.0245983802 * AU),
@@ -169,7 +167,7 @@ mod tests {
     /// Venus heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_venus_at_epoch() {
-        let coord = Venus::vsop87a(JulianDate::J2000).get_position().clone();
+        let coord = Venus::vsop87a(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.7183022797 * AU, -0.0326546017 * AU, 0.0410142975 * AU),
@@ -180,7 +178,7 @@ mod tests {
     /// Test Earth's heliocentric coordinates at epoch J2000.0
     #[test]
     fn test_earth_at_epoch() {
-        let coord = Earth::vsop87a(JulianDate::J2000).get_position().clone();
+        let coord = Earth::vsop87a(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.1771354586 * AU, 0.9672416237 * AU, -0.0000039000 * AU),
@@ -191,7 +189,7 @@ mod tests {
     /// Mars heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_mars_at_epoch() {
-        let coord = Mars::vsop87a(JulianDate::J2000).get_position().clone();
+        let coord = Mars::vsop87a(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(1.3907159264 * AU, -0.0134157043 * AU, -0.0344677967 * AU),
@@ -202,7 +200,7 @@ mod tests {
     /// Jupiter heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_jupiter_at_epoch() {
-        let coord = Jupiter::vsop87a(JulianDate::J2000).get_position().clone();
+        let coord = Jupiter::vsop87a(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(4.0011740268 * AU, 2.9385810077 * AU, -0.1017837501 * AU),
@@ -213,7 +211,7 @@ mod tests {
     /// Saturn heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_saturn_at_epoch() {
-        let coord = Saturn::vsop87a(JulianDate::J2000).get_position().clone();
+        let coord = Saturn::vsop87a(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(6.4064068573 * AU, 6.5699929449 * AU, -0.3690768029 * AU),
@@ -224,7 +222,7 @@ mod tests {
     /// Uranus heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_uranus_at_epoch() {
-        let coord = Uranus::vsop87a(JulianDate::J2000).get_position().clone();
+        let coord = Uranus::vsop87a(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(14.4318934159 * AU, -13.7343162527 * AU, -0.2381421963 * AU),
@@ -235,7 +233,7 @@ mod tests {
     /// Neptune heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_neptune_at_epoch() {
-        let coord = Neptune::vsop87a(JulianDate::J2000).get_position().clone();
+        let coord = Neptune::vsop87a(JulianDate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(16.8121116576 * AU, -24.9916630908 * AU, 0.1272190171 * AU),
@@ -250,11 +248,7 @@ mod tests {
             let vel = $body::vsop87a_vel(jd);
             let (pos2, vel2) = $body::vsop87a_pos_vel(jd);
 
-            assert_cartesian_eq!(
-                pos.get_position().clone(),
-                pos2.get_position().clone(),
-                PRECISION
-            );
+            assert_cartesian_eq!(pos, pos2, PRECISION);
             assert!(
                 (vel.x() - vel2.x()).abs()
                     < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)

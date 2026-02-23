@@ -114,8 +114,8 @@ fn main() {
     println!("  Inclination: {:.2}°\n", mars_orbit.inclination);
 
     // Get actual positions from VSOP87
-    let earth_helio = *Earth::vsop87a(jd).get_position();
-    let mars_helio = *Mars::vsop87a(jd).get_position();
+    let earth_helio = Earth::vsop87a(jd);
+    let mars_helio = Mars::vsop87a(jd);
 
     println!("Earth (Heliocentric):");
     println!("  Distance from Sun: {:.6} AU\n", earth_helio.distance());
@@ -151,7 +151,7 @@ fn main() {
 
     let venus_params = BodycentricParams::heliocentric(venus_orbit);
 
-    let venus_helio = *Venus::vsop87a(jd).get_position();
+    let venus_helio = Venus::vsop87a(jd);
     println!("Venus (Heliocentric):");
     println!("  Distance from Sun: {:.6} AU\n", venus_helio.distance());
 

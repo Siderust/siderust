@@ -58,7 +58,7 @@ fn main() {
     println!("-------------------------");
 
     // Get Earth's position (heliocentric ecliptic)
-    let earth_helio = *Earth::vsop87a(jd).get_position();
+    let earth_helio = Earth::vsop87a(jd);
     println!("Earth (Heliocentric EclipticMeanJ2000):");
     println!("  X = {:.6} AU", earth_helio.x());
     println!("  Y = {:.6} AU", earth_helio.y());
@@ -77,7 +77,7 @@ fn main() {
     );
 
     // Get Mars position (heliocentric)
-    let mars_helio = *Mars::vsop87a(jd).get_position();
+    let mars_helio = Mars::vsop87a(jd);
     println!("Mars (Heliocentric EclipticMeanJ2000):");
     println!("  X = {:.6} AU", mars_helio.x());
     println!("  Y = {:.6} AU", mars_helio.y());
@@ -127,7 +127,7 @@ fn main() {
     println!("--------------------------");
 
     // Get Earth in barycentric coordinates
-    let earth_bary = *Earth::vsop87e(jd).get_position();
+    let earth_bary = Earth::vsop87e(jd);
     println!("Earth (Barycentric EclipticMeanJ2000):");
     println!("  X = {:.6} AU", earth_bary.x());
     println!("  Y = {:.6} AU", earth_bary.y());
@@ -143,7 +143,7 @@ fn main() {
     );
 
     // Transform Mars from barycentric to geocentric
-    let mars_bary = *Mars::vsop87e(jd).get_position();
+    let mars_bary = Mars::vsop87e(jd);
     let mars_geo_from_bary: EclipticMeanJ2000<Au, Geocentric> = mars_bary.to_center(jd);
     println!("Mars (Geocentric, from Barycentric):");
     println!("  X = {:.6} AU", mars_geo_from_bary.x());

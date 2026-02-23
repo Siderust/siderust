@@ -587,10 +587,13 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Barycentric, F> 
     ) -> [f64; 3] {
         // Get Sun's position in barycentric ecliptic coordinates
         let sun_bary = Eph::sun_barycentric(jd);
-        let pos = sun_bary.get_position();
 
         // The shift is the Sun's position (in AU)
-        [pos.x().value(), pos.y().value(), pos.z().value()]
+        [
+            sun_bary.x().value(),
+            sun_bary.y().value(),
+            sun_bary.z().value(),
+        ]
     }
 }
 
@@ -618,10 +621,13 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Barycentric, F> fo
     ) -> [f64; 3] {
         // Get Earth's position in barycentric ecliptic coordinates
         let earth_bary = Eph::earth_barycentric(jd);
-        let pos = earth_bary.get_position();
 
         // The shift is the Earth's position (in AU)
-        [pos.x().value(), pos.y().value(), pos.z().value()]
+        [
+            earth_bary.x().value(),
+            earth_bary.y().value(),
+            earth_bary.z().value(),
+        ]
     }
 }
 
