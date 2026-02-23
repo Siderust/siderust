@@ -237,3 +237,63 @@ impl Moon {
         illumination_range::<DefaultEphemeris>(window, k_min, k_max, opts)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::coordinates::centers::Geodetic;
+    use crate::coordinates::frames::ECEF;
+    use crate::time::{JulianDate, ModifiedJulianDate};
+    use qtty::*;
+
+    fn greenwich() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M)
+    }
+
+    fn one_month() -> Period<MJD> {
+        let start = ModifiedJulianDate::from(JulianDate::J2000);
+        Period::new(start, start + Days::new(30.0))
+    }
+
+    #[test]
+    fn phase_topocentric_illuminated_fraction_bounded() {
+        let geom = Moon::phase_topocentric(JulianDate::J2000, greenwich());
+        assert!(geom.illuminated_fraction >= 0.0 && geom.illuminated_fraction <= 1.0);
+    }
+
+    #[test]
+    fn illumination_above_returns_periods() {
+        // Any fraction above 0 must find at least some time windows in 30 days
+        let periods = Moon::illumination_above(one_month(), 0.0, PhaseSearchOpts::default());
+        // 0% minimum means always above (all illumination ≥ 0)
+        assert!(!periods.is_empty());
+    }
+
+    #[test]
+    fn illumination_below_returns_periods() {
+        // Any fraction below 1.0 must find at least some time windows in 30 days
+        let periods = Moon::illumination_below(one_month(), 1.0, PhaseSearchOpts::default());
+        assert!(!periods.is_empty());
+    }
+
+    #[test]
+    fn illumination_range_returns_periods() {
+        let periods = Moon::illumination_range(one_month(), 0.0, 1.0, PhaseSearchOpts::default());
+        // [0.0, 1.0] covers the entire range — should cover the full window
+        assert!(!periods.is_empty());
+    }
+
+    #[test]
+    fn illumination_above_empty_when_impossible() {
+        // k_min above 1.0 — no illumination can exceed 100%
+        let periods = Moon::illumination_above(one_month(), 1.01, PhaseSearchOpts::default());
+        assert!(periods.is_empty());
+    }
+
+    #[test]
+    fn illumination_below_empty_when_impossible() {
+        // k_max below 0.0 — illumination is never negative
+        let periods = Moon::illumination_below(one_month(), -0.01, PhaseSearchOpts::default());
+        assert!(periods.is_empty());
+    }
+}

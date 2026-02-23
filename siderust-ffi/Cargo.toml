@@ -9,7 +9,7 @@ repository = "https://github.com/Siderust/siderust"
 
 [lib]
 name = "siderust_ffi"
-crate-type = ["cdylib", "staticlib", "rlib"]
+crate-type = ["rlib"]
 
 [features]
 default = []

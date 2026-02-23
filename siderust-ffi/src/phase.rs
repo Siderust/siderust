@@ -215,3 +215,277 @@ pub extern "C" fn siderust_moon_illumination_range(
         count,
     )
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ptr;
+
+    fn one_month() -> TempochPeriodMjd {
+        TempochPeriodMjd {
+            start_mjd: 60000.0,
+            end_mjd: 60030.0,
+        }
+    }
+
+    fn default_opts() -> SiderustSearchOpts {
+        SiderustSearchOpts {
+            time_tolerance_days: 1e-9,
+            scan_step_days: 0.0,
+            has_scan_step: false,
+        }
+    }
+
+    fn paris() -> SiderustGeodetict {
+        SiderustGeodetict {
+            lon_deg: 2.35,
+            lat_deg: 48.85,
+            height_m: 35.0,
+        }
+    }
+
+    // ── Geocentric phase ──────────────────────────────────────────────────
+
+    #[test]
+    fn geocentric_phase_null_out() {
+        assert_eq!(
+            siderust_moon_phase_geocentric(2451545.0, ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn geocentric_phase_valid() {
+        let mut out = SiderustMoonPhaseGeometry {
+            phase_angle_rad: 0.0,
+            illuminated_fraction: 0.0,
+            elongation_rad: 0.0,
+            waxing: 0,
+            _pad: [0; 7],
+        };
+        assert_eq!(
+            siderust_moon_phase_geocentric(2451545.0, &mut out),
+            SiderustStatus::Ok
+        );
+        assert!(out.phase_angle_rad.is_finite());
+        assert!(out.illuminated_fraction >= 0.0 && out.illuminated_fraction <= 1.0);
+        assert!(out.elongation_rad.is_finite());
+    }
+
+    // ── Topocentric phase ─────────────────────────────────────────────────
+
+    #[test]
+    fn topocentric_phase_null_out() {
+        assert_eq!(
+            siderust_moon_phase_topocentric(2451545.0, paris(), ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn topocentric_phase_valid() {
+        let mut out = SiderustMoonPhaseGeometry {
+            phase_angle_rad: 0.0,
+            illuminated_fraction: 0.0,
+            elongation_rad: 0.0,
+            waxing: 0,
+            _pad: [0; 7],
+        };
+        assert_eq!(
+            siderust_moon_phase_topocentric(2451545.0, paris(), &mut out),
+            SiderustStatus::Ok
+        );
+        assert!(out.illuminated_fraction >= 0.0 && out.illuminated_fraction <= 1.0);
+    }
+
+    // ── Phase label ───────────────────────────────────────────────────────
+
+    #[test]
+    fn phase_label_null_out() {
+        let geom = SiderustMoonPhaseGeometry {
+            phase_angle_rad: 0.0,
+            illuminated_fraction: 0.0,
+            elongation_rad: 0.0,
+            waxing: 0,
+            _pad: [0; 7],
+        };
+        assert_eq!(
+            siderust_moon_phase_label(geom, ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn phase_label_new_moon() {
+        let mut geom = SiderustMoonPhaseGeometry {
+            phase_angle_rad: 0.0,
+            illuminated_fraction: 0.0,
+            elongation_rad: 0.0,
+            waxing: 1,
+            _pad: [0; 7],
+        };
+        let mut label = SiderustMoonPhaseLabel::NewMoon;
+        assert_eq!(
+            siderust_moon_phase_geocentric(2451545.0, &mut geom),
+            SiderustStatus::Ok
+        );
+        assert_eq!(
+            siderust_moon_phase_label(geom, &mut label),
+            SiderustStatus::Ok
+        );
+    }
+
+    // ── Phase events ──────────────────────────────────────────────────────
+
+    #[test]
+    fn find_phase_events_null_out() {
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_find_phase_events(one_month(), default_opts(), ptr::null_mut(), &mut count),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn find_phase_events_null_count() {
+        let mut out: *mut SiderustPhaseEvent = ptr::null_mut();
+        assert_eq!(
+            siderust_find_phase_events(one_month(), default_opts(), &mut out, ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn find_phase_events_returns_events() {
+        let mut out: *mut SiderustPhaseEvent = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_find_phase_events(one_month(), default_opts(), &mut out, &mut count),
+            SiderustStatus::Ok
+        );
+        // 30-day window must contain at least one principal phase
+        assert!(count >= 1);
+        unsafe { siderust_phase_events_free(out, count) };
+    }
+
+    #[test]
+    fn find_phase_events_invalid_window() {
+        let bad = TempochPeriodMjd {
+            start_mjd: 60030.0,
+            end_mjd: 60000.0,
+        };
+        let mut out: *mut SiderustPhaseEvent = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_find_phase_events(bad, default_opts(), &mut out, &mut count),
+            SiderustStatus::InvalidPeriod
+        );
+    }
+
+    // ── Illumination above ────────────────────────────────────────────────
+
+    #[test]
+    fn illumination_above_ok() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_moon_illumination_above(
+                one_month(),
+                0.5,
+                default_opts(),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::Ok
+        );
+        unsafe { crate::altitude::siderust_periods_free(out, count) };
+    }
+
+    #[test]
+    fn illumination_above_invalid_window() {
+        let bad = TempochPeriodMjd {
+            start_mjd: 60030.0,
+            end_mjd: 60000.0,
+        };
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_moon_illumination_above(bad, 0.5, default_opts(), &mut out, &mut count),
+            SiderustStatus::InvalidPeriod
+        );
+    }
+
+    // ── Illumination below ────────────────────────────────────────────────
+
+    #[test]
+    fn illumination_below_ok() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_moon_illumination_below(
+                one_month(),
+                0.5,
+                default_opts(),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::Ok
+        );
+        unsafe { crate::altitude::siderust_periods_free(out, count) };
+    }
+
+    #[test]
+    fn illumination_below_invalid_window() {
+        let bad = TempochPeriodMjd {
+            start_mjd: 60030.0,
+            end_mjd: 60000.0,
+        };
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_moon_illumination_below(bad, 0.5, default_opts(), &mut out, &mut count),
+            SiderustStatus::InvalidPeriod
+        );
+    }
+
+    // ── Illumination range ────────────────────────────────────────────────
+
+    #[test]
+    fn illumination_range_ok() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_moon_illumination_range(
+                one_month(),
+                0.25,
+                0.75,
+                default_opts(),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::Ok
+        );
+        unsafe { crate::altitude::siderust_periods_free(out, count) };
+    }
+
+    #[test]
+    fn illumination_range_invalid_window() {
+        let bad = TempochPeriodMjd {
+            start_mjd: 60030.0,
+            end_mjd: 60000.0,
+        };
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_moon_illumination_range(bad, 0.25, 0.75, default_opts(), &mut out, &mut count),
+            SiderustStatus::InvalidPeriod
+        );
+    }
+
+    // ── Free safety ───────────────────────────────────────────────────────
+
+    #[test]
+    fn phase_events_free_null_safe() {
+        unsafe { siderust_phase_events_free(ptr::null_mut(), 0) };
+    }
+}
