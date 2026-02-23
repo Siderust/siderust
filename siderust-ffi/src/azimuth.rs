@@ -333,7 +333,7 @@ pub extern "C" fn siderust_icrs_azimuth_at(
         return SiderustStatus::InvalidFrame;
     }
     let icrs =
-        spherical::direction::ICRS::new(Degrees::new(dir.lon_deg), Degrees::new(dir.lat_deg));
+        spherical::direction::ICRS::new(Degrees::new(dir.azimuth_deg), Degrees::new(dir.polar_deg));
     unsafe {
         *out_deg = icrs
             .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
@@ -361,7 +361,7 @@ pub extern "C" fn siderust_icrs_azimuth_crossings(
         Err(e) => return e,
     };
     let icrs =
-        spherical::direction::ICRS::new(Degrees::new(dir.lon_deg), Degrees::new(dir.lat_deg));
+        spherical::direction::ICRS::new(Degrees::new(dir.azimuth_deg), Degrees::new(dir.polar_deg));
     vec_az_crossings_to_c(
         azimuth_crossings(
             &icrs,

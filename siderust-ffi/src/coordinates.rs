@@ -40,10 +40,10 @@ trait SphericalDirProxy {
     fn to_horizontal(&self, jd: &JulianDate, site: &Geodetic<ECEF>) -> (f64, f64);
 }
 
-/// Helper: extract (azimuth_deg, polar_deg) from a spherical Direction.
+/// Helper: extract (polar_deg, azimuth_deg) from a spherical Direction.
 #[inline]
 fn sph_to_pair<F: ReferenceFrame>(d: &spherical::Direction<F>) -> (f64, f64) {
-    (d.azimuth.value(), d.polar.value())
+    (d.polar.value(), d.azimuth.value())
 }
 
 /// Implement the proxy by always routing through ICRS as a hub.
@@ -102,36 +102,36 @@ impl_sph_dir_proxy!(EquatorialTrueOfDate);
 /// Helper: construct a direction in a given frame as a trait object.
 fn make_sph_dir_in_frame(
     frame: SiderustFrame,
-    lon_deg: f64,
-    lat_deg: f64,
+    polar_deg: f64,
+    azimuth_deg: f64,
 ) -> Result<Box<dyn SphericalDirProxy>, SiderustStatus> {
     match frame {
         SiderustFrame::ICRS => Ok(Box::new(spherical::Direction::<ICRS>::new(
-            Degrees::new(lon_deg),
-            Degrees::new(lat_deg),
+            Degrees::new(azimuth_deg),
+            Degrees::new(polar_deg),
         ))),
         SiderustFrame::EclipticMeanJ2000 => {
             Ok(Box::new(spherical::Direction::<EclipticMeanJ2000>::new(
-                Degrees::new(lon_deg),
-                Degrees::new(lat_deg),
+                Degrees::new(azimuth_deg),
+                Degrees::new(polar_deg),
             )))
         }
         SiderustFrame::EquatorialMeanJ2000 => {
             Ok(Box::new(spherical::Direction::<EquatorialMeanJ2000>::new(
-                Degrees::new(lon_deg),
-                Degrees::new(lat_deg),
+                Degrees::new(azimuth_deg),
+                Degrees::new(polar_deg),
             )))
         }
         SiderustFrame::EquatorialMeanOfDate => {
             Ok(Box::new(spherical::Direction::<EquatorialMeanOfDate>::new(
-                Degrees::new(lon_deg),
-                Degrees::new(lat_deg),
+                Degrees::new(azimuth_deg),
+                Degrees::new(polar_deg),
             )))
         }
         SiderustFrame::EquatorialTrueOfDate => {
             Ok(Box::new(spherical::Direction::<EquatorialTrueOfDate>::new(
-                Degrees::new(lon_deg),
-                Degrees::new(lat_deg),
+                Degrees::new(azimuth_deg),
+                Degrees::new(polar_deg),
             )))
         }
         _ => Err(SiderustStatus::InvalidFrame),
@@ -150,8 +150,8 @@ fn make_sph_dir_in_frame(
 /// For conversion to Horizontal, use `siderust_spherical_dir_to_horizontal`.
 #[no_mangle]
 pub extern "C" fn siderust_spherical_dir_transform_frame(
-    lon_deg: f64,
-    lat_deg: f64,
+    polar_deg: f64,
+    azimuth_deg: f64,
     src_frame: SiderustFrame,
     dst_frame: SiderustFrame,
     jd: f64,
@@ -161,14 +161,14 @@ pub extern "C" fn siderust_spherical_dir_transform_frame(
         return SiderustStatus::NullPointer;
     }
 
-    let dir = match make_sph_dir_in_frame(src_frame, lon_deg, lat_deg) {
+    let dir = match make_sph_dir_in_frame(src_frame, polar_deg, azimuth_deg) {
         Ok(d) => d,
         Err(e) => return e,
     };
 
     let jd_val = JulianDate::new(jd);
 
-    let (out_lon, out_lat) = match dst_frame {
+    let (out_polar, out_azimuth) = match dst_frame {
         SiderustFrame::ICRS => dir.to_icrs(&jd_val),
         SiderustFrame::EclipticMeanJ2000 => dir.to_ecliptic_j2000(&jd_val),
         SiderustFrame::EquatorialMeanJ2000 => dir.to_equatorial_j2000(&jd_val),
@@ -183,8 +183,8 @@ pub extern "C" fn siderust_spherical_dir_transform_frame(
 
     unsafe {
         *out = SiderustSphericalDir {
-            lon_deg: out_lon,
-            lat_deg: out_lat,
+            polar_deg: out_polar,
+            azimuth_deg: out_azimuth,
             frame: dst_frame,
         };
     }
@@ -198,8 +198,8 @@ pub extern "C" fn siderust_spherical_dir_transform_frame(
 /// EquatorialMeanOfDate, EquatorialTrueOfDate.
 #[no_mangle]
 pub extern "C" fn siderust_spherical_dir_to_horizontal(
-    lon_deg: f64,
-    lat_deg: f64,
+    polar_deg: f64,
+    azimuth_deg: f64,
     src_frame: SiderustFrame,
     jd: f64,
     observer: SiderustGeodetict,
@@ -209,7 +209,7 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal(
         return SiderustStatus::NullPointer;
     }
 
-    let dir = match make_sph_dir_in_frame(src_frame, lon_deg, lat_deg) {
+    let dir = match make_sph_dir_in_frame(src_frame, polar_deg, azimuth_deg) {
         Ok(d) => d,
         Err(e) => return e,
     };
@@ -220,8 +220,8 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal(
 
     unsafe {
         *out = SiderustSphericalDir {
-            lon_deg: az,
-            lat_deg: alt,
+            polar_deg: alt,
+            azimuth_deg: az,
             frame: SiderustFrame::Horizontal,
         };
     }

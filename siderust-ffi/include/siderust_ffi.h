@@ -230,10 +230,10 @@ typedef struct siderust_altitude_query_t {
 
 // Spherical direction (lon/lat or RA/Dec) in degrees.
 typedef struct siderust_spherical_dir_t {
-  // Longitude / Right Ascension in degrees.
-  double lon_deg;
-  // Latitude / Declination in degrees.
-  double lat_deg;
+  // Polar angle / latitude in degrees.
+  double polar_deg;
+  // Azimuth / longitude / right ascension in degrees.
+  double azimuth_deg;
   // Reference frame.
   siderust_frame_t frame;
 } siderust_spherical_dir_t;
@@ -702,8 +702,8 @@ siderust_status_t siderust_star_name(const struct SiderustStar *handle,
 //
 // For conversion to Horizontal, use `siderust_spherical_dir_to_horizontal`.
 
-siderust_status_t siderust_spherical_dir_transform_frame(double lon_deg,
-                                                         double lat_deg,
+siderust_status_t siderust_spherical_dir_transform_frame(double polar_deg,
+                                                         double azimuth_deg,
                                                          siderust_frame_t src_frame,
                                                          siderust_frame_t dst_frame,
                                                          double jd,
@@ -715,8 +715,8 @@ siderust_status_t siderust_spherical_dir_transform_frame(double lon_deg,
 // Supported source frames: ICRS, EclipticMeanJ2000, EquatorialMeanJ2000,
 // EquatorialMeanOfDate, EquatorialTrueOfDate.
 
-siderust_status_t siderust_spherical_dir_to_horizontal(double lon_deg,
-                                                       double lat_deg,
+siderust_status_t siderust_spherical_dir_to_horizontal(double polar_deg,
+                                                       double azimuth_deg,
                                                        siderust_frame_t src_frame,
                                                        double jd,
                                                        struct siderust_geodetic_t observer,
