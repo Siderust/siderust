@@ -50,6 +50,22 @@ The advantage is twofold. First, runtime performance is improved because all req
 
 When JPL features are enabled, builds may download large datasets. To support fast or offline development workflows, the `SIDERUST_JPL_STUB` option provides a lightweight alternative for iteration.
 
+## Object vs. Coordinate Sample Separation (Trackable)
+
+The crate distinguishes between two fundamentally different concepts: an **astronomical object** that can produce coordinates at any time, and a **coordinate sample** that records a specific position at a specific instant.
+
+Previously, both roles were conflated in a single `Target<T>` type. This created a semantic mismatch: a `Target` sounded like an object you observe, but it was actually a timestamped coordinate snapshot. Functions that needed "anything that can give me a position at time t" had no trait to express that requirement, leading to ad-hoc dispatch and limiting generic composition.
+
+The resolution introduces two separate abstractions:
+
+- **`CoordinateWithPM<T>`** (formerly `Target<T>`): a concrete struct representing a single position sample with an optional proper-motion correction. It does not "know" how to compute positions at arbitrary times; it simply stores one. A backward-compatible `Target<T>` type alias is provided.
+
+- **`Trackable`**: a trait representing anything that can produce coordinates at a given Julian Date. It is implemented for solar-system unit types (via VSOP87/ELP2000), `Star` (via catalog coordinates), `direction::ICRS` (identity — fixed directions are time-invariant), and `CoordinateWithPM<T>` itself (returns the stored position).
+
+This separation enables generic programming over trackable objects. A function constrained by `T: Trackable` can accept a planet, a star, a fixed sky direction, or a precomputed coordinate sample without knowing the concrete type. The `AltitudePeriodsProvider` and `AzimuthProvider` traits remain independent dispatch layers for observation-specific calculations.
+
+The design consequence is that adding new trackable object types (e.g., comets, satellites, asteroids with orbital propagation) requires only implementing `Trackable`, without modifying existing infrastructure.
+
 ## Safety-First Policy
 
 The crate intentionally avoids `unsafe` blocks in its primary implementation. Given the numerical intensity of the domain, undefined behavior would be particularly difficult to detect and potentially catastrophic in its consequences.

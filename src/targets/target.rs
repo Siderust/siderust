@@ -9,7 +9,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Target<T> {
+pub struct CoordinateWithPM<T> {
     /// Position of the object at epoch `time`.
     pub position: T,
     /// Epoch of the position expressed as a [Julian Day].
@@ -18,9 +18,9 @@ pub struct Target<T> {
     pub proper_motion: Option<ProperMotion>,
 }
 
-impl<T> Target<T> {
+impl<T> CoordinateWithPM<T> {
     pub const fn new(position: T, time: JulianDate, proper_motion: ProperMotion) -> Self {
-        Target {
+        CoordinateWithPM {
             position,
             time,
             proper_motion: Some(proper_motion),
@@ -28,7 +28,7 @@ impl<T> Target<T> {
     }
 
     pub const fn new_static(position: T, time: JulianDate) -> Self {
-        Target {
+        CoordinateWithPM {
             position,
             time,
             proper_motion: None,
@@ -40,7 +40,7 @@ impl<T> Target<T> {
         time: JulianDate,
         proper_motion: Option<ProperMotion>,
     ) -> Self {
-        Target {
+        CoordinateWithPM {
             position,
             time,
             proper_motion,
@@ -69,6 +69,11 @@ impl<T> Target<T> {
     }
 }
 
+/// Backward-compatibility type alias — existing code that says `Target<T>`
+/// continues to compile without changes.  New code should prefer
+/// [`CoordinateWithPM`].
+pub type Target<T> = CoordinateWithPM<T>;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -83,10 +88,16 @@ mod tests {
 
     #[test]
     fn test_target_new() {
-        let target = Target::new_static(*ALDEBARAN.target.get_position(), JulianDate::J2000);
+        let target = Target::new_static(*ALDEBARAN.coordinate.get_position(), JulianDate::J2000);
 
-        assert_eq!(target.position.ra(), ALDEBARAN.target.get_position().ra());
-        assert_eq!(target.position.dec(), ALDEBARAN.target.get_position().dec());
+        assert_eq!(
+            target.position.ra(),
+            ALDEBARAN.coordinate.get_position().ra()
+        );
+        assert_eq!(
+            target.position.dec(),
+            ALDEBARAN.coordinate.get_position().dec()
+        );
         assert_eq!(target.time, JulianDate::J2000);
     }
 
@@ -221,7 +232,7 @@ mod tests {
         let target = Target::new_static(position, JulianDate::J2000);
 
         let debug_str = format!("{:?}", target);
-        assert!(debug_str.contains("Target"));
+        assert!(debug_str.contains("CoordinateWithPM"));
     }
 
     #[test]

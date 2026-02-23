@@ -17,7 +17,7 @@ fn de441_real_backend_smoke() {
 
     let earth = De441Ephemeris::earth_barycentric(JulianDate::J2000);
     assert!(
-        earth.get_position().x().value().is_finite(),
+        earth.x().value().is_finite(),
         "DE441 real backend should produce finite coordinates at J2000"
     );
 }

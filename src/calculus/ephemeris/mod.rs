@@ -56,7 +56,6 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use crate::targets::Target;
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Day, Kilometer};
 
@@ -77,21 +76,21 @@ pub trait Ephemeris {
     /// Used by: Heliocentric ↔ Barycentric center shifts.
     fn sun_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>;
+    ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>;
 
     /// Earth's position in barycentric ecliptic coordinates (AU).
     ///
     /// Used by: Geocentric ↔ Barycentric center shifts.
     fn earth_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>;
+    ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>;
 
     /// Earth's position in heliocentric ecliptic coordinates (AU).
     ///
     /// Used by: Geocentric ↔ Heliocentric center shifts.
     fn earth_heliocentric(
         jd: JulianDate,
-    ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>>;
+    ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>;
 
     /// Earth's velocity in barycentric ecliptic coordinates (AU/day).
     ///

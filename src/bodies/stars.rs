@@ -9,11 +9,11 @@
 //! - `mass`: Stellar mass in solar masses (`SolarMasses`).
 //! - `radius`: Stellar radius in solar radii (`SolarRadiuses`).
 //! - `luminosity`: Stellar luminosity in solar luminosities (`SolarLuminosity`).
-//! - `target`: [`Target`] pointing to a Spherical coordinates (see [`Position`]), using degrees and Julian Day.
+//! - `coordinate`: [`CoordinateWithPM`] pointing to a Spherical coordinates (see [`Position`]), using degrees and Julian Day.
 
 use crate::coordinates::spherical::direction;
 use crate::coordinates::{centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position};
-use crate::targets::Target;
+use crate::targets::CoordinateWithPM;
 use qtty::length::nominal::SolarRadiuses;
 use qtty::*;
 
@@ -27,7 +27,7 @@ pub struct Star<'a> {
     pub mass: SolarMasses,
     pub radius: SolarRadiuses,
     pub luminosity: SolarLuminosities,
-    pub target: Target<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
+    pub coordinate: CoordinateWithPM<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
 }
 
 impl<'a> Star<'a> {
@@ -38,7 +38,7 @@ impl<'a> Star<'a> {
         mass: SolarMasses,
         radius: SolarRadiuses,
         luminosity: SolarLuminosities,
-        target: Target<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
+        coordinate: CoordinateWithPM<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
     ) -> Star<'static> {
         Star {
             name: Cow::Borrowed(name),
@@ -46,7 +46,7 @@ impl<'a> Star<'a> {
             mass,
             radius,
             luminosity,
-            target,
+            coordinate,
         }
     }
 
@@ -57,7 +57,7 @@ impl<'a> Star<'a> {
         mass: SolarMasses,
         radius: SolarRadiuses,
         luminosity: SolarLuminosities,
-        target: Target<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
+        coordinate: CoordinateWithPM<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
     ) -> Star<'a>
     where
         N: Into<Cow<'a, str>>,
@@ -68,18 +68,18 @@ impl<'a> Star<'a> {
             mass,
             radius,
             luminosity,
-            target,
+            coordinate,
         }
     }
 }
 
 impl From<&Star<'_>> for direction::ICRS {
-    /// Extracts the J2000 RA/Dec from a [`Star`]'s target position.
+    /// Extracts the J2000 RA/Dec from a [`Star`]'s coordinate position.
     ///
     /// The position's *azimuth* is RA and *polar* is Dec in the
     /// `EquatorialMeanJ2000` frame convention used throughout the crate.
     fn from(star: &Star<'_>) -> Self {
-        let pos = star.target.get_position();
+        let pos = star.coordinate.get_position();
         Self::new(pos.azimuth, pos.polar)
     }
 }
