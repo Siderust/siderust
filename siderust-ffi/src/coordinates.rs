@@ -251,3 +251,348 @@ pub extern "C" fn siderust_geodetic_to_cartesian_ecef(
     }
     SiderustStatus::Ok
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ptr;
+
+    const J2000: f64 = 2_451_545.0;
+
+    fn empty_dir() -> SiderustSphericalDir {
+        SiderustSphericalDir {
+            polar_deg: 0.0,
+            azimuth_deg: 0.0,
+            frame: SiderustFrame::ICRS,
+        }
+    }
+
+    fn empty_cart() -> SiderustCartesianPos {
+        SiderustCartesianPos {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::ICRS,
+            center: SiderustCenter::Geocentric,
+        }
+    }
+
+    fn paris_observer() -> SiderustGeodetict {
+        SiderustGeodetict {
+            lon_deg: 2.35,
+            lat_deg: 48.85,
+            height_m: 35.0,
+        }
+    }
+
+    // ── Frame transforms ─────────────────────────────────────────────────
+
+    #[test]
+    fn icrs_to_icrs_is_identity() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            10.0,
+            45.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::ICRS,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert!((out.polar_deg - 10.0).abs() < 1e-8);
+        assert!((out.azimuth_deg - 45.0).abs() < 1e-8);
+    }
+
+    #[test]
+    fn icrs_to_ecliptic_j2000() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            30.0,
+            90.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::EclipticMeanJ2000,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EclipticMeanJ2000);
+    }
+
+    #[test]
+    fn icrs_to_equatorial_j2000() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            0.0,
+            180.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialMeanJ2000,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EquatorialMeanJ2000);
+    }
+
+    #[test]
+    fn icrs_to_equatorial_mean_of_date() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialMeanOfDate,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EquatorialMeanOfDate);
+    }
+
+    #[test]
+    fn icrs_to_equatorial_true_of_date() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialTrueOfDate,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EquatorialTrueOfDate);
+    }
+
+    #[test]
+    fn ecliptic_j2000_to_icrs() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            10.0,
+            90.0,
+            SiderustFrame::EclipticMeanJ2000,
+            SiderustFrame::ICRS,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+    }
+
+    #[test]
+    fn equatorial_j2000_to_icrs() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            10.0,
+            90.0,
+            SiderustFrame::EquatorialMeanJ2000,
+            SiderustFrame::ICRS,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+    }
+
+    #[test]
+    fn equatorial_mean_of_date_to_icrs() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            10.0,
+            90.0,
+            SiderustFrame::EquatorialMeanOfDate,
+            SiderustFrame::ICRS,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+    }
+
+    #[test]
+    fn equatorial_true_of_date_to_icrs() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            10.0,
+            90.0,
+            SiderustFrame::EquatorialTrueOfDate,
+            SiderustFrame::ICRS,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+    }
+
+    #[test]
+    fn unsupported_src_frame_returns_error() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            0.0,
+            0.0,
+            SiderustFrame::Horizontal,
+            SiderustFrame::ICRS,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::InvalidFrame);
+    }
+
+    #[test]
+    fn horizontal_dst_frame_returns_error() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::Horizontal,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::InvalidFrame);
+    }
+
+    #[test]
+    fn galactic_dst_frame_returns_error() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_transform_frame(
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::Galactic,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::InvalidFrame);
+    }
+
+    #[test]
+    fn transform_frame_null_out() {
+        let s = siderust_spherical_dir_transform_frame(
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::ICRS,
+            J2000,
+            ptr::null_mut(),
+        );
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    // ── To horizontal ─────────────────────────────────────────────────────
+
+    #[test]
+    fn icrs_to_horizontal_vega() {
+        let mut out = empty_dir();
+        // Vega: RA~279.2°, Dec~38.8°
+        let s = siderust_spherical_dir_to_horizontal(
+            38.8,
+            279.2,
+            SiderustFrame::ICRS,
+            J2000,
+            paris_observer(),
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::Horizontal);
+        // alt/az should be finite
+        assert!(out.polar_deg.is_finite());
+        assert!(out.azimuth_deg.is_finite());
+    }
+
+    #[test]
+    fn ecliptic_j2000_to_horizontal() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_to_horizontal(
+            0.0,
+            0.0,
+            SiderustFrame::EclipticMeanJ2000,
+            J2000,
+            paris_observer(),
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+    }
+
+    #[test]
+    fn to_horizontal_unsupported_src_frame() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_to_horizontal(
+            0.0,
+            0.0,
+            SiderustFrame::ECEF,
+            J2000,
+            paris_observer(),
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::InvalidFrame);
+    }
+
+    #[test]
+    fn to_horizontal_null_out() {
+        let s = siderust_spherical_dir_to_horizontal(
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            J2000,
+            paris_observer(),
+            ptr::null_mut(),
+        );
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    // ── Geodetic to ECEF ─────────────────────────────────────────────────
+
+    #[test]
+    fn geodetic_to_ecef_greenwich() {
+        let geodetic = SiderustGeodetict {
+            lon_deg: 0.0,
+            lat_deg: 51.5,
+            height_m: 0.0,
+        };
+        let mut out = empty_cart();
+        let s = siderust_geodetic_to_cartesian_ecef(geodetic, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        // ECEF position should be ~6350 km from origin
+        let r = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!(r > 6_300_000.0 && r < 6_400_000.0, "ECEF radius {r} m");
+        assert_eq!(out.frame, SiderustFrame::ECEF);
+        assert_eq!(out.center, SiderustCenter::Geocentric);
+    }
+
+    #[test]
+    fn geodetic_to_ecef_null_out() {
+        let geodetic = SiderustGeodetict {
+            lon_deg: 0.0,
+            lat_deg: 0.0,
+            height_m: 0.0,
+        };
+        let s = siderust_geodetic_to_cartesian_ecef(geodetic, ptr::null_mut());
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    // ── equatorial_mean_of_date and true_of_date as source ───────────────
+
+    #[test]
+    fn equatorial_mean_of_date_to_horizontal() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_to_horizontal(
+            0.0,
+            90.0,
+            SiderustFrame::EquatorialMeanOfDate,
+            J2000,
+            paris_observer(),
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+    }
+
+    #[test]
+    fn equatorial_true_of_date_to_horizontal() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_to_horizontal(
+            0.0,
+            90.0,
+            SiderustFrame::EquatorialTrueOfDate,
+            J2000,
+            paris_observer(),
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+    }
+}

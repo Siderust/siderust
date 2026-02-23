@@ -76,3 +76,104 @@ pub extern "C" fn siderust_geodetic_new(
     }
     SiderustStatus::Ok
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ptr;
+
+    fn uninit_geodetic() -> SiderustGeodetict {
+        SiderustGeodetict {
+            lon_deg: 0.0,
+            lat_deg: 0.0,
+            height_m: 0.0,
+        }
+    }
+
+    #[test]
+    fn roque_de_los_muchachos_returns_ok() {
+        let mut out = uninit_geodetic();
+        let s = siderust_observatory_roque_de_los_muchachos(&mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        // La Palma ~-17.9°, ~28.8°
+        assert!((out.lon_deg - (-17.89)).abs() < 1.0);
+        assert!((out.lat_deg - 28.76).abs() < 1.0);
+    }
+
+    #[test]
+    fn null_ptr_roque() {
+        assert_eq!(
+            siderust_observatory_roque_de_los_muchachos(ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn el_paranal_returns_ok() {
+        let mut out = uninit_geodetic();
+        assert_eq!(
+            siderust_observatory_el_paranal(&mut out),
+            SiderustStatus::Ok
+        );
+        // Paranal ~-70.4°, ~-24.6°
+        assert!((out.lon_deg - (-70.4)).abs() < 1.0);
+    }
+
+    #[test]
+    fn null_ptr_el_paranal() {
+        assert_eq!(
+            siderust_observatory_el_paranal(ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn mauna_kea_returns_ok() {
+        let mut out = uninit_geodetic();
+        assert_eq!(siderust_observatory_mauna_kea(&mut out), SiderustStatus::Ok);
+        // Mauna Kea ~-155.5°, ~19.8°
+        assert!((out.lon_deg - (-155.5)).abs() < 1.0);
+    }
+
+    #[test]
+    fn null_ptr_mauna_kea() {
+        assert_eq!(
+            siderust_observatory_mauna_kea(ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn la_silla_returns_ok() {
+        let mut out = uninit_geodetic();
+        assert_eq!(siderust_observatory_la_silla(&mut out), SiderustStatus::Ok);
+        // La Silla ~-70.7°, ~-29.3°
+        assert!(out.lat_deg < 0.0, "La Silla is in the southern hemisphere");
+    }
+
+    #[test]
+    fn null_ptr_la_silla() {
+        assert_eq!(
+            siderust_observatory_la_silla(ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn geodetic_new_stores_values() {
+        let mut out = uninit_geodetic();
+        let s = siderust_geodetic_new(10.5, -20.3, 1500.0, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        assert!((out.lon_deg - 10.5).abs() < 1e-12);
+        assert!((out.lat_deg - (-20.3)).abs() < 1e-12);
+        assert!((out.height_m - 1500.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn null_ptr_geodetic_new() {
+        assert_eq!(
+            siderust_geodetic_new(0.0, 0.0, 0.0, ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+}
