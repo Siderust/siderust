@@ -367,7 +367,7 @@ mod tests {
         let mars_params = BodycentricParams::heliocentric(mars_orbit);
 
         // Earth's position (heliocentric)
-        let earth_helio = *Earth::vsop87a(JulianDate::J2000).get_position();
+        let earth_helio = Earth::vsop87a(JulianDate::J2000);
 
         let earth_from_mars: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
             earth_helio.to_bodycentric(mars_params, JulianDate::J2000);

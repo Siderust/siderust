@@ -22,7 +22,7 @@ where
     (): crate::coordinates::transform::FrameRotationProvider<frames::EclipticMeanJ2000, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        let sun_bary_ecl_au = *DefaultEphemeris::sun_barycentric(jd).get_position();
+        let sun_bary_ecl_au = DefaultEphemeris::sun_barycentric(jd);
 
         // Ephemeris gives the Sun's position in AstronomicalUnits
         let sun_bary_ecl = EclipticMeanJ2000::<U, Barycentric>::new(
@@ -44,7 +44,7 @@ where
     (): crate::coordinates::transform::FrameRotationProvider<frames::EclipticMeanJ2000, F>,
 {
     fn to_center(&self, jd: JulianDate) -> Position<Barycentric, F, U> {
-        let earth_bary_ecl_au = *DefaultEphemeris::earth_barycentric(jd).get_position();
+        let earth_bary_ecl_au = DefaultEphemeris::earth_barycentric(jd);
 
         // Ephemeris gives the Earth's position in AstronomicalUnits
         let earth_bary_ecl = EclipticMeanJ2000::<U, Barycentric>::new(
@@ -73,8 +73,7 @@ mod tests {
     fn test_helio() {
         let sun_helio = EclipticMeanJ2000::<Au>::CENTER;
         let sun_bary: EclipticMeanJ2000<Au, Barycentric> = sun_helio.transform(JulianDate::J2000);
-        let expected_sun_bary =
-            *DefaultEphemeris::sun_barycentric(JulianDate::J2000).get_position();
+        let expected_sun_bary = DefaultEphemeris::sun_barycentric(JulianDate::J2000);
         assert_cartesian_eq!(sun_bary, expected_sun_bary, EPSILON);
     }
 
@@ -82,8 +81,7 @@ mod tests {
     fn test_geo() {
         let earth_geo = EclipticMeanJ2000::<Au, Geocentric>::CENTER;
         let earth_bary: EclipticMeanJ2000<Au, Barycentric> = earth_geo.transform(JulianDate::J2000);
-        let expected_earth_bary =
-            *DefaultEphemeris::earth_barycentric(JulianDate::J2000).get_position();
+        let expected_earth_bary = DefaultEphemeris::earth_barycentric(JulianDate::J2000);
         assert_cartesian_eq!(&earth_bary, &expected_earth_bary, EPSILON);
     }
 }

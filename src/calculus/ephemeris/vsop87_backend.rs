@@ -13,7 +13,6 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use crate::targets::Target;
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Kilometer};
 
@@ -28,21 +27,21 @@ impl Ephemeris for Vsop87Ephemeris {
     #[inline]
     fn sun_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
+    ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
         Sun::vsop87e(jd)
     }
 
     #[inline]
     fn earth_barycentric(
         jd: JulianDate,
-    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
+    ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
         Earth::vsop87e(jd)
     }
 
     #[inline]
     fn earth_heliocentric(
         jd: JulianDate,
-    ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> {
+    ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
         Earth::vsop87a(jd)
     }
 

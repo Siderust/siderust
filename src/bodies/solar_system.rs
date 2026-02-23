@@ -52,7 +52,7 @@
 use super::{Planet, Satellite, Star};
 use crate::astro::orbit::Orbit;
 use crate::coordinates::spherical::position::{EclipticMeanJ2000, EquatorialMeanJ2000};
-use crate::targets::Target;
+use crate::targets::CoordinateWithPM;
 use crate::time::JulianDate;
 use qtty::length::nominal::RSUN;
 use qtty::*;
@@ -84,7 +84,7 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
     SolarMasses::new(1.0),
     RSUN,
     L_SUN,
-    Target::<EquatorialMeanJ2000<LightYear>>::new_static(
+    CoordinateWithPM::<EquatorialMeanJ2000<LightYear>>::new_static(
         EquatorialMeanJ2000::<LightYear>::new_raw(
             HourAngles::from_hms(-23, 0, 0.0).to_const::<Degree>(), // Dec (polar) Approx at J2000
             HourAngles::from_hms(18, 44, 48.0).to_const::<Degree>(), // RA (azimuth) Approx at J2000

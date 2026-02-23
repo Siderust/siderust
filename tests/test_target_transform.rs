@@ -10,7 +10,7 @@ use siderust::coordinates::{
     spherical,
     transform::{Transform, TransformFrame},
 };
-use siderust::targets::Target;
+use siderust::targets::CoordinateWithPM;
 use siderust::time::JulianDate;
 
 const EPS: f64 = 1e-9;
@@ -18,11 +18,13 @@ const EPS: f64 = 1e-9;
 #[test]
 fn target_cartesian_position_transform() {
     let jd = JulianDate::J2000;
-    let orig: Target<cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> =
-        Mars::vsop87a(jd);
+    let orig: CoordinateWithPM<
+        cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>,
+    > = CoordinateWithPM::new_static(Mars::vsop87a(jd), jd);
 
-    let converted: Target<cartesian::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>> =
-        Target::from(&orig);
+    let converted: CoordinateWithPM<
+        cartesian::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>,
+    > = CoordinateWithPM::from(&orig);
 
     let step: cartesian::Position<Heliocentric, EquatorialMeanJ2000, AstronomicalUnit> =
         orig.position.transform(jd);
@@ -40,15 +42,18 @@ fn target_cartesian_position_transform() {
 #[test]
 fn target_spherical_position_transform() {
     let jd = JulianDate::J2000;
-    let cart_orig: Target<cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> =
-        Mars::vsop87a(jd);
+    let cart_orig: CoordinateWithPM<
+        cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>,
+    > = CoordinateWithPM::new_static(Mars::vsop87a(jd), jd);
     let sph_pos: spherical::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> =
         spherical::Position::from_cartesian(&cart_orig.position);
-    let orig: Target<spherical::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> =
-        Target::new_static(sph_pos, jd);
+    let orig: CoordinateWithPM<
+        spherical::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>,
+    > = CoordinateWithPM::new_static(sph_pos, jd);
 
-    let converted: Target<spherical::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>> =
-        Target::from(&orig);
+    let converted: CoordinateWithPM<
+        spherical::Position<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>,
+    > = CoordinateWithPM::from(&orig);
 
     let step_cart: cartesian::Position<Heliocentric, EquatorialMeanJ2000, AstronomicalUnit> =
         orig.position.to_cartesian().transform(jd);

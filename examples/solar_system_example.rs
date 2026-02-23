@@ -35,72 +35,51 @@ fn main() {
     // Mercury
     let mercury = Mercury::vsop87a(j2000);
     println!("Mercury (Heliocentric EclipticMeanJ2000):");
-    println!("  X = {:.6} AU", mercury.get_position().x());
-    println!("  Y = {:.6} AU", mercury.get_position().y());
-    println!("  Z = {:.6} AU", mercury.get_position().z());
-    println!(
-        "  Distance from Sun: {:.6} AU\n",
-        mercury.get_position().distance()
-    );
+    println!("  X = {:.6} AU", mercury.x());
+    println!("  Y = {:.6} AU", mercury.y());
+    println!("  Z = {:.6} AU", mercury.z());
+    println!("  Distance from Sun: {:.6} AU\n", mercury.distance());
 
     // Venus
     let venus = Venus::vsop87a(j2000);
     println!("Venus (Heliocentric EclipticMeanJ2000):");
-    println!(
-        "  Distance from Sun: {:.6} AU\n",
-        venus.get_position().distance()
-    );
+    println!("  Distance from Sun: {:.6} AU\n", venus.distance());
 
     // Earth
     let earth = Earth::vsop87a(j2000);
     println!("Earth (Heliocentric EclipticMeanJ2000):");
-    println!("  X = {:.6} AU", earth.get_position().x());
-    println!("  Y = {:.6} AU", earth.get_position().y());
-    println!("  Z = {:.6} AU", earth.get_position().z());
+    println!("  X = {:.6} AU", earth.x());
+    println!("  Y = {:.6} AU", earth.y());
+    println!("  Z = {:.6} AU", earth.z());
     println!(
         "  Distance from Sun: {:.6} AU (should be ~1.0)\n",
-        earth.get_position().distance()
+        earth.distance()
     );
 
     // Mars
     let mars = Mars::vsop87a(j2000);
     println!("Mars (Heliocentric EclipticMeanJ2000):");
-    println!(
-        "  Distance from Sun: {:.6} AU\n",
-        mars.get_position().distance()
-    );
+    println!("  Distance from Sun: {:.6} AU\n", mars.distance());
 
     // Jupiter
     let jupiter = Jupiter::vsop87a(j2000);
     println!("Jupiter (Heliocentric EclipticMeanJ2000):");
-    println!(
-        "  Distance from Sun: {:.6} AU\n",
-        jupiter.get_position().distance()
-    );
+    println!("  Distance from Sun: {:.6} AU\n", jupiter.distance());
 
     // Saturn
     let saturn = Saturn::vsop87a(j2000);
     println!("Saturn (Heliocentric EclipticMeanJ2000):");
-    println!(
-        "  Distance from Sun: {:.6} AU\n",
-        saturn.get_position().distance()
-    );
+    println!("  Distance from Sun: {:.6} AU\n", saturn.distance());
 
     // Uranus
     let uranus = Uranus::vsop87a(j2000);
     println!("Uranus (Heliocentric EclipticMeanJ2000):");
-    println!(
-        "  Distance from Sun: {:.6} AU\n",
-        uranus.get_position().distance()
-    );
+    println!("  Distance from Sun: {:.6} AU\n", uranus.distance());
 
     // Neptune
     let neptune = Neptune::vsop87a(j2000);
     println!("Neptune (Heliocentric EclipticMeanJ2000):");
-    println!(
-        "  Distance from Sun: {:.6} AU\n",
-        neptune.get_position().distance()
-    );
+    println!("  Distance from Sun: {:.6} AU\n", neptune.distance());
 
     // =========================================================================
     // 2. Planet-to-Planet Distances
@@ -109,8 +88,8 @@ fn main() {
     println!("-------------------------------------");
 
     // Earth to Mars
-    let earth_pos = *earth.get_position();
-    let mars_pos = *mars.get_position();
+    let earth_pos = earth;
+    let mars_pos = mars;
     let earth_mars_distance = earth_pos.distance_to(&mars_pos);
     let earth_mars_distance_km = earth_mars_distance.to::<Kilometer>();
     println!("Earth to Mars:");
@@ -120,7 +99,7 @@ fn main() {
     );
 
     // Earth to Jupiter
-    let jupiter_pos = *jupiter.get_position();
+    let jupiter_pos = jupiter;
     let earth_jupiter_distance = earth_pos.distance_to(&jupiter_pos);
     let earth_jupiter_distance_km = earth_jupiter_distance.to::<Kilometer>();
     println!("Earth to Jupiter:");
@@ -130,8 +109,8 @@ fn main() {
     );
 
     // Venus to Mercury (inner planets)
-    let venus_pos = *venus.get_position();
-    let mercury_pos = *mercury.get_position();
+    let venus_pos = venus;
+    let mercury_pos = mercury;
     let venus_mercury_distance = venus_pos.distance_to(&mercury_pos);
     let venus_mercury_distance_km = venus_mercury_distance.to::<Kilometer>();
     println!("Venus to Mercury:");
@@ -189,12 +168,9 @@ fn main() {
     for (label, date) in dates.iter() {
         let mars_t = Mars::vsop87a(*date);
         println!("  {} (JD {:.1}):", label, date);
-        println!(
-            "    Distance from Sun: {:.6} AU",
-            mars_t.get_position().distance()
-        );
+        println!("    Distance from Sun: {:.6} AU", mars_t.distance());
 
-        let mars_geo_t: EclipticMeanJ2000<Au, Geocentric> = mars_t.get_position().to_center(*date);
+        let mars_geo_t: EclipticMeanJ2000<Au, Geocentric> = mars_t.to_center(*date);
         println!("    Distance from Earth: {:.6} AU", mars_geo_t.distance());
     }
     println!();
@@ -208,30 +184,21 @@ fn main() {
     // Sun position in barycentric coordinates
     let sun_bary = Sun::vsop87e(j2000);
     println!("Sun (Barycentric EclipticMeanJ2000):");
-    println!("  X = {:.8} AU", sun_bary.get_position().x());
-    println!("  Y = {:.8} AU", sun_bary.get_position().y());
-    println!("  Z = {:.8} AU", sun_bary.get_position().z());
-    println!(
-        "  Distance from SSB: {:.8} AU",
-        sun_bary.get_position().distance()
-    );
+    println!("  X = {:.8} AU", sun_bary.x());
+    println!("  Y = {:.8} AU", sun_bary.y());
+    println!("  Z = {:.8} AU", sun_bary.z());
+    println!("  Distance from SSB: {:.8} AU", sun_bary.distance());
     println!("  (Sun is offset from solar system barycenter due to Jupiter)\n");
 
     // Earth in barycentric coordinates
     let earth_bary = Earth::vsop87e(j2000);
     println!("Earth (Barycentric EclipticMeanJ2000):");
-    println!(
-        "  Distance from SSB: {:.6} AU\n",
-        earth_bary.get_position().distance()
-    );
+    println!("  Distance from SSB: {:.6} AU\n", earth_bary.distance());
 
     // Jupiter effect on barycenter
     let jupiter_bary = Jupiter::vsop87e(j2000);
     println!("Jupiter (Barycentric EclipticMeanJ2000):");
-    println!(
-        "  Distance from SSB: {:.6} AU",
-        jupiter_bary.get_position().distance()
-    );
+    println!("  Distance from SSB: {:.6} AU", jupiter_bary.distance());
     println!("  (Jupiter's mass causes the barycenter to be outside the Sun)\n");
 
     // =========================================================================
@@ -261,21 +228,14 @@ fn main() {
     let now_jupiter = Jupiter::vsop87a(current);
 
     println!("Current positions (JD {:.1}):", current);
-    println!(
-        "  Earth distance from Sun: {:.6} AU",
-        now_earth.get_position().distance()
-    );
-    println!(
-        "  Mars distance from Sun: {:.6} AU",
-        now_mars.get_position().distance()
-    );
+    println!("  Earth distance from Sun: {:.6} AU", now_earth.distance());
+    println!("  Mars distance from Sun: {:.6} AU", now_mars.distance());
     println!(
         "  Jupiter distance from Sun: {:.6} AU\n",
-        now_jupiter.get_position().distance()
+        now_jupiter.distance()
     );
 
-    let now_mars_geo: EclipticMeanJ2000<Au, Geocentric> =
-        now_mars.get_position().to_center(current);
+    let now_mars_geo: EclipticMeanJ2000<Au, Geocentric> = now_mars.to_center(current);
     let now_mars_geo_km = now_mars_geo.distance().to::<Kilometer>();
     println!(
         "Current Mars distance from Earth: {} ({})\n",

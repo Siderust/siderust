@@ -92,7 +92,7 @@ where
 fn test_position_transformations() {
     use siderust::coordinates::transform::Transform;
 
-    let original = *Mars::vsop87a(JulianDate::J2000).get_position();
+    let original = Mars::vsop87a(JulianDate::J2000);
 
     // Heliocentric EclipticMeanJ2000 -> Heliocentric EquatorialMeanJ2000 -> back
     let helio_eq: cartesian::Position<Heliocentric, EquatorialMeanJ2000, _> =
@@ -109,8 +109,6 @@ fn test_direction_frame_transformations() {
 
     // Create a direction from Mars position
     let original: Direction<EclipticMeanJ2000> = Mars::vsop87a(JulianDate::J2000)
-        .get_position()
-        .clone()
         .direction()
         .expect("Mars position should have a direction");
 
@@ -132,8 +130,6 @@ fn test_direction_frame_transformations() {
 fn test_spherical_direction_transformations() {
     // Create a direction from Mars position
     let cart_original: cartesian::Direction<EclipticMeanJ2000> = Mars::vsop87a(JulianDate::J2000)
-        .get_position()
-        .clone()
         .direction()
         .expect("Mars position should have a direction");
 
