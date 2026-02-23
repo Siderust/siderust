@@ -5,6 +5,7 @@
 
 use crate::altitude::{periods_to_c, window_from_c};
 use crate::error::SiderustStatus;
+use crate::ffi_utils::{free_boxed_slice, vec_to_c};
 use crate::types::*;
 use qtty::*;
 use siderust::calculus::ephemeris::Vsop87Ephemeris;
@@ -57,9 +58,7 @@ fn search_opts_to_phase(opts: SiderustSearchOpts) -> PhaseSearchOpts {
 /// Free an array of phase events.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_phase_events_free(ptr: *mut SiderustPhaseEvent, count: usize) {
-    if !ptr.is_null() && count > 0 {
-        let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
-    }
+    free_boxed_slice(ptr, count);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -135,28 +134,21 @@ pub extern "C" fn siderust_find_phase_events(
     out: *mut *mut SiderustPhaseEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    if out.is_null() || count.is_null() {
-        return SiderustStatus::NullPointer;
-    }
     let window = match window_from_c(window) {
         Ok(w) => w,
         Err(e) => return e,
     };
     let events = find_phase_events::<Vsop87Ephemeris>(window, search_opts_to_phase(opts));
-    let v: Vec<SiderustPhaseEvent> = events
-        .iter()
-        .map(|e| SiderustPhaseEvent {
+    vec_to_c(
+        events,
+        |e| SiderustPhaseEvent {
             mjd: e.mjd.value(),
             kind: phase_kind_from_rust(e.kind),
             _pad: [0; 4],
-        })
-        .collect();
-    let len = v.len();
-    unsafe {
-        *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
-        *count = len;
-    }
-    SiderustStatus::Ok
+        },
+        out,
+        count,
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

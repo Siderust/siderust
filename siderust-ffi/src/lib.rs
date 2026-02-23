@@ -19,6 +19,7 @@ pub mod bodies;
 pub mod coordinates;
 pub mod ephemeris;
 pub mod error;
+pub mod ffi_utils;
 pub mod observatories;
 pub mod phase;
 pub mod target;
