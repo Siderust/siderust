@@ -24,7 +24,7 @@
 //! ## Crate Modules
 //!
 //! - [`coordinates`]   : Cartesian & Spherical coordinate types and transformations between reference centers & frames
-//! - [`targets`]       : `Target<T>` tracking with time and proper motion
+//! - [`targets`]       : `CoordinateWithPM<T>` + `Trackable` trait for targets
 //! - [`time`]          : Time types and scale-based `Period<S>` / generic `Interval<T>`
 //! - [`astro`]         : Utilities for aberration, nutation, precession, sidereal time, and event searches
 //! - [`calculus`]      : Numerical kernels (VSOP87, ELP2000, Pluto, DE4xx, altitude API, root-finding)
@@ -47,7 +47,7 @@
 //! let mars = Mars::vsop87e(jd);
 //!
 //! // 3. Print Mars's barycentric ecliptic position (AstronomicalUnits)
-//! println!("{}", mars.position);
+//! println!("{:?}", mars);
 //! ```
 //!
 //! For a runnable tour of the library, see the `examples/` directory.
@@ -88,3 +88,8 @@ pub use calculus::lunar::phase::{
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseGeometry, MoonPhaseLabel,
     MoonPhaseSeries, PhaseEvent, PhaseKind, PhaseSearchOpts, PhaseThresholds,
 };
+
+// ---------------------------------------------------------------------------
+// Convenience re‑exports: target abstractions
+// ---------------------------------------------------------------------------
+pub use targets::{CoordinateWithPM, Trackable};

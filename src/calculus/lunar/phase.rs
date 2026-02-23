@@ -320,7 +320,7 @@ fn moon_ecliptic_geocentric<E: Ephemeris>(jd: JulianDate) -> (f64, f64, f64) {
 /// Returns `(lon_rad, dist_au)`.
 fn sun_ecliptic_geocentric<E: Ephemeris>(jd: JulianDate) -> (f64, f64) {
     let earth = E::earth_heliocentric(jd);
-    let sph = earth.position.to_spherical();
+    let sph = earth.to_spherical();
     let earth_lon = sph.azimuth.to::<Radian>().value();
     let sun_lon = (earth_lon + PI).rem_euclid(TWO_PI);
     let sun_dist = sph.distance.value(); // in AU (heliocentric distance = geocentric distance)

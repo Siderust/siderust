@@ -87,7 +87,7 @@ mod vsop87_tests {
     fn sun_barycentric_at_j2000() {
         let jd = j2000();
         let sun = Vsop87Ephemeris::sun_barycentric(jd);
-        let pos = sun.get_position();
+        let pos = sun;
 
         // Sun should be very close to SSB at J2000 (within a few solar radii)
         // Sun-SSB offset is typically < 0.01 AU
@@ -107,7 +107,7 @@ mod vsop87_tests {
     fn sun_barycentric_at_epoch_2020() {
         let jd = epoch_2020();
         let sun = Vsop87Ephemeris::sun_barycentric(jd);
-        let pos = sun.get_position();
+        let pos = sun;
 
         // Sun-SSB offset varies but typically < 0.02 AU
         let dist = pos.distance();
@@ -121,7 +121,7 @@ mod vsop87_tests {
     fn sun_barycentric_at_epoch_2026() {
         let jd = epoch_2026();
         let sun = Vsop87Ephemeris::sun_barycentric(jd);
-        let pos = sun.get_position();
+        let pos = sun;
 
         let dist = pos.distance();
         assert!(
@@ -134,7 +134,7 @@ mod vsop87_tests {
     fn sun_barycentric_at_epoch_1900() {
         let jd = epoch_1900();
         let sun = Vsop87Ephemeris::sun_barycentric(jd);
-        let pos = sun.get_position();
+        let pos = sun;
 
         // Even at extreme historical dates, Sun-SSB should be bounded
         let dist = pos.distance();
@@ -148,7 +148,7 @@ mod vsop87_tests {
     fn sun_barycentric_at_epoch_2100() {
         let jd = epoch_2100();
         let sun = Vsop87Ephemeris::sun_barycentric(jd);
-        let pos = sun.get_position();
+        let pos = sun;
 
         let dist = pos.distance();
         assert!(
@@ -165,7 +165,7 @@ mod vsop87_tests {
     fn earth_barycentric_at_j2000() {
         let jd = j2000();
         let earth = Vsop87Ephemeris::earth_barycentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         // Earth should be ~1 AU from SSB
         let dist = pos.distance();
@@ -183,7 +183,7 @@ mod vsop87_tests {
     fn earth_barycentric_at_epoch_2020() {
         let jd = epoch_2020();
         let earth = Vsop87Ephemeris::earth_barycentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         let dist = pos.distance();
         assert!(
@@ -196,7 +196,7 @@ mod vsop87_tests {
     fn earth_barycentric_at_epoch_2026() {
         let jd = epoch_2026();
         let earth = Vsop87Ephemeris::earth_barycentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         let dist = pos.distance();
         assert!(
@@ -213,7 +213,7 @@ mod vsop87_tests {
     fn earth_heliocentric_at_j2000() {
         let jd = j2000();
         let earth = Vsop87Ephemeris::earth_heliocentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         // Earth-Sun distance should be ~1 AU
         let dist = pos.distance();
@@ -229,7 +229,7 @@ mod vsop87_tests {
         // JD 2459946.0 ~ 2023-01-03
         let jd = jd_from_value(2459946.0);
         let earth = Vsop87Ephemeris::earth_heliocentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         let dist = pos.distance();
         // At perihelion, distance should be ~0.983 AU
@@ -245,7 +245,7 @@ mod vsop87_tests {
         // JD 2460128.0 ~ 2023-07-04
         let jd = jd_from_value(2460128.0);
         let earth = Vsop87Ephemeris::earth_heliocentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         let dist = pos.distance();
         // At aphelion, distance should be ~1.017 AU
@@ -259,7 +259,7 @@ mod vsop87_tests {
     fn earth_heliocentric_at_epoch_2026() {
         let jd = epoch_2026();
         let earth = Vsop87Ephemeris::earth_heliocentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         let dist = pos.distance();
         assert!(
@@ -384,22 +384,22 @@ mod vsop87_tests {
         let earth_helio = Vsop87Ephemeris::earth_heliocentric(jd);
 
         // Calculate expected heliocentric position
-        let expected_x = earth_bary.get_position().x() - sun_bary.get_position().x();
-        let expected_y = earth_bary.get_position().y() - sun_bary.get_position().y();
-        let expected_z = earth_bary.get_position().z() - sun_bary.get_position().z();
+        let expected_x = earth_bary.x() - sun_bary.x();
+        let expected_y = earth_bary.y() - sun_bary.y();
+        let expected_z = earth_bary.z() - sun_bary.z();
 
         // Compare with actual heliocentric position (should be very close)
         let tol = AstronomicalUnits::new(1e-6);
         assert!(
-            (earth_helio.get_position().x() - expected_x).abs() < tol,
+            (earth_helio.x() - expected_x).abs() < tol,
             "x mismatch in heliocentric consistency check"
         );
         assert!(
-            (earth_helio.get_position().y() - expected_y).abs() < tol,
+            (earth_helio.y() - expected_y).abs() < tol,
             "y mismatch in heliocentric consistency check"
         );
         assert!(
-            (earth_helio.get_position().z() - expected_z).abs() < tol,
+            (earth_helio.z() - expected_z).abs() < tol,
             "z mismatch in heliocentric consistency check"
         );
     }
@@ -414,9 +414,9 @@ mod vsop87_tests {
         let earth2 = Vsop87Ephemeris::earth_barycentric(jd2);
 
         // Position should not change by more than ~0.02 AU in one day
-        let dx = (earth2.get_position().x() - earth1.get_position().x()).abs();
-        let dy = (earth2.get_position().y() - earth1.get_position().y()).abs();
-        let dz = (earth2.get_position().z() - earth1.get_position().z()).abs();
+        let dx = (earth2.x() - earth1.x()).abs();
+        let dy = (earth2.y() - earth1.y()).abs();
+        let dz = (earth2.z() - earth1.z()).abs();
 
         let daily_move = AstronomicalUnits::new(0.03); // Conservative bound
         assert!(
@@ -490,7 +490,7 @@ mod de440_tests {
         }
         let jd = j2000();
         let sun = De440Ephemeris::sun_barycentric(jd);
-        let pos = sun.get_position();
+        let pos = sun;
 
         // Sun should be very close to SSB
         let dist = pos.distance();
@@ -507,7 +507,7 @@ mod de440_tests {
         }
         let jd = j2000();
         let earth = De440Ephemeris::earth_barycentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         let dist = pos.distance();
         assert!(
@@ -523,7 +523,7 @@ mod de440_tests {
         }
         let jd = j2000();
         let earth = De440Ephemeris::earth_heliocentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         let dist = pos.distance();
         assert!(
@@ -577,9 +577,9 @@ mod de440_tests {
 
         // DE440 and VSOP87 should give similar results (within ~1000 km = ~7e-6 AU)
         let tol = AstronomicalUnits::new(1e-4); // 1e-4 AU ~ 15,000 km tolerance
-        let dx = (sun_de440.get_position().x() - sun_vsop.get_position().x()).abs();
-        let dy = (sun_de440.get_position().y() - sun_vsop.get_position().y()).abs();
-        let dz = (sun_de440.get_position().z() - sun_vsop.get_position().z()).abs();
+        let dx = (sun_de440.x() - sun_vsop.x()).abs();
+        let dy = (sun_de440.y() - sun_vsop.y()).abs();
+        let dz = (sun_de440.z() - sun_vsop.z()).abs();
 
         assert!(
             dx < tol && dy < tol && dz < tol,
@@ -597,9 +597,9 @@ mod de440_tests {
         let earth_vsop = Vsop87Ephemeris::earth_barycentric(jd);
 
         let tol = AstronomicalUnits::new(1e-4);
-        let dx = (earth_de440.get_position().x() - earth_vsop.get_position().x()).abs();
-        let dy = (earth_de440.get_position().y() - earth_vsop.get_position().y()).abs();
-        let dz = (earth_de440.get_position().z() - earth_vsop.get_position().z()).abs();
+        let dx = (earth_de440.x() - earth_vsop.x()).abs();
+        let dy = (earth_de440.y() - earth_vsop.y()).abs();
+        let dz = (earth_de440.z() - earth_vsop.z()).abs();
 
         assert!(
             dx < tol && dy < tol && dz < tol,
@@ -621,9 +621,9 @@ mod de440_tests {
         let moon = De440Ephemeris::moon_geocentric(jd);
 
         // Verify all are finite and reasonable
-        assert!(sun.get_position().distance() < AstronomicalUnits::new(0.03));
-        assert!(earth_bary.get_position().distance() > AstronomicalUnits::new(0.9));
-        assert!(earth_helio.get_position().distance() > AstronomicalUnits::new(0.9));
+        assert!(sun.distance() < AstronomicalUnits::new(0.03));
+        assert!(earth_bary.distance() > AstronomicalUnits::new(0.9));
+        assert!(earth_helio.distance() > AstronomicalUnits::new(0.9));
         assert!(vel.x().value().is_finite());
         assert!(moon.distance() > Kilometers::new(350_000.0));
     }
@@ -641,9 +641,9 @@ mod de440_tests {
         let vel = De440Ephemeris::earth_barycentric_velocity(jd);
         let moon = De440Ephemeris::moon_geocentric(jd);
 
-        assert!(sun.get_position().x().value().is_finite());
-        assert!(earth_bary.get_position().x().value().is_finite());
-        assert!(earth_helio.get_position().x().value().is_finite());
+        assert!(sun.x().value().is_finite());
+        assert!(earth_bary.x().value().is_finite());
+        assert!(earth_helio.x().value().is_finite());
         assert!(vel.x().value().is_finite());
         assert!(moon.x().value().is_finite());
     }
@@ -673,7 +673,7 @@ mod de441_tests {
         }
         let jd = j2000();
         let sun = De441Ephemeris::sun_barycentric(jd);
-        let pos = sun.get_position();
+        let pos = sun;
 
         let dist = pos.distance();
         assert!(
@@ -689,7 +689,7 @@ mod de441_tests {
         }
         let jd = j2000();
         let earth = De441Ephemeris::earth_barycentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         let dist = pos.distance();
         assert!(
@@ -705,7 +705,7 @@ mod de441_tests {
         }
         let jd = j2000();
         let earth = De441Ephemeris::earth_heliocentric(jd);
-        let pos = earth.get_position();
+        let pos = earth;
 
         let dist = pos.distance();
         assert!(
@@ -758,9 +758,9 @@ mod de441_tests {
         let earth_vsop = Vsop87Ephemeris::earth_barycentric(jd);
 
         let tol = AstronomicalUnits::new(1e-4);
-        let dx = (earth_de441.get_position().x() - earth_vsop.get_position().x()).abs();
-        let dy = (earth_de441.get_position().y() - earth_vsop.get_position().y()).abs();
-        let dz = (earth_de441.get_position().z() - earth_vsop.get_position().z()).abs();
+        let dx = (earth_de441.x() - earth_vsop.x()).abs();
+        let dy = (earth_de441.y() - earth_vsop.y()).abs();
+        let dz = (earth_de441.z() - earth_vsop.z()).abs();
 
         assert!(
             dx < tol && dy < tol && dz < tol,
@@ -781,9 +781,9 @@ mod de441_tests {
         let vel = De441Ephemeris::earth_barycentric_velocity(jd);
         let moon = De441Ephemeris::moon_geocentric(jd);
 
-        assert!(sun.get_position().distance() < AstronomicalUnits::new(0.03));
-        assert!(earth_bary.get_position().distance() > AstronomicalUnits::new(0.9));
-        assert!(earth_helio.get_position().distance() > AstronomicalUnits::new(0.9));
+        assert!(sun.distance() < AstronomicalUnits::new(0.03));
+        assert!(earth_bary.distance() > AstronomicalUnits::new(0.9));
+        assert!(earth_helio.distance() > AstronomicalUnits::new(0.9));
         assert!(vel.x().value().is_finite());
         assert!(moon.distance() > Kilometers::new(350_000.0));
     }
@@ -801,9 +801,9 @@ mod de441_tests {
         let vel = De441Ephemeris::earth_barycentric_velocity(jd);
         let moon = De441Ephemeris::moon_geocentric(jd);
 
-        assert!(sun.get_position().x().value().is_finite());
-        assert!(earth_bary.get_position().x().value().is_finite());
-        assert!(earth_helio.get_position().x().value().is_finite());
+        assert!(sun.x().value().is_finite());
+        assert!(earth_bary.x().value().is_finite());
+        assert!(earth_helio.x().value().is_finite());
         assert!(vel.x().value().is_finite());
         assert!(moon.x().value().is_finite());
     }
@@ -817,12 +817,12 @@ mod de441_tests {
         // Test a historical date
         let jd_historical = jd_from_value(2415020.0); // ~1900
         let earth_hist = De441Ephemeris::earth_barycentric(jd_historical);
-        assert!(earth_hist.get_position().distance() > AstronomicalUnits::new(0.9));
+        assert!(earth_hist.distance() > AstronomicalUnits::new(0.9));
 
         // Test a future date
         let jd_future = jd_from_value(2488069.5); // ~2100
         let earth_future = De441Ephemeris::earth_barycentric(jd_future);
-        assert!(earth_future.get_position().distance() > AstronomicalUnits::new(0.9));
+        assert!(earth_future.distance() > AstronomicalUnits::new(0.9));
     }
 }
 
@@ -839,13 +839,13 @@ mod generic_ephemeris_tests {
 
         // All positions should be finite
         let sun = E::sun_barycentric(jd);
-        assert!(sun.get_position().x().value().is_finite());
+        assert!(sun.x().value().is_finite());
 
         let earth_bary = E::earth_barycentric(jd);
-        assert!(earth_bary.get_position().x().value().is_finite());
+        assert!(earth_bary.x().value().is_finite());
 
         let earth_helio = E::earth_heliocentric(jd);
-        assert!(earth_helio.get_position().x().value().is_finite());
+        assert!(earth_helio.x().value().is_finite());
 
         let vel = E::earth_barycentric_velocity(jd);
         assert!(vel.x().value().is_finite());
@@ -891,9 +891,9 @@ mod generic_ephemeris_tests {
         let vel = E::earth_barycentric_velocity(jd1);
 
         // Position change over 1 day should be approximately velocity * 1 day
-        let dx = earth2.get_position().x() - earth1.get_position().x();
-        let dy = earth2.get_position().y() - earth1.get_position().y();
-        let dz = earth2.get_position().z() - earth1.get_position().z();
+        let dx = earth2.x() - earth1.x();
+        let dy = earth2.y() - earth1.y();
+        let dz = earth2.z() - earth1.z();
 
         // Velocity is in AU/day, so expected change ~ velocity * 1 day
         // Allow 10% tolerance for interpolation/nonlinearity
@@ -948,7 +948,7 @@ mod edge_cases {
         // Test early epoch (1800)
         let jd = jd_from_value(2378497.0); // ~1800-01-01
         let earth = Vsop87Ephemeris::earth_barycentric(jd);
-        assert!(earth.get_position().distance() > AstronomicalUnits::new(0.9));
+        assert!(earth.distance() > AstronomicalUnits::new(0.9));
     }
 
     #[test]
@@ -956,7 +956,7 @@ mod edge_cases {
         // Test late epoch (2200)
         let jd = jd_from_value(2524594.0); // ~2200-01-01
         let earth = Vsop87Ephemeris::earth_barycentric(jd);
-        assert!(earth.get_position().distance() > AstronomicalUnits::new(0.9));
+        assert!(earth.distance() > AstronomicalUnits::new(0.9));
     }
 
     #[test]
@@ -969,7 +969,7 @@ mod edge_cases {
         let earth_midnight = Vsop87Ephemeris::earth_barycentric(jd_midnight);
 
         // Position should differ by ~half a day's motion
-        let dx = (earth_midnight.get_position().x() - earth_noon.get_position().x()).abs();
+        let dx = (earth_midnight.x() - earth_noon.x()).abs();
         assert!(
             dx > AstronomicalUnits::new(0.0001) && dx < AstronomicalUnits::new(0.02),
             "Earth should move noticeably in 12 hours"
@@ -981,6 +981,6 @@ mod edge_cases {
         // Test with precise fractional JD
         let jd = jd_from_value(2451545.123456789);
         let earth = Vsop87Ephemeris::earth_barycentric(jd);
-        assert!(earth.get_position().x().value().is_finite());
+        assert!(earth.x().value().is_finite());
     }
 }
