@@ -92,7 +92,9 @@ pub(crate) fn culminations_to_c(
     SiderustStatus::Ok
 }
 
-pub(crate) fn icrs_from_c(dir: SiderustSphericalDir) -> Result<spherical::direction::ICRS, SiderustStatus> {
+pub(crate) fn icrs_from_c(
+    dir: SiderustSphericalDir,
+) -> Result<spherical::direction::ICRS, SiderustStatus> {
     if dir.frame != SiderustFrame::ICRS {
         return Err(SiderustStatus::InvalidFrame);
     }

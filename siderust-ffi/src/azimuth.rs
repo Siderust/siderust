@@ -56,8 +56,7 @@ pub(crate) fn vec_az_crossings_to_c(
     if out.is_null() || count.is_null() {
         return SiderustStatus::NullPointer;
     }
-    let v: Vec<SiderustAzimuthCrossingEvent> =
-        events.iter().map(az_crossing_from_rust).collect();
+    let v: Vec<SiderustAzimuthCrossingEvent> = events.iter().map(az_crossing_from_rust).collect();
     let len = v.len();
     unsafe {
         *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
@@ -382,10 +381,8 @@ pub extern "C" fn siderust_icrs_azimuth_at(
     if dir.frame != SiderustFrame::ICRS {
         return SiderustStatus::InvalidFrame;
     }
-    let icrs = spherical::direction::ICRS::new(
-        Degrees::new(dir.lon_deg),
-        Degrees::new(dir.lat_deg),
-    );
+    let icrs =
+        spherical::direction::ICRS::new(Degrees::new(dir.lon_deg), Degrees::new(dir.lat_deg));
     unsafe {
         *out_deg = icrs
             .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
@@ -412,10 +409,8 @@ pub extern "C" fn siderust_icrs_azimuth_crossings(
         Ok(w) => w,
         Err(e) => return e,
     };
-    let icrs = spherical::direction::ICRS::new(
-        Degrees::new(dir.lon_deg),
-        Degrees::new(dir.lat_deg),
-    );
+    let icrs =
+        spherical::direction::ICRS::new(Degrees::new(dir.lon_deg), Degrees::new(dir.lat_deg));
     vec_az_crossings_to_c(
         azimuth_crossings(
             &icrs,
