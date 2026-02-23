@@ -3,18 +3,26 @@ name = "siderust-ffi"
 version = "0.1.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
-description = "C FFI bindings for siderust — precision astronomy in Rust."
-license = "AGPL-3.0"
+description = "C FFI bindings for siderust — high-precision astronomy library."
+license = "AGPL-3.0-only"
+repository = "https://github.com/Siderust/siderust"
 
 [lib]
 name = "siderust_ffi"
 crate-type = ["cdylib", "staticlib"]
 
+[features]
+default = []
+serde = ["siderust/serde", "tempoch-ffi/serde"]
+de440 = ["siderust/de440"]
+de441 = ["siderust/de441"]
+
 [dependencies]
-siderust  = { path = "..", features = [] }
-qtty      = "0.3.0"
-tempoch   = "0.3"
+siderust    = { path = "..", features = [] }
+qtty        = "0.3.0"
+tempoch     = "0.3"
 tempoch-ffi = { path = "../dev-deps/tempoch/tempoch-ffi" }
+affn        = { version = "0.3.2", features = ["astro"] }
 
 [build-dependencies]
-# No cbindgen – header is maintained by hand alongside the Rust source.
+cbindgen = "0.29.2"
