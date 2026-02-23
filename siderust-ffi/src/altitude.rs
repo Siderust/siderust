@@ -8,6 +8,7 @@
 
 use crate::bodies::SiderustStar;
 use crate::error::SiderustStatus;
+use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
 use qtty::*;
 use siderust::bodies::{Moon, Sun};
@@ -34,22 +35,7 @@ pub(crate) fn periods_to_c(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    if out.is_null() || count.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let v: Vec<TempochPeriodMjd> = periods
-        .iter()
-        .map(|p| TempochPeriodMjd {
-            start_mjd: p.start.value(),
-            end_mjd: p.end.value(),
-        })
-        .collect();
-    let len = v.len();
-    unsafe {
-        *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
-        *count = len;
-    }
-    SiderustStatus::Ok
+    vec_to_c(periods, TempochPeriodMjd::ffi_from, out, count)
 }
 
 pub(crate) fn crossings_to_c(
@@ -57,19 +43,7 @@ pub(crate) fn crossings_to_c(
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    if out.is_null() || count.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let v: Vec<SiderustCrossingEvent> = events
-        .iter()
-        .map(SiderustCrossingEvent::from_rust)
-        .collect();
-    let len = v.len();
-    unsafe {
-        *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
-        *count = len;
-    }
-    SiderustStatus::Ok
+    vec_to_c(events, SiderustCrossingEvent::ffi_from, out, count)
 }
 
 pub(crate) fn culminations_to_c(
@@ -77,19 +51,7 @@ pub(crate) fn culminations_to_c(
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    if out.is_null() || count.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let v: Vec<SiderustCulminationEvent> = events
-        .iter()
-        .map(SiderustCulminationEvent::from_rust)
-        .collect();
-    let len = v.len();
-    unsafe {
-        *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
-        *count = len;
-    }
-    SiderustStatus::Ok
+    vec_to_c(events, SiderustCulminationEvent::ffi_from, out, count)
 }
 
 pub(crate) fn icrs_from_c(
@@ -111,17 +73,13 @@ pub(crate) fn icrs_from_c(
 /// Free an array of MJD periods.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_periods_free(ptr: *mut TempochPeriodMjd, count: usize) {
-    if !ptr.is_null() && count > 0 {
-        let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
-    }
+    free_boxed_slice(ptr, count);
 }
 
 /// Free an array of crossing events.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_crossings_free(ptr: *mut SiderustCrossingEvent, count: usize) {
-    if !ptr.is_null() && count > 0 {
-        let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
-    }
+    free_boxed_slice(ptr, count);
 }
 
 /// Free an array of culmination events.
@@ -130,9 +88,7 @@ pub unsafe extern "C" fn siderust_culminations_free(
     ptr: *mut SiderustCulminationEvent,
     count: usize,
 ) {
-    if !ptr.is_null() && count > 0 {
-        let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
-    }
+    free_boxed_slice(ptr, count);
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
