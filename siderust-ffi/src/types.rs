@@ -502,3 +502,282 @@ impl FfiFrom<AzimuthExtremum> for SiderustAzimuthExtremum {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // ── SiderustGeodetict ────────────────────────────────────────────────
+
+    #[test]
+    fn geodetic_roundtrip() {
+        let orig = SiderustGeodetict {
+            lon_deg: 10.0,
+            lat_deg: -20.0,
+            height_m: 500.0,
+        };
+        let rust = orig.to_rust();
+        let back = SiderustGeodetict::from_rust(&rust);
+        assert!((back.lon_deg - 10.0).abs() < 1e-10);
+        assert!((back.lat_deg - (-20.0)).abs() < 1e-10);
+        assert!((back.height_m - 500.0).abs() < 1e-10);
+    }
+
+    // ── SiderustOrbit ────────────────────────────────────────────────────
+
+    #[test]
+    fn orbit_roundtrip() {
+        let orig = SiderustOrbit {
+            semi_major_axis_au: 1.0,
+            eccentricity: 0.017,
+            inclination_deg: 7.25,
+            lon_ascending_node_deg: 48.3,
+            arg_perihelion_deg: 102.9,
+            mean_anomaly_deg: 100.0,
+            epoch_jd: 2_451_545.0,
+        };
+        let rust = orig.to_rust();
+        let back = SiderustOrbit::from_rust(&rust);
+        assert!((back.semi_major_axis_au - 1.0).abs() < 1e-10);
+        assert!((back.eccentricity - 0.017).abs() < 1e-10);
+        assert!((back.inclination_deg - 7.25).abs() < 1e-10);
+        assert!((back.epoch_jd - 2_451_545.0).abs() < 1e-10);
+    }
+
+    // ── SiderustSearchOpts ───────────────────────────────────────────────
+
+    #[test]
+    fn search_opts_default() {
+        let d = SiderustSearchOpts::default();
+        assert!((d.time_tolerance_days - 1e-9).abs() < 1e-15);
+        assert!(!d.has_scan_step);
+    }
+
+    #[test]
+    fn search_opts_to_rust_without_scan_step() {
+        let opts = SiderustSearchOpts {
+            time_tolerance_days: 1e-6,
+            scan_step_days: 0.0,
+            has_scan_step: false,
+        };
+        let rust = opts.to_rust();
+        assert!((rust.time_tolerance.value() - 1e-6).abs() < 1e-12);
+        assert!(rust.scan_step_days.is_none());
+    }
+
+    #[test]
+    fn search_opts_to_rust_with_scan_step() {
+        let opts = SiderustSearchOpts {
+            time_tolerance_days: 1e-9,
+            scan_step_days: 0.1,
+            has_scan_step: true,
+        };
+        let rust = opts.to_rust();
+        assert!(rust.scan_step_days.is_some());
+        assert!((rust.scan_step_days.unwrap().value() - 0.1).abs() < 1e-12);
+    }
+
+    #[test]
+    fn search_opts_zero_tolerance_uses_default() {
+        let opts = SiderustSearchOpts {
+            time_tolerance_days: 0.0, // ≤ 0 → keep default
+            scan_step_days: 0.0,
+            has_scan_step: false,
+        };
+        let rust = opts.to_rust();
+        // With 0 tolerance the default is kept
+        let default_rust = SiderustSearchOpts::default().to_rust();
+        assert_eq!(
+            rust.time_tolerance.value(),
+            default_rust.time_tolerance.value()
+        );
+    }
+
+    // ── SiderustAltitudeQuery ────────────────────────────────────────────
+
+    #[test]
+    fn altitude_query_to_rust() {
+        let q = SiderustAltitudeQuery {
+            observer: SiderustGeodetict {
+                lon_deg: 0.0,
+                lat_deg: 51.5,
+                height_m: 10.0,
+            },
+            start_mjd: 60000.0,
+            end_mjd: 60001.0,
+            min_altitude_deg: 10.0,
+            max_altitude_deg: 90.0,
+        };
+        let rust = q.to_rust();
+        assert!((rust.min_altitude.value() - 10.0).abs() < 1e-10);
+        assert!((rust.max_altitude.value() - 90.0).abs() < 1e-10);
+    }
+
+    // ── SiderustPlanet ───────────────────────────────────────────────────
+
+    #[test]
+    fn planet_from_rust_earth() {
+        let p = SiderustPlanet::from_rust(&siderust::bodies::EARTH);
+        // Earth mass ~5.97e24 kg
+        assert!(
+            p.mass_kg > 5e24 && p.mass_kg < 7e24,
+            "Earth mass out of range: {}",
+            p.mass_kg
+        );
+        // Earth radius ~6371 km
+        assert!(
+            p.radius_km > 6000.0 && p.radius_km < 7000.0,
+            "Earth radius out of range: {}",
+            p.radius_km
+        );
+    }
+
+    // ── Enum PartialEq/Clone ─────────────────────────────────────────────
+
+    #[test]
+    fn enum_clone_and_eq() {
+        assert_eq!(SiderustFrame::ICRS, SiderustFrame::ICRS.clone());
+        assert_ne!(SiderustFrame::ICRS, SiderustFrame::GCRS);
+        assert_eq!(
+            SiderustCenter::Geocentric,
+            SiderustCenter::Geocentric.clone()
+        );
+        assert_eq!(
+            SiderustCrossingDirection::Rising,
+            SiderustCrossingDirection::Rising
+        );
+        assert_eq!(SiderustCulminationKind::Max, SiderustCulminationKind::Max);
+        assert_eq!(
+            SiderustAzimuthExtremumKind::Max,
+            SiderustAzimuthExtremumKind::Max
+        );
+        assert_eq!(SiderustPhaseKind::FullMoon, SiderustPhaseKind::FullMoon);
+        assert_eq!(
+            SiderustMoonPhaseLabel::WaxingCrescent,
+            SiderustMoonPhaseLabel::WaxingCrescent
+        );
+    }
+
+    #[test]
+    fn enum_debug() {
+        let s = format!("{:?}", SiderustFrame::Horizontal);
+        assert!(s.contains("Horizontal"));
+        let s2 = format!("{:?}", SiderustAsteroidClass::MainBelt);
+        assert!(s2.contains("MainBelt"));
+        let s3 = format!("{:?}", SiderustOrbitFrame::Heliocentric);
+        assert!(s3.contains("Heliocentric"));
+        let s4 = format!("{:?}", SiderustRaConvention::MuAlphaStar);
+        assert!(s4.contains("MuAlphaStar"));
+    }
+
+    // ── FfiFrom for Period<MJD> ──────────────────────────────────────────
+
+    #[test]
+    fn ffi_from_period_mjd() {
+        use tempoch::{Interval, ModifiedJulianDate, MJD};
+        let p: tempoch::Period<MJD> = Interval::new(
+            ModifiedJulianDate::new(60000.0),
+            ModifiedJulianDate::new(60001.0),
+        );
+        let ffi = TempochPeriodMjd::ffi_from(&p);
+        assert!((ffi.start_mjd - 60000.0).abs() < 1e-10);
+        assert!((ffi.end_mjd - 60001.0).abs() < 1e-10);
+    }
+
+    // ── SiderustCrossingEvent / SiderustCulminationEvent ─────────────────
+
+    #[test]
+    fn crossing_event_from_rust_rising() {
+        let e = siderust::CrossingEvent {
+            mjd: tempoch::ModifiedJulianDate::new(60000.5),
+            direction: siderust::CrossingDirection::Rising,
+        };
+        let ffi = SiderustCrossingEvent::from_rust(&e);
+        assert!((ffi.mjd - 60000.5).abs() < 1e-10);
+        assert_eq!(ffi.direction, SiderustCrossingDirection::Rising);
+    }
+
+    #[test]
+    fn crossing_event_from_rust_setting() {
+        let e = siderust::CrossingEvent {
+            mjd: tempoch::ModifiedJulianDate::new(60000.5),
+            direction: siderust::CrossingDirection::Setting,
+        };
+        let ffi = SiderustCrossingEvent::ffi_from(&e);
+        assert_eq!(ffi.direction, SiderustCrossingDirection::Setting);
+    }
+
+    #[test]
+    fn culmination_event_from_rust_max() {
+        let e = siderust::CulminationEvent {
+            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            altitude: qtty::Degrees::new(45.0),
+            kind: siderust::CulminationKind::Max,
+        };
+        let ffi = SiderustCulminationEvent::from_rust(&e);
+        assert!((ffi.altitude_deg - 45.0).abs() < 1e-10);
+        assert_eq!(ffi.kind, SiderustCulminationKind::Max);
+    }
+
+    #[test]
+    fn culmination_event_from_rust_min() {
+        let e = siderust::CulminationEvent {
+            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            altitude: qtty::Degrees::new(-10.0),
+            kind: siderust::CulminationKind::Min,
+        };
+        let ffi = SiderustCulminationEvent::ffi_from(&e);
+        assert_eq!(ffi.kind, SiderustCulminationKind::Min);
+    }
+
+    // ── AzimuthExtremum FfiFrom ──────────────────────────────────────────
+
+    #[test]
+    fn azimuth_extremum_ffi_from_max() {
+        use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
+        let e = AzimuthExtremum {
+            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            azimuth: qtty::Degrees::new(180.0),
+            kind: AzimuthExtremumKind::Max,
+        };
+        let ffi = SiderustAzimuthExtremum::ffi_from(&e);
+        assert!((ffi.azimuth_deg - 180.0).abs() < 1e-10);
+        assert_eq!(ffi.kind, SiderustAzimuthExtremumKind::Max);
+    }
+
+    #[test]
+    fn azimuth_extremum_ffi_from_min() {
+        use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
+        let e = AzimuthExtremum {
+            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            azimuth: qtty::Degrees::new(0.0),
+            kind: AzimuthExtremumKind::Min,
+        };
+        let ffi = SiderustAzimuthExtremum::ffi_from(&e);
+        assert_eq!(ffi.kind, SiderustAzimuthExtremumKind::Min);
+    }
+
+    // ── AzimuthCrossingEvent FfiFrom ─────────────────────────────────────
+
+    #[test]
+    fn azimuth_crossing_event_ffi_from_rising() {
+        use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
+        let e = AzimuthCrossingEvent {
+            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            direction: AzimuthCrossingDirection::Rising,
+        };
+        let ffi = SiderustAzimuthCrossingEvent::ffi_from(&e);
+        assert_eq!(ffi.direction, SiderustCrossingDirection::Rising);
+    }
+
+    #[test]
+    fn azimuth_crossing_event_ffi_from_setting() {
+        use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
+        let e = AzimuthCrossingEvent {
+            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            direction: AzimuthCrossingDirection::Setting,
+        };
+        let ffi = SiderustAzimuthCrossingEvent::ffi_from(&e);
+        assert_eq!(ffi.direction, SiderustCrossingDirection::Setting);
+    }
+}

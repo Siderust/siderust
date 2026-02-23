@@ -103,3 +103,105 @@ pub extern "C" fn siderust_vsop87_moon_geocentric(
     }
     SiderustStatus::Ok
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::ptr;
+
+    const J2000: f64 = 2_451_545.0;
+
+    fn empty_pos() -> SiderustCartesianPos {
+        SiderustCartesianPos {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::ICRS,
+            center: SiderustCenter::Barycentric,
+        }
+    }
+
+    #[test]
+    fn sun_barycentric_at_j2000() {
+        let mut out = empty_pos();
+        let s = siderust_vsop87_sun_barycentric(J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        // Sun barycentric at J2000 is close to origin (helio ~ bary for sun)
+        let dist = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!(dist < 0.01, "Sun barycentric too far from SSB: {dist} AU");
+        assert_eq!(out.frame, SiderustFrame::EclipticMeanJ2000);
+        assert_eq!(out.center, SiderustCenter::Barycentric);
+    }
+
+    #[test]
+    fn sun_barycentric_null_ptr() {
+        assert_eq!(
+            siderust_vsop87_sun_barycentric(J2000, ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn earth_barycentric_at_j2000() {
+        let mut out = empty_pos();
+        let s = siderust_vsop87_earth_barycentric(J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        // Earth is ~1 AU from SSB
+        let dist = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!(
+            dist > 0.9 && dist < 1.1,
+            "Earth should be ~1 AU from SSB, got {dist}"
+        );
+    }
+
+    #[test]
+    fn earth_barycentric_null_ptr() {
+        assert_eq!(
+            siderust_vsop87_earth_barycentric(J2000, ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn earth_heliocentric_at_j2000() {
+        let mut out = empty_pos();
+        let s = siderust_vsop87_earth_heliocentric(J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        let dist = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!(
+            dist > 0.98 && dist < 1.02,
+            "Earth heliocentric ~1 AU, got {dist}"
+        );
+        assert_eq!(out.center, SiderustCenter::Heliocentric);
+    }
+
+    #[test]
+    fn earth_heliocentric_null_ptr() {
+        assert_eq!(
+            siderust_vsop87_earth_heliocentric(J2000, ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn moon_geocentric_at_j2000() {
+        let mut out = empty_pos();
+        let s = siderust_vsop87_moon_geocentric(J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        // Moon is ~384,400 km from Earth
+        let dist = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!(
+            dist > 350_000.0 && dist < 420_000.0,
+            "Moon geocentric ~384400 km, got {dist}"
+        );
+        assert_eq!(out.center, SiderustCenter::Geocentric);
+    }
+
+    #[test]
+    fn moon_geocentric_null_ptr() {
+        assert_eq!(
+            siderust_vsop87_moon_geocentric(J2000, ptr::null_mut()),
+            SiderustStatus::NullPointer
+        );
+    }
+}

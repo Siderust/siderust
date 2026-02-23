@@ -42,3 +42,15 @@ pub use types::*;
 pub extern "C" fn siderust_ffi_version() -> u32 {
     0 * 10000 + 1 * 100 + 0 // 0.1.0
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn version_returns_expected_value() {
+        let v = siderust_ffi_version();
+        // 0.1.0 → 0*10000 + 1*100 + 0 = 100
+        assert_eq!(v, 100);
+    }
+}
