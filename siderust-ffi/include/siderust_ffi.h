@@ -97,16 +97,16 @@ typedef int32_t siderust_frame_t;
 #endif // __cplusplus
 
 // Azimuth extremum kind (maximum or minimum bearing).
-enum SiderustAzimuthExtremumKind
+enum siderust_azimuth_extremum_kind_t
 #ifdef __cplusplus
   : int32_t
 #endif // __cplusplus
  {
-  SIDERUST_AZIMUTH_EXTREMUM_KIND_MAX = 0,
-  SIDERUST_AZIMUTH_EXTREMUM_KIND_MIN = 1,
+  SIDERUST_AZIMUTH_EXTREMUM_KIND_T_MAX = 0,
+  SIDERUST_AZIMUTH_EXTREMUM_KIND_T_MIN = 1,
 };
 #ifndef __cplusplus
-typedef int32_t SiderustAzimuthExtremumKind;
+typedef int32_t siderust_azimuth_extremum_kind_t;
 #endif // __cplusplus
 
 // Proper motion RA convention.
@@ -141,37 +141,37 @@ typedef int32_t siderust_center_t;
 #endif // __cplusplus
 
 // Principal lunar phase kind.
-enum SiderustPhaseKind
+enum siderust_phase_kind_t
 #ifdef __cplusplus
   : int32_t
 #endif // __cplusplus
  {
-  SIDERUST_PHASE_KIND_NEW_MOON = 0,
-  SIDERUST_PHASE_KIND_FIRST_QUARTER = 1,
-  SIDERUST_PHASE_KIND_FULL_MOON = 2,
-  SIDERUST_PHASE_KIND_LAST_QUARTER = 3,
+  SIDERUST_PHASE_KIND_T_NEW_MOON = 0,
+  SIDERUST_PHASE_KIND_T_FIRST_QUARTER = 1,
+  SIDERUST_PHASE_KIND_T_FULL_MOON = 2,
+  SIDERUST_PHASE_KIND_T_LAST_QUARTER = 3,
 };
 #ifndef __cplusplus
-typedef int32_t SiderustPhaseKind;
+typedef int32_t siderust_phase_kind_t;
 #endif // __cplusplus
 
 // Named phase label (includes intermediate phases).
-enum SiderustMoonPhaseLabel
+enum siderust_moon_phase_label_t
 #ifdef __cplusplus
   : int32_t
 #endif // __cplusplus
  {
-  SIDERUST_MOON_PHASE_LABEL_NEW_MOON = 0,
-  SIDERUST_MOON_PHASE_LABEL_WAXING_CRESCENT = 1,
-  SIDERUST_MOON_PHASE_LABEL_FIRST_QUARTER = 2,
-  SIDERUST_MOON_PHASE_LABEL_WAXING_GIBBOUS = 3,
-  SIDERUST_MOON_PHASE_LABEL_FULL_MOON = 4,
-  SIDERUST_MOON_PHASE_LABEL_WANING_GIBBOUS = 5,
-  SIDERUST_MOON_PHASE_LABEL_LAST_QUARTER = 6,
-  SIDERUST_MOON_PHASE_LABEL_WANING_CRESCENT = 7,
+  SIDERUST_MOON_PHASE_LABEL_T_NEW_MOON = 0,
+  SIDERUST_MOON_PHASE_LABEL_T_WAXING_CRESCENT = 1,
+  SIDERUST_MOON_PHASE_LABEL_T_FIRST_QUARTER = 2,
+  SIDERUST_MOON_PHASE_LABEL_T_WAXING_GIBBOUS = 3,
+  SIDERUST_MOON_PHASE_LABEL_T_FULL_MOON = 4,
+  SIDERUST_MOON_PHASE_LABEL_T_WANING_GIBBOUS = 5,
+  SIDERUST_MOON_PHASE_LABEL_T_LAST_QUARTER = 6,
+  SIDERUST_MOON_PHASE_LABEL_T_WANING_CRESCENT = 7,
 };
 #ifndef __cplusplus
-typedef int32_t SiderustMoonPhaseLabel;
+typedef int32_t siderust_moon_phase_label_t;
 #endif // __cplusplus
 
 // Opaque handle to a Star. Created via `siderust_star_*` functions, freed
@@ -239,24 +239,24 @@ typedef struct siderust_spherical_dir_t {
 } siderust_spherical_dir_t;
 
 // An azimuth bearing-crossing event.
-typedef struct SiderustAzimuthCrossingEvent {
+typedef struct siderust_azimuth_crossing_event_t {
   // Time of the event (Modified Julian Date).
   double mjd;
   // Crossing direction.
   siderust_crossing_direction_t direction;
   uint8_t _pad[4];
-} SiderustAzimuthCrossingEvent;
+} siderust_azimuth_crossing_event_t;
 
 // An azimuth extremum (minimum or maximum bearing).
-typedef struct SiderustAzimuthExtremum {
+typedef struct siderust_azimuth_extremum_t {
   // Time of the extremum (Modified Julian Date).
   double mjd;
   // Azimuth at the extremum, in degrees.
   double azimuth_deg;
   // Kind of extremum.
-  SiderustAzimuthExtremumKind kind;
+  siderust_azimuth_extremum_kind_t kind;
   uint8_t _pad[4];
-} SiderustAzimuthExtremum;
+} siderust_azimuth_extremum_t;
 
 // Proper motion of a star (equatorial).
 typedef struct siderust_proper_motion_t {
@@ -296,16 +296,16 @@ typedef struct siderust_cartesian_pos_t {
 } siderust_cartesian_pos_t;
 
 // A principal lunar phase event.
-typedef struct SiderustPhaseEvent {
+typedef struct siderust_phase_event_t {
   // Time of the event (Modified Julian Date).
   double mjd;
   // Phase kind.
-  SiderustPhaseKind kind;
+  siderust_phase_kind_t kind;
   uint8_t _pad[4];
-} SiderustPhaseEvent;
+} siderust_phase_event_t;
 
 // Moon phase geometry at a given instant.
-typedef struct SiderustMoonPhaseGeometry {
+typedef struct siderust_moon_phase_geometry_t {
   // Phase angle in radians.
   double phase_angle_rad;
   // Fraction of the Moon's disk that is illuminated (0–1).
@@ -315,7 +315,7 @@ typedef struct SiderustMoonPhaseGeometry {
   // Non-zero if waxing, zero if waning.
   uint8_t waxing;
   uint8_t _pad[7];
-} SiderustMoonPhaseGeometry;
+} siderust_moon_phase_geometry_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -501,10 +501,12 @@ siderust_status_t siderust_icrs_below_threshold(struct siderust_spherical_dir_t 
                                                 uintptr_t *count);
 
 // Free an array of azimuth crossing events.
- void siderust_azimuth_crossings_free(struct SiderustAzimuthCrossingEvent *ptr, uintptr_t count);
+
+void siderust_azimuth_crossings_free(struct siderust_azimuth_crossing_event_t *ptr,
+                                     uintptr_t count);
 
 // Free an array of azimuth extrema.
- void siderust_azimuth_extrema_free(struct SiderustAzimuthExtremum *ptr, uintptr_t count);
+ void siderust_azimuth_extrema_free(struct siderust_azimuth_extremum_t *ptr, uintptr_t count);
 
 // Azimuth of the Sun at an instant (degrees, North-clockwise).
 
@@ -518,7 +520,7 @@ siderust_status_t siderust_sun_azimuth_crossings(struct siderust_geodetic_t obse
                                                  tempoch_period_mjd_t window,
                                                  double bearing_deg,
                                                  struct siderust_search_opts_t opts,
-                                                 struct SiderustAzimuthCrossingEvent **out,
+                                                 struct siderust_azimuth_crossing_event_t **out,
                                                  uintptr_t *count);
 
 // Azimuth extrema (northernmost and southernmost bearing) for the Sun.
@@ -526,7 +528,7 @@ siderust_status_t siderust_sun_azimuth_crossings(struct siderust_geodetic_t obse
 siderust_status_t siderust_sun_azimuth_extrema(struct siderust_geodetic_t observer,
                                                tempoch_period_mjd_t window,
                                                struct siderust_search_opts_t opts,
-                                               struct SiderustAzimuthExtremum **out,
+                                               struct siderust_azimuth_extremum_t **out,
                                                uintptr_t *count);
 
 // Periods when the Sun's azimuth is within [min_deg, max_deg].
@@ -551,7 +553,7 @@ siderust_status_t siderust_moon_azimuth_crossings(struct siderust_geodetic_t obs
                                                   tempoch_period_mjd_t window,
                                                   double bearing_deg,
                                                   struct siderust_search_opts_t opts,
-                                                  struct SiderustAzimuthCrossingEvent **out,
+                                                  struct siderust_azimuth_crossing_event_t **out,
                                                   uintptr_t *count);
 
 // Azimuth extrema for the Moon.
@@ -559,7 +561,7 @@ siderust_status_t siderust_moon_azimuth_crossings(struct siderust_geodetic_t obs
 siderust_status_t siderust_moon_azimuth_extrema(struct siderust_geodetic_t observer,
                                                 tempoch_period_mjd_t window,
                                                 struct siderust_search_opts_t opts,
-                                                struct SiderustAzimuthExtremum **out,
+                                                struct siderust_azimuth_extremum_t **out,
                                                 uintptr_t *count);
 
 // Periods when the Moon's azimuth is within [min_deg, max_deg].
@@ -586,7 +588,7 @@ siderust_status_t siderust_star_azimuth_crossings(const struct SiderustStar *han
                                                   tempoch_period_mjd_t window,
                                                   double bearing_deg,
                                                   struct siderust_search_opts_t opts,
-                                                  struct SiderustAzimuthCrossingEvent **out,
+                                                  struct siderust_azimuth_crossing_event_t **out,
                                                   uintptr_t *count);
 
 // Azimuth of an ICRS direction at an instant.
@@ -606,7 +608,7 @@ siderust_status_t siderust_icrs_azimuth_crossings(struct siderust_spherical_dir_
                                                   tempoch_period_mjd_t window,
                                                   double bearing_deg,
                                                   struct siderust_search_opts_t opts,
-                                                  struct SiderustAzimuthCrossingEvent **out,
+                                                  struct siderust_azimuth_crossing_event_t **out,
                                                   uintptr_t *count);
 
 // Look up a star from the built-in catalog by name.
@@ -761,21 +763,23 @@ siderust_status_t siderust_geodetic_new(double lon_deg,
                                         struct siderust_geodetic_t *out);
 
 // Free an array of phase events.
- void siderust_phase_events_free(struct SiderustPhaseEvent *ptr, uintptr_t count);
+ void siderust_phase_events_free(struct siderust_phase_event_t *ptr, uintptr_t count);
 
 // Compute geocentric Moon phase geometry at `jd` (Julian Date).
- siderust_status_t siderust_moon_phase_geocentric(double jd, struct SiderustMoonPhaseGeometry *out);
+
+siderust_status_t siderust_moon_phase_geocentric(double jd,
+                                                 struct siderust_moon_phase_geometry_t *out);
 
 // Compute topocentric Moon phase geometry at `jd` for `observer`.
 
 siderust_status_t siderust_moon_phase_topocentric(double jd,
                                                   struct siderust_geodetic_t observer,
-                                                  struct SiderustMoonPhaseGeometry *out);
+                                                  struct siderust_moon_phase_geometry_t *out);
 
 // Map phase geometry to a named phase label.
 
-siderust_status_t siderust_moon_phase_label(struct SiderustMoonPhaseGeometry geom,
-                                            SiderustMoonPhaseLabel *out);
+siderust_status_t siderust_moon_phase_label(struct siderust_moon_phase_geometry_t geom,
+                                            siderust_moon_phase_label_t *out);
 
 // Find all principal lunar phase events in `window`.
 //
@@ -784,7 +788,7 @@ siderust_status_t siderust_moon_phase_label(struct SiderustMoonPhaseGeometry geo
 
 siderust_status_t siderust_find_phase_events(tempoch_period_mjd_t window,
                                              struct siderust_search_opts_t opts,
-                                             struct SiderustPhaseEvent **out,
+                                             struct siderust_phase_event_t **out,
                                              uintptr_t *count);
 
 // Find windows where geocentric Moon illumination is above `k_min` ∈ [0,1].
@@ -888,7 +892,7 @@ siderust_status_t siderust_target_azimuth_crossings(const struct SiderustTarget 
                                                     tempoch_period_mjd_t window,
                                                     double bearing_deg,
                                                     struct siderust_search_opts_t opts,
-                                                    struct SiderustAzimuthCrossingEvent **out,
+                                                    struct siderust_azimuth_crossing_event_t **out,
                                                     uintptr_t *count);
 
 #ifdef __cplusplus
