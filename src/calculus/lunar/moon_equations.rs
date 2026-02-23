@@ -5,10 +5,14 @@ use crate::bodies::solar_system::Moon;
 
 use crate::calculus::ephemeris::Ephemeris;
 use crate::calculus::horizontal;
+use crate::calculus::lunar::phase::{
+    find_phase_events, illumination_above, illumination_below, illumination_range,
+    moon_phase_geocentric, moon_phase_topocentric, MoonPhaseGeometry, PhaseEvent, PhaseSearchOpts,
+};
 use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
-use crate::time::JulianDate;
+use crate::time::{JulianDate, Period, MJD};
 use qtty::{AstronomicalUnits, Kilometer, LengthUnit, Meter, Quantity};
 
 impl Moon {
@@ -115,5 +119,121 @@ impl Moon {
         let jd = time.into();
         let eq = Self::get_apparent_topocentric_equ::<U>(jd, site);
         horizontal::equatorial_to_horizontal(&eq, site, jd)
+    }
+}
+
+// ===========================================================================
+// Moon — phase API (DefaultEphemeris convenience methods)
+// ===========================================================================
+
+impl Moon {
+    /// Geocentric Moon phase geometry at `time`, using the compile-time
+    /// `DefaultEphemeris` backend.
+    ///
+    /// Returns illuminated fraction, phase angle, elongation, and waxing flag.
+    /// For a specific ephemeris backend use
+    /// [`moon_phase_geocentric::<E>(jd)`](crate::calculus::lunar::phase::moon_phase_geocentric).
+    ///
+    /// # Example
+    /// ```rust
+    /// use siderust::bodies::solar_system::Moon;
+    /// use siderust::time::JulianDate;
+    ///
+    /// let geom = Moon::phase_geocentric(JulianDate::J2000);
+    /// assert!(geom.illuminated_fraction >= 0.0 && geom.illuminated_fraction <= 1.0);
+    /// ```
+    pub fn phase_geocentric(time: impl Into<JulianDate>) -> MoonPhaseGeometry {
+        moon_phase_geocentric::<DefaultEphemeris>(time.into())
+    }
+
+    /// Topocentric Moon phase geometry at `time` for the given observer `site`,
+    /// using the compile-time `DefaultEphemeris` backend.
+    ///
+    /// For a specific ephemeris backend use
+    /// [`moon_phase_topocentric::<E>(jd, site)`](crate::calculus::lunar::phase::moon_phase_topocentric).
+    ///
+    /// # Example
+    /// ```rust
+    /// use siderust::bodies::solar_system::Moon;
+    /// use siderust::coordinates::centers::Geodetic;
+    /// use siderust::coordinates::frames::ECEF;
+    /// use siderust::time::JulianDate;
+    /// use qtty::*;
+    ///
+    /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M);
+    /// let geom = Moon::phase_topocentric(JulianDate::J2000, site);
+    /// println!("Illuminated: {:.1} %", geom.illuminated_percent());
+    /// ```
+    pub fn phase_topocentric(
+        time: impl Into<JulianDate>,
+        site: Geodetic<frames::ECEF>,
+    ) -> MoonPhaseGeometry {
+        moon_phase_topocentric::<DefaultEphemeris>(time.into(), site)
+    }
+
+    /// Find principal phase events (New Moon, First Quarter, Full Moon, Last
+    /// Quarter) inside `window`, using the compile-time `DefaultEphemeris`.
+    ///
+    /// For a specific ephemeris backend use
+    /// [`find_phase_events::<E>(window, opts)`](crate::calculus::lunar::phase::find_phase_events).
+    ///
+    /// # Example
+    /// ```rust
+    /// use siderust::bodies::solar_system::Moon;
+    /// use siderust::calculus::lunar::phase::PhaseSearchOpts;
+    /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
+    /// use qtty::Days;
+    ///
+    /// let start  = ModifiedJulianDate::from(JulianDate::J2000);
+    /// let window = Period::new(start, start + Days::new(35.0));
+    /// let events = Moon::phase_events(window, PhaseSearchOpts::default());
+    /// assert!(!events.is_empty());
+    /// ```
+    pub fn phase_events(window: Period<MJD>, opts: PhaseSearchOpts) -> Vec<PhaseEvent> {
+        find_phase_events::<DefaultEphemeris>(window, opts)
+    }
+
+    /// Time windows inside `window` where geocentric illuminated fraction ≥
+    /// `k_min`, using the compile-time `DefaultEphemeris`.
+    pub fn illumination_above(
+        window: Period<MJD>,
+        k_min: f64,
+        opts: PhaseSearchOpts,
+    ) -> Vec<Period<MJD>> {
+        illumination_above::<DefaultEphemeris>(window, k_min, opts)
+    }
+
+    /// Time windows inside `window` where geocentric illuminated fraction ≤
+    /// `k_max`, using the compile-time `DefaultEphemeris`.
+    pub fn illumination_below(
+        window: Period<MJD>,
+        k_max: f64,
+        opts: PhaseSearchOpts,
+    ) -> Vec<Period<MJD>> {
+        illumination_below::<DefaultEphemeris>(window, k_max, opts)
+    }
+
+    /// Time windows inside `window` where geocentric illuminated fraction is
+    /// within `[k_min, k_max]`, using the compile-time `DefaultEphemeris`.
+    ///
+    /// # Example
+    /// ```rust
+    /// use siderust::bodies::solar_system::Moon;
+    /// use siderust::calculus::lunar::phase::PhaseSearchOpts;
+    /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
+    /// use qtty::Days;
+    ///
+    /// let start  = ModifiedJulianDate::from(JulianDate::J2000);
+    /// let window = Period::new(start, start + Days::new(30.0));
+    /// // Crescent phase: 5–35% illuminated
+    /// let crescent = Moon::illumination_range(window, 0.05, 0.35, PhaseSearchOpts::default());
+    /// ```
+    pub fn illumination_range(
+        window: Period<MJD>,
+        k_min: f64,
+        k_max: f64,
+        opts: PhaseSearchOpts,
+    ) -> Vec<Period<MJD>> {
+        illumination_range::<DefaultEphemeris>(window, k_min, k_max, opts)
     }
 }
