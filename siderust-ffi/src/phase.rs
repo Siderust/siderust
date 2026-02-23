@@ -10,8 +10,7 @@ use qtty::*;
 use siderust::calculus::ephemeris::Vsop87Ephemeris;
 use siderust::calculus::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
-    moon_phase_geocentric, moon_phase_topocentric, MoonPhaseLabel, PhaseKind,
-    PhaseSearchOpts,
+    moon_phase_geocentric, moon_phase_topocentric, MoonPhaseLabel, PhaseKind, PhaseSearchOpts,
 };
 use siderust::time::JulianDate;
 
@@ -57,10 +56,7 @@ fn search_opts_to_phase(opts: SiderustSearchOpts) -> PhaseSearchOpts {
 
 /// Free an array of phase events.
 #[no_mangle]
-pub unsafe extern "C" fn siderust_phase_events_free(
-    ptr: *mut SiderustPhaseEvent,
-    count: usize,
-) {
+pub unsafe extern "C" fn siderust_phase_events_free(ptr: *mut SiderustPhaseEvent, count: usize) {
     if !ptr.is_null() && count > 0 {
         let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
     }
@@ -94,8 +90,7 @@ pub extern "C" fn siderust_moon_phase_topocentric(
     if out.is_null() {
         return SiderustStatus::NullPointer;
     }
-    let geom =
-        moon_phase_topocentric::<Vsop87Ephemeris>(JulianDate::new(jd), observer.to_rust());
+    let geom = moon_phase_topocentric::<Vsop87Ephemeris>(JulianDate::new(jd), observer.to_rust());
     unsafe { *out = phase_geometry_from_rust(geom) };
     SiderustStatus::Ok
 }
@@ -147,8 +142,7 @@ pub extern "C" fn siderust_find_phase_events(
         Ok(w) => w,
         Err(e) => return e,
     };
-    let events =
-        find_phase_events::<Vsop87Ephemeris>(window, search_opts_to_phase(opts));
+    let events = find_phase_events::<Vsop87Ephemeris>(window, search_opts_to_phase(opts));
     let v: Vec<SiderustPhaseEvent> = events
         .iter()
         .map(|e| SiderustPhaseEvent {
