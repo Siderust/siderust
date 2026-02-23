@@ -101,6 +101,7 @@
 //!
 
 pub mod altitude;
+pub mod azimuth;
 pub mod elp2000;
 pub mod ephemeris;
 pub mod horizontal;
