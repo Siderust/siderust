@@ -3,24 +3,48 @@
 
 //! Astronomical target representation
 //!
-//! This module defines [`Target`], a lightweight container that couples a position
-//! with the time at which the target was seen at that position, together with an optional
-//! proper‑motion model.  It is deliberately generic over the coordinate type so
-//! it can be reused with Cartesian/Spherical equatorial/ecliptic/icrs.
+//! This module defines two complementary concepts:
+//!
+//! ## [`CoordinateWithPM`] — Coordinate Sample
+//!
+//! A lightweight container that couples a position with the time at which
+//! the position was recorded, together with an optional proper-motion model.
+//! It is deliberately generic over the coordinate type so it can be reused
+//! with Cartesian/Spherical equatorial/ecliptic/ICRS positions.
+//!
+//! **What it is:** a stamped coordinate snapshot — a measurement or catalog
+//! entry, not an astronomical object.
 //!
 //! The design goals are:
-//! * **Zero‑cost abstraction** – All helper constructors are `const`, allowing
-//!   compile‑time evaluation when all arguments are known at build time.
+//! * **Zero-cost abstraction** – All helper constructors are `const`, allowing
+//!   compile-time evaluation when all arguments are known at build time.
 //! * **Flexibility** – The generic parameter `T` lets client code choose any
 //!   position type that implements the required operations.
 //! * **Clarity** – Specific helpers (`new`, `new_static`, `new_raw`) make the
-//!   author’s intent explicit: moving target, fixed target, or advanced manual
+//!   author's intent explicit: moving target, fixed target, or advanced manual
 //!   construction respectively.
+//!
+//! A backward-compatible type alias `Target<T>` is available so that existing
+//! code continues to compile. New code should prefer `CoordinateWithPM<T>`.
+//!
+//! ## [`Trackable`] — Object Abstraction
+//!
+//! A trait representing "anything that can produce coordinates at time *t*":
+//!
+//! ```rust,ignore
+//! pub trait Trackable {
+//!     type Coords;
+//!     fn track(&self, jd: JulianDate) -> Self::Coords;
+//! }
+//! ```
+//!
+//! Implemented for solar-system unit types, `Star`, `direction::ICRS`,
+//! and `CoordinateWithPM<T>` (identity).
 //!
 //! ## Examples
 //! ```rust
 //! use qtty::*;
-//! use siderust::targets::Target;
+//! use siderust::targets::CoordinateWithPM;
 //! use siderust::time::ModifiedJulianDate;
 //! use siderust::coordinates::frames::EquatorialMeanJ2000;
 //! use siderust::coordinates::spherical::Direction;
@@ -30,27 +54,25 @@
 //! type MasPerYear = qtty::Per<qtty::MilliArcsecond, qtty::Year>;
 //! type MasPerYearQ = qtty::Quantity<MasPerYear>;
 //! let betelgeuse_pm = ProperMotion::from_mu_alpha_star::<MasPerYear>(
-//!     MasPerYearQ::new(27.54),  // µα⋆ (Gaia/Hipparcos convention)
-//!     MasPerYearQ::new(10.86),  // µδ
+//!     MasPerYearQ::new(27.54),
+//!     MasPerYearQ::new(10.86),
 //! );
-//! let betelgeuse = Target::new(
+//! let betelgeuse = CoordinateWithPM::new(
 //!     Direction::<EquatorialMeanJ2000>::new(88.792939*DEG, 7.407064*DEG),
 //!     ModifiedJulianDate::new(60200.0).into(),
 //!     betelgeuse_pm,
 //! );
 //!
-//! // Jupiter’s geocentric position at a given epoch (no proper motion)
-//! let jupiter = Target::new_static(
+//! // Jupiter's geocentric position at a given epoch (no proper motion)
+//! let jupiter = CoordinateWithPM::new_static(
 //!     Direction::<EquatorialMeanJ2000>::new(23.123*DEG, -5.321*DEG),
 //!     ModifiedJulianDate::new(60200.0).into(),
 //! );
 //! ```
-//!
-//! The optional proper‑motion field allows the same `Target` API to represent
-//! both sidereal objects (stars, galaxies) and solar‑system bodies or static
-//! catalog entries.
 
 mod target;
+mod trackable;
 mod transform;
 
-pub use target::Target;
+pub use target::{CoordinateWithPM, Target};
+pub use trackable::Trackable;

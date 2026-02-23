@@ -7,7 +7,6 @@ use crate::coordinates::{
     centers::{Barycentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use crate::targets::Target;
 use crate::time::JulianDate;
 use qtty::AstronomicalUnit;
 
@@ -15,11 +14,9 @@ pub trait VSOP87 {
     fn vsop87a(
         &self,
         jd: JulianDate,
-    ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>>;
-    fn vsop87e(
-        &self,
-        jd: JulianDate,
-    ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>;
+    ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>;
+    fn vsop87e(&self, jd: JulianDate)
+        -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>;
 }
 
 macro_rules! impl_vsop87_for_planet {
@@ -28,14 +25,14 @@ macro_rules! impl_vsop87_for_planet {
             fn vsop87a(
                 &self,
                 jd: JulianDate,
-            ) -> Target<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>> {
+            ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
                 $planet::vsop87a(jd)
             }
 
             fn vsop87e(
                 &self,
                 jd: JulianDate,
-            ) -> Target<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>> {
+            ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
                 $planet::vsop87e(jd)
             }
         }
@@ -65,10 +62,10 @@ mod tests {
             let dyn_ref: &dyn VSOP87 = &body;
             let jd = JulianDate::J2000;
 
-            let via_trait_a = dyn_ref.vsop87a(jd).get_position().clone();
-            let via_trait_e = dyn_ref.vsop87e(jd).get_position().clone();
-            let inherent_a = $planet::vsop87a(jd).get_position().clone();
-            let inherent_e = $planet::vsop87e(jd).get_position().clone();
+            let via_trait_a = dyn_ref.vsop87a(jd);
+            let via_trait_e = dyn_ref.vsop87e(jd);
+            let inherent_a = $planet::vsop87a(jd);
+            let inherent_e = $planet::vsop87e(jd);
 
             assert_cartesian_eq!(via_trait_a, inherent_a, PRECISION);
             assert_cartesian_eq!(via_trait_e, inherent_e, PRECISION);
