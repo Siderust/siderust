@@ -70,3 +70,12 @@ pub use calculus::altitude::{
     below_threshold, crossings, culminations, AltitudePeriodsProvider, AltitudeQuery,
     CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind, SearchOpts,
 };
+
+// ---------------------------------------------------------------------------
+// Convenience re‑exports: lunar phase API
+// ---------------------------------------------------------------------------
+pub use calculus::lunar::phase::{
+    find_phase_events, illumination_above, illumination_below, illumination_range,
+    moon_phase_geocentric, moon_phase_topocentric, MoonPhaseGeometry, MoonPhaseLabel,
+    MoonPhaseSeries, PhaseEvent, PhaseKind, PhaseSearchOpts, PhaseThresholds,
+};
