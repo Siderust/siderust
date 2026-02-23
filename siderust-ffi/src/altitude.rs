@@ -61,8 +61,8 @@ pub(crate) fn icrs_from_c(
         return Err(SiderustStatus::InvalidFrame);
     }
     Ok(spherical::direction::ICRS::new(
-        Degrees::new(dir.lon_deg),
-        Degrees::new(dir.lat_deg),
+        Degrees::new(dir.azimuth_deg),
+        Degrees::new(dir.polar_deg),
     ))
 }
 

@@ -276,8 +276,8 @@ fn invalid_period_end_before_start() {
 #[test]
 fn icrs_azimuth_wrong_frame_returns_error() {
     let dir = SiderustSphericalDir {
-        lon_deg: 83.82,
-        lat_deg: -5.39,
+        polar_deg: -5.39,
+        azimuth_deg: 83.82,
         frame: SiderustFrame::EquatorialMeanJ2000, // not ICRS
     };
     let mut out: f64 = 0.0;
