@@ -320,10 +320,10 @@ impl SiderustPlanet {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustSphericalDir {
-    /// Longitude / Right Ascension in degrees.
-    pub lon_deg: f64,
-    /// Latitude / Declination in degrees.
-    pub lat_deg: f64,
+    /// Polar angle / latitude in degrees.
+    pub polar_deg: f64,
+    /// Azimuth / longitude / right ascension in degrees.
+    pub azimuth_deg: f64,
     /// Reference frame.
     pub frame: SiderustFrame,
 }
