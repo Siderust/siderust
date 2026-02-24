@@ -52,6 +52,12 @@ use crate::coordinates::spherical::direction;
 use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
 use qtty::*;
 
+// Imports for planet azimuth support
+use crate::calculus::horizontal;
+use crate::coordinates::{cartesian, centers::Geocentric, frames};
+use crate::coordinates::transform::Transform;
+use crate::time::JulianDate;
+
 // ---------------------------------------------------------------------------
 // Trait Definition
 // ---------------------------------------------------------------------------
@@ -230,6 +236,65 @@ impl AzimuthProvider for direction::ICRS {
 }
 
 // ---------------------------------------------------------------------------
+// Implementations: VSOP87 Planets (Mercury–Neptune)
+// ---------------------------------------------------------------------------
+
+/// Computes the topocentric azimuth (in radians, North-clockwise) of a
+/// VSOP87 planet at a given instant using the full transform pipeline.
+fn vsop87_planet_azimuth_rad<F>(
+    vsop87e_fn: F,
+    mjd: ModifiedJulianDate,
+    site: &Geodetic<ECEF>,
+) -> Radians
+where
+    F: Fn(JulianDate) -> cartesian::Position<
+        crate::coordinates::centers::Barycentric,
+        frames::EclipticMeanJ2000,
+        AstronomicalUnit,
+    >,
+{
+    let jd: JulianDate = mjd.into();
+    let bary_ecl = vsop87e_fn(jd);
+    let geo_equ: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
+        bary_ecl.transform(jd);
+    let topo = horizontal::geocentric_j2000_to_apparent_topocentric(&geo_equ, *site, jd);
+    let horiz = horizontal::equatorial_to_horizontal(&topo, *site, jd);
+    horiz.az().to::<Radian>()
+}
+
+/// Helper macro: implement [`AzimuthProvider`] for a VSOP87-backed planet.
+macro_rules! impl_azimuth_provider_vsop87 {
+    ($($Planet:ident),+ $(,)?) => {
+        $(
+            impl AzimuthProvider for solar_system::$Planet {
+                fn azimuth_at(
+                    &self,
+                    observer: &Geodetic<ECEF>,
+                    mjd: ModifiedJulianDate,
+                ) -> Radians {
+                    vsop87_planet_azimuth_rad(
+                        solar_system::$Planet::vsop87e, mjd, observer,
+                    )
+                }
+
+                fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
+                    if query.window.duration() <= Days::zero() {
+                        return Vec::new();
+                    }
+                    events::azimuth_range_periods(self, query)
+                }
+
+                fn scan_step_hint(&self) -> Option<Days> {
+                    Some(Hours::new(2.0).to::<Day>())
+                }
+            }
+        )+
+    };
+}
+
+impl_azimuth_provider_vsop87!(Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune);
+
+// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -329,5 +394,45 @@ mod tests {
             (total_inside + total_outside - window_len).abs() < 1e-6,
             "inside + outside should equal the full window"
         );
+    }
+
+    // --- Planet azimuth ---
+
+    #[test]
+    fn mars_azimuth_at_returns_valid_range() {
+        let az = solar_system::Mars.azimuth_at(
+            &greenwich(),
+            ModifiedJulianDate::new(60000.5),
+        );
+        assert!(az.value() >= 0.0, "azimuth must be ≥ 0, got {}", az);
+        assert!(az.value() < std::f64::consts::TAU, "azimuth must be < 2π, got {}", az);
+    }
+
+    #[test]
+    fn all_planets_azimuth_valid() {
+        let observer = greenwich();
+        let mjd = ModifiedJulianDate::new(60000.5);
+        let mercury_az = solar_system::Mercury.azimuth_at(&observer, mjd);
+        let venus_az = solar_system::Venus.azimuth_at(&observer, mjd);
+        let mars_az = solar_system::Mars.azimuth_at(&observer, mjd);
+        let jupiter_az = solar_system::Jupiter.azimuth_at(&observer, mjd);
+        let saturn_az = solar_system::Saturn.azimuth_at(&observer, mjd);
+        let uranus_az = solar_system::Uranus.azimuth_at(&observer, mjd);
+        let neptune_az = solar_system::Neptune.azimuth_at(&observer, mjd);
+
+        for (name, az) in [
+            ("Mercury", mercury_az),
+            ("Venus", venus_az),
+            ("Mars", mars_az),
+            ("Jupiter", jupiter_az),
+            ("Saturn", saturn_az),
+            ("Uranus", uranus_az),
+            ("Neptune", neptune_az),
+        ] {
+            assert!(
+                az.value() >= 0.0 && az.value() < std::f64::consts::TAU,
+                "{name} azimuth out of range: {az}"
+            );
+        }
     }
 }
