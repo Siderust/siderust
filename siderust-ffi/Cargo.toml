@@ -19,7 +19,7 @@ de441 = ["siderust/de441"]
 
 [dependencies]
 siderust    = { path = "..", features = [] }
-qtty        = "0.3.0"
+qtty        = "0.3.1"
 tempoch     = "0.3"
 tempoch-ffi = { path = "../dev-deps/tempoch/tempoch-ffi" }
 affn        = { version = "0.3.2", features = ["astro"] }
