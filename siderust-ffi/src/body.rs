@@ -8,9 +8,7 @@
 //! a [`SiderustBody`] discriminant and dispatch to the appropriate concrete
 //! implementation (Sun, Moon, or VSOP87 planet).
 
-use crate::altitude::{
-    crossings_to_c, culminations_to_c, periods_to_c, window_from_c,
-};
+use crate::altitude::{crossings_to_c, culminations_to_c, periods_to_c, window_from_c};
 use crate::azimuth::{vec_az_crossings_to_c, vec_az_extrema_to_c};
 use crate::error::SiderustStatus;
 use crate::types::*;
@@ -493,7 +491,12 @@ mod tests {
             let mut out = 0.0f64;
             let st = siderust_body_altitude_at(*body, paris(), 60000.5, &mut out);
             assert_eq!(st, SiderustStatus::Ok, "Failed for {:?}", body);
-            assert!(out.is_finite(), "Non-finite altitude for {:?}: {}", body, out);
+            assert!(
+                out.is_finite(),
+                "Non-finite altitude for {:?}: {}",
+                body,
+                out
+            );
             assert!(
                 out.abs() < std::f64::consts::FRAC_PI_2,
                 "Altitude out of range for {:?}: {}",
@@ -538,7 +541,12 @@ mod tests {
             let mut out = 0.0f64;
             let st = siderust_body_azimuth_at(*body, paris(), 60000.5, &mut out);
             assert_eq!(st, SiderustStatus::Ok, "azimuth_at failed for {:?}", body);
-            assert!(out.is_finite(), "Non-finite azimuth for {:?}: {}", body, out);
+            assert!(
+                out.is_finite(),
+                "Non-finite azimuth for {:?}: {}",
+                body,
+                out
+            );
             assert!(
                 out >= 0.0 && out < std::f64::consts::TAU,
                 "Azimuth out of range for {:?}: {}",
