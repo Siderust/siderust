@@ -91,6 +91,23 @@ pub enum SiderustOrbitFrame {
     Barycentric = 1,
 }
 
+/// Solar-system body identifier for generic altitude/azimuth dispatch.
+///
+/// Each variant maps to a concrete unit type in `siderust::bodies::solar_system`.
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SiderustBody {
+    Sun = 0,
+    Moon = 1,
+    Mercury = 2,
+    Venus = 3,
+    Mars = 4,
+    Jupiter = 5,
+    Saturn = 6,
+    Uranus = 7,
+    Neptune = 8,
+}
+
 /// Proper motion RA convention.
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
