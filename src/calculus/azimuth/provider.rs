@@ -54,8 +54,8 @@ use qtty::*;
 
 // Imports for planet azimuth support
 use crate::calculus::horizontal;
-use crate::coordinates::{cartesian, centers::Geocentric, frames};
 use crate::coordinates::transform::Transform;
+use crate::coordinates::{cartesian, centers::Geocentric, frames};
 use crate::time::JulianDate;
 
 // ---------------------------------------------------------------------------
@@ -247,7 +247,9 @@ fn vsop87_planet_azimuth_rad<F>(
     site: &Geodetic<ECEF>,
 ) -> Radians
 where
-    F: Fn(JulianDate) -> cartesian::Position<
+    F: Fn(
+        JulianDate,
+    ) -> cartesian::Position<
         crate::coordinates::centers::Barycentric,
         frames::EclipticMeanJ2000,
         AstronomicalUnit,
@@ -400,12 +402,13 @@ mod tests {
 
     #[test]
     fn mars_azimuth_at_returns_valid_range() {
-        let az = solar_system::Mars.azimuth_at(
-            &greenwich(),
-            ModifiedJulianDate::new(60000.5),
-        );
+        let az = solar_system::Mars.azimuth_at(&greenwich(), ModifiedJulianDate::new(60000.5));
         assert!(az.value() >= 0.0, "azimuth must be ≥ 0, got {}", az);
-        assert!(az.value() < std::f64::consts::TAU, "azimuth must be < 2π, got {}", az);
+        assert!(
+            az.value() < std::f64::consts::TAU,
+            "azimuth must be < 2π, got {}",
+            az
+        );
     }
 
     #[test]

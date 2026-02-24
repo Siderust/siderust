@@ -312,7 +312,9 @@ fn vsop87_planet_altitude_rad<F>(
     site: &Geodetic<ECEF>,
 ) -> Radians
 where
-    F: Fn(JulianDate) -> cartesian::Position<
+    F: Fn(
+        JulianDate,
+    ) -> cartesian::Position<
         crate::coordinates::centers::Barycentric,
         frames::EclipticMeanJ2000,
         AstronomicalUnit,
@@ -663,8 +665,11 @@ mod tests {
 
     #[test]
     fn jupiter_above_horizon_via_trait() {
-        let periods = solar_system::Jupiter
-            .above_threshold(greenwich(), one_week_window(), Degrees::new(0.0));
+        let periods = solar_system::Jupiter.above_threshold(
+            greenwich(),
+            one_week_window(),
+            Degrees::new(0.0),
+        );
         assert!(
             !periods.is_empty(),
             "Jupiter should be above horizon at some point in a week at 51°N"
