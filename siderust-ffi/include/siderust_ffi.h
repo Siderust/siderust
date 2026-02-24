@@ -124,6 +124,28 @@ enum siderust_ra_convention_t
 typedef int32_t siderust_ra_convention_t;
 #endif // __cplusplus
 
+// Solar-system body identifier for generic altitude/azimuth dispatch.
+//
+// Each variant maps to a concrete unit type in `siderust::bodies::solar_system`.
+enum SiderustBody
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  SIDERUST_BODY_SUN = 0,
+  SIDERUST_BODY_MOON = 1,
+  SIDERUST_BODY_MERCURY = 2,
+  SIDERUST_BODY_VENUS = 3,
+  SIDERUST_BODY_MARS = 4,
+  SIDERUST_BODY_JUPITER = 5,
+  SIDERUST_BODY_SATURN = 6,
+  SIDERUST_BODY_URANUS = 7,
+  SIDERUST_BODY_NEPTUNE = 8,
+};
+#ifndef __cplusplus
+typedef int32_t SiderustBody;
+#endif // __cplusplus
+
 // Reference center identifier for C interop.
 enum siderust_center_t
 #ifdef __cplusplus
@@ -690,6 +712,96 @@ siderust_status_t siderust_star_name(const struct SiderustStar *handle,
 
 // Get Neptune's orbital and physical parameters.
  siderust_status_t siderust_planet_neptune(struct siderust_planet_t *out);
+
+// Altitude of a solar-system body at an instant (radians).
+
+siderust_status_t siderust_body_altitude_at(SiderustBody body,
+                                            struct siderust_geodetic_t observer,
+                                            double mjd,
+                                            double *out_rad);
+
+// Periods when a solar-system body is above a threshold altitude.
+
+siderust_status_t siderust_body_above_threshold(SiderustBody body,
+                                                struct siderust_geodetic_t observer,
+                                                tempoch_period_mjd_t window,
+                                                double threshold_deg,
+                                                struct siderust_search_opts_t opts,
+                                                tempoch_period_mjd_t **out,
+                                                uintptr_t *count);
+
+// Periods when a solar-system body is below a threshold altitude.
+
+siderust_status_t siderust_body_below_threshold(SiderustBody body,
+                                                struct siderust_geodetic_t observer,
+                                                tempoch_period_mjd_t window,
+                                                double threshold_deg,
+                                                struct siderust_search_opts_t opts,
+                                                tempoch_period_mjd_t **out,
+                                                uintptr_t *count);
+
+// Threshold-crossing events for a solar-system body.
+
+siderust_status_t siderust_body_crossings(SiderustBody body,
+                                          struct siderust_geodetic_t observer,
+                                          tempoch_period_mjd_t window,
+                                          double threshold_deg,
+                                          struct siderust_search_opts_t opts,
+                                          struct siderust_crossing_event_t **out,
+                                          uintptr_t *count);
+
+// Culmination (local extrema) events for a solar-system body.
+
+siderust_status_t siderust_body_culminations(SiderustBody body,
+                                             struct siderust_geodetic_t observer,
+                                             tempoch_period_mjd_t window,
+                                             struct siderust_search_opts_t opts,
+                                             struct siderust_culmination_event_t **out,
+                                             uintptr_t *count);
+
+// Periods when a solar-system body's altitude is within [min, max].
+
+siderust_status_t siderust_body_altitude_periods(SiderustBody body,
+                                                 struct siderust_altitude_query_t query,
+                                                 tempoch_period_mjd_t **out,
+                                                 uintptr_t *count);
+
+// Azimuth of a solar-system body at an instant (radians).
+
+siderust_status_t siderust_body_azimuth_at(SiderustBody body,
+                                           struct siderust_geodetic_t observer,
+                                           double mjd,
+                                           double *out_rad);
+
+// Azimuth bearing-crossing events for a solar-system body.
+
+siderust_status_t siderust_body_azimuth_crossings(SiderustBody body,
+                                                  struct siderust_geodetic_t observer,
+                                                  tempoch_period_mjd_t window,
+                                                  double bearing_deg,
+                                                  struct siderust_search_opts_t opts,
+                                                  struct siderust_azimuth_crossing_event_t **out,
+                                                  uintptr_t *count);
+
+// Azimuth extrema (northernmost and southernmost bearing) for a body.
+
+siderust_status_t siderust_body_azimuth_extrema(SiderustBody body,
+                                                struct siderust_geodetic_t observer,
+                                                tempoch_period_mjd_t window,
+                                                struct siderust_search_opts_t opts,
+                                                struct siderust_azimuth_extremum_t **out,
+                                                uintptr_t *count);
+
+// Periods when a body's azimuth is within [min_deg, max_deg].
+
+siderust_status_t siderust_body_in_azimuth_range(SiderustBody body,
+                                                 struct siderust_geodetic_t observer,
+                                                 tempoch_period_mjd_t window,
+                                                 double min_deg,
+                                                 double max_deg,
+                                                 struct siderust_search_opts_t opts,
+                                                 tempoch_period_mjd_t **out,
+                                                 uintptr_t *count);
 
 // Transform a spherical direction from one frame to another.
 //
