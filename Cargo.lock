@@ -110,9 +110,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.101"
+version = "1.0.102"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f0e0fee31ef5ed1ba1316088939cea399010ed7731dba877ed44aeb407a75ea"
+checksum = "7f202df86484c868dbad7eaa557ef785d5c66295e41b460ef922eca0723b842c"
 
 [[package]]
 name = "approx"
@@ -253,9 +253,9 @@ dependencies = [
 
 [[package]]
 name = "chrono"
-version = "0.4.43"
+version = "0.4.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fac4744fb15ae8337dc853fee7fb3f4e48c0fbaa23d0afe49c447b4fab126118"
+checksum = "c673075a2e0e5f4a1dde27ce9dee1ea4558c7ffe648f576438a20ca1d2acc4b0"
 dependencies = [
  "iana-time-zone",
  "js-sys",
@@ -1305,9 +1305,9 @@ dependencies = [
 
 [[package]]
 name = "qtty"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec18b86dcb4c777f979a171699a5f552675bbbfd7406d3d002403a26d7bd3215"
+checksum = "b42948ee9aba0ed2217fd0d89a666df2ab020e3e25ef9b0328150e6d6c0aaee3"
 dependencies = [
  "qtty-core",
  "qtty-derive",
@@ -1315,9 +1315,9 @@ dependencies = [
 
 [[package]]
 name = "qtty-core"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02271e8e4889de336896d2b690ad40ef811e68a81726885a7ddfbccf7e35b19c"
+checksum = "283c549662e44f8a2848964e9639f2924f7a442f94294d508fc70c531a9717b3"
 dependencies = [
  "libm",
  "qtty-derive",
@@ -1327,12 +1327,26 @@ dependencies = [
 
 [[package]]
 name = "qtty-derive"
-version = "0.3.0"
+version = "0.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a6b1435ce1b31534c420c9b7c08dc7cf1d4a39f18748e7c7f29b71296d558a51"
+checksum = "5edb55d59461af47a984baae7fafc2374dac2a79d41434a77ee7807f0f592757"
 dependencies = [
  "proc-macro2",
  "quote",
+ "syn",
+]
+
+[[package]]
+name = "qtty-ffi"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d93de7d3db9abe1006b8a8b635de51f6d967636be144d06c28f66c3b8a49bd17"
+dependencies = [
+ "cbindgen",
+ "qtty",
+ "quote",
+ "serde",
+ "serde_json",
  "syn",
 ]
 
@@ -1988,6 +2002,7 @@ dependencies = [
  "cbindgen",
  "chrono",
  "qtty",
+ "qtty-ffi",
  "serde_json",
  "tempoch 0.3.0",
 ]
