@@ -317,6 +317,22 @@ typedef struct siderust_cartesian_pos_t {
   siderust_center_t center;
 } siderust_cartesian_pos_t;
 
+// Bodycentric reference center: which standard center the orbit is relative to.
+// Must match `OrbitReferenceCenter` in siderust: Barycentric=0, Heliocentric=1, Geocentric=2.
+typedef uint8_t SiderustOrbitRefCenter;
+
+// Parameters for a body-centric coordinate system.
+//
+// Pairs Keplerian orbital elements with the reference center of those elements.
+// Corresponds to `siderust::coordinates::centers::BodycentricParams`.
+typedef struct SiderustBodycentricParams {
+  // Keplerian orbital elements of the body.
+  struct siderust_orbit_t orbit;
+  // Reference center: 0=Barycentric, 1=Heliocentric, 2=Geocentric.
+  SiderustOrbitRefCenter orbit_center;
+  uint8_t _pad[7];
+} SiderustBodycentricParams;
+
 // A principal lunar phase event.
 typedef struct siderust_phase_event_t {
   // Time of the event (Modified Julian Date).
@@ -839,6 +855,47 @@ siderust_status_t siderust_spherical_dir_to_horizontal(double polar_deg,
 siderust_status_t siderust_geodetic_to_cartesian_ecef(struct siderust_geodetic_t geodetic,
                                                       struct siderust_cartesian_pos_t *out);
 
+// Compute the Keplerian orbital position at a given Julian date.
+//
+// Returns position in EclipticMeanJ2000 frame (AU), where the reference
+// center equals the orbit's own reference center (e.g. heliocentric for a
+// planet's orbit).  The `center` field of `out` is set to `Heliocentric` as
+// a placeholder; callers should interpret it according to `orbit_center` from
+// the associated `siderust_bodycentric_params_t`.
+
+siderust_status_t siderust_kepler_position(struct siderust_orbit_t orbit,
+                                           double jd,
+                                           struct siderust_cartesian_pos_t *out);
+
+// Transform a Cartesian position to body-centric coordinates.
+//
+// Mirrors Rust's `ToBodycentricExt::to_bodycentric()`.
+//
+// `pos`    – source position in EclipticMeanJ2000 / AU.  Center must be
+//            Geocentric, Heliocentric, or Barycentric.
+// `params` – Keplerian orbit + reference center of the body.
+// `jd`     – Julian Date for Keplerian propagation and center-shift.
+// `out`    – relative position in EclipticMeanJ2000 / AU with center Bodycentric.
+
+siderust_status_t siderust_to_bodycentric(struct siderust_cartesian_pos_t pos,
+                                          struct SiderustBodycentricParams params,
+                                          double jd,
+                                          struct siderust_cartesian_pos_t *out);
+
+// Transform a body-centric position back to geocentric coordinates.
+//
+// Mirrors Rust's `FromBodycentricExt::to_geocentric()`.
+//
+// `pos`    – body-centric position in EclipticMeanJ2000 / AU.
+// `params` – same orbital parameters used during `siderust_to_bodycentric`.
+// `jd`     – same Julian Date used during `siderust_to_bodycentric`.
+// `out`    – recovered geocentric position in EclipticMeanJ2000 / AU.
+
+siderust_status_t siderust_from_bodycentric(struct siderust_cartesian_pos_t pos,
+                                            struct SiderustBodycentricParams params,
+                                            double jd,
+                                            struct siderust_cartesian_pos_t *out);
+
 // Get the Sun's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
  siderust_status_t siderust_vsop87_sun_barycentric(double jd, struct siderust_cartesian_pos_t *out);
 
@@ -850,6 +907,16 @@ siderust_status_t siderust_vsop87_earth_barycentric(double jd,
 // Get the Earth's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
 
 siderust_status_t siderust_vsop87_earth_heliocentric(double jd,
+                                                     struct siderust_cartesian_pos_t *out);
+
+// Get Mars's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_mars_heliocentric(double jd,
+                                                    struct siderust_cartesian_pos_t *out);
+
+// Get Venus's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_venus_heliocentric(double jd,
                                                      struct siderust_cartesian_pos_t *out);
 
 // Get the Moon's geocentric position (EclipticMeanJ2000, km) via ELP2000.

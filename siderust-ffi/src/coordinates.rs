@@ -10,6 +10,7 @@
 use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::*;
+use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::{
     EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate,
@@ -246,6 +247,172 @@ pub extern "C" fn siderust_geodetic_to_cartesian_ecef(
             y: cart.y().value(),
             z: cart.z().value(),
             frame: SiderustFrame::ECEF,
+            center: SiderustCenter::Geocentric,
+        };
+    }
+    SiderustStatus::Ok
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Keplerian propagation & bodycentric transforms
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Shift a position (x, y, z) in AU/EclipticMeanJ2000 from one reference center
+/// to another, using VSOP87 for Earth-helio and Sun-bary offsets.
+///
+/// Center codes: 0 = Barycentric, 1 = Heliocentric, 2 = Geocentric.
+/// These match `OrbitReferenceCenter` (Barycentric=0, Heliocentric=1, Geocentric=2).
+fn shift_center_xyz(x: f64, y: f64, z: f64, from: u8, to: u8, jd: f64) -> (f64, f64, f64) {
+    if from == to {
+        return (x, y, z);
+    }
+    let t = JulianDate::new(jd);
+
+    // Sun's barycentric position — used for helio ↔ bary shifts
+    let sun_b = Vsop87Ephemeris::sun_barycentric(t);
+    let (sb_x, sb_y, sb_z) = (sun_b.x().value(), sun_b.y().value(), sun_b.z().value());
+
+    // Earth's heliocentric position — used for helio ↔ geo shifts
+    let earth_h = Vsop87Ephemeris::earth_heliocentric(t);
+    let (eh_x, eh_y, eh_z) = (earth_h.x().value(), earth_h.y().value(), earth_h.z().value());
+
+    // Convert to heliocentric first (hub = heliocentric)
+    let (hx, hy, hz) = match from {
+        0 => (x - sb_x, y - sb_y, z - sb_z), // bary → helio  (subtract Sun-bary pos)
+        1 => (x, y, z),                        // already heliocentric
+        2 => (x + eh_x, y + eh_y, z + eh_z),  // geo  → helio  (add Earth-helio pos)
+        _ => (x, y, z),
+    };
+
+    // Convert heliocentric to target center
+    match to {
+        0 => (hx + sb_x, hy + sb_y, hz + sb_z), // helio → bary
+        1 => (hx, hy, hz),                        // helio → helio (no-op)
+        2 => (hx - eh_x, hy - eh_y, hz - eh_z),  // helio → geo
+        _ => (hx, hy, hz),
+    }
+}
+
+/// Compute the Keplerian orbital position at a given Julian date.
+///
+/// Returns position in EclipticMeanJ2000 frame (AU), where the reference
+/// center equals the orbit's own reference center (e.g. heliocentric for a
+/// planet's orbit).  The `center` field of `out` is set to `Heliocentric` as
+/// a placeholder; callers should interpret it according to `orbit_center` from
+/// the associated `siderust_bodycentric_params_t`.
+#[no_mangle]
+pub extern "C" fn siderust_kepler_position(
+    orbit: SiderustOrbit,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+    let pos = orbit.to_rust().kepler_position(JulianDate::new(jd));
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: pos.x().value(),
+            y: pos.y().value(),
+            z: pos.z().value(),
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric, // placeholder; real center = orbit_center
+        };
+    }
+    SiderustStatus::Ok
+}
+
+/// Transform a Cartesian position to body-centric coordinates.
+///
+/// Mirrors Rust's `ToBodycentricExt::to_bodycentric()`.
+///
+/// `pos`    – source position in EclipticMeanJ2000 / AU.  Center must be
+///            Geocentric, Heliocentric, or Barycentric.
+/// `params` – Keplerian orbit + reference center of the body.
+/// `jd`     – Julian Date for Keplerian propagation and center-shift.
+/// `out`    – relative position in EclipticMeanJ2000 / AU with center Bodycentric.
+#[no_mangle]
+pub extern "C" fn siderust_to_bodycentric(
+    pos: SiderustCartesianPos,
+    params: SiderustBodycentricParams,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+
+    // Map SiderustCenter → OrbitReferenceCenter coding (0=Bary,1=Helio,2=Geo)
+    let input_center: u8 = match pos.center {
+        SiderustCenter::Barycentric => 0,
+        SiderustCenter::Heliocentric => 1,
+        SiderustCenter::Geocentric => 2,
+        _ => return SiderustStatus::InvalidCenter,
+    };
+
+    // Keplerian position of the body in its own orbit's reference center
+    let body_kep = params.orbit.to_rust().kepler_position(JulianDate::new(jd));
+    let (bkx, bky, bkz) = (
+        body_kep.x().value(),
+        body_kep.y().value(),
+        body_kep.z().value(),
+    );
+
+    // Shift body position to match the input center
+    let (body_x, body_y, body_z) =
+        shift_center_xyz(bkx, bky, bkz, params.orbit_center, input_center, jd);
+
+    // Relative position: input – body (vector from body to target)
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: pos.x - body_x,
+            y: pos.y - body_y,
+            z: pos.z - body_z,
+            frame: pos.frame,
+            center: SiderustCenter::Bodycentric,
+        };
+    }
+    SiderustStatus::Ok
+}
+
+/// Transform a body-centric position back to geocentric coordinates.
+///
+/// Mirrors Rust's `FromBodycentricExt::to_geocentric()`.
+///
+/// `pos`    – body-centric position in EclipticMeanJ2000 / AU.
+/// `params` – same orbital parameters used during `siderust_to_bodycentric`.
+/// `jd`     – same Julian Date used during `siderust_to_bodycentric`.
+/// `out`    – recovered geocentric position in EclipticMeanJ2000 / AU.
+#[no_mangle]
+pub extern "C" fn siderust_from_bodycentric(
+    pos: SiderustCartesianPos,
+    params: SiderustBodycentricParams,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+
+    // Keplerian position of the body in its own orbit's reference center
+    let body_kep = params.orbit.to_rust().kepler_position(JulianDate::new(jd));
+    let (bkx, bky, bkz) = (
+        body_kep.x().value(),
+        body_kep.y().value(),
+        body_kep.z().value(),
+    );
+
+    // Convert body position to geocentric (target center code = 2)
+    let (body_geo_x, body_geo_y, body_geo_z) =
+        shift_center_xyz(bkx, bky, bkz, params.orbit_center, 2, jd);
+
+    // Recover geocentric: bodycentric + body_geocentric
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: pos.x + body_geo_x,
+            y: pos.y + body_geo_y,
+            z: pos.z + body_geo_z,
+            frame: pos.frame,
             center: SiderustCenter::Geocentric,
         };
     }
