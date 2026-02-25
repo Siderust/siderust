@@ -9,9 +9,13 @@
 use crate::ffi_utils::FfiFrom;
 use qtty::*;
 use siderust::calculus::azimuth::{
+
     AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
 };
-use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::centers::{
+    BodycentricParams as RustBodycentricParams, Geodetic,
+    OrbitReferenceCenter as RustOrbitRefCenter,
+};
 use siderust::coordinates::frames::ECEF;
 use tempoch::{Interval, JulianDate, ModifiedJulianDate, Period, MJD};
 
@@ -187,6 +191,50 @@ impl SiderustOrbit {
             arg_perihelion_deg: o.argument_of_perihelion.value(),
             mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
             epoch_jd: o.epoch.value(),
+        }
+    }
+}
+
+/// Bodycentric reference center: which standard center the orbit is relative to.
+/// Must match `OrbitReferenceCenter` in siderust: Barycentric=0, Heliocentric=1, Geocentric=2.
+pub type SiderustOrbitRefCenter = u8;
+
+/// Parameters for a body-centric coordinate system.
+///
+/// Pairs Keplerian orbital elements with the reference center of those elements.
+/// Corresponds to `siderust::coordinates::centers::BodycentricParams`.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct SiderustBodycentricParams {
+    /// Keplerian orbital elements of the body.
+    pub orbit: SiderustOrbit,
+    /// Reference center: 0=Barycentric, 1=Heliocentric, 2=Geocentric.
+    pub orbit_center: SiderustOrbitRefCenter,
+    pub _pad: [u8; 7],
+}
+
+impl SiderustBodycentricParams {
+    pub fn to_rust(&self) -> RustBodycentricParams {
+        let orbit = self.orbit.to_rust();
+        let orbit_center = match self.orbit_center {
+            0 => RustOrbitRefCenter::Barycentric,
+            1 => RustOrbitRefCenter::Heliocentric,
+            2 => RustOrbitRefCenter::Geocentric,
+            _ => RustOrbitRefCenter::Heliocentric, // safe default
+        };
+        RustBodycentricParams::new(orbit, orbit_center)
+    }
+
+    pub fn from_rust(p: &RustBodycentricParams) -> Self {
+        let orbit_center = match p.orbit_center {
+            RustOrbitRefCenter::Barycentric => 0u8,
+            RustOrbitRefCenter::Heliocentric => 1u8,
+            RustOrbitRefCenter::Geocentric => 2u8,
+        };
+        Self {
+            orbit: SiderustOrbit::from_rust(&p.orbit),
+            orbit_center,
+            _pad: [0u8; 7],
         }
     }
 }

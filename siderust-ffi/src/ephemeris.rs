@@ -6,6 +6,7 @@
 use crate::error::SiderustStatus;
 use crate::types::*;
 use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
+use siderust::bodies::solar_system::{Mars, Venus};
 use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -69,6 +70,52 @@ pub extern "C" fn siderust_vsop87_earth_heliocentric(
     }
     let t = JulianDate::new(jd);
     let pos = Vsop87Ephemeris::earth_heliocentric(t);
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: pos.x().value(),
+            y: pos.y().value(),
+            z: pos.z().value(),
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+        };
+    }
+    SiderustStatus::Ok
+}
+
+/// Get Mars's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_mars_heliocentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+    let t = JulianDate::new(jd);
+    let pos = Mars::vsop87a(t);
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: pos.x().value(),
+            y: pos.y().value(),
+            z: pos.z().value(),
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+        };
+    }
+    SiderustStatus::Ok
+}
+
+/// Get Venus's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_venus_heliocentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+    let t = JulianDate::new(jd);
+    let pos = Venus::vsop87a(t);
     unsafe {
         *out = SiderustCartesianPos {
             x: pos.x().value(),
