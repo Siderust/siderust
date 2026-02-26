@@ -850,6 +850,35 @@ siderust_status_t siderust_spherical_dir_to_horizontal(double polar_deg,
                                                        struct siderust_geodetic_t observer,
                                                        struct siderust_spherical_dir_t *out);
 
+// Transform a Cartesian unit-vector direction from one frame to another.
+//
+// The input (x, y, z) need not be normalised; the rotation preserves the
+// vector length, so the output has the same magnitude as the input.
+//
+// Supported source/target frames: ICRS, EclipticMeanJ2000, EquatorialMeanJ2000,
+// EquatorialMeanOfDate, EquatorialTrueOfDate.
+
+siderust_status_t siderust_cartesian_dir_transform_frame(double x,
+                                                         double y,
+                                                         double z,
+                                                         siderust_frame_t src_frame,
+                                                         siderust_frame_t dst_frame,
+                                                         double jd,
+                                                         struct siderust_cartesian_pos_t *out);
+
+// Transform a Cartesian position from one frame to another (frame-only, same center).
+//
+// The rotation preserves the vector magnitude.  The `center` field of `pos`
+// is copied unchanged to `out`.
+//
+// Supported source/target frames: ICRS, EclipticMeanJ2000, EquatorialMeanJ2000,
+// EquatorialMeanOfDate, EquatorialTrueOfDate.
+
+siderust_status_t siderust_cartesian_pos_transform_frame(struct siderust_cartesian_pos_t pos,
+                                                         siderust_frame_t dst_frame,
+                                                         double jd,
+                                                         struct siderust_cartesian_pos_t *out);
+
 // Create a geodetic position and convert to ECEF Cartesian.
 
 siderust_status_t siderust_geodetic_to_cartesian_ecef(struct siderust_geodetic_t geodetic,
