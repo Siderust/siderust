@@ -83,10 +83,3 @@ harness = false
 [[bench]]
 name = "altitude_comparison"
 harness = false
-
-[[example]]
-name = "serde_serialization"
-required-features = ["serde"]
-
-[[example]]
-name = "jpl_precise_ephemeris"
