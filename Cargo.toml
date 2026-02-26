@@ -1,5 +1,6 @@
 [workspace]
 members = [".", "siderust-ffi"]
+exclude = ["dev-deps/**"]
 
 [package]
 name = "siderust"
@@ -25,9 +26,9 @@ de441 = []
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
 [dependencies]
-affn = { version="0.3.2", features = ["astro"] }
+affn = { version="0.3.3", features = ["astro"] }
 cheby = "0.1.0"
-qtty = "0.3.1"
+qtty = "0.4.0"
 tempoch = "0.3"
 approx = "0.5"
 chrono = "0.4.44"
@@ -46,6 +47,10 @@ walkdir = "2"
 regex = "1.12.2"
 anyhow = "1.0.102"
 reqwest = { version = "0.13.2", default-features = false, features = ["blocking", "rustls"] }
+
+[patch.crates-io]
+cheby = { path = "dev-deps/cheby" }
+tempoch = { path = "dev-deps/tempoch/tempoch" }
 
 [[bench]]
 name = "converters"

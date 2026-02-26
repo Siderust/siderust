@@ -273,6 +273,38 @@ impl<D: std::fmt::Display> std::fmt::Display for Apparent<D> {
     }
 }
 
+impl<D: std::fmt::LowerExp> std::fmt::LowerExp for Astrometric<D> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Astrometric(")?;
+        std::fmt::LowerExp::fmt(&self.direction, f)?;
+        write!(f, ")")
+    }
+}
+
+impl<D: std::fmt::LowerExp> std::fmt::LowerExp for Apparent<D> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Apparent(")?;
+        std::fmt::LowerExp::fmt(&self.direction, f)?;
+        write!(f, ")")
+    }
+}
+
+impl<D: std::fmt::UpperExp> std::fmt::UpperExp for Astrometric<D> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Astrometric(")?;
+        std::fmt::UpperExp::fmt(&self.direction, f)?;
+        write!(f, ")")
+    }
+}
+
+impl<D: std::fmt::UpperExp> std::fmt::UpperExp for Apparent<D> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Apparent(")?;
+        std::fmt::UpperExp::fmt(&self.direction, f)?;
+        write!(f, ")")
+    }
+}
+
 // =============================================================================
 // Tests
 // =============================================================================
