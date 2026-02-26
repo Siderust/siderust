@@ -11,13 +11,13 @@ use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::*;
 use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
-use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::centers::{Barycentric, Geodetic};
 use siderust::coordinates::frames::{
     EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate,
     ReferenceFrame, ECEF, ICRS,
 };
-use siderust::coordinates::spherical;
-use siderust::coordinates::transform::{DirectionAstroExt, SphericalDirectionAstroExt};
+use siderust::coordinates::{cartesian, spherical};
+use siderust::coordinates::transform::{DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt};
 use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -224,6 +224,265 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal(
             polar_deg: alt,
             azimuth_deg: az,
             frame: SiderustFrame::Horizontal,
+        };
+    }
+    SiderustStatus::Ok
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Cartesian Direction — frame transforms
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Trait object proxy for cartesian direction frame transforms.
+///
+/// Mirrors `SphericalDirProxy` but for cartesian unit-vector directions.
+trait CartesianDirProxy {
+    fn to_icrs(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_ecliptic_j2000(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_equatorial_j2000(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_equatorial_true_of_date(&self, jd: &JulianDate) -> (f64, f64, f64);
+}
+
+#[inline]
+fn cart_dir_to_triple<F: ReferenceFrame>(d: &cartesian::Direction<F>) -> (f64, f64, f64) {
+    (d.x(), d.y(), d.z())
+}
+
+macro_rules! impl_cart_dir_proxy {
+    ($frame_ty:ty) => {
+        impl CartesianDirProxy for cartesian::Direction<$frame_ty> {
+            fn to_icrs(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                cart_dir_to_triple(&DirectionAstroExt::to_frame::<ICRS>(self, jd))
+            }
+            fn to_ecliptic_j2000(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                let icrs = DirectionAstroExt::to_frame::<ICRS>(self, jd);
+                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EclipticMeanJ2000>(&icrs, jd))
+            }
+            fn to_equatorial_j2000(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                let icrs = DirectionAstroExt::to_frame::<ICRS>(self, jd);
+                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialMeanJ2000>(&icrs, jd))
+            }
+            fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                let icrs = DirectionAstroExt::to_frame::<ICRS>(self, jd);
+                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialMeanOfDate>(&icrs, jd))
+            }
+            fn to_equatorial_true_of_date(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                let icrs = DirectionAstroExt::to_frame::<ICRS>(self, jd);
+                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialTrueOfDate>(&icrs, jd))
+            }
+        }
+    };
+}
+
+impl_cart_dir_proxy!(ICRS);
+impl_cart_dir_proxy!(EclipticMeanJ2000);
+impl_cart_dir_proxy!(EquatorialMeanJ2000);
+impl_cart_dir_proxy!(EquatorialMeanOfDate);
+impl_cart_dir_proxy!(EquatorialTrueOfDate);
+
+fn make_cart_dir_in_frame(
+    frame: SiderustFrame,
+    x: f64,
+    y: f64,
+    z: f64,
+) -> Result<Box<dyn CartesianDirProxy>, SiderustStatus> {
+    match frame {
+        SiderustFrame::ICRS => Ok(Box::new(
+            cartesian::Direction::<ICRS>::new_unchecked(x, y, z),
+        )),
+        SiderustFrame::EclipticMeanJ2000 => Ok(Box::new(
+            cartesian::Direction::<EclipticMeanJ2000>::new_unchecked(x, y, z),
+        )),
+        SiderustFrame::EquatorialMeanJ2000 => Ok(Box::new(
+            cartesian::Direction::<EquatorialMeanJ2000>::new_unchecked(x, y, z),
+        )),
+        SiderustFrame::EquatorialMeanOfDate => Ok(Box::new(
+            cartesian::Direction::<EquatorialMeanOfDate>::new_unchecked(x, y, z),
+        )),
+        SiderustFrame::EquatorialTrueOfDate => Ok(Box::new(
+            cartesian::Direction::<EquatorialTrueOfDate>::new_unchecked(x, y, z),
+        )),
+        _ => Err(SiderustStatus::InvalidFrame),
+    }
+}
+
+/// Transform a Cartesian unit-vector direction from one frame to another.
+///
+/// The input (x, y, z) need not be normalised; the rotation preserves the
+/// vector length, so the output has the same magnitude as the input.
+///
+/// Supported source/target frames: ICRS, EclipticMeanJ2000, EquatorialMeanJ2000,
+/// EquatorialMeanOfDate, EquatorialTrueOfDate.
+#[no_mangle]
+pub extern "C" fn siderust_cartesian_dir_transform_frame(
+    x: f64,
+    y: f64,
+    z: f64,
+    src_frame: SiderustFrame,
+    dst_frame: SiderustFrame,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+
+    let dir = match make_cart_dir_in_frame(src_frame, x, y, z) {
+        Ok(d) => d,
+        Err(e) => return e,
+    };
+
+    let jd_val = JulianDate::new(jd);
+
+    let (ox, oy, oz) = match dst_frame {
+        SiderustFrame::ICRS => dir.to_icrs(&jd_val),
+        SiderustFrame::EclipticMeanJ2000 => dir.to_ecliptic_j2000(&jd_val),
+        SiderustFrame::EquatorialMeanJ2000 => dir.to_equatorial_j2000(&jd_val),
+        SiderustFrame::EquatorialMeanOfDate => dir.to_equatorial_mean_of_date(&jd_val),
+        SiderustFrame::EquatorialTrueOfDate => dir.to_equatorial_true_of_date(&jd_val),
+        _ => return SiderustStatus::InvalidFrame,
+    };
+
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: ox,
+            y: oy,
+            z: oz,
+            frame: dst_frame,
+            center: SiderustCenter::Barycentric, // directions have no center
+        };
+    }
+    SiderustStatus::Ok
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Cartesian Position — frame transforms
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Trait object proxy for Cartesian position frame transforms.
+///
+/// Works with a fixed internal unit (AU) for the rotation arithmetic;
+/// the result x/y/z are in the same implicit unit as the input.
+trait CartesianPosProxy {
+    fn to_icrs(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_ecliptic_j2000(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_equatorial_j2000(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_equatorial_true_of_date(&self, jd: &JulianDate) -> (f64, f64, f64);
+}
+
+/// Helper: extract raw (x, y, z) from a Cartesian position.
+#[inline]
+fn cart_pos_to_triple<F: siderust::coordinates::frames::ReferenceFrame>(
+    p: &cartesian::Position<Barycentric, F, AstronomicalUnit>,
+) -> (f64, f64, f64) {
+    (p.x().value(), p.y().value(), p.z().value())
+}
+
+macro_rules! impl_cart_pos_proxy {
+    ($frame_ty:ty) => {
+        impl CartesianPosProxy for cartesian::Position<Barycentric, $frame_ty, AstronomicalUnit> {
+            fn to_icrs(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                cart_pos_to_triple(&PositionAstroExt::to_frame::<ICRS>(self, jd))
+            }
+            fn to_ecliptic_j2000(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame(self, jd);
+                cart_pos_to_triple(&PositionAstroExt::to_frame::<EclipticMeanJ2000>(&icrs, jd))
+            }
+            fn to_equatorial_j2000(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame(self, jd);
+                cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialMeanJ2000>(&icrs, jd))
+            }
+            fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame(self, jd);
+                cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialMeanOfDate>(&icrs, jd))
+            }
+            fn to_equatorial_true_of_date(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame(self, jd);
+                cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialTrueOfDate>(&icrs, jd))
+            }
+        }
+    };
+}
+
+impl_cart_pos_proxy!(ICRS);
+impl_cart_pos_proxy!(EclipticMeanJ2000);
+impl_cart_pos_proxy!(EquatorialMeanJ2000);
+impl_cart_pos_proxy!(EquatorialMeanOfDate);
+impl_cart_pos_proxy!(EquatorialTrueOfDate);
+
+fn make_cart_pos_in_frame(
+    frame: SiderustFrame,
+    x: f64,
+    y: f64,
+    z: f64,
+) -> Result<Box<dyn CartesianPosProxy>, SiderustStatus> {
+    match frame {
+        SiderustFrame::ICRS => Ok(Box::new(
+            cartesian::Position::<Barycentric, ICRS, AstronomicalUnit>::new(x, y, z),
+        )),
+        SiderustFrame::EclipticMeanJ2000 => Ok(Box::new(
+            cartesian::Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(x, y, z),
+        )),
+        SiderustFrame::EquatorialMeanJ2000 => Ok(Box::new(
+            cartesian::Position::<Barycentric, EquatorialMeanJ2000, AstronomicalUnit>::new(x, y, z),
+        )),
+        SiderustFrame::EquatorialMeanOfDate => Ok(Box::new(
+            cartesian::Position::<Barycentric, EquatorialMeanOfDate, AstronomicalUnit>::new(x, y, z),
+        )),
+        SiderustFrame::EquatorialTrueOfDate => Ok(Box::new(
+            cartesian::Position::<Barycentric, EquatorialTrueOfDate, AstronomicalUnit>::new(x, y, z),
+        )),
+        _ => Err(SiderustStatus::InvalidFrame),
+    }
+}
+
+/// Transform a Cartesian position from one frame to another (frame-only, same center).
+///
+/// The rotation preserves the vector magnitude.  The `center` field of `pos`
+/// is copied unchanged to `out`.
+///
+/// Supported source/target frames: ICRS, EclipticMeanJ2000, EquatorialMeanJ2000,
+/// EquatorialMeanOfDate, EquatorialTrueOfDate.
+#[no_mangle]
+pub extern "C" fn siderust_cartesian_pos_transform_frame(
+    pos: SiderustCartesianPos,
+    dst_frame: SiderustFrame,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+
+    let proxy = match make_cart_pos_in_frame(pos.frame, pos.x, pos.y, pos.z) {
+        Ok(p) => p,
+        Err(e) => return e,
+    };
+
+    let jd_val = JulianDate::new(jd);
+
+    let (ox, oy, oz) = match dst_frame {
+        SiderustFrame::ICRS => proxy.to_icrs(&jd_val),
+        SiderustFrame::EclipticMeanJ2000 => proxy.to_ecliptic_j2000(&jd_val),
+        SiderustFrame::EquatorialMeanJ2000 => proxy.to_equatorial_j2000(&jd_val),
+        SiderustFrame::EquatorialMeanOfDate => proxy.to_equatorial_mean_of_date(&jd_val),
+        SiderustFrame::EquatorialTrueOfDate => proxy.to_equatorial_true_of_date(&jd_val),
+        _ => return SiderustStatus::InvalidFrame,
+    };
+
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: ox,
+            y: oy,
+            z: oz,
+            frame: dst_frame,
+            center: pos.center, // center is unchanged for a frame-only transform
         };
     }
     SiderustStatus::Ok
