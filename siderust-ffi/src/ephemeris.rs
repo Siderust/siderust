@@ -5,7 +5,7 @@
 
 use crate::error::SiderustStatus;
 use crate::types::*;
-use siderust::bodies::solar_system::{Mars, Venus};
+use siderust::bodies::solar_system::{Jupiter, Mars, Mercury, Neptune, Saturn, Uranus, Venus};
 use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::time::JulianDate;
 
@@ -148,6 +148,151 @@ pub extern "C" fn siderust_vsop87_venus_heliocentric(
             center: SiderustCenter::Heliocentric,
         };
     }
+    SiderustStatus::Ok
+}
+
+// ── Remaining-planet VSOP87 helpers ─────────────────────────────────────────
+
+/// Get Mercury's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_mercury_heliocentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Mercury::vsop87a(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric }; }
+    SiderustStatus::Ok
+}
+
+/// Get Mercury's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_mercury_barycentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Mercury::vsop87e(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric }; }
+    SiderustStatus::Ok
+}
+
+/// Venus barycentric VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_venus_barycentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Venus::vsop87e(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric }; }
+    SiderustStatus::Ok
+}
+
+/// Get Jupiter's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_jupiter_heliocentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Jupiter::vsop87a(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric }; }
+    SiderustStatus::Ok
+}
+
+/// Get Jupiter's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_jupiter_barycentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Jupiter::vsop87e(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric }; }
+    SiderustStatus::Ok
+}
+
+/// Get Saturn's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_saturn_heliocentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Saturn::vsop87a(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric }; }
+    SiderustStatus::Ok
+}
+
+/// Get Saturn's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_saturn_barycentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Saturn::vsop87e(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric }; }
+    SiderustStatus::Ok
+}
+
+/// Get Uranus's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_uranus_heliocentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Uranus::vsop87a(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric }; }
+    SiderustStatus::Ok
+}
+
+/// Get Uranus's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_uranus_barycentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Uranus::vsop87e(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric }; }
+    SiderustStatus::Ok
+}
+
+/// Get Neptune's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_neptune_heliocentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Neptune::vsop87a(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Heliocentric }; }
+    SiderustStatus::Ok
+}
+
+/// Get Neptune's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_neptune_barycentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() { return SiderustStatus::NullPointer; }
+    let t = JulianDate::new(jd);
+    let pos = Neptune::vsop87e(t);
+    unsafe { *out = SiderustCartesianPos { x: pos.x().value(), y: pos.y().value(), z: pos.z().value(), frame: SiderustFrame::EclipticMeanJ2000, center: SiderustCenter::Barycentric }; }
     SiderustStatus::Ok
 }
 
