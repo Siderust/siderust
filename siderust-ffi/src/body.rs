@@ -4,22 +4,13 @@
 //! FFI bindings for **generic body dispatch**: altitude, azimuth, crossings,
 //! and culminations for any solar-system body identified by [`SiderustBody`].
 //!
-//! This module provides a single set of `siderust_body_*` functions that accept
-//! a [`SiderustBody`] discriminant and dispatch to the appropriate concrete
-//! implementation (Sun, Moon, or VSOP87 planet).
+//! Every function here is a thin wrapper that constructs a
+//! [`SiderustSubject::body`] and delegates to the corresponding unified
+//! function in [`crate::subject`].
 
-use crate::altitude::{crossings_to_c, culminations_to_c, periods_to_c, window_from_c};
-use crate::azimuth::{vec_az_crossings_to_c, vec_az_extrema_to_c};
 use crate::error::SiderustStatus;
 use crate::types::*;
-use qtty::*;
-use siderust::calculus::azimuth::{azimuth_crossings, azimuth_extrema, in_azimuth_range};
-use siderust::AltitudePeriodsProvider;
-use siderust::AzimuthProvider;
-use tempoch::ModifiedJulianDate;
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Dispatch helper — see `dispatch_body!` in `ffi_utils.rs`.
 // ═══════════════════════════════════════════════════════════════════════════
 // Altitude
 // ═══════════════════════════════════════════════════════════════════════════
@@ -32,19 +23,7 @@ pub extern "C" fn siderust_body_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if out_rad.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        dispatch_body!(body, |b| {
-            unsafe {
-                *out_rad = b
-                    .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                    .value();
-            }
-            SiderustStatus::Ok
-        })
-    }}
+    crate::subject::siderust_altitude_at(SiderustSubject::body(body), observer, mjd, out_rad)
 }
 
 /// Periods when a solar-system body is above a threshold altitude.
@@ -58,25 +37,15 @@ pub extern "C" fn siderust_body_above_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_body!(body, |b| {
-            periods_to_c(
-                siderust::above_threshold(
-                    &b,
-                    &observer.to_rust(),
-                    window,
-                    Degrees::new(threshold_deg),
-                    opts.to_rust(),
-                ),
-                out,
-                count,
-            )
-        })
-    }}
+    crate::subject::siderust_above_threshold(
+        SiderustSubject::body(body),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Periods when a solar-system body is below a threshold altitude.
@@ -90,25 +59,15 @@ pub extern "C" fn siderust_body_below_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_body!(body, |b| {
-            periods_to_c(
-                siderust::below_threshold(
-                    &b,
-                    &observer.to_rust(),
-                    window,
-                    Degrees::new(threshold_deg),
-                    opts.to_rust(),
-                ),
-                out,
-                count,
-            )
-        })
-    }}
+    crate::subject::siderust_below_threshold(
+        SiderustSubject::body(body),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Threshold-crossing events for a solar-system body.
@@ -122,25 +81,15 @@ pub extern "C" fn siderust_body_crossings(
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_body!(body, |b| {
-            crossings_to_c(
-                siderust::crossings(
-                    &b,
-                    &observer.to_rust(),
-                    window,
-                    Degrees::new(threshold_deg),
-                    opts.to_rust(),
-                ),
-                out,
-                count,
-            )
-        })
-    }}
+    crate::subject::siderust_crossings(
+        SiderustSubject::body(body),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Culmination (local extrema) events for a solar-system body.
@@ -153,19 +102,14 @@ pub extern "C" fn siderust_body_culminations(
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_body!(body, |b| {
-            culminations_to_c(
-                siderust::culminations(&b, &observer.to_rust(), window, opts.to_rust()),
-                out,
-                count,
-            )
-        })
-    }}
+    crate::subject::siderust_culminations(
+        SiderustSubject::body(body),
+        observer,
+        window,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Periods when a solar-system body's altitude is within [min, max].
@@ -176,12 +120,7 @@ pub extern "C" fn siderust_body_altitude_periods(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let q = query.to_rust();
-        dispatch_body!(body, |b| {
-            periods_to_c(b.altitude_periods(&q), out, count)
-        })
-    }}
+    crate::subject::siderust_altitude_periods(SiderustSubject::body(body), query, out, count)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -196,19 +135,7 @@ pub extern "C" fn siderust_body_azimuth_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if out_rad.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        dispatch_body!(body, |b| {
-            unsafe {
-                *out_rad = b
-                    .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                    .value();
-            }
-            SiderustStatus::Ok
-        })
-    }}
+    crate::subject::siderust_azimuth_at(SiderustSubject::body(body), observer, mjd, out_rad)
 }
 
 /// Azimuth bearing-crossing events for a solar-system body.
@@ -222,25 +149,15 @@ pub extern "C" fn siderust_body_azimuth_crossings(
     out: *mut *mut SiderustAzimuthCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_body!(body, |b| {
-            vec_az_crossings_to_c(
-                azimuth_crossings(
-                    &b,
-                    &observer.to_rust(),
-                    window,
-                    Degrees::new(bearing_deg),
-                    opts.to_rust(),
-                ),
-                out,
-                count,
-            )
-        })
-    }}
+    crate::subject::siderust_azimuth_crossings(
+        SiderustSubject::body(body),
+        observer,
+        window,
+        bearing_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Azimuth extrema (northernmost and southernmost bearing) for a body.
@@ -253,19 +170,14 @@ pub extern "C" fn siderust_body_azimuth_extrema(
     out: *mut *mut SiderustAzimuthExtremum,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_body!(body, |b| {
-            vec_az_extrema_to_c(
-                azimuth_extrema(&b, &observer.to_rust(), window, opts.to_rust()),
-                out,
-                count,
-            )
-        })
-    }}
+    crate::subject::siderust_azimuth_extrema(
+        SiderustSubject::body(body),
+        observer,
+        window,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Periods when a body's azimuth is within [min_deg, max_deg].
@@ -280,26 +192,16 @@ pub extern "C" fn siderust_body_in_azimuth_range(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_body!(body, |b| {
-            periods_to_c(
-                in_azimuth_range(
-                    &b,
-                    &observer.to_rust(),
-                    window,
-                    Degrees::new(min_deg),
-                    Degrees::new(max_deg),
-                    opts.to_rust(),
-                ),
-                out,
-                count,
-            )
-        })
-    }}
+    crate::subject::siderust_in_azimuth_range(
+        SiderustSubject::body(body),
+        observer,
+        window,
+        min_deg,
+        max_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -309,30 +211,8 @@ pub extern "C" fn siderust_body_in_azimuth_range(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_helpers::*;
     use std::ptr;
-
-    fn paris() -> SiderustGeodetict {
-        SiderustGeodetict {
-            lon_deg: 2.35,
-            lat_deg: 48.85,
-            height_m: 35.0,
-        }
-    }
-
-    fn one_day_window() -> TempochPeriodMjd {
-        TempochPeriodMjd {
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-        }
-    }
-
-    fn default_opts() -> SiderustSearchOpts {
-        SiderustSearchOpts {
-            time_tolerance_days: 1e-9,
-            scan_step_days: 0.0,
-            has_scan_step: false,
-        }
-    }
 
     #[test]
     fn body_altitude_at_sun_is_finite() {

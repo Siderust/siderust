@@ -611,9 +611,9 @@ fn shift_center_xyz(x: f64, y: f64, z: f64, from: u8, to: u8, jd: f64) -> (f64, 
 /// Map SiderustCenter enum values to the internal shift_center_xyz codes.
 fn center_to_shift_code(c: SiderustCenter) -> Option<u8> {
     match c {
-        SiderustCenter::Barycentric  => Some(0),
+        SiderustCenter::Barycentric => Some(0),
         SiderustCenter::Heliocentric => Some(1),
-        SiderustCenter::Geocentric   => Some(2),
+        SiderustCenter::Geocentric => Some(2),
         _ => None,
     }
 }

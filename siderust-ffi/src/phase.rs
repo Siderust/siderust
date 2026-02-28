@@ -240,28 +240,13 @@ pub extern "C" fn siderust_moon_illumination_range(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_helpers::*;
     use std::ptr;
 
     fn one_month() -> TempochPeriodMjd {
         TempochPeriodMjd {
             start_mjd: 60000.0,
             end_mjd: 60030.0,
-        }
-    }
-
-    fn default_opts() -> SiderustSearchOpts {
-        SiderustSearchOpts {
-            time_tolerance_days: 1e-9,
-            scan_step_days: 0.0,
-            has_scan_step: false,
-        }
-    }
-
-    fn paris() -> SiderustGeodetict {
-        SiderustGeodetict {
-            lon_deg: 2.35,
-            lat_deg: 48.85,
-            height_m: 35.0,
         }
     }
 

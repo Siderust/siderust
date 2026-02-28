@@ -337,31 +337,9 @@ mod tests {
     use super::*;
     use crate::bodies::SiderustStar;
     use crate::target::SiderustTarget;
+    use crate::test_helpers::*;
     use std::ffi::CString;
     use std::ptr;
-
-    fn paris() -> SiderustGeodetict {
-        SiderustGeodetict {
-            lon_deg: 2.35,
-            lat_deg: 48.85,
-            height_m: 35.0,
-        }
-    }
-
-    fn one_day_window() -> TempochPeriodMjd {
-        TempochPeriodMjd {
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-        }
-    }
-
-    fn default_opts() -> SiderustSearchOpts {
-        SiderustSearchOpts {
-            time_tolerance_days: 1e-9,
-            scan_step_days: 0.0,
-            has_scan_step: false,
-        }
-    }
 
     // ── Subject constructors ──────────────────────────────────────────────
 
@@ -370,7 +348,11 @@ mod tests {
             kind: SiderustSubjectKind::Body,
             body: SiderustBody::Sun,
             star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir { polar_deg: 0.0, azimuth_deg: 0.0, frame: SiderustFrame::ICRS },
+            icrs_dir: SiderustSphericalDir {
+                polar_deg: 0.0,
+                azimuth_deg: 0.0,
+                frame: SiderustFrame::ICRS,
+            },
             target_handle: ptr::null(),
         }
     }
@@ -380,7 +362,11 @@ mod tests {
             kind: SiderustSubjectKind::Body,
             body: SiderustBody::Moon,
             star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir { polar_deg: 0.0, azimuth_deg: 0.0, frame: SiderustFrame::ICRS },
+            icrs_dir: SiderustSphericalDir {
+                polar_deg: 0.0,
+                azimuth_deg: 0.0,
+                frame: SiderustFrame::ICRS,
+            },
             target_handle: ptr::null(),
         }
     }
@@ -390,7 +376,11 @@ mod tests {
             kind: SiderustSubjectKind::Body,
             body: SiderustBody::Mars,
             star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir { polar_deg: 0.0, azimuth_deg: 0.0, frame: SiderustFrame::ICRS },
+            icrs_dir: SiderustSphericalDir {
+                polar_deg: 0.0,
+                azimuth_deg: 0.0,
+                frame: SiderustFrame::ICRS,
+            },
             target_handle: ptr::null(),
         }
     }
@@ -404,7 +394,11 @@ mod tests {
             kind: SiderustSubjectKind::Star,
             body: SiderustBody::Sun, // unused
             star_handle: handle,
-            icrs_dir: SiderustSphericalDir { polar_deg: 0.0, azimuth_deg: 0.0, frame: SiderustFrame::ICRS },
+            icrs_dir: SiderustSphericalDir {
+                polar_deg: 0.0,
+                azimuth_deg: 0.0,
+                frame: SiderustFrame::ICRS,
+            },
             target_handle: ptr::null(),
         };
         (handle, subject)
@@ -432,7 +426,11 @@ mod tests {
             kind: SiderustSubjectKind::Target,
             body: SiderustBody::Sun, // unused
             star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir { polar_deg: 0.0, azimuth_deg: 0.0, frame: SiderustFrame::ICRS },
+            icrs_dir: SiderustSphericalDir {
+                polar_deg: 0.0,
+                azimuth_deg: 0.0,
+                frame: SiderustFrame::ICRS,
+            },
             target_handle: handle,
         };
         (handle, subject)
@@ -504,7 +502,11 @@ mod tests {
             kind: SiderustSubjectKind::Star,
             body: SiderustBody::Sun,
             star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir { polar_deg: 0.0, azimuth_deg: 0.0, frame: SiderustFrame::ICRS },
+            icrs_dir: SiderustSphericalDir {
+                polar_deg: 0.0,
+                azimuth_deg: 0.0,
+                frame: SiderustFrame::ICRS,
+            },
             target_handle: ptr::null(),
         };
         let mut out = 0.0f64;
@@ -519,8 +521,13 @@ mod tests {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_above_threshold(
-            sun_subject(), paris(), one_day_window(), 0.0, default_opts(),
-            &mut out, &mut count,
+            sun_subject(),
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         assert!(count > 0);
@@ -533,8 +540,13 @@ mod tests {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_above_threshold(
-            subj, paris(), one_day_window(), 0.0, default_opts(),
-            &mut out, &mut count,
+            subj,
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_periods_free(out, count) };
@@ -546,8 +558,13 @@ mod tests {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_above_threshold(
-            icrs_vega_subject(), paris(), one_day_window(), 0.0, default_opts(),
-            &mut out, &mut count,
+            icrs_vega_subject(),
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_periods_free(out, count) };
@@ -559,8 +576,13 @@ mod tests {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_above_threshold(
-            subj, paris(), one_day_window(), 0.0, default_opts(),
-            &mut out, &mut count,
+            subj,
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_periods_free(out, count) };
@@ -574,8 +596,13 @@ mod tests {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_below_threshold(
-            sun_subject(), paris(), one_day_window(), 0.0, default_opts(),
-            &mut out, &mut count,
+            sun_subject(),
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         assert!(count > 0);
@@ -589,8 +616,13 @@ mod tests {
         let mut out: *mut SiderustCrossingEvent = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_crossings(
-            sun_subject(), paris(), one_day_window(), 0.0, default_opts(),
-            &mut out, &mut count,
+            sun_subject(),
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_crossings_free(out, count) };
@@ -602,8 +634,13 @@ mod tests {
         let mut out: *mut SiderustCrossingEvent = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_crossings(
-            subj, paris(), one_day_window(), 0.0, default_opts(),
-            &mut out, &mut count,
+            subj,
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_crossings_free(out, count) };
@@ -617,8 +654,12 @@ mod tests {
         let mut out: *mut SiderustCulminationEvent = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_culminations(
-            sun_subject(), paris(), one_day_window(), default_opts(),
-            &mut out, &mut count,
+            sun_subject(),
+            paris(),
+            one_day_window(),
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_culminations_free(out, count) };
@@ -630,8 +671,12 @@ mod tests {
         let mut out: *mut SiderustCulminationEvent = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_culminations(
-            subj, paris(), one_day_window(), default_opts(),
-            &mut out, &mut count,
+            subj,
+            paris(),
+            one_day_window(),
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_culminations_free(out, count) };
@@ -718,8 +763,13 @@ mod tests {
         let mut out: *mut SiderustAzimuthCrossingEvent = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_azimuth_crossings(
-            sun_subject(), paris(), one_day_window(), 180.0, default_opts(),
-            &mut out, &mut count,
+            sun_subject(),
+            paris(),
+            one_day_window(),
+            180.0,
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::azimuth::siderust_azimuth_crossings_free(out, count) };
@@ -732,8 +782,12 @@ mod tests {
         let mut out: *mut SiderustAzimuthExtremum = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_azimuth_extrema(
-            sun_subject(), paris(), one_day_window(), default_opts(),
-            &mut out, &mut count,
+            sun_subject(),
+            paris(),
+            one_day_window(),
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::azimuth::siderust_azimuth_extrema_free(out, count) };
@@ -746,8 +800,14 @@ mod tests {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_in_azimuth_range(
-            sun_subject(), paris(), one_day_window(), 90.0, 270.0, default_opts(),
-            &mut out, &mut count,
+            sun_subject(),
+            paris(),
+            one_day_window(),
+            90.0,
+            270.0,
+            default_opts(),
+            &mut out,
+            &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_periods_free(out, count) };

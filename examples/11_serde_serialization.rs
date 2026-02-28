@@ -24,8 +24,7 @@ struct TimeBundle {
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CoordinateBundle {
-    geo_icrs_cart:
-        cartesian::Position<centers::Geocentric, frames::ICRS, Kilometer>,
+    geo_icrs_cart: cartesian::Position<centers::Geocentric, frames::ICRS, Kilometer>,
     helio_ecl_sph:
         spherical::Position<centers::Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit>,
     observer_site: centers::Geodetic<frames::ECEF>,
@@ -43,8 +42,9 @@ struct BodySnapshot {
 #[derive(Debug, Serialize, Deserialize)]
 struct BodyTargetsBundle {
     // Mars `Trackable` output is already a CoordinateWithPM<...>, i.e. Target<...>.
-    mars_bary_target:
-        Target<cartesian::Position<centers::Barycentric, frames::EclipticMeanJ2000, AstronomicalUnit>>,
+    mars_bary_target: Target<
+        cartesian::Position<centers::Barycentric, frames::EclipticMeanJ2000, AstronomicalUnit>,
+    >,
     // Moon does not return CoordinateWithPM from `track`, so we wrap a snapshot.
     moon_geo_target:
         Target<cartesian::Position<centers::Geocentric, frames::EclipticMeanJ2000, Kilometer>>,
@@ -94,22 +94,23 @@ fn main() {
     println!("---------------------");
 
     let coords = CoordinateBundle {
-        geo_icrs_cart:
-            cartesian::Position::<centers::Geocentric, frames::ICRS, Kilometer>::new(
-                6371.0, 0.0, 0.0,
-            ),
-        helio_ecl_sph:
-            spherical::Position::<centers::Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit>::new_raw(
-                Degrees::new(5.0),   // lat
-                Degrees::new(120.0), // lon
-                AstronomicalUnits::new(1.2),
-            ),
-        observer_site:
-            centers::Geodetic::<frames::ECEF>::new(
-                Degrees::new(-17.8947), // lon
-                Degrees::new(28.7636),  // lat
-                Meters::new(2396.0),    // height
-            ),
+        geo_icrs_cart: cartesian::Position::<centers::Geocentric, frames::ICRS, Kilometer>::new(
+            6371.0, 0.0, 0.0,
+        ),
+        helio_ecl_sph: spherical::Position::<
+            centers::Heliocentric,
+            frames::EclipticMeanJ2000,
+            AstronomicalUnit,
+        >::new_raw(
+            Degrees::new(5.0),   // lat
+            Degrees::new(120.0), // lon
+            AstronomicalUnits::new(1.2),
+        ),
+        observer_site: centers::Geodetic::<frames::ECEF>::new(
+            Degrees::new(-17.8947), // lon
+            Degrees::new(28.7636),  // lat
+            Meters::new(2396.0),    // height
+        ),
     };
     println!("{}", pretty_json(&coords));
 
