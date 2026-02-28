@@ -65,6 +65,11 @@ enum siderust_status_t
   SIDERUST_STATUS_T_ALLOCATION_FAILED = 8,
   // One or more arguments are out of range or otherwise invalid.
   SIDERUST_STATUS_T_INVALID_ARGUMENT = 9,
+  // A Rust panic was caught at the FFI boundary.
+  //
+  // This should never happen in normal operation; it indicates a bug in the
+  // underlying library.  The panic payload is discarded.
+  SIDERUST_STATUS_T_INTERNAL_PANIC = 10,
 };
 #ifndef __cplusplus
 typedef int32_t siderust_status_t;
@@ -194,6 +199,25 @@ enum siderust_moon_phase_label_t
 };
 #ifndef __cplusplus
 typedef int32_t siderust_moon_phase_label_t;
+#endif // __cplusplus
+
+// Subject kind discriminant for [`SiderustSubject`].
+enum siderust_subject_kind_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Solar-system body (the `body` field is valid).
+  SIDERUST_SUBJECT_KIND_T_BODY = 0,
+  // Star opaque handle (the `star_handle` field is valid).
+  SIDERUST_SUBJECT_KIND_T_STAR = 1,
+  // Fixed ICRS direction (the `icrs_dir` field is valid).
+  SIDERUST_SUBJECT_KIND_T_ICRS = 2,
+  // Target opaque handle (the `target_handle` field is valid).
+  SIDERUST_SUBJECT_KIND_T_TARGET = 3,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_subject_kind_t;
 #endif // __cplusplus
 
 // Opaque handle to a Star. Created via `siderust_star_*` functions, freed
@@ -354,6 +378,33 @@ typedef struct siderust_moon_phase_geometry_t {
   uint8_t waxing;
   uint8_t _pad[7];
 } siderust_moon_phase_geometry_t;
+
+// Unified subject for altitude / azimuth / tracking computations.
+//
+// A tagged struct that can represent any entity on which altitude and
+// azimuth queries can be performed: solar-system bodies, catalog stars,
+// fixed ICRS directions, or opaque Target handles.
+//
+// Only the field corresponding to `kind` is valid:
+//
+// | `kind`   | Valid field(s)         |
+// |----------|-----------------------|
+// | `Body`   | `body`                |
+// | `Star`   | `star_handle`         |
+// | `Icrs`   | `icrs_dir`            |
+// | `Target` | `target_handle`       |
+typedef struct siderust_subject_t {
+  // Discriminant selecting which field is active.
+  siderust_subject_kind_t kind;
+  // Solar-system body discriminant.  Valid when `kind == Body`.
+  SiderustBody body;
+  // Opaque star handle (non-null).  Valid when `kind == Star`.
+  const struct SiderustStar *star_handle;
+  // ICRS spherical direction.  Valid when `kind == Icrs`.
+  struct siderust_spherical_dir_t icrs_dir;
+  // Opaque target handle (non-null).  Valid when `kind == Target`.
+  const struct SiderustTarget *target_handle;
+} siderust_subject_t;
 
 #ifdef __cplusplus
 extern "C" {
@@ -1107,6 +1158,99 @@ siderust_status_t siderust_moon_illumination_range(tempoch_period_mjd_t window,
                                                    struct siderust_search_opts_t opts,
                                                    tempoch_period_mjd_t **out,
                                                    uintptr_t *count);
+
+// Altitude of any subject at an instant (radians).
+
+siderust_status_t siderust_altitude_at(struct siderust_subject_t subject,
+                                       struct siderust_geodetic_t observer,
+                                       double mjd,
+                                       double *out_rad);
+
+// Periods when a subject is above a threshold altitude.
+
+siderust_status_t siderust_above_threshold(struct siderust_subject_t subject,
+                                           struct siderust_geodetic_t observer,
+                                           tempoch_period_mjd_t window,
+                                           double threshold_deg,
+                                           struct siderust_search_opts_t opts,
+                                           tempoch_period_mjd_t **out,
+                                           uintptr_t *count);
+
+// Periods when a subject is below a threshold altitude.
+
+siderust_status_t siderust_below_threshold(struct siderust_subject_t subject,
+                                           struct siderust_geodetic_t observer,
+                                           tempoch_period_mjd_t window,
+                                           double threshold_deg,
+                                           struct siderust_search_opts_t opts,
+                                           tempoch_period_mjd_t **out,
+                                           uintptr_t *count);
+
+// Threshold-crossing events for a subject.
+
+siderust_status_t siderust_crossings(struct siderust_subject_t subject,
+                                     struct siderust_geodetic_t observer,
+                                     tempoch_period_mjd_t window,
+                                     double threshold_deg,
+                                     struct siderust_search_opts_t opts,
+                                     struct siderust_crossing_event_t **out,
+                                     uintptr_t *count);
+
+// Culmination (local extrema) events for a subject.
+
+siderust_status_t siderust_culminations(struct siderust_subject_t subject,
+                                        struct siderust_geodetic_t observer,
+                                        tempoch_period_mjd_t window,
+                                        struct siderust_search_opts_t opts,
+                                        struct siderust_culmination_event_t **out,
+                                        uintptr_t *count);
+
+// Periods when a body's altitude is within [min, max].
+//
+// Only `Body` subjects support this operation.  For `Star`, `Icrs`, and
+// `Target`, `SIDERUST_STATUS_T_INVALID_ARGUMENT` is returned.
+
+siderust_status_t siderust_altitude_periods(struct siderust_subject_t subject,
+                                            struct siderust_altitude_query_t query,
+                                            tempoch_period_mjd_t **out,
+                                            uintptr_t *count);
+
+// Azimuth of any subject at an instant (degrees, North-clockwise).
+
+siderust_status_t siderust_azimuth_at(struct siderust_subject_t subject,
+                                      struct siderust_geodetic_t observer,
+                                      double mjd,
+                                      double *out_deg);
+
+// Azimuth bearing-crossing events for a subject.
+
+siderust_status_t siderust_azimuth_crossings(struct siderust_subject_t subject,
+                                             struct siderust_geodetic_t observer,
+                                             tempoch_period_mjd_t window,
+                                             double bearing_deg,
+                                             struct siderust_search_opts_t opts,
+                                             struct siderust_azimuth_crossing_event_t **out,
+                                             uintptr_t *count);
+
+// Azimuth extrema (northernmost / southernmost bearing) for a subject.
+
+siderust_status_t siderust_azimuth_extrema(struct siderust_subject_t subject,
+                                           struct siderust_geodetic_t observer,
+                                           tempoch_period_mjd_t window,
+                                           struct siderust_search_opts_t opts,
+                                           struct siderust_azimuth_extremum_t **out,
+                                           uintptr_t *count);
+
+// Periods when a subject's azimuth is within [min_deg, max_deg].
+
+siderust_status_t siderust_in_azimuth_range(struct siderust_subject_t subject,
+                                            struct siderust_geodetic_t observer,
+                                            tempoch_period_mjd_t window,
+                                            double min_deg,
+                                            double max_deg,
+                                            struct siderust_search_opts_t opts,
+                                            tempoch_period_mjd_t **out,
+                                            uintptr_t *count);
 
 // Create a new target from right ascension and declination (degrees) and epoch
 // (Julian Date).
