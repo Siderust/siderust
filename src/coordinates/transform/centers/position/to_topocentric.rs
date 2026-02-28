@@ -96,7 +96,7 @@ where
     ///     384_400.0, 0.0, 0.0
     /// );
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
-    /// let moon_topo = moon_geo.to_center((site, JulianDate::J2000));
+    /// let moon_topo: Position<Topocentric, EquatorialMeanJ2000, Kilometer> = moon_geo.to_center((site, JulianDate::J2000));
     /// ```
     fn to_center_with(
         &self,
