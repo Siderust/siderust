@@ -977,6 +977,61 @@ siderust_status_t siderust_vsop87_mars_barycentric(double jd,
 siderust_status_t siderust_vsop87_venus_heliocentric(double jd,
                                                      struct siderust_cartesian_pos_t *out);
 
+// Get Mercury's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_mercury_heliocentric(double jd,
+                                                       struct siderust_cartesian_pos_t *out);
+
+// Get Mercury's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_mercury_barycentric(double jd,
+                                                      struct siderust_cartesian_pos_t *out);
+
+// Venus barycentric VSOP87.
+
+siderust_status_t siderust_vsop87_venus_barycentric(double jd,
+                                                    struct siderust_cartesian_pos_t *out);
+
+// Get Jupiter's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_jupiter_heliocentric(double jd,
+                                                       struct siderust_cartesian_pos_t *out);
+
+// Get Jupiter's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_jupiter_barycentric(double jd,
+                                                      struct siderust_cartesian_pos_t *out);
+
+// Get Saturn's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_saturn_heliocentric(double jd,
+                                                      struct siderust_cartesian_pos_t *out);
+
+// Get Saturn's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_saturn_barycentric(double jd,
+                                                     struct siderust_cartesian_pos_t *out);
+
+// Get Uranus's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_uranus_heliocentric(double jd,
+                                                      struct siderust_cartesian_pos_t *out);
+
+// Get Uranus's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_uranus_barycentric(double jd,
+                                                     struct siderust_cartesian_pos_t *out);
+
+// Get Neptune's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_neptune_heliocentric(double jd,
+                                                       struct siderust_cartesian_pos_t *out);
+
+// Get Neptune's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_neptune_barycentric(double jd,
+                                                      struct siderust_cartesian_pos_t *out);
+
 // Get the Moon's geocentric position (EclipticMeanJ2000, km) via ELP2000.
  siderust_status_t siderust_vsop87_moon_geocentric(double jd, struct siderust_cartesian_pos_t *out);
 
