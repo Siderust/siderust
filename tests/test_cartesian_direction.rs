@@ -36,8 +36,9 @@ fn direction_display_includes_frame_and_components() {
     let dir = Direction::<EclipticMeanJ2000>::normalize(1.0, 2.0, 2.0);
     let formatted = dir.display();
     // Direction no longer has center, only frame
+    // Display uses full f64 precision, e.g. 0.3333333333333333
     assert!(formatted.starts_with("Frame: EclipticMeanJ2000"));
-    assert!(formatted.contains("X: 0.333333"));
-    assert!(formatted.contains("Y: 0.666667"));
-    assert!(formatted.contains("Z: 0.666667"));
+    assert!(formatted.contains("X: 0.3333333333333333"));
+    assert!(formatted.contains("Y: 0.6666666666666666"));
+    assert!(formatted.contains("Z: 0.6666666666666666"));
 }
