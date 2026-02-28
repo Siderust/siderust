@@ -63,18 +63,12 @@ fn section_trackable_objects(jd: JulianDate, jd_next: JulianDate) {
     let mars = Mars.track(jd);
     let moon = Moon.track(jd);
 
-    println!(
-        "  Sun barycentric distance: {:.6}",
-        sun.position.distance()
-    );
+    println!("  Sun barycentric distance: {:.6}", sun.position.distance());
     println!(
         "  Mars barycentric distance: {:.6}",
         mars.position.distance()
     );
-    println!(
-        "  Moon geocentric distance: {:.1}\n",
-        moon.distance()
-    );
+    println!("  Moon geocentric distance: {:.1}\n", moon.distance());
 }
 
 fn section_target_snapshots(jd: JulianDate, jd_next: JulianDate) {
@@ -139,8 +133,11 @@ fn section_target_with_proper_motion(jd: JulianDate) {
         MasPerYearQ::new(10.86), // µδ
     );
 
-    let mut moving_target =
-        Target::new(*catalog::BETELGEUSE.coordinate.get_position(), jd, pm.clone());
+    let mut moving_target = Target::new(
+        *catalog::BETELGEUSE.coordinate.get_position(),
+        jd,
+        pm.clone(),
+    );
 
     println!(
         "  Betelgeuse-like target at J2000: RA {:.6}, Dec {:.6}",

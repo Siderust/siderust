@@ -4,20 +4,12 @@
 //! Target FFI — opaque handle for an ICRS celestial target.
 //!
 //! A `SiderustTarget` wraps an ICRS direction (RA/Dec) and exposes altitude
-//! and azimuth queries using the same algorithms as the `icrs_*` family.
+//! and azimuth queries by delegating to the unified [`crate::subject`] module.
 
-use crate::altitude::{crossings_to_c, culminations_to_c, periods_to_c, window_from_c};
-use crate::azimuth::vec_az_crossings_to_c;
 use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::*;
-use siderust::calculus::altitude::{
-    above_threshold, crossings, culminations, AltitudePeriodsProvider,
-};
-use siderust::calculus::azimuth::azimuth_crossings;
 use siderust::coordinates::spherical;
-use siderust::time::ModifiedJulianDate;
-use siderust::AzimuthProvider;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Opaque handle
@@ -124,7 +116,7 @@ pub extern "C" fn siderust_target_epoch_jd(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Altitude
+// Altitude  — thin wrappers
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of the target (radians).
@@ -135,18 +127,7 @@ pub extern "C" fn siderust_target_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() || out_rad.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let dir = unsafe { &(*handle).dir };
-        unsafe {
-            *out_rad = dir
-                .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                .value();
-        }
-        SiderustStatus::Ok
-    }}
+    crate::subject::siderust_altitude_at(SiderustSubject::target(handle), observer, mjd, out_rad)
 }
 
 /// Periods when the target is above `threshold_deg`.
@@ -160,27 +141,37 @@ pub extern "C" fn siderust_target_above_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        let dir = unsafe { &(*handle).dir };
-        periods_to_c(
-            above_threshold(
-                dir,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_above_threshold(
+        SiderustSubject::target(handle),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
+}
+
+/// Periods when the target is below `threshold_deg`.
+#[no_mangle]
+pub extern "C" fn siderust_target_below_threshold(
+    handle: *const SiderustTarget,
+    observer: SiderustGeodetict,
+    window: TempochPeriodMjd,
+    threshold_deg: f64,
+    opts: SiderustSearchOpts,
+    out: *mut *mut TempochPeriodMjd,
+    count: *mut usize,
+) -> SiderustStatus {
+    crate::subject::siderust_below_threshold(
+        SiderustSubject::target(handle),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Altitude crossing events for the target.
@@ -194,27 +185,15 @@ pub extern "C" fn siderust_target_crossings(
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        let dir = unsafe { &(*handle).dir };
-        crossings_to_c(
-            crossings(
-                dir,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_crossings(
+        SiderustSubject::target(handle),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Culmination events for the target.
@@ -227,25 +206,18 @@ pub extern "C" fn siderust_target_culminations(
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        let dir = unsafe { &(*handle).dir };
-        culminations_to_c(
-            culminations(dir, &observer.to_rust(), window, opts.to_rust()),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_culminations(
+        SiderustSubject::target(handle),
+        observer,
+        window,
+        opts,
+        out,
+        count,
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Azimuth
+// Azimuth  — thin wrappers
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Azimuth of the target (degrees, North-clockwise).
@@ -256,18 +228,7 @@ pub extern "C" fn siderust_target_azimuth_at(
     mjd: f64,
     out_deg: *mut f64,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() || out_deg.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let dir = unsafe { &(*handle).dir };
-        unsafe {
-            *out_deg = dir
-                .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                .value();
-        }
-        SiderustStatus::Ok
-    }}
+    crate::subject::siderust_azimuth_at(SiderustSubject::target(handle), observer, mjd, out_deg)
 }
 
 /// Azimuth bearing-crossing events for the target.
@@ -281,32 +242,21 @@ pub extern "C" fn siderust_target_azimuth_crossings(
     out: *mut *mut SiderustAzimuthCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        let dir = unsafe { &(*handle).dir };
-        vec_az_crossings_to_c(
-            azimuth_crossings(
-                dir,
-                &observer.to_rust(),
-                window,
-                Degrees::new(bearing_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_azimuth_crossings(
+        SiderustSubject::target(handle),
+        observer,
+        window,
+        bearing_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::test_helpers::*;
     use std::ptr;
 
     // Vega: RA = 279.23°, Dec = 38.78° (approximate)
@@ -318,29 +268,6 @@ mod tests {
         );
         assert!(!h.is_null());
         h
-    }
-
-    fn paris() -> SiderustGeodetict {
-        SiderustGeodetict {
-            lon_deg: 2.35,
-            lat_deg: 48.85,
-            height_m: 35.0,
-        }
-    }
-
-    fn one_day_window() -> TempochPeriodMjd {
-        TempochPeriodMjd {
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-        }
-    }
-
-    fn default_opts() -> SiderustSearchOpts {
-        SiderustSearchOpts {
-            time_tolerance_days: 1e-9,
-            scan_step_days: 0.0,
-            has_scan_step: false,
-        }
     }
 
     // ── Lifecycle ─────────────────────────────────────────────────────────

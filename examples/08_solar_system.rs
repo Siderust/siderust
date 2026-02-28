@@ -20,10 +20,7 @@ fn main() {
     let now = JulianDate::from_utc(chrono::Utc::now());
 
     println!("=== Siderust Solar System Module Tour ===\n");
-    println!(
-        "Epoch used for deterministic outputs: J2000 (JD {:.1})",
-        jd
-    );
+    println!("Epoch used for deterministic outputs: J2000 (JD {:.1})", jd);
     println!("Current epoch snapshot: JD {:.6}\n", now);
 
     section_catalog_overview();
@@ -60,7 +57,10 @@ fn section_planet_constants_and_periods() {
         ("Neptune", &NEPTUNE),
     ];
 
-    println!("{:<8} {:>10} {:>10} {:>10}", "Planet", "a [AU]", "e", "Period");
+    println!(
+        "{:<8} {:>10} {:>10} {:>10}",
+        "Planet", "a [AU]", "e", "Period"
+    );
     println!("{}", "-".repeat(48));
     for (name, p) in major_planets {
         println!(
@@ -82,14 +82,8 @@ fn section_vsop87_positions(jd: JulianDate) {
     let mars_h = Mars::vsop87a(jd);
     let earth_mars = earth_h.distance_to(&mars_h);
 
-    println!(
-        "Earth heliocentric distance: {:.6}",
-        earth_h.distance()
-    );
-    println!(
-        "Mars heliocentric distance:  {:.6}",
-        mars_h.distance()
-    );
+    println!("Earth heliocentric distance: {:.6}", earth_h.distance());
+    println!("Mars heliocentric distance:  {:.6}", mars_h.distance());
     println!(
         "Earth-Mars separation:      {:.6} ({:.0}",
         earth_mars,
@@ -140,11 +134,7 @@ fn section_moon_and_lagrange_points(jd: JulianDate) {
     for lp in LAGRANGE_POINTS {
         println!(
             "  {:<12} in {:<10} -> lon={:>7.2} lat={:>6.2} r={:>5.2}",
-            lp.name,
-            lp.parent_system,
-            lp.position.azimuth,
-            lp.position.polar,
-            lp.position.distance
+            lp.name, lp.parent_system, lp.position.azimuth, lp.position.polar, lp.position.distance
         );
     }
     println!();
@@ -210,14 +200,8 @@ fn section_current_snapshot(now: JulianDate) {
     let mars_now = Mars::vsop87a(now);
     let mars_geo_now: EclipticMeanJ2000<AstronomicalUnit, Geocentric> = mars_now.to_center(now);
 
-    println!(
-        "Earth-Sun distance now: {:.6}",
-        earth_now.distance()
-    );
-    println!(
-        "Mars-Sun distance now:  {:.6}",
-        mars_now.distance()
-    );
+    println!("Earth-Sun distance now: {:.6}", earth_now.distance());
+    println!("Mars-Sun distance now:  {:.6}", mars_now.distance());
     println!(
         "Mars-Earth distance now: {:.6} ({:.0})",
         mars_geo_now.distance(),

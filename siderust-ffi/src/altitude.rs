@@ -11,9 +11,7 @@ use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
 use qtty::*;
-use siderust::bodies::{Moon, Sun};
 use siderust::coordinates::spherical;
-use siderust::AltitudePeriodsProvider;
 use tempoch::{Interval, ModifiedJulianDate, Period, MJD};
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -92,7 +90,7 @@ pub unsafe extern "C" fn siderust_culminations_free(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Sun
+// Sun  — thin wrappers delegating to the unified `subject` module.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of the Sun at an instant (radians).
@@ -102,17 +100,12 @@ pub extern "C" fn siderust_sun_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if out_rad.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        unsafe {
-            *out_rad = Sun
-                .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                .value();
-        }
-        SiderustStatus::Ok
-    }}
+    crate::subject::siderust_altitude_at(
+        SiderustSubject::body(SiderustBody::Sun),
+        observer,
+        mjd,
+        out_rad,
+    )
 }
 
 /// Periods when the Sun is above a threshold altitude.
@@ -125,23 +118,15 @@ pub extern "C" fn siderust_sun_above_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        periods_to_c(
-            siderust::above_threshold(
-                &Sun,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_above_threshold(
+        SiderustSubject::body(SiderustBody::Sun),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Periods when the Sun is below a threshold altitude.
@@ -154,23 +139,15 @@ pub extern "C" fn siderust_sun_below_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        periods_to_c(
-            siderust::below_threshold(
-                &Sun,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_below_threshold(
+        SiderustSubject::body(SiderustBody::Sun),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Threshold-crossing events for the Sun.
@@ -183,23 +160,15 @@ pub extern "C" fn siderust_sun_crossings(
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        crossings_to_c(
-            siderust::crossings(
-                &Sun,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_crossings(
+        SiderustSubject::body(SiderustBody::Sun),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Culmination (local extrema) events for the Sun.
@@ -211,17 +180,14 @@ pub extern "C" fn siderust_sun_culminations(
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        culminations_to_c(
-            siderust::culminations(&Sun, &observer.to_rust(), window, opts.to_rust()),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_culminations(
+        SiderustSubject::body(SiderustBody::Sun),
+        observer,
+        window,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Periods when the Sun's altitude is within [min, max].
@@ -231,13 +197,16 @@ pub extern "C" fn siderust_sun_altitude_periods(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        periods_to_c(Sun.altitude_periods(&query.to_rust()), out, count)
-    }}
+    crate::subject::siderust_altitude_periods(
+        SiderustSubject::body(SiderustBody::Sun),
+        query,
+        out,
+        count,
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Moon
+// Moon  — thin wrappers delegating to the unified `subject` module.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of the Moon at an instant (radians).
@@ -247,17 +216,12 @@ pub extern "C" fn siderust_moon_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if out_rad.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        unsafe {
-            *out_rad = Moon
-                .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                .value();
-        }
-        SiderustStatus::Ok
-    }}
+    crate::subject::siderust_altitude_at(
+        SiderustSubject::body(SiderustBody::Moon),
+        observer,
+        mjd,
+        out_rad,
+    )
 }
 
 /// Periods when the Moon is above a threshold altitude.
@@ -270,23 +234,15 @@ pub extern "C" fn siderust_moon_above_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        periods_to_c(
-            siderust::above_threshold(
-                &Moon,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_above_threshold(
+        SiderustSubject::body(SiderustBody::Moon),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Periods when the Moon is below a threshold altitude.
@@ -299,23 +255,15 @@ pub extern "C" fn siderust_moon_below_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        periods_to_c(
-            siderust::below_threshold(
-                &Moon,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_below_threshold(
+        SiderustSubject::body(SiderustBody::Moon),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Threshold-crossing events for the Moon.
@@ -328,23 +276,15 @@ pub extern "C" fn siderust_moon_crossings(
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        crossings_to_c(
-            siderust::crossings(
-                &Moon,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_crossings(
+        SiderustSubject::body(SiderustBody::Moon),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Culmination (local extrema) events for the Moon.
@@ -356,17 +296,14 @@ pub extern "C" fn siderust_moon_culminations(
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        culminations_to_c(
-            siderust::culminations(&Moon, &observer.to_rust(), window, opts.to_rust()),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_culminations(
+        SiderustSubject::body(SiderustBody::Moon),
+        observer,
+        window,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Periods when the Moon's altitude is within [min, max].
@@ -376,13 +313,16 @@ pub extern "C" fn siderust_moon_altitude_periods(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        periods_to_c(Moon.altitude_periods(&query.to_rust()), out, count)
-    }}
+    crate::subject::siderust_altitude_periods(
+        SiderustSubject::body(SiderustBody::Moon),
+        query,
+        out,
+        count,
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Star (opaque handle)
+// Star (opaque handle)  — thin wrappers delegating to the unified `subject` module.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of a star at an instant (radians).
@@ -393,18 +333,7 @@ pub extern "C" fn siderust_star_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() || out_rad.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let star = unsafe { &(*handle).inner };
-        unsafe {
-            *out_rad = star
-                .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                .value();
-        }
-        SiderustStatus::Ok
-    }}
+    crate::subject::siderust_altitude_at(SiderustSubject::star(handle), observer, mjd, out_rad)
 }
 
 /// Periods when a star is above a threshold altitude.
@@ -418,27 +347,15 @@ pub extern "C" fn siderust_star_above_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let star = unsafe { &(*handle).inner };
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        periods_to_c(
-            siderust::above_threshold(
-                star,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_above_threshold(
+        SiderustSubject::star(handle),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Periods when a star is below a threshold altitude.
@@ -452,27 +369,15 @@ pub extern "C" fn siderust_star_below_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let star = unsafe { &(*handle).inner };
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        periods_to_c(
-            siderust::below_threshold(
-                star,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_below_threshold(
+        SiderustSubject::star(handle),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Threshold-crossing events for a star.
@@ -486,27 +391,15 @@ pub extern "C" fn siderust_star_crossings(
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let star = unsafe { &(*handle).inner };
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        crossings_to_c(
-            siderust::crossings(
-                star,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_crossings(
+        SiderustSubject::star(handle),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Culmination events for a star.
@@ -519,25 +412,18 @@ pub extern "C" fn siderust_star_culminations(
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if handle.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let star = unsafe { &(*handle).inner };
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        culminations_to_c(
-            siderust::culminations(star, &observer.to_rust(), window, opts.to_rust()),
-            out,
-            count,
-        )
-    }}
+    crate::subject::siderust_culminations(
+        SiderustSubject::star(handle),
+        observer,
+        window,
+        opts,
+        out,
+        count,
+    )
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ICRS direction
+// ICRS direction  — thin wrappers delegating to the unified `subject` module.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of an ICRS direction at an instant (radians).
@@ -548,21 +434,10 @@ pub extern "C" fn siderust_icrs_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        if out_rad.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let dir = match icrs_from_c(dir) {
-            Ok(d) => d,
-            Err(e) => return e,
-        };
-        unsafe {
-            *out_rad = dir
-                .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                .value();
-        }
-        SiderustStatus::Ok
-    }}
+    if dir.frame != SiderustFrame::ICRS {
+        return SiderustStatus::InvalidFrame;
+    }
+    crate::subject::siderust_altitude_at(SiderustSubject::icrs(dir), observer, mjd, out_rad)
 }
 
 /// Periods when an ICRS direction is above a threshold altitude.
@@ -576,27 +451,18 @@ pub extern "C" fn siderust_icrs_above_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let dir = match icrs_from_c(dir) {
-            Ok(d) => d,
-            Err(e) => return e,
-        };
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        periods_to_c(
-            siderust::above_threshold(
-                &dir,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    if dir.frame != SiderustFrame::ICRS {
+        return SiderustStatus::InvalidFrame;
+    }
+    crate::subject::siderust_above_threshold(
+        SiderustSubject::icrs(dir),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 /// Periods when an ICRS direction is below a threshold altitude.
@@ -610,66 +476,27 @@ pub extern "C" fn siderust_icrs_below_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    ffi_guard! {{
-        let dir = match icrs_from_c(dir) {
-            Ok(d) => d,
-            Err(e) => return e,
-        };
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        periods_to_c(
-            siderust::below_threshold(
-                &dir,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    }}
+    if dir.frame != SiderustFrame::ICRS {
+        return SiderustStatus::InvalidFrame;
+    }
+    crate::subject::siderust_below_threshold(
+        SiderustSubject::icrs(dir),
+        observer,
+        window,
+        threshold_deg,
+        opts,
+        out,
+        count,
+    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::bodies::SiderustStar;
+    use crate::test_helpers::*;
     use std::ffi::CString;
     use std::ptr;
-
-    fn paris() -> SiderustGeodetict {
-        SiderustGeodetict {
-            lon_deg: 2.35,
-            lat_deg: 48.85,
-            height_m: 35.0,
-        }
-    }
-
-    fn one_day_window() -> TempochPeriodMjd {
-        TempochPeriodMjd {
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-        }
-    }
-
-    fn default_opts() -> SiderustSearchOpts {
-        SiderustSearchOpts {
-            time_tolerance_days: 1e-9,
-            scan_step_days: 0.0,
-            has_scan_step: false,
-        }
-    }
-
-    fn icrs_vega() -> SiderustSphericalDir {
-        SiderustSphericalDir {
-            polar_deg: 38.78,
-            azimuth_deg: 279.23,
-            frame: SiderustFrame::ICRS,
-        }
-    }
 
     fn get_vega_handle() -> *mut SiderustStar {
         let cname = CString::new("VEGA").unwrap();
