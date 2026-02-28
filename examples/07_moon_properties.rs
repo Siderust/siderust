@@ -44,7 +44,10 @@ fn main() {
         .get(1)
         .and_then(|s| NaiveDate::parse_from_str(s, "%Y-%m-%d").ok())
         .unwrap_or(today);
-    let lat = args.get(2).and_then(|s| s.parse::<f64>().ok()).unwrap_or(28.762);
+    let lat = args
+        .get(2)
+        .and_then(|s| s.parse::<f64>().ok())
+        .unwrap_or(28.762);
     let lon = args
         .get(3)
         .and_then(|s| s.parse::<f64>().ok())
@@ -79,9 +82,18 @@ fn main() {
     println!("\nGeocentric:");
     println!("  label                 : {}", geo.label());
     println!("  illuminated fraction  : {:.4}", geo.illuminated_fraction);
-    println!("  illuminated percent   : {:.2} %", geo.illuminated_percent());
-    println!("  phase angle           : {}", geo.phase_angle.to::<Degree>());
-    println!("  elongation            : {}", geo.elongation.to::<Degree>());
+    println!(
+        "  illuminated percent   : {:.2} %",
+        geo.illuminated_percent()
+    );
+    println!(
+        "  phase angle           : {}",
+        geo.phase_angle.to::<Degree>()
+    );
+    println!(
+        "  elongation            : {}",
+        geo.elongation.to::<Degree>()
+    );
     println!("  waxing                : {}", geo.waxing);
 
     println!("\nTopocentric:");
@@ -91,14 +103,21 @@ fn main() {
         "  illumination delta    : {:+.4} %",
         (topo.illuminated_fraction - geo.illuminated_fraction) * 100.0
     );
-    println!("  elongation            : {}", topo.elongation.to::<Degree>());
+    println!(
+        "  elongation            : {}",
+        topo.elongation.to::<Degree>()
+    );
 
     // 2) Principal phase events (optional but useful alongside range searches).
     let events = find_phase_events::<Vsop87Ephemeris>(window, opts);
     println!("\nPrincipal phase events in next 35 days: {}", events.len());
     for ev in &events {
         if let Some(utc) = ev.mjd.to_utc() {
-            println!("  - {:>13} at {}", ev.kind, utc.format("%Y-%m-%d %H:%M UTC"));
+            println!(
+                "  - {:>13} at {}",
+                ev.kind,
+                utc.format("%Y-%m-%d %H:%M UTC")
+            );
         } else {
             println!("  - {:>13} at MJD {}", ev.kind, ev.mjd);
         }

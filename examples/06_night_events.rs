@@ -10,11 +10,9 @@
 //! `cargo run --example 06_night_events -- [YYYY-MM-DD] [lat_deg] [lon_deg] [height_m]`
 
 use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
-use qtty::{Degrees, Meter, Quantity, Days};
+use qtty::{Days, Degrees, Meter, Quantity};
 use siderust::bodies::Sun;
-use siderust::calculus::altitude::{
-    below_threshold, crossings, CrossingDirection, SearchOpts,
-};
+use siderust::calculus::altitude::{below_threshold, crossings, CrossingDirection, SearchOpts};
 use siderust::calculus::solar::night_types::{twilight, Twilight};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
@@ -31,12 +29,7 @@ fn week_period_from_date(start_date: NaiveDate) -> Period<MJD> {
     Period::new(mjd_start, mjd_end)
 }
 
-fn print_events_for_type(
-    site: &Geodetic<ECEF>,
-    week: Period<MJD>,
-    name: &str,
-    threshold: Degrees,
-) {
+fn print_events_for_type(site: &Geodetic<ECEF>, week: Period<MJD>, name: &str, threshold: Degrees) {
     let events = crossings(&Sun, site, week, threshold, SearchOpts::default());
     let mut downs = 0usize;
     let mut raises = 0usize;

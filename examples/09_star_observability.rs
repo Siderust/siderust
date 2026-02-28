@@ -70,8 +70,8 @@ fn main() {
         );
     }
 
-    let total_hours = observable_periods
-        .iter()
-        .fold(Hours::new(0.0), |acc, p| acc + p.duration_days().to::<Hour>());
+    let total_hours = observable_periods.iter().fold(Hours::new(0.0), |acc, p| {
+        acc + p.duration_days().to::<Hour>()
+    });
     println!("\nTotal observable time in both ranges: {}", total_hours);
 }

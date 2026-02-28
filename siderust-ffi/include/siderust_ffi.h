@@ -692,9 +692,6 @@ siderust_status_t siderust_star_in_azimuth_range(const struct SiderustStar *hand
                                                  uintptr_t *count);
 
 // Azimuth of an ICRS direction at an instant.
-//
-// `dir.frame` must equal `SIDERUST_FRAME_T_ICRS`; otherwise
-// `SIDERUST_STATUS_T_INVALID_FRAME` is returned.
 
 siderust_status_t siderust_icrs_azimuth_at(struct siderust_spherical_dir_t dir,
                                            struct siderust_geodetic_t observer,
@@ -1288,6 +1285,16 @@ siderust_status_t siderust_target_altitude_at(const struct SiderustTarget *handl
 // Periods when the target is above `threshold_deg`.
 
 siderust_status_t siderust_target_above_threshold(const struct SiderustTarget *handle,
+                                                  struct siderust_geodetic_t observer,
+                                                  tempoch_period_mjd_t window,
+                                                  double threshold_deg,
+                                                  struct siderust_search_opts_t opts,
+                                                  tempoch_period_mjd_t **out,
+                                                  uintptr_t *count);
+
+// Periods when the target is below `threshold_deg`.
+
+siderust_status_t siderust_target_below_threshold(const struct SiderustTarget *handle,
                                                   struct siderust_geodetic_t observer,
                                                   tempoch_period_mjd_t window,
                                                   double threshold_deg,

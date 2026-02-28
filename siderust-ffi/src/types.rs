@@ -159,6 +159,52 @@ pub struct SiderustSubject {
 unsafe impl Send for SiderustSubject {}
 unsafe impl Sync for SiderustSubject {}
 
+impl SiderustSubject {
+    /// Construct a `Body` subject.
+    pub(crate) fn body(body: SiderustBody) -> Self {
+        Self {
+            kind: SiderustSubjectKind::Body,
+            body,
+            star_handle: std::ptr::null(),
+            icrs_dir: SiderustSphericalDir::zeroed(),
+            target_handle: std::ptr::null(),
+        }
+    }
+
+    /// Construct a `Star` subject (borrows the opaque handle).
+    pub(crate) fn star(handle: *const crate::bodies::SiderustStar) -> Self {
+        Self {
+            kind: SiderustSubjectKind::Star,
+            body: SiderustBody::Sun,
+            star_handle: handle,
+            icrs_dir: SiderustSphericalDir::zeroed(),
+            target_handle: std::ptr::null(),
+        }
+    }
+
+    /// Construct an `Icrs` subject from a spherical direction.
+    pub(crate) fn icrs(dir: SiderustSphericalDir) -> Self {
+        Self {
+            kind: SiderustSubjectKind::Icrs,
+            body: SiderustBody::Sun,
+            star_handle: std::ptr::null(),
+            icrs_dir: dir,
+            target_handle: std::ptr::null(),
+        }
+    }
+
+    /// Construct a `Target` subject (borrows the opaque handle).
+    pub(crate) fn target(handle: *const crate::target::SiderustTarget) -> Self {
+        Self {
+            kind: SiderustSubjectKind::Target,
+            body: SiderustBody::Sun,
+            star_handle: std::ptr::null(),
+            icrs_dir: SiderustSphericalDir::zeroed(),
+            target_handle: handle,
+        }
+    }
+}
+
 /// Proper motion RA convention.
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -438,6 +484,17 @@ pub struct SiderustSphericalDir {
     pub azimuth_deg: f64,
     /// Reference frame.
     pub frame: SiderustFrame,
+}
+
+impl SiderustSphericalDir {
+    /// Return a zeroed direction (used as placeholder for unused fields).
+    pub(crate) fn zeroed() -> Self {
+        Self {
+            polar_deg: 0.0,
+            azimuth_deg: 0.0,
+            frame: SiderustFrame::ICRS,
+        }
+    }
 }
 
 /// Cartesian unit-direction vector.
