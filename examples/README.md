@@ -45,8 +45,12 @@ cargo run --example 04_all_center_conversions
 ```
 
 ### 5. Time Periods (`05_time_periods.rs`)
-`Period<T>` for JulianDate, MJD, UTC DateTime — conversions, arithmetic,
-and duration queries.
+Tour of `tempoch` time **scales** and **period conversions** as re-exported by `siderust::time`.
+
+Covers:
+- Instants across `JD`, `JDE`, `MJD`, `TDB`, `TT`, `TAI`, `TCG`, `TCB`, `GPS`, `UnixTime`, `UT`
+- Format/alias printing (`JulianDate`, `ModifiedJulianDate`, `DateTime<Utc>`)
+- `Period<S>` conversions between scales and to/from `UtcPeriod`
 
 ```bash
 cargo run --example 05_time_periods

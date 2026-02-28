@@ -13,7 +13,7 @@ use qtty::*;
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::{Barycentric, Geocentric, Heliocentric, ReferenceCenter};
 use siderust::coordinates::frames::EclipticMeanJ2000;
-use siderust::coordinates::transform::{CenterShiftProvider, PositionAstroExt};
+use siderust::coordinates::transform::{CenterShiftProvider, TransformCenter};
 use siderust::time::JulianDate;
 
 type F = EclipticMeanJ2000;
@@ -36,8 +36,8 @@ where
     (): CenterShiftProvider<C1, C2, F>,
     (): CenterShiftProvider<C2, C1, F>,
 {
-    let out: Position<C2, F, U> = src.to_center(jd);
-    let back: Position<C1, F, U> = out.to_center(jd);
+    let out: Position<C2, F, U> = src.to_center(*jd);
+    let back: Position<C1, F, U> = out.to_center(*jd);
     let err = position_error(src, &back);
 
     println!(
@@ -58,8 +58,8 @@ fn main() {
     // We derive equivalent representations in other centers to compare
     // true center-shift roundtrips for the same physical location.
     let p_bary = Position::<Barycentric, F, U>::new(0.40, -0.10, 1.20);
-    let p_helio: Position<Heliocentric, F, U> = p_bary.to_center(&jd);
-    let p_geo: Position<Geocentric, F, U> = p_bary.to_center(&jd);
+    let p_helio: Position<Heliocentric, F, U> = p_bary.to_center(jd);
+    let p_geo: Position<Geocentric, F, U> = p_bary.to_center(jd);
 
     println!("Center conversion demo at JD(TT) = {:.1}", jd.value());
 

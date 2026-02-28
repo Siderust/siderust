@@ -66,10 +66,10 @@ pub fn geocentric_j2000_to_apparent_topocentric_with_ctx<
 where
     Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
 {
-    use crate::coordinates::transform::centers::ToTopocentricExt;
+    use crate::coordinates::transform::to_topocentric_with_ctx;
 
     // 1) Translate geocentric → topocentric in J2000 frame (applies parallax)
-    let topo_cart_j2000 = geo_cart_j2000.to_topocentric_with_ctx(site, jd, ctx);
+    let topo_cart_j2000 = to_topocentric_with_ctx(geo_cart_j2000, site, jd, ctx);
 
     // 2) Rotate J2000 → mean-of-date using IAU 2006 precession
     let rot_prec = precession::precession_matrix_iau2006(jd);
