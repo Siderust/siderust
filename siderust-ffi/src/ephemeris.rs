@@ -105,6 +105,29 @@ pub extern "C" fn siderust_vsop87_mars_heliocentric(
     SiderustStatus::Ok
 }
 
+/// Get Mars's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+#[no_mangle]
+pub extern "C" fn siderust_vsop87_mars_barycentric(
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+    let t = JulianDate::new(jd);
+    let pos = Mars::vsop87e(t);
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: pos.x().value(),
+            y: pos.y().value(),
+            z: pos.z().value(),
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Barycentric,
+        };
+    }
+    SiderustStatus::Ok
+}
+
 /// Get Venus's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
 #[no_mangle]
 pub extern "C" fn siderust_vsop87_venus_heliocentric(
