@@ -10,7 +10,7 @@ use siderust::coordinates::cartesian::position::EquatorialMeanJ2000;
 use siderust::coordinates::centers::{Geocentric, Geodetic};
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical;
-use siderust::coordinates::transform::centers::ToTopocentricExt;
+use siderust::coordinates::transform::TransformCenter;
 use siderust::time::JulianDate;
 
 fn main() {

@@ -13,7 +13,6 @@ use siderust::coordinates::cartesian::position::{EclipticMeanJ2000, Position};
 use siderust::coordinates::cartesian::Direction;
 use siderust::coordinates::centers::{Bodycentric, BodycentricParams, Geocentric, Heliocentric};
 use siderust::coordinates::frames;
-use siderust::coordinates::transform::centers::{FromBodycentricExt, ToBodycentricExt};
 use siderust::coordinates::transform::TransformCenter;
 use siderust::time::JulianDate;
 
@@ -77,7 +76,7 @@ fn main() {
 
     // Transform to ISS-centric coordinates
     let moon_from_iss: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
-        moon_geo.to_bodycentric(iss_params, jd);
+        moon_geo.to_center((iss_params, jd));
 
     println!("Moon as seen from ISS:");
     println!("  X = {:.6} AU", moon_from_iss.x());
@@ -125,7 +124,7 @@ fn main() {
 
     // View Earth from Mars (using approximate orbit)
     let earth_from_mars: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
-        earth_helio.to_bodycentric(mars_params, jd);
+        earth_helio.to_center((mars_params, jd));
 
     println!("Earth as seen from Mars:");
     println!("  X = {:.6} AU", earth_from_mars.x());
@@ -157,14 +156,14 @@ fn main() {
 
     // View Earth from Venus
     let earth_from_venus: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
-        earth_helio.to_bodycentric(venus_params, jd);
+        earth_helio.to_center((venus_params, jd));
 
     println!("Earth as seen from Venus:");
     println!("  Distance: {:.6} AU\n", earth_from_venus.distance());
 
     // View Mars from Venus
     let mars_from_venus: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
-        mars_helio.to_bodycentric(venus_params, jd);
+        mars_helio.to_center((venus_params, jd));
 
     println!("Mars as seen from Venus:");
     println!("  Distance: {:.6} AU\n", mars_from_venus.distance());
@@ -183,7 +182,7 @@ fn main() {
 
     // Transform to Mars-centric
     let earth_mars_centric: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
-        original_earth.to_bodycentric(mars_params, jd);
+        original_earth.to_center((mars_params, jd));
 
     println!("Transformed to Mars-centric:");
     println!(
@@ -192,7 +191,7 @@ fn main() {
     );
 
     // Transform back to geocentric (to match original center)
-    let recovered_geo: EclipticMeanJ2000<Au, Geocentric> = earth_mars_centric.to_geocentric(jd);
+    let recovered_geo: EclipticMeanJ2000<Au, Geocentric> = earth_mars_centric.to_center(jd);
 
     // Then to heliocentric to compare
     let recovered_helio: EclipticMeanJ2000<Au, Heliocentric> = recovered_geo.to_center(jd);

@@ -67,10 +67,7 @@ fn main() {
     println!("  X = {:.10}", earth_geo.x());
     println!("  Y = {:.10}", earth_geo.y());
     println!("  Z = {:.10}\n", earth_geo.z());
-    println!(
-        "  Distance = {:.10} (should be ~0)\n",
-        earth_geo.distance()
-    );
+    println!("  Distance = {:.10} (should be ~0)\n", earth_geo.distance());
 
     // Get Mars position (heliocentric)
     let mars_helio = Mars::vsop87a(jd);

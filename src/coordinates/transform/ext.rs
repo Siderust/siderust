@@ -12,14 +12,16 @@
 //! The default API uses IAU models with no context argument required:
 //!
 //! - `to_frame::<F2>(jd_tt)` — Rotate to a new reference frame.
-//! - `to_center::<C2>(jd_tt)` — Translate to a new reference center.
 //! - `to::<C2, F2>(jd_tt)` — Combined center and frame transformation.
 //!
-//! For expert users who need to override the ephemeris, EOP, or nutation
-//! model, a `_with` suffix variant accepts an [`AstroContext`]:
+//! Center-only transforms are exposed on the [`TransformCenter`] trait:
+//!
+//! - `pos.to_center(params, jd)` — Shift to a new reference center (all variants).
+//! - `pos.to_center_with(params, jd, &ctx)` — Same with a custom context.
+//!
+//! For frame-only expert overrides, a `_with` suffix variant accepts an [`AstroContext`]:
 //!
 //! - `to_frame_with::<F2>(jd_tt, &ctx)` — Frame rotation with custom context.
-//! - `to_center_with::<C2>(jd_tt, &ctx)` — Center shift with custom context.
 //! - `to_with::<C2, F2>(jd_tt, &ctx)` — Combined transform with custom context.
 //!
 //! Alternatively, wrap a coordinate with a custom context using
@@ -60,11 +62,12 @@ use crate::coordinates::cartesian::{Direction, Position, Vector};
 use crate::coordinates::centers::{Geodetic, ReferenceCenter};
 use crate::coordinates::frames::{ReferenceFrame, ECEF};
 use crate::coordinates::spherical;
+use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::{CenterShiftProvider, FrameRotationProvider};
 use crate::time::JulianDate;
 use affn::Rotation3;
-use qtty::{AstronomicalUnit, LengthUnit, Quantity, Unit};
+use qtty::{LengthUnit, Unit};
 
 // =============================================================================
 // DirectionAstroExt - Extension trait for Direction<F>
@@ -268,10 +271,14 @@ impl<F: ReferenceFrame, U: Unit> VectorAstroExt<F, U> for Vector<F, U> {
 // PositionAstroExt - Extension trait for Position<C, F, U>
 // =============================================================================
 
-/// Extension trait for `Position<C, F, U>` providing coordinate transformations.
+/// Extension trait for `Position<C, F, U>` providing frame transformations
+/// and combined center+frame transformations.
 ///
 /// Positions are affine points that can undergo both frame rotations and
 /// center translations.
+///
+/// **Center-only transforms** are provided by [`TransformCenter`] (use
+/// `pos.to_center(params, jd)`).
 ///
 /// Default methods use IAU models with no context argument.
 /// `_with` variants accept an [`AstroContext`] for expert overrides.
@@ -289,20 +296,6 @@ pub trait PositionAstroExt<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
     ) -> Position<C, F2, U>
     where
         (): FrameRotationProvider<F, F2>;
-
-    /// Translates this position to a new reference center (IAU defaults).
-    fn to_center<C2: ReferenceCenter<Params = ()>>(&self, jd: &JulianDate) -> Position<C2, F, U>
-    where
-        (): CenterShiftProvider<C, C2, F>;
-
-    /// Translates this position to a new reference center with custom context.
-    fn to_center_with<C2: ReferenceCenter<Params = ()>>(
-        &self,
-        jd: &JulianDate,
-        ctx: &AstroContext,
-    ) -> Position<C2, F, U>
-    where
-        (): CenterShiftProvider<C, C2, F>;
 
     /// Transforms this position to a new center and frame (IAU defaults).
     ///
@@ -355,31 +348,6 @@ where
         Position::new(x, y, z)
     }
 
-    fn to_center<C2: ReferenceCenter<Params = ()>>(&self, jd: &JulianDate) -> Position<C2, F, U>
-    where
-        (): CenterShiftProvider<C, C2, F>,
-    {
-        self.to_center_with(jd, &AstroContext::default())
-    }
-
-    fn to_center_with<C2: ReferenceCenter<Params = ()>>(
-        &self,
-        jd: &JulianDate,
-        ctx: &AstroContext,
-    ) -> Position<C2, F, U>
-    where
-        (): CenterShiftProvider<C, C2, F>,
-    {
-        let shift = <() as CenterShiftProvider<C, C2, F>>::shift(*jd, ctx);
-
-        // The shift is in AU; convert to the target unit U.
-        let shift_x = Quantity::<AstronomicalUnit>::new(shift[0]).to::<U>();
-        let shift_y = Quantity::<AstronomicalUnit>::new(shift[1]).to::<U>();
-        let shift_z = Quantity::<AstronomicalUnit>::new(shift[2]).to::<U>();
-
-        Position::new(self.x() + shift_x, self.y() + shift_y, self.z() + shift_z)
-    }
-
     fn to<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame>(
         &self,
         jd: &JulianDate,
@@ -401,7 +369,7 @@ where
         (): FrameRotationProvider<F, F2>,
     {
         // Order: center first (in source frame), then rotate
-        self.to_center_with::<C2>(jd, ctx)
+        <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, ctx)
             .to_frame_with::<F2>(jd, ctx)
     }
 }
@@ -472,7 +440,12 @@ where
     where
         (): CenterShiftProvider<C, C2, F>,
     {
-        self.inner.to_center_with(jd, self.ctx)
+        <Position<C, F, U> as TransformCenter<C2, F, U>>::to_center_with(
+            self.inner,
+            (),
+            *jd,
+            self.ctx,
+        )
     }
 
     /// Combined center + frame transform using the wrapped context.
@@ -566,7 +539,7 @@ mod tests {
         let geo_origin =
             Position::<Geocentric, EclipticMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
         let bary: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
-            geo_origin.to_center(&jd);
+            geo_origin.to_center(jd);
 
         // Should be non-zero (Earth is ~1 AU from barycenter)
         let dist = bary.distance();
@@ -606,8 +579,8 @@ mod tests {
         assert!((same_frame.y() - pos.y()).abs() < EPSILON);
         assert!((same_frame.z() - pos.z()).abs() < EPSILON);
 
-        // Identity center transform
-        let same_center: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_center(&jd);
+        // Identity center transform (via ShiftCenter)
+        let same_center: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_center(jd);
         assert!((same_center.x() - pos.x()).abs() < EPSILON);
         assert!((same_center.y() - pos.y()).abs() < EPSILON);
         assert!((same_center.z() - pos.z()).abs() < EPSILON);
