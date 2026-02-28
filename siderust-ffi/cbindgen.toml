@@ -45,6 +45,8 @@ header = """
 "SiderustMoonPhaseLabel" = "siderust_moon_phase_label_t"
 "SiderustMoonPhaseGeometry" = "siderust_moon_phase_geometry_t"
 "SiderustPhaseEvent" = "siderust_phase_event_t"
+"SiderustSubjectKind" = "siderust_subject_kind_t"
+"SiderustSubject" = "siderust_subject_t"
 
 [enum]
 rename_variants = "ScreamingSnakeCase"

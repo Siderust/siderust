@@ -8,6 +8,35 @@
 use crate::error::SiderustStatus;
 
 // ═══════════════════════════════════════════════════════════════════════════
+// Panic-catching FFI guard
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Wrap an FFI function body so that any Rust panic is caught and converted to
+/// [`SiderustStatus::InternalPanic`] instead of unwinding across the `extern "C"`
+/// boundary (which is undefined behaviour).
+///
+/// Usage:
+///
+/// ```ignore
+/// #[no_mangle]
+/// pub extern "C" fn siderust_some_function(args...) -> SiderustStatus {
+///     ffi_guard! {
+///         // … body that returns SiderustStatus …
+///     }
+/// }
+/// ```
+#[macro_export]
+macro_rules! ffi_guard {
+    ($body:block) => {{
+        let result = ::std::panic::catch_unwind(::std::panic::AssertUnwindSafe(|| $body));
+        match result {
+            Ok(status) => status,
+            Err(_) => $crate::error::SiderustStatus::InternalPanic,
+        }
+    }};
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
 // Null-pointer guard
 // ═══════════════════════════════════════════════════════════════════════════
 
@@ -29,6 +58,125 @@ macro_rules! check_out {
             return $crate::error::SiderustStatus::NullPointer;
         }
     };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Body dispatch macro
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Dispatch an action to the concrete body type selected by a
+/// [`SiderustBody`](crate::types::SiderustBody) discriminant.
+///
+/// The bound `$provider` will be an owned instance of the matching body type
+/// (e.g. `Sun`, `Moon`, `solar_system::Mars`, …).
+///
+/// ```ignore
+/// dispatch_body!(body, |b| {
+///     b.altitude_at(&observer, mjd).value()
+/// })
+/// ```
+#[macro_export]
+macro_rules! dispatch_body {
+    ($body:expr, |$provider:ident| $action:expr) => {
+        match $body {
+            $crate::types::SiderustBody::Sun => {
+                let $provider = siderust::bodies::Sun;
+                $action
+            }
+            $crate::types::SiderustBody::Moon => {
+                let $provider = siderust::bodies::Moon;
+                $action
+            }
+            $crate::types::SiderustBody::Mercury => {
+                let $provider = siderust::bodies::solar_system::Mercury;
+                $action
+            }
+            $crate::types::SiderustBody::Venus => {
+                let $provider = siderust::bodies::solar_system::Venus;
+                $action
+            }
+            $crate::types::SiderustBody::Mars => {
+                let $provider = siderust::bodies::solar_system::Mars;
+                $action
+            }
+            $crate::types::SiderustBody::Jupiter => {
+                let $provider = siderust::bodies::solar_system::Jupiter;
+                $action
+            }
+            $crate::types::SiderustBody::Saturn => {
+                let $provider = siderust::bodies::solar_system::Saturn;
+                $action
+            }
+            $crate::types::SiderustBody::Uranus => {
+                let $provider = siderust::bodies::solar_system::Uranus;
+                $action
+            }
+            $crate::types::SiderustBody::Neptune => {
+                let $provider = siderust::bodies::solar_system::Neptune;
+                $action
+            }
+        }
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Subject dispatch macro
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Dispatch an action to the concrete provider identified by a
+/// [`SiderustSubject`](crate::types::SiderustSubject).
+///
+/// For `Body` subjects, this expands into [`dispatch_body!`].
+/// For `Star` and `Target`, `$provider` is a reference (`&Star` / `&ICRS`).
+/// For `Icrs`, it is a reference to a local `ICRS` value.
+///
+/// **`$provider` is always a reference**, so pass it directly to free
+/// functions (e.g. `above_threshold(p, …)`, **not** `&p`).  Method calls
+/// (`p.altitude_at(…)`) auto-deref and work either way.
+///
+/// On null `star_handle` or `target_handle` the macro returns
+/// `SiderustStatus::NullPointer`.
+///
+/// ```ignore
+/// dispatch_subject!(subject, |p| {
+///     siderust::above_threshold(p, &observer, window, threshold, opts)
+/// })
+/// ```
+#[macro_export]
+macro_rules! dispatch_subject {
+    ($subject:expr, |$provider:ident| $action:expr) => {{
+        let __subj = &$subject;
+        match __subj.kind {
+            $crate::types::SiderustSubjectKind::Body => {
+                $crate::dispatch_body!(__subj.body, |__body_owned| {
+                    let $provider = &__body_owned;
+                    $action
+                })
+            }
+            $crate::types::SiderustSubjectKind::Star => {
+                if __subj.star_handle.is_null() {
+                    return $crate::error::SiderustStatus::NullPointer;
+                }
+                let $provider = unsafe { &(*__subj.star_handle).inner };
+                $action
+            }
+            $crate::types::SiderustSubjectKind::Icrs => {
+                let __icrs_owned = siderust::coordinates::spherical::direction::ICRS::new(
+                    qtty::Degrees::new(__subj.icrs_dir.azimuth_deg),
+                    qtty::Degrees::new(__subj.icrs_dir.polar_deg),
+                );
+                let $provider = &__icrs_owned;
+                $action
+            }
+            $crate::types::SiderustSubjectKind::Target => {
+                if __subj.target_handle.is_null() {
+                    return $crate::error::SiderustStatus::NullPointer;
+                }
+                let $provider = unsafe { &(*__subj.target_handle).dir };
+                $action
+            }
+        }
+    }};
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

@@ -29,4 +29,9 @@ pub enum SiderustStatus {
     AllocationFailed = 8,
     /// One or more arguments are out of range or otherwise invalid.
     InvalidArgument = 9,
+    /// A Rust panic was caught at the FFI boundary.
+    ///
+    /// This should never happen in normal operation; it indicates a bug in the
+    /// underlying library.  The panic payload is discarded.
+    InternalPanic = 10,
 }
