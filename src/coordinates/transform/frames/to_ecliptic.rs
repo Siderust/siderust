@@ -58,13 +58,14 @@ mod tests {
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
-    fn serialize<U: LengthUnit>(ecl: &EclipticMeanJ2000<U>) -> EclipticMeanJ2000<U>
-    where
-        Quantity<U>: From<Quantity<AstronomicalUnit>>,
-    {
-        let hcrs: ICRS<U> = ecl.transform(JulianDate::J2000); // Convert to ICRS
-        let ecl_back: EclipticMeanJ2000<U> = hcrs.transform(JulianDate::J2000); // Convert back to EclipticMeanJ2000
-        ecl_back
+    fn serialize<U: LengthUnit>(ecl: &EclipticMeanJ2000<U>) -> EclipticMeanJ2000<U> {
+        use crate::coordinates::transform::TransformFrame;
+        // Use to_frame() (pure frame rotation, no center shift) so the
+        // Heliocentric center is preserved across the round-trip.
+        // Using transform() with the ICRS<U> default (Barycentric) would shift
+        // the center and introduce the Sun's barycentric offset as residual.
+        let hcrs: ICRS<U, centers::Heliocentric> = ecl.to_frame();
+        hcrs.to_frame()
     }
 
     /// **Test 1: Identity transformation (Zero vector)**
