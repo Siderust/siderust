@@ -311,6 +311,40 @@ pub extern "C" fn siderust_star_azimuth_crossings(
     )
 }
 
+/// Periods when a star's azimuth is within [min_deg, max_deg].
+#[no_mangle]
+pub extern "C" fn siderust_star_in_azimuth_range(
+    handle: *const SiderustStar,
+    observer: SiderustGeodetict,
+    window: TempochPeriodMjd,
+    min_deg: f64,
+    max_deg: f64,
+    opts: SiderustSearchOpts,
+    out: *mut *mut TempochPeriodMjd,
+    count: *mut usize,
+) -> SiderustStatus {
+    if handle.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+    let window = match window_from_c(window) {
+        Ok(w) => w,
+        Err(e) => return e,
+    };
+    let star = unsafe { &(*handle).inner };
+    periods_to_c(
+        in_azimuth_range(
+            star,
+            &observer.to_rust(),
+            window,
+            Degrees::new(min_deg),
+            Degrees::new(max_deg),
+            opts.to_rust(),
+        ),
+        out,
+        count,
+    )
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // ICRS direction azimuth
 // ═══════════════════════════════════════════════════════════════════════════
