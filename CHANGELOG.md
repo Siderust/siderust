@@ -39,33 +39,41 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * Crate-root re-exports for ergonomic access and a new integration test
     suite `tests/test_azimuth_api.rs` covering trait and free-function APIs.
 
-  ### Changed
-  * Core ephemeris API refactor: `Ephemeris` methods `sun_barycentric`,
-    `earth_barycentric` and `earth_heliocentric` now return a plain
-    `Position<...>` instead of `CoordinateWithPM<Position<...>>`. This
-    simplifies consumers that only needed instantaneous positions and
-    eliminates unnecessary proper-motion wrappers in the coordinate
-    transform pipeline.
-  * VSOP87 API changes: `vsop87a` and `vsop87e` generated helpers now
-    return `Position<...>` directly (and `vsop87*_pos_vel` return
-    `(Position, Velocity)`). Call sites across transforms, tests and
-    examples were updated to use the direct `Position` return values.
-  * JPL body helpers under `calculus::jpl::bodies` now return
-    `Position<...>` directly (instead of `CoordinateWithPM::new_static(...)`).
-  * `Trackable` / solar-system unit integration: VSOP87-backed
-    `Trackable` implementations now wrap the returned `Position` into a
-    `CoordinateWithPM::new_static(..., jd)` when a `CoordinateWithPM` is
-    still required by the `Trackable` trait, keeping the public
-    `Trackable` contract intact while removing the wrapper from the
-    ephemeris primitives.
-  * Tests and examples: updated numerous `.get_position()` usages,
-    dereferences and formatting to match the new return types for
-    `vsop87a`/`vsop87e` and JPL helpers.
+* **C ABI / FFI layer**: new workspace crate `siderust-ffi` exposing a flat C API (generated header `siderust-ffi/include/siderust_ffi.h` via `cbindgen`) for coordinate transforms, ephemeris queries, altitude/azimuth events and periods, moon-phase sampling, observatories, and target tracking.
+* VSOP87 planets (Mercury–Neptune) now implement `AltitudePeriodsProvider` and `AzimuthProvider`, enabling altitude/azimuth queries and event finding for planets via the unified APIs.
 
-  ### Fixed
-  * Compilation and doc examples updated to reflect the API change
-    (e.g. printing or inspecting a `Position` no longer accesses
-    `.position` field). All tests run locally after the refactor.
+### Changed
+* Center-shift transformations are unified under `coordinates::transform::centers::TransformCenter` (`pos.to_center(...)` / `pos.to_center_with(...)`), replacing the previous per-center extension traits and legacy `to_*centric` modules.
+* The topocentric expert API is now exposed as `coordinates::transform::to_topocentric_with_ctx(...)` (free function) instead of `ToTopocentricExt::to_topocentric_with_ctx(...)`.
+* `Transform` blanket impl for `Position` is restricted to standard centers (`Params = ()`); parameterised centers (Topocentric/Bodycentric) require explicit parameters via `to_center(...)`.
+* Example suite reorganized and expanded: renamed/renumbered examples under `examples/` and updated `examples/README.md`.
+* Workspace and dependency updates: `siderust` is now a workspace with `siderust-ffi` member; dependency bumps (notably `qtty` 0.4 and `affn` 0.3.3); local development now patches `cheby` and `tempoch` to `dev-deps/` via `[patch.crates-io]`.
+* Core ephemeris API refactor: `Ephemeris` methods `sun_barycentric`,
+  `earth_barycentric` and `earth_heliocentric` now return a plain
+  `Position<...>` instead of `CoordinateWithPM<Position<...>>`. This
+  simplifies consumers that only needed instantaneous positions and
+  eliminates unnecessary proper-motion wrappers in the coordinate
+  transform pipeline.
+* VSOP87 API changes: `vsop87a` and `vsop87e` generated helpers now
+  return `Position<...>` directly (and `vsop87*_pos_vel` return
+  `(Position, Velocity)`). Call sites across transforms, tests and
+  examples were updated to use the direct `Position` return values.
+* JPL body helpers under `calculus::jpl::bodies` now return
+  `Position<...>` directly (instead of `CoordinateWithPM::new_static(...)`).
+* `Trackable` / solar-system unit integration: VSOP87-backed
+  `Trackable` implementations now wrap the returned `Position` into a
+  `CoordinateWithPM::new_static(..., jd)` when a `CoordinateWithPM` is
+  still required by the `Trackable` trait, keeping the public
+  `Trackable` contract intact while removing the wrapper from the
+  ephemeris primitives.
+* Tests and examples: updated numerous `.get_position()` usages,
+  dereferences and formatting to match the new return types for
+  `vsop87a`/`vsop87e` and JPL helpers.
+
+### Fixed
+* Compilation and doc examples updated to reflect the API change
+  (e.g. printing or inspecting a `Position` no longer accesses
+  `.position` field). All tests run locally after the refactor.
 
 ## [0.5.2] - 19/02/2026
 
