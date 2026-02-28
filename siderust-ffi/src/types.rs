@@ -111,6 +111,54 @@ pub enum SiderustBody {
     Neptune = 8,
 }
 
+/// Subject kind discriminant for [`SiderustSubject`].
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SiderustSubjectKind {
+    /// Solar-system body (the `body` field is valid).
+    Body = 0,
+    /// Star opaque handle (the `star_handle` field is valid).
+    Star = 1,
+    /// Fixed ICRS direction (the `icrs_dir` field is valid).
+    Icrs = 2,
+    /// Target opaque handle (the `target_handle` field is valid).
+    Target = 3,
+}
+
+/// Unified subject for altitude / azimuth / tracking computations.
+///
+/// A tagged struct that can represent any entity on which altitude and
+/// azimuth queries can be performed: solar-system bodies, catalog stars,
+/// fixed ICRS directions, or opaque Target handles.
+///
+/// Only the field corresponding to `kind` is valid:
+///
+/// | `kind`   | Valid field(s)         |
+/// |----------|-----------------------|
+/// | `Body`   | `body`                |
+/// | `Star`   | `star_handle`         |
+/// | `Icrs`   | `icrs_dir`            |
+/// | `Target` | `target_handle`       |
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct SiderustSubject {
+    /// Discriminant selecting which field is active.
+    pub kind: SiderustSubjectKind,
+    /// Solar-system body discriminant.  Valid when `kind == Body`.
+    pub body: SiderustBody,
+    /// Opaque star handle (non-null).  Valid when `kind == Star`.
+    pub star_handle: *const crate::bodies::SiderustStar,
+    /// ICRS spherical direction.  Valid when `kind == Icrs`.
+    pub icrs_dir: SiderustSphericalDir,
+    /// Opaque target handle (non-null).  Valid when `kind == Target`.
+    pub target_handle: *const crate::target::SiderustTarget,
+}
+
+// Safety: the raw pointers in SiderustSubject are only dereferenced inside
+// `ffi_guard!` blocks on the same thread that created them.
+unsafe impl Send for SiderustSubject {}
+unsafe impl Sync for SiderustSubject {}
+
 /// Proper motion RA convention.
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

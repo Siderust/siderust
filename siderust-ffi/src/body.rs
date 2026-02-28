@@ -13,65 +13,13 @@ use crate::azimuth::{vec_az_crossings_to_c, vec_az_extrema_to_c};
 use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::*;
-use siderust::bodies::solar_system;
-use siderust::bodies::{Moon, Sun};
 use siderust::calculus::azimuth::{azimuth_crossings, azimuth_extrema, in_azimuth_range};
 use siderust::AltitudePeriodsProvider;
 use siderust::AzimuthProvider;
 use tempoch::ModifiedJulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Dispatch helper
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Dispatches an operation over the concrete body type corresponding to
-/// `body`.  The closure receives a `&dyn AltitudePeriodsProvider` and can
-/// call any trait method on it.
-///
-/// This avoids duplicating a 10-arm match in every FFI function.
-macro_rules! dispatch_body {
-    ($body:expr, |$provider:ident| $action:expr) => {
-        match $body {
-            SiderustBody::Sun => {
-                let $provider = Sun;
-                $action
-            }
-            SiderustBody::Moon => {
-                let $provider = Moon;
-                $action
-            }
-            SiderustBody::Mercury => {
-                let $provider = solar_system::Mercury;
-                $action
-            }
-            SiderustBody::Venus => {
-                let $provider = solar_system::Venus;
-                $action
-            }
-            SiderustBody::Mars => {
-                let $provider = solar_system::Mars;
-                $action
-            }
-            SiderustBody::Jupiter => {
-                let $provider = solar_system::Jupiter;
-                $action
-            }
-            SiderustBody::Saturn => {
-                let $provider = solar_system::Saturn;
-                $action
-            }
-            SiderustBody::Uranus => {
-                let $provider = solar_system::Uranus;
-                $action
-            }
-            SiderustBody::Neptune => {
-                let $provider = solar_system::Neptune;
-                $action
-            }
-        }
-    };
-}
-
+// Dispatch helper — see `dispatch_body!` in `ffi_utils.rs`.
 // ═══════════════════════════════════════════════════════════════════════════
 // Altitude
 // ═══════════════════════════════════════════════════════════════════════════
@@ -84,17 +32,19 @@ pub extern "C" fn siderust_body_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    if out_rad.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    dispatch_body!(body, |b| {
-        unsafe {
-            *out_rad = b
-                .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                .value();
+    ffi_guard! {{
+        if out_rad.is_null() {
+            return SiderustStatus::NullPointer;
         }
-        SiderustStatus::Ok
-    })
+        dispatch_body!(body, |b| {
+            unsafe {
+                *out_rad = b
+                    .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                    .value();
+            }
+            SiderustStatus::Ok
+        })
+    }}
 }
 
 /// Periods when a solar-system body is above a threshold altitude.
@@ -108,23 +58,25 @@ pub extern "C" fn siderust_body_above_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    dispatch_body!(body, |b| {
-        periods_to_c(
-            siderust::above_threshold(
-                &b,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    })
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_body!(body, |b| {
+            periods_to_c(
+                siderust::above_threshold(
+                    &b,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(threshold_deg),
+                    opts.to_rust(),
+                ),
+                out,
+                count,
+            )
+        })
+    }}
 }
 
 /// Periods when a solar-system body is below a threshold altitude.
@@ -138,23 +90,25 @@ pub extern "C" fn siderust_body_below_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    dispatch_body!(body, |b| {
-        periods_to_c(
-            siderust::below_threshold(
-                &b,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    })
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_body!(body, |b| {
+            periods_to_c(
+                siderust::below_threshold(
+                    &b,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(threshold_deg),
+                    opts.to_rust(),
+                ),
+                out,
+                count,
+            )
+        })
+    }}
 }
 
 /// Threshold-crossing events for a solar-system body.
@@ -168,23 +122,25 @@ pub extern "C" fn siderust_body_crossings(
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    dispatch_body!(body, |b| {
-        crossings_to_c(
-            siderust::crossings(
-                &b,
-                &observer.to_rust(),
-                window,
-                Degrees::new(threshold_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    })
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_body!(body, |b| {
+            crossings_to_c(
+                siderust::crossings(
+                    &b,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(threshold_deg),
+                    opts.to_rust(),
+                ),
+                out,
+                count,
+            )
+        })
+    }}
 }
 
 /// Culmination (local extrema) events for a solar-system body.
@@ -197,17 +153,19 @@ pub extern "C" fn siderust_body_culminations(
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    dispatch_body!(body, |b| {
-        culminations_to_c(
-            siderust::culminations(&b, &observer.to_rust(), window, opts.to_rust()),
-            out,
-            count,
-        )
-    })
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_body!(body, |b| {
+            culminations_to_c(
+                siderust::culminations(&b, &observer.to_rust(), window, opts.to_rust()),
+                out,
+                count,
+            )
+        })
+    }}
 }
 
 /// Periods when a solar-system body's altitude is within [min, max].
@@ -218,10 +176,12 @@ pub extern "C" fn siderust_body_altitude_periods(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let q = query.to_rust();
-    dispatch_body!(body, |b| {
-        periods_to_c(b.altitude_periods(&q), out, count)
-    })
+    ffi_guard! {{
+        let q = query.to_rust();
+        dispatch_body!(body, |b| {
+            periods_to_c(b.altitude_periods(&q), out, count)
+        })
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -236,17 +196,19 @@ pub extern "C" fn siderust_body_azimuth_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    if out_rad.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    dispatch_body!(body, |b| {
-        unsafe {
-            *out_rad = b
-                .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-                .value();
+    ffi_guard! {{
+        if out_rad.is_null() {
+            return SiderustStatus::NullPointer;
         }
-        SiderustStatus::Ok
-    })
+        dispatch_body!(body, |b| {
+            unsafe {
+                *out_rad = b
+                    .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                    .value();
+            }
+            SiderustStatus::Ok
+        })
+    }}
 }
 
 /// Azimuth bearing-crossing events for a solar-system body.
@@ -260,23 +222,25 @@ pub extern "C" fn siderust_body_azimuth_crossings(
     out: *mut *mut SiderustAzimuthCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    dispatch_body!(body, |b| {
-        vec_az_crossings_to_c(
-            azimuth_crossings(
-                &b,
-                &observer.to_rust(),
-                window,
-                Degrees::new(bearing_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    })
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_body!(body, |b| {
+            vec_az_crossings_to_c(
+                azimuth_crossings(
+                    &b,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(bearing_deg),
+                    opts.to_rust(),
+                ),
+                out,
+                count,
+            )
+        })
+    }}
 }
 
 /// Azimuth extrema (northernmost and southernmost bearing) for a body.
@@ -289,17 +253,19 @@ pub extern "C" fn siderust_body_azimuth_extrema(
     out: *mut *mut SiderustAzimuthExtremum,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    dispatch_body!(body, |b| {
-        vec_az_extrema_to_c(
-            azimuth_extrema(&b, &observer.to_rust(), window, opts.to_rust()),
-            out,
-            count,
-        )
-    })
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_body!(body, |b| {
+            vec_az_extrema_to_c(
+                azimuth_extrema(&b, &observer.to_rust(), window, opts.to_rust()),
+                out,
+                count,
+            )
+        })
+    }}
 }
 
 /// Periods when a body's azimuth is within [min_deg, max_deg].
@@ -314,24 +280,26 @@ pub extern "C" fn siderust_body_in_azimuth_range(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    dispatch_body!(body, |b| {
-        periods_to_c(
-            in_azimuth_range(
-                &b,
-                &observer.to_rust(),
-                window,
-                Degrees::new(min_deg),
-                Degrees::new(max_deg),
-                opts.to_rust(),
-            ),
-            out,
-            count,
-        )
-    })
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_body!(body, |b| {
+            periods_to_c(
+                in_azimuth_range(
+                    &b,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(min_deg),
+                    Degrees::new(max_deg),
+                    opts.to_rust(),
+                ),
+                out,
+                count,
+            )
+        })
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

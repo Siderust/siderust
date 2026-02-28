@@ -70,15 +70,17 @@ pub extern "C" fn siderust_sun_azimuth_at(
     mjd: f64,
     out_deg: *mut f64,
 ) -> SiderustStatus {
-    if out_deg.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe {
-        *out_deg = Sun
-            .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-            .value();
-    }
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out_deg.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe {
+            *out_deg = Sun
+                .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                .value();
+        }
+        SiderustStatus::Ok
+    }}
 }
 
 /// Azimuth bearing-crossing events for the Sun.
@@ -91,21 +93,23 @@ pub extern "C" fn siderust_sun_azimuth_crossings(
     out: *mut *mut SiderustAzimuthCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    vec_az_crossings_to_c(
-        azimuth_crossings(
-            &Sun,
-            &observer.to_rust(),
-            window,
-            Degrees::new(bearing_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        vec_az_crossings_to_c(
+            azimuth_crossings(
+                &Sun,
+                &observer.to_rust(),
+                window,
+                Degrees::new(bearing_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 /// Azimuth extrema (northernmost and southernmost bearing) for the Sun.
@@ -117,15 +121,17 @@ pub extern "C" fn siderust_sun_azimuth_extrema(
     out: *mut *mut SiderustAzimuthExtremum,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    vec_az_extrema_to_c(
-        azimuth_extrema(&Sun, &observer.to_rust(), window, opts.to_rust()),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        vec_az_extrema_to_c(
+            azimuth_extrema(&Sun, &observer.to_rust(), window, opts.to_rust()),
+            out,
+            count,
+        )
+    }}
 }
 
 /// Periods when the Sun's azimuth is within [min_deg, max_deg].
@@ -139,22 +145,24 @@ pub extern "C" fn siderust_sun_in_azimuth_range(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    periods_to_c(
-        in_azimuth_range(
-            &Sun,
-            &observer.to_rust(),
-            window,
-            Degrees::new(min_deg),
-            Degrees::new(max_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        periods_to_c(
+            in_azimuth_range(
+                &Sun,
+                &observer.to_rust(),
+                window,
+                Degrees::new(min_deg),
+                Degrees::new(max_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -168,15 +176,17 @@ pub extern "C" fn siderust_moon_azimuth_at(
     mjd: f64,
     out_deg: *mut f64,
 ) -> SiderustStatus {
-    if out_deg.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe {
-        *out_deg = Moon
-            .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-            .value();
-    }
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out_deg.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe {
+            *out_deg = Moon
+                .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                .value();
+        }
+        SiderustStatus::Ok
+    }}
 }
 
 /// Azimuth bearing-crossing events for the Moon.
@@ -189,21 +199,23 @@ pub extern "C" fn siderust_moon_azimuth_crossings(
     out: *mut *mut SiderustAzimuthCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    vec_az_crossings_to_c(
-        azimuth_crossings(
-            &Moon,
-            &observer.to_rust(),
-            window,
-            Degrees::new(bearing_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        vec_az_crossings_to_c(
+            azimuth_crossings(
+                &Moon,
+                &observer.to_rust(),
+                window,
+                Degrees::new(bearing_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 /// Azimuth extrema for the Moon.
@@ -215,15 +227,17 @@ pub extern "C" fn siderust_moon_azimuth_extrema(
     out: *mut *mut SiderustAzimuthExtremum,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    vec_az_extrema_to_c(
-        azimuth_extrema(&Moon, &observer.to_rust(), window, opts.to_rust()),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        vec_az_extrema_to_c(
+            azimuth_extrema(&Moon, &observer.to_rust(), window, opts.to_rust()),
+            out,
+            count,
+        )
+    }}
 }
 
 /// Periods when the Moon's azimuth is within [min_deg, max_deg].
@@ -237,22 +251,24 @@ pub extern "C" fn siderust_moon_in_azimuth_range(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    periods_to_c(
-        in_azimuth_range(
-            &Moon,
-            &observer.to_rust(),
-            window,
-            Degrees::new(min_deg),
-            Degrees::new(max_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        periods_to_c(
+            in_azimuth_range(
+                &Moon,
+                &observer.to_rust(),
+                window,
+                Degrees::new(min_deg),
+                Degrees::new(max_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -267,16 +283,18 @@ pub extern "C" fn siderust_star_azimuth_at(
     mjd: f64,
     out_deg: *mut f64,
 ) -> SiderustStatus {
-    if handle.is_null() || out_deg.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let star = unsafe { &(*handle).inner };
-    unsafe {
-        *out_deg = star
-            .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-            .value();
-    }
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if handle.is_null() || out_deg.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let star = unsafe { &(*handle).inner };
+        unsafe {
+            *out_deg = star
+                .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                .value();
+        }
+        SiderustStatus::Ok
+    }}
 }
 
 /// Azimuth bearing-crossing events for a star.
@@ -290,25 +308,27 @@ pub extern "C" fn siderust_star_azimuth_crossings(
     out: *mut *mut SiderustAzimuthCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    if handle.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    let star = unsafe { &(*handle).inner };
-    vec_az_crossings_to_c(
-        azimuth_crossings(
-            star,
-            &observer.to_rust(),
-            window,
-            Degrees::new(bearing_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        if handle.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let star = unsafe { &(*handle).inner };
+        vec_az_crossings_to_c(
+            azimuth_crossings(
+                star,
+                &observer.to_rust(),
+                window,
+                Degrees::new(bearing_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 /// Periods when a star's azimuth is within [min_deg, max_deg].
@@ -323,26 +343,28 @@ pub extern "C" fn siderust_star_in_azimuth_range(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    if handle.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    let star = unsafe { &(*handle).inner };
-    periods_to_c(
-        in_azimuth_range(
-            star,
-            &observer.to_rust(),
-            window,
-            Degrees::new(min_deg),
-            Degrees::new(max_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        if handle.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let star = unsafe { &(*handle).inner };
+        periods_to_c(
+            in_azimuth_range(
+                star,
+                &observer.to_rust(),
+                window,
+                Degrees::new(min_deg),
+                Degrees::new(max_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -360,20 +382,22 @@ pub extern "C" fn siderust_icrs_azimuth_at(
     mjd: f64,
     out_deg: *mut f64,
 ) -> SiderustStatus {
-    if out_deg.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    if dir.frame != SiderustFrame::ICRS {
-        return SiderustStatus::InvalidFrame;
-    }
-    let icrs =
-        spherical::direction::ICRS::new(Degrees::new(dir.azimuth_deg), Degrees::new(dir.polar_deg));
-    unsafe {
-        *out_deg = icrs
-            .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-            .value();
-    }
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out_deg.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        if dir.frame != SiderustFrame::ICRS {
+            return SiderustStatus::InvalidFrame;
+        }
+        let icrs =
+            spherical::direction::ICRS::new(Degrees::new(dir.azimuth_deg), Degrees::new(dir.polar_deg));
+        unsafe {
+            *out_deg = icrs
+                .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                .value();
+        }
+        SiderustStatus::Ok
+    }}
 }
 
 /// Azimuth bearing-crossing events for an ICRS direction.
@@ -387,26 +411,28 @@ pub extern "C" fn siderust_icrs_azimuth_crossings(
     out: *mut *mut SiderustAzimuthCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    if dir.frame != SiderustFrame::ICRS {
-        return SiderustStatus::InvalidFrame;
-    }
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    let icrs =
-        spherical::direction::ICRS::new(Degrees::new(dir.azimuth_deg), Degrees::new(dir.polar_deg));
-    vec_az_crossings_to_c(
-        azimuth_crossings(
-            &icrs,
-            &observer.to_rust(),
-            window,
-            Degrees::new(bearing_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        if dir.frame != SiderustFrame::ICRS {
+            return SiderustStatus::InvalidFrame;
+        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let icrs =
+            spherical::direction::ICRS::new(Degrees::new(dir.azimuth_deg), Degrees::new(dir.polar_deg));
+        vec_az_crossings_to_c(
+            azimuth_crossings(
+                &icrs,
+                &observer.to_rust(),
+                window,
+                Degrees::new(bearing_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 #[cfg(test)]

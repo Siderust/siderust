@@ -47,18 +47,20 @@ pub extern "C" fn siderust_target_create(
     epoch_jd: f64,
     out: *mut *mut SiderustTarget,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let dir = spherical::direction::ICRS::new(Degrees::new(ra_deg), Degrees::new(dec_deg));
-    let handle = Box::new(SiderustTarget {
-        dir,
-        ra_deg,
-        dec_deg,
-        epoch_jd,
-    });
-    unsafe { *out = Box::into_raw(handle) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let dir = spherical::direction::ICRS::new(Degrees::new(ra_deg), Degrees::new(dec_deg));
+        let handle = Box::new(SiderustTarget {
+            dir,
+            ra_deg,
+            dec_deg,
+            epoch_jd,
+        });
+        unsafe { *out = Box::into_raw(handle) };
+        SiderustStatus::Ok
+    }}
 }
 
 /// Free a target handle created by [`siderust_target_create`].
@@ -82,11 +84,13 @@ pub extern "C" fn siderust_target_ra_deg(
     handle: *const SiderustTarget,
     out: *mut f64,
 ) -> SiderustStatus {
-    if handle.is_null() || out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = (*handle).ra_deg };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if handle.is_null() || out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = (*handle).ra_deg };
+        SiderustStatus::Ok
+    }}
 }
 
 /// Write the declination (degrees) to `*out`.
@@ -95,11 +99,13 @@ pub extern "C" fn siderust_target_dec_deg(
     handle: *const SiderustTarget,
     out: *mut f64,
 ) -> SiderustStatus {
-    if handle.is_null() || out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = (*handle).dec_deg };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if handle.is_null() || out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = (*handle).dec_deg };
+        SiderustStatus::Ok
+    }}
 }
 
 /// Write the reference epoch (Julian Date) to `*out`.
@@ -108,11 +114,13 @@ pub extern "C" fn siderust_target_epoch_jd(
     handle: *const SiderustTarget,
     out: *mut f64,
 ) -> SiderustStatus {
-    if handle.is_null() || out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = (*handle).epoch_jd };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if handle.is_null() || out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = (*handle).epoch_jd };
+        SiderustStatus::Ok
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -127,16 +135,18 @@ pub extern "C" fn siderust_target_altitude_at(
     mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
-    if handle.is_null() || out_rad.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let dir = unsafe { &(*handle).dir };
-    unsafe {
-        *out_rad = dir
-            .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-            .value();
-    }
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if handle.is_null() || out_rad.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let dir = unsafe { &(*handle).dir };
+        unsafe {
+            *out_rad = dir
+                .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                .value();
+        }
+        SiderustStatus::Ok
+    }}
 }
 
 /// Periods when the target is above `threshold_deg`.
@@ -150,25 +160,27 @@ pub extern "C" fn siderust_target_above_threshold(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    if handle.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    let dir = unsafe { &(*handle).dir };
-    periods_to_c(
-        above_threshold(
-            dir,
-            &observer.to_rust(),
-            window,
-            Degrees::new(threshold_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        if handle.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let dir = unsafe { &(*handle).dir };
+        periods_to_c(
+            above_threshold(
+                dir,
+                &observer.to_rust(),
+                window,
+                Degrees::new(threshold_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 /// Altitude crossing events for the target.
@@ -182,25 +194,27 @@ pub extern "C" fn siderust_target_crossings(
     out: *mut *mut SiderustCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    if handle.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    let dir = unsafe { &(*handle).dir };
-    crossings_to_c(
-        crossings(
-            dir,
-            &observer.to_rust(),
-            window,
-            Degrees::new(threshold_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        if handle.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let dir = unsafe { &(*handle).dir };
+        crossings_to_c(
+            crossings(
+                dir,
+                &observer.to_rust(),
+                window,
+                Degrees::new(threshold_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 /// Culmination events for the target.
@@ -213,19 +227,21 @@ pub extern "C" fn siderust_target_culminations(
     out: *mut *mut SiderustCulminationEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    if handle.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    let dir = unsafe { &(*handle).dir };
-    culminations_to_c(
-        culminations(dir, &observer.to_rust(), window, opts.to_rust()),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        if handle.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let dir = unsafe { &(*handle).dir };
+        culminations_to_c(
+            culminations(dir, &observer.to_rust(), window, opts.to_rust()),
+            out,
+            count,
+        )
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -240,16 +256,18 @@ pub extern "C" fn siderust_target_azimuth_at(
     mjd: f64,
     out_deg: *mut f64,
 ) -> SiderustStatus {
-    if handle.is_null() || out_deg.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let dir = unsafe { &(*handle).dir };
-    unsafe {
-        *out_deg = dir
-            .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
-            .value();
-    }
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if handle.is_null() || out_deg.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let dir = unsafe { &(*handle).dir };
+        unsafe {
+            *out_deg = dir
+                .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                .value();
+        }
+        SiderustStatus::Ok
+    }}
 }
 
 /// Azimuth bearing-crossing events for the target.
@@ -263,25 +281,27 @@ pub extern "C" fn siderust_target_azimuth_crossings(
     out: *mut *mut SiderustAzimuthCrossingEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    if handle.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    let dir = unsafe { &(*handle).dir };
-    vec_az_crossings_to_c(
-        azimuth_crossings(
-            dir,
-            &observer.to_rust(),
-            window,
-            Degrees::new(bearing_deg),
-            opts.to_rust(),
-        ),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        if handle.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let dir = unsafe { &(*handle).dir };
+        vec_az_crossings_to_c(
+            azimuth_crossings(
+                dir,
+                &observer.to_rust(),
+                window,
+                Degrees::new(bearing_deg),
+                opts.to_rust(),
+            ),
+            out,
+            count,
+        )
+    }}
 }
 
 #[cfg(test)]

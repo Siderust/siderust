@@ -71,12 +71,15 @@ pub extern "C" fn siderust_moon_phase_geocentric(
     jd: f64,
     out: *mut SiderustMoonPhaseGeometry,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let geom = moon_phase_geocentric::<Vsop87Ephemeris>(JulianDate::new(jd));
-    unsafe { *out = phase_geometry_from_rust(geom) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let geom = moon_phase_geocentric::<Vsop87Ephemeris>(JulianDate::new(jd));
+        unsafe { *out = phase_geometry_from_rust(geom) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Compute topocentric Moon phase geometry at `jd` for `observer`.
@@ -86,12 +89,15 @@ pub extern "C" fn siderust_moon_phase_topocentric(
     observer: SiderustGeodetict,
     out: *mut SiderustMoonPhaseGeometry,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let geom = moon_phase_topocentric::<Vsop87Ephemeris>(JulianDate::new(jd), observer.to_rust());
-    unsafe { *out = phase_geometry_from_rust(geom) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let geom = moon_phase_topocentric::<Vsop87Ephemeris>(JulianDate::new(jd), observer.to_rust());
+        unsafe { *out = phase_geometry_from_rust(geom) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Map phase geometry to a named phase label.
@@ -100,23 +106,26 @@ pub extern "C" fn siderust_moon_phase_label(
     geom: SiderustMoonPhaseGeometry,
     out: *mut SiderustMoonPhaseLabel,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let elong_deg = Radians::new(geom.elongation_rad).to::<Degree>();
-    let label = MoonPhaseLabel::from_elongation(elong_deg, &Default::default());
-    let ffi_label = match label {
-        MoonPhaseLabel::NewMoon => SiderustMoonPhaseLabel::NewMoon,
-        MoonPhaseLabel::WaxingCrescent => SiderustMoonPhaseLabel::WaxingCrescent,
-        MoonPhaseLabel::FirstQuarter => SiderustMoonPhaseLabel::FirstQuarter,
-        MoonPhaseLabel::WaxingGibbous => SiderustMoonPhaseLabel::WaxingGibbous,
-        MoonPhaseLabel::FullMoon => SiderustMoonPhaseLabel::FullMoon,
-        MoonPhaseLabel::WaningGibbous => SiderustMoonPhaseLabel::WaningGibbous,
-        MoonPhaseLabel::LastQuarter => SiderustMoonPhaseLabel::LastQuarter,
-        MoonPhaseLabel::WaningCrescent => SiderustMoonPhaseLabel::WaningCrescent,
-    };
-    unsafe { *out = ffi_label };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let elong_deg = Radians::new(geom.elongation_rad).to::<Degree>();
+        let label = MoonPhaseLabel::from_elongation(elong_deg, &Default::default());
+        let ffi_label = match label {
+            MoonPhaseLabel::NewMoon => SiderustMoonPhaseLabel::NewMoon,
+            MoonPhaseLabel::WaxingCrescent => SiderustMoonPhaseLabel::WaxingCrescent,
+            MoonPhaseLabel::FirstQuarter => SiderustMoonPhaseLabel::FirstQuarter,
+            MoonPhaseLabel::WaxingGibbous => SiderustMoonPhaseLabel::WaxingGibbous,
+            MoonPhaseLabel::FullMoon => SiderustMoonPhaseLabel::FullMoon,
+            MoonPhaseLabel::WaningGibbous => SiderustMoonPhaseLabel::WaningGibbous,
+            MoonPhaseLabel::LastQuarter => SiderustMoonPhaseLabel::LastQuarter,
+            MoonPhaseLabel::WaningCrescent => SiderustMoonPhaseLabel::WaningCrescent,
+        };
+        unsafe { *out = ffi_label };
+        SiderustStatus::Ok
+
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -134,21 +143,24 @@ pub extern "C" fn siderust_find_phase_events(
     out: *mut *mut SiderustPhaseEvent,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    let events = find_phase_events::<Vsop87Ephemeris>(window, search_opts_to_phase(opts));
-    vec_to_c(
-        events,
-        |e| SiderustPhaseEvent {
-            mjd: e.mjd.value(),
-            kind: phase_kind_from_rust(e.kind),
-            _pad: [0; 4],
-        },
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        let events = find_phase_events::<Vsop87Ephemeris>(window, search_opts_to_phase(opts));
+        vec_to_c(
+            events,
+            |e| SiderustPhaseEvent {
+                mjd: e.mjd.value(),
+                kind: phase_kind_from_rust(e.kind),
+                _pad: [0; 4],
+            },
+            out,
+            count,
+        )
+
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -164,15 +176,18 @@ pub extern "C" fn siderust_moon_illumination_above(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    periods_to_c(
-        illumination_above::<Vsop87Ephemeris>(window, k_min, search_opts_to_phase(opts)),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        periods_to_c(
+            illumination_above::<Vsop87Ephemeris>(window, k_min, search_opts_to_phase(opts)),
+            out,
+            count,
+        )
+
+    }}
 }
 
 /// Find windows where geocentric Moon illumination is below `k_max` ∈ [0,1].
@@ -184,15 +199,18 @@ pub extern "C" fn siderust_moon_illumination_below(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    periods_to_c(
-        illumination_below::<Vsop87Ephemeris>(window, k_max, search_opts_to_phase(opts)),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        periods_to_c(
+            illumination_below::<Vsop87Ephemeris>(window, k_max, search_opts_to_phase(opts)),
+            out,
+            count,
+        )
+
+    }}
 }
 
 /// Find windows where Moon illumination is within [k_min, k_max].
@@ -205,15 +223,18 @@ pub extern "C" fn siderust_moon_illumination_range(
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
-    let window = match window_from_c(window) {
-        Ok(w) => w,
-        Err(e) => return e,
-    };
-    periods_to_c(
-        illumination_range::<Vsop87Ephemeris>(window, k_min, k_max, search_opts_to_phase(opts)),
-        out,
-        count,
-    )
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        periods_to_c(
+            illumination_range::<Vsop87Ephemeris>(window, k_min, k_max, search_opts_to_phase(opts)),
+            out,
+            count,
+        )
+
+    }}
 }
 
 #[cfg(test)]

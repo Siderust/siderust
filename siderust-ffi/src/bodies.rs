@@ -40,37 +40,40 @@ pub extern "C" fn siderust_star_catalog(
     name: *const c_char,
     out: *mut *mut SiderustStar,
 ) -> SiderustStatus {
-    if name.is_null() || out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let name_str = unsafe { CStr::from_ptr(name) };
-    let name_str = match name_str.to_str() {
-        Ok(s) => s,
-        Err(_) => return SiderustStatus::InvalidArgument,
-    };
-
-    let star: Option<&Star<'static>> = match name_str.to_uppercase().as_str() {
-        "VEGA" => Some(&bodies::VEGA),
-        "SIRIUS" => Some(&bodies::SIRIUS),
-        "POLARIS" => Some(&bodies::POLARIS),
-        "CANOPUS" => Some(&bodies::CANOPUS),
-        "ARCTURUS" => Some(&bodies::ARCTURUS),
-        "RIGEL" => Some(&bodies::RIGEL),
-        "BETELGEUSE" => Some(&bodies::BETELGEUSE),
-        "PROCYON" => Some(&bodies::PROCYON),
-        "ALDEBARAN" => Some(&bodies::ALDEBARAN),
-        "ALTAIR" => Some(&bodies::ALTAIR),
-        _ => None,
-    };
-
-    match star {
-        Some(s) => {
-            let handle = Box::new(SiderustStar { inner: s.clone() });
-            unsafe { *out = Box::into_raw(handle) };
-            SiderustStatus::Ok
+    ffi_guard! {{
+        if name.is_null() || out.is_null() {
+            return SiderustStatus::NullPointer;
         }
-        None => SiderustStatus::UnknownStar,
-    }
+        let name_str = unsafe { CStr::from_ptr(name) };
+        let name_str = match name_str.to_str() {
+            Ok(s) => s,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+
+        let star: Option<&Star<'static>> = match name_str.to_uppercase().as_str() {
+            "VEGA" => Some(&bodies::VEGA),
+            "SIRIUS" => Some(&bodies::SIRIUS),
+            "POLARIS" => Some(&bodies::POLARIS),
+            "CANOPUS" => Some(&bodies::CANOPUS),
+            "ARCTURUS" => Some(&bodies::ARCTURUS),
+            "RIGEL" => Some(&bodies::RIGEL),
+            "BETELGEUSE" => Some(&bodies::BETELGEUSE),
+            "PROCYON" => Some(&bodies::PROCYON),
+            "ALDEBARAN" => Some(&bodies::ALDEBARAN),
+            "ALTAIR" => Some(&bodies::ALTAIR),
+            _ => None,
+        };
+
+        match star {
+            Some(s) => {
+                let handle = Box::new(SiderustStar { inner: s.clone() });
+                unsafe { *out = Box::into_raw(handle) };
+                SiderustStatus::Ok
+            }
+            None => SiderustStatus::UnknownStar,
+        }
+
+    }}
 }
 
 /// Create a custom star.
@@ -93,55 +96,58 @@ pub extern "C" fn siderust_star_create(
     proper_motion: *const SiderustProperMotion,
     out: *mut *mut SiderustStar,
 ) -> SiderustStatus {
-    if name.is_null() || out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let name_str = unsafe { CStr::from_ptr(name) };
-    let name_str = match name_str.to_str() {
-        Ok(s) => s.to_owned(),
-        Err(_) => return SiderustStatus::InvalidArgument,
-    };
-
-    let pos = spherical::Position::<Geocentric, EquatorialMeanJ2000, LightYear>::new(
-        Degrees::new(ra_deg),
-        Degrees::new(dec_deg),
-        LightYears::new(distance_ly),
-    );
-
-    let epoch = JulianDate::new(epoch_jd);
-
-    let pm = if proper_motion.is_null() {
-        None
-    } else {
-        let pm_c = unsafe { &*proper_motion };
-        let convention = match pm_c.ra_convention {
-            SiderustRaConvention::MuAlpha => RaProperMotionConvention::MuAlpha,
-            SiderustRaConvention::MuAlphaStar => RaProperMotionConvention::MuAlphaStar,
+    ffi_guard! {{
+        if name.is_null() || out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let name_str = unsafe { CStr::from_ptr(name) };
+        let name_str = match name_str.to_str() {
+            Ok(s) => s.to_owned(),
+            Err(_) => return SiderustStatus::InvalidArgument,
         };
-        Some(ProperMotion {
-            pm_ra: Quantity::new(pm_c.pm_ra_deg_yr),
-            pm_dec: Quantity::new(pm_c.pm_dec_deg_yr),
-            ra_convention: convention,
-        })
-    };
 
-    let target = match pm {
-        Some(pm) => Target::new(pos, epoch, pm),
-        None => Target::new_static(pos, epoch),
-    };
+        let pos = spherical::Position::<Geocentric, EquatorialMeanJ2000, LightYear>::new(
+            Degrees::new(ra_deg),
+            Degrees::new(dec_deg),
+            LightYears::new(distance_ly),
+        );
 
-    let star = Star::new(
-        Cow::<'static, str>::Owned(name_str),
-        LightYears::new(distance_ly),
-        SolarMasses::new(mass_solar),
-        SolarRadiuses::new(radius_solar),
-        SolarLuminosities::new(luminosity_solar),
-        target,
-    );
+        let epoch = JulianDate::new(epoch_jd);
 
-    let handle = Box::new(SiderustStar { inner: star });
-    unsafe { *out = Box::into_raw(handle) };
-    SiderustStatus::Ok
+        let pm = if proper_motion.is_null() {
+            None
+        } else {
+            let pm_c = unsafe { &*proper_motion };
+            let convention = match pm_c.ra_convention {
+                SiderustRaConvention::MuAlpha => RaProperMotionConvention::MuAlpha,
+                SiderustRaConvention::MuAlphaStar => RaProperMotionConvention::MuAlphaStar,
+            };
+            Some(ProperMotion {
+                pm_ra: Quantity::new(pm_c.pm_ra_deg_yr),
+                pm_dec: Quantity::new(pm_c.pm_dec_deg_yr),
+                ra_convention: convention,
+            })
+        };
+
+        let target = match pm {
+            Some(pm) => Target::new(pos, epoch, pm),
+            None => Target::new_static(pos, epoch),
+        };
+
+        let star = Star::new(
+            Cow::<'static, str>::Owned(name_str),
+            LightYears::new(distance_ly),
+            SolarMasses::new(mass_solar),
+            SolarRadiuses::new(radius_solar),
+            SolarLuminosities::new(luminosity_solar),
+            target,
+        );
+
+        let handle = Box::new(SiderustStar { inner: star });
+        unsafe { *out = Box::into_raw(handle) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Free a Star handle.
@@ -166,22 +172,25 @@ pub extern "C" fn siderust_star_name(
     buf_len: usize,
     written: *mut usize,
 ) -> SiderustStatus {
-    if handle.is_null() || buf.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let star = unsafe { &*handle };
-    let name = star.inner.name.as_bytes();
-    if name.len() + 1 > buf_len {
-        return SiderustStatus::InvalidArgument;
-    }
-    unsafe {
-        std::ptr::copy_nonoverlapping(name.as_ptr(), buf as *mut u8, name.len());
-        *buf.add(name.len()) = 0; // NUL terminator
-        if !written.is_null() {
-            *written = name.len();
+    ffi_guard! {{
+        if handle.is_null() || buf.is_null() {
+            return SiderustStatus::NullPointer;
         }
-    }
-    SiderustStatus::Ok
+        let star = unsafe { &*handle };
+        let name = star.inner.name.as_bytes();
+        if name.len() + 1 > buf_len {
+            return SiderustStatus::InvalidArgument;
+        }
+        unsafe {
+            std::ptr::copy_nonoverlapping(name.as_ptr(), buf as *mut u8, name.len());
+            *buf.add(name.len()) = 0; // NUL terminator
+            if !written.is_null() {
+                *written = name.len();
+            }
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Get the star's distance in light-years.
@@ -227,81 +236,105 @@ pub extern "C" fn siderust_star_luminosity_solar(handle: *const SiderustStar) ->
 /// Get Mercury's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_mercury(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = SiderustPlanet::from_rust(&bodies::MERCURY) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = SiderustPlanet::from_rust(&bodies::MERCURY) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Get Venus's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_venus(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = SiderustPlanet::from_rust(&bodies::VENUS) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = SiderustPlanet::from_rust(&bodies::VENUS) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Get Earth's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_earth(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = SiderustPlanet::from_rust(&bodies::EARTH) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = SiderustPlanet::from_rust(&bodies::EARTH) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Get Mars's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_mars(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = SiderustPlanet::from_rust(&bodies::MARS) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = SiderustPlanet::from_rust(&bodies::MARS) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Get Jupiter's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_jupiter(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = SiderustPlanet::from_rust(&bodies::JUPITER) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = SiderustPlanet::from_rust(&bodies::JUPITER) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Get Saturn's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_saturn(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = SiderustPlanet::from_rust(&bodies::SATURN) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = SiderustPlanet::from_rust(&bodies::SATURN) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Get Uranus's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_uranus(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = SiderustPlanet::from_rust(&bodies::URANUS) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = SiderustPlanet::from_rust(&bodies::URANUS) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Get Neptune's orbital and physical parameters.
 #[no_mangle]
 pub extern "C" fn siderust_planet_neptune(out: *mut SiderustPlanet) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    unsafe { *out = SiderustPlanet::from_rust(&bodies::NEPTUNE) };
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { *out = SiderustPlanet::from_rust(&bodies::NEPTUNE) };
+        SiderustStatus::Ok
+
+    }}
 }
 
 #[cfg(test)]

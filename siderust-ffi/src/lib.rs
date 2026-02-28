@@ -13,18 +13,23 @@
 // Ensure the tempoch-ffi crate is linked so the TempochPeriodMjd re-export resolves.
 extern crate tempoch_ffi;
 
+// These modules must come first: `error` defines the status enum, `ffi_utils`
+// exports the `ffi_guard!` and `check_out!` macros used by all other modules.
+pub mod error;
+#[macro_use]
+pub mod ffi_utils;
+pub mod types;
+
 pub mod altitude;
 pub mod azimuth;
 pub mod bodies;
 pub mod body;
 pub mod coordinates;
 pub mod ephemeris;
-pub mod error;
-pub mod ffi_utils;
 pub mod observatories;
 pub mod phase;
+pub mod subject;
 pub mod target;
-pub mod types;
 
 pub use altitude::*;
 pub use azimuth::*;

@@ -160,38 +160,41 @@ pub extern "C" fn siderust_spherical_dir_transform_frame(
     jd: f64,
     out: *mut SiderustSphericalDir,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-
-    let dir = match make_sph_dir_in_frame(src_frame, polar_deg, azimuth_deg) {
-        Ok(d) => d,
-        Err(e) => return e,
-    };
-
-    let jd_val = JulianDate::new(jd);
-
-    let (out_polar, out_azimuth) = match dst_frame {
-        SiderustFrame::ICRS => dir.to_icrs(&jd_val),
-        SiderustFrame::EclipticMeanJ2000 => dir.to_ecliptic_j2000(&jd_val),
-        SiderustFrame::EquatorialMeanJ2000 => dir.to_equatorial_j2000(&jd_val),
-        SiderustFrame::EquatorialMeanOfDate => dir.to_equatorial_mean_of_date(&jd_val),
-        SiderustFrame::EquatorialTrueOfDate => dir.to_equatorial_true_of_date(&jd_val),
-        SiderustFrame::Horizontal => {
-            // Horizontal needs an observer — use siderust_spherical_dir_to_horizontal instead
-            return SiderustStatus::InvalidFrame;
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
         }
-        _ => return SiderustStatus::InvalidFrame,
-    };
 
-    unsafe {
-        *out = SiderustSphericalDir {
-            polar_deg: out_polar,
-            azimuth_deg: out_azimuth,
-            frame: dst_frame,
+        let dir = match make_sph_dir_in_frame(src_frame, polar_deg, azimuth_deg) {
+            Ok(d) => d,
+            Err(e) => return e,
         };
-    }
-    SiderustStatus::Ok
+
+        let jd_val = JulianDate::new(jd);
+
+        let (out_polar, out_azimuth) = match dst_frame {
+            SiderustFrame::ICRS => dir.to_icrs(&jd_val),
+            SiderustFrame::EclipticMeanJ2000 => dir.to_ecliptic_j2000(&jd_val),
+            SiderustFrame::EquatorialMeanJ2000 => dir.to_equatorial_j2000(&jd_val),
+            SiderustFrame::EquatorialMeanOfDate => dir.to_equatorial_mean_of_date(&jd_val),
+            SiderustFrame::EquatorialTrueOfDate => dir.to_equatorial_true_of_date(&jd_val),
+            SiderustFrame::Horizontal => {
+                // Horizontal needs an observer — use siderust_spherical_dir_to_horizontal instead
+                return SiderustStatus::InvalidFrame;
+            }
+            _ => return SiderustStatus::InvalidFrame,
+        };
+
+        unsafe {
+            *out = SiderustSphericalDir {
+                polar_deg: out_polar,
+                azimuth_deg: out_azimuth,
+                frame: dst_frame,
+            };
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Transform a spherical direction to the horizontal (alt-az) frame.
@@ -208,27 +211,30 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal(
     observer: SiderustGeodetict,
     out: *mut SiderustSphericalDir,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
 
-    let dir = match make_sph_dir_in_frame(src_frame, polar_deg, azimuth_deg) {
-        Ok(d) => d,
-        Err(e) => return e,
-    };
-
-    let jd_val = JulianDate::new(jd);
-    let site = observer.to_rust();
-    let (az, alt) = dir.to_horizontal(&jd_val, &site);
-
-    unsafe {
-        *out = SiderustSphericalDir {
-            polar_deg: alt,
-            azimuth_deg: az,
-            frame: SiderustFrame::Horizontal,
+        let dir = match make_sph_dir_in_frame(src_frame, polar_deg, azimuth_deg) {
+            Ok(d) => d,
+            Err(e) => return e,
         };
-    }
-    SiderustStatus::Ok
+
+        let jd_val = JulianDate::new(jd);
+        let site = observer.to_rust();
+        let (az, alt) = dir.to_horizontal(&jd_val, &site);
+
+        unsafe {
+            *out = SiderustSphericalDir {
+                polar_deg: alt,
+                azimuth_deg: az,
+                frame: SiderustFrame::Horizontal,
+            };
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -332,36 +338,39 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame(
     jd: f64,
     out: *mut SiderustCartesianPos,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
 
-    let dir = match make_cart_dir_in_frame(src_frame, x, y, z) {
-        Ok(d) => d,
-        Err(e) => return e,
-    };
-
-    let jd_val = JulianDate::new(jd);
-
-    let (ox, oy, oz) = match dst_frame {
-        SiderustFrame::ICRS => dir.to_icrs(&jd_val),
-        SiderustFrame::EclipticMeanJ2000 => dir.to_ecliptic_j2000(&jd_val),
-        SiderustFrame::EquatorialMeanJ2000 => dir.to_equatorial_j2000(&jd_val),
-        SiderustFrame::EquatorialMeanOfDate => dir.to_equatorial_mean_of_date(&jd_val),
-        SiderustFrame::EquatorialTrueOfDate => dir.to_equatorial_true_of_date(&jd_val),
-        _ => return SiderustStatus::InvalidFrame,
-    };
-
-    unsafe {
-        *out = SiderustCartesianPos {
-            x: ox,
-            y: oy,
-            z: oz,
-            frame: dst_frame,
-            center: SiderustCenter::Barycentric, // directions have no center
+        let dir = match make_cart_dir_in_frame(src_frame, x, y, z) {
+            Ok(d) => d,
+            Err(e) => return e,
         };
-    }
-    SiderustStatus::Ok
+
+        let jd_val = JulianDate::new(jd);
+
+        let (ox, oy, oz) = match dst_frame {
+            SiderustFrame::ICRS => dir.to_icrs(&jd_val),
+            SiderustFrame::EclipticMeanJ2000 => dir.to_ecliptic_j2000(&jd_val),
+            SiderustFrame::EquatorialMeanJ2000 => dir.to_equatorial_j2000(&jd_val),
+            SiderustFrame::EquatorialMeanOfDate => dir.to_equatorial_mean_of_date(&jd_val),
+            SiderustFrame::EquatorialTrueOfDate => dir.to_equatorial_true_of_date(&jd_val),
+            _ => return SiderustStatus::InvalidFrame,
+        };
+
+        unsafe {
+            *out = SiderustCartesianPos {
+                x: ox,
+                y: oy,
+                z: oz,
+                frame: dst_frame,
+                center: SiderustCenter::Barycentric, // directions have no center
+            };
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -492,37 +501,40 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame(
     jd: f64,
     out: *mut SiderustCartesianPos,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
 
-    let proxy = match make_cart_pos_in_frame(pos.frame, pos.x, pos.y, pos.z) {
-        Ok(p) => p,
-        Err(e) => return e,
-    };
-
-    let jd_val = JulianDate::new(jd);
-
-    let (ox, oy, oz) = match dst_frame {
-        SiderustFrame::ICRS => proxy.to_icrs(&jd_val),
-        SiderustFrame::ICRF => proxy.to_icrf(&jd_val),
-        SiderustFrame::EclipticMeanJ2000 => proxy.to_ecliptic_j2000(&jd_val),
-        SiderustFrame::EquatorialMeanJ2000 => proxy.to_equatorial_j2000(&jd_val),
-        SiderustFrame::EquatorialMeanOfDate => proxy.to_equatorial_mean_of_date(&jd_val),
-        SiderustFrame::EquatorialTrueOfDate => proxy.to_equatorial_true_of_date(&jd_val),
-        _ => return SiderustStatus::InvalidFrame,
-    };
-
-    unsafe {
-        *out = SiderustCartesianPos {
-            x: ox,
-            y: oy,
-            z: oz,
-            frame: dst_frame,
-            center: pos.center, // center is unchanged for a frame-only transform
+        let proxy = match make_cart_pos_in_frame(pos.frame, pos.x, pos.y, pos.z) {
+            Ok(p) => p,
+            Err(e) => return e,
         };
-    }
-    SiderustStatus::Ok
+
+        let jd_val = JulianDate::new(jd);
+
+        let (ox, oy, oz) = match dst_frame {
+            SiderustFrame::ICRS => proxy.to_icrs(&jd_val),
+            SiderustFrame::ICRF => proxy.to_icrf(&jd_val),
+            SiderustFrame::EclipticMeanJ2000 => proxy.to_ecliptic_j2000(&jd_val),
+            SiderustFrame::EquatorialMeanJ2000 => proxy.to_equatorial_j2000(&jd_val),
+            SiderustFrame::EquatorialMeanOfDate => proxy.to_equatorial_mean_of_date(&jd_val),
+            SiderustFrame::EquatorialTrueOfDate => proxy.to_equatorial_true_of_date(&jd_val),
+            _ => return SiderustStatus::InvalidFrame,
+        };
+
+        unsafe {
+            *out = SiderustCartesianPos {
+                x: ox,
+                y: oy,
+                z: oz,
+                frame: dst_frame,
+                center: pos.center, // center is unchanged for a frame-only transform
+            };
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Create a geodetic position and convert to ECEF Cartesian.
@@ -531,22 +543,25 @@ pub extern "C" fn siderust_geodetic_to_cartesian_ecef(
     geodetic: SiderustGeodetict,
     out: *mut SiderustCartesianPos,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let g = geodetic.to_rust();
-    let cart = g.to_cartesian::<Meter>();
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let g = geodetic.to_rust();
+        let cart = g.to_cartesian::<Meter>();
 
-    unsafe {
-        *out = SiderustCartesianPos {
-            x: cart.x().value(),
-            y: cart.y().value(),
-            z: cart.z().value(),
-            frame: SiderustFrame::ECEF,
-            center: SiderustCenter::Geocentric,
-        };
-    }
-    SiderustStatus::Ok
+        unsafe {
+            *out = SiderustCartesianPos {
+                x: cart.x().value(),
+                y: cart.y().value(),
+                z: cart.z().value(),
+                frame: SiderustFrame::ECEF,
+                center: SiderustCenter::Geocentric,
+            };
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -617,31 +632,34 @@ pub extern "C" fn siderust_cartesian_pos_transform_center(
     jd: f64,
     out: *mut SiderustCartesianPos,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
 
-    let from_code = match center_to_shift_code(pos.center) {
-        Some(c) => c,
-        None => return SiderustStatus::InvalidCenter,
-    };
-    let to_code = match center_to_shift_code(dst_center) {
-        Some(c) => c,
-        None => return SiderustStatus::InvalidCenter,
-    };
-
-    let (ox, oy, oz) = shift_center_xyz(pos.x, pos.y, pos.z, from_code, to_code, jd);
-
-    unsafe {
-        *out = SiderustCartesianPos {
-            x: ox,
-            y: oy,
-            z: oz,
-            frame: pos.frame,
-            center: dst_center,
+        let from_code = match center_to_shift_code(pos.center) {
+            Some(c) => c,
+            None => return SiderustStatus::InvalidCenter,
         };
-    }
-    SiderustStatus::Ok
+        let to_code = match center_to_shift_code(dst_center) {
+            Some(c) => c,
+            None => return SiderustStatus::InvalidCenter,
+        };
+
+        let (ox, oy, oz) = shift_center_xyz(pos.x, pos.y, pos.z, from_code, to_code, jd);
+
+        unsafe {
+            *out = SiderustCartesianPos {
+                x: ox,
+                y: oy,
+                z: oz,
+                frame: pos.frame,
+                center: dst_center,
+            };
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Compute the Keplerian orbital position at a given Julian date.
@@ -657,20 +675,23 @@ pub extern "C" fn siderust_kepler_position(
     jd: f64,
     out: *mut SiderustCartesianPos,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
-    let pos = orbit.to_rust().kepler_position(JulianDate::new(jd));
-    unsafe {
-        *out = SiderustCartesianPos {
-            x: pos.x().value(),
-            y: pos.y().value(),
-            z: pos.z().value(),
-            frame: SiderustFrame::EclipticMeanJ2000,
-            center: SiderustCenter::Heliocentric, // placeholder; real center = orbit_center
-        };
-    }
-    SiderustStatus::Ok
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let pos = orbit.to_rust().kepler_position(JulianDate::new(jd));
+        unsafe {
+            *out = SiderustCartesianPos {
+                x: pos.x().value(),
+                y: pos.y().value(),
+                z: pos.z().value(),
+                frame: SiderustFrame::EclipticMeanJ2000,
+                center: SiderustCenter::Heliocentric, // placeholder; real center = orbit_center
+            };
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Transform a Cartesian position to body-centric coordinates.
@@ -689,41 +710,44 @@ pub extern "C" fn siderust_to_bodycentric(
     jd: f64,
     out: *mut SiderustCartesianPos,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
 
-    // Map SiderustCenter → OrbitReferenceCenter coding (0=Bary,1=Helio,2=Geo)
-    let input_center: u8 = match pos.center {
-        SiderustCenter::Barycentric => 0,
-        SiderustCenter::Heliocentric => 1,
-        SiderustCenter::Geocentric => 2,
-        _ => return SiderustStatus::InvalidCenter,
-    };
-
-    // Keplerian position of the body in its own orbit's reference center
-    let body_kep = params.orbit.to_rust().kepler_position(JulianDate::new(jd));
-    let (bkx, bky, bkz) = (
-        body_kep.x().value(),
-        body_kep.y().value(),
-        body_kep.z().value(),
-    );
-
-    // Shift body position to match the input center
-    let (body_x, body_y, body_z) =
-        shift_center_xyz(bkx, bky, bkz, params.orbit_center, input_center, jd);
-
-    // Relative position: input – body (vector from body to target)
-    unsafe {
-        *out = SiderustCartesianPos {
-            x: pos.x - body_x,
-            y: pos.y - body_y,
-            z: pos.z - body_z,
-            frame: pos.frame,
-            center: SiderustCenter::Bodycentric,
+        // Map SiderustCenter → OrbitReferenceCenter coding (0=Bary,1=Helio,2=Geo)
+        let input_center: u8 = match pos.center {
+            SiderustCenter::Barycentric => 0,
+            SiderustCenter::Heliocentric => 1,
+            SiderustCenter::Geocentric => 2,
+            _ => return SiderustStatus::InvalidCenter,
         };
-    }
-    SiderustStatus::Ok
+
+        // Keplerian position of the body in its own orbit's reference center
+        let body_kep = params.orbit.to_rust().kepler_position(JulianDate::new(jd));
+        let (bkx, bky, bkz) = (
+            body_kep.x().value(),
+            body_kep.y().value(),
+            body_kep.z().value(),
+        );
+
+        // Shift body position to match the input center
+        let (body_x, body_y, body_z) =
+            shift_center_xyz(bkx, bky, bkz, params.orbit_center, input_center, jd);
+
+        // Relative position: input – body (vector from body to target)
+        unsafe {
+            *out = SiderustCartesianPos {
+                x: pos.x - body_x,
+                y: pos.y - body_y,
+                z: pos.z - body_z,
+                frame: pos.frame,
+                center: SiderustCenter::Bodycentric,
+            };
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 /// Transform a body-centric position back to geocentric coordinates.
@@ -741,33 +765,36 @@ pub extern "C" fn siderust_from_bodycentric(
     jd: f64,
     out: *mut SiderustCartesianPos,
 ) -> SiderustStatus {
-    if out.is_null() {
-        return SiderustStatus::NullPointer;
-    }
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
 
-    // Keplerian position of the body in its own orbit's reference center
-    let body_kep = params.orbit.to_rust().kepler_position(JulianDate::new(jd));
-    let (bkx, bky, bkz) = (
-        body_kep.x().value(),
-        body_kep.y().value(),
-        body_kep.z().value(),
-    );
+        // Keplerian position of the body in its own orbit's reference center
+        let body_kep = params.orbit.to_rust().kepler_position(JulianDate::new(jd));
+        let (bkx, bky, bkz) = (
+            body_kep.x().value(),
+            body_kep.y().value(),
+            body_kep.z().value(),
+        );
 
-    // Convert body position to geocentric (target center code = 2)
-    let (body_geo_x, body_geo_y, body_geo_z) =
-        shift_center_xyz(bkx, bky, bkz, params.orbit_center, 2, jd);
+        // Convert body position to geocentric (target center code = 2)
+        let (body_geo_x, body_geo_y, body_geo_z) =
+            shift_center_xyz(bkx, bky, bkz, params.orbit_center, 2, jd);
 
-    // Recover geocentric: bodycentric + body_geocentric
-    unsafe {
-        *out = SiderustCartesianPos {
-            x: pos.x + body_geo_x,
-            y: pos.y + body_geo_y,
-            z: pos.z + body_geo_z,
-            frame: pos.frame,
-            center: SiderustCenter::Geocentric,
-        };
-    }
-    SiderustStatus::Ok
+        // Recover geocentric: bodycentric + body_geocentric
+        unsafe {
+            *out = SiderustCartesianPos {
+                x: pos.x + body_geo_x,
+                y: pos.y + body_geo_y,
+                z: pos.z + body_geo_z,
+                frame: pos.frame,
+                center: SiderustCenter::Geocentric,
+            };
+        }
+        SiderustStatus::Ok
+
+    }}
 }
 
 #[cfg(test)]
