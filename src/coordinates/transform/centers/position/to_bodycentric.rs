@@ -29,7 +29,7 @@
 //! let target_geo: Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
 //!     Position::new(0.00257, 0.0, 0.0);
 //!
-//! let target_from_sat = target_geo.to_center((sat_params, JulianDate::J2000));
+//! let target_from_sat: Position<Bodycentric, frames::EquatorialMeanJ2000, AstronomicalUnit> = target_geo.to_center((sat_params, JulianDate::J2000));
 //! ```
 //!
 //! Reverse (Bodycentric → Geocentric):
