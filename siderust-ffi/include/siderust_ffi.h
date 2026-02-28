@@ -629,6 +629,17 @@ siderust_status_t siderust_star_azimuth_crossings(const struct SiderustStar *han
                                                   struct siderust_azimuth_crossing_event_t **out,
                                                   uintptr_t *count);
 
+// Periods when a star's azimuth is within [min_deg, max_deg].
+
+siderust_status_t siderust_star_in_azimuth_range(const struct SiderustStar *handle,
+                                                 struct siderust_geodetic_t observer,
+                                                 tempoch_period_mjd_t window,
+                                                 double min_deg,
+                                                 double max_deg,
+                                                 struct siderust_search_opts_t opts,
+                                                 tempoch_period_mjd_t **out,
+                                                 uintptr_t *count);
+
 // Azimuth of an ICRS direction at an instant.
 //
 // `dir.frame` must equal `SIDERUST_FRAME_T_ICRS`; otherwise
@@ -884,6 +895,19 @@ siderust_status_t siderust_cartesian_pos_transform_frame(struct siderust_cartesi
 siderust_status_t siderust_geodetic_to_cartesian_ecef(struct siderust_geodetic_t geodetic,
                                                       struct siderust_cartesian_pos_t *out);
 
+// Transform a Cartesian position from one reference center to another
+// (frame-only, same frame).
+//
+// Only works for EclipticMeanJ2000 frame positions.  The input frame must
+// already be EclipticMeanJ2000; this function performs only the center shift.
+//
+// Supported centers: Barycentric, Heliocentric, Geocentric.
+
+siderust_status_t siderust_cartesian_pos_transform_center(struct siderust_cartesian_pos_t pos,
+                                                          siderust_center_t dst_center,
+                                                          double jd,
+                                                          struct siderust_cartesian_pos_t *out);
+
 // Compute the Keplerian orbital position at a given Julian date.
 //
 // Returns position in EclipticMeanJ2000 frame (AU), where the reference
@@ -942,6 +966,11 @@ siderust_status_t siderust_vsop87_earth_heliocentric(double jd,
 
 siderust_status_t siderust_vsop87_mars_heliocentric(double jd,
                                                     struct siderust_cartesian_pos_t *out);
+
+// Get Mars's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
+
+siderust_status_t siderust_vsop87_mars_barycentric(double jd,
+                                                   struct siderust_cartesian_pos_t *out);
 
 // Get Venus's heliocentric position (EclipticMeanJ2000, AU) via VSOP87.
 

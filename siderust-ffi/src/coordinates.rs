@@ -14,7 +14,7 @@ use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::coordinates::centers::{Barycentric, Geodetic};
 use siderust::coordinates::frames::{
     EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate,
-    ReferenceFrame, ECEF, ICRS,
+    ReferenceFrame, ECEF, ICRF, ICRS,
 };
 use siderust::coordinates::transform::{
     DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt,
@@ -374,6 +374,7 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame(
 /// the result x/y/z are in the same implicit unit as the input.
 trait CartesianPosProxy {
     fn to_icrs(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_icrf(&self, jd: &JulianDate) -> (f64, f64, f64);
     fn to_ecliptic_j2000(&self, jd: &JulianDate) -> (f64, f64, f64);
     fn to_equatorial_j2000(&self, jd: &JulianDate) -> (f64, f64, f64);
     fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64, f64);
@@ -393,6 +394,11 @@ macro_rules! impl_cart_pos_proxy {
         impl CartesianPosProxy for cartesian::Position<Barycentric, $frame_ty, AstronomicalUnit> {
             fn to_icrs(&self, jd: &JulianDate) -> (f64, f64, f64) {
                 cart_pos_to_triple(&PositionAstroExt::to_frame::<ICRS>(self, jd))
+            }
+            fn to_icrf(&self, jd: &JulianDate) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame(self, jd);
+                cart_pos_to_triple(&PositionAstroExt::to_frame::<ICRF>(&icrs, jd))
             }
             fn to_ecliptic_j2000(&self, jd: &JulianDate) -> (f64, f64, f64) {
                 let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
@@ -425,6 +431,7 @@ macro_rules! impl_cart_pos_proxy {
 }
 
 impl_cart_pos_proxy!(ICRS);
+impl_cart_pos_proxy!(ICRF);
 impl_cart_pos_proxy!(EclipticMeanJ2000);
 impl_cart_pos_proxy!(EquatorialMeanJ2000);
 impl_cart_pos_proxy!(EquatorialMeanOfDate);
@@ -440,6 +447,11 @@ fn make_cart_pos_in_frame(
         SiderustFrame::ICRS => Ok(Box::new(cartesian::Position::<
             Barycentric,
             ICRS,
+            AstronomicalUnit,
+        >::new(x, y, z))),
+        SiderustFrame::ICRF => Ok(Box::new(cartesian::Position::<
+            Barycentric,
+            ICRF,
             AstronomicalUnit,
         >::new(x, y, z))),
         SiderustFrame::EclipticMeanJ2000 => Ok(Box::new(cartesian::Position::<
@@ -493,6 +505,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame(
 
     let (ox, oy, oz) = match dst_frame {
         SiderustFrame::ICRS => proxy.to_icrs(&jd_val),
+        SiderustFrame::ICRF => proxy.to_icrf(&jd_val),
         SiderustFrame::EclipticMeanJ2000 => proxy.to_ecliptic_j2000(&jd_val),
         SiderustFrame::EquatorialMeanJ2000 => proxy.to_equatorial_j2000(&jd_val),
         SiderustFrame::EquatorialMeanOfDate => proxy.to_equatorial_mean_of_date(&jd_val),
@@ -578,6 +591,57 @@ fn shift_center_xyz(x: f64, y: f64, z: f64, from: u8, to: u8, jd: f64) -> (f64, 
         2 => (hx - eh_x, hy - eh_y, hz - eh_z), // helio → geo
         _ => (hx, hy, hz),
     }
+}
+
+/// Map SiderustCenter enum values to the internal shift_center_xyz codes.
+fn center_to_shift_code(c: SiderustCenter) -> Option<u8> {
+    match c {
+        SiderustCenter::Barycentric  => Some(0),
+        SiderustCenter::Heliocentric => Some(1),
+        SiderustCenter::Geocentric   => Some(2),
+        _ => None,
+    }
+}
+
+/// Transform a Cartesian position from one reference center to another
+/// (frame-only, same frame).
+///
+/// Only works for EclipticMeanJ2000 frame positions.  The input frame must
+/// already be EclipticMeanJ2000; this function performs only the center shift.
+///
+/// Supported centers: Barycentric, Heliocentric, Geocentric.
+#[no_mangle]
+pub extern "C" fn siderust_cartesian_pos_transform_center(
+    pos: SiderustCartesianPos,
+    dst_center: SiderustCenter,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+
+    let from_code = match center_to_shift_code(pos.center) {
+        Some(c) => c,
+        None => return SiderustStatus::InvalidCenter,
+    };
+    let to_code = match center_to_shift_code(dst_center) {
+        Some(c) => c,
+        None => return SiderustStatus::InvalidCenter,
+    };
+
+    let (ox, oy, oz) = shift_center_xyz(pos.x, pos.y, pos.z, from_code, to_code, jd);
+
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: ox,
+            y: oy,
+            z: oz,
+            frame: pos.frame,
+            center: dst_center,
+        };
+    }
+    SiderustStatus::Ok
 }
 
 /// Compute the Keplerian orbital position at a given Julian date.
