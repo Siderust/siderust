@@ -5,8 +5,8 @@
 
 use crate::error::SiderustStatus;
 use crate::types::*;
-use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::bodies::solar_system::{Mars, Venus};
+use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════

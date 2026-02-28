@@ -10,10 +10,10 @@
 
 use qtty::*;
 use siderust::coordinates::cartesian::position::EquatorialMeanJ2000;
-use siderust::coordinates::centers::{Geocentric, Geodetic};
+use siderust::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical;
-use siderust::coordinates::transform::centers::ToTopocentricExt;
+use siderust::coordinates::transform::TransformCenter;
 use siderust::time::JulianDate;
 
 fn main() {
@@ -137,7 +137,8 @@ fn main() {
     );
 
     // Transform to topocentric (Greenwich)
-    let satellite_topo = satellite_geo.to_topocentric(greenwich, jd);
+    let satellite_topo: EquatorialMeanJ2000<Kilometer, Topocentric> =
+        satellite_geo.to_center((greenwich, jd));
 
     println!("Satellite (Topocentric from Greenwich):");
     println!("  X = {:.1} km", satellite_topo.x());
@@ -160,17 +161,20 @@ fn main() {
 
     println!("Same object from different observatories:");
 
-    let from_greenwich = object_geo.to_topocentric(greenwich, jd);
+    let from_greenwich: EquatorialMeanJ2000<Kilometer, Topocentric> =
+        object_geo.to_center((greenwich, jd));
     println!("  From Greenwich:");
     println!("    Observer lat: {:.2}° N", greenwich.lat);
     println!("    Distance: {:.0} km", from_greenwich.distance());
 
-    let from_la_palma = object_geo.to_topocentric(la_palma, jd);
+    let from_la_palma: EquatorialMeanJ2000<Kilometer, Topocentric> =
+        object_geo.to_center((la_palma, jd));
     println!("  From La Palma:");
     println!("    Observer lat: {:.2}° N", la_palma.lat);
     println!("    Distance: {:.0} km", from_la_palma.distance());
 
-    let from_sydney = object_geo.to_topocentric(sydney, jd);
+    let from_sydney: EquatorialMeanJ2000<Kilometer, Topocentric> =
+        object_geo.to_center((sydney, jd));
     println!("  From Sydney:");
     println!("    Observer lat: {:.2}° S", -sydney.lat);
     println!("    Distance: {:.0} km\n", from_sydney.distance());
@@ -217,7 +221,7 @@ fn main() {
     println!("  Distance: {:.0} km", pos_geo.distance());
 
     // Convert to topocentric
-    let pos_topo = pos_geo.to_topocentric(greenwich, jd);
+    let pos_topo: EquatorialMeanJ2000<Kilometer, Topocentric> = pos_geo.to_center((greenwich, jd));
     println!("\nPosition (Topocentric EquatorialMeanJ2000 from Greenwich):");
     println!("  Distance: {:.0} km", pos_topo.distance());
 

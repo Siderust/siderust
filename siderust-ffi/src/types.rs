@@ -9,7 +9,6 @@
 use crate::ffi_utils::FfiFrom;
 use qtty::*;
 use siderust::calculus::azimuth::{
-
     AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
 };
 use siderust::coordinates::centers::{

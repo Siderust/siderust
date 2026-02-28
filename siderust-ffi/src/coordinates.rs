@@ -16,8 +16,10 @@ use siderust::coordinates::frames::{
     EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate,
     ReferenceFrame, ECEF, ICRS,
 };
+use siderust::coordinates::transform::{
+    DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt,
+};
 use siderust::coordinates::{cartesian, spherical};
-use siderust::coordinates::transform::{DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt};
 use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -261,15 +263,21 @@ macro_rules! impl_cart_dir_proxy {
             }
             fn to_equatorial_j2000(&self, jd: &JulianDate) -> (f64, f64, f64) {
                 let icrs = DirectionAstroExt::to_frame::<ICRS>(self, jd);
-                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialMeanJ2000>(&icrs, jd))
+                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialMeanJ2000>(
+                    &icrs, jd,
+                ))
             }
             fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64, f64) {
                 let icrs = DirectionAstroExt::to_frame::<ICRS>(self, jd);
-                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialMeanOfDate>(&icrs, jd))
+                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialMeanOfDate>(
+                    &icrs, jd,
+                ))
             }
             fn to_equatorial_true_of_date(&self, jd: &JulianDate) -> (f64, f64, f64) {
                 let icrs = DirectionAstroExt::to_frame::<ICRS>(self, jd);
-                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialTrueOfDate>(&icrs, jd))
+                cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialTrueOfDate>(
+                    &icrs, jd,
+                ))
             }
         }
     };
@@ -288,21 +296,21 @@ fn make_cart_dir_in_frame(
     z: f64,
 ) -> Result<Box<dyn CartesianDirProxy>, SiderustStatus> {
     match frame {
-        SiderustFrame::ICRS => Ok(Box::new(
-            cartesian::Direction::<ICRS>::new_unchecked(x, y, z),
-        )),
+        SiderustFrame::ICRS => Ok(Box::new(cartesian::Direction::<ICRS>::new_unchecked(
+            x, y, z,
+        ))),
         SiderustFrame::EclipticMeanJ2000 => Ok(Box::new(
             cartesian::Direction::<EclipticMeanJ2000>::new_unchecked(x, y, z),
         )),
-        SiderustFrame::EquatorialMeanJ2000 => Ok(Box::new(
-            cartesian::Direction::<EquatorialMeanJ2000>::new_unchecked(x, y, z),
-        )),
-        SiderustFrame::EquatorialMeanOfDate => Ok(Box::new(
-            cartesian::Direction::<EquatorialMeanOfDate>::new_unchecked(x, y, z),
-        )),
-        SiderustFrame::EquatorialTrueOfDate => Ok(Box::new(
-            cartesian::Direction::<EquatorialTrueOfDate>::new_unchecked(x, y, z),
-        )),
+        SiderustFrame::EquatorialMeanJ2000 => Ok(Box::new(cartesian::Direction::<
+            EquatorialMeanJ2000,
+        >::new_unchecked(x, y, z))),
+        SiderustFrame::EquatorialMeanOfDate => Ok(Box::new(cartesian::Direction::<
+            EquatorialMeanOfDate,
+        >::new_unchecked(x, y, z))),
+        SiderustFrame::EquatorialTrueOfDate => Ok(Box::new(cartesian::Direction::<
+            EquatorialTrueOfDate,
+        >::new_unchecked(x, y, z))),
         _ => Err(SiderustStatus::InvalidFrame),
     }
 }
@@ -394,17 +402,23 @@ macro_rules! impl_cart_pos_proxy {
             fn to_equatorial_j2000(&self, jd: &JulianDate) -> (f64, f64, f64) {
                 let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
                     PositionAstroExt::to_frame(self, jd);
-                cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialMeanJ2000>(&icrs, jd))
+                cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialMeanJ2000>(
+                    &icrs, jd,
+                ))
             }
             fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64, f64) {
                 let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
                     PositionAstroExt::to_frame(self, jd);
-                cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialMeanOfDate>(&icrs, jd))
+                cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialMeanOfDate>(
+                    &icrs, jd,
+                ))
             }
             fn to_equatorial_true_of_date(&self, jd: &JulianDate) -> (f64, f64, f64) {
                 let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
                     PositionAstroExt::to_frame(self, jd);
-                cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialTrueOfDate>(&icrs, jd))
+                cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialTrueOfDate>(
+                    &icrs, jd,
+                ))
             }
         }
     };
@@ -423,21 +437,31 @@ fn make_cart_pos_in_frame(
     z: f64,
 ) -> Result<Box<dyn CartesianPosProxy>, SiderustStatus> {
     match frame {
-        SiderustFrame::ICRS => Ok(Box::new(
-            cartesian::Position::<Barycentric, ICRS, AstronomicalUnit>::new(x, y, z),
-        )),
-        SiderustFrame::EclipticMeanJ2000 => Ok(Box::new(
-            cartesian::Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(x, y, z),
-        )),
-        SiderustFrame::EquatorialMeanJ2000 => Ok(Box::new(
-            cartesian::Position::<Barycentric, EquatorialMeanJ2000, AstronomicalUnit>::new(x, y, z),
-        )),
-        SiderustFrame::EquatorialMeanOfDate => Ok(Box::new(
-            cartesian::Position::<Barycentric, EquatorialMeanOfDate, AstronomicalUnit>::new(x, y, z),
-        )),
-        SiderustFrame::EquatorialTrueOfDate => Ok(Box::new(
-            cartesian::Position::<Barycentric, EquatorialTrueOfDate, AstronomicalUnit>::new(x, y, z),
-        )),
+        SiderustFrame::ICRS => Ok(Box::new(cartesian::Position::<
+            Barycentric,
+            ICRS,
+            AstronomicalUnit,
+        >::new(x, y, z))),
+        SiderustFrame::EclipticMeanJ2000 => Ok(Box::new(cartesian::Position::<
+            Barycentric,
+            EclipticMeanJ2000,
+            AstronomicalUnit,
+        >::new(x, y, z))),
+        SiderustFrame::EquatorialMeanJ2000 => Ok(Box::new(cartesian::Position::<
+            Barycentric,
+            EquatorialMeanJ2000,
+            AstronomicalUnit,
+        >::new(x, y, z))),
+        SiderustFrame::EquatorialMeanOfDate => Ok(Box::new(cartesian::Position::<
+            Barycentric,
+            EquatorialMeanOfDate,
+            AstronomicalUnit,
+        >::new(x, y, z))),
+        SiderustFrame::EquatorialTrueOfDate => Ok(Box::new(cartesian::Position::<
+            Barycentric,
+            EquatorialTrueOfDate,
+            AstronomicalUnit,
+        >::new(x, y, z))),
         _ => Err(SiderustStatus::InvalidFrame),
     }
 }
@@ -533,21 +557,25 @@ fn shift_center_xyz(x: f64, y: f64, z: f64, from: u8, to: u8, jd: f64) -> (f64, 
 
     // Earth's heliocentric position — used for helio ↔ geo shifts
     let earth_h = Vsop87Ephemeris::earth_heliocentric(t);
-    let (eh_x, eh_y, eh_z) = (earth_h.x().value(), earth_h.y().value(), earth_h.z().value());
+    let (eh_x, eh_y, eh_z) = (
+        earth_h.x().value(),
+        earth_h.y().value(),
+        earth_h.z().value(),
+    );
 
     // Convert to heliocentric first (hub = heliocentric)
     let (hx, hy, hz) = match from {
         0 => (x - sb_x, y - sb_y, z - sb_z), // bary → helio  (subtract Sun-bary pos)
-        1 => (x, y, z),                        // already heliocentric
-        2 => (x + eh_x, y + eh_y, z + eh_z),  // geo  → helio  (add Earth-helio pos)
+        1 => (x, y, z),                      // already heliocentric
+        2 => (x + eh_x, y + eh_y, z + eh_z), // geo  → helio  (add Earth-helio pos)
         _ => (x, y, z),
     };
 
     // Convert heliocentric to target center
     match to {
         0 => (hx + sb_x, hy + sb_y, hz + sb_z), // helio → bary
-        1 => (hx, hy, hz),                        // helio → helio (no-op)
-        2 => (hx - eh_x, hy - eh_y, hz - eh_z),  // helio → geo
+        1 => (hx, hy, hz),                      // helio → helio (no-op)
+        2 => (hx - eh_x, hy - eh_y, hz - eh_z), // helio → geo
         _ => (hx, hy, hz),
     }
 }
