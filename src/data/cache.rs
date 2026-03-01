@@ -120,11 +120,3 @@ fn sha256_file(path: &Path) -> Result<String, DataError> {
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
-
-/// Atomically write a file: write to a temporary path, then rename.
-pub fn atomic_write(dest: &Path, data: &[u8]) -> Result<(), DataError> {
-    let tmp = dest.with_extension("tmp");
-    std::fs::write(&tmp, data)?;
-    std::fs::rename(&tmp, dest)?;
-    Ok(())
-}
