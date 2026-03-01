@@ -16,9 +16,32 @@ mod de440_build;
 
 use std::{env, path::PathBuf};
 
+/// Returns `true` when `SIDERUST_JPL_STUB` env var requests stubbing for `prefix`.
+#[cfg(feature = "de440")]
+fn jpl_stub_enabled_for(prefix: &str) -> bool {
+    let Ok(raw) = env::var("SIDERUST_JPL_STUB") else {
+        return false;
+    };
+    let lower = raw.trim().to_ascii_lowercase();
+    if lower.is_empty() {
+        return false;
+    }
+    if lower == "all" || lower == "1" || lower == "true" || lower == "yes" || lower == "on" {
+        return true;
+    }
+    lower
+        .split(|c: char| c == ',' || c.is_whitespace())
+        .filter(|s| !s.is_empty())
+        .any(|tok| tok == prefix)
+}
+
 fn main() {
     println!("cargo:rerun-if-env-changed=SIDERUST_DATASETS_DIR");
     println!("cargo:rerun-if-env-changed=SIDERUST_REGEN");
+    println!("cargo:rerun-if-env-changed=SIDERUST_JPL_STUB");
+
+    // Declare valid custom cfgs (needed since Rust 1.80 --check-cfg).
+    println!("cargo:rustc-check-cfg=cfg(siderust_mock_de440)");
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"));
     let datasets_base_dir = env::var_os("SIDERUST_DATASETS_DIR")
@@ -81,6 +104,9 @@ fn main() {
     // DE440 (only with feature)
     #[cfg(feature = "de440")]
     {
+        if jpl_stub_enabled_for("de440") {
+            println!("cargo:rustc-cfg=siderust_mock_de440");
+        }
         eprintln!("Building DE440 data...");
         let de440_dir = datasets_base_dir.join("de440_dataset");
         de440_build::run(de440_dir.as_path()).unwrap_or_else(|e| {
