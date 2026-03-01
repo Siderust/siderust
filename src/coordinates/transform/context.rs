@@ -37,7 +37,9 @@ use crate::calculus::ephemeris::Vsop87Ephemeris;
 /// Default ephemeris type.
 ///
 /// - Without `de440` feature: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
-/// - With `de440` feature: `De440Ephemeris` (JPL DE440, compile-time).
+/// - With `de440` feature (and real data): `De440Ephemeris` (JPL DE440, compile-time).
+/// - With `de440` feature but `SIDERUST_JPL_STUB` set: falls back to [`Vsop87Ephemeris`]
+///   so tests run without downloading the BSP.
 /// - For DE441 or other large datasets: use [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris)
 ///   with a BSP file loaded at runtime via [`DataManager`](crate::data::DataManager).
 ///
@@ -47,8 +49,13 @@ use crate::calculus::ephemeris::Vsop87Ephemeris;
 #[cfg(not(feature = "de440"))]
 pub type DefaultEphemeris = Vsop87Ephemeris;
 
-#[cfg(feature = "de440")]
+#[cfg(all(feature = "de440", not(siderust_mock_de440)))]
 pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
+
+// Stub: de440 feature is on but SIDERUST_JPL_STUB is set — fall back to VSOP87
+// so all tests work without the BSP download.
+#[cfg(all(feature = "de440", siderust_mock_de440))]
+pub type DefaultEphemeris = crate::calculus::ephemeris::Vsop87Ephemeris;
 
 /// Default Earth orientation model: [`IersEop`], backed by the
 /// build-time embedded `finals2000A.all` table.
