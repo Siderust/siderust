@@ -28,6 +28,7 @@ pub mod coordinates;
 pub mod ephemeris;
 pub mod observatories;
 pub mod phase;
+pub mod runtime_ephemeris;
 pub mod subject;
 pub mod target;
 
@@ -43,6 +44,7 @@ pub use ephemeris::*;
 pub use error::*;
 pub use observatories::*;
 pub use phase::*;
+pub use runtime_ephemeris::*;
 pub use target::*;
 pub use types::*;
 

@@ -34,4 +34,9 @@ pub enum SiderustStatus {
     /// This should never happen in normal operation; it indicates a bug in the
     /// underlying library.  The panic payload is discarded.
     InternalPanic = 10,
+    /// A data-loading error occurred (I/O, download, integrity, or parse failure).
+    ///
+    /// Returned by runtime ephemeris functions when BSP file loading or
+    /// parsing fails.
+    DataError = 11,
 }

@@ -35,7 +35,7 @@
 //! - **Moon geocentric**= Moon_offset × μ_Earth / (μ_Earth + μ_Moon)
 //! - **Earth helio.**  = Earth_bary − Sun_bary
 
-use super::eval::SegmentDescriptor;
+use super::eval::{DynSegmentDescriptor, SegmentDescriptor};
 
 use crate::coordinates::{
     cartesian::{Position, Velocity},
@@ -154,6 +154,89 @@ pub fn earth_barycentric_velocity(
 pub fn moon_geocentric(
     jd: JulianDate,
     moon: &SegmentDescriptor,
+) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let moon_off = moon.position(jd_tdb);
+    let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
+    let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&JulianDate::J2000);
+    Position::new(moon_geo_ecl.x(), moon_geo_ecl.y(), moon_geo_ecl.z())
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DynSegmentDescriptor variants — runtime-loaded data
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Sun barycentric position (runtime data).
+#[inline]
+pub fn dyn_sun_barycentric(
+    jd: JulianDate,
+    sun: &DynSegmentDescriptor,
+) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let sun_icrf = sun.position(jd_tdb);
+    let sun_ecl_au = sun_icrf
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
+        .to_unit::<AstronomicalUnit>();
+    Position::new(sun_ecl_au.x(), sun_ecl_au.y(), sun_ecl_au.z())
+}
+
+/// Earth barycentric position (runtime data).
+#[inline]
+pub fn dyn_earth_barycentric(
+    jd: JulianDate,
+    emb: &DynSegmentDescriptor,
+    moon: &DynSegmentDescriptor,
+) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let emb_pos = emb.position(jd_tdb);
+    let moon_off = moon.position(jd_tdb);
+    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON);
+    let earth_ecl_au = earth_icrf
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
+        .to_unit::<AstronomicalUnit>();
+    Position::new(earth_ecl_au.x(), earth_ecl_au.y(), earth_ecl_au.z())
+}
+
+/// Earth heliocentric position (runtime data).
+#[inline]
+pub fn dyn_earth_heliocentric(
+    jd: JulianDate,
+    sun: &DynSegmentDescriptor,
+    emb: &DynSegmentDescriptor,
+    moon: &DynSegmentDescriptor,
+) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let emb_pos = emb.position(jd_tdb);
+    let moon_off = moon.position(jd_tdb);
+    let sun_pos = sun.position(jd_tdb);
+    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON) - sun_pos;
+    let earth_ecl_au = earth_icrf
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
+        .to_unit::<AstronomicalUnit>();
+    Position::new(earth_ecl_au.x(), earth_ecl_au.y(), earth_ecl_au.z())
+}
+
+/// Earth barycentric velocity (runtime data).
+#[inline]
+pub fn dyn_earth_barycentric_velocity(
+    jd: JulianDate,
+    emb: &DynSegmentDescriptor,
+    moon: &DynSegmentDescriptor,
+) -> Velocity<EclipticMeanJ2000, AuPerDay> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let v_emb = emb.velocity(jd_tdb);
+    let v_moon_off = moon.velocity(jd_tdb);
+    let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
+    v_earth_icrf
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
+        .to_unit::<AuPerDay>()
+}
+
+/// Moon geocentric position (runtime data).
+#[inline]
+pub fn dyn_moon_geocentric(
+    jd: JulianDate,
+    moon: &DynSegmentDescriptor,
 ) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
     let jd_tdb = JulianDate::tt_to_tdb(jd);
     let moon_off = moon.position(jd_tdb);

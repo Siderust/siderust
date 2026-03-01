@@ -155,6 +155,86 @@ impl<Eop, Nut> AstroContext<DefaultEphemeris, Eop, Nut> {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DynAstroContext — runtime-selected ephemeris via DynEphemeris trait object
+// ═══════════════════════════════════════════════════════════════════════════
+
+use crate::calculus::ephemeris::DynEphemeris;
+
+/// Astronomical context with a runtime-selected ephemeris backend.
+///
+/// This is the dynamic counterpart to [`AstroContext`]. Instead of selecting
+/// an ephemeris backend at compile time via type parameters, it stores a
+/// `Box<dyn DynEphemeris>` and dispatches via virtual calls.
+///
+/// Use this when:
+/// - You load BSP files at runtime via [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris)
+/// - You need to switch between backends without recompiling
+/// - You want to override the default ephemeris at runtime
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use siderust::calculus::ephemeris::{RuntimeEphemeris, DynEphemeris};
+/// use siderust::coordinates::transform::context::DynAstroContext;
+///
+/// let eph = RuntimeEphemeris::from_bsp("path/to/de441.bsp")?;
+/// let ctx = DynAstroContext::with_ephemeris(Box::new(eph));
+/// ```
+pub struct DynAstroContext<Eop = DefaultEop> {
+    ephemeris: Box<dyn DynEphemeris>,
+    eop: Eop,
+}
+
+impl DynAstroContext<DefaultEop> {
+    /// Create a dynamic context from a `DynEphemeris` implementor.
+    pub fn with_ephemeris(eph: Box<dyn DynEphemeris>) -> Self {
+        Self {
+            ephemeris: eph,
+            eop: DefaultEop::default(),
+        }
+    }
+}
+
+impl<Eop: Default> DynAstroContext<Eop> {
+    /// Create a dynamic context with a custom EOP provider.
+    pub fn with_ephemeris_and_eop(eph: Box<dyn DynEphemeris>, eop: Eop) -> Self {
+        Self { ephemeris: eph, eop }
+    }
+}
+
+impl<Eop: EopProvider> DynAstroContext<Eop> {
+    /// Reference to the runtime ephemeris backend.
+    #[inline]
+    pub fn ephemeris(&self) -> &dyn DynEphemeris {
+        &*self.ephemeris
+    }
+
+    /// Look up EOP values for the given **UTC** Julian Date.
+    #[inline]
+    pub fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
+        self.eop.eop_at(jd_utc)
+    }
+
+    /// Reference to the underlying EOP provider.
+    #[inline]
+    pub fn eop(&self) -> &Eop {
+        &self.eop
+    }
+}
+
+impl<Eop> std::fmt::Debug for DynAstroContext<Eop>
+where
+    Eop: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DynAstroContext")
+            .field("ephemeris", &"<dyn DynEphemeris>")
+            .field("eop", &self.eop)
+            .finish()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
