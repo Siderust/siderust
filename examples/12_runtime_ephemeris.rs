@@ -36,36 +36,11 @@ fn print_positions(eph: &RuntimeEphemeris, label: &str) {
     let moon = eph.moon_geocentric(jd);
 
     println!("=== {} — positions at J2000 ===", label);
-    println!(
-        "  Sun  (bary, AU)   : ({:.6}, {:.6}, {:.6})",
-        sun.x().value(),
-        sun.y().value(),
-        sun.z().value(),
-    );
-    println!(
-        "  Earth (bary, AU)  : ({:.6}, {:.6}, {:.6})",
-        earth_bary.x().value(),
-        earth_bary.y().value(),
-        earth_bary.z().value(),
-    );
-    println!(
-        "  Earth (helio, AU) : ({:.6}, {:.6}, {:.6})",
-        earth_helio.x().value(),
-        earth_helio.y().value(),
-        earth_helio.z().value(),
-    );
-    println!(
-        "  Earth vel (AU/d)  : ({:.8}, {:.8}, {:.8})",
-        earth_vel.x().value(),
-        earth_vel.y().value(),
-        earth_vel.z().value(),
-    );
-    println!(
-        "  Moon  (geo, km)   : ({:.1}, {:.1}, {:.1})",
-        moon.x().value(),
-        moon.y().value(),
-        moon.z().value(),
-    );
+    println!("  Sun : {:.6}", sun);
+    println!("  Earth : {:.6}", earth_bary);
+    println!("  Earth : {:.6}", earth_helio);
+    println!("  Earth vel: {:.8}", earth_vel);
+    println!("  Moon : {:.1}", moon);
     println!();
 }
 
