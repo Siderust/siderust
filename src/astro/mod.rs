@@ -26,8 +26,11 @@ pub mod era;
 pub mod iers_data;
 pub mod light_deflection;
 pub mod nutation;
+pub mod orientation;
 pub mod orbit;
 pub mod polar_motion;
 pub mod precession;
 pub mod proper_motion;
 pub mod sidereal;
+
+pub use orientation::{HasIauRotation, IauRotationParams};

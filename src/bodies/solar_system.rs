@@ -50,23 +50,162 @@
 //! 2. Williams, D. R. (2024). *Planetary Fact Sheet – Metric*. NASA Goddard Space Flight Center.
 
 use super::{Planet, Satellite, Star};
+use crate::astro::{HasIauRotation, IauRotationParams};
 use crate::astro::orbit::Orbit;
 use crate::coordinates::spherical::position::{EclipticMeanJ2000, EquatorialMeanJ2000};
 use crate::targets::CoordinateWithPM;
 use crate::time::JulianDate;
 use qtty::length::nominal::RSUN;
 use qtty::*;
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
 
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Sun;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Mercury;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Venus;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Earth;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Moon;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Mars;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Jupiter;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Saturn;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Uranus;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Neptune;
+#[derive(Debug, Copy, Clone)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct Pluto;
+
+// =============================================================================
+// Planetary IAU Rotation Parameters
+// =============================================================================
+
+macro_rules! define_body_rotations {
+    (
+        $(
+            $rotation_const:ident => $body:ty {
+                alpha0_deg: $alpha0_deg:expr,
+                alpha0_rate: $alpha0_rate:expr,
+                delta0_deg: $delta0_deg:expr,
+                delta0_rate: $delta0_rate:expr,
+                w0_deg: $w0_deg:expr,
+                w_rate: $w_rate:expr $(,)?
+            }
+        ),+ $(,)?
+    ) => {
+        $(
+            pub const $rotation_const: IauRotationParams = IauRotationParams {
+                alpha0_deg: $alpha0_deg,
+                alpha0_rate: $alpha0_rate,
+                delta0_deg: $delta0_deg,
+                delta0_rate: $delta0_rate,
+                w0_deg: $w0_deg,
+                w_rate: $w_rate,
+            };
+
+            impl HasIauRotation for $body {
+                const ROTATION: IauRotationParams = $rotation_const;
+            }
+
+            impl $body {
+                pub const ROTATION: IauRotationParams = $rotation_const;
+            }
+        )+
+    };
+}
+
+define_body_rotations!(
+    MERCURY_ROTATION => Mercury {
+        alpha0_deg: Degrees::new(281.0103),
+        alpha0_rate: Degrees::new(-0.0328),
+        delta0_deg: Degrees::new(61.4155),
+        delta0_rate: Degrees::new(-0.0049),
+        w0_deg: Degrees::new(329.5988),
+        w_rate: Degrees::new(6.1385108),
+    },
+    VENUS_ROTATION => Venus {
+        alpha0_deg: Degrees::new(272.76),
+        alpha0_rate: Degrees::new(0.0),
+        delta0_deg: Degrees::new(67.16),
+        delta0_rate: Degrees::new(0.0),
+        w0_deg: Degrees::new(160.20),
+        w_rate: Degrees::new(-1.4813688),
+    },
+    MARS_ROTATION => Mars {
+        alpha0_deg: Degrees::new(317.269),
+        alpha0_rate: Degrees::new(-0.10927),
+        delta0_deg: Degrees::new(54.432),
+        delta0_rate: Degrees::new(-0.05827),
+        w0_deg: Degrees::new(176.049),
+        w_rate: Degrees::new(350.891982443),
+    },
+    MOON_ROTATION => Moon {
+        alpha0_deg: Degrees::new(269.9949),
+        alpha0_rate: Degrees::new(0.0031),
+        delta0_deg: Degrees::new(66.5392),
+        delta0_rate: Degrees::new(0.0130),
+        w0_deg: Degrees::new(38.3213),
+        w_rate: Degrees::new(13.17635815),
+    },
+    JUPITER_ROTATION => Jupiter {
+        alpha0_deg: Degrees::new(268.057),
+        alpha0_rate: Degrees::new(-0.006),
+        delta0_deg: Degrees::new(64.495),
+        delta0_rate: Degrees::new(0.002),
+        w0_deg: Degrees::new(284.95),
+        w_rate: Degrees::new(870.5360000),
+    },
+    SATURN_ROTATION => Saturn {
+        alpha0_deg: Degrees::new(40.589),
+        alpha0_rate: Degrees::new(-0.036),
+        delta0_deg: Degrees::new(83.537),
+        delta0_rate: Degrees::new(-0.004),
+        w0_deg: Degrees::new(38.90),
+        w_rate: Degrees::new(810.7939024),
+    },
+    URANUS_ROTATION => Uranus {
+        alpha0_deg: Degrees::new(257.311),
+        alpha0_rate: Degrees::new(0.0),
+        delta0_deg: Degrees::new(-15.175),
+        delta0_rate: Degrees::new(0.0),
+        w0_deg: Degrees::new(203.81),
+        w_rate: Degrees::new(-501.1600928),
+    },
+    NEPTUNE_ROTATION => Neptune {
+        alpha0_deg: Degrees::new(299.36),
+        alpha0_rate: Degrees::new(0.0), // periodic term handled separately
+        delta0_deg: Degrees::new(43.46),
+        delta0_rate: Degrees::new(0.0), // periodic term handled separately
+        w0_deg: Degrees::new(249.978),
+        w_rate: Degrees::new(541.1397757),
+    },
+    PLUTO_ROTATION => Pluto {
+        alpha0_deg: Degrees::new(132.993),
+        alpha0_rate: Degrees::new(0.0),
+        delta0_deg: Degrees::new(-6.163),
+        delta0_rate: Degrees::new(0.0),
+        w0_deg: Degrees::new(302.695),
+        w_rate: Degrees::new(56.3625225),
+    },
+);
 
 /// **Sun** – the central star of the Solar System.
 ///
@@ -593,3 +732,58 @@ pub const SOLAR_SYSTEM: SolarSystem<'static> = SolarSystem {
     moons: MAJOR_MOONS,
     lagrange_points: LAGRANGE_POINTS,
 };
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use affn::frames::{
+        JupiterSystemIII, MarsFixed, MercuryFixed, MoonPrincipalAxes, NeptuneFixed, PlutoFixed,
+        ReferenceFrame, SaturnFixed, SphericalNaming, UranusFixed, VenusFixed,
+    };
+
+    #[test]
+    fn planetary_frame_names() {
+        assert_eq!(MercuryFixed::frame_name(), "MercuryFixed");
+        assert_eq!(VenusFixed::frame_name(), "VenusFixed");
+        assert_eq!(MarsFixed::frame_name(), "MarsFixed");
+        assert_eq!(MoonPrincipalAxes::frame_name(), "MoonPrincipalAxes");
+        assert_eq!(JupiterSystemIII::frame_name(), "JupiterSystemIII");
+        assert_eq!(SaturnFixed::frame_name(), "SaturnFixed");
+        assert_eq!(UranusFixed::frame_name(), "UranusFixed");
+        assert_eq!(NeptuneFixed::frame_name(), "NeptuneFixed");
+        assert_eq!(PlutoFixed::frame_name(), "PlutoFixed");
+    }
+
+    #[test]
+    fn spherical_naming_is_planetocentric() {
+        assert_eq!(MercuryFixed::polar_name(), "lat");
+        assert_eq!(MercuryFixed::azimuth_name(), "lon");
+        assert_eq!(MercuryFixed::distance_name(), "radius");
+        assert_eq!(MarsFixed::polar_name(), "lat");
+        assert_eq!(MarsFixed::azimuth_name(), "lon");
+    }
+
+    #[test]
+    fn rotation_params_at_j2000() {
+        let p = &MARS_ROTATION;
+        assert!((p.alpha0(JulianDate::J2000).value() - 317.269).abs() < 1e-10);
+        assert!((p.delta0(JulianDate::J2000).value() - 54.432).abs() < 1e-10);
+        assert!((p.w(JulianDate::J2000).value() - 176.049).abs() < 1e-10);
+    }
+
+    #[test]
+    fn rotation_params_rate() {
+        let p = &MARS_ROTATION;
+        let alpha = p.alpha0(JulianDate::J2000 + JulianDate::JULIAN_CENTURY);
+        assert!((alpha.value() - (317.269 - 0.10927)).abs() < 1e-10);
+        let w = p.w(JulianDate::J2000 + qtty::Days::new(1.0));
+        assert!((w.value() - (176.049 + 350.891982443)).abs() < 1e-8);
+    }
+
+    #[test]
+    fn body_associated_rotation_constants_match_catalog() {
+        assert_eq!(Mars::ROTATION.alpha0_deg, MARS_ROTATION.alpha0_deg);
+        assert_eq!(Jupiter::ROTATION.w_rate, JUPITER_ROTATION.w_rate);
+        assert_eq!(Moon::ROTATION.delta0_deg, MOON_ROTATION.delta0_deg);
+    }
+}
