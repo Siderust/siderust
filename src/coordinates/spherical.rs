@@ -136,7 +136,8 @@ pub mod position {
     pub type Galactic<U> = Position<centers::Barycentric, frames::Galactic, U>;
 
     /// **Heliocentric Ecliptic J2000** coordinates (λ, β, R).
-    pub type HeliocentricEclipticJ2000<U> = Position<centers::Heliocentric, frames::EclipticMeanJ2000, U>;
+    pub type HeliocentricEclipticJ2000<U> =
+        Position<centers::Heliocentric, frames::EclipticMeanJ2000, U>;
 
     // --- Planetocentric body-fixed positions ---
 

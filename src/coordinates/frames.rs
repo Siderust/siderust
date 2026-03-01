@@ -95,9 +95,9 @@ pub use affn::ellipsoidal::Position as EllipsoidalPosition;
 
 // Re-export all astronomical frame types from affn
 pub use affn::frames::{
-    CIRS, ECEF, EclipticMeanJ2000, EclipticMeanOfDate, EclipticOfDate, EclipticTrueOfDate, FK4B1950,
-    GCRS, Galactic, Horizontal, ICRF, ICRS, ITRF, TEME, TIRS, EquatorialMeanJ2000,
-    EquatorialMeanOfDate, EquatorialTrueOfDate,
+    EclipticMeanJ2000, EclipticMeanOfDate, EclipticOfDate, EclipticTrueOfDate, EquatorialMeanJ2000,
+    EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic, Horizontal, CIRS, ECEF, FK4B1950, GCRS,
+    ICRF, ICRS, ITRF, TEME, TIRS,
 };
 
 // Re-export siderust-specific frame types
