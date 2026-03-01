@@ -9,7 +9,6 @@
 
 #[cfg(feature = "serde")]
 mod demo {
-    use super::*;
     use qtty::*;
     use serde::{Deserialize, Serialize};
     use siderust::astro::orbit::Orbit;

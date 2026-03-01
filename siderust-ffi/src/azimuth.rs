@@ -7,7 +7,6 @@
 //! [`crate::subject`] functions.  Helpers and free functions are kept
 //! here because `subject.rs` depends on them.
 
-use crate::altitude::periods_to_c;
 use crate::bodies::SiderustStar;
 use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
@@ -335,7 +334,7 @@ mod tests {
     fn get_vega() -> *mut SiderustStar {
         let cname = CString::new("VEGA").unwrap();
         let mut h: *mut SiderustStar = ptr::null_mut();
-        unsafe { crate::bodies::siderust_star_catalog(cname.as_ptr(), &mut h) };
+        crate::bodies::siderust_star_catalog(cname.as_ptr(), &mut h);
         h
     }
 
