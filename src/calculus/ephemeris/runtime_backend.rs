@@ -140,10 +140,7 @@ impl DynEphemeris for RuntimeEphemeris {
     }
 
     #[inline]
-    fn earth_barycentric_velocity(
-        &self,
-        jd: JulianDate,
-    ) -> Velocity<EclipticMeanJ2000, AuPerDay> {
+    fn earth_barycentric_velocity(&self, jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
         bodies::dyn_earth_barycentric_velocity(jd, &self.inner.emb, &self.inner.moon)
     }
 
