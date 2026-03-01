@@ -796,9 +796,21 @@ use crate::coordinates::frames::Galactic;
 // This is the transpose of the equatorial-to-galactic matrix AG from
 // Hipparcos Volume 1, Section 1.5.3 (ESA 1997).
 const GALACTIC_TO_ICRS: Rotation3 = Rotation3::from_matrix([
-    [-0.054_875_560_416_215_4, -0.873_437_090_234_885_1, -0.483_835_015_548_713_2],
-    [ 0.494_109_427_875_583_7, -0.444_829_629_960_011_2,  0.746_982_244_580_286_6],
-    [-0.867_666_149_019_004_7, -0.198_076_373_431_201_5,  0.455_983_776_175_066_9],
+    [
+        -0.054_875_560_416_215_4,
+        -0.873_437_090_234_885_1,
+        -0.483_835_015_548_713_2,
+    ],
+    [
+        0.494_109_427_875_583_7,
+        -0.444_829_629_960_011_2,
+        0.746_982_244_580_286_6,
+    ],
+    [
+        -0.867_666_149_019_004_7,
+        -0.198_076_373_431_201_5,
+        0.455_983_776_175_066_9,
+    ],
 ]);
 
 /// Galactic → ICRS rotation.
@@ -901,9 +913,21 @@ use crate::coordinates::frames::FK4B1950;
 // Note: FK5/J2000 ≈ ICRS to within 20 mas; the ICRS frame bias is composed
 // at runtime in the FK4→ICRS provider below.
 const FK4_TO_FK5: Rotation3 = Rotation3::from_matrix([
-    [ 0.999_925_679_495_687_7, -0.011_181_483_220_466_2, -0.004_859_003_815_359_2],
-    [ 0.011_181_483_239_171_7,  0.999_937_484_893_313_5, -0.000_027_162_594_714_2],
-    [ 0.004_859_003_772_314_3, -0.000_027_170_293_744_0,  0.999_988_194_602_374_2],
+    [
+        0.999_925_679_495_687_7,
+        -0.011_181_483_220_466_2,
+        -0.004_859_003_815_359_2,
+    ],
+    [
+        0.011_181_483_239_171_7,
+        0.999_937_484_893_313_5,
+        -0.000_027_162_594_714_2,
+    ],
+    [
+        0.004_859_003_772_314_3,
+        -0.000_027_170_293_744_0,
+        0.999_988_194_602_374_2,
+    ],
 ]);
 
 /// FK4B1950 → ICRS rotation (FK4→FK5 then FK5→ICRS via frame bias inverse).
@@ -1099,8 +1123,8 @@ impl_body_fixed_rotation!(PlutoFixed, crate::bodies::solar_system::Pluto);
 // =============================================================================
 
 use crate::coordinates::centers::{
-    Jovicentric, Marscentric, Mercurycentric, Neptunocentric, Plutocentric,
-    Saturnocentric, Selenocentric, Uranocentric, Venuscentric,
+    Jovicentric, Marscentric, Mercurycentric, Neptunocentric, Plutocentric, Saturnocentric,
+    Selenocentric, Uranocentric, Venuscentric,
 };
 
 /// Generates center shift providers for a planetocentric center via the
@@ -1181,8 +1205,7 @@ macro_rules! impl_planet_center_shift_vsop {
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> [f64; 3] {
-                let [x, y, z] =
-                    <() as CenterShiftProvider<Geocentric, $center, F>>::shift(jd, ctx);
+                let [x, y, z] = <() as CenterShiftProvider<Geocentric, $center, F>>::shift(jd, ctx);
                 [-x, -y, -z]
             }
         }
@@ -1211,7 +1234,8 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Plutocentric, Barycentric, F> 
         use crate::bodies::solar_system;
 
         let helio_pos = solar_system::PLUTO.orbit.kepler_position(jd);
-        let [sx, sy, sz] = <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
+        let [sx, sy, sz] =
+            <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
 
         [
             helio_pos.x().value() + sx,
@@ -1238,8 +1262,10 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Plutocentric, F>
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
-        let [x1, y1, z1] = <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
-        let [x2, y2, z2] = <() as CenterShiftProvider<Barycentric, Plutocentric, F>>::shift(jd, ctx);
+        let [x1, y1, z1] =
+            <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
+        let [x2, y2, z2] =
+            <() as CenterShiftProvider<Barycentric, Plutocentric, F>>::shift(jd, ctx);
         [x1 + x2, y1 + y2, z1 + z2]
     }
 }
@@ -1262,7 +1288,8 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Plutocentric, F> f
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
         let [x1, y1, z1] = <() as CenterShiftProvider<Geocentric, Barycentric, F>>::shift(jd, ctx);
-        let [x2, y2, z2] = <() as CenterShiftProvider<Barycentric, Plutocentric, F>>::shift(jd, ctx);
+        let [x2, y2, z2] =
+            <() as CenterShiftProvider<Barycentric, Plutocentric, F>>::shift(jd, ctx);
         [x1 + x2, y1 + y2, z1 + z2]
     }
 }
@@ -1297,8 +1324,7 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Selenocentric, Barycentric, F>
         let moon_z = moon_geo.z().value() / km_per_au;
 
         // Earth's barycentric position
-        let [ex, ey, ez] =
-            <() as CenterShiftProvider<Geocentric, Barycentric, F>>::shift(jd, ctx);
+        let [ex, ey, ez] = <() as CenterShiftProvider<Geocentric, Barycentric, F>>::shift(jd, ctx);
 
         // Moon barycentric = Moon geocentric + Earth barycentric
         [moon_x + ex, moon_y + ey, moon_z + ez]
@@ -1311,8 +1337,7 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Selenocentric, F>
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
-        let [x, y, z] =
-            <() as CenterShiftProvider<Selenocentric, Barycentric, F>>::shift(jd, ctx);
+        let [x, y, z] = <() as CenterShiftProvider<Selenocentric, Barycentric, F>>::shift(jd, ctx);
         [-x, -y, -z]
     }
 }
@@ -1337,8 +1362,7 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Selenocentric, Heliocentric, F
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
-        let [x, y, z] =
-            <() as CenterShiftProvider<Heliocentric, Selenocentric, F>>::shift(jd, ctx);
+        let [x, y, z] = <() as CenterShiftProvider<Heliocentric, Selenocentric, F>>::shift(jd, ctx);
         [-x, -y, -z]
     }
 }
@@ -1372,8 +1396,7 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Selenocentric, Geocentric, F> 
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
-        let [x, y, z] =
-            <() as CenterShiftProvider<Geocentric, Selenocentric, F>>::shift(jd, ctx);
+        let [x, y, z] = <() as CenterShiftProvider<Geocentric, Selenocentric, F>>::shift(jd, ctx);
         [-x, -y, -z]
     }
 }
