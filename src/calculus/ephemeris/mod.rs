@@ -28,20 +28,18 @@
 //! |----------------------|----------------|---------------------------|
 //! | [`Vsop87Ephemeris`]  | (always)       | VSOP87 + ELP2000-82B      |
 //! | `De440Ephemeris`     | `de440`        | JPL DE440 (compile-time)   |
-//! | `De441Ephemeris`     | `de441`        | JPL DE441 (compile-time)   |
-//! | [`RuntimeEphemeris`] | `runtime-data` | Any BSP file (runtime)     |
+//! | [`RuntimeEphemeris`] | (always)       | Any BSP file (runtime)     |
+//!
+//! For DE441 (and other large datasets), use [`RuntimeEphemeris`] with
+//! [`DataManager`](crate::data::DataManager) to download and load at runtime.
 
 #[cfg(feature = "de440")]
 mod de440_backend;
-#[cfg(feature = "de441")]
-mod de441_backend;
 mod runtime_backend;
 mod vsop87_backend;
 
 #[cfg(feature = "de440")]
 pub use de440_backend::De440Ephemeris;
-#[cfg(feature = "de441")]
-pub use de441_backend::De441Ephemeris;
 pub use runtime_backend::RuntimeEphemeris;
 pub use vsop87_backend::Vsop87Ephemeris;
 
@@ -137,16 +135,11 @@ pub trait DynEphemeris {
     ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>;
 
     /// Earth's velocity in barycentric ecliptic coordinates (AU/day).
-    fn earth_barycentric_velocity(
-        &self,
-        jd: JulianDate,
-    ) -> Velocity<EclipticMeanJ2000, AuPerDay>;
+    fn earth_barycentric_velocity(&self, jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay>;
 
     /// Moon's position in geocentric ecliptic coordinates (km).
-    fn moon_geocentric(
-        &self,
-        jd: JulianDate,
-    ) -> Position<Geocentric, EclipticMeanJ2000, Kilometer>;
+    fn moon_geocentric(&self, jd: JulianDate)
+        -> Position<Geocentric, EclipticMeanJ2000, Kilometer>;
 }
 
 /// Blanket implementation: every static `Ephemeris` backend automatically
@@ -177,10 +170,7 @@ impl<T: Ephemeris> DynEphemeris for T {
     }
 
     #[inline]
-    fn earth_barycentric_velocity(
-        &self,
-        jd: JulianDate,
-    ) -> Velocity<EclipticMeanJ2000, AuPerDay> {
+    fn earth_barycentric_velocity(&self, jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
         <T as Ephemeris>::earth_barycentric_velocity(jd)
     }
 

@@ -57,7 +57,7 @@ pub fn read_type2_segment(
     let intlen = daf.read_f64_at_word(file_data, end - 2);
     let init = daf.read_f64_at_word(file_data, end - 3);
 
-    if rsize < 5 || rsize > 200 {
+    if !(5..=200).contains(&rsize) {
         return Err(DataError::Parse(format!(
             "Implausible rsize={} for SPK Type 2 segment",
             rsize
