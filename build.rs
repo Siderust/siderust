@@ -1,6 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+#[cfg(any(feature = "regen-data", feature = "de440"))]
+use std::env;
+#[cfg(any(feature = "regen-data", feature = "de440"))]
+use std::path::PathBuf;
+
 #[cfg(feature = "regen-data")]
 #[path = "scripts/vsop87/mod.rs"]
 mod vsop87_build;
