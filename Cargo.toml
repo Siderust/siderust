@@ -23,6 +23,7 @@ name = "siderust"
 default = []
 de440 = []
 de441 = []
+runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
 [dependencies]
@@ -35,6 +36,8 @@ chrono = "0.4.44"
 nalgebra = "0.34.1"
 paste = "1.0"
 serde = { version = "1.0", features = ["derive"], optional = true }
+sha2 = { version = "0.10", optional = true }
+ureq = { version = "2.12", optional = true, default-features = false, features = ["tls"] }
 wide = "1.1.1"
 
 [dev-dependencies]

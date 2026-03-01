@@ -13,6 +13,7 @@ header = """
 "feature = serde" = "SIDERUST_FFI_HAS_SERDE"
 "feature = de440" = "SIDERUST_FFI_HAS_DE440"
 "feature = de441" = "SIDERUST_FFI_HAS_DE441"
+"feature = runtime-data" = "SIDERUST_FFI_HAS_RUNTIME_DATA"
 
 [export]
 
@@ -47,6 +48,8 @@ header = """
 "SiderustPhaseEvent" = "siderust_phase_event_t"
 "SiderustSubjectKind" = "siderust_subject_kind_t"
 "SiderustSubject" = "siderust_subject_t"
+"SiderustCartesianVel" = "siderust_cartesian_vel_t"
+"SiderustRuntimeEphemeris" = "siderust_runtime_ephemeris_t"
 
 [enum]
 rename_variants = "ScreamingSnakeCase"

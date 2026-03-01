@@ -16,6 +16,7 @@ default = []
 serde = ["siderust/serde", "tempoch-ffi/serde"]
 de440 = ["siderust/de440"]
 de441 = ["siderust/de441"]
+runtime-data = ["siderust/runtime-data"]
 
 [dependencies]
 siderust    = { path = "..", features = [] }
