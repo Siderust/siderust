@@ -92,6 +92,7 @@ pub static DATASETS: &[DatasetMeta] = &[
 ];
 
 /// Look up dataset metadata by ID.
+#[cfg(feature = "runtime-data")]
 pub fn lookup(id: DatasetId) -> Option<&'static DatasetMeta> {
     DATASETS.iter().find(|d| d.id == id)
 }

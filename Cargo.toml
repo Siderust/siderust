@@ -22,7 +22,6 @@ name = "siderust"
 [features]
 default = []
 de440 = []
-de441 = []
 runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
@@ -78,11 +77,6 @@ harness = false
 [[bench]]
 name = "elp2000"
 harness = false
-
-[[bench]]
-name = "de441"
-harness = false
-required-features = ["de441"]
 
 [[bench]]
 name = "ephemeris_comparison"

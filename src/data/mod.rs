@@ -39,6 +39,7 @@
 //! siderust = { version = "0.5", features = ["runtime-data"] }
 //! ```
 
+#[cfg(feature = "runtime-data")]
 mod cache;
 mod registry;
 
