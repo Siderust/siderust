@@ -14,44 +14,11 @@ mod iers_build;
 #[path = "scripts/jpl/de440/mod.rs"]
 mod de440_build;
 
-#[cfg(feature = "de441")]
-#[path = "scripts/jpl/de441/mod.rs"]
-mod de441_build;
-
 use std::{env, path::PathBuf};
 
-fn stub_enabled_for(prefix: &str) -> bool {
-    let Ok(raw) = env::var("SIDERUST_JPL_STUB") else {
-        return false;
-    };
-    let raw = raw.trim();
-    if raw.is_empty() {
-        return false;
-    }
-
-    let lower = raw.to_ascii_lowercase();
-    if lower == "all" || lower == "1" || lower == "true" || lower == "yes" || lower == "on" {
-        return true;
-    }
-
-    lower
-        .split(|c: char| c == ',' || c.is_whitespace())
-        .filter(|s| !s.is_empty())
-        .any(|tok| tok == prefix)
-}
-
 fn main() {
-    println!("cargo:rerun-if-env-changed=SIDERUST_JPL_STUB");
     println!("cargo:rerun-if-env-changed=SIDERUST_DATASETS_DIR");
     println!("cargo:rerun-if-env-changed=SIDERUST_REGEN");
-    println!("cargo:rustc-check-cfg=cfg(siderust_mock_de441)");
-
-    if stub_enabled_for("de441") {
-        println!("cargo:rustc-cfg=siderust_mock_de441");
-        println!(
-            "cargo:warning=Using DE441 mock ephemeris backend (VSOP87/ELP2000) because SIDERUST_JPL_STUB includes de441; real-DE441 tests are skipped"
-        );
-    }
 
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"));
     let datasets_base_dir = env::var_os("SIDERUST_DATASETS_DIR")
@@ -120,16 +87,5 @@ fn main() {
             panic!("DE440 codegen failed: {}", e);
         });
         eprintln!("DE440 data generation complete");
-    }
-
-    // DE441 (only with feature)
-    #[cfg(feature = "de441")]
-    {
-        eprintln!("Building DE441 data...");
-        let de441_dir = datasets_base_dir.join("de441_dataset");
-        de441_build::run(de441_dir.as_path()).unwrap_or_else(|e| {
-            panic!("DE441 codegen failed: {}", e);
-        });
-        eprintln!("DE441 data generation complete");
     }
 }

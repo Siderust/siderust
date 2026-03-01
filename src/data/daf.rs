@@ -89,7 +89,7 @@ impl Daf {
             )));
         }
 
-        let ss = nd + (ni + 1) / 2;
+        let ss = nd + ni.div_ceil(2);
 
         let mut summaries = Vec::new();
         let mut rec = fward;

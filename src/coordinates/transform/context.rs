@@ -31,26 +31,24 @@ use std::marker::PhantomData;
 use crate::astro::eop::{EopProvider, EopValues, IersEop};
 use crate::time::JulianDate;
 
-#[cfg(not(any(feature = "de440", feature = "de441")))]
+#[cfg(not(feature = "de440"))]
 use crate::calculus::ephemeris::Vsop87Ephemeris;
 
 /// Default ephemeris type.
 ///
-/// - Without `de440`/`de441` features: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
-/// - With `de440` feature: `De440Ephemeris` (JPL DE440).
-/// - With `de441` feature: `De441Ephemeris` (JPL DE441 part-2).
+/// - Without `de440` feature: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
+/// - With `de440` feature: `De440Ephemeris` (JPL DE440, compile-time).
+/// - For DE441 or other large datasets: use [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris)
+///   with a BSP file loaded at runtime via [`DataManager`](crate::data::DataManager).
 ///
 /// This type alias is used as the default `Eph` parameter in [`AstroContext`],
 /// so all code using `AstroContext::default()` will automatically use the
 /// selected backend.
-#[cfg(not(any(feature = "de440", feature = "de441")))]
+#[cfg(not(feature = "de440"))]
 pub type DefaultEphemeris = Vsop87Ephemeris;
 
-#[cfg(all(feature = "de440", not(feature = "de441")))]
+#[cfg(feature = "de440")]
 pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
-
-#[cfg(feature = "de441")]
-pub type DefaultEphemeris = crate::calculus::ephemeris::De441Ephemeris;
 
 /// Default Earth orientation model: [`IersEop`], backed by the
 /// build-time embedded `finals2000A.all` table.
@@ -199,7 +197,10 @@ impl DynAstroContext<DefaultEop> {
 impl<Eop: Default> DynAstroContext<Eop> {
     /// Create a dynamic context with a custom EOP provider.
     pub fn with_ephemeris_and_eop(eph: Box<dyn DynEphemeris>, eop: Eop) -> Self {
-        Self { ephemeris: eph, eop }
+        Self {
+            ephemeris: eph,
+            eop,
+        }
     }
 }
 
