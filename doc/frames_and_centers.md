@@ -13,13 +13,35 @@ A *center* is the origin of a coordinate system.  In siderust every
 
 | Center type | Struct | Where origin lives |
 |---|---|---|
+| `Barycentric` | `centers::Barycentric` | Solar-System barycentre |
+| `Heliocentric` | `centers::Heliocentric` | Sun's centre of mass |
 | `Geocentric` | `centers::Geocentric` | Earth's centre of mass |
 | `Topocentric` | `centers::Topocentric` | Observer's location on Earth's surface |
-| `Heliocentric` | `centers::Heliocentric` | Sun's centre of mass |
-| `Bodycentric` | `centers::Bodycentric` | Centre of a named Solar-System body |
+| `Mercurycentric` | `centers::Mercurycentric` | Mercury's centre of mass |
+| `Venuscentric` | `centers::Venuscentric` | Venus's centre of mass |
+| `Marscentric` | `centers::Marscentric` | Mars's centre of mass |
+| `Selenocentric` | `centers::Selenocentric` | Moon's centre of mass |
+| `Jovicentric` | `centers::Jovicentric` | Jupiter's centre of mass |
+| `Saturnocentric` | `centers::Saturnocentric` | Saturn's centre of mass |
+| `Uranocentric` | `centers::Uranocentric` | Uranus's centre of mass |
+| `Neptunocentric` | `centers::Neptunocentric` | Neptune's centre of mass |
+| `Plutocentric` | `centers::Plutocentric` | Pluto's centre of mass |
 
 `Topocentric` is *parameterised*: it carries a `Geodetic<ECEF>` so horizontal
 coordinates know their own observation point without external context.
+
+### Center-Shift Hub
+
+All center-shift transformations route through the **Barycentric** hub:
+
+```
+Planetocentric → Barycentric → target center
+```
+
+For planets (Mercury–Pluto), barycentric positions are computed via Keplerian
+orbit propagation (from `solar_system.rs`) plus Sun's barycentric offset.
+For the Moon (Selenocentric), the position comes from the ephemeris
+`moon_geocentric()` combined with Earth's barycentric position.
 
 ---
 
@@ -110,7 +132,58 @@ J2000, using the IAU 1976/1980 precession-nutation constants.
 This is the **working frame** for most internal transforms in siderust
 because precession-only rotations are cheap and widely tabulated.
 
-### 3.4 Ecliptic Frames
+### 3.4 FK4 B1950
+
+```rust
+pub struct FK4B1950;
+```
+
+The **Fourth Fundamental Catalogue** equatorial frame, referred to the mean
+equator and equinox of the Besselian epoch B1950.0.  The FK4 → ICRS
+transformation uses the Standish (1982) frame-tie rotation matrix.
+
+**When to use `FK4B1950`:**
+- Converting positions from legacy FK4-epoch catalogues.
+- Cross-matching with historical observing records.
+
+**Accuracy note:**  The FK4 → FK5 (ICRS) transformation involves a frame
+rotation, an equinox correction, and an E-term removal.  siderust implements
+the constant rotation matrix; E-term removal is not yet included.
+
+### 3.5 TEME — True Equator, Mean Equinox
+
+```rust
+pub struct TEME;
+```
+
+The **True Equator, Mean Equinox** frame is the de facto reference for
+SGP4/SDP4 (TLE) satellite orbit propagation.  The TEME-to-TOD transformation
+is a single rotation about the z-axis by the equation of the equinoxes:
+
+```
+TEME → Rz(Δψ · cos εA) → TOD (EquatorialTrueOfDate)
+```
+
+**When to use `TEME`:**
+- Propagating TLE elements with SGP4/SDP4.
+- Importing NORAD ephemerides.
+
+### 3.6 Galactic
+
+```rust
+pub struct Galactic;
+```
+
+The **Galactic coordinate system** (IAU 1958), centred on the Sun, with the
+fundamental plane parallel to the Galactic plane.  Galactic longitude *l*
+increases towards the Galactic centre; Galactic latitude *b* is positive
+towards the North Galactic Pole.
+
+The Galactic → ICRS rotation is a pre-computed constant matrix derived from
+the North Galactic Pole coordinates (α = 192.85948°, δ = 27.12825°) and the
+Galactic centre position angle (l₀ = 32.93192°), per Murray (1989).
+
+### 3.7 Ecliptic Frames
 
 | Type | Description |
 |---|---|
@@ -135,7 +208,54 @@ Every `Position<Topocentric, Horizontal, U>` implicitly carries a
 
 ---
 
-## 5. The Earth-Rotation Chain
+## 5. Planetary Body-Fixed Frames
+
+These frames rotate with the respective body, defined by IAU 2015 rotation
+parameters (α₀, δ₀, W).  The transformation from body-fixed to ICRS is:
+
+```
+R = Rz(−(α₀ + 90°)) · Rx(−(90° − δ₀)) · Rz(−W)
+```
+
+where α₀ and δ₀ define the body's north pole direction in ICRS, and W is
+the prime meridian angle (degrees).
+
+The **frame marker types** (zero-sized structs) are defined in `affn::frames`
+behind `feature = "astro"` so that `affn`'s derive macros can generate
+inherent `Direction`/`Position` constructors and getters (`lat()`, `lon()`,
+`radius()`).  They are re-exported from `siderust::coordinates::frames`
+and `siderust::coordinates::frames::planetary` for convenience.
+
+The **IAU rotation parameters** and all `FrameRotationProvider` implementations
+remain in `siderust::coordinates::frames::planetary` and
+`siderust::coordinates::transform::providers`.
+
+| Frame | Struct | Body | Spherical coords |
+|---|---|---|---|
+| Mercury body-fixed | `MercuryFixed` | Mercury | (lat, lon, radius) |
+| Venus body-fixed | `VenusFixed` | Venus | (lat, lon, radius) |
+| Mars body-fixed | `MarsFixed` | Mars | (lat, lon, radius) |
+| Moon PA | `MoonPrincipalAxes` | Moon | (lat, lon, radius) |
+| Jupiter System III | `JupiterSystemIII` | Jupiter | (lat, lon, radius) |
+| Saturn body-fixed | `SaturnFixed` | Saturn | (lat, lon, radius) |
+| Uranus body-fixed | `UranusFixed` | Uranus | (lat, lon, radius) |
+| Neptune body-fixed | `NeptuneFixed` | Neptune | (lat, lon, radius) |
+| Pluto body-fixed | `PlutoFixed` | Pluto | (lat, lon, radius) |
+
+### IAU Rotation Parameters
+
+Each body's rotation is defined by three functions of time:
+
+- **α₀(T)** — right ascension of the north pole (degrees), T in Julian centuries
+- **δ₀(T)** — declination of the north pole (degrees), T in Julian centuries
+- **W(d)** — prime meridian angle (degrees), d in days from J2000.0
+
+These are stored as `IauRotationParams` constants (e.g., `MARS_ROTATION`)
+in `coordinates::frames::planetary`.
+
+---
+
+## 6. The Earth-Rotation Chain
 
 The canonical ITRS → EquatorialMeanJ2000 rotation is implemented in
 `crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation`.
@@ -156,9 +276,35 @@ is a **Terrestrial Time (TT)** Julian Date.
 
 ---
 
-## 6. Geodetic Coordinates and Ellipsoid Conversion
+## 7. Frame-Rotation Hub
 
-### 6.1 `Geodetic<F, U>` (siderust) / `ellipsoidal::Position<C, F, U>` (affn)
+All frame rotations route through the **ICRS** hub frame:
+
+```
+F1 → ICRS → F2
+```
+
+The following constant rotation matrices are pre-computed:
+
+| Rotation | Matrix constant | Reference |
+|---|---|---|
+| FK4 B1950 → ICRS | `FK4_TO_ICRS` | Standish (1982) + frame bias |
+| Galactic → ICRS | `GALACTIC_TO_ICRS` | Murray (1989), NGP coordinates |
+| ICRS → EquatorialMeanJ2000 | `FRAME_BIAS_ICRS_TO_J2000` | IAU 2006 frame bias |
+
+Time-dependent rotations:
+
+| Pair | Method |
+|---|---|
+| TEME ↔ TOD | Rz(equation of equinoxes) |
+| EquatorialMean ↔ EquatorialTrueOfDate | IAU 2006 precession + IAU 2000B nutation |
+| Body-fixed ↔ ICRS | IAU 2015 rotation parameters |
+
+---
+
+## 8. Geodetic Coordinates and Ellipsoid Conversion
+
+### 8.1 `Geodetic<F, U>` (siderust) / `ellipsoidal::Position<C, F, U>` (affn)
 
 ```rust
 pub type Geodetic<F, U = Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
@@ -170,7 +316,7 @@ is encoded in the frame `F` via `HasEllipsoid`:
 - `Geodetic<ECEF>` — WGS84
 - `Geodetic<ITRF>` — GRS80
 
-### 6.2 Converting to/from Cartesian ECEF
+### 8.2 Converting to/from Cartesian ECEF
 
 ```rust
 use siderust::coordinates::centers::Geodetic;
@@ -188,16 +334,28 @@ Named getters (`lat()`, `lon()`, `altitude()`) are generated automatically by th
 
 ---
 
-## 7. Summary Table
+## 9. Summary Table
 
 | Shorthand | Full name | Axes fixed by | Typical use |
 |---|---|---|---|
 | ICRS | Int'l Celestial Ref. System | Quasar positions | Star catalogues |
 | GCRS | Geocentric CRS | ≈ ICRS (< 1 mas offset) | Aberration, parallax |
 | MeanJ2000 | Equatorial Mean J2000 | IAU 1976 precession | Internal working frame |
+| FK4 B1950 | FK4 Equatorial B1950 | FK4 catalogue | Legacy catalogues |
+| TEME | True Equator Mean Equinox | SGP4 convention | TLE/satellite orbits |
+| Galactic | Galactic (IAU 1958) | Galactic plane + NGP | Milky Way structure |
 | EclMeanJ2000 | Ecliptic Mean J2000 | Ecliptic plane of J2000 | Planetary ephemerides |
 | ECEF | Earth-Centred Earth-Fixed | ERA only (no polar motion) | First-order site positions |
 | ITRF | Int'l Terrestrial Ref. Frame | Full EOP chain | Geodetic / VLBI |
+| MercuryFixed | Mercury body-fixed | IAU 2015 rotation | Mercury surface |
+| VenusFixed | Venus body-fixed | IAU 2015 rotation | Venus surface |
+| MarsFixed | Mars body-fixed | IAU 2015 rotation | Mars surface |
+| MoonPA | Moon Principal Axes | IAU 2015 rotation | Lunar surface |
+| JupiterSysIII | Jupiter System III | IAU 2015 rotation | Jupiter magnetosphere |
+| SaturnFixed | Saturn body-fixed | IAU 2015 rotation | Saturn surface |
+| UranusFixed | Uranus body-fixed | IAU 2015 rotation | Uranus surface |
+| NeptuneFixed | Neptune body-fixed | IAU 2015 rotation | Neptune surface |
+| PlutoFixed | Pluto body-fixed | IAU 2015 rotation | Pluto surface |
 | Horizontal | Local horizon | Observer's local vertical | Telescope pointing |
 
 ---
