@@ -530,6 +530,16 @@ pub struct SiderustCartesianPos {
     pub center: SiderustCenter,
 }
 
+/// Cartesian velocity (vx, vy, vz + frame metadata).
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct SiderustCartesianVel {
+    pub vx: f64,
+    pub vy: f64,
+    pub vz: f64,
+    pub frame: SiderustFrame,
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Azimuth types
 // ═══════════════════════════════════════════════════════════════════════════

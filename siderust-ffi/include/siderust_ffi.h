@@ -70,6 +70,11 @@ enum siderust_status_t
   // This should never happen in normal operation; it indicates a bug in the
   // underlying library.  The panic payload is discarded.
   SIDERUST_STATUS_T_INTERNAL_PANIC = 10,
+  // A data-loading error occurred (I/O, download, integrity, or parse failure).
+  //
+  // Returned by runtime ephemeris functions when BSP file loading or
+  // parsing fails.
+  SIDERUST_STATUS_T_DATA_ERROR = 11,
 };
 #ifndef __cplusplus
 typedef int32_t siderust_status_t;
@@ -219,6 +224,12 @@ enum siderust_subject_kind_t
 #ifndef __cplusplus
 typedef int32_t siderust_subject_kind_t;
 #endif // __cplusplus
+
+// Opaque handle to a `RuntimeEphemeris`.
+//
+// Created via `siderust_runtime_ephemeris_load_bsp`, `_load_bytes`, or
+// `_ensure`. Must be freed with `siderust_runtime_ephemeris_free`.
+typedef struct siderust_runtime_ephemeris_t siderust_runtime_ephemeris_t;
 
 // Opaque handle to a Star. Created via `siderust_star_*` functions, freed
 // with `siderust_star_free`.
@@ -378,6 +389,14 @@ typedef struct siderust_moon_phase_geometry_t {
   uint8_t waxing;
   uint8_t _pad[7];
 } siderust_moon_phase_geometry_t;
+
+// Cartesian velocity (vx, vy, vz + frame metadata).
+typedef struct siderust_cartesian_vel_t {
+  double vx;
+  double vy;
+  double vz;
+  siderust_frame_t frame;
+} siderust_cartesian_vel_t;
 
 // Unified subject for altitude / azimuth / tracking computations.
 //
@@ -1155,6 +1174,81 @@ siderust_status_t siderust_moon_illumination_range(tempoch_period_mjd_t window,
                                                    struct siderust_search_opts_t opts,
                                                    tempoch_period_mjd_t **out,
                                                    uintptr_t *count);
+
+// Load a runtime ephemeris from a BSP file on disk.
+//
+// `path` must be a valid, NUL-terminated UTF-8 path to a JPL DE4xx BSP file.
+// On success, `*out` receives a newly allocated handle that must be freed
+// with `siderust_runtime_ephemeris_free`.
+
+siderust_status_t siderust_runtime_ephemeris_load_bsp(const char *path,
+                                                      struct siderust_runtime_ephemeris_t **out);
+
+// Load a runtime ephemeris from raw BSP bytes already in memory.
+//
+// `data` must point to `len` bytes of a valid JPL DE4xx BSP file.
+// On success, `*out` receives a newly allocated handle.
+
+siderust_status_t siderust_runtime_ephemeris_load_bytes(const uint8_t *data,
+                                                        uintptr_t len,
+                                                        struct siderust_runtime_ephemeris_t **out);
+
+#if defined(SIDERUST_FFI_HAS_RUNTIME_DATA)
+// Download (if necessary) and load a runtime ephemeris for the given dataset.
+//
+// `dataset_id`:
+//   - 0 = DE440 (~120 MB)
+//   - 1 = DE441 (~1.65 GB)
+//
+// On first call this will download the BSP from JPL's servers into the
+// local cache (`~/.siderust/data/` or `$SIDERUST_DATA_DIR`). Subsequent
+// calls re-use the cached file.
+//
+// On success, `*out` receives a newly allocated handle.
+//
+// **Requires feature `runtime-data`.**
+
+siderust_status_t siderust_runtime_ephemeris_ensure(uint32_t dataset_id,
+                                                    struct siderust_runtime_ephemeris_t **out);
+#endif
+
+// Free a `SiderustRuntimeEphemeris` handle.
+//
+// # Safety
+//
+// The handle must have been allocated by one of the `siderust_runtime_ephemeris_*`
+// constructors, and must not be used after this call.
+ void siderust_runtime_ephemeris_free(struct siderust_runtime_ephemeris_t *handle);
+
+// Sun's barycentric position (EclipticMeanJ2000, AU) via the runtime ephemeris.
+
+siderust_status_t siderust_runtime_ephemeris_sun_barycentric(const struct siderust_runtime_ephemeris_t *handle,
+                                                             double jd,
+                                                             struct siderust_cartesian_pos_t *out);
+
+// Earth's barycentric position (EclipticMeanJ2000, AU) via the runtime ephemeris.
+
+siderust_status_t siderust_runtime_ephemeris_earth_barycentric(const struct siderust_runtime_ephemeris_t *handle,
+                                                               double jd,
+                                                               struct siderust_cartesian_pos_t *out);
+
+// Earth's heliocentric position (EclipticMeanJ2000, AU) via the runtime ephemeris.
+
+siderust_status_t siderust_runtime_ephemeris_earth_heliocentric(const struct siderust_runtime_ephemeris_t *handle,
+                                                                double jd,
+                                                                struct siderust_cartesian_pos_t *out);
+
+// Earth's barycentric velocity (EclipticMeanJ2000, AU/day) via the runtime ephemeris.
+
+siderust_status_t siderust_runtime_ephemeris_earth_barycentric_velocity(const struct siderust_runtime_ephemeris_t *handle,
+                                                                        double jd,
+                                                                        struct siderust_cartesian_vel_t *out);
+
+// Moon's geocentric position (EclipticMeanJ2000, km) via the runtime ephemeris.
+
+siderust_status_t siderust_runtime_ephemeris_moon_geocentric(const struct siderust_runtime_ephemeris_t *handle,
+                                                             double jd,
+                                                             struct siderust_cartesian_pos_t *out);
 
 // Altitude of any subject at an instant (radians).
 
