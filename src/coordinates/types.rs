@@ -57,6 +57,12 @@ pub use super::spherical::direction::Galactic as GalacticDir;
 pub use super::spherical::direction::Horizontal as HorizontalDir;
 /// **ICRS** spherical direction (right-ascension, declination).
 pub use super::spherical::direction::ICRS as IcrsDir;
+/// **FK4 B1950** spherical direction (right-ascension, declination in FK4).
+pub use super::spherical::direction::FK4B1950 as Fk4B1950Dir;
+/// **TEME** spherical direction (right-ascension, declination in TEME).
+pub use super::spherical::direction::TEME as TemeDir;
+/// **GCRS** spherical direction (right-ascension, declination in GCRS).
+pub use super::spherical::direction::GCRS as GcrsFrameDir;
 
 // =============================================================================
 // Spherical position aliases (center + frame + distance unit)
@@ -82,6 +88,45 @@ pub use super::spherical::position::GCRS as GcrsPos;
 pub use super::spherical::position::HCRS as HcrsPos;
 /// **Barycentric ICRS** spherical position.
 pub use super::spherical::position::ICRS as IcrsPos;
+
+// =============================================================================
+// New system-level spherical position aliases
+// =============================================================================
+
+/// **Barycentric ICRF** spherical position (BCRS).
+pub use super::spherical::position::BCRS as BcrsPos;
+/// **Heliocentric J2000** equatorial spherical position.
+pub use super::spherical::position::HeliocentricJ2000 as HeliocentricJ2000Pos;
+/// **Geocentric J2000** equatorial spherical position (FK5-compatible ECI).
+pub use super::spherical::position::GeocentricJ2000 as GeocentricJ2000Pos;
+/// **FK4 B1950** geocentric spherical position.
+pub use super::spherical::position::FK4B1950 as Fk4B1950Pos;
+/// **Geocentric TEME** spherical position (SGP4/TLE).
+pub use super::spherical::position::TEME as TemePos;
+/// **Galactic** barycentric spherical position (l, b, d).
+pub use super::spherical::position::Galactic as GalacticPos;
+/// **Heliocentric Ecliptic J2000** spherical position (λ, β, R).
+pub use super::spherical::position::HeliocentricEclipticJ2000 as HeliocentricEclipticJ2000Pos;
+
+// --- Planetocentric body-fixed spherical positions ---
+/// **Mercurycentric** body-fixed spherical position.
+pub use super::spherical::position::MercuryFixed as MercuryFixedPos;
+/// **Venuscentric** body-fixed spherical position.
+pub use super::spherical::position::VenusFixed as VenusFixedPos;
+/// **Marscentric** body-fixed spherical position.
+pub use super::spherical::position::MarsFixed as MarsFixedPos;
+/// **Selenocentric** Moon principal axes spherical position.
+pub use super::spherical::position::MoonPrincipalAxes as MoonPrincipalAxesPos;
+/// **Jovicentric** System III spherical position.
+pub use super::spherical::position::JupiterSystemIII as JupiterSystemIIIPos;
+/// **Saturnocentric** body-fixed spherical position.
+pub use super::spherical::position::SaturnFixed as SaturnFixedPos;
+/// **Uranocentric** body-fixed spherical position.
+pub use super::spherical::position::UranusFixed as UranusFixedPos;
+/// **Neptunocentric** body-fixed spherical position.
+pub use super::spherical::position::NeptuneFixed as NeptuneFixedPos;
+/// **Plutocentric** body-fixed spherical position.
+pub use super::spherical::position::PlutoFixed as PlutoFixedPos;
 
 // =============================================================================
 // Cartesian direction aliases (unit vector, frame-only)
@@ -128,6 +173,43 @@ pub use super::cartesian::position::ICRS as IcrsCartPos;
 pub use super::cartesian::position::TCRS as TcrsCartPos;
 
 // =============================================================================
+// New system-level cartesian position aliases
+// =============================================================================
+
+/// **Barycentric ICRF** cartesian position (BCRS).
+pub use super::cartesian::position::BCRS as BcrsCartPos;
+/// **Heliocentric J2000** equatorial cartesian position.
+pub use super::cartesian::position::HeliocentricJ2000 as HeliocentricJ2000CartPos;
+/// **FK4 B1950** geocentric cartesian position.
+pub use super::cartesian::position::FK4B1950 as Fk4B1950CartPos;
+/// **Geocentric TEME** cartesian position (SGP4/TLE).
+pub use super::cartesian::position::TEME as TemeCartPos;
+/// **Geocentric ITRF** cartesian position.
+pub use super::cartesian::position::ITRF as ItrfCartPos;
+/// **Galactic** barycentric cartesian position.
+pub use super::cartesian::position::Galactic as GalacticCartPos;
+
+// --- Planetocentric body-fixed cartesian positions ---
+/// **Mercurycentric** body-fixed cartesian position.
+pub use super::cartesian::position::MercuryFixed as MercuryFixedCartPos;
+/// **Venuscentric** body-fixed cartesian position.
+pub use super::cartesian::position::VenusFixed as VenusFixedCartPos;
+/// **Marscentric** body-fixed cartesian position.
+pub use super::cartesian::position::MarsFixed as MarsFixedCartPos;
+/// **Selenocentric** cartesian position in Moon principal axes frame.
+pub use super::cartesian::position::MoonPrincipalAxes as MoonPrincipalAxesCartPos;
+/// **Jovicentric** System III cartesian position.
+pub use super::cartesian::position::JupiterSystemIII as JupiterSystemIIICartPos;
+/// **Saturnocentric** body-fixed cartesian position.
+pub use super::cartesian::position::SaturnFixed as SaturnFixedCartPos;
+/// **Uranocentric** body-fixed cartesian position.
+pub use super::cartesian::position::UranusFixed as UranusFixedCartPos;
+/// **Neptunocentric** body-fixed cartesian position.
+pub use super::cartesian::position::NeptuneFixed as NeptuneFixedCartPos;
+/// **Plutocentric** body-fixed cartesian position.
+pub use super::cartesian::position::PlutoFixed as PlutoFixedCartPos;
+
+// =============================================================================
 // Backward-compatible legacy-style namespaces
 // =============================================================================
 
@@ -140,9 +222,12 @@ pub mod direction {
     pub use super::EquatorialJ2000Dir as EquatorialMeanJ2000;
     pub use super::EquatorialMeanOfDateDir as EquatorialMeanOfDate;
     pub use super::EquatorialTrueOfDateDir as EquatorialTrueOfDate;
+    pub use super::Fk4B1950Dir as FK4B1950;
     pub use super::GalacticDir as Galactic;
+    pub use super::GcrsFrameDir as GCRS;
     pub use super::HorizontalDir as Horizontal;
     pub use super::IcrsDir as ICRS;
+    pub use super::TemeDir as TEME;
 }
 
 /// Legacy-style spherical position aliases using the original names.
@@ -154,8 +239,12 @@ pub mod position {
     pub use super::EquatorialJ2000Pos as EquatorialMeanJ2000;
     pub use super::EquatorialMeanOfDatePos as EquatorialMeanOfDate;
     pub use super::EquatorialTrueOfDatePos as EquatorialTrueOfDate;
+    pub use super::Fk4B1950Pos as FK4B1950;
+    pub use super::GalacticPos as Galactic;
     pub use super::GcrsPos as GCRS;
     pub use super::HcrsPos as HCRS;
     pub use super::HorizontalPos as Horizontal;
     pub use super::IcrsPos as ICRS;
+    pub use super::TemePos as TEME;
+    pub use super::BcrsPos as BCRS;
 }

@@ -4,13 +4,15 @@
 //! # Reference Frames Module
 //!
 //! This module re-exports astronomical reference frames defined in `affn`
-//! and adds siderust-specific extensions.
+//! and adds siderust-specific extensions including planetary body-fixed
+//! frames and historical catalog frames.
 //!
-//! ## Predefined Frames
+//! ## Predefined Frames (from `affn`)
 //!
 //! The following reference frames are available (from `affn`):
 //!
 //! - [`ICRS`]: International Celestial Reference System (quasi-inertial, fundamental reference).
+//! - [`ICRF`]: International Celestial Reference Frame (ICRS realization via VLBI).
 //! - [`Horizontal`]: Local horizon system (altitude-azimuth).
 //! - [`EquatorialMeanJ2000`]: Mean equator/equinox of J2000 (FK5/J2000 mean).
 //! - [`EquatorialMeanOfDate`]: Mean equator/equinox of date (precessed, no nutation).
@@ -21,20 +23,37 @@
 //! - [`EclipticTrueOfDate`]: True ecliptic coordinate system of date.
 //! - [`ITRF`]: International Terrestrial Reference Frame (Earth-fixed).
 //! - [`ECEF`]: Earth-Centered, Earth-Fixed (geocentric, rotating with the Earth).
-//! - [`Galactic`]: Galactic coordinate system.
+//! - [`Galactic`]: Galactic coordinate system (IAU 1958).
+//! - [`GCRS`]: Geocentric Celestial Reference System.
+//! - [`CIRS`]: Celestial Intermediate Reference System.
+//! - [`TIRS`]: Terrestrial Intermediate Reference System.
 //!
-//! Each frame type provides inherent named constructors and getters on
-//! `Direction<F>` and `Position<C, F, U>`. For example:
+//! ## Siderust-Specific Frames
 //!
-//! ```rust
-//! use siderust::coordinates::frames::ICRS;
-//! use affn::spherical::Direction;
-//! use qtty::*;
+//! All frames are now defined in `affn` and re-exported here.
 //!
-//! let d = Direction::<ICRS>::new(120.0 * DEG, 45.0 * DEG);
-//! assert_eq!(d.ra(), 120.0 * DEG);
-//! assert_eq!(d.dec(), 45.0 * DEG);
-//! ```
+//! ## Planetary Body-Fixed Frames (from `affn`)
+//!
+//! The following body-fixed frame marker types are defined in `affn`
+//! (behind `feature = "astro"`) and re-exported here. The generic
+//! [`IauRotationParams`] type comes from [`crate::astro`], while body-specific
+//! constants (e.g. `MARS_ROTATION`) are defined in [`crate::bodies::solar_system`]
+//! and re-exported by [`planetary`]. `FrameRotationProvider`
+//! implementations live in `transform::providers`.
+//!
+//! - [`MercuryFixed`]: Mercury IAU 2015 body-fixed rotation model.
+//! - [`VenusFixed`]: Venus IAU 2015 body-fixed rotation model.
+//! - [`MarsFixed`]: Mars IAU 2015 body-fixed rotation model.
+//! - [`MoonPrincipalAxes`]: Moon principal axes (selenocentric) frame.
+//! - [`JupiterSystemIII`]: Jupiter System III magnetic-field-based rotation.
+//! - [`SaturnFixed`]: Saturn IAU body-fixed rotation model.
+//! - [`UranusFixed`]: Uranus IAU body-fixed rotation model.
+//! - [`NeptuneFixed`]: Neptune IAU body-fixed rotation model.
+//! - [`PlutoFixed`]: Pluto IAU body-fixed rotation model.
+//!
+//! Each frame type provides its canonical name via [`ReferenceFrame::frame_name()`].
+//! Planetocentric body-fixed frames use latitude/longitude/radius naming
+//! via [`SphericalNaming`].
 //!
 //! ## Extending
 //!
@@ -48,6 +67,23 @@
 //! assert_eq!(MyCustomFrame::frame_name(), "MyCustomFrame");
 //! ```
 
+/// Planetary body-fixed frame markers and their IAU rotation-parameter constants.
+pub mod planetary {
+    // Re-export frame types from affn so existing `use …::planetary::MarsFixed`
+    // paths continue to work.
+    pub use affn::frames::{
+        JupiterSystemIII, MarsFixed, MercuryFixed, MoonPrincipalAxes, NeptuneFixed, PlutoFixed,
+        SaturnFixed, UranusFixed, VenusFixed,
+    };
+
+    // Re-export planetary IAU rotation parameters from solar-system body metadata.
+    pub use crate::astro::{HasIauRotation, IauRotationParams};
+    pub use crate::bodies::solar_system::{
+        JUPITER_ROTATION, MARS_ROTATION, MERCURY_ROTATION, MOON_ROTATION, NEPTUNE_ROTATION,
+        PLUTO_ROTATION, SATURN_ROTATION, URANUS_ROTATION, VENUS_ROTATION,
+    };
+}
+
 // Re-export trait infrastructure from affn
 pub use affn::frames::{ReferenceFrame, SphericalNaming};
 
@@ -59,13 +95,19 @@ pub use affn::ellipsoidal::Position as EllipsoidalPosition;
 
 // Re-export all astronomical frame types from affn
 pub use affn::frames::{
-    EclipticMeanJ2000, EclipticMeanOfDate, EclipticOfDate, EclipticTrueOfDate, EquatorialMeanJ2000,
-    EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic, Horizontal, CIRS, ECEF, GCRS, ICRF, ICRS,
-    ITRF, TIRS,
+    CIRS, ECEF, EclipticMeanJ2000, EclipticMeanOfDate, EclipticOfDate, EclipticTrueOfDate, FK4B1950,
+    GCRS, Galactic, Horizontal, ICRF, ICRS, ITRF, TEME, TIRS, EquatorialMeanJ2000,
+    EquatorialMeanOfDate, EquatorialTrueOfDate,
+};
+
+// Re-export siderust-specific frame types
+pub use planetary::{
+    JupiterSystemIII, MarsFixed, MercuryFixed, MoonPrincipalAxes, NeptuneFixed, PlutoFixed,
+    SaturnFixed, UranusFixed, VenusFixed,
 };
 
 // NOTE: The `Horizontal` frame type uses the **North-clockwise** azimuth convention
-// (0° = North, increasing through East). If you are importing data that uses a
+// (0deg = North, increasing through East). If you are importing data that uses a
 // different convention (e.g. South-origin or counter-clockwise), use the helpers in
 // [`crate::coordinates::horizontal`] to convert before constructing `Horizontal`
 // coordinates.
@@ -83,3 +125,7 @@ pub trait MutableFrame: ReferenceFrame {}
 impl MutableFrame for ICRS {}
 impl MutableFrame for EclipticMeanJ2000 {}
 impl MutableFrame for EquatorialMeanJ2000 {}
+impl MutableFrame for FK4B1950 {}
+impl MutableFrame for TEME {}
+impl MutableFrame for Galactic {}
+impl MutableFrame for GCRS {}

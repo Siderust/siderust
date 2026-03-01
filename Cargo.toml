@@ -51,6 +51,7 @@ anyhow = "1.0.102"
 reqwest = { version = "0.13.2", default-features = false, features = ["blocking", "rustls"] }
 
 [patch.crates-io]
+affn = { path = "dev-deps/affn" }
 cheby = { path = "dev-deps/cheby" }
 tempoch = { path = "dev-deps/tempoch/tempoch" }
 
