@@ -424,7 +424,7 @@ mod tests {
     fn catalog_star(name: &str) -> *mut SiderustStar {
         let cname = CString::new(name).unwrap();
         let mut handle: *mut SiderustStar = ptr::null_mut();
-        let s = unsafe { siderust_star_catalog(cname.as_ptr(), &mut handle) };
+        let s = siderust_star_catalog(cname.as_ptr(), &mut handle);
         assert_eq!(s, SiderustStatus::Ok, "Catalog lookup for {name} failed");
         assert!(!handle.is_null());
         handle
@@ -446,7 +446,7 @@ mod tests {
         ] {
             let h = catalog_star(name);
             // Check distance is finite and positive
-            let dist = unsafe { siderust_star_distance_ly(h) };
+            let dist = siderust_star_distance_ly(h);
             assert!(dist > 0.0 && dist.is_finite(), "{name}: distance {dist}");
             unsafe { siderust_star_free(h) };
         }
@@ -456,7 +456,7 @@ mod tests {
     fn catalog_lowercase_name() {
         let cname = CString::new("vega").unwrap();
         let mut handle: *mut SiderustStar = ptr::null_mut();
-        let s = unsafe { siderust_star_catalog(cname.as_ptr(), &mut handle) };
+        let s = siderust_star_catalog(cname.as_ptr(), &mut handle);
         assert_eq!(s, SiderustStatus::Ok);
         unsafe { siderust_star_free(handle) };
     }
@@ -466,7 +466,7 @@ mod tests {
         let cname = CString::new("NOTASTAR").unwrap();
         let mut handle: *mut SiderustStar = ptr::null_mut();
         assert_eq!(
-            unsafe { siderust_star_catalog(cname.as_ptr(), &mut handle) },
+            siderust_star_catalog(cname.as_ptr(), &mut handle),
             SiderustStatus::UnknownStar
         );
         assert!(handle.is_null());
@@ -476,7 +476,7 @@ mod tests {
     fn catalog_null_name() {
         let mut handle: *mut SiderustStar = ptr::null_mut();
         assert_eq!(
-            unsafe { siderust_star_catalog(ptr::null(), &mut handle) },
+            siderust_star_catalog(ptr::null(), &mut handle),
             SiderustStatus::NullPointer
         );
     }
@@ -485,7 +485,7 @@ mod tests {
     fn catalog_null_out() {
         let cname = CString::new("VEGA").unwrap();
         assert_eq!(
-            unsafe { siderust_star_catalog(cname.as_ptr(), ptr::null_mut()) },
+            siderust_star_catalog(cname.as_ptr(), ptr::null_mut()),
             SiderustStatus::NullPointer
         );
     }
@@ -509,7 +509,7 @@ mod tests {
         let h = catalog_star("VEGA");
         let mut buf = vec![0i8; 32];
         let mut written = 0usize;
-        let s = unsafe { siderust_star_name(h, buf.as_mut_ptr(), buf.len(), &mut written) };
+        let s = siderust_star_name(h, buf.as_mut_ptr(), buf.len(), &mut written);
         assert_eq!(s, SiderustStatus::Ok);
         assert!(written > 0);
         unsafe { siderust_star_free(h) };
@@ -518,11 +518,11 @@ mod tests {
     #[test]
     fn star_name_null_ptr() {
         let h = catalog_star("SIRIUS");
-        let s = unsafe { siderust_star_name(h, ptr::null_mut(), 32, ptr::null_mut()) };
+        let s = siderust_star_name(h, ptr::null_mut(), 32, ptr::null_mut());
         assert_eq!(s, SiderustStatus::NullPointer);
         // null handle
         let mut buf = vec![0i8; 32];
-        let s2 = unsafe { siderust_star_name(ptr::null(), buf.as_mut_ptr(), 32, ptr::null_mut()) };
+        let s2 = siderust_star_name(ptr::null(), buf.as_mut_ptr(), 32, ptr::null_mut());
         assert_eq!(s2, SiderustStatus::NullPointer);
         unsafe { siderust_star_free(h) };
     }
@@ -532,7 +532,7 @@ mod tests {
         let h = catalog_star("BETELGEUSE"); // 10 chars + NUL = 11 bytes
         let mut buf = vec![0i8; 4]; // too small
         let mut written = 0usize;
-        let s = unsafe { siderust_star_name(h, buf.as_mut_ptr(), 4, &mut written) };
+        let s = siderust_star_name(h, buf.as_mut_ptr(), 4, &mut written);
         assert_eq!(s, SiderustStatus::InvalidArgument);
         unsafe { siderust_star_free(h) };
     }
@@ -543,20 +543,18 @@ mod tests {
     fn custom_star_no_proper_motion() {
         let cname = CString::new("TestStar").unwrap();
         let mut handle: *mut SiderustStar = ptr::null_mut();
-        let s = unsafe {
-            siderust_star_create(
-                cname.as_ptr(),
-                10.0, // distance_ly
-                1.0,  // mass_solar
-                1.0,  // radius_solar
-                1.0,  // luminosity_solar
-                90.0, // ra_deg
-                45.0, // dec_deg
-                2_451_545.0,
-                ptr::null(),
-                &mut handle,
-            )
-        };
+        let s = siderust_star_create(
+            cname.as_ptr(),
+            10.0, // distance_ly
+            1.0,  // mass_solar
+            1.0,  // radius_solar
+            1.0,  // luminosity_solar
+            90.0, // ra_deg
+            45.0, // dec_deg
+            2_451_545.0,
+            ptr::null(),
+            &mut handle,
+        );
         assert_eq!(s, SiderustStatus::Ok);
         assert!(!handle.is_null());
         assert!((siderust_star_distance_ly(handle) - 10.0).abs() < 1e-9);
@@ -575,20 +573,18 @@ mod tests {
             ra_convention: SiderustRaConvention::MuAlpha,
         };
         let mut handle: *mut SiderustStar = ptr::null_mut();
-        let s = unsafe {
-            siderust_star_create(
-                cname.as_ptr(),
-                5.0,
-                0.5,
-                0.5,
-                0.1,
-                100.0,
-                30.0,
-                2_451_545.0,
-                &pm as *const _,
-                &mut handle,
-            )
-        };
+        let s = siderust_star_create(
+            cname.as_ptr(),
+            5.0,
+            0.5,
+            0.5,
+            0.1,
+            100.0,
+            30.0,
+            2_451_545.0,
+            &pm as *const _,
+            &mut handle,
+        );
         assert_eq!(s, SiderustStatus::Ok);
         unsafe { siderust_star_free(handle) };
     }
@@ -602,20 +598,18 @@ mod tests {
             ra_convention: SiderustRaConvention::MuAlphaStar,
         };
         let mut handle: *mut SiderustStar = ptr::null_mut();
-        let s = unsafe {
-            siderust_star_create(
-                cname.as_ptr(),
-                5.0,
-                0.5,
-                0.5,
-                0.1,
-                100.0,
-                30.0,
-                2_451_545.0,
-                &pm as *const _,
-                &mut handle,
-            )
-        };
+        let s = siderust_star_create(
+            cname.as_ptr(),
+            5.0,
+            0.5,
+            0.5,
+            0.1,
+            100.0,
+            30.0,
+            2_451_545.0,
+            &pm as *const _,
+            &mut handle,
+        );
         assert_eq!(s, SiderustStatus::Ok);
         unsafe { siderust_star_free(handle) };
     }
@@ -623,40 +617,36 @@ mod tests {
     #[test]
     fn custom_star_null_name_returns_null_pointer() {
         let mut handle: *mut SiderustStar = ptr::null_mut();
-        let s = unsafe {
-            siderust_star_create(
-                ptr::null(),
-                5.0,
-                1.0,
-                1.0,
-                1.0,
-                0.0,
-                0.0,
-                2_451_545.0,
-                ptr::null(),
-                &mut handle,
-            )
-        };
+        let s = siderust_star_create(
+            ptr::null(),
+            5.0,
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            2_451_545.0,
+            ptr::null(),
+            &mut handle,
+        );
         assert_eq!(s, SiderustStatus::NullPointer);
     }
 
     #[test]
     fn custom_star_null_out_returns_null_pointer() {
         let cname = CString::new("X").unwrap();
-        let s = unsafe {
-            siderust_star_create(
-                cname.as_ptr(),
-                5.0,
-                1.0,
-                1.0,
-                1.0,
-                0.0,
-                0.0,
-                2_451_545.0,
-                ptr::null(),
-                ptr::null_mut(),
-            )
-        };
+        let s = siderust_star_create(
+            cname.as_ptr(),
+            5.0,
+            1.0,
+            1.0,
+            1.0,
+            0.0,
+            0.0,
+            2_451_545.0,
+            ptr::null(),
+            ptr::null_mut(),
+        );
         assert_eq!(s, SiderustStatus::NullPointer);
     }
 

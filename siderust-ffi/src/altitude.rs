@@ -11,6 +11,7 @@ use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
 use qtty::*;
+#[cfg(test)]
 use siderust::coordinates::spherical;
 use tempoch::{Interval, ModifiedJulianDate, Period, MJD};
 
@@ -52,6 +53,7 @@ pub(crate) fn culminations_to_c(
     vec_to_c(events, SiderustCulminationEvent::ffi_from, out, count)
 }
 
+#[cfg(test)]
 pub(crate) fn icrs_from_c(
     dir: SiderustSphericalDir,
 ) -> Result<spherical::direction::ICRS, SiderustStatus> {
@@ -501,7 +503,7 @@ mod tests {
     fn get_vega_handle() -> *mut SiderustStar {
         let cname = CString::new("VEGA").unwrap();
         let mut handle: *mut SiderustStar = ptr::null_mut();
-        unsafe { crate::bodies::siderust_star_catalog(cname.as_ptr(), &mut handle) };
+        crate::bodies::siderust_star_catalog(cname.as_ptr(), &mut handle);
         handle
     }
 

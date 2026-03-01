@@ -388,7 +388,7 @@ mod tests {
     fn star_subject(name: &str) -> (*mut SiderustStar, SiderustSubject) {
         let cname = CString::new(name).unwrap();
         let mut handle: *mut SiderustStar = ptr::null_mut();
-        let st = unsafe { crate::bodies::siderust_star_catalog(cname.as_ptr(), &mut handle) };
+        let st = crate::bodies::siderust_star_catalog(cname.as_ptr(), &mut handle);
         assert_eq!(st, SiderustStatus::Ok);
         let subject = SiderustSubject {
             kind: SiderustSubjectKind::Star,
