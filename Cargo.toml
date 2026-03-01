@@ -22,6 +22,7 @@ name = "siderust"
 [features]
 default = []
 de440 = []
+regen-data = ["dep:reqwest"]
 runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
@@ -48,7 +49,7 @@ serde_json = "1.0"
 walkdir = "2"
 regex = "1.12.2"
 anyhow = "1.0.102"
-reqwest = { version = "0.13.2", default-features = false, features = ["blocking", "rustls"] }
+reqwest = { version = "0.13.2", optional = true, default-features = false, features = ["blocking", "rustls"] }
 
 [patch.crates-io]
 cheby = { path = "dev-deps/cheby" }
