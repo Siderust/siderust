@@ -16,8 +16,8 @@
 //!   enabling trait objects (`Box<dyn DynEphemeris>`) for runtime-loaded data.
 //!   A blanket impl bridges: every `Ephemeris` implementor automatically
 //!   implements `DynEphemeris`.
-//! - **Feature-gated**: VSOP87 is always available. DE440 and DE441 require
-//!   the `de440`/`de441` Cargo features. Runtime loading requires `runtime-data`.
+//! - **Feature-gated**: VSOP87 is always available. DE440 requires
+//!   the `de440` Cargo feature. Runtime loading requires `runtime-data`.
 //! - **Body-centric user API preserved**: `Earth::vsop87e(jd)` etc. remain
 //!   unchanged. The traits are used internally by the coordinate transform
 //!   pipeline and `AstroContext`.
