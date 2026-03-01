@@ -6,7 +6,10 @@
 
 use qtty::*;
 use siderust::coordinates::{
-    cartesian, centers::*, frames::*, spherical,
+    cartesian,
+    centers::*,
+    frames::*,
+    spherical,
     transform::{
         providers::{center_shift, frame_rotation},
         AstroContext,
@@ -335,10 +338,8 @@ fn planetocentric_to_bary_antisymmetry() {
 
     macro_rules! test_antisymmetry {
         ($center:ty) => {{
-            let fwd =
-                center_shift::<$center, Barycentric, EclipticMeanJ2000>(jd, &ctx);
-            let bwd =
-                center_shift::<Barycentric, $center, EclipticMeanJ2000>(jd, &ctx);
+            let fwd = center_shift::<$center, Barycentric, EclipticMeanJ2000>(jd, &ctx);
+            let bwd = center_shift::<Barycentric, $center, EclipticMeanJ2000>(jd, &ctx);
             assert!(
                 (fwd[0] + bwd[0]).abs() < EPSILON
                     && (fwd[1] + bwd[1]).abs() < EPSILON
@@ -380,8 +381,7 @@ fn planetocentric_center_shifts_are_nonzero() {
 
     macro_rules! test_nonzero {
         ($center:ty) => {{
-            let s =
-                center_shift::<$center, Barycentric, EclipticMeanJ2000>(jd, &ctx);
+            let s = center_shift::<$center, Barycentric, EclipticMeanJ2000>(jd, &ctx);
             let norm = (s[0] * s[0] + s[1] * s[1] + s[2] * s[2]).sqrt();
             assert!(
                 norm > 0.01,
@@ -409,12 +409,9 @@ fn marscentric_helio_geo_composition() {
     let jd = JulianDate::J2000;
 
     // Marscentric → Geocentric should compose via Barycentric
-    let mars_bary =
-        center_shift::<Marscentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
-    let bary_geo =
-        center_shift::<Barycentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
-    let mars_geo =
-        center_shift::<Marscentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
+    let mars_bary = center_shift::<Marscentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
+    let bary_geo = center_shift::<Barycentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
+    let mars_geo = center_shift::<Marscentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
 
     let composed = [
         mars_bary[0] + bary_geo[0],
@@ -434,12 +431,9 @@ fn selenocentric_geocentric_composition() {
 
     // Selenocentric → Barycentric should equal
     // Selenocentric → Geocentric + Geocentric → Barycentric
-    let sel_bary =
-        center_shift::<Selenocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
-    let sel_geo =
-        center_shift::<Selenocentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
-    let geo_bary =
-        center_shift::<Geocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
+    let sel_bary = center_shift::<Selenocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
+    let sel_geo = center_shift::<Selenocentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
+    let geo_bary = center_shift::<Geocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
 
     let composed = [
         sel_geo[0] + geo_bary[0],
@@ -530,11 +524,7 @@ fn can_construct_galactic_position() {
 
 #[test]
 fn can_construct_marsfixed_position() {
-    let pos = cartesian::position::MarsFixed::<AstronomicalUnit>::new(
-        1.0 * AU,
-        0.5 * AU,
-        0.2 * AU,
-    );
+    let pos = cartesian::position::MarsFixed::<AstronomicalUnit>::new(1.0 * AU, 0.5 * AU, 0.2 * AU);
     assert!((pos.x().value() - 1.0).abs() < LOOSE_EPS);
 }
 
