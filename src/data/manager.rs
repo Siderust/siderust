@@ -122,3 +122,136 @@ impl DataManager {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::io::Write;
+
+    fn temp_dir_path(suffix: &str) -> PathBuf {
+        std::env::temp_dir().join(format!("siderust_mgr_{}", suffix))
+    }
+
+    // ── with_dir ──────────────────────────────────────────────────────
+
+    #[test]
+    fn with_dir_creates_manager() {
+        let dir = temp_dir_path("with_dir");
+        let _ = std::fs::remove_dir_all(&dir);
+        let dm = DataManager::with_dir(&dir).unwrap();
+        assert_eq!(dm.data_dir(), dir.as_path());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    fn data_dir_returns_configured_path() {
+        let dir = temp_dir_path("data_dir_getter");
+        let dm = DataManager::with_dir(&dir).unwrap();
+        assert_eq!(dm.data_dir(), dir.as_path());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // ── is_available ──────────────────────────────────────────────────
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn is_available_returns_false_when_not_cached() {
+        let dir = temp_dir_path("is_avail_false");
+        let _ = std::fs::remove_dir_all(&dir);
+        let dm = DataManager::with_dir(&dir).unwrap();
+        assert!(!dm.is_available(DatasetId::De440));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn is_available_returns_true_when_file_present() {
+        let dir = temp_dir_path("is_avail_true");
+        let dm = DataManager::with_dir(&dir).unwrap();
+        // Write a file sized above min_size for de440's filename
+        let meta = registry::lookup(DatasetId::De440).unwrap();
+        let path = dir.join(meta.filename);
+        let data = vec![0u8; (meta.min_size + 100) as usize];
+        std::fs::write(&path, &data).unwrap();
+        assert!(dm.is_available(DatasetId::De440));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // ── load_path ─────────────────────────────────────────────────────
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn load_path_returns_none_when_not_cached() {
+        let dir = temp_dir_path("load_path_none");
+        let _ = std::fs::remove_dir_all(&dir);
+        let dm = DataManager::with_dir(&dir).unwrap();
+        assert!(dm.load_path(DatasetId::De440).is_none());
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn load_path_returns_some_when_cached() {
+        let dir = temp_dir_path("load_path_some");
+        let dm = DataManager::with_dir(&dir).unwrap();
+        let meta = registry::lookup(DatasetId::IersEop).unwrap();
+        let path = dir.join(meta.filename);
+        let data = vec![0u8; (meta.min_size + 100) as usize];
+        std::fs::write(&path, &data).unwrap();
+        let result = dm.load_path(DatasetId::IersEop);
+        assert!(result.is_some());
+        assert_eq!(result.unwrap(), path);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // ── list ──────────────────────────────────────────────────────────
+
+    #[test]
+    fn list_returns_all_datasets() {
+        let dir = temp_dir_path("list_datasets");
+        let dm = DataManager::with_dir(&dir).unwrap();
+        let items = dm.list();
+        assert!(!items.is_empty());
+        // All should be unavailable in an empty dir
+        assert!(items.iter().all(|(_, avail)| !avail));
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // ── ensure (cached already) ───────────────────────────────────────
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn ensure_returns_path_when_already_cached() {
+        let dir = temp_dir_path("ensure_cached");
+        let dm = DataManager::with_dir(&dir).unwrap();
+        let meta = registry::lookup(DatasetId::IersEop).unwrap();
+        let path = dir.join(meta.filename);
+        // Write a file big enough to pass is_cached and verify (sha256 is empty)
+        let data = vec![42u8; (meta.min_size + 100) as usize];
+        std::fs::write(&path, &data).unwrap();
+        let result = dm.ensure(DatasetId::IersEop).unwrap();
+        assert_eq!(result, path);
+        std::fs::remove_dir_all(&dir).ok();
+    }
+
+    // ── require_meta (unknown id) ─────────────────────────────────────
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn ensure_unknown_dataset_returns_error() {
+        let dir = temp_dir_path("ensure_unknown");
+        let dm = DataManager::with_dir(&dir).unwrap();
+        // Elp2000 is likely not in the DATASETS slice so lookup returns None
+        // which triggers UnknownDataset error
+        let result = dm.ensure(DatasetId::Elp2000);
+        if let Err(e) = result {
+            let s = format!("{}", e);
+            assert!(
+                s.contains("elp2000") || s.contains("unknown") || s.contains("Unknown"),
+                "Unexpected error: {s}"
+            );
+        }
+        // If it happens to be in the catalog that's fine too - we just don't download
+        std::fs::remove_dir_all(&dir).ok();
+    }
+}

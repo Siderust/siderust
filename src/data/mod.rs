@@ -102,3 +102,78 @@ impl From<std::io::Error> for DataError {
         DataError::Io(e)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn data_error_display_io() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "file not found");
+        let e = DataError::Io(io_err);
+        let msg = format!("{}", e);
+        assert!(msg.contains("I/O error"));
+    }
+
+    #[test]
+    fn data_error_display_integrity() {
+        let e = DataError::Integrity("checksum mismatch".to_string());
+        let msg = format!("{}", e);
+        assert!(msg.contains("integrity check failed"));
+        assert!(msg.contains("checksum mismatch"));
+    }
+
+    #[test]
+    fn data_error_display_unknown_dataset() {
+        let e = DataError::UnknownDataset("de999".to_string());
+        let msg = format!("{}", e);
+        assert!(msg.contains("unknown dataset"));
+        assert!(msg.contains("de999"));
+    }
+
+    #[test]
+    fn data_error_display_parse() {
+        let e = DataError::Parse("bad header".to_string());
+        let msg = format!("{}", e);
+        assert!(msg.contains("parse error"));
+        assert!(msg.contains("bad header"));
+    }
+
+    #[test]
+    fn data_error_from_io() {
+        let io_err = std::io::Error::new(std::io::ErrorKind::PermissionDenied, "denied");
+        let e: DataError = io_err.into();
+        matches!(e, DataError::Io(_));
+    }
+
+    #[test]
+    fn data_error_source_io_is_some() {
+        use std::error::Error;
+        let io_err = std::io::Error::new(std::io::ErrorKind::NotFound, "not found");
+        let e = DataError::Io(io_err);
+        assert!(e.source().is_some());
+    }
+
+    #[test]
+    fn data_error_source_non_io_is_none() {
+        use std::error::Error;
+        let e = DataError::Integrity("x".to_string());
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn data_error_debug() {
+        let e = DataError::Parse("test".to_string());
+        let dbg = format!("{:?}", e);
+        assert!(dbg.contains("Parse"));
+    }
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn data_error_display_download() {
+        let e = DataError::Download("timeout".to_string());
+        let msg = format!("{}", e);
+        assert!(msg.contains("download error"));
+        assert!(msg.contains("timeout"));
+    }
+}

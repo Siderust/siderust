@@ -120,3 +120,175 @@ fn sha256_file(path: &Path) -> Result<String, DataError> {
 fn hex_encode(bytes: &[u8]) -> String {
     bytes.iter().map(|b| format!("{:02x}", b)).collect()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::data::registry::{DatasetId, DatasetMeta};
+    use std::io::Write;
+
+    fn dummy_meta(filename: &'static str, min_size: u64) -> DatasetMeta {
+        DatasetMeta {
+            id: DatasetId::De440,
+            name: "test",
+            url: "https://example.com/file",
+            filename,
+            sha256: "",
+            min_size,
+            size_hint: "1 B",
+        }
+    }
+
+    // ── resolve_data_dir ──────────────────────────────────────────────
+
+    #[test]
+    fn resolve_data_dir_uses_env_var() {
+        let tmp = std::env::temp_dir().join("siderust_test_data_dir");
+        std::env::set_var(DATA_DIR_ENV, tmp.to_str().unwrap());
+        let result = resolve_data_dir().unwrap();
+        assert_eq!(result, tmp);
+        std::env::remove_var(DATA_DIR_ENV);
+    }
+
+    #[test]
+    fn resolve_data_dir_env_empty_falls_back_to_home() {
+        std::env::set_var(DATA_DIR_ENV, "   ");
+        let result = resolve_data_dir().unwrap();
+        // Should fall back to HOME-based path since env var is whitespace-only
+        let path_str = result.to_string_lossy();
+        assert!(
+            path_str.contains(".siderust"),
+            "Expected .siderust in path: {path_str}"
+        );
+        std::env::remove_var(DATA_DIR_ENV);
+    }
+
+    #[test]
+    fn resolve_data_dir_default_contains_siderust() {
+        std::env::remove_var(DATA_DIR_ENV);
+        let result = resolve_data_dir();
+        // Should succeed on any machine with HOME set
+        if let Ok(path) = result {
+            assert!(path.to_string_lossy().contains(".siderust"));
+        }
+    }
+
+    // ── ensure_data_dir ───────────────────────────────────────────────
+
+    #[test]
+    fn ensure_data_dir_creates_directory() {
+        let tmp = std::env::temp_dir().join("siderust_test_ensure_dir_12345");
+        let _ = std::fs::remove_dir_all(&tmp);
+        ensure_data_dir(&tmp).unwrap();
+        assert!(tmp.exists());
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    #[test]
+    fn ensure_data_dir_idempotent() {
+        let tmp = std::env::temp_dir().join("siderust_test_ensure_dir_idempotent");
+        ensure_data_dir(&tmp).unwrap();
+        ensure_data_dir(&tmp).unwrap(); // should not fail on second call
+        std::fs::remove_dir_all(&tmp).ok();
+    }
+
+    // ── dataset_path ──────────────────────────────────────────────────
+
+    #[test]
+    fn dataset_path_builds_correct_path() {
+        let dir = std::path::PathBuf::from("/tmp/siderust_data");
+        let meta = dummy_meta("de440.bsp", 0);
+        let path = dataset_path(&dir, &meta);
+        assert_eq!(path, dir.join("de440.bsp"));
+    }
+
+    // ── is_cached ─────────────────────────────────────────────────────
+
+    #[test]
+    fn is_cached_returns_false_when_file_absent() {
+        let tmp = std::env::temp_dir().join("siderust_test_cache_absent");
+        let meta = dummy_meta("nonexistent_file.bsp", 1);
+        assert!(!is_cached(&tmp, &meta));
+    }
+
+    #[test]
+    fn is_cached_returns_false_when_file_too_small() {
+        let tmp = std::env::temp_dir().join("siderust_test_cache_small");
+        ensure_data_dir(&tmp).unwrap();
+        let path = tmp.join("small_file.bsp");
+        let mut f = std::fs::File::create(&path).unwrap();
+        f.write_all(b"x").unwrap();
+        let meta = dummy_meta("small_file.bsp", 1000);
+        assert!(!is_cached(&tmp, &meta));
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_dir(&tmp).ok();
+    }
+
+    #[test]
+    fn is_cached_returns_true_when_file_meets_min_size() {
+        let tmp = std::env::temp_dir().join("siderust_test_cache_ok");
+        ensure_data_dir(&tmp).unwrap();
+        let path = tmp.join("ok_file.bsp");
+        let data: Vec<u8> = vec![0u8; 100];
+        std::fs::write(&path, &data).unwrap();
+        let meta = dummy_meta("ok_file.bsp", 50);
+        assert!(is_cached(&tmp, &meta));
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_dir(&tmp).ok();
+    }
+
+    // ── verify ────────────────────────────────────────────────────────
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn verify_fails_when_file_too_small() {
+        let tmp = std::env::temp_dir().join("siderust_test_verify_small");
+        ensure_data_dir(&tmp).unwrap();
+        let path = tmp.join("tiny.bsp");
+        std::fs::write(&path, b"hi").unwrap();
+        let meta = dummy_meta("tiny.bsp", 1000);
+        let result = verify(&path, &meta);
+        assert!(result.is_err());
+        let err = format!("{:?}", result.unwrap_err());
+        assert!(err.contains("Integrity") || err.contains("too small"));
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_dir(&tmp).ok();
+    }
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn verify_passes_when_no_sha256_and_size_ok() {
+        let tmp = std::env::temp_dir().join("siderust_test_verify_ok");
+        ensure_data_dir(&tmp).unwrap();
+        let path = tmp.join("ok.bsp");
+        let data = vec![0u8; 200];
+        std::fs::write(&path, &data).unwrap();
+        let meta = dummy_meta("ok.bsp", 100);
+        verify(&path, &meta).unwrap(); // should succeed with empty sha256
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_dir(&tmp).ok();
+    }
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn verify_fails_on_wrong_sha256() {
+        let tmp = std::env::temp_dir().join("siderust_test_verify_sha256");
+        ensure_data_dir(&tmp).unwrap();
+        let path = tmp.join("sha_check.bsp");
+        let data = vec![0u8; 200];
+        std::fs::write(&path, &data).unwrap();
+        let meta = DatasetMeta {
+            id: DatasetId::De440,
+            name: "test",
+            url: "https://example.com/file",
+            filename: "sha_check.bsp",
+            sha256: "deadbeef1234deadbeef1234deadbeef1234deadbeef1234deadbeef1234dead",
+            min_size: 100,
+            size_hint: "1 B",
+        };
+        let result = verify(&path, &meta);
+        assert!(result.is_err());
+        std::fs::remove_file(&path).ok();
+        std::fs::remove_dir(&tmp).ok();
+    }
+}

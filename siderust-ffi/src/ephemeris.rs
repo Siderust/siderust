@@ -473,4 +473,183 @@ mod tests {
             SiderustStatus::NullPointer
         );
     }
+
+    // ── Planet ephemeris: heliocentric and barycentric ────────────────────
+
+    macro_rules! test_planet_heliocentric {
+        ($fn_name:ident, $fn:ident, $min_au:expr, $max_au:expr) => {
+            #[test]
+            fn $fn_name() {
+                let mut out = empty_pos();
+                let s = $fn(J2000, &mut out);
+                assert_eq!(s, SiderustStatus::Ok);
+                let dist = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+                assert!(
+                    dist > $min_au && dist < $max_au,
+                    "{}: distance = {} AU, expected [{}, {}]",
+                    stringify!($fn),
+                    dist,
+                    $min_au,
+                    $max_au
+                );
+                assert_eq!(out.center, SiderustCenter::Heliocentric);
+            }
+        };
+    }
+
+    macro_rules! test_planet_null {
+        ($fn_name:ident, $fn:ident) => {
+            #[test]
+            fn $fn_name() {
+                assert_eq!($fn(J2000, ptr::null_mut()), SiderustStatus::NullPointer);
+            }
+        };
+    }
+
+    // Mars: 1.38 – 1.67 AU
+    test_planet_heliocentric!(
+        mars_heliocentric_at_j2000,
+        siderust_vsop87_mars_heliocentric,
+        1.3,
+        1.7
+    );
+    test_planet_null!(mars_heliocentric_null, siderust_vsop87_mars_heliocentric);
+
+    // Venus: 0.718 – 0.728 AU
+    test_planet_heliocentric!(
+        venus_heliocentric_at_j2000,
+        siderust_vsop87_venus_heliocentric,
+        0.5,
+        0.8
+    );
+    test_planet_null!(venus_heliocentric_null, siderust_vsop87_venus_heliocentric);
+
+    // Mercury: 0.31 – 0.47 AU
+    test_planet_heliocentric!(
+        mercury_heliocentric_at_j2000,
+        siderust_vsop87_mercury_heliocentric,
+        0.2,
+        0.6
+    );
+    test_planet_null!(
+        mercury_heliocentric_null,
+        siderust_vsop87_mercury_heliocentric
+    );
+
+    // Jupiter: 4.95 – 5.46 AU
+    test_planet_heliocentric!(
+        jupiter_heliocentric_at_j2000,
+        siderust_vsop87_jupiter_heliocentric,
+        4.0,
+        6.0
+    );
+    test_planet_null!(
+        jupiter_heliocentric_null,
+        siderust_vsop87_jupiter_heliocentric
+    );
+
+    // Saturn: 9.0 – 10.1 AU
+    test_planet_heliocentric!(
+        saturn_heliocentric_at_j2000,
+        siderust_vsop87_saturn_heliocentric,
+        8.0,
+        11.0
+    );
+    test_planet_null!(
+        saturn_heliocentric_null,
+        siderust_vsop87_saturn_heliocentric
+    );
+
+    // Uranus: 18.3 – 20.1 AU
+    test_planet_heliocentric!(
+        uranus_heliocentric_at_j2000,
+        siderust_vsop87_uranus_heliocentric,
+        17.0,
+        21.0
+    );
+    test_planet_null!(
+        uranus_heliocentric_null,
+        siderust_vsop87_uranus_heliocentric
+    );
+
+    // Neptune: 29.7 – 30.4 AU
+    test_planet_heliocentric!(
+        neptune_heliocentric_at_j2000,
+        siderust_vsop87_neptune_heliocentric,
+        28.0,
+        31.5
+    );
+    test_planet_null!(
+        neptune_heliocentric_null,
+        siderust_vsop87_neptune_heliocentric
+    );
+
+    // ── Barycentric variants ──────────────────────────────────────────────
+
+    macro_rules! test_planet_barycentric_ok {
+        ($fn_name:ident, $fn:ident) => {
+            #[test]
+            fn $fn_name() {
+                let mut out = empty_pos();
+                let s = $fn(J2000, &mut out);
+                assert_eq!(s, SiderustStatus::Ok);
+                let dist = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+                assert!(
+                    dist > 0.0 && dist < 35.0,
+                    "{}: dist = {}",
+                    stringify!($fn),
+                    dist
+                );
+                assert_eq!(out.center, SiderustCenter::Barycentric);
+            }
+        };
+    }
+
+    test_planet_barycentric_ok!(mars_barycentric_at_j2000, siderust_vsop87_mars_barycentric);
+    test_planet_null!(mars_barycentric_null, siderust_vsop87_mars_barycentric);
+
+    test_planet_barycentric_ok!(
+        venus_barycentric_at_j2000,
+        siderust_vsop87_venus_barycentric
+    );
+    test_planet_null!(venus_barycentric_null, siderust_vsop87_venus_barycentric);
+
+    test_planet_barycentric_ok!(
+        mercury_barycentric_at_j2000,
+        siderust_vsop87_mercury_barycentric
+    );
+    test_planet_null!(
+        mercury_barycentric_null,
+        siderust_vsop87_mercury_barycentric
+    );
+
+    test_planet_barycentric_ok!(
+        jupiter_barycentric_at_j2000,
+        siderust_vsop87_jupiter_barycentric
+    );
+    test_planet_null!(
+        jupiter_barycentric_null,
+        siderust_vsop87_jupiter_barycentric
+    );
+
+    test_planet_barycentric_ok!(
+        saturn_barycentric_at_j2000,
+        siderust_vsop87_saturn_barycentric
+    );
+    test_planet_null!(saturn_barycentric_null, siderust_vsop87_saturn_barycentric);
+
+    test_planet_barycentric_ok!(
+        uranus_barycentric_at_j2000,
+        siderust_vsop87_uranus_barycentric
+    );
+    test_planet_null!(uranus_barycentric_null, siderust_vsop87_uranus_barycentric);
+
+    test_planet_barycentric_ok!(
+        neptune_barycentric_at_j2000,
+        siderust_vsop87_neptune_barycentric
+    );
+    test_planet_null!(
+        neptune_barycentric_null,
+        siderust_vsop87_neptune_barycentric
+    );
 }

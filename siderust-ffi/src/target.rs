@@ -626,4 +626,69 @@ mod tests {
         );
         unsafe { siderust_target_free(h) };
     }
+
+    // ── Below threshold ───────────────────────────────────────────────────
+
+    #[test]
+    fn below_threshold_ok() {
+        let h = create_vega();
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        let s = siderust_target_below_threshold(
+            h,
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        unsafe {
+            crate::altitude::siderust_periods_free(out, count);
+            siderust_target_free(h);
+        }
+    }
+
+    #[test]
+    fn below_threshold_null_handle() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_target_below_threshold(
+                ptr::null(),
+                paris(),
+                one_day_window(),
+                0.0,
+                default_opts(),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn below_threshold_invalid_window() {
+        let h = create_vega();
+        let bad = TempochPeriodMjd {
+            start_mjd: 60001.0,
+            end_mjd: 60000.0,
+        };
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_target_below_threshold(
+                h,
+                paris(),
+                bad,
+                0.0,
+                default_opts(),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::InvalidPeriod
+        );
+        unsafe { siderust_target_free(h) };
+    }
 }

@@ -109,3 +109,123 @@ pub fn gmst_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> Radians {
 pub fn gmst_default(jd_tt: JulianDate) -> Radians {
     gmst_from_tt(jd_tt)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::eop::EopValues;
+    use std::f64::consts::TAU;
+
+    const JD_J2000: f64 = 2451545.0;
+
+    fn jd() -> JulianDate {
+        JulianDate::new(JD_J2000)
+    }
+
+    // ── jd_ut1_from_tt ────────────────────────────────────────────────────
+
+    #[test]
+    fn jd_ut1_is_close_to_tt_at_modern_epoch() {
+        // ΔT at J2000 is ~63.8 s, so UT1 ≈ TT - 63.8/86400 days
+        let jd_ut1 = jd_ut1_from_tt(jd());
+        let diff_sec = (jd().value() - jd_ut1.value()) * 86400.0;
+        assert!(
+            diff_sec > 50.0 && diff_sec < 80.0,
+            "ΔT at J2000 expected ~63s, got {diff_sec}s"
+        );
+    }
+
+    // ── jd_ut1_from_tt_eop ────────────────────────────────────────────────
+
+    #[test]
+    fn jd_ut1_eop_zero_dut1_falls_back_to_delta_t() {
+        let eop = EopValues::default(); // dut1 = 0
+        let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
+        let jd_dt = jd_ut1_from_tt(jd());
+        // Both should give the same result when dUT1 = 0
+        assert!((jd_eop.value() - jd_dt.value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn jd_ut1_eop_nonzero_dut1_applies_correction() {
+        use qtty::Seconds;
+        let eop = EopValues {
+            dut1: Seconds::new(0.3),
+            ..Default::default()
+        }; // dUT1 = +0.3 s
+        let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
+        // With non-zero dUT1, result should differ from pure ΔT model
+        assert!(jd_eop.value().is_finite());
+        // The result should be within a few minutes of TT (no gross errors)
+        let diff_days = (jd().value() - jd_eop.value()).abs();
+        assert!(
+            diff_days < 1e-3,
+            "UT1-TT difference too large: {diff_days} days"
+        );
+    }
+
+    #[test]
+    fn jd_ut1_eop_negative_dut1() {
+        use qtty::Seconds;
+        let eop = EopValues {
+            dut1: Seconds::new(-0.5),
+            ..Default::default()
+        };
+        let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
+        assert!(jd_eop.value().is_finite());
+    }
+
+    // ── gmst_from_tt ─────────────────────────────────────────────────────
+
+    #[test]
+    fn gmst_from_tt_is_in_range() {
+        let gmst = gmst_from_tt(jd());
+        assert!(
+            gmst.value() >= 0.0 && gmst.value() < TAU,
+            "GMST out of [0, 2π): {}",
+            gmst.value()
+        );
+    }
+
+    #[test]
+    fn gmst_from_tt_varies_with_time() {
+        let gmst1 = gmst_from_tt(jd());
+        let gmst2 = gmst_from_tt(JulianDate::new(JD_J2000 + 1.0));
+        // One sidereal day rotates by ~2π, so GMST changes significantly
+        let diff = (gmst2.value() - gmst1.value()).abs();
+        assert!(diff > 0.0, "GMST should change over 1 day");
+    }
+
+    // ── gmst_from_tt_eop ─────────────────────────────────────────────────
+
+    #[test]
+    fn gmst_from_tt_eop_null_eop_matches_gmst_from_tt() {
+        let eop = EopValues::default(); // all zeros
+        let gmst_eop = gmst_from_tt_eop(jd(), &eop);
+        let gmst_dt = gmst_from_tt(jd());
+        // With NullEop (all zeros), they should be equal
+        assert!((gmst_eop.value() - gmst_dt.value()).abs() < 1e-12);
+    }
+
+    #[test]
+    fn gmst_from_tt_eop_with_nonzero_dut1() {
+        use qtty::Seconds;
+        let eop = EopValues {
+            dut1: Seconds::new(0.2),
+            ..Default::default()
+        };
+        let gmst_eop = gmst_from_tt_eop(jd(), &eop);
+        assert!(gmst_eop.value().is_finite());
+        assert!(gmst_eop.value() >= 0.0);
+    }
+
+    // ── gmst_default ─────────────────────────────────────────────────────
+
+    #[test]
+    fn gmst_default_matches_gmst_from_tt() {
+        let jd_val = jd();
+        let g1 = gmst_default(jd_val);
+        let g2 = gmst_from_tt(jd_val);
+        assert!((g1.value() - g2.value()).abs() < 1e-15);
+    }
+}

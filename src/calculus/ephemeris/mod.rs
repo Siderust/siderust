@@ -182,3 +182,95 @@ impl<T: Ephemeris> DynEphemeris for T {
         <T as Ephemeris>::moon_geocentric(jd)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::calculus::ephemeris::Vsop87Ephemeris;
+
+    const JD_J2000: f64 = 2451545.0;
+
+    fn jd() -> JulianDate {
+        JulianDate::new(JD_J2000)
+    }
+
+    // Test the DynEphemeris blanket impl via Vsop87Ephemeris (which implements Ephemeris).
+    // Calling through &dyn DynEphemeris exercises the blanket impl code paths.
+
+    #[test]
+    fn dyn_ephemeris_sun_barycentric_via_blanket_impl() {
+        let eph: &dyn DynEphemeris = &Vsop87Ephemeris;
+        let pos = eph.sun_barycentric(jd());
+        // Sun is within a few million km of SSB (~0.005 AU)
+        let mag =
+            (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
+        assert!(mag < 0.02, "Sun-SSB offset too large: {mag} AU");
+        assert!(pos.x().value().is_finite());
+    }
+
+    #[test]
+    fn dyn_ephemeris_earth_barycentric_via_blanket_impl() {
+        let eph: &dyn DynEphemeris = &Vsop87Ephemeris;
+        let pos = eph.earth_barycentric(jd());
+        let mag =
+            (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
+        // Earth is ~1 AU from SSB
+        assert!(
+            mag > 0.9 && mag < 1.1,
+            "Earth-SSB distance should be ~1 AU, got {mag}"
+        );
+    }
+
+    #[test]
+    fn dyn_ephemeris_earth_heliocentric_via_blanket_impl() {
+        let eph: &dyn DynEphemeris = &Vsop87Ephemeris;
+        let pos = eph.earth_heliocentric(jd());
+        let mag =
+            (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
+        // Earth is ~1 AU from Sun
+        assert!(
+            mag > 0.98 && mag < 1.02,
+            "Earth heliocentric should be ~1 AU, got {mag}"
+        );
+    }
+
+    #[test]
+    fn dyn_ephemeris_earth_barycentric_velocity_via_blanket_impl() {
+        let eph: &dyn DynEphemeris = &Vsop87Ephemeris;
+        let vel = eph.earth_barycentric_velocity(jd());
+        // Earth's orbital speed is ~0.0172 AU/day (≈ 30 km/s)
+        let speed =
+            (vel.x().value().powi(2) + vel.y().value().powi(2) + vel.z().value().powi(2)).sqrt();
+        assert!(
+            speed > 0.01 && speed < 0.03,
+            "Earth speed ~0.017 AU/day, got {speed}"
+        );
+    }
+
+    #[test]
+    fn dyn_ephemeris_moon_geocentric_via_blanket_impl() {
+        let eph: &dyn DynEphemeris = &Vsop87Ephemeris;
+        let pos = eph.moon_geocentric(jd());
+        let dist =
+            (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
+        // Moon is ~384,400 km from Earth
+        assert!(
+            dist > 350_000.0 && dist < 420_000.0,
+            "Moon geocentric dist: {dist} km"
+        );
+    }
+
+    // Also test the static Ephemeris dispatch to confirm it gives the same results.
+    #[test]
+    fn static_vs_dynamic_dispatch_agree() {
+        let jd_val = jd();
+        let pos_static = <Vsop87Ephemeris as Ephemeris>::sun_barycentric(jd_val);
+        let pos_dyn = {
+            let eph: &dyn DynEphemeris = &Vsop87Ephemeris;
+            eph.sun_barycentric(jd_val)
+        };
+        assert!((pos_static.x().value() - pos_dyn.x().value()).abs() < 1e-15);
+        assert!((pos_static.y().value() - pos_dyn.y().value()).abs() < 1e-15);
+        assert!((pos_static.z().value() - pos_dyn.z().value()).abs() < 1e-15);
+    }
+}
