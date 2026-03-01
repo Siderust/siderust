@@ -149,9 +149,7 @@ pub extern "C" fn siderust_runtime_ephemeris_ensure(
 /// The handle must have been allocated by one of the `siderust_runtime_ephemeris_*`
 /// constructors, and must not be used after this call.
 #[no_mangle]
-pub unsafe extern "C" fn siderust_runtime_ephemeris_free(
-    handle: *mut SiderustRuntimeEphemeris,
-) {
+pub unsafe extern "C" fn siderust_runtime_ephemeris_free(handle: *mut SiderustRuntimeEphemeris) {
     if !handle.is_null() {
         drop(Box::from_raw(handle));
     }
@@ -313,10 +311,7 @@ mod tests {
     fn load_bsp_null_out() {
         let path = b"dummy.bsp\0";
         assert_eq!(
-            siderust_runtime_ephemeris_load_bsp(
-                path.as_ptr() as *const c_char,
-                ptr::null_mut()
-            ),
+            siderust_runtime_ephemeris_load_bsp(path.as_ptr() as *const c_char, ptr::null_mut()),
             SiderustStatus::NullPointer
         );
     }
@@ -326,10 +321,7 @@ mod tests {
         let path = b"/nonexistent/path/de440.bsp\0";
         let mut out: *mut SiderustRuntimeEphemeris = ptr::null_mut();
         assert_eq!(
-            siderust_runtime_ephemeris_load_bsp(
-                path.as_ptr() as *const c_char,
-                &mut out
-            ),
+            siderust_runtime_ephemeris_load_bsp(path.as_ptr() as *const c_char, &mut out),
             SiderustStatus::DataError
         );
         assert!(out.is_null());
@@ -349,11 +341,7 @@ mod tests {
         let bad_data = [0u8; 64];
         let mut out: *mut SiderustRuntimeEphemeris = ptr::null_mut();
         assert_eq!(
-            siderust_runtime_ephemeris_load_bytes(
-                bad_data.as_ptr(),
-                bad_data.len(),
-                &mut out
-            ),
+            siderust_runtime_ephemeris_load_bytes(bad_data.as_ptr(), bad_data.len(), &mut out),
             SiderustStatus::DataError
         );
     }

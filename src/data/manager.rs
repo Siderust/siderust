@@ -108,8 +108,7 @@ impl DataManager {
     // ── Internal helpers ──────────────────────────────────────────────
 
     fn require_meta(&self, id: DatasetId) -> Result<&'static DatasetMeta, DataError> {
-        registry::lookup(id)
-            .ok_or_else(|| DataError::UnknownDataset(id.as_str().to_string()))
+        registry::lookup(id).ok_or_else(|| DataError::UnknownDataset(id.as_str().to_string()))
     }
 
     fn download_inner(
