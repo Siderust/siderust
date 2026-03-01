@@ -55,6 +55,11 @@ use crate::coordinates::spherical::direction;
 use crate::time::{ModifiedJulianDate, Period, MJD};
 use qtty::*;
 
+// Imports for planet altitude support
+use crate::calculus::horizontal;
+use crate::coordinates::{cartesian, centers::Geocentric, frames};
+use crate::time::JulianDate;
+
 // ---------------------------------------------------------------------------
 // Trait Definition
 // ---------------------------------------------------------------------------
@@ -283,6 +288,116 @@ impl AltitudePeriodsProvider for direction::ICRS {
         crate::calculus::stellar::fixed_star_altitude_rad(mjd, observer, self.ra(), self.dec())
     }
 }
+
+// ---------------------------------------------------------------------------
+// Implementations: VSOP87 Planets (Mercury–Neptune)
+// ---------------------------------------------------------------------------
+
+use crate::calculus::math_core::intervals;
+use crate::coordinates::transform::Transform;
+use crate::time::complement_within;
+
+/// Scan step for planet altitude threshold detection (2 hours in days).
+///
+/// Planets' apparent motion is dominated by Earth's rotation, so the same
+/// 2‑hour scan step used for the Sun is adequate.
+const PLANET_SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
+
+/// Computes the topocentric altitude (in radians) of a VSOP87 planet at a
+/// given instant, using the full VSOP87 → geocentric equatorial → topocentric
+/// → horizontal pipeline.
+fn vsop87_planet_altitude_rad<F>(
+    vsop87e_fn: F,
+    mjd: ModifiedJulianDate,
+    site: &Geodetic<ECEF>,
+) -> Radians
+where
+    F: Fn(
+        JulianDate,
+    ) -> cartesian::Position<
+        crate::coordinates::centers::Barycentric,
+        frames::EclipticMeanJ2000,
+        AstronomicalUnit,
+    >,
+{
+    let jd: JulianDate = mjd.into();
+    // 1) VSOP87e → barycentric ecliptic J2000
+    let bary_ecl = vsop87e_fn(jd);
+    // 2) Frame rotation + center shift → geocentric equatorial J2000
+    let geo_equ: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
+        bary_ecl.transform(jd);
+    // 3–4) Topocentric parallax + precession/nutation → true‑of‑date RA/Dec,
+    //       then equatorial → horizontal
+    let topo = horizontal::geocentric_j2000_to_apparent_topocentric(&geo_equ, *site, jd);
+    let horiz = horizontal::equatorial_to_horizontal(&topo, *site, jd);
+    horiz.alt().to::<Radian>()
+}
+
+/// Helper macro: implement [`AltitudePeriodsProvider`] for a VSOP87‑backed
+/// planet unit type.  Delegates altitude computation through the
+/// [`vsop87_planet_altitude_rad`] helper and uses [`intervals`] for
+/// threshold/range queries.
+macro_rules! impl_altitude_provider_vsop87 {
+    ($($Planet:ident),+ $(,)?) => {
+        $(
+            impl AltitudePeriodsProvider for solar_system::$Planet {
+                fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
+                    if query.window.duration() <= Days::zero() {
+                        return Vec::new();
+                    }
+                    let f = |t: ModifiedJulianDate| -> Radians {
+                        vsop87_planet_altitude_rad(
+                            solar_system::$Planet::vsop87e, t, &query.observer,
+                        )
+                    };
+                    if query.max_altitude >= Degrees::new(89.99) {
+                        // Full "above" query
+                        intervals::above_threshold_periods(
+                            query.window,
+                            PLANET_SCAN_STEP,
+                            &f,
+                            query.min_altitude.to::<Radian>(),
+                        )
+                    } else if query.min_altitude <= Degrees::new(-89.99) {
+                        // Full "below" query — complement of above(max)
+                        let above = intervals::above_threshold_periods(
+                            query.window,
+                            PLANET_SCAN_STEP,
+                            &f,
+                            query.max_altitude.to::<Radian>(),
+                        );
+                        complement_within(query.window, &above)
+                    } else {
+                        // Band [min, max] query
+                        intervals::in_range_periods(
+                            query.window,
+                            PLANET_SCAN_STEP,
+                            &f,
+                            query.min_altitude.to::<Radian>(),
+                            query.max_altitude.to::<Radian>(),
+                        )
+                    }
+                }
+
+                fn altitude_at(
+                    &self,
+                    observer: &Geodetic<ECEF>,
+                    mjd: ModifiedJulianDate,
+                ) -> Radians {
+                    vsop87_planet_altitude_rad(
+                        solar_system::$Planet::vsop87e, mjd, observer,
+                    )
+                }
+
+                fn scan_step_hint(&self) -> Option<Days> {
+                    Some(PLANET_SCAN_STEP)
+                }
+            }
+        )+
+    };
+}
+
+impl_altitude_provider_vsop87!(Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Neptune);
 
 // ---------------------------------------------------------------------------
 // Tests
@@ -532,6 +647,59 @@ mod tests {
                 "Periods should be non-overlapping and sorted: {:?} vs {:?}",
                 w[0],
                 w[1]
+            );
+        }
+    }
+
+    // --- Planet altitude ---
+
+    #[test]
+    fn mars_altitude_at_is_finite() {
+        let alt = solar_system::Mars.altitude_at(&greenwich(), ModifiedJulianDate::new(60000.5));
+        assert!(alt.is_finite());
+        assert!(
+            alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2),
+            "Mars altitude should be within ±90°"
+        );
+    }
+
+    #[test]
+    fn jupiter_above_horizon_via_trait() {
+        let periods = solar_system::Jupiter.above_threshold(
+            greenwich(),
+            one_week_window(),
+            Degrees::new(0.0),
+        );
+        assert!(
+            !periods.is_empty(),
+            "Jupiter should be above horizon at some point in a week at 51°N"
+        );
+    }
+
+    #[test]
+    fn planet_altitudes_are_realistic() {
+        let observer = greenwich();
+        let mjd = ModifiedJulianDate::new(60000.5);
+        // All planets should return finite altitudes
+        let mercury_alt = solar_system::Mercury.altitude_at(&observer, mjd);
+        let venus_alt = solar_system::Venus.altitude_at(&observer, mjd);
+        let mars_alt = solar_system::Mars.altitude_at(&observer, mjd);
+        let saturn_alt = solar_system::Saturn.altitude_at(&observer, mjd);
+        let uranus_alt = solar_system::Uranus.altitude_at(&observer, mjd);
+        let neptune_alt = solar_system::Neptune.altitude_at(&observer, mjd);
+
+        for (name, alt) in [
+            ("Mercury", mercury_alt),
+            ("Venus", venus_alt),
+            ("Mars", mars_alt),
+            ("Saturn", saturn_alt),
+            ("Uranus", uranus_alt),
+            ("Neptune", neptune_alt),
+        ] {
+            assert!(alt.is_finite(), "{name} altitude should be finite");
+            assert!(
+                alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2),
+                "{name} altitude should be within ±90°, got {alt}"
             );
         }
     }

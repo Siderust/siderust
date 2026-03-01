@@ -47,3 +47,64 @@ pub mod twilight {
     /// Apparent sunrise/sunset accounting for atmospheric refraction (-0.833°)
     pub const APPARENT_HORIZON: Degrees = Degrees::new(-0.833);
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn civil_twilight_is_minus_6() {
+        let d: Degrees = Twilight::Civil.into();
+        assert!((d.value() - (-6.0)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn nautical_twilight_is_minus_12() {
+        let d: Degrees = Twilight::Nautical.into();
+        assert!((d.value() - (-12.0)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn astronomical_twilight_is_minus_18() {
+        let d: Degrees = Twilight::Astronomical.into();
+        assert!((d.value() - (-18.0)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn horizon_is_zero() {
+        let d: Degrees = Twilight::Horizon.into();
+        assert!((d.value() - 0.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn apparent_horizon_is_minus_0_833() {
+        let d: Degrees = Twilight::ApparentHorizon.into();
+        assert!((d.value() - (-0.833)).abs() < 1e-12);
+    }
+
+    #[test]
+    fn twilight_clone_and_eq() {
+        assert_eq!(Twilight::Civil, Twilight::Civil.clone());
+        assert_ne!(Twilight::Civil, Twilight::Nautical);
+    }
+
+    #[test]
+    fn twilight_debug() {
+        let s = format!("{:?}", Twilight::Astronomical);
+        assert!(s.contains("Astronomical"));
+    }
+
+    #[test]
+    fn twilight_constants_match_variants() {
+        assert!((twilight::CIVIL.value() - Degrees::from(Twilight::Civil).value()).abs() < 1e-12);
+        assert!(
+            (twilight::NAUTICAL.value() - Degrees::from(Twilight::Nautical).value()).abs() < 1e-12
+        );
+        assert!(
+            (twilight::ASTRONOMICAL.value() - Degrees::from(Twilight::Astronomical).value()).abs()
+                < 1e-12
+        );
+        assert!((twilight::HORIZON.value() - 0.0).abs() < 1e-12);
+        assert!((twilight::APPARENT_HORIZON.value() - (-0.833)).abs() < 1e-12);
+    }
+}

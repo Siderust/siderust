@@ -1,3 +1,7 @@
+[workspace]
+members = [".", "siderust-ffi"]
+exclude = ["dev-deps/**"]
+
 [package]
 name = "siderust"
 version = "0.5.2"
@@ -18,19 +22,22 @@ name = "siderust"
 [features]
 default = []
 de440 = []
-de441 = []
+regen-data = ["dep:reqwest"]
+runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
 [dependencies]
-affn = { version="0.3.2", features = ["astro"] }
+affn = { version="0.3.3", features = ["astro"] }
 cheby = "0.1.0"
-qtty = "0.3.0"
+qtty = "0.4.0"
 tempoch = "0.3"
 approx = "0.5"
-chrono = "0.4.43"
+chrono = "0.4.44"
 nalgebra = "0.34.1"
 paste = "1.0"
 serde = { version = "1.0", features = ["derive"], optional = true }
+sha2 = { version = "0.10", optional = true }
+ureq = { version = "2.12", optional = true, default-features = false, features = ["tls"] }
 wide = "1.1.1"
 
 [dev-dependencies]
@@ -41,8 +48,12 @@ serde_json = "1.0"
 [build-dependencies]
 walkdir = "2"
 regex = "1.12.2"
-anyhow = "1.0.101"
-reqwest = { version = "0.13.2", default-features = false, features = ["blocking", "rustls"] }
+anyhow = "1.0.102"
+reqwest = { version = "0.13.2", optional = true, default-features = false, features = ["blocking", "rustls"] }
+
+[patch.crates-io]
+cheby = { path = "dev-deps/cheby" }
+tempoch = { path = "dev-deps/tempoch/tempoch" }
 
 [[bench]]
 name = "converters"
@@ -69,21 +80,9 @@ name = "elp2000"
 harness = false
 
 [[bench]]
-name = "de441"
-harness = false
-required-features = ["de441"]
-
-[[bench]]
 name = "ephemeris_comparison"
 harness = false
 
 [[bench]]
 name = "altitude_comparison"
 harness = false
-
-[[example]]
-name = "serde_serialization"
-required-features = ["serde"]
-
-[[example]]
-name = "jpl_precise_ephemeris"
