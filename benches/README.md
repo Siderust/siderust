@@ -7,7 +7,7 @@ Results go to `target/criterion/` with HTML reports.
 
 ```bash
 cargo bench                           # run everything (except feature-gated)
-cargo bench --features de440,de441    # include JPL backends
+cargo bench --features de440          # include JPL DE440 backend
 ```
 
 ## Comparative Suites
@@ -17,7 +17,7 @@ Criterion's HTML reports show relative performance in a single chart.
 
 | Benchmark | What it compares | Command |
 |-----------|-----------------|---------|
-| `ephemeris_comparison` | VSOP87 vs DE440 vs DE441 for every `Ephemeris` trait method | `cargo bench --bench ephemeris_comparison --features de440,de441` |
+| `ephemeris_comparison` | VSOP87 vs DE440 for every `Ephemeris` trait method | `cargo bench --bench ephemeris_comparison --features de440` |
 | `altitude_comparison`  | Sun vs Moon vs Star (Sirius) for single-point, 7-day, 30-day, 365-day searches | `cargo bench --bench altitude_comparison` |
 
 ## Per-Module Benchmarks
@@ -32,7 +32,7 @@ Detailed benchmarks for each subsystem with multiple time horizons and algorithm
 | `solar_altitude` | Sun night-period finding (1/7/30/365-day) | `cargo bench --bench solar_altitude` |
 | `moon_altitude` | Moon above/below horizon, altitude ranges, algorithm comparison | `cargo bench --bench moon_altitude` |
 | `star_altitude` | Fixed-star altitude, thresholds, crossings | `cargo bench --bench star_altitude` |
-| `de441` | DE441 ephemeris body queries | `cargo bench --bench de441 --features de441` |
+| `de441` | Runtime DE4xx ephemeris body queries (needs `SIDERUST_BSP_PATH`) | `cargo bench --bench de441` |
 
 ## Filtering
 

@@ -11,11 +11,10 @@
 
 use qtty::*;
 use siderust::coordinates::cartesian::{line_of_sight, Position};
-use siderust::coordinates::centers::{Geocentric, Geodetic, Heliocentric};
+use siderust::coordinates::centers::{Geocentric, Geodetic, Heliocentric, Topocentric};
 use siderust::coordinates::frames::{EquatorialMeanJ2000, ECEF};
 use siderust::coordinates::observation::{Apparent, Astrometric, ObserverState};
 use siderust::coordinates::spherical;
-use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
 use siderust::coordinates::transform::{Transform, TransformCenter};
 use siderust::time::JulianDate;
 
@@ -218,7 +217,8 @@ fn topocentric_parallax_is_real_translation() {
     let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
     let jd = JulianDate::J2000;
 
-    let moon_topo = moon_geo.to_topocentric(site, jd);
+    let moon_topo: Position<Topocentric, EquatorialMeanJ2000, Kilometer> =
+        moon_geo.to_center((site, jd));
 
     // The distance should differ by approximately the observer's geocentric distance
     let geo_dist = moon_geo.distance().value();
@@ -247,7 +247,7 @@ fn topocentric_roundtrip_preserves_geocentric_position() {
     let jd = JulianDate::J2000;
 
     // Geocentric -> Topocentric -> Geocentric
-    let topo = geo.to_topocentric(site, jd);
+    let topo: Position<Topocentric, EquatorialMeanJ2000, Kilometer> = geo.to_center((site, jd));
     let geo_recovered: Position<Geocentric, EquatorialMeanJ2000, Kilometer> = topo.to_center(jd);
 
     // Should recover within floating-point precision
@@ -277,7 +277,7 @@ fn topocentric_parallax_negligible_for_stars() {
     let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
     let jd = JulianDate::J2000;
 
-    let star_topo = star_geo.to_topocentric(site, jd);
+    let star_topo: Position<Topocentric, EquatorialMeanJ2000, Au> = star_geo.to_center((site, jd));
 
     // Relative parallax should be tiny
     let rel_diff = (star_geo.x().value() - star_topo.x().value()).abs() / star_geo.x().value();
