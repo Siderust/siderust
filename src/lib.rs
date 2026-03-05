@@ -56,6 +56,7 @@ pub mod astro;
 pub mod bodies;
 pub mod calculus;
 pub mod coordinates;
+pub mod data;
 pub mod observatories;
 pub mod targets;
 pub use tempoch as time;

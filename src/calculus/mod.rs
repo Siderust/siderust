@@ -105,7 +105,6 @@ pub mod azimuth;
 pub mod elp2000;
 pub mod ephemeris;
 pub mod horizontal;
-#[cfg(any(feature = "de440", feature = "de441"))]
 pub mod jpl;
 pub mod kepler_equations;
 pub mod lunar;

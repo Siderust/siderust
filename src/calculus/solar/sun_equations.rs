@@ -6,7 +6,12 @@ use crate::bodies::solar_system::Sun;
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;
 use crate::calculus::horizontal;
-use crate::coordinates::{cartesian, centers::*, frames, spherical, transform::Transform};
+use crate::coordinates::{
+    cartesian,
+    centers::*,
+    frames, spherical,
+    transform::{Transform, TransformFrame},
+};
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 
@@ -34,7 +39,11 @@ impl Sun {
         Quantity<U>: From<AstronomicalUnits>,
     {
         let helio = cartesian::position::EclipticMeanJ2000::<U, Heliocentric>::CENTER;
-        let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> = helio.transform(jd);
+        // Center shift first (stays in EclipticMeanJ2000), then frame-rotate to equatorial.
+        // Doing both in one `transform` call would apply the ecliptic shift vector into the
+        // already-rotated equatorial frame, yielding a near-zero Dec instead of ~-23°.
+        let geo_ecl: cartesian::position::EclipticMeanJ2000<U, Geocentric> = helio.transform(jd);
+        let geo_cart: cartesian::position::EquatorialMeanJ2000<U, Geocentric> = geo_ecl.to_frame();
 
         // Apply full IAU 2006/2000B NPB matrix (GCRS → true equator/equinox of date)
         let nut = nutation_iau2000b(jd);
@@ -55,10 +64,13 @@ impl Sun {
     where
         Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
     {
-        // 1) Compute geocentric cartesian in J2000 (mean) as base
+        // 1) Compute geocentric cartesian in J2000 (mean) as base.
+        // Center shift first (stays in EclipticMeanJ2000), then frame-rotate to equatorial.
         let helio = cartesian::position::EclipticMeanJ2000::<U, Heliocentric>::CENTER;
-        let geo_cart_j2000: cartesian::position::EquatorialMeanJ2000<U, Geocentric> =
+        let geo_ecl_j2000: cartesian::position::EclipticMeanJ2000<U, Geocentric> =
             helio.transform(jd);
+        let geo_cart_j2000: cartesian::position::EquatorialMeanJ2000<U, Geocentric> =
+            geo_ecl_j2000.to_frame();
 
         // 2-5) Shared pipeline: topocentric parallax → precession → nutation → spherical
         horizontal::geocentric_j2000_to_apparent_topocentric(&geo_cart_j2000, site, jd)

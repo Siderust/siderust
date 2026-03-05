@@ -31,26 +31,31 @@ use std::marker::PhantomData;
 use crate::astro::eop::{EopProvider, EopValues, IersEop};
 use crate::time::JulianDate;
 
-#[cfg(not(any(feature = "de440", feature = "de441")))]
+#[cfg(not(feature = "de440"))]
 use crate::calculus::ephemeris::Vsop87Ephemeris;
 
 /// Default ephemeris type.
 ///
-/// - Without `de440`/`de441` features: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
-/// - With `de440` feature: `De440Ephemeris` (JPL DE440).
-/// - With `de441` feature: `De441Ephemeris` (JPL DE441 part-2).
+/// - Without `de440` feature: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
+/// - With `de440` feature (and real data): `De440Ephemeris` (JPL DE440, compile-time).
+/// - With `de440` feature but `SIDERUST_JPL_STUB` set: falls back to [`Vsop87Ephemeris`]
+///   so tests run without downloading the BSP.
+/// - For DE441 or other large datasets: use [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris)
+///   with a BSP file loaded at runtime via [`DataManager`](crate::data::DataManager).
 ///
 /// This type alias is used as the default `Eph` parameter in [`AstroContext`],
 /// so all code using `AstroContext::default()` will automatically use the
 /// selected backend.
-#[cfg(not(any(feature = "de440", feature = "de441")))]
+#[cfg(not(feature = "de440"))]
 pub type DefaultEphemeris = Vsop87Ephemeris;
 
-#[cfg(all(feature = "de440", not(feature = "de441")))]
+#[cfg(all(feature = "de440", not(siderust_mock_de440)))]
 pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
 
-#[cfg(feature = "de441")]
-pub type DefaultEphemeris = crate::calculus::ephemeris::De441Ephemeris;
+// Stub: de440 feature is on but SIDERUST_JPL_STUB is set — fall back to VSOP87
+// so all tests work without the BSP download.
+#[cfg(all(feature = "de440", siderust_mock_de440))]
+pub type DefaultEphemeris = crate::calculus::ephemeris::Vsop87Ephemeris;
 
 /// Default Earth orientation model: [`IersEop`], backed by the
 /// build-time embedded `finals2000A.all` table.
@@ -152,6 +157,89 @@ impl<Eop, Nut> AstroContext<DefaultEphemeris, Eop, Nut> {
     #[inline]
     pub const fn uses_default_ephemeris(&self) -> bool {
         true
+    }
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// DynAstroContext — runtime-selected ephemeris via DynEphemeris trait object
+// ═══════════════════════════════════════════════════════════════════════════
+
+use crate::calculus::ephemeris::DynEphemeris;
+
+/// Astronomical context with a runtime-selected ephemeris backend.
+///
+/// This is the dynamic counterpart to [`AstroContext`]. Instead of selecting
+/// an ephemeris backend at compile time via type parameters, it stores a
+/// `Box<dyn DynEphemeris>` and dispatches via virtual calls.
+///
+/// Use this when:
+/// - You load BSP files at runtime via [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris)
+/// - You need to switch between backends without recompiling
+/// - You want to override the default ephemeris at runtime
+///
+/// # Example
+///
+/// ```rust,ignore
+/// use siderust::calculus::ephemeris::{RuntimeEphemeris, DynEphemeris};
+/// use siderust::coordinates::transform::context::DynAstroContext;
+///
+/// let eph = RuntimeEphemeris::from_bsp("path/to/de441.bsp")?;
+/// let ctx = DynAstroContext::with_ephemeris(Box::new(eph));
+/// ```
+pub struct DynAstroContext<Eop = DefaultEop> {
+    ephemeris: Box<dyn DynEphemeris>,
+    eop: Eop,
+}
+
+impl DynAstroContext<DefaultEop> {
+    /// Create a dynamic context from a `DynEphemeris` implementor.
+    pub fn with_ephemeris(eph: Box<dyn DynEphemeris>) -> Self {
+        Self {
+            ephemeris: eph,
+            eop: DefaultEop::default(),
+        }
+    }
+}
+
+impl<Eop: Default> DynAstroContext<Eop> {
+    /// Create a dynamic context with a custom EOP provider.
+    pub fn with_ephemeris_and_eop(eph: Box<dyn DynEphemeris>, eop: Eop) -> Self {
+        Self {
+            ephemeris: eph,
+            eop,
+        }
+    }
+}
+
+impl<Eop: EopProvider> DynAstroContext<Eop> {
+    /// Reference to the runtime ephemeris backend.
+    #[inline]
+    pub fn ephemeris(&self) -> &dyn DynEphemeris {
+        &*self.ephemeris
+    }
+
+    /// Look up EOP values for the given **UTC** Julian Date.
+    #[inline]
+    pub fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
+        self.eop.eop_at(jd_utc)
+    }
+
+    /// Reference to the underlying EOP provider.
+    #[inline]
+    pub fn eop(&self) -> &Eop {
+        &self.eop
+    }
+}
+
+impl<Eop> std::fmt::Debug for DynAstroContext<Eop>
+where
+    Eop: std::fmt::Debug,
+{
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("DynAstroContext")
+            .field("ephemeris", &"<dyn DynEphemeris>")
+            .field("eop", &self.eop)
+            .finish()
     }
 }
 
