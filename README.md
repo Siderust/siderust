@@ -139,6 +139,23 @@ When JPL features are enabled, build scripts may download:
 
 Default checked-in behavior is **real JPL builds** (no global stubbing).
 
+### Persistent Cache (Recommended)
+
+By default, downloaded JPL kernels are cached under Cargo's build output directory (`OUT_DIR`),
+so `cargo clean` (or switching targets) can force a re-download.
+
+To download once and reuse across builds, set `SIDERUST_DATASETS_DIR` to a persistent location
+and prefetch the kernel you need:
+
+```bash
+export SIDERUST_DATASETS_DIR="$HOME/.cache/siderust"
+./scripts/prefetch_datasets.sh --de440   # downloads $SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp
+```
+
+Notes:
+- `cargo test --all-features` enables `de440`, so it will try to acquire `de440.bsp` if missing.
+- If the file is already present in the datasets directory, the build script reuses it.
+
 Real JPL mode (recommended for representative DE440/DE441 behavior):
 
 ```bash

@@ -4,8 +4,10 @@
 //! Comprehensive tests for the [`calculus::ephemeris`] module.
 //!
 //! This test file aims to provide comprehensive coverage of the ephemeris module,
-//! testing all backends (Vsop87Ephemeris, De440Ephemeris, De441Ephemeris) and
+//! testing all backends (Vsop87Ephemeris, De440Ephemeris) and
 //! all trait methods across multiple epochs.
+//!
+//! DE441 is no longer a compile-time backend; use `RuntimeEphemeris` at runtime.
 
 use qtty::*;
 use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
@@ -51,7 +53,7 @@ fn epoch_2100() -> JulianDate {
 }
 
 /// Returns true when build/test runs are configured to stub JPL datasets.
-#[cfg(any(feature = "de440", feature = "de441"))]
+#[cfg(feature = "de440")]
 fn jpl_stub_enabled_for(prefix: &str) -> bool {
     let Ok(raw) = std::env::var("SIDERUST_JPL_STUB") else {
         return false;
@@ -649,182 +651,8 @@ mod de440_tests {
     }
 }
 
-// ============================================================================
-// DE441 Ephemeris Tests (Feature-gated)
-// ============================================================================
-
-#[cfg(feature = "de441")]
-mod de441_tests {
-    use super::*;
-    use siderust::calculus::ephemeris::De441Ephemeris;
-
-    fn skip_if_de441_stubbed() -> bool {
-        if jpl_stub_enabled_for("de441") {
-            eprintln!("Skipping DE441 test: SIDERUST_JPL_STUB enables DE441 stubbing.");
-            return true;
-        }
-        false
-    }
-
-    #[test]
-    fn de441_sun_barycentric_at_j2000() {
-        if skip_if_de441_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let sun = De441Ephemeris::sun_barycentric(jd);
-        let pos = sun;
-
-        let dist = pos.distance();
-        assert!(
-            dist < AstronomicalUnits::new(0.02),
-            "DE441: Sun should be close to SSB at J2000"
-        );
-    }
-
-    #[test]
-    fn de441_earth_barycentric_at_j2000() {
-        if skip_if_de441_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let earth = De441Ephemeris::earth_barycentric(jd);
-        let pos = earth;
-
-        let dist = pos.distance();
-        assert!(
-            dist > AstronomicalUnits::new(0.98) && dist < AstronomicalUnits::new(1.02),
-            "DE441: Earth should be ~1 AU from SSB"
-        );
-    }
-
-    #[test]
-    fn de441_earth_heliocentric_at_j2000() {
-        if skip_if_de441_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let earth = De441Ephemeris::earth_heliocentric(jd);
-        let pos = earth;
-
-        let dist = pos.distance();
-        assert!(
-            dist > AstronomicalUnits::new(0.98) && dist < AstronomicalUnits::new(1.02),
-            "DE441: Earth heliocentric should be ~1 AU"
-        );
-    }
-
-    #[test]
-    fn de441_earth_barycentric_velocity_at_j2000() {
-        if skip_if_de441_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let vel = De441Ephemeris::earth_barycentric_velocity(jd);
-
-        let vx = vel.x().value();
-        let vy = vel.y().value();
-        let vz = vel.z().value();
-        let speed = (vx * vx + vy * vy + vz * vz).sqrt();
-
-        assert!(
-            speed > 0.015 && speed < 0.02,
-            "DE441: Earth velocity should be ~0.017 AU/day"
-        );
-    }
-
-    #[test]
-    fn de441_moon_geocentric_at_j2000() {
-        if skip_if_de441_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let moon = De441Ephemeris::moon_geocentric(jd);
-
-        let dist = moon.distance();
-        assert!(
-            dist > Kilometers::new(356_000.0) && dist < Kilometers::new(407_000.0),
-            "DE441: Moon distance should be 356k-407k km"
-        );
-    }
-
-    #[test]
-    fn de441_consistency_earth_versus_vsop87() {
-        if skip_if_de441_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let earth_de441 = De441Ephemeris::earth_barycentric(jd);
-        let earth_vsop = Vsop87Ephemeris::earth_barycentric(jd);
-
-        let tol = AstronomicalUnits::new(1e-4);
-        let dx = (earth_de441.x() - earth_vsop.x()).abs();
-        let dy = (earth_de441.y() - earth_vsop.y()).abs();
-        let dz = (earth_de441.z() - earth_vsop.z()).abs();
-
-        assert!(
-            dx < tol && dy < tol && dz < tol,
-            "DE441 and VSOP87 Earth positions should be similar at J2000"
-        );
-    }
-
-    #[test]
-    fn de441_at_epoch_2020() {
-        if skip_if_de441_stubbed() {
-            return;
-        }
-        let jd = epoch_2020();
-
-        let sun = De441Ephemeris::sun_barycentric(jd);
-        let earth_bary = De441Ephemeris::earth_barycentric(jd);
-        let earth_helio = De441Ephemeris::earth_heliocentric(jd);
-        let vel = De441Ephemeris::earth_barycentric_velocity(jd);
-        let moon = De441Ephemeris::moon_geocentric(jd);
-
-        assert!(sun.distance() < AstronomicalUnits::new(0.03));
-        assert!(earth_bary.distance() > AstronomicalUnits::new(0.9));
-        assert!(earth_helio.distance() > AstronomicalUnits::new(0.9));
-        assert!(vel.x().value().is_finite());
-        assert!(moon.distance() > Kilometers::new(350_000.0));
-    }
-
-    #[test]
-    fn de441_at_epoch_2026() {
-        if skip_if_de441_stubbed() {
-            return;
-        }
-        let jd = epoch_2026();
-
-        let sun = De441Ephemeris::sun_barycentric(jd);
-        let earth_bary = De441Ephemeris::earth_barycentric(jd);
-        let earth_helio = De441Ephemeris::earth_heliocentric(jd);
-        let vel = De441Ephemeris::earth_barycentric_velocity(jd);
-        let moon = De441Ephemeris::moon_geocentric(jd);
-
-        assert!(sun.x().value().is_finite());
-        assert!(earth_bary.x().value().is_finite());
-        assert!(earth_helio.x().value().is_finite());
-        assert!(vel.x().value().is_finite());
-        assert!(moon.x().value().is_finite());
-    }
-
-    #[test]
-    fn de441_long_time_span() {
-        if skip_if_de441_stubbed() {
-            return;
-        }
-        // DE441 supports a long time span (-13200 to +17191 years)
-        // Test a historical date
-        let jd_historical = jd_from_value(2415020.0); // ~1900
-        let earth_hist = De441Ephemeris::earth_barycentric(jd_historical);
-        assert!(earth_hist.distance() > AstronomicalUnits::new(0.9));
-
-        // Test a future date
-        let jd_future = jd_from_value(2488069.5); // ~2100
-        let earth_future = De441Ephemeris::earth_barycentric(jd_future);
-        assert!(earth_future.distance() > AstronomicalUnits::new(0.9));
-    }
-}
+// DE441 is now runtime-only via RuntimeEphemeris — see examples/12_runtime_ephemeris.rs.
+// The compile-time De441Ephemeris backend has been removed.
 
 // ============================================================================
 // Generic Ephemeris Trait Tests
@@ -870,17 +698,6 @@ mod generic_ephemeris_tests {
         test_ephemeris_basic_properties::<De440Ephemeris>();
     }
 
-    #[cfg(feature = "de441")]
-    #[test]
-    fn de441_basic_properties() {
-        if jpl_stub_enabled_for("de441") {
-            eprintln!("Skipping DE441 generic test: SIDERUST_JPL_STUB enables DE441 stubbing.");
-            return;
-        }
-        use siderust::calculus::ephemeris::De441Ephemeris;
-        test_ephemeris_basic_properties::<De441Ephemeris>();
-    }
-
     /// Test that velocity is consistent with position change over time
     fn test_velocity_consistency<E: Ephemeris>() {
         let jd1 = epoch_2020();
@@ -922,17 +739,6 @@ mod generic_ephemeris_tests {
         }
         use siderust::calculus::ephemeris::De440Ephemeris;
         test_velocity_consistency::<De440Ephemeris>();
-    }
-
-    #[cfg(feature = "de441")]
-    #[test]
-    fn de441_velocity_consistency() {
-        if jpl_stub_enabled_for("de441") {
-            eprintln!("Skipping DE441 generic test: SIDERUST_JPL_STUB enables DE441 stubbing.");
-            return;
-        }
-        use siderust::calculus::ephemeris::De441Ephemeris;
-        test_velocity_consistency::<De441Ephemeris>();
     }
 }
 

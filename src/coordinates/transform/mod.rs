@@ -80,7 +80,7 @@ pub mod providers;
 mod to_cartesian;
 mod to_spherical;
 
-pub use centers::TransformCenter;
+pub use centers::{to_topocentric_with_ctx, IntoTransformArgs, TransformCenter};
 pub use context::AstroContext;
 pub use ecliptic_of_date::{FromEclipticTrueOfDate, ToEclipticTrueOfDate};
 pub use ext::{DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt, VectorAstroExt};
@@ -113,17 +113,19 @@ pub trait Transform<Coord> {
 
 /// Blanket implementation for Position transformations (center + frame changes).
 ///
-/// This implementation allows converting a [`crate::coordinates::cartesian::Vector`] from one
-/// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
-/// transformations:
+/// Applies two transformations:
 /// 1. Frame transformation (within the same center)
-/// 2. Center transformation (within the new frame)
+/// 2. Center transformation (within the rotated frame)
+///
+/// Restricted to standard centers (`Params = ()`) because combined transforms
+/// for Bodycentric or Topocentric require explicit parameter values.
+/// Use `to_center` directly for those cases.
 impl<C1, C2, F1, F2, U> Transform<Position<C2, F2, U>> for Position<C1, F1, U>
 where
-    Position<C1, F2, U>: TransformCenter<Position<C2, F2, U>>,
+    C1: ReferenceCenter<Params = ()>,
+    C2: ReferenceCenter<Params = ()>,
+    Position<C1, F2, U>: TransformCenter<C2, F2, U>,
     (): FrameRotationProvider<F1, F2>,
-    C1: ReferenceCenter,
-    C2: ReferenceCenter,
     F1: MutableFrame,
     F2: MutableFrame,
     U: LengthUnit,
@@ -132,10 +134,10 @@ where
         // Apply the frame rotation at the requested epoch, then shift centers.
         let rot: Rotation3 = frame_rotation::<F1, F2>(jd, &AstroContext::default());
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        let rotated = Position::<C1, F2, U>::from_vec3(
-            self.center_params().clone(),
-            nalgebra::Vector3::new(x, y, z),
-        );
+        let rotated = {
+            self.center_params();
+            Position::<C1, F2, U>::from_vec3((), nalgebra::Vector3::new(x, y, z))
+        };
         rotated.to_center(jd)
     }
 }

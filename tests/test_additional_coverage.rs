@@ -6,7 +6,7 @@ use siderust::astro::orbit::Orbit;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};
-use siderust::coordinates::transform::centers::position::to_topocentric::ToTopocentricExt;
+use siderust::coordinates::transform::TransformCenter;
 use siderust::coordinates::{
     cartesian,
     centers::Geodetic,
@@ -71,7 +71,11 @@ fn horizontal_conversion_variants_cover_all_impls() {
     );
     // Topocentric translation currently requires a MutableFrame, so do it in J2000...
     let cart_pos = eq_pos.to_cartesian();
-    let topo_cart_j2000 = cart_pos.to_topocentric(site, jd);
+    let topo_cart_j2000: cartesian::Position<
+        siderust::coordinates::centers::Topocentric,
+        frames::EquatorialMeanJ2000,
+        AstronomicalUnit,
+    > = cart_pos.to_center((site, jd));
 
     // ...then rotate J2000 -> mean-of-date using the provider rotation matrix.
     let ctx = AstroContext::default();
