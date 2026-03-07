@@ -58,11 +58,16 @@ pub extern "C" fn siderust_target_create(
 /// Free a target handle created by [`siderust_target_create`].
 ///
 /// # Safety
-/// The handle must not be used after this call.
+///
+/// * `handle` must have been allocated by [`siderust_target_create`].
+/// * The handle must not have been freed before, and must not be used after
+///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_target_free(handle: *mut SiderustTarget) {
     if !handle.is_null() {
-        drop(Box::from_raw(handle));
+        // SAFETY: caller guarantees the handle was allocated by
+        // `siderust_target_create` and has not been freed before.
+        drop(unsafe { Box::from_raw(handle) });
     }
 }
 
