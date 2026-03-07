@@ -52,10 +52,11 @@ pub(crate) fn nutation_with_celestial_pole_offsets(
     // dψ_eop = dX/sin(εA), dε_eop = dY.
     let dx_rad = qtty::Radians::from(eop.dx);
     let dy_rad = qtty::Radians::from(eop.dy);
-    if dx_rad.value() != 0.0 || dy_rad.value() != 0.0 {
+    let zero = qtty::Radians::new(0.0);
+    if dx_rad != zero || dy_rad != zero {
         let sin_eps = nut.mean_obliquity.sin();
         if sin_eps.abs() > 1e-15 {
-            dpsi += qtty::Radians::new(dx_rad.value() / sin_eps);
+            dpsi += dx_rad / sin_eps;
         }
         deps += dy_rad;
     }
