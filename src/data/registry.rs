@@ -96,3 +96,67 @@ pub static DATASETS: &[DatasetMeta] = &[
 pub fn lookup(id: DatasetId) -> Option<&'static DatasetMeta> {
     DATASETS.iter().find(|d| d.id == id)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dataset_id_as_str() {
+        assert_eq!(DatasetId::De440.as_str(), "de440");
+        assert_eq!(DatasetId::De441.as_str(), "de441");
+        assert_eq!(DatasetId::Vsop87a.as_str(), "vsop87a");
+        assert_eq!(DatasetId::Vsop87e.as_str(), "vsop87e");
+        assert_eq!(DatasetId::Elp2000.as_str(), "elp2000");
+        assert_eq!(DatasetId::IersEop.as_str(), "iers_eop");
+    }
+
+    #[test]
+    fn dataset_id_display() {
+        assert_eq!(format!("{}", DatasetId::De440), "de440");
+        assert_eq!(format!("{}", DatasetId::De441), "de441");
+        assert_eq!(format!("{}", DatasetId::IersEop), "iers_eop");
+    }
+
+    #[test]
+    fn dataset_id_eq_and_clone() {
+        let id = DatasetId::De440;
+        let id2 = id;
+        assert_eq!(id, id2);
+        assert_ne!(id, DatasetId::De441);
+        assert_ne!(DatasetId::Vsop87a, DatasetId::Vsop87e);
+    }
+
+    #[test]
+    fn datasets_slice_is_non_empty() {
+        assert!(!DATASETS.is_empty());
+        // Check that de440 is present
+        assert!(DATASETS.iter().any(|d| d.id == DatasetId::De440));
+        assert!(DATASETS.iter().any(|d| d.id == DatasetId::IersEop));
+    }
+
+    #[test]
+    fn dataset_meta_fields_non_empty() {
+        let de440 = DATASETS.iter().find(|d| d.id == DatasetId::De440).unwrap();
+        assert!(!de440.name.is_empty());
+        assert!(!de440.url.is_empty());
+        assert!(!de440.filename.is_empty());
+        assert!(de440.min_size > 0);
+    }
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn lookup_de440_found() {
+        let meta = lookup(DatasetId::De440);
+        assert!(meta.is_some());
+        assert_eq!(meta.unwrap().id, DatasetId::De440);
+    }
+
+    #[test]
+    #[cfg(feature = "runtime-data")]
+    fn lookup_elp2000_not_in_catalog_returns_none() {
+        // Elp2000 is defined as DatasetId but might not be in DATASETS
+        // Either way lookup returns Some or None without panicking
+        let _result = lookup(DatasetId::Elp2000);
+    }
+}

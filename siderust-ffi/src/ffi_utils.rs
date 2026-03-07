@@ -188,6 +188,7 @@ macro_rules! dispatch_subject {
 /// Implement this trait for every FFI struct that mirrors a Rust type.  The
 /// blanket call `U::ffi_from(r)` can then be passed directly to [`vec_to_c`].
 pub trait FfiFrom<R>: Sized {
+    /// Convert a reference to a Rust domain value into `Self`.
     fn ffi_from(r: &R) -> Self;
 }
 
@@ -237,6 +238,8 @@ where
 /// the array.  The pointer must not be used after this call.
 pub unsafe fn free_boxed_slice<T>(ptr: *mut T, count: usize) {
     if !ptr.is_null() && count > 0 {
-        let _ = Box::from_raw(std::slice::from_raw_parts_mut(ptr, count));
+        // SAFETY: caller guarantees `ptr` and `count` originate from the same
+        // `vec_to_c` allocation and have not been freed before.
+        let _ = unsafe { Box::from_raw(std::slice::from_raw_parts_mut(ptr, count)) };
     }
 }
