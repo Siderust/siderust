@@ -38,21 +38,39 @@ pub(crate) fn vec_az_extrema_to_c(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Free an array of azimuth crossing events.
+///
+/// # Safety
+///
+/// * `ptr` must have been returned by a `siderust_*` azimuth crossing function.
+/// * `count` must be the element count that was returned alongside `ptr`.
+/// * The pointer must not have been freed before, and must not be used after
+///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_azimuth_crossings_free(
     ptr: *mut SiderustAzimuthCrossingEvent,
     count: usize,
 ) {
-    free_boxed_slice(ptr, count);
+    // SAFETY: caller guarantees the pointer/count pair was returned by a
+    // siderust function and has not been freed before.
+    unsafe { free_boxed_slice(ptr, count) };
 }
 
 /// Free an array of azimuth extrema.
+///
+/// # Safety
+///
+/// * `ptr` must have been returned by a `siderust_*` azimuth extrema function.
+/// * `count` must be the element count that was returned alongside `ptr`.
+/// * The pointer must not have been freed before, and must not be used after
+///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_azimuth_extrema_free(
     ptr: *mut SiderustAzimuthExtremum,
     count: usize,
 ) {
-    free_boxed_slice(ptr, count);
+    // SAFETY: caller guarantees the pointer/count pair was returned by a
+    // siderust function and has not been freed before.
+    unsafe { free_boxed_slice(ptr, count) };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
