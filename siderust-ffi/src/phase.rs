@@ -56,9 +56,18 @@ fn search_opts_to_phase(opts: SiderustSearchOpts) -> PhaseSearchOpts {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Free an array of phase events.
+///
+/// # Safety
+///
+/// * `ptr` must have been returned by `siderust_moon_phase_events`.
+/// * `count` must be the element count that was returned alongside `ptr`.
+/// * The pointer must not have been freed before, and must not be used after
+///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_phase_events_free(ptr: *mut SiderustPhaseEvent, count: usize) {
-    free_boxed_slice(ptr, count);
+    // SAFETY: caller guarantees the pointer/count pair was returned by a
+    // siderust function and has not been freed before.
+    unsafe { free_boxed_slice(ptr, count) };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -493,5 +502,79 @@ mod tests {
     #[test]
     fn phase_events_free_null_safe() {
         unsafe { siderust_phase_events_free(ptr::null_mut(), 0) };
+    }
+
+    // ── Custom scan step ──────────────────────────────────────────────────
+
+    fn opts_with_scan_step(step_days: f64) -> SiderustSearchOpts {
+        SiderustSearchOpts {
+            time_tolerance_days: 1e-4,
+            scan_step_days: step_days,
+            has_scan_step: true,
+        }
+    }
+
+    #[test]
+    fn find_phase_events_with_custom_scan_step() {
+        let mut out: *mut SiderustPhaseEvent = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_find_phase_events(one_month(), opts_with_scan_step(0.5), &mut out, &mut count),
+            SiderustStatus::Ok
+        );
+        assert!(count >= 1);
+        unsafe { siderust_phase_events_free(out, count) };
+    }
+
+    #[test]
+    fn illumination_above_with_custom_scan_step() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_moon_illumination_above(
+                one_month(),
+                0.5,
+                opts_with_scan_step(0.25),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::Ok
+        );
+        unsafe { crate::altitude::siderust_periods_free(out, count) };
+    }
+
+    #[test]
+    fn illumination_below_with_custom_scan_step() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_moon_illumination_below(
+                one_month(),
+                0.5,
+                opts_with_scan_step(0.25),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::Ok
+        );
+        unsafe { crate::altitude::siderust_periods_free(out, count) };
+    }
+
+    #[test]
+    fn illumination_range_with_custom_scan_step() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_moon_illumination_range(
+                one_month(),
+                0.25,
+                0.75,
+                opts_with_scan_step(0.25),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::Ok
+        );
+        unsafe { crate::altitude::siderust_periods_free(out, count) };
     }
 }

@@ -114,6 +114,16 @@ showcasing the polymorphic trait-based API.
 cargo run --example 11_compare_sun_moon_star
 ```
 
+### 13. Coordinate Operations (`13_coordinate_operations.rs`)
+Angular separation between spherical directions (Vincenty formula), cross-validation
+against the Cartesian dot product, Euclidean 3D distance between spherical positions,
+displacement vectors from Cartesian subtraction, and the type-safety guarantee that
+prevents mixing incompatible coordinate frames.
+
+```bash
+cargo run --example 13_coordinate_operations
+```
+
 ---
 
 ## Solar System & Coordinates
