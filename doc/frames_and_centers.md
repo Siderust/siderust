@@ -47,27 +47,28 @@ For the Moon (Selenocentric), the position comes from the ephemeris
 
 ## 2. Earth-Fixed Frames
 
-### 2.1 ECEF — Earth-Centred Earth-Fixed (mathematical placeholder)
+### 2.1 ECEF — Earth-Centred Earth-Fixed (WGS84 Earth-fixed convenience frame)
 
 ```rust
 // affn::frames::ECEF
 pub struct ECEF;
 ```
 
-`ECEF` is a **generic** Earth-fixed label.  It rotates with the Earth using
-ERA / GMST but intentionally **does not** apply the IERS polar-motion matrix
-**W**(xₚ, yₚ, s′).
+`ECEF` is the WGS84-tagged Earth-fixed frame used for geodetic site input and
+for Earth-fixed Cartesian vectors in user-facing APIs.
 
 **When to use `ECEF`:**
-- First-order geodetic → topocentric conversions where ≤ 10 m accuracy suffices.
-- Internal bookkeeping when a labelled Earth-fixed frame is needed before a
-  full EOP chain is available.
+- Storing WGS84 geodetic coordinates (`Geodetic<ECEF>`).
+- User-facing Earth-fixed Cartesian vectors when you want the familiar `ECEF`
+  label instead of `ITRF`.
 
-**Accuracy note:**  Omitting polar motion introduces an error of roughly
-±10 m (up to ~30 m at solar maximum) in geocentric Cartesian coordinates.
-For observatory positioning at the metre level or better, store observatory
-data in `Geodetic<ECEF>` and call `.to_cartesian::<Meter>()`, which uses the
-WGS84 ellipsoid encoded in the `ECEF` frame.
+**Provider-layer note:**  frame rotations currently treat `ECEF` as
+co-aligned with `ITRF`.  The distinction between the two frames is therefore
+ellipsoidal / metadata-oriented in siderust today:
+- `Geodetic<ECEF>` uses **WGS84**
+- `Geodetic<ITRF>` uses **GRS80**
+- `Position<Geocentric, ECEF, U>` and `Position<Geocentric, ITRF, U>` share
+  the same Earth-orientation chain when rotated to inertial frames
 
 ### 2.2 ITRF — International Terrestrial Reference Frame (EOP-realised)
 
@@ -88,6 +89,24 @@ ITRS → W⁻¹ → TIRS → ERA → CIRS → Q → GCRS/ICRS
 - Observatory geocentric coordinates sourced from ITRF2020 / VLBI solutions.
 - Polar-motion-corrected baselines at the centimetre level.
 - Any context where the phrase "ITRF coordinates" appears in the source data.
+
+### 2.3 CIRS / TIRS — Intermediate Earth-orientation frames
+
+```rust
+pub struct CIRS;
+pub struct TIRS;
+```
+
+These are the public intermediate frames of the IAU 2000/2006 Earth-rotation
+chain:
+
+```text
+GCRS/ICRS ──Q──▶ CIRS ──ERA──▶ TIRS ──W──▶ ITRF/ECEF
+```
+
+Use them when you need to inspect or exchange states at a specific stage of the
+Earth-orientation reduction instead of jumping directly between inertial and
+Earth-fixed frames.
 
 ---
 
@@ -119,10 +138,11 @@ frame-bias matrix **B**), which is below the accuracy floor of most
 calculations.  If sub-mas accuracy is required, apply the frame-bias
 explicitly.
 
-### 3.3 EquatorialMeanJ2000
+### 3.3 EquatorialMeanJ2000 / EME2000
 
 ```rust
 pub struct EquatorialMeanJ2000;
+pub struct EME2000;
 ```
 
 Mean equatorial frame referred to the standard epoch J2000.0
@@ -131,6 +151,10 @@ J2000, using the IAU 1976/1980 precession-nutation constants.
 
 This is the **working frame** for most internal transforms in siderust
 because precession-only rotations are cheap and widely tabulated.
+
+`EME2000` is provided as an explicit CCSDS-facing synonym of the same axes.
+Its transform to/from `EquatorialMeanJ2000` is the identity, but keeping the
+name separate preserves frame provenance in exchanged data.
 
 ### 3.4 FK4 B1950
 
@@ -259,6 +283,8 @@ in `coordinates::frames::planetary`.
 
 The canonical ITRS → EquatorialMeanJ2000 rotation is implemented in
 `crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation`.
+The same chain is also exposed through public `FrameRotationProvider`
+implementations for `GCRS`, `CIRS`, `TIRS`, `ITRF`, and `ECEF`.
 
 ```
 ITRS  ──W⁻¹──▶  TIRS  ──ERA──▶  CIRS  ──Q──▶  GCRS/ICRS  ──P──▶  EquatorialMeanJ2000
@@ -270,6 +296,14 @@ ITRS  ──W⁻¹──▶  TIRS  ──ERA──▶  CIRS  ──Q──▶  G
 | **ERA** | Earth Rotation Angle | UT1 → `earth_rotation_angle` |
 | **Q** | CIO/CIP (X, Y, s) | nutation IAU 2000B ± EOP dX,dY |
 | **P** | Precession ICRS → MeanJ2000 | `FrameRotationProvider<ICRS, EquatorialMeanJ2000>` |
+
+Public provider coverage now includes:
+- `GCRS ↔ CIRS`
+- `CIRS ↔ TIRS`
+- `TIRS ↔ ITRF`
+- `ICRS ↔ CIRS/TIRS/ITRF/ECEF`
+- `EclipticMeanJ2000`, `EquatorialMeanJ2000`, `EME2000`, `ICRF`, `TEME`,
+  `Galactic`, and `FK4B1950` ↔ `CIRS/TIRS/ITRF/ECEF`
 
 **Time-scale contract:**  The `jd` argument to `itrs_to_equatorial_mean_j2000_rotation`
 is a **Terrestrial Time (TT)** Julian Date.
@@ -296,6 +330,9 @@ Time-dependent rotations:
 
 | Pair | Method |
 |---|---|
+| GCRS ↔ CIRS | CIO/CIP matrix **Q** |
+| CIRS ↔ TIRS | Earth Rotation Angle |
+| TIRS ↔ ITRF | Polar motion matrix **W** |
 | TEME ↔ TOD | Rz(equation of equinoxes) |
 | EquatorialMean ↔ EquatorialTrueOfDate | IAU 2006 precession + IAU 2000B nutation |
 | Body-fixed ↔ ICRS | IAU 2015 rotation parameters |
@@ -341,11 +378,14 @@ Named getters (`lat()`, `lon()`, `altitude()`) are generated automatically by th
 | ICRS | Int'l Celestial Ref. System | Quasar positions | Star catalogues |
 | GCRS | Geocentric CRS | ≈ ICRS (< 1 mas offset) | Aberration, parallax |
 | MeanJ2000 | Equatorial Mean J2000 | IAU 1976 precession | Internal working frame |
+| EME2000 | Earth Mean Equator/Equinox J2000 | Same axes as MeanJ2000 | CCSDS / flight-dynamics exchange |
 | FK4 B1950 | FK4 Equatorial B1950 | FK4 catalogue | Legacy catalogues |
 | TEME | True Equator Mean Equinox | SGP4 convention | TLE/satellite orbits |
 | Galactic | Galactic (IAU 1958) | Galactic plane + NGP | Milky Way structure |
 | EclMeanJ2000 | Ecliptic Mean J2000 | Ecliptic plane of J2000 | Planetary ephemerides |
-| ECEF | Earth-Centred Earth-Fixed | ERA only (no polar motion) | First-order site positions |
+| CIRS | Celestial Intermediate RS | CIP + CIO | Intermediate Earth-orientation diagnostics |
+| TIRS | Terrestrial Intermediate RS | CIP + ERA | Intermediate Earth-orientation diagnostics |
+| ECEF | Earth-Centred Earth-Fixed | Provider-aligned with ITRF; WGS84 geodetic tag | WGS84 site input / Earth-fixed vectors |
 | ITRF | Int'l Terrestrial Ref. Frame | Full EOP chain | Geodetic / VLBI |
 | MercuryFixed | Mercury body-fixed | IAU 2015 rotation | Mercury surface |
 | VenusFixed | Venus body-fixed | IAU 2015 rotation | Venus surface |
@@ -357,6 +397,19 @@ Named getters (`lat()`, `lon()`, `altitude()`) are generated automatically by th
 | NeptuneFixed | Neptune body-fixed | IAU 2015 rotation | Neptune surface |
 | PlutoFixed | Pluto body-fixed | IAU 2015 rotation | Pluto surface |
 | Horizontal | Local horizon | Observer's local vertical | Telescope pointing |
+
+---
+
+## 10. Current Non-Goals
+
+The following operational frames are **not** first-class in the current typed
+frame system:
+
+- `RTN` / `RIC` / `LVLH`-style local orbital frames
+- covariance transport objects tied to those local frames
+
+Those frames are state-dependent rather than global; they need an orbit-relative
+API instead of the current zero-sized global frame markers.
 
 ---
 

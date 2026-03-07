@@ -55,6 +55,8 @@ pub use super::spherical::direction::EquatorialTrueOfDate as EquatorialTrueOfDat
 pub use super::spherical::direction::Galactic as GalacticDir;
 /// **Horizontal** spherical direction (altitude, azimuth).
 pub use super::spherical::direction::Horizontal as HorizontalDir;
+/// **EME2000** spherical direction (right-ascension, declination).
+pub use super::spherical::direction::EME2000 as Eme2000Dir;
 /// **FK4 B1950** spherical direction (right-ascension, declination in FK4).
 pub use super::spherical::direction::FK4B1950 as Fk4B1950Dir;
 /// **GCRS** spherical direction (right-ascension, declination in GCRS).
@@ -76,6 +78,8 @@ pub use super::spherical::position::EquatorialMeanJ2000 as EquatorialJ2000Pos;
 pub use super::spherical::position::EquatorialMeanOfDate as EquatorialMeanOfDatePos;
 /// **Geocentric Equatorial true of date** spherical position.
 pub use super::spherical::position::EquatorialTrueOfDate as EquatorialTrueOfDatePos;
+/// **Geocentric EME2000** spherical position (α, δ, d).
+pub use super::spherical::position::EME2000 as Eme2000Pos;
 // NOTE: `GeographicPos` (spherical position alias) has been removed.
 // The old `Geographic = Position<Geocentric, ECEF, Kilometer>` was a correctness
 // footgun: spherical `distance` is radial distance, not ellipsoidal height.
@@ -144,6 +148,8 @@ pub use super::cartesian::direction::EquatorialMeanOfDate as EquatorialMeanOfDat
 pub use super::cartesian::direction::EquatorialTrueOfDate as EquatorialTrueOfDateCartDir;
 /// **Horizontal** cartesian direction (unit vector).
 pub use super::cartesian::direction::Horizontal as HorizontalCartDir;
+/// **EME2000** cartesian direction (unit vector).
+pub use super::cartesian::direction::EME2000 as Eme2000CartDir;
 /// **ICRS** cartesian direction (unit vector).
 pub use super::cartesian::direction::ICRS as IcrsCartDir;
 
@@ -163,6 +169,8 @@ pub use super::cartesian::position::EquatorialMeanOfDate as EquatorialMeanOfDate
 pub use super::cartesian::position::EquatorialTrueOfDate as EquatorialTrueOfDateCartPos;
 /// **Topocentric Horizontal** cartesian position.
 pub use super::cartesian::position::Horizontal as HorizontalCartPos;
+/// **Geocentric EME2000** cartesian position.
+pub use super::cartesian::position::EME2000 as Eme2000CartPos;
 /// **Geocentric ICRS** cartesian position.
 pub use super::cartesian::position::GCRS as GcrsCartPos;
 /// **Heliocentric ICRS** cartesian position.
@@ -219,6 +227,7 @@ pub use super::cartesian::position::VenusFixed as VenusFixedCartPos;
 /// `use siderust::coordinates::types::direction::ICRS;`
 pub mod direction {
     pub use super::EclipticDir as EclipticMeanJ2000;
+    pub use super::Eme2000Dir as EME2000;
     pub use super::EquatorialJ2000Dir as EquatorialMeanJ2000;
     pub use super::EquatorialMeanOfDateDir as EquatorialMeanOfDate;
     pub use super::EquatorialTrueOfDateDir as EquatorialTrueOfDate;
@@ -237,6 +246,7 @@ pub mod direction {
 pub mod position {
     pub use super::BcrsPos as BCRS;
     pub use super::EclipticPos as EclipticMeanJ2000;
+    pub use super::Eme2000Pos as EME2000;
     pub use super::EquatorialJ2000Pos as EquatorialMeanJ2000;
     pub use super::EquatorialMeanOfDatePos as EquatorialMeanOfDate;
     pub use super::EquatorialTrueOfDatePos as EquatorialTrueOfDate;

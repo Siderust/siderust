@@ -96,8 +96,8 @@ pub use affn::ellipsoidal::Position as EllipsoidalPosition;
 // Re-export all astronomical frame types from affn
 pub use affn::frames::{
     EclipticMeanJ2000, EclipticMeanOfDate, EclipticOfDate, EclipticTrueOfDate, EquatorialMeanJ2000,
-    EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic, Horizontal, CIRS, ECEF, FK4B1950, GCRS,
-    ICRF, ICRS, ITRF, TEME, TIRS,
+    EquatorialMeanOfDate, EquatorialTrueOfDate, Galactic, Horizontal, CIRS, ECEF, EME2000,
+    FK4B1950, GCRS, ICRF, ICRS, ITRF, TEME, TIRS,
 };
 
 // Re-export siderust-specific frame types
@@ -124,8 +124,15 @@ pub trait MutableFrame: ReferenceFrame {}
 
 impl MutableFrame for ICRS {}
 impl MutableFrame for EclipticMeanJ2000 {}
+impl MutableFrame for EME2000 {}
 impl MutableFrame for EquatorialMeanJ2000 {}
+impl MutableFrame for EquatorialMeanOfDate {}
+impl MutableFrame for EquatorialTrueOfDate {}
 impl MutableFrame for FK4B1950 {}
 impl MutableFrame for TEME {}
 impl MutableFrame for Galactic {}
 impl MutableFrame for GCRS {}
+impl MutableFrame for CIRS {}
+impl MutableFrame for TIRS {}
+impl MutableFrame for ITRF {}
+impl MutableFrame for ECEF {}

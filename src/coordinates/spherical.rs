@@ -31,6 +31,8 @@ pub mod direction {
     pub type EclipticMeanJ2000 = Direction<frames::EclipticMeanJ2000>;
     /// **Equatorial mean J2000** direction (right‑ascension *α*, declination *δ*).
     pub type EquatorialMeanJ2000 = Direction<frames::EquatorialMeanJ2000>;
+    /// **EME2000** direction (right-ascension *α*, declination *δ*).
+    pub type EME2000 = Direction<frames::EME2000>;
     /// **Equatorial mean of date** direction (right‑ascension *α*, declination *δ*).
     pub type EquatorialMeanOfDate = Direction<frames::EquatorialMeanOfDate>;
     /// **Equatorial true of date** direction (right‑ascension *α*, declination *δ*).
@@ -79,6 +81,9 @@ pub mod position {
     /// * `δ` – declination, degrees in `[-90, 90]`
     /// * `d` – geocentric distance in unit `U` (e.g. `Kilometer`)
     pub type EquatorialMeanJ2000<U> = Position<centers::Geocentric, frames::EquatorialMeanJ2000, U>;
+
+    /// **Geocentric EME2000** coordinates *(α, δ, d)*.
+    pub type EME2000<U> = Position<centers::Geocentric, frames::EME2000, U>;
 
     /// **Geocentric Equatorial mean of date** coordinates *(α, δ, d)*.
     pub type EquatorialMeanOfDate<U> =
