@@ -45,7 +45,7 @@ use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::providers::CenterShiftProvider;
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnit, LengthUnit, Quantity};
+use qtty::LengthUnit;
 
 // =============================================================================
 // IntoTransformArgs — converts (params, jd) or just jd into the full argument
@@ -152,10 +152,11 @@ where
         ctx: &AstroContext,
     ) -> Position<C2, F, U> {
         let shift = <() as CenterShiftProvider<C1, C2, F>>::shift(jd, ctx);
-        let sx = Quantity::<AstronomicalUnit>::new(shift[0]).to::<U>();
-        let sy = Quantity::<AstronomicalUnit>::new(shift[1]).to::<U>();
-        let sz = Quantity::<AstronomicalUnit>::new(shift[2]).to::<U>();
-        Position::new(self.x() + sx, self.y() + sy, self.z() + sz)
+        Position::new(
+            self.x() + shift[0].to::<U>(),
+            self.y() + shift[1].to::<U>(),
+            self.z() + shift[2].to::<U>(),
+        )
     }
 }
 
