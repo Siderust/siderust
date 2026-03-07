@@ -1,0 +1,207 @@
+// SPDX-License-Identifier: AGPL-3.0-or-later
+// Copyright (C) 2026 Vallés Puig, Ramon
+
+use super::*;
+
+impl FrameRotationProvider<GCRSFrame, CIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        gcrs_to_cirs_rotation(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<CIRS, GCRSFrame> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        inverse_rotation::<CIRS, GCRSFrame, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<CIRS, TIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        cirs_to_tirs_rotation(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<TIRS, CIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        inverse_rotation::<TIRS, CIRS, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<TIRS, ITRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        tirs_to_itrf_rotation(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<ITRF, TIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        inverse_rotation::<ITRF, TIRS, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<ITRF, ECEF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        _jd: JulianDate,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        Rotation3::IDENTITY
+    }
+}
+
+impl FrameRotationProvider<ECEF, ITRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        inverse_rotation::<ECEF, ITRF, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<ICRS, CIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<GCRSFrame, CIRS>>::rotation(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<CIRS, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        inverse_rotation::<CIRS, ICRS, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<ICRS, TIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        compose_rotation::<ICRS, CIRS, TIRS, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<TIRS, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        inverse_rotation::<TIRS, ICRS, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<ICRS, ITRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        compose_rotation::<ICRS, TIRS, ITRF, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<ITRF, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        inverse_rotation::<ITRF, ICRS, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<ICRS, ECEF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, ITRF>>::rotation(jd, ctx)
+    }
+}
+
+impl FrameRotationProvider<ECEF, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        inverse_rotation::<ECEF, ICRS, Eph, Eop, Nut>(jd, ctx)
+    }
+}
+
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, CIRS);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, CIRS);
+impl_via_icrs_bidirectional!(EME2000, CIRS);
+impl_via_icrs_bidirectional!(EquatorialMeanOfDate, CIRS);
+impl_via_icrs_bidirectional!(EquatorialTrueOfDate, CIRS);
+impl_via_icrs_bidirectional!(ICRF, CIRS);
+impl_via_icrs_bidirectional!(TEME, CIRS);
+impl_via_icrs_bidirectional!(Galactic, CIRS);
+impl_via_icrs_bidirectional!(FK4B1950, CIRS);
+
+impl_via_icrs_bidirectional!(GCRSFrame, TIRS);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, TIRS);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, TIRS);
+impl_via_icrs_bidirectional!(EME2000, TIRS);
+impl_via_icrs_bidirectional!(EquatorialMeanOfDate, TIRS);
+impl_via_icrs_bidirectional!(EquatorialTrueOfDate, TIRS);
+impl_via_icrs_bidirectional!(ICRF, TIRS);
+impl_via_icrs_bidirectional!(TEME, TIRS);
+impl_via_icrs_bidirectional!(Galactic, TIRS);
+impl_via_icrs_bidirectional!(FK4B1950, TIRS);
+
+impl_via_icrs_bidirectional!(GCRSFrame, ITRF);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, ITRF);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, ITRF);
+impl_via_icrs_bidirectional!(EME2000, ITRF);
+impl_via_icrs_bidirectional!(EquatorialMeanOfDate, ITRF);
+impl_via_icrs_bidirectional!(EquatorialTrueOfDate, ITRF);
+impl_via_icrs_bidirectional!(ICRF, ITRF);
+impl_via_icrs_bidirectional!(TEME, ITRF);
+impl_via_icrs_bidirectional!(Galactic, ITRF);
+impl_via_icrs_bidirectional!(FK4B1950, ITRF);
+
+impl_via_icrs_bidirectional!(GCRSFrame, ECEF);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, ECEF);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, ECEF);
+impl_via_icrs_bidirectional!(EME2000, ECEF);
+impl_via_icrs_bidirectional!(EquatorialMeanOfDate, ECEF);
+impl_via_icrs_bidirectional!(EquatorialTrueOfDate, ECEF);
+impl_via_icrs_bidirectional!(ICRF, ECEF);
+impl_via_icrs_bidirectional!(TEME, ECEF);
+impl_via_icrs_bidirectional!(Galactic, ECEF);
+impl_via_icrs_bidirectional!(FK4B1950, ECEF);

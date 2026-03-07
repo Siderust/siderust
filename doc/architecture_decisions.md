@@ -26,6 +26,19 @@ Each of these operations carries different invariants and requires different con
 
 This design avoids hidden assumptions, particularly regarding Earth orientation and observational context. The user is required to supply the appropriate information where necessary, reinforcing clarity over convenience.
 
+## Modular Provider Registry with Explicit Hubs
+
+The provider layer is organized as a small module tree under `coordinates::transform::providers` rather than a single registry file. Inertial frames, Earth-orientation frames, catalog frames, TEME support, planetary body-fixed frames, and center-shift families each live in their own submodule.
+
+This structure is deliberate. New extensions should add only the direct primitives for their domain and then compose through the established hubs:
+
+- Frame rotations compose through `ICRS`.
+- Center shifts compose through `Barycentric`.
+
+Shared helper functions implement common patterns such as inversion, two-step composition, antisymmetric center shifts, and frame-aware rotation of ephemeris vectors. This keeps implementations local, reduces duplicate arithmetic, and makes debugging easier because related providers are grouped together.
+
+The consequence is that adding a new frame or center should typically require changes in one focused module plus tests, rather than editing a monolithic provider file with unrelated logic.
+
 ## Explicit, Context-Driven Earth Orientation
 
 High-precision topocentric and horizontal calculations depend on Earth orientation parameters. To accommodate this, the crate introduces `AstroContext`, which encapsulates EOP providers such as `IersEop` or `NullEop`.
