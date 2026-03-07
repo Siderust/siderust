@@ -30,20 +30,35 @@ pub use ::tempoch_ffi::TempochPeriodMjd;
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustFrame {
+    /// International Celestial Reference System.
     ICRS = 1,
+    /// Mean ecliptic of J2000.0.
     EclipticMeanJ2000 = 2,
+    /// Mean equatorial of J2000.0.
     EquatorialMeanJ2000 = 3,
+    /// Mean equatorial of date.
     EquatorialMeanOfDate = 4,
+    /// True equatorial of date (includes nutation).
     EquatorialTrueOfDate = 5,
+    /// Local horizontal (azimuth/altitude).
     Horizontal = 6,
+    /// Earth-Centred Earth-Fixed.
     ECEF = 7,
+    /// Galactic coordinate system.
     Galactic = 8,
+    /// Geocentric Celestial Reference System.
     GCRS = 9,
+    /// Ecliptic of date.
     EclipticOfDate = 10,
+    /// True ecliptic of date.
     EclipticTrueOfDate = 11,
+    /// Celestial Intermediate Reference System.
     CIRS = 12,
+    /// Terrestrial Intermediate Reference System.
     TIRS = 13,
+    /// International Terrestrial Reference Frame.
     ITRF = 14,
+    /// International Celestial Reference Frame.
     ICRF = 15,
 }
 
@@ -51,10 +66,15 @@ pub enum SiderustFrame {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustCenter {
+    /// Solar-system barycentre.
     Barycentric = 1,
+    /// Sun centre.
     Heliocentric = 2,
+    /// Earth centre.
     Geocentric = 3,
+    /// Observer site on the Earth's surface.
     Topocentric = 4,
+    /// Centre of a specific body.
     Bodycentric = 5,
 }
 
@@ -62,7 +82,9 @@ pub enum SiderustCenter {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustCrossingDirection {
+    /// The body is crossing upward through the threshold.
     Rising = 0,
+    /// The body is crossing downward through the threshold.
     Setting = 1,
 }
 
@@ -70,7 +92,9 @@ pub enum SiderustCrossingDirection {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustCulminationKind {
+    /// Upper culmination (maximum altitude).
     Max = 0,
+    /// Lower culmination (minimum altitude).
     Min = 1,
 }
 
@@ -78,11 +102,17 @@ pub enum SiderustCulminationKind {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustAsteroidClass {
+    /// Main-belt asteroid.
     MainBelt = 0,
+    /// Near-Earth asteroid.
     NearEarth = 1,
+    /// Trojan asteroid (co-orbital with a planet).
     Trojan = 2,
+    /// Centaur (orbiting between Jupiter and Neptune).
     Centaur = 3,
+    /// Trans-Neptunian object.
     TransNeptunian = 4,
+    /// Dwarf planet.
     DwarfPlanet = 5,
 }
 
@@ -90,7 +120,9 @@ pub enum SiderustAsteroidClass {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustOrbitFrame {
+    /// Orbit defined relative to the Sun.
     Heliocentric = 0,
+    /// Orbit defined relative to the solar-system barycentre.
     Barycentric = 1,
 }
 
@@ -100,14 +132,23 @@ pub enum SiderustOrbitFrame {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustBody {
+    /// The Sun.
     Sun = 0,
+    /// Earth's Moon.
     Moon = 1,
+    /// Mercury.
     Mercury = 2,
+    /// Venus.
     Venus = 3,
+    /// Mars.
     Mars = 4,
+    /// Jupiter.
     Jupiter = 5,
+    /// Saturn.
     Saturn = 6,
+    /// Uranus.
     Uranus = 7,
+    /// Neptune.
     Neptune = 8,
 }
 
@@ -154,8 +195,22 @@ pub struct SiderustSubject {
     pub target_handle: *const crate::target::SiderustTarget,
 }
 
-// Safety: the raw pointers in SiderustSubject are only dereferenced inside
-// `ffi_guard!` blocks on the same thread that created them.
+// SAFETY: `SiderustSubject` contains raw pointers (`star_handle`,
+// `target_handle`) which prevent the auto-derived `Send`/`Sync` impls.
+// These impls are sound because:
+//
+//  1. The pointees (`SiderustStar`, `SiderustTarget`) are heap-allocated
+//     immutable objects created via `Box::into_raw`.  They are never
+//     mutated after creation, so sharing across threads is safe.
+//
+//  2. The pointers are only dereferenced inside `dispatch_subject!` which
+//     runs within an `ffi_guard!` (= `catch_unwind`) block.  A null check
+//     precedes every dereference.
+//
+//  3. Ownership of the pointed-to object is held by the C caller.  The
+//     caller must ensure the handle remains valid for the lifetime of the
+//     `SiderustSubject` that borrows it.  This is an invariant of the
+//     extern "C" API contract, documented on each function.
 unsafe impl Send for SiderustSubject {}
 unsafe impl Sync for SiderustSubject {}
 
@@ -232,6 +287,7 @@ pub struct SiderustGeodetict {
 }
 
 impl SiderustGeodetict {
+    /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(
             Degrees::new(self.lon_deg),
@@ -240,6 +296,7 @@ impl SiderustGeodetict {
         )
     }
 
+    /// Create from the Rust domain type.
     pub fn from_rust(g: &Geodetic<ECEF>) -> Self {
         Self {
             lon_deg: g.lon.value(),
@@ -253,16 +310,24 @@ impl SiderustGeodetict {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustOrbit {
+    /// Semi-major axis in astronomical units.
     pub semi_major_axis_au: f64,
+    /// Orbital eccentricity.
     pub eccentricity: f64,
+    /// Orbital inclination in degrees.
     pub inclination_deg: f64,
+    /// Longitude of the ascending node in degrees.
     pub lon_ascending_node_deg: f64,
+    /// Argument of perihelion in degrees.
     pub arg_perihelion_deg: f64,
+    /// Mean anomaly at epoch in degrees.
     pub mean_anomaly_deg: f64,
+    /// Epoch as a Julian Date.
     pub epoch_jd: f64,
 }
 
 impl SiderustOrbit {
+    /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::astro::orbit::Orbit {
         siderust::astro::orbit::Orbit::new(
             AstronomicalUnits::new(self.semi_major_axis_au),
@@ -275,6 +340,7 @@ impl SiderustOrbit {
         )
     }
 
+    /// Create from the Rust domain type.
     pub fn from_rust(o: &siderust::astro::orbit::Orbit) -> Self {
         Self {
             semi_major_axis_au: o.semi_major_axis.value(),
@@ -303,10 +369,12 @@ pub struct SiderustBodycentricParams {
     pub orbit: SiderustOrbit,
     /// Reference center: 0=Barycentric, 1=Heliocentric, 2=Geocentric.
     pub orbit_center: SiderustOrbitRefCenter,
+    /// Padding bytes for alignment; must be zeroed.
     pub _pad: [u8; 7],
 }
 
 impl SiderustBodycentricParams {
+    /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> RustBodycentricParams {
         let orbit = self.orbit.to_rust();
         let orbit_center = match self.orbit_center {
@@ -318,6 +386,7 @@ impl SiderustBodycentricParams {
         RustBodycentricParams::new(orbit, orbit_center)
     }
 
+    /// Create from the Rust domain type.
     pub fn from_rust(p: &RustBodycentricParams) -> Self {
         let orbit_center = match p.orbit_center {
             RustOrbitRefCenter::Barycentric => 0u8,
@@ -345,6 +414,7 @@ pub struct SiderustSearchOpts {
 }
 
 impl SiderustSearchOpts {
+    /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::SearchOpts {
         let mut opts = siderust::SearchOpts::default();
         if self.time_tolerance_days > 0.0 {
@@ -378,6 +448,7 @@ pub struct SiderustCrossingEvent {
 }
 
 impl SiderustCrossingEvent {
+    /// Create from the Rust domain type.
     pub fn from_rust(e: &siderust::CrossingEvent) -> Self {
         Self {
             mjd: e.mjd.value(),
@@ -402,6 +473,7 @@ pub struct SiderustCulminationEvent {
 }
 
 impl SiderustCulminationEvent {
+    /// Create from the Rust domain type.
     pub fn from_rust(e: &siderust::CulminationEvent) -> Self {
         Self {
             mjd: e.mjd.value(),
@@ -418,14 +490,20 @@ impl SiderustCulminationEvent {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustAltitudeQuery {
+    /// Observer location.
     pub observer: SiderustGeodetict,
+    /// Start of the search window (Modified Julian Date).
     pub start_mjd: f64,
+    /// End of the search window (Modified Julian Date).
     pub end_mjd: f64,
+    /// Minimum altitude threshold in degrees.
     pub min_altitude_deg: f64,
+    /// Maximum altitude threshold in degrees.
     pub max_altitude_deg: f64,
 }
 
 impl SiderustAltitudeQuery {
+    /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::AltitudeQuery {
         siderust::AltitudeQuery {
             observer: self.observer.to_rust(),
@@ -455,12 +533,16 @@ pub struct SiderustProperMotion {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustPlanet {
+    /// Planet mass in kilograms.
     pub mass_kg: f64,
+    /// Mean equatorial radius in kilometres.
     pub radius_km: f64,
+    /// Keplerian orbital elements.
     pub orbit: SiderustOrbit,
 }
 
 impl SiderustPlanet {
+    /// Create from the Rust domain type.
     pub fn from_rust(p: &siderust::bodies::Planet) -> Self {
         Self {
             mass_kg: p.mass.value(),
@@ -501,9 +583,13 @@ impl SiderustSphericalDir {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustCartesianDir {
+    /// X component.
     pub x: f64,
+    /// Y component.
     pub y: f64,
+    /// Z component.
     pub z: f64,
+    /// Reference frame.
     pub frame: SiderustFrame,
 }
 
@@ -511,11 +597,15 @@ pub struct SiderustCartesianDir {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustSphericalPos {
+    /// Longitude in degrees.
     pub lon_deg: f64,
+    /// Latitude in degrees.
     pub lat_deg: f64,
     /// Distance in the unit appropriate for the context (AU, km, ly, etc.).
     pub distance: f64,
+    /// Reference frame.
     pub frame: SiderustFrame,
+    /// Reference centre.
     pub center: SiderustCenter,
 }
 
@@ -523,10 +613,15 @@ pub struct SiderustSphericalPos {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustCartesianPos {
+    /// X coordinate (AU).
     pub x: f64,
+    /// Y coordinate (AU).
     pub y: f64,
+    /// Z coordinate (AU).
     pub z: f64,
+    /// Reference frame.
     pub frame: SiderustFrame,
+    /// Reference centre.
     pub center: SiderustCenter,
 }
 
@@ -534,9 +629,13 @@ pub struct SiderustCartesianPos {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustCartesianVel {
+    /// X velocity component (AU/day).
     pub vx: f64,
+    /// Y velocity component (AU/day).
     pub vy: f64,
+    /// Z velocity component (AU/day).
     pub vz: f64,
+    /// Reference frame.
     pub frame: SiderustFrame,
 }
 
@@ -548,7 +647,9 @@ pub struct SiderustCartesianVel {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustAzimuthExtremumKind {
+    /// Maximum azimuth (easternmost bearing).
     Max = 0,
+    /// Minimum azimuth (westernmost bearing).
     Min = 1,
 }
 
@@ -560,6 +661,7 @@ pub struct SiderustAzimuthCrossingEvent {
     pub mjd: f64,
     /// Crossing direction.
     pub direction: SiderustCrossingDirection,
+    /// Padding bytes for alignment; must be zeroed.
     pub _pad: [u8; 4],
 }
 
@@ -573,6 +675,7 @@ pub struct SiderustAzimuthExtremum {
     pub azimuth_deg: f64,
     /// Kind of extremum.
     pub kind: SiderustAzimuthExtremumKind,
+    /// Padding bytes for alignment; must be zeroed.
     pub _pad: [u8; 4],
 }
 
@@ -584,9 +687,13 @@ pub struct SiderustAzimuthExtremum {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustPhaseKind {
+    /// New Moon.
     NewMoon = 0,
+    /// First Quarter.
     FirstQuarter = 1,
+    /// Full Moon.
     FullMoon = 2,
+    /// Last Quarter.
     LastQuarter = 3,
 }
 
@@ -594,13 +701,21 @@ pub enum SiderustPhaseKind {
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustMoonPhaseLabel {
+    /// New Moon.
     NewMoon = 0,
+    /// Waxing Crescent.
     WaxingCrescent = 1,
+    /// First Quarter.
     FirstQuarter = 2,
+    /// Waxing Gibbous.
     WaxingGibbous = 3,
+    /// Full Moon.
     FullMoon = 4,
+    /// Waning Gibbous.
     WaningGibbous = 5,
+    /// Last Quarter.
     LastQuarter = 6,
+    /// Waning Crescent.
     WaningCrescent = 7,
 }
 
@@ -616,6 +731,7 @@ pub struct SiderustMoonPhaseGeometry {
     pub elongation_rad: f64,
     /// Non-zero if waxing, zero if waning.
     pub waxing: u8,
+    /// Padding bytes for alignment; must be zeroed.
     pub _pad: [u8; 7],
 }
 
@@ -627,6 +743,7 @@ pub struct SiderustPhaseEvent {
     pub mjd: f64,
     /// Phase kind.
     pub kind: SiderustPhaseKind,
+    /// Padding bytes for alignment; must be zeroed.
     pub _pad: [u8; 4],
 }
 
@@ -958,5 +1075,138 @@ mod tests {
         };
         let ffi = SiderustAzimuthCrossingEvent::ffi_from(&e);
         assert_eq!(ffi.direction, SiderustCrossingDirection::Setting);
+    }
+
+    // ── ABI layout assertions ────────────────────────────────────────────
+    // These tests lock down the size and alignment of every repr(C) type
+    // so accidental field additions/reorderings break CI before they
+    // reach consumers.
+
+    macro_rules! assert_layout {
+        ($ty:ty, size = $size:expr, align = $align:expr) => {
+            assert_eq!(
+                std::mem::size_of::<$ty>(),
+                $size,
+                concat!("size_of::<", stringify!($ty), ">() mismatch")
+            );
+            assert_eq!(
+                std::mem::align_of::<$ty>(),
+                $align,
+                concat!("align_of::<", stringify!($ty), ">() mismatch")
+            );
+        };
+    }
+
+    #[test]
+    fn layout_status_enum() {
+        assert_layout!(crate::error::SiderustStatus, size = 4, align = 4);
+    }
+
+    #[test]
+    fn layout_frame_enum() {
+        assert_layout!(SiderustFrame, size = 4, align = 4);
+    }
+
+    #[test]
+    fn layout_center_enum() {
+        assert_layout!(SiderustCenter, size = 4, align = 4);
+    }
+
+    #[test]
+    fn layout_body_enum() {
+        assert_layout!(SiderustBody, size = 4, align = 4);
+    }
+
+    #[test]
+    fn layout_geodetic() {
+        assert_layout!(SiderustGeodetict, size = 24, align = 8);
+    }
+
+    #[test]
+    fn layout_orbit() {
+        assert_layout!(SiderustOrbit, size = 56, align = 8);
+    }
+
+    #[test]
+    fn layout_search_opts() {
+        // 2 × f64 + bool + padding = 24
+        assert_eq!(std::mem::size_of::<SiderustSearchOpts>(), 24);
+    }
+
+    #[test]
+    fn layout_crossing_event() {
+        // f64 + i32 + padding = 16
+        assert_eq!(std::mem::size_of::<SiderustCrossingEvent>(), 16);
+        assert_eq!(std::mem::align_of::<SiderustCrossingEvent>(), 8);
+    }
+
+    #[test]
+    fn layout_culmination_event() {
+        // 2 × f64 + i32 + padding = 24
+        assert_eq!(std::mem::size_of::<SiderustCulminationEvent>(), 24);
+        assert_eq!(std::mem::align_of::<SiderustCulminationEvent>(), 8);
+    }
+
+    #[test]
+    fn layout_spherical_dir() {
+        // 2 × f64 + i32 + padding = 24
+        assert_eq!(std::mem::size_of::<SiderustSphericalDir>(), 24);
+        assert_eq!(std::mem::align_of::<SiderustSphericalDir>(), 8);
+    }
+
+    #[test]
+    fn layout_cartesian_dir() {
+        // 3 × f64 + i32 + padding = 32
+        assert_eq!(std::mem::size_of::<SiderustCartesianDir>(), 32);
+        assert_eq!(std::mem::align_of::<SiderustCartesianDir>(), 8);
+    }
+
+    #[test]
+    fn layout_cartesian_pos() {
+        // 3 × f64 + i32 (frame) + i32 (center) = 32
+        assert_eq!(std::mem::size_of::<SiderustCartesianPos>(), 32);
+        assert_eq!(std::mem::align_of::<SiderustCartesianPos>(), 8);
+    }
+
+    #[test]
+    fn layout_cartesian_vel() {
+        // 3 × f64 + i32 + padding = 32
+        assert_eq!(std::mem::size_of::<SiderustCartesianVel>(), 32);
+        assert_eq!(std::mem::align_of::<SiderustCartesianVel>(), 8);
+    }
+
+    #[test]
+    fn layout_azimuth_crossing_event() {
+        // f64 + i32 + 4 pad = 16
+        assert_eq!(std::mem::size_of::<SiderustAzimuthCrossingEvent>(), 16);
+        assert_eq!(std::mem::align_of::<SiderustAzimuthCrossingEvent>(), 8);
+    }
+
+    #[test]
+    fn layout_azimuth_extremum() {
+        // 2 × f64 + i32 + 4 pad = 24
+        assert_eq!(std::mem::size_of::<SiderustAzimuthExtremum>(), 24);
+        assert_eq!(std::mem::align_of::<SiderustAzimuthExtremum>(), 8);
+    }
+
+    #[test]
+    fn layout_moon_phase_geometry() {
+        // 3 × f64 + u8 + 7 pad = 32
+        assert_eq!(std::mem::size_of::<SiderustMoonPhaseGeometry>(), 32);
+        assert_eq!(std::mem::align_of::<SiderustMoonPhaseGeometry>(), 8);
+    }
+
+    #[test]
+    fn layout_phase_event() {
+        // f64 + i32 + 4 pad = 16
+        assert_eq!(std::mem::size_of::<SiderustPhaseEvent>(), 16);
+        assert_eq!(std::mem::align_of::<SiderustPhaseEvent>(), 8);
+    }
+
+    #[test]
+    fn layout_planet() {
+        // 2 × f64 + SiderustOrbit(56) = 72
+        assert_eq!(std::mem::size_of::<SiderustPlanet>(), 72);
+        assert_eq!(std::mem::align_of::<SiderustPlanet>(), 8);
     }
 }

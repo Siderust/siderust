@@ -56,9 +56,18 @@ fn search_opts_to_phase(opts: SiderustSearchOpts) -> PhaseSearchOpts {
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Free an array of phase events.
+///
+/// # Safety
+///
+/// * `ptr` must have been returned by `siderust_moon_phase_events`.
+/// * `count` must be the element count that was returned alongside `ptr`.
+/// * The pointer must not have been freed before, and must not be used after
+///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_phase_events_free(ptr: *mut SiderustPhaseEvent, count: usize) {
-    free_boxed_slice(ptr, count);
+    // SAFETY: caller guarantees the pointer/count pair was returned by a
+    // siderust function and has not been freed before.
+    unsafe { free_boxed_slice(ptr, count) };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
