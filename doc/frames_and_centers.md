@@ -250,9 +250,9 @@ inherent `Direction`/`Position` constructors and getters (`lat()`, `lon()`,
 `radius()`).  They are re-exported from `siderust::coordinates::frames`
 and `siderust::coordinates::frames::planetary` for convenience.
 
-The **IAU rotation parameters** and all `FrameRotationProvider` implementations
-remain in `siderust::coordinates::frames::planetary` and
-`siderust::coordinates::transform::providers`.
+The **IAU rotation parameters** remain in `siderust::coordinates::frames::planetary`.
+The corresponding `FrameRotationProvider` implementations are organized under
+`siderust::coordinates::transform::providers::frames_planetary`.
 
 | Frame | Struct | Body | Spherical coords |
 |---|---|---|---|
@@ -336,6 +336,19 @@ Time-dependent rotations:
 | TEME ↔ TOD | Rz(equation of equinoxes) |
 | EquatorialMean ↔ EquatorialTrueOfDate | IAU 2006 precession + IAU 2000B nutation |
 | Body-fixed ↔ ICRS | IAU 2015 rotation parameters |
+
+Provider implementations are grouped by responsibility:
+
+- `providers::frames_inertial`
+- `providers::frames_earth`
+- `providers::frames_catalog`
+- `providers::frames_teme`
+- `providers::frames_planetary`
+- `providers::centers_standard`
+- `providers::centers_planetary`
+
+Shared helper utilities in `providers::mod` handle inversion, hub composition,
+and rotation of ecliptic ephemeris vectors into the requested destination frame.
 
 ---
 
