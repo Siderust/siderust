@@ -56,8 +56,9 @@ Siderust aims to be a reference ephemeris and orbit‑analysis library for resea
 
 ### Astrometry Compliance Note
 
-- Stellar aberration uses the full special-relativistic (Lorentz) formula per IERS Conventions (2020, §7.2); annual uses VSOP87E barycentric Earth velocity and topocentric adds a diurnal `ω×r` term (GMST-based Earth rotation).
-- This is not yet a full IAU 2000/2006 "apparent place" pipeline (missing CIO/CIP, polar motion, and gravitational light deflection).
+- Stellar aberration uses the full special-relativistic (Lorentz) formula per IERS Conventions (2020, §7.2); annual uses VSOP87E barycentric Earth velocity and topocentric adds a diurnal `ω×r` term.
+- The Earth-orientation chain now exposes public frame transforms for `GCRS ↔ CIRS ↔ TIRS ↔ ITRF/ECEF`, plus the usual inertial and operational frames (`ICRS`, `ICRF`, `EME2000`, `TEME`, `Galactic`, planetary body-fixed).
+- Local orbital frames such as `RTN` / `RIC` and covariance transport in those frames are not first-class yet.
 
 ---
 
@@ -209,6 +210,11 @@ let mars_helio = cartesian::Position::<Heliocentric, EclipticMeanJ2000, Au>::new
 ```
 
 Impossible states (e.g. adding heliocentric and geocentric positions) simply do not compile.
+
+The public frame set includes:
+- inertial / catalogue frames: `ICRS`, `ICRF`, `EquatorialMeanJ2000`, `EME2000`, `EquatorialMeanOfDate`, `EquatorialTrueOfDate`, `FK4B1950`, `Galactic`
+- Earth-rotation chain frames: `GCRS`, `CIRS`, `TIRS`, `ITRF`, `ECEF`
+- operational / mission frames: `TEME`, `Horizontal`, and the planetary body-fixed frames
 
 ### Compile-Time vs Runtime Safety
 

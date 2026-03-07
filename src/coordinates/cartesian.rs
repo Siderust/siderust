@@ -31,6 +31,8 @@ pub mod direction {
     pub type EclipticMeanJ2000 = Direction<frames::EclipticMeanJ2000>;
     /// **Equatorial mean J2000** cartesian direction (unit vector).
     pub type EquatorialMeanJ2000 = Direction<frames::EquatorialMeanJ2000>;
+    /// **EME2000** cartesian direction (unit vector).
+    pub type EME2000 = Direction<frames::EME2000>;
     /// **Equatorial mean of date** cartesian direction (unit vector).
     pub type EquatorialMeanOfDate = Direction<frames::EquatorialMeanOfDate>;
     /// **Equatorial true of date** cartesian direction (unit vector).
@@ -47,6 +49,14 @@ pub mod direction {
     pub type ICRS = Direction<frames::ICRS>;
     /// **ICRF** cartesian direction (unit vector).
     pub type ICRF = Direction<frames::ICRF>;
+    /// **FK4 B1950** cartesian direction (unit vector).
+    pub type FK4B1950 = Direction<frames::FK4B1950>;
+    /// **TEME** cartesian direction (unit vector).
+    pub type TEME = Direction<frames::TEME>;
+    /// **GCRS** cartesian direction (unit vector).
+    pub type GCRSDir = Direction<frames::GCRS>;
+    /// **Galactic** cartesian direction (unit vector).
+    pub type Galactic = Direction<frames::Galactic>;
 }
 
 // =============================================================================
@@ -61,6 +71,8 @@ pub mod displacement {
     pub type EclipticMeanJ2000<U> = Displacement<frames::EclipticMeanJ2000, U>;
     /// **Equatorial mean J2000** displacement vector.
     pub type EquatorialMeanJ2000<U> = Displacement<frames::EquatorialMeanJ2000, U>;
+    /// **EME2000** displacement vector.
+    pub type EME2000<U> = Displacement<frames::EME2000, U>;
     /// **Equatorial mean of date** displacement vector.
     pub type EquatorialMeanOfDate<U> = Displacement<frames::EquatorialMeanOfDate, U>;
     /// **Equatorial true of date** displacement vector.
@@ -71,6 +83,10 @@ pub mod displacement {
     pub type ICRS<U> = Displacement<frames::ICRS, U>;
     /// **ICRF** displacement vector.
     pub type ICRF<U> = Displacement<frames::ICRF, U>;
+    /// **FK4 B1950** displacement vector.
+    pub type FK4B1950<U> = Displacement<frames::FK4B1950, U>;
+    /// **TEME** displacement vector.
+    pub type TEME<U> = Displacement<frames::TEME, U>;
 }
 
 // =============================================================================
@@ -87,6 +103,8 @@ pub mod position {
     /// **Geocentric Equatorial mean J2000** cartesian position.
     pub type EquatorialMeanJ2000<U, C = centers::Geocentric> =
         Position<C, frames::EquatorialMeanJ2000, U>;
+    /// **Geocentric EME2000** cartesian position.
+    pub type EME2000<U, C = centers::Geocentric> = Position<C, frames::EME2000, U>;
     /// **Geocentric Equatorial mean of date** cartesian position.
     pub type EquatorialMeanOfDate<U, C = centers::Geocentric> =
         Position<C, frames::EquatorialMeanOfDate, U>;
@@ -117,6 +135,48 @@ pub mod position {
     pub type GCRS<U> = Position<centers::Geocentric, frames::ICRS, U>;
     /// **Topocentric ICRS** cartesian position.
     pub type TCRS<U> = Position<centers::Topocentric, frames::ICRS, U>;
+
+    /// **Barycentric ICRF** cartesian position (BCRS).
+    pub type BCRS<U> = Position<centers::Barycentric, frames::ICRF, U>;
+
+    /// **Heliocentric J2000** equatorial cartesian position.
+    pub type HeliocentricJ2000<U> = Position<centers::Heliocentric, frames::EquatorialMeanJ2000, U>;
+
+    /// **Geocentric J2000** equatorial cartesian position (FK5-compatible ECI).
+    pub type GeocentricJ2000<U> = Position<centers::Geocentric, frames::EquatorialMeanJ2000, U>;
+
+    /// **Geocentric FK4 B1950** cartesian position.
+    pub type FK4B1950<U> = Position<centers::Geocentric, frames::FK4B1950, U>;
+
+    /// **Geocentric TEME** cartesian position (SGP4/TLE).
+    pub type TEME<U> = Position<centers::Geocentric, frames::TEME, U>;
+
+    /// **Geocentric ITRF** cartesian position.
+    pub type ITRF<U> = Position<centers::Geocentric, frames::ITRF, U>;
+
+    /// **Galactic** barycentric cartesian position.
+    pub type Galactic<U> = Position<centers::Barycentric, frames::Galactic, U>;
+
+    // --- Planetocentric body-fixed cartesian positions ---
+
+    /// **Mercurycentric** body-fixed cartesian position.
+    pub type MercuryFixed<U> = Position<centers::Mercurycentric, frames::MercuryFixed, U>;
+    /// **Venuscentric** body-fixed cartesian position.
+    pub type VenusFixed<U> = Position<centers::Venuscentric, frames::VenusFixed, U>;
+    /// **Marscentric** body-fixed cartesian position.
+    pub type MarsFixed<U> = Position<centers::Marscentric, frames::MarsFixed, U>;
+    /// **Selenocentric** cartesian position in Moon principal axes frame.
+    pub type MoonPrincipalAxes<U> = Position<centers::Selenocentric, frames::MoonPrincipalAxes, U>;
+    /// **Jovicentric** System III cartesian position.
+    pub type JupiterSystemIII<U> = Position<centers::Jovicentric, frames::JupiterSystemIII, U>;
+    /// **Saturnocentric** body-fixed cartesian position.
+    pub type SaturnFixed<U> = Position<centers::Saturnocentric, frames::SaturnFixed, U>;
+    /// **Uranocentric** body-fixed cartesian position.
+    pub type UranusFixed<U> = Position<centers::Uranocentric, frames::UranusFixed, U>;
+    /// **Neptunocentric** body-fixed cartesian position.
+    pub type NeptuneFixed<U> = Position<centers::Neptunocentric, frames::NeptuneFixed, U>;
+    /// **Plutocentric** body-fixed cartesian position.
+    pub type PlutoFixed<U> = Position<centers::Plutocentric, frames::PlutoFixed, U>;
 }
 
 // =============================================================================
@@ -131,6 +191,8 @@ pub mod velocity {
     pub type EclipticMeanJ2000<U> = Velocity<frames::EclipticMeanJ2000, U>;
     /// **Equatorial mean J2000** cartesian velocity vector.
     pub type EquatorialMeanJ2000<U> = Velocity<frames::EquatorialMeanJ2000, U>;
+    /// **EME2000** cartesian velocity vector.
+    pub type EME2000<U> = Velocity<frames::EME2000, U>;
     /// **Equatorial mean of date** cartesian velocity vector.
     pub type EquatorialMeanOfDate<U> = Velocity<frames::EquatorialMeanOfDate, U>;
     /// **Equatorial true of date** cartesian velocity vector.
@@ -141,4 +203,8 @@ pub mod velocity {
     pub type ICRS<U> = Velocity<frames::ICRS, U>;
     /// **ICRF** cartesian velocity vector.
     pub type ICRF<U> = Velocity<frames::ICRF, U>;
+    /// **TEME** cartesian velocity vector.
+    pub type TEME<U> = Velocity<frames::TEME, U>;
+    /// **FK4 B1950** cartesian velocity vector.
+    pub type FK4B1950<U> = Velocity<frames::FK4B1950, U>;
 }

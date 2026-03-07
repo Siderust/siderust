@@ -21,6 +21,21 @@
 //! - [`Topocentric`]: Observer's location on the surface of the Earth (parameterized by [`Geodetic<ECEF>`]).
 //! - [`Bodycentric`]: Generic center for any orbiting celestial body (parameterized by [`BodycentricParams`]).
 //!
+//! ### Planetocentric Centers
+//!
+//! For major solar system bodies, dedicated zero-cost center types provide
+//! compile-time safety:
+//!
+//! - [`Mercurycentric`]: Center of mass of Mercury.
+//! - [`Venuscentric`]: Center of mass of Venus.
+//! - [`Marscentric`]: Center of mass of Mars.
+//! - [`Selenocentric`]: Center of mass of the Moon.
+//! - [`Jovicentric`]: Center of mass of Jupiter.
+//! - [`Saturnocentric`]: Center of mass of Saturn.
+//! - [`Uranocentric`]: Center of mass of Uranus.
+//! - [`Neptunocentric`]: Center of mass of Neptune.
+//! - [`Plutocentric`]: Center of mass of Pluto.
+//!
 //! ## Compile-Time vs Runtime Safety
 //!
 //! | Center            | `Params`              | Safety level                        |
@@ -168,6 +183,86 @@ impl Topocentric {
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Geocentric;
+
+// =============================================================================
+// Planetocentric Centers
+// =============================================================================
+
+/// Center of mass of Mercury.
+///
+/// Zero-cost, compile-time–safe center type for Mercury-centered coordinate
+/// systems. Used with body-fixed frames such as [`super::frames::MercuryFixed`].
+pub type Mercurycentric = crate::bodies::solar_system::Mercury;
+
+/// Center of mass of Venus.
+///
+/// Zero-cost, compile-time–safe center type for Venus-centered coordinate
+/// systems. Used with body-fixed frames such as [`super::frames::VenusFixed`].
+pub type Venuscentric = crate::bodies::solar_system::Venus;
+
+/// Center of mass of Mars.
+///
+/// Zero-cost, compile-time–safe center type for Mars-centered coordinate
+/// systems. Used with body-fixed frames such as [`super::frames::MarsFixed`].
+pub type Marscentric = crate::bodies::solar_system::Mars;
+
+/// Center of mass of the Moon (selenocentric).
+///
+/// Zero-cost, compile-time–safe center type for Moon-centered coordinate
+/// systems. Used with body-fixed frames such as [`super::frames::MoonPrincipalAxes`].
+pub type Selenocentric = crate::bodies::solar_system::Moon;
+
+/// Center of mass of Jupiter (jovicentric).
+///
+/// Zero-cost, compile-time–safe center type for Jupiter-centered coordinate
+/// systems. Used with body-fixed frames such as [`super::frames::JupiterSystemIII`].
+pub type Jovicentric = crate::bodies::solar_system::Jupiter;
+
+/// Center of mass of Saturn.
+///
+/// Zero-cost, compile-time–safe center type for Saturn-centered coordinate
+/// systems. Used with body-fixed frames such as [`super::frames::SaturnFixed`].
+pub type Saturnocentric = crate::bodies::solar_system::Saturn;
+
+/// Center of mass of Uranus.
+///
+/// Zero-cost, compile-time–safe center type for Uranus-centered coordinate
+/// systems. Used with body-fixed frames such as [`super::frames::UranusFixed`].
+pub type Uranocentric = crate::bodies::solar_system::Uranus;
+
+/// Center of mass of Neptune.
+///
+/// Zero-cost, compile-time–safe center type for Neptune-centered coordinate
+/// systems. Used with body-fixed frames such as [`super::frames::NeptuneFixed`].
+pub type Neptunocentric = crate::bodies::solar_system::Neptune;
+
+/// Center of mass of Pluto.
+///
+/// Zero-cost, compile-time–safe center type for Pluto-centered coordinate
+/// systems. Used with body-fixed frames such as [`super::frames::PlutoFixed`].
+pub type Plutocentric = crate::bodies::solar_system::Pluto;
+
+macro_rules! impl_planet_center_marker {
+    ($ty:path, $name:literal) => {
+        impl ReferenceCenter for $ty {
+            type Params = ();
+            fn center_name() -> &'static str {
+                $name
+            }
+        }
+        impl affn::AffineCenter for $ty {}
+    };
+}
+
+impl_planet_center_marker!(crate::bodies::solar_system::Mercury, "Mercurycentric");
+impl_planet_center_marker!(crate::bodies::solar_system::Venus, "Venuscentric");
+impl_planet_center_marker!(crate::bodies::solar_system::Mars, "Marscentric");
+impl_planet_center_marker!(crate::bodies::solar_system::Moon, "Selenocentric");
+impl_planet_center_marker!(crate::bodies::solar_system::Jupiter, "Jovicentric");
+impl_planet_center_marker!(crate::bodies::solar_system::Saturn, "Saturnocentric");
+impl_planet_center_marker!(crate::bodies::solar_system::Uranus, "Uranocentric");
+impl_planet_center_marker!(crate::bodies::solar_system::Neptune, "Neptunocentric");
+impl_planet_center_marker!(crate::bodies::solar_system::Pluto, "Plutocentric");
 
 // =============================================================================
 // Bodycentric: Generic center for any orbiting celestial body
@@ -342,6 +437,17 @@ mod tests {
         assert_eq!(Geocentric::center_name(), "Geocentric");
         assert_eq!(Bodycentric::center_name(), "Bodycentric");
         assert_eq!(<() as ReferenceCenter>::center_name(), "");
+
+        // Planetocentric centers
+        assert_eq!(Mercurycentric::center_name(), "Mercurycentric");
+        assert_eq!(Venuscentric::center_name(), "Venuscentric");
+        assert_eq!(Marscentric::center_name(), "Marscentric");
+        assert_eq!(Selenocentric::center_name(), "Selenocentric");
+        assert_eq!(Jovicentric::center_name(), "Jovicentric");
+        assert_eq!(Saturnocentric::center_name(), "Saturnocentric");
+        assert_eq!(Uranocentric::center_name(), "Uranocentric");
+        assert_eq!(Neptunocentric::center_name(), "Neptunocentric");
+        assert_eq!(Plutocentric::center_name(), "Plutocentric");
     }
 
     #[test]
