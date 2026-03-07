@@ -11,6 +11,7 @@ If you are looking for benchmarking/profiling write-ups, see `benches/reports/RE
 - `doc/architecture_decisions.md`: key architectural decisions (what/why/impact).
 - `doc/promises.md`: compatibility/behavior promises (what we guarantee).
 - `doc/datasets.md`: how embedded datasets and optional JPL backends work.
+- `doc/binding_strategy.md`: multi-language binding architecture (Python, Node.js, C/C++), FFI gap analysis, and hardening plan.
 
 ## Related docs elsewhere
 
