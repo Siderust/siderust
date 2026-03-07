@@ -48,7 +48,7 @@ macro_rules! impl_planet_center_shift_vsop {
             fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
+            ) -> AuShift {
                 rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(<$center>::vsop87e(jd), jd, ctx)
             }
         }
@@ -83,7 +83,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         use crate::bodies::solar_system;
 
         let helio_pos = solar_system::PLUTO.orbit.kepler_position(jd);
@@ -120,7 +120,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         let moon_geo_au = Eph::moon_geocentric(jd).to_unit::<qtty::AstronomicalUnit>();
         let earth_bary = Eph::earth_barycentric(jd);
         // Combine geocentric Moon (now in AU) with Earth's barycentric offset
@@ -148,7 +148,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         let moon_geo_au = Eph::moon_geocentric(jd).to_unit::<qtty::AstronomicalUnit>();
         // The Geo→Seleno shift is the negated Moon geocentric position:
         // to move from Earth-centred to Moon-centred, subtract moon's location.
@@ -171,7 +171,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         inverse_shift::<Barycentric, Selenocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
@@ -185,7 +185,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         compose_shift::<Heliocentric, Barycentric, Selenocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
@@ -199,7 +199,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         inverse_shift::<Selenocentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
@@ -214,7 +214,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         inverse_shift::<Selenocentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }

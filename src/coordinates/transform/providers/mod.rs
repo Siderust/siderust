@@ -93,13 +93,15 @@ pub trait FrameRotationProvider<F1, F2> {
 /// Trait for computing translation vectors between reference centers.
 ///
 /// Implementations provide the time-dependent translation from center `C1`
-/// to center `C2`, expressed in frame `F`.
+/// to center `C2`, expressed in frame `F`. The result is a typed quantity
+/// array in [`AstronomicalUnit`](qtty::AstronomicalUnit), matching the
+/// canonical unit of the ephemeris providers.
 pub trait CenterShiftProvider<C1, C2, F> {
     /// Computes the translation vector from center `C1` to center `C2`.
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3];
+    ) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3];
 }
 
 /// Identity rotation: same frame to same frame.
@@ -126,8 +128,13 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
-        [0.0, 0.0, 0.0]
+    ) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3] {
+        use qtty::AstronomicalUnit;
+        [
+            qtty::Quantity::<AstronomicalUnit>::new(0.0),
+            qtty::Quantity::<AstronomicalUnit>::new(0.0),
+            qtty::Quantity::<AstronomicalUnit>::new(0.0),
+        ]
     }
 }
 
@@ -188,15 +195,18 @@ where
     <() as FrameRotationProvider<F2, F1>>::rotation(jd, ctx).inverse()
 }
 
+/// Convenience alias for a 3-component shift in astronomical units.
+type AuShift = [qtty::Quantity<qtty::AstronomicalUnit>; 3];
+
 /// Negates a 3-component shift vector (element-wise sign flip).
 #[inline]
-fn negate_shift(shift: [f64; 3]) -> [f64; 3] {
+fn negate_shift(shift: AuShift) -> AuShift {
     [-shift[0], -shift[1], -shift[2]]
 }
 
 /// Adds two 3-component shift vectors element-wise.
 #[inline]
-fn add_shifts(lhs: [f64; 3], rhs: [f64; 3]) -> [f64; 3] {
+fn add_shifts(lhs: AuShift, rhs: AuShift) -> AuShift {
     [lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2]]
 }
 
@@ -205,7 +215,7 @@ fn add_shifts(lhs: [f64; 3], rhs: [f64; 3]) -> [f64; 3] {
 fn inverse_shift<C1, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
-) -> [f64; 3]
+) -> AuShift
 where
     (): CenterShiftProvider<C2, C1, F>,
 {
@@ -217,7 +227,7 @@ where
 fn compose_shift<C1, CM, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
-) -> [f64; 3]
+) -> AuShift
 where
     (): CenterShiftProvider<C1, CM, F>,
     (): CenterShiftProvider<CM, C2, F>,
@@ -269,12 +279,13 @@ fn tirs_to_itrf_rotation<Eph, Eop: EopProvider, Nut>(
     polar_motion::polar_motion_matrix_from_eop(eop.xp, eop.yp, jd)
 }
 
-/// Rotates a typed ecliptic position into target frame `F`, returning `[f64; 3]`.
+/// Rotates a typed ecliptic position into target frame `F`, returning
+/// a typed `[Quantity<AstronomicalUnit>; 3]` shift vector.
 ///
-/// This is the **sole** extraction point where typed [`qtty::AstronomicalUnit`]
-/// quantities are converted to raw `f64`. All upstream code operates on
-/// typed [`Position`] values; units are stripped here, at the boundary
-/// between the qtty world and the raw-array world of [`Rotation3::apply_array`].
+/// Uses [`Rotation3`]'s built-in `Mul<Position>` support to rotate the
+/// position in typed quantity space — no raw `f64` extraction needed.
+/// The result preserves the AU unit through the rotation, then extracts
+/// the three components as typed quantities.
 ///
 /// The center type `C` is irrelevant to the rotation and is only present
 /// so callers can pass any ecliptic-plane position directly without
@@ -284,14 +295,15 @@ fn rotate_shift_from_ecliptic<C, F, Eph, Eop: EopProvider, Nut>(
     pos: Position<C, EclipticMeanJ2000, qtty::AstronomicalUnit>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
-) -> [f64; 3]
+) -> AuShift
 where
     C: affn::ReferenceCenter,
     F: affn::ReferenceFrame,
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     let rot = <() as FrameRotationProvider<EclipticMeanJ2000, F>>::rotation(jd, ctx);
-    rot.apply_array([pos.x().value(), pos.y().value(), pos.z().value()])
+    let rotated = rot * pos;
+    [rotated.x(), rotated.y(), rotated.z()]
 }
 
 macro_rules! impl_via_icrs_bidirectional {
@@ -342,7 +354,7 @@ macro_rules! impl_reverse_center_shifts {
             fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
+            ) -> AuShift {
                 inverse_shift::<Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
@@ -356,7 +368,7 @@ macro_rules! impl_reverse_center_shifts {
             fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
+            ) -> AuShift {
                 compose_shift::<Heliocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
@@ -370,7 +382,7 @@ macro_rules! impl_reverse_center_shifts {
             fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
+            ) -> AuShift {
                 inverse_shift::<$center, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
@@ -384,7 +396,7 @@ macro_rules! impl_reverse_center_shifts {
             fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
+            ) -> AuShift {
                 compose_shift::<Geocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
@@ -398,7 +410,7 @@ macro_rules! impl_reverse_center_shifts {
             fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
+            ) -> AuShift {
                 inverse_shift::<$center, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
             }
         }
@@ -427,7 +439,10 @@ fn iau_body_fixed_to_icrs(params: &IauRotationParams, jd: JulianDate) -> Rotatio
 
 /// Computes the center shift from `C1` to `C2` in frame `F`.
 #[inline]
-pub fn center_shift<C1, C2, F>(jd: JulianDate, ctx: &AstroContext) -> [f64; 3]
+pub fn center_shift<C1, C2, F>(
+    jd: JulianDate,
+    ctx: &AstroContext,
+) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3]
 where
     (): CenterShiftProvider<C1, C2, F>,
 {

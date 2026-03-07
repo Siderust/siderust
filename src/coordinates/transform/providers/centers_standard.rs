@@ -33,7 +33,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(Eph::sun_barycentric(jd), jd, ctx)
     }
 }
@@ -47,7 +47,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         inverse_shift::<Barycentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
@@ -69,7 +69,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(Eph::earth_barycentric(jd), jd, ctx)
     }
 }
@@ -83,7 +83,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         inverse_shift::<Barycentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
@@ -101,7 +101,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         compose_shift::<Heliocentric, Barycentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
@@ -115,7 +115,7 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
+    ) -> AuShift {
         inverse_shift::<Geocentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
