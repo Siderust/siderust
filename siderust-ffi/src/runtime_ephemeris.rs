@@ -151,7 +151,9 @@ pub extern "C" fn siderust_runtime_ephemeris_ensure(
 #[no_mangle]
 pub unsafe extern "C" fn siderust_runtime_ephemeris_free(handle: *mut SiderustRuntimeEphemeris) {
     if !handle.is_null() {
-        drop(Box::from_raw(handle));
+        // SAFETY: caller guarantees the handle was allocated by one of the
+        // `siderust_runtime_ephemeris_*` constructors and has not been freed.
+        drop(unsafe { Box::from_raw(handle) });
     }
 }
 

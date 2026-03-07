@@ -10,6 +10,8 @@
 //! The matching C header lives at `include/siderust_ffi.h` and must be included
 //! **after** `tempoch_ffi.h` (for `tempoch_period_mjd_t`).
 
+#![deny(missing_docs)]
+#![deny(unsafe_op_in_unsafe_fn)]
 // Ensure the tempoch-ffi crate is linked so the TempochPeriodMjd re-export resolves.
 extern crate tempoch_ffi;
 
