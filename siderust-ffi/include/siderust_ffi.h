@@ -17,7 +17,9 @@ enum siderust_crossing_direction_t
   : int32_t
 #endif // __cplusplus
  {
+  // The body is crossing upward through the threshold.
   SIDERUST_CROSSING_DIRECTION_T_RISING = 0,
+  // The body is crossing downward through the threshold.
   SIDERUST_CROSSING_DIRECTION_T_SETTING = 1,
 };
 #ifndef __cplusplus
@@ -30,7 +32,9 @@ enum siderust_culmination_kind_t
   : int32_t
 #endif // __cplusplus
  {
+  // Upper culmination (maximum altitude).
   SIDERUST_CULMINATION_KIND_T_MAX = 0,
+  // Lower culmination (minimum altitude).
   SIDERUST_CULMINATION_KIND_T_MIN = 1,
 };
 #ifndef __cplusplus
@@ -86,20 +90,35 @@ enum siderust_frame_t
   : int32_t
 #endif // __cplusplus
  {
+  // International Celestial Reference System.
   SIDERUST_FRAME_T_ICRS = 1,
+  // Mean ecliptic of J2000.0.
   SIDERUST_FRAME_T_ECLIPTIC_MEAN_J2000 = 2,
+  // Mean equatorial of J2000.0.
   SIDERUST_FRAME_T_EQUATORIAL_MEAN_J2000 = 3,
+  // Mean equatorial of date.
   SIDERUST_FRAME_T_EQUATORIAL_MEAN_OF_DATE = 4,
+  // True equatorial of date (includes nutation).
   SIDERUST_FRAME_T_EQUATORIAL_TRUE_OF_DATE = 5,
+  // Local horizontal (azimuth/altitude).
   SIDERUST_FRAME_T_HORIZONTAL = 6,
+  // Earth-Centred Earth-Fixed.
   SIDERUST_FRAME_T_ECEF = 7,
+  // Galactic coordinate system.
   SIDERUST_FRAME_T_GALACTIC = 8,
+  // Geocentric Celestial Reference System.
   SIDERUST_FRAME_T_GCRS = 9,
+  // Ecliptic of date.
   SIDERUST_FRAME_T_ECLIPTIC_OF_DATE = 10,
+  // True ecliptic of date.
   SIDERUST_FRAME_T_ECLIPTIC_TRUE_OF_DATE = 11,
+  // Celestial Intermediate Reference System.
   SIDERUST_FRAME_T_CIRS = 12,
+  // Terrestrial Intermediate Reference System.
   SIDERUST_FRAME_T_TIRS = 13,
+  // International Terrestrial Reference Frame.
   SIDERUST_FRAME_T_ITRF = 14,
+  // International Celestial Reference Frame.
   SIDERUST_FRAME_T_ICRF = 15,
 };
 #ifndef __cplusplus
@@ -112,7 +131,9 @@ enum siderust_azimuth_extremum_kind_t
   : int32_t
 #endif // __cplusplus
  {
+  // Maximum azimuth (easternmost bearing).
   SIDERUST_AZIMUTH_EXTREMUM_KIND_T_MAX = 0,
+  // Minimum azimuth (westernmost bearing).
   SIDERUST_AZIMUTH_EXTREMUM_KIND_T_MIN = 1,
 };
 #ifndef __cplusplus
@@ -142,14 +163,23 @@ enum SiderustBody
   : int32_t
 #endif // __cplusplus
  {
+  // The Sun.
   SIDERUST_BODY_SUN = 0,
+  // Earth's Moon.
   SIDERUST_BODY_MOON = 1,
+  // Mercury.
   SIDERUST_BODY_MERCURY = 2,
+  // Venus.
   SIDERUST_BODY_VENUS = 3,
+  // Mars.
   SIDERUST_BODY_MARS = 4,
+  // Jupiter.
   SIDERUST_BODY_JUPITER = 5,
+  // Saturn.
   SIDERUST_BODY_SATURN = 6,
+  // Uranus.
   SIDERUST_BODY_URANUS = 7,
+  // Neptune.
   SIDERUST_BODY_NEPTUNE = 8,
 };
 #ifndef __cplusplus
@@ -162,10 +192,15 @@ enum siderust_center_t
   : int32_t
 #endif // __cplusplus
  {
+  // Solar-system barycentre.
   SIDERUST_CENTER_T_BARYCENTRIC = 1,
+  // Sun centre.
   SIDERUST_CENTER_T_HELIOCENTRIC = 2,
+  // Earth centre.
   SIDERUST_CENTER_T_GEOCENTRIC = 3,
+  // Observer site on the Earth's surface.
   SIDERUST_CENTER_T_TOPOCENTRIC = 4,
+  // Centre of a specific body.
   SIDERUST_CENTER_T_BODYCENTRIC = 5,
 };
 #ifndef __cplusplus
@@ -178,9 +213,13 @@ enum siderust_phase_kind_t
   : int32_t
 #endif // __cplusplus
  {
+  // New Moon.
   SIDERUST_PHASE_KIND_T_NEW_MOON = 0,
+  // First Quarter.
   SIDERUST_PHASE_KIND_T_FIRST_QUARTER = 1,
+  // Full Moon.
   SIDERUST_PHASE_KIND_T_FULL_MOON = 2,
+  // Last Quarter.
   SIDERUST_PHASE_KIND_T_LAST_QUARTER = 3,
 };
 #ifndef __cplusplus
@@ -193,13 +232,21 @@ enum siderust_moon_phase_label_t
   : int32_t
 #endif // __cplusplus
  {
+  // New Moon.
   SIDERUST_MOON_PHASE_LABEL_T_NEW_MOON = 0,
+  // Waxing Crescent.
   SIDERUST_MOON_PHASE_LABEL_T_WAXING_CRESCENT = 1,
+  // First Quarter.
   SIDERUST_MOON_PHASE_LABEL_T_FIRST_QUARTER = 2,
+  // Waxing Gibbous.
   SIDERUST_MOON_PHASE_LABEL_T_WAXING_GIBBOUS = 3,
+  // Full Moon.
   SIDERUST_MOON_PHASE_LABEL_T_FULL_MOON = 4,
+  // Waning Gibbous.
   SIDERUST_MOON_PHASE_LABEL_T_WANING_GIBBOUS = 5,
+  // Last Quarter.
   SIDERUST_MOON_PHASE_LABEL_T_LAST_QUARTER = 6,
+  // Waning Crescent.
   SIDERUST_MOON_PHASE_LABEL_T_WANING_CRESCENT = 7,
 };
 #ifndef __cplusplus
@@ -278,10 +325,15 @@ typedef struct siderust_search_opts_t {
 
 // Altitude computation query parameters.
 typedef struct siderust_altitude_query_t {
+  // Observer location.
   struct siderust_geodetic_t observer;
+  // Start of the search window (Modified Julian Date).
   double start_mjd;
+  // End of the search window (Modified Julian Date).
   double end_mjd;
+  // Minimum altitude threshold in degrees.
   double min_altitude_deg;
+  // Maximum altitude threshold in degrees.
   double max_altitude_deg;
 } siderust_altitude_query_t;
 
@@ -301,6 +353,7 @@ typedef struct siderust_azimuth_crossing_event_t {
   double mjd;
   // Crossing direction.
   siderust_crossing_direction_t direction;
+  // Padding bytes for alignment; must be zeroed.
   uint8_t _pad[4];
 } siderust_azimuth_crossing_event_t;
 
@@ -312,6 +365,7 @@ typedef struct siderust_azimuth_extremum_t {
   double azimuth_deg;
   // Kind of extremum.
   siderust_azimuth_extremum_kind_t kind;
+  // Padding bytes for alignment; must be zeroed.
   uint8_t _pad[4];
 } siderust_azimuth_extremum_t;
 
@@ -327,28 +381,43 @@ typedef struct siderust_proper_motion_t {
 
 // Keplerian orbital elements.
 typedef struct siderust_orbit_t {
+  // Semi-major axis in astronomical units.
   double semi_major_axis_au;
+  // Orbital eccentricity.
   double eccentricity;
+  // Orbital inclination in degrees.
   double inclination_deg;
+  // Longitude of the ascending node in degrees.
   double lon_ascending_node_deg;
+  // Argument of perihelion in degrees.
   double arg_perihelion_deg;
+  // Mean anomaly at epoch in degrees.
   double mean_anomaly_deg;
+  // Epoch as a Julian Date.
   double epoch_jd;
 } siderust_orbit_t;
 
 // Planet data (value type, copyable).
 typedef struct siderust_planet_t {
+  // Planet mass in kilograms.
   double mass_kg;
+  // Mean equatorial radius in kilometres.
   double radius_km;
+  // Keplerian orbital elements.
   struct siderust_orbit_t orbit;
 } siderust_planet_t;
 
 // Cartesian position (x, y, z + metadata).
 typedef struct siderust_cartesian_pos_t {
+  // X coordinate (AU).
   double x;
+  // Y coordinate (AU).
   double y;
+  // Z coordinate (AU).
   double z;
+  // Reference frame.
   siderust_frame_t frame;
+  // Reference centre.
   siderust_center_t center;
 } siderust_cartesian_pos_t;
 
@@ -365,6 +434,7 @@ typedef struct SiderustBodycentricParams {
   struct siderust_orbit_t orbit;
   // Reference center: 0=Barycentric, 1=Heliocentric, 2=Geocentric.
   SiderustOrbitRefCenter orbit_center;
+  // Padding bytes for alignment; must be zeroed.
   uint8_t _pad[7];
 } SiderustBodycentricParams;
 
@@ -374,6 +444,7 @@ typedef struct siderust_phase_event_t {
   double mjd;
   // Phase kind.
   siderust_phase_kind_t kind;
+  // Padding bytes for alignment; must be zeroed.
   uint8_t _pad[4];
 } siderust_phase_event_t;
 
@@ -387,14 +458,19 @@ typedef struct siderust_moon_phase_geometry_t {
   double elongation_rad;
   // Non-zero if waxing, zero if waning.
   uint8_t waxing;
+  // Padding bytes for alignment; must be zeroed.
   uint8_t _pad[7];
 } siderust_moon_phase_geometry_t;
 
 // Cartesian velocity (vx, vy, vz + frame metadata).
 typedef struct siderust_cartesian_vel_t {
+  // X velocity component (AU/day).
   double vx;
+  // Y velocity component (AU/day).
   double vy;
+  // Z velocity component (AU/day).
   double vz;
+  // Reference frame.
   siderust_frame_t frame;
 } siderust_cartesian_vel_t;
 
@@ -433,12 +509,36 @@ extern "C" {
  uint32_t siderust_ffi_version(void);
 
 // Free an array of MJD periods.
+//
+// # Safety
+//
+// * `ptr` must have been returned by a `siderust_*` function that allocates
+//   this array type (e.g. `siderust_sun_night_periods`).
+// * `count` must be the element count that was returned alongside `ptr`.
+// * The pointer must not have been freed before, and must not be used after
+//   this call.
  void siderust_periods_free(tempoch_period_mjd_t *ptr, uintptr_t count);
 
 // Free an array of crossing events.
+//
+// # Safety
+//
+// * `ptr` must have been returned by a `siderust_*` function that allocates
+//   this array type (e.g. `siderust_sun_crossings`).
+// * `count` must be the element count that was returned alongside `ptr`.
+// * The pointer must not have been freed before, and must not be used after
+//   this call.
  void siderust_crossings_free(struct siderust_crossing_event_t *ptr, uintptr_t count);
 
 // Free an array of culmination events.
+//
+// # Safety
+//
+// * `ptr` must have been returned by a `siderust_*` function that allocates
+//   this array type (e.g. `siderust_sun_culminations`).
+// * `count` must be the element count that was returned alongside `ptr`.
+// * The pointer must not have been freed before, and must not be used after
+//   this call.
  void siderust_culminations_free(struct siderust_culmination_event_t *ptr, uintptr_t count);
 
 // Altitude of the Sun at an instant (radians).
@@ -609,11 +709,25 @@ siderust_status_t siderust_icrs_below_threshold(struct siderust_spherical_dir_t 
                                                 uintptr_t *count);
 
 // Free an array of azimuth crossing events.
+//
+// # Safety
+//
+// * `ptr` must have been returned by a `siderust_*` azimuth crossing function.
+// * `count` must be the element count that was returned alongside `ptr`.
+// * The pointer must not have been freed before, and must not be used after
+//   this call.
 
 void siderust_azimuth_crossings_free(struct siderust_azimuth_crossing_event_t *ptr,
                                      uintptr_t count);
 
 // Free an array of azimuth extrema.
+//
+// # Safety
+//
+// * `ptr` must have been returned by a `siderust_*` azimuth extrema function.
+// * `count` must be the element count that was returned alongside `ptr`.
+// * The pointer must not have been freed before, and must not be used after
+//   this call.
  void siderust_azimuth_extrema_free(struct siderust_azimuth_extremum_t *ptr, uintptr_t count);
 
 // Azimuth of the Sun at an instant (degrees, North-clockwise).
@@ -1122,6 +1236,13 @@ siderust_status_t siderust_geodetic_new(double lon_deg,
                                         struct siderust_geodetic_t *out);
 
 // Free an array of phase events.
+//
+// # Safety
+//
+// * `ptr` must have been returned by `siderust_moon_phase_events`.
+// * `count` must be the element count that was returned alongside `ptr`.
+// * The pointer must not have been freed before, and must not be used after
+//   this call.
  void siderust_phase_events_free(struct siderust_phase_event_t *ptr, uintptr_t count);
 
 // Compute geocentric Moon phase geometry at `jd` (Julian Date).
@@ -1357,7 +1478,10 @@ siderust_status_t siderust_target_create(double ra_deg,
 // Free a target handle created by [`siderust_target_create`].
 //
 // # Safety
-// The handle must not be used after this call.
+//
+// * `handle` must have been allocated by [`siderust_target_create`].
+// * The handle must not have been freed before, and must not be used after
+//   this call.
  void siderust_target_free(struct SiderustTarget *handle);
 
 // Write the right ascension (degrees) to `*out`.

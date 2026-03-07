@@ -158,7 +158,10 @@ pub extern "C" fn siderust_star_create(
 #[no_mangle]
 pub unsafe extern "C" fn siderust_star_free(handle: *mut SiderustStar) {
     if !handle.is_null() {
-        drop(Box::from_raw(handle));
+        // SAFETY: caller guarantees the handle was allocated by
+        // `siderust_star_catalog` or `siderust_star_create` and has not
+        // been freed before.
+        drop(unsafe { Box::from_raw(handle) });
     }
 }
 
