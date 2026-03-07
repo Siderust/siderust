@@ -40,6 +40,7 @@ use crate::astro::{
     cio, era, nutation, polar_motion, precession, HasIauRotation, IauRotationParams,
 };
 use crate::calculus::ephemeris::Ephemeris;
+use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{
     Barycentric, Geocentric, Heliocentric, Jovicentric, Marscentric, Mercurycentric,
     Neptunocentric, Plutocentric, Saturnocentric, Selenocentric, Uranocentric, Venuscentric,
@@ -131,6 +132,9 @@ where
 }
 
 /// Mean obliquity ε₀ at J2000.0 (IAU 2006): 84381.406".
+///
+/// Converts the canonical arcsecond value to radians using the exact
+/// factor `π / 648 000` (arcseconds-to-radians).
 #[inline]
 fn j2000_obliquity() -> qtty::Radians {
     qtty::Radians::new(precession::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648000.0)
@@ -155,6 +159,9 @@ const FRAME_BIAS_ICRS_TO_J2000: Rotation3 = Rotation3::from_matrix([
     ],
 ]);
 
+/// Composes two frame rotations: `F1 → FM → F2`.
+///
+/// Equivalent to `R(FM→F2) · R(F1→FM)`, applied left-to-right.
 #[inline]
 fn compose_rotation<F1, FM, F2, Eph, Eop: EopProvider, Nut>(
     jd: JulianDate,
@@ -169,6 +176,7 @@ where
     right * left
 }
 
+/// Returns `R(F2→F1)` by inverting `R(F1→F2)`.
 #[inline]
 fn inverse_rotation<F1, F2, Eph, Eop: EopProvider, Nut>(
     jd: JulianDate,
@@ -180,16 +188,19 @@ where
     <() as FrameRotationProvider<F2, F1>>::rotation(jd, ctx).inverse()
 }
 
+/// Negates a 3-component shift vector (element-wise sign flip).
 #[inline]
 fn negate_shift(shift: [f64; 3]) -> [f64; 3] {
     [-shift[0], -shift[1], -shift[2]]
 }
 
+/// Adds two 3-component shift vectors element-wise.
 #[inline]
 fn add_shifts(lhs: [f64; 3], rhs: [f64; 3]) -> [f64; 3] {
     [lhs[0] + rhs[0], lhs[1] + rhs[1], lhs[2] + rhs[2]]
 }
 
+/// Returns `shift(C1→C2)` by negating `shift(C2→C1)`.
 #[inline]
 fn inverse_shift<C1, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut>(
     jd: JulianDate,
@@ -201,6 +212,7 @@ where
     negate_shift(<() as CenterShiftProvider<C2, C1, F>>::shift(jd, ctx))
 }
 
+/// Composes two center shifts: `C1 → CM → C2`.
 #[inline]
 fn compose_shift<C1, CM, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut>(
     jd: JulianDate,
@@ -216,6 +228,9 @@ where
 }
 
 /// Direct GCRS → CIRS rotation from the IAU 2000/2006 CIO-based chain.
+///
+/// Applies IERS celestial-pole corrections (dX, dY) from the EOP provider
+/// before computing the CIP/CIO-based rotation matrix.
 #[inline]
 fn gcrs_to_cirs_rotation<Eph, Eop: EopProvider, Nut>(
     jd: JulianDate,
@@ -228,6 +243,9 @@ fn gcrs_to_cirs_rotation<Eph, Eop: EopProvider, Nut>(
 }
 
 /// Direct CIRS → TIRS rotation from the Earth Rotation Angle.
+///
+/// Converts the epoch from TT to UT1 using the EOP ΔUT1 correction,
+/// then builds a single Rz rotation by the negative ERA.
 #[inline]
 fn cirs_to_tirs_rotation<Eph, Eop: EopProvider, Nut>(
     jd: JulianDate,
@@ -239,6 +257,9 @@ fn cirs_to_tirs_rotation<Eph, Eop: EopProvider, Nut>(
 }
 
 /// Direct TIRS → ITRF rotation from polar motion.
+///
+/// Uses the IERS polar-motion parameters (xp, yp) from the EOP provider
+/// to build the W(t) rotation matrix.
 #[inline]
 fn tirs_to_itrf_rotation<Eph, Eop: EopProvider, Nut>(
     jd: JulianDate,
@@ -248,18 +269,29 @@ fn tirs_to_itrf_rotation<Eph, Eop: EopProvider, Nut>(
     polar_motion::polar_motion_matrix_from_eop(eop.xp, eop.yp, jd)
 }
 
+/// Rotates a typed ecliptic position into target frame `F`, returning `[f64; 3]`.
+///
+/// This is the **sole** extraction point where typed [`qtty::AstronomicalUnit`]
+/// quantities are converted to raw `f64`. All upstream code operates on
+/// typed [`Position`] values; units are stripped here, at the boundary
+/// between the qtty world and the raw-array world of [`Rotation3::apply_array`].
+///
+/// The center type `C` is irrelevant to the rotation and is only present
+/// so callers can pass any ecliptic-plane position directly without
+/// first converting it to a specific center.
 #[inline]
-fn rotate_shift_from_ecliptic<F, Eph, Eop: EopProvider, Nut>(
-    shift_ecl: [f64; 3],
+fn rotate_shift_from_ecliptic<C, F, Eph, Eop: EopProvider, Nut>(
+    pos: Position<C, EclipticMeanJ2000, qtty::AstronomicalUnit>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> [f64; 3]
 where
+    C: affn::ReferenceCenter,
     F: affn::ReferenceFrame,
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     let rot = <() as FrameRotationProvider<EclipticMeanJ2000, F>>::rotation(jd, ctx);
-    rot.apply_array(shift_ecl)
+    rot.apply_array([pos.x().value(), pos.y().value(), pos.z().value()])
 }
 
 macro_rules! impl_via_icrs_bidirectional {
@@ -288,7 +320,98 @@ macro_rules! impl_via_icrs_bidirectional {
 
 pub(crate) use impl_via_icrs_bidirectional;
 
+/// Implements the reverse and composed `CenterShiftProvider` impls for a
+/// body center that already has a direct `Center → Barycentric` impl.
+///
+/// Given a primary `Center → Barycentric` implementation, this macro
+/// generates the five remaining directional impls:
+///
+/// - `Barycentric → Center` (negate)
+/// - `Heliocentric → Center` (compose via Barycentric)
+/// - `Center → Heliocentric` (negate)
+/// - `Geocentric → Center` (compose via Barycentric)
+/// - `Center → Geocentric` (negate)
+macro_rules! impl_reverse_center_shifts {
+    ($center:ty) => {
+        impl<F> CenterShiftProvider<Barycentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop, Nut>,
+            ) -> [f64; 3] {
+                inverse_shift::<Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+
+        impl<F> CenterShiftProvider<Heliocentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop, Nut>,
+            ) -> [f64; 3] {
+                compose_shift::<Heliocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+
+        impl<F> CenterShiftProvider<$center, Heliocentric, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop, Nut>,
+            ) -> [f64; 3] {
+                inverse_shift::<$center, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+
+        impl<F> CenterShiftProvider<Geocentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop, Nut>,
+            ) -> [f64; 3] {
+                compose_shift::<Geocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+
+        impl<F> CenterShiftProvider<$center, Geocentric, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop, Nut>,
+            ) -> [f64; 3] {
+                inverse_shift::<$center, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+    };
+}
+
+pub(crate) use impl_reverse_center_shifts;
+
 /// Computes the body-fixed → ICRS rotation matrix from IAU rotation parameters.
+///
+/// Builds a ZXZ Euler rotation from the IAU pole direction (α₀, δ₀) and
+/// prime-meridian angle (W). All angles are converted to radians via
+/// `qtty` before being passed to [`Rotation3::from_euler_zxz`].
 #[inline]
 fn iau_body_fixed_to_icrs(params: &IauRotationParams, jd: JulianDate) -> Rotation3 {
     let alpha0 = params.alpha0(jd).to::<qtty::Radian>();

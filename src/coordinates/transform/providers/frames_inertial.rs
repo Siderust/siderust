@@ -1,6 +1,22 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Frame-rotation providers for **inertial and quasi-inertial** frames.
+//!
+//! This module covers rotations between ICRS (the hub), the J2000 ecliptic
+//! and equatorial frames, the mean/true equators of date, and the
+//! identity-equivalent frames ICRF and GCRS.
+//!
+//! Key rotation chains:
+//!
+//! - **Frame bias**: ICRS ↔ EquatorialMeanJ2000 (constant ~80 µas matrix).
+//! - **Obliquity**: EquatorialMeanJ2000 ↔ EclipticMeanJ2000 (Rx by −ε₀).
+//! - **Precession**: EquatorialMeanJ2000 → EquatorialMeanOfDate (IAU 2006).
+//! - **Nutation**: EquatorialMeanOfDate → EquatorialTrueOfDate (IAU 2000B).
+//! - **EME2000 ≡ EquatorialMeanJ2000**: identity alias.
+//! - **ICRF ≡ ICRS**: identity alias.
+//! - **GCRS ≈ ICRS**: treated as identity (no aberration modelling).
+
 use super::*;
 
 /// ICRS → EclipticMeanJ2000 rotation (J2000 mean ecliptic).
@@ -292,6 +308,13 @@ impl FrameRotationProvider<EquatorialMeanOfDate, ICRS> for () {
     }
 }
 
+/// ICRS → EquatorialTrueOfDate rotation.
+///
+/// Combines IAU 2000B nutation with IERS celestial-pole corrections
+/// (dX, dY) from the EOP provider into a full precession–nutation matrix.
+///
+/// The first-order correction is:
+///   dψ_eop = dX / sin(εA),  dε_eop = dY
 impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut>(
@@ -305,10 +328,11 @@ impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
         let dx_rad = qtty::Radians::from(eop.dx);
         let dy_rad = qtty::Radians::from(eop.dy);
 
-        if dx_rad.value() != 0.0 || dy_rad.value() != 0.0 {
+        let zero = qtty::Radians::new(0.0);
+        if dx_rad != zero || dy_rad != zero {
             let sin_eps = nut.mean_obliquity.sin();
             if sin_eps.abs() > 1e-15 {
-                dpsi += qtty::Radians::new(dx_rad.value() / sin_eps);
+                dpsi += dx_rad / sin_eps;
             }
             deps += dy_rad;
         }

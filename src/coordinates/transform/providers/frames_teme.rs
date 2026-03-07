@@ -1,6 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Frame-rotation provider for **TEME** (True Equator Mean Equinox).
+//!
+//! TEME is the output frame of SGP4/SDP4 propagators used with TLE data.
+//! It shares the true equator of date but uses a simplified equinox
+//! definition (the "equation of the equinoxes" shortcut).
+//!
+//! The rotation chain is:
+//!
+//! ```text
+//! TEME → EquatorialTrueOfDate → (precession/nutation) → ICRS
+//! ```
+//!
+//! The first step is Rz(Δψ cos εA), which removes the approximate
+//! equinox offset.
+
 use super::*;
 
 impl FrameRotationProvider<TEME, EquatorialTrueOfDate> for () {

@@ -1,8 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Center-shift providers for the three **standard** reference centers:
+//! [`Barycentric`], [`Heliocentric`] and [`Geocentric`].
+//!
+//! These form the hub of the center-shift graph. Every other center
+//! (planetary, selenocentric, …) composes through [`Barycentric`], so
+//! only the three pairwise directions need explicit implementations here.
+//!
+//! # Data source
+//!
+//! The Sun and Earth barycentric positions come from the
+//! [`Ephemeris`] trait (VSOP87 by default, DE441 optionally).
+//! Both return `Position<Barycentric, EclipticMeanJ2000, AU>`.
+
 use super::*;
 
+// ---------------------------------------------------------------------------
+// Heliocentric ↔ Barycentric
+// ---------------------------------------------------------------------------
+
+/// Heliocentric → Barycentric shift.
+///
+/// Returns the Sun's barycentric position converted from the ecliptic to
+/// the target frame `F`.
 impl<F> CenterShiftProvider<Heliocentric, Barycentric, F> for ()
 where
     F: affn::ReferenceFrame,
@@ -13,16 +34,7 @@ where
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
-        let sun_bary = Eph::sun_barycentric(jd);
-        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(
-            [
-                sun_bary.x().value(),
-                sun_bary.y().value(),
-                sun_bary.z().value(),
-            ],
-            jd,
-            ctx,
-        )
+        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(Eph::sun_barycentric(jd), jd, ctx)
     }
 }
 
@@ -40,6 +52,14 @@ where
     }
 }
 
+// ---------------------------------------------------------------------------
+// Geocentric ↔ Barycentric
+// ---------------------------------------------------------------------------
+
+/// Geocentric → Barycentric shift.
+///
+/// Returns the Earth's barycentric position converted from the ecliptic to
+/// the target frame `F`.
 impl<F> CenterShiftProvider<Geocentric, Barycentric, F> for ()
 where
     F: affn::ReferenceFrame,
@@ -50,16 +70,7 @@ where
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
-        let earth_bary = Eph::earth_barycentric(jd);
-        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(
-            [
-                earth_bary.x().value(),
-                earth_bary.y().value(),
-                earth_bary.z().value(),
-            ],
-            jd,
-            ctx,
-        )
+        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(Eph::earth_barycentric(jd), jd, ctx)
     }
 }
 
@@ -76,6 +87,10 @@ where
         inverse_shift::<Barycentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
 }
+
+// ---------------------------------------------------------------------------
+// Heliocentric ↔ Geocentric (composed through Barycentric)
+// ---------------------------------------------------------------------------
 
 impl<F> CenterShiftProvider<Heliocentric, Geocentric, F> for ()
 where

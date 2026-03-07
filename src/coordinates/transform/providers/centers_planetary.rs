@@ -1,8 +1,42 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Center-shift providers for **planetary**, **plutocentric** and
+//! **selenocentric** reference centers.
+//!
+//! # VSOP87 planets (Mercury – Neptune)
+//!
+//! Each planet center type (e.g. [`Mercurycentric`]) exposes `vsop87e(jd)`
+//! which returns a typed `Position<Barycentric, EclipticMeanJ2000, AU>`.
+//! The [`impl_planet_center_shift_vsop`] macro generates the direct
+//! `Center → Barycentric` shift plus all reverse and composed impls via
+//! [`impl_reverse_center_shifts`].
+//!
+//! # Pluto
+//!
+//! Pluto has no VSOP87 series. Its heliocentric position is obtained from
+//! a Keplerian orbit, then combined with the Sun's barycentric position.
+//!
+//! # Moon (Selenocentric)
+//!
+//! The Moon's geocentric position is provided by the ephemeris in
+//! kilometres and must be converted to AU before combining with the
+//! Earth's barycentric position. The conversion uses
+//! [`qtty`]'s typed unit conversion (`to_unit::<AstronomicalUnit>()`),
+//! avoiding any hardcoded magic constants.
+
 use super::*;
 
+// ---------------------------------------------------------------------------
+// VSOP87 planets (Mercury – Neptune)
+// ---------------------------------------------------------------------------
+
+/// Generates all six `CenterShiftProvider` impls for a VSOP87 planet center.
+///
+/// The direct `Center → Barycentric` impl calls `vsop87e(jd)` which returns
+/// a typed `Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>` and
+/// passes it directly to [`rotate_shift_from_ecliptic`]. The five
+/// reverse/composed impls are delegated to [`impl_reverse_center_shifts`].
 macro_rules! impl_planet_center_shift_vsop {
     ($center:ty) => {
         impl<F> CenterShiftProvider<$center, Barycentric, F> for ()
@@ -15,88 +49,11 @@ macro_rules! impl_planet_center_shift_vsop {
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> [f64; 3] {
-                let bary_pos = <$center>::vsop87e(jd);
-                rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(
-                    [
-                        bary_pos.x().value(),
-                        bary_pos.y().value(),
-                        bary_pos.z().value(),
-                    ],
-                    jd,
-                    ctx,
-                )
+                rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(<$center>::vsop87e(jd), jd, ctx)
             }
         }
 
-        impl<F> CenterShiftProvider<Barycentric, $center, F> for ()
-        where
-            F: affn::ReferenceFrame,
-            (): FrameRotationProvider<EclipticMeanJ2000, F>,
-        {
-            #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-                jd: JulianDate,
-                ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
-                inverse_shift::<Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
-            }
-        }
-
-        impl<F> CenterShiftProvider<Heliocentric, $center, F> for ()
-        where
-            F: affn::ReferenceFrame,
-            (): FrameRotationProvider<EclipticMeanJ2000, F>,
-        {
-            #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-                jd: JulianDate,
-                ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
-                compose_shift::<Heliocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
-            }
-        }
-
-        impl<F> CenterShiftProvider<$center, Heliocentric, F> for ()
-        where
-            F: affn::ReferenceFrame,
-            (): FrameRotationProvider<EclipticMeanJ2000, F>,
-        {
-            #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-                jd: JulianDate,
-                ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
-                inverse_shift::<$center, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
-            }
-        }
-
-        impl<F> CenterShiftProvider<Geocentric, $center, F> for ()
-        where
-            F: affn::ReferenceFrame,
-            (): FrameRotationProvider<EclipticMeanJ2000, F>,
-        {
-            #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-                jd: JulianDate,
-                ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
-                compose_shift::<Geocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
-            }
-        }
-
-        impl<F> CenterShiftProvider<$center, Geocentric, F> for ()
-        where
-            F: affn::ReferenceFrame,
-            (): FrameRotationProvider<EclipticMeanJ2000, F>,
-        {
-            #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-                jd: JulianDate,
-                ctx: &AstroContext<Eph, Eop, Nut>,
-            ) -> [f64; 3] {
-                inverse_shift::<$center, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
-            }
-        }
+        impl_reverse_center_shifts!($center);
     };
 }
 
@@ -108,6 +65,15 @@ impl_planet_center_shift_vsop!(Saturnocentric);
 impl_planet_center_shift_vsop!(Uranocentric);
 impl_planet_center_shift_vsop!(Neptunocentric);
 
+// ---------------------------------------------------------------------------
+// Pluto (Keplerian orbit + Sun barycentric)
+// ---------------------------------------------------------------------------
+
+/// Pluto → Barycentric shift.
+///
+/// Pluto lacks a VSOP87 series. Instead its heliocentric ecliptic position
+/// is computed from a Keplerian orbit and offset by the Sun's barycentric
+/// position to yield the full barycentric vector.
 impl<F> CenterShiftProvider<Plutocentric, Barycentric, F> for ()
 where
     F: affn::ReferenceFrame,
@@ -122,89 +88,29 @@ where
 
         let helio_pos = solar_system::PLUTO.orbit.kepler_position(jd);
         let sun_bary = Eph::sun_barycentric(jd);
+        // Combine the heliocentric Keplerian position with the Sun's
+        // barycentric offset using AU quantity arithmetic — no raw f64 needed.
+        let bary_pos = Position::<Barycentric, EclipticMeanJ2000, qtty::AstronomicalUnit>::new(
+            helio_pos.x() + sun_bary.x(),
+            helio_pos.y() + sun_bary.y(),
+            helio_pos.z() + sun_bary.z(),
+        );
 
-        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(
-            [
-                helio_pos.x().value() + sun_bary.x().value(),
-                helio_pos.y().value() + sun_bary.y().value(),
-                helio_pos.z().value() + sun_bary.z().value(),
-            ],
-            jd,
-            ctx,
-        )
+        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(bary_pos, jd, ctx)
     }
 }
 
-impl<F> CenterShiftProvider<Barycentric, Plutocentric, F> for ()
-where
-    F: affn::ReferenceFrame,
-    (): FrameRotationProvider<EclipticMeanJ2000, F>,
-{
-    #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-        jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
-        inverse_shift::<Barycentric, Plutocentric, F, Eph, Eop, Nut>(jd, ctx)
-    }
-}
+impl_reverse_center_shifts!(Plutocentric);
 
-impl<F> CenterShiftProvider<Heliocentric, Plutocentric, F> for ()
-where
-    F: affn::ReferenceFrame,
-    (): FrameRotationProvider<EclipticMeanJ2000, F>,
-{
-    #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-        jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
-        compose_shift::<Heliocentric, Barycentric, Plutocentric, F, Eph, Eop, Nut>(jd, ctx)
-    }
-}
+// ---------------------------------------------------------------------------
+// Moon (Selenocentric)
+// ---------------------------------------------------------------------------
 
-impl<F> CenterShiftProvider<Plutocentric, Heliocentric, F> for ()
-where
-    F: affn::ReferenceFrame,
-    (): FrameRotationProvider<EclipticMeanJ2000, F>,
-{
-    #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-        jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
-        inverse_shift::<Plutocentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
-    }
-}
-
-impl<F> CenterShiftProvider<Geocentric, Plutocentric, F> for ()
-where
-    F: affn::ReferenceFrame,
-    (): FrameRotationProvider<EclipticMeanJ2000, F>,
-{
-    #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-        jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
-        compose_shift::<Geocentric, Barycentric, Plutocentric, F, Eph, Eop, Nut>(jd, ctx)
-    }
-}
-
-impl<F> CenterShiftProvider<Plutocentric, Geocentric, F> for ()
-where
-    F: affn::ReferenceFrame,
-    (): FrameRotationProvider<EclipticMeanJ2000, F>,
-{
-    #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-        jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
-        inverse_shift::<Plutocentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
-    }
-}
-
+/// Selenocentric → Barycentric shift.
+///
+/// The Moon's geocentric position (in km) is converted to AU using
+/// `qtty`'s typed unit conversion, then added to the Earth's barycentric
+/// position (already in AU).
 impl<F> CenterShiftProvider<Selenocentric, Barycentric, F> for ()
 where
     F: affn::ReferenceFrame,
@@ -215,19 +121,44 @@ where
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
-        let moon_geo = Eph::moon_geocentric(jd);
+        let moon_geo_au = Eph::moon_geocentric(jd).to_unit::<qtty::AstronomicalUnit>();
         let earth_bary = Eph::earth_barycentric(jd);
-        let km_per_au = 149_597_870.7;
+        // Combine geocentric Moon (now in AU) with Earth's barycentric offset
+        // using AU quantity arithmetic — no raw f64 or magic constants needed.
+        let seleno_bary = Position::<Barycentric, EclipticMeanJ2000, qtty::AstronomicalUnit>::new(
+            moon_geo_au.x() + earth_bary.x(),
+            moon_geo_au.y() + earth_bary.y(),
+            moon_geo_au.z() + earth_bary.z(),
+        );
 
-        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(
-            [
-                moon_geo.x().value() / km_per_au + earth_bary.x().value(),
-                moon_geo.y().value() / km_per_au + earth_bary.y().value(),
-                moon_geo.z().value() / km_per_au + earth_bary.z().value(),
-            ],
-            jd,
-            ctx,
-        )
+        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(seleno_bary, jd, ctx)
+    }
+}
+
+/// Geocentric → Selenocentric override (direct, avoids double composition).
+///
+/// Negates the Moon's geocentric position in AU directly, which is more
+/// efficient than routing through Barycentric.
+impl<F> CenterShiftProvider<Geocentric, Selenocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    #[inline]
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> [f64; 3] {
+        let moon_geo_au = Eph::moon_geocentric(jd).to_unit::<qtty::AstronomicalUnit>();
+        // The Geo→Seleno shift is the negated Moon geocentric position:
+        // to move from Earth-centred to Moon-centred, subtract moon's location.
+        let geo_to_seleno = Position::<Geocentric, EclipticMeanJ2000, qtty::AstronomicalUnit>::new(
+            -moon_geo_au.x(),
+            -moon_geo_au.y(),
+            -moon_geo_au.z(),
+        );
+
+        rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(geo_to_seleno, jd, ctx)
     }
 }
 
@@ -273,31 +204,7 @@ where
     }
 }
 
-impl<F> CenterShiftProvider<Geocentric, Selenocentric, F> for ()
-where
-    F: affn::ReferenceFrame,
-    (): FrameRotationProvider<EclipticMeanJ2000, F>,
-{
-    #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
-        jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
-    ) -> [f64; 3] {
-        let moon_geo = Eph::moon_geocentric(jd);
-        let km_per_au = 149_597_870.7;
-
-        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(
-            [
-                -moon_geo.x().value() / km_per_au,
-                -moon_geo.y().value() / km_per_au,
-                -moon_geo.z().value() / km_per_au,
-            ],
-            jd,
-            ctx,
-        )
-    }
-}
-
+/// Selenocentric → Geocentric override (inverse of the direct Geo→Seleno).
 impl<F> CenterShiftProvider<Selenocentric, Geocentric, F> for ()
 where
     F: affn::ReferenceFrame,

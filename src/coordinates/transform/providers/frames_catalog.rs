@@ -1,6 +1,15 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Frame-rotation providers for **catalog coordinate systems**.
+//!
+//! - **Galactic ↔ ICRS**: constant rotation matrix from the IAU 1958
+//!   Galactic pole direction (l_NCP, b_NCP).
+//! - **FK4 B1950 ↔ ICRS**: the classical FK4→FK5 rotation combined with
+//!   the ICRS↔J2000 frame bias.
+//!
+//! Both frames are epoch-independent (constant rotation).
+
 use super::*;
 
 const GALACTIC_TO_ICRS: Rotation3 = Rotation3::from_matrix([
