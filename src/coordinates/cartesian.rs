@@ -31,6 +31,8 @@ pub mod direction {
     pub type EclipticMeanJ2000 = Direction<frames::EclipticMeanJ2000>;
     /// **Equatorial mean J2000** cartesian direction (unit vector).
     pub type EquatorialMeanJ2000 = Direction<frames::EquatorialMeanJ2000>;
+    /// **EME2000** cartesian direction (unit vector).
+    pub type EME2000 = Direction<frames::EME2000>;
     /// **Equatorial mean of date** cartesian direction (unit vector).
     pub type EquatorialMeanOfDate = Direction<frames::EquatorialMeanOfDate>;
     /// **Equatorial true of date** cartesian direction (unit vector).
@@ -69,6 +71,8 @@ pub mod displacement {
     pub type EclipticMeanJ2000<U> = Displacement<frames::EclipticMeanJ2000, U>;
     /// **Equatorial mean J2000** displacement vector.
     pub type EquatorialMeanJ2000<U> = Displacement<frames::EquatorialMeanJ2000, U>;
+    /// **EME2000** displacement vector.
+    pub type EME2000<U> = Displacement<frames::EME2000, U>;
     /// **Equatorial mean of date** displacement vector.
     pub type EquatorialMeanOfDate<U> = Displacement<frames::EquatorialMeanOfDate, U>;
     /// **Equatorial true of date** displacement vector.
@@ -99,6 +103,8 @@ pub mod position {
     /// **Geocentric Equatorial mean J2000** cartesian position.
     pub type EquatorialMeanJ2000<U, C = centers::Geocentric> =
         Position<C, frames::EquatorialMeanJ2000, U>;
+    /// **Geocentric EME2000** cartesian position.
+    pub type EME2000<U, C = centers::Geocentric> = Position<C, frames::EME2000, U>;
     /// **Geocentric Equatorial mean of date** cartesian position.
     pub type EquatorialMeanOfDate<U, C = centers::Geocentric> =
         Position<C, frames::EquatorialMeanOfDate, U>;
@@ -185,6 +191,8 @@ pub mod velocity {
     pub type EclipticMeanJ2000<U> = Velocity<frames::EclipticMeanJ2000, U>;
     /// **Equatorial mean J2000** cartesian velocity vector.
     pub type EquatorialMeanJ2000<U> = Velocity<frames::EquatorialMeanJ2000, U>;
+    /// **EME2000** cartesian velocity vector.
+    pub type EME2000<U> = Velocity<frames::EME2000, U>;
     /// **Equatorial mean of date** cartesian velocity vector.
     pub type EquatorialMeanOfDate<U> = Velocity<frames::EquatorialMeanOfDate, U>;
     /// **Equatorial true of date** cartesian velocity vector.
