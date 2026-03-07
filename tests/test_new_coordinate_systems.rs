@@ -12,7 +12,7 @@ use siderust::coordinates::{
     spherical,
     transform::{
         providers::{center_shift, frame_rotation},
-        AstroContext,
+        AstroContext, TransformCenter,
     },
 };
 use siderust::time::JulianDate;
@@ -240,6 +240,113 @@ fn gcrs_to_icrs_is_near_identity() {
 }
 
 // =============================================================================
+// Frame Rotation Tests: EME2000 / CIO / Earth-fixed Chain
+// =============================================================================
+
+#[test]
+fn eme2000_is_alias_frame_with_explicit_marker() {
+    let ctx = AstroContext::default();
+    let jd = JulianDate::new(2_460_000.5);
+
+    let r = frame_rotation::<EME2000, EquatorialMeanJ2000>(jd, &ctx);
+    let v = [0.2, -0.4, 0.9];
+    let out = r.apply_array(v);
+
+    assert!((out[0] - v[0]).abs() < EPSILON);
+    assert!((out[1] - v[1]).abs() < EPSILON);
+    assert!((out[2] - v[2]).abs() < EPSILON);
+}
+
+#[test]
+fn eme2000_to_icrs_roundtrip() {
+    let ctx = AstroContext::default();
+    let jd = JulianDate::new(2_460_000.5);
+
+    let r = frame_rotation::<EME2000, ICRS>(jd, &ctx);
+    let rinv = frame_rotation::<ICRS, EME2000>(jd, &ctx);
+    let v = [0.4, 0.3, 0.866_025_403_784];
+    let roundtrip = rinv.apply_array(r.apply_array(v));
+
+    assert!((roundtrip[0] - v[0]).abs() < EPSILON);
+    assert!((roundtrip[1] - v[1]).abs() < EPSILON);
+    assert!((roundtrip[2] - v[2]).abs() < EPSILON);
+}
+
+#[test]
+fn gcrs_cirs_roundtrip() {
+    let ctx = AstroContext::default();
+    let jd = JulianDate::new(2_460_000.5);
+
+    let r = frame_rotation::<GCRS, CIRS>(jd, &ctx);
+    let rinv = frame_rotation::<CIRS, GCRS>(jd, &ctx);
+    let v = [0.3, -0.7, 0.644_204_936];
+    let roundtrip = rinv.apply_array(r.apply_array(v));
+
+    assert!((roundtrip[0] - v[0]).abs() < EPSILON);
+    assert!((roundtrip[1] - v[1]).abs() < EPSILON);
+    assert!((roundtrip[2] - v[2]).abs() < EPSILON);
+}
+
+#[test]
+fn cirs_tirs_roundtrip() {
+    let ctx = AstroContext::default();
+    let jd = JulianDate::new(2_460_000.5);
+
+    let r = frame_rotation::<CIRS, TIRS>(jd, &ctx);
+    let rinv = frame_rotation::<TIRS, CIRS>(jd, &ctx);
+    let v = [0.1, 0.8, -0.591_607_978];
+    let roundtrip = rinv.apply_array(r.apply_array(v));
+
+    assert!((roundtrip[0] - v[0]).abs() < EPSILON);
+    assert!((roundtrip[1] - v[1]).abs() < EPSILON);
+    assert!((roundtrip[2] - v[2]).abs() < EPSILON);
+}
+
+#[test]
+fn tirs_itrf_roundtrip() {
+    let ctx = AstroContext::default();
+    let jd = JulianDate::new(2_460_000.5);
+
+    let r = frame_rotation::<TIRS, ITRF>(jd, &ctx);
+    let rinv = frame_rotation::<ITRF, TIRS>(jd, &ctx);
+    let v = [0.6, -0.2, 0.774_596_669_241];
+    let roundtrip = rinv.apply_array(r.apply_array(v));
+
+    assert!((roundtrip[0] - v[0]).abs() < EPSILON);
+    assert!((roundtrip[1] - v[1]).abs() < EPSILON);
+    assert!((roundtrip[2] - v[2]).abs() < EPSILON);
+}
+
+#[test]
+fn itrf_to_icrs_roundtrip() {
+    let ctx = AstroContext::default();
+    let jd = JulianDate::new(2_460_000.5);
+
+    let r = frame_rotation::<ITRF, ICRS>(jd, &ctx);
+    let rinv = frame_rotation::<ICRS, ITRF>(jd, &ctx);
+    let v = [0.5, 0.4, 0.768_114_574_787];
+    let roundtrip = rinv.apply_array(r.apply_array(v));
+
+    assert!((roundtrip[0] - v[0]).abs() < 1e-9);
+    assert!((roundtrip[1] - v[1]).abs() < 1e-9);
+    assert!((roundtrip[2] - v[2]).abs() < 1e-9);
+}
+
+#[test]
+fn ecef_tracks_itrf_in_provider_layer() {
+    let ctx = AstroContext::default();
+    let jd = JulianDate::new(2_460_000.5);
+
+    let r = frame_rotation::<ECEF, ITRF>(jd, &ctx);
+    let v = [0.2, 0.9, -0.387_298_334_621];
+    let out = r.apply_array(v);
+
+    assert!((out[0] - v[0]).abs() < EPSILON);
+    assert!((out[1] - v[1]).abs() < EPSILON);
+    assert!((out[2] - v[2]).abs() < EPSILON);
+}
+
+// =============================================================================
 // Frame Rotation Tests: Planetary Body-Fixed
 // =============================================================================
 
@@ -330,6 +437,20 @@ fn body_fixed_rotation_varies_with_time() {
 // =============================================================================
 // Center Shift Tests: Planetocentric
 // =============================================================================
+
+#[test]
+fn standard_center_shift_roundtrip_in_itrf() {
+    let jd = JulianDate::new(2_460_000.5);
+
+    let bary = cartesian::Position::<Barycentric, ITRF, AstronomicalUnit>::new(0.4, -0.2, 0.7);
+    let geo: cartesian::Position<Geocentric, ITRF, AstronomicalUnit> = bary.to_center(jd);
+    let recovered: cartesian::Position<Barycentric, ITRF, AstronomicalUnit> = geo.to_center(jd);
+    let diff = bary - recovered;
+
+    assert!(diff.x().value().abs() < 1e-9);
+    assert!(diff.y().value().abs() < 1e-9);
+    assert!(diff.z().value().abs() < 1e-9);
+}
 
 #[test]
 fn planetocentric_to_bary_antisymmetry() {

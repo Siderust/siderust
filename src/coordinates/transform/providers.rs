@@ -50,7 +50,10 @@
 //! );
 //! ```
 
+use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
+use crate::astro::earth_rotation_provider::nutation_with_celestial_pole_offsets;
 use crate::astro::eop::EopProvider;
+use crate::astro::{cio, era, polar_motion};
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::transform::context::AstroContext;
 use crate::time::JulianDate;
@@ -147,7 +150,7 @@ pub trait CenterShiftProvider<C1, C2, F> {
     /// A 3-element array `[x, y, z]` representing the shift in frame `F`,
     /// in astronomical units (AU). The caller should convert to the
     /// appropriate unit if needed.
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3];
@@ -161,7 +164,8 @@ use crate::astro::nutation;
 use crate::astro::precession;
 use crate::coordinates::centers::{Barycentric, Geocentric, Heliocentric};
 use crate::coordinates::frames::{
-    EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRF, ICRS,
+    EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, EME2000,
+    ICRF, ICRS,
 };
 
 /// Identity rotation: same frame to same frame.
@@ -185,7 +189,7 @@ where
     F: affn::ReferenceFrame,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -227,6 +231,66 @@ const FRAME_BIAS_ICRS_TO_J2000: Rotation3 = Rotation3::from_matrix([
         0.999_999_999_999_993_2,
     ],
 ]);
+
+/// Direct GCRS → CIRS rotation from the IAU 2000/2006 CIO-based chain.
+#[inline]
+fn gcrs_to_cirs_rotation<Eph, Eop: EopProvider, Nut>(
+    jd: JulianDate,
+    ctx: &AstroContext<Eph, Eop, Nut>,
+) -> Rotation3 {
+    let eop = ctx.eop_at(jd);
+    let (dpsi, deps) = nutation_with_celestial_pole_offsets(jd, eop);
+    let cip = cio::cip_cio(jd, dpsi, deps);
+    cio::gcrs_to_cirs_matrix(cip.x, cip.y, cip.s)
+}
+
+/// Direct CIRS → TIRS rotation from the Earth Rotation Angle.
+#[inline]
+fn cirs_to_tirs_rotation<Eph, Eop: EopProvider, Nut>(
+    jd: JulianDate,
+    ctx: &AstroContext<Eph, Eop, Nut>,
+) -> Rotation3 {
+    let eop = ctx.eop_at(jd);
+    let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
+    Rotation3::rz(-era::earth_rotation_angle(jd_ut1))
+}
+
+/// Direct TIRS → ITRF rotation from polar motion.
+#[inline]
+fn tirs_to_itrf_rotation<Eph, Eop: EopProvider, Nut>(
+    jd: JulianDate,
+    ctx: &AstroContext<Eph, Eop, Nut>,
+) -> Rotation3 {
+    let eop = ctx.eop_at(jd);
+    polar_motion::polar_motion_matrix_from_eop(eop.xp, eop.yp, jd)
+}
+
+/// Composes `SRC -> ICRS -> DST`.
+macro_rules! impl_via_icrs_bidirectional {
+    ($src:ty, $dst:ty) => {
+        impl FrameRotationProvider<$src, $dst> for () {
+            #[inline]
+            fn rotation<Eph, Eop: EopProvider, Nut>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop, Nut>,
+            ) -> Rotation3 {
+                let r1 = <() as FrameRotationProvider<$src, ICRS>>::rotation(jd, ctx);
+                let r2 = <() as FrameRotationProvider<ICRS, $dst>>::rotation(jd, ctx);
+                r2 * r1
+            }
+        }
+
+        impl FrameRotationProvider<$dst, $src> for () {
+            #[inline]
+            fn rotation<Eph, Eop: EopProvider, Nut>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop, Nut>,
+            ) -> Rotation3 {
+                <() as FrameRotationProvider<$src, $dst>>::rotation(jd, ctx).inverse()
+            }
+        }
+    };
+}
 
 /// ICRS → EclipticMeanJ2000 rotation (J2000 mean ecliptic).
 ///
@@ -275,6 +339,163 @@ impl FrameRotationProvider<EquatorialMeanJ2000, ICRS> for () {
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
         FRAME_BIAS_ICRS_TO_J2000.inverse()
+    }
+}
+
+/// EME2000 → EquatorialMeanJ2000 rotation.
+///
+/// `EME2000` is treated as the CCSDS naming variant of the FK5/J2000
+/// mean-equator, mean-equinox frame.
+impl FrameRotationProvider<EME2000, EquatorialMeanJ2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        _jd: JulianDate,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        Rotation3::IDENTITY
+    }
+}
+
+/// EquatorialMeanJ2000 → EME2000 rotation.
+impl FrameRotationProvider<EquatorialMeanJ2000, EME2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EME2000, EquatorialMeanJ2000>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// EME2000 → ICRS rotation.
+impl FrameRotationProvider<EME2000, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EquatorialMeanJ2000, ICRS>>::rotation(jd, ctx)
+    }
+}
+
+/// ICRS → EME2000 rotation.
+impl FrameRotationProvider<ICRS, EME2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation(jd, ctx)
+    }
+}
+
+/// EME2000 → EclipticMeanJ2000 rotation.
+impl FrameRotationProvider<EME2000, EclipticMeanJ2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EquatorialMeanJ2000, EclipticMeanJ2000>>::rotation(jd, ctx)
+    }
+}
+
+/// EclipticMeanJ2000 → EME2000 rotation.
+impl FrameRotationProvider<EclipticMeanJ2000, EME2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EME2000, EclipticMeanJ2000>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// EME2000 → EquatorialMeanOfDate rotation.
+impl FrameRotationProvider<EME2000, EquatorialMeanOfDate> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EquatorialMeanJ2000, EquatorialMeanOfDate>>::rotation(jd, ctx)
+    }
+}
+
+/// EquatorialMeanOfDate → EME2000 rotation.
+impl FrameRotationProvider<EquatorialMeanOfDate, EME2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EME2000, EquatorialMeanOfDate>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// EME2000 → EquatorialTrueOfDate rotation.
+impl FrameRotationProvider<EME2000, EquatorialTrueOfDate> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EquatorialMeanJ2000, EquatorialTrueOfDate>>::rotation(jd, ctx)
+    }
+}
+
+/// EquatorialTrueOfDate → EME2000 rotation.
+impl FrameRotationProvider<EquatorialTrueOfDate, EME2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EME2000, EquatorialTrueOfDate>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// EME2000 → ICRF rotation.
+impl FrameRotationProvider<EME2000, ICRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EquatorialMeanJ2000, ICRF>>::rotation(jd, ctx)
+    }
+}
+
+/// ICRF → EME2000 rotation.
+impl FrameRotationProvider<ICRF, EME2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EME2000, ICRF>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// EME2000 → GCRS rotation.
+impl FrameRotationProvider<EME2000, GCRSFrame> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EquatorialMeanJ2000, GCRSFrame>>::rotation(jd, ctx)
+    }
+}
+
+/// GCRS → EME2000 rotation.
+impl FrameRotationProvider<GCRSFrame, EME2000> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<EME2000, GCRSFrame>>::rotation(jd, ctx).inverse()
     }
 }
 
@@ -576,32 +797,52 @@ impl FrameRotationProvider<EquatorialTrueOfDate, ICRF> for () {
 // Center Shift Implementations (Hub: Barycentric)
 // =============================================================================
 
+#[inline]
+fn rotate_shift_from_ecliptic<F, Eph, Eop: EopProvider, Nut>(
+    shift_ecl: [f64; 3],
+    jd: JulianDate,
+    ctx: &AstroContext<Eph, Eop, Nut>,
+) -> [f64; 3]
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    let rot = <() as FrameRotationProvider<EclipticMeanJ2000, F>>::rotation(jd, ctx);
+    rot.apply_array(shift_ecl)
+}
+
 /// Heliocentric → Barycentric shift.
 ///
 /// Returns the position of the Sun in barycentric coordinates.
 /// Uses the active ephemeris backend for the Sun's position.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Barycentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Heliocentric, Barycentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
-        // Get Sun's position in barycentric ecliptic coordinates
         let sun_bary = Eph::sun_barycentric(jd);
-
-        // The shift is the Sun's position (in AU)
-        [
+        let shift_ecl = [
             sun_bary.x().value(),
             sun_bary.y().value(),
             sun_bary.z().value(),
-        ]
+        ];
+        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(shift_ecl, jd, ctx)
     }
 }
 
 /// Barycentric → Heliocentric shift.
 ///
 /// Returns the negation of the Sun's barycentric position.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Heliocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Barycentric, Heliocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -614,26 +855,32 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Heliocentric, F> 
 ///
 /// Returns the position of the Earth in barycentric coordinates.
 /// Uses the active ephemeris backend for the Earth's position.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Barycentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Geocentric, Barycentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
-        // Get Earth's position in barycentric ecliptic coordinates
         let earth_bary = Eph::earth_barycentric(jd);
-
-        // The shift is the Earth's position (in AU)
-        [
+        let shift_ecl = [
             earth_bary.x().value(),
             earth_bary.y().value(),
             earth_bary.z().value(),
-        ]
+        ];
+        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(shift_ecl, jd, ctx)
     }
 }
 
 /// Barycentric → Geocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Geocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Barycentric, Geocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -645,8 +892,12 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Geocentric, F> fo
 /// Heliocentric → Geocentric shift.
 ///
 /// Composed via Barycentric hub.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Geocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Heliocentric, Geocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -659,8 +910,12 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Geocentric, F> f
 }
 
 /// Geocentric → Heliocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Heliocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Geocentric, Heliocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -766,6 +1021,240 @@ impl FrameRotationProvider<EclipticMeanJ2000, GCRSFrame> for () {
         <() as FrameRotationProvider<EclipticMeanJ2000, ICRS>>::rotation(jd, ctx)
     }
 }
+
+// =============================================================================
+// CIO / Earth-Rotation Chain Frames
+// =============================================================================
+
+use crate::coordinates::frames::{CIRS, ECEF, ITRF, TIRS};
+
+/// GCRS → CIRS rotation.
+impl FrameRotationProvider<GCRSFrame, CIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        gcrs_to_cirs_rotation(jd, ctx)
+    }
+}
+
+/// CIRS → GCRS rotation.
+impl FrameRotationProvider<CIRS, GCRSFrame> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<GCRSFrame, CIRS>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// CIRS → TIRS rotation.
+impl FrameRotationProvider<CIRS, TIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        cirs_to_tirs_rotation(jd, ctx)
+    }
+}
+
+/// TIRS → CIRS rotation.
+impl FrameRotationProvider<TIRS, CIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<CIRS, TIRS>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// TIRS → ITRF rotation.
+impl FrameRotationProvider<TIRS, ITRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        tirs_to_itrf_rotation(jd, ctx)
+    }
+}
+
+/// ITRF → TIRS rotation.
+impl FrameRotationProvider<ITRF, TIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<TIRS, ITRF>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// ITRF → ECEF rotation.
+///
+/// The provider layer treats `ECEF` as an operational alias of the current
+/// ITRF axes so Earth-fixed Cartesian vectors can participate in the same
+/// time-dependent rotation chain. The geodetic distinction remains encoded
+/// in the associated ellipsoid (`WGS84` for `ECEF`, `GRS80` for `ITRF`).
+impl FrameRotationProvider<ITRF, ECEF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        _jd: JulianDate,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        Rotation3::IDENTITY
+    }
+}
+
+/// ECEF → ITRF rotation.
+impl FrameRotationProvider<ECEF, ITRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<ITRF, ECEF>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// ICRS → CIRS rotation.
+impl FrameRotationProvider<ICRS, CIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<GCRSFrame, CIRS>>::rotation(jd, ctx)
+    }
+}
+
+/// CIRS → ICRS rotation.
+impl FrameRotationProvider<CIRS, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, CIRS>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// ICRS → TIRS rotation.
+impl FrameRotationProvider<ICRS, TIRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        let r1 = <() as FrameRotationProvider<ICRS, CIRS>>::rotation(jd, ctx);
+        let r2 = <() as FrameRotationProvider<CIRS, TIRS>>::rotation(jd, ctx);
+        r2 * r1
+    }
+}
+
+/// TIRS → ICRS rotation.
+impl FrameRotationProvider<TIRS, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, TIRS>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// ICRS → ITRF rotation.
+impl FrameRotationProvider<ICRS, ITRF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        let r1 = <() as FrameRotationProvider<ICRS, TIRS>>::rotation(jd, ctx);
+        let r2 = <() as FrameRotationProvider<TIRS, ITRF>>::rotation(jd, ctx);
+        r2 * r1
+    }
+}
+
+/// ITRF → ICRS rotation.
+impl FrameRotationProvider<ITRF, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, ITRF>>::rotation(jd, ctx).inverse()
+    }
+}
+
+/// ICRS → ECEF rotation.
+impl FrameRotationProvider<ICRS, ECEF> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, ITRF>>::rotation(jd, ctx)
+    }
+}
+
+/// ECEF → ICRS rotation.
+impl FrameRotationProvider<ECEF, ICRS> for () {
+    #[inline]
+    fn rotation<Eph, Eop: EopProvider, Nut>(
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop, Nut>,
+    ) -> Rotation3 {
+        <() as FrameRotationProvider<ICRS, ECEF>>::rotation(jd, ctx).inverse()
+    }
+}
+
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, CIRS);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, CIRS);
+impl_via_icrs_bidirectional!(EME2000, CIRS);
+impl_via_icrs_bidirectional!(EquatorialMeanOfDate, CIRS);
+impl_via_icrs_bidirectional!(EquatorialTrueOfDate, CIRS);
+impl_via_icrs_bidirectional!(ICRF, CIRS);
+impl_via_icrs_bidirectional!(TEME, CIRS);
+impl_via_icrs_bidirectional!(Galactic, CIRS);
+impl_via_icrs_bidirectional!(FK4B1950, CIRS);
+
+impl_via_icrs_bidirectional!(GCRSFrame, TIRS);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, TIRS);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, TIRS);
+impl_via_icrs_bidirectional!(EME2000, TIRS);
+impl_via_icrs_bidirectional!(EquatorialMeanOfDate, TIRS);
+impl_via_icrs_bidirectional!(EquatorialTrueOfDate, TIRS);
+impl_via_icrs_bidirectional!(ICRF, TIRS);
+impl_via_icrs_bidirectional!(TEME, TIRS);
+impl_via_icrs_bidirectional!(Galactic, TIRS);
+impl_via_icrs_bidirectional!(FK4B1950, TIRS);
+
+impl_via_icrs_bidirectional!(GCRSFrame, ITRF);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, ITRF);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, ITRF);
+impl_via_icrs_bidirectional!(EME2000, ITRF);
+impl_via_icrs_bidirectional!(EquatorialMeanOfDate, ITRF);
+impl_via_icrs_bidirectional!(EquatorialTrueOfDate, ITRF);
+impl_via_icrs_bidirectional!(ICRF, ITRF);
+impl_via_icrs_bidirectional!(TEME, ITRF);
+impl_via_icrs_bidirectional!(Galactic, ITRF);
+impl_via_icrs_bidirectional!(FK4B1950, ITRF);
+
+impl_via_icrs_bidirectional!(GCRSFrame, ECEF);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, ECEF);
+impl_via_icrs_bidirectional!(EquatorialMeanJ2000, ECEF);
+impl_via_icrs_bidirectional!(EME2000, ECEF);
+impl_via_icrs_bidirectional!(EquatorialMeanOfDate, ECEF);
+impl_via_icrs_bidirectional!(EquatorialTrueOfDate, ECEF);
+impl_via_icrs_bidirectional!(ICRF, ECEF);
+impl_via_icrs_bidirectional!(TEME, ECEF);
+impl_via_icrs_bidirectional!(Galactic, ECEF);
+impl_via_icrs_bidirectional!(FK4B1950, ECEF);
 
 // =============================================================================
 // Galactic ↔ ICRS Frame Rotation (IAU 1958)
@@ -1118,6 +1607,26 @@ impl_body_fixed_rotation!(UranusFixed, crate::bodies::solar_system::Uranus);
 impl_body_fixed_rotation!(NeptuneFixed, crate::bodies::solar_system::Neptune);
 impl_body_fixed_rotation!(PlutoFixed, crate::bodies::solar_system::Pluto);
 
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, MercuryFixed);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, VenusFixed);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, MarsFixed);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, MoonPrincipalAxes);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, JupiterSystemIII);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, SaturnFixed);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, UranusFixed);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, NeptuneFixed);
+impl_via_icrs_bidirectional!(EclipticMeanJ2000, PlutoFixed);
+
+impl_via_icrs_bidirectional!(EME2000, MercuryFixed);
+impl_via_icrs_bidirectional!(EME2000, VenusFixed);
+impl_via_icrs_bidirectional!(EME2000, MarsFixed);
+impl_via_icrs_bidirectional!(EME2000, MoonPrincipalAxes);
+impl_via_icrs_bidirectional!(EME2000, JupiterSystemIII);
+impl_via_icrs_bidirectional!(EME2000, SaturnFixed);
+impl_via_icrs_bidirectional!(EME2000, UranusFixed);
+impl_via_icrs_bidirectional!(EME2000, NeptuneFixed);
+impl_via_icrs_bidirectional!(EME2000, PlutoFixed);
+
 // =============================================================================
 // Planetocentric Center Shift Implementations
 // =============================================================================
@@ -1133,23 +1642,32 @@ use crate::coordinates::centers::{
 macro_rules! impl_planet_center_shift_vsop {
     ($center:ty, $planet_ty:path) => {
         /// Planetocentric → Barycentric shift.
-        impl<F: affn::ReferenceFrame> CenterShiftProvider<$center, Barycentric, F> for () {
-            fn shift<Eph: Ephemeris, Eop, Nut>(
+        impl<F> CenterShiftProvider<$center, Barycentric, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
-                _ctx: &AstroContext<Eph, Eop, Nut>,
+                ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> [f64; 3] {
                 let bary_pos = <$planet_ty>::vsop87e(jd);
-                [
+                let shift_ecl = [
                     bary_pos.x().value(),
                     bary_pos.y().value(),
                     bary_pos.z().value(),
-                ]
+                ];
+                rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(shift_ecl, jd, ctx)
             }
         }
 
         /// Barycentric → Planetocentric shift.
-        impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, $center, F> for () {
-            fn shift<Eph: Ephemeris, Eop, Nut>(
+        impl<F> CenterShiftProvider<Barycentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> [f64; 3] {
@@ -1160,8 +1678,12 @@ macro_rules! impl_planet_center_shift_vsop {
         }
 
         /// Heliocentric → Planetocentric shift (via Barycentric hub).
-        impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, $center, F> for () {
-            fn shift<Eph: Ephemeris, Eop, Nut>(
+        impl<F> CenterShiftProvider<Heliocentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> [f64; 3] {
@@ -1174,8 +1696,12 @@ macro_rules! impl_planet_center_shift_vsop {
         }
 
         /// Planetocentric → Heliocentric shift.
-        impl<F: affn::ReferenceFrame> CenterShiftProvider<$center, Heliocentric, F> for () {
-            fn shift<Eph: Ephemeris, Eop, Nut>(
+        impl<F> CenterShiftProvider<$center, Heliocentric, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> [f64; 3] {
@@ -1186,8 +1712,12 @@ macro_rules! impl_planet_center_shift_vsop {
         }
 
         /// Geocentric → Planetocentric shift (via Barycentric hub).
-        impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, $center, F> for () {
-            fn shift<Eph: Ephemeris, Eop, Nut>(
+        impl<F> CenterShiftProvider<Geocentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> [f64; 3] {
@@ -1200,8 +1730,12 @@ macro_rules! impl_planet_center_shift_vsop {
         }
 
         /// Planetocentric → Geocentric shift.
-        impl<F: affn::ReferenceFrame> CenterShiftProvider<$center, Geocentric, F> for () {
-            fn shift<Eph: Ephemeris, Eop, Nut>(
+        impl<F> CenterShiftProvider<$center, Geocentric, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> [f64; 3] {
@@ -1226,28 +1760,36 @@ impl_planet_center_shift_vsop!(Neptunocentric, crate::bodies::solar_system::Nept
 /// produce heliocentric coordinates, then shifts by the Sun's barycentric
 /// offset. This preserves existing behavior until a dedicated
 /// `solar_system::Pluto` barycentric ephemeris method is added.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Plutocentric, Barycentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Plutocentric, Barycentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
         use crate::bodies::solar_system;
 
         let helio_pos = solar_system::PLUTO.orbit.kepler_position(jd);
-        let [sx, sy, sz] =
-            <() as CenterShiftProvider<Heliocentric, Barycentric, F>>::shift(jd, ctx);
+        let sun_bary = Eph::sun_barycentric(jd);
 
-        [
-            helio_pos.x().value() + sx,
-            helio_pos.y().value() + sy,
-            helio_pos.z().value() + sz,
-        ]
+        let shift_ecl = [
+            helio_pos.x().value() + sun_bary.x().value(),
+            helio_pos.y().value() + sun_bary.y().value(),
+            helio_pos.z().value() + sun_bary.z().value(),
+        ];
+        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(shift_ecl, jd, ctx)
     }
 }
 
 /// Barycentric → Plutocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Plutocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Barycentric, Plutocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -1257,8 +1799,12 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Plutocentric, F> 
 }
 
 /// Heliocentric → Plutocentric shift (via Barycentric hub).
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Plutocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Heliocentric, Plutocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -1271,8 +1817,12 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Plutocentric, F>
 }
 
 /// Plutocentric → Heliocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Plutocentric, Heliocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Plutocentric, Heliocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -1282,8 +1832,12 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Plutocentric, Heliocentric, F>
 }
 
 /// Geocentric → Plutocentric shift (via Barycentric hub).
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Plutocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Geocentric, Plutocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -1295,8 +1849,12 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Plutocentric, F> f
 }
 
 /// Plutocentric → Geocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Plutocentric, Geocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Plutocentric, Geocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -1310,8 +1868,12 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Plutocentric, Geocentric, F> f
 /// The Moon's position is obtained from the ephemeris (geocentric ecliptic),
 /// then combined with Earth's barycentric position to get the Moon's
 /// barycentric position.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Selenocentric, Barycentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Selenocentric, Barycentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -1324,16 +1886,25 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Selenocentric, Barycentric, F>
         let moon_z = moon_geo.z().value() / km_per_au;
 
         // Earth's barycentric position
-        let [ex, ey, ez] = <() as CenterShiftProvider<Geocentric, Barycentric, F>>::shift(jd, ctx);
+        let earth_bary = Eph::earth_barycentric(jd);
 
         // Moon barycentric = Moon geocentric + Earth barycentric
-        [moon_x + ex, moon_y + ey, moon_z + ez]
+        let shift_ecl = [
+            moon_x + earth_bary.x().value(),
+            moon_y + earth_bary.y().value(),
+            moon_z + earth_bary.z().value(),
+        ];
+        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(shift_ecl, jd, ctx)
     }
 }
 
 /// Barycentric → Selenocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Selenocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Barycentric, Selenocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -1343,8 +1914,12 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Barycentric, Selenocentric, F>
 }
 
 /// Heliocentric → Selenocentric shift (via Barycentric hub).
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Selenocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Heliocentric, Selenocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -1357,8 +1932,12 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Heliocentric, Selenocentric, F
 }
 
 /// Selenocentric → Heliocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Selenocentric, Heliocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Selenocentric, Heliocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
@@ -1373,26 +1952,35 @@ impl<F: affn::ReferenceFrame> CenterShiftProvider<Selenocentric, Heliocentric, F
 /// gives us the Earth→Moon vector. The shift from Geo→Seleno is the
 /// position of Earth's centre in Selenocentric (Moon-centred) coordinates,
 /// which is the negative of the Moon's geocentric position.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Geocentric, Selenocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Geocentric, Selenocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
         let moon_geo = Eph::moon_geocentric(jd);
         let km_per_au = 149_597_870.7;
         // Shift = position of Geocentric origin (Earth) in Selenocentric (Moon) frame
         // = -(Moon position relative to Earth)
-        [
+        let shift_ecl = [
             -moon_geo.x().value() / km_per_au,
             -moon_geo.y().value() / km_per_au,
             -moon_geo.z().value() / km_per_au,
-        ]
+        ];
+        rotate_shift_from_ecliptic::<F, Eph, Eop, Nut>(shift_ecl, jd, ctx)
     }
 }
 
 /// Selenocentric → Geocentric shift.
-impl<F: affn::ReferenceFrame> CenterShiftProvider<Selenocentric, Geocentric, F> for () {
-    fn shift<Eph: Ephemeris, Eop, Nut>(
+impl<F> CenterShiftProvider<Selenocentric, Geocentric, F> for ()
+where
+    F: affn::ReferenceFrame,
+    (): FrameRotationProvider<EclipticMeanJ2000, F>,
+{
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [f64; 3] {
