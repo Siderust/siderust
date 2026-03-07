@@ -58,11 +58,16 @@ pub extern "C" fn siderust_target_create(
 /// Free a target handle created by [`siderust_target_create`].
 ///
 /// # Safety
-/// The handle must not be used after this call.
+///
+/// * `handle` must have been allocated by [`siderust_target_create`].
+/// * The handle must not have been freed before, and must not be used after
+///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_target_free(handle: *mut SiderustTarget) {
     if !handle.is_null() {
-        drop(Box::from_raw(handle));
+        // SAFETY: caller guarantees the handle was allocated by
+        // `siderust_target_create` and has not been freed before.
+        drop(unsafe { Box::from_raw(handle) });
     }
 }
 
@@ -618,6 +623,71 @@ mod tests {
                 paris(),
                 bad,
                 180.0,
+                default_opts(),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::InvalidPeriod
+        );
+        unsafe { siderust_target_free(h) };
+    }
+
+    // ── Below threshold ───────────────────────────────────────────────────
+
+    #[test]
+    fn below_threshold_ok() {
+        let h = create_vega();
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        let s = siderust_target_below_threshold(
+            h,
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        unsafe {
+            crate::altitude::siderust_periods_free(out, count);
+            siderust_target_free(h);
+        }
+    }
+
+    #[test]
+    fn below_threshold_null_handle() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_target_below_threshold(
+                ptr::null(),
+                paris(),
+                one_day_window(),
+                0.0,
+                default_opts(),
+                &mut out,
+                &mut count
+            ),
+            SiderustStatus::NullPointer
+        );
+    }
+
+    #[test]
+    fn below_threshold_invalid_window() {
+        let h = create_vega();
+        let bad = TempochPeriodMjd {
+            start_mjd: 60001.0,
+            end_mjd: 60000.0,
+        };
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count = 0usize;
+        assert_eq!(
+            siderust_target_below_threshold(
+                h,
+                paris(),
+                bad,
+                0.0,
                 default_opts(),
                 &mut out,
                 &mut count

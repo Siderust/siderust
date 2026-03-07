@@ -71,24 +71,54 @@ pub(crate) fn icrs_from_c(
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Free an array of MJD periods.
+///
+/// # Safety
+///
+/// * `ptr` must have been returned by a `siderust_*` function that allocates
+///   this array type (e.g. `siderust_sun_night_periods`).
+/// * `count` must be the element count that was returned alongside `ptr`.
+/// * The pointer must not have been freed before, and must not be used after
+///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_periods_free(ptr: *mut TempochPeriodMjd, count: usize) {
-    free_boxed_slice(ptr, count);
+    // SAFETY: caller guarantees the pointer/count pair was returned by a
+    // siderust function and has not been freed before.
+    unsafe { free_boxed_slice(ptr, count) };
 }
 
 /// Free an array of crossing events.
+///
+/// # Safety
+///
+/// * `ptr` must have been returned by a `siderust_*` function that allocates
+///   this array type (e.g. `siderust_sun_crossings`).
+/// * `count` must be the element count that was returned alongside `ptr`.
+/// * The pointer must not have been freed before, and must not be used after
+///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_crossings_free(ptr: *mut SiderustCrossingEvent, count: usize) {
-    free_boxed_slice(ptr, count);
+    // SAFETY: caller guarantees the pointer/count pair was returned by a
+    // siderust function and has not been freed before.
+    unsafe { free_boxed_slice(ptr, count) };
 }
 
 /// Free an array of culmination events.
+///
+/// # Safety
+///
+/// * `ptr` must have been returned by a `siderust_*` function that allocates
+///   this array type (e.g. `siderust_sun_culminations`).
+/// * `count` must be the element count that was returned alongside `ptr`.
+/// * The pointer must not have been freed before, and must not be used after
+///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_culminations_free(
     ptr: *mut SiderustCulminationEvent,
     count: usize,
 ) {
-    free_boxed_slice(ptr, count);
+    // SAFETY: caller guarantees the pointer/count pair was returned by a
+    // siderust function and has not been freed before.
+    unsafe { free_boxed_slice(ptr, count) };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

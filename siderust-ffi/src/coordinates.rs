@@ -1140,4 +1140,563 @@ mod tests {
         );
         assert_eq!(s, SiderustStatus::Ok);
     }
+
+    // ── Cartesian direction frame transforms ─────────────────────────────
+
+    fn unit_x_cart() -> (f64, f64, f64) {
+        (1.0, 0.0, 0.0)
+    }
+
+    #[test]
+    fn cartesian_dir_icrs_to_icrs_identity() {
+        let mut out = empty_cart();
+        let (x, y, z) = unit_x_cart();
+        let s = siderust_cartesian_dir_transform_frame(
+            x,
+            y,
+            z,
+            SiderustFrame::ICRS,
+            SiderustFrame::ICRS,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert!((out.x - 1.0).abs() < 1e-8);
+        assert!(out.y.abs() < 1e-8);
+        assert!(out.z.abs() < 1e-8);
+        assert_eq!(out.frame, SiderustFrame::ICRS);
+    }
+
+    #[test]
+    fn cartesian_dir_icrs_to_ecliptic_j2000() {
+        let mut out = empty_cart();
+        let (x, y, z) = unit_x_cart();
+        let s = siderust_cartesian_dir_transform_frame(
+            x,
+            y,
+            z,
+            SiderustFrame::ICRS,
+            SiderustFrame::EclipticMeanJ2000,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EclipticMeanJ2000);
+        // magnitude is preserved
+        let mag = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!((mag - 1.0).abs() < 1e-8);
+    }
+
+    #[test]
+    fn cartesian_dir_icrs_to_equatorial_j2000() {
+        let mut out = empty_cart();
+        let s = siderust_cartesian_dir_transform_frame(
+            1.0,
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialMeanJ2000,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EquatorialMeanJ2000);
+    }
+
+    #[test]
+    fn cartesian_dir_icrs_to_equatorial_mean_of_date() {
+        let mut out = empty_cart();
+        let s = siderust_cartesian_dir_transform_frame(
+            1.0,
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialMeanOfDate,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EquatorialMeanOfDate);
+    }
+
+    #[test]
+    fn cartesian_dir_icrs_to_equatorial_true_of_date() {
+        let mut out = empty_cart();
+        let s = siderust_cartesian_dir_transform_frame(
+            1.0,
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialTrueOfDate,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EquatorialTrueOfDate);
+    }
+
+    #[test]
+    fn cartesian_dir_ecliptic_to_icrs() {
+        let mut out = empty_cart();
+        let s = siderust_cartesian_dir_transform_frame(
+            1.0,
+            0.0,
+            0.0,
+            SiderustFrame::EclipticMeanJ2000,
+            SiderustFrame::ICRS,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+    }
+
+    #[test]
+    fn cartesian_dir_invalid_src_frame() {
+        let mut out = empty_cart();
+        let s = siderust_cartesian_dir_transform_frame(
+            1.0,
+            0.0,
+            0.0,
+            SiderustFrame::Horizontal,
+            SiderustFrame::ICRS,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::InvalidFrame);
+    }
+
+    #[test]
+    fn cartesian_dir_invalid_dst_frame() {
+        let mut out = empty_cart();
+        let s = siderust_cartesian_dir_transform_frame(
+            1.0,
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::Galactic,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::InvalidFrame);
+    }
+
+    #[test]
+    fn cartesian_dir_null_out() {
+        let s = siderust_cartesian_dir_transform_frame(
+            1.0,
+            0.0,
+            0.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::ICRS,
+            J2000,
+            ptr::null_mut(),
+        );
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    // ── Cartesian position frame transforms ──────────────────────────────
+
+    fn earth_pos_icrs() -> SiderustCartesianPos {
+        // Approximate Earth position at J2000 (AU) in ICRS
+        SiderustCartesianPos {
+            x: -0.177,
+            y: 0.969,
+            z: 0.0,
+            frame: SiderustFrame::ICRS,
+            center: SiderustCenter::Barycentric,
+        }
+    }
+
+    #[test]
+    fn cartesian_pos_icrs_to_icrs_identity() {
+        let pos = earth_pos_icrs();
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_frame(pos, SiderustFrame::ICRS, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        assert!((out.x - pos.x).abs() < 1e-8);
+        assert!((out.y - pos.y).abs() < 1e-8);
+        assert_eq!(out.frame, SiderustFrame::ICRS);
+        assert_eq!(out.center, SiderustCenter::Barycentric);
+    }
+
+    #[test]
+    fn cartesian_pos_icrs_to_ecliptic_j2000() {
+        let pos = earth_pos_icrs();
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_frame(
+            pos,
+            SiderustFrame::EclipticMeanJ2000,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EclipticMeanJ2000);
+        // magnitude preserved
+        let mag_in = (pos.x * pos.x + pos.y * pos.y + pos.z * pos.z).sqrt();
+        let mag_out = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!((mag_in - mag_out).abs() < 1e-6);
+    }
+
+    #[test]
+    fn cartesian_pos_icrs_to_equatorial_j2000() {
+        let pos = earth_pos_icrs();
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_frame(
+            pos,
+            SiderustFrame::EquatorialMeanJ2000,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EquatorialMeanJ2000);
+    }
+
+    #[test]
+    fn cartesian_pos_icrs_to_equatorial_mean_of_date() {
+        let pos = earth_pos_icrs();
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_frame(
+            pos,
+            SiderustFrame::EquatorialMeanOfDate,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EquatorialMeanOfDate);
+    }
+
+    #[test]
+    fn cartesian_pos_icrs_to_equatorial_true_of_date() {
+        let pos = earth_pos_icrs();
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_frame(
+            pos,
+            SiderustFrame::EquatorialTrueOfDate,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::EquatorialTrueOfDate);
+    }
+
+    #[test]
+    fn cartesian_pos_icrs_to_icrf() {
+        let pos = earth_pos_icrs();
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_frame(pos, SiderustFrame::ICRF, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::ICRF);
+    }
+
+    #[test]
+    fn cartesian_pos_ecliptic_to_icrs() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+        };
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_frame(pos, SiderustFrame::ICRS, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+    }
+
+    #[test]
+    fn cartesian_pos_invalid_src_frame() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::Horizontal,
+            center: SiderustCenter::Geocentric,
+        };
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_frame(pos, SiderustFrame::ICRS, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::InvalidFrame);
+    }
+
+    #[test]
+    fn cartesian_pos_invalid_dst_frame() {
+        let pos = earth_pos_icrs();
+        let mut out = empty_cart();
+        let s =
+            siderust_cartesian_pos_transform_frame(pos, SiderustFrame::Galactic, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::InvalidFrame);
+    }
+
+    #[test]
+    fn cartesian_pos_null_out() {
+        let pos = earth_pos_icrs();
+        let s = siderust_cartesian_pos_transform_frame(
+            pos,
+            SiderustFrame::ICRS,
+            J2000,
+            ptr::null_mut(),
+        );
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    // ── Cartesian position center transforms ─────────────────────────────
+
+    #[test]
+    fn center_transform_same_center_is_identity() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.5,
+            z: -0.3,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+        };
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_center(
+            pos,
+            SiderustCenter::Heliocentric,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert!((out.x - 1.0).abs() < 1e-8);
+        assert!((out.y - 0.5).abs() < 1e-8);
+        assert!((out.z + 0.3).abs() < 1e-8);
+        assert_eq!(out.center, SiderustCenter::Heliocentric);
+    }
+
+    #[test]
+    fn center_transform_helio_to_bary() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+        };
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_center(
+            pos,
+            SiderustCenter::Barycentric,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.center, SiderustCenter::Barycentric);
+        assert!(out.x.is_finite() && out.y.is_finite() && out.z.is_finite());
+    }
+
+    #[test]
+    fn center_transform_helio_to_geo() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+        };
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_center(
+            pos,
+            SiderustCenter::Geocentric,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.center, SiderustCenter::Geocentric);
+        assert!(out.x.is_finite());
+    }
+
+    #[test]
+    fn center_transform_invalid_src_center() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Bodycentric,
+        };
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_center(
+            pos,
+            SiderustCenter::Heliocentric,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::InvalidCenter);
+    }
+
+    #[test]
+    fn center_transform_invalid_dst_center() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+        };
+        let mut out = empty_cart();
+        let s = siderust_cartesian_pos_transform_center(
+            pos,
+            SiderustCenter::Bodycentric,
+            J2000,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::InvalidCenter);
+    }
+
+    #[test]
+    fn center_transform_null_out() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+        };
+        let s = siderust_cartesian_pos_transform_center(
+            pos,
+            SiderustCenter::Barycentric,
+            J2000,
+            ptr::null_mut(),
+        );
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    // ── Kepler position ───────────────────────────────────────────────────
+
+    // Earth's approximate J2000 orbital elements
+    fn earth_orbit() -> SiderustOrbit {
+        SiderustOrbit {
+            semi_major_axis_au: 1.0000,
+            eccentricity: 0.0167,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_perihelion_deg: 102.94,
+            mean_anomaly_deg: 357.53,
+            epoch_jd: J2000,
+        }
+    }
+
+    #[test]
+    fn kepler_position_earth_at_j2000() {
+        let mut out = empty_cart();
+        let s = siderust_kepler_position(earth_orbit(), J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        // Earth should be ~1 AU from the Sun
+        let r = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!(r > 0.98 && r < 1.02, "r = {r}");
+        assert_eq!(out.frame, SiderustFrame::EclipticMeanJ2000);
+    }
+
+    #[test]
+    fn kepler_position_null_out() {
+        let s = siderust_kepler_position(earth_orbit(), J2000, ptr::null_mut());
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    // ── Bodycentric transforms ─────────────────────────────────────────────
+
+    fn earth_bodycentric_params() -> SiderustBodycentricParams {
+        SiderustBodycentricParams {
+            orbit: earth_orbit(),
+            orbit_center: 1, // Heliocentric
+            _pad: [0u8; 7],
+        }
+    }
+
+    #[test]
+    fn to_bodycentric_and_back_roundtrip() {
+        // A geocentric position
+        let pos = SiderustCartesianPos {
+            x: 0.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Geocentric,
+        };
+        let params = earth_bodycentric_params();
+        let mut body_pos = empty_cart();
+        let s1 = siderust_to_bodycentric(pos, params, J2000, &mut body_pos);
+        assert_eq!(s1, SiderustStatus::Ok);
+        assert_eq!(body_pos.center, SiderustCenter::Bodycentric);
+
+        let mut recovered = empty_cart();
+        let s2 = siderust_from_bodycentric(body_pos, params, J2000, &mut recovered);
+        assert_eq!(s2, SiderustStatus::Ok);
+        assert_eq!(recovered.center, SiderustCenter::Geocentric);
+        // Round-trip: recovered should be close to original pos (geocentric origin)
+        let diff = ((recovered.x - pos.x).powi(2)
+            + (recovered.y - pos.y).powi(2)
+            + (recovered.z - pos.z).powi(2))
+        .sqrt();
+        assert!(diff < 1e-6, "round-trip error = {diff}");
+    }
+
+    #[test]
+    fn to_bodycentric_invalid_center() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Bodycentric, // invalid for input
+        };
+        let mut out = empty_cart();
+        let s = siderust_to_bodycentric(pos, earth_bodycentric_params(), J2000, &mut out);
+        assert_eq!(s, SiderustStatus::InvalidCenter);
+    }
+
+    #[test]
+    fn to_bodycentric_null_out() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Geocentric,
+        };
+        let s = siderust_to_bodycentric(pos, earth_bodycentric_params(), J2000, ptr::null_mut());
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    #[test]
+    fn from_bodycentric_null_out() {
+        let pos = SiderustCartesianPos {
+            x: 0.1,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Bodycentric,
+        };
+        let s = siderust_from_bodycentric(pos, earth_bodycentric_params(), J2000, ptr::null_mut());
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    #[test]
+    fn to_bodycentric_heliocentric_input() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+        };
+        let mut out = empty_cart();
+        let s = siderust_to_bodycentric(pos, earth_bodycentric_params(), J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.center, SiderustCenter::Bodycentric);
+    }
+
+    #[test]
+    fn to_bodycentric_barycentric_input() {
+        let pos = SiderustCartesianPos {
+            x: 1.0,
+            y: 0.0,
+            z: 0.0,
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Barycentric,
+        };
+        let mut out = empty_cart();
+        let s = siderust_to_bodycentric(pos, earth_bodycentric_params(), J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.center, SiderustCenter::Bodycentric);
+    }
 }

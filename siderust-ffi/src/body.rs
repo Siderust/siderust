@@ -422,4 +422,174 @@ mod tests {
             unsafe { crate::azimuth::siderust_azimuth_crossings_free(out, count) };
         }
     }
+
+    // ── body_below_threshold ──────────────────────────────────────────────
+
+    #[test]
+    fn body_below_threshold_sun_succeeds() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count: usize = 0;
+        let st = siderust_body_below_threshold(
+            SiderustBody::Sun,
+            paris(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
+        if count > 0 {
+            unsafe { crate::altitude::siderust_periods_free(out, count) };
+        }
+    }
+
+    #[test]
+    fn body_below_threshold_moon_returns_ok() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count: usize = 0;
+        let window = TempochPeriodMjd {
+            start_mjd: 60000.0,
+            end_mjd: 60003.0,
+        };
+        let st = siderust_body_below_threshold(
+            SiderustBody::Moon,
+            paris(),
+            window,
+            0.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
+        if count > 0 {
+            unsafe { crate::altitude::siderust_periods_free(out, count) };
+        }
+    }
+
+    // ── body_altitude_periods ─────────────────────────────────────────────
+
+    #[test]
+    fn body_altitude_periods_sun_succeeds() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count: usize = 0;
+        let query = SiderustAltitudeQuery {
+            observer: paris(),
+            start_mjd: 60000.0,
+            end_mjd: 60001.0,
+            min_altitude_deg: 0.0,
+            max_altitude_deg: 90.0,
+        };
+        let st = siderust_body_altitude_periods(SiderustBody::Sun, query, &mut out, &mut count);
+        assert_eq!(st, SiderustStatus::Ok);
+        if count > 0 {
+            unsafe { crate::altitude::siderust_periods_free(out, count) };
+        }
+    }
+
+    #[test]
+    fn body_altitude_periods_jupiter_succeeds() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count: usize = 0;
+        let query = SiderustAltitudeQuery {
+            observer: paris(),
+            start_mjd: 60000.0,
+            end_mjd: 60007.0,
+            min_altitude_deg: 10.0,
+            max_altitude_deg: 90.0,
+        };
+        let st = siderust_body_altitude_periods(SiderustBody::Jupiter, query, &mut out, &mut count);
+        assert_eq!(st, SiderustStatus::Ok);
+        if count > 0 {
+            unsafe { crate::altitude::siderust_periods_free(out, count) };
+        }
+    }
+
+    // ── body_azimuth_extrema ──────────────────────────────────────────────
+
+    #[test]
+    fn body_azimuth_extrema_sun_succeeds() {
+        let mut out: *mut SiderustAzimuthExtremum = ptr::null_mut();
+        let mut count: usize = 0;
+        let st = siderust_body_azimuth_extrema(
+            SiderustBody::Sun,
+            paris(),
+            one_day_window(),
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
+        if count > 0 {
+            unsafe { crate::azimuth::siderust_azimuth_extrema_free(out, count) };
+        }
+    }
+
+    #[test]
+    fn body_azimuth_extrema_moon_succeeds() {
+        let mut out: *mut SiderustAzimuthExtremum = ptr::null_mut();
+        let mut count: usize = 0;
+        let window = TempochPeriodMjd {
+            start_mjd: 60000.0,
+            end_mjd: 60003.0,
+        };
+        let st = siderust_body_azimuth_extrema(
+            SiderustBody::Moon,
+            paris(),
+            window,
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
+        if count > 0 {
+            unsafe { crate::azimuth::siderust_azimuth_extrema_free(out, count) };
+        }
+    }
+
+    // ── body_in_azimuth_range ─────────────────────────────────────────────
+
+    #[test]
+    fn body_in_azimuth_range_sun_succeeds() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count: usize = 0;
+        let st = siderust_body_in_azimuth_range(
+            SiderustBody::Sun,
+            paris(),
+            one_day_window(),
+            90.0,  // east
+            270.0, // west
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
+        if count > 0 {
+            unsafe { crate::altitude::siderust_periods_free(out, count) };
+        }
+    }
+
+    #[test]
+    fn body_in_azimuth_range_mars_succeeds() {
+        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
+        let mut count: usize = 0;
+        let window = TempochPeriodMjd {
+            start_mjd: 60000.0,
+            end_mjd: 60007.0,
+        };
+        let st = siderust_body_in_azimuth_range(
+            SiderustBody::Mars,
+            paris(),
+            window,
+            0.0,
+            360.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
+        if count > 0 {
+            unsafe { crate::altitude::siderust_periods_free(out, count) };
+        }
+    }
 }
