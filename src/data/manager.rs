@@ -126,7 +126,6 @@ impl DataManager {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
 
     fn temp_dir_path(suffix: &str) -> PathBuf {
         std::env::temp_dir().join(format!("siderust_mgr_{}", suffix))
