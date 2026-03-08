@@ -256,6 +256,12 @@ pub struct PhaseEvent {
     pub kind: PhaseKind,
 }
 
+impl std::fmt::Display for PhaseEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} at {}", self.kind, self.mjd)
+    }
+}
+
 // ===========================================================================
 // MoonPhaseGeometry
 // ===========================================================================
@@ -276,6 +282,19 @@ pub struct MoonPhaseGeometry {
     pub elongation: Radians,
     /// `true` when the Moon is waxing (elongation ∈ (0, π)).
     pub waxing: bool,
+}
+
+impl std::fmt::Display for MoonPhaseGeometry {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let phase_dir = if self.waxing { "waxing" } else { "waning" };
+        write!(
+            f,
+            "{} ({}, {:.1}% lit)",
+            self.label(),
+            phase_dir,
+            self.illuminated_fraction * 100.0
+        )
+    }
 }
 
 impl MoonPhaseGeometry {

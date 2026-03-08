@@ -44,6 +44,15 @@ pub enum RaProperMotionConvention {
     MuAlphaStar,
 }
 
+impl std::fmt::Display for RaProperMotionConvention {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::MuAlpha => write!(f, "\u{03bc}\u{03b1}"),
+            Self::MuAlphaStar => write!(f, "\u{03bc}\u{03b1}\u{2a}"),
+        }
+    }
+}
+
 /// Describes the proper motion of a star in equatorial coordinates.
 ///
 /// - `pm_ra` is the right-ascension proper motion
@@ -57,6 +66,16 @@ pub struct ProperMotion {
     pub pm_ra: DegreesPerYear,
     pub pm_dec: DegreesPerYear,
     pub ra_convention: RaProperMotionConvention,
+}
+
+impl fmt::Display for ProperMotion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        write!(
+            f,
+            "\u{03bc}\u{03b1}{}: {}, \u{03bc}\u{03b4}: {}",
+            self.ra_convention, self.pm_ra, self.pm_dec
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq)]

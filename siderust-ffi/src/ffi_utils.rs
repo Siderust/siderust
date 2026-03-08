@@ -175,6 +175,15 @@ macro_rules! dispatch_subject {
                 let $provider = unsafe { &(*__subj.target_handle).dir };
                 $action
             }
+            $crate::types::SiderustSubjectKind::GenericTarget => {
+                if __subj.generic_target_handle.is_null() {
+                    return $crate::error::SiderustStatus::NullPointer;
+                }
+                // Dispatch on the inner position, not the whole CoordinateWithPM,
+                // because AltitudePeriodsProvider is implemented for the position type.
+                let $provider = unsafe { &(*__subj.generic_target_handle).inner.position };
+                $action
+            }
         }
     }};
 }

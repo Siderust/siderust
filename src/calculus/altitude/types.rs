@@ -19,6 +19,15 @@ pub enum CrossingDirection {
     Setting,
 }
 
+impl std::fmt::Display for CrossingDirection {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Rising => write!(f, "Rising"),
+            Self::Setting => write!(f, "Setting"),
+        }
+    }
+}
+
 /// A threshold crossing event.
 #[derive(Debug, Clone, Copy)]
 pub struct CrossingEvent {
@@ -26,6 +35,12 @@ pub struct CrossingEvent {
     pub mjd: ModifiedJulianDate,
     /// Direction: rising above or setting below the threshold.
     pub direction: CrossingDirection,
+}
+
+impl std::fmt::Display for CrossingEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} at {}", self.direction, self.mjd)
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -41,6 +56,15 @@ pub enum CulminationKind {
     Min,
 }
 
+impl std::fmt::Display for CulminationKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Max => write!(f, "Upper Transit"),
+            Self::Min => write!(f, "Lower Transit"),
+        }
+    }
+}
+
 /// A culmination event.
 #[derive(Debug, Clone, Copy)]
 pub struct CulminationEvent {
@@ -50,6 +74,12 @@ pub struct CulminationEvent {
     pub altitude: Degrees,
     /// Maximum or minimum.
     pub kind: CulminationKind,
+}
+
+impl std::fmt::Display for CulminationEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} at {} (alt: {})", self.kind, self.mjd, self.altitude)
+    }
 }
 
 // ---------------------------------------------------------------------------
