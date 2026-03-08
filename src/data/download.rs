@@ -35,11 +35,13 @@ pub fn download(
     })?;
 
     let total: u64 = response
-        .header("Content-Length")
+        .headers()
+        .get("Content-Length")
+        .and_then(|v| v.to_str().ok())
         .and_then(|v| v.parse().ok())
         .unwrap_or(0);
 
-    let mut reader = response.into_reader();
+    let mut reader = response.into_body().into_reader();
     let mut file = std::fs::File::create(&tmp)?;
     let mut buf = vec![0u8; 1 << 20]; // 1 MB buffer
     let mut downloaded: u64 = 0;
