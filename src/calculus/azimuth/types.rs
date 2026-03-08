@@ -30,6 +30,12 @@ pub struct AzimuthCrossingEvent {
     pub direction: CrossingDirection,
 }
 
+impl std::fmt::Display for AzimuthCrossingEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "Azimuth {} at {}", self.direction, self.mjd)
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Azimuth Extremum Types
 // ---------------------------------------------------------------------------
@@ -43,6 +49,15 @@ pub enum AzimuthExtremumKind {
     Min,
 }
 
+impl std::fmt::Display for AzimuthExtremumKind {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Max => write!(f, "Max Azimuth"),
+            Self::Min => write!(f, "Min Azimuth"),
+        }
+    }
+}
+
 /// An azimuth extremum event.
 #[derive(Debug, Clone, Copy)]
 pub struct AzimuthExtremum {
@@ -52,6 +67,12 @@ pub struct AzimuthExtremum {
     pub azimuth: Degrees,
     /// Maximum or minimum.
     pub kind: AzimuthExtremumKind,
+}
+
+impl std::fmt::Display for AzimuthExtremum {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} at {} (az: {})", self.kind, self.mjd, self.azimuth)
+    }
 }
 
 // ---------------------------------------------------------------------------
