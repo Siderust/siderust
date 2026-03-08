@@ -423,6 +423,7 @@ impl SiderustSubject {
     }
 
     /// Construct a `GenericTarget` subject (borrows the opaque handle).
+    #[allow(dead_code)]
     pub(crate) fn generic_target(handle: *const crate::target::SiderustGenericTarget) -> Self {
         Self {
             kind: SiderustSubjectKind::GenericTarget,
