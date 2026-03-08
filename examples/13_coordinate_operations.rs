@@ -154,7 +154,7 @@ fn main() {
 
     println!("Earth (lon=100°, lat=0°, r=1.000 AU)");
     println!("Mars  (lon=200°, lat=2°, r=1.524 AU)");
-    println!("  Euclidean 3D distance  = {:.4} AU", eu_dist.value());
+    println!("  Euclidean 3D distance  = {:.4}", eu_dist);
     println!("  Angular separation     = {:.4}°\n", ang_sep_pos);
 
     // =========================================================================
@@ -167,35 +167,17 @@ fn main() {
     let mars_cart = mars.to_cartesian();
 
     let eu_dist_cart = earth_cart.distance_to(&mars_cart);
+    println!("Earth cartesian: {earth_cart}");
+    println!("Mars  cartesian: {mars_cart}");
     println!(
-        "Earth cartesian: ({:.4}, {:.4}, {:.4})",
-        earth_cart.x(),
-        earth_cart.y(),
-        earth_cart.z()
-    );
-    println!(
-        "Mars  cartesian: ({:.4}, {:.4}, {:.4})",
-        mars_cart.x(),
-        mars_cart.y(),
-        mars_cart.z()
-    );
-    println!(
-        "  Euclidean distance = {:.4} AU  (matches spherical)",
-        eu_dist_cart.value()
+        "  Euclidean distance = {:.4}  (matches spherical)",
+        eu_dist_cart
     );
 
     // Vector difference gives displacement vector
     let diff = mars_cart - earth_cart;
-    println!(
-        "  Mars − Earth vector: ({:.4}, {:.4}, {:.4})",
-        diff.x(),
-        diff.y(),
-        diff.z()
-    );
-    println!(
-        "  |Mars − Earth|      = {:.4} AU\n",
-        diff.magnitude().value()
-    );
+    println!("  Mars − Earth vector: {}", diff);
+    println!("  |Mars − Earth|      = {:.4}\n", diff.magnitude());
 
     // =========================================================================
     // 6. Ecliptic Directions — Same API, Different Frame

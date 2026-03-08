@@ -41,7 +41,7 @@ where
 
 fn main() {
     let jd = JulianDate::new(2_460_000.5);
-    println!("Frame conversion demo at JD(TT) = {:.1}", jd.value());
+    println!("Frame conversion demo at {:.1}", jd);
 
     let p_icrs = Position::<C, ICRS, U>::new(0.30, -0.70, 0.64);
     let p_icrf: Position<C, ICRF, U> = p_icrs.to_frame(&jd);

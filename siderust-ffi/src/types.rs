@@ -5,6 +5,48 @@
 //!
 //! These `#[repr(C)]` types are the data bridge between C/C++ callers and
 //! the rich generic Rust types in siderust.
+//!
+//! # Shared Coordinate Model
+//!
+//! The coordinate types in this module implement the `affn` coordinate semantics:
+//!
+//! - **Frames**: [`SiderustFrame`] enumerates supported reference frames
+//! - **Centers**: [`SiderustCenter`] enumerates supported reference centers
+//! - **Units**: [`SiderustLengthUnit`] enumerates supported length units
+//!
+//! Adapters (C++, Python, JavaScript) should use these enum values rather than
+//! runtime strings when possible. For string-based adapter APIs:
+//!
+//! | Frame String          | `SiderustFrame` Variant  |
+//! |-----------------------|--------------------------|
+//! | `"ICRS"`              | `ICRS = 1`               |
+//! | `"EclipticMeanJ2000"` | `EclipticMeanJ2000 = 2`  |
+//! | `"EquatorialMeanJ2000"`| `EquatorialMeanJ2000 = 3`|
+//! | `"EquatorialMeanOfDate"`| `EquatorialMeanOfDate = 4`|
+//! | `"EquatorialTrueOfDate"`| `EquatorialTrueOfDate = 5`|
+//! | `"Horizontal"`        | `Horizontal = 6`         |
+//! | `"ECEF"`              | `ECEF = 7`               |
+//! | `"Galactic"`          | `Galactic = 8`           |
+//! | `"GCRS"`              | `GCRS = 9`               |
+//! | `"ICRF"`              | `ICRF = 15`              |
+//!
+//! | Center String      | `SiderustCenter` Variant |
+//! |--------------------|--------------------------|
+//! | `"Barycentric"`    | `Barycentric = 1`        |
+//! | `"Heliocentric"`   | `Heliocentric = 2`       |
+//! | `"Geocentric"`     | `Geocentric = 3`         |
+//! | `"Topocentric"`    | `Topocentric = 4`        |
+//! | `"Bodycentric"`    | `Bodycentric = 5`        |
+//!
+//! # Coordinate Arithmetic
+//!
+//! Following `affn` semantics:
+//! - `Position - Position` yields a displacement/vector (not another position)
+//! - `Position + Position` is **not valid**
+//! - `Position + Displacement` yields a position
+//! - `Displacement + Displacement` yields a displacement
+//!
+//! Adapters should enforce these rules at their language boundary.
 
 use crate::ffi_utils::FfiFrom;
 use qtty::*;
@@ -62,6 +104,66 @@ pub enum SiderustFrame {
     ICRF = 15,
 }
 
+impl SiderustFrame {
+    /// Parse a frame name string (case-insensitive).
+    ///
+    /// Accepts the canonical names documented in the module header:
+    /// `"icrs"`, `"ecliptic_mean_j2000"`, `"equatorial_mean_j2000"`, etc.
+    /// Also accepts common aliases like `"horizontal"`, `"galactic"`, `"gcrs"`.
+    ///
+    /// Returns `None` if the string does not match any known frame.
+    pub fn from_str(s: &str) -> Option<Self> {
+        let lower = s.to_ascii_lowercase();
+        match lower.as_str() {
+            "icrs" => Some(Self::ICRS),
+            "ecliptic_mean_j2000" | "eclipticmeanj2000" | "mean_ecliptic_j2000" => {
+                Some(Self::EclipticMeanJ2000)
+            }
+            "equatorial_mean_j2000" | "equatorialmeanj2000" | "mean_equatorial_j2000" => {
+                Some(Self::EquatorialMeanJ2000)
+            }
+            "equatorial_mean_of_date" | "equatorialmeanofdate" | "mean_of_date" => {
+                Some(Self::EquatorialMeanOfDate)
+            }
+            "equatorial_true_of_date" | "equatorialtrueofdate" | "true_of_date" => {
+                Some(Self::EquatorialTrueOfDate)
+            }
+            "horizontal" | "altaz" | "local_horizontal" => Some(Self::Horizontal),
+            "ecef" | "earth_fixed" => Some(Self::ECEF),
+            "galactic" | "gal" => Some(Self::Galactic),
+            "gcrs" | "geocentric_celestial" => Some(Self::GCRS),
+            "ecliptic_of_date" | "eclipticofdate" => Some(Self::EclipticOfDate),
+            "ecliptic_true_of_date" | "ecliptictrueofdate" => Some(Self::EclipticTrueOfDate),
+            "cirs" | "celestial_intermediate" => Some(Self::CIRS),
+            "tirs" | "terrestrial_intermediate" => Some(Self::TIRS),
+            "itrf" | "terrestrial_reference" => Some(Self::ITRF),
+            "icrf" | "celestial_reference" => Some(Self::ICRF),
+            _ => None,
+        }
+    }
+
+    /// Return the canonical string name of this frame.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::ICRS => "icrs",
+            Self::EclipticMeanJ2000 => "ecliptic_mean_j2000",
+            Self::EquatorialMeanJ2000 => "equatorial_mean_j2000",
+            Self::EquatorialMeanOfDate => "equatorial_mean_of_date",
+            Self::EquatorialTrueOfDate => "equatorial_true_of_date",
+            Self::Horizontal => "horizontal",
+            Self::ECEF => "ecef",
+            Self::Galactic => "galactic",
+            Self::GCRS => "gcrs",
+            Self::EclipticOfDate => "ecliptic_of_date",
+            Self::EclipticTrueOfDate => "ecliptic_true_of_date",
+            Self::CIRS => "cirs",
+            Self::TIRS => "tirs",
+            Self::ITRF => "itrf",
+            Self::ICRF => "icrf",
+        }
+    }
+}
+
 /// Reference center identifier for C interop.
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,6 +178,38 @@ pub enum SiderustCenter {
     Topocentric = 4,
     /// Centre of a specific body.
     Bodycentric = 5,
+}
+
+impl SiderustCenter {
+    /// Parse a center name string (case-insensitive).
+    ///
+    /// Accepts the canonical names documented in the module header:
+    /// `"barycentric"`, `"heliocentric"`, `"geocentric"`, `"topocentric"`, `"bodycentric"`.
+    /// Also accepts common aliases like `"ssb"`, `"solar"`, `"earth"`, `"observer"`.
+    ///
+    /// Returns `None` if the string does not match any known center.
+    pub fn from_str(s: &str) -> Option<Self> {
+        let lower = s.to_ascii_lowercase();
+        match lower.as_str() {
+            "barycentric" | "ssb" | "solar_system_barycenter" => Some(Self::Barycentric),
+            "heliocentric" | "solar" | "sun" => Some(Self::Heliocentric),
+            "geocentric" | "earth" => Some(Self::Geocentric),
+            "topocentric" | "observer" | "site" => Some(Self::Topocentric),
+            "bodycentric" | "body" => Some(Self::Bodycentric),
+            _ => None,
+        }
+    }
+
+    /// Return the canonical string name of this center.
+    pub fn as_str(&self) -> &'static str {
+        match self {
+            Self::Barycentric => "barycentric",
+            Self::Heliocentric => "heliocentric",
+            Self::Geocentric => "geocentric",
+            Self::Topocentric => "topocentric",
+            Self::Bodycentric => "bodycentric",
+        }
+    }
 }
 
 /// Crossing event direction.
@@ -126,6 +260,26 @@ pub enum SiderustOrbitFrame {
     Barycentric = 1,
 }
 
+/// Length unit for coordinate positions.
+///
+/// Specifies the unit of measure for coordinate distances (x, y, z components
+/// in Cartesian positions, or distance in spherical positions).
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
+pub enum SiderustLengthUnit {
+    /// Astronomical Units (≈149.6 million km).
+    #[default]
+    AU = 0,
+    /// Kilometres.
+    Km = 1,
+    /// Light-years.
+    LightYear = 2,
+    /// Parsecs.
+    Parsec = 3,
+    /// Metres.
+    Meter = 4,
+}
+
 /// Solar-system body identifier for generic altitude/azimuth dispatch.
 ///
 /// Each variant maps to a concrete unit type in `siderust::bodies::solar_system`.
@@ -164,6 +318,8 @@ pub enum SiderustSubjectKind {
     Icrs = 2,
     /// Target opaque handle (the `target_handle` field is valid).
     Target = 3,
+    /// Generic target opaque handle (the `generic_target_handle` field is valid).
+    GenericTarget = 4,
 }
 
 /// Unified subject for altitude / azimuth / tracking computations.
@@ -174,12 +330,13 @@ pub enum SiderustSubjectKind {
 ///
 /// Only the field corresponding to `kind` is valid:
 ///
-/// | `kind`   | Valid field(s)         |
-/// |----------|-----------------------|
-/// | `Body`   | `body`                |
-/// | `Star`   | `star_handle`         |
-/// | `Icrs`   | `icrs_dir`            |
-/// | `Target` | `target_handle`       |
+/// | `kind`           | Valid field(s)           |
+/// |------------------|--------------------------|
+/// | `Body`           | `body`                   |
+/// | `Star`           | `star_handle`            |
+/// | `Icrs`           | `icrs_dir`               |
+/// | `Target`         | `target_handle`          |
+/// | `GenericTarget`  | `generic_target_handle`  |
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustSubject {
@@ -193,6 +350,8 @@ pub struct SiderustSubject {
     pub icrs_dir: SiderustSphericalDir,
     /// Opaque target handle (non-null).  Valid when `kind == Target`.
     pub target_handle: *const crate::target::SiderustTarget,
+    /// Opaque generic target handle.  Valid when `kind == GenericTarget`.
+    pub generic_target_handle: *const crate::target::SiderustGenericTarget,
 }
 
 // SAFETY: `SiderustSubject` contains raw pointers (`star_handle`,
@@ -223,6 +382,7 @@ impl SiderustSubject {
             star_handle: std::ptr::null(),
             icrs_dir: SiderustSphericalDir::zeroed(),
             target_handle: std::ptr::null(),
+            generic_target_handle: std::ptr::null(),
         }
     }
 
@@ -234,6 +394,7 @@ impl SiderustSubject {
             star_handle: handle,
             icrs_dir: SiderustSphericalDir::zeroed(),
             target_handle: std::ptr::null(),
+            generic_target_handle: std::ptr::null(),
         }
     }
 
@@ -245,6 +406,7 @@ impl SiderustSubject {
             star_handle: std::ptr::null(),
             icrs_dir: dir,
             target_handle: std::ptr::null(),
+            generic_target_handle: std::ptr::null(),
         }
     }
 
@@ -256,6 +418,19 @@ impl SiderustSubject {
             star_handle: std::ptr::null(),
             icrs_dir: SiderustSphericalDir::zeroed(),
             target_handle: handle,
+            generic_target_handle: std::ptr::null(),
+        }
+    }
+
+    /// Construct a `GenericTarget` subject (borrows the opaque handle).
+    pub(crate) fn generic_target(handle: *const crate::target::SiderustGenericTarget) -> Self {
+        Self {
+            kind: SiderustSubjectKind::GenericTarget,
+            body: SiderustBody::Sun,
+            star_handle: std::ptr::null(),
+            icrs_dir: SiderustSphericalDir::zeroed(),
+            target_handle: std::ptr::null(),
+            generic_target_handle: handle,
         }
     }
 }
@@ -268,6 +443,65 @@ pub enum SiderustRaConvention {
     MuAlpha = 0,
     /// Catalog rate µα★ = µα cos(δ) (deg/yr).
     MuAlphaStar = 1,
+}
+
+/// Coordinate kind discriminant for [`SiderustTargetCoord`].
+///
+/// Specifies which coordinate representation is stored in the target.
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SiderustTargetCoordKind {
+    /// Spherical direction (RA/Dec) without distance.
+    SphericalDir = 0,
+    /// Spherical position with distance.
+    SphericalPos = 1,
+    /// Cartesian position (x, y, z).
+    CartesianPos = 2,
+}
+
+/// Union of coordinate types for [`SiderustGenericTargetData`].
+///
+/// Callers must check `kind` to determine which field is valid.
+/// Only the field corresponding to `kind` contains valid data:
+///
+/// | `kind`        | Valid field    |
+/// |---------------|----------------|
+/// | `SphericalDir`| `spherical_dir`|
+/// | `SphericalPos`| `spherical_pos`|
+/// | `CartesianPos`| `cartesian_pos`|
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub union SiderustTargetCoordUnion {
+    /// Spherical direction (valid when kind == SphericalDir).
+    pub spherical_dir: SiderustSphericalDir,
+    /// Spherical position (valid when kind == SphericalPos).
+    pub spherical_pos: SiderustSphericalPos,
+    /// Cartesian position (valid when kind == CartesianPos).
+    pub cartesian_pos: SiderustCartesianPos,
+}
+
+/// Generic target data — stored as a flat struct for FFI.
+///
+/// Represents a point in celestial coordinates at a specific epoch,
+/// optionally with proper motion. This struct mirrors the Rust
+/// `CoordinateWithPM<T>` type but in a C-compatible form.
+#[repr(C)]
+#[derive(Clone, Copy)]
+pub struct SiderustGenericTargetData {
+    /// Which coordinate representation is stored.
+    pub kind: SiderustTargetCoordKind,
+    /// Padding for alignment.
+    pub _pad1: [u8; 4],
+    /// The coordinate data (union — check `kind` to determine which field).
+    pub coord: SiderustTargetCoordUnion,
+    /// Epoch as a Julian Date.
+    pub epoch_jd: f64,
+    /// Whether proper motion is present.
+    pub has_proper_motion: bool,
+    /// Padding for alignment.
+    pub _pad2: [u8; 7],
+    /// Proper motion (valid only when `has_proper_motion` is true).
+    pub proper_motion: SiderustProperMotion,
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -613,16 +847,18 @@ pub struct SiderustSphericalPos {
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustCartesianPos {
-    /// X coordinate (AU).
+    /// X coordinate in the specified length unit.
     pub x: f64,
-    /// Y coordinate (AU).
+    /// Y coordinate in the specified length unit.
     pub y: f64,
-    /// Z coordinate (AU).
+    /// Z coordinate in the specified length unit.
     pub z: f64,
     /// Reference frame.
     pub frame: SiderustFrame,
     /// Reference centre.
     pub center: SiderustCenter,
+    /// Length unit for x, y, z coordinates.
+    pub length_unit: SiderustLengthUnit,
 }
 
 /// Cartesian velocity (vx, vy, vz + frame metadata).
@@ -1163,8 +1399,8 @@ mod tests {
 
     #[test]
     fn layout_cartesian_pos() {
-        // 3 × f64 + i32 (frame) + i32 (center) = 32
-        assert_eq!(std::mem::size_of::<SiderustCartesianPos>(), 32);
+        // 3 × f64 + i32 (frame) + i32 (center) + i32 (length_unit) + padding = 40
+        assert_eq!(std::mem::size_of::<SiderustCartesianPos>(), 40);
         assert_eq!(std::mem::align_of::<SiderustCartesianPos>(), 8);
     }
 
@@ -1208,5 +1444,123 @@ mod tests {
         // 2 × f64 + SiderustOrbit(56) = 72
         assert_eq!(std::mem::size_of::<SiderustPlanet>(), 72);
         assert_eq!(std::mem::align_of::<SiderustPlanet>(), 8);
+    }
+
+    // ───────────────────────────────────────────────────────────
+    // Frame/Center parsing tests
+    // ───────────────────────────────────────────────────────────
+
+    #[test]
+    fn frame_from_str_canonical() {
+        assert_eq!(SiderustFrame::from_str("icrs"), Some(SiderustFrame::ICRS));
+        assert_eq!(
+            SiderustFrame::from_str("horizontal"),
+            Some(SiderustFrame::Horizontal)
+        );
+        assert_eq!(
+            SiderustFrame::from_str("galactic"),
+            Some(SiderustFrame::Galactic)
+        );
+        assert_eq!(SiderustFrame::from_str("gcrs"), Some(SiderustFrame::GCRS));
+    }
+
+    #[test]
+    fn frame_from_str_case_insensitive() {
+        assert_eq!(SiderustFrame::from_str("ICRS"), Some(SiderustFrame::ICRS));
+        assert_eq!(SiderustFrame::from_str("Icrs"), Some(SiderustFrame::ICRS));
+        assert_eq!(
+            SiderustFrame::from_str("HORIZONTAL"),
+            Some(SiderustFrame::Horizontal)
+        );
+    }
+
+    #[test]
+    fn frame_from_str_aliases() {
+        assert_eq!(
+            SiderustFrame::from_str("altaz"),
+            Some(SiderustFrame::Horizontal)
+        );
+        assert_eq!(
+            SiderustFrame::from_str("gal"),
+            Some(SiderustFrame::Galactic)
+        );
+        assert_eq!(
+            SiderustFrame::from_str("mean_of_date"),
+            Some(SiderustFrame::EquatorialMeanOfDate)
+        );
+    }
+
+    #[test]
+    fn frame_from_str_unknown() {
+        assert_eq!(SiderustFrame::from_str("unknown"), None);
+        assert_eq!(SiderustFrame::from_str(""), None);
+    }
+
+    #[test]
+    fn frame_roundtrip() {
+        for frame in [
+            SiderustFrame::ICRS,
+            SiderustFrame::Horizontal,
+            SiderustFrame::Galactic,
+            SiderustFrame::GCRS,
+            SiderustFrame::ECEF,
+        ] {
+            let name = frame.as_str();
+            assert_eq!(SiderustFrame::from_str(name), Some(frame));
+        }
+    }
+
+    #[test]
+    fn center_from_str_canonical() {
+        assert_eq!(
+            SiderustCenter::from_str("barycentric"),
+            Some(SiderustCenter::Barycentric)
+        );
+        assert_eq!(
+            SiderustCenter::from_str("heliocentric"),
+            Some(SiderustCenter::Heliocentric)
+        );
+        assert_eq!(
+            SiderustCenter::from_str("geocentric"),
+            Some(SiderustCenter::Geocentric)
+        );
+        assert_eq!(
+            SiderustCenter::from_str("topocentric"),
+            Some(SiderustCenter::Topocentric)
+        );
+    }
+
+    #[test]
+    fn center_from_str_aliases() {
+        assert_eq!(
+            SiderustCenter::from_str("ssb"),
+            Some(SiderustCenter::Barycentric)
+        );
+        assert_eq!(
+            SiderustCenter::from_str("sun"),
+            Some(SiderustCenter::Heliocentric)
+        );
+        assert_eq!(
+            SiderustCenter::from_str("earth"),
+            Some(SiderustCenter::Geocentric)
+        );
+        assert_eq!(
+            SiderustCenter::from_str("observer"),
+            Some(SiderustCenter::Topocentric)
+        );
+    }
+
+    #[test]
+    fn center_roundtrip() {
+        for center in [
+            SiderustCenter::Barycentric,
+            SiderustCenter::Heliocentric,
+            SiderustCenter::Geocentric,
+            SiderustCenter::Topocentric,
+            SiderustCenter::Bodycentric,
+        ] {
+            let name = center.as_str();
+            assert_eq!(SiderustCenter::from_str(name), Some(center));
+        }
     }
 }
