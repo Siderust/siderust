@@ -24,25 +24,15 @@ fn main() {
     let earth_position =
         cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(1.0, 0.0, 0.0);
     println!("Earth position (Heliocentric EclipticMeanJ2000):");
-    println!("  X = {:.6} AU", earth_position.x());
-    println!("  Y = {:.6} AU", earth_position.y());
-    println!("  Z = {:.6} AU", earth_position.z());
-    println!(
-        "  Distance from Sun = {:.6} AU\n",
-        earth_position.distance()
-    );
+    println!("  {earth_position}");
+    println!("  Distance from Sun = {:.6}\n", earth_position.distance());
 
     // Create a geocentric equatorial position (Moon at ~384,400 km)
     let moon_position =
         cartesian::position::EquatorialMeanJ2000::<Kilometer>::new(300_000.0, 200_000.0, 100_000.0);
     println!("Moon position (Geocentric EquatorialMeanJ2000):");
-    println!("  X = {:.1} km", moon_position.x());
-    println!("  Y = {:.1} km", moon_position.y());
-    println!("  Z = {:.1} km", moon_position.z());
-    println!(
-        "  Distance from Earth = {:.1} km\n",
-        moon_position.distance()
-    );
+    println!("  {moon_position}");
+    println!("  Distance from Earth = {:.1}\n", moon_position.distance());
 
     // =========================================================================
     // 2. Spherical Coordinates
@@ -56,8 +46,7 @@ fn main() {
         Degrees::new(89.26), // Declination
     );
     println!("Polaris (Geocentric EquatorialMeanJ2000 Direction):");
-    println!("  Right Ascension = {:.2}°", polaris.ra());
-    println!("  Declination = {:.2}°\n", polaris.dec());
+    println!("  {polaris}\n");
 
     // Create a position with distance (Betelgeuse at ~500 light-years)
     let betelgeuse_distance = 500.0 * 9.461e15 / 1.496e11; // Convert ly to AU
@@ -67,9 +56,7 @@ fn main() {
         betelgeuse_distance,
     );
     println!("Betelgeuse (Barycentric ICRS Position):");
-    println!("  Right Ascension = {:.2}°", betelgeuse.azimuth);
-    println!("  Declination = {:.2}°", betelgeuse.polar);
-    println!("  Distance = {:.1} AU (~500 ly)\n", betelgeuse.distance);
+    println!("  {betelgeuse}\n");
 
     // =========================================================================
     // 3. Directions (Unit Vectors)
@@ -84,8 +71,7 @@ fn main() {
         Degrees::new(0.0),  // Azimuth (North - doesn't matter for zenith)
     );
     println!("Zenith direction (Horizontal frame):");
-    println!("  Altitude = {:.1}°", zenith.alt());
-    println!("  Azimuth = {:.1}°\n", zenith.az());
+    println!("  {zenith}\n");
 
     // Convert direction to position at a specific distance
     // Using Geocentric since it has simple Params = ()
@@ -93,7 +79,7 @@ fn main() {
     use siderust::coordinates::centers::Geocentric;
     let cloud = zenith.position::<Geocentric, _>(cloud_distance);
     println!("Cloud at zenith, 5 km altitude (relative to geocenter):");
-    println!("  Distance = {:.1} km\n", cloud.distance);
+    println!("  Distance = {:.1}\n", cloud.distance);
 
     // =========================================================================
     // 4. Cartesian <-> Spherical Conversion
@@ -105,25 +91,19 @@ fn main() {
     let cart_pos =
         cartesian::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(0.5, 0.5, 0.707);
     println!("Cartesian position:");
-    println!("  X = {:.3} AU", cart_pos.x());
-    println!("  Y = {:.3} AU", cart_pos.y());
-    println!("  Z = {:.3} AU\n", cart_pos.z());
+    println!("  {cart_pos}\n");
 
     // Convert to spherical
     let sph_pos =
         spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::from_cartesian(&cart_pos);
     println!("\nConverted to Spherical:");
-    println!("  RA = {:.2}°", sph_pos.azimuth);
-    println!("  Dec = {:.2}°", sph_pos.polar);
-    println!("  Distance = {:.3} AU", sph_pos.distance);
+    println!("  {sph_pos}");
 
     // Convert back to cartesian
     let cart_pos_back =
         cartesian::position::EquatorialMeanJ2000::<AstronomicalUnit>::from_spherical(&sph_pos);
     println!("\nConverted back to Cartesian:");
-    println!("  X = {:.3} AU", cart_pos_back.x());
-    println!("  Y = {:.3} AU", cart_pos_back.y());
-    println!("  Z = {:.3} AU\n", cart_pos_back.z());
+    println!("  {cart_pos_back}\n");
 
     // =========================================================================
     // 5. Type Safety

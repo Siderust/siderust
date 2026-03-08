@@ -77,12 +77,12 @@ pub struct MoonPositionCache {
     mjd_start: ModifiedJulianDate,
     /// Number of segments.
     num_segments: usize,
-    /// Chebyshev coefficients for X coordinate: [segment][CHEB_NODES].
-    cx: Vec<[Kilometers; CHEB_NODES]>,
+    /// Chebyshev coefficients for X coordinate: [segment][CHEB_NODES], stored as raw km.
+    cx: Vec<[f64; CHEB_NODES]>,
     /// Chebyshev coefficients for Y coordinate.
-    cy: Vec<[Kilometers; CHEB_NODES]>,
+    cy: Vec<[f64; CHEB_NODES]>,
     /// Chebyshev coefficients for Z coordinate.
-    cz: Vec<[Kilometers; CHEB_NODES]>,
+    cz: Vec<[f64; CHEB_NODES]>,
 }
 
 impl MoonPositionCache {
@@ -106,16 +106,16 @@ impl MoonPositionCache {
             let seg_mid = seg_start + SEGMENT_DAYS * 0.5;
             let seg_half = SEGMENT_DAYS * 0.5;
 
-            let mut vx = [Kilometers::zero(); CHEB_NODES];
-            let mut vy = [Kilometers::zero(); CHEB_NODES];
-            let mut vz = [Kilometers::zero(); CHEB_NODES];
+            let mut vx = [0.0; CHEB_NODES];
+            let mut vy = [0.0; CHEB_NODES];
+            let mut vz = [0.0; CHEB_NODES];
 
             for k in 0..CHEB_NODES {
                 let mjd_k = seg_mid + seg_half * nodes[k];
                 let pos = DefaultEphemeris::moon_geocentric(mjd_k.into());
-                vx[k] = pos.x();
-                vy[k] = pos.y();
-                vz[k] = pos.z();
+                vx[k] = pos.x().value();
+                vy[k] = pos.y().value();
+                vz[k] = pos.z().value();
             }
 
             cx.push(cheby::fit_coeffs(&vx));
@@ -151,9 +151,9 @@ impl MoonPositionCache {
         let seg_mid = seg_start + SEGMENT_DAYS * 0.5;
         let x = (mjd - seg_mid) / (SEGMENT_DAYS * 0.5);
         let x = x.value(); // dimensionless
-        let px = cheby::evaluate(&self.cx[seg_idx], x);
-        let py = cheby::evaluate(&self.cy[seg_idx], x);
-        let pz = cheby::evaluate(&self.cz[seg_idx], x);
+        let px = Kilometers::new(cheby::evaluate(&self.cx[seg_idx], x));
+        let py = Kilometers::new(cheby::evaluate(&self.cy[seg_idx], x));
+        let pz = Kilometers::new(cheby::evaluate(&self.cz[seg_idx], x));
         (px, py, pz)
     }
 }

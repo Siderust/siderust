@@ -182,6 +182,7 @@ pub extern "C" fn siderust_runtime_ephemeris_sun_barycentric(
                 z: pos.z().value(),
                 frame: SiderustFrame::EclipticMeanJ2000,
                 center: SiderustCenter::Barycentric,
+                length_unit: SiderustLengthUnit::AU,
             };
         }
         SiderustStatus::Ok
@@ -209,6 +210,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric(
                 z: pos.z().value(),
                 frame: SiderustFrame::EclipticMeanJ2000,
                 center: SiderustCenter::Barycentric,
+                length_unit: SiderustLengthUnit::AU,
             };
         }
         SiderustStatus::Ok
@@ -236,6 +238,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_heliocentric(
                 z: pos.z().value(),
                 frame: SiderustFrame::EclipticMeanJ2000,
                 center: SiderustCenter::Heliocentric,
+                length_unit: SiderustLengthUnit::AU,
             };
         }
         SiderustStatus::Ok
@@ -289,6 +292,7 @@ pub extern "C" fn siderust_runtime_ephemeris_moon_geocentric(
                 z: pos.z().value(),
                 frame: SiderustFrame::EclipticMeanJ2000,
                 center: SiderustCenter::Geocentric,
+                length_unit: SiderustLengthUnit::Km,
             };
         }
         SiderustStatus::Ok
@@ -356,6 +360,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::ICRS,
             center: SiderustCenter::Barycentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         assert_eq!(
             siderust_runtime_ephemeris_sun_barycentric(ptr::null(), 2451545.0, &mut pos),

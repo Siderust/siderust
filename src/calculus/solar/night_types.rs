@@ -15,6 +15,18 @@ pub enum Twilight {
     ApparentHorizon,
 }
 
+impl std::fmt::Display for Twilight {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::Civil => write!(f, "Civil"),
+            Self::Nautical => write!(f, "Nautical"),
+            Self::Astronomical => write!(f, "Astronomical"),
+            Self::Horizon => write!(f, "Horizon"),
+            Self::ApparentHorizon => write!(f, "Apparent Horizon"),
+        }
+    }
+}
+
 impl From<Twilight> for Degrees {
     fn from(t: Twilight) -> Degrees {
         match t {

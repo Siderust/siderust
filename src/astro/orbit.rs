@@ -100,7 +100,21 @@ pub struct Orbit {
     pub mean_anomaly_at_epoch: Degrees,     // Mean anomaly at epoch (M₀)
     pub epoch: JulianDate,                  // Epoch (Julian Date)
 }
-
+impl std::fmt::Display for Orbit {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "a={}, e={:.6}, i={}, \u{03a9}={}, \u{03c9}={}, M\u{2080}={}, epoch={}",
+            self.semi_major_axis,
+            self.eccentricity,
+            self.inclination,
+            self.longitude_of_ascending_node,
+            self.argument_of_perihelion,
+            self.mean_anomaly_at_epoch,
+            self.epoch,
+        )
+    }
+}
 impl Orbit {
     /// Creates a new set of orbital elements.
     pub const fn new(

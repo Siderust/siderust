@@ -4,17 +4,21 @@ version = 4
 
 [[package]]
 name = "affn"
-version = "0.3.3"
+version = "0.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ec6639fb5f399ec93eceeec24afc3608b9760ddcdece6936412d04ab478627d2"
 dependencies = [
  "affn-derive",
  "nalgebra",
- "qtty 0.4.0",
+ "qtty 0.4.1",
  "serde",
 ]
 
 [[package]]
 name = "affn-derive"
 version = "0.1.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "20fe1fdcdc9c8b7fa557c99dc1acacbc90d7c64c8d2826e83f01e414fca1cf18"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -250,8 +254,10 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 [[package]]
 name = "cheby"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3af87a2f4182a67a08e5618b52859ef58cca770526061f0f43eaa754f12ecd30"
 dependencies = [
- "qtty 0.4.0",
+ "qtty 0.3.1",
 ]
 
 [[package]]
@@ -1408,12 +1414,12 @@ dependencies = [
 
 [[package]]
 name = "qtty"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bea89a195c12cff1a98730ebdbf28ac603d75a5eaba14e0b0d0704535f67a811"
+checksum = "9dc60ed0161fc68ec0b0faf090e4feec70dd179447c6ca14e5cc052b4eb2a789"
 dependencies = [
- "qtty-core 0.4.0",
- "qtty-derive 0.4.0",
+ "qtty-core 0.4.1",
+ "qtty-derive 0.4.1",
 ]
 
 [[package]]
@@ -1429,12 +1435,12 @@ dependencies = [
 
 [[package]]
 name = "qtty-core"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eec18c85c65728c91aeec04456140bece6d71cb703307f786303523957759718"
+checksum = "ab488371c17ea2db038caa2a3d0044a85a433c4c2172467978d05ee39d22b6fb"
 dependencies = [
  "libm",
- "qtty-derive 0.4.0",
+ "qtty-derive 0.4.1",
  "serde",
  "typenum",
 ]
@@ -1452,9 +1458,9 @@ dependencies = [
 
 [[package]]
 name = "qtty-derive"
-version = "0.4.0"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e5c4ed7c0500072e756d76102cf8fceebe6ae9199e6e16ca018948eb80c78625"
+checksum = "3ab6c550316cbdd43e4eca2c94c14c1cf4e67b253278a94ccc4a5eca2ce5db6e"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1463,12 +1469,12 @@ dependencies = [
 
 [[package]]
 name = "qtty-ffi"
-version = "0.3.1"
+version = "0.4.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d93de7d3db9abe1006b8a8b635de51f6d967636be144d06c28f66c3b8a49bd17"
+checksum = "8ee8ce830af38e0287f1cf409b6cd713db88f647c5472fc66df00be7cfa53b14"
 dependencies = [
  "cbindgen",
- "qtty 0.3.1",
+ "qtty 0.4.1",
  "quote",
  "serde",
  "serde_json",
@@ -1757,9 +1763,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "758025cb5fccfd3bc2fd74708fd4682be41d99e5dff73c377c0646c6012c73a4"
 dependencies = [
  "aws-lc-rs",
- "log",
  "once_cell",
- "ring",
  "rustls-pki-types",
  "rustls-webpki",
  "subtle",
@@ -1979,7 +1983,7 @@ dependencies = [
  "criterion",
  "nalgebra",
  "paste",
- "qtty 0.4.0",
+ "qtty 0.4.1",
  "regex",
  "reqwest",
  "rstest",
@@ -1998,7 +2002,8 @@ version = "0.1.0"
 dependencies = [
  "affn",
  "cbindgen",
- "qtty 0.4.0",
+ "qtty 0.4.1",
+ "qtty-ffi",
  "siderust",
  "tempoch",
  "tempoch-ffi",
@@ -2103,31 +2108,33 @@ dependencies = [
 
 [[package]]
 name = "tempoch"
-version = "0.3.0"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "acec780480096b36a1872a5131de3e90463083d0a5c5bd13779defc18a530384"
 dependencies = [
- "chrono",
- "qtty 0.4.0",
- "serde_json",
  "tempoch-core",
 ]
 
 [[package]]
 name = "tempoch-core"
-version = "0.3.0"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ea3f7d4b6138b4144837ed3d38042737f16ce3d909661f193fdaf3f40faf7422"
 dependencies = [
  "chrono",
- "qtty 0.4.0",
+ "qtty 0.4.1",
  "serde",
- "serde_json",
 ]
 
 [[package]]
 name = "tempoch-ffi"
-version = "0.1.0"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7a71a06a4b4ec613a77871a1ed81fcf5aa6b17f4409018e4b5f516dd7b066e1b"
 dependencies = [
  "cbindgen",
  "chrono",
- "qtty 0.4.0",
+ "qtty 0.4.1",
  "qtty-ffi",
  "serde_json",
  "tempoch",
@@ -2388,17 +2395,27 @@ checksum = "8ecb6da28b8a351d773b68d5825ac39017e680750f980f3a1a85cd8dd28a47c1"
 
 [[package]]
 name = "ureq"
-version = "2.12.1"
+version = "3.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02d1a66277ed75f640d608235660df48c8e3c19f3b4edb6a263315626cc3c01d"
+checksum = "fdc97a28575b85cfedf2a7e7d3cc64b3e11bd8ac766666318003abbacc7a21fc"
 dependencies = [
  "base64",
  "log",
- "once_cell",
- "rustls",
- "rustls-pki-types",
- "url",
- "webpki-roots 0.26.11",
+ "percent-encoding",
+ "ureq-proto",
+ "utf-8",
+]
+
+[[package]]
+name = "ureq-proto"
+version = "0.5.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d81f9efa9df032be5934a46a068815a10a042b494b6a58cb0a1a97bb5467ed6f"
+dependencies = [
+ "base64",
+ "http",
+ "httparse",
+ "log",
 ]
 
 [[package]]
@@ -2412,6 +2429,12 @@ dependencies = [
  "percent-encoding",
  "serde",
 ]
+
+[[package]]
+name = "utf-8"
+version = "0.7.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
 
 [[package]]
 name = "utf8_iter"
@@ -2592,24 +2615,6 @@ name = "webpki-root-certs"
 version = "1.0.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "804f18a4ac2676ffb4e8b5b5fa9ae38af06df08162314f96a68d2a363e21a8ca"
-dependencies = [
- "rustls-pki-types",
-]
-
-[[package]]
-name = "webpki-roots"
-version = "0.26.11"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "521bc38abb08001b01866da9f51eb7c5d647a19260e00054a8c7fd5f9e57f7a9"
-dependencies = [
- "webpki-roots 1.0.6",
-]
-
-[[package]]
-name = "webpki-roots"
-version = "1.0.6"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22cfaf3c063993ff62e73cb4311efde4db1efb31ab78a3e5c457939ad5cc0bed"
 dependencies = [
  "rustls-pki-types",
 ]

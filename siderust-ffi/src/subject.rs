@@ -1,16 +1,29 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! **Unified subject dispatch** — one set of FFI functions that operate on any
-//! [`SiderustSubject`].
+//! **Unified subject dispatch** — the **preferred FFI entry point** for altitude
+//! and azimuth computations.
+//!
+//! # Overview
 //!
 //! Instead of separate `siderust_sun_*`, `siderust_moon_*`, `siderust_body_*`,
 //! `siderust_star_*`, `siderust_icrs_*`, and `siderust_target_*` families, the
 //! caller constructs a [`SiderustSubject`] tagged value and passes it to these
 //! generic entry-points.
 //!
-//! The old per-type functions remain for backwards compatibility but new code
-//! should prefer these.
+//! # Supported Subject Kinds
+//!
+//! - `Body`: Solar-system bodies (Sun, Moon, planets)
+//! - `Star`: Catalog or custom stars via `SiderustStar` handle
+//! - `Icrs`: Fixed ICRS direction (RA/Dec)
+//! - `Target`: Legacy direction-only target via `SiderustTarget` handle
+//! - `GenericTarget`: Full `CoordinateWithPM<T>` via [`SiderustGenericTarget`] handle
+//!
+//! # Migration
+//!
+//! The old per-type functions in [`crate::altitude`] and [`crate::azimuth`]
+//! remain for backwards compatibility but simply delegate to this module.
+//! New adapters and bindings should use this unified API directly.
 
 use crate::altitude::{crossings_to_c, culminations_to_c, periods_to_c, window_from_c};
 use crate::azimuth::{vec_az_crossings_to_c, vec_az_extrema_to_c};
@@ -354,6 +367,7 @@ mod tests {
                 frame: SiderustFrame::ICRS,
             },
             target_handle: ptr::null(),
+            generic_target_handle: ptr::null(),
         }
     }
 
@@ -368,6 +382,7 @@ mod tests {
                 frame: SiderustFrame::ICRS,
             },
             target_handle: ptr::null(),
+            generic_target_handle: ptr::null(),
         }
     }
 
@@ -382,6 +397,7 @@ mod tests {
                 frame: SiderustFrame::ICRS,
             },
             target_handle: ptr::null(),
+            generic_target_handle: ptr::null(),
         }
     }
 
@@ -400,6 +416,7 @@ mod tests {
                 frame: SiderustFrame::ICRS,
             },
             target_handle: ptr::null(),
+            generic_target_handle: ptr::null(),
         };
         (handle, subject)
     }
@@ -415,6 +432,7 @@ mod tests {
                 frame: SiderustFrame::ICRS,
             },
             target_handle: ptr::null(),
+            generic_target_handle: ptr::null(),
         }
     }
 
@@ -432,6 +450,7 @@ mod tests {
                 frame: SiderustFrame::ICRS,
             },
             target_handle: handle,
+            generic_target_handle: ptr::null(),
         };
         (handle, subject)
     }
@@ -491,6 +510,55 @@ mod tests {
     }
 
     #[test]
+    fn altitude_at_generic_target() {
+        use crate::target::{
+            siderust_generic_target_create_icrs, siderust_generic_target_free,
+            SiderustGenericTarget,
+        };
+
+        let mut handle: *mut SiderustGenericTarget = ptr::null_mut();
+        let st = siderust_generic_target_create_icrs(279.23, 38.78, 2451545.0, &mut handle);
+        assert_eq!(st, SiderustStatus::Ok);
+
+        let subj = SiderustSubject::generic_target(handle);
+        let mut out = 0.0f64;
+        let st = siderust_altitude_at(subj, paris(), 60000.5, &mut out);
+        assert_eq!(st, SiderustStatus::Ok);
+        assert!(out.is_finite());
+
+        unsafe { siderust_generic_target_free(handle) };
+    }
+
+    #[test]
+    fn altitude_at_generic_target_with_pm() {
+        use crate::target::{
+            siderust_generic_target_create_icrs_with_pm, siderust_generic_target_free,
+            SiderustGenericTarget,
+        };
+
+        let mut handle: *mut SiderustGenericTarget = ptr::null_mut();
+        // Simulate a star with proper motion (in degrees per year)
+        let st = siderust_generic_target_create_icrs_with_pm(
+            279.23,
+            38.78,
+            2451545.0,
+            0.0001,
+            -0.0001, // ~0.36 arcsec/yr
+            SiderustRaConvention::MuAlphaStar,
+            &mut handle,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
+
+        let subj = SiderustSubject::generic_target(handle);
+        let mut out = 0.0f64;
+        let st = siderust_altitude_at(subj, paris(), 60000.5, &mut out);
+        assert_eq!(st, SiderustStatus::Ok);
+        assert!(out.is_finite());
+
+        unsafe { siderust_generic_target_free(handle) };
+    }
+
+    #[test]
     fn altitude_at_null_out() {
         let st = siderust_altitude_at(sun_subject(), paris(), 60000.5, ptr::null_mut());
         assert_eq!(st, SiderustStatus::NullPointer);
@@ -508,6 +576,7 @@ mod tests {
                 frame: SiderustFrame::ICRS,
             },
             target_handle: ptr::null(),
+            generic_target_handle: ptr::null(),
         };
         let mut out = 0.0f64;
         let st = siderust_altitude_at(subj, paris(), 60000.5, &mut out);

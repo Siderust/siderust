@@ -366,6 +366,7 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame(
                 z: oz,
                 frame: dst_frame,
                 center: SiderustCenter::Barycentric, // directions have no center
+                length_unit: SiderustLengthUnit::AU,
             };
         }
         SiderustStatus::Ok
@@ -530,6 +531,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame(
                 z: oz,
                 frame: dst_frame,
                 center: pos.center, // center is unchanged for a frame-only transform
+                length_unit: pos.length_unit,
             };
         }
         SiderustStatus::Ok
@@ -557,6 +559,7 @@ pub extern "C" fn siderust_geodetic_to_cartesian_ecef(
                 z: cart.z().value(),
                 frame: SiderustFrame::ECEF,
                 center: SiderustCenter::Geocentric,
+                length_unit: SiderustLengthUnit::Meter,
             };
         }
         SiderustStatus::Ok
@@ -655,6 +658,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_center(
                 z: oz,
                 frame: pos.frame,
                 center: dst_center,
+                length_unit: pos.length_unit,
             };
         }
         SiderustStatus::Ok
@@ -687,6 +691,7 @@ pub extern "C" fn siderust_kepler_position(
                 z: pos.z().value(),
                 frame: SiderustFrame::EclipticMeanJ2000,
                 center: SiderustCenter::Heliocentric, // placeholder; real center = orbit_center
+                length_unit: SiderustLengthUnit::AU,
             };
         }
         SiderustStatus::Ok
@@ -743,6 +748,7 @@ pub extern "C" fn siderust_to_bodycentric(
                 z: pos.z - body_z,
                 frame: pos.frame,
                 center: SiderustCenter::Bodycentric,
+                length_unit: pos.length_unit,
             };
         }
         SiderustStatus::Ok
@@ -790,6 +796,7 @@ pub extern "C" fn siderust_from_bodycentric(
                 z: pos.z + body_geo_z,
                 frame: pos.frame,
                 center: SiderustCenter::Geocentric,
+            length_unit: SiderustLengthUnit::AU,
             };
         }
         SiderustStatus::Ok
@@ -819,6 +826,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::ICRS,
             center: SiderustCenter::Geocentric,
+            length_unit: SiderustLengthUnit::AU,
         }
     }
 
@@ -1304,6 +1312,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::ICRS,
             center: SiderustCenter::Barycentric,
+            length_unit: SiderustLengthUnit::AU,
         }
     }
 
@@ -1396,6 +1405,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Heliocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_cartesian_pos_transform_frame(pos, SiderustFrame::ICRS, J2000, &mut out);
@@ -1410,6 +1420,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::Horizontal,
             center: SiderustCenter::Geocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_cartesian_pos_transform_frame(pos, SiderustFrame::ICRS, J2000, &mut out);
@@ -1447,6 +1458,7 @@ mod tests {
             z: -0.3,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Heliocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_cartesian_pos_transform_center(
@@ -1470,6 +1482,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Heliocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_cartesian_pos_transform_center(
@@ -1491,6 +1504,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Heliocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_cartesian_pos_transform_center(
@@ -1512,6 +1526,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Bodycentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_cartesian_pos_transform_center(
@@ -1531,6 +1546,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Heliocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_cartesian_pos_transform_center(
@@ -1550,6 +1566,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Heliocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let s = siderust_cartesian_pos_transform_center(
             pos,
@@ -1611,6 +1628,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Geocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let params = earth_bodycentric_params();
         let mut body_pos = empty_cart();
@@ -1638,6 +1656,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Bodycentric, // invalid for input
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_to_bodycentric(pos, earth_bodycentric_params(), J2000, &mut out);
@@ -1652,6 +1671,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Geocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let s = siderust_to_bodycentric(pos, earth_bodycentric_params(), J2000, ptr::null_mut());
         assert_eq!(s, SiderustStatus::NullPointer);
@@ -1665,6 +1685,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Bodycentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let s = siderust_from_bodycentric(pos, earth_bodycentric_params(), J2000, ptr::null_mut());
         assert_eq!(s, SiderustStatus::NullPointer);
@@ -1678,6 +1699,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Heliocentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_to_bodycentric(pos, earth_bodycentric_params(), J2000, &mut out);
@@ -1693,6 +1715,7 @@ mod tests {
             z: 0.0,
             frame: SiderustFrame::EclipticMeanJ2000,
             center: SiderustCenter::Barycentric,
+            length_unit: SiderustLengthUnit::AU,
         };
         let mut out = empty_cart();
         let s = siderust_to_bodycentric(pos, earth_bodycentric_params(), J2000, &mut out);
