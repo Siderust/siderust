@@ -6,6 +6,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.6.0] - 08/03/2026
+
 ### Added
 * **Moon phase module** (`calculus::lunar::phase`) with continuous photometric geometry and discrete 8-label classification
   * `moon_phase_geocentric<E>()` — phase angle, illuminated fraction, elongation, waxing flag (generic over `Ephemeris` backend)
