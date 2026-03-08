@@ -19,7 +19,7 @@
 #   SIDERUST_DATASETS_DIR   Alternative to --datasets-dir.
 #
 # After this script completes, run:
-#   git diff dev-deps/siderust/src/generated/
+#   git diff src/generated/
 # to review changes, then commit them.
 
 set -euo pipefail
@@ -112,8 +112,8 @@ echo "==> Done. Updated files:"
 ls -lh "$GENERATED_DIR"
 echo ""
 echo "Review changes with:"
-echo "  git diff dev-deps/siderust/src/generated/"
+echo "  git diff src/generated/"
 echo ""
 echo "Then commit:"
-echo "  git add dev-deps/siderust/src/generated/"
+echo "  git add src/generated/"
 echo "  git commit -m 'chore: refresh generated dataset tables'"

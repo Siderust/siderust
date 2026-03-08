@@ -3,8 +3,25 @@
 
 //! FFI bindings for the altitude / observation API.
 //!
-//! Provides per-body-type functions for altitude_at, above_threshold,
-//! below_threshold, crossings, culminations, and altitude_periods.
+//! ## Preferred API
+//!
+//! New code should use the **unified subject API** from [`crate::subject`]:
+//! - [`siderust_altitude_at`](crate::subject::siderust_altitude_at)
+//! - [`siderust_above_threshold`](crate::subject::siderust_above_threshold)
+//! - [`siderust_below_threshold`](crate::subject::siderust_below_threshold)
+//! - [`siderust_crossings`](crate::subject::siderust_crossings)
+//! - [`siderust_culminations`](crate::subject::siderust_culminations)
+//!
+//! These accept a [`SiderustSubject`](crate::types::SiderustSubject) discriminated
+//! union that can represent any trackable entity: solar-system bodies, stars,
+//! ICRS directions, legacy targets, or generic `CoordinateWithPM<T>` targets.
+//!
+//! ## Legacy Per-Body Functions
+//!
+//! The `siderust_sun_*`, `siderust_moon_*`, `siderust_star_*`, and other
+//! per-body functions in this module are **thin wrappers** around the unified
+//! subject API and are retained for backward compatibility. New adapters should
+//! prefer the unified API.
 
 use crate::bodies::SiderustStar;
 use crate::error::SiderustStatus;
