@@ -79,6 +79,11 @@ enum siderust_status_t
   // Returned by runtime ephemeris functions when BSP file loading or
   // parsing fails.
   SIDERUST_STATUS_T_DATA_ERROR = 11,
+  // A quantity has an incompatible physical dimension.
+  //
+  // Returned by qtty-aware functions when a quantity's dimension doesn't
+  // match the expected type (e.g., passing a length where an angle is expected).
+  SIDERUST_STATUS_T_INVALID_DIMENSION = 12,
 };
 #ifndef __cplusplus
 typedef int32_t siderust_status_t;
@@ -207,6 +212,30 @@ enum siderust_center_t
 typedef int32_t siderust_center_t;
 #endif // __cplusplus
 
+// Length unit for coordinate positions.
+//
+// Specifies the unit of measure for coordinate distances (x, y, z components
+// in Cartesian positions, or distance in spherical positions).
+enum SiderustLengthUnit
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Astronomical Units (≈149.6 million km).
+  SIDERUST_LENGTH_UNIT_AU = 0,
+  // Kilometres.
+  SIDERUST_LENGTH_UNIT_KM = 1,
+  // Light-years.
+  SIDERUST_LENGTH_UNIT_LIGHT_YEAR = 2,
+  // Parsecs.
+  SIDERUST_LENGTH_UNIT_PARSEC = 3,
+  // Metres.
+  SIDERUST_LENGTH_UNIT_METER = 4,
+};
+#ifndef __cplusplus
+typedef int32_t SiderustLengthUnit;
+#endif // __cplusplus
+
 // Principal lunar phase kind.
 enum siderust_phase_kind_t
 #ifdef __cplusplus
@@ -267,10 +296,42 @@ enum siderust_subject_kind_t
   SIDERUST_SUBJECT_KIND_T_ICRS = 2,
   // Target opaque handle (the `target_handle` field is valid).
   SIDERUST_SUBJECT_KIND_T_TARGET = 3,
+  // Generic target opaque handle (the `generic_target_handle` field is valid).
+  SIDERUST_SUBJECT_KIND_T_GENERIC_TARGET = 4,
 };
 #ifndef __cplusplus
 typedef int32_t siderust_subject_kind_t;
 #endif // __cplusplus
+
+// Coordinate kind discriminant for [`SiderustTargetCoord`].
+//
+// Specifies which coordinate representation is stored in the target.
+enum SiderustTargetCoordKind
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Spherical direction (RA/Dec) without distance.
+  SIDERUST_TARGET_COORD_KIND_SPHERICAL_DIR = 0,
+  // Spherical position with distance.
+  SIDERUST_TARGET_COORD_KIND_SPHERICAL_POS = 1,
+  // Cartesian position (x, y, z).
+  SIDERUST_TARGET_COORD_KIND_CARTESIAN_POS = 2,
+};
+#ifndef __cplusplus
+typedef int32_t SiderustTargetCoordKind;
+#endif // __cplusplus
+
+// Opaque handle representing a generic celestial target.
+//
+// This mirrors Rust's `CoordinateWithPM<T>`, supporting:
+// - Direction-only coordinates (ICRS, equatorial, etc.)
+// - Full position coordinates with distance
+// - Optional proper motion
+//
+// Use `siderust_generic_target_create_*` functions to construct,
+// and `siderust_generic_target_free` to release.
+typedef struct SiderustGenericTarget SiderustGenericTarget;
 
 // Opaque handle to a `RuntimeEphemeris`.
 //
@@ -283,6 +344,8 @@ typedef struct siderust_runtime_ephemeris_t siderust_runtime_ephemeris_t;
 typedef struct SiderustStar SiderustStar;
 
 // Opaque handle representing an ICRS celestial target (RA/Dec).
+//
+// This is the legacy target type. New code should prefer [`SiderustGenericTarget`].
 typedef struct SiderustTarget SiderustTarget;
 
 // A threshold-crossing event.
@@ -409,16 +472,18 @@ typedef struct siderust_planet_t {
 
 // Cartesian position (x, y, z + metadata).
 typedef struct siderust_cartesian_pos_t {
-  // X coordinate (AU).
+  // X coordinate in the specified length unit.
   double x;
-  // Y coordinate (AU).
+  // Y coordinate in the specified length unit.
   double y;
-  // Z coordinate (AU).
+  // Z coordinate in the specified length unit.
   double z;
   // Reference frame.
   siderust_frame_t frame;
   // Reference centre.
   siderust_center_t center;
+  // Length unit for x, y, z coordinates.
+  SiderustLengthUnit length_unit;
 } siderust_cartesian_pos_t;
 
 // Bodycentric reference center: which standard center the orbit is relative to.
@@ -462,6 +527,36 @@ typedef struct siderust_moon_phase_geometry_t {
   uint8_t _pad[7];
 } siderust_moon_phase_geometry_t;
 
+// Unified subject for altitude / azimuth / tracking computations.
+//
+// A tagged struct that can represent any entity on which altitude and
+// azimuth queries can be performed: solar-system bodies, catalog stars,
+// fixed ICRS directions, or opaque Target handles.
+//
+// Only the field corresponding to `kind` is valid:
+//
+// | `kind`           | Valid field(s)           |
+// |------------------|--------------------------|
+// | `Body`           | `body`                   |
+// | `Star`           | `star_handle`            |
+// | `Icrs`           | `icrs_dir`               |
+// | `Target`         | `target_handle`          |
+// | `GenericTarget`  | `generic_target_handle`  |
+typedef struct siderust_subject_t {
+  // Discriminant selecting which field is active.
+  siderust_subject_kind_t kind;
+  // Solar-system body discriminant.  Valid when `kind == Body`.
+  SiderustBody body;
+  // Opaque star handle (non-null).  Valid when `kind == Star`.
+  const struct SiderustStar *star_handle;
+  // ICRS spherical direction.  Valid when `kind == Icrs`.
+  struct siderust_spherical_dir_t icrs_dir;
+  // Opaque target handle (non-null).  Valid when `kind == Target`.
+  const struct SiderustTarget *target_handle;
+  // Opaque generic target handle.  Valid when `kind == GenericTarget`.
+  const struct SiderustGenericTarget *generic_target_handle;
+} siderust_subject_t;
+
 // Cartesian velocity (vx, vy, vz + frame metadata).
 typedef struct siderust_cartesian_vel_t {
   // X velocity component (AU/day).
@@ -474,32 +569,60 @@ typedef struct siderust_cartesian_vel_t {
   siderust_frame_t frame;
 } siderust_cartesian_vel_t;
 
-// Unified subject for altitude / azimuth / tracking computations.
+// Spherical position (direction + distance).
+typedef struct siderust_spherical_pos_t {
+  // Longitude in degrees.
+  double lon_deg;
+  // Latitude in degrees.
+  double lat_deg;
+  // Distance in the unit appropriate for the context (AU, km, ly, etc.).
+  double distance;
+  // Reference frame.
+  siderust_frame_t frame;
+  // Reference centre.
+  siderust_center_t center;
+} siderust_spherical_pos_t;
+
+// Union of coordinate types for [`SiderustGenericTargetData`].
 //
-// A tagged struct that can represent any entity on which altitude and
-// azimuth queries can be performed: solar-system bodies, catalog stars,
-// fixed ICRS directions, or opaque Target handles.
+// Callers must check `kind` to determine which field is valid.
+// Only the field corresponding to `kind` contains valid data:
 //
-// Only the field corresponding to `kind` is valid:
+// | `kind`        | Valid field    |
+// |---------------|----------------|
+// | `SphericalDir`| `spherical_dir`|
+// | `SphericalPos`| `spherical_pos`|
+// | `CartesianPos`| `cartesian_pos`|
+typedef union SiderustTargetCoordUnion {
+  // Spherical direction (valid when kind == SphericalDir).
+  struct siderust_spherical_dir_t spherical_dir;
+  // Spherical position (valid when kind == SphericalPos).
+  struct siderust_spherical_pos_t spherical_pos;
+  // Cartesian position (valid when kind == CartesianPos).
+  struct siderust_cartesian_pos_t cartesian_pos;
+} SiderustTargetCoordUnion;
+
+// Generic target data — stored as a flat struct for FFI.
 //
-// | `kind`   | Valid field(s)         |
-// |----------|-----------------------|
-// | `Body`   | `body`                |
-// | `Star`   | `star_handle`         |
-// | `Icrs`   | `icrs_dir`            |
-// | `Target` | `target_handle`       |
-typedef struct siderust_subject_t {
-  // Discriminant selecting which field is active.
-  siderust_subject_kind_t kind;
-  // Solar-system body discriminant.  Valid when `kind == Body`.
-  SiderustBody body;
-  // Opaque star handle (non-null).  Valid when `kind == Star`.
-  const struct SiderustStar *star_handle;
-  // ICRS spherical direction.  Valid when `kind == Icrs`.
-  struct siderust_spherical_dir_t icrs_dir;
-  // Opaque target handle (non-null).  Valid when `kind == Target`.
-  const struct SiderustTarget *target_handle;
-} siderust_subject_t;
+// Represents a point in celestial coordinates at a specific epoch,
+// optionally with proper motion. This struct mirrors the Rust
+// `CoordinateWithPM<T>` type but in a C-compatible form.
+typedef struct SiderustGenericTargetData {
+  // Which coordinate representation is stored.
+  SiderustTargetCoordKind kind;
+  // Padding for alignment.
+  uint8_t _pad1[4];
+  // The coordinate data (union — check `kind` to determine which field).
+  union SiderustTargetCoordUnion coord;
+  // Epoch as a Julian Date.
+  double epoch_jd;
+  // Whether proper motion is present.
+  bool has_proper_motion;
+  // Padding for alignment.
+  uint8_t _pad2[7];
+  // Proper motion (valid only when `has_proper_motion` is true).
+  struct siderust_proper_motion_t proper_motion;
+} SiderustGenericTargetData;
 
 #ifdef __cplusplus
 extern "C" {
@@ -1296,6 +1419,42 @@ siderust_status_t siderust_moon_illumination_range(tempoch_period_mjd_t window,
                                                    tempoch_period_mjd_t **out,
                                                    uintptr_t *count);
 
+// Altitude of any subject at an instant, with threshold as a `QttyQuantity`.
+//
+// The `mjd` parameter is still a raw `f64` Modified Julian Date. Use the
+// tempoch-ffi functions to work with typed time values.
+
+siderust_status_t siderust_altitude_at_qty(struct siderust_subject_t subject,
+                                           struct siderust_geodetic_t observer,
+                                           double mjd,
+                                           QttyQuantity *out);
+
+// Periods when a subject is above a threshold altitude (qtty-aware).
+//
+// The `threshold` parameter must be an angle quantity (degrees, radians, arcminutes, etc.).
+// Returns `InvalidDimension` if the quantity is not an angle.
+
+siderust_status_t siderust_above_threshold_qty(struct siderust_subject_t subject,
+                                               struct siderust_geodetic_t observer,
+                                               tempoch_period_mjd_t window,
+                                               QttyQuantity threshold,
+                                               struct siderust_search_opts_t opts,
+                                               tempoch_period_mjd_t **out,
+                                               uintptr_t *count);
+
+// Periods when a subject is below a threshold altitude (qtty-aware).
+//
+// The `threshold` parameter must be an angle quantity (degrees, radians, arcminutes, etc.).
+// Returns `InvalidDimension` if the quantity is not an angle.
+
+siderust_status_t siderust_below_threshold_qty(struct siderust_subject_t subject,
+                                               struct siderust_geodetic_t observer,
+                                               tempoch_period_mjd_t window,
+                                               QttyQuantity threshold,
+                                               struct siderust_search_opts_t opts,
+                                               tempoch_period_mjd_t **out,
+                                               uintptr_t *count);
+
 // Load a runtime ephemeris from a BSP file on disk.
 //
 // `path` must be a valid, NUL-terminated UTF-8 path to a JPL DE4xx BSP file.
@@ -1463,6 +1622,61 @@ siderust_status_t siderust_in_azimuth_range(struct siderust_subject_t subject,
                                             struct siderust_search_opts_t opts,
                                             tempoch_period_mjd_t **out,
                                             uintptr_t *count);
+
+// Create a generic target from an ICRS spherical direction.
+//
+// # Parameters
+// - `ra_deg`: Right ascension in degrees.
+// - `dec_deg`: Declination in degrees.
+// - `epoch_jd`: Reference epoch as Julian Date.
+// - `out`: On success, receives the allocated handle pointer.
+//
+// The caller must free the handle with [`siderust_generic_target_free`].
+
+siderust_status_t siderust_generic_target_create_icrs(double ra_deg,
+                                                      double dec_deg,
+                                                      double epoch_jd,
+                                                      struct SiderustGenericTarget **out);
+
+// Create a generic target from an ICRS direction with proper motion.
+//
+// # Parameters
+// - `ra_deg`: Right ascension in degrees.
+// - `dec_deg`: Declination in degrees.
+// - `epoch_jd`: Reference epoch as Julian Date.
+// - `pm_ra_deg_yr`: RA proper motion in degrees per Julian year.
+// - `pm_dec_deg_yr`: Dec proper motion in degrees per Julian year.
+// - `ra_convention`: Whether `pm_ra` is µα or µα★.
+// - `out`: On success, receives the allocated handle pointer.
+//
+// The caller must free the handle with [`siderust_generic_target_free`].
+
+siderust_status_t siderust_generic_target_create_icrs_with_pm(double ra_deg,
+                                                              double dec_deg,
+                                                              double epoch_jd,
+                                                              double pm_ra_deg_yr,
+                                                              double pm_dec_deg_yr,
+                                                              siderust_ra_convention_t ra_convention,
+                                                              struct SiderustGenericTarget **out);
+
+// Free a generic target handle.
+//
+// # Safety
+// - `handle` must have been allocated by a `siderust_generic_target_create_*` function.
+// - The handle must not have been freed before, and must not be used after this call.
+ void siderust_generic_target_free(struct SiderustGenericTarget *handle);
+
+// Get the coordinate data from a generic target.
+//
+// Writes the target's coordinate information to `*out`.
+
+siderust_status_t siderust_generic_target_get_data(const struct SiderustGenericTarget *handle,
+                                                   struct SiderustGenericTargetData *out);
+
+// Get the epoch (Julian Date) of a generic target.
+
+siderust_status_t siderust_generic_target_epoch_jd(const struct SiderustGenericTarget *handle,
+                                                   double *out);
 
 // Create a new target from right ascension and declination (degrees) and epoch
 // (Julian Date).

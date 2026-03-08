@@ -39,4 +39,9 @@ pub enum SiderustStatus {
     /// Returned by runtime ephemeris functions when BSP file loading or
     /// parsing fails.
     DataError = 11,
+    /// A quantity has an incompatible physical dimension.
+    ///
+    /// Returned by qtty-aware functions when a quantity's dimension doesn't
+    /// match the expected type (e.g., passing a length where an angle is expected).
+    InvalidDimension = 12,
 }

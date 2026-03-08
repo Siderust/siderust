@@ -3,9 +3,19 @@
 
 //! Azimuth FFI — bearing crossings, extrema, and range periods.
 //!
+//! ## Preferred API
+//!
+//! New code should use the **unified subject API** from [`crate::subject`]:
+//! - [`siderust_azimuth_at`](crate::subject::siderust_azimuth_at)
+//! - [`siderust_azimuth_crossings`](crate::subject::siderust_azimuth_crossings)
+//! - [`siderust_azimuth_extrema`](crate::subject::siderust_azimuth_extrema)
+//! - [`siderust_in_azimuth_range`](crate::subject::siderust_in_azimuth_range)
+//!
+//! ## Legacy Per-Body Functions
+//!
 //! Per-body functions are thin wrappers delegating to the unified
-//! [`crate::subject`] functions.  Helpers and free functions are kept
-//! here because `subject.rs` depends on them.
+//! [`crate::subject`] functions and are retained for backward compatibility.
+//! Helpers and free functions are kept here because `subject.rs` depends on them.
 
 use crate::bodies::SiderustStar;
 use crate::error::SiderustStatus;
