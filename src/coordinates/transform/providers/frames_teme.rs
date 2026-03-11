@@ -20,18 +20,18 @@ use super::*;
 
 impl FrameRotationProvider<TEME, EquatorialTrueOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        let nut = nutation::nutation_iau2000b(jd);
+        let nut = Nut::nutation(jd);
         Rotation3::rz(nut.dpsi * nut.mean_obliquity.cos())
     }
 }
 
 impl FrameRotationProvider<EquatorialTrueOfDate, TEME> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -41,7 +41,7 @@ impl FrameRotationProvider<EquatorialTrueOfDate, TEME> for () {
 
 impl FrameRotationProvider<TEME, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -51,7 +51,7 @@ impl FrameRotationProvider<TEME, ICRS> for () {
 
 impl FrameRotationProvider<ICRS, TEME> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {

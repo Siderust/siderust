@@ -29,7 +29,7 @@ use crate::astro::cio;
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::eop::{EopProvider, EopValues};
 use crate::astro::era::earth_rotation_angle;
-use crate::astro::nutation::nutation_iau2000b;
+use crate::astro::nutation::{nutation_iau2000b, NutationModel};
 use crate::astro::polar_motion::polar_motion_matrix_from_eop;
 use crate::coordinates::frames::{EquatorialMeanJ2000, ICRS};
 use crate::coordinates::transform::context::AstroContext;
@@ -87,7 +87,7 @@ pub(crate) fn nutation_with_celestial_pole_offsets(
 /// # Returns
 ///
 /// A 3×3 rotation matrix `R` such that `v_eq = R * v_itrs`.
-pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut>(
+pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> affn::Rotation3 {
