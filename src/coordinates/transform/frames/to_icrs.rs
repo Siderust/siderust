@@ -1,10 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use super::bias::frame_bias_j2000_to_icrs;
+use super::bias;
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
-use affn::Rotation3;
 use qtty::LengthUnit;
 
 // Implement Transform trait for EclipticMeanJ2000 -> ICRS
@@ -12,18 +11,8 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS,
     for Position<C, frames::EclipticMeanJ2000, U>
 {
     fn to_frame(&self) -> Position<C, frames::ICRS, U> {
-        // J2000 mean obliquity ε₀ (IAU 2006): 84381.406″
-        let eps = (84381.406_f64 / 3600.0).to_radians();
-        let cos_e = eps.cos();
-        let sin_e = eps.sin();
-
-        let x0 = self.x();
-        let y0 = self.y();
-        let z0 = self.z();
-        let mean_y = cos_e * y0 - sin_e * z0;
-        let mean_z = sin_e * y0 + cos_e * z0;
-        let rot: Rotation3 = frame_bias_j2000_to_icrs();
-        let [x, y, z] = rot * [x0, mean_y, mean_z];
+        let rot = bias::ecliptic_j2000_to_icrs();
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         Position::from_vec3(
             self.center_params().clone(),
             nalgebra::Vector3::new(x, y, z),
@@ -36,7 +25,7 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS,
     for Position<C, frames::EquatorialMeanJ2000, U>
 {
     fn to_frame(&self) -> Position<C, frames::ICRS, U> {
-        let rot: Rotation3 = frame_bias_j2000_to_icrs();
+        let rot = bias::frame_bias_j2000_to_icrs();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         Position::from_vec3(
             self.center_params().clone(),

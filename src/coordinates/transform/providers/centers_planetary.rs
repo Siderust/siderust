@@ -45,7 +45,7 @@ macro_rules! impl_planet_center_shift_vsop {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> AuShift {
@@ -80,7 +80,7 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> AuShift {
@@ -117,7 +117,7 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> AuShift {
@@ -145,7 +145,7 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> AuShift {
@@ -168,7 +168,7 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> AuShift {
@@ -182,7 +182,7 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> AuShift {
@@ -196,7 +196,7 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> AuShift {
@@ -211,7 +211,7 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> AuShift {
