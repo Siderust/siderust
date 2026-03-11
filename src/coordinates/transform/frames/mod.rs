@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-mod bias;
+pub(crate) mod bias;
 pub mod direction;
 pub mod to_ecliptic;
 pub mod to_equatorial;

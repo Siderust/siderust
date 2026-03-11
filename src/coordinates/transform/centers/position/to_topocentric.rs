@@ -3,6 +3,7 @@
 
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::astro::eop::EopProvider;
+use crate::astro::nutation::NutationModel;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
@@ -16,7 +17,7 @@ use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 // =============================================================================
 
 #[inline]
-fn observer_site_equatorial_mean_j2000_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
+fn observer_site_equatorial_mean_j2000_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut: NutationModel>(
     site: Geodetic<ECEF>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
@@ -42,7 +43,7 @@ where
 ///
 /// For the default-precision path, call `pos.to_center(site, jd)` on any
 /// `Position<Geocentric, F, U>`.
-pub fn to_topocentric_with_ctx<F, U, Eph, Eop, Nut>(
+pub fn to_topocentric_with_ctx<F, U, Eph, Eop, Nut: NutationModel>(
     pos: &Position<Geocentric, F, U>,
     site: Geodetic<ECEF>,
     jd: JulianDate,

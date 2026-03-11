@@ -65,8 +65,10 @@ pub type DefaultEphemeris = crate::calculus::ephemeris::Vsop87Ephemeris;
 pub type DefaultEop = IersEop;
 
 /// Default nutation/precession model marker.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct DefaultNutationModel;
+///
+/// Uses IAU 2000B (77 terms, ~1 mas accuracy). For full precision,
+/// substitute [`Iau2006A`](crate::astro::nutation::Iau2006A).
+pub type DefaultNutationModel = crate::astro::nutation::Iau2000B;
 
 /// Astronomical context for coordinate transformations.
 ///

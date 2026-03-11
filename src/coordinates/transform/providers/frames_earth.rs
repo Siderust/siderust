@@ -24,7 +24,7 @@ use super::*;
 
 impl FrameRotationProvider<GCRSFrame, CIRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -34,7 +34,7 @@ impl FrameRotationProvider<GCRSFrame, CIRS> for () {
 
 impl FrameRotationProvider<CIRS, GCRSFrame> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -44,7 +44,7 @@ impl FrameRotationProvider<CIRS, GCRSFrame> for () {
 
 impl FrameRotationProvider<CIRS, TIRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -54,7 +54,7 @@ impl FrameRotationProvider<CIRS, TIRS> for () {
 
 impl FrameRotationProvider<TIRS, CIRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -64,7 +64,7 @@ impl FrameRotationProvider<TIRS, CIRS> for () {
 
 impl FrameRotationProvider<TIRS, ITRF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -74,7 +74,7 @@ impl FrameRotationProvider<TIRS, ITRF> for () {
 
 impl FrameRotationProvider<ITRF, TIRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -84,7 +84,7 @@ impl FrameRotationProvider<ITRF, TIRS> for () {
 
 impl FrameRotationProvider<ITRF, ECEF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -94,7 +94,7 @@ impl FrameRotationProvider<ITRF, ECEF> for () {
 
 impl FrameRotationProvider<ECEF, ITRF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -104,7 +104,7 @@ impl FrameRotationProvider<ECEF, ITRF> for () {
 
 impl FrameRotationProvider<ICRS, CIRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -114,7 +114,7 @@ impl FrameRotationProvider<ICRS, CIRS> for () {
 
 impl FrameRotationProvider<CIRS, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -124,7 +124,7 @@ impl FrameRotationProvider<CIRS, ICRS> for () {
 
 impl FrameRotationProvider<ICRS, TIRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -134,7 +134,7 @@ impl FrameRotationProvider<ICRS, TIRS> for () {
 
 impl FrameRotationProvider<TIRS, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -144,7 +144,7 @@ impl FrameRotationProvider<TIRS, ICRS> for () {
 
 impl FrameRotationProvider<ICRS, ITRF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -154,7 +154,7 @@ impl FrameRotationProvider<ICRS, ITRF> for () {
 
 impl FrameRotationProvider<ITRF, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -164,7 +164,7 @@ impl FrameRotationProvider<ITRF, ICRS> for () {
 
 impl FrameRotationProvider<ICRS, ECEF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -174,7 +174,7 @@ impl FrameRotationProvider<ICRS, ECEF> for () {
 
 impl FrameRotationProvider<ECEF, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {

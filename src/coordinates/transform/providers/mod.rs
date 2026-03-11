@@ -36,8 +36,9 @@
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::earth_rotation_provider::nutation_with_celestial_pole_offsets;
 use crate::astro::eop::EopProvider;
+use crate::astro::nutation::NutationModel;
 use crate::astro::{
-    cio, era, nutation, polar_motion, precession, HasIauRotation, IauRotationParams,
+    cio, era, polar_motion, precession, HasIauRotation, IauRotationParams,
 };
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Position;
@@ -84,7 +85,7 @@ mod frames_teme;
 /// ```
 pub trait FrameRotationProvider<F1, F2> {
     /// Computes the rotation matrix from frame `F1` to frame `F2`.
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3;
@@ -98,7 +99,7 @@ pub trait FrameRotationProvider<F1, F2> {
 /// canonical unit of the ephemeris providers.
 pub trait CenterShiftProvider<C1, C2, F> {
     /// Computes the translation vector from center `C1` to center `C2`.
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3];
@@ -110,7 +111,7 @@ where
     F: affn::ReferenceFrame,
 {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -125,7 +126,7 @@ where
     F: affn::ReferenceFrame,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3] {
@@ -138,39 +139,11 @@ where
     }
 }
 
-/// Mean obliquity ε₀ at J2000.0 (IAU 2006): 84381.406".
-///
-/// Converts the canonical arcsecond value to radians using the exact
-/// factor `π / 648 000` (arcseconds-to-radians).
-#[inline]
-fn j2000_obliquity() -> qtty::Radians {
-    qtty::Radians::new(precession::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648000.0)
-}
-
-/// Frame bias rotation from ICRS to mean equator/equinox of J2000.0.
-const FRAME_BIAS_ICRS_TO_J2000: Rotation3 = Rotation3::from_matrix([
-    [
-        0.999_999_999_999_994_2,
-        0.000_000_070_782_794_8,
-        -0.000_000_080_562_171_5,
-    ],
-    [
-        -0.000_000_070_782_797_4,
-        0.999_999_999_999_996_9,
-        -0.000_000_033_060_408_8,
-    ],
-    [
-        0.000_000_080_562_169_6,
-        0.000_000_033_060_414_5,
-        0.999_999_999_999_993_2,
-    ],
-]);
-
 /// Composes two frame rotations: `F1 → FM → F2`.
 ///
 /// Equivalent to `R(FM→F2) · R(F1→FM)`, applied left-to-right.
 #[inline]
-fn compose_rotation<F1, FM, F2, Eph, Eop: EopProvider, Nut>(
+fn compose_rotation<F1, FM, F2, Eph, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> Rotation3
@@ -185,7 +158,7 @@ where
 
 /// Returns `R(F2→F1)` by inverting `R(F1→F2)`.
 #[inline]
-fn inverse_rotation<F1, F2, Eph, Eop: EopProvider, Nut>(
+fn inverse_rotation<F1, F2, Eph, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> Rotation3
@@ -212,7 +185,7 @@ fn add_shifts(lhs: AuShift, rhs: AuShift) -> AuShift {
 
 /// Returns `shift(C1→C2)` by negating `shift(C2→C1)`.
 #[inline]
-fn inverse_shift<C1, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut>(
+fn inverse_shift<C1, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> AuShift
@@ -224,7 +197,7 @@ where
 
 /// Composes two center shifts: `C1 → CM → C2`.
 #[inline]
-fn compose_shift<C1, CM, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut>(
+fn compose_shift<C1, CM, C2, F, Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> AuShift
@@ -242,7 +215,7 @@ where
 /// Applies IERS celestial-pole corrections (dX, dY) from the EOP provider
 /// before computing the CIP/CIO-based rotation matrix.
 #[inline]
-fn gcrs_to_cirs_rotation<Eph, Eop: EopProvider, Nut>(
+fn gcrs_to_cirs_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> Rotation3 {
@@ -257,7 +230,7 @@ fn gcrs_to_cirs_rotation<Eph, Eop: EopProvider, Nut>(
 /// Converts the epoch from TT to UT1 using the EOP ΔUT1 correction,
 /// then builds a single Rz rotation by the negative ERA.
 #[inline]
-fn cirs_to_tirs_rotation<Eph, Eop: EopProvider, Nut>(
+fn cirs_to_tirs_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> Rotation3 {
@@ -271,7 +244,7 @@ fn cirs_to_tirs_rotation<Eph, Eop: EopProvider, Nut>(
 /// Uses the IERS polar-motion parameters (xp, yp) from the EOP provider
 /// to build the W(t) rotation matrix.
 #[inline]
-fn tirs_to_itrf_rotation<Eph, Eop: EopProvider, Nut>(
+fn tirs_to_itrf_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> Rotation3 {
@@ -291,7 +264,7 @@ fn tirs_to_itrf_rotation<Eph, Eop: EopProvider, Nut>(
 /// so callers can pass any ecliptic-plane position directly without
 /// first converting it to a specific center.
 #[inline]
-fn rotate_shift_from_ecliptic<C, F, Eph, Eop: EopProvider, Nut>(
+fn rotate_shift_from_ecliptic<C, F, Eph, Eop: EopProvider, Nut: NutationModel>(
     pos: Position<C, EclipticMeanJ2000, qtty::AstronomicalUnit>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
@@ -310,7 +283,7 @@ macro_rules! impl_via_icrs_bidirectional {
     ($src:ty, $dst:ty) => {
         impl FrameRotationProvider<$src, $dst> for () {
             #[inline]
-            fn rotation<Eph, Eop: EopProvider, Nut>(
+            fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> Rotation3 {
@@ -320,7 +293,7 @@ macro_rules! impl_via_icrs_bidirectional {
 
         impl FrameRotationProvider<$dst, $src> for () {
             #[inline]
-            fn rotation<Eph, Eop: EopProvider, Nut>(
+            fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> Rotation3 {
@@ -351,7 +324,7 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> AuShift {
@@ -365,7 +338,7 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> AuShift {
@@ -379,7 +352,7 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> AuShift {
@@ -393,7 +366,7 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> AuShift {
@@ -407,7 +380,7 @@ macro_rules! impl_reverse_center_shifts {
             (): FrameRotationProvider<EclipticMeanJ2000, F>,
         {
             #[inline]
-            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> AuShift {

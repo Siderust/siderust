@@ -24,6 +24,7 @@
 
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::astro::eop::EopProvider;
+use crate::astro::nutation::NutationModel;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::Geodetic;
@@ -120,7 +121,7 @@ impl ObserverState {
     }
 
     /// Context-aware topocentric observer state.
-    pub fn topocentric_with_ctx<Eph, Eop: EopProvider, Nut>(
+    pub fn topocentric_with_ctx<Eph, Eop: EopProvider, Nut: NutationModel>(
         site: &Geodetic<ECEF>,
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,

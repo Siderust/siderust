@@ -18,21 +18,22 @@
 //! - **GCRS ≈ ICRS**: treated as identity (no aberration modelling).
 
 use super::*;
+use crate::coordinates::transform::frames::bias;
 
 /// ICRS → EclipticMeanJ2000 rotation (J2000 mean ecliptic).
 impl FrameRotationProvider<ICRS, EclipticMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        Rotation3::rx(-j2000_obliquity()) * FRAME_BIAS_ICRS_TO_J2000
+        bias::icrs_to_ecliptic_j2000()
     }
 }
 
 impl FrameRotationProvider<EclipticMeanJ2000, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -42,27 +43,27 @@ impl FrameRotationProvider<EclipticMeanJ2000, ICRS> for () {
 
 impl FrameRotationProvider<ICRS, EquatorialMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        FRAME_BIAS_ICRS_TO_J2000
+        bias::frame_bias_icrs_to_j2000()
     }
 }
 
 impl FrameRotationProvider<EquatorialMeanJ2000, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        FRAME_BIAS_ICRS_TO_J2000.inverse()
+        bias::frame_bias_j2000_to_icrs()
     }
 }
 
 impl FrameRotationProvider<EME2000, EquatorialMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -72,7 +73,7 @@ impl FrameRotationProvider<EME2000, EquatorialMeanJ2000> for () {
 
 impl FrameRotationProvider<EquatorialMeanJ2000, EME2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -82,7 +83,7 @@ impl FrameRotationProvider<EquatorialMeanJ2000, EME2000> for () {
 
 impl FrameRotationProvider<EME2000, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -92,7 +93,7 @@ impl FrameRotationProvider<EME2000, ICRS> for () {
 
 impl FrameRotationProvider<ICRS, EME2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -102,7 +103,7 @@ impl FrameRotationProvider<ICRS, EME2000> for () {
 
 impl FrameRotationProvider<EME2000, EclipticMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -112,7 +113,7 @@ impl FrameRotationProvider<EME2000, EclipticMeanJ2000> for () {
 
 impl FrameRotationProvider<EclipticMeanJ2000, EME2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -122,7 +123,7 @@ impl FrameRotationProvider<EclipticMeanJ2000, EME2000> for () {
 
 impl FrameRotationProvider<EME2000, EquatorialMeanOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -132,7 +133,7 @@ impl FrameRotationProvider<EME2000, EquatorialMeanOfDate> for () {
 
 impl FrameRotationProvider<EquatorialMeanOfDate, EME2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -142,7 +143,7 @@ impl FrameRotationProvider<EquatorialMeanOfDate, EME2000> for () {
 
 impl FrameRotationProvider<EME2000, EquatorialTrueOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -152,7 +153,7 @@ impl FrameRotationProvider<EME2000, EquatorialTrueOfDate> for () {
 
 impl FrameRotationProvider<EquatorialTrueOfDate, EME2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -162,7 +163,7 @@ impl FrameRotationProvider<EquatorialTrueOfDate, EME2000> for () {
 
 impl FrameRotationProvider<EME2000, ICRF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -172,7 +173,7 @@ impl FrameRotationProvider<EME2000, ICRF> for () {
 
 impl FrameRotationProvider<ICRF, EME2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -182,7 +183,7 @@ impl FrameRotationProvider<ICRF, EME2000> for () {
 
 impl FrameRotationProvider<EME2000, GCRSFrame> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -192,7 +193,7 @@ impl FrameRotationProvider<EME2000, GCRSFrame> for () {
 
 impl FrameRotationProvider<GCRSFrame, EME2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -202,58 +203,61 @@ impl FrameRotationProvider<GCRSFrame, EME2000> for () {
 
 impl FrameRotationProvider<EquatorialMeanJ2000, EclipticMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        Rotation3::rx(-j2000_obliquity())
+        bias::obliquity_eq_to_ecl()
     }
 }
 
 impl FrameRotationProvider<EclipticMeanJ2000, EquatorialMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        Rotation3::rx(j2000_obliquity())
+        bias::obliquity_ecl_to_eq()
     }
 }
 
 impl FrameRotationProvider<EquatorialMeanJ2000, EquatorialMeanOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        precession::precession_matrix_iau2006(jd)
+        // precession_matrix_iau2006 returns the full Fukushima-Williams matrix
+        // (ICRS → MeanOfDate, including frame bias).  Strip the bias to get
+        // pure precession: P = FW(date) · rb⁻¹.
+        precession::precession_matrix_iau2006(jd) * bias::frame_bias_j2000_to_icrs()
     }
 }
 
 impl FrameRotationProvider<EquatorialMeanOfDate, EquatorialMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        precession::precession_matrix_iau2006(jd).inverse()
+        (precession::precession_matrix_iau2006(jd) * bias::frame_bias_j2000_to_icrs()).inverse()
     }
 }
 
 impl FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        let nut = nutation::nutation_iau2000b(jd);
+        let nut = Nut::nutation(jd);
         Rotation3::fused_rx_rz_rx(nut.mean_obliquity + nut.deps, nut.dpsi, -nut.mean_obliquity)
     }
 }
 
 impl FrameRotationProvider<EquatorialTrueOfDate, EquatorialMeanOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -263,7 +267,7 @@ impl FrameRotationProvider<EquatorialTrueOfDate, EquatorialMeanOfDate> for () {
 
 impl FrameRotationProvider<EquatorialMeanJ2000, EquatorialTrueOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -280,7 +284,7 @@ impl FrameRotationProvider<EquatorialMeanJ2000, EquatorialTrueOfDate> for () {
 
 impl FrameRotationProvider<EquatorialTrueOfDate, EquatorialMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -290,7 +294,7 @@ impl FrameRotationProvider<EquatorialTrueOfDate, EquatorialMeanJ2000> for () {
 
 impl FrameRotationProvider<ICRS, EquatorialMeanOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -300,7 +304,7 @@ impl FrameRotationProvider<ICRS, EquatorialMeanOfDate> for () {
 
 impl FrameRotationProvider<EquatorialMeanOfDate, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -310,18 +314,19 @@ impl FrameRotationProvider<EquatorialMeanOfDate, ICRS> for () {
 
 /// ICRS → EquatorialTrueOfDate rotation.
 ///
-/// Combines IAU 2000B nutation with IERS celestial-pole corrections
-/// (dX, dY) from the EOP provider into a full precession–nutation matrix.
+/// Combines nutation (dispatched via `Nut`) with IERS celestial-pole
+/// corrections (dX, dY) from the EOP provider into a full
+/// precession–nutation matrix.
 ///
 /// The first-order correction is:
 ///   dψ_eop = dX / sin(εA),  dε_eop = dY
 impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        let nut = nutation::nutation_iau2000b(jd);
+        let nut = Nut::nutation(jd);
         let mut dpsi = nut.dpsi;
         let mut deps = nut.deps;
         let eop = ctx.eop_at(jd);
@@ -343,7 +348,7 @@ impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
 
 impl FrameRotationProvider<EquatorialTrueOfDate, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -353,7 +358,7 @@ impl FrameRotationProvider<EquatorialTrueOfDate, ICRS> for () {
 
 impl FrameRotationProvider<ICRF, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -363,7 +368,7 @@ impl FrameRotationProvider<ICRF, ICRS> for () {
 
 impl FrameRotationProvider<ICRS, ICRF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -373,7 +378,7 @@ impl FrameRotationProvider<ICRS, ICRF> for () {
 
 impl FrameRotationProvider<ICRF, EquatorialMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -383,7 +388,7 @@ impl FrameRotationProvider<ICRF, EquatorialMeanJ2000> for () {
 
 impl FrameRotationProvider<EquatorialMeanJ2000, ICRF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -393,7 +398,7 @@ impl FrameRotationProvider<EquatorialMeanJ2000, ICRF> for () {
 
 impl FrameRotationProvider<ICRF, EclipticMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -403,7 +408,7 @@ impl FrameRotationProvider<ICRF, EclipticMeanJ2000> for () {
 
 impl FrameRotationProvider<EclipticMeanJ2000, ICRF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -413,7 +418,7 @@ impl FrameRotationProvider<EclipticMeanJ2000, ICRF> for () {
 
 impl FrameRotationProvider<ICRF, EquatorialMeanOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -423,7 +428,7 @@ impl FrameRotationProvider<ICRF, EquatorialMeanOfDate> for () {
 
 impl FrameRotationProvider<EquatorialMeanOfDate, ICRF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -433,7 +438,7 @@ impl FrameRotationProvider<EquatorialMeanOfDate, ICRF> for () {
 
 impl FrameRotationProvider<ICRF, EquatorialTrueOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -443,7 +448,7 @@ impl FrameRotationProvider<ICRF, EquatorialTrueOfDate> for () {
 
 impl FrameRotationProvider<EquatorialTrueOfDate, ICRF> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -453,7 +458,7 @@ impl FrameRotationProvider<EquatorialTrueOfDate, ICRF> for () {
 
 impl FrameRotationProvider<GCRSFrame, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -463,7 +468,7 @@ impl FrameRotationProvider<GCRSFrame, ICRS> for () {
 
 impl FrameRotationProvider<ICRS, GCRSFrame> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -473,7 +478,7 @@ impl FrameRotationProvider<ICRS, GCRSFrame> for () {
 
 impl FrameRotationProvider<GCRSFrame, EquatorialMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -483,7 +488,7 @@ impl FrameRotationProvider<GCRSFrame, EquatorialMeanJ2000> for () {
 
 impl FrameRotationProvider<EquatorialMeanJ2000, GCRSFrame> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -493,7 +498,7 @@ impl FrameRotationProvider<EquatorialMeanJ2000, GCRSFrame> for () {
 
 impl FrameRotationProvider<GCRSFrame, EquatorialTrueOfDate> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -503,7 +508,7 @@ impl FrameRotationProvider<GCRSFrame, EquatorialTrueOfDate> for () {
 
 impl FrameRotationProvider<EquatorialTrueOfDate, GCRSFrame> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -513,7 +518,7 @@ impl FrameRotationProvider<EquatorialTrueOfDate, GCRSFrame> for () {
 
 impl FrameRotationProvider<GCRSFrame, EclipticMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
@@ -523,7 +528,7 @@ impl FrameRotationProvider<GCRSFrame, EclipticMeanJ2000> for () {
 
 impl FrameRotationProvider<EclipticMeanJ2000, GCRSFrame> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
