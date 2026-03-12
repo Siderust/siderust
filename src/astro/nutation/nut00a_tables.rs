@@ -13,7 +13,7 @@
 /// Columns: nl, nlp, nf, nd, nom, sp, spt, cp, ce, cet, se
 /// Coefficients in units of 0.1 µas (and 0.1 µas/century for t-terms).
 #[rustfmt::skip]
-pub(crate) const NUT00A_LS: [[f64; 11]; 678] = [
+pub(crate) static NUT00A_LS: [[f64; 11]; 678] = [
     [0.0, 0.0, 0.0, 0.0, 1.0, -172064161.0, -174666.0, 33386.0, 92052331.0, 9086.0, 15377.0],
     [0.0, 0.0, 2.0, -2.0, 2.0, -13170906.0, -1675.0, -13696.0, 5730336.0, -3015.0, -4587.0],
     [0.0, 0.0, 2.0, 0.0, 2.0, -2276413.0, -234.0, 2796.0, 978459.0, -485.0, 1374.0],
@@ -699,7 +699,7 @@ pub(crate) const NUT00A_LS: [[f64; 11]; 678] = [
 /// Note: planetary Delaunay args are l, F, D, Ω (no l').
 /// Coefficients sp, cp, se, ce in integer units of 0.1 µas.
 #[rustfmt::skip]
-pub(crate) const NUT00A_PL: [[i32; 17]; 687] = [
+pub(crate) static NUT00A_PL: [[i32; 17]; 687] = [
     [0, 0, 0, 0, 0,    0,    8,  -16,    4,    5,    0,    0,    0, 1440,    0,    0,    0],
     [0, 0, 0, 0, 0,    0,   -8,   16,   -4,   -5,    0,    0,    2,   56, -117,  -42,  -40],
     [0, 0, 0, 0, 0,    0,    8,  -16,    4,    5,    0,    0,    2,  125,  -43,    0,  -54],

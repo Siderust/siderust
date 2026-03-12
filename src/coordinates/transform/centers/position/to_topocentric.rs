@@ -17,7 +17,12 @@ use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 // =============================================================================
 
 #[inline]
-fn observer_site_equatorial_mean_j2000_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut: NutationModel>(
+fn observer_site_equatorial_mean_j2000_with_ctx<
+    U: LengthUnit,
+    Eph,
+    Eop: EopProvider,
+    Nut: NutationModel,
+>(
     site: Geodetic<ECEF>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,

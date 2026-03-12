@@ -37,9 +37,7 @@ use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::earth_rotation_provider::nutation_with_celestial_pole_offsets;
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
-use crate::astro::{
-    cio, era, polar_motion, precession, HasIauRotation, IauRotationParams,
-};
+use crate::astro::{cio, era, polar_motion, precession, HasIauRotation, IauRotationParams};
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{

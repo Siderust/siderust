@@ -174,10 +174,26 @@ mod tests {
         let m = rb.as_matrix();
 
         // ERFA convention:  rb[0][1] < 0,  rb[1][0] > 0
-        assert!(m[0][1] < 0.0, "rb[0][1] should be negative, got {}", m[0][1]);
-        assert!(m[1][0] > 0.0, "rb[1][0] should be positive, got {}", m[1][0]);
-        assert!(m[0][2] > 0.0, "rb[0][2] should be positive, got {}", m[0][2]);
-        assert!(m[2][0] < 0.0, "rb[2][0] should be negative, got {}", m[2][0]);
+        assert!(
+            m[0][1] < 0.0,
+            "rb[0][1] should be negative, got {}",
+            m[0][1]
+        );
+        assert!(
+            m[1][0] > 0.0,
+            "rb[1][0] should be positive, got {}",
+            m[1][0]
+        );
+        assert!(
+            m[0][2] > 0.0,
+            "rb[0][2] should be positive, got {}",
+            m[0][2]
+        );
+        assert!(
+            m[2][0] < 0.0,
+            "rb[2][0] should be negative, got {}",
+            m[2][0]
+        );
     }
 
     /// Applying bias to basis vectors must produce sub-mas agreement with ERFA.
