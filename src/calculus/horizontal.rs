@@ -138,7 +138,12 @@ pub fn equatorial_to_horizontal_true_of_date<U: LengthUnit>(
 /// Context-aware variant of [`equatorial_to_horizontal_true_of_date`].
 ///
 /// Uses the context EOP provider to derive UT1 for GAST.
-pub fn equatorial_to_horizontal_true_of_date_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut: NutationModel>(
+pub fn equatorial_to_horizontal_true_of_date_with_ctx<
+    U: LengthUnit,
+    Eph,
+    Eop: EopProvider,
+    Nut: NutationModel,
+>(
     eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
     site: Geodetic<ECEF>,
     jd: JulianDate,
@@ -178,7 +183,12 @@ pub fn equatorial_to_horizontal_true_of_date_with_ctx<U: LengthUnit, Eph, Eop: E
 
 /// Backward-compatible context-aware wrapper.
 #[inline]
-pub fn equatorial_to_horizontal_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut: NutationModel>(
+pub fn equatorial_to_horizontal_with_ctx<
+    U: LengthUnit,
+    Eph,
+    Eop: EopProvider,
+    Nut: NutationModel,
+>(
     eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
     site: Geodetic<frames::ECEF>,
     jd: JulianDate,

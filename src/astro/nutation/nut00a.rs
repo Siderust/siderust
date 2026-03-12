@@ -85,8 +85,7 @@ fn fa_l_iers03(t: f64) -> f64 {
     let t2 = t * t;
     let t3 = t2 * t;
     let t4 = t3 * t;
-    ((485868.249036 + 1717915923.2178 * t + 31.8792 * t2 + 0.051635 * t3
-        - 0.000_244_70 * t4)
+    ((485868.249036 + 1717915923.2178 * t + 31.8792 * t2 + 0.051635 * t3 - 0.000_244_70 * t4)
         % TURNAS)
         * AS2R
 }
@@ -100,8 +99,7 @@ fn fa_lp_mhb(t: f64) -> f64 {
     let t2 = t * t;
     let t3 = t2 * t;
     let t4 = t3 * t;
-    ((1287104.79305 + 129596581.0481 * t - 0.5532 * t2 + 0.000136 * t3
-        - 0.000_011_49 * t4)
+    ((1287104.79305 + 129596581.0481 * t - 0.5532 * t2 + 0.000136 * t3 - 0.000_011_49 * t4)
         % TURNAS)
         * AS2R
 }
@@ -112,8 +110,7 @@ fn fa_f_iers03(t: f64) -> f64 {
     let t2 = t * t;
     let t3 = t2 * t;
     let t4 = t3 * t;
-    ((335779.526232 + 1739527262.8478 * t - 12.7512 * t2 - 0.001037 * t3
-        + 0.000_000_417 * t4)
+    ((335779.526232 + 1739527262.8478 * t - 12.7512 * t2 - 0.001037 * t3 + 0.000_000_417 * t4)
         % TURNAS)
         * AS2R
 }
@@ -124,8 +121,7 @@ fn fa_d_mhb(t: f64) -> f64 {
     let t2 = t * t;
     let t3 = t2 * t;
     let t4 = t3 * t;
-    ((1072260.70369 + 1602961601.2090 * t - 6.3706 * t2 + 0.006593 * t3
-        - 0.000_031_69 * t4)
+    ((1072260.70369 + 1602961601.2090 * t - 6.3706 * t2 + 0.006593 * t3 - 0.000_031_69 * t4)
         % TURNAS)
         * AS2R
 }
@@ -136,9 +132,7 @@ fn fa_om_iers03(t: f64) -> f64 {
     let t2 = t * t;
     let t3 = t2 * t;
     let t4 = t3 * t;
-    ((450160.398036 - 6962890.5431 * t + 7.4722 * t2 + 0.007702 * t3
-        - 0.000_059_39 * t4)
-        % TURNAS)
+    ((450160.398036 - 6962890.5431 * t + 7.4722 * t2 + 0.007702 * t3 - 0.000_059_39 * t4) % TURNAS)
         * AS2R
 }
 
@@ -382,8 +376,16 @@ mod tests {
         let deps_corr = (n06a.deps.value() - de_raw).abs();
 
         // Correction to dpsi should be dp_raw * 0.4697e-6 ≈ very small
-        assert!(dpsi_corr < 1e-9, "dpsi P03 correction too large: {:.3e}", dpsi_corr);
+        assert!(
+            dpsi_corr < 1e-9,
+            "dpsi P03 correction too large: {:.3e}",
+            dpsi_corr
+        );
         // deps correction at t=0 should be zero (fj2=0)
-        assert!(deps_corr < 1e-15, "deps P03 correction should be zero at t=0: {:.3e}", deps_corr);
+        assert!(
+            deps_corr < 1e-15,
+            "deps P03 correction should be zero at t=0: {:.3e}",
+            deps_corr
+        );
     }
 }
