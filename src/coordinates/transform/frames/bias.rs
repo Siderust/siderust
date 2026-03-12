@@ -15,6 +15,7 @@
 
 use crate::astro::precession;
 use affn::Rotation3;
+use std::sync::OnceLock;
 
 /// Frame bias rotation matrix from ICRS to mean equator/equinox of J2000.0.
 ///
@@ -28,36 +29,24 @@ use affn::Rotation3;
 /// εA = obl06(J2000.0) = 84381.406″.
 ///
 /// The off-diagonal signs follow the SOFA/ERFA convention: `rb[0][1] < 0`.
-const FRAME_BIAS_ICRS_TO_J2000: Rotation3 = Rotation3::from_matrix([
-    [
-        0.999_999_999_999_994_1,
-        -0.000_000_070_783_689_610,
-        0.000_000_080_562_139_776,
-    ],
-    [
-        0.000_000_070_783_686_946,
-        0.999_999_999_999_996_9,
-        0.000_000_033_059_437_354,
-    ],
-    [
-        -0.000_000_080_562_142_116,
-        -0.000_000_033_059_431_692,
-        0.999_999_999_999_996_2,
-    ],
-]);
+fn frame_bias_matrix() -> Rotation3 {
+    static FRAME_BIAS: OnceLock<Rotation3> = OnceLock::new();
+    *FRAME_BIAS
+        .get_or_init(|| precession::precession_matrix_iau2006(crate::time::JulianDate::J2000))
+}
 
 // ── Bias helpers ──────────────────────────────────────────────────────
 
 /// Frame bias: ICRS → EquatorialMeanJ2000.
 #[inline]
 pub(crate) fn frame_bias_icrs_to_j2000() -> Rotation3 {
-    FRAME_BIAS_ICRS_TO_J2000
+    frame_bias_matrix()
 }
 
 /// Inverse frame bias: EquatorialMeanJ2000 → ICRS.
 #[inline]
 pub(crate) fn frame_bias_j2000_to_icrs() -> Rotation3 {
-    FRAME_BIAS_ICRS_TO_J2000.inverse()
+    frame_bias_matrix().inverse()
 }
 
 // ── Obliquity helpers ─────────────────────────────────────────────────

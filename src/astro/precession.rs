@@ -84,7 +84,7 @@
 //!
 //! ## See Also
 //!
-//! - [`crate::astro::nutation`] – IAU 2000B nutation (77 terms)
+//! - [`crate::astro::nutation`] – IAU 2006/2000A and IAU 2000B nutation models
 
 use crate::time::JulianDate;
 use affn::Rotation3;

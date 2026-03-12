@@ -66,9 +66,10 @@ pub type DefaultEop = IersEop;
 
 /// Default nutation/precession model marker.
 ///
-/// Uses IAU 2000B (77 terms, ~1 mas accuracy). For full precision,
-/// substitute [`Iau2006A`](crate::astro::nutation::Iau2006A).
-pub type DefaultNutationModel = crate::astro::nutation::Iau2000B;
+/// Uses the full IAU 2006/2000A nutation model for SOFA-grade accuracy.
+/// For the abridged 77-term model, substitute
+/// [`Iau2000B`](crate::astro::nutation::Iau2000B).
+pub type DefaultNutationModel = crate::astro::nutation::Iau2006A;
 
 /// Astronomical context for coordinate transformations.
 ///

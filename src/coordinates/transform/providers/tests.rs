@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use super::*;
-use crate::astro::nutation::Iau2006A;
+use crate::astro::nutation::{Iau2000B, Iau2006A};
 
 const EPSILON: f64 = 1e-10;
 
@@ -197,8 +197,8 @@ fn test_icrf_to_ecliptic_matches_icrs_to_ecliptic() {
 // ERFA 2.0.1.5 / SOFA 2024-10-01 release.  Tolerances are:
 //
 //   • Fixed bias / J2000 obliquity: 1 × 10⁻¹⁵ (double-precision hard-coded).
-//   • Precession (pmat06):         1 × 10⁻¹² (same IAU 2006 model).
-//   • Nutation (num06a vs 2000B):  1 × 10⁻⁶  (expected 2000A vs 2000B gap).
+//   • Precession (pmat06 / bp06-rp): 1 × 10⁻¹² (same IAU 2006 model).
+//   • Nutation (num06a):             1 × 10⁻¹² (same IAU 2006/2000A model).
 
 /// Helper: Frobenius distance between two 3×3 matrices.
 fn mat_frobenius(a: &[[f64; 3]; 3], b: &[[f64; 3]; 3]) -> f64 {
@@ -351,10 +351,9 @@ fn erfa_precession_j2020_matches_pmat06() {
     );
 }
 
-/// Nutation at J2020.0: siderust's 2000B differs from ERFA `num06a` (2000A)
-/// within expected 2000A/2000B precision gap (~few mas ≈ ~1e-8 rad).
+/// Nutation at J2020.0: default siderust context matches ERFA `num06a`.
 #[test]
-fn erfa_nutation_j2020_within_2000b_ceiling() {
+fn erfa_nutation_j2020_default_matches_num06a() {
     let ctx = AstroContext::default();
     let jd = JulianDate::new(2451545.0 + 7305.0);
     let rot = frame_rotation::<EquatorialMeanOfDate, EquatorialTrueOfDate>(jd, &ctx);
@@ -380,10 +379,49 @@ fn erfa_nutation_j2020_within_2000b_ceiling() {
     ];
 
     let frob = mat_frobenius(m, &erfa);
-    // 2000A vs 2000B gap should be ≤ ~10 µas ≈ 5e-11 rad; allow generous 1e-6
+    assert!(
+        frob < 1e-12,
+        "default nutation should match ERFA num06a; Frobenius = {:.3e}",
+        frob,
+    );
+}
+
+/// The abridged IAU 2000B option remains available for callers that prefer it.
+#[test]
+fn erfa_nutation_j2020_iau2000b_within_ceiling() {
+    use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris};
+
+    let ctx = AstroContext::<DefaultEphemeris, DefaultEop, Iau2000B>::with_types();
+    let jd = JulianDate::new(2451545.0 + 7305.0);
+    let rot = <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation::<
+        DefaultEphemeris,
+        DefaultEop,
+        Iau2000B,
+    >(jd, &ctx);
+    let m = rot.as_matrix();
+
+    let erfa: [[f64; 3]; 3] = [
+        [
+            0.999_999_996_793_943_5,
+            7.346_944_425_006_64e-5,
+            3.184_892_099_196_083e-5,
+        ],
+        [
+            -7.346_970_426_149_143e-5,
+            0.999_999_997_267_785_5,
+            8.162_807_504_485_947e-6,
+        ],
+        [
+            -3.184_832_118_801_187_4e-5,
+            -8.165_147_409_144_868e-6,
+            0.999_999_999_459_507_5,
+        ],
+    ];
+
+    let frob = mat_frobenius(m, &erfa);
     assert!(
         frob < 1e-6,
-        "nutation 2000B should be close to ERFA num06a; Frobenius = {:.3e}",
+        "nutation Iau2000B should stay within its expected ceiling; Frobenius = {:.3e}",
         frob,
     );
 }

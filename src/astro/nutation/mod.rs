@@ -6,14 +6,14 @@
 //! This module provides the [`NutationModel`] trait for type-level nutation
 //! model selection and two concrete implementations:
 //!
-//! - **[`Iau2000B`]** — 77-term abridged model (~1 mas accuracy)
 //! - **[`Iau2006A`]** — Full IAU 2006/2000A model (1365 terms, sub-µas)
+//! - **[`Iau2000B`]** — 77-term abridged model (~1 mas accuracy)
 //!
 //! ## Usage
 //!
 //! The model is selected at compile time via the `Nut` type parameter on
 //! [`AstroContext`](crate::coordinates::transform::context::AstroContext).
-//! The default is `Iau2000B`. For full precision:
+//! The default is `Iau2006A`. For the full-precision default explicitly:
 //!
 //! ```rust
 //! use siderust::coordinates::transform::context::AstroContext;
@@ -28,17 +28,17 @@
 //! let ctx = FullPrecision::with_types();
 //! ```
 //!
-//! ## IAU 2000B (default)
-//!
-//! Uses **77 trigonometric terms** for Δψ/Δε plus a fixed correction for
-//! omitted planetary terms. Accurate to better than **1 mas** vs the full
-//! IAU 2000A model.
-//!
-//! ## IAU 2006/2000A (full precision)
+//! ## IAU 2006/2000A (default)
 //!
 //! Full MHB2000 model with 678 luni-solar + 687 planetary terms, plus
 //! Wallace & Capitaine (2006) P03/J₂ corrections for IAU 2006 precession
 //! compatibility.
+//!
+//! ## IAU 2000B (abridged)
+//!
+//! Uses **77 trigonometric terms** for Δψ/Δε plus a fixed correction for
+//! omitted planetary terms. Accurate to better than **1 mas** vs the full
+//! IAU 2000A model.
 //!
 //! ## Legacy IAU 1980 Nutation
 //!
