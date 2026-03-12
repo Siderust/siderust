@@ -269,16 +269,11 @@ impl FrameRotationProvider<EquatorialMeanJ2000, EquatorialTrueOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        compose_rotation::<
-            EquatorialMeanJ2000,
-            EquatorialMeanOfDate,
-            EquatorialTrueOfDate,
-            Eph,
-            Eop,
-            Nut,
-        >(jd, ctx)
+        let nut = Nut::nutation(jd);
+        precession::precession_nutation_matrix(jd, nut.dpsi, nut.deps)
+            * bias::frame_bias_j2000_to_icrs()
     }
 }
 
@@ -286,9 +281,12 @@ impl FrameRotationProvider<EquatorialTrueOfDate, EquatorialMeanJ2000> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        inverse_rotation::<EquatorialTrueOfDate, EquatorialMeanJ2000, Eph, Eop, Nut>(jd, ctx)
+        let nut = Nut::nutation(jd);
+        (precession::precession_nutation_matrix(jd, nut.dpsi, nut.deps)
+            * bias::frame_bias_j2000_to_icrs())
+        .inverse()
     }
 }
 
@@ -296,9 +294,9 @@ impl FrameRotationProvider<ICRS, EquatorialMeanOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        compose_rotation::<ICRS, EquatorialMeanJ2000, EquatorialMeanOfDate, Eph, Eop, Nut>(jd, ctx)
+        precession::precession_matrix_iau2006(jd)
     }
 }
 
@@ -306,9 +304,9 @@ impl FrameRotationProvider<EquatorialMeanOfDate, ICRS> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Rotation3 {
-        inverse_rotation::<EquatorialMeanOfDate, ICRS, Eph, Eop, Nut>(jd, ctx)
+        precession::precession_matrix_iau2006(jd).inverse()
     }
 }
 
