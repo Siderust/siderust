@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Polar Motion — IERS Conventions
+//! # Polar Motion, IERS Conventions
 //!
 //! Polar motion describes the deviation of the Earth's rotation axis from
 //! its crust-fixed reference position. It is characterized by the pole

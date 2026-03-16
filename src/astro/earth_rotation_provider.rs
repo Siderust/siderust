@@ -14,10 +14,10 @@
 //! ```
 //!
 //! Where:
-//! - **W** = polar-motion matrix (xₚ, yₚ, s′)  — from EOP
-//! - **ERA** = Earth Rotation Angle (from UT1)  — from EOP `dUT1`
-//! - **Q** = CIO/CIP matrix (X, Y, s)  — from nutation IAU 2000B ± EOP `dX,dY`
-//! - **P** = precession from ICRS to EquatorialMeanJ2000  — frame rotation provider
+//! - **W** = polar-motion matrix (xₚ, yₚ, s′) , from EOP
+//! - **ERA** = Earth Rotation Angle (from UT1) , from EOP `dUT1`
+//! - **Q** = CIO/CIP matrix (X, Y, s) , from nutation IAU 2000B ± EOP `dX,dY`
+//! - **P** = precession from ICRS to EquatorialMeanJ2000 , frame rotation provider
 //!
 //! ## Time-scale contract
 //!
@@ -29,7 +29,7 @@ use crate::astro::cio;
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::eop::{EopProvider, EopValues};
 use crate::astro::era::earth_rotation_angle;
-use crate::astro::nutation::nutation_iau2000b;
+use crate::astro::nutation::NutationModel;
 use crate::astro::polar_motion::polar_motion_matrix_from_eop;
 use crate::coordinates::frames::{EquatorialMeanJ2000, ICRS};
 use crate::coordinates::transform::context::AstroContext;
@@ -40,11 +40,11 @@ use crate::time::JulianDate;
 ///
 /// Returns corrected `(dpsi, deps)` in radians.
 #[inline]
-pub(crate) fn nutation_with_celestial_pole_offsets(
+pub(crate) fn nutation_with_celestial_pole_offsets<Nut: NutationModel>(
     jd: JulianDate,
     eop: EopValues,
 ) -> (qtty::Radians, qtty::Radians) {
-    let nut = nutation_iau2000b(jd);
+    let nut = Nut::nutation(jd);
     let mut dpsi = nut.dpsi;
     let mut deps = nut.deps;
 
@@ -72,13 +72,13 @@ pub(crate) fn nutation_with_celestial_pole_offsets(
 ///
 /// # Arguments
 ///
-/// * `jd`  — observation epoch in **Terrestrial Time** (TT Julian Date).
-/// * `ctx` — [`AstroContext`] providing the EOP and ephemeris providers.
+/// * `jd` , observation epoch in **Terrestrial Time** (TT Julian Date).
+/// * `ctx`, [`AstroContext`] providing the EOP and ephemeris providers.
 ///
 /// # Time-scale contract
 ///
 /// `jd` **must** be Terrestrial Time (TT). The function internally calls
-/// `ctx.eop_at(jd)` which expects a UTC Julian Date — because TT and UTC
+/// `ctx.eop_at(jd)` which expects a UTC Julian Date, because TT and UTC
 /// differ by only ≈ 69 s (accumulated leap seconds + 32.184 s), an epoch
 /// passed as TT will introduce at most ~0.5 ms EOP interpolation error,
 /// which is below the precision of the daily IERS table.  The subsequent
@@ -87,14 +87,14 @@ pub(crate) fn nutation_with_celestial_pole_offsets(
 /// # Returns
 ///
 /// A 3×3 rotation matrix `R` such that `v_eq = R * v_itrs`.
-pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut>(
+pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> affn::Rotation3 {
     let eop = ctx.eop_at(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
 
-    let (dpsi, deps) = nutation_with_celestial_pole_offsets(jd, eop);
+    let (dpsi, deps) = nutation_with_celestial_pole_offsets::<Nut>(jd, eop);
     let cip = cio::cip_cio(jd, dpsi, deps);
     let q = cio::gcrs_to_cirs_matrix(cip.x, cip.y, cip.s);
     let w = polar_motion_matrix_from_eop(eop.xp, eop.yp, jd);

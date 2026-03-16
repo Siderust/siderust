@@ -481,7 +481,7 @@ pub union SiderustTargetCoordUnion {
     pub cartesian_pos: SiderustCartesianPos,
 }
 
-/// Generic target data — stored as a flat struct for FFI.
+/// Generic target data, stored as a flat struct for FFI.
 ///
 /// Represents a point in celestial coordinates at a specific epoch,
 /// optionally with proper motion. This struct mirrors the Rust
@@ -493,7 +493,7 @@ pub struct SiderustGenericTargetData {
     pub kind: SiderustTargetCoordKind,
     /// Padding for alignment.
     pub _pad1: [u8; 4],
-    /// The coordinate data (union — check `kind` to determine which field).
+    /// The coordinate data (union, check `kind` to determine which field).
     pub coord: SiderustTargetCoordUnion,
     /// Epoch as a Julian Date.
     pub epoch_jd: f64,

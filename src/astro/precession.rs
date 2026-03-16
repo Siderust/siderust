@@ -84,7 +84,7 @@
 //!
 //! ## See Also
 //!
-//! - [`crate::astro::nutation`] – IAU 2000B nutation (77 terms)
+//! - [`crate::astro::nutation`] – IAU 2006/2000A and IAU 2000B nutation models
 
 use crate::time::JulianDate;
 use affn::Rotation3;
@@ -117,23 +117,23 @@ pub fn precession_fw_angles(jd: JulianDate) -> (Radians, Radians, Radians, Radia
     let t4 = t3 * t;
     let t5 = t4 * t;
 
-    // γ̄ (gamb) — arcseconds
+    // γ̄ (gamb), arcseconds
     let gamb_as =
         -0.052_928 + 10.556_378 * t + 0.493_204_4 * t2 - 0.000_312_38 * t3 - 2.788e-6 * t4
             + 2.60e-8 * t5;
 
-    // φ̄ (phib) — arcseconds
+    // φ̄ (phib), arcseconds
     let phib_as = 84_381.412_819 - 46.811_016 * t + 0.051_126_8 * t2 + 0.000_532_89 * t3
         - 4.40e-7 * t4
         - 1.76e-8 * t5;
 
-    // ψ̄ (psib) — arcseconds
+    // ψ̄ (psib), arcseconds
     let psib_as = -0.041_775 + 5_038.481_484 * t + 1.558_417_5 * t2
         - 0.000_185_22 * t3
         - 2.6452e-5 * t4
         - 1.48e-8 * t5;
 
-    // ε_A (epsa) — mean obliquity of date, arcseconds
+    // ε_A (epsa), mean obliquity of date, arcseconds
     // IAU 2006 obliquity (Hilton et al. 2006 / SOFA iauObl06)
     let epsa_as = 84381.406 - 46.836_769 * t - 0.000_183_1 * t2 + 0.002_003_40 * t3
         - 5.76e-7 * t4

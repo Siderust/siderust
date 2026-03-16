@@ -7,7 +7,7 @@ and how to refresh or extend the pre-generated data.
 ## Offline-by-default: committed generated tables
 
 The three core datasets are **pre-generated and committed** under
-`src/generated/`.  Normal builds — including docs.rs — do **not** download
+`src/generated/`.  Normal builds, including docs.rs, do **not** download
 anything:
 
 | File | Source dataset | Update frequency |

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Integration tests for `math_core::root_finding` — the astronomy-agnostic
+//! Integration tests for `math_core::root_finding`, the astronomy-agnostic
 //! Brent & bisection solvers that use typed [`qtty`] quantities.
 
 use qtty::{Day, Quantity, Radian};

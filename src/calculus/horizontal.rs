@@ -12,7 +12,7 @@
 
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::eop::EopProvider;
-use crate::astro::nutation::nutation_iau2000b;
+use crate::astro::nutation::{nutation_iau2000b, NutationModel};
 use crate::astro::precession;
 use crate::astro::sidereal::gast_iau2006;
 use crate::coordinates::centers::Geodetic;
@@ -56,7 +56,7 @@ pub fn geocentric_j2000_to_apparent_topocentric_with_ctx<
     U: LengthUnit,
     Eph,
     Eop: EopProvider,
-    Nut,
+    Nut: NutationModel,
 >(
     geo_cart_j2000: &cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, U>,
     site: Geodetic<frames::ECEF>,
@@ -88,7 +88,7 @@ where
             z_m,
         );
 
-    // 3) Apply nutation rotation (mean-of-date → true-of-date) — IAU 2000B
+    // 3) Apply nutation rotation (mean-of-date → true-of-date), IAU 2000B
     let rot_nut = crate::astro::nutation::nutation_rotation_iau2000b(jd);
     let [x_t, y_t, z_t] = rot_nut * [topo_cart_mod.x(), topo_cart_mod.y(), topo_cart_mod.z()];
 
@@ -138,7 +138,12 @@ pub fn equatorial_to_horizontal_true_of_date<U: LengthUnit>(
 /// Context-aware variant of [`equatorial_to_horizontal_true_of_date`].
 ///
 /// Uses the context EOP provider to derive UT1 for GAST.
-pub fn equatorial_to_horizontal_true_of_date_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
+pub fn equatorial_to_horizontal_true_of_date_with_ctx<
+    U: LengthUnit,
+    Eph,
+    Eop: EopProvider,
+    Nut: NutationModel,
+>(
     eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
     site: Geodetic<ECEF>,
     jd: JulianDate,
@@ -178,7 +183,12 @@ pub fn equatorial_to_horizontal_true_of_date_with_ctx<U: LengthUnit, Eph, Eop: E
 
 /// Backward-compatible context-aware wrapper.
 #[inline]
-pub fn equatorial_to_horizontal_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
+pub fn equatorial_to_horizontal_with_ctx<
+    U: LengthUnit,
+    Eph,
+    Eop: EopProvider,
+    Nut: NutationModel,
+>(
     eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
     site: Geodetic<frames::ECEF>,
     jd: JulianDate,

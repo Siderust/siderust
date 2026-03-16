@@ -27,7 +27,7 @@
 //!    - Expressed in degrees.
 //!
 //! 4. **Longitude of the ascending node (`Ω`)**  
-//!    - Angle from a fixed reference direction (e.g., the vernal equinox) to the ascending node —
+//!    - Angle from a fixed reference direction (e.g., the vernal equinox) to the ascending node,
 //!      the point where the orbit crosses the reference plane going north.
 //!    - Expressed in degrees.
 //!

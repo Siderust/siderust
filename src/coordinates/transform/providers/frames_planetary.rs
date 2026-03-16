@@ -20,7 +20,7 @@ macro_rules! impl_body_fixed_rotation {
     ($frame:ty, $body_ty:ty) => {
         impl FrameRotationProvider<$frame, ICRS> for () {
             #[inline]
-            fn rotation<Eph, Eop: EopProvider, Nut>(
+            fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 _ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> Rotation3 {
@@ -30,7 +30,7 @@ macro_rules! impl_body_fixed_rotation {
 
         impl FrameRotationProvider<ICRS, $frame> for () {
             #[inline]
-            fn rotation<Eph, Eop: EopProvider, Nut>(
+            fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
                 ctx: &AstroContext<Eph, Eop, Nut>,
             ) -> Rotation3 {

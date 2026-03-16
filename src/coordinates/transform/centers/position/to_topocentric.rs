@@ -3,6 +3,8 @@
 
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::astro::eop::EopProvider;
+use crate::astro::nutation::NutationModel;
+use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
@@ -16,7 +18,12 @@ use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 // =============================================================================
 
 #[inline]
-fn observer_site_equatorial_mean_j2000_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
+fn observer_site_equatorial_mean_j2000_with_ctx<
+    U: LengthUnit,
+    Eph,
+    Eop: EopProvider,
+    Nut: NutationModel,
+>(
     site: Geodetic<ECEF>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop, Nut>,
@@ -42,7 +49,7 @@ where
 ///
 /// For the default-precision path, call `pos.to_center(site, jd)` on any
 /// `Position<Geocentric, F, U>`.
-pub fn to_topocentric_with_ctx<F, U, Eph, Eop, Nut>(
+pub fn to_topocentric_with_ctx<F, U, Eph, Eop, Nut: NutationModel>(
     pos: &Position<Geocentric, F, U>,
     site: Geodetic<ECEF>,
     jd: JulianDate,
@@ -71,6 +78,7 @@ where
 // Geocentric → Topocentric  (TransformCenter impl)
 // =============================================================================
 
+// Accept custom model/eop context types for expert callers.
 impl<F: MutableFrame, U: LengthUnit> TransformCenter<Topocentric, F, U>
     for Position<Geocentric, F, U>
 where
@@ -78,31 +86,11 @@ where
     Position<Geocentric, EquatorialMeanJ2000, U>:
         crate::coordinates::transform::TransformFrame<Position<Geocentric, F, U>>,
 {
-    /// Transform to topocentric coordinates.
-    ///
-    /// `params` is the observer's geographic location ([`Geodetic<ECEF>`]).
-    ///
-    /// # Example
-    ///
-    /// ```rust
-    /// use siderust::coordinates::cartesian::Position;
-    /// use siderust::coordinates::centers::{Geocentric, Topocentric, Geodetic};
-    /// use siderust::coordinates::frames::{ECEF, EquatorialMeanJ2000};
-    /// use siderust::coordinates::transform::TransformCenter;
-    /// use siderust::time::JulianDate;
-    /// use qtty::*;
-    ///
-    /// let moon_geo = Position::<Geocentric, EquatorialMeanJ2000, Kilometer>::new(
-    ///     384_400.0, 0.0, 0.0
-    /// );
-    /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
-    /// let moon_topo: Position<Topocentric, EquatorialMeanJ2000, Kilometer> = moon_geo.to_center((site, JulianDate::J2000));
-    /// ```
-    fn to_center_with(
+    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         &self,
         params: Geodetic<ECEF>,
         jd: JulianDate,
-        ctx: &AstroContext,
+        ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Position<Topocentric, F, U> {
         to_topocentric_with_ctx(self, params, jd, ctx)
     }
@@ -122,15 +110,14 @@ where
     /// Inverse parallax: recovers the geocentric position from topocentric.
     ///
     /// The observer site is read from the stored center params.
-    fn to_center_with(
+    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         &self,
         _params: (),
         jd: JulianDate,
-        _ctx: &AstroContext,
+        _ctx: &AstroContext<Eph, Eop, Nut>,
     ) -> Position<Geocentric, F, U> {
         let site = self.center_params();
-        let ctx: AstroContext = AstroContext::default();
-        let site_equatorial = observer_site_equatorial_mean_j2000_with_ctx(*site, jd, &ctx);
+        let site_equatorial = observer_site_equatorial_mean_j2000_with_ctx(*site, jd, _ctx);
         let site_in_frame: Position<Geocentric, F, U> =
             crate::coordinates::transform::TransformFrame::to_frame(&site_equatorial);
         let geo_vec = nalgebra::Vector3::new(

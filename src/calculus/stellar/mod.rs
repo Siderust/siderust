@@ -9,7 +9,7 @@
 //!
 //! ## Key Insight
 //!
-//! A star's altitude varies sinusoidally with Earth's rotation — all stars
+//! A star's altitude varies sinusoidally with Earth's rotation, all stars
 //! share the same period (one sidereal day) and differ only in amplitude,
 //! offset, and phase.  This module exploits that structure for **analytical
 //! bracket discovery**, avoiding the expensive uniform scan used for bodies
@@ -29,10 +29,10 @@
 //!
 //! ## See Also
 //!
-//! - [`crate::calculus::altitude`] — unified API (dispatches here for
+//! - [`crate::calculus::altitude`], unified API (dispatches here for
 //!   [`direction::ICRS`](crate::coordinates::spherical::direction::ICRS) and [`Star`](crate::bodies::Star))
-//! - [`crate::calculus::solar`] — analogous module for the Sun
-//! - [`crate::calculus::lunar`] — analogous module for the Moon
+//! - [`crate::calculus::solar`], analogous module for the Sun
+//! - [`crate::calculus::lunar`], analogous module for the Moon
 
 pub(crate) mod star_equations;
 
