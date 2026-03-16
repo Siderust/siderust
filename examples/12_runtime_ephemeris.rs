@@ -35,7 +35,7 @@ fn print_positions(eph: &RuntimeEphemeris, label: &str) {
     let earth_vel = eph.earth_barycentric_velocity(jd);
     let moon = eph.moon_geocentric(jd);
 
-    println!("=== {} — positions at J2000 ===", label);
+    println!("=== {}, positions at J2000 ===", label);
     println!("  Sun : {:.6}", sun);
     println!("  Earth : {:.6}", earth_bary);
     println!("  Earth : {:.6}", earth_helio);
@@ -70,7 +70,7 @@ fn demo_load_from_bytes() {
     println!("────────────────────────────────────────────────────");
 
     // In a real application you might read the file into a Vec<u8> and pass
-    // it here — useful when you have already downloaded the BSP into a buffer.
+    // it here, useful when you have already downloaded the BSP into a buffer.
     let fake_data = b"this is not a valid BSP file";
     match RuntimeEphemeris::from_bytes(fake_data) {
         Ok(_) => println!("  ✓ Parsed successfully"),
@@ -110,7 +110,7 @@ fn demo_data_manager(explicit_download: bool) {
         } else {
             "✗ not cached"
         };
-        println!("    {:10} — {}", format!("{:?}", id), status);
+        println!("    {:10}, {}", format!("{:?}", id), status);
     }
 
     // DE440 (~120 MB): check if already downloaded before loading.
@@ -118,7 +118,7 @@ fn demo_data_manager(explicit_download: bool) {
     println!("\n  Checking DE440...");
 
     if dm.is_available(id) {
-        // File already cached — load it directly.
+        // File already cached, load it directly.
         match RuntimeEphemeris::from_data_manager(&dm, id) {
             Ok(eph) => print_positions(&eph, "DE440 (DataManager)"),
             Err(e) => eprintln!("  ✗ Load failed: {}", e),
@@ -126,7 +126,7 @@ fn demo_data_manager(explicit_download: bool) {
     } else if explicit_download {
         // User explicitly requested a download (--download flag).
         println!("  Downloading DE440 (~120 MB) from JPL...");
-        println!("  NOTE: This is the ONLY way siderust downloads data —");
+        println!("  NOTE: This is the ONLY way siderust downloads data,");
         println!("        it never happens automatically without your code calling it.");
 
         match dm.download(
@@ -156,7 +156,7 @@ fn demo_data_manager(explicit_download: bool) {
             Err(e) => eprintln!("\n  ✗ Download failed: {}", e),
         }
     } else {
-        // Inform but do NOT download automatically — explicit consent required.
+        // Inform but do NOT download automatically, explicit consent required.
         println!("  DE440 is not cached yet.");
         println!();
         println!("  To download it, either:");
@@ -194,7 +194,7 @@ fn main() {
     // Demo 2: loading from raw bytes.
     demo_load_from_bytes();
 
-    // Demo 3: DataManager — only compiled when `runtime-data` feature is active.
+    // Demo 3: DataManager, only compiled when `runtime-data` feature is active.
     #[cfg(feature = "runtime-data")]
     {
         let explicit_download = args.iter().any(|a| a == "--download");

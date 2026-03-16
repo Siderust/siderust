@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! DE440 build-time pipeline — thin configuration wrapper.
+//! DE440 build-time pipeline, thin configuration wrapper.
 //!
 //! All logic lives in [`pipeline`](../pipeline.rs).
 //! Only activated when the `de440` Cargo feature is enabled.

@@ -1,11 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Moon Ephemeris Cache — Chebyshev Segment Interpolation
+//! # Moon Ephemeris Cache, Chebyshev Segment Interpolation
 //!
 //! Precomputes the Moon's geocentric ecliptic Cartesian coordinates (X, Y, Z)
 //! on Chebyshev nodes within fixed-duration segments, then evaluates any
-//! intermediate time via Clenshaw recurrence in **O(degree)** — replacing the
+//! intermediate time via Clenshaw recurrence in **O(degree)**, replacing the
 //! full ELP2000 series summation (~200 µs → ~1 µs per query).
 //!
 //! A companion [`NutationCache`] stores pre-evaluated nutation triplets
@@ -24,7 +24,7 @@
 //!
 //! The Moon's shortest significant perturbation period is ~5 days (evection).
 //! Chebyshev degree 8 over 4-day segments yields interpolation errors well
-//! below 1 arcsecond in geocentric position — far smaller than the ~0.5°
+//! below 1 arcsecond in geocentric position, far smaller than the ~0.5°
 //! atmospheric refraction uncertainty at the horizon.
 
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
@@ -204,7 +204,7 @@ impl NutationCache {
         let idx = frac as usize;
 
         if idx + 1 >= self.num_entries {
-            // Fallback: outside cache range — compute directly
+            // Fallback: outside cache range, compute directly
             let nut = nutation_iau2000b(mjd.into());
             return (nut.dpsi, nut.deps, nut.mean_obliquity);
         }
@@ -234,14 +234,14 @@ impl NutationCache {
 }
 
 // =============================================================================
-// MoonAltitudeContext — combines caches + site data
+// MoonAltitudeContext, combines caches + site data
 // =============================================================================
 
 /// Pre-built context for fast repeated Moon altitude queries at a fixed site.
 ///
 /// Holds:
-/// * [`MoonPositionCache`] — Chebyshev interpolation of ELP2000 geocentric XYZ
-/// * [`NutationCache`] — linear interpolation of IAU 2000B nutation values
+/// * [`MoonPositionCache`], Chebyshev interpolation of ELP2000 geocentric XYZ
+/// * [`NutationCache`], linear interpolation of IAU 2000B nutation values
 /// * Precomputed observer ITRF position in km
 ///
 /// The [`altitude_rad`] method reproduces the full transform chain
@@ -296,7 +296,7 @@ impl MoonAltitudeContext {
         let ctx: AstroContext = AstroContext::default();
 
         // ---------------------------------------------------------------
-        // 1. Geocentric ecliptic Cartesian (km) — from Chebyshev cache
+        // 1. Geocentric ecliptic Cartesian (km), from Chebyshev cache
         // ---------------------------------------------------------------
         let (x_ecl, y_ecl, z_ecl) = self.pos_cache.get_position_km(mjd);
 
@@ -360,7 +360,7 @@ impl MoonAltitudeContext {
 }
 
 // =============================================================================
-// find_and_label_crossings — avoids probe evaluations
+// find_and_label_crossings, avoids probe evaluations
 // =============================================================================
 
 use crate::calculus::math_core::intervals::LabeledCrossing;
@@ -377,7 +377,7 @@ const DEDUPE_EPS: Days = Days::new(1e-8);
 ///
 /// Unlike the generic `find_crossings` + `label_crossings` pipeline in
 /// `intervals.rs`, this function records the crossing direction directly
-/// from the sign change that triggered the Brent solve — **eliminating
+/// from the sign change that triggered the Brent solve, **eliminating
 /// the 2 extra probe evaluations per crossing**.
 pub fn find_and_label_crossings<V, F>(
     period: Period<MJD>,

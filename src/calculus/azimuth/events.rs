@@ -50,7 +50,7 @@ fn scan_step_for<T: AzimuthProvider>(target: &T, opts: &SearchOpts) -> Days {
 /// Build a **continuous** function `sin(az(t) − bearing)`.
 ///
 /// This sidesteps the 0°/360° discontinuity of the raw azimuth: because sine
-/// has period 2π, `sin(az + 2π − b) = sin(az − b)` — the function is smooth
+/// has period 2π, `sin(az + 2π − b) = sin(az − b)`, the function is smooth
 /// and sign-changes exactly where `az(t) = bearing  (mod 360°)`.
 ///
 /// The zero-crossings of this function correspond exactly to crossing events
@@ -93,7 +93,7 @@ fn make_az_cosine_fn<'a, T: AzimuthProvider>(
 /// monotone function safe for `find_extrema_tol`.
 ///
 /// **Important:** this closure is stateful and must be evaluated with
-/// monotonically increasing `t` — as guaranteed by all `math_core` scan loops.
+/// monotonically increasing `t`, as guaranteed by all `math_core` scan loops.
 fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
     target: &'a T,
     site: Geodetic<ECEF>,
@@ -132,11 +132,11 @@ fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
 /// [`CrossingDirection::Setting`] when decreasing.
 ///
 /// # Arguments
-/// * `target`   — any body implementing [`AzimuthProvider`]
-/// * `observer` — site on Earth
-/// * `window`   — search interval (MJD on TT axis)
-/// * `bearing`  — compass bearing to detect crossings of (North-clockwise)
-/// * `opts`     — search options (tolerances, scan step)
+/// * `target`  , any body implementing [`AzimuthProvider`]
+/// * `observer`, site on Earth
+/// * `window`  , search interval (MJD on TT axis)
+/// * `bearing` , compass bearing to detect crossings of (North-clockwise)
+/// * `opts`    , search options (tolerances, scan step)
 ///
 /// # Example
 /// ```rust
@@ -398,7 +398,7 @@ mod tests {
         let periods = in_azimuth_range(
             &Sun,
             &greenwich(),
-            // Use a 7-day window — the Sun is near North briefly near the solstice,
+            // Use a 7-day window, the Sun is near North briefly near the solstice,
             // but let's just check the function runs without panicking and that
             // non-wrap + wrap complement each other.
             Period::new(

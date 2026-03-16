@@ -4,10 +4,12 @@
 //! # Nutation Models
 //!
 //! This module provides the [`NutationModel`] trait for type-level nutation
-//! model selection and two concrete implementations:
+//! model selection and concrete implementations:
 //!
-//! - **[`Iau2006A`]** — Full IAU 2006/2000A model (1365 terms, sub-µas)
-//! - **[`Iau2000B`]** — 77-term abridged model (~1 mas accuracy)
+//! - **[`Iau2000A`]**, Full IAU 2000A model (1365 terms, highest precision)
+//! - **[`Iau2000B`]**, 77-term abridged model (~1 mas accuracy)
+//! - **[`Iau2006A`]**, IAU 2006-compatible 2000A (P03/J2 corrected)
+//! - **[`Iau2006`]**, precession-only profile (zero nutation angles)
 //!
 //! ## Usage
 //!
@@ -120,6 +122,17 @@ impl NutationModel for Iau2000B {
     }
 }
 
+/// Pure IAU 2000A nutation model marker (1365 terms).
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Iau2000A;
+
+impl NutationModel for Iau2000A {
+    #[inline]
+    fn nutation(jd: JulianDate) -> NutationAngles {
+        nut00a::nutation_iau2000a(jd)
+    }
+}
+
 /// IAU 2006/2000A nutation model marker (1365 terms, sub-µas).
 ///
 /// Uses the full MHB2000 series with P03/J₂ corrections for compatibility
@@ -131,6 +144,24 @@ impl NutationModel for Iau2006A {
     #[inline]
     fn nutation(jd: JulianDate) -> NutationAngles {
         nut00a::nutation_iau2006a(jd)
+    }
+}
+
+/// IAU 2006 precession-only profile marker.
+///
+/// Returns zero nutation offsets while keeping the IAU 2006 mean obliquity,
+/// so frame paths can represent "IAU 2006 precession" without nutation.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Iau2006;
+
+impl NutationModel for Iau2006 {
+    #[inline]
+    fn nutation(jd: JulianDate) -> NutationAngles {
+        NutationAngles {
+            dpsi: Radians::new(0.0),
+            deps: Radians::new(0.0),
+            mean_obliquity: mean_obliquity_iau2006(jd),
+        }
     }
 }
 

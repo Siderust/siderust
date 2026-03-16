@@ -218,7 +218,7 @@ fn gcrs_to_cirs_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
     ctx: &AstroContext<Eph, Eop, Nut>,
 ) -> Rotation3 {
     let eop = ctx.eop_at(jd);
-    let (dpsi, deps) = nutation_with_celestial_pole_offsets(jd, eop);
+    let (dpsi, deps) = nutation_with_celestial_pole_offsets::<Nut>(jd, eop);
     let cip = cio::cip_cio(jd, dpsi, deps);
     cio::gcrs_to_cirs_matrix(cip.x, cip.y, cip.s)
 }
@@ -254,7 +254,7 @@ fn tirs_to_itrf_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
 /// a typed `[Quantity<AstronomicalUnit>; 3]` shift vector.
 ///
 /// Uses [`Rotation3`]'s built-in `Mul<Position>` support to rotate the
-/// position in typed quantity space — no raw `f64` extraction needed.
+/// position in typed quantity space, no raw `f64` extraction needed.
 /// The result preserves the AU unit through the rotation, then extracts
 /// the three components as typed quantities.
 ///

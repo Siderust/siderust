@@ -38,9 +38,9 @@
 //!
 //! ```text
 //! Abbreviations for orbital elements:
-//!   a  — semi‑major axis         Ω — longitude of ascending node
-//!   e  — eccentricity            ω — argument of perihelion
-//!   i  — inclination             M₀ — mean anomaly at epoch
+//!   a , semi‑major axis         Ω, longitude of ascending node
+//!   e , eccentricity            ω, argument of perihelion
+//!   i , inclination             M₀, mean anomaly at epoch
 //! ```
 //!
 //! ---

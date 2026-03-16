@@ -10,9 +10,9 @@
 //! parameterized over the specific data source (DE440, DE441, etc.).
 //!
 //! It does **not** own:
-//! - Physical constants — those come from `qtty` (single source of truth).
-//! - Time-scale conversion — delegated to [`JulianDate::tt_to_tdb`].
-//! - Frame-model definitions — delegated to the coordinate transform providers.
+//! - Physical constants, those come from `qtty` (single source of truth).
+//! - Time-scale conversion, delegated to [`JulianDate::tt_to_tdb`].
+//! - Frame-model definitions, delegated to the coordinate transform providers.
 //!
 //! ## Type safety
 //!
@@ -53,10 +53,10 @@ use qtty::{AstronomicalUnit, Day, Kilometer, Per};
 /// This value is consistent across DE440 and DE441.
 const EARTH_MOON_RATIO: f64 = 81.300_569_074_190_62;
 
-/// μ_Earth / (μ_Earth + μ_Moon)  — Earth's mass fraction of the EM system.
+/// μ_Earth / (μ_Earth + μ_Moon) , Earth's mass fraction of the EM system.
 const FRAC_EARTH: f64 = EARTH_MOON_RATIO / (EARTH_MOON_RATIO + 1.0);
 
-/// μ_Moon / (μ_Earth + μ_Moon)  — Moon's mass fraction of the EM system.
+/// μ_Moon / (μ_Earth + μ_Moon) , Moon's mass fraction of the EM system.
 const FRAC_MOON: f64 = 1.0 / (EARTH_MOON_RATIO + 1.0);
 
 // ── Velocity type alias ─────────────────────────────────────────────────
@@ -163,7 +163,7 @@ pub fn moon_geocentric(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DynSegmentDescriptor variants — runtime-loaded data
+// DynSegmentDescriptor variants, runtime-loaded data
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Sun barycentric position (runtime data).

@@ -89,7 +89,7 @@ where
         let helio_pos = solar_system::PLUTO.orbit.kepler_position(jd);
         let sun_bary = Eph::sun_barycentric(jd);
         // Combine the heliocentric Keplerian position with the Sun's
-        // barycentric offset using AU quantity arithmetic — no raw f64 needed.
+        // barycentric offset using AU quantity arithmetic, no raw f64 needed.
         let bary_pos = Position::<Barycentric, EclipticMeanJ2000, qtty::AstronomicalUnit>::new(
             helio_pos.x() + sun_bary.x(),
             helio_pos.y() + sun_bary.y(),
@@ -124,7 +124,7 @@ where
         let moon_geo_au = Eph::moon_geocentric(jd).to_unit::<qtty::AstronomicalUnit>();
         let earth_bary = Eph::earth_barycentric(jd);
         // Combine geocentric Moon (now in AU) with Earth's barycentric offset
-        // using AU quantity arithmetic — no raw f64 or magic constants needed.
+        // using AU quantity arithmetic, no raw f64 or magic constants needed.
         let seleno_bary = Position::<Barycentric, EclipticMeanJ2000, qtty::AstronomicalUnit>::new(
             moon_geo_au.x() + earth_bary.x(),
             moon_geo_au.y() + earth_bary.y(),

@@ -21,7 +21,7 @@ use crate::time::JulianDate;
 use qtty::*;
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  Fundamental arguments — planetary longitudes (IERS 2003)
+//  Fundamental arguments, planetary longitudes (IERS 2003)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Mercury mean longitude (IERS 2003), radians.
@@ -73,7 +73,7 @@ fn fa_pa(t: f64) -> f64 {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-//  Fundamental arguments — luni-solar (IERS 2003 / MHB2000 mix)
+//  Fundamental arguments, luni-solar (IERS 2003 / MHB2000 mix)
 // ═══════════════════════════════════════════════════════════════════════════
 
 const AS2R: f64 = std::f64::consts::PI / (180.0 * 3600.0);
@@ -186,7 +186,7 @@ const U2R: f64 = AS2R / 1e7;
 ///
 /// This is the raw IAU 2000A result; for use with IAU 2006 precession
 /// call [`nutation_iau2006a`] instead, which applies the P03 corrections.
-fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
+pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
     let t = jd.julian_centuries().value();
 
     // ── Luni-solar fundamental arguments ──
@@ -283,6 +283,19 @@ pub(crate) fn nutation_iau2006a(jd: JulianDate) -> NutationAngles {
     }
 }
 
+/// Compute pure IAU 2000A nutation (without IAU 2006 P03/J2 corrections).
+///
+/// This is useful when callers need an explicit "IAU 2000A" model selection
+/// separate from the combined IAU 2006A convention.
+pub(crate) fn nutation_iau2000a(jd: JulianDate) -> NutationAngles {
+    let (dpsi, deps) = nutation_iau2000a_raw(jd);
+    NutationAngles {
+        dpsi: Radians::new(dpsi),
+        deps: Radians::new(deps),
+        mean_obliquity: mean_obliquity_iau2006(jd),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -337,7 +350,7 @@ mod tests {
     }
 
     /// Cross-check against Python/ERFA nut06a at a reference epoch.
-    /// Reference: erfa.nut06a(2458849.5, 0.0) — 2020-01-01T12:00 TT
+    /// Reference: erfa.nut06a(2458849.5, 0.0), 2020-01-01T12:00 TT
     #[test]
     fn nut2006a_matches_erfa_at_j2020() {
         let jd = JulianDate::new(2_458_849.5);
