@@ -58,6 +58,7 @@
 //! let geo_icrs: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd);
 //! ```
 
+use crate::astro::nutation::{Iau2000A, Iau2000B, Iau2006, Iau2006A};
 use crate::coordinates::cartesian::{Direction, Position, Vector};
 use crate::coordinates::centers::{Geodetic, ReferenceCenter};
 use crate::coordinates::frames::{ReferenceFrame, ECEF};
@@ -69,7 +70,6 @@ use crate::coordinates::transform::context::{
 use crate::coordinates::transform::providers::{CenterShiftProvider, FrameRotationProvider};
 use crate::time::JulianDate;
 use affn::Rotation3;
-use crate::astro::nutation::{Iau2000A, Iau2000B, Iau2006, Iau2006A};
 use qtty::{LengthUnit, Unit};
 
 #[inline]
@@ -514,28 +514,32 @@ where
         match model {
             EarthOrientationModel::Iau2000A => {
                 let ctx = AstroContext::<DefaultEphemeris, DefaultEop, Iau2000A>::with_types();
-                let centered = <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, &ctx);
+                let centered =
+                    <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, &ctx);
                 let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, &ctx);
                 let [x, y, z] = rot * [centered.x(), centered.y(), centered.z()];
                 Position::new(x, y, z)
             }
             EarthOrientationModel::Iau2000B => {
                 let ctx = AstroContext::<DefaultEphemeris, DefaultEop, Iau2000B>::with_types();
-                let centered = <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, &ctx);
+                let centered =
+                    <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, &ctx);
                 let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, &ctx);
                 let [x, y, z] = rot * [centered.x(), centered.y(), centered.z()];
                 Position::new(x, y, z)
             }
             EarthOrientationModel::Iau2006 => {
                 let ctx = AstroContext::<DefaultEphemeris, DefaultEop, Iau2006>::with_types();
-                let centered = <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, &ctx);
+                let centered =
+                    <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, &ctx);
                 let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, &ctx);
                 let [x, y, z] = rot * [centered.x(), centered.y(), centered.z()];
                 Position::new(x, y, z)
             }
             EarthOrientationModel::Iau2006A => {
                 let ctx = AstroContext::<DefaultEphemeris, DefaultEop, Iau2006A>::with_types();
-                let centered = <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, &ctx);
+                let centered =
+                    <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, &ctx);
                 let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, &ctx);
                 let [x, y, z] = rot * [centered.x(), centered.y(), centered.z()];
                 Position::new(x, y, z)
@@ -777,13 +781,12 @@ mod tests {
         let dir = Direction::<ICRS>::new(1.0, 0.0, 0.0);
         let jd = JulianDate::new(2_458_850.0);
 
-        let with_nutation =
-            dir.to_frame_model::<crate::coordinates::frames::EquatorialTrueOfDate>(
-                &jd,
-                EarthOrientationModel::Iau2006A,
-            );
-        let precession_only =
-            dir.to_frame_model::<crate::coordinates::frames::EquatorialTrueOfDate>(
+        let with_nutation = dir.to_frame_model::<crate::coordinates::frames::EquatorialTrueOfDate>(
+            &jd,
+            EarthOrientationModel::Iau2006A,
+        );
+        let precession_only = dir
+            .to_frame_model::<crate::coordinates::frames::EquatorialTrueOfDate>(
                 &jd,
                 EarthOrientationModel::Iau2006,
             );
@@ -793,6 +796,9 @@ mod tests {
             + (with_nutation.z() - precession_only.z()).powi(2))
         .sqrt();
 
-        assert!(delta > 1e-9, "model presets should produce distinct rotations");
+        assert!(
+            delta > 1e-9,
+            "model presets should produce distinct rotations"
+        );
     }
 }
