@@ -49,11 +49,11 @@ fn period_3d() -> Period<MJD> {
     )
 }
 
-// Sirius — J2000 RA/Dec
+// Sirius, J2000 RA/Dec
 const SIRIUS_RA: Degrees = Degrees::new(101.287);
 const SIRIUS_DEC: Degrees = Degrees::new(-16.716);
 
-// Polaris — J2000 RA/Dec
+// Polaris, J2000 RA/Dec
 const POLARIS_RA: Degrees = Degrees::new(37.95);
 const POLARIS_DEC: Degrees = Degrees::new(89.26);
 
@@ -88,7 +88,7 @@ fn polaris_circumpolar_at_greenwich() {
 
 #[test]
 fn polaris_circumpolar_at_roque() {
-    // Roque (28.7°N) — Polaris has Dec ≈ +89.26°, so it's circumpolar
+    // Roque (28.7°N), Polaris has Dec ≈ +89.26°, so it's circumpolar
     let periods = polaris().above_threshold(roque(), period_7d(), Degrees::new(0.0));
 
     assert_eq!(periods.len(), 1, "Polaris circumpolar at 28.7°N");

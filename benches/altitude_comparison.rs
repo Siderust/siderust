@@ -160,7 +160,7 @@ fn bench_below_threshold_30day(c: &mut Criterion) {
 }
 
 // =============================================================================
-// 365-Day Period Search (full year — main performance target)
+// 365-Day Period Search (full year, main performance target)
 // =============================================================================
 
 fn bench_period_search_365day(c: &mut Criterion) {

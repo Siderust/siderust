@@ -9,10 +9,10 @@
 //!
 //! ## Module Structure
 //!
-//! - [`types`]    — Core type definitions (events, query)
-//! - [`search`]   — Search options and configuration constants
-//! - [`events`]   — Event finding (crossings, extrema, range periods)
-//! - [`provider`] — Trait-based dispatch for bodies
+//! - [`types`]   , Core type definitions (events, query)
+//! - [`search`]  , Search options and configuration constants
+//! - [`events`]  , Event finding (crossings, extrema, range periods)
+//! - [`provider`], Trait-based dispatch for bodies
 //!
 //! ## Public Functions
 //!
@@ -35,7 +35,7 @@
 //! ## Azimuth Convention
 //!
 //! North-clockwise (North = 0°), values in `[0°, 360°)`.
-//! A **wrap-around** query — e.g., 350° → 10° passing through North — is
+//! A **wrap-around** query, e.g., 350° → 10° passing through North, is
 //! expressed by setting `min_azimuth > max_azimuth` in [`AzimuthQuery`].
 //!
 //! ## Trait-Based API

@@ -11,8 +11,8 @@
 //! | Parameter | Description |
 //! |-----------|-------------|
 //! | **UT1 − UTC** | Difference between Universal Time and Coordinated Universal Time |
-//! | **xₚ, yₚ** | Pole coordinates — position of the CIP in the ITRS |
-//! | **dX, dY** | Celestial pole offsets — corrections to the IAU precession-nutation model |
+//! | **xₚ, yₚ** | Pole coordinates, position of the CIP in the ITRS |
+//! | **dX, dY** | Celestial pole offsets, corrections to the IAU precession-nutation model |
 //! | **LOD** | Length Of Day excess (deviation from 86400 SI seconds) |
 //!
 //! ## Time-scale contract

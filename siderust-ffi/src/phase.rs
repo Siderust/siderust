@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Lunar phase FFI — phase geometry, event finding, illumination periods.
+//! Lunar phase FFI, phase geometry, event finding, illumination periods.
 
 use crate::altitude::{periods_to_c, window_from_c};
 use crate::error::SiderustStatus;

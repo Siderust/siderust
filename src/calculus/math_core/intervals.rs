@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Interval Assembly — "In‑Range" Period Detection
+//! # Interval Assembly, "In‑Range" Period Detection
 //!
 //! Assembles time periods where a scalar function satisfies
 //! `h_min ≤ f(t) ≤ h_max`, handling:

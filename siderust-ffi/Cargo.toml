@@ -3,7 +3,7 @@ name = "siderust-ffi"
 version = "0.1.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
-description = "C FFI bindings for siderust — high-precision astronomy library."
+description = "C FFI bindings for siderust, high-precision astronomy library."
 license = "AGPL-3.0-only"
 repository = "https://github.com/Siderust/siderust"
 
