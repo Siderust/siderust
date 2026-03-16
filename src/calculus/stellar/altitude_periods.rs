@@ -13,7 +13,7 @@
 //! Earth's rotation (period = one sidereal day):
 //!
 //! 1. Precess J2000 coordinates to the midpoint of the search window
-//!    (precession drift < 0.01″/day — one evaluation suffices).
+//!    (precession drift < 0.01″/day, one evaluation suffices).
 //! 2. Solve `cos(H₀) = (sin(h) − sin(δ)sin(φ)) / (cos(δ)cos(φ))`
 //!    to find threshold crossing hour angles analytically.
 //! 3. Convert H₀ to Mjd crossing times via the GST rate.
@@ -164,7 +164,7 @@ fn find_crossings_analytical(
             if start_above && end_above {
                 (Vec::new(), true)
             } else {
-                // Precession drift moved the star across the threshold —
+                // Precession drift moved the star across the threshold,
                 // fall back to uniform scan for this edge case.
                 let mut crossings = intervals::find_crossings(period, SCAN_STEP_FALLBACK, &f, thr);
                 let labeled = intervals::label_crossings(&mut crossings, &f, thr);
@@ -229,11 +229,11 @@ fn find_crossings_analytical(
 ///
 /// # Arguments
 ///
-/// * `ra_j2000`  — right ascension in J2000 equatorial coordinates
-/// * `dec_j2000` — declination in J2000 equatorial coordinates
-/// * `site`      — observer location on Earth
-/// * `period`    — time window to search
-/// * `threshold` — altitude threshold (e.g. 0° for the geometric horizon)
+/// * `ra_j2000` , right ascension in J2000 equatorial coordinates
+/// * `dec_j2000`, declination in J2000 equatorial coordinates
+/// * `site`     , observer location on Earth
+/// * `period`   , time window to search
+/// * `threshold`, altitude threshold (e.g. 0° for the geometric horizon)
 pub(crate) fn find_star_above_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,

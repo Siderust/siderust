@@ -21,9 +21,9 @@
 //!
 //! ## Pipeline
 //!
-//! 1. **Fetch** — try local `scripts/iers/dataset/`, then download from IERS
-//! 2. **Parse** — fixed-width columns per USNO readme.finals2000A
-//! 3. **Codegen** — emit `iers_eop_data.rs` with `pub static EOP_TABLE`
+//! 1. **Fetch**, try local `scripts/iers/dataset/`, then download from IERS
+//! 2. **Parse**, fixed-width columns per USNO readme.finals2000A
+//! 3. **Codegen**, emit `iers_eop_data.rs` with `pub static EOP_TABLE`
 //!
 //! ## References
 //!

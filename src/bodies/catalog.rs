@@ -59,7 +59,7 @@ use crate::time::JulianDate;
 use qtty::length::nominal::SolarRadiuses;
 use qtty::*;
 
-/// **Vega** (α Lyrae) — an A0 V star that defines the zero‑point of the Johnson
+/// **Vega** (α Lyrae), an A0 V star that defines the zero‑point of the Johnson
 /// V photometric system.
 ///
 /// * **Distance:** 25 ly
@@ -83,7 +83,7 @@ pub const VEGA: Star<'static> = Star::new_const(
     ),
 );
 
-/// **Polaris** (α Ursae Minoris) — the current North Celestial Pole star and a
+/// **Polaris** (α Ursae Minoris), the current North Celestial Pole star and a
 /// classical Cepheid variable.
 ///
 /// * **Distance:** 433 ly
@@ -107,7 +107,7 @@ pub const POLARIS: Star<'static> = Star::new_const(
     ),
 );
 
-/// **Sirius A** (α Canis Majoris) — the brightest star in the night sky,
+/// **Sirius A** (α Canis Majoris), the brightest star in the night sky,
 /// accompanied by the white‑dwarf Sirius B.
 ///
 /// * **Distance:** 8.6 ly
@@ -131,7 +131,7 @@ pub const SIRIUS: Star<'static> = Star::new_const(
     ),
 );
 
-/// **Canopus** (α Carinae) — a yellow‑white F‑type super‑giant and the second
+/// **Canopus** (α Carinae), a yellow‑white F‑type super‑giant and the second
 /// brightest star in the night sky.
 ///
 /// * **Distance:** 310 ly
@@ -155,7 +155,7 @@ pub const CANOPUS: Star<'static> = Star::new_const(
     ),
 );
 
-/// **Arcturus** (α Boötis) — a K‑type red giant and the brightest star in the
+/// **Arcturus** (α Boötis), a K‑type red giant and the brightest star in the
 /// northern celestial hemisphere.
 ///
 /// * **Distance:** 36.7 ly
@@ -179,7 +179,7 @@ pub const ARCTURUS: Star<'static> = Star::new_const(
     ),
 );
 
-/// **Rigel** (β Orionis) — a blue super‑giant that outshines most of the Milky
+/// **Rigel** (β Orionis), a blue super‑giant that outshines most of the Milky
 /// Way despite its great distance.
 ///
 /// * **Distance:** 860 ly
@@ -203,7 +203,7 @@ pub const RIGEL: Star<'static> = Star::new_const(
     ),
 );
 
-/// **Betelgeuse** (α Orionis) — a red super‑giant nearing the end of its life;
+/// **Betelgeuse** (α Orionis), a red super‑giant nearing the end of its life;
 /// expected to explode as a type‑II supernova within the next million years.
 ///
 /// * **Distance:** 548 ly
@@ -227,7 +227,7 @@ pub const BETELGEUSE: Star<'static> = Star::new_const(
     ),
 );
 
-/// **Procyon A** (α Canis Minoris) — a binary system consisting of a F5 IV–V
+/// **Procyon A** (α Canis Minoris), a binary system consisting of a F5 IV–V
 /// sub‑giant and a faint white‑dwarf companion.
 ///
 /// * **Distance:** 11.5 ly
@@ -251,7 +251,7 @@ pub const PROCYON: Star<'static> = Star::new_const(
     ),
 );
 
-/// **Aldebaran** (α Tauri) — an orange K‑type giant lying in front of the Hyades
+/// **Aldebaran** (α Tauri), an orange K‑type giant lying in front of the Hyades
 /// cluster.
 ///
 /// * **Distance:** 65.1 ly
@@ -275,7 +275,7 @@ pub const ALDEBARAN: Star<'static> = Star::new_const(
     ),
 );
 
-/// **Altair** (α Aquilae) — a fast‑rotating A‑type main‑sequence star that bulges
+/// **Altair** (α Aquilae), a fast‑rotating A‑type main‑sequence star that bulges
 /// noticeably at its equator.
 ///
 /// * **Distance:** 16.7 ly

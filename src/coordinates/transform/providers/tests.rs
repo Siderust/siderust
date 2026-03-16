@@ -359,7 +359,7 @@ fn erfa_nutation_j2020_default_matches_num06a() {
     let rot = frame_rotation::<EquatorialMeanOfDate, EquatorialTrueOfDate>(jd, &ctx);
     let m = rot.as_matrix();
 
-    // ERFA num06a(2451545.0, 7305.0) — IAU 2000A
+    // ERFA num06a(2451545.0, 7305.0), IAU 2000A
     let erfa: [[f64; 3]; 3] = [
         [
             0.999_999_996_793_943_5,

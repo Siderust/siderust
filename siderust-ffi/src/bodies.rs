@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! FFI bindings for celestial bodies — Sun, Moon, Star, Planet, etc.
+//! FFI bindings for celestial bodies, Sun, Moon, Star, Planet, etc.
 
 use crate::error::SiderustStatus;
 use crate::types::{SiderustPlanet, SiderustProperMotion, SiderustRaConvention};
@@ -78,11 +78,11 @@ pub extern "C" fn siderust_star_catalog(
 
 /// Create a custom star.
 ///
-/// `name` — UTF-8 null-terminated string.
-/// `ra_deg`, `dec_deg` — J2000 equatorial coordinates in degrees.
-/// `distance_ly` — distance in light-years.
-/// `epoch_jd` — epoch of the given coordinates (Julian Date).
-/// `proper_motion` — optional: pass null for a fixed star.
+/// `name`, UTF-8 null-terminated string.
+/// `ra_deg`, `dec_deg`, J2000 equatorial coordinates in degrees.
+/// `distance_ly`, distance in light-years.
+/// `epoch_jd`, epoch of the given coordinates (Julian Date).
+/// `proper_motion`, optional: pass null for a fixed star.
 #[no_mangle]
 pub extern "C" fn siderust_star_create(
     name: *const c_char,

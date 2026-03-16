@@ -66,14 +66,14 @@ impl DataManager {
     /// Ensure a dataset is available: download if missing, verify integrity, return path.
     ///
     /// **This is the primary API for runtime data loading.** It will download
-    /// the data only if it is not already cached — this is the user's explicit
+    /// the data only if it is not already cached, this is the user's explicit
     /// consent to download.
     pub fn ensure(&self, id: DatasetId) -> Result<PathBuf, DataError> {
         let meta = self.require_meta(id)?;
         let path = cache::dataset_path(&self.data_dir, meta);
 
         if cache::is_cached(&self.data_dir, meta) {
-            // Already cached — verify and return
+            // Already cached, verify and return
             cache::verify(&path, meta)?;
             return Ok(path);
         }

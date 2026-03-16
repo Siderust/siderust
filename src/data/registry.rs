@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Dataset registry — metadata for all downloadable datasets.
+//! Dataset registry, metadata for all downloadable datasets.
 
 /// Identifies a downloadable dataset.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
@@ -10,7 +10,7 @@ pub enum DatasetId {
     De440,
     /// JPL DE441 planetary ephemeris, part 2 (~1.65 GB BSP).
     De441,
-    // Smaller datasets — normally compiled in, but available for runtime override.
+    // Smaller datasets, normally compiled in, but available for runtime override.
     /// VSOP87A planetary theory tables.
     Vsop87a,
     /// VSOP87E planetary theory tables (barycentric).

@@ -19,7 +19,7 @@ use siderust::calculus::lunar::phase::*;
 use siderust::time::{JulianDate, ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
-// Helpers — known lunar events from the USNO / Meeus
+// Helpers, known lunar events from the USNO / Meeus
 // ---------------------------------------------------------------------------
 
 /// Convert a UTC calendar date+time to JulianDate.
@@ -274,7 +274,7 @@ fn l6_waxing_waning_flags() {
 }
 
 // ---------------------------------------------------------------------------
-// L4b: PhaseEvent coverage — all four kinds in a 35-day window
+// L4b: PhaseEvent coverage, all four kinds in a 35-day window
 // ---------------------------------------------------------------------------
 
 #[test]

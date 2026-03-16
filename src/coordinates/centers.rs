@@ -40,9 +40,9 @@
 //!
 //! | Center            | `Params`              | Safety level                        |
 //! |-------------------|-----------------------|-------------------------------------|
-//! | `Barycentric`     | `()`                  | **Compile-time** — zero cost        |
-//! | `Heliocentric`    | `()`                  | **Compile-time** — zero cost        |
-//! | `Geocentric`      | `()`                  | **Compile-time** — zero cost        |
+//! | `Barycentric`     | `()`                  | **Compile-time**, zero cost        |
+//! | `Heliocentric`    | `()`                  | **Compile-time**, zero cost        |
+//! | `Geocentric`      | `()`                  | **Compile-time**, zero cost        |
 //! | `Topocentric`     | [`Geodetic<ECEF>`]    | **Runtime-parameterized** (see below) |
 //! | `Bodycentric`     | [`BodycentricParams`] | **Runtime-parameterized** (see below) |
 //!
@@ -51,12 +51,12 @@
 //!
 //! For **parameterized centers**, the *center type* is still enforced at compile
 //! time (you cannot mix `Topocentric` and `Geocentric` positions), but operations
-//! that require *matching parameters* — such as `Position - Position` and
-//! `distance_to` — verify parameter equality at **runtime**:
+//! that require *matching parameters*, such as `Position - Position` and
+//! `distance_to`, verify parameter equality at **runtime**:
 //!
-//! - **Panicking API** — the default operators (`Sub`, `distance_to`) `assert!`
+//! - **Panicking API**, the default operators (`Sub`, `distance_to`) `assert!`
 //!   in all build profiles.
-//! - **Checked API** — [`Position::checked_sub`](affn::Position::checked_sub) and
+//! - **Checked API**, [`Position::checked_sub`](affn::Position::checked_sub) and
 //!   [`Position::try_distance_to`](affn::Position::try_distance_to) return
 //!   `Result<_, CenterParamsMismatchError>`.
 //!
@@ -108,8 +108,8 @@ use super::frames::ECEF;
 /// The frame `F` determines which ellipsoid is used via
 /// [`HasEllipsoid`](affn::ellipsoid::HasEllipsoid):
 ///
-/// - `Geodetic<ECEF>` — WGS84 ellipsoid
-/// - `Geodetic<ITRF>` — GRS80 ellipsoid
+/// - `Geodetic<ECEF>`, WGS84 ellipsoid
+/// - `Geodetic<ITRF>`, GRS80 ellipsoid
 pub type Geodetic<F, U = qtty::Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
 
 // Required for Transform specialization

@@ -125,11 +125,11 @@ jobs:
             Automated refresh of pre-generated Rust tables in `src/generated/`.
 
             Updated files:
-            - `src/generated/vsop87a.rs` — VSOP87A planetary theory
-            - `src/generated/vsop87e.rs` — VSOP87E planetary theory  
-            - `src/generated/elp_data.rs` — ELP2000 lunar theory
-            - `src/generated/iers_eop_data.rs` — IERS Earth Orientation Parameters
-            - `src/generated/datasets.lock.json` — source checksums and timestamp
+            - `src/generated/vsop87a.rs`, VSOP87A planetary theory
+            - `src/generated/vsop87e.rs`, VSOP87E planetary theory  
+            - `src/generated/elp_data.rs`, ELP2000 lunar theory
+            - `src/generated/iers_eop_data.rs`, IERS Earth Orientation Parameters
+            - `src/generated/datasets.lock.json`, source checksums and timestamp
 
             Triggered by: ${{ github.event_name }}
           labels: "dependencies,automated"

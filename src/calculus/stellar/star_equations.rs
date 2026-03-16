@@ -12,9 +12,9 @@
 //!
 //! where:
 //!
-//! - `A = sin(δ) · sin(φ)`  — vertical offset (set by declination & latitude)
-//! - `B = cos(δ) · cos(φ)`  — amplitude (always ≥ 0)
-//! - `HA = LST − α`         — hour angle
+//! - `A = sin(δ) · sin(φ)` , vertical offset (set by declination & latitude)
+//! - `B = cos(δ) · cos(φ)` , amplitude (always ≥ 0)
+//! - `HA = LST − α`        , hour angle
 //!
 //! All stars share the same period (one sidereal day ≈ 23 h 56 m 4 s) since
 //! the rotation rate is universal.  Differences between stars appear only in
@@ -26,7 +26,7 @@
 //! cos(H₀) = (sin(h) − A) / B
 //! ```
 //!
-//! yielding O(1) bracket discovery per sidereal cycle — much faster than the
+//! yielding O(1) bracket discovery per sidereal cycle, much faster than the
 //! uniform scan used for bodies with non‑trivial orbital motion (Sun, Moon).
 
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
@@ -88,9 +88,9 @@ pub(crate) enum ThresholdResult {
 /// ```
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct StarAltitudeParams {
-    /// `sin(δ) · sin(φ)` — vertical offset of the sinusoid.
+    /// `sin(δ) · sin(φ)`, vertical offset of the sinusoid.
     a: Quantity<Unitless>,
-    /// `cos(δ) · cos(φ)` — amplitude of the sinusoidal term (≥ 0).
+    /// `cos(δ) · cos(φ)`, amplitude of the sinusoidal term (≥ 0).
     b: Quantity<Unitless>,
     /// RA corrected for precession + nutation (unwrapped degrees).
     ra_corrected: Degrees,
@@ -145,14 +145,14 @@ impl StarAltitudeParams {
 
     /// Solve for the threshold crossing hour angle.
     ///
-    /// * `AlwaysAbove`  — the star's minimum altitude exceeds the threshold
-    /// * `NeverAbove`   — the star's maximum altitude is below the threshold
-    /// * `Crossings`    — two crossings per sidereal day at HA = ±H₀
+    /// * `AlwaysAbove` , the star's minimum altitude exceeds the threshold
+    /// * `NeverAbove`  , the star's maximum altitude is below the threshold
+    /// * `Crossings`   , two crossings per sidereal day at HA = ±H₀
     pub fn threshold_ha(&self, threshold: Radians) -> ThresholdResult {
         let sin_h: Quantity<Unitless> = Quantity::new(threshold.sin());
 
         if self.b.abs() < DEGENERATE_B_EPS {
-            // Degenerate: observer at a pole or star at a pole — altitude
+            // Degenerate: observer at a pole or star at a pole, altitude
             // is constant.
             return if self.a > sin_h {
                 ThresholdResult::AlwaysAbove

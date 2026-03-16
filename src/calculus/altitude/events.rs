@@ -47,11 +47,11 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// Returns a chronologically sorted list of [`CrossingEvent`]s.
 ///
 /// # Arguments
-/// * `target` — any body implementing [`AltitudePeriodsProvider`]
-/// * `observer` — site on Earth
-/// * `window` — search interval (MJD on TT axis)
-/// * `threshold` — altitude threshold
-/// * `opts` — search options (tolerances, scan step)
+/// * `target`, any body implementing [`AltitudePeriodsProvider`]
+/// * `observer`, site on Earth
+/// * `window`, search interval (MJD on TT axis)
+/// * `threshold`, altitude threshold
+/// * `opts`, search options (tolerances, scan step)
 ///
 /// # Example
 /// ```rust

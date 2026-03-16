@@ -21,7 +21,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
         Ok(p) => p,
         Err(_) => {
             eprintln!(
-                "[de441 bench] SIDERUST_BSP_PATH not set — skipping RuntimeEphemeris benchmarks"
+                "[de441 bench] SIDERUST_BSP_PATH not set, skipping RuntimeEphemeris benchmarks"
             );
             return;
         }
@@ -30,7 +30,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     let eph = match RuntimeEphemeris::from_bsp(&path) {
         Ok(e) => e,
         Err(err) => {
-            eprintln!("[de441 bench] Failed to load '{path}': {err} — skipping");
+            eprintln!("[de441 bench] Failed to load '{path}': {err}, skipping");
             return;
         }
     };

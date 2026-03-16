@@ -88,7 +88,7 @@ where
             z_m,
         );
 
-    // 3) Apply nutation rotation (mean-of-date → true-of-date) — IAU 2000B
+    // 3) Apply nutation rotation (mean-of-date → true-of-date), IAU 2000B
     let rot_nut = crate::astro::nutation::nutation_rotation_iau2000b(jd);
     let [x_t, y_t, z_t] = rot_nut * [topo_cart_mod.x(), topo_cart_mod.y(), topo_cart_mod.z()];
 

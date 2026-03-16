@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Altitude Periods — Trait‑Based Dispatch Layer
+//! # Altitude Periods, Trait‑Based Dispatch Layer
 //!
 //! This module defines the [`AltitudePeriodsProvider`] trait and implementations
 //! that normalise the "altitude periods" API across Sun, Moon, and fixed stars.
 //!
 //! ## Design
 //!
-//! The trait layer is the *dispatch* layer — no astronomical math lives
+//! The trait layer is the *dispatch* layer, no astronomical math lives
 //! here.  Each `impl` delegates to the appropriate engine inside
 //! [`calculus::solar`], [`calculus::lunar`], or [`calculus::stellar`].
 //!
@@ -67,7 +67,7 @@ use crate::time::JulianDate;
 /// Unified interface for computing altitude periods of any celestial body.
 ///
 /// Implementors delegate to the appropriate analytical/numerical engine in
-/// the `calculus` layer.  The trait is intentionally small — one required
+/// the `calculus` layer.  The trait is intentionally small, one required
 /// method plus convenience defaults.
 ///
 /// Time scale note: all `ModifiedJulianDate` and `Period<MJD>` values are on
@@ -176,7 +176,7 @@ pub fn altitude_periods<B: AltitudePeriodsProvider>(
 // Implementations
 // ---------------------------------------------------------------------------
 
-/// **Sun** — delegates to [`calculus::solar`].
+/// **Sun**, delegates to [`calculus::solar`].
 impl AltitudePeriodsProvider for solar_system::Sun {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
         if query.window.duration() <= Days::zero() {
@@ -204,7 +204,7 @@ impl AltitudePeriodsProvider for solar_system::Sun {
     }
 }
 
-/// **Moon** — delegates to [`calculus::lunar`].
+/// **Moon**, delegates to [`calculus::lunar`].
 impl AltitudePeriodsProvider for solar_system::Moon {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
         if query.window.duration() <= Days::zero() {
@@ -235,7 +235,7 @@ impl AltitudePeriodsProvider for solar_system::Moon {
     }
 }
 
-/// **Star** — extracts RA/Dec from the star's target, delegates to
+/// **Star**, extracts RA/Dec from the star's target, delegates to
 /// [`calculus::stellar`].
 impl AltitudePeriodsProvider for Star<'_> {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
@@ -249,7 +249,7 @@ impl AltitudePeriodsProvider for Star<'_> {
     }
 }
 
-/// **direction::ICRS** — the lightest path: raw RA/Dec → stellar engine.
+/// **direction::ICRS**, the lightest path: raw RA/Dec → stellar engine.
 impl AltitudePeriodsProvider for direction::ICRS {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
         if query.window.duration() <= Days::zero() {
@@ -359,7 +359,7 @@ macro_rules! impl_altitude_provider_vsop87 {
                             query.min_altitude.to::<Radian>(),
                         )
                     } else if query.min_altitude <= Degrees::new(-89.99) {
-                        // Full "below" query — complement of above(max)
+                        // Full "below" query, complement of above(max)
                         let above = intervals::above_threshold_periods(
                             query.window,
                             PLANET_SCAN_STEP,
@@ -585,7 +585,7 @@ mod tests {
     #[test]
     fn polaris_never_below_minus90_via_trait() {
         let polaris = &catalog::POLARIS;
-        // Polaris is circumpolar at 51°N — should never be below -90° (vacuous)
+        // Polaris is circumpolar at 51°N, should never be below -90° (vacuous)
         let periods = polaris.below_threshold(greenwich(), one_day_window(), Degrees::new(-80.0));
         assert!(
             periods.is_empty(),

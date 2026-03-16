@@ -47,10 +47,10 @@ Siderust aims to be a reference ephemeris and orbit‑analysis library for resea
 | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Coordinate Systems**  | `Position` and spherical `Direction` types parameterised by `ReferenceCenter`, `ReferenceFrame`, and `Unit`. Compile‑time guarantees prevent mixing frames by accident.       |
 | **Target Tracking**     | `Target<T>` couples any coordinate with an observation epoch and optional `ProperMotion`, enabling extrapolation & filtering.                                                  |
-| **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Duration` & more via the [`qtty`](https://crates.io/crates/qtty) crate — dimensional correctness at compile time.       |
+| **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Duration` & more via the [`qtty`](https://crates.io/crates/qtty) crate, dimensional correctness at compile time.       |
 | **Celestial Mechanics** | Kepler solvers, VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches.                |
-| **Ephemeris Backends**  | Pluggable `Ephemeris` trait with three backends — `Vsop87Ephemeris` (always available), `De440Ephemeris`, and `De441Ephemeris` (feature-gated JPL DE4xx).                     |
-| **Altitude API**        | Unified `AltitudePeriodsProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions — find crossings, culminations, altitude ranges, and above/below‑threshold periods.|
+| **Ephemeris Backends**  | Pluggable `Ephemeris` trait with three backends, `Vsop87Ephemeris` (always available), `De440Ephemeris`, and `De441Ephemeris` (feature-gated JPL DE4xx).                     |
+| **Altitude API**        | Unified `AltitudePeriodsProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions, find crossings, culminations, altitude ranges, and above/below‑threshold periods.|
 | **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, + helpers for custom datasets.                           |
 | **Observatories**       | Predefined sites (Roque de los Muchachos, El Paranal, Mauna Kea, La Silla) with `ObserverSite` for topocentric transforms.                                                  |
 

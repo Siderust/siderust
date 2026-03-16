@@ -386,7 +386,7 @@ fn phase_angle_from_triangle(r_moon_km: f64, r_sun_au: f64, psi: f64) -> f64 {
 /// # Returns
 ///
 /// A [`MoonPhaseGeometry`] with phase angle, illuminated fraction,
-/// elongation, and waxing flag — all computed in the geocentric frame.
+/// elongation, and waxing flag, all computed in the geocentric frame.
 ///
 /// # Example
 ///
@@ -558,12 +558,12 @@ impl Default for PhaseSearchOpts {
 ///
 /// # Type parameter
 ///
-/// - `E: Ephemeris` — the ephemeris backend to use.
+/// - `E: Ephemeris`, the ephemeris backend to use.
 ///
 /// # Arguments
 ///
-/// - `window` — search interval as `Period<MJD>` (TT axis)
-/// - `opts` — search precision options
+/// - `window`, search interval as `Period<MJD>` (TT axis)
+/// - `opts`, search precision options
 ///
 /// # Returns
 ///
@@ -614,7 +614,7 @@ pub fn find_phase_events<E: Ephemeris>(
             let elong = elongation_at_mjd::<E>(mjd);
             let diff = angle_diff(elong, target);
             if diff.abs() < 0.5 {
-                // within ~28.6° — genuine crossing, not the ±π alias
+                // within ~28.6°, genuine crossing, not the ±π alias
                 events.push(PhaseEvent { mjd, kind });
             }
         }
@@ -644,12 +644,12 @@ fn angle_diff(a: f64, b: f64) -> f64 {
 ///
 /// Iterates from `start` to `end` at the given `step`, computing
 /// [`MoonPhaseGeometry`] at each sample point. No additional caching
-/// is performed — the ephemeris backend's own caching (e.g. Chebyshev
+/// is performed, the ephemeris backend's own caching (e.g. Chebyshev
 /// for DE441) is relied upon.
 ///
 /// # Type parameter
 ///
-/// - `E: Ephemeris` — the ephemeris backend to use.
+/// - `E: Ephemeris`, the ephemeris backend to use.
 pub struct MoonPhaseSeries<E: Ephemeris> {
     _marker: PhantomData<E>,
 }
@@ -935,7 +935,7 @@ mod tests {
 
     #[test]
     fn find_events_in_one_synodic_month() {
-        // Search ~35 days from J2000 — should find at least one of each kind.
+        // Search ~35 days from J2000, should find at least one of each kind.
         let start = ModifiedJulianDate::from(JulianDate::J2000);
         let end = start + Days::new(35.0);
         let window = Period::new(start, end);

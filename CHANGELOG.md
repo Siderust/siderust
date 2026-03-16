@@ -10,11 +10,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 * **Moon phase module** (`calculus::lunar::phase`) with continuous photometric geometry and discrete 8-label classification
-  * `moon_phase_geocentric<E>()` — phase angle, illuminated fraction, elongation, waxing flag (generic over `Ephemeris` backend)
-  * `moon_phase_topocentric<E>()` — same with observer parallax correction
+  * `moon_phase_geocentric<E>()`, phase angle, illuminated fraction, elongation, waxing flag (generic over `Ephemeris` backend)
+  * `moon_phase_topocentric<E>()`, same with observer parallax correction
   * `MoonPhaseGeometry` struct with `.label()` → `MoonPhaseLabel` (8 classical names)
-  * `find_phase_events<E>()` — locate New Moon, First Quarter, Full Moon, Last Quarter instants via scan + Brent root-finding
-  * `MoonPhaseSeries<E>::sample()` / `sample_topocentric()` — batch sampling for plotting
+  * `find_phase_events<E>()`, locate New Moon, First Quarter, Full Moon, Last Quarter instants via scan + Brent root-finding
+  * `MoonPhaseSeries<E>::sample()` / `sample_topocentric()`, batch sampling for plotting
   * `PhaseThresholds` for customizable label bin widths
   * `PhaseKind`, `PhaseEvent`, `PhaseSearchOpts` types
 * Re-exports of the full phase API at crate root for ergonomic access
@@ -125,7 +125,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Updated light-deflection documentation and tests to match the corrected physics, including scalar-vs-vector consistency checks
 * **Offline-by-default build**: VSOP87, ELP2000, and IERS EOP tables are now pre-generated and committed under `src/generated/`; `build.rs` no longer downloads anything during a normal build (fixes docs.rs build failure)
 * Generated files are refreshed via `SIDERUST_REGEN=1 cargo build` or the helper script `scripts/update_generated_tables.sh`
-* Added `.github/workflows/update-datasets.yml` — scheduled (weekly) workflow that regenerates committed tables and opens a PR when sources change
+* Added `.github/workflows/update-datasets.yml`, scheduled (weekly) workflow that regenerates committed tables and opens a PR when sources change
 
 ## [0.5.1] - 19/02/2026
 
@@ -143,7 +143,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * `de441` Cargo feature with `De441Ephemeris` backend (JPL DE441 part-2, extended coverage)
 * Build-time DE440/DE441 pipelines under `scripts/jpl/` with NAIF `.bsp` support and Git LFS datasets
 * `calculus::jpl` shared DE4xx infrastructure: `DeData` trait, `DeEphemeris<D>` generic backend, Chebyshev segment evaluation
-* `cheby` workspace crate — Chebyshev polynomial toolkit (DCT fitting, Clenshaw evaluation, segment tables)
+* `cheby` workspace crate, Chebyshev polynomial toolkit (DCT fitting, Clenshaw evaluation, segment tables)
 * Build system `SIDERUST_JPL_STUB` env var and `siderust_mock_de441` cfg flag for CI stub backends
 
 #### Unified Altitude API
@@ -154,10 +154,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Crate-root re-exports of the entire altitude API (`siderust::{above_threshold, crossings, ...}`)
 
 #### Body-Specific Altitude Engines
-* `calculus::stellar` — analytical sinusoidal model exploiting Earth's rotation for fixed-star altitude periods
-* `calculus::lunar` — Moon altitude functions with topocentric parallax (`find_moon_above_horizon`, `find_moon_below_horizon`, `find_moon_altitude_range`)
+* `calculus::stellar`, analytical sinusoidal model exploiting Earth's rotation for fixed-star altitude periods
+* `calculus::lunar`, Moon altitude functions with topocentric parallax (`find_moon_above_horizon`, `find_moon_below_horizon`, `find_moon_altitude_range`)
 * Moon Chebyshev cache (`moon_cache`) for optimized repeated ephemeris evaluation
-* `calculus::horizontal` — shared equatorial→horizontal coordinate pipeline factored out of Sun/Moon engines
+* `calculus::horizontal`, shared equatorial→horizontal coordinate pipeline factored out of Sun/Moon engines
 
 #### Numerical Engine
 * `calculus::math_core` module: astronomy-agnostic numerical algorithms
@@ -169,7 +169,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Celestial Bodies
 * `bodies::Asteroid` type with `AsteroidBuilder`, `AsteroidClass` enum, and presets: `CERES_AST`, `BENNU`, `APOPHIS`
 * `bodies::Comet` type with `CometBuilder`, `OrbitFrame` enum, `period_years()` helper, and presets: `HALLEY`, `ENCKE`, `HALE_BOPP`
-* `calculus::pluto` — Meeus/Williams Pluto heliocentric ephemeris (42-43 periodic terms, ~0.5″ accuracy 1885–2099)
+* `calculus::pluto`, Meeus/Williams Pluto heliocentric ephemeris (42-43 periodic terms, ~0.5″ accuracy 1885–2099)
 
 #### Coordinates & Frames
 * `Galactic` reference frame (re-exported from `affn`)
@@ -178,29 +178,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Horizontal coordinate convention helpers following IAU Alt-Az convention
 
 #### Observatories
-* La Silla Observatory (`observatories::LA_SILLA_OBSERVATORY` — ESO, Chile: −29.2584°, −70.7346°, 2400 m)
+* La Silla Observatory (`observatories::LA_SILLA_OBSERVATORY`, ESO, Chile: −29.2584°, −70.7346°, 2400 m)
 
 #### Examples
-* New `jpl_precise_ephemeris` — unified DE440/DE441 backend comparison (replaces separate DE440/DE441 examples)
-* New `altitude_periods_trait` — comprehensive `AltitudePeriodsProvider` trait demonstration
-* New `compare_sun_moon_star` — generic body comparison via trait polymorphism
-* New `night_quality_scoring` — practical observing planner scoring nights by darkness and Moon interference
-* New `star_observability` — multi-star observing planner with visibility windows and peak altitudes
-* New `find_night_periods_365day` — full-year astronomical night search with CLI support
+* New `jpl_precise_ephemeris`, unified DE440/DE441 backend comparison (replaces separate DE440/DE441 examples)
+* New `altitude_periods_trait`, comprehensive `AltitudePeriodsProvider` trait demonstration
+* New `compare_sun_moon_star`, generic body comparison via trait polymorphism
+* New `night_quality_scoring`, practical observing planner scoring nights by darkness and Moon interference
+* New `star_observability`, multi-star observing planner with visibility windows and peak altitudes
+* New `find_night_periods_365day`, full-year astronomical night search with CLI support
 
 #### Benchmarks
-* New `ephemeris_comparison` — comparative benchmark: VSOP87 vs DE440 vs DE441 across all `Ephemeris` trait methods
-* New `altitude_comparison` — comparative benchmark: Sun vs Moon vs Star for single-point eval and period searches (7/30/365-day)
-* New `moon_altitude` — detailed lunar altitude benchmarks (single eval, above/below horizon, altitude ranges, algorithm comparison)
-* New `star_altitude` — fixed-star altitude benchmarks (single eval, thresholds, crossings)
-* New `elp2000` — ELP2000-82B evaluation benchmarks at multiple epochs
-* New `de441` — DE441 ephemeris body-query benchmarks (feature-gated)
+* New `ephemeris_comparison`, comparative benchmark: VSOP87 vs DE440 vs DE441 across all `Ephemeris` trait methods
+* New `altitude_comparison`, comparative benchmark: Sun vs Moon vs Star for single-point eval and period searches (7/30/365-day)
+* New `moon_altitude`, detailed lunar altitude benchmarks (single eval, above/below horizon, altitude ranges, algorithm comparison)
+* New `star_altitude`, fixed-star altitude benchmarks (single eval, thresholds, crossings)
+* New `elp2000`, ELP2000-82B evaluation benchmarks at multiple epochs
+* New `de441`, DE441 ephemeris body-query benchmarks (feature-gated)
 
 #### Tests
 * Comprehensive ephemeris backend tests (`test_ephemeris.rs`, 879 lines) covering all backends and multiple epochs
-* Unified altitude API tests (`test_altitude_api.rs`, `test_altitude_provider.rs`) — crossings, culminations, thresholds, ranges
-* Domain B invariant tests (`test_domain_b.rs`) — aberration separation, Astrometric/Apparent states, topocentric parallax
-* Stellar engine tests (`test_stellar.rs`) — circumpolar, rise/set, never-visible edge cases
+* Unified altitude API tests (`test_altitude_api.rs`, `test_altitude_provider.rs`), crossings, culminations, thresholds, ranges
+* Domain B invariant tests (`test_domain_b.rs`), aberration separation, Astrometric/Apparent states, topocentric parallax
+* Stellar engine tests (`test_stellar.rs`), circumpolar, rise/set, never-visible edge cases
 * Asteroid/Comet body tests (`test_asteroid.rs`)
 
 ### Changed

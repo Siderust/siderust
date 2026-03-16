@@ -52,7 +52,7 @@ pub type DefaultEphemeris = Vsop87Ephemeris;
 #[cfg(all(feature = "de440", not(siderust_mock_de440)))]
 pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
 
-// Stub: de440 feature is on but SIDERUST_JPL_STUB is set — fall back to VSOP87
+// Stub: de440 feature is on but SIDERUST_JPL_STUB is set, fall back to VSOP87
 // so all tests work without the BSP download.
 #[cfg(all(feature = "de440", siderust_mock_de440))]
 pub type DefaultEphemeris = crate::calculus::ephemeris::Vsop87Ephemeris;
@@ -70,6 +70,22 @@ pub type DefaultEop = IersEop;
 /// For the abridged 77-term model, substitute
 /// [`Iau2000B`](crate::astro::nutation::Iau2000B).
 pub type DefaultNutationModel = crate::astro::nutation::Iau2006A;
+
+/// Runtime-selectable Earth orientation model presets.
+///
+/// These presets control nutation behavior while keeping the current IAU 2006
+/// precession implementation used across the transform pipeline.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EarthOrientationModel {
+    /// Full IAU 2000A nutation.
+    Iau2000A,
+    /// Abridged IAU 2000B nutation.
+    Iau2000B,
+    /// IAU 2006 precession-only profile (zero nutation offsets).
+    Iau2006,
+    /// High-precision IAU 2006A convention (IAU 2006 + corrected 2000A).
+    Iau2006A,
+}
 
 /// Astronomical context for coordinate transformations.
 ///
@@ -164,7 +180,7 @@ impl<Eop, Nut> AstroContext<DefaultEphemeris, Eop, Nut> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DynAstroContext — runtime-selected ephemeris via DynEphemeris trait object
+// DynAstroContext, runtime-selected ephemeris via DynEphemeris trait object
 // ═══════════════════════════════════════════════════════════════════════════
 
 use crate::calculus::ephemeris::DynEphemeris;

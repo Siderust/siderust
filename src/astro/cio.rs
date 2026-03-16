@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # CIO Locator and CIP Coordinates — IAU 2006/2000A
+//! # CIO Locator and CIP Coordinates, IAU 2006/2000A
 //!
 //! In the IAU 2000/2006 framework, the orientation of the Celestial Intermediate
 //! Pole (CIP) is described by two direction cosines **X** and **Y** in the GCRS,

@@ -118,7 +118,7 @@ fn eval_both(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// SegmentDescriptor — compile-time embedded data (via function pointer)
+// SegmentDescriptor, compile-time embedded data (via function pointer)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// All metadata needed to evaluate one body segment (compile-time data).
@@ -174,7 +174,7 @@ impl SegmentDescriptor {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// DynSegmentDescriptor — runtime heap-backed data
+// DynSegmentDescriptor, runtime heap-backed data
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Segment descriptor for runtime-loaded data (heap-backed).

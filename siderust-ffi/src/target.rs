@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Target FFI — opaque handles for celestial targets.
+//! Target FFI, opaque handles for celestial targets.
 //!
 //! This module provides two target abstractions:
 //!
@@ -316,7 +316,7 @@ pub extern "C" fn siderust_target_epoch_jd(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Altitude  — thin wrappers
+// Altitude , thin wrappers
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of the target (radians).
@@ -417,7 +417,7 @@ pub extern "C" fn siderust_target_culminations(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Azimuth  — thin wrappers
+// Azimuth , thin wrappers
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Azimuth of the target (degrees, North-clockwise).

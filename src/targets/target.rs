@@ -69,7 +69,7 @@ impl<T> CoordinateWithPM<T> {
     }
 }
 
-/// Backward-compatibility type alias — existing code that says `Target<T>`
+/// Backward-compatibility type alias, existing code that says `Target<T>`
 /// continues to compile without changes.  New code should prefer
 /// [`CoordinateWithPM`].
 pub type Target<T> = CoordinateWithPM<T>;

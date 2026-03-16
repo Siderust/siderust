@@ -218,7 +218,7 @@ fn round_trip_date_line() {
 
 #[test]
 fn to_ecef_itrf_uses_grs80() {
-    // ITRF has GRS80 ellipsoid — at equator, X should equal GRS80's a
+    // ITRF has GRS80 ellipsoid, at equator, X should equal GRS80's a
     let coord = Geodetic::<ITRF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
     let pos: Position<Geocentric, ITRF, Meter> = coord.to_cartesian();
     assert!((pos.x().value() - Grs80::A).abs() < TOL_M);

@@ -5,14 +5,14 @@
 //!
 //! This module defines two complementary concepts:
 //!
-//! ## [`CoordinateWithPM`] — Coordinate Sample
+//! ## [`CoordinateWithPM`], Coordinate Sample
 //!
 //! A lightweight container that couples a position with the time at which
 //! the position was recorded, together with an optional proper-motion model.
 //! It is deliberately generic over the coordinate type so it can be reused
 //! with Cartesian/Spherical equatorial/ecliptic/ICRS positions.
 //!
-//! **What it is:** a stamped coordinate snapshot — a measurement or catalog
+//! **What it is:** a stamped coordinate snapshot, a measurement or catalog
 //! entry, not an astronomical object.
 //!
 //! The design goals are:
@@ -27,7 +27,7 @@
 //! A backward-compatible type alias `Target<T>` is available so that existing
 //! code continues to compile. New code should prefer `CoordinateWithPM<T>`.
 //!
-//! ## [`Trackable`] — Object Abstraction
+//! ## [`Trackable`], Object Abstraction
 //!
 //! A trait representing "anything that can produce coordinates at time *t*":
 //!

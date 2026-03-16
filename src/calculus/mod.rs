@@ -80,14 +80,14 @@
 //!
 //! ## File Structure
 //!
-//! - `vsop87/`         — VSOP87 planetary theory implementation
-//! - `elp2000/`        — ELP2000 lunar theory implementation
-//! - `solar/`          — Solar coordinate calculations
-//! - `lunar/`          — Lunar coordinate calculations
-//! - `stellar/`        — Stellar altitude period finding (analytical sinusoidal model)
+//! - `vsop87/`        , VSOP87 planetary theory implementation
+//! - `elp2000/`       , ELP2000 lunar theory implementation
+//! - `solar/`         , Solar coordinate calculations
+//! - `lunar/`         , Lunar coordinate calculations
+//! - `stellar/`       , Stellar altitude period finding (analytical sinusoidal model)
 //! - `kepler_equations/`— General orbital mechanics
-//! - `math_core/`      — Reusable numerical primitives
-//! - `altitude.rs`     — Unified altitude computation & event API
+//! - `math_core/`     , Reusable numerical primitives
+//! - `altitude.rs`    , Unified altitude computation & event API
 //!
 //! ## See Also
 //!
