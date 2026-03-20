@@ -486,6 +486,42 @@ typedef struct siderust_cartesian_pos_t {
   SiderustLengthUnit length_unit;
 } siderust_cartesian_pos_t;
 
+// Mean-motion-driven elliptic orbital elements.
+typedef struct siderust_mean_motion_orbit_t {
+  // Semi-major axis in astronomical units.
+  double semi_major_axis_au;
+  // Orbital eccentricity.
+  double eccentricity;
+  // Orbital inclination in degrees.
+  double inclination_deg;
+  // Longitude of the ascending node in degrees.
+  double lon_ascending_node_deg;
+  // Argument of periapsis in degrees.
+  double arg_periapsis_deg;
+  // Mean motion in degrees per day.
+  double mean_motion_deg_per_day;
+  // Epoch as a Julian Date. Mean anomaly is defined to be zero at this epoch.
+  double epoch_jd;
+} siderust_mean_motion_orbit_t;
+
+// Unified conic elements expressed using periapsis distance.
+typedef struct siderust_conic_orbit_t {
+  // Periapsis distance in astronomical units.
+  double periapsis_distance_au;
+  // Orbital eccentricity.
+  double eccentricity;
+  // Orbital inclination in degrees.
+  double inclination_deg;
+  // Longitude of the ascending node in degrees.
+  double lon_ascending_node_deg;
+  // Argument of periapsis in degrees.
+  double arg_periapsis_deg;
+  // Mean anomaly at epoch in degrees.
+  double mean_anomaly_deg;
+  // Epoch as a Julian Date.
+  double epoch_jd;
+} siderust_conic_orbit_t;
+
 // Bodycentric reference center: which standard center the orbit is relative to.
 // Must match `OrbitReferenceCenter` in siderust: Barycentric=0, Heliocentric=1, Geocentric=2.
 typedef uint8_t SiderustOrbitRefCenter;
@@ -1216,13 +1252,25 @@ siderust_status_t siderust_cartesian_pos_transform_center(struct siderust_cartes
 //
 // Returns position in EclipticMeanJ2000 frame (AU), where the reference
 // center equals the orbit's own reference center (e.g. heliocentric for a
-// planet's orbit).  The `center` field of `out` is set to `Heliocentric` as
-// a placeholder; callers should interpret it according to `orbit_center` from
+// planet's orbit). The `center` field of `out` is set to `Heliocentric` as a
+// placeholder; callers should interpret it according to `orbit_center` from
 // the associated `siderust_bodycentric_params_t`.
 
 siderust_status_t siderust_kepler_position(struct siderust_orbit_t orbit,
                                            double jd,
                                            struct siderust_cartesian_pos_t *out);
+
+// Compute the position of an explicit mean-motion orbit at a given Julian date.
+
+siderust_status_t siderust_mean_motion_position(struct siderust_mean_motion_orbit_t orbit,
+                                                double jd,
+                                                struct siderust_cartesian_pos_t *out);
+
+// Compute the position of a unified conic orbit at a given Julian date.
+
+siderust_status_t siderust_conic_position(struct siderust_conic_orbit_t orbit,
+                                          double jd,
+                                          struct siderust_cartesian_pos_t *out);
 
 // Transform a Cartesian position to body-centric coordinates.
 //

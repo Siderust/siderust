@@ -666,12 +666,30 @@ pub extern "C" fn siderust_cartesian_pos_transform_center(
     }}
 }
 
+// Shared serializer for orbit propagation functions that return heliocentric
+// EclipticMeanJ2000 positions in astronomical units.
+fn write_ecliptic_au_position(
+    out: *mut SiderustCartesianPos,
+    pos: siderust::coordinates::cartesian::position::EclipticMeanJ2000<AstronomicalUnit>,
+) {
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: pos.x().value(),
+            y: pos.y().value(),
+            z: pos.z().value(),
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center: SiderustCenter::Heliocentric,
+            length_unit: SiderustLengthUnit::AU,
+        };
+    }
+}
+
 /// Compute the Keplerian orbital position at a given Julian date.
 ///
 /// Returns position in EclipticMeanJ2000 frame (AU), where the reference
 /// center equals the orbit's own reference center (e.g. heliocentric for a
-/// planet's orbit).  The `center` field of `out` is set to `Heliocentric` as
-/// a placeholder; callers should interpret it according to `orbit_center` from
+/// planet's orbit). The `center` field of `out` is set to `Heliocentric` as a
+/// placeholder; callers should interpret it according to `orbit_center` from
 /// the associated `siderust_bodycentric_params_t`.
 #[no_mangle]
 pub extern "C" fn siderust_kepler_position(
@@ -684,16 +702,49 @@ pub extern "C" fn siderust_kepler_position(
             return SiderustStatus::NullPointer;
         }
         let pos = orbit.to_rust().kepler_position(JulianDate::new(jd));
-        unsafe {
-            *out = SiderustCartesianPos {
-                x: pos.x().value(),
-                y: pos.y().value(),
-                z: pos.z().value(),
-                frame: SiderustFrame::EclipticMeanJ2000,
-                center: SiderustCenter::Heliocentric, // placeholder; real center = orbit_center
-                length_unit: SiderustLengthUnit::AU,
-            };
+        write_ecliptic_au_position(out, pos);
+        SiderustStatus::Ok
+
+    }}
+}
+
+/// Compute the position of an explicit mean-motion orbit at a given Julian date.
+#[no_mangle]
+pub extern "C" fn siderust_mean_motion_position(
+    orbit: SiderustMeanMotionOrbit,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
         }
+        let pos = match orbit.to_rust().position_at(JulianDate::new(jd)) {
+            Ok(pos) => pos,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        write_ecliptic_au_position(out, pos);
+        SiderustStatus::Ok
+
+    }}
+}
+
+/// Compute the position of a unified conic orbit at a given Julian date.
+#[no_mangle]
+pub extern "C" fn siderust_conic_position(
+    orbit: SiderustConicOrbit,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let pos = match orbit.to_rust().position_at(JulianDate::new(jd)) {
+            Ok(pos) => pos,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        write_ecliptic_au_position(out, pos);
         SiderustStatus::Ok
 
     }}
@@ -1592,6 +1643,18 @@ mod tests {
         }
     }
 
+    fn earth_mean_motion_orbit() -> SiderustMeanMotionOrbit {
+        SiderustMeanMotionOrbit {
+            semi_major_axis_au: 1.0000,
+            eccentricity: 0.0167,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 102.94,
+            mean_motion_deg_per_day: 0.9856076686,
+            epoch_jd: J2000,
+        }
+    }
+
     #[test]
     fn kepler_position_earth_at_j2000() {
         let mut out = empty_cart();
@@ -1607,6 +1670,32 @@ mod tests {
     fn kepler_position_null_out() {
         let s = siderust_kepler_position(earth_orbit(), J2000, ptr::null_mut());
         assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    #[test]
+    fn mean_motion_position_earth_at_j2000() {
+        let mut out = empty_cart();
+        let s = siderust_mean_motion_position(earth_mean_motion_orbit(), J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
+        let r = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!(r > 0.98 && r < 1.02, "r = {r}");
+        assert_eq!(out.frame, SiderustFrame::EclipticMeanJ2000);
+    }
+
+    #[test]
+    fn conic_position_rejects_parabolic() {
+        let orbit = SiderustConicOrbit {
+            periapsis_distance_au: 1.0,
+            eccentricity: 1.0,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_anomaly_deg: 0.0,
+            epoch_jd: J2000,
+        };
+        let mut out = empty_cart();
+        let s = siderust_conic_position(orbit, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
     }
 
     // ── Bodycentric transforms ─────────────────────────────────────────────
