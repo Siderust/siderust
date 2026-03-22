@@ -5,7 +5,7 @@
 //!
 //! Provides a **generic [`Planet`] type** together with ergonomic *builder*
 //! utilities and helper traits for working with unit‑safe Keplerian elements
-//! ([`Orbit`]).  These additions let you construct planetary bodies in a
+//! ([`KeplerianOrbit`]).  These additions let you construct planetary bodies in a
 //! progressively‑filled, compile‑time‑safe manner while keeping the original
 //! lightweight `struct` used by the Solar‑System constants fully compatible.
 //!
@@ -13,14 +13,14 @@
 //! ```rust
 //! use siderust::bodies::planets::{Planet, PlanetBuilder};
 //! use qtty::*;
-//! use siderust::astro::orbit::Orbit;
+//! use siderust::astro::orbit::KeplerianOrbit;
 //! use siderust::time::JulianDate;
 //!
 //! // Build a custom exoplanet in two steps:
 //! let kepler_452b = Planet::builder()
 //!     .mass(Kilograms::new(5.972e24 * 5.0))
 //!     .radius(Kilometers::new(6371.0 * 1.6))
-//!     .orbit(Orbit::new(
+//!     .orbit(KeplerianOrbit::new(
 //!         AstronomicalUnits::new(1.046),
 //!         0.02,
 //!         Degrees::new(0.0),
@@ -48,7 +48,7 @@
 //! methods *for free*.
 //! ---
 
-use crate::astro::orbit::Orbit;
+use crate::astro::orbit::KeplerianOrbit;
 use qtty::*;
 
 type RadiansPerDay = qtty::Quantity<qtty::Per<Radian, Day>>;
@@ -59,12 +59,12 @@ const GAUSSIAN_GRAVITATIONAL_CONSTANT: RadiansPerDay = Quantity::new(0.017_202_0
 pub struct Planet {
     pub mass: Kilograms,
     pub radius: Kilometers,
-    pub orbit: Orbit,
+    pub orbit: KeplerianOrbit,
 }
 
 impl Planet {
     /// Compile‑time constructor.
-    pub const fn new_const(mass: Kilograms, radius: Kilometers, orbit: Orbit) -> Self {
+    pub const fn new_const(mass: Kilograms, radius: Kilometers, orbit: KeplerianOrbit) -> Self {
         Self {
             mass,
             radius,
@@ -96,7 +96,7 @@ pub enum PlanetBuilderError {
 pub struct PlanetBuilder {
     mass: Option<Kilograms>,
     radius: Option<Kilometers>,
-    orbit: Option<Orbit>,
+    orbit: Option<KeplerianOrbit>,
 }
 
 impl PlanetBuilder {
@@ -113,7 +113,7 @@ impl PlanetBuilder {
     }
 
     /// Set the heliocentric orbit.
-    pub fn orbit(mut self, orbit: Orbit) -> Self {
+    pub fn orbit(mut self, orbit: KeplerianOrbit) -> Self {
         self.orbit = Some(orbit);
         self
     }
@@ -150,13 +150,13 @@ impl PlanetBuilder {
 //  Extension trait for derived orbital quantities
 // -------------------------------------------------------------------------------------------------
 
-/// Additional derived methods for [`Orbit`].
+/// Additional derived methods for [`KeplerianOrbit`].
 pub trait OrbitExt {
     /// Sidereal orbital period using Kepler’s third law, returned in **seconds**.
     fn period(&self) -> Seconds;
 }
 
-impl OrbitExt for Orbit {
+impl OrbitExt for KeplerianOrbit {
     fn period(&self) -> Seconds {
         // Kepler's 3rd: P = 2π * sqrt(a^3 / μ)
         // Using Gaussian gravitational constant k ≈ 0.01720209895 AU^{3/2} d^{-1}
@@ -164,7 +164,7 @@ impl OrbitExt for Orbit {
         // We compute in seconds directly.
 
         use std::f64::consts::PI;
-        let a_au = self.semi_major_axis.to::<AstronomicalUnit>().value();
+        let a_au = self.shape.semi_major_axis.to::<AstronomicalUnit>().value();
         let k = GAUSSIAN_GRAVITATIONAL_CONSTANT.value();
 
         let t_days = (2.0 * PI / k) * a_au.powf(1.5);
@@ -186,7 +186,7 @@ mod tests {
         let p = Planet::builder()
             .mass(Kilograms::new(1.0))
             .radius(Kilometers::new(1.0))
-            .orbit(Orbit::new(
+            .orbit(KeplerianOrbit::new(
                 AstronomicalUnits::new(1.0),
                 0.0,
                 Degrees::new(0.0),

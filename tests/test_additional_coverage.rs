@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use qtty::{AstronomicalUnit, AstronomicalUnits, Days, Degrees, Kilograms, Kilometers, Years, AU};
-use siderust::astro::orbit::Orbit;
+use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
 use siderust::bodies::planets::{Planet, PlanetBuilder};
@@ -138,7 +138,7 @@ fn frame_transform_traits_exercised() {
 
 #[test]
 fn body_const_constructors_and_builders() {
-    let orbit = Orbit::new(
+    let orbit = KeplerianOrbit::new(
         AstronomicalUnits::new(1.0),
         0.01,
         Degrees::new(1.0),

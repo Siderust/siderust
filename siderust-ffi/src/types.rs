@@ -542,6 +542,10 @@ impl SiderustGeodetict {
 }
 
 /// Keplerian orbital elements.
+///
+/// Note: the field `arg_perihelion_deg` uses solar-specific terminology
+/// ("perihelion") for backward compatibility with existing C consumers.
+/// The Rust domain type uses the generic term "periapsis".
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustOrbit {
@@ -553,7 +557,7 @@ pub struct SiderustOrbit {
     pub inclination_deg: f64,
     /// Longitude of the ascending node in degrees.
     pub lon_ascending_node_deg: f64,
-    /// Argument of perihelion in degrees.
+    /// Argument of perihelion (periapsis) in degrees.
     pub arg_perihelion_deg: f64,
     /// Mean anomaly at epoch in degrees.
     pub mean_anomaly_deg: f64,
@@ -563,8 +567,8 @@ pub struct SiderustOrbit {
 
 impl SiderustOrbit {
     /// Convert to the Rust domain type.
-    pub fn to_rust(&self) -> siderust::astro::orbit::Orbit {
-        siderust::astro::orbit::Orbit::new(
+    pub fn to_rust(&self) -> siderust::astro::orbit::KeplerianOrbit {
+        siderust::astro::orbit::KeplerianOrbit::new(
             AstronomicalUnits::new(self.semi_major_axis_au),
             self.eccentricity,
             Degrees::new(self.inclination_deg),
@@ -576,13 +580,13 @@ impl SiderustOrbit {
     }
 
     /// Create from the Rust domain type.
-    pub fn from_rust(o: &siderust::astro::orbit::Orbit) -> Self {
+    pub fn from_rust(o: &siderust::astro::orbit::KeplerianOrbit) -> Self {
         Self {
-            semi_major_axis_au: o.semi_major_axis.value(),
-            eccentricity: o.eccentricity,
-            inclination_deg: o.inclination.value(),
-            lon_ascending_node_deg: o.longitude_of_ascending_node.value(),
-            arg_perihelion_deg: o.argument_of_perihelion.value(),
+            semi_major_axis_au: o.shape.semi_major_axis.value(),
+            eccentricity: o.shape.eccentricity,
+            inclination_deg: o.orientation.inclination.value(),
+            lon_ascending_node_deg: o.orientation.longitude_of_ascending_node.value(),
+            arg_perihelion_deg: o.orientation.argument_of_periapsis.value(),
             mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
             epoch_jd: o.epoch.value(),
         }
@@ -626,11 +630,11 @@ impl SiderustMeanMotionOrbit {
     /// Create from the Rust domain type.
     pub fn from_rust(o: &siderust::MeanMotionOrbit) -> Self {
         Self {
-            semi_major_axis_au: o.semi_major_axis.value(),
-            eccentricity: o.eccentricity,
-            inclination_deg: o.inclination.value(),
-            lon_ascending_node_deg: o.longitude_of_ascending_node.value(),
-            arg_periapsis_deg: o.argument_of_periapsis.value(),
+            semi_major_axis_au: o.geometry.shape.semi_major_axis.value(),
+            eccentricity: o.geometry.shape.eccentricity,
+            inclination_deg: o.geometry.orientation.inclination.value(),
+            lon_ascending_node_deg: o.geometry.orientation.longitude_of_ascending_node.value(),
+            arg_periapsis_deg: o.geometry.orientation.argument_of_periapsis.value(),
             mean_motion_deg_per_day: o.mean_motion_deg_per_day,
             epoch_jd: o.epoch.value(),
         }
@@ -674,11 +678,11 @@ impl SiderustConicOrbit {
     /// Create from the Rust domain type.
     pub fn from_rust(o: &siderust::ConicOrbit) -> Self {
         Self {
-            periapsis_distance_au: o.periapsis_distance.value(),
-            eccentricity: o.eccentricity,
-            inclination_deg: o.inclination.value(),
-            lon_ascending_node_deg: o.longitude_of_ascending_node.value(),
-            arg_periapsis_deg: o.argument_of_periapsis.value(),
+            periapsis_distance_au: o.geometry.shape.periapsis_distance.value(),
+            eccentricity: o.geometry.shape.eccentricity,
+            inclination_deg: o.geometry.orientation.inclination.value(),
+            lon_ascending_node_deg: o.geometry.orientation.longitude_of_ascending_node.value(),
+            arg_periapsis_deg: o.geometry.orientation.argument_of_periapsis.value(),
             mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
             epoch_jd: o.epoch.value(),
         }
