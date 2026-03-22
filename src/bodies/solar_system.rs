@@ -19,7 +19,7 @@
 //! | **Lagrange points**     | Sun–Earth L₁, Sun–Earth L₂                                                                      |
 //!
 //! Each body re‑uses the strongly‑typed structures defined elsewhere in the crate
-//! (`Star`, `Planet`, `Satellite`, [`Orbit`], …) so values can be consumed
+//! (`Star`, `Planet`, `Satellite`, [`KeplerianOrbit`], …) so values can be consumed
 //! directly without conversion.
 //!
 //! ### Physical & Orbital Parameters

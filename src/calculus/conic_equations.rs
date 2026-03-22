@@ -44,7 +44,7 @@ fn solve_hyperbolic_anomaly(mean_anomaly_radians: f64, eccentricity: f64) -> f64
     hyperbolic_anomaly
 }
 
-fn rotate_to_ecliptic(
+pub(crate) fn rotate_to_ecliptic(
     radius_au: f64,
     inclination: Degrees,
     argument_of_periapsis: Degrees,
@@ -71,7 +71,7 @@ fn rotate_to_ecliptic(
 
 /// Given a solved eccentric anomaly and eccentricity, returns the true anomaly
 /// and the heliocentric radius for an elliptic orbit.
-fn elliptic_true_anomaly_and_radius(
+pub(crate) fn elliptic_true_anomaly_and_radius(
     eccentric_anomaly: Radians,
     eccentricity: f64,
     semi_major_axis_au: f64,

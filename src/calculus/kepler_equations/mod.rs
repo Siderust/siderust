@@ -85,6 +85,7 @@
 //! | `kepler_equation_residual`, `kepler_equation_derivative` | crate-private | Helpers |
 
 use crate::astro::orbit::KeplerianOrbit;
+use crate::calculus::conic_equations::{elliptic_true_anomaly_and_radius, rotate_to_ecliptic};
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::time::JulianDate;
 use qtty::*;
@@ -241,34 +242,20 @@ pub fn calculate_orbit_position(
     // 4) Solve Kepler's Equation (E) for the eccentric anomaly
     let e_anomaly = solve_keplers_equation(m_rad, e);
 
-    // 5) True Anomaly (ν)
-    let true_anomaly = 2.0 * ((1.0 + e).sqrt() * (e_anomaly * 0.5).tan() / (1.0 - e).sqrt()).atan();
+    // 5) True anomaly and heliocentric radius via shared helper
+    let (true_anomaly, radius) = elliptic_true_anomaly_and_radius(
+        e_anomaly,
+        e,
+        elements.shape.semi_major_axis.value(),
+    );
 
-    // 6) Heliocentric distance (z)
-    let z = elements.shape.semi_major_axis * (1.0 - e * e_anomaly.cos());
-
-    // 7) Compute standard rotation angular
-    let i_rad = elements.orientation.inclination.to::<Radian>();
-    let omega_rad = elements
-        .orientation
-        .longitude_of_ascending_node
-        .to::<Radian>();
-    let w_rad = elements.orientation.argument_of_periapsis.to::<Radian>();
-
-    // 8) Textbook formula: position in ecliptic coordinates (X, Y, Z)
-    //
-    //   X = z * [cosΩ * cos(ω+ν) − sinΩ * sin(ω+ν) cos i]
-    //   Y = z * [sinΩ * cos(ω+ν) + cosΩ * sin(ω+ν) cos i]
-    //   Z = z * [sin(ω+ν) * sin i]
-    //
-    let (sin_i, cos_i) = (i_rad.sin(), i_rad.cos());
-    let (sin_omega, cos_omega) = omega_rad.sin_cos();
-    let (sin_w_nu, cos_w_nu) = (w_rad + Radians::new(true_anomaly)).sin_cos();
-
-    EclipticMeanJ2000::new(
-        z * (cos_omega * cos_w_nu - sin_omega * sin_w_nu * cos_i),
-        z * (sin_omega * cos_w_nu + cos_omega * sin_w_nu * cos_i),
-        z * (sin_w_nu * sin_i),
+    // 6) Rotate to ecliptic coordinates via shared helper
+    rotate_to_ecliptic(
+        radius,
+        elements.orientation.inclination,
+        elements.orientation.argument_of_periapsis,
+        elements.orientation.longitude_of_ascending_node,
+        true_anomaly,
     )
 }
 

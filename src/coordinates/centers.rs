@@ -434,7 +434,7 @@ pub struct Bodycentric;
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::orbit::KeplerianOrbit as Orbit;
+    use crate::astro::orbit::KeplerianOrbit;
 
     #[test]
     fn center_names_are_correct() {
@@ -512,7 +512,7 @@ mod tests {
         use crate::time::JulianDate;
 
         // Create a simple orbit
-        let orbit = Orbit::new(
+        let orbit = KeplerianOrbit::new(
             1.524 * AU,
             0.0934,
             Degrees::new(1.85),
@@ -533,7 +533,7 @@ mod tests {
     fn bodycentric_params_constructors() {
         use crate::time::JulianDate;
 
-        let orbit = Orbit::new(
+        let orbit = KeplerianOrbit::new(
             1.0 * AU,
             0.0,
             Degrees::new(0.0),
@@ -564,7 +564,7 @@ mod tests {
     fn bodycentric_params_equality() {
         use crate::time::JulianDate;
 
-        let orbit1 = Orbit::new(
+        let orbit1 = KeplerianOrbit::new(
             1.0 * AU,
             0.0,
             Degrees::new(0.0),
@@ -573,7 +573,7 @@ mod tests {
             Degrees::new(0.0),
             JulianDate::J2000,
         );
-        let orbit2 = Orbit::new(
+        let orbit2 = KeplerianOrbit::new(
             2.0 * AU, // Different semi-major axis
             0.0,
             Degrees::new(0.0),

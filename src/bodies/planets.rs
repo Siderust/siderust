@@ -44,7 +44,7 @@
 //! ## Helper traits
 //! A small extension trait [`OrbitExt`] is provided to compute derived orbital
 //! quantities—currently the sidereal period via Kepler’s third law. The trait is
-//! implemented for [`Orbit`], so any existing orbit constant gets the new
+//! implemented for [`KeplerianOrbit`], so any existing orbit constant gets the new
 //! methods *for free*.
 //! ---
 
