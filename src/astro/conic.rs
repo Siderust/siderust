@@ -3,24 +3,21 @@
 
 //! Additional orbit models used when a plain elliptic Keplerian orbit is not
 //! the right semantic container.
+//!
+//! The reusable conic geometry itself lives in `affn::conic`. This module keeps
+//! the astronomy-specific state that layers epoch and anomaly semantics on top
+//! of that geometry for siderust propagation code.
 
 use crate::time::JulianDate;
+use affn::conic::{
+    ConicOrientation, ConicValidationError, OrientedPeriapsisConic, OrientedSemiMajorAxisConic,
+};
 use qtty::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-/// High-level conic classification derived from orbital eccentricity.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub enum ConicKind {
-    /// Elliptic orbit (`0 <= e < 1`).
-    Elliptic,
-    /// Parabolic orbit (`e == 1`).
-    Parabolic,
-    /// Hyperbolic orbit (`e > 1`).
-    Hyperbolic,
-}
+pub use affn::conic::ConicKind;
 
 /// Validation and propagation errors for conic-based orbit models.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -49,10 +46,19 @@ impl std::fmt::Display for ConicError {
 
 impl std::error::Error for ConicError {}
 
+pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
+    match error {
+        ConicValidationError::InvalidEccentricity => ConicError::InvalidEccentricity,
+        ConicValidationError::InvalidSemiMajorAxis => ConicError::InvalidSemiMajorAxis,
+        ConicValidationError::InvalidPeriapsisDistance => ConicError::InvalidPeriapsisDistance,
+    }
+}
+
 /// Unified conic elements expressed using periapsis distance.
 ///
-/// This representation covers elliptic and hyperbolic trajectories without
-/// changing the meaning of the geometric fields across orbit families.
+/// The conic geometry itself is represented by
+/// [`affn::conic::OrientedPeriapsisConic`]. `siderust::ConicOrbit` adds the
+/// mean-anomaly-at-epoch and epoch fields needed for astronomical propagation.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ConicOrbit {
@@ -96,7 +102,27 @@ impl ConicOrbit {
 
     /// Classifies the orbit from its eccentricity.
     pub fn kind(&self) -> Result<ConicKind, ConicError> {
-        classify_eccentricity(self.eccentricity)
+        self.geometry().kind().map_err(map_validation_error)
+    }
+
+    pub(crate) fn geometry(&self) -> OrientedPeriapsisConic<AstronomicalUnit> {
+        OrientedPeriapsisConic::new(
+            self.periapsis_distance,
+            self.eccentricity,
+            ConicOrientation::new(
+                self.inclination,
+                self.longitude_of_ascending_node,
+                self.argument_of_periapsis,
+            ),
+        )
+    }
+
+    pub(crate) fn validated_geometry(
+        &self,
+    ) -> Result<OrientedPeriapsisConic<AstronomicalUnit>, ConicError> {
+        let geometry = self.geometry();
+        geometry.validate().map_err(map_validation_error)?;
+        Ok(geometry)
     }
 }
 
@@ -104,7 +130,9 @@ impl ConicOrbit {
 ///
 /// This is intentionally distinct from [`crate::astro::orbit::Orbit`]. Here the
 /// stored mean daily motion is authoritative and the epoch corresponds to zero
-/// mean anomaly, which matches a number of catalog and legacy data sets.
+/// mean anomaly, which matches a number of catalog and legacy data sets. The
+/// reusable geometry fields are modeled by
+/// [`affn::conic::OrientedSemiMajorAxisConic`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MeanMotionOrbit {
@@ -145,19 +173,31 @@ impl MeanMotionOrbit {
             epoch,
         }
     }
-}
 
-fn classify_eccentricity(eccentricity: f64) -> Result<ConicKind, ConicError> {
-    if !eccentricity.is_finite() || eccentricity < 0.0 {
-        return Err(ConicError::InvalidEccentricity);
+    pub(crate) fn geometry(&self) -> OrientedSemiMajorAxisConic<AstronomicalUnit> {
+        OrientedSemiMajorAxisConic::new(
+            self.semi_major_axis,
+            self.eccentricity,
+            ConicOrientation::new(
+                self.inclination,
+                self.longitude_of_ascending_node,
+                self.argument_of_periapsis,
+            ),
+        )
     }
 
-    if eccentricity < 1.0 {
-        Ok(ConicKind::Elliptic)
-    } else if eccentricity > 1.0 {
-        Ok(ConicKind::Hyperbolic)
-    } else {
-        Ok(ConicKind::Parabolic)
+    pub(crate) fn validated_geometry(
+        &self,
+    ) -> Result<OrientedSemiMajorAxisConic<AstronomicalUnit>, ConicError> {
+        let geometry = self.geometry();
+        geometry.validate().map_err(map_validation_error)?;
+        if !matches!(
+            geometry.kind().map_err(map_validation_error)?,
+            ConicKind::Elliptic
+        ) {
+            return Err(ConicError::InvalidEccentricity);
+        }
+        Ok(geometry)
     }
 }
 
@@ -196,7 +236,16 @@ mod tests {
     #[test]
     fn negative_eccentricity_is_invalid() {
         assert_eq!(
-            classify_eccentricity(-0.1),
+            ConicOrbit::new(
+                1.0 * AU,
+                -0.1,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                JulianDate::J2000,
+            )
+            .kind(),
             Err(ConicError::InvalidEccentricity)
         );
     }

@@ -76,7 +76,8 @@ pub use calculus::solar::{twilight, Twilight};
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: unified altitude API
 // ---------------------------------------------------------------------------
-pub use astro::conic::{ConicError, ConicKind, ConicOrbit, MeanMotionOrbit};
+pub use affn::conic::ConicKind;
+pub use astro::conic::{ConicError, ConicOrbit, MeanMotionOrbit};
 pub use calculus::altitude::{
     above_threshold, altitude_periods as compute_altitude_periods, altitude_ranges,
     below_threshold, crossings, culminations, AltitudePeriodsProvider, AltitudeQuery,
