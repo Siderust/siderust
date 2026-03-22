@@ -243,11 +243,8 @@ pub fn calculate_orbit_position(
     let e_anomaly = solve_keplers_equation(m_rad, e);
 
     // 5) True anomaly and heliocentric radius via shared helper
-    let (true_anomaly, radius) = elliptic_true_anomaly_and_radius(
-        e_anomaly,
-        e,
-        elements.shape.semi_major_axis.value(),
-    );
+    let (true_anomaly, radius) =
+        elliptic_true_anomaly_and_radius(e_anomaly, e, elements.shape.semi_major_axis.value());
 
     // 6) Rotate to ecliptic coordinates via shared helper
     rotate_to_ecliptic(
