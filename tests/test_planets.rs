@@ -2,7 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use qtty::*;
-use siderust::astro::orbit::Orbit;
+use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::time::JulianDate;
 
@@ -10,7 +10,7 @@ use siderust::time::JulianDate;
 fn planet_builder_errors() {
     let builder = Planet::builder()
         .radius(Kilometers::new(1.0))
-        .orbit(Orbit::new(
+        .orbit(KeplerianOrbit::new(
             AstronomicalUnits::new(1.0),
             0.0,
             Degrees::new(0.0),
@@ -33,7 +33,7 @@ fn planet_builder_errors() {
 fn orbit_period_computation() {
     let k = 0.017_202_098_95_f64; // rad/day
 
-    let orbit = Orbit::new(
+    let orbit = KeplerianOrbit::new(
         AstronomicalUnits::new(1.0),
         0.0,
         Degrees::new(0.0),

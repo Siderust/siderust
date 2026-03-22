@@ -2,7 +2,7 @@
 members = [".", "siderust-ffi"]
 
 [patch.crates-io]
-affn = { path = "affn" }
+affn = { path = "../affn" }
 
 [package]
 name = "siderust"

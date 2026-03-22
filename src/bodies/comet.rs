@@ -32,7 +32,7 @@
 //!
 //! ---
 
-use crate::astro::orbit::Orbit;
+use crate::astro::orbit::KeplerianOrbit;
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, Degrees, Kilometers};
 
@@ -50,7 +50,7 @@ pub enum OrbitFrame {
 pub struct Comet<'a> {
     pub name: &'a str,
     pub tail_length: Kilometers,
-    pub orbit: Orbit,
+    pub orbit: KeplerianOrbit,
     pub reference: OrbitFrame,
 }
 
@@ -59,7 +59,7 @@ impl<'a> Comet<'a> {
     pub const fn new_const(
         name: &'a str,
         tail_length: Kilometers,
-        orbit: Orbit,
+        orbit: KeplerianOrbit,
         reference: OrbitFrame,
     ) -> Self {
         Self {
@@ -84,7 +84,7 @@ impl<'a> Comet<'a> {
 pub struct CometBuilder<'a> {
     name: Option<&'a str>,
     tail_length: Option<Kilometers>,
-    orbit: Option<Orbit>,
+    orbit: Option<KeplerianOrbit>,
     reference: Option<OrbitFrame>,
 }
 
@@ -97,7 +97,7 @@ impl<'a> CometBuilder<'a> {
         self.tail_length = Some(len);
         self
     }
-    pub fn orbit(mut self, orbit: Orbit) -> Self {
+    pub fn orbit(mut self, orbit: KeplerianOrbit) -> Self {
         self.orbit = Some(orbit);
         self
     }
@@ -124,7 +124,7 @@ impl<'a> Comet<'a> {
     /// Approximate orbital period in Julian years (`365.25 d`) using Kepler’s third law.
     pub fn period_years(&self) -> f64 {
         // μ_sun ≈ 1 (when a in AU, P in years): P = sqrt(a^3)
-        let a = self.orbit.semi_major_axis;
+        let a = self.orbit.shape.semi_major_axis;
         a.value().powf(1.5)
     }
 }
@@ -137,7 +137,7 @@ impl<'a> Comet<'a> {
 pub const HALLEY: Comet = Comet::new_const(
     "1P/Halley",
     Kilometers::new(1.0e7),
-    Orbit::new(
+    KeplerianOrbit::new(
         AstronomicalUnits::new(17.834144),
         0.967_142_9,
         Degrees::new(162.262_69),
@@ -153,7 +153,7 @@ pub const HALLEY: Comet = Comet::new_const(
 pub const ENCKE: Comet = Comet::new_const(
     "2P/Encke",
     Kilometers::new(5.0e6),
-    Orbit::new(
+    KeplerianOrbit::new(
         AstronomicalUnits::new(2.215_080),
         0.850_219,
         Degrees::new(11.780),
@@ -169,7 +169,7 @@ pub const ENCKE: Comet = Comet::new_const(
 pub const HALE_BOPP: Comet = Comet::new_const(
     "C/1995 O1 (Hale‑Bopp)",
     Kilometers::new(1.0e8),
-    Orbit::new(
+    KeplerianOrbit::new(
         AstronomicalUnits::new(286.538),
         0.995_086,
         Degrees::new(89.425),

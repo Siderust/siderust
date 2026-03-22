@@ -88,7 +88,7 @@
 //! assert_eq!(name, "Geocentric");
 //! ```
 
-use crate::astro::orbit::Orbit;
+use crate::astro::orbit::KeplerianOrbit;
 use qtty::*;
 use std::fmt::Debug;
 
@@ -291,6 +291,12 @@ pub enum OrbitReferenceCenter {
 /// reference center the orbit is defined relative to. This allows computing
 /// the body's position at any Julian date using Keplerian propagation.
 ///
+/// **Intentionally elliptic:** `BodycentricParams` uses [`KeplerianOrbit`],
+/// which is restricted to elliptic motion (`0 ≤ e < 1`). This is appropriate
+/// for planets, moons, and bound satellites. For hyperbolic or parabolic
+/// flyby bodies, use [`ConicOrbit`](crate::astro::conic::ConicOrbit)
+/// directly instead of the bodycentric coordinate transform.
+///
 /// # Fields
 ///
 /// - `orbit`: The Keplerian orbital elements of the body.
@@ -300,17 +306,17 @@ pub enum OrbitReferenceCenter {
 ///
 /// ```rust
 /// use siderust::coordinates::centers::{BodycentricParams, OrbitReferenceCenter};
-/// use siderust::astro::orbit::Orbit;
+/// use siderust::astro::orbit::KeplerianOrbit;
 /// use siderust::time::JulianDate;
 /// use qtty::*;
 ///
 /// // Mars-like orbit (heliocentric)
-/// let mars_orbit = Orbit::new(
+/// let mars_orbit = KeplerianOrbit::new(
 ///     1.524 * AU,           // semi-major axis
 ///     0.0934,               // eccentricity
 ///     Degrees::new(1.85),   // inclination
 ///     Degrees::new(49.56),  // longitude of ascending node
-///     Degrees::new(286.5),  // argument of perihelion
+///     Degrees::new(286.5),  // argument of periapsis
 ///     Degrees::new(19.41),  // mean anomaly at epoch
 ///     JulianDate::J2000,    // epoch
 /// );
@@ -321,7 +327,7 @@ pub enum OrbitReferenceCenter {
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct BodycentricParams {
     /// The Keplerian orbital elements of the body.
-    pub orbit: Orbit,
+    pub orbit: KeplerianOrbit,
     /// Which standard center the orbit is defined relative to.
     pub orbit_center: OrbitReferenceCenter,
 }
@@ -333,7 +339,7 @@ impl BodycentricParams {
     ///
     /// - `orbit`: The Keplerian orbital elements of the body.
     /// - `orbit_center`: Which center the orbit is defined relative to.
-    pub const fn new(orbit: Orbit, orbit_center: OrbitReferenceCenter) -> Self {
+    pub const fn new(orbit: KeplerianOrbit, orbit_center: OrbitReferenceCenter) -> Self {
         Self {
             orbit,
             orbit_center,
@@ -343,19 +349,19 @@ impl BodycentricParams {
     /// Creates parameters for a body orbiting the Sun (heliocentric orbit).
     ///
     /// This is the most common case for planets, asteroids, and comets.
-    pub const fn heliocentric(orbit: Orbit) -> Self {
+    pub const fn heliocentric(orbit: KeplerianOrbit) -> Self {
         Self::new(orbit, OrbitReferenceCenter::Heliocentric)
     }
 
     /// Creates parameters for a body orbiting Earth (geocentric orbit).
     ///
     /// Use this for artificial satellites, the Moon, etc.
-    pub const fn geocentric(orbit: Orbit) -> Self {
+    pub const fn geocentric(orbit: KeplerianOrbit) -> Self {
         Self::new(orbit, OrbitReferenceCenter::Geocentric)
     }
 
     /// Creates parameters for a body orbiting the solar system barycenter.
-    pub const fn barycentric(orbit: Orbit) -> Self {
+    pub const fn barycentric(orbit: KeplerianOrbit) -> Self {
         Self::new(orbit, OrbitReferenceCenter::Barycentric)
     }
 }
@@ -370,7 +376,7 @@ impl Default for BodycentricParams {
         use qtty::AstronomicalUnits;
 
         Self {
-            orbit: Orbit::new(
+            orbit: KeplerianOrbit::new(
                 AstronomicalUnits::new(1.0),
                 0.0,
                 Degrees::new(0.0),
@@ -403,12 +409,12 @@ impl Default for BodycentricParams {
 /// use siderust::coordinates::centers::{Bodycentric, BodycentricParams, ReferenceCenter};
 /// use siderust::coordinates::cartesian::Position;
 /// use siderust::coordinates::frames;
-/// use siderust::astro::orbit::Orbit;
+/// use siderust::astro::orbit::KeplerianOrbit;
 /// use siderust::time::JulianDate;
 /// use qtty::*;
 ///
 /// // Create orbital parameters for an Earth-orbiting satellite
-/// let satellite_orbit = Orbit::new(
+/// let satellite_orbit = KeplerianOrbit::new(
 ///     0.0000426 * AU,       // ~6378 km (low Earth orbit) in AU
 ///     0.001,                // nearly circular
 ///     Degrees::new(51.6),   // ISS-like inclination
@@ -428,6 +434,7 @@ pub struct Bodycentric;
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::astro::orbit::KeplerianOrbit as Orbit;
 
     #[test]
     fn center_names_are_correct() {
@@ -550,7 +557,7 @@ mod tests {
     fn bodycentric_params_default() {
         let params = BodycentricParams::default();
         assert_eq!(params.orbit_center, OrbitReferenceCenter::Heliocentric);
-        assert_eq!(params.orbit.eccentricity, 0.0);
+        assert_eq!(params.orbit.shape.eccentricity, 0.0);
     }
 
     #[test]
