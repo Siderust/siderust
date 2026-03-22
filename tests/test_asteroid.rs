@@ -2,13 +2,13 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use qtty::*;
-use siderust::astro::orbit::Orbit;
+use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::asteroid::{
     Asteroid, AsteroidClass, APOPHIS, ASTEROID_PRESETS, BENNU, CERES_AST,
 };
 use siderust::time::JulianDate;
 
-const TEST_ORBIT: Orbit = Orbit::new(
+const TEST_ORBIT: KeplerianOrbit = KeplerianOrbit::new(
     AstronomicalUnits::new(1.0),
     0.0,
     Degrees::new(0.0),
@@ -33,7 +33,10 @@ fn builder_sets_all_fields() {
     assert_eq!(asteroid.designation, "M-01");
     assert_eq!(asteroid.composition, "Carbonaceous");
     assert_eq!(asteroid.class, AsteroidClass::NearEarth);
-    assert_eq!(asteroid.orbit.semi_major_axis, AstronomicalUnits::new(1.0));
+    assert_eq!(
+        asteroid.orbit.shape.semi_major_axis,
+        AstronomicalUnits::new(1.0)
+    );
 }
 
 #[test]
@@ -70,7 +73,7 @@ fn const_constructor_and_presets() {
     assert_eq!(CONST_ASTEROID.designation, "C-1");
     assert_eq!(CONST_ASTEROID.composition, "Silicate");
     assert_eq!(CONST_ASTEROID.class, AsteroidClass::MainBelt);
-    assert_eq!(CONST_ASTEROID.orbit.eccentricity, 0.0);
+    assert_eq!(CONST_ASTEROID.orbit.shape.eccentricity, 0.0);
 
     assert_eq!(ASTEROID_PRESETS.len(), 3);
     assert!(std::ptr::eq(ASTEROID_PRESETS[0], &CERES_AST));

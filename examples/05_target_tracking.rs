@@ -13,7 +13,7 @@
 //! `cargo run --example 08_target`
 
 use qtty::*;
-use siderust::astro::orbit::Orbit;
+use siderust::astro::orbit::KeplerianOrbit;
 use siderust::astro::proper_motion::{set_proper_motion_since_j2000, ProperMotion};
 use siderust::bodies::comet::HALLEY;
 use siderust::bodies::solar_system::{Mars, Moon, Sun};
@@ -103,7 +103,7 @@ fn section_target_snapshots(jd: JulianDate, jd_next: JulianDate) {
         "DemoSat",
         Kilograms::new(1_200.0),
         Kilometers::new(1.4),
-        Orbit::new(
+        KeplerianOrbit::new(
             AstronomicalUnits::new(1.0002),
             0.001,
             Degrees::new(0.1),

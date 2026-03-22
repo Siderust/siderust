@@ -16,7 +16,7 @@
 //!   positions originally expressed in each of the three standard centers.
 
 use qtty::*;
-use siderust::astro::orbit::Orbit;
+use siderust::astro::orbit::KeplerianOrbit;
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::{
     Barycentric, Bodycentric, BodycentricParams, Geocentric, Geodetic, Heliocentric,
@@ -134,7 +134,7 @@ fn main() {
 
     // ── Bodycentric: Mars-like orbit (heliocentric reference) ──────────────────
     println!("\n── Bodycentric – Mars-like orbit (heliocentric ref) ───────────────────");
-    let mars_orbit = Orbit::new(
+    let mars_orbit = KeplerianOrbit::new(
         1.524 * AU,
         0.0934,
         Degrees::new(1.85),
@@ -151,7 +151,7 @@ fn main() {
 
     // ── Bodycentric: ISS-like orbit (geocentric reference) ────────────────────
     println!("\n── Bodycentric – ISS-like orbit (geocentric ref) ──────────────────────");
-    let iss_orbit = Orbit::new(
+    let iss_orbit = KeplerianOrbit::new(
         0.0000426 * AU, // ~6 378 km in AU
         0.001,
         Degrees::new(51.6),

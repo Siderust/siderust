@@ -7,9 +7,9 @@
 //! - `name`: Name of the satellite (borrowed or owned).
 //! - `mass`: Mass in kilograms (`Kilograms`).
 //! - `radius`: Mean radius in kilometers (`Kilometers`).
-//! - `orbit`: Orbital parameters (see [`Orbit`]).
+//! - `orbit`: Orbital parameters (see [`KeplerianOrbit`]).
 
-use crate::astro::orbit::Orbit;
+use crate::astro::orbit::KeplerianOrbit;
 use qtty::{Kilograms, Kilometers};
 
 use std::borrow::Cow;
@@ -20,7 +20,7 @@ pub struct Satellite<'a> {
     pub name: Cow<'a, str>,
     pub mass: Kilograms,
     pub radius: Kilometers,
-    pub orbit: Orbit,
+    pub orbit: KeplerianOrbit,
 }
 
 impl<'a> Satellite<'a> {
@@ -29,7 +29,7 @@ impl<'a> Satellite<'a> {
         name: &'static str,
         mass: Kilograms,
         radius: Kilometers,
-        orbit: Orbit,
+        orbit: KeplerianOrbit,
     ) -> Satellite<'static> {
         Satellite {
             name: Cow::Borrowed(name),
@@ -40,7 +40,12 @@ impl<'a> Satellite<'a> {
     }
 
     /// Runtime constructor: accepts any string-like thing.
-    pub fn new<N>(name: N, mass: Kilograms, radius: Kilometers, orbit: Orbit) -> Satellite<'a>
+    pub fn new<N>(
+        name: N,
+        mass: Kilograms,
+        radius: Kilometers,
+        orbit: KeplerianOrbit,
+    ) -> Satellite<'a>
     where
         N: Into<Cow<'a, str>>,
     {

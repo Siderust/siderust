@@ -1,7 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Propagation helpers for conic and mean-motion orbit models.
+//! Heliocentric propagation helpers for conic and mean-motion orbit models.
+//!
+//! All functions in this module assume a **heliocentric** context: the
+//! gravitational parameter is the Gaussian gravitational constant
+//! (`k = 0.01720209895 AU^{3/2} d^{-1}`), which implicitly encodes
+//! `GM_☉` in the AU-day system. The returned positions are heliocentric
+//! ecliptic J2000.
+//!
+//! To propagate orbits around other central bodies, use the generic
+//! gravitational parameter approach in a future extension.
 
 use crate::astro::conic::{
     map_validation_error, ConicError, ConicKind, ConicOrbit, MeanMotionOrbit,
@@ -11,6 +20,11 @@ use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::time::JulianDate;
 use qtty::*;
 
+/// Gaussian gravitational constant `k` in AU^{3/2} d^{-1}.
+///
+/// Encodes `√(GM_☉)` in the heliocentric AU-day system. Using this
+/// constant ties all propagation in this module to a Sun-centered
+/// context.
 const GAUSSIAN_GRAVITATIONAL_CONSTANT: f64 = 0.01720209895;
 const HYPERBOLIC_TOLERANCE: f64 = 1e-14;
 const MAX_HYPERBOLIC_ITERS: usize = 100;
@@ -55,34 +69,38 @@ fn rotate_to_ecliptic(
     )
 }
 
+/// Given a solved eccentric anomaly and eccentricity, returns the true anomaly
+/// and the heliocentric radius for an elliptic orbit.
+fn elliptic_true_anomaly_and_radius(
+    eccentric_anomaly: Radians,
+    eccentricity: f64,
+    semi_major_axis_au: f64,
+) -> (f64, f64) {
+    let true_anomaly = 2.0
+        * ((1.0 + eccentricity).sqrt() * (eccentric_anomaly * 0.5).tan()
+            / (1.0 - eccentricity).sqrt())
+        .atan();
+    let radius = semi_major_axis_au * (1.0 - eccentricity * eccentric_anomaly.cos());
+    (true_anomaly, radius)
+}
+
 /// Calculates a heliocentric position for an orbit whose explicit mean motion is
 /// authoritative.
 pub fn calculate_mean_motion_position(
     orbit: &MeanMotionOrbit,
     julian_date: JulianDate,
 ) -> Result<EclipticMeanJ2000<AstronomicalUnit>, ConicError> {
-    if orbit.semi_major_axis.value().abs() < 1e-30 {
-        return Ok(EclipticMeanJ2000::new(
-            AstronomicalUnits::new(0.0),
-            AstronomicalUnits::new(0.0),
-            AstronomicalUnits::new(0.0),
-        ));
-    }
-
     let geometry = orbit.validated_geometry()?;
-    let semi_major_axis = geometry.conic.semi_major_axis.value();
-    let eccentricity = geometry.conic.eccentricity;
+    let semi_major_axis = geometry.shape.semi_major_axis.value();
+    let eccentricity = geometry.shape.eccentricity;
     let orientation = geometry.orientation;
 
     let dt_days = (julian_date - orbit.epoch).value();
     let mean_anomaly_deg = orbit.mean_motion_deg_per_day * dt_days;
     let mean_anomaly = Degrees::new(mean_anomaly_deg).to::<Radian>();
     let eccentric_anomaly = solve_keplers_equation(mean_anomaly, eccentricity);
-    let true_anomaly = 2.0
-        * ((1.0 + eccentricity).sqrt() * (eccentric_anomaly * 0.5).tan()
-            / (1.0 - eccentricity).sqrt())
-        .atan();
-    let radius = semi_major_axis * (1.0 - eccentricity * eccentric_anomaly.cos());
+    let (true_anomaly, radius) =
+        elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, semi_major_axis);
 
     Ok(rotate_to_ecliptic(
         radius,
@@ -100,22 +118,19 @@ pub fn calculate_conic_position(
 ) -> Result<EclipticMeanJ2000<AstronomicalUnit>, ConicError> {
     let geometry = orbit.validated_geometry()?;
     let kind = geometry.kind().map_err(map_validation_error)?;
-    let periapsis_distance = geometry.conic.periapsis_distance.value();
-    let eccentricity = geometry.conic.eccentricity;
+    let periapsis_distance = geometry.shape.periapsis_distance.value();
+    let eccentricity = geometry.shape.eccentricity;
     let orientation = geometry.orientation;
     match kind {
         ConicKind::Elliptic => {
-            let semi_major_axis = AstronomicalUnits::new(periapsis_distance / (1.0 - eccentricity));
-            let mean_motion = GAUSSIAN_GRAVITATIONAL_CONSTANT / semi_major_axis.value().powf(1.5);
+            let semi_major_axis = periapsis_distance / (1.0 - eccentricity);
+            let mean_motion = GAUSSIAN_GRAVITATIONAL_CONSTANT / semi_major_axis.powf(1.5);
             let dt_days = (julian_date - orbit.epoch).value();
             let mean_anomaly =
                 orbit.mean_anomaly_at_epoch.to::<Radian>() + Radians::new(mean_motion * dt_days);
             let eccentric_anomaly = solve_keplers_equation(mean_anomaly, eccentricity);
-            let true_anomaly = 2.0
-                * ((1.0 + eccentricity).sqrt() * (eccentric_anomaly * 0.5).tan()
-                    / (1.0 - eccentricity).sqrt())
-                .atan();
-            let radius = semi_major_axis.value() * (1.0 - eccentricity * eccentric_anomaly.cos());
+            let (true_anomaly, radius) =
+                elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, semi_major_axis);
 
             Ok(rotate_to_ecliptic(
                 radius,
@@ -198,7 +213,7 @@ mod tests {
             Degrees::new(260.04078),
             Degrees::new(68.15913068),
             Degrees::new(0.0),
-            JulianDate::new(2458997.030358636436),
+            JulianDate::new(2_458_997.030_358_636_3),
         );
         let position = orbit.position_at(JulianDate::new(2458999.0)).unwrap();
         assert!(position.x().value().is_finite());
