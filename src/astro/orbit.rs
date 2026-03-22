@@ -83,6 +83,8 @@
 //! let coords = earth_orbit.kepler_position(JulianDate::new(2459200.5));
 //! ```
 
+use crate::astro::conic::ConicError;
+use crate::astro::units::GaussianYears;
 use crate::time::JulianDate;
 use affn::conic::{ConicOrientation, ConicShape, SemiMajorAxisParam};
 use affn::frames::EclipticMeanJ2000;
@@ -157,6 +159,33 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         }
     }
 
+    /// Creates a new set of Keplerian orbital elements, returning an error
+    /// if the orbit is not a valid ellipse.
+    ///
+    /// Prefer this over [`new()`](Self::new) for user-supplied or deserialized
+    /// data. The orbit is validated exactly once at construction time.
+    pub fn try_new(
+        semi_major_axis: Quantity<U>,
+        eccentricity: f64,
+        inclination: Degrees,
+        longitude_of_ascending_node: Degrees,
+        argument_of_periapsis: Degrees,
+        mean_anomaly_at_epoch: Degrees,
+        epoch: JulianDate,
+    ) -> Result<Self, crate::astro::conic::ConicError> {
+        let orbit = Self::new(
+            semi_major_axis,
+            eccentricity,
+            inclination,
+            longitude_of_ascending_node,
+            argument_of_periapsis,
+            mean_anomaly_at_epoch,
+            epoch,
+        );
+        orbit.validate()?;
+        Ok(orbit)
+    }
+
     /// Validates that this orbit is elliptic (`0 ≤ e < 1`) with a positive
     /// semi-major axis and finite orientation angles.
     pub fn validate(&self) -> Result<(), crate::astro::conic::ConicError> {
@@ -173,5 +202,203 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
             return Err(ConicError::InvalidEccentricity);
         }
         Ok(())
+    }
+}
+
+// =============================================================================
+// PreparedOrbit — validated + precomputed for hot propagation
+// =============================================================================
+
+/// Precomputed orientation trig values for efficient repeated rotation to ecliptic.
+///
+/// These values are computed once from the three orbital orientation angles and
+/// reused on every propagation call, avoiding redundant `sin_cos()` evaluations.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct OrientationTrig {
+    sin_i: f64,
+    cos_i: f64,
+    sin_omega: f64,
+    cos_omega: f64,
+    sin_node: f64,
+    cos_node: f64,
+}
+
+impl OrientationTrig {
+    #[inline]
+    pub(crate) fn sin_i(&self) -> f64 {
+        self.sin_i
+    }
+    #[inline]
+    pub(crate) fn cos_i(&self) -> f64 {
+        self.cos_i
+    }
+    #[inline]
+    pub(crate) fn sin_omega(&self) -> f64 {
+        self.sin_omega
+    }
+    #[inline]
+    pub(crate) fn cos_omega(&self) -> f64 {
+        self.cos_omega
+    }
+    #[inline]
+    pub(crate) fn sin_node(&self) -> f64 {
+        self.sin_node
+    }
+    #[inline]
+    pub(crate) fn cos_node(&self) -> f64 {
+        self.cos_node
+    }
+
+    fn from_orientation(o: &ConicOrientation<EclipticMeanJ2000>) -> Self {
+        let (sin_i, cos_i) = o.inclination.to::<Radian>().value().sin_cos();
+        let (sin_omega, cos_omega) = o.argument_of_periapsis.to::<Radian>().value().sin_cos();
+        let (sin_node, cos_node) = o
+            .longitude_of_ascending_node
+            .to::<Radian>()
+            .value()
+            .sin_cos();
+        Self {
+            sin_i,
+            cos_i,
+            sin_omega,
+            cos_omega,
+            sin_node,
+            cos_node,
+        }
+    }
+}
+
+/// A validated, precomputed elliptic orbit optimized for repeated propagation.
+///
+/// `PreparedOrbit` guarantees at construction time that the underlying
+/// [`KeplerianOrbit`] is a valid ellipse. It caches:
+///
+/// - Mean motion (radians/day) — avoids recomputing `k / a^{1.5}` every call.
+/// - Orientation trig terms — avoids 3× `sin_cos()` per call.
+/// - Mean anomaly at epoch (radians) — avoids degree→radian conversion per call.
+///
+/// Use [`TryFrom<KeplerianOrbit>`] or [`PreparedOrbit::try_from_elements`] to
+/// construct.
+///
+/// # Example
+///
+/// ```rust
+/// use siderust::astro::orbit::{KeplerianOrbit, PreparedOrbit};
+/// use siderust::time::JulianDate;
+/// use qtty::*;
+///
+/// let orbit = KeplerianOrbit::new(
+///     1.0 * AU, 0.0167,
+///     Degrees::new(0.00005), Degrees::new(-11.26064),
+///     Degrees::new(102.94719), Degrees::new(100.46435),
+///     JulianDate::J2000,
+/// );
+/// let prepared = PreparedOrbit::try_from(orbit).unwrap();
+/// let pos = prepared.position_at(JulianDate::new(2459200.5));
+/// ```
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct PreparedOrbit {
+    /// The validated source orbit (kept for introspection / conversion back).
+    elements: KeplerianOrbit,
+    /// Precomputed mean motion in radians per day.
+    mean_motion_rad_per_day: f64,
+    /// Precomputed mean anomaly at epoch in radians.
+    m0_rad: f64,
+    /// Precomputed orientation trig.
+    trig: OrientationTrig,
+}
+
+impl PreparedOrbit {
+    /// Construct from individual orbital elements, validating and precomputing.
+    pub fn try_from_elements(
+        semi_major_axis: AstronomicalUnits,
+        eccentricity: f64,
+        inclination: Degrees,
+        longitude_of_ascending_node: Degrees,
+        argument_of_periapsis: Degrees,
+        mean_anomaly_at_epoch: Degrees,
+        epoch: JulianDate,
+    ) -> Result<Self, ConicError> {
+        let orbit = KeplerianOrbit::try_new(
+            semi_major_axis,
+            eccentricity,
+            inclination,
+            longitude_of_ascending_node,
+            argument_of_periapsis,
+            mean_anomaly_at_epoch,
+            epoch,
+        )?;
+        Ok(Self::from_validated(orbit))
+    }
+
+    /// Access the underlying validated [`KeplerianOrbit`].
+    #[inline]
+    pub fn elements(&self) -> &KeplerianOrbit {
+        &self.elements
+    }
+
+    /// Precomputed mean motion in radians per day.
+    #[inline]
+    pub fn mean_motion_rad_per_day(&self) -> f64 {
+        self.mean_motion_rad_per_day
+    }
+
+    /// Precomputed mean anomaly at epoch in radians.
+    #[inline]
+    pub(crate) fn m0_rad(&self) -> f64 {
+        self.m0_rad
+    }
+
+    /// Precomputed orientation trig values.
+    #[inline]
+    pub(crate) fn orientation_trig(&self) -> &OrientationTrig {
+        &self.trig
+    }
+
+    /// Internal: build from an already-validated orbit.
+    fn from_validated(orbit: KeplerianOrbit) -> Self {
+        let a = orbit.shape.semi_major_axis.value();
+        // Kepler's 3rd law: T [Gaussian years] = a [AU]^{3/2}
+        let t_gaussian_years = a * a.sqrt();
+        let period_days = GaussianYears::new(t_gaussian_years).to::<Day>().value();
+        let mean_motion_rad_per_day = std::f64::consts::TAU / period_days;
+        let m0_rad = orbit.mean_anomaly_at_epoch.to::<Radian>().value();
+        let trig = OrientationTrig::from_orientation(&orbit.orientation);
+        Self {
+            elements: orbit,
+            mean_motion_rad_per_day,
+            m0_rad,
+            trig,
+        }
+    }
+}
+
+impl TryFrom<KeplerianOrbit> for PreparedOrbit {
+    type Error = ConicError;
+
+    fn try_from(orbit: KeplerianOrbit) -> Result<Self, Self::Error> {
+        orbit.validate()?;
+        Ok(Self::from_validated(orbit))
+    }
+}
+
+#[cfg(feature = "serde")]
+impl<'de> Deserialize<'de> for PreparedOrbit {
+    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    where
+        D: serde::Deserializer<'de>,
+    {
+        let orbit = KeplerianOrbit::deserialize(deserializer)?;
+        Self::try_from(orbit).map_err(serde::de::Error::custom)
+    }
+}
+
+#[cfg(feature = "serde")]
+impl Serialize for PreparedOrbit {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        self.elements.serialize(serializer)
     }
 }

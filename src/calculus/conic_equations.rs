@@ -15,6 +15,7 @@
 use crate::astro::conic::{
     map_validation_error, ConicError, ConicKind, ConicOrbit, MeanMotionOrbit,
 };
+use crate::astro::orbit::OrientationTrig;
 use crate::calculus::kepler_equations::solve_keplers_equation;
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::time::JulianDate;
@@ -44,6 +45,29 @@ fn solve_hyperbolic_anomaly(mean_anomaly_radians: f64, eccentricity: f64) -> f64
     hyperbolic_anomaly
 }
 
+/// Like [`rotate_to_ecliptic`] but uses precomputed sin/cos values from
+/// [`OrientationTrig`].
+#[inline]
+pub(crate) fn rotate_to_ecliptic_precomputed(
+    radius_au: f64,
+    trig: &OrientationTrig,
+    true_anomaly_radians: f64,
+) -> EclipticMeanJ2000<AstronomicalUnit> {
+    // argument of latitude u = ω + ν
+    let (sin_nu, cos_nu) = true_anomaly_radians.sin_cos();
+    let sin_u = trig.sin_omega() * cos_nu + trig.cos_omega() * sin_nu;
+    let cos_u = trig.cos_omega() * cos_nu - trig.sin_omega() * sin_nu;
+    let x = radius_au * (trig.cos_node() * cos_u - trig.sin_node() * sin_u * trig.cos_i());
+    let y = radius_au * (trig.sin_node() * cos_u + trig.cos_node() * sin_u * trig.cos_i());
+    let z = radius_au * sin_u * trig.sin_i();
+    EclipticMeanJ2000::new(
+        AstronomicalUnits::new(x),
+        AstronomicalUnits::new(y),
+        AstronomicalUnits::new(z),
+    )
+}
+
+#[inline]
 pub(crate) fn rotate_to_ecliptic(
     radius_au: f64,
     inclination: Degrees,
@@ -51,17 +75,13 @@ pub(crate) fn rotate_to_ecliptic(
     longitude_of_ascending_node: Degrees,
     true_anomaly_radians: f64,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
-    let inclination_rad = inclination.to::<Radian>();
-    let argument_of_latitude =
-        argument_of_periapsis.to::<Radian>() + Radians::new(true_anomaly_radians);
-    let ascending_node_rad = longitude_of_ascending_node.to::<Radian>();
-    let x = radius_au
-        * (ascending_node_rad.cos() * argument_of_latitude.cos()
-            - ascending_node_rad.sin() * argument_of_latitude.sin() * inclination_rad.cos());
-    let y = radius_au
-        * (ascending_node_rad.sin() * argument_of_latitude.cos()
-            + ascending_node_rad.cos() * argument_of_latitude.sin() * inclination_rad.cos());
-    let z = radius_au * argument_of_latitude.sin() * inclination_rad.sin();
+    let (sin_i, cos_i) = inclination.to::<Radian>().value().sin_cos();
+    let (sin_u, cos_u) =
+        (argument_of_periapsis.to::<Radian>().value() + true_anomaly_radians).sin_cos();
+    let (sin_node, cos_node) = longitude_of_ascending_node.to::<Radian>().value().sin_cos();
+    let x = radius_au * (cos_node * cos_u - sin_node * sin_u * cos_i);
+    let y = radius_au * (sin_node * cos_u + cos_node * sin_u * cos_i);
+    let z = radius_au * sin_u * sin_i;
     EclipticMeanJ2000::new(
         AstronomicalUnits::new(x),
         AstronomicalUnits::new(y),
@@ -71,6 +91,7 @@ pub(crate) fn rotate_to_ecliptic(
 
 /// Given a solved eccentric anomaly and eccentricity, returns the true anomaly
 /// and the heliocentric radius for an elliptic orbit.
+#[inline]
 pub(crate) fn elliptic_true_anomaly_and_radius(
     eccentric_anomaly: Radians,
     eccentricity: f64,
@@ -124,7 +145,8 @@ pub fn calculate_conic_position(
     match kind {
         ConicKind::Elliptic => {
             let semi_major_axis = periapsis_distance / (1.0 - eccentricity);
-            let mean_motion = GAUSSIAN_GRAVITATIONAL_CONSTANT / semi_major_axis.powf(1.5);
+            let mean_motion =
+                GAUSSIAN_GRAVITATIONAL_CONSTANT / (semi_major_axis * semi_major_axis.sqrt());
             let dt_days = (julian_date - orbit.epoch).value();
             let mean_anomaly =
                 orbit.mean_anomaly_at_epoch.to::<Radian>() + Radians::new(mean_motion * dt_days);
@@ -142,7 +164,8 @@ pub fn calculate_conic_position(
         }
         ConicKind::Hyperbolic => {
             let semi_major_axis = periapsis_distance / (eccentricity - 1.0);
-            let mean_motion = GAUSSIAN_GRAVITATIONAL_CONSTANT / semi_major_axis.powf(1.5);
+            let mean_motion =
+                GAUSSIAN_GRAVITATIONAL_CONSTANT / (semi_major_axis * semi_major_axis.sqrt());
             let dt_days = (julian_date - orbit.epoch).value();
             let mean_anomaly =
                 orbit.mean_anomaly_at_epoch.to::<Radian>().value() + mean_motion * dt_days;

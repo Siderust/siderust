@@ -167,7 +167,7 @@ impl OrbitExt for KeplerianOrbit {
         let a_au = self.shape.semi_major_axis.to::<AstronomicalUnit>().value();
         let k = GAUSSIAN_GRAVITATIONAL_CONSTANT.value();
 
-        let t_days = (2.0 * PI / k) * a_au.powf(1.5);
+        let t_days = (2.0 * PI / k) * (a_au * a_au.sqrt());
         Seconds::new(t_days * 86_400.0)
     }
 }

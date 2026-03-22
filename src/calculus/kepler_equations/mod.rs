@@ -84,8 +84,11 @@
 //! | `newton_kepler`, `bisection_kepler` | crate-private | Numerical kernels |
 //! | `kepler_equation_residual`, `kepler_equation_derivative` | crate-private | Helpers |
 
-use crate::astro::orbit::KeplerianOrbit;
-use crate::calculus::conic_equations::{elliptic_true_anomaly_and_radius, rotate_to_ecliptic};
+use crate::astro::orbit::{KeplerianOrbit, PreparedOrbit};
+use crate::astro::units::GaussianYears;
+use crate::calculus::conic_equations::{
+    elliptic_true_anomaly_and_radius, rotate_to_ecliptic, rotate_to_ecliptic_precomputed,
+};
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::time::JulianDate;
 use qtty::*;
@@ -193,13 +196,12 @@ pub fn solve_keplers_equation(m: Radians, e: f64) -> Radians {
     }
 }
 
+#[inline]
 fn orbital_period_days(a: AstronomicalUnits) -> Days {
-    // Kepler’s Third Law: T^2 = a^3 for the Sun+tiny planet
-    // T in years, a in AstronomicalUnits
-    // 1 year ~ 365.256898326 days
-    let year = 365.256898326;
-    let t_years = a.value().powf(1.5); // T in years
-    Days::new(t_years * year) // convert years -> days
+    // Kepler’s Third Law: T [Gaussian years] = a [AU]^{3/2}
+    let a_val = a.value();
+    let t_gaussian_years = a_val * a_val.sqrt(); // a^1.5 via sqrt, cheaper than powf
+    GaussianYears::new(t_gaussian_years).to::<Day>()
 }
 
 /// Calculates the heliocentric coordinates of a celestial body at a given Julian date,
@@ -263,6 +265,56 @@ impl KeplerianOrbit {
     /// check user-supplied elements before calling this method.
     pub fn kepler_position(&self, jd: JulianDate) -> EclipticMeanJ2000<AstronomicalUnit> {
         calculate_orbit_position(self, jd)
+    }
+
+    /// Like [`kepler_position`](Self::kepler_position), but validates the orbit
+    /// first and returns an error for non-elliptic or malformed elements.
+    ///
+    /// Prefer this for user-supplied data where the orbit may not have been
+    /// validated at construction time.
+    pub fn try_kepler_position(
+        &self,
+        jd: JulianDate,
+    ) -> Result<EclipticMeanJ2000<AstronomicalUnit>, crate::astro::conic::ConicError> {
+        self.validate()?;
+        Ok(calculate_orbit_position(self, jd))
+    }
+}
+
+/// Fast propagation for a [`PreparedOrbit`] using precomputed constants.
+///
+/// All validation, degree-to-radian conversion, mean-motion calculation, and
+/// orientation trig are already cached in the [`PreparedOrbit`]. This function
+/// only performs the time-dependent work: mean anomaly advance, Kepler solve,
+/// true anomaly / radius, and the ecliptic rotation.
+pub fn calculate_prepared_position(
+    prepared: &PreparedOrbit,
+    julian_date: JulianDate,
+) -> EclipticMeanJ2000<AstronomicalUnit> {
+    let dt = (julian_date - prepared.elements().epoch).value();
+    let m_rad = prepared.m0_rad() + prepared.mean_motion_rad_per_day() * dt;
+    let m_rad = Radians::new(m_rad % std::f64::consts::TAU);
+
+    let e = prepared.elements().shape.eccentricity;
+    let e_anomaly = solve_keplers_equation(m_rad, e);
+
+    let (true_anomaly, radius) = elliptic_true_anomaly_and_radius(
+        e_anomaly,
+        e,
+        prepared.elements().shape.semi_major_axis.value(),
+    );
+
+    rotate_to_ecliptic_precomputed(radius, prepared.orientation_trig(), true_anomaly)
+}
+
+impl PreparedOrbit {
+    /// Calculates heliocentric coordinates at a given Julian date.
+    ///
+    /// This is the fastest propagation path: no validation, no redundant
+    /// trig, no degree→radian conversion on the hot path.
+    #[inline]
+    pub fn position_at(&self, jd: JulianDate) -> EclipticMeanJ2000<AstronomicalUnit> {
+        calculate_prepared_position(self, jd)
     }
 }
 

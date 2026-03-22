@@ -125,7 +125,8 @@ impl<'a> Comet<'a> {
     pub fn period_years(&self) -> f64 {
         // μ_sun ≈ 1 (when a in AU, P in years): P = sqrt(a^3)
         let a = self.orbit.shape.semi_major_axis;
-        a.value().powf(1.5)
+        let a_val = a.value();
+        a_val * a_val.sqrt()
     }
 }
 

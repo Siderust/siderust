@@ -110,6 +110,30 @@ impl ConicOrbit {
         }
     }
 
+    /// Creates a new conic-element set, returning an error if the geometry is
+    /// invalid (e.g. non-positive periapsis distance, non-finite angles).
+    pub fn try_new(
+        periapsis_distance: AstronomicalUnits,
+        eccentricity: f64,
+        inclination: Degrees,
+        longitude_of_ascending_node: Degrees,
+        argument_of_periapsis: Degrees,
+        mean_anomaly_at_epoch: Degrees,
+        epoch: JulianDate,
+    ) -> Result<Self, ConicError> {
+        let orbit = Self::new(
+            periapsis_distance,
+            eccentricity,
+            inclination,
+            longitude_of_ascending_node,
+            argument_of_periapsis,
+            mean_anomaly_at_epoch,
+            epoch,
+        );
+        orbit.geometry.validate().map_err(map_validation_error)?;
+        Ok(orbit)
+    }
+
     /// Classifies the orbit from its eccentricity.
     pub fn kind(&self) -> Result<ConicKind, ConicError> {
         self.geometry.kind().map_err(map_validation_error)
@@ -165,6 +189,30 @@ impl MeanMotionOrbit {
             mean_motion_deg_per_day,
             epoch,
         }
+    }
+
+    /// Creates a new mean-motion orbit, returning an error if the geometry
+    /// is invalid or not elliptic.
+    pub fn try_new(
+        semi_major_axis: AstronomicalUnits,
+        eccentricity: f64,
+        inclination: Degrees,
+        longitude_of_ascending_node: Degrees,
+        argument_of_periapsis: Degrees,
+        mean_motion_deg_per_day: f64,
+        epoch: JulianDate,
+    ) -> Result<Self, ConicError> {
+        let orbit = Self::new(
+            semi_major_axis,
+            eccentricity,
+            inclination,
+            longitude_of_ascending_node,
+            argument_of_periapsis,
+            mean_motion_deg_per_day,
+            epoch,
+        );
+        orbit.validated_geometry()?;
+        Ok(orbit)
     }
 
     pub(crate) fn validated_geometry(
