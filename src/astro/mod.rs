@@ -33,5 +33,6 @@ pub mod polar_motion;
 pub mod precession;
 pub mod proper_motion;
 pub mod sidereal;
+pub mod units;
 
 pub use orientation::{HasIauRotation, IauRotationParams};

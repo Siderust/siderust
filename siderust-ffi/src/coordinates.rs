@@ -666,11 +666,12 @@ pub extern "C" fn siderust_cartesian_pos_transform_center(
     }}
 }
 
-// Shared serializer for orbit propagation functions that return heliocentric
+// Shared serializer for orbit propagation functions that return
 // EclipticMeanJ2000 positions in astronomical units.
 fn write_ecliptic_au_position(
     out: *mut SiderustCartesianPos,
     pos: siderust::coordinates::cartesian::position::EclipticMeanJ2000<AstronomicalUnit>,
+    center: SiderustCenter,
 ) {
     unsafe {
         *out = SiderustCartesianPos {
@@ -678,19 +679,27 @@ fn write_ecliptic_au_position(
             y: pos.y().value(),
             z: pos.z().value(),
             frame: SiderustFrame::EclipticMeanJ2000,
-            center: SiderustCenter::Heliocentric,
+            center,
             length_unit: SiderustLengthUnit::AU,
         };
     }
 }
 
+/// Map an `SiderustOrbitRefCenter` (0=Bary,1=Helio,2=Geo) to a `SiderustCenter`.
+fn orbit_ref_center_to_siderust(orbit_center: SiderustOrbitRefCenter) -> Option<SiderustCenter> {
+    match orbit_center {
+        0 => Some(SiderustCenter::Barycentric),
+        1 => Some(SiderustCenter::Heliocentric),
+        2 => Some(SiderustCenter::Geocentric),
+        _ => None,
+    }
+}
+
 /// Compute the Keplerian orbital position at a given Julian date.
 ///
-/// Returns position in EclipticMeanJ2000 frame (AU), where the reference
-/// center equals the orbit's own reference center (e.g. heliocentric for a
-/// planet's orbit). The `center` field of `out` is set to `Heliocentric` as a
-/// placeholder; callers should interpret it according to `orbit_center` from
-/// the associated `siderust_bodycentric_params_t`.
+/// **Deprecated:** the `center` field of `out` is always set to `Heliocentric`.
+/// Prefer [`siderust_kepler_position_ex`] which takes an explicit
+/// `orbit_center` so the output metadata matches the orbit's actual reference center.
 #[no_mangle]
 pub extern "C" fn siderust_kepler_position(
     orbit: SiderustOrbit,
@@ -702,7 +711,35 @@ pub extern "C" fn siderust_kepler_position(
             return SiderustStatus::NullPointer;
         }
         let pos = orbit.to_rust().kepler_position(JulianDate::new(jd));
-        write_ecliptic_au_position(out, pos);
+        write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
+        SiderustStatus::Ok
+
+    }}
+}
+
+/// Compute the Keplerian orbital position at a given Julian date, with
+/// explicit output center semantics.
+///
+/// `orbit_center` specifies which reference center the orbit elements are
+/// relative to (0=Barycentric, 1=Heliocentric, 2=Geocentric). The `center`
+/// field of `out` will be set accordingly.
+#[no_mangle]
+pub extern "C" fn siderust_kepler_position_ex(
+    orbit: SiderustOrbit,
+    orbit_center: SiderustOrbitRefCenter,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let center = match orbit_ref_center_to_siderust(orbit_center) {
+            Some(c) => c,
+            None => return SiderustStatus::InvalidCenter,
+        };
+        let pos = orbit.to_rust().kepler_position(JulianDate::new(jd));
+        write_ecliptic_au_position(out, pos, center);
         SiderustStatus::Ok
 
     }}
@@ -723,7 +760,7 @@ pub extern "C" fn siderust_mean_motion_position(
             Ok(pos) => pos,
             Err(_) => return SiderustStatus::InvalidArgument,
         };
-        write_ecliptic_au_position(out, pos);
+        write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
         SiderustStatus::Ok
 
     }}
@@ -744,9 +781,83 @@ pub extern "C" fn siderust_conic_position(
             Ok(pos) => pos,
             Err(_) => return SiderustStatus::InvalidArgument,
         };
-        write_ecliptic_au_position(out, pos);
+        write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
         SiderustStatus::Ok
 
+    }}
+}
+
+// =============================================================================
+// Opaque PreparedOrbit handle for amortized propagation
+// =============================================================================
+
+/// Opaque handle to a validated, precomputed Keplerian orbit.
+///
+/// Created via [`siderust_prepared_orbit_create`], used for repeated
+/// propagation via [`siderust_prepared_orbit_position`], and freed via
+/// [`siderust_prepared_orbit_destroy`].
+///
+/// This avoids per-call reconstruction, validation, and trig precomputation
+/// when propagating the same orbit at many epochs.
+pub type SiderustPreparedOrbitHandle = *mut std::ffi::c_void;
+
+/// Create a validated, precomputed orbit handle from Keplerian elements.
+///
+/// Returns `Ok` and writes a non-null handle on success. Returns
+/// `InvalidArgument` if the orbit is not a valid ellipse.
+#[no_mangle]
+pub extern "C" fn siderust_prepared_orbit_create(
+    orbit: SiderustOrbit,
+    out: *mut SiderustPreparedOrbitHandle,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let prepared = match siderust::PreparedOrbit::try_from(orbit.to_rust()) {
+            Ok(p) => p,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        let boxed = Box::new(prepared);
+        unsafe { *out = Box::into_raw(boxed) as *mut std::ffi::c_void };
+        SiderustStatus::Ok
+    }}
+}
+
+/// Propagate a prepared orbit to a given Julian date.
+///
+/// `handle` must have been created via [`siderust_prepared_orbit_create`].
+/// This is the fastest FFI propagation path: no validation, no reconstruction.
+#[no_mangle]
+pub extern "C" fn siderust_prepared_orbit_position(
+    handle: SiderustPreparedOrbitHandle,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if handle.is_null() || out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let prepared = unsafe { &*(handle as *const siderust::PreparedOrbit) };
+        let pos = prepared.position_at(JulianDate::new(jd));
+        write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
+        SiderustStatus::Ok
+    }}
+}
+
+/// Destroy a prepared orbit handle, freeing its memory.
+///
+/// After this call, `handle` must not be used again.
+#[no_mangle]
+pub extern "C" fn siderust_prepared_orbit_destroy(
+    handle: SiderustPreparedOrbitHandle,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if handle.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { drop(Box::from_raw(handle as *mut siderust::PreparedOrbit)) };
+        SiderustStatus::Ok
     }}
 }
 
