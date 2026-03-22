@@ -356,7 +356,7 @@ mod tests {
                 eccentricity: 0.0,
                 inclination_deg: 0.0,
                 lon_ascending_node_deg: 0.0,
-                arg_perihelion_deg: 0.0,
+                arg_periapsis_deg: 0.0,
                 mean_anomaly_deg: 0.0,
                 epoch_jd: 0.0,
             },

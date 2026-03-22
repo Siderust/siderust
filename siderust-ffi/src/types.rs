@@ -542,10 +542,6 @@ impl SiderustGeodetict {
 }
 
 /// Keplerian orbital elements.
-///
-/// Note: the field `arg_perihelion_deg` uses solar-specific terminology
-/// ("perihelion") for backward compatibility with existing C consumers.
-/// The Rust domain type uses the generic term "periapsis".
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustOrbit {
@@ -557,8 +553,8 @@ pub struct SiderustOrbit {
     pub inclination_deg: f64,
     /// Longitude of the ascending node in degrees.
     pub lon_ascending_node_deg: f64,
-    /// Argument of perihelion (periapsis) in degrees.
-    pub arg_perihelion_deg: f64,
+    /// Argument of periapsis in degrees.
+    pub arg_periapsis_deg: f64,
     /// Mean anomaly at epoch in degrees.
     pub mean_anomaly_deg: f64,
     /// Epoch as a Julian Date.
@@ -573,7 +569,7 @@ impl SiderustOrbit {
             self.eccentricity,
             Degrees::new(self.inclination_deg),
             Degrees::new(self.lon_ascending_node_deg),
-            Degrees::new(self.arg_perihelion_deg),
+            Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
             JulianDate::new(self.epoch_jd),
         )
@@ -586,7 +582,7 @@ impl SiderustOrbit {
             eccentricity: o.shape.eccentricity,
             inclination_deg: o.orientation.inclination.value(),
             lon_ascending_node_deg: o.orientation.longitude_of_ascending_node.value(),
-            arg_perihelion_deg: o.orientation.argument_of_periapsis.value(),
+            arg_periapsis_deg: o.orientation.argument_of_periapsis.value(),
             mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
             epoch_jd: o.epoch.value(),
         }
@@ -1165,7 +1161,7 @@ mod tests {
             eccentricity: 0.017,
             inclination_deg: 7.25,
             lon_ascending_node_deg: 48.3,
-            arg_perihelion_deg: 102.9,
+            arg_periapsis_deg: 102.9,
             mean_anomaly_deg: 100.0,
             epoch_jd: 2_451_545.0,
         };

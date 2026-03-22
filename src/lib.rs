@@ -78,6 +78,7 @@ pub use calculus::solar::{twilight, Twilight};
 // ---------------------------------------------------------------------------
 pub use affn::conic::ConicKind;
 pub use astro::conic::{ConicError, ConicOrbit, MeanMotionOrbit};
+pub use astro::orbit::KeplerianOrbit;
 pub use calculus::altitude::{
     above_threshold, altitude_periods as compute_altitude_periods, altitude_ranges,
     below_threshold, crossings, culminations, AltitudePeriodsProvider, AltitudeQuery,
