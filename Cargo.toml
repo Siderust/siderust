@@ -1,6 +1,9 @@
 [workspace]
 members = [".", "siderust-ffi"]
 
+[patch.crates-io]
+affn = { path = "affn" }
+
 [package]
 name = "siderust"
 version = "0.6.0"

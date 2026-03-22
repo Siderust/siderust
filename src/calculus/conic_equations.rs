@@ -3,7 +3,9 @@
 
 //! Propagation helpers for conic and mean-motion orbit models.
 
-use crate::astro::conic::{ConicError, ConicKind, ConicOrbit, MeanMotionOrbit};
+use crate::astro::conic::{
+    map_validation_error, ConicError, ConicKind, ConicOrbit, MeanMotionOrbit,
+};
 use crate::calculus::kepler_equations::solve_keplers_equation;
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::time::JulianDate;
@@ -12,20 +14,6 @@ use qtty::*;
 const GAUSSIAN_GRAVITATIONAL_CONSTANT: f64 = 0.01720209895;
 const HYPERBOLIC_TOLERANCE: f64 = 1e-14;
 const MAX_HYPERBOLIC_ITERS: usize = 100;
-
-fn validate_positive_au(value: AstronomicalUnits, err: ConicError) -> Result<(), ConicError> {
-    if !value.value().is_finite() || value.value() <= 0.0 {
-        return Err(err);
-    }
-    Ok(())
-}
-
-fn validate_elliptic_eccentricity(eccentricity: f64) -> Result<(), ConicError> {
-    if !eccentricity.is_finite() || !(0.0..1.0).contains(&eccentricity) {
-        return Err(ConicError::InvalidEccentricity);
-    }
-    Ok(())
-}
 
 fn solve_hyperbolic_anomaly(mean_anomaly_radians: f64, eccentricity: f64) -> f64 {
     let mut hyperbolic_anomaly = (mean_anomaly_radians / eccentricity).asinh();
@@ -81,25 +69,26 @@ pub fn calculate_mean_motion_position(
         ));
     }
 
-    validate_positive_au(orbit.semi_major_axis, ConicError::InvalidSemiMajorAxis)?;
-    validate_elliptic_eccentricity(orbit.eccentricity)?;
+    let geometry = orbit.validated_geometry()?;
+    let semi_major_axis = geometry.conic.semi_major_axis.value();
+    let eccentricity = geometry.conic.eccentricity;
+    let orientation = geometry.orientation;
 
     let dt_days = (julian_date - orbit.epoch).value();
     let mean_anomaly_deg = orbit.mean_motion_deg_per_day * dt_days;
     let mean_anomaly = Degrees::new(mean_anomaly_deg).to::<Radian>();
-    let eccentric_anomaly = solve_keplers_equation(mean_anomaly, orbit.eccentricity);
+    let eccentric_anomaly = solve_keplers_equation(mean_anomaly, eccentricity);
     let true_anomaly = 2.0
-        * ((1.0 + orbit.eccentricity).sqrt() * (eccentric_anomaly * 0.5).tan()
-            / (1.0 - orbit.eccentricity).sqrt())
+        * ((1.0 + eccentricity).sqrt() * (eccentric_anomaly * 0.5).tan()
+            / (1.0 - eccentricity).sqrt())
         .atan();
-    let radius =
-        orbit.semi_major_axis.value() * (1.0 - orbit.eccentricity * eccentric_anomaly.cos());
+    let radius = semi_major_axis * (1.0 - eccentricity * eccentric_anomaly.cos());
 
     Ok(rotate_to_ecliptic(
         radius,
-        orbit.inclination,
-        orbit.argument_of_periapsis,
-        orbit.longitude_of_ascending_node,
+        orientation.inclination,
+        orientation.argument_of_periapsis,
+        orientation.longitude_of_ascending_node,
         true_anomaly,
     ))
 }
@@ -109,54 +98,50 @@ pub fn calculate_conic_position(
     orbit: &ConicOrbit,
     julian_date: JulianDate,
 ) -> Result<EclipticMeanJ2000<AstronomicalUnit>, ConicError> {
-    validate_positive_au(
-        orbit.periapsis_distance,
-        ConicError::InvalidPeriapsisDistance,
-    )?;
-
-    let kind = orbit.kind()?;
+    let geometry = orbit.validated_geometry()?;
+    let kind = geometry.kind().map_err(map_validation_error)?;
+    let periapsis_distance = geometry.conic.periapsis_distance.value();
+    let eccentricity = geometry.conic.eccentricity;
+    let orientation = geometry.orientation;
     match kind {
         ConicKind::Elliptic => {
-            let semi_major_axis = AstronomicalUnits::new(
-                orbit.periapsis_distance.value() / (1.0 - orbit.eccentricity),
-            );
+            let semi_major_axis = AstronomicalUnits::new(periapsis_distance / (1.0 - eccentricity));
             let mean_motion = GAUSSIAN_GRAVITATIONAL_CONSTANT / semi_major_axis.value().powf(1.5);
             let dt_days = (julian_date - orbit.epoch).value();
             let mean_anomaly =
                 orbit.mean_anomaly_at_epoch.to::<Radian>() + Radians::new(mean_motion * dt_days);
-            let eccentric_anomaly = solve_keplers_equation(mean_anomaly, orbit.eccentricity);
+            let eccentric_anomaly = solve_keplers_equation(mean_anomaly, eccentricity);
             let true_anomaly = 2.0
-                * ((1.0 + orbit.eccentricity).sqrt() * (eccentric_anomaly * 0.5).tan()
-                    / (1.0 - orbit.eccentricity).sqrt())
+                * ((1.0 + eccentricity).sqrt() * (eccentric_anomaly * 0.5).tan()
+                    / (1.0 - eccentricity).sqrt())
                 .atan();
-            let radius =
-                semi_major_axis.value() * (1.0 - orbit.eccentricity * eccentric_anomaly.cos());
+            let radius = semi_major_axis.value() * (1.0 - eccentricity * eccentric_anomaly.cos());
 
             Ok(rotate_to_ecliptic(
                 radius,
-                orbit.inclination,
-                orbit.argument_of_periapsis,
-                orbit.longitude_of_ascending_node,
+                orientation.inclination,
+                orientation.argument_of_periapsis,
+                orientation.longitude_of_ascending_node,
                 true_anomaly,
             ))
         }
         ConicKind::Hyperbolic => {
-            let semi_major_axis = orbit.periapsis_distance.value() / (orbit.eccentricity - 1.0);
+            let semi_major_axis = periapsis_distance / (eccentricity - 1.0);
             let mean_motion = GAUSSIAN_GRAVITATIONAL_CONSTANT / semi_major_axis.powf(1.5);
             let dt_days = (julian_date - orbit.epoch).value();
             let mean_anomaly =
                 orbit.mean_anomaly_at_epoch.to::<Radian>().value() + mean_motion * dt_days;
-            let hyperbolic_anomaly = solve_hyperbolic_anomaly(mean_anomaly, orbit.eccentricity);
+            let hyperbolic_anomaly = solve_hyperbolic_anomaly(mean_anomaly, eccentricity);
             let true_anomaly = 2.0
-                * ((orbit.eccentricity + 1.0).sqrt() * (hyperbolic_anomaly * 0.5).sinh())
-                    .atan2((orbit.eccentricity - 1.0).sqrt() * (hyperbolic_anomaly * 0.5).cosh());
-            let radius = semi_major_axis * (orbit.eccentricity * hyperbolic_anomaly.cosh() - 1.0);
+                * ((eccentricity + 1.0).sqrt() * (hyperbolic_anomaly * 0.5).sinh())
+                    .atan2((eccentricity - 1.0).sqrt() * (hyperbolic_anomaly * 0.5).cosh());
+            let radius = semi_major_axis * (eccentricity * hyperbolic_anomaly.cosh() - 1.0);
 
             Ok(rotate_to_ecliptic(
                 radius,
-                orbit.inclination,
-                orbit.argument_of_periapsis,
-                orbit.longitude_of_ascending_node,
+                orientation.inclination,
+                orientation.argument_of_periapsis,
+                orientation.longitude_of_ascending_node,
                 true_anomaly,
             ))
         }
@@ -235,6 +220,57 @@ mod tests {
         assert!(matches!(
             orbit.position_at(JulianDate::J2000),
             Err(ConicError::ParabolicUnsupported)
+        ));
+    }
+
+    #[test]
+    fn invalid_mean_motion_semi_major_axis_maps_to_existing_error() {
+        let orbit = MeanMotionOrbit::new(
+            -1.0 * AU,
+            0.1,
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            1.0,
+            JulianDate::J2000,
+        );
+        assert!(matches!(
+            orbit.position_at(JulianDate::J2000),
+            Err(ConicError::InvalidSemiMajorAxis)
+        ));
+    }
+
+    #[test]
+    fn invalid_mean_motion_eccentricity_maps_to_existing_error() {
+        let orbit = MeanMotionOrbit::new(
+            1.0 * AU,
+            1.1,
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            1.0,
+            JulianDate::J2000,
+        );
+        assert!(matches!(
+            orbit.position_at(JulianDate::J2000),
+            Err(ConicError::InvalidEccentricity)
+        ));
+    }
+
+    #[test]
+    fn invalid_periapsis_distance_maps_to_existing_error() {
+        let orbit = ConicOrbit::new(
+            0.0 * AU,
+            0.5,
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            JulianDate::J2000,
+        );
+        assert!(matches!(
+            orbit.position_at(JulianDate::J2000),
+            Err(ConicError::InvalidPeriapsisDistance)
         ));
     }
 }
