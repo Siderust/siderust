@@ -296,7 +296,7 @@ fn keplerian_orbit_round_trip() {
         eccentricity: 0.0934,
         inclination_deg: 1.85,
         lon_ascending_node_deg: 49.558,
-        arg_perihelion_deg: 286.502,
+        arg_periapsis_deg: 286.502,
         mean_anomaly_deg: 19.412,
         epoch_jd: 2451545.0,
     };
@@ -306,7 +306,7 @@ fn keplerian_orbit_round_trip() {
     assert!((back.eccentricity - ffi.eccentricity).abs() < 1e-12);
     assert!((back.inclination_deg - ffi.inclination_deg).abs() < 1e-12);
     assert!((back.lon_ascending_node_deg - ffi.lon_ascending_node_deg).abs() < 1e-12);
-    assert!((back.arg_perihelion_deg - ffi.arg_perihelion_deg).abs() < 1e-12);
+    assert!((back.arg_periapsis_deg - ffi.arg_periapsis_deg).abs() < 1e-12);
     assert!((back.mean_anomaly_deg - ffi.mean_anomaly_deg).abs() < 1e-12);
     assert!((back.epoch_jd - ffi.epoch_jd).abs() < 1e-12);
 }

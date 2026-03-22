@@ -6,7 +6,7 @@
 //! Represents comets with their name, tail length, and orbital parameters.
 //! - name: String identifier for the comet.
 //! - tail_length: Tail length in kilometers (Kilometers).
-//! - orbit: Orbital parameters (see [Orbit]).
+//! - orbit: Orbital parameters (see [`KeplerianOrbit`](crate::astro::orbit::KeplerianOrbit)).
 //!
 //! | Constant | Designation | Reference frame | Period (yr) | Notes |
 //! |----------|-------------|-----------------|-------------|-------|

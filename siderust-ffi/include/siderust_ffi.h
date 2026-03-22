@@ -443,10 +443,6 @@ typedef struct siderust_proper_motion_t {
 } siderust_proper_motion_t;
 
 // Keplerian orbital elements.
-//
-// Note: the field `arg_perihelion_deg` uses solar-specific terminology
-// ("perihelion") for backward compatibility with existing C consumers.
-// The Rust domain type uses the generic term "periapsis".
 typedef struct siderust_orbit_t {
   // Semi-major axis in astronomical units.
   double semi_major_axis_au;
@@ -456,8 +452,8 @@ typedef struct siderust_orbit_t {
   double inclination_deg;
   // Longitude of the ascending node in degrees.
   double lon_ascending_node_deg;
-  // Argument of perihelion (periapsis) in degrees.
-  double arg_perihelion_deg;
+  // Argument of periapsis in degrees.
+  double arg_periapsis_deg;
   // Mean anomaly at epoch in degrees.
   double mean_anomaly_deg;
   // Epoch as a Julian Date.

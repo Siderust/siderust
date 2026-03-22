@@ -175,7 +175,3 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         Ok(())
     }
 }
-
-/// Legacy type alias. Prefer `KeplerianOrbit`.
-#[deprecated(since = "0.7.0", note = "Use KeplerianOrbit instead")]
-pub type Orbit = KeplerianOrbit;
