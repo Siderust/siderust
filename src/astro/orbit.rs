@@ -3,40 +3,41 @@
 
 //! # Keplerian Orbit Model
 //!
-//! This module defines the `Orbit` struct, which encapsulates the **six classical Keplerian orbital elements**
+//! This module defines the `KeplerianOrbit` struct, which encapsulates the **six classical Keplerian orbital elements**
 //! used to describe the motion of a celestial object around a central body, such as a planet around the Sun.
 //!
 //! These elements are:
 //!
-//! 1. **Semi-major axis (`a`)**  
+//! 1. **Semi-major axis (`a`)**
 //!    - Defines the size of the orbit.
 //!    - It is half the longest diameter of the ellipse.
 //!    - Expressed in astronomical units (AstronomicalUnits).
 //!
-//! 2. **Eccentricity (`e`)**  
+//! 2. **Eccentricity (`e`)**
 //!    - Defines the shape of the orbit.
+//!    - `KeplerianOrbit` only supports **elliptic** motion (`0 ≤ e < 1`).
+//!    - For parabolic or hyperbolic trajectories, use
+//!      [`ConicOrbit`](crate::astro::conic::ConicOrbit) instead.
 //!    - Values:
-//!       - `e = 0`: circular  
-//!       - `0 < e < 1`: elliptical  
-//!       - `e = 1`: parabolic  
-//!       - `e > 1`: hyperbolic
+//!       - `e = 0`: circular
+//!       - `0 < e < 1`: elliptical
 //!
-//! 3. **Inclination (`i`)**  
+//! 3. **Inclination (`i`)**
 //!    - The angle between the orbital plane and a reference plane (typically the ecliptic).
 //!    - Describes the tilt of the orbit relative to the reference frame.
 //!    - Expressed in degrees.
 //!
-//! 4. **Longitude of the ascending node (`Ω`)**  
+//! 4. **Longitude of the ascending node (`Ω`)**
 //!    - Angle from a fixed reference direction (e.g., the vernal equinox) to the ascending node —
 //!      the point where the orbit crosses the reference plane going north.
 //!    - Expressed in degrees.
 //!
-//! 5. **Argument of perihelion (`ω`)**  
-//!    - The angle from the ascending node to the perihelion (the point of closest approach).
+//! 5. **Argument of periapsis (`ω`)**
+//!    - The angle from the ascending node to the periapsis (the point of closest approach).
 //!    - Measured in the direction of motion.
 //!    - Expressed in degrees.
 //!
-//! 6. **Mean anomaly at epoch (`M₀`)**  
+//! 6. **Mean anomaly at epoch (`M₀`)**
 //!    - Represents the position of the object along its orbit at a specific reference time (epoch).
 //!    - It evolves linearly over time and is used to compute the true anomaly.
 //!    - Expressed in degrees.
@@ -44,11 +45,11 @@
 //! ## Epoch
 //!
 //! The `epoch` is the reference point in time (given in Julian Day) at which the `mean_anomaly_at_epoch` applies.
-//! From this point, the object's position can be propagated using Kepler’s equation.
+//! From this point, the object's position can be propagated using Kepler's equation.
 //!
 //! ## Coordinate Calculation
 //!
-//! The `Orbit::kepler_position(jd)` method (implemented in
+//! The `KeplerianOrbit::kepler_position(jd)` method (implemented in
 //! [`calculus::kepler_equations`](crate::calculus::kepler_equations)) returns the
 //! **heliocentric ecliptic Cartesian coordinates** of the orbiting body at a given
 //! Julian Day (`jd`), based on the orbital elements and epoch.
@@ -65,11 +66,11 @@
 //! This example computes Earth's position on a given Julian date.
 //!
 //! ```rust
-//! use siderust::astro::orbit::Orbit;
+//! use siderust::astro::orbit::KeplerianOrbit;
 //! use siderust::time::JulianDate;
 //! use qtty::*;
 //!
-//! let earth_orbit = Orbit::new(
+//! let earth_orbit = KeplerianOrbit::new(
 //!     1.0*AU,                    // a
 //!     0.0167,                    // e
 //!     Degrees::new(0.00005),     // i
@@ -83,57 +84,98 @@
 //! ```
 
 use crate::time::JulianDate;
+use affn::conic::{ConicOrientation, ConicShape, SemiMajorAxisParam};
+use affn::frames::EclipticMeanJ2000;
 use qtty::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-/// Represents the Keplerian orbital elements of a celestial object.
+/// Keplerian orbital elements in semi-major-axis + mean-anomaly-at-epoch form.
+///
+/// This is the canonical orbital element set for elliptic Solar System bodies
+/// (`0 ≤ e < 1`). For parabolic or hyperbolic trajectories, use
+/// [`ConicOrbit`](crate::astro::conic::ConicOrbit) instead.
+///
+/// The shape and orientation are composed from `affn` conic types, tagged
+/// to the `EclipticMeanJ2000` frame matching JPL/NASA catalog conventions.
 #[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
-pub struct Orbit {
-    pub semi_major_axis: AstronomicalUnits, // Semi-major axis (AstronomicalUnits)
-    pub eccentricity: f64,                  // Orbital eccentricity
-    pub inclination: Degrees,               // Inclination (degrees)
-    pub longitude_of_ascending_node: Degrees, // Longitude of ascending node (Ω)
-    pub argument_of_perihelion: Degrees,    // Argument of perihelion (ω)
-    pub mean_anomaly_at_epoch: Degrees,     // Mean anomaly at epoch (M₀)
-    pub epoch: JulianDate,                  // Epoch (Julian Date)
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(bound = ""))]
+pub struct KeplerianOrbit<U: LengthUnit = AstronomicalUnit> {
+    /// Shape: semi-major axis and eccentricity.
+    pub shape: SemiMajorAxisParam<U>,
+    /// 3-D orientation in the ecliptic mean J2000 frame.
+    pub orientation: ConicOrientation<EclipticMeanJ2000>,
+    /// Mean anomaly at `epoch`.
+    pub mean_anomaly_at_epoch: Degrees,
+    /// Reference epoch.
+    pub epoch: JulianDate,
 }
-impl std::fmt::Display for Orbit {
+
+impl<U: LengthUnit> std::fmt::Display for KeplerianOrbit<U>
+where
+    Quantity<U>: std::fmt::Display,
+{
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
             "a={}, e={:.6}, i={}, \u{03a9}={}, \u{03c9}={}, M\u{2080}={}, epoch={}",
-            self.semi_major_axis,
-            self.eccentricity,
-            self.inclination,
-            self.longitude_of_ascending_node,
-            self.argument_of_perihelion,
+            self.shape.semi_major_axis,
+            self.shape.eccentricity,
+            self.orientation.inclination,
+            self.orientation.longitude_of_ascending_node,
+            self.orientation.argument_of_periapsis,
             self.mean_anomaly_at_epoch,
             self.epoch,
         )
     }
 }
-impl Orbit {
-    /// Creates a new set of orbital elements.
+
+impl<U: LengthUnit> KeplerianOrbit<U> {
+    /// Creates a new set of Keplerian orbital elements.
+    ///
+    /// Note: this constructor does not validate. Call [`validate()`](Self::validate)
+    /// before propagation to ensure the orbit is elliptic.
     pub const fn new(
-        semi_major_axis: AstronomicalUnits,
+        semi_major_axis: Quantity<U>,
         eccentricity: f64,
         inclination: Degrees,
         longitude_of_ascending_node: Degrees,
-        argument_of_perihelion: Degrees,
+        argument_of_periapsis: Degrees,
         mean_anomaly_at_epoch: Degrees,
         epoch: JulianDate,
     ) -> Self {
         Self {
-            semi_major_axis,
-            eccentricity,
-            inclination,
-            longitude_of_ascending_node,
-            argument_of_perihelion,
+            shape: SemiMajorAxisParam::new(semi_major_axis, eccentricity),
+            orientation: ConicOrientation::new(
+                inclination,
+                longitude_of_ascending_node,
+                argument_of_periapsis,
+            ),
             mean_anomaly_at_epoch,
             epoch,
         }
     }
+
+    /// Validates that this orbit is elliptic (`0 ≤ e < 1`) with a positive
+    /// semi-major axis and finite orientation angles.
+    pub fn validate(&self) -> Result<(), crate::astro::conic::ConicError> {
+        use crate::astro::conic::{map_validation_error, ConicError};
+        use affn::conic::ConicKind;
+
+        self.shape.validate().map_err(map_validation_error)?;
+        self.orientation.validate().map_err(map_validation_error)?;
+
+        if !matches!(
+            self.shape.kind().map_err(map_validation_error)?,
+            ConicKind::Elliptic
+        ) {
+            return Err(ConicError::InvalidEccentricity);
+        }
+        Ok(())
+    }
 }
+
+/// Legacy type alias. Prefer `KeplerianOrbit`.
+#[deprecated(since = "0.7.0", note = "Use KeplerianOrbit instead")]
+pub type Orbit = KeplerianOrbit;

@@ -284,3 +284,73 @@ fn icrs_azimuth_wrong_frame_returns_error() {
     let status = unsafe { siderust_icrs_azimuth_at(dir, paris_observer(), 60000.0, &mut out) };
     assert_eq!(status, SiderustStatus::InvalidFrame);
 }
+
+// ─────────────────────────────────────────────────────────────────────────────
+// Orbit FFI round-trip tests
+// ─────────────────────────────────────────────────────────────────────────────
+
+#[test]
+fn keplerian_orbit_round_trip() {
+    let ffi = SiderustOrbit {
+        semi_major_axis_au: 1.523679,
+        eccentricity: 0.0934,
+        inclination_deg: 1.85,
+        lon_ascending_node_deg: 49.558,
+        arg_perihelion_deg: 286.502,
+        mean_anomaly_deg: 19.412,
+        epoch_jd: 2451545.0,
+    };
+    let rust = ffi.to_rust();
+    let back = SiderustOrbit::from_rust(&rust);
+    assert!((back.semi_major_axis_au - ffi.semi_major_axis_au).abs() < 1e-12);
+    assert!((back.eccentricity - ffi.eccentricity).abs() < 1e-12);
+    assert!((back.inclination_deg - ffi.inclination_deg).abs() < 1e-12);
+    assert!((back.lon_ascending_node_deg - ffi.lon_ascending_node_deg).abs() < 1e-12);
+    assert!((back.arg_perihelion_deg - ffi.arg_perihelion_deg).abs() < 1e-12);
+    assert!((back.mean_anomaly_deg - ffi.mean_anomaly_deg).abs() < 1e-12);
+    assert!((back.epoch_jd - ffi.epoch_jd).abs() < 1e-12);
+}
+
+#[test]
+fn mean_motion_orbit_round_trip() {
+    let ffi = SiderustMeanMotionOrbit {
+        semi_major_axis_au: 2.767,
+        eccentricity: 0.0758,
+        inclination_deg: 10.594,
+        lon_ascending_node_deg: 80.329,
+        arg_periapsis_deg: 73.597,
+        mean_motion_deg_per_day: 0.2138,
+        epoch_jd: 2451545.0,
+    };
+    let rust = ffi.to_rust();
+    let back = SiderustMeanMotionOrbit::from_rust(&rust);
+    assert!((back.semi_major_axis_au - ffi.semi_major_axis_au).abs() < 1e-12);
+    assert!((back.eccentricity - ffi.eccentricity).abs() < 1e-12);
+    assert!((back.inclination_deg - ffi.inclination_deg).abs() < 1e-12);
+    assert!((back.lon_ascending_node_deg - ffi.lon_ascending_node_deg).abs() < 1e-12);
+    assert!((back.arg_periapsis_deg - ffi.arg_periapsis_deg).abs() < 1e-12);
+    assert!((back.mean_motion_deg_per_day - ffi.mean_motion_deg_per_day).abs() < 1e-12);
+    assert!((back.epoch_jd - ffi.epoch_jd).abs() < 1e-12);
+}
+
+#[test]
+fn conic_orbit_round_trip() {
+    let ffi = SiderustConicOrbit {
+        periapsis_distance_au: 0.586,
+        eccentricity: 0.967,
+        inclination_deg: 162.26,
+        lon_ascending_node_deg: 58.15,
+        arg_periapsis_deg: 111.87,
+        mean_anomaly_deg: 0.0,
+        epoch_jd: 2451545.0,
+    };
+    let rust = ffi.to_rust();
+    let back = SiderustConicOrbit::from_rust(&rust);
+    assert!((back.periapsis_distance_au - ffi.periapsis_distance_au).abs() < 1e-12);
+    assert!((back.eccentricity - ffi.eccentricity).abs() < 1e-12);
+    assert!((back.inclination_deg - ffi.inclination_deg).abs() < 1e-12);
+    assert!((back.lon_ascending_node_deg - ffi.lon_ascending_node_deg).abs() < 1e-12);
+    assert!((back.arg_periapsis_deg - ffi.arg_periapsis_deg).abs() < 1e-12);
+    assert!((back.mean_anomaly_deg - ffi.mean_anomaly_deg).abs() < 1e-12);
+    assert!((back.epoch_jd - ffi.epoch_jd).abs() < 1e-12);
+}

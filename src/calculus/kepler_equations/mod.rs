@@ -56,7 +56,7 @@
 //! ```
 //!
 //! To advance from anomaly to Cartesian position use  
-//! `calculate_orbit_position(&Orbit, julian_date)` which wraps the standard
+//! `calculate_orbit_position(&KeplerianOrbit, julian_date)` which wraps the standard
 //! true-anomaly conversion, radius vector, and three-axis rotation into the
 //! ecliptic heliocentric frame.
 //!
@@ -84,7 +84,7 @@
 //! | `newton_kepler`, `bisection_kepler` | crate-private | Numerical kernels |
 //! | `kepler_equation_residual`, `kepler_equation_derivative` | crate-private | Helpers |
 
-use crate::astro::orbit::Orbit;
+use crate::astro::orbit::KeplerianOrbit;
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::time::JulianDate;
 use qtty::*;
@@ -205,26 +205,28 @@ fn orbital_period_days(a: AstronomicalUnits) -> Days {
 /// using the direct textbook rotation formula.
 ///
 /// # Arguments
-/// - `elements`: Orbital elements of the celestial body.
+/// - `elements`: Orbital elements of the celestial body (must be elliptic with
+///   positive semi-major axis).
 /// - `julian_date`: Julian date for the desired position.
 ///
 /// # Returns
-/// - `(x, y, z)`: Heliocentric coordinates in AstronomicalUnits.
+/// - Heliocentric ecliptic J2000 coordinates in AstronomicalUnits.
+///
+/// # Panics
+/// Debug-asserts that `elements.validate()` succeeds. In release builds,
+/// invalid elements produce unspecified (but finite) results.
 pub fn calculate_orbit_position(
-    elements: &Orbit,
+    elements: &KeplerianOrbit,
     julian_date: JulianDate,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
-    // Handle degenerate case: if semi-major axis is zero or negligible, return origin
-    if elements.semi_major_axis.value().abs() < 1e-30 {
-        return EclipticMeanJ2000::new(
-            AstronomicalUnits::new(0.0),
-            AstronomicalUnits::new(0.0),
-            AstronomicalUnits::new(0.0),
-        );
-    }
+    debug_assert!(
+        elements.validate().is_ok(),
+        "calculate_orbit_position called with invalid orbit: {:?}",
+        elements.validate(),
+    );
 
     // 1) Mean motion (n).
-    let period = orbital_period_days(elements.semi_major_axis);
+    let period = orbital_period_days(elements.shape.semi_major_axis);
     type RadiansPerDay = qtty::frequency::Frequency<Radian, Day>;
     let n: RadiansPerDay = Radians::TAU / period;
 
@@ -233,22 +235,25 @@ pub fn calculate_orbit_position(
 
     // 3) Mean Anomaly (M) in radians
     let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
+    let e = elements.shape.eccentricity;
     let m_rad = (m0_rad + (n * dt).to::<Radian>()) % std::f64::consts::TAU;
 
     // 4) Solve Kepler's Equation (E) for the eccentric anomaly
-    let e_anomaly = solve_keplers_equation(m_rad, elements.eccentricity);
+    let e_anomaly = solve_keplers_equation(m_rad, e);
 
     // 5) True Anomaly (ν)
-    let e = elements.eccentricity;
     let true_anomaly = 2.0 * ((1.0 + e).sqrt() * (e_anomaly * 0.5).tan() / (1.0 - e).sqrt()).atan();
 
     // 6) Heliocentric distance (z)
-    let z = elements.semi_major_axis * (1.0 - e * e_anomaly.cos());
+    let z = elements.shape.semi_major_axis * (1.0 - e * e_anomaly.cos());
 
     // 7) Compute standard rotation angular
-    let i_rad = elements.inclination.to::<Radian>();
-    let omega_rad = elements.longitude_of_ascending_node.to::<Radian>();
-    let w_rad = elements.argument_of_perihelion.to::<Radian>();
+    let i_rad = elements.orientation.inclination.to::<Radian>();
+    let omega_rad = elements
+        .orientation
+        .longitude_of_ascending_node
+        .to::<Radian>();
+    let w_rad = elements.orientation.argument_of_periapsis.to::<Radian>();
 
     // 8) Textbook formula: position in ecliptic coordinates (X, Y, Z)
     //
@@ -267,8 +272,11 @@ pub fn calculate_orbit_position(
     )
 }
 
-impl Orbit {
+impl KeplerianOrbit {
     /// Calculates heliocentric coordinates of the orbiting body at a given Julian date.
+    ///
+    /// The orbit must be valid and elliptic. Use [`validate()`](Self::validate) to
+    /// check user-supplied elements before calling this method.
     pub fn kepler_position(&self, jd: JulianDate) -> EclipticMeanJ2000<AstronomicalUnit> {
         calculate_orbit_position(self, jd)
     }
@@ -313,7 +321,7 @@ mod tests {
     /// Test circular orbit where eccentricity is zero.
     #[test]
     fn test_circular_orbit() {
-        let orbit = Orbit::new(
+        let orbit = KeplerianOrbit::new(
             1.0 * AU,          // a (AstronomicalUnits)
             0.0,               // e
             Degrees::new(0.0), // i
@@ -338,7 +346,7 @@ mod tests {
     /// Test heliocentric coordinates for zero inclination.
     #[test]
     fn test_zero_inclination() {
-        let elements = Orbit::new(
+        let elements = KeplerianOrbit::new(
             2.0 * AU,          // a (AstronomicalUnits)
             0.1,               // e
             Degrees::new(0.0), // i
@@ -356,7 +364,7 @@ mod tests {
     /// Test heliocentric coordinates after a specific number of days.
     #[test]
     fn test_after_days() {
-        let elements = Orbit::new(
+        let elements = KeplerianOrbit::new(
             1.0 * AU,          // a (AstronomicalUnits)
             0.0167,            // e
             Degrees::new(0.0), // i
@@ -536,9 +544,8 @@ mod tests {
     }
 
     #[test]
-    fn test_calculate_orbit_position_edge_cases() {
-        // Test with zero semi-major axis (should handle gracefully)
-        let orbit = Orbit::new(
+    fn test_zero_semi_major_axis_fails_validation() {
+        let orbit = KeplerianOrbit::new(
             AstronomicalUnits::new(0.0), // a = 0 AU
             0.0,                         // e
             Degrees::new(0.0),           // i
@@ -548,15 +555,12 @@ mod tests {
             JulianDate::J2000,           // epoch
         );
 
-        let coord = calculate_orbit_position(&orbit, JulianDate::J2000);
-        assert!(coord.x().is_finite());
-        assert!(coord.y().is_finite());
-        assert!(coord.z().is_finite());
+        assert!(orbit.validate().is_err());
     }
 
     #[test]
     fn test_calculate_orbit_position_different_epochs() {
-        let orbit = Orbit::new(
+        let orbit = KeplerianOrbit::new(
             1.0 * AU,          // a (AU)
             0.1,               // e
             Degrees::new(0.0), // i
@@ -587,7 +591,7 @@ mod tests {
 
     #[test]
     fn test_orbit_kepler_position_method() {
-        let orbit = Orbit::new(
+        let orbit = KeplerianOrbit::new(
             1.0 * AU,          // a (AU)
             0.0,               // e (circular)
             Degrees::new(0.0), // i
@@ -608,7 +612,7 @@ mod tests {
 
     #[test]
     fn test_high_inclination_orbit() {
-        let orbit = Orbit::new(
+        let orbit = KeplerianOrbit::new(
             1.0 * AU,           // a (AU)
             0.1,                // e
             Degrees::new(89.0), // i (high inclination)
@@ -632,7 +636,7 @@ mod tests {
 
     #[test]
     fn test_retrograde_orbit() {
-        let orbit = Orbit::new(
+        let orbit = KeplerianOrbit::new(
             1.0 * AU,            // a (AU)
             0.1,                 // e
             Degrees::new(180.0), // i (retrograde)

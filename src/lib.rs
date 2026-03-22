@@ -71,10 +71,13 @@ pub use calculus::azimuth::{
     in_azimuth_range, outside_azimuth_range, AzimuthCrossingDirection, AzimuthCrossingEvent,
     AzimuthExtremum, AzimuthExtremumKind, AzimuthProvider, AzimuthQuery,
 };
+pub use calculus::solar::{twilight, Twilight};
 
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: unified altitude API
 // ---------------------------------------------------------------------------
+pub use affn::conic::ConicKind;
+pub use astro::conic::{ConicError, ConicOrbit, MeanMotionOrbit};
 pub use calculus::altitude::{
     above_threshold, altitude_periods as compute_altitude_periods, altitude_ranges,
     below_threshold, crossings, culminations, AltitudePeriodsProvider, AltitudeQuery,
