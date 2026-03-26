@@ -164,7 +164,11 @@ impl OrbitExt for KeplerianOrbit {
         // We compute in seconds directly.
 
         use std::f64::consts::PI;
-        let a_au = self.shape.semi_major_axis.to::<AstronomicalUnit>().value();
+        let a_au = self
+            .shape()
+            .semi_major_axis()
+            .to::<AstronomicalUnit>()
+            .value();
         let k = GAUSSIAN_GRAVITATIONAL_CONSTANT.value();
 
         let t_days = (2.0 * PI / k) * (a_au * a_au.sqrt());
