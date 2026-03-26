@@ -10,7 +10,8 @@
 
 use crate::time::JulianDate;
 use affn::conic::{
-    ConicOrientation, ConicValidationError, OrientedConic, PeriapsisParam, SemiMajorAxisParam,
+    ClassifiedSemiMajorAxisParam, ConicOrientation, ConicValidationError, Elliptic, OrientedConic,
+    PeriapsisParam, SemiMajorAxisParam, TypedSemiMajorAxisParam,
 };
 use affn::frames::EclipticMeanJ2000;
 use qtty::*;
@@ -68,17 +69,22 @@ pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
     }
 }
 
+// =============================================================================
+// ConicOrbit
+// =============================================================================
+
 /// Unified conic elements expressed using periapsis distance.
 ///
-/// The conic geometry is stored directly as an
+/// The conic geometry is stored as a validated
 /// [`OrientedConic<PeriapsisParam<AstronomicalUnit>, EclipticMeanJ2000>`].
-/// `ConicOrbit` adds the mean-anomaly-at-epoch and epoch fields needed for
-/// astronomical propagation.
+/// After construction the geometry is always valid; `kind()` is infallible.
+///
+/// Supports elliptic, parabolic, and hyperbolic orbits. Parabolic propagation
+/// returns [`ConicError::ParabolicUnsupported`].
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ConicOrbit {
-    /// Geometry: periapsis distance, eccentricity, and 3-D orientation.
-    pub geometry: OrientedConic<PeriapsisParam<AstronomicalUnit>, EclipticMeanJ2000>,
+    geometry: OrientedConic<PeriapsisParam<AstronomicalUnit>, EclipticMeanJ2000>,
     /// Mean anomaly at `epoch`.
     pub mean_anomaly_at_epoch: Degrees,
     /// Reference epoch.
@@ -86,7 +92,37 @@ pub struct ConicOrbit {
 }
 
 impl ConicOrbit {
-    /// Creates a new conic-element set.
+    /// Creates a new validated conic-element set.
+    ///
+    /// Returns an error if any parameter is invalid (non-positive periapsis
+    /// distance, non-finite eccentricity, non-finite orientation angles).
+    pub fn try_new(
+        periapsis_distance: AstronomicalUnits,
+        eccentricity: f64,
+        inclination: Degrees,
+        longitude_of_ascending_node: Degrees,
+        argument_of_periapsis: Degrees,
+        mean_anomaly_at_epoch: Degrees,
+        epoch: JulianDate,
+    ) -> Result<Self, ConicError> {
+        let shape = PeriapsisParam::try_new(periapsis_distance, eccentricity)
+            .map_err(map_validation_error)?;
+        let orientation = ConicOrientation::try_new(
+            inclination,
+            longitude_of_ascending_node,
+            argument_of_periapsis,
+        )
+        .map_err(map_validation_error)?;
+        Ok(Self {
+            geometry: OrientedConic::new(shape, orientation),
+            mean_anomaly_at_epoch,
+            epoch,
+        })
+    }
+
+    /// Creates a new conic-element set **without validation**.
+    ///
+    /// Intended for compile-time body constants with known-correct values.
     pub const fn new(
         periapsis_distance: AstronomicalUnits,
         eccentricity: f64,
@@ -98,7 +134,7 @@ impl ConicOrbit {
     ) -> Self {
         Self {
             geometry: OrientedConic::new(
-                PeriapsisParam::new(periapsis_distance, eccentricity),
+                PeriapsisParam::new_unchecked(periapsis_distance, eccentricity),
                 ConicOrientation::new(
                     inclination,
                     longitude_of_ascending_node,
@@ -110,56 +146,34 @@ impl ConicOrbit {
         }
     }
 
-    /// Creates a new conic-element set, returning an error if the geometry is
-    /// invalid (e.g. non-positive periapsis distance, non-finite angles).
-    pub fn try_new(
-        periapsis_distance: AstronomicalUnits,
-        eccentricity: f64,
-        inclination: Degrees,
-        longitude_of_ascending_node: Degrees,
-        argument_of_periapsis: Degrees,
-        mean_anomaly_at_epoch: Degrees,
-        epoch: JulianDate,
-    ) -> Result<Self, ConicError> {
-        let orbit = Self::new(
-            periapsis_distance,
-            eccentricity,
-            inclination,
-            longitude_of_ascending_node,
-            argument_of_periapsis,
-            mean_anomaly_at_epoch,
-            epoch,
-        );
-        orbit.geometry.validate().map_err(map_validation_error)?;
-        Ok(orbit)
+    /// The validated oriented geometry.
+    #[inline]
+    pub fn geometry(&self) -> &OrientedConic<PeriapsisParam<AstronomicalUnit>, EclipticMeanJ2000> {
+        &self.geometry
     }
 
-    /// Classifies the orbit from its eccentricity.
-    pub fn kind(&self) -> Result<ConicKind, ConicError> {
-        self.geometry.kind().map_err(map_validation_error)
-    }
-
-    pub(crate) fn validated_geometry(
-        &self,
-    ) -> Result<&OrientedConic<PeriapsisParam<AstronomicalUnit>, EclipticMeanJ2000>, ConicError>
-    {
-        self.geometry.validate().map_err(map_validation_error)?;
-        Ok(&self.geometry)
+    /// Classifies the orbit from its eccentricity. Infallible.
+    pub fn kind(&self) -> ConicKind {
+        self.geometry.kind()
     }
 }
 
+// =============================================================================
+// MeanMotionOrbit
+// =============================================================================
+
 /// Mean-motion-driven elliptic elements.
 ///
-/// This is intentionally distinct from [`crate::astro::orbit::KeplerianOrbit`]. Here the
-/// stored mean daily motion is authoritative and the epoch corresponds to zero
-/// mean anomaly, which matches a number of catalog and legacy data sets. The
-/// geometry is stored directly as an
-/// [`OrientedConic<SemiMajorAxisParam<AstronomicalUnit>, EclipticMeanJ2000>`].
+/// This is intentionally distinct from [`crate::astro::orbit::KeplerianOrbit`].
+/// Here the stored mean daily motion is authoritative and the epoch corresponds
+/// to zero mean anomaly.
+///
+/// Stores `OrientedConic<TypedSemiMajorAxisParam<AstronomicalUnit, Elliptic>,
+/// EclipticMeanJ2000>` — elliptic geometry is enforced at construction time.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MeanMotionOrbit {
-    /// Geometry: semi-major axis, eccentricity, and 3-D orientation.
-    pub geometry: OrientedConic<SemiMajorAxisParam<AstronomicalUnit>, EclipticMeanJ2000>,
+    geometry: OrientedConic<TypedSemiMajorAxisParam<AstronomicalUnit, Elliptic>, EclipticMeanJ2000>,
     /// Mean motion in degrees per day.
     pub mean_motion_deg_per_day: f64,
     /// Epoch at which the mean anomaly is defined to be zero.
@@ -167,7 +181,43 @@ pub struct MeanMotionOrbit {
 }
 
 impl MeanMotionOrbit {
-    /// Creates a new mean-motion orbit.
+    /// Creates a new validated elliptic mean-motion orbit.
+    ///
+    /// Returns an error if any parameter is invalid or if the eccentricity is
+    /// not elliptic (`e >= 1`).
+    pub fn try_new(
+        semi_major_axis: AstronomicalUnits,
+        eccentricity: f64,
+        inclination: Degrees,
+        longitude_of_ascending_node: Degrees,
+        argument_of_periapsis: Degrees,
+        mean_motion_deg_per_day: f64,
+        epoch: JulianDate,
+    ) -> Result<Self, ConicError> {
+        let sma = SemiMajorAxisParam::try_new(semi_major_axis, eccentricity)
+            .map_err(map_validation_error)?;
+        let typed = match sma.classify() {
+            ClassifiedSemiMajorAxisParam::Elliptic(t) => t,
+            ClassifiedSemiMajorAxisParam::Hyperbolic(_) => {
+                return Err(ConicError::InvalidEccentricity);
+            }
+        };
+        let orientation = ConicOrientation::try_new(
+            inclination,
+            longitude_of_ascending_node,
+            argument_of_periapsis,
+        )
+        .map_err(map_validation_error)?;
+        Ok(Self {
+            geometry: OrientedConic::new(typed, orientation),
+            mean_motion_deg_per_day,
+            epoch,
+        })
+    }
+
+    /// Creates a new mean-motion orbit **without validation**.
+    ///
+    /// Intended for compile-time body constants with known-correct elliptic values.
     pub const fn new(
         semi_major_axis: AstronomicalUnits,
         eccentricity: f64,
@@ -179,7 +229,10 @@ impl MeanMotionOrbit {
     ) -> Self {
         Self {
             geometry: OrientedConic::new(
-                SemiMajorAxisParam::new(semi_major_axis, eccentricity),
+                TypedSemiMajorAxisParam::new_unchecked(SemiMajorAxisParam::new_unchecked(
+                    semi_major_axis,
+                    eccentricity,
+                )),
                 ConicOrientation::new(
                     inclination,
                     longitude_of_ascending_node,
@@ -191,42 +244,13 @@ impl MeanMotionOrbit {
         }
     }
 
-    /// Creates a new mean-motion orbit, returning an error if the geometry
-    /// is invalid or not elliptic.
-    pub fn try_new(
-        semi_major_axis: AstronomicalUnits,
-        eccentricity: f64,
-        inclination: Degrees,
-        longitude_of_ascending_node: Degrees,
-        argument_of_periapsis: Degrees,
-        mean_motion_deg_per_day: f64,
-        epoch: JulianDate,
-    ) -> Result<Self, ConicError> {
-        let orbit = Self::new(
-            semi_major_axis,
-            eccentricity,
-            inclination,
-            longitude_of_ascending_node,
-            argument_of_periapsis,
-            mean_motion_deg_per_day,
-            epoch,
-        );
-        orbit.validated_geometry()?;
-        Ok(orbit)
-    }
-
-    pub(crate) fn validated_geometry(
+    /// The validated oriented geometry.
+    #[inline]
+    pub fn geometry(
         &self,
-    ) -> Result<&OrientedConic<SemiMajorAxisParam<AstronomicalUnit>, EclipticMeanJ2000>, ConicError>
+    ) -> &OrientedConic<TypedSemiMajorAxisParam<AstronomicalUnit, Elliptic>, EclipticMeanJ2000>
     {
-        self.geometry.validate().map_err(map_validation_error)?;
-        if !matches!(
-            self.geometry.kind().map_err(map_validation_error)?,
-            ConicKind::Elliptic
-        ) {
-            return Err(ConicError::InvalidEccentricity);
-        }
-        Ok(&self.geometry)
+        &self.geometry
     }
 }
 
@@ -236,7 +260,7 @@ mod tests {
 
     #[test]
     fn classify_elliptic() {
-        let orbit = ConicOrbit::new(
+        let orbit = ConicOrbit::try_new(
             1.0 * AU,
             0.5,
             Degrees::new(0.0),
@@ -244,13 +268,14 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             JulianDate::J2000,
-        );
-        assert_eq!(orbit.kind().unwrap(), ConicKind::Elliptic);
+        )
+        .unwrap();
+        assert_eq!(orbit.kind(), ConicKind::Elliptic);
     }
 
     #[test]
     fn classify_hyperbolic() {
-        let orbit = ConicOrbit::new(
+        let orbit = ConicOrbit::try_new(
             1.0 * AU,
             1.5,
             Degrees::new(0.0),
@@ -258,14 +283,15 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             JulianDate::J2000,
-        );
-        assert_eq!(orbit.kind().unwrap(), ConicKind::Hyperbolic);
+        )
+        .unwrap();
+        assert_eq!(orbit.kind(), ConicKind::Hyperbolic);
     }
 
     #[test]
     fn negative_eccentricity_is_invalid() {
         assert_eq!(
-            ConicOrbit::new(
+            ConicOrbit::try_new(
                 1.0 * AU,
                 -0.1,
                 Degrees::new(0.0),
@@ -273,8 +299,23 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 JulianDate::J2000,
-            )
-            .kind(),
+            ),
+            Err(ConicError::InvalidEccentricity)
+        );
+    }
+
+    #[test]
+    fn mean_motion_rejects_hyperbolic() {
+        assert_eq!(
+            MeanMotionOrbit::try_new(
+                1.0 * AU,
+                1.1,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                1.0,
+                JulianDate::J2000,
+            ),
             Err(ConicError::InvalidEccentricity)
         );
     }

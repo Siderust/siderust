@@ -222,14 +222,8 @@ pub fn calculate_orbit_position(
     elements: &KeplerianOrbit,
     julian_date: JulianDate,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
-    debug_assert!(
-        elements.validate().is_ok(),
-        "calculate_orbit_position called with invalid orbit: {:?}",
-        elements.validate(),
-    );
-
     // 1) Mean motion (n).
-    let period = orbital_period_days(elements.shape.semi_major_axis);
+    let period = orbital_period_days(elements.shape().semi_major_axis());
     type RadiansPerDay = qtty::frequency::Frequency<Radian, Day>;
     let n: RadiansPerDay = Radians::TAU / period;
 
@@ -238,7 +232,7 @@ pub fn calculate_orbit_position(
 
     // 3) Mean Anomaly (M) in radians
     let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
-    let e = elements.shape.eccentricity;
+    let e = elements.shape().eccentricity();
     let m_rad = (m0_rad + (n * dt).to::<Radian>()) % std::f64::consts::TAU;
 
     // 4) Solve Kepler's Equation (E) for the eccentric anomaly
@@ -246,38 +240,22 @@ pub fn calculate_orbit_position(
 
     // 5) True anomaly and heliocentric radius via shared helper
     let (true_anomaly, radius) =
-        elliptic_true_anomaly_and_radius(e_anomaly, e, elements.shape.semi_major_axis.value());
+        elliptic_true_anomaly_and_radius(e_anomaly, e, elements.shape().semi_major_axis().value());
 
     // 6) Rotate to ecliptic coordinates via shared helper
     rotate_to_ecliptic(
         radius,
-        elements.orientation.inclination,
-        elements.orientation.argument_of_periapsis,
-        elements.orientation.longitude_of_ascending_node,
+        elements.orientation().inclination(),
+        elements.orientation().argument_of_periapsis(),
+        elements.orientation().longitude_of_ascending_node(),
         true_anomaly,
     )
 }
 
 impl KeplerianOrbit {
     /// Calculates heliocentric coordinates of the orbiting body at a given Julian date.
-    ///
-    /// The orbit must be valid and elliptic. Use [`validate()`](Self::validate) to
-    /// check user-supplied elements before calling this method.
     pub fn kepler_position(&self, jd: JulianDate) -> EclipticMeanJ2000<AstronomicalUnit> {
         calculate_orbit_position(self, jd)
-    }
-
-    /// Like [`kepler_position`](Self::kepler_position), but validates the orbit
-    /// first and returns an error for non-elliptic or malformed elements.
-    ///
-    /// Prefer this for user-supplied data where the orbit may not have been
-    /// validated at construction time.
-    pub fn try_kepler_position(
-        &self,
-        jd: JulianDate,
-    ) -> Result<EclipticMeanJ2000<AstronomicalUnit>, crate::astro::conic::ConicError> {
-        self.validate()?;
-        Ok(calculate_orbit_position(self, jd))
     }
 }
 
@@ -295,13 +273,13 @@ pub fn calculate_prepared_position(
     let m_rad = prepared.m0_rad() + prepared.mean_motion_rad_per_day() * dt;
     let m_rad = Radians::new(m_rad % std::f64::consts::TAU);
 
-    let e = prepared.elements().shape.eccentricity;
+    let e = prepared.elements().shape().eccentricity();
     let e_anomaly = solve_keplers_equation(m_rad, e);
 
     let (true_anomaly, radius) = elliptic_true_anomaly_and_radius(
         e_anomaly,
         e,
-        prepared.elements().shape.semi_major_axis.value(),
+        prepared.elements().shape().semi_major_axis().value(),
     );
 
     rotate_to_ecliptic_precomputed(radius, prepared.orientation_trig(), true_anomaly)
@@ -581,17 +559,16 @@ mod tests {
 
     #[test]
     fn test_zero_semi_major_axis_fails_validation() {
-        let orbit = KeplerianOrbit::new(
-            AstronomicalUnits::new(0.0), // a = 0 AU
-            0.0,                         // e
-            Degrees::new(0.0),           // i
-            Degrees::new(0.0),           // Ω
-            Degrees::new(0.0),           // ω
-            Degrees::new(0.0),           // M0
-            JulianDate::J2000,           // epoch
-        );
-
-        assert!(orbit.validate().is_err());
+        assert!(KeplerianOrbit::try_new(
+            AstronomicalUnits::new(0.0), // a = 0 AU — invalid
+            0.0,
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            JulianDate::J2000,
+        )
+        .is_err());
     }
 
     #[test]

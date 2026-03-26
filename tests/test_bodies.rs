@@ -15,11 +15,11 @@ fn earth_constants() {
     assert!((EARTH.radius - Kilometers::new(6371.0)).abs() < Kilometers::new(1e-6));
     let orbit = &EARTH.orbit;
     assert!(
-        (orbit.shape.semi_major_axis - AstronomicalUnits::new(1.00000011)).abs()
+        (orbit.shape().semi_major_axis() - AstronomicalUnits::new(1.00000011)).abs()
             < AstronomicalUnits::new(1e-8)
     );
-    assert!((orbit.shape.eccentricity - 0.01671022).abs() < 1e-8);
-    assert!((orbit.orientation.inclination - Degrees::new(0.00005)).abs() < 1e-8);
+    assert!((orbit.shape().eccentricity() - 0.01671022).abs() < 1e-8);
+    assert!((orbit.orientation().inclination() - Degrees::new(0.00005)).abs() < 1e-8);
 }
 
 #[test]
@@ -28,10 +28,10 @@ fn moon_constants() {
     assert!((MOON.radius - Kilometers::new(1737.4)).abs() < Kilometers::new(1e-4));
     let orbit = &MOON.orbit;
     assert!(
-        (orbit.shape.semi_major_axis - AstronomicalUnits::new(2.566881e-6)).abs()
+        (orbit.shape().semi_major_axis() - AstronomicalUnits::new(2.566881e-6)).abs()
             < AstronomicalUnits::new(1e-12)
     );
-    assert!((orbit.shape.eccentricity - 0.0549).abs() < 1e-6);
+    assert!((orbit.shape().eccentricity() - 0.0549).abs() < 1e-6);
 }
 
 #[test]

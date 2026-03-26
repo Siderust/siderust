@@ -557,7 +557,7 @@ mod tests {
     fn bodycentric_params_default() {
         let params = BodycentricParams::default();
         assert_eq!(params.orbit_center, OrbitReferenceCenter::Heliocentric);
-        assert_eq!(params.orbit.shape.eccentricity, 0.0);
+        assert_eq!(params.orbit.shape().eccentricity(), 0.0);
     }
 
     #[test]

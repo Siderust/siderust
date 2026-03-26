@@ -34,7 +34,7 @@ fn builder_sets_all_fields() {
     assert_eq!(asteroid.composition, "Carbonaceous");
     assert_eq!(asteroid.class, AsteroidClass::NearEarth);
     assert_eq!(
-        asteroid.orbit.shape.semi_major_axis,
+        asteroid.orbit.shape().semi_major_axis(),
         AstronomicalUnits::new(1.0)
     );
 }
@@ -73,7 +73,7 @@ fn const_constructor_and_presets() {
     assert_eq!(CONST_ASTEROID.designation, "C-1");
     assert_eq!(CONST_ASTEROID.composition, "Silicate");
     assert_eq!(CONST_ASTEROID.class, AsteroidClass::MainBelt);
-    assert_eq!(CONST_ASTEROID.orbit.shape.eccentricity, 0.0);
+    assert_eq!(CONST_ASTEROID.orbit.shape().eccentricity(), 0.0);
 
     assert_eq!(ASTEROID_PRESETS.len(), 3);
     assert!(std::ptr::eq(ASTEROID_PRESETS[0], &CERES_AST));
