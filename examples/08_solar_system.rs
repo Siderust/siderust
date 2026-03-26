@@ -66,8 +66,8 @@ fn section_planet_constants_and_periods() {
         println!(
             "{:<8} {:>10.6} {:>10.6} {:>10.2}",
             name,
-            p.orbit.shape.semi_major_axis,
-            p.orbit.shape.eccentricity,
+            p.orbit.shape().semi_major_axis(),
+            p.orbit.shape().eccentricity(),
             p.orbit.period().to::<Day>()
         );
     }
@@ -185,7 +185,7 @@ fn section_planet_builder() {
     println!("Custom planet built at runtime:");
     println!("  mass   = {}", demo_world.mass);
     println!("  radius = {}", demo_world.radius);
-    println!("  a      = {}", demo_world.orbit.shape.semi_major_axis);
+    println!("  a      = {}", demo_world.orbit.shape().semi_major_axis());
     println!(
         "  sidereal period = {:.2}\n",
         demo_world.orbit.period().to::<Day>()

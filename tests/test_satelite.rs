@@ -28,8 +28,11 @@ fn satellite_new_const() {
     assert!(matches!(sat.name, Cow::Borrowed("TestSat")));
     assert_eq!(sat.mass, Kilograms::new(1000.0));
     assert_eq!(sat.radius, Kilometers::new(10.0));
-    assert_eq!(sat.orbit.shape.semi_major_axis, AstronomicalUnits::new(1.0));
-    assert!((sat.orbit.shape.eccentricity - 0.01).abs() < 1e-10);
+    assert_eq!(
+        sat.orbit.shape().semi_major_axis(),
+        AstronomicalUnits::new(1.0)
+    );
+    assert!((sat.orbit.shape().eccentricity() - 0.01).abs() < 1e-10);
 }
 
 #[test]
@@ -54,6 +57,9 @@ fn satellite_new_owned() {
     assert!(matches!(sat.name, Cow::Owned(ref s) if s == &name));
     assert_eq!(sat.mass, Kilograms::new(2000.0));
     assert_eq!(sat.radius, Kilometers::new(20.0));
-    assert_eq!(sat.orbit.shape.semi_major_axis, AstronomicalUnits::new(2.0));
-    assert!((sat.orbit.shape.eccentricity - 0.1).abs() < 1e-10);
+    assert_eq!(
+        sat.orbit.shape().semi_major_axis(),
+        AstronomicalUnits::new(2.0)
+    );
+    assert!((sat.orbit.shape().eccentricity() - 0.1).abs() < 1e-10);
 }

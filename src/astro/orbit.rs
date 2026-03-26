@@ -86,7 +86,10 @@
 use crate::astro::conic::ConicError;
 use crate::astro::units::GaussianYears;
 use crate::time::JulianDate;
-use affn::conic::{ConicOrientation, ConicShape, SemiMajorAxisParam};
+use affn::conic::{
+    ClassifiedSemiMajorAxisParam, ConicOrientation, Elliptic, SemiMajorAxisParam,
+    TypedSemiMajorAxisParam,
+};
 use affn::frames::EclipticMeanJ2000;
 use qtty::*;
 
@@ -99,15 +102,14 @@ use serde::{Deserialize, Serialize};
 /// (`0 ≤ e < 1`). For parabolic or hyperbolic trajectories, use
 /// [`ConicOrbit`](crate::astro::conic::ConicOrbit) instead.
 ///
-/// The shape and orientation are composed from `affn` conic types, tagged
-/// to the `EclipticMeanJ2000` frame matching JPL/NASA catalog conventions.
+/// The elliptic constraint is enforced at construction time via `try_new`.
+/// The infallible `new` constructor skips validation and is intended for
+/// compile-time body constants with known-correct values.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize), serde(bound = ""))]
 pub struct KeplerianOrbit<U: LengthUnit = AstronomicalUnit> {
-    /// Shape: semi-major axis and eccentricity.
-    pub shape: SemiMajorAxisParam<U>,
-    /// 3-D orientation in the ecliptic mean J2000 frame.
-    pub orientation: ConicOrientation<EclipticMeanJ2000>,
+    shape: TypedSemiMajorAxisParam<U, Elliptic>,
+    orientation: ConicOrientation<EclipticMeanJ2000>,
     /// Mean anomaly at `epoch`.
     pub mean_anomaly_at_epoch: Degrees,
     /// Reference epoch.
@@ -122,11 +124,11 @@ where
         write!(
             f,
             "a={}, e={:.6}, i={}, \u{03a9}={}, \u{03c9}={}, M\u{2080}={}, epoch={}",
-            self.shape.semi_major_axis,
-            self.shape.eccentricity,
-            self.orientation.inclination,
-            self.orientation.longitude_of_ascending_node,
-            self.orientation.argument_of_periapsis,
+            self.shape.semi_major_axis(),
+            self.shape.eccentricity(),
+            self.orientation.inclination(),
+            self.orientation.longitude_of_ascending_node(),
+            self.orientation.argument_of_periapsis(),
             self.mean_anomaly_at_epoch,
             self.epoch,
         )
@@ -134,10 +136,11 @@ where
 }
 
 impl<U: LengthUnit> KeplerianOrbit<U> {
-    /// Creates a new set of Keplerian orbital elements.
+    /// Creates a new set of Keplerian orbital elements **without validation**.
     ///
-    /// Note: this constructor does not validate. Call [`validate()`](Self::validate)
-    /// before propagation to ensure the orbit is elliptic.
+    /// Intended for compile-time body constants where the values are known to
+    /// be a valid elliptic orbit. For user-supplied data use
+    /// [`try_new`](Self::try_new) instead.
     pub const fn new(
         semi_major_axis: Quantity<U>,
         eccentricity: f64,
@@ -148,7 +151,10 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         epoch: JulianDate,
     ) -> Self {
         Self {
-            shape: SemiMajorAxisParam::new(semi_major_axis, eccentricity),
+            shape: TypedSemiMajorAxisParam::new_unchecked(SemiMajorAxisParam::new_unchecked(
+                semi_major_axis,
+                eccentricity,
+            )),
             orientation: ConicOrientation::new(
                 inclination,
                 longitude_of_ascending_node,
@@ -173,35 +179,41 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         mean_anomaly_at_epoch: Degrees,
         epoch: JulianDate,
     ) -> Result<Self, crate::astro::conic::ConicError> {
-        let orbit = Self::new(
-            semi_major_axis,
-            eccentricity,
+        use crate::astro::conic::map_validation_error;
+
+        let sma = SemiMajorAxisParam::try_new(semi_major_axis, eccentricity)
+            .map_err(map_validation_error)?;
+        let typed = match sma.classify() {
+            ClassifiedSemiMajorAxisParam::Elliptic(t) => t,
+            ClassifiedSemiMajorAxisParam::Hyperbolic(_) => {
+                return Err(ConicError::InvalidEccentricity);
+            }
+        };
+        let orientation = ConicOrientation::try_new(
             inclination,
             longitude_of_ascending_node,
             argument_of_periapsis,
+        )
+        .map_err(map_validation_error)?;
+
+        Ok(Self {
+            shape: typed,
+            orientation,
             mean_anomaly_at_epoch,
             epoch,
-        );
-        orbit.validate()?;
-        Ok(orbit)
+        })
     }
 
-    /// Validates that this orbit is elliptic (`0 ≤ e < 1`) with a positive
-    /// semi-major axis and finite orientation angles.
-    pub fn validate(&self) -> Result<(), crate::astro::conic::ConicError> {
-        use crate::astro::conic::{map_validation_error, ConicError};
-        use affn::conic::ConicKind;
+    /// The typed elliptic shape (semi-major axis + eccentricity).
+    #[inline]
+    pub fn shape(&self) -> &TypedSemiMajorAxisParam<U, Elliptic> {
+        &self.shape
+    }
 
-        self.shape.validate().map_err(map_validation_error)?;
-        self.orientation.validate().map_err(map_validation_error)?;
-
-        if !matches!(
-            self.shape.kind().map_err(map_validation_error)?,
-            ConicKind::Elliptic
-        ) {
-            return Err(ConicError::InvalidEccentricity);
-        }
-        Ok(())
+    /// The 3-D orientation in the ecliptic mean J2000 frame.
+    #[inline]
+    pub fn orientation(&self) -> &ConicOrientation<EclipticMeanJ2000> {
+        &self.orientation
     }
 }
 
@@ -249,11 +261,11 @@ impl OrientationTrig {
         self.cos_node
     }
 
-    fn from_orientation(o: &ConicOrientation<EclipticMeanJ2000>) -> Self {
-        let (sin_i, cos_i) = o.inclination.to::<Radian>().value().sin_cos();
-        let (sin_omega, cos_omega) = o.argument_of_periapsis.to::<Radian>().value().sin_cos();
+    pub(crate) fn from_orientation(o: &ConicOrientation<EclipticMeanJ2000>) -> Self {
+        let (sin_i, cos_i) = o.inclination().to::<Radian>().value().sin_cos();
+        let (sin_omega, cos_omega) = o.argument_of_periapsis().to::<Radian>().value().sin_cos();
         let (sin_node, cos_node) = o
-            .longitude_of_ascending_node
+            .longitude_of_ascending_node()
             .to::<Radian>()
             .value()
             .sin_cos();
@@ -356,14 +368,14 @@ impl PreparedOrbit {
     }
 
     /// Internal: build from an already-validated orbit.
-    fn from_validated(orbit: KeplerianOrbit) -> Self {
-        let a = orbit.shape.semi_major_axis.value();
+    pub(crate) fn from_validated(orbit: KeplerianOrbit) -> Self {
+        let a = orbit.shape().semi_major_axis().value();
         // Kepler's 3rd law: T [Gaussian years] = a [AU]^{3/2}
         let t_gaussian_years = a * a.sqrt();
         let period_days = GaussianYears::new(t_gaussian_years).to::<Day>().value();
         let mean_motion_rad_per_day = std::f64::consts::TAU / period_days;
         let m0_rad = orbit.mean_anomaly_at_epoch.to::<Radian>().value();
-        let trig = OrientationTrig::from_orientation(&orbit.orientation);
+        let trig = OrientationTrig::from_orientation(orbit.orientation());
         Self {
             elements: orbit,
             mean_motion_rad_per_day,
@@ -377,7 +389,8 @@ impl TryFrom<KeplerianOrbit> for PreparedOrbit {
     type Error = ConicError;
 
     fn try_from(orbit: KeplerianOrbit) -> Result<Self, Self::Error> {
-        orbit.validate()?;
+        // KeplerianOrbit::try_new already validates; orbits produced by `new`
+        // (const, body constants) are trusted. Build directly.
         Ok(Self::from_validated(orbit))
     }
 }
