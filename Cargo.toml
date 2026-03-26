@@ -2,7 +2,7 @@
 members = [".", "siderust-ffi"]
 
 [patch.crates-io]
-affn = { path = "../affn" }
+affn = { git = "https://github.com/Siderust/affn", branch = "impl-conic" }
 
 [package]
 name = "siderust"
