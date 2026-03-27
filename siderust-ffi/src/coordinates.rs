@@ -756,7 +756,11 @@ pub extern "C" fn siderust_mean_motion_position(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let pos = match orbit.to_rust().position_at(JulianDate::new(jd)) {
+        let rust_orbit = match orbit.try_to_rust() {
+            Ok(o) => o,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        let pos = match rust_orbit.position_at(JulianDate::new(jd)) {
             Ok(pos) => pos,
             Err(_) => return SiderustStatus::InvalidArgument,
         };
@@ -777,7 +781,11 @@ pub extern "C" fn siderust_conic_position(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let pos = match orbit.to_rust().position_at(JulianDate::new(jd)) {
+        let rust_orbit = match orbit.try_to_rust() {
+            Ok(o) => o,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        let pos = match rust_orbit.position_at(JulianDate::new(jd)) {
             Ok(pos) => pos,
             Err(_) => return SiderustStatus::InvalidArgument,
         };
@@ -814,7 +822,15 @@ pub extern "C" fn siderust_prepared_orbit_create(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let prepared = match siderust::PreparedOrbit::try_from(orbit.to_rust()) {
+        let prepared = match siderust::PreparedOrbit::try_from_elements(
+            AstronomicalUnits::new(orbit.semi_major_axis_au),
+            orbit.eccentricity,
+            Degrees::new(orbit.inclination_deg),
+            Degrees::new(orbit.lon_ascending_node_deg),
+            Degrees::new(orbit.arg_periapsis_deg),
+            Degrees::new(orbit.mean_anomaly_deg),
+            JulianDate::new(orbit.epoch_jd),
+        ) {
             Ok(p) => p,
             Err(_) => return SiderustStatus::InvalidArgument,
         };
@@ -1807,6 +1823,75 @@ mod tests {
         let mut out = empty_cart();
         let s = siderust_conic_position(orbit, J2000, &mut out);
         assert_eq!(s, SiderustStatus::InvalidArgument);
+    }
+
+    #[test]
+    fn conic_position_rejects_invalid_periapsis() {
+        // Zero periapsis distance must be caught at the FFI boundary, not silently
+        // produce NaN coordinates.
+        let orbit = SiderustConicOrbit {
+            periapsis_distance_au: 0.0,
+            eccentricity: 0.5,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_anomaly_deg: 0.0,
+            epoch_jd: J2000,
+        };
+        let mut out = empty_cart();
+        let s = siderust_conic_position(orbit, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
+    }
+
+    #[test]
+    fn mean_motion_position_rejects_invalid_semi_major_axis() {
+        let orbit = SiderustMeanMotionOrbit {
+            semi_major_axis_au: -1.0,
+            eccentricity: 0.0167,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_motion_deg_per_day: 0.9856,
+            epoch_jd: J2000,
+        };
+        let mut out = empty_cart();
+        let s = siderust_mean_motion_position(orbit, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
+    }
+
+    #[test]
+    fn prepared_orbit_create_rejects_invalid_semi_major_axis() {
+        // Negative SMA must return InvalidArgument, not silently create a broken handle.
+        let orbit = SiderustOrbit {
+            semi_major_axis_au: -1.0,
+            eccentricity: 0.0167,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_anomaly_deg: 0.0,
+            epoch_jd: J2000,
+        };
+        let mut handle = std::ptr::null_mut();
+        let s = siderust_prepared_orbit_create(orbit, &mut handle);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
+        assert!(handle.is_null());
+    }
+
+    #[test]
+    fn prepared_orbit_create_rejects_hyperbolic() {
+        let orbit = SiderustOrbit {
+            semi_major_axis_au: 1.0,
+            eccentricity: 1.5, // hyperbolic — KeplerianOrbit requires e < 1
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_anomaly_deg: 0.0,
+            epoch_jd: J2000,
+        };
+        let mut handle = std::ptr::null_mut();
+        let s = siderust_prepared_orbit_create(orbit, &mut handle);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
+        assert!(handle.is_null());
     }
 
     // ── Bodycentric transforms ─────────────────────────────────────────────
