@@ -186,7 +186,7 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         let typed = match sma.classify() {
             ClassifiedSemiMajorAxisParam::Elliptic(t) => t,
             ClassifiedSemiMajorAxisParam::Hyperbolic(_) => {
-                return Err(ConicError::InvalidEccentricity);
+                return Err(ConicError::HyperbolicNotSupported);
             }
         };
         let orientation = ConicOrientation::try_new(

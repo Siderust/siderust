@@ -37,6 +37,12 @@ pub enum ConicError {
     InvalidOrientation,
     /// Parabolic orbits are intentionally not supported yet.
     ParabolicUnsupported,
+    /// Hyperbolic eccentricity (`e ≥ 1`) is not valid for this orbit type.
+    ///
+    /// [`KeplerianOrbit`](crate::astro::orbit::KeplerianOrbit) and
+    /// [`MeanMotionOrbit`] only support elliptic orbits (`0 ≤ e < 1`).
+    /// Use [`ConicOrbit`] for hyperbolic trajectories.
+    HyperbolicNotSupported,
 }
 
 impl std::fmt::Display for ConicError {
@@ -53,6 +59,13 @@ impl std::fmt::Display for ConicError {
             }
             Self::InvalidOrientation => write!(f, "orientation angles must be finite"),
             Self::ParabolicUnsupported => write!(f, "parabolic orbits are not supported"),
+            Self::HyperbolicNotSupported => {
+                write!(
+                    f,
+                    "hyperbolic eccentricity (e >= 1) is not supported by this orbit type; \
+                     use ConicOrbit instead"
+                )
+            }
         }
     }
 }
@@ -199,7 +212,7 @@ impl MeanMotionOrbit {
         let typed = match sma.classify() {
             ClassifiedSemiMajorAxisParam::Elliptic(t) => t,
             ClassifiedSemiMajorAxisParam::Hyperbolic(_) => {
-                return Err(ConicError::InvalidEccentricity);
+                return Err(ConicError::HyperbolicNotSupported);
             }
         };
         let orientation = ConicOrientation::try_new(
@@ -316,7 +329,7 @@ mod tests {
                 1.0,
                 JulianDate::J2000,
             ),
-            Err(ConicError::InvalidEccentricity)
+            Err(ConicError::HyperbolicNotSupported)
         );
     }
 }

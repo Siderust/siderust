@@ -623,6 +623,23 @@ impl SiderustMeanMotionOrbit {
         )
     }
 
+    /// Convert to the Rust domain type with validation.
+    ///
+    /// Returns an error if any field is invalid: non-positive semi-major axis,
+    /// non-finite or negative eccentricity, non-finite orientation angles, or
+    /// eccentricity ≥ 1 (this type only supports elliptic orbits).
+    pub fn try_to_rust(&self) -> Result<siderust::MeanMotionOrbit, siderust::ConicError> {
+        siderust::MeanMotionOrbit::try_new(
+            AstronomicalUnits::new(self.semi_major_axis_au),
+            self.eccentricity,
+            Degrees::new(self.inclination_deg),
+            Degrees::new(self.lon_ascending_node_deg),
+            Degrees::new(self.arg_periapsis_deg),
+            self.mean_motion_deg_per_day,
+            JulianDate::new(self.epoch_jd),
+        )
+    }
+
     /// Create from the Rust domain type.
     pub fn from_rust(o: &siderust::MeanMotionOrbit) -> Self {
         Self {
@@ -661,6 +678,22 @@ impl SiderustConicOrbit {
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::ConicOrbit {
         siderust::ConicOrbit::new(
+            AstronomicalUnits::new(self.periapsis_distance_au),
+            self.eccentricity,
+            Degrees::new(self.inclination_deg),
+            Degrees::new(self.lon_ascending_node_deg),
+            Degrees::new(self.arg_periapsis_deg),
+            Degrees::new(self.mean_anomaly_deg),
+            JulianDate::new(self.epoch_jd),
+        )
+    }
+
+    /// Convert to the Rust domain type with validation.
+    ///
+    /// Returns an error if any field is invalid: non-positive periapsis distance,
+    /// non-finite or negative eccentricity, or non-finite orientation angles.
+    pub fn try_to_rust(&self) -> Result<siderust::ConicOrbit, siderust::ConicError> {
+        siderust::ConicOrbit::try_new(
             AstronomicalUnits::new(self.periapsis_distance_au),
             self.eccentricity,
             Degrees::new(self.inclination_deg),
