@@ -279,7 +279,7 @@ mod tests {
     }
 
     #[test]
-    fn invalid_mean_motion_eccentricity_maps_to_existing_error() {
+    fn invalid_mean_motion_eccentricity_maps_to_hyperbolic_error() {
         assert!(matches!(
             MeanMotionOrbit::try_new(
                 1.0 * AU,
@@ -290,7 +290,7 @@ mod tests {
                 1.0,
                 JulianDate::J2000,
             ),
-            Err(ConicError::InvalidEccentricity)
+            Err(ConicError::HyperbolicNotSupported)
         ));
     }
 
