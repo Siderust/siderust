@@ -695,28 +695,6 @@ fn orbit_ref_center_to_siderust(orbit_center: SiderustOrbitRefCenter) -> Option<
     }
 }
 
-/// Compute the Keplerian orbital position at a given Julian date.
-///
-/// **Deprecated:** the `center` field of `out` is always set to `Heliocentric`.
-/// Prefer [`siderust_kepler_position_ex`] which takes an explicit
-/// `orbit_center` so the output metadata matches the orbit's actual reference center.
-#[no_mangle]
-pub extern "C" fn siderust_kepler_position(
-    orbit: SiderustOrbit,
-    jd: f64,
-    out: *mut SiderustCartesianPos,
-) -> SiderustStatus {
-    ffi_guard! {{
-        if out.is_null() {
-            return SiderustStatus::NullPointer;
-        }
-        let pos = orbit.to_rust().kepler_position(JulianDate::new(jd));
-        write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
-        SiderustStatus::Ok
-
-    }}
-}
-
 /// Compute the Keplerian orbital position at a given Julian date, with
 /// explicit output center semantics.
 ///
@@ -1783,19 +1761,20 @@ mod tests {
     }
 
     #[test]
-    fn kepler_position_earth_at_j2000() {
+    fn kepler_position_ex_earth_at_j2000() {
         let mut out = empty_cart();
-        let s = siderust_kepler_position(earth_orbit(), J2000, &mut out);
+        let s = siderust_kepler_position_ex(earth_orbit(), 1, J2000, &mut out);
         assert_eq!(s, SiderustStatus::Ok);
         // Earth should be ~1 AU from the Sun
         let r = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
         assert!(r > 0.98 && r < 1.02, "r = {r}");
         assert_eq!(out.frame, SiderustFrame::EclipticMeanJ2000);
+        assert_eq!(out.center, SiderustCenter::Heliocentric);
     }
 
     #[test]
-    fn kepler_position_null_out() {
-        let s = siderust_kepler_position(earth_orbit(), J2000, ptr::null_mut());
+    fn kepler_position_ex_null_out() {
+        let s = siderust_kepler_position_ex(earth_orbit(), 1, J2000, ptr::null_mut());
         assert_eq!(s, SiderustStatus::NullPointer);
     }
 

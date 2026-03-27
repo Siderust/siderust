@@ -1258,16 +1258,6 @@ siderust_status_t siderust_cartesian_pos_transform_center(struct siderust_cartes
                                                           double jd,
                                                           struct siderust_cartesian_pos_t *out);
 
-// Compute the Keplerian orbital position at a given Julian date.
-//
-// **Deprecated:** the `center` field of `out` is always set to `Heliocentric`.
-// Prefer [`siderust_kepler_position_ex`] which takes an explicit
-// `orbit_center` so the output metadata matches the orbit's actual reference center.
-
-siderust_status_t siderust_kepler_position(struct siderust_orbit_t orbit,
-                                           double jd,
-                                           struct siderust_cartesian_pos_t *out);
-
 // Compute the Keplerian orbital position at a given Julian date, with
 // explicit output center semantics.
 //
