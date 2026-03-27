@@ -578,11 +578,11 @@ impl SiderustOrbit {
     /// Create from the Rust domain type.
     pub fn from_rust(o: &siderust::astro::orbit::KeplerianOrbit) -> Self {
         Self {
-            semi_major_axis_au: o.shape.semi_major_axis.value(),
-            eccentricity: o.shape.eccentricity,
-            inclination_deg: o.orientation.inclination.value(),
-            lon_ascending_node_deg: o.orientation.longitude_of_ascending_node.value(),
-            arg_periapsis_deg: o.orientation.argument_of_periapsis.value(),
+            semi_major_axis_au: o.shape().semi_major_axis().value(),
+            eccentricity: o.shape().eccentricity(),
+            inclination_deg: o.orientation().inclination().value(),
+            lon_ascending_node_deg: o.orientation().longitude_of_ascending_node().value(),
+            arg_periapsis_deg: o.orientation().argument_of_periapsis().value(),
             mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
             epoch_jd: o.epoch.value(),
         }
@@ -643,11 +643,15 @@ impl SiderustMeanMotionOrbit {
     /// Create from the Rust domain type.
     pub fn from_rust(o: &siderust::MeanMotionOrbit) -> Self {
         Self {
-            semi_major_axis_au: o.geometry.shape.semi_major_axis.value(),
-            eccentricity: o.geometry.shape.eccentricity,
-            inclination_deg: o.geometry.orientation.inclination.value(),
-            lon_ascending_node_deg: o.geometry.orientation.longitude_of_ascending_node.value(),
-            arg_periapsis_deg: o.geometry.orientation.argument_of_periapsis.value(),
+            semi_major_axis_au: o.geometry().shape().semi_major_axis().value(),
+            eccentricity: o.geometry().shape().eccentricity(),
+            inclination_deg: o.geometry().orientation().inclination().value(),
+            lon_ascending_node_deg: o
+                .geometry()
+                .orientation()
+                .longitude_of_ascending_node()
+                .value(),
+            arg_periapsis_deg: o.geometry().orientation().argument_of_periapsis().value(),
             mean_motion_deg_per_day: o.mean_motion_deg_per_day,
             epoch_jd: o.epoch.value(),
         }
@@ -707,11 +711,15 @@ impl SiderustConicOrbit {
     /// Create from the Rust domain type.
     pub fn from_rust(o: &siderust::ConicOrbit) -> Self {
         Self {
-            periapsis_distance_au: o.geometry.shape.periapsis_distance.value(),
-            eccentricity: o.geometry.shape.eccentricity,
-            inclination_deg: o.geometry.orientation.inclination.value(),
-            lon_ascending_node_deg: o.geometry.orientation.longitude_of_ascending_node.value(),
-            arg_periapsis_deg: o.geometry.orientation.argument_of_periapsis.value(),
+            periapsis_distance_au: o.geometry().shape().periapsis_distance().value(),
+            eccentricity: o.geometry().shape().eccentricity(),
+            inclination_deg: o.geometry().orientation().inclination().value(),
+            lon_ascending_node_deg: o
+                .geometry()
+                .orientation()
+                .longitude_of_ascending_node()
+                .value(),
+            arg_periapsis_deg: o.geometry().orientation().argument_of_periapsis().value(),
             mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
             epoch_jd: o.epoch.value(),
         }
