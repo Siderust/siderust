@@ -11,7 +11,7 @@
 mod demo {
     use qtty::*;
     use serde::{Deserialize, Serialize};
-    use siderust::astro::orbit::Orbit;
+    use siderust::astro::orbit::KeplerianOrbit;
     use siderust::bodies::comet::HALLEY;
     use siderust::bodies::solar_system::{Earth, Mars, Moon};
     use siderust::coordinates::{cartesian, centers, frames, spherical};
@@ -38,7 +38,7 @@ mod demo {
     struct BodySnapshot {
         name: String,
         epoch: JulianDate,
-        orbit: Orbit,
+        orbit: KeplerianOrbit,
         heliocentric_ecliptic:
             cartesian::Position<centers::Heliocentric, frames::EclipticMeanJ2000, AstronomicalUnit>,
     }

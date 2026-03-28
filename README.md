@@ -54,6 +54,8 @@ Siderust aims to be a reference ephemeris and orbit‑analysis library for resea
 | **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, + helpers for custom datasets.                           |
 | **Observatories**       | Predefined sites (Roque de los Muchachos, El Paranal, Mauna Kea, La Silla) with `ObserverSite` for topocentric transforms.                                                  |
 
+Coordinate algebra and reusable conic geometry are provided by [`affn`](https://crates.io/crates/affn); `siderust` adds the astronomy-specific time, anomaly, and propagation semantics on top.
+
 ### Astrometry Compliance Note
 
 - Stellar aberration uses the full special-relativistic (Lorentz) formula per IERS Conventions (2020, §7.2); annual uses VSOP87E barycentric Earth velocity and topocentric adds a diurnal `ω×r` term.

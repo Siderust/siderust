@@ -6,6 +6,36 @@
 //! This module provides [`TransformCenter`] impls for bodycentric coordinates.
 //! A body-centric coordinate system has its origin at an orbiting celestial body
 //! (satellite, planet, moon, comet, asteroid, etc.).
+//!
+//! ## Usage
+//!
+//! Forward (any standard center → Bodycentric):
+//! ```rust
+//! use siderust::coordinates::transform::TransformCenter;
+//! use siderust::coordinates::centers::{Bodycentric, BodycentricParams, Geocentric};
+//! use siderust::coordinates::cartesian::Position;
+//! use siderust::coordinates::frames;
+//! use siderust::astro::orbit::KeplerianOrbit;
+//! use siderust::time::JulianDate;
+//! use qtty::*;
+//!
+//! let satellite_orbit = KeplerianOrbit::new(
+//!     0.0000426 * AU, 0.001,
+//!     Degrees::new(51.6), Degrees::new(0.0), Degrees::new(0.0), Degrees::new(0.0),
+//!     JulianDate::J2000,
+//! );
+//! let sat_params = BodycentricParams::geocentric(satellite_orbit);
+//!
+//! let target_geo: Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
+//!     Position::new(0.00257, 0.0, 0.0);
+//!
+//! let target_from_sat: Position<Bodycentric, frames::EquatorialMeanJ2000, AstronomicalUnit> = target_geo.to_center((sat_params, JulianDate::J2000));
+//! ```
+//!
+//! Reverse (Bodycentric → Geocentric):
+//! ```rust,ignore
+//! let geo: Position<Geocentric, _, _> = bodycentric_pos.to_center(jd);
+//! ```
 
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
@@ -237,7 +267,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::orbit::Orbit;
+    use crate::astro::orbit::KeplerianOrbit;
     use crate::bodies::solar_system::Earth;
     use crate::coordinates::frames;
     use crate::coordinates::transform::TransformCenter;
@@ -246,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_geocentric_to_bodycentric_geocentric_orbit() {
-        let satellite_orbit = Orbit::new(
+        let satellite_orbit = KeplerianOrbit::new(
             0.0001 * AU,
             0.0,
             Degrees::new(0.0),
@@ -270,7 +300,7 @@ mod tests {
 
     #[test]
     fn test_heliocentric_to_bodycentric_mars_view() {
-        let mars_orbit = Orbit::new(
+        let mars_orbit = KeplerianOrbit::new(
             1.524 * AU,
             0.0934,
             Degrees::new(1.85),
@@ -294,7 +324,7 @@ mod tests {
 
     #[test]
     fn test_bodycentric_roundtrip() {
-        let satellite_orbit = Orbit::new(
+        let satellite_orbit = KeplerianOrbit::new(
             0.0001 * AU,
             0.0,
             Degrees::new(0.0),
@@ -324,7 +354,7 @@ mod tests {
 
     #[test]
     fn test_body_at_origin() {
-        let orbit = Orbit::new(
+        let orbit = KeplerianOrbit::new(
             0.0001 * AU,
             0.0,
             Degrees::new(0.0),

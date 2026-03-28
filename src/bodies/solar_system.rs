@@ -19,7 +19,7 @@
 //! | **Lagrange points**     | Sun–Earth L₁, Sun–Earth L₂                                                                      |
 //!
 //! Each body re‑uses the strongly‑typed structures defined elsewhere in the crate
-//! (`Star`, `Planet`, `Satellite`, [`Orbit`], …) so values can be consumed
+//! (`Star`, `Planet`, `Satellite`, [`KeplerianOrbit`], …) so values can be consumed
 //! directly without conversion.
 //!
 //! ### Physical & Orbital Parameters
@@ -29,18 +29,18 @@
 //! * **Mass** (kg)
 //! * **Mean radius** (km)
 //! * **Keplerian orbital elements**:
-//!   * `a` – semi‑major axis [`AstronomicalUnit`]
-//!   * `e` – eccentricity (unitless)
-//!   * `i` – inclination [`Degrees`]
-//!   * `Ω` – longitude of ascending node [`Degrees`]
-//!   * `ω` – argument of perihelion [`Degrees`]
-//!   * `M₀` – mean anomaly at epoch [`Degrees`]
+//!   * `a` : semi‑major axis [`AstronomicalUnit`]
+//!   * `e` : eccentricity (unitless)
+//!   * `i` : inclination [`Degrees`]
+//!   * `Ω` : longitude of ascending node [`Degrees`]
+//!   * `ω` : argument of periapsis [`Degrees`]
+//!   * `M₀` : mean anomaly at epoch [`Degrees`]
 //!
 //! ```text
 //! Abbreviations for orbital elements:
-//!   a , semi‑major axis         Ω, longitude of ascending node
-//!   e , eccentricity            ω, argument of perihelion
-//!   i , inclination             M₀, mean anomaly at epoch
+//!   a  : semi‑major axis         Ω : longitude of ascending node
+//!   e  : eccentricity            ω : argument of periapsis
+//!   i  : inclination             M₀ : mean anomaly at epoch
 //! ```
 //!
 //! ---
@@ -50,7 +50,7 @@
 //! 2. Williams, D. R. (2024). *Planetary Fact Sheet – Metric*. NASA Goddard Space Flight Center.
 
 use super::{Planet, Satellite, Star};
-use crate::astro::orbit::Orbit;
+use crate::astro::orbit::KeplerianOrbit;
 use crate::astro::{HasIauRotation, IauRotationParams};
 use crate::coordinates::spherical::position::{EclipticMeanJ2000, EquatorialMeanJ2000};
 use crate::targets::CoordinateWithPM;
@@ -248,7 +248,7 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
 pub const MERCURY: super::Planet = super::Planet {
     mass: Kilograms::new(3.3011e23),
     radius: Kilometers::new(2439.7),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(0.38709893),
         0.20563069,
         Degrees::new(7.00487),
@@ -274,7 +274,7 @@ pub const MERCURY: super::Planet = super::Planet {
 pub const VENUS: super::Planet = super::Planet {
     mass: Kilograms::new(4.8675e24),
     radius: Kilometers::new(6051.8),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(0.72333199),
         0.00677323,
         Degrees::new(3.39471),
@@ -300,7 +300,7 @@ pub const VENUS: super::Planet = super::Planet {
 pub const EARTH: super::Planet = super::Planet {
     mass: Kilograms::new(5.97237e24),
     radius: Kilometers::new(6371.0),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(1.00000011),
         0.01671022,
         Degrees::new(0.00005),
@@ -327,16 +327,15 @@ pub const MOON: super::Satellite = super::Satellite::new_const(
     "Moon",
     Kilograms::new(7.346e22),
     Kilometers::new(1_737.4),
-    Orbit {
-        // 384 400 km → AstronomicalUnits
-        semi_major_axis: AstronomicalUnits::new(2.566881e-6),
-        eccentricity: 0.054_9,
-        inclination: Degrees::new(5.145),
-        longitude_of_ascending_node: Degrees::new(125.08),
-        argument_of_perihelion: Degrees::new(318.15),
-        mean_anomaly_at_epoch: Degrees::new(135.27),
-        epoch: JulianDate::J2000,
-    },
+    KeplerianOrbit::new(
+        AstronomicalUnits::new(2.566881e-6),
+        0.054_9,
+        Degrees::new(5.145),
+        Degrees::new(125.08),
+        Degrees::new(318.15),
+        Degrees::new(135.27),
+        JulianDate::J2000,
+    ),
 );
 
 /// **Mars** – the red planet, fourth from the Sun.
@@ -354,7 +353,7 @@ pub const MOON: super::Satellite = super::Satellite::new_const(
 pub const MARS: super::Planet = super::Planet {
     mass: Kilograms::new(6.4171e23),
     radius: Kilometers::new(3389.5),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(1.52366231),
         0.09341233,
         Degrees::new(1.85061),
@@ -380,7 +379,7 @@ pub const MARS: super::Planet = super::Planet {
 pub const JUPITER: super::Planet = super::Planet {
     mass: Kilograms::new(1.8982e27),
     radius: Kilometers::new(69911.0),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(5.20336301),
         0.04839266,
         Degrees::new(1.30530),
@@ -406,7 +405,7 @@ pub const JUPITER: super::Planet = super::Planet {
 pub const SATURN: super::Planet = super::Planet {
     mass: Kilograms::new(5.6834e26),
     radius: Kilometers::new(58232.0),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(9.53707032),
         0.05415060,
         Degrees::new(2.48446),
@@ -432,7 +431,7 @@ pub const SATURN: super::Planet = super::Planet {
 pub const URANUS: super::Planet = super::Planet {
     mass: Kilograms::new(8.6810e25),
     radius: Kilometers::new(25362.0),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(19.19126393),
         0.04716771,
         Degrees::new(0.76986),
@@ -458,7 +457,7 @@ pub const URANUS: super::Planet = super::Planet {
 pub const NEPTUNE: super::Planet = super::Planet {
     mass: Kilograms::new(1.02409e26),
     radius: Kilometers::new(24622.0),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(30.06896348),
         0.00858587,
         Degrees::new(1.76917),
@@ -484,7 +483,7 @@ pub const NEPTUNE: super::Planet = super::Planet {
 pub const PLUTO: super::Planet = super::Planet {
     mass: Kilograms::new(1.303e22),
     radius: Kilometers::new(1188.3),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(39.48168677),
         0.24880766,
         Degrees::new(17.14175),
@@ -502,7 +501,7 @@ pub const PLUTO: super::Planet = super::Planet {
 pub const CERES: Planet = Planet {
     mass: Kilograms::new(9.393e20),
     radius: Kilometers::new(473.0),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(2.7675),
         0.0758,
         Degrees::new(10.5941),
@@ -516,7 +515,7 @@ pub const CERES: Planet = Planet {
 pub const HAUMEA: Planet = Planet {
     mass: Kilograms::new(4.006e21),
     radius: Kilometers::new(620.0),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(43.218),
         0.195,
         Degrees::new(28.19),
@@ -530,7 +529,7 @@ pub const HAUMEA: Planet = Planet {
 pub const MAKEMAKE: Planet = Planet {
     mass: Kilograms::new(3.1e21),
     radius: Kilometers::new(715.0),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(45.791),
         0.159,
         Degrees::new(29.01),
@@ -544,7 +543,7 @@ pub const MAKEMAKE: Planet = Planet {
 pub const ERIS: Planet = Planet {
     mass: Kilograms::new(1.66e22),
     radius: Kilometers::new(1163.0),
-    orbit: Orbit::new(
+    orbit: KeplerianOrbit::new(
         AstronomicalUnits::new(67.864),
         0.44177,
         Degrees::new(44.04),
@@ -566,90 +565,90 @@ pub const IO: Satellite = Satellite::new_const(
     Kilograms::new(8.9319e22),
     Kilometers::new(1821.6),
     // Semi‑major axis 421 700 km
-    Orbit {
-        semi_major_axis: AstronomicalUnits::new(0.002823),
-        eccentricity: 0.0041,
-        inclination: Degrees::new(0.036),
-        longitude_of_ascending_node: Degrees::new(43.977),
-        argument_of_perihelion: Degrees::new(84.129),
-        mean_anomaly_at_epoch: Degrees::new(171.016),
-        epoch: JulianDate::J2000,
-    },
+    KeplerianOrbit::new(
+        AstronomicalUnits::new(0.002823),
+        0.0041,
+        Degrees::new(0.036),
+        Degrees::new(43.977),
+        Degrees::new(84.129),
+        Degrees::new(171.016),
+        JulianDate::J2000,
+    ),
 );
 
 pub const EUROPA: Satellite = Satellite::new_const(
     "Europa",
     Kilograms::new(4.7998e22),
     Kilometers::new(1560.8),
-    Orbit {
-        semi_major_axis: AstronomicalUnits::new(0.004485),
-        eccentricity: 0.009,
-        inclination: Degrees::new(0.465),
-        longitude_of_ascending_node: Degrees::new(219.106),
-        argument_of_perihelion: Degrees::new(88.970),
-        mean_anomaly_at_epoch: Degrees::new(324.528),
-        epoch: JulianDate::J2000,
-    },
+    KeplerianOrbit::new(
+        AstronomicalUnits::new(0.004485),
+        0.009,
+        Degrees::new(0.465),
+        Degrees::new(219.106),
+        Degrees::new(88.970),
+        Degrees::new(324.528),
+        JulianDate::J2000,
+    ),
 );
 
 pub const GANYMEDE: Satellite = Satellite::new_const(
     "Ganymede",
     Kilograms::new(1.4819e23),
     Kilometers::new(2634.1),
-    Orbit {
-        semi_major_axis: AstronomicalUnits::new(0.007155),
-        eccentricity: 0.0013,
-        inclination: Degrees::new(0.177),
-        longitude_of_ascending_node: Degrees::new(63.552),
-        argument_of_perihelion: Degrees::new(192.417),
-        mean_anomaly_at_epoch: Degrees::new(317.654),
-        epoch: JulianDate::J2000,
-    },
+    KeplerianOrbit::new(
+        AstronomicalUnits::new(0.007155),
+        0.0013,
+        Degrees::new(0.177),
+        Degrees::new(63.552),
+        Degrees::new(192.417),
+        Degrees::new(317.654),
+        JulianDate::J2000,
+    ),
 );
 
 pub const CALLISTO: Satellite = Satellite::new_const(
     "Callisto",
     Kilograms::new(1.0759e23),
     Kilometers::new(2410.3),
-    Orbit {
-        semi_major_axis: AstronomicalUnits::new(0.012585),
-        eccentricity: 0.0074,
-        inclination: Degrees::new(0.192),
-        longitude_of_ascending_node: Degrees::new(298.848),
-        argument_of_perihelion: Degrees::new(52.643),
-        mean_anomaly_at_epoch: Degrees::new(51.483),
-        epoch: JulianDate::J2000,
-    },
+    KeplerianOrbit::new(
+        AstronomicalUnits::new(0.012585),
+        0.0074,
+        Degrees::new(0.192),
+        Degrees::new(298.848),
+        Degrees::new(52.643),
+        Degrees::new(51.483),
+        JulianDate::J2000,
+    ),
 );
 
 pub const TITAN: Satellite = Satellite::new_const(
     "Titan",
     Kilograms::new(1.3452e23),
     Kilometers::new(2574.73),
-    Orbit {
-        semi_major_axis: AstronomicalUnits::new(0.008167),
-        eccentricity: 0.0288,
-        inclination: Degrees::new(0.34854),
-        longitude_of_ascending_node: Degrees::new(168.650),
-        argument_of_perihelion: Degrees::new(186.585),
-        mean_anomaly_at_epoch: Degrees::new(30.744),
-        epoch: JulianDate::J2000,
-    },
+    KeplerianOrbit::new(
+        AstronomicalUnits::new(0.008167),
+        0.0288,
+        Degrees::new(0.34854),
+        Degrees::new(168.650),
+        Degrees::new(186.585),
+        Degrees::new(30.744),
+        JulianDate::J2000,
+    ),
 );
 
 pub const TRITON: Satellite = Satellite::new_const(
     "Triton",
     Kilograms::new(2.14e22),
     Kilometers::new(1353.4),
-    Orbit {
-        semi_major_axis: AstronomicalUnits::new(0.002371),
-        eccentricity: 0.000016,
-        inclination: Degrees::new(156.865), // retrograde
-        longitude_of_ascending_node: Degrees::new(216.732),
-        argument_of_perihelion: Degrees::new(185.965),
-        mean_anomaly_at_epoch: Degrees::new(144.960),
-        epoch: JulianDate::J2000,
-    },
+    KeplerianOrbit::new(
+        AstronomicalUnits::new(0.002371),
+        0.000016,
+        Degrees::new(156.865),
+        Degrees::new(216.732),
+        Degrees::new(185.965),
+        Degrees::new(144.960),
+        JulianDate::J2000,
+    ),
 );
 
 pub const MAJOR_MOONS: &[&Satellite] = &[

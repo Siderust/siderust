@@ -666,16 +666,45 @@ pub extern "C" fn siderust_cartesian_pos_transform_center(
     }}
 }
 
-/// Compute the Keplerian orbital position at a given Julian date.
+// Shared serializer for orbit propagation functions that return
+// EclipticMeanJ2000 positions in astronomical units.
+fn write_ecliptic_au_position(
+    out: *mut SiderustCartesianPos,
+    pos: siderust::coordinates::cartesian::position::EclipticMeanJ2000<AstronomicalUnit>,
+    center: SiderustCenter,
+) {
+    unsafe {
+        *out = SiderustCartesianPos {
+            x: pos.x().value(),
+            y: pos.y().value(),
+            z: pos.z().value(),
+            frame: SiderustFrame::EclipticMeanJ2000,
+            center,
+            length_unit: SiderustLengthUnit::AU,
+        };
+    }
+}
+
+/// Map an `SiderustOrbitRefCenter` (0=Bary,1=Helio,2=Geo) to a `SiderustCenter`.
+fn orbit_ref_center_to_siderust(orbit_center: SiderustOrbitRefCenter) -> Option<SiderustCenter> {
+    match orbit_center {
+        0 => Some(SiderustCenter::Barycentric),
+        1 => Some(SiderustCenter::Heliocentric),
+        2 => Some(SiderustCenter::Geocentric),
+        _ => None,
+    }
+}
+
+/// Compute the Keplerian orbital position at a given Julian date, with
+/// explicit output center semantics.
 ///
-/// Returns position in EclipticMeanJ2000 frame (AU), where the reference
-/// center equals the orbit's own reference center (e.g. heliocentric for a
-/// planet's orbit).  The `center` field of `out` is set to `Heliocentric` as
-/// a placeholder; callers should interpret it according to `orbit_center` from
-/// the associated `siderust_bodycentric_params_t`.
+/// `orbit_center` specifies which reference center the orbit elements are
+/// relative to (0=Barycentric, 1=Heliocentric, 2=Geocentric). The `center`
+/// field of `out` will be set accordingly.
 #[no_mangle]
-pub extern "C" fn siderust_kepler_position(
+pub extern "C" fn siderust_kepler_position_ex(
     orbit: SiderustOrbit,
+    orbit_center: SiderustOrbitRefCenter,
     jd: f64,
     out: *mut SiderustCartesianPos,
 ) -> SiderustStatus {
@@ -683,19 +712,146 @@ pub extern "C" fn siderust_kepler_position(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        let center = match orbit_ref_center_to_siderust(orbit_center) {
+            Some(c) => c,
+            None => return SiderustStatus::InvalidCenter,
+        };
         let pos = orbit.to_rust().kepler_position(JulianDate::new(jd));
-        unsafe {
-            *out = SiderustCartesianPos {
-                x: pos.x().value(),
-                y: pos.y().value(),
-                z: pos.z().value(),
-                frame: SiderustFrame::EclipticMeanJ2000,
-                center: SiderustCenter::Heliocentric, // placeholder; real center = orbit_center
-                length_unit: SiderustLengthUnit::AU,
-            };
-        }
+        write_ecliptic_au_position(out, pos, center);
         SiderustStatus::Ok
 
+    }}
+}
+
+/// Compute the position of an explicit mean-motion orbit at a given Julian date.
+#[no_mangle]
+pub extern "C" fn siderust_mean_motion_position(
+    orbit: SiderustMeanMotionOrbit,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let rust_orbit = match orbit.try_to_rust() {
+            Ok(o) => o,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        let pos = match rust_orbit.position_at(JulianDate::new(jd)) {
+            Ok(pos) => pos,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
+        SiderustStatus::Ok
+
+    }}
+}
+
+/// Compute the position of a unified conic orbit at a given Julian date.
+#[no_mangle]
+pub extern "C" fn siderust_conic_position(
+    orbit: SiderustConicOrbit,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let rust_orbit = match orbit.try_to_rust() {
+            Ok(o) => o,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        let pos = match rust_orbit.position_at(JulianDate::new(jd)) {
+            Ok(pos) => pos,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
+        SiderustStatus::Ok
+
+    }}
+}
+
+// =============================================================================
+// Opaque PreparedOrbit handle for amortized propagation
+// =============================================================================
+
+/// Opaque handle to a validated, precomputed Keplerian orbit.
+///
+/// Created via [`siderust_prepared_orbit_create`], used for repeated
+/// propagation via [`siderust_prepared_orbit_position`], and freed via
+/// [`siderust_prepared_orbit_destroy`].
+///
+/// This avoids per-call reconstruction, validation, and trig precomputation
+/// when propagating the same orbit at many epochs.
+pub type SiderustPreparedOrbitHandle = *mut std::ffi::c_void;
+
+/// Create a validated, precomputed orbit handle from Keplerian elements.
+///
+/// Returns `Ok` and writes a non-null handle on success. Returns
+/// `InvalidArgument` if the orbit is not a valid ellipse.
+#[no_mangle]
+pub extern "C" fn siderust_prepared_orbit_create(
+    orbit: SiderustOrbit,
+    out: *mut SiderustPreparedOrbitHandle,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let prepared = match siderust::PreparedOrbit::try_from_elements(
+            AstronomicalUnits::new(orbit.semi_major_axis_au),
+            orbit.eccentricity,
+            Degrees::new(orbit.inclination_deg),
+            Degrees::new(orbit.lon_ascending_node_deg),
+            Degrees::new(orbit.arg_periapsis_deg),
+            Degrees::new(orbit.mean_anomaly_deg),
+            JulianDate::new(orbit.epoch_jd),
+        ) {
+            Ok(p) => p,
+            Err(_) => return SiderustStatus::InvalidArgument,
+        };
+        let boxed = Box::new(prepared);
+        unsafe { *out = Box::into_raw(boxed) as *mut std::ffi::c_void };
+        SiderustStatus::Ok
+    }}
+}
+
+/// Propagate a prepared orbit to a given Julian date.
+///
+/// `handle` must have been created via [`siderust_prepared_orbit_create`].
+/// This is the fastest FFI propagation path: no validation, no reconstruction.
+#[no_mangle]
+pub extern "C" fn siderust_prepared_orbit_position(
+    handle: SiderustPreparedOrbitHandle,
+    jd: f64,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if handle.is_null() || out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        let prepared = unsafe { &*(handle as *const siderust::PreparedOrbit) };
+        let pos = prepared.position_at(JulianDate::new(jd));
+        write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
+        SiderustStatus::Ok
+    }}
+}
+
+/// Destroy a prepared orbit handle, freeing its memory.
+///
+/// After this call, `handle` must not be used again.
+#[no_mangle]
+pub extern "C" fn siderust_prepared_orbit_destroy(
+    handle: SiderustPreparedOrbitHandle,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if handle.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+        unsafe { drop(Box::from_raw(handle as *mut siderust::PreparedOrbit)) };
+        SiderustStatus::Ok
     }}
 }
 
@@ -1586,27 +1742,135 @@ mod tests {
             eccentricity: 0.0167,
             inclination_deg: 0.0,
             lon_ascending_node_deg: 0.0,
-            arg_perihelion_deg: 102.94,
+            arg_periapsis_deg: 102.94,
             mean_anomaly_deg: 357.53,
             epoch_jd: J2000,
         }
     }
 
+    fn earth_mean_motion_orbit() -> SiderustMeanMotionOrbit {
+        SiderustMeanMotionOrbit {
+            semi_major_axis_au: 1.0000,
+            eccentricity: 0.0167,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 102.94,
+            mean_motion_deg_per_day: 0.9856076686,
+            epoch_jd: J2000,
+        }
+    }
+
     #[test]
-    fn kepler_position_earth_at_j2000() {
+    fn kepler_position_ex_earth_at_j2000() {
         let mut out = empty_cart();
-        let s = siderust_kepler_position(earth_orbit(), J2000, &mut out);
+        let s = siderust_kepler_position_ex(earth_orbit(), 1, J2000, &mut out);
         assert_eq!(s, SiderustStatus::Ok);
         // Earth should be ~1 AU from the Sun
+        let r = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
+        assert!(r > 0.98 && r < 1.02, "r = {r}");
+        assert_eq!(out.frame, SiderustFrame::EclipticMeanJ2000);
+        assert_eq!(out.center, SiderustCenter::Heliocentric);
+    }
+
+    #[test]
+    fn kepler_position_ex_null_out() {
+        let s = siderust_kepler_position_ex(earth_orbit(), 1, J2000, ptr::null_mut());
+        assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    #[test]
+    fn mean_motion_position_earth_at_j2000() {
+        let mut out = empty_cart();
+        let s = siderust_mean_motion_position(earth_mean_motion_orbit(), J2000, &mut out);
+        assert_eq!(s, SiderustStatus::Ok);
         let r = (out.x * out.x + out.y * out.y + out.z * out.z).sqrt();
         assert!(r > 0.98 && r < 1.02, "r = {r}");
         assert_eq!(out.frame, SiderustFrame::EclipticMeanJ2000);
     }
 
     #[test]
-    fn kepler_position_null_out() {
-        let s = siderust_kepler_position(earth_orbit(), J2000, ptr::null_mut());
-        assert_eq!(s, SiderustStatus::NullPointer);
+    fn conic_position_rejects_parabolic() {
+        let orbit = SiderustConicOrbit {
+            periapsis_distance_au: 1.0,
+            eccentricity: 1.0,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_anomaly_deg: 0.0,
+            epoch_jd: J2000,
+        };
+        let mut out = empty_cart();
+        let s = siderust_conic_position(orbit, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
+    }
+
+    #[test]
+    fn conic_position_rejects_invalid_periapsis() {
+        // Zero periapsis distance must be caught at the FFI boundary, not silently
+        // produce NaN coordinates.
+        let orbit = SiderustConicOrbit {
+            periapsis_distance_au: 0.0,
+            eccentricity: 0.5,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_anomaly_deg: 0.0,
+            epoch_jd: J2000,
+        };
+        let mut out = empty_cart();
+        let s = siderust_conic_position(orbit, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
+    }
+
+    #[test]
+    fn mean_motion_position_rejects_invalid_semi_major_axis() {
+        let orbit = SiderustMeanMotionOrbit {
+            semi_major_axis_au: -1.0,
+            eccentricity: 0.0167,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_motion_deg_per_day: 0.9856,
+            epoch_jd: J2000,
+        };
+        let mut out = empty_cart();
+        let s = siderust_mean_motion_position(orbit, J2000, &mut out);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
+    }
+
+    #[test]
+    fn prepared_orbit_create_rejects_invalid_semi_major_axis() {
+        // Negative SMA must return InvalidArgument, not silently create a broken handle.
+        let orbit = SiderustOrbit {
+            semi_major_axis_au: -1.0,
+            eccentricity: 0.0167,
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_anomaly_deg: 0.0,
+            epoch_jd: J2000,
+        };
+        let mut handle = std::ptr::null_mut();
+        let s = siderust_prepared_orbit_create(orbit, &mut handle);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
+        assert!(handle.is_null());
+    }
+
+    #[test]
+    fn prepared_orbit_create_rejects_hyperbolic() {
+        let orbit = SiderustOrbit {
+            semi_major_axis_au: 1.0,
+            eccentricity: 1.5, // hyperbolic — KeplerianOrbit requires e < 1
+            inclination_deg: 0.0,
+            lon_ascending_node_deg: 0.0,
+            arg_periapsis_deg: 0.0,
+            mean_anomaly_deg: 0.0,
+            epoch_jd: J2000,
+        };
+        let mut handle = std::ptr::null_mut();
+        let s = siderust_prepared_orbit_create(orbit, &mut handle);
+        assert_eq!(s, SiderustStatus::InvalidArgument);
+        assert!(handle.is_null());
     }
 
     // ── Bodycentric transforms ─────────────────────────────────────────────

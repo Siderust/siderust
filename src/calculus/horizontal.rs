@@ -181,22 +181,6 @@ pub fn equatorial_to_horizontal_true_of_date_with_ctx<
     Topocentric::horizontal(site, alt, az, distance)
 }
 
-/// Backward-compatible context-aware wrapper.
-#[inline]
-pub fn equatorial_to_horizontal_with_ctx<
-    U: LengthUnit,
-    Eph,
-    Eop: EopProvider,
-    Nut: NutationModel,
->(
-    eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
-    site: Geodetic<frames::ECEF>,
-    jd: JulianDate,
-    ctx: &AstroContext<Eph, Eop, Nut>,
-) -> spherical::Position<Topocentric, frames::Horizontal, U> {
-    equatorial_to_horizontal_true_of_date_with_ctx(eq_position, site, jd, ctx)
-}
-
 /// Computes the **horizontal direction** (altitude, azimuth) for a fixed-star
 /// RA/Dec (J2000) from an observer site at a given Julian Date.
 ///
