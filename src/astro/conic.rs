@@ -43,6 +43,14 @@ pub enum ConicError {
     /// [`MeanMotionOrbit`] only support elliptic orbits (`0 ≤ e < 1`).
     /// Use [`ConicOrbit`] for hyperbolic trajectories.
     HyperbolicNotSupported,
+    /// Epoch must be finite (not NaN or infinity).
+    InvalidEpoch,
+    /// Mean anomaly at epoch must be finite.
+    InvalidMeanAnomaly,
+    /// Mean motion must be finite and positive.
+    InvalidMeanMotion,
+    /// The hyperbolic anomaly solver failed to converge.
+    HyperbolicSolverFailed,
 }
 
 impl std::fmt::Display for ConicError {
@@ -65,6 +73,12 @@ impl std::fmt::Display for ConicError {
                     "hyperbolic eccentricity (e >= 1) is not supported by this orbit type; \
                      use ConicOrbit instead"
                 )
+            }
+            Self::InvalidEpoch => write!(f, "epoch must be finite"),
+            Self::InvalidMeanAnomaly => write!(f, "mean anomaly at epoch must be finite"),
+            Self::InvalidMeanMotion => write!(f, "mean motion must be finite and positive"),
+            Self::HyperbolicSolverFailed => {
+                write!(f, "hyperbolic anomaly solver failed to converge")
             }
         }
     }
@@ -92,8 +106,8 @@ pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
 /// [`OrientedConic<PeriapsisParam<AstronomicalUnit>, EclipticMeanJ2000>`].
 /// After construction the geometry is always valid; `kind()` is infallible.
 ///
-/// Supports elliptic, parabolic, and hyperbolic orbits. Parabolic propagation
-/// returns [`ConicError::ParabolicUnsupported`].
+/// Supports elliptic and hyperbolic orbits. Parabolic eccentricity (`e == 1`)
+/// is rejected at construction time by [`try_new`](Self::try_new).
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ConicOrbit {
@@ -108,7 +122,8 @@ impl ConicOrbit {
     /// Creates a new validated conic-element set.
     ///
     /// Returns an error if any parameter is invalid (non-positive periapsis
-    /// distance, non-finite eccentricity, non-finite orientation angles).
+    /// distance, non-finite eccentricity, non-finite orientation angles,
+    /// non-finite mean anomaly or epoch, or parabolic eccentricity).
     pub fn try_new(
         periapsis_distance: AstronomicalUnits,
         eccentricity: f64,
@@ -120,12 +135,21 @@ impl ConicOrbit {
     ) -> Result<Self, ConicError> {
         let shape = PeriapsisParam::try_new(periapsis_distance, eccentricity)
             .map_err(map_validation_error)?;
+        if eccentricity == 1.0 {
+            return Err(ConicError::ParabolicUnsupported);
+        }
         let orientation = ConicOrientation::try_new(
             inclination,
             longitude_of_ascending_node,
             argument_of_periapsis,
         )
         .map_err(map_validation_error)?;
+        if !mean_anomaly_at_epoch.value().is_finite() {
+            return Err(ConicError::InvalidMeanAnomaly);
+        }
+        if !epoch.value().is_finite() {
+            return Err(ConicError::InvalidEpoch);
+        }
         Ok(Self {
             geometry: OrientedConic::new(shape, orientation),
             mean_anomaly_at_epoch,
@@ -136,7 +160,7 @@ impl ConicOrbit {
     /// Creates a new conic-element set **without validation**.
     ///
     /// Intended for compile-time body constants with known-correct values.
-    pub const fn new(
+    pub const fn new_unchecked(
         periapsis_distance: AstronomicalUnits,
         eccentricity: f64,
         inclination: Degrees,
@@ -196,8 +220,8 @@ pub struct MeanMotionOrbit {
 impl MeanMotionOrbit {
     /// Creates a new validated elliptic mean-motion orbit.
     ///
-    /// Returns an error if any parameter is invalid or if the eccentricity is
-    /// not elliptic (`e >= 1`).
+    /// Returns an error if any parameter is invalid, if the eccentricity is
+    /// not elliptic (`e >= 1`), or if the mean motion or epoch is non-finite.
     pub fn try_new(
         semi_major_axis: AstronomicalUnits,
         eccentricity: f64,
@@ -221,6 +245,12 @@ impl MeanMotionOrbit {
             argument_of_periapsis,
         )
         .map_err(map_validation_error)?;
+        if !mean_motion_deg_per_day.is_finite() || mean_motion_deg_per_day <= 0.0 {
+            return Err(ConicError::InvalidMeanMotion);
+        }
+        if !epoch.value().is_finite() {
+            return Err(ConicError::InvalidEpoch);
+        }
         Ok(Self {
             geometry: OrientedConic::new(typed, orientation),
             mean_motion_deg_per_day,
@@ -231,7 +261,7 @@ impl MeanMotionOrbit {
     /// Creates a new mean-motion orbit **without validation**.
     ///
     /// Intended for compile-time body constants with known-correct elliptic values.
-    pub const fn new(
+    pub const fn new_unchecked(
         semi_major_axis: AstronomicalUnits,
         eccentricity: f64,
         inclination: Degrees,
@@ -330,6 +360,102 @@ mod tests {
                 JulianDate::J2000,
             ),
             Err(ConicError::HyperbolicNotSupported)
+        );
+    }
+
+    #[test]
+    fn conic_rejects_nan_epoch() {
+        assert_eq!(
+            ConicOrbit::try_new(
+                1.0 * AU,
+                0.5,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                JulianDate::new(f64::NAN),
+            ),
+            Err(ConicError::InvalidEpoch)
+        );
+    }
+
+    #[test]
+    fn conic_rejects_inf_mean_anomaly() {
+        assert_eq!(
+            ConicOrbit::try_new(
+                1.0 * AU,
+                0.5,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(f64::INFINITY),
+                JulianDate::J2000,
+            ),
+            Err(ConicError::InvalidMeanAnomaly)
+        );
+    }
+
+    #[test]
+    fn conic_rejects_parabolic() {
+        assert_eq!(
+            ConicOrbit::try_new(
+                1.0 * AU,
+                1.0,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                JulianDate::J2000,
+            ),
+            Err(ConicError::ParabolicUnsupported)
+        );
+    }
+
+    #[test]
+    fn mean_motion_rejects_nan_mean_motion() {
+        assert_eq!(
+            MeanMotionOrbit::try_new(
+                1.0 * AU,
+                0.5,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                f64::NAN,
+                JulianDate::J2000,
+            ),
+            Err(ConicError::InvalidMeanMotion)
+        );
+    }
+
+    #[test]
+    fn mean_motion_rejects_negative_mean_motion() {
+        assert_eq!(
+            MeanMotionOrbit::try_new(
+                1.0 * AU,
+                0.5,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                -1.0,
+                JulianDate::J2000,
+            ),
+            Err(ConicError::InvalidMeanMotion)
+        );
+    }
+
+    #[test]
+    fn mean_motion_rejects_nan_epoch() {
+        assert_eq!(
+            MeanMotionOrbit::try_new(
+                1.0 * AU,
+                0.5,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                1.0,
+                JulianDate::new(f64::NAN),
+            ),
+            Err(ConicError::InvalidEpoch)
         );
     }
 }
