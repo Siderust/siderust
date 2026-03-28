@@ -73,7 +73,11 @@ fn hyperbolic_bisection(m: f64, e: f64) -> Option<f64> {
         }
     }
     let result = 0.5 * (lo + hi);
-    if result.is_finite() { Some(result) } else { None }
+    if result.is_finite() {
+        Some(result)
+    } else {
+        None
+    }
 }
 
 fn solve_hyperbolic_anomaly(mean_anomaly_radians: f64, eccentricity: f64) -> Option<f64> {
@@ -178,11 +182,7 @@ pub fn calculate_mean_motion_position(
     let (true_anomaly, radius) =
         elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, semi_major_axis);
 
-    Ok(rotate_to_ecliptic_precomputed(
-        radius,
-        &trig,
-        true_anomaly,
-    ))
+    Ok(rotate_to_ecliptic_precomputed(radius, &trig, true_anomaly))
 }
 
 /// Calculates a heliocentric position for unified conic elements.
@@ -285,9 +285,7 @@ mod tests {
         )
         .unwrap();
         // 1e8 days ~ 274,000 years — tests M normalization for large accumulation.
-        let position = orbit
-            .position_at(JulianDate::new(2451545.0 + 1e8))
-            .unwrap();
+        let position = orbit.position_at(JulianDate::new(2451545.0 + 1e8)).unwrap();
         assert!(position.x().value().is_finite());
         assert!(position.y().value().is_finite());
         assert!(position.z().value().is_finite());
