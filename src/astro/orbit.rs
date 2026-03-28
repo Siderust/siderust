@@ -196,6 +196,12 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         )
         .map_err(map_validation_error)?;
 
+        if !mean_anomaly_at_epoch.value().is_finite() {
+            return Err(ConicError::InvalidMeanAnomaly);
+        }
+        if !epoch.value().is_finite() {
+            return Err(ConicError::InvalidEpoch);
+        }
         Ok(Self {
             shape: typed,
             orientation,

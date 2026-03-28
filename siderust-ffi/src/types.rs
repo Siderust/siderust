@@ -612,7 +612,7 @@ pub struct SiderustMeanMotionOrbit {
 impl SiderustMeanMotionOrbit {
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::MeanMotionOrbit {
-        siderust::MeanMotionOrbit::new(
+        siderust::MeanMotionOrbit::new_unchecked(
             AstronomicalUnits::new(self.semi_major_axis_au),
             self.eccentricity,
             Degrees::new(self.inclination_deg),
@@ -681,7 +681,7 @@ pub struct SiderustConicOrbit {
 impl SiderustConicOrbit {
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::ConicOrbit {
-        siderust::ConicOrbit::new(
+        siderust::ConicOrbit::new_unchecked(
             AstronomicalUnits::new(self.periapsis_distance_au),
             self.eccentricity,
             Degrees::new(self.inclination_deg),
