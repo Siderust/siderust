@@ -22,7 +22,7 @@ macro_rules! impl_body_fixed_rotation {
             #[inline]
             fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
-                _ctx: &AstroContext<Eph, Eop, Nut>,
+                _ctx: &AstroContext<Eph, Eop>,
             ) -> Rotation3 {
                 iau_body_fixed_to_icrs(&<$body_ty as HasIauRotation>::ROTATION, jd)
             }
@@ -32,7 +32,7 @@ macro_rules! impl_body_fixed_rotation {
             #[inline]
             fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
                 jd: JulianDate,
-                ctx: &AstroContext<Eph, Eop, Nut>,
+                ctx: &AstroContext<Eph, Eop>,
             ) -> Rotation3 {
                 inverse_rotation::<ICRS, $frame, Eph, Eop, Nut>(jd, ctx)
             }

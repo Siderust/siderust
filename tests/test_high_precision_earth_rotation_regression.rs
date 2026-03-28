@@ -15,10 +15,8 @@ use siderust::coordinates::cartesian::position;
 use siderust::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use siderust::coordinates::frames::{self, ECEF};
 use siderust::coordinates::spherical;
-use siderust::coordinates::transform::context::{
-    AstroContext, DefaultEphemeris, DefaultNutationModel,
-};
-use siderust::coordinates::transform::{to_topocentric_with_ctx, TransformCenter};
+use siderust::coordinates::transform::context::{AstroContext, DefaultEphemeris};
+use siderust::coordinates::transform::{to_topocentric_with, TransformCenter};
 use siderust::time::JulianDate;
 
 #[inline]
@@ -127,9 +125,8 @@ fn topocentric_site_vector_matches_erfa_chain_roque_2020() {
     );
 
     // Null-EOP path remains selectable and should differ measurably.
-    let null_ctx: AstroContext<DefaultEphemeris, NullEop, DefaultNutationModel> =
-        AstroContext::default();
-    let topo_null = to_topocentric_with_ctx(&origin, site, jd_tt, &null_ctx);
+    let null_ctx: AstroContext<DefaultEphemeris, NullEop> = AstroContext::default();
+    let topo_null = to_topocentric_with(&origin, site, jd_tt, &null_ctx);
     let dx = topo_default.x() - topo_null.x();
     let dy = topo_default.y() - topo_null.y();
     let dz = topo_default.z() - topo_null.z();

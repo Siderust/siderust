@@ -22,7 +22,7 @@ impl FrameRotationProvider<TEME, EquatorialTrueOfDate> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
         let nut = Nut::nutation(jd);
         Rotation3::rz(nut.dpsi * nut.mean_obliquity.cos())
@@ -33,7 +33,7 @@ impl FrameRotationProvider<EquatorialTrueOfDate, TEME> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
         inverse_rotation::<EquatorialTrueOfDate, TEME, Eph, Eop, Nut>(jd, ctx)
     }
@@ -43,7 +43,7 @@ impl FrameRotationProvider<TEME, ICRS> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
         compose_rotation::<TEME, EquatorialTrueOfDate, ICRS, Eph, Eop, Nut>(jd, ctx)
     }
@@ -53,7 +53,7 @@ impl FrameRotationProvider<ICRS, TEME> for () {
     #[inline]
     fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
         inverse_rotation::<ICRS, TEME, Eph, Eop, Nut>(jd, ctx)
     }

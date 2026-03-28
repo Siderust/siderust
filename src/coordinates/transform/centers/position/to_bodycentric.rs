@@ -62,11 +62,11 @@ where
     Position<Geocentric, F, U>: TransformFrame<EclipticMeanJ2000<U, Geocentric>>,
     EclipticMeanJ2000<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>,
 {
-    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn to_center_as<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         &self,
         body_params: BodycentricParams,
         jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Bodycentric, F, U> {
         let body_ecliptic_au = body_params.orbit.kepler_position(jd);
 
@@ -115,11 +115,11 @@ where
     Position<Heliocentric, F, U>: TransformFrame<EclipticMeanJ2000<U, Heliocentric>>,
     EclipticMeanJ2000<U, Heliocentric>: TransformFrame<Position<Heliocentric, F, U>>,
 {
-    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn to_center_as<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         &self,
         body_params: BodycentricParams,
         jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Bodycentric, F, U> {
         let body_ecliptic_au = body_params.orbit.kepler_position(jd);
 
@@ -169,11 +169,11 @@ where
     Position<Barycentric, F, U>: TransformFrame<EclipticMeanJ2000<U, Barycentric>>,
     EclipticMeanJ2000<U, Barycentric>: TransformFrame<Position<Barycentric, F, U>>,
 {
-    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn to_center_as<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         &self,
         body_params: BodycentricParams,
         jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Bodycentric, F, U> {
         let body_ecliptic_au = body_params.orbit.kepler_position(jd);
 
@@ -222,11 +222,11 @@ where
     Position<Geocentric, F, U>: TransformFrame<EclipticMeanJ2000<U, Geocentric>>,
     EclipticMeanJ2000<U, Geocentric>: TransformFrame<Position<Geocentric, F, U>>,
 {
-    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn to_center_as<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         &self,
         _params: (),
         jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Geocentric, F, U> {
         let body_params = *self.center_params();
         let body_ecliptic_au = body_params.orbit.kepler_position(jd);

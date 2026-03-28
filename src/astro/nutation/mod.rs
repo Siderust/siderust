@@ -13,21 +13,17 @@
 //!
 //! ## Usage
 //!
-//! The model is selected at compile time via the `Nut` type parameter on
-//! [`AstroContext`](crate::coordinates::transform::context::AstroContext).
-//! The default is `Iau2006A`. For the full-precision default explicitly:
+//! The model is selected at compile time by wrapping an
+//! [`AstroContext`](crate::coordinates::transform::context::AstroContext)
+//! with [`AstroContext::with_model`](crate::coordinates::transform::context::AstroContext::with_model).
+//! The default transform path uses [`Iau2006A`]. To request a specific model:
 //!
 //! ```rust
 //! use siderust::coordinates::transform::context::AstroContext;
 //! use siderust::astro::nutation::Iau2006A;
-//! use siderust::astro::eop::IersEop;
 //!
-//! type FullPrecision = AstroContext<
-//!     siderust::coordinates::transform::context::DefaultEphemeris,
-//!     IersEop,
-//!     Iau2006A,
-//! >;
-//! let ctx = FullPrecision::with_types();
+//! let ctx = AstroContext::new();
+//! let full_precision = ctx.with_model::<Iau2006A>();
 //! ```
 //!
 //! ## IAU 2006/2000A (default)
@@ -60,9 +56,19 @@ use crate::astro::precession::mean_obliquity_iau2006;
 use crate::time::JulianDate;
 use affn::Rotation3;
 use qtty::*;
+use std::marker::PhantomData;
 
+mod iau2000a;
+mod iau2000b;
+mod iau2006;
+mod iau2006a;
 pub(crate) mod nut00a;
 mod nut00a_tables;
+
+pub use iau2000a::Iau2000A;
+pub use iau2000b::Iau2000B;
+pub use iau2006::Iau2006;
+pub use iau2006a::Iau2006A;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Model-agnostic nutation result
@@ -87,80 +93,57 @@ impl NutationAngles {
     }
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// NutationModel trait
-// ═══════════════════════════════════════════════════════════════════════════
+/// Runtime identifier for the supported compile-time nutation model markers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NutationModelId {
+    /// Full IAU 2000A nutation.
+    Iau2000A,
+    /// Abridged IAU 2000B nutation.
+    Iau2000B,
+    /// IAU 2006 precession-only profile.
+    Iau2006,
+    /// IAU 2006-compatible full nutation.
+    Iau2006A,
+}
+
+/// Zero-sized wrapper that encodes a nutation model in the type system.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Model<Tag>(PhantomData<Tag>);
+
+/// Metadata implemented by each public nutation model tag.
+pub trait NutationTag {
+    /// Static identifier used by the shared dispatch implementation.
+    const ID: NutationModelId;
+}
 
 /// Trait for type-level nutation model dispatch.
 ///
 /// Providers call `Nut::nutation(jd)` to compute nutation at a given epoch,
-/// where `Nut` is the model marker supplied via `AstroContext`.
+/// where `Nut` is the model marker supplied via the transform context.
 pub trait NutationModel {
     /// Compute nutation angles at the given TT Julian Date.
     fn nutation(jd: JulianDate) -> NutationAngles;
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Marker types + trait impls
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// IAU 2000B nutation model marker (77 terms, ~1 mas accuracy).
-///
-/// This is the default model used by `AstroContext`.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Iau2000B;
-
-impl NutationModel for Iau2000B {
+impl<Tag: NutationTag> NutationModel for Model<Tag> {
     #[inline]
     fn nutation(jd: JulianDate) -> NutationAngles {
-        let n = nutation_iau2000b(jd);
-        NutationAngles {
-            dpsi: n.dpsi,
-            deps: n.deps,
-            mean_obliquity: n.mean_obliquity,
-        }
-    }
-}
-
-/// Pure IAU 2000A nutation model marker (1365 terms).
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Iau2000A;
-
-impl NutationModel for Iau2000A {
-    #[inline]
-    fn nutation(jd: JulianDate) -> NutationAngles {
-        nut00a::nutation_iau2000a(jd)
-    }
-}
-
-/// IAU 2006/2000A nutation model marker (1365 terms, sub-µas).
-///
-/// Uses the full MHB2000 series with P03/J₂ corrections for compatibility
-/// with IAU 2006 precession.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Iau2006A;
-
-impl NutationModel for Iau2006A {
-    #[inline]
-    fn nutation(jd: JulianDate) -> NutationAngles {
-        nut00a::nutation_iau2006a(jd)
-    }
-}
-
-/// IAU 2006 precession-only profile marker.
-///
-/// Returns zero nutation offsets while keeping the IAU 2006 mean obliquity,
-/// so frame paths can represent "IAU 2006 precession" without nutation.
-#[derive(Debug, Clone, Copy, Default)]
-pub struct Iau2006;
-
-impl NutationModel for Iau2006 {
-    #[inline]
-    fn nutation(jd: JulianDate) -> NutationAngles {
-        NutationAngles {
-            dpsi: Radians::new(0.0),
-            deps: Radians::new(0.0),
-            mean_obliquity: mean_obliquity_iau2006(jd),
+        match Tag::ID {
+            NutationModelId::Iau2000A => nut00a::nutation_iau2000a(jd),
+            NutationModelId::Iau2000B => {
+                let n = nutation_iau2000b(jd);
+                NutationAngles {
+                    dpsi: n.dpsi,
+                    deps: n.deps,
+                    mean_obliquity: n.mean_obliquity,
+                }
+            }
+            NutationModelId::Iau2006 => NutationAngles {
+                dpsi: Radians::new(0.0),
+                deps: Radians::new(0.0),
+                mean_obliquity: mean_obliquity_iau2006(jd),
+            },
+            NutationModelId::Iau2006A => nut00a::nutation_iau2006a(jd),
         }
     }
 }

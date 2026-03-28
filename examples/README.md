@@ -124,6 +124,15 @@ prevents mixing incompatible coordinate frames.
 cargo run --example 13_coordinate_operations
 ```
 
+### 14. Nutation Models (`14_nutation_models.rs`)
+Shows the default transform path and the custom-model path using
+`AstroContext::with_model::<...>()`, with side-by-side output for the
+default `Iau2006A`, abridged `Iau2000B`, and precession-only `Iau2006`.
+
+```bash
+cargo run --example 14_nutation_models
+```
+
 ---
 
 ## Solar System & Coordinates

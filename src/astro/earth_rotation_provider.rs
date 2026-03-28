@@ -89,7 +89,7 @@ pub(crate) fn nutation_with_celestial_pole_offsets<Nut: NutationModel>(
 /// A 3×3 rotation matrix `R` such that `v_eq = R * v_itrs`.
 pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
-    ctx: &AstroContext<Eph, Eop, Nut>,
+    ctx: &AstroContext<Eph, Eop>,
 ) -> affn::Rotation3 {
     let eop = ctx.eop_at(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
@@ -104,7 +104,10 @@ pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut:
     // aligned such that this composition matches the ERFA/SOFA chain for
     // ITRS -> GCRS in this codebase.
     let itrs_to_gcrs = q * affn::Rotation3::rz(-era) * w.inverse();
-    let icrs_to_j2000 = <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation(jd, ctx);
+    let icrs_to_j2000 =
+        <() as FrameRotationProvider<ICRS, EquatorialMeanJ2000>>::rotation::<Eph, Eop, Nut>(
+            jd, ctx,
+        );
 
     icrs_to_j2000 * itrs_to_gcrs
 }

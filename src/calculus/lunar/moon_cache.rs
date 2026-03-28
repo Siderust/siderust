@@ -35,7 +35,7 @@ use crate::astro::sidereal::gast_iau2006;
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::coordinates::transform::context::DefaultEphemeris;
+use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris, DefaultNutationModel};
 use crate::coordinates::transform::AstroContext;
 use crate::time::JulianDate;
 use cheby;
@@ -316,7 +316,11 @@ impl MoonAltitudeContext {
         let sz = self.site_itrf_km[2];
 
         // ITRF → EquatorialMeanJ2000 via full IAU 2006 + EOP chain.
-        let rot_itrs = itrs_to_equatorial_mean_j2000_rotation(jd, &ctx);
+        let rot_itrs = itrs_to_equatorial_mean_j2000_rotation::<
+            DefaultEphemeris,
+            DefaultEop,
+            DefaultNutationModel,
+        >(jd, &ctx);
         let [site_eq_x, site_eq_y, site_eq_z] = rot_itrs * [sx, sy, sz];
 
         let x_topo = x_eq - site_eq_x;
