@@ -285,4 +285,115 @@ mod tests {
             dec_back.to::<Deg>()
         );
     }
+
+    // =====================================================================
+    // Cartesian position transform roundtrips
+    // =====================================================================
+
+    #[test]
+    fn test_cartesian_eq_to_horizontal_roundtrip() {
+        use crate::coordinates::transform::Transform;
+        use qtty::AU;
+
+        let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
+        let jd = JulianDate::new(2460677.0);
+
+        let eq_pos = cartesian::Position::<Topocentric, EquatorialMeanOfDate, qtty::AstronomicalUnit>::from_vec3(
+            site,
+            nalgebra::Vector3::new(0.5 * AU, 0.3 * AU, 0.7 * AU),
+        );
+
+        let hz_pos: cartesian::Position<Topocentric, Horizontal, qtty::AstronomicalUnit> =
+            eq_pos.transform(jd);
+        let eq_back: cartesian::Position<
+            Topocentric,
+            EquatorialMeanOfDate,
+            qtty::AstronomicalUnit,
+        > = hz_pos.transform(jd);
+
+        // Distance should be preserved
+        assert!(
+            (eq_pos.distance() - hz_pos.distance()).abs() < 1e-10,
+            "Distance should be preserved in eq→hz"
+        );
+        assert!(
+            (eq_pos.distance() - eq_back.distance()).abs() < 1e-10,
+            "Distance should be preserved in roundtrip"
+        );
+
+        // Position should roundtrip
+        assert!((eq_back.x() - eq_pos.x()).abs() < 1e-6 * AU, "x mismatch");
+        assert!((eq_back.y() - eq_pos.y()).abs() < 1e-6 * AU, "y mismatch");
+        assert!((eq_back.z() - eq_pos.z()).abs() < 1e-6 * AU, "z mismatch");
+    }
+
+    // =====================================================================
+    // Spherical position transforms
+    // =====================================================================
+
+    #[test]
+    fn test_spherical_eq_to_horizontal_roundtrip() {
+        use crate::coordinates::transform::Transform;
+        use qtty::AU;
+
+        let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
+        let jd = JulianDate::new(2460677.0);
+
+        // Build a spherical equatorial position via cartesian → spherical
+        let eq_cart = cartesian::Position::<
+            Topocentric,
+            EquatorialMeanOfDate,
+            qtty::AstronomicalUnit,
+        >::from_vec3(
+            site, nalgebra::Vector3::new(0.5 * AU, 0.3 * AU, 0.7 * AU)
+        );
+        let eq_sph = spherical::Position::<Topocentric, EquatorialMeanOfDate, qtty::AstronomicalUnit>::from_cartesian(&eq_cart);
+
+        let hz_sph: spherical::Position<Topocentric, Horizontal, qtty::AstronomicalUnit> =
+            eq_sph.transform(jd);
+        let eq_back: spherical::Position<
+            Topocentric,
+            EquatorialMeanOfDate,
+            qtty::AstronomicalUnit,
+        > = hz_sph.transform(jd);
+
+        // Distance should be preserved
+        assert!(
+            (eq_sph.distance - hz_sph.distance).abs() < 1e-10 * AU,
+            "Distance should be preserved"
+        );
+
+        // Position should roundtrip
+        let eq_cart_back = eq_back.to_cartesian();
+        let eq_cart_orig = eq_sph.to_cartesian();
+        assert!((eq_cart_back.x() - eq_cart_orig.x()).abs() < 1e-6 * AU, "x");
+        assert!((eq_cart_back.y() - eq_cart_orig.y()).abs() < 1e-6 * AU, "y");
+        assert!((eq_cart_back.z() - eq_cart_orig.z()).abs() < 1e-6 * AU, "z");
+    }
+
+    // =====================================================================
+    // Different observer latitudes
+    // =====================================================================
+
+    #[test]
+    fn test_observer_at_equator() {
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
+        let jd = JulianDate::J2000;
+        let site_trig = SiteTrig::from_site(&site);
+
+        // Object on meridian at dec=0 should be at altitude 0 (horizon) or 90 (zenith)
+        let gmst = gmst_from_tt(jd);
+        let lst_rad = gmst.value() + site.lon.to::<Radian>().value();
+        let ra: Degrees = Quantity::<Deg>::new(lst_rad.to_degrees());
+        let dec = 0.0 * DEG; // Equator
+
+        let (alt, _az) = equatorial_to_horizontal_angles(ra, dec, &site, &site_trig, jd);
+        // On meridian at dec=lat=0 → altitude should be ~90° (zenith)
+        let expected_alt = std::f64::consts::FRAC_PI_2 * RAD;
+        assert!(
+            (alt - expected_alt).abs() < 1e-6 * RAD,
+            "Expected zenith at equator, got alt={}",
+            alt.to::<Deg>()
+        );
+    }
 }

@@ -452,8 +452,8 @@ typedef struct siderust_orbit_t {
   double inclination_deg;
   // Longitude of the ascending node in degrees.
   double lon_ascending_node_deg;
-  // Argument of perihelion in degrees.
-  double arg_perihelion_deg;
+  // Argument of periapsis in degrees.
+  double arg_periapsis_deg;
   // Mean anomaly at epoch in degrees.
   double mean_anomaly_deg;
   // Epoch as a Julian Date.
@@ -489,6 +489,52 @@ typedef struct siderust_cartesian_pos_t {
 // Bodycentric reference center: which standard center the orbit is relative to.
 // Must match `OrbitReferenceCenter` in siderust: Barycentric=0, Heliocentric=1, Geocentric=2.
 typedef uint8_t SiderustOrbitRefCenter;
+
+// Mean-motion-driven elliptic orbital elements.
+typedef struct siderust_mean_motion_orbit_t {
+  // Semi-major axis in astronomical units.
+  double semi_major_axis_au;
+  // Orbital eccentricity.
+  double eccentricity;
+  // Orbital inclination in degrees.
+  double inclination_deg;
+  // Longitude of the ascending node in degrees.
+  double lon_ascending_node_deg;
+  // Argument of periapsis in degrees.
+  double arg_periapsis_deg;
+  // Mean motion in degrees per day.
+  double mean_motion_deg_per_day;
+  // Epoch as a Julian Date. Mean anomaly is defined to be zero at this epoch.
+  double epoch_jd;
+} siderust_mean_motion_orbit_t;
+
+// Unified conic elements expressed using periapsis distance.
+typedef struct siderust_conic_orbit_t {
+  // Periapsis distance in astronomical units.
+  double periapsis_distance_au;
+  // Orbital eccentricity.
+  double eccentricity;
+  // Orbital inclination in degrees.
+  double inclination_deg;
+  // Longitude of the ascending node in degrees.
+  double lon_ascending_node_deg;
+  // Argument of periapsis in degrees.
+  double arg_periapsis_deg;
+  // Mean anomaly at epoch in degrees.
+  double mean_anomaly_deg;
+  // Epoch as a Julian Date.
+  double epoch_jd;
+} siderust_conic_orbit_t;
+
+// Opaque handle to a validated, precomputed Keplerian orbit.
+//
+// Created via [`siderust_prepared_orbit_create`], used for repeated
+// propagation via [`siderust_prepared_orbit_position`], and freed via
+// [`siderust_prepared_orbit_destroy`].
+//
+// This avoids per-call reconstruction, validation, and trig precomputation
+// when propagating the same orbit at many epochs.
+typedef void *SiderustPreparedOrbitHandle;
 
 // Parameters for a body-centric coordinate system.
 //
@@ -1212,17 +1258,51 @@ siderust_status_t siderust_cartesian_pos_transform_center(struct siderust_cartes
                                                           double jd,
                                                           struct siderust_cartesian_pos_t *out);
 
-// Compute the Keplerian orbital position at a given Julian date.
+// Compute the Keplerian orbital position at a given Julian date, with
+// explicit output center semantics.
 //
-// Returns position in EclipticMeanJ2000 frame (AU), where the reference
-// center equals the orbit's own reference center (e.g. heliocentric for a
-// planet's orbit).  The `center` field of `out` is set to `Heliocentric` as
-// a placeholder; callers should interpret it according to `orbit_center` from
-// the associated `siderust_bodycentric_params_t`.
+// `orbit_center` specifies which reference center the orbit elements are
+// relative to (0=Barycentric, 1=Heliocentric, 2=Geocentric). The `center`
+// field of `out` will be set accordingly.
 
-siderust_status_t siderust_kepler_position(struct siderust_orbit_t orbit,
-                                           double jd,
-                                           struct siderust_cartesian_pos_t *out);
+siderust_status_t siderust_kepler_position_ex(struct siderust_orbit_t orbit,
+                                              SiderustOrbitRefCenter orbit_center,
+                                              double jd,
+                                              struct siderust_cartesian_pos_t *out);
+
+// Compute the position of an explicit mean-motion orbit at a given Julian date.
+
+siderust_status_t siderust_mean_motion_position(struct siderust_mean_motion_orbit_t orbit,
+                                                double jd,
+                                                struct siderust_cartesian_pos_t *out);
+
+// Compute the position of a unified conic orbit at a given Julian date.
+
+siderust_status_t siderust_conic_position(struct siderust_conic_orbit_t orbit,
+                                          double jd,
+                                          struct siderust_cartesian_pos_t *out);
+
+// Create a validated, precomputed orbit handle from Keplerian elements.
+//
+// Returns `Ok` and writes a non-null handle on success. Returns
+// `InvalidArgument` if the orbit is not a valid ellipse.
+
+siderust_status_t siderust_prepared_orbit_create(struct siderust_orbit_t orbit,
+                                                 SiderustPreparedOrbitHandle *out);
+
+// Propagate a prepared orbit to a given Julian date.
+//
+// `handle` must have been created via [`siderust_prepared_orbit_create`].
+// This is the fastest FFI propagation path: no validation, no reconstruction.
+
+siderust_status_t siderust_prepared_orbit_position(SiderustPreparedOrbitHandle handle,
+                                                   double jd,
+                                                   struct siderust_cartesian_pos_t *out);
+
+// Destroy a prepared orbit handle, freeing its memory.
+//
+// After this call, `handle` must not be used again.
+ siderust_status_t siderust_prepared_orbit_destroy(SiderustPreparedOrbitHandle handle);
 
 // Transform a Cartesian position to body-centric coordinates.
 //

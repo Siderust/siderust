@@ -102,6 +102,7 @@
 
 pub mod altitude;
 pub mod azimuth;
+pub mod conic_equations;
 pub mod elp2000;
 pub mod ephemeris;
 pub mod horizontal;

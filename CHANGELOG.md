@@ -6,6 +6,33 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+* **Conic orbit API** for propagation models that are not plain elliptic Kepler elements.
+  * `astro::conic::{ConicOrbit, MeanMotionOrbit, ConicError}` plus re-exported `ConicKind`
+  * `calculus::conic_equations::{calculate_conic_position, calculate_mean_motion_position}`
+  * `ConicOrbit::position_at(...)` for elliptic and hyperbolic propagation (`ParabolicUnsupported` for `e == 1`)
+* `PreparedOrbit` for repeated elliptic propagation with cached mean motion, precomputed orientation trig, and a fast `position_at(...)` path.
+* `astro::units::{GaussianYear, GaussianYears, GAUSSIAN_YEAR}` for AU-day / Gaussian-year orbital period work.
+* Crate-root re-exports for `KeplerianOrbit`, `PreparedOrbit`, `ConicOrbit`, `MeanMotionOrbit`, `ConicError`, `ConicKind`, `twilight`, and `Twilight`.
+* **FFI orbit extensions** in `siderust-ffi`.
+  * New C structs: `siderust_mean_motion_orbit_t` and `siderust_conic_orbit_t`
+  * New propagation APIs: `siderust_kepler_position_ex`, `siderust_mean_motion_position`, and `siderust_conic_position`
+  * New prepared-orbit handle lifecycle: `siderust_prepared_orbit_create`, `siderust_prepared_orbit_position`, and `siderust_prepared_orbit_destroy`
+
+### Changed
+* `astro::orbit::Orbit` has been renamed to `KeplerianOrbit`, making the elliptic-only semantics explicit across public builders, body constants, examples, and `BodycentricParams`.
+* Orbit construction now exposes validated `try_new(...)` entry points for `KeplerianOrbit`, `MeanMotionOrbit`, and `ConicOrbit`, while unchecked `new(...)` remains available for trusted compile-time constants.
+* Orbital shape and orientation data now flow through `affn` conic primitives; `siderust` keeps the astronomy-specific epoch, anomaly, and propagation semantics on top.
+* Terminology now consistently uses `argument_of_periapsis` / `arg_periapsis_deg` instead of perihelion-specific naming in both Rust and FFI orbit types.
+* `siderust_kepler_position` is now documented as a legacy FFI entry point; `siderust_kepler_position_ex` should be preferred when the orbit reference center matters.
+
+### Removed
+* Legacy compatibility namespaces `coordinates::types::direction` and `coordinates::types::position`; use the explicit aliases or the `coordinates::spherical::{direction, position}` modules instead.
+* `calculus::horizontal::equatorial_to_horizontal_with_ctx`; use `equatorial_to_horizontal_true_of_date_with_ctx` instead.
+
+### Fixed
+* FFI orbit propagation can now preserve the declared orbit reference center in output metadata via `siderust_kepler_position_ex`, instead of always tagging results as heliocentric.
+
 ## [0.6.0] - 08/03/2026
 
 ### Added

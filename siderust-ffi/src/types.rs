@@ -553,8 +553,8 @@ pub struct SiderustOrbit {
     pub inclination_deg: f64,
     /// Longitude of the ascending node in degrees.
     pub lon_ascending_node_deg: f64,
-    /// Argument of perihelion in degrees.
-    pub arg_perihelion_deg: f64,
+    /// Argument of periapsis in degrees.
+    pub arg_periapsis_deg: f64,
     /// Mean anomaly at epoch in degrees.
     pub mean_anomaly_deg: f64,
     /// Epoch as a Julian Date.
@@ -563,26 +563,163 @@ pub struct SiderustOrbit {
 
 impl SiderustOrbit {
     /// Convert to the Rust domain type.
-    pub fn to_rust(&self) -> siderust::astro::orbit::Orbit {
-        siderust::astro::orbit::Orbit::new(
+    pub fn to_rust(&self) -> siderust::astro::orbit::KeplerianOrbit {
+        siderust::astro::orbit::KeplerianOrbit::new(
             AstronomicalUnits::new(self.semi_major_axis_au),
             self.eccentricity,
             Degrees::new(self.inclination_deg),
             Degrees::new(self.lon_ascending_node_deg),
-            Degrees::new(self.arg_perihelion_deg),
+            Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
             JulianDate::new(self.epoch_jd),
         )
     }
 
     /// Create from the Rust domain type.
-    pub fn from_rust(o: &siderust::astro::orbit::Orbit) -> Self {
+    pub fn from_rust(o: &siderust::astro::orbit::KeplerianOrbit) -> Self {
         Self {
-            semi_major_axis_au: o.semi_major_axis.value(),
-            eccentricity: o.eccentricity,
-            inclination_deg: o.inclination.value(),
-            lon_ascending_node_deg: o.longitude_of_ascending_node.value(),
-            arg_perihelion_deg: o.argument_of_perihelion.value(),
+            semi_major_axis_au: o.shape().semi_major_axis().value(),
+            eccentricity: o.shape().eccentricity(),
+            inclination_deg: o.orientation().inclination().value(),
+            lon_ascending_node_deg: o.orientation().longitude_of_ascending_node().value(),
+            arg_periapsis_deg: o.orientation().argument_of_periapsis().value(),
+            mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
+            epoch_jd: o.epoch.value(),
+        }
+    }
+}
+
+/// Mean-motion-driven elliptic orbital elements.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct SiderustMeanMotionOrbit {
+    /// Semi-major axis in astronomical units.
+    pub semi_major_axis_au: f64,
+    /// Orbital eccentricity.
+    pub eccentricity: f64,
+    /// Orbital inclination in degrees.
+    pub inclination_deg: f64,
+    /// Longitude of the ascending node in degrees.
+    pub lon_ascending_node_deg: f64,
+    /// Argument of periapsis in degrees.
+    pub arg_periapsis_deg: f64,
+    /// Mean motion in degrees per day.
+    pub mean_motion_deg_per_day: f64,
+    /// Epoch as a Julian Date. Mean anomaly is defined to be zero at this epoch.
+    pub epoch_jd: f64,
+}
+
+impl SiderustMeanMotionOrbit {
+    /// Convert to the Rust domain type.
+    pub fn to_rust(&self) -> siderust::MeanMotionOrbit {
+        siderust::MeanMotionOrbit::new_unchecked(
+            AstronomicalUnits::new(self.semi_major_axis_au),
+            self.eccentricity,
+            Degrees::new(self.inclination_deg),
+            Degrees::new(self.lon_ascending_node_deg),
+            Degrees::new(self.arg_periapsis_deg),
+            self.mean_motion_deg_per_day,
+            JulianDate::new(self.epoch_jd),
+        )
+    }
+
+    /// Convert to the Rust domain type with validation.
+    ///
+    /// Returns an error if any field is invalid: non-positive semi-major axis,
+    /// non-finite or negative eccentricity, non-finite orientation angles, or
+    /// eccentricity ≥ 1 (this type only supports elliptic orbits).
+    pub fn try_to_rust(&self) -> Result<siderust::MeanMotionOrbit, siderust::ConicError> {
+        siderust::MeanMotionOrbit::try_new(
+            AstronomicalUnits::new(self.semi_major_axis_au),
+            self.eccentricity,
+            Degrees::new(self.inclination_deg),
+            Degrees::new(self.lon_ascending_node_deg),
+            Degrees::new(self.arg_periapsis_deg),
+            self.mean_motion_deg_per_day,
+            JulianDate::new(self.epoch_jd),
+        )
+    }
+
+    /// Create from the Rust domain type.
+    pub fn from_rust(o: &siderust::MeanMotionOrbit) -> Self {
+        Self {
+            semi_major_axis_au: o.geometry().shape().semi_major_axis().value(),
+            eccentricity: o.geometry().shape().eccentricity(),
+            inclination_deg: o.geometry().orientation().inclination().value(),
+            lon_ascending_node_deg: o
+                .geometry()
+                .orientation()
+                .longitude_of_ascending_node()
+                .value(),
+            arg_periapsis_deg: o.geometry().orientation().argument_of_periapsis().value(),
+            mean_motion_deg_per_day: o.mean_motion_deg_per_day,
+            epoch_jd: o.epoch.value(),
+        }
+    }
+}
+
+/// Unified conic elements expressed using periapsis distance.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct SiderustConicOrbit {
+    /// Periapsis distance in astronomical units.
+    pub periapsis_distance_au: f64,
+    /// Orbital eccentricity.
+    pub eccentricity: f64,
+    /// Orbital inclination in degrees.
+    pub inclination_deg: f64,
+    /// Longitude of the ascending node in degrees.
+    pub lon_ascending_node_deg: f64,
+    /// Argument of periapsis in degrees.
+    pub arg_periapsis_deg: f64,
+    /// Mean anomaly at epoch in degrees.
+    pub mean_anomaly_deg: f64,
+    /// Epoch as a Julian Date.
+    pub epoch_jd: f64,
+}
+
+impl SiderustConicOrbit {
+    /// Convert to the Rust domain type.
+    pub fn to_rust(&self) -> siderust::ConicOrbit {
+        siderust::ConicOrbit::new_unchecked(
+            AstronomicalUnits::new(self.periapsis_distance_au),
+            self.eccentricity,
+            Degrees::new(self.inclination_deg),
+            Degrees::new(self.lon_ascending_node_deg),
+            Degrees::new(self.arg_periapsis_deg),
+            Degrees::new(self.mean_anomaly_deg),
+            JulianDate::new(self.epoch_jd),
+        )
+    }
+
+    /// Convert to the Rust domain type with validation.
+    ///
+    /// Returns an error if any field is invalid: non-positive periapsis distance,
+    /// non-finite or negative eccentricity, or non-finite orientation angles.
+    pub fn try_to_rust(&self) -> Result<siderust::ConicOrbit, siderust::ConicError> {
+        siderust::ConicOrbit::try_new(
+            AstronomicalUnits::new(self.periapsis_distance_au),
+            self.eccentricity,
+            Degrees::new(self.inclination_deg),
+            Degrees::new(self.lon_ascending_node_deg),
+            Degrees::new(self.arg_periapsis_deg),
+            Degrees::new(self.mean_anomaly_deg),
+            JulianDate::new(self.epoch_jd),
+        )
+    }
+
+    /// Create from the Rust domain type.
+    pub fn from_rust(o: &siderust::ConicOrbit) -> Self {
+        Self {
+            periapsis_distance_au: o.geometry().shape().periapsis_distance().value(),
+            eccentricity: o.geometry().shape().eccentricity(),
+            inclination_deg: o.geometry().orientation().inclination().value(),
+            lon_ascending_node_deg: o
+                .geometry()
+                .orientation()
+                .longitude_of_ascending_node()
+                .value(),
+            arg_periapsis_deg: o.geometry().orientation().argument_of_periapsis().value(),
             mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
             epoch_jd: o.epoch.value(),
         }
@@ -1065,7 +1202,7 @@ mod tests {
             eccentricity: 0.017,
             inclination_deg: 7.25,
             lon_ascending_node_deg: 48.3,
-            arg_perihelion_deg: 102.9,
+            arg_periapsis_deg: 102.9,
             mean_anomaly_deg: 100.0,
             epoch_jd: 2_451_545.0,
         };
@@ -1075,6 +1212,40 @@ mod tests {
         assert!((back.eccentricity - 0.017).abs() < 1e-10);
         assert!((back.inclination_deg - 7.25).abs() < 1e-10);
         assert!((back.epoch_jd - 2_451_545.0).abs() < 1e-10);
+    }
+
+    #[test]
+    fn mean_motion_orbit_roundtrip() {
+        let orig = SiderustMeanMotionOrbit {
+            semi_major_axis_au: 1.0,
+            eccentricity: 0.0167,
+            inclination_deg: 7.25,
+            lon_ascending_node_deg: 48.3,
+            arg_periapsis_deg: 102.9,
+            mean_motion_deg_per_day: 0.9856,
+            epoch_jd: 2_451_545.0,
+        };
+        let rust = orig.to_rust();
+        let back = SiderustMeanMotionOrbit::from_rust(&rust);
+        assert!((back.semi_major_axis_au - 1.0).abs() < 1e-10);
+        assert!((back.mean_motion_deg_per_day - 0.9856).abs() < 1e-10);
+    }
+
+    #[test]
+    fn conic_orbit_roundtrip() {
+        let orig = SiderustConicOrbit {
+            periapsis_distance_au: 0.4335,
+            eccentricity: 1.0009,
+            inclination_deg: 110.8,
+            lon_ascending_node_deg: 260.0,
+            arg_periapsis_deg: 68.1,
+            mean_anomaly_deg: 0.0,
+            epoch_jd: 2_458_997.0,
+        };
+        let rust = orig.to_rust();
+        let back = SiderustConicOrbit::from_rust(&rust);
+        assert!((back.periapsis_distance_au - 0.4335).abs() < 1e-10);
+        assert!((back.eccentricity - 1.0009).abs() < 1e-10);
     }
 
     // ── SiderustSearchOpts ───────────────────────────────────────────────
@@ -1362,6 +1533,16 @@ mod tests {
     #[test]
     fn layout_orbit() {
         assert_layout!(SiderustOrbit, size = 56, align = 8);
+    }
+
+    #[test]
+    fn layout_mean_motion_orbit() {
+        assert_layout!(SiderustMeanMotionOrbit, size = 56, align = 8);
+    }
+
+    #[test]
+    fn layout_conic_orbit() {
+        assert_layout!(SiderustConicOrbit, size = 56, align = 8);
     }
 
     #[test]
