@@ -433,4 +433,117 @@ mod tests {
         assert!(format!("{}", astrometric).contains("Astrometric"));
         assert!(format!("{}", apparent).contains("Apparent"));
     }
+
+    // =====================================================================
+    // Cartesian direction paths
+    // =====================================================================
+
+    #[test]
+    fn test_cartesian_astrometric_to_apparent_roundtrip() {
+        let jd = JulianDate::J2000;
+        let obs = ObserverState::geocentric(jd);
+
+        let cart_dir = cartesian::Direction::<crate::coordinates::frames::EquatorialMeanJ2000>::new(
+            0.6, 0.7, 0.3,
+        );
+        let astrometric = Astrometric::new(cart_dir);
+
+        let apparent = astrometric.to_apparent(&obs);
+        let recovered = apparent.to_astrometric(&obs);
+
+        let orig = astrometric.direction();
+        let rec = recovered.direction();
+        assert!((rec.x() - orig.x()).abs() < 1e-8);
+        assert!((rec.y() - orig.y()).abs() < 1e-8);
+        assert!((rec.z() - orig.z()).abs() < 1e-8);
+    }
+
+    #[test]
+    fn test_cartesian_aberration_introduces_shift() {
+        let jd = JulianDate::J2000;
+        let obs = ObserverState::geocentric(jd);
+
+        let cart_dir = cartesian::Direction::<crate::coordinates::frames::EquatorialMeanJ2000>::new(
+            1.0, 0.0, 0.0,
+        );
+        let astrometric = Astrometric::new(cart_dir);
+        let apparent = astrometric.to_apparent(&obs);
+
+        let orig = astrometric.direction();
+        let shifted = apparent.direction();
+        let delta = (shifted.x() - orig.x()).abs()
+            + (shifted.y() - orig.y()).abs()
+            + (shifted.z() - orig.z()).abs();
+        assert!(delta > 0.0, "Aberration should shift the direction");
+        assert!(
+            delta < 0.001,
+            "Aberration shift should be small, got {}",
+            delta
+        );
+    }
+
+    #[test]
+    fn test_cartesian_into_inner() {
+        let cart_dir = cartesian::Direction::<crate::coordinates::frames::EquatorialMeanJ2000>::new(
+            0.0, 0.0, 1.0,
+        );
+        let astrometric = Astrometric::new(cart_dir);
+        let inner = astrometric.into_inner();
+        assert!((inner.z() - 1.0).abs() < 1e-12);
+    }
+
+    // =====================================================================
+    // Display / LowerExp / UpperExp formatting
+    // =====================================================================
+
+    #[test]
+    fn test_display_formatting() {
+        let dir = spherical::direction::EquatorialMeanJ2000::new(10.0 * DEG, 20.0 * DEG);
+        let astrometric = Astrometric::new(dir);
+        let display = format!("{}", astrometric);
+        assert!(display.starts_with("Astrometric("));
+        assert!(display.ends_with(')'));
+    }
+
+    #[test]
+    fn test_apparent_display_formatting() {
+        let jd = JulianDate::J2000;
+        let obs = ObserverState::geocentric(jd);
+        let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
+            10.0 * DEG,
+            20.0 * DEG,
+        ));
+        let apparent = astrometric.to_apparent(&obs);
+        let display = format!("{}", apparent);
+        assert!(display.starts_with("Apparent("));
+        assert!(display.ends_with(')'));
+    }
+
+    #[test]
+    fn test_lower_exp_formatting() {
+        let dir = spherical::direction::EquatorialMeanJ2000::new(10.0 * DEG, 20.0 * DEG);
+        let astrometric = Astrometric::new(dir);
+        let display = format!("{:e}", astrometric);
+        assert!(display.starts_with("Astrometric("));
+
+        let jd = JulianDate::J2000;
+        let obs = ObserverState::geocentric(jd);
+        let apparent = astrometric.to_apparent(&obs);
+        let display = format!("{:e}", apparent);
+        assert!(display.starts_with("Apparent("));
+    }
+
+    #[test]
+    fn test_upper_exp_formatting() {
+        let dir = spherical::direction::EquatorialMeanJ2000::new(10.0 * DEG, 20.0 * DEG);
+        let astrometric = Astrometric::new(dir);
+        let display = format!("{:E}", astrometric);
+        assert!(display.starts_with("Astrometric("));
+
+        let jd = JulianDate::J2000;
+        let obs = ObserverState::geocentric(jd);
+        let apparent = astrometric.to_apparent(&obs);
+        let display = format!("{:E}", apparent);
+        assert!(display.starts_with("Apparent("));
+    }
 }
