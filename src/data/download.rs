@@ -3,7 +3,7 @@
 
 //! HTTP download with progress reporting.
 //!
-//! Uses `ureq` (sync, minimal dependency footprint — no async runtime).
+//! Uses `ureq` (sync, minimal dependency footprint, no async runtime).
 
 use super::registry::DatasetMeta;
 use super::DataError;

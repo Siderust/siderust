@@ -9,11 +9,11 @@
 //!
 //! ## Module Structure
 //!
-//! - [`types`] — Core type definitions (events, queries, periods)
-//! - [`search`] — Search options and configuration constants
-//! - [`compute`] — Low-level altitude computation functions
-//! - [`events`] — Event finding (crossings, culminations, ranges)
-//! - [`provider`] — Trait-based dispatch for bodies
+//! - [`types`], Core type definitions (events, queries, periods)
+//! - [`search`], Search options and configuration constants
+//! - [`compute`], Low-level altitude computation functions
+//! - [`events`], Event finding (crossings, culminations, ranges)
+//! - [`provider`], Trait-based dispatch for bodies
 //!
 //! ## Public Functions
 //!

@@ -73,7 +73,7 @@ fn regen_tables() {
 
     if !regen {
         eprintln!(
-            "siderust build (regen-data): SIDERUST_REGEN not set — skipping table regeneration."
+            "siderust build (regen-data): SIDERUST_REGEN not set, skipping table regeneration."
         );
         return;
     }

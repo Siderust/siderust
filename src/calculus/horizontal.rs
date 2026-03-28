@@ -11,13 +11,13 @@
 //! `lunar::moon_equations`.
 
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
-use crate::astro::eop::EopProvider;
-use crate::astro::nutation::nutation_iau2000b;
+use crate::astro::nutation::{nutation_iau2000b, NutationModel};
 use crate::astro::precession;
 use crate::astro::sidereal::gast_iau2006;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::coordinates::transform::AstroContext;
+use crate::coordinates::transform::centers::position::to_topocentric::to_topocentric_with;
+use crate::coordinates::transform::{AstroContext, TransformContext};
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, Degree, LengthUnit, Meter, Quantity, Radian, Radians};
@@ -52,24 +52,19 @@ where
 }
 
 /// Context-aware variant of [`geocentric_j2000_to_apparent_topocentric`].
-pub fn geocentric_j2000_to_apparent_topocentric_with_ctx<
-    U: LengthUnit,
-    Eph,
-    Eop: EopProvider,
-    Nut,
->(
+pub fn geocentric_j2000_to_apparent_topocentric_with_ctx<U: LengthUnit, Ctx>(
     geo_cart_j2000: &cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, U>,
     site: Geodetic<frames::ECEF>,
     jd: JulianDate,
-    ctx: &AstroContext<Eph, Eop, Nut>,
+    ctx: &Ctx,
 ) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>
 where
+    Ctx: TransformContext,
+    Ctx::Eph: crate::calculus::ephemeris::Ephemeris,
     Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
 {
-    use crate::coordinates::transform::to_topocentric_with_ctx;
-
     // 1) Translate geocentric → topocentric in J2000 frame (applies parallax)
-    let topo_cart_j2000 = to_topocentric_with_ctx(geo_cart_j2000, site, jd, ctx);
+    let topo_cart_j2000 = to_topocentric_with(geo_cart_j2000, site, jd, ctx);
 
     // 2) Rotate J2000 → mean-of-date using IAU 2006 precession
     let rot_prec = precession::precession_matrix_iau2006(jd);
@@ -88,8 +83,13 @@ where
             z_m,
         );
 
-    // 3) Apply nutation rotation (mean-of-date → true-of-date) — IAU 2000B
-    let rot_nut = crate::astro::nutation::nutation_rotation_iau2000b(jd);
+    // 3) Apply the selected nutation rotation (mean-of-date → true-of-date)
+    let nut = Ctx::Nut::nutation(jd);
+    let rot_nut = affn::Rotation3::fused_rx_rz_rx(
+        nut.mean_obliquity + nut.deps,
+        nut.dpsi,
+        -nut.mean_obliquity,
+    );
     let [x_t, y_t, z_t] = rot_nut * [topo_cart_mod.x(), topo_cart_mod.y(), topo_cart_mod.z()];
 
     let topo_cart_true =
@@ -138,21 +138,24 @@ pub fn equatorial_to_horizontal_true_of_date<U: LengthUnit>(
 /// Context-aware variant of [`equatorial_to_horizontal_true_of_date`].
 ///
 /// Uses the context EOP provider to derive UT1 for GAST.
-pub fn equatorial_to_horizontal_true_of_date_with_ctx<U: LengthUnit, Eph, Eop: EopProvider, Nut>(
+pub fn equatorial_to_horizontal_true_of_date_with_ctx<U: LengthUnit, Ctx>(
     eq_position: &spherical::Position<Topocentric, frames::EquatorialTrueOfDate, U>,
     site: Geodetic<ECEF>,
     jd: JulianDate,
-    ctx: &AstroContext<Eph, Eop, Nut>,
-) -> spherical::Position<Topocentric, frames::Horizontal, U> {
+    ctx: &Ctx,
+) -> spherical::Position<Topocentric, frames::Horizontal, U>
+where
+    Ctx: TransformContext,
+{
     // Extract RA, Dec, distance from the equatorial position
     let ra = eq_position.azimuth;
     let dec = eq_position.polar;
     let distance = eq_position.distance;
 
     // True-of-date RA/Dec must use apparent sidereal time (GAST).
-    let eop = ctx.eop_at(jd);
+    let eop = ctx.astro_context().eop_at(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
-    let nut = nutation_iau2000b(jd);
+    let nut = Ctx::Nut::nutation(jd);
     let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
     let lst = gast + site.lon.to::<Radian>();
     let ha = (lst - ra.to::<Radian>())

@@ -30,9 +30,9 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> AuShift {
         rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(Eph::sun_barycentric(jd), jd, ctx)
     }
@@ -44,9 +44,9 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> AuShift {
         inverse_shift::<Barycentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
@@ -66,9 +66,9 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> AuShift {
         rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(Eph::earth_barycentric(jd), jd, ctx)
     }
@@ -80,9 +80,9 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> AuShift {
         inverse_shift::<Barycentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
@@ -98,9 +98,9 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> AuShift {
         compose_shift::<Heliocentric, Barycentric, Geocentric, F, Eph, Eop, Nut>(jd, ctx)
     }
@@ -112,9 +112,9 @@ where
     (): FrameRotationProvider<EclipticMeanJ2000, F>,
 {
     #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut>(
+    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> AuShift {
         inverse_shift::<Geocentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
     }

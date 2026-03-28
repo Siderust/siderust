@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Extrema Finding — Golden‑Section Search & Classification
+//! # Extrema Finding, Golden‑Section Search & Classification
 //!
 //! Derivative‑free optimisation for scalar functions of one variable.
 //! Finds local minima, maxima, and classifies stationary points.

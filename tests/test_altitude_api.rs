@@ -34,7 +34,7 @@ fn greenwich() -> Geodetic<ECEF> {
 }
 
 // ===========================================================================
-// altitude_at — single-point smoke tests (via trait)
+// altitude_at, single-point smoke tests (via trait)
 // ===========================================================================
 
 #[test]
@@ -74,7 +74,7 @@ fn altitude_at_sirius_reasonable() {
 }
 
 // ===========================================================================
-// crossings — sunrise / sunset
+// crossings, sunrise / sunset
 // ===========================================================================
 
 #[test]
@@ -131,7 +131,7 @@ fn crossings_sun_astronomical_twilight() {
 }
 
 // ===========================================================================
-// culminations — solar transit & anti-transit
+// culminations, solar transit & anti-transit
 // ===========================================================================
 
 #[test]
@@ -176,7 +176,7 @@ fn culminations_moon_one_day() {
 }
 
 // ===========================================================================
-// above/below threshold — day/night periods
+// above/below threshold, day/night periods
 // ===========================================================================
 
 #[test]
@@ -235,7 +235,7 @@ fn below_threshold_astronomical_night_week() {
 }
 
 // ===========================================================================
-// altitude_ranges — twilight band
+// altitude_ranges, twilight band
 // ===========================================================================
 
 #[test]
@@ -294,14 +294,14 @@ fn moon_above_horizon_week() {
 }
 
 // ===========================================================================
-// Fixed star — Polaris should be circumpolar at high latitude
+// Fixed star, Polaris should be circumpolar at high latitude
 // ===========================================================================
 
 #[test]
 fn polaris_always_above_horizon_at_greenwich() {
     // Polaris: RA ≈ 37.95°, Dec ≈ +89.26° (J2000)
     let polaris = direction::ICRS::new(Degrees::new(37.95), Degrees::new(89.26));
-    let site = greenwich(); // 51.5°N — Polaris is circumpolar here
+    let site = greenwich(); // 51.5°N, Polaris is circumpolar here
 
     let window = Period::new(
         ModifiedJulianDate::new(60000.0),
@@ -318,7 +318,7 @@ fn polaris_always_above_horizon_at_greenwich() {
     );
     assert!(
         events.is_empty(),
-        "Polaris should be circumpolar at 51.5°N — found {} crossings",
+        "Polaris should be circumpolar at 51.5°N, found {} crossings",
         events.len()
     );
 

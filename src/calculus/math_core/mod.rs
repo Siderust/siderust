@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Math Core — Astronomy‑Agnostic Numerical Engine
+//! # Math Core, Astronomy‑Agnostic Numerical Engine
 //!
 //! This module contains **all** reusable mathematical logic for scalar event
 //! detection, root finding, extrema search, and interval assembly.  It is

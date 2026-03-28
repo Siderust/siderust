@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Root Finding — Brent & Bisection
+//! # Root Finding, Brent & Bisection
 //!
 //! Robust, astronomy‑agnostic root solvers for scalar functions of one
 //! variable.
@@ -156,7 +156,7 @@ where
     .map(|offset| start.add_duration(offset))
 }
 
-/// Typed Brent solver — all domain arithmetic uses [`Quantity`] types.
+/// Typed Brent solver, all domain arithmetic uses [`Quantity`] types.
 ///
 /// The only raw `f64` values extracted are dimensionless ratios of
 /// same‑unit function values, used as interpolation weights.

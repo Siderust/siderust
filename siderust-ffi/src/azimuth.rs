@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Azimuth FFI — bearing crossings, extrema, and range periods.
+//! Azimuth FFI, bearing crossings, extrema, and range periods.
 //!
 //! ## Preferred API
 //!
@@ -84,7 +84,7 @@ pub unsafe extern "C" fn siderust_azimuth_extrema_free(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Sun azimuth  — thin wrappers
+// Sun azimuth , thin wrappers
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Azimuth of the Sun at an instant (degrees, North-clockwise).
@@ -166,7 +166,7 @@ pub extern "C" fn siderust_sun_in_azimuth_range(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Moon azimuth  — thin wrappers
+// Moon azimuth , thin wrappers
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Azimuth of the Moon at an instant (degrees, North-clockwise).
@@ -248,7 +248,7 @@ pub extern "C" fn siderust_moon_in_azimuth_range(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Star azimuth  — thin wrappers
+// Star azimuth , thin wrappers
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Azimuth of a star at an instant (degrees, North-clockwise).
@@ -309,7 +309,7 @@ pub extern "C" fn siderust_star_in_azimuth_range(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ICRS direction azimuth  — thin wrappers
+// ICRS direction azimuth , thin wrappers
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Azimuth of an ICRS direction at an instant.
