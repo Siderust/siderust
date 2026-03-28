@@ -667,4 +667,79 @@ mod tests {
             "East-counter-clockwise"
         );
     }
+
+    // -----------------------------------------------------------------
+    // Position helpers
+    // -----------------------------------------------------------------
+
+    #[test]
+    fn position_to_native_south_cw() {
+        use crate::coordinates::centers::{Geodetic, Topocentric};
+        use crate::coordinates::frames::ECEF;
+        use qtty::{AstronomicalUnit, AU, M};
+
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
+        let pos =
+            Topocentric::horizontal::<AstronomicalUnit, _>(site, 30.0 * DEG, 45.0 * DEG, 1.0 * AU);
+        let native = position_to_native(&pos, &HorizontalConvention::SOUTH_CLOCKWISE);
+        assert_eq!(native.alt(), 30.0 * DEG);
+        assert_az_eq(native.az(), 225.0);
+        assert!((native.distance - pos.distance).abs() < 1e-15 * AU);
+    }
+
+    #[test]
+    fn position_from_native_south_cw() {
+        use crate::coordinates::centers::{Geodetic, Topocentric};
+        use crate::coordinates::frames::ECEF;
+        use qtty::{AstronomicalUnit, AU, M};
+
+        let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
+        let pos =
+            Topocentric::horizontal::<AstronomicalUnit, _>(site, 30.0 * DEG, 225.0 * DEG, 1.0 * AU);
+        let foreign = position_from_native(&pos, &HorizontalConvention::SOUTH_CLOCKWISE);
+        assert_eq!(foreign.alt(), 30.0 * DEG);
+        assert_az_eq(foreign.az(), 45.0);
+        assert!((foreign.distance - pos.distance).abs() < 1e-15 * AU);
+    }
+
+    #[test]
+    fn position_convert_roundtrip() {
+        use crate::coordinates::centers::{Geodetic, Topocentric};
+        use crate::coordinates::frames::ECEF;
+        use qtty::{AstronomicalUnit, AU, M};
+
+        let site = Geodetic::<ECEF>::new(-17.89 * DEG, 28.75 * DEG, 2396.0 * M);
+        let pos =
+            Topocentric::horizontal::<AstronomicalUnit, _>(site, 60.0 * DEG, 123.0 * DEG, 2.5 * AU);
+
+        let converted = convert_position(
+            &pos,
+            &HorizontalConvention::NORTH_CLOCKWISE,
+            &HorizontalConvention::EAST_COUNTERCLOCKWISE,
+        );
+        let back = convert_position(
+            &converted,
+            &HorizontalConvention::EAST_COUNTERCLOCKWISE,
+            &HorizontalConvention::NORTH_CLOCKWISE,
+        );
+
+        assert_eq!(back.alt(), pos.alt());
+        assert_az_eq(back.az(), pos.az().value());
+        assert!((back.distance - pos.distance).abs() < 1e-15 * AU);
+    }
+
+    #[test]
+    fn position_convert_preserves_site() {
+        use crate::coordinates::centers::{Geodetic, Topocentric};
+        use crate::coordinates::frames::ECEF;
+        use qtty::{AstronomicalUnit, AU, M};
+
+        let site = Geodetic::<ECEF>::new(-17.89 * DEG, 28.75 * DEG, 2396.0 * M);
+        let pos =
+            Topocentric::horizontal::<AstronomicalUnit, _>(site, 45.0 * DEG, 90.0 * DEG, 1.0 * AU);
+
+        let converted = position_to_native(&pos, &HorizontalConvention::SOUTH_CLOCKWISE);
+        assert_eq!(converted.center_params().lat, site.lat);
+        assert_eq!(converted.center_params().lon, site.lon);
+    }
 }
