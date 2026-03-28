@@ -6,7 +6,7 @@
 //! Run with: `cargo run --example 12_solar_system_example`
 
 use qtty::*;
-use siderust::astro::orbit::Orbit;
+use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::planets::{OrbitExt, Planet};
 use siderust::bodies::solar_system::*;
 use siderust::calculus::vsop87::VSOP87;
@@ -66,8 +66,8 @@ fn section_planet_constants_and_periods() {
         println!(
             "{:<8} {:>10.6} {:>10.6} {:>10.2}",
             name,
-            p.orbit.semi_major_axis,
-            p.orbit.eccentricity,
+            p.orbit.shape().semi_major_axis(),
+            p.orbit.shape().eccentricity(),
             p.orbit.period().to::<Day>()
         );
     }
@@ -171,7 +171,7 @@ fn section_planet_builder() {
     let demo_world = Planet::builder()
         .mass(Kilograms::new(5.972e24 * 2.0))
         .radius(Kilometers::new(6371.0 * 1.3))
-        .orbit(Orbit::new(
+        .orbit(KeplerianOrbit::new(
             AstronomicalUnits::new(1.4),
             0.07,
             Degrees::new(4.0),
@@ -185,7 +185,7 @@ fn section_planet_builder() {
     println!("Custom planet built at runtime:");
     println!("  mass   = {}", demo_world.mass);
     println!("  radius = {}", demo_world.radius);
-    println!("  a      = {}", demo_world.orbit.semi_major_axis);
+    println!("  a      = {}", demo_world.orbit.shape().semi_major_axis());
     println!(
         "  sidereal period = {:.2}\n",
         demo_world.orbit.period().to::<Day>()

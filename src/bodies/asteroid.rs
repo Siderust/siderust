@@ -7,7 +7,7 @@
 //! - `name`: String identifier for the asteroid.
 //! - `designation`: system used to formally identify asteroids.
 //! - `composition`: String describing the primary material makeup.
-//! - `orbit`: Orbital parameters (see [`Orbit`]),.
+//! - `orbit`: Orbital parameters (see [`KeplerianOrbit`](crate::astro::orbit::KeplerianOrbit)).
 //!
 //! | Constant | Designation | Class | Potentially Hazardous? | Notes |
 //! |----------|-------------|-------|-----------------------|-------|
@@ -21,7 +21,7 @@
 //!
 //! ---
 
-use crate::astro::orbit::Orbit;
+use crate::astro::orbit::KeplerianOrbit;
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, Degrees};
 
@@ -43,7 +43,7 @@ pub struct Asteroid<'a> {
     pub designation: &'a str,
     pub composition: &'a str,
     pub class: AsteroidClass,
-    pub orbit: Orbit,
+    pub orbit: KeplerianOrbit,
 }
 
 impl<'a> Asteroid<'a> {
@@ -53,7 +53,7 @@ impl<'a> Asteroid<'a> {
         designation: &'a str,
         composition: &'a str,
         class: AsteroidClass,
-        orbit: Orbit,
+        orbit: KeplerianOrbit,
     ) -> Self {
         Self {
             name,
@@ -80,7 +80,7 @@ pub struct AsteroidBuilder<'a> {
     designation: Option<&'a str>,
     composition: Option<&'a str>,
     class: Option<AsteroidClass>,
-    orbit: Option<Orbit>,
+    orbit: Option<KeplerianOrbit>,
 }
 
 impl<'a> AsteroidBuilder<'a> {
@@ -100,7 +100,7 @@ impl<'a> AsteroidBuilder<'a> {
         self.class = Some(class);
         self
     }
-    pub fn orbit(mut self, orbit: Orbit) -> Self {
+    pub fn orbit(mut self, orbit: KeplerianOrbit) -> Self {
         self.orbit = Some(orbit);
         self
     }
@@ -126,7 +126,7 @@ pub const CERES_AST: Asteroid = Asteroid::new_const(
     "(1) Ceres",
     "C‑type (carbonaceous)",
     AsteroidClass::DwarfPlanet,
-    Orbit::new(
+    KeplerianOrbit::new(
         AstronomicalUnits::new(2.7675),
         0.0758,
         Degrees::new(10.5941),
@@ -143,7 +143,7 @@ pub const BENNU: Asteroid = Asteroid::new_const(
     "(101955) Bennu",
     "B‑type (carbonaceous)",
     AsteroidClass::NearEarth,
-    Orbit::new(
+    KeplerianOrbit::new(
         AstronomicalUnits::new(1.1264),
         0.203_745,
         Degrees::new(6.03494),
@@ -160,7 +160,7 @@ pub const APOPHIS: Asteroid = Asteroid::new_const(
     "(99942) Apophis",
     "S‑type (siliceous)",
     AsteroidClass::NearEarth,
-    Orbit::new(
+    KeplerianOrbit::new(
         AstronomicalUnits::new(0.922495),
         0.191_197,
         Degrees::new(3.33146),
