@@ -80,8 +80,10 @@ pub mod providers;
 mod to_cartesian;
 mod to_spherical;
 
-pub use centers::{to_topocentric_with_ctx, IntoTransformArgs, TransformCenter};
-pub use context::{AstroContext, EarthOrientationModel};
+pub use centers::{
+    to_topocentric_with, to_topocentric_with_ctx, IntoTransformArgs, TransformCenter,
+};
+pub use context::{AstroContext, EarthOrientationModel, ModelContext, TransformContext};
 pub use ecliptic_of_date::{FromEclipticTrueOfDate, ToEclipticTrueOfDate};
 pub use ext::{DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt, VectorAstroExt};
 pub use ext::{UsingEngine, WithEngine};
@@ -89,7 +91,10 @@ pub use frames::TransformFrame;
 pub use horizontal::{
     FromHorizontal, ToHorizontal, TopocentricEquatorialExt, TopocentricHorizontalExt,
 };
-pub use providers::{center_shift, frame_rotation, CenterShiftProvider, FrameRotationProvider};
+pub use providers::{
+    center_shift, center_shift_as, center_shift_with, frame_rotation, frame_rotation_as,
+    frame_rotation_with, CenterShiftProvider, FrameRotationProvider,
+};
 
 use crate::coordinates::{
     cartesian, cartesian::Position, centers::ReferenceCenter, frames::MutableFrame, spherical,

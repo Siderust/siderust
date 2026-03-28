@@ -30,7 +30,7 @@ use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::EquatorialMeanJ2000;
 use crate::coordinates::frames::ECEF;
-use crate::coordinates::transform::context::{AstroContext, DefaultEphemeris};
+use crate::coordinates::transform::context::{AstroContext, DefaultEphemeris, TransformContext};
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnit, Day};
 
@@ -117,14 +117,14 @@ impl ObserverState {
     /// Diurnal aberration (~0.3") uses the default EOP-backed Earth-rotation chain.
     pub fn topocentric(site: &Geodetic<ECEF>, jd: JulianDate) -> Self {
         let ctx: AstroContext = AstroContext::default();
-        Self::topocentric_with_ctx(site, jd, &ctx)
+        Self::topocentric_with(site, jd, &ctx)
     }
 
     /// Context-aware topocentric observer state.
     pub fn topocentric_with_ctx<Eph, Eop: EopProvider, Nut: NutationModel>(
         site: &Geodetic<ECEF>,
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> Self {
         use crate::coordinates::transform::TransformFrame;
         use qtty::{Meter, Second, Seconds};
@@ -151,7 +151,7 @@ impl ObserverState {
         let vy_ecef: qtty::Quantity<MetersPerSecond> = (site_itrf_m.x() * OMEGA_EARTH) / one_second;
         let vz_ecef: qtty::Quantity<MetersPerSecond> = qtty::Quantity::zero();
 
-        let rot = itrs_to_equatorial_mean_j2000_rotation(jd, ctx);
+        let rot = itrs_to_equatorial_mean_j2000_rotation::<Eph, Eop, Nut>(jd, ctx);
         let [vx_eq, vy_eq, vz_eq] = rot * [vx_ecef, vy_ecef, vz_ecef];
 
         let v_diurnal = Velocity::<EquatorialMeanJ2000, AuPerDay>::new(
@@ -167,6 +167,15 @@ impl ObserverState {
         );
 
         Self { velocity, jd }
+    }
+
+    /// Context-aware topocentric observer state using a transform context wrapper.
+    pub fn topocentric_with<Ctx>(site: &Geodetic<ECEF>, jd: JulianDate, ctx: &Ctx) -> Self
+    where
+        Ctx: TransformContext,
+        Ctx::Eph: crate::calculus::ephemeris::Ephemeris,
+    {
+        Self::topocentric_with_ctx::<Ctx::Eph, Ctx::Eop, Ctx::Nut>(site, jd, ctx.astro_context())
     }
 
     /// Creates an observer state from explicit velocity components.

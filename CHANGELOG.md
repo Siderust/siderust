@@ -18,6 +18,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   * New C structs: `siderust_mean_motion_orbit_t` and `siderust_conic_orbit_t`
   * New propagation APIs: `siderust_kepler_position_ex`, `siderust_mean_motion_position`, and `siderust_conic_position`
   * New prepared-orbit handle lifecycle: `siderust_prepared_orbit_create`, `siderust_prepared_orbit_position`, and `siderust_prepared_orbit_destroy`
+* New type-level IAU nutation model markers in `astro::nutation`: `Iau2000A`, `Iau2000B`, `Iau2006`, and `Iau2006A`, plus shared runtime identifiers via `NutationModelId`.
+* Runtime Earth-orientation model selection via `EarthOrientationModel`, including ergonomic `to_*_model(...)` coordinate transform methods for model-specific rotation paths.
+* New nutation model showcase example `examples/14_nutation_models.rs`, covering default transforms and custom `AstroContext::with_model::<...>()` usage.
 
 ### Changed
 * `astro::orbit::Orbit` has been renamed to `KeplerianOrbit`, making the elliptic-only semantics explicit across public builders, body constants, examples, and `BodycentricParams`.
@@ -25,6 +28,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Orbital shape and orientation data now flow through `affn` conic primitives; `siderust` keeps the astronomy-specific epoch, anomaly, and propagation semantics on top.
 * Terminology now consistently uses `argument_of_periapsis` / `arg_periapsis_deg` instead of perihelion-specific naming in both Rust and FFI orbit types.
 * `siderust_kepler_position` is now documented as a legacy FFI entry point; `siderust_kepler_position_ex` should be preferred when the orbit reference center matters.
+* Transform defaults now use `Iau2006A` as `DefaultNutationModel`, while keeping opt-in support for `Iau2000A`, `Iau2000B`, and `Iau2006` through typed model contexts.
 
 ### Removed
 * Legacy compatibility namespaces `coordinates::types::direction` and `coordinates::types::position`; use the explicit aliases or the `coordinates::spherical::{direction, position}` modules instead.

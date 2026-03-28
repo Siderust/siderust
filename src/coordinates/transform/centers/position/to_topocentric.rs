@@ -9,7 +9,7 @@ use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
 use crate::coordinates::transform::centers::TransformCenter;
-use crate::coordinates::transform::context::AstroContext;
+use crate::coordinates::transform::context::{AstroContext, TransformContext};
 use crate::time::JulianDate;
 use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 
@@ -26,13 +26,13 @@ fn observer_site_equatorial_mean_j2000_with_ctx<
 >(
     site: Geodetic<ECEF>,
     jd: JulianDate,
-    ctx: &AstroContext<Eph, Eop, Nut>,
+    ctx: &AstroContext<Eph, Eop>,
 ) -> Position<Geocentric, EquatorialMeanJ2000, U>
 where
     Quantity<U>: From<Quantity<Meter>>,
 {
     let site_itrf: Position<Geocentric, ECEF, U> = site.to_cartesian();
-    let rot = itrs_to_equatorial_mean_j2000_rotation(jd, ctx);
+    let rot = itrs_to_equatorial_mean_j2000_rotation::<Eph, Eop, Nut>(jd, ctx);
     let [x_eq, y_eq, z_eq] = rot * [site_itrf.x(), site_itrf.y(), site_itrf.z()];
     Position::<Geocentric, EquatorialMeanJ2000, U>::new_with_params((), x_eq, y_eq, z_eq)
 }
@@ -53,7 +53,7 @@ pub fn to_topocentric_with_ctx<F, U, Eph, Eop, Nut: NutationModel>(
     pos: &Position<Geocentric, F, U>,
     site: Geodetic<ECEF>,
     jd: JulianDate,
-    ctx: &AstroContext<Eph, Eop, Nut>,
+    ctx: &AstroContext<Eph, Eop>,
 ) -> Position<Topocentric, F, U>
 where
     F: MutableFrame,
@@ -63,7 +63,8 @@ where
     Position<Geocentric, EquatorialMeanJ2000, U>:
         crate::coordinates::transform::TransformFrame<Position<Geocentric, F, U>>,
 {
-    let site_equatorial = observer_site_equatorial_mean_j2000_with_ctx(site, jd, ctx);
+    let site_equatorial =
+        observer_site_equatorial_mean_j2000_with_ctx::<U, Eph, Eop, Nut>(site, jd, ctx);
     let site_in_frame: Position<Geocentric, F, U> =
         crate::coordinates::transform::TransformFrame::to_frame(&site_equatorial);
     let topo_vec = nalgebra::Vector3::new(
@@ -72,6 +73,31 @@ where
         pos.z() - site_in_frame.z(),
     );
     Position::<Topocentric, F, U>::from_vec3(site, topo_vec)
+}
+
+/// Transform a geocentric position to topocentric coordinates using any
+/// transform context wrapper.
+pub fn to_topocentric_with<F, U, Ctx>(
+    pos: &Position<Geocentric, F, U>,
+    site: Geodetic<ECEF>,
+    jd: JulianDate,
+    ctx: &Ctx,
+) -> Position<Topocentric, F, U>
+where
+    F: MutableFrame,
+    U: LengthUnit,
+    Ctx: TransformContext,
+    Ctx::Eph: Ephemeris,
+    Quantity<U>: From<Quantity<Meter>> + From<AstronomicalUnits>,
+    Position<Geocentric, EquatorialMeanJ2000, U>:
+        crate::coordinates::transform::TransformFrame<Position<Geocentric, F, U>>,
+{
+    to_topocentric_with_ctx::<F, U, Ctx::Eph, Ctx::Eop, Ctx::Nut>(
+        pos,
+        site,
+        jd,
+        ctx.astro_context(),
+    )
 }
 
 // =============================================================================
@@ -86,13 +112,13 @@ where
     Position<Geocentric, EquatorialMeanJ2000, U>:
         crate::coordinates::transform::TransformFrame<Position<Geocentric, F, U>>,
 {
-    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn to_center_as<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         &self,
         params: Geodetic<ECEF>,
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Topocentric, F, U> {
-        to_topocentric_with_ctx(self, params, jd, ctx)
+        to_topocentric_with_ctx::<F, U, Eph, Eop, Nut>(self, params, jd, ctx)
     }
 }
 
@@ -110,14 +136,15 @@ where
     /// Inverse parallax: recovers the geocentric position from topocentric.
     ///
     /// The observer site is read from the stored center params.
-    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn to_center_as<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         &self,
         _params: (),
         jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Geocentric, F, U> {
         let site = self.center_params();
-        let site_equatorial = observer_site_equatorial_mean_j2000_with_ctx(*site, jd, _ctx);
+        let site_equatorial =
+            observer_site_equatorial_mean_j2000_with_ctx::<U, Eph, Eop, Nut>(*site, jd, _ctx);
         let site_in_frame: Position<Geocentric, F, U> =
             crate::coordinates::transform::TransformFrame::to_frame(&site_equatorial);
         let geo_vec = nalgebra::Vector3::new(
