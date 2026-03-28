@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! **Qtty-aware FFI entry points** — accept `QttyQuantity` for typed angles and thresholds.
+//! **Qtty-aware FFI entry points**, accept `QttyQuantity` for typed angles and thresholds.
 //!
 //! These functions accept [`qtty_ffi::QttyQuantity`] values instead of raw `f64` degrees,
 //! providing compile-time dimension checking on the FFI boundary when the caller's
@@ -47,7 +47,7 @@ fn qty_to_degrees(qty: QttyQuantity) -> Result<Degrees, SiderustStatus> {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Altitude — qtty-aware variants
+// Altitude, qtty-aware variants
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of any subject at an instant, with threshold as a `QttyQuantity`.

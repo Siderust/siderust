@@ -1,59 +1,152 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # IAU 2000B Nutation Model
+//! # Nutation Models
 //!
-//! This module implements the **IAU 2000B** luni-solar nutation model, which uses
-//! **77 trigonometric terms** for Δψ (nutation in longitude) and Δε (nutation in
-//! obliquity). It is accurate to better than **1 mas** (milliarcsecond) compared
-//! to the full IAU 2000A model (1365 terms).
+//! This module provides the [`NutationModel`] trait for type-level nutation
+//! model selection and concrete implementations:
 //!
-//! ## Method
+//! - **[`Iau2000A`]**, Full IAU 2000A model (1365 terms, highest precision)
+//! - **[`Iau2000B`]**, 77-term abridged model (~1 mas accuracy)
+//! - **[`Iau2006A`]**, IAU 2006-compatible 2000A (P03/J2 corrected)
+//! - **[`Iau2006`]**, precession-only profile (zero nutation angles)
 //!
-//! The nutation angles are computed as truncated trigonometric series in the
-//! five **Delaunay arguments** (IERS Conventions 2003):
+//! ## Usage
 //!
-//! * `l`  — mean anomaly of the Moon
-//! * `l'` — mean anomaly of the Sun
-//! * `F`  — mean argument of latitude of the Moon
-//! * `D`  — mean elongation of the Moon from the Sun
-//! * `Ω`  — mean longitude of the ascending node of the Moon
+//! The model is selected at compile time by wrapping an
+//! [`AstroContext`](crate::coordinates::transform::context::AstroContext)
+//! with [`AstroContext::with_model`](crate::coordinates::transform::context::AstroContext::with_model).
+//! The default transform path uses [`Iau2006A`]. To request a specific model:
 //!
-//! ```text
-//! Δψ = Σᵢ (Aᵢ + A'ᵢ·t) · sin(αᵢ)     (0.1 μas units)
-//! Δε = Σᵢ (Bᵢ + B'ᵢ·t) · cos(αᵢ)     (0.1 μas units)
+//! ```rust
+//! use siderust::coordinates::transform::context::AstroContext;
+//! use siderust::astro::nutation::Iau2006A;
+//!
+//! let ctx = AstroContext::new();
+//! let full_precision = ctx.with_model::<Iau2006A>();
 //! ```
 //!
-//! A fixed correction is applied for the omitted planetary terms.
+//! ## IAU 2006/2000A (default)
 //!
-//! ## Compatibility
+//! Full MHB2000 model with 678 luni-solar + 687 planetary terms, plus
+//! Wallace & Capitaine (2006) P03/J₂ corrections for IAU 2006 precession
+//! compatibility.
 //!
-//! This module uses the **IAU 2006 mean obliquity** polynomial (84381.406″ at
-//! J2000.0) for consistency with the IAU 2006 precession model.
+//! ## IAU 2000B (abridged)
+//!
+//! Uses **77 trigonometric terms** for Δψ/Δε plus a fixed correction for
+//! omitted planetary terms. Accurate to better than **1 mas** vs the full
+//! IAU 2000A model.
 //!
 //! ## Legacy IAU 1980 Nutation
 //!
 //! The legacy **IAU 1980** nutation (63 terms) is retained in the [`iau1980`]
 //! submodule for cross-validation testing. It is not used in production code.
 //!
-//! ## Public API
-//!
-//! - [`nutation_iau2000b`] — Compute IAU 2000B nutation angles
-//! - [`nutation_rotation_iau2000b`] — Nutation rotation matrix (mean → true of date)
-//! - [`Nutation2000B`] — Nutation components struct (Δψ, Δε, ε_A)
-//!
 //! ## References
 //!
 //! * IAU 2000 Resolution B1.6 (nutation)
-//! * McCarthy & Luzum (2003), "An abridged model of the precession-nutation
-//!   of the celestial pole", *Celestial Mechanics* 85, 37–49
+//! * McCarthy & Luzum (2003), *Celestial Mechanics* 85, 37–49
+//! * Mathews, Herring & Buffett (2002), *J. Geophys. Res.* 107, B4
+//! * Wallace & Capitaine (2006), *Astron. Astrophys.* 459, 981
 //! * IERS Conventions (2010), §5.5.1
-//! * SOFA/ERFA routine `iauNut00b` / `eraNut00b`
+//! * SOFA/ERFA routines `eraNut00b`, `eraNut00a`, `eraNut06a`
 
 use crate::astro::precession::mean_obliquity_iau2006;
 use crate::time::JulianDate;
 use affn::Rotation3;
 use qtty::*;
+use std::marker::PhantomData;
+
+mod iau2000a;
+mod iau2000b;
+mod iau2006;
+mod iau2006a;
+pub(crate) mod nut00a;
+mod nut00a_tables;
+
+pub use iau2000a::Iau2000A;
+pub use iau2000b::Iau2000B;
+pub use iau2006::Iau2006;
+pub use iau2006a::Iau2006A;
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Model-agnostic nutation result
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Nutation angles from any model (all **radians**).
+#[derive(Debug, Copy, Clone)]
+pub struct NutationAngles {
+    /// Δψ: nutation in ecliptic longitude.
+    pub dpsi: Radians,
+    /// Δε: nutation in obliquity.
+    pub deps: Radians,
+    /// ε_A: mean obliquity of the ecliptic (IAU 2006).
+    pub mean_obliquity: Radians,
+}
+
+impl NutationAngles {
+    /// True obliquity: ε = ε_A + Δε.
+    #[inline]
+    pub fn true_obliquity(&self) -> Radians {
+        self.mean_obliquity + self.deps
+    }
+}
+
+/// Runtime identifier for the supported compile-time nutation model markers.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum NutationModelId {
+    /// Full IAU 2000A nutation.
+    Iau2000A,
+    /// Abridged IAU 2000B nutation.
+    Iau2000B,
+    /// IAU 2006 precession-only profile.
+    Iau2006,
+    /// IAU 2006-compatible full nutation.
+    Iau2006A,
+}
+
+/// Zero-sized wrapper that encodes a nutation model in the type system.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Model<Tag>(PhantomData<Tag>);
+
+/// Metadata implemented by each public nutation model tag.
+pub trait NutationTag {
+    /// Static identifier used by the shared dispatch implementation.
+    const ID: NutationModelId;
+}
+
+/// Trait for type-level nutation model dispatch.
+///
+/// Providers call `Nut::nutation(jd)` to compute nutation at a given epoch,
+/// where `Nut` is the model marker supplied via the transform context.
+pub trait NutationModel {
+    /// Compute nutation angles at the given TT Julian Date.
+    fn nutation(jd: JulianDate) -> NutationAngles;
+}
+
+impl<Tag: NutationTag> NutationModel for Model<Tag> {
+    #[inline]
+    fn nutation(jd: JulianDate) -> NutationAngles {
+        match Tag::ID {
+            NutationModelId::Iau2000A => nut00a::nutation_iau2000a(jd),
+            NutationModelId::Iau2000B => {
+                let n = nutation_iau2000b(jd);
+                NutationAngles {
+                    dpsi: n.dpsi,
+                    deps: n.deps,
+                    mean_obliquity: n.mean_obliquity,
+                }
+            }
+            NutationModelId::Iau2006 => NutationAngles {
+                dpsi: Radians::new(0.0),
+                deps: Radians::new(0.0),
+                mean_obliquity: mean_obliquity_iau2006(jd),
+            },
+            NutationModelId::Iau2006A => nut00a::nutation_iau2006a(jd),
+        }
+    }
+}
 
 /// Nutation components for a given epoch (all **radians**).
 #[derive(Debug, Copy, Clone)]

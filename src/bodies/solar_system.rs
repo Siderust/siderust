@@ -29,18 +29,18 @@
 //! * **Mass** (kg)
 //! * **Mean radius** (km)
 //! * **Keplerian orbital elements**:
-//!   * `a` – semi‑major axis [`AstronomicalUnit`]
-//!   * `e` – eccentricity (unitless)
-//!   * `i` – inclination [`Degrees`]
-//!   * `Ω` – longitude of ascending node [`Degrees`]
-//!   * `ω` – argument of periapsis [`Degrees`]
-//!   * `M₀` – mean anomaly at epoch [`Degrees`]
+//!   * `a` : semi‑major axis [`AstronomicalUnit`]
+//!   * `e` : eccentricity (unitless)
+//!   * `i` : inclination [`Degrees`]
+//!   * `Ω` : longitude of ascending node [`Degrees`]
+//!   * `ω` : argument of periapsis [`Degrees`]
+//!   * `M₀` : mean anomaly at epoch [`Degrees`]
 //!
 //! ```text
 //! Abbreviations for orbital elements:
-//!   a  — semi‑major axis         Ω — longitude of ascending node
-//!   e  — eccentricity            ω — argument of periapsis
-//!   i  — inclination             M₀ — mean anomaly at epoch
+//!   a  : semi‑major axis         Ω : longitude of ascending node
+//!   e  : eccentricity            ω : argument of periapsis
+//!   i  : inclination             M₀ : mean anomaly at epoch
 //! ```
 //!
 //! ---

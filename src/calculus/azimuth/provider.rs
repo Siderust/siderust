@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Azimuth Provider — Trait-Based Dispatch Layer
+//! # Azimuth Provider, Trait-Based Dispatch Layer
 //!
 //! Defines [`AzimuthProvider`] and implementations that normalise the azimuth
 //! API across Sun, Moon, and fixed stars.
 //!
 //! ## Design
 //!
-//! The trait is the *dispatch* layer — all astronomical math lives in the
+//! The trait is the *dispatch* layer, all astronomical math lives in the
 //! per-body engine modules (`calculus::solar`, `calculus::lunar`,
 //! `calculus::stellar`).  Each `impl` simply delegates.
 //!
@@ -171,7 +171,7 @@ pub fn azimuth_periods<B: AzimuthProvider>(body: &B, query: &AzimuthQuery) -> Ve
 // Implementations
 // ---------------------------------------------------------------------------
 
-/// **Sun** — delegates to [`calculus::solar::sun_azimuth_rad`].
+/// **Sun**, delegates to [`calculus::solar::sun_azimuth_rad`].
 impl AzimuthProvider for solar_system::Sun {
     fn azimuth_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::calculus::solar::sun_azimuth_rad(mjd, observer)
@@ -189,7 +189,7 @@ impl AzimuthProvider for solar_system::Sun {
     }
 }
 
-/// **Moon** — delegates to [`calculus::lunar::moon_azimuth_rad`].
+/// **Moon**, delegates to [`calculus::lunar::moon_azimuth_rad`].
 impl AzimuthProvider for solar_system::Moon {
     fn azimuth_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::calculus::lunar::moon_azimuth_rad(mjd, observer)
@@ -208,7 +208,7 @@ impl AzimuthProvider for solar_system::Moon {
     }
 }
 
-/// **Star** — extracts RA/Dec, delegates to [`direction::ICRS`].
+/// **Star**, extracts RA/Dec, delegates to [`direction::ICRS`].
 impl AzimuthProvider for Star<'_> {
     fn azimuth_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         let dir = direction::ICRS::from(self);
@@ -221,7 +221,7 @@ impl AzimuthProvider for Star<'_> {
     }
 }
 
-/// **direction::ICRS** — raw RA/Dec → stellar engine.
+/// **direction::ICRS**, raw RA/Dec → stellar engine.
 impl AzimuthProvider for direction::ICRS {
     fn azimuth_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::calculus::stellar::fixed_star_azimuth_rad(mjd, observer, self.ra(), self.dec())

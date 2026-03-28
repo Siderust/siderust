@@ -8,11 +8,8 @@
 
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::frames::{self, MutableFrame};
-use crate::coordinates::transform::frames::bias::{
-    frame_bias_icrs_to_j2000, frame_bias_j2000_to_icrs,
-};
+use crate::coordinates::transform::frames::bias;
 use crate::coordinates::transform::TransformFrame;
-use affn::Rotation3;
 use nalgebra::Vector3;
 use qtty::Unit;
 
@@ -28,46 +25,24 @@ where
 }
 
 /// Frame transform from EclipticMeanJ2000 to EquatorialMeanJ2000 for velocities.
-/// Rotation about +X by the J2000 mean obliquity ε₀ (IAU 2006): 84381.406″.
 impl<U: Unit> TransformFrame<Velocity<frames::EquatorialMeanJ2000, U>>
     for Velocity<frames::EclipticMeanJ2000, U>
 {
     fn to_frame(&self) -> Velocity<frames::EquatorialMeanJ2000, U> {
-        let eps = (84381.406_f64 / 3600.0).to_radians();
-        let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
-
-        let x = self.x();
-        let y = self.y();
-        let z = self.z();
-
-        // Same rotation as Direction: about +X axis
-        let new_x = x;
-        let new_y = y * cos_eps - z * sin_eps;
-        let new_z = y * sin_eps + z * cos_eps;
-
-        Velocity::<frames::EquatorialMeanJ2000, U>::from_vec3(Vector3::new(new_x, new_y, new_z))
+        let rot = bias::obliquity_ecl_to_eq();
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Velocity::<frames::EquatorialMeanJ2000, U>::from_vec3(Vector3::new(x, y, z))
     }
 }
 
 /// Frame transform from EquatorialMeanJ2000 to EclipticMeanJ2000 for velocities.
-/// Inverse rotation about +X by the obliquity ε.
 impl<U: Unit> TransformFrame<Velocity<frames::EclipticMeanJ2000, U>>
     for Velocity<frames::EquatorialMeanJ2000, U>
 {
     fn to_frame(&self) -> Velocity<frames::EclipticMeanJ2000, U> {
-        let eps = (84381.406_f64 / 3600.0).to_radians();
-        let (sin_eps, cos_eps) = (eps.sin(), eps.cos());
-
-        let x = self.x();
-        let y = self.y();
-        let z = self.z();
-
-        // Inverse rotation (transpose)
-        let new_x = x;
-        let new_y = y * cos_eps + z * sin_eps;
-        let new_z = -y * sin_eps + z * cos_eps;
-
-        Velocity::<frames::EclipticMeanJ2000, U>::from_vec3(Vector3::new(new_x, new_y, new_z))
+        let rot = bias::obliquity_eq_to_ecl();
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Velocity::<frames::EclipticMeanJ2000, U>::from_vec3(Vector3::new(x, y, z))
     }
 }
 
@@ -76,7 +51,7 @@ impl<U: Unit> TransformFrame<Velocity<frames::EquatorialMeanJ2000, U>>
     for Velocity<frames::ICRS, U>
 {
     fn to_frame(&self) -> Velocity<frames::EquatorialMeanJ2000, U> {
-        let rot: Rotation3 = frame_bias_icrs_to_j2000();
+        let rot = bias::frame_bias_icrs_to_j2000();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         Velocity::<frames::EquatorialMeanJ2000, U>::from_vec3(Vector3::new(x, y, z))
     }
@@ -87,7 +62,7 @@ impl<U: Unit> TransformFrame<Velocity<frames::ICRS, U>>
     for Velocity<frames::EquatorialMeanJ2000, U>
 {
     fn to_frame(&self) -> Velocity<frames::ICRS, U> {
-        let rot: Rotation3 = frame_bias_j2000_to_icrs();
+        let rot = bias::frame_bias_j2000_to_icrs();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         Velocity::<frames::ICRS, U>::from_vec3(Vector3::new(x, y, z))
     }

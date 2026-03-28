@@ -6,7 +6,7 @@
 //! Reference: NAIF DAF Required Reading
 //! <https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/daf.html>
 //!
-//! This is a runtime-capable version of the parser — it returns `Result`
+//! This is a runtime-capable version of the parser, it returns `Result`
 //! errors instead of panicking and can be used both at build time (via the
 //! build-script pipeline in `scripts/jpl/`) and at runtime (via the
 //! `runtime-data` feature).
@@ -279,7 +279,7 @@ mod tests {
 
     #[test]
     fn parse_non_spk_format_returns_error() {
-        // ND=3, NI=4 — valid values but not SPK (ND=2, NI=6)
+        // ND=3, NI=4, valid values but not SPK (ND=2, NI=6)
         let mut buf = vec![0u8; 1024];
         buf[0..8].copy_from_slice(b"DAF/CK  ");
         write_i32_le(&mut buf, 8, 3); // ND = 3
@@ -386,9 +386,9 @@ mod tests {
         let rec = &mut buf[1024..];
         write_f64_le(rec, 0, 0.0);
         write_f64_le(rec, 8, 0.0);
-        write_f64_le(rec, 16, 100.0); // nsum = 100 — far more than fits in 1024 bytes
+        write_f64_le(rec, 16, 100.0); // nsum = 100, far more than fits in 1024 bytes
         let result = Daf::parse(&buf);
-        // Should either succeed with partial summaries or return an error — must not panic
+        // Should either succeed with partial summaries or return an error, must not panic
         let _ = result;
     }
 }

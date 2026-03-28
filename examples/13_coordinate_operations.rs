@@ -19,13 +19,13 @@ fn main() {
     println!("=== Siderust Coordinate Operations Example ===\n");
 
     // =========================================================================
-    // 1. Angular Separation — Spherical Directions
+    // 1. Angular Separation, Spherical Directions
     // =========================================================================
     println!("1. ANGULAR SEPARATION (SPHERICAL DIRECTIONS)");
     println!("---------------------------------------------");
 
     // Two well-known stars using EquatorialMeanJ2000 directions.
-    // Constructor: new(ra, dec) — azimuth first, matching IAU naming.
+    // Constructor: new(ra, dec), azimuth first, matching IAU naming.
     let polaris = spherical::direction::EquatorialMeanJ2000::new(
         Degrees::new(37.9546), // Right Ascension
         Degrees::new(89.2641), // Declination
@@ -48,7 +48,7 @@ fn main() {
     );
     println!("  Angular separation = {:.4}°\n", sep);
 
-    // Nearby pair — separation should be about 0.71°
+    // Nearby pair, separation should be about 0.71°
     let star_a =
         spherical::direction::EquatorialMeanJ2000::new(Degrees::new(10.0), Degrees::new(30.0));
     let star_b =
@@ -180,7 +180,7 @@ fn main() {
     println!("  |Mars − Earth|      = {:.4}\n", diff.magnitude());
 
     // =========================================================================
-    // 6. Ecliptic Directions — Same API, Different Frame
+    // 6. Ecliptic Directions, Same API, Different Frame
     // =========================================================================
     println!("6. ECLIPTIC AND EQUATORIAL DIRECTIONS");
     println!("--------------------------------------");
@@ -212,7 +212,7 @@ fn main() {
     );
 
     println!("  Type safety note: EclipticMeanJ2000 and EquatorialMeanJ2000");
-    println!("  directions are distinct types — the compiler prevents mixing them.");
+    println!("  directions are distinct types, the compiler prevents mixing them.");
     println!("  angular_separation only compiles for directions in the same frame.\n");
 
     println!("=== Example Complete ===");

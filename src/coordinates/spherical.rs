@@ -13,7 +13,7 @@
 //! - Inherent named constructors and getters (`ra`/`dec`, `lon`/`lat`, `alt`/`az`)
 //! - Convenient type aliases for common coordinate combinations
 
-// Re-export affn types directly — no wrappers
+// Re-export affn types directly, no wrappers
 pub use affn::spherical::Direction;
 pub use affn::spherical::Position;
 
@@ -119,7 +119,7 @@ pub mod position {
     /// use `Position<Geocentric, frames::GCRS, U>` directly.
     pub type GCRS<U> = Position<centers::Geocentric, frames::ICRS, U>;
 
-    /// **Barycentric ICRF** coordinates (BCRS — Barycentric Celestial Reference System).
+    /// **Barycentric ICRF** coordinates (BCRS, Barycentric Celestial Reference System).
     ///
     /// The BCRS is the relativistic barycentric system used in JPL ephemerides (DE440).
     /// Its axes coincide with ICRF to sub-milliarcsecond accuracy.

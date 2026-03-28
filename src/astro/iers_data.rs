@@ -33,7 +33,7 @@ pub fn lookup(table: &[EopEntry], mjd: f64) -> Option<EopEntry> {
 
     // Binary search for the interval containing `mjd`.
     // The table has daily spacing (1.0 MJD), so we can also compute
-    // a direct index guess for speed — but binary search is robust for
+    // a direct index guess for speed, but binary search is robust for
     // any spacing.
     let idx = table.partition_point(|e| e.mjd < mjd);
 

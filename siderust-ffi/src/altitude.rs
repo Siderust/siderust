@@ -139,7 +139,7 @@ pub unsafe extern "C" fn siderust_culminations_free(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Sun  — thin wrappers delegating to the unified `subject` module.
+// Sun , thin wrappers delegating to the unified `subject` module.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of the Sun at an instant (radians).
@@ -255,7 +255,7 @@ pub extern "C" fn siderust_sun_altitude_periods(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Moon  — thin wrappers delegating to the unified `subject` module.
+// Moon , thin wrappers delegating to the unified `subject` module.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of the Moon at an instant (radians).
@@ -371,7 +371,7 @@ pub extern "C" fn siderust_moon_altitude_periods(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Star (opaque handle)  — thin wrappers delegating to the unified `subject` module.
+// Star (opaque handle) , thin wrappers delegating to the unified `subject` module.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of a star at an instant (radians).
@@ -472,7 +472,7 @@ pub extern "C" fn siderust_star_culminations(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// ICRS direction  — thin wrappers delegating to the unified `subject` module.
+// ICRS direction , thin wrappers delegating to the unified `subject` module.
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of an ICRS direction at an instant (radians).

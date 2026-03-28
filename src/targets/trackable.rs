@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Trackable — Zero-Cost Object Abstraction
+//! # Trackable, Zero-Cost Object Abstraction
 //!
 //! The [`Trackable`] trait represents "anything that can produce coordinates
 //! at an arbitrary time *t*".  It separates the *object* (a star, a planet,
@@ -9,10 +9,10 @@
 //!
 //! ## Design
 //!
-//! * **Associated type** `Coords` — each implementor chooses its natural output
+//! * **Associated type** `Coords`, each implementor chooses its natural output
 //!   type, so the trait is zero-cost through monomorphization.
-//! * **No `&mut self`** — tracking is a pure, stateless query.
-//! * **Static dispatch** — callers write `fn foo<T: Trackable>(t: &T)` and pay
+//! * **No `&mut self`**, tracking is a pure, stateless query.
+//! * **Static dispatch**, callers write `fn foo<T: Trackable>(t: &T)` and pay
 //!   no dynamic-dispatch overhead.
 //!
 //! ## Implementors
@@ -64,7 +64,7 @@ pub trait Trackable {
 }
 
 // =============================================================================
-// Implementation: direction::ICRS  (fixed direction — identity)
+// Implementation: direction::ICRS  (fixed direction, identity)
 // =============================================================================
 
 impl Trackable for direction::ICRS {
@@ -77,7 +77,7 @@ impl Trackable for direction::ICRS {
 }
 
 // =============================================================================
-// Implementation: CoordinateWithPM<T>  (identity — returns stored position)
+// Implementation: CoordinateWithPM<T>  (identity, returns stored position)
 // =============================================================================
 
 impl<T: Clone> Trackable for CoordinateWithPM<T> {
@@ -108,10 +108,10 @@ impl Trackable for crate::bodies::Star<'_> {
 
 use crate::bodies::solar_system;
 
-/// Barycentric ecliptic position (AU) — the natural output of VSOP87e.
+/// Barycentric ecliptic position (AU), the natural output of VSOP87e.
 type BaryEclPos = CoordinateWithPM<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>;
 
-/// Geocentric ecliptic position (km) — the natural output of ELP2000.
+/// Geocentric ecliptic position (km), the natural output of ELP2000.
 type GeoEclPos = Position<Geocentric, EclipticMeanJ2000, Kilometer>;
 
 /// Helper macro: implement [`Trackable`] for a VSOP87-backed planet unit type.

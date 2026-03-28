@@ -1,7 +1,7 @@
 # Siderust Examples
 
 Runnable examples organized by theme. Each demonstrates a specific aspect of
-the library — from basic coordinate algebra to full observing-session planners.
+the library, from basic coordinate algebra to full observing-session planners.
 
 > **Tip**: Run any example with `cargo run --example <name>`.
 > Feature-gated examples require `--features <feat>` (noted below).
@@ -72,7 +72,7 @@ cargo run --example 06_astronomical_night
 cargo run --example 06_astronomical_night -- 2026-06-21 51.4769 -0.0005 80
 ```
 
-### 7. Night Periods — Full Year (`07_find_night_periods_365day.rs`)
+### 7. Night Periods, Full Year (`07_find_night_periods_365day.rs`)
 Computes all astronomical night windows for a 365-day horizon at Roque de
 los Muchachos. Accepts an optional start-date CLI argument.
 
@@ -90,7 +90,7 @@ cargo run --example 08_night_quality_scoring
 ```
 
 ### 9. Star Observability (`09_star_observability.rs`)
-Observing planner: 6 stars at Greenwich — visibility windows during
+Observing planner: 6 stars at Greenwich, visibility windows during
 astronomical night, peak altitudes, and observing strategy.
 
 ```bash
@@ -122,6 +122,15 @@ prevents mixing incompatible coordinate frames.
 
 ```bash
 cargo run --example 13_coordinate_operations
+```
+
+### 14. Nutation Models (`14_nutation_models.rs`)
+Shows the default transform path and the custom-model path using
+`AstroContext::with_model::<...>()`, with side-by-side output for the
+default `Iau2006A`, abridged `Iau2000B`, and precession-only `Iau2006`.
+
+```bash
+cargo run --example 14_nutation_models
 ```
 
 ---
@@ -172,7 +181,7 @@ cargo run --example 15_targets_proper_motion
 ## Ephemeris Backends
 
 ### 16. JPL Precise Ephemeris (`16_jpl_precise_ephemeris.rs`)
-Compares VSOP87/ELP2000 with JPL DE440 and/or DE441 — Earth and Moon
+Compares VSOP87/ELP2000 with JPL DE440 and/or DE441, Earth and Moon
 positions, velocities, and precision differences side-by-side.
 
 Requires at least one JPL feature:
@@ -256,7 +265,7 @@ let pos2: Position<Geocentric, EquatorialMeanJ2000, Km> = /* ... */;
 let d = pos1.distance_to(&pos2);  // ✓ compiles
 
 let pos3: Position<Heliocentric, EclipticMeanJ2000, Au> = /* ... */;
-// pos1.distance_to(&pos3);  // ✗ compile error — different types!
+// pos1.distance_to(&pos3);  // ✗ compile error, different types!
 ```
 
 ---

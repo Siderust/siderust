@@ -123,7 +123,7 @@ impl Moon {
 }
 
 // ===========================================================================
-// Moon — phase API (DefaultEphemeris convenience methods)
+// Moon, phase API (DefaultEphemeris convenience methods)
 // ===========================================================================
 
 impl Moon {
@@ -279,20 +279,20 @@ mod tests {
     #[test]
     fn illumination_range_returns_periods() {
         let periods = Moon::illumination_range(one_month(), 0.0, 1.0, PhaseSearchOpts::default());
-        // [0.0, 1.0] covers the entire range — should cover the full window
+        // [0.0, 1.0] covers the entire range, should cover the full window
         assert!(!periods.is_empty());
     }
 
     #[test]
     fn illumination_above_empty_when_impossible() {
-        // k_min above 1.0 — no illumination can exceed 100%
+        // k_min above 1.0, no illumination can exceed 100%
         let periods = Moon::illumination_above(one_month(), 1.01, PhaseSearchOpts::default());
         assert!(periods.is_empty());
     }
 
     #[test]
     fn illumination_below_empty_when_impossible() {
-        // k_max below 0.0 — illumination is never negative
+        // k_max below 0.0, illumination is never negative
         let periods = Moon::illumination_below(one_month(), -0.01, PhaseSearchOpts::default());
         assert!(periods.is_empty());
     }

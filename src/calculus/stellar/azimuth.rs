@@ -18,10 +18,10 @@ use qtty::*;
 /// GAST, and the standard equatorial→horizontal formula.
 ///
 /// # Arguments
-/// * `mjd`       — Modified Julian Date (TT)
-/// * `site`      — Observer's geographic location
-/// * `ra_j2000`  — Right Ascension (J2000), in degrees
-/// * `dec_j2000` — Declination (J2000), in degrees
+/// * `mjd`      , Modified Julian Date (TT)
+/// * `site`     , Observer's geographic location
+/// * `ra_j2000` , Right Ascension (J2000), in degrees
+/// * `dec_j2000`, Declination (J2000), in degrees
 pub(crate) fn fixed_star_azimuth_rad(
     mjd: ModifiedJulianDate,
     site: &Geodetic<ECEF>,

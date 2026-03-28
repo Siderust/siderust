@@ -4,7 +4,7 @@
 //! # DE440 Ephemeris Module
 //!
 //! Thin configuration layer over the shared JPL DE4xx infrastructure.
-//! Provides [`De440Data`] — the marker type that selects DE440 coefficients
+//! Provides [`De440Data`], the marker type that selects DE440 coefficients
 //! for use with [`DeEphemeris`](crate::calculus::jpl::DeEphemeris).
 //!
 //! All evaluation logic, body-chain arithmetic, and frame/unit conversions

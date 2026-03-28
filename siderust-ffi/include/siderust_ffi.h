@@ -648,7 +648,7 @@ typedef union SiderustTargetCoordUnion {
   struct siderust_cartesian_pos_t cartesian_pos;
 } SiderustTargetCoordUnion;
 
-// Generic target data — stored as a flat struct for FFI.
+// Generic target data, stored as a flat struct for FFI.
 //
 // Represents a point in celestial coordinates at a specific epoch,
 // optionally with proper motion. This struct mirrors the Rust
@@ -658,7 +658,7 @@ typedef struct SiderustGenericTargetData {
   SiderustTargetCoordKind kind;
   // Padding for alignment.
   uint8_t _pad1[4];
-  // The coordinate data (union — check `kind` to determine which field).
+  // The coordinate data (union, check `kind` to determine which field).
   union SiderustTargetCoordUnion coord;
   // Epoch as a Julian Date.
   double epoch_jd;
@@ -1021,11 +1021,11 @@ siderust_status_t siderust_icrs_azimuth_crossings(struct siderust_spherical_dir_
 
 // Create a custom star.
 //
-// `name` — UTF-8 null-terminated string.
-// `ra_deg`, `dec_deg` — J2000 equatorial coordinates in degrees.
-// `distance_ly` — distance in light-years.
-// `epoch_jd` — epoch of the given coordinates (Julian Date).
-// `proper_motion` — optional: pass null for a fixed star.
+// `name`, UTF-8 null-terminated string.
+// `ra_deg`, `dec_deg`, J2000 equatorial coordinates in degrees.
+// `distance_ly`, distance in light-years.
+// `epoch_jd`, epoch of the given coordinates (Julian Date).
+// `proper_motion`, optional: pass null for a fixed star.
 
 siderust_status_t siderust_star_create(const char *name,
                                        double distance_ly,

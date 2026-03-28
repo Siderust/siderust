@@ -23,7 +23,7 @@ use siderust::coordinates::{cartesian, spherical};
 use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Spherical Direction — frame transforms
+// Spherical Direction, frame transforms
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Trait object proxy for spherical direction transforms.
@@ -179,7 +179,7 @@ pub extern "C" fn siderust_spherical_dir_transform_frame(
             SiderustFrame::EquatorialMeanOfDate => dir.to_equatorial_mean_of_date(&jd_val),
             SiderustFrame::EquatorialTrueOfDate => dir.to_equatorial_true_of_date(&jd_val),
             SiderustFrame::Horizontal => {
-                // Horizontal needs an observer — use siderust_spherical_dir_to_horizontal instead
+                // Horizontal needs an observer, use siderust_spherical_dir_to_horizontal instead
                 return SiderustStatus::InvalidFrame;
             }
             _ => return SiderustStatus::InvalidFrame,
@@ -238,7 +238,7 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Cartesian Direction — frame transforms
+// Cartesian Direction, frame transforms
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Trait object proxy for cartesian direction frame transforms.
@@ -375,7 +375,7 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Cartesian Position — frame transforms
+// Cartesian Position, frame transforms
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Trait object proxy for Cartesian position frame transforms.
@@ -582,11 +582,11 @@ fn shift_center_xyz(x: f64, y: f64, z: f64, from: u8, to: u8, jd: f64) -> (f64, 
     }
     let t = JulianDate::new(jd);
 
-    // Sun's barycentric position — used for helio ↔ bary shifts
+    // Sun's barycentric position, used for helio ↔ bary shifts
     let sun_b = Vsop87Ephemeris::sun_barycentric(t);
     let (sb_x, sb_y, sb_z) = (sun_b.x().value(), sun_b.y().value(), sun_b.z().value());
 
-    // Earth's heliocentric position — used for helio ↔ geo shifts
+    // Earth's heliocentric position, used for helio ↔ geo shifts
     let earth_h = Vsop87Ephemeris::earth_heliocentric(t);
     let (eh_x, eh_y, eh_z) = (
         earth_h.x().value(),

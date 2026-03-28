@@ -11,18 +11,31 @@
 //!
 //! The default API uses IAU models with no context argument required:
 //!
-//! - `to_frame::<F2>(jd_tt)` — Rotate to a new reference frame.
-//! - `to::<C2, F2>(jd_tt)` — Combined center and frame transformation.
+//! - `to_frame::<F2>(jd_tt)`, Rotate to a new reference frame.
+//! - `to::<C2, F2>(jd_tt)`, Combined center and frame transformation.
 //!
 //! Center-only transforms are exposed on the [`TransformCenter`] trait:
 //!
-//! - `pos.to_center(params, jd)` — Shift to a new reference center (all variants).
-//! - `pos.to_center_with(params, jd, &ctx)` — Same with a custom context.
+//! - `pos.to_center(params, jd)`, Shift to a new reference center (all variants).
+//! - `pos.to_center_with(params, jd, &ctx)`, Same with a custom context.
 //!
-//! For frame-only expert overrides, a `_with` suffix variant accepts an [`AstroContext`]:
+//! For expert overrides, a `_with` suffix variant accepts any
+//! [`TransformContext`](crate::coordinates::transform::context::TransformContext):
 //!
-//! - `to_frame_with::<F2>(jd_tt, &ctx)` — Frame rotation with custom context.
-//! - `to_with::<C2, F2>(jd_tt, &ctx)` — Combined transform with custom context.
+//! - `to_frame_with::<F2>(jd_tt, &ctx)`, Frame rotation with custom context.
+//! - `to_with::<C2, F2>(jd_tt, &ctx)`, Combined transform with custom context.
+//!
+//! A plain [`AstroContext`] uses the default IAU 2006A model. To bind another
+//! model at compile time, derive a [`ModelContext`](crate::coordinates::transform::context::ModelContext)
+//! with [`AstroContext::with_model`](crate::coordinates::transform::context::AstroContext::with_model):
+//!
+//! ```rust,ignore
+//! use siderust::astro::nutation::Iau2000B;
+//!
+//! let ctx = AstroContext::new();
+//! let low_cost = ctx.with_model::<Iau2000B>();
+//! let dir = dir.to_frame_with::<EclipticMeanJ2000>(&jd, &low_cost);
+//! ```
 //!
 //! Alternatively, wrap a coordinate with a custom context using
 //! [`WithEngine`] and use the same method names:
@@ -54,20 +67,50 @@
 //! let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
 //! let jd = JulianDate::J2000;
 //!
-//! // Transform to Geocentric ICRS — no context needed
+//! // Transform to Geocentric ICRS, no context needed
 //! let geo_icrs: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd);
 //! ```
 
+use crate::astro::nutation::{Iau2000A, Iau2000B, Iau2006, Iau2006A};
 use crate::coordinates::cartesian::{Direction, Position, Vector};
 use crate::coordinates::centers::{Geodetic, ReferenceCenter};
 use crate::coordinates::frames::{ReferenceFrame, ECEF};
 use crate::coordinates::spherical;
 use crate::coordinates::transform::centers::TransformCenter;
-use crate::coordinates::transform::context::AstroContext;
-use crate::coordinates::transform::providers::{CenterShiftProvider, FrameRotationProvider};
+use crate::coordinates::transform::context::{
+    AstroContext, DefaultEop, DefaultEphemeris, EarthOrientationModel, TransformContext,
+};
+use crate::coordinates::transform::providers::{
+    frame_rotation_as, frame_rotation_with, CenterShiftProvider, FrameRotationProvider,
+};
 use crate::time::JulianDate;
 use affn::Rotation3;
 use qtty::{LengthUnit, Unit};
+
+#[inline]
+fn model_rotation<F: ReferenceFrame, F2: ReferenceFrame>(
+    jd: JulianDate,
+    model: EarthOrientationModel,
+) -> Rotation3
+where
+    (): FrameRotationProvider<F, F2>,
+{
+    let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
+    match model {
+        EarthOrientationModel::Iau2000A => {
+            frame_rotation_as::<F, F2, Iau2000A, DefaultEphemeris, DefaultEop>(jd, &ctx)
+        }
+        EarthOrientationModel::Iau2000B => {
+            frame_rotation_as::<F, F2, Iau2000B, DefaultEphemeris, DefaultEop>(jd, &ctx)
+        }
+        EarthOrientationModel::Iau2006 => {
+            frame_rotation_as::<F, F2, Iau2006, DefaultEphemeris, DefaultEop>(jd, &ctx)
+        }
+        EarthOrientationModel::Iau2006A => {
+            frame_rotation_as::<F, F2, Iau2006A, DefaultEphemeris, DefaultEop>(jd, &ctx)
+        }
+    }
+}
 
 // =============================================================================
 // DirectionAstroExt - Extension trait for Direction<F>
@@ -92,10 +135,16 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
         (): FrameRotationProvider<F, F2>;
 
     /// Rotates this direction to a new reference frame with a custom context.
-    fn to_frame_with<F2: ReferenceFrame>(
+    fn to_frame_with<F2: ReferenceFrame, Ctx>(&self, jd: &JulianDate, ctx: &Ctx) -> Direction<F2>
+    where
+        Ctx: TransformContext,
+        (): FrameRotationProvider<F, F2>;
+
+    /// Rotates this direction to a new frame using a runtime Earth model preset.
+    fn to_frame_model<F2: ReferenceFrame>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        model: EarthOrientationModel,
     ) -> Direction<F2>
     where
         (): FrameRotationProvider<F, F2>;
@@ -155,20 +204,31 @@ impl<F: ReferenceFrame> DirectionAstroExt<F> for Direction<F> {
     where
         (): FrameRotationProvider<F, F2>,
     {
-        self.to_frame_with(jd, &AstroContext::default())
+        let ctx: AstroContext = AstroContext::default();
+        self.to_frame_with(jd, &ctx)
     }
 
-    fn to_frame_with<F2: ReferenceFrame>(
+    fn to_frame_with<F2: ReferenceFrame, Ctx>(&self, jd: &JulianDate, ctx: &Ctx) -> Direction<F2>
+    where
+        Ctx: TransformContext,
+        (): FrameRotationProvider<F, F2>,
+    {
+        let rot: Rotation3 = frame_rotation_with::<F, F2, Ctx>(*jd, ctx);
+        let [x, y, z] = rot.apply_array([self.x(), self.y(), self.z()]);
+        // The result is still normalized (rotations preserve length)
+        Direction::new_unchecked(x, y, z)
+    }
+
+    fn to_frame_model<F2: ReferenceFrame>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        model: EarthOrientationModel,
     ) -> Direction<F2>
     where
         (): FrameRotationProvider<F, F2>,
     {
-        let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, ctx);
+        let rot: Rotation3 = model_rotation::<F, F2>(*jd, model);
         let [x, y, z] = rot.apply_array([self.x(), self.y(), self.z()]);
-        // The result is still normalized (rotations preserve length)
         Direction::new_unchecked(x, y, z)
     }
 }
@@ -190,10 +250,20 @@ pub trait SphericalDirectionAstroExt<F: ReferenceFrame> {
         (): FrameRotationProvider<F, F2>;
 
     /// Rotates this spherical direction to a new reference frame with custom context.
-    fn to_frame_with<F2: ReferenceFrame>(
+    fn to_frame_with<F2: ReferenceFrame, Ctx>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        ctx: &Ctx,
+    ) -> spherical::Direction<F2>
+    where
+        Ctx: TransformContext,
+        (): FrameRotationProvider<F, F2>;
+
+    /// Rotates this spherical direction using a runtime Earth model preset.
+    fn to_frame_model<F2: ReferenceFrame>(
+        &self,
+        jd: &JulianDate,
+        model: EarthOrientationModel,
     ) -> spherical::Direction<F2>
     where
         (): FrameRotationProvider<F, F2>;
@@ -204,19 +274,34 @@ impl<F: ReferenceFrame> SphericalDirectionAstroExt<F> for spherical::Direction<F
     where
         (): FrameRotationProvider<F, F2>,
     {
-        self.to_frame_with(jd, &AstroContext::default())
+        let ctx: AstroContext = AstroContext::default();
+        self.to_frame_with(jd, &ctx)
     }
 
-    fn to_frame_with<F2: ReferenceFrame>(
+    fn to_frame_with<F2: ReferenceFrame, Ctx>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        ctx: &Ctx,
+    ) -> spherical::Direction<F2>
+    where
+        Ctx: TransformContext,
+        (): FrameRotationProvider<F, F2>,
+    {
+        let cart: Direction<F> = self.to_cartesian();
+        let cart_f2: Direction<F2> = cart.to_frame_with(jd, ctx);
+        spherical::Direction::from_cartesian(&cart_f2)
+    }
+
+    fn to_frame_model<F2: ReferenceFrame>(
+        &self,
+        jd: &JulianDate,
+        model: EarthOrientationModel,
     ) -> spherical::Direction<F2>
     where
         (): FrameRotationProvider<F, F2>,
     {
         let cart: Direction<F> = self.to_cartesian();
-        let cart_f2: Direction<F2> = cart.to_frame_with(jd, ctx);
+        let cart_f2: Direction<F2> = cart.to_frame_model(jd, model);
         spherical::Direction::from_cartesian(&cart_f2)
     }
 }
@@ -236,10 +321,16 @@ pub trait VectorAstroExt<F: ReferenceFrame, U: Unit> {
         (): FrameRotationProvider<F, F2>;
 
     /// Rotates this vector to a new reference frame with custom context.
-    fn to_frame_with<F2: ReferenceFrame>(
+    fn to_frame_with<F2: ReferenceFrame, Ctx>(&self, jd: &JulianDate, ctx: &Ctx) -> Vector<F2, U>
+    where
+        Ctx: TransformContext,
+        (): FrameRotationProvider<F, F2>;
+
+    /// Rotates this vector using a runtime Earth model preset.
+    fn to_frame_model<F2: ReferenceFrame>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        model: EarthOrientationModel,
     ) -> Vector<F2, U>
     where
         (): FrameRotationProvider<F, F2>;
@@ -250,18 +341,29 @@ impl<F: ReferenceFrame, U: Unit> VectorAstroExt<F, U> for Vector<F, U> {
     where
         (): FrameRotationProvider<F, F2>,
     {
-        self.to_frame_with(jd, &AstroContext::default())
+        let ctx: AstroContext = AstroContext::default();
+        self.to_frame_with(jd, &ctx)
     }
 
-    fn to_frame_with<F2: ReferenceFrame>(
+    fn to_frame_with<F2: ReferenceFrame, Ctx>(&self, jd: &JulianDate, ctx: &Ctx) -> Vector<F2, U>
+    where
+        Ctx: TransformContext,
+        (): FrameRotationProvider<F, F2>,
+    {
+        let rot: Rotation3 = frame_rotation_with::<F, F2, Ctx>(*jd, ctx);
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Vector::new(x, y, z)
+    }
+
+    fn to_frame_model<F2: ReferenceFrame>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        model: EarthOrientationModel,
     ) -> Vector<F2, U>
     where
         (): FrameRotationProvider<F, F2>,
     {
-        let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, ctx);
+        let rot: Rotation3 = model_rotation::<F, F2>(*jd, model);
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         Vector::new(x, y, z)
     }
@@ -289,10 +391,20 @@ pub trait PositionAstroExt<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
         (): FrameRotationProvider<F, F2>;
 
     /// Rotates this position to a new reference frame with custom context.
-    fn to_frame_with<F2: ReferenceFrame>(
+    fn to_frame_with<F2: ReferenceFrame, Ctx>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        ctx: &Ctx,
+    ) -> Position<C, F2, U>
+    where
+        Ctx: TransformContext,
+        (): FrameRotationProvider<F, F2>;
+
+    /// Rotates this position with a runtime Earth model preset.
+    fn to_frame_model<F2: ReferenceFrame>(
+        &self,
+        jd: &JulianDate,
+        model: EarthOrientationModel,
     ) -> Position<C, F2, U>
     where
         (): FrameRotationProvider<F, F2>;
@@ -312,10 +424,22 @@ pub trait PositionAstroExt<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
         (): FrameRotationProvider<F, F2>;
 
     /// Transforms this position to a new center and frame with custom context.
-    fn to_with<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame>(
+    fn to_with<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame, Ctx>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        ctx: &Ctx,
+    ) -> Position<C2, F2, U>
+    where
+        Ctx: TransformContext,
+        Ctx::Eph: crate::calculus::ephemeris::Ephemeris,
+        (): CenterShiftProvider<C, C2, F>,
+        (): FrameRotationProvider<F, F2>;
+
+    /// Transforms this position to a new center and frame with a runtime model preset.
+    fn to_model<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame>(
+        &self,
+        jd: &JulianDate,
+        model: EarthOrientationModel,
     ) -> Position<C2, F2, U>
     where
         (): CenterShiftProvider<C, C2, F>,
@@ -332,18 +456,33 @@ where
     where
         (): FrameRotationProvider<F, F2>,
     {
-        self.to_frame_with(jd, &AstroContext::default())
+        let ctx: AstroContext = AstroContext::default();
+        self.to_frame_with(jd, &ctx)
     }
 
-    fn to_frame_with<F2: ReferenceFrame>(
+    fn to_frame_with<F2: ReferenceFrame, Ctx>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        ctx: &Ctx,
+    ) -> Position<C, F2, U>
+    where
+        Ctx: TransformContext,
+        (): FrameRotationProvider<F, F2>,
+    {
+        let rot: Rotation3 = frame_rotation_with::<F, F2, Ctx>(*jd, ctx);
+        let [x, y, z] = rot * [self.x(), self.y(), self.z()];
+        Position::new(x, y, z)
+    }
+
+    fn to_frame_model<F2: ReferenceFrame>(
+        &self,
+        jd: &JulianDate,
+        model: EarthOrientationModel,
     ) -> Position<C, F2, U>
     where
         (): FrameRotationProvider<F, F2>,
     {
-        let rot: Rotation3 = <() as FrameRotationProvider<F, F2>>::rotation(*jd, ctx);
+        let rot: Rotation3 = model_rotation::<F, F2>(*jd, model);
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         Position::new(x, y, z)
     }
@@ -356,21 +495,42 @@ where
         (): CenterShiftProvider<C, C2, F>,
         (): FrameRotationProvider<F, F2>,
     {
-        self.to_with(jd, &AstroContext::default())
+        let ctx: AstroContext = AstroContext::default();
+        self.to_with(jd, &ctx)
     }
 
-    fn to_with<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame>(
+    fn to_with<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame, Ctx>(
         &self,
         jd: &JulianDate,
-        ctx: &AstroContext,
+        ctx: &Ctx,
     ) -> Position<C2, F2, U>
     where
+        Ctx: TransformContext,
+        Ctx::Eph: crate::calculus::ephemeris::Ephemeris,
         (): CenterShiftProvider<C, C2, F>,
         (): FrameRotationProvider<F, F2>,
     {
         // Order: center first (in source frame), then rotate
         <Self as TransformCenter<C2, F, U>>::to_center_with(self, (), *jd, ctx)
-            .to_frame_with::<F2>(jd, ctx)
+            .to_frame_with::<F2, Ctx>(jd, ctx)
+    }
+
+    fn to_model<C2: ReferenceCenter<Params = ()>, F2: ReferenceFrame>(
+        &self,
+        jd: &JulianDate,
+        model: EarthOrientationModel,
+    ) -> Position<C2, F2, U>
+    where
+        (): CenterShiftProvider<C, C2, F>,
+        (): FrameRotationProvider<F, F2>,
+    {
+        let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
+        match model {
+            EarthOrientationModel::Iau2000A => self.to_with(jd, &ctx.with_model::<Iau2000A>()),
+            EarthOrientationModel::Iau2000B => self.to_with(jd, &ctx.with_model::<Iau2000B>()),
+            EarthOrientationModel::Iau2006 => self.to_with(jd, &ctx.with_model::<Iau2006>()),
+            EarthOrientationModel::Iau2006A => self.to_with(jd, &ctx.with_model::<Iau2006A>()),
+        }
     }
 }
 
@@ -378,7 +538,8 @@ where
 // WithEngine - Builder for custom context
 // =============================================================================
 
-/// A wrapper that pairs a coordinate reference with a custom [`AstroContext`],
+/// A wrapper that pairs a coordinate reference with a custom transform
+/// context,
 /// enabling `.using(&engine).to_frame::<F2>(&jd)` style calls.
 ///
 /// # Example
@@ -387,16 +548,19 @@ where
 /// let engine = AstroContext::new();
 /// let result = direction.using(&engine).to_frame::<EclipticMeanJ2000>(&jd);
 /// ```
-pub struct WithEngine<'a, T> {
+pub struct WithEngine<'a, T, Ctx> {
     inner: &'a T,
-    ctx: &'a AstroContext,
+    ctx: &'a Ctx,
 }
 
 /// Helper trait to create [`WithEngine`] wrappers.
 pub trait UsingEngine: Sized {
-    /// Wrap this coordinate with a custom [`AstroContext`] for the next
+    /// Wrap this coordinate with a custom transform context for the next
     /// transformation call.
-    fn using<'a>(&'a self, engine: &'a AstroContext) -> WithEngine<'a, Self> {
+    fn using<'a, Ctx>(&'a self, engine: &'a Ctx) -> WithEngine<'a, Self, Ctx>
+    where
+        Ctx: TransformContext,
+    {
         WithEngine {
             inner: self,
             ctx: engine,
@@ -409,7 +573,10 @@ impl<T> UsingEngine for T {}
 
 // --- WithEngine impls for Direction<F> ---
 
-impl<'a, F: ReferenceFrame> WithEngine<'a, Direction<F>> {
+impl<'a, F: ReferenceFrame, Ctx> WithEngine<'a, Direction<F>, Ctx>
+where
+    Ctx: TransformContext,
+{
     /// Rotates this direction to a new reference frame using the wrapped context.
     pub fn to_frame<F2: ReferenceFrame>(&self, jd: &JulianDate) -> Direction<F2>
     where
@@ -421,9 +588,11 @@ impl<'a, F: ReferenceFrame> WithEngine<'a, Direction<F>> {
 
 // --- WithEngine impls for Position<C, F, U> ---
 
-impl<'a, C, F, U> WithEngine<'a, Position<C, F, U>>
+impl<'a, C, F, U, Ctx> WithEngine<'a, Position<C, F, U>, Ctx>
 where
     C: ReferenceCenter<Params = ()>,
+    Ctx: TransformContext,
+    Ctx::Eph: crate::calculus::ephemeris::Ephemeris,
     F: ReferenceFrame,
     U: LengthUnit,
 {
@@ -490,7 +659,7 @@ mod tests {
     #[test]
     fn test_direction_frame_transform_with_ctx() {
         let dir = Direction::<ICRS>::new(1.0, 0.0, 0.0);
-        let ctx = AstroContext::default();
+        let ctx: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
 
         let dir_ecl: Direction<EclipticMeanJ2000> = dir.to_frame_with(&jd, &ctx);
@@ -589,7 +758,7 @@ mod tests {
     #[test]
     fn test_using_engine() {
         let dir = Direction::<ICRS>::new(1.0, 0.0, 0.0);
-        let engine = AstroContext::default();
+        let engine: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
 
         let dir_ecl: Direction<EclipticMeanJ2000> = dir.using(&engine).to_frame(&jd);
@@ -598,6 +767,34 @@ mod tests {
         assert!((dir_ecl.x() - dir_ecl_direct.x()).abs() < 1e-15);
         assert!((dir_ecl.y() - dir_ecl_direct.y()).abs() < 1e-15);
         assert!((dir_ecl.z() - dir_ecl_direct.z()).abs() < 1e-15);
+    }
+
+    #[test]
+    fn test_runtime_model_selection_affects_true_of_date_rotation() {
+        use crate::coordinates::transform::EarthOrientationModel;
+
+        let dir = Direction::<ICRS>::new(1.0, 0.0, 0.0);
+        let jd = JulianDate::new(2_458_850.0);
+
+        let with_nutation = dir.to_frame_model::<crate::coordinates::frames::EquatorialTrueOfDate>(
+            &jd,
+            EarthOrientationModel::Iau2006A,
+        );
+        let precession_only = dir
+            .to_frame_model::<crate::coordinates::frames::EquatorialTrueOfDate>(
+                &jd,
+                EarthOrientationModel::Iau2006,
+            );
+
+        let delta = ((with_nutation.x() - precession_only.x()).powi(2)
+            + (with_nutation.y() - precession_only.y()).powi(2)
+            + (with_nutation.z() - precession_only.z()).powi(2))
+        .sqrt();
+
+        assert!(
+            delta > 1e-9,
+            "model presets should produce distinct rotations"
+        );
     }
 
     // =====================================================================
@@ -643,7 +840,7 @@ mod tests {
         use qtty::DEG;
 
         let sph_dir = spherical::Direction::<ICRS>::new(90.0 * DEG, 0.0 * DEG);
-        let ctx = AstroContext::default();
+        let ctx: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
 
         let with_ctx: spherical::Direction<EclipticMeanJ2000> = sph_dir.to_frame_with(&jd, &ctx);
@@ -707,7 +904,7 @@ mod tests {
             qtty::Quantity::<AstronomicalUnit>::new(0.0),
             qtty::Quantity::<AstronomicalUnit>::new(0.0),
         );
-        let ctx = AstroContext::default();
+        let ctx: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
 
         let with_ctx: Vector<EclipticMeanJ2000, AstronomicalUnit> = vec.to_frame_with(&jd, &ctx);
@@ -725,7 +922,7 @@ mod tests {
     #[test]
     fn test_using_engine_position_frame() {
         let pos = Position::<Barycentric, ICRS, AstronomicalUnit>::new(1.0, 0.5, 0.2);
-        let engine = AstroContext::default();
+        let engine: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
 
         let via_engine: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
@@ -740,7 +937,7 @@ mod tests {
     #[test]
     fn test_using_engine_position_center() {
         let pos = Position::<Geocentric, EclipticMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
-        let engine = AstroContext::default();
+        let engine: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
 
         let via_engine: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
@@ -755,7 +952,7 @@ mod tests {
     #[test]
     fn test_using_engine_position_combined() {
         let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
-        let engine = AstroContext::default();
+        let engine: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
 
         let via_engine: Position<Geocentric, ICRS, AstronomicalUnit> = pos.using(&engine).to(&jd);
@@ -773,7 +970,7 @@ mod tests {
     #[test]
     fn test_position_frame_with_ctx() {
         let pos = Position::<Barycentric, ICRS, AstronomicalUnit>::new(1.0, 2.0, 3.0);
-        let ctx = AstroContext::default();
+        let ctx: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
 
         let with_ctx: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
@@ -789,7 +986,7 @@ mod tests {
     #[test]
     fn test_position_combined_with_ctx() {
         let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
-        let ctx = AstroContext::default();
+        let ctx: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
 
         let with_ctx: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to_with(&jd, &ctx);

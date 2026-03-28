@@ -48,7 +48,7 @@ pub use qtty::time::SIDEREAL_DAY;
 /// Arcseconds-to-radians conversion factor.
 const AS2RAD: f64 = std::f64::consts::PI / (180.0 * 3600.0);
 
-/// Greenwich Mean Sidereal Time — IAU 2006 (ERA-based).
+/// Greenwich Mean Sidereal Time, IAU 2006 (ERA-based).
 ///
 /// ```text
 /// GMST(UT1, TT) = ERA(UT1) + polynomial(t)
@@ -82,7 +82,7 @@ pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
     Radians::new(gmst.rem_euclid(TAU))
 }
 
-/// Greenwich Apparent Sidereal Time — IAU 2006/2000A.
+/// Greenwich Apparent Sidereal Time, IAU 2006/2000A.
 ///
 /// ```text
 /// GAST = GMST + equation_of_the_equinoxes

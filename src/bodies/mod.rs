@@ -40,7 +40,7 @@
 //! ```
 //!
 //! ## Design philosophy
-//! * **Type safety first** — every physical quantity carries its unit.
+//! * **Type safety first**, every physical quantity carries its unit.
 //! * **Zero runtime cost** for built‑in constants.
 //! * **Ergonomic**: most commonly used types (`Planet`, `Star`, `Comet`, …) are
 //!   re‑exported at the crate root to minimise path noise.

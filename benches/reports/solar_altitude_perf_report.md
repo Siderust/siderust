@@ -1,4 +1,4 @@
-# Solar Altitude Bench — Performance Investigation (`find_night_periods_365day`)
+# Solar Altitude Bench, Performance Investigation (`find_night_periods_365day`)
 
 > Note: This report lives under `benches/reports/` because it documents
 > benchmark-driven performance work.

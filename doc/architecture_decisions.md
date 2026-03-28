@@ -73,7 +73,7 @@ The resolution introduces two separate abstractions:
 
 - **`CoordinateWithPM<T>`** (formerly `Target<T>`): a concrete struct representing a single position sample with an optional proper-motion correction. It does not "know" how to compute positions at arbitrary times; it simply stores one. A backward-compatible `Target<T>` type alias is provided.
 
-- **`Trackable`**: a trait representing anything that can produce coordinates at a given Julian Date. It is implemented for solar-system unit types (via VSOP87/ELP2000), `Star` (via catalog coordinates), `direction::ICRS` (identity — fixed directions are time-invariant), and `CoordinateWithPM<T>` itself (returns the stored position).
+- **`Trackable`**: a trait representing anything that can produce coordinates at a given Julian Date. It is implemented for solar-system unit types (via VSOP87/ELP2000), `Star` (via catalog coordinates), `direction::ICRS` (identity, fixed directions are time-invariant), and `CoordinateWithPM<T>` itself (returns the stored position).
 
 This separation enables generic programming over trackable objects. A function constrained by `T: Trackable` can accept a planet, a star, a fixed sky direction, or a precomputed coordinate sample without knowing the concrete type. The `AltitudePeriodsProvider` and `AzimuthProvider` traits remain independent dispatch layers for observation-specific calculations.
 

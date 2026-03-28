@@ -42,7 +42,7 @@ fn one_week() -> Period<MJD> {
 }
 
 // ===========================================================================
-// azimuth_at — valid range
+// azimuth_at, valid range
 // ===========================================================================
 
 #[test]
@@ -138,13 +138,13 @@ fn moon_crossing_south_over_week() {
 }
 
 // ===========================================================================
-// azimuth_extrema — smoke tests
+// azimuth_extrema, smoke tests
 // ===========================================================================
 
 /// Smoke test: `azimuth_extrema` runs without panicking and any returned
 /// extremum has a valid azimuth value.  The Sun's azimuth is monotonically
 /// increasing over a 24-hour window (Earth rotation dominates its apparent
-/// motion), so the result may well be empty — but the values must be valid.
+/// motion), so the result may well be empty, but the values must be valid.
 #[test]
 fn sun_azimuth_extrema_smoke() {
     let exts = azimuth_extrema(&Sun, &greenwich(), one_day(), SearchOpts::default());
@@ -236,7 +236,7 @@ fn in_azimuth_range_equals_azimuth_ranges() {
 }
 
 // ===========================================================================
-// outside_azimuth_range — complement property
+// outside_azimuth_range, complement property
 // ===========================================================================
 
 #[test]

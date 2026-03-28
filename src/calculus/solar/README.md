@@ -1,4 +1,4 @@
-# `calculus::solar` — day/night & twilight periods
+# `calculus::solar`, day/night & twilight periods
 
 This folder contains Sun-specific helpers for computing **time windows** where the Sun's
 altitude satisfies some condition (night, day, twilight bands, etc.).
@@ -50,7 +50,7 @@ See runnable examples:
   - Implementation: calls `Sun::get_horizontal::<AstronomicalUnit>(jd, site)` and reads `.alt()`.
   - Used by all the period finders as the "truth" function to be thresholded.
 
-### Period finders (recommended — 2-hour scan step)
+### Period finders (recommended, 2-hour scan step)
 
 Functions:
 
@@ -63,9 +63,9 @@ Functions:
   - Useful for twilight "bands", e.g. nautical twilight could be `(-18°, -12°)`.
 
 Implementation: all three delegate to `math_core::intervals` with a **2-hour** scan step,
-yielding ~12 VSOP87 evaluations per day — fast enough for multi-year sweeps.
+yielding ~12 VSOP87 evaluations per day, fast enough for multi-year sweeps.
 
-### Period finders (scan-based — 10-minute step, for comparison)
+### Period finders (scan-based, 10-minute step, for comparison)
 
 - `find_day_periods_scan(...)`
 - `find_night_periods_scan(...)`
@@ -103,7 +103,7 @@ All period finders share the same pipeline from `math_core::intervals`:
 4. **Interval assembly** from consecutive crossing pairs.
 
 For `Between {min, max}` queries, the range is computed as
-`above(min) ∩ complement(above(max))` — two interval-algebra passes at near-zero cost.
+`above(min) ∩ complement(above(max))`, two interval-algebra passes at near-zero cost.
 
 ### Scan step choice
 

@@ -10,7 +10,7 @@
 //! ## Design
 //!
 //! - **Compile-time selection**: The [`Ephemeris`] trait uses associated
-//!   functions (no `&self`) — backends are zero-sized marker types; all
+//!   functions (no `&self`), backends are zero-sized marker types; all
 //!   dispatch is monomorphized away.
 //! - **Runtime selection**: The [`DynEphemeris`] trait uses `&self` methods,
 //!   enabling trait objects (`Box<dyn DynEphemeris>`) for runtime-loaded data.
@@ -58,7 +58,7 @@ pub type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
 /// (**compile-time, static dispatch**).
 ///
 /// All methods are associated functions (no `&self` receiver) because backends
-/// are zero-sized marker types — the coefficient data lives in static arrays
+/// are zero-sized marker types, the coefficient data lives in static arrays
 /// generated at compile time.
 ///
 /// The five methods cover every ephemeris call site in the coordinate transform
@@ -92,7 +92,7 @@ pub trait Ephemeris {
 /// (**runtime, dynamic dispatch**).
 ///
 /// This is the instance-based counterpart to [`Ephemeris`]. All methods take
-/// `&self`, making this trait **object-safe** — you can use `Box<dyn DynEphemeris>`
+/// `&self`, making this trait **object-safe**, you can use `Box<dyn DynEphemeris>`
 /// or `&dyn DynEphemeris` for runtime-selected backends.
 ///
 /// ## Blanket implementation
