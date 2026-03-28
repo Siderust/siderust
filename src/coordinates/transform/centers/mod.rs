@@ -37,7 +37,7 @@
 pub mod position;
 
 // Re-export expert API for topocentric transforms with custom context.
-pub use position::to_topocentric::to_topocentric_with_ctx;
+pub use position::to_topocentric::{to_topocentric_with, to_topocentric_with_ctx};
 
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
@@ -45,8 +45,8 @@ use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames::ReferenceFrame;
-use crate::coordinates::transform::context::AstroContext;
-use crate::coordinates::transform::providers::CenterShiftProvider;
+use crate::coordinates::transform::context::{AstroContext, TransformContext};
+use crate::coordinates::transform::providers::{center_shift_as, CenterShiftProvider};
 use crate::time::JulianDate;
 use qtty::LengthUnit;
 
@@ -113,20 +113,38 @@ pub trait TransformCenter<C2: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
     /// `args` is either a bare [`JulianDate`] (for standard centers whose
     /// `Params = ()`) or a `(params, jd)` tuple for parameterised centers.
     /// See [`IntoTransformArgs`] for all supported forms.
-    fn to_center<A: IntoTransformArgs<C2::Params>>(&self, args: A) -> Position<C2, F, U> {
+    fn to_center<A: IntoTransformArgs<C2::Params>>(&self, args: A) -> Position<C2, F, U>
+    where
+        Self: Sized,
+    {
         let (params, jd) = args.into_params_jd();
         let ctx: AstroContext = AstroContext::default();
         self.to_center_with(params, jd, &ctx)
     }
 
-    /// Transform to the target center with a custom [`AstroContext`].
+    /// Transform to the target center with a custom transform context.
     ///
-    /// Use this to override the ephemeris, EOP, or nutation model.
-    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    /// Use this to override the ephemeris, EOP, or compile-time nutation model.
+    fn to_center_with<Ctx>(
         &self,
         params: C2::Params,
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &Ctx,
+    ) -> Position<C2, F, U>
+    where
+        Ctx: TransformContext,
+        Ctx::Eph: Ephemeris,
+        Self: Sized,
+    {
+        self.to_center_as::<Ctx::Eph, Ctx::Eop, Ctx::Nut>(params, jd, ctx.astro_context())
+    }
+
+    /// Transform to the target center with an explicit compile-time nutation model.
+    fn to_center_as<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+        &self,
+        params: C2::Params,
+        jd: JulianDate,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> Position<C2, F, U>;
 }
 
@@ -149,13 +167,13 @@ where
     U: LengthUnit,
     (): CenterShiftProvider<C1, C2, F>,
 {
-    fn to_center_with<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+    fn to_center_as<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         &self,
         _params: (),
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> Position<C2, F, U> {
-        let shift = <() as CenterShiftProvider<C1, C2, F>>::shift(jd, ctx);
+        let shift = center_shift_as::<C1, C2, F, Nut, Eph, Eop>(jd, ctx);
         Position::new(
             self.x() + shift[0].to::<U>(),
             self.y() + shift[1].to::<U>(),

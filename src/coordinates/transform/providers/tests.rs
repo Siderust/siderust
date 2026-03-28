@@ -391,13 +391,10 @@ fn erfa_nutation_j2020_default_matches_num06a() {
 fn erfa_nutation_j2020_iau2000b_within_ceiling() {
     use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris};
 
-    let ctx = AstroContext::<DefaultEphemeris, DefaultEop, Iau2000B>::with_types();
+    let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
+    let model_ctx = ctx.with_model::<Iau2000B>();
     let jd = JulianDate::new(2451545.0 + 7305.0);
-    let rot = <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation::<
-        DefaultEphemeris,
-        DefaultEop,
-        Iau2000B,
-    >(jd, &ctx);
+    let rot = frame_rotation_with::<EquatorialMeanOfDate, EquatorialTrueOfDate, _>(jd, &model_ctx);
     let m = rot.as_matrix();
 
     let erfa: [[f64; 3]; 3] = [
@@ -502,13 +499,10 @@ fn erfa_bpn_j2020_composed() {
 fn erfa_bpn_j2020_iau2006a_matches_pnm06a() {
     use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris};
 
-    let ctx = AstroContext::<DefaultEphemeris, DefaultEop, Iau2006A>::with_types();
+    let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
+    let model_ctx = ctx.with_model::<Iau2006A>();
     let jd = JulianDate::new(2458850.0);
-    let rot = <() as FrameRotationProvider<ICRS, EquatorialTrueOfDate>>::rotation::<
-        DefaultEphemeris,
-        DefaultEop,
-        Iau2006A,
-    >(jd, &ctx);
+    let rot = frame_rotation_with::<ICRS, EquatorialTrueOfDate, _>(jd, &model_ctx);
     let m = rot.as_matrix();
 
     // erfa.pnm06a(2458850.0, 0.0)
@@ -544,13 +538,10 @@ fn erfa_bpn_j2020_iau2006a_matches_pnm06a() {
 fn erfa_nutation_j2020_iau2006a_matches_num06a() {
     use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris};
 
-    let ctx = AstroContext::<DefaultEphemeris, DefaultEop, Iau2006A>::with_types();
+    let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
+    let model_ctx = ctx.with_model::<Iau2006A>();
     let jd = JulianDate::new(2458850.0);
-    let rot = <() as FrameRotationProvider<EquatorialMeanOfDate, EquatorialTrueOfDate>>::rotation::<
-        DefaultEphemeris,
-        DefaultEop,
-        Iau2006A,
-    >(jd, &ctx);
+    let rot = frame_rotation_with::<EquatorialMeanOfDate, EquatorialTrueOfDate, _>(jd, &model_ctx);
     let m = rot.as_matrix();
 
     // erfa.num06a(2458850.0, 0.0)

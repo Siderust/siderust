@@ -29,6 +29,7 @@
 use std::marker::PhantomData;
 
 use crate::astro::eop::{EopProvider, EopValues, IersEop};
+use crate::astro::nutation::NutationModel;
 use crate::time::JulianDate;
 
 #[cfg(not(feature = "de440"))]
@@ -89,17 +90,21 @@ pub enum EarthOrientationModel {
 
 /// Astronomical context for coordinate transformations.
 ///
-/// This structure holds configuration for time-dependent transformations,
-/// including:
+/// This structure holds the runtime configuration for time-dependent
+/// transformations:
 /// - Ephemeris source for planetary positions
 /// - Earth Orientation Parameters (EOP) for polar motion and UT1-UTC
-/// - Nutation/precession model selection
+///
+/// Compile-time model selection is layered on top through
+/// [`ModelContext`], keeping the base context focused on providers/data.
 ///
 /// # Type Parameters
 ///
 /// - `Eph`: Ephemeris provider type (default: [`DefaultEphemeris`]).
 /// - `Eop`: Earth Orientation Parameters type (default: [`DefaultEop`]).
-/// - `Nut`: Nutation/precession model type (default: [`DefaultNutationModel`]).
+///
+/// To override the default nutation model, call [`AstroContext::with_model`]
+/// and pass the resulting [`ModelContext`] into the `_with` transform APIs.
 ///
 /// # Example
 ///
@@ -110,19 +115,17 @@ pub enum EarthOrientationModel {
 /// let ctx = AstroContext::new();
 /// ```
 #[derive(Debug, Clone)]
-pub struct AstroContext<Eph = DefaultEphemeris, Eop = DefaultEop, Nut = DefaultNutationModel> {
+pub struct AstroContext<Eph = DefaultEphemeris, Eop = DefaultEop> {
     _ephemeris: PhantomData<Eph>,
     /// Earth Orientation Parameters provider.
     eop: Eop,
-    _nutation: PhantomData<Nut>,
 }
 
-impl<Eph, Eop: Default, Nut> Default for AstroContext<Eph, Eop, Nut> {
+impl<Eph, Eop: Default> Default for AstroContext<Eph, Eop> {
     fn default() -> Self {
         Self {
             _ephemeris: PhantomData,
             eop: Eop::default(),
-            _nutation: PhantomData,
         }
     }
 }
@@ -138,17 +141,31 @@ impl AstroContext {
     }
 }
 
-impl<Eph, Eop: Default, Nut> AstroContext<Eph, Eop, Nut> {
+impl<Eph, Eop: Default> AstroContext<Eph, Eop> {
     /// Creates a context with custom type parameters.
     ///
-    /// Use this when you need to specify custom ephemeris or model types.
+    /// Use this when you need to specify custom ephemeris or EOP types.
     #[inline]
     pub fn with_types() -> Self {
         Self::default()
     }
 }
 
-impl<Eph, Eop: EopProvider, Nut> AstroContext<Eph, Eop, Nut> {
+impl<Eph, Eop> AstroContext<Eph, Eop> {
+    /// Binds a compile-time nutation model to this context.
+    ///
+    /// This returns a lightweight wrapper carrying only a reference to the
+    /// base context plus a [`PhantomData`] marker for the selected model.
+    #[inline]
+    pub fn with_model<Nut: NutationModel>(&self) -> ModelContext<'_, Eph, Eop, Nut> {
+        ModelContext {
+            ctx: self,
+            _nutation: PhantomData,
+        }
+    }
+}
+
+impl<Eph, Eop: EopProvider> AstroContext<Eph, Eop> {
     /// Look up EOP values for the given **UTC** Julian Date.
     ///
     /// # Time-scale contract
@@ -171,11 +188,69 @@ impl<Eph, Eop: EopProvider, Nut> AstroContext<Eph, Eop, Nut> {
 }
 
 // Marker that this context uses default ephemeris
-impl<Eop, Nut> AstroContext<DefaultEphemeris, Eop, Nut> {
+impl<Eop> AstroContext<DefaultEphemeris, Eop> {
     /// Returns true if this context uses the default ephemeris.
     #[inline]
     pub const fn uses_default_ephemeris(&self) -> bool {
         true
+    }
+}
+
+/// Context wrapper that binds a compile-time nutation model to an
+/// [`AstroContext`] without duplicating the runtime provider state.
+#[derive(Debug, Clone, Copy)]
+pub struct ModelContext<'a, Eph = DefaultEphemeris, Eop = DefaultEop, Nut = DefaultNutationModel> {
+    ctx: &'a AstroContext<Eph, Eop>,
+    _nutation: PhantomData<Nut>,
+}
+
+impl<'a, Eph, Eop, Nut> ModelContext<'a, Eph, Eop, Nut> {
+    /// Returns the underlying runtime context.
+    #[inline]
+    pub fn astro_context(&self) -> &'a AstroContext<Eph, Eop> {
+        self.ctx
+    }
+}
+
+/// Common interface for transformation contexts accepted by the ergonomic
+/// `_with` APIs.
+///
+/// A plain [`AstroContext`] uses [`DefaultNutationModel`], while a
+/// [`ModelContext`] overrides that compile-time model through its phantom
+/// type parameter.
+pub trait TransformContext {
+    /// Ephemeris provider type carried by the context.
+    type Eph;
+    /// EOP provider type carried by the context.
+    type Eop: EopProvider;
+    /// Compile-time nutation model associated with this context value.
+    type Nut: NutationModel;
+
+    /// Returns the underlying runtime context.
+    fn astro_context(&self) -> &AstroContext<Self::Eph, Self::Eop>;
+}
+
+impl<Eph, Eop: EopProvider> TransformContext for AstroContext<Eph, Eop> {
+    type Eph = Eph;
+    type Eop = Eop;
+    type Nut = DefaultNutationModel;
+
+    #[inline]
+    fn astro_context(&self) -> &AstroContext<Self::Eph, Self::Eop> {
+        self
+    }
+}
+
+impl<'a, Eph, Eop: EopProvider, Nut: NutationModel> TransformContext
+    for ModelContext<'a, Eph, Eop, Nut>
+{
+    type Eph = Eph;
+    type Eop = Eop;
+    type Nut = Nut;
+
+    #[inline]
+    fn astro_context(&self) -> &AstroContext<Self::Eph, Self::Eop> {
+        self.ctx
     }
 }
 
@@ -280,9 +355,15 @@ mod tests {
 
     #[test]
     fn test_context_with_types() {
-        let ctx: AstroContext<DefaultEphemeris, DefaultEop, DefaultNutationModel> =
-            AstroContext::with_types();
+        let ctx: AstroContext<DefaultEphemeris, DefaultEop> = AstroContext::with_types();
         assert!(ctx.uses_default_ephemeris());
+    }
+
+    #[test]
+    fn test_context_with_model() {
+        let ctx = AstroContext::new();
+        let model_ctx = ctx.with_model::<DefaultNutationModel>();
+        let _ = model_ctx.astro_context();
     }
 
     #[test]

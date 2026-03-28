@@ -4,4 +4,4 @@
 pub mod to_bodycentric;
 pub mod to_topocentric;
 
-pub use to_topocentric::to_topocentric_with_ctx;
+pub use to_topocentric::{to_topocentric_with, to_topocentric_with_ctx};
