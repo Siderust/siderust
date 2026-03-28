@@ -651,7 +651,7 @@ mod de440_tests {
     }
 }
 
-// DE441 is now runtime-only via RuntimeEphemeris — see examples/12_runtime_ephemeris.rs.
+// DE441 is now runtime-only via RuntimeEphemeris, see examples/12_runtime_ephemeris.rs.
 // The compile-time De441Ephemeris backend has been removed.
 
 // ============================================================================

@@ -11,6 +11,7 @@
 //! Both frames are epoch-independent (constant rotation).
 
 use super::*;
+use crate::coordinates::transform::frames::bias;
 
 const GALACTIC_TO_ICRS: Rotation3 = Rotation3::from_matrix([
     [
@@ -32,9 +33,9 @@ const GALACTIC_TO_ICRS: Rotation3 = Rotation3::from_matrix([
 
 impl FrameRotationProvider<Galactic, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
         GALACTIC_TO_ICRS
     }
@@ -42,9 +43,9 @@ impl FrameRotationProvider<Galactic, ICRS> for () {
 
 impl FrameRotationProvider<ICRS, Galactic> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
         GALACTIC_TO_ICRS.inverse()
     }
@@ -73,29 +74,29 @@ const FK4_TO_FK5: Rotation3 = Rotation3::from_matrix([
 
 impl FrameRotationProvider<FK4B1950, ICRS> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
-        FRAME_BIAS_ICRS_TO_J2000.inverse() * FK4_TO_FK5
+        bias::frame_bias_j2000_to_icrs() * FK4_TO_FK5
     }
 }
 
 impl FrameRotationProvider<ICRS, FK4B1950> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
-        FK4_TO_FK5.inverse() * FRAME_BIAS_ICRS_TO_J2000
+        FK4_TO_FK5.inverse() * bias::frame_bias_icrs_to_j2000()
     }
 }
 
 impl FrameRotationProvider<FK4B1950, EquatorialMeanJ2000> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
-        _ctx: &AstroContext<Eph, Eop, Nut>,
+        _ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
         FK4_TO_FK5
     }
@@ -103,9 +104,9 @@ impl FrameRotationProvider<FK4B1950, EquatorialMeanJ2000> for () {
 
 impl FrameRotationProvider<EquatorialMeanJ2000, FK4B1950> for () {
     #[inline]
-    fn rotation<Eph, Eop: EopProvider, Nut>(
+    fn rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop, Nut>,
+        ctx: &AstroContext<Eph, Eop>,
     ) -> Rotation3 {
         inverse_rotation::<EquatorialMeanJ2000, FK4B1950, Eph, Eop, Nut>(jd, ctx)
     }

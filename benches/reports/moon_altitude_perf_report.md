@@ -1,4 +1,4 @@
-# Moon Altitude Bench — Performance Notes (`find_moon_above_horizon_365day`)
+# Moon Altitude Bench, Performance Notes (`find_moon_above_horizon_365day`)
 
 > Note: This report lives under `benches/reports/` because it documents
 > benchmark-driven performance work.

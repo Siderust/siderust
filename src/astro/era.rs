@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Earth Rotation Angle (ERA) — IAU 2000
+//! # Earth Rotation Angle (ERA), IAU 2000
 //!
 //! The **Earth Rotation Angle** (ERA, θ) is the angle between the Celestial
 //! Intermediate Origin (CIO) and the Terrestrial Intermediate Origin (TIO),

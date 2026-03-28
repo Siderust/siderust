@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! **Unified subject dispatch** — the **preferred FFI entry point** for altitude
+//! **Unified subject dispatch**, the **preferred FFI entry point** for altitude
 //! and azimuth computations.
 //!
 //! # Overview
@@ -36,7 +36,7 @@ use siderust::AzimuthProvider;
 use tempoch::ModifiedJulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Altitude — instantaneous
+// Altitude, instantaneous
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Altitude of any subject at an instant (radians).
@@ -63,7 +63,7 @@ pub extern "C" fn siderust_altitude_at(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Altitude — threshold periods
+// Altitude, threshold periods
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Periods when a subject is above a threshold altitude.
@@ -131,7 +131,7 @@ pub extern "C" fn siderust_below_threshold(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Altitude — events
+// Altitude, events
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Threshold-crossing events for a subject.
@@ -220,7 +220,7 @@ pub extern "C" fn siderust_altitude_periods(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Azimuth — instantaneous
+// Azimuth, instantaneous
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Azimuth of any subject at an instant (degrees, North-clockwise).
@@ -247,7 +247,7 @@ pub extern "C" fn siderust_azimuth_at(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Azimuth — events
+// Azimuth, events
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Azimuth bearing-crossing events for a subject.

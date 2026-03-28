@@ -8,8 +8,8 @@
 //!
 //! ## Algorithms Compared
 //!
-//! - **2-hour scan** (recommended): `find_moon_above_horizon` — fast, ~12 evals/day
-//! - **10-minute scan** (validation): `find_moon_above_horizon_scan` — finer step
+//! - **2-hour scan** (recommended): `find_moon_above_horizon`, fast, ~12 evals/day
+//! - **10-minute scan** (validation): `find_moon_above_horizon_scan`, finer step
 //!
 //! Both delegate to `math_core::intervals` for scan + Brent refinement.
 //!
@@ -67,7 +67,7 @@ fn bench_moon_altitude_computation(c: &mut Criterion) {
 }
 
 // =============================================================================
-// Moon Above Horizon Benchmarks (2-hour scan — recommended)
+// Moon Above Horizon Benchmarks (2-hour scan, recommended)
 // =============================================================================
 
 fn bench_moon_above_horizon(c: &mut Criterion) {
@@ -127,7 +127,7 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
 }
 
 // =============================================================================
-// Moon Below Horizon Benchmarks (2-hour scan — recommended)
+// Moon Below Horizon Benchmarks (2-hour scan, recommended)
 // =============================================================================
 
 fn bench_moon_below_horizon(c: &mut Criterion) {

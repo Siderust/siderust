@@ -115,7 +115,7 @@ pub fn solar_deflection(
     // Avoid degenerate case: source is exactly behind the Sun
     let denom = 1.0 + s_dot_q;
     if denom.abs() < 1e-15 {
-        return star; // source directly behind sun — deflection undefined
+        return star; // source directly behind sun, deflection undefined
     }
 
     // Deflection factor: 2 G M / (c² |q|)
@@ -165,7 +165,7 @@ pub fn solar_deflection_magnitude(
     let dist = sun_distance.value();
 
     if angle <= 0.0 || dist <= 0.0 {
-        return Arcseconds::new(0.0); // directly at the Sun — meaningless
+        return Arcseconds::new(0.0); // directly at the Sun, meaningless
     }
 
     // Δθ = (2GM/c²R) × cot(θ/2)
@@ -318,7 +318,7 @@ mod tests {
 
     #[test]
     fn deflection_roundtrip() {
-        // Apply deflection, then inverse — should recover original direction
+        // Apply deflection, then inverse, should recover original direction
         let star = direction::EquatorialMeanJ2000::new(0.6, 0.7, 0.3742);
         let earth_sun_au = [0.5, -0.3, 0.8]; // ~1 AU
 

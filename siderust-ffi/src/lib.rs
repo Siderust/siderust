@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! C FFI bindings for **siderust** — high-precision astronomy library.
+//! C FFI bindings for **siderust**, high-precision astronomy library.
 //!
 //! This crate exposes a flat, `#[no_mangle] extern "C"` API that can be consumed
 //! from C, C++, or any language with a C FFI bridge.  All heap-allocated types

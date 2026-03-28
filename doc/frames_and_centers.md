@@ -47,7 +47,7 @@ For the Moon (Selenocentric), the position comes from the ephemeris
 
 ## 2. Earth-Fixed Frames
 
-### 2.1 ECEF — Earth-Centred Earth-Fixed (WGS84 Earth-fixed convenience frame)
+### 2.1 ECEF, Earth-Centred Earth-Fixed (WGS84 Earth-fixed convenience frame)
 
 ```rust
 // affn::frames::ECEF
@@ -70,7 +70,7 @@ ellipsoidal / metadata-oriented in siderust today:
 - `Position<Geocentric, ECEF, U>` and `Position<Geocentric, ITRF, U>` share
   the same Earth-orientation chain when rotated to inertial frames
 
-### 2.2 ITRF — International Terrestrial Reference Frame (EOP-realised)
+### 2.2 ITRF, International Terrestrial Reference Frame (EOP-realised)
 
 ```rust
 // affn::frames::ITRF
@@ -90,7 +90,7 @@ ITRS → W⁻¹ → TIRS → ERA → CIRS → Q → GCRS/ICRS
 - Polar-motion-corrected baselines at the centimetre level.
 - Any context where the phrase "ITRF coordinates" appears in the source data.
 
-### 2.3 CIRS / TIRS — Intermediate Earth-orientation frames
+### 2.3 CIRS / TIRS, Intermediate Earth-orientation frames
 
 ```rust
 pub struct CIRS;
@@ -126,7 +126,7 @@ the ICRF catalogue.
 **Note:** `ICRS` and `ICRF` differ only in coordinate style (spherical vs.
 Cartesian direction); they share the same axes.
 
-### 3.2 GCRS — Geocentric Celestial Reference System
+### 3.2 GCRS, Geocentric Celestial Reference System
 
 ```rust
 pub struct GCRS;
@@ -174,7 +174,7 @@ transformation uses the Standish (1982) frame-tie rotation matrix.
 rotation, an equinox correction, and an E-term removal.  siderust implements
 the constant rotation matrix; E-term removal is not yet included.
 
-### 3.5 TEME — True Equator, Mean Equinox
+### 3.5 TEME, True Equator, Mean Equinox
 
 ```rust
 pub struct TEME;
@@ -224,7 +224,7 @@ pub struct Horizontal;
 ```
 
 Local horizontal frame centred on the observer.  Spherical coordinates are
-**(altitude, azimuth)** — altitude measured from the horizon (+90° = zenith),
+**(altitude, azimuth)**, altitude measured from the horizon (+90° = zenith),
 azimuth measured from North through East.
 
 Every `Position<Topocentric, Horizontal, U>` implicitly carries a
@@ -270,9 +270,9 @@ The corresponding `FrameRotationProvider` implementations are organized under
 
 Each body's rotation is defined by three functions of time:
 
-- **α₀(T)** — right ascension of the north pole (degrees), T in Julian centuries
-- **δ₀(T)** — declination of the north pole (degrees), T in Julian centuries
-- **W(d)** — prime meridian angle (degrees), d in days from J2000.0
+- **α₀(T)**, right ascension of the north pole (degrees), T in Julian centuries
+- **δ₀(T)**, declination of the north pole (degrees), T in Julian centuries
+- **W(d)**, prime meridian angle (degrees), d in days from J2000.0
 
 These are stored as `IauRotationParams` constants (e.g., `MARS_ROTATION`)
 in `coordinates::frames::planetary`.
@@ -363,8 +363,8 @@ pub type Geodetic<F, U = Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
 `Geodetic<F>` is the first-class type for Earth-surface positions.  The ellipsoid
 is encoded in the frame `F` via `HasEllipsoid`:
 
-- `Geodetic<ECEF>` — WGS84
-- `Geodetic<ITRF>` — GRS80
+- `Geodetic<ECEF>`, WGS84
+- `Geodetic<ITRF>`, GRS80
 
 ### 8.2 Converting to/from Cartesian ECEF
 
