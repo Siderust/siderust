@@ -191,6 +191,25 @@ enum SiderustBody
 typedef int32_t SiderustBody;
 #endif // __cplusplus
 
+// Runtime-selectable Earth-orientation / nutation model preset.
+enum SiderustEarthOrientationModel
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Full IAU 2000A nutation.
+  SIDERUST_EARTH_ORIENTATION_MODEL_IAU2000_A = 1,
+  // Abridged IAU 2000B nutation.
+  SIDERUST_EARTH_ORIENTATION_MODEL_IAU2000_B = 2,
+  // IAU 2006 precession-only profile.
+  SIDERUST_EARTH_ORIENTATION_MODEL_IAU2006 = 3,
+  // High-precision IAU 2006A convention.
+  SIDERUST_EARTH_ORIENTATION_MODEL_IAU2006_A = 4,
+};
+#ifndef __cplusplus
+typedef int32_t SiderustEarthOrientationModel;
+#endif // __cplusplus
+
 // Reference center identifier for C interop.
 enum siderust_center_t
 #ifdef __cplusplus
@@ -1198,6 +1217,16 @@ siderust_status_t siderust_spherical_dir_transform_frame(double polar_deg,
                                                          double jd,
                                                          struct siderust_spherical_dir_t *out);
 
+// Transform a spherical direction using an explicit Earth-orientation model.
+
+siderust_status_t siderust_spherical_dir_transform_frame_model(double polar_deg,
+                                                               double azimuth_deg,
+                                                               siderust_frame_t src_frame,
+                                                               siderust_frame_t dst_frame,
+                                                               double jd,
+                                                               SiderustEarthOrientationModel model,
+                                                               struct siderust_spherical_dir_t *out);
+
 // Transform a spherical direction to the horizontal (alt-az) frame.
 //
 // Requires an observer location (geodetic WGS84) and a Julian Date.
@@ -1210,6 +1239,16 @@ siderust_status_t siderust_spherical_dir_to_horizontal(double polar_deg,
                                                        double jd,
                                                        struct siderust_geodetic_t observer,
                                                        struct siderust_spherical_dir_t *out);
+
+// Transform a spherical direction to Horizontal using an explicit Earth-orientation model.
+
+siderust_status_t siderust_spherical_dir_to_horizontal_model(double polar_deg,
+                                                             double azimuth_deg,
+                                                             siderust_frame_t src_frame,
+                                                             double jd,
+                                                             struct siderust_geodetic_t observer,
+                                                             SiderustEarthOrientationModel model,
+                                                             struct siderust_spherical_dir_t *out);
 
 // Transform a Cartesian unit-vector direction from one frame to another.
 //
@@ -1227,6 +1266,17 @@ siderust_status_t siderust_cartesian_dir_transform_frame(double x,
                                                          double jd,
                                                          struct siderust_cartesian_pos_t *out);
 
+// Transform a Cartesian unit-vector direction using an explicit Earth-orientation model.
+
+siderust_status_t siderust_cartesian_dir_transform_frame_model(double x,
+                                                               double y,
+                                                               double z,
+                                                               siderust_frame_t src_frame,
+                                                               siderust_frame_t dst_frame,
+                                                               double jd,
+                                                               SiderustEarthOrientationModel model,
+                                                               struct siderust_cartesian_pos_t *out);
+
 // Transform a Cartesian position from one frame to another (frame-only, same center).
 //
 // The rotation preserves the vector magnitude.  The `center` field of `pos`
@@ -1239,6 +1289,14 @@ siderust_status_t siderust_cartesian_pos_transform_frame(struct siderust_cartesi
                                                          siderust_frame_t dst_frame,
                                                          double jd,
                                                          struct siderust_cartesian_pos_t *out);
+
+// Transform a Cartesian position using an explicit Earth-orientation model.
+
+siderust_status_t siderust_cartesian_pos_transform_frame_model(struct siderust_cartesian_pos_t pos,
+                                                               siderust_frame_t dst_frame,
+                                                               double jd,
+                                                               SiderustEarthOrientationModel model,
+                                                               struct siderust_cartesian_pos_t *out);
 
 // Create a geodetic position and convert to ECEF Cartesian.
 

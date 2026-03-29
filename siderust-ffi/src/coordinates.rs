@@ -17,7 +17,8 @@ use siderust::coordinates::frames::{
     ReferenceFrame, ECEF, ICRF, ICRS,
 };
 use siderust::coordinates::transform::{
-    DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt,
+    DirectionAstroExt, EarthOrientationModel as RustEarthOrientationModel, PositionAstroExt,
+    SphericalDirectionAstroExt,
 };
 use siderust::coordinates::{cartesian, spherical};
 use siderust::time::JulianDate;
@@ -41,6 +42,33 @@ trait SphericalDirProxy {
     fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64);
     fn to_equatorial_true_of_date(&self, jd: &JulianDate) -> (f64, f64);
     fn to_horizontal(&self, jd: &JulianDate, site: &Geodetic<ECEF>) -> (f64, f64);
+    fn to_icrs_model(&self, jd: &JulianDate, model: RustEarthOrientationModel) -> (f64, f64);
+    fn to_ecliptic_j2000_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64);
+    fn to_equatorial_j2000_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64);
+    fn to_equatorial_mean_of_date_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64);
+    fn to_equatorial_true_of_date_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64);
+    fn to_horizontal_model(
+        &self,
+        jd: &JulianDate,
+        site: &Geodetic<ECEF>,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64);
 }
 
 /// Helper: extract (polar_deg, azimuth_deg) from a spherical Direction.
@@ -87,6 +115,73 @@ macro_rules! impl_sph_dir_proxy {
                 let icrs = SphericalDirectionAstroExt::to_frame::<ICRS>(self, jd);
                 let eq_tod =
                     SphericalDirectionAstroExt::to_frame::<EquatorialTrueOfDate>(&icrs, jd);
+                let cart = eq_tod.to_cartesian();
+                let hz = DirectionAstroExt::to_horizontal(&cart, jd, site);
+                let hz_sph = spherical::Direction::from_cartesian(&hz);
+                sph_to_pair(&hz_sph)
+            }
+            fn to_icrs_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64) {
+                let r = SphericalDirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                sph_to_pair(&r)
+            }
+            fn to_ecliptic_j2000_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64) {
+                let icrs = SphericalDirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                let r = SphericalDirectionAstroExt::to_frame_model::<EclipticMeanJ2000>(
+                    &icrs, jd, model,
+                );
+                sph_to_pair(&r)
+            }
+            fn to_equatorial_j2000_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64) {
+                let icrs = SphericalDirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                let r = SphericalDirectionAstroExt::to_frame_model::<EquatorialMeanJ2000>(
+                    &icrs, jd, model,
+                );
+                sph_to_pair(&r)
+            }
+            fn to_equatorial_mean_of_date_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64) {
+                let icrs = SphericalDirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                let r = SphericalDirectionAstroExt::to_frame_model::<EquatorialMeanOfDate>(
+                    &icrs, jd, model,
+                );
+                sph_to_pair(&r)
+            }
+            fn to_equatorial_true_of_date_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64) {
+                let icrs = SphericalDirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                let r = SphericalDirectionAstroExt::to_frame_model::<EquatorialTrueOfDate>(
+                    &icrs, jd, model,
+                );
+                sph_to_pair(&r)
+            }
+            fn to_horizontal_model(
+                &self,
+                jd: &JulianDate,
+                site: &Geodetic<ECEF>,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64) {
+                let icrs = SphericalDirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                let eq_tod = SphericalDirectionAstroExt::to_frame_model::<EquatorialTrueOfDate>(
+                    &icrs, jd, model,
+                );
                 let cart = eq_tod.to_cartesian();
                 let hz = DirectionAstroExt::to_horizontal(&cart, jd, site);
                 let hz_sph = spherical::Direction::from_cartesian(&hz);
@@ -197,6 +292,55 @@ pub extern "C" fn siderust_spherical_dir_transform_frame(
     }}
 }
 
+/// Transform a spherical direction using an explicit Earth-orientation model.
+#[no_mangle]
+pub extern "C" fn siderust_spherical_dir_transform_frame_model(
+    polar_deg: f64,
+    azimuth_deg: f64,
+    src_frame: SiderustFrame,
+    dst_frame: SiderustFrame,
+    jd: f64,
+    model: SiderustEarthOrientationModel,
+    out: *mut SiderustSphericalDir,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+
+        let dir = match make_sph_dir_in_frame(src_frame, polar_deg, azimuth_deg) {
+            Ok(d) => d,
+            Err(e) => return e,
+        };
+
+        let jd_val = JulianDate::new(jd);
+        let model = model.to_rust();
+
+        let (out_polar, out_azimuth) = match dst_frame {
+            SiderustFrame::ICRS => dir.to_icrs_model(&jd_val, model),
+            SiderustFrame::EclipticMeanJ2000 => dir.to_ecliptic_j2000_model(&jd_val, model),
+            SiderustFrame::EquatorialMeanJ2000 => dir.to_equatorial_j2000_model(&jd_val, model),
+            SiderustFrame::EquatorialMeanOfDate => {
+                dir.to_equatorial_mean_of_date_model(&jd_val, model)
+            }
+            SiderustFrame::EquatorialTrueOfDate => {
+                dir.to_equatorial_true_of_date_model(&jd_val, model)
+            }
+            SiderustFrame::Horizontal => return SiderustStatus::InvalidFrame,
+            _ => return SiderustStatus::InvalidFrame,
+        };
+
+        unsafe {
+            *out = SiderustSphericalDir {
+                polar_deg: out_polar,
+                azimuth_deg: out_azimuth,
+                frame: dst_frame,
+            };
+        }
+        SiderustStatus::Ok
+    }}
+}
+
 /// Transform a spherical direction to the horizontal (alt-az) frame.
 ///
 /// Requires an observer location (geodetic WGS84) and a Julian Date.
@@ -237,6 +381,42 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal(
     }}
 }
 
+/// Transform a spherical direction to Horizontal using an explicit Earth-orientation model.
+#[no_mangle]
+pub extern "C" fn siderust_spherical_dir_to_horizontal_model(
+    polar_deg: f64,
+    azimuth_deg: f64,
+    src_frame: SiderustFrame,
+    jd: f64,
+    observer: SiderustGeodetict,
+    model: SiderustEarthOrientationModel,
+    out: *mut SiderustSphericalDir,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+
+        let dir = match make_sph_dir_in_frame(src_frame, polar_deg, azimuth_deg) {
+            Ok(d) => d,
+            Err(e) => return e,
+        };
+
+        let jd_val = JulianDate::new(jd);
+        let site = observer.to_rust();
+        let (az, alt) = dir.to_horizontal_model(&jd_val, &site, model.to_rust());
+
+        unsafe {
+            *out = SiderustSphericalDir {
+                polar_deg: alt,
+                azimuth_deg: az,
+                frame: SiderustFrame::Horizontal,
+            };
+        }
+        SiderustStatus::Ok
+    }}
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Cartesian Direction, frame transforms
 // ═══════════════════════════════════════════════════════════════════════════
@@ -250,6 +430,27 @@ trait CartesianDirProxy {
     fn to_equatorial_j2000(&self, jd: &JulianDate) -> (f64, f64, f64);
     fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64, f64);
     fn to_equatorial_true_of_date(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_icrs_model(&self, jd: &JulianDate, model: RustEarthOrientationModel) -> (f64, f64, f64);
+    fn to_ecliptic_j2000_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64, f64);
+    fn to_equatorial_j2000_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64, f64);
+    fn to_equatorial_mean_of_date_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64, f64);
+    fn to_equatorial_true_of_date_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64, f64);
 }
 
 #[inline]
@@ -283,6 +484,53 @@ macro_rules! impl_cart_dir_proxy {
                 let icrs = DirectionAstroExt::to_frame::<ICRS>(self, jd);
                 cart_dir_to_triple(&DirectionAstroExt::to_frame::<EquatorialTrueOfDate>(
                     &icrs, jd,
+                ))
+            }
+            fn to_icrs_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                cart_dir_to_triple(&DirectionAstroExt::to_frame_model::<ICRS>(self, jd, model))
+            }
+            fn to_ecliptic_j2000_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                let icrs = DirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                cart_dir_to_triple(&DirectionAstroExt::to_frame_model::<EclipticMeanJ2000>(
+                    &icrs, jd, model,
+                ))
+            }
+            fn to_equatorial_j2000_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                let icrs = DirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                cart_dir_to_triple(&DirectionAstroExt::to_frame_model::<EquatorialMeanJ2000>(
+                    &icrs, jd, model,
+                ))
+            }
+            fn to_equatorial_mean_of_date_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                let icrs = DirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                cart_dir_to_triple(&DirectionAstroExt::to_frame_model::<EquatorialMeanOfDate>(
+                    &icrs, jd, model,
+                ))
+            }
+            fn to_equatorial_true_of_date_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                let icrs = DirectionAstroExt::to_frame_model::<ICRS>(self, jd, model);
+                cart_dir_to_triple(&DirectionAstroExt::to_frame_model::<EquatorialTrueOfDate>(
+                    &icrs, jd, model,
                 ))
             }
         }
@@ -374,6 +622,58 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame(
     }}
 }
 
+/// Transform a Cartesian unit-vector direction using an explicit Earth-orientation model.
+#[no_mangle]
+pub extern "C" fn siderust_cartesian_dir_transform_frame_model(
+    x: f64,
+    y: f64,
+    z: f64,
+    src_frame: SiderustFrame,
+    dst_frame: SiderustFrame,
+    jd: f64,
+    model: SiderustEarthOrientationModel,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+
+        let dir = match make_cart_dir_in_frame(src_frame, x, y, z) {
+            Ok(d) => d,
+            Err(e) => return e,
+        };
+
+        let jd_val = JulianDate::new(jd);
+        let model = model.to_rust();
+
+        let (ox, oy, oz) = match dst_frame {
+            SiderustFrame::ICRS => dir.to_icrs_model(&jd_val, model),
+            SiderustFrame::EclipticMeanJ2000 => dir.to_ecliptic_j2000_model(&jd_val, model),
+            SiderustFrame::EquatorialMeanJ2000 => dir.to_equatorial_j2000_model(&jd_val, model),
+            SiderustFrame::EquatorialMeanOfDate => {
+                dir.to_equatorial_mean_of_date_model(&jd_val, model)
+            }
+            SiderustFrame::EquatorialTrueOfDate => {
+                dir.to_equatorial_true_of_date_model(&jd_val, model)
+            }
+            _ => return SiderustStatus::InvalidFrame,
+        };
+
+        unsafe {
+            *out = SiderustCartesianPos {
+                x: ox,
+                y: oy,
+                z: oz,
+                frame: dst_frame,
+                center: SiderustCenter::Barycentric,
+                length_unit: SiderustLengthUnit::AU,
+            };
+        }
+        SiderustStatus::Ok
+    }}
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Cartesian Position, frame transforms
 // ═══════════════════════════════════════════════════════════════════════════
@@ -389,6 +689,28 @@ trait CartesianPosProxy {
     fn to_equatorial_j2000(&self, jd: &JulianDate) -> (f64, f64, f64);
     fn to_equatorial_mean_of_date(&self, jd: &JulianDate) -> (f64, f64, f64);
     fn to_equatorial_true_of_date(&self, jd: &JulianDate) -> (f64, f64, f64);
+    fn to_icrs_model(&self, jd: &JulianDate, model: RustEarthOrientationModel) -> (f64, f64, f64);
+    fn to_icrf_model(&self, jd: &JulianDate, model: RustEarthOrientationModel) -> (f64, f64, f64);
+    fn to_ecliptic_j2000_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64, f64);
+    fn to_equatorial_j2000_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64, f64);
+    fn to_equatorial_mean_of_date_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64, f64);
+    fn to_equatorial_true_of_date_model(
+        &self,
+        jd: &JulianDate,
+        model: RustEarthOrientationModel,
+    ) -> (f64, f64, f64);
 }
 
 /// Helper: extract raw (x, y, z) from a Cartesian position.
@@ -434,6 +756,66 @@ macro_rules! impl_cart_pos_proxy {
                     PositionAstroExt::to_frame(self, jd);
                 cart_pos_to_triple(&PositionAstroExt::to_frame::<EquatorialTrueOfDate>(
                     &icrs, jd,
+                ))
+            }
+            fn to_icrs_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                cart_pos_to_triple(&PositionAstroExt::to_frame_model::<ICRS>(self, jd, model))
+            }
+            fn to_icrf_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame_model(self, jd, model);
+                cart_pos_to_triple(&PositionAstroExt::to_frame_model::<ICRF>(&icrs, jd, model))
+            }
+            fn to_ecliptic_j2000_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame_model(self, jd, model);
+                cart_pos_to_triple(&PositionAstroExt::to_frame_model::<EclipticMeanJ2000>(
+                    &icrs, jd, model,
+                ))
+            }
+            fn to_equatorial_j2000_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame_model(self, jd, model);
+                cart_pos_to_triple(&PositionAstroExt::to_frame_model::<EquatorialMeanJ2000>(
+                    &icrs, jd, model,
+                ))
+            }
+            fn to_equatorial_mean_of_date_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame_model(self, jd, model);
+                cart_pos_to_triple(&PositionAstroExt::to_frame_model::<EquatorialMeanOfDate>(
+                    &icrs, jd, model,
+                ))
+            }
+            fn to_equatorial_true_of_date_model(
+                &self,
+                jd: &JulianDate,
+                model: RustEarthOrientationModel,
+            ) -> (f64, f64, f64) {
+                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                    PositionAstroExt::to_frame_model(self, jd, model);
+                cart_pos_to_triple(&PositionAstroExt::to_frame_model::<EquatorialTrueOfDate>(
+                    &icrs, jd, model,
                 ))
             }
         }
@@ -536,6 +918,56 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame(
         }
         SiderustStatus::Ok
 
+    }}
+}
+
+/// Transform a Cartesian position using an explicit Earth-orientation model.
+#[no_mangle]
+pub extern "C" fn siderust_cartesian_pos_transform_frame_model(
+    pos: SiderustCartesianPos,
+    dst_frame: SiderustFrame,
+    jd: f64,
+    model: SiderustEarthOrientationModel,
+    out: *mut SiderustCartesianPos,
+) -> SiderustStatus {
+    ffi_guard! {{
+        if out.is_null() {
+            return SiderustStatus::NullPointer;
+        }
+
+        let proxy = match make_cart_pos_in_frame(pos.frame, pos.x, pos.y, pos.z) {
+            Ok(p) => p,
+            Err(e) => return e,
+        };
+
+        let jd_val = JulianDate::new(jd);
+        let model = model.to_rust();
+
+        let (ox, oy, oz) = match dst_frame {
+            SiderustFrame::ICRS => proxy.to_icrs_model(&jd_val, model),
+            SiderustFrame::ICRF => proxy.to_icrf_model(&jd_val, model),
+            SiderustFrame::EclipticMeanJ2000 => proxy.to_ecliptic_j2000_model(&jd_val, model),
+            SiderustFrame::EquatorialMeanJ2000 => proxy.to_equatorial_j2000_model(&jd_val, model),
+            SiderustFrame::EquatorialMeanOfDate => {
+                proxy.to_equatorial_mean_of_date_model(&jd_val, model)
+            }
+            SiderustFrame::EquatorialTrueOfDate => {
+                proxy.to_equatorial_true_of_date_model(&jd_val, model)
+            }
+            _ => return SiderustStatus::InvalidFrame,
+        };
+
+        unsafe {
+            *out = SiderustCartesianPos {
+                x: ox,
+                y: oy,
+                z: oz,
+                frame: dst_frame,
+                center: pos.center,
+                length_unit: pos.length_unit,
+            };
+        }
+        SiderustStatus::Ok
     }}
 }
 
@@ -1183,6 +1615,38 @@ mod tests {
         assert_eq!(s, SiderustStatus::NullPointer);
     }
 
+    #[test]
+    fn spherical_dir_model_variant_changes_true_of_date() {
+        let mut with_nutation = empty_dir();
+        let mut precession_only = empty_dir();
+        let jd = 2_458_850.0;
+
+        let s1 = siderust_spherical_dir_transform_frame_model(
+            30.0,
+            100.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialTrueOfDate,
+            jd,
+            SiderustEarthOrientationModel::Iau2006A,
+            &mut with_nutation,
+        );
+        let s2 = siderust_spherical_dir_transform_frame_model(
+            30.0,
+            100.0,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialTrueOfDate,
+            jd,
+            SiderustEarthOrientationModel::Iau2006,
+            &mut precession_only,
+        );
+
+        assert_eq!(s1, SiderustStatus::Ok);
+        assert_eq!(s2, SiderustStatus::Ok);
+        let delta = (with_nutation.polar_deg - precession_only.polar_deg).abs()
+            + (with_nutation.azimuth_deg - precession_only.azimuth_deg).abs();
+        assert!(delta > 1e-10);
+    }
+
     // ── To horizontal ─────────────────────────────────────────────────────
 
     #[test]
@@ -1243,6 +1707,22 @@ mod tests {
             ptr::null_mut(),
         );
         assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    #[test]
+    fn spherical_dir_horizontal_model_variant_succeeds() {
+        let mut out = empty_dir();
+        let s = siderust_spherical_dir_to_horizontal_model(
+            38.8,
+            279.2,
+            SiderustFrame::ICRS,
+            J2000,
+            paris_observer(),
+            SiderustEarthOrientationModel::Iau2000B,
+            &mut out,
+        );
+        assert_eq!(s, SiderustStatus::Ok);
+        assert_eq!(out.frame, SiderustFrame::Horizontal);
     }
 
     // ── Geodetic to ECEF ─────────────────────────────────────────────────
@@ -1458,6 +1938,42 @@ mod tests {
         assert_eq!(s, SiderustStatus::NullPointer);
     }
 
+    #[test]
+    fn cartesian_dir_model_variant_changes_true_of_date() {
+        let mut with_nutation = empty_cart();
+        let mut precession_only = empty_cart();
+        let jd = 2_458_850.0;
+
+        let s1 = siderust_cartesian_dir_transform_frame_model(
+            0.6,
+            -0.3,
+            0.74,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialTrueOfDate,
+            jd,
+            SiderustEarthOrientationModel::Iau2006A,
+            &mut with_nutation,
+        );
+        let s2 = siderust_cartesian_dir_transform_frame_model(
+            0.6,
+            -0.3,
+            0.74,
+            SiderustFrame::ICRS,
+            SiderustFrame::EquatorialTrueOfDate,
+            jd,
+            SiderustEarthOrientationModel::Iau2006,
+            &mut precession_only,
+        );
+
+        assert_eq!(s1, SiderustStatus::Ok);
+        assert_eq!(s2, SiderustStatus::Ok);
+        let delta = ((with_nutation.x - precession_only.x).powi(2)
+            + (with_nutation.y - precession_only.y).powi(2)
+            + (with_nutation.z - precession_only.z).powi(2))
+        .sqrt();
+        assert!(delta > 1e-10);
+    }
+
     // ── Cartesian position frame transforms ──────────────────────────────
 
     fn earth_pos_icrs() -> SiderustCartesianPos {
@@ -1602,6 +2118,37 @@ mod tests {
             ptr::null_mut(),
         );
         assert_eq!(s, SiderustStatus::NullPointer);
+    }
+
+    #[test]
+    fn cartesian_pos_model_variant_changes_true_of_date() {
+        let pos = earth_pos_icrs();
+        let mut with_nutation = empty_cart();
+        let mut precession_only = empty_cart();
+        let jd = 2_458_850.0;
+
+        let s1 = siderust_cartesian_pos_transform_frame_model(
+            pos,
+            SiderustFrame::EquatorialTrueOfDate,
+            jd,
+            SiderustEarthOrientationModel::Iau2006A,
+            &mut with_nutation,
+        );
+        let s2 = siderust_cartesian_pos_transform_frame_model(
+            pos,
+            SiderustFrame::EquatorialTrueOfDate,
+            jd,
+            SiderustEarthOrientationModel::Iau2006,
+            &mut precession_only,
+        );
+
+        assert_eq!(s1, SiderustStatus::Ok);
+        assert_eq!(s2, SiderustStatus::Ok);
+        let delta = ((with_nutation.x - precession_only.x).powi(2)
+            + (with_nutation.y - precession_only.y).powi(2)
+            + (with_nutation.z - precession_only.z).powi(2))
+        .sqrt();
+        assert!(delta > 1e-10);
     }
 
     // ── Cartesian position center transforms ─────────────────────────────
