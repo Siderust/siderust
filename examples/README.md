@@ -133,6 +133,15 @@ default `Iau2006A`, abridged `Iau2000B`, and precession-only `Iau2006`.
 cargo run --example 14_nutation_models
 ```
 
+### 15. Orbit Models (`15_orbit_models.rs`)
+Overview of the current orbit APIs: `KeplerianOrbit`, `MeanMotionOrbit`,
+`ConicOrbit`, and `PreparedOrbit`, including elliptic vs hyperbolic conic
+classification and prepared-vs-direct propagation comparison.
+
+```bash
+cargo run --example 15_orbit_models
+```
+
 ---
 
 ## Solar System & Coordinates

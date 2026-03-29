@@ -58,6 +58,7 @@ use siderust::coordinates::centers::{
     OrbitReferenceCenter as RustOrbitRefCenter,
 };
 use siderust::coordinates::frames::ECEF;
+use siderust::coordinates::transform::EarthOrientationModel;
 use tempoch::{Interval, JulianDate, ModifiedJulianDate, Period, MJD};
 
 // Re-export tempoch-ffi types so the generated header can reference them.
@@ -178,6 +179,32 @@ pub enum SiderustCenter {
     Topocentric = 4,
     /// Centre of a specific body.
     Bodycentric = 5,
+}
+
+/// Runtime-selectable Earth-orientation / nutation model preset.
+#[repr(i32)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SiderustEarthOrientationModel {
+    /// Full IAU 2000A nutation.
+    Iau2000A = 1,
+    /// Abridged IAU 2000B nutation.
+    Iau2000B = 2,
+    /// IAU 2006 precession-only profile.
+    Iau2006 = 3,
+    /// High-precision IAU 2006A convention.
+    Iau2006A = 4,
+}
+
+impl SiderustEarthOrientationModel {
+    /// Convert to the Rust runtime model enum.
+    pub fn to_rust(self) -> EarthOrientationModel {
+        match self {
+            Self::Iau2000A => EarthOrientationModel::Iau2000A,
+            Self::Iau2000B => EarthOrientationModel::Iau2000B,
+            Self::Iau2006 => EarthOrientationModel::Iau2006,
+            Self::Iau2006A => EarthOrientationModel::Iau2006A,
+        }
+    }
 }
 
 impl SiderustCenter {
@@ -1248,6 +1275,26 @@ mod tests {
         assert!((back.eccentricity - 1.0009).abs() < 1e-10);
     }
 
+    #[test]
+    fn earth_orientation_model_mapping() {
+        assert_eq!(
+            SiderustEarthOrientationModel::Iau2000A.to_rust(),
+            EarthOrientationModel::Iau2000A
+        );
+        assert_eq!(
+            SiderustEarthOrientationModel::Iau2000B.to_rust(),
+            EarthOrientationModel::Iau2000B
+        );
+        assert_eq!(
+            SiderustEarthOrientationModel::Iau2006.to_rust(),
+            EarthOrientationModel::Iau2006
+        );
+        assert_eq!(
+            SiderustEarthOrientationModel::Iau2006A.to_rust(),
+            EarthOrientationModel::Iau2006A
+        );
+    }
+
     // ── SiderustSearchOpts ───────────────────────────────────────────────
 
     #[test]
@@ -1518,6 +1565,11 @@ mod tests {
     #[test]
     fn layout_center_enum() {
         assert_layout!(SiderustCenter, size = 4, align = 4);
+    }
+
+    #[test]
+    fn layout_earth_orientation_model_enum() {
+        assert_layout!(SiderustEarthOrientationModel, size = 4, align = 4);
     }
 
     #[test]
