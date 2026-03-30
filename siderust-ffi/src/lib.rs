@@ -25,12 +25,10 @@ pub mod types;
 pub mod altitude;
 pub mod azimuth;
 pub mod bodies;
-pub mod body;
 pub mod coordinates;
 pub mod ephemeris;
 pub mod observatories;
 pub mod phase;
-pub mod qtty_integration;
 pub mod runtime_ephemeris;
 pub mod subject;
 pub mod target;
@@ -41,22 +39,22 @@ pub(crate) mod test_helpers;
 pub use altitude::*;
 pub use azimuth::*;
 pub use bodies::*;
-pub use body::*;
 pub use coordinates::*;
 pub use ephemeris::*;
 pub use error::*;
 pub use observatories::*;
 pub use phase::*;
-pub use qtty_integration::*;
 pub use runtime_ephemeris::*;
+pub use subject::*;
 pub use target::*;
+pub use tempoch_ffi::{TempochJd, TempochMjd};
 pub use types::*;
 
 /// Returns the siderust-ffi ABI version (major*10000 + minor*100 + patch).
 #[allow(clippy::erasing_op, clippy::identity_op)]
 #[no_mangle]
 pub extern "C" fn siderust_ffi_version() -> u32 {
-    0 * 10000 + 1 * 100 + 0 // 0.1.0
+    0 * 10000 + 3 * 100 + 0 // 0.3.0
 }
 
 #[cfg(test)]
@@ -66,7 +64,7 @@ mod tests {
     #[test]
     fn version_returns_expected_value() {
         let v = siderust_ffi_version();
-        // 0.1.0 → 0*10000 + 1*100 + 0 = 100
-        assert_eq!(v, 100);
+        // 0.3.0 → 0*10000 + 3*100 + 0 = 300
+        assert_eq!(v, 300);
     }
 }
