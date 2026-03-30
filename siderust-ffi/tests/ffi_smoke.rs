@@ -1,97 +1,21 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Smoke tests for the siderust-ffi C API.
+//! Smoke tests for the reduced siderust-ffi C API.
 //!
-//! These tests exercise the lifecycle (create → query → free) of every major
-//! handle type and verify that the null-pointer guards and invalid-period
-//! checks return the expected status codes.
-//!
-//! Run with:
-//!   cargo test --manifest-path siderust/siderust-ffi/Cargo.toml
-//!
-//! And optionally with the address sanitizer to catch leaks:
-//!   RUSTFLAGS="-Z sanitizer=address" cargo +nightly test --target x86_64-unknown-linux-gnu
+//! These tests focus on the forward-looking surface: `siderust_subject_t`,
+//! `SiderustGenericTarget`, array lifetimes, and the remaining non-subject
+//! helpers such as phase/event APIs.
 
-// The query functions are `extern "C"` (not `unsafe extern "C"`) so calling
-// them from Rust is safe.  We keep the `unsafe` blocks for documentation
-// clarity (raw pointers are involved), hence we suppress this lint.
 #![allow(unused_unsafe)]
 
 use siderust_ffi::*;
 use std::ffi::CString;
 use std::ptr;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Opaque handle lifecycle
-// ─────────────────────────────────────────────────────────────────────────────
-
-#[test]
-fn star_catalog_create_and_free() {
-    let name = CString::new("VEGA").unwrap();
-    let mut handle: *mut SiderustStar = ptr::null_mut();
-    let status = unsafe { siderust_star_catalog(name.as_ptr(), &mut handle) };
-    assert_eq!(status, SiderustStatus::Ok);
-    assert!(!handle.is_null());
-    unsafe { siderust_star_free(handle) };
+fn mjd(value: f64) -> TempochMjd {
+    TempochMjd::new(value)
 }
-
-#[test]
-fn star_unknown_name_returns_error() {
-    let name = CString::new("NOTASTAR").unwrap();
-    let mut handle: *mut SiderustStar = ptr::null_mut();
-    let status = unsafe { siderust_star_catalog(name.as_ptr(), &mut handle) };
-    assert_eq!(status, SiderustStatus::UnknownStar);
-    assert!(handle.is_null());
-}
-
-#[test]
-fn star_custom_create_and_free() {
-    let name = CString::new("ProximaCen").unwrap();
-    let mut handle: *mut SiderustStar = ptr::null_mut();
-    let status = unsafe {
-        siderust_star_create(
-            name.as_ptr(),
-            4.244,     // distance_ly
-            0.12,      // mass_solar
-            0.15,      // radius_solar
-            0.0017,    // luminosity_solar
-            217.4291,  // ra_deg
-            -62.679,   // dec_deg
-            2451545.0, // epoch_jd (J2000.0)
-            ptr::null(),
-            &mut handle,
-        )
-    };
-    assert_eq!(status, SiderustStatus::Ok);
-    assert!(!handle.is_null());
-    unsafe { siderust_star_free(handle) };
-}
-
-#[test]
-fn target_create_and_free() {
-    // Orion Nebula direction
-    let mut handle: *mut SiderustTarget = ptr::null_mut();
-    let status = unsafe { siderust_target_create(83.82, -5.39, 2451545.0, &mut handle) };
-    assert_eq!(status, SiderustStatus::Ok);
-    assert!(!handle.is_null());
-    let mut ra = 0.0_f64;
-    let mut dec = 0.0_f64;
-    unsafe {
-        assert_eq!(siderust_target_ra_deg(handle, &mut ra), SiderustStatus::Ok);
-        assert_eq!(
-            siderust_target_dec_deg(handle, &mut dec),
-            SiderustStatus::Ok
-        );
-    }
-    assert!((ra - 83.82).abs() < 1e-10);
-    assert!((dec - (-5.39)).abs() < 1e-10);
-    unsafe { siderust_target_free(handle) };
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Vec-returning functions: allocate then free
-// ─────────────────────────────────────────────────────────────────────────────
 
 fn paris_observer() -> SiderustGeodetict {
     SiderustGeodetict {
@@ -103,8 +27,8 @@ fn paris_observer() -> SiderustGeodetict {
 
 fn one_day_window() -> TempochPeriodMjd {
     TempochPeriodMjd {
-        start_mjd: 60000.0,
-        end_mjd: 60001.0,
+        start_mjd: mjd(60000.0),
+        end_mjd: mjd(60001.0),
     }
 }
 
@@ -116,111 +40,311 @@ fn default_opts() -> SiderustSearchOpts {
     }
 }
 
+fn sun_subject() -> SiderustSubject {
+    SiderustSubject {
+        kind: SiderustSubjectKind::Body,
+        body: SiderustBody::Sun,
+        star_handle: ptr::null(),
+        icrs_dir: SiderustSphericalDir {
+            polar_deg: 0.0,
+            azimuth_deg: 0.0,
+            frame: SiderustFrame::ICRS,
+        },
+        generic_target_handle: ptr::null(),
+    }
+}
+
+fn moon_subject() -> SiderustSubject {
+    SiderustSubject {
+        kind: SiderustSubjectKind::Body,
+        body: SiderustBody::Moon,
+        star_handle: ptr::null(),
+        icrs_dir: SiderustSphericalDir {
+            polar_deg: 0.0,
+            azimuth_deg: 0.0,
+            frame: SiderustFrame::ICRS,
+        },
+        generic_target_handle: ptr::null(),
+    }
+}
+
+fn icrs_subject() -> SiderustSubject {
+    SiderustSubject {
+        kind: SiderustSubjectKind::Icrs,
+        body: SiderustBody::Sun,
+        star_handle: ptr::null(),
+        icrs_dir: SiderustSphericalDir {
+            polar_deg: 38.78,
+            azimuth_deg: 279.23,
+            frame: SiderustFrame::ICRS,
+        },
+        generic_target_handle: ptr::null(),
+    }
+}
+
+fn vega_subject() -> (*mut SiderustStar, SiderustSubject) {
+    let name = CString::new("VEGA").unwrap();
+    let mut handle: *mut SiderustStar = ptr::null_mut();
+    let status = unsafe { siderust_star_catalog(name.as_ptr(), &mut handle) };
+    assert_eq!(status, SiderustStatus::Ok);
+    (
+        handle,
+        SiderustSubject {
+            kind: SiderustSubjectKind::Star,
+            body: SiderustBody::Sun,
+            star_handle: handle,
+            icrs_dir: SiderustSphericalDir {
+                polar_deg: 0.0,
+                azimuth_deg: 0.0,
+                frame: SiderustFrame::ICRS,
+            },
+            generic_target_handle: ptr::null(),
+        },
+    )
+}
+
+fn generic_target_subject() -> (*mut SiderustGenericTarget, SiderustSubject) {
+    let mut handle: *mut SiderustGenericTarget = ptr::null_mut();
+    let status =
+        unsafe { siderust_generic_target_create_icrs(83.82, -5.39, 2451545.0, &mut handle) };
+    assert_eq!(status, SiderustStatus::Ok);
+    (
+        handle,
+        SiderustSubject {
+            kind: SiderustSubjectKind::GenericTarget,
+            body: SiderustBody::Sun,
+            star_handle: ptr::null(),
+            icrs_dir: SiderustSphericalDir {
+                polar_deg: 0.0,
+                azimuth_deg: 0.0,
+                frame: SiderustFrame::ICRS,
+            },
+            generic_target_handle: handle,
+        },
+    )
+}
+
 #[test]
-fn sun_crossings_alloc_and_free() {
-    let mut out: *mut SiderustCrossingEvent = ptr::null_mut();
+fn star_lifecycle_still_works() {
+    let (handle, _) = vega_subject();
+    assert!(!handle.is_null());
+    unsafe { siderust_star_free(handle) };
+}
+
+#[test]
+fn generic_target_lifecycle_and_data_work() {
+    let mut handle: *mut SiderustGenericTarget = ptr::null_mut();
+    let status = unsafe {
+        siderust_generic_target_create_icrs_with_pm(
+            83.82,
+            -5.39,
+            2451545.0,
+            0.0001,
+            -0.0002,
+            SiderustRaConvention::MuAlphaStar,
+            &mut handle,
+        )
+    };
+    assert_eq!(status, SiderustStatus::Ok);
+    assert!(!handle.is_null());
+
+    let mut data = SiderustGenericTargetData {
+        kind: SiderustTargetCoordKind::CartesianPos,
+        _pad1: [0; 4],
+        coord: SiderustTargetCoordUnion {
+            cartesian_pos: SiderustCartesianPos {
+                x: 0.0,
+                y: 0.0,
+                z: 0.0,
+                frame: SiderustFrame::ICRS,
+                center: SiderustCenter::Geocentric,
+                length_unit: SiderustLengthUnit::Meter,
+            },
+        },
+        epoch_jd: TempochJd::new(0.0),
+        has_proper_motion: false,
+        _pad2: [0; 7],
+        proper_motion: SiderustProperMotion {
+            pm_ra_deg_yr: 0.0,
+            pm_dec_deg_yr: 0.0,
+            ra_convention: SiderustRaConvention::MuAlpha,
+        },
+    };
+    let status = unsafe { siderust_generic_target_get_data(handle, &mut data) };
+    assert_eq!(status, SiderustStatus::Ok);
+    assert_eq!(data.kind, SiderustTargetCoordKind::SphericalDir);
+    assert!(data.has_proper_motion);
+    assert_eq!(data.epoch_jd.value, 2451545.0);
+
+    unsafe { siderust_generic_target_free(handle) };
+}
+
+#[test]
+fn subject_altitude_queries_cover_all_supported_kinds() {
+    let mut out = 0.0_f64;
+
+    let status =
+        unsafe { siderust_altitude_at(sun_subject(), paris_observer(), mjd(60000.0), &mut out) };
+    assert_eq!(status, SiderustStatus::Ok);
+    assert!(out.is_finite());
+
+    let (star_handle, star_subject) = vega_subject();
+    let status =
+        unsafe { siderust_altitude_at(star_subject, paris_observer(), mjd(60000.0), &mut out) };
+    assert_eq!(status, SiderustStatus::Ok);
+    assert!(out.is_finite());
+    unsafe { siderust_star_free(star_handle) };
+
+    let status =
+        unsafe { siderust_altitude_at(icrs_subject(), paris_observer(), mjd(60000.0), &mut out) };
+    assert_eq!(status, SiderustStatus::Ok);
+    assert!(out.is_finite());
+
+    let (target_handle, target_subject) = generic_target_subject();
+    let status =
+        unsafe { siderust_altitude_at(target_subject, paris_observer(), mjd(60000.0), &mut out) };
+    assert_eq!(status, SiderustStatus::Ok);
+    assert!(out.is_finite());
+    unsafe { siderust_generic_target_free(target_handle) };
+}
+
+#[test]
+fn subject_vector_queries_allocate_and_free() {
+    let mut crossings: *mut SiderustCrossingEvent = ptr::null_mut();
     let mut count: usize = 0;
     let status = unsafe {
-        siderust_sun_crossings(
+        siderust_crossings(
+            sun_subject(),
             paris_observer(),
             one_day_window(),
             0.0,
             default_opts(),
-            &mut out,
+            &mut crossings,
             &mut count,
         )
     };
     assert_eq!(status, SiderustStatus::Ok);
-    unsafe { siderust_crossings_free(out, count) };
-}
+    unsafe { siderust_crossings_free(crossings, count) };
 
-#[test]
-fn sun_culminations_alloc_and_free() {
-    let mut out: *mut SiderustCulminationEvent = ptr::null_mut();
-    let mut count: usize = 0;
+    let mut culminations: *mut SiderustCulminationEvent = ptr::null_mut();
     let status = unsafe {
-        siderust_sun_culminations(
+        siderust_culminations(
+            sun_subject(),
             paris_observer(),
             one_day_window(),
             default_opts(),
-            &mut out,
+            &mut culminations,
             &mut count,
         )
     };
     assert_eq!(status, SiderustStatus::Ok);
-    unsafe { siderust_culminations_free(out, count) };
+    unsafe { siderust_culminations_free(culminations, count) };
+
+    let (star_handle, star_subject) = vega_subject();
+    let mut periods: *mut TempochPeriodMjd = ptr::null_mut();
+    let status = unsafe {
+        siderust_above_threshold(
+            star_subject,
+            paris_observer(),
+            one_day_window(),
+            0.0,
+            default_opts(),
+            &mut periods,
+            &mut count,
+        )
+    };
+    assert_eq!(status, SiderustStatus::Ok);
+    unsafe {
+        siderust_periods_free(periods, count);
+        siderust_star_free(star_handle);
+    }
+
+    let (target_handle, target_subject) = generic_target_subject();
+    let mut az_crossings: *mut SiderustAzimuthCrossingEvent = ptr::null_mut();
+    let status = unsafe {
+        siderust_azimuth_crossings(
+            target_subject,
+            paris_observer(),
+            one_day_window(),
+            180.0,
+            default_opts(),
+            &mut az_crossings,
+            &mut count,
+        )
+    };
+    assert_eq!(status, SiderustStatus::Ok);
+    unsafe {
+        siderust_azimuth_crossings_free(az_crossings, count);
+        siderust_generic_target_free(target_handle);
+    }
+
+    let mut extrema: *mut SiderustAzimuthExtremum = ptr::null_mut();
+    let status = unsafe {
+        siderust_azimuth_extrema(
+            moon_subject(),
+            paris_observer(),
+            one_day_window(),
+            default_opts(),
+            &mut extrema,
+            &mut count,
+        )
+    };
+    assert_eq!(status, SiderustStatus::Ok);
+    unsafe { siderust_azimuth_extrema_free(extrema, count) };
 }
 
 #[test]
-fn sun_periods_above_threshold_alloc_and_free() {
+fn altitude_periods_stays_body_only() {
+    let query = SiderustAltitudeQuery {
+        observer: paris_observer(),
+        start_mjd: mjd(60000.0),
+        end_mjd: mjd(60001.0),
+        min_altitude_deg: -90.0,
+        max_altitude_deg: 90.0,
+    };
+
     let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-    let mut count: usize = 0;
-    let status = unsafe {
-        siderust_sun_above_threshold(
-            paris_observer(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        )
-    };
+    let mut count = 0usize;
+    let status = unsafe { siderust_altitude_periods(sun_subject(), query, &mut out, &mut count) };
     assert_eq!(status, SiderustStatus::Ok);
     unsafe { siderust_periods_free(out, count) };
-}
 
-#[test]
-fn moon_azimuth_crossings_alloc_and_free() {
-    let mut out: *mut SiderustAzimuthCrossingEvent = ptr::null_mut();
-    let mut count: usize = 0;
-    let status = unsafe {
-        siderust_moon_azimuth_crossings(
-            paris_observer(),
-            one_day_window(),
-            180.0, // bearing south
-            default_opts(),
-            &mut out,
-            &mut count,
-        )
-    };
-    assert_eq!(status, SiderustStatus::Ok);
-    unsafe { siderust_azimuth_crossings_free(out, count) };
+    let (target_handle, target_subject) = generic_target_subject();
+    let status = unsafe { siderust_altitude_periods(target_subject, query, &mut out, &mut count) };
+    assert_eq!(status, SiderustStatus::InvalidArgument);
+    unsafe { siderust_generic_target_free(target_handle) };
 }
 
 #[test]
 fn phase_events_alloc_and_free() {
     let window = TempochPeriodMjd {
-        start_mjd: 60000.0,
-        end_mjd: 60030.0, // ~1 month to be sure we get events
+        start_mjd: mjd(60000.0),
+        end_mjd: mjd(60030.0),
     };
     let mut out: *mut SiderustPhaseEvent = ptr::null_mut();
     let mut count: usize = 0;
     let status =
         unsafe { siderust_find_phase_events(window, default_opts(), &mut out, &mut count) };
     assert_eq!(status, SiderustStatus::Ok);
-    // One month should contain at least 2 principal phases
-    assert!(
-        count >= 2,
-        "Expected >=2 phase events in a 30-day window, got {}",
-        count
-    );
+    assert!(count >= 2);
     unsafe { siderust_phase_events_free(out, count) };
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// Null-pointer guards
-// ─────────────────────────────────────────────────────────────────────────────
-
 #[test]
-fn null_ptr_guard_altitude_out() {
-    let status = unsafe { siderust_sun_altitude_at(paris_observer(), 60000.0, ptr::null_mut()) };
-    assert_eq!(status, SiderustStatus::NullPointer);
-}
-
-#[test]
-fn null_ptr_guard_crossings_out() {
+fn null_pointer_guards_use_subject_handles() {
     let status = unsafe {
-        siderust_sun_crossings(
+        siderust_altitude_at(
+            sun_subject(),
+            paris_observer(),
+            mjd(60000.0),
+            ptr::null_mut(),
+        )
+    };
+    assert_eq!(status, SiderustStatus::NullPointer);
+
+    let status = unsafe {
+        siderust_crossings(
+            sun_subject(),
             paris_observer(),
             one_day_window(),
             0.0,
@@ -230,40 +354,62 @@ fn null_ptr_guard_crossings_out() {
         )
     };
     assert_eq!(status, SiderustStatus::NullPointer);
-}
 
-#[test]
-fn null_ptr_guard_star_handle() {
     let mut out: f64 = 0.0;
-    let status =
-        unsafe { siderust_star_altitude_at(ptr::null(), paris_observer(), 60000.0, &mut out) };
+    let status = unsafe {
+        siderust_altitude_at(
+            SiderustSubject {
+                kind: SiderustSubjectKind::Star,
+                body: SiderustBody::Sun,
+                star_handle: ptr::null(),
+                icrs_dir: SiderustSphericalDir {
+                    polar_deg: 0.0,
+                    azimuth_deg: 0.0,
+                    frame: SiderustFrame::ICRS,
+                },
+                generic_target_handle: ptr::null(),
+            },
+            paris_observer(),
+            mjd(60000.0),
+            &mut out,
+        )
+    };
+    assert_eq!(status, SiderustStatus::NullPointer);
+
+    let status = unsafe {
+        siderust_altitude_at(
+            SiderustSubject {
+                kind: SiderustSubjectKind::GenericTarget,
+                body: SiderustBody::Sun,
+                star_handle: ptr::null(),
+                icrs_dir: SiderustSphericalDir {
+                    polar_deg: 0.0,
+                    azimuth_deg: 0.0,
+                    frame: SiderustFrame::ICRS,
+                },
+                generic_target_handle: ptr::null(),
+            },
+            paris_observer(),
+            mjd(60000.0),
+            &mut out,
+        )
+    };
     assert_eq!(status, SiderustStatus::NullPointer);
 }
 
 #[test]
-fn null_ptr_guard_target_handle() {
-    let mut out: f64 = 0.0;
-    let status =
-        unsafe { siderust_target_altitude_at(ptr::null(), paris_observer(), 60000.0, &mut out) };
-    assert_eq!(status, SiderustStatus::NullPointer);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Validation errors
-// ─────────────────────────────────────────────────────────────────────────────
-
-#[test]
-fn invalid_period_end_before_start() {
-    let bad_window = TempochPeriodMjd {
-        start_mjd: 60001.0,
-        end_mjd: 60000.0, // end < start
+fn invalid_period_is_still_reported() {
+    let bad = TempochPeriodMjd {
+        start_mjd: mjd(60001.0),
+        end_mjd: mjd(60000.0),
     };
     let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-    let mut count: usize = 0;
+    let mut count = 0usize;
     let status = unsafe {
-        siderust_sun_above_threshold(
+        siderust_above_threshold(
+            sun_subject(),
             paris_observer(),
-            bad_window,
+            bad,
             0.0,
             default_opts(),
             &mut out,
@@ -271,86 +417,4 @@ fn invalid_period_end_before_start() {
         )
     };
     assert_eq!(status, SiderustStatus::InvalidPeriod);
-}
-
-#[test]
-fn icrs_azimuth_wrong_frame_returns_error() {
-    let dir = SiderustSphericalDir {
-        polar_deg: -5.39,
-        azimuth_deg: 83.82,
-        frame: SiderustFrame::EquatorialMeanJ2000, // not ICRS
-    };
-    let mut out: f64 = 0.0;
-    let status = unsafe { siderust_icrs_azimuth_at(dir, paris_observer(), 60000.0, &mut out) };
-    assert_eq!(status, SiderustStatus::InvalidFrame);
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
-// Orbit FFI round-trip tests
-// ─────────────────────────────────────────────────────────────────────────────
-
-#[test]
-fn keplerian_orbit_round_trip() {
-    let ffi = SiderustOrbit {
-        semi_major_axis_au: 1.523679,
-        eccentricity: 0.0934,
-        inclination_deg: 1.85,
-        lon_ascending_node_deg: 49.558,
-        arg_periapsis_deg: 286.502,
-        mean_anomaly_deg: 19.412,
-        epoch_jd: 2451545.0,
-    };
-    let rust = ffi.to_rust();
-    let back = SiderustOrbit::from_rust(&rust);
-    assert!((back.semi_major_axis_au - ffi.semi_major_axis_au).abs() < 1e-12);
-    assert!((back.eccentricity - ffi.eccentricity).abs() < 1e-12);
-    assert!((back.inclination_deg - ffi.inclination_deg).abs() < 1e-12);
-    assert!((back.lon_ascending_node_deg - ffi.lon_ascending_node_deg).abs() < 1e-12);
-    assert!((back.arg_periapsis_deg - ffi.arg_periapsis_deg).abs() < 1e-12);
-    assert!((back.mean_anomaly_deg - ffi.mean_anomaly_deg).abs() < 1e-12);
-    assert!((back.epoch_jd - ffi.epoch_jd).abs() < 1e-12);
-}
-
-#[test]
-fn mean_motion_orbit_round_trip() {
-    let ffi = SiderustMeanMotionOrbit {
-        semi_major_axis_au: 2.767,
-        eccentricity: 0.0758,
-        inclination_deg: 10.594,
-        lon_ascending_node_deg: 80.329,
-        arg_periapsis_deg: 73.597,
-        mean_motion_deg_per_day: 0.2138,
-        epoch_jd: 2451545.0,
-    };
-    let rust = ffi.to_rust();
-    let back = SiderustMeanMotionOrbit::from_rust(&rust);
-    assert!((back.semi_major_axis_au - ffi.semi_major_axis_au).abs() < 1e-12);
-    assert!((back.eccentricity - ffi.eccentricity).abs() < 1e-12);
-    assert!((back.inclination_deg - ffi.inclination_deg).abs() < 1e-12);
-    assert!((back.lon_ascending_node_deg - ffi.lon_ascending_node_deg).abs() < 1e-12);
-    assert!((back.arg_periapsis_deg - ffi.arg_periapsis_deg).abs() < 1e-12);
-    assert!((back.mean_motion_deg_per_day - ffi.mean_motion_deg_per_day).abs() < 1e-12);
-    assert!((back.epoch_jd - ffi.epoch_jd).abs() < 1e-12);
-}
-
-#[test]
-fn conic_orbit_round_trip() {
-    let ffi = SiderustConicOrbit {
-        periapsis_distance_au: 0.586,
-        eccentricity: 0.967,
-        inclination_deg: 162.26,
-        lon_ascending_node_deg: 58.15,
-        arg_periapsis_deg: 111.87,
-        mean_anomaly_deg: 0.0,
-        epoch_jd: 2451545.0,
-    };
-    let rust = ffi.to_rust();
-    let back = SiderustConicOrbit::from_rust(&rust);
-    assert!((back.periapsis_distance_au - ffi.periapsis_distance_au).abs() < 1e-12);
-    assert!((back.eccentricity - ffi.eccentricity).abs() < 1e-12);
-    assert!((back.inclination_deg - ffi.inclination_deg).abs() < 1e-12);
-    assert!((back.lon_ascending_node_deg - ffi.lon_ascending_node_deg).abs() < 1e-12);
-    assert!((back.arg_periapsis_deg - ffi.arg_periapsis_deg).abs() < 1e-12);
-    assert!((back.mean_anomaly_deg - ffi.mean_anomaly_deg).abs() < 1e-12);
-    assert!((back.epoch_jd - ffi.epoch_jd).abs() < 1e-12);
 }

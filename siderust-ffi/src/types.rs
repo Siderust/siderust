@@ -59,6 +59,7 @@ use siderust::coordinates::centers::{
 };
 use siderust::coordinates::frames::ECEF;
 use tempoch::{Interval, JulianDate, ModifiedJulianDate, Period, MJD};
+use tempoch_ffi::{TempochJd, TempochMjd};
 
 // Re-export tempoch-ffi types so the generated header can reference them.
 // The extern crate declaration is needed because the dep name maps through a hyphen.
@@ -162,6 +163,30 @@ impl SiderustFrame {
             Self::ICRF => "icrf",
         }
     }
+
+    /// Decode a raw `i32` discriminant into a `SiderustFrame`.
+    ///
+    /// Returns `None` if the value does not match any known frame variant.
+    pub fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            1 => Some(Self::ICRS),
+            2 => Some(Self::EclipticMeanJ2000),
+            3 => Some(Self::EquatorialMeanJ2000),
+            4 => Some(Self::EquatorialMeanOfDate),
+            5 => Some(Self::EquatorialTrueOfDate),
+            6 => Some(Self::Horizontal),
+            7 => Some(Self::ECEF),
+            8 => Some(Self::Galactic),
+            9 => Some(Self::GCRS),
+            10 => Some(Self::EclipticOfDate),
+            11 => Some(Self::EclipticTrueOfDate),
+            12 => Some(Self::CIRS),
+            13 => Some(Self::TIRS),
+            14 => Some(Self::ITRF),
+            15 => Some(Self::ICRF),
+            _ => None,
+        }
+    }
 }
 
 /// Reference center identifier for C interop.
@@ -208,6 +233,20 @@ impl SiderustCenter {
             Self::Geocentric => "geocentric",
             Self::Topocentric => "topocentric",
             Self::Bodycentric => "bodycentric",
+        }
+    }
+
+    /// Decode a raw `i32` discriminant into a `SiderustCenter`.
+    ///
+    /// Returns `None` if the value does not match any known center variant.
+    pub fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            1 => Some(Self::Barycentric),
+            2 => Some(Self::Heliocentric),
+            3 => Some(Self::Geocentric),
+            4 => Some(Self::Topocentric),
+            5 => Some(Self::Bodycentric),
+            _ => None,
         }
     }
 }
@@ -280,6 +319,22 @@ pub enum SiderustLengthUnit {
     Meter = 4,
 }
 
+impl SiderustLengthUnit {
+    /// Decode a raw `i32` discriminant into a `SiderustLengthUnit`.
+    ///
+    /// Returns `None` if the value does not match any known unit variant.
+    pub fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::AU),
+            1 => Some(Self::Km),
+            2 => Some(Self::LightYear),
+            3 => Some(Self::Parsec),
+            4 => Some(Self::Meter),
+            _ => None,
+        }
+    }
+}
+
 /// Solar-system body identifier for generic altitude/azimuth dispatch.
 ///
 /// Each variant maps to a concrete unit type in `siderust::bodies::solar_system`.
@@ -306,6 +361,26 @@ pub enum SiderustBody {
     Neptune = 8,
 }
 
+impl SiderustBody {
+    /// Decode a raw `i32` discriminant into a `SiderustBody`.
+    ///
+    /// Returns `None` if the value does not match any known body variant.
+    pub fn from_raw(raw: i32) -> Option<Self> {
+        match raw {
+            0 => Some(Self::Sun),
+            1 => Some(Self::Moon),
+            2 => Some(Self::Mercury),
+            3 => Some(Self::Venus),
+            4 => Some(Self::Mars),
+            5 => Some(Self::Jupiter),
+            6 => Some(Self::Saturn),
+            7 => Some(Self::Uranus),
+            8 => Some(Self::Neptune),
+            _ => None,
+        }
+    }
+}
+
 /// Subject kind discriminant for [`SiderustSubject`].
 #[repr(i32)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -316,17 +391,15 @@ pub enum SiderustSubjectKind {
     Star = 1,
     /// Fixed ICRS direction (the `icrs_dir` field is valid).
     Icrs = 2,
-    /// Target opaque handle (the `target_handle` field is valid).
-    Target = 3,
     /// Generic target opaque handle (the `generic_target_handle` field is valid).
-    GenericTarget = 4,
+    GenericTarget = 3,
 }
 
 /// Unified subject for altitude / azimuth / tracking computations.
 ///
 /// A tagged struct that can represent any entity on which altitude and
 /// azimuth queries can be performed: solar-system bodies, catalog stars,
-/// fixed ICRS directions, or opaque Target handles.
+/// fixed ICRS directions, or generic target handles.
 ///
 /// Only the field corresponding to `kind` is valid:
 ///
@@ -335,7 +408,6 @@ pub enum SiderustSubjectKind {
 /// | `Body`           | `body`                   |
 /// | `Star`           | `star_handle`            |
 /// | `Icrs`           | `icrs_dir`               |
-/// | `Target`         | `target_handle`          |
 /// | `GenericTarget`  | `generic_target_handle`  |
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
@@ -348,18 +420,16 @@ pub struct SiderustSubject {
     pub star_handle: *const crate::bodies::SiderustStar,
     /// ICRS spherical direction.  Valid when `kind == Icrs`.
     pub icrs_dir: SiderustSphericalDir,
-    /// Opaque target handle (non-null).  Valid when `kind == Target`.
-    pub target_handle: *const crate::target::SiderustTarget,
     /// Opaque generic target handle.  Valid when `kind == GenericTarget`.
     pub generic_target_handle: *const crate::target::SiderustGenericTarget,
 }
 
 // SAFETY: `SiderustSubject` contains raw pointers (`star_handle`,
-// `target_handle`) which prevent the auto-derived `Send`/`Sync` impls.
+// `generic_target_handle`) which prevent the auto-derived `Send`/`Sync` impls.
 // These impls are sound because:
 //
-//  1. The pointees (`SiderustStar`, `SiderustTarget`) are heap-allocated
-//     immutable objects created via `Box::into_raw`.  They are never
+//  1. The pointees (`SiderustStar`, `SiderustGenericTarget`) are heap-allocated
+//     immutable objects created via `Box::into_raw`. They are never
 //     mutated after creation, so sharing across threads is safe.
 //
 //  2. The pointers are only dereferenced inside `dispatch_subject!` which
@@ -375,49 +445,37 @@ unsafe impl Sync for SiderustSubject {}
 
 impl SiderustSubject {
     /// Construct a `Body` subject.
+    #[allow(dead_code)]
     pub(crate) fn body(body: SiderustBody) -> Self {
         Self {
             kind: SiderustSubjectKind::Body,
             body,
             star_handle: std::ptr::null(),
             icrs_dir: SiderustSphericalDir::zeroed(),
-            target_handle: std::ptr::null(),
             generic_target_handle: std::ptr::null(),
         }
     }
 
     /// Construct a `Star` subject (borrows the opaque handle).
+    #[allow(dead_code)]
     pub(crate) fn star(handle: *const crate::bodies::SiderustStar) -> Self {
         Self {
             kind: SiderustSubjectKind::Star,
             body: SiderustBody::Sun,
             star_handle: handle,
             icrs_dir: SiderustSphericalDir::zeroed(),
-            target_handle: std::ptr::null(),
             generic_target_handle: std::ptr::null(),
         }
     }
 
     /// Construct an `Icrs` subject from a spherical direction.
+    #[allow(dead_code)]
     pub(crate) fn icrs(dir: SiderustSphericalDir) -> Self {
         Self {
             kind: SiderustSubjectKind::Icrs,
             body: SiderustBody::Sun,
             star_handle: std::ptr::null(),
             icrs_dir: dir,
-            target_handle: std::ptr::null(),
-            generic_target_handle: std::ptr::null(),
-        }
-    }
-
-    /// Construct a `Target` subject (borrows the opaque handle).
-    pub(crate) fn target(handle: *const crate::target::SiderustTarget) -> Self {
-        Self {
-            kind: SiderustSubjectKind::Target,
-            body: SiderustBody::Sun,
-            star_handle: std::ptr::null(),
-            icrs_dir: SiderustSphericalDir::zeroed(),
-            target_handle: handle,
             generic_target_handle: std::ptr::null(),
         }
     }
@@ -430,7 +488,6 @@ impl SiderustSubject {
             body: SiderustBody::Sun,
             star_handle: std::ptr::null(),
             icrs_dir: SiderustSphericalDir::zeroed(),
-            target_handle: std::ptr::null(),
             generic_target_handle: handle,
         }
     }
@@ -496,7 +553,7 @@ pub struct SiderustGenericTargetData {
     /// The coordinate data (union, check `kind` to determine which field).
     pub coord: SiderustTargetCoordUnion,
     /// Epoch as a Julian Date.
-    pub epoch_jd: f64,
+    pub epoch_jd: TempochJd,
     /// Whether proper motion is present.
     pub has_proper_motion: bool,
     /// Padding for alignment.
@@ -865,9 +922,9 @@ pub struct SiderustAltitudeQuery {
     /// Observer location.
     pub observer: SiderustGeodetict,
     /// Start of the search window (Modified Julian Date).
-    pub start_mjd: f64,
+    pub start_mjd: TempochMjd,
     /// End of the search window (Modified Julian Date).
-    pub end_mjd: f64,
+    pub end_mjd: TempochMjd,
     /// Minimum altitude threshold in degrees.
     pub min_altitude_deg: f64,
     /// Maximum altitude threshold in degrees.
@@ -880,8 +937,8 @@ impl SiderustAltitudeQuery {
         siderust::AltitudeQuery {
             observer: self.observer.to_rust(),
             window: Interval::new(
-                ModifiedJulianDate::new(self.start_mjd),
-                ModifiedJulianDate::new(self.end_mjd),
+                ModifiedJulianDate::new(self.start_mjd.value),
+                ModifiedJulianDate::new(self.end_mjd.value),
             ),
             min_altitude: Degrees::new(self.min_altitude_deg),
             max_altitude: Degrees::new(self.max_altitude_deg),
@@ -1128,8 +1185,8 @@ pub struct SiderustPhaseEvent {
 impl FfiFrom<Period<MJD>> for TempochPeriodMjd {
     fn ffi_from(p: &Period<MJD>) -> Self {
         TempochPeriodMjd {
-            start_mjd: p.start.value(),
-            end_mjd: p.end.value(),
+            start_mjd: TempochMjd::new(p.start.value()),
+            end_mjd: TempochMjd::new(p.end.value()),
         }
     }
 }
@@ -1307,8 +1364,8 @@ mod tests {
                 lat_deg: 51.5,
                 height_m: 10.0,
             },
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
+            start_mjd: TempochMjd::new(60000.0),
+            end_mjd: TempochMjd::new(60001.0),
             min_altitude_deg: 10.0,
             max_altitude_deg: 90.0,
         };
@@ -1384,8 +1441,8 @@ mod tests {
             ModifiedJulianDate::new(60001.0),
         );
         let ffi = TempochPeriodMjd::ffi_from(&p);
-        assert!((ffi.start_mjd - 60000.0).abs() < 1e-10);
-        assert!((ffi.end_mjd - 60001.0).abs() < 1e-10);
+        assert!((ffi.start_mjd.value - 60000.0).abs() < 1e-10);
+        assert!((ffi.end_mjd.value - 60001.0).abs() < 1e-10);
     }
 
     // ── SiderustCrossingEvent / SiderustCulminationEvent ─────────────────

@@ -15,6 +15,18 @@ Rust types/functions and regenerate instead.
 - Generated C header in `include/siderust_ffi.h` (via `cbindgen`).
 - A shared library and/or static library artifact (see `Cargo.toml` `crate-type`).
 
+## Public Surface
+
+The forward-looking ABI is intentionally small:
+
+- unified tracking queries via `siderust_subject_t`
+- generic target handles via `SiderustGenericTarget`
+- coordinate value structs, runtime ephemeris handles, and array free helpers
+
+Legacy per-body/per-target wrapper families are intentionally removed from the
+canonical crate. C++ convenience APIs in `siderust-cpp` are implemented on top
+of this unified surface instead.
+
 ## Dependencies
 
 This crate is meant to be built from a workspace checkout where these path dependencies exist:
@@ -73,4 +85,3 @@ invokes Cargo for you and installs both headers and libraries via `cmake --insta
 - `include/siderust_ffi.h` is generated; regenerate it by running `cargo build`.
 - When changing exported signatures or the meaning/values of public enums, consider ABI
   compatibility and bump `siderust_ffi_version()` in `src/lib.rs` accordingly.
-
