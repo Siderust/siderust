@@ -1,48 +1,30 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! FFI bindings for the altitude / observation API.
+//! Shared altitude helpers for the unified subject FFI.
 //!
-//! ## Preferred API
-//!
-//! New code should use the **unified subject API** from [`crate::subject`]:
-//! - [`siderust_altitude_at`](crate::subject::siderust_altitude_at)
-//! - [`siderust_above_threshold`](crate::subject::siderust_above_threshold)
-//! - [`siderust_below_threshold`](crate::subject::siderust_below_threshold)
-//! - [`siderust_crossings`](crate::subject::siderust_crossings)
-//! - [`siderust_culminations`](crate::subject::siderust_culminations)
-//!
-//! These accept a [`SiderustSubject`](crate::types::SiderustSubject) discriminated
-//! union that can represent any trackable entity: solar-system bodies, stars,
-//! ICRS directions, legacy targets, or generic `CoordinateWithPM<T>` targets.
-//!
-//! ## Legacy Per-Body Functions
-//!
-//! The `siderust_sun_*`, `siderust_moon_*`, `siderust_star_*`, and other
-//! per-body functions in this module are **thin wrappers** around the unified
-//! subject API and are retained for backward compatibility. New adapters should
-//! prefer the unified API.
+//! The public query entry points live in [`crate::subject`]. This module only
+//! keeps the common window conversions and array-free helpers used by that
+//! surface and by phase/event modules.
 
-use crate::bodies::SiderustStar;
 use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
+#[cfg(test)]
 use qtty::*;
 #[cfg(test)]
 use siderust::coordinates::spherical;
 use tempoch::{Interval, ModifiedJulianDate, Period, MJD};
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Helpers
-// ═══════════════════════════════════════════════════════════════════════════
+#[cfg(test)]
+use tempoch_ffi::TempochMjd;
 
 pub(crate) fn window_from_c(w: TempochPeriodMjd) -> Result<Period<MJD>, SiderustStatus> {
-    if w.start_mjd > w.end_mjd {
+    if w.start_mjd.value > w.end_mjd.value {
         return Err(SiderustStatus::InvalidPeriod);
     }
     Ok(Interval::new(
-        ModifiedJulianDate::new(w.start_mjd),
-        ModifiedJulianDate::new(w.end_mjd),
+        ModifiedJulianDate::new(w.start_mjd.value),
+        ModifiedJulianDate::new(w.end_mjd.value),
     ))
 }
 
@@ -83,23 +65,17 @@ pub(crate) fn icrs_from_c(
     ))
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Free functions for dynamic arrays
-// ═══════════════════════════════════════════════════════════════════════════
-
 /// Free an array of MJD periods.
 ///
 /// # Safety
 ///
-/// * `ptr` must have been returned by a `siderust_*` function that allocates
-///   this array type (e.g. `siderust_sun_night_periods`).
-/// * `count` must be the element count that was returned alongside `ptr`.
+/// * `ptr` must have been returned by a siderust FFI function that allocates
+///   `TempochPeriodMjd` arrays.
+/// * `count` must be the element count returned alongside `ptr`.
 /// * The pointer must not have been freed before, and must not be used after
 ///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_periods_free(ptr: *mut TempochPeriodMjd, count: usize) {
-    // SAFETY: caller guarantees the pointer/count pair was returned by a
-    // siderust function and has not been freed before.
     unsafe { free_boxed_slice(ptr, count) };
 }
 
@@ -107,15 +83,13 @@ pub unsafe extern "C" fn siderust_periods_free(ptr: *mut TempochPeriodMjd, count
 ///
 /// # Safety
 ///
-/// * `ptr` must have been returned by a `siderust_*` function that allocates
-///   this array type (e.g. `siderust_sun_crossings`).
-/// * `count` must be the element count that was returned alongside `ptr`.
+/// * `ptr` must have been returned by a siderust FFI function that allocates
+///   `SiderustCrossingEvent` arrays.
+/// * `count` must be the element count returned alongside `ptr`.
 /// * The pointer must not have been freed before, and must not be used after
 ///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_crossings_free(ptr: *mut SiderustCrossingEvent, count: usize) {
-    // SAFETY: caller guarantees the pointer/count pair was returned by a
-    // siderust function and has not been freed before.
     unsafe { free_boxed_slice(ptr, count) };
 }
 
@@ -123,9 +97,9 @@ pub unsafe extern "C" fn siderust_crossings_free(ptr: *mut SiderustCrossingEvent
 ///
 /// # Safety
 ///
-/// * `ptr` must have been returned by a `siderust_*` function that allocates
-///   this array type (e.g. `siderust_sun_culminations`).
-/// * `count` must be the element count that was returned alongside `ptr`.
+/// * `ptr` must have been returned by a siderust FFI function that allocates
+///   `SiderustCulminationEvent` arrays.
+/// * `count` must be the element count returned alongside `ptr`.
 /// * The pointer must not have been freed before, and must not be used after
 ///   this call.
 #[no_mangle]
@@ -133,448 +107,27 @@ pub unsafe extern "C" fn siderust_culminations_free(
     ptr: *mut SiderustCulminationEvent,
     count: usize,
 ) {
-    // SAFETY: caller guarantees the pointer/count pair was returned by a
-    // siderust function and has not been freed before.
     unsafe { free_boxed_slice(ptr, count) };
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Sun , thin wrappers delegating to the unified `subject` module.
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Altitude of the Sun at an instant (radians).
-#[no_mangle]
-pub extern "C" fn siderust_sun_altitude_at(
-    observer: SiderustGeodetict,
-    mjd: f64,
-    out_rad: *mut f64,
-) -> SiderustStatus {
-    crate::subject::siderust_altitude_at(
-        SiderustSubject::body(SiderustBody::Sun),
-        observer,
-        mjd,
-        out_rad,
-    )
-}
-
-/// Periods when the Sun is above a threshold altitude.
-#[no_mangle]
-pub extern "C" fn siderust_sun_above_threshold(
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_above_threshold(
-        SiderustSubject::body(SiderustBody::Sun),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Periods when the Sun is below a threshold altitude.
-#[no_mangle]
-pub extern "C" fn siderust_sun_below_threshold(
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_below_threshold(
-        SiderustSubject::body(SiderustBody::Sun),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Threshold-crossing events for the Sun.
-#[no_mangle]
-pub extern "C" fn siderust_sun_crossings(
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut SiderustCrossingEvent,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_crossings(
-        SiderustSubject::body(SiderustBody::Sun),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Culmination (local extrema) events for the Sun.
-#[no_mangle]
-pub extern "C" fn siderust_sun_culminations(
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    opts: SiderustSearchOpts,
-    out: *mut *mut SiderustCulminationEvent,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_culminations(
-        SiderustSubject::body(SiderustBody::Sun),
-        observer,
-        window,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Periods when the Sun's altitude is within [min, max].
-#[no_mangle]
-pub extern "C" fn siderust_sun_altitude_periods(
-    query: SiderustAltitudeQuery,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_altitude_periods(
-        SiderustSubject::body(SiderustBody::Sun),
-        query,
-        out,
-        count,
-    )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Moon , thin wrappers delegating to the unified `subject` module.
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Altitude of the Moon at an instant (radians).
-#[no_mangle]
-pub extern "C" fn siderust_moon_altitude_at(
-    observer: SiderustGeodetict,
-    mjd: f64,
-    out_rad: *mut f64,
-) -> SiderustStatus {
-    crate::subject::siderust_altitude_at(
-        SiderustSubject::body(SiderustBody::Moon),
-        observer,
-        mjd,
-        out_rad,
-    )
-}
-
-/// Periods when the Moon is above a threshold altitude.
-#[no_mangle]
-pub extern "C" fn siderust_moon_above_threshold(
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_above_threshold(
-        SiderustSubject::body(SiderustBody::Moon),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Periods when the Moon is below a threshold altitude.
-#[no_mangle]
-pub extern "C" fn siderust_moon_below_threshold(
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_below_threshold(
-        SiderustSubject::body(SiderustBody::Moon),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Threshold-crossing events for the Moon.
-#[no_mangle]
-pub extern "C" fn siderust_moon_crossings(
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut SiderustCrossingEvent,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_crossings(
-        SiderustSubject::body(SiderustBody::Moon),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Culmination (local extrema) events for the Moon.
-#[no_mangle]
-pub extern "C" fn siderust_moon_culminations(
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    opts: SiderustSearchOpts,
-    out: *mut *mut SiderustCulminationEvent,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_culminations(
-        SiderustSubject::body(SiderustBody::Moon),
-        observer,
-        window,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Periods when the Moon's altitude is within [min, max].
-#[no_mangle]
-pub extern "C" fn siderust_moon_altitude_periods(
-    query: SiderustAltitudeQuery,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_altitude_periods(
-        SiderustSubject::body(SiderustBody::Moon),
-        query,
-        out,
-        count,
-    )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// Star (opaque handle) , thin wrappers delegating to the unified `subject` module.
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Altitude of a star at an instant (radians).
-#[no_mangle]
-pub extern "C" fn siderust_star_altitude_at(
-    handle: *const SiderustStar,
-    observer: SiderustGeodetict,
-    mjd: f64,
-    out_rad: *mut f64,
-) -> SiderustStatus {
-    crate::subject::siderust_altitude_at(SiderustSubject::star(handle), observer, mjd, out_rad)
-}
-
-/// Periods when a star is above a threshold altitude.
-#[no_mangle]
-pub extern "C" fn siderust_star_above_threshold(
-    handle: *const SiderustStar,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_above_threshold(
-        SiderustSubject::star(handle),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Periods when a star is below a threshold altitude.
-#[no_mangle]
-pub extern "C" fn siderust_star_below_threshold(
-    handle: *const SiderustStar,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_below_threshold(
-        SiderustSubject::star(handle),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Threshold-crossing events for a star.
-#[no_mangle]
-pub extern "C" fn siderust_star_crossings(
-    handle: *const SiderustStar,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut SiderustCrossingEvent,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_crossings(
-        SiderustSubject::star(handle),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Culmination events for a star.
-#[no_mangle]
-pub extern "C" fn siderust_star_culminations(
-    handle: *const SiderustStar,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    opts: SiderustSearchOpts,
-    out: *mut *mut SiderustCulminationEvent,
-    count: *mut usize,
-) -> SiderustStatus {
-    crate::subject::siderust_culminations(
-        SiderustSubject::star(handle),
-        observer,
-        window,
-        opts,
-        out,
-        count,
-    )
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// ICRS direction , thin wrappers delegating to the unified `subject` module.
-// ═══════════════════════════════════════════════════════════════════════════
-
-/// Altitude of an ICRS direction at an instant (radians).
-#[no_mangle]
-pub extern "C" fn siderust_icrs_altitude_at(
-    dir: SiderustSphericalDir,
-    observer: SiderustGeodetict,
-    mjd: f64,
-    out_rad: *mut f64,
-) -> SiderustStatus {
-    if dir.frame != SiderustFrame::ICRS {
-        return SiderustStatus::InvalidFrame;
-    }
-    crate::subject::siderust_altitude_at(SiderustSubject::icrs(dir), observer, mjd, out_rad)
-}
-
-/// Periods when an ICRS direction is above a threshold altitude.
-#[no_mangle]
-pub extern "C" fn siderust_icrs_above_threshold(
-    dir: SiderustSphericalDir,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    if dir.frame != SiderustFrame::ICRS {
-        return SiderustStatus::InvalidFrame;
-    }
-    crate::subject::siderust_above_threshold(
-        SiderustSubject::icrs(dir),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
-}
-
-/// Periods when an ICRS direction is below a threshold altitude.
-#[no_mangle]
-pub extern "C" fn siderust_icrs_below_threshold(
-    dir: SiderustSphericalDir,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOpts,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    if dir.frame != SiderustFrame::ICRS {
-        return SiderustStatus::InvalidFrame;
-    }
-    crate::subject::siderust_below_threshold(
-        SiderustSubject::icrs(dir),
-        observer,
-        window,
-        threshold_deg,
-        opts,
-        out,
-        count,
-    )
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bodies::SiderustStar;
-    use crate::test_helpers::*;
-    use std::ffi::CString;
-    use std::ptr;
-
-    fn get_vega_handle() -> *mut SiderustStar {
-        let cname = CString::new("VEGA").unwrap();
-        let mut handle: *mut SiderustStar = ptr::null_mut();
-        crate::bodies::siderust_star_catalog(cname.as_ptr(), &mut handle);
-        handle
-    }
-
-    // ── window_from_c ─────────────────────────────────────────────────────
+    use crate::test_helpers::{icrs_vega, one_day_window};
 
     #[test]
     fn window_invalid_period() {
         let bad = TempochPeriodMjd {
-            start_mjd: 60001.0,
-            end_mjd: 60000.0,
+            start_mjd: TempochMjd::new(60001.0),
+            end_mjd: TempochMjd::new(60000.0),
         };
-        assert!(window_from_c(bad).is_err());
+        assert_eq!(window_from_c(bad), Err(SiderustStatus::InvalidPeriod));
     }
 
     #[test]
     fn window_valid_period() {
-        let w = TempochPeriodMjd {
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-        };
-        assert!(window_from_c(w).is_ok());
+        assert!(window_from_c(one_day_window()).is_ok());
     }
-
-    // ── icrs_from_c ───────────────────────────────────────────────────────
 
     #[test]
     fn icrs_from_c_wrong_frame() {
@@ -583,533 +136,14 @@ mod tests {
             azimuth_deg: 0.0,
             frame: SiderustFrame::EquatorialMeanJ2000,
         };
-        assert!(icrs_from_c(dir).is_err());
+        assert!(matches!(
+            icrs_from_c(dir),
+            Err(SiderustStatus::InvalidFrame)
+        ));
     }
 
     #[test]
     fn icrs_from_c_correct_frame() {
         assert!(icrs_from_c(icrs_vega()).is_ok());
-    }
-
-    // ── Sun altitude ──────────────────────────────────────────────────────
-
-    #[test]
-    fn sun_altitude_at_is_finite() {
-        let mut out = 0.0f64;
-        assert_eq!(
-            siderust_sun_altitude_at(paris(), 60000.0, &mut out),
-            SiderustStatus::Ok
-        );
-        assert!(out.is_finite());
-    }
-
-    #[test]
-    fn sun_altitude_at_null_ptr() {
-        assert_eq!(
-            siderust_sun_altitude_at(paris(), 60000.0, ptr::null_mut()),
-            SiderustStatus::NullPointer
-        );
-    }
-
-    #[test]
-    fn sun_above_threshold_ok() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_sun_above_threshold(
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_periods_free(out, count) };
-    }
-
-    #[test]
-    fn sun_below_threshold_ok() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_sun_below_threshold(
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_periods_free(out, count) };
-    }
-
-    #[test]
-    fn sun_crossings_ok() {
-        let mut out: *mut SiderustCrossingEvent = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_sun_crossings(
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_crossings_free(out, count) };
-    }
-
-    #[test]
-    fn sun_culminations_ok() {
-        let mut out: *mut SiderustCulminationEvent = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_sun_culminations(
-            paris(),
-            one_day_window(),
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_culminations_free(out, count) };
-    }
-
-    #[test]
-    fn sun_altitude_periods_ok() {
-        let query = SiderustAltitudeQuery {
-            observer: paris(),
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-            min_altitude_deg: -90.0,
-            max_altitude_deg: 90.0,
-        };
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_sun_altitude_periods(query, &mut out, &mut count);
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_periods_free(out, count) };
-    }
-
-    // ── Moon altitude ─────────────────────────────────────────────────────
-
-    #[test]
-    fn moon_altitude_at_is_finite() {
-        let mut out = 0.0f64;
-        assert_eq!(
-            siderust_moon_altitude_at(paris(), 60000.0, &mut out),
-            SiderustStatus::Ok
-        );
-        assert!(out.is_finite());
-    }
-
-    #[test]
-    fn moon_altitude_at_null_ptr() {
-        assert_eq!(
-            siderust_moon_altitude_at(paris(), 60000.0, ptr::null_mut()),
-            SiderustStatus::NullPointer
-        );
-    }
-
-    #[test]
-    fn moon_above_threshold_ok() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_moon_above_threshold(
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_periods_free(out, count) };
-    }
-
-    #[test]
-    fn moon_below_threshold_ok() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_moon_below_threshold(
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_periods_free(out, count) };
-    }
-
-    #[test]
-    fn moon_crossings_ok() {
-        let mut out: *mut SiderustCrossingEvent = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_moon_crossings(
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_crossings_free(out, count) };
-    }
-
-    #[test]
-    fn moon_culminations_ok() {
-        let mut out: *mut SiderustCulminationEvent = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_moon_culminations(
-            paris(),
-            one_day_window(),
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_culminations_free(out, count) };
-    }
-
-    #[test]
-    fn moon_altitude_periods_ok() {
-        let query = SiderustAltitudeQuery {
-            observer: paris(),
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-            min_altitude_deg: -90.0,
-            max_altitude_deg: 90.0,
-        };
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_moon_altitude_periods(query, &mut out, &mut count);
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_periods_free(out, count) };
-    }
-
-    // ── Star altitude ─────────────────────────────────────────────────────
-
-    #[test]
-    fn star_altitude_at_ok() {
-        let h = get_vega_handle();
-        let mut out = 0.0f64;
-        assert_eq!(
-            siderust_star_altitude_at(h, paris(), 60000.0, &mut out),
-            SiderustStatus::Ok
-        );
-        assert!(out.is_finite());
-        unsafe { crate::bodies::siderust_star_free(h) };
-    }
-
-    #[test]
-    fn star_altitude_null_handle() {
-        let mut out = 0.0f64;
-        assert_eq!(
-            siderust_star_altitude_at(ptr::null(), paris(), 60000.0, &mut out),
-            SiderustStatus::NullPointer
-        );
-    }
-
-    #[test]
-    fn star_altitude_null_out() {
-        let h = get_vega_handle();
-        assert_eq!(
-            siderust_star_altitude_at(h, paris(), 60000.0, ptr::null_mut()),
-            SiderustStatus::NullPointer
-        );
-        unsafe { crate::bodies::siderust_star_free(h) };
-    }
-
-    #[test]
-    fn star_above_threshold_ok() {
-        let h = get_vega_handle();
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_star_above_threshold(
-            h,
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe {
-            siderust_periods_free(out, count);
-            crate::bodies::siderust_star_free(h);
-        }
-    }
-
-    #[test]
-    fn star_above_threshold_null_handle() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        assert_eq!(
-            siderust_star_above_threshold(
-                ptr::null(),
-                paris(),
-                one_day_window(),
-                0.0,
-                default_opts(),
-                &mut out,
-                &mut count
-            ),
-            SiderustStatus::NullPointer
-        );
-    }
-
-    #[test]
-    fn star_below_threshold_ok() {
-        let h = get_vega_handle();
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_star_below_threshold(
-            h,
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe {
-            siderust_periods_free(out, count);
-            crate::bodies::siderust_star_free(h);
-        }
-    }
-
-    #[test]
-    fn star_below_threshold_null_handle() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        assert_eq!(
-            siderust_star_below_threshold(
-                ptr::null(),
-                paris(),
-                one_day_window(),
-                0.0,
-                default_opts(),
-                &mut out,
-                &mut count
-            ),
-            SiderustStatus::NullPointer
-        );
-    }
-
-    #[test]
-    fn star_crossings_ok() {
-        let h = get_vega_handle();
-        let mut out: *mut SiderustCrossingEvent = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_star_crossings(
-            h,
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe {
-            siderust_crossings_free(out, count);
-            crate::bodies::siderust_star_free(h);
-        }
-    }
-
-    #[test]
-    fn star_crossings_null_handle() {
-        let mut out: *mut SiderustCrossingEvent = ptr::null_mut();
-        let mut count = 0usize;
-        assert_eq!(
-            siderust_star_crossings(
-                ptr::null(),
-                paris(),
-                one_day_window(),
-                0.0,
-                default_opts(),
-                &mut out,
-                &mut count
-            ),
-            SiderustStatus::NullPointer
-        );
-    }
-
-    #[test]
-    fn star_culminations_ok() {
-        let h = get_vega_handle();
-        let mut out: *mut SiderustCulminationEvent = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_star_culminations(
-            h,
-            paris(),
-            one_day_window(),
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe {
-            siderust_culminations_free(out, count);
-            crate::bodies::siderust_star_free(h);
-        }
-    }
-
-    #[test]
-    fn star_culminations_null_handle() {
-        let mut out: *mut SiderustCulminationEvent = ptr::null_mut();
-        let mut count = 0usize;
-        assert_eq!(
-            siderust_star_culminations(
-                ptr::null(),
-                paris(),
-                one_day_window(),
-                default_opts(),
-                &mut out,
-                &mut count
-            ),
-            SiderustStatus::NullPointer
-        );
-    }
-
-    // ── ICRS altitude ─────────────────────────────────────────────────────
-
-    #[test]
-    fn icrs_altitude_at_ok() {
-        let mut out = 0.0f64;
-        let s = siderust_icrs_altitude_at(icrs_vega(), paris(), 60000.0, &mut out);
-        assert_eq!(s, SiderustStatus::Ok);
-        assert!(out.is_finite());
-    }
-
-    #[test]
-    fn icrs_altitude_null_out() {
-        assert_eq!(
-            siderust_icrs_altitude_at(icrs_vega(), paris(), 60000.0, ptr::null_mut()),
-            SiderustStatus::NullPointer
-        );
-    }
-
-    #[test]
-    fn icrs_altitude_wrong_frame() {
-        let dir = SiderustSphericalDir {
-            polar_deg: 0.0,
-            azimuth_deg: 0.0,
-            frame: SiderustFrame::EquatorialMeanJ2000,
-        };
-        let mut out = 0.0f64;
-        assert_eq!(
-            siderust_icrs_altitude_at(dir, paris(), 60000.0, &mut out),
-            SiderustStatus::InvalidFrame
-        );
-    }
-
-    #[test]
-    fn icrs_above_threshold_ok() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_icrs_above_threshold(
-            icrs_vega(),
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_periods_free(out, count) };
-    }
-
-    #[test]
-    fn icrs_above_threshold_wrong_frame() {
-        let dir = SiderustSphericalDir {
-            polar_deg: 0.0,
-            azimuth_deg: 0.0,
-            frame: SiderustFrame::Galactic,
-        };
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        assert_eq!(
-            siderust_icrs_above_threshold(
-                dir,
-                paris(),
-                one_day_window(),
-                0.0,
-                default_opts(),
-                &mut out,
-                &mut count
-            ),
-            SiderustStatus::InvalidFrame
-        );
-    }
-
-    #[test]
-    fn icrs_below_threshold_ok() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let s = siderust_icrs_below_threshold(
-            icrs_vega(),
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(s, SiderustStatus::Ok);
-        unsafe { siderust_periods_free(out, count) };
-    }
-
-    #[test]
-    fn icrs_below_threshold_wrong_frame() {
-        let dir = SiderustSphericalDir {
-            polar_deg: 0.0,
-            azimuth_deg: 0.0,
-            frame: SiderustFrame::Galactic,
-        };
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        assert_eq!(
-            siderust_icrs_below_threshold(
-                dir,
-                paris(),
-                one_day_window(),
-                0.0,
-                default_opts(),
-                &mut out,
-                &mut count
-            ),
-            SiderustStatus::InvalidFrame
-        );
-    }
-
-    // ── Invalid window ────────────────────────────────────────────────────
-
-    #[test]
-    fn sun_above_threshold_invalid_window() {
-        let bad = TempochPeriodMjd {
-            start_mjd: 60001.0,
-            end_mjd: 60000.0,
-        };
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        assert_eq!(
-            siderust_sun_above_threshold(paris(), bad, 0.0, default_opts(), &mut out, &mut count),
-            SiderustStatus::InvalidPeriod
-        );
-    }
-
-    #[test]
-    fn free_null_pointers_safe() {
-        unsafe {
-            siderust_periods_free(ptr::null_mut(), 0);
-            siderust_crossings_free(ptr::null_mut(), 0);
-            siderust_culminations_free(ptr::null_mut(), 0);
-        }
     }
 }

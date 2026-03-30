@@ -127,14 +127,15 @@ macro_rules! dispatch_body {
 /// [`SiderustSubject`](crate::types::SiderustSubject).
 ///
 /// For `Body` subjects, this expands into [`dispatch_body!`].
-/// For `Star` and `Target`, `$provider` is a reference (`&Star` / `&ICRS`).
+/// For `Star` and `GenericTarget`, `$provider` is a shared reference to the
+/// underlying Rust value.
 /// For `Icrs`, it is a reference to a local `ICRS` value.
 ///
 /// **`$provider` is always a reference**, so pass it directly to free
 /// functions (e.g. `above_threshold(p, …)`, **not** `&p`).  Method calls
 /// (`p.altitude_at(…)`) auto-deref and work either way.
 ///
-/// On null `star_handle` or `target_handle` the macro returns
+/// On null `star_handle` or `generic_target_handle` the macro returns
 /// `SiderustStatus::NullPointer`.
 ///
 /// ```ignore
@@ -166,13 +167,6 @@ macro_rules! dispatch_subject {
                     qtty::Degrees::new(__subj.icrs_dir.polar_deg),
                 );
                 let $provider = &__icrs_owned;
-                $action
-            }
-            $crate::types::SiderustSubjectKind::Target => {
-                if __subj.target_handle.is_null() {
-                    return $crate::error::SiderustStatus::NullPointer;
-                }
-                let $provider = unsafe { &(*__subj.target_handle).dir };
                 $action
             }
             $crate::types::SiderustSubjectKind::GenericTarget => {

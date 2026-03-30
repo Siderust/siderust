@@ -254,8 +254,8 @@ mod tests {
 
     fn one_month() -> TempochPeriodMjd {
         TempochPeriodMjd {
-            start_mjd: 60000.0,
-            end_mjd: 60030.0,
+            start_mjd: mjd(60000.0),
+            end_mjd: mjd(60030.0),
         }
     }
 
@@ -386,8 +386,8 @@ mod tests {
     #[test]
     fn find_phase_events_invalid_window() {
         let bad = TempochPeriodMjd {
-            start_mjd: 60030.0,
-            end_mjd: 60000.0,
+            start_mjd: mjd(60030.0),
+            end_mjd: mjd(60000.0),
         };
         let mut out: *mut SiderustPhaseEvent = ptr::null_mut();
         let mut count = 0usize;
@@ -419,8 +419,8 @@ mod tests {
     #[test]
     fn illumination_above_invalid_window() {
         let bad = TempochPeriodMjd {
-            start_mjd: 60030.0,
-            end_mjd: 60000.0,
+            start_mjd: mjd(60030.0),
+            end_mjd: mjd(60000.0),
         };
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
@@ -452,8 +452,8 @@ mod tests {
     #[test]
     fn illumination_below_invalid_window() {
         let bad = TempochPeriodMjd {
-            start_mjd: 60030.0,
-            end_mjd: 60000.0,
+            start_mjd: mjd(60030.0),
+            end_mjd: mjd(60000.0),
         };
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
@@ -486,8 +486,8 @@ mod tests {
     #[test]
     fn illumination_range_invalid_window() {
         let bad = TempochPeriodMjd {
-            start_mjd: 60030.0,
-            end_mjd: 60000.0,
+            start_mjd: mjd(60030.0),
+            end_mjd: mjd(60000.0),
         };
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;

@@ -6,9 +6,7 @@
 //!
 //! # Overview
 //!
-//! Instead of separate `siderust_sun_*`, `siderust_moon_*`, `siderust_body_*`,
-//! `siderust_star_*`, `siderust_icrs_*`, and `siderust_target_*` families, the
-//! caller constructs a [`SiderustSubject`] tagged value and passes it to these
+//! Callers construct a [`SiderustSubject`] tagged value and pass it to these
 //! generic entry-points.
 //!
 //! # Supported Subject Kinds
@@ -16,14 +14,7 @@
 //! - `Body`: Solar-system bodies (Sun, Moon, planets)
 //! - `Star`: Catalog or custom stars via `SiderustStar` handle
 //! - `Icrs`: Fixed ICRS direction (RA/Dec)
-//! - `Target`: Legacy direction-only target via `SiderustTarget` handle
 //! - `GenericTarget`: Full `CoordinateWithPM<T>` via [`SiderustGenericTarget`] handle
-//!
-//! # Migration
-//!
-//! The old per-type functions in [`crate::altitude`] and [`crate::azimuth`]
-//! remain for backwards compatibility but simply delegate to this module.
-//! New adapters and bindings should use this unified API directly.
 
 use crate::altitude::{crossings_to_c, culminations_to_c, periods_to_c, window_from_c};
 use crate::azimuth::{vec_az_crossings_to_c, vec_az_extrema_to_c};
@@ -34,6 +25,7 @@ use siderust::calculus::azimuth::{azimuth_crossings, azimuth_extrema, in_azimuth
 use siderust::AltitudePeriodsProvider;
 use siderust::AzimuthProvider;
 use tempoch::ModifiedJulianDate;
+use tempoch_ffi::TempochMjd;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Altitude, instantaneous
@@ -44,7 +36,7 @@ use tempoch::ModifiedJulianDate;
 pub extern "C" fn siderust_altitude_at(
     subject: SiderustSubject,
     observer: SiderustGeodetict,
-    mjd: f64,
+    mjd: TempochMjd,
     out_rad: *mut f64,
 ) -> SiderustStatus {
     ffi_guard! {{
@@ -54,7 +46,7 @@ pub extern "C" fn siderust_altitude_at(
         dispatch_subject!(subject, |p| {
             unsafe {
                 *out_rad = p
-                    .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                    .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd.value))
                     .value();
             }
             SiderustStatus::Ok
@@ -197,8 +189,8 @@ pub extern "C" fn siderust_culminations(
 
 /// Periods when a body's altitude is within [min, max].
 ///
-/// Only `Body` subjects support this operation.  For `Star`, `Icrs`, and
-/// `Target`, `SIDERUST_STATUS_T_INVALID_ARGUMENT` is returned.
+/// Only `Body` subjects support this operation. For `Star`, `Icrs`, and
+/// `GenericTarget`, `SIDERUST_STATUS_T_INVALID_ARGUMENT` is returned.
 #[no_mangle]
 pub extern "C" fn siderust_altitude_periods(
     subject: SiderustSubject,
@@ -228,7 +220,7 @@ pub extern "C" fn siderust_altitude_periods(
 pub extern "C" fn siderust_azimuth_at(
     subject: SiderustSubject,
     observer: SiderustGeodetict,
-    mjd: f64,
+    mjd: TempochMjd,
     out_deg: *mut f64,
 ) -> SiderustStatus {
     ffi_guard! {{
@@ -238,7 +230,7 @@ pub extern "C" fn siderust_azimuth_at(
         dispatch_subject!(subject, |p| {
             unsafe {
                 *out_deg = p
-                    .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                    .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd.value))
                     .value();
             }
             SiderustStatus::Ok
@@ -348,268 +340,99 @@ pub extern "C" fn siderust_in_azimuth_range(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::bodies::SiderustStar;
-    use crate::target::SiderustTarget;
+    use crate::target::{
+        siderust_generic_target_create_icrs, siderust_generic_target_create_icrs_with_pm,
+        siderust_generic_target_free, SiderustGenericTarget,
+    };
     use crate::test_helpers::*;
     use std::ffi::CString;
     use std::ptr;
 
-    // ── Subject constructors ──────────────────────────────────────────────
-
-    fn sun_subject() -> SiderustSubject {
-        SiderustSubject {
-            kind: SiderustSubjectKind::Body,
-            body: SiderustBody::Sun,
-            star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir {
-                polar_deg: 0.0,
-                azimuth_deg: 0.0,
-                frame: SiderustFrame::ICRS,
-            },
-            target_handle: ptr::null(),
-            generic_target_handle: ptr::null(),
-        }
-    }
-
-    fn moon_subject() -> SiderustSubject {
-        SiderustSubject {
-            kind: SiderustSubjectKind::Body,
-            body: SiderustBody::Moon,
-            star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir {
-                polar_deg: 0.0,
-                azimuth_deg: 0.0,
-                frame: SiderustFrame::ICRS,
-            },
-            target_handle: ptr::null(),
-            generic_target_handle: ptr::null(),
-        }
-    }
-
-    fn mars_subject() -> SiderustSubject {
-        SiderustSubject {
-            kind: SiderustSubjectKind::Body,
-            body: SiderustBody::Mars,
-            star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir {
-                polar_deg: 0.0,
-                azimuth_deg: 0.0,
-                frame: SiderustFrame::ICRS,
-            },
-            target_handle: ptr::null(),
-            generic_target_handle: ptr::null(),
-        }
-    }
-
-    fn star_subject(name: &str) -> (*mut SiderustStar, SiderustSubject) {
+    fn star_subject(name: &str) -> (*mut crate::bodies::SiderustStar, SiderustSubject) {
         let cname = CString::new(name).unwrap();
-        let mut handle: *mut SiderustStar = ptr::null_mut();
+        let mut handle: *mut crate::bodies::SiderustStar = ptr::null_mut();
         let st = crate::bodies::siderust_star_catalog(cname.as_ptr(), &mut handle);
         assert_eq!(st, SiderustStatus::Ok);
-        let subject = SiderustSubject {
-            kind: SiderustSubjectKind::Star,
-            body: SiderustBody::Sun, // unused
-            star_handle: handle,
-            icrs_dir: SiderustSphericalDir {
-                polar_deg: 0.0,
-                azimuth_deg: 0.0,
-                frame: SiderustFrame::ICRS,
-            },
-            target_handle: ptr::null(),
-            generic_target_handle: ptr::null(),
-        };
-        (handle, subject)
+        (handle, SiderustSubject::star(handle))
     }
 
     fn icrs_vega_subject() -> SiderustSubject {
-        SiderustSubject {
-            kind: SiderustSubjectKind::Icrs,
-            body: SiderustBody::Sun, // unused
-            star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir {
-                polar_deg: 38.78,
-                azimuth_deg: 279.23,
-                frame: SiderustFrame::ICRS,
-            },
-            target_handle: ptr::null(),
-            generic_target_handle: ptr::null(),
-        }
+        SiderustSubject::icrs(icrs_vega())
     }
 
-    fn target_subject(ra: f64, dec: f64) -> (*mut SiderustTarget, SiderustSubject) {
-        let mut handle: *mut SiderustTarget = ptr::null_mut();
-        let st = crate::target::siderust_target_create(ra, dec, 2451545.0, &mut handle);
-        assert_eq!(st, SiderustStatus::Ok);
-        let subject = SiderustSubject {
-            kind: SiderustSubjectKind::Target,
-            body: SiderustBody::Sun, // unused
-            star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir {
-                polar_deg: 0.0,
-                azimuth_deg: 0.0,
-                frame: SiderustFrame::ICRS,
-            },
-            target_handle: handle,
-            generic_target_handle: ptr::null(),
-        };
-        (handle, subject)
-    }
-
-    // ── altitude_at ───────────────────────────────────────────────────────
-
-    #[test]
-    fn altitude_at_sun() {
-        let mut out = 0.0f64;
-        let st = siderust_altitude_at(sun_subject(), paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-    }
-
-    #[test]
-    fn altitude_at_moon() {
-        let mut out = 0.0f64;
-        let st = siderust_altitude_at(moon_subject(), paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-    }
-
-    #[test]
-    fn altitude_at_mars() {
-        let mut out = 0.0f64;
-        let st = siderust_altitude_at(mars_subject(), paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-    }
-
-    #[test]
-    fn altitude_at_star() {
-        let (handle, subj) = star_subject("VEGA");
-        let mut out = 0.0f64;
-        let st = siderust_altitude_at(subj, paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-        unsafe { crate::bodies::siderust_star_free(handle) };
-    }
-
-    #[test]
-    fn altitude_at_icrs() {
-        let mut out = 0.0f64;
-        let st = siderust_altitude_at(icrs_vega_subject(), paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-    }
-
-    #[test]
-    fn altitude_at_target() {
-        let (handle, subj) = target_subject(279.23, 38.78);
-        let mut out = 0.0f64;
-        let st = siderust_altitude_at(subj, paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-        unsafe { crate::target::siderust_target_free(handle) };
-    }
-
-    #[test]
-    fn altitude_at_generic_target() {
-        use crate::target::{
-            siderust_generic_target_create_icrs, siderust_generic_target_free,
-            SiderustGenericTarget,
-        };
-
+    fn generic_target_subject() -> (*mut SiderustGenericTarget, SiderustSubject) {
         let mut handle: *mut SiderustGenericTarget = ptr::null_mut();
         let st = siderust_generic_target_create_icrs(279.23, 38.78, 2451545.0, &mut handle);
         assert_eq!(st, SiderustStatus::Ok);
-
-        let subj = SiderustSubject::generic_target(handle);
-        let mut out = 0.0f64;
-        let st = siderust_altitude_at(subj, paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-
-        unsafe { siderust_generic_target_free(handle) };
+        (handle, SiderustSubject::generic_target(handle))
     }
 
     #[test]
-    fn altitude_at_generic_target_with_pm() {
-        use crate::target::{
-            siderust_generic_target_create_icrs_with_pm, siderust_generic_target_free,
-            SiderustGenericTarget,
-        };
-
-        let mut handle: *mut SiderustGenericTarget = ptr::null_mut();
-        // Simulate a star with proper motion (in degrees per year)
-        let st = siderust_generic_target_create_icrs_with_pm(
-            279.23,
-            38.78,
-            2451545.0,
-            0.0001,
-            -0.0001, // ~0.36 arcsec/yr
-            SiderustRaConvention::MuAlphaStar,
-            &mut handle,
-        );
-        assert_eq!(st, SiderustStatus::Ok);
-
-        let subj = SiderustSubject::generic_target(handle);
+    fn altitude_at_body_star_icrs_and_generic_target() {
         let mut out = 0.0f64;
-        let st = siderust_altitude_at(subj, paris(), 60000.5, &mut out);
+        let st = siderust_altitude_at(
+            SiderustSubject::body(SiderustBody::Sun),
+            paris(),
+            mjd(60000.5),
+            &mut out,
+        );
         assert_eq!(st, SiderustStatus::Ok);
         assert!(out.is_finite());
 
-        unsafe { siderust_generic_target_free(handle) };
+        let (star_handle, star_subj) = star_subject("VEGA");
+        let st = siderust_altitude_at(star_subj, paris(), mjd(60000.5), &mut out);
+        assert_eq!(st, SiderustStatus::Ok);
+        assert!(out.is_finite());
+
+        let st = siderust_altitude_at(icrs_vega_subject(), paris(), mjd(60000.5), &mut out);
+        assert_eq!(st, SiderustStatus::Ok);
+        assert!(out.is_finite());
+
+        let (target_handle, target_subj) = generic_target_subject();
+        let st = siderust_altitude_at(target_subj, paris(), mjd(60000.5), &mut out);
+        assert_eq!(st, SiderustStatus::Ok);
+        assert!(out.is_finite());
+
+        unsafe {
+            crate::bodies::siderust_star_free(star_handle);
+            siderust_generic_target_free(target_handle);
+        }
     }
 
     #[test]
     fn altitude_at_null_out() {
-        let st = siderust_altitude_at(sun_subject(), paris(), 60000.5, ptr::null_mut());
+        let st = siderust_altitude_at(
+            SiderustSubject::body(SiderustBody::Sun),
+            paris(),
+            mjd(60000.5),
+            ptr::null_mut(),
+        );
         assert_eq!(st, SiderustStatus::NullPointer);
     }
 
     #[test]
     fn altitude_at_null_star_handle() {
-        let subj = SiderustSubject {
-            kind: SiderustSubjectKind::Star,
-            body: SiderustBody::Sun,
-            star_handle: ptr::null(),
-            icrs_dir: SiderustSphericalDir {
-                polar_deg: 0.0,
-                azimuth_deg: 0.0,
-                frame: SiderustFrame::ICRS,
-            },
-            target_handle: ptr::null(),
-            generic_target_handle: ptr::null(),
-        };
+        let subj = SiderustSubject::star(ptr::null());
         let mut out = 0.0f64;
-        let st = siderust_altitude_at(subj, paris(), 60000.5, &mut out);
+        let st = siderust_altitude_at(subj, paris(), mjd(60000.5), &mut out);
         assert_eq!(st, SiderustStatus::NullPointer);
     }
 
-    // ── above_threshold ───────────────────────────────────────────────────
-
     #[test]
-    fn above_threshold_sun() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let st = siderust_above_threshold(
-            sun_subject(),
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(count > 0);
-        unsafe { crate::altitude::siderust_periods_free(out, count) };
+    fn altitude_at_null_generic_target_handle() {
+        let subj = SiderustSubject::generic_target(ptr::null());
+        let mut out = 0.0f64;
+        let st = siderust_altitude_at(subj, paris(), mjd(60000.5), &mut out);
+        assert_eq!(st, SiderustStatus::NullPointer);
     }
 
     #[test]
-    fn above_threshold_star() {
-        let (handle, subj) = star_subject("VEGA");
+    fn above_threshold_star_and_generic_target_with_pm() {
+        let (star_handle, star_subj) = star_subject("VEGA");
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_above_threshold(
-            subj,
+            star_subj,
             paris(),
             one_day_window(),
             0.0,
@@ -619,15 +442,20 @@ mod tests {
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_periods_free(out, count) };
-        unsafe { crate::bodies::siderust_star_free(handle) };
-    }
 
-    #[test]
-    fn above_threshold_icrs() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
+        let mut handle: *mut SiderustGenericTarget = ptr::null_mut();
+        let st = siderust_generic_target_create_icrs_with_pm(
+            279.23,
+            38.78,
+            2451545.0,
+            0.0001,
+            -0.0001,
+            SiderustRaConvention::MuAlphaStar,
+            &mut handle,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
         let st = siderust_above_threshold(
-            icrs_vega_subject(),
+            SiderustSubject::generic_target(handle),
             paris(),
             one_day_window(),
             0.0,
@@ -636,36 +464,19 @@ mod tests {
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_periods_free(out, count) };
+        unsafe {
+            crate::altitude::siderust_periods_free(out, count);
+            crate::bodies::siderust_star_free(star_handle);
+            siderust_generic_target_free(handle);
+        }
     }
 
     #[test]
-    fn above_threshold_target() {
-        let (handle, subj) = target_subject(279.23, 38.78);
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let st = siderust_above_threshold(
-            subj,
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_periods_free(out, count) };
-        unsafe { crate::target::siderust_target_free(handle) };
-    }
-
-    // ── below_threshold ───────────────────────────────────────────────────
-
-    #[test]
-    fn below_threshold_sun() {
+    fn below_threshold_and_crossings_body() {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_below_threshold(
-            sun_subject(),
+            SiderustSubject::body(SiderustBody::Sun),
             paris(),
             one_day_window(),
             0.0,
@@ -674,69 +485,24 @@ mod tests {
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
-        assert!(count > 0);
         unsafe { crate::altitude::siderust_periods_free(out, count) };
-    }
-
-    // ── crossings ─────────────────────────────────────────────────────────
-
-    #[test]
-    fn crossings_sun() {
-        let mut out: *mut SiderustCrossingEvent = ptr::null_mut();
-        let mut count = 0usize;
+        let mut crossings: *mut SiderustCrossingEvent = ptr::null_mut();
         let st = siderust_crossings(
-            sun_subject(),
+            SiderustSubject::body(SiderustBody::Sun),
             paris(),
             one_day_window(),
             0.0,
             default_opts(),
-            &mut out,
+            &mut crossings,
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_crossings_free(out, count) };
+        unsafe { crate::altitude::siderust_crossings_free(crossings, count) };
     }
 
     #[test]
-    fn crossings_star() {
-        let (handle, subj) = star_subject("VEGA");
-        let mut out: *mut SiderustCrossingEvent = ptr::null_mut();
-        let mut count = 0usize;
-        let st = siderust_crossings(
-            subj,
-            paris(),
-            one_day_window(),
-            0.0,
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_crossings_free(out, count) };
-        unsafe { crate::bodies::siderust_star_free(handle) };
-    }
-
-    // ── culminations ──────────────────────────────────────────────────────
-
-    #[test]
-    fn culminations_sun() {
-        let mut out: *mut SiderustCulminationEvent = ptr::null_mut();
-        let mut count = 0usize;
-        let st = siderust_culminations(
-            sun_subject(),
-            paris(),
-            one_day_window(),
-            default_opts(),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_culminations_free(out, count) };
-    }
-
-    #[test]
-    fn culminations_target() {
-        let (handle, subj) = target_subject(279.23, 38.78);
+    fn culminations_generic_target() {
+        let (handle, subj) = generic_target_subject();
         let mut out: *mut SiderustCulminationEvent = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_culminations(
@@ -748,137 +514,87 @@ mod tests {
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_culminations_free(out, count) };
-        unsafe { crate::target::siderust_target_free(handle) };
+        unsafe {
+            crate::altitude::siderust_culminations_free(out, count);
+            siderust_generic_target_free(handle);
+        }
     }
 
-    // ── altitude_periods (body-only) ──────────────────────────────────────
-
     #[test]
-    fn altitude_periods_sun() {
+    fn altitude_periods_body_only() {
         let query = SiderustAltitudeQuery {
             observer: paris(),
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
+            start_mjd: mjd(60000.0),
+            end_mjd: mjd(60001.0),
             min_altitude_deg: -90.0,
             max_altitude_deg: 90.0,
         };
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
-        let st = siderust_altitude_periods(sun_subject(), query, &mut out, &mut count);
+        let st = siderust_altitude_periods(
+            SiderustSubject::body(SiderustBody::Sun),
+            query,
+            &mut out,
+            &mut count,
+        );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_periods_free(out, count) };
-    }
-
-    #[test]
-    fn altitude_periods_star_unsupported() {
-        let (handle, subj) = star_subject("VEGA");
-        let query = SiderustAltitudeQuery {
-            observer: paris(),
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-            min_altitude_deg: -90.0,
-            max_altitude_deg: 90.0,
-        };
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let st = siderust_altitude_periods(subj, query, &mut out, &mut count);
+        let (star_handle, star_subj) = star_subject("VEGA");
+        let st = siderust_altitude_periods(star_subj, query, &mut out, &mut count);
         assert_eq!(st, SiderustStatus::InvalidArgument);
-        unsafe { crate::bodies::siderust_star_free(handle) };
+        unsafe { crate::bodies::siderust_star_free(star_handle) };
+
+        let (target_handle, target_subj) = generic_target_subject();
+        let st = siderust_altitude_periods(target_subj, query, &mut out, &mut count);
+        assert_eq!(st, SiderustStatus::InvalidArgument);
+        unsafe { siderust_generic_target_free(target_handle) };
     }
 
-    // ── azimuth_at ────────────────────────────────────────────────────────
-
     #[test]
-    fn azimuth_at_sun() {
+    fn azimuth_subject_queries() {
         let mut out = 0.0f64;
-        let st = siderust_azimuth_at(sun_subject(), paris(), 60000.5, &mut out);
+        let st = siderust_azimuth_at(icrs_vega_subject(), paris(), mjd(60000.5), &mut out);
         assert_eq!(st, SiderustStatus::Ok);
         assert!(out.is_finite());
-    }
 
-    #[test]
-    fn azimuth_at_star() {
-        let (handle, subj) = star_subject("VEGA");
-        let mut out = 0.0f64;
-        let st = siderust_azimuth_at(subj, paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-        unsafe { crate::bodies::siderust_star_free(handle) };
-    }
-
-    #[test]
-    fn azimuth_at_icrs() {
-        let mut out = 0.0f64;
-        let st = siderust_azimuth_at(icrs_vega_subject(), paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-    }
-
-    #[test]
-    fn azimuth_at_target() {
-        let (handle, subj) = target_subject(279.23, 38.78);
-        let mut out = 0.0f64;
-        let st = siderust_azimuth_at(subj, paris(), 60000.5, &mut out);
-        assert_eq!(st, SiderustStatus::Ok);
-        assert!(out.is_finite());
-        unsafe { crate::target::siderust_target_free(handle) };
-    }
-
-    // ── azimuth_crossings ─────────────────────────────────────────────────
-
-    #[test]
-    fn azimuth_crossings_sun() {
-        let mut out: *mut SiderustAzimuthCrossingEvent = ptr::null_mut();
+        let mut crossings: *mut SiderustAzimuthCrossingEvent = ptr::null_mut();
         let mut count = 0usize;
         let st = siderust_azimuth_crossings(
-            sun_subject(),
+            SiderustSubject::body(SiderustBody::Moon),
             paris(),
             one_day_window(),
             180.0,
             default_opts(),
-            &mut out,
+            &mut crossings,
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::azimuth::siderust_azimuth_crossings_free(out, count) };
-    }
+        unsafe { crate::azimuth::siderust_azimuth_crossings_free(crossings, count) };
 
-    // ── azimuth_extrema ───────────────────────────────────────────────────
-
-    #[test]
-    fn azimuth_extrema_sun() {
-        let mut out: *mut SiderustAzimuthExtremum = ptr::null_mut();
-        let mut count = 0usize;
+        let mut extrema: *mut SiderustAzimuthExtremum = ptr::null_mut();
         let st = siderust_azimuth_extrema(
-            sun_subject(),
+            SiderustSubject::body(SiderustBody::Sun),
             paris(),
             one_day_window(),
             default_opts(),
-            &mut out,
+            &mut extrema,
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::azimuth::siderust_azimuth_extrema_free(out, count) };
-    }
+        unsafe { crate::azimuth::siderust_azimuth_extrema_free(extrema, count) };
 
-    // ── in_azimuth_range ──────────────────────────────────────────────────
-
-    #[test]
-    fn in_azimuth_range_sun() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
+        let mut periods: *mut TempochPeriodMjd = ptr::null_mut();
         let st = siderust_in_azimuth_range(
-            sun_subject(),
+            SiderustSubject::body(SiderustBody::Sun),
             paris(),
             one_day_window(),
             90.0,
             270.0,
             default_opts(),
-            &mut out,
+            &mut periods,
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_periods_free(out, count) };
+        unsafe { crate::altitude::siderust_periods_free(periods, count) };
     }
 }

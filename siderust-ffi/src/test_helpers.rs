@@ -6,6 +6,12 @@
 //! This module is only compiled under `#[cfg(test)]`.
 
 use crate::types::*;
+use tempoch_ffi::TempochMjd;
+
+/// Wrap a raw Modified Julian Date for FFI calls.
+pub fn mjd(value: f64) -> TempochMjd {
+    TempochMjd::new(value)
+}
 
 /// Observer at Paris (lat 48.85°N, lon 2.35°E, 35 m).
 pub fn paris() -> SiderustGeodetict {
@@ -19,8 +25,8 @@ pub fn paris() -> SiderustGeodetict {
 /// A one-day time window starting at MJD 60000.
 pub fn one_day_window() -> TempochPeriodMjd {
     TempochPeriodMjd {
-        start_mjd: 60000.0,
-        end_mjd: 60001.0,
+        start_mjd: mjd(60000.0),
+        end_mjd: mjd(60001.0),
     }
 }
 
