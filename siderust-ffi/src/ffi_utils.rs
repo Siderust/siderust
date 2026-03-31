@@ -183,7 +183,7 @@ macro_rules! dispatch_subject {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// FfiFrom trait
+// FfiFrom trait (Rust → FFI)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// Convert a Rust domain type into an FFI-compatible value.
@@ -193,6 +193,182 @@ macro_rules! dispatch_subject {
 pub trait FfiFrom<R>: Sized {
     /// Convert a reference to a Rust domain value into `Self`.
     fn ffi_from(r: &R) -> Self;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// TryFromFfi trait (FFI → Rust)
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Convert an FFI-compatible value into a Rust domain type.
+///
+/// This is the reverse of [`FfiFrom`]: it validates and converts a C-side
+/// POD value into the corresponding rich Rust type, returning an appropriate
+/// [`SiderustStatus`] on failure.
+pub trait TryFromFfi<F>: Sized {
+    /// Try to convert an FFI value into a Rust domain value.
+    ///
+    /// Returns `Ok(rust_value)` on success or `Err(status)` with a descriptive
+    /// error code when the FFI value is invalid (e.g. unknown enum discriminant,
+    /// out-of-range field).
+    fn try_from_ffi(ffi: &F) -> Result<Self, SiderustStatus>;
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Generic pointer / output helpers
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Write a value through a non-null output pointer.
+///
+/// Returns [`SiderustStatus::NullPointer`] if `out` is null, otherwise writes
+/// `value` and returns [`SiderustStatus::Ok`].
+///
+/// # Safety
+///
+/// `out` must be properly aligned and point to valid (possibly uninitialised)
+/// memory for one `T`.  This is always the case for output parameters in the
+/// siderust-ffi C API.
+#[inline]
+pub unsafe fn write_out<T>(out: *mut T, value: T) -> SiderustStatus {
+    if out.is_null() {
+        return SiderustStatus::NullPointer;
+    }
+    unsafe { out.write(value) };
+    SiderustStatus::Ok
+}
+
+/// Read through a non-null pointer, returning `NullPointer` on null.
+///
+/// # Safety
+///
+/// `ptr` must point to a valid, initialised `T` if it is non-null.
+#[inline]
+pub unsafe fn read_nonnull<'a, T>(ptr: *const T) -> Result<&'a T, SiderustStatus> {
+    if ptr.is_null() {
+        return Err(SiderustStatus::NullPointer);
+    }
+    Ok(unsafe { &*ptr })
+}
+
+// ═══════════════════════════════════════════════════════════════════════════
+// Declarative FFI enum macro
+// ═══════════════════════════════════════════════════════════════════════════
+
+/// Define a `#[repr(i32)]` FFI enum from a single declarative table.
+///
+/// Generates the enum itself, `from_raw(i32) -> Option<Self>`, and
+/// optionally `from_str(&str) -> Option<Self>` + `as_str() -> &'static str`
+/// when string mappings are provided.
+///
+/// # Syntax
+///
+/// ```ignore
+/// ffi_enum! {
+///     /// Doc comment on the enum.
+///     pub enum SiderustBody {
+///         Sun     = 0 => "sun",
+///         Moon    = 1 => "moon",
+///         Mercury = 2 => "mercury",
+///     }
+/// }
+/// ```
+///
+/// The `=> "canonical"` part is optional.  When omitted, `from_str`/`as_str`
+/// are not generated.  String aliases can be added with `| "alias1" | "alias2"`:
+///
+/// ```ignore
+/// ffi_enum! {
+///     pub enum SiderustCenter {
+///         Barycentric  = 1 => "barycentric" | "ssb" | "solar_system_barycenter",
+///         Heliocentric = 2 => "heliocentric" | "solar" | "sun",
+///     }
+/// }
+/// ```
+#[macro_export]
+macro_rules! ffi_enum {
+    // ── With string mappings ────────────────────────────────────────────
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $Name:ident {
+            $(
+                $(#[$vmeta:meta])*
+                $Variant:ident = $disc:expr
+                    => $canonical:literal $(| $alias:literal)*
+            ),+ $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        #[repr(i32)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        $vis enum $Name {
+            $(
+                $(#[$vmeta])*
+                $Variant = $disc,
+            )+
+        }
+
+        impl $Name {
+            /// Decode a raw `i32` discriminant.
+            ///
+            /// Returns `None` if the value does not match any known variant.
+            pub fn from_raw(raw: i32) -> Option<Self> {
+                match raw {
+                    $( $disc => Some(Self::$Variant), )+
+                    _ => None,
+                }
+            }
+
+            /// Parse a name string (case-insensitive).
+            ///
+            /// Returns `None` if the string does not match any known variant.
+            pub fn parse_name(s: &str) -> Option<Self> {
+                let lower = s.to_ascii_lowercase();
+                match lower.as_str() {
+                    $( $canonical $(| $alias)* => Some(Self::$Variant), )+
+                    _ => None,
+                }
+            }
+
+            /// Return the canonical string name of this variant.
+            pub fn as_str(&self) -> &'static str {
+                match self {
+                    $( Self::$Variant => $canonical, )+
+                }
+            }
+        }
+    };
+
+    // ── Without string mappings ─────────────────────────────────────────
+    (
+        $(#[$meta:meta])*
+        $vis:vis enum $Name:ident {
+            $(
+                $(#[$vmeta:meta])*
+                $Variant:ident = $disc:expr
+            ),+ $(,)?
+        }
+    ) => {
+        $(#[$meta])*
+        #[repr(i32)]
+        #[derive(Debug, Clone, Copy, PartialEq, Eq)]
+        $vis enum $Name {
+            $(
+                $(#[$vmeta])*
+                $Variant = $disc,
+            )+
+        }
+
+        impl $Name {
+            /// Decode a raw `i32` discriminant.
+            ///
+            /// Returns `None` if the value does not match any known variant.
+            pub fn from_raw(raw: i32) -> Option<Self> {
+                match raw {
+                    $( $disc => Some(Self::$Variant), )+
+                    _ => None,
+                }
+            }
+        }
+    };
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -243,6 +419,6 @@ pub unsafe fn free_boxed_slice<T>(ptr: *mut T, count: usize) {
     if !ptr.is_null() && count > 0 {
         // SAFETY: caller guarantees `ptr` and `count` originate from the same
         // `vec_to_c` allocation and have not been freed before.
-        let _ = unsafe { Box::from_raw(std::slice::from_raw_parts_mut(ptr, count)) };
+        let _ = unsafe { Box::from_raw(std::ptr::slice_from_raw_parts_mut(ptr, count)) };
     }
 }
