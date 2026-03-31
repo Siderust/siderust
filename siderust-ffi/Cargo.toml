@@ -18,11 +18,11 @@ de440 = ["siderust/de440"]
 runtime-data = ["siderust/runtime-data"]
 
 [dependencies]
-siderust    = { version = "0.6.0", path = "..", features = [] }
-qtty        = "0.4.0"
-tempoch     = "0.4"
+siderust    = { version = "0.6.0", path = ".." }
+qtty        = { version = "0.4.1", path = "../../qtty/qtty" }
+tempoch     = { version = "0.4.0", path = "../../tempoch/tempoch" }
 tempoch-ffi = { version = "0.3.0", path = "../../tempoch/tempoch-ffi" }
-affn        = { version = "0.4.1", features = ["astro"] }
+affn        = { version = "0.5.0", path = "../../affn", features = ["astro"] }
 
 [build-dependencies]
 cbindgen = "0.29.2"

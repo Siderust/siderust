@@ -34,6 +34,7 @@ Siderust aims to be a reference ephemeris and orbit‑analysis library for resea
 | `de440`  |         | JPL DE440 Chebyshev ephemeris backend (1550–2650 CE) |
 | `de441`  |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
 | `serde`  |         | `Serialize` / `Deserialize` on public types |
+| `ffi`    |         | Forwards Rust-side FFI layout guarantees to `qtty`, `tempoch`, and `affn` |
 
 > **Note:** `no_std` and `f128` quad‑precision are **not** supported today.
 > The crate depends on `std`‑only libraries (`chrono`, `nalgebra`).

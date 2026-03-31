@@ -25,10 +25,10 @@ runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
 
 [dependencies]
-affn = { version="0.5.0", features = ["astro"] }
+affn = { version = "0.5.0", path = "../affn", features = ["astro"] }
 cheby = "0.1.0"
-qtty = "0.4.1"
-tempoch = "0.4"
+qtty = { version = "0.4.1", path = "../qtty/qtty" }
+tempoch = { version = "0.4.0", path = "../tempoch/tempoch" }
 approx = "0.5"
 chrono = "0.4.44"
 nalgebra = "0.34.1"

@@ -69,330 +69,174 @@ pub use ::tempoch_ffi::TempochPeriodMjd;
 // Enumerations
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Reference frame identifier for C interop.
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustFrame {
-    /// International Celestial Reference System.
-    ICRS = 1,
-    /// Mean ecliptic of J2000.0.
-    EclipticMeanJ2000 = 2,
-    /// Mean equatorial of J2000.0.
-    EquatorialMeanJ2000 = 3,
-    /// Mean equatorial of date.
-    EquatorialMeanOfDate = 4,
-    /// True equatorial of date (includes nutation).
-    EquatorialTrueOfDate = 5,
-    /// Local horizontal (azimuth/altitude).
-    Horizontal = 6,
-    /// Earth-Centred Earth-Fixed.
-    ECEF = 7,
-    /// Galactic coordinate system.
-    Galactic = 8,
-    /// Geocentric Celestial Reference System.
-    GCRS = 9,
-    /// Ecliptic of date.
-    EclipticOfDate = 10,
-    /// True ecliptic of date.
-    EclipticTrueOfDate = 11,
-    /// Celestial Intermediate Reference System.
-    CIRS = 12,
-    /// Terrestrial Intermediate Reference System.
-    TIRS = 13,
-    /// International Terrestrial Reference Frame.
-    ITRF = 14,
-    /// International Celestial Reference Frame.
-    ICRF = 15,
-}
-
-impl SiderustFrame {
-    /// Parse a frame name string (case-insensitive).
-    ///
-    /// Accepts the canonical names documented in the module header:
-    /// `"icrs"`, `"ecliptic_mean_j2000"`, `"equatorial_mean_j2000"`, etc.
-    /// Also accepts common aliases like `"horizontal"`, `"galactic"`, `"gcrs"`.
-    ///
-    /// Returns `None` if the string does not match any known frame.
-    pub fn from_str(s: &str) -> Option<Self> {
-        let lower = s.to_ascii_lowercase();
-        match lower.as_str() {
-            "icrs" => Some(Self::ICRS),
-            "ecliptic_mean_j2000" | "eclipticmeanj2000" | "mean_ecliptic_j2000" => {
-                Some(Self::EclipticMeanJ2000)
-            }
-            "equatorial_mean_j2000" | "equatorialmeanj2000" | "mean_equatorial_j2000" => {
-                Some(Self::EquatorialMeanJ2000)
-            }
-            "equatorial_mean_of_date" | "equatorialmeanofdate" | "mean_of_date" => {
-                Some(Self::EquatorialMeanOfDate)
-            }
-            "equatorial_true_of_date" | "equatorialtrueofdate" | "true_of_date" => {
-                Some(Self::EquatorialTrueOfDate)
-            }
-            "horizontal" | "altaz" | "local_horizontal" => Some(Self::Horizontal),
-            "ecef" | "earth_fixed" => Some(Self::ECEF),
-            "galactic" | "gal" => Some(Self::Galactic),
-            "gcrs" | "geocentric_celestial" => Some(Self::GCRS),
-            "ecliptic_of_date" | "eclipticofdate" => Some(Self::EclipticOfDate),
-            "ecliptic_true_of_date" | "ecliptictrueofdate" => Some(Self::EclipticTrueOfDate),
-            "cirs" | "celestial_intermediate" => Some(Self::CIRS),
-            "tirs" | "terrestrial_intermediate" => Some(Self::TIRS),
-            "itrf" | "terrestrial_reference" => Some(Self::ITRF),
-            "icrf" | "celestial_reference" => Some(Self::ICRF),
-            _ => None,
-        }
-    }
-
-    /// Return the canonical string name of this frame.
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::ICRS => "icrs",
-            Self::EclipticMeanJ2000 => "ecliptic_mean_j2000",
-            Self::EquatorialMeanJ2000 => "equatorial_mean_j2000",
-            Self::EquatorialMeanOfDate => "equatorial_mean_of_date",
-            Self::EquatorialTrueOfDate => "equatorial_true_of_date",
-            Self::Horizontal => "horizontal",
-            Self::ECEF => "ecef",
-            Self::Galactic => "galactic",
-            Self::GCRS => "gcrs",
-            Self::EclipticOfDate => "ecliptic_of_date",
-            Self::EclipticTrueOfDate => "ecliptic_true_of_date",
-            Self::CIRS => "cirs",
-            Self::TIRS => "tirs",
-            Self::ITRF => "itrf",
-            Self::ICRF => "icrf",
-        }
-    }
-
-    /// Decode a raw `i32` discriminant into a `SiderustFrame`.
-    ///
-    /// Returns `None` if the value does not match any known frame variant.
-    pub fn from_raw(raw: i32) -> Option<Self> {
-        match raw {
-            1 => Some(Self::ICRS),
-            2 => Some(Self::EclipticMeanJ2000),
-            3 => Some(Self::EquatorialMeanJ2000),
-            4 => Some(Self::EquatorialMeanOfDate),
-            5 => Some(Self::EquatorialTrueOfDate),
-            6 => Some(Self::Horizontal),
-            7 => Some(Self::ECEF),
-            8 => Some(Self::Galactic),
-            9 => Some(Self::GCRS),
-            10 => Some(Self::EclipticOfDate),
-            11 => Some(Self::EclipticTrueOfDate),
-            12 => Some(Self::CIRS),
-            13 => Some(Self::TIRS),
-            14 => Some(Self::ITRF),
-            15 => Some(Self::ICRF),
-            _ => None,
-        }
+ffi_enum! {
+    /// Reference frame identifier for C interop.
+    pub enum SiderustFrame {
+        /// International Celestial Reference System.
+        ICRS = 1 => "icrs",
+        /// Mean ecliptic of J2000.0.
+        EclipticMeanJ2000 = 2
+            => "ecliptic_mean_j2000" | "eclipticmeanj2000" | "mean_ecliptic_j2000",
+        /// Mean equatorial of J2000.0.
+        EquatorialMeanJ2000 = 3
+            => "equatorial_mean_j2000" | "equatorialmeanj2000" | "mean_equatorial_j2000",
+        /// Mean equatorial of date.
+        EquatorialMeanOfDate = 4
+            => "equatorial_mean_of_date" | "equatorialmeanofdate" | "mean_of_date",
+        /// True equatorial of date (includes nutation).
+        EquatorialTrueOfDate = 5
+            => "equatorial_true_of_date" | "equatorialtrueofdate" | "true_of_date",
+        /// Local horizontal (azimuth/altitude).
+        Horizontal = 6 => "horizontal" | "altaz" | "local_horizontal",
+        /// Earth-Centred Earth-Fixed.
+        ECEF = 7 => "ecef" | "earth_fixed",
+        /// Galactic coordinate system.
+        Galactic = 8 => "galactic" | "gal",
+        /// Geocentric Celestial Reference System.
+        GCRS = 9 => "gcrs" | "geocentric_celestial",
+        /// Ecliptic of date.
+        EclipticOfDate = 10 => "ecliptic_of_date" | "eclipticofdate",
+        /// True ecliptic of date.
+        EclipticTrueOfDate = 11 => "ecliptic_true_of_date" | "ecliptictrueofdate",
+        /// Celestial Intermediate Reference System.
+        CIRS = 12 => "cirs" | "celestial_intermediate",
+        /// Terrestrial Intermediate Reference System.
+        TIRS = 13 => "tirs" | "terrestrial_intermediate",
+        /// International Terrestrial Reference Frame.
+        ITRF = 14 => "itrf" | "terrestrial_reference",
+        /// International Celestial Reference Frame.
+        ICRF = 15 => "icrf" | "celestial_reference",
     }
 }
 
-/// Reference center identifier for C interop.
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustCenter {
-    /// Solar-system barycentre.
-    Barycentric = 1,
-    /// Sun centre.
-    Heliocentric = 2,
-    /// Earth centre.
-    Geocentric = 3,
-    /// Observer site on the Earth's surface.
-    Topocentric = 4,
-    /// Centre of a specific body.
-    Bodycentric = 5,
-}
-
-impl SiderustCenter {
-    /// Parse a center name string (case-insensitive).
-    ///
-    /// Accepts the canonical names documented in the module header:
-    /// `"barycentric"`, `"heliocentric"`, `"geocentric"`, `"topocentric"`, `"bodycentric"`.
-    /// Also accepts common aliases like `"ssb"`, `"solar"`, `"earth"`, `"observer"`.
-    ///
-    /// Returns `None` if the string does not match any known center.
-    pub fn from_str(s: &str) -> Option<Self> {
-        let lower = s.to_ascii_lowercase();
-        match lower.as_str() {
-            "barycentric" | "ssb" | "solar_system_barycenter" => Some(Self::Barycentric),
-            "heliocentric" | "solar" | "sun" => Some(Self::Heliocentric),
-            "geocentric" | "earth" => Some(Self::Geocentric),
-            "topocentric" | "observer" | "site" => Some(Self::Topocentric),
-            "bodycentric" | "body" => Some(Self::Bodycentric),
-            _ => None,
-        }
-    }
-
-    /// Return the canonical string name of this center.
-    pub fn as_str(&self) -> &'static str {
-        match self {
-            Self::Barycentric => "barycentric",
-            Self::Heliocentric => "heliocentric",
-            Self::Geocentric => "geocentric",
-            Self::Topocentric => "topocentric",
-            Self::Bodycentric => "bodycentric",
-        }
-    }
-
-    /// Decode a raw `i32` discriminant into a `SiderustCenter`.
-    ///
-    /// Returns `None` if the value does not match any known center variant.
-    pub fn from_raw(raw: i32) -> Option<Self> {
-        match raw {
-            1 => Some(Self::Barycentric),
-            2 => Some(Self::Heliocentric),
-            3 => Some(Self::Geocentric),
-            4 => Some(Self::Topocentric),
-            5 => Some(Self::Bodycentric),
-            _ => None,
-        }
+ffi_enum! {
+    /// Reference center identifier for C interop.
+    pub enum SiderustCenter {
+        /// Solar-system barycentre.
+        Barycentric = 1 => "barycentric" | "ssb" | "solar_system_barycenter",
+        /// Sun centre.
+        Heliocentric = 2 => "heliocentric" | "solar" | "sun",
+        /// Earth centre.
+        Geocentric = 3 => "geocentric" | "earth",
+        /// Observer site on the Earth's surface.
+        Topocentric = 4 => "topocentric" | "observer" | "site",
+        /// Centre of a specific body.
+        Bodycentric = 5 => "bodycentric" | "body",
     }
 }
 
-/// Crossing event direction.
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustCrossingDirection {
-    /// The body is crossing upward through the threshold.
-    Rising = 0,
-    /// The body is crossing downward through the threshold.
-    Setting = 1,
-}
-
-/// Culmination event kind.
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustCulminationKind {
-    /// Upper culmination (maximum altitude).
-    Max = 0,
-    /// Lower culmination (minimum altitude).
-    Min = 1,
-}
-
-/// Asteroid taxonomic class.
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustAsteroidClass {
-    /// Main-belt asteroid.
-    MainBelt = 0,
-    /// Near-Earth asteroid.
-    NearEarth = 1,
-    /// Trojan asteroid (co-orbital with a planet).
-    Trojan = 2,
-    /// Centaur (orbiting between Jupiter and Neptune).
-    Centaur = 3,
-    /// Trans-Neptunian object.
-    TransNeptunian = 4,
-    /// Dwarf planet.
-    DwarfPlanet = 5,
-}
-
-/// Orbit reference frame for comets.
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustOrbitFrame {
-    /// Orbit defined relative to the Sun.
-    Heliocentric = 0,
-    /// Orbit defined relative to the solar-system barycentre.
-    Barycentric = 1,
-}
-
-/// Length unit for coordinate positions.
-///
-/// Specifies the unit of measure for coordinate distances (x, y, z components
-/// in Cartesian positions, or distance in spherical positions).
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum SiderustLengthUnit {
-    /// Astronomical Units (≈149.6 million km).
-    #[default]
-    AU = 0,
-    /// Kilometres.
-    Km = 1,
-    /// Light-years.
-    LightYear = 2,
-    /// Parsecs.
-    Parsec = 3,
-    /// Metres.
-    Meter = 4,
-}
-
-impl SiderustLengthUnit {
-    /// Decode a raw `i32` discriminant into a `SiderustLengthUnit`.
-    ///
-    /// Returns `None` if the value does not match any known unit variant.
-    pub fn from_raw(raw: i32) -> Option<Self> {
-        match raw {
-            0 => Some(Self::AU),
-            1 => Some(Self::Km),
-            2 => Some(Self::LightYear),
-            3 => Some(Self::Parsec),
-            4 => Some(Self::Meter),
-            _ => None,
-        }
+ffi_enum! {
+    /// Crossing event direction.
+    pub enum SiderustCrossingDirection {
+        /// The body is crossing upward through the threshold.
+        Rising = 0,
+        /// The body is crossing downward through the threshold.
+        Setting = 1,
     }
 }
 
-/// Solar-system body identifier for generic altitude/azimuth dispatch.
-///
-/// Each variant maps to a concrete unit type in `siderust::bodies::solar_system`.
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustBody {
-    /// The Sun.
-    Sun = 0,
-    /// Earth's Moon.
-    Moon = 1,
-    /// Mercury.
-    Mercury = 2,
-    /// Venus.
-    Venus = 3,
-    /// Mars.
-    Mars = 4,
-    /// Jupiter.
-    Jupiter = 5,
-    /// Saturn.
-    Saturn = 6,
-    /// Uranus.
-    Uranus = 7,
-    /// Neptune.
-    Neptune = 8,
-}
-
-impl SiderustBody {
-    /// Decode a raw `i32` discriminant into a `SiderustBody`.
-    ///
-    /// Returns `None` if the value does not match any known body variant.
-    pub fn from_raw(raw: i32) -> Option<Self> {
-        match raw {
-            0 => Some(Self::Sun),
-            1 => Some(Self::Moon),
-            2 => Some(Self::Mercury),
-            3 => Some(Self::Venus),
-            4 => Some(Self::Mars),
-            5 => Some(Self::Jupiter),
-            6 => Some(Self::Saturn),
-            7 => Some(Self::Uranus),
-            8 => Some(Self::Neptune),
-            _ => None,
-        }
+ffi_enum! {
+    /// Culmination event kind.
+    pub enum SiderustCulminationKind {
+        /// Upper culmination (maximum altitude).
+        Max = 0,
+        /// Lower culmination (minimum altitude).
+        Min = 1,
     }
 }
 
-/// Subject kind discriminant for [`SiderustSubject`].
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustSubjectKind {
-    /// Solar-system body (the `body` field is valid).
-    Body = 0,
-    /// Star opaque handle (the `star_handle` field is valid).
-    Star = 1,
-    /// Fixed ICRS direction (the `icrs_dir` field is valid).
-    Icrs = 2,
-    /// Generic target opaque handle (the `generic_target_handle` field is valid).
-    GenericTarget = 3,
+ffi_enum! {
+    /// Asteroid taxonomic class.
+    pub enum SiderustAsteroidClass {
+        /// Main-belt asteroid.
+        MainBelt = 0,
+        /// Near-Earth asteroid.
+        NearEarth = 1,
+        /// Trojan asteroid (co-orbital with a planet).
+        Trojan = 2,
+        /// Centaur (orbiting between Jupiter and Neptune).
+        Centaur = 3,
+        /// Trans-Neptunian object.
+        TransNeptunian = 4,
+        /// Dwarf planet.
+        DwarfPlanet = 5,
+    }
+}
+
+ffi_enum! {
+    /// Orbit reference frame for comets.
+    pub enum SiderustOrbitFrame {
+        /// Orbit defined relative to the Sun.
+        Heliocentric = 0,
+        /// Orbit defined relative to the solar-system barycentre.
+        Barycentric = 1,
+    }
+}
+
+ffi_enum! {
+    /// Length unit for coordinate positions.
+    ///
+    /// Specifies the unit of measure for coordinate distances (x, y, z components
+    /// in Cartesian positions, or distance in spherical positions).
+    pub enum SiderustLengthUnit {
+        /// Astronomical Units (≈149.6 million km).
+        AU = 0,
+        /// Kilometres.
+        Km = 1,
+        /// Light-years.
+        LightYear = 2,
+        /// Parsecs.
+        Parsec = 3,
+        /// Metres.
+        Meter = 4,
+    }
+}
+
+#[allow(clippy::derivable_impls)]
+impl Default for SiderustLengthUnit {
+    fn default() -> Self {
+        Self::AU
+    }
+}
+
+ffi_enum! {
+    /// Solar-system body identifier for generic altitude/azimuth dispatch.
+    ///
+    /// Each variant maps to a concrete unit type in `siderust::bodies::solar_system`.
+    pub enum SiderustBody {
+        /// The Sun.
+        Sun = 0,
+        /// Earth's Moon.
+        Moon = 1,
+        /// Mercury.
+        Mercury = 2,
+        /// Venus.
+        Venus = 3,
+        /// Mars.
+        Mars = 4,
+        /// Jupiter.
+        Jupiter = 5,
+        /// Saturn.
+        Saturn = 6,
+        /// Uranus.
+        Uranus = 7,
+        /// Neptune.
+        Neptune = 8,
+    }
+}
+
+ffi_enum! {
+    /// Subject kind discriminant for [`SiderustSubject`].
+    pub enum SiderustSubjectKind {
+        /// Solar-system body (the `body` field is valid).
+        Body = 0,
+        /// Star opaque handle (the `star_handle` field is valid).
+        Star = 1,
+        /// Fixed ICRS direction (the `icrs_dir` field is valid).
+        Icrs = 2,
+        /// Generic target opaque handle (the `generic_target_handle` field is valid).
+        GenericTarget = 3,
+    }
 }
 
 /// Unified subject for altitude / azimuth / tracking computations.
@@ -493,28 +337,28 @@ impl SiderustSubject {
     }
 }
 
-/// Proper motion RA convention.
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustRaConvention {
-    /// True RA rate µα (deg/yr).
-    MuAlpha = 0,
-    /// Catalog rate µα★ = µα cos(δ) (deg/yr).
-    MuAlphaStar = 1,
+ffi_enum! {
+    /// Proper motion RA convention.
+    pub enum SiderustRaConvention {
+        /// True RA rate µα (deg/yr).
+        MuAlpha = 0,
+        /// Catalog rate µα★ = µα cos(δ) (deg/yr).
+        MuAlphaStar = 1,
+    }
 }
 
-/// Coordinate kind discriminant for [`SiderustTargetCoord`].
-///
-/// Specifies which coordinate representation is stored in the target.
-#[repr(i32)]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum SiderustTargetCoordKind {
-    /// Spherical direction (RA/Dec) without distance.
-    SphericalDir = 0,
-    /// Spherical position with distance.
-    SphericalPos = 1,
-    /// Cartesian position (x, y, z).
-    CartesianPos = 2,
+ffi_enum! {
+    /// Coordinate kind discriminant for [`SiderustTargetCoord`].
+    ///
+    /// Specifies which coordinate representation is stored in the target.
+    pub enum SiderustTargetCoordKind {
+        /// Spherical direction (RA/Dec) without distance.
+        SphericalDir = 0,
+        /// Spherical position with distance.
+        SphericalPos = 1,
+        /// Cartesian position (x, y, z).
+        CartesianPos = 2,
+    }
 }
 
 /// Union of coordinate types for [`SiderustGenericTargetData`].
@@ -1691,24 +1535,24 @@ mod tests {
 
     #[test]
     fn frame_from_str_canonical() {
-        assert_eq!(SiderustFrame::from_str("icrs"), Some(SiderustFrame::ICRS));
+        assert_eq!(SiderustFrame::parse_name("icrs"), Some(SiderustFrame::ICRS));
         assert_eq!(
-            SiderustFrame::from_str("horizontal"),
+            SiderustFrame::parse_name("horizontal"),
             Some(SiderustFrame::Horizontal)
         );
         assert_eq!(
-            SiderustFrame::from_str("galactic"),
+            SiderustFrame::parse_name("galactic"),
             Some(SiderustFrame::Galactic)
         );
-        assert_eq!(SiderustFrame::from_str("gcrs"), Some(SiderustFrame::GCRS));
+        assert_eq!(SiderustFrame::parse_name("gcrs"), Some(SiderustFrame::GCRS));
     }
 
     #[test]
     fn frame_from_str_case_insensitive() {
-        assert_eq!(SiderustFrame::from_str("ICRS"), Some(SiderustFrame::ICRS));
-        assert_eq!(SiderustFrame::from_str("Icrs"), Some(SiderustFrame::ICRS));
+        assert_eq!(SiderustFrame::parse_name("ICRS"), Some(SiderustFrame::ICRS));
+        assert_eq!(SiderustFrame::parse_name("Icrs"), Some(SiderustFrame::ICRS));
         assert_eq!(
-            SiderustFrame::from_str("HORIZONTAL"),
+            SiderustFrame::parse_name("HORIZONTAL"),
             Some(SiderustFrame::Horizontal)
         );
     }
@@ -1716,23 +1560,23 @@ mod tests {
     #[test]
     fn frame_from_str_aliases() {
         assert_eq!(
-            SiderustFrame::from_str("altaz"),
+            SiderustFrame::parse_name("altaz"),
             Some(SiderustFrame::Horizontal)
         );
         assert_eq!(
-            SiderustFrame::from_str("gal"),
+            SiderustFrame::parse_name("gal"),
             Some(SiderustFrame::Galactic)
         );
         assert_eq!(
-            SiderustFrame::from_str("mean_of_date"),
+            SiderustFrame::parse_name("mean_of_date"),
             Some(SiderustFrame::EquatorialMeanOfDate)
         );
     }
 
     #[test]
     fn frame_from_str_unknown() {
-        assert_eq!(SiderustFrame::from_str("unknown"), None);
-        assert_eq!(SiderustFrame::from_str(""), None);
+        assert_eq!(SiderustFrame::parse_name("unknown"), None);
+        assert_eq!(SiderustFrame::parse_name(""), None);
     }
 
     #[test]
@@ -1745,26 +1589,26 @@ mod tests {
             SiderustFrame::ECEF,
         ] {
             let name = frame.as_str();
-            assert_eq!(SiderustFrame::from_str(name), Some(frame));
+            assert_eq!(SiderustFrame::parse_name(name), Some(frame));
         }
     }
 
     #[test]
     fn center_from_str_canonical() {
         assert_eq!(
-            SiderustCenter::from_str("barycentric"),
+            SiderustCenter::parse_name("barycentric"),
             Some(SiderustCenter::Barycentric)
         );
         assert_eq!(
-            SiderustCenter::from_str("heliocentric"),
+            SiderustCenter::parse_name("heliocentric"),
             Some(SiderustCenter::Heliocentric)
         );
         assert_eq!(
-            SiderustCenter::from_str("geocentric"),
+            SiderustCenter::parse_name("geocentric"),
             Some(SiderustCenter::Geocentric)
         );
         assert_eq!(
-            SiderustCenter::from_str("topocentric"),
+            SiderustCenter::parse_name("topocentric"),
             Some(SiderustCenter::Topocentric)
         );
     }
@@ -1772,19 +1616,19 @@ mod tests {
     #[test]
     fn center_from_str_aliases() {
         assert_eq!(
-            SiderustCenter::from_str("ssb"),
+            SiderustCenter::parse_name("ssb"),
             Some(SiderustCenter::Barycentric)
         );
         assert_eq!(
-            SiderustCenter::from_str("sun"),
+            SiderustCenter::parse_name("sun"),
             Some(SiderustCenter::Heliocentric)
         );
         assert_eq!(
-            SiderustCenter::from_str("earth"),
+            SiderustCenter::parse_name("earth"),
             Some(SiderustCenter::Geocentric)
         );
         assert_eq!(
-            SiderustCenter::from_str("observer"),
+            SiderustCenter::parse_name("observer"),
             Some(SiderustCenter::Topocentric)
         );
     }
@@ -1799,7 +1643,7 @@ mod tests {
             SiderustCenter::Bodycentric,
         ] {
             let name = center.as_str();
-            assert_eq!(SiderustCenter::from_str(name), Some(center));
+            assert_eq!(SiderustCenter::parse_name(name), Some(center));
         }
     }
 }
