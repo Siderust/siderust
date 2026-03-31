@@ -13,8 +13,8 @@ use siderust_ffi::*;
 use std::ffi::CString;
 use std::ptr;
 
-fn mjd(value: f64) -> TempochMjd {
-    TempochMjd::new(value)
+fn mjd(value: f64) -> f64 {
+    value
 }
 
 fn paris_observer() -> SiderustGeodetict {
@@ -161,7 +161,7 @@ fn generic_target_lifecycle_and_data_work() {
                 length_unit: SiderustLengthUnit::Meter,
             },
         },
-        epoch_jd: TempochJd::new(0.0),
+        epoch_jd: 0.0,
         has_proper_motion: false,
         _pad2: [0; 7],
         proper_motion: SiderustProperMotion {
@@ -174,7 +174,7 @@ fn generic_target_lifecycle_and_data_work() {
     assert_eq!(status, SiderustStatus::Ok);
     assert_eq!(data.kind, SiderustTargetCoordKind::SphericalDir);
     assert!(data.has_proper_motion);
-    assert_eq!(data.epoch_jd.value, 2451545.0);
+    assert_eq!(data.epoch_jd, 2451545.0);
 
     unsafe { siderust_generic_target_free(handle) };
 }

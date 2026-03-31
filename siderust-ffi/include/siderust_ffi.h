@@ -11,6 +11,36 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+// Crossing event direction.
+enum siderust_crossing_direction_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // The body is crossing upward through the threshold.
+  SIDERUST_CROSSING_DIRECTION_T_RISING = 0,
+  // The body is crossing downward through the threshold.
+  SIDERUST_CROSSING_DIRECTION_T_SETTING = 1,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_crossing_direction_t;
+#endif // __cplusplus
+
+// Culmination event kind.
+enum siderust_culmination_kind_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Upper culmination (maximum altitude).
+  SIDERUST_CULMINATION_KIND_T_MAX = 0,
+  // Lower culmination (minimum altitude).
+  SIDERUST_CULMINATION_KIND_T_MIN = 1,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_culmination_kind_t;
+#endif // __cplusplus
+
 // Azimuth extremum kind (maximum or minimum bearing).
 enum siderust_azimuth_extremum_kind_t
 #ifdef __cplusplus
@@ -74,6 +104,126 @@ enum siderust_status_t
 typedef int32_t siderust_status_t;
 #endif // __cplusplus
 
+// Proper motion RA convention.
+enum siderust_ra_convention_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // True RA rate µα (deg/yr).
+  SIDERUST_RA_CONVENTION_T_MU_ALPHA = 0,
+  // Catalog rate µα★ = µα cos(δ) (deg/yr).
+  SIDERUST_RA_CONVENTION_T_MU_ALPHA_STAR = 1,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_ra_convention_t;
+#endif // __cplusplus
+
+// Runtime Earth-orientation / nutation model preset.
+enum siderust_earth_orientation_model_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Full IAU 2000A nutation.
+  SIDERUST_EARTH_ORIENTATION_MODEL_T_IAU2000_A = 0,
+  // Abridged IAU 2000B nutation.
+  SIDERUST_EARTH_ORIENTATION_MODEL_T_IAU2000_B = 1,
+  // IAU 2006 precession-only profile (no nutation terms).
+  SIDERUST_EARTH_ORIENTATION_MODEL_T_IAU2006 = 2,
+  // IAU 2006A high-precision default profile.
+  SIDERUST_EARTH_ORIENTATION_MODEL_T_IAU2006_A = 3,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_earth_orientation_model_t;
+#endif // __cplusplus
+
+// Reference frame identifier for C interop.
+enum siderust_frame_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // International Celestial Reference System.
+  SIDERUST_FRAME_T_ICRS = 1,
+  // Mean ecliptic of J2000.0.
+  SIDERUST_FRAME_T_ECLIPTIC_MEAN_J2000 = 2,
+  // Mean equatorial of J2000.0.
+  SIDERUST_FRAME_T_EQUATORIAL_MEAN_J2000 = 3,
+  // Mean equatorial of date.
+  SIDERUST_FRAME_T_EQUATORIAL_MEAN_OF_DATE = 4,
+  // True equatorial of date (includes nutation).
+  SIDERUST_FRAME_T_EQUATORIAL_TRUE_OF_DATE = 5,
+  // Local horizontal (azimuth/altitude).
+  SIDERUST_FRAME_T_HORIZONTAL = 6,
+  // Earth-Centred Earth-Fixed.
+  SIDERUST_FRAME_T_ECEF = 7,
+  // Galactic coordinate system.
+  SIDERUST_FRAME_T_GALACTIC = 8,
+  // Geocentric Celestial Reference System.
+  SIDERUST_FRAME_T_GCRS = 9,
+  // Ecliptic of date.
+  SIDERUST_FRAME_T_ECLIPTIC_OF_DATE = 10,
+  // True ecliptic of date.
+  SIDERUST_FRAME_T_ECLIPTIC_TRUE_OF_DATE = 11,
+  // Celestial Intermediate Reference System.
+  SIDERUST_FRAME_T_CIRS = 12,
+  // Terrestrial Intermediate Reference System.
+  SIDERUST_FRAME_T_TIRS = 13,
+  // International Terrestrial Reference Frame.
+  SIDERUST_FRAME_T_ITRF = 14,
+  // International Celestial Reference Frame.
+  SIDERUST_FRAME_T_ICRF = 15,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_frame_t;
+#endif // __cplusplus
+
+// Reference center identifier for C interop.
+enum siderust_center_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Solar-system barycentre.
+  SIDERUST_CENTER_T_BARYCENTRIC = 1,
+  // Sun centre.
+  SIDERUST_CENTER_T_HELIOCENTRIC = 2,
+  // Earth centre.
+  SIDERUST_CENTER_T_GEOCENTRIC = 3,
+  // Observer site on the Earth's surface.
+  SIDERUST_CENTER_T_TOPOCENTRIC = 4,
+  // Centre of a specific body.
+  SIDERUST_CENTER_T_BODYCENTRIC = 5,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_center_t;
+#endif // __cplusplus
+
+// Length unit for coordinate positions.
+//
+// Specifies the unit of measure for coordinate distances (x, y, z components
+// in Cartesian positions, or distance in spherical positions).
+enum SiderustLengthUnit
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Astronomical Units (≈149.6 million km).
+  SIDERUST_LENGTH_UNIT_AU = 0,
+  // Kilometres.
+  SIDERUST_LENGTH_UNIT_KM = 1,
+  // Light-years.
+  SIDERUST_LENGTH_UNIT_LIGHT_YEAR = 2,
+  // Parsecs.
+  SIDERUST_LENGTH_UNIT_PARSEC = 3,
+  // Metres.
+  SIDERUST_LENGTH_UNIT_METER = 4,
+};
+#ifndef __cplusplus
+typedef int32_t SiderustLengthUnit;
+#endif // __cplusplus
+
 // Principal lunar phase kind.
 enum siderust_phase_kind_t
 #ifdef __cplusplus
@@ -120,15 +270,85 @@ enum siderust_moon_phase_label_t
 typedef int32_t siderust_moon_phase_label_t;
 #endif // __cplusplus
 
+// Subject kind discriminant for [`SiderustSubject`].
+enum siderust_subject_kind_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Solar-system body (the `body` field is valid).
+  SIDERUST_SUBJECT_KIND_T_BODY = 0,
+  // Star opaque handle (the `star_handle` field is valid).
+  SIDERUST_SUBJECT_KIND_T_STAR = 1,
+  // Fixed ICRS direction (the `icrs_dir` field is valid).
+  SIDERUST_SUBJECT_KIND_T_ICRS = 2,
+  // Generic target opaque handle (the `generic_target_handle` field is valid).
+  SIDERUST_SUBJECT_KIND_T_GENERIC_TARGET = 3,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_subject_kind_t;
+#endif // __cplusplus
+
+// Solar-system body identifier for generic altitude/azimuth dispatch.
+//
+// Each variant maps to a concrete unit type in `siderust::bodies::solar_system`.
+enum SiderustBody
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // The Sun.
+  SIDERUST_BODY_SUN = 0,
+  // Earth's Moon.
+  SIDERUST_BODY_MOON = 1,
+  // Mercury.
+  SIDERUST_BODY_MERCURY = 2,
+  // Venus.
+  SIDERUST_BODY_VENUS = 3,
+  // Mars.
+  SIDERUST_BODY_MARS = 4,
+  // Jupiter.
+  SIDERUST_BODY_JUPITER = 5,
+  // Saturn.
+  SIDERUST_BODY_SATURN = 6,
+  // Uranus.
+  SIDERUST_BODY_URANUS = 7,
+  // Neptune.
+  SIDERUST_BODY_NEPTUNE = 8,
+};
+#ifndef __cplusplus
+typedef int32_t SiderustBody;
+#endif // __cplusplus
+
+// Coordinate kind discriminant for [`SiderustTargetCoord`].
+//
+// Specifies which coordinate representation is stored in the target.
+enum SiderustTargetCoordKind
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Spherical direction (RA/Dec) without distance.
+  SIDERUST_TARGET_COORD_KIND_SPHERICAL_DIR = 0,
+  // Spherical position with distance.
+  SIDERUST_TARGET_COORD_KIND_SPHERICAL_POS = 1,
+  // Cartesian position (x, y, z).
+  SIDERUST_TARGET_COORD_KIND_CARTESIAN_POS = 2,
+};
+#ifndef __cplusplus
+typedef int32_t SiderustTargetCoordKind;
+#endif // __cplusplus
+
+// Opaque FFI context used by model-sensitive transform entry points.
+typedef struct siderust_context_t siderust_context_t;
+
 // Opaque handle representing a generic celestial target.
 //
 // This mirrors Rust's `CoordinateWithPM<T>`, supporting:
-// - Direction-only coordinates (ICRS, equatorial, etc.)
-// - Full position coordinates with distance
-// - Optional proper motion
-//
-// Use `siderust_generic_target_create_*` functions to construct,
-// and `siderust_generic_target_free` to release.
+// - direction-only coordinates,
+// - spherical positions with distance metadata,
+// - cartesian positions with frame/center/unit metadata,
+// - and optional proper motion payloads.
 typedef struct SiderustGenericTarget SiderustGenericTarget;
 
 // Opaque handle to a `RuntimeEphemeris`.
@@ -396,9 +616,9 @@ typedef struct siderust_altitude_query_t {
   // Observer location.
   struct siderust_geodetic_t observer;
   // Start of the search window (Modified Julian Date).
-  TempochMjd start_mjd;
+  double start_mjd;
   // End of the search window (Modified Julian Date).
-  TempochMjd end_mjd;
+  double end_mjd;
   // Minimum altitude threshold in degrees.
   double min_altitude_deg;
   // Maximum altitude threshold in degrees.
@@ -417,6 +637,8 @@ typedef struct siderust_spherical_pos_t {
   siderust_frame_t frame;
   // Reference centre.
   siderust_center_t center;
+  // Length unit for the distance component.
+  SiderustLengthUnit length_unit;
 } siderust_spherical_pos_t;
 
 // Union of coordinate types for [`SiderustGenericTargetData`].
@@ -451,7 +673,7 @@ typedef struct SiderustGenericTargetData {
   // The coordinate data (union, check `kind` to determine which field).
   union SiderustTargetCoordUnion coord;
   // Epoch as a Julian Date.
-  TempochJd epoch_jd;
+  double epoch_jd;
   // Whether proper motion is present.
   bool has_proper_motion;
   // Padding for alignment.
@@ -604,6 +826,25 @@ siderust_status_t siderust_star_name(const struct SiderustStar *handle,
 // Get Neptune's orbital and physical parameters.
  siderust_status_t siderust_planet_neptune(struct siderust_planet_t *out);
 
+// Create a context using the default siderust transform model.
+ siderust_status_t siderust_context_create_default(struct siderust_context_t **out);
+
+// Create a context with an explicit Earth-orientation model preset.
+
+siderust_status_t siderust_context_create_with_model(siderust_earth_orientation_model_t model,
+                                                     struct siderust_context_t **out);
+
+// Free a context handle previously returned by `siderust_context_create_*`.
+//
+// # Safety
+// `handle` must be either null or a live pointer produced by this crate.
+ void siderust_context_free(struct siderust_context_t *handle);
+
+// Retrieve the model preset stored in a context handle.
+
+siderust_status_t siderust_context_get_model(const struct siderust_context_t *handle,
+                                             siderust_earth_orientation_model_t *out);
+
 // Transform a spherical direction from one frame to another.
 //
 // `jd` is required for time-dependent frames (mean/true of date, horizontal).
@@ -622,6 +863,16 @@ siderust_status_t siderust_spherical_dir_transform_frame(double polar_deg,
                                                          double jd,
                                                          struct siderust_spherical_dir_t *out);
 
+// Transform a spherical direction using an explicit transform context.
+
+siderust_status_t siderust_spherical_dir_transform_frame_with_context(double polar_deg,
+                                                                      double azimuth_deg,
+                                                                      siderust_frame_t src_frame,
+                                                                      siderust_frame_t dst_frame,
+                                                                      double jd,
+                                                                      const struct siderust_context_t *context,
+                                                                      struct siderust_spherical_dir_t *out);
+
 // Transform a spherical direction to the horizontal (alt-az) frame.
 //
 // Requires an observer location (geodetic WGS84) and a Julian Date.
@@ -634,6 +885,28 @@ siderust_status_t siderust_spherical_dir_to_horizontal(double polar_deg,
                                                        double jd,
                                                        struct siderust_geodetic_t observer,
                                                        struct siderust_spherical_dir_t *out);
+
+// Convert a spherical direction to horizontal coordinates using explicit TT and UT1.
+
+siderust_status_t siderust_spherical_dir_to_horizontal_precise(double polar_deg,
+                                                               double azimuth_deg,
+                                                               siderust_frame_t src_frame,
+                                                               double jd_tt,
+                                                               double jd_ut1,
+                                                               struct siderust_geodetic_t observer,
+                                                               struct siderust_spherical_dir_t *out);
+
+// Convert a spherical direction to horizontal coordinates using an explicit
+// transform context plus explicit TT and UT1.
+
+siderust_status_t siderust_spherical_dir_to_horizontal_precise_with_context(double polar_deg,
+                                                                            double azimuth_deg,
+                                                                            siderust_frame_t src_frame,
+                                                                            double jd_tt,
+                                                                            double jd_ut1,
+                                                                            struct siderust_geodetic_t observer,
+                                                                            const struct siderust_context_t *context,
+                                                                            struct siderust_spherical_dir_t *out);
 
 // Transform a Cartesian unit-vector direction from one frame to another.
 //
@@ -651,6 +924,17 @@ siderust_status_t siderust_cartesian_dir_transform_frame(double x,
                                                          double jd,
                                                          struct siderust_cartesian_pos_t *out);
 
+// Transform a Cartesian direction using an explicit transform context.
+
+siderust_status_t siderust_cartesian_dir_transform_frame_with_context(double x,
+                                                                      double y,
+                                                                      double z,
+                                                                      siderust_frame_t src_frame,
+                                                                      siderust_frame_t dst_frame,
+                                                                      double jd,
+                                                                      const struct siderust_context_t *context,
+                                                                      struct siderust_cartesian_pos_t *out);
+
 // Transform a Cartesian position from one frame to another (frame-only, same center).
 //
 // The rotation preserves the vector magnitude.  The `center` field of `pos`
@@ -663,6 +947,14 @@ siderust_status_t siderust_cartesian_pos_transform_frame(struct siderust_cartesi
                                                          siderust_frame_t dst_frame,
                                                          double jd,
                                                          struct siderust_cartesian_pos_t *out);
+
+// Transform a Cartesian position using an explicit transform context.
+
+siderust_status_t siderust_cartesian_pos_transform_frame_with_context(struct siderust_cartesian_pos_t pos,
+                                                                      siderust_frame_t dst_frame,
+                                                                      double jd,
+                                                                      const struct siderust_context_t *context,
+                                                                      struct siderust_cartesian_pos_t *out);
 
 // Create a geodetic position and convert to ECEF Cartesian.
 
@@ -941,25 +1233,6 @@ siderust_status_t siderust_runtime_ephemeris_load_bytes(const uint8_t *data,
                                                         uintptr_t len,
                                                         struct siderust_runtime_ephemeris_t **out);
 
-#if defined(SIDERUST_FFI_HAS_RUNTIME_DATA)
-// Download (if necessary) and load a runtime ephemeris for the given dataset.
-//
-// `dataset_id`:
-//   - 0 = DE440 (~120 MB)
-//   - 1 = DE441 (~1.65 GB)
-//
-// On first call this will download the BSP from JPL's servers into the
-// local cache (`~/.siderust/data/` or `$SIDERUST_DATA_DIR`). Subsequent
-// calls re-use the cached file.
-//
-// On success, `*out` receives a newly allocated handle.
-//
-// **Requires feature `runtime-data`.**
-
-siderust_status_t siderust_runtime_ephemeris_ensure(uint32_t dataset_id,
-                                                    struct siderust_runtime_ephemeris_t **out);
-#endif
-
 // Free a `SiderustRuntimeEphemeris` handle.
 //
 // # Safety
@@ -1002,7 +1275,7 @@ siderust_status_t siderust_runtime_ephemeris_moon_geocentric(const struct sideru
 
 siderust_status_t siderust_altitude_at(struct siderust_subject_t subject,
                                        struct siderust_geodetic_t observer,
-                                       TempochMjd mjd,
+                                       double mjd,
                                        double *out_rad);
 
 // Periods when a subject is above a threshold altitude.
@@ -1058,7 +1331,7 @@ siderust_status_t siderust_altitude_periods(struct siderust_subject_t subject,
 
 siderust_status_t siderust_azimuth_at(struct siderust_subject_t subject,
                                       struct siderust_geodetic_t observer,
-                                      TempochMjd mjd,
+                                      double mjd,
                                       double *out_deg);
 
 // Azimuth bearing-crossing events for a subject.
@@ -1091,15 +1364,15 @@ siderust_status_t siderust_in_azimuth_range(struct siderust_subject_t subject,
                                             tempoch_period_mjd_t **out,
                                             uintptr_t *count);
 
+// Create a generic target from the tagged target payload.
+//
+// This is the canonical constructor for the compact FFI target ABI. Existing
+// convenience helpers remain available as compatibility shims and forward here.
+
+siderust_status_t siderust_generic_target_create(struct SiderustGenericTargetData data,
+                                                 struct SiderustGenericTarget **out);
+
 // Create a generic target from an ICRS spherical direction.
-//
-// # Parameters
-// - `ra_deg`: Right ascension in degrees.
-// - `dec_deg`: Declination in degrees.
-// - `epoch_jd`: Reference epoch as Julian Date.
-// - `out`: On success, receives the allocated handle pointer.
-//
-// The caller must free the handle with [`siderust_generic_target_free`].
 
 siderust_status_t siderust_generic_target_create_icrs(double ra_deg,
                                                       double dec_deg,
@@ -1107,17 +1380,6 @@ siderust_status_t siderust_generic_target_create_icrs(double ra_deg,
                                                       struct SiderustGenericTarget **out);
 
 // Create a generic target from an ICRS direction with proper motion.
-//
-// # Parameters
-// - `ra_deg`: Right ascension in degrees.
-// - `dec_deg`: Declination in degrees.
-// - `epoch_jd`: Reference epoch as Julian Date.
-// - `pm_ra_deg_yr`: RA proper motion in degrees per Julian year.
-// - `pm_dec_deg_yr`: Dec proper motion in degrees per Julian year.
-// - `ra_convention`: Whether `pm_ra` is µα or µα★.
-// - `out`: On success, receives the allocated handle pointer.
-//
-// The caller must free the handle with [`siderust_generic_target_free`].
 
 siderust_status_t siderust_generic_target_create_icrs_with_pm(double ra_deg,
                                                               double dec_deg,
@@ -1130,13 +1392,11 @@ siderust_status_t siderust_generic_target_create_icrs_with_pm(double ra_deg,
 // Free a generic target handle.
 //
 // # Safety
-// - `handle` must have been allocated by a `siderust_generic_target_create_*` function.
-// - The handle must not have been freed before, and must not be used after this call.
+// `handle` must have been allocated by a `siderust_generic_target_create*`
+// function in this crate and must not have been freed before.
  void siderust_generic_target_free(struct SiderustGenericTarget *handle);
 
-// Get the coordinate data from a generic target.
-//
-// Writes the target's coordinate information to `*out`.
+// Get the coordinate payload from a generic target.
 
 siderust_status_t siderust_generic_target_get_data(const struct SiderustGenericTarget *handle,
                                                    struct SiderustGenericTargetData *out);
