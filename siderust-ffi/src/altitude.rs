@@ -15,16 +15,14 @@ use qtty::*;
 #[cfg(test)]
 use siderust::coordinates::spherical;
 use tempoch::{Interval, ModifiedJulianDate, Period, MJD};
-#[cfg(test)]
-use tempoch_ffi::TempochMjd;
 
 pub(crate) fn window_from_c(w: TempochPeriodMjd) -> Result<Period<MJD>, SiderustStatus> {
-    if w.start_mjd.value > w.end_mjd.value {
+    if w.start_mjd > w.end_mjd {
         return Err(SiderustStatus::InvalidPeriod);
     }
     Ok(Interval::new(
-        ModifiedJulianDate::new(w.start_mjd.value),
-        ModifiedJulianDate::new(w.end_mjd.value),
+        ModifiedJulianDate::new(w.start_mjd),
+        ModifiedJulianDate::new(w.end_mjd),
     ))
 }
 
@@ -118,8 +116,8 @@ mod tests {
     #[test]
     fn window_invalid_period() {
         let bad = TempochPeriodMjd {
-            start_mjd: TempochMjd::new(60001.0),
-            end_mjd: TempochMjd::new(60000.0),
+            start_mjd: 60001.0,
+            end_mjd: 60000.0,
         };
         assert_eq!(window_from_c(bad), Err(SiderustStatus::InvalidPeriod));
     }

@@ -1,6 +1,6 @@
 [package]
 name = "siderust-ffi"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "C FFI bindings for siderust, high-precision astronomy library."
@@ -19,10 +19,10 @@ runtime-data = ["siderust/runtime-data"]
 
 [dependencies]
 siderust    = { version = "0.6.0", path = ".." }
-qtty        = { version = "0.4.1", path = "../../qtty/qtty" }
-tempoch     = { version = "0.4.0", path = "../../tempoch/tempoch" }
-tempoch-ffi = { version = "0.3.0", path = "../../tempoch/tempoch-ffi" }
-affn        = { version = "0.5.0", path = "../../affn", features = ["astro"] }
+qtty        = "0.5.0"
+tempoch     = "0.4.1"
+tempoch-ffi = "0.2.0"
+affn        = { version = "0.6.0", features = ["astro"] }
 
 [build-dependencies]
 cbindgen = "0.29.2"

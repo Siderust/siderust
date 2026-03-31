@@ -21,7 +21,15 @@ The forward-looking ABI is intentionally small:
 
 - unified tracking queries via `siderust_subject_t`
 - generic target handles via `SiderustGenericTarget`
+- explicit context handles for Earth-orientation/model-sensitive transforms
 - coordinate value structs, runtime ephemeris handles, and array free helpers
+
+Tagged target payloads now preserve:
+
+- spherical directions
+- spherical positions with explicit distance units
+- cartesian positions with frame/center/unit metadata
+- epoch and optional proper motion metadata
 
 Legacy per-body/per-target wrapper families are intentionally removed from the
 canonical crate. C++ convenience APIs in `siderust-cpp` are implemented on top
@@ -32,8 +40,11 @@ of this unified surface instead.
 This crate is meant to be built from a workspace checkout where these path dependencies exist:
 
 - `siderust` (Rust implementation) at `../siderust`
-- `tempoch-ffi` (C ABI for time types used by the API) at `../siderust/tempoch/tempoch-ffi`
+- `tempoch-ffi` (C ABI for time types used by the API) at `../../tempoch/tempoch-ffi`
 - `tempoch`, `affn`, `qtty` (Rust crates used internally)
+
+`tempoch-ffi 0.4` exposes JD/MJD carriers as raw `double`s, so `siderust-ffi`
+reuses that scalar ABI directly instead of duplicating wrapper structs.
 
 If you cloned via git submodules, make sure they are initialized:
 
@@ -47,12 +58,11 @@ Cargo features mirror `siderust` options:
 
 - `serde`: enables serialization-related APIs where applicable
 - `de440`: enables DE440 ephemeris support
-- `de441`: enables DE441 ephemeris support
 
 Example:
 
 ```bash
-cargo build --release --features de441
+cargo build --release --features de440
 ```
 
 ## Build
@@ -83,5 +93,7 @@ invokes Cargo for you and installs both headers and libraries via `cmake --insta
 
 - Treat Rust as the source of truth for enums/structs/constants.
 - `include/siderust_ffi.h` is generated; regenerate it by running `cargo build`.
+- The generated header is also emitted into Cargo `OUT_DIR`; treat both copies as build artifacts.
+- The cross-repo parity checklist lives in `../doc/ffi_bindings_matrix.md`.
 - When changing exported signatures or the meaning/values of public enums, consider ABI
   compatibility and bump `siderust_ffi_version()` in `src/lib.rs` accordingly.
