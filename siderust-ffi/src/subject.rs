@@ -25,7 +25,6 @@ use siderust::calculus::azimuth::{azimuth_crossings, azimuth_extrema, in_azimuth
 use siderust::AltitudePeriodsProvider;
 use siderust::AzimuthProvider;
 use tempoch::ModifiedJulianDate;
-use tempoch_ffi::TempochMjd;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Altitude, instantaneous
@@ -36,7 +35,7 @@ use tempoch_ffi::TempochMjd;
 pub extern "C" fn siderust_altitude_at(
     subject: SiderustSubject,
     observer: SiderustGeodetict,
-    mjd: TempochMjd,
+    mjd: f64,
     out_rad: *mut f64,
 ) -> SiderustStatus {
     ffi_guard! {{
@@ -46,7 +45,7 @@ pub extern "C" fn siderust_altitude_at(
         dispatch_subject!(subject, |p| {
             unsafe {
                 *out_rad = p
-                    .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd.value))
+                    .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
                     .value();
             }
             SiderustStatus::Ok
@@ -220,7 +219,7 @@ pub extern "C" fn siderust_altitude_periods(
 pub extern "C" fn siderust_azimuth_at(
     subject: SiderustSubject,
     observer: SiderustGeodetict,
-    mjd: TempochMjd,
+    mjd: f64,
     out_deg: *mut f64,
 ) -> SiderustStatus {
     ffi_guard! {{
@@ -230,7 +229,7 @@ pub extern "C" fn siderust_azimuth_at(
         dispatch_subject!(subject, |p| {
             unsafe {
                 *out_deg = p
-                    .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd.value))
+                    .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
                     .value();
             }
             SiderustStatus::Ok

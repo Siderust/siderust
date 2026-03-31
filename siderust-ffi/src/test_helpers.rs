@@ -6,11 +6,10 @@
 //! This module is only compiled under `#[cfg(test)]`.
 
 use crate::types::*;
-use tempoch_ffi::TempochMjd;
 
 /// Wrap a raw Modified Julian Date for FFI calls.
-pub fn mjd(value: f64) -> TempochMjd {
-    TempochMjd::new(value)
+pub fn mjd(value: f64) -> f64 {
+    value
 }
 
 /// Observer at Paris (lat 48.85°N, lon 2.35°E, 35 m).

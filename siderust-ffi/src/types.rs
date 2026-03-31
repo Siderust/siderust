@@ -59,7 +59,6 @@ use siderust::coordinates::centers::{
 };
 use siderust::coordinates::frames::ECEF;
 use tempoch::{Interval, JulianDate, ModifiedJulianDate, Period, MJD};
-use tempoch_ffi::{TempochJd, TempochMjd};
 
 // Re-export tempoch-ffi types so the generated header can reference them.
 // The extern crate declaration is needed because the dep name maps through a hyphen.
@@ -348,6 +347,32 @@ ffi_enum! {
 }
 
 ffi_enum! {
+    /// Runtime Earth-orientation / nutation model preset.
+    pub enum SiderustEarthOrientationModel {
+        /// Full IAU 2000A nutation.
+        Iau2000A = 0 => "iau2000a",
+        /// Abridged IAU 2000B nutation.
+        Iau2000B = 1 => "iau2000b",
+        /// IAU 2006 precession-only profile (no nutation terms).
+        Iau2006 = 2 => "iau2006",
+        /// IAU 2006A high-precision default profile.
+        Iau2006A = 3 => "iau2006a",
+    }
+}
+
+impl SiderustEarthOrientationModel {
+    /// Convert to the canonical Rust model identifier.
+    pub fn to_rust(self) -> siderust::coordinates::transform::EarthOrientationModel {
+        match self {
+            Self::Iau2000A => siderust::coordinates::transform::EarthOrientationModel::Iau2000A,
+            Self::Iau2000B => siderust::coordinates::transform::EarthOrientationModel::Iau2000B,
+            Self::Iau2006 => siderust::coordinates::transform::EarthOrientationModel::Iau2006,
+            Self::Iau2006A => siderust::coordinates::transform::EarthOrientationModel::Iau2006A,
+        }
+    }
+}
+
+ffi_enum! {
     /// Coordinate kind discriminant for [`SiderustTargetCoord`].
     ///
     /// Specifies which coordinate representation is stored in the target.
@@ -397,7 +422,7 @@ pub struct SiderustGenericTargetData {
     /// The coordinate data (union, check `kind` to determine which field).
     pub coord: SiderustTargetCoordUnion,
     /// Epoch as a Julian Date.
-    pub epoch_jd: TempochJd,
+    pub epoch_jd: f64,
     /// Whether proper motion is present.
     pub has_proper_motion: bool,
     /// Padding for alignment.
@@ -766,9 +791,9 @@ pub struct SiderustAltitudeQuery {
     /// Observer location.
     pub observer: SiderustGeodetict,
     /// Start of the search window (Modified Julian Date).
-    pub start_mjd: TempochMjd,
+    pub start_mjd: f64,
     /// End of the search window (Modified Julian Date).
-    pub end_mjd: TempochMjd,
+    pub end_mjd: f64,
     /// Minimum altitude threshold in degrees.
     pub min_altitude_deg: f64,
     /// Maximum altitude threshold in degrees.
@@ -781,8 +806,8 @@ impl SiderustAltitudeQuery {
         siderust::AltitudeQuery {
             observer: self.observer.to_rust(),
             window: Interval::new(
-                ModifiedJulianDate::new(self.start_mjd.value),
-                ModifiedJulianDate::new(self.end_mjd.value),
+                ModifiedJulianDate::new(self.start_mjd),
+                ModifiedJulianDate::new(self.end_mjd),
             ),
             min_altitude: Degrees::new(self.min_altitude_deg),
             max_altitude: Degrees::new(self.max_altitude_deg),
@@ -880,6 +905,8 @@ pub struct SiderustSphericalPos {
     pub frame: SiderustFrame,
     /// Reference centre.
     pub center: SiderustCenter,
+    /// Length unit for the distance component.
+    pub length_unit: SiderustLengthUnit,
 }
 
 /// Cartesian position (x, y, z + metadata).
@@ -1029,8 +1056,8 @@ pub struct SiderustPhaseEvent {
 impl FfiFrom<Period<MJD>> for TempochPeriodMjd {
     fn ffi_from(p: &Period<MJD>) -> Self {
         TempochPeriodMjd {
-            start_mjd: TempochMjd::new(p.start.value()),
-            end_mjd: TempochMjd::new(p.end.value()),
+            start_mjd: p.start.value(),
+            end_mjd: p.end.value(),
         }
     }
 }
@@ -1208,8 +1235,8 @@ mod tests {
                 lat_deg: 51.5,
                 height_m: 10.0,
             },
-            start_mjd: TempochMjd::new(60000.0),
-            end_mjd: TempochMjd::new(60001.0),
+            start_mjd: 60000.0,
+            end_mjd: 60001.0,
             min_altitude_deg: 10.0,
             max_altitude_deg: 90.0,
         };
@@ -1273,6 +1300,8 @@ mod tests {
         assert!(s3.contains("Heliocentric"));
         let s4 = format!("{:?}", SiderustRaConvention::MuAlphaStar);
         assert!(s4.contains("MuAlphaStar"));
+        let s5 = format!("{:?}", SiderustEarthOrientationModel::Iau2006A);
+        assert!(s5.contains("Iau2006A"));
     }
 
     // ── FfiFrom for Period<MJD> ──────────────────────────────────────────
@@ -1285,8 +1314,8 @@ mod tests {
             ModifiedJulianDate::new(60001.0),
         );
         let ffi = TempochPeriodMjd::ffi_from(&p);
-        assert!((ffi.start_mjd.value - 60000.0).abs() < 1e-10);
-        assert!((ffi.end_mjd.value - 60001.0).abs() < 1e-10);
+        assert!((ffi.start_mjd - 60000.0).abs() < 1e-10);
+        assert!((ffi.end_mjd - 60001.0).abs() < 1e-10);
     }
 
     // ── SiderustCrossingEvent / SiderustCulminationEvent ─────────────────
@@ -1474,6 +1503,28 @@ mod tests {
     }
 
     #[test]
+    fn layout_earth_orientation_model_enum() {
+        assert_layout!(SiderustEarthOrientationModel, size = 4, align = 4);
+    }
+
+    #[test]
+    fn earth_orientation_model_roundtrip() {
+        for model in [
+            SiderustEarthOrientationModel::Iau2000A,
+            SiderustEarthOrientationModel::Iau2000B,
+            SiderustEarthOrientationModel::Iau2006,
+            SiderustEarthOrientationModel::Iau2006A,
+        ] {
+            let name = model.as_str();
+            assert_eq!(SiderustEarthOrientationModel::parse_name(name), Some(model));
+        }
+        assert_eq!(
+            SiderustEarthOrientationModel::parse_name("IAU2006A"),
+            Some(SiderustEarthOrientationModel::Iau2006A)
+        );
+    }
+
+    #[test]
     fn layout_cartesian_dir() {
         // 3 × f64 + i32 + padding = 32
         assert_eq!(std::mem::size_of::<SiderustCartesianDir>(), 32);
@@ -1485,6 +1536,13 @@ mod tests {
         // 3 × f64 + i32 (frame) + i32 (center) + i32 (length_unit) + padding = 40
         assert_eq!(std::mem::size_of::<SiderustCartesianPos>(), 40);
         assert_eq!(std::mem::align_of::<SiderustCartesianPos>(), 8);
+    }
+
+    #[test]
+    fn layout_spherical_pos() {
+        // 3 × f64 + i32 (frame) + i32 (center) + i32 (length_unit) + padding = 40
+        assert_eq!(std::mem::size_of::<SiderustSphericalPos>(), 40);
+        assert_eq!(std::mem::align_of::<SiderustSphericalPos>(), 8);
     }
 
     #[test]

@@ -21,6 +21,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * New type-level IAU nutation model markers in `astro::nutation`: `Iau2000A`, `Iau2000B`, `Iau2006`, and `Iau2006A`, plus shared runtime identifiers via `NutationModelId`.
 * Runtime Earth-orientation model selection via `EarthOrientationModel`, including ergonomic `to_*_model(...)` coordinate transform methods for model-specific rotation paths.
 * New nutation model showcase example `examples/14_nutation_models.rs`, covering default transforms and custom `AstroContext::with_model::<...>()` usage.
+* Checked-in FFI bindings matrix at `doc/ffi_bindings_matrix.md`, tracking canonical Rust concepts across `qtty-ffi`, `tempoch-ffi`, `siderust-ffi`, and the C++/Python/JS adapters.
+* **FFI transform contexts and richer target payloads** in `siderust-ffi`.
+  * New opaque `SiderustContext` handle plus `SiderustEarthOrientationModel`
+    for model-sensitive frame and horizontal transforms.
+  * New context-aware transform entry points and explicit TT/UT1 horizontal APIs.
+  * New canonical `siderust_generic_target_create(...)` constructor that accepts
+    tagged spherical-direction, spherical-position, or cartesian-position payloads.
 
 ### Changed
 * `astro::orbit::Orbit` has been renamed to `KeplerianOrbit`, making the elliptic-only semantics explicit across public builders, body constants, examples, and `BodycentricParams`.
@@ -29,6 +36,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Terminology now consistently uses `argument_of_periapsis` / `arg_periapsis_deg` instead of perihelion-specific naming in both Rust and FFI orbit types.
 * `siderust_kepler_position` is now documented as a legacy FFI entry point; `siderust_kepler_position_ex` should be preferred when the orbit reference center matters.
 * Transform defaults now use `Iau2006A` as `DefaultNutationModel`, while keeping opt-in support for `Iau2000A`, `Iau2000B`, and `Iau2006` through typed model contexts.
+* `siderust-ffi` is now aligned with `tempoch-ffi 0.4.x`, bumps its ABI version to `400`, and generates its C header into both Cargo `OUT_DIR` and `include/` for consistent adapter consumption.
+* `siderust-ffi` now follows the `tempoch-ffi 0.4` scalar carrier contract for JD/MJD values and extends `SiderustSphericalPos` with an explicit `length_unit`, so target payloads preserve distance-unit semantics at the ABI boundary.
 
 ### Removed
 * Legacy compatibility namespaces `coordinates::types::direction` and `coordinates::types::position`; use the explicit aliases or the `coordinates::spherical::{direction, position}` modules instead.
