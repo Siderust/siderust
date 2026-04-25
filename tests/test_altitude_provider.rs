@@ -62,7 +62,7 @@ fn assert_periods_valid(periods: &[Period<MJD>], window: Period<MJD>) {
     for (i, p) in periods.iter().enumerate() {
         // Positive duration
         assert!(
-            p.duration_days() >= 0.0,
+            p.duration_days() >= Days::new(0.0),
             "Period {} has negative duration: {:?}",
             i,
             p

@@ -299,8 +299,8 @@ mod tests {
 
         assert!(!days.is_empty(), "should find daytime periods in 7 days");
         for p in &days {
-            assert!(p.duration_days() > 0.0);
-            assert!(p.duration_days() < 1.0, "each day period < 24h");
+            assert!(p.duration_days() > Days::new(0.0));
+            assert!(p.duration_days() < Days::new(1.0), "each day period < 24h");
         }
     }
 

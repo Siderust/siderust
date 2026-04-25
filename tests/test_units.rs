@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use qtty::*;
+use qtty::Simplify;
 
 #[test]
 fn hour_angles_from_hms() {
@@ -44,7 +45,7 @@ fn quantity_arithmetic_and_simplify() {
     let distance = Meters::new(120.0);
     let extra = Meters::new(5.0);
     let sum = distance + extra;
-    assert_eq!(sum, 125.0);
+    assert_eq!(sum.value(), 125.0);
 
     let diff = sum - extra;
     assert!((diff.value() - distance.value()).abs() < 1e-12);
@@ -54,7 +55,7 @@ fn quantity_arithmetic_and_simplify() {
     let dist_back = velocity * time;
     assert!((dist_back.value() - distance.value()).abs() < 1e-12);
 
-    let time_back = (distance / velocity).simplify();
+    let time_back = distance / velocity;
     assert!((time_back.value() - time.value()).abs() < 1e-12);
 
     let unitless_ratio = distance / distance;
@@ -62,9 +63,18 @@ fn quantity_arithmetic_and_simplify() {
 }
 
 #[test]
-fn unitless_from_length_and_display() {
+fn unitless_from_same_unit_division_and_display() {
+    let a = Meters::new(84.0);
+    let b = Meters::new(2.0);
+    let ratio: Quantity<Unitless> = (a / b).simplify();
+    assert!((ratio.value() - 42.0).abs() < 1e-12);
+    assert_eq!(format!("{}", ratio), "42");
+}
+
+#[test]
+fn erase_unit_raw_and_display() {
     let meters = Meters::new(42.0);
     let unitless: Quantity<Unitless> = meters.into();
-    assert_eq!(unitless, 42.0);
+    assert_eq!(unitless.value(), 42.0);
     assert_eq!(format!("{}", unitless), "42");
 }

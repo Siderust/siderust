@@ -306,7 +306,7 @@ fn wgs84_geodetic_to_ecef_provides_geocentric_position() {
         pos.x().value()
     );
     assert!(
-        pos.y().abs() < 10.0,
+        pos.y().abs() < Kilometers::new(10.0),
         "y = {} km, expected ~0 km (prime meridian)",
         pos.y().value()
     );

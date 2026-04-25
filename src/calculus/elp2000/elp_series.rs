@@ -15,7 +15,7 @@ use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;
 use crate::time::JulianDate;
 use elp_data::*;
-use qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians, Simplify};
+use qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians};
 use std::f64::consts::FRAC_PI_2;
 
 // ====================
@@ -825,7 +825,7 @@ impl Moon {
             + W1[3].value() * t[3]
             + W1[4].value() * t[4];
         let lat_rad = Arcseconds::new(b).to::<Radian>().value();
-        let ratio = (A0 / ATH).simplify().value();
+        let ratio = (A0 / ATH).value();
         let distance_km = c * ratio;
 
         // Use sin_cos for efficiency (2 combined calls instead of 4 separate)
