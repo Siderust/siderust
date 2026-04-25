@@ -1,6 +1,13 @@
 [workspace]
 members = [".", "siderust-ffi"]
 
+[patch.crates-io]
+qtty = { path = "../qtty/qtty" }
+qtty-ffi = { path = "../qtty/qtty-ffi" }
+affn = { path = "../affn" }
+tempoch = { path = "../tempoch/tempoch" }
+tempoch-ffi = { path = "../tempoch/tempoch-ffi" }
+
 [package]
 name = "siderust"
 version = "0.6.0"
