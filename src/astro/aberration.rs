@@ -69,9 +69,9 @@ fn velocity_to_beta(
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> nalgebra::Vector3<f64> {
     nalgebra::Vector3::new(
-        (velocity.x() / AU_PER_DAY_C).simplify().value(),
-        (velocity.y() / AU_PER_DAY_C).simplify().value(),
-        (velocity.z() / AU_PER_DAY_C).simplify().value(),
+        (velocity.x() / AU_PER_DAY_C).value(),
+        (velocity.y() / AU_PER_DAY_C).value(),
+        (velocity.z() / AU_PER_DAY_C).value(),
     )
 }
 

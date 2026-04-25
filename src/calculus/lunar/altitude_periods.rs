@@ -202,7 +202,7 @@ mod tests {
 
         for p in &periods {
             assert!(
-                p.duration_days() > 0.0,
+                p.duration_days() > Days::new(0.0),
                 "Period duration should be positive"
             );
         }

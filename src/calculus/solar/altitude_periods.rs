@@ -141,11 +141,11 @@ mod tests {
 
         for night in &nights {
             assert!(
-                night.duration_days() > 0.0,
+                night.duration_days() > Days::new(0.0),
                 "Night duration should be positive"
             );
             assert!(
-                night.duration_days() < 1.0,
+                night.duration_days() < Days::new(1.0),
                 "Night should be less than 24 hours"
             );
         }

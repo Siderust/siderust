@@ -212,7 +212,7 @@ impl StarAltitudeParams {
         for &(ha_target, dir) in &[(Degrees::FULL_TURN - h0_deg, 1_i32), (h0_deg, -1_i32)] {
             // Time offset from t_start to the first occurrence
             let dha = (ha_target - ha_start).normalize();
-            let phase = (dha / Degrees::FULL_TURN).simplify();
+            let phase = dha / Degrees::FULL_TURN;
             let dt_first: Days = (SIDEREAL_DAY_DAYS * phase).to::<Day>();
 
             let mut dt = dt_first;

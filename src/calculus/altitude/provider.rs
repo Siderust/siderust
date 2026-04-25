@@ -434,8 +434,8 @@ mod tests {
             solar_system::Sun.above_threshold(greenwich(), one_day_window(), Degrees::new(0.0));
         assert!(!periods.is_empty(), "Sun should be above horizon at 51°N");
         for p in &periods {
-            assert!(p.duration_days() > 0.0);
-            assert!(p.duration_days() < 1.0);
+            assert!(p.duration_days() > Days::new(0.0));
+            assert!(p.duration_days() < Days::new(1.0));
         }
     }
 
@@ -559,7 +559,7 @@ mod tests {
             !periods.is_empty(),
             "Full sky range should return at least one period"
         );
-        let total: f64 = periods.iter().map(|p| p.duration_days()).sum();
+        let total: f64 = periods.iter().map(|p| p.duration_days().value()).sum();
         assert!(
             (total - 1.0).abs() < 0.01,
             "Full sky range should span ~1 day, got {} days",

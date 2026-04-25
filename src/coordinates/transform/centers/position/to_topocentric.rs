@@ -250,7 +250,7 @@ mod tests {
         let star_topo: position::EquatorialMeanJ2000<Au, Topocentric> =
             star_geo.to_center((site, jd));
 
-        let rel_diff = ((star_geo.x() - star_topo.x()).abs() / star_geo.x()).simplify();
+        let rel_diff = (star_geo.x() - star_topo.x()).abs() / star_geo.x();
         assert!(rel_diff < 1e-6, "Relative parallax too large: {}", rel_diff);
     }
 }
