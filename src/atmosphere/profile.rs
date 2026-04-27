@@ -34,7 +34,7 @@ pub struct AtmosphereProfile {
 }
 
 impl AtmosphereProfile {
-    /// Cerro Paranal / La Palma default profile.
+    /// Cerro Paranal default profile.
     ///
     /// - Surface pressure: 744 hPa (standard Paranal value).
     /// - Altitude: 2.635 km AMSL — geodetic height of Cerro Paranal
@@ -46,6 +46,61 @@ impl AtmosphereProfile {
         observer_altitude: Kilometers::new(2.635),
         rayleigh_scale_height_km: DEFAULT_SCALE_HEIGHT_KM,
         mie_params: MieParams::PARANAL,
+    };
+
+    /// Roque de los Muchachos Observatory, La Palma (ORM) profile.
+    ///
+    /// - Surface pressure: 744 hPa (source: `NSB_Utils.py:59`, `la_palma_pres = 744 hPa`;
+    ///   consistent with `siderust::observatories::ROQUE_DE_LOS_MUCHACHOS`).
+    /// - Altitude: 2.396 km AMSL (WGS84 height of Roque de los Muchachos, 2396 m).
+    /// - Rayleigh scale height: [`DEFAULT_SCALE_HEIGHT_KM`] (8.0 km).
+    /// - Mie aerosols: [`MieParams::LA_PALMA`] (τ₀ = 0.02 at 550 nm).
+    ///
+    /// See [`crate::observatories::ROQUE_DE_LOS_MUCHACHOS`] for the observatory entry.
+    pub const LA_PALMA: AtmosphereProfile = AtmosphereProfile {
+        surface_pressure: Hectopascals::new(744.0),
+        observer_altitude: Kilometers::new(2.396),
+        rayleigh_scale_height_km: DEFAULT_SCALE_HEIGHT_KM,
+        mie_params: MieParams::LA_PALMA,
+    };
+
+    /// Mauna Kea Observatories (CFHT / Subaru) profile.
+    ///
+    /// - Surface pressure: 615 hPa. At 4207 m AMSL the ISA standard-atmosphere
+    ///   pressure is ≈ 600–620 hPa; 615 hPa is consistent with CFHT site
+    ///   documentation and Krisciunas (1990, PASP 102, 1235).
+    /// - Altitude: 4.207 km AMSL (WGS84 height, `siderust::observatories::MAUNA_KEA`).
+    /// - Rayleigh scale height: [`DEFAULT_SCALE_HEIGHT_KM`] (8.0 km).
+    /// - Mie aerosols: [`MieParams::MAUNA_KEA`] (τ₀ = 0.03 at 550 nm).
+    ///
+    /// **Note:** The lower pressure at Mauna Kea reduces the Rayleigh optical depth
+    /// relative to sea-level sites by the ratio 615/1013 ≈ 0.61, making the
+    /// atmosphere unusually transparent at near-UV/blue wavelengths.
+    ///
+    /// See [`crate::observatories::MAUNA_KEA`] for the observatory entry.
+    pub const MAUNA_KEA: AtmosphereProfile = AtmosphereProfile {
+        surface_pressure: Hectopascals::new(615.0),
+        observer_altitude: Kilometers::new(4.207),
+        rayleigh_scale_height_km: DEFAULT_SCALE_HEIGHT_KM,
+        mie_params: MieParams::MAUNA_KEA,
+    };
+
+    /// La Silla Observatory (ESO, Chile) profile.
+    ///
+    /// - Surface pressure: 760 hPa. At 2400 m AMSL the ISA standard-atmosphere
+    ///   pressure is ≈ 756 hPa; 760 hPa is consistent with ESO La Silla
+    ///   atmospheric monitoring and Burki et al. (1995, A&AS 112, 383).
+    /// - Altitude: 2.400 km AMSL (WGS84 height,
+    ///   `siderust::observatories::LA_SILLA_OBSERVATORY`).
+    /// - Rayleigh scale height: [`DEFAULT_SCALE_HEIGHT_KM`] (8.0 km).
+    /// - Mie aerosols: [`MieParams::LA_SILLA`] (τ₀ = 0.04 at 550 nm).
+    ///
+    /// See [`crate::observatories::LA_SILLA_OBSERVATORY`] for the observatory entry.
+    pub const LA_SILLA: AtmosphereProfile = AtmosphereProfile {
+        surface_pressure: Hectopascals::new(760.0),
+        observer_altitude: Kilometers::new(2.400),
+        rayleigh_scale_height_km: DEFAULT_SCALE_HEIGHT_KM,
+        mie_params: MieParams::LA_SILLA,
     };
 
     /// Total optical depth at wavelength `lambda` (Rayleigh + Mie).
@@ -134,5 +189,55 @@ mod tests {
         let t1 = AtmosphereProfile::PARANAL.transmission(Nanometers::new(550.0), 1.0);
         let t2 = AtmosphereProfile::PARANAL.transmission(Nanometers::new(550.0), 2.0);
         assert!(t2 < t1, "transmission must decrease with airmass");
+    }
+
+    /// Site profiles must differ from PARANAL on at least one parameter.
+    #[test]
+    fn site_profiles_differ_from_paranal() {
+        let p = AtmosphereProfile::PARANAL;
+        let lp = AtmosphereProfile::LA_PALMA;
+        let mk = AtmosphereProfile::MAUNA_KEA;
+        let ls = AtmosphereProfile::LA_SILLA;
+
+        // τ₀ differs for all three sites.
+        assert_ne!(lp.mie_params.tau0, p.mie_params.tau0, "La Palma τ₀ must differ");
+        assert_ne!(mk.mie_params.tau0, p.mie_params.tau0, "Mauna Kea τ₀ must differ");
+        assert_ne!(ls.mie_params.tau0, p.mie_params.tau0, "La Silla τ₀ must differ");
+
+        // Mauna Kea also has different pressure and altitude.
+        assert_ne!(mk.surface_pressure.value(), p.surface_pressure.value(),
+            "Mauna Kea pressure must differ from Paranal");
+        assert_ne!(mk.observer_altitude.value(), p.observer_altitude.value(),
+            "Mauna Kea altitude must differ from Paranal");
+    }
+
+    /// Optical depth at 550 nm / airmass 2 (altitude ≈ 30°) must be
+    /// positive, finite, and ordered roughly by aerosol loading.
+    #[test]
+    fn site_profiles_optical_depth_ordering_at_30deg() {
+        let lambda = Nanometers::new(550.0);
+        let airmass = 2.0; // ~30° elevation
+
+        let t_lp = AtmosphereProfile::LA_PALMA.transmission(lambda, airmass);
+        let t_mk = AtmosphereProfile::MAUNA_KEA.transmission(lambda, airmass);
+        let t_ls = AtmosphereProfile::LA_SILLA.transmission(lambda, airmass);
+        let t_pn = AtmosphereProfile::PARANAL.transmission(lambda, airmass);
+
+        // All transmissions must be in (0, 1).
+        for (name, t) in [("La Palma", t_lp), ("Mauna Kea", t_mk),
+                          ("La Silla", t_ls), ("Paranal", t_pn)] {
+            assert!(t > 0.0 && t < 1.0 && t.is_finite(),
+                "{name} transmission {t:.4} must be in (0,1)");
+        }
+
+        // Mauna Kea has lower pressure so its Rayleigh OD is substantially
+        // reduced; it should therefore have higher overall transmission than
+        // La Silla and Paranal despite being at a different absolute scale.
+        assert!(t_mk > t_pn,
+            "Mauna Kea should transmit more than Paranal (lower pressure + cleaner aerosol)");
+        assert!(t_ls > t_pn,
+            "La Silla should transmit more than Paranal (cleaner aerosol)");
+        assert!(t_lp > t_pn,
+            "La Palma should transmit more than Paranal (cleaner aerosol)");
     }
 }
