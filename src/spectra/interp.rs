@@ -1,7 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Interpolation and out-of-range policies for [`crate::spectra::SampledSpectrum`].
+//! Interpolation policies for [`crate::spectra::SampledSpectrum`].
+//!
+//! [`OutOfRange`] lives in [`crate::interp`] so it can be shared with
+//! [`crate::tables`]; it is re-exported here for backwards compatibility.
+
+pub use crate::interp::OutOfRange;
 
 /// How to evaluate `y(x)` between samples.
 ///
@@ -22,16 +27,4 @@ pub enum Interpolation {
     PiecewiseConstantRight,
     /// Reserved for a future natural cubic spline implementation.
     CubicSpline,
-}
-
-/// How to evaluate `y(x)` outside the sampled domain `[xs[0], xs[-1]]`.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum OutOfRange {
-    /// Hold the nearest endpoint value (matches `numpy.interp` default).
-    #[default]
-    ClampToEndpoints,
-    /// Return zero outside the domain.
-    Zero,
-    /// Surface a [`crate::spectra::SpectrumError::OutOfRange`].
-    Error,
 }
