@@ -17,17 +17,22 @@
 //! - [`mie`] — Mie / aerosol optical depth via the Patat 2011 power-law
 //!   parameterization, with a `MieParams::PARANAL` preset.
 //! - [`extinction`] — Beer-Lambert transmission `exp(-airmass · τ)`.
-//!
-//! These are intentionally low-level: they expose the kernels needed
-//! to assemble a sky-brightness or atmospheric-transmission model
-//! without baking in any one site's defaults.
+//! - [`profile`] — [`AtmosphereProfile`]: first-class aggregate of
+//!   Rayleigh + Mie optical depth for a fixed observer site. Ozone is
+//!   kept separate; apply `ozone::transmission_table()` independently.
 
 pub mod airmass;
 pub mod extinction;
 pub mod mie;
+pub mod profile;
 pub mod rayleigh;
+#[cfg(feature = "spectra")]
+pub mod ozone;
 
 pub use airmass::{airmass, AirmassFormula};
 pub use extinction::transmission;
 pub use mie::{mie_optical_depth, MieParams};
+pub use profile::AtmosphereProfile;
 pub use rayleigh::{rayleigh_optical_depth_bodhaine99, rayleigh_phase};
+#[cfg(feature = "spectra")]
+pub use ozone::{transmission_table, Transmittance};
