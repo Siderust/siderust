@@ -9,7 +9,7 @@
 
 #[cfg(feature = "serde")]
 mod demo {
-    use qtty::*;
+    use siderust::qtty::*;
     use serde::{Deserialize, Serialize};
     use siderust::astro::orbit::KeplerianOrbit;
     use siderust::bodies::comet::HALLEY;

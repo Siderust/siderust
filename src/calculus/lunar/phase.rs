@@ -46,7 +46,7 @@ use crate::coordinates::cartesian;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::time::{JulianDate, ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 use std::f64::consts::PI;
 use std::marker::PhantomData;
 
@@ -268,7 +268,7 @@ impl std::fmt::Display for PhaseEvent {
 
 /// Continuous photometric geometry of the Moon–Sun–Earth (or observer) system.
 ///
-/// All angular quantities are in **radians** (typed via `qtty::Radians`).
+/// All angular quantities are in **radians** (typed via `crate::qtty::Radians`).
 /// The illuminated fraction is a dimensionless `f64` in \[0, 1\].
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
@@ -463,7 +463,7 @@ fn great_circle_elongation(lon1: f64, lat1: f64, lon2: f64, lat2: f64) -> f64 {
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
 /// use siderust::time::JulianDate;
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M);
 /// let geom = moon_phase_topocentric::<Vsop87Ephemeris>(JulianDate::J2000, site);
@@ -728,7 +728,7 @@ fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> Radians {
 /// use siderust::calculus::lunar::phase::{illumination_above, PhaseSearchOpts};
 /// use siderust::calculus::ephemeris::Vsop87Ephemeris;
 /// use siderust::time::{ModifiedJulianDate, Period};
-/// use qtty::Days;
+/// use siderust::qtty::Days;
 ///
 /// let start  = ModifiedJulianDate::new(60000.0);
 /// let window = Period::new(start, start + Days::new(30.0));
@@ -785,7 +785,7 @@ pub fn illumination_below<E: Ephemeris>(
 /// use siderust::calculus::lunar::phase::{illumination_range, PhaseSearchOpts};
 /// use siderust::calculus::ephemeris::Vsop87Ephemeris;
 /// use siderust::time::{ModifiedJulianDate, Period};
-/// use qtty::Days;
+/// use siderust::qtty::Days;
 ///
 /// let start  = ModifiedJulianDate::new(60000.0);
 /// let window = Period::new(start, start + Days::new(60.0));

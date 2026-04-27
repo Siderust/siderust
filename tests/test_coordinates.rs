@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::centers::*;
 use siderust::coordinates::frames::*;
@@ -68,13 +68,13 @@ where
     Quantity<U>: std::cmp::PartialOrd + std::fmt::Display,
 {
     assert!(
-        (a.polar - b.polar).abs() < 1e-6,
+        (a.polar - b.polar).abs().value() < 1e-6,
         "polar mismatch: {} vs {}",
         a.polar,
         b.polar
     );
     assert!(
-        (a.azimuth - b.azimuth).abs() < 1e-6,
+        (a.azimuth - b.azimuth).abs().value() < 1e-6,
         "polar mismatch: {} vs {}",
         a.azimuth,
         b.azimuth

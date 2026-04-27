@@ -27,7 +27,7 @@
 //! use siderust::coordinates::centers::Geodetic;
 //! use siderust::coordinates::frames::ECEF;
 //! use siderust::time::{ModifiedJulianDate, MJD, Period};
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 //! let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
@@ -50,7 +50,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical::direction;
 use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 // Imports for planet azimuth support
 use crate::calculus::horizontal;
@@ -150,7 +150,7 @@ pub trait AzimuthProvider {
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
 /// use siderust::time::{ModifiedJulianDate, MJD, Period};
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 /// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
@@ -178,7 +178,7 @@ impl AzimuthProvider for solar_system::Sun {
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
-        if query.window.duration() <= Days::zero() {
+        if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
         events::azimuth_range_periods(self, query)
@@ -196,7 +196,7 @@ impl AzimuthProvider for solar_system::Moon {
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
-        if query.window.duration() <= Days::zero() {
+        if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
         events::azimuth_range_periods(self, query)
@@ -228,7 +228,7 @@ impl AzimuthProvider for direction::ICRS {
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
-        if query.window.duration() <= Days::zero() {
+        if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
         events::azimuth_range_periods(self, query)
@@ -280,7 +280,7 @@ macro_rules! impl_azimuth_provider_vsop87 {
                 }
 
                 fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
-                    if query.window.duration() <= Days::zero() {
+                    if (query.window.end - query.window.start) <= Days::zero() {
                         return Vec::new();
                     }
                     events::azimuth_range_periods(self, query)
@@ -389,9 +389,9 @@ mod tests {
         );
 
         // Total covered should be the full window
-        let total_inside: f64 = inside.iter().map(|p| p.duration_days().value()).sum();
-        let total_outside: f64 = outside.iter().map(|p| p.duration_days().value()).sum();
-        let window_len = window.duration_days().value();
+        let total_inside: f64 = inside.iter().map(|p| ((p).end - (p).start).value()).sum();
+        let total_outside: f64 = outside.iter().map(|p| ((p).end - (p).start).value()).sum();
+        let window_len = ((window).end - (window).start).value();
         assert!(
             (total_inside + total_outside - window_len).abs() < 1e-6,
             "inside + outside should equal the full window"

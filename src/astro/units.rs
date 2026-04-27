@@ -3,9 +3,9 @@
 
 //! Astronomical time units not already present in `qtty`.
 //!
-//! [`qtty`] ships [`qtty::time::SiderealYear`] (365.256 363 004 d, the actual
+//! [`qtty`] ships [`crate::qtty::time::SiderealYear`] (365.256 363 004 d, the actual
 //! measured period of Earth relative to the fixed stars) and
-//! [`qtty::time::JulianYear`] (365.25 d exactly).
+//! [`crate::qtty::time::JulianYear`] (365.25 d exactly).
 //!
 //! This module adds the **Gaussian year** — the year length that is implied by
 //! the Gaussian gravitational constant `k = 0.01720209895 AU^{3/2} d^{-1}`.
@@ -22,7 +22,7 @@
 //! the modern sidereal year accounts for the full two-body problem with
 //! a more precise solar GM.
 
-use qtty::{Quantity, Time, Unit};
+use crate::qtty::{Quantity, Time, Unit};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // GaussianYear — unit definition
@@ -65,7 +65,7 @@ impl Unit for GaussianYear {
 ///
 /// ```rust
 /// use siderust::astro::units::GaussianYears;
-/// use qtty::time::Day;
+/// use siderust::qtty::time::Day;
 ///
 /// // Earth's orbital period via Kepler's 3rd law (a = 1 AU → T = 1 Gaussian year).
 /// let period_days = GaussianYears::new(1.0).to::<Day>();
@@ -83,7 +83,7 @@ pub const GAUSSIAN_YEAR: GaussianYears = GaussianYears::new(1.0);
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::time::{Day, JulianYear, Second, SiderealYear};
+    use crate::qtty::time::{Day, JulianYear, Second, SiderealYear};
 
     #[test]
     fn gaussian_year_to_days() {
@@ -101,7 +101,7 @@ mod tests {
     fn gaussian_year_differs_from_sidereal_year() {
         // Should differ by ~46 s (≈ 0.000535 d).
         let g = GaussianYears::new(1.0).to::<Day>().value();
-        let s = qtty::Quantity::<SiderealYear>::new(1.0).to::<Day>().value();
+        let s = crate::qtty::Quantity::<SiderealYear>::new(1.0).to::<Day>().value();
         let diff = (g - s).abs();
         assert!(diff > 4e-4 && diff < 7e-4, "diff = {diff}");
     }
@@ -110,7 +110,7 @@ mod tests {
     fn gaussian_year_differs_from_julian_year() {
         // Julian year = 365.25 d; Gaussian year ≈ 365.257 d.
         let g = GaussianYears::new(1.0).to::<Day>().value();
-        let j = qtty::Quantity::<JulianYear>::new(1.0).to::<Day>().value();
+        let j = crate::qtty::Quantity::<JulianYear>::new(1.0).to::<Day>().value();
         assert!((g - j).abs() > 5e-3);
     }
 

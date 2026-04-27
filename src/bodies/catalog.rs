@@ -56,8 +56,8 @@ use super::Star;
 use crate::coordinates::spherical::position::EquatorialMeanJ2000;
 use crate::targets::CoordinateWithPM;
 use crate::time::JulianDate;
-use qtty::length::nominal::SolarRadiuses;
-use qtty::*;
+use crate::qtty::length::nominal::SolarRadiuses;
+use crate::qtty::*;
 
 /// **Vega** (α Lyrae), an A0 V star that defines the zero‑point of the Johnson
 /// V photometric system.

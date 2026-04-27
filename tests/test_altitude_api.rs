@@ -13,7 +13,7 @@ use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::time::{ModifiedJulianDate, Period};
 
-use qtty::*;
+use siderust::qtty::*;
 
 /// La Palma (Roque de los Muchachos), ~28.76°N, -17.89°E, 2396 m
 fn roque() -> Geodetic<ECEF> {
@@ -47,7 +47,7 @@ fn altitude_at_sun_j2000_greenwich() {
     // sun should be low but above horizon around local noon (UTC ≈ TT-64s).
     // Accept any value in [-π/2, +π/2] radians.
     assert!(
-        alt.abs() < std::f64::consts::FRAC_PI_2,
+        alt.abs().value() < std::f64::consts::FRAC_PI_2,
         "Sun altitude out of range: {} rad",
         alt.value()
     );
@@ -59,7 +59,7 @@ fn altitude_at_moon_j2000_greenwich() {
         &greenwich(),
         siderust::time::ModifiedJulianDate::new(51544.5),
     );
-    assert!(alt.abs() < std::f64::consts::FRAC_PI_2);
+    assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
@@ -70,7 +70,7 @@ fn altitude_at_sirius_reasonable() {
         &greenwich(),
         siderust::time::ModifiedJulianDate::new(51544.5),
     );
-    assert!(alt.abs() < std::f64::consts::FRAC_PI_2);
+    assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
 // ===========================================================================
@@ -201,9 +201,9 @@ fn above_threshold_sun_week() {
         days.len()
     );
     for (i, p) in days.iter().enumerate() {
-        let hours = p.duration_days() * 24.0;
+        let hours = ((p).end - (p).start) * 24.0;
         assert!(
-            hours > 8.0 && hours < 16.0,
+            hours.value() > 8.0 && hours.value() < 16.0,
             "day {} duration {} hours is unreasonable",
             i,
             hours
@@ -228,9 +228,9 @@ fn below_threshold_astronomical_night_week() {
 
     assert!(!nights.is_empty(), "should find astronomical night periods");
     for p in &nights {
-        let hours = p.duration_days() * 24.0;
+        let hours = ((p).end - (p).start) * 24.0;
         // Nights should be several hours long
-        assert!(hours > 3.0, "night period is too short: {} hours", hours);
+        assert!(hours.value() > 3.0, "night period is too short: {} hours", hours);
     }
 }
 
@@ -261,10 +261,10 @@ fn altitude_ranges_nautical_to_astro_twilight() {
         bands.len()
     );
     for p in &bands {
-        let minutes = p.duration_days() * 1440.0;
+        let minutes = ((p).end - (p).start) * 1440.0;
         // Each twilight band should be 20-90 minutes
         assert!(
-            minutes > 10.0 && minutes < 120.0,
+            minutes.value() > 10.0 && minutes.value() < 120.0,
             "twilight band duration {} min is unreasonable",
             minutes
         );
@@ -336,9 +336,9 @@ fn polaris_always_above_horizon_at_greenwich() {
         "Polaris should be continuously above horizon, found {} periods",
         up.len()
     );
-    let duration = up[0].duration_days();
+    let duration = (up[0]).end - (up[0]).start;
     assert!(
-        (duration - Days::new(1.0)).abs() < 0.01,
+        (duration - Days::new(1.0)).abs().value() < 0.01,
         "Polaris up-period should span the full day, got {} days",
         duration
     );

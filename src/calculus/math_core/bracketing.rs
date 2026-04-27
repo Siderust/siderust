@@ -18,7 +18,7 @@
 //! | [`extrema_based_brackets`] | Find extrema first, bracket crossings around each |
 
 use crate::time::{ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 use super::extrema::{self, ExtremumKind};
 
@@ -207,13 +207,13 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let g = |t: Mjd| f(t) - threshold;
-    let range = search_period.duration();
+    let range = search_period.end - search_period.start;
 
     // Expanding search: start near the extremum and step backward
     let mut bracket = Period::new(search_period.end, search_period.end);
     let mut g_hi = g(bracket.end);
     let mut step = range * 0.1;
-    if step < 1e-10 {
+    if step < Days::new(1e-10) {
         step = range * 0.5;
     }
 
@@ -249,12 +249,12 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let g = |t: Mjd| f(t) - threshold;
-    let range = search_period.duration();
+    let range = search_period.end - search_period.start;
 
     let mut bracket = Period::new(search_period.start, search_period.start);
     let mut g_lo = g(bracket.start);
     let mut step = range * 0.1;
-    if step < 1e-10 {
+    if step < Days::new(1e-10) {
         step = range * 0.5;
     }
 
@@ -285,7 +285,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::Radian;
+    use crate::qtty::Radian;
 
     type Radians = Quantity<Radian>;
 

@@ -4,7 +4,7 @@
 //! Orientation model primitives for rotating-body reference frames.
 
 use crate::time::JulianDate;
-use qtty::Degrees;
+use crate::qtty::Degrees;
 
 /// IAU pole and prime meridian rotation parameters for a body.
 ///
@@ -34,7 +34,7 @@ impl IauRotationParams {
     /// * `jd` - Julian Date (TDB/TT-compatible epoch for IAU model evaluation).
     #[inline]
     pub fn alpha0(&self, jd: JulianDate) -> Degrees {
-        let t_centuries = jd.julian_centuries().value();
+        let t_centuries = jd.julian_centuries();
         self.alpha0_deg + self.alpha0_rate * t_centuries
     }
 
@@ -44,7 +44,7 @@ impl IauRotationParams {
     /// * `jd` - Julian Date (TDB/TT-compatible epoch for IAU model evaluation).
     #[inline]
     pub fn delta0(&self, jd: JulianDate) -> Degrees {
-        let t_centuries = jd.julian_centuries().value();
+        let t_centuries = jd.julian_centuries();
         self.delta0_deg + self.delta0_rate * t_centuries
     }
 

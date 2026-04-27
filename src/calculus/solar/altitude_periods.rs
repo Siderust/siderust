@@ -29,7 +29,7 @@ use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 // =============================================================================
 // Constants
@@ -141,11 +141,11 @@ mod tests {
 
         for night in &nights {
             assert!(
-                night.duration_days() > Days::new(0.0),
+                ((night).end - (night).start) > Days::new(0.0),
                 "Night duration should be positive"
             );
             assert!(
-                night.duration_days() < Days::new(1.0),
+                ((night).end - (night).start) < Days::new(1.0),
                 "Night should be less than 24 hours"
             );
         }

@@ -40,7 +40,7 @@ use crate::coordinates::spherical;
 use crate::coordinates::transform::AstroContext;
 use crate::time::JulianDate;
 use crate::time::{ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -50,7 +50,7 @@ use qtty::*;
 const SIDEREAL_DAY_DAYS: Days = SIDEREAL_DAY.to_const::<Day>();
 
 /// Threshold for treating `B = cos(δ) cos(φ)` as numerically zero.
-const DEGENERATE_B_EPS: Quantity<Unitless> = Quantity::new(1e-15);
+const DEGENERATE_B_EPS: f64 = 1e-15;
 
 /// Small temporal epsilon used to include crossings at the right boundary.
 const CROSSING_EDGE_EPS: Days = Days::new(1e-12);
@@ -89,9 +89,9 @@ pub(crate) enum ThresholdResult {
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct StarAltitudeParams {
     /// `sin(δ) · sin(φ)`, vertical offset of the sinusoid.
-    a: Quantity<Unitless>,
+    a: f64,
     /// `cos(δ) · cos(φ)`, amplitude of the sinusoidal term (≥ 0).
-    b: Quantity<Unitless>,
+    b: f64,
     /// RA corrected for precession + nutation (unwrapped degrees).
     ra_corrected: Degrees,
     /// Observer longitude (east positive).
@@ -136,8 +136,8 @@ impl StarAltitudeParams {
         let lat_rad = site.lat.to::<Radian>();
 
         Self {
-            a: Quantity::new(dec.sin() * lat_rad.sin()),
-            b: Quantity::new(dec.cos() * lat_rad.cos()),
+            a: dec.sin() * lat_rad.sin(),
+            b: dec.cos() * lat_rad.cos(),
             ra_corrected,
             lon: site.lon,
         }
@@ -149,7 +149,7 @@ impl StarAltitudeParams {
     /// * `NeverAbove`  , the star's maximum altitude is below the threshold
     /// * `Crossings`   , two crossings per sidereal day at HA = ±H₀
     pub fn threshold_ha(&self, threshold: Radians) -> ThresholdResult {
-        let sin_h: Quantity<Unitless> = Quantity::new(threshold.sin());
+        let sin_h: f64 = threshold.sin();
 
         if self.b.abs() < DEGENERATE_B_EPS {
             // Degenerate: observer at a pole or star at a pole, altitude

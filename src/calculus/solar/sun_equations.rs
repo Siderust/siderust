@@ -13,7 +13,7 @@ use crate::coordinates::{
     transform::{Transform, TransformFrame},
 };
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
+use crate::qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 
 impl Sun {
     /// Returns the **apparent geocentric equatorial coordinates** of the Sun
@@ -98,7 +98,7 @@ impl Sun {
     /// use siderust::coordinates::centers::Geodetic;
     /// use siderust::coordinates::frames::ECEF;
     /// use siderust::time::{JulianDate, ModifiedJulianDate};
-    /// use qtty::*;
+    /// use siderust::qtty::*;
     ///
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     ///
@@ -127,7 +127,7 @@ impl Sun {
 mod tests {
     use crate::bodies::solar_system::Sun;
     use crate::time::JulianDate;
-    use qtty::{AstronomicalUnit, AstronomicalUnits, Degrees};
+    use crate::qtty::{AstronomicalUnit, AstronomicalUnits, Degrees};
 
     #[test]
     fn apparent_sun_position_j2000() {

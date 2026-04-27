@@ -39,7 +39,7 @@
 //! use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
 //! use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
 //! use siderust::time::JulianDate;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! // A geometric direction to a star
 //! let astrometric_dir: Astrometric<EquatorialMeanJ2000> = Astrometric::new(

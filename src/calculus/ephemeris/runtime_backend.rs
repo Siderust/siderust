@@ -19,7 +19,7 @@ use crate::coordinates::{
 use crate::data::spk;
 use crate::data::DataError;
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnit, Kilometer};
+use crate::qtty::{AstronomicalUnit, Kilometer};
 use std::path::Path;
 use std::sync::Arc;
 

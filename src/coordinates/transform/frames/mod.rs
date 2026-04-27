@@ -13,7 +13,7 @@ use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::MutableFrame;
 use crate::coordinates::{cartesian, spherical};
-use qtty::LengthUnit;
+use crate::qtty::LengthUnit;
 
 pub trait TransformFrame<Coord> {
     fn to_frame(&self) -> Coord;

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use qtty::{AstronomicalUnit, AstronomicalUnits, Days, Degrees, Kilograms, Kilometers, Years, AU};
+use siderust::qtty::{AstronomicalUnit, AstronomicalUnits, Days, Degrees, Kilograms, Kilometers, AU};
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame};
@@ -25,19 +25,19 @@ fn julian_date_arithmetic_and_display_branches() {
     jd += Days::new(2.0);
     jd -= Days::new(0.5);
 
-    let with_years = jd + Years::new(1.0);
+    let with_years = jd + JulianDate::JULIAN_YEAR;
     let day_span: Days = with_years - jd;
     assert!((day_span.value() - JulianDate::JULIAN_YEAR.value()).abs() < 1e-9);
 
     let ratio = with_years / Days::new(2.0);
     assert!((ratio - with_years.value() / 2.0).abs() < 1e-12);
-    let ratio_plain = with_years / 2.0;
+    let ratio_plain = with_years.value() / 2.0;
     assert!((ratio_plain - with_years.value() / 2.0).abs() < 1e-12);
 
     let min = with_years.min(jd);
     assert_eq!(min, jd);
 
-    let utc = jd.to_utc().expect("UTC conversion should succeed");
+    let utc = jd.to_utc();
     let roundtrip = JulianDate::from_utc(utc);
     assert!((roundtrip.value() - jd.value()).abs() < 1e-6);
 }
@@ -56,7 +56,7 @@ fn horizontal_conversion_variants_cover_all_impls() {
     let observer = Geodetic::<ECEF>::new(
         Degrees::new(-17.89), // lon
         Degrees::new(28.76),  // lat
-        qtty::Meters::new(2400.0),
+        siderust::qtty::Meters::new(2400.0),
     );
     let jd = JulianDate::J2000;
 
@@ -98,7 +98,7 @@ fn horizontal_conversion_variants_cover_all_impls() {
     let horiz_pos = horiz_cart_pos.to_spherical();
     // Distance changes slightly due to real topocentric parallax (observer is ~6000 km from Earth center)
     // For an object at 1 AU, this is a very small fractional change (Earth radius / 1 AU ≈ 4e-5)
-    assert!((horiz_pos.distance - eq_pos.distance).abs() < 1e-4);
+    assert!((horiz_pos.distance - eq_pos.distance).abs().value() < 1e-4);
     assert!(horiz_cart_pos.z().value().is_finite());
 
     // Note: Directions no longer support center transforms (to_topocentric).

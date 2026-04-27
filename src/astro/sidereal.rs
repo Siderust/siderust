@@ -24,7 +24,7 @@
 //! use chrono::prelude::*;
 //! use siderust::time::JulianDate;
 //! use siderust::astro::sidereal::gmst_iau2006;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let jd = JulianDate::from_utc(Utc::now());
 //! let gmst = gmst_iau2006(jd, jd); // jd_ut1 ≈ jd_tt for most applications
@@ -35,11 +35,11 @@
 
 use crate::astro::era::earth_rotation_angle;
 use crate::time::JulianDate;
-use qtty::*;
+use crate::qtty::*;
 use std::f64::consts::TAU;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
-pub use qtty::time::SIDEREAL_DAY;
+pub use crate::qtty::time::SIDEREAL_DAY;
 
 // ════════════════════════════════════════════════════════════════════════
 // IAU 2006 ERA-based sidereal time
@@ -69,7 +69,7 @@ const AS2RAD: f64 = std::f64::consts::PI / (180.0 * 3600.0);
 #[inline]
 pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
     let era = earth_rotation_angle(jd_ut1);
-    let t = jd_tt.julian_centuries().value();
+    let t = jd_tt.julian_centuries();
 
     // Polynomial: accumulated precession of equinox in arcseconds
     // Coefficients from Capitaine et al. (2003), eq. 42

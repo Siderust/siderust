@@ -88,7 +88,7 @@
 
 use crate::time::JulianDate;
 use affn::Rotation3;
-use qtty::*;
+use crate::qtty::*;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Fukushima-Williams precession angles (SOFA iauPfw06)
@@ -111,7 +111,7 @@ use qtty::*;
 /// * SOFA routine `iauPfw06`
 #[inline]
 pub fn precession_fw_angles(jd: JulianDate) -> (Radians, Radians, Radians, Radians) {
-    let t = jd.julian_centuries().value();
+    let t = jd.julian_centuries();
     let t2 = t * t;
     let t3 = t2 * t;
     let t4 = t3 * t;
@@ -162,7 +162,7 @@ pub fn precession_fw_angles(jd: JulianDate) -> (Radians, Radians, Radians, Radia
 /// * SOFA routine `iauObl06`
 #[inline]
 pub fn mean_obliquity_iau2006(jd: JulianDate) -> Radians {
-    let t = jd.julian_centuries().value();
+    let t = jd.julian_centuries();
     let t2 = t * t;
     let t3 = t2 * t;
     let t4 = t3 * t;
@@ -360,7 +360,7 @@ pub fn ecliptic_of_date_to_mean_equatorial_matrix(jd: JulianDate) -> Rotation3 {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::Radians;
+    use crate::qtty::Radians;
 
     #[test]
     fn mean_obliquity_at_j2000() {

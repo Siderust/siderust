@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use qtty::*;
-use qtty::Simplify;
+use siderust::qtty::*;
 
 #[test]
 fn hour_angles_from_hms() {
@@ -66,15 +65,14 @@ fn quantity_arithmetic_and_simplify() {
 fn unitless_from_same_unit_division_and_display() {
     let a = Meters::new(84.0);
     let b = Meters::new(2.0);
-    let ratio: Quantity<Unitless> = (a / b).simplify();
-    assert!((ratio.value() - 42.0).abs() < 1e-12);
-    assert_eq!(format!("{}", ratio), "42");
+    let ratio: f64 = a / b;
+    assert!((ratio - 42.0).abs() < 1e-12);
+    assert_eq!(ratio, 42.0);
 }
 
 #[test]
 fn erase_unit_raw_and_display() {
     let meters = Meters::new(42.0);
-    let unitless: Quantity<Unitless> = meters.into();
-    assert_eq!(unitless.value(), 42.0);
-    assert_eq!(format!("{}", unitless), "42");
+    let raw: f64 = meters.erase_unit_raw();
+    assert_eq!(raw, 42.0);
 }

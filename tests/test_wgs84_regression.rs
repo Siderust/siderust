@@ -29,7 +29,7 @@
 //! All assertions use a 1 m tolerance, which is well within the accuracy of
 //! the WGS84 formula and far tighter than any pointing/observing need.
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::{Geocentric, Geodetic};
 use siderust::coordinates::frames::ECEF;

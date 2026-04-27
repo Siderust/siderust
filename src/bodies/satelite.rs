@@ -10,7 +10,7 @@
 //! - `orbit`: Orbital parameters (see [`KeplerianOrbit`]).
 
 use crate::astro::orbit::KeplerianOrbit;
-use qtty::{Kilograms, Kilometers};
+use crate::qtty::{Kilograms, Kilometers};
 
 use std::borrow::Cow;
 

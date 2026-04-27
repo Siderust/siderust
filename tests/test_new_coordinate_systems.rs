@@ -4,7 +4,7 @@
 //! Tests for the extended coordinate systems: FK4 B1950, TEME, Galactic,
 //! planetary body-fixed frames, and planetocentric centers.
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::coordinates::{
     cartesian,
     centers::*,
@@ -19,6 +19,7 @@ use siderust::time::JulianDate;
 
 const EPSILON: f64 = 1e-10;
 const LOOSE_EPS: f64 = 1e-6;
+const AU_EPS: AstronomicalUnits = AstronomicalUnits::new(EPSILON);
 
 // =============================================================================
 // Frame Rotation Tests: FK4 B1950
@@ -462,9 +463,9 @@ fn planetocentric_to_bary_antisymmetry() {
             let fwd = center_shift::<$center, Barycentric, EclipticMeanJ2000>(jd, &ctx);
             let bwd = center_shift::<Barycentric, $center, EclipticMeanJ2000>(jd, &ctx);
             assert!(
-                (fwd[0] + bwd[0]).abs() < EPSILON
-                    && (fwd[1] + bwd[1]).abs() < EPSILON
-                    && (fwd[2] + bwd[2]).abs() < EPSILON,
+                (fwd[0] + bwd[0]).abs() < AU_EPS
+                    && (fwd[1] + bwd[1]).abs() < AU_EPS
+                    && (fwd[2] + bwd[2]).abs() < AU_EPS,
                 "{} antisymmetry failed",
                 stringify!($center)
             );
@@ -490,9 +491,9 @@ fn selenocentric_to_bary_antisymmetry() {
     let fwd = center_shift::<Selenocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Selenocentric, EclipticMeanJ2000>(jd, &ctx);
 
-    assert!((fwd[0] + bwd[0]).abs() < EPSILON);
-    assert!((fwd[1] + bwd[1]).abs() < EPSILON);
-    assert!((fwd[2] + bwd[2]).abs() < EPSILON);
+    assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
+    assert!((fwd[1] + bwd[1]).abs() < AU_EPS);
+    assert!((fwd[2] + bwd[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -503,7 +504,7 @@ fn planetocentric_center_shifts_are_nonzero() {
     macro_rules! test_nonzero {
         ($center:ty) => {{
             let s = center_shift::<$center, Barycentric, EclipticMeanJ2000>(jd, &ctx);
-            let norm = (s[0] * s[0] + s[1] * s[1] + s[2] * s[2]).sqrt();
+            let norm = (s[0] * s[0] + s[1] * s[1] + s[2] * s[2]).scalar_sqrt();
             assert!(
                 norm > 0.01,
                 "{} center shift should be nonzero, got {}",
@@ -540,9 +541,9 @@ fn marscentric_helio_geo_composition() {
         mars_bary[2] + bary_geo[2],
     ];
 
-    assert!((mars_geo[0] - composed[0]).abs() < EPSILON);
-    assert!((mars_geo[1] - composed[1]).abs() < EPSILON);
-    assert!((mars_geo[2] - composed[2]).abs() < EPSILON);
+    assert!((mars_geo[0] - composed[0]).abs() < AU_EPS);
+    assert!((mars_geo[1] - composed[1]).abs() < AU_EPS);
+    assert!((mars_geo[2] - composed[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -563,19 +564,19 @@ fn selenocentric_geocentric_composition() {
     ];
 
     assert!(
-        (sel_bary[0] - composed[0]).abs() < EPSILON,
+        (sel_bary[0] - composed[0]).abs() < AU_EPS,
         "x: {} vs {}",
         sel_bary[0],
         composed[0]
     );
     assert!(
-        (sel_bary[1] - composed[1]).abs() < EPSILON,
+        (sel_bary[1] - composed[1]).abs() < AU_EPS,
         "y: {} vs {}",
         sel_bary[1],
         composed[1]
     );
     assert!(
-        (sel_bary[2] - composed[2]).abs() < EPSILON,
+        (sel_bary[2] - composed[2]).abs() < AU_EPS,
         "z: {} vs {}",
         sel_bary[2],
         composed[2]
@@ -588,7 +589,7 @@ fn selenocentric_geocentric_distance_is_reasonable() {
     let jd = JulianDate::J2000;
 
     let s = center_shift::<Geocentric, Selenocentric, EclipticMeanJ2000>(jd, &ctx);
-    let dist_au = (s[0] * s[0] + s[1] * s[1] + s[2] * s[2]).sqrt();
+    let dist_au = (s[0] * s[0] + s[1] * s[1] + s[2] * s[2]).scalar_sqrt();
 
     // Moon is ~0.00257 AU from Earth
     assert!(
@@ -604,7 +605,7 @@ fn jupiter_distance_is_reasonable() {
     let jd = JulianDate::J2000;
 
     let s = center_shift::<Heliocentric, Jovicentric, EclipticMeanJ2000>(jd, &ctx);
-    let dist_au = (s[0] * s[0] + s[1] * s[1] + s[2] * s[2]).sqrt();
+    let dist_au = (s[0] * s[0] + s[1] * s[1] + s[2] * s[2]).scalar_sqrt();
 
     // Jupiter is ~5.2 AU from the Sun
     assert!(

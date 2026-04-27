@@ -6,7 +6,7 @@
 //! This demonstrates every direct frame-rotation pair implemented in
 //! `providers.rs`, plus identity rotations for each frame.
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::Barycentric;
 use siderust::coordinates::frames::{

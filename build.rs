@@ -1,9 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-#[cfg(any(feature = "regen-data", feature = "de440"))]
+#[cfg(any(feature = "regen-data", feature = "de440", feature = "de441"))]
 use std::env;
-#[cfg(any(feature = "regen-data", feature = "de440"))]
+#[cfg(any(feature = "regen-data", feature = "de440", feature = "de441"))]
 use std::path::PathBuf;
 
 #[cfg(feature = "regen-data")]
@@ -22,11 +22,16 @@ mod iers_build;
 #[path = "scripts/jpl/de440/mod.rs"]
 mod de440_build;
 
+#[cfg(feature = "de441")]
+#[path = "scripts/jpl/de441/mod.rs"]
+mod de441_build;
+
 fn main() {
     println!("cargo:rerun-if-env-changed=SIDERUST_DATASETS_DIR");
     println!("cargo:rerun-if-env-changed=SIDERUST_REGEN");
     println!("cargo:rerun-if-env-changed=SIDERUST_JPL_STUB");
     println!("cargo:rustc-check-cfg=cfg(siderust_mock_de440)");
+    println!("cargo:rustc-check-cfg=cfg(siderust_mock_de441)");
 
     #[cfg(feature = "regen-data")]
     regen_tables();
@@ -39,13 +44,16 @@ fn main() {
 
     #[cfg(feature = "de440")]
     build_de440();
+
+    #[cfg(feature = "de441")]
+    build_de441();
 }
 
 // ── Shared helpers ────────────────────────────────────────────────────────────
 
 /// Returns the base directory for dataset storage.
 /// Prefers `SIDERUST_DATASETS_DIR`; falls back to `OUT_DIR`.
-#[cfg(any(feature = "regen-data", feature = "de440"))]
+#[cfg(any(feature = "regen-data", feature = "de440", feature = "de441"))]
 fn datasets_base_dir() -> PathBuf {
     let out_dir = PathBuf::from(env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"));
     env::var_os("SIDERUST_DATASETS_DIR")
@@ -119,6 +127,34 @@ fn build_de440() {
 /// Returns `true` when `SIDERUST_JPL_STUB` requests stubbing for DE440.
 #[cfg(feature = "de440")]
 fn jpl_stub_active() -> bool {
+    jpl_stub_active_for("de440")
+}
+
+// ── `de441` feature ───────────────────────────────────────────────────────────
+
+/// Builds DE441 coefficient data from the JPL BSP file.
+///
+/// When `SIDERUST_JPL_STUB=all` (or `de441`), emits `siderust_mock_de441` so
+/// the library falls back to `Vsop87Ephemeris` without downloading the BSP.
+#[cfg(feature = "de441")]
+fn build_de441() {
+    if jpl_stub_active_de441() {
+        println!("cargo:rustc-cfg=siderust_mock_de441");
+    }
+    let de441_dir = datasets_base_dir().join("de441_dataset");
+    eprintln!("Building DE441 data...");
+    de441_build::run(de441_dir.as_path()).unwrap_or_else(|e| panic!("DE441 codegen failed: {e}"));
+    eprintln!("DE441 data generation complete");
+}
+
+/// Returns `true` when `SIDERUST_JPL_STUB` requests stubbing for DE441.
+#[cfg(feature = "de441")]
+fn jpl_stub_active_de441() -> bool {
+    jpl_stub_active_for("de441")
+}
+
+#[cfg(any(feature = "de440", feature = "de441"))]
+fn jpl_stub_active_for(dataset: &str) -> bool {
     let Ok(raw) = env::var("SIDERUST_JPL_STUB") else {
         return false;
     };
@@ -132,5 +168,5 @@ fn jpl_stub_active() -> bool {
     lower
         .split(|c: char| c == ',' || c.is_whitespace())
         .filter(|s| !s.is_empty())
-        .any(|tok| tok == "de440")
+        .any(|tok| tok == dataset)
 }

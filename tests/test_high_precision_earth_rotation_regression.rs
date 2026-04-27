@@ -8,7 +8,7 @@
 //! - terrestrial->celestial chain: W(xp,yp,s') · R3(-ERA) · Q(X,Y,s)
 //!   with frame-bias to EquatorialMeanJ2000
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::astro::eop::NullEop;
 use siderust::calculus::horizontal::equatorial_to_horizontal_true_of_date_with_ctx;
 use siderust::coordinates::cartesian::position;
@@ -130,7 +130,7 @@ fn topocentric_site_vector_matches_erfa_chain_roque_2020() {
     let dx = topo_default.x() - topo_null.x();
     let dy = topo_default.y() - topo_null.y();
     let dz = topo_default.z() - topo_null.z();
-    let delta = (dx * dx + dy * dy + dz * dz).sqrt();
+    let delta = (dx * dx + dy * dy + dz * dz).scalar_sqrt();
     assert!(
         delta > 0.001,
         "default vs NullEop delta too small: {}",

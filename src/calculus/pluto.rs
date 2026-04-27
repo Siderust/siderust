@@ -33,7 +33,7 @@
 
 use crate::coordinates::{cartesian, centers::Heliocentric, frames::EclipticMeanJ2000, spherical};
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnit, Degrees, Radian, AU};
+use crate::qtty::{AstronomicalUnit, Degrees, Radian, AU};
 
 pub struct Pluto;
 
@@ -41,7 +41,7 @@ impl Pluto {
     pub fn get_heliocentric(
         jd: JulianDate,
     ) -> cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
-        let t = jd.julian_centuries().value();
+        let t = jd.julian_centuries();
 
         // 2. Calculate mean longitudes (in degrees) for Jupiter, Saturn, and Pluto.
         let jupiter_lon = Degrees::new(34.35 + 3034.9057 * t);
@@ -635,13 +635,13 @@ const RADIUS_TERMS: &[PlutoTerm] = &[
 mod tests {
     use crate::calculus::pluto::Pluto;
     use crate::time::JulianDate;
-    use qtty::AstronomicalUnits;
+    use crate::qtty::AstronomicalUnits;
 
     #[test]
     fn pluto_heliocentric_position_j2000() {
         let pos = Pluto::get_heliocentric(JulianDate::J2000);
-        assert!((pos.x() - AstronomicalUnits::new(-9.875333629852145)).abs() < 1e-6);
-        assert!((pos.y() - AstronomicalUnits::new(-27.958786187190157)).abs() < 1e-6);
-        assert!((pos.z() - AstronomicalUnits::new(5.850444258527083)).abs() < 1e-6);
+        assert!((pos.x() - AstronomicalUnits::new(-9.875333629852145)).abs().value() < 1e-6);
+        assert!((pos.y() - AstronomicalUnits::new(-27.958786187190157)).abs().value() < 1e-6);
+        assert!((pos.z() - AstronomicalUnits::new(5.850444258527083)).abs().value() < 1e-6);
     }
 }

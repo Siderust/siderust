@@ -39,7 +39,7 @@ use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris, Defau
 use crate::coordinates::transform::AstroContext;
 use crate::time::JulianDate;
 use cheby;
-use qtty::*;
+use crate::qtty::*;
 
 // =============================================================================
 // Constants
@@ -56,8 +56,8 @@ const SEGMENT_DAYS: Days = Days::new(4.0);
 
 /// J2000 mean obliquity ε₀ (IAU 2006): 84381.406″ converted to radians.
 /// Used for ecliptic → equatorial rotation (constant for J2000 frame).
-const J2000_OBLIQUITY_RAD: qtty::Quantity<Radian> =
-    qtty::Quantity::<Radian>::new(84381.406 / 3600.0 * std::f64::consts::PI / 180.0);
+const J2000_OBLIQUITY_RAD: crate::qtty::Quantity<Radian> =
+    crate::qtty::Quantity::<Radian>::new(84381.406 / 3600.0 * std::f64::consts::PI / 180.0);
 
 /// Nutation cache step in days (2 hours).
 const NUT_STEP_DAYS: Days = Hours::new(2.0).to_const::<Day>();
@@ -94,7 +94,7 @@ impl MoonPositionCache {
         let pad = Days::new(1.0); // 1-day padding on each side
         let t0 = mjd_start - pad;
         let span = mjd_end + pad - t0;
-        let num_segments = ((span / SEGMENT_DAYS).value().ceil() as usize).max(1);
+        let num_segments = ((span / SEGMENT_DAYS).ceil() as usize).max(1);
 
         let nodes: [f64; CHEB_NODES] = cheby::nodes();
         let mut cx = Vec::with_capacity(num_segments);
@@ -138,7 +138,7 @@ impl MoonPositionCache {
     #[inline]
     pub fn get_position_km(&self, mjd: ModifiedJulianDate) -> (Kilometers, Kilometers, Kilometers) {
         let offset = mjd - self.mjd_start;
-        let seg_idx = (offset / SEGMENT_DAYS).value() as usize;
+        let seg_idx = (offset / SEGMENT_DAYS) as usize;
 
         if seg_idx >= self.num_segments {
             // Fallback: outside cache range
@@ -150,7 +150,6 @@ impl MoonPositionCache {
         let seg_start = self.mjd_start + seg_idx as f64 * SEGMENT_DAYS;
         let seg_mid = seg_start + SEGMENT_DAYS * 0.5;
         let x = (mjd - seg_mid) / (SEGMENT_DAYS * 0.5);
-        let x = x.value(); // dimensionless
         let px = Kilometers::new(cheby::evaluate(&self.cx[seg_idx], x));
         let py = Kilometers::new(cheby::evaluate(&self.cy[seg_idx], x));
         let pz = Kilometers::new(cheby::evaluate(&self.cz[seg_idx], x));
@@ -180,7 +179,7 @@ impl NutationCache {
         let t0 = mjd_start - pad;
         let t1 = mjd_end + pad;
         let span = t1 - t0;
-        let num_entries = ((span / NUT_STEP_DAYS).value().ceil() as usize) + 1;
+        let num_entries = ((span / NUT_STEP_DAYS).ceil() as usize) + 1;
 
         let mut values = Vec::with_capacity(num_entries);
         for i in 0..num_entries {
@@ -200,7 +199,7 @@ impl NutationCache {
     #[inline]
     pub fn get_nutation_rad(&self, mjd: ModifiedJulianDate) -> (Radians, Radians, Radians) {
         let offset = mjd - self.mjd_start;
-        let frac = (offset / NUT_STEP_DAYS).value();
+        let frac = offset / NUT_STEP_DAYS;
         let idx = frac as usize;
 
         if idx + 1 >= self.num_entries {
@@ -254,9 +253,9 @@ pub struct MoonAltitudeContext {
     /// Observer ITRF position in km: [x, y, z].
     site_itrf_km: [Kilometers; 3],
     /// Observer geodetic latitude.
-    lat: qtty::Radians,
+    lat: crate::qtty::Radians,
     /// Observer geodetic longitude in radians (for LST computation).
-    lon_rad: qtty::Radians,
+    lon_rad: crate::qtty::Radians,
 }
 
 impl MoonAltitudeContext {
@@ -372,7 +371,7 @@ use crate::calculus::math_core::root_finding;
 use crate::time::{ModifiedJulianDate, Period, MJD};
 
 type Mjd = ModifiedJulianDate;
-type Days = qtty::Quantity<qtty::Day>;
+type Days = crate::qtty::Quantity<crate::qtty::Day>;
 
 /// Tiny epsilon for deduplication (same as intervals.rs).
 const DEDUPE_EPS: Days = Days::new(1e-8);
@@ -387,19 +386,19 @@ pub fn find_and_label_crossings<V, F>(
     period: Period<MJD>,
     step: Days,
     f: &F,
-    threshold: qtty::Quantity<V>,
+    threshold: crate::qtty::Quantity<V>,
 ) -> (Vec<LabeledCrossing>, bool)
 where
-    V: qtty::Unit,
-    F: Fn(ModifiedJulianDate) -> qtty::Quantity<V>,
+    V: crate::qtty::Unit,
+    F: Fn(ModifiedJulianDate) -> crate::qtty::Quantity<V>,
 {
-    let g = |t: Mjd| -> qtty::Quantity<V> { f(t) - threshold };
+    let g = |t: Mjd| -> crate::qtty::Quantity<V> { f(t) - threshold };
 
     let t_start = period.start;
     let t_end = period.end;
 
     let start_val = g(t_start);
-    let start_above = start_val > 0.0;
+    let start_above = start_val > crate::qtty::Quantity::<V>::new(0.0);
 
     let mut labeled = Vec::new();
     let mut t = t_start;
@@ -415,7 +414,7 @@ where
             {
                 if root >= t_start && root <= t_end {
                     // Direction from sign change: prev < 0 → next > 0 means entering (+1)
-                    let direction = if prev < 0.0 { 1 } else { -1 };
+                    let direction = if prev < crate::qtty::Quantity::<V>::new(0.0) { 1 } else { -1 };
                     labeled.push(LabeledCrossing { t: root, direction });
                 }
             }
@@ -448,7 +447,7 @@ mod tests {
     use crate::calculus::lunar::moon_altitude_rad;
     use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
     use crate::time::JulianDate;
-    use qtty::Radians;
+    use crate::qtty::Radians;
 
     #[test]
     fn chebyshev_position_accuracy() {

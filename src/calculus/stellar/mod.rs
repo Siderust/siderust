@@ -19,7 +19,7 @@
 //!
 //! ```ignore
 //! use siderust::calculus::stellar::*;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let ra  = Degrees::new(101.287);   // Sirius RA  (J2000)
 //! let dec = Degrees::new(-16.716);   // Sirius Dec (J2000)

@@ -6,7 +6,7 @@
 //! Core types for altitude computation, crossings, and culminations.
 
 use crate::time::{ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 // ---------------------------------------------------------------------------
 // Crossing Types

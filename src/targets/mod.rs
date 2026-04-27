@@ -43,7 +43,7 @@
 //!
 //! ## Examples
 //! ```rust
-//! use qtty::*;
+//! use siderust::qtty::*;
 //! use siderust::targets::CoordinateWithPM;
 //! use siderust::time::ModifiedJulianDate;
 //! use siderust::coordinates::frames::EquatorialMeanJ2000;
@@ -51,8 +51,8 @@
 //! use siderust::astro::proper_motion::ProperMotion;
 //!
 //! // A star with known proper motion
-//! type MasPerYear = qtty::Per<qtty::MilliArcsecond, qtty::Year>;
-//! type MasPerYearQ = qtty::Quantity<MasPerYear>;
+//! type MasPerYear = siderust::qtty::Per<siderust::qtty::MilliArcsecond, siderust::qtty::Year>;
+//! type MasPerYearQ = siderust::qtty::Quantity<MasPerYear>;
 //! let betelgeuse_pm = ProperMotion::from_mu_alpha_star::<MasPerYear>(
 //!     MasPerYearQ::new(27.54),
 //!     MasPerYearQ::new(10.86),

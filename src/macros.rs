@@ -4,7 +4,7 @@
 // src/macros.rs
 use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
 use core::f64;
-use qtty::{LengthUnit, Quantity};
+use crate::qtty::{Degrees, LengthUnit, Quantity};
 
 #[doc(hidden)]
 pub(crate) fn __assert_cartesian_eq<C, F, U>(
@@ -52,7 +52,10 @@ pub(crate) fn __assert_spherical_eq<C, F, U>(
     let d2 = b.distance;
     let dp = (a.polar - b.polar).abs();
     let da = (a.azimuth - b.azimuth).abs();
-    if (d1 - d2).abs() >= Quantity::<U>::new(epsilon) || dp >= epsilon || da >= epsilon {
+    if (d1 - d2).abs() >= Quantity::<U>::new(epsilon)
+        || dp >= Degrees::new(epsilon)
+        || da >= Degrees::new(epsilon)
+    {
         if let Some(m) = msg {
             panic!(
                 "{}. Spherical coords differ: {} vs {} (ε = {})",
@@ -110,7 +113,7 @@ pub(crate) use assert_spherical_eq;
 #[cfg(test)]
 mod tests {
     use crate::coordinates::{cartesian, spherical};
-    use qtty::{AstronomicalUnit, Degrees, AU};
+    use crate::qtty::{AstronomicalUnit, Degrees, AU};
 
     #[test]
     #[should_panic(expected = "Cartesian coords differ")]

@@ -14,7 +14,7 @@ use crate::coordinates::{
     frames::EclipticMeanJ2000,
 };
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnit, Kilometer};
+use crate::qtty::{AstronomicalUnit, Kilometer};
 
 /// VSOP87 / ELP2000-82B ephemeris backend (always available).
 ///

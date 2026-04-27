@@ -13,7 +13,7 @@ use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::time::{JulianDate, Period, MJD};
-use qtty::{AstronomicalUnits, Kilometer, LengthUnit, Meter, Quantity};
+use crate::qtty::{AstronomicalUnits, Kilometer, LengthUnit, Meter, Quantity};
 
 impl Moon {
     /// Returns the **apparent topocentric equatorial coordinates** of the Moon
@@ -97,7 +97,7 @@ impl Moon {
     /// use siderust::coordinates::centers::Geodetic;
     /// use siderust::coordinates::frames::ECEF;
     /// use siderust::time::{JulianDate, ModifiedJulianDate};
-    /// use qtty::*;
+    /// use siderust::qtty::*;
     ///
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     ///
@@ -158,7 +158,7 @@ impl Moon {
     /// use siderust::coordinates::centers::Geodetic;
     /// use siderust::coordinates::frames::ECEF;
     /// use siderust::time::JulianDate;
-    /// use qtty::*;
+    /// use siderust::qtty::*;
     ///
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M);
     /// let geom = Moon::phase_topocentric(JulianDate::J2000, site);
@@ -182,7 +182,7 @@ impl Moon {
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::calculus::lunar::phase::PhaseSearchOpts;
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
-    /// use qtty::Days;
+    /// use siderust::qtty::Days;
     ///
     /// let start  = ModifiedJulianDate::from(JulianDate::J2000);
     /// let window = Period::new(start, start + Days::new(35.0));
@@ -221,7 +221,7 @@ impl Moon {
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::calculus::lunar::phase::PhaseSearchOpts;
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
-    /// use qtty::Days;
+    /// use siderust::qtty::Days;
     ///
     /// let start  = ModifiedJulianDate::from(JulianDate::J2000);
     /// let window = Period::new(start, start + Days::new(30.0));
@@ -244,7 +244,7 @@ mod tests {
     use crate::coordinates::centers::Geodetic;
     use crate::coordinates::frames::ECEF;
     use crate::time::{JulianDate, ModifiedJulianDate};
-    use qtty::*;
+    use crate::qtty::*;
 
     fn greenwich() -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M)

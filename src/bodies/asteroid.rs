@@ -23,7 +23,7 @@
 
 use crate::astro::orbit::KeplerianOrbit;
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnits, Degrees};
+use crate::qtty::{AstronomicalUnits, Degrees};
 
 /// Taxonomic class of a small Solar‑System body.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]

@@ -10,8 +10,8 @@ use crate::coordinates::{
     frames::EclipticMeanJ2000,
 };
 use crate::time::JulianDate;
-use qtty::*;
-type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
+use crate::qtty::*;
+type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
@@ -50,9 +50,9 @@ macro_rules! impl_vsop87a {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
-                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
-                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz)
+                    crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                    crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                    crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz)
                 )
             }
 
@@ -71,9 +71,9 @@ macro_rules! impl_vsop87a {
                         AstronomicalUnits::new(z),
                     ),
                     Velocity::new(
-                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
-                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
-                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz))
+                        crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                        crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                        crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz))
                 )
             }
         }
@@ -149,7 +149,7 @@ mod tests {
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
     use crate::time::JulianDate;
-    use qtty::AU;
+    use crate::qtty::AU;
 
     const PRECISION: f64 = 1e-6;
 
@@ -251,22 +251,22 @@ mod tests {
             assert_cartesian_eq!(pos, pos2, PRECISION);
             assert!(
                 (vel.x() - vel2.x()).abs()
-                    < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)
+                    < crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)
             );
             assert!(
                 (vel.y() - vel2.y()).abs()
-                    < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)
+                    < crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)
             );
             assert!(
                 (vel.z() - vel2.z()).abs()
-                    < qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)
+                    < crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(PRECISION)
             );
         }};
     }
 
     #[test]
     fn test_vsop87a_velocity_and_combined() {
-        use qtty::*;
+        use crate::qtty::*;
         test_vel_and_pos_vel!(Mercury);
         test_vel_and_pos_vel!(Venus);
         test_vel_and_pos_vel!(Earth);

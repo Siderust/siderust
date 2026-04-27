@@ -68,7 +68,7 @@
 //! ```rust
 //! use siderust::astro::orbit::KeplerianOrbit;
 //! use siderust::time::JulianDate;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let earth_orbit = KeplerianOrbit::new(
 //!     1.0*AU,                    // a
@@ -91,7 +91,7 @@ use affn::conic::{
     TypedSemiMajorAxisParam,
 };
 use affn::frames::EclipticMeanJ2000;
-use qtty::*;
+use crate::qtty::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -303,7 +303,7 @@ impl OrientationTrig {
 /// ```rust
 /// use siderust::astro::orbit::{KeplerianOrbit, PreparedOrbit};
 /// use siderust::time::JulianDate;
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let orbit = KeplerianOrbit::new(
 ///     1.0 * AU, 0.0167,

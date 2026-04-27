@@ -28,14 +28,14 @@
 //! use siderust::coordinates::centers::Geodetic;
 //! use siderust::coordinates::frames::ECEF;
 //! use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-//! use qtty::Meter;
+//! use siderust::qtty::Meter;
 //!
 //! let ecef = ROQUE_DE_LOS_MUCHACHOS.to_cartesian::<Meter>();
 //! ```
 
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use qtty::{Degrees, Meters};
+use crate::qtty::{Degrees, Meters};
 
 /// Roque de los Muchachos Observatory (La Palma, Canary Islands, Spain)
 /// - Longitude: −17.8925°

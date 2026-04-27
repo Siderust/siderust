@@ -36,7 +36,7 @@
 //! use siderust::coordinates::cartesian::{line_of_sight, Position};
 //! use siderust::coordinates::centers::Geocentric;
 //! use siderust::coordinates::frames::EquatorialMeanJ2000;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let observer =
 //!     Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
@@ -51,7 +51,7 @@
 //! ```rust
 //! use siderust::coordinates::{cartesian::Position, frames::*, centers::*};
 //! use siderust::coordinates::transform::{Transform, TransformFrame};
-//! use qtty::AstronomicalUnit;
+//! use siderust::qtty::AstronomicalUnit;
 //! use siderust::time::JulianDate;
 //!
 //! let cart_eq = Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 2.0, 3.0);
@@ -101,7 +101,7 @@ use crate::coordinates::{
 };
 use crate::time::JulianDate;
 use affn::Rotation3;
-use qtty::LengthUnit;
+use crate::qtty::LengthUnit;
 
 /// Trait for transforming coordinates between different centers and/or frames.
 ///

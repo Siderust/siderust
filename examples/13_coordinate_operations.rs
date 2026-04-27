@@ -12,7 +12,7 @@
 
 use std::f64::consts::PI;
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::coordinates::spherical;
 
 fn main() {

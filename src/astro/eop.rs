@@ -35,7 +35,7 @@
 //! * IERS Technical Note 36
 
 use crate::time::JulianDate;
-use qtty::*;
+use crate::qtty::*;
 
 use crate::astro::iers_data;
 

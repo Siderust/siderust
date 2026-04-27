@@ -6,7 +6,7 @@
 //! Configuration for altitude search algorithms including tolerances,
 //! scan steps, and target-specific defaults.
 
-use qtty::*;
+use crate::qtty::*;
 
 // ---------------------------------------------------------------------------
 // Search Options

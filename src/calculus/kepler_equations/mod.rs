@@ -48,7 +48,7 @@
 //!
 //! ```rust
 //! use siderust::calculus::kepler_equations::solve_keplers_equation;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let m = 1.047 * RAD; // mean anomaly
 //! let e = 0.0167;             // eccentricity
@@ -91,7 +91,7 @@ use crate::calculus::conic_equations::{
 };
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::time::JulianDate;
-use qtty::*;
+use crate::qtty::*;
 use std::f64::consts::PI;
 
 const TOLERANCE: Radians = Radians::new(1e-15);
@@ -224,7 +224,7 @@ pub fn calculate_orbit_position(
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
     // 1) Mean motion (n).
     let period = orbital_period_days(elements.shape().semi_major_axis());
-    type RadiansPerDay = qtty::frequency::Frequency<Radian, Day>;
+    type RadiansPerDay = crate::qtty::angular_rate::AngularRate<Radian, Day>;
     let n: RadiansPerDay = Radians::TAU / period;
 
     // 2) Days since epoch
@@ -301,7 +301,7 @@ mod tests {
     use super::*;
     use crate::macros::assert_cartesian_eq;
     use crate::time::JulianDate;
-    use qtty::{Days, Degrees};
+    use crate::qtty::{Days, Degrees};
 
     /// Helper function to compare two floating-point numbers with a tolerance.
     fn approx_eq(a: f64, y: f64, tol: f64) -> bool {
@@ -517,8 +517,8 @@ mod tests {
         let computed_e = solve_keplers_equation(m, e);
         // Should still converge and give a reasonable result
         assert!(computed_e.is_finite());
-        assert!(computed_e >= 0.0);
-        assert!(computed_e <= 2.0 * PI);
+        assert!(computed_e >= Radians::new(0.0));
+        assert!(computed_e <= Radians::new(2.0 * PI));
     }
 
     #[test]
@@ -531,12 +531,12 @@ mod tests {
 
             // Check that result is finite and in reasonable range
             assert!(computed_e.is_finite());
-            assert!(computed_e >= 0.0);
-            assert!(computed_e <= 2.0 * PI);
+            assert!(computed_e >= Radians::new(0.0));
+            assert!(computed_e <= Radians::new(2.0 * PI));
 
             // Check that it satisfies Kepler's equation approximately
             let residual = kepler_equation_residual(computed_e, e, m);
-            assert!(residual.abs() < 1e-10);
+            assert!(residual.abs() < Radians::new(1e-10));
         }
     }
 
@@ -598,7 +598,7 @@ mod tests {
 
             // Distance should be positive
             let distance = coord.distance();
-            assert!(distance > 0.0);
+            assert!(distance.value() > 0.0);
         }
     }
 
@@ -639,12 +639,12 @@ mod tests {
 
         // With high inclination, z component should be significant
         // For 89° inclination, z should be close to the radial distance
-        assert!(coord.z().abs() > 0.01);
+        assert!(coord.z().abs().value() > 0.01);
 
         // Distance should still be reasonable
         let distance = coord.distance();
-        assert!(distance > 0.0);
-        assert!(distance < 2.0); // Should be less than 2 AU for this orbit
+        assert!(distance.value() > 0.0);
+        assert!(distance.value() < 2.0); // Should be less than 2 AU for this orbit
     }
 
     #[test]

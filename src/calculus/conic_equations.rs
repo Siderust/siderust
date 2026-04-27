@@ -17,7 +17,7 @@ use crate::astro::orbit::OrientationTrig;
 use crate::calculus::kepler_equations::solve_keplers_equation;
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::time::JulianDate;
-use qtty::*;
+use crate::qtty::*;
 
 /// Gaussian gravitational constant `k` in AU^{3/2} d^{-1}.
 ///

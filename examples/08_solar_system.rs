@@ -5,7 +5,7 @@
 //!
 //! Run with: `cargo run --example 12_solar_system_example`
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::planets::{OrbitExt, Planet};
 use siderust::bodies::solar_system::*;

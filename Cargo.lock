@@ -4,17 +4,21 @@ version = 4
 
 [[package]]
 name = "affn"
-version = "0.6.0"
+version = "0.6.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "381a7e024c56cbd97e2a39b6fe6aa6dccc1750e5ef31f795744b524cc9501e90"
 dependencies = [
  "affn-derive",
  "nalgebra",
- "qtty 0.5.0",
+ "qtty",
  "serde",
 ]
 
 [[package]]
 name = "affn-derive"
-version = "0.1.3"
+version = "0.1.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "82753e9be968f42991300bcee91930171a1f2a7a2d0f074a6f32b2fb19241df6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -250,10 +254,8 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 [[package]]
 name = "cheby"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3af87a2f4182a67a08e5618b52859ef58cca770526061f0f43eaa754f12ecd30"
 dependencies = [
- "qtty 0.3.1",
+ "qtty",
 ]
 
 [[package]]
@@ -1419,89 +1421,31 @@ dependencies = [
 
 [[package]]
 name = "qtty"
-version = "0.3.1"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b42948ee9aba0ed2217fd0d89a666df2ab020e3e25ef9b0328150e6d6c0aaee3"
+checksum = "adc4e4fbd7aabae80c30ca07bd9583dc3bc3f6bcf8b123ff538386715aeee293"
 dependencies = [
- "qtty-core 0.3.1",
- "qtty-derive 0.3.1",
-]
-
-[[package]]
-name = "qtty"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9dc60ed0161fc68ec0b0faf090e4feec70dd179447c6ca14e5cc052b4eb2a789"
-dependencies = [
- "qtty-core 0.4.1",
- "qtty-derive 0.4.1",
-]
-
-[[package]]
-name = "qtty"
-version = "0.5.0"
-dependencies = [
- "qtty-core 0.5.0",
- "qtty-derive 0.5.0",
+ "qtty-core",
+ "qtty-derive",
 ]
 
 [[package]]
 name = "qtty-core"
-version = "0.3.1"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "283c549662e44f8a2848964e9639f2924f7a442f94294d508fc70c531a9717b3"
+checksum = "e524035941ae68ff8524dfc41d395fe721cd3c0e7eaa16a756284d59a64ddd53"
 dependencies = [
  "libm",
- "qtty-derive 0.3.1",
- "typenum",
-]
-
-[[package]]
-name = "qtty-core"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ab488371c17ea2db038caa2a3d0044a85a433c4c2172467978d05ee39d22b6fb"
-dependencies = [
- "libm",
- "qtty-derive 0.4.1",
- "typenum",
-]
-
-[[package]]
-name = "qtty-core"
-version = "0.5.0"
-dependencies = [
- "libm",
- "qtty-derive 0.5.0",
+ "qtty-derive",
  "serde",
  "typenum",
 ]
 
 [[package]]
 name = "qtty-derive"
-version = "0.3.1"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5edb55d59461af47a984baae7fafc2374dac2a79d41434a77ee7807f0f592757"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "qtty-derive"
-version = "0.4.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3ab6c550316cbdd43e4eca2c94c14c1cf4e67b253278a94ccc4a5eca2ce5db6e"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
-]
-
-[[package]]
-name = "qtty-derive"
-version = "0.5.0"
+checksum = "75757ec156050a0343f72034061a8cfd7a4a7c49254ba55feef0c4951bceb842"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1510,15 +1454,14 @@ dependencies = [
 
 [[package]]
 name = "qtty-ffi"
-version = "0.4.1"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ee8ce830af38e0287f1cf409b6cd713db88f647c5472fc66df00be7cfa53b14"
+checksum = "e768485c5909c5d0e34071829a2e4e1cd9e963765da3244284fc0e44f55357db"
 dependencies = [
  "cbindgen",
- "qtty 0.4.1",
+ "qtty",
  "quote",
  "serde",
- "serde_json",
  "syn",
 ]
 
@@ -2014,7 +1957,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 
 [[package]]
 name = "siderust"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "affn",
  "anyhow",
@@ -2024,7 +1967,7 @@ dependencies = [
  "criterion",
  "nalgebra",
  "paste",
- "qtty 0.5.0",
+ "qtty",
  "regex",
  "reqwest",
  "rstest",
@@ -2034,16 +1977,16 @@ dependencies = [
  "tempoch",
  "ureq",
  "walkdir",
- "wide 1.2.0",
+ "wide 1.3.0",
 ]
 
 [[package]]
 name = "siderust-ffi"
-version = "0.4.0"
+version = "0.4.1"
 dependencies = [
  "affn",
  "cbindgen",
- "qtty 0.5.0",
+ "qtty",
  "siderust",
  "tempoch",
  "tempoch-ffi",
@@ -2148,39 +2091,44 @@ dependencies = [
 
 [[package]]
 name = "tempoch"
-version = "0.4.1"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "493caf391691f45c2f2de15dce032e5180009066059a1673bda3a853155c084a"
 dependencies = [
  "tempoch-core",
 ]
 
 [[package]]
 name = "tempoch-core"
-version = "0.4.1"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "32e8c71221c8d1a82dfc529216006506c0a45afa7e6e0e24b93c1ee6e60ffc4e"
 dependencies = [
  "affn",
  "chrono",
- "qtty 0.5.0",
+ "qtty",
  "serde",
  "tempoch-time-data",
 ]
 
 [[package]]
 name = "tempoch-ffi"
-version = "0.2.0"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7a71a06a4b4ec613a77871a1ed81fcf5aa6b17f4409018e4b5f516dd7b066e1b"
+checksum = "bfaa5a83d78b097937f737cfb0fa0097a04cdf9cbeb661fc62db61cb3059c84b"
 dependencies = [
  "cbindgen",
  "chrono",
- "qtty 0.4.1",
+ "qtty",
  "qtty-ffi",
- "serde_json",
  "tempoch",
 ]
 
 [[package]]
 name = "tempoch-time-data"
 version = "0.1.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "672165c5b96abb03126dc4a30fa6df2e357d82de2b74e6a92f202a481e22b91d"
 dependencies = [
  "chrono",
 ]
@@ -2670,9 +2618,9 @@ dependencies = [
 
 [[package]]
 name = "wide"
-version = "1.2.0"
+version = "1.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "198f6abc41fab83526d10880fa5c17e2b4ee44e763949b4bb34e2fd1e8ca48e4"
+checksum = "c9479f84a757f819cfab37295955906479181395de83add28f74975fde083141"
 dependencies = [
  "bytemuck",
  "safe_arch 1.0.0",
@@ -3201,11 +3149,3 @@ name = "zmij"
 version = "1.0.21"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b8848ee67ecc8aedbaf3e4122217aff892639231befc6a1b58d29fff4c2cabaa"
-
-[[patch.unused]]
-name = "qtty-ffi"
-version = "0.5.0"
-
-[[patch.unused]]
-name = "tempoch-ffi"
-version = "0.4.1"

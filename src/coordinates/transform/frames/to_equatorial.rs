@@ -4,7 +4,7 @@
 use super::bias;
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
-use qtty::LengthUnit;
+use crate::qtty::LengthUnit;
 
 /// Rotate an ecliptic‐J2000 Cartesian vector into the mean equatorial‐J2000 frame.
 impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::EquatorialMeanJ2000, U>>
@@ -40,7 +40,7 @@ mod tests {
     use crate::coordinates::{centers, frames, spherical::Position};
     use crate::macros::assert_spherical_eq;
     use crate::time::JulianDate;
-    use qtty::{AstronomicalUnit, Degrees};
+    use crate::qtty::{AstronomicalUnit, Degrees};
 
     const EPS: f64 = 1.0e-12;
 

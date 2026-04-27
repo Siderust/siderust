@@ -55,8 +55,8 @@ use crate::astro::{HasIauRotation, IauRotationParams};
 use crate::coordinates::spherical::position::{EclipticMeanJ2000, EquatorialMeanJ2000};
 use crate::targets::CoordinateWithPM;
 use crate::time::JulianDate;
-use qtty::length::nominal::RSUN;
-use qtty::*;
+use crate::qtty::length::nominal::RSUN;
+use crate::qtty::*;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -775,7 +775,7 @@ mod tests {
         let p = &MARS_ROTATION;
         let alpha = p.alpha0(JulianDate::J2000 + JulianDate::JULIAN_CENTURY);
         assert!((alpha.value() - (317.269 - 0.10927)).abs() < 1e-10);
-        let w = p.w(JulianDate::J2000 + qtty::Days::new(1.0));
+        let w = p.w(JulianDate::J2000 + crate::qtty::Days::new(1.0));
         assert!((w.value() - (176.049 + 350.891982443)).abs() < 1e-8);
     }
 

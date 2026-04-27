@@ -52,14 +52,17 @@
 //!
 //! For a runnable tour of the library, see the `examples/` directory.
 
+pub(crate) use ::qtty as ext_qtty;
+
 pub mod astro;
 pub mod bodies;
 pub mod calculus;
 pub mod coordinates;
 pub mod data;
 pub mod observatories;
+pub mod qtty;
 pub mod targets;
-pub use tempoch as time;
+pub mod time;
 
 pub(crate) mod macros;
 

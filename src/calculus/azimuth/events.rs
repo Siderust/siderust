@@ -34,7 +34,7 @@ use crate::calculus::math_core::{extrema, intervals};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -145,7 +145,7 @@ fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
 /// use siderust::time::{ModifiedJulianDate, MJD, Period};
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 /// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
@@ -436,9 +436,9 @@ mod tests {
         let total: f64 = inside
             .iter()
             .chain(outside.iter())
-            .map(|p| p.duration_days().value())
+            .map(|p| ((p).end - (p).start).value())
             .sum();
-        let window_duration = window.duration_days().value();
+        let window_duration = ((window).end - (window).start).value();
         assert!(
             (total - window_duration).abs() < 1e-6,
             "inside + outside durations must equal the window"

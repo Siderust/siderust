@@ -15,7 +15,7 @@
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
 
 use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period, MJD};
-use qtty::{Day, Quantity, Unit};
+use crate::qtty::{Day, Quantity, Unit};
 
 use super::root_finding;
 
@@ -121,11 +121,11 @@ where
         let fb = g(b);
 
         const ROOT_EPS: f64 = 1e-12;
-        if fa.abs() < ROOT_EPS {
+        if fa.abs() < Quantity::<V>::new(ROOT_EPS) {
             crossings.push(a);
             continue;
         }
-        if fb.abs() < ROOT_EPS {
+        if fb.abs() < Quantity::<V>::new(ROOT_EPS) {
             crossings.push(b);
             continue;
         }
@@ -355,7 +355,7 @@ pub fn intersect(a: &[Period<MJD>], b: &[Period<MJD>]) -> Vec<Period<MJD>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::Radian;
+    use crate::qtty::Radian;
 
     type Radians = Quantity<Radian>;
 
@@ -383,7 +383,7 @@ mod tests {
         // Total above duration should be roughly 0.5
         let total = periods
             .iter()
-            .fold(Days::new(0.0), |sum, p| sum + p.duration_days());
+            .fold(Days::new(0.0), |sum, p| sum + ((p).end - (p).start));
         assert!(
             (total - Days::new(0.5)).abs() < Days::new(0.05),
             "total = {total}"
@@ -430,7 +430,7 @@ mod tests {
 
         let total = periods
             .iter()
-            .fold(Days::new(0.0), |sum, p| sum + p.duration_days());
+            .fold(Days::new(0.0), |sum, p| sum + ((p).end - (p).start));
         // Analytically, sin(x) ∈ (-0.5, 0.5) for 1/3 of each full cycle ≈ 0.333
         assert!(
             total > Days::new(0.25) && total < Days::new(0.45),
@@ -453,7 +453,7 @@ mod tests {
     fn complement_empty_input() {
         let gaps = complement(period(0.0, 10.0), &[]);
         assert_eq!(gaps.len(), 1);
-        assert!((gaps[0].duration_days() - Days::new(10.0)).abs() < Days::new(1e-10));
+        assert!((((gaps[0]).end - (gaps[0]).start) - Days::new(10.0)).abs() < Days::new(1e-10));
     }
 
     #[test]

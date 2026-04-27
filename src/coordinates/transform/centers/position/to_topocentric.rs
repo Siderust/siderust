@@ -11,7 +11,7 @@ use crate::coordinates::frames::{EquatorialMeanJ2000, MutableFrame, ECEF};
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::{AstroContext, TransformContext};
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
+use crate::qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
 
 // =============================================================================
 // Internal helper
@@ -161,7 +161,7 @@ mod tests {
     use super::*;
     use crate::coordinates::cartesian::position;
     use crate::coordinates::transform::TransformCenter;
-    use qtty::*;
+    use crate::qtty::*;
 
     #[test]
     fn test_observer_site_geocentric_position() {
@@ -173,7 +173,7 @@ mod tests {
             "x={}",
             pos.x()
         );
-        assert!(pos.y().abs() < 10.0, "y={}", pos.y());
+        assert!(pos.y().abs().value() < 10.0, "y={}", pos.y());
         assert!(
             (pos.z() - Kilometers::new(4970.0)).abs() < Kilometers::new(100.0),
             "z={}",
@@ -201,7 +201,7 @@ mod tests {
 
         let diff = (moon_geo.x() - moon_topo.x()).abs();
         assert!(
-            diff > 1000.0 && diff < 10000.0,
+            diff.value() > 1000.0 && diff.value() < 10000.0,
             "Parallax shift = {} km, expected ~6371 km",
             diff
         );
@@ -221,19 +221,19 @@ mod tests {
             topo.to_center(jd);
 
         assert!(
-            (geo.x() - geo_recovered.x()).abs() < 1e-6,
+            (geo.x() - geo_recovered.x()).abs().value() < 1e-6,
             "x: {} vs {}",
             geo.x(),
             geo_recovered.x()
         );
         assert!(
-            (geo.y() - geo_recovered.y()).abs() < 1e-6,
+            (geo.y() - geo_recovered.y()).abs().value() < 1e-6,
             "y: {} vs {}",
             geo.y(),
             geo_recovered.y()
         );
         assert!(
-            (geo.z() - geo_recovered.z()).abs() < 1e-6,
+            (geo.z() - geo_recovered.z()).abs().value() < 1e-6,
             "z: {} vs {}",
             geo.z(),
             geo_recovered.z()

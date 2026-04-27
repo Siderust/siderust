@@ -4,7 +4,7 @@
 //! Shared JPL DE4xx implementation.
 //!
 //! This module provides the common infrastructure shared by all JPL DE4xx
-//! ephemeris backends (DE440):
+//! ephemeris backends (DE440/DE441):
 //!
 //! - [`eval`], Chebyshev polynomial evaluation and [`SegmentDescriptor`](eval::SegmentDescriptor).
 //! - [`bodies`], Generic body-chain resolution (Sun, Earth, Moon positions/velocities).
@@ -16,6 +16,8 @@ pub mod eval;
 
 #[cfg(feature = "de440")]
 pub mod de440;
+#[cfg(feature = "de441")]
+pub mod de441;
 
 use eval::SegmentDescriptor;
 
@@ -26,7 +28,7 @@ use crate::coordinates::{
     frames::EclipticMeanJ2000,
 };
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnit, Kilometer};
+use crate::qtty::{AstronomicalUnit, Kilometer};
 
 use core::marker::PhantomData;
 

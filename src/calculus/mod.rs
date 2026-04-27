@@ -59,7 +59,7 @@
 //!
 //! ```rust
 //! use siderust::calculus::kepler_equations::solve_keplers_equation;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let m = 1.0 * RAD;
 //! let e = 0.0167;

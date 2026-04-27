@@ -48,7 +48,7 @@
 use crate::astro::precession;
 use crate::time::JulianDate;
 use affn::Rotation3;
-use qtty::*;
+use crate::qtty::*;
 
 /// CIP (X, Y) coordinates and CIO locator s.
 #[derive(Debug, Clone, Copy)]
@@ -105,7 +105,7 @@ pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (f64, f64) {
 /// * Capitaine, Wallace & Chapront (2003)
 /// * SOFA routine `iauS06`
 pub fn cio_locator_s(jd: JulianDate, x: f64, y: f64) -> Radians {
-    let t = jd.julian_centuries().value();
+    let t = jd.julian_centuries();
 
     // Polynomial part (μas), from IERS Conventions (2010) eq. 5.15
     let poly_uas = 94.0 + 3808.65 * t - 122.68 * t.powi(2) - 72574.11 * t.powi(3);

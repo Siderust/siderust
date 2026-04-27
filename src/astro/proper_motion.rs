@@ -23,14 +23,14 @@
 
 use crate::coordinates::spherical::position;
 use crate::time::JulianDate;
-use qtty::*;
+use crate::qtty::*;
 use std::fmt;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
-type DegreePerYear = qtty::Per<Degree, Year>;
-type DegreesPerYear = qtty::frequency::Frequency<Degree, Year>;
+type DegreePerYear = crate::qtty::Per<Degree, Year>;
+type DegreesPerYear = crate::qtty::angular_rate::AngularRate<Degree, Year>;
 
 const COS_DEC_EPSILON: f64 = 1.0e-12;
 
@@ -123,7 +123,7 @@ impl ProperMotion {
     /// Construct proper motion from true RA angular rate `µα`.
     pub fn from_mu_alpha<T>(pm_ra: Quantity<T>, pm_dec: Quantity<T>) -> Self
     where
-        T: FrequencyUnit,
+        T: AngularRateUnit,
     {
         Self {
             pm_ra: pm_ra.to::<DegreePerYear>(),
@@ -135,7 +135,7 @@ impl ProperMotion {
     /// Construct proper motion from catalog rate `µα⋆ = µα cos(δ)`.
     pub fn from_mu_alpha_star<T>(pm_ra_cosdec: Quantity<T>, pm_dec: Quantity<T>) -> Self
     where
-        T: FrequencyUnit,
+        T: AngularRateUnit,
     {
         Self {
             pm_ra: pm_ra_cosdec.to::<DegreePerYear>(),
@@ -205,9 +205,9 @@ mod tests {
         centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position,
     };
     use crate::time::JulianDate;
-    use qtty::{AstronomicalUnit, Degrees};
+    use crate::qtty::{AstronomicalUnit, Degrees};
 
-    type DegreesPerYear = qtty::Quantity<qtty::Per<Degree, Year>>;
+    type DegreesPerYear = crate::qtty::Quantity<crate::qtty::Per<Degree, Year>>;
 
     #[test]
     fn test_proper_motion_linear_shift_mu_alpha() {
@@ -237,13 +237,13 @@ mod tests {
         let dec_err = (shifted.dec() - expected_dec).abs();
 
         assert!(
-            ra_err < 1e-6,
+            ra_err < Degrees::new(1e-6),
             "RA shifted incorrectly: got {}, expected {}",
             shifted.ra(),
             expected_ra
         );
         assert!(
-            dec_err < 1e-6,
+            dec_err < Degrees::new(1e-6),
             "DEC shifted incorrectly: got {}, expected {}",
             shifted.dec(),
             expected_dec
@@ -270,7 +270,7 @@ mod tests {
         let ra_err = (shifted.ra() - expected_ra).abs();
 
         assert!(
-            ra_err < 1e-6,
+            ra_err < Degrees::new(1e-6),
             "RA shifted incorrectly for µα⋆: got {}, expected {}",
             shifted.ra(),
             expected_ra

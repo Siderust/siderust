@@ -20,7 +20,7 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
-use qtty::*;
+use siderust::qtty::*;
 use siderust::bodies::Moon;
 use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;

@@ -9,8 +9,8 @@ use crate::coordinates::{
     frames::EclipticMeanJ2000,
 };
 use crate::time::JulianDate;
-use qtty::*;
-type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
+use crate::qtty::*;
+type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
@@ -49,9 +49,9 @@ macro_rules! impl_vsop87e {
                     &[$( &$z ),+]
                 );
                 Velocity::new(
-                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
-                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
-                    qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz)
+                    crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                    crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                    crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz)
                 )
             }
 
@@ -70,9 +70,9 @@ macro_rules! impl_vsop87e {
                         AstronomicalUnits::new(z),
                     ),
                     Velocity::new(
-                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
-                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
-                        qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz))
+                        crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vx),
+                        crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vy),
+                        crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz))
                 )
             }
         }
@@ -156,7 +156,7 @@ mod tests {
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
     use crate::time::JulianDate;
-    use qtty::AU;
+    use crate::qtty::AU;
 
     const PRECISION: f64 = 1.0e-6;
 

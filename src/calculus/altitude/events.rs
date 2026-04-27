@@ -16,7 +16,7 @@ use crate::calculus::math_core::{extrema, intervals};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 // ---------------------------------------------------------------------------
 // Internal: build altitude function from trait
@@ -60,7 +60,7 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
 /// use siderust::time::{ModifiedJulianDate, MJD, Period};
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 /// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
@@ -299,8 +299,8 @@ mod tests {
 
         assert!(!days.is_empty(), "should find daytime periods in 7 days");
         for p in &days {
-            assert!(p.duration_days() > Days::new(0.0));
-            assert!(p.duration_days() < Days::new(1.0), "each day period < 24h");
+            assert!(((p).end - (p).start) > Days::new(0.0));
+            assert!(((p).end - (p).start) < Days::new(1.0), "each day period < 24h");
         }
     }
 

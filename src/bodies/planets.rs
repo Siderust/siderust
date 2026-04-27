@@ -12,7 +12,7 @@
 //! ## Quick start
 //! ```rust
 //! use siderust::bodies::planets::{Planet, PlanetBuilder};
-//! use qtty::*;
+//! use siderust::qtty::*;
 //! use siderust::astro::orbit::KeplerianOrbit;
 //! use siderust::time::JulianDate;
 //!
@@ -49,9 +49,9 @@
 //! ---
 
 use crate::astro::orbit::KeplerianOrbit;
-use qtty::*;
+use crate::qtty::*;
 
-type RadiansPerDay = qtty::Quantity<qtty::Per<Radian, Day>>;
+type RadiansPerDay = crate::qtty::Quantity<crate::qtty::Per<Radian, Day>>;
 const GAUSSIAN_GRAVITATIONAL_CONSTANT: RadiansPerDay = Quantity::new(0.017_202_098_95);
 
 /// Represents a **Planet** characterised by its mass, mean radius, and orbit.
@@ -183,7 +183,7 @@ impl OrbitExt for KeplerianOrbit {
 mod tests {
     use super::*;
     use crate::time::JulianDate;
-    use qtty::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
+    use crate::qtty::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
 
     #[test]
     fn builder_roundtrip() {
@@ -200,6 +200,6 @@ mod tests {
                 JulianDate::J2000,
             ))
             .build();
-        assert_eq!(p.mass, 1.0);
+        assert_eq!(p.mass.value(), 1.0);
     }
 }

@@ -9,7 +9,7 @@
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::time::{JulianDate, ModifiedJulianDate};
-use qtty::*;
+use crate::qtty::*;
 
 /// Computes the topocentric azimuth of a fixed star in **radians**
 /// (North-clockwise, range `[0, 2π)`) at a given Julian Date and observer site.

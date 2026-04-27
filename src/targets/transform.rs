@@ -3,7 +3,7 @@
 
 use super::CoordinateWithPM;
 use crate::coordinates::{cartesian, centers::*, frames::*, spherical, transform::Transform};
-use qtty::LengthUnit;
+use crate::qtty::LengthUnit;
 
 /// Blanket implementation to allow chaining two consecutive `Transform` operations.
 ///

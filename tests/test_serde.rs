@@ -8,7 +8,7 @@
 
 #![cfg(feature = "serde")]
 
-use qtty::*;
+use siderust::qtty::*;
 use serde_json;
 use siderust::coordinates::{cartesian, centers, frames, frames::ECEF, spherical};
 

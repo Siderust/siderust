@@ -15,7 +15,7 @@
 
 use crate::astro::precession;
 use crate::time::JulianDate;
-use qtty::{Kilometers, Radians};
+use crate::qtty::{Kilometers, Radians};
 
 /// Geocentric apparent equatorial + ecliptic coordinates of the Moon.
 #[derive(Debug, Clone, Copy, PartialEq)]

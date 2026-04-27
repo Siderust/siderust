@@ -28,7 +28,7 @@
 //! use siderust::coordinates::frames::ECEF;
 //! use siderust::coordinates::spherical::direction;
 //! use siderust::time::{ModifiedJulianDate, MJD, Period};
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 //! let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
@@ -53,7 +53,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical::direction;
 use crate::time::{ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 // Imports for planet altitude support
 use crate::calculus::horizontal;
@@ -152,7 +152,7 @@ pub trait AltitudePeriodsProvider {
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
 /// use siderust::time::{ModifiedJulianDate, MJD, Period};
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 /// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
@@ -179,7 +179,7 @@ pub fn altitude_periods<B: AltitudePeriodsProvider>(
 /// **Sun**, delegates to [`calculus::solar`].
 impl AltitudePeriodsProvider for solar_system::Sun {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
-        if query.window.duration() <= Days::zero() {
+        if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::solar;
@@ -207,7 +207,7 @@ impl AltitudePeriodsProvider for solar_system::Sun {
 /// **Moon**, delegates to [`calculus::lunar`].
 impl AltitudePeriodsProvider for solar_system::Moon {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
-        if query.window.duration() <= Days::zero() {
+        if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::lunar;
@@ -252,7 +252,7 @@ impl AltitudePeriodsProvider for Star<'_> {
 /// **direction::ICRS**, the lightest path: raw RA/Dec → stellar engine.
 impl AltitudePeriodsProvider for direction::ICRS {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
-        if query.window.duration() <= Days::zero() {
+        if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::stellar;
@@ -342,7 +342,7 @@ macro_rules! impl_altitude_provider_vsop87 {
         $(
             impl AltitudePeriodsProvider for solar_system::$Planet {
                 fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
-                    if query.window.duration() <= Days::zero() {
+                    if (query.window.end - query.window.start) <= Days::zero() {
                         return Vec::new();
                     }
                     let f = |t: ModifiedJulianDate| -> Radians {
@@ -434,8 +434,8 @@ mod tests {
             solar_system::Sun.above_threshold(greenwich(), one_day_window(), Degrees::new(0.0));
         assert!(!periods.is_empty(), "Sun should be above horizon at 51°N");
         for p in &periods {
-            assert!(p.duration_days() > Days::new(0.0));
-            assert!(p.duration_days() < Days::new(1.0));
+            assert!(((p).end - (p).start) > Days::new(0.0));
+            assert!(((p).end - (p).start) < Days::new(1.0));
         }
     }
 
@@ -533,14 +533,14 @@ mod tests {
         let mjd = ModifiedJulianDate::new(51544.5); // J2000 epoch in MJD
 
         let sun_alt = solar_system::Sun.altitude_at(&observer, mjd);
-        assert!(sun_alt.abs() < std::f64::consts::FRAC_PI_2);
+        assert!(sun_alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2));
 
         let moon_alt = solar_system::Moon.altitude_at(&observer, mjd);
-        assert!(moon_alt.abs() < std::f64::consts::FRAC_PI_2);
+        assert!(moon_alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2));
 
         let sirius_dir = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
         let star_alt = sirius_dir.altitude_at(&observer, mjd);
-        assert!(star_alt.abs() < std::f64::consts::FRAC_PI_2);
+        assert!(star_alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2));
     }
 
     // --- Edge cases ---
@@ -559,7 +559,7 @@ mod tests {
             !periods.is_empty(),
             "Full sky range should return at least one period"
         );
-        let total: f64 = periods.iter().map(|p| p.duration_days().value()).sum();
+        let total: f64 = periods.iter().map(|p| ((p).end - (p).start).value()).sum();
         assert!(
             (total - 1.0).abs() < 0.01,
             "Full sky range should span ~1 day, got {} days",
@@ -577,7 +577,7 @@ mod tests {
             "Polaris should be continuously above horizon at 51°N"
         );
         assert!(
-            (periods[0].duration_days() - Days::new(1.0)).abs() < Days::new(0.01),
+            (((periods[0]).end - (periods[0]).start) - Days::new(1.0)).abs() < Days::new(0.01),
             "Polaris up-period should span the full day"
         );
     }

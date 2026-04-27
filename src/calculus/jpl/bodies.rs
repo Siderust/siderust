@@ -44,7 +44,7 @@ use crate::coordinates::{
     transform::VectorAstroExt,
 };
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnit, Day, Kilometer, Per};
+use crate::qtty::{AstronomicalUnit, Day, Kilometer, Per};
 
 // ── Physical constants (single source of truth: qtty + DE4xx headers) ────
 
@@ -302,7 +302,7 @@ mod tests {
     }
 
     fn make_static_seg(record_fn: fn(usize) -> &'static [f64]) -> SegmentDescriptor {
-        use qtty::Seconds;
+        use crate::qtty::Seconds;
         SegmentDescriptor {
             init: Seconds::new(0.0),
             intlen: Seconds::new(1000.0 * SECONDS_PER_DAY),
@@ -388,7 +388,7 @@ mod tests {
     /// The segment spans 1000 days from J2000. The position at tau=0 (J2000+500d)
     /// is (x_km, y_km, z_km) in ICRF km. The velocity is zero.
     fn make_seg(x_km: f64, y_km: f64, z_km: f64) -> DynSegmentDescriptor {
-        use qtty::Seconds;
+        use crate::qtty::Seconds;
         let ncoeff = 2usize;
         let rsize = 2 + 3 * ncoeff; // 8
         let intlen_secs = 1000.0 * SECONDS_PER_DAY;

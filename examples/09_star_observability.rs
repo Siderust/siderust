@@ -12,7 +12,7 @@ use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::intersect_periods;
 use siderust::time::{ModifiedJulianDate, Period};
 
-use qtty::*;
+use siderust::qtty::*;
 
 fn main() {
     println!("Star observability: altitude + azimuth constraints\n");
@@ -60,7 +60,7 @@ fn main() {
 
     println!("Matched periods: {}", observable_periods.len());
     for (idx, period) in observable_periods.iter().enumerate() {
-        let hours = period.duration_days().to::<Hour>();
+        let hours = ((period).end - (period).start).to::<Hour>();
         println!(
             "  {}. {} -> {}  ({})",
             idx + 1,
@@ -71,7 +71,7 @@ fn main() {
     }
 
     let total_hours = observable_periods.iter().fold(Hours::new(0.0), |acc, p| {
-        acc + p.duration_days().to::<Hour>()
+        acc + ((p).end - (p).start).to::<Hour>()
     });
     println!("\nTotal observable time in both ranges: {}", total_hours);
 }

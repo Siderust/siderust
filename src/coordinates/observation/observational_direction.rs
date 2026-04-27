@@ -23,7 +23,7 @@
 //! use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
 //! use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
 //! use siderust::time::JulianDate;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let geo_dir = Astrometric::new(EquatorialMeanJ2000::new(45.0 * DEG, 20.0 * DEG));
 //! let obs = ObserverState::geocentric(JulianDate::J2000);
@@ -102,7 +102,7 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
     /// use siderust::coordinates::observation::{Astrometric, Apparent, ObserverState};
     /// use siderust::coordinates::spherical::direction::EquatorialMeanJ2000;
     /// use siderust::time::JulianDate;
-    /// use qtty::*;
+    /// use siderust::qtty::*;
     ///
     /// let astrometric = Astrometric::new(EquatorialMeanJ2000::new(0.0 * DEG, 0.0 * DEG));
     /// let obs = ObserverState::geocentric(JulianDate::J2000);
@@ -313,7 +313,7 @@ impl<D: std::fmt::UpperExp> std::fmt::UpperExp for Apparent<D> {
 mod tests {
     use super::*;
     use crate::time::JulianDate;
-    use qtty::*;
+    use crate::qtty::*;
 
     #[test]
     fn test_astrometric_to_apparent_introduces_shift() {
@@ -336,20 +336,20 @@ mod tests {
 
         // Handle azimuth wrap-around (e.g., 359.999° vs 0.001° is actually 0.002° apart)
         let mut delta_ra = (shifted.azimuth - original.azimuth).abs();
-        if delta_ra > 180.0 {
+        if delta_ra > Degrees::new(180.0) {
             delta_ra = Degrees::new(360.0) - delta_ra;
         }
         let delta_dec = (shifted.polar - original.polar).abs();
 
         // At least one should have changed
         assert!(
-            delta_ra > 0.0 || delta_dec > 0.0,
+            delta_ra > Degrees::new(0.0) || delta_dec > Degrees::new(0.0),
             "Expected aberration to introduce a shift"
         );
 
         // Shift should be small (less than 1 degree, typically ~20 arcsec = 0.006 deg)
         assert!(
-            delta_ra < 0.1 && delta_dec < 0.1,
+            delta_ra < Degrees::new(0.1) && delta_dec < Degrees::new(0.1),
             "Aberration shift too large: dRA={}, dDec={}",
             delta_ra,
             delta_dec
@@ -381,12 +381,12 @@ mod tests {
 
         // Tolerance of 1e-6 degrees ≈ 0.003 arcseconds (numerical precision limit)
         assert!(
-            delta_ra < 1e-6,
+            delta_ra < Degrees::new(1e-6),
             "RA not preserved in roundtrip: delta = {}",
             delta_ra
         );
         assert!(
-            delta_dec < 1e-6,
+            delta_dec < Degrees::new(1e-6),
             "Dec not preserved in roundtrip: delta = {}",
             delta_dec
         );
@@ -407,7 +407,7 @@ mod tests {
 
         // Declination should decrease slightly
         assert!(
-            apparent.direction().polar < 90.0,
+            apparent.direction().polar < Degrees::new(90.0),
             "Declination at pole should decrease due to aberration"
         );
     }
