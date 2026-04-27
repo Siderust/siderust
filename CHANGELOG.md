@@ -7,6 +7,29 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+* **Generic 1D and 2D gridded tables** under the new optional `tables`
+  feature (`siderust::tables`). Provides `Grid1D<X, V>` and `Grid2D<X, Y, V>`
+  with strict-monotonic axis validation, per-axis `OutOfRange` policy
+  (clamp / zero / error), and untyped `algo::{linear_1d, bilinear,
+  bilinear_unit}` `f64` kernels for callers needing bit-for-bit parity
+  with `numpy`-style table lookups (e.g. NSB's Leinert zodiacal lookup).
+* **Atmospheric optics primitives** under the new optional `atmosphere`
+  feature (`siderust::atmosphere`). Provides:
+  * `airmass(zenith: Radians, formula)` with the named
+    `AirmassFormula::{PlaneParallel, Young1994, Rozenberg1966,
+    KrisciunasSchaefer1991}` variants.
+  * Rayleigh optical depth `rayleigh_optical_depth_bodhaine99`
+    (Bodhaine et al. 1999) with parameterizable scale height, plus
+    `rayleigh_phase`.
+  * Mie / aerosol optical depth via the Patat 2011 power law
+    (`MieParams { tau0, alpha, lambda_ref }`) with a
+    `MieParams::PARANAL` preset.
+  * Beer-Lambert `transmission(tau, airmass)`.
+* **Shared `OutOfRange` and `Provenance` types** at the crate root
+  (`siderust::interp::OutOfRange`, `siderust::provenance::{Provenance,
+  DataSource}`) so the `spectra` and `tables` features can share
+  validation, boundary, and dataset-metadata vocabulary. The
+  `siderust::spectra` re-exports preserve the existing public API.
 * **Generic typed sampled spectra** under the new optional `spectra` feature
   (`siderust::spectra`). Provides `SampledSpectrum<X: Unit, Y: Unit, S = f64>`
   with strict-monotonic validation, configurable `Interpolation` (linear) and

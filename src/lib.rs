@@ -59,10 +59,16 @@ pub mod bodies;
 pub mod calculus;
 pub mod coordinates;
 pub mod data;
+pub mod interp;
 pub mod observatories;
+pub mod provenance;
 pub mod qtty;
+#[cfg(feature = "atmosphere")]
+pub mod atmosphere;
 #[cfg(feature = "spectra")]
 pub mod spectra;
+#[cfg(feature = "tables")]
+pub mod tables;
 pub mod targets;
 pub mod time;
 
