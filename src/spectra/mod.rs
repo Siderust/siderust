@@ -48,6 +48,7 @@ pub mod error;
 pub mod interp;
 pub mod integrate;
 pub mod loaders;
+pub mod passbands;
 pub mod provenance;
 pub mod sampled;
 
