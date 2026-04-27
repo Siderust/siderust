@@ -7,7 +7,7 @@ use crate::ext_qtty::{Quantity, Scalar, Unit};
 use crate::interp::OutOfRange;
 use crate::provenance::Provenance;
 
-use super::{algo, TableError};
+use super::{algo, AxisDirection, TableError};
 
 /// Strictly-monotonic 1D table of `(X, V)` samples with linear
 /// interpolation. The `S` scalar parameter defaults to `f64`.
@@ -15,6 +15,7 @@ use super::{algo, TableError};
 pub struct Grid1D<X: Unit, V: Unit, S: Scalar = f64> {
     xs: Vec<S>,
     vs: Vec<S>,
+    dir_x: AxisDirection,
     provenance: Provenance,
     _markers: core::marker::PhantomData<(X, V)>,
 }
@@ -33,10 +34,11 @@ impl<X: Unit, V: Unit, S: Scalar + Into<f64> + From<f64>> Grid1D<X, V, S> {
             });
         }
         let xs_f64: Vec<f64> = xs.iter().copied().map(Into::into).collect();
-        algo::validate_axis("x", &xs_f64)?;
+        let dir_x = algo::validate_axis("x", &xs_f64)?;
         Ok(Self {
             xs,
             vs,
+            dir_x,
             provenance: Provenance::default(),
             _markers: core::marker::PhantomData,
         })
@@ -71,7 +73,7 @@ impl<X: Unit, V: Unit, S: Scalar + Into<f64> + From<f64>> Grid1D<X, V, S> {
     ) -> Result<Quantity<V, S>, TableError> {
         let xs_f64: Vec<f64> = self.xs.iter().copied().map(Into::into).collect();
         let vs_f64: Vec<f64> = self.vs.iter().copied().map(Into::into).collect();
-        let v = algo::linear_1d(&xs_f64, &vs_f64, x.value().into(), oor)?;
+        let v = algo::linear_1d(&xs_f64, &vs_f64, x.value().into(), oor, self.dir_x)?;
         Ok(Quantity::<V, S>::new(S::from(v)))
     }
 }
@@ -97,5 +99,26 @@ mod tests {
         let vs = vec![1.0_f64, 2.0, 3.0];
         let g: Result<Grid1D<Nanometer, Meter>, _> = Grid1D::from_raw(xs, vs);
         assert!(matches!(g, Err(TableError::NotMonotonic { .. })));
+    }
+
+    #[test]
+    fn descending_axis_interpolates_correctly() {
+        // xs descending: [10, 5, 0]; vs = [1, 2, 3]
+        // At x=7.5: between xs[0]=10 and xs[1]=5,  t=0.5 → v=1.5
+        let xs = vec![10.0_f64, 5.0, 0.0];
+        let vs = vec![1.0_f64, 2.0, 3.0];
+        let g: Grid1D<Nanometer, Meter> = Grid1D::from_raw(xs, vs).unwrap();
+        let v = g.interp_at(Quantity::<Nanometer>::new(7.5), OutOfRange::Error).unwrap();
+        assert_eq!(v.value(), 1.5);
+    }
+
+    #[test]
+    fn descending_axis_clamp_above_max() {
+        // xs = [10,5,0]; vs=[1,2,3]; x=15 (above max of descending=10) → clamp to first value
+        let xs = vec![10.0_f64, 5.0, 0.0];
+        let vs = vec![1.0_f64, 2.0, 3.0];
+        let g: Grid1D<Nanometer, Meter> = Grid1D::from_raw(xs, vs).unwrap();
+        let v = g.interp_at(Quantity::<Nanometer>::new(15.0), OutOfRange::ClampToEndpoints).unwrap();
+        assert_eq!(v.value(), 1.0);
     }
 }

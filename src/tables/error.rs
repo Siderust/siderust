@@ -18,7 +18,8 @@ pub enum TableError {
     },
     /// One of the axis arrays is shorter than two samples.
     TooFewSamples { axis: &'static str, len: usize },
-    /// An axis is not strictly increasing.
+    /// An axis is not strictly monotonic (equal consecutive values or a
+    /// direction change after the first step).
     NotMonotonic { axis: &'static str, at_index: usize },
     /// Evaluation point falls outside the sampled domain and the
     /// active [`OutOfRange::Error`](super::OutOfRange::Error) policy
@@ -48,7 +49,7 @@ impl fmt::Display for TableError {
             }
             TableError::NotMonotonic { axis, at_index } => write!(
                 f,
-                "{axis} axis is not strictly increasing at index {at_index}"
+                "{axis} axis is not strictly monotonic at index {at_index}"
             ),
             TableError::OutOfRange { axis, value, lo, hi } => write!(
                 f,
