@@ -27,6 +27,7 @@ de441 = []
 regen-data = ["dep:reqwest"]
 runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
+spectra = []
 
 [dependencies]
 affn = { version = "0.6.1", features = ["astro"] }
