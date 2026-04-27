@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+* **Generic typed sampled spectra** under the new optional `spectra` feature
+  (`siderust::spectra`). Provides `SampledSpectrum<X: Unit, Y: Unit, S = f64>`
+  with strict-monotonic validation, configurable `Interpolation` (linear) and
+  `OutOfRange` (clamp / zero / error) policies, trapezoidal `integrate` /
+  `integrate_range` / `integrate_weighted` (returning unit-correct
+  `Quantity<Prod<Y, X>>`), `Provenance` / `DataSource` metadata, and a
+  generic ASCII two-column loader (`spectra::loaders::ascii::two_column`).
+  Untyped `f64` numerical kernels are exposed under `spectra::algo` for
+  callers that need bit-for-bit `numpy.interp`/trapezoid parity.
 * **Conic orbit API** for propagation models that are not plain elliptic Kepler elements.
   * `astro::conic::{ConicOrbit, MeanMotionOrbit, ConicError}` plus re-exported `ConicKind`
   * `calculus::conic_equations::{calculate_conic_position, calculate_mean_motion_position}`

@@ -61,6 +61,8 @@ pub mod coordinates;
 pub mod data;
 pub mod observatories;
 pub mod qtty;
+#[cfg(feature = "spectra")]
+pub mod spectra;
 pub mod targets;
 pub mod time;
 
