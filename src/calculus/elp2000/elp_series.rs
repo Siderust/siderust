@@ -15,7 +15,7 @@ use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;
 use crate::time::JulianDate;
 use elp_data::*;
-use qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians};
+use crate::qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians};
 use std::f64::consts::FRAC_PI_2;
 
 // ====================
@@ -769,7 +769,7 @@ impl Moon {
     where
         U: LengthUnit,
     {
-        let t1 = jd.julian_centuries().value();
+        let t1 = jd.julian_centuries();
         let t2 = t1 * t1;
         let t3 = t2 * t1;
         let t4 = t2 * t2;
@@ -825,7 +825,7 @@ impl Moon {
             + W1[3].value() * t[3]
             + W1[4].value() * t[4];
         let lat_rad = Arcseconds::new(b).to::<Radian>().value();
-        let ratio = (A0 / ATH).value();
+        let ratio = A0 / ATH;
         let distance_km = c * ratio;
 
         // Use sin_cos for efficiency (2 combined calls instead of 4 separate)
@@ -863,7 +863,7 @@ impl Moon {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::{Days, Kilometer, KM};
+    use crate::qtty::{Days, Kilometer, KM};
     use std::f64::consts::PI;
 
     // ===========================================================================
@@ -917,7 +917,7 @@ mod tests {
     #[test]
     fn j2000_julian_centuries_is_zero() {
         // The epoch origin must be exactly J2000 (t1 = 0)
-        let centuries = JulianDate::J2000.julian_centuries().value();
+        let centuries = JulianDate::J2000.julian_centuries();
         assert!(
             centuries.abs() < 1e-15,
             "J2000.julian_centuries() should be 0, got {centuries}"
@@ -928,7 +928,7 @@ mod tests {
     fn julian_centuries_one_century_from_j2000() {
         // J2000 + 36525 days = exactly 1 Julian century
         let jd = JulianDate::J2000 + Days::new(36_525.0);
-        let centuries = jd.julian_centuries().value();
+        let centuries = jd.julian_centuries();
         assert!(
             (centuries - 1.0).abs() < 1e-12,
             "Expected 1.0 Julian century, got {centuries}"
@@ -940,7 +940,7 @@ mod tests {
     #[test]
     fn normalize_angle_zero() {
         let result = normalize_angle(Radians::new(0.0));
-        assert!(result.abs() < 1e-15, "normalize_angle(0) should be 0");
+        assert!(result.abs() < Radians::new(1e-15), "normalize_angle(0) should be 0");
     }
 
     #[test]
@@ -1035,7 +1035,7 @@ mod tests {
     fn unit_conversion_arcsec_to_degree() {
         // 3600 arcsec = 1 degree (definitional)
         let arcsec = Arcseconds::new(3600.0);
-        let deg = arcsec.to::<qtty::Degree>().value();
+        let deg = arcsec.to::<crate::qtty::Degree>().value();
         assert!(
             (deg - 1.0).abs() < 1e-15,
             "3600 arcsec should be 1 degree, got {deg}"
@@ -1525,7 +1525,8 @@ mod tests {
 
     #[test]
     fn long_range_stability_10_year_intervals() {
-        for year in (1950..=2050).step_by(10) {
+        // UTC was defined in 1960; earlier dates are not representable via from_utc.
+        for year in (1970..=2050).step_by(10) {
             let jd = make_jd_utc(year, 1, 1, 0, 0, 0);
             let pos = Moon::get_geo_position::<Kilometer>(jd);
             let r = r_from_xyz_km(&pos);
@@ -1723,20 +1724,20 @@ mod tests {
     #[test]
     fn regression_delaunay_initial_values() {
         // Delaunay arguments should be in [0, 2*PI) at epoch
-        assert!(DEL[0][0] >= 0.0 && DEL[0][0] < 2.0 * PI);
-        assert!(DEL[1][0].abs() < 2.0 * PI);
-        assert!(DEL[2][0] >= 0.0 && DEL[2][0] < 2.0 * PI);
-        assert!(DEL[3][0] >= 0.0 && DEL[3][0] < 2.0 * PI);
+        assert!(DEL[0][0] >= Radians::new(0.0) && DEL[0][0] < Radians::new(2.0 * PI));
+        assert!(DEL[1][0].abs() < Radians::new(2.0 * PI));
+        assert!(DEL[2][0] >= Radians::new(0.0) && DEL[2][0] < Radians::new(2.0 * PI));
+        assert!(DEL[3][0] >= Radians::new(0.0) && DEL[3][0] < Radians::new(2.0 * PI));
     }
 
     #[test]
     fn delaunay_and_planet_args_monotonic_rates() {
         // Rates should be positive (mean motions)
-        assert!(DEL[0][1] > 0.0, "l' rate should be positive");
-        assert!(DEL[1][1] > 0.0, "l_sun' rate should be positive");
-        assert!(DEL[2][1] > 0.0, "F' rate should be positive");
-        assert!(DEL[3][1] > 0.0, "D' rate should be positive");
-        assert!(ZETA[1] > 1.0, "ZETA rate should be large positive");
+        assert!(DEL[0][1] > Radians::new(0.0), "l' rate should be positive");
+        assert!(DEL[1][1] > Radians::new(0.0), "l_sun' rate should be positive");
+        assert!(DEL[2][1] > Radians::new(0.0), "F' rate should be positive");
+        assert!(DEL[3][1] > Radians::new(0.0), "D' rate should be positive");
+        assert!(ZETA[1].value() > 1.0, "ZETA rate should be large positive");
     }
 
     // ===========================================================================
@@ -1753,7 +1754,7 @@ mod tests {
     #[test]
     fn w1_initial_value_reasonable() {
         // W1[0] is the mean longitude of the Moon at J2000 ~218 degrees
-        let w1_deg = W1[0].to::<qtty::Degree>().value();
+        let w1_deg = W1[0].to::<crate::qtty::Degree>().value();
         assert!(
             (w1_deg - 218.0).abs() < 1.0,
             "W1[0] = {} deg, expected ~218 degrees",
@@ -1764,7 +1765,7 @@ mod tests {
     #[test]
     fn planetary_args_initial_values_reasonable() {
         // P_ARGS[0][0] is Mercury's mean longitude at J2000 ~252 degrees
-        let mercury_deg = P_ARGS[0][0].to::<qtty::Degree>().value();
+        let mercury_deg = P_ARGS[0][0].to::<crate::qtty::Degree>().value();
         assert!(
             (mercury_deg - 252.0).abs() < 1.0,
             "Mercury mean lon = {} deg, expected ~252 degrees",

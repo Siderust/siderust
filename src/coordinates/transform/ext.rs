@@ -62,7 +62,7 @@
 //! use siderust::coordinates::centers::{Barycentric, Geocentric};
 //! use siderust::coordinates::frames::{EclipticMeanJ2000, ICRS};
 //! use siderust::time::JulianDate;
-//! use qtty::AstronomicalUnit;
+//! use siderust::qtty::AstronomicalUnit;
 //!
 //! let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
 //! let jd = JulianDate::J2000;
@@ -85,7 +85,7 @@ use crate::coordinates::transform::providers::{
 };
 use crate::time::JulianDate;
 use affn::Rotation3;
-use qtty::{LengthUnit, Unit};
+use crate::qtty::{LengthUnit, Unit};
 
 #[inline]
 fn model_rotation<F: ReferenceFrame, F2: ReferenceFrame>(
@@ -635,9 +635,11 @@ mod tests {
     use super::*;
     use crate::coordinates::centers::{Barycentric, Geocentric};
     use crate::coordinates::frames::{EclipticMeanJ2000, ICRS};
-    use qtty::AstronomicalUnit;
+    use crate::qtty::{AstronomicalUnit, AstronomicalUnits};
 
     const EPSILON: f64 = 1e-10;
+    const AU_EPS: AstronomicalUnits = AstronomicalUnits::new(EPSILON);
+    const AU_TIGHT: AstronomicalUnits = AstronomicalUnits::new(1e-15);
 
     #[test]
     fn test_direction_frame_transform() {
@@ -693,10 +695,11 @@ mod tests {
         assert!(pos_ecl.x().is_finite() && pos_ecl.y().is_finite() && pos_ecl.z().is_finite());
 
         // Length must be preserved under pure rotation.
-        let n0 = (pos.x() * pos.x() + pos.y() * pos.y() + pos.z() * pos.z()).sqrt();
-        let n1 =
-            (pos_ecl.x() * pos_ecl.x() + pos_ecl.y() * pos_ecl.y() + pos_ecl.z() * pos_ecl.z())
-                .sqrt();
+        let n0 = (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
+        let n1 = (pos_ecl.x().value().powi(2)
+            + pos_ecl.y().value().powi(2)
+            + pos_ecl.z().value().powi(2))
+        .sqrt();
         assert!((n0 - n1).abs() < 1e-12);
     }
 
@@ -713,7 +716,7 @@ mod tests {
         // Should be non-zero (Earth is ~1 AU from barycenter)
         let dist = bary.distance();
         assert!(
-            dist > 0.9 && dist < 1.1,
+            dist.value() > 0.9 && dist.value() < 1.1,
             "Earth should be ~1 AU from barycenter, got {}",
             dist
         );
@@ -730,9 +733,9 @@ mod tests {
 
         // Verify it's not the same as the input (transformation happened)
         assert!(
-            (result.x() - pos.x()).abs() > EPSILON
-                || (result.y() - pos.y()).abs() > EPSILON
-                || (result.z() - pos.z()).abs() > EPSILON
+            (result.x() - pos.x()).abs() > AU_EPS
+                || (result.y() - pos.y()).abs() > AU_EPS
+                || (result.z() - pos.z()).abs() > AU_EPS
         );
     }
 
@@ -744,15 +747,15 @@ mod tests {
 
         // Identity frame transform
         let same_frame: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_frame(&jd);
-        assert!((same_frame.x() - pos.x()).abs() < EPSILON);
-        assert!((same_frame.y() - pos.y()).abs() < EPSILON);
-        assert!((same_frame.z() - pos.z()).abs() < EPSILON);
+        assert!((same_frame.x() - pos.x()).abs() < AU_EPS);
+        assert!((same_frame.y() - pos.y()).abs() < AU_EPS);
+        assert!((same_frame.z() - pos.z()).abs() < AU_EPS);
 
         // Identity center transform (via ShiftCenter)
         let same_center: Position<Barycentric, ICRS, AstronomicalUnit> = pos.to_center(jd);
-        assert!((same_center.x() - pos.x()).abs() < EPSILON);
-        assert!((same_center.y() - pos.y()).abs() < EPSILON);
-        assert!((same_center.z() - pos.z()).abs() < EPSILON);
+        assert!((same_center.x() - pos.x()).abs() < AU_EPS);
+        assert!((same_center.y() - pos.y()).abs() < AU_EPS);
+        assert!((same_center.z() - pos.z()).abs() < AU_EPS);
     }
 
     #[test]
@@ -805,7 +808,7 @@ mod tests {
     fn test_spherical_direction_frame_transform() {
         use super::SphericalDirectionAstroExt;
         use crate::coordinates::spherical;
-        use qtty::DEG;
+        use crate::qtty::DEG;
 
         let sph_dir = spherical::Direction::<ICRS>::new(45.0 * DEG, 30.0 * DEG);
         let jd = JulianDate::J2000;
@@ -821,7 +824,7 @@ mod tests {
     fn test_spherical_direction_roundtrip() {
         use super::SphericalDirectionAstroExt;
         use crate::coordinates::spherical;
-        use qtty::DEG;
+        use crate::qtty::DEG;
 
         let sph_dir = spherical::Direction::<ICRS>::new(123.0 * DEG, -45.0 * DEG);
         let jd = JulianDate::J2000;
@@ -829,15 +832,15 @@ mod tests {
         let sph_ecl: spherical::Direction<EclipticMeanJ2000> = sph_dir.to_frame(&jd);
         let sph_back: spherical::Direction<ICRS> = sph_ecl.to_frame(&jd);
 
-        assert!((sph_back.azimuth - sph_dir.azimuth).abs() < 1e-8);
-        assert!((sph_back.polar - sph_dir.polar).abs() < 1e-8);
+        assert!((sph_back.azimuth - sph_dir.azimuth).abs().value() < 1e-8);
+        assert!((sph_back.polar - sph_dir.polar).abs().value() < 1e-8);
     }
 
     #[test]
     fn test_spherical_direction_with_ctx() {
         use super::SphericalDirectionAstroExt;
         use crate::coordinates::spherical;
-        use qtty::DEG;
+        use crate::qtty::DEG;
 
         let sph_dir = spherical::Direction::<ICRS>::new(90.0 * DEG, 0.0 * DEG);
         let ctx: AstroContext = AstroContext::default();
@@ -846,8 +849,8 @@ mod tests {
         let with_ctx: spherical::Direction<EclipticMeanJ2000> = sph_dir.to_frame_with(&jd, &ctx);
         let without_ctx: spherical::Direction<EclipticMeanJ2000> = sph_dir.to_frame(&jd);
 
-        assert!((with_ctx.azimuth - without_ctx.azimuth).abs() < 1e-15);
-        assert!((with_ctx.polar - without_ctx.polar).abs() < 1e-15);
+        assert!((with_ctx.azimuth - without_ctx.azimuth).abs().value() < 1e-15);
+        assert!((with_ctx.polar - without_ctx.polar).abs().value() < 1e-15);
     }
 
     // =====================================================================
@@ -859,9 +862,9 @@ mod tests {
         use super::VectorAstroExt;
 
         let vec = Vector::<ICRS, AstronomicalUnit>::new(
-            qtty::Quantity::<AstronomicalUnit>::new(1.0),
-            qtty::Quantity::<AstronomicalUnit>::new(2.0),
-            qtty::Quantity::<AstronomicalUnit>::new(3.0),
+            AstronomicalUnits::new(1.0),
+            AstronomicalUnits::new(2.0),
+            AstronomicalUnits::new(3.0),
         );
         let jd = JulianDate::J2000;
 
@@ -869,10 +872,10 @@ mod tests {
         assert!(vec_ecl.x().is_finite() && vec_ecl.y().is_finite() && vec_ecl.z().is_finite());
 
         // Length should be preserved
-        let n0 = (vec.x() * vec.x() + vec.y() * vec.y() + vec.z() * vec.z()).sqrt();
+        let n0 = (vec.x() * vec.x() + vec.y() * vec.y() + vec.z() * vec.z()).scalar_sqrt();
         let n1 =
             (vec_ecl.x() * vec_ecl.x() + vec_ecl.y() * vec_ecl.y() + vec_ecl.z() * vec_ecl.z())
-                .sqrt();
+                .scalar_sqrt();
         assert!((n0 - n1).abs() < 1e-12);
     }
 
@@ -881,18 +884,18 @@ mod tests {
         use super::VectorAstroExt;
 
         let vec = Vector::<ICRS, AstronomicalUnit>::new(
-            qtty::Quantity::<AstronomicalUnit>::new(0.5),
-            qtty::Quantity::<AstronomicalUnit>::new(-0.3),
-            qtty::Quantity::<AstronomicalUnit>::new(0.8),
+            AstronomicalUnits::new(0.5),
+            AstronomicalUnits::new(-0.3),
+            AstronomicalUnits::new(0.8),
         );
         let jd = JulianDate::J2000;
 
         let vec_ecl: Vector<EclipticMeanJ2000, AstronomicalUnit> = vec.to_frame(&jd);
         let vec_back: Vector<ICRS, AstronomicalUnit> = vec_ecl.to_frame(&jd);
 
-        assert!((vec_back.x() - vec.x()).abs() < 1e-10);
-        assert!((vec_back.y() - vec.y()).abs() < 1e-10);
-        assert!((vec_back.z() - vec.z()).abs() < 1e-10);
+        assert!((vec_back.x() - vec.x()).abs() < AU_EPS);
+        assert!((vec_back.y() - vec.y()).abs() < AU_EPS);
+        assert!((vec_back.z() - vec.z()).abs() < AU_EPS);
     }
 
     #[test]
@@ -900,9 +903,9 @@ mod tests {
         use super::VectorAstroExt;
 
         let vec = Vector::<ICRS, AstronomicalUnit>::new(
-            qtty::Quantity::<AstronomicalUnit>::new(1.0),
-            qtty::Quantity::<AstronomicalUnit>::new(0.0),
-            qtty::Quantity::<AstronomicalUnit>::new(0.0),
+            AstronomicalUnits::new(1.0),
+            AstronomicalUnits::new(0.0),
+            AstronomicalUnits::new(0.0),
         );
         let ctx: AstroContext = AstroContext::default();
         let jd = JulianDate::J2000;
@@ -910,9 +913,9 @@ mod tests {
         let with_ctx: Vector<EclipticMeanJ2000, AstronomicalUnit> = vec.to_frame_with(&jd, &ctx);
         let without_ctx: Vector<EclipticMeanJ2000, AstronomicalUnit> = vec.to_frame(&jd);
 
-        assert!((with_ctx.x() - without_ctx.x()).abs() < 1e-15);
-        assert!((with_ctx.y() - without_ctx.y()).abs() < 1e-15);
-        assert!((with_ctx.z() - without_ctx.z()).abs() < 1e-15);
+        assert!((with_ctx.x() - without_ctx.x()).abs() < AU_TIGHT);
+        assert!((with_ctx.y() - without_ctx.y()).abs() < AU_TIGHT);
+        assert!((with_ctx.z() - without_ctx.z()).abs() < AU_TIGHT);
     }
 
     // =====================================================================
@@ -929,9 +932,9 @@ mod tests {
             pos.using(&engine).to_frame(&jd);
         let direct: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> = pos.to_frame(&jd);
 
-        assert!((via_engine.x() - direct.x()).abs() < 1e-15);
-        assert!((via_engine.y() - direct.y()).abs() < 1e-15);
-        assert!((via_engine.z() - direct.z()).abs() < 1e-15);
+        assert!((via_engine.x() - direct.x()).abs() < AU_TIGHT);
+        assert!((via_engine.y() - direct.y()).abs() < AU_TIGHT);
+        assert!((via_engine.z() - direct.z()).abs() < AU_TIGHT);
     }
 
     #[test]
@@ -944,9 +947,9 @@ mod tests {
             pos.using(&engine).to_center(&jd);
         let direct: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> = pos.to_center(jd);
 
-        assert!((via_engine.x() - direct.x()).abs() < 1e-15);
-        assert!((via_engine.y() - direct.y()).abs() < 1e-15);
-        assert!((via_engine.z() - direct.z()).abs() < 1e-15);
+        assert!((via_engine.x() - direct.x()).abs() < AU_TIGHT);
+        assert!((via_engine.y() - direct.y()).abs() < AU_TIGHT);
+        assert!((via_engine.z() - direct.z()).abs() < AU_TIGHT);
     }
 
     #[test]
@@ -958,9 +961,9 @@ mod tests {
         let via_engine: Position<Geocentric, ICRS, AstronomicalUnit> = pos.using(&engine).to(&jd);
         let direct: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd);
 
-        assert!((via_engine.x() - direct.x()).abs() < 1e-15);
-        assert!((via_engine.y() - direct.y()).abs() < 1e-15);
-        assert!((via_engine.z() - direct.z()).abs() < 1e-15);
+        assert!((via_engine.x() - direct.x()).abs() < AU_TIGHT);
+        assert!((via_engine.y() - direct.y()).abs() < AU_TIGHT);
+        assert!((via_engine.z() - direct.z()).abs() < AU_TIGHT);
     }
 
     // =====================================================================
@@ -978,9 +981,9 @@ mod tests {
         let default_ctx: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
             pos.to_frame(&jd);
 
-        assert!((with_ctx.x() - default_ctx.x()).abs() < 1e-15);
-        assert!((with_ctx.y() - default_ctx.y()).abs() < 1e-15);
-        assert!((with_ctx.z() - default_ctx.z()).abs() < 1e-15);
+        assert!((with_ctx.x() - default_ctx.x()).abs() < AU_TIGHT);
+        assert!((with_ctx.y() - default_ctx.y()).abs() < AU_TIGHT);
+        assert!((with_ctx.z() - default_ctx.z()).abs() < AU_TIGHT);
     }
 
     #[test]
@@ -992,8 +995,8 @@ mod tests {
         let with_ctx: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to_with(&jd, &ctx);
         let default_ctx: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd);
 
-        assert!((with_ctx.x() - default_ctx.x()).abs() < 1e-15);
-        assert!((with_ctx.y() - default_ctx.y()).abs() < 1e-15);
-        assert!((with_ctx.z() - default_ctx.z()).abs() < 1e-15);
+        assert!((with_ctx.x() - default_ctx.x()).abs() < AU_TIGHT);
+        assert!((with_ctx.y() - default_ctx.y()).abs() < AU_TIGHT);
+        assert!((with_ctx.z() - default_ctx.z()).abs() < AU_TIGHT);
     }
 }

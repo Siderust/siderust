@@ -23,7 +23,7 @@
 //! invalid (same sign at both endpoints).
 
 use crate::time::{Interval, TimeInstant};
-use qtty::{Days, Quantity, Unit};
+use crate::qtty::{Days, Quantity, Unit};
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -337,7 +337,7 @@ where
 mod tests {
     use super::*;
     use crate::time::{Interval, ModifiedJulianDate};
-    use qtty::{Day, Radian};
+    use crate::qtty::{Day, Radian};
 
     type Days = Quantity<Day>;
     type Mjd = ModifiedJulianDate;
@@ -423,10 +423,10 @@ mod tests {
     #[test]
     fn brent_handles_step_function() {
         let root = brent(Days::new(-1.0), Days::new(1.0), |t: Days| {
-            Radians::new(if t < 0.0 { -1.0 } else { 1.0 })
+            Radians::new(if t < Days::new(0.0) { -1.0 } else { 1.0 })
         })
         .expect("step");
-        assert!(root.abs() < 1e-6);
+        assert!(root.abs() < Days::new(1e-6));
     }
 
     #[test]
@@ -455,10 +455,10 @@ mod tests {
     #[test]
     fn bisection_handles_step_function() {
         let root = bisection(Days::new(-1.0), Days::new(1.0), |t: Days| {
-            Radians::new(if t < 0.0 { -5.0 } else { 5.0 })
+            Radians::new(if t < Days::new(0.0) { -5.0 } else { 5.0 })
         })
         .expect("step");
-        assert!(root.abs() < 1e-6);
+        assert!(root.abs() < Days::new(1e-6));
     }
 
     #[test]

@@ -8,7 +8,7 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
-use qtty::*;
+use siderust::qtty::*;
 use siderust::calculus::altitude::{
     above_threshold, altitude_ranges, crossings, AltitudePeriodsProvider, SearchOpts,
 };

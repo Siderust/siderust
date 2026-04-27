@@ -19,7 +19,7 @@
 //! | [`classify`] | Determine if a point is a local max, min, or neither |
 
 use crate::time::{ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 use super::root_finding;
 
@@ -94,26 +94,26 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let mut p = period;
-    let mut x1 = p.end - PHI * p.duration();
-    let mut x2 = p.start + PHI * p.duration();
+    let mut x1 = p.end - PHI * (p.end - p.start);
+    let mut x2 = p.start + PHI * (p.end - p.start);
     let mut f1: Quantity<V> = f(x1);
     let mut f2: Quantity<V> = f(x2);
 
     for _ in 0..MAX_ITER {
-        if p.duration() < tol {
+        if (p.end - p.start) < tol {
             break;
         }
         if f1 < f2 {
             p.end = x2;
             x2 = x1;
             f2 = f1;
-            x1 = p.end - PHI * p.duration();
+            x1 = p.end - PHI * (p.end - p.start);
             f1 = f(x1);
         } else {
             p.start = x1;
             x1 = x2;
             f1 = f2;
-            x2 = p.start + PHI * p.duration();
+            x2 = p.start + PHI * (p.end - p.start);
             f2 = f(x2);
         }
     }
@@ -295,7 +295,7 @@ where
                     k
                 } else {
                     // Default based on derivative sign change direction
-                    if prev_d > 0.0 {
+                    if prev_d > Quantity::<V>::new(0.0) {
                         ExtremumKind::Maximum
                     } else {
                         ExtremumKind::Minimum
@@ -324,7 +324,7 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::Radian;
+    use crate::qtty::Radian;
 
     type Radians = Quantity<Radian>;
 

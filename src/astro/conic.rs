@@ -14,7 +14,7 @@ use affn::conic::{
     PeriapsisParam, SemiMajorAxisParam, TypedSemiMajorAxisParam,
 };
 use affn::frames::EclipticMeanJ2000;
-use qtty::*;
+use crate::qtty::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

@@ -39,7 +39,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::time::JulianDate;
 use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 use super::star_equations::{StarAltitudeParams, ThresholdResult};
 
@@ -74,15 +74,15 @@ const SCAN_STEP_FALLBACK: Days = Quantity::new(10.0 / 1440.0);
 pub(crate) fn fixed_star_altitude_rad(
     mjd: ModifiedJulianDate,
     site: &crate::coordinates::centers::Geodetic<crate::coordinates::frames::ECEF>,
-    ra_j2000: qtty::Degrees,
-    dec_j2000: qtty::Degrees,
-) -> qtty::Radians {
+    ra_j2000: crate::qtty::Degrees,
+    dec_j2000: crate::qtty::Degrees,
+) -> crate::qtty::Radians {
     use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
     use crate::astro::nutation::nutation_iau2000b;
     use crate::astro::precession::precession_nutation_matrix;
     use crate::astro::sidereal::gast_iau2006;
     use crate::coordinates::transform::AstroContext;
-    use qtty::Radian;
+    use crate::qtty::Radian;
 
     let jd: JulianDate = mjd.into();
 
@@ -116,7 +116,7 @@ pub(crate) fn fixed_star_altitude_rad(
     // Equatorial → horizontal altitude
     let lat = site.lat.to::<Radian>().value();
     let sin_alt = dec_tod.sin() * lat.sin() + dec_tod.cos() * lat.cos() * ha.cos();
-    qtty::Radians::new(sin_alt.asin())
+    crate::qtty::Radians::new(sin_alt.asin())
 }
 
 // =============================================================================
@@ -313,7 +313,7 @@ mod tests {
         Geodetic::<ECEF>::new(
             Degrees::new(0.0),
             Degrees::new(51.4769),
-            Quantity::<qtty::Meter>::new(0.0),
+            Quantity::<crate::qtty::Meter>::new(0.0),
         )
     }
 
@@ -321,7 +321,7 @@ mod tests {
         Geodetic::<ECEF>::new(
             Degrees::new(-17.892),
             Degrees::new(28.762),
-            Quantity::<qtty::Meter>::new(2396.0),
+            Quantity::<crate::qtty::Meter>::new(2396.0),
         )
     }
 
@@ -342,7 +342,7 @@ mod tests {
             Degrees::new(0.0),
         );
         assert_eq!(periods.len(), 1, "Polaris should be continuously above");
-        let dur = periods[0].duration_days();
+        let dur = periods[0].end - periods[0].start;
         assert!(
             (dur - Days::new(7.0)).abs() < Days::new(0.01),
             "should span full 7 days, got {}",
@@ -365,10 +365,10 @@ mod tests {
             periods.len()
         );
         for p in &periods {
-            let hours = p.duration_days().to::<Hour>();
+            let hours = ((p).end - (p).start).to::<Hour>();
             // First/last period may be truncated by the window boundary
             assert!(
-                hours > 0.1 && hours < 18.0,
+                hours > Hours::new(0.1) && hours < Hours::new(18.0),
                 "unreasonable above‑horizon duration: {} h",
                 hours
             );
@@ -397,8 +397,8 @@ mod tests {
         let above = find_star_above_periods(ra, dec, site, period, Degrees::new(0.0));
         let below = find_star_below_periods(ra, dec, site, period, Degrees::new(0.0));
 
-        let total_above: Days = above.iter().map(|p| p.duration_days()).sum();
-        let total_below: Days = below.iter().map(|p| p.duration_days()).sum();
+        let total_above: Days = above.iter().map(|p| p.end - p.start).sum();
+        let total_below: Days = below.iter().map(|p| p.end - p.start).sum();
         assert!(
             (total_above + total_below - Days::new(7.0)).abs() < Days::new(0.01),
             "above + below should cover 7 days, got {}",

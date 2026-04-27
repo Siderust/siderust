@@ -89,7 +89,7 @@
 //! ```
 
 use crate::astro::orbit::KeplerianOrbit;
-use qtty::*;
+use crate::qtty::*;
 use std::fmt::Debug;
 
 #[cfg(feature = "serde")]
@@ -110,7 +110,7 @@ use super::frames::ECEF;
 ///
 /// - `Geodetic<ECEF>`, WGS84 ellipsoid
 /// - `Geodetic<ITRF>`, GRS80 ellipsoid
-pub type Geodetic<F, U = qtty::Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
+pub type Geodetic<F, U = crate::qtty::Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
 
 // Required for Transform specialization
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
@@ -137,7 +137,7 @@ pub struct Barycentric;
 /// ```rust
 /// use siderust::coordinates::centers::{Topocentric, Geodetic, ReferenceCenter};
 /// use siderust::coordinates::frames::ECEF;
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// // Topocentric coordinates require a geodetic site
 /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
@@ -161,22 +161,21 @@ impl affn::AffineCenter for Topocentric {}
 impl Topocentric {
     /// Creates a Topocentric Horizontal position with observer site.
     ///
-    /// Angles are canonicalized:
-    /// - `alt` is folded to `[-90°, +90°]`
-    /// - `az` is normalized to `[0°, 360°)`
+    /// Angles are canonicalized to the canonical spherical ranges:
+    /// - `alt` is folded into `[-90°, +90°]`.
+    /// - `az` is normalized into `[0°, 360°)`.
+    /// - When `alt` overshoots a pole, `az` is rotated by 180° to keep
+    ///   the represented point on the sphere consistent.
+    /// - Negative `distance` is converted to a positive distance at the
+    ///   antipodal direction.
     #[inline]
-    pub fn horizontal<U: qtty::LengthUnit, T: Into<qtty::Quantity<U>>>(
+    pub fn horizontal<U: crate::qtty::LengthUnit, T: Into<crate::qtty::Quantity<U>>>(
         site: Geodetic<ECEF>,
-        alt: qtty::Degrees,
-        az: qtty::Degrees,
+        alt: crate::qtty::Degrees,
+        az: crate::qtty::Degrees,
         distance: T,
     ) -> affn::spherical::Position<Topocentric, super::frames::Horizontal, U> {
-        affn::spherical::Position::new_raw_with_params(
-            site,
-            alt.wrap_quarter_fold(),
-            az.normalize(),
-            distance.into(),
-        )
+        affn::spherical::Position::new_with_params(site, alt, az, distance.into())
     }
 }
 
@@ -308,7 +307,7 @@ pub enum OrbitReferenceCenter {
 /// use siderust::coordinates::centers::{BodycentricParams, OrbitReferenceCenter};
 /// use siderust::astro::orbit::KeplerianOrbit;
 /// use siderust::time::JulianDate;
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// // Mars-like orbit (heliocentric)
 /// let mars_orbit = KeplerianOrbit::new(
@@ -373,7 +372,7 @@ impl Default for BodycentricParams {
     /// always provide meaningful orbital elements for body-centric calculations.
     fn default() -> Self {
         use crate::time::JulianDate;
-        use qtty::AstronomicalUnits;
+        use crate::qtty::AstronomicalUnits;
 
         Self {
             orbit: KeplerianOrbit::new(
@@ -411,7 +410,7 @@ impl Default for BodycentricParams {
 /// use siderust::coordinates::frames;
 /// use siderust::astro::orbit::KeplerianOrbit;
 /// use siderust::time::JulianDate;
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// // Create orbital parameters for an Earth-orbiting satellite
 /// let satellite_orbit = KeplerianOrbit::new(
@@ -493,9 +492,9 @@ mod tests {
     #[test]
     fn geodetic_coord_default() {
         let coord = Geodetic::<ECEF>::default();
-        assert_eq!(coord.lon, 0.0);
-        assert_eq!(coord.lat, 0.0);
-        assert_eq!(coord.height, 0.0);
+        assert_eq!(coord.lon.value(), 0.0);
+        assert_eq!(coord.lat.value(), 0.0);
+        assert_eq!(coord.height.value(), 0.0);
     }
 
     #[test]

@@ -11,7 +11,7 @@ use crate::coordinates::frames::{self, MutableFrame};
 use crate::coordinates::transform::frames::bias;
 use crate::coordinates::transform::TransformFrame;
 use nalgebra::Vector3;
-use qtty::Unit;
+use crate::qtty::Unit;
 
 /// Identity frame transform for velocities.
 impl<F, U> TransformFrame<Velocity<F, U>> for Velocity<F, U>
@@ -89,7 +89,7 @@ impl<U: Unit> TransformFrame<Velocity<frames::EclipticMeanJ2000, U>> for Velocit
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::{AstronomicalUnit, Day, Per, Quantity};
+    use crate::qtty::{AstronomicalUnit, Day, Per, Quantity};
 
     type AuPerDay = Per<AstronomicalUnit, Day>;
 

@@ -43,16 +43,16 @@ use crate::time::JulianDate;
 pub(crate) fn nutation_with_celestial_pole_offsets<Nut: NutationModel>(
     jd: JulianDate,
     eop: EopValues,
-) -> (qtty::Radians, qtty::Radians) {
+) -> (crate::qtty::Radians, crate::qtty::Radians) {
     let nut = Nut::nutation(jd);
     let mut dpsi = nut.dpsi;
     let mut deps = nut.deps;
 
     // Apply IERS celestial pole offsets dX,dY as first-order corrections.
     // dψ_eop = dX/sin(εA), dε_eop = dY.
-    let dx_rad = qtty::Radians::from(eop.dx);
-    let dy_rad = qtty::Radians::from(eop.dy);
-    let zero = qtty::Radians::new(0.0);
+    let dx_rad = crate::qtty::Radians::from(eop.dx);
+    let dy_rad = crate::qtty::Radians::from(eop.dy);
+    let zero = crate::qtty::Radians::new(0.0);
     if dx_rad != zero || dy_rad != zero {
         let sin_eps = nut.mean_obliquity.sin();
         if sin_eps.abs() > 1e-15 {

@@ -3,7 +3,7 @@
 
 //! Night-related solar types (twilight thresholds, etc.).
 
-use qtty::Degrees;
+use crate::qtty::Degrees;
 
 /// Common twilight types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -41,7 +41,7 @@ impl From<Twilight> for Degrees {
 
 /// Standard twilight threshold definitions (Sun center altitude).
 pub mod twilight {
-    use qtty::Degrees;
+    use crate::qtty::Degrees;
 
     /// Civil twilight: Sun center 6° below horizon (-6°)
     pub const CIVIL: Degrees = Degrees::new(-6.0);

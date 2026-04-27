@@ -33,7 +33,7 @@
 //! ```rust
 //! use siderust::coordinates::horizontal::{AzimuthOrigin, AzimuthSense, HorizontalConvention};
 //! use siderust::coordinates::horizontal as hz;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! // Convert a foreign "south-clockwise" azimuth to siderust's native convention
 //! let foreign_az = 45.0 * DEG; // 45° from South, clockwise
@@ -45,14 +45,14 @@
 //! assert!((native_az.value() - 225.0).abs() < 1e-10);
 //! ```
 //!
-//! The helpers work on raw [`Degrees`](qtty::Degrees) values as well as on
+//! The helpers work on raw [`Degrees`](crate::qtty::Degrees) values as well as on
 //! [`Direction<Horizontal>`] and [`Position<Topocentric, Horizontal, U>`]
 //! coordinates.
 
 use crate::coordinates::centers::Topocentric;
 use crate::coordinates::frames::Horizontal;
 use affn::spherical;
-use qtty::{Degrees, LengthUnit, DEG};
+use crate::qtty::{Degrees, LengthUnit, DEG};
 
 // =============================================================================
 // Convention descriptors
@@ -185,7 +185,7 @@ const fn origin_offset_cw(origin: AzimuthOrigin) -> f64 {
 ///
 /// ```rust
 /// use siderust::coordinates::horizontal::{HorizontalConvention, convert_azimuth};
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// // 90° in North-CW (= due East) → South-CW
 /// let south_cw = convert_azimuth(
@@ -236,7 +236,7 @@ pub fn convert_azimuth(
 /// use siderust::coordinates::horizontal::{HorizontalConvention, direction_to_native};
 /// use siderust::coordinates::spherical::Direction;
 /// use siderust::coordinates::frames::Horizontal;
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let foreign = Direction::<Horizontal>::new(30.0 * DEG, 45.0 * DEG); // alt=30, az=45
 /// let native = direction_to_native(&foreign, &HorizontalConvention::SOUTH_CLOCKWISE);
@@ -262,7 +262,7 @@ pub fn direction_to_native(
 /// use siderust::coordinates::horizontal::{HorizontalConvention, direction_from_native};
 /// use siderust::coordinates::spherical::Direction;
 /// use siderust::coordinates::frames::Horizontal;
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let native = Direction::<Horizontal>::new(30.0 * DEG, 225.0 * DEG);
 /// let foreign = direction_from_native(&native, &HorizontalConvention::SOUTH_CLOCKWISE);
@@ -363,7 +363,7 @@ pub fn convert_position<U: LengthUnit>(
 ///
 /// ```rust
 /// use siderust::coordinates::horizontal::flip_north_south;
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let north_az = 45.0 * DEG;   // NE in North-CW
 /// let south_az = flip_north_south(north_az);
@@ -385,7 +385,7 @@ pub fn flip_north_south(azimuth: Degrees) -> Degrees {
 ///
 /// ```rust
 /// use siderust::coordinates::horizontal::flip_sense;
-/// use qtty::*;
+/// use siderust::qtty::*;
 ///
 /// let cw_az = 90.0 * DEG;   // East in N-CW
 /// let ccw_az = flip_sense(cw_az);
@@ -402,7 +402,7 @@ pub fn flip_sense(azimuth: Degrees) -> Degrees {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::DEG;
+    use crate::qtty::DEG;
 
     const TOL: f64 = 1e-10;
 
@@ -676,7 +676,7 @@ mod tests {
     fn position_to_native_south_cw() {
         use crate::coordinates::centers::{Geodetic, Topocentric};
         use crate::coordinates::frames::ECEF;
-        use qtty::{AstronomicalUnit, AU, M};
+        use crate::qtty::{AstronomicalUnit, AU, M};
 
         let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
         let pos =
@@ -691,7 +691,7 @@ mod tests {
     fn position_from_native_south_cw() {
         use crate::coordinates::centers::{Geodetic, Topocentric};
         use crate::coordinates::frames::ECEF;
-        use qtty::{AstronomicalUnit, AU, M};
+        use crate::qtty::{AstronomicalUnit, AU, M};
 
         let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
         let pos =
@@ -706,7 +706,7 @@ mod tests {
     fn position_convert_roundtrip() {
         use crate::coordinates::centers::{Geodetic, Topocentric};
         use crate::coordinates::frames::ECEF;
-        use qtty::{AstronomicalUnit, AU, M};
+        use crate::qtty::{AstronomicalUnit, AU, M};
 
         let site = Geodetic::<ECEF>::new(-17.89 * DEG, 28.75 * DEG, 2396.0 * M);
         let pos =
@@ -732,7 +732,7 @@ mod tests {
     fn position_convert_preserves_site() {
         use crate::coordinates::centers::{Geodetic, Topocentric};
         use crate::coordinates::frames::ECEF;
-        use qtty::{AstronomicalUnit, AU, M};
+        use crate::qtty::{AstronomicalUnit, AU, M};
 
         let site = Geodetic::<ECEF>::new(-17.89 * DEG, 28.75 * DEG, 2396.0 * M);
         let pos =

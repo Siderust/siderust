@@ -18,7 +18,7 @@ use super::nut00a_tables::{NUT00A_LS, NUT00A_PL};
 use super::NutationAngles;
 use crate::astro::precession::mean_obliquity_iau2006;
 use crate::time::JulianDate;
-use qtty::*;
+use crate::qtty::*;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Fundamental arguments, planetary longitudes (IERS 2003)
@@ -187,7 +187,7 @@ const U2R: f64 = AS2R / 1e7;
 /// This is the raw IAU 2000A result; for use with IAU 2006 precession
 /// call [`nutation_iau2006a`] instead, which applies the P03 corrections.
 pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
-    let t = jd.julian_centuries().value();
+    let t = jd.julian_centuries();
 
     // ── Luni-solar fundamental arguments ──
     let el = fa_l_iers03(t);
@@ -268,7 +268,7 @@ pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
 ///
 /// Reference: Wallace & Capitaine (2006), Eqs. 5.
 pub(crate) fn nutation_iau2006a(jd: JulianDate) -> NutationAngles {
-    let t = jd.julian_centuries().value();
+    let t = jd.julian_centuries();
     let fj2 = -2.7774e-6 * t;
 
     let (dp, de) = nutation_iau2000a_raw(jd);

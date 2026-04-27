@@ -14,7 +14,7 @@
 //! ## Key Concepts
 //! - **Position, Direction and Velocity Types**: Both spherical and cartesian coordinates are parameterized
 //!   by a reference center (e.g., `Heliocentric`, `Geocentric`), a reference frame (e.g., `EclipticMeanJ2000`, `EquatorialMeanJ2000`, `ICRS`),
-//!   and a measure unit (`Unitless`, `LengthUnit`, `VelocityUnit`). This ensures that only compatible coordinates can be used together.
+//!   and a measure unit (`Dimensionless`, `LengthUnit`, `VelocityUnit`). This ensures that only compatible coordinates can be used together.
 //! - **Phantom Types**: The `Center`, `Frame` and `Unit`types are zero-cost markers that encode coordinate semantics at compile time.
 //! - **Type Safety**: Operations between coordinates are only allowed when their type parameters match, preventing accidental mixing of frames, centers or magnitude.
 //! - **Conversions**: Seamless conversion between spherical and cartesian forms, and between different frames and centers, is provided via `From`/`Into` and the `Transform` trait.
@@ -84,7 +84,7 @@
 //! use siderust::coordinates::spherical;
 //! use siderust::coordinates::cartesian;
 //! use siderust::coordinates::frames::EclipticMeanJ2000;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! // Create an ecliptic spherical direction (frame-only, no center)
 //! let spherical = spherical::Direction::<EclipticMeanJ2000>::new(

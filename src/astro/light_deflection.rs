@@ -51,7 +51,7 @@
 //! * Klioner, S. A. (2003), AJ 125, 1580
 
 use crate::coordinates::cartesian::direction;
-use qtty::{Arcseconds, AstronomicalUnits, Radians};
+use crate::qtty::{Arcseconds, AstronomicalUnits, Radians};
 
 /// Schwarzschild radius of the Sun in AU: 2 G M☉ / c².
 ///
@@ -212,7 +212,7 @@ pub fn solar_deflection_inverse(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::Radians;
+    use crate::qtty::Radians;
 
     const RAD_TO_ARCSEC: f64 = 206_264.806_247_096_36;
 

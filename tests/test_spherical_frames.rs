@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::{direction, position};
@@ -15,15 +15,15 @@ fn ecef_normalization_and_altitude() {
     // and lon via normalize to [0, 360)
     // Note: IAU convention - lon first, lat second
     let dir = direction::EcefDir::new(190.0 * DEG, 95.0 * DEG);
-    // 95° lat after wrap_quarter_fold: clamped to 85° (90 - 5)
-    // 190° lon after normalize stays as 190°
+    // 95° lat wraps over the pole via wrap_quarter_fold: lat → 85°,
+    // longitude flips by 180° (190° + 180° = 370° → 10°).
     assert!(
         (dir.lat().value() - 85.0).abs() < EPS,
         "lat mismatch: {}",
         dir.lat().value()
     );
     assert!(
-        (dir.lon().value() - 190.0).abs() < EPS,
+        (dir.lon().value() - 10.0).abs() < EPS,
         "lon mismatch: {}",
         dir.lon().value()
     );
@@ -80,9 +80,10 @@ fn horizontal_normalization() {
     // Direction is now frame-only (no site parameter)
     // Note: new(alt, az) - IAU Alt-Az convention (altitude first)
     let dir = direction::Horizontal::new(120.0 * DEG, -30.0 * DEG);
-    // Altitude 120° wraps via wrap_quarter_fold: 90 - |120-90| = 60°, azimuth -30° normalizes to 330°
+    // Altitude 120° wraps over the zenith via wrap_quarter_fold: alt → 60°,
+    // azimuth flips by 180° (-30° + 180° = 150°).
     assert!((dir.alt().value() - 60.0).abs() < EPS, "alt={}", dir.alt());
-    assert!((dir.az().value() - 330.0).abs() < EPS, "az={}", dir.az());
+    assert!((dir.az().value() - 150.0).abs() < EPS, "az={}", dir.az());
 
     // Positions use new_with_site for Topocentric center
     let site = Geodetic::<ECEF>::default();
@@ -90,7 +91,7 @@ fn horizontal_normalization() {
     let pos = siderust::coordinates::centers::Topocentric::horizontal(
         site,
         120.0 * DEG, // alt - wraps to 60
-        -30.0 * DEG, // az - normalizes to 330
+        -30.0 * DEG, // az - flips by 180° to 150
         2.0 * AU,
     );
     assert!(
@@ -99,7 +100,7 @@ fn horizontal_normalization() {
         pos.alt()
     );
     assert!(
-        (pos.az().value() - 330.0).abs() < EPS,
+        (pos.az().value() - 150.0).abs() < EPS,
         "pos az={}",
         pos.az()
     );

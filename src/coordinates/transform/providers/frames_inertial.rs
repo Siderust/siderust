@@ -342,10 +342,10 @@ impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
         let mut dpsi = nut.dpsi;
         let mut deps = nut.deps;
         let eop = ctx.eop_at(jd);
-        let dx_rad = qtty::Radians::from(eop.dx);
-        let dy_rad = qtty::Radians::from(eop.dy);
+        let dx_rad = crate::qtty::Radians::from(eop.dx);
+        let dy_rad = crate::qtty::Radians::from(eop.dy);
 
-        let zero = qtty::Radians::new(0.0);
+        let zero = crate::qtty::Radians::new(0.0);
         if dx_rad != zero || dy_rad != zero {
             let sin_eps = nut.mean_obliquity.sin();
             if sin_eps.abs() > 1e-15 {

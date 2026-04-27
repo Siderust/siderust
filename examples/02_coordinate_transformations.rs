@@ -5,7 +5,7 @@
 //!
 //! Run with: `cargo run --example 02_coordinate_transformations`
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::bodies::solar_system::{Earth, Mars};
 use siderust::coordinates::cartesian::position::{
     EclipticMeanJ2000, EquatorialMeanJ2000, GCRS, HCRS, ICRS,

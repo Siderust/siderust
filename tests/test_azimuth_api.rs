@@ -7,7 +7,7 @@
 //! `azimuth_extrema`, and interval-query functions across Sun, Moon, and star
 //! targets.
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::bodies::catalog;
 use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::azimuth::{
@@ -262,9 +262,9 @@ fn outside_plus_inside_equals_window_sun() {
     let total: f64 = inside
         .iter()
         .chain(outside.iter())
-        .map(|p| p.duration_days().value())
+        .map(|p| ((p).end - (p).start).value())
         .sum();
-    let window_len = window.duration_days().value();
+    let window_len = ((window).end - (window).start).value();
     assert!(
         (total - window_len).abs() < 1e-5,
         "inside ({total:.6}) + outside must equal window ({window_len:.6})"
@@ -294,9 +294,9 @@ fn outside_plus_inside_equals_window_moon() {
     let total: f64 = inside
         .iter()
         .chain(outside.iter())
-        .map(|p| p.duration_days().value())
+        .map(|p| ((p).end - (p).start).value())
         .sum();
-    let window_len = window.duration_days().value();
+    let window_len = ((window).end - (window).start).value();
     assert!(
         (total - window_len).abs() < 1e-5,
         "Moon: inside + outside must equal window"
@@ -331,9 +331,9 @@ fn wrap_range_complement_covers_window() {
     let total: f64 = inside
         .iter()
         .chain(outside.iter())
-        .map(|p| p.duration_days().value())
+        .map(|p| ((p).end - (p).start).value())
         .sum();
-    let window_len = window.duration_days().value();
+    let window_len = ((window).end - (window).start).value();
     assert!(
         (total - window_len).abs() < 1e-5,
         "wrap-around inside + outside must cover the full window"

@@ -4,7 +4,7 @@
 use super::bias;
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
-use qtty::LengthUnit;
+use crate::qtty::LengthUnit;
 
 // Implement Transform trait for ICRS -> EclipticMeanJ2000
 impl<C: ReferenceCenter, U> TransformFrame<Position<C, frames::EclipticMeanJ2000, U>>
@@ -44,8 +44,8 @@ mod tests {
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
     use crate::time::JulianDate;
-    use qtty::Degrees;
-    use qtty::*;
+    use crate::qtty::Degrees;
+    use crate::qtty::*;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 

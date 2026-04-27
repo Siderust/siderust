@@ -32,7 +32,7 @@ use crate::coordinates::{
     spherical::direction,
 };
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnit, Kilometer};
+use crate::qtty::{AstronomicalUnit, Kilometer};
 
 use super::CoordinateWithPM;
 
@@ -150,13 +150,13 @@ mod tests {
     use super::*;
     use crate::bodies::catalog;
     use crate::time::JulianDate;
-    use qtty::*;
+    use crate::qtty::*;
 
     #[test]
     fn icrs_direction_is_time_invariant() {
-        let dir = direction::ICRS::new(qtty::Degrees::new(101.287), qtty::Degrees::new(-16.716));
+        let dir = direction::ICRS::new(crate::qtty::Degrees::new(101.287), crate::qtty::Degrees::new(-16.716));
         let at_j2000 = dir.track(JulianDate::J2000);
-        let at_j2050 = dir.track(JulianDate::J2000 + qtty::Days::new(365.25 * 50.0));
+        let at_j2050 = dir.track(JulianDate::J2000 + crate::qtty::Days::new(365.25 * 50.0));
         assert_eq!(at_j2000.ra(), at_j2050.ra());
         assert_eq!(at_j2000.dec(), at_j2050.dec());
     }
@@ -187,7 +187,7 @@ mod tests {
     #[test]
     fn earth_changes_with_time() {
         let p1 = solar_system::Earth.track(JulianDate::J2000);
-        let p2 = solar_system::Earth.track(JulianDate::J2000 + qtty::Days::new(182.625));
+        let p2 = solar_system::Earth.track(JulianDate::J2000 + crate::qtty::Days::new(182.625));
         // After half a year, Earth should be on the opposite side (~2 AU apart)
         let sep = p1.position.distance_to(&p2.position);
         assert!(
@@ -224,15 +224,15 @@ mod tests {
     #[test]
     fn coordinate_with_pm_returns_stored_position() {
         use crate::coordinates::spherical::position;
-        let pos = position::EquatorialMeanJ2000::<qtty::LightYear>::new(
-            qtty::Degrees::new(88.0),
-            qtty::Degrees::new(7.0),
-            qtty::LightYears::new(548.0),
+        let pos = position::EquatorialMeanJ2000::<crate::qtty::LightYear>::new(
+            crate::qtty::Degrees::new(88.0),
+            crate::qtty::Degrees::new(7.0),
+            crate::qtty::LightYears::new(548.0),
         );
         let sample = CoordinateWithPM::new_static(pos, JulianDate::J2000);
-        let result = sample.track(JulianDate::J2000 + qtty::Days::new(365.25));
-        assert_eq!(result.ra(), 88.0);
-        assert_eq!(result.dec(), 7.0);
+        let result = sample.track(JulianDate::J2000 + crate::qtty::Days::new(365.25));
+        assert_eq!(result.ra(), crate::qtty::Degrees::new(88.0));
+        assert_eq!(result.dec(), crate::qtty::Degrees::new(7.0));
     }
 
     #[test]
@@ -241,9 +241,9 @@ mod tests {
             obj.track(jd)
         }
 
-        let dir = direction::ICRS::new(qtty::Degrees::new(45.0), qtty::Degrees::new(30.0));
+        let dir = direction::ICRS::new(crate::qtty::Degrees::new(45.0), crate::qtty::Degrees::new(30.0));
         let result = track_anything(&dir, JulianDate::J2000);
-        assert_eq!(result.ra(), 45.0);
-        assert_eq!(result.dec(), 30.0);
+        assert_eq!(result.ra(), crate::qtty::Degrees::new(45.0));
+        assert_eq!(result.dec(), crate::qtty::Degrees::new(30.0));
     }
 }

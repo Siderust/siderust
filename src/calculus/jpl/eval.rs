@@ -12,12 +12,12 @@
 use crate::coordinates::frames::ICRF;
 use crate::time::JulianDate;
 use affn::{Displacement, Velocity};
-use qtty::*;
+use crate::qtty::*;
 
 type KmPerDay = Per<Kilometer, Day>;
-type KmPerDayQ = qtty::Quantity<KmPerDay>;
+type KmPerDayQ = crate::qtty::Quantity<KmPerDay>;
 
-const SECONDS_PER_DAY: f64 = qtty::time::SECONDS_PER_DAY;
+const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Shared helpers (used by both SegmentDescriptor and DynSegmentDescriptor)
@@ -46,7 +46,7 @@ fn locate_params(
     jd_tdb: JulianDate,
 ) -> (usize, f64, Seconds) {
     let et = jd_to_et(jd_tdb);
-    let idx = ((et - init) / intlen).value() as usize;
+    let idx = ((et - init) / intlen) as usize;
     let idx = idx.min(n_records - 1);
     (idx, et.value(), intlen)
 }

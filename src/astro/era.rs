@@ -39,7 +39,7 @@
 //! * SOFA/ERFA routine `iauEra00`
 
 use crate::time::JulianDate;
-use qtty::*;
+use crate::qtty::*;
 use std::f64::consts::TAU;
 
 /// Compute the Earth Rotation Angle for a given Julian Date on the UT1 axis.

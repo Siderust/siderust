@@ -4,7 +4,7 @@
 use super::bias;
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
-use qtty::LengthUnit;
+use crate::qtty::LengthUnit;
 
 // Implement Transform trait for EclipticMeanJ2000 -> ICRS
 impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS, U>>
@@ -39,7 +39,7 @@ mod tests {
     use super::*;
     use crate::coordinates::centers::Barycentric;
     use crate::macros::assert_cartesian_eq;
-    use qtty::AstronomicalUnit;
+    use crate::qtty::AstronomicalUnit;
 
     #[test]
     fn ecliptic_roundtrip_through_icrs_preserves_vector() {

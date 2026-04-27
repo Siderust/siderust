@@ -25,7 +25,7 @@ use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
-use qtty::*;
+use crate::qtty::*;
 
 use super::moon_cache::{find_and_label_crossings, MoonAltitudeContext};
 
@@ -202,7 +202,7 @@ mod tests {
 
         for p in &periods {
             assert!(
-                p.duration_days() > Days::new(0.0),
+                ((p).end - (p).start) > Days::new(0.0),
                 "Period duration should be positive"
             );
         }

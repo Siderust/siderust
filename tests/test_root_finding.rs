@@ -4,7 +4,7 @@
 //! Integration tests for `math_core::root_finding`, the astronomy-agnostic
 //! Brent & bisection solvers that use typed [`qtty`] quantities.
 
-use qtty::{Day, Quantity, Radian};
+use siderust::qtty::{Day, Quantity, Radian};
 use siderust::calculus::math_core::root_finding;
 use siderust::time::{ModifiedJulianDate, Period};
 use std::cell::Cell;
@@ -42,10 +42,10 @@ fn brent_finds_linear_root() {
 #[test]
 fn brent_handles_step_function() {
     let root = root_finding::brent(Days::new(-2.0), Days::new(2.0), |t: Days| {
-        Radians::new(if t < 0.0 { -5.0 } else { 5.0 })
+        Radians::new(if t.value() < 0.0 { -5.0 } else { 5.0 })
     })
     .expect("step crossing");
-    assert!(root.abs() < 1e-6);
+    assert!(root.abs().value() < 1e-6);
 }
 
 #[test]
@@ -140,10 +140,10 @@ fn bisection_returns_none_for_invalid_bracket() {
 #[test]
 fn bisection_handles_step_function() {
     let root = root_finding::bisection(Days::new(-1.0), Days::new(1.0), |t: Days| {
-        Radians::new(if t < 0.0 { -5.0 } else { 5.0 })
+        Radians::new(if t.value() < 0.0 { -5.0 } else { 5.0 })
     })
     .expect("step crossing via bisection");
-    assert!(root.abs() < 1e-6);
+    assert!(root.abs().value() < 1e-6);
 }
 
 #[test]
@@ -152,5 +152,5 @@ fn bisection_endpoint_root() {
         Radians::new(t.value())
     })
     .expect("root at 0");
-    assert!(root.abs() < 1e-12);
+    assert!(root.abs().value() < 1e-12);
 }

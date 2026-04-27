@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::coordinates::cartesian::{Direction, Displacement, Position};
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::frames::EclipticMeanJ2000;

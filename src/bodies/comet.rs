@@ -17,7 +17,7 @@
 //! ## Example
 //! ```rust
 //! use siderust::bodies::comet::{HALLEY, OrbitFrame, CometBuilder};
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! println!("Halley's tail is at least {:?} long", HALLEY.tail_length);
 //!
@@ -34,7 +34,7 @@
 
 use crate::astro::orbit::KeplerianOrbit;
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnits, Degrees, Kilometers};
+use crate::qtty::{AstronomicalUnits, Degrees, Kilometers};
 
 /// Indicates whether orbital elements are given **with respect to the Solar‑System barycentre**
 /// or the heliocentre (Sun‑centred).

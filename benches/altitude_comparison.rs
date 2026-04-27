@@ -14,7 +14,7 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
-use qtty::*;
+use siderust::qtty::*;
 use siderust::bodies::{Moon, Sun};
 use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::coordinates::spherical::direction;

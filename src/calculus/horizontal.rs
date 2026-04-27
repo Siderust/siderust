@@ -20,7 +20,7 @@ use crate::coordinates::transform::centers::position::to_topocentric::to_topocen
 use crate::coordinates::transform::{AstroContext, TransformContext};
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnits, Degree, LengthUnit, Meter, Quantity, Radian, Radians};
+use crate::qtty::{AstronomicalUnits, Degree, LengthUnit, Meter, Quantity, Radian, Radians};
 
 // =============================================================================
 // Apparent Topocentric Pipeline
@@ -192,8 +192,8 @@ where
 /// 3. Compute GAST → LAST → HA
 /// 4. Standard equatorial→horizontal altitude/azimuth formula
 pub fn star_horizontal(
-    ra_j2000: qtty::Degrees,
-    dec_j2000: qtty::Degrees,
+    ra_j2000: crate::qtty::Degrees,
+    dec_j2000: crate::qtty::Degrees,
     site: &Geodetic<frames::ECEF>,
     jd: JulianDate,
 ) -> spherical::Direction<frames::Horizontal> {

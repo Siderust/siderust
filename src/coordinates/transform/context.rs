@@ -32,30 +32,47 @@ use crate::astro::eop::{EopProvider, EopValues, IersEop};
 use crate::astro::nutation::NutationModel;
 use crate::time::JulianDate;
 
-#[cfg(not(feature = "de440"))]
+#[cfg(not(any(feature = "de440", feature = "de441")))]
 use crate::calculus::ephemeris::Vsop87Ephemeris;
 
 /// Default ephemeris type.
 ///
-/// - Without `de440` feature: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
+/// - Without a DE feature: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
+/// - With `de441` feature (and real data): `De441Ephemeris` (JPL DE441, compile-time).
 /// - With `de440` feature (and real data): `De440Ephemeris` (JPL DE440, compile-time).
-/// - With `de440` feature but `SIDERUST_JPL_STUB` set: falls back to [`Vsop87Ephemeris`]
-///   so tests run without downloading the BSP.
-/// - For DE441 or other large datasets: use [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris)
-///   with a BSP file loaded at runtime via [`DataManager`](crate::data::DataManager).
+/// - With a DE feature but matching `SIDERUST_JPL_STUB` set: falls back to
+///   [`Vsop87Ephemeris`] so tests run without downloading the BSP.
+/// - For other large datasets: use
+///   [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris) with a
+///   BSP file loaded at runtime via [`DataManager`](crate::data::DataManager).
 ///
 /// This type alias is used as the default `Eph` parameter in [`AstroContext`],
 /// so all code using `AstroContext::default()` will automatically use the
 /// selected backend.
-#[cfg(not(feature = "de440"))]
+#[cfg(not(any(feature = "de440", feature = "de441")))]
 pub type DefaultEphemeris = Vsop87Ephemeris;
 
-#[cfg(all(feature = "de440", not(siderust_mock_de440)))]
+#[cfg(all(feature = "de441", not(siderust_mock_de441)))]
+pub type DefaultEphemeris = crate::calculus::ephemeris::De441Ephemeris;
+
+#[cfg(all(
+    feature = "de440",
+    not(feature = "de441"),
+    not(siderust_mock_de440)
+))]
 pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
 
-// Stub: de440 feature is on but SIDERUST_JPL_STUB is set, fall back to VSOP87
-// so all tests work without the BSP download.
-#[cfg(all(feature = "de440", siderust_mock_de440))]
+// Stub: DE feature is on but SIDERUST_JPL_STUB is set, fall back to VSOP87 so
+// tests work without the BSP download. DE441 takes precedence when both DE
+// features are enabled.
+#[cfg(any(
+    all(feature = "de441", siderust_mock_de441),
+    all(
+        feature = "de440",
+        not(feature = "de441"),
+        siderust_mock_de440
+    )
+))]
 pub type DefaultEphemeris = crate::calculus::ephemeris::Vsop87Ephemeris;
 
 /// Default Earth orientation model: [`IersEop`], backed by the

@@ -5,6 +5,7 @@ use super::*;
 use crate::astro::nutation::{Iau2000B, Iau2006A};
 
 const EPSILON: f64 = 1e-10;
+const AU_EPS: crate::qtty::AstronomicalUnits = crate::qtty::AstronomicalUnits::new(EPSILON);
 
 #[test]
 fn test_identity_frame_rotation() {
@@ -52,9 +53,9 @@ fn test_identity_center_shift() {
         JulianDate::J2000,
         &AstroContext::default(),
     );
-    assert!((shift[0]).abs() < EPSILON);
-    assert!((shift[1]).abs() < EPSILON);
-    assert!((shift[2]).abs() < EPSILON);
+    assert!((shift[0]).abs() < AU_EPS);
+    assert!((shift[1]).abs() < AU_EPS);
+    assert!((shift[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -72,9 +73,9 @@ fn test_helio_bary_geo_composition() {
         helio_bary[2] + bary_geo[2],
     ];
 
-    assert!((helio_geo[0] - composed[0]).abs() < EPSILON);
-    assert!((helio_geo[1] - composed[1]).abs() < EPSILON);
-    assert!((helio_geo[2] - composed[2]).abs() < EPSILON);
+    assert!((helio_geo[0] - composed[0]).abs() < AU_EPS);
+    assert!((helio_geo[1] - composed[1]).abs() < AU_EPS);
+    assert!((helio_geo[2] - composed[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -85,9 +86,9 @@ fn test_center_shift_antisymmetry() {
     let forward = center_shift::<Heliocentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
     let backward = center_shift::<Geocentric, Heliocentric, EclipticMeanJ2000>(jd, &ctx);
 
-    assert!((forward[0] + backward[0]).abs() < EPSILON);
-    assert!((forward[1] + backward[1]).abs() < EPSILON);
-    assert!((forward[2] + backward[2]).abs() < EPSILON);
+    assert!((forward[0] + backward[0]).abs() < AU_EPS);
+    assert!((forward[1] + backward[1]).abs() < AU_EPS);
+    assert!((forward[2] + backward[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -1237,7 +1238,7 @@ fn test_mars_bary_shift_is_nonzero() {
     let ctx = AstroContext::default();
     let jd = JulianDate::J2000;
     let shift = center_shift::<Marscentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
-    let dist = (shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]).sqrt();
+    let dist = (shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]).scalar_sqrt();
     // Mars is 1.2–1.7 AU from the Sun at J2000
     assert!(
         dist > 1.0 && dist < 2.0,
@@ -1252,9 +1253,9 @@ fn test_mars_shift_antisymmetry() {
     let jd = JulianDate::J2000;
     let fwd = center_shift::<Marscentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Marscentric, EclipticMeanJ2000>(jd, &ctx);
-    assert!((fwd[0] + bwd[0]).abs() < EPSILON);
-    assert!((fwd[1] + bwd[1]).abs() < EPSILON);
-    assert!((fwd[2] + bwd[2]).abs() < EPSILON);
+    assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
+    assert!((fwd[1] + bwd[1]).abs() < AU_EPS);
+    assert!((fwd[2] + bwd[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -1267,9 +1268,9 @@ fn test_venus_helio_shift_via_barycentric() {
         let b = center_shift::<Barycentric, Venuscentric, EclipticMeanJ2000>(jd, &ctx);
         [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
     };
-    assert!((direct[0] - via_bary[0]).abs() < EPSILON);
-    assert!((direct[1] - via_bary[1]).abs() < EPSILON);
-    assert!((direct[2] - via_bary[2]).abs() < EPSILON);
+    assert!((direct[0] - via_bary[0]).abs() < AU_EPS);
+    assert!((direct[1] - via_bary[1]).abs() < AU_EPS);
+    assert!((direct[2] - via_bary[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -1282,9 +1283,9 @@ fn test_jupiter_geo_shift_via_barycentric() {
         let b = center_shift::<Barycentric, Jovicentric, EclipticMeanJ2000>(jd, &ctx);
         [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
     };
-    assert!((direct[0] - via_bary[0]).abs() < EPSILON);
-    assert!((direct[1] - via_bary[1]).abs() < EPSILON);
-    assert!((direct[2] - via_bary[2]).abs() < EPSILON);
+    assert!((direct[0] - via_bary[0]).abs() < AU_EPS);
+    assert!((direct[1] - via_bary[1]).abs() < AU_EPS);
+    assert!((direct[2] - via_bary[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -1292,7 +1293,7 @@ fn test_selenocentric_bary_shift_nonzero() {
     let ctx = AstroContext::default();
     let jd = JulianDate::J2000;
     let shift = center_shift::<Selenocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
-    let dist = (shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]).sqrt();
+    let dist = (shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]).scalar_sqrt();
     // Moon is ~1 AU from barycenter (roughly same as Earth)
     assert!(
         dist > 0.9 && dist < 1.1,
@@ -1307,9 +1308,9 @@ fn test_selenocentric_geocentric_antisymmetry() {
     let jd = JulianDate::J2000;
     let fwd = center_shift::<Geocentric, Selenocentric, EclipticMeanJ2000>(jd, &ctx);
     let bwd = center_shift::<Selenocentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
-    assert!((fwd[0] + bwd[0]).abs() < EPSILON);
-    assert!((fwd[1] + bwd[1]).abs() < EPSILON);
-    assert!((fwd[2] + bwd[2]).abs() < EPSILON);
+    assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
+    assert!((fwd[1] + bwd[1]).abs() < AU_EPS);
+    assert!((fwd[2] + bwd[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -1322,9 +1323,9 @@ fn test_selenocentric_helio_shift_via_barycentric() {
         let b = center_shift::<Barycentric, Selenocentric, EclipticMeanJ2000>(jd, &ctx);
         [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
     };
-    assert!((direct[0] - via_bary[0]).abs() < EPSILON);
-    assert!((direct[1] - via_bary[1]).abs() < EPSILON);
-    assert!((direct[2] - via_bary[2]).abs() < EPSILON);
+    assert!((direct[0] - via_bary[0]).abs() < AU_EPS);
+    assert!((direct[1] - via_bary[1]).abs() < AU_EPS);
+    assert!((direct[2] - via_bary[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -1332,7 +1333,7 @@ fn test_pluto_bary_shift_nonzero() {
     let ctx = AstroContext::default();
     let jd = JulianDate::J2000;
     let shift = center_shift::<Plutocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
-    let dist = (shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]).sqrt();
+    let dist = (shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]).scalar_sqrt();
     // Pluto is ~30–50 AU from the Sun
     assert!(
         dist > 25.0 && dist < 55.0,
@@ -1347,9 +1348,9 @@ fn test_pluto_shift_antisymmetry() {
     let jd = JulianDate::J2000;
     let fwd = center_shift::<Plutocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Plutocentric, EclipticMeanJ2000>(jd, &ctx);
-    assert!((fwd[0] + bwd[0]).abs() < EPSILON);
-    assert!((fwd[1] + bwd[1]).abs() < EPSILON);
-    assert!((fwd[2] + bwd[2]).abs() < EPSILON);
+    assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
+    assert!((fwd[1] + bwd[1]).abs() < AU_EPS);
+    assert!((fwd[2] + bwd[2]).abs() < AU_EPS);
 }
 
 // =========================================================================
@@ -1362,9 +1363,9 @@ fn test_helio_bary_shift_in_icrs_roundtrip() {
     let jd = JulianDate::J2000;
     let fwd = center_shift::<Heliocentric, Barycentric, ICRS>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Heliocentric, ICRS>(jd, &ctx);
-    assert!((fwd[0] + bwd[0]).abs() < EPSILON);
-    assert!((fwd[1] + bwd[1]).abs() < EPSILON);
-    assert!((fwd[2] + bwd[2]).abs() < EPSILON);
+    assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
+    assert!((fwd[1] + bwd[1]).abs() < AU_EPS);
+    assert!((fwd[2] + bwd[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -1373,9 +1374,9 @@ fn test_geo_bary_shift_in_icrs_roundtrip() {
     let jd = JulianDate::J2000;
     let fwd = center_shift::<Geocentric, Barycentric, ICRS>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Geocentric, ICRS>(jd, &ctx);
-    assert!((fwd[0] + bwd[0]).abs() < EPSILON);
-    assert!((fwd[1] + bwd[1]).abs() < EPSILON);
-    assert!((fwd[2] + bwd[2]).abs() < EPSILON);
+    assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
+    assert!((fwd[1] + bwd[1]).abs() < AU_EPS);
+    assert!((fwd[2] + bwd[2]).abs() < AU_EPS);
 }
 
 #[test]
@@ -1392,7 +1393,7 @@ fn test_geo_helio_composition_in_icrs() {
         helio_bary[1] + bary_geo[1],
         helio_bary[2] + bary_geo[2],
     ];
-    assert!((helio_geo[0] - composed[0]).abs() < EPSILON);
-    assert!((helio_geo[1] - composed[1]).abs() < EPSILON);
-    assert!((helio_geo[2] - composed[2]).abs() < EPSILON);
+    assert!((helio_geo[0] - composed[0]).abs() < AU_EPS);
+    assert!((helio_geo[1] - composed[1]).abs() < AU_EPS);
+    assert!((helio_geo[2] - composed[2]).abs() < AU_EPS);
 }

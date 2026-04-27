@@ -35,7 +35,7 @@
 //! use siderust::coordinates::spherical;
 //! use siderust::coordinates::transform::horizontal::ToHorizontal;
 //! use siderust::time::JulianDate;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let jd_ut1 = JulianDate::new(2_451_545.0);
 //! let jd_tt = JulianDate::new(2_451_545.000_800_741);
@@ -52,7 +52,7 @@ use crate::coordinates::cartesian::{Direction, Position};
 use crate::coordinates::centers::{Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialTrueOfDate, Horizontal, ECEF};
 use crate::time::JulianDate;
-use qtty::{Degrees, LengthUnit, Radians};
+use crate::qtty::{Degrees, LengthUnit, Radians};
 use std::f64::consts::TAU;
 
 // =============================================================================
@@ -307,7 +307,7 @@ impl<U: LengthUnit> TopocentricHorizontalExt<U> for Position<Topocentric, Horizo
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
+    use crate::qtty::*;
 
     #[test]
     fn roundtrip_equatorial_horizontal_is_stable() {
@@ -383,7 +383,7 @@ mod tests {
     #[test]
     fn topocentric_position_transformation() {
         use affn::spherical;
-        use qtty::Kilometer;
+        use crate::qtty::Kilometer;
 
         let jd_ut1 = JulianDate::new(2_451_545.0);
         let jd_tt = JulianDate::new(2_451_545.000_800_741);

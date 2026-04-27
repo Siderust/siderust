@@ -12,7 +12,7 @@
 //! Run with:
 //! `cargo run --example 08_target`
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::astro::proper_motion::{set_proper_motion_since_j2000, ProperMotion};
 use siderust::bodies::comet::HALLEY;
@@ -125,8 +125,8 @@ fn section_target_snapshots(jd: JulianDate, jd_next: JulianDate) {
 fn section_target_with_proper_motion(jd: JulianDate) {
     println!("3) Target with proper motion (stellar-style target)");
 
-    type MasPerYear = qtty::Per<qtty::MilliArcsecond, qtty::Year>;
-    type MasPerYearQ = qtty::Quantity<MasPerYear>;
+    type MasPerYear = siderust::qtty::Per<siderust::qtty::MilliArcsecond, siderust::qtty::Year>;
+    type MasPerYearQ = siderust::qtty::Quantity<MasPerYear>;
 
     let pm = ProperMotion::from_mu_alpha_star::<MasPerYear>(
         MasPerYearQ::new(27.54), // µα⋆

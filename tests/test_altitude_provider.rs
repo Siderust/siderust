@@ -15,7 +15,7 @@ use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::time::{ModifiedJulianDate, Period, MJD};
 
-use qtty::*;
+use siderust::qtty::*;
 
 // ===========================================================================
 // Helpers
@@ -62,7 +62,7 @@ fn assert_periods_valid(periods: &[Period<MJD>], window: Period<MJD>) {
     for (i, p) in periods.iter().enumerate() {
         // Positive duration
         assert!(
-            p.duration_days() >= Days::new(0.0),
+            ((p).end - (p).start) >= Days::new(0.0),
             "Period {} has negative duration: {:?}",
             i,
             p
@@ -105,9 +105,9 @@ fn sun_daytime_periods_trait() {
     assert_periods_valid(&periods, one_day());
     assert!(!periods.is_empty(), "Sun should rise at 51°N");
     for p in &periods {
-        let hours = p.duration_days() * 24.0;
+        let hours = ((p).end - (p).start) * 24.0;
         assert!(
-            hours > 5.0 && hours < 20.0,
+            hours.value() > 5.0 && hours.value() < 20.0,
             "Day length {} hours is unreasonable at 51°N in Feb",
             hours
         );
@@ -277,26 +277,26 @@ fn free_function_direction() {
 #[test]
 fn altitude_at_sun_in_range() {
     let alt = Sun.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
-    assert!(alt.abs() < std::f64::consts::FRAC_PI_2);
+    assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_moon_in_range() {
     let alt = Moon.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
-    assert!(alt.abs() < std::f64::consts::FRAC_PI_2);
+    assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_star_in_range() {
     let alt = SIRIUS.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
-    assert!(alt.abs() < std::f64::consts::FRAC_PI_2);
+    assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_icrs_direction_in_range() {
     let dir = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
     let alt = dir.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
-    assert!(alt.abs() < std::f64::consts::FRAC_PI_2);
+    assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
 // ===========================================================================
@@ -331,7 +331,7 @@ fn full_sky_range_returns_full_window() {
     };
     let periods = Sun.altitude_periods(&query);
     assert!(!periods.is_empty());
-    let total: f64 = periods.iter().map(|p| p.duration_days().value()).sum();
+    let total: f64 = periods.iter().map(|p| ((p).end - (p).start).value()).sum();
     assert!(
         (total - 1.0).abs() < 0.01,
         "Full sky range should span ~1 day, got {}",
@@ -348,9 +348,9 @@ fn circumpolar_star_always_above() {
         "Polaris should be continuously above horizon at 51°N"
     );
     assert!(
-        (periods[0].duration_days() - Days::new(1.0)).abs() < 0.01,
+        (((periods[0]).end - (periods[0]).start) - Days::new(1.0)).abs().value() < 0.01,
         "Polaris period should span full day, got {} days",
-        periods[0].duration_days()
+        ((periods[0]).end - (periods[0]).start)
     );
 }
 
@@ -394,8 +394,8 @@ fn above_and_below_cover_full_window() {
     let above = Sun.above_threshold(observer, window, threshold);
     let below = Sun.below_threshold(observer, window, threshold);
 
-    let total_above: f64 = above.iter().map(|p| p.duration_days().value()).sum();
-    let total_below: f64 = below.iter().map(|p| p.duration_days().value()).sum();
+    let total_above: f64 = above.iter().map(|p| ((p).end - (p).start).value()).sum();
+    let total_below: f64 = below.iter().map(|p| ((p).end - (p).start).value()).sum();
     let total = total_above + total_below;
 
     assert!(

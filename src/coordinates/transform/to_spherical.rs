@@ -12,7 +12,7 @@
 #[cfg(test)]
 mod tests {
     use crate::coordinates::{cartesian, spherical};
-    use qtty::{AstronomicalUnit, Degrees};
+    use crate::qtty::{AstronomicalUnit, Degrees};
 
     #[test]
     fn test_cartesian_to_spherical() {

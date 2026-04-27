@@ -10,7 +10,7 @@
 //! `cargo run --example 06_night_events -- [YYYY-MM-DD] [lat_deg] [lon_deg] [height_m]`
 
 use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
-use qtty::{Days, Degrees, Meter, Quantity};
+use siderust::qtty::{Days, Degrees, Meter, Quantity};
 use siderust::bodies::Sun;
 use siderust::calculus::altitude::{below_threshold, crossings, CrossingDirection, SearchOpts};
 use siderust::calculus::solar::night_types::{twilight, Twilight};
@@ -52,9 +52,8 @@ fn print_events_for_type(site: &Geodetic<ECEF>, week: Period<MJD>, name: &str, t
                 "night-type raise (Sun rising above threshold)"
             }
         };
-        if let Some(t_utc) = ev.mjd.to_utc() {
-            println!("  - {} at {}", label, t_utc.format("%Y-%m-%dT%H:%M:%S"));
-        }
+        let t_utc = ev.mjd.to_utc();
+        println!("  - {} at {}", label, t_utc.format("%Y-%m-%dT%H:%M:%S"));
     }
 
     println!("  summary: down={} raise={}", downs, raises);
@@ -73,14 +72,14 @@ fn print_periods_for_type(
     );
 
     for p in periods {
-        if let (Some(s), Some(e)) = (p.start.to_utc(), p.end.to_utc()) {
-            println!(
-                "  - {} -> {} ({:.1} h)",
-                s.format("%Y-%m-%dT%H:%M:%S"),
-                e.format("%Y-%m-%dT%H:%M:%S"),
-                p.duration_days().to::<qtty::Hour>()
-            );
-        }
+        let s = p.start.to_utc();
+        let e = p.end.to_utc();
+        println!(
+            "  - {} -> {} ({:.1} h)",
+            s.format("%Y-%m-%dT%H:%M:%S"),
+            e.format("%Y-%m-%dT%H:%M:%S"),
+            ((p).end - (p).start).to::<siderust::qtty::Hour>()
+        );
     }
 }
 

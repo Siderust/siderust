@@ -93,14 +93,14 @@ pub trait FrameRotationProvider<F1, F2> {
 ///
 /// Implementations provide the time-dependent translation from center `C1`
 /// to center `C2`, expressed in frame `F`. The result is a typed quantity
-/// array in [`AstronomicalUnit`](qtty::AstronomicalUnit), matching the
+/// array in [`AstronomicalUnit`](crate::qtty::AstronomicalUnit), matching the
 /// canonical unit of the ephemeris providers.
 pub trait CenterShiftProvider<C1, C2, F> {
     /// Computes the translation vector from center `C1` to center `C2`.
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         jd: JulianDate,
         ctx: &AstroContext<Eph, Eop>,
-    ) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3];
+    ) -> [crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3];
 }
 
 /// Identity rotation: same frame to same frame.
@@ -127,12 +127,12 @@ where
     fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
         _jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop>,
-    ) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3] {
-        use qtty::AstronomicalUnit;
+    ) -> [crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3] {
+        use crate::qtty::AstronomicalUnit;
         [
-            qtty::Quantity::<AstronomicalUnit>::new(0.0),
-            qtty::Quantity::<AstronomicalUnit>::new(0.0),
-            qtty::Quantity::<AstronomicalUnit>::new(0.0),
+            crate::qtty::Quantity::<AstronomicalUnit>::new(0.0),
+            crate::qtty::Quantity::<AstronomicalUnit>::new(0.0),
+            crate::qtty::Quantity::<AstronomicalUnit>::new(0.0),
         ]
     }
 }
@@ -167,7 +167,7 @@ where
 }
 
 /// Convenience alias for a 3-component shift in astronomical units.
-type AuShift = [qtty::Quantity<qtty::AstronomicalUnit>; 3];
+type AuShift = [crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3];
 
 /// Negates a 3-component shift vector (element-wise sign flip).
 #[inline]
@@ -263,7 +263,7 @@ fn tirs_to_itrf_rotation<Eph, Eop: EopProvider>(
 /// first converting it to a specific center.
 #[inline]
 fn rotate_shift_from_ecliptic<C, F, Eph, Eop: EopProvider, Nut: NutationModel>(
-    pos: Position<C, EclipticMeanJ2000, qtty::AstronomicalUnit>,
+    pos: Position<C, EclipticMeanJ2000, crate::qtty::AstronomicalUnit>,
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
 ) -> AuShift
@@ -398,10 +398,10 @@ pub(crate) use impl_reverse_center_shifts;
 /// `qtty` before being passed to [`Rotation3::from_euler_zxz`].
 #[inline]
 fn iau_body_fixed_to_icrs(params: &IauRotationParams, jd: JulianDate) -> Rotation3 {
-    let alpha0 = params.alpha0(jd).to::<qtty::Radian>();
-    let delta0 = params.delta0(jd).to::<qtty::Radian>();
-    let w = params.w(jd).to::<qtty::Radian>();
-    let right_angle = qtty::Degrees::new(90.0).to::<qtty::Radian>();
+    let alpha0 = params.alpha0(jd).to::<crate::qtty::Radian>();
+    let delta0 = params.delta0(jd).to::<crate::qtty::Radian>();
+    let w = params.w(jd).to::<crate::qtty::Radian>();
+    let right_angle = crate::qtty::Degrees::new(90.0).to::<crate::qtty::Radian>();
 
     let z1 = -w;
     let x = -(right_angle - delta0);
@@ -414,7 +414,7 @@ fn iau_body_fixed_to_icrs(params: &IauRotationParams, jd: JulianDate) -> Rotatio
 pub fn center_shift<C1, C2, F>(
     jd: JulianDate,
     ctx: &AstroContext,
-) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3]
+) -> [crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3]
 where
     (): CenterShiftProvider<C1, C2, F>,
 {
@@ -426,7 +426,7 @@ where
 pub fn center_shift_with<C1, C2, F, Ctx>(
     jd: JulianDate,
     ctx: &Ctx,
-) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3]
+) -> [crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3]
 where
     Ctx: TransformContext,
     Ctx::Eph: Ephemeris,
@@ -444,7 +444,7 @@ where
 pub fn center_shift_as<C1, C2, F, Nut, Eph, Eop>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
-) -> [qtty::Quantity<qtty::AstronomicalUnit>; 3]
+) -> [crate::qtty::Quantity<crate::qtty::AstronomicalUnit>; 3]
 where
     Nut: NutationModel,
     Eph: Ephemeris,

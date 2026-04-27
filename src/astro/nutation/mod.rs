@@ -55,7 +55,7 @@
 use crate::astro::precession::mean_obliquity_iau2006;
 use crate::time::JulianDate;
 use affn::Rotation3;
-use qtty::*;
+use crate::qtty::*;
 use std::marker::PhantomData;
 
 mod iau2000a;
@@ -352,7 +352,7 @@ const DEPS_PLANETARY_CORR: f64 = 3880.0; // 0.1 μas
 /// * McCarthy & Luzum (2003)
 /// * IERS Conventions (2010), §5.5.1
 pub fn nutation_iau2000b(jd: JulianDate) -> Nutation2000B {
-    let t = jd.julian_centuries().value();
+    let t = jd.julian_centuries();
 
     // Delaunay arguments (radians)
     let fa = delaunay_arguments(t);
@@ -518,7 +518,7 @@ pub(crate) mod iau1980 {
     #[cfg(test)]
     use crate::time::JulianDate;
     #[cfg(test)]
-    use qtty::*;
+    use crate::qtty::*;
 
     #[cfg(test)]
     #[derive(Debug)]
@@ -554,7 +554,7 @@ pub(crate) mod iau1980 {
     #[cfg(test)]
     pub(crate) fn get_nutation(jd: JulianDate) -> Nutation {
         // Input is interpreted as JD(TT), as required by the IAU 1980 model.
-        let t = jd.julian_centuries().value();
+        let t = jd.julian_centuries();
         let t2 = t * t;
         let t3 = t2 * t;
 

@@ -17,7 +17,7 @@
 //! use siderust::coordinates::frames;
 //! use siderust::astro::orbit::KeplerianOrbit;
 //! use siderust::time::JulianDate;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let satellite_orbit = KeplerianOrbit::new(
 //!     0.0000426 * AU, 0.001,
@@ -49,7 +49,7 @@ use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::TransformFrame;
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnits, LengthUnit, Quantity};
+use crate::qtty::{AstronomicalUnits, LengthUnit, Quantity};
 
 // =============================================================================
 // Geocentric -> Bodycentric
@@ -272,7 +272,7 @@ mod tests {
     use crate::coordinates::frames;
     use crate::coordinates::transform::TransformCenter;
     use crate::macros::assert_cartesian_eq;
-    use qtty::{AstronomicalUnit, Au, Degrees, AU};
+    use crate::qtty::{AstronomicalUnit, Au, Degrees, AU};
 
     #[test]
     fn test_geocentric_to_bodycentric_geocentric_orbit() {
@@ -294,8 +294,8 @@ mod tests {
         let result: Position<Bodycentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
             target.to_center((sat_params, JulianDate::J2000));
 
-        assert!(result.x() > 0.0);
-        assert!(result.x() < 0.001);
+        assert!(result.x().value() > 0.0);
+        assert!(result.x().value() < 0.001);
     }
 
     #[test]
@@ -374,7 +374,7 @@ mod tests {
             body_geo.to_center((params, JulianDate::J2000));
 
         assert!(
-            body_from_body.distance().abs() < 1e-10,
+            body_from_body.distance().abs().value() < 1e-10,
             "Body's own position in body-centric should be at origin, got distance {}",
             body_from_body.distance()
         );

@@ -11,7 +11,7 @@
 //! `cargo run --example 07_moon_phase -- [YYYY-MM-DD] [lat_deg] [lon_deg] [height_m]`
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use qtty::{Days, Degree, Degrees, Meter, Quantity};
+use siderust::qtty::{Days, Degree, Degrees, Meter, Quantity};
 use siderust::calculus::ephemeris::Vsop87Ephemeris;
 use siderust::calculus::lunar::phase::{
     find_phase_events, illumination_range, moon_phase_geocentric, moon_phase_topocentric,
@@ -24,15 +24,14 @@ use siderust::time::{JulianDate, ModifiedJulianDate, Period, MJD};
 fn print_periods(label: &str, periods: &[Period<MJD>]) {
     println!("\n{label}: {} period(s)", periods.len());
     for p in periods {
-        let dur_h = p.duration_days().to::<qtty::Hour>();
-        match (p.start.to_utc(), p.end.to_utc()) {
-            (Some(s), Some(e)) => println!(
-                "  - {} -> {} ({dur_h})",
-                s.format("%Y-%m-%d %H:%M UTC"),
-                e.format("%Y-%m-%d %H:%M UTC")
-            ),
-            _ => println!("  - MJD {} -> {} ({dur_h})", p.start, p.end),
-        }
+        let dur_h = ((p).end - (p).start).to::<siderust::qtty::Hour>();
+        let s = p.start.to_utc();
+        let e = p.end.to_utc();
+        println!(
+            "  - {} -> {} ({dur_h})",
+            s.format("%Y-%m-%d %H:%M UTC"),
+            e.format("%Y-%m-%d %H:%M UTC")
+        );
     }
 }
 
@@ -112,15 +111,12 @@ fn main() {
     let events = find_phase_events::<Vsop87Ephemeris>(window, opts);
     println!("\nPrincipal phase events in next 35 days: {}", events.len());
     for ev in &events {
-        if let Some(utc) = ev.mjd.to_utc() {
-            println!(
-                "  - {:>13} at {}",
-                ev.kind,
-                utc.format("%Y-%m-%d %H:%M UTC")
-            );
-        } else {
-            println!("  - {:>13} at MJD {}", ev.kind, ev.mjd);
-        }
+        let utc = ev.mjd.to_utc();
+        println!(
+            "  - {:>13} at {}",
+            ev.kind,
+            utc.format("%Y-%m-%d %H:%M UTC")
+        );
     }
 
     // 3) Find periods where Moon illumination is in requested phase ranges.

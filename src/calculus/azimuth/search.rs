@@ -6,7 +6,7 @@
 //! Re-exports [`SearchOpts`] from the altitude module (shared struct) and
 //! provides scan-step constants for azimuth event finding.
 
-use qtty::*;
+use crate::qtty::*;
 
 /// Re-export the shared search options struct.
 pub use crate::calculus::altitude::SearchOpts;

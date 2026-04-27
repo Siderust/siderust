@@ -32,10 +32,10 @@ use crate::coordinates::frames::EquatorialMeanJ2000;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::transform::context::{AstroContext, DefaultEphemeris, TransformContext};
 use crate::time::JulianDate;
-use qtty::{AstronomicalUnit, Day};
+use crate::qtty::{AstronomicalUnit, Day};
 
 /// Velocity unit: AU per day
-pub type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
+pub type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 
 /// The complete state of an observer required for observation-model effects.
 ///
@@ -127,7 +127,7 @@ impl ObserverState {
         ctx: &AstroContext<Eph, Eop>,
     ) -> Self {
         use crate::coordinates::transform::TransformFrame;
-        use qtty::{Meter, Second, Seconds};
+        use crate::qtty::{Meter, Second, Seconds};
 
         // Annual (orbital) component: barycentric Earth velocity.
         let vel_ecl = DefaultEphemeris::earth_barycentric_velocity(jd);
@@ -142,14 +142,14 @@ impl ObserverState {
         const OMEGA_EARTH: f64 = 7.292_115_0e-5;
 
         let site_itrf_m = site.to_cartesian::<Meter>();
-        type MetersPerSecond = qtty::Per<Meter, Second>;
+        type MetersPerSecond = crate::qtty::Per<Meter, Second>;
         let one_second = Seconds::new(1.0);
 
         // ω = (0,0,OMEGA_EARTH) in ECEF => ω×r = (-ω*y, ω*x, 0)
-        let vx_ecef: qtty::Quantity<MetersPerSecond> =
+        let vx_ecef: crate::qtty::Quantity<MetersPerSecond> =
             (-site_itrf_m.y() * OMEGA_EARTH) / one_second;
-        let vy_ecef: qtty::Quantity<MetersPerSecond> = (site_itrf_m.x() * OMEGA_EARTH) / one_second;
-        let vz_ecef: qtty::Quantity<MetersPerSecond> = qtty::Quantity::zero();
+        let vy_ecef: crate::qtty::Quantity<MetersPerSecond> = (site_itrf_m.x() * OMEGA_EARTH) / one_second;
+        let vz_ecef: crate::qtty::Quantity<MetersPerSecond> = crate::qtty::Quantity::zero();
 
         let rot = itrs_to_equatorial_mean_j2000_rotation::<Eph, Eop, Nut>(jd, ctx);
         let [vx_eq, vy_eq, vz_eq] = rot * [vx_ecef, vy_ecef, vz_ecef];
@@ -207,7 +207,7 @@ impl ObserverState {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
+    use crate::qtty::*;
 
     #[test]
     fn test_geocentric_observer_state() {
@@ -217,7 +217,8 @@ mod tests {
         // Earth's orbital velocity is approximately 30 km/s
         // In AU/day: ~30 km/s * 86400 s/day / 149597870.7 km/AU ≈ 0.017 AU/day
         let vel = obs.velocity();
-        let speed = (vel.x() * vel.x() + vel.y() * vel.y() + vel.z() * vel.z()).sqrt();
+        let speed =
+            (vel.x().value().powi(2) + vel.y().value().powi(2) + vel.z().value().powi(2)).sqrt();
 
         // Speed should be around 0.017 AU/day (Earth's orbital velocity)
         assert!(speed > 0.015, "Earth orbital speed too low: {}", speed);
@@ -241,7 +242,7 @@ mod tests {
         let dvx = topo.velocity().x() - geo.velocity().x();
         let dvy = topo.velocity().y() - geo.velocity().y();
         let dvz = topo.velocity().z() - geo.velocity().z();
-        let dv = (dvx * dvx + dvy * dvy + dvz * dvz).sqrt();
+        let dv = (dvx.value().powi(2) + dvy.value().powi(2) + dvz.value().powi(2)).sqrt();
 
         // Equatorial surface speed is ~465 m/s ≈ 2.685e-4 AU/day.
         assert!(dv > 2.3e-4, "diurnal speed too low: {}", dv);

@@ -7,7 +7,7 @@
 //! by cross-checking module interactions: precession + nutation,
 //! ERA + GMST, CIO-based GCRS→CIRS, polar motion, and light deflection.
 
-use qtty::*;
+use siderust::qtty::*;
 use siderust::astro::cio::{cip_cio, gcrs_to_cirs_matrix};
 use siderust::astro::eop::{EopProvider, NullEop};
 use siderust::astro::era::earth_rotation_angle;

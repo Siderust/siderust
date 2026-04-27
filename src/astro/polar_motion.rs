@@ -36,7 +36,7 @@
 
 use crate::time::JulianDate;
 use affn::Rotation3;
-use qtty::*;
+use crate::qtty::*;
 
 /// TIO locator s'.
 ///
@@ -51,7 +51,7 @@ use qtty::*;
 /// * SOFA routine `iauSp00`
 #[inline]
 pub fn tio_locator_sp(jd_tt: JulianDate) -> Radians {
-    let t = jd_tt.julian_centuries().value();
+    let t = jd_tt.julian_centuries();
     MicroArcseconds::new(-47.0 * t).to::<Radian>()
 }
 

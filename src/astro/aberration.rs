@@ -34,10 +34,10 @@ use crate::coordinates::{
     frames,
 };
 use crate::time::JulianDate;
-use qtty::*;
+use crate::qtty::*;
 
-type AuPerDay = qtty::Per<AstronomicalUnit, Day>;
-type AusPerDay = qtty::velocity::Velocity<AstronomicalUnit, Day>;
+type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
+type AusPerDay = crate::qtty::velocity::Velocity<AstronomicalUnit, Day>;
 
 /// Speed of light in AU/day from exact SI definitions:
 /// `c = 299_792_458 m/s`, `day = 86_400 s`, `AU = 149_597_870_700 m`.
@@ -69,9 +69,9 @@ fn velocity_to_beta(
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> nalgebra::Vector3<f64> {
     nalgebra::Vector3::new(
-        (velocity.x() / AU_PER_DAY_C).value(),
-        (velocity.y() / AU_PER_DAY_C).value(),
-        (velocity.z() / AU_PER_DAY_C).value(),
+        velocity.x() / AU_PER_DAY_C,
+        velocity.y() / AU_PER_DAY_C,
+        velocity.z() / AU_PER_DAY_C,
     )
 }
 
@@ -136,7 +136,7 @@ pub fn apply_aberration<U: LengthUnit>(
     mean: position::EquatorialMeanJ2000<U>,
     jd: JulianDate,
 ) -> position::EquatorialMeanJ2000<U> {
-    if mean.distance() == 0.0 {
+    if mean.distance().value() == 0.0 {
         // Don't look at your feet!
         return mean;
     }
@@ -155,7 +155,7 @@ pub fn remove_aberration<U: LengthUnit>(
     app: position::EquatorialMeanJ2000<U>,
     jd: JulianDate,
 ) -> position::EquatorialMeanJ2000<U> {
-    if app.distance() == 0.0 {
+    if app.distance().value() == 0.0 {
         // Don't look at your feet!
         return app;
     }
@@ -209,10 +209,13 @@ mod tests {
         let delta_ra = out.ra().abs_separation(mean.ra());
         let delta_dec = out.dec().abs_separation(mean.dec());
         assert!(
-            delta_ra > 0.0 || delta_dec > 0.0,
+            delta_ra > Degrees::new(0.0) || delta_dec > Degrees::new(0.0),
             "Expected a change in RA or Dec"
         );
-        assert!(delta_ra < 0.01 && delta_dec < 0.01, "Shift is too large")
+        assert!(
+            delta_ra < Degrees::new(0.01) && delta_dec < Degrees::new(0.01),
+            "Shift is too large"
+        )
     }
 
     #[test]
@@ -226,7 +229,7 @@ mod tests {
         let out = apply_aberration_sph(&mean, jd);
 
         assert!(
-            out.dec() < 90.0,
+            out.dec() < Degrees::new(90.0),
             "Declination should decrease slightly at pole"
         );
         assert!(!out.ra().is_nan(), "RA must not be NaN at the pole");

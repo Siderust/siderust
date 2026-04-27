@@ -53,7 +53,7 @@
 //! use siderust::coordinates::centers::Geodetic;
 //! use siderust::coordinates::frames::ECEF;
 //! use siderust::time::{ModifiedJulianDate, Period};
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 //! let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));

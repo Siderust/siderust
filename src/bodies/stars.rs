@@ -14,8 +14,8 @@
 use crate::coordinates::spherical::direction;
 use crate::coordinates::{centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position};
 use crate::targets::CoordinateWithPM;
-use qtty::length::nominal::SolarRadiuses;
-use qtty::*;
+use crate::qtty::length::nominal::SolarRadiuses;
+use crate::qtty::*;
 
 use std::borrow::Cow;
 

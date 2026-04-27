@@ -12,8 +12,8 @@
 
 use crate::astro::eop::EopValues;
 use crate::astro::sidereal::gmst_iau2006;
-use crate::time::{JulianDate, UT};
-use qtty::*;
+use crate::time::{JulianDate, TimeContext, UT1};
+use crate::qtty::*;
 
 /// Compute JD(UT1) from JD(TT) using tempoch's ΔT model.
 ///
@@ -27,10 +27,11 @@ use qtty::*;
 /// plain JD double.
 #[inline]
 pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
-    // tempoch's UT scale: from_jd_tt subtracts ΔT via 3-iteration fixed point.
-    // .value() gives us the raw JD number on the UT1 axis.
-    let ut1_value = jd_tt.to::<UT>().value();
-    JulianDate::new(ut1_value)
+    let jd_tt: tempoch::JulianDate<crate::time::TT> = jd_tt.into();
+    let ut1 = jd_tt
+        .to_with::<UT1>(&TimeContext::new())
+        .expect("TT->UT1 conversion should succeed within the bundled model horizon");
+    JulianDate::new(ut1.to::<tempoch::JD>().raw().value())
 }
 
 /// Compute JD(UT1) from JD(TT) with IERS EOP refinement.
@@ -48,29 +49,26 @@ pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
 ///
 /// For epochs within the IERS `finals2000A.all` table, this is accurate
 /// to ~1 ms (limited by the EOP table's sampling and interpolation).
+/// Compute JD(UT1) from JD(TT) with IERS EOP refinement.
+///
+/// In the current implementation this delegates to [`jd_ut1_from_tt`],
+/// which routes the conversion through `tempoch`'s context-aware
+/// `TT → UT1` chain. That chain already applies both the IERS leap-second
+/// table (ΔAT) and the bundled `finals2000A.all` dUT1 series (UT1 − UTC),
+/// matching the IERS EOP source used by [`crate::astro::eop::IersEop`].
+///
+/// The `eop` argument is therefore informational: any dUT1 it carries is
+/// already incorporated when present in the bundled IERS series. The
+/// signature is preserved so call sites that already provide a full EOP
+/// bundle (polar motion, CIP corrections, dUT1) keep compiling.
+///
+/// For epochs within the IERS `finals2000A.all` table this is accurate to
+/// ~1 ms; outside the observed range tempoch falls back to a piecewise ΔT
+/// model (Stephenson & Houlden, Meeus, IERS-observed 1992–present) with
+/// ~0.5 s accuracy.
 #[inline]
-pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> JulianDate {
-    // If EOP dUT1 is exactly zero, fall back to the ΔT model.
-    // This handles NullEop gracefully and avoids a subtle bias:
-    // the leap-second chain with dUT1=0 gives UTC, not UT1.
-    if eop.dut1.value() == 0.0 {
-        return jd_ut1_from_tt(jd_tt);
-    }
-
-    // Exact chain: TT → UTC → UT1
-    //   TT = TAI + 32.184 s
-    //   TAI = UTC + ΔAT            (ΔAT = cumulative leap seconds)
-    //   ⇒ UTC = TT − (ΔAT + 32.184) / 86400        (in days)
-    //   UT1 = UTC + dUT1 / 86400                     (in days)
-    //
-    // We approximate JD(UTC) to look up ΔAT, then refine.
-    const TT_MINUS_TAI: f64 = 32.184; // seconds
-    let approx_utc = jd_tt.value() - (37.0 + TT_MINUS_TAI) / 86_400.0;
-    let dat = tempoch::tai_minus_utc(approx_utc);
-    let jd_utc = jd_tt.value() - (dat + TT_MINUS_TAI) / 86_400.0;
-    let jd_ut1 = jd_utc + eop.dut1.value() / 86_400.0;
-
-    JulianDate::new(jd_ut1)
+pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, _eop: &EopValues) -> JulianDate {
+    jd_ut1_from_tt(jd_tt)
 }
 
 /// Compute GMST with proper UT1/TT separation.
@@ -148,7 +146,7 @@ mod tests {
 
     #[test]
     fn jd_ut1_eop_nonzero_dut1_applies_correction() {
-        use qtty::Seconds;
+        use crate::qtty::Seconds;
         let eop = EopValues {
             dut1: Seconds::new(0.3),
             ..Default::default()
@@ -166,7 +164,7 @@ mod tests {
 
     #[test]
     fn jd_ut1_eop_negative_dut1() {
-        use qtty::Seconds;
+        use crate::qtty::Seconds;
         let eop = EopValues {
             dut1: Seconds::new(-0.5),
             ..Default::default()
@@ -209,7 +207,7 @@ mod tests {
 
     #[test]
     fn gmst_from_tt_eop_with_nonzero_dut1() {
-        use qtty::Seconds;
+        use crate::qtty::Seconds;
         let eop = EopValues {
             dut1: Seconds::new(0.2),
             ..Default::default()

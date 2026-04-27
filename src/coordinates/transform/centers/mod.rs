@@ -24,7 +24,7 @@
 //! use siderust::coordinates::cartesian::{line_of_sight, Position};
 //! use siderust::coordinates::centers::Geocentric;
 //! use siderust::coordinates::frames::EquatorialMeanJ2000;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let observer =
 //!     Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
@@ -48,7 +48,7 @@ use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::transform::context::{AstroContext, TransformContext};
 use crate::coordinates::transform::providers::{center_shift_as, CenterShiftProvider};
 use crate::time::JulianDate;
-use qtty::LengthUnit;
+use crate::qtty::LengthUnit;
 
 // =============================================================================
 // IntoTransformArgs, converts (params, jd) or just jd into the full argument
@@ -191,7 +191,7 @@ mod tests {
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
     use crate::time::JulianDate;
-    use qtty::AstronomicalUnit;
+    use crate::qtty::AstronomicalUnit;
 
     const EPSILON: f64 = 1e-8;
 

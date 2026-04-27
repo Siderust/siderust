@@ -41,7 +41,7 @@
 //! use siderust::coordinates::spherical;
 //! use siderust::coordinates::transform::ecliptic_of_date::ToEclipticTrueOfDate;
 //! use siderust::time::JulianDate;
-//! use qtty::*;
+//! use siderust::qtty::*;
 //!
 //! let jd_tt = JulianDate::new(2_451_545.0);
 //! let equatorial = spherical::Direction::<EquatorialMeanOfDate>::new(45.0 * DEG, 30.0 * DEG)
@@ -54,7 +54,7 @@ use crate::astro::precession;
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{EclipticTrueOfDate, EquatorialMeanOfDate, GCRS, ICRS};
 use crate::time::JulianDate;
-use qtty::{Degrees, Radians};
+use crate::qtty::{Degrees, Radians};
 use std::f64::consts::TAU;
 
 // =============================================================================
@@ -263,7 +263,7 @@ impl FromEclipticTrueOfDate for Direction<EclipticTrueOfDate> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use qtty::*;
+    use crate::qtty::*;
 
     #[test]
     fn roundtrip_mean_of_date_is_stable() {

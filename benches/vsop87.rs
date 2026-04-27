@@ -2,12 +2,12 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use qtty::{Days, Years};
+use siderust::qtty::Days;
 use siderust::{bodies::solar_system::*, calculus::vsop87::VSOP87, time::JulianDate};
 use std::hint::black_box;
 
 fn bench_vsop87(c: &mut Criterion) {
-    let start = JulianDate::J2000 + Years::new(25.0);
+    let start = JulianDate::J2000 + Days::new(25.0 * 365.25);
 
     let planet_list: Vec<(&str, Box<dyn VSOP87>)> = vec![
         ("Mercury", Box::new(Mercury)),
