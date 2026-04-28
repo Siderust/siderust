@@ -17,7 +17,7 @@ use siderust::qtty::*;
 fn main() {
     println!("Star observability: altitude + azimuth constraints\n");
 
-    let observer = ROQUE_DE_LOS_MUCHACHOS;
+    let observer = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let target = SIRIUS;
 
     // One-night search window (MJD TT).
@@ -45,7 +45,7 @@ fn main() {
     // Final observability: periods satisfying both constraints simultaneously.
     let observable_periods = intersect_periods(&altitude_periods, &azimuth_periods);
 
-    println!("Observer: {}", observer);
+    println!("Observer: {}", ROQUE_DE_LOS_MUCHACHOS.name);
     println!("Target: Sirius");
     println!("Window: {}\n", window);
 

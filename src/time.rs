@@ -54,6 +54,18 @@ impl JulianDate {
         Self(tt.to::<tempoch::JD>().raw().value())
     }
 
+    /// Construct a TT-aligned [`JulianDate`] directly from a [`tempoch::Time<UTC>`].
+    ///
+    /// Applies leap seconds via the same UTC→TT conversion path used by
+    /// [`JulianDate::from_utc`], but without requiring a `chrono::DateTime`
+    /// intermediary — downstream crates no longer need a direct `chrono` dependency
+    /// just for this conversion.
+    #[inline]
+    pub fn from_tempoch_utc(time: tempoch::Time<UTC>) -> Self {
+        let tt = time.to::<TT>();
+        Self(tt.to::<tempoch::JD>().raw().value())
+    }
+
     #[inline]
     pub fn to_utc(self) -> DateTime<Utc> {
         let tt: tempoch::JulianDate<TT> = self.into();
@@ -362,4 +374,48 @@ pub fn complement_within<T: Copy + PartialOrd>(
 #[inline]
 pub fn intersect_periods<T: Copy + PartialOrd>(a: &[Interval<T>], b: &[Interval<T>]) -> Vec<Interval<T>> {
     Interval::intersect_many(a, b)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    /// 2024-01-01T00:00:00Z as a POSIX timestamp.
+    const POSIX_2024_01_01: i64 = 1_704_067_200;
+
+    #[test]
+    fn from_tempoch_utc_matches_from_utc_for_known_instant() {
+        let dt = chrono::DateTime::<chrono::Utc>::from_timestamp(POSIX_2024_01_01, 0)
+            .expect("valid timestamp");
+        let via_chrono = JulianDate::from_utc(dt);
+
+        let utc_time = tempoch::Time::<UTC>::from_chrono(dt);
+        let via_tempoch = JulianDate::from_tempoch_utc(utc_time);
+
+        assert_eq!(
+            via_chrono.value(),
+            via_tempoch.value(),
+            "from_tempoch_utc must produce identical JD to from_utc"
+        );
+    }
+
+    /// Verify behaviour near a leap-second boundary (2016-12-31T23:59:59Z,
+    /// one second before the 2017 leap second insertion).
+    #[test]
+    fn from_tempoch_utc_matches_from_utc_near_leap_second() {
+        // 2016-12-31T23:59:59Z  →  POSIX 1483228799
+        let posix_before_leap: i64 = 1_483_228_799;
+        let dt = chrono::DateTime::<chrono::Utc>::from_timestamp(posix_before_leap, 0)
+            .expect("valid timestamp");
+        let via_chrono = JulianDate::from_utc(dt);
+
+        let utc_time = tempoch::Time::<UTC>::from_chrono(dt);
+        let via_tempoch = JulianDate::from_tempoch_utc(utc_time);
+
+        assert_eq!(
+            via_chrono.value(),
+            via_tempoch.value(),
+            "leap-second-adjacent instant must match from_utc exactly"
+        );
+    }
 }

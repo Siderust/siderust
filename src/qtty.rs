@@ -20,8 +20,10 @@ pub use crate::ext_qtty::angular_rate::AngularRateUnit;
 
 pub use crate::ext_qtty::unit;
 pub use crate::ext_qtty::{
-    acceleration, angular, area, energy, force, length, mass, power, time, volume,
+    acceleration, angular, area, energy, force, length, mass, power, solid_angle, time, volume,
 };
+
+pub use crate::ext_qtty::solid_angle::*;
 
 pub use crate::ext_qtty::acceleration::*;
 pub use crate::ext_qtty::angular::*;
@@ -31,5 +33,9 @@ pub use crate::ext_qtty::force::*;
 pub use crate::ext_qtty::length::*;
 pub use crate::ext_qtty::mass::*;
 pub use crate::ext_qtty::power::*;
+pub use crate::ext_qtty::pressure;
+pub use crate::ext_qtty::pressure::*;
+pub use crate::ext_qtty::temperature;
+pub use crate::ext_qtty::temperature::*;
 pub use crate::ext_qtty::time::*;
 pub use crate::ext_qtty::volume::*;

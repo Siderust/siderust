@@ -3,6 +3,9 @@ members = [".", "siderust-ffi"]
 
 [patch.crates-io]
 cheby = { path = "../cheby" }
+qtty = { path = "../qtty/qtty" }
+qtty-core = { path = "../qtty/qtty-core" }
+qtty-derive = { path = "../qtty/qtty-derive" }
 
 [package]
 name = "siderust"

@@ -59,6 +59,7 @@ pub mod bodies;
 pub mod calculus;
 pub mod coordinates;
 pub mod data;
+pub mod geometry;
 pub mod interp;
 pub mod observatories;
 pub mod provenance;
@@ -83,6 +84,7 @@ pub use calculus::azimuth::{
     AzimuthExtremum, AzimuthExtremumKind, AzimuthProvider, AzimuthQuery,
 };
 pub use calculus::solar::{twilight, Twilight};
+pub use calculus::solar::{twilight_classification, TwilightPhase};
 
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: unified altitude API
