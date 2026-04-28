@@ -30,6 +30,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   DataSource}`) so the `spectra` and `tables` features can share
   validation, boundary, and dataset-metadata vocabulary. The
   `siderust::spectra` re-exports preserve the existing public API.
+* **Johnson B/V passband convenience accessors** in
+  `siderust::spectra::passbands`: `johnson_b()` and `johnson_v()`
+  alias the Bessell (1990) realization (PASP 102, 1181), which
+  Bessell & Murphy (2012, PASP 124, 140) recommend as the canonical
+  Johnson–Cousins reference. Lets downstream consumers (e.g. NSB's
+  zodiacal component) replace nearest-grid-point B/V wavelength hacks
+  with real filter integrals without committing to a specific dataset
+  module name.
 * **Generic typed sampled spectra** under the new optional `spectra` feature
   (`siderust::spectra`). Provides `SampledSpectrum<X: Unit, Y: Unit, S = f64>`
   with strict-monotonic validation, configurable `Interpolation` (linear) and
