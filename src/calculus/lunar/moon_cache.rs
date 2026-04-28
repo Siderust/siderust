@@ -512,7 +512,7 @@ mod tests {
 
     #[test]
     fn cached_altitude_matches_direct() {
-        let site = ROQUE_DE_LOS_MUCHACHOS;
+        let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
         let mjd_start: ModifiedJulianDate = JulianDate::J2000.into();
         let mjd_end = mjd_start + Days::new(7.0);
         let ctx = MoonAltitudeContext::new(mjd_start, mjd_end, site);
