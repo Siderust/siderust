@@ -13,7 +13,7 @@ use crate::coordinates::{
     transform::{Transform, TransformFrame},
 };
 use crate::time::JulianDate;
-use crate::qtty::{AstronomicalUnits, LengthUnit, Meter, Quantity};
+use crate::qtty::{AstronomicalUnit, AstronomicalUnits, LengthUnit, Meter, Quantity, Radian, Radians};
 
 impl Sun {
     /// Returns the **apparent geocentric equatorial coordinates** of the Sun
@@ -121,13 +121,38 @@ impl Sun {
         let eq = Self::get_apparent_topocentric_equ::<U>(jd, site);
         horizontal::equatorial_to_horizontal(&eq, site, jd)
     }
+
+    /// Geocentric apparent ecliptic longitude of the Sun in the J2000 mean
+    /// ecliptic frame, computed via VSOP87.
+    ///
+    /// The Sun is placed at the solar-system barycentre / heliocentric origin,
+    /// then transformed to a geocentric observer using the VSOP87 cartesian
+    /// ephemeris for Earth.  The resulting ecliptic cartesian vector is
+    /// converted to spherical and the longitude component is returned.
+    ///
+    /// ### Returns
+    /// Longitude in [`Radians`] (`Quantity<Radian>`).  Convert to degrees with
+    /// `.to::<Deg>()` or any other angular unit.
+    ///
+    /// ### Reference
+    /// VSOP87 (Bretagnon & Francou 1988); frame: `EclipticMeanJ2000`.
+    pub fn ecliptic_longitude_geocentric(jd: JulianDate) -> Radians {
+        let helio =
+            cartesian::position::EclipticMeanJ2000::<AstronomicalUnit, Heliocentric>::CENTER;
+        let geo_ecl: cartesian::position::EclipticMeanJ2000<AstronomicalUnit, Geocentric> =
+            helio.transform(jd);
+        spherical::Position::from_cartesian(&geo_ecl)
+            .direction()
+            .lon()
+            .to::<Radian>()
+    }
 }
 
 #[cfg(test)]
 mod tests {
     use crate::bodies::solar_system::Sun;
     use crate::time::JulianDate;
-    use crate::qtty::{AstronomicalUnit, AstronomicalUnits, Degrees};
+    use crate::qtty::{AstronomicalUnit, AstronomicalUnits, Degrees, Radians};
 
     #[test]
     fn apparent_sun_position_j2000() {
@@ -160,6 +185,21 @@ mod tests {
         assert!(
             (pos.distance - AstronomicalUnits::new(expected_dist)).abs()
                 < AstronomicalUnits::new(0.2)
+        );
+    }
+
+    /// At J2000.0 the geocentric ecliptic longitude of the Sun is roughly
+    /// 280.46° ≈ 4.895 rad (Sun near winter solstice as seen from Earth).
+    #[test]
+    fn ecliptic_longitude_geocentric_j2000() {
+        let lon: Radians = Sun::ecliptic_longitude_geocentric(JulianDate::J2000);
+        // VSOP87 gives ~4.8935 rad (≈ 280.34°) at J2000.0.  Tolerance: 1e-3 rad (~0.06°).
+        let expected = 4.8935_f64;
+        assert!(
+            (lon.value() - expected).abs() < 1e-3,
+            "ecliptic longitude mismatch: got {:.6} rad, expected ~{:.4} rad",
+            lon.value(),
+            expected
         );
     }
 }
