@@ -424,13 +424,26 @@ pub fn moon_phase_geocentric<E: Ephemeris>(jd: JulianDate) -> MoonPhaseGeometry 
     }
 }
 
-/// Great-circle angular separation between two ecliptic directions.
+/// Great-circle angular separation between two spherical directions.
 ///
-/// `(lon1, lat1)` and `(lon2, lat2)` are in radians.
-/// Returns angle in \[0, π\].
+/// `(lon1, lat1)` and `(lon2, lat2)` are in radians (longitude/latitude or
+/// RA/Dec — any equirectangular pair on a sphere).  Returns angle in \[0, π\].
+///
+/// Uses the Vincenty form `atan2(|n × m|, n · m)` for numerical stability at
+/// both small and near-antipodal separations, matching
+/// [`affn::spherical::angular_separation_impl`] used by all
+/// `Direction<F>::angular_separation` methods.
 fn great_circle_elongation(lon1: f64, lat1: f64, lon2: f64, lat2: f64) -> f64 {
-    let cos_sep = lat1.sin() * lat2.sin() + lat1.cos() * lat2.cos() * (lon2 - lon1).cos();
-    cos_sep.clamp(-1.0, 1.0).acos()
+    let dlon = lon2 - lon1;
+    let (s_lat1, c_lat1) = lat1.sin_cos();
+    let (s_lat2, c_lat2) = lat2.sin_cos();
+    let (s_dlon, c_dlon) = dlon.sin_cos();
+
+    let x = c_lat1 * s_lat2 - s_lat1 * c_lat2 * c_dlon;
+    let y = c_lat2 * s_dlon;
+    let z = s_lat1 * s_lat2 + c_lat1 * c_lat2 * c_dlon;
+
+    (x * x + y * y).sqrt().atan2(z)
 }
 
 // ===========================================================================
