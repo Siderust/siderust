@@ -63,6 +63,35 @@ const RAW_V: &str = include_str!("../../../data/passbands/bessell1990/V.dat");
 const RAW_R: &str = include_str!("../../../data/passbands/bessell1990/R.dat");
 const RAW_I: &str = include_str!("../../../data/passbands/bessell1990/I.dat");
 
+// Pinned SHA-256 of each Bessell 1990 passband file. Update only when the
+// curated SVO export is intentionally refreshed (see
+// `siderust::provenance::checksum`).
+crate::assert_data_checksum!(
+    "siderust/data/passbands/bessell1990/U.dat",
+    RAW_U.as_bytes(),
+    "e00771381f3ecd293bcf8c20fdbe57ce5cb9c24404b6ad7f499f28912525ea58"
+);
+crate::assert_data_checksum!(
+    "siderust/data/passbands/bessell1990/B.dat",
+    RAW_B.as_bytes(),
+    "ba2b36196cc285482659df521fc5ffde60e8c6849963912cfcbe61f912f704b0"
+);
+crate::assert_data_checksum!(
+    "siderust/data/passbands/bessell1990/V.dat",
+    RAW_V.as_bytes(),
+    "fd5cc0ac9bba2e8121efe8b66d1aeb63b0744b0997d672053bdccf585248e24c"
+);
+crate::assert_data_checksum!(
+    "siderust/data/passbands/bessell1990/R.dat",
+    RAW_R.as_bytes(),
+    "25393e6cd0c2b3c2c7a2a0688ce675e6475d550150b44f580751e13731ac1bc0"
+);
+crate::assert_data_checksum!(
+    "siderust/data/passbands/bessell1990/I.dat",
+    RAW_I.as_bytes(),
+    "f3eba62d9898b1b69b6c56cbb7806875f528410145594e56d61cff4f8c5c44e0"
+);
+
 // ── static caches ─────────────────────────────────────────────────────────────
 
 static U_TABLE: OnceLock<SampledSpectrum<Nanometer, Throughput>> = OnceLock::new();
@@ -203,6 +232,24 @@ fn fwhm(s: &SampledSpectrum<Nanometer, Throughput>) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Defense-in-depth: confirm the runtime SHA-256 of every bundled
+    /// passband file matches the value pinned via
+    /// [`assert_data_checksum!`].
+    #[test]
+    fn pinned_sha256_matches_runtime_hash() {
+        use crate::provenance::checksum::{sha256, to_hex};
+        let cases: &[(&str, &str)] = &[
+            (RAW_U, "e00771381f3ecd293bcf8c20fdbe57ce5cb9c24404b6ad7f499f28912525ea58"),
+            (RAW_B, "ba2b36196cc285482659df521fc5ffde60e8c6849963912cfcbe61f912f704b0"),
+            (RAW_V, "fd5cc0ac9bba2e8121efe8b66d1aeb63b0744b0997d672053bdccf585248e24c"),
+            (RAW_R, "25393e6cd0c2b3c2c7a2a0688ce675e6475d550150b44f580751e13731ac1bc0"),
+            (RAW_I, "f3eba62d9898b1b69b6c56cbb7806875f528410145594e56d61cff4f8c5c44e0"),
+        ];
+        for (raw, want) in cases {
+            assert_eq!(to_hex(&sha256(raw.as_bytes())), *want);
+        }
+    }
 
     // ── per-band fixtures ──────────────────────────────────────────────────────
 
