@@ -37,6 +37,7 @@ pub mod phase;
 pub mod runtime_ephemeris;
 pub mod subject;
 pub mod target;
+pub mod twilight;
 
 #[cfg(test)]
 pub(crate) mod test_helpers;
@@ -53,6 +54,7 @@ pub use phase::*;
 pub use runtime_ephemeris::*;
 pub use subject::*;
 pub use target::*;
+pub use twilight::*;
 pub use types::*;
 
 /// Returns the siderust-ffi ABI version (major*10000 + minor*100 + patch).

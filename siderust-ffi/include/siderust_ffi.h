@@ -339,6 +339,34 @@ enum SiderustTargetCoordKind
 typedef int32_t SiderustTargetCoordKind;
 #endif // __cplusplus
 
+// Sky condition derived from the Sun's altitude.
+//
+// Boundaries are inclusive on the upper (brighter) side, following the
+// IAU/USNO convention: the Sun exactly at `0°` is [`Civil`], exactly at
+// `-6°` is [`Nautical`], etc.
+//
+// [`Civil`]: SiderustTwilightPhase::Civil
+// [`Nautical`]: SiderustTwilightPhase::Nautical
+enum siderust_twilight_phase_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Sun above the horizon: altitude > 0°.
+  SIDERUST_TWILIGHT_PHASE_T_DAY = 0,
+  // Civil twilight: -6° < altitude ≤ 0°.
+  SIDERUST_TWILIGHT_PHASE_T_CIVIL = 1,
+  // Nautical twilight: -12° < altitude ≤ -6°.
+  SIDERUST_TWILIGHT_PHASE_T_NAUTICAL = 2,
+  // Astronomical twilight: -18° < altitude ≤ -12°.
+  SIDERUST_TWILIGHT_PHASE_T_ASTRONOMICAL = 3,
+  // Full darkness: altitude ≤ -18°.
+  SIDERUST_TWILIGHT_PHASE_T_DARK = 4,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_twilight_phase_t;
+#endif // __cplusplus
+
 // Opaque FFI context used by model-sensitive transform entry points.
 typedef struct siderust_context_t siderust_context_t;
 
@@ -1405,6 +1433,24 @@ siderust_status_t siderust_generic_target_get_data(const struct SiderustGenericT
 
 siderust_status_t siderust_generic_target_epoch_jd(const struct SiderustGenericTarget *handle,
                                                    double *out);
+
+// Classify the sky condition from the Sun's altitude in degrees.
+//
+// Writes the resulting phase to `out` and returns [`SiderustStatus::Ok`] on
+// success. Returns [`SiderustStatus::NullPointer`] if `out` is null.
+//
+// The boundary convention follows IAU/USNO; see [`SiderustTwilightPhase`].
+
+siderust_status_t siderust_twilight_classification_deg(double altitude_deg,
+                                                       siderust_twilight_phase_t *out);
+
+// Classify the sky condition from the Sun's altitude in radians.
+//
+// Writes the resulting phase to `out` and returns [`SiderustStatus::Ok`] on
+// success. Returns [`SiderustStatus::NullPointer`] if `out` is null.
+
+siderust_status_t siderust_twilight_classification_rad(double altitude_rad,
+                                                       siderust_twilight_phase_t *out);
 
 #ifdef __cplusplus
 }  // extern "C"
