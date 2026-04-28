@@ -10,6 +10,15 @@
 //!
 //! Re-exported from [`crate::spectra`] and [`crate::tables`] for backwards
 //! compatibility.
+//!
+//! ## Build-time integrity checks
+//!
+//! The [`checksum`] submodule provides a const-evaluable SHA-256 and the
+//! [`assert_data_checksum!`](crate::assert_data_checksum) macro for
+//! pinning the hash of any [`include_str!`] / [`include_bytes!`] data
+//! blob shipped inside the crate. Mismatches become hard compile errors.
+
+pub mod checksum;
 
 /// Where a dataset's samples originally came from.
 #[derive(Debug, Clone, PartialEq, Eq)]
