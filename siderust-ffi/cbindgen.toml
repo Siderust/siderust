@@ -54,6 +54,7 @@ header = """
 "SiderustContext" = "siderust_context_t"
 "SiderustCartesianVel" = "siderust_cartesian_vel_t"
 "SiderustRuntimeEphemeris" = "siderust_runtime_ephemeris_t"
+"SiderustTwilightPhase" = "siderust_twilight_phase_t"
 
 [enum]
 rename_variants = "ScreamingSnakeCase"
