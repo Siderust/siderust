@@ -28,7 +28,7 @@ mod grid3d;
 
 pub use error::TableError;
 pub use grid1d::Grid1D;
-pub use grid2d::Grid2D;
+pub use grid2d::{ConstantRegion, Grid2D};
 pub use grid3d::Grid3D;
 
 pub use crate::interp::OutOfRange;
