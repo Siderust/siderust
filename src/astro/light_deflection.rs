@@ -34,14 +34,16 @@
 //!
 //! ## Effect magnitudes
 //!
-//! | Body   | Max deflection |
-//! |--------|---------------|
-//! | Sun    | 1.75″ (limb)  |
-//! | Jupiter| 0.017″        |
-//! | Saturn | 0.006″        |
-//! | Moon   | 0.026 mas     |
+//! | Body   | Max deflection | Function                     |
+//! |--------|---------------|------------------------------|
+//! | Sun    | 1.75″ (limb)  | [`solar_deflection`]         |
+//! | Jupiter| 0.017″        | [`jupiter_deflection`]       |
+//! | Saturn | 0.006″        | [`saturn_deflection`]        |
+//! | Moon   | 0.026 mas     | (use [`body_deflection`])    |
 //!
-//! For most applications, only the Sun's contribution matters above 1 mas.
+//! For sub-mas astrometry, apply all three planetary deflectors in
+//! sequence via [`full_planetary_deflection`]. For ~1″ astrometry, the
+//! Sun-only [`solar_deflection`] is sufficient.
 //!
 //! ## References
 //!
@@ -61,6 +63,24 @@ use crate::qtty::{Arcseconds, AstronomicalUnits, Radians};
 /// * IAU 2015 Resolution B3 (nominal solar mass parameter)
 /// * IERS Conventions (2010), Table 1.1
 const SOLAR_SCHWARZSCHILD_AU: f64 = 1.974_125_743_36e-8;
+
+/// Schwarzschild radius of Jupiter in AU: 2 G M♃ / c².
+///
+/// Computed from `M♃ / M☉ = 1/1047.348644` (IAU 2015 nominal Jovian mass
+/// parameter `GM♃ = 1.2668653e17 m³/s²`).
+///
+/// ## References
+/// * IAU 2015 Resolution B3
+/// * IERS Conventions (2010), Table 1.1
+const JUPITER_SCHWARZSCHILD_AU: f64 = SOLAR_SCHWARZSCHILD_AU / 1_047.348_644;
+
+/// Schwarzschild radius of Saturn in AU: 2 G M♄ / c².
+///
+/// Computed from `M♄ / M☉ = 1/3497.9018`.
+///
+/// ## References
+/// * IAU 2015 Resolution B3
+const SATURN_SCHWARZSCHILD_AU: f64 = SOLAR_SCHWARZSCHILD_AU / 3_497.901_8;
 
 /// Apply solar gravitational light deflection to a source direction.
 ///
@@ -132,6 +152,128 @@ pub fn solar_deflection(
 
     // Re-normalize to unit direction
     direction::EquatorialMeanJ2000::normalize(dx, dy, dz)
+}
+
+/// Apply the gravitational light deflection of an arbitrary deflecting body.
+///
+/// This is the body-agnostic form of [`solar_deflection`]: it accepts an
+/// explicit Schwarzschild radius (in AU) so callers can model deflection by
+/// Jupiter, Saturn, or any other body whose mass parameter is known.
+///
+/// Use the convenience wrapper [`jupiter_deflection`] or [`saturn_deflection`]
+/// when the deflecting body is one of the well-known planetary deflectors
+/// (≥ 1 mas at the limb).
+///
+/// ## Parameters
+///
+/// * `star`: Unit direction toward the source in
+///   [`EquatorialMeanJ2000`](direction::EquatorialMeanJ2000) (BCRS).
+/// * `body_to_observer_au`: Vector from the deflecting body to the
+///   observer in AU (BCRS). Magnitude `|q|` enters the formula linearly.
+/// * `schwarzschild_au`: `2 G M / c²` for the deflecting body, in AU.
+///
+/// ## References
+/// * SOFA routine `iauLd`
+/// * IERS Conventions (2010), eq. 7.4
+/// * Klioner, S. A. (2003), AJ 125, 1580
+pub fn body_deflection(
+    star: direction::EquatorialMeanJ2000,
+    body_to_observer_au: [f64; 3],
+    schwarzschild_au: f64,
+) -> direction::EquatorialMeanJ2000 {
+    let q_mag = (body_to_observer_au[0].powi(2)
+        + body_to_observer_au[1].powi(2)
+        + body_to_observer_au[2].powi(2))
+    .sqrt();
+    if q_mag < 1e-10 || schwarzschild_au <= 0.0 {
+        return star;
+    }
+    let q_hat = [
+        body_to_observer_au[0] / q_mag,
+        body_to_observer_au[1] / q_mag,
+        body_to_observer_au[2] / q_mag,
+    ];
+    let sx = star.x();
+    let sy = star.y();
+    let sz = star.z();
+    let s_dot_q = sx * q_hat[0] + sy * q_hat[1] + sz * q_hat[2];
+    let denom = 1.0 + s_dot_q;
+    if denom.abs() < 1e-15 {
+        return star;
+    }
+    let factor = schwarzschild_au / q_mag;
+    let f = factor / denom;
+    let dx = sx + f * (q_hat[0] - s_dot_q * sx);
+    let dy = sy + f * (q_hat[1] - s_dot_q * sy);
+    let dz = sz + f * (q_hat[2] - s_dot_q * sz);
+    direction::EquatorialMeanJ2000::normalize(dx, dy, dz)
+}
+
+/// Apply the Jovian gravitational light deflection.
+///
+/// The maximum deflection at Jupiter's limb is about **0.017″**. For a
+/// source 5° away from Jupiter at conjunction, the residual deflection is
+/// ~0.4 mas — large enough to matter for sub-mas astrometry.
+///
+/// `jupiter_to_observer_au` is the BCRS vector from Jupiter to the observer.
+/// Compute it as `r_observer − r_jupiter` from your ephemeris at the same
+/// epoch as `star`.
+///
+/// ## References
+/// * SOFA routine `iauLdsun` (this is the same algorithm with a different
+///   Schwarzschild radius).
+#[inline]
+pub fn jupiter_deflection(
+    star: direction::EquatorialMeanJ2000,
+    jupiter_to_observer_au: [f64; 3],
+) -> direction::EquatorialMeanJ2000 {
+    body_deflection(star, jupiter_to_observer_au, JUPITER_SCHWARZSCHILD_AU)
+}
+
+/// Apply the Saturnian gravitational light deflection.
+///
+/// The maximum deflection at Saturn's limb is about **0.006″**. This is
+/// only relevant for sub-mas astrometry of sources within a few degrees of
+/// Saturn.
+///
+/// `saturn_to_observer_au` is the BCRS vector from Saturn to the observer.
+#[inline]
+pub fn saturn_deflection(
+    star: direction::EquatorialMeanJ2000,
+    saturn_to_observer_au: [f64; 3],
+) -> direction::EquatorialMeanJ2000 {
+    body_deflection(star, saturn_to_observer_au, SATURN_SCHWARZSCHILD_AU)
+}
+
+/// Apply the Sun, Jupiter, and Saturn gravitational light deflection in
+/// sequence.
+///
+/// This is the recommended call for sub-milliarcsecond astrometry: the
+/// solar contribution dominates, but Jupiter and Saturn each contribute up
+/// to ~17 mas / ~6 mas at their respective limbs. The Moon and Earth
+/// contribute < 30 µas at their limbs and are not included here.
+///
+/// ## Arguments
+///
+/// * `star`: catalog (geometric) direction toward the source in BCRS.
+/// * `earth_sun_au`: Sun → observer in AU.
+/// * `earth_jupiter_au`: Jupiter → observer in AU.
+/// * `earth_saturn_au`: Saturn → observer in AU.
+///
+/// ## Notes
+///
+/// The three deflectors are applied independently (their cross-terms are
+/// negligible). The order of application affects the result only at the
+/// `1e−14` rad level.
+pub fn full_planetary_deflection(
+    star: direction::EquatorialMeanJ2000,
+    earth_sun_au: [f64; 3],
+    earth_jupiter_au: [f64; 3],
+    earth_saturn_au: [f64; 3],
+) -> direction::EquatorialMeanJ2000 {
+    let s = solar_deflection(star, earth_sun_au);
+    let s = jupiter_deflection(s, earth_jupiter_au);
+    saturn_deflection(s, earth_saturn_au)
 }
 
 /// Compute the magnitude of solar deflection for a source at a given

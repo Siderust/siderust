@@ -58,6 +58,9 @@ walkdir = "2"
 regex = "1.12.2"
 anyhow = "1.0.102"
 reqwest = { version = "0.13.2", optional = true, default-features = false, features = ["blocking", "rustls"] }
+# SHA-256 verification of downloaded coefficient datasets (regen-data feature).
+# Always linked; only invoked when regenerating tables, so it adds no runtime cost.
+sha2 = "0.10"
 
 [[bench]]
 name = "converters"

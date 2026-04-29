@@ -31,6 +31,23 @@
 //! - [`bodies`]        : Planets, stars, satellites, asteroids, comets, and built-in catalogs
 //! - [`observatories`] : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 //!
+//! ## Error-handling conventions
+//!
+//! `siderust` deliberately uses three distinct error-reporting patterns;
+//! they are not interchangeable.  The choice tells you something about the
+//! contract of the function:
+//!
+//! | Pattern                        | Meaning                                                        |
+//! |--------------------------------|----------------------------------------------------------------|
+//! | `-> Result<T, ConcreteError>`  | A *recoverable, domain-specific* failure (bad input, no convergence, dataset out of range). The error type is module-local and documented. |
+//! | `-> Option<T>`                 | A *lookup* that may legitimately have no answer (e.g. no event in the requested window, parameter outside the table's interpolation range). The `None` semantics are documented in the `# Returns` section of every public `Option`-returning function. |
+//! | `panic!` / `unwrap` / `expect` | A **bug or contract violation**: a non-finite Julian Date, an inverse of a singular rotation, an inconsistent type-system state, or a corrupt build-time table. Public functions that may panic carry a `# Panics` section. |
+//!
+//! When extending the public API, prefer `Result` over `Option` whenever the
+//! caller might want to know *why* there is no answer (e.g. "out of EOP
+//! range" vs "no event").  Reserve panics for true invariant violations,
+//! and document the trigger in the `# Panics` section.
+//!
 //! ## Minimal Example
 //!
 //! ```rust

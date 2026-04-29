@@ -131,6 +131,13 @@ pub fn remove_aberration_from_direction(
 
 /// Apply **annual aberration** to a position vector, preserving its
 /// geocentric distance.
+///
+/// # Panics
+///
+/// Will not panic on user input: the zero-distance case (`|p| == 0`) is
+/// short-circuited early to return the input unchanged. The internal
+/// `direction()` extraction is guarded by that distance check, so the
+/// `expect` it contains is unreachable for any well-formed `Position`.
 #[must_use]
 pub fn apply_aberration<U: LengthUnit>(
     mean: position::EquatorialMeanJ2000<U>,
@@ -150,6 +157,12 @@ pub fn apply_aberration<U: LengthUnit>(
 
 /// Remove **annual aberration** from a position vector, preserving its
 /// geocentric distance.
+///
+/// # Panics
+///
+/// As for [`apply_aberration`]: the zero-distance case is short-circuited
+/// and the internal direction extraction is provably safe under the
+/// guarded distance check.
 #[must_use]
 pub fn remove_aberration<U: LengthUnit>(
     app: position::EquatorialMeanJ2000<U>,

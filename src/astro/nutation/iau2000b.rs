@@ -19,6 +19,8 @@ pub type Iau2000B = Model<Tag>;
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Tag;
 
+impl super::private::Sealed for Tag {}
+
 impl NutationTag for Tag {
     const ID: NutationModelId = NutationModelId::Iau2000B;
 }

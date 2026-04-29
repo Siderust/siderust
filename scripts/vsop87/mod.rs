@@ -54,6 +54,71 @@ mod collect;
 mod fetch;
 mod io;
 
+/// Compute a stable SHA-256 fingerprint of the VSOP87 input dataset
+/// directory by hashing every `VSOP87X.xxx` file in sorted name order.
+///
+/// The resulting hex digest is logged during regeneration and can be
+/// pinned via the `SIDERUST_VSOP87_SHA256` environment variable for
+/// reproducible builds.
+fn dataset_sha256(data_dir: &Path) -> anyhow::Result<(String, u64)> {
+    use sha2::{Digest, Sha256};
+    use std::fs;
+    use std::io::Read;
+
+    let mut paths: Vec<PathBuf> = fs::read_dir(data_dir)
+        .with_context(|| format!("read-dir {data_dir:?}"))?
+        .filter_map(|e| e.ok().map(|e| e.path()))
+        .filter(|p| {
+            p.file_name()
+                .and_then(|n| n.to_str())
+                .map(|s| s.starts_with("VSOP87"))
+                .unwrap_or(false)
+        })
+        .collect();
+    paths.sort();
+
+    let mut hasher = Sha256::new();
+    let mut total: u64 = 0;
+    for path in &paths {
+        // Include the file name in the hash so that file rearrangements
+        // can't masquerade as identical content.
+        if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
+            hasher.update(name.as_bytes());
+            hasher.update(b"\0");
+        }
+        let mut f = std::fs::File::open(path).with_context(|| format!("open {path:?}"))?;
+        let mut buf = [0u8; 64 * 1024];
+        loop {
+            let n = f.read(&mut buf).with_context(|| format!("read {path:?}"))?;
+            if n == 0 {
+                break;
+            }
+            total += n as u64;
+            hasher.update(&buf[..n]);
+        }
+    }
+    let digest = hasher.finalize();
+    let mut s = String::with_capacity(64);
+    use std::fmt::Write;
+    for b in digest {
+        let _ = write!(s, "{:02x}", b);
+    }
+    Ok((s, total))
+}
+
+fn check_pinned_sha256(actual: &str, env_var: &str) -> anyhow::Result<()> {
+    if let Ok(expected) = env::var(env_var) {
+        let expected = expected.trim().to_ascii_lowercase();
+        if !expected.is_empty() && expected != actual {
+            anyhow::bail!(
+                "VSOP87: SHA-256 mismatch.\n  expected: {expected}\n  actual:   {actual}\n\
+                 Refusing to regenerate tables from unverified data."
+            );
+        }
+    }
+    Ok(())
+}
+
 // ---------------------------------------------------------------------------
 // Core domain types
 // ---------------------------------------------------------------------------
@@ -106,11 +171,56 @@ pub fn run(data_dir: &Path) -> anyhow::Result<()> {
 /// Like [`run`] but writes generated files to `gen_dir` instead of `OUT_DIR`.
 ///
 /// Used by `build.rs` when `SIDERUST_REGEN=1` to overwrite the committed
-/// tables in `src/generated/`.
+/// tables in `src/generated/`. Verifies the input dataset SHA-256 against
+/// the `SIDERUST_VSOP87_SHA256` environment variable when set, and embeds
+/// the SHA-256 + retrieval timestamp as a comment header in every emitted
+/// `vsop87X.rs` file.
 pub fn run_regen(data_dir: &Path, gen_dir: &Path) -> anyhow::Result<()> {
     fetch::ensure_dataset(data_dir)?;
+
+    let (sha, bytes) = dataset_sha256(data_dir)?;
+    eprintln!(
+        "VSOP87: dataset SHA-256 = {sha} ({bytes} bytes across all files)"
+    );
+    check_pinned_sha256(&sha, "SIDERUST_VSOP87_SHA256")?;
+
+    let prov = codegen::DatasetProvenance {
+        source_url: "https://ftp.imcce.fr/pub/ephem/planets/vsop87/".to_string(),
+        sha256_hex: sha,
+        retrieved_at: iso8601_now(),
+        byte_count: bytes,
+    };
+
     let versions = collect::collect_terms(data_dir)?;
-    let modules = codegen::generate_modules(&versions)?;
+    let modules = codegen::generate_modules_with_provenance(&versions, &prov)?;
     io::write_modules(&modules, gen_dir)?;
     Ok(())
+}
+
+fn iso8601_now() -> String {
+    // Same lightweight formatter as in scripts/iers — duplicated here to
+    // avoid threading an extra module through `#[path]` includes.
+    use std::time::SystemTime;
+    let secs = SystemTime::now()
+        .duration_since(SystemTime::UNIX_EPOCH)
+        .map(|d| d.as_secs())
+        .unwrap_or(0);
+    let days = (secs / 86_400) as i64;
+    let rem = (secs % 86_400) as u32;
+    let hour = (rem / 3_600) as u8;
+    let minute = ((rem % 3_600) / 60) as u8;
+    let second = (rem % 60) as u8;
+    let z = days + 719_468;
+    let era = if z >= 0 { z } else { z - 146_096 } / 146_097;
+    let doe = (z - era * 146_097) as u64;
+    let yoe = (doe - doe / 1_460 + doe / 36_524 - doe / 146_096) / 365;
+    let y = yoe as i64 + era * 400;
+    let doy = doe - (365 * yoe + yoe / 4 - yoe / 100);
+    let mp = (5 * doy + 2) / 153;
+    let d = (doy - (153 * mp + 2) / 5 + 1) as u8;
+    let m = if mp < 10 { mp + 3 } else { mp - 9 } as u8;
+    let year = (y + if m <= 2 { 1 } else { 0 }) as i32;
+    format!(
+        "{year:04}-{m:02}-{d:02}T{hour:02}:{minute:02}:{second:02}Z"
+    )
 }
