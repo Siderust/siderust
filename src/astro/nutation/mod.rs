@@ -70,6 +70,14 @@ pub use iau2000b::Iau2000B;
 pub use iau2006::Iau2006;
 pub use iau2006a::Iau2006A;
 
+/// Sealing module for [`NutationTag`].
+///
+/// External crates cannot implement this trait, which prevents unsafe
+/// nutation models from being introduced into the transform pipeline.
+pub(crate) mod private {
+    pub trait Sealed {}
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Model-agnostic nutation result
 // ═══════════════════════════════════════════════════════════════════════════
@@ -111,7 +119,14 @@ pub enum NutationModelId {
 pub struct Model<Tag>(PhantomData<Tag>);
 
 /// Metadata implemented by each public nutation model tag.
-pub trait NutationTag {
+///
+/// # Sealed trait
+///
+/// This trait is sealed: only the four IAU nutation model tags shipped
+/// with `siderust` may implement it. External implementations of
+/// `NutationTag` (and by extension `NutationModel`) would silently
+/// corrupt all coordinate transforms that use the model.
+pub trait NutationTag: private::Sealed {
     /// Static identifier used by the shared dispatch implementation.
     const ID: NutationModelId;
 }
@@ -120,10 +135,21 @@ pub trait NutationTag {
 ///
 /// Providers call `Nut::nutation(jd)` to compute nutation at a given epoch,
 /// where `Nut` is the model marker supplied via the transform context.
-pub trait NutationModel {
+///
+/// # Sealed trait
+///
+/// `NutationModel` is sealed: it can only be implemented by the four IAU
+/// nutation marker types shipped with `siderust` ([`Iau2000A`],
+/// [`Iau2000B`], [`Iau2006A`], [`Iau2006`]). External implementations are
+/// rejected at compile time because they would silently corrupt every
+/// transform that depends on the IAU coefficient series and dispatch
+/// conventions enforced here.
+pub trait NutationModel: private::Sealed {
     /// Compute nutation angles at the given TT Julian Date.
     fn nutation(jd: JulianDate) -> NutationAngles;
 }
+
+impl<Tag: NutationTag> private::Sealed for Model<Tag> {}
 
 impl<Tag: NutationTag> NutationModel for Model<Tag> {
     #[inline]

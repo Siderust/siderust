@@ -159,7 +159,14 @@ impl IersEop {
 
     /// MJD range covered by the active table.
     ///
-    /// Returns `(first_mjd, last_mjd)` or `None` if the table is empty.
+    /// # Returns
+    ///
+    /// * `Some((first_mjd, last_mjd))` when the table has at least one
+    ///   entry; the values are the first and last `mjd` columns,
+    ///   inclusive on both ends.
+    /// * `None` if and only if the active table is empty (which can only
+    ///   happen if a caller passes an explicitly empty slice via a custom
+    ///   constructor; the default build-embedded table is never empty).
     pub fn mjd_range(&self) -> Option<(f64, f64)> {
         let first = self.table.first()?.mjd;
         let last = self.table.last()?.mjd;

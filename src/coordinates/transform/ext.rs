@@ -86,7 +86,6 @@ use crate::coordinates::transform::providers::{
 use crate::time::JulianDate;
 use affn::Rotation3;
 use crate::qtty::{LengthUnit, Unit};
-
 #[inline]
 fn model_rotation<F: ReferenceFrame, F2: ReferenceFrame>(
     jd: JulianDate,
@@ -166,7 +165,13 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
 
     /// Converts this direction to horizontal coordinates using TT only.
     ///
-    /// UT1 is inferred from TT via the built-in ΔT model.
+    /// UT1 is derived from TT using the context's EOP provider
+    /// (`IersEop` by default), which applies the IERS `dUT1 = UT1 − UTC`
+    /// correction on top of tempoch's leap-second chain. For sub-second
+    /// precision, prefer [`to_horizontal_precise`] with an explicit UT1
+    /// value.
+    ///
+    /// [`to_horizontal_precise`]: Self::to_horizontal_precise
     fn to_horizontal(
         &self,
         jd_tt: &JulianDate,
@@ -175,7 +180,13 @@ pub trait DirectionAstroExt<F: ReferenceFrame> {
     where
         Self: crate::coordinates::transform::horizontal::ToHorizontal,
     {
-        let jd_ut1 = crate::astro::earth_rotation::jd_ut1_from_tt(*jd_tt);
+        let ctx: AstroContext<DefaultEphemeris, DefaultEop> = AstroContext::default();
+        // EOP tables are daily-tabulated; the TT−UTC offset (~70 s) is far
+        // below the lookup grid, so passing `jd_tt` here selects the same
+        // table row as a properly converted UTC JD. `jd_ut1_from_tt_eop`
+        // performs the precise leap-second chain internally.
+        let eop = ctx.eop_at(*jd_tt);
+        let jd_ut1 = crate::astro::earth_rotation::jd_ut1_from_tt_eop(*jd_tt, &eop);
         crate::coordinates::transform::horizontal::ToHorizontal::to_horizontal(
             self, &jd_ut1, jd_tt, site,
         )

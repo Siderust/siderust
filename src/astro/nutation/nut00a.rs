@@ -186,6 +186,21 @@ const U2R: f64 = AS2R / 1e7;
 ///
 /// This is the raw IAU 2000A result; for use with IAU 2006 precession
 /// call [`nutation_iau2006a`] instead, which applies the P03 corrections.
+///
+/// # Numerical convention: summation order
+///
+/// Both the luni-solar and the planetary series are summed in **reverse
+/// table order** (`.iter().rev()`), so that the smallest-amplitude terms
+/// are accumulated first and the dominant `Ω`-term (with `dpsi ≈ −17″`,
+/// roughly seven orders of magnitude larger than the smallest planetary
+/// terms at ~0.1 µas) is summed last. This matches the SOFA/ERFA
+/// convention (`eraNut00a`) and preserves ~1 µas of precision in `Δψ` /
+/// `Δε` even at extreme epochs (|t| ≳ 30 centuries) where catastrophic
+/// cancellation in a "largest-first" summation would otherwise dominate
+/// the IEEE-754 round-off budget.
+///
+/// Do not reorder the loop without updating the IAU compliance tests in
+/// `tests/`.
 pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
     let t = jd.julian_centuries();
 

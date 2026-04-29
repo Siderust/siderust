@@ -18,7 +18,23 @@ pub use iers_eop_data::{EopEntry, EOP_TABLE};
 /// Look up EOP values by MJD (UTC), interpolating linearly between
 /// daily entries when the MJD falls between two table rows.
 ///
-/// Returns `None` if `mjd` is outside the table range.
+/// # Returns
+///
+/// * `Some(entry)` when `mjd` is within the closed interval
+///   `[first.mjd, last.mjd]` covered by `table`.
+/// * `None` in two cases:
+///     - The supplied `table` slice is empty (i.e. the embedded EOP table
+///       has not been generated, or a custom table was passed in empty).
+///     - `mjd` falls strictly outside the `[first, last]` interval. The
+///       caller is then expected to fall back to a zero-EOP / `NullEop`
+///       approximation; `iers_data::lookup` deliberately does **not**
+///       extrapolate, since IERS entries beyond the prediction horizon
+///       are unreliable and would silently degrade UT1/polar-motion
+///       accuracy without a clear signal.
+///
+/// Within the covered interval the function performs daily linear
+/// interpolation and never returns `None` — `None` is therefore a
+/// reliable indicator that the requested epoch is out of range.
 pub fn lookup(table: &[EopEntry], mjd: f64) -> Option<EopEntry> {
     if table.is_empty() {
         return None;
