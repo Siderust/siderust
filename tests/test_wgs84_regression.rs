@@ -29,10 +29,10 @@
 //! All assertions use a 1 m tolerance, which is well within the accuracy of
 //! the WGS84 formula and far tighter than any pointing/observing need.
 
-use siderust::qtty::*;
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::{Geocentric, Geodetic};
 use siderust::coordinates::frames::ECEF;
+use siderust::qtty::*;
 
 /// Absolute tolerance: 1 metre in ECEF XYZ.
 const TOL_M: f64 = 1.0;

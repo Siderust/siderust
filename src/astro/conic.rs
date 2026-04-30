@@ -8,13 +8,13 @@
 //! the astronomy-specific state that layers epoch and anomaly semantics on top
 //! of that geometry for siderust propagation code.
 
+use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::conic::{
     ClassifiedSemiMajorAxisParam, ConicOrientation, ConicValidationError, Elliptic, OrientedConic,
     PeriapsisParam, SemiMajorAxisParam, TypedSemiMajorAxisParam,
 };
 use affn::frames::EclipticMeanJ2000;
-use crate::qtty::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

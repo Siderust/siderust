@@ -9,8 +9,8 @@
 //!
 //! DE441 is no longer a compile-time backend; use `RuntimeEphemeris` at runtime.
 
-use siderust::qtty::*;
 use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 // ============================================================================

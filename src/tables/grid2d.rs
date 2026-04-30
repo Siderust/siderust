@@ -44,10 +44,26 @@ impl<S: Scalar> ConstantRegion<S> {
 
     #[inline]
     fn contains(&self, x: S, y: S) -> bool {
-        if let Some(b) = self.x_min_inclusive { if !(x >= b) { return false; } }
-        if let Some(b) = self.x_max_exclusive { if !(x <  b) { return false; } }
-        if let Some(b) = self.y_min_inclusive { if !(y >= b) { return false; } }
-        if let Some(b) = self.y_max_exclusive { if !(y <  b) { return false; } }
+        if let Some(b) = self.x_min_inclusive {
+            if !(x >= b) {
+                return false;
+            }
+        }
+        if let Some(b) = self.x_max_exclusive {
+            if !(x < b) {
+                return false;
+            }
+        }
+        if let Some(b) = self.y_min_inclusive {
+            if !(y >= b) {
+                return false;
+            }
+        }
+        if let Some(b) = self.y_max_exclusive {
+            if !(y < b) {
+                return false;
+            }
+        }
         true
     }
 }
@@ -92,18 +108,12 @@ pub struct Grid2D<X: Unit, Y: Unit, V: Unit, S: Scalar = f64> {
     _markers: core::marker::PhantomData<(X, Y, V)>,
 }
 
-impl<X: Unit, Y: Unit, V: Unit, S: Scalar + Into<f64> + From<f64>>
-    Grid2D<X, Y, V, S>
-{
+impl<X: Unit, Y: Unit, V: Unit, S: Scalar + Into<f64> + From<f64>> Grid2D<X, Y, V, S> {
     /// Build a `Grid2D` from raw scalar slices already expressed in the
     /// declared `X` / `Y` / `V` units. The two axes are validated to be
     /// strictly monotonic; the table is required to be `ys.len() · xs.len()`
     /// long, laid out row-major.
-    pub fn from_raw_row_major(
-        xs: Vec<S>,
-        ys: Vec<S>,
-        table: Vec<S>,
-    ) -> Result<Self, TableError> {
+    pub fn from_raw_row_major(xs: Vec<S>, ys: Vec<S>, table: Vec<S>) -> Result<Self, TableError> {
         let nx = xs.len();
         let ny = ys.len();
         if table.len() != nx * ny {
@@ -164,7 +174,11 @@ impl<X: Unit, Y: Unit, V: Unit, S: Scalar + Into<f64> + From<f64>>
             return Err(TableError::ShapeMismatch {
                 expected_x: nx,
                 expected_y: ny,
-                actual_rows: if nx == 0 { 0 } else { table_desc.len() / nx.max(1) },
+                actual_rows: if nx == 0 {
+                    0
+                } else {
+                    table_desc.len() / nx.max(1)
+                },
                 actual_cols: nx,
             });
         }
@@ -175,12 +189,18 @@ impl<X: Unit, Y: Unit, V: Unit, S: Scalar + Into<f64> + From<f64>>
         let ys_desc_f64: Vec<f64> = ys_desc.iter().copied().map(Into::into).collect();
         let step = ys_desc_f64[1] - ys_desc_f64[0];
         if !(step < 0.0) {
-            return Err(TableError::NotMonotonic { axis: "y", at_index: 1 });
+            return Err(TableError::NotMonotonic {
+                axis: "y",
+                at_index: 1,
+            });
         }
         for i in 2..ny {
             let s = ys_desc_f64[i] - ys_desc_f64[i - 1];
             if s.to_bits() != step.to_bits() {
-                return Err(TableError::NotMonotonic { axis: "y", at_index: i });
+                return Err(TableError::NotMonotonic {
+                    axis: "y",
+                    at_index: i,
+                });
             }
         }
         // Flip y-axis to ascending storage. The reflection
@@ -299,8 +319,7 @@ mod tests {
         let ys = vec![0.0, 1.0];
         // Row 0: [10, 20, 30]; Row 1: [100, 200, 300]
         let table = vec![10.0, 20.0, 30.0, 100.0, 200.0, 300.0];
-        let g: Grid2D<Nanometer, Meter, Meter> =
-            Grid2D::from_raw_row_major(xs, ys, table).unwrap();
+        let g: Grid2D<Nanometer, Meter, Meter> = Grid2D::from_raw_row_major(xs, ys, table).unwrap();
 
         let v = g
             .interp_at(
@@ -330,8 +349,7 @@ mod tests {
         let xs = vec![0.0_f64, 1.0, 2.0];
         let ys = vec![10.0_f64, 5.0, 0.0]; // descending
         let table = vec![1.0_f64; 9];
-        let g: Grid2D<Nanometer, Meter, Meter> =
-            Grid2D::from_raw_row_major(xs, ys, table).unwrap();
+        let g: Grid2D<Nanometer, Meter, Meter> = Grid2D::from_raw_row_major(xs, ys, table).unwrap();
         assert_eq!(g.dir_y, AxisDirection::Descending);
         assert_eq!(g.dir_x, AxisDirection::Ascending);
     }
@@ -361,12 +379,14 @@ mod tests {
         let xq = 7.5_f64;
         let yq = 7.5_f64;
 
-        let got = g.interp_at(
-            Quantity::<Nanometer>::new(xq),
-            Quantity::<Meter>::new(yq),
-            OutOfRange::Error,
-            OutOfRange::Error,
-        ).unwrap();
+        let got = g
+            .interp_at(
+                Quantity::<Nanometer>::new(xq),
+                Quantity::<Meter>::new(yq),
+                OutOfRange::Error,
+                OutOfRange::Error,
+            )
+            .unwrap();
 
         // NSB-style reference using bilinear_unit with manual descending-y indexing:
         // ix0 = floor(xq/5) = 1, bt = (7.5 - 5) / 5 = 0.5
@@ -403,41 +423,42 @@ mod tests {
     fn constant_region_short_circuits() {
         let xs = vec![0.0_f64, 10.0, 20.0];
         let ys = vec![0.0_f64, 10.0, 20.0];
-        let table = vec![
-            1.0, 2.0, 3.0,
-            4.0, 5.0, 6.0,
-            7.0, 8.0, 9.0,
-        ];
-        let g: Grid2D<Nanometer, Meter, Meter> =
-            Grid2D::from_raw_row_major(xs, ys, table)
-                .unwrap()
-                .with_constant_region(ConstantRegion::lower_corner(5.0, 5.0, 999.0));
+        let table = vec![1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0];
+        let g: Grid2D<Nanometer, Meter, Meter> = Grid2D::from_raw_row_major(xs, ys, table)
+            .unwrap()
+            .with_constant_region(ConstantRegion::lower_corner(5.0, 5.0, 999.0));
 
         // Inside region: x<5 && y<5 → 999.
-        let v_in = g.interp_at(
-            Quantity::<Nanometer>::new(2.0),
-            Quantity::<Meter>::new(2.0),
-            OutOfRange::Error,
-            OutOfRange::Error,
-        ).unwrap();
+        let v_in = g
+            .interp_at(
+                Quantity::<Nanometer>::new(2.0),
+                Quantity::<Meter>::new(2.0),
+                OutOfRange::Error,
+                OutOfRange::Error,
+            )
+            .unwrap();
         assert_eq!(v_in.value(), 999.0);
 
         // Boundary excluded (half-open: x<5 false at x=5).
-        let v_b = g.interp_at(
-            Quantity::<Nanometer>::new(5.0),
-            Quantity::<Meter>::new(2.0),
-            OutOfRange::Error,
-            OutOfRange::Error,
-        ).unwrap();
+        let v_b = g
+            .interp_at(
+                Quantity::<Nanometer>::new(5.0),
+                Quantity::<Meter>::new(2.0),
+                OutOfRange::Error,
+                OutOfRange::Error,
+            )
+            .unwrap();
         assert_ne!(v_b.value(), 999.0);
 
         // Outside region: standard bilinear.
-        let v_out = g.interp_at(
-            Quantity::<Nanometer>::new(15.0),
-            Quantity::<Meter>::new(15.0),
-            OutOfRange::Error,
-            OutOfRange::Error,
-        ).unwrap();
+        let v_out = g
+            .interp_at(
+                Quantity::<Nanometer>::new(15.0),
+                Quantity::<Meter>::new(15.0),
+                OutOfRange::Error,
+                OutOfRange::Error,
+            )
+            .unwrap();
         assert_eq!(v_out.value(), 7.0); // bilinear at (15,15) on this table = 7
     }
 
@@ -447,26 +468,31 @@ mod tests {
         let xs = vec![0.0_f64, 10.0];
         let ys = vec![0.0_f64, 10.0];
         let table = vec![1.0, 2.0, 3.0, 4.0];
-        let g: Grid2D<Nanometer, Meter, Meter> =
-            Grid2D::from_raw_row_major(xs, ys, table)
-                .unwrap()
-                .with_constant_region(ConstantRegion::lower_corner(5.0, 5.0, 100.0))
-                .with_constant_region(ConstantRegion::lower_corner(8.0, 8.0, 200.0));
+        let g: Grid2D<Nanometer, Meter, Meter> = Grid2D::from_raw_row_major(xs, ys, table)
+            .unwrap()
+            .with_constant_region(ConstantRegion::lower_corner(5.0, 5.0, 100.0))
+            .with_constant_region(ConstantRegion::lower_corner(8.0, 8.0, 200.0));
 
         // (2,2): both match → 100 (first).
-        let v = g.interp_at(
-            Quantity::<Nanometer>::new(2.0),
-            Quantity::<Meter>::new(2.0),
-            OutOfRange::Error, OutOfRange::Error,
-        ).unwrap();
+        let v = g
+            .interp_at(
+                Quantity::<Nanometer>::new(2.0),
+                Quantity::<Meter>::new(2.0),
+                OutOfRange::Error,
+                OutOfRange::Error,
+            )
+            .unwrap();
         assert_eq!(v.value(), 100.0);
 
         // (6,6): only second matches → 200.
-        let v = g.interp_at(
-            Quantity::<Nanometer>::new(6.0),
-            Quantity::<Meter>::new(6.0),
-            OutOfRange::Error, OutOfRange::Error,
-        ).unwrap();
+        let v = g
+            .interp_at(
+                Quantity::<Nanometer>::new(6.0),
+                Quantity::<Meter>::new(6.0),
+                OutOfRange::Error,
+                OutOfRange::Error,
+            )
+            .unwrap();
         assert_eq!(v.value(), 200.0);
     }
 
@@ -512,11 +538,14 @@ mod tests {
         // Query at exact stored y values reproduces table cells.
         for (iy, &yv) in ys_desc.iter().enumerate() {
             for ix in 0..3 {
-                let v = g.interp_at(
-                    Quantity::<Nanometer>::new(xs[ix]),
-                    Quantity::<Meter>::new(yv),
-                    OutOfRange::Error, OutOfRange::Error,
-                ).unwrap();
+                let v = g
+                    .interp_at(
+                        Quantity::<Nanometer>::new(xs[ix]),
+                        Quantity::<Meter>::new(yv),
+                        OutOfRange::Error,
+                        OutOfRange::Error,
+                    )
+                    .unwrap();
                 assert_eq!(v.value(), table[iy * 3 + ix]);
             }
         }
@@ -562,12 +591,14 @@ mod tests {
             lt,
         );
 
-        let got = g.interp_at(
-            Quantity::<Nanometer>::new(beta),
-            Quantity::<Meter>::new(dl),
-            OutOfRange::ClampToEndpoints,
-            OutOfRange::ClampToEndpoints,
-        ).unwrap();
+        let got = g
+            .interp_at(
+                Quantity::<Nanometer>::new(beta),
+                Quantity::<Meter>::new(dl),
+                OutOfRange::ClampToEndpoints,
+                OutOfRange::ClampToEndpoints,
+            )
+            .unwrap();
         assert_eq!(
             got.value().to_bits(),
             expected.to_bits(),

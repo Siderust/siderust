@@ -43,8 +43,8 @@ use crate::coordinates::{
     frames::EclipticMeanJ2000,
     transform::VectorAstroExt,
 };
-use crate::time::JulianDate;
 use crate::qtty::{AstronomicalUnit, Day, Kilometer, Per};
+use crate::time::JulianDate;
 
 // ── Physical constants (single source of truth: qtty + DE4xx headers) ────
 

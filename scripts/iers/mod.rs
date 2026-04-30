@@ -67,7 +67,9 @@ impl SourceProvenance {
         let mut buf = [0u8; 64 * 1024];
         let mut count = 0u64;
         loop {
-            let n = file.read(&mut buf).with_context(|| format!("read {path:?}"))?;
+            let n = file
+                .read(&mut buf)
+                .with_context(|| format!("read {path:?}"))?;
             if n == 0 {
                 break;
             }
@@ -102,9 +104,7 @@ fn iso8601_now() -> String {
         .map(|d| d.as_secs())
         .unwrap_or(0);
     let (year, month, day, hour, minute, second) = unix_to_civil(secs);
-    format!(
-        "{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}Z"
-    )
+    format!("{year:04}-{month:02}-{day:02}T{hour:02}:{minute:02}:{second:02}Z")
 }
 
 /// Convert a Unix timestamp (seconds since 1970-01-01 UTC) to civil

@@ -2,8 +2,8 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::qtty::{Au, Degrees};
 use siderust::coordinates::{cartesian, centers::Barycentric, frames::ICRS, spherical};
+use siderust::qtty::{Au, Degrees};
 use std::{hint::black_box, time::Duration};
 
 fn bench_cartesian_spherical_converters(c: &mut Criterion) {

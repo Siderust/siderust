@@ -46,9 +46,9 @@
 //! * SOFA routines `iauXy06`, `iauS06`, `iauC2ixys`
 
 use crate::astro::precession;
+use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::Rotation3;
-use crate::qtty::*;
 
 /// CIP (X, Y) coordinates and CIO locator s.
 #[derive(Debug, Clone, Copy)]

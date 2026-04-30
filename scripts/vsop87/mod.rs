@@ -179,9 +179,7 @@ pub fn run_regen(data_dir: &Path, gen_dir: &Path) -> anyhow::Result<()> {
     fetch::ensure_dataset(data_dir)?;
 
     let (sha, bytes) = dataset_sha256(data_dir)?;
-    eprintln!(
-        "VSOP87: dataset SHA-256 = {sha} ({bytes} bytes across all files)"
-    );
+    eprintln!("VSOP87: dataset SHA-256 = {sha} ({bytes} bytes across all files)");
     check_pinned_sha256(&sha, "SIDERUST_VSOP87_SHA256")?;
 
     let prov = codegen::DatasetProvenance {
@@ -220,7 +218,5 @@ fn iso8601_now() -> String {
     let d = (doy - (153 * mp + 2) / 5 + 1) as u8;
     let m = if mp < 10 { mp + 3 } else { mp - 9 } as u8;
     let year = (y + if m <= 2 { 1 } else { 0 }) as i32;
-    format!(
-        "{year:04}-{m:02}-{d:02}T{hour:02}:{minute:02}:{second:02}Z"
-    )
+    format!("{year:04}-{m:02}-{d:02}T{hour:02}:{minute:02}:{second:02}Z")
 }

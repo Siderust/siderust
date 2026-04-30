@@ -111,11 +111,7 @@ fn provenance(filter_id: &str, dat_path: &str) -> Provenance {
     ))
 }
 
-fn load(
-    raw: &str,
-    filter_id: &str,
-    dat_path: &str,
-) -> SampledSpectrum<Nanometer, Throughput> {
+fn load(raw: &str, filter_id: &str, dat_path: &str) -> SampledSpectrum<Nanometer, Throughput> {
     ascii::two_column::<Nanometer, Throughput>(
         raw,
         1.0, // wavelengths already in nm (converted from Å during data curation)
@@ -134,7 +130,11 @@ fn load(
 /// λ_eff ≈ 366 nm, FWHM ≈ 66 nm (Bessell 1990 Table 1).
 pub fn u() -> &'static SampledSpectrum<Nanometer, Throughput> {
     U_TABLE.get_or_init(|| {
-        load(RAW_U, "Generic/Bessell.U", "siderust/data/passbands/bessell1990/U.dat")
+        load(
+            RAW_U,
+            "Generic/Bessell.U",
+            "siderust/data/passbands/bessell1990/U.dat",
+        )
     })
 }
 
@@ -143,7 +143,11 @@ pub fn u() -> &'static SampledSpectrum<Nanometer, Throughput> {
 /// λ_eff ≈ 438 nm, FWHM ≈ 98 nm (Bessell 1990 Table 1).
 pub fn b() -> &'static SampledSpectrum<Nanometer, Throughput> {
     B_TABLE.get_or_init(|| {
-        load(RAW_B, "Generic/Bessell.B", "siderust/data/passbands/bessell1990/B.dat")
+        load(
+            RAW_B,
+            "Generic/Bessell.B",
+            "siderust/data/passbands/bessell1990/B.dat",
+        )
     })
 }
 
@@ -152,7 +156,11 @@ pub fn b() -> &'static SampledSpectrum<Nanometer, Throughput> {
 /// λ_eff ≈ 545 nm, FWHM ≈ 88 nm (Bessell 1990 Table 1).
 pub fn v() -> &'static SampledSpectrum<Nanometer, Throughput> {
     V_TABLE.get_or_init(|| {
-        load(RAW_V, "Generic/Bessell.V", "siderust/data/passbands/bessell1990/V.dat")
+        load(
+            RAW_V,
+            "Generic/Bessell.V",
+            "siderust/data/passbands/bessell1990/V.dat",
+        )
     })
 }
 
@@ -161,7 +169,11 @@ pub fn v() -> &'static SampledSpectrum<Nanometer, Throughput> {
 /// λ_eff ≈ 641 nm, FWHM ≈ 158 nm (Bessell 1990 Table 1).
 pub fn r() -> &'static SampledSpectrum<Nanometer, Throughput> {
     R_TABLE.get_or_init(|| {
-        load(RAW_R, "Generic/Bessell.R", "siderust/data/passbands/bessell1990/R.dat")
+        load(
+            RAW_R,
+            "Generic/Bessell.R",
+            "siderust/data/passbands/bessell1990/R.dat",
+        )
     })
 }
 
@@ -170,7 +182,11 @@ pub fn r() -> &'static SampledSpectrum<Nanometer, Throughput> {
 /// λ_eff ≈ 798 nm, FWHM ≈ 154 nm (Bessell 1990 Table 1).
 pub fn i() -> &'static SampledSpectrum<Nanometer, Throughput> {
     I_TABLE.get_or_init(|| {
-        load(RAW_I, "Generic/Bessell.I", "siderust/data/passbands/bessell1990/I.dat")
+        load(
+            RAW_I,
+            "Generic/Bessell.I",
+            "siderust/data/passbands/bessell1990/I.dat",
+        )
     })
 }
 
@@ -240,11 +256,26 @@ mod tests {
     fn pinned_sha256_matches_runtime_hash() {
         use crate::provenance::checksum::{sha256, to_hex};
         let cases: &[(&str, &str)] = &[
-            (RAW_U, "e00771381f3ecd293bcf8c20fdbe57ce5cb9c24404b6ad7f499f28912525ea58"),
-            (RAW_B, "ba2b36196cc285482659df521fc5ffde60e8c6849963912cfcbe61f912f704b0"),
-            (RAW_V, "fd5cc0ac9bba2e8121efe8b66d1aeb63b0744b0997d672053bdccf585248e24c"),
-            (RAW_R, "25393e6cd0c2b3c2c7a2a0688ce675e6475d550150b44f580751e13731ac1bc0"),
-            (RAW_I, "f3eba62d9898b1b69b6c56cbb7806875f528410145594e56d61cff4f8c5c44e0"),
+            (
+                RAW_U,
+                "e00771381f3ecd293bcf8c20fdbe57ce5cb9c24404b6ad7f499f28912525ea58",
+            ),
+            (
+                RAW_B,
+                "ba2b36196cc285482659df521fc5ffde60e8c6849963912cfcbe61f912f704b0",
+            ),
+            (
+                RAW_V,
+                "fd5cc0ac9bba2e8121efe8b66d1aeb63b0744b0997d672053bdccf585248e24c",
+            ),
+            (
+                RAW_R,
+                "25393e6cd0c2b3c2c7a2a0688ce675e6475d550150b44f580751e13731ac1bc0",
+            ),
+            (
+                RAW_I,
+                "f3eba62d9898b1b69b6c56cbb7806875f528410145594e56d61cff4f8c5c44e0",
+            ),
         ];
         for (raw, want) in cases {
             assert_eq!(to_hex(&sha256(raw.as_bytes())), *want);
@@ -399,7 +430,10 @@ mod tests {
     fn repeated_calls_return_same_pointer() {
         let a = v() as *const _;
         let b = v() as *const _;
-        assert_eq!(a, b, "OnceLock must return the same instance on repeated calls");
+        assert_eq!(
+            a, b,
+            "OnceLock must return the same instance on repeated calls"
+        );
     }
 
     // ── integration smoke test ─────────────────────────────────────────────────
@@ -422,9 +456,6 @@ mod tests {
             "∫ T_V dλ should be positive, got {integral}"
         );
         // The V band spans ~470–700 nm with peak ≈ 1.0; ∫T dλ ≈ several tens of nm
-        assert!(
-            integral > 10.0,
-            "∫ T_V dλ = {integral} nm seems too small"
-        );
+        assert!(integral > 10.0, "∫ T_V dλ = {integral} nm seems too small");
     }
 }

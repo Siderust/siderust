@@ -4,7 +4,6 @@
 //! Tests for the extended coordinate systems: FK4 B1950, TEME, Galactic,
 //! planetary body-fixed frames, and planetocentric centers.
 
-use siderust::qtty::*;
 use siderust::coordinates::{
     cartesian,
     centers::*,
@@ -15,6 +14,7 @@ use siderust::coordinates::{
         AstroContext, TransformCenter,
     },
 };
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 const EPSILON: f64 = 1e-10;

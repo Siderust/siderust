@@ -71,7 +71,7 @@ const H0: [u32; 8] = [
 ];
 
 const fn rotr(x: u32, n: u32) -> u32 {
-    (x >> n) | (x << (32 - n))
+    x.rotate_right(n)
 }
 
 const fn compress(state: &mut [u32; 8], block: &[u8; 64]) {
@@ -179,14 +179,14 @@ pub const fn sha256(input: &[u8]) -> [u8; 32] {
     let final_len = rem + 1 + pad_zeros + 8;
 
     let len_off = final_len - 8;
-    tail[len_off]     = (bit_len >> 56) as u8;
+    tail[len_off] = (bit_len >> 56) as u8;
     tail[len_off + 1] = (bit_len >> 48) as u8;
     tail[len_off + 2] = (bit_len >> 40) as u8;
     tail[len_off + 3] = (bit_len >> 32) as u8;
     tail[len_off + 4] = (bit_len >> 24) as u8;
     tail[len_off + 5] = (bit_len >> 16) as u8;
-    tail[len_off + 6] = (bit_len >> 8)  as u8;
-    tail[len_off + 7] =  bit_len        as u8;
+    tail[len_off + 6] = (bit_len >> 8) as u8;
+    tail[len_off + 7] = bit_len as u8;
 
     let mut bi = 0;
     while bi < final_len {
@@ -204,10 +204,10 @@ pub const fn sha256(input: &[u8]) -> [u8; 32] {
     let mut o = 0;
     while o < 8 {
         let v = state[o];
-        out[o * 4]     = (v >> 24) as u8;
+        out[o * 4] = (v >> 24) as u8;
         out[o * 4 + 1] = (v >> 16) as u8;
-        out[o * 4 + 2] = (v >> 8)  as u8;
-        out[o * 4 + 3] =  v        as u8;
+        out[o * 4 + 2] = (v >> 8) as u8;
+        out[o * 4 + 3] = v as u8;
         o += 1;
     }
     out
@@ -298,11 +298,7 @@ pub const fn assert_sha256_eq(_name: &'static str, data: &[u8], expected: &str) 
 macro_rules! assert_data_checksum {
     ($name:literal, $data:expr, $expected_hex:literal) => {
         #[allow(long_running_const_eval)]
-        const _: () = $crate::provenance::checksum::assert_sha256_eq(
-            $name,
-            $data,
-            $expected_hex,
-        );
+        const _: () = $crate::provenance::checksum::assert_sha256_eq($name, $data, $expected_hex);
     };
 }
 

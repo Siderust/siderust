@@ -12,8 +12,8 @@
 
 use std::f64::consts::PI;
 
-use siderust::qtty::*;
 use siderust::coordinates::spherical;
+use siderust::qtty::*;
 
 fn main() {
     println!("=== Siderust Coordinate Operations Example ===\n");

@@ -7,7 +7,6 @@
 //! by cross-checking module interactions: precession + nutation,
 //! ERA + GMST, CIO-based GCRS→CIRS, polar motion, and light deflection.
 
-use siderust::qtty::*;
 use siderust::astro::cio::{cip_cio, gcrs_to_cirs_matrix};
 use siderust::astro::eop::{EopProvider, NullEop};
 use siderust::astro::era::earth_rotation_angle;
@@ -18,6 +17,7 @@ use siderust::astro::precession::{
     mean_obliquity_iau2006, precession_matrix_iau2006, precession_nutation_matrix,
 };
 use siderust::astro::sidereal::{gast_iau2006, gmst_iau2006};
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 use std::f64::consts::TAU;
 

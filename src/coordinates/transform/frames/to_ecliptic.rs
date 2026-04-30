@@ -43,9 +43,9 @@ mod tests {
     use crate::coordinates::*;
     use crate::macros::assert_cartesian_eq;
     use crate::macros::assert_spherical_eq;
-    use crate::time::JulianDate;
     use crate::qtty::Degrees;
     use crate::qtty::*;
+    use crate::time::JulianDate;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 

@@ -8,12 +8,12 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::qtty::*;
 use siderust::calculus::altitude::{
     above_threshold, altitude_ranges, crossings, AltitudePeriodsProvider, SearchOpts,
 };
 use siderust::coordinates::spherical::direction;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
+use siderust::qtty::*;
 use siderust::time::{ModifiedJulianDate, Period, MJD};
 use std::hint::black_box;
 use std::time::Duration;
@@ -45,7 +45,7 @@ fn sirius_target() -> direction::ICRS {
 // =============================================================================
 
 fn bench_star_altitude_computation(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let target = sirius_target();
     let mjd = siderust::time::ModifiedJulianDate::new(51544.5); // J2000 epoch
 
@@ -65,7 +65,7 @@ fn bench_star_altitude_computation(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_star_thresholds(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let target = sirius_target();
     let opts = SearchOpts::default();
 
@@ -119,7 +119,7 @@ fn bench_star_thresholds(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_star_crossings(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let target = sirius_target();
     let opts = SearchOpts::default();
 

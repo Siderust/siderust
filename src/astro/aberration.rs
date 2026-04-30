@@ -33,8 +33,8 @@ use crate::coordinates::{
     cartesian::{direction, position, Velocity},
     frames,
 };
-use crate::time::JulianDate;
 use crate::qtty::*;
+use crate::time::JulianDate;
 
 type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 type AusPerDay = crate::qtty::velocity::Velocity<AstronomicalUnit, Day>;

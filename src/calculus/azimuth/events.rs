@@ -33,8 +33,8 @@ use crate::calculus::altitude::CrossingDirection;
 use crate::calculus::math_core::{extrema, intervals};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
 use crate::qtty::*;
+use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
 
 // ---------------------------------------------------------------------------
 // Helpers

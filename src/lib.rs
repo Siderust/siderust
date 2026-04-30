@@ -72,6 +72,8 @@
 pub(crate) use ::qtty as ext_qtty;
 
 pub mod astro;
+#[cfg(feature = "atmosphere")]
+pub mod atmosphere;
 pub mod bodies;
 pub mod calculus;
 pub mod coordinates;
@@ -81,8 +83,6 @@ pub mod interp;
 pub mod observatories;
 pub mod provenance;
 pub mod qtty;
-#[cfg(feature = "atmosphere")]
-pub mod atmosphere;
 #[cfg(feature = "spectra")]
 pub mod spectra;
 #[cfg(feature = "tables")]

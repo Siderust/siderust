@@ -45,9 +45,7 @@ pub struct Grid3D<X: Unit, Y: Unit, Z: Unit, V: Unit, S: Scalar = f64> {
     _markers: core::marker::PhantomData<(X, Y, Z, V)>,
 }
 
-impl<X: Unit, Y: Unit, Z: Unit, V: Unit, S: Scalar + Into<f64> + From<f64>>
-    Grid3D<X, Y, Z, V, S>
-{
+impl<X: Unit, Y: Unit, Z: Unit, V: Unit, S: Scalar + Into<f64> + From<f64>> Grid3D<X, Y, Z, V, S> {
     /// Build a `Grid3D` from raw scalar slices already expressed in the
     /// declared `X` / `Y` / `Z` / `V` units. All three axes are validated
     /// to be strictly monotonic (either direction); the table is required to

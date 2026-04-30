@@ -31,8 +31,8 @@ use crate::coordinates::{
     frames::EclipticMeanJ2000,
     spherical::direction,
 };
-use crate::time::JulianDate;
 use crate::qtty::{AstronomicalUnit, Kilometer};
+use crate::time::JulianDate;
 
 use super::CoordinateWithPM;
 
@@ -149,12 +149,15 @@ impl Trackable for solar_system::Moon {
 mod tests {
     use super::*;
     use crate::bodies::catalog;
-    use crate::time::JulianDate;
     use crate::qtty::*;
+    use crate::time::JulianDate;
 
     #[test]
     fn icrs_direction_is_time_invariant() {
-        let dir = direction::ICRS::new(crate::qtty::Degrees::new(101.287), crate::qtty::Degrees::new(-16.716));
+        let dir = direction::ICRS::new(
+            crate::qtty::Degrees::new(101.287),
+            crate::qtty::Degrees::new(-16.716),
+        );
         let at_j2000 = dir.track(JulianDate::J2000);
         let at_j2050 = dir.track(JulianDate::J2000 + crate::qtty::Days::new(365.25 * 50.0));
         assert_eq!(at_j2000.ra(), at_j2050.ra());
@@ -241,7 +244,10 @@ mod tests {
             obj.track(jd)
         }
 
-        let dir = direction::ICRS::new(crate::qtty::Degrees::new(45.0), crate::qtty::Degrees::new(30.0));
+        let dir = direction::ICRS::new(
+            crate::qtty::Degrees::new(45.0),
+            crate::qtty::Degrees::new(30.0),
+        );
         let result = track_anything(&dir, JulianDate::J2000);
         assert_eq!(result.ra(), crate::qtty::Degrees::new(45.0));
         assert_eq!(result.dec(), crate::qtty::Degrees::new(30.0));

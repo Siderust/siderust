@@ -10,8 +10,8 @@ use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::frames::{self, MutableFrame};
 use crate::coordinates::transform::frames::bias;
 use crate::coordinates::transform::TransformFrame;
-use nalgebra::Vector3;
 use crate::qtty::Unit;
+use nalgebra::Vector3;
 
 /// Identity frame transform for velocities.
 impl<F, U> TransformFrame<Velocity<F, U>> for Velocity<F, U>

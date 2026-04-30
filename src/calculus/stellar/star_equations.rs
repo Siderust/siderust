@@ -38,9 +38,9 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical;
 use crate::coordinates::transform::AstroContext;
+use crate::qtty::*;
 use crate::time::JulianDate;
 use crate::time::{ModifiedJulianDate, Period, MJD};
-use crate::qtty::*;
 
 // ---------------------------------------------------------------------------
 // Constants

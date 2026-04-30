@@ -34,8 +34,8 @@
 //! ```
 
 use crate::astro::era::earth_rotation_angle;
-use crate::time::JulianDate;
 use crate::qtty::*;
+use crate::time::JulianDate;
 use std::f64::consts::TAU;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).

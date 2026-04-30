@@ -14,8 +14,8 @@
 //! * Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Ch. 47.
 
 use crate::astro::precession;
-use crate::time::JulianDate;
 use crate::qtty::{Kilometers, Radians};
+use crate::time::JulianDate;
 
 /// Geocentric apparent equatorial + ecliptic coordinates of the Moon.
 #[derive(Debug, Clone, Copy, PartialEq)]

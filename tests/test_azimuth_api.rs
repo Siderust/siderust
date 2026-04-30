@@ -7,7 +7,6 @@
 //! `azimuth_extrema`, and interval-query functions across Sun, Moon, and star
 //! targets.
 
-use siderust::qtty::*;
 use siderust::bodies::catalog;
 use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::calculus::azimuth::{
@@ -17,6 +16,7 @@ use siderust::calculus::azimuth::{
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
+use siderust::qtty::*;
 use siderust::time::{ModifiedJulianDate, Period, MJD};
 
 // ---------------------------------------------------------------------------

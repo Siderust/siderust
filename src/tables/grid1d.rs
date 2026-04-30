@@ -108,7 +108,9 @@ mod tests {
         let xs = vec![10.0_f64, 5.0, 0.0];
         let vs = vec![1.0_f64, 2.0, 3.0];
         let g: Grid1D<Nanometer, Meter> = Grid1D::from_raw(xs, vs).unwrap();
-        let v = g.interp_at(Quantity::<Nanometer>::new(7.5), OutOfRange::Error).unwrap();
+        let v = g
+            .interp_at(Quantity::<Nanometer>::new(7.5), OutOfRange::Error)
+            .unwrap();
         assert_eq!(v.value(), 1.5);
     }
 
@@ -118,7 +120,12 @@ mod tests {
         let xs = vec![10.0_f64, 5.0, 0.0];
         let vs = vec![1.0_f64, 2.0, 3.0];
         let g: Grid1D<Nanometer, Meter> = Grid1D::from_raw(xs, vs).unwrap();
-        let v = g.interp_at(Quantity::<Nanometer>::new(15.0), OutOfRange::ClampToEndpoints).unwrap();
+        let v = g
+            .interp_at(
+                Quantity::<Nanometer>::new(15.0),
+                OutOfRange::ClampToEndpoints,
+            )
+            .unwrap();
         assert_eq!(v.value(), 1.0);
     }
 }

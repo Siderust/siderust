@@ -140,7 +140,13 @@ impl<X: Unit, Y: Unit> SampledSpectrum<X, Y, f64> {
         let raw_xs: Vec<f64> = xs.iter().map(|q| q.value()).collect();
         let raw_ys: Vec<f64> = ys.iter().map(|q| q.value()).collect();
         algo::validate(&raw_xs, &raw_ys)?;
-        Ok(Self { xs, ys, interp: interpolation, oor: out_of_range, provenance })
+        Ok(Self {
+            xs,
+            ys,
+            interp: interpolation,
+            oor: out_of_range,
+            provenance,
+        })
     }
 
     /// Raw f64 view of the x-axis (each sample's unit-scoped value).

@@ -8,7 +8,6 @@
 //! - terrestrial->celestial chain: W(xp,yp,s') · R3(-ERA) · Q(X,Y,s)
 //!   with frame-bias to EquatorialMeanJ2000
 
-use siderust::qtty::*;
 use siderust::astro::eop::NullEop;
 use siderust::calculus::horizontal::equatorial_to_horizontal_true_of_date_with_ctx;
 use siderust::coordinates::cartesian::position;
@@ -17,6 +16,7 @@ use siderust::coordinates::frames::{self, ECEF};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::context::{AstroContext, DefaultEphemeris};
 use siderust::coordinates::transform::{to_topocentric_with, TransformCenter};
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 #[inline]

@@ -14,8 +14,8 @@ use chrono::{DateTime, Utc};
 pub use tempoch::{
     constats, delta_t_seconds, delta_t_seconds_extrapolated, eop, ContinuousScale, ConversionError,
     ConversionTarget, CoordinateScale, EncodedTime, InfallibleConversionTarget, Interval,
-    InvalidIntervalError, InvalidPeriodError, PeriodListError, Scale, ScaleKind, TAI, TCB, TCG,
-    TDB, TT, Time, TimeContext, TimeDataError, UTC, UT1,
+    InvalidIntervalError, InvalidPeriodError, PeriodListError, Scale, ScaleKind, Time, TimeContext,
+    TimeDataError, TAI, TCB, TCG, TDB, TT, UT1, UTC,
 };
 
 /// Backward-compatible alias: old siderust code used `UT` for the UT1 axis.
@@ -94,12 +94,20 @@ impl JulianDate {
 
     #[inline]
     pub fn min(self, other: Self) -> Self {
-        if self <= other { self } else { other }
+        if self <= other {
+            self
+        } else {
+            other
+        }
     }
 
     #[inline]
     pub fn max(self, other: Self) -> Self {
-        if self >= other { self } else { other }
+        if self >= other {
+            self
+        } else {
+            other
+        }
     }
 
     #[inline]
@@ -204,12 +212,20 @@ impl ModifiedJulianDate {
 
     #[inline]
     pub fn min(self, other: Self) -> Self {
-        if self <= other { self } else { other }
+        if self <= other {
+            self
+        } else {
+            other
+        }
     }
 
     #[inline]
     pub fn max(self, other: Self) -> Self {
-        if self >= other { self } else { other }
+        if self >= other {
+            self
+        } else {
+            other
+        }
     }
 
     #[inline]
@@ -372,7 +388,10 @@ pub fn complement_within<T: Copy + PartialOrd>(
 }
 
 #[inline]
-pub fn intersect_periods<T: Copy + PartialOrd>(a: &[Interval<T>], b: &[Interval<T>]) -> Vec<Interval<T>> {
+pub fn intersect_periods<T: Copy + PartialOrd>(
+    a: &[Interval<T>],
+    b: &[Interval<T>],
+) -> Vec<Interval<T>> {
     Interval::intersect_many(a, b)
 }
 

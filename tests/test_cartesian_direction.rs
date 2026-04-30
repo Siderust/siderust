@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use siderust::qtty::*;
 use siderust::coordinates::cartesian::Direction;
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::frames::EclipticMeanJ2000;
+use siderust::qtty::*;
 
 #[test]
 fn direction_position_scales_with_magnitude() {

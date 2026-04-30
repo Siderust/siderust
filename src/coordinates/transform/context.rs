@@ -55,11 +55,7 @@ pub type DefaultEphemeris = Vsop87Ephemeris;
 #[cfg(all(feature = "de441", not(siderust_mock_de441)))]
 pub type DefaultEphemeris = crate::calculus::ephemeris::De441Ephemeris;
 
-#[cfg(all(
-    feature = "de440",
-    not(feature = "de441"),
-    not(siderust_mock_de440)
-))]
+#[cfg(all(feature = "de440", not(feature = "de441"), not(siderust_mock_de440)))]
 pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
 
 // Stub: DE feature is on but SIDERUST_JPL_STUB is set, fall back to VSOP87 so
@@ -67,11 +63,7 @@ pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
 // features are enabled.
 #[cfg(any(
     all(feature = "de441", siderust_mock_de441),
-    all(
-        feature = "de440",
-        not(feature = "de441"),
-        siderust_mock_de440
-    )
+    all(feature = "de440", not(feature = "de441"), siderust_mock_de440)
 ))]
 pub type DefaultEphemeris = crate::calculus::ephemeris::Vsop87Ephemeris;
 

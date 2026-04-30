@@ -9,8 +9,8 @@ use crate::coordinates::{
     centers::Heliocentric,
     frames::EclipticMeanJ2000,
 };
-use crate::time::JulianDate;
 use crate::qtty::*;
+use crate::time::JulianDate;
 type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 
 #[allow(clippy::approx_constant)]
@@ -148,8 +148,8 @@ mod tests {
     use super::*;
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
-    use crate::time::JulianDate;
     use crate::qtty::AU;
+    use crate::time::JulianDate;
 
     const PRECISION: f64 = 1e-6;
 

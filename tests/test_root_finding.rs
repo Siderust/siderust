@@ -4,8 +4,8 @@
 //! Integration tests for `math_core::root_finding`, the astronomy-agnostic
 //! Brent & bisection solvers that use typed [`qtty`] quantities.
 
-use siderust::qtty::{Day, Quantity, Radian};
 use siderust::calculus::math_core::root_finding;
+use siderust::qtty::{Day, Quantity, Radian};
 use siderust::time::{ModifiedJulianDate, Period};
 use std::cell::Cell;
 

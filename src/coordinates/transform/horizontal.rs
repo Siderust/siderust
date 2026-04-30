@@ -51,8 +51,8 @@ use crate::astro::{nutation, sidereal};
 use crate::coordinates::cartesian::{Direction, Position};
 use crate::coordinates::centers::{Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialTrueOfDate, Horizontal, ECEF};
-use crate::time::JulianDate;
 use crate::qtty::{Degrees, LengthUnit, Radians};
+use crate::time::JulianDate;
 use std::f64::consts::TAU;
 
 // =============================================================================
@@ -382,8 +382,8 @@ mod tests {
 
     #[test]
     fn topocentric_position_transformation() {
-        use affn::spherical;
         use crate::qtty::Kilometer;
+        use affn::spherical;
 
         let jd_ut1 = JulianDate::new(2_451_545.0);
         let jd_tt = JulianDate::new(2_451_545.000_800_741);

@@ -377,10 +377,7 @@ mod tests {
         let total: f64 = grid.with_solid_angle().map(|(_, sr)| sr.value()).sum();
         let expected = 2.0 * PI;
         let rel_err = (total - expected).abs() / expected;
-        assert!(
-            rel_err < 0.001,
-            "equal-area sum={total}, rel_err={rel_err}"
-        );
+        assert!(rel_err < 0.001, "equal-area sum={total}, rel_err={rel_err}");
     }
 
     /// All cells lie strictly inside the requested alt/az ranges (no
@@ -391,10 +388,7 @@ mod tests {
         for dir in grid.iter() {
             let alt = dir.polar.value();
             let az = dir.azimuth.value();
-            assert!(
-                (0.0..=90.0).contains(&alt),
-                "alt {alt} out of [0, 90]"
-            );
+            assert!((0.0..=90.0).contains(&alt), "alt {alt} out of [0, 90]");
             assert!((0.0..360.0).contains(&az), "az {az} out of [0, 360)");
         }
     }
@@ -420,7 +414,12 @@ mod tests {
             for b in &cells[i + 1..] {
                 let dup = (a.polar.value() - b.polar.value()).abs() < 1e-12
                     && (a.azimuth.value() - b.azimuth.value()).abs() < 1e-12;
-                assert!(!dup, "duplicate cell at ({}, {})", a.polar.value(), a.azimuth.value());
+                assert!(
+                    !dup,
+                    "duplicate cell at ({}, {})",
+                    a.polar.value(),
+                    a.azimuth.value()
+                );
             }
         }
     }
@@ -451,8 +450,7 @@ mod tests {
     /// `with_alt_range` applies a horizon mask correctly.
     #[test]
     fn horizon_mask_via_with_alt_range() {
-        let grid = SkyGrid::uniform(10.0 * DEG)
-            .with_alt_range(30.0 * DEG, 60.0 * DEG);
+        let grid = SkyGrid::uniform(10.0 * DEG).with_alt_range(30.0 * DEG, 60.0 * DEG);
         assert_eq!(grid.len(), 3 * 36);
         for dir in grid.iter() {
             assert!(dir.polar.value() >= 30.0 && dir.polar.value() <= 60.0);

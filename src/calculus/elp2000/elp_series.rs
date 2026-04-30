@@ -13,9 +13,9 @@ mod elp_data {
 }
 use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;
+use crate::qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians};
 use crate::time::JulianDate;
 use elp_data::*;
-use crate::qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians};
 use std::f64::consts::FRAC_PI_2;
 
 // ====================
@@ -940,7 +940,10 @@ mod tests {
     #[test]
     fn normalize_angle_zero() {
         let result = normalize_angle(Radians::new(0.0));
-        assert!(result.abs() < Radians::new(1e-15), "normalize_angle(0) should be 0");
+        assert!(
+            result.abs() < Radians::new(1e-15),
+            "normalize_angle(0) should be 0"
+        );
     }
 
     #[test]
@@ -1734,7 +1737,10 @@ mod tests {
     fn delaunay_and_planet_args_monotonic_rates() {
         // Rates should be positive (mean motions)
         assert!(DEL[0][1] > Radians::new(0.0), "l' rate should be positive");
-        assert!(DEL[1][1] > Radians::new(0.0), "l_sun' rate should be positive");
+        assert!(
+            DEL[1][1] > Radians::new(0.0),
+            "l_sun' rate should be positive"
+        );
         assert!(DEL[2][1] > Radians::new(0.0), "F' rate should be positive");
         assert!(DEL[3][1] > Radians::new(0.0), "D' rate should be positive");
         assert!(ZETA[1].value() > 1.0, "ZETA rate should be large positive");

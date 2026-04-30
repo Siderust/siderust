@@ -46,8 +46,8 @@ fn lcg_next(state: &mut u64) -> f64 {
 fn angular_separation_identity_is_exact_zero() {
     let cases: &[(f64, f64)] = &[
         (0.0, 0.0),
-        (37.9546, 89.2641),   // near Polaris
-        (279.2347, 38.7836),  // near Vega
+        (37.9546, 89.2641),  // near Polaris
+        (279.2347, 38.7836), // near Vega
         (180.0, -45.0),
         (359.9999, -89.9999),
     ];
@@ -85,7 +85,7 @@ fn angular_separation_general_antipode() {
         (270.0, -60.0),
         (120.0, 0.0),
         (0.0, 45.0),
-        (10.0, 89.0),  // near pole
+        (10.0, 89.0), // near pole
     ];
 
     for &(ra, dec) in cases {
@@ -127,7 +127,7 @@ fn angular_separation_symmetry_100_random_pairs() {
         // Angular separation is always non-negative; compare raw bit patterns.
         let ba = sep_ab.to_bits();
         let bb = sep_ba.to_bits();
-        let ulp_diff = if ba >= bb { ba - bb } else { bb - ba };
+        let ulp_diff = ba.abs_diff(bb);
 
         assert!(
             ulp_diff <= 4,

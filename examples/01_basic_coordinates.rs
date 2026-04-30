@@ -5,11 +5,11 @@
 //!
 //! Run with: `cargo run --example 01_basic_coordinates`
 
-use siderust::qtty::*;
 use siderust::coordinates::cartesian;
 use siderust::coordinates::centers::{self, ReferenceCenter};
 use siderust::coordinates::frames::{self, ReferenceFrame};
 use siderust::coordinates::spherical;
+use siderust::qtty::*;
 
 fn main() {
     println!("=== Siderust Basic Coordinates Example ===\n");

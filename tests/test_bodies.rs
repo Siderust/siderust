@@ -1,12 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use siderust::qtty::*;
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
 use siderust::bodies::comet::{Comet, OrbitFrame, HALLEY};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::bodies::{EARTH, MARS, MOON};
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 #[test]
@@ -19,7 +19,12 @@ fn earth_constants() {
             < AstronomicalUnits::new(1e-8)
     );
     assert!((orbit.shape().eccentricity() - 0.01671022).abs() < 1e-8);
-    assert!((orbit.orientation().inclination() - Degrees::new(0.00005)).abs().value() < 1e-8);
+    assert!(
+        (orbit.orientation().inclination() - Degrees::new(0.00005))
+            .abs()
+            .value()
+            < 1e-8
+    );
 }
 
 #[test]

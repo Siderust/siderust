@@ -86,9 +86,9 @@
 //!
 //! - [`crate::astro::nutation`] – IAU 2006/2000A and IAU 2000B nutation models
 
+use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::Rotation3;
-use crate::qtty::*;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Fukushima-Williams precession angles (SOFA iauPfw06)

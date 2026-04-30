@@ -9,12 +9,12 @@
 
 #[cfg(feature = "serde")]
 mod demo {
-    use siderust::qtty::*;
     use serde::{Deserialize, Serialize};
     use siderust::astro::orbit::KeplerianOrbit;
     use siderust::bodies::comet::HALLEY;
     use siderust::bodies::solar_system::{Earth, Mars, Moon};
     use siderust::coordinates::{cartesian, centers, frames, spherical};
+    use siderust::qtty::*;
     use siderust::targets::{Target, Trackable};
     use siderust::time::{JulianDate, ModifiedJulianDate};
     use std::fs;

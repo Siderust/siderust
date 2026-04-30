@@ -15,7 +15,6 @@
 //! - **Topocentric** conversions: observer-on-Earth parallax correction applied to
 //!   positions originally expressed in each of the three standard centers.
 
-use siderust::qtty::*;
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::{
@@ -24,6 +23,7 @@ use siderust::coordinates::centers::{
 };
 use siderust::coordinates::frames::{EclipticMeanJ2000, ECEF};
 use siderust::coordinates::transform::{CenterShiftProvider, TransformCenter};
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 type F = EclipticMeanJ2000;

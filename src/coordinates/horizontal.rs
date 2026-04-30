@@ -51,8 +51,8 @@
 
 use crate::coordinates::centers::Topocentric;
 use crate::coordinates::frames::Horizontal;
-use affn::spherical;
 use crate::qtty::{Degrees, LengthUnit, DEG};
+use affn::spherical;
 
 // =============================================================================
 // Convention descriptors

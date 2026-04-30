@@ -17,8 +17,8 @@
 
 pub mod bessell1990;
 
-use crate::ext_qtty::Unit;
 use crate::ext_qtty::length::Nanometer;
+use crate::ext_qtty::Unit;
 use crate::spectra::sampled::SampledSpectrum;
 
 /// Convenience accessor for the Johnson **B** passband.
@@ -79,7 +79,13 @@ mod tests {
 
     #[test]
     fn johnson_b_v_have_provenance() {
-        assert!(johnson_b().provenance().is_some(), "Johnson B must carry provenance");
-        assert!(johnson_v().provenance().is_some(), "Johnson V must carry provenance");
+        assert!(
+            johnson_b().provenance().is_some(),
+            "Johnson B must carry provenance"
+        );
+        assert!(
+            johnson_v().provenance().is_some(),
+            "Johnson V must carry provenance"
+        );
     }
 }

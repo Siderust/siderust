@@ -15,8 +15,8 @@ use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, Culminati
 use crate::calculus::math_core::{extrema, intervals};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
 use crate::qtty::*;
+use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
 
 // ---------------------------------------------------------------------------
 // Internal: build altitude function from trait
@@ -300,7 +300,10 @@ mod tests {
         assert!(!days.is_empty(), "should find daytime periods in 7 days");
         for p in &days {
             assert!(((p).end - (p).start) > Days::new(0.0));
-            assert!(((p).end - (p).start) < Days::new(1.0), "each day period < 24h");
+            assert!(
+                ((p).end - (p).start) < Days::new(1.0),
+                "each day period < 24h"
+            );
         }
     }
 

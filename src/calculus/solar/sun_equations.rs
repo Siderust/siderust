@@ -12,8 +12,10 @@ use crate::coordinates::{
     frames, spherical,
     transform::{Transform, TransformFrame},
 };
+use crate::qtty::{
+    AstronomicalUnit, AstronomicalUnits, LengthUnit, Meter, Quantity, Radian, Radians,
+};
 use crate::time::JulianDate;
-use crate::qtty::{AstronomicalUnit, AstronomicalUnits, LengthUnit, Meter, Quantity, Radian, Radians};
 
 impl Sun {
     /// Returns the **apparent geocentric equatorial coordinates** of the Sun
@@ -151,8 +153,8 @@ impl Sun {
 #[cfg(test)]
 mod tests {
     use crate::bodies::solar_system::Sun;
-    use crate::time::JulianDate;
     use crate::qtty::{AstronomicalUnit, AstronomicalUnits, Degrees, Radians};
+    use crate::time::JulianDate;
 
     #[test]
     fn apparent_sun_position_j2000() {

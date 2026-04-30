@@ -215,14 +215,17 @@ mod tests {
     #[test]
     fn site_presets_optical_depth_ordering() {
         let lambda = Nanometers::new(550.0);
-        let tau_lp = mie_optical_depth(&MieParams::LA_PALMA,  lambda);
+        let tau_lp = mie_optical_depth(&MieParams::LA_PALMA, lambda);
         let tau_mk = mie_optical_depth(&MieParams::MAUNA_KEA, lambda);
-        let tau_ls = mie_optical_depth(&MieParams::LA_SILLA,  lambda);
-        let tau_pn = mie_optical_depth(&MieParams::PARANAL,   lambda);
+        let tau_ls = mie_optical_depth(&MieParams::LA_SILLA, lambda);
+        let tau_pn = mie_optical_depth(&MieParams::PARANAL, lambda);
 
         // All values must be positive and finite.
         for tau in [tau_lp, tau_mk, tau_ls, tau_pn] {
-            assert!(tau > 0.0 && tau.is_finite(), "tau must be positive finite: {tau}");
+            assert!(
+                tau > 0.0 && tau.is_finite(),
+                "tau must be positive finite: {tau}"
+            );
         }
 
         // Expected order: La Palma (cleanest) < Mauna Kea < La Silla < Paranal.
@@ -244,18 +247,24 @@ mod tests {
     #[test]
     fn aod_500nm_within_published_ranges() {
         let lambda = Nanometers::new(500.0);
-        let aod_lp = mie_optical_depth(&MieParams::LA_PALMA,  lambda);
+        let aod_lp = mie_optical_depth(&MieParams::LA_PALMA, lambda);
         let aod_mk = mie_optical_depth(&MieParams::MAUNA_KEA, lambda);
-        let aod_ls = mie_optical_depth(&MieParams::LA_SILLA,  lambda);
+        let aod_ls = mie_optical_depth(&MieParams::LA_SILLA, lambda);
 
         // La Palma: 0.01–0.05 (Lombardi 2008, García-Gil 2010)
-        assert!(aod_lp >= 0.01 && aod_lp <= 0.05,
-            "La Palma AOD(500nm) = {aod_lp:.4} outside 0.01–0.05");
+        assert!(
+            aod_lp >= 0.01 && aod_lp <= 0.05,
+            "La Palma AOD(500nm) = {aod_lp:.4} outside 0.01–0.05"
+        );
         // Mauna Kea: 0.02–0.04 (Krisciunas 1990)
-        assert!(aod_mk >= 0.02 && aod_mk <= 0.05,
-            "Mauna Kea AOD(500nm) = {aod_mk:.4} outside 0.02–0.05");
+        assert!(
+            aod_mk >= 0.02 && aod_mk <= 0.05,
+            "Mauna Kea AOD(500nm) = {aod_mk:.4} outside 0.02–0.05"
+        );
         // La Silla: 0.03–0.06 (Burki et al. 1995)
-        assert!(aod_ls >= 0.03 && aod_ls <= 0.07,
-            "La Silla AOD(500nm) = {aod_ls:.4} outside 0.03–0.07");
+        assert!(
+            aod_ls >= 0.03 && aod_ls <= 0.07,
+            "La Silla AOD(500nm) = {aod_ls:.4} outside 0.03–0.07"
+        );
     }
 }

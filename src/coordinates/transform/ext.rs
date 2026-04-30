@@ -83,9 +83,9 @@ use crate::coordinates::transform::context::{
 use crate::coordinates::transform::providers::{
     frame_rotation_as, frame_rotation_with, CenterShiftProvider, FrameRotationProvider,
 };
+use crate::qtty::{LengthUnit, Unit};
 use crate::time::JulianDate;
 use affn::Rotation3;
-use crate::qtty::{LengthUnit, Unit};
 #[inline]
 fn model_rotation<F: ReferenceFrame, F2: ReferenceFrame>(
     jd: JulianDate,
@@ -706,7 +706,8 @@ mod tests {
         assert!(pos_ecl.x().is_finite() && pos_ecl.y().is_finite() && pos_ecl.z().is_finite());
 
         // Length must be preserved under pure rotation.
-        let n0 = (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
+        let n0 =
+            (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
         let n1 = (pos_ecl.x().value().powi(2)
             + pos_ecl.y().value().powi(2)
             + pos_ecl.z().value().powi(2))

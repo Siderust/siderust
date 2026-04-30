@@ -45,8 +45,8 @@
 
 pub mod algo;
 pub mod error;
-pub mod interp;
 pub mod integrate;
+pub mod interp;
 pub mod loaders;
 pub mod passbands;
 pub mod provenance;

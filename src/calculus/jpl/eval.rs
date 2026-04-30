@@ -10,9 +10,9 @@
 //! Both share the same Chebyshev evaluation logic.
 
 use crate::coordinates::frames::ICRF;
+use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::{Displacement, Velocity};
-use crate::qtty::*;
 
 type KmPerDay = Per<Kilometer, Day>;
 type KmPerDayQ = crate::qtty::Quantity<KmPerDay>;
