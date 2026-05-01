@@ -93,6 +93,7 @@ pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
         ConicValidationError::InvalidPeriapsisDistance => ConicError::InvalidPeriapsisDistance,
         ConicValidationError::ParabolicSemiMajorAxis => ConicError::ParabolicSemiMajorAxis,
         ConicValidationError::InvalidOrientation => ConicError::InvalidOrientation,
+        ConicValidationError::OutOfRange { .. } => ConicError::InvalidOrientation,
     }
 }
 
