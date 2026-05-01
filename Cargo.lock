@@ -5,8 +5,6 @@ version = 4
 [[package]]
 name = "affn"
 version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "381a7e024c56cbd97e2a39b6fe6aa6dccc1750e5ef31f795744b524cc9501e90"
 dependencies = [
  "affn-derive",
  "nalgebra",
@@ -17,8 +15,6 @@ dependencies = [
 [[package]]
 name = "affn-derive"
 version = "0.1.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "82753e9be968f42991300bcee91930171a1f2a7a2d0f074a6f32b2fb19241df6"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2028,11 +2024,40 @@ dependencies = [
  "serde_json",
  "sha2 0.10.9",
  "sha2 0.11.0",
+ "siderust-atmosphere",
+ "siderust-numerics",
+ "siderust-spectra",
  "tempoch",
  "ureq",
  "walkdir",
  "wide 1.3.0",
 ]
+
+[[package]]
+name = "siderust-astrometry"
+version = "0.6.1"
+
+[[package]]
+name = "siderust-atmosphere"
+version = "0.6.1"
+dependencies = [
+ "approx",
+ "qtty",
+ "siderust-numerics",
+ "siderust-spectra",
+]
+
+[[package]]
+name = "siderust-bodies"
+version = "0.6.1"
+
+[[package]]
+name = "siderust-coordinates"
+version = "0.6.1"
+
+[[package]]
+name = "siderust-ephemeris"
+version = "0.6.1"
 
 [[package]]
 name = "siderust-ffi"
@@ -2044,6 +2069,34 @@ dependencies = [
  "siderust",
  "tempoch",
  "tempoch-ffi",
+]
+
+[[package]]
+name = "siderust-mechanics"
+version = "0.6.1"
+
+[[package]]
+name = "siderust-numerics"
+version = "0.6.1"
+dependencies = [
+ "qtty",
+]
+
+[[package]]
+name = "siderust-observability"
+version = "0.6.1"
+
+[[package]]
+name = "siderust-photometry"
+version = "0.6.1"
+
+[[package]]
+name = "siderust-spectra"
+version = "0.6.1"
+dependencies = [
+ "approx",
+ "qtty",
+ "siderust-numerics",
 ]
 
 [[package]]
@@ -2146,8 +2199,6 @@ dependencies = [
 [[package]]
 name = "tempoch"
 version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "493caf391691f45c2f2de15dce032e5180009066059a1673bda3a853155c084a"
 dependencies = [
  "tempoch-core",
 ]
@@ -2155,8 +2206,6 @@ dependencies = [
 [[package]]
 name = "tempoch-core"
 version = "0.4.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "32e8c71221c8d1a82dfc529216006506c0a45afa7e6e0e24b93c1ee6e60ffc4e"
 dependencies = [
  "affn",
  "chrono",
@@ -2181,8 +2230,6 @@ dependencies = [
 [[package]]
 name = "tempoch-time-data"
 version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "672165c5b96abb03126dc4a30fa6df2e357d82de2b74e6a92f202a481e22b91d"
 dependencies = [
  "chrono",
 ]

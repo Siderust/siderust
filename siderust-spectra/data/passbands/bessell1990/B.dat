@@ -1,0 +1,27 @@
+# Source: Bessell 1990, PASP 102, 1181 (UBVRI passbands)
+# Retrieved via SVO Filter Profile Service, http://svo2.cab.inta-csic.es/theory/fps/
+# Filter ID: Generic/Bessell.B
+# Columns: wavelength_nm transmission_dimensionless
+# Retrieved: 2026-04-27
+# Note: wavelengths converted from Angstrom to nm by dividing by 10.
+360.0 0.0000000000
+370.0 0.0300000000
+380.0 0.1340000000
+390.0 0.5670000000
+400.0 0.9200000000
+410.0 0.9780000000
+420.0 1.0000000000
+430.0 0.9780000000
+440.0 0.9350000000
+450.0 0.8530000000
+460.0 0.7400000000
+470.0 0.6400000000
+480.0 0.5360000000
+490.0 0.4240000000
+500.0 0.3250000000
+510.0 0.2350000000
+520.0 0.1500000000
+530.0 0.0950000000
+540.0 0.0430000000
+550.0 0.0090000000
+560.0 0.0000000000

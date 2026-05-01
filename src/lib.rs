@@ -73,24 +73,26 @@ pub(crate) use ::qtty as ext_qtty;
 
 pub mod astro;
 #[cfg(feature = "atmosphere")]
-pub mod atmosphere;
+pub use siderust_atmosphere as atmosphere;
 pub mod bodies;
 pub mod calculus;
 pub mod coordinates;
 pub mod data;
 pub mod geometry;
-pub mod interp;
+pub use siderust_numerics::interp;
 pub mod observatories;
-pub mod provenance;
+pub use siderust_numerics::provenance;
 pub mod qtty;
 #[cfg(feature = "spectra")]
-pub mod spectra;
+pub use siderust_spectra as spectra;
 #[cfg(feature = "tables")]
-pub mod tables;
+pub use siderust_numerics::tables;
 pub mod targets;
 pub mod time;
 
 pub(crate) mod macros;
+
+pub use siderust_numerics::assert_data_checksum;
 
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: unified azimuth API
@@ -122,6 +124,10 @@ pub use calculus::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseGeometry, MoonPhaseLabel,
     MoonPhaseSeries, PhaseEvent, PhaseKind, PhaseSearchOpts, PhaseThresholds,
+};
+pub use calculus::lunar::photometry::{
+    lunar_albedo_jones2013, lunar_full_moon_albedo_jones2013, lunar_phase_attenuation_jones2013,
+    reflected_lunar_spectral_radiance_jones2013,
 };
 
 // ---------------------------------------------------------------------------

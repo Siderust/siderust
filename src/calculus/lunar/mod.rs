@@ -35,6 +35,7 @@ pub mod meeus_ch47;
 pub(crate) mod moon_cache;
 mod moon_equations;
 pub mod phase;
+pub mod photometry;
 
 pub(crate) use altitude_periods::*;
 pub(crate) use azimuth::*;

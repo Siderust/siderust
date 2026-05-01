@@ -1,0 +1,12 @@
+[package]
+name = "siderust-coordinates"
+version = "0.6.1"
+edition = "2021"
+authors = ["VPRamon <vallespuigramon@gmail.com>"]
+license = "AGPL-3.0"
+repository = "https://github.com/Siderust/siderust"
+
+[lib]
+name = "siderust_coordinates"
+
+[dependencies]

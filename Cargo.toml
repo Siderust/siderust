@@ -1,11 +1,26 @@
 [workspace]
-members = [".", "siderust-ffi"]
+members = [
+    ".",
+    "siderust-ffi",
+    "siderust-numerics",
+    "siderust-spectra",
+    "siderust-atmosphere",
+    "siderust-coordinates",
+    "siderust-astrometry",
+    "siderust-mechanics",
+    "siderust-ephemeris",
+    "siderust-photometry",
+    "siderust-bodies",
+    "siderust-observability",
+]
 
 [patch.crates-io]
+affn = { path = "../affn" }
 cheby = { path = "../cheby" }
 qtty = { path = "../qtty/qtty" }
 qtty-core = { path = "../qtty/qtty-core" }
 qtty-derive = { path = "../qtty/qtty-derive" }
+tempoch = { path = "../tempoch/tempoch" }
 
 [package]
 name = "siderust"
@@ -30,14 +45,17 @@ de441 = []
 regen-data = ["dep:reqwest"]
 runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
-spectra = []
+spectra = ["dep:siderust-spectra"]
 tables = []
-atmosphere = []
+atmosphere = ["dep:siderust-atmosphere"]
 
 [dependencies]
+siderust-numerics = { path = "siderust-numerics" }
+siderust-spectra = { path = "siderust-spectra", optional = true }
+siderust-atmosphere = { path = "siderust-atmosphere", optional = true }
 affn = { version = "0.6.1", features = ["astro"] }
 cheby = "0.1.0"
-qtty = "0.6.1"
+qtty = { version = "0.6.1", features = ["radiometry"] }
 tempoch = "0.4.2"
 approx = "0.5"
 chrono = "0.4.44"

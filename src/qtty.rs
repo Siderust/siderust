@@ -19,7 +19,8 @@ pub use crate::ext_qtty::{
 
 pub use crate::ext_qtty::unit;
 pub use crate::ext_qtty::{
-    acceleration, angular, area, energy, force, length, mass, power, solid_angle, time, volume,
+    acceleration, angular, area, energy, force, length, mass, power, radiometry, solid_angle, time,
+    volume,
 };
 
 pub use crate::ext_qtty::solid_angle::*;
@@ -34,6 +35,7 @@ pub use crate::ext_qtty::mass::*;
 pub use crate::ext_qtty::power::*;
 pub use crate::ext_qtty::pressure;
 pub use crate::ext_qtty::pressure::*;
+pub use crate::ext_qtty::radiometry::*;
 pub use crate::ext_qtty::temperature;
 pub use crate::ext_qtty::temperature::*;
 pub use crate::ext_qtty::time::*;
