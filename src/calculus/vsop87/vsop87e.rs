@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 use super::*;
+use crate::bodies::solar_system::*;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::Barycentric,
@@ -20,6 +21,7 @@ use vsop_data::*;
 
 macro_rules! impl_vsop87e {
     (
+        $Planet:ident,
         $prefix:ident,
         x: [$($x:ident),+ $(,)?],
         y: [$($y:ident),+ $(,)?],
@@ -74,6 +76,21 @@ macro_rules! impl_vsop87e {
                         crate::qtty::velocity::Velocity::<AstronomicalUnit, Day>::new(vz))
                 )
             }
+
+            impl $Planet {
+                pub fn vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+                    [<$prefix _vsop87e>](jd)
+                }
+
+                pub fn vsop87e_vel(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
+                    [<$prefix _vsop87e_vel>](jd)
+                }
+
+                pub fn vsop87e_pos_vel(jd: JulianDate)
+                    -> (Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, Velocity<EclipticMeanJ2000, AuPerDay>) {
+                    [<$prefix _vsop87e_pos_vel>](jd)
+                }
+            }
         }
     };
 }
@@ -92,7 +109,14 @@ pub fn sun_vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, A
     )
 }
 
+impl Sun {
+    pub fn vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+        sun_vsop87e(jd)
+    }
+}
+
 impl_vsop87e!(
+    Mercury,
     mercury,
     x: [MERCURY_X0, MERCURY_X1, MERCURY_X2, MERCURY_X3, MERCURY_X4, MERCURY_X5],
     y: [MERCURY_Y0, MERCURY_Y1, MERCURY_Y2, MERCURY_Y3, MERCURY_Y4, MERCURY_Y5],
@@ -100,6 +124,7 @@ impl_vsop87e!(
 );
 
 impl_vsop87e!(
+    Venus,
     venus,
     x: [VENUS_X0, VENUS_X1, VENUS_X2, VENUS_X3, VENUS_X4, VENUS_X5],
     y: [VENUS_Y0, VENUS_Y1, VENUS_Y2, VENUS_Y3, VENUS_Y4, VENUS_Y5],
@@ -107,6 +132,7 @@ impl_vsop87e!(
 );
 
 impl_vsop87e!(
+    Earth,
     earth,
     x: [EARTH_X0, EARTH_X1, EARTH_X2, EARTH_X3, EARTH_X4, EARTH_X5],
     y: [EARTH_Y0, EARTH_Y1, EARTH_Y2, EARTH_Y3, EARTH_Y4, EARTH_Y5],
@@ -114,6 +140,7 @@ impl_vsop87e!(
 );
 
 impl_vsop87e!(
+    Mars,
     mars,
     x: [MARS_X0, MARS_X1, MARS_X2, MARS_X3, MARS_X4, MARS_X5],
     y: [MARS_Y0, MARS_Y1, MARS_Y2, MARS_Y3, MARS_Y4, MARS_Y5],
@@ -121,6 +148,7 @@ impl_vsop87e!(
 );
 
 impl_vsop87e!(
+    Jupiter,
     jupiter,
     x: [JUPITER_X0, JUPITER_X1, JUPITER_X2, JUPITER_X3, JUPITER_X4, JUPITER_X5],
     y: [JUPITER_Y0, JUPITER_Y1, JUPITER_Y2, JUPITER_Y3, JUPITER_Y4, JUPITER_Y5],
@@ -128,6 +156,7 @@ impl_vsop87e!(
 );
 
 impl_vsop87e!(
+    Saturn,
     saturn,
     x: [SATURN_X0, SATURN_X1, SATURN_X2, SATURN_X3, SATURN_X4, SATURN_X5],
     y: [SATURN_Y0, SATURN_Y1, SATURN_Y2, SATURN_Y3, SATURN_Y4, SATURN_Y5],
@@ -135,6 +164,7 @@ impl_vsop87e!(
 );
 
 impl_vsop87e!(
+    Uranus,
     uranus,
     x: [URANUS_X0, URANUS_X1, URANUS_X2, URANUS_X3, URANUS_X4],
     y: [URANUS_Y0, URANUS_Y1, URANUS_Y2, URANUS_Y3, URANUS_Y4],
@@ -142,6 +172,7 @@ impl_vsop87e!(
 );
 
 impl_vsop87e!(
+    Neptune,
     neptune,
     x: [NEPTUNE_X0, NEPTUNE_X1, NEPTUNE_X2, NEPTUNE_X3, NEPTUNE_X4],
     y: [NEPTUNE_Y0, NEPTUNE_Y1, NEPTUNE_Y2, NEPTUNE_Y3, NEPTUNE_Y4],
