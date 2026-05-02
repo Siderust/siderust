@@ -2,16 +2,6 @@
 members = [
     ".",
     "siderust-ffi",
-    "siderust-numerics",
-    "siderust-spectra",
-    "siderust-atmosphere",
-    "siderust-coordinates",
-    "siderust-astrometry",
-    "siderust-mechanics",
-    "siderust-ephemeris",
-    "siderust-photometry",
-    "siderust-bodies",
-    "siderust-observability",
 ]
 
 [patch.crates-io]
@@ -45,14 +35,11 @@ de441 = []
 regen-data = ["dep:reqwest"]
 runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
-spectra = ["dep:siderust-spectra"]
+spectra = []
 tables = []
-atmosphere = ["dep:siderust-atmosphere"]
+atmosphere = []
 
 [dependencies]
-siderust-numerics = { path = "siderust-numerics" }
-siderust-spectra = { path = "siderust-spectra", optional = true }
-siderust-atmosphere = { path = "siderust-atmosphere", optional = true }
 affn = { version = "0.6.1", features = ["astro"] }
 cheby = "0.1.0"
 qtty = { version = "0.6.1", features = ["radiometry"] }

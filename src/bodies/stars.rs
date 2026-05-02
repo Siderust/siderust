@@ -198,3 +198,12 @@ impl From<&Star<'_>> for direction::ICRS {
         Self::new(pos.azimuth, pos.polar)
     }
 }
+
+impl crate::targets::Trackable for Star<'_> {
+    type Coords = direction::ICRS;
+
+    #[inline]
+    fn track(&self, _jd: JulianDate) -> Self::Coords {
+        direction::ICRS::from(self)
+    }
+}

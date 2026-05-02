@@ -73,26 +73,24 @@ pub(crate) use ::qtty as ext_qtty;
 
 pub mod astro;
 #[cfg(feature = "atmosphere")]
-pub use siderust_atmosphere as atmosphere;
+pub mod atmosphere;
 pub mod bodies;
 pub mod calculus;
 pub mod coordinates;
 pub mod data;
 pub mod geometry;
-pub use siderust_numerics::interp;
+pub mod interp;
 pub mod observatories;
-pub use siderust_numerics::provenance;
+pub mod provenance;
 pub mod qtty;
 #[cfg(feature = "spectra")]
-pub use siderust_spectra as spectra;
+pub mod spectra;
 #[cfg(feature = "tables")]
-pub use siderust_numerics::tables;
+pub mod tables;
 pub mod targets;
 pub mod time;
 
 pub(crate) mod macros;
-
-pub use siderust_numerics::assert_data_checksum;
 
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: unified azimuth API

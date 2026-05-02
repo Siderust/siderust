@@ -786,3 +786,109 @@ mod tests {
         assert_eq!(Moon::ROTATION.delta0_deg, MOON_ROTATION.delta0_deg);
     }
 }
+
+// =============================================================================
+// Trackable implementations
+//
+// These live here (not in targets/trackable.rs) to keep targets free of any
+// dependency on bodies, breaking the targets ↔ bodies cycle.
+// =============================================================================
+
+use crate::coordinates::{
+    cartesian::Position,
+    centers::{Barycentric, Geocentric},
+    frames::EclipticMeanJ2000 as EclJ2000,
+};
+use crate::qtty::{AstronomicalUnit, Kilometer};
+use crate::targets::Trackable;
+
+/// Barycentric ecliptic position (AU), the natural output of VSOP87e.
+type BaryEclPos = CoordinateWithPM<Position<Barycentric, EclJ2000, AstronomicalUnit>>;
+
+/// Geocentric ecliptic position (km), the natural output of ELP2000.
+type GeoEclPos = Position<Geocentric, EclJ2000, Kilometer>;
+
+macro_rules! impl_trackable_vsop87 {
+    ($($Planet:ident),+ $(,)?) => {
+        $(
+            impl Trackable for $Planet {
+                type Coords = BaryEclPos;
+
+                #[inline]
+                fn track(&self, jd: JulianDate) -> Self::Coords {
+                    CoordinateWithPM::new_static($Planet::vsop87e(jd), jd)
+                }
+            }
+        )+
+    };
+}
+
+impl_trackable_vsop87!(Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune);
+
+impl Trackable for Moon {
+    type Coords = GeoEclPos;
+
+    #[inline]
+    fn track(&self, jd: JulianDate) -> Self::Coords {
+        Moon::get_geo_position::<Kilometer>(jd)
+    }
+}
+
+#[cfg(test)]
+mod trackable_tests {
+    use super::*;
+    use crate::qtty::*;
+    use crate::time::JulianDate;
+
+    #[test]
+    fn star_produces_icrs_direction() {
+        use crate::bodies::catalog;
+        use crate::coordinates::spherical::direction;
+        let sirius = &catalog::SIRIUS;
+        let dir = <crate::bodies::Star<'_> as Trackable>::track(sirius, JulianDate::J2000);
+        let ra_diff = dir.ra() - Degrees::new(101.287);
+        assert!(ra_diff <= Degrees::new(0.01) && ra_diff >= -Degrees::new(0.01));
+        let dec_diff = dir.dec() + Degrees::new(16.716);
+        assert!(dec_diff <= Degrees::new(0.01) && dec_diff >= -Degrees::new(0.01));
+    }
+
+    #[test]
+    fn sun_produces_barycentric_position() {
+        let pos = Sun.track(JulianDate::J2000);
+        let dist = pos.position.distance();
+        assert!(
+            dist < AstronomicalUnits::new(0.02),
+            "Sun should be near SSB, got {dist}"
+        );
+    }
+
+    #[test]
+    fn earth_changes_with_time() {
+        let p1 = Earth.track(JulianDate::J2000);
+        let p2 = Earth.track(JulianDate::J2000 + Days::new(182.625));
+        let sep = p1.position.distance_to(&p2.position);
+        assert!(
+            sep > AstronomicalUnits::new(1.0),
+            "Half-year separation should be > 1 AU, got {sep}"
+        );
+    }
+
+    #[test]
+    fn moon_produces_geocentric_position() {
+        let pos = Moon.track(JulianDate::J2000);
+        let dist = pos.distance();
+        assert!(
+            dist >= Kilometers::new(350_000.0) && dist <= Kilometers::new(410_000.0),
+            "Moon distance should be ~384 400 km, got {dist}"
+        );
+    }
+
+    #[test]
+    fn planets_produce_nonzero_positions() {
+        let dist = Mars.track(JulianDate::J2000).position.distance();
+        assert!(
+            dist > AstronomicalUnits::new(1.0),
+            "Mars should be > 1 AU from SSB, got {dist}"
+        );
+    }
+}
