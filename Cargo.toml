@@ -5,12 +5,10 @@ members = [
 ]
 
 [patch.crates-io]
-affn = { path = "../affn" }
 cheby = { path = "../cheby" }
-qtty = { path = "../qtty/qtty" }
-qtty-core = { path = "../qtty/qtty-core" }
-qtty-derive = { path = "../qtty/qtty-derive" }
 tempoch = { path = "../tempoch/tempoch" }
+tempoch-core = { path = "../tempoch/tempoch-core" }
+
 
 [package]
 name = "siderust"
@@ -40,10 +38,10 @@ tables = []
 atmosphere = []
 
 [dependencies]
-affn = { version = "0.6.1", features = ["astro"] }
+affn = { version = "0.6.2", features = ["astro"] }
 cheby = "0.1.0"
-qtty = { version = "0.6.1", features = ["radiometry"] }
-tempoch = "0.4.2"
+qtty = { version = "0.7.0", features = ["radiometry"] }
+tempoch = "0.4.3"
 approx = "0.5"
 chrono = "0.4.44"
 nalgebra = "0.34.2"
