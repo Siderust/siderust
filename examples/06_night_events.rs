@@ -17,19 +17,19 @@ use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::qtty::{Days, Degrees, Meter, Quantity};
 use siderust::time::ModifiedJulianDate;
-use siderust::time::{Period, MJD};
+use siderust::time::Period;
 
-fn week_period_from_date(start_date: NaiveDate) -> Period<MJD> {
+fn week_period_from_date(start_date: NaiveDate) -> Period<ModifiedJulianDate> {
     let start_dt = Utc.from_utc_datetime(&NaiveDateTime::new(
         start_date,
         chrono::NaiveTime::from_hms_opt(0, 0, 0).expect("00:00:00 is valid"),
     ));
-    let mjd_start = ModifiedJulianDate::from_utc(start_dt);
+    let mjd_start = ModifiedJulianDate::from_chrono(start_dt);
     let mjd_end = mjd_start + Days::new(7.0);
     Period::new(mjd_start, mjd_end)
 }
 
-fn print_events_for_type(site: &Geodetic<ECEF>, week: Period<MJD>, name: &str, threshold: Degrees) {
+fn print_events_for_type(site: &Geodetic<ECEF>, week: Period<ModifiedJulianDate>, name: &str, threshold: Degrees) {
     let events = crossings(&Sun, site, week, threshold, SearchOpts::default());
     let mut downs = 0usize;
     let mut raises = 0usize;
@@ -52,7 +52,7 @@ fn print_events_for_type(site: &Geodetic<ECEF>, week: Period<MJD>, name: &str, t
                 "night-type raise (Sun rising above threshold)"
             }
         };
-        let t_utc = ev.mjd.to_utc();
+        let t_utc = ev.mjd.to_chrono().expect("valid UTC");
         println!("  - {} at {}", label, t_utc.format("%Y-%m-%dT%H:%M:%S"));
     }
 
@@ -61,7 +61,7 @@ fn print_events_for_type(site: &Geodetic<ECEF>, week: Period<MJD>, name: &str, t
 
 fn print_periods_for_type(
     site: &Geodetic<ECEF>,
-    week: Period<MJD>,
+    week: Period<ModifiedJulianDate>,
     name: &str,
     threshold: Degrees,
 ) {
@@ -72,8 +72,8 @@ fn print_periods_for_type(
     );
 
     for p in periods {
-        let s = p.start.to_utc();
-        let e = p.end.to_utc();
+        let s = p.start.to_chrono().expect("valid UTC");
+        let e = p.end.to_chrono().expect("valid UTC");
         println!(
             "  - {} -> {} ({:.1} h)",
             s.format("%Y-%m-%dT%H:%M:%S"),

@@ -17,7 +17,7 @@ use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::qtty::*;
-use siderust::time::{ModifiedJulianDate, Period, MJD};
+use siderust::time::{ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -27,14 +27,14 @@ fn greenwich() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
 }
 
-fn one_day() -> Period<MJD> {
+fn one_day() -> Period<ModifiedJulianDate> {
     Period::new(
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60001.0),
     )
 }
 
-fn one_week() -> Period<MJD> {
+fn one_week() -> Period<ModifiedJulianDate> {
     Period::new(
         ModifiedJulianDate::new(60000.0),
         ModifiedJulianDate::new(60007.0),

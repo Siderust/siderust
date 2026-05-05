@@ -4,15 +4,33 @@
 //! Airglow emission geometry.
 //!
 //! Airglow is emitted in a finite-height atmospheric layer rather than at
-//! infinity.  The Van Rhijn factor is the standard spherical-shell correction
-//! that maps zenith angle to the longer path through that emitting shell.
+//! infinity. The Van Rhijn factor is the standard spherical-shell correction
+//! used to convert a zenith-view brightness into the brightness expected at an
+//! arbitrary zenith distance.
+//!
+//! In physical terms, the factor accounts for the fact that an oblique line of
+//! sight crosses a longer segment of the emitting layer than a vertical one.
+//! For a thin, uniform shell it is therefore a geometric path-length multiplier:
+//! values near 1 correspond to a nearly vertical sight line, while larger
+//! values toward the horizon reflect the longer path through the layer. Unlike
+//! a plane-parallel secant approximation, the spherical-shell form remains
+//! finite at the horizon because the emitting layer is located at finite
+//! altitude above the surface.
 
 use crate::qtty::{Kilometers, Radians};
 
-/// Mean Earth radius used by the spherical Van Rhijn shell model.
-pub const MEAN_EARTH_RADIUS_KM: f64 = 6_371.0;
-
 /// Van Rhijn path-length factor for a thin emitting layer at `emission_height`.
+///
+/// The Van Rhijn factor is the ratio between:
+///
+/// - the effective path length through a thin emitting shell seen at zenith
+///   distance `z`, and
+/// - the corresponding path length for the same shell observed at the zenith.
+///
+/// It is commonly used for airglow and similar upper-atmosphere emissions when
+/// a measured or modeled zenith intensity must be projected to another viewing
+/// direction under the assumption that the emitting layer is horizontally
+/// uniform.
 ///
 /// The factor is
 ///
@@ -28,7 +46,7 @@ pub fn van_rhijn_factor(zenith: Radians, emission_height: Kilometers) -> f64 {
     van_rhijn_factor_with_radius(
         zenith,
         emission_height,
-        Kilometers::new(MEAN_EARTH_RADIUS_KM),
+        crate::bodies::solar_system::EARTH.radius,
     )
 }
 

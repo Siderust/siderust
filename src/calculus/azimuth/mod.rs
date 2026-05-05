@@ -9,10 +9,10 @@
 //!
 //! ## Module Structure
 //!
-//! - [`types`]   , Core type definitions (events, query)
-//! - [`search`]  , Search options and configuration constants
-//! - [`events`]  , Event finding (crossings, extrema, range periods)
-//! - [`provider`], Trait-based dispatch for bodies
+//! - `types`, Core type definitions (events, query)
+//! - `search`, Search options and configuration constants
+//! - `events`, Event finding (crossings, extrema, range periods)
+//! - `provider`, Trait-based dispatch for bodies
 //!
 //! ## Public Functions
 //!
@@ -28,7 +28,7 @@
 //!
 //! ## Time Scale
 //!
-//! `ModifiedJulianDate` / `Period<MJD>` values in this API are interpreted on
+//! `ModifiedJulianDate` / `Period<ModifiedJulianDate>` values in this API are interpreted on
 //! the TT axis (`tempoch` canonical JD(TT) semantics).  If your inputs are UTC
 //! timestamps, convert them with `ModifiedJulianDate::from_utc(…)` first.
 //!

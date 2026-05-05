@@ -45,8 +45,8 @@
 //! assert!((native_az.value() - 225.0).abs() < 1e-10);
 //! ```
 //!
-//! The helpers work on raw [`Degrees`](crate::qtty::Degrees) values as well as on
-//! [`Direction<Horizontal>`] and [`Position<Topocentric, Horizontal, U>`]
+//! The helpers work on raw [`crate::qtty::Degrees`] values as well as on
+//! `Direction<Horizontal>` and `Position<Topocentric, Horizontal, U>`
 //! coordinates.
 
 use crate::coordinates::centers::Topocentric;
@@ -225,7 +225,7 @@ pub fn convert_azimuth(
 // Convenience: Direction<Horizontal> conversions
 // =============================================================================
 
-/// Convert a [`Direction<Horizontal>`] **from** a foreign convention
+/// Convert a `Direction<Horizontal>` **from** a foreign convention
 /// **to** siderust's native North-clockwise convention.
 ///
 /// Altitude is preserved; only the azimuth is adjusted.
@@ -251,7 +251,7 @@ pub fn direction_to_native(
     spherical::Direction::<Horizontal>::new(dir.alt(), new_az)
 }
 
-/// Convert a [`Direction<Horizontal>`] **from** siderust's native
+/// Convert a `Direction<Horizontal>` **from** siderust's native
 /// North-clockwise convention **to** a foreign convention.
 ///
 /// Altitude is preserved; only the azimuth is adjusted.
@@ -277,7 +277,7 @@ pub fn direction_from_native(
     spherical::Direction::<Horizontal>::new(dir.alt(), new_az)
 }
 
-/// Convert a [`Direction<Horizontal>`] between two arbitrary conventions.
+/// Convert a `Direction<Horizontal>` between two arbitrary conventions.
 ///
 /// Altitude is preserved; only the azimuth is adjusted.
 pub fn convert_direction(
@@ -293,7 +293,7 @@ pub fn convert_direction(
 // Convenience: Position<Topocentric, Horizontal, U> conversions
 // =============================================================================
 
-/// Convert a [`Position<Topocentric, Horizontal, U>`] **from** a foreign
+/// Convert a `Position<Topocentric, Horizontal, U>` **from** a foreign
 /// convention **to** siderust's native North-clockwise convention.
 ///
 /// Altitude and distance are preserved; only the azimuth is adjusted.
@@ -303,7 +303,7 @@ pub fn position_to_native<U: LengthUnit>(
     from: &HorizontalConvention,
 ) -> spherical::Position<Topocentric, Horizontal, U> {
     let new_az = convert_azimuth(pos.az(), from, &HorizontalConvention::NORTH_CLOCKWISE);
-    spherical::Position::<Topocentric, Horizontal, U>::new_raw_with_params(
+    spherical::Position::<Topocentric, Horizontal, U>::new_unchecked_with_params(
         *pos.center_params(),
         pos.alt(),
         new_az,
@@ -311,7 +311,7 @@ pub fn position_to_native<U: LengthUnit>(
     )
 }
 
-/// Convert a [`Position<Topocentric, Horizontal, U>`] **from**
+/// Convert a `Position<Topocentric, Horizontal, U>` **from**
 /// siderust's native convention **to** a foreign convention.
 ///
 /// Altitude and distance are preserved; only the azimuth is adjusted.
@@ -321,7 +321,7 @@ pub fn position_from_native<U: LengthUnit>(
     to: &HorizontalConvention,
 ) -> spherical::Position<Topocentric, Horizontal, U> {
     let new_az = convert_azimuth(pos.az(), &HorizontalConvention::NORTH_CLOCKWISE, to);
-    spherical::Position::<Topocentric, Horizontal, U>::new_raw_with_params(
+    spherical::Position::<Topocentric, Horizontal, U>::new_unchecked_with_params(
         *pos.center_params(),
         pos.alt(),
         new_az,
@@ -329,7 +329,7 @@ pub fn position_from_native<U: LengthUnit>(
     )
 }
 
-/// Convert a [`Position<Topocentric, Horizontal, U>`] between two
+/// Convert a `Position<Topocentric, Horizontal, U>` between two
 /// arbitrary conventions.
 ///
 /// Altitude and distance are preserved; only the azimuth is adjusted.
@@ -340,7 +340,7 @@ pub fn convert_position<U: LengthUnit>(
     to: &HorizontalConvention,
 ) -> spherical::Position<Topocentric, Horizontal, U> {
     let new_az = convert_azimuth(pos.az(), from, to);
-    spherical::Position::<Topocentric, Horizontal, U>::new_raw_with_params(
+    spherical::Position::<Topocentric, Horizontal, U>::new_unchecked_with_params(
         *pos.center_params(),
         pos.alt(),
         new_az,

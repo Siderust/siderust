@@ -13,7 +13,7 @@ use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
 use crate::qtty::{AstronomicalUnits, Kilometer, LengthUnit, Meter, Quantity};
-use crate::time::{JulianDate, Period, MJD};
+use crate::time::{JulianDate, ModifiedJulianDate, Period};
 
 impl Moon {
     /// Returns the **apparent topocentric equatorial coordinates** of the Moon
@@ -67,7 +67,7 @@ impl Moon {
         // 6) Convert from Kilometer to target unit U
         let dist_u: Quantity<U> = topo_sph_km.distance.into();
 
-        affn::spherical::Position::<Topocentric, frames::EquatorialTrueOfDate, U>::new_raw_with_params(
+        affn::spherical::Position::<Topocentric, frames::EquatorialTrueOfDate, U>::new_unchecked_with_params(
             *topo_sph_km.center_params(),
             topo_sph_km.polar,
             topo_sph_km.azimuth,
@@ -189,27 +189,27 @@ impl Moon {
     /// let events = Moon::phase_events(window, PhaseSearchOpts::default());
     /// assert!(!events.is_empty());
     /// ```
-    pub fn phase_events(window: Period<MJD>, opts: PhaseSearchOpts) -> Vec<PhaseEvent> {
+    pub fn phase_events(window: Period<ModifiedJulianDate>, opts: PhaseSearchOpts) -> Vec<PhaseEvent> {
         find_phase_events::<DefaultEphemeris>(window, opts)
     }
 
     /// Time windows inside `window` where geocentric illuminated fraction ≥
     /// `k_min`, using the compile-time `DefaultEphemeris`.
     pub fn illumination_above(
-        window: Period<MJD>,
+        window: Period<ModifiedJulianDate>,
         k_min: f64,
         opts: PhaseSearchOpts,
-    ) -> Vec<Period<MJD>> {
+    ) -> Vec<Period<ModifiedJulianDate>> {
         illumination_above::<DefaultEphemeris>(window, k_min, opts)
     }
 
     /// Time windows inside `window` where geocentric illuminated fraction ≤
     /// `k_max`, using the compile-time `DefaultEphemeris`.
     pub fn illumination_below(
-        window: Period<MJD>,
+        window: Period<ModifiedJulianDate>,
         k_max: f64,
         opts: PhaseSearchOpts,
-    ) -> Vec<Period<MJD>> {
+    ) -> Vec<Period<ModifiedJulianDate>> {
         illumination_below::<DefaultEphemeris>(window, k_max, opts)
     }
 
@@ -229,11 +229,11 @@ impl Moon {
     /// let crescent = Moon::illumination_range(window, 0.05, 0.35, PhaseSearchOpts::default());
     /// ```
     pub fn illumination_range(
-        window: Period<MJD>,
+        window: Period<ModifiedJulianDate>,
         k_min: f64,
         k_max: f64,
         opts: PhaseSearchOpts,
-    ) -> Vec<Period<MJD>> {
+    ) -> Vec<Period<ModifiedJulianDate>> {
         illumination_range::<DefaultEphemeris>(window, k_min, k_max, opts)
     }
 }
@@ -250,7 +250,7 @@ mod tests {
         Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M)
     }
 
-    fn one_month() -> Period<MJD> {
+    fn one_month() -> Period<ModifiedJulianDate> {
         let start = ModifiedJulianDate::from(JulianDate::J2000);
         Period::new(start, start + Days::new(30.0))
     }

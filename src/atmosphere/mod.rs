@@ -7,11 +7,11 @@
 //! citation-backed, typed-input helpers for:
 //!
 //! - [`airmass`] — the geometric path-length multiplier through a
-//!   plane-parallel or curved-Earth atmosphere, with named formulas
-//!   covering [Plane-parallel](airmass::AirmassFormula::PlaneParallel),
-//!   [Young 1994](airmass::AirmassFormula::Young1994),
-//!   [Rozenberg 1966](airmass::AirmassFormula::Rozenberg1966), and
-//!   [Krisciunas & Schaefer 1991](airmass::AirmassFormula::KrisciunasSchaefer1991).
+//!   plane-parallel or curved-Earth atmosphere, with compile-time formula
+//!   selectors covering [`PlaneParallel`](airmass::PlaneParallel),
+//!   [`Young1994`](airmass::Young1994),
+//!   [`Rozenberg1966`](airmass::Rozenberg1966), and
+//!   [`KrisciunasSchaefer1991`](airmass::KrisciunasSchaefer1991).
 //! - [`rayleigh`] — Rayleigh optical depth (Bodhaine et al. 1999) and
 //!   the Rayleigh phase function.
 //! - [`mie`] — Mie / aerosol optical depth via the Patat 2011 power-law
@@ -34,7 +34,10 @@ pub mod rayleigh;
 pub mod scattering;
 
 pub use airglow::{van_rhijn_factor, van_rhijn_factor_with_radius};
-pub use airmass::{airmass, AirmassFormula};
+pub use airmass::{
+    airmass, AirmassFormula, DefaultAirmassFormula, Formula, KrisciunasSchaefer1991,
+    PlaneParallel, Rozenberg1966, Young1994,
+};
 pub use extinction::transmission;
 pub use mie::{mie_optical_depth, MieParams};
 #[cfg(feature = "spectra")]

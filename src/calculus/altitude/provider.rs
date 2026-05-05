@@ -27,7 +27,7 @@
 //! use siderust::coordinates::centers::Geodetic;
 //! use siderust::coordinates::frames::ECEF;
 //! use siderust::coordinates::spherical::direction;
-//! use siderust::time::{ModifiedJulianDate, MJD, Period};
+//! use siderust::time::{ModifiedJulianDate, Period};
 //! use siderust::qtty::*;
 //!
 //! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
@@ -53,7 +53,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical::direction;
 use crate::qtty::*;
-use crate::time::{ModifiedJulianDate, Period, MJD};
+use crate::time::{ModifiedJulianDate, Period};
 
 // Imports for planet altitude support
 use crate::calculus::horizontal;
@@ -70,7 +70,7 @@ use crate::time::JulianDate;
 /// the `calculus` layer.  The trait is intentionally small, one required
 /// method plus convenience defaults.
 ///
-/// Time scale note: all `ModifiedJulianDate` and `Period<MJD>` values are on
+/// Time scale note: all `ModifiedJulianDate` and `Period<ModifiedJulianDate>` values are on
 /// the canonical JD(TT) axis (`tempoch` semantics). Convert UTC instants with
 /// `ModifiedJulianDate::from_utc(...)` before using this API.
 pub trait AltitudePeriodsProvider {
@@ -78,12 +78,12 @@ pub trait AltitudePeriodsProvider {
     /// body's topocentric altitude is within
     /// `[query.min_altitude, query.max_altitude]`.
     ///
-    /// `query.window` is interpreted on the TT axis (`Period<MJD>` with
+    /// `query.window` is interpreted on the TT axis (`Period<ModifiedJulianDate>` with
     /// canonical `JD(TT)` semantics).
     ///
     /// The returned vector is sorted chronologically.  An empty vector
     /// means the body never enters the requested band during the window.
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>>;
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>>;
 
     /// Convenience: intervals where altitude is **above** `threshold`.
     ///
@@ -92,9 +92,9 @@ pub trait AltitudePeriodsProvider {
     fn above_threshold(
         &self,
         observer: Geodetic<ECEF>,
-        window: Period<MJD>,
+        window: Period<ModifiedJulianDate>,
         threshold: Degrees,
-    ) -> Vec<Period<MJD>> {
+    ) -> Vec<Period<ModifiedJulianDate>> {
         self.altitude_periods(&AltitudeQuery {
             observer,
             window,
@@ -110,9 +110,9 @@ pub trait AltitudePeriodsProvider {
     fn below_threshold(
         &self,
         observer: Geodetic<ECEF>,
-        window: Period<MJD>,
+        window: Period<ModifiedJulianDate>,
         threshold: Degrees,
-    ) -> Vec<Period<MJD>> {
+    ) -> Vec<Period<ModifiedJulianDate>> {
         self.altitude_periods(&AltitudeQuery {
             observer,
             window,
@@ -151,7 +151,7 @@ pub trait AltitudePeriodsProvider {
 /// use siderust::bodies::Sun;
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
-/// use siderust::time::{ModifiedJulianDate, MJD, Period};
+/// use siderust::time::{ModifiedJulianDate, Period};
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
@@ -168,7 +168,7 @@ pub trait AltitudePeriodsProvider {
 pub fn altitude_periods<B: AltitudePeriodsProvider>(
     body: &B,
     query: &AltitudeQuery,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     body.altitude_periods(query)
 }
 
@@ -176,9 +176,9 @@ pub fn altitude_periods<B: AltitudePeriodsProvider>(
 // Implementations
 // ---------------------------------------------------------------------------
 
-/// **Sun**, delegates to [`calculus::solar`].
+/// **Sun**, delegates to [`crate::calculus::solar`].
 impl AltitudePeriodsProvider for solar_system::Sun {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
         if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
@@ -204,9 +204,9 @@ impl AltitudePeriodsProvider for solar_system::Sun {
     }
 }
 
-/// **Moon**, delegates to [`calculus::lunar`].
+/// **Moon**, delegates to [`crate::calculus::lunar`].
 impl AltitudePeriodsProvider for solar_system::Moon {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
         if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
@@ -236,9 +236,9 @@ impl AltitudePeriodsProvider for solar_system::Moon {
 }
 
 /// **Star**, extracts RA/Dec from the star's target, delegates to
-/// [`calculus::stellar`].
+/// [`crate::calculus::stellar`].
 impl AltitudePeriodsProvider for Star<'_> {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
         let dir = direction::ICRS::from(self);
         dir.altitude_periods(query)
     }
@@ -251,7 +251,7 @@ impl AltitudePeriodsProvider for Star<'_> {
 
 /// **direction::ICRS**, the lightest path: raw RA/Dec → stellar engine.
 impl AltitudePeriodsProvider for direction::ICRS {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
         if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
@@ -341,7 +341,7 @@ macro_rules! impl_altitude_provider_vsop87 {
     ($($Planet:ident),+ $(,)?) => {
         $(
             impl AltitudePeriodsProvider for solar_system::$Planet {
-                fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<MJD>> {
+                fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
                     if (query.window.end - query.window.start) <= Days::zero() {
                         return Vec::new();
                     }
@@ -412,14 +412,14 @@ mod tests {
         Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
-    fn one_day_window() -> Period<MJD> {
+    fn one_day_window() -> Period<ModifiedJulianDate> {
         Period::new(
             ModifiedJulianDate::new(60000.0),
             ModifiedJulianDate::new(60001.0),
         )
     }
 
-    fn one_week_window() -> Period<MJD> {
+    fn one_week_window() -> Period<ModifiedJulianDate> {
         Period::new(
             ModifiedJulianDate::new(60000.0),
             ModifiedJulianDate::new(60007.0),

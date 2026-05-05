@@ -25,7 +25,7 @@ use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
 
 use super::moon_cache::{find_and_label_crossings, MoonAltitudeContext};
 
@@ -82,9 +82,9 @@ pub(crate) fn moon_altitude_rad(
 /// ```
 pub(crate) fn find_moon_above_horizon(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
     // Build Chebyshev + nutation caches for the period
@@ -107,9 +107,9 @@ pub(crate) fn find_moon_above_horizon(
 /// ```
 pub(crate) fn find_moon_below_horizon(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let above = find_moon_above_horizon(site, period, threshold);
     complement_within(period, &above)
 }
@@ -125,9 +125,9 @@ pub(crate) fn find_moon_below_horizon(
 /// ```
 pub(crate) fn find_moon_altitude_range(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
@@ -154,9 +154,9 @@ const SCAN_STEP_10MIN: Days = Quantity::new(10.0 / 1440.0);
 /// for comparison / validation.
 fn find_moon_above_horizon_scan(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
     let f = |t: ModifiedJulianDate| -> Radians { moon_altitude_rad(t, &site) };

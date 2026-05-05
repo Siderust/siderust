@@ -43,8 +43,7 @@ use crate::calculus::ephemeris::Vsop87Ephemeris;
 /// - With a DE feature but matching `SIDERUST_JPL_STUB` set: falls back to
 ///   [`Vsop87Ephemeris`] so tests run without downloading the BSP.
 /// - For other large datasets: use
-///   [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris) with a
-///   BSP file loaded at runtime via [`DataManager`](crate::data::DataManager).
+///   `DataManager` (from the `runtime-data` feature) with a BSP file loaded at runtime.
 ///
 /// This type alias is used as the default `Eph` parameter in [`AstroContext`],
 /// so all code using `AstroContext::default()` will automatically use the

@@ -10,7 +10,7 @@
 
 use serde_json;
 use siderust::coordinates::{cartesian, centers, frames, frames::ECEF, spherical};
-use siderust::qtty::*;
+use siderust::qtty::{self, *};
 
 // =============================================================================
 // Cartesian Direction Tests
@@ -84,7 +84,7 @@ fn test_cartesian_displacement_roundtrip() {
 
 #[test]
 fn test_cartesian_velocity_roundtrip() {
-    type KmPerSec = Per<Kilometer, Second>;
+    type KmPerSec = Per<Kilometer, qtty::unit::Second>;
     let vel = cartesian::Velocity::<frames::ICRS, KmPerSec>::new(10.0, 20.0, 30.0);
 
     let json = serde_json::to_string(&vel).expect("serialize velocity");
@@ -134,7 +134,7 @@ fn test_spherical_position_heliocentric_roundtrip() {
         centers::Heliocentric,
         frames::EclipticMeanJ2000,
         AstronomicalUnit,
-    >::new_raw(
+    >::new_unchecked(
         7.0 * DEG,   // latitude
         120.0 * DEG, // longitude
         1.5 * AU,    // distance

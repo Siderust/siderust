@@ -6,7 +6,7 @@
 //! Strategies for producing candidate brackets where a scalar function may
 //! cross a threshold or reach an extremum.
 //!
-//! All routines operate on `Period<MJD>` time windows and
+//! All routines operate on `Period<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
 //!
 //! ## Provided policies
@@ -18,7 +18,7 @@
 //! | [`extrema_based_brackets`] | Find extrema first, bracket crossings around each |
 
 use crate::qtty::*;
-use crate::time::{ModifiedJulianDate, Period, MJD};
+use crate::time::{ModifiedJulianDate, Period};
 
 use super::extrema::{self, ExtremumKind};
 
@@ -37,11 +37,11 @@ fn opposite_sign<V: Unit>(a: Quantity<V>, b: Quantity<V>) -> bool {
 ///
 /// Returns sign‑change brackets for `f(t) − threshold`.
 pub fn fixed_step_brackets<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -76,12 +76,12 @@ where
 ///
 /// `min_step` prevents infinite subdivision.
 pub fn adaptive_step_brackets<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     initial_step: Days,
     min_step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -91,7 +91,7 @@ where
     let mut brackets = Vec::new();
 
     struct Frame<V: Unit> {
-        period: Period<MJD>,
+        period: Period<ModifiedJulianDate>,
         g_lo: Quantity<V>,
         g_hi: Quantity<V>,
     }
@@ -153,11 +153,11 @@ where
 /// This is ideal for satellite pass detection: find the altitude peak of each
 /// pass, then bracket the rise/set crossings on either side.
 pub fn extrema_based_brackets<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     extrema_step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -198,10 +198,10 @@ where
 
 /// Search backward from `search_period.end` to `search_period.start` for a sign change in `f(t) − threshold`.
 fn search_crossing_backward<V, F>(
-    search_period: Period<MJD>,
+    search_period: Period<ModifiedJulianDate>,
     f: &F,
     threshold: Quantity<V>,
-) -> Option<Period<MJD>>
+) -> Option<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -240,10 +240,10 @@ where
 
 /// Search forward from `search_period.start` to `search_period.end` for a sign change.
 fn search_crossing_forward<V, F>(
-    search_period: Period<MJD>,
+    search_period: Period<ModifiedJulianDate>,
     f: &F,
     threshold: Quantity<V>,
-) -> Option<Period<MJD>>
+) -> Option<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -292,7 +292,7 @@ mod tests {
     fn mjd(v: f64) -> Mjd {
         Mjd::new(v)
     }
-    fn period(a: f64, b: f64) -> Period<MJD> {
+    fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
         Period::new(mjd(a), mjd(b))
     }
 

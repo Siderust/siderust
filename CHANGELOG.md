@@ -6,6 +6,34 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+* Resolved all `cargo doc --no-deps` intra-doc link warnings (64 warnings → 0):
+  * Removed link brackets from private submodule references in `calculus::altitude`,
+    `calculus::azimuth`, `calculus::solar`, `calculus::lunar`, and `astro::nutation`.
+  * Removed link brackets from private function references in `calculus::solar`,
+    `calculus::lunar`, `calculus::math_core::root_finding`, `astro::earth_rotation_provider`,
+    and `astro::proper_motion`.
+  * Qualified previously-unresolved links: `[crate::qtty]`, `[crate::targets::Target]`,
+    `[crate::coordinates::frames::ICRF]`, `[crate::coordinates::frames::EclipticMeanJ2000]`,
+    `[crate::astro::orientation::IauRotationParams]`, and `[crate::astro::precession::…]`.
+  * Replaced non-existent `[IersEop::from_entries]` / `[IersEop::from_file]` references
+    with accurate prose pointing to `IersEop::new`.
+  * Converted feature-gated links (`atmosphere`, `runtime-data`, `spectra`, `tables`)
+    to plain text to avoid unresolved-link warnings in the default doc build.
+  * Fixed eight redundant explicit link targets (e.g. `[Foo](path::Foo)` → `[path::Foo]`).
+  * Replaced unresolvable generic-parameter links (e.g. `` [`Direction<Horizontal>`] ``)
+    with code-formatted backtick spans.
+* Removed unused imports that triggered `dead_code` / `unused-imports` compiler warnings:
+  `MJD` (seven files in `calculus/`), `CoordinateScale` in `calculus/jpl/eval.rs`, and
+  `Second` in `coordinates/observation/observer_state.rs`.
+* Replaced deprecated API calls throughout:
+  * `EncodedTime::value()` → `.jd_value()` (six call sites).
+  * `Rotation3::from_matrix` → `from_matrix_unchecked` (three const statics).
+  * `SphericalPosition::new_raw` → `new_unchecked` (thirteen call sites).
+  * `SphericalPosition::new_raw_with_params` → `new_unchecked_with_params` (four call sites).
+  * `SphericalDirection::new_raw` → `new_unchecked` (nine call sites).
+
 ### Added
 * **Generic 1D and 2D gridded tables** under the new optional `tables`
   feature (`siderust::tables`). Provides `Grid1D<X, V>` and `Grid2D<X, Y, V>`

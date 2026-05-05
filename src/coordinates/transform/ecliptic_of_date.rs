@@ -16,7 +16,7 @@
 //!
 //! Ecliptic longitude is measured from the **mean equinox** of date.
 //! For expert use with longitude from the **true equinox**, see
-//! [`precession::gcrs_to_true_ecliptic_of_date_matrix`](crate::astro::precession::gcrs_to_true_ecliptic_of_date_matrix).
+//! [`crate::astro::precession::gcrs_to_true_ecliptic_of_date_matrix`].
 //!
 //! ## Time Requirements
 //!
@@ -30,8 +30,8 @@
 //! - [`EquatorialMeanOfDate`] ↔ [`EclipticTrueOfDate`]
 //! - [`ICRS`]/[`GCRS`] ↔ [`EclipticTrueOfDate`] (via precession matrix)
 //!
-//! Note: For J2000 ecliptic coordinates, use the time-independent [`EclipticMeanJ2000`]
-//! frame with [`TransformFrame`](crate::coordinates::transform::TransformFrame).
+//! Note: For J2000 ecliptic coordinates, use the time-independent [`crate::coordinates::frames::EclipticMeanJ2000`]
+//! frame with [`crate::coordinates::transform::TransformFrame`].
 //!
 //! ## Usage
 //!
@@ -102,7 +102,7 @@ impl ToEclipticTrueOfDate for Direction<EquatorialMeanOfDate> {
         let lon = v_ecl[1].atan2(v_ecl[0]).rem_euclid(TAU);
         let lat = v_ecl[2].clamp(-1.0, 1.0).asin();
 
-        let spherical_ecl = affn::spherical::Direction::<EclipticTrueOfDate>::new_raw(
+        let spherical_ecl = affn::spherical::Direction::<EclipticTrueOfDate>::new_unchecked(
             Degrees::new(lat.to_degrees()),
             Degrees::new(lon.to_degrees()),
         );
@@ -131,7 +131,7 @@ impl ToEclipticTrueOfDate for Direction<ICRS> {
         let lon = v_ecl[1].atan2(v_ecl[0]).rem_euclid(TAU);
         let lat = v_ecl[2].clamp(-1.0, 1.0).asin();
 
-        let spherical_ecl = affn::spherical::Direction::<EclipticTrueOfDate>::new_raw(
+        let spherical_ecl = affn::spherical::Direction::<EclipticTrueOfDate>::new_unchecked(
             Degrees::new(lat.to_degrees()),
             Degrees::new(lon.to_degrees()),
         );
@@ -160,7 +160,7 @@ impl ToEclipticTrueOfDate for Direction<GCRS> {
         let lon = v_ecl[1].atan2(v_ecl[0]).rem_euclid(TAU);
         let lat = v_ecl[2].clamp(-1.0, 1.0).asin();
 
-        let spherical_ecl = affn::spherical::Direction::<EclipticTrueOfDate>::new_raw(
+        let spherical_ecl = affn::spherical::Direction::<EclipticTrueOfDate>::new_unchecked(
             Degrees::new(lat.to_degrees()),
             Degrees::new(lon.to_degrees()),
         );
@@ -225,7 +225,7 @@ impl FromEclipticTrueOfDate for Direction<EclipticTrueOfDate> {
         let ra = v_eq[1].atan2(v_eq[0]).rem_euclid(TAU);
         let dec = v_eq[2].clamp(-1.0, 1.0).asin();
 
-        let spherical_equ = affn::spherical::Direction::<EquatorialMeanOfDate>::new_raw(
+        let spherical_equ = affn::spherical::Direction::<EquatorialMeanOfDate>::new_unchecked(
             Degrees::new(dec.to_degrees()),
             Degrees::new(ra.to_degrees()),
         );
@@ -252,7 +252,7 @@ impl FromEclipticTrueOfDate for Direction<EclipticTrueOfDate> {
         let ra = v_eq[1].atan2(v_eq[0]).rem_euclid(TAU);
         let dec = v_eq[2].clamp(-1.0, 1.0).asin();
 
-        let spherical_equ = affn::spherical::Direction::<ICRS>::new_raw(
+        let spherical_equ = affn::spherical::Direction::<ICRS>::new_unchecked(
             Degrees::new(dec.to_degrees()),
             Degrees::new(ra.to_degrees()),
         );
@@ -272,7 +272,7 @@ mod tests {
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
 
-        let spherical_equ = affn::spherical::Direction::<EquatorialMeanOfDate>::new_raw(
+        let spherical_equ = affn::spherical::Direction::<EquatorialMeanOfDate>::new_unchecked(
             Degrees::new(dec.value().to_degrees()),
             Degrees::new(ra.value().to_degrees()),
         );
@@ -301,7 +301,7 @@ mod tests {
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
 
-        let spherical_icrs = affn::spherical::Direction::<ICRS>::new_raw(
+        let spherical_icrs = affn::spherical::Direction::<ICRS>::new_unchecked(
             Degrees::new(dec.value().to_degrees()),
             Degrees::new(ra.value().to_degrees()),
         );
@@ -330,7 +330,7 @@ mod tests {
 
         // A point on the equatorial equator (RA = 0°, Dec = 0°) should be on the ecliptic
         let spherical_equ =
-            affn::spherical::Direction::<EquatorialMeanOfDate>::new_raw(0.0 * DEG, 0.0 * DEG);
+            affn::spherical::Direction::<EquatorialMeanOfDate>::new_unchecked(0.0 * DEG, 0.0 * DEG);
         let equatorial = spherical_equ.to_cartesian();
         let ecliptic = equatorial.to_ecliptic_of_date(&jd_tt);
 
@@ -343,7 +343,7 @@ mod tests {
 
         // A point at the north celestial pole (Dec = 90°) should be at the ecliptic pole
         let spherical_north =
-            affn::spherical::Direction::<EquatorialMeanOfDate>::new_raw(90.0 * DEG, 0.0 * DEG);
+            affn::spherical::Direction::<EquatorialMeanOfDate>::new_unchecked(90.0 * DEG, 0.0 * DEG);
         let north_pole = spherical_north.to_cartesian();
         let ecl_north = north_pole.to_ecliptic_of_date(&jd_tt);
 

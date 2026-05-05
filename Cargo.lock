@@ -10,7 +10,7 @@ checksum = "0014e31e5ef8439603545dbc2913307dcb82910809484ddec91c58dccf7a8b9b"
 dependencies = [
  "affn-derive",
  "nalgebra",
- "qtty 0.7.0",
+ "qtty",
  "serde",
 ]
 
@@ -264,7 +264,7 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 name = "cheby"
 version = "0.1.0"
 dependencies = [
- "qtty 0.6.1",
+ "qtty",
 ]
 
 [[package]]
@@ -1469,33 +1469,12 @@ dependencies = [
 
 [[package]]
 name = "qtty"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "adc4e4fbd7aabae80c30ca07bd9583dc3bc3f6bcf8b123ff538386715aeee293"
-dependencies = [
- "qtty-core 0.6.1",
- "qtty-derive 0.6.1",
-]
-
-[[package]]
-name = "qtty"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "61587536c9c9ec95845b7e5ddbac8afb06ce94ea10fc2728543db3f7bc0a2bc6"
 dependencies = [
- "qtty-core 0.7.0",
- "qtty-derive 0.7.0",
-]
-
-[[package]]
-name = "qtty-core"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e524035941ae68ff8524dfc41d395fe721cd3c0e7eaa16a756284d59a64ddd53"
-dependencies = [
- "libm",
- "qtty-derive 0.6.1",
- "typenum",
+ "qtty-core",
+ "qtty-derive",
 ]
 
 [[package]]
@@ -1505,20 +1484,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3b01d8237a224bea98fcd76fed95ceff6dcca63f613948ef08ecdfeb7e5e398e"
 dependencies = [
  "libm",
- "qtty-derive 0.7.0",
+ "qtty-derive",
  "serde",
  "typenum",
-]
-
-[[package]]
-name = "qtty-derive"
-version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "75757ec156050a0343f72034061a8cfd7a4a7c49254ba55feef0c4951bceb842"
-dependencies = [
- "proc-macro2",
- "quote",
- "syn",
 ]
 
 [[package]]
@@ -1534,12 +1502,12 @@ dependencies = [
 
 [[package]]
 name = "qtty-ffi"
-version = "0.6.1"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e768485c5909c5d0e34071829a2e4e1cd9e963765da3244284fc0e44f55357db"
+checksum = "18e1481ea808f7aa18b48b650f85950631168663bc52faded612d78a89df0441"
 dependencies = [
  "cbindgen",
- "qtty 0.6.1",
+ "qtty",
  "quote",
  "serde",
  "syn",
@@ -2058,7 +2026,7 @@ dependencies = [
  "criterion",
  "nalgebra",
  "paste",
- "qtty 0.7.0",
+ "qtty",
  "regex",
  "reqwest",
  "rstest",
@@ -2078,7 +2046,7 @@ version = "0.4.1"
 dependencies = [
  "affn",
  "cbindgen",
- "qtty 0.6.1",
+ "qtty",
  "siderust",
  "tempoch",
  "tempoch-ffi",
@@ -2194,20 +2162,20 @@ version = "0.4.3"
 dependencies = [
  "affn",
  "chrono",
- "qtty 0.7.0",
+ "qtty",
  "serde",
  "tempoch-time-data",
 ]
 
 [[package]]
 name = "tempoch-ffi"
-version = "0.4.2"
+version = "0.4.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfaa5a83d78b097937f737cfb0fa0097a04cdf9cbeb661fc62db61cb3059c84b"
+checksum = "8a110d143cbbfd027044a257e065c016d1d7a33d49cfee7e328858f3821b2816"
 dependencies = [
  "cbindgen",
  "chrono",
- "qtty 0.6.1",
+ "qtty",
  "qtty-ffi",
  "tempoch",
 ]

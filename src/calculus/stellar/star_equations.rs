@@ -40,7 +40,7 @@ use crate::coordinates::spherical;
 use crate::coordinates::transform::AstroContext;
 use crate::qtty::*;
 use crate::time::JulianDate;
-use crate::time::{ModifiedJulianDate, Period, MJD};
+use crate::time::{ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -197,7 +197,7 @@ impl StarAltitudeParams {
     /// direction = **+1** (rising above threshold) or **−1** (setting below).
     pub fn predict_crossings(
         &self,
-        period: Period<MJD>,
+        period: Period<ModifiedJulianDate>,
         h0: Radians,
     ) -> Vec<(ModifiedJulianDate, i32)> {
         let h0_deg = h0.to::<Degree>();

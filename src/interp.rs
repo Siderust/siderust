@@ -4,7 +4,7 @@
 //! Shared interpolation policies.
 //!
 //! This module defines policy enums that are reused across the
-//! [`crate::spectra`] and [`crate::tables`] feature modules so callers can
+//! `spectra` and `tables` feature modules so callers can
 //! mix typed sampled spectra and typed gridded tables without adapter glue.
 //!
 //! Currently provides:

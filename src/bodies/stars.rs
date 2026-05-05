@@ -47,7 +47,7 @@ pub struct Star<'a> {
     /// Used to apply the secular acceleration to proper motion: as the star
     /// approaches or recedes its angular PM changes even if the transverse
     /// velocity is constant.
-    pub radial_velocity: Option<Velocity<Kilometer, Second>>,
+    pub radial_velocity: Option<Velocity<Kilometer, unit::Second>>,
 }
 
 impl<'a> Star<'a> {
@@ -103,7 +103,7 @@ impl<'a> Star<'a> {
     }
 
     /// Builder: attach a radial velocity (positive = receding).
-    pub const fn with_radial_velocity(mut self, rv: Velocity<Kilometer, Second>) -> Self {
+    pub const fn with_radial_velocity(mut self, rv: Velocity<Kilometer, unit::Second>) -> Self {
         self.radial_velocity = Some(rv);
         self
     }

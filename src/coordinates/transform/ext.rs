@@ -20,7 +20,7 @@
 //! - `pos.to_center_with(params, jd, &ctx)`, Same with a custom context.
 //!
 //! For expert overrides, a `_with` suffix variant accepts any
-//! [`TransformContext`](crate::coordinates::transform::context::TransformContext):
+//! [`crate::coordinates::transform::context::TransformContext`]:
 //!
 //! - `to_frame_with::<F2>(jd_tt, &ctx)`, Frame rotation with custom context.
 //! - `to_with::<C2, F2>(jd_tt, &ctx)`, Combined transform with custom context.

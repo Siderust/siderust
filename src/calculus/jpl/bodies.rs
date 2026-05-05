@@ -16,7 +16,7 @@
 //!
 //! ## Type safety
 //!
-//! All intermediate vectors carry their reference frame ([`ICRF`]) and unit
+//! All intermediate vectors carry their reference frame ([`crate::coordinates::frames::ICRF`]) and unit
 //! ([`Kilometer`] or [`Per<Kilometer, Day>`]) in the type system, so
 //! body-chain arithmetic (subtraction, scaling) is checked at compile time.
 //! Frame conversion (ICRF → EclipticMeanJ2000) and unit conversion (km → AU,

@@ -105,7 +105,7 @@ mod demo {
                 centers::Heliocentric,
                 frames::EclipticMeanJ2000,
                 AstronomicalUnit,
-            >::new_raw(
+            >::new_unchecked(
                 Degrees::new(5.0),   // lat
                 Degrees::new(120.0), // lon
                 AstronomicalUnits::new(1.2),

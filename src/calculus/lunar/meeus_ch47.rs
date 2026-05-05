@@ -37,7 +37,7 @@ pub struct MoonMeeusCh47 {
 /// Returns both ecliptic-of-date and equatorial coordinates. The ecliptic→
 /// equatorial conversion uses the IAU 2006 mean obliquity of date.
 pub fn moon_position_meeus_ch47(jd_tt: JulianDate) -> MoonMeeusCh47 {
-    let date2 = jd_tt.value() - 2_451_545.0;
+    let date2 = jd_tt.jd_value() - 2_451_545.0;
     let t = date2 / 36_525.0;
 
     // Mean elements (degrees), Meeus Ch.47

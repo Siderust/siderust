@@ -79,7 +79,7 @@ impl std::fmt::Display for TwilightPhase {
 /// # Arguments
 ///
 /// * `sun_altitude` — The Sun's apparent altitude as any typed angular
-///   [`Quantity`] (e.g. [`Degrees`] or [`Radians`](crate::qtty::Radians)).
+///   [`Quantity`] (e.g. [`crate::qtty::Degrees`] or [`crate::qtty::Radians`]).
 ///   Negative values indicate the Sun is below the geometric horizon. The
 ///   value is converted to degrees internally, so callers may pass either
 ///   typed angle without manual conversion.

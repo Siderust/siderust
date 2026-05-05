@@ -23,9 +23,9 @@
 //! ## Usage
 //!
 //! The main entry points are:
-//! - [`sun_altitude_rad`]: Compute Sun altitude at a given Julian Date
-//! - [`find_day_periods`] / [`find_night_periods`]: Above/below threshold
-//! - [`find_sun_range_periods`]: Within a min/max altitude band
+//! - `sun_altitude_rad`: Compute Sun altitude at a given Julian Date
+//! - `find_day_periods` / `find_night_periods`: Above/below threshold
+//! - `find_sun_range_periods`: Within a min/max altitude band
 //!
 //! ---
 //! _This module is under active development and will be expanded in future releases._

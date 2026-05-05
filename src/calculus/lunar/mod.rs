@@ -22,9 +22,9 @@
 //! ## Usage
 //!
 //! The main entry points are:
-//! - [`moon_altitude_rad`]: Compute Moon altitude at a given Julian Date
-//! - [`find_moon_above_horizon`] / [`find_moon_below_horizon`]: Above/below threshold
-//! - [`find_moon_altitude_range`]: Within a min/max altitude band
+//! - `moon_altitude_rad`: Compute Moon altitude at a given Julian Date
+//! - `find_moon_above_horizon` / `find_moon_below_horizon`: Above/below threshold
+//! - `find_moon_altitude_range`: Within a min/max altitude band
 //!
 //! ---
 //! _This module is under active development and will be expanded in future releases._

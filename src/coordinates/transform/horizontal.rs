@@ -124,7 +124,7 @@ impl ToHorizontal for Direction<EquatorialTrueOfDate> {
         let alt = z.atan2(r);
 
         // Construct horizontal direction from spherical coordinates
-        let spherical_horiz = affn::spherical::Direction::<Horizontal>::new_raw(
+        let spherical_horiz = affn::spherical::Direction::<Horizontal>::new_unchecked(
             Degrees::new(alt.to_degrees()),
             Degrees::new(az.to_degrees()),
         );
@@ -196,7 +196,7 @@ impl FromHorizontal for Direction<Horizontal> {
         let ra = (last - ha).rem_euclid(TAU);
 
         // Construct equatorial direction from spherical coordinates
-        let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_raw(
+        let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_unchecked(
             Degrees::new(dec.to_degrees()),
             Degrees::new(ra.to_degrees()),
         );
@@ -322,7 +322,7 @@ mod tests {
             0.0 * M,
         );
 
-        let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_raw(
+        let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_unchecked(
             Degrees::new(dec.value().to_degrees()),
             Degrees::new(ra.value().to_degrees()),
         );
@@ -359,7 +359,7 @@ mod tests {
             0.0 * M,
         );
 
-        let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_raw(
+        let spherical_equ = affn::spherical::Direction::<EquatorialTrueOfDate>::new_unchecked(
             Degrees::new(dec.value().to_degrees()),
             Degrees::new(ra.value().to_degrees()),
         );
@@ -394,7 +394,7 @@ mod tests {
         let distance = 1000.0 * KM;
 
         // Create equatorial position via spherical
-        let equ_sph_dir = spherical::Direction::<EquatorialTrueOfDate>::new_raw(dec, ra);
+        let equ_sph_dir = spherical::Direction::<EquatorialTrueOfDate>::new_unchecked(dec, ra);
         let equ_pos_sph =
             equ_sph_dir.position_with_params::<Topocentric, Kilometer>(site, distance);
         let equ_pos =

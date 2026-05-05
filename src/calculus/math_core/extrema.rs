@@ -6,7 +6,7 @@
 //! Derivative‑free optimisation for scalar functions of one variable.
 //! Finds local minima, maxima, and classifies stationary points.
 //!
-//! All routines operate on `Period<MJD>` time windows and
+//! All routines operate on `Period<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
 //!
 //! ## Provided routines
@@ -19,7 +19,7 @@
 //! | [`classify`] | Determine if a point is a local max, min, or neither |
 
 use crate::qtty::*;
-use crate::time::{ModifiedJulianDate, Period, MJD};
+use crate::time::{ModifiedJulianDate, Period};
 
 use super::root_finding;
 
@@ -75,7 +75,7 @@ pub struct Extremum<V: Unit> {
 ///
 /// Uses golden‑section search (derivative‑free, guaranteed convergence).
 /// Returns `(t_min, f(t_min))`.
-pub fn minimize<V, F>(period: Period<MJD>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
+pub fn minimize<V, F>(period: Period<ModifiedJulianDate>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -85,7 +85,7 @@ where
 
 /// Like [`minimize`] but with a caller‑chosen tolerance.
 pub fn minimize_tol<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     f: &F,
     tol: Days,
 ) -> (ModifiedJulianDate, Quantity<V>)
@@ -125,7 +125,7 @@ where
 /// Find the value of *t* in `period` that **maximises** `f(t)`.
 ///
 /// Implemented as `minimize(-f)`.  Returns `(t_max, f(t_max))`.
-pub fn maximize<V, F>(period: Period<MJD>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
+pub fn maximize<V, F>(period: Period<ModifiedJulianDate>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -135,7 +135,7 @@ where
 
 /// Like [`maximize`] but with a caller‑chosen tolerance.
 pub fn maximize_tol<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     f: &F,
     tol: Days,
 ) -> (ModifiedJulianDate, Quantity<V>)
@@ -183,7 +183,7 @@ where
 /// and refine each extremum with golden‑section.
 ///
 /// Returns a chronologically sorted list of [`Extremum`] values.
-pub fn find_extrema<V, F>(period: Period<MJD>, step: Days, f: &F) -> Vec<Extremum<V>>
+pub fn find_extrema<V, F>(period: Period<ModifiedJulianDate>, step: Days, f: &F) -> Vec<Extremum<V>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -192,7 +192,7 @@ where
 }
 
 /// Like [`find_extrema`] but with a caller‑chosen tolerance.
-pub fn find_extrema_tol<V, F>(period: Period<MJD>, step: Days, f: &F, tol: Days) -> Vec<Extremum<V>>
+pub fn find_extrema_tol<V, F>(period: Period<ModifiedJulianDate>, step: Days, f: &F, tol: Days) -> Vec<Extremum<V>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -258,7 +258,7 @@ where
 ///
 /// The derivative is estimated as: f'(t) ≈ (f(t+h) − f(t−h)) / (2h)
 pub fn find_extrema_via_derivative<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     step: Days,
     f: &F,
     fd_step: Days,
@@ -331,7 +331,7 @@ mod tests {
     fn mjd(v: f64) -> Mjd {
         Mjd::new(v)
     }
-    fn period(a: f64, b: f64) -> Period<MJD> {
+    fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
         Period::new(mjd(a), mjd(b))
     }
 

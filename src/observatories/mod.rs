@@ -50,7 +50,7 @@ pub struct Observatory {
     /// any Celsius/Fahrenheit observation to kelvin at the boundary before
     /// constructing this value.  `None` means "no authoritative cited value
     /// has been wired in yet" — callers should fall back to a profile default
-    /// (e.g. [`crate::atmosphere::profile::AtmosphereProfile`]) rather than
+    /// (e.g. `AtmosphereProfile` from the `atmosphere` feature) rather than
     /// assume a hard-coded constant.
     pub reference_temperature: Option<Kelvins>,
     /// Optional median reference relative humidity for the site.
@@ -81,7 +81,7 @@ impl Observatory {
 /// - Reference relative humidity: `None` — same rationale as temperature.
 ///
 /// For an atmosphere profile calibrated to this site, see
-/// [`crate::atmosphere::profile::AtmosphereProfile::LA_PALMA`].
+/// `AtmosphereProfile::ROQUE_DE_LOS_MUCHACHOS` (requires the `atmosphere` feature).
 pub const ROQUE_DE_LOS_MUCHACHOS: Observatory = Observatory {
     name: "Roque de los Muchachos Observatory",
     geodetic: Geodetic::new_raw(
@@ -124,7 +124,7 @@ pub const EL_PARANAL: Observatory = Observatory {
 /// - Altitude:  4207 m (WGS84 ellipsoidal height)
 ///
 /// For an atmosphere profile calibrated to this site, see
-/// [`crate::atmosphere::profile::AtmosphereProfile::MAUNA_KEA`].
+/// `AtmosphereProfile::MAUNA_KEA` (requires the `atmosphere` feature).
 pub const MAUNA_KEA: Geodetic<ECEF> = Geodetic::new_raw(
     Degrees::new(-155.4681),
     Degrees::new(19.8207),
@@ -138,7 +138,7 @@ pub const MAUNA_KEA: Geodetic<ECEF> = Geodetic::new_raw(
 /// - Altitude:  2400 m (WGS84 ellipsoidal height)
 ///
 /// For an atmosphere profile calibrated to this site, see
-/// [`crate::atmosphere::profile::AtmosphereProfile::LA_SILLA`].
+/// `AtmosphereProfile::LA_SILLA` (requires the `atmosphere` feature).
 pub const LA_SILLA_OBSERVATORY: Geodetic<ECEF> = Geodetic::new_raw(
     Degrees::new(-70.7346),
     Degrees::new(-29.2584),

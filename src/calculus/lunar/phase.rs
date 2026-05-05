@@ -37,7 +37,7 @@
 //!
 //! ## Time scale
 //!
-//! All `JulianDate` / `ModifiedJulianDate` / `Period<MJD>` values are
+//! All `JulianDate` / `ModifiedJulianDate` / `Period<ModifiedJulianDate>` values are
 //! interpreted on the TT axis (consistent with the altitude API).
 
 use crate::calculus::ephemeris::Ephemeris;
@@ -46,7 +46,7 @@ use crate::coordinates::cartesian;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::qtty::*;
-use crate::time::{JulianDate, ModifiedJulianDate, Period, MJD};
+use crate::time::{JulianDate, ModifiedJulianDate, Period};
 use std::f64::consts::PI;
 use std::marker::PhantomData;
 
@@ -575,7 +575,7 @@ impl Default for PhaseSearchOpts {
 ///
 /// # Arguments
 ///
-/// - `window`, search interval as `Period<MJD>` (TT axis)
+/// - `window`, search interval as `Period<ModifiedJulianDate>` (TT axis)
 /// - `opts`, search precision options
 ///
 /// # Returns
@@ -599,7 +599,7 @@ impl Default for PhaseSearchOpts {
 /// }
 /// ```
 pub fn find_phase_events<E: Ephemeris>(
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     opts: PhaseSearchOpts,
 ) -> Vec<PhaseEvent> {
     let mut events = Vec::new();
@@ -727,13 +727,13 @@ fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> Radians {
 ///
 /// # Parameters
 ///
-/// - `window`: search interval (`Period<MJD>`, TT axis)
+/// - `window`: search interval (`Period<ModifiedJulianDate>`, TT axis)
 /// - `k_min`: illuminated fraction lower bound, in \[0, 1\]
 /// - `opts`: scan precision options
 ///
 /// # Returns
 ///
-/// Sorted, non-overlapping `Vec<Period<MJD>>`.
+/// Sorted, non-overlapping `Vec<Period<ModifiedJulianDate>>`.
 ///
 /// # Example
 ///
@@ -749,10 +749,10 @@ fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> Radians {
 /// let bright = illumination_above::<Vsop87Ephemeris>(window, 0.5, PhaseSearchOpts::default());
 /// ```
 pub fn illumination_above<E: Ephemeris>(
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     k_min: f64,
     opts: PhaseSearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     intervals::above_threshold_periods(
         window,
         opts.scan_step,
@@ -770,10 +770,10 @@ pub fn illumination_above<E: Ephemeris>(
 /// - `k_max`: illuminated fraction upper bound, in \[0, 1\]
 /// - `opts`: scan precision options
 pub fn illumination_below<E: Ephemeris>(
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     k_max: f64,
     opts: PhaseSearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     use crate::time::complement_within;
     let above = illumination_above::<E>(window, k_max, opts);
     complement_within(window, &above)
@@ -806,11 +806,11 @@ pub fn illumination_below<E: Ephemeris>(
 /// let crescent = illumination_range::<Vsop87Ephemeris>(window, 0.05, 0.35, PhaseSearchOpts::default());
 /// ```
 pub fn illumination_range<E: Ephemeris>(
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     k_min: f64,
     k_max: f64,
     opts: PhaseSearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     intervals::in_range_periods(
         window,
         opts.scan_step,

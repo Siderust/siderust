@@ -14,11 +14,12 @@
 //! A [`J2000`] constant is also re-exported for the J2000.0 TT epoch.
 
 pub use tempoch::{
-    constats, delta_t_seconds, delta_t_seconds_extrapolated, eop, ContinuousScale, ConversionError,
-    ConversionTarget, CoordinateScale, EncodedTime, InfallibleConversionTarget,
-    InfallibleRepresentationForScale, Interval, InvalidIntervalError, InvalidPeriodError, J2000_TT,
-    JD, JulianTimeExt, MJD, PeriodListError, RepresentationForScale, Scale, ScaleKind, Time,
-    TimeContext, TimeDataError, TimeInstant, TAI, TCB, TCG, TDB, TT, UT1, UTC,
+    complement_within, constats, delta_t_seconds, delta_t_seconds_extrapolated, eop,
+    ContinuousScale, ConversionError, ConversionTarget, CoordinateScale, EncodedTime,
+    InfallibleConversionTarget, InfallibleRepresentationForScale, Interval, InvalidIntervalError,
+    InvalidPeriodError, J2000_TT, JULIAN_YEAR_DAYS, JD, MJD, PeriodListError,
+    RepresentationForScale, Scale, ScaleKind, Time, TimeContext, TimeDataError, TimeInstant, TAI,
+    TCB, TCG, TDB, TT, UT1, UTC,
 };
 
 /// Re-export `JulianDate` and `ModifiedJulianDate` under their generic names
@@ -41,3 +42,5 @@ pub type ModifiedJulianDate = tempoch::ModifiedJulianDate<TT>;
 
 /// J2000.0 epoch as a [`JulianDate`] (TT, JD 2 451 545.0).
 pub const J2000: JulianDate = J2000_TT;
+
+pub use crate::calculus::math_core::intervals::intersect as intersect_periods;

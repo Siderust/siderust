@@ -895,7 +895,7 @@ mod tests {
         use chrono::{DateTime, NaiveDate, Utc};
         let date = NaiveDate::from_ymd_opt(yyyy, mm, dd).expect("invalid date");
         let datetime = date.and_hms_opt(h, m, s).expect("invalid time");
-        JulianDate::from_utc(DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc))
+        JulianDate::from_chrono(DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc))
     }
 
     /// Build time array t = [1, t1, t1², t1³, t1⁴] from Julian centuries

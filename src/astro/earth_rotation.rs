@@ -161,7 +161,7 @@ mod tests {
     fn jd_ut1_is_close_to_tt_at_modern_epoch() {
         // ΔT at J2000 is ~63.8 s, so UT1 ≈ TT - 63.8/86400 days
         let jd_ut1 = jd_ut1_from_tt(jd());
-        let diff_sec = (jd().value() - jd_ut1.value()) * 86400.0;
+        let diff_sec = (jd().jd_value() - jd_ut1.jd_value()) * 86400.0;
         assert!(
             diff_sec > 50.0 && diff_sec < 80.0,
             "ΔT at J2000 expected ~63s, got {diff_sec}s"
@@ -195,9 +195,9 @@ mod tests {
         let expected_utc_jd = bundled_ut1_jd - bundled_dut1 / 86_400.0;
 
         assert!(
-            (jd_eop.value() - expected_utc_jd).abs() < 1e-12,
+            (jd_eop.jd_value() - expected_utc_jd).abs() < 1e-12,
             "with dut1 = 0, UT1 must equal UTC, got {} vs UTC {}",
-            jd_eop.value(),
+            jd_eop.jd_value(),
             expected_utc_jd
         );
 
@@ -205,7 +205,7 @@ mod tests {
         // exposed via `jd_ut1_from_tt`: the two should differ by roughly the
         // bundled dUT1 at this epoch.
         let jd_dt = jd_ut1_from_tt(jd());
-        let diff_sec = (jd_eop.value() - jd_dt.value()).abs() * 86_400.0;
+        let diff_sec = (jd_eop.jd_value() - jd_dt.jd_value()).abs() * 86_400.0;
         assert!(
             diff_sec > 0.05,
             "EOP(dut1=0) and ΔT models should differ measurably, got {diff_sec}s"
@@ -234,7 +234,7 @@ mod tests {
             .map(|s| s.value())
             .unwrap_or(0.0);
         let expected_utc_jd = bundled_ut1_jd - bundled_dut1 / 86_400.0;
-        let recovered_dut1_s = (jd_eop.value() - expected_utc_jd) * 86_400.0;
+        let recovered_dut1_s = (jd_eop.jd_value() - expected_utc_jd) * 86_400.0;
 
         // f64 precision at JD ~2.45e6 limits the recoverable resolution to
         // roughly 10 µs; sub-microsecond agreement is unrealistic here.
@@ -252,7 +252,7 @@ mod tests {
             ..Default::default()
         };
         let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
-        assert!(jd_eop.value().is_finite());
+        assert!(jd_eop.jd_value().is_finite());
     }
 
     // ── gmst_from_tt ─────────────────────────────────────────────────────

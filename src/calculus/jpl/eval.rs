@@ -11,7 +11,7 @@
 
 use crate::coordinates::frames::ICRF;
 use crate::qtty::*;
-use crate::time::JulianDate;
+use crate::time::{JulianDateG, TDB};
 use affn::{Displacement, Velocity};
 
 type KmPerDay = Per<Kilometer, Day>;
@@ -23,9 +23,10 @@ const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 // Shared helpers (used by both SegmentDescriptor and DynSegmentDescriptor)
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// Convert a raw Julian Day value to ephemeris seconds past J2000.
 #[inline]
-fn jd_to_et(jd_tdb: JulianDate) -> Seconds {
-    (jd_tdb - JulianDate::J2000).to::<Second>()
+fn jd_to_et(jd_value: f64) -> Seconds {
+    Seconds::new((jd_value - 2_451_545.0) * SECONDS_PER_DAY)
 }
 
 #[inline]
@@ -43,9 +44,9 @@ fn locate_params(
     init: Seconds,
     intlen: Seconds,
     n_records: usize,
-    jd_tdb: JulianDate,
+    jd_tdb: JulianDateG<TDB>,
 ) -> (usize, f64, Seconds) {
-    let et = jd_to_et(jd_tdb);
+    let et = jd_to_et(jd_tdb.jd_value());
     let idx = ((et - init) / intlen) as usize;
     let idx = idx.min(n_records - 1);
     (idx, et.value(), intlen)
@@ -139,7 +140,7 @@ pub struct SegmentDescriptor {
 }
 
 #[inline]
-fn locate(seg: &SegmentDescriptor, jd_tdb: JulianDate) -> (&'static [f64], f64, Seconds) {
+fn locate(seg: &SegmentDescriptor, jd_tdb: JulianDateG<TDB>) -> (&'static [f64], f64, Seconds) {
     let (idx, et, intlen) = locate_params(seg.init, seg.intlen, seg.n_records, jd_tdb);
     let record = (seg.record_fn)(idx);
     let (tau, radius) = record_tau(record, et);
@@ -150,14 +151,14 @@ fn locate(seg: &SegmentDescriptor, jd_tdb: JulianDate) -> (&'static [f64], f64, 
 impl SegmentDescriptor {
     /// Evaluate position in km (ICRF) at Julian Date (TDB).
     #[inline]
-    pub fn position(&self, jd_tdb: JulianDate) -> Displacement<ICRF, Kilometer> {
+    pub fn position(&self, jd_tdb: JulianDateG<TDB>) -> Displacement<ICRF, Kilometer> {
         let (record, tau, _) = locate(self, jd_tdb);
         eval_position(record, self.ncoeff, tau)
     }
 
     /// Evaluate velocity in km/day (ICRF) at Julian Date (TDB).
     #[inline]
-    pub fn velocity(&self, jd_tdb: JulianDate) -> Velocity<ICRF, KmPerDay> {
+    pub fn velocity(&self, jd_tdb: JulianDateG<TDB>) -> Velocity<ICRF, KmPerDay> {
         let (record, tau, radius) = locate(self, jd_tdb);
         eval_velocity(record, self.ncoeff, tau, radius)
     }
@@ -166,7 +167,7 @@ impl SegmentDescriptor {
     #[inline]
     pub fn position_velocity(
         &self,
-        jd_tdb: JulianDate,
+        jd_tdb: JulianDateG<TDB>,
     ) -> (Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>) {
         let (record, tau, radius) = locate(self, jd_tdb);
         eval_both(record, self.ncoeff, tau, radius)
@@ -219,7 +220,7 @@ impl DynSegmentDescriptor {
 
     /// Locate the record for a given JD and compute tau.
     #[inline]
-    fn locate(&self, jd_tdb: JulianDate) -> (&[f64], f64, Seconds) {
+    fn locate(&self, jd_tdb: JulianDateG<TDB>) -> (&[f64], f64, Seconds) {
         let (idx, et, _) = locate_params(self.init, self.intlen, self.n_records, jd_tdb);
         let record = self.record(idx);
         let (tau, radius) = record_tau(record, et);
@@ -228,14 +229,14 @@ impl DynSegmentDescriptor {
 
     /// Evaluate position in km (ICRF) at Julian Date (TDB).
     #[inline]
-    pub fn position(&self, jd_tdb: JulianDate) -> Displacement<ICRF, Kilometer> {
+    pub fn position(&self, jd_tdb: JulianDateG<TDB>) -> Displacement<ICRF, Kilometer> {
         let (record, tau, _) = self.locate(jd_tdb);
         eval_position(record, self.ncoeff, tau)
     }
 
     /// Evaluate velocity in km/day (ICRF) at Julian Date (TDB).
     #[inline]
-    pub fn velocity(&self, jd_tdb: JulianDate) -> Velocity<ICRF, KmPerDay> {
+    pub fn velocity(&self, jd_tdb: JulianDateG<TDB>) -> Velocity<ICRF, KmPerDay> {
         let (record, tau, radius) = self.locate(jd_tdb);
         eval_velocity(record, self.ncoeff, tau, radius)
     }
@@ -244,7 +245,7 @@ impl DynSegmentDescriptor {
     #[inline]
     pub fn position_velocity(
         &self,
-        jd_tdb: JulianDate,
+        jd_tdb: JulianDateG<TDB>,
     ) -> (Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>) {
         let (record, tau, radius) = self.locate(jd_tdb);
         eval_both(record, self.ncoeff, tau, radius)
@@ -287,13 +288,13 @@ mod tests {
     }
 
     /// JD for J2000 + 500 days (the midpoint → tau = 0).
-    fn jd_mid() -> JulianDate {
-        JulianDate::new(JD_J2000 + 500.0)
+    fn jd_mid() -> JulianDateG<TDB> {
+        JulianDateG::<TDB>::new(JD_J2000 + 500.0)
     }
 
     /// JD for J2000 + 250 days (first quarter → tau = -0.5).
-    fn jd_quarter() -> JulianDate {
-        JulianDate::new(JD_J2000 + 250.0)
+    fn jd_quarter() -> JulianDateG<TDB> {
+        JulianDateG::<TDB>::new(JD_J2000 + 250.0)
     }
 
     // ── Position ──────────────────────────────────────────────────────────
@@ -333,7 +334,7 @@ mod tests {
     fn dyn_desc_position_at_boundary_does_not_panic() {
         // First JD in the segment (idx clamped to 0)
         let desc = make_desc(100.0, 200.0, 300.0);
-        let jd_start = JulianDate::new(JD_J2000); // et = 0 → idx = 0
+        let jd_start = JulianDateG::<TDB>::new(JD_J2000); // et = 0 → idx = 0
         let pos = desc.position(jd_start);
         assert!(pos.x().value().is_finite());
     }
@@ -525,7 +526,7 @@ mod tests {
     #[test]
     fn static_desc_position_at_boundary() {
         let desc = make_static_desc();
-        let jd_start = JulianDate::new(JD_J2000); // et=0 → idx clamped to 0
+        let jd_start = JulianDateG::<TDB>::new(JD_J2000); // et=0 → idx clamped to 0
         let pos = desc.position(jd_start);
         assert!(pos.x().value().is_finite());
     }
@@ -556,7 +557,7 @@ mod tests {
             data,
         };
         // At J2000 + 750 days → et = 750 * 86400 = 64800000, idx = (64800000 / 43200000) = 1
-        let jd_second = JulianDate::new(JD_J2000 + 750.0);
+        let jd_second = JulianDateG::<TDB>::new(JD_J2000 + 750.0);
         let pos = desc.position(jd_second);
         // At tau = (et - mid1) / rad with et = 750*86400, mid1 = 750*86400 → tau=0 → x=200
         let et_s = 750.0 * SECONDS_PER_DAY;

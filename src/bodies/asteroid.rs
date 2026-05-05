@@ -7,7 +7,7 @@
 //! - `name`: String identifier for the asteroid.
 //! - `designation`: system used to formally identify asteroids.
 //! - `composition`: String describing the primary material makeup.
-//! - `orbit`: Orbital parameters (see [`KeplerianOrbit`](crate::astro::orbit::KeplerianOrbit)).
+//! - `orbit`: Orbital parameters (see [`crate::astro::orbit::KeplerianOrbit`]).
 //!
 //! | Constant | Designation | Class | Potentially Hazardous? | Notes |
 //! |----------|-------------|-------|-----------------------|-------|

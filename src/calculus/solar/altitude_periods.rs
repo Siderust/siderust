@@ -29,7 +29,7 @@ use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
 
 // =============================================================================
 // Constants
@@ -62,9 +62,9 @@ pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -
 /// Uses a 2-hour scan + Brent refinement via [`math_core::intervals`].
 pub(crate) fn find_day_periods(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
     let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
@@ -77,9 +77,9 @@ pub(crate) fn find_day_periods(
 /// Complement of [`find_day_periods`] within `period`.
 pub(crate) fn find_night_periods(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     twilight: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let days = find_day_periods(site, period, twilight);
     complement_within(period, &days)
 }
@@ -90,9 +90,9 @@ pub(crate) fn find_night_periods(
 /// [`math_core::intervals::in_range_periods`].
 pub(crate) fn find_sun_range_periods(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 

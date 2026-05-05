@@ -8,7 +8,7 @@
 //! data came from, what version it is, and (optionally) a checksum for
 //! reproducibility audits.
 //!
-//! Re-exported from [`crate::spectra`] and [`crate::tables`] for backwards
+//! Re-exported from the `spectra` and `tables` feature modules for backwards
 //! compatibility.
 //!
 //! ## Build-time integrity checks

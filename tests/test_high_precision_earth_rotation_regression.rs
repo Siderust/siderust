@@ -30,7 +30,7 @@ fn tod_unit_position(
     ra_deg: f64,
     dec_deg: f64,
 ) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit> {
-    affn::spherical::Position::<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit>::new_raw_with_params(
+    affn::spherical::Position::<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit>::new_unchecked_with_params(
         site,
         Degrees::new(dec_deg),
         Degrees::new(ra_deg),

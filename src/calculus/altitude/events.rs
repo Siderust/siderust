@@ -6,7 +6,7 @@
 //! Functions for finding altitude events: crossings, culminations,
 //! and periods above/below thresholds or within ranges.
 //!
-//! All `Period<MJD>` inputs/outputs are interpreted on the TT axis.
+//! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the TT axis.
 //! Convert UTC timestamps with `ModifiedJulianDate::from_utc(...)` first.
 
 use super::provider::AltitudePeriodsProvider;
@@ -16,7 +16,7 @@ use crate::calculus::math_core::{extrema, intervals};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
+use crate::time::{complement_within, ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
 // Internal: build altitude function from trait
@@ -72,7 +72,7 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 pub fn crossings<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     threshold: Degrees,
     opts: SearchOpts,
 ) -> Vec<CrossingEvent> {
@@ -107,7 +107,7 @@ pub fn crossings<T: AltitudePeriodsProvider>(
 pub fn culminations<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     opts: SearchOpts,
 ) -> Vec<CulminationEvent> {
     let f = make_altitude_fn(target, observer);
@@ -142,7 +142,7 @@ pub fn culminations<T: AltitudePeriodsProvider>(
 /// Find all time intervals where the altitude of `target` is within
 /// `[h_min, h_max]`.
 ///
-/// Returns a sorted list of `Period<MJD>`.
+/// Returns a sorted list of `Period<ModifiedJulianDate>`.
 ///
 /// # Algorithm
 ///
@@ -163,11 +163,11 @@ pub fn culminations<T: AltitudePeriodsProvider>(
 pub fn altitude_ranges<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     h_min: Degrees,
     h_max: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let f = make_altitude_fn(target, observer);
     let min_rad = h_min.to::<Radian>();
     let max_rad = h_max.to::<Radian>();
@@ -186,10 +186,10 @@ pub fn altitude_ranges<T: AltitudePeriodsProvider>(
 pub fn above_threshold<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     threshold: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let f = make_altitude_fn(target, observer);
     let thr_rad = threshold.to::<Radian>();
     let step = scan_step_for(target, &opts);
@@ -203,10 +203,10 @@ pub fn above_threshold<T: AltitudePeriodsProvider>(
 pub fn below_threshold<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     threshold: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let above = above_threshold(target, observer, window, threshold, opts);
     complement_within(window, &above)
 }

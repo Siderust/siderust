@@ -286,7 +286,7 @@ pub fn full_planetary_deflection(
 ///
 /// ## Returns
 ///
-/// The deflection angle in [`Arcsecond`].
+/// The deflection angle in arcseconds ([`crate::qtty::Arcseconds`]).
 ///
 /// ## Notes
 ///

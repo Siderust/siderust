@@ -78,7 +78,7 @@ impl EopValues {
     /// Convert UTC Julian Date to UT1 Julian Date using this EOP's dUT1.
     #[inline]
     pub fn jd_ut1(&self, jd_utc: JulianDate) -> JulianDate {
-        JulianDate::new(jd_utc.value() + self.dut1.to::<Day>().value())
+        JulianDate::new(jd_utc.jd_value() + self.dut1.to::<Day>().value())
     }
 }
 
@@ -130,8 +130,8 @@ impl EopProvider for NullEop {
 /// EOP provider backed by the IERS `finals2000A.all` table.
 ///
 /// By default, uses the table embedded at compile time from the IERS data
-/// center. Call [`IersEop::from_entries`] or [`IersEop::from_file`] to load
-/// a fresh dataset at runtime.
+/// center. Construct via [`IersEop::new`] to load the default compile-time
+/// dataset, or replace the table field for a custom dataset.
 ///
 /// The provider interpolates linearly between daily entries for any epoch
 /// within the table's MJD range. For epochs outside the range, it returns
@@ -189,7 +189,7 @@ impl IersEop {
 impl EopProvider for IersEop {
     fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
         // Convert JD (TT‑axis value, used as UTC approximation) → MJD.
-        let mjd = jd_utc.value() - 2_400_000.5;
+        let mjd = jd_utc.jd_value() - 2_400_000.5;
 
         match iers_data::lookup(self.table, mjd) {
             Some(e) => EopValues {

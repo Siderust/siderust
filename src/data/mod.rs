@@ -13,7 +13,7 @@
 //! ## Design Principles
 //!
 //! - **Explicit consent**: Data is never downloaded without the user calling
-//!   [`DataManager::ensure`] or [`DataManager::download`] explicitly.
+//!   `DataManager::ensure` or `DataManager::download` explicitly.
 //! - **Persistent cache**: Downloaded files are stored on disk and reused
 //!   across program runs.
 //! - **Integrity verification**: Downloads are validated via SHA-256 checksums

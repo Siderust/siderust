@@ -70,7 +70,7 @@ fn dimensionless_ratio<V: Unit>(num: Quantity<V>, den: Quantity<V>) -> f64 {
 // ---------------------------------------------------------------------------
 
 /// Find a root of `f(t) = 0` in `[lo, hi]` using Brent's method with
-/// default tolerance ([`DEFAULT_TOL`]).
+/// default tolerance (`DEFAULT_TOL`).
 ///
 /// Returns `Some(t)` where `|f(t)| < ε` or the bracket width < tolerance,
 /// `None` if the bracket is invalid.

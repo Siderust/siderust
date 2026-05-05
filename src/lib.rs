@@ -93,6 +93,11 @@ pub mod time;
 pub(crate) mod macros;
 
 // ---------------------------------------------------------------------------
+// Convenience re‑exports: interval utilities
+// ---------------------------------------------------------------------------
+pub use calculus::math_core::intervals::intersect as intersect_periods;
+
+// ---------------------------------------------------------------------------
 // Convenience re‑exports: unified azimuth API
 // ---------------------------------------------------------------------------
 pub use calculus::azimuth::{

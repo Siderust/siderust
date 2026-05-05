@@ -13,7 +13,7 @@
 //! ## Submodules
 //! - [`sidereal`]: Handles sidereal time calculations, including GST and LST.
 //! - [`nutation`]: Computes nutation components (Δψ, Δε) and applies corrections.
-//! - [`dynamical_time`]: Converts between Universal Time (UT) and Terrestrial Time (TT).
+//! - `dynamical_time`: Converts between Universal Time (UT) and Terrestrial Time (TT).
 //! - [`aberration`]: Applies annual aberration corrections to celestial coordinates.
 //! - [`orbit`]: Provides utilities for orbital mechanics and celestial object tracking.
 

@@ -40,7 +40,7 @@
 //!
 //! ## Legacy IAU 1980 Nutation
 //!
-//! The legacy **IAU 1980** nutation (63 terms) is retained in the [`iau1980`]
+//! The legacy **IAU 1980** nutation (63 terms) is retained in the `iau1980`
 //! submodule for cross-validation testing. It is not used in production code.
 //!
 //! ## References

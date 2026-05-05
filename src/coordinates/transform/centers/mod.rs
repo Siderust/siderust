@@ -80,8 +80,8 @@ impl IntoTransformArgs<()> for JulianDate {
 /// For **any** center: passing a `(Params, JulianDate)` tuple always works.
 ///
 /// This is the canonical form for non-trivial parameter types like
-/// [`BodycentricParams`](crate::coordinates::centers::BodycentricParams) or
-/// [`Geodetic<ECEF>`](crate::coordinates::centers::Geodetic).
+/// [`crate::coordinates::centers::BodycentricParams`] or
+/// `Geodetic<ECEF>`.
 impl<P: Clone> IntoTransformArgs<P> for (P, JulianDate) {
     #[inline]
     fn into_params_jd(self) -> (P, JulianDate) {
@@ -96,8 +96,8 @@ impl<P: Clone> IntoTransformArgs<P> for (P, JulianDate) {
 /// | Target center | Call site | Notes |
 /// |---|---|---|
 /// | Barycentric / Heliocentric / Geocentric (identity too) | `pos.to_center(jd)` | Pass only the [`JulianDate`], no `()` |
-/// | Bodycentric | `pos.to_center((orbit_params, jd))` | [`BodycentricParams`](crate::coordinates::centers::BodycentricParams) |
-/// | Topocentric | `pos.to_center((site, jd))` | [`Geodetic<ECEF>`](crate::coordinates::centers::Geodetic) |
+/// | Bodycentric | `pos.to_center((orbit_params, jd))` | [`crate::coordinates::centers::BodycentricParams`] |
+/// | Topocentric | `pos.to_center((site, jd))` | `Geodetic<ECEF>` |
 /// | Bodycentric → Geocentric | `bary.to_center(jd)` | Same as standard |
 /// | Topocentric → Geocentric | `topo.to_center(jd)` | Same as standard |
 ///

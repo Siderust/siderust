@@ -6,7 +6,7 @@
 //! This module provides the common infrastructure shared by all JPL DE4xx
 //! ephemeris backends (DE440/DE441):
 //!
-//! - [`eval`], Chebyshev polynomial evaluation and [`SegmentDescriptor`](eval::SegmentDescriptor).
+//! - [`eval`], Chebyshev polynomial evaluation and [`eval::SegmentDescriptor`].
 //! - [`bodies`], Generic body-chain resolution (Sun, Earth, Moon positions/velocities).
 //! - [`DeData`], Trait abstracting over the per-version coefficient data.
 //! - [`DeEphemeris`], Generic zero-sized ephemeris backend for any `DeData` impl.

@@ -9,11 +9,11 @@
 //!
 //! ## Module Structure
 //!
-//! - [`types`], Core type definitions (events, queries, periods)
-//! - [`search`], Search options and configuration constants
-//! - [`compute`], Low-level altitude computation functions
-//! - [`events`], Event finding (crossings, culminations, ranges)
-//! - [`provider`], Trait-based dispatch for bodies
+//! - `types`, Core type definitions (events, queries, periods)
+//! - `search`, Search options and configuration constants
+//! - `compute`, Low-level altitude computation functions
+//! - `events`, Event finding (crossings, culminations, ranges)
+//! - `provider`, Trait-based dispatch for bodies
 //!
 //! ## Public Functions
 //!
@@ -29,7 +29,7 @@
 //!
 //! ## Time Scale
 //!
-//! `ModifiedJulianDate` / `Period<MJD>` values in this API are interpreted on
+//! `ModifiedJulianDate` / `Period<ModifiedJulianDate>` values in this API are interpreted on
 //! the TT axis (`tempoch` canonical JD(TT) semantics). If your inputs are UTC
 //! timestamps, convert them with `ModifiedJulianDate::from_utc(...)` first.
 //!

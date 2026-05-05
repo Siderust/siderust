@@ -21,7 +21,7 @@
 //!   tracks the previous raw sample and accumulates ±2π offsets, producing
 //!   a continuous monotone-ish function safe for `find_extrema_tol`.
 //!
-//! All `Period<MJD>` inputs/outputs are interpreted on the TT axis.
+//! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the TT axis.
 //! Convert UTC timestamps with `ModifiedJulianDate::from_utc(…)` first.
 
 use std::cell::Cell;
@@ -34,7 +34,7 @@ use crate::calculus::math_core::{extrema, intervals};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
+use crate::time::{complement_within, ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -156,7 +156,7 @@ fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
 pub fn azimuth_crossings<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     bearing: Degrees,
     opts: SearchOpts,
 ) -> Vec<AzimuthCrossingEvent> {
@@ -194,7 +194,7 @@ pub fn azimuth_crossings<T: AzimuthProvider>(
 pub fn azimuth_extrema<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     opts: SearchOpts,
 ) -> Vec<AzimuthExtremum> {
     let step = opts
@@ -248,7 +248,7 @@ pub fn azimuth_extrema<T: AzimuthProvider>(
 pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
     target: &T,
     query: &AzimuthQuery,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let step = target.scan_step_hint().unwrap_or(DEFAULT_SCAN_STEP);
 
     let min_deg = query.min_azimuth.value();
@@ -284,15 +284,15 @@ pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
 ///
 /// Supports wrap-around ranges when `min_az > max_az` (e.g. 350° → 10°).
 ///
-/// Returns a sorted list of `Period<MJD>`.
+/// Returns a sorted list of `Period<ModifiedJulianDate>`.
 pub fn azimuth_ranges<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     min_az: Degrees,
     max_az: Degrees,
     _opts: SearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     target.azimuth_periods(&AzimuthQuery {
         observer: *observer,
         window,
@@ -307,11 +307,11 @@ pub fn azimuth_ranges<T: AzimuthProvider>(
 pub fn in_azimuth_range<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     min_az: Degrees,
     max_az: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     azimuth_ranges(target, observer, window, min_az, max_az, opts)
 }
 
@@ -319,11 +319,11 @@ pub fn in_azimuth_range<T: AzimuthProvider>(
 pub fn outside_azimuth_range<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     min_az: Degrees,
     max_az: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let inside = azimuth_ranges(target, observer, window, min_az, max_az, opts);
     complement_within(window, &inside)
 }
@@ -341,7 +341,7 @@ mod tests {
         Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
-    fn one_day() -> Period<MJD> {
+    fn one_day() -> Period<ModifiedJulianDate> {
         Period::new(
             ModifiedJulianDate::new(60000.0),
             ModifiedJulianDate::new(60001.0),

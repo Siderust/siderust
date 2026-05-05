@@ -170,7 +170,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
 ) -> Result<position::EquatorialMeanJ2000<U>, ProperMotionError> {
     // Time difference in Julian years
     let t: Years =
-        Years::new((jd / JulianDate::JULIAN_YEAR) - (epoch_jd / JulianDate::JULIAN_YEAR));
+        Years::new((jd - epoch_jd).value() / 365.25);
     let ra_rate = proper_motion.ra_rate_at_epoch(mean_position.dec())?;
     // Linearly apply proper motion in RA and DEC
     Ok(position::EquatorialMeanJ2000::<U>::new(
@@ -213,7 +213,7 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 /// - `radial_velocity` is positive away from the Solar System (recession).
 ///
 /// Both `parallax` and `radial_velocity` are required for a full update; the
-/// transverse-only [`set_proper_motion_since_epoch`] family ignores them and
+/// transverse-only `set_proper_motion_since_epoch` family ignores them and
 /// is therefore not adequate for fast nearby stars (Barnard's, Proxima …)
 /// over multi-decade horizons.
 #[derive(Debug, Clone, Copy)]
@@ -225,7 +225,7 @@ pub struct StarSpaceMotion {
     /// Annual trigonometric parallax (positive).
     pub parallax: MilliArcseconds,
     /// Radial velocity, positive away from the Solar System.
-    pub radial_velocity: crate::qtty::velocity::Velocity<Kilometer, Second>,
+    pub radial_velocity: crate::qtty::velocity::Velocity<Kilometer, unit::Second>,
 }
 
 /// Apply full 6D space-motion to a catalog star position.
@@ -239,7 +239,7 @@ pub struct StarSpaceMotion {
 /// 4. Re-project to spherical (RA, Dec) at the new epoch and rescale the
 ///    distance accordingly.
 ///
-/// Unlike [`set_proper_motion_since_epoch`], this version honours the
+/// Unlike `set_proper_motion_since_epoch`, this version honours the
 /// **radial velocity** (giving the secular acceleration in proper motion
 /// caused by the changing transverse projection of a 3D velocity) and the
 /// **parallax** (giving the absolute scale of the propagation). For most
@@ -330,7 +330,7 @@ pub fn propagate_space_motion(
     ];
 
     // Δt in Julian years.
-    let dt_yr = (jd / JulianDate::JULIAN_YEAR) - (epoch_jd / JulianDate::JULIAN_YEAR);
+    let dt_yr = (jd - epoch_jd).value() / 365.25;
 
     // Linear propagation in BCRS.
     let p = [

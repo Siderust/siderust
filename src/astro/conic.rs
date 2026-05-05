@@ -148,7 +148,7 @@ impl ConicOrbit {
         if !mean_anomaly_at_epoch.value().is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.value().is_finite() {
+        if !epoch.jd_value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -249,7 +249,7 @@ impl MeanMotionOrbit {
         if !mean_motion_deg_per_day.is_finite() || mean_motion_deg_per_day <= 0.0 {
             return Err(ConicError::InvalidMeanMotion);
         }
-        if !epoch.value().is_finite() {
+        if !epoch.jd_value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {

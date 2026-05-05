@@ -368,7 +368,7 @@ impl MoonAltitudeContext {
 
 use crate::calculus::math_core::intervals::LabeledCrossing;
 use crate::calculus::math_core::root_finding;
-use crate::time::{ModifiedJulianDate, Period, MJD};
+use crate::time::{ModifiedJulianDate, Period};
 
 type Mjd = ModifiedJulianDate;
 type Days = crate::qtty::Quantity<crate::qtty::Day>;
@@ -383,7 +383,7 @@ const DEDUPE_EPS: Days = Days::new(1e-8);
 /// from the sign change that triggered the Brent solve, **eliminating
 /// the 2 extra probe evaluations per crossing**.
 pub fn find_and_label_crossings<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     step: Days,
     f: &F,
     threshold: crate::qtty::Quantity<V>,
@@ -542,7 +542,7 @@ mod tests {
     #[test]
     fn find_and_label_crossings_sine_wave() {
         // Test with a known sine wave: sin(2π(t+0.05)) crosses 0 at known times
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.mjd_value() + 0.05)).sin());
         let period = Period::new(Mjd::new(0.0), Mjd::new(1.0));
         let step = Days::new(0.01);
 

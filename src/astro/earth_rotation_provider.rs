@@ -21,7 +21,7 @@
 //!
 //! ## Time-scale contract
 //!
-//! The `jd` argument passed to [`itrs_to_equatorial_mean_j2000_rotation`]
+//! The `jd` argument passed to `itrs_to_equatorial_mean_j2000_rotation`
 //! must be a **TT Julian Date** (Terrestrial Time).  Internally the function
 //! converts to UT1 using EOP `dUT1`.  Do not pass UTC or UT1 directly.
 
