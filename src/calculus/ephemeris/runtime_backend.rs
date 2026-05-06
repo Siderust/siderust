@@ -158,7 +158,7 @@ mod tests {
     use super::*;
     use crate::data::spk::{BspSegments, SegmentData};
 
-    const SECONDS_PER_DAY: f64 = 86400.0;
+    const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
     const JD_J2000: f64 = 2451545.0;
 
     /// Create a minimal SegmentData with constant position (x_km, y_km, z_km).

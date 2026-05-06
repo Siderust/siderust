@@ -53,7 +53,7 @@
 //! * Klioner, S. A. (2003), AJ 125, 1580
 
 use crate::coordinates::cartesian::direction;
-use crate::qtty::{Arcseconds, AstronomicalUnits, Radians};
+use crate::qtty::{Arcsecond, Arcseconds, AstronomicalUnits, Radians};
 
 /// Schwarzschild radius of the Sun in AU: 2 G M☉ / c².
 ///
@@ -301,8 +301,6 @@ pub fn solar_deflection_magnitude(
     sun_angle: Radians,
     sun_distance: AstronomicalUnits,
 ) -> Arcseconds {
-    const RAD_TO_ARCSEC: f64 = 206_264.806_247_096_36;
-
     if sun_angle <= Radians::new(0.0) || sun_distance <= AstronomicalUnits::new(0.0) {
         return Arcseconds::new(0.0); // directly at the Sun, meaningless
     }
@@ -310,8 +308,8 @@ pub fn solar_deflection_magnitude(
     // Δθ = (2GM/c²R) × cot(θ/2)
     let half = sun_angle * 0.5;
     let cot_half = half.cos() / half.sin().abs().max(1e-10);
-    let scale_arcsec = (SOLAR_SCHWARZSCHILD_AU / sun_distance.value()) * RAD_TO_ARCSEC;
-    Arcseconds::new(scale_arcsec * cot_half)
+    let scale_rad = SOLAR_SCHWARZSCHILD_AU / sun_distance.value();
+    Radians::new(scale_rad * cot_half).to::<Arcsecond>()
 }
 
 /// Remove solar deflection from an apparent direction to get the geometric
@@ -351,16 +349,14 @@ pub fn solar_deflection_inverse(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::qtty::Radians;
-
-    const RAD_TO_ARCSEC: f64 = 206_264.806_247_096_36;
+    use crate::qtty::{Radian, Radians};
 
     #[test]
     fn deflection_at_ninety_deg_is_milliarcseconds() {
         // At 90° elongation and 1 AU: Δθ = (2GM/c²R) ≈ 0.00407″
         let angle = Radians::new(std::f64::consts::FRAC_PI_2);
         let defl = solar_deflection_magnitude(angle, AstronomicalUnits::new(1.0));
-        let expected = SOLAR_SCHWARZSCHILD_AU * RAD_TO_ARCSEC;
+        let expected = Radians::new(SOLAR_SCHWARZSCHILD_AU).to::<Arcsecond>().value();
         assert!(
             (defl.value() - expected).abs() < 1e-9,
             "deflection at 90° = {}″, expected {}″",
@@ -372,7 +368,7 @@ mod tests {
     #[test]
     fn deflection_at_limb_is_about_1_75_arcsec() {
         // Solar angular radius at 1 AU is ~959.63 arcsec.
-        let angle = Radians::new(959.63 / RAD_TO_ARCSEC);
+        let angle = Arcseconds::new(959.63).to::<Radian>();
         let defl = solar_deflection_magnitude(angle, AstronomicalUnits::new(1.0));
         assert!(
             (defl.value() - 1.75).abs() < 0.03,
@@ -429,7 +425,7 @@ mod tests {
             + (deflected.y() - star.y()).powi(2)
             + (deflected.z() - star.z()).powi(2))
         .sqrt();
-        let vec_deflection_arcsec = (2.0 * (0.5 * chord).asin()) * RAD_TO_ARCSEC;
+        let vec_deflection_arcsec = Radians::new(2.0 * (0.5 * chord).asin()).to::<Arcsecond>().value();
 
         let scalar_deflection = solar_deflection_magnitude(
             Radians::new(std::f64::consts::FRAC_PI_2),

@@ -269,13 +269,6 @@ pub fn propagate_space_motion(
     jd: JulianDate,
     epoch_jd: JulianDate,
 ) -> Result<position::EquatorialMeanJ2000<AstronomicalUnit>, ProperMotionError> {
-    // ── Constants ──
-    // 1 AU / (1 km/s · 1 Julian year) = days_per_year · seconds_per_day / km_per_au
-    // = 365.25 · 86400 / 1.49597870700e8 = 0.21094502... AU per (km/s · yr)
-    const AU_PER_KMS_YR: f64 = 0.210_945_021_894_944_8;
-    // 1 mas in radians: π / (180 · 3600 · 1000)
-    const MAS_TO_RAD: f64 = std::f64::consts::PI / (180.0 * 3_600_000.0);
-
     let dec_deg = mean_position.dec();
     let cos_dec = dec_deg.to::<Radian>().cos();
     if cos_dec.abs() <= COS_DEC_EPSILON {
@@ -312,14 +305,14 @@ pub fn propagate_space_motion(
     // Angular rates → linear transverse velocity in AU/yr.
     // μα⋆ already includes cos(δ); divide once to get true μα, then scale by
     // r·cos(δ) to recover the AU/yr coefficient on e_alpha.
-    let pm_ra_rad_yr = (motion.pm_ra_cos_dec.value() * MAS_TO_RAD) / cos_dec;
-    let pm_dec_rad_yr = motion.pm_dec.value() * MAS_TO_RAD;
+    let pm_ra_rad_yr = motion.pm_ra_cos_dec.to::<Per<Radian, Year>>().value() / cos_dec;
+    let pm_dec_rad_yr = motion.pm_dec.to::<Per<Radian, Year>>().value();
 
     let v_alpha_au_yr = pm_ra_rad_yr * r_au * cos_d;
     let v_delta_au_yr = pm_dec_rad_yr * r_au;
 
     // Radial velocity in AU/yr (positive = away).
-    let v_r_au_yr = motion.radial_velocity.value() * AU_PER_KMS_YR;
+    let v_r_au_yr = motion.radial_velocity.to::<Per<AstronomicalUnit, Year>>().value();
 
     // BCRS velocity vector in AU/yr.
     let r_hat = [cos_d * cos_a, cos_d * sin_a, sin_d];

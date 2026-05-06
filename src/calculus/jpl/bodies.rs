@@ -250,15 +250,15 @@ mod tests {
     use super::*;
     use crate::calculus::jpl::eval::{DynSegmentDescriptor, SegmentDescriptor};
 
-    const SECONDS_PER_DAY: f64 = 86400.0;
+    const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
     const JD_J2000: f64 = 2451545.0;
 
     // ── Shared test data for SegmentDescriptor (compile-time variant) ─────
 
     /// Static record for sun-like segment: position ~0.5 AU at tau=0.
     static SUN_RECORD: [f64; 8] = [
-        500.0 * 86400.0, // mid (seconds past J2000)
-        500.0 * 86400.0, // radius = half-interval
+        500.0 * SECONDS_PER_DAY, // mid (seconds past J2000)
+        500.0 * SECONDS_PER_DAY, // radius = half-interval
         7.5e7,
         0.0, // cx ~0.5 AU in km
         3.0e7,
@@ -269,8 +269,8 @@ mod tests {
 
     /// Static record for EMB-like segment: ~1 AU from SSB.
     static EMB_RECORD: [f64; 8] = [
-        500.0 * 86400.0,
-        500.0 * 86400.0,
+        500.0 * SECONDS_PER_DAY,
+        500.0 * SECONDS_PER_DAY,
         1.5e8,
         0.0, // ~1 AU
         0.0,
@@ -281,8 +281,8 @@ mod tests {
 
     /// Static record for Moon offset (~Earth-Moon distance).
     static MOON_RECORD: [f64; 8] = [
-        500.0 * 86400.0,
-        500.0 * 86400.0,
+        500.0 * SECONDS_PER_DAY,
+        500.0 * SECONDS_PER_DAY,
         3.84e5,
         0.0, // ~384400 km
         0.0,

@@ -44,9 +44,6 @@ pub use crate::qtty::time::SIDEREAL_DAY;
 // IAU 2006 ERA-based sidereal time
 // ════════════════════════════════════════════════════════════════════════
 
-/// Arcseconds-to-radians conversion factor.
-const AS2RAD: f64 = std::f64::consts::PI / (180.0 * 3600.0);
-
 /// Greenwich Mean Sidereal Time, IAU 2006 (ERA-based).
 ///
 /// ```text
@@ -77,7 +74,7 @@ pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
         - 0.000_029_956 * t.powi(4)
         - 0.000_000_036_8 * t.powi(5);
 
-    let gmst = era + Radians::new(poly_as * AS2RAD);
+    let gmst = era + Arcseconds::new(poly_as).to::<Radian>();
     gmst.wrap_pos()
 }
 
