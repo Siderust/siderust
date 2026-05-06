@@ -68,7 +68,7 @@ use crate::time::JulianDate;
 /// ## Time Scale
 ///
 /// All `ModifiedJulianDate` and `Period<ModifiedJulianDate>` values are on the canonical
-/// JD(TT) axis.  Convert UTC instants with `ModifiedJulianDate::from_utc(…)`
+/// JD(TT) axis.  Convert UTC instants with `ModifiedJulianDate::from_chrono(…)`
 /// before using this API.
 ///
 /// ## Azimuth convention

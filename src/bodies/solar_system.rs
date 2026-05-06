@@ -837,13 +837,11 @@ impl Trackable for Moon {
 #[cfg(test)]
 mod trackable_tests {
     use super::*;
-    use crate::qtty::*;
     use crate::time::JulianDate;
 
     #[test]
     fn star_produces_icrs_direction() {
         use crate::bodies::catalog;
-        use crate::coordinates::spherical::direction;
         let sirius = &catalog::SIRIUS;
         let dir = <crate::bodies::Star<'_> as Trackable>::track(sirius, JulianDate::J2000);
         let ra_diff = dir.ra() - Degrees::new(101.287);

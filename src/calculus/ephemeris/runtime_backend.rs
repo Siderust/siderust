@@ -223,45 +223,45 @@ mod tests {
     fn sun_barycentric_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let pos = eph.sun_barycentric(jd_mid());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
     fn earth_barycentric_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let pos = eph.earth_barycentric(jd_mid());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
     fn earth_heliocentric_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let pos = eph.earth_heliocentric(jd_mid());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
     fn earth_barycentric_velocity_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let vel = eph.earth_barycentric_velocity(jd_mid());
-        assert!(vel.x().value().is_finite());
-        assert!(vel.y().value().is_finite());
-        assert!(vel.z().value().is_finite());
+        assert!(vel.x().is_finite());
+        assert!(vel.y().is_finite());
+        assert!(vel.z().is_finite());
     }
 
     #[test]
     fn moon_geocentric_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let pos = eph.moon_geocentric(jd_mid());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]

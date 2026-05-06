@@ -31,7 +31,7 @@
 //!
 //! `ModifiedJulianDate` / `Period<ModifiedJulianDate>` values in this API are interpreted on
 //! the TT axis (`tempoch` canonical JD(TT) semantics). If your inputs are UTC
-//! timestamps, convert them with `ModifiedJulianDate::from_utc(...)` first.
+//! timestamps, convert them with `ModifiedJulianDate::from_chrono(…)` first.
 //!
 //! ## Trait-Based API
 //!

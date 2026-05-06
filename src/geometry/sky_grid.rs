@@ -69,7 +69,7 @@ use std::f64::consts::PI;
 
 use crate::coordinates::frames;
 use crate::coordinates::spherical;
-use crate::qtty::{Degrees, Steradians};
+use crate::qtty::{Degrees, Radian, Steradians};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public types
@@ -215,7 +215,7 @@ impl SkyGrid {
 
     fn n_az_equal_area(&self, alt_center_deg: f64) -> usize {
         let cos_alt = alt_center_deg.to_radians().cos().max(0.0);
-        let az_horizon_rad = self.az_step.value().to_radians();
+        let az_horizon_rad = self.az_step.to::<Radian>().value();
         if az_horizon_rad <= 0.0 {
             return 1;
         }
@@ -261,7 +261,7 @@ impl SkyGrid {
     /// Iterate over full [`SkyGridCell`] records.
     pub fn iter_cells(&self) -> impl Iterator<Item = SkyGridCell> + '_ {
         let n_alt = self.n_alt();
-        let alt_step_rad = self.alt_step.value().to_radians();
+        let alt_step_rad = self.alt_step.to::<Radian>().value();
         let equal_area = self.equal_solid_angle;
         let alt_min = self.alt_min.value();
         let alt_step = self.alt_step.value();

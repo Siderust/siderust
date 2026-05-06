@@ -93,7 +93,7 @@ pub fn equation_of_the_origins(
     cio_locator_s: Radians,
 ) -> Radians {
     // EO = −(ψ̄ + Δψ) × cos(ε_A + Δε) − s
-    Radians::new(-(psib_plus_dpsi.value()) * epsa_plus_deps.cos() - cio_locator_s.value())
+    -(psib_plus_dpsi * epsa_plus_deps.cos()) - cio_locator_s
 }
 
 /// Equation of the equinoxes (traditional, simplified).
@@ -110,7 +110,7 @@ pub fn equation_of_the_origins(
 /// * SOFA routine `iauEe00`
 #[inline]
 pub fn equation_of_the_equinoxes(dpsi: Radians, true_obliquity: Radians) -> Radians {
-    Radians::new(dpsi.value() * true_obliquity.cos())
+    dpsi * true_obliquity.cos()
 }
 
 #[cfg(test)]

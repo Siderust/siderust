@@ -303,17 +303,14 @@ pub fn solar_deflection_magnitude(
 ) -> Arcseconds {
     const RAD_TO_ARCSEC: f64 = 206_264.806_247_096_36;
 
-    let angle = sun_angle.value();
-    let dist = sun_distance.value();
-
-    if angle <= 0.0 || dist <= 0.0 {
+    if sun_angle <= Radians::new(0.0) || sun_distance <= AstronomicalUnits::new(0.0) {
         return Arcseconds::new(0.0); // directly at the Sun, meaningless
     }
 
     // Δθ = (2GM/c²R) × cot(θ/2)
-    let half = angle / 2.0;
+    let half = sun_angle * 0.5;
     let cot_half = half.cos() / half.sin().abs().max(1e-10);
-    let scale_arcsec = (SOLAR_SCHWARZSCHILD_AU / dist) * RAD_TO_ARCSEC;
+    let scale_arcsec = (SOLAR_SCHWARZSCHILD_AU / sun_distance.value()) * RAD_TO_ARCSEC;
     Arcseconds::new(scale_arcsec * cot_half)
 }
 

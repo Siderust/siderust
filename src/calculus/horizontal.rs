@@ -228,7 +228,7 @@ pub fn star_horizontal(
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
     let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
     let lst = gast + site.lon.to::<Radian>();
-    let ha = Radians::new((lst - ra_tod).value().rem_euclid(std::f64::consts::TAU));
+    let ha = (lst - ra_tod).wrap_pos();
 
     // Equatorial → horizontal
     let lat = site.lat.to::<Radian>();

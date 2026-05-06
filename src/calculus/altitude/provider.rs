@@ -72,7 +72,7 @@ use crate::time::JulianDate;
 ///
 /// Time scale note: all `ModifiedJulianDate` and `Period<ModifiedJulianDate>` values are on
 /// the canonical JD(TT) axis (`tempoch` semantics). Convert UTC instants with
-/// `ModifiedJulianDate::from_utc(...)` before using this API.
+/// `ModifiedJulianDate::from_chrono(…)` before using this API.
 pub trait AltitudePeriodsProvider {
     /// Returns all contiguous intervals inside `query.window` where the
     /// body's topocentric altitude is within

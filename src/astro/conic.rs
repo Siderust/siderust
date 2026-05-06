@@ -145,7 +145,7 @@ impl ConicOrbit {
             argument_of_periapsis,
         )
         .map_err(map_validation_error)?;
-        if !mean_anomaly_at_epoch.value().is_finite() {
+        if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
         if !epoch.jd_value().is_finite() {

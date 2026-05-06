@@ -312,8 +312,8 @@ mod tests {
             ..Default::default()
         };
         let gmst_eop = gmst_from_tt_eop(jd(), &eop);
-        assert!(gmst_eop.value().is_finite());
-        assert!(gmst_eop.value() >= 0.0);
+        assert!(gmst_eop.is_finite());
+        assert!(gmst_eop >= Radians::new(0.0));
     }
 
     // ── gmst_default ─────────────────────────────────────────────────────

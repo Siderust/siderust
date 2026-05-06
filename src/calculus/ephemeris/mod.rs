@@ -207,7 +207,7 @@ mod tests {
         let mag =
             (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
         assert!(mag < 0.02, "Sun-SSB offset too large: {mag} AU");
-        assert!(pos.x().value().is_finite());
+        assert!(pos.x().is_finite());
     }
 
     #[test]

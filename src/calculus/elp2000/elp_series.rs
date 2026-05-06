@@ -994,7 +994,7 @@ mod tests {
             let original = Radians::new(angle);
             let normalized = normalize_angle(original);
             let sin_orig = angle.sin();
-            let sin_norm = normalized.value().sin();
+            let sin_norm = normalized.sin();
             // Tolerance relaxed: different argument-reduction paths
             // (libm for large angles vs. wrap_signed first) can differ.
             // For very large angles (>1000), differences up to ~1e-13 are acceptable.

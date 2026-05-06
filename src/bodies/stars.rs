@@ -160,7 +160,7 @@ impl<'a> Star<'a> {
                         pm.pm_ra.value() * mas_per_yr_factor
                     }
                     crate::astro::proper_motion::RaProperMotionConvention::MuAlpha => {
-                        let cos_dec = pos_au.dec().value().to_radians().cos();
+                        let cos_dec = pos_au.dec().cos();
                         pm.pm_ra.value() * mas_per_yr_factor * cos_dec
                     }
                 };

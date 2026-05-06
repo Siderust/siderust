@@ -22,7 +22,7 @@
 //!   a continuous monotone-ish function safe for `find_extrema_tol`.
 //!
 //! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the TT axis.
-//! Convert UTC timestamps with `ModifiedJulianDate::from_utc(…)` first.
+//! Convert UTC timestamps with `ModifiedJulianDate::from_chrono(…)` first.
 
 use std::cell::Cell;
 
@@ -209,8 +209,7 @@ pub fn azimuth_extrema<T: AzimuthProvider>(
     raw.iter()
         .map(|ext| {
             // Wrap the unwrapped value back into [0°, 360°)
-            let az_wrapped = ext.value.value().rem_euclid(std::f64::consts::TAU);
-            let az_deg = Radians::new(az_wrapped).to::<Degree>();
+            let az_deg = ext.value.wrap_pos().to::<Degree>();
             AzimuthExtremum {
                 mjd: ext.t,
                 azimuth: az_deg,

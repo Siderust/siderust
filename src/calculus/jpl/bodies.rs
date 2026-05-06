@@ -322,9 +322,9 @@ mod tests {
     fn sun_barycentric_is_finite() {
         let sun = make_static_seg(sun_record_fn);
         let pos = sun_barycentric(jd_test_static(), &sun);
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
@@ -332,9 +332,9 @@ mod tests {
         let emb = make_static_seg(emb_record_fn);
         let moon = make_static_seg(moon_record_fn);
         let pos = earth_barycentric(jd_test_static(), &emb, &moon);
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
@@ -343,9 +343,9 @@ mod tests {
         let emb = make_static_seg(emb_record_fn);
         let moon = make_static_seg(moon_record_fn);
         let pos = earth_heliocentric(jd_test_static(), &sun, &emb, &moon);
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
@@ -353,18 +353,18 @@ mod tests {
         let emb = make_static_seg(emb_record_fn);
         let moon = make_static_seg(moon_record_fn);
         let vel = earth_barycentric_velocity(jd_test_static(), &emb, &moon);
-        assert!(vel.x().value().is_finite());
-        assert!(vel.y().value().is_finite());
-        assert!(vel.z().value().is_finite());
+        assert!(vel.x().is_finite());
+        assert!(vel.y().is_finite());
+        assert!(vel.z().is_finite());
     }
 
     #[test]
     fn moon_geocentric_is_finite() {
         let moon = make_static_seg(moon_record_fn);
         let pos = moon_geocentric(jd_test_static(), &moon);
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
@@ -434,9 +434,9 @@ mod tests {
     fn dyn_sun_barycentric_is_finite() {
         let sun = make_seg(1.0e8, 2.0e7, 3.0e6); // ~1 AU-ish in km
         let pos = dyn_sun_barycentric(jd_test(), &sun);
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     // ── dyn_earth_barycentric ─────────────────────────────────────────────
@@ -446,9 +446,9 @@ mod tests {
         let emb = make_seg(1.5e8, 0.0, 0.0);
         let moon = make_seg(3.84e5, 0.0, 0.0);
         let pos = dyn_earth_barycentric(jd_test(), &emb, &moon);
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     // ── dyn_earth_heliocentric ─────────────────────────────────────────────
@@ -459,9 +459,9 @@ mod tests {
         let emb = make_seg(1.5e8, 0.0, 0.0);
         let moon = make_seg(3.84e5, 0.0, 0.0);
         let pos = dyn_earth_heliocentric(jd_test(), &sun, &emb, &moon);
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     // ── dyn_earth_barycentric_velocity ────────────────────────────────────
@@ -471,9 +471,9 @@ mod tests {
         let emb = make_seg(1.5e8, 0.0, 0.0);
         let moon = make_seg(3.84e5, 0.0, 0.0);
         let vel = dyn_earth_barycentric_velocity(jd_test(), &emb, &moon);
-        assert!(vel.x().value().is_finite());
-        assert!(vel.y().value().is_finite());
-        assert!(vel.z().value().is_finite());
+        assert!(vel.x().is_finite());
+        assert!(vel.y().is_finite());
+        assert!(vel.z().is_finite());
     }
 
     // ── dyn_moon_geocentric ───────────────────────────────────────────────
@@ -482,9 +482,9 @@ mod tests {
     fn dyn_moon_geocentric_is_finite() {
         let moon = make_seg(3.84e5, 1.0e4, 2.0e3);
         let pos = dyn_moon_geocentric(jd_test(), &moon);
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]

@@ -81,16 +81,16 @@ impl fmt::Display for ProperMotion {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProperMotionError {
     /// Conversion from `µα⋆` to `µα` is unstable near the poles (`cos(dec)≈0`).
-    RightAscensionUndefinedAtPole { dec_deg: f64 },
+    RightAscensionUndefinedAtPole { dec: Degrees },
 }
 
 impl fmt::Display for ProperMotionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ProperMotionError::RightAscensionUndefinedAtPole { dec_deg } => write!(
+            ProperMotionError::RightAscensionUndefinedAtPole { dec } => write!(
                 f,
-                "right-ascension proper motion is undefined near the poles (dec={} deg)",
-                dec_deg
+                "right-ascension proper motion is undefined near the poles (dec={})",
+                dec
             ),
         }
     }
@@ -107,13 +107,13 @@ impl RaProperMotionConvention {
         match self {
             RaProperMotionConvention::MuAlpha => Ok(pm_ra),
             RaProperMotionConvention::MuAlphaStar => {
-                let cos_dec = dec.value().to_radians().cos();
+                let cos_dec = dec.to::<Radian>().cos();
                 if cos_dec.abs() <= COS_DEC_EPSILON {
                     return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-                        dec_deg: dec.value(),
+                        dec,
                     });
                 }
-                Ok(DegreesPerYear::new(pm_ra.value() / cos_dec))
+                Ok(pm_ra / cos_dec)
             }
         }
     }
@@ -170,7 +170,7 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
 ) -> Result<position::EquatorialMeanJ2000<U>, ProperMotionError> {
     // Time difference in Julian years
     let t: Years =
-        Years::new((jd - epoch_jd).value() / 365.25);
+        Years::new((jd - epoch_jd) / qtty::Year::one().to::<Day>());
     let ra_rate = proper_motion.ra_rate_at_epoch(mean_position.dec())?;
     // Linearly apply proper motion in RA and DEC
     Ok(position::EquatorialMeanJ2000::<U>::new(
@@ -277,30 +277,30 @@ pub fn propagate_space_motion(
     const MAS_TO_RAD: f64 = std::f64::consts::PI / (180.0 * 3_600_000.0);
 
     let dec_deg = mean_position.dec();
-    let cos_dec = dec_deg.value().to_radians().cos();
+    let cos_dec = dec_deg.to::<Radian>().cos();
     if cos_dec.abs() <= COS_DEC_EPSILON {
         return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-            dec_deg: dec_deg.value(),
+            dec: dec_deg,
         });
     }
 
-    let alpha = mean_position.ra().value().to_radians();
-    let delta = dec_deg.value().to_radians();
+    let alpha = mean_position.ra().to::<Radian>();
+    let delta = dec_deg.to::<Radian>();
     let (sin_a, cos_a) = alpha.sin_cos();
     let (sin_d, cos_d) = delta.sin_cos();
 
     // Distance in AU from parallax (mas → AU). r_AU = 1 rad / π_rad
-    let pi_rad = motion.parallax.value() * MAS_TO_RAD;
-    if pi_rad <= 0.0 {
+    let pi_rad = motion.parallax.to::<Radian>();
+    if pi_rad <= qtty::Radian::zero() {
         // A non-positive parallax has no physical meaning (the "negative
         // parallax" entries in some catalogues are noisy fits; callers
         // should treat them as missing and fall back to a transverse-only
         // propagation).
         return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-            dec_deg: dec_deg.value(),
+            dec: dec_deg,
         });
     }
-    let r_au = 1.0 / pi_rad;
+    let r_au = 1.0 / pi_rad.value();
 
     // BCRS position vector at epoch (AU).
     let p0 = [r_au * cos_d * cos_a, r_au * cos_d * sin_a, r_au * sin_d];
@@ -345,7 +345,7 @@ pub fn propagate_space_motion(
         // Star passed exactly through the Solar System; refuse rather than
         // emit a divide-by-zero. This requires unphysical inputs.
         return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-            dec_deg: dec_deg.value(),
+            dec: dec_deg,
         });
     }
     let new_dec = (p[2] / r_new).asin();

@@ -7,7 +7,7 @@
 //! and periods above/below thresholds or within ranges.
 //!
 //! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the TT axis.
-//! Convert UTC timestamps with `ModifiedJulianDate::from_utc(...)` first.
+//! Convert UTC timestamps with `ModifiedJulianDate::from_chrono(…)` first.
 
 use super::provider::AltitudePeriodsProvider;
 use super::search::{SearchOpts, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};

@@ -102,8 +102,14 @@ impl NutationAngles {
 }
 
 /// Runtime identifier for the supported compile-time nutation model markers.
+///
+/// This is an internal dispatch tag used inside the sealed [`NutationTag`]
+/// implementation. It is not part of the public API surface. Callers select
+/// the nutation model at compile time by choosing a marker type
+/// ([`Iau2000A`], [`Iau2000B`], [`Iau2006A`], [`Iau2006`]); they never
+/// need to match on this enum directly.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NutationModelId {
+pub(crate) enum NutationModelId {
     /// Full IAU 2000A nutation.
     Iau2000A,
     /// Abridged IAU 2000B nutation.
@@ -118,15 +124,14 @@ pub enum NutationModelId {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Model<Tag>(PhantomData<Tag>);
 
-/// Metadata implemented by each public nutation model tag.
+/// Metadata implemented by each compile-time nutation model tag.
 ///
-/// # Sealed trait
-///
-/// This trait is sealed: only the four IAU nutation model tags shipped
-/// with `siderust` may implement it. External implementations of
-/// `NutationTag` (and by extension `NutationModel`) would silently
-/// corrupt all coordinate transforms that use the model.
-pub trait NutationTag: private::Sealed {
+/// This is an internal plumbing trait. External crates cannot implement
+/// it (sealed via [`private::Sealed`]). Callers never need to name this
+/// trait; they interact only with the concrete marker types
+/// ([`Iau2000A`], [`Iau2000B`], [`Iau2006A`], [`Iau2006`]) and the
+/// public [`NutationModel`] dispatch trait.
+pub(crate) trait NutationTag: private::Sealed {
     /// Static identifier used by the shared dispatch implementation.
     const ID: NutationModelId;
 }

@@ -105,7 +105,6 @@ impl<T: Clone> Trackable for CoordinateWithPM<T> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::qtty::*;
     use crate::time::JulianDate;
 
     #[test]

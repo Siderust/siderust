@@ -180,7 +180,7 @@ impl MieParams {
 /// power-law parameterization stored in `params`.
 #[inline]
 pub fn mie_optical_depth(params: &MieParams, wavelength: Nanometers) -> f64 {
-    params.tau0 * (wavelength.value() / params.lambda_ref.value()).powf(params.alpha)
+    params.tau0 * (wavelength / params.lambda_ref).value().powf(params.alpha)
 }
 
 #[cfg(test)]

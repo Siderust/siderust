@@ -26,7 +26,7 @@
 //! use siderust::astro::sidereal::gmst_iau2006;
 //! use siderust::qtty::*;
 //!
-//! let jd = JulianDate::from_utc(Utc::now());
+//! let jd = JulianDate::from_chrono(Utc::now());
 //! let gmst = gmst_iau2006(jd, jd); // jd_ut1 ≈ jd_tt for most applications
 //! let lon_madrid = Degrees::new(-3.7038).to::<Radian>();
 //! let lst = gmst + lon_madrid;
@@ -36,7 +36,6 @@
 use crate::astro::era::earth_rotation_angle;
 use crate::qtty::*;
 use crate::time::JulianDate;
-use std::f64::consts::TAU;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
 pub use crate::qtty::time::SIDEREAL_DAY;
@@ -78,8 +77,8 @@ pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
         - 0.000_029_956 * t.powi(4)
         - 0.000_000_036_8 * t.powi(5);
 
-    let gmst = era.value() + poly_as * AS2RAD;
-    Radians::new(gmst.rem_euclid(TAU))
+    let gmst = era + Radians::new(poly_as * AS2RAD);
+    gmst.wrap_pos()
 }
 
 /// Greenwich Apparent Sidereal Time, IAU 2006/2000A.
@@ -109,12 +108,13 @@ pub fn gast_iau2006(
 ) -> Radians {
     let gmst = gmst_iau2006(jd_ut1, jd_tt);
     let ee = crate::astro::era::equation_of_the_equinoxes(dpsi, true_obliquity);
-    Radians::new((gmst.value() + ee.value()).rem_euclid(TAU))
+    (gmst + ee).wrap_pos()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f64::consts::TAU;
 
     #[test]
     fn gmst_iau2006_at_j2000() {

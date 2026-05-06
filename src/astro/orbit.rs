@@ -196,7 +196,7 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         )
         .map_err(map_validation_error)?;
 
-        if !mean_anomaly_at_epoch.value().is_finite() {
+        if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
         if !epoch.jd_value().is_finite() {
@@ -268,13 +268,9 @@ impl OrientationTrig {
     }
 
     pub(crate) fn from_orientation(o: &ConicOrientation<EclipticMeanJ2000>) -> Self {
-        let (sin_i, cos_i) = o.inclination().to::<Radian>().value().sin_cos();
-        let (sin_omega, cos_omega) = o.argument_of_periapsis().to::<Radian>().value().sin_cos();
-        let (sin_node, cos_node) = o
-            .longitude_of_ascending_node()
-            .to::<Radian>()
-            .value()
-            .sin_cos();
+        let (sin_i, cos_i) = o.inclination().sin_cos();
+        let (sin_omega, cos_omega) = o.argument_of_periapsis().sin_cos();
+        let (sin_node, cos_node) = o.longitude_of_ascending_node().sin_cos();
         Self {
             sin_i,
             cos_i,

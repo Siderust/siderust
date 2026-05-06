@@ -325,9 +325,9 @@ mod tests {
     fn dyn_desc_position_is_finite() {
         let desc = make_desc(500.0, -300.0, 150.0);
         let pos = desc.position(jd_quarter());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
@@ -336,7 +336,7 @@ mod tests {
         let desc = make_desc(100.0, 200.0, 300.0);
         let jd_start = JulianDateG::<TDB>::new(JD_J2000); // et = 0 → idx = 0
         let pos = desc.position(jd_start);
-        assert!(pos.x().value().is_finite());
+        assert!(pos.x().is_finite());
     }
 
     // ── Velocity ──────────────────────────────────────────────────────────
@@ -345,9 +345,9 @@ mod tests {
     fn dyn_desc_velocity_is_finite() {
         let desc = make_desc(1000.0, 2000.0, 3000.0);
         let vel = desc.velocity(jd_mid());
-        assert!(vel.x().value().is_finite());
-        assert!(vel.y().value().is_finite());
-        assert!(vel.z().value().is_finite());
+        assert!(vel.x().is_finite());
+        assert!(vel.y().is_finite());
+        assert!(vel.z().is_finite());
     }
 
     #[test]
@@ -483,18 +483,18 @@ mod tests {
     fn static_desc_position_is_finite() {
         let desc = make_static_desc();
         let pos = desc.position(jd_quarter());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
     fn static_desc_velocity_is_finite() {
         let desc = make_static_desc();
         let vel = desc.velocity(jd_mid());
-        assert!(vel.x().value().is_finite());
-        assert!(vel.y().value().is_finite());
-        assert!(vel.z().value().is_finite());
+        assert!(vel.x().is_finite());
+        assert!(vel.y().is_finite());
+        assert!(vel.z().is_finite());
     }
 
     #[test]
@@ -528,7 +528,7 @@ mod tests {
         let desc = make_static_desc();
         let jd_start = JulianDateG::<TDB>::new(JD_J2000); // et=0 → idx clamped to 0
         let pos = desc.position(jd_start);
-        assert!(pos.x().value().is_finite());
+        assert!(pos.x().is_finite());
     }
 
     // ── Multi-record ─────────────────────────────────────────────────────
@@ -565,6 +565,6 @@ mod tests {
         let expected_x = 200.0; // T0(tau=0) = 1 but tau may not be 0
         let _ = tau;
         let _ = expected_x;
-        assert!(pos.x().value().is_finite());
+        assert!(pos.x().is_finite());
     }
 }
