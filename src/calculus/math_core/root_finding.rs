@@ -1,26 +1,38 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Root Finding, Brent & Bisection
+//! # Root Finding — Brent and Bisection Solvers
 //!
-//! Robust, astronomy‑agnostic root solvers for scalar functions of one
-//! variable.
+//! ## Scientific scope
 //!
-//! [`brent`] and [`bisection`] are generic over [`qtty`] unit types.
-//! [`brent_with_values`] and [`brent_tol`] operate on
-//! [`Interval`]s (`TimeInstant` with day durations).
+//! Provides robust, derivative-free root solvers for scalar functions of one
+//! variable.  The Brent (1973) hybrid method combines bisection, secant, and
+//! inverse quadratic interpolation (IQI) to achieve superlinear convergence
+//! while retaining the guaranteed convergence of bisection.  Bisection is
+//! provided as a fallback when function evaluations are very expensive and
+//! lower accuracy is acceptable.
 //!
-//! ## Provided solvers
+//! ## Technical scope
+//!
+//! All solvers are generic over [`qtty`] unit types; tolerances are typed
+//! `Quantity<Days>`.
 //!
 //! | Function | Method | Convergence | Evals / iter |
 //! |----------|--------|-------------|--------------|
 //! | [`brent`] | Brent hybrid (bisection + secant + IQI) | superlinear | 1–2 |
-//! | [`brent_with_values`] | same, pre‑computed endpoints | superlinear | 1–2 |
+//! | [`brent_with_values`] | same, pre-computed endpoints | superlinear | 1–2 |
 //! | [`brent_tol`] | same, custom tolerance | superlinear | 1–2 |
 //! | [`bisection`] | classic bisection | linear | 1 |
 //!
 //! All functions return `Some(root)` on success, `None` when the bracket is
 //! invalid (same sign at both endpoints).
+//!
+//! ## References
+//!
+//! - Brent, R. P. (1973). *Algorithms for Minimization without Derivatives*,
+//!   ch. 4. Prentice-Hall.
+//! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
+//!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
 use crate::qtty::{Days, Quantity, Unit};
 use crate::time::{Interval, TimeInstant};

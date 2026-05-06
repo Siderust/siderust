@@ -1,22 +1,37 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Extrema Finding, Golden‑Section Search & Classification
+//! # Extrema Finding — Golden-Section Search and Classification
 //!
-//! Derivative‑free optimisation for scalar functions of one variable.
-//! Finds local minima, maxima, and classifies stationary points.
+//! ## Scientific scope
+//!
+//! Provides derivative-free optimisation for scalar functions of one variable.
+//! The golden-section search (Kiefer 1953; refined in Brent 1973) finds a
+//! local extremum to a specified tolerance by iteratively contracting a
+//! bracket, maintaining the golden-ratio property to minimise function
+//! evaluations.  A scan function identifies all local extrema within a
+//! time window by evaluating on a coarse grid then refining each bracket.
+//!
+//! ## Technical scope
 //!
 //! All routines operate on `Period<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
-//!
-//! ## Provided routines
 //!
 //! | Function | Purpose |
 //! |----------|---------|
 //! | [`minimize`] | Find the *t* that minimises *f(t)* in a bracket |
 //! | [`maximize`] | Find the *t* that maximises *f(t)* in a bracket |
-//! | [`find_extrema`] | Scan a period, find all local min/max |
+//! | [`find_extrema`] | Scan a period, find all local min / max |
 //! | [`classify`] | Determine if a point is a local max, min, or neither |
+//!
+//! ## References
+//!
+//! - Brent, R. P. (1973). *Algorithms for Minimization without Derivatives*,
+//!   ch. 5. Prentice-Hall.
+//! - Kiefer, J. (1953). "Sequential minimax search for a maximum".
+//!   *Proceedings of the American Mathematical Society* 4, 502–506.
+//! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
+//!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
 use crate::qtty::*;
 use crate::time::{ModifiedJulianDate, Period};

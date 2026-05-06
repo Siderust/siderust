@@ -1,21 +1,33 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Bracketing / Seeding Policies
+//! # Bracketing and Seeding Policies
 //!
-//! Strategies for producing candidate brackets where a scalar function may
-//! cross a threshold or reach an extremum.
+//! ## Scientific scope
+//!
+//! Provides strategies for identifying candidate sub-intervals where a scalar
+//! function may cross a threshold or contain an extremum.  Bracketing is the
+//! prerequisite step before root-finding or golden-section search can be
+//! applied.  Three policies cover progressively more complex detection
+//! scenarios, from uniform probing to extremum-guided refinement.
+//!
+//! ## Technical scope
 //!
 //! All routines operate on `Period<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
-//!
-//! ## Provided policies
 //!
 //! | Policy | Description |
 //! |--------|-------------|
 //! | [`fixed_step_brackets`] | Uniform step across the window |
 //! | [`adaptive_step_brackets`] | Narrows step near suspected events |
 //! | [`extrema_based_brackets`] | Find extrema first, bracket crossings around each |
+//!
+//! ## References
+//!
+//! - Brent, R. P. (1973). *Algorithms for Minimization without Derivatives*.
+//!   Prentice-Hall.
+//! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
+//!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
 use crate::qtty::*;
 use crate::time::{ModifiedJulianDate, Period};

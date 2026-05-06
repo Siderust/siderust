@@ -1,39 +1,47 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Generic body-chain resolution for DE4xx ephemerides.
+//! # DE4xx Body-Chain Resolution
 //!
-//! ## Responsibility
+//! ## Scientific scope
 //!
-//! This module provides **generic** implementations of the body-chain arithmetic
-//! required by the [`Ephemeris`](crate::calculus::ephemeris::Ephemeris) trait,
-//! parameterized over the specific data source (DE440, DE441, etc.).
-//!
-//! It does **not** own:
-//! - Physical constants, those come from `qtty` (single source of truth).
-//! - Time-scale conversion, delegated to [`JulianDate::tt_to_tdb`].
-//! - Frame-model definitions, delegated to the coordinate transform providers.
-//!
-//! ## Type safety
-//!
-//! All intermediate vectors carry their reference frame ([`crate::coordinates::frames::ICRF`]) and unit
-//! ([`Kilometer`] or [`Per<Kilometer, Day>`]) in the type system, so
-//! body-chain arithmetic (subtraction, scaling) is checked at compile time.
-//! Frame conversion (ICRF → EclipticMeanJ2000) and unit conversion (km → AU,
-//! km/day → AU/day) are composed explicitly via transform/unit adapters.
-//!
-//! ## DE4xx segment semantics
-//!
-//! | Segment | NAIF IDs       | Meaning                                |
-//! |---------|----------------|----------------------------------------|
-//! | Sun     | 10 → 0 (SSB)  | Sun barycentric (ICRF, km)             |
-//! | EMB     | 3  → 0 (SSB)  | Earth-Moon barycenter bary. (ICRF, km) |
-//! | Moon    | 301 → 3 (EMB) | Moon offset from EMB (ICRF, km)        |
+//! The JPL DE ephemerides natively integrate the Sun, the Earth–Moon
+//! Barycenter (EMB), and the Moon relative to the EMB.  This module
+//! reconstructs the individual states of the Sun, Earth, and Moon in
+//! every reference-center and unit combination required by the public
+//! [`Ephemeris`](crate::calculus::ephemeris::Ephemeris) trait.
 //!
 //! Derived quantities:
-//! - **Earth bary.**   = EMB − Moon_offset × μ_Moon / (μ_Earth + μ_Moon)
-//! - **Moon geocentric**= Moon_offset × μ_Earth / (μ_Earth + μ_Moon)
-//! - **Earth helio.**  = Earth_bary − Sun_bary
+//!
+//! - **Earth barycentric** = EMB − Moon_offset × μ_Moon / (μ_Earth + μ_Moon)
+//! - **Moon geocentric**   = Moon_offset × μ_Earth / (μ_Earth + μ_Moon)
+//! - **Earth heliocentric**= Earth_bary − Sun_bary
+//!
+//! where μ_Moon / (μ_Earth + μ_Moon) ≈ 1/82.300560.
+//!
+//! ## Technical scope
+//!
+//! - All intermediate vectors carry frame ([`ICRF`]) and unit ([`Kilometer`]
+//!   or [`Per<Kilometer, Day>`]) in the type system; body-chain arithmetic
+//!   is compile-time checked.
+//! - Frame conversion (ICRF → EclipticMeanJ2000) and unit conversion
+//!   (km → AU, km/day → AU/day) are applied explicitly after chain arithmetic.
+//! - Time input: `JulianDate` (TT); TT → TDB conversion is performed
+//!   internally via [`JulianDate::tt_to_tdb`].
+//!
+//! | Segment | DE NAIF IDs   | Meaning                                |
+//! |---------|---------------|----------------------------------------|
+//! | Sun     | 10 → 0 (SSB)  | Sun barycentric (ICRF, km)             |
+//! | EMB     |  3 → 0 (SSB)  | Earth-Moon barycenter bary. (ICRF, km) |
+//! | Moon    | 301 → 3 (EMB) | Moon offset from EMB (ICRF, km)        |
+//!
+//! ## References
+//!
+//! - Standish, E. M. (1998). "JPL Planetary and Lunar Ephemerides, DE405/LE405".
+//!   *JPL Interoffice Memorandum* 312.F-98-048.
+//! - Park, R. S., et al. (2021). "The JPL Planetary and Lunar Ephemerides
+//!   DE440 and DE441". *The Astronomical Journal* 161, 105.
+//!   <https://doi.org/10.3847/1538-3881/abd414>
 
 use super::eval::{DynSegmentDescriptor, SegmentDescriptor};
 

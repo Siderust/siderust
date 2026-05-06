@@ -1,15 +1,45 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Shared JPL DE4xx implementation.
+//! # JPL Planetary and Lunar Ephemerides (DE4xx)
 //!
-//! This module provides the common infrastructure shared by all JPL DE4xx
-//! ephemeris backends (DE440/DE441):
+//! ## Scientific scope
 //!
-//! - [`eval`], Chebyshev polynomial evaluation and [`eval::SegmentDescriptor`].
-//! - [`bodies`], Generic body-chain resolution (Sun, Earth, Moon positions/velocities).
-//! - [`DeData`], Trait abstracting over the per-version coefficient data.
-//! - [`DeEphemeris`], Generic zero-sized ephemeris backend for any `DeData` impl.
+//! The JPL DE (*Development Ephemeris*) series are numerical integrations of
+//! the equations of motion for the Solar System bodies produced by the Jet
+//! Propulsion Laboratory.  Each release (DE440, DE441, …) provides highly
+//! accurate Chebyshev polynomial representations of barycentric and
+//! heliocentric positions and velocities.
+//!
+//! The two variants supported here differ in time span and perturbation model:
+//!
+//! - **DE440** — modern fit (1550–2650), includes lunar laser ranging (LLR) data
+//!   and relativistic corrections.  Recommended for near-term applications.
+//! - **DE441** — extended fit (−13 200 to +17 191), sacrificing minor accuracy
+//!   improvements for broader temporal coverage.
+//!
+//! ## Technical scope
+//!
+//! - [`eval`] — Chebyshev polynomial evaluation and [`eval::SegmentDescriptor`],
+//!   which maps a JD interval to a coefficient block and evaluates position /
+//!   velocity for one body.
+//! - [`bodies`] — generic body-chain resolution that derives Earth, Sun, and Moon
+//!   from the natively integrated barycentric states (Earth–Moon Barycenter +
+//!   Moon offset).
+//! - [`DeData`] — trait abstracting over the per-version coefficient tables.
+//! - [`DeEphemeris`] — generic zero-sized ephemeris backend generic over any
+//!   `DeData` implementation; implements the shared [`Ephemeris`] trait.
+//!
+//! ## References
+//!
+//! - Standish, E. M. (1998). "JPL Planetary and Lunar Ephemerides, DE405/LE405".
+//!   *JPL Interoffice Memorandum* 312.F-98-048.
+//! - Folkner, W. M., Williams, J. G., Boggs, D. H., Park, R. S., & Kuchynka, P.
+//!   (2014). "The Planetary and Lunar Ephemerides DE430 and DE431".
+//!   *IPN Progress Report* 42-196, 1–81.
+//! - Park, R. S., et al. (2021). "The JPL Planetary and Lunar Ephemerides DE440
+//!   and DE441". *The Astronomical Journal* 161, 105.
+//!   <https://doi.org/10.3847/1538-3881/abd414>
 
 pub mod bodies;
 pub mod eval;

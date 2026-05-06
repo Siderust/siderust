@@ -1,13 +1,40 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Shared segment lookup and coordinate evaluation for DE4xx datasets.
+//! # DE4xx Chebyshev Segment Evaluation
 //!
-//! This module provides two descriptor types:
-//! - [`SegmentDescriptor`]: compile-time data via function pointer to `&'static [f64]`.
-//! - [`DynSegmentDescriptor`]: runtime data backed by a heap-allocated `Vec<f64>`.
+//! ## Scientific scope
 //!
-//! Both share the same Chebyshev evaluation logic.
+//! JPL DE ephemerides store body positions and velocities as piecewise
+//! Chebyshev polynomial expansions.  Each segment covers a fixed time
+//! sub-interval (typically 32 days for inner planets) and encodes `N`
+//! Chebyshev coefficients per Cartesian axis.  The position polynomial is
+//! evaluated by Clenshaw recurrence, and the velocity is the analytical
+//! derivative of that polynomial.
+//!
+//! Positions are in **kilometres** (ICRF), velocities in **km · day⁻¹**.
+//!
+//! ## Technical scope
+//!
+//! - [`SegmentDescriptor`] — compile-time segment backed by a static
+//!   `fn() -> &'static [f64]` data pointer.
+//! - [`DynSegmentDescriptor`] — run-time segment backed by a heap
+//!   `Vec<f64>`, used when reading ephemeris binary files at runtime.
+//!
+//! Both types expose:
+//! - `position(jd)  -> Displacement<ICRF, Kilometer>`
+//! - `velocity(jd)  -> Velocity<ICRF, KmPerDay>`
+//! - `position_velocity(jd)  -> (…, …)` — evaluates both in a single pass.
+//!
+//! The time argument is `JulianDateG<TDB>` (Julian Date, TDB time scale).
+//!
+//! ## References
+//!
+//! - Standish, E. M. (1998). "JPL Planetary and Lunar Ephemerides, DE405/LE405".
+//!   *JPL Interoffice Memorandum* 312.F-98-048.
+//! - Park, R. S., et al. (2021). "The JPL Planetary and Lunar Ephemerides
+//!   DE440 and DE441". *The Astronomical Journal* 161, 105.
+//!   <https://doi.org/10.3847/1538-3881/abd414>
 
 use crate::coordinates::frames::ICRF;
 use crate::qtty::*;

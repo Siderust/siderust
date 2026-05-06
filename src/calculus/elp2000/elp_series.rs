@@ -1,6 +1,56 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! # ELP2000-82B Series Evaluation
+//!
+//! ## Scientific scope
+//!
+//! This module implements the numerical evaluation of the 36 ELP2000-82B
+//! Poisson sub-series that make up the Moon's geocentric ecliptic longitude (`a`,
+//! arc-seconds), latitude (`b`, arc-seconds), and distance factor (`c`,
+//! dimensionless ratio relative to the mean semi-major axis).  The time argument
+//! `T` is Julian millennia from J2000.0 (TT):
+//!
+//! ```text
+//!     T = (JD − 2451545.0) / 365250
+//! ```
+//!
+//! The series are grouped as:
+//!
+//! - **ELP 1–12** — Main Problem (longitude, latitude, distance in three groups
+//!   of four sub-series each).
+//! - **ELP 13–24** — Earth Perturbations (same structure).
+//! - **ELP 25–36** — Planetary Perturbations (same structure).
+//!
+//! After summation, the Laskar (1986) rotation matrix converts from the mean
+//! ecliptic of date to the J2000.0 fixed frame.  The public entry point returns
+//! a strongly-typed Cartesian position.
+//!
+//! Validity: ±10 centuries from J2000.0; accuracy better than 1″ for the Main
+//! Problem series.
+//!
+//! ## Technical scope
+//!
+//! - `Moon::get_geo_position<U>` — the sole public entry point: takes a
+//!   `JulianDate` (TT), evaluates the full ELP2000-82B theory, and returns a
+//!   `Position<Geocentric, EclipticMeanJ2000, U>` for any `LengthUnit`.
+//!
+//! All internal kernel functions (`sum_series_elpN_ctx`) accept a pre-computed
+//! `ElpPrecomputed` context (raw `f64` fields in Julian-millennia, radians, and
+//! arc-seconds) and return `f64` arc-second contributions.  The `series_wrappers`
+//! sub-module re-exposes them with a plain `t: &[f64; 5]` signature for testing.
+//!
+//! ## References
+//!
+//! - Chapront-Touzé, M., & Chapront, J. (1983). "The lunar ephemeris ELP 2000".
+//!   *Astronomy and Astrophysics* 124, 50–62.
+//! - Chapront-Touzé, M., & Chapront, J. (1988). "ELP 2000-82B: A semi-analytical
+//!   lunar ephemeris adequate for historical times".
+//!   *Astronomy and Astrophysics* 190, 342–352.
+//! - Laskar, J. (1986). "Secular terms of classical planetary theories using the
+//!   results of general theory". *Astronomy and Astrophysics* 157, 59–70.
+//! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed. Willmann-Bell.
+
 #![allow(clippy::needless_range_loop)]
 
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};

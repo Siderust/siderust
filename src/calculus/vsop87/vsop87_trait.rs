@@ -1,6 +1,35 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! # VSOP87 Trait and Planet Dispatch
+//!
+//! ## Scientific scope
+//!
+//! This module exposes the `VSOP87` object-safe trait, which provides both the
+//! heliocentric (VSOP87A) and barycentric (VSOP87E) ecliptic rectangular
+//! coordinates for every supported planet.  The coordinates are in the mean
+//! ecliptic / equinox of J2000.0 and expressed in astronomical units.
+//!
+//! ## Technical scope
+//!
+//! - [`VSOP87`] — trait with two methods:
+//!   - `vsop87a(jd: JulianDate) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>`
+//!   - `vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>`
+//!
+//! Blanket `impl_vsop87_for_planet!` macro instantiates the trait for
+//! `Mercury`, `Venus`, `Earth`, `Mars`, `Jupiter`, `Saturn`, `Uranus`,
+//! and `Neptune`, delegating to each planet's inherent `vsop87a` / `vsop87e`
+//! methods generated in `vsop87a.rs` and `vsop87e.rs`.
+//!
+//! The `jd` argument is a `JulianDate` in Terrestrial Time (TT); the
+//! implementation converts to TDB via `JulianDate::tt_to_tdb` before computing
+//! the series argument T (Julian millennia).
+//!
+//! ## References
+//!
+//! - Bretagnon, P., & Francou, G. (1988). "Planetary theories in rectangular
+//!   and spherical variables: VSOP87 solutions".
+//!   *Astronomy and Astrophysics* 202, 309–315.
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
     cartesian::Position,

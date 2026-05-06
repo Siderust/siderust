@@ -1,18 +1,32 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Interval Assembly, "In‑Range" Period Detection
+//! # Interval Assembly — "In-Range" Period Detection
 //!
-//! Assembles time periods where a scalar function satisfies
-//! `h_min ≤ f(t) ≤ h_max`, handling:
+//! ## Scientific scope
 //!
-//! * Multiple crossings per window (fast movers, satellites)
-//! * Tangencies (touching a threshold without crossing)
-//! * Always‑above / always‑below cases
-//! * Single‑threshold (above only) as a special case
+//! Assembles the set of continuous time intervals during which a scalar
+//! function f(t) satisfies `h_min ≤ f(t) ≤ h_max`.  Handles edge cases
+//! including multiple crossings per window (fast movers, satellites),
+//! tangencies (touching a threshold without crossing), always-above /
+//! always-below cases, and the single-threshold (above-only) variant.
+//!
+//! ## Technical scope
 //!
 //! All routines operate on `Period<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
+//!
+//! The main entry point is [`above_threshold`] and [`between_thresholds`];
+//! internally they delegate to [`root_finding::brent`] for root polishing
+//! after bracket detection, and use a tiny probe offset `PROBE_DT` to
+//! classify crossing direction.
+//!
+//! ## References
+//!
+//! - Brent, R. P. (1973). *Algorithms for Minimization without Derivatives*.
+//!   Prentice-Hall.
+//! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
+//!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
 use crate::qtty::{Day, Quantity, Unit};
 use crate::time::{Interval, ModifiedJulianDate, Period};
