@@ -168,9 +168,9 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
     jd: JulianDate,
     epoch_jd: JulianDate,
 ) -> Result<position::EquatorialMeanJ2000<U>, ProperMotionError> {
-    // Time difference in Julian years
-    let t: Years =
-        Years::new((jd - epoch_jd) / qtty::Year::one().to::<Day>());
+    // Time difference in Julian years (365.25 d), matching the convention used
+    // in proper-motion catalogs (Hipparcos, Gaia) and propagate_space_motion.
+    let t: Years = Years::new((jd - epoch_jd).value() / 365.25);
     let ra_rate = proper_motion.ra_rate_at_epoch(mean_position.dec())?;
     // Linearly apply proper motion in RA and DEC
     Ok(position::EquatorialMeanJ2000::<U>::new(
