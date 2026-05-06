@@ -176,7 +176,7 @@ pub fn calculate_mean_motion_position(
     let trig = OrientationTrig::from_orientation(orientation);
     let dt_days = (julian_date - orbit.epoch).value();
     let mean_anomaly_rad =
-        (orbit.mean_motion_deg_per_day.to_radians() * dt_days).rem_euclid(std::f64::consts::TAU);
+        (orbit.mean_motion.value().to_radians() * dt_days).rem_euclid(std::f64::consts::TAU);
     let mean_anomaly = Radians::new(mean_anomaly_rad);
     let eccentric_anomaly = solve_keplers_equation(mean_anomaly, eccentricity);
     let (true_anomaly, radius) =
@@ -255,6 +255,7 @@ impl ConicOrbit {
 mod tests {
     use super::*;
     use crate::macros::assert_cartesian_eq;
+    use crate::qtty::angular_rate::AngularRate;
 
     #[test]
     fn mean_motion_position_is_at_periapsis_at_epoch() {
@@ -264,7 +265,7 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            0.9856076686,
+            AngularRate::<Degree, Day>::new(0.9856076686),
             JulianDate::J2000,
         )
         .unwrap();
@@ -280,7 +281,7 @@ mod tests {
             Degrees::new(10.0),
             Degrees::new(20.0),
             Degrees::new(30.0),
-            0.9856076686,
+            AngularRate::<Degree, Day>::new(0.9856076686),
             JulianDate::J2000,
         )
         .unwrap();
@@ -334,7 +335,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                1.0,
+                AngularRate::<Degree, Day>::new(1.0),
                 JulianDate::J2000,
             ),
             Err(ConicError::InvalidSemiMajorAxis)
@@ -350,7 +351,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                1.0,
+                AngularRate::<Degree, Day>::new(1.0),
                 JulianDate::J2000,
             ),
             Err(ConicError::HyperbolicNotSupported)

@@ -1,12 +1,33 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # IAU 2000A / 2006A Nutation
+//! # IAU 2000A / 2006A Nutation (numerical engine)
 //!
-//! Full-precision nutation model with 678 luni-solar and 687 planetary
-//! terms (MHB2000).  The public entry point [`nutation_iau2006a`] applies
-//! the IAU 2006 precession adjustments (Wallace & Capitaine 2006, Eqs. 5)
-//! on top of the raw IAU 2000A angles.
+//! Numerical evaluation of the full MHB2000 nutation series and of the
+//! IAU 2006A-compatible variant; this is the shared engine that the
+//! type-level model markers dispatch to.
+//!
+//! ## Scientific scope
+//!
+//! The MHB2000 series describes nutation in longitude (`Δψ`) and obliquity
+//! (`Δε`) as a sum of **678 luni-solar** trigonometric terms in the
+//! Delaunay arguments and **687 planetary** terms in the planetary mean
+//! longitudes plus the general accumulated precession. The IAU 2006A
+//! variant adds the Wallace & Capitaine (2006) polynomial correction so
+//! the result is internally consistent with the IAU 2006 (P03) precession
+//! model. Together these provide sub-microarcsecond formal accuracy for
+//! the orientation of the true equator of date.
+//!
+//! ## Technical scope
+//!
+//! The fundamental arguments (Mercury through Uranus mean longitudes,
+//! general precession `pa`, plus the luni-solar Delaunay arguments) are
+//! evaluated as polynomials in `t = (JD_TT − J2000) / 36525`. The series
+//! coefficients live in `nut00a_tables` (units of 0.1 µas / 0.1 µas·cy)
+//! and are summed against the trigonometric arguments to yield `(Δψ, Δε)`.
+//! The public entry point [`nutation_iau2006a`] additionally applies the
+//! IAU 2006 precession-compatibility corrections from Wallace & Capitaine
+//! (2006), Eqs. 5.
 //!
 //! ## References
 //!

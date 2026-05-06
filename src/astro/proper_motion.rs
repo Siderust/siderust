@@ -3,23 +3,38 @@
 
 //! # Proper Motion Correction
 //!
-//! This module applies **proper motion** to a star’s mean position
-//! in order to obtain its updated position at a new epoch (Julian Day).
+//! Applies stellar proper motion to a star's mean position to obtain its
+//! updated coordinates at a target epoch.
 //!
-//! ## What is proper motion?
-//! Proper motion is the apparent angular displacement of a star across
-//! the sky due to its real motion through space, relative to the Solar System.
-//! It is typically measured in milliarcseconds or degrees per year.
+//! ## Scientific scope
 //!
-//! Since high-precision star catalogs (like Gaia or Hipparcos) provide
-//! positions at a reference epoch (usually J2000.0), we need to correct
-//! for proper motion when computing positions at a later date.
+//! Proper motion is the apparent angular displacement of a star across the
+//! sky due to its real motion through space relative to the Solar System
+//! barycentre, typically measured in milliarcseconds per year. Modern
+//! catalogues (Gaia, Hipparcos, Tycho-2) publish positions at a reference
+//! epoch (commonly J2000.0 or J2015.5/J2016.0); to predict an observable
+//! position at any other date the catalogue position must be propagated
+//! by its proper motion. For high-velocity stars this can amount to
+//! arcseconds per decade, which dominates over precession or nutation
+//! residuals.
 //!
-//! ## Catalog mapping
-//! Gaia and Hipparcos publish right-ascension proper motion as `µα⋆ = µα cos(δ)`.
-//! Use [`ProperMotion::from_mu_alpha_star`] for those catalogs. Use
-//! [`ProperMotion::from_mu_alpha`] only if your source already provides the true
-//! RA angular rate `µα`.
+//! ## Technical scope
+//!
+//! [`ProperMotion`] stores the right-ascension and declination rates as
+//! typed `DegreesPerYear` quantities together with a
+//! [`RaProperMotionConvention`] flag distinguishing the true RA rate `µα`
+//! from the catalogue rate `µα⋆ = µα cos(δ)`. Helpers
+//! [`ProperMotion::from_mu_alpha`] and [`ProperMotion::from_mu_alpha_star`]
+//! enforce the convention at construction time, and propagation guards
+//! against the `cos(δ) → 0` singularity near the celestial poles via a
+//! small epsilon.
+//!
+//! ## References
+//!
+//! * Hipparcos and Tycho Catalogues, ESA SP-1200 (1997)
+//! * Gaia Data Release documentation (Gaia Collaboration, 2016–)
+//! * Seidelmann, *Explanatory Supplement to the Astronomical Almanac*,
+//!   §3.2 (proper motion)
 
 use crate::coordinates::spherical::position;
 use crate::qtty::*;

@@ -3,53 +3,41 @@
 
 //! # Gravitational Light Deflection
 //!
-//! When light from a distant source passes near a massive body (primarily the
-//! Sun), its path is curved by the gravitational field. This shifts the
-//! **apparent** direction of the source away from the deflecting body.
+//! Applies the general-relativistic deflection of light by Solar-System
+//! bodies (primarily the Sun, with optional planetary terms) to apparent
+//! source directions.
 //!
-//! ## Solar deflection
+//! ## Scientific scope
 //!
-//! The maximum solar deflection at the limb is **1.75″** (the classic Einstein
-//! value). For a source at angular distance **θ** from the Sun:
+//! When light from a distant source passes near a massive body its path is
+//! curved by the gravitational field, shifting the **apparent** direction
+//! away from the deflector. The maximum solar deflection at the limb is the
+//! classic Einstein value of **1.75″**; at 1 AU and 90° elongation the
+//! deflection is still ≈ 4.07 mas, well above modern astrometric noise
+//! floors. Jupiter and Saturn contribute up to ≈ 17 mas and ≈ 6 mas
+//! respectively at small impact parameters and matter for sub-mas astrometry.
+//!
+//! ## Technical scope
+//!
+//! The deflection is computed using the IERS Conventions (2010) §7.1.1
+//! vector formulation,
 //!
 //! ```text
-//! Δθ ≈ (2 G M☉ / c² R) × cot(θ/2)
+//! δs = (2 G M / c² |q|) × [ (s · q̂) q̂ − (q̂ · s) s ] / (1 + q̂ · s),
 //! ```
 //!
-//! or equivalently in the vector formulation (IERS Conventions 2010, §7.1.1):
-//!
-//! ```text
-//! δs = (2 G M / c² |q|) × [ (s · q̂) q̂ − (q̂ · s) s ] / (1 + q̂ · s)
-//! ```
-//!
-//! where:
-//! - **s**: unit direction vector toward the source (BCRS)
-//! - **q**: vector from the deflecting body to the observer (BCRS)
-//! - **q̂** = q / |q|
-//! - **R** = |q| (observer-body distance)
-//!
-//! At **R = 1 AU**, this gives:
-//! - **θ = 90°**  → Δθ ≈ **0.00407″** (4.07 mas)
-//! - **θ ≈ 959.63″** (solar limb) → Δθ ≈ **1.75″**
-//!
-//! ## Effect magnitudes
-//!
-//! | Body   | Max deflection | Function                     |
-//! |--------|---------------|------------------------------|
-//! | Sun    | 1.75″ (limb)  | [`solar_deflection`]         |
-//! | Jupiter| 0.017″        | [`jupiter_deflection`]       |
-//! | Saturn | 0.006″        | [`saturn_deflection`]        |
-//! | Moon   | 0.026 mas     | (use [`body_deflection`])    |
-//!
-//! For sub-mas astrometry, apply all three planetary deflectors in
-//! sequence via [`full_planetary_deflection`]. For ~1″ astrometry, the
-//! Sun-only [`solar_deflection`] is sufficient.
+//! where `s` is the unit direction toward the source and `q` the
+//! observer-to-deflector vector in the BCRS. Schwarzschild radii for the
+//! Sun, Jupiter and Saturn are precomputed from the IAU 2015 nominal mass
+//! parameters. Convenience functions cover Sun-only deflection
+//! ([`solar_deflection`]), single-body deflection ([`body_deflection`]) and
+//! the full planetary chain ([`full_planetary_deflection`]).
 //!
 //! ## References
 //!
 //! * IAU 2000 Resolution B1.6
 //! * IERS Conventions (2010), §7.1.1
-//! * SOFA routine `iauLdsun`, `iauLd`
+//! * SOFA routines `iauLdsun`, `iauLd`
 //! * Klioner, S. A. (2003), AJ 125, 1580
 
 use crate::coordinates::cartesian::direction;

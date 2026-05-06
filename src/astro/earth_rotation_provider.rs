@@ -3,27 +3,38 @@
 
 //! # ITRS → Equatorial rotation provider
 //!
-//! This module centralises the composite rotation matrix that transforms
-//! Earth-fixed (ITRS/ECEF) Cartesian vectors into the mean equatorial frame
-//! of J2000.0.
+//! Centralises the composite rotation matrix that transforms Earth-fixed
+//! (ITRS/ECEF) Cartesian vectors into the mean equatorial frame of J2000.0,
+//! using EOP data and the configured nutation model.
 //!
-//! ## Rotation chain
+//! ## Scientific scope
+//!
+//! Earth's instantaneous orientation in inertial space is the product of
+//! polar motion, diurnal rotation, precession and nutation, all of which
+//! must be assembled to project a terrestrial vector onto a celestial frame.
+//! This module owns the canonical assembly of those matrices for siderust,
+//! so that every topocentric, horizontal or stellar transform path uses the
+//! same IAU-compliant chain and therefore yields self-consistent positions.
+//!
+//! ## Technical scope
+//!
+//! The chain implemented is
 //!
 //! ```text
 //! ITRS  ──W⁻¹──▶  TIRS  ──ERA──▶  CIRS  ──Q──▶  GCRS/ICRS  ──P──▶  EquatorialMeanJ2000
 //! ```
 //!
-//! Where:
-//! - **W** = polar-motion matrix (xₚ, yₚ, s′) , from EOP
-//! - **ERA** = Earth Rotation Angle (from UT1) , from EOP `dUT1`
-//! - **Q** = CIO/CIP matrix (X, Y, s) , from nutation IAU 2000B ± EOP `dX,dY`
-//! - **P** = precession from ICRS to EquatorialMeanJ2000 , frame rotation provider
+//! with **W** the polar-motion matrix `(xₚ, yₚ, s′)` from EOP, **ERA** the
+//! Earth Rotation Angle from UT1 (derived from EOP `dUT1`), **Q** the
+//! CIO/CIP matrix `(X, Y, s)` from the active nutation model with optional
+//! IERS celestial-pole offsets `dX, dY`, and **P** the ICRS → mean J2000.0
+//! frame rotation. Inputs are **TT Julian Dates**; the conversion to UT1 is
+//! performed internally using the EOP `dUT1`.
 //!
-//! ## Time-scale contract
+//! ## References
 //!
-//! The `jd` argument passed to `itrs_to_equatorial_mean_j2000_rotation`
-//! must be a **TT Julian Date** (Terrestrial Time).  Internally the function
-//! converts to UT1 using EOP `dUT1`.  Do not pass UTC or UT1 directly.
+//! * IERS Conventions (2010), Chapter 5
+//! * SOFA/ERFA Earth-rotation cookbook (`iauC2t06a` and friends)
 
 use crate::astro::cio;
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;

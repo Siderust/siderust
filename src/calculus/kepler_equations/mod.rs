@@ -270,7 +270,7 @@ pub fn calculate_prepared_position(
     julian_date: JulianDate,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
     let dt = (julian_date - prepared.elements().epoch).value();
-    let m_rad = prepared.m0_rad() + prepared.mean_motion_rad_per_day() * dt;
+    let m_rad = prepared.m0_rad() + prepared.mean_motion().value() * dt;
     let m_rad = Radians::new(m_rad % std::f64::consts::TAU);
 
     let e = prepared.elements().shape().eccentricity();

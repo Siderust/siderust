@@ -3,12 +3,35 @@
 
 //! # Earth Rotation Helpers
 //!
-//! Utilities for computing UT1 Julian Dates from TT, and properly
-//! separated GMST with distinct UT1 and TT arguments.
+//! Utilities for computing UT1 Julian Dates from TT and for evaluating GMST
+//! with properly separated UT1 and TT arguments.
 //!
-//! These helpers centralise the TT→UT1 conversion logic so that all
-//! call sites (topocentric, horizontal, stellar) use a consistent,
-//! IAU-compliant approach.
+//! ## Scientific scope
+//!
+//! Many Earth-rotation quantities (ERA, GMST, GAST, sidereal time) are
+//! defined on the **UT1** time scale, while the precession, nutation and
+//! polynomial parts are defined on the dynamical **TT** scale. Mixing the
+//! two introduces tens-of-seconds-level errors. The conversion `TT → UT1`
+//! requires the time-dependent quantity `ΔT = TT − UT1`, which combines the
+//! tabulated leap-second history (ΔAT = TAI − UTC) with the IERS-published
+//! `dUT1 = UT1 − UTC` series.
+//!
+//! ## Technical scope
+//!
+//! The helpers route conversions through `tempoch`'s context-aware
+//! `TT → UT1` chain, which is backed by either a piecewise ΔT model
+//! (Stephenson & Houlden, Meeus, IERS-observed 1992–present) or the bundled
+//! IERS `finals2000A.all` series. When an [`EopValues`] is supplied, the
+//! caller's measured `dUT1` is honoured by adding the residual relative to
+//! the bundled series. GMST is computed by delegating to
+//! [`gmst_iau2006`](crate::astro::sidereal::gmst_iau2006) with distinct
+//! UT1 and TT arguments, ensuring SOFA-compatible results.
+//!
+//! ## References
+//!
+//! * IERS Conventions (2010), Chapter 5
+//! * SOFA routine `iauGmst06`
+//! * Stephenson & Houlden (1986); Meeus, *Astronomical Algorithms*, Ch. 10
 
 use crate::astro::eop::EopValues;
 use crate::astro::sidereal::gmst_iau2006;

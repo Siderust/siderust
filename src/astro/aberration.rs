@@ -3,28 +3,34 @@
 
 //! # Aberration (observer-velocity)
 //!
-//! This module applies the special-relativistic aberration of light due to an
-//! observer's velocity.
+//! Applies the special-relativistic aberration of light to celestial
+//! directions, given an observer's velocity in a barycentric frame.
 //!
-//! ```text
-//! max effect   ≃ 20.5″
-//! annual (Earth orbital) ≃ 20.5″
-//! diurnal (Earth rotation) ≃ 0.3″
-//! ```
+//! ## Scientific scope
 //!
-//! ## Velocity model
-//! * The convenience functions in this module use **VSOP87E barycentric Earth
-//!   velocity** (SSB-referenced), rotated from the dynamical *ecliptic J2000*
-//!   frame into [`frames::EquatorialMeanJ2000`].
+//! Stellar aberration is the apparent shift of a source's direction caused by
+//! the finite speed of light combined with the observer's motion relative to
+//! the rest frame of the source. The annual (Earth orbital) component reaches
+//! ≈ 20.5″, while the diurnal (Earth rotation) component is ≈ 0.3″. Correctly
+//! modelling aberration is essential for sub-arcsecond astrometry and for any
+//! observer-relative direction that is to be compared with catalogue (BCRS)
+//! positions.
+//!
+//! ## Technical scope
+//!
+//! The convenience functions in this module use the **VSOP87E barycentric
+//! Earth velocity** (SSB-referenced), rotated from the dynamical *ecliptic
+//! J2000* frame into [`frames::EquatorialMeanJ2000`]. The aberration is
+//! applied via the full Lorentz transform of unit direction vectors rather
+//! than the classical first-order approximation, ensuring < 1 μas residuals.
+//! The speed of light in AU/day is computed from exact SI definitions of
+//! `c`, the day, and the AU.
 //!
 //! ## References
-//! * IERS Conventions 2020, §7.2 (aberration)
-//! * SOFA/ERFA: stellar aberration is a full SR (Lorentz) transform (see e.g.
-//!   `iauAb` / `eraAb` behavior)
 //!
-//! ## Implementation notes
-//! * Uses the full special-relativistic aberration formula (Lorentz transform).
-//! * Uses exact SI definitions for `c`, day, and AU to compute `c` in AU/day.
+//! * IERS Conventions 2020, §7.2 (aberration)
+//! * SOFA/ERFA: stellar aberration as a full SR (Lorentz) transform
+//!   (cf. `iauAb` / `eraAb`)
 
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::transform::context::DefaultEphemeris;

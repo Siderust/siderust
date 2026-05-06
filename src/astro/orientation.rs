@@ -1,7 +1,37 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Orientation model primitives for rotating-body reference frames.
+//! # Body Orientation Primitives
+//!
+//! Type-level primitives for describing the orientation of rotating
+//! Solar-System bodies via the standard IAU pole-and-prime-meridian model.
+//!
+//! ## Scientific scope
+//!
+//! The IAU Working Group on Cartographic Coordinates and Rotational Elements
+//! recommends representing each body's orientation by the right ascension
+//! and declination of its north pole at J2000.0 together with their secular
+//! rates, and by the rotation angle `W` of the prime meridian as a function
+//! of time. These six numbers define the body-fixed frame relative to the
+//! ICRS, which is what is needed to convert between body-fixed and inertial
+//! coordinates for planets, satellites and minor bodies.
+//!
+//! ## Technical scope
+//!
+//! [`IauRotationParams`] stores the six parameters in [`Degrees`] using the
+//! IAU convention that pole rates are per Julian century while `W` evolves
+//! per day, both measured from the J2000.0 TDB epoch. Helper methods
+//! [`IauRotationParams::alpha0`], [`IauRotationParams::delta0`] and
+//! [`IauRotationParams::w`] evaluate the linear models at a given Julian
+//! Date. The [`HasIauRotation`] trait lets concrete body types expose their
+//! parameters as an associated `const`, keeping the abstraction zero-cost
+//! after monomorphisation.
+//!
+//! ## References
+//!
+//! * Archinal, B. A. et al., *Report of the IAU WG on Cartographic
+//!   Coordinates and Rotational Elements*, Celest. Mech. Dyn. Astron.
+//! * IAU 2009 / 2015 / 2018 reports on rotational elements
 
 use crate::qtty::Degrees;
 use crate::time::JulianDate;

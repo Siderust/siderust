@@ -3,10 +3,15 @@
 
 //! # Earth Orientation Parameters (EOP)
 //!
-//! Earth Orientation Parameters connect the celestial (GCRS) and terrestrial
-//! (ITRS) reference frames by accounting for irregularities in Earth's rotation.
+//! Loading, representation and provider abstraction for Earth Orientation
+//! Parameters used throughout the Earth-rotation pipeline.
 //!
-//! The key EOP quantities are:
+//! ## Scientific scope
+//!
+//! Earth Orientation Parameters connect the celestial (GCRS) and terrestrial
+//! (ITRS) reference frames by accounting for irregularities in Earth's
+//! rotation that cannot be predicted from theory alone. The relevant
+//! quantities are:
 //!
 //! | Parameter | Description |
 //! |-----------|-------------|
@@ -15,19 +20,22 @@
 //! | **dX, dY** | Celestial pole offsets, corrections to the IAU precession-nutation model |
 //! | **LOD** | Length Of Day excess (deviation from 86400 SI seconds) |
 //!
-//! ## Time-scale contract
+//! These are published by the IERS in Bulletins A/B and the
+//! `finals2000A.all` series, and are required at the sub-arcsecond level for
+//! VLBI, GNSS and astrometric reductions.
 //!
-//! **All Julian Dates passed to EOP lookups are in UTC.**
-//! IERS Bulletin A/B tables are indexed by UTC civil date; passing TT or UT1
-//! would introduce an error of up to ~70 s in the interpolation index,
-//! corrupting the returned `dUT1`, `xp`, `yp` values.  Always convert to UTC
-//! before calling [`EopProvider::eop_at`].
+//! ## Technical scope
 //!
-//! ## Architecture
+//! The [`EopProvider`] trait abstracts over data sources (zero-correction
+//! placeholder, bundled IERS tables, custom feeds). [`EopValues`] holds the
+//! parameters in their natural IERS units (`Seconds`, `Arcseconds`,
+//! `MilliArcseconds`); converting to radians for computation goes through
+//! the standard `qtty` machinery.
 //!
-//! The [`EopProvider`] trait abstracts over different EOP data sources:
-//! - [`NullEop`]: zero-correction placeholder (assumes UTC ≈ UT1, no polar motion)
-//! - Future: IERS Bulletin A/B parsers, finals2000A, etc.
+//! **Time-scale contract:** all Julian Dates passed to EOP lookups are in
+//! **UTC**. IERS Bulletin A/B tables are indexed by UTC civil date; passing
+//! TT or UT1 would introduce ~70 s of error in the interpolation index and
+//! corrupt the returned `dUT1`, `xp`, `yp` values.
 //!
 //! ## References
 //!
@@ -189,7 +197,7 @@ impl IersEop {
 impl EopProvider for IersEop {
     fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
         // Convert JD (TT‑axis value, used as UTC approximation) → MJD.
-        let mjd = jd_utc.jd_value() - 2_400_000.5;
+        let mjd = Days::new(jd_utc.jd_value() - 2_400_000.5);
 
         match iers_data::lookup(self.table, mjd) {
             Some(e) => EopValues {

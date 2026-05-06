@@ -1,11 +1,40 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Embedded IERS EOP table from `finals2000A.all`, built at compile time.
+//! # IERS Earth Orientation Parameter Lookup
 //!
-//! This module wraps the auto-generated `iers_eop_data.rs` and provides
-//! a binary-search lookup with linear interpolation for any MJD within
-//! the table's coverage.
+//! ## Scientific scope
+//!
+//! The **International Earth Rotation and Reference Systems Service** (IERS)
+//! publishes daily measurements and short-range predictions of Earth Orientation
+//! Parameters (EOP): polar motion `xp`, `yp`; the difference between Universal
+//! Time and Coordinated Universal Time `ΔUT1 = UT1 − UTC`; and celestial-pole
+//! offsets `dX`, `dY` in the IAU 2000A/2006 precession-nutation model.  These
+//! quantities are required for transforming between terrestrial and celestial
+//! reference frames at sub-arcsecond accuracy.
+//!
+//! This module wraps the auto-generated `iers_eop_data.rs` (built at compile
+//! time from `finals2000A.all`) and provides binary-search interpolation keyed
+//! on Modified Julian Date in UTC.
+//!
+//! ## Technical scope
+//!
+//! - [`EopEntry`] — one row of the IERS table: `mjd`, `xp`, `yp`, `dut1`,
+//!   `dx`, `dy` (all `f64` raw values from the generated code).
+//! - [`EOP_TABLE`] — static slice of `EopEntry` rows.
+//! - [`lookup`] — binary-search + linear interpolation keyed on [`Days`] (MJD
+//!   in UTC).  Returns `None` when the epoch is outside the table's coverage.
+//!
+//! The `mjd` argument is typed as [`Days`] (`Quantity<Day>`) so callers cannot
+//! accidentally pass a Julian Date (JD) or Julian Centuries value.  The
+//! internal comparison against `EopEntry.mjd` (which remains `f64`) extracts
+//! `.value()` at the function boundary.
+//!
+//! ## References
+//!
+//! - Petit, G., & Luzum, B. (Eds.) (2010). *IERS Conventions (2010)*. IERS
+//!   Technical Note 36, §5.1. Verlag des BKG, Frankfurt.
+//! - IERS EOP Data Center. <https://www.iers.org/IERS/EN/DataProducts/EarthOrientationData/eop.html>
 
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
@@ -15,8 +44,17 @@ mod iers_eop_data {
 
 pub use iers_eop_data::{EopEntry, EOP_TABLE};
 
+use crate::qtty::Days;
+
 /// Look up EOP values by MJD (UTC), interpolating linearly between
 /// daily entries when the MJD falls between two table rows.
+///
+/// # Arguments
+///
+/// - `table`: slice of [`EopEntry`] rows, typically [`EOP_TABLE`].
+/// - `mjd`: Modified Julian Date in UTC scale, typed as [`Days`].  Callers
+///   must subtract the JD epoch offset themselves:
+///   `Days::new(jd_utc - 2_400_000.5)`.
 ///
 /// # Returns
 ///
@@ -35,7 +73,20 @@ pub use iers_eop_data::{EopEntry, EOP_TABLE};
 /// Within the covered interval the function performs daily linear
 /// interpolation and never returns `None` — `None` is therefore a
 /// reliable indicator that the requested epoch is out of range.
-pub fn lookup(table: &[EopEntry], mjd: f64) -> Option<EopEntry> {
+///
+/// # Examples
+///
+/// ```
+/// use siderust::astro::iers_data::{EOP_TABLE, lookup};
+/// use siderust::qtty::Days;
+///
+/// // MJD 51544.5 ≈ J2000.0 in UTC
+/// let result = lookup(&EOP_TABLE, Days::new(51544.5));
+/// // Table may or may not contain this epoch depending on the build-time data.
+/// let _ = result;
+/// ```
+pub fn lookup(table: &[EopEntry], mjd: Days) -> Option<EopEntry> {
+    let mjd = mjd.value();
     if table.is_empty() {
         return None;
     }
@@ -48,9 +99,6 @@ pub fn lookup(table: &[EopEntry], mjd: f64) -> Option<EopEntry> {
     }
 
     // Binary search for the interval containing `mjd`.
-    // The table has daily spacing (1.0 MJD), so we can also compute
-    // a direct index guess for speed, but binary search is robust for
-    // any spacing.
     let idx = table.partition_point(|e| e.mjd < mjd);
 
     if idx == 0 {

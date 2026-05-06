@@ -3,35 +3,37 @@
 
 //! # Polar Motion, IERS Conventions
 //!
-//! Polar motion describes the deviation of the Earth's rotation axis from
-//! its crust-fixed reference position. It is characterized by the pole
-//! coordinates **(xₚ, yₚ)** published by the IERS.
+//! Builds the polar-motion matrix **W** that links the Terrestrial
+//! Intermediate Reference System (TIRS) to the International Terrestrial
+//! Reference System (ITRS).
 //!
-//! ## The W matrix
+//! ## Scientific scope
 //!
-//! The polar motion matrix **W** transforms from the Terrestrial Intermediate
-//! Reference System (TIRS) to the International Terrestrial Reference System
-//! (ITRS):
+//! Polar motion describes the deviation of Earth's rotation axis from its
+//! crust-fixed reference position. It is characterised by the pole
+//! coordinates `(xₚ, yₚ)` published by the IERS, which combine the Chandler
+//! wobble, an annual term, and irregular components driven by mass
+//! redistribution in the atmosphere, oceans and core. Even a few hundred
+//! milliarcseconds of polar motion produce metre-level shifts at Earth's
+//! surface, so polar motion must be modelled for any precise terrestrial-to-
+//! celestial transformation.
+//!
+//! ## Technical scope
+//!
+//! The polar-motion matrix is assembled as
 //!
 //! ```text
 //! W = R₃(−s') · R₂(xₚ) · R₁(yₚ)
 //! ```
 //!
-//! where **s'** is the TIO locator (Terrestrial Intermediate Origin locator),
-//! a very small quantity (~μas) that accounts for the motion of the TIO on
-//! the Earth's surface.
-//!
-//! ## TIO locator s'
-//!
-//! ```text
-//! s' ≈ −47 μas × t  (where t is Julian centuries from J2000)
-//! ```
-//!
-//! This is negligible for most applications (< 0.01 mas over a century).
+//! where `s'` is the TIO locator, here implemented as the linear-in-time
+//! IERS form `s' ≈ −47 μas × t` (Julian centuries from J2000 on TT).
+//! Convenience helpers convert IERS [`Arcseconds`] inputs to [`Radians`]
+//! and assemble the rotation via `affn::Rotation3` factors.
 //!
 //! ## References
 //!
-//! * IERS Conventions (2010), §5.4.2
+//! * IERS Conventions (2010), §5.4.2, eq. 5.13
 //! * SOFA routines `iauSp00`, `iauPom00`
 
 use crate::qtty::*;

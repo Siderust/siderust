@@ -3,34 +3,34 @@
 
 //! # Earth Rotation Angle (ERA), IAU 2000
 //!
-//! The **Earth Rotation Angle** (ERA, θ) is the angle between the Celestial
-//! Intermediate Origin (CIO) and the Terrestrial Intermediate Origin (TIO),
-//! measured along the equator of the Celestial Intermediate Pole (CIP).
+//! Implements the Earth Rotation Angle θ — the IAU 2000/2006 replacement for
+//! Greenwich Apparent Sidereal Time as the primary measure of Earth's
+//! rotation — and the equation of the origins linking ERA to GAST.
 //!
-//! ERA replaces Greenwich Apparent Sidereal Time (GAST) in the IAU 2000/2006
-//! framework as the primary measure of Earth's rotation.
+//! ## Scientific scope
 //!
-//! ## Defining relation
+//! The ERA is the angle between the Celestial Intermediate Origin (CIO) and
+//! the Terrestrial Intermediate Origin (TIO) measured along the equator of
+//! the Celestial Intermediate Pole (CIP). Unlike GMST, which mixes precession
+//! into a polynomial in TT, the ERA is a strictly linear function of UT1, so
+//! its angular velocity is exactly the ratio of a sidereal day to a solar
+//! day. The equation of the origins `EO = GAST − ERA` provides the bridge to
+//! the legacy equinox-based system and depends only on the precession-
+//! nutation angles and the CIO locator `s`.
+//!
+//! ## Technical scope
+//!
+//! `earth_rotation_angle` evaluates
 //!
 //! ```text
 //! ERA = 2π × (0.7790572732640 + 1.00273781191135448 × Du)
 //! ```
 //!
-//! where **Du** is the Julian UT1 date − 2451545.0 (i.e., days since
-//! J2000.0 on the UT1 axis).
-//!
-//! This is a simple linear function of UT1, with no polynomial terms.
-//! The angular velocity is exactly the ratio of a sidereal day to a solar day.
-//!
-//! ## Equation of the Origins
-//!
-//! The **equation of the origins** (EO) connects ERA to GAST:
-//!
-//! ```text
-//! GAST = ERA + EO
-//! ```
-//!
-//! where EO is a function of the precession-nutation angles.
+//! with `Du = JD(UT1) − 2451545.0`, splitting fractional and integer parts to
+//! preserve precision over long timescales, and returning a value normalised
+//! to `[0, 2π)`. The equation of the origins follows from the precession-
+//! nutation chain via the simplified relation
+//! `EO ≈ −(ψ̄ + Δψ) cos(ε_A + Δε) − s`.
 //!
 //! ## References
 //!
