@@ -432,7 +432,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 7. GAST → LST → HA → altitude
         // ---------------------------------------------------------------
-        let eop = ctx.eop_at(jd);
+        let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
         let gast = gast_iau2006(jd_ut1, jd, dpsi, eps0 + deps);
         let lst_rad = gast + self.lon_rad;

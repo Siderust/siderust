@@ -56,6 +56,55 @@ use crate::time::JulianDate;
 /// Velocity measured in AU/day.
 pub type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 
+/// Ephemeris evaluation error.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum EphemerisError {
+    /// The requested epoch is not finite or lies outside the ephemeris
+    /// segment coverage.
+    OutOfRange {
+        /// Requested Julian Date.
+        jd: f64,
+        /// First covered Julian Date.
+        start_jd: f64,
+        /// Last covered Julian Date.
+        end_jd: f64,
+    },
+    /// Ephemeris segment metadata is internally inconsistent.
+    InvalidSegment {
+        /// Segment start, TDB seconds past J2000.
+        init_seconds: f64,
+        /// Segment interval length in seconds.
+        intlen_seconds: f64,
+        /// Number of coefficient records.
+        n_records: usize,
+    },
+}
+
+impl core::fmt::Display for EphemerisError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match *self {
+            Self::OutOfRange {
+                jd,
+                start_jd,
+                end_jd,
+            } => write!(
+                f,
+                "ephemeris epoch JD {jd} is outside covered range [{start_jd}, {end_jd}]"
+            ),
+            Self::InvalidSegment {
+                init_seconds,
+                intlen_seconds,
+                n_records,
+            } => write!(
+                f,
+                "invalid ephemeris segment metadata: init={init_seconds}s intlen={intlen_seconds}s n_records={n_records}"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for EphemerisError {}
+
 /// Trait abstracting over ephemeris backends for fundamental body states
 /// (**compile-time, static dispatch**).
 ///
@@ -68,23 +117,63 @@ pub type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 ///
 /// See also [`DynEphemeris`] for the runtime/dynamic-dispatch counterpart.
 pub trait Ephemeris {
+    /// Fallible Sun barycentric position in ecliptic coordinates (AU).
+    #[inline]
+    fn try_sun_barycentric(
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        Ok(Self::sun_barycentric(jd))
+    }
+
     /// Sun's position in barycentric ecliptic coordinates (AU).
     fn sun_barycentric(
         jd: JulianDate,
     ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>;
+
+    /// Fallible Earth barycentric position in ecliptic coordinates (AU).
+    #[inline]
+    fn try_earth_barycentric(
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        Ok(Self::earth_barycentric(jd))
+    }
 
     /// Earth's position in barycentric ecliptic coordinates (AU).
     fn earth_barycentric(
         jd: JulianDate,
     ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>;
 
+    /// Fallible Earth heliocentric position in ecliptic coordinates (AU).
+    #[inline]
+    fn try_earth_heliocentric(
+        jd: JulianDate,
+    ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        Ok(Self::earth_heliocentric(jd))
+    }
+
     /// Earth's position in heliocentric ecliptic coordinates (AU).
     fn earth_heliocentric(
         jd: JulianDate,
     ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>;
 
+    /// Fallible Earth barycentric velocity in ecliptic coordinates (AU/day).
+    #[inline]
+    fn try_earth_barycentric_velocity(
+        jd: JulianDate,
+    ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
+        Ok(Self::earth_barycentric_velocity(jd))
+    }
+
     /// Earth's velocity in barycentric ecliptic coordinates (AU/day).
     fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay>;
+
+    /// Fallible Moon geocentric position in ecliptic coordinates (km).
+    #[inline]
+    fn try_moon_geocentric(
+        jd: JulianDate,
+    ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
+        Ok(Self::moon_geocentric(jd))
+    }
 
     /// Moon's position in geocentric ecliptic coordinates (km).
     fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, EclipticMeanJ2000, Kilometer>;
@@ -118,11 +207,23 @@ pub trait Ephemeris {
 /// let sun = rt.sun_barycentric(jd);
 /// ```
 pub trait DynEphemeris {
+    /// Fallible Sun barycentric position in ecliptic coordinates (AU).
+    fn try_sun_barycentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError>;
+
     /// Sun's position in barycentric ecliptic coordinates (AU).
     fn sun_barycentric(
         &self,
         jd: JulianDate,
     ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>;
+
+    /// Fallible Earth barycentric position in ecliptic coordinates (AU).
+    fn try_earth_barycentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError>;
 
     /// Earth's position in barycentric ecliptic coordinates (AU).
     fn earth_barycentric(
@@ -130,14 +231,32 @@ pub trait DynEphemeris {
         jd: JulianDate,
     ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>;
 
+    /// Fallible Earth heliocentric position in ecliptic coordinates (AU).
+    fn try_earth_heliocentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError>;
+
     /// Earth's position in heliocentric ecliptic coordinates (AU).
     fn earth_heliocentric(
         &self,
         jd: JulianDate,
     ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>;
 
+    /// Fallible Earth barycentric velocity in ecliptic coordinates (AU/day).
+    fn try_earth_barycentric_velocity(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError>;
+
     /// Earth's velocity in barycentric ecliptic coordinates (AU/day).
     fn earth_barycentric_velocity(&self, jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay>;
+
+    /// Fallible Moon geocentric position in ecliptic coordinates (km).
+    fn try_moon_geocentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError>;
 
     /// Moon's position in geocentric ecliptic coordinates (km).
     fn moon_geocentric(&self, jd: JulianDate)
@@ -148,11 +267,27 @@ pub trait DynEphemeris {
 /// implements `DynEphemeris`.
 impl<T: Ephemeris> DynEphemeris for T {
     #[inline]
+    fn try_sun_barycentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        <T as Ephemeris>::try_sun_barycentric(jd)
+    }
+
+    #[inline]
     fn sun_barycentric(
         &self,
         jd: JulianDate,
     ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
         <T as Ephemeris>::sun_barycentric(jd)
+    }
+
+    #[inline]
+    fn try_earth_barycentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        <T as Ephemeris>::try_earth_barycentric(jd)
     }
 
     #[inline]
@@ -164,6 +299,14 @@ impl<T: Ephemeris> DynEphemeris for T {
     }
 
     #[inline]
+    fn try_earth_heliocentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        <T as Ephemeris>::try_earth_heliocentric(jd)
+    }
+
+    #[inline]
     fn earth_heliocentric(
         &self,
         jd: JulianDate,
@@ -172,8 +315,24 @@ impl<T: Ephemeris> DynEphemeris for T {
     }
 
     #[inline]
+    fn try_earth_barycentric_velocity(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
+        <T as Ephemeris>::try_earth_barycentric_velocity(jd)
+    }
+
+    #[inline]
     fn earth_barycentric_velocity(&self, jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
         <T as Ephemeris>::earth_barycentric_velocity(jd)
+    }
+
+    #[inline]
+    fn try_moon_geocentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
+        <T as Ephemeris>::try_moon_geocentric(jd)
     }
 
     #[inline]

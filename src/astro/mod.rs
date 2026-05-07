@@ -35,8 +35,8 @@
 //! - [`conic`], [`orbit`]: conic-section and Keplerian orbital mechanics.
 //! - [`earth_rotation`], [`earth_rotation_provider`], [`era`]: TT↔UT1, ERA,
 //!   and the composite ITRS→equatorial rotation.
-//! - [`eop`], [`iers_data`]: Earth Orientation Parameters and bundled IERS
-//!   tables.
+//! - [`eop`]: Earth Orientation Parameters backed by `tempoch` EOP data.
+//! - [`iers_data`]: legacy compatibility access to the old embedded IERS table.
 //! - [`light_deflection`]: GR deflection by the Sun and planets.
 //! - [`nutation`]: IAU 2000A/2000B/2006A nutation models.
 //! - [`orientation`]: IAU body pole / prime-meridian parameters.

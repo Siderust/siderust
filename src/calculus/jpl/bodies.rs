@@ -45,6 +45,7 @@
 
 use super::eval::{DynSegmentDescriptor, SegmentDescriptor};
 
+use crate::calculus::ephemeris::EphemerisError;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
@@ -77,16 +78,34 @@ type AuPerDay = Per<AstronomicalUnit, Day>;
 ///
 /// Generic over any DE4xx data source providing a SUN segment.
 #[inline]
+pub fn try_sun_barycentric(
+    jd: JulianDate,
+    sun: &SegmentDescriptor,
+) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let sun_icrf = sun.try_position(jd_tdb)?;
+    let sun_ecl_au = sun_icrf
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
+        .to_unit::<AstronomicalUnit>();
+    Ok(Position::new(
+        sun_ecl_au.x(),
+        sun_ecl_au.y(),
+        sun_ecl_au.z(),
+    ))
+}
+
+/// Sun barycentric position in EclipticMeanJ2000 J2000 (AU).
+///
+/// # Panics
+///
+/// Panics when `jd` is outside the underlying JPL segment coverage. Use
+/// [`try_sun_barycentric`] for explicit error handling.
+#[inline]
 pub fn sun_barycentric(
     jd: JulianDate,
     sun: &SegmentDescriptor,
 ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let sun_icrf = sun.position(jd_tdb);
-    let sun_ecl_au = sun_icrf
-        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
-        .to_unit::<AstronomicalUnit>();
-    Position::new(sun_ecl_au.x(), sun_ecl_au.y(), sun_ecl_au.z())
+    try_sun_barycentric(jd, sun).expect("JPL Sun barycentric position unavailable")
 }
 
 /// Earth barycentric position in EclipticMeanJ2000 J2000 (AU).
@@ -95,19 +114,38 @@ pub fn sun_barycentric(
 ///
 /// Generic over any DE4xx data source providing EMB and MOON segments.
 #[inline]
+pub fn try_earth_barycentric(
+    jd: JulianDate,
+    emb: &SegmentDescriptor,
+    moon: &SegmentDescriptor,
+) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let emb_pos = emb.try_position(jd_tdb)?;
+    let moon_off = moon.try_position(jd_tdb)?;
+    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON);
+    let earth_ecl_au = earth_icrf
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
+        .to_unit::<AstronomicalUnit>();
+    Ok(Position::new(
+        earth_ecl_au.x(),
+        earth_ecl_au.y(),
+        earth_ecl_au.z(),
+    ))
+}
+
+/// Earth barycentric position in EclipticMeanJ2000 J2000 (AU).
+///
+/// # Panics
+///
+/// Panics when `jd` is outside the underlying JPL segment coverage. Use
+/// [`try_earth_barycentric`] for explicit error handling.
+#[inline]
 pub fn earth_barycentric(
     jd: JulianDate,
     emb: &SegmentDescriptor,
     moon: &SegmentDescriptor,
 ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let emb_pos = emb.position(jd_tdb);
-    let moon_off = moon.position(jd_tdb);
-    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON);
-    let earth_ecl_au = earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
-        .to_unit::<AstronomicalUnit>();
-    Position::new(earth_ecl_au.x(), earth_ecl_au.y(), earth_ecl_au.z())
+    try_earth_barycentric(jd, emb, moon).expect("JPL Earth barycentric position unavailable")
 }
 
 /// Earth heliocentric position in EclipticMeanJ2000 J2000 (AU).
@@ -116,21 +154,41 @@ pub fn earth_barycentric(
 ///
 /// Generic over any DE4xx data source providing SUN, EMB, and MOON segments.
 #[inline]
+pub fn try_earth_heliocentric(
+    jd: JulianDate,
+    sun: &SegmentDescriptor,
+    emb: &SegmentDescriptor,
+    moon: &SegmentDescriptor,
+) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let emb_pos = emb.try_position(jd_tdb)?;
+    let moon_off = moon.try_position(jd_tdb)?;
+    let sun_pos = sun.try_position(jd_tdb)?;
+    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON) - sun_pos;
+    let earth_ecl_au = earth_icrf
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
+        .to_unit::<AstronomicalUnit>();
+    Ok(Position::new(
+        earth_ecl_au.x(),
+        earth_ecl_au.y(),
+        earth_ecl_au.z(),
+    ))
+}
+
+/// Earth heliocentric position in EclipticMeanJ2000 J2000 (AU).
+///
+/// # Panics
+///
+/// Panics when `jd` is outside the underlying JPL segment coverage. Use
+/// [`try_earth_heliocentric`] for explicit error handling.
+#[inline]
 pub fn earth_heliocentric(
     jd: JulianDate,
     sun: &SegmentDescriptor,
     emb: &SegmentDescriptor,
     moon: &SegmentDescriptor,
 ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let emb_pos = emb.position(jd_tdb);
-    let moon_off = moon.position(jd_tdb);
-    let sun_pos = sun.position(jd_tdb);
-    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON) - sun_pos;
-    let earth_ecl_au = earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
-        .to_unit::<AstronomicalUnit>();
-    Position::new(earth_ecl_au.x(), earth_ecl_au.y(), earth_ecl_au.z())
+    try_earth_heliocentric(jd, sun, emb, moon).expect("JPL Earth heliocentric position unavailable")
 }
 
 /// Earth barycentric velocity in EclipticMeanJ2000 J2000 (AU/day).
@@ -139,18 +197,34 @@ pub fn earth_heliocentric(
 ///
 /// Generic over any DE4xx data source providing EMB and MOON segments.
 #[inline]
+pub fn try_earth_barycentric_velocity(
+    jd: JulianDate,
+    emb: &SegmentDescriptor,
+    moon: &SegmentDescriptor,
+) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let v_emb = emb.try_velocity(jd_tdb)?;
+    let v_moon_off = moon.try_velocity(jd_tdb)?;
+    let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
+    Ok(v_earth_icrf
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
+        .to_unit::<AuPerDay>())
+}
+
+/// Earth barycentric velocity in EclipticMeanJ2000 J2000 (AU/day).
+///
+/// # Panics
+///
+/// Panics when `jd` is outside the underlying JPL segment coverage. Use
+/// [`try_earth_barycentric_velocity`] for explicit error handling.
+#[inline]
 pub fn earth_barycentric_velocity(
     jd: JulianDate,
     emb: &SegmentDescriptor,
     moon: &SegmentDescriptor,
 ) -> Velocity<EclipticMeanJ2000, AuPerDay> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let v_emb = emb.velocity(jd_tdb);
-    let v_moon_off = moon.velocity(jd_tdb);
-    let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
-    v_earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
-        .to_unit::<AuPerDay>()
+    try_earth_barycentric_velocity(jd, emb, moon)
+        .expect("JPL Earth barycentric velocity unavailable")
 }
 
 /// Moon geocentric position in EclipticMeanJ2000 J2000 (km).
@@ -159,15 +233,33 @@ pub fn earth_barycentric_velocity(
 ///
 /// Generic over any DE4xx data source providing a MOON segment.
 #[inline]
+pub fn try_moon_geocentric(
+    jd: JulianDate,
+    moon: &SegmentDescriptor,
+) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let moon_off = moon.try_position(jd_tdb)?;
+    let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
+    let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&JulianDate::J2000);
+    Ok(Position::new(
+        moon_geo_ecl.x(),
+        moon_geo_ecl.y(),
+        moon_geo_ecl.z(),
+    ))
+}
+
+/// Moon geocentric position in EclipticMeanJ2000 J2000 (km).
+///
+/// # Panics
+///
+/// Panics when `jd` is outside the underlying JPL segment coverage. Use
+/// [`try_moon_geocentric`] for explicit error handling.
+#[inline]
 pub fn moon_geocentric(
     jd: JulianDate,
     moon: &SegmentDescriptor,
 ) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let moon_off = moon.position(jd_tdb);
-    let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
-    let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&JulianDate::J2000);
-    Position::new(moon_geo_ecl.x(), moon_geo_ecl.y(), moon_geo_ecl.z())
+    try_moon_geocentric(jd, moon).expect("JPL Moon geocentric position unavailable")
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -176,16 +268,50 @@ pub fn moon_geocentric(
 
 /// Sun barycentric position (runtime data).
 #[inline]
+pub fn try_dyn_sun_barycentric(
+    jd: JulianDate,
+    sun: &DynSegmentDescriptor,
+) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let sun_icrf = sun.try_position(jd_tdb)?;
+    let sun_ecl_au = sun_icrf
+        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
+        .to_unit::<AstronomicalUnit>();
+    Ok(Position::new(
+        sun_ecl_au.x(),
+        sun_ecl_au.y(),
+        sun_ecl_au.z(),
+    ))
+}
+
+/// Sun barycentric position (runtime data).
+#[inline]
 pub fn dyn_sun_barycentric(
     jd: JulianDate,
     sun: &DynSegmentDescriptor,
 ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+    try_dyn_sun_barycentric(jd, sun).expect("runtime JPL Sun barycentric position unavailable")
+}
+
+/// Earth barycentric position (runtime data).
+#[inline]
+pub fn try_dyn_earth_barycentric(
+    jd: JulianDate,
+    emb: &DynSegmentDescriptor,
+    moon: &DynSegmentDescriptor,
+) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
     let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let sun_icrf = sun.position(jd_tdb);
-    let sun_ecl_au = sun_icrf
+    let emb_pos = emb.try_position(jd_tdb)?;
+    let moon_off = moon.try_position(jd_tdb)?;
+    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON);
+    let earth_ecl_au = earth_icrf
         .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
         .to_unit::<AstronomicalUnit>();
-    Position::new(sun_ecl_au.x(), sun_ecl_au.y(), sun_ecl_au.z())
+    Ok(Position::new(
+        earth_ecl_au.x(),
+        earth_ecl_au.y(),
+        earth_ecl_au.z(),
+    ))
 }
 
 /// Earth barycentric position (runtime data).
@@ -195,14 +321,31 @@ pub fn dyn_earth_barycentric(
     emb: &DynSegmentDescriptor,
     moon: &DynSegmentDescriptor,
 ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+    try_dyn_earth_barycentric(jd, emb, moon)
+        .expect("runtime JPL Earth barycentric position unavailable")
+}
+
+/// Earth heliocentric position (runtime data).
+#[inline]
+pub fn try_dyn_earth_heliocentric(
+    jd: JulianDate,
+    sun: &DynSegmentDescriptor,
+    emb: &DynSegmentDescriptor,
+    moon: &DynSegmentDescriptor,
+) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
     let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let emb_pos = emb.position(jd_tdb);
-    let moon_off = moon.position(jd_tdb);
-    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON);
+    let emb_pos = emb.try_position(jd_tdb)?;
+    let moon_off = moon.try_position(jd_tdb)?;
+    let sun_pos = sun.try_position(jd_tdb)?;
+    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON) - sun_pos;
     let earth_ecl_au = earth_icrf
         .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
         .to_unit::<AstronomicalUnit>();
-    Position::new(earth_ecl_au.x(), earth_ecl_au.y(), earth_ecl_au.z())
+    Ok(Position::new(
+        earth_ecl_au.x(),
+        earth_ecl_au.y(),
+        earth_ecl_au.z(),
+    ))
 }
 
 /// Earth heliocentric position (runtime data).
@@ -213,15 +356,24 @@ pub fn dyn_earth_heliocentric(
     emb: &DynSegmentDescriptor,
     moon: &DynSegmentDescriptor,
 ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
+    try_dyn_earth_heliocentric(jd, sun, emb, moon)
+        .expect("runtime JPL Earth heliocentric position unavailable")
+}
+
+/// Earth barycentric velocity (runtime data).
+#[inline]
+pub fn try_dyn_earth_barycentric_velocity(
+    jd: JulianDate,
+    emb: &DynSegmentDescriptor,
+    moon: &DynSegmentDescriptor,
+) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
     let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let emb_pos = emb.position(jd_tdb);
-    let moon_off = moon.position(jd_tdb);
-    let sun_pos = sun.position(jd_tdb);
-    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON) - sun_pos;
-    let earth_ecl_au = earth_icrf
+    let v_emb = emb.try_velocity(jd_tdb)?;
+    let v_moon_off = moon.try_velocity(jd_tdb)?;
+    let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
+    Ok(v_earth_icrf
         .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
-        .to_unit::<AstronomicalUnit>();
-    Position::new(earth_ecl_au.x(), earth_ecl_au.y(), earth_ecl_au.z())
+        .to_unit::<AuPerDay>())
 }
 
 /// Earth barycentric velocity (runtime data).
@@ -231,13 +383,25 @@ pub fn dyn_earth_barycentric_velocity(
     emb: &DynSegmentDescriptor,
     moon: &DynSegmentDescriptor,
 ) -> Velocity<EclipticMeanJ2000, AuPerDay> {
+    try_dyn_earth_barycentric_velocity(jd, emb, moon)
+        .expect("runtime JPL Earth barycentric velocity unavailable")
+}
+
+/// Moon geocentric position (runtime data).
+#[inline]
+pub fn try_dyn_moon_geocentric(
+    jd: JulianDate,
+    moon: &DynSegmentDescriptor,
+) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
     let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let v_emb = emb.velocity(jd_tdb);
-    let v_moon_off = moon.velocity(jd_tdb);
-    let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
-    v_earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
-        .to_unit::<AuPerDay>()
+    let moon_off = moon.try_position(jd_tdb)?;
+    let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
+    let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&JulianDate::J2000);
+    Ok(Position::new(
+        moon_geo_ecl.x(),
+        moon_geo_ecl.y(),
+        moon_geo_ecl.z(),
+    ))
 }
 
 /// Moon geocentric position (runtime data).
@@ -246,11 +410,7 @@ pub fn dyn_moon_geocentric(
     jd: JulianDate,
     moon: &DynSegmentDescriptor,
 ) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
-    let moon_off = moon.position(jd_tdb);
-    let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
-    let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&JulianDate::J2000);
-    Position::new(moon_geo_ecl.x(), moon_geo_ecl.y(), moon_geo_ecl.z())
+    try_dyn_moon_geocentric(jd, moon).expect("runtime JPL Moon geocentric position unavailable")
 }
 
 #[cfg(test)]

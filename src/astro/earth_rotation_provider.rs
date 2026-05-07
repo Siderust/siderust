@@ -37,7 +37,7 @@
 //! * SOFA/ERFA Earth-rotation cookbook (`iauC2t06a` and friends)
 
 use crate::astro::cio;
-use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
+use crate::astro::earth_rotation::{jd_ut1_from_tt_eop, jd_utc_from_tt};
 use crate::astro::eop::{EopProvider, EopValues};
 use crate::astro::era::earth_rotation_angle;
 use crate::astro::nutation::NutationModel;
@@ -88,12 +88,9 @@ pub(crate) fn nutation_with_celestial_pole_offsets<Nut: NutationModel>(
 ///
 /// # Time-scale contract
 ///
-/// `jd` **must** be Terrestrial Time (TT). The function internally calls
-/// `ctx.eop_at(jd)` which expects a UTC Julian Date, because TT and UTC
-/// differ by only ≈ 69 s (accumulated leap seconds + 32.184 s), an epoch
-/// passed as TT will introduce at most ~0.5 ms EOP interpolation error,
-/// which is below the precision of the daily IERS table.  The subsequent
-/// UT1 conversion (`jd_ut1_from_tt_eop`) is then exact.
+/// `jd` **must** be Terrestrial Time (TT). The function converts it to UTC
+/// before consulting the context's EOP provider, because IERS EOP tables are
+/// indexed by UTC civil date.
 ///
 /// # Returns
 ///
@@ -102,7 +99,8 @@ pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut:
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
 ) -> affn::Rotation3 {
-    let eop = ctx.eop_at(jd);
+    let jd_utc = jd_utc_from_tt(jd);
+    let eop = ctx.eop_at(jd_utc);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
 
     let (dpsi, deps) = nutation_with_celestial_pole_offsets::<Nut>(jd, eop);

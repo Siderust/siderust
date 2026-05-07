@@ -53,8 +53,6 @@
 //! - Krisciunas, K., & Schaefer, B. E. (1991). "A model of the brightness
 //!   of moonlight". *PASP* 103, 1033.
 
-use crate::ext_qtty::{Dimensionless, Quantity, Unit};
-
 pub mod airglow;
 pub mod airmass;
 pub mod extinction;
@@ -65,10 +63,11 @@ pub mod profile;
 pub mod rayleigh;
 pub mod scattering;
 
+pub use crate::qtty::{Transmittance, Transmittances};
 pub use airglow::{van_rhijn_factor, van_rhijn_factor_with_radius};
 pub use airmass::{
-    airmass, AirmassFormula, DefaultAirmassFormula, Formula, KrisciunasSchaefer1991,
-    PlaneParallel, Rozenberg1966, Young1994,
+    airmass, AirmassFormula, DefaultAirmassFormula, Formula, KrisciunasSchaefer1991, PlaneParallel,
+    Rozenberg1966, Young1994,
 };
 pub use extinction::transmission;
 pub use mie::{mie_optical_depth, MieParams};
@@ -79,25 +78,3 @@ pub use rayleigh::{rayleigh_optical_depth_bodhaine99, rayleigh_phase, DEFAULT_SC
 #[cfg(feature = "tables")]
 pub use scattering::TabulatedPhaseFunction;
 pub use scattering::{PhaseFunction, RayleighPhaseFunction, ScatteringFactor};
-
-/// Dimensionless transmittance `T ∈ [0, 1]`.
-///
-/// Used by Beer–Lambert extinction (`extinction::transmission`), by ozone
-/// band absorption tables, and as the canonical return type of any
-/// "fraction of incident flux that survives the atmosphere" calculation
-/// in this module.
-///
-/// `Transmittance` is a `qtty` `Unit` so it can be combined dimensionally
-/// with optical depths, airmasses, and irradiances in downstream code
-/// without loss of type information.
-#[derive(Copy, Clone, Debug, PartialEq)]
-pub struct Transmittance;
-
-impl Unit for Transmittance {
-    const RATIO: f64 = 1.0;
-    type Dim = Dimensionless;
-    const SYMBOL: &'static str = "";
-}
-
-/// `Quantity<Transmittance>` — a typed transmittance scalar.
-pub type Transmittances = Quantity<Transmittance>;

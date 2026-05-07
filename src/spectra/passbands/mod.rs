@@ -24,7 +24,7 @@
 //!
 //! - [`Throughput`] — `qtty::Unit` marker for dimensionless filter
 //!   throughput in `[0, 1]`. Distinct from
-//!   `crate::atmosphere::ozone::Transmittance` so the two concepts
+//!   `crate::atmosphere::Transmittance` so the two concepts
 //!   remain typewise distinguishable.
 //! - [`johnson_b`] / [`johnson_v`] — convenience accessors returning
 //!   the Bessell (1990) Johnson *B* and *V* curves (aliases for

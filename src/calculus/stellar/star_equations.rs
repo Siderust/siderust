@@ -181,7 +181,7 @@ impl StarAltitudeParams {
     fn hour_angle(&self, mjd: ModifiedJulianDate) -> Degrees {
         let jd: JulianDate = mjd.into();
         let ctx: AstroContext = AstroContext::default();
-        let eop = ctx.eop_at(jd);
+        let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
         let nut = nutation_iau2000b(jd);
         let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());

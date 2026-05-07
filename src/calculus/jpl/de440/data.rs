@@ -8,6 +8,7 @@
 //! [`SegmentDescriptor`] constants.
 
 use super::super::eval::SegmentDescriptor;
+#[allow(unused_imports)]
 use crate::qtty;
 
 include!(concat!(env!("OUT_DIR"), "/de440_data.rs"));

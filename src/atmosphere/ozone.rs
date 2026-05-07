@@ -50,15 +50,8 @@ use crate::spectra::loaders::ascii;
 use crate::spectra::sampled::SampledSpectrum;
 
 const RAW: &str = include_str!("../../data/o3trans.dat");
-
-// Pinned SHA-256 of the embedded `o3trans.dat`. Recompute and update if the
-// bundled file is intentionally regenerated; see
-// `siderust::provenance::checksum`.
-crate::assert_data_checksum!(
-    "siderust/data/o3trans.dat",
-    RAW.as_bytes(),
-    "cb06c173f393d6d55e3c39551665abb8f5d6c1a846cd0fd739a15d0155f94502"
-);
+#[cfg(test)]
+const OZONE_SHA256: &str = "cb06c173f393d6d55e3c39551665abb8f5d6c1a846cd0fd739a15d0155f94502";
 
 static TABLE: OnceLock<SampledSpectrum<Nanometer, Transmittance>> = OnceLock::new();
 
@@ -106,10 +99,7 @@ mod tests {
     #[test]
     fn pinned_sha256_matches_runtime_hash() {
         use crate::provenance::checksum::{sha256, to_hex};
-        assert_eq!(
-            to_hex(&sha256(RAW.as_bytes())),
-            "cb06c173f393d6d55e3c39551665abb8f5d6c1a846cd0fd739a15d0155f94502",
-        );
+        assert_eq!(to_hex(&sha256(RAW.as_bytes())), OZONE_SHA256);
     }
 
     #[test]

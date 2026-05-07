@@ -190,7 +190,7 @@ where
     let distance = eq_position.distance;
 
     // True-of-date RA/Dec must use apparent sidereal time (GAST).
-    let eop = ctx.astro_context().eop_at(jd);
+    let eop = ctx.astro_context().eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
     let nut = Ctx::Nut::nutation(jd);
     let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
@@ -261,7 +261,7 @@ pub fn star_horizontal(
 
     // True-of-date RA/Dec requires apparent sidereal time (GAST).
     let ctx: AstroContext = AstroContext::default();
-    let eop = ctx.eop_at(jd);
+    let eop = ctx.eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
     let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
     let lst = gast + site.lon.to::<Radian>();

@@ -13,9 +13,11 @@
 //! quantities are required for transforming between terrestrial and celestial
 //! reference frames at sub-arcsecond accuracy.
 //!
-//! This module wraps the auto-generated `iers_eop_data.rs` (built at compile
-//! time from `finals2000A.all`) and provides binary-search interpolation keyed
-//! on Modified Julian Date in UTC.
+//! This compatibility module wraps the historical auto-generated
+//! `iers_eop_data.rs` table and provides binary-search interpolation keyed on
+//! Modified Julian Date in UTC. New Siderust code should use
+//! [`crate::astro::eop::IersEop`], which consumes the active/bundled EOP data
+//! owned by `tempoch`.
 //!
 //! ## Technical scope
 //!
@@ -64,11 +66,11 @@ use crate::qtty::Days;
 ///     - The supplied `table` slice is empty (i.e. the embedded EOP table
 ///       has not been generated, or a custom table was passed in empty).
 ///     - `mjd` falls strictly outside the `[first, last]` interval. The
-///       caller is then expected to fall back to a zero-EOP / `NullEop`
-///       approximation; `iers_data::lookup` deliberately does **not**
-///       extrapolate, since IERS entries beyond the prediction horizon
-///       are unreliable and would silently degrade UT1/polar-motion
-///       accuracy without a clear signal.
+///       caller should return or propagate a missing-EOP error unless a
+///       documented `NullEop` approximation was selected explicitly.
+///       `iers_data::lookup` deliberately does **not** extrapolate, since
+///       IERS entries beyond the prediction horizon are unreliable and would
+///       silently degrade UT1/polar-motion accuracy without a clear signal.
 ///
 /// Within the covered interval the function performs daily linear
 /// interpolation and never returns `None` — `None` is therefore a

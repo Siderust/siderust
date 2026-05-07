@@ -51,7 +51,7 @@ pub mod de441;
 
 use eval::SegmentDescriptor;
 
-use crate::calculus::ephemeris::{AuPerDay, Ephemeris};
+use crate::calculus::ephemeris::{AuPerDay, Ephemeris, EphemerisError};
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
@@ -93,10 +93,24 @@ pub struct DeEphemeris<D: DeData>(PhantomData<D>);
 
 impl<D: DeData> Ephemeris for DeEphemeris<D> {
     #[inline]
+    fn try_sun_barycentric(
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        bodies::try_sun_barycentric(jd, &D::SUN)
+    }
+
+    #[inline]
     fn sun_barycentric(
         jd: JulianDate,
     ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
         bodies::sun_barycentric(jd, &D::SUN)
+    }
+
+    #[inline]
+    fn try_earth_barycentric(
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        bodies::try_earth_barycentric(jd, &D::EMB, &D::MOON)
     }
 
     #[inline]
@@ -107,6 +121,13 @@ impl<D: DeData> Ephemeris for DeEphemeris<D> {
     }
 
     #[inline]
+    fn try_earth_heliocentric(
+        jd: JulianDate,
+    ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        bodies::try_earth_heliocentric(jd, &D::SUN, &D::EMB, &D::MOON)
+    }
+
+    #[inline]
     fn earth_heliocentric(
         jd: JulianDate,
     ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
@@ -114,8 +135,22 @@ impl<D: DeData> Ephemeris for DeEphemeris<D> {
     }
 
     #[inline]
+    fn try_earth_barycentric_velocity(
+        jd: JulianDate,
+    ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
+        bodies::try_earth_barycentric_velocity(jd, &D::EMB, &D::MOON)
+    }
+
+    #[inline]
     fn earth_barycentric_velocity(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
         bodies::earth_barycentric_velocity(jd, &D::EMB, &D::MOON)
+    }
+
+    #[inline]
+    fn try_moon_geocentric(
+        jd: JulianDate,
+    ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
+        bodies::try_moon_geocentric(jd, &D::MOON)
     }
 
     #[inline]
