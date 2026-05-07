@@ -27,13 +27,29 @@
 //! [`gmst_iau2006`](crate::astro::sidereal::gmst_iau2006) with distinct
 //! UT1 and TT arguments, ensuring SOFA-compatible results.
 //!
+//! Public functions and their typed signatures:
+//!
+//! | Function | Input | Output |
+//! |---|---|---|
+//! | [`jd_ut1_from_tt`] | `JulianDate` (TT) | `JulianDate` (UT1) |
+//! | [`jd_utc_from_tt`] | `JulianDate` (TT) | `JulianDate` (UTC) |
+//! | [`jd_ut1_from_tt_eop`] | `JulianDate` (TT), `&EopValues` | `JulianDate` (UT1) |
+//! | [`gmst_from_tt`] | `JulianDate` (TT) | `Radians` |
+//! | [`gmst_from_tt_eop`] | `JulianDate` (TT), `&EopValues` | `Radians` |
+//! | [`gmst_default`] | `JulianDate` (TT) | `Radians` |
+//!
+//! The `JulianDate` returned by the UT1/UTC helpers carries the
+//! numeric JD value of the requested timescale but is typed as TT for
+//! interoperability with the rest of the sidereal-time call sites
+//! (matching the SOFA convention for `iauGmst06`).
+//!
 //! ## References
 //!
-//! * IERS Conventions (2010), Chapter 5
-//! * SOFA routine `iauGmst06`
+//! * IERS Conventions (2010), §5.4 (ERA and GAST), §5.5 (GMST)
+//! * SOFA routine `iauGmst06`; ERFA library
 //! * Stephenson & Houlden (1986); Meeus, *Astronomical Algorithms*, Ch. 10
 
-use crate::astro::eop::EopValues;
+use crate::astro::eop::{EopProvider, EopValues, IersEop};
 use crate::astro::sidereal::gmst_iau2006;
 use crate::qtty::*;
 use crate::time::{JulianDate, TimeContext, TT, UT1};
@@ -63,6 +79,32 @@ pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
         .to_with::<UT1>(&TimeContext::new())
         .expect("TT->UT1 conversion should succeed within the bundled model horizon");
     JulianDate::new(ut1.to::<tempoch::JD>().raw().value())
+}
+
+/// Compute JD(UTC) from JD(TT).
+///
+/// The returned value is stored in the legacy [`JulianDate`] alias for
+/// compatibility, but its numeric axis is UTC. Use it only where an external
+/// table is explicitly keyed by UTC, such as IERS EOP data.
+#[inline]
+pub fn jd_utc_from_tt(jd_tt: JulianDate) -> JulianDate {
+    let jd_tt: tempoch::JulianDate<TT> = jd_tt.into();
+    let ctx = TimeContext::with_builtin_eop();
+    let ut1 = jd_tt
+        .to_with::<UT1>(&ctx)
+        .expect("TT->UT1 conversion should succeed within the bundled model horizon");
+    let ut1_jd = ut1.to::<tempoch::JD>().raw().value();
+    let mut utc_jd = ut1_jd;
+
+    for _ in 0..3 {
+        let mjd_utc = Days::new(utc_jd - 2_400_000.5);
+        let Some(eop) = tempoch::eop::builtin_eop_at(mjd_utc) else {
+            break;
+        };
+        utc_jd = ut1_jd - eop.ut1_minus_utc.to::<Day>().value();
+    }
+
+    JulianDate::new(utc_jd)
 }
 
 /// Compute JD(UT1) from JD(TT) with IERS EOP refinement.
@@ -163,7 +205,9 @@ pub fn gmst_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> Radians {
 /// tempoch's ΔT model.
 #[inline]
 pub fn gmst_default(jd_tt: JulianDate) -> Radians {
-    gmst_from_tt(jd_tt)
+    let jd_utc = jd_utc_from_tt(jd_tt);
+    let eop = IersEop::new().eop_at(jd_utc);
+    gmst_from_tt_eop(jd_tt, &eop)
 }
 
 #[cfg(test)]
@@ -342,10 +386,22 @@ mod tests {
     // ── gmst_default ─────────────────────────────────────────────────────
 
     #[test]
-    fn gmst_default_matches_gmst_from_tt() {
+    fn gmst_default_matches_builtin_eop_path() {
         let jd_val = jd();
         let g1 = gmst_default(jd_val);
-        let g2 = gmst_from_tt(jd_val);
+        let jd_utc = jd_utc_from_tt(jd_val);
+        let eop = IersEop::new().eop_at(jd_utc);
+        let g2 = gmst_from_tt_eop(jd_val, &eop);
         assert!((g1.value() - g2.value()).abs() < 1e-15);
+    }
+
+    #[test]
+    fn tt_to_utc_conversion_is_not_identity() {
+        let jd_utc = jd_utc_from_tt(jd());
+        let diff_sec = (jd().jd_value() - jd_utc.jd_value()) * 86_400.0;
+        assert!(
+            diff_sec > 60.0 && diff_sec < 70.0,
+            "TT-UTC at J2000 should include leap seconds + 32.184s, got {diff_sec}s"
+        );
     }
 }
