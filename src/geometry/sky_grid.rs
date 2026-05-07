@@ -218,22 +218,21 @@ impl SkyGrid {
 
 impl SkyGrid {
     fn n_alt(&self) -> usize {
-        let span = self.alt_max.value() - self.alt_min.value();
-        if span <= 0.0 || self.alt_step.value() <= 0.0 {
+        if self.alt_max <= self.alt_min || self.alt_step.value() <= 0.0 {
             return 0;
         }
-        (span / self.alt_step.value()).round() as usize
+        ((self.alt_max - self.alt_min) / self.alt_step).round() as usize
     }
 
     fn n_az_uniform(&self) -> usize {
         if self.az_step.value() <= 0.0 {
             return 0;
         }
-        (360.0_f64 / self.az_step.value()).round() as usize
+        (Degrees::new(360.0) / self.az_step).round() as usize
     }
 
-    fn n_az_equal_area(&self, alt_center_deg: f64) -> usize {
-        let cos_alt = alt_center_deg.to_radians().cos().max(0.0);
+    fn n_az_equal_area(&self, alt_center: Degrees) -> usize {
+        let cos_alt = alt_center.to::<Radian>().value().cos().max(0.0);
         let az_horizon_rad = self.az_step.to::<Radian>().value();
         if az_horizon_rad <= 0.0 {
             return 1;
@@ -248,7 +247,7 @@ impl SkyGrid {
         if self.equal_solid_angle {
             (0..n_alt)
                 .map(|i| {
-                    let alt = self.alt_min.value() + (i as f64 + 0.5) * self.alt_step.value();
+                    let alt = self.alt_min + Degrees::new(i as f64 + 0.5) * self.alt_step.value();
                     self.n_az_equal_area(alt)
                 })
                 .sum()
@@ -282,23 +281,23 @@ impl SkyGrid {
         let n_alt = self.n_alt();
         let alt_step_rad = self.alt_step.to::<Radian>().value();
         let equal_area = self.equal_solid_angle;
-        let alt_min = self.alt_min.value();
-        let alt_step = self.alt_step.value();
-        let az_step_uniform = self.az_step.value();
+        let alt_min = self.alt_min;
+        let alt_step = self.alt_step;
+        let az_step_uniform = self.az_step;
         let n_az_uniform = self.n_az_uniform();
 
         (0..n_alt).flat_map(move |i| {
-            let alt_deg = alt_min + (i as f64 + 0.5) * alt_step;
-            let alt_rad = alt_deg.to_radians();
+            let alt: Degrees = alt_min + Degrees::new(i as f64 + 0.5) * alt_step.value();
+            let alt_rad = alt.to::<Radian>().value();
             let cos_alt = alt_rad.cos();
 
             let n_az: usize;
-            let az_step_deg: f64;
+            let az_step: Degrees;
 
             if equal_area {
                 n_az = {
                     let cos_clamped = cos_alt.max(0.0);
-                    let az_horizon_rad = az_step_uniform.to_radians();
+                    let az_horizon_rad = az_step_uniform.to::<Radian>().value();
                     let raw = if az_horizon_rad > 0.0 {
                         ((2.0 * PI * cos_clamped) / az_horizon_rad).round() as usize
                     } else {
@@ -306,22 +305,19 @@ impl SkyGrid {
                     };
                     raw.max(1)
                 };
-                az_step_deg = 360.0 / n_az as f64;
+                az_step = Degrees::new(360.0) / n_az as f64;
             } else {
                 n_az = n_az_uniform;
-                az_step_deg = az_step_uniform;
+                az_step = az_step_uniform;
             }
 
-            let az_step_rad = az_step_deg.to_radians();
+            let az_step_rad = az_step.to::<Radian>().value();
             let solid_angle = Steradians::new(cos_alt * alt_step_rad * az_step_rad);
 
             (0..n_az).map(move |j| {
-                let az_deg = (j as f64 + 0.5) * az_step_deg;
+                let az: Degrees = Degrees::new(j as f64 + 0.5) * az_step.value();
                 SkyGridCell {
-                    direction: spherical::Direction::<frames::Horizontal>::new_unchecked(
-                        Degrees::new(alt_deg),
-                        Degrees::new(az_deg),
-                    ),
+                    direction: spherical::Direction::<frames::Horizontal>::new_unchecked(alt, az),
                     solid_angle,
                 }
             })

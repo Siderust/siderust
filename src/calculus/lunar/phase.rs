@@ -338,35 +338,34 @@ impl MoonPhaseGeometry {
 
 /// Ecliptic longitude and distance of the Moon (geocentric, ecliptic J2000).
 ///
-/// Returns `(lon_rad, lat_rad, dist_km)`.
-fn moon_ecliptic_geocentric<E: Ephemeris>(jd: JulianDate) -> (f64, f64, f64) {
+/// Returns `(lon, lat, dist_km)`.
+fn moon_ecliptic_geocentric<E: Ephemeris>(jd: JulianDate) -> (Radians, Radians, f64) {
     let moon: cartesian::Position<Geocentric, frames::EclipticMeanJ2000, Kilometer> =
         E::moon_geocentric(jd);
     let sph = moon.to_spherical();
     (
-        sph.azimuth.to::<Radian>().value(), // lon
-        sph.polar.to::<Radian>().value(),   // lat
-        sph.distance.value(),               // km
+        sph.azimuth.to::<Radian>(), // lon
+        sph.polar.to::<Radian>(),   // lat
+        sph.distance.value(),       // km (no Kilometer ÷ Kilometer = f64 path needed)
     )
 }
 
 /// Ecliptic longitude and distance of the Sun as seen from Earth (geocentric).
 ///
 /// We compute: Sun geocentric ecliptic lon = Earth heliocentric lon + π.
-/// Returns `(lon_rad, dist_au)`.
-fn sun_ecliptic_geocentric<E: Ephemeris>(jd: JulianDate) -> (f64, f64) {
+/// Returns `(lon, dist_au)`.
+fn sun_ecliptic_geocentric<E: Ephemeris>(jd: JulianDate) -> (Radians, f64) {
     let earth = E::earth_heliocentric(jd);
     let sph = earth.to_spherical();
-    let earth_lon = sph.azimuth.to::<Radian>().value();
-    let sun_lon = (earth_lon + PI).rem_euclid(TWO_PI);
-    let sun_dist = sph.distance.value(); // in AU (heliocentric distance = geocentric distance)
+    let sun_lon = Radians::new((sph.azimuth.to::<Radian>().value() + PI).rem_euclid(TWO_PI));
+    let sun_dist = sph.distance.value(); // AU
     (sun_lon, sun_dist)
 }
 
 /// Compute Moon–Sun elongation (eastward, in \[0, 2π)) from ecliptic
 /// longitudes.
-fn elongation_from_longitudes(moon_lon: f64, sun_lon: f64) -> f64 {
-    (moon_lon - sun_lon).rem_euclid(TWO_PI)
+fn elongation_from_longitudes(moon_lon: Radians, sun_lon: Radians) -> f64 {
+    (moon_lon - sun_lon).value().rem_euclid(TWO_PI)
 }
 
 /// Phase angle *i* via the law of cosines on the Sun–Moon–Earth triangle.
@@ -422,7 +421,7 @@ pub fn moon_phase_geocentric<E: Ephemeris>(jd: JulianDate) -> MoonPhaseGeometry 
 
     // Elongation: angular separation measured eastward from the Sun.
     // For the proper great-circle elongation including latitude:
-    let psi = great_circle_elongation(sun_lon, 0.0, moon_lon, moon_lat);
+    let psi = great_circle_elongation(sun_lon, Radians::new(0.0), moon_lon, moon_lat);
 
     // Signed elongation for waxing/waning (eastward = positive)
     let signed_elong = elongation_from_longitudes(moon_lon, sun_lon);
@@ -450,8 +449,8 @@ pub fn moon_phase_geocentric<E: Ephemeris>(jd: JulianDate) -> MoonPhaseGeometry 
 /// both small and near-antipodal separations, matching
 /// [`affn::spherical::angular_separation_impl`] used by all
 /// `Direction<F>::angular_separation` methods.
-fn great_circle_elongation(lon1: f64, lat1: f64, lon2: f64, lat2: f64) -> f64 {
-    let dlon = lon2 - lon1;
+fn great_circle_elongation(lon1: Radians, lat1: Radians, lon2: Radians, lat2: Radians) -> f64 {
+    let dlon = (lon2 - lon1).value();
     let (s_lat1, c_lat1) = lat1.sin_cos();
     let (s_lat2, c_lat2) = lat2.sin_cos();
     let (s_dlon, c_dlon) = dlon.sin_cos();
@@ -514,18 +513,18 @@ pub fn moon_phase_topocentric<E: Ephemeris>(
         AstronomicalUnit,
     > = Sun::get_apparent_topocentric_equ(jd, site);
 
-    // RA/Dec in radians
-    let moon_ra = moon_topo.ra().to::<Radian>().value();
-    let moon_dec = moon_topo.dec().to::<Radian>().value();
-    let sun_ra = sun_topo.ra().to::<Radian>().value();
-    let sun_dec = sun_topo.dec().to::<Radian>().value();
+    // RA/Dec as typed Radians
+    let moon_ra = moon_topo.ra().to::<Radian>();
+    let moon_dec = moon_topo.dec().to::<Radian>();
+    let sun_ra = sun_topo.ra().to::<Radian>();
+    let sun_dec = sun_topo.dec().to::<Radian>();
 
     // True angular separation (great circle)
     let psi = great_circle_elongation(moon_ra, moon_dec, sun_ra, sun_dec);
 
     // Signed elongation: positive when Moon is east of Sun.
     // Use RA difference as proxy for the east/west sign.
-    let dra = (moon_ra - sun_ra).rem_euclid(TWO_PI);
+    let dra = (moon_ra - sun_ra).value().rem_euclid(TWO_PI);
     let signed_elong = if dra < PI { psi } else { TWO_PI - psi };
 
     // Phase angle from geocentric distance triangle
@@ -745,10 +744,9 @@ impl<E: Ephemeris> MoonPhaseSeries<E> {
 // ===========================================================================
 
 /// A reusable scalar closure for geocentric illuminated fraction at a given MJD.
-fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> Radians {
+fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> IlluminationFractions {
     let jd: JulianDate = mjd.into();
-    let geom = moon_phase_geocentric::<E>(jd);
-    Radians::new(geom.illuminated_fraction.value())
+    moon_phase_geocentric::<E>(jd).illuminated_fraction
 }
 
 /// Find all time windows in `window` where the geocentric illuminated
@@ -786,7 +784,7 @@ pub fn illumination_above<E: Ephemeris>(
         window,
         opts.scan_step,
         &illumination_at_mjd::<E>,
-        Radians::new(k_min.value()),
+        k_min,
     )
 }
 
@@ -854,8 +852,8 @@ pub fn illumination_range<E: Ephemeris>(
         window,
         opts.scan_step,
         &illumination_at_mjd::<E>,
-        Radians::new(k_min.value()),
-        Radians::new(k_max.value()),
+        k_min,
+        k_max,
     )
 }
 
