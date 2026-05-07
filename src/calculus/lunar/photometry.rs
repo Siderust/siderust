@@ -55,7 +55,7 @@ pub const MEAN_MOON_DISTANCE: Kilometers = Kilometers::new(384_400.0);
 ///
 /// Dimensionless full‑Moon geometric albedo at `wavelength`.
 pub fn lunar_full_moon_albedo_jones2013(wavelength: Nanometers) -> Albedos {
-    let lambda = wavelength.value().clamp(300.0, 1_100.0);
+    let lambda = wavelength.clamp(Nanometers::new(300.0), Nanometers::new(1_100.0)).value();
     let t = (lambda - 300.0) / 800.0;
     Albedos::new(0.075 + 0.065 * t)
 }
@@ -75,7 +75,7 @@ pub fn lunar_full_moon_albedo_jones2013(wavelength: Nanometers) -> Albedos {
 /// Dimensionless attenuation factor (typed [`IlluminationFractions`]),
 /// equal to `1` at full Moon and vanishing near the new Moon.
 pub fn lunar_phase_attenuation_jones2013(phase_angle: Radians) -> IlluminationFractions {
-    let a = phase_angle.value().abs().to_degrees();
+    let a = phase_angle.abs().value().to_degrees();
     IlluminationFractions::new(10f64.powf(-0.4 * (0.026 * a + 4.0e-9 * a.powi(4))))
 }
 

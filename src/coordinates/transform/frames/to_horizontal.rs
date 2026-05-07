@@ -75,10 +75,10 @@ fn equatorial_to_horizontal_angles(
     jd: JulianDate,
 ) -> (Radians, Radians) {
     let gmst = gmst_from_tt(jd);
-    let lst_rad = gmst.value() + site.lon.to::<Radian>().value();
+    let lst = gmst + site.lon.to::<Radian>();
 
     let ra_rad: Radians = ra.to::<Radian>();
-    let ha = Quantity::<Radian>::new((lst_rad - ra_rad.value()).rem_euclid(std::f64::consts::TAU));
+    let ha = Quantity::<Radian>::new((lst - ra_rad).value().rem_euclid(std::f64::consts::TAU));
     let dec_rad: Radians = dec.to::<Radian>();
 
     let (sin_dec, cos_dec) = dec_rad.sin_cos();
@@ -158,7 +158,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
             Quantity::<Radian>::new(0.0)
         };
 
-        let ra: Radians = Quantity::<Radian>::new(self.y().value().atan2(self.x().value()));
+        let ra: Radians = Quantity::<Radian>::new((self.y() / r).atan2(self.x() / r));
 
         let site_trig = SiteTrig::from_site(site);
         let (alt, az) =
@@ -198,7 +198,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, EquatorialMeanOfD
             Quantity::<Radian>::new(0.0)
         };
         // atan2 on Quantity<U> values - extract raw values for atan2
-        let az: Radians = Quantity::<Radian>::new((-self.y()).value().atan2(self.x().value()));
+        let az: Radians = Quantity::<Radian>::new((-self.y() / r).atan2(self.x() / r));
 
         let site_trig = SiteTrig::from_site(site);
         let (ra, dec) = horizontal_to_equatorial_angles(alt, az, site, &site_trig, jd);
