@@ -107,7 +107,7 @@ impl ToHorizontal for Direction<EquatorialTrueOfDate> {
         // Compute GAST and hour angle
         let nut = nutation::nutation_iau2000b(*jd_tt);
         let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.true_obliquity());
-        let ha = gast.value() + obs_lon.value() - ra.value();
+        let ha = (gast + obs_lon - ra).value();
 
         // Spherical trigonometry for equatorial → horizontal
         let (sh, ch) = ha.sin_cos();
@@ -184,7 +184,7 @@ impl FromHorizontal for Direction<Horizontal> {
         // Compute LAST (Local Apparent Sidereal Time)
         let nut = nutation::nutation_iau2000b(*jd_tt);
         let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.true_obliquity());
-        let last = gast.value() + obs_lon.value();
+        let last = (gast + obs_lon).value();
 
         // Spherical trigonometry for horizontal → equatorial
         let (sp, cp) = obs_lat.sin_cos();

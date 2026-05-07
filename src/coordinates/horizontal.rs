@@ -175,12 +175,12 @@ impl std::fmt::Display for HorizontalConvention {
 ///
 /// This is the bearing of the origin cardinal point measured in the
 /// standard North-CW system.
-const fn origin_offset_cw(origin: AzimuthOrigin) -> f64 {
+const fn origin_offset_cw(origin: AzimuthOrigin) -> Degrees {
     match origin {
-        AzimuthOrigin::North => 0.0,
-        AzimuthOrigin::East => 90.0,
-        AzimuthOrigin::South => 180.0,
-        AzimuthOrigin::West => 270.0,
+        AzimuthOrigin::North => Degrees::new(0.0),
+        AzimuthOrigin::East => Degrees::new(90.0),
+        AzimuthOrigin::South => Degrees::new(180.0),
+        AzimuthOrigin::West => Degrees::new(270.0),
     }
 }
 
@@ -230,9 +230,9 @@ pub fn convert_azimuth(
 
     // Step 1: source → North-CW
     let az_ncw = match from.sense {
-        AzimuthSense::Clockwise => azimuth.value() + origin_offset_cw(from.origin),
+        AzimuthSense::Clockwise => azimuth + origin_offset_cw(from.origin),
         // CCW sense: negate first, then add origin offset
-        AzimuthSense::CounterClockwise => -azimuth.value() + origin_offset_cw(from.origin),
+        AzimuthSense::CounterClockwise => -azimuth + origin_offset_cw(from.origin),
     };
 
     // Step 2: North-CW → target
@@ -242,7 +242,7 @@ pub fn convert_azimuth(
         AzimuthSense::CounterClockwise => -(az_ncw - origin_offset_cw(to.origin)),
     };
 
-    (az_target * DEG).normalize()
+    az_target.normalize()
 }
 
 // =============================================================================
@@ -491,7 +491,7 @@ pub fn flip_north_south(azimuth: Degrees) -> Degrees {
 /// assert!((ccw_az.value() - 270.0).abs() < 1e-10);
 /// ```
 pub fn flip_sense(azimuth: Degrees) -> Degrees {
-    (-(azimuth.value()) * DEG).normalize()
+    (-azimuth).normalize()
 }
 
 // =============================================================================

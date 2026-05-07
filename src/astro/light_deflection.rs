@@ -296,7 +296,7 @@ pub fn solar_deflection_magnitude(
     // Δθ = (2GM/c²R) × cot(θ/2)
     let half = sun_angle * 0.5;
     let cot_half = half.cos() / half.sin().abs().max(1e-10);
-    let scale_rad = SOLAR_SCHWARZSCHILD_AU / sun_distance.value();
+    let scale_rad = AstronomicalUnits::new(SOLAR_SCHWARZSCHILD_AU) / sun_distance;
     Radians::new(scale_rad * cot_half).to::<Arcsecond>()
 }
 
