@@ -3,42 +3,59 @@
 
 //! # Moon Phase Module
 //!
+//! ## Scientific scope
+//!
 //! Computes the photometric geometry of the Moon–Sun–Earth (or observer)
-//! system and derives human-facing phase labels.
+//! system and derives human-facing phase labels.  The core quantity is the
+//! **illuminated fraction** *k* = (1 + cos *i*) / 2, where *i* is the
+//! Sun–Moon–Earth phase angle derived from the ecliptic-coordinate triangle.
+//! Elongation ψ is measured eastward from the Sun in \[0, 2π), giving the
+//! waxing (ψ ∈ (0, π)) / waning (ψ ∈ (π, 2π)) classification.  Phase-event
+//! finding locates the instants when ψ ∈ {0°, 90°, 180°, 270°} (new, first
+//! quarter, full, last quarter) within an arbitrary time window.
 //!
-//! ## Outputs
+//! ## Technical scope
 //!
-//! Two layers are exposed:
+//! Two API layers are exposed:
 //!
 //! ### A) Continuous geometry ([`MoonPhaseGeometry`])
 //!
-//! * **Phase angle** *i*: Sun–Moon–Observer angle at the Moon
-//! * **Illuminated fraction** *k* = (1 + cos *i*) / 2
-//! * **Elongation** ψ: geocentric (or topocentric) angular separation
-//!   between Moon and Sun, in \[0, 2π)
-//! * **Waxing/waning** flag: derived from elongation ψ ∈ (0, π)
+//! * `phase_angle: Radians` — Sun–Moon–Observer angle at the Moon, \[0, π\].
+//! * `illuminated_fraction: IlluminationFractions` — typed k ∈ \[0, 1\].
+//! * `elongation: Radians` — geocentric (or topocentric) elongation, \[0, 2π).
+//! * `waxing: bool` — derived from elongation ψ ∈ (0, π).
+//!
+//! Entry points: [`moon_phase_geocentric`], [`moon_phase_topocentric`].
 //!
 //! ### B) Discrete label ([`MoonPhaseLabel`])
 //!
-//! Eight classical names, derived from the elongation with configurable
+//! Eight classical names derived from elongation with configurable 45°-bin
 //! thresholds ([`PhaseThresholds`]).
 //!
-//! ## Event finding ([`find_phase_events`])
+//! ### C) Event finding ([`find_phase_events`])
 //!
-//! Locates principal lunar phases (new, first quarter, full, last quarter)
-//! in a time window using the same scan + Brent root-finding approach as
-//! the altitude-crossings API.
+//! Locates principal lunar phases in a time window using scan + Brent
+//! root-finding (same infrastructure as the altitude-crossings API).
 //!
-//! ## Backend selection
+//! ### D) Illumination period finders
 //!
-//! All free functions are generic over `E: Ephemeris`, so callers can choose
-//! between `Vsop87Ephemeris` (always available) and optional `De440Ephemeris`
-//! / `De441Ephemeris` when the corresponding feature is enabled.
+//! [`illumination_above`], [`illumination_below`], [`illumination_range`] find
+//! `Period<ModifiedJulianDate>` intervals where the geocentric *k* satisfies a
+//! threshold or band condition.  Parameters typed as `IlluminationFractions`.
 //!
-//! ## Time scale
+//! All free functions are generic over `E: Ephemeris`, supporting
+//! `Vsop87Ephemeris` (always available) and optional `De440Ephemeris` /
+//! `De441Ephemeris`.  All `JulianDate` / `ModifiedJulianDate` values are on
+//! the TT axis.
 //!
-//! All `JulianDate` / `ModifiedJulianDate` / `Period<ModifiedJulianDate>` values are
-//! interpreted on the TT axis (consistent with the altitude API).
+//! ## References
+//!
+//! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Ch. 48.
+//!   Willmann-Bell.
+//! - Seidelmann, P. K. (Ed.) (1992). *Explanatory Supplement to the
+//!   Astronomical Almanac*, 3rd ed., Ch. 9.  University Science Books.
+//! - Krisciunas, K., & Schaefer, B. E. (1991). "A model of the brightness
+//!   of moonlight." *PASP*, 103(667), 1033–1039.  doi:10.1086/132900
 
 use crate::calculus::ephemeris::Ephemeris;
 use crate::calculus::math_core::intervals;
@@ -268,15 +285,15 @@ impl std::fmt::Display for PhaseEvent {
 
 /// Continuous photometric geometry of the Moon–Sun–Earth (or observer) system.
 ///
-/// All angular quantities are in **radians** (typed via `crate::qtty::Radians`).
-/// The illuminated fraction is a dimensionless `f64` in \[0, 1\].
+/// All angular quantities are typed via `crate::qtty`.  The illuminated
+/// fraction is an [`IlluminationFractions`] (dimensionless, \[0, 1\]).
 #[derive(Debug, Clone, Copy)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MoonPhaseGeometry {
     /// Sun–Moon–Earth (or observer) angle at the Moon, in \[0, π\].
     pub phase_angle: Radians,
     /// Fraction of the Moon's disk that is illuminated, \[0, 1\].
-    pub illuminated_fraction: f64,
+    pub illuminated_fraction: IlluminationFractions,
     /// Geocentric (or topocentric) elongation of the Moon from the Sun,
     /// measured eastward from the Sun, in \[0, 2π).
     pub elongation: Radians,
@@ -292,7 +309,7 @@ impl std::fmt::Display for MoonPhaseGeometry {
             "{} ({}, {:.1}% lit)",
             self.label(),
             phase_dir,
-            self.illuminated_fraction * 100.0
+            self.illuminated_fraction.value() * 100.0
         )
     }
 }
@@ -311,7 +328,7 @@ impl MoonPhaseGeometry {
 
     /// Illuminated fraction as a percentage \[0, 100\].
     pub fn illuminated_percent(&self) -> f64 {
-        self.illuminated_fraction * 100.0
+        self.illuminated_fraction.value() * 100.0
     }
 }
 
@@ -396,8 +413,8 @@ fn phase_angle_from_triangle(r_moon_km: f64, r_sun_au: f64, psi: f64) -> f64 {
 /// use siderust::time::JulianDate;
 ///
 /// let geom = moon_phase_geocentric::<Vsop87Ephemeris>(JulianDate::J2000);
-/// assert!(geom.illuminated_fraction >= 0.0);
-/// assert!(geom.illuminated_fraction <= 1.0);
+/// assert!(geom.illuminated_fraction.value() >= 0.0);
+/// assert!(geom.illuminated_fraction.value() <= 1.0);
 /// ```
 pub fn moon_phase_geocentric<E: Ephemeris>(jd: JulianDate) -> MoonPhaseGeometry {
     let (moon_lon, moon_lat, moon_dist_km) = moon_ecliptic_geocentric::<E>(jd);
@@ -418,7 +435,7 @@ pub fn moon_phase_geocentric<E: Ephemeris>(jd: JulianDate) -> MoonPhaseGeometry 
 
     MoonPhaseGeometry {
         phase_angle: Radians::new(i),
-        illuminated_fraction: k,
+        illuminated_fraction: IlluminationFractions::new(k),
         elongation: Radians::new(signed_elong),
         waxing: signed_elong > 0.0 && signed_elong < PI,
     }
@@ -480,7 +497,7 @@ fn great_circle_elongation(lon1: f64, lat1: f64, lon2: f64, lat2: f64) -> f64 {
 ///
 /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M);
 /// let geom = moon_phase_topocentric::<Vsop87Ephemeris>(JulianDate::J2000, site);
-/// assert!(geom.illuminated_fraction >= 0.0 && geom.illuminated_fraction <= 1.0);
+/// assert!(geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0);
 /// ```
 pub fn moon_phase_topocentric<E: Ephemeris>(
     jd: JulianDate,
@@ -521,7 +538,7 @@ pub fn moon_phase_topocentric<E: Ephemeris>(
 
     MoonPhaseGeometry {
         phase_angle: Radians::new(i),
-        illuminated_fraction: k,
+        illuminated_fraction: IlluminationFractions::new(k),
         elongation: Radians::new(signed_elong),
         waxing: signed_elong > 0.0 && signed_elong < PI,
     }
@@ -693,6 +710,18 @@ impl<E: Ephemeris> MoonPhaseSeries<E> {
 
     /// Sample topocentric Moon phase geometry from `start` to `end`
     /// (inclusive) at intervals of `step` for a given observer location.
+    ///
+    /// # Arguments
+    ///
+    /// * `start`, first MJD sample (TT axis).
+    /// * `end`, last MJD sample (TT axis).
+    /// * `step`, time spacing between samples.
+    /// * `site`, geodetic observer location.
+    ///
+    /// # Returns
+    ///
+    /// `Vec<(ModifiedJulianDate, MoonPhaseGeometry)>` with one entry per
+    /// sample point.
     pub fn sample_topocentric(
         start: ModifiedJulianDate,
         end: ModifiedJulianDate,
@@ -719,7 +748,7 @@ impl<E: Ephemeris> MoonPhaseSeries<E> {
 fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> Radians {
     let jd: JulianDate = mjd.into();
     let geom = moon_phase_geocentric::<E>(jd);
-    Radians::new(geom.illuminated_fraction)
+    Radians::new(geom.illuminated_fraction.value())
 }
 
 /// Find all time windows in `window` where the geocentric illuminated
@@ -741,23 +770,23 @@ fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> Radians {
 /// use siderust::calculus::lunar::phase::{illumination_above, PhaseSearchOpts};
 /// use siderust::calculus::ephemeris::Vsop87Ephemeris;
 /// use siderust::time::{ModifiedJulianDate, Period};
-/// use siderust::qtty::Days;
+/// use siderust::qtty::{Days, IlluminationFractions};
 ///
 /// let start  = ModifiedJulianDate::new(60000.0);
 /// let window = Period::new(start, start + Days::new(30.0));
 /// // Find windows where Moon is more than 50% illuminated (gibbous/full)
-/// let bright = illumination_above::<Vsop87Ephemeris>(window, 0.5, PhaseSearchOpts::default());
+/// let bright = illumination_above::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.5), PhaseSearchOpts::default());
 /// ```
 pub fn illumination_above<E: Ephemeris>(
     window: Period<ModifiedJulianDate>,
-    k_min: f64,
+    k_min: IlluminationFractions,
     opts: PhaseSearchOpts,
 ) -> Vec<Period<ModifiedJulianDate>> {
     intervals::above_threshold_periods(
         window,
         opts.scan_step,
         &illumination_at_mjd::<E>,
-        Radians::new(k_min),
+        Radians::new(k_min.value()),
     )
 }
 
@@ -769,9 +798,14 @@ pub fn illumination_above<E: Ephemeris>(
 /// - `window`: search interval
 /// - `k_max`: illuminated fraction upper bound, in \[0, 1\]
 /// - `opts`: scan precision options
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of intervals
+/// where `illuminated_fraction(t) ≤ k_max`.
 pub fn illumination_below<E: Ephemeris>(
     window: Period<ModifiedJulianDate>,
-    k_max: f64,
+    k_max: IlluminationFractions,
     opts: PhaseSearchOpts,
 ) -> Vec<Period<ModifiedJulianDate>> {
     use crate::time::complement_within;
@@ -798,25 +832,30 @@ pub fn illumination_below<E: Ephemeris>(
 /// use siderust::calculus::lunar::phase::{illumination_range, PhaseSearchOpts};
 /// use siderust::calculus::ephemeris::Vsop87Ephemeris;
 /// use siderust::time::{ModifiedJulianDate, Period};
-/// use siderust::qtty::Days;
+/// use siderust::qtty::{Days, IlluminationFractions};
 ///
 /// let start  = ModifiedJulianDate::new(60000.0);
 /// let window = Period::new(start, start + Days::new(60.0));
 /// // Crescent phase: 5–35% illuminated
-/// let crescent = illumination_range::<Vsop87Ephemeris>(window, 0.05, 0.35, PhaseSearchOpts::default());
+/// let crescent = illumination_range::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.05), IlluminationFractions::new(0.35), PhaseSearchOpts::default());
 /// ```
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of intervals
+/// where `k_min ≤ illuminated_fraction(t) ≤ k_max`.
 pub fn illumination_range<E: Ephemeris>(
     window: Period<ModifiedJulianDate>,
-    k_min: f64,
-    k_max: f64,
+    k_min: IlluminationFractions,
+    k_max: IlluminationFractions,
     opts: PhaseSearchOpts,
 ) -> Vec<Period<ModifiedJulianDate>> {
     intervals::in_range_periods(
         window,
         opts.scan_step,
         &illumination_at_mjd::<E>,
-        Radians::new(k_min),
-        Radians::new(k_max),
+        Radians::new(k_min.value()),
+        Radians::new(k_max.value()),
     )
 }
 
@@ -837,10 +876,10 @@ mod tests {
             let jd = start + Days::new(i as f64 * 3.0);
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             assert!(
-                geom.illuminated_fraction >= 0.0 && geom.illuminated_fraction <= 1.0,
+                geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0,
                 "Fraction out of bounds at JD offset {}: {}",
                 i * 3,
-                geom.illuminated_fraction
+                geom.illuminated_fraction.value()
             );
         }
     }
@@ -986,7 +1025,7 @@ mod tests {
         );
 
         // Illuminated fraction difference should be < 1%
-        let frac_diff = (geo.illuminated_fraction - topo.illuminated_fraction).abs();
+        let frac_diff = (geo.illuminated_fraction.value() - topo.illuminated_fraction.value()).abs();
         assert!(
             frac_diff < 0.01,
             "Illuminated fraction geo vs topo differ by more than 1%: {}",

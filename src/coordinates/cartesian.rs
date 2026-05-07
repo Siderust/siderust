@@ -3,8 +3,21 @@
 
 //! Cartesian coordinate type aliases for common astronomical systems.
 //!
-//! This module provides convenient type aliases that combine algebraic cartesian
-//! types with standard astronomical reference frames and centers.
+//! ## Scientific scope
+//!
+//! Cartesian coordinates provide a linear representation of positions,
+//! directions, displacements, and velocities in three-dimensional space.
+//! They are the natural working format for rotation matrices, vector
+//! arithmetic, and distance calculations. All frame-rotation and
+//! center-shift operations in siderust operate on Cartesian vectors
+//! internally, even when the user-facing API accepts or returns spherical
+//! coordinates.
+//!
+//! ## Technical scope
+//!
+//! This module provides convenient type aliases that combine the algebraic
+//! cartesian types from the `affn` crate with standard astronomical reference
+//! frames and centers.
 //!
 //! ## Semantic Types
 //!
@@ -13,6 +26,11 @@
 //! - [`Direction`]: Unit vectors with frame only (dimensionless)
 //! - [`Velocity`]: Rate-of-change vectors with frame and unit
 //! - [`Vector`]: Generic free vector (base type for Displacement and Velocity)
+//!
+//! ## References
+//!
+//! - Vallado, D. A. (2013). *Fundamentals of Astrodynamics and Applications*,
+//!   4th ed. §2.1.
 
 use crate::coordinates::{centers, frames};
 

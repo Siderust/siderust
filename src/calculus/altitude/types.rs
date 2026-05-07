@@ -3,7 +3,25 @@
 
 //! # Altitude Type Definitions
 //!
-//! Core types for altitude computation, crossings, and culminations.
+//! ## Scientific scope
+//!
+//! Light data structures used to express the *result* of an altitude
+//! computation: the kinematic event types (rising/setting threshold
+//! crossings, upper/lower culminations) and the geometric query
+//! description (observer, time window, altitude band). No physics is
+//! performed here; the types are unit‑typed via `qtty` so callers cannot
+//! accidentally mix degrees, radians, or time scales.
+//!
+//! ## Technical scope
+//!
+//! Pure data types (no functions). Defines:
+//! - [`CrossingDirection`] / [`CrossingEvent`], threshold transit results.
+//! - [`CulminationKind`] / [`CulminationEvent`], altitude extrema.
+//! - [`AltitudeQuery`], grouped query parameters consumed by the
+//!   event‑finding APIs.
+//!
+//! ## References
+//! None.
 
 use crate::qtty::*;
 use crate::time::{ModifiedJulianDate, Period};

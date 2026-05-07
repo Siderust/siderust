@@ -3,32 +3,32 @@
 
 //! # Solar Calculus Module
 //!
-//! This module provides algorithms and data structures for calculations related to the Sun
-//! and solar system barycenter, focusing on the Sun's apparent position as seen from Earth.
+//! ## Scientific scope
 //!
-//! ## Current Features
+//! Algorithms and data structures for the apparent position of the Sun as
+//! seen from a topocentric Earth observer. Covers altitude (no
+//! refraction), azimuth, twilight phase classification (civil, nautical,
+//! astronomical), and time intervals during which the Sun is above/below a
+//! threshold or inside a band. Validity is bounded by the underlying
+//! VSOP87 model used for the Sun–Earth geometry.
 //!
-//! - Calculation of the Sun's apparent geocentric equatorial coordinates, including
-//!   corrections for nutation and aberration.
-//! - Optimized sun altitude calculations
-//! - Finding periods when Sun is above/below specific altitude thresholds (day/night)
-//! - Altitude range detection (`find_sun_range_periods`)
+//! ## Technical scope
 //!
-//! ## Design Notes
+//! - Apparent geocentric equatorial coordinates with nutation + aberration.
+//! - Optimised Sun altitude/azimuth closures.
+//! - `find_day_periods`, `find_night_periods`, `find_sun_range_periods`
+//!   built on `math_core::intervals` (scan + Brent + interval algebra).
+//! - Twilight phase classification via [`twilight_classification`].
 //!
-//! All period-finding delegates to [`crate::calculus::math_core::intervals`]
-//! which provides scan + Brent refinement + interval assembly.  This module
-//! supplies the Sun-altitude closure and JD↔Mjd conversions.
+//! All period‑finding delegates to [`crate::calculus::math_core::intervals`]
+//! which provides scan + Brent refinement + interval assembly. This module
+//! supplies the Sun‑altitude closure and JD↔MJD conversions.
 //!
-//! ## Usage
-//!
-//! The main entry points are:
-//! - `sun_altitude_rad`: Compute Sun altitude at a given Julian Date
-//! - `find_day_periods` / `find_night_periods`: Above/below threshold
-//! - `find_sun_range_periods`: Within a min/max altitude band
-//!
-//! ---
-//! _This module is under active development and will be expanded in future releases._
+//! ## References
+//! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Willmann‑Bell.
+//! - Bretagnon, P. & Francou, G. (1988). "Planetary theories in
+//!   rectangular and spherical variables. VSOP 87 solutions". *A&A*,
+//!   202, 309–315.
 
 mod sun_equations;
 

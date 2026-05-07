@@ -120,14 +120,14 @@ fn nutation_shifts_cip_significantly() {
     let dy = (y1 - y0) * 206_264.806;
 
     assert!(
-        dx.abs() > 0.1 && dx.abs() < 25.0,
+        dx.abs() > CipCoordinates::new(0.1) && dx.abs() < CipCoordinates::new(25.0),
         "CIP X nutation shift = {}″, expected 1-20″",
-        dx
+        dx.value()
     );
     assert!(
-        dy.abs() > 0.1 && dy.abs() < 25.0,
+        dy.abs() > CipCoordinates::new(0.1) && dy.abs() < CipCoordinates::new(25.0),
         "CIP Y nutation shift = {}″, expected 1-20″",
-        dy
+        dy.value()
     );
 }
 

@@ -3,9 +3,30 @@
 
 //! Frame transformation: EquatorialMeanOfDate → Horizontal
 //!
-//! This module implements the transformation from the equatorial frame to the
-//! horizontal (alt-az) frame for topocentric coordinates. The transformation
-//! uses the observer's site information embedded in the coordinate's center params.
+//! ## Scientific scope
+//!
+//! The **horizontal (alt-az) frame** is an observer-fixed coordinate system
+//! referenced to the local horizon. Altitude is the elevation above the
+//! horizon and azimuth is the compass bearing (North-clockwise in siderust's
+//! native convention). This frame depends on both the observer's geographic
+//! location and the sidereal time at observation.
+//!
+//! ## Technical scope
+//!
+//! The transformation from the mean equatorial frame of date uses GMST
+//! (Greenwich Mean Sidereal Time) derived from the Julian Date, together with
+//! the observer's geodetic latitude and longitude embedded in the topocentric
+//! center parameters.
+//!
+//! For a more precise transform using GAST (Greenwich Apparent Sidereal Time,
+//! which accounts for nutation), see
+//! [`crate::coordinates::transform::horizontal`].
+//!
+//! ## References
+//!
+//! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed. Ch. 13.
+//! - Montenbruck, O. & Pfleger, T. (2000). *Astronomy on the Personal
+//!   Computer*. §4.2.
 
 use crate::astro::earth_rotation::gmst_from_tt;
 use crate::coordinates::centers::{Geodetic, Topocentric};
@@ -150,7 +171,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, Horizontal, U>>
         let new_y = -r * alt.cos() * az.sin(); // negative for East-positive azimuth
         let new_z = r * alt.sin();
 
-        cartesian::Position::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
+        cartesian::Position::from_array(*site, [new_x, new_y, new_z])
     }
 }
 
@@ -188,7 +209,7 @@ impl<U: LengthUnit> Transform<cartesian::Position<Topocentric, EquatorialMeanOfD
         let new_y = r * dec.cos() * ra.sin();
         let new_z = r * dec.sin();
 
-        cartesian::Position::from_vec3(*site, nalgebra::Vector3::new(new_x, new_y, new_z))
+        cartesian::Position::from_array(*site, [new_x, new_y, new_z])
     }
 }
 
@@ -302,8 +323,8 @@ mod tests {
             Topocentric,
             EquatorialMeanOfDate,
             crate::qtty::AstronomicalUnit,
-        >::from_vec3(
-            site, nalgebra::Vector3::new(0.5 * AU, 0.3 * AU, 0.7 * AU)
+        >::from_array(
+            site, [0.5 * AU, 0.3 * AU, 0.7 * AU]
         );
 
         let hz_pos: cartesian::Position<Topocentric, Horizontal, crate::qtty::AstronomicalUnit> =
@@ -347,8 +368,8 @@ mod tests {
             Topocentric,
             EquatorialMeanOfDate,
             crate::qtty::AstronomicalUnit,
-        >::from_vec3(
-            site, nalgebra::Vector3::new(0.5 * AU, 0.3 * AU, 0.7 * AU)
+        >::from_array(
+            site, [0.5 * AU, 0.3 * AU, 0.7 * AU]
         );
         let eq_sph = spherical::Position::<
             Topocentric,

@@ -1,43 +1,61 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Airmass formulas: geometric path-length multipliers through the
-//! atmosphere as a function of the source's zenith distance.
+//! # Airmass formulas
 //!
-//! In astronomical use, airmass is the ratio between:
+//! ## Scientific scope
 //!
-//! - the effective atmospheric path length along an arbitrary line of sight,
-//!   and
-//! - the corresponding path length for the same observer looking at the
-//!   zenith.
+//! Airmass `X` is the ratio between the geometric path length traversed by a
+//! line of sight through the atmosphere and the corresponding zenith path
+//! length for the same observer. It is the dimensionless slant-path
+//! correction used by extinction and sky-brightness models. Values near
+//! `1.0` correspond to sources close to the zenith; values diverge (or
+//! plateau, depending on formula) as the source approaches the horizon.
 //!
-//! It is therefore a dimensionless correction factor for how much atmosphere a
-//! source is seen through. Values near `1.0` correspond to sources close to the
-//! zenith, while larger values at increasing zenith distance represent longer
-//! optical paths, stronger extinction, and greater sensitivity to refraction
-//! and near-horizon approximations.
+//! Several closed-form approximations exist, each trading off accuracy near
+//! the horizon against simplicity. This module exposes four common ones,
+//! selectable at compile time via the [`AirmassFormula`] trait so callers
+//! pay no runtime dispatch cost.
 //!
-//! All variants return a dimensionless scalar; at the zenith every formula
-//! evaluates to (numerically) `1.0`.
+//! ## Technical scope
+//!
+//! - Inputs are typed [`Radians`] zenith distances; the kernel integer is
+//!   never expressed in raw `f64` at the public API.
+//! - Outputs are typed [`Airmasses`] (a `qtty` dimensionless newtype) so
+//!   downstream consumers cannot confuse an airmass with an optical depth
+//!   or a transmittance.
+//! - Formula selection is a zero-sized phantom-type; see
+//!   [`Formula`].
+//!
+//! ## References
+//!
+//! - Young, A. T. (1994). "Air mass and refraction". *Applied Optics* 33,
+//!   1108.
+//! - Rozenberg, G. V. (1966). *Twilight: A Study in Atmospheric Optics*,
+//!   Plenum Press.
+//! - Krisciunas, K., & Schaefer, B. E. (1991). "A model of the brightness
+//!   of moonlight". *PASP* 103, 1033.
+//! - Kasten, F., & Young, A. T. (1989). "Revised optical air mass tables
+//!   and approximation formula". *Applied Optics* 28, 4735.
 
-use crate::qtty::Radians;
+use crate::qtty::{Airmasses, Radians};
 use core::marker::PhantomData;
 
 /// Compile-time airmass formula selector.
 ///
-/// Implement this trait on zero-sized marker types so callers can select a
-/// formula at compile time with `airmass::<F>(zenith)`.
+/// Implementors are zero-sized marker types so callers can pick a formula
+/// at compile time via `airmass::<F>(zenith)` with no runtime dispatch.
 pub trait AirmassFormula {
     /// Human-readable identifier for docs, diagnostics, and tests.
     const NAME: &'static str;
 
-    /// Compute the airmass value for the provided zenith distance in radians.
-    fn airmass_from_radians(zenith_radians: f64) -> f64;
+    /// Compute the airmass at the given typed zenith distance.
+    fn airmass(zenith: Radians) -> Airmasses;
 }
 
 /// Plane-parallel atmosphere: `X = sec z`.
 ///
-/// This is the simplest airmass approximation and diverges at the horizon.
+/// Simplest airmass approximation; diverges at the horizon.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub struct PlaneParallel;
 
@@ -45,8 +63,8 @@ impl AirmassFormula for PlaneParallel {
     const NAME: &'static str = "PlaneParallel";
 
     #[inline]
-    fn airmass_from_radians(zenith_radians: f64) -> f64 {
-        1.0 / zenith_radians.cos()
+    fn airmass(zenith: Radians) -> Airmasses {
+        Airmasses::new(1.0 / zenith.cos())
     }
 }
 
@@ -61,11 +79,11 @@ impl AirmassFormula for Young1994 {
     const NAME: &'static str = "Young1994";
 
     #[inline]
-    fn airmass_from_radians(zenith_radians: f64) -> f64 {
-        let c = zenith_radians.cos();
+    fn airmass(zenith: Radians) -> Airmasses {
+        let c = zenith.cos();
         let num = 1.002432 * c * c + 0.148386 * c + 0.0096467;
         let den = c * c * c + 0.149864 * c * c + 0.0102963 * c + 0.000303978;
-        num / den
+        Airmasses::new(num / den)
     }
 }
 
@@ -80,8 +98,9 @@ impl AirmassFormula for Rozenberg1966 {
     const NAME: &'static str = "Rozenberg1966";
 
     #[inline]
-    fn airmass_from_radians(zenith_radians: f64) -> f64 {
-        1.0 / (zenith_radians.cos() + 0.025 * (-11.0 * zenith_radians.cos()).exp())
+    fn airmass(zenith: Radians) -> Airmasses {
+        let c = zenith.cos();
+        Airmasses::new(1.0 / (c + 0.025 * (-11.0 * c).exp()))
     }
 }
 
@@ -98,14 +117,14 @@ impl AirmassFormula for KrisciunasSchaefer1991 {
     const NAME: &'static str = "KrisciunasSchaefer1991";
 
     #[inline]
-    fn airmass_from_radians(zenith_radians: f64) -> f64 {
-        let s = zenith_radians.sin();
-        (1.0 - 0.96 * s * s).powf(-0.5)
+    fn airmass(zenith: Radians) -> Airmasses {
+        let s = zenith.sin();
+        Airmasses::new((1.0 - 0.96 * s * s).powf(-0.5))
     }
 }
 
-/// Type alias for the recommended default formula in optical sky-brightness
-/// work near the horizon.
+/// Recommended default formula for optical sky-brightness work near the
+/// horizon.
 pub type DefaultAirmassFormula = KrisciunasSchaefer1991;
 
 /// Zero-sized typed selector that carries the airmass formula in its type.
@@ -123,13 +142,10 @@ impl<F: AirmassFormula> Formula<F> {
 /// Compute airmass at the given zenith distance using compile-time formula
 /// selection.
 ///
-/// This returns the multiplicative factor by which the atmospheric path is
-/// longer than the vertical path at the zenith. In practical terms, it is the
-/// standard geometric input used by extinction and sky-brightness models to
-/// scale line-of-sight effects away from zenith.
-///
-/// The zenith distance is taken as a typed [`Radians`] quantity to prevent
-/// accidental degree/radian mismatches at the call site.
+/// Returns the typed [`Airmasses`] multiplier by which the atmospheric
+/// path is longer than the vertical path at the zenith. The zenith
+/// distance is taken as a typed [`Radians`] quantity to prevent accidental
+/// degree/radian mismatches at the call site.
 ///
 /// # Examples
 ///
@@ -138,11 +154,11 @@ impl<F: AirmassFormula> Formula<F> {
 /// use siderust::qtty::Radians;
 ///
 /// let x = airmass::<PlaneParallel>(Radians::new(0.5));
-/// assert!(x > 1.0);
+/// assert!(x.value() > 1.0);
 /// ```
 #[inline]
-pub fn airmass<F: AirmassFormula>(zenith: Radians) -> f64 {
-    F::airmass_from_radians(zenith.value())
+pub fn airmass<F: AirmassFormula>(zenith: Radians) -> Airmasses {
+    F::airmass(zenith)
 }
 
 #[cfg(test)]
@@ -152,7 +168,7 @@ mod tests {
 
     fn assert_zenith_is_one<F: AirmassFormula>() {
         let x = airmass::<F>(Radians::new(0.0));
-        assert!((x - 1.0).abs() < 1e-3, "{} -> {}", F::NAME, x);
+        assert!((x.value() - 1.0).abs() < 1e-3, "{} -> {:?}", F::NAME, x);
     }
 
     #[test]
@@ -166,13 +182,13 @@ mod tests {
     #[test]
     fn plane_parallel_diverges_near_horizon() {
         let z = Radians::new(89.0_f64.to_radians());
-        assert!(airmass::<PlaneParallel>(z) > 50.0);
+        assert!(airmass::<PlaneParallel>(z).value() > 50.0);
     }
 
     #[test]
     fn ks91_finite_at_horizon() {
         let z = Radians::new(90.0_f64.to_radians());
         let x = airmass::<KrisciunasSchaefer1991>(z);
-        assert!(x.is_finite() && x > 1.0);
+        assert!(x.value().is_finite() && x.value() > 1.0);
     }
 }

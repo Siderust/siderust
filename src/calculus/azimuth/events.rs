@@ -3,10 +3,26 @@
 
 //! # Azimuth Event-Finding Functions
 //!
-//! Functions for finding azimuth events: bearing crossings, azimuth extrema,
-//! and periods within an azimuth range.
+//! ## Scientific scope
 //!
-//! ## Handling the 0°/360° discontinuity
+//! Computes time‑domain azimuth events for a topocentric observer:
+//! bearing crossings (instants when *A(t)* matches a fixed compass
+//! bearing), local extrema (turning points where *A(t)* reaches its most
+//! northerly/southerly excursion), and the time intervals during which
+//! *A(t)* stays inside a (possibly North‑wrapping) bearing band. The
+//! azimuth function itself is delegated to [`AzimuthProvider`], so
+//! accuracy and validity inherit from the underlying ephemeris/star
+//! engine. Refraction is not modelled.
+//!
+//! ## Technical scope
+//!
+//! Public API: [`azimuth_crossings`], [`azimuth_extrema`],
+//! [`azimuth_ranges`], [`in_azimuth_range`], [`outside_azimuth_range`].
+//! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the
+//! TT axis. Convert UTC timestamps with `ModifiedJulianDate::from_chrono(…)`
+//! first.
+//!
+//! ### Handling the 0°/360° discontinuity
 //!
 //! Azimuth is a circular quantity that wraps at North (0° = 360°).  Naive
 //! root-finding on the raw `az(t)` function would produce false crossings at
@@ -21,8 +37,8 @@
 //!   tracks the previous raw sample and accumulates ±2π offsets, producing
 //!   a continuous monotone-ish function safe for `find_extrema_tol`.
 //!
-//! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the TT axis.
-//! Convert UTC timestamps with `ModifiedJulianDate::from_chrono(…)` first.
+//! ## References
+//! None.
 
 use std::cell::Cell;
 
@@ -153,6 +169,11 @@ fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
 /// // Find when the Sun crosses due-South (180°)
 /// let events = azimuth_crossings(&Sun, &site, window, Degrees::new(180.0), SearchOpts::default());
 /// ```
+///
+/// # Returns
+///
+/// Chronologically sorted `Vec<AzimuthCrossingEvent>` of every bearing
+/// transit found inside `window`.
 pub fn azimuth_crossings<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
@@ -191,6 +212,18 @@ pub fn azimuth_crossings<T: AzimuthProvider>(
 ///
 /// Uses a stateful unwrapped closure so that true extrema near the
 /// 0°/360° boundary are detected correctly.
+///
+/// # Arguments
+///
+/// * `target`, body implementing [`AzimuthProvider`]
+/// * `observer`, geodetic site
+/// * `window`, MJD/TT search interval
+/// * `opts`, search precision options
+///
+/// # Returns
+///
+/// Sorted `Vec<AzimuthExtremum>` mixing local maxima and minima of the
+/// (unwrapped) azimuth.
 pub fn azimuth_extrema<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
@@ -284,6 +317,20 @@ pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
 /// Supports wrap-around ranges when `min_az > max_az` (e.g. 350° → 10°).
 ///
 /// Returns a sorted list of `Period<ModifiedJulianDate>`.
+///
+/// # Arguments
+///
+/// * `target`, body implementing [`AzimuthProvider`]
+/// * `observer`, geodetic site
+/// * `window`, MJD/TT search interval
+/// * `min_az`, lower bearing bound (or start of wrap arc)
+/// * `max_az`, upper bearing bound (or end of wrap arc)
+/// * `_opts`, search precision options (currently routed via the provider hint)
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` covering the
+/// times when the azimuth lies in the requested arc.
 pub fn azimuth_ranges<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
@@ -303,6 +350,19 @@ pub fn azimuth_ranges<T: AzimuthProvider>(
 /// Convenience: find periods where azimuth is within `[min_az, max_az]`.
 ///
 /// Identical to [`azimuth_ranges`]; provided as a named convenience wrapper.
+///
+/// # Arguments
+///
+/// * `target`, body implementing [`AzimuthProvider`]
+/// * `observer`, geodetic site
+/// * `window`, MJD/TT search interval
+/// * `min_az`, lower bearing bound (or start of wrap arc)
+/// * `max_az`, upper bearing bound (or end of wrap arc)
+/// * `opts`, search precision options
+///
+/// # Returns
+///
+/// Same as [`azimuth_ranges`]: sorted `Vec<Period<ModifiedJulianDate>>`.
 pub fn in_azimuth_range<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
@@ -315,6 +375,20 @@ pub fn in_azimuth_range<T: AzimuthProvider>(
 }
 
 /// Convenience: find periods where azimuth is **outside** `[min_az, max_az]`.
+///
+/// # Arguments
+///
+/// * `target`, body implementing [`AzimuthProvider`]
+/// * `observer`, geodetic site
+/// * `window`, MJD/TT search interval
+/// * `min_az`, lower bearing bound (or start of wrap arc)
+/// * `max_az`, upper bearing bound (or end of wrap arc)
+/// * `opts`, search precision options
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` covering the
+/// complement of [`in_azimuth_range`] inside `window`.
 pub fn outside_azimuth_range<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,

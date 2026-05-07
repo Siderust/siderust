@@ -1,7 +1,56 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Typed 3D trilinearly-interpolated table.
+//! # Typed 3-D trilinearly-interpolated table
+//!
+//! ## Scientific scope
+//!
+//! Some astronomical models depend on three independent parameters and
+//! are distributed as 3-D gridded look-up tables. The canonical
+//! example is the ESO Sky Model (Noll et al. 2012), which tabulates
+//! sky brightness as a function of wavelength, airmass, and
+//! moon-target separation. Other examples include 3-D atmospheric
+//! transmission grids and pre-computed `(λ, T_eff, log g)` stellar
+//! flux libraries restricted to a single metallicity. This module
+//! provides the typed container for those 3-D parameter grids, with
+//! trilinear interpolation and per-axis out-of-range policy. It is the
+//! 3-D peer of [`crate::tables::Grid1D`] and [`crate::tables::Grid2D`].
+//!
+//! Validity is bounded by the sampled cuboid on `(X, Y, Z)`; outside
+//! it the configured [`OutOfRange`] policy applies on each axis.
+//!
+//! ## Technical scope
+//!
+//! Provides [`Grid3D<X, Y, Z, V, S>`] (`S` defaults to `f64`). Flat
+//! storage uses the convention
+//!
+//! ```text
+//! index = (iz · NY + iy) · NX + ix
+//! ```
+//!
+//! so that the innermost stride is `x`, then `y`, then `z`. The
+//! interpolant matches the ordering used by
+//! [`crate::tables::algo::trilinear`] (interpolate along `x` first,
+//! then `y`, then `z`). The public surface includes:
+//!
+//! - Constructors that validate per-axis lengths, monotonicity, and
+//!   total table size, returning [`TableError`] on failure.
+//! - [`Grid3D::interp_at`] — typed trilinear evaluation honouring the
+//!   per-axis [`OutOfRange`] policies.
+//! - Provenance accessors.
+//!
+//! Inputs are typed `Quantity<X, S>` / `Quantity<Y, S>` /
+//! `Quantity<Z, S>`; outputs are typed `Quantity<V, S>`. The
+//! numerical work is delegated to [`crate::tables::algo::trilinear`].
+//!
+//! ## References
+//!
+//! - Noll, S., Kausch, W., Barden, M., et al. (2012). "An atmospheric
+//!   radiation model for Cerro Paranal. I. The optical spectral
+//!   range". *Astronomy & Astrophysics* **543**, A92.
+//!   doi:10.1051/0004-6361/201219040.
+//! - European Southern Observatory. *SkyCalc — ESO Sky Model
+//!   Calculator*. <https://www.eso.org/observing/etc/skycalc/skycalc.htm>.
 
 use crate::ext_qtty::{Quantity, Scalar, Unit};
 use crate::interp::OutOfRange;

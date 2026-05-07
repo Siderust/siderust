@@ -3,7 +3,26 @@
 
 //! # Azimuth Type Definitions
 //!
-//! Core types for azimuth computation, bearing crossings, and azimuth extrema.
+//! ## Scientific scope
+//!
+//! Pure data structures expressing the *result* of an azimuth analysis:
+//! bearing‑crossing events (instants when *A(t)* sweeps through a fixed
+//! compass bearing) and azimuth extrema (turning points of *A(t)*),
+//! together with a query descriptor for range searches over the circular
+//! `[0°, 360°)` domain. Wrap‑around ranges spanning North are encoded by
+//! `min_azimuth > max_azimuth`; this is a convention, not a constraint
+//! enforced at the type level.
+//!
+//! ## Technical scope
+//!
+//! No functions. Defines:
+//! - [`AzimuthCrossingDirection`] (re‑exported from `altitude`),
+//! - [`AzimuthCrossingEvent`],
+//! - [`AzimuthExtremumKind`] / [`AzimuthExtremum`],
+//! - [`AzimuthQuery`].
+//!
+//! ## References
+//! None.
 
 use crate::calculus::altitude::CrossingDirection;
 use crate::qtty::*;

@@ -1,17 +1,46 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Star type and related functionality.
+//! # Stars
 //!
-//! Represents stars with name, distance, mass, radius, luminosity, and target.
-//! - `name`: Name of the star (borrowed or owned).
-//! - `distance`: LengthUnit from Earth in light-years (`LightYear`).
-//! - `mass`: Stellar mass in solar masses (`SolarMasses`).
-//! - `radius`: Stellar radius in solar radii (`SolarRadiuses`).
-//! - `luminosity`: Stellar luminosity in solar luminosities (`SolarLuminosity`).
-//! - `coordinate`: [`CoordinateWithPM`] pointing to a Spherical coordinates (see [`Position`]), using degrees and Julian Day.
-//! - `parallax`: Optional annual parallax in milliarcseconds.
-//! - `radial_velocity`: Optional radial velocity in km/s.
+//! ## Scientific scope
+//!
+//! Stars are self-luminous plasma spheroids held together by their own gravity
+//! and powered by nuclear fusion. From an observational standpoint, a catalog
+//! star is characterised by its angular position (right ascension, declination),
+//! distance, proper motion, radial velocity, and photometric/physical properties
+//! (mass, radius, luminosity). This module targets the Hipparcos/Gaia regime:
+//! equatorial coordinates in the geocentric mean equator and equinox of J2000.0
+//! (ICRS-aligned), distances in light-years, and proper motions in degrees/year.
+//!
+//! When both trigonometric parallax and radial velocity are available, the full
+//! 6D space-motion propagation (Hipparcos-style, honouring secular acceleration)
+//! is applied by [`Star::position_at`]; otherwise a linear transverse-only
+//! approximation is used.
+//!
+//! ## Technical scope
+//!
+//! - [`Star`] — typed catalog star with name, distance ([`LightYears`]),
+//!   mass ([`SolarMasses`]), radius ([`SolarRadiuses`]),
+//!   luminosity ([`SolarLuminosities`]), ICRS coordinate with optional
+//!   proper motion, parallax ([`MilliArcseconds`]), and radial velocity.
+//! - [`Star::position_at`] — propagates position to an arbitrary epoch
+//!   ([`JulianDate`]) using proper motion and, when available, the full
+//!   Hipparcos-style 6D space-motion model.
+//! - [`Star::has_full_space_motion`] — `true` when parallax, radial
+//!   velocity, and proper motion are all available.
+//!
+//! Pre-built star constants live in [`crate::bodies::catalog`].
+//!
+//! ## References
+//!
+//! - Hipparcos Catalogue, ESA SP-1200 (1997).
+//!   <https://www.cosmos.esa.int/web/hipparcos/catalogues>
+//! - van Leeuwen, F. (2007). *Hipparcos, the New Reduction of the Raw Data*.
+//!   Astrophysics and Space Science Library 350. doi:10.1007/978-1-4020-6342-8
+//! - Luri, X., et al. (2018). "Gaia Data Release 2: using Gaia parallaxes".
+//!   *A&A* 616, A9. doi:10.1051/0004-6361/201832964
+
 
 use crate::astro::proper_motion::{
     propagate_space_motion_since_j2000, ProperMotionError, StarSpaceMotion,

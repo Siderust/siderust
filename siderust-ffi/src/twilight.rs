@@ -8,6 +8,7 @@
 
 use crate::error::SiderustStatus;
 use qtty::*;
+use qtty::angular::{Degrees, Radians};
 use siderust::calculus::solar::classification::{twilight_classification, TwilightPhase};
 
 ffi_enum! {
@@ -77,7 +78,7 @@ pub extern "C" fn siderust_twilight_classification_rad(
 ) -> SiderustStatus {
     ffi_guard! {{
         check_out!(out);
-        let phase = twilight_classification(qtty::Radians::new(altitude_rad));
+        let phase = twilight_classification(qtty::angular::Radians::new(altitude_rad));
         unsafe { *out = SiderustTwilightPhase::from_rust(phase) };
         SiderustStatus::Ok
     }}

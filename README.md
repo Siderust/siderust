@@ -57,6 +57,21 @@ Siderust aims to be a reference ephemeris and orbit‑analysis library for resea
 
 Coordinate algebra and reusable conic geometry are provided by [`affn`](https://crates.io/crates/affn); `siderust` adds the astronomy-specific time, anomaly, and propagation semantics on top.
 
+### API Design Pillars
+
+Siderust 0.7 is built on two cross-cutting principles documented in
+[`doc/conventions.md`](doc/conventions.md):
+
+1. **Typed quantities everywhere.** Every scalar that has physical meaning —
+   pressures, scale heights, optical depths, airmasses, albedos, illumination
+   fractions, CIP coordinates — is a `qtty` newtype. Passing a raw `f64` where
+   a `Hectopascals` or `Kilometers` is expected is a compile-time error.
+
+2. **Phantom-typed model selection.** Algorithm variants (e.g. nutation models)
+   are selected at the call site via zero-sized phantom type parameters such as
+   `to_frame_as::<EquatorialFrame, Iau2006A>(jd)`. There are no runtime enums
+   to match on and no heap allocations — dispatch is fully monomorphised.
+
 ### Astrometry Compliance Note
 
 - Stellar aberration uses the full special-relativistic (Lorentz) formula per IERS Conventions (2020, §7.2); annual uses VSOP87E barycentric Earth velocity and topocentric adds a diurnal `ω×r` term.
@@ -71,7 +86,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.5"
+siderust = "0.7"
 ```
 
 Build-time datasets (VSOP87/ELP2000/IERS and optional JPL kernels) are downloaded on demand; see `doc/datasets.md`.
@@ -92,21 +107,21 @@ Optional features add JPL backends:
 
 ```toml
 [dependencies]
-siderust = { version = "0.5", default-features = false }
+siderust = { version = "0.7", default-features = false }
 ```
 
 2. Enable DE440
 
 ```toml
 [dependencies]
-siderust = { version = "0.5", features = ["de440"] }
+siderust = { version = "0.7", features = ["de440"] }
 ```
 
 3. Enable DE441
 
 ```toml
 [dependencies]
-siderust = { version = "0.5", features = ["de441"] }
+siderust = { version = "0.7", features = ["de441"] }
 ```
 
 4. Combine backends in one binary
@@ -132,7 +147,7 @@ You can combine ephemeris features with others (for example `serde`):
 
 ```toml
 [dependencies]
-siderust = { version = "0.5", features = ["de441", "serde"] }
+siderust = { version = "0.7", features = ["de441", "serde"] }
 ```
 
 ### JPL Build Modes: Real vs Stubbed

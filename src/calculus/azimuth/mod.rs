@@ -3,6 +3,19 @@
 
 //! # Unified Azimuth Computation & Event API
 //!
+//! ## Scientific scope
+//!
+//! Topocentric azimuth *A(t)* of a celestial body, expressed in the
+//! North‑clockwise convention (`N = 0°`, `E = 90°`). The body's apparent
+//! direction comes from the chosen analytical or numerical engine
+//! (VSOP87/ELP/JPL DE for solar‑system bodies; ICRS catalogue position
+//! plus proper motion for stars), so accuracy and validity match that
+//! engine. Azimuth is intrinsically circular in `[0°, 360°)`; this module
+//! supports queries that wrap around North by allowing
+//! `min_azimuth > max_azimuth`. No atmospheric refraction is modelled.
+//!
+//! ## Technical scope
+//!
 //! A clean, user‑friendly API for computing target azimuth vs time and
 //! finding events (bearing crossings, azimuth extrema, range periods) for
 //! **any** celestial target.
@@ -75,6 +88,9 @@
 //! };
 //! let eastern_periods = Sun.azimuth_periods(&query);
 //! ```
+//!
+//! ## References
+//! None.
 
 mod events;
 mod provider;

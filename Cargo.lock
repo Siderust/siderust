@@ -5,13 +5,30 @@ version = 4
 [[package]]
 name = "affn"
 version = "0.6.2"
+dependencies = [
+ "affn-derive 0.1.5",
+ "qtty",
+ "serde",
+]
+
+[[package]]
+name = "affn"
+version = "0.6.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0014e31e5ef8439603545dbc2913307dcb82910809484ddec91c58dccf7a8b9b"
 dependencies = [
- "affn-derive",
+ "affn-derive 0.1.5 (registry+https://github.com/rust-lang/crates.io-index)",
  "nalgebra",
  "qtty",
- "serde",
+]
+
+[[package]]
+name = "affn-derive"
+version = "0.1.5"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
 ]
 
 [[package]]
@@ -1270,7 +1287,6 @@ dependencies = [
  "num-complex",
  "num-rational",
  "num-traits",
- "serde",
  "simba",
  "typenum",
 ]
@@ -1303,7 +1319,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73f88a1307638156682bada9d7604135552957b7818057dcef22705b4d509495"
 dependencies = [
  "num-traits",
- "serde",
 ]
 
 [[package]]
@@ -2018,13 +2033,12 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 name = "siderust"
 version = "0.6.1"
 dependencies = [
- "affn",
+ "affn 0.6.2",
  "anyhow",
  "approx",
  "cheby",
  "chrono",
  "criterion",
- "nalgebra",
  "paste",
  "qtty",
  "regex",
@@ -2044,7 +2058,7 @@ dependencies = [
 name = "siderust-ffi"
 version = "0.4.1"
 dependencies = [
- "affn",
+ "affn 0.6.2",
  "cbindgen",
  "qtty",
  "siderust",
@@ -2160,7 +2174,7 @@ dependencies = [
 name = "tempoch-core"
 version = "0.4.3"
 dependencies = [
- "affn",
+ "affn 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono",
  "qtty",
  "serde",

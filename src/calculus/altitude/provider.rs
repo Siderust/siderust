@@ -3,13 +3,23 @@
 
 //! # Altitude Periods, Trait‑Based Dispatch Layer
 //!
-//! This module defines the [`AltitudePeriodsProvider`] trait and implementations
-//! that normalise the "altitude periods" API across Sun, Moon, and fixed stars.
+//! ## Scientific scope
 //!
-//! ## Design
+//! Provides a uniform, type‑safe view of "altitude periods" (intervals
+//! during which a body's topocentric altitude lies in a given band) for
+//! the Sun, Moon, fixed stars, and ICRS directions. The accuracy of every
+//! result is inherited from the underlying engines (`solar`, `lunar`,
+//! `stellar`); this module only routes calls. Refraction is not applied.
+//!
+//! ## Technical scope
+//!
+//! Defines the [`AltitudePeriodsProvider`] trait and implementations
+//! that normalise the "altitude periods" API across Sun, Moon, fixed
+//! stars and direction‑style targets. Also exposes the free function
+//! [`altitude_periods`] for callers who prefer a non‑method API.
 //!
 //! The trait layer is the *dispatch* layer, no astronomical math lives
-//! here.  Each `impl` delegates to the appropriate engine inside
+//! here. Each `impl` delegates to the appropriate engine inside
 //! [`calculus::solar`], [`calculus::lunar`], or [`calculus::stellar`].
 //!
 //! | Body type | Engine |
@@ -19,32 +29,8 @@
 //! | [`Star`] | [`calculus::stellar::find_star_above_periods`] / [`calculus::stellar::find_star_range_periods`] |
 //! | [`direction::ICRS`] | [`calculus::stellar::find_star_above_periods`] / [`calculus::stellar::find_star_range_periods`] |
 //!
-//! ## Quick Start
-//!
-//! ```rust
-//! use siderust::bodies::Sun;
-//! use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
-//! use siderust::coordinates::centers::Geodetic;
-//! use siderust::coordinates::frames::ECEF;
-//! use siderust::coordinates::spherical::direction;
-//! use siderust::time::{ModifiedJulianDate, Period};
-//! use siderust::qtty::*;
-//!
-//! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-//! let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
-//!
-//! let query = AltitudeQuery {
-//!     observer: site,
-//!     window,
-//!     min_altitude: Degrees::new(-90.0),
-//!     max_altitude: Degrees::new(0.0),
-//! };
-//!
-//! // Same call shape for any body:
-//! let sun_periods = Sun.altitude_periods(&query);
-//! let star_periods = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716))
-//!     .altitude_periods(&query);
-//! ```
+//! ## References
+//! None.
 
 use super::types::AltitudeQuery;
 use crate::bodies::solar_system;
@@ -83,12 +69,32 @@ pub trait AltitudePeriodsProvider {
     ///
     /// The returned vector is sorted chronologically.  An empty vector
     /// means the body never enters the requested band during the window.
+    ///
+    /// # Arguments
+    ///
+    /// * `query`, observer site, search window, and altitude band.
+    ///
+    /// # Returns
+    ///
+    /// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of all
+    /// in‑band intervals.
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>>;
 
     /// Convenience: intervals where altitude is **above** `threshold`.
     ///
     /// Default implementation calls [`altitude_periods`](Self::altitude_periods)
     /// with `max_altitude = 90°`.
+    ///
+    /// # Arguments
+    ///
+    /// * `observer`, geodetic site
+    /// * `window`, MJD/TT search interval
+    /// * `threshold`, altitude lower bound
+    ///
+    /// # Returns
+    ///
+    /// Sorted `Vec<Period<ModifiedJulianDate>>` covering times where
+    /// `altitude(t) ≥ threshold`.
     fn above_threshold(
         &self,
         observer: Geodetic<ECEF>,
@@ -107,6 +113,17 @@ pub trait AltitudePeriodsProvider {
     ///
     /// Default implementation calls [`altitude_periods`](Self::altitude_periods)
     /// with `min_altitude = −90°`.
+    ///
+    /// # Arguments
+    ///
+    /// * `observer`, geodetic site
+    /// * `window`, MJD/TT search interval
+    /// * `threshold`, altitude upper bound
+    ///
+    /// # Returns
+    ///
+    /// Sorted `Vec<Period<ModifiedJulianDate>>` covering times where
+    /// `altitude(t) ≤ threshold`.
     fn below_threshold(
         &self,
         observer: Geodetic<ECEF>,
@@ -124,12 +141,25 @@ pub trait AltitudePeriodsProvider {
     /// Compute the altitude of this body at a single instant.
     ///
     /// Returns the topocentric altitude in radians.
+    ///
+    /// # Arguments
+    ///
+    /// * `observer`, geodetic site
+    /// * `mjd`, instant (MJD on the TT axis)
+    ///
+    /// # Returns
+    ///
+    /// Topocentric altitude as `Radians` (no refraction applied).
     fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians;
 
     /// Hint for the scan step to use when searching for events.
     ///
     /// Returns `None` to use the default (10 minutes). Bodies with slower
     /// apparent motion (like the Moon) can return a larger step for efficiency.
+    ///
+    /// # Returns
+    ///
+    /// `Some(step)` overriding the default, or `None` to keep it.
     fn scan_step_hint(&self) -> Option<Days> {
         None
     }
@@ -164,6 +194,16 @@ pub trait AltitudePeriodsProvider {
 /// };
 /// let periods = altitude_periods(&Sun, &query);
 /// ```
+///
+/// # Arguments
+///
+/// * `body`, any value implementing [`AltitudePeriodsProvider`]
+/// * `query`, observer/window/altitude‑band specification
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` produced by
+/// `body.altitude_periods(query)`.
 #[inline]
 pub fn altitude_periods<B: AltitudePeriodsProvider>(
     body: &B,

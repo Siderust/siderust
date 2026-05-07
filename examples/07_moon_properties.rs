@@ -18,7 +18,7 @@ use siderust::calculus::lunar::phase::{
 };
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
-use siderust::qtty::{Days, Degree, Degrees, Meter, Quantity};
+use siderust::qtty::{Days, Degree, Degrees, IlluminationFractions, Meter, Quantity};
 use siderust::time::{JulianDate, ModifiedJulianDate, Period};
 
 fn print_periods(label: &str, periods: &[Period<ModifiedJulianDate>]) {
@@ -80,7 +80,7 @@ fn main() {
     println!("Site: lat={lat:.4} deg, lon={lon:.4} deg, h={h_m:.0} m");
     println!("\nGeocentric:");
     println!("  label                 : {}", geo.label());
-    println!("  illuminated fraction  : {:.4}", geo.illuminated_fraction);
+    println!("  illuminated fraction  : {:.4}", geo.illuminated_fraction.value());
     println!(
         "  illuminated percent   : {:.2} %",
         geo.illuminated_percent()
@@ -97,10 +97,10 @@ fn main() {
 
     println!("\nTopocentric:");
     println!("  label                 : {}", topo.label());
-    println!("  illuminated fraction  : {:.4}", topo.illuminated_fraction);
+    println!("  illuminated fraction  : {:.4}", topo.illuminated_fraction.value());
     println!(
         "  illumination delta    : {:+.4} %",
-        (topo.illuminated_fraction - geo.illuminated_fraction) * 100.0
+        (topo.illuminated_fraction - geo.illuminated_fraction).value() * 100.0
     );
     println!(
         "  elongation            : {}",
@@ -120,9 +120,9 @@ fn main() {
     }
 
     // 3) Find periods where Moon illumination is in requested phase ranges.
-    let crescent = illumination_range::<Vsop87Ephemeris>(window, 0.05, 0.35, opts);
-    let quarterish = illumination_range::<Vsop87Ephemeris>(window, 0.45, 0.55, opts);
-    let gibbous = illumination_range::<Vsop87Ephemeris>(window, 0.65, 0.95, opts);
+    let crescent = illumination_range::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.05), IlluminationFractions::new(0.35), opts);
+    let quarterish = illumination_range::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.45), IlluminationFractions::new(0.55), opts);
+    let gibbous = illumination_range::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.65), IlluminationFractions::new(0.95), opts);
 
     print_periods("Crescent-like range (5%-35%)", &crescent);
     print_periods("Quarter-like range (45%-55%)", &quarterish);

@@ -21,6 +21,7 @@ use crate::azimuth::{vec_az_crossings_to_c, vec_az_extrema_to_c};
 use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::*;
+use qtty::angular::Degrees;
 use siderust::calculus::azimuth::{azimuth_crossings, azimuth_extrema, in_azimuth_range};
 use siderust::AltitudePeriodsProvider;
 use siderust::AzimuthProvider;

@@ -12,11 +12,15 @@ use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
 #[cfg(test)]
 use qtty::*;
+use qtty::angular::Degrees;
 #[cfg(test)]
 use siderust::coordinates::spherical;
-use tempoch::{Interval, ModifiedJulianDate, Period, MJD};
+use siderust::time::{ModifiedJulianDate, Period};
+use tempoch::Interval;
 
-pub(crate) fn window_from_c(w: TempochPeriodMjd) -> Result<Period<MJD>, SiderustStatus> {
+pub(crate) fn window_from_c(
+    w: TempochPeriodMjd,
+) -> Result<Period<ModifiedJulianDate>, SiderustStatus> {
     if w.start_mjd > w.end_mjd {
         return Err(SiderustStatus::InvalidPeriod);
     }
@@ -27,7 +31,7 @@ pub(crate) fn window_from_c(w: TempochPeriodMjd) -> Result<Period<MJD>, Siderust
 }
 
 pub(crate) fn periods_to_c(
-    periods: Vec<Period<MJD>>,
+    periods: Vec<Period<ModifiedJulianDate>>,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {

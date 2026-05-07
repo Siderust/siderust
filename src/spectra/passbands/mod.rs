@@ -1,19 +1,45 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Photometric filter passband datasets.
+//! # Photometric filter passbands
 //!
-//! Each sub-module provides lazily-initialised, statically-cached
-//! [`SampledSpectrum`](crate::spectra::SampledSpectrum) constants for a
-//! particular photometric system, following the same `OnceLock` pattern as
-//! [`crate::atmosphere::ozone`].
+//! ## Scientific scope
 //!
-//! ## Units
+//! Synthetic photometry — the conversion of a stellar or extragalactic
+//! spectral energy distribution into broad-band magnitudes — requires
+//! the spectral response curve `S(λ)` of each filter in the photometric
+//! system. For the Johnson–Cousins UBVRI system, the de-facto modern
+//! reference is Bessell (1990), recommended by Bessell & Murphy (2012)
+//! as the canonical realisation of the historical Johnson–Cousins
+//! definitions. Each sub-module of this module bundles a curated
+//! transmission curve for one such system, distributed as a
+//! lazily-initialised, statically-cached
+//! [`SampledSpectrum`](crate::spectra::SampledSpectrum) constant.
 //!
-//! Filter throughputs are dimensionless values in \[0, 1\] represented by the
-//! [`Throughput`] unit marker defined in this module.  It is analogous to
-//! [`crate::atmosphere::ozone::Transmittance`] but scoped to filter passbands
-//! so that the two concepts remain distinguishable in type signatures.
+//! Validity ranges are bounded by the wavelength interval of the
+//! published table; outside that interval the throughput is taken as
+//! zero (the conventional assumption for a compactly supported filter).
+//!
+//! ## Technical scope
+//!
+//! - [`Throughput`] — `qtty::Unit` marker for dimensionless filter
+//!   throughput in `[0, 1]`. Distinct from
+//!   `crate::atmosphere::ozone::Transmittance` so the two concepts
+//!   remain typewise distinguishable.
+//! - [`johnson_b`] / [`johnson_v`] — convenience accessors returning
+//!   the Bessell (1990) Johnson *B* and *V* curves (aliases for
+//!   [`bessell1990::b`] / [`bessell1990::v`]).
+//! - [`bessell1990`] — bundled UBVRI dataset.
+//!
+//! ## References
+//!
+//! - Bessell, M. S. (1990). "UBVRI Passbands". *Publications of the
+//!   Astronomical Society of the Pacific* **102**, 1181.
+//!   doi:10.1086/132749.
+//! - Bessell, M. S., & Murphy, S. (2012). "Spectrophotometric Libraries,
+//!   Revised Photonic Passbands, and Zero Points for UBVRI, Hipparcos,
+//!   and Tycho Photometry". *Publications of the Astronomical Society
+//!   of the Pacific* **124**, 140. doi:10.1086/664083.
 
 pub mod bessell1990;
 

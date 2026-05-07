@@ -3,8 +3,24 @@
 
 //! # Horizontal Coordinate Convention Helpers
 //!
-//! This module provides explicit conversion utilities between common
-//! horizontal (alt-az) coordinate conventions.
+//! ## Scientific scope
+//!
+//! The horizontal (alt-az) coordinate system is an observer-fixed frame that
+//! describes pointing directions relative to the local horizon. Because no
+//! single azimuth convention dominates across all disciplines, siderust needs
+//! explicit conversion utilities between the most common variants.
+//!
+//! ## Technical scope
+//!
+//! This module provides the [`HorizontalConvention`] descriptor, which pairs
+//! an [`AzimuthOrigin`] with an [`AzimuthSense`], and a set of pure functions
+//! for converting azimuths and horizontal coordinates between conventions.
+//! All conversions pass through an intermediate North-clockwise representation.
+//!
+//! ## References
+//!
+//! - IAU Commission 19 recommendations on azimuth convention (North-clockwise).
+//! - ISO 31-11:1992 (North-counter-clockwise mathematical convention).
 //!
 //! ## Siderust's native convention
 //!
@@ -173,13 +189,21 @@ const fn origin_offset_cw(origin: AzimuthOrigin) -> f64 {
 /// The altitude component is unaffected by convention changes and is therefore
 /// not part of this function.
 ///
+/// # Arguments
+///
+/// - `azimuth`: The input azimuth angle to convert.
+/// - `from`: The source convention in which `azimuth` is expressed.
+/// - `to`: The target convention.
+///
+/// # Returns
+///
+/// The equivalent azimuth in the `to` convention, normalised to `[0°, 360°)`.
+///
 /// # Algorithm
 ///
 /// 1. Transform the input azimuth to an internal *North-clockwise*
 ///    representation by accounting for the source origin offset and sense.
 /// 2. Transform from the internal representation to the target convention.
-///
-/// The result is always normalised to `[0°, 360°)`.
 ///
 /// # Example
 ///
@@ -230,6 +254,16 @@ pub fn convert_azimuth(
 ///
 /// Altitude is preserved; only the azimuth is adjusted.
 ///
+/// # Arguments
+///
+/// - `dir`: The direction in the source convention.
+/// - `from`: The convention in which `dir`'s azimuth is expressed.
+///
+/// # Returns
+///
+/// A new `Direction<Horizontal>` with the azimuth expressed in the native
+/// North-clockwise convention. Altitude is unchanged.
+///
 /// # Example
 ///
 /// ```rust
@@ -256,6 +290,16 @@ pub fn direction_to_native(
 ///
 /// Altitude is preserved; only the azimuth is adjusted.
 ///
+/// # Arguments
+///
+/// - `dir`: The direction in the native North-clockwise convention.
+/// - `to`: The target convention for the output azimuth.
+///
+/// # Returns
+///
+/// A new `Direction<Horizontal>` with the azimuth expressed in `to`.
+/// Altitude is unchanged.
+///
 /// # Example
 ///
 /// ```rust
@@ -280,6 +324,16 @@ pub fn direction_from_native(
 /// Convert a `Direction<Horizontal>` between two arbitrary conventions.
 ///
 /// Altitude is preserved; only the azimuth is adjusted.
+///
+/// # Arguments
+///
+/// - `dir`: The direction to convert.
+/// - `from`: The source convention.
+/// - `to`: The target convention.
+///
+/// # Returns
+///
+/// A new `Direction<Horizontal>` with the azimuth expressed in `to`.
 pub fn convert_direction(
     dir: &spherical::Direction<Horizontal>,
     from: &HorizontalConvention,
@@ -298,6 +352,16 @@ pub fn convert_direction(
 ///
 /// Altitude and distance are preserved; only the azimuth is adjusted.
 /// The observer site (`center_params`) is also preserved.
+///
+/// # Arguments
+///
+/// - `pos`: The position in the source convention.
+/// - `from`: The source azimuth convention.
+///
+/// # Returns
+///
+/// A new position with the azimuth expressed in the native North-clockwise
+/// convention. Altitude, distance, and site are unchanged.
 pub fn position_to_native<U: LengthUnit>(
     pos: &spherical::Position<Topocentric, Horizontal, U>,
     from: &HorizontalConvention,
@@ -316,6 +380,16 @@ pub fn position_to_native<U: LengthUnit>(
 ///
 /// Altitude and distance are preserved; only the azimuth is adjusted.
 /// The observer site (`center_params`) is also preserved.
+///
+/// # Arguments
+///
+/// - `pos`: The position in the native North-clockwise convention.
+/// - `to`: The target azimuth convention.
+///
+/// # Returns
+///
+/// A new position with the azimuth expressed in `to`.
+/// Altitude, distance, and site are unchanged.
 pub fn position_from_native<U: LengthUnit>(
     pos: &spherical::Position<Topocentric, Horizontal, U>,
     to: &HorizontalConvention,
@@ -334,6 +408,17 @@ pub fn position_from_native<U: LengthUnit>(
 ///
 /// Altitude and distance are preserved; only the azimuth is adjusted.
 /// The observer site (`center_params`) is also preserved.
+///
+/// # Arguments
+///
+/// - `pos`: The position to convert.
+/// - `from`: The source azimuth convention.
+/// - `to`: The target azimuth convention.
+///
+/// # Returns
+///
+/// A new position with the azimuth expressed in `to`.
+/// Altitude, distance, and site are unchanged.
 pub fn convert_position<U: LengthUnit>(
     pos: &spherical::Position<Topocentric, Horizontal, U>,
     from: &HorizontalConvention,
@@ -357,7 +442,13 @@ pub fn convert_position<U: LengthUnit>(
 /// This is equivalent to adding/subtracting 180° and is the most common
 /// convention mismatch encountered in practice.
 ///
-/// The result is normalised to `[0°, 360°)`.
+/// # Arguments
+///
+/// - `azimuth`: The input azimuth in either North-CW or South-CW convention.
+///
+/// # Returns
+///
+/// The azimuth in the opposite origin convention, normalised to `[0°, 360°)`.
 ///
 /// # Example
 ///
@@ -380,6 +471,14 @@ pub fn flip_north_south(azimuth: Degrees) -> Degrees {
 /// while keeping the same origin.
 ///
 /// This is equivalent to negating the angle (and re-normalising).
+///
+/// # Arguments
+///
+/// - `azimuth`: The input azimuth to reverse.
+///
+/// # Returns
+///
+/// The azimuth with sense reversed, normalised to `[0°, 360°)`.
 ///
 /// # Example
 ///

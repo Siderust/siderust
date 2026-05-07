@@ -1,13 +1,31 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-// Note: Cartesian-to-Spherical conversion is handled by affn's inherent methods:
-// - cartesian::Position::to_spherical()
-// - spherical::Position::from_cartesian()
-//
-// These are re-exported through siderust's type aliases, so users can call:
-//   cart_position.to_spherical()
-//   spherical::Position::from_cartesian(&cart_position)
+//! Cartesian-to-Spherical coordinate conversion.
+//!
+//! ## Scientific scope
+//!
+//! Spherical coordinates (longitude/latitude/distance) are the standard output
+//! form for most astronomical results: star catalogues publish positions in
+//! right-ascension/declination and planetary positions in ecliptic
+//! longitude/latitude. Cartesian arithmetic is simpler for rotations and
+//! vector operations, so the round-trip Cartesian ↔ Spherical is ubiquitous.
+//!
+//! ## Technical scope
+//!
+//! The conversion is implemented in the `affn` geometry kernel and exposed
+//! through siderust's type aliases. No siderust-specific code is needed here;
+//! this module exists to host the corresponding unit tests and to serve as a
+//! documentation entry point.
+//!
+//! - `cartesian::Position::to_spherical()` uses `atan2(y, x)` for longitude
+//!   and `asin(z / r)` for latitude.
+//! - `spherical::Position::from_cartesian(cart)` is the complementary form.
+//!
+//! ## References
+//!
+//! - Vallado, D. A. (2013). *Fundamentals of Astrodynamics and Applications*,
+//!   4th ed. §2.1.
 
 #[cfg(test)]
 mod tests {

@@ -1,24 +1,46 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Runtime Data Management
+//! # Runtime data management
 //!
-//! This module provides runtime download, caching, and loading of astronomical
-//! datasets. It follows an approach similar to [Astropy's data management][astropy]:
-//! heavy datasets are **not** embedded at compile time but downloaded on demand
-//! to a local cache directory (`~/.siderust/data/` by default).
+//! ## Scientific scope
 //!
-//! [astropy]: https://docs.astropy.org/en/stable/utils/data.html
+//! Several reference datasets used in modern astronomy — JPL planetary
+//! ephemerides (DE440, DE441), high-resolution IERS time series, large
+//! star catalogues — are tens to hundreds of megabytes and cannot be
+//! shipped inside a Rust crate without inflating every dependent build
+//! and bloating the registry. The community-standard solution, used by
+//! Astropy and SPICE, is to keep the heavy data *out* of the source
+//! distribution and instead download it on demand to a per-user cache,
+//! verifying integrity by SHA-256 against a pinned manifest.
 //!
-//! ## Design Principles
+//! This module implements that pattern for `siderust`. It does not by
+//! itself contain any astronomical algorithm; rather, it materialises the
+//! coefficient files that ephemeris and IERS modules consume, so that
+//! results are byte-identical to what one would obtain from the
+//! upstream Astropy / NAIF SPICE distributions.
 //!
-//! - **Explicit consent**: Data is never downloaded without the user calling
-//!   `DataManager::ensure` or `DataManager::download` explicitly.
-//! - **Persistent cache**: Downloaded files are stored on disk and reused
-//!   across program runs.
-//! - **Integrity verification**: Downloads are validated via SHA-256 checksums
-//!   and minimum file sizes.
-//! - **Environment override**: Set `SIDERUST_DATA_DIR` to relocate the cache.
+//! ## Technical scope
+//!
+//! Behind the `runtime-data` feature this module provides:
+//!
+//! - [`DataManager`] — discovers (or creates) the cache directory,
+//!   downloads, verifies, and returns paths to dataset files.
+//! - [`DatasetId`], [`DatasetMeta`], [`DATASETS`] — pinned manifest of
+//!   the datasets known to the crate.
+//! - [`DataError`] — error taxonomy (`Io`, `Download`, `Integrity`,
+//!   `UnknownDataset`, `Parse`).
+//! - [`ProgressCallback`] — optional progress hook for downloads.
+//!
+//! Without the `runtime-data` feature, only [`DatasetId`],
+//! [`DatasetMeta`], [`DATASETS`], and [`DataError`] are available, so
+//! that downstream code can still reason about the *registry* without
+//! pulling in the network/IO stack.
+//!
+//! Cache location is `~/.siderust/data/` by default; override with the
+//! `SIDERUST_DATA_DIR` environment variable. Data is never downloaded
+//! without an explicit call to [`DataManager::ensure`] /
+//! `DataManager::download`.
 //!
 //! ## Quick Start
 //!
@@ -26,18 +48,22 @@
 //! use siderust::data::{DataManager, DatasetId};
 //!
 //! let dm = DataManager::new()?;
-//!
-//! // Download DE441 BSP if not already cached (explicit consent)
 //! let path = dm.ensure(DatasetId::De441)?;
 //! println!("DE441 ready at: {}", path.display());
 //! ```
 //!
-//! ## Feature Gate
+//! ## References
 //!
-//! This module requires the `runtime-data` Cargo feature:
-//! ```toml
-//! siderust = { version = "0.5", features = ["runtime-data"] }
-//! ```
+//! - The Astropy Collaboration (2022). "The Astropy Project: Sustaining
+//!   and Growing a Community-oriented Open-Source Project and the Latest
+//!   Major Release (v5.0) of the Core Package". *The Astrophysical
+//!   Journal* **935**, 167. doi:10.3847/1538-4357/ac7c74.
+//! - Acton, C. H., Bachman, N., Semenov, B., Wright, E. (2018). "A look
+//!   towards the future in the handling of space science mission
+//!   geometry". *Planetary and Space Science* **150**, 9–12.
+//!   doi:10.1016/j.pss.2017.02.013.
+//! - NAIF (2022). *SPK Required Reading* and *DAF Required Reading*.
+//!   <https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html>.
 
 #[cfg(feature = "runtime-data")]
 mod cache;

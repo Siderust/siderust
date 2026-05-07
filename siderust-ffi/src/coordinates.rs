@@ -11,6 +11,9 @@ use crate::context::SiderustContext;
 use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::*;
+use qtty::angular::Degrees;
+use qtty::length::AstronomicalUnits;
+use qtty::unit::{AstronomicalUnit, Meter};
 use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::coordinates::centers::Barycentric;
 use siderust::coordinates::frames::{
@@ -1706,7 +1709,11 @@ mod tests {
         let mut coarse = empty_dir();
         let mut precise = empty_dir();
         let jd_tt = siderust::time::JulianDate::new(J2000);
-        let jd_ut1 = siderust::astro::earth_rotation::jd_ut1_from_tt(jd_tt);
+        // Replicate the EOP-derived UT1 that `to_horizontal` uses internally:
+        // the coarse path calls `jd_ut1_from_tt_eop` with the default IersEop context.
+        let ctx: siderust::coordinates::transform::AstroContext = Default::default();
+        let eop = ctx.eop_at(jd_tt);
+        let jd_ut1 = siderust::astro::earth_rotation::jd_ut1_from_tt_eop(jd_tt, &eop);
 
         let s1 = siderust_spherical_dir_to_horizontal(
             38.8,
@@ -1721,7 +1728,7 @@ mod tests {
             279.2,
             SiderustFrame::ICRS,
             J2000,
-            jd_ut1.value(),
+            jd_ut1.jd_value(),
             paris_observer(),
             &mut precise,
         );
@@ -1742,8 +1749,8 @@ mod tests {
             38.8,
             279.2,
             SiderustFrame::ICRS,
-            jd_tt.value(),
-            jd_ut1.value(),
+            jd_tt.jd_value(),
+            jd_ut1.jd_value(),
             paris_observer(),
             ctx,
             &mut out,

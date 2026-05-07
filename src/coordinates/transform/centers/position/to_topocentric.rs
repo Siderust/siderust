@@ -1,6 +1,38 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Geocentric → Topocentric parallax correction.
+//!
+//! ## Scientific scope
+//!
+//! The **topocentric parallax** correction accounts for the difference between
+//! a position measured from Earth's centre (geocentric) and the same position
+//! as seen from a surface observer (topocentric). For the Moon the correction
+//! reaches ~57 arcmin; for nearby asteroids it can be arcsec-level.
+//!
+//! The shift vector is the observer's geocentric position expressed in the
+//! same Cartesian frame as the target, then subtracted from the target vector.
+//!
+//! ## Technical scope
+//!
+//! The observer's geodetic site (`Geodetic<ECEF>`) is first converted to an
+//! ITRF Cartesian position, rotated into the target frame via the ITRS→Equatorial
+//! rotation (GMST + polar motion), and then frame-transformed to match the
+//! target coordinate frame before the subtraction.
+//!
+//! Two public entry points are provided:
+//!
+//! - [`to_topocentric_with_ctx`]: expert API accepting an explicit
+//!   [`AstroContext`](crate::coordinates::transform::context::AstroContext).
+//! - [`to_topocentric_with`]: convenience wrapper accepting any
+//!   [`TransformContext`](crate::coordinates::transform::context::TransformContext).
+//!
+//! ## References
+//!
+//! - Urban, S. E. & Seidelmann, P. K. (2013). *Explanatory Supplement to the
+//!   Astronomical Almanac*, 3rd ed. §7.2.
+//! - IERS Conventions 2010, Chapter 4 (Earth rotation).
+
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
@@ -49,6 +81,18 @@ where
 ///
 /// For the default-precision path, call `pos.to_center(site, jd)` on any
 /// `Position<Geocentric, F, U>`.
+///
+/// # Arguments
+///
+/// - `pos`: The geocentric position to transform.
+/// - `site`: The observer's geodetic site coordinates in the ECEF frame.
+/// - `jd`: The Julian Date (TT) of observation.
+/// - `ctx`: The `AstroContext` carrying the EOP and ephemeris backends.
+///
+/// # Returns
+///
+/// The topocentric position in the same reference frame `F` and unit `U` as
+/// the input, with the observer's geocentric position vector subtracted.
 pub fn to_topocentric_with_ctx<F, U, Eph, Eop, Nut: NutationModel>(
     pos: &Position<Geocentric, F, U>,
     site: Geodetic<ECEF>,
@@ -67,16 +111,28 @@ where
         observer_site_equatorial_mean_j2000_with_ctx::<U, Eph, Eop, Nut>(site, jd, ctx);
     let site_in_frame: Position<Geocentric, F, U> =
         crate::coordinates::transform::TransformFrame::to_frame(&site_equatorial);
-    let topo_vec = nalgebra::Vector3::new(
+    let topo_vec = [
         pos.x() - site_in_frame.x(),
         pos.y() - site_in_frame.y(),
         pos.z() - site_in_frame.z(),
-    );
-    Position::<Topocentric, F, U>::from_vec3(site, topo_vec)
+    ];
+    Position::<Topocentric, F, U>::from_array(site, topo_vec)
 }
 
 /// Transform a geocentric position to topocentric coordinates using any
 /// transform context wrapper.
+///
+/// # Arguments
+///
+/// - `pos`: The geocentric position to transform.
+/// - `site`: The observer's geodetic site coordinates in the ECEF frame.
+/// - `jd`: The Julian Date (TT) of observation.
+/// - `ctx`: Any type implementing [`TransformContext`].
+///
+/// # Returns
+///
+/// The topocentric position in the same reference frame `F` and unit `U` as
+/// the input.
 pub fn to_topocentric_with<F, U, Ctx>(
     pos: &Position<Geocentric, F, U>,
     site: Geodetic<ECEF>,
@@ -147,12 +203,12 @@ where
             observer_site_equatorial_mean_j2000_with_ctx::<U, Eph, Eop, Nut>(*site, jd, _ctx);
         let site_in_frame: Position<Geocentric, F, U> =
             crate::coordinates::transform::TransformFrame::to_frame(&site_equatorial);
-        let geo_vec = nalgebra::Vector3::new(
+        let geo_vec = [
             self.x() + site_in_frame.x(),
             self.y() + site_in_frame.y(),
             self.z() + site_in_frame.z(),
-        );
-        Position::<Geocentric, F, U>::from_vec3_origin(geo_vec)
+        ];
+        Position::<Geocentric, F, U>::from_array_origin(geo_vec)
     }
 }
 

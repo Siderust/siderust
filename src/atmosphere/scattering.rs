@@ -1,13 +1,44 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Scattering phase-function primitives.
+//! # Scattering phase functions
+//!
+//! ## Scientific scope
+//!
+//! A scattering phase function `P(λ, θ)` describes the angular
+//! redistribution of light scattered by a medium. It is normalised so
+//! that its integral over the sphere equals 1 (or 4π, depending on
+//! convention) and feeds directly into single-scattering radiative
+//! transfer, sky-brightness models, and aerosol retrieval.
+//!
+//! This module provides:
+//!
+//! - the dimensionless [`ScatteringFactor`] unit shared across the
+//!   atmosphere submodules,
+//! - a generic [`PhaseFunction`] trait,
+//! - the closed-form [`RayleighPhaseFunction`], and
+//! - an optional tabulated implementation [`TabulatedPhaseFunction`]
+//!   (behind the `tables` feature) for empirical / Mie phase functions.
+//!
+//! ## Technical scope
+//!
+//! All phase-function evaluators take typed [`Nanometers`] wavelengths
+//! and typed [`Radians`] scattering angles, and return typed
+//! [`Quantity<ScatteringFactor>`] values.
+//!
+//! ## References
+//!
+//! - Hansen, J. E., & Travis, L. D. (1974). "Light scattering in
+//!   planetary atmospheres". *Space Science Reviews* 16, 527.
 
 use crate::atmosphere::rayleigh::rayleigh_phase;
+use crate::ext_qtty::{Dimensionless, Quantity, Unit};
+use crate::qtty::{Nanometers, Radians};
+#[cfg(feature = "tables")]
 use crate::qtty::unit::{Degree, Nanometer};
-use crate::qtty::{Dimensionless, Nanometers, Radians, Unit};
 
-/// Dimensionless value marker for phase functions and correction factors.
+/// Dimensionless value marker for phase functions and angular correction
+/// factors.
 #[derive(Copy, Clone, Debug, PartialEq)]
 pub struct ScatteringFactor;
 
@@ -20,16 +51,25 @@ impl Unit for ScatteringFactor {
 /// A wavelength-dependent scattering phase function.
 pub trait PhaseFunction {
     /// Evaluate the phase function at `scattering_angle` for `wavelength`.
-    fn phase(&self, wavelength: Nanometers, scattering_angle: Radians) -> f64;
+    fn phase(
+        &self,
+        wavelength: Nanometers,
+        scattering_angle: Radians,
+    ) -> Quantity<ScatteringFactor>;
 }
 
-/// Rayleigh phase function.
+/// Rayleigh phase function `P(θ) = (3 / 16π)·(1 + cos²θ)`.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct RayleighPhaseFunction;
 
 impl PhaseFunction for RayleighPhaseFunction {
-    fn phase(&self, _wavelength: Nanometers, scattering_angle: Radians) -> f64 {
-        rayleigh_phase(scattering_angle.cos())
+    #[inline]
+    fn phase(
+        &self,
+        _wavelength: Nanometers,
+        scattering_angle: Radians,
+    ) -> Quantity<ScatteringFactor> {
+        rayleigh_phase(scattering_angle)
     }
 }
 
@@ -66,21 +106,23 @@ impl TabulatedPhaseFunction {
         &self,
         wavelength: Nanometers,
         scattering_angle: Radians,
-    ) -> Result<f64, crate::tables::TableError> {
-        self.grid
-            .interp_at(
-                wavelength,
-                scattering_angle.to::<Degree>(),
-                crate::tables::OutOfRange::ClampToEndpoints,
-                crate::tables::OutOfRange::ClampToEndpoints,
-            )
-            .map(|q| q.value())
+    ) -> Result<Quantity<ScatteringFactor>, crate::tables::TableError> {
+        self.grid.interp_at(
+            wavelength,
+            scattering_angle.to::<Degree>(),
+            crate::tables::OutOfRange::ClampToEndpoints,
+            crate::tables::OutOfRange::ClampToEndpoints,
+        )
     }
 }
 
 #[cfg(feature = "tables")]
 impl PhaseFunction for TabulatedPhaseFunction {
-    fn phase(&self, wavelength: Nanometers, scattering_angle: Radians) -> f64 {
+    fn phase(
+        &self,
+        wavelength: Nanometers,
+        scattering_angle: Radians,
+    ) -> Quantity<ScatteringFactor> {
         self.interp_at(wavelength, scattering_angle)
             .expect("tabulated phase-function interpolation failed")
     }
@@ -94,9 +136,15 @@ mod tests {
     #[test]
     fn rayleigh_phase_is_symmetric() {
         let r = RayleighPhaseFunction;
-        let p0 = r.phase(Nanometers::new(550.0), Degrees::new(0.0).to::<Radian>());
-        let p180 = r.phase(Nanometers::new(550.0), Degrees::new(180.0).to::<Radian>());
-        let p90 = r.phase(Nanometers::new(550.0), Degrees::new(90.0).to::<Radian>());
+        let p0 = r
+            .phase(Nanometers::new(550.0), Degrees::new(0.0).to::<Radian>())
+            .value();
+        let p180 = r
+            .phase(Nanometers::new(550.0), Degrees::new(180.0).to::<Radian>())
+            .value();
+        let p90 = r
+            .phase(Nanometers::new(550.0), Degrees::new(90.0).to::<Radian>())
+            .value();
         assert!((p0 - p180).abs() < 1.0e-15);
         assert!(p0 > p90);
     }
@@ -110,7 +158,9 @@ mod tests {
             vec![1.0, 2.0, 3.0, 4.0],
         )
         .unwrap();
-        let v = t.phase(Nanometers::new(550.0), Degrees::new(45.0).to::<Radian>());
+        let v = t
+            .phase(Nanometers::new(550.0), Degrees::new(45.0).to::<Radian>())
+            .value();
         assert!((v - 2.5).abs() < 1.0e-12);
     }
 }

@@ -11,6 +11,8 @@
 use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::*;
+use qtty::angular::Degrees;
+use qtty::unit::{Degree, LightYear, Meter, Year};
 use siderust::astro::proper_motion::ProperMotion;
 use siderust::coordinates::frames::{
     EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRF, ICRS,
@@ -78,7 +80,7 @@ fn icrs_direction_from_spherical_dir(
             Degrees::new(dir.azimuth_deg),
             Degrees::new(dir.polar_deg),
         )),
-        SiderustFrame::ICRF => Ok(spherical::Direction::<ICRF>::new_raw(
+        SiderustFrame::ICRF => Ok(spherical::Direction::<ICRF>::new_unchecked(
             Degrees::new(dir.azimuth_deg),
             Degrees::new(dir.polar_deg),
         )

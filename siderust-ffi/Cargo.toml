@@ -23,7 +23,7 @@ siderust    = { version = "0.6.1", path = ".." }
 qtty        = "0.7.0"
 tempoch     = "0.4.3"
 tempoch-ffi = "0.4.3"
-affn        = { version = "0.6.2", features = ["astro"] }
+affn        = { path = "../../affn", features = ["astro"] }
 
 [build-dependencies]
 cbindgen = "0.29.2"

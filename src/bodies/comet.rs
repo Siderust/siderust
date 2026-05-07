@@ -3,37 +3,38 @@
 
 //! # Comet module
 //!
-//! Represents comets with their name, tail length, and orbital parameters.
-//! - name: String identifier for the comet.
-//! - tail_length: Tail length in kilometers (Kilometers).
-//! - orbit: Orbital parameters (see [`crate::astro::orbit::KeplerianOrbit`]).
+//! ## Scientific scope
+//!
+//! This module models **comets** — small Solar System bodies on highly
+//! eccentric orbits that develop a visible coma and tail when near the Sun.
+//! Each comet is described by:
+//! - a short human‑readable designation,
+//! - an approximate dust/ion tail length,
+//! - six Keplerian orbital elements with an epoch (see
+//!   [`KeplerianOrbit`](crate::astro::orbit::KeplerianOrbit)), and
+//! - a flag indicating whether elements are heliocentric or barycentric.
 //!
 //! | Constant | Designation | Reference frame | Period (yr) | Notes |
 //! |----------|-------------|-----------------|-------------|-------|
 //! | [`HALLEY`] | 1P/Halley | Heliocentric | 75.3 | Archetype of periodic comets |
 //! | [`ENCKE`] | 2P/Encke | Heliocentric | 3.30 | Shortest‑period named comet |
-//! | [`HALE_BOPP`] | C/1995 O1 | **Barycentric** | ~2 530 | Great comet of 1997 |
+//! | [`HALE_BOPP`] | C/1995 O1 | **Barycentric** | ~2 530 | Great comet of 1997 |
 //!
-//! ## Example
-//! ```rust
-//! use siderust::bodies::comet::{HALLEY, OrbitFrame, CometBuilder};
-//! use siderust::qtty::*;
+//! ## Technical scope
 //!
-//! println!("Halley's tail is at least {:?} long", HALLEY.tail_length);
+//! - [`Comet`] — runtime struct (lifetimed name, [`Kilometers`] tail, orbit, frame).
+//! - [`OrbitFrame`] — enum discriminating heliocentric vs. barycentric elements.
+//! - [`CometBuilder`] — builder for runtime construction.
+//! - [`Comet::period_years`] — returns a typed [`Years`] value via Kepler's
+//!   third law (`P = a^(3/2)` with `a` in AU, `P` in Julian years).
 //!
-//! // Build a custom comet with barycentric elements
-//! let custom = CometBuilder::default()
-//!     .name("C/2025 A1 Customius")
-//!     .tail_length(Kilometers::new(1.2e7))
-//!     .reference(OrbitFrame::Barycentric)
-//!     .orbit( HALLEY.orbit )
-//!     .build();
-//! ```
+//! ## References
 //!
-//! ---
+//! - JPL Small‑Body Database. <https://ssd.jpl.nasa.gov/tools/sbdb_query.html>
+//! - Meeus, J. (1998). *Astronomical Algorithms* (2nd ed.). Willmann‑Bell.
 
 use crate::astro::orbit::KeplerianOrbit;
-use crate::qtty::{AstronomicalUnits, Degrees, Kilometers};
+use crate::qtty::{AstronomicalUnits, Degrees, Kilometers, Years};
 use crate::time::JulianDate;
 
 /// Indicates whether orbital elements are given **with respect to the Solar‑System barycentre**
@@ -121,12 +122,26 @@ impl<'a> CometBuilder<'a> {
 // -------------------------------------------------------------------------------------------------
 
 impl<'a> Comet<'a> {
-    /// Approximate orbital period in Julian years (`365.25 d`) using Kepler’s third law.
-    pub fn period_years(&self) -> f64 {
+    /// Approximate orbital period as a typed [`Years`] value using Kepler’s third law.
+    ///
+    /// Uses `P = a^(3/2)` with `a` in AU and `P` in Julian years (μ_sun ≈ 1 in these units).
+    ///
+    /// # Returns
+    ///
+    /// A [`Years`] quantity equal to the orbital period.
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use siderust::bodies::comet::HALLEY;
+    /// let p = HALLEY.period_years();
+    /// assert!((p.value() - 75.0).abs() < 2.0, "Halley period ~75 yr, got {}", p.value());
+    /// ```
+    pub fn period_years(&self) -> Years {
         // μ_sun ≈ 1 (when a in AU, P in years): P = sqrt(a^3)
         let a = self.orbit.shape().semi_major_axis();
         let a_val = a.value();
-        a_val * a_val.sqrt()
+        Years::new(a_val * a_val.sqrt())
     }
 }
 

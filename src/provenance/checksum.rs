@@ -1,12 +1,41 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Build-time integrity verification for embedded data tables.
+//! # Build-time integrity pinning for embedded data tables
 //!
-//! Datasets that ship in the crate via [`include_str!`] / [`include_bytes!`]
-//! should be pinned to a SHA-256 hash so that an accidental edit to the
-//! bundled file (or a corrupted vendored copy) is rejected at compile time
-//! rather than producing silently wrong scientific results.
+//! ## Scientific scope
+//!
+//! Many astronomical results in this crate depend on numeric data tables
+//! that ship inside the source tree (filter passband curves, ozone
+//! transmission, IERS-style auxiliary tables, …). An accidental edit to
+//! one of those files — a stray comma, a vendored copy that drifted from
+//! its upstream source, an editor that re-encoded line endings — would
+//! silently change the value of computed quantities such as effective
+//! wavelengths or atmospheric extinction without producing any test
+//! failure or compile error. The infrastructure in this module exists to
+//! turn that class of silent data corruption into a hard compile-time
+//! failure: every embedded dataset is pinned to a published SHA-256
+//! checksum, and the `const fn` SHA-256 implementation here lets the
+//! Rust compiler verify the pin during build.
+//!
+//! ## Technical scope
+//!
+//! This module provides:
+//!
+//! - [`sha256`] — const-evaluable SHA-256 of a byte slice; usable in any
+//!   `const` context, including `const _: () = …` integrity checks.
+//! - [`assert_sha256_eq`] — const-evaluable equality assertion that
+//!   panics at compile time on mismatch.
+//! - [`hex32`] / [`to_hex`] — const-evaluable conversion between
+//!   `[u8; 32]` digests and their lower-case hexadecimal representation.
+//! - [`assert_data_checksum!`](crate::assert_data_checksum) macro that
+//!   wraps these into the canonical pinning idiom for an
+//!   [`include_str!`] / [`include_bytes!`] blob.
+//!
+//! No runtime dependency is introduced — the SHA-256 kernel is pure
+//! `const fn` Rust. A `#[test]` companion path also recomputes each
+//! pinned hash at runtime as defense in depth, so any future refactor
+//! that bypasses the const path still fails `cargo test`.
 //!
 //! ## Usage
 //!
@@ -21,12 +50,7 @@
 //! );
 //! ```
 //!
-//! The macro expands to a `const _: () = …` block that calls
-//! [`assert_sha256_eq`] in const context. SHA-256 is implemented as a
-//! `const fn` here ([`sha256`]), so the check is fully evaluated by the
-//! compiler — no new runtime dependency, no extra crates.
-//!
-//! ## Updating a pinned hash
+//! ### Updating a pinned hash
 //!
 //! When a bundled file legitimately changes (e.g. a new release of an
 //! upstream catalog) recompute the hash with:
@@ -46,12 +70,12 @@
 //! note. Hashes must never be updated without verifying that the new
 //! bytes are intentional.
 //!
-//! ## Defense in depth
+//! ## References
 //!
-//! Each protected file is also covered by a `#[test]` that recomputes
-//! the SHA-256 at runtime and asserts it matches the pinned value, so
-//! any future refactor that bypasses the const path still fails
-//! `cargo test`.
+//! - National Institute of Standards and Technology (2015). *Secure Hash
+//!   Standard (SHS)*. FIPS PUB 180-4. doi:10.6028/NIST.FIPS.180-4.
+//! - NIST Cryptographic Algorithm Validation Program (CAVS). SHA-256
+//!   test vectors. <https://csrc.nist.gov/projects/cryptographic-algorithm-validation-program>.
 
 // ── const-evaluable SHA-256 ──────────────────────────────────────────────────
 

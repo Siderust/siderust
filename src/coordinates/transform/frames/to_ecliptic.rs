@@ -1,6 +1,36 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Frame rotation implementations targeting [`EclipticMeanJ2000`](crate::coordinates::frames::EclipticMeanJ2000).
+//!
+//! ## Scientific scope
+//!
+//! The **J2000.0 mean ecliptic** is defined by the orientation of Earth's
+//! orbital plane at epoch J2000.0. It is the natural reference frame for
+//! heliocentric computations (planetary ephemerides, osculating orbital
+//! elements).
+//!
+//! This module implements two rotation chains:
+//!
+//! - **ICRS → EclipticMeanJ2000**: frame bias followed by the J2000 obliquity.
+//! - **EquatorialMeanJ2000 → EclipticMeanJ2000**: pure obliquity rotation.
+//!
+//! ## Technical scope
+//!
+//! Both impls apply a fixed 3×3 rotation from [`bias`]:
+//!
+//! - `icrs_to_ecliptic_j2000()` = `Rx(ε₀) · rb`, where ε₀ is the IAU 2006
+//!   J2000 mean obliquity (84 381.406″) and `rb` is the ICRS→J2000 frame-bias.
+//! - `obliquity_eq_to_ecl()` = `Rx(ε₀)`.
+//!
+//! Spherical types are handled by the blanket impl in the parent module via
+//! a Cartesian round-trip.
+//!
+//! ## References
+//!
+//! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
+//! - SOFA/ERFA functions `eraBp06`, `eraObl06`.
+
 use super::bias;
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
@@ -15,9 +45,9 @@ where
     fn to_frame(&self) -> Position<C, frames::EclipticMeanJ2000, U> {
         let rot = bias::icrs_to_ecliptic_j2000();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_vec3(
+        Position::from_array(
             self.center_params().clone(),
-            nalgebra::Vector3::new(x, y, z),
+            [x, y, z],
         )
     }
 }
@@ -29,9 +59,9 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Eclip
     fn to_frame(&self) -> Position<C, frames::EclipticMeanJ2000, U> {
         let rot = bias::obliquity_eq_to_ecl();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_vec3(
+        Position::from_array(
             self.center_params().clone(),
-            nalgebra::Vector3::new(x, y, z),
+            [x, y, z],
         )
     }
 }

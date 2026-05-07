@@ -1,22 +1,52 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Provenance metadata for bundled or computed datasets.
+//! # Provenance metadata
 //!
-//! Datasets ingested into a typed container (sampled spectrum, gridded
-//! table, …) should carry a [`Provenance`] record describing where the
-//! data came from, what version it is, and (optionally) a checksum for
-//! reproducibility audits.
+//! ## Scientific scope
 //!
-//! Re-exported from the `spectra` and `tables` feature modules for backwards
-//! compatibility.
+//! Reproducible astronomical pipelines must be able to answer the
+//! question "where did this number come from?" for every dataset they
+//! consume — was it the literature curve cited in a paper, a specific
+//! release of a vendored ASCII table, the output of an external service
+//! pulled at build time, or a derived product computed at runtime?
+//! The provenance record carried by every typed dataset in this crate
+//! lets downstream consumers audit the literature source, file version,
+//! and (optionally) cryptographic hash of the bytes that produced any
+//! computed result, without having to re-derive that information from
+//! file paths or imported strings.
 //!
-//! ## Build-time integrity checks
+//! This is the same hygiene principle followed by the IVOA Provenance
+//! Data Model and by IERS conventions when distributing reference data.
+//!
+//! ## Technical scope
+//!
+//! This module provides:
+//!
+//! - [`Provenance`] — full record (origin, version, retrieval timestamp,
+//!   optional SHA-256 checksum, free-form notes).
+//! - [`DataSource`] — origin classifier with variants for
+//!   `LiteratureCitation`, `BundledFile`, `External`, and `Computed`.
+//! - Builder helpers: [`Provenance::new`], [`Provenance::bundled_file`],
+//!   [`Provenance::cited`], [`Provenance::computed`],
+//!   [`Provenance::with_version`], [`Provenance::with_notes`].
+//!
+//! All fields are owned `String` / `Option<String>` for portability; no
+//! external serialization is implied. Re-exported from the `spectra` and
+//! `tables` feature modules for backwards compatibility.
 //!
 //! The [`checksum`] submodule provides a const-evaluable SHA-256 and the
 //! [`assert_data_checksum!`](crate::assert_data_checksum) macro for
 //! pinning the hash of any [`include_str!`] / [`include_bytes!`] data
 //! blob shipped inside the crate. Mismatches become hard compile errors.
+//!
+//! ## References
+//!
+//! - International Virtual Observatory Alliance (2020). *IVOA Provenance
+//!   Data Model*. IVOA Recommendation, version 1.0.
+//!   <https://www.ivoa.net/documents/ProvenanceDM/>.
+//! - IERS Conventions (2010). *IERS Technical Note 36*, Chapter 1
+//!   (citing reference data products).
 
 pub mod checksum;
 

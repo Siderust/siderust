@@ -141,7 +141,7 @@ where
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         let rotated = {
             self.center_params();
-            Position::<C1, F2, U>::from_vec3((), nalgebra::Vector3::new(x, y, z))
+            Position::<C1, F2, U>::from_array((), [x, y, z])
         };
         rotated.to_center(jd)
     }

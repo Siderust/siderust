@@ -1,6 +1,36 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Frame rotation implementations targeting [`ICRS`](crate::coordinates::frames::ICRS).
+//!
+//! ## Scientific scope
+//!
+//! The **International Celestial Reference System (ICRS)** is the IAU's
+//! primary celestial reference system, realised by the International Celestial
+//! Reference Frame (ICRF) from extragalactic radio-source positions. It
+//! supersedes the older equinox-based frames and serves as the hub through
+//! which all modern frame transformations are routed.
+//!
+//! This module implements two inverse rotation chains targeting ICRS:
+//!
+//! - **EclipticMeanJ2000 → ICRS**: inverse of `icrs_to_ecliptic_j2000`.
+//! - **EquatorialMeanJ2000 → ICRS**: inverse frame bias `rb⁻¹`.
+//!
+//! ## Technical scope
+//!
+//! Both impls apply fixed 3×3 rotations from [`bias`]:
+//!
+//! - `ecliptic_j2000_to_icrs()` = `(Rx(ε₀) · rb)⁻¹`.
+//! - `frame_bias_j2000_to_icrs()` = `rb⁻¹`.
+//!
+//! Spherical types are handled by the blanket impl in the parent module via
+//! a Cartesian round-trip.
+//!
+//! ## References
+//!
+//! - Ma, C. et al. (1998). *Astronomical Journal*, 116, 516 — ICRF definition.
+//! - SOFA/ERFA function `eraBp06`.
+
 use super::bias;
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
@@ -13,9 +43,9 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS,
     fn to_frame(&self) -> Position<C, frames::ICRS, U> {
         let rot = bias::ecliptic_j2000_to_icrs();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_vec3(
+        Position::from_array(
             self.center_params().clone(),
-            nalgebra::Vector3::new(x, y, z),
+            [x, y, z],
         )
     }
 }
@@ -27,9 +57,9 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::ICRS,
     fn to_frame(&self) -> Position<C, frames::ICRS, U> {
         let rot = bias::frame_bias_j2000_to_icrs();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_vec3(
+        Position::from_array(
             self.center_params().clone(),
-            nalgebra::Vector3::new(x, y, z),
+            [x, y, z],
         )
     }
 }

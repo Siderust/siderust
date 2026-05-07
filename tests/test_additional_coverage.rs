@@ -154,7 +154,7 @@ fn body_const_constructors_and_builders() {
         orbit,
         OrbitFrame::Barycentric,
     );
-    assert!(comet.period_years() > 0.0);
+    assert!(comet.period_years().value() > 0.0);
 
     let comet_from_builder = CometBuilder::default()
         .name("Builder")

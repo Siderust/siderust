@@ -3,26 +3,35 @@
 
 //! # Asteroid module
 //!
-//! Represents asteroids with:
-//! - `name`: String identifier for the asteroid.
-//! - `designation`: system used to formally identify asteroids.
-//! - `composition`: String describing the primary material makeup.
-//! - `orbit`: Orbital parameters (see [`crate::astro::orbit::KeplerianOrbit`]).
+//! ## Scientific scope
+//!
+//! This module models **asteroids / minor planets** — small Solar System
+//! bodies orbiting the Sun, primarily in the main belt between Mars and
+//! Jupiter or in near-Earth space.  Each body carries a formal designation,
+//! taxonomic composition class, Keplerian orbital elements, and an optional
+//! Bond albedo.
 //!
 //! | Constant | Designation | Class | Potentially Hazardous? | Notes |
 //! |----------|-------------|-------|-----------------------|-------|
-//! | [`CERES_AST`] | (1) Ceres | Main‑belt / Dwarf‑planet | No | Largest asteroid, also dwarf planet |
-//! | [`BENNU`] | (101955) Bennu | Near‑Earth ( Apollo ) | **Yes** | OSIRIS‑REx sample‑return target |
-//! | [`APOPHIS`] | (99942) Apophis | Near‑Earth ( Aten ) | **Yes** | 2029 Earth fly‑by ~0.1 LD |
+//! | [`CERES_AST`] | (1) Ceres | Main‑belt / Dwarf‑planet | No | Largest asteroid, also dwarf planet |
+//! | [`BENNU`] | (101955) Bennu | Near‑Earth (Apollo) | **Yes** | OSIRIS‑REx sample‑return target |
+//! | [`APOPHIS`] | (99942) Apophis | Near‑Earth (Aten) | **Yes** | 2029 Earth fly‑by ~0.1 LD |
 //!
-//! ## API highlights
-//! * `AsteroidClass` enum (`MainBelt`, `NearEarth`, …)
-//! * `AsteroidBuilder` for fluent construction of custom objects
+//! ## Technical scope
 //!
-//! ---
+//! - [`Asteroid`] — runtime struct with lifetimed string fields and an optional
+//!   Bond albedo ([`Albedos`]).
+//! - [`AsteroidClass`] — taxonomic enum (`MainBelt`, `NearEarth`, …).
+//! - [`AsteroidBuilder`] — builder for runtime construction.
+//! - [`Asteroid::with_albedo`] — `const`-safe albedo builder method.
+//!
+//! ## References
+//!
+//! - JPL Small-Body Database. <https://ssd.jpl.nasa.gov/tools/sbdb_query.html>
+//! - NASA Planetary Fact Sheet. <https://nssdc.gsfc.nasa.gov/planetary/factsheet/>
 
 use crate::astro::orbit::KeplerianOrbit;
-use crate::qtty::{AstronomicalUnits, Degrees};
+use crate::qtty::{Albedos, AstronomicalUnits, Degrees};
 use crate::time::JulianDate;
 
 /// Taxonomic class of a small Solar‑System body.
@@ -44,6 +53,8 @@ pub struct Asteroid<'a> {
     pub composition: &'a str,
     pub class: AsteroidClass,
     pub orbit: KeplerianOrbit,
+    /// Bond albedo (dimensionless, ∈ [0, 1]).  `None` when not catalogued.
+    pub albedo: Option<Albedos>,
 }
 
 impl<'a> Asteroid<'a> {
@@ -61,7 +72,22 @@ impl<'a> Asteroid<'a> {
             composition,
             class,
             orbit,
+            albedo: None,
         }
+    }
+
+    /// Set the Bond albedo, returning `self` (const-safe builder step).
+    ///
+    /// # Examples
+    ///
+    /// ```rust
+    /// use siderust::bodies::asteroid::CERES_AST;
+    /// let a = CERES_AST.albedo.unwrap();
+    /// assert!((a.value() - 0.09).abs() < 1e-9);
+    /// ```
+    pub const fn with_albedo(mut self, albedo: Albedos) -> Self {
+        self.albedo = Some(albedo);
+        self
     }
 
     /// Fluent builder.
@@ -81,6 +107,7 @@ pub struct AsteroidBuilder<'a> {
     composition: Option<&'a str>,
     class: Option<AsteroidClass>,
     orbit: Option<KeplerianOrbit>,
+    albedo: Option<Albedos>,
 }
 
 impl<'a> AsteroidBuilder<'a> {
@@ -104,6 +131,10 @@ impl<'a> AsteroidBuilder<'a> {
         self.orbit = Some(orbit);
         self
     }
+    pub fn albedo(mut self, albedo: Albedos) -> Self {
+        self.albedo = Some(albedo);
+        self
+    }
 
     pub fn build(self) -> Asteroid<'a> {
         Asteroid {
@@ -112,6 +143,7 @@ impl<'a> AsteroidBuilder<'a> {
             composition: self.composition.unwrap_or("Unknown"),
             class: self.class.unwrap_or(AsteroidClass::MainBelt),
             orbit: self.orbit.expect("missing orbit"),
+            albedo: self.albedo,
         }
     }
 }
@@ -120,7 +152,7 @@ impl<'a> AsteroidBuilder<'a> {
 //  Preset asteroids (orbital elements from JPL SBDB, epoch J2000)
 // -------------------------------------------------------------------------------------------------
 
-/// **(1) Ceres** – largest object in the asteroid belt (also classified as a dwarf planet).
+/// **(1) Ceres** – largest object in the asteroid belt (also classified as a dwarf planet).
 pub const CERES_AST: Asteroid = Asteroid::new_const(
     "Ceres",
     "(1) Ceres",
@@ -135,9 +167,9 @@ pub const CERES_AST: Asteroid = Asteroid::new_const(
         Degrees::new(95.9892),
         JulianDate::J2000,
     ),
-);
+).with_albedo(Albedos::new(0.09));
 
-/// **(101955) Bennu** – OSIRIS‑REx target; carbon‑rich Apollo NEO.
+/// **(101955) Bennu** – OSIRIS‑REx target; carbon‑rich Apollo NEO.
 pub const BENNU: Asteroid = Asteroid::new_const(
     "Bennu",
     "(101955) Bennu",
@@ -152,9 +184,9 @@ pub const BENNU: Asteroid = Asteroid::new_const(
         Degrees::new(101.703),
         JulianDate::J2000,
     ),
-);
+).with_albedo(Albedos::new(0.044));
 
-/// **(99942) Apophis** – Aten NEO with close Earth approach in 2029.
+/// **(99942) Apophis** – Aten NEO with close Earth approach in 2029.
 pub const APOPHIS: Asteroid = Asteroid::new_const(
     "Apophis",
     "(99942) Apophis",
@@ -169,7 +201,7 @@ pub const APOPHIS: Asteroid = Asteroid::new_const(
         Degrees::new(204.479),
         JulianDate::J2000,
     ),
-);
+).with_albedo(Albedos::new(0.23));
 
 /// Convenience array of preset asteroids.
 pub const ASTEROID_PRESETS: &[&Asteroid] = &[&CERES_AST, &BENNU, &APOPHIS];

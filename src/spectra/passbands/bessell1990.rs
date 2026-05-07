@@ -1,24 +1,56 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Johnson–Cousins UBVRI passbands from Bessell (1990).
+//! # Johnson–Cousins UBVRI passbands from Bessell (1990)
 //!
-//! ## Citation
+//! ## Scientific scope
 //!
-//! Bessell, M. S. 1990, "UBVRI Passbands", *Publications of the
-//! Astronomical Society of the Pacific*, **102**, 1181.
-//! <https://doi.org/10.1086/132749>
+//! Johnson–Cousins UBVRI is the most widely used broad-band photometric
+//! system in optical astronomy. The reference realisation of its filter
+//! transmission curves used by virtually every modern synthetic
+//! photometry pipeline is the one published in
 //!
-//! ## Data source
+//! > Bessell, M. S. 1990, "UBVRI Passbands", *Publications of the
+//! > Astronomical Society of the Pacific*, **102**, 1181.
+//! > <https://doi.org/10.1086/132749>
+//!
+//! Bessell & Murphy (2012, *PASP* **124**, 140) recommend these curves
+//! as the canonical "Johnson–Cousins" realisation against which
+//! synthetic magnitudes should be computed.
+//!
+//! Validity is bounded by the published wavelength range of each
+//! filter; throughput outside that range is treated as zero (the
+//! standard convention for a compactly supported passband).
+//!
+//! ## Technical scope
+//!
+//! Provides lazily-initialised, statically-cached
+//! [`SampledSpectrum<Nanometer, Throughput>`](crate::spectra::SampledSpectrum)
+//! constants for each of the five UBVRI bands via accessor functions
+//! `bessell1990::u()`, `bessell1990::b()`, `bessell1990::v()`,
+//! `bessell1990::r()`, `bessell1990::i()`. Each spectrum carries a
+//! [`Provenance`](crate::provenance::Provenance) record citing the
+//! Bessell (1990) paper and the bundled ASCII source file.
+//!
+//! Sample values are exposed at the typed boundary; consumers that need
+//! to drive the untyped numerical kernels can use
+//! [`SampledSpectrum::xs_raw`](crate::spectra::SampledSpectrum::xs_raw)
+//! and
+//! [`SampledSpectrum::ys_raw`](crate::spectra::SampledSpectrum::ys_raw)
+//! to obtain zero-cost numeric-table views (`Vec<f64>` of each axis'
+//! unit-scoped value) suitable for passing to the algo kernels.
+//!
+//! ### Data source
 //!
 //! Data retrieved from the SVO Filter Profile Service
 //! (<http://svo2.cab.inta-csic.es/theory/fps/>) under filter IDs
 //! `Generic/Bessell.{U,B,V,R,I}`, which mirror Bessell 1990 Table 2.
 //! Wavelengths were converted from Ångström (SVO default) to nanometres
-//! by dividing by 10.  The curated ASCII tables are bundled at
-//! `siderust/data/passbands/bessell1990/{U,B,V,R,I}.dat`.
+//! by dividing by 10. The curated ASCII tables are bundled at
+//! `siderust/data/passbands/bessell1990/{U,B,V,R,I}.dat` and pinned by
+//! SHA-256 via [`crate::assert_data_checksum!`].
 //!
-//! ## Usage
+//! ### Usage
 //!
 //! ```
 //! # #[cfg(feature = "spectra")]
@@ -44,6 +76,19 @@
 //! assert!((lambda_eff - 551.2).abs() < 2.0, "λ_eff = {lambda_eff:.1} nm");
 //! # }
 //! ```
+//!
+//! ## References
+//!
+//! - Bessell, M. S. (1990). "UBVRI Passbands". *Publications of the
+//!   Astronomical Society of the Pacific* **102**, 1181.
+//!   doi:10.1086/132749.
+//! - Bessell, M. S., & Murphy, S. (2012). "Spectrophotometric Libraries,
+//!   Revised Photonic Passbands, and Zero Points for UBVRI, Hipparcos,
+//!   and Tycho Photometry". *Publications of the Astronomical Society
+//!   of the Pacific* **124**, 140. doi:10.1086/664083.
+//! - Rodrigo, C., Solano, E. (2020). *The SVO Filter Profile Service*.
+//!   Contributions to the XIV.0 Scientific Meeting of the Spanish
+//!   Astronomical Society. <http://svo2.cab.inta-csic.es/theory/fps/>.
 
 use std::sync::OnceLock;
 

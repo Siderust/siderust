@@ -3,6 +3,23 @@
 
 //! # Unified Altitude Computation & Event API
 //!
+//! ## Scientific scope
+//!
+//! Topocentric altitude *h(t)* of a celestial body as observed from a
+//! geodetic site on Earth, evaluated on the canonical TT axis. The body's
+//! apparent direction is taken from the underlying analytical or numerical
+//! engine (VSOP87/ELP2000/JPL ephemerides for solar-system bodies; ICRS
+//! catalogue position for stars), so the regime of validity is bounded by
+//! that of the chosen engine. Atmospheric refraction is **not** applied
+//! here; thresholds such as `−0.833°` must be supplied by the caller.
+//!
+//! Event detection (rise/set crossings, culminations, time inside an
+//! altitude band) is computed by combining a coarse scan with bracketed
+//! root finding, so the temporal accuracy is limited by the scan step and
+//! by the chosen `time_tolerance`.
+//!
+//! ## Technical scope
+//!
 //! A clean, user‑friendly API for computing target altitude vs time and
 //! finding events (crossings, culminations, altitude ranges) for **any**
 //! celestial target.
@@ -64,6 +81,9 @@
 //! // Or use the trait methods directly
 //! let alt_rad = Sun.altitude_at(&site, siderust::time::ModifiedJulianDate::new(60000.0));
 //! ```
+//!
+//! ## References
+//! None.
 
 // ---------------------------------------------------------------------------
 // Submodules

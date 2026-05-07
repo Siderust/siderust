@@ -3,22 +3,29 @@
 
 //! # Lunar Altitude Window Periods
 //!
-//! Moon-specific routines for finding time intervals where the Moon's
-//! altitude is above, below, or within a given range.
+//! ## Scientific scope
 //!
-//! All period-finding is delegated to [`crate::calculus::math_core::intervals`]
-//! which provides scan + Brent refinement + crossing classification + interval
-//! assembly.  This module supplies the altitude closure and JD↔f64 / Mjd
-//! conversions.
+//! Moon‑specific routines for finding time intervals where the
+//! topocentric Moon altitude is above, below, or within a given band —
+//! the kinematic basis for moonrise/moonset, dark‑sky planning, and
+//! lunar visibility windows. Topocentric parallax (~1° at horizon) is
+//! handled by [`Moon::get_horizontal`] inside [`moon_altitude_rad`]; no
+//! atmospheric refraction is applied. Position accuracy is bounded by the
+//! underlying lunar engine (ELP truncation / DE chebyshev cache).
 //!
-//! ## Key Points
+//! ## Technical scope
 //!
-//! * **Topocentric parallax** (~1° at horizon) is handled by
-//!   [`Moon::get_horizontal`] inside [`moon_altitude_rad`].
-//! * A 2-hour scan step safely brackets every moonrise/moonset
-//!   (the shortest above-horizon arc is ~4 h).
-//! * Below-threshold and range variants are derived at negligible cost
-//!   via [`crate::time::complement_within`] / set intersection.
+//! Crate‑internal API: `moon_altitude_rad`, [`find_moon_above_horizon`],
+//! [`find_moon_below_horizon`], [`find_moon_altitude_range`]. All
+//! period‑finding is delegated to
+//! [`crate::calculus::math_core::intervals`] which provides scan + Brent
+//! refinement + crossing classification + interval assembly. A 2‑hour
+//! scan step safely brackets every moonrise/moonset (the shortest
+//! above‑horizon arc is ~4 h). Below‑threshold and range variants are
+//! derived at negligible cost via [`crate::time::complement_within`].
+//!
+//! ## References
+//! None.
 
 use crate::bodies::solar_system::Moon;
 use crate::calculus::math_core::intervals;
@@ -80,6 +87,11 @@ pub(crate) fn moon_altitude_rad(
 /// ```ignore
 /// let moonrise_periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
 /// ```
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` where the
+/// Moon altitude is at or above `threshold`.
 pub(crate) fn find_moon_above_horizon(
     site: Geodetic<ECEF>,
     period: Period<ModifiedJulianDate>,
@@ -101,10 +113,21 @@ pub(crate) fn find_moon_above_horizon(
 ///
 /// Complement of [`find_moon_above_horizon`] within `period`.
 ///
+/// # Arguments
+///
+/// * `site`, geodetic observer location
+/// * `period`, MJD/TT search window
+/// * `threshold`, altitude upper bound (e.g. `−0.5°` for "Moon down")
+///
 /// # Example
 /// ```ignore
 /// let moonless_periods = find_moon_below_horizon(site, period, Degrees::new(-0.5));
 /// ```
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` where the
+/// Moon altitude is at or below `threshold`.
 pub(crate) fn find_moon_below_horizon(
     site: Geodetic<ECEF>,
     period: Period<ModifiedJulianDate>,
@@ -119,10 +142,21 @@ pub(crate) fn find_moon_below_horizon(
 /// Computed as `above(min) ∩ complement(above(max))` via
 /// [`math_core::intervals::in_range_periods`].
 ///
+/// # Arguments
+///
+/// * `site`, geodetic observer location
+/// * `period`, MJD/TT search window
+/// * `range`, `(min_altitude, max_altitude)` band
+///
 /// # Example
 /// ```ignore
 /// let low_moon = find_moon_altitude_range(site, period, (Degrees::new(0.0), Degrees::new(30.0)));
 /// ```
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of intervals
+/// where `min ≤ altitude(t) ≤ max`.
 pub(crate) fn find_moon_altitude_range(
     site: Geodetic<ECEF>,
     period: Period<ModifiedJulianDate>,

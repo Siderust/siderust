@@ -3,11 +3,15 @@
 
 //! # Twilight Classification
 //!
-//! Classifies the current sky condition from the Sun's altitude angle, following
-//! the IAU/USNO convention where each boundary belongs to the **higher** (brighter)
-//! category — i.e. the upper bound is **inclusive** and the lower bound is
-//! **exclusive** for every interval except the bottommost (`Dark`), which captures
-//! all altitudes ≤ −18°.
+//! ## Scientific scope
+//!
+//! Classifies the current sky condition from the Sun's altitude angle,
+//! following the IAU/USNO convention where each boundary belongs to the
+//! **higher** (brighter) category — i.e. the upper bound is **inclusive**
+//! and the lower bound is **exclusive** for every interval except the
+//! bottommost (`Dark`), which captures all altitudes ≤ −18°. The phases
+//! match the standard civil/nautical/astronomical twilight definitions
+//! used in nautical and observational practice.
 //!
 //! | Phase          | Condition                      |
 //! |----------------|-------------------------------|
@@ -17,7 +21,12 @@
 //! | `Astronomical` | −18° < sun_alt ≤ −12°         |
 //! | `Dark`         | sun_alt ≤ −18°                |
 //!
-//! ## Example
+//! ## Technical scope
+//!
+//! Pure classification helper: takes any typed angular [`Quantity`] and
+//! returns a [`TwilightPhase`]. Unit conversion (radians → degrees) is
+//! handled internally via the `qtty` machinery; no Sun position is
+//! computed here.
 //!
 //! ```rust
 //! use siderust::qtty::Degrees;
@@ -26,6 +35,11 @@
 //! let phase = twilight_classification(Degrees::new(-7.5));
 //! assert_eq!(phase, TwilightPhase::Nautical);
 //! ```
+//!
+//! ## References
+//! - U.S. Naval Observatory, Astronomical Applications Department,
+//!   "Definitions of Twilight". (Civil/Nautical/Astronomical at
+//!   −6° / −12° / −18° solar altitude.)
 
 use crate::qtty::{Angular, Deg, Quantity, Unit};
 
@@ -83,6 +97,11 @@ impl std::fmt::Display for TwilightPhase {
 ///   Negative values indicate the Sun is below the geometric horizon. The
 ///   value is converted to degrees internally, so callers may pass either
 ///   typed angle without manual conversion.
+///
+/// # Returns
+///
+/// The [`TwilightPhase`] corresponding to `sun_altitude` under the
+/// IAU/USNO upper‑inclusive convention.
 ///
 /// # Examples
 ///

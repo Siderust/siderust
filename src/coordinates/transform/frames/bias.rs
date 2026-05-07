@@ -3,15 +3,34 @@
 
 //! Single source of truth for **fixed J2000 rotations**.
 //!
+//! ## Scientific scope
+//!
+//! The J2000.0 epoch defines two interrelated fixed rotations that appear
+//! throughout astrometric software:
+//!
+//! 1. **Frame bias** (`rb`): a ~80 µas rotation from the ICRS to the J2000.0
+//!    mean equator/equinox. It arises because the ICRS pole and equinox do not
+//!    coincide exactly with the classical J2000.0 definitions.
+//! 2. **Mean obliquity** (ε₀ = 84 381.406″): the tilt between Earth's mean
+//!    equatorial and ecliptic planes at J2000.0, used to rotate between
+//!    equatorial and ecliptic coordinates.
+//!
+//! ## Technical scope
+//!
 //! Every fixed frame rotation involving ICRS, EquatorialMeanJ2000 and
 //! EclipticMeanJ2000 is derived from the two constants in this module:
 //!
 //! 1. [`FRAME_BIAS_ICRS_TO_J2000`] – the IAU 2006 frame bias matrix `rb`
 //!    (equivalent to the output of ERFA `eraBp06` at J2000.0).
-//! 2. The J2000 mean obliquity ε₀ = 84381.406″ (IAU 2006, `eraObl06`).
+//! 2. The J2000 mean obliquity ε₀ = 84 381.406″ (IAU 2006, `eraObl06`).
 //!
 //! Both the legacy `TransformFrame` impls and the `FrameRotationProvider`
 //! pipeline use this module so that the bias/obliquity values cannot diverge.
+//!
+//! ## References
+//!
+//! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
+//! - SOFA/ERFA functions `eraBp06`, `eraObl06`.
 
 use crate::astro::precession;
 use affn::Rotation3;
