@@ -10,8 +10,7 @@
 //! Each comet is described by:
 //! - a short human‑readable designation,
 //! - an approximate dust/ion tail length,
-//! - six Keplerian orbital elements with an epoch (see
-//!   [`KeplerianOrbit`](crate::astro::orbit::KeplerianOrbit)), and
+//! - six Keplerian orbital elements with an epoch (see [`KeplerianOrbit`]), and
 //! - a flag indicating whether elements are heliocentric or barycentric.
 //!
 //! | Constant | Designation | Reference frame | Period (yr) | Notes |

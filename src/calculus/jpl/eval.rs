@@ -44,6 +44,8 @@ use affn::{Displacement, Velocity};
 
 type KmPerDay = Per<Kilometer, Day>;
 type KmPerDayQ = crate::qtty::Quantity<KmPerDay>;
+type PosVelResult =
+    Result<(Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>), EphemerisError>;
 
 const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 
@@ -252,10 +254,7 @@ impl SegmentDescriptor {
 
     /// Fallibly evaluate both position and velocity in one pass.
     #[inline]
-    pub fn try_position_velocity(
-        &self,
-        jd_tdb: JulianDateG<TDB>,
-    ) -> Result<(Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>), EphemerisError> {
+    pub fn try_position_velocity(&self, jd_tdb: JulianDateG<TDB>) -> PosVelResult {
         let (record, tau, radius) = try_locate(self, jd_tdb)?;
         Ok(eval_both(record, self.ncoeff, tau, radius))
     }
@@ -378,10 +377,7 @@ impl DynSegmentDescriptor {
 
     /// Fallibly evaluate both position and velocity in one pass.
     #[inline]
-    pub fn try_position_velocity(
-        &self,
-        jd_tdb: JulianDateG<TDB>,
-    ) -> Result<(Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>), EphemerisError> {
+    pub fn try_position_velocity(&self, jd_tdb: JulianDateG<TDB>) -> PosVelResult {
         let (record, tau, radius) = self.try_locate(jd_tdb)?;
         Ok(eval_both(record, self.ncoeff, tau, radius))
     }

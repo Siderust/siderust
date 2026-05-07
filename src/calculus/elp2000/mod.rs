@@ -18,9 +18,9 @@
 //!
 //! ## Technical scope
 //!
-//! - [`elp_structs`] — coefficient record types (`MainProblem`, `EarthPert`,
+//! - `elp_structs` — coefficient record types (`MainProblem`, `EarthPert`,
 //!   `PlanetPert`).
-//! - [`elp_series`] — all 36 coefficient tables and the evaluation engine;
+//! - `elp_series` — all 36 coefficient tables and the evaluation engine;
 //!   public entry point: `Moon::get_geo_position<U>(jd: JulianDate)` returning
 //!   `Position<Geocentric, EclipticMeanJ2000, U>`.
 //!

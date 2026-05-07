@@ -101,7 +101,10 @@ where
 
         let a = self.as_array();
         let b = body_in_our_center.as_array();
-        Position::<Bodycentric, F, U>::from_array(body_params, [a[0]-b[0], a[1]-b[1], a[2]-b[2]])
+        Position::<Bodycentric, F, U>::from_array(
+            body_params,
+            [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+        )
     }
 }
 
@@ -156,7 +159,10 @@ where
 
         let a = self.as_array();
         let b = body_in_our_center.as_array();
-        Position::<Bodycentric, F, U>::from_array(body_params, [a[0]-b[0], a[1]-b[1], a[2]-b[2]])
+        Position::<Bodycentric, F, U>::from_array(
+            body_params,
+            [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+        )
     }
 }
 
@@ -210,7 +216,10 @@ where
 
         let a = self.as_array();
         let b = body_in_our_center.as_array();
-        Position::<Bodycentric, F, U>::from_array(body_params, [a[0]-b[0], a[1]-b[1], a[2]-b[2]])
+        Position::<Bodycentric, F, U>::from_array(
+            body_params,
+            [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+        )
     }
 }
 
@@ -265,7 +274,7 @@ where
 
         let a = self.as_array();
         let b = body_geo.as_array();
-        Position::<Geocentric, F, U>::from_array_origin([a[0]+b[0], a[1]+b[1], a[2]+b[2]])
+        Position::<Geocentric, F, U>::from_array_origin([a[0] + b[0], a[1] + b[1], a[2] + b[2]])
     }
 }
 

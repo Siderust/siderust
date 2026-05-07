@@ -44,7 +44,6 @@
 //! - Seidelmann, P. K. (Ed.) (1992). *Explanatory Supplement to the
 //!   Astronomical Almanac*. University Science Books.
 
-
 use super::{Planet, Satellite, Star};
 use crate::astro::orbit::KeplerianOrbit;
 use crate::astro::{HasIauRotation, IauRotationParams};
@@ -335,7 +334,8 @@ pub const MOON: super::Satellite = super::Satellite::new_const(
         Degrees::new(135.27),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.12));
+)
+.with_albedo(Albedos::new(0.12));
 
 /// **Mars** – the red planet, fourth from the Sun.
 ///
@@ -583,7 +583,8 @@ pub const IO: Satellite = Satellite::new_const(
         Degrees::new(171.016),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.62));
+)
+.with_albedo(Albedos::new(0.62));
 
 pub const EUROPA: Satellite = Satellite::new_const(
     "Europa",
@@ -598,7 +599,8 @@ pub const EUROPA: Satellite = Satellite::new_const(
         Degrees::new(324.528),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.67));
+)
+.with_albedo(Albedos::new(0.67));
 
 pub const GANYMEDE: Satellite = Satellite::new_const(
     "Ganymede",
@@ -613,7 +615,8 @@ pub const GANYMEDE: Satellite = Satellite::new_const(
         Degrees::new(317.654),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.43));
+)
+.with_albedo(Albedos::new(0.43));
 
 pub const CALLISTO: Satellite = Satellite::new_const(
     "Callisto",
@@ -628,7 +631,8 @@ pub const CALLISTO: Satellite = Satellite::new_const(
         Degrees::new(51.483),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.17));
+)
+.with_albedo(Albedos::new(0.17));
 
 pub const TITAN: Satellite = Satellite::new_const(
     "Titan",
@@ -643,7 +647,8 @@ pub const TITAN: Satellite = Satellite::new_const(
         Degrees::new(30.744),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.22));
+)
+.with_albedo(Albedos::new(0.22));
 
 pub const TRITON: Satellite = Satellite::new_const(
     "Triton",
@@ -658,7 +663,8 @@ pub const TRITON: Satellite = Satellite::new_const(
         Degrees::new(144.960),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.76));
+)
+.with_albedo(Albedos::new(0.76));
 
 pub const MAJOR_MOONS: &[&Satellite] = &[
     &super::MOON,

@@ -16,7 +16,8 @@
 //! All routines operate on `Period<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
 //!
-//! The main entry point is [`above_threshold`] and [`between_thresholds`];
+//! The main entry points are [`above_threshold_periods`] and
+//! [`in_range_periods`];
 //! internally they delegate to [`root_finding::brent`] for root polishing
 //! after bracket detection, and use a tiny probe offset `PROBE_DT` to
 //! classify crossing direction.
@@ -353,12 +354,18 @@ where
 // ---------------------------------------------------------------------------
 
 /// Complement of `periods` within `within`.
-pub fn complement(within: Period<ModifiedJulianDate>, periods: &[Period<ModifiedJulianDate>]) -> Vec<Period<ModifiedJulianDate>> {
+pub fn complement(
+    within: Period<ModifiedJulianDate>,
+    periods: &[Period<ModifiedJulianDate>],
+) -> Vec<Period<ModifiedJulianDate>> {
     within.complement(periods)
 }
 
 /// Intersection of two sorted, non‑overlapping period lists.
-pub fn intersect(a: &[Period<ModifiedJulianDate>], b: &[Period<ModifiedJulianDate>]) -> Vec<Period<ModifiedJulianDate>> {
+pub fn intersect(
+    a: &[Period<ModifiedJulianDate>],
+    b: &[Period<ModifiedJulianDate>],
+) -> Vec<Period<ModifiedJulianDate>> {
     Interval::intersect_many(a, b)
 }
 

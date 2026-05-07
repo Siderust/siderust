@@ -90,7 +90,10 @@ pub struct Extremum<V: Unit> {
 ///
 /// Uses golden‑section search (derivative‑free, guaranteed convergence).
 /// Returns `(t_min, f(t_min))`.
-pub fn minimize<V, F>(period: Period<ModifiedJulianDate>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
+pub fn minimize<V, F>(
+    period: Period<ModifiedJulianDate>,
+    f: &F,
+) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -140,7 +143,10 @@ where
 /// Find the value of *t* in `period` that **maximises** `f(t)`.
 ///
 /// Implemented as `minimize(-f)`.  Returns `(t_max, f(t_max))`.
-pub fn maximize<V, F>(period: Period<ModifiedJulianDate>, f: &F) -> (ModifiedJulianDate, Quantity<V>)
+pub fn maximize<V, F>(
+    period: Period<ModifiedJulianDate>,
+    f: &F,
+) -> (ModifiedJulianDate, Quantity<V>)
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -207,7 +213,12 @@ where
 }
 
 /// Like [`find_extrema`] but with a caller‑chosen tolerance.
-pub fn find_extrema_tol<V, F>(period: Period<ModifiedJulianDate>, step: Days, f: &F, tol: Days) -> Vec<Extremum<V>>
+pub fn find_extrema_tol<V, F>(
+    period: Period<ModifiedJulianDate>,
+    step: Days,
+    f: &F,
+    tol: Days,
+) -> Vec<Extremum<V>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,

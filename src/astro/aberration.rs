@@ -54,26 +54,30 @@ fn aberrate_direction_lorentz<F: frames::ReferenceFrame>(
     u: direction::Direction<F>,
     beta: Velocity<F, Ratio>,
 ) -> direction::Direction<F> {
-    let bx = beta.x().value();
-    let by = beta.y().value();
-    let bz = beta.z().value();
-    let beta2 = bx * bx + by * by + bz * bz;
+    let beta_arr = beta.as_array();
+    let beta2: f64 = beta_arr.iter().map(|v| v.value() * v.value()).sum();
     if beta2 == 0.0 {
         return u;
     }
 
-    let gamma = (1.0 - beta2).sqrt().recip();
-    let beta_dot_u = bx * u.x() + by * u.y() + bz * u.z();
+    let gamma = (1.0_f64 - beta2).sqrt().recip();
+    let u_arr = u.as_array();
+    let u_vec = Velocity::<F, Ratio>::from_array([
+        Quantity::<Ratio>::new(u_arr[0]),
+        Quantity::<Ratio>::new(u_arr[1]),
+        Quantity::<Ratio>::new(u_arr[2]),
+    ]);
+    let beta_dot_u: f64 = beta_arr
+        .iter()
+        .zip(u_arr.iter())
+        .map(|(b, v)| b.value() * v)
+        .sum();
     let factor = gamma / (gamma + 1.0);
     let scale_b = 1.0 + factor * beta_dot_u;
-    let inv_denom = (1.0 + beta_dot_u).recip();
-    let inv_gamma = gamma.recip();
-
-    direction::Direction::new(
-        (u.x() * inv_gamma + bx * scale_b) * inv_denom,
-        (u.y() * inv_gamma + by * scale_b) * inv_denom,
-        (u.z() * inv_gamma + bz * scale_b) * inv_denom,
-    )
+    let denom = Quantity::<Ratio>::new(1.0 + beta_dot_u);
+    let result = (u_vec.scale(gamma.recip()) + beta.scale(scale_b)) / denom;
+    let r = result.as_array();
+    direction::Direction::from_array([r[0].value(), r[1].value(), r[2].value()])
 }
 
 /// Apply aberration to a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.

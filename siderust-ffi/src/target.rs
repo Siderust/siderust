@@ -10,9 +10,9 @@
 
 use crate::error::SiderustStatus;
 use crate::types::*;
-use qtty::*;
 use qtty::angular::Degrees;
-use qtty::unit::{Degree, LightYear, Meter, Year};
+use qtty::unit::{Degree, Year};
+use qtty::*;
 use siderust::astro::proper_motion::ProperMotion;
 use siderust::coordinates::frames::{
     EclipticMeanJ2000, EquatorialMeanJ2000, EquatorialMeanOfDate, EquatorialTrueOfDate, ICRF, ICRS,

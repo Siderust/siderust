@@ -114,7 +114,10 @@ fn roque_site() -> Geodetic<ECEF> {
     ROQUE_DE_LOS_MUCHACHOS.geodetic()
 }
 
-fn assert_periods_close(expected: &[Period<ModifiedJulianDate>], computed: &[Period<ModifiedJulianDate>]) {
+fn assert_periods_close(
+    expected: &[Period<ModifiedJulianDate>],
+    computed: &[Period<ModifiedJulianDate>],
+) {
     assert_eq!(
         expected.len(),
         computed.len(),

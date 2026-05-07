@@ -323,9 +323,7 @@ mod tests {
             Topocentric,
             EquatorialMeanOfDate,
             crate::qtty::AstronomicalUnit,
-        >::from_array(
-            site, [0.5 * AU, 0.3 * AU, 0.7 * AU]
-        );
+        >::from_array(site, [0.5 * AU, 0.3 * AU, 0.7 * AU]);
 
         let hz_pos: cartesian::Position<Topocentric, Horizontal, crate::qtty::AstronomicalUnit> =
             eq_pos.transform(jd);
@@ -368,9 +366,7 @@ mod tests {
             Topocentric,
             EquatorialMeanOfDate,
             crate::qtty::AstronomicalUnit,
-        >::from_array(
-            site, [0.5 * AU, 0.3 * AU, 0.7 * AU]
-        );
+        >::from_array(site, [0.5 * AU, 0.3 * AU, 0.7 * AU]);
         let eq_sph = spherical::Position::<
             Topocentric,
             EquatorialMeanOfDate,

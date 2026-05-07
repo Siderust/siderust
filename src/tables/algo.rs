@@ -243,6 +243,7 @@ pub fn linear_1d(
 /// matches the ordering used by NSB's `leinert_lookup_s10` so callers
 /// migrating from inline math get bit-identical results.
 #[inline]
+#[allow(clippy::too_many_arguments)]
 pub fn bilinear(
     xs: &[f64],
     ys: &[f64],
@@ -316,6 +317,7 @@ pub fn bilinear_unit(f00: f64, f10: f64, f01: f64, f11: f64, tx: f64, ty: f64) -
 ///
 /// — i.e. interpolate along `x` first, then `y`, then `z`.
 #[inline]
+#[allow(clippy::too_many_arguments)]
 pub fn trilinear(
     xs: &[f64],
     ys: &[f64],
@@ -385,6 +387,7 @@ pub fn trilinear(
 /// out      = plane_lo + tz · (plane_hi − plane_lo)
 /// ```
 #[inline]
+#[allow(clippy::too_many_arguments)]
 pub fn trilinear_unit(
     f000: f64,
     f100: f64,

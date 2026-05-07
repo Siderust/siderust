@@ -49,7 +49,6 @@
 //! println!("{} is {} away", ALTAIR.name, ALTAIR.distance);
 //! ```
 
-
 pub mod asteroid;
 pub mod catalog;
 pub mod comet;

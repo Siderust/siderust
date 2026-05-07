@@ -118,8 +118,7 @@ mod tests {
 
     #[test]
     fn ecliptic_to_icrs_roundtrip_matches_original() {
-        let dir_ecl =
-            Direction::<frames::EclipticMeanJ2000>::from_array([0.1, 0.2, 0.3]);
+        let dir_ecl = Direction::<frames::EclipticMeanJ2000>::from_array([0.1, 0.2, 0.3]);
         let icrs: Direction<frames::ICRS> = dir_ecl.to_frame();
         let back: Direction<frames::EclipticMeanJ2000> = icrs.to_frame();
 

@@ -24,13 +24,13 @@
 //!
 //! Behind the `runtime-data` feature this module provides:
 //!
-//! - [`DataManager`] — discovers (or creates) the cache directory,
+//! - `DataManager` — discovers (or creates) the cache directory,
 //!   downloads, verifies, and returns paths to dataset files.
 //! - [`DatasetId`], [`DatasetMeta`], [`DATASETS`] — pinned manifest of
 //!   the datasets known to the crate.
 //! - [`DataError`] — error taxonomy (`Io`, `Download`, `Integrity`,
 //!   `UnknownDataset`, `Parse`).
-//! - [`ProgressCallback`] — optional progress hook for downloads.
+//! - `ProgressCallback` — optional progress hook for downloads.
 //!
 //! Without the `runtime-data` feature, only [`DatasetId`],
 //! [`DatasetMeta`], [`DATASETS`], and [`DataError`] are available, so
@@ -39,7 +39,7 @@
 //!
 //! Cache location is `~/.siderust/data/` by default; override with the
 //! `SIDERUST_DATA_DIR` environment variable. Data is never downloaded
-//! without an explicit call to [`DataManager::ensure`] /
+//! without an explicit call to `DataManager::ensure` /
 //! `DataManager::download`.
 //!
 //! ## Quick Start

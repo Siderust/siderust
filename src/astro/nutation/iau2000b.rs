@@ -18,7 +18,7 @@
 //! ## Technical scope
 //!
 //! [`Iau2000B`] is an alias for `Model<Tag>` whose `Tag` implements the
-//! sealed [`NutationTag`] trait with
+//! sealed internal marker trait with
 //! `ID = NutationModelId::Iau2000B`, so dispatch in
 //! [`AstroContext`](crate::coordinates::transform::context::AstroContext)
 //! routes to the abridged evaluator without any runtime branching.

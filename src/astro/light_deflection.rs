@@ -344,7 +344,9 @@ mod tests {
         // At 90° elongation and 1 AU: Δθ = (2GM/c²R) ≈ 0.00407″
         let angle = Radians::new(std::f64::consts::FRAC_PI_2);
         let defl = solar_deflection_magnitude(angle, AstronomicalUnits::new(1.0));
-        let expected = Radians::new(SOLAR_SCHWARZSCHILD_AU).to::<Arcsecond>().value();
+        let expected = Radians::new(SOLAR_SCHWARZSCHILD_AU)
+            .to::<Arcsecond>()
+            .value();
         assert!(
             (defl.value() - expected).abs() < 1e-9,
             "deflection at 90° = {}″, expected {}″",
@@ -413,7 +415,9 @@ mod tests {
             + (deflected.y() - star.y()).powi(2)
             + (deflected.z() - star.z()).powi(2))
         .sqrt();
-        let vec_deflection_arcsec = Radians::new(2.0 * (0.5 * chord).asin()).to::<Arcsecond>().value();
+        let vec_deflection_arcsec = Radians::new(2.0 * (0.5 * chord).asin())
+            .to::<Arcsecond>()
+            .value();
 
         let scalar_deflection = solar_deflection_magnitude(
             Radians::new(std::f64::consts::FRAC_PI_2),

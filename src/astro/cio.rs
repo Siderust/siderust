@@ -99,7 +99,8 @@ pub fn cio_locator_s(jd: JulianDate, x: CipCoordinates, y: CipCoordinates) -> Ra
     // Polynomial part (μas), from IERS Conventions (2010) eq. 5.15
     let poly_uas = 94.0 + 3808.65 * t - 122.68 * t.powi(2) - 72574.11 * t.powi(3);
 
-    let s_rad = -0.5 * x.value() * y.value() + MicroArcseconds::new(poly_uas).to::<Radian>().value();
+    let s_rad =
+        -0.5 * x.value() * y.value() + MicroArcseconds::new(poly_uas).to::<Radian>().value();
     Radians::new(s_rad)
 }
 
@@ -176,14 +177,26 @@ mod tests {
         // At J2000.0, the CIP is very close to the GCRS pole, so X ≈ 0, Y ≈ 0
         let (x, y) = cip_xy(JulianDate::J2000, Radians::new(0.0), Radians::new(0.0));
         // Frame bias gives X, Y of order ~10 mas = ~5e-8 rad
-        assert!(x.value().abs() < 1e-4, "X at J2000 should be ~0, got {}", x.value());
-        assert!(y.value().abs() < 1e-4, "Y at J2000 should be ~0, got {}", y.value());
+        assert!(
+            x.value().abs() < 1e-4,
+            "X at J2000 should be ~0, got {}",
+            x.value()
+        );
+        assert!(
+            y.value().abs() < 1e-4,
+            "Y at J2000 should be ~0, got {}",
+            y.value()
+        );
     }
 
     #[test]
     fn cio_locator_small() {
         // The CIO locator s is very small (< 1 mas for current epochs)
-        let s = cio_locator_s(JulianDate::J2000, CipCoordinates::new(0.0), CipCoordinates::new(0.0));
+        let s = cio_locator_s(
+            JulianDate::J2000,
+            CipCoordinates::new(0.0),
+            CipCoordinates::new(0.0),
+        );
         let s_mas = s.value() * 206_264_806.0; // rad → mas
         assert!(
             s_mas.abs() < 100.0,
@@ -195,7 +208,11 @@ mod tests {
     #[test]
     fn gcrs_to_cirs_near_identity_at_j2000() {
         // At J2000 with zero nutation, Q should be near-identity (only frame bias)
-        let q = gcrs_to_cirs_matrix(CipCoordinates::new(0.0), CipCoordinates::new(0.0), Radians::new(0.0));
+        let q = gcrs_to_cirs_matrix(
+            CipCoordinates::new(0.0),
+            CipCoordinates::new(0.0),
+            Radians::new(0.0),
+        );
         let m = q.as_matrix();
         for (i, row) in m.iter().enumerate().take(3) {
             assert!(

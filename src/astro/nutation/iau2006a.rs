@@ -20,7 +20,7 @@
 //! ## Technical scope
 //!
 //! [`Iau2006A`] is an alias for `Model<Tag>`. `Tag` implements the sealed
-//! [`NutationTag`] trait with `ID = NutationModelId::Iau2006A`, dispatching
+//! internal marker trait with `ID = NutationModelId::Iau2006A`, dispatching
 //! to the IAU 2006A-corrected evaluator inside the shared `nut00a` engine.
 //! This is the model used by the default transform pipeline.
 //!

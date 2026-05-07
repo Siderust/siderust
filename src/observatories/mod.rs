@@ -39,8 +39,8 @@
 //! dimensionless fraction in `[0.0, 1.0]` (so 14.5 % RH is `0.145`, never
 //! `14.5`).
 //!
-//! Atmospheric profiles built from these site constants live in
-//! [`crate::atmosphere`] (behind the `atmosphere` feature).
+//! Atmospheric profiles built from these site constants live in the
+//! `atmosphere` module (behind the `atmosphere` feature).
 //!
 //! ## Usage
 //!

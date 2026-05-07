@@ -7,8 +7,8 @@
 //! into a flat C ABI.
 
 use crate::error::SiderustStatus;
+use qtty::angular::Degrees;
 use qtty::*;
-use qtty::angular::{Degrees, Radians};
 use siderust::calculus::solar::classification::{twilight_classification, TwilightPhase};
 
 ffi_enum! {

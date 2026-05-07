@@ -167,7 +167,8 @@ pub const CERES_AST: Asteroid = Asteroid::new_const(
         Degrees::new(95.9892),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.09));
+)
+.with_albedo(Albedos::new(0.09));
 
 /// **(101955) Bennu** – OSIRIS‑REx target; carbon‑rich Apollo NEO.
 pub const BENNU: Asteroid = Asteroid::new_const(
@@ -184,7 +185,8 @@ pub const BENNU: Asteroid = Asteroid::new_const(
         Degrees::new(101.703),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.044));
+)
+.with_albedo(Albedos::new(0.044));
 
 /// **(99942) Apophis** – Aten NEO with close Earth approach in 2029.
 pub const APOPHIS: Asteroid = Asteroid::new_const(
@@ -201,7 +203,8 @@ pub const APOPHIS: Asteroid = Asteroid::new_const(
         Degrees::new(204.479),
         JulianDate::J2000,
     ),
-).with_albedo(Albedos::new(0.23));
+)
+.with_albedo(Albedos::new(0.23));
 
 /// Convenience array of preset asteroids.
 pub const ASTEROID_PRESETS: &[&Asteroid] = &[&CERES_AST, &BENNU, &APOPHIS];

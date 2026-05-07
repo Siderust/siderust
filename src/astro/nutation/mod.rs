@@ -25,11 +25,9 @@
 //! [`AstroContext`](crate::coordinates::transform::context::AstroContext)
 //! via [`AstroContext::with_model`](crate::coordinates::transform::context::AstroContext::with_model).
 //! Each concrete marker — [`Iau2000A`], [`Iau2000B`], [`Iau2006A`],
-//! [`Iau2006`] — is a zero-sized type implementing the sealed
-//! [`NutationTag`] trait, so dispatch is monomorphised and free of any
-//! runtime cost. The numerical evaluation is shared in the
-//! `nut00a` submodule and the planetary-correction tables in
-//! `nut00a_tables`.
+//! [`Iau2006`] — is a zero-sized type implementing an internal sealed
+//! marker trait, so dispatch is monomorphised and free of any runtime cost.
+//! The numerical evaluation is shared in the `nut00a` submodule.
 //!
 //! ## Usage
 //!

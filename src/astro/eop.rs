@@ -189,7 +189,7 @@ impl IersEop {
     /// Create an `IersEop` from the build-time embedded table.
     #[inline]
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 
     /// MJD range covered by the active table.

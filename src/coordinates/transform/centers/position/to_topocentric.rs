@@ -23,9 +23,9 @@
 //! Two public entry points are provided:
 //!
 //! - [`to_topocentric_with_ctx`]: expert API accepting an explicit
-//!   [`AstroContext`](crate::coordinates::transform::context::AstroContext).
+//!   [`AstroContext`].
 //! - [`to_topocentric_with`]: convenience wrapper accepting any
-//!   [`TransformContext`](crate::coordinates::transform::context::TransformContext).
+//!   [`TransformContext`].
 //!
 //! ## References
 //!

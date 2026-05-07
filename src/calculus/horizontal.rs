@@ -28,11 +28,11 @@
 //! - [`geocentric_j2000_to_apparent_topocentric`] — intermediate stage;
 //!   takes a geocentric J2000 Cartesian position and returns a topocentric
 //!   true-of-date spherical position (`RA`, `Dec`, distance).
-//! - [`apparent_topocentric_to_horizontal`] — final stage; converts the
+//! - [`equatorial_to_horizontal_true_of_date`] — final stage; converts the
 //!   true-of-date equatorial spherical position to altitude / azimuth using
 //!   GAST and the observer latitude.
-//! - [`geocentric_j2000_to_horizontal`] — convenience wrapper composing the
-//!   full pipeline in one call.
+//! - [`equatorial_to_horizontal`] — convenience wrapper for the standard
+//!   true-of-date equatorial to horizontal conversion.
 //!
 //! All public functions accept and return typed `qtty` quantities (degrees,
 //! radians, AU, metres).

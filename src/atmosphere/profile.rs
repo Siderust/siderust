@@ -147,7 +147,10 @@ mod tests {
         let red = p.optical_depth(Nanometers::new(700.0));
         assert!(blue.value() > 0.0);
         assert!(red.value() > 0.0);
-        assert!(blue.value() > red.value(), "Rayleigh + Mie both fall with λ");
+        assert!(
+            blue.value() > red.value(),
+            "Rayleigh + Mie both fall with λ"
+        );
     }
 
     #[test]

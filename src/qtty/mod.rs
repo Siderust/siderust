@@ -41,8 +41,8 @@ pub use crate::ext_qtty::temperature::*;
 pub use crate::ext_qtty::time::*;
 // Explicit import overrides the glob above: `crate::qtty::Second` = the
 // quantity type `Quantity<unit::Second, f64>`, not the unit marker struct.
-pub use crate::ext_qtty::Second;
 pub use crate::ext_qtty::volume::*;
+pub use crate::ext_qtty::Second;
 
 pub mod dimensionless;
 pub use dimensionless::*;

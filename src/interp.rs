@@ -17,8 +17,8 @@
 //! is never acceptable). Mixing these policies silently across modules
 //! produces inconsistent answers.
 //!
-//! Centralising the policy enum here lets the [`spectra`](crate::spectra)
-//! and [`tables`](crate::tables) feature modules share a single typed
+//! Centralising the policy enum here lets the `spectra` and `tables`
+//! feature modules share a single typed
 //! contract for out-of-range handling, so callers can mix sampled
 //! spectra and gridded tables without writing adapter glue.
 //!
@@ -31,8 +31,8 @@
 //! - [`OutOfRange::Error`] — surface an out-of-range error from the
 //!   typed evaluation API.
 //!
-//! No interpolation algorithm lives here; the kernels are in
-//! [`crate::spectra::algo`] and [`crate::tables::algo`].
+//! No interpolation algorithm lives here; the kernels live in the
+//! feature-gated `spectra::algo` and `tables::algo` modules.
 //!
 //! ## References
 //!

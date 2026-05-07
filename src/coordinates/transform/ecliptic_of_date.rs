@@ -342,8 +342,10 @@ mod tests {
         );
 
         // A point at the north celestial pole (Dec = 90°) should be at the ecliptic pole
-        let spherical_north =
-            affn::spherical::Direction::<EquatorialMeanOfDate>::new_unchecked(90.0 * DEG, 0.0 * DEG);
+        let spherical_north = affn::spherical::Direction::<EquatorialMeanOfDate>::new_unchecked(
+            90.0 * DEG,
+            0.0 * DEG,
+        );
         let north_pole = spherical_north.to_cartesian();
         let ecl_north = north_pole.to_ecliptic_of_date(&jd_tt);
 

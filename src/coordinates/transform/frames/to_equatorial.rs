@@ -43,10 +43,7 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equat
     fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
         let rot = bias::obliquity_ecl_to_eq();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_array(
-            self.center_params().clone(),
-            [x, y, z],
-        )
+        Position::from_array(self.center_params().clone(), [x, y, z])
     }
 }
 
@@ -57,10 +54,7 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equat
     fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
         let rot = bias::frame_bias_icrs_to_j2000();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_array(
-            self.center_params().clone(),
-            [x, y, z],
-        )
+        Position::from_array(self.center_params().clone(), [x, y, z])
     }
 }
 

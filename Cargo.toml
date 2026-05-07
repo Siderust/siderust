@@ -14,7 +14,7 @@ tempoch-core = { path = "../tempoch/tempoch-core" }
 
 [package]
 name = "siderust"
-version = "0.6.1"
+version = "0.7.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -40,9 +40,9 @@ tables = []
 atmosphere = []
 
 [dependencies]
-affn = { path = "../affn", features = ["astro"] }
+affn = { version = "0.6.2", path = "../affn", features = ["astro"] }
 cheby = "0.1.0"
-qtty = { path = "../qtty/qtty", features = ["radiometry"] }
+qtty = { version = "0.7.0", path = "../qtty/qtty", features = ["radiometry"] }
 tempoch = "0.4.3"
 approx = "0.5"
 chrono = "0.4.44"

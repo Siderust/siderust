@@ -7,7 +7,7 @@
 //! parameterizes the pipeline over a [`DeConfig`] so each version is
 //! a thin configuration wrapper.
 
-use super::{daf, spk};
+use crate::{jpl_daf as daf, jpl_spk as spk};
 use std::env;
 use std::path::Path;
 use std::process::Command;
@@ -202,7 +202,6 @@ fn generate_stub_rust_module(cfg: &DeConfig, path: &Path) -> anyhow::Result<()> 
         f,
         "/// These require `SegmentDescriptor` to be in scope via `use`."
     )?;
-    writeln!(f)?;
 
     writeln!(f, "pub const SUN: SegmentDescriptor = SegmentDescriptor {{")?;
     writeln!(f, "    init: crate::qtty::Seconds::new(sun::INIT),")?;
@@ -335,7 +334,6 @@ fn generate_rust_module(
         f,
         "/// These require `SegmentDescriptor` to be in scope via `use`."
     )?;
-    writeln!(f)?;
     writeln!(f, "/// Segment descriptor for the Sun (NAIF 10 → SSB).")?;
     writeln!(f, "pub const SUN: SegmentDescriptor = SegmentDescriptor {{")?;
     writeln!(f, "    init: crate::qtty::Seconds::new(sun::INIT),")?;

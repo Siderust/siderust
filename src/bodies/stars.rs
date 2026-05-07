@@ -41,7 +41,6 @@
 //! - Luri, X., et al. (2018). "Gaia Data Release 2: using Gaia parallaxes".
 //!   *A&A* 616, A9. doi:10.1051/0004-6361/201832964
 
-
 use crate::astro::proper_motion::{
     propagate_space_motion_since_j2000, ProperMotionError, StarSpaceMotion,
 };

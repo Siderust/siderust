@@ -43,75 +43,313 @@ pub(crate) struct PlutoTerm {
 }
 
 pub(crate) const ARGUMENTS: &[PlutoArgument] = &[
-    PlutoArgument { j: 0.0, s: 0.0, p: 1.0 },
-    PlutoArgument { j: 0.0, s: 0.0, p: 2.0 },
-    PlutoArgument { j: 0.0, s: 0.0, p: 3.0 },
-    PlutoArgument { j: 0.0, s: 0.0, p: 4.0 },
-    PlutoArgument { j: 0.0, s: 0.0, p: 5.0 },
-    PlutoArgument { j: 0.0, s: 0.0, p: 6.0 },
-    PlutoArgument { j: 0.0, s: 1.0, p: -1.0 },
-    PlutoArgument { j: 0.0, s: 1.0, p: 0.0 },
-    PlutoArgument { j: 0.0, s: 1.0, p: 1.0 },
-    PlutoArgument { j: 0.0, s: 1.0, p: 2.0 },
-    PlutoArgument { j: 0.0, s: 1.0, p: 3.0 },
-    PlutoArgument { j: 0.0, s: 2.0, p: -2.0 },
-    PlutoArgument { j: 0.0, s: 2.0, p: -1.0 },
-    PlutoArgument { j: 0.0, s: 2.0, p: 0.0 },
-    PlutoArgument { j: 1.0, s: -1.0, p: 0.0 },
-    PlutoArgument { j: 1.0, s: -1.0, p: 1.0 },
-    PlutoArgument { j: 1.0, s: 0.0, p: -3.0 },
-    PlutoArgument { j: 1.0, s: 0.0, p: -2.0 },
-    PlutoArgument { j: 1.0, s: 0.0, p: -1.0 },
-    PlutoArgument { j: 1.0, s: 0.0, p: 0.0 },
-    PlutoArgument { j: 1.0, s: 0.0, p: 1.0 },
-    PlutoArgument { j: 1.0, s: 0.0, p: 2.0 },
-    PlutoArgument { j: 1.0, s: 0.0, p: 3.0 },
-    PlutoArgument { j: 1.0, s: 0.0, p: 4.0 },
-    PlutoArgument { j: 1.0, s: 1.0, p: -3.0 },
-    PlutoArgument { j: 1.0, s: 1.0, p: -2.0 },
-    PlutoArgument { j: 1.0, s: 1.0, p: -1.0 },
-    PlutoArgument { j: 1.0, s: 1.0, p: 0.0 },
-    PlutoArgument { j: 1.0, s: 1.0, p: 1.0 },
-    PlutoArgument { j: 1.0, s: 1.0, p: 3.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: -6.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: -5.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: -4.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: -3.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: -2.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: -1.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: 0.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: 1.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: 2.0 },
-    PlutoArgument { j: 2.0, s: 0.0, p: 3.0 },
-    PlutoArgument { j: 3.0, s: 0.0, p: -2.0 },
-    PlutoArgument { j: 3.0, s: 0.0, p: -1.0 },
-    PlutoArgument { j: 3.0, s: 0.0, p: 0.0 },
+    PlutoArgument {
+        j: 0.0,
+        s: 0.0,
+        p: 1.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 0.0,
+        p: 2.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 0.0,
+        p: 3.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 0.0,
+        p: 4.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 0.0,
+        p: 5.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 0.0,
+        p: 6.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 1.0,
+        p: -1.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 1.0,
+        p: 0.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 1.0,
+        p: 1.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 1.0,
+        p: 2.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 1.0,
+        p: 3.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 2.0,
+        p: -2.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 2.0,
+        p: -1.0,
+    },
+    PlutoArgument {
+        j: 0.0,
+        s: 2.0,
+        p: 0.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: -1.0,
+        p: 0.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: -1.0,
+        p: 1.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 0.0,
+        p: -3.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 0.0,
+        p: -2.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 0.0,
+        p: -1.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 0.0,
+        p: 0.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 0.0,
+        p: 1.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 0.0,
+        p: 2.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 0.0,
+        p: 3.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 0.0,
+        p: 4.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 1.0,
+        p: -3.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 1.0,
+        p: -2.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 1.0,
+        p: -1.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 1.0,
+        p: 0.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 1.0,
+        p: 1.0,
+    },
+    PlutoArgument {
+        j: 1.0,
+        s: 1.0,
+        p: 3.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: -6.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: -5.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: -4.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: -3.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: -2.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: -1.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: 0.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: 1.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: 2.0,
+    },
+    PlutoArgument {
+        j: 2.0,
+        s: 0.0,
+        p: 3.0,
+    },
+    PlutoArgument {
+        j: 3.0,
+        s: 0.0,
+        p: -2.0,
+    },
+    PlutoArgument {
+        j: 3.0,
+        s: 0.0,
+        p: -1.0,
+    },
+    PlutoArgument {
+        j: 3.0,
+        s: 0.0,
+        p: 0.0,
+    },
 ];
 
 pub(crate) const LONGITUDE_TERMS: &[PlutoTerm] = &[
-    PlutoTerm { a: -19799805.0, b: 19850055.0 },
-    PlutoTerm { a: 897144.0, b: -4954829.0 },
-    PlutoTerm { a: 611149.0, b: 1211027.0 },
-    PlutoTerm { a: -341243.0, b: -189585.0 },
-    PlutoTerm { a: 129287.0, b: -34992.0 },
-    PlutoTerm { a: -38164.0, b: 30893.0 },
-    PlutoTerm { a: 20442.0, b: -9987.0 },
-    PlutoTerm { a: -4063.0, b: -5071.0 },
-    PlutoTerm { a: -6016.0, b: -3336.0 },
-    PlutoTerm { a: -3956.0, b: 3039.0 },
-    PlutoTerm { a: -667.0, b: 3572.0 },
-    PlutoTerm { a: 1276.0, b: 501.0 },
-    PlutoTerm { a: 1152.0, b: -917.0 },
-    PlutoTerm { a: 630.0, b: -1277.0 },
-    PlutoTerm { a: 2571.0, b: -459.0 },
-    PlutoTerm { a: 899.0, b: -1449.0 },
-    PlutoTerm { a: -1016.0, b: 1043.0 },
-    PlutoTerm { a: -2343.0, b: -1012.0 },
-    PlutoTerm { a: 7042.0, b: 788.0 },
-    PlutoTerm { a: 1199.0, b: -338.0 },
+    PlutoTerm {
+        a: -19799805.0,
+        b: 19850055.0,
+    },
+    PlutoTerm {
+        a: 897144.0,
+        b: -4954829.0,
+    },
+    PlutoTerm {
+        a: 611149.0,
+        b: 1211027.0,
+    },
+    PlutoTerm {
+        a: -341243.0,
+        b: -189585.0,
+    },
+    PlutoTerm {
+        a: 129287.0,
+        b: -34992.0,
+    },
+    PlutoTerm {
+        a: -38164.0,
+        b: 30893.0,
+    },
+    PlutoTerm {
+        a: 20442.0,
+        b: -9987.0,
+    },
+    PlutoTerm {
+        a: -4063.0,
+        b: -5071.0,
+    },
+    PlutoTerm {
+        a: -6016.0,
+        b: -3336.0,
+    },
+    PlutoTerm {
+        a: -3956.0,
+        b: 3039.0,
+    },
+    PlutoTerm {
+        a: -667.0,
+        b: 3572.0,
+    },
+    PlutoTerm {
+        a: 1276.0,
+        b: 501.0,
+    },
+    PlutoTerm {
+        a: 1152.0,
+        b: -917.0,
+    },
+    PlutoTerm {
+        a: 630.0,
+        b: -1277.0,
+    },
+    PlutoTerm {
+        a: 2571.0,
+        b: -459.0,
+    },
+    PlutoTerm {
+        a: 899.0,
+        b: -1449.0,
+    },
+    PlutoTerm {
+        a: -1016.0,
+        b: 1043.0,
+    },
+    PlutoTerm {
+        a: -2343.0,
+        b: -1012.0,
+    },
+    PlutoTerm {
+        a: 7042.0,
+        b: 788.0,
+    },
+    PlutoTerm {
+        a: 1199.0,
+        b: -338.0,
+    },
     PlutoTerm { a: 418.0, b: -67.0 },
-    PlutoTerm { a: 120.0, b: -274.0 },
-    PlutoTerm { a: -60.0, b: -159.0 },
+    PlutoTerm {
+        a: 120.0,
+        b: -274.0,
+    },
+    PlutoTerm {
+        a: -60.0,
+        b: -159.0,
+    },
     PlutoTerm { a: -82.0, b: -29.0 },
     PlutoTerm { a: -36.0, b: -20.0 },
     PlutoTerm { a: -40.0, b: 7.0 },
@@ -135,27 +373,72 @@ pub(crate) const LONGITUDE_TERMS: &[PlutoTerm] = &[
 ];
 
 pub(crate) const LATITUDE_TERMS: &[PlutoTerm] = &[
-    PlutoTerm { a: -5452852.0, b: -14974862.0 },
-    PlutoTerm { a: 3527812.0, b: 1672790.0 },
-    PlutoTerm { a: -1050748.0, b: 327647.0 },
-    PlutoTerm { a: 178690.0, b: -292153.0 },
-    PlutoTerm { a: 18650.0, b: 100340.0 },
-    PlutoTerm { a: -30697.0, b: -25823.0 },
-    PlutoTerm { a: 4878.0, b: 11248.0 },
+    PlutoTerm {
+        a: -5452852.0,
+        b: -14974862.0,
+    },
+    PlutoTerm {
+        a: 3527812.0,
+        b: 1672790.0,
+    },
+    PlutoTerm {
+        a: -1050748.0,
+        b: 327647.0,
+    },
+    PlutoTerm {
+        a: 178690.0,
+        b: -292153.0,
+    },
+    PlutoTerm {
+        a: 18650.0,
+        b: 100340.0,
+    },
+    PlutoTerm {
+        a: -30697.0,
+        b: -25823.0,
+    },
+    PlutoTerm {
+        a: 4878.0,
+        b: 11248.0,
+    },
     PlutoTerm { a: 226.0, b: -64.0 },
-    PlutoTerm { a: 2030.0, b: -836.0 },
+    PlutoTerm {
+        a: 2030.0,
+        b: -836.0,
+    },
     PlutoTerm { a: 69.0, b: -604.0 },
-    PlutoTerm { a: -247.0, b: -567.0 },
+    PlutoTerm {
+        a: -247.0,
+        b: -567.0,
+    },
     PlutoTerm { a: -57.0, b: 1.0 },
-    PlutoTerm { a: -122.0, b: 175.0 },
-    PlutoTerm { a: -49.0, b: -164.0 },
-    PlutoTerm { a: -197.0, b: 199.0 },
+    PlutoTerm {
+        a: -122.0,
+        b: 175.0,
+    },
+    PlutoTerm {
+        a: -49.0,
+        b: -164.0,
+    },
+    PlutoTerm {
+        a: -197.0,
+        b: 199.0,
+    },
     PlutoTerm { a: -25.0, b: 217.0 },
-    PlutoTerm { a: 589.0, b: -248.0 },
-    PlutoTerm { a: -269.0, b: 711.0 },
+    PlutoTerm {
+        a: 589.0,
+        b: -248.0,
+    },
+    PlutoTerm {
+        a: -269.0,
+        b: 711.0,
+    },
     PlutoTerm { a: 185.0, b: 193.0 },
     PlutoTerm { a: 315.0, b: 807.0 },
-    PlutoTerm { a: -130.0, b: -43.0 },
+    PlutoTerm {
+        a: -130.0,
+        b: -43.0,
+    },
     PlutoTerm { a: 5.0, b: 3.0 },
     PlutoTerm { a: 2.0, b: 17.0 },
     PlutoTerm { a: 2.0, b: 5.0 },
@@ -181,28 +464,85 @@ pub(crate) const LATITUDE_TERMS: &[PlutoTerm] = &[
 ];
 
 pub(crate) const RADIUS_TERMS: &[PlutoTerm] = &[
-    PlutoTerm { a: 66865439.0, b: 68951812.0 },
-    PlutoTerm { a: -11827535.0, b: -332538.0 },
-    PlutoTerm { a: 1593179.0, b: -1438890.0 },
-    PlutoTerm { a: -18444.0, b: 483220.0 },
-    PlutoTerm { a: -65977.0, b: -85431.0 },
-    PlutoTerm { a: 31174.0, b: -6032.0 },
-    PlutoTerm { a: -5794.0, b: 22161.0 },
-    PlutoTerm { a: 4601.0, b: 4032.0 },
-    PlutoTerm { a: -1729.0, b: 234.0 },
-    PlutoTerm { a: -415.0, b: 702.0 },
+    PlutoTerm {
+        a: 66865439.0,
+        b: 68951812.0,
+    },
+    PlutoTerm {
+        a: -11827535.0,
+        b: -332538.0,
+    },
+    PlutoTerm {
+        a: 1593179.0,
+        b: -1438890.0,
+    },
+    PlutoTerm {
+        a: -18444.0,
+        b: 483220.0,
+    },
+    PlutoTerm {
+        a: -65977.0,
+        b: -85431.0,
+    },
+    PlutoTerm {
+        a: 31174.0,
+        b: -6032.0,
+    },
+    PlutoTerm {
+        a: -5794.0,
+        b: 22161.0,
+    },
+    PlutoTerm {
+        a: 4601.0,
+        b: 4032.0,
+    },
+    PlutoTerm {
+        a: -1729.0,
+        b: 234.0,
+    },
+    PlutoTerm {
+        a: -415.0,
+        b: 702.0,
+    },
     PlutoTerm { a: 239.0, b: 723.0 },
     PlutoTerm { a: 67.0, b: -67.0 },
-    PlutoTerm { a: 1034.0, b: -451.0 },
-    PlutoTerm { a: -129.0, b: 504.0 },
-    PlutoTerm { a: 480.0, b: -231.0 },
+    PlutoTerm {
+        a: 1034.0,
+        b: -451.0,
+    },
+    PlutoTerm {
+        a: -129.0,
+        b: 504.0,
+    },
+    PlutoTerm {
+        a: 480.0,
+        b: -231.0,
+    },
     PlutoTerm { a: 2.0, b: -441.0 },
-    PlutoTerm { a: -3359.0, b: 265.0 },
-    PlutoTerm { a: 7856.0, b: -7832.0 },
-    PlutoTerm { a: 36.0, b: 45763.0 },
-    PlutoTerm { a: 8663.0, b: 8547.0 },
-    PlutoTerm { a: -809.0, b: -769.0 },
-    PlutoTerm { a: 263.0, b: -144.0 },
+    PlutoTerm {
+        a: -3359.0,
+        b: 265.0,
+    },
+    PlutoTerm {
+        a: 7856.0,
+        b: -7832.0,
+    },
+    PlutoTerm {
+        a: 36.0,
+        b: 45763.0,
+    },
+    PlutoTerm {
+        a: 8663.0,
+        b: 8547.0,
+    },
+    PlutoTerm {
+        a: -809.0,
+        b: -769.0,
+    },
+    PlutoTerm {
+        a: 263.0,
+        b: -144.0,
+    },
     PlutoTerm { a: -126.0, b: 32.0 },
     PlutoTerm { a: -35.0, b: -16.0 },
     PlutoTerm { a: -19.0, b: -4.0 },
@@ -215,8 +555,14 @@ pub(crate) const RADIUS_TERMS: &[PlutoTerm] = &[
     PlutoTerm { a: -2.0, b: -2.0 },
     PlutoTerm { a: 14.0, b: 13.0 },
     PlutoTerm { a: -63.0, b: 13.0 },
-    PlutoTerm { a: 136.0, b: -236.0 },
-    PlutoTerm { a: 273.0, b: 1065.0 },
+    PlutoTerm {
+        a: 136.0,
+        b: -236.0,
+    },
+    PlutoTerm {
+        a: 273.0,
+        b: 1065.0,
+    },
     PlutoTerm { a: 251.0, b: 149.0 },
     PlutoTerm { a: -25.0, b: -9.0 },
     PlutoTerm { a: 9.0, b: -2.0 },

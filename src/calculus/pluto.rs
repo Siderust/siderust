@@ -13,7 +13,7 @@
 //! while being dramatically faster than a full numerical integration or the
 //! DE ephemerides.
 //!
-//! Coefficient tables live in [`crate::archive::pluto_tables`].
+//! Coefficient tables live in the crate-private `archive::pluto_tables` module.
 //!
 //! ```text
 //! Step outline (see code for details):

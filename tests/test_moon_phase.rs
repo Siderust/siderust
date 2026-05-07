@@ -210,7 +210,9 @@ fn l5_topocentric_parallax_bound() {
                 diff_deg
             );
 
-            let frac_diff = (geo.illuminated_fraction - topo.illuminated_fraction).value().abs();
+            let frac_diff = (geo.illuminated_fraction - topo.illuminated_fraction)
+                .value()
+                .abs();
             assert!(
                 frac_diff < 0.02,
                 "Site {} epoch {}: fraction diff {:.4} exceeds 2%",
@@ -316,7 +318,9 @@ fn series_topocentric_works() {
     let series = MoonPhaseSeries::<Vsop87Ephemeris>::sample_topocentric(start, end, step, site);
     assert_eq!(series.len(), 6);
     for (_, geom) in &series {
-        assert!(geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0);
+        assert!(
+            geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0
+        );
     }
 }
 

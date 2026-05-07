@@ -65,9 +65,9 @@
 //! - [`interp`]                  : Generic interpolation kernels
 //! - [`data`]                    : Built-in reference data (EOP tables, star catalogs)
 //! - [`provenance`]              : Provenance and source-attribution types
-//! - [`atmosphere`] *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
-//! - [`spectra`] *(optional)*    : Spectral response and photometric bandpass utilities (`spectra` feature)
-//! - [`tables`] *(optional)*     : Tabulated data loaders (`tables` feature)
+//! - `atmosphere` *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
+//! - `spectra` *(optional)*    : Spectral response and photometric bandpass utilities (`spectra` feature)
+//! - `tables` *(optional)*     : Tabulated data loaders (`tables` feature)
 //!
 //! ## Error-handling conventions
 //!

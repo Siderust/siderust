@@ -22,6 +22,18 @@ mod de440_build;
 #[path = "scripts/jpl/de441/mod.rs"]
 mod de441_build;
 
+#[cfg(any(feature = "de440", feature = "de441"))]
+#[path = "scripts/jpl/daf.rs"]
+pub(crate) mod jpl_daf;
+
+#[cfg(any(feature = "de440", feature = "de441"))]
+#[path = "scripts/jpl/pipeline.rs"]
+pub(crate) mod jpl_pipeline;
+
+#[cfg(any(feature = "de440", feature = "de441"))]
+#[path = "scripts/jpl/spk.rs"]
+pub(crate) mod jpl_spk;
+
 fn main() {
     println!("cargo:rerun-if-env-changed=SIDERUST_DATASETS_DIR");
     println!("cargo:rerun-if-env-changed=SIDERUST_REGEN");

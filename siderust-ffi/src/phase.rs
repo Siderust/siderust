@@ -7,10 +7,10 @@ use crate::altitude::{periods_to_c, window_from_c};
 use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c};
 use crate::types::*;
-use qtty::*;
 use qtty::angular::Radians;
 use qtty::time::Days;
 use qtty::unit::Degree;
+use qtty::*;
 use siderust::calculus::ephemeris::Vsop87Ephemeris;
 use siderust::calculus::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,

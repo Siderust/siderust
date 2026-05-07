@@ -15,7 +15,12 @@ fn main() {
     println!("UTC now : {}", now_utc.to_rfc3339());
     println!("JD (TT) : {}", jd);
     println!("MJD(TT) : {}", mjd);
-    println!("Back UTC: {}", jd.to_chrono().map(|dt| dt.to_rfc3339()).unwrap_or_else(|| "N/A".into()));
+    println!(
+        "Back UTC: {}",
+        jd.to_chrono()
+            .map(|dt| dt.to_rfc3339())
+            .unwrap_or_else(|| "N/A".into())
+    );
 
     let tomorrow = jd + Days::new(1.0);
     let window = Interval::<JulianDate>::new(jd, tomorrow);

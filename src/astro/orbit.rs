@@ -31,7 +31,7 @@
 //!   M₀ in radians.  Mean motion is exposed through the typed accessor
 //!   [`PreparedOrbit::mean_motion`]; callers requiring the raw `f64` should
 //!   call `.value()` on the return value.
-//! - [`OrientationTrig`] — cached sin/cos of inclination, Ω, ω (crate-internal).
+//! - `OrientationTrig` — cached sin/cos of inclination, Ω, ω (crate-internal).
 //!
 //! ## References
 //!

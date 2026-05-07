@@ -49,12 +49,12 @@
 //! Adapters should enforce these rules at their language boundary.
 
 use crate::ffi_utils::FfiFrom;
-use qtty::*;
 use qtty::angular::Degrees;
 use qtty::angular_rate::AngularRate;
 use qtty::length::{AstronomicalUnits, Meters};
 use qtty::time::Days;
-use qtty::unit::{Day, Degree, LightYear, Meter};
+use qtty::unit::{Day, Degree};
+use qtty::*;
 use siderust::calculus::azimuth::{
     AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
 };
@@ -363,18 +363,6 @@ ffi_enum! {
         Iau2006 = 2 => "iau2006",
         /// IAU 2006A high-precision default profile.
         Iau2006A = 3 => "iau2006a",
-    }
-}
-
-impl SiderustEarthOrientationModel {
-    /// Convert to the canonical Rust model identifier.
-    pub fn to_rust(self) -> siderust::coordinates::transform::EarthOrientationModel {
-        match self {
-            Self::Iau2000A => siderust::coordinates::transform::EarthOrientationModel::Iau2000A,
-            Self::Iau2000B => siderust::coordinates::transform::EarthOrientationModel::Iau2000B,
-            Self::Iau2006 => siderust::coordinates::transform::EarthOrientationModel::Iau2006,
-            Self::Iau2006A => siderust::coordinates::transform::EarthOrientationModel::Iau2006A,
-        }
     }
 }
 

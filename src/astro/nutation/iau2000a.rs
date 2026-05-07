@@ -18,7 +18,7 @@
 //! ## Technical scope
 //!
 //! [`Iau2000A`] is an alias for `Model<Tag>` where `Tag` is a sealed,
-//! zero-sized type implementing [`NutationTag`] with
+//! zero-sized type implementing an internal marker trait with
 //! `ID = NutationModelId::Iau2000A`. The actual numerical evaluation lives
 //! in the shared `nut00a` engine; this file only fixes the compile-time
 //! identity used for trait dispatch.

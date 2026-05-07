@@ -59,7 +59,6 @@
 //! );
 //! ```
 
-
 use super::Star;
 use crate::coordinates::spherical::position::EquatorialMeanJ2000;
 use crate::qtty::length::nominal::SolarRadiuses;

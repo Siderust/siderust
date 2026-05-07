@@ -21,7 +21,8 @@
 //!
 //! ## Technical scope
 //!
-//! - All intermediate vectors carry frame ([`ICRF`]) and unit ([`Kilometer`]
+//! - All intermediate vectors carry frame
+//!   ([`crate::coordinates::frames::ICRF`]) and unit ([`Kilometer`]
 //!   or [`Per<Kilometer, Day>`]) in the type system; body-chain arithmetic
 //!   is compile-time checked.
 //! - Frame conversion (ICRF → EclipticMeanJ2000) and unit conversion

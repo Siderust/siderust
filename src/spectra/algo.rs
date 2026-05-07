@@ -186,7 +186,7 @@ pub fn validate(xs: &[f64], ys: &[f64]) -> Result<(), SpectrumError> {
         return Err(SpectrumError::TooFewSamples(xs.len()));
     }
     for i in 1..xs.len() {
-        if !(xs[i] > xs[i - 1]) {
+        if xs[i].partial_cmp(&xs[i - 1]) != Some(std::cmp::Ordering::Greater) {
             return Err(SpectrumError::NotMonotonic { index: i });
         }
     }

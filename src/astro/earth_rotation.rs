@@ -24,7 +24,7 @@
 //! IERS `finals2000A.all` series. When an [`EopValues`] is supplied, the
 //! caller's measured `dUT1` is honoured by adding the residual relative to
 //! the bundled series. GMST is computed by delegating to
-//! [`gmst_iau2006`](crate::astro::sidereal::gmst_iau2006) with distinct
+//! [`gmst_iau2006`] with distinct
 //! UT1 and TT arguments, ensuring SOFA-compatible results.
 //!
 //! Public functions and their typed signatures:
@@ -74,7 +74,7 @@ use crate::time::{JulianDate, TimeContext, TT, UT1};
 /// [`tempoch::JulianDate::to_with`] directly to recover a `Result`.
 #[inline]
 pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
-    let jd_tt: tempoch::JulianDate<crate::time::TT> = jd_tt.into();
+    let jd_tt: tempoch::JulianDate<crate::time::TT> = jd_tt;
     let ut1 = jd_tt
         .to_with::<UT1>(&TimeContext::new())
         .expect("TT->UT1 conversion should succeed within the bundled model horizon");
@@ -88,7 +88,7 @@ pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
 /// table is explicitly keyed by UTC, such as IERS EOP data.
 #[inline]
 pub fn jd_utc_from_tt(jd_tt: JulianDate) -> JulianDate {
-    let jd_tt: tempoch::JulianDate<TT> = jd_tt.into();
+    let jd_tt: tempoch::JulianDate<TT> = jd_tt;
     let ctx = TimeContext::with_builtin_eop();
     let ut1 = jd_tt
         .to_with::<UT1>(&ctx)
@@ -116,7 +116,7 @@ pub fn jd_utc_from_tt(jd_tt: JulianDate) -> JulianDate {
 /// interpolation, then the caller's [`EopValues`] is honoured by adding
 /// the residual `eop.dut1 − bundled_dut1` correction. In particular:
 ///
-/// * For an [`IersEop`](crate::astro::eop::IersEop) provider that uses the
+/// * For an [`IersEop`] provider that uses the
 ///   same bundled finals2000A.all data, the residual is ≈ 0 and the
 ///   result matches tempoch's high-fidelity bundled UT1 path within
 ///   floating-point precision.
@@ -149,7 +149,7 @@ pub fn jd_utc_from_tt(jd_tt: JulianDate) -> JulianDate {
 /// [`tempoch::JulianDate::to_with`].
 #[inline]
 pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> JulianDate {
-    let jd_tt_t: tempoch::JulianDate<TT> = jd_tt.into();
+    let jd_tt_t: tempoch::JulianDate<TT> = jd_tt;
     let ctx = TimeContext::with_builtin_eop();
     let ut1 = jd_tt_t
         .to_with::<UT1>(&ctx)

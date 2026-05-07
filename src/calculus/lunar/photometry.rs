@@ -55,7 +55,9 @@ pub const MEAN_MOON_DISTANCE: Kilometers = Kilometers::new(384_400.0);
 ///
 /// Dimensionless full‑Moon geometric albedo at `wavelength`.
 pub fn lunar_full_moon_albedo_jones2013(wavelength: Nanometers) -> Albedos {
-    let lambda = wavelength.clamp(Nanometers::new(300.0), Nanometers::new(1_100.0)).value();
+    let lambda = wavelength
+        .clamp(Nanometers::new(300.0), Nanometers::new(1_100.0))
+        .value();
     let t = (lambda - 300.0) / 800.0;
     Albedos::new(0.075 + 0.065 * t)
 }

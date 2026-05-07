@@ -148,7 +148,7 @@ static I_TABLE: OnceLock<SampledSpectrum<Nanometer, Throughput>> = OnceLock::new
 // ── helpers ───────────────────────────────────────────────────────────────────
 
 fn provenance(filter_id: &str, dat_path: &str) -> Provenance {
-    Provenance::bundled_file(dat_path).with_notes(&format!(
+    Provenance::bundled_file(dat_path).with_notes(format!(
         "Bessell 1990, PASP 102, 1181 — filter {filter_id}. \
          Retrieved from SVO Filter Profile Service \
          <http://svo2.cab.inta-csic.es/theory/fps/>. \

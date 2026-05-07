@@ -39,7 +39,9 @@ use crate::calculus::lunar::phase::{
 use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
-use crate::qtty::{AstronomicalUnits, IlluminationFractions, Kilometer, LengthUnit, Meter, Quantity};
+use crate::qtty::{
+    AstronomicalUnits, IlluminationFractions, Kilometer, LengthUnit, Meter, Quantity,
+};
 use crate::time::{JulianDate, ModifiedJulianDate, Period};
 
 impl Moon {
@@ -263,7 +265,10 @@ impl Moon {
     /// # Returns
     ///
     /// `Vec<PhaseEvent>` ordered by time, each tagged with its quarter.
-    pub fn phase_events(window: Period<ModifiedJulianDate>, opts: PhaseSearchOpts) -> Vec<PhaseEvent> {
+    pub fn phase_events(
+        window: Period<ModifiedJulianDate>,
+        opts: PhaseSearchOpts,
+    ) -> Vec<PhaseEvent> {
         find_phase_events::<DefaultEphemeris>(window, opts)
     }
 
@@ -366,13 +371,19 @@ mod tests {
     #[test]
     fn phase_topocentric_illuminated_fraction_bounded() {
         let geom = Moon::phase_topocentric(JulianDate::J2000, greenwich());
-        assert!(geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0);
+        assert!(
+            geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0
+        );
     }
 
     #[test]
     fn illumination_above_returns_periods() {
         // Any fraction above 0 must find at least some time windows in 30 days
-        let periods = Moon::illumination_above(one_month(), IlluminationFractions::new(0.0), PhaseSearchOpts::default());
+        let periods = Moon::illumination_above(
+            one_month(),
+            IlluminationFractions::new(0.0),
+            PhaseSearchOpts::default(),
+        );
         // 0% minimum means always above (all illumination ≥ 0)
         assert!(!periods.is_empty());
     }
@@ -380,13 +391,22 @@ mod tests {
     #[test]
     fn illumination_below_returns_periods() {
         // Any fraction below 1.0 must find at least some time windows in 30 days
-        let periods = Moon::illumination_below(one_month(), IlluminationFractions::new(1.0), PhaseSearchOpts::default());
+        let periods = Moon::illumination_below(
+            one_month(),
+            IlluminationFractions::new(1.0),
+            PhaseSearchOpts::default(),
+        );
         assert!(!periods.is_empty());
     }
 
     #[test]
     fn illumination_range_returns_periods() {
-        let periods = Moon::illumination_range(one_month(), IlluminationFractions::new(0.0), IlluminationFractions::new(1.0), PhaseSearchOpts::default());
+        let periods = Moon::illumination_range(
+            one_month(),
+            IlluminationFractions::new(0.0),
+            IlluminationFractions::new(1.0),
+            PhaseSearchOpts::default(),
+        );
         // [0.0, 1.0] covers the entire range, should cover the full window
         assert!(!periods.is_empty());
     }
@@ -394,14 +414,22 @@ mod tests {
     #[test]
     fn illumination_above_empty_when_impossible() {
         // k_min above 1.0, no illumination can exceed 100%
-        let periods = Moon::illumination_above(one_month(), IlluminationFractions::new(1.01), PhaseSearchOpts::default());
+        let periods = Moon::illumination_above(
+            one_month(),
+            IlluminationFractions::new(1.01),
+            PhaseSearchOpts::default(),
+        );
         assert!(periods.is_empty());
     }
 
     #[test]
     fn illumination_below_empty_when_impossible() {
         // k_max below 0.0, illumination is never negative
-        let periods = Moon::illumination_below(one_month(), IlluminationFractions::new(-0.01), PhaseSearchOpts::default());
+        let periods = Moon::illumination_below(
+            one_month(),
+            IlluminationFractions::new(-0.01),
+            PhaseSearchOpts::default(),
+        );
         assert!(periods.is_empty());
     }
 }

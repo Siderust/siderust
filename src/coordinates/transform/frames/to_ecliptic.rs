@@ -45,10 +45,7 @@ where
     fn to_frame(&self) -> Position<C, frames::EclipticMeanJ2000, U> {
         let rot = bias::icrs_to_ecliptic_j2000();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_array(
-            self.center_params().clone(),
-            [x, y, z],
-        )
+        Position::from_array(self.center_params().clone(), [x, y, z])
     }
 }
 
@@ -59,10 +56,7 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Eclip
     fn to_frame(&self) -> Position<C, frames::EclipticMeanJ2000, U> {
         let rot = bias::obliquity_eq_to_ecl();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_array(
-            self.center_params().clone(),
-            [x, y, z],
-        )
+        Position::from_array(self.center_params().clone(), [x, y, z])
     }
 }
 

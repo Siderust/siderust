@@ -780,12 +780,7 @@ pub fn illumination_above<E: Ephemeris>(
     k_min: IlluminationFractions,
     opts: PhaseSearchOpts,
 ) -> Vec<Period<ModifiedJulianDate>> {
-    intervals::above_threshold_periods(
-        window,
-        opts.scan_step,
-        &illumination_at_mjd::<E>,
-        k_min,
-    )
+    intervals::above_threshold_periods(window, opts.scan_step, &illumination_at_mjd::<E>, k_min)
 }
 
 /// Find all time windows in `window` where the geocentric illuminated
@@ -874,7 +869,8 @@ mod tests {
             let jd = start + Days::new(i as f64 * 3.0);
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             assert!(
-                geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0,
+                geom.illuminated_fraction.value() >= 0.0
+                    && geom.illuminated_fraction.value() <= 1.0,
                 "Fraction out of bounds at JD offset {}: {}",
                 i * 3,
                 geom.illuminated_fraction.value()
@@ -1023,7 +1019,8 @@ mod tests {
         );
 
         // Illuminated fraction difference should be < 1%
-        let frac_diff = (geo.illuminated_fraction.value() - topo.illuminated_fraction.value()).abs();
+        let frac_diff =
+            (geo.illuminated_fraction.value() - topo.illuminated_fraction.value()).abs();
         assert!(
             frac_diff < 0.01,
             "Illuminated fraction geo vs topo differ by more than 1%: {}",

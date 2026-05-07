@@ -647,14 +647,16 @@ mod tests {
         let jd = JulianDate::new(2_458_850.0);
         let ctx: AstroContext<DefaultEphemeris, DefaultEop> = AstroContext::default();
 
-        let with_nutation = dir.to_frame_with::<crate::coordinates::frames::EquatorialTrueOfDate, _>(
-            &jd,
-            &ctx.with_model::<Iau2006A>(),
-        );
-        let precession_only = dir.to_frame_with::<crate::coordinates::frames::EquatorialTrueOfDate, _>(
-            &jd,
-            &ctx.with_model::<Iau2006>(),
-        );
+        let with_nutation = dir
+            .to_frame_with::<crate::coordinates::frames::EquatorialTrueOfDate, _>(
+                &jd,
+                &ctx.with_model::<Iau2006A>(),
+            );
+        let precession_only = dir
+            .to_frame_with::<crate::coordinates::frames::EquatorialTrueOfDate, _>(
+                &jd,
+                &ctx.with_model::<Iau2006>(),
+            );
 
         let delta = ((with_nutation.x() - precession_only.x()).powi(2)
             + (with_nutation.y() - precession_only.y()).powi(2)

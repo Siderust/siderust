@@ -29,7 +29,12 @@ fn week_period_from_date(start_date: NaiveDate) -> Period<ModifiedJulianDate> {
     Period::new(mjd_start, mjd_end)
 }
 
-fn print_events_for_type(site: &Geodetic<ECEF>, week: Period<ModifiedJulianDate>, name: &str, threshold: Degrees) {
+fn print_events_for_type(
+    site: &Geodetic<ECEF>,
+    week: Period<ModifiedJulianDate>,
+    name: &str,
+    threshold: Degrees,
+) {
     let events = crossings(&Sun, site, week, threshold, SearchOpts::default());
     let mut downs = 0usize;
     let mut raises = 0usize;

@@ -49,8 +49,11 @@ fn full_gcrs_to_itrs_chain() {
 
     // Step 5: CIRS → TIRS (apply ERA as R₃(-ERA))
     let (s_era, c_era) = (-era.value()).sin_cos();
-    let r3_era =
-        affn::Rotation3::from_matrix_unchecked([[c_era, -s_era, 0.0], [s_era, c_era, 0.0], [0.0, 0.0, 1.0]]);
+    let r3_era = affn::Rotation3::from_matrix_unchecked([
+        [c_era, -s_era, 0.0],
+        [s_era, c_era, 0.0],
+        [0.0, 0.0, 1.0],
+    ]);
 
     // Step 6: Polar motion (TIRS → ITRS)
     let sp = tio_locator_sp(jd_tt);

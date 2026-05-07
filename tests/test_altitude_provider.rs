@@ -55,7 +55,10 @@ fn one_week() -> Period<ModifiedJulianDate> {
 }
 
 /// Generic assertion helper: verifies basic structural invariants of periods.
-fn assert_periods_valid(periods: &[Period<ModifiedJulianDate>], window: Period<ModifiedJulianDate>) {
+fn assert_periods_valid(
+    periods: &[Period<ModifiedJulianDate>],
+    window: Period<ModifiedJulianDate>,
+) {
     let win_start = window.start.mjd_value();
     let win_end = window.end.mjd_value();
 

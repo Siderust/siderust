@@ -33,9 +33,9 @@
 
 use crate::atmosphere::rayleigh::rayleigh_phase;
 use crate::ext_qtty::{Dimensionless, Quantity, Unit};
-use crate::qtty::{Nanometers, Radians};
 #[cfg(feature = "tables")]
 use crate::qtty::unit::{Degree, Nanometer};
+use crate::qtty::{Nanometers, Radians};
 
 /// Dimensionless value marker for phase functions and angular correction
 /// factors.

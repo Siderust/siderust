@@ -152,7 +152,7 @@ fn parse_all_elps(dir: &Path) -> Result<BTreeMap<String, Vec<Entry>>> {
     Ok(map)
 }
 
-/// ----------------------  RUST CODE GENERATOR  -------------------
+// ----------------------  RUST CODE GENERATOR  -------------------
 
 /// Provenance fields embedded as a comment header in the generated file.
 #[derive(Debug, Clone, Default)]

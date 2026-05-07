@@ -67,7 +67,7 @@ pub static DATASETS: &[DatasetMeta] = &[
         name: "JPL DE440",
         url: "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp",
         filename: "de440.bsp",
-        sha256: "", // TODO: compute and pin
+        sha256: "a4ce9bf9b3282becc9f4b2ac3cebe03a2ae7599981aabd7265fd8482fff7c4b5",
         min_size: 100_000_000,
         size_hint: "~120 MB",
     },
@@ -76,7 +76,7 @@ pub static DATASETS: &[DatasetMeta] = &[
         name: "JPL DE441 (part 2)",
         url: "https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de441_part-2.bsp",
         filename: "de441_part-2.bsp",
-        sha256: "", // TODO: compute and pin
+        sha256: "3abb17dae2d78dd34880377544aacb54892104a0d4462b322cb9f4454d4887f6",
         min_size: 1_500_000_000,
         size_hint: "~1.65 GB",
     },
@@ -85,7 +85,7 @@ pub static DATASETS: &[DatasetMeta] = &[
         name: "IERS EOP finals2000A",
         url: "https://datacenter.iers.org/products/eop/rapid/standard/finals2000A.all",
         filename: "finals2000A.all",
-        sha256: "",
+        sha256: "eeb76193cd43c065b763d78923f8a8ce2f8a62df5d3e1519a3217fac433bdaa6",
         min_size: 1_000_000,
         size_hint: "~4 MB",
     },

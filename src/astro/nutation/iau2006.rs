@@ -18,7 +18,7 @@
 //! ## Technical scope
 //!
 //! [`Iau2006`] is an alias for `Model<Tag>` whose `Tag` implements the
-//! sealed [`NutationTag`] trait with
+//! sealed internal marker trait with
 //! `ID = NutationModelId::Iau2006`. Trait dispatch routes to a degenerate
 //! evaluator that returns zero nutation while still reporting the
 //! correctly evaluated mean obliquity.

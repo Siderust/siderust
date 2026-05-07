@@ -124,9 +124,7 @@ impl RaProperMotionConvention {
             RaProperMotionConvention::MuAlphaStar => {
                 let cos_dec = dec.to::<Radian>().cos();
                 if cos_dec.abs() <= COS_DEC_EPSILON {
-                    return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-                        dec,
-                    });
+                    return Err(ProperMotionError::RightAscensionUndefinedAtPole { dec });
                 }
                 Ok(pm_ra / cos_dec)
             }
@@ -287,9 +285,7 @@ pub fn propagate_space_motion(
     let dec_deg = mean_position.dec();
     let cos_dec = dec_deg.to::<Radian>().cos();
     if cos_dec.abs() <= COS_DEC_EPSILON {
-        return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-            dec: dec_deg,
-        });
+        return Err(ProperMotionError::RightAscensionUndefinedAtPole { dec: dec_deg });
     }
 
     let alpha = mean_position.ra().to::<Radian>();
@@ -304,9 +300,7 @@ pub fn propagate_space_motion(
         // parallax" entries in some catalogues are noisy fits; callers
         // should treat them as missing and fall back to a transverse-only
         // propagation).
-        return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-            dec: dec_deg,
-        });
+        return Err(ProperMotionError::RightAscensionUndefinedAtPole { dec: dec_deg });
     }
     let r_au = 1.0 / pi_rad.value();
 
@@ -327,7 +321,10 @@ pub fn propagate_space_motion(
     let v_delta_au_yr = pm_dec_rad_yr * r_au;
 
     // Radial velocity in AU/yr (positive = away).
-    let v_r_au_yr = motion.radial_velocity.to::<Per<AstronomicalUnit, Year>>().value();
+    let v_r_au_yr = motion
+        .radial_velocity
+        .to::<Per<AstronomicalUnit, Year>>()
+        .value();
 
     // BCRS velocity vector in AU/yr.
     let r_hat = [cos_d * cos_a, cos_d * sin_a, sin_d];
@@ -352,9 +349,7 @@ pub fn propagate_space_motion(
     if r_new <= 0.0 {
         // Star passed exactly through the Solar System; refuse rather than
         // emit a divide-by-zero. This requires unphysical inputs.
-        return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-            dec: dec_deg,
-        });
+        return Err(ProperMotionError::RightAscensionUndefinedAtPole { dec: dec_deg });
     }
     let new_dec = (p[2] / r_new).asin();
     let new_ra = p[1].atan2(p[0]).rem_euclid(std::f64::consts::TAU);

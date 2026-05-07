@@ -55,16 +55,14 @@ pub use tempoch::{
     complement_within, constats, delta_t_seconds, delta_t_seconds_extrapolated, eop,
     ContinuousScale, ConversionError, ConversionTarget, CoordinateScale, EncodedTime,
     InfallibleConversionTarget, InfallibleRepresentationForScale, Interval, InvalidIntervalError,
-    InvalidPeriodError, J2000_TT, JULIAN_YEAR_DAYS, JD, MJD, PeriodListError,
-    RepresentationForScale, Scale, ScaleKind, Time, TimeContext, TimeDataError, TimeInstant, TAI,
-    TCB, TCG, TDB, TT, UT1, UTC,
+    InvalidPeriodError, PeriodListError, RepresentationForScale, Scale, ScaleKind, Time,
+    TimeContext, TimeDataError, TimeInstant, J2000_TT, JD, JULIAN_YEAR_DAYS, MJD, TAI, TCB, TCG,
+    TDB, TT, UT1, UTC,
 };
 
 /// Re-export `JulianDate` and `ModifiedJulianDate` under their generic names
 /// so code that explicitly writes `JulianDate<TT>` or `JulianDate<TDB>` still compiles.
-pub use tempoch::{
-    JulianDate as JulianDateG, ModifiedJulianDate as ModifiedJulianDateG,
-};
+pub use tempoch::{JulianDate as JulianDateG, ModifiedJulianDate as ModifiedJulianDateG};
 
 /// Backward-compatible alias: old siderust code used `UT` for the UT1 axis.
 pub type UT = UT1;

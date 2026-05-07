@@ -34,7 +34,6 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 | `de440`  |         | JPL DE440 Chebyshev ephemeris backend (1550–2650 CE) |
 | `de441`  |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
 | `serde`  |         | `Serialize` / `Deserialize` on public types |
-| `ffi`    |         | Forwards Rust-side FFI layout guarantees to `qtty`, `tempoch`, and `affn` |
 | `atmosphere` |     | Atmospheric tables and radiative transfer helpers |
 | `spectra` |        | Spectral tables and synthetic-photometry helpers |
 | `tables` |         | Additional tabulated astronomy helpers |
@@ -44,6 +43,7 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 > **Note:** `no_std` and `f128` quad‑precision are **not** supported today.
 > The crate depends on `std`‑only libraries such as `chrono`.
 > Sub‑crates `qtty` and `qtty-core` do offer `no_std` support independently.
+> C ABI bindings live in the separate `siderust-ffi` crate rather than a `siderust` feature flag.
 
 ---
 
@@ -91,7 +91,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.6.1"
+siderust = "0.7.0"
 ```
 
 Committed datasets (VSOP87/ELP2000 and tempoch-owned EOP tables) are available offline. Optional JPL kernels are downloaded on demand when the corresponding feature is enabled; see `doc/datasets.md`.
@@ -112,21 +112,21 @@ Optional features add JPL backends:
 
 ```toml
 [dependencies]
-siderust = { version = "0.6.1", default-features = false }
+siderust = { version = "0.7.0", default-features = false }
 ```
 
 2. Enable DE440
 
 ```toml
 [dependencies]
-siderust = { version = "0.6.1", features = ["de440"] }
+siderust = { version = "0.7.0", features = ["de440"] }
 ```
 
 3. Enable DE441
 
 ```toml
 [dependencies]
-siderust = { version = "0.6.1", features = ["de441"] }
+siderust = { version = "0.7.0", features = ["de441"] }
 ```
 
 4. Combine backends in one binary
@@ -152,7 +152,7 @@ You can combine ephemeris features with others (for example `serde`):
 
 ```toml
 [dependencies]
-siderust = { version = "0.6.1", features = ["de441", "serde"] }
+siderust = { version = "0.7.0", features = ["de441", "serde"] }
 ```
 
 ### JPL Build Modes: Real vs Stubbed

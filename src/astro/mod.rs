@@ -43,7 +43,7 @@
 //! - [`polar_motion`]: polar-motion matrix `W`.
 //! - [`precession`]: IAU 2006 (Fukushima-Williams) precession.
 //! - [`proper_motion`]: stellar proper-motion propagation.
-//! - [`sidereal`]: GMST/GAST/LST.
+//! - [`sidereal`][]: GMST/GAST/LST.
 //! - [`units`]: astronomical units (e.g. Gaussian year) not covered by `qtty`.
 //!
 //! ## References

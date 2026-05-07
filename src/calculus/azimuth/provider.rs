@@ -206,7 +206,10 @@ pub trait AzimuthProvider {
 /// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` produced by
 /// `body.azimuth_periods(query)`.
 #[inline]
-pub fn azimuth_periods<B: AzimuthProvider>(body: &B, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
+pub fn azimuth_periods<B: AzimuthProvider>(
+    body: &B,
+    query: &AzimuthQuery,
+) -> Vec<Period<ModifiedJulianDate>> {
     body.azimuth_periods(query)
 }
 
