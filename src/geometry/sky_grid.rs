@@ -218,21 +218,21 @@ impl SkyGrid {
 
 impl SkyGrid {
     fn n_alt(&self) -> usize {
-        if self.alt_max <= self.alt_min || self.alt_step.value() <= 0.0 {
+        if self.alt_max <= self.alt_min || self.alt_step <= Degrees::new(0.0) {
             return 0;
         }
         ((self.alt_max - self.alt_min) / self.alt_step).round() as usize
     }
 
     fn n_az_uniform(&self) -> usize {
-        if self.az_step.value() <= 0.0 {
+        if self.az_step <= Degrees::new(0.0) {
             return 0;
         }
         (Degrees::new(360.0) / self.az_step).round() as usize
     }
 
     fn n_az_equal_area(&self, alt_center: Degrees) -> usize {
-        let cos_alt = alt_center.to::<Radian>().value().cos().max(0.0);
+        let cos_alt = alt_center.to::<Radian>().cos().max(0.0);
         let az_horizon_rad = self.az_step.to::<Radian>().value();
         if az_horizon_rad <= 0.0 {
             return 1;
@@ -247,7 +247,7 @@ impl SkyGrid {
         if self.equal_solid_angle {
             (0..n_alt)
                 .map(|i| {
-                    let alt = self.alt_min + Degrees::new(i as f64 + 0.5) * self.alt_step.value();
+                    let alt = self.alt_min + (i as f64 + 0.5) * self.alt_step;
                     self.n_az_equal_area(alt)
                 })
                 .sum()
@@ -287,7 +287,7 @@ impl SkyGrid {
         let n_az_uniform = self.n_az_uniform();
 
         (0..n_alt).flat_map(move |i| {
-            let alt: Degrees = alt_min + Degrees::new(i as f64 + 0.5) * alt_step.value();
+            let alt: Degrees = alt_min + (i as f64 + 0.5) * alt_step;
             let alt_rad = alt.to::<Radian>().value();
             let cos_alt = alt_rad.cos();
 
@@ -315,7 +315,7 @@ impl SkyGrid {
             let solid_angle = Steradians::new(cos_alt * alt_step_rad * az_step_rad);
 
             (0..n_az).map(move |j| {
-                let az: Degrees = Degrees::new(j as f64 + 0.5) * az_step.value();
+                let az: Degrees = (j as f64 + 0.5) * az_step;
                 SkyGridCell {
                     direction: spherical::Direction::<frames::Horizontal>::new_unchecked(alt, az),
                     solid_angle,

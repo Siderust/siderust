@@ -107,9 +107,7 @@ pub fn moon_position_meeus_ch47(jd_tt: JulianDate) -> MoonMeeusCh47 {
     let dist_km = 385_000.56 + sum_r / 1_000.0;
 
     // EclipticMeanJ2000 → equatorial with IAU 2006 mean obliquity
-    let eps = precession::mean_obliquity_iau2006(jd_tt).value();
-    let ce = eps.cos();
-    let se = eps.sin();
+    let (se, ce) = precession::mean_obliquity_iau2006(jd_tt).sin_cos();
     let ra = (ecl_lon_rad.sin() * ce - ecl_lat_rad.tan() * se).atan2(ecl_lon_rad.cos());
     let ra_val = ra.rem_euclid(std::f64::consts::TAU);
     let dec_val = (ecl_lat_rad.sin() * ce + ecl_lat_rad.cos() * se * ecl_lon_rad.sin())

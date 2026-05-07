@@ -196,7 +196,7 @@ impl MieParams {
 #[inline]
 pub fn mie_optical_depth(params: &MieParams, wavelength: Nanometers) -> OpticalDepths {
     let ratio: f64 = wavelength / params.lambda_ref;
-    OpticalDepths::new(params.tau0.value() * ratio.powf(params.alpha))
+    params.tau0 * ratio.powf(params.alpha)
 }
 
 #[cfg(test)]
