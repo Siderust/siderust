@@ -350,7 +350,7 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
 * Ecliptic-of-date direction transforms via `coordinates::transform::ecliptic_of_date::{ToEclipticTrueOfDate, FromEclipticTrueOfDate}`
 * `SphericalDirectionAstroExt` for time-dependent frame transformations on `spherical::Direction<F>`
 * New conversion examples: `examples/all_center_conversions.rs` and `examples/all_frame_conversions.rs`
-* Regression suite `tests/test_high_precision_earth_rotation_regression.rs` with ERFA/SOFA reference vectors for true-of-date horizontal and topocentric site-vector paths
+* Regression suite `tests/test_high_precision_earth_rotation_regression.rs` with SOFA reference vectors for true-of-date horizontal and topocentric site-vector paths
 * ECEF-first coordinate aliases in `coordinates::types`: `EcefSphericalDir` and `EcefPos`
 
 ### Changed

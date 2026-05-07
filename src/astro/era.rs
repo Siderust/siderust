@@ -36,7 +36,7 @@
 //!
 //! * IAU 2000 Resolution B1.8
 //! * IERS Conventions (2010), §5.4.4
-//! * SOFA/ERFA routine `iauEra00`
+//! * SOFA routine `iauEra00`
 
 use crate::qtty::*;
 use crate::time::JulianDate;

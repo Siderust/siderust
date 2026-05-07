@@ -29,7 +29,7 @@
 //! ## References
 //!
 //! * IERS Conventions 2020, §7.2 (aberration)
-//! * SOFA/ERFA: stellar aberration as a full SR (Lorentz) transform
+//! * SOFA: stellar aberration as a full SR (Lorentz) transform
 //!   (cf. `iauAb` / `eraAb`)
 
 use crate::calculus::ephemeris::Ephemeris;
@@ -43,13 +43,6 @@ use crate::qtty::*;
 use crate::time::JulianDate;
 
 type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
-type AusPerDay = crate::qtty::velocity::Velocity<AstronomicalUnit, Day>;
-
-/// Speed of light in AU/day, derived from exact SI definitions:
-/// `c = 299_792_458 m/s`, `day = 86_400 s`, `AU = 149_597_870_700 m`.
-const C_M_S: f64 = 299_792_458.0;
-pub const AU_PER_DAY_C: AusPerDay =
-    AusPerDay::new(C_M_S * Day::RATIO / AstronomicalUnit::RATIO);
 
 /// Full SR Lorentz aberration transform for a unit direction vector.
 ///
@@ -59,9 +52,11 @@ pub const AU_PER_DAY_C: AusPerDay =
 #[inline]
 fn aberrate_direction_lorentz<F: frames::ReferenceFrame>(
     u: direction::Direction<F>,
-    beta: [f64; 3],
+    beta: Velocity<F, Ratio>,
 ) -> direction::Direction<F> {
-    let [bx, by, bz] = beta;
+    let bx = beta.x().value();
+    let by = beta.y().value();
+    let bz = beta.z().value();
     let beta2 = bx * bx + by * by + bz * bz;
     if beta2 == 0.0 {
         return u;
@@ -87,8 +82,7 @@ pub fn apply_aberration_to_direction_with_velocity(
     mean: direction::EquatorialMeanJ2000,
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
-    let c = AU_PER_DAY_C;
-    aberrate_direction_lorentz(mean, [velocity.x() / c, velocity.y() / c, velocity.z() / c])
+    aberrate_direction_lorentz(mean, *velocity / crate::qtty::velocity::AU_PER_DAY_C)
 }
 
 /// Remove aberration from a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.
@@ -98,8 +92,7 @@ pub fn remove_aberration_from_direction_with_velocity(
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
     // Inverse is the same Lorentz transform with negated velocity.
-    let c = AU_PER_DAY_C;
-    aberrate_direction_lorentz(app, [-velocity.x() / c, -velocity.y() / c, -velocity.z() / c])
+    aberrate_direction_lorentz(app, -(*velocity / crate::qtty::velocity::AU_PER_DAY_C))
 }
 
 /// Apply **annual aberration** to a unit direction vector (mean J2000).
@@ -187,6 +180,8 @@ mod tests {
     use super::*;
     use crate::coordinates::spherical::{self, position};
 
+    type AusPerDay = crate::qtty::velocity::Velocity<AstronomicalUnit, Day>;
+
     fn apply_aberration_sph<U: LengthUnit>(
         mean: &position::EquatorialMeanJ2000<U>,
         jd: JulianDate,
@@ -254,7 +249,7 @@ mod tests {
         // Exact from SI definitions (to ~1e-15 relative precision in f64):
         // 299792458 * 86400 / 149597870700 = 173.14463267424033...
         let expected = AusPerDay::new(173.144_632_674_240_33);
-        assert!((AU_PER_DAY_C - expected).abs() < AusPerDay::new(1e-12));
+        assert!((crate::qtty::velocity::AU_PER_DAY_C - expected).abs() < AusPerDay::new(1e-12));
     }
 
     #[test]

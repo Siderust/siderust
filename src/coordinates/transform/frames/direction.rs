@@ -24,7 +24,7 @@
 //! ## References
 //!
 //! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
-//! - SOFA/ERFA functions `eraObl06`, `eraBp06`.
+//! - SOFA routines `iauObl06`, `iauBp06`.
 
 use crate::coordinates::cartesian::Direction;
 use crate::coordinates::frames::{self, MutableFrame};

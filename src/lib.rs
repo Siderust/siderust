@@ -128,6 +128,7 @@ pub mod tables;
 pub mod targets;
 pub mod time;
 
+pub(crate) mod archive;
 pub(crate) mod macros;
 
 // ---------------------------------------------------------------------------

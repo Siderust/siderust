@@ -56,7 +56,7 @@
 //! - IAU 2006 Resolution B1 (precession) and Resolution B1.6 (nutation).
 //! - IERS Conventions (2010), §5.4 and §5.5.
 //! - Wallace, P. T., & Capitaine, N. (2006). *A&A* 459, 981 (P03 correction).
-//! - SOFA/ERFA software collection.
+//! - SOFA software collection.
 
 use std::marker::PhantomData;
 

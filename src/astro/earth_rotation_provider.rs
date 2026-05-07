@@ -34,7 +34,7 @@
 //! ## References
 //!
 //! * IERS Conventions (2010), Chapter 5
-//! * SOFA/ERFA Earth-rotation cookbook (`iauC2t06a` and friends)
+//! * SOFA Earth-rotation cookbook (`iauC2t06a` and friends)
 
 use crate::astro::cio;
 use crate::astro::earth_rotation::{jd_ut1_from_tt_eop, jd_utc_from_tt};
@@ -110,7 +110,7 @@ pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut:
     let era = earth_rotation_angle(jd_ut1);
 
     // NOTE: `cio::gcrs_to_cirs_matrix` and `Rotation3::rz` conventions are
-    // aligned such that this composition matches the ERFA/SOFA chain for
+    // aligned such that this composition matches the SOFA chain for
     // ITRS -> GCRS in this codebase.
     let itrs_to_gcrs = q * affn::Rotation3::rz(-era) * w.inverse();
     let icrs_to_j2000 =

@@ -184,7 +184,7 @@ fn bisection_kepler(m: Radians, e: f64, mut lower: Radians, mut upper: Radians) 
 /// # Returns
 /// - `E`: The eccentric anomaly in radians, guaranteed to converge.
 pub fn solve_keplers_equation(m: Radians, e: f64) -> Radians {
-    // Start with E = M (matching ERFA convention for consistency).
+    // Start with E = M (matching SOFA-style reference cases for consistency).
     let initial_guess = m;
 
     // 1) Try Newton-Raphson

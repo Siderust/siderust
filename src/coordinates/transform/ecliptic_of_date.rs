@@ -6,13 +6,13 @@
 //! This module provides traits for converting between equatorial and ecliptic
 //! coordinates using the ecliptic of date.
 //!
-//! ## Convention (ERFA `eraEcm06` parity)
+//! ## Convention (SOFA `iauEcm06` parity)
 //!
-//! Following ERFA/SOFA convention, this module uses IAU 2006 precession
+//! Following SOFA convention, this module uses IAU 2006 precession
 //! and **mean** obliquity of date to rotate from the equatorial plane to
 //! the ecliptic plane.  The ecliptic plane itself does not undergo nutation
 //! (nutation only affects the CIP / equatorial pole), so "ecliptic of date"
-//! as defined by ERFA is a purely precessional quantity.
+//! as defined by SOFA is a purely precessional quantity.
 //!
 //! Ecliptic longitude is measured from the **mean equinox** of date.
 //! For expert use with longitude from the **true equinox**, see
@@ -61,7 +61,7 @@ use std::f64::consts::TAU;
 // ToEclipticTrueOfDate Trait
 // =============================================================================
 
-/// Convert coordinates to the ecliptic of date (ERFA `eraEcm06` convention).
+/// Convert coordinates to the ecliptic of date (SOFA `iauEcm06` convention).
 ///
 /// This trait transforms directions to the ecliptic plane of date using
 /// the IAU 2006 mean obliquity.  Ecliptic longitude is measured from
@@ -94,7 +94,7 @@ impl ToEclipticTrueOfDate for Direction<EquatorialMeanOfDate> {
         let (sin_ra, cos_ra) = ra.sin_cos();
         let v_eq = [cos_dec * cos_ra, cos_dec * sin_ra, sin_dec];
 
-        // Apply mean-of-date to ecliptic-of-date rotation (mean obliquity, ERFA convention)
+        // Apply mean-of-date to ecliptic-of-date rotation (mean obliquity, SOFA convention)
         let rot = precession::mean_equatorial_to_ecliptic_of_date_matrix(*jd_tt);
         let v_ecl = rot.apply_array(v_eq);
 
@@ -123,7 +123,7 @@ impl ToEclipticTrueOfDate for Direction<ICRS> {
         let (sin_ra, cos_ra) = ra.sin_cos();
         let v_eq = [cos_dec * cos_ra, cos_dec * sin_ra, sin_dec];
 
-        // Apply ICRS/GCRS to ecliptic-of-date rotation (mean obliquity, ERFA convention)
+        // Apply ICRS/GCRS to ecliptic-of-date rotation (mean obliquity, SOFA convention)
         let rot = precession::gcrs_to_ecliptic_of_date_matrix(*jd_tt);
         let v_ecl = rot.apply_array(v_eq);
 
@@ -152,7 +152,7 @@ impl ToEclipticTrueOfDate for Direction<GCRS> {
         let (sin_ra, cos_ra) = ra.sin_cos();
         let v_eq = [cos_dec * cos_ra, cos_dec * sin_ra, sin_dec];
 
-        // Apply GCRS to ecliptic-of-date rotation (mean obliquity, ERFA convention)
+        // Apply GCRS to ecliptic-of-date rotation (mean obliquity, SOFA convention)
         let rot = precession::gcrs_to_ecliptic_of_date_matrix(*jd_tt);
         let v_ecl = rot.apply_array(v_eq);
 
@@ -217,7 +217,7 @@ impl FromEclipticTrueOfDate for Direction<EclipticTrueOfDate> {
         let (sin_lon, cos_lon) = lon.sin_cos();
         let v_ecl = [cos_lat * cos_lon, cos_lat * sin_lon, sin_lat];
 
-        // Apply ecliptic-of-date to mean-of-date rotation (ERFA convention)
+        // Apply ecliptic-of-date to mean-of-date rotation (SOFA convention)
         let rot = precession::ecliptic_of_date_to_mean_equatorial_matrix(*jd_tt);
         let v_eq = rot.apply_array(v_ecl);
 
@@ -244,7 +244,7 @@ impl FromEclipticTrueOfDate for Direction<EclipticTrueOfDate> {
         let (sin_lon, cos_lon) = lon.sin_cos();
         let v_ecl = [cos_lat * cos_lon, cos_lat * sin_lon, sin_lat];
 
-        // Apply ecliptic-of-date to GCRS/ICRS rotation (ERFA convention)
+        // Apply ecliptic-of-date to GCRS/ICRS rotation (SOFA convention)
         let rot = precession::ecliptic_of_date_to_gcrs_matrix(*jd_tt);
         let v_eq = rot.apply_array(v_ecl);
 

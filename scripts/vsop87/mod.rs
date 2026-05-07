@@ -171,7 +171,7 @@ pub fn run(data_dir: &Path) -> anyhow::Result<()> {
 /// Like [`run`] but writes generated files to `gen_dir` instead of `OUT_DIR`.
 ///
 /// Used by `build.rs` when `SIDERUST_REGEN=1` to overwrite the committed
-/// tables in `src/generated/`. Verifies the input dataset SHA-256 against
+/// tables in `src/archive/`. Verifies the input dataset SHA-256 against
 /// the `SIDERUST_VSOP87_SHA256` environment variable when set, and embeds
 /// the SHA-256 + retrieval timestamp as a comment header in every emitted
 /// `vsop87X.rs` file.

@@ -10,16 +10,30 @@ The core Siderust ephemeris datasets are **pre-generated and committed** under
 `src/generated/`. Normal builds, including docs.rs, do **not** download
 anything:
 
-| File | Source dataset | Update frequency |
-|------|---------------|-----------------|
-| `src/generated/vsop87a.rs` | VSOP87A (planetary theory) | ~stable |
-| `src/generated/vsop87e.rs` | VSOP87E (planetary theory) | ~stable |
-| `src/generated/elp_data.rs` | ELP2000-82B (lunar theory) | ~stable |
+| File / asset | Embedded table | Official reference | Canonical upstream | Update frequency |
+|------|---------------|--------------------|--------------------|-----------------|
+| `src/generated/vsop87a.rs` | VSOP87A rectangular heliocentric series | Bretagnon, P., & Francou, G. (1988), *Astronomy and Astrophysics* **202**, 309, "Planetary theories in rectangular and spherical variables. VSOP87 solutions" | CDS VI/81 / IMCCE VSOP87 distribution | ~stable |
+| `src/generated/vsop87e.rs` | VSOP87E barycentric spherical series | Bretagnon, P., & Francou, G. (1988), *Astronomy and Astrophysics* **202**, 309, "Planetary theories in rectangular and spherical variables. VSOP87 solutions" | CDS VI/81 / IMCCE VSOP87 distribution | ~stable |
+| `src/generated/elp_data.rs` | ELP2000-82B lunar series (`ELP1`…`ELP36`) | Chapront-Touzé, M., & Chapront, J. (1983), *Astronomy and Astrophysics* **124**, 50, "The Lunar Ephemeris ELP 2000"; and Chapront-Touzé, M., & Chapront, J. (1988), *Astronomy and Astrophysics* **190**, 342, "ELP 2000-85: a semi-analytical lunar ephemeris adequate for historical times" | CDS VI/79 | ~stable |
 
 Earth-orientation data is owned by `tempoch`; `siderust::astro::IersEop`
 consumes `tempoch`'s bundled EOP tables instead of regenerating a second active
 IERS table in this crate. The legacy `siderust::astro::iers_data` module is
 kept for compatibility, but new code should use `tempoch`/`IersEop`.
+
+Other bundled scientific tables that are shipped directly as data files:
+
+| File / asset | Embedded table | Official reference | Canonical upstream |
+|------|---------------|--------------------|--------------------|
+| `data/o3trans.dat` | Ozone transmittance vs wavelength | Patat, F., et al. (2008), *A&A* **481**, 575, "An Atlas of the Sky Background Spectrum over Cerro Paranal" | Bundled from the NSB / `darknsb` lineage; canonical copy in `siderust::atmosphere::ozone` |
+| `data/passbands/bessell1990/U.dat` | Johnson U passband | Bessell, M. S. (1990), *PASP* **102**, 1181, "UBVRI Passbands" | SVO Filter Profile Service `Generic/Bessell.U` |
+| `data/passbands/bessell1990/B.dat` | Johnson B passband | Bessell, M. S. (1990), *PASP* **102**, 1181, "UBVRI Passbands" | SVO Filter Profile Service `Generic/Bessell.B` |
+| `data/passbands/bessell1990/V.dat` | Johnson V passband | Bessell, M. S. (1990), *PASP* **102**, 1181, "UBVRI Passbands" | SVO Filter Profile Service `Generic/Bessell.V` |
+| `data/passbands/bessell1990/R.dat` | Cousins R passband | Bessell, M. S. (1990), *PASP* **102**, 1181, "UBVRI Passbands" | SVO Filter Profile Service `Generic/Bessell.R` |
+| `data/passbands/bessell1990/I.dat` | Cousins I passband | Bessell, M. S. (1990), *PASP* **102**, 1181, "UBVRI Passbands" | SVO Filter Profile Service `Generic/Bessell.I` |
+
+For the bundled UTC-TAI, ΔT, and IERS EOP tables consumed through `tempoch`,
+see the corresponding reference inventory in `tempoch/README.md`.
 
 The library includes these files directly:
 ```rust

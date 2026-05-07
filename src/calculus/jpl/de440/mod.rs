@@ -26,8 +26,7 @@
 //!   DE440 and DE441". *The Astronomical Journal* 161, 105.
 //!   <https://doi.org/10.3847/1538-3881/abd414>
 
-pub mod data;
-
+use crate::archive::jpl::de440 as data;
 use super::{eval::SegmentDescriptor, DeData};
 
 /// Marker type selecting DE440 embedded coefficient data.

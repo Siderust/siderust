@@ -10,7 +10,7 @@
 
 pub use crate::ext_qtty::dimensionless::{
     Airmass, Airmasses, Albedo, Albedos, IlluminationFraction, IlluminationFractions, OpticalDepth,
-    OpticalDepths, Refractivities, Refractivity, Transmittance, Transmittances,
+    OpticalDepths, Ratio, Ratios, Refractivities, Refractivity, Transmittance, Transmittances,
 };
 
 use crate::ext_qtty::{Dimensionless, Quantity, Unit};

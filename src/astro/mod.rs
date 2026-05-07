@@ -36,7 +36,7 @@
 //! - [`earth_rotation`], [`earth_rotation_provider`], [`era`]: TT↔UT1, ERA,
 //!   and the composite ITRS→equatorial rotation.
 //! - [`eop`]: Earth Orientation Parameters backed by `tempoch` EOP data.
-//! - [`iers_data`]: legacy compatibility access to the old embedded IERS table.
+//! - [`iers_data`]: IERS EOP data re-exported from `tempoch`.
 //! - [`light_deflection`]: GR deflection by the Sun and planets.
 //! - [`nutation`]: IAU 2000A/2000B/2006A nutation models.
 //! - [`orientation`]: IAU body pole / prime-meridian parameters.
@@ -50,7 +50,7 @@
 //!
 //! * IERS Conventions (2010)
 //! * IAU 2000 Resolution B1, IAU 2006 Resolution B1
-//! * SOFA / ERFA software collection
+//! * SOFA software collection
 
 pub mod aberration;
 pub mod cio;

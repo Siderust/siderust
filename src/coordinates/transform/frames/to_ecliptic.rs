@@ -29,7 +29,7 @@
 //! ## References
 //!
 //! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
-//! - SOFA/ERFA functions `eraBp06`, `eraObl06`.
+//! - SOFA routines `iauBp06`, `iauObl06`.
 
 use super::bias;
 use super::TransformFrame;

@@ -46,7 +46,7 @@
 //! ## References
 //!
 //! * IERS Conventions (2010), §5.4 (ERA and GAST), §5.5 (GMST)
-//! * SOFA routine `iauGmst06`; ERFA library
+//! * SOFA routine `iauGmst06`
 //! * Stephenson & Houlden (1986); Meeus, *Astronomical Algorithms*, Ch. 10
 
 use crate::astro::eop::{EopProvider, EopValues, IersEop};

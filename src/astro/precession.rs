@@ -59,7 +59,7 @@ use affn::Rotation3;
 /// * `epsa` (ε_A): obliquity of the ecliptic (mean obliquity of date)
 ///
 /// Polynomials from Hilton et al. (2006), Table 1.
-/// Coefficients match SOFA `iauPfw06` / ERFA `eraPfw06`.
+/// Coefficients match SOFA `iauPfw06`.
 ///
 /// ## References
 /// * IAU 2006 Resolution B1
@@ -143,14 +143,14 @@ pub const J2000_MEAN_OBLIQUITY_ARCSEC: f64 = 84381.406;
 
 /// Construct the Fukushima-Williams precession matrix from four angles.
 ///
-/// The SOFA/ERFA formula is:
+/// The SOFA formula is:
 /// ```text
 /// P = R₁(−ε_A) · R₃(−ψ̄) · R₁(φ̄) · R₃(γ̄)
 /// ```
-/// where R₁, R₃ are ERFA's rotation functions.
+/// where R₁, R₃ are the SOFA elementary rotation functions.
 ///
-/// ERFA's Rx/Rz use the **opposite sign convention** from the standard
-/// math rotation matrices:  `Rx_ERFA(θ) = Rx_standard(−θ)`.
+/// SOFA's Rx/Rz use the **opposite sign convention** from the standard
+/// math rotation matrices: `Rx_SOFA(θ) = Rx_standard(−θ)`.
 ///
 /// Translated to **standard** (siderust) convention:
 /// ```text

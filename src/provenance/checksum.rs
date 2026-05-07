@@ -42,7 +42,7 @@
 //! ```ignore
 //! use siderust::assert_data_checksum;
 //!
-//! const RAW: &str = include_str!("../../data/o3trans.dat");
+//! const RAW: &str = include_str!("../archive/data/o3trans.dat");
 //! assert_data_checksum!(
 //!     "o3trans.dat",
 //!     RAW.as_bytes(),
@@ -311,7 +311,7 @@ pub const fn assert_sha256_eq(_name: &'static str, data: &[u8], expected: &str) 
 /// `.as_bytes()` at the macro site:
 ///
 /// ```ignore
-/// const RAW: &str = include_str!("../../data/o3trans.dat");
+/// const RAW: &str = include_str!("../archive/data/o3trans.dat");
 /// siderust::assert_data_checksum!(
 ///     "siderust/data/o3trans.dat",
 ///     RAW.as_bytes(),
@@ -347,27 +347,27 @@ pub(crate) mod dev {
         let datasets: &[(&str, &[u8])] = &[
             (
                 "siderust/data/o3trans.dat",
-                include_bytes!("../../data/o3trans.dat"),
+                include_bytes!("../archive/data/o3trans.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/U.dat",
-                include_bytes!("../../data/passbands/bessell1990/U.dat"),
+                include_bytes!("../archive/data/passbands/bessell1990/U.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/B.dat",
-                include_bytes!("../../data/passbands/bessell1990/B.dat"),
+                include_bytes!("../archive/data/passbands/bessell1990/B.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/V.dat",
-                include_bytes!("../../data/passbands/bessell1990/V.dat"),
+                include_bytes!("../archive/data/passbands/bessell1990/V.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/R.dat",
-                include_bytes!("../../data/passbands/bessell1990/R.dat"),
+                include_bytes!("../archive/data/passbands/bessell1990/R.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/I.dat",
-                include_bytes!("../../data/passbands/bessell1990/I.dat"),
+                include_bytes!("../archive/data/passbands/bessell1990/I.dat"),
             ),
         ];
         for (name, data) in datasets {

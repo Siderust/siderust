@@ -27,7 +27,7 @@
 //!
 //! * IAU 2000 Resolution B1.6
 //! * McCarthy & Luzum (2003), *Celest. Mech.* 85, 37–49
-//! * SOFA/ERFA routine `eraNut00b`
+//! * SOFA routine `iauNut00b`
 
 use super::{Model, NutationModelId, NutationTag};
 

@@ -29,7 +29,7 @@
 //! ## References
 //!
 //! - IAU 2006 resolution B1 (frame-bias definition).
-//! - SOFA/ERFA functions `eraBp06`, `eraObl06`.
+//! - SOFA routines `iauBp06`, `iauObl06`.
 
 use super::bias;
 use super::TransformFrame;

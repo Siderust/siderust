@@ -48,7 +48,7 @@
 //! * Mathews, Herring & Buffett (2002), *J. Geophys. Res.* 107, B4
 //! * Wallace & Capitaine (2006), *Astron. Astrophys.* 459, 981
 //! * IERS Conventions (2010), §5.5.1
-//! * SOFA/ERFA routines `eraNut00b`, `eraNut00a`, `eraNut06a`
+//! * SOFA routines `iauNut00b`, `iauNut00a`, `iauNut06a`
 
 use crate::astro::precession::mean_obliquity_iau2006;
 use crate::qtty::*;
@@ -61,7 +61,6 @@ mod iau2000b;
 mod iau2006;
 mod iau2006a;
 pub(crate) mod nut00a;
-mod nut00a_tables;
 
 pub use iau2000a::Iau2000A;
 pub use iau2000b::Iau2000B;
@@ -377,7 +376,7 @@ const DEPS_PLANETARY_CORR: f64 = 3880.0; // 0.1 μas
 /// the IAU 2006 precession model.
 ///
 /// ## References
-/// * SOFA/ERFA routine `iauNut00b`
+/// * SOFA routine `iauNut00b`
 /// * McCarthy & Luzum (2003)
 /// * IERS Conventions (2010), §5.5.1
 pub fn nutation_iau2000b(jd: JulianDate) -> Nutation2000B {

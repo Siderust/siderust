@@ -33,9 +33,9 @@
 //!
 //! * Mathews, Herring & Buffett (2002), *J. Geophys. Res.* 107, B4
 //! * Wallace & Capitaine (2006), *Astron. Astrophys.* 459, 981
-//! * SOFA/ERFA routines `eraNut00a`, `eraNut06a`
+//! * SOFA routines `iauNut00a`, `iauNut06a`
 
-use super::nut00a_tables::{NUT00A_LS, NUT00A_PL};
+use crate::archive::nut00a_tables::{NUT00A_LS, NUT00A_PL};
 use super::NutationAngles;
 use crate::astro::precession::mean_obliquity_iau2006;
 use crate::qtty::*;
@@ -214,8 +214,8 @@ const U2R: f64 = AS2R / 1e7;
 /// table order** (`.iter().rev()`), so that the smallest-amplitude terms
 /// are accumulated first and the dominant `Ω`-term (with `dpsi ≈ −17″`,
 /// roughly seven orders of magnitude larger than the smallest planetary
-/// terms at ~0.1 µas) is summed last. This matches the SOFA/ERFA
-/// convention (`eraNut00a`) and preserves ~1 µas of precision in `Δψ` /
+/// terms at ~0.1 µas) is summed last. This matches the SOFA
+/// convention (`iauNut00a`) and preserves ~1 µas of precision in `Δψ` /
 /// `Δε` even at extreme epochs (|t| ≳ 30 centuries) where catastrophic
 /// cancellation in a "largest-first" summation would otherwise dominate
 /// the IEEE-754 round-off budget.
@@ -385,29 +385,29 @@ mod tests {
         );
     }
 
-    /// Cross-check against Python/ERFA nut06a at a reference epoch.
-    /// Reference: erfa.nut06a(2458849.5, 0.0), 2020-01-01T12:00 TT
+    /// Cross-check against a SOFA `iauNut06a` reference epoch.
+    /// Reference epoch: 2020-01-01T12:00 TT (`JD_TT = 2458849.5`)
     #[test]
-    fn nut2006a_matches_erfa_at_j2020() {
+    fn nut2006a_matches_sofa_at_j2020() {
         let jd = JulianDate::new(2_458_849.5);
         let n = nutation_iau2006a(jd);
 
-        let erfa_dpsi: f64 = -7.996558234083069e-05; // rad
-        let erfa_deps: f64 = -8.251412879483328e-06; // rad
+        let sofa_dpsi: f64 = -7.996558234083069e-05; // rad
+        let sofa_deps: f64 = -8.251412879483328e-06; // rad
 
         let one_uas = std::f64::consts::PI / (180.0 * 3600.0 * 1e6); // 1 µas in rad
-        let dpsi_diff = (n.dpsi.value() - erfa_dpsi).abs();
-        let deps_diff = (n.deps.value() - erfa_deps).abs();
+        let dpsi_diff = (n.dpsi.value() - sofa_dpsi).abs();
+        let deps_diff = (n.deps.value() - sofa_deps).abs();
 
         assert!(
             dpsi_diff < one_uas,
-            "Δψ diff vs ERFA = {:.3e} rad ({:.3} µas)",
+            "Δψ diff vs SOFA = {:.3e} rad ({:.3} µas)",
             dpsi_diff,
             dpsi_diff / one_uas
         );
         assert!(
             deps_diff < one_uas,
-            "Δε diff vs ERFA = {:.3e} rad ({:.3} µas)",
+            "Δε diff vs SOFA = {:.3e} rad ({:.3} µas)",
             deps_diff,
             deps_diff / one_uas
         );

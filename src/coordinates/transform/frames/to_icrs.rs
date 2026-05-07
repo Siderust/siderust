@@ -29,7 +29,7 @@
 //! ## References
 //!
 //! - Ma, C. et al. (1998). *Astronomical Journal*, 116, 516 — ICRF definition.
-//! - SOFA/ERFA function `eraBp06`.
+//! - SOFA routine `iauBp06`.
 
 use super::bias;
 use super::TransformFrame;

@@ -27,7 +27,7 @@
 //!
 //! * IAU 2000 Resolution B1.6
 //! * Mathews, Herring & Buffett (2002), *J. Geophys. Res.* 107, B4
-//! * SOFA/ERFA routine `eraNut00a`
+//! * SOFA routine `iauNut00a`
 
 use super::{Model, NutationModelId, NutationTag};
 

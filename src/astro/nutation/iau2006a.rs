@@ -28,7 +28,7 @@
 //!
 //! * Wallace, P. T. & Capitaine, N. (2006), A&A 459, 981
 //! * IERS Conventions (2010), §5.5.4
-//! * SOFA/ERFA routine `eraNut06a`
+//! * SOFA routine `iauNut06a`
 
 use super::{Model, NutationModelId, NutationTag};
 

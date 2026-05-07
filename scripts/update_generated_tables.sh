@@ -4,7 +4,7 @@
 #
 # update_generated_tables.sh
 #
-# Refreshes the committed Rust tables in src/generated/ by re-running the
+# Refreshes the committed Rust tables in src/archive/ by re-running the
 # full download + codegen pipeline for VSOP87 and ELP2000.
 #
 # Usage:
@@ -19,7 +19,7 @@
 #   SIDERUST_DATASETS_DIR   Alternative to --datasets-dir.
 #
 # After this script completes, run:
-#   git diff src/generated/
+#   git diff src/archive/
 # to review changes, then commit them.
 
 set -euo pipefail
@@ -51,7 +51,7 @@ SIDERUST_DATASETS_DIR="$DATASETS_DIR" \
 
 echo ""
 echo "==> Regenerating Rust tables from downloaded datasets..."
-echo "    Output: $ROOT_DIR/src/generated/"
+echo "    Output: $ROOT_DIR/src/archive/"
 
 SIDERUST_REGEN=1 \
 SIDERUST_DATASETS_DIR="$DATASETS_DIR" \
@@ -60,7 +60,7 @@ SIDERUST_DATASETS_DIR="$DATASETS_DIR" \
 echo ""
 echo "==> Writing datasets.lock.json..."
 
-GENERATED_DIR="$ROOT_DIR/src/generated"
+GENERATED_DIR="$ROOT_DIR/src/archive"
 mkdir -p "$GENERATED_DIR"
 
 TIMESTAMP="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
@@ -106,8 +106,8 @@ echo "==> Done. Updated files:"
 ls -lh "$GENERATED_DIR"
 echo ""
 echo "Review changes with:"
-echo "  git diff src/generated/"
+echo "  git diff src/archive/"
 echo ""
 echo "Then commit:"
-echo "  git add src/generated/"
+echo "  git add src/archive/"
 echo "  git commit -m 'chore: refresh generated dataset tables'"
