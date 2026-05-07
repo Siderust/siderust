@@ -54,30 +54,25 @@ fn aberrate_direction_lorentz<F: frames::ReferenceFrame>(
     u: direction::Direction<F>,
     beta: Velocity<F, Ratio>,
 ) -> direction::Direction<F> {
-    let beta_arr = beta.as_array();
-    let beta2: f64 = beta_arr.iter().map(|v| v.value() * v.value()).sum();
+    let beta_raw = affn::cartesian::XYZ::from_array(*beta.as_array()).to_raw();
+    let beta2 = beta_raw.magnitude_squared();
     if beta2 == 0.0 {
         return u;
     }
 
-    let gamma = (1.0_f64 - beta2).sqrt().recip();
-    let u_arr = u.as_array();
-    let u_vec = Velocity::<F, Ratio>::from_array([
-        Quantity::<Ratio>::new(u_arr[0]),
-        Quantity::<Ratio>::new(u_arr[1]),
-        Quantity::<Ratio>::new(u_arr[2]),
-    ]);
-    let beta_dot_u: f64 = beta_arr
-        .iter()
-        .zip(u_arr.iter())
-        .map(|(b, v)| b.value() * v)
-        .sum();
-    let factor = gamma / (gamma + 1.0);
-    let scale_b = 1.0 + factor * beta_dot_u;
-    let denom = Quantity::<Ratio>::new(1.0 + beta_dot_u);
-    let result = (u_vec.scale(gamma.recip()) + beta.scale(scale_b)) / denom;
-    let r = result.as_array();
-    direction::Direction::from_array([r[0].value(), r[1].value(), r[2].value()])
+    let gamma = 1.0 / (1.0 - beta2).sqrt();
+    let u_vec = Velocity::<F, Ratio>::new(u.x(), u.y(), u.z());
+    let beta_dot_u = beta_raw.dot(&affn::cartesian::XYZ::from_array(u.as_array()));
+
+    let result = (u_vec.scale(1.0 / gamma)
+        + beta.scale(1.0 + (gamma / (gamma + 1.0)) * beta_dot_u))
+        / Quantity::<Ratio>::new(1.0 + beta_dot_u);
+
+    direction::Direction::from_array(
+        affn::cartesian::XYZ::from_array(*result.as_array())
+            .to_raw()
+            .into_array(),
+    )
 }
 
 /// Apply aberration to a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.

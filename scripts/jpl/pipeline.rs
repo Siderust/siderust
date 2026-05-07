@@ -182,7 +182,6 @@ fn generate_stub_rust_module(cfg: &DeConfig, path: &Path) -> anyhow::Result<()> 
         writeln!(f, "    pub const INIT: f64 = 0.0;")?;
         writeln!(f, "    pub const INTLEN: f64 = 1.0;")?;
         writeln!(f, "    pub const NCOEFF: usize = 0;")?;
-        writeln!(f, "    pub const RSIZE: usize = 2;")?;
         writeln!(f, "    pub const N_RECORDS: usize = 1;")?;
         writeln!(f)?;
         writeln!(
