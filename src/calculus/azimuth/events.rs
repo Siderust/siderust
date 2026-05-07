@@ -74,12 +74,12 @@ fn scan_step_for<T: AzimuthProvider>(target: &T, opts: &SearchOpts) -> Days {
 fn make_az_bearing_sin_fn<'a, T: AzimuthProvider>(
     target: &'a T,
     site: &'a Geodetic<ECEF>,
-    bearing_rad: f64,
+    bearing: Radians,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let site = *site;
     move |t: ModifiedJulianDate| {
-        let az = target.azimuth_at(&site, t).value();
-        Radians::new((az - bearing_rad).sin())
+        let az = target.azimuth_at(&site, t);
+        Radians::new((az - bearing).value().sin())
     }
 }
 
@@ -91,13 +91,13 @@ fn make_az_bearing_sin_fn<'a, T: AzimuthProvider>(
 fn make_az_cosine_fn<'a, T: AzimuthProvider>(
     target: &'a T,
     site: &'a Geodetic<ECEF>,
-    mid_rad: f64,
+    mid: Radians,
     cos_hw: f64,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let site = *site;
     move |t: ModifiedJulianDate| {
-        let az = target.azimuth_at(&site, t).value();
-        Radians::new((az - mid_rad).cos() - cos_hw)
+        let az = target.azimuth_at(&site, t);
+        Radians::new((az - mid).value().cos() - cos_hw)
     }
 }
 
@@ -181,7 +181,7 @@ pub fn azimuth_crossings<T: AzimuthProvider>(
     bearing: Degrees,
     opts: SearchOpts,
 ) -> Vec<AzimuthCrossingEvent> {
-    let bearing_rad = bearing.to::<Radian>().value();
+    let bearing_rad = bearing.to::<Radian>();
     let f = make_az_bearing_sin_fn(target, observer, bearing_rad);
     let step = scan_step_for(target, &opts);
 
@@ -283,25 +283,22 @@ pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
 ) -> Vec<Period<ModifiedJulianDate>> {
     let step = target.scan_step_hint().unwrap_or(DEFAULT_SCAN_STEP);
 
-    let min_deg = query.min_azimuth.value();
-    let max_deg = query.max_azimuth.value();
-
-    if min_deg <= max_deg {
+    if query.min_azimuth <= query.max_azimuth {
         // ── Non-wrap arc [min, max] ────────────────────────────────────────
-        let mid_rad = ((min_deg + max_deg) / 2.0).to_radians();
-        let hw_rad = ((max_deg - min_deg) / 2.0).to_radians();
-        let cos_hw = hw_rad.cos();
+        let mid = ((query.min_azimuth + query.max_azimuth) * 0.5).to::<Radian>();
+        let half_width = ((query.max_azimuth - query.min_azimuth) * 0.5).to::<Radian>();
+        let cos_hw = half_width.cos();
 
-        let f = make_az_cosine_fn(target, &query.observer, mid_rad, cos_hw);
+        let f = make_az_cosine_fn(target, &query.observer, mid, cos_hw);
         intervals::above_threshold_periods(query.window, step, &f, Radians::new(0.0))
     } else {
         // ── Wrap-around arc [min, 360°) ∪ [0°, max] ──────────────────────
         // Complement arc is [max, min] (non-wrapping).
-        let mid_rad = ((max_deg + min_deg) / 2.0).to_radians();
-        let hw_rad = ((min_deg - max_deg) / 2.0).to_radians();
-        let cos_hw = hw_rad.cos();
+        let mid = ((query.max_azimuth + query.min_azimuth) * 0.5).to::<Radian>();
+        let half_width = ((query.min_azimuth - query.max_azimuth) * 0.5).to::<Radian>();
+        let cos_hw = half_width.cos();
 
-        let f = make_az_cosine_fn(target, &query.observer, mid_rad, cos_hw);
+        let f = make_az_cosine_fn(target, &query.observer, mid, cos_hw);
         let outside = intervals::above_threshold_periods(query.window, step, &f, Radians::new(0.0));
         complement_within(query.window, &outside)
     }
