@@ -43,7 +43,7 @@ The consequence is that adding a new frame or center should typically require ch
 
 High-precision topocentric and horizontal calculations depend on Earth orientation parameters. To accommodate this, the crate introduces `AstroContext`, which encapsulates EOP providers such as `IersEop` or `NullEop`.
 
-The design principle is that precision should be an explicit choice. Some applications require high-fidelity UT1 and polar motion modeling; others may prioritize speed or operate in contexts where such corrections are unnecessary. By making the context explicit, callers can select the appropriate trade-off.
+The design principle is that precision should be an explicit choice. `IersEop` uses the active/bundled EOP data owned by `tempoch` and rejects epochs outside coverage; `NullEop` is the explicit zero-EOP approximation for applications that intentionally trade fidelity for simplicity. EOP tables are keyed by UTC/MJD, so TT epochs are converted before lookup.
 
 Convenience paths exist for common scenarios, but context-aware `_with_ctx` variants are available for full control. This dual-layer approach keeps typical workflows straightforward while preserving the ability to perform rigorous, high-precision computations.
 
@@ -57,7 +57,7 @@ At compile time, `DefaultEphemeris` selects the best available backend based on 
 
 ## Build-Time Dataset Generation and Embedding
 
-Datasets, including VSOP87, ELP2000, IERS EOP, and optionally DE4xx, are generated and embedded at build time. This eliminates runtime data dependencies and ensures deterministic behavior once the crate is compiled.
+Datasets including VSOP87, ELP2000, and optionally DE4xx are generated and embedded at build time. Earth-orientation data is consumed from `tempoch`, which owns the active IERS bundle. This eliminates runtime data dependencies for the default path and ensures deterministic behavior once the crates are compiled.
 
 The advantage is twofold. First, runtime performance is improved because all required data is locally embedded. Second, operational environments remain simpler because no external data loading is required after build.
 

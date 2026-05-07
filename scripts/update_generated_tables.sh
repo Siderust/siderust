@@ -5,7 +5,7 @@
 # update_generated_tables.sh
 #
 # Refreshes the committed Rust tables in src/generated/ by re-running the
-# full download + codegen pipeline for VSOP87, ELP2000, and IERS EOP.
+# full download + codegen pipeline for VSOP87 and ELP2000.
 #
 # Usage:
 #   ./scripts/update_generated_tables.sh [--datasets-dir DIR]
@@ -77,7 +77,6 @@ sha256_of() {
 VSOP87A_SHA="$(sha256_of "$GENERATED_DIR/vsop87a.rs")"
 VSOP87E_SHA="$(sha256_of "$GENERATED_DIR/vsop87e.rs")"
 ELP_SHA="$(sha256_of "$GENERATED_DIR/elp_data.rs")"
-IERS_SHA="$(sha256_of "$GENERATED_DIR/iers_eop_data.rs")"
 
 cat > "$GENERATED_DIR/datasets.lock.json" <<EOF
 {
@@ -97,11 +96,6 @@ cat > "$GENERATED_DIR/datasets.lock.json" <<EOF
       "url": "https://cdsarc.cds.unistra.fr/ftp/VI/79/",
       "output": "elp_data.rs",
       "sha256": "${ELP_SHA}"
-    },
-    "iers_eop": {
-      "url": "https://datacenter.iers.org/products/eop/rapid/standard/finals2000A.all",
-      "output": "iers_eop_data.rs",
-      "sha256": "${IERS_SHA}"
     }
   }
 }

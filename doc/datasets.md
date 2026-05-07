@@ -6,8 +6,8 @@ and how to refresh or extend the pre-generated data.
 
 ## Offline-by-default: committed generated tables
 
-The three core datasets are **pre-generated and committed** under
-`src/generated/`.  Normal builds, including docs.rs, do **not** download
+The core Siderust ephemeris datasets are **pre-generated and committed** under
+`src/generated/`. Normal builds, including docs.rs, do **not** download
 anything:
 
 | File | Source dataset | Update frequency |
@@ -15,7 +15,11 @@ anything:
 | `src/generated/vsop87a.rs` | VSOP87A (planetary theory) | ~stable |
 | `src/generated/vsop87e.rs` | VSOP87E (planetary theory) | ~stable |
 | `src/generated/elp_data.rs` | ELP2000-82B (lunar theory) | ~stable |
-| `src/generated/iers_eop_data.rs` | IERS finals2000A.all (EOP) | weekly |
+
+Earth-orientation data is owned by `tempoch`; `siderust::astro::IersEop`
+consumes `tempoch`'s bundled EOP tables instead of regenerating a second active
+IERS table in this crate. The legacy `siderust::astro::iers_data` module is
+kept for compatibility, but new code should use `tempoch`/`IersEop`.
 
 The library includes these files directly:
 ```rust
@@ -46,7 +50,8 @@ Rust tables in one step:
 
 This does three things:
 1. Downloads the source datasets via `scripts/prefetch_datasets.sh --minimal`.
-2. Runs `SIDERUST_REGEN=1 cargo build` which overwrites `src/generated/`.
+2. Runs `SIDERUST_REGEN=1 cargo build` which overwrites the active generated
+   VSOP87/ELP2000 files under `src/generated/`.
 3. Writes an updated `src/generated/datasets.lock.json`.
 
 Review with `git diff src/generated/`, then commit:
@@ -68,17 +73,16 @@ SIDERUST_REGEN=1 cargo build
 
 `build.rs` checks the `SIDERUST_REGEN` environment variable at compile time:
 
-- **Not set (default):** The build script is a no-op for VSOP87/ELP2000/IERS.
+- **Not set (default):** The build script is a no-op for VSOP87/ELP2000.
   The library reads the committed files from `src/generated/`.
 - **`SIDERUST_REGEN=1`:** The build script downloads (or reuses cached) source
   datasets, parses them, and overwrites `src/generated/*.rs`.
 
 ## Automated CI refresh
 
-A GitHub Actions workflow (`.github/workflows/update-datasets.yml`) runs every
-Monday and on `workflow_dispatch`.  If any generated file changes (typically
-`iers_eop_data.rs` is updated weekly with new IERS data), it opens a pull
-request automatically.
+A GitHub Actions workflow (`.github/workflows/update-datasets.yml`) runs on
+`workflow_dispatch` for the active Siderust tables. EOP refreshes belong in
+the `tempoch` data pipeline.
 
 ## Where downloads go (caching for SIDERUST_REGEN and JPL)
 
@@ -99,9 +103,6 @@ If you prefer downloading by hand, place files in the cache directory:
   - Source: `https://ftp.imcce.fr/pub/ephem/planets/vsop87/`
 - ELP2000 → `$SIDERUST_DATASETS_DIR/elp2000_dataset/` (files `ELP1`…`ELP36`)
   - Base URL: `https://cdsarc.cds.unistra.fr/ftp/VI/79/`
-- IERS EOP → `$SIDERUST_DATASETS_DIR/iers_dataset/finals2000A.all`
-  - Primary: `https://datacenter.iers.org/products/eop/rapid/standard/finals2000A.all`
-  - Mirror:  `https://maia.usno.navy.mil/ser7/finals2000A.all`
 - DE440 → `$SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp`
   - `https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de440.bsp`
 - DE441 → `$SIDERUST_DATASETS_DIR/de441_dataset/de441_part-2.bsp`

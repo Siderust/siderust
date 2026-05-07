@@ -3,9 +3,9 @@
 [![Crates.io](https://img.shields.io/crates/v/siderust.svg)](https://crates.io/crates/siderust)
 [![Docs.rs](https://docs.rs/siderust/badge.svg)](https://docs.rs/siderust)
 
-> **Precision astronomy & satellite mechanics in safe, fast Rust.**
+> **Typed astronomy & satellite mechanics in safe Rust.**
 
-Siderust aims to be a reference ephemeris and orbit‑analysis library for research‐grade pipelines and ground‑segment tooling. Every algorithm ships with validation tests against authoritative data (JPL Horizons, IMCCE, SOFA). No unsafe blocks, no hidden allocations.
+Siderust provides ephemerides, coordinate transforms, time-scale handling, and orbit-analysis building blocks for scientific applications. The primary Rust implementation avoids `unsafe`; allocation behavior depends on the enabled subsystems and is documented at the module level. External reference fixtures are being expanded, so scientific claims should be read against the validation tests that ship with the crate.
 
 ---
 
@@ -35,9 +35,14 @@ Siderust aims to be a reference ephemeris and orbit‑analysis library for resea
 | `de441`  |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
 | `serde`  |         | `Serialize` / `Deserialize` on public types |
 | `ffi`    |         | Forwards Rust-side FFI layout guarantees to `qtty`, `tempoch`, and `affn` |
+| `atmosphere` |     | Atmospheric tables and radiative transfer helpers |
+| `spectra` |        | Spectral tables and synthetic-photometry helpers |
+| `tables` |         | Additional tabulated astronomy helpers |
+| `runtime-data` |   | Runtime dataset-loading helpers |
+| `regen-data` |     | Regenerates committed VSOP87/ELP2000 tables |
 
 > **Note:** `no_std` and `f128` quad‑precision are **not** supported today.
-> The crate depends on `std`‑only libraries (`chrono`, `nalgebra`).
+> The crate depends on `std`‑only libraries such as `chrono`.
 > Sub‑crates `qtty` and `qtty-core` do offer `no_std` support independently.
 
 ---
@@ -59,7 +64,7 @@ Coordinate algebra and reusable conic geometry are provided by [`affn`](https://
 
 ### API Design Pillars
 
-Siderust 0.7 is built on two cross-cutting principles documented in
+Siderust is built on two cross-cutting principles documented in
 [`doc/conventions.md`](doc/conventions.md):
 
 1. **Typed quantities everywhere.** Every scalar that has physical meaning —
@@ -70,7 +75,7 @@ Siderust 0.7 is built on two cross-cutting principles documented in
 2. **Phantom-typed model selection.** Algorithm variants (e.g. nutation models)
    are selected at the call site via zero-sized phantom type parameters such as
    `to_frame_as::<EquatorialFrame, Iau2006A>(jd)`. There are no runtime enums
-   to match on and no heap allocations — dispatch is fully monomorphised.
+   to match on. Dispatch is fully monomorphised.
 
 ### Astrometry Compliance Note
 
@@ -86,10 +91,10 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.7"
+siderust = "0.6.1"
 ```
 
-Build-time datasets (VSOP87/ELP2000/IERS and optional JPL kernels) are downloaded on demand; see `doc/datasets.md`.
+Committed datasets (VSOP87/ELP2000 and tempoch-owned EOP tables) are available offline. Optional JPL kernels are downloaded on demand when the corresponding feature is enabled; see `doc/datasets.md`.
 
 ### Ephemeris Backends (Enable / Disable / Combine)
 
@@ -107,21 +112,21 @@ Optional features add JPL backends:
 
 ```toml
 [dependencies]
-siderust = { version = "0.7", default-features = false }
+siderust = { version = "0.6.1", default-features = false }
 ```
 
 2. Enable DE440
 
 ```toml
 [dependencies]
-siderust = { version = "0.7", features = ["de440"] }
+siderust = { version = "0.6.1", features = ["de440"] }
 ```
 
 3. Enable DE441
 
 ```toml
 [dependencies]
-siderust = { version = "0.7", features = ["de441"] }
+siderust = { version = "0.6.1", features = ["de441"] }
 ```
 
 4. Combine backends in one binary
@@ -147,7 +152,7 @@ You can combine ephemeris features with others (for example `serde`):
 
 ```toml
 [dependencies]
-siderust = { version = "0.7", features = ["de441", "serde"] }
+siderust = { version = "0.6.1", features = ["de441", "serde"] }
 ```
 
 ### JPL Build Modes: Real vs Stubbed
@@ -212,6 +217,11 @@ Caveat:
 - Stubbed DE datasets compile successfully, but low-level DE calls are unavailable at runtime.
 - `de441` has a high-level mock backend (`De441Ephemeris -> Vsop87Ephemeris`).
 - `de440` is compile-only when stubbed; direct runtime calls to `De440Ephemeris` will panic.
+
+Coverage:
+- Fallible JPL APIs such as `try_position`, `try_velocity`, and `try_position_velocity` return an error outside the Chebyshev segment coverage.
+- The legacy infallible JPL APIs are retained for compatibility and panic with an explicit out-of-range message instead of silently extrapolating.
+- Earth-orientation lookups are keyed by UTC/MJD. The default IERS provider uses `tempoch`'s bundled EOP data and reports missing coverage rather than fabricating zero EOP values. Use `NullEop` only when a documented zero-EOP approximation is intended.
 
 ---
 
@@ -298,20 +308,20 @@ The `examples/` directory is a curated tour of the crate’s major building bloc
 (coordinates, transforms, altitude periods, ephemeris backends, serialization).
 
 - Browse: `examples/README.md`
-- Run one: `cargo run --example basic_coordinates`
+- Run one: `cargo run --example 01_basic_coordinates`
 
 Feature-gated examples:
 
 ```bash
 # JPL DE4xx (may download large BSP datasets unless you explicitly stub)
-cargo run --example jpl_precise_ephemeris --features de440
-cargo run --example jpl_precise_ephemeris --features de441
+cargo run --example 12_runtime_ephemeris --features de440
+cargo run --example 12_runtime_ephemeris --features de441
 
 # Fast/offline loop: compile JPL features but skip runtime DE calls
-SIDERUST_JPL_STUB=all cargo run --example jpl_precise_ephemeris --features de440,de441
+SIDERUST_JPL_STUB=all cargo run --example 12_runtime_ephemeris --features de440,de441
 
 # Serde
-cargo run --example serde_serialization --features serde
+cargo run --example 11_serde_serialization --features serde
 ```
 
 ## Crate Layout

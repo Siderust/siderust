@@ -83,7 +83,7 @@ mod to_spherical;
 pub use centers::{
     to_topocentric_with, to_topocentric_with_ctx, IntoTransformArgs, TransformCenter,
 };
-pub use context::{AstroContext, EarthOrientationModel, ModelContext, TransformContext};
+pub use context::{AstroContext, ModelContext, TransformContext};
 pub use ecliptic_of_date::{FromEclipticTrueOfDate, ToEclipticTrueOfDate};
 pub use ext::{DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt, VectorAstroExt};
 pub use ext::{UsingEngine, WithEngine};

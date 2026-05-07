@@ -44,4 +44,8 @@ pub enum SiderustStatus {
     /// Returned by qtty-aware functions when a quantity's dimension doesn't
     /// match the expected type (e.g., passing a length where an angle is expected).
     InvalidDimension = 12,
+    /// A requested epoch lies outside the covered ephemeris or EOP data range.
+    OutOfRange = 13,
+    /// Required Earth Orientation Parameters are unavailable for the epoch.
+    NoEopData = 14,
 }

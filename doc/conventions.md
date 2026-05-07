@@ -68,11 +68,13 @@ pub fn rayleigh_phase(cos_theta: f64) -> f64 { ... }
 pub fn rayleigh_phase(cos_theta: Dimensionless) -> Dimensionless { ... }
 ```
 
-Dimensionless physical ratios receive newtypes in `siderust::qtty`
+Dimensionless physical ratios receive newtypes in `qtty`
 (`OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`,
-`Refractivity`, `CipCoordinate`, etc.). Use the existing newtypes when
-they exist; add new ones in `src/qtty.rs` (or upstream into the `qtty`
-crate via a follow-up PR) when they do not.
+`Refractivity`, etc.) and are re-exported through `siderust::qtty` for
+compatibility. Astronomy-specific dimensionless concepts such as
+`CipCoordinate` remain in `siderust`. Use the existing newtypes when they
+exist; add generic dimensionless concepts in the `qtty` crate first, then
+re-export them from `siderust` if compatibility requires it.
 
 `.value()` and `.raw()` are tools of the *math kernel*, not of the API.
 They are permitted inside `pub(crate)` numerical inner loops (`vsop87`,

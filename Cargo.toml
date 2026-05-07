@@ -6,6 +6,8 @@ members = [
 
 [patch.crates-io]
 cheby = { path = "../cheby" }
+qtty = { path = "../qtty/qtty" }
+qtty-core = { path = "../qtty/qtty-core" }
 tempoch = { path = "../tempoch/tempoch" }
 tempoch-core = { path = "../tempoch/tempoch-core" }
 
@@ -40,7 +42,7 @@ atmosphere = []
 [dependencies]
 affn = { path = "../affn", features = ["astro"] }
 cheby = "0.1.0"
-qtty = { version = "0.7.0", features = ["radiometry"] }
+qtty = { path = "../qtty/qtty", features = ["radiometry"] }
 tempoch = "0.4.3"
 approx = "0.5"
 chrono = "0.4.44"

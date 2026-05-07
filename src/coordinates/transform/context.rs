@@ -1,34 +1,66 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Astronomical Context
+//! # Astronomical Transform Context
 //!
-//! This module provides the [`AstroContext`] type, which holds configuration
-//! for astronomical transformations, including ephemeris selection, Earth
-//! orientation parameters, and model choices.
+//! ## Scientific scope
 //!
-//! ## Design Philosophy
+//! Every time-dependent coordinate transformation in siderust needs access to
+//! three external providers: an *ephemeris* that supplies planetary positions,
+//! an *Earth Orientation Parameters* (EOP) table that supplies the observed
+//! offset between UT1 and UTC and the pole coordinates, and a *nutation /
+//! precession model* that determines which IAU series is used to orient the
+//! terrestrial frame in the celestial reference system. These three concerns
+//! are bundled in this module so that transform call sites carry no ambient
+//! state and the same transform path can be reused with any combination of
+//! backends.
 //!
-//! The context is designed to be:
-//! - **Generic**: Parameterized over ephemeris and model types for flexibility.
-//! - **Zero-cost when unused**: Default type parameters allow simple usage.
-//! - **Passed by reference**: Context is borrowed, not consumed, in transforms.
+//! ## Technical scope
 //!
-//! ## Usage
+//! - [`AstroContext<Eph, Eop>`] — the primary runtime provider container.
+//!   - `Eph` selects the ephemeris backend (default: [`DefaultEphemeris`],
+//!     VSOP87/ELP2000; DE440/DE441 selectable via Cargo features).
+//!   - `Eop` selects the EOP source (default: [`DefaultEop`] = [`IersEop`],
+//!     backed by the build-time `finals2000A.all` table; substitute
+//!     [`NullEop`](crate::astro::eop::NullEop) for zero overhead).
+//! - [`AstroContext::with_model::<Nut>()`] — attaches a compile-time nutation
+//!   model marker, returning a zero-cost [`ModelContext`]. The nutation model
+//!   is always a **phantom type**: use [`Iau2006A`](crate::astro::nutation::Iau2006A)
+//!   (default, full 1365-term MHB2000 + P03 correction),
+//!   [`Iau2000B`](crate::astro::nutation::Iau2000B) (77-term abridged),
+//!   [`Iau2000A`](crate::astro::nutation::Iau2000A) (uncorrected 2000A), or
+//!   [`Iau2006`](crate::astro::nutation::Iau2006) (precession-only). This is
+//!   the canonical model-selection mechanism — no runtime enum dispatch.
+//! - [`ModelContext<Eph, Eop, Nut>`] — lightweight borrow wrapper that satisfies
+//!   [`TransformContext`] and exposes the chosen model to the transform
+//!   providers via a single trait.
+//! - [`DynAstroContext<Eop>`] — dynamic variant carrying a `Box<dyn DynEphemeris>`
+//!   for cases where the BSP file is loaded at runtime.
+//!
+//! ## Model-selection example
 //!
 //! ```rust
 //! use siderust::coordinates::transform::context::AstroContext;
+//! use siderust::astro::nutation::Iau2000B;
 //!
-//! // Create a default context
+//! // Default context: IAU 2006A nutation, VSOP87 ephemeris, IERS EOP.
 //! let ctx = AstroContext::new();
 //!
-//! // Use with transforms:
-//! // position.to_frame::<EclipticMeanJ2000>(&jd, &ctx);
+//! // Abridged 77-term IAU 2000B nutation — zero runtime overhead.
+//! let low_cost = ctx.with_model::<Iau2000B>();
+//! // low_cost can now be passed to any _with transform variant.
 //! ```
+//!
+//! ## References
+//!
+//! - IAU 2006 Resolution B1 (precession) and Resolution B1.6 (nutation).
+//! - IERS Conventions (2010), §5.4 and §5.5.
+//! - Wallace, P. T., & Capitaine, N. (2006). *A&A* 459, 981 (P03 correction).
+//! - SOFA/ERFA software collection.
 
 use std::marker::PhantomData;
 
-use crate::astro::eop::{EopProvider, EopValues, IersEop};
+use crate::astro::eop::{EopError, EopProvider, EopValues, IersEop};
 use crate::astro::nutation::NutationModel;
 use crate::time::JulianDate;
 
@@ -79,22 +111,6 @@ pub type DefaultEop = IersEop;
 /// For the abridged 77-term model, substitute
 /// [`Iau2000B`](crate::astro::nutation::Iau2000B).
 pub type DefaultNutationModel = crate::astro::nutation::Iau2006A;
-
-/// Runtime-selectable Earth orientation model presets.
-///
-/// These presets control nutation behavior while keeping the current IAU 2006
-/// precession implementation used across the transform pipeline.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum EarthOrientationModel {
-    /// Full IAU 2000A nutation.
-    Iau2000A,
-    /// Abridged IAU 2000B nutation.
-    Iau2000B,
-    /// IAU 2006 precession-only profile (zero nutation offsets).
-    Iau2006,
-    /// High-precision IAU 2006A convention (IAU 2006 + corrected 2000A).
-    Iau2006A,
-}
 
 /// Astronomical context for coordinate transformations.
 ///
@@ -174,6 +190,29 @@ impl<Eph, Eop> AstroContext<Eph, Eop> {
 }
 
 impl<Eph, Eop: EopProvider> AstroContext<Eph, Eop> {
+    /// Fallibly look up EOP values for the given **UTC** Julian Date.
+    #[inline]
+    pub fn try_eop_at(&self, jd_utc: JulianDate) -> Result<EopValues, EopError> {
+        self.eop.try_eop_at(jd_utc)
+    }
+
+    /// Fallibly look up EOP values for a **TT** observation epoch.
+    ///
+    /// This converts TT to UTC before querying the provider, preserving the
+    /// EOP provider contract while keeping transform call sites ergonomic.
+    #[inline]
+    pub fn try_eop_at_tt(&self, jd_tt: JulianDate) -> Result<EopValues, EopError> {
+        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
+        self.try_eop_at(jd_utc)
+    }
+
+    /// Look up EOP values for a **TT** observation epoch.
+    #[inline]
+    pub fn eop_at_tt(&self, jd_tt: JulianDate) -> EopValues {
+        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
+        self.eop_at(jd_utc)
+    }
+
     /// Look up EOP values for the given **UTC** Julian Date.
     ///
     /// # Time-scale contract
@@ -326,6 +365,26 @@ impl<Eop: EopProvider> DynAstroContext<Eop> {
         self.eop.eop_at(jd_utc)
     }
 
+    /// Fallibly look up EOP values for the given **UTC** Julian Date.
+    #[inline]
+    pub fn try_eop_at(&self, jd_utc: JulianDate) -> Result<EopValues, EopError> {
+        self.eop.try_eop_at(jd_utc)
+    }
+
+    /// Fallibly look up EOP values for a **TT** observation epoch.
+    #[inline]
+    pub fn try_eop_at_tt(&self, jd_tt: JulianDate) -> Result<EopValues, EopError> {
+        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
+        self.try_eop_at(jd_utc)
+    }
+
+    /// Look up EOP values for a **TT** observation epoch.
+    #[inline]
+    pub fn eop_at_tt(&self, jd_tt: JulianDate) -> EopValues {
+        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
+        self.eop_at(jd_utc)
+    }
+
     /// Reference to the underlying EOP provider.
     #[inline]
     pub fn eop(&self) -> &Eop {
@@ -378,7 +437,7 @@ mod tests {
     fn test_eop_at_returns_values() {
         let ctx = AstroContext::new();
         let jd = JulianDate::J2000;
-        let eop = ctx.eop_at(jd);
+        let eop = ctx.eop_at_tt(jd);
         // EOP values should be finite
         assert!(eop.dut1.is_finite());
     }

@@ -14,10 +14,6 @@ mod vsop87_build;
 #[path = "scripts/elp2000/mod.rs"]
 mod elp2000_build;
 
-#[cfg(feature = "regen-data")]
-#[path = "scripts/iers/mod.rs"]
-mod iers_build;
-
 #[cfg(feature = "de440")]
 #[path = "scripts/jpl/de440/mod.rs"]
 mod de440_build;
@@ -38,7 +34,7 @@ fn main() {
 
     #[cfg(not(feature = "regen-data"))]
     eprintln!(
-        "siderust build: using committed generated tables in src/generated/. \
+        "siderust build: using committed generated VSOP87/ELP2000 tables in src/generated/. \
          Enable the `regen-data` feature and set SIDERUST_REGEN=1 to refresh them."
     );
 
@@ -63,7 +59,7 @@ fn datasets_base_dir() -> PathBuf {
 
 // ── `regen-data` feature ──────────────────────────────────────────────────────
 
-/// Regenerates the committed VSOP87, ELP2000 and IERS tables from source data.
+/// Regenerates the committed VSOP87 and ELP2000 tables from source data.
 ///
 /// Only runs when `SIDERUST_REGEN=1` (or `true`/`yes`) is set. Requires the
 /// `regen-data` build feature so that `reqwest` is compiled only when needed.
@@ -100,11 +96,6 @@ fn regen_tables() {
     elp2000_build::run_regen(base.join("elp2000_dataset").as_path(), &gen_dir)
         .unwrap_or_else(|e| panic!("ELP2000 codegen failed: {e}"));
     eprintln!("ELP2000 regeneration complete");
-
-    eprintln!("Regenerating IERS EOP data...");
-    iers_build::run_regen(base.join("iers_dataset").as_path(), &gen_dir)
-        .unwrap_or_else(|e| panic!("IERS EOP codegen failed: {e}"));
-    eprintln!("IERS EOP regeneration complete");
 }
 
 // ── `de440` feature ───────────────────────────────────────────────────────────
