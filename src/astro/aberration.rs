@@ -45,65 +45,40 @@ use crate::time::JulianDate;
 type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 type AusPerDay = crate::qtty::velocity::Velocity<AstronomicalUnit, Day>;
 
-/// Speed of light in AU/day from exact SI definitions:
+/// Speed of light in AU/day, derived from exact SI definitions:
 /// `c = 299_792_458 m/s`, `day = 86_400 s`, `AU = 149_597_870_700 m`.
-pub const AU_PER_DAY_C: AusPerDay = AusPerDay::new(173.144_632_674_240_33);
+const C_M_S: f64 = 299_792_458.0;
+pub const AU_PER_DAY_C: AusPerDay =
+    AusPerDay::new(C_M_S * Day::RATIO / AstronomicalUnit::RATIO);
 
-/// Dot product of two `[f64; 3]` vectors.
+/// Full SR Lorentz aberration transform for a unit direction vector.
+///
+/// `beta` is the observer's velocity divided by c (dimensionless, non-unit-length).
+/// The Lorentz formula is:
+/// `u' = [ u/γ + β (1 + γ/(γ+1) β·u) ] / (1 + β·u)`
 #[inline]
-fn dot3(a: [f64; 3], b: [f64; 3]) -> f64 {
-    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-}
-
-/// Scales a `[f64; 3]` vector by a scalar.
-#[inline]
-fn scale3(v: [f64; 3], s: f64) -> [f64; 3] {
-    [v[0] * s, v[1] * s, v[2] * s]
-}
-
-/// Component-wise addition of two `[f64; 3]` vectors.
-#[inline]
-fn add3(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
-    [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
-}
-
-/// Normalises a `[f64; 3]` vector to unit length.
-#[inline]
-fn normalize3(v: [f64; 3]) -> [f64; 3] {
-    let mag = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
-    scale3(v, 1.0 / mag)
-}
-
-#[inline]
-fn aberrate_unit_vector_lorentz(
-    u: [f64; 3],
+fn aberrate_direction_lorentz<F: frames::ReferenceFrame>(
+    u: direction::Direction<F>,
     beta: [f64; 3],
-) -> [f64; 3] {
-    let beta2 = dot3(beta, beta);
+) -> direction::Direction<F> {
+    let [bx, by, bz] = beta;
+    let beta2 = bx * bx + by * by + bz * bz;
     if beta2 == 0.0 {
         return u;
     }
 
-    // gamma = 1 / sqrt(1 - |beta|^2)
-    let gamma = 1.0 / (1.0 - beta2).sqrt();
-    let beta_dot_u = dot3(beta, u);
-
-    // u' = [ u/gamma + beta + (gamma/(gamma+1)) (beta·u) beta ] / (1 + beta·u)
+    let gamma = (1.0 - beta2).sqrt().recip();
+    let beta_dot_u = bx * u.x() + by * u.y() + bz * u.z();
     let factor = gamma / (gamma + 1.0);
-    let numerator = add3(scale3(u, 1.0 / gamma), scale3(beta, 1.0 + factor * beta_dot_u));
-    let denom = 1.0 + beta_dot_u;
-    scale3(numerator, 1.0 / denom)
-}
+    let scale_b = 1.0 + factor * beta_dot_u;
+    let inv_denom = (1.0 + beta_dot_u).recip();
+    let inv_gamma = gamma.recip();
 
-#[inline]
-fn velocity_to_beta(
-    velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
-) -> [f64; 3] {
-    [
-        velocity.x() / AU_PER_DAY_C,
-        velocity.y() / AU_PER_DAY_C,
-        velocity.z() / AU_PER_DAY_C,
-    ]
+    direction::Direction::new(
+        (u.x() * inv_gamma + bx * scale_b) * inv_denom,
+        (u.y() * inv_gamma + by * scale_b) * inv_denom,
+        (u.z() * inv_gamma + bz * scale_b) * inv_denom,
+    )
 }
 
 /// Apply aberration to a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.
@@ -112,10 +87,8 @@ pub fn apply_aberration_to_direction_with_velocity(
     mean: direction::EquatorialMeanJ2000,
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
-    let beta = velocity_to_beta(velocity);
-    let u = [mean.x(), mean.y(), mean.z()];
-    let up = aberrate_unit_vector_lorentz(u, beta);
-    direction::EquatorialMeanJ2000::normalize(up[0], up[1], up[2])
+    let c = AU_PER_DAY_C;
+    aberrate_direction_lorentz(mean, [velocity.x() / c, velocity.y() / c, velocity.z() / c])
 }
 
 /// Remove aberration from a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.
@@ -125,11 +98,8 @@ pub fn remove_aberration_from_direction_with_velocity(
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
     // Inverse is the same Lorentz transform with negated velocity.
-    let beta = velocity_to_beta(velocity);
-    let neg_beta = [-beta[0], -beta[1], -beta[2]];
-    let u = [app.x(), app.y(), app.z()];
-    let up = aberrate_unit_vector_lorentz(u, neg_beta);
-    direction::EquatorialMeanJ2000::normalize(up[0], up[1], up[2])
+    let c = AU_PER_DAY_C;
+    aberrate_direction_lorentz(app, [-velocity.x() / c, -velocity.y() / c, -velocity.z() / c])
 }
 
 /// Apply **annual aberration** to a unit direction vector (mean J2000).
@@ -175,7 +145,7 @@ pub fn apply_aberration<U: LengthUnit>(
     mean: position::EquatorialMeanJ2000<U>,
     jd: JulianDate,
 ) -> position::EquatorialMeanJ2000<U> {
-    if mean.distance().value() == 0.0 {
+    if mean.distance() == Quantity::<U>::new(0.0) {
         // Don't look at your feet!
         return mean;
     }
@@ -200,7 +170,7 @@ pub fn remove_aberration<U: LengthUnit>(
     app: position::EquatorialMeanJ2000<U>,
     jd: JulianDate,
 ) -> position::EquatorialMeanJ2000<U> {
-    if app.distance().value() == 0.0 {
+    if app.distance() == Quantity::<U>::new(0.0) {
         // Don't look at your feet!
         return app;
     }
@@ -303,7 +273,7 @@ mod tests {
         ];
 
         for u in directions {
-            let mean = direction::EquatorialMeanJ2000::from_array(normalize3(u));
+            let mean = direction::EquatorialMeanJ2000::from_array(u);
             let app = apply_aberration_to_direction_with_velocity(mean, &velocity);
             let rec = remove_aberration_from_direction_with_velocity(app, &velocity);
 
