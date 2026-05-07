@@ -1,6 +1,40 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! # Coordinate-type conversions for [`CoordinateWithPM`]
+//!
+//! ## Scientific scope
+//!
+//! Astrometric pipelines frequently need to express the same catalog position
+//! in different reference frames or reference centers: e.g. transforming from
+//! a heliocentric J2000 ecliptic catalog position to a geocentric equatorial
+//! of-date position for comparison with an observation. This module provides
+//! blanket [`From`] implementations so those transformations compose
+//! transparently with the `CoordinateWithPM<T>` container, preserving the
+//! epoch and proper-motion model across the conversion.
+//!
+//! ## Technical scope
+//!
+//! Two blanket impls are provided:
+//!
+//! - `From<&CoordinateWithPM<cartesian::Position<C1,F1,U>>>`
+//!   `for CoordinateWithPM<cartesian::Position<C2,F2,U>>` — chains a frame
+//!   transform and a center transform, both evaluated at the stored epoch.
+//!
+//! - `From<&CoordinateWithPM<spherical::Position<C1,F1,U>>>`
+//!   `for CoordinateWithPM<spherical::Position<C2,F2,U>>` — converts to
+//!   Cartesian, applies both transforms, then converts back to spherical.
+//!
+//! Both impls delegate to the [`Transform`](crate::coordinates::transform::Transform)
+//! trait and are gated on the same bounds, so the compiler statically checks
+//! that the requested center/frame combination has a valid transform path.
+//!
+//! ## References
+//!
+//! - IAU SOFA Library, function `iauPmpx` (proper-motion and parallax).
+//! - Seidelmann, P. K. (1992). *Explanatory Supplement to the Astronomical
+//!   Almanac*, §3.3. University Science Books.
+
 use super::CoordinateWithPM;
 use crate::coordinates::{cartesian, centers::*, frames::*, spherical, transform::Transform};
 use crate::qtty::LengthUnit;

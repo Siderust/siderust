@@ -1,6 +1,40 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! # Coordinate-with-proper-motion container
+//!
+//! ## Scientific scope
+//!
+//! A `CoordinateWithPM<T>` is the minimal representation of a *catalog entry*:
+//! a single coordinate sample valid at a reference epoch, optionally coupled
+//! with a proper-motion model that describes how the object drifts through the
+//! sky over time. Proper motion is expressed as a rate vector in right ascension
+//! and declination (typically in mas yr⁻¹), as tabulated in astrometric
+//! catalogs such as Hipparcos, Tycho-2, Gaia DR3, and UCAC4. This container
+//! is coordinate-system–agnostic: `T` may be any cartesian or spherical
+//! position type, depending on the caller's reference frame choice.
+//!
+//! ## Technical scope
+//!
+//! - [`CoordinateWithPM<T>`] — generic container storing:
+//!   - `position: T` — the coordinate value at `time`.
+//!   - `time: JulianDate` — the catalog epoch (e.g. J2000.0).
+//!   - `proper_motion: Option<ProperMotion>` — drift model; `None` for
+//!     objects treated as stationary over the observer's time horizon.
+//!
+//! This type is a *data* container, not a *tracking* abstraction. Use
+//! [`crate::targets::Trackable`] for objects that can propagate their own
+//! position to an arbitrary epoch.
+//!
+//! ## References
+//!
+//! - van Leeuwen, F. (2007). *Hipparcos, the New Reduction of the Raw Data*.
+//!   Springer. (Catalog epoch and proper-motion conventions.)
+//! - Lindegren, L., et al. (2021). Gaia EDR3: Parallax bias and proper motion.
+//!   *A&A* **649**, A4. doi:10.1051/0004-6361/202039653.
+//! - Urban, S. E., & Seidelmann, P. K. (2013). *Explanatory Supplement to the
+//!   Astronomical Almanac*, 3rd ed., §3.5. University Science Books.
+
 use crate::astro::proper_motion::ProperMotion;
 use crate::time::JulianDate;
 

@@ -1,6 +1,49 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! # Solar apparent-position equations
+//!
+//! ## Scientific scope
+//!
+//! The Sun's *apparent* position as seen from Earth differs from its
+//! geometric/mean position by three main effects: (1) precession of the
+//! equinoxes (continuous drift of the equatorial frame), (2) nutation
+//! (periodic perturbation of Earth's spin axis due to the Moon and Sun),
+//! and (3) light aberration (apparent displacement caused by Earth's orbital
+//! velocity, ~20.5 arc-seconds). This module computes a subset of those
+//! corrections that is sufficient for solar position, sunrise/sunset, and
+//! shadow modeling: the geometric VSOP87 position is corrected for precession
+//! and nutation (via the IAU 2006/2000B NPB matrix), but aberration is
+//! intentionally omitted. For topocentric coordinates the full pipeline
+//! includes the diurnal parallax correction (~8.9 arc-seconds at the horizon).
+//!
+//! ## Technical scope
+//!
+//! Methods on the [`Sun`](crate::bodies::solar_system::Sun) zero-size marker:
+//!
+//! - [`Sun::get_apparent_geocentric_equ`] — geocentric equatorial apparent
+//!   position (`EquatorialTrueOfDate`), nutation applied.
+//! - [`Sun::get_apparent_topocentric_equ`] — topocentric apparent position,
+//!   adding diurnal parallax shift for a given [`Geodetic<ECEF>`] site.
+//! - [`Sun::get_horizontal`] — altitude/azimuth as seen from a site; accepts
+//!   any type convertible to `JulianDate` (e.g. `ModifiedJulianDate`).
+//! - [`Sun::ecliptic_longitude_geocentric`] — raw geocentric ecliptic
+//!   longitude in the J2000 mean ecliptic frame, returned as [`Radians`].
+//!
+//! All methods are generic over the length unit `U` (pass
+//! `AstronomicalUnit`, `Meter`, etc.). The VSOP87 barycentric ephemeris
+//! is evaluated via the [`Transform`](crate::coordinates::transform::Transform)
+//! blanket impl.
+//!
+//! ## References
+//!
+//! - Bretagnon, P., & Francou, G. (1988). Planetary theories in rectangular
+//!   and spherical variables: VSOP87 solution. *A&A* **202**, 309–315.
+//! - Capitaine, N., & Wallace, P. T. (2006). High precision methods for
+//!   locating the celestial intermediate pole and origin. *A&A* **450**, 855.
+//! - IERS Conventions (2010), §5.5: Nutation matrix.
+//! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Ch. 27. Willmann-Bell.
+
 use crate::bodies::solar_system::Sun;
 
 use crate::astro::nutation::nutation_iau2000b;
