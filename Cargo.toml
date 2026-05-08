@@ -5,11 +5,9 @@ members = [
 ]
 
 [patch.crates-io]
-cheby = { path = "../cheby" }
-qtty = { path = "../qtty/qtty" }
-qtty-core = { path = "../qtty/qtty-core" }
-tempoch = { path = "../tempoch/tempoch" }
-tempoch-core = { path = "../tempoch/tempoch-core" }
+cheby = { git = "https://github.com/Siderust/cheby.git", branch = "main" }
+qtty = { git = "https://github.com/Siderust/qtty.git", branch = "main" }
+tempoch = { git = "https://github.com/Siderust/tempoch.git", branch = "main" }
 
 
 [package]
@@ -42,7 +40,7 @@ atmosphere = []
 [dependencies]
 affn = { version = "0.6.2", path = "../affn", features = ["astro"] }
 cheby = "0.1.0"
-qtty = { version = "0.7.0", path = "../qtty/qtty", features = ["radiometry"] }
+qtty = { version = "0.7.0", git = "https://github.com/Siderust/qtty.git", branch = "main", features = ["astro", "radiometry"] }
 tempoch = "0.4.3"
 approx = "0.5"
 chrono = "0.4.44"

@@ -271,6 +271,7 @@ checksum = "613afe47fcd5fac7ccf1db93babcb082c5994d996f20b8b159f2ad1658eb5724"
 [[package]]
 name = "cheby"
 version = "0.1.0"
+source = "git+https://github.com/Siderust/cheby.git?branch=main#ec854a8c5e953121cea7bd90412c1d7f318a34ad"
 dependencies = [
  "qtty",
 ]
@@ -1437,6 +1438,7 @@ dependencies = [
 [[package]]
 name = "qtty"
 version = "0.7.0"
+source = "git+https://github.com/Siderust/qtty.git?branch=main#e0d29bf701cc6b05bf259db240ec6423ae8a7969"
 dependencies = [
  "qtty-core",
  "qtty-derive",
@@ -1445,6 +1447,7 @@ dependencies = [
 [[package]]
 name = "qtty-core"
 version = "0.7.0"
+source = "git+https://github.com/Siderust/qtty.git?branch=main#e0d29bf701cc6b05bf259db240ec6423ae8a7969"
 dependencies = [
  "libm",
  "qtty-derive",
@@ -1455,6 +1458,7 @@ dependencies = [
 [[package]]
 name = "qtty-derive"
 version = "0.7.0"
+source = "git+https://github.com/Siderust/qtty.git?branch=main#e0d29bf701cc6b05bf259db240ec6423ae8a7969"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2100,6 +2104,7 @@ dependencies = [
 [[package]]
 name = "tempoch"
 version = "0.4.3"
+source = "git+https://github.com/Siderust/tempoch.git?branch=main#2ff908c4f0de8098a53cca5788be017ab6cc6021"
 dependencies = [
  "tempoch-core",
 ]
@@ -2107,6 +2112,7 @@ dependencies = [
 [[package]]
 name = "tempoch-core"
 version = "0.4.3"
+source = "git+https://github.com/Siderust/tempoch.git?branch=main#2ff908c4f0de8098a53cca5788be017ab6cc6021"
 dependencies = [
  "affn 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "chrono",
@@ -2131,6 +2137,7 @@ dependencies = [
 [[package]]
 name = "tempoch-time-data"
 version = "0.1.0"
+source = "git+https://github.com/Siderust/tempoch.git?branch=main#2ff908c4f0de8098a53cca5788be017ab6cc6021"
 dependencies = [
  "chrono",
 ]
