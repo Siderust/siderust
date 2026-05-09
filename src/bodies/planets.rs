@@ -182,8 +182,8 @@ impl OrbitExt for KeplerianOrbit {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::JulianDate;
     use crate::qtty::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
+    use crate::time::JulianDate;
 
     #[test]
     fn builder_roundtrip() {

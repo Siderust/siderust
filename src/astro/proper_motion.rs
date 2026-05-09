@@ -22,8 +22,8 @@
 //! RA angular rate `µα`.
 
 use crate::coordinates::spherical::position;
-use crate::time::JulianDate;
 use crate::qtty::*;
+use crate::time::JulianDate;
 use std::fmt;
 
 #[cfg(feature = "serde")]
@@ -376,8 +376,8 @@ mod tests {
     use crate::coordinates::{
         centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position,
     };
-    use crate::time::JulianDate;
     use crate::qtty::{AstronomicalUnit, Degrees};
+    use crate::time::JulianDate;
 
     type DegreesPerYear = crate::qtty::Quantity<crate::qtty::Per<Degree, Year>>;
 

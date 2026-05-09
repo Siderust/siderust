@@ -33,8 +33,8 @@
 //! ---
 
 use crate::astro::orbit::KeplerianOrbit;
-use crate::time::JulianDate;
 use crate::qtty::{AstronomicalUnits, Degrees, Kilometers};
+use crate::time::JulianDate;
 
 /// Indicates whether orbital elements are given **with respect to the Solar‑System barycentre**
 /// or the heliocentre (Sun‑centred).

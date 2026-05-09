@@ -11,8 +11,8 @@
 //! ```
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::qtty::Days;
 use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
+use siderust::qtty::Days;
 use siderust::time::JulianDate;
 use std::hint::black_box;
 

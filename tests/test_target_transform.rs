@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use siderust::qtty::*;
 use siderust::bodies::solar_system::Mars;
 use siderust::coordinates::{
     cartesian,
@@ -10,6 +9,7 @@ use siderust::coordinates::{
     spherical,
     transform::{Transform, TransformFrame},
 };
+use siderust::qtty::*;
 use siderust::targets::CoordinateWithPM;
 use siderust::time::JulianDate;
 

@@ -52,8 +52,8 @@ use crate::bodies::Star;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical::direction;
-use crate::time::{ModifiedJulianDate, Period, MJD};
 use crate::qtty::*;
+use crate::time::{ModifiedJulianDate, Period, MJD};
 
 // Imports for planet altitude support
 use crate::calculus::horizontal;

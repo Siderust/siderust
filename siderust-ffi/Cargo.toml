@@ -20,10 +20,10 @@ runtime-data = ["siderust/runtime-data"]
 
 [dependencies]
 siderust    = { version = "0.6.1", path = ".." }
-qtty        = "0.6.1"
+qtty        = { version = "0.7.0", features = ["astro"] }
 tempoch     = "0.4.2"
 tempoch-ffi = "0.4.2"
-affn        = { version = "0.6.1", features = ["astro"] }
+affn        = { version = "0.6.2", features = ["astro"] }
 
 [build-dependencies]
 cbindgen = "0.29.2"

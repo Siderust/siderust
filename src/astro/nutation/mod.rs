@@ -53,9 +53,9 @@
 //! * SOFA/ERFA routines `eraNut00b`, `eraNut00a`, `eraNut06a`
 
 use crate::astro::precession::mean_obliquity_iau2006;
+use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::Rotation3;
-use crate::qtty::*;
 use std::marker::PhantomData;
 
 mod iau2000a;
@@ -542,9 +542,9 @@ mod tests {
 
 pub(crate) mod iau1980 {
     #[cfg(test)]
-    use crate::time::JulianDate;
-    #[cfg(test)]
     use crate::qtty::*;
+    #[cfg(test)]
+    use crate::time::JulianDate;
 
     #[cfg(test)]
     #[derive(Debug)]

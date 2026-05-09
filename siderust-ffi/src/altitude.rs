@@ -11,10 +11,10 @@ use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
 #[cfg(test)]
-use qtty::*;
-#[cfg(test)]
 use siderust::coordinates::spherical;
-use tempoch::{Interval, ModifiedJulianDate, Period, MJD};
+#[cfg(test)]
+use siderust::qtty::*;
+use siderust::time::{Interval, ModifiedJulianDate, Period, MJD};
 
 pub(crate) fn window_from_c(w: TempochPeriodMjd) -> Result<Period<MJD>, SiderustStatus> {
     if w.start_mjd > w.end_mjd {

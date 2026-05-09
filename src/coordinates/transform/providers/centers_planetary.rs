@@ -90,11 +90,12 @@ where
         let sun_bary = Eph::sun_barycentric(jd);
         // Combine the heliocentric Keplerian position with the Sun's
         // barycentric offset using AU quantity arithmetic, no raw f64 needed.
-        let bary_pos = Position::<Barycentric, EclipticMeanJ2000, crate::qtty::AstronomicalUnit>::new(
-            helio_pos.x() + sun_bary.x(),
-            helio_pos.y() + sun_bary.y(),
-            helio_pos.z() + sun_bary.z(),
-        );
+        let bary_pos =
+            Position::<Barycentric, EclipticMeanJ2000, crate::qtty::AstronomicalUnit>::new(
+                helio_pos.x() + sun_bary.x(),
+                helio_pos.y() + sun_bary.y(),
+                helio_pos.z() + sun_bary.z(),
+            );
 
         rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(bary_pos, jd, ctx)
     }
@@ -125,11 +126,12 @@ where
         let earth_bary = Eph::earth_barycentric(jd);
         // Combine geocentric Moon (now in AU) with Earth's barycentric offset
         // using AU quantity arithmetic, no raw f64 or magic constants needed.
-        let seleno_bary = Position::<Barycentric, EclipticMeanJ2000, crate::qtty::AstronomicalUnit>::new(
-            moon_geo_au.x() + earth_bary.x(),
-            moon_geo_au.y() + earth_bary.y(),
-            moon_geo_au.z() + earth_bary.z(),
-        );
+        let seleno_bary =
+            Position::<Barycentric, EclipticMeanJ2000, crate::qtty::AstronomicalUnit>::new(
+                moon_geo_au.x() + earth_bary.x(),
+                moon_geo_au.y() + earth_bary.y(),
+                moon_geo_au.z() + earth_bary.z(),
+            );
 
         rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(seleno_bary, jd, ctx)
     }
@@ -152,11 +154,12 @@ where
         let moon_geo_au = Eph::moon_geocentric(jd).to_unit::<crate::qtty::AstronomicalUnit>();
         // The Geo→Seleno shift is the negated Moon geocentric position:
         // to move from Earth-centred to Moon-centred, subtract moon's location.
-        let geo_to_seleno = Position::<Geocentric, EclipticMeanJ2000, crate::qtty::AstronomicalUnit>::new(
-            -moon_geo_au.x(),
-            -moon_geo_au.y(),
-            -moon_geo_au.z(),
-        );
+        let geo_to_seleno =
+            Position::<Geocentric, EclipticMeanJ2000, crate::qtty::AstronomicalUnit>::new(
+                -moon_geo_au.x(),
+                -moon_geo_au.y(),
+                -moon_geo_au.z(),
+            );
 
         rotate_shift_from_ecliptic::<_, F, Eph, Eop, Nut>(geo_to_seleno, jd, ctx)
     }

@@ -37,9 +37,9 @@
 use crate::calculus::math_core::{intervals, root_finding};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
+use crate::qtty::*;
 use crate::time::JulianDate;
 use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
-use crate::qtty::*;
 
 use super::star_equations::{StarAltitudeParams, ThresholdResult};
 

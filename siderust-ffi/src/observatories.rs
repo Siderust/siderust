@@ -16,7 +16,7 @@ pub extern "C" fn siderust_observatory_roque_de_los_muchachos(
             return SiderustStatus::NullPointer;
         }
         unsafe {
-            *out = SiderustGeodetict::from_rust(&siderust::observatories::ROQUE_DE_LOS_MUCHACHOS);
+            *out = SiderustGeodetict::from_rust(&siderust::observatories::ROQUE_DE_LOS_MUCHACHOS.geodetic);
         }
         SiderustStatus::Ok
 
@@ -31,7 +31,7 @@ pub extern "C" fn siderust_observatory_el_paranal(out: *mut SiderustGeodetict) -
             return SiderustStatus::NullPointer;
         }
         unsafe {
-            *out = SiderustGeodetict::from_rust(&siderust::observatories::EL_PARANAL);
+            *out = SiderustGeodetict::from_rust(&siderust::observatories::EL_PARANAL.geodetic);
         }
         SiderustStatus::Ok
 

@@ -13,7 +13,7 @@
 use super::*;
 use crate::coordinates::transform::frames::bias;
 
-const GALACTIC_TO_ICRS: Rotation3 = Rotation3::from_matrix([
+const GALACTIC_TO_ICRS: Rotation3 = Rotation3::from_matrix_unchecked([
     [
         -0.054_875_560_416_215_4,
         -0.873_437_090_234_885_1,
@@ -54,7 +54,7 @@ impl FrameRotationProvider<ICRS, Galactic> for () {
 impl_via_icrs_bidirectional!(Galactic, EquatorialMeanJ2000);
 impl_via_icrs_bidirectional!(Galactic, EclipticMeanJ2000);
 
-const FK4_TO_FK5: Rotation3 = Rotation3::from_matrix([
+const FK4_TO_FK5: Rotation3 = Rotation3::from_matrix_unchecked([
     [
         0.999_925_679_495_687_7,
         -0.011_181_483_220_466_2,

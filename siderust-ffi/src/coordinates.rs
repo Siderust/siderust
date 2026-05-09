@@ -10,7 +10,6 @@
 use crate::context::SiderustContext;
 use crate::error::SiderustStatus;
 use crate::types::*;
-use qtty::*;
 use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::coordinates::centers::Barycentric;
 use siderust::coordinates::frames::{
@@ -21,6 +20,7 @@ use siderust::coordinates::transform::{
     DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt,
 };
 use siderust::coordinates::{cartesian, spherical};
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════

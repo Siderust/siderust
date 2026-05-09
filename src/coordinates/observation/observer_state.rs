@@ -31,8 +31,8 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::EquatorialMeanJ2000;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::transform::context::{AstroContext, DefaultEphemeris, TransformContext};
-use crate::time::JulianDate;
 use crate::qtty::{AstronomicalUnit, Day};
+use crate::time::JulianDate;
 
 /// Velocity unit: AU per day
 pub type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
@@ -148,7 +148,8 @@ impl ObserverState {
         // ω = (0,0,OMEGA_EARTH) in ECEF => ω×r = (-ω*y, ω*x, 0)
         let vx_ecef: crate::qtty::Quantity<MetersPerSecond> =
             (-site_itrf_m.y() * OMEGA_EARTH) / one_second;
-        let vy_ecef: crate::qtty::Quantity<MetersPerSecond> = (site_itrf_m.x() * OMEGA_EARTH) / one_second;
+        let vy_ecef: crate::qtty::Quantity<MetersPerSecond> =
+            (site_itrf_m.x() * OMEGA_EARTH) / one_second;
         let vz_ecef: crate::qtty::Quantity<MetersPerSecond> = crate::qtty::Quantity::zero();
 
         let rot = itrs_to_equatorial_mean_j2000_rotation::<Eph, Eop, Nut>(jd, ctx);

@@ -90,8 +90,8 @@ use crate::calculus::conic_equations::{
     elliptic_true_anomaly_and_radius, rotate_to_ecliptic, rotate_to_ecliptic_precomputed,
 };
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
-use crate::time::JulianDate;
 use crate::qtty::*;
+use crate::time::JulianDate;
 use std::f64::consts::PI;
 
 const TOLERANCE: Radians = Radians::new(1e-15);
@@ -300,8 +300,8 @@ impl PreparedOrbit {
 mod tests {
     use super::*;
     use crate::macros::assert_cartesian_eq;
-    use crate::time::JulianDate;
     use crate::qtty::{Days, Degrees};
+    use crate::time::JulianDate;
 
     /// Helper function to compare two floating-point numbers with a tolerance.
     fn approx_eq(a: f64, y: f64, tol: f64) -> bool {

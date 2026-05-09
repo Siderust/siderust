@@ -37,9 +37,9 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris, DefaultNutationModel};
 use crate::coordinates::transform::AstroContext;
+use crate::qtty::*;
 use crate::time::JulianDate;
 use cheby;
-use crate::qtty::*;
 
 // =============================================================================
 // Constants
@@ -414,7 +414,11 @@ where
             {
                 if root >= t_start && root <= t_end {
                     // Direction from sign change: prev < 0 → next > 0 means entering (+1)
-                    let direction = if prev < crate::qtty::Quantity::<V>::new(0.0) { 1 } else { -1 };
+                    let direction = if prev < crate::qtty::Quantity::<V>::new(0.0) {
+                        1
+                    } else {
+                        -1
+                    };
                     labeled.push(LabeledCrossing { t: root, direction });
                 }
             }
@@ -446,8 +450,8 @@ mod tests {
     use super::*;
     use crate::calculus::lunar::moon_altitude_rad;
     use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
-    use crate::time::JulianDate;
     use crate::qtty::Radians;
+    use crate::time::JulianDate;
 
     #[test]
     fn chebyshev_position_accuracy() {

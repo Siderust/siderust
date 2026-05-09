@@ -24,15 +24,15 @@
 pub mod airmass;
 pub mod extinction;
 pub mod mie;
-pub mod profile;
-pub mod rayleigh;
 #[cfg(feature = "spectra")]
 pub mod ozone;
+pub mod profile;
+pub mod rayleigh;
 
 pub use airmass::{airmass, AirmassFormula};
 pub use extinction::transmission;
 pub use mie::{mie_optical_depth, MieParams};
-pub use profile::AtmosphereProfile;
-pub use rayleigh::{rayleigh_optical_depth_bodhaine99, rayleigh_phase};
 #[cfg(feature = "spectra")]
 pub use ozone::{transmission_table, Transmittance};
+pub use profile::AtmosphereProfile;
+pub use rayleigh::{rayleigh_optical_depth_bodhaine99, rayleigh_phase};

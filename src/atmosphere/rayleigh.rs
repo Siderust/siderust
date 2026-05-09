@@ -40,8 +40,7 @@ pub fn rayleigh_optical_depth_bodhaine99(
     let l2 = lam_um * lam_um;
     let inv_l2 = 1.0 / l2;
     // Bodhaine et al. 1999 simplified form (matches NSB GetRayleighOptDepth).
-    let tau_sea = 0.0021520
-        * (1.0455996 - 341.29061 * inv_l2 - 0.90230850 * l2)
+    let tau_sea = 0.0021520 * (1.0455996 - 341.29061 * inv_l2 - 0.90230850 * l2)
         / (1.0 + 0.0027059889 * inv_l2 - 85.968563 * l2);
     let height_factor = (-h_km / scale_height_km).exp();
     p_atm * tau_sea * height_factor

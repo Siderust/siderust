@@ -5,7 +5,6 @@
 //!
 //! Run with: `cargo run --example 12_solar_system_example`
 
-use siderust::qtty::*;
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::planets::{OrbitExt, Planet};
 use siderust::bodies::solar_system::*;
@@ -13,6 +12,7 @@ use siderust::calculus::vsop87::VSOP87;
 use siderust::coordinates::cartesian::position::EclipticMeanJ2000;
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::transform::TransformCenter;
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 fn main() {

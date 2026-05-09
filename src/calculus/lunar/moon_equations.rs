@@ -12,8 +12,8 @@ use crate::calculus::lunar::phase::{
 use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{cartesian, centers::*, frames, spherical};
-use crate::time::{JulianDate, Period, MJD};
 use crate::qtty::{AstronomicalUnits, Kilometer, LengthUnit, Meter, Quantity};
+use crate::time::{JulianDate, Period, MJD};
 
 impl Moon {
     /// Returns the **apparent topocentric equatorial coordinates** of the Moon
@@ -67,7 +67,7 @@ impl Moon {
         // 6) Convert from Kilometer to target unit U
         let dist_u: Quantity<U> = topo_sph_km.distance.into();
 
-        affn::spherical::Position::<Topocentric, frames::EquatorialTrueOfDate, U>::new_raw_with_params(
+        affn::spherical::Position::<Topocentric, frames::EquatorialTrueOfDate, U>::new_unchecked_with_params(
             *topo_sph_km.center_params(),
             topo_sph_km.polar,
             topo_sph_km.azimuth,
@@ -243,8 +243,8 @@ mod tests {
     use super::*;
     use crate::coordinates::centers::Geodetic;
     use crate::coordinates::frames::ECEF;
-    use crate::time::{JulianDate, ModifiedJulianDate};
     use crate::qtty::*;
+    use crate::time::{JulianDate, ModifiedJulianDate};
 
     fn greenwich() -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M)

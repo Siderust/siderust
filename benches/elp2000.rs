@@ -10,8 +10,8 @@
 //! - get_geo_position_offset: ~1.66 ms
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::qtty::{Days, Kilometer};
 use siderust::bodies::solar_system::Moon;
+use siderust::qtty::{Days, Kilometer};
 use siderust::time::JulianDate;
 use std::hint::black_box;
 

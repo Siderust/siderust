@@ -6,8 +6,8 @@
 //! Core types for azimuth computation, bearing crossings, and azimuth extrema.
 
 use crate::calculus::altitude::CrossingDirection;
-use crate::time::{ModifiedJulianDate, Period, MJD};
 use crate::qtty::*;
+use crate::time::{ModifiedJulianDate, Period, MJD};
 
 // Re-export CrossingDirection so consumers only need to import from this module.
 pub use crate::calculus::altitude::CrossingDirection as AzimuthCrossingDirection;

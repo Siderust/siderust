@@ -371,8 +371,8 @@ impl Default for BodycentricParams {
     /// Note: This default is primarily for internal use. In practice, you should
     /// always provide meaningful orbital elements for body-centric calculations.
     fn default() -> Self {
-        use crate::time::JulianDate;
         use crate::qtty::AstronomicalUnits;
+        use crate::time::JulianDate;
 
         Self {
             orbit: KeplerianOrbit::new(

@@ -7,12 +7,12 @@ use crate::altitude::{periods_to_c, window_from_c};
 use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c};
 use crate::types::*;
-use qtty::*;
 use siderust::calculus::ephemeris::Vsop87Ephemeris;
 use siderust::calculus::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseLabel, PhaseKind, PhaseSearchOpts,
 };
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════

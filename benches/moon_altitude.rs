@@ -20,10 +20,10 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::qtty::*;
 use siderust::bodies::Moon;
 use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
+use siderust::qtty::*;
 use siderust::time::{ModifiedJulianDate, Period, MJD};
 use std::hint::black_box;
 use std::time::Duration;

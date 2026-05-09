@@ -3,8 +3,8 @@
 
 //! Orientation model primitives for rotating-body reference frames.
 
-use crate::time::JulianDate;
 use crate::qtty::Degrees;
+use crate::time::JulianDate;
 
 /// IAU pole and prime meridian rotation parameters for a body.
 ///

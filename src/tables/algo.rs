@@ -19,7 +19,10 @@ use super::{AxisDirection, OutOfRange, TableError};
 #[inline]
 pub fn validate_axis(name: &'static str, xs: &[f64]) -> Result<AxisDirection, TableError> {
     if xs.len() < 2 {
-        return Err(TableError::TooFewSamples { axis: name, len: xs.len() });
+        return Err(TableError::TooFewSamples {
+            axis: name,
+            len: xs.len(),
+        });
     }
     // Determine direction from the first step, then verify consistency.
     let dir = if xs[1] > xs[0] {
@@ -27,7 +30,10 @@ pub fn validate_axis(name: &'static str, xs: &[f64]) -> Result<AxisDirection, Ta
     } else if xs[1] < xs[0] {
         AxisDirection::Descending
     } else {
-        return Err(TableError::NotMonotonic { axis: name, at_index: 1 });
+        return Err(TableError::NotMonotonic {
+            axis: name,
+            at_index: 1,
+        });
     };
     for i in 2..xs.len() {
         let ok = match dir {
@@ -35,7 +41,10 @@ pub fn validate_axis(name: &'static str, xs: &[f64]) -> Result<AxisDirection, Ta
             AxisDirection::Descending => xs[i] < xs[i - 1],
         };
         if !ok {
-            return Err(TableError::NotMonotonic { axis: name, at_index: i });
+            return Err(TableError::NotMonotonic {
+                axis: name,
+                at_index: i,
+            });
         }
     }
     Ok(dir)
@@ -67,17 +76,23 @@ fn apply_oor(
         match oor {
             OutOfRange::ClampToEndpoints => Ok((lo, false)),
             OutOfRange::Zero => Ok((lo, true)),
-            OutOfRange::Error => {
-                Err(TableError::OutOfRange { axis, value: x, lo, hi })
-            }
+            OutOfRange::Error => Err(TableError::OutOfRange {
+                axis,
+                value: x,
+                lo,
+                hi,
+            }),
         }
     } else if x > hi {
         match oor {
             OutOfRange::ClampToEndpoints => Ok((hi, false)),
             OutOfRange::Zero => Ok((hi, true)),
-            OutOfRange::Error => {
-                Err(TableError::OutOfRange { axis, value: x, lo, hi })
-            }
+            OutOfRange::Error => Err(TableError::OutOfRange {
+                axis,
+                value: x,
+                lo,
+                hi,
+            }),
         }
     } else {
         Ok((x, false))
@@ -149,14 +164,24 @@ pub fn linear_1d(
         return match oor {
             OutOfRange::ClampToEndpoints => Ok(lo_y),
             OutOfRange::Zero => Ok(0.0),
-            OutOfRange::Error => Err(TableError::OutOfRange { axis: "x", value: x, lo, hi }),
+            OutOfRange::Error => Err(TableError::OutOfRange {
+                axis: "x",
+                value: x,
+                lo,
+                hi,
+            }),
         };
     }
     if x > hi {
         return match oor {
             OutOfRange::ClampToEndpoints => Ok(hi_y),
             OutOfRange::Zero => Ok(0.0),
-            OutOfRange::Error => Err(TableError::OutOfRange { axis: "x", value: x, lo, hi }),
+            OutOfRange::Error => Err(TableError::OutOfRange {
+                axis: "x",
+                value: x,
+                lo,
+                hi,
+            }),
         };
     }
     let (i0, t) = locate(xs, x, dir);
@@ -307,7 +332,9 @@ pub fn trilinear(
     let f011 = table[idx(iz1, iy1, ix0)];
     let f111 = table[idx(iz1, iy1, ix1)];
 
-    Ok(trilinear_unit(f000, f100, f010, f110, f001, f101, f011, f111, tx, ty, tz))
+    Ok(trilinear_unit(
+        f000, f100, f010, f110, f001, f101, f011, f111, tx, ty, tz,
+    ))
 }
 
 /// Trilinear interpolation kernel from eight already-located corner values
@@ -393,18 +420,36 @@ mod tests {
         let xs = [0.0, 1.0, 2.0];
         let ys = [10.0, 20.0, 30.0];
         assert_eq!(
-            linear_1d(&xs, &ys, -1.0, OutOfRange::ClampToEndpoints, AxisDirection::Ascending)
-                .unwrap(),
+            linear_1d(
+                &xs,
+                &ys,
+                -1.0,
+                OutOfRange::ClampToEndpoints,
+                AxisDirection::Ascending
+            )
+            .unwrap(),
             10.0
         );
         assert_eq!(
-            linear_1d(&xs, &ys, 3.0, OutOfRange::ClampToEndpoints, AxisDirection::Ascending)
-                .unwrap(),
+            linear_1d(
+                &xs,
+                &ys,
+                3.0,
+                OutOfRange::ClampToEndpoints,
+                AxisDirection::Ascending
+            )
+            .unwrap(),
             30.0
         );
         assert_eq!(
-            linear_1d(&xs, &ys, 0.5, OutOfRange::ClampToEndpoints, AxisDirection::Ascending)
-                .unwrap(),
+            linear_1d(
+                &xs,
+                &ys,
+                0.5,
+                OutOfRange::ClampToEndpoints,
+                AxisDirection::Ascending
+            )
+            .unwrap(),
             15.0
         );
     }
@@ -437,15 +482,27 @@ mod tests {
         let ys_desc = [30.0, 20.0, 10.0];
 
         // Query x=2.5: between xs_desc[0]=3 and xs_desc[1]=2.
-        let v = linear_1d(&xs_desc, &ys_desc, 2.5, OutOfRange::ClampToEndpoints,
-                          AxisDirection::Descending).unwrap();
+        let v = linear_1d(
+            &xs_desc,
+            &ys_desc,
+            2.5,
+            OutOfRange::ClampToEndpoints,
+            AxisDirection::Descending,
+        )
+        .unwrap();
         assert_eq!(v, 25.0);
 
         // Same query on the ascending flip must give bit-identical results.
         let xs_asc = [1.0, 2.0, 3.0];
         let ys_asc = [10.0, 20.0, 30.0];
-        let v_asc = linear_1d(&xs_asc, &ys_asc, 2.5, OutOfRange::ClampToEndpoints,
-                              AxisDirection::Ascending).unwrap();
+        let v_asc = linear_1d(
+            &xs_asc,
+            &ys_asc,
+            2.5,
+            OutOfRange::ClampToEndpoints,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
         assert_eq!(v.to_bits(), v_asc.to_bits(), "bit-for-bit parity required");
     }
 
@@ -455,8 +512,14 @@ mod tests {
         let xs = [3.0, 2.0, 1.0];
         let ys = [30.0, 20.0, 10.0];
         assert_eq!(
-            linear_1d(&xs, &ys, 0.0, OutOfRange::ClampToEndpoints, AxisDirection::Descending)
-                .unwrap(),
+            linear_1d(
+                &xs,
+                &ys,
+                0.0,
+                OutOfRange::ClampToEndpoints,
+                AxisDirection::Descending
+            )
+            .unwrap(),
             10.0
         );
     }
@@ -467,8 +530,14 @@ mod tests {
         let xs = [3.0, 2.0, 1.0];
         let ys = [30.0, 20.0, 10.0];
         assert_eq!(
-            linear_1d(&xs, &ys, 4.0, OutOfRange::ClampToEndpoints, AxisDirection::Descending)
-                .unwrap(),
+            linear_1d(
+                &xs,
+                &ys,
+                4.0,
+                OutOfRange::ClampToEndpoints,
+                AxisDirection::Descending
+            )
+            .unwrap(),
             30.0
         );
     }
@@ -481,13 +550,33 @@ mod tests {
         let r1: &[f64] = &[10.0, 20.0, 30.0];
         let table: &[&[f64]] = &[r0, r1];
         assert_eq!(
-            bilinear(&xs, &ys, table, 0.0, 10.0, OutOfRange::Error, OutOfRange::Error,
-                     AxisDirection::Ascending, AxisDirection::Ascending).unwrap(),
+            bilinear(
+                &xs,
+                &ys,
+                table,
+                0.0,
+                10.0,
+                OutOfRange::Error,
+                OutOfRange::Error,
+                AxisDirection::Ascending,
+                AxisDirection::Ascending
+            )
+            .unwrap(),
             1.0
         );
         assert_eq!(
-            bilinear(&xs, &ys, table, 2.0, 20.0, OutOfRange::Error, OutOfRange::Error,
-                     AxisDirection::Ascending, AxisDirection::Ascending).unwrap(),
+            bilinear(
+                &xs,
+                &ys,
+                table,
+                2.0,
+                20.0,
+                OutOfRange::Error,
+                OutOfRange::Error,
+                AxisDirection::Ascending,
+                AxisDirection::Ascending
+            )
+            .unwrap(),
             30.0
         );
     }
@@ -499,8 +588,18 @@ mod tests {
         let r0: &[f64] = &[1.0, 3.0];
         let r1: &[f64] = &[5.0, 7.0];
         let table: &[&[f64]] = &[r0, r1];
-        let v = bilinear(&xs, &ys, table, 1.0, 1.0, OutOfRange::Error, OutOfRange::Error,
-                         AxisDirection::Ascending, AxisDirection::Ascending).unwrap();
+        let v = bilinear(
+            &xs,
+            &ys,
+            table,
+            1.0,
+            1.0,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
         assert_eq!(v, (1.0 + 3.0 + 5.0 + 7.0) / 4.0);
     }
 
@@ -512,10 +611,17 @@ mod tests {
         let r1: &[f64] = &[3.0, 4.0];
         let table: &[&[f64]] = &[r0, r1];
         let v = bilinear(
-            &xs, &ys, table, -1.0, -1.0,
-            OutOfRange::ClampToEndpoints, OutOfRange::ClampToEndpoints,
-            AxisDirection::Ascending, AxisDirection::Ascending,
-        ).unwrap();
+            &xs,
+            &ys,
+            table,
+            -1.0,
+            -1.0,
+            OutOfRange::ClampToEndpoints,
+            OutOfRange::ClampToEndpoints,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
         assert_eq!(v, 1.0);
     }
 
@@ -527,10 +633,17 @@ mod tests {
         let r1: &[f64] = &[3.0, 4.0];
         let table: &[&[f64]] = &[r0, r1];
         let v = bilinear(
-            &xs, &ys, table, -1.0, 0.5,
-            OutOfRange::Zero, OutOfRange::ClampToEndpoints,
-            AxisDirection::Ascending, AxisDirection::Ascending,
-        ).unwrap();
+            &xs,
+            &ys,
+            table,
+            -1.0,
+            0.5,
+            OutOfRange::Zero,
+            OutOfRange::ClampToEndpoints,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
         assert_eq!(v, 0.0);
     }
 
@@ -563,38 +676,45 @@ mod tests {
         let iy0 = 1usize;
         let bt = (xq - xs[ix0]) / (xs[ix0 + 1] - xs[ix0]);
         let lt = (yq - ys[iy0]) / (ys[iy0 + 1] - ys[iy0]);
-        let expected = bilinear_unit(
-            r1[ix0], r1[ix0 + 1],
-            r2[ix0], r2[ix0 + 1],
-            bt, lt,
-        );
+        let expected = bilinear_unit(r1[ix0], r1[ix0 + 1], r2[ix0], r2[ix0 + 1], bt, lt);
 
         let got = bilinear(
-            &xs, &ys, table, xq, yq,
-            OutOfRange::Error, OutOfRange::Error,
-            AxisDirection::Ascending, AxisDirection::Descending,
-        ).unwrap();
+            &xs,
+            &ys,
+            table,
+            xq,
+            yq,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            AxisDirection::Ascending,
+            AxisDirection::Descending,
+        )
+        .unwrap();
 
-        assert_eq!(got.to_bits(), expected.to_bits(),
-                   "bilinear(descending y) must be bit-for-bit equal to bilinear_unit: \
-                    got={got}, expected={expected}");
+        assert_eq!(
+            got.to_bits(),
+            expected.to_bits(),
+            "bilinear(descending y) must be bit-for-bit equal to bilinear_unit: \
+                    got={got}, expected={expected}"
+        );
     }
 
     #[test]
     fn trilinear_unit_midpoint() {
         // f(x,y,z) = 100x + 10y + z on the unit cube [0,1]^3
         // corners at (x,y,z) in {0,1}^3:
-        let f000 = 0.0_f64;   // (0,0,0)
-        let f100 = 100.0;     // (1,0,0)
-        let f010 = 10.0;      // (0,1,0)
-        let f110 = 110.0;     // (1,1,0)
-        let f001 = 1.0;       // (0,0,1)
-        let f101 = 101.0;     // (1,0,1)
-        let f011 = 11.0;      // (0,1,1)
-        let f111 = 111.0;     // (1,1,1)
-        // At midpoint (0.5, 0.5, 0.5): expected = 100*0.5 + 10*0.5 + 0.5 = 55.5
-        let v = trilinear_unit(f000, f100, f010, f110, f001, f101, f011, f111,
-                               0.5, 0.5, 0.5);
+        let f000 = 0.0_f64; // (0,0,0)
+        let f100 = 100.0; // (1,0,0)
+        let f010 = 10.0; // (0,1,0)
+        let f110 = 110.0; // (1,1,0)
+        let f001 = 1.0; // (0,0,1)
+        let f101 = 101.0; // (1,0,1)
+        let f011 = 11.0; // (0,1,1)
+        let f111 = 111.0; // (1,1,1)
+                          // At midpoint (0.5, 0.5, 0.5): expected = 100*0.5 + 10*0.5 + 0.5 = 55.5
+        let v = trilinear_unit(
+            f000, f100, f010, f110, f001, f101, f011, f111, 0.5, 0.5, 0.5,
+        );
         assert!((v - 55.5).abs() < 1e-12, "got {v}");
     }
 
@@ -613,14 +733,35 @@ mod tests {
                 (100 * ix + 10 * iy + iz) as f64
             })
             .collect();
-        for (xv, yv, zv) in [(0.0, 0.0, 0.0), (1.0, 0.0, 0.0), (0.0, 1.0, 1.0), (1.0, 1.0, 1.0)] {
+        for (xv, yv, zv) in [
+            (0.0, 0.0, 0.0),
+            (1.0, 0.0, 0.0),
+            (0.0, 1.0, 1.0),
+            (1.0, 1.0, 1.0),
+        ] {
             let expected = 100.0 * xv + 10.0 * yv + zv;
-            let got = trilinear(&xs, &ys, &zs, &table, 2, 2,
-                                xv, yv, zv,
-                                OutOfRange::Error, OutOfRange::Error, OutOfRange::Error,
-                                AxisDirection::Ascending, AxisDirection::Ascending, AxisDirection::Ascending)
-                .unwrap();
-            assert!((got - expected).abs() < 1e-12, "at ({xv},{yv},{zv}): got {got}, expected {expected}");
+            let got = trilinear(
+                &xs,
+                &ys,
+                &zs,
+                &table,
+                2,
+                2,
+                xv,
+                yv,
+                zv,
+                OutOfRange::Error,
+                OutOfRange::Error,
+                OutOfRange::Error,
+                AxisDirection::Ascending,
+                AxisDirection::Ascending,
+                AxisDirection::Ascending,
+            )
+            .unwrap();
+            assert!(
+                (got - expected).abs() < 1e-12,
+                "at ({xv},{yv},{zv}): got {got}, expected {expected}"
+            );
         }
     }
 
@@ -639,11 +780,24 @@ mod tests {
                 }
             }
         }
-        let v = trilinear(&xs, &ys, &zs, &table, 3, 3,
-                          0.5, 0.5, 0.5,
-                          OutOfRange::Error, OutOfRange::Error, OutOfRange::Error,
-                          AxisDirection::Ascending, AxisDirection::Ascending, AxisDirection::Ascending)
-            .unwrap();
+        let v = trilinear(
+            &xs,
+            &ys,
+            &zs,
+            &table,
+            3,
+            3,
+            0.5,
+            0.5,
+            0.5,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
         assert!((v - 55.5).abs() < 1e-12, "got {v}");
     }
 
@@ -661,31 +815,83 @@ mod tests {
             })
             .collect();
         // Clamp x below → same as x=0
-        let v = trilinear(&xs, &ys, &zs, &table, 2, 2,
-                          -1.0, 0.5, 0.5,
-                          OutOfRange::ClampToEndpoints, OutOfRange::ClampToEndpoints, OutOfRange::ClampToEndpoints,
-                          AxisDirection::Ascending, AxisDirection::Ascending, AxisDirection::Ascending)
-            .unwrap();
-        let expected = trilinear(&xs, &ys, &zs, &table, 2, 2,
-                                 0.0, 0.5, 0.5,
-                                 OutOfRange::Error, OutOfRange::Error, OutOfRange::Error,
-                                 AxisDirection::Ascending, AxisDirection::Ascending, AxisDirection::Ascending)
-            .unwrap();
+        let v = trilinear(
+            &xs,
+            &ys,
+            &zs,
+            &table,
+            2,
+            2,
+            -1.0,
+            0.5,
+            0.5,
+            OutOfRange::ClampToEndpoints,
+            OutOfRange::ClampToEndpoints,
+            OutOfRange::ClampToEndpoints,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
+        let expected = trilinear(
+            &xs,
+            &ys,
+            &zs,
+            &table,
+            2,
+            2,
+            0.0,
+            0.5,
+            0.5,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
         assert_eq!(v.to_bits(), expected.to_bits());
 
         // Zero policy for z-axis OOR
-        let v = trilinear(&xs, &ys, &zs, &table, 2, 2,
-                          0.5, 0.5, 5.0,
-                          OutOfRange::ClampToEndpoints, OutOfRange::ClampToEndpoints, OutOfRange::Zero,
-                          AxisDirection::Ascending, AxisDirection::Ascending, AxisDirection::Ascending)
-            .unwrap();
+        let v = trilinear(
+            &xs,
+            &ys,
+            &zs,
+            &table,
+            2,
+            2,
+            0.5,
+            0.5,
+            5.0,
+            OutOfRange::ClampToEndpoints,
+            OutOfRange::ClampToEndpoints,
+            OutOfRange::Zero,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
         assert_eq!(v, 0.0);
 
         // Error policy
-        let r = trilinear(&xs, &ys, &zs, &table, 2, 2,
-                          0.5, 5.0, 0.5,
-                          OutOfRange::Error, OutOfRange::Error, OutOfRange::Error,
-                          AxisDirection::Ascending, AxisDirection::Ascending, AxisDirection::Ascending);
+        let r = trilinear(
+            &xs,
+            &ys,
+            &zs,
+            &table,
+            2,
+            2,
+            0.5,
+            5.0,
+            0.5,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        );
         assert!(matches!(r, Err(TableError::OutOfRange { axis: "y", .. })));
     }
 
@@ -704,21 +910,43 @@ mod tests {
             })
             .collect();
         let (xq, yq, zq) = (0.3, 0.6, 0.8);
-        let via_trilinear = trilinear(&xs, &ys, &zs, &table, 2, 2,
-                                     xq, yq, zq,
-                                     OutOfRange::Error, OutOfRange::Error, OutOfRange::Error,
-                                     AxisDirection::Ascending, AxisDirection::Ascending, AxisDirection::Ascending)
-            .unwrap();
+        let via_trilinear = trilinear(
+            &xs,
+            &ys,
+            &zs,
+            &table,
+            2,
+            2,
+            xq,
+            yq,
+            zq,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
         let idx = |iz: usize, iy: usize, ix: usize| (iz * 2 + iy) * 2 + ix;
         let via_unit = trilinear_unit(
-            table[idx(0,0,0)], table[idx(0,0,1)],
-            table[idx(0,1,0)], table[idx(0,1,1)],
-            table[idx(1,0,0)], table[idx(1,0,1)],
-            table[idx(1,1,0)], table[idx(1,1,1)],
-            xq, yq, zq,
+            table[idx(0, 0, 0)],
+            table[idx(0, 0, 1)],
+            table[idx(0, 1, 0)],
+            table[idx(0, 1, 1)],
+            table[idx(1, 0, 0)],
+            table[idx(1, 0, 1)],
+            table[idx(1, 1, 0)],
+            table[idx(1, 1, 1)],
+            xq,
+            yq,
+            zq,
         );
-        assert_eq!(via_trilinear.to_bits(), via_unit.to_bits(),
-                   "trilinear_unit must match trilinear bit-for-bit");
+        assert_eq!(
+            via_trilinear.to_bits(),
+            via_unit.to_bits(),
+            "trilinear_unit must match trilinear bit-for-bit"
+        );
     }
 
     /// Bit-for-bit parity check against NSB's hand-rolled bilinear in
@@ -749,8 +977,22 @@ mod tests {
         let bx1 = t[iy0 + 1][ix0] + tx * (t[iy0 + 1][ix0 + 1] - t[iy0 + 1][ix0]);
         let expected = bx0 + ty * (bx1 - bx0);
 
-        let got = bilinear(&xs, &ys, t, xq, yq, OutOfRange::Error, OutOfRange::Error,
-                           AxisDirection::Ascending, AxisDirection::Ascending).unwrap();
-        assert_eq!(got.to_bits(), expected.to_bits(), "bit-for-bit parity required");
+        let got = bilinear(
+            &xs,
+            &ys,
+            t,
+            xq,
+            yq,
+            OutOfRange::Error,
+            OutOfRange::Error,
+            AxisDirection::Ascending,
+            AxisDirection::Ascending,
+        )
+        .unwrap();
+        assert_eq!(
+            got.to_bits(),
+            expected.to_bits(),
+            "bit-for-bit parity required"
+        );
     }
 }

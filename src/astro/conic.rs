@@ -8,13 +8,13 @@
 //! the astronomy-specific state that layers epoch and anomaly semantics on top
 //! of that geometry for siderust propagation code.
 
+use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::conic::{
     ClassifiedSemiMajorAxisParam, ConicOrientation, ConicValidationError, Elliptic, OrientedConic,
     PeriapsisParam, SemiMajorAxisParam, TypedSemiMajorAxisParam,
 };
 use affn::frames::EclipticMeanJ2000;
-use crate::qtty::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
@@ -22,7 +22,7 @@ use serde::{Deserialize, Serialize};
 pub use affn::conic::ConicKind;
 
 /// Validation and propagation errors for conic-based orbit models.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ConicError {
     /// Eccentricity must be finite and non-negative.
@@ -35,6 +35,13 @@ pub enum ConicError {
     ParabolicSemiMajorAxis,
     /// Orientation angles must be finite.
     InvalidOrientation,
+    /// An orientation angle was outside its canonical range.
+    OutOfRange {
+        /// Name of the angle field that was out of range.
+        field: &'static str,
+        /// The rejected value, in degrees.
+        value: f64,
+    },
     /// Parabolic orbits are intentionally not supported yet.
     ParabolicUnsupported,
     /// Hyperbolic eccentricity (`e ≥ 1`) is not valid for this orbit type.
@@ -66,6 +73,12 @@ impl std::fmt::Display for ConicError {
                 )
             }
             Self::InvalidOrientation => write!(f, "orientation angles must be finite"),
+            Self::OutOfRange { field, value } => {
+                write!(
+                    f,
+                    "orientation angle `{field}` is out of canonical range: {value}°"
+                )
+            }
             Self::ParabolicUnsupported => write!(f, "parabolic orbits are not supported"),
             Self::HyperbolicNotSupported => {
                 write!(
@@ -93,6 +106,9 @@ pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
         ConicValidationError::InvalidPeriapsisDistance => ConicError::InvalidPeriapsisDistance,
         ConicValidationError::ParabolicSemiMajorAxis => ConicError::ParabolicSemiMajorAxis,
         ConicValidationError::InvalidOrientation => ConicError::InvalidOrientation,
+        ConicValidationError::OutOfRange { field, value } => {
+            ConicError::OutOfRange { field, value }
+        }
     }
 }
 

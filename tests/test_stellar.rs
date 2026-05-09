@@ -8,11 +8,11 @@
 //! Scan-vs-analytical consistency is tested inside the `calculus::stellar`
 //! module's own `#[cfg(test)]` block.
 
-use siderust::qtty::*;
 use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
+use siderust::qtty::*;
 use siderust::time::{ModifiedJulianDate, Period, MJD};
 
 // ---------------------------------------------------------------------------
@@ -221,7 +221,10 @@ fn trait_api_range_within_above() {
     });
 
     // Range [10°, 30°] periods should be subsets of above(10°) periods
-    let total_range: f64 = range_10_30.iter().map(|p| ((p).end - (p).start).value()).sum();
+    let total_range: f64 = range_10_30
+        .iter()
+        .map(|p| ((p).end - (p).start).value())
+        .sum();
     let total_above: f64 = above_10.iter().map(|p| ((p).end - (p).start).value()).sum();
     assert!(
         total_range <= total_above + 0.01,

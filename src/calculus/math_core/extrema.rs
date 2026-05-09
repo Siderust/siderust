@@ -18,8 +18,8 @@
 //! | [`find_extrema`] | Scan a period, find all local min/max |
 //! | [`classify`] | Determine if a point is a local max, min, or neither |
 
-use crate::time::{ModifiedJulianDate, Period, MJD};
 use crate::qtty::*;
+use crate::time::{ModifiedJulianDate, Period, MJD};
 
 use super::root_finding;
 

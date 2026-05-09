@@ -3,13 +3,11 @@
 
 //! Vertically-integrated atmosphere profile: Rayleigh + Mie optical depth.
 
-use crate::ext_qtty::length::{Kilometers, Nanometers};
-use crate::ext_qtty::pressure::Hectopascals;
 use crate::atmosphere::extinction::transmission as ext_transmission;
 use crate::atmosphere::mie::{mie_optical_depth, MieParams};
-use crate::atmosphere::rayleigh::{
-    rayleigh_optical_depth_bodhaine99, DEFAULT_SCALE_HEIGHT_KM,
-};
+use crate::atmosphere::rayleigh::{rayleigh_optical_depth_bodhaine99, DEFAULT_SCALE_HEIGHT_KM};
+use crate::ext_qtty::length::{Kilometers, Nanometers};
+use crate::ext_qtty::pressure::Hectopascals;
 
 /// Vertically-integrated atmosphere model used to compute the total
 /// dry/aerosol optical depth at a given wavelength for a fixed observer
@@ -148,8 +146,11 @@ mod tests {
         );
         let tau_m = mie_optical_depth(&MieParams::PARANAL, Nanometers::new(550.0));
 
-        assert_eq!(profile_tau, tau_r + tau_m,
-            "AtmosphereProfile must be bit-identical to the manual chain");
+        assert_eq!(
+            profile_tau,
+            tau_r + tau_m,
+            "AtmosphereProfile must be bit-identical to the manual chain"
+        );
     }
 
     /// Custom profile: verify optical_depth equals the sum of Rayleigh + Mie
@@ -172,16 +173,14 @@ mod tests {
         let lambda = Nanometers::new(450.0);
         let tau = profile.optical_depth(lambda);
 
-        let tau_r = rayleigh_optical_depth_bodhaine99(
-            lambda,
-            900.0,
-            Kilometers::new(0.5),
-            8.0,
-        );
+        let tau_r = rayleigh_optical_depth_bodhaine99(lambda, 900.0, Kilometers::new(0.5), 8.0);
         let tau_m = mie_optical_depth(&custom_mie, lambda);
 
-        assert_eq!(tau, tau_r + tau_m,
-            "optical_depth must equal tau_r + tau_m for custom profile");
+        assert_eq!(
+            tau,
+            tau_r + tau_m,
+            "optical_depth must equal tau_r + tau_m for custom profile"
+        );
     }
 
     #[test]
@@ -200,15 +199,30 @@ mod tests {
         let ls = AtmosphereProfile::LA_SILLA;
 
         // τ₀ differs for all three sites.
-        assert_ne!(lp.mie_params.tau0, p.mie_params.tau0, "La Palma τ₀ must differ");
-        assert_ne!(mk.mie_params.tau0, p.mie_params.tau0, "Mauna Kea τ₀ must differ");
-        assert_ne!(ls.mie_params.tau0, p.mie_params.tau0, "La Silla τ₀ must differ");
+        assert_ne!(
+            lp.mie_params.tau0, p.mie_params.tau0,
+            "La Palma τ₀ must differ"
+        );
+        assert_ne!(
+            mk.mie_params.tau0, p.mie_params.tau0,
+            "Mauna Kea τ₀ must differ"
+        );
+        assert_ne!(
+            ls.mie_params.tau0, p.mie_params.tau0,
+            "La Silla τ₀ must differ"
+        );
 
         // Mauna Kea also has different pressure and altitude.
-        assert_ne!(mk.surface_pressure.value(), p.surface_pressure.value(),
-            "Mauna Kea pressure must differ from Paranal");
-        assert_ne!(mk.observer_altitude.value(), p.observer_altitude.value(),
-            "Mauna Kea altitude must differ from Paranal");
+        assert_ne!(
+            mk.surface_pressure.value(),
+            p.surface_pressure.value(),
+            "Mauna Kea pressure must differ from Paranal"
+        );
+        assert_ne!(
+            mk.observer_altitude.value(),
+            p.observer_altitude.value(),
+            "Mauna Kea altitude must differ from Paranal"
+        );
     }
 
     /// Optical depth at 550 nm / airmass 2 (altitude ≈ 30°) must be
@@ -224,20 +238,32 @@ mod tests {
         let t_pn = AtmosphereProfile::PARANAL.transmission(lambda, airmass);
 
         // All transmissions must be in (0, 1).
-        for (name, t) in [("La Palma", t_lp), ("Mauna Kea", t_mk),
-                          ("La Silla", t_ls), ("Paranal", t_pn)] {
-            assert!(t > 0.0 && t < 1.0 && t.is_finite(),
-                "{name} transmission {t:.4} must be in (0,1)");
+        for (name, t) in [
+            ("La Palma", t_lp),
+            ("Mauna Kea", t_mk),
+            ("La Silla", t_ls),
+            ("Paranal", t_pn),
+        ] {
+            assert!(
+                t > 0.0 && t < 1.0 && t.is_finite(),
+                "{name} transmission {t:.4} must be in (0,1)"
+            );
         }
 
         // Mauna Kea has lower pressure so its Rayleigh OD is substantially
         // reduced; it should therefore have higher overall transmission than
         // La Silla and Paranal despite being at a different absolute scale.
-        assert!(t_mk > t_pn,
-            "Mauna Kea should transmit more than Paranal (lower pressure + cleaner aerosol)");
-        assert!(t_ls > t_pn,
-            "La Silla should transmit more than Paranal (cleaner aerosol)");
-        assert!(t_lp > t_pn,
-            "La Palma should transmit more than Paranal (cleaner aerosol)");
+        assert!(
+            t_mk > t_pn,
+            "Mauna Kea should transmit more than Paranal (lower pressure + cleaner aerosol)"
+        );
+        assert!(
+            t_ls > t_pn,
+            "La Silla should transmit more than Paranal (cleaner aerosol)"
+        );
+        assert!(
+            t_lp > t_pn,
+            "La Palma should transmit more than Paranal (cleaner aerosol)"
+        );
     }
 }

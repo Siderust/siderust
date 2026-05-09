@@ -7,4 +7,6 @@
 //! shorter names for callers that prefer free functions over the
 //! [`crate::spectra::SampledSpectrum`] inherent methods.
 
-pub use super::algo::{trapz as integrate, trapz_range as integrate_range, trapz_weighted as integrate_weighted};
+pub use super::algo::{
+    trapz as integrate, trapz_range as integrate_range, trapz_weighted as integrate_weighted,
+};

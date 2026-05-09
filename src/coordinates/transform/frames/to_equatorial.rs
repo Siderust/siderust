@@ -39,8 +39,8 @@ mod tests {
     use crate::coordinates::transform::Transform;
     use crate::coordinates::{centers, frames, spherical::Position};
     use crate::macros::assert_spherical_eq;
-    use crate::time::JulianDate;
     use crate::qtty::{AstronomicalUnit, Degrees};
+    use crate::time::JulianDate;
 
     const EPS: f64 = 1.0e-12;
 

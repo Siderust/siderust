@@ -348,7 +348,10 @@ fn circumpolar_star_always_above() {
         "Polaris should be continuously above horizon at 51°N"
     );
     assert!(
-        (((periods[0]).end - (periods[0]).start) - Days::new(1.0)).abs().value() < 0.01,
+        (((periods[0]).end - (periods[0]).start) - Days::new(1.0))
+            .abs()
+            .value()
+            < 0.01,
         "Polaris period should span full day, got {} days",
         ((periods[0]).end - (periods[0]).start)
     );

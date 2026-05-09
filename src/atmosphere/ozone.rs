@@ -21,12 +21,12 @@
 
 use std::sync::OnceLock;
 
-use crate::ext_qtty::Unit;
 use crate::ext_qtty::length::Nanometer;
+use crate::ext_qtty::Unit;
+use crate::provenance::Provenance;
 use crate::spectra::interp::{Interpolation, OutOfRange};
 use crate::spectra::loaders::ascii;
 use crate::spectra::sampled::SampledSpectrum;
-use crate::provenance::Provenance;
 
 /// Zero-dimensional (dimensionless) unit marker for a transmittance value
 /// ∈ [0, 1]. RATIO = 1.0; canonical SI dimension is dimensionless.

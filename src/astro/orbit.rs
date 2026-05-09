@@ -85,13 +85,13 @@
 
 use crate::astro::conic::ConicError;
 use crate::astro::units::GaussianYears;
+use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::conic::{
     ClassifiedSemiMajorAxisParam, ConicOrientation, Elliptic, SemiMajorAxisParam,
     TypedSemiMajorAxisParam,
 };
 use affn::frames::EclipticMeanJ2000;
-use crate::qtty::*;
 
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};

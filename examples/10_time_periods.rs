@@ -22,6 +22,9 @@ fn main() {
     println!("1-day window length: {}", window.end - window.start);
 
     let utc_time = tempoch::Time::<UTC>::from_chrono(now_utc);
-    let utc_window = Interval::<tempoch::Time<UTC>>::new(utc_time, tempoch::Time::<UTC>::from_chrono(now_utc + Duration::hours(6)));
+    let utc_window = Interval::<tempoch::Time<UTC>>::new(
+        utc_time,
+        tempoch::Time::<UTC>::from_chrono(now_utc + Duration::hours(6)),
+    );
     println!("UTC scale window: {}", utc_window.end - utc_window.start);
 }

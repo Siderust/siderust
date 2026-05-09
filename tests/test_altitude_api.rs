@@ -230,7 +230,11 @@ fn below_threshold_astronomical_night_week() {
     for p in &nights {
         let hours = ((p).end - (p).start) * 24.0;
         // Nights should be several hours long
-        assert!(hours.value() > 3.0, "night period is too short: {} hours", hours);
+        assert!(
+            hours.value() > 3.0,
+            "night period is too short: {} hours",
+            hours
+        );
     }
 }
 

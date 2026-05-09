@@ -7,8 +7,8 @@
 //! into a flat C ABI.
 
 use crate::error::SiderustStatus;
-use qtty::*;
 use siderust::calculus::solar::classification::{twilight_classification, TwilightPhase};
+use siderust::qtty::*;
 
 ffi_enum! {
     /// Sky condition derived from the Sun's altitude.
@@ -77,7 +77,7 @@ pub extern "C" fn siderust_twilight_classification_rad(
 ) -> SiderustStatus {
     ffi_guard! {{
         check_out!(out);
-        let phase = twilight_classification(qtty::Radians::new(altitude_rad));
+        let phase = twilight_classification(Radians::new(altitude_rad));
         unsafe { *out = SiderustTwilightPhase::from_rust(phase) };
         SiderustStatus::Ok
     }}

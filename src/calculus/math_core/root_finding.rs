@@ -22,8 +22,8 @@
 //! All functions return `Some(root)` on success, `None` when the bracket is
 //! invalid (same sign at both endpoints).
 
-use crate::time::{Interval, TimeInstant};
 use crate::qtty::{Days, Quantity, Unit};
+use crate::time::{Interval, TimeInstant};
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -336,8 +336,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::{Interval, ModifiedJulianDate};
     use crate::qtty::{Day, Radian};
+    use crate::time::{Interval, ModifiedJulianDate};
 
     type Days = Quantity<Day>;
     type Mjd = ModifiedJulianDate;

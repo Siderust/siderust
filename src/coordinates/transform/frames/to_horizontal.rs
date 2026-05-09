@@ -11,8 +11,8 @@ use crate::astro::earth_rotation::gmst_from_tt;
 use crate::coordinates::centers::{Geodetic, Topocentric};
 use crate::coordinates::frames::{EquatorialMeanOfDate, Horizontal, ECEF};
 use crate::coordinates::{cartesian, spherical};
-use crate::time::JulianDate;
 use crate::qtty::{Deg, Degrees, LengthUnit, Quantity, Radian, Radians};
+use crate::time::JulianDate;
 
 /// Precomputed trigonometric values for an observer's latitude.
 ///
@@ -298,9 +298,12 @@ mod tests {
         let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
         let jd = JulianDate::new(2460677.0);
 
-        let eq_pos = cartesian::Position::<Topocentric, EquatorialMeanOfDate, crate::qtty::AstronomicalUnit>::from_vec3(
-            site,
-            nalgebra::Vector3::new(0.5 * AU, 0.3 * AU, 0.7 * AU),
+        let eq_pos = cartesian::Position::<
+            Topocentric,
+            EquatorialMeanOfDate,
+            crate::qtty::AstronomicalUnit,
+        >::from_vec3(
+            site, nalgebra::Vector3::new(0.5 * AU, 0.3 * AU, 0.7 * AU)
         );
 
         let hz_pos: cartesian::Position<Topocentric, Horizontal, crate::qtty::AstronomicalUnit> =
@@ -347,7 +350,11 @@ mod tests {
         >::from_vec3(
             site, nalgebra::Vector3::new(0.5 * AU, 0.3 * AU, 0.7 * AU)
         );
-        let eq_sph = spherical::Position::<Topocentric, EquatorialMeanOfDate, crate::qtty::AstronomicalUnit>::from_cartesian(&eq_cart);
+        let eq_sph = spherical::Position::<
+            Topocentric,
+            EquatorialMeanOfDate,
+            crate::qtty::AstronomicalUnit,
+        >::from_cartesian(&eq_cart);
 
         let hz_sph: spherical::Position<Topocentric, Horizontal, crate::qtty::AstronomicalUnit> =
             eq_sph.transform(jd);

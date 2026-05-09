@@ -56,7 +56,9 @@ pub(crate) fn frame_bias_j2000_to_icrs() -> Rotation3 {
 /// 84381.406″ × π / 648000 (IAU 2006, matches ERFA `eraObl06` at J2000.0).
 #[inline]
 pub(crate) fn j2000_obliquity() -> crate::qtty::Radians {
-    crate::qtty::Radians::new(precession::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648_000.0)
+    crate::qtty::Radians::new(
+        precession::J2000_MEAN_OBLIQUITY_ARCSEC * std::f64::consts::PI / 648_000.0,
+    )
 }
 
 /// Rx(−ε₀): EquatorialMeanJ2000 → EclipticMeanJ2000.

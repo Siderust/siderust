@@ -101,7 +101,9 @@ mod tests {
     fn gaussian_year_differs_from_sidereal_year() {
         // Should differ by ~46 s (≈ 0.000535 d).
         let g = GaussianYears::new(1.0).to::<Day>().value();
-        let s = crate::qtty::Quantity::<SiderealYear>::new(1.0).to::<Day>().value();
+        let s = crate::qtty::Quantity::<SiderealYear>::new(1.0)
+            .to::<Day>()
+            .value();
         let diff = (g - s).abs();
         assert!(diff > 4e-4 && diff < 7e-4, "diff = {diff}");
     }
@@ -110,7 +112,9 @@ mod tests {
     fn gaussian_year_differs_from_julian_year() {
         // Julian year = 365.25 d; Gaussian year ≈ 365.257 d.
         let g = GaussianYears::new(1.0).to::<Day>().value();
-        let j = crate::qtty::Quantity::<JulianYear>::new(1.0).to::<Day>().value();
+        let j = crate::qtty::Quantity::<JulianYear>::new(1.0)
+            .to::<Day>()
+            .value();
         assert!((g - j).abs() > 5e-3);
     }
 

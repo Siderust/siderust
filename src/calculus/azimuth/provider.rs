@@ -49,8 +49,8 @@ use crate::bodies::Star;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical::direction;
-use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
 use crate::qtty::*;
+use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
 
 // Imports for planet azimuth support
 use crate::calculus::horizontal;

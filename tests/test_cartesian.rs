@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use siderust::qtty::*;
 use siderust::coordinates::cartesian::{Displacement, Position};
 use siderust::coordinates::centers::Heliocentric;
 use siderust::coordinates::frames::EclipticMeanJ2000;
+use siderust::qtty::*;
 
 type DispAu = Displacement<EclipticMeanJ2000, Au>;
 type PosAu = Position<Heliocentric, EclipticMeanJ2000, Au>;

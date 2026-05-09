@@ -50,8 +50,8 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use crate::time::JulianDate;
 use crate::qtty::{AstronomicalUnit, Day, Kilometer};
+use crate::time::JulianDate;
 
 /// Velocity measured in AU/day.
 pub type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;

@@ -17,8 +17,8 @@
 //! | [`adaptive_step_brackets`] | Narrows step near suspected events |
 //! | [`extrema_based_brackets`] | Find extrema first, bracket crossings around each |
 
-use crate::time::{ModifiedJulianDate, Period, MJD};
 use crate::qtty::*;
+use crate::time::{ModifiedJulianDate, Period, MJD};
 
 use super::extrema::{self, ExtremumKind};
 

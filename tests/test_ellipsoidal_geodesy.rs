@@ -8,11 +8,11 @@
 //! accuracy across multiple geodetic positions.
 
 use affn::ellipsoid::{Ellipsoid, Grs80, HasEllipsoid, Wgs84};
-use siderust::qtty::*;
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::{ECEF, ITRF};
+use siderust::qtty::*;
 
 // =============================================================================
 // Ellipsoid trait tests

@@ -19,11 +19,11 @@ use crate::astro::proper_motion::{
 use crate::coordinates::spherical::direction;
 use crate::coordinates::spherical::position;
 use crate::coordinates::{centers::Geocentric, frames::EquatorialMeanJ2000, spherical::Position};
-use crate::targets::CoordinateWithPM;
-use crate::time::JulianDate;
 use crate::qtty::length::nominal::SolarRadiuses;
 use crate::qtty::velocity::Velocity;
 use crate::qtty::*;
+use crate::targets::CoordinateWithPM;
+use crate::time::JulianDate;
 
 use std::borrow::Cow;
 
@@ -145,7 +145,11 @@ impl<'a> Star<'a> {
 
         // Full Hipparcos-style propagation when we have both parallax and
         // radial velocity. Otherwise fall back to transverse-only PM.
-        match (self.parallax, self.radial_velocity, &self.coordinate.proper_motion) {
+        match (
+            self.parallax,
+            self.radial_velocity,
+            &self.coordinate.proper_motion,
+        ) {
             (Some(parallax), Some(rv), Some(pm)) => {
                 // ProperMotion stores deg/yr, but the full-motion API needs
                 // mas/yr in the catalog μα⋆ convention. Convert via μα → μα⋆.
@@ -168,11 +172,9 @@ impl<'a> Star<'a> {
                 };
                 propagate_space_motion_since_j2000(pos_au, motion, jd)
             }
-            (_, _, Some(pm)) => crate::astro::proper_motion::set_proper_motion_since_j2000(
-                pos_au,
-                pm.clone(),
-                jd,
-            ),
+            (_, _, Some(pm)) => {
+                crate::astro::proper_motion::set_proper_motion_since_j2000(pos_au, pm.clone(), jd)
+            }
             (_, _, None) => Ok(pos_au),
         }
     }
@@ -185,7 +187,6 @@ impl<'a> Star<'a> {
             && self.coordinate.proper_motion.is_some()
     }
 }
-
 
 impl From<&Star<'_>> for direction::ICRS {
     /// Extracts the J2000 RA/Dec from a [`Star`]'s coordinate position.

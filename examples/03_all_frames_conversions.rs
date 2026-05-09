@@ -6,7 +6,6 @@
 //! This demonstrates every direct frame-rotation pair implemented in
 //! `providers.rs`, plus identity rotations for each frame.
 
-use siderust::qtty::*;
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::Barycentric;
 use siderust::coordinates::frames::{
@@ -14,6 +13,7 @@ use siderust::coordinates::frames::{
     ReferenceFrame, ICRF, ICRS,
 };
 use siderust::coordinates::transform::{FrameRotationProvider, PositionAstroExt};
+use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 type C = Barycentric;

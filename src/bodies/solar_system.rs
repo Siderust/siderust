@@ -53,10 +53,10 @@ use super::{Planet, Satellite, Star};
 use crate::astro::orbit::KeplerianOrbit;
 use crate::astro::{HasIauRotation, IauRotationParams};
 use crate::coordinates::spherical::position::{EclipticMeanJ2000, EquatorialMeanJ2000};
-use crate::targets::CoordinateWithPM;
-use crate::time::JulianDate;
 use crate::qtty::length::nominal::RSUN;
 use crate::qtty::*;
+use crate::targets::CoordinateWithPM;
+use crate::time::JulianDate;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -224,7 +224,7 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
     RSUN,
     L_SUN,
     CoordinateWithPM::<EquatorialMeanJ2000<LightYear>>::new_static(
-        EquatorialMeanJ2000::<LightYear>::new_raw(
+        EquatorialMeanJ2000::<LightYear>::new_unchecked(
             HourAngles::from_hms(-23, 0, 0.0).to_const::<Degree>(), // Dec (polar) Approx at J2000
             HourAngles::from_hms(18, 44, 48.0).to_const::<Degree>(), // RA (azimuth) Approx at J2000
             LightYears::new(1.58125e-5), // 1 AstronomicalUnits in LightYears
@@ -680,7 +680,7 @@ pub struct LagrangePoint {
 const SUN_EARTH_L1: LagrangePoint = LagrangePoint {
     name: "Sun–Earth L1",
     parent_system: "Sun–Earth",
-    position: EclipticMeanJ2000::<AstronomicalUnit>::new_raw(
+    position: EclipticMeanJ2000::<AstronomicalUnit>::new_unchecked(
         Degrees::new(0.0), // lat (polar)
         Degrees::new(0.0), // lon (azimuth)
         AstronomicalUnits::new(0.99),
@@ -689,7 +689,7 @@ const SUN_EARTH_L1: LagrangePoint = LagrangePoint {
 const SUN_EARTH_L2: LagrangePoint = LagrangePoint {
     name: "Sun–Earth L2",
     parent_system: "Sun–Earth",
-    position: EclipticMeanJ2000::<AstronomicalUnit>::new_raw(
+    position: EclipticMeanJ2000::<AstronomicalUnit>::new_unchecked(
         Degrees::new(0.0),   // lat (polar)
         Degrees::new(180.0), // lon (azimuth)
         AstronomicalUnits::new(1.01),

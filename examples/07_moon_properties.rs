@@ -11,7 +11,6 @@
 //! `cargo run --example 07_moon_phase -- [YYYY-MM-DD] [lat_deg] [lon_deg] [height_m]`
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use siderust::qtty::{Days, Degree, Degrees, Meter, Quantity};
 use siderust::calculus::ephemeris::Vsop87Ephemeris;
 use siderust::calculus::lunar::phase::{
     find_phase_events, illumination_range, moon_phase_geocentric, moon_phase_topocentric,
@@ -19,6 +18,7 @@ use siderust::calculus::lunar::phase::{
 };
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
+use siderust::qtty::{Days, Degree, Degrees, Meter, Quantity};
 use siderust::time::{JulianDate, ModifiedJulianDate, Period, MJD};
 
 fn print_periods(label: &str, periods: &[Period<MJD>]) {

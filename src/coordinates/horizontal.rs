@@ -51,8 +51,8 @@
 
 use crate::coordinates::centers::Topocentric;
 use crate::coordinates::frames::Horizontal;
-use affn::spherical;
 use crate::qtty::{Degrees, LengthUnit, DEG};
+use affn::spherical;
 
 // =============================================================================
 // Convention descriptors
@@ -303,7 +303,7 @@ pub fn position_to_native<U: LengthUnit>(
     from: &HorizontalConvention,
 ) -> spherical::Position<Topocentric, Horizontal, U> {
     let new_az = convert_azimuth(pos.az(), from, &HorizontalConvention::NORTH_CLOCKWISE);
-    spherical::Position::<Topocentric, Horizontal, U>::new_raw_with_params(
+    spherical::Position::<Topocentric, Horizontal, U>::new_unchecked_with_params(
         *pos.center_params(),
         pos.alt(),
         new_az,
@@ -321,7 +321,7 @@ pub fn position_from_native<U: LengthUnit>(
     to: &HorizontalConvention,
 ) -> spherical::Position<Topocentric, Horizontal, U> {
     let new_az = convert_azimuth(pos.az(), &HorizontalConvention::NORTH_CLOCKWISE, to);
-    spherical::Position::<Topocentric, Horizontal, U>::new_raw_with_params(
+    spherical::Position::<Topocentric, Horizontal, U>::new_unchecked_with_params(
         *pos.center_params(),
         pos.alt(),
         new_az,
@@ -340,7 +340,7 @@ pub fn convert_position<U: LengthUnit>(
     to: &HorizontalConvention,
 ) -> spherical::Position<Topocentric, Horizontal, U> {
     let new_az = convert_azimuth(pos.az(), from, to);
-    spherical::Position::<Topocentric, Horizontal, U>::new_raw_with_params(
+    spherical::Position::<Topocentric, Horizontal, U>::new_unchecked_with_params(
         *pos.center_params(),
         pos.alt(),
         new_az,

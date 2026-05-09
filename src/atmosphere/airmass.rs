@@ -47,8 +47,7 @@ pub fn airmass(zenith: Radians, formula: AirmassFormula) -> f64 {
         AirmassFormula::Young1994 => {
             let c = z.cos();
             let num = 1.002432 * c * c + 0.148386 * c + 0.0096467;
-            let den =
-                c * c * c + 0.149864 * c * c + 0.0102963 * c + 0.000303978;
+            let den = c * c * c + 0.149864 * c * c + 0.0102963 * c + 0.000303978;
             num / den
         }
         AirmassFormula::Rozenberg1966 => 1.0 / (z.cos() + 0.025 * (-11.0 * z.cos()).exp()),

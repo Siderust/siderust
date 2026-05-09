@@ -46,9 +46,9 @@
 //! * SOFA routines `iauXy06`, `iauS06`, `iauC2ixys`
 
 use crate::astro::precession;
+use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::Rotation3;
-use crate::qtty::*;
 
 /// CIP (X, Y) coordinates and CIO locator s.
 #[derive(Debug, Clone, Copy)]
@@ -174,7 +174,7 @@ pub fn gcrs_to_cirs_matrix(x: f64, y: f64, s: Radians) -> Rotation3 {
     // Let's verify: at J2000 with X≈0, Y≈0, s≈0, this should be ≈ identity.
     // E = atan2(0,0) = 0, d = 0, s = 0.
     // m[0][0] = 1, m[1][1] = 1, m[2][2] = 1. ✓
-    Rotation3::from_matrix(m)
+    Rotation3::from_matrix_unchecked(m)
 }
 
 #[cfg(test)]

@@ -151,29 +151,43 @@ mod tests {
 
     #[test]
     fn el_paranal_reference_pressure() {
-        assert_eq!(EL_PARANAL.reference_pressure.value(), 744.0,
-            "El Paranal reference pressure should be 744 hPa (NSB_Utils.py:59)");
+        assert_eq!(
+            EL_PARANAL.reference_pressure.value(),
+            744.0,
+            "El Paranal reference pressure should be 744 hPa (NSB_Utils.py:59)"
+        );
     }
 
     #[test]
     fn roque_de_los_muchachos_reference_pressure() {
-        assert_eq!(ROQUE_DE_LOS_MUCHACHOS.reference_pressure.value(), 744.0,
-            "Roque de los Muchachos reference pressure should be 744 hPa (NSB_Utils.py:59)");
+        assert_eq!(
+            ROQUE_DE_LOS_MUCHACHOS.reference_pressure.value(),
+            744.0,
+            "Roque de los Muchachos reference pressure should be 744 hPa (NSB_Utils.py:59)"
+        );
     }
 
     #[test]
     fn el_paranal_optional_atmosphere_unset() {
-        assert!(EL_PARANAL.reference_temperature.is_none(),
-            "El Paranal reference temperature must stay None until a cited value is wired in");
-        assert!(EL_PARANAL.reference_relative_humidity.is_none(),
-            "El Paranal reference relative humidity must stay None until a cited value is wired in");
+        assert!(
+            EL_PARANAL.reference_temperature.is_none(),
+            "El Paranal reference temperature must stay None until a cited value is wired in"
+        );
+        assert!(
+            EL_PARANAL.reference_relative_humidity.is_none(),
+            "El Paranal reference relative humidity must stay None until a cited value is wired in"
+        );
     }
 
     #[test]
     fn roque_de_los_muchachos_optional_atmosphere_unset() {
-        assert!(ROQUE_DE_LOS_MUCHACHOS.reference_temperature.is_none(),
-            "ORM reference temperature must stay None until a cited value is wired in");
-        assert!(ROQUE_DE_LOS_MUCHACHOS.reference_relative_humidity.is_none(),
-            "ORM reference relative humidity must stay None until a cited value is wired in");
+        assert!(
+            ROQUE_DE_LOS_MUCHACHOS.reference_temperature.is_none(),
+            "ORM reference temperature must stay None until a cited value is wired in"
+        );
+        assert!(
+            ROQUE_DE_LOS_MUCHACHOS.reference_relative_humidity.is_none(),
+            "ORM reference relative humidity must stay None until a cited value is wired in"
+        );
     }
 }

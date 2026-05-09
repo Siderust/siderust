@@ -17,8 +17,8 @@
 use super::nut00a_tables::{NUT00A_LS, NUT00A_PL};
 use super::NutationAngles;
 use crate::astro::precession::mean_obliquity_iau2006;
-use crate::time::JulianDate;
 use crate::qtty::*;
+use crate::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Fundamental arguments, planetary longitudes (IERS 2003)

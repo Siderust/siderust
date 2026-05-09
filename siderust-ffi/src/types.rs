@@ -49,7 +49,6 @@
 //! Adapters should enforce these rules at their language boundary.
 
 use crate::ffi_utils::FfiFrom;
-use qtty::*;
 use siderust::calculus::azimuth::{
     AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
 };
@@ -58,7 +57,8 @@ use siderust::coordinates::centers::{
     OrbitReferenceCenter as RustOrbitRefCenter,
 };
 use siderust::coordinates::frames::ECEF;
-use tempoch::{Interval, JulianDate, ModifiedJulianDate, Period, MJD};
+use siderust::qtty::*;
+use siderust::time::{Interval, JulianDate, ModifiedJulianDate, Period, MJD};
 
 // Re-export tempoch-ffi types so the generated header can reference them.
 // The extern crate declaration is needed because the dep name maps through a hyphen.
@@ -1308,8 +1308,8 @@ mod tests {
 
     #[test]
     fn ffi_from_period_mjd() {
-        use tempoch::{Interval, ModifiedJulianDate, MJD};
-        let p: tempoch::Period<MJD> = Interval::new(
+        use siderust::time::{Interval, ModifiedJulianDate, MJD};
+        let p: siderust::time::Period<MJD> = Interval::new(
             ModifiedJulianDate::new(60000.0),
             ModifiedJulianDate::new(60001.0),
         );
@@ -1323,7 +1323,7 @@ mod tests {
     #[test]
     fn crossing_event_from_rust_rising() {
         let e = siderust::CrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.5),
+            mjd: siderust::time::ModifiedJulianDate::new(60000.5),
             direction: siderust::CrossingDirection::Rising,
         };
         let ffi = SiderustCrossingEvent::from_rust(&e);
@@ -1334,7 +1334,7 @@ mod tests {
     #[test]
     fn crossing_event_from_rust_setting() {
         let e = siderust::CrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.5),
+            mjd: siderust::time::ModifiedJulianDate::new(60000.5),
             direction: siderust::CrossingDirection::Setting,
         };
         let ffi = SiderustCrossingEvent::ffi_from(&e);
@@ -1344,8 +1344,8 @@ mod tests {
     #[test]
     fn culmination_event_from_rust_max() {
         let e = siderust::CulminationEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
-            altitude: qtty::Degrees::new(45.0),
+            mjd: siderust::time::ModifiedJulianDate::new(60000.0),
+            altitude: Degrees::new(45.0),
             kind: siderust::CulminationKind::Max,
         };
         let ffi = SiderustCulminationEvent::from_rust(&e);
@@ -1356,8 +1356,8 @@ mod tests {
     #[test]
     fn culmination_event_from_rust_min() {
         let e = siderust::CulminationEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
-            altitude: qtty::Degrees::new(-10.0),
+            mjd: siderust::time::ModifiedJulianDate::new(60000.0),
+            altitude: Degrees::new(-10.0),
             kind: siderust::CulminationKind::Min,
         };
         let ffi = SiderustCulminationEvent::ffi_from(&e);
@@ -1370,8 +1370,8 @@ mod tests {
     fn azimuth_extremum_ffi_from_max() {
         use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
-            azimuth: qtty::Degrees::new(180.0),
+            mjd: siderust::time::ModifiedJulianDate::new(60000.0),
+            azimuth: Degrees::new(180.0),
             kind: AzimuthExtremumKind::Max,
         };
         let ffi = SiderustAzimuthExtremum::ffi_from(&e);
@@ -1383,8 +1383,8 @@ mod tests {
     fn azimuth_extremum_ffi_from_min() {
         use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
-            azimuth: qtty::Degrees::new(0.0),
+            mjd: siderust::time::ModifiedJulianDate::new(60000.0),
+            azimuth: Degrees::new(0.0),
             kind: AzimuthExtremumKind::Min,
         };
         let ffi = SiderustAzimuthExtremum::ffi_from(&e);
@@ -1397,7 +1397,7 @@ mod tests {
     fn azimuth_crossing_event_ffi_from_rising() {
         use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            mjd: siderust::time::ModifiedJulianDate::new(60000.0),
             direction: AzimuthCrossingDirection::Rising,
         };
         let ffi = SiderustAzimuthCrossingEvent::ffi_from(&e);
@@ -1408,7 +1408,7 @@ mod tests {
     fn azimuth_crossing_event_ffi_from_setting() {
         use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            mjd: siderust::time::ModifiedJulianDate::new(60000.0),
             direction: AzimuthCrossingDirection::Setting,
         };
         let ffi = SiderustAzimuthCrossingEvent::ffi_from(&e);

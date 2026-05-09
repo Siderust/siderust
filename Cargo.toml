@@ -35,9 +35,9 @@ tables = []
 atmosphere = []
 
 [dependencies]
-affn = { version = "0.6.1", features = ["astro"] }
+affn = { version = "0.6.2", features = ["astro"] }
 cheby = "0.1.0"
-qtty = "0.6.1"
+qtty = { version = "0.7.0", features = ["astro"] }
 tempoch = "0.4.2"
 approx = "0.5"
 chrono = "0.4.44"

@@ -14,8 +14,8 @@
 //! All routines operate on `Period<MJD>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
 
-use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period, MJD};
 use crate::qtty::{Day, Quantity, Unit};
+use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period, MJD};
 
 use super::root_finding;
 

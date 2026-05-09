@@ -312,8 +312,8 @@ impl<D: std::fmt::UpperExp> std::fmt::UpperExp for Apparent<D> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::JulianDate;
     use crate::qtty::*;
+    use crate::time::JulianDate;
 
     #[test]
     fn test_astrometric_to_apparent_introduces_shift() {

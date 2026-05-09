@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-use siderust::qtty::length::nominal::SolarRadiuses;
-use siderust::qtty::*;
 use siderust::bodies::Star;
 use siderust::coordinates::spherical::position::EquatorialMeanJ2000;
+use siderust::qtty::length::nominal::SolarRadiuses;
+use siderust::qtty::*;
 use siderust::targets::CoordinateWithPM;
 use siderust::time::JulianDate;
 use std::borrow::Cow;

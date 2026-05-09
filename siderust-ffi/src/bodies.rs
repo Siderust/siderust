@@ -6,12 +6,12 @@
 use crate::error::SiderustStatus;
 use crate::types::{SiderustPlanet, SiderustProperMotion, SiderustRaConvention};
 use qtty::length::nominal::SolarRadiuses;
-use qtty::*;
 use siderust::astro::proper_motion::{ProperMotion, RaProperMotionConvention};
 use siderust::bodies::{self, Star};
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::frames::EquatorialMeanJ2000;
 use siderust::coordinates::spherical;
+use siderust::qtty::*;
 use siderust::targets::Target;
 use siderust::time::JulianDate;
 use std::borrow::Cow;

@@ -34,9 +34,9 @@
 //! * IERS Conventions (2010), §5.4.2
 //! * SOFA routines `iauSp00`, `iauPom00`
 
+use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::Rotation3;
-use crate::qtty::*;
 
 /// TIO locator s'.
 ///

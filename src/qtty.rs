@@ -10,13 +10,12 @@
 //! so the rest of this crate can keep its existing imports while depending on
 //! newer `qtty`.
 
-pub use crate::ext_qtty::{
-    accel, angular_rate, velocity, Acceleration, AmountOfSubstance, Angular,
-    AngularRate, Current, Dimension, Dimensionless, Energy, Force, Length,
-    LuminousIntensity, Mass, Per, Power, Prod, Quantity, Real, Scalar, Temperature, Time,
-    Transcendental, Unit, Velocity, Volume,
-};
 pub use crate::ext_qtty::angular_rate::AngularRateUnit;
+pub use crate::ext_qtty::{
+    accel, angular_rate, velocity, Acceleration, AmountOfSubstance, Angular, AngularRate, Current,
+    Dimension, Dimensionless, Energy, Force, Length, LuminousIntensity, Mass, Per, Power, Prod,
+    Quantity, Real, Scalar, Temperature, Time, Transcendental, Unit, Velocity, Volume,
+};
 
 pub use crate::ext_qtty::unit;
 pub use crate::ext_qtty::{

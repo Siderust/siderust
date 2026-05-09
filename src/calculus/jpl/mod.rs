@@ -27,8 +27,8 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use crate::time::JulianDate;
 use crate::qtty::{AstronomicalUnit, Kilometer};
+use crate::time::JulianDate;
 
 use core::marker::PhantomData;
 

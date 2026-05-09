@@ -12,7 +12,6 @@
 //! Run with:
 //! `cargo run --example 08_target`
 
-use siderust::qtty::*;
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::astro::proper_motion::{set_proper_motion_since_j2000, ProperMotion};
 use siderust::bodies::comet::HALLEY;
@@ -21,6 +20,7 @@ use siderust::bodies::{catalog, Satellite};
 use siderust::coordinates::cartesian;
 use siderust::coordinates::centers::{Geocentric, Heliocentric};
 use siderust::coordinates::spherical::direction;
+use siderust::qtty::*;
 use siderust::targets::{Target, Trackable};
 use siderust::time::JulianDate;
 

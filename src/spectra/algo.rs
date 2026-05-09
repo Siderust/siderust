@@ -141,7 +141,10 @@ pub fn trapz_weighted(
 /// Validate that `xs` and `ys` form a well-formed sampled spectrum.
 pub fn validate(xs: &[f64], ys: &[f64]) -> Result<(), SpectrumError> {
     if xs.len() != ys.len() {
-        return Err(SpectrumError::LengthMismatch { xs: xs.len(), ys: ys.len() });
+        return Err(SpectrumError::LengthMismatch {
+            xs: xs.len(),
+            ys: ys.len(),
+        });
     }
     if xs.len() < 2 {
         return Err(SpectrumError::TooFewSamples(xs.len()));

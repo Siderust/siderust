@@ -28,8 +28,8 @@ use crate::bodies::solar_system::Sun;
 use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
 use crate::qtty::*;
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
 
 // =============================================================================
 // Constants
