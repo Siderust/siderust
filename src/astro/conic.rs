@@ -54,7 +54,7 @@ use serde::{Deserialize, Serialize};
 pub use affn::conic::ConicKind;
 
 /// Validation and propagation errors for conic-based orbit models.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ConicError {
     /// Eccentricity must be finite and non-negative.
