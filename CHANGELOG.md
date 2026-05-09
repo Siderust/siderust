@@ -184,6 +184,16 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
   * `SphericalPosition::new_raw` → `new_unchecked` (thirteen call sites).
   * `SphericalPosition::new_raw_with_params` → `new_unchecked_with_params` (four call sites).
   * `SphericalDirection::new_raw` → `new_unchecked` (nine call sites).
+* Updated altitude benchmarks (`benches/solar_altitude.rs`, `moon_altitude.rs`,
+  `star_altitude.rs`, `altitude_comparison.rs`) to use `ModifiedJulianDate::from_chrono`
+  (replaces the removed `from_utc`) and `Period<ModifiedJulianDate>` (replaces `Period<MJD>`).
+* Removed erroneous `Eq` derive from `ConicError`: the `OutOfRange { value: f64 }` variant
+  contains an `f64` which does not implement `Eq`.
+* Fixed `build.rs` to eliminate duplicate `jpl_daf` / `jpl_pipeline` / `jpl_spk` module
+  declarations that caused `E0428` errors when both `de440` and `de441` features are enabled.
+* Added `de441 = []` to `[features]` in `Cargo.toml` and wired full `de441` build support
+  in `build.rs` (matching the existing `de440` pipeline), resolving `unexpected cfg condition
+  value: de441` warnings and `siderust_mock_de441` cfg check-cfg errors.
 
 ### Added
 * **Generic 1D and 2D gridded tables** under the new optional `tables`
