@@ -81,7 +81,7 @@ fn comet_builder_defaults_and_period() {
         .build();
     assert_eq!(comet.reference, OrbitFrame::Heliocentric);
     let period = HALLEY.period_years();
-    assert!((period - 75.0).abs() < 5.0);
+    assert!((period.value() - 75.0).abs() < 5.0);
 }
 
 #[test]

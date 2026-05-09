@@ -1,13 +1,40 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Generic two-column ASCII loader for sampled spectra.
+//! # Two-column ASCII spectrum loader
 //!
-//! Recognises whitespace- or comma-separated numeric pairs, ignores empty
-//! lines and `#`-prefixed comment lines. The caller may apply per-axis
-//! multiplicative scale factors before the raw values are wrapped in typed
-//! quantities — this is the canonical hook for converting (e.g.) micrometre
-//! input columns into the module's preferred nanometre x-axis.
+//! ## Scientific scope
+//!
+//! The two-column `wavelength, value` ASCII format is the de-facto
+//! distribution format for most published photometric filter curves
+//! (Bessell 1990, the SVO Filter Profile Service, Stetson tables) and
+//! for many ground-based atmospheric transmission tables. Despite its
+//! simplicity it is fragile in practice: wavelength columns may be in
+//! Ångström, micrometre, or nanometre; comment-line conventions vary;
+//! some publishers use comma separators, others use whitespace. This
+//! loader normalises those variations into a single typed
+//! [`crate::spectra::SampledSpectrum`] while preserving full
+//! provenance.
+//!
+//! ## Technical scope
+//!
+//! Provides [`two_column`], which parses a string of whitespace- or
+//! comma-separated numeric pairs (one pair per line; blank lines and
+//! `#`-prefixed comment lines are skipped) and returns a
+//! [`SampledSpectrum<X, Y, f64>`](crate::spectra::SampledSpectrum)
+//! with the supplied [`Interpolation`] /
+//! [`OutOfRange`](crate::spectra::OutOfRange) policies and optional
+//! [`Provenance`]. Per-axis multiplicative scale factors are applied
+//! *before* the raw values are wrapped in typed quantities, providing
+//! the canonical hook for unit conversion (e.g. micrometre input
+//! columns → nanometre x-axis).
+//!
+//! ## References
+//!
+//! - HEASARC / OGIP (1993). *OGIP/93-003: Recommended FITS file
+//!   structures for high-energy astrophysics: ASCII format conventions
+//!   for tabular data*. NASA Goddard Space Flight Center.
+//!   <https://heasarc.gsfc.nasa.gov/docs/heasarc/ofwg/docs/general/ogip_93_003/>.
 
 use crate::ext_qtty::Unit;
 

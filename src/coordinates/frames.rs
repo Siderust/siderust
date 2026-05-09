@@ -36,7 +36,7 @@
 //!
 //! The following body-fixed frame marker types are defined in `affn`
 //! (behind `feature = "astro"`) and re-exported here. The generic
-//! [`IauRotationParams`] type comes from [`crate::astro`], while body-specific
+//! [`crate::astro::orientation::IauRotationParams`] type comes from [`crate::astro`], while body-specific
 //! constants (e.g. `MARS_ROTATION`) are defined in [`crate::bodies::solar_system`]
 //! and re-exported by [`planetary`]. `FrameRotationProvider`
 //! implementations live in `transform::providers`.

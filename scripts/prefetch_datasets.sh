@@ -154,7 +154,6 @@ fi
 if [[ "$want_minimal" -eq 1 ]]; then
   prefetch_vsop87
   prefetch_elp2000
-  prefetch_iers
 fi
 
 if [[ "$want_de440" -eq 1 ]]; then

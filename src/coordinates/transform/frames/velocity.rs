@@ -1,17 +1,34 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Frame transformations for Velocity types.
+//! Frame rotations for [`Velocity`](crate::coordinates::cartesian::Velocity) types.
 //!
-//! Velocities are free vectors, so frame transformations are pure rotations
-//! (same as directions, but with velocity units instead of dimensionless units).
+//! ## Scientific scope
+//!
+//! Velocities are free vectors with rate-of-change units. Like directions, they
+//! are **translation-invariant** and therefore only require frame rotations, not
+//! center shifts. The rotation matrices are identical to those applied to
+//! position and direction vectors.
+//!
+//! Note: relativistic corrections (stellar aberration, Lorentz boost) are
+//! outside the scope of this module.
+//!
+//! ## Technical scope
+//!
+//! This module provides `TransformFrame` impls for `cartesian::Velocity<F, U>`
+//! between the J2000.0 fixed frames (EquatorialMeanJ2000, EclipticMeanJ2000)
+//! using the constant rotation matrices from [`bias`].
+//!
+//! ## References
+//!
+//! - Murray, C. A. (1983). *Vectorial Astrometry*. §3.2.
+//! - IAU SOFA Tools for Earth Attitude (2023): <https://www.iausofa.org>.
 
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::frames::{self, MutableFrame};
 use crate::coordinates::transform::frames::bias;
 use crate::coordinates::transform::TransformFrame;
 use crate::qtty::Unit;
-use nalgebra::Vector3;
 
 /// Identity frame transform for velocities.
 impl<F, U> TransformFrame<Velocity<F, U>> for Velocity<F, U>
@@ -20,7 +37,7 @@ where
     U: Unit,
 {
     fn to_frame(&self) -> Velocity<F, U> {
-        Self::from_vec3(*self.as_vec3())
+        Self::from_array(*self.as_array())
     }
 }
 
@@ -31,7 +48,7 @@ impl<U: Unit> TransformFrame<Velocity<frames::EquatorialMeanJ2000, U>>
     fn to_frame(&self) -> Velocity<frames::EquatorialMeanJ2000, U> {
         let rot = bias::obliquity_ecl_to_eq();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Velocity::<frames::EquatorialMeanJ2000, U>::from_vec3(Vector3::new(x, y, z))
+        Velocity::<frames::EquatorialMeanJ2000, U>::from_array([x, y, z])
     }
 }
 
@@ -42,7 +59,7 @@ impl<U: Unit> TransformFrame<Velocity<frames::EclipticMeanJ2000, U>>
     fn to_frame(&self) -> Velocity<frames::EclipticMeanJ2000, U> {
         let rot = bias::obliquity_eq_to_ecl();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Velocity::<frames::EclipticMeanJ2000, U>::from_vec3(Vector3::new(x, y, z))
+        Velocity::<frames::EclipticMeanJ2000, U>::from_array([x, y, z])
     }
 }
 
@@ -53,7 +70,7 @@ impl<U: Unit> TransformFrame<Velocity<frames::EquatorialMeanJ2000, U>>
     fn to_frame(&self) -> Velocity<frames::EquatorialMeanJ2000, U> {
         let rot = bias::frame_bias_icrs_to_j2000();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Velocity::<frames::EquatorialMeanJ2000, U>::from_vec3(Vector3::new(x, y, z))
+        Velocity::<frames::EquatorialMeanJ2000, U>::from_array([x, y, z])
     }
 }
 
@@ -64,7 +81,7 @@ impl<U: Unit> TransformFrame<Velocity<frames::ICRS, U>>
     fn to_frame(&self) -> Velocity<frames::ICRS, U> {
         let rot = bias::frame_bias_j2000_to_icrs();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Velocity::<frames::ICRS, U>::from_vec3(Vector3::new(x, y, z))
+        Velocity::<frames::ICRS, U>::from_array([x, y, z])
     }
 }
 
@@ -94,11 +111,7 @@ mod tests {
     type AuPerDay = Per<AstronomicalUnit, Day>;
 
     fn vel_ecl(x: f64, y: f64, z: f64) -> Velocity<frames::EclipticMeanJ2000, AuPerDay> {
-        Velocity::from_vec3(Vector3::new(
-            Quantity::new(x),
-            Quantity::new(y),
-            Quantity::new(z),
-        ))
+        Velocity::from_array([Quantity::new(x), Quantity::new(y), Quantity::new(z)])
     }
 
     fn assert_velocity_close<F, U>(a: &Velocity<F, U>, b: &Velocity<F, U>, eps: f64)
@@ -123,11 +136,11 @@ mod tests {
 
     #[test]
     fn icrs_bias_roundtrip_for_velocity_is_identity() {
-        let icrs = Velocity::<frames::ICRS, AuPerDay>::from_vec3(Vector3::new(
+        let icrs = Velocity::<frames::ICRS, AuPerDay>::from_array([
             Quantity::new(-1.0),
             Quantity::new(0.5),
             Quantity::new(0.25),
-        ));
+        ]);
 
         let eq: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = icrs.to_frame();
         let back: Velocity<frames::ICRS, AuPerDay> = eq.to_frame();

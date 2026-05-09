@@ -3,14 +3,23 @@
 
 //! # Azimuth Provider, Trait-Based Dispatch Layer
 //!
-//! Defines [`AzimuthProvider`] and implementations that normalise the azimuth
-//! API across Sun, Moon, and fixed stars.
+//! ## Scientific scope
 //!
-//! ## Design
+//! Provides a uniform, type‑safe view of azimuth quantities and azimuth
+//! periods (intervals during which the body's bearing lies in a given
+//! arc) for the Sun, Moon, the seven VSOP87 major planets, fixed stars,
+//! and ICRS directions. The azimuth convention is North‑clockwise, with
+//! values in `[0°, 360°)`. Accuracy and validity are inherited from the
+//! delegated engines (`solar`, `lunar`, `stellar`, VSOP87E pipeline);
+//! refraction is not applied.
 //!
-//! The trait is the *dispatch* layer, all astronomical math lives in the
-//! per-body engine modules (`calculus::solar`, `calculus::lunar`,
-//! `calculus::stellar`).  Each `impl` simply delegates.
+//! ## Technical scope
+//!
+//! Defines the [`AzimuthProvider`] trait, default convenience methods
+//! ([`in_azimuth_range`](AzimuthProvider::in_azimuth_range),
+//! [`outside_azimuth_range`](AzimuthProvider::outside_azimuth_range)), and
+//! the free function [`azimuth_periods`]. Each `impl` simply delegates;
+//! all astronomical math lives in the per‑body engine modules.
 //!
 //! | Body type | Engine |
 //! |-----------|--------|
@@ -18,29 +27,10 @@
 //! | [`solar_system::Moon`] | [`calculus::lunar::moon_azimuth_rad`]        |
 //! | [`Star`]               | delegates to [`direction::ICRS`] impl below  |
 //! | [`direction::ICRS`]    | [`calculus::stellar::fixed_star_azimuth_rad`] |
+//! | VSOP87 planets         | local helper + horizontal transform pipeline |
 //!
-//! ## Quick Start
-//!
-//! ```rust
-//! use siderust::bodies::Sun;
-//! use siderust::calculus::azimuth::{AzimuthProvider, AzimuthQuery};
-//! use siderust::coordinates::centers::Geodetic;
-//! use siderust::coordinates::frames::ECEF;
-//! use siderust::time::{ModifiedJulianDate, MJD, Period};
-//! use siderust::qtty::*;
-//!
-//! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-//! let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
-//! let query = AzimuthQuery {
-//!     observer: site,
-//!     window,
-//!     min_azimuth: Degrees::new(90.0),
-//!     max_azimuth: Degrees::new(270.0),
-//! };
-//!
-//! // Same call shape for any body:
-//! let sun_periods = Sun.azimuth_periods(&query);
-//! ```
+//! ## References
+//! None.
 
 use super::events;
 use super::types::AzimuthQuery;
@@ -50,7 +40,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical::direction;
 use crate::qtty::*;
-use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
+use crate::time::{complement_within, ModifiedJulianDate, Period};
 
 // Imports for planet azimuth support
 use crate::calculus::horizontal;
@@ -67,8 +57,8 @@ use crate::time::JulianDate;
 ///
 /// ## Time Scale
 ///
-/// All `ModifiedJulianDate` and `Period<MJD>` values are on the canonical
-/// JD(TT) axis.  Convert UTC instants with `ModifiedJulianDate::from_utc(…)`
+/// All `ModifiedJulianDate` and `Period<ModifiedJulianDate>` values are on the canonical
+/// JD(TT) axis.  Convert UTC instants with `ModifiedJulianDate::from_chrono(…)`
 /// before using this API.
 ///
 /// ## Azimuth convention
@@ -78,6 +68,15 @@ pub trait AzimuthProvider {
     /// Compute the topocentric azimuth of this body at a single instant.
     ///
     /// Returns a value in radians, range `[0, 2π)` (North-clockwise).
+    ///
+    /// # Arguments
+    ///
+    /// * `observer`, geodetic site
+    /// * `mjd`, instant on the TT axis
+    ///
+    /// # Returns
+    ///
+    /// `Radians` in `[0, 2π)`, North‑clockwise.
     fn azimuth_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians;
 
     /// Returns all contiguous intervals inside `query.window` where the body's
@@ -88,19 +87,38 @@ pub trait AzimuthProvider {
     ///
     /// The returned vector is sorted chronologically.  An empty vector means
     /// the body never enters the requested band during the window.
-    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>>;
+    ///
+    /// # Arguments
+    ///
+    /// * `query`, observer/window/azimuth‑band specification
+    ///
+    /// # Returns
+    ///
+    /// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>`.
+    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>>;
 
     /// Convenience: intervals where azimuth is within `[min_az, max_az]`.
     ///
     /// Equivalent to calling [`azimuth_periods`](Self::azimuth_periods)
     /// directly.
+    ///
+    /// # Arguments
+    ///
+    /// * `observer`, geodetic site
+    /// * `window`, MJD/TT search interval
+    /// * `min_az`, lower (or wrap‑start) bearing
+    /// * `max_az`, upper (or wrap‑end) bearing
+    ///
+    /// # Returns
+    ///
+    /// Sorted `Vec<Period<ModifiedJulianDate>>`.
     fn in_azimuth_range(
         &self,
         observer: Geodetic<ECEF>,
-        window: Period<MJD>,
+        window: Period<ModifiedJulianDate>,
         min_az: Degrees,
         max_az: Degrees,
-    ) -> Vec<Period<MJD>> {
+    ) -> Vec<Period<ModifiedJulianDate>> {
         self.azimuth_periods(&AzimuthQuery {
             observer,
             window,
@@ -113,13 +131,24 @@ pub trait AzimuthProvider {
     ///
     /// Returns the complement of [`in_azimuth_range`](Self::in_azimuth_range)
     /// within `window`.
+    ///
+    /// # Arguments
+    ///
+    /// * `observer`, geodetic site
+    /// * `window`, MJD/TT search interval
+    /// * `min_az`, lower (or wrap‑start) bearing
+    /// * `max_az`, upper (or wrap‑end) bearing
+    ///
+    /// # Returns
+    ///
+    /// Sorted `Vec<Period<ModifiedJulianDate>>`.
     fn outside_azimuth_range(
         &self,
         observer: Geodetic<ECEF>,
-        window: Period<MJD>,
+        window: Period<ModifiedJulianDate>,
         min_az: Degrees,
         max_az: Degrees,
-    ) -> Vec<Period<MJD>> {
+    ) -> Vec<Period<ModifiedJulianDate>> {
         let inside = self.in_azimuth_range(observer, window, min_az, max_az);
         complement_within(window, &inside)
     }
@@ -128,6 +157,10 @@ pub trait AzimuthProvider {
     ///
     /// Returns `None` to use the default (10 minutes). Bodies with slower
     /// apparent motion (like the Moon) can return a larger step.
+    ///
+    /// # Returns
+    ///
+    /// `Some(step)` to override the default scan step, or `None`.
     fn scan_step_hint(&self) -> Option<Days> {
         None
     }
@@ -162,8 +195,21 @@ pub trait AzimuthProvider {
 /// };
 /// let periods = azimuth_periods(&Sun, &query);
 /// ```
+///
+/// # Arguments
+///
+/// * `body`, any value implementing [`AzimuthProvider`]
+/// * `query`, observer/window/azimuth‑band specification
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` produced by
+/// `body.azimuth_periods(query)`.
 #[inline]
-pub fn azimuth_periods<B: AzimuthProvider>(body: &B, query: &AzimuthQuery) -> Vec<Period<MJD>> {
+pub fn azimuth_periods<B: AzimuthProvider>(
+    body: &B,
+    query: &AzimuthQuery,
+) -> Vec<Period<ModifiedJulianDate>> {
     body.azimuth_periods(query)
 }
 
@@ -171,13 +217,13 @@ pub fn azimuth_periods<B: AzimuthProvider>(body: &B, query: &AzimuthQuery) -> Ve
 // Implementations
 // ---------------------------------------------------------------------------
 
-/// **Sun**, delegates to [`calculus::solar::sun_azimuth_rad`].
+/// **Sun**, delegates to `calculus::solar::sun_azimuth_rad`.
 impl AzimuthProvider for solar_system::Sun {
     fn azimuth_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::calculus::solar::sun_azimuth_rad(mjd, observer)
     }
 
-    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
+    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
         if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
@@ -189,13 +235,13 @@ impl AzimuthProvider for solar_system::Sun {
     }
 }
 
-/// **Moon**, delegates to [`calculus::lunar::moon_azimuth_rad`].
+/// **Moon**, delegates to `calculus::lunar::moon_azimuth_rad`.
 impl AzimuthProvider for solar_system::Moon {
     fn azimuth_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::calculus::lunar::moon_azimuth_rad(mjd, observer)
     }
 
-    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
+    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
         if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
@@ -215,7 +261,7 @@ impl AzimuthProvider for Star<'_> {
         dir.azimuth_at(observer, mjd)
     }
 
-    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
+    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
         let dir = direction::ICRS::from(self);
         dir.azimuth_periods(query)
     }
@@ -227,7 +273,7 @@ impl AzimuthProvider for direction::ICRS {
         crate::calculus::stellar::fixed_star_azimuth_rad(mjd, observer, self.ra(), self.dec())
     }
 
-    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
+    fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
         if (query.window.end - query.window.start) <= Days::zero() {
             return Vec::new();
         }
@@ -279,7 +325,7 @@ macro_rules! impl_azimuth_provider_vsop87 {
                     )
                 }
 
-                fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<MJD>> {
+                fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
                     if (query.window.end - query.window.start) <= Days::zero() {
                         return Vec::new();
                     }
@@ -310,7 +356,7 @@ mod tests {
         Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
-    fn one_day_window() -> Period<MJD> {
+    fn one_day_window() -> Period<ModifiedJulianDate> {
         Period::new(
             ModifiedJulianDate::new(60000.0),
             ModifiedJulianDate::new(60001.0),

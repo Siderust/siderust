@@ -127,7 +127,7 @@ impl ObserverState {
         ctx: &AstroContext<Eph, Eop>,
     ) -> Self {
         use crate::coordinates::transform::TransformFrame;
-        use crate::qtty::{Meter, Second, Seconds};
+        use crate::qtty::{unit, Meter, Seconds};
 
         // Annual (orbital) component: barycentric Earth velocity.
         let vel_ecl = DefaultEphemeris::earth_barycentric_velocity(jd);
@@ -142,7 +142,7 @@ impl ObserverState {
         const OMEGA_EARTH: f64 = 7.292_115_0e-5;
 
         let site_itrf_m = site.to_cartesian::<Meter>();
-        type MetersPerSecond = crate::qtty::Per<Meter, Second>;
+        type MetersPerSecond = crate::qtty::Per<Meter, unit::Second>;
         let one_second = Seconds::new(1.0);
 
         // ω = (0,0,OMEGA_EARTH) in ECEF => ω×r = (-ω*y, ω*x, 0)

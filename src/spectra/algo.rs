@@ -1,19 +1,55 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Untyped numerical kernels for sampled spectra.
+//! # Untyped numerical kernels for sampled spectra
 //!
-//! These functions operate on plain `&[f64]` slices and are the reference
-//! implementation that the typed [`crate::spectra::SampledSpectrum`] API
-//! delegates to. They are exposed because legacy code paths (notably NSB) and
-//! external loaders may already hold raw vectors; keeping a single
-//! implementation guarantees bit-for-bit parity between the typed and untyped
-//! surfaces.
+//! ## Scientific scope
 //!
-//! Pre-conditions (debug-asserted):
-//! - `xs.len() == ys.len()`
-//! - `xs.len() >= 2`
-//! - `xs` is strictly monotonically increasing.
+//! Synthetic photometry, atmospheric extinction, and night-sky
+//! brightness pipelines reduce, at their innermost loop, to two
+//! operations on a tabulated spectral function: piecewise-linear
+//! interpolation at a query wavelength, and trapezoidal integration of
+//! a (possibly weighted) product over a wavelength interval. The exact
+//! semantics of those operations — boundary handling, monotonicity
+//! guarantees, weighting — must match the reference pipelines
+//! (`numpy.interp`, the SVO Filter Profile Service convention,
+//! Bessell-style synthetic magnitudes) bit-for-bit, otherwise published
+//! magnitudes drift by tens of millimagnitudes between toolchains.
+//!
+//! These kernels are the canonical implementation of those operations
+//! in the crate. Both the typed [`crate::spectra::SampledSpectrum`]
+//! surface and the legacy NSB code path call into them, so the two
+//! routes return identical numerical results.
+//!
+//! ## Technical scope
+//!
+//! All entry points operate on plain `&[f64]` slices and return either
+//! `f64` or `Result<f64, SpectrumError>`:
+//!
+//! - [`interp_linear`] — piecewise-linear interpolation honouring the
+//!   given [`OutOfRange`] policy (matches `numpy.interp` exactly when
+//!   `oor == ClampToEndpoints`).
+//! - [`trapz`] — trapezoidal integral over the entire sampled domain.
+//! - [`trapz_range`] — trapezoidal integral restricted to a sub-interval.
+//! - [`trapz_weighted`] — trapezoidal integral of `f(x) · w(x)` against
+//!   a separately tabulated weight, with policy-controlled boundary
+//!   handling on each input.
+//! - [`validate`] — pre-condition check (length match, ≥ 2 samples,
+//!   strict monotonic increase).
+//!
+//! Pre-conditions are debug-asserted in release builds; the typed
+//! constructor in [`crate::spectra::sampled`] is the safe entry point.
+//!
+//! ## References
+//!
+//! - Atkinson, K. E. (1989). *An Introduction to Numerical Analysis*,
+//!   2nd ed., §5.2 (composite trapezoidal rule). John Wiley & Sons.
+//!   ISBN 978-0-471-62489-9.
+//! - NumPy developers. *numpy.interp* documentation
+//!   (boundary-handling semantics).
+//! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., Flannery, B. P.
+//!   (1992). *Numerical Recipes in C*, 2nd ed., §3.1, §4.1.
+//!   Cambridge University Press.
 
 use super::interp::{Interpolation, OutOfRange};
 use super::SpectrumError;
@@ -150,7 +186,7 @@ pub fn validate(xs: &[f64], ys: &[f64]) -> Result<(), SpectrumError> {
         return Err(SpectrumError::TooFewSamples(xs.len()));
     }
     for i in 1..xs.len() {
-        if !(xs[i] > xs[i - 1]) {
+        if xs[i].partial_cmp(&xs[i - 1]) != Some(std::cmp::Ordering::Greater) {
             return Err(SpectrumError::NotMonotonic { index: i });
         }
     }

@@ -217,7 +217,7 @@ fn gcrs_to_cirs_rotation<Eph, Eop: EopProvider, Nut: NutationModel>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
 ) -> Rotation3 {
-    let eop = ctx.eop_at(jd);
+    let eop = ctx.eop_at_tt(jd);
     let (dpsi, deps) = nutation_with_celestial_pole_offsets::<Nut>(jd, eop);
     let cip = cio::cip_cio(jd, dpsi, deps);
     cio::gcrs_to_cirs_matrix(cip.x, cip.y, cip.s)
@@ -232,7 +232,7 @@ fn cirs_to_tirs_rotation<Eph, Eop: EopProvider>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
 ) -> Rotation3 {
-    let eop = ctx.eop_at(jd);
+    let eop = ctx.eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
     Rotation3::rz(-era::earth_rotation_angle(jd_ut1))
 }
@@ -246,7 +246,7 @@ fn tirs_to_itrf_rotation<Eph, Eop: EopProvider>(
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
 ) -> Rotation3 {
-    let eop = ctx.eop_at(jd);
+    let eop = ctx.eop_at_tt(jd);
     polar_motion::polar_motion_matrix_from_eop(eop.xp, eop.yp, jd)
 }
 

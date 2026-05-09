@@ -3,28 +3,34 @@
 
 //! # Aberration (observer-velocity)
 //!
-//! This module applies the special-relativistic aberration of light due to an
-//! observer's velocity.
+//! Applies the special-relativistic aberration of light to celestial
+//! directions, given an observer's velocity in a barycentric frame.
 //!
-//! ```text
-//! max effect   ≃ 20.5″
-//! annual (Earth orbital) ≃ 20.5″
-//! diurnal (Earth rotation) ≃ 0.3″
-//! ```
+//! ## Scientific scope
 //!
-//! ## Velocity model
-//! * The convenience functions in this module use **VSOP87E barycentric Earth
-//!   velocity** (SSB-referenced), rotated from the dynamical *ecliptic J2000*
-//!   frame into [`frames::EquatorialMeanJ2000`].
+//! Stellar aberration is the apparent shift of a source's direction caused by
+//! the finite speed of light combined with the observer's motion relative to
+//! the rest frame of the source. The annual (Earth orbital) component reaches
+//! ≈ 20.5″, while the diurnal (Earth rotation) component is ≈ 0.3″. Correctly
+//! modelling aberration is essential for sub-arcsecond astrometry and for any
+//! observer-relative direction that is to be compared with catalogue (BCRS)
+//! positions.
+//!
+//! ## Technical scope
+//!
+//! The convenience functions in this module use the **VSOP87E barycentric
+//! Earth velocity** (SSB-referenced), rotated from the dynamical *ecliptic
+//! J2000* frame into [`frames::EquatorialMeanJ2000`]. The aberration is
+//! applied via the full Lorentz transform of unit direction vectors rather
+//! than the classical first-order approximation, ensuring < 1 μas residuals.
+//! The speed of light in AU/day is computed from exact SI definitions of
+//! `c`, the day, and the AU.
 //!
 //! ## References
-//! * IERS Conventions 2020, §7.2 (aberration)
-//! * SOFA/ERFA: stellar aberration is a full SR (Lorentz) transform (see e.g.
-//!   `iauAb` / `eraAb` behavior)
 //!
-//! ## Implementation notes
-//! * Uses the full special-relativistic aberration formula (Lorentz transform).
-//! * Uses exact SI definitions for `c`, day, and AU to compute `c` in AU/day.
+//! * IERS Conventions 2020, §7.2 (aberration)
+//! * SOFA: stellar aberration as a full SR (Lorentz) transform
+//!   (cf. `iauAb` / `eraAb`)
 
 use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::transform::context::DefaultEphemeris;
@@ -37,41 +43,35 @@ use crate::qtty::*;
 use crate::time::JulianDate;
 
 type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
-type AusPerDay = crate::qtty::velocity::Velocity<AstronomicalUnit, Day>;
 
-/// Speed of light in AU/day from exact SI definitions:
-/// `c = 299_792_458 m/s`, `day = 86_400 s`, `AU = 149_597_870_700 m`.
-pub const AU_PER_DAY_C: AusPerDay = AusPerDay::new(173.144_632_674_240_33);
-
+/// Full SR Lorentz aberration transform for a unit direction vector.
+///
+/// `beta` is the observer's velocity divided by c (dimensionless, non-unit-length).
+/// The Lorentz formula is:
+/// `u' = [ u/γ + β (1 + γ/(γ+1) β·u) ] / (1 + β·u)`
 #[inline]
-fn aberrate_unit_vector_lorentz(
-    u: nalgebra::Vector3<f64>,
-    beta: nalgebra::Vector3<f64>,
-) -> nalgebra::Vector3<f64> {
-    let beta2 = beta.dot(&beta);
+fn aberrate_direction_lorentz<F: frames::ReferenceFrame>(
+    u: direction::Direction<F>,
+    beta: Velocity<F, Ratio>,
+) -> direction::Direction<F> {
+    let beta_raw = affn::cartesian::XYZ::from_array(*beta.as_array()).to_raw();
+    let beta2 = beta_raw.magnitude_squared();
     if beta2 == 0.0 {
         return u;
     }
 
-    // gamma = 1 / sqrt(1 - |beta|^2)
     let gamma = 1.0 / (1.0 - beta2).sqrt();
-    let beta_dot_u = beta.dot(&u);
+    let u_vec = Velocity::<F, Ratio>::new(u.x(), u.y(), u.z());
+    let beta_dot_u = beta_raw.dot(&affn::cartesian::XYZ::from_array(u.as_array()));
 
-    // u' = [ u/gamma + beta + (gamma/(gamma+1)) (beta·u) beta ] / (1 + beta·u)
-    let factor = gamma / (gamma + 1.0);
-    let numerator = (u / gamma) + beta * (1.0 + factor * beta_dot_u);
-    let denom = 1.0 + beta_dot_u;
-    numerator / denom
-}
+    let result = (u_vec.scale(1.0 / gamma)
+        + beta.scale(1.0 + (gamma / (gamma + 1.0)) * beta_dot_u))
+        / Quantity::<Ratio>::new(1.0 + beta_dot_u);
 
-#[inline]
-fn velocity_to_beta(
-    velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
-) -> nalgebra::Vector3<f64> {
-    nalgebra::Vector3::new(
-        velocity.x() / AU_PER_DAY_C,
-        velocity.y() / AU_PER_DAY_C,
-        velocity.z() / AU_PER_DAY_C,
+    direction::Direction::from_array(
+        affn::cartesian::XYZ::from_array(*result.as_array())
+            .to_raw()
+            .into_array(),
     )
 }
 
@@ -81,10 +81,7 @@ pub fn apply_aberration_to_direction_with_velocity(
     mean: direction::EquatorialMeanJ2000,
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
-    let beta = velocity_to_beta(velocity);
-    let u = nalgebra::Vector3::new(mean.x(), mean.y(), mean.z());
-    let up = aberrate_unit_vector_lorentz(u, beta);
-    direction::EquatorialMeanJ2000::normalize(up.x, up.y, up.z)
+    aberrate_direction_lorentz(mean, *velocity / crate::qtty::velocity::AU_PER_DAY_C)
 }
 
 /// Remove aberration from a unit direction in [`frames::EquatorialMeanJ2000`] using an explicit observer velocity.
@@ -94,10 +91,7 @@ pub fn remove_aberration_from_direction_with_velocity(
     velocity: &Velocity<frames::EquatorialMeanJ2000, AuPerDay>,
 ) -> direction::EquatorialMeanJ2000 {
     // Inverse is the same Lorentz transform with negated velocity.
-    let beta = -velocity_to_beta(velocity);
-    let u = nalgebra::Vector3::new(app.x(), app.y(), app.z());
-    let up = aberrate_unit_vector_lorentz(u, beta);
-    direction::EquatorialMeanJ2000::normalize(up.x, up.y, up.z)
+    aberrate_direction_lorentz(app, -(*velocity / crate::qtty::velocity::AU_PER_DAY_C))
 }
 
 /// Apply **annual aberration** to a unit direction vector (mean J2000).
@@ -143,7 +137,7 @@ pub fn apply_aberration<U: LengthUnit>(
     mean: position::EquatorialMeanJ2000<U>,
     jd: JulianDate,
 ) -> position::EquatorialMeanJ2000<U> {
-    if mean.distance().value() == 0.0 {
+    if mean.distance() == Quantity::<U>::new(0.0) {
         // Don't look at your feet!
         return mean;
     }
@@ -168,7 +162,7 @@ pub fn remove_aberration<U: LengthUnit>(
     app: position::EquatorialMeanJ2000<U>,
     jd: JulianDate,
 ) -> position::EquatorialMeanJ2000<U> {
-    if app.distance().value() == 0.0 {
+    if app.distance() == Quantity::<U>::new(0.0) {
         // Don't look at your feet!
         return app;
     }
@@ -184,7 +178,8 @@ pub fn remove_aberration<U: LengthUnit>(
 mod tests {
     use super::*;
     use crate::coordinates::spherical::{self, position};
-    use nalgebra::Vector3;
+
+    type AusPerDay = crate::qtty::velocity::Velocity<AstronomicalUnit, Day>;
 
     fn apply_aberration_sph<U: LengthUnit>(
         mean: &position::EquatorialMeanJ2000<U>,
@@ -253,7 +248,7 @@ mod tests {
         // Exact from SI definitions (to ~1e-15 relative precision in f64):
         // 299792458 * 86400 / 149597870700 = 173.14463267424033...
         let expected = AusPerDay::new(173.144_632_674_240_33);
-        assert!((AU_PER_DAY_C - expected).abs() < AusPerDay::new(1e-12));
+        assert!((crate::qtty::velocity::AU_PER_DAY_C - expected).abs() < AusPerDay::new(1e-12));
     }
 
     #[test]
@@ -263,16 +258,16 @@ mod tests {
         let velocity_ecl = Earth::vsop87e_vel(jd);
         let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity_ecl.to_frame();
 
-        let directions = [
-            Vector3::new(1.0, 0.0, 0.0),
-            Vector3::new(0.0, 1.0, 0.0),
-            Vector3::new(0.0, 0.0, 1.0),
-            Vector3::new(0.3, -0.7, 0.64),
-            Vector3::new(-0.8, 0.2, -0.56),
+        let directions: [[f64; 3]; 5] = [
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+            [0.3, -0.7, 0.64],
+            [-0.8, 0.2, -0.56],
         ];
 
         for u in directions {
-            let mean = direction::EquatorialMeanJ2000::from_vec3(u.normalize());
+            let mean = direction::EquatorialMeanJ2000::from_array(u);
             let app = apply_aberration_to_direction_with_velocity(mean, &velocity);
             let rec = remove_aberration_from_direction_with_velocity(app, &velocity);
 

@@ -3,8 +3,25 @@
 
 //! # Search Options and Constants
 //!
-//! Configuration for altitude search algorithms including tolerances,
-//! scan steps, and target-specific defaults.
+//! ## Scientific scope
+//!
+//! Numerical controls for the bracket‑and‑refine algorithm used to locate
+//! altitude crossings and culminations. The default scan step (~10 min)
+//! and refinement tolerance (~1 µs ≈ 86 µs in time) are sized for fast
+//! diurnal motion of solar‑system bodies; very slow targets (Moon close
+//! to standstill, deep‑sky tracking around culmination) may require a
+//! coarser scan step or finer tolerance to avoid missed brackets or
+//! spurious extrema.
+//!
+//! ## Technical scope
+//!
+//! Defines [`SearchOpts`], its [`Default`] impl, and the crate‑internal
+//! step constants (`DEFAULT_SCAN_STEP`, `EXTREMA_SCAN_STEP`). No event
+//! search is performed here; this module only carries configuration that
+//! is consumed by [`super::events`] and [`super::provider`].
+//!
+//! ## References
+//! None.
 
 use crate::qtty::*;
 

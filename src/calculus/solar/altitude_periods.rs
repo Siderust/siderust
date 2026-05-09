@@ -3,33 +3,37 @@
 
 //! # Solar Altitude Window Periods
 //!
-//! Sun-specific routines for finding time intervals where the Sun's
-//! altitude is above, below, or within a given range.
+//! ## Scientific scope
 //!
-//! All period-finding is delegated to [`crate::calculus::math_core::intervals`]
-//! which provides scan + Brent refinement + crossing classification + interval
-//! assembly.  This module supplies the altitude closure and JD↔f64 / Mjd
-//! conversions.
+//! Sun‑specific routines for finding time intervals where the topocentric
+//! altitude of the Sun is above, below, or within a given band — the
+//! kinematic basis for day/night classification, twilight detection, and
+//! observation‑window planning. The Sun position comes from
+//! `Sun::get_horizontal` (VSOP87 + nutation + aberration); refraction is
+//! not applied. A 2‑hour scan step safely brackets every sunrise/sunset
+//! since the shortest daylight arc at 65° latitude is ≳ 5 h.
 //!
-//! ## Key Points
+//! ## Technical scope
 //!
-//! * A 2-hour scan step safely brackets every sunrise/sunset
-//!   (the shortest daylight arc at 65° latitude is ~5 h).
-//! * Below-threshold and range variants are derived at negligible cost
-//!   via [`crate::time::complement_within`] / set intersection.
+//! Crate‑internal API: `sun_altitude_rad`, [`find_day_periods`],
+//! [`find_night_periods`], [`find_sun_range_periods`]. All period‑finding
+//! is delegated to [`crate::calculus::math_core::intervals`] which
+//! provides scan + Brent refinement + crossing classification + interval
+//! assembly. Below‑threshold and range variants are derived at negligible
+//! cost via [`crate::time::complement_within`] / set intersection.
 //!
-//! ## Performance
+//! Performance note: the 2‑hour scan uses ~12 VSOP87 evaluations per day,
+//! versus ~72 for a 20‑min hour‑angle scan (~6× reduction).
 //!
-//! The 2-hour scan uses ~12 VSOP87 evaluations per day, compared to ~72
-//! for the previous culmination-based approach (20-min hour-angle scan).
-//! This yields a ~6× reduction in ephemeris evaluations.
+//! ## References
+//! None.
 
 use crate::bodies::solar_system::Sun;
 use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, MJD};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
 
 // =============================================================================
 // Constants
@@ -46,6 +50,15 @@ const SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
 
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
 /// Positive above the horizon, negative below.
+///
+/// # Arguments
+///
+/// * `mjd`, instant on the TT axis
+/// * `site`, geodetic observer location
+///
+/// # Returns
+///
+/// Topocentric altitude as `Quantity<Radian>` (no refraction).
 pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Quantity<Radian> {
     let jd: JulianDate = mjd.into();
     Sun::get_horizontal::<AstronomicalUnit>(jd, *site)
@@ -60,11 +73,22 @@ pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -
 /// Finds day periods (Sun **above** `threshold`) inside `period`.
 ///
 /// Uses a 2-hour scan + Brent refinement via [`math_core::intervals`].
+///
+/// # Arguments
+///
+/// * `site`, geodetic observer location
+/// * `period`, MJD/TT search window
+/// * `threshold`, altitude threshold
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` where the Sun
+/// is above `threshold`.
 pub(crate) fn find_day_periods(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
     let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
@@ -75,11 +99,22 @@ pub(crate) fn find_day_periods(
 /// Finds night periods (Sun **below** `twilight`) inside `period`.
 ///
 /// Complement of [`find_day_periods`] within `period`.
+///
+/// # Arguments
+///
+/// * `site`, geodetic observer location
+/// * `period`, MJD/TT search window
+/// * `twilight`, altitude threshold (e.g. `−18°` for astronomical night)
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` where the Sun
+/// is at or below `twilight`.
 pub(crate) fn find_night_periods(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     twilight: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let days = find_day_periods(site, period, twilight);
     complement_within(period, &days)
 }
@@ -88,11 +123,22 @@ pub(crate) fn find_night_periods(
 ///
 /// Computed as `above(min) ∩ complement(above(max))` via
 /// [`math_core::intervals::in_range_periods`].
+///
+/// # Arguments
+///
+/// * `site`, geodetic observer location
+/// * `period`, MJD/TT search window
+/// * `range`, `(min_altitude, max_altitude)` band
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of intervals
+/// where `min ≤ altitude(t) ≤ max`.
 pub(crate) fn find_sun_range_periods(
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 

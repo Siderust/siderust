@@ -622,14 +622,15 @@ fn jupiter_distance_is_reasonable() {
 #[test]
 fn can_construct_fk4_direction() {
     // FK4B1950 uses new_raw(polar=dec, azimuth=ra)
-    let dir = spherical::direction::FK4B1950::new_raw(Degrees::new(45.0), Degrees::new(180.0));
+    let dir =
+        spherical::direction::FK4B1950::new_unchecked(Degrees::new(45.0), Degrees::new(180.0));
     assert!((dir.polar.value() - 45.0).abs() < LOOSE_EPS);
     assert!((dir.azimuth.value() - 180.0).abs() < LOOSE_EPS);
 }
 
 #[test]
 fn can_construct_teme_direction() {
-    let dir = spherical::direction::TEME::new_raw(Degrees::new(-30.0), Degrees::new(90.0));
+    let dir = spherical::direction::TEME::new_unchecked(Degrees::new(-30.0), Degrees::new(90.0));
     assert!((dir.polar.value() - (-30.0)).abs() < LOOSE_EPS);
     assert!((dir.azimuth.value() - 90.0).abs() < LOOSE_EPS);
 }

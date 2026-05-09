@@ -3,51 +3,46 @@
 
 //! # Solar System
 //!
-//! This module exposes a type‑safe, canonical description of our Solar System
-//! for astronomical calculations, ephemeris generation, and visualisation
-//! engines.  It bundles **all** major bodies and selected Lagrange points into
-//! a single aggregate constant: [`SOLAR_SYSTEM`].
+//! ## Scientific scope
 //!
-//! ## What’s Included
+//! Our Solar System consists of the Sun, eight planets, five IAU-recognised
+//! dwarf planets, more than 200 moons, millions of asteroids, and billions
+//! of comets. Physical parameters (mass, radius, Bond albedo) and Keplerian
+//! heliocentric orbital elements at the J2000.0 epoch are tabulated here.
+//! Orbital elements are osculating values from the JPL planetary ephemeris;
+//! they capture mean orbital behaviour well for visualisation and coarse
+//! ephemeris but should not be used for precision close-approach analysis
+//! (use VSOP87 / ELP-2000 via [`crate::calculus`] for that). Bond albedo
+//! values are IAU/NASA consensus; they are typed as [`Albedos`] to prevent
+//! unit-confusion with geometric albedo.
 //!
-//! | Category                | Bodies / Points                                                                                 |
-//! |-------------------------|--------------------------------------------------------------------------------------------------|
-//! | **Star**                | Sun                                                                                             |
-//! | **Planets**             | Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune                                   |
-//! | **Dwarf planets**       | Ceres, Pluto, Haumea, Makemake, Eris                                                            |
-//! | **Major moons**         | Moon, Io, Europa, Ganymede, Callisto, Titan, Triton                                             |
-//! | **Lagrange points**     | Sun–Earth L₁, Sun–Earth L₂                                                                      |
+//! ## Technical scope
 //!
-//! Each body re‑uses the strongly‑typed structures defined elsewhere in the crate
-//! (`Star`, `Planet`, `Satellite`, [`KeplerianOrbit`], …) so values can be consumed
-//! directly without conversion.
+//! This module provides:
 //!
-//! ### Physical & Orbital Parameters
+//! - Marker structs: [`Sun`], [`Mercury`], [`Venus`], [`Earth`], [`Moon`],
+//!   [`Mars`], [`Jupiter`], [`Saturn`], [`Uranus`], [`Neptune`], [`Pluto`].
+//! - IAU rotation parameters via the [`HasIauRotation`] trait + `ROTATION`
+//!   associated constants for each body.
+//! - Planet constants ([`MERCURY`] … [`NEPTUNE`], [`PLUTO`]) as typed
+//!   [`Planet`] values with mass ([`Kilograms`]), radius ([`Kilometers`]),
+//!   Bond albedo ([`Albedos`]), and [`KeplerianOrbit`].
+//! - Dwarf planet constants ([`CERES`], [`HAUMEA`], [`MAKEMAKE`], [`ERIS`]).
+//! - Moon constants ([`MOON`], [`IO`], [`EUROPA`], [`GANYMEDE`],
+//!   [`CALLISTO`], [`TITAN`], [`TRITON`]) as [`Satellite`] values.
+//! - [`LagrangePoint`] type + [`LAGRANGE_POINTS`] slice.
+//! - [`SolarSystem`] aggregate struct + [`SOLAR_SYSTEM`] constant.
+//! - [`Trackable`] implementations for every planet and the Moon.
 //!
-//! Every object comes with the following fields (J2000.0 epoch unless noted):
-//!
-//! * **Mass** (kg)
-//! * **Mean radius** (km)
-//! * **Keplerian orbital elements**:
-//!   * `a` : semi‑major axis [`AstronomicalUnit`]
-//!   * `e` : eccentricity (unitless)
-//!   * `i` : inclination [`Degrees`]
-//!   * `Ω` : longitude of ascending node [`Degrees`]
-//!   * `ω` : argument of periapsis [`Degrees`]
-//!   * `M₀` : mean anomaly at epoch [`Degrees`]
-//!
-//! ```text
-//! Abbreviations for orbital elements:
-//!   a  : semi‑major axis         Ω : longitude of ascending node
-//!   e  : eccentricity            ω : argument of periapsis
-//!   i  : inclination             M₀ : mean anomaly at epoch
-//! ```
-//!
-//! ---
 //! ## References
 //!
-//! 1. NASA – Planetary Fact Sheet: <https://nssdc.gsfc.nasa.gov/planetary/factsheet/>
-//! 2. Williams, D. R. (2024). *Planetary Fact Sheet – Metric*. NASA Goddard Space Flight Center.
+//! - Williams, D. R. (2024). *Planetary Fact Sheet – Metric*. NASA GSFC.
+//!   <https://nssdc.gsfc.nasa.gov/planetary/factsheet/>
+//! - IAU Working Group on Cartographic Coordinates and Rotational Elements
+//!   (2015). *Celestial Mechanics and Dynamical Astronomy* 130, 22.
+//!   doi:10.1007/s10569-017-9805-5
+//! - Seidelmann, P. K. (Ed.) (1992). *Explanatory Supplement to the
+//!   Astronomical Almanac*. University Science Books.
 
 use super::{Planet, Satellite, Star};
 use crate::astro::orbit::KeplerianOrbit;
@@ -257,6 +252,7 @@ pub const MERCURY: super::Planet = super::Planet {
         Degrees::new(174.79439),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.068)),
 };
 
 /// **Venus** – second planet from the Sun.
@@ -283,6 +279,7 @@ pub const VENUS: super::Planet = super::Planet {
         Degrees::new(50.44675),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.76)),
 };
 
 /// **Earth** – third planet from the Sun and our home.
@@ -309,6 +306,7 @@ pub const EARTH: super::Planet = super::Planet {
         Degrees::new(357.51716),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.306)),
 };
 
 /// **Moon** – natural satellite of Earth.
@@ -336,7 +334,8 @@ pub const MOON: super::Satellite = super::Satellite::new_const(
         Degrees::new(135.27),
         JulianDate::J2000,
     ),
-);
+)
+.with_albedo(Albedos::new(0.12));
 
 /// **Mars** – the red planet, fourth from the Sun.
 ///
@@ -362,6 +361,7 @@ pub const MARS: super::Planet = super::Planet {
         Degrees::new(19.41248),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.25)),
 };
 
 /// **Jupiter** – the largest planet in the Solar System.
@@ -388,6 +388,7 @@ pub const JUPITER: super::Planet = super::Planet {
         Degrees::new(19.65053),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.503)),
 };
 
 /// **Saturn** – known for its prominent ring system.
@@ -414,6 +415,7 @@ pub const SATURN: super::Planet = super::Planet {
         Degrees::new(317.51238),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.342)),
 };
 
 /// **Uranus** – icy giant with extreme axial tilt.
@@ -440,6 +442,7 @@ pub const URANUS: super::Planet = super::Planet {
         Degrees::new(142.26794),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.3)),
 };
 
 /// **Neptune** – outermost giant planet.
@@ -466,6 +469,7 @@ pub const NEPTUNE: super::Planet = super::Planet {
         Degrees::new(259.90868),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.29)),
 };
 
 /// **Pluto** – dwarf planet once considered the ninth planet.
@@ -492,6 +496,7 @@ pub const PLUTO: super::Planet = super::Planet {
         Degrees::new(14.86205),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.52)),
 };
 
 // -------------------------------------------------------------------------------------------------
@@ -510,6 +515,7 @@ pub const CERES: Planet = Planet {
         Degrees::new(95.9892),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.09)),
 };
 
 pub const HAUMEA: Planet = Planet {
@@ -524,6 +530,7 @@ pub const HAUMEA: Planet = Planet {
         Degrees::new(205.7),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.8)),
 };
 
 pub const MAKEMAKE: Planet = Planet {
@@ -538,6 +545,7 @@ pub const MAKEMAKE: Planet = Planet {
         Degrees::new(159.8),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.81)),
 };
 
 pub const ERIS: Planet = Planet {
@@ -552,6 +560,7 @@ pub const ERIS: Planet = Planet {
         Degrees::new(204.17),
         JulianDate::J2000,
     ),
+    albedo: Some(Albedos::new(0.96)),
 };
 
 pub const DWARF_PLANETS: &[&Planet] = &[&super::PLUTO, &CERES, &HAUMEA, &MAKEMAKE, &ERIS];
@@ -574,7 +583,8 @@ pub const IO: Satellite = Satellite::new_const(
         Degrees::new(171.016),
         JulianDate::J2000,
     ),
-);
+)
+.with_albedo(Albedos::new(0.62));
 
 pub const EUROPA: Satellite = Satellite::new_const(
     "Europa",
@@ -589,7 +599,8 @@ pub const EUROPA: Satellite = Satellite::new_const(
         Degrees::new(324.528),
         JulianDate::J2000,
     ),
-);
+)
+.with_albedo(Albedos::new(0.67));
 
 pub const GANYMEDE: Satellite = Satellite::new_const(
     "Ganymede",
@@ -604,7 +615,8 @@ pub const GANYMEDE: Satellite = Satellite::new_const(
         Degrees::new(317.654),
         JulianDate::J2000,
     ),
-);
+)
+.with_albedo(Albedos::new(0.43));
 
 pub const CALLISTO: Satellite = Satellite::new_const(
     "Callisto",
@@ -619,7 +631,8 @@ pub const CALLISTO: Satellite = Satellite::new_const(
         Degrees::new(51.483),
         JulianDate::J2000,
     ),
-);
+)
+.with_albedo(Albedos::new(0.17));
 
 pub const TITAN: Satellite = Satellite::new_const(
     "Titan",
@@ -634,7 +647,8 @@ pub const TITAN: Satellite = Satellite::new_const(
         Degrees::new(30.744),
         JulianDate::J2000,
     ),
-);
+)
+.with_albedo(Albedos::new(0.22));
 
 pub const TRITON: Satellite = Satellite::new_const(
     "Triton",
@@ -649,7 +663,8 @@ pub const TRITON: Satellite = Satellite::new_const(
         Degrees::new(144.960),
         JulianDate::J2000,
     ),
-);
+)
+.with_albedo(Albedos::new(0.76));
 
 pub const MAJOR_MOONS: &[&Satellite] = &[
     &super::MOON,
@@ -784,5 +799,109 @@ mod tests {
         assert_eq!(Mars::ROTATION.alpha0_deg, MARS_ROTATION.alpha0_deg);
         assert_eq!(Jupiter::ROTATION.w_rate, JUPITER_ROTATION.w_rate);
         assert_eq!(Moon::ROTATION.delta0_deg, MOON_ROTATION.delta0_deg);
+    }
+}
+
+// =============================================================================
+// Trackable implementations
+//
+// These live here (not in targets/trackable.rs) to keep targets free of any
+// dependency on bodies, breaking the targets ↔ bodies cycle.
+// =============================================================================
+
+use crate::coordinates::{
+    cartesian::Position,
+    centers::{Barycentric, Geocentric},
+    frames::EclipticMeanJ2000 as EclJ2000,
+};
+use crate::qtty::{AstronomicalUnit, Kilometer};
+use crate::targets::Trackable;
+
+/// Barycentric ecliptic position (AU), the natural output of VSOP87e.
+type BaryEclPos = CoordinateWithPM<Position<Barycentric, EclJ2000, AstronomicalUnit>>;
+
+/// Geocentric ecliptic position (km), the natural output of ELP2000.
+type GeoEclPos = Position<Geocentric, EclJ2000, Kilometer>;
+
+macro_rules! impl_trackable_vsop87 {
+    ($($Planet:ident),+ $(,)?) => {
+        $(
+            impl Trackable for $Planet {
+                type Coords = BaryEclPos;
+
+                #[inline]
+                fn track(&self, jd: JulianDate) -> Self::Coords {
+                    CoordinateWithPM::new_static($Planet::vsop87e(jd), jd)
+                }
+            }
+        )+
+    };
+}
+
+impl_trackable_vsop87!(Sun, Mercury, Venus, Earth, Mars, Jupiter, Saturn, Uranus, Neptune);
+
+impl Trackable for Moon {
+    type Coords = GeoEclPos;
+
+    #[inline]
+    fn track(&self, jd: JulianDate) -> Self::Coords {
+        Moon::get_geo_position::<Kilometer>(jd)
+    }
+}
+
+#[cfg(test)]
+mod trackable_tests {
+    use super::*;
+    use crate::time::JulianDate;
+
+    #[test]
+    fn star_produces_icrs_direction() {
+        use crate::bodies::catalog;
+        let sirius = &catalog::SIRIUS;
+        let dir = <crate::bodies::Star<'_> as Trackable>::track(sirius, JulianDate::J2000);
+        let ra_diff = dir.ra() - Degrees::new(101.287);
+        assert!(ra_diff <= Degrees::new(0.01) && ra_diff >= -Degrees::new(0.01));
+        let dec_diff = dir.dec() + Degrees::new(16.716);
+        assert!(dec_diff <= Degrees::new(0.01) && dec_diff >= -Degrees::new(0.01));
+    }
+
+    #[test]
+    fn sun_produces_barycentric_position() {
+        let pos = Sun.track(JulianDate::J2000);
+        let dist = pos.position.distance();
+        assert!(
+            dist < AstronomicalUnits::new(0.02),
+            "Sun should be near SSB, got {dist}"
+        );
+    }
+
+    #[test]
+    fn earth_changes_with_time() {
+        let p1 = Earth.track(JulianDate::J2000);
+        let p2 = Earth.track(JulianDate::J2000 + Days::new(182.625));
+        let sep = p1.position.distance_to(&p2.position);
+        assert!(
+            sep > AstronomicalUnits::new(1.0),
+            "Half-year separation should be > 1 AU, got {sep}"
+        );
+    }
+
+    #[test]
+    fn moon_produces_geocentric_position() {
+        let pos = Moon.track(JulianDate::J2000);
+        let dist = pos.distance();
+        assert!(
+            dist >= Kilometers::new(350_000.0) && dist <= Kilometers::new(410_000.0),
+            "Moon distance should be ~384 400 km, got {dist}"
+        );
+    }
+
+    #[test]
+    fn planets_produce_nonzero_positions() {
+        let dist = Mars.track(JulianDate::J2000).position.distance();
+        assert!(
+            dist > AstronomicalUnits::new(1.0),
+            "Mars should be > 1 AU from SSB, got {dist}"
+        );
     }
 }

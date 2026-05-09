@@ -184,7 +184,7 @@ fn bisection_kepler(m: Radians, e: f64, mut lower: Radians, mut upper: Radians) 
 /// # Returns
 /// - `E`: The eccentric anomaly in radians, guaranteed to converge.
 pub fn solve_keplers_equation(m: Radians, e: f64) -> Radians {
-    // Start with E = M (matching ERFA convention for consistency).
+    // Start with E = M (matching SOFA-style reference cases for consistency).
     let initial_guess = m;
 
     // 1) Try Newton-Raphson
@@ -270,7 +270,7 @@ pub fn calculate_prepared_position(
     julian_date: JulianDate,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
     let dt = (julian_date - prepared.elements().epoch).value();
-    let m_rad = prepared.m0_rad() + prepared.mean_motion_rad_per_day() * dt;
+    let m_rad = prepared.m0_rad() + prepared.mean_motion().value() * dt;
     let m_rad = Radians::new(m_rad % std::f64::consts::TAU);
 
     let e = prepared.elements().shape().eccentricity();

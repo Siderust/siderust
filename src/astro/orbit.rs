@@ -3,88 +3,46 @@
 
 //! # Keplerian Orbit Model
 //!
-//! This module defines the `KeplerianOrbit` struct, which encapsulates the **six classical Keplerian orbital elements**
-//! used to describe the motion of a celestial object around a central body, such as a planet around the Sun.
+//! ## Scientific scope
 //!
-//! These elements are:
+//! A **Keplerian orbit** is the idealized two-body solution of Newton's law of
+//! gravitation.  The shape and orientation of the orbit are fully described by
+//! the **six classical orbital elements**:
 //!
-//! 1. **Semi-major axis (`a`)**
-//!    - Defines the size of the orbit.
-//!    - It is half the longest diameter of the ellipse.
-//!    - Expressed in astronomical units (AstronomicalUnits).
+//! | Element | Symbol | Unit | Meaning |
+//! |---------|--------|------|---------|
+//! | Semi-major axis | a | AU | Size of the orbit (half the long axis) |
+//! | Eccentricity | e | — | Shape: 0 = circle, 0 < e < 1 = ellipse |
+//! | Inclination | i | ° | Tilt relative to the ecliptic plane |
+//! | Longitude of ascending node | Ω | ° | Where the orbit crosses the ecliptic going north |
+//! | Argument of periapsis | ω | ° | Angle from node to periapsis |
+//! | Mean anomaly at epoch | M₀ | ° | Angular position at reference epoch |
 //!
-//! 2. **Eccentricity (`e`)**
-//!    - Defines the shape of the orbit.
-//!    - `KeplerianOrbit` only supports **elliptic** motion (`0 ≤ e < 1`).
-//!    - For parabolic or hyperbolic trajectories, use
-//!      [`ConicOrbit`](crate::astro::conic::ConicOrbit) instead.
-//!    - Values:
-//!       - `e = 0`: circular
-//!       - `0 < e < 1`: elliptical
+//! This module restricts itself to **elliptic** orbits (e < 1).  For parabolic
+//! and hyperbolic trajectories use [`crate::astro::conic::ConicOrbit`].
 //!
-//! 3. **Inclination (`i`)**
-//!    - The angle between the orbital plane and a reference plane (typically the ecliptic).
-//!    - Describes the tilt of the orbit relative to the reference frame.
-//!    - Expressed in degrees.
+//! ## Technical scope
 //!
-//! 4. **Longitude of the ascending node (`Ω`)**
-//!    - Angle from a fixed reference direction (e.g., the vernal equinox) to the ascending node,
-//!      the point where the orbit crosses the reference plane going north.
-//!    - Expressed in degrees.
+//! - [`KeplerianOrbit<U>`] — storage type for the six elements, generic over
+//!   length unit `U`.  Constructed via the infallible `new` (trusted constants)
+//!   or the validated `try_new` (user/deserialized data).
+//! - [`PreparedOrbit`] — precomputed version for repeated propagation: caches
+//!   mean motion as a typed [`AngularRate<Radian, Day>`], orientation trig, and
+//!   M₀ in radians.  Mean motion is exposed through the typed accessor
+//!   [`PreparedOrbit::mean_motion`]; callers requiring the raw `f64` should
+//!   call `.value()` on the return value.
+//! - `OrientationTrig` — cached sin/cos of inclination, Ω, ω (crate-internal).
 //!
-//! 5. **Argument of periapsis (`ω`)**
-//!    - The angle from the ascending node to the periapsis (the point of closest approach).
-//!    - Measured in the direction of motion.
-//!    - Expressed in degrees.
+//! ## References
 //!
-//! 6. **Mean anomaly at epoch (`M₀`)**
-//!    - Represents the position of the object along its orbit at a specific reference time (epoch).
-//!    - It evolves linearly over time and is used to compute the true anomaly.
-//!    - Expressed in degrees.
-//!
-//! ## Epoch
-//!
-//! The `epoch` is the reference point in time (given in Julian Day) at which the `mean_anomaly_at_epoch` applies.
-//! From this point, the object's position can be propagated using Kepler's equation.
-//!
-//! ## Coordinate Calculation
-//!
-//! The `KeplerianOrbit::kepler_position(jd)` method (implemented in
-//! [`calculus::kepler_equations`](crate::calculus::kepler_equations)) returns the
-//! **heliocentric ecliptic Cartesian coordinates** of the orbiting body at a given
-//! Julian Day (`jd`), based on the orbital elements and epoch.
-//!
-//! ## Units
-//!
-//! This module assumes that:
-//! - **Angles** are expressed in degrees (`Degrees`).
-//! - **Distances** use astronomical units (`AstronomicalUnits`).
-//! - **Time** is expressed as Julian Days (`JulianDate`).
-//!
-//! ## Usage Example
-//!
-//! This example computes Earth's position on a given Julian date.
-//!
-//! ```rust
-//! use siderust::astro::orbit::KeplerianOrbit;
-//! use siderust::time::JulianDate;
-//! use siderust::qtty::*;
-//!
-//! let earth_orbit = KeplerianOrbit::new(
-//!     1.0*AU,                    // a
-//!     0.0167,                    // e
-//!     Degrees::new(0.00005),     // i
-//!     Degrees::new(-11.26064),   // Ω
-//!     Degrees::new(102.94719),   // ω
-//!     Degrees::new(100.46435),   // M₀
-//!     JulianDate::J2000,         // epoch (J2000)
-//! );
-//!
-//! let coords = earth_orbit.kepler_position(JulianDate::new(2459200.5));
-//! ```
+//! - Meeus, J. (1998). *Astronomical Algorithms* (2nd ed.). Willmann-Bell.
+//! - Standish, E. M. (1992). "Keplerian Elements for Approximate Positions of
+//!   the Major Planets". *JPL Solar System Dynamics*.
+//!   <https://ssd.jpl.nasa.gov/planets/approx_pos.html>
 
 use crate::astro::conic::ConicError;
 use crate::astro::units::GaussianYears;
+use crate::qtty::angular_rate::AngularRate;
 use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::conic::{
@@ -196,10 +154,10 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         )
         .map_err(map_validation_error)?;
 
-        if !mean_anomaly_at_epoch.value().is_finite() {
+        if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.value().is_finite() {
+        if !epoch.jd_value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -268,13 +226,9 @@ impl OrientationTrig {
     }
 
     pub(crate) fn from_orientation(o: &ConicOrientation<EclipticMeanJ2000>) -> Self {
-        let (sin_i, cos_i) = o.inclination().to::<Radian>().value().sin_cos();
-        let (sin_omega, cos_omega) = o.argument_of_periapsis().to::<Radian>().value().sin_cos();
-        let (sin_node, cos_node) = o
-            .longitude_of_ascending_node()
-            .to::<Radian>()
-            .value()
-            .sin_cos();
+        let (sin_i, cos_i) = o.inclination().sin_cos();
+        let (sin_omega, cos_omega) = o.argument_of_periapsis().sin_cos();
+        let (sin_node, cos_node) = o.longitude_of_ascending_node().sin_cos();
         Self {
             sin_i,
             cos_i,
@@ -291,7 +245,8 @@ impl OrientationTrig {
 /// `PreparedOrbit` guarantees at construction time that the underlying
 /// [`KeplerianOrbit`] is a valid ellipse. It caches:
 ///
-/// - Mean motion (radians/day) — avoids recomputing `k / a^{1.5}` every call.
+/// - Mean motion as [`AngularRate<Radian, Day>`] — avoids recomputing
+///   `k / a^{1.5}` every call and carries the physical unit.
 /// - Orientation trig terms — avoids 3× `sin_cos()` per call.
 /// - Mean anomaly at epoch (radians) — avoids degree→radian conversion per call.
 ///
@@ -318,8 +273,8 @@ impl OrientationTrig {
 pub struct PreparedOrbit {
     /// The validated source orbit (kept for introspection / conversion back).
     elements: KeplerianOrbit,
-    /// Precomputed mean motion in radians per day.
-    mean_motion_rad_per_day: f64,
+    /// Precomputed mean motion (rad/day), typed.
+    mean_motion: AngularRate<Radian, Day>,
     /// Precomputed mean anomaly at epoch in radians.
     m0_rad: f64,
     /// Precomputed orientation trig.
@@ -355,10 +310,12 @@ impl PreparedOrbit {
         &self.elements
     }
 
-    /// Precomputed mean motion in radians per day.
+    /// Precomputed mean motion (radians per day), typed as [`AngularRate<Radian, Day>`].
+    ///
+    /// Callers that need a raw `f64` for math kernels should call `.value()`.
     #[inline]
-    pub fn mean_motion_rad_per_day(&self) -> f64 {
-        self.mean_motion_rad_per_day
+    pub fn mean_motion(&self) -> AngularRate<Radian, Day> {
+        self.mean_motion
     }
 
     /// Precomputed mean anomaly at epoch in radians.
@@ -379,12 +336,12 @@ impl PreparedOrbit {
         // Kepler's 3rd law: T [Gaussian years] = a [AU]^{3/2}
         let t_gaussian_years = a * a.sqrt();
         let period_days = GaussianYears::new(t_gaussian_years).to::<Day>().value();
-        let mean_motion_rad_per_day = std::f64::consts::TAU / period_days;
+        let mean_motion = AngularRate::<Radian, Day>::new(std::f64::consts::TAU / period_days);
         let m0_rad = orbit.mean_anomaly_at_epoch.to::<Radian>().value();
         let trig = OrientationTrig::from_orientation(orbit.orientation());
         Self {
             elements: orbit,
-            mean_motion_rad_per_day,
+            mean_motion,
             m0_rad,
             trig,
         }

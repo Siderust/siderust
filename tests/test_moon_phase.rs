@@ -29,7 +29,7 @@ fn jd_from_utc(year: i32, month: u32, day: u32, hour: u32, min: u32) -> JulianDa
     let dt = Utc
         .with_ymd_and_hms(year, month, day, hour, min, 0)
         .unwrap();
-    JulianDate::from_utc(dt)
+    JulianDate::from_chrono(dt)
 }
 
 // ---------------------------------------------------------------------------
@@ -43,10 +43,10 @@ fn l1_illuminated_fraction_bounded_1000_points() {
         let jd = start + Days::new(i as f64 * 0.37); // irregular spacing
         let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
         assert!(
-            geom.illuminated_fraction >= 0.0 && geom.illuminated_fraction <= 1.0,
-            "Fraction out of bounds at step {}: {}",
+            geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0,
+            "Fraction out of bounds at step {}: {:.4}",
             i,
-            geom.illuminated_fraction
+            geom.illuminated_fraction.value()
         );
         let pa = geom.phase_angle;
         assert!(
@@ -81,10 +81,10 @@ fn l2_full_moon_high_illumination() {
     for (i, jd) in full_moons.iter().enumerate() {
         let geom = moon_phase_geocentric::<Vsop87Ephemeris>(*jd);
         assert!(
-            geom.illuminated_fraction >= 0.99,
+            geom.illuminated_fraction.value() >= 0.99,
             "Full moon #{} illumination too low: {:.4}",
             i,
-            geom.illuminated_fraction
+            geom.illuminated_fraction.value()
         );
     }
 }
@@ -105,10 +105,10 @@ fn l3_new_moon_low_illumination() {
     for (i, jd) in new_moons.iter().enumerate() {
         let geom = moon_phase_geocentric::<Vsop87Ephemeris>(*jd);
         assert!(
-            geom.illuminated_fraction <= 0.01,
+            geom.illuminated_fraction.value() <= 0.01,
             "New moon #{} illumination too high: {:.4}",
             i,
-            geom.illuminated_fraction
+            geom.illuminated_fraction.value()
         );
     }
 }
@@ -210,7 +210,9 @@ fn l5_topocentric_parallax_bound() {
                 diff_deg
             );
 
-            let frac_diff = (geo.illuminated_fraction - topo.illuminated_fraction).abs();
+            let frac_diff = (geo.illuminated_fraction - topo.illuminated_fraction)
+                .value()
+                .abs();
             assert!(
                 frac_diff < 0.02,
                 "Site {} epoch {}: fraction diff {:.4} exceeds 2%",
@@ -316,7 +318,9 @@ fn series_topocentric_works() {
     let series = MoonPhaseSeries::<Vsop87Ephemeris>::sample_topocentric(start, end, step, site);
     assert_eq!(series.len(), 6);
     for (_, geom) in &series {
-        assert!(geom.illuminated_fraction >= 0.0 && geom.illuminated_fraction <= 1.0);
+        assert!(
+            geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0
+        );
     }
 }
 

@@ -3,7 +3,7 @@
 
 //! Regression tests for high-precision Earth-rotation usage in topocentric paths.
 //!
-//! Reference numbers in this file were precomputed with ERFA/SOFA routines:
+//! Reference numbers in this file were precomputed with SOFA routines:
 //! - sidereal angle: GMST06 + Nut00B equation-of-equinoxes form
 //! - terrestrial->celestial chain: W(xp,yp,s') · R3(-ERA) · Q(X,Y,s)
 //!   with frame-bias to EquatorialMeanJ2000
@@ -30,7 +30,7 @@ fn tod_unit_position(
     ra_deg: f64,
     dec_deg: f64,
 ) -> spherical::Position<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit> {
-    affn::spherical::Position::<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit>::new_raw_with_params(
+    affn::spherical::Position::<Topocentric, frames::EquatorialTrueOfDate, AstronomicalUnit>::new_unchecked_with_params(
         site,
         Degrees::new(dec_deg),
         Degrees::new(ra_deg),
@@ -39,7 +39,7 @@ fn tod_unit_position(
 }
 
 #[test]
-fn horizontal_true_of_date_matches_erfa_roque_sirius_2020() {
+fn horizontal_true_of_date_matches_sofa_roque_sirius_2020() {
     let jd_tt = JulianDate::new(2_459_015.5);
     let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
     let eq = tod_unit_position(site, 101.287, -16.716);
@@ -47,7 +47,7 @@ fn horizontal_true_of_date_matches_erfa_roque_sirius_2020() {
 
     let horiz = equatorial_to_horizontal_true_of_date_with_ctx(&eq, site, jd_tt, &ctx);
 
-    // ERFA reference (degrees)
+    // SOFA reference (degrees)
     let expected_alt = -55.077_584_745_179_26;
     let expected_az = 282.286_824_123_029_6;
 
@@ -63,7 +63,7 @@ fn horizontal_true_of_date_matches_erfa_roque_sirius_2020() {
 }
 
 #[test]
-fn horizontal_true_of_date_matches_erfa_greenwich_2024() {
+fn horizontal_true_of_date_matches_sofa_greenwich_2024() {
     let jd_tt = JulianDate::new(2_460_310.25);
     let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     let eq = tod_unit_position(site, 210.1234, 35.6789);
@@ -71,7 +71,7 @@ fn horizontal_true_of_date_matches_erfa_greenwich_2024() {
 
     let horiz = equatorial_to_horizontal_true_of_date_with_ctx(&eq, site, jd_tt, &ctx);
 
-    // ERFA reference (degrees)
+    // SOFA reference (degrees)
     let expected_alt = -1.006_037_970_004_032_3;
     let expected_az = 343.464_018_807_157_86;
 
@@ -87,7 +87,7 @@ fn horizontal_true_of_date_matches_erfa_greenwich_2024() {
 }
 
 #[test]
-fn topocentric_site_vector_matches_erfa_chain_roque_2020() {
+fn topocentric_site_vector_matches_sofa_chain_roque_2020() {
     let jd_tt = JulianDate::new(2_459_015.5);
     let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
     let origin = position::EquatorialMeanJ2000::<Kilometer, Geocentric>::new(0.0, 0.0, 0.0);
@@ -100,7 +100,7 @@ fn topocentric_site_vector_matches_erfa_chain_roque_2020() {
     let site_eq_y = -topo_default.y();
     let site_eq_z = -topo_default.z();
 
-    // ERFA reference (km) for this epoch/site using full IAU chain.
+    // SOFA reference (km) for this epoch/site using full IAU chain.
     let ex = 1_081.752_851_23;
     let ey = 5_493.726_969_09;
     let ez = 3_049.140_205_07;

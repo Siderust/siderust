@@ -3,12 +3,49 @@
 
 //! # Shared Horizontal Coordinate Helpers
 //!
-//! Common routines for converting equatorial coordinates to horizontal
-//! (altitude/azimuth), shared across Sun, Moon, and stellar modules.
+//! ## Scientific scope
 //!
-//! These helpers factor out the duplicated equatorial→horizontal transform
-//! that previously existed independently in `solar::sun_equations` and
-//! `lunar::moon_equations`.
+//! This module implements the apparent-topocentric pipeline that converts a
+//! geocentric mean-J2000 position to an observed altitude / azimuth for an
+//! Earth-surface observer.  The pipeline applies, in order:
+//!
+//! 1. **Topocentric parallax** — shifts the apparent direction from the
+//!    geocentre to the observer site (important for the Moon, ~57′ maximum).
+//! 2. **Precession** (IAU 2006 / P03) — rotates the mean J2000 frame to
+//!    the mean equator / equinox of date.
+//! 3. **Nutation** (IAU 2000B) — adds short-period oscillations of the
+//!    Earth's rotation axis to reach the true-of-date frame.
+//! 4. **Apparent sidereal time** (GAST, IAU 2006) — projects the equatorial
+//!    position onto the local meridian to obtain the hour angle.
+//! 5. **Equatorial → horizontal** — converts hour angle + declination to
+//!    altitude + azimuth for the observer's latitude.
+//!
+//! The routines are shared between the Sun and Moon modules to avoid
+//! duplicating identical transform chains.
+//!
+//! ## Technical scope
+//!
+//! - [`geocentric_j2000_to_apparent_topocentric`] — intermediate stage;
+//!   takes a geocentric J2000 Cartesian position and returns a topocentric
+//!   true-of-date spherical position (`RA`, `Dec`, distance).
+//! - [`equatorial_to_horizontal_true_of_date`] — final stage; converts the
+//!   true-of-date equatorial spherical position to altitude / azimuth using
+//!   GAST and the observer latitude.
+//! - [`equatorial_to_horizontal`] — convenience wrapper for the standard
+//!   true-of-date equatorial to horizontal conversion.
+//!
+//! All public functions accept and return typed `qtty` quantities (degrees,
+//! radians, AU, metres).
+//!
+//! ## References
+//!
+//! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed. ch. 13.
+//!   Willmann-Bell.
+//! - IAU SOFA (2023). *Standards of Fundamental Astronomy*, release 18.
+//!   <https://www.iausofa.org/>
+//! - Capitaine, N., et al. (2003). "Expressions for IAU 2000 precession
+//!   quantities". *Astronomy and Astrophysics* 412, 567–586.
+//!   <https://doi.org/10.1051/0004-6361:20031539>
 
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::nutation::{nutation_iau2000b, NutationModel};
@@ -153,7 +190,7 @@ where
     let distance = eq_position.distance;
 
     // True-of-date RA/Dec must use apparent sidereal time (GAST).
-    let eop = ctx.astro_context().eop_at(jd);
+    let eop = ctx.astro_context().eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
     let nut = Ctx::Nut::nutation(jd);
     let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
@@ -224,11 +261,11 @@ pub fn star_horizontal(
 
     // True-of-date RA/Dec requires apparent sidereal time (GAST).
     let ctx: AstroContext = AstroContext::default();
-    let eop = ctx.eop_at(jd);
+    let eop = ctx.eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
     let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
     let lst = gast + site.lon.to::<Radian>();
-    let ha = Radians::new((lst - ra_tod).value().rem_euclid(std::f64::consts::TAU));
+    let ha = (lst - ra_tod).wrap_pos();
 
     // Equatorial → horizontal
     let lat = site.lat.to::<Radian>();

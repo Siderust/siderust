@@ -37,11 +37,11 @@ of this unified surface instead.
 
 ## Dependencies
 
-This crate is meant to be built from a workspace checkout where these path dependencies exist:
+This crate is meant to be built from a workspace checkout where the Rust sources are available:
 
-- `siderust` (Rust implementation) at `../siderust`
-- `tempoch-ffi` (C ABI for time types used by the API) at `../../tempoch/tempoch-ffi`
-- `tempoch`, `affn`, `qtty` (Rust crates used internally)
+- `siderust` (Rust implementation) at `..`
+- `affn`, `qtty`, `tempoch` in the sibling workspace crates
+- `tempoch-ffi` from crates.io for the shared C time ABI
 
 `tempoch-ffi 0.4` exposes JD/MJD carriers as raw `double`s, so `siderust-ffi`
 reuses that scalar ABI directly instead of duplicating wrapper structs.
@@ -58,6 +58,8 @@ Cargo features mirror `siderust` options:
 
 - `serde`: enables serialization-related APIs where applicable
 - `de440`: enables DE440 ephemeris support
+- `de441`: enables DE441 ephemeris support
+- `runtime-data`: enables runtime dataset-management helpers exposed through `siderust`
 
 Example:
 

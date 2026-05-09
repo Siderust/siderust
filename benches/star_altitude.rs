@@ -45,7 +45,7 @@ fn sirius_target() -> direction::ICRS {
 // =============================================================================
 
 fn bench_star_altitude_computation(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let target = sirius_target();
     let mjd = siderust::time::ModifiedJulianDate::new(51544.5); // J2000 epoch
 
@@ -65,7 +65,7 @@ fn bench_star_altitude_computation(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_star_thresholds(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let target = sirius_target();
     let opts = SearchOpts::default();
 
@@ -119,7 +119,7 @@ fn bench_star_thresholds(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_star_crossings(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let target = sirius_target();
     let opts = SearchOpts::default();
 

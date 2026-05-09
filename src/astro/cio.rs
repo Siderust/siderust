@@ -3,41 +3,30 @@
 
 //! # CIO Locator and CIP Coordinates, IAU 2006/2000A
 //!
-//! In the IAU 2000/2006 framework, the orientation of the Celestial Intermediate
-//! Pole (CIP) is described by two direction cosines **X** and **Y** in the GCRS,
-//! and the position of the Celestial Intermediate Origin (CIO) on the CIP equator
-//! is given by the quantity **s**.
+//! Computes the Celestial Intermediate Pole (CIP) coordinates **(X, Y)** and the
+//! Celestial Intermediate Origin (CIO) locator **s** in the IAU 2006/2000A
+//! framework, plus the celestial-to-intermediate (CIO-based) rotation matrix.
 //!
-//! ## CIP (X, Y) coordinates
+//! ## Scientific scope
 //!
-//! The CIP direction in the GCRS is given by:
+//! In the IAU 2000/2006 paradigm the CIP direction in the GCRS is described by
+//! the two direction cosines `X` and `Y`, and the position of the CIO on the
+//! CIP equator is given by the small angle `s`. Together they fully specify
+//! the orientation of the intermediate frame used for Earth-rotation modelling
+//! and replace the classical equinox-based bias-precession-nutation chain.
+//! Accurate `(X, Y, s)` are required for sub-mas astrometry, VLBI reductions
+//! and the rigorous transformation between the GCRS and the TIRS/ITRS.
 //!
-//! ```text
-//! X ≈ sin(ψ̄ + Δψ) × sin(ε_A + Δε) + corrections
-//! Y ≈ −(ε_A + Δε) + corrections
-//! ```
+//! ## Technical scope
 //!
-//! but the rigorous approach uses the Fukushima-Williams angles with nutation.
-//!
-//! ## CIO locator s
-//!
-//! The CIO locator `s` is defined as:
-//!
-//! ```text
-//! s = −½ X Y + Σ(polynomial + trigonometric series)
-//! ```
-//!
-//! For most applications, the simplified form `s ≈ −½ X Y` is accurate to ~1 μas.
-//!
-//! ## BPN matrix (CIO-based)
-//!
-//! The celestial-to-intermediate frame rotation uses the CIO-based matrix:
-//!
-//! ```text
-//! Q(t) = R₃(−E)·R₂(−d)·R₃(E)·R₃(s)
-//! ```
-//!
-//! where `E = atan2(Y, X)`, `d = acos(Z)`, `Z = √(1 − X² − Y²)`.
+//! `(X, Y)` are extracted from the rigorous Fukushima-Williams precession
+//! angles combined with nutation corrections, i.e. from the full
+//! bias-precession-nutation (NPB) matrix rather than truncated series. The
+//! CIO locator is implemented in the simplified high-accuracy form
+//! `s ≈ −½ X Y`, sufficient for ~1 μas precision. The intermediate-frame
+//! rotation `Q(t) = R₃(−E)·R₂(−d)·R₃(E)·R₃(s)` with
+//! `E = atan2(Y, X)`, `d = acos(√(1 − X² − Y²))` is built directly from
+//! `affn::Rotation3` factors.
 //!
 //! ## References
 //!
@@ -54,9 +43,9 @@ use affn::Rotation3;
 #[derive(Debug, Clone, Copy)]
 pub struct CipCio {
     /// X coordinate of CIP in GCRS (dimensionless direction cosine).
-    pub x: f64,
+    pub x: CipCoordinates,
     /// Y coordinate of CIP in GCRS (dimensionless direction cosine).
-    pub y: f64,
+    pub y: CipCoordinates,
     /// CIO locator s.
     pub s: Radians,
 }
@@ -76,14 +65,14 @@ pub struct CipCio {
 /// ## References
 /// * SOFA routine `iauXys06a` (via the NPB matrix approach)
 /// * IERS Conventions (2010), §5.4.1
-pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (f64, f64) {
+pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (CipCoordinates, CipCoordinates) {
     // Build the full NPB matrix (bias + precession + nutation)
     let npb = precession::precession_nutation_matrix(jd, dpsi, deps);
     let m = npb.as_matrix();
 
     // X = sin(d)·cos(E) = m[2][0], Y = sin(d)·sin(E) = m[2][1]
     // In the SOFA convention: X = m[2][0], Y = m[2][1]
-    (m[2][0], m[2][1])
+    (CipCoordinates::new(m[2][0]), CipCoordinates::new(m[2][1]))
 }
 
 /// CIO locator `s`, simplified form.
@@ -104,13 +93,14 @@ pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (f64, f64) {
 /// * IERS Conventions (2010), §5.5.4
 /// * Capitaine, Wallace & Chapront (2003)
 /// * SOFA routine `iauS06`
-pub fn cio_locator_s(jd: JulianDate, x: f64, y: f64) -> Radians {
+pub fn cio_locator_s(jd: JulianDate, x: CipCoordinates, y: CipCoordinates) -> Radians {
     let t = jd.julian_centuries();
 
     // Polynomial part (μas), from IERS Conventions (2010) eq. 5.15
     let poly_uas = 94.0 + 3808.65 * t - 122.68 * t.powi(2) - 72574.11 * t.powi(3);
 
-    let s_rad = -0.5 * x * y + MicroArcseconds::new(poly_uas).to::<Radian>().value();
+    let s_rad =
+        -0.5 * x.value() * y.value() + MicroArcseconds::new(poly_uas).to::<Radian>().value();
     Radians::new(s_rad)
 }
 
@@ -137,9 +127,10 @@ pub fn cip_cio(jd: JulianDate, dpsi: Radians, deps: Radians) -> CipCio {
 /// ## References
 /// * SOFA routine `iauC2ixys`
 /// * IERS Conventions (2010), eq. 5.8
-pub fn gcrs_to_cirs_matrix(x: f64, y: f64, s: Radians) -> Rotation3 {
-    let r2 = x * x + y * y;
-    let e = y.atan2(x);
+pub fn gcrs_to_cirs_matrix(x: CipCoordinates, y: CipCoordinates, s: Radians) -> Rotation3 {
+    let (xv, yv) = (x.value(), y.value());
+    let r2 = xv * xv + yv * yv;
+    let e = yv.atan2(xv);
     let d = r2.sqrt().atan2((1.0 - r2).max(0.0).sqrt());
 
     let (se, ce) = e.sin_cos();
@@ -186,14 +177,26 @@ mod tests {
         // At J2000.0, the CIP is very close to the GCRS pole, so X ≈ 0, Y ≈ 0
         let (x, y) = cip_xy(JulianDate::J2000, Radians::new(0.0), Radians::new(0.0));
         // Frame bias gives X, Y of order ~10 mas = ~5e-8 rad
-        assert!(x.abs() < 1e-4, "X at J2000 should be ~0, got {}", x);
-        assert!(y.abs() < 1e-4, "Y at J2000 should be ~0, got {}", y);
+        assert!(
+            x.value().abs() < 1e-4,
+            "X at J2000 should be ~0, got {}",
+            x.value()
+        );
+        assert!(
+            y.value().abs() < 1e-4,
+            "Y at J2000 should be ~0, got {}",
+            y.value()
+        );
     }
 
     #[test]
     fn cio_locator_small() {
         // The CIO locator s is very small (< 1 mas for current epochs)
-        let s = cio_locator_s(JulianDate::J2000, 0.0, 0.0);
+        let s = cio_locator_s(
+            JulianDate::J2000,
+            CipCoordinates::new(0.0),
+            CipCoordinates::new(0.0),
+        );
         let s_mas = s.value() * 206_264_806.0; // rad → mas
         assert!(
             s_mas.abs() < 100.0,
@@ -205,7 +208,11 @@ mod tests {
     #[test]
     fn gcrs_to_cirs_near_identity_at_j2000() {
         // At J2000 with zero nutation, Q should be near-identity (only frame bias)
-        let q = gcrs_to_cirs_matrix(0.0, 0.0, Radians::new(0.0));
+        let q = gcrs_to_cirs_matrix(
+            CipCoordinates::new(0.0),
+            CipCoordinates::new(0.0),
+            Radians::new(0.0),
+        );
         let m = q.as_matrix();
         for (i, row) in m.iter().enumerate().take(3) {
             assert!(

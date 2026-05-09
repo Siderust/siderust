@@ -1,6 +1,56 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! # ELP2000-82B Series Evaluation
+//!
+//! ## Scientific scope
+//!
+//! This module implements the numerical evaluation of the 36 ELP2000-82B
+//! Poisson sub-series that make up the Moon's geocentric ecliptic longitude (`a`,
+//! arc-seconds), latitude (`b`, arc-seconds), and distance factor (`c`,
+//! dimensionless ratio relative to the mean semi-major axis).  The time argument
+//! `T` is Julian millennia from J2000.0 (TT):
+//!
+//! ```text
+//!     T = (JD − 2451545.0) / 365250
+//! ```
+//!
+//! The series are grouped as:
+//!
+//! - **ELP 1–12** — Main Problem (longitude, latitude, distance in three groups
+//!   of four sub-series each).
+//! - **ELP 13–24** — Earth Perturbations (same structure).
+//! - **ELP 25–36** — Planetary Perturbations (same structure).
+//!
+//! After summation, the Laskar (1986) rotation matrix converts from the mean
+//! ecliptic of date to the J2000.0 fixed frame.  The public entry point returns
+//! a strongly-typed Cartesian position.
+//!
+//! Validity: ±10 centuries from J2000.0; accuracy better than 1″ for the Main
+//! Problem series.
+//!
+//! ## Technical scope
+//!
+//! - `Moon::get_geo_position<U>` — the sole public entry point: takes a
+//!   `JulianDate` (TT), evaluates the full ELP2000-82B theory, and returns a
+//!   `Position<Geocentric, EclipticMeanJ2000, U>` for any `LengthUnit`.
+//!
+//! All internal kernel functions (`sum_series_elpN_ctx`) accept a pre-computed
+//! `ElpPrecomputed` context (raw `f64` fields in Julian-millennia, radians, and
+//! arc-seconds) and return `f64` arc-second contributions.  The `series_wrappers`
+//! sub-module re-exposes them with a plain `t: &[f64; 5]` signature for testing.
+//!
+//! ## References
+//!
+//! - Chapront-Touzé, M., & Chapront, J. (1983). "The lunar ephemeris ELP 2000".
+//!   *Astronomy and Astrophysics* 124, 50–62.
+//! - Chapront-Touzé, M., & Chapront, J. (1988). "ELP 2000-82B: A semi-analytical
+//!   lunar ephemeris adequate for historical times".
+//!   *Astronomy and Astrophysics* 190, 342–352.
+//! - Laskar, J. (1986). "Secular terms of classical planetary theories using the
+//!   results of general theory". *Astronomy and Astrophysics* 157, 59–70.
+//! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed. Willmann-Bell.
+
 #![allow(clippy::needless_range_loop)]
 
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};
@@ -9,7 +59,7 @@ use wide::f64x4;
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
 mod elp_data {
-    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/generated/elp_data.rs"));
+    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/archive/elp_data.rs"));
 }
 use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;
@@ -895,7 +945,7 @@ mod tests {
         use chrono::{DateTime, NaiveDate, Utc};
         let date = NaiveDate::from_ymd_opt(yyyy, mm, dd).expect("invalid date");
         let datetime = date.and_hms_opt(h, m, s).expect("invalid time");
-        JulianDate::from_utc(DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc))
+        JulianDate::from_chrono(DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc))
     }
 
     /// Build time array t = [1, t1, t1², t1³, t1⁴] from Julian centuries
@@ -994,7 +1044,7 @@ mod tests {
             let original = Radians::new(angle);
             let normalized = normalize_angle(original);
             let sin_orig = angle.sin();
-            let sin_norm = normalized.value().sin();
+            let sin_norm = normalized.sin();
             // Tolerance relaxed: different argument-reduction paths
             // (libm for large angles vs. wrap_signed first) can differ.
             // For very large angles (>1000), differences up to ~1e-13 are acceptable.

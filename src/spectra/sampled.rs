@@ -1,7 +1,46 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Typed sampled spectrum.
+//! # Typed sampled spectrum container
+//!
+//! ## Scientific scope
+//!
+//! A *sampled spectrum* is the elementary representation of a continuous
+//! 1-D spectral function — wavelength-indexed transmission, irradiance,
+//! throughput, etc. — discretised into a strictly-monotonic table of
+//! `(x_i, y_i)` pairs. The container itself carries no spectral physics:
+//! it stores the samples, validates their monotonicity, and exposes
+//! typed evaluation via piecewise-linear interpolation against the
+//! configured boundary policy. This is the typed counterpart to the
+//! untyped numerical kernels in [`crate::spectra::algo`].
+//!
+//! ## Technical scope
+//!
+//! Provides [`SampledSpectrum<X, Y, S>`], generic over the typed
+//! `qtty::Unit` markers `X` (axis) and `Y` (value) and the scalar `S`
+//! (defaulting to `f64`). The public surface includes:
+//!
+//! - Constructors that validate length, monotonicity, and minimum
+//!   sample count, returning [`SpectrumError`] on failure.
+//! - [`SampledSpectrum::interp_at`] — typed evaluation honouring the
+//!   declared [`Interpolation`] and [`OutOfRange`] policies.
+//! - Typed integrators returning `Quantity<Prod<Y, X>>`.
+//! - [`SampledSpectrum::xs_raw`] / [`SampledSpectrum::ys_raw`] —
+//!   zero-cost numeric-table views (`Vec<f64>` of each axis' unit-scoped
+//!   `.value()`) intended for handing the samples to the
+//!   [`crate::spectra::algo`] kernels and for external consumers that
+//!   work in plain `f64`.
+//!
+//! Inputs are typed `Quantity<X, S>` / `Quantity<Y, S>`; outputs of
+//! [`SampledSpectrum::interp_at`] are typed `Quantity<Y, f64>`.
+//!
+//! ## References
+//!
+//! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., Flannery, B. P.
+//!   (1992). *Numerical Recipes in C*, 2nd ed., §3.1 (linear
+//!   interpolation). Cambridge University Press.
+//! - NumPy developers. *numpy.interp* documentation
+//!   (boundary-handling semantics).
 
 use crate::ext_qtty::{Quantity, Unit};
 
@@ -149,12 +188,22 @@ impl<X: Unit, Y: Unit> SampledSpectrum<X, Y, f64> {
         })
     }
 
-    /// Raw f64 view of the x-axis (each sample's unit-scoped value).
+    /// Zero-cost numeric-table view of the x-axis as a `Vec<f64>` of each
+    /// sample's unit-scoped `.value()`.
+    ///
+    /// Intended for handing the samples to the untyped
+    /// [`crate::spectra::algo`] kernels and to external consumers that
+    /// work in plain `f64`. The values are *not* canonicalised — they
+    /// remain expressed in the declared unit `X`.
     pub fn xs_raw(&self) -> Vec<f64> {
         self.xs.iter().map(|q| q.value()).collect()
     }
 
-    /// Raw f64 view of the y-axis.
+    /// Zero-cost numeric-table view of the y-axis as a `Vec<f64>` of
+    /// each sample's unit-scoped `.value()`.
+    ///
+    /// Same intent as [`SampledSpectrum::xs_raw`]: a kernel-facing
+    /// numeric view, not a canonicalising conversion.
     pub fn ys_raw(&self) -> Vec<f64> {
         self.ys.iter().map(|q| q.value()).collect()
     }

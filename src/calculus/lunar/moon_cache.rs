@@ -3,29 +3,46 @@
 
 //! # Moon Ephemeris Cache, Chebyshev Segment Interpolation
 //!
-//! Precomputes the Moon's geocentric ecliptic Cartesian coordinates (X, Y, Z)
-//! on Chebyshev nodes within fixed-duration segments, then evaluates any
-//! intermediate time via Clenshaw recurrence in **O(degree)**, replacing the
-//! full ELP2000 series summation (~200 µs → ~1 µs per query).
+//! ## Scientific scope
 //!
-//! A companion [`NutationCache`] stores pre-evaluated nutation triplets
-//! (Δψ, Δε, ε₀) at regular intervals and linearly interpolates, removing
-//! the 77-term IAU 2000B series from the per-query hot path.
+//! Precomputes the Moon's geocentric ecliptic Cartesian coordinates
+//! (X, Y, Z) on Chebyshev nodes within fixed‑duration segments, then
+//! evaluates any intermediate time via Clenshaw recurrence in
+//! **O(degree)**, replacing the full ELP2000 series summation
+//! (~200 µs → ~1 µs per query). A companion [`NutationCache`] stores
+//! pre‑evaluated nutation triplets (Δψ, Δε, ε₀) at regular intervals and
+//! linearly interpolates, removing the 77‑term IAU 2000B series from the
+//! per‑query hot path. The Moon's shortest significant perturbation
+//! period is ~5 days (evection); Chebyshev degree 8 over 4‑day segments
+//! yields interpolation errors well below 1″ in geocentric position, far
+//! smaller than the ~0.5° atmospheric refraction uncertainty at the
+//! horizon.
 //!
-//! ## Design
+//! ## Technical scope
 //!
-//! | Parameter | Default | Notes |
-//! |-----------|---------|-------|
-//! | Segment duration | 4 days | Moon moves ≈52° in ecliptic longitude |
-//! | Chebyshev degree | 8 | 9 nodes per segment, sub-arcsecond accuracy |
-//! | Nutation step | 2 hours | Linear interpolation error < 0.001″ |
+//! Three public types:
 //!
-//! ## Accuracy
+//! * [`MoonPositionCache`], Chebyshev cache for ELP2000 geocentric XYZ.
+//! * [`NutationCache`], 2‑hour linear cache for IAU 2000B nutation.
+//! * [`MoonAltitudeContext`], pre‑built context combining both caches
+//!   plus precomputed observer ITRF position for the unified altitude
+//!   pipeline at a fixed site.
 //!
-//! The Moon's shortest significant perturbation period is ~5 days (evection).
-//! Chebyshev degree 8 over 4-day segments yields interpolation errors well
-//! below 1 arcsecond in geocentric position, far smaller than the ~0.5°
-//! atmospheric refraction uncertainty at the horizon.
+//! Plus the free function [`find_and_label_crossings`], a fused
+//! scan + Brent + labelling pass that records crossing direction
+//! directly from the bracketed sign change, eliminating the two probe
+//! evaluations per crossing required by the generic `find_crossings` +
+//! `label_crossings` pipeline in `intervals.rs`.
+//!
+//! Defaults: 4‑day segments, Chebyshev degree 8 (9 nodes), 2‑hour
+//! nutation step.
+//!
+//! ## References
+//! - Chapront‑Touzé, M. & Chapront, J. (1983). "The lunar ephemeris ELP 2000".
+//!   *Astronomy & Astrophysics* 124, 50–62.
+//! - Capitaine, N., Wallace, P. T., & Chapront, J. (2003). IAU 2000B
+//!   nutation series. *Astronomy & Astrophysics* 412, 567–586.
+//!   doi:10.1051/0004‑6361:20031539
 
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
@@ -90,6 +107,16 @@ impl MoonPositionCache {
     ///
     /// Adds a small padding on each side to accommodate Brent probes
     /// near the boundaries.
+    ///
+    /// # Arguments
+    ///
+    /// * `mjd_start`, inclusive lower bound of the cached window.
+    /// * `mjd_end`, inclusive upper bound of the cached window.
+    ///
+    /// # Returns
+    ///
+    /// A populated [`MoonPositionCache`] holding Chebyshev coefficients
+    /// for X, Y, Z over each segment.
     pub fn new(mjd_start: ModifiedJulianDate, mjd_end: ModifiedJulianDate) -> Self {
         let pad = Days::new(1.0); // 1-day padding on each side
         let t0 = mjd_start - pad;
@@ -135,6 +162,14 @@ impl MoonPositionCache {
     /// Evaluate the cached geocentric ecliptic (X, Y, Z) in km at `jd`.
     ///
     /// Falls back to full ELP2000 if `jd` is outside the cached range.
+    ///
+    /// # Arguments
+    ///
+    /// * `mjd`, evaluation instant.
+    ///
+    /// # Returns
+    ///
+    /// `(x, y, z)` in `Kilometers` in the EclipticMeanJ2000 frame.
     #[inline]
     pub fn get_position_km(&self, mjd: ModifiedJulianDate) -> (Kilometers, Kilometers, Kilometers) {
         let offset = mjd - self.mjd_start;
@@ -174,6 +209,16 @@ pub struct NutationCache {
 
 impl NutationCache {
     /// Build the nutation cache covering `[jd_start, jd_end]`.
+    ///
+    /// # Arguments
+    ///
+    /// * `mjd_start`, inclusive lower bound of the cached window.
+    /// * `mjd_end`, inclusive upper bound of the cached window.
+    ///
+    /// # Returns
+    ///
+    /// A populated [`NutationCache`] with `(Δψ, Δε, ε₀)` triplets at
+    /// 2‑hour spacing across the padded window.
     pub fn new(mjd_start: ModifiedJulianDate, mjd_end: ModifiedJulianDate) -> Self {
         let pad = Days::new(1.0); // 1-day padding
         let t0 = mjd_start - pad;
@@ -196,6 +241,15 @@ impl NutationCache {
     }
 
     /// Interpolate (Δψ, Δε, ε₀) in radians at `jd`.
+    ///
+    /// # Arguments
+    ///
+    /// * `mjd`, evaluation instant.
+    ///
+    /// # Returns
+    ///
+    /// `(dpsi, deps, eps0)` as `Radians`. Falls back to a direct
+    /// IAU 2000B evaluation if `mjd` is outside the cached window.
     #[inline]
     pub fn get_nutation_rad(&self, mjd: ModifiedJulianDate) -> (Radians, Radians, Radians) {
         let offset = mjd - self.mjd_start;
@@ -223,6 +277,15 @@ impl NutationCache {
     ///
     /// Equivalent to [`crate::astro::nutation::nutation_rotation_iau2000b`] but uses
     /// interpolated nutation parameters instead of the full 77-term series.
+    ///
+    /// # Arguments
+    ///
+    /// * `mjd`, evaluation instant.
+    ///
+    /// # Returns
+    ///
+    /// `affn::Rotation3` carrying the mean → true equator‑and‑equinox
+    /// rotation `R₁(ε₀+Δε) · R₃(Δψ) · R₁(−ε₀)`.
     #[inline]
     pub fn nutation_rotation(&self, mjd: ModifiedJulianDate) -> affn::Rotation3 {
         let (dpsi, deps, eps0) = self.get_nutation_rad(mjd);
@@ -262,6 +325,17 @@ impl MoonAltitudeContext {
     /// Build an altitude context covering the MJD period for a given site.
     ///
     /// The caches are padded by 1 day on each side to accommodate Brent probes.
+    ///
+    /// # Arguments
+    ///
+    /// * `mjd_start`, inclusive lower bound of the search window.
+    /// * `mjd_end`, inclusive upper bound of the search window.
+    /// * `site`, geodetic observer location.
+    ///
+    /// # Returns
+    ///
+    /// A [`MoonAltitudeContext`] with both caches populated and the
+    /// observer ITRF position precomputed in km.
     pub fn new(
         mjd_start: ModifiedJulianDate,
         mjd_end: ModifiedJulianDate,
@@ -289,6 +363,14 @@ impl MoonAltitudeContext {
     /// Replicates the full transform chain of
     /// [`Moon::get_horizontal`] → [`Moon::get_apparent_topocentric_equ`]
     /// but replaces ELP2000 and nutation with cached interpolations.
+    ///
+    /// # Arguments
+    ///
+    /// * `mjd`, evaluation instant.
+    ///
+    /// # Returns
+    ///
+    /// Topocentric altitude in `Radians`, no atmospheric refraction.
     #[inline]
     pub fn altitude_rad(&self, mjd: ModifiedJulianDate) -> Quantity<Radian> {
         let jd: JulianDate = mjd.into();
@@ -350,7 +432,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 7. GAST → LST → HA → altitude
         // ---------------------------------------------------------------
-        let eop = ctx.eop_at(jd);
+        let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
         let gast = gast_iau2006(jd_ut1, jd, dpsi, eps0 + deps);
         let lst_rad = gast + self.lon_rad;
@@ -368,7 +450,7 @@ impl MoonAltitudeContext {
 
 use crate::calculus::math_core::intervals::LabeledCrossing;
 use crate::calculus::math_core::root_finding;
-use crate::time::{ModifiedJulianDate, Period, MJD};
+use crate::time::{ModifiedJulianDate, Period};
 
 type Mjd = ModifiedJulianDate;
 type Days = crate::qtty::Quantity<crate::qtty::Day>;
@@ -382,8 +464,22 @@ const DEDUPE_EPS: Days = Days::new(1e-8);
 /// `intervals.rs`, this function records the crossing direction directly
 /// from the sign change that triggered the Brent solve, **eliminating
 /// the 2 extra probe evaluations per crossing**.
+///
+/// # Arguments
+///
+/// * `period`, MJD search window.
+/// * `step`, scan step size used to bracket sign changes.
+/// * `f`, scalar function `mjd → Quantity<V>` to root‑find against `threshold`.
+/// * `threshold`, value subtracted from `f` before root‑finding.
+///
+/// # Returns
+///
+/// A tuple `(crossings, start_above)` where `crossings` is the sorted,
+/// deduplicated `Vec<LabeledCrossing>` of root MJDs annotated with the
+/// crossing direction (`+1` entering, `−1` leaving), and `start_above`
+/// is `true` if `f(start) > threshold`.
 pub fn find_and_label_crossings<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     step: Days,
     f: &F,
     threshold: crate::qtty::Quantity<V>,
@@ -542,7 +638,7 @@ mod tests {
     #[test]
     fn find_and_label_crossings_sine_wave() {
         // Test with a known sine wave: sin(2π(t+0.05)) crosses 0 at known times
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.mjd_value() + 0.05)).sin());
         let period = Period::new(Mjd::new(0.0), Mjd::new(1.0));
         let step = Days::new(0.01);
 

@@ -3,15 +3,24 @@
 
 //! # Simplified Meeus Ch.47 Lunar Position
 //!
-//! Implements the reduced-term geocentric Moon model from
-//! *Astronomical Algorithms*, 2nd ed., Ch. 47 (Jean Meeus).
+//! ## Scientific scope
 //!
-//! This is **intentionally simplified** (6 longitude, 4 latitude, 4 distance
-//! terms) for use as a lightweight benchmark reference. For production
-//! accuracy see [`crate::calculus::lunar`] (ELP2000-82B).
+//! Implements the reduced‑term geocentric Moon model from
+//! *Astronomical Algorithms*, 2nd ed., Ch. 47 (Jean Meeus). Only the six
+//! largest longitude, four latitude, and four distance terms are kept,
+//! giving a few‑arcminute‑class accuracy adequate for benchmarking and
+//! coarse visibility checks. The output is geocentric ecliptic of date
+//! plus equatorial coordinates obtained via the IAU 2006 mean obliquity.
+//!
+//! ## Technical scope
+//!
+//! Single public function [`moon_position_meeus_ch47`] returning a
+//! [`MoonMeeusCh47`] aggregate. Intended as a lightweight reference; for
+//! production accuracy use [`crate::calculus::lunar`] (ELP2000‑82B / DE
+//! cache backends).
 //!
 //! ## References
-//! * Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Ch. 47.
+//! - Meeus, J. (1998). *Astronomical Algorithms*, 2nd ed., Ch. 47, Willmann‑Bell.
 
 use crate::astro::precession;
 use crate::qtty::{Kilometers, Radians};
@@ -36,8 +45,17 @@ pub struct MoonMeeusCh47 {
 ///
 /// Returns both ecliptic-of-date and equatorial coordinates. The ecliptic→
 /// equatorial conversion uses the IAU 2006 mean obliquity of date.
+///
+/// # Arguments
+///
+/// * `jd_tt`, instant on the TT axis as a Julian Date.
+///
+/// # Returns
+///
+/// A [`MoonMeeusCh47`] containing geocentric apparent right ascension,
+/// declination, distance, and ecliptic longitude/latitude of date.
 pub fn moon_position_meeus_ch47(jd_tt: JulianDate) -> MoonMeeusCh47 {
-    let date2 = jd_tt.value() - 2_451_545.0;
+    let date2 = jd_tt.jd_value() - 2_451_545.0;
     let t = date2 / 36_525.0;
 
     // Mean elements (degrees), Meeus Ch.47
@@ -89,9 +107,7 @@ pub fn moon_position_meeus_ch47(jd_tt: JulianDate) -> MoonMeeusCh47 {
     let dist_km = 385_000.56 + sum_r / 1_000.0;
 
     // EclipticMeanJ2000 → equatorial with IAU 2006 mean obliquity
-    let eps = precession::mean_obliquity_iau2006(jd_tt).value();
-    let ce = eps.cos();
-    let se = eps.sin();
+    let (se, ce) = precession::mean_obliquity_iau2006(jd_tt).sin_cos();
     let ra = (ecl_lon_rad.sin() * ce - ecl_lat_rad.tan() * se).atan2(ecl_lon_rad.cos());
     let ra_val = ra.rem_euclid(std::f64::consts::TAU);
     let dec_val = (ecl_lat_rad.sin() * ce + ecl_lat_rad.cos() * se * ecl_lon_rad.sin())

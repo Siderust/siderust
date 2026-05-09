@@ -1,7 +1,48 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-// src/macros.rs
+//! # Test-support macros for typed coordinate equality
+//!
+//! ## Scientific scope
+//!
+//! Astronomical coordinates are 3-tuples of floating-point quantities
+//! that are computed by long chains of trigonometric and matrix
+//! operations (precession, nutation, frame rotations, light-time
+//! corrections, …). At every link in those chains, round-off introduces
+//! sub-ULP errors that accumulate in the last few bits of the mantissa
+//! but are scientifically negligible. Bitwise `assert_eq!` is therefore
+//! the wrong test primitive for coordinate values: the meaningful
+//! question is whether two `Position`s agree to within a tolerance
+//! comparable to the precision of the reference value, not whether their
+//! `f64` bit patterns are identical.
+//!
+//! These macros provide that element-wise tolerance check at the typed
+//! coordinate boundary, so that tests express intent ("agree to
+//! 1e-6 AU") rather than re-implementing the comparison by hand.
+//!
+//! ## Technical scope
+//!
+//! This module provides:
+//!
+//! - [`assert_cartesian_eq!`](crate::assert_cartesian_eq) — assert that
+//!   two [`cartesian::Position`](crate::coordinates::cartesian::Position)
+//!   values agree component-wise within an `epsilon` tolerance, panicking
+//!   with a coordinate-aware message on failure.
+//! - [`assert_spherical_eq!`](crate::assert_spherical_eq) — same for
+//!   [`spherical::Position`](crate::coordinates::spherical::Position),
+//!   comparing distance in the typed `LengthUnit`, and polar/azimuth in
+//!   degrees.
+//! - `__assert_cartesian_eq` / `__assert_spherical_eq` — the
+//!   `pub(crate)` implementations the macros expand to.
+//!
+//! `epsilon` is intentionally a raw `f64` (no typed tolerance newtype):
+//! these are testing helpers, not part of the science API.
+//!
+//! ## References
+//!
+//! None — this is test infrastructure with no domain-specific
+//! algorithm.
+
 use crate::coordinates::{cartesian, centers::ReferenceCenter, frames::ReferenceFrame, spherical};
 use crate::qtty::{Degrees, LengthUnit, Quantity};
 use core::f64;

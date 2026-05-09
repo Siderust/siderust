@@ -1,7 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Errors raised by [`crate::spectra`].
+//! # Error taxonomy for sampled spectra
+//!
+//! ## Scientific scope
+//!
+//! Errors raised when constructing or evaluating a
+//! [`crate::spectra::SampledSpectrum`]. They cover invariants that the
+//! typed container enforces — co-indexed length, minimum sample count,
+//! strict monotonicity of the wavelength axis — and out-of-domain
+//! queries that the configured boundary policy turns into surfaced
+//! errors. These are infrastructure errors, not physical failure modes.
+//!
+//! ## Technical scope
+//!
+//! [`SpectrumError`] enumerates: `LengthMismatch`, `TooFewSamples`,
+//! `NotMonotonic`, `OutOfRange`, `Parse`. Implements [`core::fmt::Display`].
+//!
+//! ## References
+//!
+//! None — error infrastructure.
 
 use core::fmt;
 

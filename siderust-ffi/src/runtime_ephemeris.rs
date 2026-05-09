@@ -24,6 +24,18 @@ use crate::types::*;
 use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
 use siderust::time::JulianDate;
 
+#[inline]
+fn ephemeris_status(err: siderust::calculus::ephemeris::EphemerisError) -> SiderustStatus {
+    match err {
+        siderust::calculus::ephemeris::EphemerisError::OutOfRange { .. } => {
+            SiderustStatus::OutOfRange
+        }
+        siderust::calculus::ephemeris::EphemerisError::InvalidSegment { .. } => {
+            SiderustStatus::DataError
+        }
+    }
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Opaque handle
 // ═══════════════════════════════════════════════════════════════════════════
@@ -174,7 +186,10 @@ pub extern "C" fn siderust_runtime_ephemeris_sun_barycentric(
         }
         let eph = unsafe { &*handle };
         let t = JulianDate::new(jd);
-        let pos = eph.inner.sun_barycentric(t);
+        let pos = match eph.inner.try_sun_barycentric(t) {
+            Ok(pos) => pos,
+            Err(err) => return ephemeris_status(err),
+        };
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x().value(),
@@ -202,7 +217,10 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric(
         }
         let eph = unsafe { &*handle };
         let t = JulianDate::new(jd);
-        let pos = eph.inner.earth_barycentric(t);
+        let pos = match eph.inner.try_earth_barycentric(t) {
+            Ok(pos) => pos,
+            Err(err) => return ephemeris_status(err),
+        };
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x().value(),
@@ -230,7 +248,10 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_heliocentric(
         }
         let eph = unsafe { &*handle };
         let t = JulianDate::new(jd);
-        let pos = eph.inner.earth_heliocentric(t);
+        let pos = match eph.inner.try_earth_heliocentric(t) {
+            Ok(pos) => pos,
+            Err(err) => return ephemeris_status(err),
+        };
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x().value(),
@@ -258,7 +279,10 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric_velocity(
         }
         let eph = unsafe { &*handle };
         let t = JulianDate::new(jd);
-        let vel = eph.inner.earth_barycentric_velocity(t);
+        let vel = match eph.inner.try_earth_barycentric_velocity(t) {
+            Ok(vel) => vel,
+            Err(err) => return ephemeris_status(err),
+        };
         unsafe {
             *out = SiderustCartesianVel {
                 vx: vel.x().value(),
@@ -284,7 +308,10 @@ pub extern "C" fn siderust_runtime_ephemeris_moon_geocentric(
         }
         let eph = unsafe { &*handle };
         let t = JulianDate::new(jd);
-        let pos = eph.inner.moon_geocentric(t);
+        let pos = match eph.inner.try_moon_geocentric(t) {
+            Ok(pos) => pos,
+            Err(err) => return ephemeris_status(err),
+        };
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x().value(),

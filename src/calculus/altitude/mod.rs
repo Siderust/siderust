@@ -3,17 +3,34 @@
 
 //! # Unified Altitude Computation & Event API
 //!
+//! ## Scientific scope
+//!
+//! Topocentric altitude *h(t)* of a celestial body as observed from a
+//! geodetic site on Earth, evaluated on the canonical TT axis. The body's
+//! apparent direction is taken from the underlying analytical or numerical
+//! engine (VSOP87/ELP2000/JPL ephemerides for solar-system bodies; ICRS
+//! catalogue position for stars), so the regime of validity is bounded by
+//! that of the chosen engine. Atmospheric refraction is **not** applied
+//! here; thresholds such as `−0.833°` must be supplied by the caller.
+//!
+//! Event detection (rise/set crossings, culminations, time inside an
+//! altitude band) is computed by combining a coarse scan with bracketed
+//! root finding, so the temporal accuracy is limited by the scan step and
+//! by the chosen `time_tolerance`.
+//!
+//! ## Technical scope
+//!
 //! A clean, user‑friendly API for computing target altitude vs time and
 //! finding events (crossings, culminations, altitude ranges) for **any**
 //! celestial target.
 //!
 //! ## Module Structure
 //!
-//! - [`types`], Core type definitions (events, queries, periods)
-//! - [`search`], Search options and configuration constants
-//! - [`compute`], Low-level altitude computation functions
-//! - [`events`], Event finding (crossings, culminations, ranges)
-//! - [`provider`], Trait-based dispatch for bodies
+//! - `types`, Core type definitions (events, queries, periods)
+//! - `search`, Search options and configuration constants
+//! - `compute`, Low-level altitude computation functions
+//! - `events`, Event finding (crossings, culminations, ranges)
+//! - `provider`, Trait-based dispatch for bodies
 //!
 //! ## Public Functions
 //!
@@ -29,9 +46,9 @@
 //!
 //! ## Time Scale
 //!
-//! `ModifiedJulianDate` / `Period<MJD>` values in this API are interpreted on
+//! `ModifiedJulianDate` / `Period<ModifiedJulianDate>` values in this API are interpreted on
 //! the TT axis (`tempoch` canonical JD(TT) semantics). If your inputs are UTC
-//! timestamps, convert them with `ModifiedJulianDate::from_utc(...)` first.
+//! timestamps, convert them with `ModifiedJulianDate::from_chrono(…)` first.
 //!
 //! ## Trait-Based API
 //!
@@ -64,6 +81,9 @@
 //! // Or use the trait methods directly
 //! let alt_rad = Sun.altitude_at(&site, siderust::time::ModifiedJulianDate::new(60000.0));
 //! ```
+//!
+//! ## References
+//! None.
 
 // ---------------------------------------------------------------------------
 // Submodules

@@ -8,7 +8,7 @@
 //!
 //! ## Approach
 //!
-//! The transformation follows ERFA conventions:
+//! The transformation follows SOFA conventions:
 //! - GAST (Greenwich Apparent Sidereal Time) = `gast_iau2006(UT1, TT, dpsi, true_obliquity)`
 //! - Hour Angle = GAST + observer_longitude - RA
 //! - Azimuth uses astronomical convention: 0° = North, increasing clockwise through East
@@ -107,14 +107,14 @@ impl ToHorizontal for Direction<EquatorialTrueOfDate> {
         // Compute GAST and hour angle
         let nut = nutation::nutation_iau2000b(*jd_tt);
         let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.true_obliquity());
-        let ha = gast.value() + obs_lon.value() - ra.value();
+        let ha = (gast + obs_lon - ra).value();
 
         // Spherical trigonometry for equatorial → horizontal
         let (sh, ch) = ha.sin_cos();
         let (sd, cd) = dec.sin_cos();
         let (sp, cp) = obs_lat.sin_cos();
 
-        // ERFA-compatible intermediate axes
+        // SOFA-compatible intermediate axes
         let x = -ch * cd * sp + sd * cp;
         let y = -sh * cd;
         let z = ch * cd * cp + sd * sp;
@@ -184,7 +184,7 @@ impl FromHorizontal for Direction<Horizontal> {
         // Compute LAST (Local Apparent Sidereal Time)
         let nut = nutation::nutation_iau2000b(*jd_tt);
         let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.true_obliquity());
-        let last = gast.value() + obs_lon.value();
+        let last = (gast + obs_lon).value();
 
         // Spherical trigonometry for horizontal → equatorial
         let (sp, cp) = obs_lat.sin_cos();
@@ -346,8 +346,8 @@ mod tests {
     }
 
     #[test]
-    fn matches_erfa_reference_case() {
-        // Reference generated from ERFA adapter in the lab benchmark suite
+    fn matches_sofa_reference_case() {
+        // Reference generated from the SOFA-based lab benchmark suite
         let jd_ut1 = JulianDate::new(2_451_545.0);
         let jd_tt = JulianDate::new(2_451_545.000_800_741);
 

@@ -3,20 +3,33 @@
 
 //! # Nutation Models
 //!
-//! This module provides the [`NutationModel`] trait for type-level nutation
-//! model selection and concrete implementations:
+//! Type-level [`NutationModel`] trait and concrete IAU 2000A/2000B/2006A
+//! and precession-only model markers used by siderust's transform pipeline.
 //!
-//! - **[`Iau2000A`]**, Full IAU 2000A model (1365 terms, highest precision)
-//! - **[`Iau2000B`]**, 77-term abridged model (~1 mas accuracy)
-//! - **[`Iau2006A`]**, IAU 2006-compatible 2000A (P03/J2 corrected)
-//! - **[`Iau2006`]**, precession-only profile (zero nutation angles)
+//! ## Scientific scope
+//!
+//! Nutation is the short-period oscillation of the Earth's rotation axis
+//! superposed on the secular drift produced by precession, driven by the
+//! periodic part of the lunisolar and planetary torques on the Earth's
+//! equatorial bulge. The dominant 18.6-year term has an amplitude of ≈ 9″
+//! in obliquity, with hundreds of additional terms ranging from days to
+//! decades. The IAU 2000A model (MHB2000, 1365 terms) is the
+//! sub-microarcsecond reference; IAU 2000B (77 terms) is its ≈ 1 mas
+//! abridgement; IAU 2006A is the IAU 2006-precession-compatible variant
+//! of 2000A (Wallace & Capitaine 2006); and a precession-only profile is
+//! provided for diagnostics.
+//!
+//! ## Technical scope
+//!
+//! The model is selected at compile time by parameterising
+//! [`AstroContext`](crate::coordinates::transform::context::AstroContext)
+//! via [`AstroContext::with_model`](crate::coordinates::transform::context::AstroContext::with_model).
+//! Each concrete marker — [`Iau2000A`], [`Iau2000B`], [`Iau2006A`],
+//! [`Iau2006`] — is a zero-sized type implementing an internal sealed
+//! marker trait, so dispatch is monomorphised and free of any runtime cost.
+//! The numerical evaluation is shared in the `nut00a` submodule.
 //!
 //! ## Usage
-//!
-//! The model is selected at compile time by wrapping an
-//! [`AstroContext`](crate::coordinates::transform::context::AstroContext)
-//! with [`AstroContext::with_model`](crate::coordinates::transform::context::AstroContext::with_model).
-//! The default transform path uses [`Iau2006A`]. To request a specific model:
 //!
 //! ```rust
 //! use siderust::coordinates::transform::context::AstroContext;
@@ -26,23 +39,6 @@
 //! let full_precision = ctx.with_model::<Iau2006A>();
 //! ```
 //!
-//! ## IAU 2006/2000A (default)
-//!
-//! Full MHB2000 model with 678 luni-solar + 687 planetary terms, plus
-//! Wallace & Capitaine (2006) P03/J₂ corrections for IAU 2006 precession
-//! compatibility.
-//!
-//! ## IAU 2000B (abridged)
-//!
-//! Uses **77 trigonometric terms** for Δψ/Δε plus a fixed correction for
-//! omitted planetary terms. Accurate to better than **1 mas** vs the full
-//! IAU 2000A model.
-//!
-//! ## Legacy IAU 1980 Nutation
-//!
-//! The legacy **IAU 1980** nutation (63 terms) is retained in the [`iau1980`]
-//! submodule for cross-validation testing. It is not used in production code.
-//!
 //! ## References
 //!
 //! * IAU 2000 Resolution B1.6 (nutation)
@@ -50,7 +46,7 @@
 //! * Mathews, Herring & Buffett (2002), *J. Geophys. Res.* 107, B4
 //! * Wallace & Capitaine (2006), *Astron. Astrophys.* 459, 981
 //! * IERS Conventions (2010), §5.5.1
-//! * SOFA/ERFA routines `eraNut00b`, `eraNut00a`, `eraNut06a`
+//! * SOFA routines `iauNut00b`, `iauNut00a`, `iauNut06a`
 
 use crate::astro::precession::mean_obliquity_iau2006;
 use crate::qtty::*;
@@ -63,7 +59,6 @@ mod iau2000b;
 mod iau2006;
 mod iau2006a;
 pub(crate) mod nut00a;
-mod nut00a_tables;
 
 pub use iau2000a::Iau2000A;
 pub use iau2000b::Iau2000B;
@@ -102,8 +97,14 @@ impl NutationAngles {
 }
 
 /// Runtime identifier for the supported compile-time nutation model markers.
+///
+/// This is an internal dispatch tag used inside the sealed [`NutationTag`]
+/// implementation. It is not part of the public API surface. Callers select
+/// the nutation model at compile time by choosing a marker type
+/// ([`Iau2000A`], [`Iau2000B`], [`Iau2006A`], [`Iau2006`]); they never
+/// need to match on this enum directly.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum NutationModelId {
+pub(crate) enum NutationModelId {
     /// Full IAU 2000A nutation.
     Iau2000A,
     /// Abridged IAU 2000B nutation.
@@ -118,15 +119,14 @@ pub enum NutationModelId {
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Model<Tag>(PhantomData<Tag>);
 
-/// Metadata implemented by each public nutation model tag.
+/// Metadata implemented by each compile-time nutation model tag.
 ///
-/// # Sealed trait
-///
-/// This trait is sealed: only the four IAU nutation model tags shipped
-/// with `siderust` may implement it. External implementations of
-/// `NutationTag` (and by extension `NutationModel`) would silently
-/// corrupt all coordinate transforms that use the model.
-pub trait NutationTag: private::Sealed {
+/// This is an internal plumbing trait. External crates cannot implement
+/// it (sealed via [`private::Sealed`]). Callers never need to name this
+/// trait; they interact only with the concrete marker types
+/// ([`Iau2000A`], [`Iau2000B`], [`Iau2006A`], [`Iau2006`]) and the
+/// public [`NutationModel`] dispatch trait.
+pub(crate) trait NutationTag: private::Sealed {
     /// Static identifier used by the shared dispatch implementation.
     const ID: NutationModelId;
 }
@@ -374,7 +374,7 @@ const DEPS_PLANETARY_CORR: f64 = 3880.0; // 0.1 μas
 /// the IAU 2006 precession model.
 ///
 /// ## References
-/// * SOFA/ERFA routine `iauNut00b`
+/// * SOFA routine `iauNut00b`
 /// * McCarthy & Luzum (2003)
 /// * IERS Conventions (2010), §5.5.1
 pub fn nutation_iau2000b(jd: JulianDate) -> Nutation2000B {

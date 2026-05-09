@@ -3,57 +3,45 @@
 
 //! # Gravitational Light Deflection
 //!
-//! When light from a distant source passes near a massive body (primarily the
-//! Sun), its path is curved by the gravitational field. This shifts the
-//! **apparent** direction of the source away from the deflecting body.
+//! Applies the general-relativistic deflection of light by Solar-System
+//! bodies (primarily the Sun, with optional planetary terms) to apparent
+//! source directions.
 //!
-//! ## Solar deflection
+//! ## Scientific scope
 //!
-//! The maximum solar deflection at the limb is **1.75″** (the classic Einstein
-//! value). For a source at angular distance **θ** from the Sun:
+//! When light from a distant source passes near a massive body its path is
+//! curved by the gravitational field, shifting the **apparent** direction
+//! away from the deflector. The maximum solar deflection at the limb is the
+//! classic Einstein value of **1.75″**; at 1 AU and 90° elongation the
+//! deflection is still ≈ 4.07 mas, well above modern astrometric noise
+//! floors. Jupiter and Saturn contribute up to ≈ 17 mas and ≈ 6 mas
+//! respectively at small impact parameters and matter for sub-mas astrometry.
+//!
+//! ## Technical scope
+//!
+//! The deflection is computed using the IERS Conventions (2010) §7.1.1
+//! vector formulation,
 //!
 //! ```text
-//! Δθ ≈ (2 G M☉ / c² R) × cot(θ/2)
+//! δs = (2 G M / c² |q|) × [ (s · q̂) q̂ − (q̂ · s) s ] / (1 + q̂ · s),
 //! ```
 //!
-//! or equivalently in the vector formulation (IERS Conventions 2010, §7.1.1):
-//!
-//! ```text
-//! δs = (2 G M / c² |q|) × [ (s · q̂) q̂ − (q̂ · s) s ] / (1 + q̂ · s)
-//! ```
-//!
-//! where:
-//! - **s**: unit direction vector toward the source (BCRS)
-//! - **q**: vector from the deflecting body to the observer (BCRS)
-//! - **q̂** = q / |q|
-//! - **R** = |q| (observer-body distance)
-//!
-//! At **R = 1 AU**, this gives:
-//! - **θ = 90°**  → Δθ ≈ **0.00407″** (4.07 mas)
-//! - **θ ≈ 959.63″** (solar limb) → Δθ ≈ **1.75″**
-//!
-//! ## Effect magnitudes
-//!
-//! | Body   | Max deflection | Function                     |
-//! |--------|---------------|------------------------------|
-//! | Sun    | 1.75″ (limb)  | [`solar_deflection`]         |
-//! | Jupiter| 0.017″        | [`jupiter_deflection`]       |
-//! | Saturn | 0.006″        | [`saturn_deflection`]        |
-//! | Moon   | 0.026 mas     | (use [`body_deflection`])    |
-//!
-//! For sub-mas astrometry, apply all three planetary deflectors in
-//! sequence via [`full_planetary_deflection`]. For ~1″ astrometry, the
-//! Sun-only [`solar_deflection`] is sufficient.
+//! where `s` is the unit direction toward the source and `q` the
+//! observer-to-deflector vector in the BCRS. Schwarzschild radii for the
+//! Sun, Jupiter and Saturn are precomputed from the IAU 2015 nominal mass
+//! parameters. Convenience functions cover Sun-only deflection
+//! ([`solar_deflection`]), single-body deflection ([`body_deflection`]) and
+//! the full planetary chain ([`full_planetary_deflection`]).
 //!
 //! ## References
 //!
 //! * IAU 2000 Resolution B1.6
 //! * IERS Conventions (2010), §7.1.1
-//! * SOFA routine `iauLdsun`, `iauLd`
+//! * SOFA routines `iauLdsun`, `iauLd`
 //! * Klioner, S. A. (2003), AJ 125, 1580
 
 use crate::coordinates::cartesian::direction;
-use crate::qtty::{Arcseconds, AstronomicalUnits, Radians};
+use crate::qtty::{Arcsecond, Arcseconds, AstronomicalUnits, Radians};
 
 /// Schwarzschild radius of the Sun in AU: 2 G M☉ / c².
 ///
@@ -286,7 +274,7 @@ pub fn full_planetary_deflection(
 ///
 /// ## Returns
 ///
-/// The deflection angle in [`Arcsecond`].
+/// The deflection angle in arcseconds ([`crate::qtty::Arcseconds`]).
 ///
 /// ## Notes
 ///
@@ -301,20 +289,15 @@ pub fn solar_deflection_magnitude(
     sun_angle: Radians,
     sun_distance: AstronomicalUnits,
 ) -> Arcseconds {
-    const RAD_TO_ARCSEC: f64 = 206_264.806_247_096_36;
-
-    let angle = sun_angle.value();
-    let dist = sun_distance.value();
-
-    if angle <= 0.0 || dist <= 0.0 {
+    if sun_angle <= Radians::new(0.0) || sun_distance <= AstronomicalUnits::new(0.0) {
         return Arcseconds::new(0.0); // directly at the Sun, meaningless
     }
 
     // Δθ = (2GM/c²R) × cot(θ/2)
-    let half = angle / 2.0;
+    let half = sun_angle * 0.5;
     let cot_half = half.cos() / half.sin().abs().max(1e-10);
-    let scale_arcsec = (SOLAR_SCHWARZSCHILD_AU / dist) * RAD_TO_ARCSEC;
-    Arcseconds::new(scale_arcsec * cot_half)
+    let scale_rad = AstronomicalUnits::new(SOLAR_SCHWARZSCHILD_AU) / sun_distance;
+    Radians::new(scale_rad * cot_half).to::<Arcsecond>()
 }
 
 /// Remove solar deflection from an apparent direction to get the geometric
@@ -354,16 +337,16 @@ pub fn solar_deflection_inverse(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::qtty::Radians;
-
-    const RAD_TO_ARCSEC: f64 = 206_264.806_247_096_36;
+    use crate::qtty::{Radian, Radians};
 
     #[test]
     fn deflection_at_ninety_deg_is_milliarcseconds() {
         // At 90° elongation and 1 AU: Δθ = (2GM/c²R) ≈ 0.00407″
         let angle = Radians::new(std::f64::consts::FRAC_PI_2);
         let defl = solar_deflection_magnitude(angle, AstronomicalUnits::new(1.0));
-        let expected = SOLAR_SCHWARZSCHILD_AU * RAD_TO_ARCSEC;
+        let expected = Radians::new(SOLAR_SCHWARZSCHILD_AU)
+            .to::<Arcsecond>()
+            .value();
         assert!(
             (defl.value() - expected).abs() < 1e-9,
             "deflection at 90° = {}″, expected {}″",
@@ -375,7 +358,7 @@ mod tests {
     #[test]
     fn deflection_at_limb_is_about_1_75_arcsec() {
         // Solar angular radius at 1 AU is ~959.63 arcsec.
-        let angle = Radians::new(959.63 / RAD_TO_ARCSEC);
+        let angle = Arcseconds::new(959.63).to::<Radian>();
         let defl = solar_deflection_magnitude(angle, AstronomicalUnits::new(1.0));
         assert!(
             (defl.value() - 1.75).abs() < 0.03,
@@ -432,7 +415,9 @@ mod tests {
             + (deflected.y() - star.y()).powi(2)
             + (deflected.z() - star.z()).powi(2))
         .sqrt();
-        let vec_deflection_arcsec = (2.0 * (0.5 * chord).asin()) * RAD_TO_ARCSEC;
+        let vec_deflection_arcsec = Radians::new(2.0 * (0.5 * chord).asin())
+            .to::<Arcsecond>()
+            .value();
 
         let scalar_deflection = solar_deflection_magnitude(
             Radians::new(std::f64::consts::FRAC_PI_2),

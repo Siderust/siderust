@@ -3,10 +3,26 @@
 
 //! # Azimuth Event-Finding Functions
 //!
-//! Functions for finding azimuth events: bearing crossings, azimuth extrema,
-//! and periods within an azimuth range.
+//! ## Scientific scope
 //!
-//! ## Handling the 0°/360° discontinuity
+//! Computes time‑domain azimuth events for a topocentric observer:
+//! bearing crossings (instants when *A(t)* matches a fixed compass
+//! bearing), local extrema (turning points where *A(t)* reaches its most
+//! northerly/southerly excursion), and the time intervals during which
+//! *A(t)* stays inside a (possibly North‑wrapping) bearing band. The
+//! azimuth function itself is delegated to [`AzimuthProvider`], so
+//! accuracy and validity inherit from the underlying ephemeris/star
+//! engine. Refraction is not modelled.
+//!
+//! ## Technical scope
+//!
+//! Public API: [`azimuth_crossings`], [`azimuth_extrema`],
+//! [`azimuth_ranges`], [`in_azimuth_range`], [`outside_azimuth_range`].
+//! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the
+//! TT axis. Convert UTC timestamps with `ModifiedJulianDate::from_chrono(…)`
+//! first.
+//!
+//! ### Handling the 0°/360° discontinuity
 //!
 //! Azimuth is a circular quantity that wraps at North (0° = 360°).  Naive
 //! root-finding on the raw `az(t)` function would produce false crossings at
@@ -21,8 +37,8 @@
 //!   tracks the previous raw sample and accumulates ±2π offsets, producing
 //!   a continuous monotone-ish function safe for `find_extrema_tol`.
 //!
-//! All `Period<MJD>` inputs/outputs are interpreted on the TT axis.
-//! Convert UTC timestamps with `ModifiedJulianDate::from_utc(…)` first.
+//! ## References
+//! None.
 
 use std::cell::Cell;
 
@@ -34,7 +50,7 @@ use crate::calculus::math_core::{extrema, intervals};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
+use crate::time::{complement_within, ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -58,12 +74,12 @@ fn scan_step_for<T: AzimuthProvider>(target: &T, opts: &SearchOpts) -> Days {
 fn make_az_bearing_sin_fn<'a, T: AzimuthProvider>(
     target: &'a T,
     site: &'a Geodetic<ECEF>,
-    bearing_rad: f64,
+    bearing: Radians,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let site = *site;
     move |t: ModifiedJulianDate| {
-        let az = target.azimuth_at(&site, t).value();
-        Radians::new((az - bearing_rad).sin())
+        let az = target.azimuth_at(&site, t);
+        Radians::new((az - bearing).value().sin())
     }
 }
 
@@ -75,13 +91,13 @@ fn make_az_bearing_sin_fn<'a, T: AzimuthProvider>(
 fn make_az_cosine_fn<'a, T: AzimuthProvider>(
     target: &'a T,
     site: &'a Geodetic<ECEF>,
-    mid_rad: f64,
+    mid: Radians,
     cos_hw: f64,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let site = *site;
     move |t: ModifiedJulianDate| {
-        let az = target.azimuth_at(&site, t).value();
-        Radians::new((az - mid_rad).cos() - cos_hw)
+        let az = target.azimuth_at(&site, t);
+        Radians::new((az - mid).value().cos() - cos_hw)
     }
 }
 
@@ -153,14 +169,19 @@ fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
 /// // Find when the Sun crosses due-South (180°)
 /// let events = azimuth_crossings(&Sun, &site, window, Degrees::new(180.0), SearchOpts::default());
 /// ```
+///
+/// # Returns
+///
+/// Chronologically sorted `Vec<AzimuthCrossingEvent>` of every bearing
+/// transit found inside `window`.
 pub fn azimuth_crossings<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     bearing: Degrees,
     opts: SearchOpts,
 ) -> Vec<AzimuthCrossingEvent> {
-    let bearing_rad = bearing.to::<Radian>().value();
+    let bearing_rad = bearing.to::<Radian>();
     let f = make_az_bearing_sin_fn(target, observer, bearing_rad);
     let step = scan_step_for(target, &opts);
 
@@ -191,10 +212,22 @@ pub fn azimuth_crossings<T: AzimuthProvider>(
 ///
 /// Uses a stateful unwrapped closure so that true extrema near the
 /// 0°/360° boundary are detected correctly.
+///
+/// # Arguments
+///
+/// * `target`, body implementing [`AzimuthProvider`]
+/// * `observer`, geodetic site
+/// * `window`, MJD/TT search interval
+/// * `opts`, search precision options
+///
+/// # Returns
+///
+/// Sorted `Vec<AzimuthExtremum>` mixing local maxima and minima of the
+/// (unwrapped) azimuth.
 pub fn azimuth_extrema<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     opts: SearchOpts,
 ) -> Vec<AzimuthExtremum> {
     let step = opts
@@ -209,8 +242,7 @@ pub fn azimuth_extrema<T: AzimuthProvider>(
     raw.iter()
         .map(|ext| {
             // Wrap the unwrapped value back into [0°, 360°)
-            let az_wrapped = ext.value.value().rem_euclid(std::f64::consts::TAU);
-            let az_deg = Radians::new(az_wrapped).to::<Degree>();
+            let az_deg = ext.value.wrap_pos().to::<Degree>();
             AzimuthExtremum {
                 mjd: ext.t,
                 azimuth: az_deg,
@@ -248,28 +280,25 @@ pub fn azimuth_extrema<T: AzimuthProvider>(
 pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
     target: &T,
     query: &AzimuthQuery,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let step = target.scan_step_hint().unwrap_or(DEFAULT_SCAN_STEP);
 
-    let min_deg = query.min_azimuth.value();
-    let max_deg = query.max_azimuth.value();
-
-    if min_deg <= max_deg {
+    if query.min_azimuth <= query.max_azimuth {
         // ── Non-wrap arc [min, max] ────────────────────────────────────────
-        let mid_rad = ((min_deg + max_deg) / 2.0).to_radians();
-        let hw_rad = ((max_deg - min_deg) / 2.0).to_radians();
-        let cos_hw = hw_rad.cos();
+        let mid = ((query.min_azimuth + query.max_azimuth) * 0.5).to::<Radian>();
+        let half_width = ((query.max_azimuth - query.min_azimuth) * 0.5).to::<Radian>();
+        let cos_hw = half_width.cos();
 
-        let f = make_az_cosine_fn(target, &query.observer, mid_rad, cos_hw);
+        let f = make_az_cosine_fn(target, &query.observer, mid, cos_hw);
         intervals::above_threshold_periods(query.window, step, &f, Radians::new(0.0))
     } else {
         // ── Wrap-around arc [min, 360°) ∪ [0°, max] ──────────────────────
         // Complement arc is [max, min] (non-wrapping).
-        let mid_rad = ((max_deg + min_deg) / 2.0).to_radians();
-        let hw_rad = ((min_deg - max_deg) / 2.0).to_radians();
-        let cos_hw = hw_rad.cos();
+        let mid = ((query.max_azimuth + query.min_azimuth) * 0.5).to::<Radian>();
+        let half_width = ((query.min_azimuth - query.max_azimuth) * 0.5).to::<Radian>();
+        let cos_hw = half_width.cos();
 
-        let f = make_az_cosine_fn(target, &query.observer, mid_rad, cos_hw);
+        let f = make_az_cosine_fn(target, &query.observer, mid, cos_hw);
         let outside = intervals::above_threshold_periods(query.window, step, &f, Radians::new(0.0));
         complement_within(query.window, &outside)
     }
@@ -284,15 +313,29 @@ pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
 ///
 /// Supports wrap-around ranges when `min_az > max_az` (e.g. 350° → 10°).
 ///
-/// Returns a sorted list of `Period<MJD>`.
+/// Returns a sorted list of `Period<ModifiedJulianDate>`.
+///
+/// # Arguments
+///
+/// * `target`, body implementing [`AzimuthProvider`]
+/// * `observer`, geodetic site
+/// * `window`, MJD/TT search interval
+/// * `min_az`, lower bearing bound (or start of wrap arc)
+/// * `max_az`, upper bearing bound (or end of wrap arc)
+/// * `_opts`, search precision options (currently routed via the provider hint)
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` covering the
+/// times when the azimuth lies in the requested arc.
 pub fn azimuth_ranges<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     min_az: Degrees,
     max_az: Degrees,
     _opts: SearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     target.azimuth_periods(&AzimuthQuery {
         observer: *observer,
         window,
@@ -304,26 +347,53 @@ pub fn azimuth_ranges<T: AzimuthProvider>(
 /// Convenience: find periods where azimuth is within `[min_az, max_az]`.
 ///
 /// Identical to [`azimuth_ranges`]; provided as a named convenience wrapper.
+///
+/// # Arguments
+///
+/// * `target`, body implementing [`AzimuthProvider`]
+/// * `observer`, geodetic site
+/// * `window`, MJD/TT search interval
+/// * `min_az`, lower bearing bound (or start of wrap arc)
+/// * `max_az`, upper bearing bound (or end of wrap arc)
+/// * `opts`, search precision options
+///
+/// # Returns
+///
+/// Same as [`azimuth_ranges`]: sorted `Vec<Period<ModifiedJulianDate>>`.
 pub fn in_azimuth_range<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     min_az: Degrees,
     max_az: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     azimuth_ranges(target, observer, window, min_az, max_az, opts)
 }
 
 /// Convenience: find periods where azimuth is **outside** `[min_az, max_az]`.
+///
+/// # Arguments
+///
+/// * `target`, body implementing [`AzimuthProvider`]
+/// * `observer`, geodetic site
+/// * `window`, MJD/TT search interval
+/// * `min_az`, lower bearing bound (or start of wrap arc)
+/// * `max_az`, upper bearing bound (or end of wrap arc)
+/// * `opts`, search precision options
+///
+/// # Returns
+///
+/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` covering the
+/// complement of [`in_azimuth_range`] inside `window`.
 pub fn outside_azimuth_range<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<MJD>,
+    window: Period<ModifiedJulianDate>,
     min_az: Degrees,
     max_az: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let inside = azimuth_ranges(target, observer, window, min_az, max_az, opts);
     complement_within(window, &inside)
 }
@@ -341,7 +411,7 @@ mod tests {
         Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
-    fn one_day() -> Period<MJD> {
+    fn one_day() -> Period<ModifiedJulianDate> {
         Period::new(
             ModifiedJulianDate::new(60000.0),
             ModifiedJulianDate::new(60001.0),

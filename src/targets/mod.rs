@@ -1,47 +1,45 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Astronomical target representation
+//! # Astronomical target representation
 //!
-//! This module defines two complementary concepts:
+//! ## Scientific scope
 //!
-//! ## [`CoordinateWithPM`], Coordinate Sample
+//! An *astronomical target* is the coupling of a position on the sky with the
+//! epoch at which that position is asserted, together with an optional
+//! proper-motion model that propagates the position to other epochs. This is
+//! the standard formal model used by stellar catalogues (e.g. Hipparcos,
+//! Gaia) and solar-system ephemerides: a position is only meaningful when
+//! tagged with the time it refers to and, for non-stationary objects, with a
+//! rule for how to move it forward or backward.
 //!
-//! A lightweight container that couples a position with the time at which
-//! the position was recorded, together with an optional proper-motion model.
-//! It is deliberately generic over the coordinate type so it can be reused
-//! with Cartesian/Spherical equatorial/ecliptic/ICRS positions.
+//! The default coordinate frame in `siderust` for catalogue-style targets is
+//! ICRS / Equatorial Mean J2000.0; proper-motion rates follow the IAU 2006
+//! formalism `(μ_α* = μ_α · cos δ, μ_δ)` so that great-circle motion is
+//! preserved. The model is valid for stars and small-body solar-system
+//! objects whose proper motion is well determined; it does *not* model
+//! parallax, light-time, or barycentric corrections — those live in
+//! [`crate::astro`].
 //!
-//! **What it is:** a stamped coordinate snapshot, a measurement or catalog
-//! entry, not an astronomical object.
+//! ## Technical scope
 //!
-//! The design goals are:
-//! * **Zero-cost abstraction** – All helper constructors are `const`, allowing
-//!   compile-time evaluation when all arguments are known at build time.
-//! * **Flexibility** – The generic parameter `T` lets client code choose any
-//!   position type that implements the required operations.
-//! * **Clarity** – Specific helpers (`new`, `new_static`, `new_raw`) make the
-//!   author's intent explicit: moving target, fixed target, or advanced manual
-//!   construction respectively.
+//! This module provides:
 //!
-//! A backward-compatible type alias `Target<T>` is available so that existing
-//! code continues to compile. New code should prefer `CoordinateWithPM<T>`.
+//! - [`CoordinateWithPM<T>`] — a stamped coordinate snapshot pairing any
+//!   typed coordinate `T` with a [`crate::time::JulianDate`] and an optional
+//!   proper-motion model. Constructors are `const` where possible.
+//! - [`Target<T>`] — backward-compatible alias for `CoordinateWithPM<T>`.
+//! - [`Trackable`] — trait abstracting "anything that can produce a position
+//!   at time *t*"; implemented for solar-system unit types, `Star`,
+//!   `direction::ICRS`, and `CoordinateWithPM<T>` itself (identity).
 //!
-//! ## [`Trackable`], Object Abstraction
-//!
-//! A trait representing "anything that can produce coordinates at time *t*":
-//!
-//! ```rust,ignore
-//! pub trait Trackable {
-//!     type Coords;
-//!     fn track(&self, jd: JulianDate) -> Self::Coords;
-//! }
-//! ```
-//!
-//! Implemented for solar-system unit types, `Star`, `direction::ICRS`,
-//! and `CoordinateWithPM<T>` (identity).
+//! Time inputs are typed [`crate::time::JulianDate`] / [`crate::time::ModifiedJulianDate`];
+//! coordinates retain their declared frame and unit at the type level.
+//! Propagation kernels live in [`crate::astro::proper_motion`]; this module
+//! only defines the data containers.
 //!
 //! ## Examples
+//!
 //! ```rust
 //! use siderust::qtty::*;
 //! use siderust::targets::CoordinateWithPM;
@@ -50,7 +48,6 @@
 //! use siderust::coordinates::spherical::Direction;
 //! use siderust::astro::proper_motion::ProperMotion;
 //!
-//! // A star with known proper motion
 //! type MasPerYear = siderust::qtty::Per<siderust::qtty::MilliArcsecond, siderust::qtty::Year>;
 //! type MasPerYearQ = siderust::qtty::Quantity<MasPerYear>;
 //! let betelgeuse_pm = ProperMotion::from_mu_alpha_star::<MasPerYear>(
@@ -63,12 +60,21 @@
 //!     betelgeuse_pm,
 //! );
 //!
-//! // Jupiter's geocentric position at a given epoch (no proper motion)
 //! let jupiter = CoordinateWithPM::new_static(
 //!     Direction::<EquatorialMeanJ2000>::new(23.123*DEG, -5.321*DEG),
 //!     ModifiedJulianDate::new(60200.0).into(),
 //! );
 //! ```
+//!
+//! ## References
+//!
+//! - International Astronomical Union (2006). Resolution B1.5 ("Definition
+//!   of the Barycentric Celestial Reference System") and the IAU 2006
+//!   proper-motion formalism. IAU Transactions XXVIB.
+//! - Kovalevsky, J., & Seidelmann, P. K. (2004). *Fundamentals of
+//!   Astrometry*. Cambridge University Press. ISBN 978-0-521-64216-7.
+//! - ESA (1997). *The Hipparcos and Tycho Catalogues*. ESA SP-1200,
+//!   §1.2 (proper-motion conventions).
 
 mod target;
 mod trackable;

@@ -49,8 +49,11 @@ fn full_gcrs_to_itrs_chain() {
 
     // Step 5: CIRS → TIRS (apply ERA as R₃(-ERA))
     let (s_era, c_era) = (-era.value()).sin_cos();
-    let r3_era =
-        affn::Rotation3::from_matrix([[c_era, -s_era, 0.0], [s_era, c_era, 0.0], [0.0, 0.0, 1.0]]);
+    let r3_era = affn::Rotation3::from_matrix_unchecked([
+        [c_era, -s_era, 0.0],
+        [s_era, c_era, 0.0],
+        [0.0, 0.0, 1.0],
+    ]);
 
     // Step 6: Polar motion (TIRS → ITRS)
     let sp = tio_locator_sp(jd_tt);
@@ -120,14 +123,14 @@ fn nutation_shifts_cip_significantly() {
     let dy = (y1 - y0) * 206_264.806;
 
     assert!(
-        dx.abs() > 0.1 && dx.abs() < 25.0,
+        dx.abs() > CipCoordinates::new(0.1) && dx.abs() < CipCoordinates::new(25.0),
         "CIP X nutation shift = {}″, expected 1-20″",
-        dx
+        dx.value()
     );
     assert!(
-        dy.abs() > 0.1 && dy.abs() < 25.0,
+        dy.abs() > CipCoordinates::new(0.1) && dy.abs() < CipCoordinates::new(25.0),
         "CIP Y nutation shift = {}″, expected 1-20″",
-        dy
+        dy.value()
     );
 }
 
@@ -184,7 +187,7 @@ fn null_eop_produces_ut1_equal_utc() {
     let jd_utc = JulianDate::new(2_460_000.5);
     let vals = eop.eop_at(jd_utc);
     let jd_ut1 = vals.jd_ut1(jd_utc);
-    assert_eq!(jd_ut1.value(), jd_utc.value());
+    assert_eq!(jd_ut1.jd_value(), jd_utc.jd_value());
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

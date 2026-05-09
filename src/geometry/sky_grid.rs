@@ -3,22 +3,26 @@
 
 //! Typed alt/az hemispherical sky grid sampler.
 //!
+//! ## Scientific scope
+//!
+//! A hemispherical sky grid partitions the visible hemisphere into discrete
+//! directions for numerical integration over the sky (background estimation,
+//! sky-brightness maps, Monte-Carlo ray-casting, etc.). Two classic
+//! partitioning strategies are exposed: a *uniform* (equal angle-step) grid
+//! and an *equal-area* grid that scales the azimuth-cell count with
+//! `cos(alt)` so that every cell subtends approximately the same solid angle
+//! — the iso-latitude ring partition used by HEALPix-inspired quick samplers.
+//! The hemisphere integrates to `≈ 2π sr`.
+//!
+//! ## Technical scope
+//!
 //! Provides [`SkyGrid`], a configurable iterator over sky directions covering
 //! (part of) the visible hemisphere in regular altitude–azimuth cells. The
 //! grid yields frame-typed [`Direction<Horizontal>`](crate::coordinates::spherical::direction::Horizontal)
 //! values; per-cell solid angles are exposed as typed [`Steradians`] through
 //! [`SkyGrid::with_solid_angle`] / [`SkyGrid::iter_cells`].
 //!
-//! ## Module placement
-//!
-//! Hemispherical samplers are geometric primitives independent of any
-//! particular astronomical model — they don't need ephemerides, sidereal
-//! time, or even an observer. They live in [`crate::geometry`] (alongside
-//! other sky-coverage helpers) rather than under `astro::` or
-//! `calculus::horizontal`, both of which are reserved for time-dependent or
-//! body-specific calculations.
-//!
-//! ## Cell layout
+//! ### Cell layout
 //!
 //! - **Cell centres** are sampled (not edges):
 //!   `alt = alt_min + (i + 0.5)·Δalt`, `az = (j + 0.5)·Δaz`.
@@ -27,7 +31,7 @@
 //! - Iteration order is **altitude-outer ascending, azimuth-inner ascending**.
 //! - The default altitude range is `[0°, 90°)` (upper hemisphere).
 //!
-//! ## Equal-area mode
+//! ### Equal-area mode
 //!
 //! When constructed with [`SkyGrid::equal_area`], the azimuth count per
 //! altitude band scales with `cos(alt)`:
@@ -38,10 +42,9 @@
 //!
 //! so cells subtend approximately the same solid angle. The horizon row uses
 //! the user-supplied `az_step_at_horizon`; near the zenith, rows collapse to
-//! a single cell. This is the iso-latitude ring partition commonly used by
-//! HEALPix-like quick samplers.
+//! a single cell.
 //!
-//! ## Solid angle
+//! ### Solid angle
 //!
 //! Per-cell solid angles are returned as typed [`Steradians`]:
 //!
@@ -49,7 +52,23 @@
 //! dΩ = cos(alt) · Δalt_rad · Δaz_rad
 //! ```
 //!
-//! The hemisphere integrates to `≈ 2π sr` (see the tests for tolerances).
+//! ### Module placement
+//!
+//! Hemispherical samplers are geometric primitives independent of any
+//! particular astronomical model — they don't need ephemerides, sidereal
+//! time, or even an observer. They live in [`crate::geometry`] (alongside
+//! other sky-coverage helpers) rather than under `astro::` or
+//! `calculus::horizontal`, both of which are reserved for time-dependent or
+//! body-specific calculations.
+//!
+//! ## References
+//!
+//! - Górski, K. M., Hivon, E., Banday, A. J., et al. (2005). *HEALPix*:
+//!   A Framework for High-Resolution Discretization and Fast Analysis of
+//!   Data Distributed on the Sphere. *ApJ* **622**, 759.
+//!   doi:10.1086/427976.
+//! - Arvo, J. (1995). Stratified sampling of spherical triangles. In
+//!   *SIGGRAPH '95 Proceedings*, 437–438. (Equal-area hemisphere sampling.)
 //!
 //! ## Example
 //!
@@ -69,7 +88,7 @@ use std::f64::consts::PI;
 
 use crate::coordinates::frames;
 use crate::coordinates::spherical;
-use crate::qtty::{Degrees, Steradians};
+use crate::qtty::{Degrees, Radian, Steradians};
 
 // ─────────────────────────────────────────────────────────────────────────────
 // Public types
@@ -199,23 +218,22 @@ impl SkyGrid {
 
 impl SkyGrid {
     fn n_alt(&self) -> usize {
-        let span = self.alt_max.value() - self.alt_min.value();
-        if span <= 0.0 || self.alt_step.value() <= 0.0 {
+        if self.alt_max <= self.alt_min || self.alt_step <= Degrees::new(0.0) {
             return 0;
         }
-        (span / self.alt_step.value()).round() as usize
+        ((self.alt_max - self.alt_min) / self.alt_step).round() as usize
     }
 
     fn n_az_uniform(&self) -> usize {
-        if self.az_step.value() <= 0.0 {
+        if self.az_step <= Degrees::new(0.0) {
             return 0;
         }
-        (360.0_f64 / self.az_step.value()).round() as usize
+        (Degrees::new(360.0) / self.az_step).round() as usize
     }
 
-    fn n_az_equal_area(&self, alt_center_deg: f64) -> usize {
-        let cos_alt = alt_center_deg.to_radians().cos().max(0.0);
-        let az_horizon_rad = self.az_step.value().to_radians();
+    fn n_az_equal_area(&self, alt_center: Degrees) -> usize {
+        let cos_alt = alt_center.to::<Radian>().cos().max(0.0);
+        let az_horizon_rad = self.az_step.to::<Radian>().value();
         if az_horizon_rad <= 0.0 {
             return 1;
         }
@@ -229,7 +247,7 @@ impl SkyGrid {
         if self.equal_solid_angle {
             (0..n_alt)
                 .map(|i| {
-                    let alt = self.alt_min.value() + (i as f64 + 0.5) * self.alt_step.value();
+                    let alt = self.alt_min + (i as f64 + 0.5) * self.alt_step;
                     self.n_az_equal_area(alt)
                 })
                 .sum()
@@ -261,25 +279,25 @@ impl SkyGrid {
     /// Iterate over full [`SkyGridCell`] records.
     pub fn iter_cells(&self) -> impl Iterator<Item = SkyGridCell> + '_ {
         let n_alt = self.n_alt();
-        let alt_step_rad = self.alt_step.value().to_radians();
+        let alt_step_rad = self.alt_step.to::<Radian>().value();
         let equal_area = self.equal_solid_angle;
-        let alt_min = self.alt_min.value();
-        let alt_step = self.alt_step.value();
-        let az_step_uniform = self.az_step.value();
+        let alt_min = self.alt_min;
+        let alt_step = self.alt_step;
+        let az_step_uniform = self.az_step;
         let n_az_uniform = self.n_az_uniform();
 
         (0..n_alt).flat_map(move |i| {
-            let alt_deg = alt_min + (i as f64 + 0.5) * alt_step;
-            let alt_rad = alt_deg.to_radians();
+            let alt: Degrees = alt_min + (i as f64 + 0.5) * alt_step;
+            let alt_rad = alt.to::<Radian>().value();
             let cos_alt = alt_rad.cos();
 
             let n_az: usize;
-            let az_step_deg: f64;
+            let az_step: Degrees;
 
             if equal_area {
                 n_az = {
                     let cos_clamped = cos_alt.max(0.0);
-                    let az_horizon_rad = az_step_uniform.to_radians();
+                    let az_horizon_rad = az_step_uniform.to::<Radian>().value();
                     let raw = if az_horizon_rad > 0.0 {
                         ((2.0 * PI * cos_clamped) / az_horizon_rad).round() as usize
                     } else {
@@ -287,22 +305,19 @@ impl SkyGrid {
                     };
                     raw.max(1)
                 };
-                az_step_deg = 360.0 / n_az as f64;
+                az_step = Degrees::new(360.0) / n_az as f64;
             } else {
                 n_az = n_az_uniform;
-                az_step_deg = az_step_uniform;
+                az_step = az_step_uniform;
             }
 
-            let az_step_rad = az_step_deg.to_radians();
+            let az_step_rad = az_step.to::<Radian>().value();
             let solid_angle = Steradians::new(cos_alt * alt_step_rad * az_step_rad);
 
             (0..n_az).map(move |j| {
-                let az_deg = (j as f64 + 0.5) * az_step_deg;
+                let az: Degrees = (j as f64 + 0.5) * az_step;
                 SkyGridCell {
-                    direction: spherical::Direction::<frames::Horizontal>::new_unchecked(
-                        Degrees::new(alt_deg),
-                        Degrees::new(az_deg),
-                    ),
+                    direction: spherical::Direction::<frames::Horizontal>::new_unchecked(alt, az),
                     solid_angle,
                 }
             })

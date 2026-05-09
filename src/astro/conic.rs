@@ -1,13 +1,45 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Additional orbit models used when a plain elliptic Keplerian orbit is not
-//! the right semantic container.
+//! # Conic Orbit Models
 //!
-//! The reusable conic geometry itself lives in `affn::conic`. This module keeps
-//! the astronomy-specific state that layers epoch and anomaly semantics on top
-//! of that geometry for siderust propagation code.
+//! ## Scientific scope
+//!
+//! This module provides orbit model types for the two cases where the
+//! plain elliptic six-element [`KeplerianOrbit`](crate::astro::orbit::KeplerianOrbit)
+//! is not the right semantic container:
+//!
+//! - **[`ConicOrbit`]** — a unified conic (elliptic or hyperbolic) expressed
+//!   using **periapsis distance** as the shape parameter.  Used for comets,
+//!   near-parabolic intruders, and any body whose eccentricity is not
+//!   definitively below 1.
+//!
+//! - **[`MeanMotionOrbit`]** — an elliptic orbit where the **mean daily
+//!   motion** is the authoritative element and the epoch corresponds to zero
+//!   mean anomaly.  Used for minor planets from the MPC catalog where mean
+//!   motion is the directly fitted quantity.
+//!
+//! The reusable conic geometry (shape + orientation abstractions) lives in
+//! `affn::conic`.  This module layers epoch and anomaly semantics on top.
+//!
+//! ## Technical scope
+//!
+//! - [`ConicOrbit`] — validated [`OrientedConic<PeriapsisParam<AU>, Ecliptic>`]
+//!   plus mean anomaly at epoch and reference epoch.
+//! - [`MeanMotionOrbit`] — validated elliptic oriented conic plus typed mean
+//!   motion [`AngularRate<Degree, Day>`] and epoch.  The mean motion field
+//!   `pub mean_motion: AngularRate<Degree, Day>` replaces the old untyped
+//!   `mean_motion_deg_per_day: f64`; callers needing a raw `f64` call
+//!   `.mean_motion.value()`.
+//! - [`ConicError`] — unified validation error enum for both types.
+//!
+//! ## References
+//!
+//! - Meeus, J. (1998). *Astronomical Algorithms* (2nd ed.). Willmann-Bell.
+//! - Minor Planet Center. *MPC Orbit (MPCORB) Database*.
+//!   <https://minorplanetcenter.net/iau/MPCORB.html>
 
+use crate::qtty::angular_rate::AngularRate;
 use crate::qtty::*;
 use crate::time::JulianDate;
 use affn::conic::{
@@ -22,7 +54,7 @@ use serde::{Deserialize, Serialize};
 pub use affn::conic::ConicKind;
 
 /// Validation and propagation errors for conic-based orbit models.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ConicError {
     /// Eccentricity must be finite and non-negative.
@@ -35,13 +67,6 @@ pub enum ConicError {
     ParabolicSemiMajorAxis,
     /// Orientation angles must be finite.
     InvalidOrientation,
-    /// An orientation angle was outside its canonical range.
-    OutOfRange {
-        /// Name of the angle field that was out of range.
-        field: &'static str,
-        /// The rejected value, in degrees.
-        value: f64,
-    },
     /// Parabolic orbits are intentionally not supported yet.
     ParabolicUnsupported,
     /// Hyperbolic eccentricity (`e ≥ 1`) is not valid for this orbit type.
@@ -73,12 +98,6 @@ impl std::fmt::Display for ConicError {
                 )
             }
             Self::InvalidOrientation => write!(f, "orientation angles must be finite"),
-            Self::OutOfRange { field, value } => {
-                write!(
-                    f,
-                    "orientation angle `{field}` is out of canonical range: {value}°"
-                )
-            }
             Self::ParabolicUnsupported => write!(f, "parabolic orbits are not supported"),
             Self::HyperbolicNotSupported => {
                 write!(
@@ -106,9 +125,7 @@ pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
         ConicValidationError::InvalidPeriapsisDistance => ConicError::InvalidPeriapsisDistance,
         ConicValidationError::ParabolicSemiMajorAxis => ConicError::ParabolicSemiMajorAxis,
         ConicValidationError::InvalidOrientation => ConicError::InvalidOrientation,
-        ConicValidationError::OutOfRange { field, value } => {
-            ConicError::OutOfRange { field, value }
-        }
+        ConicValidationError::OutOfRange { .. } => ConicError::InvalidOrientation,
     }
 }
 
@@ -160,10 +177,10 @@ impl ConicOrbit {
             argument_of_periapsis,
         )
         .map_err(map_validation_error)?;
-        if !mean_anomaly_at_epoch.value().is_finite() {
+        if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.value().is_finite() {
+        if !epoch.jd_value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -223,12 +240,15 @@ impl ConicOrbit {
 ///
 /// Stores `OrientedConic<TypedSemiMajorAxisParam<AstronomicalUnit, Elliptic>,
 /// EclipticMeanJ2000>` — elliptic geometry is enforced at construction time.
+///
+/// The mean motion is typed as [`AngularRate<Degree, Day>`] so callers cannot
+/// accidentally use it as radians-per-day or confuse it with other rates.
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct MeanMotionOrbit {
     geometry: OrientedConic<TypedSemiMajorAxisParam<AstronomicalUnit, Elliptic>, EclipticMeanJ2000>,
-    /// Mean motion in degrees per day.
-    pub mean_motion_deg_per_day: f64,
+    /// Mean motion (degrees per day), typed.
+    pub mean_motion: AngularRate<Degree, Day>,
     /// Epoch at which the mean anomaly is defined to be zero.
     pub epoch: JulianDate,
 }
@@ -244,7 +264,7 @@ impl MeanMotionOrbit {
         inclination: Degrees,
         longitude_of_ascending_node: Degrees,
         argument_of_periapsis: Degrees,
-        mean_motion_deg_per_day: f64,
+        mean_motion: AngularRate<Degree, Day>,
         epoch: JulianDate,
     ) -> Result<Self, ConicError> {
         let sma = SemiMajorAxisParam::try_new(semi_major_axis, eccentricity)
@@ -261,15 +281,15 @@ impl MeanMotionOrbit {
             argument_of_periapsis,
         )
         .map_err(map_validation_error)?;
-        if !mean_motion_deg_per_day.is_finite() || mean_motion_deg_per_day <= 0.0 {
+        if !mean_motion.value().is_finite() || mean_motion.value() <= 0.0 {
             return Err(ConicError::InvalidMeanMotion);
         }
-        if !epoch.value().is_finite() {
+        if !epoch.jd_value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
             geometry: OrientedConic::new(typed, orientation),
-            mean_motion_deg_per_day,
+            mean_motion,
             epoch,
         })
     }
@@ -283,7 +303,7 @@ impl MeanMotionOrbit {
         inclination: Degrees,
         longitude_of_ascending_node: Degrees,
         argument_of_periapsis: Degrees,
-        mean_motion_deg_per_day: f64,
+        mean_motion: AngularRate<Degree, Day>,
         epoch: JulianDate,
     ) -> Self {
         Self {
@@ -298,7 +318,7 @@ impl MeanMotionOrbit {
                     argument_of_periapsis,
                 ),
             ),
-            mean_motion_deg_per_day,
+            mean_motion,
             epoch,
         }
     }
@@ -372,7 +392,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                1.0,
+                AngularRate::<Degree, Day>::new(1.0),
                 JulianDate::J2000,
             ),
             Err(ConicError::HyperbolicNotSupported)
@@ -436,7 +456,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                f64::NAN,
+                AngularRate::<Degree, Day>::new(f64::NAN),
                 JulianDate::J2000,
             ),
             Err(ConicError::InvalidMeanMotion)
@@ -452,7 +472,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                -1.0,
+                AngularRate::<Degree, Day>::new(-1.0),
                 JulianDate::J2000,
             ),
             Err(ConicError::InvalidMeanMotion)
@@ -468,7 +488,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                1.0,
+                AngularRate::<Degree, Day>::new(1.0),
                 JulianDate::new(f64::NAN),
             ),
             Err(ConicError::InvalidEpoch)

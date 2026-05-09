@@ -1,6 +1,27 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! # Solar Night Types
+//!
+//! ## Scientific scope
+//!
+//! Standard Sun‑altitude thresholds used to define the conventional
+//! visibility/twilight regimes: civil (−6°), nautical (−12°),
+//! astronomical (−18°), geometric horizon (0°) and apparent horizon
+//! (−0.833°, the standard refraction allowance for the lower limb at the
+//! true horizon for sea‑level observers in a standard atmosphere).
+//!
+//! ## Technical scope
+//!
+//! Defines the [`Twilight`] enum, its [`From<Twilight> for Degrees`]
+//! conversion, and the [`twilight`] sub‑module of named [`Degrees`]
+//! constants. No functions of the Sun position are computed here.
+//!
+//! ## References
+//! - U.S. Naval Observatory, "Definitions of Twilight".
+//! - International Astronomical Union, standard refraction value
+//!   34′ for the geometric setting altitude.
+//!
 //! Night-related solar types (twilight thresholds, etc.).
 
 use crate::qtty::Degrees;
@@ -28,6 +49,16 @@ impl std::fmt::Display for Twilight {
 }
 
 impl From<Twilight> for Degrees {
+    /// Convert a named twilight regime to its conventional Sun‑altitude
+    /// threshold.
+    ///
+    /// # Arguments
+    ///
+    /// * `t`, the [`Twilight`] regime.
+    ///
+    /// # Returns
+    ///
+    /// `Degrees` with the canonical altitude (e.g. `−6°` for `Civil`).
     fn from(t: Twilight) -> Degrees {
         match t {
             Twilight::Civil => Degrees::new(-6.0),

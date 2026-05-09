@@ -3,15 +3,45 @@
 
 //! # Siderust
 //!
-//! **Precision astronomy & satellite mechanics in Rust.**
+//! **Precision positional astrometry, atmospheric optics, ephemerides,
+//! sky-brightness and satellite mechanics in Rust.**
 //!
-//! `siderust` is a research-grade astronomy toolkit focused on:
+//! `siderust` is a research-grade astronomy toolkit built on two explicit pillars:
+//!
+//! 1. **Typed quantities everywhere** — every physical quantity at a public API
+//!    boundary is a [`qtty`] newtype (e.g. `Meters`, `Radians`, `JulianDate`,
+//!    `Airmass`, `OpticalDepth`, `Albedo`, `IlluminationFraction`, `Refractivity`,
+//!    `CipCoordinate`, …).  Bare `f64` is confined to internal math kernels.
+//!
+//! 2. **Compile-time model selection** — when a function can use one of several
+//!    algorithms or conventions (nutation theory, airmass formula, extinction
+//!    parameterisation, …) the choice is expressed as a zero-sized phantom-type
+//!    parameter, not a runtime enum.  For example:
+//!    ```rust,ignore
+//!    // picks Iau2006A nutation at compile time — no runtime dispatch
+//!    let equatorial = ecliptic.to_frame_as::<Equatorial, Iau2006A>(ctx);
+//!    ```
+//!
+//! Together these two properties make type errors in physical calculations into
+//! compile-time errors and eliminate whole classes of unit-confusion bugs.
+//!
+//! See [`doc/conventions.md`](../doc/conventions.md) for the mandatory
+//! authoring rules: the academic-style module-doc template
+//! (*Scientific scope / Technical scope / References*), typed-quantity
+//! guidelines, and the phantom-type model-selection pattern.
+//!
+//! ## Scientific scope
+//!
 //! - Strongly-typed coordinates (center + frame + unit encoded in the type system)
 //! - Ephemerides (VSOP87/ELP2000 always available; optional JPL DE4xx backends)
-//! - Observation planning utilities (altitude periods, crossings, culminations)
+//! - Observation planning (altitude periods, crossings, culminations, azimuth windows)
+//! - Atmospheric refraction and extinction (airmass, optical depth, scattering)
+//! - Sky brightness and lunar photometry (phase geometry, albedo, spectral radiance)
 //! - Time handling (via the `tempoch` crate, re-exported as [`time`])
+//! - Keplerian / conic orbits and satellite mechanics
+//! - Spectral utilities (optional `spectra` feature)
 //!
-//! ## Features
+//! ## API pillars
 //!
 //! - **Coordinates**: `cartesian::{Position, Direction, Velocity, ...}` and
 //!   `spherical::{Position, Direction}` parameterized by `Center`, `Frame`, and `Unit`.
@@ -23,13 +53,21 @@
 //!
 //! ## Crate Modules
 //!
-//! - [`coordinates`]   : Cartesian & Spherical coordinate types and transformations between reference centers & frames
-//! - [`targets`]       : `CoordinateWithPM<T>` + `Trackable` trait for targets
-//! - [`time`]          : Time types and scale-based `Period<S>` / generic `Interval<T>`
-//! - [`astro`]         : Utilities for aberration, nutation, precession, sidereal time, and event searches
-//! - [`calculus`]      : Numerical kernels (VSOP87, ELP2000, Pluto, DE4xx, altitude API, root-finding)
-//! - [`bodies`]        : Planets, stars, satellites, asteroids, comets, and built-in catalogs
-//! - [`observatories`] : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
+//! - [`coordinates`]             : Cartesian & Spherical coordinate types and transformations
+//! - [`targets`]                 : `CoordinateWithPM<T>` + `Trackable` trait for targets
+//! - [`time`]                    : Time types and scale-based `Period<S>` / generic `Interval<T>`
+//! - [`astro`]                   : Aberration, nutation, precession, sidereal time, event searches, orbits
+//! - [`calculus`]                : Numerical kernels (VSOP87, ELP2000, DE4xx, altitude/azimuth/lunar APIs, root-finding)
+//! - [`bodies`]                  : Planets, stars, satellites, asteroids, comets, and built-in catalogs
+//! - [`observatories`]           : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
+//! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate (including `OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`, `Refractivity`, `CipCoordinate`)
+//! - [`geometry`]                : Angular geometry primitives (great-circle, parallactic angle, …)
+//! - [`interp`]                  : Generic interpolation kernels
+//! - [`data`]                    : Built-in reference data (EOP tables, star catalogs)
+//! - [`provenance`]              : Provenance and source-attribution types
+//! - `atmosphere` *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
+//! - `spectra` *(optional)*    : Spectral response and photometric bandpass utilities (`spectra` feature)
+//! - `tables` *(optional)*     : Tabulated data loaders (`tables` feature)
 //!
 //! ## Error-handling conventions
 //!
@@ -58,7 +96,7 @@
 //! use chrono::prelude::*;
 //!
 //! // 1. Select an epoch (UTC now to JD)
-//! let jd = JulianDate::from_utc(Utc::now());
+//! let jd = JulianDate::from_chrono(Utc::now());
 //!
 //! // 2. Compute barycentric ecliptic coordinates via VSOP87
 //! let mars = Mars::vsop87e(jd);
@@ -90,7 +128,13 @@ pub mod tables;
 pub mod targets;
 pub mod time;
 
+pub(crate) mod archive;
 pub(crate) mod macros;
+
+// ---------------------------------------------------------------------------
+// Convenience re‑exports: interval utilities
+// ---------------------------------------------------------------------------
+pub use calculus::math_core::intervals::intersect as intersect_periods;
 
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: unified azimuth API
@@ -122,6 +166,10 @@ pub use calculus::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseGeometry, MoonPhaseLabel,
     MoonPhaseSeries, PhaseEvent, PhaseKind, PhaseSearchOpts, PhaseThresholds,
+};
+pub use calculus::lunar::photometry::{
+    lunar_albedo_jones2013, lunar_full_moon_albedo_jones2013, lunar_phase_attenuation_jones2013,
+    reflected_lunar_spectral_radiance_jones2013,
 };
 
 // ---------------------------------------------------------------------------

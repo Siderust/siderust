@@ -3,30 +3,41 @@
 
 //! # ITRS → Equatorial rotation provider
 //!
-//! This module centralises the composite rotation matrix that transforms
-//! Earth-fixed (ITRS/ECEF) Cartesian vectors into the mean equatorial frame
-//! of J2000.0.
+//! Centralises the composite rotation matrix that transforms Earth-fixed
+//! (ITRS/ECEF) Cartesian vectors into the mean equatorial frame of J2000.0,
+//! using EOP data and the configured nutation model.
 //!
-//! ## Rotation chain
+//! ## Scientific scope
+//!
+//! Earth's instantaneous orientation in inertial space is the product of
+//! polar motion, diurnal rotation, precession and nutation, all of which
+//! must be assembled to project a terrestrial vector onto a celestial frame.
+//! This module owns the canonical assembly of those matrices for siderust,
+//! so that every topocentric, horizontal or stellar transform path uses the
+//! same IAU-compliant chain and therefore yields self-consistent positions.
+//!
+//! ## Technical scope
+//!
+//! The chain implemented is
 //!
 //! ```text
 //! ITRS  ──W⁻¹──▶  TIRS  ──ERA──▶  CIRS  ──Q──▶  GCRS/ICRS  ──P──▶  EquatorialMeanJ2000
 //! ```
 //!
-//! Where:
-//! - **W** = polar-motion matrix (xₚ, yₚ, s′) , from EOP
-//! - **ERA** = Earth Rotation Angle (from UT1) , from EOP `dUT1`
-//! - **Q** = CIO/CIP matrix (X, Y, s) , from nutation IAU 2000B ± EOP `dX,dY`
-//! - **P** = precession from ICRS to EquatorialMeanJ2000 , frame rotation provider
+//! with **W** the polar-motion matrix `(xₚ, yₚ, s′)` from EOP, **ERA** the
+//! Earth Rotation Angle from UT1 (derived from EOP `dUT1`), **Q** the
+//! CIO/CIP matrix `(X, Y, s)` from the active nutation model with optional
+//! IERS celestial-pole offsets `dX, dY`, and **P** the ICRS → mean J2000.0
+//! frame rotation. Inputs are **TT Julian Dates**; the conversion to UT1 is
+//! performed internally using the EOP `dUT1`.
 //!
-//! ## Time-scale contract
+//! ## References
 //!
-//! The `jd` argument passed to [`itrs_to_equatorial_mean_j2000_rotation`]
-//! must be a **TT Julian Date** (Terrestrial Time).  Internally the function
-//! converts to UT1 using EOP `dUT1`.  Do not pass UTC or UT1 directly.
+//! * IERS Conventions (2010), Chapter 5
+//! * SOFA Earth-rotation cookbook (`iauC2t06a` and friends)
 
 use crate::astro::cio;
-use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
+use crate::astro::earth_rotation::{jd_ut1_from_tt_eop, jd_utc_from_tt};
 use crate::astro::eop::{EopProvider, EopValues};
 use crate::astro::era::earth_rotation_angle;
 use crate::astro::nutation::NutationModel;
@@ -77,12 +88,9 @@ pub(crate) fn nutation_with_celestial_pole_offsets<Nut: NutationModel>(
 ///
 /// # Time-scale contract
 ///
-/// `jd` **must** be Terrestrial Time (TT). The function internally calls
-/// `ctx.eop_at(jd)` which expects a UTC Julian Date, because TT and UTC
-/// differ by only ≈ 69 s (accumulated leap seconds + 32.184 s), an epoch
-/// passed as TT will introduce at most ~0.5 ms EOP interpolation error,
-/// which is below the precision of the daily IERS table.  The subsequent
-/// UT1 conversion (`jd_ut1_from_tt_eop`) is then exact.
+/// `jd` **must** be Terrestrial Time (TT). The function converts it to UTC
+/// before consulting the context's EOP provider, because IERS EOP tables are
+/// indexed by UTC civil date.
 ///
 /// # Returns
 ///
@@ -91,7 +99,8 @@ pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut:
     jd: JulianDate,
     ctx: &AstroContext<Eph, Eop>,
 ) -> affn::Rotation3 {
-    let eop = ctx.eop_at(jd);
+    let jd_utc = jd_utc_from_tt(jd);
+    let eop = ctx.eop_at(jd_utc);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
 
     let (dpsi, deps) = nutation_with_celestial_pole_offsets::<Nut>(jd, eop);
@@ -101,7 +110,7 @@ pub(crate) fn itrs_to_equatorial_mean_j2000_rotation<Eph, Eop: EopProvider, Nut:
     let era = earth_rotation_angle(jd_ut1);
 
     // NOTE: `cio::gcrs_to_cirs_matrix` and `Rotation3::rz` conventions are
-    // aligned such that this composition matches the ERFA/SOFA chain for
+    // aligned such that this composition matches the SOFA chain for
     // ITRS -> GCRS in this codebase.
     let itrs_to_gcrs = q * affn::Rotation3::rz(-era) * w.inverse();
     let icrs_to_j2000 =

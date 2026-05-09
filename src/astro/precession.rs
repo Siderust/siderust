@@ -3,88 +3,44 @@
 
 //! # IAU 2006 Precession
 //!
-//! This module provides **precession of the Earth's mean equator and equinox**
-//! using the **IAU 2006** precession model (Capitaine et al. 2003, P03) with the
-//! Fukushima-Williams four-angle parameterization.
+//! Provides precession of the Earth's mean equator and equinox using the
+//! IAU 2006 model (Capitaine et al. 2003, P03) in the Fukushima-Williams
+//! four-angle parameterisation, plus the combined precession-nutation matrix.
 //!
-//! ## What is precession?
+//! ## Scientific scope
 //!
-//! The rotation axis of the Earth is not fixed in inertial space: the torques
-//! produced by the gravitational attraction of the Sun and the Moon on the
-//! Earth's equatorial bulge make the axis describe a **slow conical motion**,
-//! like a gyroscope under external torque. This effect is known as **lunisolar
-//! precession** and has a period of about **25,770 years** (the *Platonic year*).
-//! A smaller contribution, **planetary precession**, is produced by the tidal
-//! forces of the other planets.
+//! The Earth's rotation axis is not fixed in inertial space: torques from
+//! the Sun and Moon on the equatorial bulge produce a slow conical motion
+//! with a period of ≈ 25,770 years (the *Platonic year*), known as
+//! lunisolar precession; planetary tides add a much smaller contribution.
+//! In equatorial coordinates this drifts the celestial poles and equinox
+//! at ≈ 50″/yr. Whenever stellar positions from different epochs are
+//! compared, coordinates must be precessed to a common reference date.
+//! Precession is the **secular** part of the orientation; nutation is the
+//! superposed periodic wobble.
 //!
-//! In equatorial coordinates (right ascension α, declination δ), this causes
-//! the celestial poles and the equinox to *drift* at roughly **50″·yr⁻¹**. When
-//! comparing stellar positions from different epochs, coordinates must be
-//! **precessed** to a common reference date.
-//!
-//! ## Why IAU 2006?
-//!
-//! The IAU 2006 precession model supersedes earlier formulations (e.g., IAU 1976,
-//! Lieske) and provides:
-//! - **Sub-milliarcsecond accuracy** for epochs within ±200 years of J2000.0
-//! - Proper incorporation of the **frame bias** between GCRS and J2000 mean equator
-//! - Consistency with the **IAU 2000/2006 nutation** models
-//! - Compliance with modern VLBI and space astrometry requirements
-//!
-//! ## Precession vs Nutation
-//!
-//! | Aspect            | **Precession**                                      | **Nutation**                                        |
-//! |-------------------|-----------------------------------------------------|-----------------------------------------------------|
-//! | Physical cause    | Long-term torque on equatorial bulge               | Short-term periodic torque variations               |
-//! | Character         | **Secular** (monotonic drift, ≈50″·yr⁻¹)          | **Periodic** (18.6 yr dominant, ±9″ amplitude)      |
-//! | Time scale        | ~25,770 year cycle                                  | Hours → decades (hundreds of terms)                 |
-//! | Typical magnitude | ~0.014° per year                                    | Up to 9″ peak-to-peak                               |
-//! | Modeling          | Polynomial series (IAU 2006)                        | Trigonometric series (IAU 2000B/2006, 77-680 terms) |
-//! | When to apply?    | **Always** when transforming between epochs         | When sub-arcsecond or true-of-date coords required  |
-//!
-//! **Precession** is the steady drift of the reference frame; **nutation** is the
-//! superposed wobble. Both must be applied to obtain the *true equator and equinox
-//! of date*.
-//!
-//! ## Implementation
+//! ## Technical scope
 //!
 //! The precession matrix is constructed from four Fukushima-Williams angles
-//! (γ̄, φ̄, ψ̄, ε_A), all expressed as 5th-order polynomials in Julian centuries `t`
-//! from J2000.0 TT:
+//! `(γ̄, φ̄, ψ̄, ε_A)`, each evaluated as a 5th-order polynomial in Julian
+//! centuries `t` from J2000.0 TT, and assembled as
 //!
 //! ```text
-//! P = R₁(−ε_A) · R₃(−ψ̄) · R₁(φ̄) · R₃(γ̄)
+//! P = R₁(−ε_A) · R₃(−ψ̄) · R₁(φ̄) · R₃(γ̄),
 //! ```
 //!
-//! This naturally incorporates the frame bias between GCRS and the J2000.0 mean
-//! equator/equinox.
-//!
-//! ## Public API
-//!
-//! - [`precession_fw_angles`] – Fukushima-Williams angles (γ̄, φ̄, ψ̄, ε_A)
-//! - [`fw_matrix`] – Precession rotation matrix from F-W angles
-//! - [`precession_matrix_iau2006`] – Direct precession matrix for a given epoch
-//! - [`precession_nutation_matrix`] – Combined precession-nutation matrix
-//! - [`mean_obliquity_iau2006`] – Mean obliquity of the ecliptic (ε_A)
-//! - [`J2000_MEAN_OBLIQUITY_ARCSEC`] – J2000.0 obliquity constant (84381.406″)
-//!
-//! ## Accuracy & Limitations
-//!
-//! - **Better than 0.1 mas** for ±200 years from J2000.0
-//! - Polynomial series has no formal time limit, but accuracy degrades for epochs
-//!   far from J2000.0
-//! - For epochs before 1800 or after 2200, residual errors may exceed 1 mas
+//! which naturally incorporates the GCRS↔J2000 mean equator/equinox frame
+//! bias. Public entry points include [`precession_fw_angles`], [`fw_matrix`],
+//! [`precession_matrix_iau2006`], [`precession_nutation_matrix`] and
+//! [`mean_obliquity_iau2006`]. Accuracy is better than 0.1 mas within
+//! ±200 yr of J2000.0, degrading gracefully outside that window.
 //!
 //! ## References
 //!
-//! - **IAU 2006 Resolution B1** (precession)
-//! - Hilton et al. (2006), *Celestial Mechanics* **94**, 351–367
-//! - Capitaine et al. (2003), *A&A* **412**, 567–586
-//! - SOFA/ERFA routines: `iauPfw06`, `iauObl06`, `iauPmat06`
-//!
-//! ## See Also
-//!
-//! - [`crate::astro::nutation`] – IAU 2006/2000A and IAU 2000B nutation models
+//! * IAU 2006 Resolution B1
+//! * Capitaine, N., Wallace, P. T., Chapront, J. (2003), A&A 412, 567
+//! * IERS Conventions (2010), §5.6
+//! * SOFA routine `iauPfw06`
 
 use crate::qtty::*;
 use crate::time::JulianDate;
@@ -103,7 +59,7 @@ use affn::Rotation3;
 /// * `epsa` (ε_A): obliquity of the ecliptic (mean obliquity of date)
 ///
 /// Polynomials from Hilton et al. (2006), Table 1.
-/// Coefficients match SOFA `iauPfw06` / ERFA `eraPfw06`.
+/// Coefficients match SOFA `iauPfw06`.
 ///
 /// ## References
 /// * IAU 2006 Resolution B1
@@ -187,14 +143,14 @@ pub const J2000_MEAN_OBLIQUITY_ARCSEC: f64 = 84381.406;
 
 /// Construct the Fukushima-Williams precession matrix from four angles.
 ///
-/// The SOFA/ERFA formula is:
+/// The SOFA formula is:
 /// ```text
 /// P = R₁(−ε_A) · R₃(−ψ̄) · R₁(φ̄) · R₃(γ̄)
 /// ```
-/// where R₁, R₃ are ERFA's rotation functions.
+/// where R₁, R₃ are the SOFA elementary rotation functions.
 ///
-/// ERFA's Rx/Rz use the **opposite sign convention** from the standard
-/// math rotation matrices:  `Rx_ERFA(θ) = Rx_standard(−θ)`.
+/// SOFA's Rx/Rz use the **opposite sign convention** from the standard
+/// math rotation matrices: `Rx_SOFA(θ) = Rx_standard(−θ)`.
 ///
 /// Translated to **standard** (siderust) convention:
 /// ```text

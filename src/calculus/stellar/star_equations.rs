@@ -40,7 +40,7 @@ use crate::coordinates::spherical;
 use crate::coordinates::transform::AstroContext;
 use crate::qtty::*;
 use crate::time::JulianDate;
-use crate::time::{ModifiedJulianDate, Period, MJD};
+use crate::time::{ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
 // Constants
@@ -181,7 +181,7 @@ impl StarAltitudeParams {
     fn hour_angle(&self, mjd: ModifiedJulianDate) -> Degrees {
         let jd: JulianDate = mjd.into();
         let ctx: AstroContext = AstroContext::default();
-        let eop = ctx.eop_at(jd);
+        let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
         let nut = nutation_iau2000b(jd);
         let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
@@ -197,7 +197,7 @@ impl StarAltitudeParams {
     /// direction = **+1** (rising above threshold) or **−1** (setting below).
     pub fn predict_crossings(
         &self,
-        period: Period<MJD>,
+        period: Period<ModifiedJulianDate>,
         h0: Radians,
     ) -> Vec<(ModifiedJulianDate, i32)> {
         let h0_deg = h0.to::<Degree>();

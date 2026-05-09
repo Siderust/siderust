@@ -1,6 +1,36 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Frame rotation implementations targeting [`EquatorialMeanJ2000`](crate::coordinates::frames::EquatorialMeanJ2000).
+//!
+//! ## Scientific scope
+//!
+//! The **J2000.0 mean equatorial frame** has its X-axis pointing toward the
+//! mean vernal equinox at J2000.0 and its Z-axis aligned with Earth's mean
+//! rotation pole at J2000.0. It is the traditional epoch-based equatorial
+//! frame used for star catalogues and astrometric reductions.
+//!
+//! This module implements two rotation chains targeting this frame:
+//!
+//! - **EclipticMeanJ2000 → EquatorialMeanJ2000**: inverse obliquity rotation.
+//! - **ICRS → EquatorialMeanJ2000**: IAU 2006 frame-bias matrix `rb`.
+//!
+//! ## Technical scope
+//!
+//! Both impls apply a fixed 3×3 rotation from [`bias`]:
+//!
+//! - `obliquity_ecl_to_eq()` = `Rx(−ε₀)`, tilting the ecliptic plane to the
+//!   equatorial plane.
+//! - `frame_bias_icrs_to_j2000()` = the `rb` matrix from `eraBp06(J2000)`.
+//!
+//! Spherical types are handled by the blanket impl in the parent module via
+//! a Cartesian round-trip.
+//!
+//! ## References
+//!
+//! - IAU 2006 resolution B1 (frame-bias definition).
+//! - SOFA routines `iauBp06`, `iauObl06`.
+
 use super::bias;
 use super::TransformFrame;
 use crate::coordinates::{cartesian::Position, centers::ReferenceCenter, frames};
@@ -13,10 +43,7 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equat
     fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
         let rot = bias::obliquity_ecl_to_eq();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_vec3(
-            self.center_params().clone(),
-            nalgebra::Vector3::new(x, y, z),
-        )
+        Position::from_array(self.center_params().clone(), [x, y, z])
     }
 }
 
@@ -27,10 +54,7 @@ impl<C: ReferenceCenter, U: LengthUnit> TransformFrame<Position<C, frames::Equat
     fn to_frame(&self) -> Position<C, frames::EquatorialMeanJ2000, U> {
         let rot = bias::frame_bias_icrs_to_j2000();
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
-        Position::from_vec3(
-            self.center_params().clone(),
-            nalgebra::Vector3::new(x, y, z),
-        )
+        Position::from_array(self.center_params().clone(), [x, y, z])
     }
 }
 

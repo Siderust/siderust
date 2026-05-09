@@ -220,16 +220,16 @@ mod tests {
 
     #[test]
     #[cfg(feature = "runtime-data")]
-    fn ensure_returns_path_when_already_cached() {
+    fn ensure_rejects_cached_file_with_wrong_pinned_hash() {
         let dir = temp_dir_path("ensure_cached");
         let dm = DataManager::with_dir(&dir).unwrap();
         let meta = registry::lookup(DatasetId::IersEop).unwrap();
         let path = dir.join(meta.filename);
-        // Write a file big enough to pass is_cached and verify (sha256 is empty)
+        // Write a file big enough to pass the size gate but not the pinned hash.
         let data = vec![42u8; (meta.min_size + 100) as usize];
         std::fs::write(&path, &data).unwrap();
-        let result = dm.ensure(DatasetId::IersEop).unwrap();
-        assert_eq!(result, path);
+        let result = dm.ensure(DatasetId::IersEop);
+        assert!(result.is_err());
         std::fs::remove_dir_all(&dir).ok();
     }
 

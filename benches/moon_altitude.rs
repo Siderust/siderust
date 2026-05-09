@@ -51,7 +51,7 @@ fn build_period(days: u32) -> Period<MJD> {
 // =============================================================================
 
 fn bench_moon_altitude_computation(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let mjd = ModifiedJulianDate::new(51544.5); // J2000
 
     let mut group = c.benchmark_group("moon_altitude_single");
@@ -71,7 +71,7 @@ fn bench_moon_altitude_computation(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_moon_above_horizon(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
 
     let mut group = c.benchmark_group("moon_above_horizon");
 
@@ -131,7 +131,7 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_moon_below_horizon(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
 
     let mut group = c.benchmark_group("moon_below_horizon");
 
@@ -191,7 +191,7 @@ fn bench_moon_below_horizon(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_moon_altitude_range(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
 
     let mut group = c.benchmark_group("moon_altitude_range");
 
@@ -229,7 +229,7 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
 // =============================================================================
 
 fn bench_algorithm_comparison(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
 
     let mut group = c.benchmark_group("moon_algorithm_comparison");
     group.measurement_time(Duration::from_secs(15));

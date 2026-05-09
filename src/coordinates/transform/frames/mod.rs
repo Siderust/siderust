@@ -1,6 +1,37 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Frame rotation trait and blanket implementations.
+//!
+//! ## Scientific scope
+//!
+//! Frame rotations change the orientation of coordinate axes without moving the
+//! origin. The reference frames bridged in this sub-tree include:
+//!
+//! - **ICRS / GCRS** — pseudo-inertial, tied to extragalactic radio sources.
+//! - **EquatorialMeanJ2000 / EclipticMeanJ2000** — J2000.0 epoch realisation.
+//! - **EquatorialMeanOfDate / EquatorialTrueOfDate** — precession and nutation.
+//! - **CIRS / TIRS / ITRF / ECEF** — Earth-fixed chain (ERA, polar motion).
+//! - **Horizontal** — local horizon frame, tied to an observer site.
+//!
+//! ## Technical scope
+//!
+//! [`TransformFrame`] is the low-level, statically-dispatched interface for
+//! frame rotations. Each `impl` in the child modules applies a fixed or
+//! time-dependent 3×3 rotation matrix to the underlying Cartesian vector.
+//!
+//! Blanket impls here route spherical types through a Cartesian round-trip so
+//! that each frame-pair only needs a single Cartesian `impl`.
+//!
+//! The higher-level, runtime API — which selects the nutation model at
+//! run-time and carries an `AstroContext` — lives in
+//! [`crate::coordinates::transform::ext`] and uses `FrameRotationProvider`.
+//!
+//! ## References
+//!
+//! - IAU SOFA Tools for Earth Attitude (2023): <https://www.iausofa.org>
+//! - IERS Conventions 2010 (IERS Technical Note No. 36).
+
 pub(crate) mod bias;
 pub mod direction;
 pub mod to_ecliptic;
@@ -27,7 +58,7 @@ where
     C: ReferenceCenter,
 {
     fn to_frame(&self) -> Position<C, F, U> {
-        Position::from_vec3(self.center_params().clone(), *self.as_vec3())
+        Position::from_array(self.center_params().clone(), *self.as_array())
     }
 }
 

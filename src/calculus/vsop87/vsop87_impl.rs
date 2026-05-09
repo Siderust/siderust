@@ -1,18 +1,44 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! VSOP87 position / velocity computation (optimized version)
+//! # VSOP87 Series Evaluation Kernels
 //!
-//! Exposes three public helpers:
-//! * [`position`]  – only X,Y,Z (AstronomicalUnits)
-//! * [`velocity`]  – only Ẋ,Ẏ,Ż (AstronomicalUnits/day)
-//! * [`position_velocity`] – both in one pass (≈30 % faster than 2 calls)
+//! ## Scientific scope
 //!
-//! ## Optimizations applied
-//! - Separate specialized functions eliminate inner-loop branching
-//! - `mul_add` for FMA precision and potential performance
-//! - `#[inline(always)]` on hot paths
-//! - SIMD batching via `wide` crate for sin/cos operations
+//! Implements the numerical evaluation of the VSOP87 Poisson series
+//! (Bretagnon & Francou 1988) for one Cartesian coordinate at a time.
+//! The series have the form:
+//!
+//! ```text
+//!   X(T) = Σ_k  T^k · Σ_j  A_{kj} · cos(B_{kj} + C_{kj} · T)
+//! ```
+//!
+//! where `T` is Julian millennia from J2000.0 (TDB).  Separate kernels
+//! evaluate position only, velocity only, or both in a single pass.
+//!
+//! ## Technical scope
+//!
+//! - [`Vsop87`] — coefficient record `(a, b, c)` for one series term.
+//! - [`position`] — evaluates X, Y, Z.
+//!   Returns raw `f64` values in **astronomical units** (AU).
+//! - [`velocity`] — evaluates Ẋ, Ẏ, Ż.
+//!   Returns raw `f64` values in **AU · day⁻¹**.
+//! - [`position_velocity`] — evaluates both in one pass (≈ 30 % faster).
+//!
+//! All three functions accept `T` (Julian millennia) produced by the
+//! caller; unit conversion to typed quantities happens in the calling
+//! planet `impl` blocks in `vsop87a.rs` / `vsop87e.rs`.
+//!
+//! ### Optimisations
+//! - SIMD 4-lane batching via the `wide::f64x4` type.
+//! - `f64::mul_add` (FMA) for Horner inner-loop.
+//! - `#[inline(always)]` on the hot coordinate kernels.
+//!
+//! ## References
+//!
+//! - Bretagnon, P., & Francou, G. (1988). "Planetary theories in rectangular
+//!   and spherical variables: VSOP87 solutions".
+//!   *Astronomy and Astrophysics* 202, 309–315.
 
 use crate::time::JulianDate;
 use wide::f64x4;

@@ -4,9 +4,9 @@
 //! IAU 2000A nutation data tables.
 //!
 //! Contains the 678 luni-solar and 687 planetary nutation terms
-//! from the MHB2000 model, extracted from ERFA `eraNut00a`.
+//! from the MHB2000 model corresponding to SOFA `iauNut00a`.
 //!
-//! These tables are auto-generated from the ERFA C source and should
+//! These tables are auto-generated from the canonical SOFA-compatible series and should
 //! not be edited by hand.
 
 /// IAU 2000A luni-solar nutation series (678 terms).

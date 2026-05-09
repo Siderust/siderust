@@ -39,7 +39,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
 use crate::time::JulianDate;
-use crate::time::{complement_within, ModifiedJulianDate, Period, MJD};
+use crate::time::{complement_within, ModifiedJulianDate, Period};
 
 use super::star_equations::{StarAltitudeParams, ThresholdResult};
 
@@ -107,7 +107,7 @@ pub(crate) fn fixed_star_altitude_rad(
 
     // True-of-date RA/Dec requires apparent sidereal time (GAST).
     let ctx: AstroContext = AstroContext::default();
-    let eop = ctx.eop_at(jd);
+    let eop = ctx.eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
     let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
     let lst_rad = gast.value() + site.lon.to::<Radian>().value();
@@ -141,7 +141,7 @@ fn find_crossings_analytical(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: &Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     threshold: Radians,
 ) -> (Vec<intervals::LabeledCrossing>, bool) {
     let thr = threshold;
@@ -238,9 +238,9 @@ pub(crate) fn find_star_above_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
     let f = make_star_fn(ra_j2000, dec_j2000, &site);
 
@@ -256,9 +256,9 @@ pub(crate) fn find_star_below_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let above = find_star_above_periods(ra_j2000, dec_j2000, site, period, threshold);
     complement_within(period, &above)
 }
@@ -270,9 +270,9 @@ pub(crate) fn find_star_range_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let above_min = find_star_above_periods(ra_j2000, dec_j2000, site, period, range.0);
     let above_max = find_star_above_periods(ra_j2000, dec_j2000, site, period, range.1);
     let below_max = intervals::complement(period, &above_max);
@@ -293,9 +293,9 @@ fn find_star_above_periods_scan(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: Geodetic<ECEF>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<MJD>> {
+) -> Vec<Period<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
     let f = make_star_fn(ra_j2000, dec_j2000, &site);
     intervals::above_threshold_periods(period, SCAN_STEP_FALLBACK, &f, thr)
@@ -325,7 +325,7 @@ mod tests {
         )
     }
 
-    fn period_7d() -> Period<MJD> {
+    fn period_7d() -> Period<ModifiedJulianDate> {
         Period::new(
             ModifiedJulianDate::new(60000.0),
             ModifiedJulianDate::new(60007.0),

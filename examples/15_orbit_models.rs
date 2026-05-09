@@ -8,6 +8,8 @@
 //!
 //! Run with: `cargo run --example 15_orbit_models`
 
+use siderust::qtty::angular_rate::AngularRate;
+use siderust::qtty::unit::{Day, Degree};
 use siderust::qtty::AstronomicalUnits;
 use siderust::time::JulianDate;
 use siderust::{ConicKind, ConicOrbit, KeplerianOrbit, MeanMotionOrbit, PreparedOrbit};
@@ -16,7 +18,7 @@ fn main() {
     let jd = JulianDate::new(2458850.0);
 
     println!("=== Orbit Models ===\n");
-    println!("Epoch: {:.1}\n", jd.value());
+    println!("Epoch: {:.1}\n", jd.jd_value());
 
     // 1. KeplerianOrbit
     let kepler = KeplerianOrbit::new(
@@ -45,7 +47,7 @@ fn main() {
         siderust::qtty::Degrees::new(0.0),
         siderust::qtty::Degrees::new(0.0),
         siderust::qtty::Degrees::new(102.9),
-        0.9856,
+        AngularRate::<Degree, Day>::new(0.9856),
         JulianDate::new(2451545.0),
     )
     .expect("valid mean-motion orbit");

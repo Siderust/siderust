@@ -19,7 +19,8 @@ pub use crate::ext_qtty::{
 
 pub use crate::ext_qtty::unit;
 pub use crate::ext_qtty::{
-    acceleration, angular, area, energy, force, length, mass, power, solid_angle, time, volume,
+    acceleration, angular, area, energy, force, length, mass, power, radiometry, solid_angle, time,
+    volume,
 };
 
 pub use crate::ext_qtty::solid_angle::*;
@@ -34,7 +35,14 @@ pub use crate::ext_qtty::mass::*;
 pub use crate::ext_qtty::power::*;
 pub use crate::ext_qtty::pressure;
 pub use crate::ext_qtty::pressure::*;
+pub use crate::ext_qtty::radiometry::*;
 pub use crate::ext_qtty::temperature;
 pub use crate::ext_qtty::temperature::*;
 pub use crate::ext_qtty::time::*;
+// Explicit import overrides the glob above: `crate::qtty::Second` = the
+// quantity type `Quantity<unit::Second, f64>`, not the unit marker struct.
 pub use crate::ext_qtty::volume::*;
+pub use crate::ext_qtty::Second;
+
+pub mod dimensionless;
+pub use dimensionless::*;

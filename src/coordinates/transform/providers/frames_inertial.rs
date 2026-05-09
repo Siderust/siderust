@@ -341,7 +341,7 @@ impl FrameRotationProvider<ICRS, EquatorialTrueOfDate> for () {
         let nut = Nut::nutation(jd);
         let mut dpsi = nut.dpsi;
         let mut deps = nut.deps;
-        let eop = ctx.eop_at(jd);
+        let eop = ctx.eop_at_tt(jd);
         let dx_rad = crate::qtty::Radians::from(eop.dx);
         let dy_rad = crate::qtty::Radians::from(eop.dy);
 

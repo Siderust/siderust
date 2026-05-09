@@ -3,16 +3,10 @@
 
 //! DE441 build-time pipeline, thin configuration wrapper.
 //!
-//! All logic lives in [`pipeline`](../pipeline.rs).
+//! All logic lives in the shared JPL build pipeline.
 //! Only activated when the `de441` Cargo feature is enabled.
 
-#[path = "../daf.rs"]
-mod daf;
-#[path = "../pipeline.rs"]
-mod pipeline;
-#[path = "../spk.rs"]
-mod spk;
-
+use crate::jpl_pipeline as pipeline;
 use std::path::Path;
 
 const CONFIG: pipeline::DeConfig = pipeline::DeConfig {

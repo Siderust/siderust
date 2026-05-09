@@ -1,10 +1,32 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Interpolation policies for [`crate::spectra::SampledSpectrum`].
+//! # Interpolation policy types for sampled spectra
 //!
-//! [`OutOfRange`] lives in [`crate::interp`] so it can be shared with
-//! [`crate::tables`]; it is re-exported here for backwards compatibility.
+//! ## Scientific scope
+//!
+//! Selects how a [`crate::spectra::SampledSpectrum`] evaluates `y(x)`
+//! between adjacent samples. Synthetic photometry and atmospheric
+//! transmission codes converge on piecewise-linear interpolation as the
+//! conservative default — it preserves monotonic regions, has no
+//! ringing, and matches the reference behaviour of `numpy.interp` and
+//! `scipy.interpolate.interp1d(kind="linear")`. The other variants in
+//! the enum are reserved for future implementations and currently
+//! reject at construction time.
+//!
+//! ## Technical scope
+//!
+//! - [`Interpolation`] enum with variants `Linear` (implemented),
+//!   `Nearest`, `PiecewiseConstantLeft`, `PiecewiseConstantRight`,
+//!   `CubicSpline` (reserved).
+//! - [`OutOfRange`] re-exported from [`crate::interp`] so the two
+//!   policies can be referenced from a single import path.
+//!
+//! ## References
+//!
+//! - NumPy developers. *numpy.interp* documentation
+//!   (linear interpolation reference).
+//! - SciPy developers. *scipy.interpolate.interp1d* documentation.
 
 pub use crate::interp::OutOfRange;
 

@@ -3,14 +3,53 @@
 
 //! # Earth Rotation Helpers
 //!
-//! Utilities for computing UT1 Julian Dates from TT, and properly
-//! separated GMST with distinct UT1 and TT arguments.
+//! Utilities for computing UT1 Julian Dates from TT and for evaluating GMST
+//! with properly separated UT1 and TT arguments.
 //!
-//! These helpers centralise the TT→UT1 conversion logic so that all
-//! call sites (topocentric, horizontal, stellar) use a consistent,
-//! IAU-compliant approach.
+//! ## Scientific scope
+//!
+//! Many Earth-rotation quantities (ERA, GMST, GAST, sidereal time) are
+//! defined on the **UT1** time scale, while the precession, nutation and
+//! polynomial parts are defined on the dynamical **TT** scale. Mixing the
+//! two introduces tens-of-seconds-level errors. The conversion `TT → UT1`
+//! requires the time-dependent quantity `ΔT = TT − UT1`, which combines the
+//! tabulated leap-second history (ΔAT = TAI − UTC) with the IERS-published
+//! `dUT1 = UT1 − UTC` series.
+//!
+//! ## Technical scope
+//!
+//! The helpers route conversions through `tempoch`'s context-aware
+//! `TT → UT1` chain, which is backed by either a piecewise ΔT model
+//! (Stephenson & Houlden, Meeus, IERS-observed 1992–present) or the bundled
+//! IERS `finals2000A.all` series. When an [`EopValues`] is supplied, the
+//! caller's measured `dUT1` is honoured by adding the residual relative to
+//! the bundled series. GMST is computed by delegating to
+//! [`gmst_iau2006`] with distinct
+//! UT1 and TT arguments, ensuring SOFA-compatible results.
+//!
+//! Public functions and their typed signatures:
+//!
+//! | Function | Input | Output |
+//! |---|---|---|
+//! | [`jd_ut1_from_tt`] | `JulianDate` (TT) | `JulianDate` (UT1) |
+//! | [`jd_utc_from_tt`] | `JulianDate` (TT) | `JulianDate` (UTC) |
+//! | [`jd_ut1_from_tt_eop`] | `JulianDate` (TT), `&EopValues` | `JulianDate` (UT1) |
+//! | [`gmst_from_tt`] | `JulianDate` (TT) | `Radians` |
+//! | [`gmst_from_tt_eop`] | `JulianDate` (TT), `&EopValues` | `Radians` |
+//! | [`gmst_default`] | `JulianDate` (TT) | `Radians` |
+//!
+//! The `JulianDate` returned by the UT1/UTC helpers carries the
+//! numeric JD value of the requested timescale but is typed as TT for
+//! interoperability with the rest of the sidereal-time call sites
+//! (matching the SOFA convention for `iauGmst06`).
+//!
+//! ## References
+//!
+//! * IERS Conventions (2010), §5.4 (ERA and GAST), §5.5 (GMST)
+//! * SOFA routine `iauGmst06`
+//! * Stephenson & Houlden (1986); Meeus, *Astronomical Algorithms*, Ch. 10
 
-use crate::astro::eop::EopValues;
+use crate::astro::eop::{EopProvider, EopValues, IersEop};
 use crate::astro::sidereal::gmst_iau2006;
 use crate::qtty::*;
 use crate::time::{JulianDate, TimeContext, TT, UT1};
@@ -35,11 +74,37 @@ use crate::time::{JulianDate, TimeContext, TT, UT1};
 /// [`tempoch::JulianDate::to_with`] directly to recover a `Result`.
 #[inline]
 pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
-    let jd_tt: tempoch::JulianDate<crate::time::TT> = jd_tt.into();
+    let jd_tt: tempoch::JulianDate<crate::time::TT> = jd_tt;
     let ut1 = jd_tt
         .to_with::<UT1>(&TimeContext::new())
         .expect("TT->UT1 conversion should succeed within the bundled model horizon");
     JulianDate::new(ut1.to::<tempoch::JD>().raw().value())
+}
+
+/// Compute JD(UTC) from JD(TT).
+///
+/// The returned value is stored in the legacy [`JulianDate`] alias for
+/// compatibility, but its numeric axis is UTC. Use it only where an external
+/// table is explicitly keyed by UTC, such as IERS EOP data.
+#[inline]
+pub fn jd_utc_from_tt(jd_tt: JulianDate) -> JulianDate {
+    let jd_tt: tempoch::JulianDate<TT> = jd_tt;
+    let ctx = TimeContext::with_builtin_eop();
+    let ut1 = jd_tt
+        .to_with::<UT1>(&ctx)
+        .expect("TT->UT1 conversion should succeed within the bundled model horizon");
+    let ut1_jd = ut1.to::<tempoch::JD>().raw().value();
+    let mut utc_jd = ut1_jd;
+
+    for _ in 0..3 {
+        let mjd_utc = Days::new(utc_jd - 2_400_000.5);
+        let Some(eop) = tempoch::eop::builtin_eop_at(mjd_utc) else {
+            break;
+        };
+        utc_jd = ut1_jd - eop.ut1_minus_utc.to::<Day>().value();
+    }
+
+    JulianDate::new(utc_jd)
 }
 
 /// Compute JD(UT1) from JD(TT) with IERS EOP refinement.
@@ -51,7 +116,7 @@ pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
 /// interpolation, then the caller's [`EopValues`] is honoured by adding
 /// the residual `eop.dut1 − bundled_dut1` correction. In particular:
 ///
-/// * For an [`IersEop`](crate::astro::eop::IersEop) provider that uses the
+/// * For an [`IersEop`] provider that uses the
 ///   same bundled finals2000A.all data, the residual is ≈ 0 and the
 ///   result matches tempoch's high-fidelity bundled UT1 path within
 ///   floating-point precision.
@@ -84,7 +149,7 @@ pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
 /// [`tempoch::JulianDate::to_with`].
 #[inline]
 pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> JulianDate {
-    let jd_tt_t: tempoch::JulianDate<TT> = jd_tt.into();
+    let jd_tt_t: tempoch::JulianDate<TT> = jd_tt;
     let ctx = TimeContext::with_builtin_eop();
     let ut1 = jd_tt_t
         .to_with::<UT1>(&ctx)
@@ -140,7 +205,9 @@ pub fn gmst_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> Radians {
 /// tempoch's ΔT model.
 #[inline]
 pub fn gmst_default(jd_tt: JulianDate) -> Radians {
-    gmst_from_tt(jd_tt)
+    let jd_utc = jd_utc_from_tt(jd_tt);
+    let eop = IersEop::new().eop_at(jd_utc);
+    gmst_from_tt_eop(jd_tt, &eop)
 }
 
 #[cfg(test)]
@@ -161,7 +228,7 @@ mod tests {
     fn jd_ut1_is_close_to_tt_at_modern_epoch() {
         // ΔT at J2000 is ~63.8 s, so UT1 ≈ TT - 63.8/86400 days
         let jd_ut1 = jd_ut1_from_tt(jd());
-        let diff_sec = (jd().value() - jd_ut1.value()) * 86400.0;
+        let diff_sec = (jd().jd_value() - jd_ut1.jd_value()) * 86400.0;
         assert!(
             diff_sec > 50.0 && diff_sec < 80.0,
             "ΔT at J2000 expected ~63s, got {diff_sec}s"
@@ -195,9 +262,9 @@ mod tests {
         let expected_utc_jd = bundled_ut1_jd - bundled_dut1 / 86_400.0;
 
         assert!(
-            (jd_eop.value() - expected_utc_jd).abs() < 1e-12,
+            (jd_eop.jd_value() - expected_utc_jd).abs() < 1e-12,
             "with dut1 = 0, UT1 must equal UTC, got {} vs UTC {}",
-            jd_eop.value(),
+            jd_eop.jd_value(),
             expected_utc_jd
         );
 
@@ -205,7 +272,7 @@ mod tests {
         // exposed via `jd_ut1_from_tt`: the two should differ by roughly the
         // bundled dUT1 at this epoch.
         let jd_dt = jd_ut1_from_tt(jd());
-        let diff_sec = (jd_eop.value() - jd_dt.value()).abs() * 86_400.0;
+        let diff_sec = (jd_eop.jd_value() - jd_dt.jd_value()).abs() * 86_400.0;
         assert!(
             diff_sec > 0.05,
             "EOP(dut1=0) and ΔT models should differ measurably, got {diff_sec}s"
@@ -234,7 +301,7 @@ mod tests {
             .map(|s| s.value())
             .unwrap_or(0.0);
         let expected_utc_jd = bundled_ut1_jd - bundled_dut1 / 86_400.0;
-        let recovered_dut1_s = (jd_eop.value() - expected_utc_jd) * 86_400.0;
+        let recovered_dut1_s = (jd_eop.jd_value() - expected_utc_jd) * 86_400.0;
 
         // f64 precision at JD ~2.45e6 limits the recoverable resolution to
         // roughly 10 µs; sub-microsecond agreement is unrealistic here.
@@ -252,7 +319,7 @@ mod tests {
             ..Default::default()
         };
         let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
-        assert!(jd_eop.value().is_finite());
+        assert!(jd_eop.jd_value().is_finite());
     }
 
     // ── gmst_from_tt ─────────────────────────────────────────────────────
@@ -312,17 +379,29 @@ mod tests {
             ..Default::default()
         };
         let gmst_eop = gmst_from_tt_eop(jd(), &eop);
-        assert!(gmst_eop.value().is_finite());
-        assert!(gmst_eop.value() >= 0.0);
+        assert!(gmst_eop.is_finite());
+        assert!(gmst_eop >= Radians::new(0.0));
     }
 
     // ── gmst_default ─────────────────────────────────────────────────────
 
     #[test]
-    fn gmst_default_matches_gmst_from_tt() {
+    fn gmst_default_matches_builtin_eop_path() {
         let jd_val = jd();
         let g1 = gmst_default(jd_val);
-        let g2 = gmst_from_tt(jd_val);
+        let jd_utc = jd_utc_from_tt(jd_val);
+        let eop = IersEop::new().eop_at(jd_utc);
+        let g2 = gmst_from_tt_eop(jd_val, &eop);
         assert!((g1.value() - g2.value()).abs() < 1e-15);
+    }
+
+    #[test]
+    fn tt_to_utc_conversion_is_not_identity() {
+        let jd_utc = jd_utc_from_tt(jd());
+        let diff_sec = (jd().jd_value() - jd_utc.jd_value()) * 86_400.0;
+        assert!(
+            diff_sec > 60.0 && diff_sec < 70.0,
+            "TT-UTC at J2000 should include leap seconds + 32.184s, got {diff_sec}s"
+        );
     }
 }

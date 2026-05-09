@@ -44,14 +44,8 @@ pub enum SiderustStatus {
     /// Returned by qtty-aware functions when a quantity's dimension doesn't
     /// match the expected type (e.g., passing a length where an angle is expected).
     InvalidDimension = 12,
-    /// The requested epoch is outside the range covered by the loaded data.
-    ///
-    /// Returned when the Julian Date falls before or after the ephemeris or
-    /// table coverage window.
+    /// A requested epoch lies outside the covered ephemeris or EOP data range.
     OutOfRange = 13,
-    /// Earth Orientation Parameters (EOP) are not available for the requested epoch.
-    ///
-    /// Returned by high-precision transforms that require IERS EOP data when no
-    /// data has been loaded or the epoch is outside the loaded dataset.
+    /// Required Earth Orientation Parameters are unavailable for the epoch.
     NoEopData = 14,
 }

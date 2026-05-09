@@ -3,40 +3,56 @@
 
 //! # Sidereal Time Module
 //!
-//! **Sidereal time** is the hour angle of the vernal equinox: a clock that tells us
-//! "how far the Earth has rotated relative to the stars" instead of the Sun.  One
-//! **mean sidereal day** is ≈ 23 h 56 m 4.09 s, i.e. about 0.99727 solar days.
-//! Astronomers rely on it to aim equatorial‑mounted telescopes, reduce star‐track
-//! images, or convert between Earth‐fixed and inertial coordinate frames.
+//! IAU 2006/2000A compliant Greenwich Mean and Apparent Sidereal Time
+//! functions, suitable for converting between Earth-fixed and inertial
+//! frames and for pointing equatorially mounted telescopes.
 //!
-//! This module provides IAU 2006/2000A compliant sidereal time functions:
+//! ## Scientific scope
 //!
-//! | Function | Output | Notes |
-//! |----------|--------|-------|
-//! | [`gmst_iau2006`] | Greenwich Mean Sidereal Time (radians) | IAU 2006 ERA-based formula |
-//! | [`gast_iau2006`] | Greenwich Apparent Sidereal Time (radians) | Includes equation of equinoxes |
+//! Sidereal time is the hour angle of the vernal equinox: a clock that
+//! tracks how far the Earth has rotated relative to the stars rather than
+//! the Sun. One mean sidereal day is ≈ 23 h 56 m 4.09 s (≈ 0.99727 solar
+//! days). Greenwich Mean Sidereal Time (GMST) measures rotation against the
+//! mean equinox; Greenwich Apparent Sidereal Time (GAST) additionally
+//! includes the equation of the equinoxes (the projection of nutation onto
+//! the equator). Local Sidereal Time (LST) is GMST/GAST plus the observer's
+//! geodetic longitude.
 //!
-//! The implementation follows the IAU 2006 standard using the Earth Rotation Angle (ERA).
-//! Accuracy is better than ±0.1″ for dates within ±100 years of J2000.
+//! ## Technical scope
+//!
+//! [`gmst_iau2006`] implements the ERA-based IAU 2006 formulation
+//! `GMST(UT1, TT) = ERA(UT1) + polynomial(t)`, with the polynomial
+//! coefficients of Capitaine, Wallace & Chapront (2003) adopted by IAU 2006
+//! Resolution B1. The two time arguments are kept distinct (UT1 for ERA,
+//! TT for the polynomial) to match SOFA semantics. [`gast_iau2006`] adds
+//! the equation of the equinoxes built from the nutation model and CIO
+//! locator. Accuracy is better than ±0.1″ for dates within ±100 yr of
+//! J2000.
 //!
 //! ## Example
+//!
 //! ```rust
 //! use chrono::prelude::*;
 //! use siderust::time::JulianDate;
 //! use siderust::astro::sidereal::gmst_iau2006;
 //! use siderust::qtty::*;
 //!
-//! let jd = JulianDate::from_utc(Utc::now());
+//! let jd = JulianDate::from_chrono(Utc::now());
 //! let gmst = gmst_iau2006(jd, jd); // jd_ut1 ≈ jd_tt for most applications
 //! let lon_madrid = Degrees::new(-3.7038).to::<Radian>();
 //! let lst = gmst + lon_madrid;
 //! println!("GMST = {:.4}°,  LST = {:.4}°", gmst.to::<Degree>(), lst.to::<Degree>());
 //! ```
+//!
+//! ## References
+//!
+//! * Capitaine, N., Wallace, P. T., Chapront, J. (2003), A&A 412, 567
+//! * IERS Conventions (2010), §5.5.7
+//! * SOFA routines `iauGmst06`, `iauGst06a`
 
 use crate::astro::era::earth_rotation_angle;
 use crate::qtty::*;
 use crate::time::JulianDate;
-use std::f64::consts::TAU;
 
 /// Mean sidereal day length ≈ 0.9972696 solar days (23 h 56 m 4.09 s).
 pub use crate::qtty::time::SIDEREAL_DAY;
@@ -44,9 +60,6 @@ pub use crate::qtty::time::SIDEREAL_DAY;
 // ════════════════════════════════════════════════════════════════════════
 // IAU 2006 ERA-based sidereal time
 // ════════════════════════════════════════════════════════════════════════
-
-/// Arcseconds-to-radians conversion factor.
-const AS2RAD: f64 = std::f64::consts::PI / (180.0 * 3600.0);
 
 /// Greenwich Mean Sidereal Time, IAU 2006 (ERA-based).
 ///
@@ -78,8 +91,8 @@ pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
         - 0.000_029_956 * t.powi(4)
         - 0.000_000_036_8 * t.powi(5);
 
-    let gmst = era.value() + poly_as * AS2RAD;
-    Radians::new(gmst.rem_euclid(TAU))
+    let gmst = era + Arcseconds::new(poly_as).to::<Radian>();
+    gmst.wrap_pos()
 }
 
 /// Greenwich Apparent Sidereal Time, IAU 2006/2000A.
@@ -109,12 +122,13 @@ pub fn gast_iau2006(
 ) -> Radians {
     let gmst = gmst_iau2006(jd_ut1, jd_tt);
     let ee = crate::astro::era::equation_of_the_equinoxes(dpsi, true_obliquity);
-    Radians::new((gmst.value() + ee.value()).rem_euclid(TAU))
+    (gmst + ee).wrap_pos()
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use std::f64::consts::TAU;
 
     #[test]
     fn gmst_iau2006_at_j2000() {

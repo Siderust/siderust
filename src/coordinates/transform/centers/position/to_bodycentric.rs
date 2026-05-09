@@ -99,8 +99,12 @@ where
             }
         };
 
-        let relative_vec = self.as_vec3() - body_in_our_center.as_vec3();
-        Position::<Bodycentric, F, U>::from_vec3(body_params, relative_vec)
+        let a = self.as_array();
+        let b = body_in_our_center.as_array();
+        Position::<Bodycentric, F, U>::from_array(
+            body_params,
+            [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+        )
     }
 }
 
@@ -153,8 +157,12 @@ where
             }
         };
 
-        let relative_vec = self.as_vec3() - body_in_our_center.as_vec3();
-        Position::<Bodycentric, F, U>::from_vec3(body_params, relative_vec)
+        let a = self.as_array();
+        let b = body_in_our_center.as_array();
+        Position::<Bodycentric, F, U>::from_array(
+            body_params,
+            [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+        )
     }
 }
 
@@ -206,8 +214,12 @@ where
             }
         };
 
-        let relative_vec = self.as_vec3() - body_in_our_center.as_vec3();
-        Position::<Bodycentric, F, U>::from_vec3(body_params, relative_vec)
+        let a = self.as_array();
+        let b = body_in_our_center.as_array();
+        Position::<Bodycentric, F, U>::from_array(
+            body_params,
+            [a[0] - b[0], a[1] - b[1], a[2] - b[2]],
+        )
     }
 }
 
@@ -260,7 +272,9 @@ where
             }
         };
 
-        Position::<Geocentric, F, U>::from_vec3_origin(self.as_vec3() + body_geo.as_vec3())
+        let a = self.as_array();
+        let b = body_geo.as_array();
+        Position::<Geocentric, F, U>::from_array_origin([a[0] + b[0], a[1] + b[1], a[2] + b[2]])
     }
 }
 
@@ -368,7 +382,7 @@ mod tests {
 
         let body_geo_ecl = orbit.kepler_position(JulianDate::J2000);
         let body_geo: Position<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
-            Position::from_vec3_origin(*body_geo_ecl.as_vec3());
+            Position::from_array_origin(*body_geo_ecl.as_array());
 
         let body_from_body: Position<Bodycentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
             body_geo.to_center((params, JulianDate::J2000));

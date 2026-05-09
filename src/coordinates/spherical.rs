@@ -3,8 +3,15 @@
 
 //! Spherical coordinate types with astronomical conventions.
 //!
-//! - [`Position<C, F, U>`]: spherical **position** (center + frame + distance)
-//! - [`Direction<F>`]: spherical **direction** (frame-only, no center)
+//! ## Scientific scope
+//!
+//! Spherical coordinates express positions and directions using angular
+//! coordinates (longitude/latitude or right-ascension/declination) plus an
+//! optional radial distance. They are the natural representation for
+//! observational astronomy: star catalogues, planetary almanacs, and
+//! telescope-pointing interfaces all use angular coordinates.
+//!
+//! ## Technical scope
 //!
 //! The core spherical coordinate functionality lives in the `affn` crate
 //! (domain-agnostic geometry kernel). This module provides:
@@ -12,6 +19,14 @@
 //! - Astronomical reference frame types (ICRS, EclipticMeanJ2000, Horizontal, etc.)
 //! - Inherent named constructors and getters (`ra`/`dec`, `lon`/`lat`, `alt`/`az`)
 //! - Convenient type aliases for common coordinate combinations
+//!
+//! ## References
+//!
+//! - Vallado, D. A. (2013). *Fundamentals of Astrodynamics and Applications*,
+//!   4th ed. §2.1.
+//!
+//! - [`Position<C, F, U>`]: spherical **position** (center + frame + distance)
+//! - [`Direction<F>`]: spherical **direction** (frame-only, no center)
 
 // Re-export affn types directly, no wrappers
 pub use affn::spherical::Direction;

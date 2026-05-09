@@ -1,7 +1,40 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Typed 1D linearly-interpolated table.
+//! # Typed 1-D linearly-interpolated table
+//!
+//! ## Scientific scope
+//!
+//! A 1-D look-up table is the simplest gridded representation of a
+//! tabulated astronomical model — a single independent variable
+//! (wavelength, airmass, zenith distance) mapped to a single dependent
+//! quantity (transmission, refraction, response). This module provides
+//! the typed counterpart to the untyped [`crate::tables::algo::linear_1d`]
+//! kernel: a strictly-monotonic table whose axis carries a typed
+//! `qtty::Unit` marker and whose values carry their own unit marker, so
+//! that dimensional analysis flows through interpolation. It is the
+//! 1-D peer of [`crate::tables::Grid2D`] and [`crate::tables::Grid3D`].
+//!
+//! ## Technical scope
+//!
+//! Provides [`Grid1D<X, V, S>`] (with `S` defaulting to `f64`).
+//! Constructors validate length agreement and monotonicity (ascending
+//! or descending), returning [`TableError`] on failure. Public surface
+//! includes:
+//!
+//! - [`Grid1D::from_raw`] / [`Grid1D::with_provenance`] — construction.
+//! - [`Grid1D::interp_at`] — typed evaluation honouring the configured
+//!   [`OutOfRange`] policy.
+//! - Provenance accessors.
+//!
+//! Inputs are typed `Quantity<X, S>`; the output of `interp_at` is
+//! typed `Quantity<V, S>`. The numerical work is delegated to
+//! [`crate::tables::algo::linear_1d`].
+//!
+//! ## References
+//!
+//! - See [`crate::tables::algo`] for the underlying interpolation
+//!   citations (`numpy.interp`, Press et al. 1992 §3.1).
 
 use crate::ext_qtty::{Quantity, Scalar, Unit};
 use crate::interp::OutOfRange;

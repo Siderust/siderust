@@ -87,7 +87,7 @@ mod demo {
         let recovered_times: TimeBundle = roundtrip(&time_bundle);
         println!(
             "Roundtrip check: j2000={:.1}, timeline_len={}\n",
-            recovered_times.j2000.value(),
+            recovered_times.j2000.jd_value(),
             recovered_times.timeline.len()
         );
 
@@ -105,7 +105,7 @@ mod demo {
                 centers::Heliocentric,
                 frames::EclipticMeanJ2000,
                 AstronomicalUnit,
-            >::new_raw(
+            >::new_unchecked(
                 Degrees::new(5.0),   // lat
                 Degrees::new(120.0), // lon
                 AstronomicalUnits::new(1.2),
@@ -157,7 +157,7 @@ mod demo {
         println!(
             "Roundtrip check: {} @ JD {:.1}, r={:.6} AU\n",
             recovered_halley.name,
-            recovered_halley.epoch.value(),
+            recovered_halley.epoch.jd_value(),
             recovered_halley.heliocentric_ecliptic.distance().value()
         );
 
@@ -179,8 +179,8 @@ mod demo {
         let recovered_targets: BodyTargetsBundle = roundtrip(&targets);
         println!(
             "Roundtrip check: Mars target JD {:.1}, Moon target JD {:.1}\n",
-            recovered_targets.mars_bary_target.time.value(),
-            recovered_targets.moon_geo_target.time.value()
+            recovered_targets.mars_bary_target.time.jd_value(),
+            recovered_targets.moon_geo_target.time.jd_value()
         );
 
         // =========================================================================

@@ -1,14 +1,47 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Untyped `f64` interpolation kernels for [`crate::tables`].
+//! # Untyped `f64` interpolation kernels for gridded tables
 //!
-//! These primitives operate on raw slices and `&[&[f64]]`-like views and
-//! exist for callers that need bit-for-bit `numpy.interp`-style parity with
-//! existing pipelines (NSB's Leinert lookup, ESO Sky-Model tables, …).
+//! ## Scientific scope
 //!
-//! Typed callers should prefer [`Grid1D::interp_at`](super::Grid1D::interp_at)
-//! and [`Grid2D::interp_at`](super::Grid2D::interp_at).
+//! The reference implementations (NSB's Leinert lookup, the ESO Sky
+//! Model, IDL/Python pipelines built on `numpy.interp` /
+//! `scipy.interpolate.RegularGridInterpolator`) treat gridded
+//! astronomical look-up tables as piecewise-multilinear interpolants on
+//! strictly-monotonic axes, with the convention that out-of-domain
+//! queries clamp to the nearest endpoint by default. To stay
+//! bit-for-bit compatible with those pipelines, the typed
+//! `Grid1D`/`Grid2D`/`Grid3D` API delegates the actual numerical work
+//! to a single set of untyped `f64` kernels collected here.
+//!
+//! ## Technical scope
+//!
+//! All kernels operate on raw `&[f64]` slices and `&[&[f64]]`-like
+//! views and return either `f64` or `Result<f64, TableError>`:
+//!
+//! - [`validate_axis`] — strict-monotonicity check; returns the detected
+//!   [`AxisDirection`].
+//! - [`locate`] — bracket-search helper that respects axis direction.
+//! - [`linear_1d`] — 1-D linear interpolation with [`OutOfRange`] policy.
+//! - [`bilinear`] — 2-D bilinear interpolation with per-axis policy.
+//! - [`trilinear`] — 3-D trilinear interpolation with per-axis policy.
+//!
+//! Typed callers should prefer
+//! [`Grid1D::interp_at`](super::Grid1D::interp_at),
+//! [`Grid2D::interp_at`](super::Grid2D::interp_at), and
+//! [`Grid3D::interp_at`](super::Grid3D::interp_at).
+//!
+//! ## References
+//!
+//! - NumPy developers. *numpy.interp* documentation
+//!   (boundary-handling semantics).
+//! - SciPy developers. *scipy.interpolate.RegularGridInterpolator*
+//!   documentation.
+//! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., Flannery, B. P.
+//!   (1992). *Numerical Recipes in C*, 2nd ed., §3.1, §3.6
+//!   (linear and multilinear interpolation). Cambridge University
+//!   Press.
 
 use super::{AxisDirection, OutOfRange, TableError};
 
@@ -210,6 +243,7 @@ pub fn linear_1d(
 /// matches the ordering used by NSB's `leinert_lookup_s10` so callers
 /// migrating from inline math get bit-identical results.
 #[inline]
+#[allow(clippy::too_many_arguments)]
 pub fn bilinear(
     xs: &[f64],
     ys: &[f64],
@@ -283,6 +317,7 @@ pub fn bilinear_unit(f00: f64, f10: f64, f01: f64, f11: f64, tx: f64, ty: f64) -
 ///
 /// — i.e. interpolate along `x` first, then `y`, then `z`.
 #[inline]
+#[allow(clippy::too_many_arguments)]
 pub fn trilinear(
     xs: &[f64],
     ys: &[f64],
@@ -352,6 +387,7 @@ pub fn trilinear(
 /// out      = plane_lo + tz · (plane_hi − plane_lo)
 /// ```
 #[inline]
+#[allow(clippy::too_many_arguments)]
 pub fn trilinear_unit(
     f000: f64,
     f100: f64,

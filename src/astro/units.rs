@@ -1,26 +1,40 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Astronomical time units not already present in `qtty`.
+//! # Astronomical Units (siderust extensions)
 //!
-//! [`qtty`] ships [`crate::qtty::time::SiderealYear`] (365.256 363 004 d, the actual
-//! measured period of Earth relative to the fixed stars) and
-//! [`crate::qtty::time::JulianYear`] (365.25 d exactly).
+//! Astronomical time units that are not already shipped by [`qtty`], in
+//! particular the **Gaussian year** used to express orbital periods in the
+//! heliocentric AU-day system.
 //!
-//! This module adds the **Gaussian year** — the year length that is implied by
-//! the Gaussian gravitational constant `k = 0.01720209895 AU^{3/2} d^{-1}`.
-//! For a test particle at 1 AU from the Sun, Kepler's third law gives:
+//! ## Scientific scope
 //!
-//! ```text
-//! T_Gaussian = 2π / k ≈ 365.256 898 326 d
-//! ```
+//! Two "year" units are widely used in astronomy: the **sidereal year**
+//! (≈ 365.256 363 004 d, the actual measured period of Earth relative to
+//! the fixed stars) and the **Julian year** (365.25 d exactly, used for
+//! Julian centuries). Both are provided by `qtty`. This module adds the
+//! **Gaussian year**, the period implied by Gauss's gravitational constant
+//! `k = 0.01720209895 AU^{3/2} d^{-1}`. It is the natural time unit for
+//! Kepler's third law in the AU-day system, since for a test particle at
+//! 1 AU `T_Gaussian = 2π / k ≈ 365.256 898 326 d` and
+//! `T [gyr] = a [AU]^{3/2}`. It differs from the sidereal year by ≈ 46 s
+//! because `k` encodes only the Sun + test-particle two-body problem.
 //!
-//! This is the natural "year" unit for expressing orbital periods in the
-//! heliocentric AU-day system: `T (Gaussian years) = a^{3/2} (AU)`.
-//! It differs from the measured sidereal year by ≈ 46 s, because the
-//! Gaussian constant encodes the solar mass + test particle mass, while
-//! the modern sidereal year accounts for the full two-body problem with
-//! a more precise solar GM.
+//! ## Technical scope
+//!
+//! The unit is implemented as a zero-sized `GaussianYear` type implementing
+//! the [`Unit`] trait of [`qtty`], with `RATIO = 365.256 898 326 × 86 400`
+//! seconds and dimension [`Time`]. The corresponding quantity alias
+//! [`GaussianYears`] supports the standard `qtty` conversion machinery
+//! (`.to::<Day>()`, `.to::<Second>()`, …) and is interoperable with every
+//! other time unit in the crate.
+//!
+//! ## References
+//!
+//! * Gauss, C. F., *Theoria Motus Corporum Coelestium* (1809)
+//! * Seidelmann, *Explanatory Supplement to the Astronomical Almanac*,
+//!   §8 (time units)
+//! * IAU 2012 Resolution B2 (redefinition of the astronomical unit)
 
 use crate::qtty::{Quantity, Time, Unit};
 

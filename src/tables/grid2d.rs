@@ -1,11 +1,59 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Typed 2D bilinearly-interpolated table.
+//! # Typed 2-D bilinearly-interpolated table
+//!
+//! ## Scientific scope
+//!
+//! Many astronomical models are naturally indexed by two independent
+//! parameters: the Leinert et al. (1998) zodiacal-light intensity as a
+//! function of ecliptic latitude and solar elongation, the Krisciunas &
+//! Schaefer (1991) moon-sky brightness as a function of moon-target
+//! separation and lunar phase, refraction tables as a function of
+//! zenith distance and wavelength. This module provides the typed
+//! container for those 2-D parameter grids, with bilinear interpolation
+//! and per-axis out-of-range policy. It is the 2-D peer of
+//! [`crate::tables::Grid1D`] and [`crate::tables::Grid3D`].
+//!
+//! Validity is bounded by the sampled rectangle on `(X, Y)`; outside
+//! it the configured [`OutOfRange`] policy applies. Some published
+//! models (notably the NSB Leinert lookup) contain a corner region
+//! where the model collapses to a single constant value; the
+//! [`ConstantRegion`] short-circuit captures that exact pattern
+//! without forcing every consumer to special-case it.
+//!
+//! ## Technical scope
+//!
+//! Provides [`Grid2D<X, Y, V, S>`] (`S` defaults to `f64`). Storage is
+//! row-major `[NY][NX]` so that consecutive memory entries advance
+//! along the `x`-axis. The public surface includes:
+//!
+//! - Constructors that validate axis lengths, axis monotonicity, and
+//!   table shape, returning [`TableError`] on failure.
+//! - [`Grid2D::interp_at`] — typed bilinear evaluation honouring the
+//!   per-axis [`OutOfRange`] policies.
+//! - [`ConstantRegion`] — half-open rectangular short-circuit
+//!   (`x_min_inclusive`, `x_max_exclusive`, `y_min_inclusive`,
+//!   `y_max_exclusive`, `value`); convenience constructor
+//!   [`ConstantRegion::lower_corner`] for the lower-corner clamp
+//!   pattern (`x < x_max && y < y_max`) used by NSB Leinert lookups.
+//! - Provenance accessors.
+//!
+//! Inputs are typed `Quantity<X, S>` / `Quantity<Y, S>`; outputs are
+//! typed `Quantity<V, S>`. The numerical work is delegated to
+//! [`crate::tables::algo::bilinear`].
+//!
+//! ## References
+//!
+//! - Leinert, Ch., Bowyer, S., Haikala, L. K., et al. (1998). "The
+//!   1997 reference of diffuse night sky brightness". *Astronomy &
+//!   Astrophysics Supplement Series* **127**, 1–99.
+//!   doi:10.1051/aas:1998105.
 
 use crate::ext_qtty::{Quantity, Scalar, Unit};
 use crate::interp::OutOfRange;
 use crate::provenance::Provenance;
+use core::cmp::Ordering;
 
 use super::{algo, AxisDirection, TableError};
 
@@ -45,22 +93,28 @@ impl<S: Scalar> ConstantRegion<S> {
     #[inline]
     fn contains(&self, x: S, y: S) -> bool {
         if let Some(b) = self.x_min_inclusive {
-            if !(x >= b) {
+            if !matches!(
+                x.partial_cmp(&b),
+                Some(Ordering::Greater) | Some(Ordering::Equal)
+            ) {
                 return false;
             }
         }
         if let Some(b) = self.x_max_exclusive {
-            if !(x < b) {
+            if !matches!(x.partial_cmp(&b), Some(Ordering::Less)) {
                 return false;
             }
         }
         if let Some(b) = self.y_min_inclusive {
-            if !(y >= b) {
+            if !matches!(
+                y.partial_cmp(&b),
+                Some(Ordering::Greater) | Some(Ordering::Equal)
+            ) {
                 return false;
             }
         }
         if let Some(b) = self.y_max_exclusive {
-            if !(y < b) {
+            if !matches!(y.partial_cmp(&b), Some(Ordering::Less)) {
                 return false;
             }
         }
@@ -188,7 +242,7 @@ impl<X: Unit, Y: Unit, V: Unit, S: Scalar + Into<f64> + From<f64>> Grid2D<X, Y, 
         // Validate strictly descending + uniform (bit-equal step in IEEE 754).
         let ys_desc_f64: Vec<f64> = ys_desc.iter().copied().map(Into::into).collect();
         let step = ys_desc_f64[1] - ys_desc_f64[0];
-        if !(step < 0.0) {
+        if !matches!(step.partial_cmp(&0.0), Some(Ordering::Less)) {
             return Err(TableError::NotMonotonic {
                 axis: "y",
                 at_index: 1,

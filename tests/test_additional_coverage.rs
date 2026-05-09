@@ -31,17 +31,12 @@ fn julian_date_arithmetic_and_display_branches() {
     let day_span: Days = with_years - jd;
     assert!((day_span.value() - JulianDate::JULIAN_YEAR.value()).abs() < 1e-9);
 
-    let ratio = with_years / Days::new(2.0);
-    assert!((ratio - with_years.value() / 2.0).abs() < 1e-12);
-    let ratio_plain = with_years.value() / 2.0;
-    assert!((ratio_plain - with_years.value() / 2.0).abs() < 1e-12);
-
     let min = with_years.min(jd);
     assert_eq!(min, jd);
 
-    let utc = jd.to_utc();
-    let roundtrip = JulianDate::from_utc(utc);
-    assert!((roundtrip.value() - jd.value()).abs() < 1e-6);
+    let utc = jd.to_chrono().expect("valid UTC");
+    let roundtrip = JulianDate::from_chrono(utc);
+    assert!((roundtrip.jd_value() - jd.jd_value()).abs() < 1e-6);
 }
 
 #[test]
@@ -159,7 +154,7 @@ fn body_const_constructors_and_builders() {
         orbit,
         OrbitFrame::Barycentric,
     );
-    assert!(comet.period_years() > 0.0);
+    assert!(comet.period_years().value() > 0.0);
 
     let comet_from_builder = CometBuilder::default()
         .name("Builder")

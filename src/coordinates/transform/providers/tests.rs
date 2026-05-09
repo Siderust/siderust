@@ -192,10 +192,10 @@ fn test_icrf_to_ecliptic_matches_icrs_to_ecliptic() {
     assert!((a[2] - b[2]).abs() < 1e-15);
 }
 
-// ── Absolute ERFA-derived regression tests ────────────────────────────
+// ── Absolute SOFA-derived regression tests ────────────────────────────
 //
-// Reference values computed with `python3 -c "import erfa; ..."` using the
-// ERFA 2.0.1.5 / SOFA 2024-10-01 release.  Tolerances are:
+// Reference values computed from SOFA-compatible routines using the
+// SOFA 2024-10-01 release. Tolerances are:
 //
 //   • Fixed bias / J2000 obliquity: 1 × 10⁻¹⁵ (double-precision hard-coded).
 //   • Precession (pmat06 / bp06-rp): 1 × 10⁻¹² (same IAU 2006 model).
@@ -213,15 +213,15 @@ fn mat_frobenius(a: &[[f64; 3]; 3], b: &[[f64; 3]; 3]) -> f64 {
     sum.sqrt()
 }
 
-/// Frame bias matches ERFA `bp06` rb at J2000.0 (provider path).
+/// Frame bias matches SOFA `bp06` rb at J2000.0 (provider path).
 #[test]
-fn erfa_frame_bias_provider_matches_bp06_rb() {
+fn sofa_frame_bias_provider_matches_bp06_rb() {
     let ctx = AstroContext::default();
     let rb = frame_rotation::<ICRS, EquatorialMeanJ2000>(JulianDate::J2000, &ctx);
     let m = rb.as_matrix();
 
-    // ERFA bp06(2451545.0, 0.0) → rb
-    let erfa: [[f64; 3]; 3] = [
+    // SOFA bp06(2451545.0, 0.0) → rb
+    let sofa: [[f64; 3]; 3] = [
         [
             0.999_999_999_999_994_1,
             -7.078_368_960_971_556e-8,
@@ -240,20 +240,20 @@ fn erfa_frame_bias_provider_matches_bp06_rb() {
     ];
 
     assert!(
-        mat_frobenius(m, &erfa) < 1e-15,
-        "frame bias provider should match ERFA bp06 rb"
+        mat_frobenius(m, &sofa) < 1e-15,
+        "frame bias provider should match SOFA bp06 rb"
     );
 }
 
-/// ICRS→EclipticMeanJ2000 at J2000.0 matches ERFA `ecm06(J2000.0)`.
+/// ICRS→EclipticMeanJ2000 at J2000.0 matches SOFA `ecm06(J2000.0)`.
 #[test]
-fn erfa_icrs_to_ecliptic_j2000_matches_ecm06() {
+fn sofa_icrs_to_ecliptic_j2000_matches_ecm06() {
     let ctx = AstroContext::default();
     let rot = frame_rotation::<ICRS, EclipticMeanJ2000>(JulianDate::J2000, &ctx);
     let m = rot.as_matrix();
 
-    // ERFA ecm06(2451545.0, 0.0)
-    let erfa: [[f64; 3]; 3] = [
+    // SOFA ecm06(2451545.0, 0.0)
+    let sofa: [[f64; 3]; 3] = [
         [
             0.999_999_999_999_994_1,
             -7.078_368_960_971_556e-8,
@@ -272,14 +272,14 @@ fn erfa_icrs_to_ecliptic_j2000_matches_ecm06() {
     ];
 
     assert!(
-        mat_frobenius(m, &erfa) < 1e-14,
-        "ICRS→EclipticMeanJ2000 should match ERFA ecm06 at J2000.0"
+        mat_frobenius(m, &sofa) < 1e-14,
+        "ICRS→EclipticMeanJ2000 should match SOFA ecm06 at J2000.0"
     );
 }
 
-/// Precession matrix at J2010.0 matches ERFA `pmat06`.
+/// Precession matrix at J2010.0 matches SOFA `pmat06`.
 #[test]
-fn erfa_precession_j2010_matches_pmat06() {
+fn sofa_precession_j2010_matches_pmat06() {
     let ctx = AstroContext::default();
     let jd = JulianDate::new(2451545.0 + 3654.7681);
     let rot = frame_rotation::<ICRS, EquatorialMeanOfDate>(jd, &ctx);
@@ -287,14 +287,14 @@ fn erfa_precession_j2010_matches_pmat06() {
     // pmat06 includes bias; provider's ICRS→EquatorialMeanOfDate = precession * bias
     let m = rot.as_matrix();
 
-    // ERFA pmat06(2451545.0, 3654.7681)  (= bias*precession ≡ rbp)
+    // SOFA pmat06(2451545.0, 3654.7681)  (= bias*precession ≡ rbp)
     //
     // pmat06 actually produces the bias-corrected precession-nutation matrix
     // from ICRS to mean equator of date (rbp from bp06), which is = P * rb.
     //
     // Our provider computes this as compose_rotation(ICRS→J2000→MeanOfDate):
     //   R(MeanOfDate←J2000) * R(J2000←ICRS) = P * bias ≡ pmat06 output.
-    let erfa: [[f64; 3]; 3] = [
+    let sofa: [[f64; 3]; 3] = [
         [
             0.999_997_024_103_100_3,
             -0.002_237_563_057_932_016,
@@ -313,21 +313,21 @@ fn erfa_precession_j2010_matches_pmat06() {
     ];
 
     assert!(
-        mat_frobenius(m, &erfa) < 1e-12,
-        "ICRS→MeanOfDate at J2010.0 should match ERFA pmat06; Frobenius = {:.3e}",
-        mat_frobenius(m, &erfa),
+        mat_frobenius(m, &sofa) < 1e-12,
+        "ICRS→MeanOfDate at J2010.0 should match SOFA pmat06; Frobenius = {:.3e}",
+        mat_frobenius(m, &sofa),
     );
 }
 
-/// Precession matrix at J2020.0 matches ERFA `pmat06`.
+/// Precession matrix at J2020.0 matches SOFA `pmat06`.
 #[test]
-fn erfa_precession_j2020_matches_pmat06() {
+fn sofa_precession_j2020_matches_pmat06() {
     let ctx = AstroContext::default();
     let jd = JulianDate::new(2451545.0 + 7305.0);
     let rot = frame_rotation::<ICRS, EquatorialMeanOfDate>(jd, &ctx);
     let m = rot.as_matrix();
 
-    let erfa: [[f64; 3]; 3] = [
+    let sofa: [[f64; 3]; 3] = [
         [
             0.999_988_110_837_506,
             -0.004_472_399_764_533_532,
@@ -346,22 +346,22 @@ fn erfa_precession_j2020_matches_pmat06() {
     ];
 
     assert!(
-        mat_frobenius(m, &erfa) < 1e-12,
-        "ICRS→MeanOfDate at J2020.0 should match ERFA pmat06; Frobenius = {:.3e}",
-        mat_frobenius(m, &erfa),
+        mat_frobenius(m, &sofa) < 1e-12,
+        "ICRS→MeanOfDate at J2020.0 should match SOFA pmat06; Frobenius = {:.3e}",
+        mat_frobenius(m, &sofa),
     );
 }
 
-/// Nutation at J2020.0: default siderust context matches ERFA `num06a`.
+/// Nutation at J2020.0: default siderust context matches SOFA `num06a`.
 #[test]
-fn erfa_nutation_j2020_default_matches_num06a() {
+fn sofa_nutation_j2020_default_matches_num06a() {
     let ctx = AstroContext::default();
     let jd = JulianDate::new(2451545.0 + 7305.0);
     let rot = frame_rotation::<EquatorialMeanOfDate, EquatorialTrueOfDate>(jd, &ctx);
     let m = rot.as_matrix();
 
-    // ERFA num06a(2451545.0, 7305.0), IAU 2000A
-    let erfa: [[f64; 3]; 3] = [
+    // SOFA num06a(2451545.0, 7305.0), IAU 2000A
+    let sofa: [[f64; 3]; 3] = [
         [
             0.999_999_996_793_943_5,
             7.346_944_425_006_64e-5,
@@ -379,17 +379,17 @@ fn erfa_nutation_j2020_default_matches_num06a() {
         ],
     ];
 
-    let frob = mat_frobenius(m, &erfa);
+    let frob = mat_frobenius(m, &sofa);
     assert!(
         frob < 1e-12,
-        "default nutation should match ERFA num06a; Frobenius = {:.3e}",
+        "default nutation should match SOFA num06a; Frobenius = {:.3e}",
         frob,
     );
 }
 
 /// The abridged IAU 2000B option remains available for callers that prefer it.
 #[test]
-fn erfa_nutation_j2020_iau2000b_within_ceiling() {
+fn sofa_nutation_j2020_iau2000b_within_ceiling() {
     use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris};
 
     let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
@@ -398,7 +398,7 @@ fn erfa_nutation_j2020_iau2000b_within_ceiling() {
     let rot = frame_rotation_with::<EquatorialMeanOfDate, EquatorialTrueOfDate, _>(jd, &model_ctx);
     let m = rot.as_matrix();
 
-    let erfa: [[f64; 3]; 3] = [
+    let sofa: [[f64; 3]; 3] = [
         [
             0.999_999_996_793_943_5,
             7.346_944_425_006_64e-5,
@@ -416,7 +416,7 @@ fn erfa_nutation_j2020_iau2000b_within_ceiling() {
         ],
     ];
 
-    let frob = mat_frobenius(m, &erfa);
+    let frob = mat_frobenius(m, &sofa);
     assert!(
         frob < 1e-6,
         "nutation Iau2000B should stay within its expected ceiling; Frobenius = {:.3e}",
@@ -426,7 +426,7 @@ fn erfa_nutation_j2020_iau2000b_within_ceiling() {
 
 /// Obliquity at J2000.0 matches 84381.406″ exactly.
 #[test]
-fn erfa_obliquity_j2000() {
+fn sofa_obliquity_j2000() {
     let eps_arcsec = crate::astro::precession::J2000_MEAN_OBLIQUITY_ARCSEC;
     assert!(
         (eps_arcsec - 84381.406).abs() < 1e-10,
@@ -434,9 +434,9 @@ fn erfa_obliquity_j2000() {
     );
 }
 
-/// Frame bias applied to basis vectors matches ERFA via provider path.
+/// Frame bias applied to basis vectors matches SOFA via provider path.
 #[test]
-fn erfa_bias_basis_vectors_via_provider() {
+fn sofa_bias_basis_vectors_via_provider() {
     let ctx = AstroContext::default();
     let rb = frame_rotation::<ICRS, EquatorialMeanJ2000>(JulianDate::J2000, &ctx);
 
@@ -444,7 +444,7 @@ fn erfa_bias_basis_vectors_via_provider() {
     let ey = rb.apply_array([0.0, 1.0, 0.0]);
     let ez = rb.apply_array([0.0, 0.0, 1.0]);
 
-    // Column vectors of ERFA rb (each column = rb applied to basis vector)
+    // Column vectors of SOFA rb (each column = rb applied to basis vector)
     let expected_ex = [
         0.999_999_999_999_994_1,
         7.078_368_694_637_676e-8,
@@ -469,9 +469,9 @@ fn erfa_bias_basis_vectors_via_provider() {
 }
 
 /// Composed bias+precession+nutation at J2020.0 (BPN matrix).
-/// ERFA pmat06 * num06a is the full BPN; our provider composes it similarly.
+/// SOFA pmat06 * num06a is the full BPN; our provider composes it similarly.
 #[test]
-fn erfa_bpn_j2020_composed() {
+fn sofa_bpn_j2020_composed() {
     let ctx = AstroContext::default();
     let jd = JulianDate::new(2451545.0 + 7305.0);
     let rot = frame_rotation::<ICRS, EquatorialTrueOfDate>(jd, &ctx);
@@ -488,16 +488,16 @@ fn erfa_bpn_j2020_composed() {
     );
 }
 
-/// Full BPN matrix at J2020.0 with IAU 2006A nutation matches ERFA `pnm06a`.
-/// Reference: erfa.pnm06a(2458850.0, 0.0)
+/// Full BPN matrix at J2020.0 with IAU 2006A nutation matches SOFA `pnm06a`.
+/// Reference: `iauPnm06a(2458850.0, 0.0)`
 ///
 /// Tolerance 1e-8 (~2 µas): our BPN is built via a single `fw2m(γ̄, φ̄,
-/// ψ̄+Δψ, ε_A+Δε)` call, while ERFA's `pnm06a` multiplies separate
+/// ψ̄+Δψ, ε_A+Δε)` call, while SOFA's `pnm06a` multiplies separate
 /// nutation × bias-precession matrices. The approaches are algebraically
 /// equivalent but differ at the ~5e-9 (1 µas) level due to floating-point
 /// non-commutativity.
 #[test]
-fn erfa_bpn_j2020_iau2006a_matches_pnm06a() {
+fn sofa_bpn_j2020_iau2006a_matches_pnm06a() {
     use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris};
 
     let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
@@ -506,8 +506,8 @@ fn erfa_bpn_j2020_iau2006a_matches_pnm06a() {
     let rot = frame_rotation_with::<ICRS, EquatorialTrueOfDate, _>(jd, &model_ctx);
     let m = rot.as_matrix();
 
-    // erfa.pnm06a(2458850.0, 0.0)
-    let erfa: [[f64; 3]; 3] = [
+    // SOFA pnm06a(2458850.0, 0.0)
+    let sofa: [[f64; 3]; 3] = [
         [
             9.999_884_981_033_785e-01,
             -4.398_931_180_974_626e-03,
@@ -525,18 +525,18 @@ fn erfa_bpn_j2020_iau2006a_matches_pnm06a() {
         ],
     ];
 
-    let frob = mat_frobenius(m, &erfa);
+    let frob = mat_frobenius(m, &sofa);
     assert!(
         frob < 1e-8,
-        "BPN with Iau2006A at J2020.0 should match ERFA pnm06a; Frobenius = {:.3e}",
+        "BPN with Iau2006A at J2020.0 should match SOFA pnm06a; Frobenius = {:.3e}",
         frob,
     );
 }
 
-/// Nutation matrix at J2020.0 with IAU 2006A matches ERFA `num06a`.
-/// Reference: erfa.num06a(2458850.0, 0.0)
+/// Nutation matrix at J2020.0 with IAU 2006A matches SOFA `num06a`.
+/// Reference: `iauNum06a(2458850.0, 0.0)`
 #[test]
-fn erfa_nutation_j2020_iau2006a_matches_num06a() {
+fn sofa_nutation_j2020_iau2006a_matches_num06a() {
     use crate::coordinates::transform::context::{DefaultEop, DefaultEphemeris};
 
     let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
@@ -545,8 +545,8 @@ fn erfa_nutation_j2020_iau2006a_matches_num06a() {
     let rot = frame_rotation_with::<EquatorialMeanOfDate, EquatorialTrueOfDate, _>(jd, &model_ctx);
     let m = rot.as_matrix();
 
-    // erfa.num06a(2458850.0, 0.0)
-    let erfa: [[f64; 3]; 3] = [
+    // SOFA num06a(2458850.0, 0.0)
+    let sofa: [[f64; 3]; 3] = [
         [
             9.999_999_967_939_435e-01,
             7.346_944_425_006_64e-5,
@@ -564,17 +564,17 @@ fn erfa_nutation_j2020_iau2006a_matches_num06a() {
         ],
     ];
 
-    let frob = mat_frobenius(m, &erfa);
+    let frob = mat_frobenius(m, &sofa);
     assert!(
         frob < 1e-12,
-        "Nutation Iau2006A at J2020.0 should match ERFA num06a; Frobenius = {:.3e}",
+        "Nutation Iau2006A at J2020.0 should match SOFA num06a; Frobenius = {:.3e}",
         frob,
     );
 }
 
 /// Inverse frame bias recovers input via provider path.
 #[test]
-fn erfa_inverse_bias_provider_roundtrip() {
+fn sofa_inverse_bias_provider_roundtrip() {
     let ctx = AstroContext::default();
     let jd = JulianDate::J2000;
     let fwd = frame_rotation::<ICRS, EquatorialMeanJ2000>(jd, &ctx);

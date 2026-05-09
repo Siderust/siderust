@@ -1,7 +1,25 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Errors surfaced by the gridded-table API.
+//! # Error taxonomy for gridded tables
+//!
+//! ## Scientific scope
+//!
+//! Errors raised when constructing or evaluating a typed gridded table.
+//! They cover invariants the typed containers enforce — axis/value
+//! shape agreement, minimum sample count per axis, strict monotonicity
+//! of each axis (either ascending or descending) — and out-of-domain
+//! queries that the configured boundary policy turns into surfaced
+//! errors. These are infrastructure errors, not physical failure modes.
+//!
+//! ## Technical scope
+//!
+//! [`TableError`] enumerates: `ShapeMismatch`, `TooFewSamples`,
+//! `NotMonotonic`, `OutOfRange`. Implements [`core::fmt::Display`].
+//!
+//! ## References
+//!
+//! None — error infrastructure.
 
 use core::fmt;
 

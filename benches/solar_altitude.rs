@@ -35,7 +35,7 @@ fn build_period(days: u32) -> Period<MJD> {
 }
 
 fn bench_find_night_periods(c: &mut Criterion) {
-    let site = ROQUE_DE_LOS_MUCHACHOS;
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
 
     let mut group = c.benchmark_group("solar_altitude_periods");
 

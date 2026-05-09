@@ -1,21 +1,51 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Shared segment lookup and coordinate evaluation for DE4xx datasets.
+//! # DE4xx Chebyshev Segment Evaluation
 //!
-//! This module provides two descriptor types:
-//! - [`SegmentDescriptor`]: compile-time data via function pointer to `&'static [f64]`.
-//! - [`DynSegmentDescriptor`]: runtime data backed by a heap-allocated `Vec<f64>`.
+//! ## Scientific scope
 //!
-//! Both share the same Chebyshev evaluation logic.
+//! JPL DE ephemerides store body positions and velocities as piecewise
+//! Chebyshev polynomial expansions.  Each segment covers a fixed time
+//! sub-interval (typically 32 days for inner planets) and encodes `N`
+//! Chebyshev coefficients per Cartesian axis.  The position polynomial is
+//! evaluated by Clenshaw recurrence, and the velocity is the analytical
+//! derivative of that polynomial.
+//!
+//! Positions are in **kilometres** (ICRF), velocities in **km · day⁻¹**.
+//!
+//! ## Technical scope
+//!
+//! - [`SegmentDescriptor`] — compile-time segment backed by a static
+//!   `fn() -> &'static [f64]` data pointer.
+//! - [`DynSegmentDescriptor`] — run-time segment backed by a heap
+//!   `Vec<f64>`, used when reading ephemeris binary files at runtime.
+//!
+//! Both types expose:
+//! - `position(jd)  -> Displacement<ICRF, Kilometer>`
+//! - `velocity(jd)  -> Velocity<ICRF, KmPerDay>`
+//! - `position_velocity(jd)  -> (…, …)` — evaluates both in a single pass.
+//!
+//! The time argument is `JulianDateG<TDB>` (Julian Date, TDB time scale).
+//!
+//! ## References
+//!
+//! - Standish, E. M. (1998). "JPL Planetary and Lunar Ephemerides, DE405/LE405".
+//!   *JPL Interoffice Memorandum* 312.F-98-048.
+//! - Park, R. S., et al. (2021). "The JPL Planetary and Lunar Ephemerides
+//!   DE440 and DE441". *The Astronomical Journal* 161, 105.
+//!   <https://doi.org/10.3847/1538-3881/abd414>
 
+use crate::calculus::ephemeris::EphemerisError;
 use crate::coordinates::frames::ICRF;
 use crate::qtty::*;
-use crate::time::JulianDate;
+use crate::time::{JulianDateG, TDB};
 use affn::{Displacement, Velocity};
 
 type KmPerDay = Per<Kilometer, Day>;
 type KmPerDayQ = crate::qtty::Quantity<KmPerDay>;
+type PosVelResult =
+    Result<(Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>), EphemerisError>;
 
 const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 
@@ -23,9 +53,10 @@ const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 // Shared helpers (used by both SegmentDescriptor and DynSegmentDescriptor)
 // ═══════════════════════════════════════════════════════════════════════════
 
+/// Convert a raw Julian Day value to ephemeris seconds past J2000.
 #[inline]
-fn jd_to_et(jd_tdb: JulianDate) -> Seconds {
-    (jd_tdb - JulianDate::J2000).to::<Second>()
+fn jd_to_et(jd_value: f64) -> Seconds {
+    Seconds::new((jd_value - 2_451_545.0) * SECONDS_PER_DAY)
 }
 
 #[inline]
@@ -43,12 +74,38 @@ fn locate_params(
     init: Seconds,
     intlen: Seconds,
     n_records: usize,
-    jd_tdb: JulianDate,
-) -> (usize, f64, Seconds) {
-    let et = jd_to_et(jd_tdb);
-    let idx = ((et - init) / intlen) as usize;
-    let idx = idx.min(n_records - 1);
-    (idx, et.value(), intlen)
+    jd_tdb: JulianDateG<TDB>,
+) -> Result<(usize, f64, Seconds), EphemerisError> {
+    let et = jd_to_et(jd_tdb.jd_value());
+    let init_s = init.value();
+    let intlen_s = intlen.value();
+    let et_s = et.value();
+
+    if n_records == 0 || !init_s.is_finite() || !intlen_s.is_finite() || intlen_s <= 0.0 {
+        return Err(EphemerisError::InvalidSegment {
+            init_seconds: init_s,
+            intlen_seconds: intlen_s,
+            n_records,
+        });
+    }
+
+    let span_s = intlen_s * n_records as f64;
+    let end_s = init_s + span_s;
+    if !jd_tdb.jd_value().is_finite() || et_s < init_s || et_s > end_s {
+        return Err(EphemerisError::OutOfRange {
+            jd: jd_tdb.jd_value(),
+            start_jd: 2_451_545.0 + init_s / SECONDS_PER_DAY,
+            end_jd: 2_451_545.0 + end_s / SECONDS_PER_DAY,
+        });
+    }
+
+    let rel = (et_s - init_s) / intlen_s;
+    let idx = if rel >= n_records as f64 {
+        n_records - 1
+    } else {
+        rel.floor() as usize
+    };
+    Ok((idx, et_s, intlen))
 }
 
 /// Given a record slice, compute (tau, radius).
@@ -139,37 +196,82 @@ pub struct SegmentDescriptor {
 }
 
 #[inline]
-fn locate(seg: &SegmentDescriptor, jd_tdb: JulianDate) -> (&'static [f64], f64, Seconds) {
-    let (idx, et, intlen) = locate_params(seg.init, seg.intlen, seg.n_records, jd_tdb);
+fn try_locate(
+    seg: &SegmentDescriptor,
+    jd_tdb: JulianDateG<TDB>,
+) -> Result<(&'static [f64], f64, Seconds), EphemerisError> {
+    let (idx, et, intlen) = locate_params(seg.init, seg.intlen, seg.n_records, jd_tdb)?;
     let record = (seg.record_fn)(idx);
     let (tau, radius) = record_tau(record, et);
     let _ = intlen;
-    (record, tau, radius)
+    Ok((record, tau, radius))
 }
 
 impl SegmentDescriptor {
-    /// Evaluate position in km (ICRF) at Julian Date (TDB).
+    /// Fallibly evaluate position in km (ICRF) at Julian Date (TDB).
     #[inline]
-    pub fn position(&self, jd_tdb: JulianDate) -> Displacement<ICRF, Kilometer> {
-        let (record, tau, _) = locate(self, jd_tdb);
-        eval_position(record, self.ncoeff, tau)
+    pub fn try_position(
+        &self,
+        jd_tdb: JulianDateG<TDB>,
+    ) -> Result<Displacement<ICRF, Kilometer>, EphemerisError> {
+        let (record, tau, _) = try_locate(self, jd_tdb)?;
+        Ok(eval_position(record, self.ncoeff, tau))
+    }
+
+    /// Evaluate position in km (ICRF) at Julian Date (TDB).
+    ///
+    /// # Panics
+    ///
+    /// Panics when `jd_tdb` is outside the segment coverage. Use
+    /// [`Self::try_position`] to handle that condition explicitly.
+    #[inline]
+    pub fn position(&self, jd_tdb: JulianDateG<TDB>) -> Displacement<ICRF, Kilometer> {
+        self.try_position(jd_tdb)
+            .expect("JPL segment position requested outside ephemeris coverage")
+    }
+
+    /// Fallibly evaluate velocity in km/day (ICRF) at Julian Date (TDB).
+    #[inline]
+    pub fn try_velocity(
+        &self,
+        jd_tdb: JulianDateG<TDB>,
+    ) -> Result<Velocity<ICRF, KmPerDay>, EphemerisError> {
+        let (record, tau, radius) = try_locate(self, jd_tdb)?;
+        Ok(eval_velocity(record, self.ncoeff, tau, radius))
     }
 
     /// Evaluate velocity in km/day (ICRF) at Julian Date (TDB).
+    ///
+    /// # Panics
+    ///
+    /// Panics when `jd_tdb` is outside the segment coverage. Use
+    /// [`Self::try_velocity`] to handle that condition explicitly.
     #[inline]
-    pub fn velocity(&self, jd_tdb: JulianDate) -> Velocity<ICRF, KmPerDay> {
-        let (record, tau, radius) = locate(self, jd_tdb);
-        eval_velocity(record, self.ncoeff, tau, radius)
+    pub fn velocity(&self, jd_tdb: JulianDateG<TDB>) -> Velocity<ICRF, KmPerDay> {
+        self.try_velocity(jd_tdb)
+            .expect("JPL segment velocity requested outside ephemeris coverage")
+    }
+
+    /// Fallibly evaluate both position and velocity in one pass.
+    #[inline]
+    pub fn try_position_velocity(&self, jd_tdb: JulianDateG<TDB>) -> PosVelResult {
+        let (record, tau, radius) = try_locate(self, jd_tdb)?;
+        Ok(eval_both(record, self.ncoeff, tau, radius))
     }
 
     /// Evaluate both position and velocity in one pass.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `jd_tdb` is outside the segment coverage. Use
+    /// [`Self::try_position_velocity`] to handle that condition explicitly.
     #[inline]
     pub fn position_velocity(
         &self,
-        jd_tdb: JulianDate,
+        jd_tdb: JulianDateG<TDB>,
     ) -> (Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>) {
-        let (record, tau, radius) = locate(self, jd_tdb);
-        eval_both(record, self.ncoeff, tau, radius)
+        self.try_position_velocity(jd_tdb)
+            .expect("JPL segment state requested outside ephemeris coverage")
     }
 }
 
@@ -219,35 +321,80 @@ impl DynSegmentDescriptor {
 
     /// Locate the record for a given JD and compute tau.
     #[inline]
-    fn locate(&self, jd_tdb: JulianDate) -> (&[f64], f64, Seconds) {
-        let (idx, et, _) = locate_params(self.init, self.intlen, self.n_records, jd_tdb);
+    fn try_locate(
+        &self,
+        jd_tdb: JulianDateG<TDB>,
+    ) -> Result<(&[f64], f64, Seconds), EphemerisError> {
+        let (idx, et, _) = locate_params(self.init, self.intlen, self.n_records, jd_tdb)?;
         let record = self.record(idx);
         let (tau, radius) = record_tau(record, et);
-        (record, tau, radius)
+        Ok((record, tau, radius))
+    }
+
+    /// Fallibly evaluate position in km (ICRF) at Julian Date (TDB).
+    #[inline]
+    pub fn try_position(
+        &self,
+        jd_tdb: JulianDateG<TDB>,
+    ) -> Result<Displacement<ICRF, Kilometer>, EphemerisError> {
+        let (record, tau, _) = self.try_locate(jd_tdb)?;
+        Ok(eval_position(record, self.ncoeff, tau))
     }
 
     /// Evaluate position in km (ICRF) at Julian Date (TDB).
+    ///
+    /// # Panics
+    ///
+    /// Panics when `jd_tdb` is outside the segment coverage. Use
+    /// [`Self::try_position`] to handle that condition explicitly.
     #[inline]
-    pub fn position(&self, jd_tdb: JulianDate) -> Displacement<ICRF, Kilometer> {
-        let (record, tau, _) = self.locate(jd_tdb);
-        eval_position(record, self.ncoeff, tau)
+    pub fn position(&self, jd_tdb: JulianDateG<TDB>) -> Displacement<ICRF, Kilometer> {
+        self.try_position(jd_tdb)
+            .expect("JPL runtime segment position requested outside ephemeris coverage")
+    }
+
+    /// Fallibly evaluate velocity in km/day (ICRF) at Julian Date (TDB).
+    #[inline]
+    pub fn try_velocity(
+        &self,
+        jd_tdb: JulianDateG<TDB>,
+    ) -> Result<Velocity<ICRF, KmPerDay>, EphemerisError> {
+        let (record, tau, radius) = self.try_locate(jd_tdb)?;
+        Ok(eval_velocity(record, self.ncoeff, tau, radius))
     }
 
     /// Evaluate velocity in km/day (ICRF) at Julian Date (TDB).
+    ///
+    /// # Panics
+    ///
+    /// Panics when `jd_tdb` is outside the segment coverage. Use
+    /// [`Self::try_velocity`] to handle that condition explicitly.
     #[inline]
-    pub fn velocity(&self, jd_tdb: JulianDate) -> Velocity<ICRF, KmPerDay> {
-        let (record, tau, radius) = self.locate(jd_tdb);
-        eval_velocity(record, self.ncoeff, tau, radius)
+    pub fn velocity(&self, jd_tdb: JulianDateG<TDB>) -> Velocity<ICRF, KmPerDay> {
+        self.try_velocity(jd_tdb)
+            .expect("JPL runtime segment velocity requested outside ephemeris coverage")
+    }
+
+    /// Fallibly evaluate both position and velocity in one pass.
+    #[inline]
+    pub fn try_position_velocity(&self, jd_tdb: JulianDateG<TDB>) -> PosVelResult {
+        let (record, tau, radius) = self.try_locate(jd_tdb)?;
+        Ok(eval_both(record, self.ncoeff, tau, radius))
     }
 
     /// Evaluate both position and velocity in one pass.
+    ///
+    /// # Panics
+    ///
+    /// Panics when `jd_tdb` is outside the segment coverage. Use
+    /// [`Self::try_position_velocity`] to handle that condition explicitly.
     #[inline]
     pub fn position_velocity(
         &self,
-        jd_tdb: JulianDate,
+        jd_tdb: JulianDateG<TDB>,
     ) -> (Displacement<ICRF, Kilometer>, Velocity<ICRF, KmPerDay>) {
-        let (record, tau, radius) = self.locate(jd_tdb);
-        eval_both(record, self.ncoeff, tau, radius)
+        self.try_position_velocity(jd_tdb)
+            .expect("JPL runtime segment state requested outside ephemeris coverage")
     }
 }
 
@@ -287,13 +434,13 @@ mod tests {
     }
 
     /// JD for J2000 + 500 days (the midpoint → tau = 0).
-    fn jd_mid() -> JulianDate {
-        JulianDate::new(JD_J2000 + 500.0)
+    fn jd_mid() -> JulianDateG<TDB> {
+        JulianDateG::<TDB>::new(JD_J2000 + 500.0)
     }
 
     /// JD for J2000 + 250 days (first quarter → tau = -0.5).
-    fn jd_quarter() -> JulianDate {
-        JulianDate::new(JD_J2000 + 250.0)
+    fn jd_quarter() -> JulianDateG<TDB> {
+        JulianDateG::<TDB>::new(JD_J2000 + 250.0)
     }
 
     // ── Position ──────────────────────────────────────────────────────────
@@ -324,18 +471,40 @@ mod tests {
     fn dyn_desc_position_is_finite() {
         let desc = make_desc(500.0, -300.0, 150.0);
         let pos = desc.position(jd_quarter());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
     fn dyn_desc_position_at_boundary_does_not_panic() {
-        // First JD in the segment (idx clamped to 0)
+        // First JD in the segment.
         let desc = make_desc(100.0, 200.0, 300.0);
-        let jd_start = JulianDate::new(JD_J2000); // et = 0 → idx = 0
+        let jd_start = JulianDateG::<TDB>::new(JD_J2000); // et = 0 → idx = 0
         let pos = desc.position(jd_start);
-        assert!(pos.x().value().is_finite());
+        assert!(pos.x().is_finite());
+    }
+
+    #[test]
+    fn dyn_desc_position_at_end_boundary_does_not_panic() {
+        let desc = make_desc(100.0, 200.0, 300.0);
+        let jd_end = JulianDateG::<TDB>::new(JD_J2000 + 1000.0);
+        let pos = desc.try_position(jd_end).expect("end boundary is in range");
+        assert!(pos.x().is_finite());
+    }
+
+    #[test]
+    fn dyn_desc_rejects_before_segment() {
+        let desc = make_desc(100.0, 200.0, 300.0);
+        let before = JulianDateG::<TDB>::new(JD_J2000 - 1.0e-8);
+        assert!(desc.try_position(before).is_err());
+    }
+
+    #[test]
+    fn dyn_desc_rejects_after_segment() {
+        let desc = make_desc(100.0, 200.0, 300.0);
+        let after = JulianDateG::<TDB>::new(JD_J2000 + 1000.0 + 1.0e-8);
+        assert!(desc.try_position_velocity(after).is_err());
     }
 
     // ── Velocity ──────────────────────────────────────────────────────────
@@ -344,9 +513,9 @@ mod tests {
     fn dyn_desc_velocity_is_finite() {
         let desc = make_desc(1000.0, 2000.0, 3000.0);
         let vel = desc.velocity(jd_mid());
-        assert!(vel.x().value().is_finite());
-        assert!(vel.y().value().is_finite());
-        assert!(vel.z().value().is_finite());
+        assert!(vel.x().is_finite());
+        assert!(vel.y().is_finite());
+        assert!(vel.z().is_finite());
     }
 
     #[test]
@@ -482,18 +651,18 @@ mod tests {
     fn static_desc_position_is_finite() {
         let desc = make_static_desc();
         let pos = desc.position(jd_quarter());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
     fn static_desc_velocity_is_finite() {
         let desc = make_static_desc();
         let vel = desc.velocity(jd_mid());
-        assert!(vel.x().value().is_finite());
-        assert!(vel.y().value().is_finite());
-        assert!(vel.z().value().is_finite());
+        assert!(vel.x().is_finite());
+        assert!(vel.y().is_finite());
+        assert!(vel.z().is_finite());
     }
 
     #[test]
@@ -525,9 +694,28 @@ mod tests {
     #[test]
     fn static_desc_position_at_boundary() {
         let desc = make_static_desc();
-        let jd_start = JulianDate::new(JD_J2000); // et=0 → idx clamped to 0
+        let jd_start = JulianDateG::<TDB>::new(JD_J2000); // et=0 → idx=0
         let pos = desc.position(jd_start);
-        assert!(pos.x().value().is_finite());
+        assert!(pos.x().is_finite());
+    }
+
+    #[test]
+    fn static_desc_position_at_end_boundary() {
+        let desc = make_static_desc();
+        let jd_end = JulianDateG::<TDB>::new(JD_J2000 + 1000.0);
+        let pos = desc
+            .try_position(jd_end)
+            .expect("end boundary is part of the last record");
+        assert!(pos.x().is_finite());
+    }
+
+    #[test]
+    fn static_desc_rejects_out_of_range() {
+        let desc = make_static_desc();
+        let before = JulianDateG::<TDB>::new(JD_J2000 - 1.0e-8);
+        let after = JulianDateG::<TDB>::new(JD_J2000 + 1000.0 + 1.0e-8);
+        assert!(desc.try_position(before).is_err());
+        assert!(desc.try_velocity(after).is_err());
     }
 
     // ── Multi-record ─────────────────────────────────────────────────────
@@ -556,7 +744,7 @@ mod tests {
             data,
         };
         // At J2000 + 750 days → et = 750 * 86400 = 64800000, idx = (64800000 / 43200000) = 1
-        let jd_second = JulianDate::new(JD_J2000 + 750.0);
+        let jd_second = JulianDateG::<TDB>::new(JD_J2000 + 750.0);
         let pos = desc.position(jd_second);
         // At tau = (et - mid1) / rad with et = 750*86400, mid1 = 750*86400 → tau=0 → x=200
         let et_s = 750.0 * SECONDS_PER_DAY;
@@ -564,6 +752,6 @@ mod tests {
         let expected_x = 200.0; // T0(tau=0) = 1 but tau may not be 0
         let _ = tau;
         let _ = expected_x;
-        assert!(pos.x().value().is_finite());
+        assert!(pos.x().is_finite());
     }
 }

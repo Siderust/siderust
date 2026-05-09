@@ -7,7 +7,7 @@
 //! parameterizes the pipeline over a [`DeConfig`] so each version is
 //! a thin configuration wrapper.
 
-use super::{daf, spk};
+use crate::{jpl_daf as daf, jpl_spk as spk};
 use std::env;
 use std::path::Path;
 use std::process::Command;
@@ -182,7 +182,6 @@ fn generate_stub_rust_module(cfg: &DeConfig, path: &Path) -> anyhow::Result<()> 
         writeln!(f, "    pub const INIT: f64 = 0.0;")?;
         writeln!(f, "    pub const INTLEN: f64 = 1.0;")?;
         writeln!(f, "    pub const NCOEFF: usize = 0;")?;
-        writeln!(f, "    pub const RSIZE: usize = 2;")?;
         writeln!(f, "    pub const N_RECORDS: usize = 1;")?;
         writeln!(f)?;
         writeln!(
@@ -202,11 +201,10 @@ fn generate_stub_rust_module(cfg: &DeConfig, path: &Path) -> anyhow::Result<()> 
         f,
         "/// These require `SegmentDescriptor` to be in scope via `use`."
     )?;
-    writeln!(f)?;
 
     writeln!(f, "pub const SUN: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: qtty::Seconds::new(sun::INIT),")?;
-    writeln!(f, "    intlen: qtty::Seconds::new(sun::INTLEN),")?;
+    writeln!(f, "    init: crate::qtty::Seconds::new(sun::INIT),")?;
+    writeln!(f, "    intlen: crate::qtty::Seconds::new(sun::INTLEN),")?;
     writeln!(f, "    ncoeff: sun::NCOEFF,")?;
     writeln!(f, "    n_records: sun::N_RECORDS,")?;
     writeln!(f, "    record_fn: sun::record,")?;
@@ -214,8 +212,8 @@ fn generate_stub_rust_module(cfg: &DeConfig, path: &Path) -> anyhow::Result<()> 
     writeln!(f)?;
 
     writeln!(f, "pub const EMB: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: qtty::Seconds::new(emb::INIT),")?;
-    writeln!(f, "    intlen: qtty::Seconds::new(emb::INTLEN),")?;
+    writeln!(f, "    init: crate::qtty::Seconds::new(emb::INIT),")?;
+    writeln!(f, "    intlen: crate::qtty::Seconds::new(emb::INTLEN),")?;
     writeln!(f, "    ncoeff: emb::NCOEFF,")?;
     writeln!(f, "    n_records: emb::N_RECORDS,")?;
     writeln!(f, "    record_fn: emb::record,")?;
@@ -226,8 +224,8 @@ fn generate_stub_rust_module(cfg: &DeConfig, path: &Path) -> anyhow::Result<()> 
         f,
         "pub const MOON: SegmentDescriptor = SegmentDescriptor {{"
     )?;
-    writeln!(f, "    init: qtty::Seconds::new(moon::INIT),")?;
-    writeln!(f, "    intlen: qtty::Seconds::new(moon::INTLEN),")?;
+    writeln!(f, "    init: crate::qtty::Seconds::new(moon::INIT),")?;
+    writeln!(f, "    intlen: crate::qtty::Seconds::new(moon::INTLEN),")?;
     writeln!(f, "    ncoeff: moon::NCOEFF,")?;
     writeln!(f, "    n_records: moon::N_RECORDS,")?;
     writeln!(f, "    record_fn: moon::record,")?;
@@ -335,11 +333,10 @@ fn generate_rust_module(
         f,
         "/// These require `SegmentDescriptor` to be in scope via `use`."
     )?;
-    writeln!(f)?;
     writeln!(f, "/// Segment descriptor for the Sun (NAIF 10 → SSB).")?;
     writeln!(f, "pub const SUN: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: qtty::Seconds::new(sun::INIT),")?;
-    writeln!(f, "    intlen: qtty::Seconds::new(sun::INTLEN),")?;
+    writeln!(f, "    init: crate::qtty::Seconds::new(sun::INIT),")?;
+    writeln!(f, "    intlen: crate::qtty::Seconds::new(sun::INTLEN),")?;
     writeln!(f, "    ncoeff: sun::NCOEFF,")?;
     writeln!(f, "    n_records: sun::N_RECORDS,")?;
     writeln!(f, "    record_fn: sun::record,")?;
@@ -350,8 +347,8 @@ fn generate_rust_module(
         "/// Segment descriptor for the Earth-Moon Barycenter (NAIF 3 → SSB)."
     )?;
     writeln!(f, "pub const EMB: SegmentDescriptor = SegmentDescriptor {{")?;
-    writeln!(f, "    init: qtty::Seconds::new(emb::INIT),")?;
-    writeln!(f, "    intlen: qtty::Seconds::new(emb::INTLEN),")?;
+    writeln!(f, "    init: crate::qtty::Seconds::new(emb::INIT),")?;
+    writeln!(f, "    intlen: crate::qtty::Seconds::new(emb::INTLEN),")?;
     writeln!(f, "    ncoeff: emb::NCOEFF,")?;
     writeln!(f, "    n_records: emb::N_RECORDS,")?;
     writeln!(f, "    record_fn: emb::record,")?;
@@ -362,8 +359,8 @@ fn generate_rust_module(
         f,
         "pub const MOON: SegmentDescriptor = SegmentDescriptor {{"
     )?;
-    writeln!(f, "    init: qtty::Seconds::new(moon::INIT),")?;
-    writeln!(f, "    intlen: qtty::Seconds::new(moon::INTLEN),")?;
+    writeln!(f, "    init: crate::qtty::Seconds::new(moon::INIT),")?;
+    writeln!(f, "    intlen: crate::qtty::Seconds::new(moon::INTLEN),")?;
     writeln!(f, "    ncoeff: moon::NCOEFF,")?;
     writeln!(f, "    n_records: moon::N_RECORDS,")?;
     writeln!(f, "    record_fn: moon::record,")?;

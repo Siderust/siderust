@@ -3,23 +3,38 @@
 
 //! # Proper Motion Correction
 //!
-//! This module applies **proper motion** to a star’s mean position
-//! in order to obtain its updated position at a new epoch (Julian Day).
+//! Applies stellar proper motion to a star's mean position to obtain its
+//! updated coordinates at a target epoch.
 //!
-//! ## What is proper motion?
-//! Proper motion is the apparent angular displacement of a star across
-//! the sky due to its real motion through space, relative to the Solar System.
-//! It is typically measured in milliarcseconds or degrees per year.
+//! ## Scientific scope
 //!
-//! Since high-precision star catalogs (like Gaia or Hipparcos) provide
-//! positions at a reference epoch (usually J2000.0), we need to correct
-//! for proper motion when computing positions at a later date.
+//! Proper motion is the apparent angular displacement of a star across the
+//! sky due to its real motion through space relative to the Solar System
+//! barycentre, typically measured in milliarcseconds per year. Modern
+//! catalogues (Gaia, Hipparcos, Tycho-2) publish positions at a reference
+//! epoch (commonly J2000.0 or J2015.5/J2016.0); to predict an observable
+//! position at any other date the catalogue position must be propagated
+//! by its proper motion. For high-velocity stars this can amount to
+//! arcseconds per decade, which dominates over precession or nutation
+//! residuals.
 //!
-//! ## Catalog mapping
-//! Gaia and Hipparcos publish right-ascension proper motion as `µα⋆ = µα cos(δ)`.
-//! Use [`ProperMotion::from_mu_alpha_star`] for those catalogs. Use
-//! [`ProperMotion::from_mu_alpha`] only if your source already provides the true
-//! RA angular rate `µα`.
+//! ## Technical scope
+//!
+//! [`ProperMotion`] stores the right-ascension and declination rates as
+//! typed `DegreesPerYear` quantities together with a
+//! [`RaProperMotionConvention`] flag distinguishing the true RA rate `µα`
+//! from the catalogue rate `µα⋆ = µα cos(δ)`. Helpers
+//! [`ProperMotion::from_mu_alpha`] and [`ProperMotion::from_mu_alpha_star`]
+//! enforce the convention at construction time, and propagation guards
+//! against the `cos(δ) → 0` singularity near the celestial poles via a
+//! small epsilon.
+//!
+//! ## References
+//!
+//! * Hipparcos and Tycho Catalogues, ESA SP-1200 (1997)
+//! * Gaia Data Release documentation (Gaia Collaboration, 2016–)
+//! * Seidelmann, *Explanatory Supplement to the Astronomical Almanac*,
+//!   §3.2 (proper motion)
 
 use crate::coordinates::spherical::position;
 use crate::qtty::*;
@@ -81,16 +96,16 @@ impl fmt::Display for ProperMotion {
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProperMotionError {
     /// Conversion from `µα⋆` to `µα` is unstable near the poles (`cos(dec)≈0`).
-    RightAscensionUndefinedAtPole { dec_deg: f64 },
+    RightAscensionUndefinedAtPole { dec: Degrees },
 }
 
 impl fmt::Display for ProperMotionError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
-            ProperMotionError::RightAscensionUndefinedAtPole { dec_deg } => write!(
+            ProperMotionError::RightAscensionUndefinedAtPole { dec } => write!(
                 f,
-                "right-ascension proper motion is undefined near the poles (dec={} deg)",
-                dec_deg
+                "right-ascension proper motion is undefined near the poles (dec={})",
+                dec
             ),
         }
     }
@@ -107,13 +122,11 @@ impl RaProperMotionConvention {
         match self {
             RaProperMotionConvention::MuAlpha => Ok(pm_ra),
             RaProperMotionConvention::MuAlphaStar => {
-                let cos_dec = dec.value().to_radians().cos();
+                let cos_dec = dec.to::<Radian>().cos();
                 if cos_dec.abs() <= COS_DEC_EPSILON {
-                    return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-                        dec_deg: dec.value(),
-                    });
+                    return Err(ProperMotionError::RightAscensionUndefinedAtPole { dec });
                 }
-                Ok(DegreesPerYear::new(pm_ra.value() / cos_dec))
+                Ok(pm_ra / cos_dec)
             }
         }
     }
@@ -168,9 +181,9 @@ fn set_proper_motion_since_epoch<U: LengthUnit>(
     jd: JulianDate,
     epoch_jd: JulianDate,
 ) -> Result<position::EquatorialMeanJ2000<U>, ProperMotionError> {
-    // Time difference in Julian years
-    let t: Years =
-        Years::new((jd / JulianDate::JULIAN_YEAR) - (epoch_jd / JulianDate::JULIAN_YEAR));
+    // Time difference in Julian years (365.25 d), matching the convention used
+    // in proper-motion catalogs (Hipparcos, Gaia) and propagate_space_motion.
+    let t: Years = Years::new((jd - epoch_jd) / Days::new(365.25));
     let ra_rate = proper_motion.ra_rate_at_epoch(mean_position.dec())?;
     // Linearly apply proper motion in RA and DEC
     Ok(position::EquatorialMeanJ2000::<U>::new(
@@ -213,7 +226,7 @@ pub fn set_proper_motion_since_j2000<U: LengthUnit>(
 /// - `radial_velocity` is positive away from the Solar System (recession).
 ///
 /// Both `parallax` and `radial_velocity` are required for a full update; the
-/// transverse-only [`set_proper_motion_since_epoch`] family ignores them and
+/// transverse-only `set_proper_motion_since_epoch` family ignores them and
 /// is therefore not adequate for fast nearby stars (Barnard's, Proxima …)
 /// over multi-decade horizons.
 #[derive(Debug, Clone, Copy)]
@@ -225,7 +238,7 @@ pub struct StarSpaceMotion {
     /// Annual trigonometric parallax (positive).
     pub parallax: MilliArcseconds,
     /// Radial velocity, positive away from the Solar System.
-    pub radial_velocity: crate::qtty::velocity::Velocity<Kilometer, Second>,
+    pub radial_velocity: crate::qtty::velocity::Velocity<Kilometer, unit::Second>,
 }
 
 /// Apply full 6D space-motion to a catalog star position.
@@ -239,7 +252,7 @@ pub struct StarSpaceMotion {
 /// 4. Re-project to spherical (RA, Dec) at the new epoch and rescale the
 ///    distance accordingly.
 ///
-/// Unlike [`set_proper_motion_since_epoch`], this version honours the
+/// Unlike `set_proper_motion_since_epoch`, this version honours the
 /// **radial velocity** (giving the secular acceleration in proper motion
 /// caused by the changing transverse projection of a 3D velocity) and the
 /// **parallax** (giving the absolute scale of the propagation). For most
@@ -269,38 +282,27 @@ pub fn propagate_space_motion(
     jd: JulianDate,
     epoch_jd: JulianDate,
 ) -> Result<position::EquatorialMeanJ2000<AstronomicalUnit>, ProperMotionError> {
-    // ── Constants ──
-    // 1 AU / (1 km/s · 1 Julian year) = days_per_year · seconds_per_day / km_per_au
-    // = 365.25 · 86400 / 1.49597870700e8 = 0.21094502... AU per (km/s · yr)
-    const AU_PER_KMS_YR: f64 = 0.210_945_021_894_944_8;
-    // 1 mas in radians: π / (180 · 3600 · 1000)
-    const MAS_TO_RAD: f64 = std::f64::consts::PI / (180.0 * 3_600_000.0);
-
     let dec_deg = mean_position.dec();
-    let cos_dec = dec_deg.value().to_radians().cos();
+    let cos_dec = dec_deg.to::<Radian>().cos();
     if cos_dec.abs() <= COS_DEC_EPSILON {
-        return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-            dec_deg: dec_deg.value(),
-        });
+        return Err(ProperMotionError::RightAscensionUndefinedAtPole { dec: dec_deg });
     }
 
-    let alpha = mean_position.ra().value().to_radians();
-    let delta = dec_deg.value().to_radians();
+    let alpha = mean_position.ra().to::<Radian>();
+    let delta = dec_deg.to::<Radian>();
     let (sin_a, cos_a) = alpha.sin_cos();
     let (sin_d, cos_d) = delta.sin_cos();
 
     // Distance in AU from parallax (mas → AU). r_AU = 1 rad / π_rad
-    let pi_rad = motion.parallax.value() * MAS_TO_RAD;
-    if pi_rad <= 0.0 {
+    let pi_rad = motion.parallax.to::<Radian>();
+    if pi_rad <= qtty::Radian::zero() {
         // A non-positive parallax has no physical meaning (the "negative
         // parallax" entries in some catalogues are noisy fits; callers
         // should treat them as missing and fall back to a transverse-only
         // propagation).
-        return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-            dec_deg: dec_deg.value(),
-        });
+        return Err(ProperMotionError::RightAscensionUndefinedAtPole { dec: dec_deg });
     }
-    let r_au = 1.0 / pi_rad;
+    let r_au = 1.0 / pi_rad.value();
 
     // BCRS position vector at epoch (AU).
     let p0 = [r_au * cos_d * cos_a, r_au * cos_d * sin_a, r_au * sin_d];
@@ -312,14 +314,17 @@ pub fn propagate_space_motion(
     // Angular rates → linear transverse velocity in AU/yr.
     // μα⋆ already includes cos(δ); divide once to get true μα, then scale by
     // r·cos(δ) to recover the AU/yr coefficient on e_alpha.
-    let pm_ra_rad_yr = (motion.pm_ra_cos_dec.value() * MAS_TO_RAD) / cos_dec;
-    let pm_dec_rad_yr = motion.pm_dec.value() * MAS_TO_RAD;
+    let pm_ra_rad_yr = motion.pm_ra_cos_dec.to::<Per<Radian, Year>>().value() / cos_dec;
+    let pm_dec_rad_yr = motion.pm_dec.to::<Per<Radian, Year>>().value();
 
     let v_alpha_au_yr = pm_ra_rad_yr * r_au * cos_d;
     let v_delta_au_yr = pm_dec_rad_yr * r_au;
 
     // Radial velocity in AU/yr (positive = away).
-    let v_r_au_yr = motion.radial_velocity.value() * AU_PER_KMS_YR;
+    let v_r_au_yr = motion
+        .radial_velocity
+        .to::<Per<AstronomicalUnit, Year>>()
+        .value();
 
     // BCRS velocity vector in AU/yr.
     let r_hat = [cos_d * cos_a, cos_d * sin_a, sin_d];
@@ -330,7 +335,7 @@ pub fn propagate_space_motion(
     ];
 
     // Δt in Julian years.
-    let dt_yr = (jd / JulianDate::JULIAN_YEAR) - (epoch_jd / JulianDate::JULIAN_YEAR);
+    let dt_yr = (jd - epoch_jd) / Days::new(365.25);
 
     // Linear propagation in BCRS.
     let p = [
@@ -344,9 +349,7 @@ pub fn propagate_space_motion(
     if r_new <= 0.0 {
         // Star passed exactly through the Solar System; refuse rather than
         // emit a divide-by-zero. This requires unphysical inputs.
-        return Err(ProperMotionError::RightAscensionUndefinedAtPole {
-            dec_deg: dec_deg.value(),
-        });
+        return Err(ProperMotionError::RightAscensionUndefinedAtPole { dec: dec_deg });
     }
     let new_dec = (p[2] / r_new).asin();
     let new_ra = p[1].atan2(p[0]).rem_euclid(std::f64::consts::TAU);

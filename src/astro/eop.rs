@@ -3,10 +3,15 @@
 
 //! # Earth Orientation Parameters (EOP)
 //!
-//! Earth Orientation Parameters connect the celestial (GCRS) and terrestrial
-//! (ITRS) reference frames by accounting for irregularities in Earth's rotation.
+//! Loading, representation and provider abstraction for Earth Orientation
+//! Parameters used throughout the Earth-rotation pipeline.
 //!
-//! The key EOP quantities are:
+//! ## Scientific scope
+//!
+//! Earth Orientation Parameters connect the celestial (GCRS) and terrestrial
+//! (ITRS) reference frames by accounting for irregularities in Earth's
+//! rotation that cannot be predicted from theory alone. The relevant
+//! quantities are:
 //!
 //! | Parameter | Description |
 //! |-----------|-------------|
@@ -15,19 +20,22 @@
 //! | **dX, dY** | Celestial pole offsets, corrections to the IAU precession-nutation model |
 //! | **LOD** | Length Of Day excess (deviation from 86400 SI seconds) |
 //!
-//! ## Time-scale contract
+//! These are published by the IERS in Bulletins A/B and the
+//! `finals2000A.all` series, and are required at the sub-arcsecond level for
+//! VLBI, GNSS and astrometric reductions.
 //!
-//! **All Julian Dates passed to EOP lookups are in UTC.**
-//! IERS Bulletin A/B tables are indexed by UTC civil date; passing TT or UT1
-//! would introduce an error of up to ~70 s in the interpolation index,
-//! corrupting the returned `dUT1`, `xp`, `yp` values.  Always convert to UTC
-//! before calling [`EopProvider::eop_at`].
+//! ## Technical scope
 //!
-//! ## Architecture
+//! The [`EopProvider`] trait abstracts over data sources (zero-correction
+//! placeholder, bundled IERS tables, custom feeds). [`EopValues`] holds the
+//! parameters in their natural IERS units (`Seconds`, `Arcseconds`,
+//! `MilliArcseconds`); converting to radians for computation goes through
+//! the standard `qtty` machinery.
 //!
-//! The [`EopProvider`] trait abstracts over different EOP data sources:
-//! - [`NullEop`]: zero-correction placeholder (assumes UTC ≈ UT1, no polar motion)
-//! - Future: IERS Bulletin A/B parsers, finals2000A, etc.
+//! **Time-scale contract:** all Julian Dates passed to EOP lookups are in
+//! **UTC**. IERS Bulletin A/B tables are indexed by UTC civil date; passing
+//! TT or UT1 would introduce ~70 s of error in the interpolation index and
+//! corrupt the returned `dUT1`, `xp`, `yp` values.
 //!
 //! ## References
 //!
@@ -36,8 +44,6 @@
 
 use crate::qtty::*;
 use crate::time::JulianDate;
-
-use crate::astro::iers_data;
 
 /// A set of Earth Orientation Parameters at a given epoch.
 ///
@@ -78,9 +84,34 @@ impl EopValues {
     /// Convert UTC Julian Date to UT1 Julian Date using this EOP's dUT1.
     #[inline]
     pub fn jd_ut1(&self, jd_utc: JulianDate) -> JulianDate {
-        JulianDate::new(jd_utc.value() + self.dut1.to::<Day>().value())
+        JulianDate::new(jd_utc.jd_value() + self.dut1.to::<Day>().value())
     }
 }
+
+/// EOP lookup error.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum EopError {
+    /// No EOP entry covers the requested UTC epoch.
+    NoData {
+        /// Requested UTC Julian Date.
+        jd_utc: f64,
+        /// Requested UTC Modified Julian Date.
+        mjd_utc: f64,
+    },
+}
+
+impl core::fmt::Display for EopError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match *self {
+            Self::NoData { jd_utc, mjd_utc } => write!(
+                f,
+                "no Earth Orientation Parameters cover UTC JD {jd_utc} (MJD {mjd_utc})"
+            ),
+        }
+    }
+}
+
+impl std::error::Error for EopError {}
 
 /// Trait for providing Earth Orientation Parameters at a given epoch.
 ///
@@ -98,6 +129,15 @@ impl EopValues {
 /// leap seconds + TT–TAI) in the interpolation, which can shift the looked-up
 /// `dUT1` by several milliseconds and shift `xp`/`yp` by a perceptible amount.
 pub trait EopProvider {
+    /// Fallibly look up EOP values for the given **UTC** Julian Date.
+    ///
+    /// The default implementation preserves compatibility for providers that
+    /// are intentionally total, such as [`NullEop`].
+    #[inline]
+    fn try_eop_at(&self, jd_utc: JulianDate) -> Result<EopValues, EopError> {
+        Ok(self.eop_at(jd_utc))
+    }
+
     /// Look up (or interpolate) EOP values for the given **UTC** Julian Date.
     ///
     /// # Time-scale contract
@@ -118,6 +158,11 @@ pub struct NullEop;
 
 impl EopProvider for NullEop {
     #[inline]
+    fn try_eop_at(&self, _jd_utc: JulianDate) -> Result<EopValues, EopError> {
+        Ok(EopValues::default())
+    }
+
+    #[inline]
     fn eop_at(&self, _jd_utc: JulianDate) -> EopValues {
         EopValues::default()
     }
@@ -127,34 +172,24 @@ impl EopProvider for NullEop {
 // IERS EOP provider (build-time embedded table + optional runtime override)
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// EOP provider backed by the IERS `finals2000A.all` table.
+/// EOP provider backed by tempoch's active IERS `finals2000A.all` bundle.
 ///
-/// By default, uses the table embedded at compile time from the IERS data
-/// center. Call [`IersEop::from_entries`] or [`IersEop::from_file`] to load
-/// a fresh dataset at runtime.
+/// By default, uses the time-data bundle embedded in `tempoch`. Runtime
+/// refreshes performed through `tempoch` are visible to newly constructed
+/// contexts/providers, keeping UTC/UT1 and EOP data centralized in one crate.
 ///
 /// The provider interpolates linearly between daily entries for any epoch
-/// within the table's MJD range. For epochs outside the range, it returns
-/// the nearest boundary entry (i.e., clamped extrapolation).
-#[derive(Debug, Clone)]
-pub struct IersEop {
-    /// The active EOP table. Defaults to the compile-time embedded data.
-    table: &'static [iers_data::EopEntry],
-}
-
-impl Default for IersEop {
-    fn default() -> Self {
-        Self {
-            table: iers_data::EOP_TABLE,
-        }
-    }
-}
+/// within the bundle's MJD range. For epochs outside the range,
+/// [`IersEop::try_eop_at`] returns [`EopError::NoData`]; the provider never
+/// fabricates zero EOP values outside coverage.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct IersEop;
 
 impl IersEop {
     /// Create an `IersEop` from the build-time embedded table.
     #[inline]
     pub fn new() -> Self {
-        Self::default()
+        Self
     }
 
     /// MJD range covered by the active table.
@@ -168,40 +203,46 @@ impl IersEop {
     ///   happen if a caller passes an explicitly empty slice via a custom
     ///   constructor; the default build-embedded table is never empty).
     pub fn mjd_range(&self) -> Option<(f64, f64)> {
-        let first = self.table.first()?.mjd;
-        let last = self.table.last()?.mjd;
-        Some((first, last))
+        Some((tempoch::EOP_START_MJD.value(), tempoch::EOP_END_MJD.value()))
     }
 
     /// Number of entries in the active table.
     #[inline]
     pub fn len(&self) -> usize {
-        self.table.len()
+        ((tempoch::EOP_END_MJD - tempoch::EOP_START_MJD)
+            .value()
+            .floor() as usize)
+            + 1
     }
 
     /// Whether the table is empty.
     #[inline]
     pub fn is_empty(&self) -> bool {
-        self.table.is_empty()
+        false
     }
 }
 
 impl EopProvider for IersEop {
-    fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
-        // Convert JD (TT‑axis value, used as UTC approximation) → MJD.
-        let mjd = jd_utc.value() - 2_400_000.5;
+    fn try_eop_at(&self, jd_utc: JulianDate) -> Result<EopValues, EopError> {
+        let mjd = Days::new(jd_utc.jd_value() - 2_400_000.5);
 
-        match iers_data::lookup(self.table, mjd) {
-            Some(e) => EopValues {
-                dut1: Seconds::new(e.dut1),
-                xp: Arcseconds::new(e.xp),
-                yp: Arcseconds::new(e.yp),
-                dx: MilliArcseconds::new(e.dx),
-                dy: MilliArcseconds::new(e.dy),
-            },
-            // Outside table range → fall back to zero corrections (same as NullEop)
-            None => EopValues::default(),
-        }
+        let e = tempoch::eop::builtin_eop_at(mjd).ok_or(EopError::NoData {
+            jd_utc: jd_utc.jd_value(),
+            mjd_utc: mjd.value(),
+        })?;
+
+        Ok(EopValues {
+            dut1: e.ut1_minus_utc,
+            xp: Arcseconds::new(e.pm_xp_arcsec.unwrap_or(0.0)),
+            yp: Arcseconds::new(e.pm_yp_arcsec.unwrap_or(0.0)),
+            dx: MilliArcseconds::new(e.dx_milliarcsec.unwrap_or(0.0)),
+            dy: MilliArcseconds::new(e.dy_milliarcsec.unwrap_or(0.0)),
+        })
+    }
+
+    fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
+        self.try_eop_at(jd_utc)
+            .expect("IERS EOP requested outside bundled EOP coverage")
     }
 }
 
@@ -251,5 +292,24 @@ mod tests {
         assert!((vals.yp.to::<Radian>().value() - 0.2 * as2rad).abs() < 1e-20);
         assert!((vals.dx.to::<Radian>().value() - 0.3e-3 * as2rad).abs() < 1e-20);
         assert!((vals.dy.to::<Radian>().value() - 0.4e-3 * as2rad).abs() < 1e-20);
+    }
+
+    #[test]
+    fn iers_eop_rejects_out_of_range_instead_of_zeroing() {
+        let eop = IersEop::new();
+        let (first, _) = eop.mjd_range().expect("compiled EOP range");
+        let before = JulianDate::new(first + 2_400_000.5 - 1.0);
+        let err = eop.try_eop_at(before).expect_err("before range must fail");
+        assert!(matches!(err, EopError::NoData { .. }));
+    }
+
+    #[test]
+    fn iers_eop_uses_tempoch_builtin_data() {
+        let eop = IersEop::new();
+        let (first, _) = eop.mjd_range().expect("compiled EOP range");
+        let jd = JulianDate::new(first + 2_400_000.5);
+        let vals = eop.try_eop_at(jd).expect("range start must be covered");
+        let raw = tempoch::eop::builtin_eop_at(Days::new(first)).expect("tempoch EOP");
+        assert!((vals.dut1.value() - raw.ut1_minus_utc.value()).abs() < 1e-12);
     }
 }

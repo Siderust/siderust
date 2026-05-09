@@ -83,7 +83,7 @@ mod to_spherical;
 pub use centers::{
     to_topocentric_with, to_topocentric_with_ctx, IntoTransformArgs, TransformCenter,
 };
-pub use context::{AstroContext, EarthOrientationModel, ModelContext, TransformContext};
+pub use context::{AstroContext, ModelContext, TransformContext};
 pub use ecliptic_of_date::{FromEclipticTrueOfDate, ToEclipticTrueOfDate};
 pub use ext::{DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt, VectorAstroExt};
 pub use ext::{UsingEngine, WithEngine};
@@ -141,7 +141,7 @@ where
         let [x, y, z] = rot * [self.x(), self.y(), self.z()];
         let rotated = {
             self.center_params();
-            Position::<C1, F2, U>::from_vec3((), nalgebra::Vector3::new(x, y, z))
+            Position::<C1, F2, U>::from_array((), [x, y, z])
         };
         rotated.to_center(jd)
     }

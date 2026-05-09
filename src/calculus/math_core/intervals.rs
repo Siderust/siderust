@@ -1,21 +1,36 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Interval Assembly, "In‑Range" Period Detection
+//! # Interval Assembly — "In-Range" Period Detection
 //!
-//! Assembles time periods where a scalar function satisfies
-//! `h_min ≤ f(t) ≤ h_max`, handling:
+//! ## Scientific scope
 //!
-//! * Multiple crossings per window (fast movers, satellites)
-//! * Tangencies (touching a threshold without crossing)
-//! * Always‑above / always‑below cases
-//! * Single‑threshold (above only) as a special case
+//! Assembles the set of continuous time intervals during which a scalar
+//! function f(t) satisfies `h_min ≤ f(t) ≤ h_max`.  Handles edge cases
+//! including multiple crossings per window (fast movers, satellites),
+//! tangencies (touching a threshold without crossing), always-above /
+//! always-below cases, and the single-threshold (above-only) variant.
 //!
-//! All routines operate on `Period<MJD>` time windows and
+//! ## Technical scope
+//!
+//! All routines operate on `Period<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
+//!
+//! The main entry points are [`above_threshold_periods`] and
+//! [`in_range_periods`];
+//! internally they delegate to [`root_finding::brent`] for root polishing
+//! after bracket detection, and use a tiny probe offset `PROBE_DT` to
+//! classify crossing direction.
+//!
+//! ## References
+//!
+//! - Brent, R. P. (1973). *Algorithms for Minimization without Derivatives*.
+//!   Prentice-Hall.
+//! - Press, W. H., Teukolsky, S. A., Vetterling, W. T., & Flannery, B. P.
+//!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
 use crate::qtty::{Day, Quantity, Unit};
-use crate::time::{complement_within, intersect_periods, ModifiedJulianDate, Period, MJD};
+use crate::time::{Interval, ModifiedJulianDate, Period};
 
 use super::root_finding;
 
@@ -51,7 +66,7 @@ pub struct LabeledCrossing {
 /// Scan `period` at `step` intervals, find all roots of
 /// `f(t) − threshold` using Brent's method.  Returns unsorted crossing times.
 pub fn find_crossings<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     step: Days,
     f: &F,
     threshold: Quantity<V>,
@@ -97,7 +112,7 @@ pub fn find_crossings_in_segments<V, F>(
     key_times: &[ModifiedJulianDate],
     f: &F,
     threshold: Quantity<V>,
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
 ) -> Vec<ModifiedJulianDate>
 where
     V: Unit,
@@ -193,11 +208,11 @@ where
 /// A midpoint validation check is performed for each candidate period.
 pub fn build_above_periods<V, F>(
     labeled: &[LabeledCrossing],
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     start_above: bool,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -259,11 +274,11 @@ where
 /// using a coarse scan at `step` followed by Brent refinement and
 /// crossing classification.
 pub fn above_threshold_periods<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -278,10 +293,10 @@ where
 /// segments (culmination‑based).
 pub fn above_threshold_periods_segmented<V, F>(
     key_times: &[ModifiedJulianDate],
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -300,12 +315,12 @@ where
 ///
 /// Computed as `above(h_min) ∩ complement(above(h_max))`.
 pub fn in_range_periods<V, F>(
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     step: Days,
     f: &F,
     h_min: Quantity<V>,
     h_max: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -319,11 +334,11 @@ where
 /// Like [`in_range_periods`] but using key‑time segments.
 pub fn in_range_periods_segmented<V, F>(
     key_times: &[ModifiedJulianDate],
-    period: Period<MJD>,
+    period: Period<ModifiedJulianDate>,
     f: &F,
     h_min: Quantity<V>,
     h_max: Quantity<V>,
-) -> Vec<Period<MJD>>
+) -> Vec<Period<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -339,13 +354,19 @@ where
 // ---------------------------------------------------------------------------
 
 /// Complement of `periods` within `within`.
-pub fn complement(within: Period<MJD>, periods: &[Period<MJD>]) -> Vec<Period<MJD>> {
-    complement_within(within, periods)
+pub fn complement(
+    within: Period<ModifiedJulianDate>,
+    periods: &[Period<ModifiedJulianDate>],
+) -> Vec<Period<ModifiedJulianDate>> {
+    within.complement(periods)
 }
 
 /// Intersection of two sorted, non‑overlapping period lists.
-pub fn intersect(a: &[Period<MJD>], b: &[Period<MJD>]) -> Vec<Period<MJD>> {
-    intersect_periods(a, b)
+pub fn intersect(
+    a: &[Period<ModifiedJulianDate>],
+    b: &[Period<ModifiedJulianDate>],
+) -> Vec<Period<ModifiedJulianDate>> {
+    Interval::intersect_many(a, b)
 }
 
 // ---------------------------------------------------------------------------
@@ -362,12 +383,12 @@ mod tests {
     fn mjd(v: f64) -> Mjd {
         Mjd::new(v)
     }
-    fn period(a: f64, b: f64) -> Period<MJD> {
+    fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
         Period::new(mjd(a), mjd(b))
     }
 
     fn mjd_scalar(t: Mjd) -> f64 {
-        t / Days::new(1.0)
+        t.mjd_value()
     }
 
     #[test]

@@ -4,7 +4,188 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1] - 2026-05-09
+## [Unreleased]
+
+## [0.7.0] - 07/05/2026
+
+This release contains **breaking API changes** throughout the public surface.
+Callers must migrate before upgrading.
+
+### Added
+
+* **New dimensionless `qtty` newtypes** in `crate::qtty` (re-exported from
+  `siderust::qtty`):
+  `OpticalDepth` / `OpticalDepths`, `Airmass` / `Airmasses`,
+  `Albedo` / `Albedos`, `IlluminationFraction` / `IlluminationFractions`,
+  `Refractivity` / `Refractivities`, `CipCoordinate` / `CipCoordinates`.
+  All carry dimensional safety at compile time — accidental raw-`f64` mixing
+  is now a type error.
+* **`Asteroid::with_albedo(albedo: Albedos) -> Self`** const builder.
+  The optional `albedo: Option<Albedos>` field is now part of `Asteroid`,
+  matching the existing pattern on `Planet` and `Satellite`.
+* **`DEFAULT_SCALE_HEIGHT: Kilometers`** constant in
+  `siderust::atmosphere::rayleigh` replaces the deprecated
+  `DEFAULT_SCALE_HEIGHT_KM: f64` (which remains with `#[deprecated]` for one
+  cycle).
+* **Crate-wide academic documentation sweep**: every module now has structured
+  `## Scientific scope`, `## Technical scope`, and `## References`
+  (BibTeX-style citations) sections.
+* **Authoring-convention reference** at `doc/conventions.md` formalises the
+  documentation and API style rules now followed throughout the crate.
+
+### Changed
+
+* **`EarthOrientationModel` runtime enum removed** from
+  `coordinates::transform::context` and from the `pub use` in
+  `coordinates::transform`.
+  Model selection is now fully static via phantom-typed dispatch:
+  * `to_frame_as::<F2, Nut: NutationModel>(jd)` on `DirectionAstroExt`,
+    `SphericalDirectionAstroExt`, `VectorAstroExt`, and `PositionAstroExt`.
+  * `to_as::<C2, F2, Nut>(jd)` on `PositionAstroExt` for a simultaneous
+    center + frame transform.
+  * The default nutation marker (`DefaultNutationModel`) is `Iau2006A`.
+    No runtime branch, no heap allocation — all dispatch is monomorphised.
+
+* **`rayleigh_optical_depth_bodhaine99` signature** (in
+  `siderust::atmosphere::rayleigh`) now takes typed quantities:
+  * `pressure_hpa: f64` → `pressure: Hectopascals`
+  * `scale_height_km: f64` → `scale_height: Kilometers`
+
+* **`AtmosphereProfile.rayleigh_scale_height_km: f64`** renamed and retyped to
+  `rayleigh_scale_height: Kilometers`.
+
+* **`astro::cio::CipCio`** fields `x` and `y` retyped from `f64` to
+  `CipCoordinates`. `cip_xy()` now returns `(CipCoordinates, CipCoordinates)`.
+  `cio_locator_s` accepts `CipCoordinates` arguments.
+
+* **`astro::iers_data::lookup`** now accepts `Days` instead of `f64` for the
+  Julian-date offset argument, ensuring callers cannot silently pass a raw
+  number in the wrong time scale.
+
+* **`astro::orbit::PreparedOrbit.mean_motion`** is now typed as
+  `AngularRate<Radian, Day>`.
+
+* **`astro::conic::MeanMotionOrbit.mean_motion`** is now typed as
+  `AngularRate<Degree, Day>`.
+
+* **`calculus::lunar::phase::MoonPhaseGeometry.illuminated_fraction`**
+  retyped from `f64` to `IlluminationFractions`.
+  `Moon::illumination_above`, `illumination_below`, and `illumination_range`
+  now accept `IlluminationFractions` thresholds instead of bare `f64`.
+
+### Removed
+
+* `EarthOrientationModel` enum and all `to_*_model(...)` helper methods
+  (added in 0.6.1). Replaced by the phantom-typed `to_frame_as` / `to_as`
+  API described above.
+
+### Migration
+
+#### 1 — Frame transforms (nutation model)
+
+```rust
+// 0.6.x (runtime enum, removed)
+use siderust::coordinates::transform::EarthOrientationModel;
+let equatorial = ecliptic.to_frame(jd, EarthOrientationModel::Iau2006A);
+
+// 0.7.0 (compile-time phantom type)
+use siderust::astro::nutation::Iau2006A;
+let equatorial = ecliptic.to_frame_as::<EquatorialFrame, Iau2006A>(jd);
+
+// Using the default (Iau2006A) via DefaultNutationModel:
+use siderust::coordinates::transform::context::DefaultNutationModel;
+let equatorial = ecliptic.to_frame_as::<EquatorialFrame, DefaultNutationModel>(jd);
+```
+
+#### 2 — Rayleigh optical depth
+
+```rust
+// 0.6.x (raw f64 parameters, removed)
+let tau = rayleigh_optical_depth_bodhaine99(wavelength, co2_ppm, 744.0, latitude, 8.0);
+
+// 0.7.0 (typed quantities)
+use siderust::qtty::{Hectopascals, Kilometers};
+let tau = rayleigh_optical_depth_bodhaine99(
+    wavelength,
+    co2_ppm,
+    Hectopascals::new(744.0),
+    latitude,
+    Kilometers::new(8.0),
+);
+```
+
+#### 3 — Rayleigh scale height constant
+
+```rust
+// 0.6.x (deprecated f64 constant)
+use siderust::atmosphere::rayleigh::DEFAULT_SCALE_HEIGHT_KM;
+let h: f64 = DEFAULT_SCALE_HEIGHT_KM;
+
+// 0.7.0 (typed constant)
+use siderust::atmosphere::rayleigh::DEFAULT_SCALE_HEIGHT;
+let h: Kilometers = DEFAULT_SCALE_HEIGHT;
+```
+
+#### 4 — AtmosphereProfile field
+
+```rust
+// 0.6.x
+profile.rayleigh_scale_height_km   // f64
+
+// 0.7.0
+profile.rayleigh_scale_height      // Kilometers
+```
+
+#### 5 — Illuminated fraction
+
+```rust
+// 0.6.x
+let fraction: f64 = geometry.illuminated_fraction;
+
+// 0.7.0
+use siderust::qtty::IlluminationFractions;
+let fraction: IlluminationFractions = geometry.illuminated_fraction;
+let raw: f64 = fraction.value();
+```
+
+#### 6 — IERS lookup
+
+```rust
+// 0.6.x
+let entry = iers_data::lookup(jd_value_f64);
+
+// 0.7.0
+use siderust::qtty::Days;
+let entry = iers_data::lookup(Days::new(jd_value_f64));
+```
+
+### Fixed
+
+* Resolved all `cargo doc --no-deps` intra-doc link warnings (64 warnings → 0):
+  * Removed link brackets from private submodule references in `calculus::altitude`,
+    `calculus::azimuth`, `calculus::solar`, `calculus::lunar`, and `astro::nutation`.
+  * Removed link brackets from private function references in `calculus::solar`,
+    `calculus::lunar`, `calculus::math_core::root_finding`, `astro::earth_rotation_provider`,
+    and `astro::proper_motion`.
+  * Qualified previously-unresolved links: `[crate::qtty]`, `[crate::targets::Target]`,
+    `[crate::coordinates::frames::ICRF]`, `[crate::coordinates::frames::EclipticMeanJ2000]`,
+    `[crate::astro::orientation::IauRotationParams]`, and `[crate::astro::precession::…]`.
+  * Replaced non-existent `[IersEop::from_entries]` / `[IersEop::from_file]` references
+    with accurate prose pointing to `IersEop::new`.
+  * Converted feature-gated links (`atmosphere`, `runtime-data`, `spectra`, `tables`)
+    to plain text to avoid unresolved-link warnings in the default doc build.
+  * Fixed eight redundant explicit link targets (e.g. `[Foo](path::Foo)` → `[path::Foo]`).
+  * Replaced unresolvable generic-parameter links (e.g. `` [`Direction<Horizontal>`] ``)
+    with code-formatted backtick spans.
+* Removed unused imports that triggered `dead_code` / `unused-imports` compiler warnings:
+  `MJD` (seven files in `calculus/`), `CoordinateScale` in `calculus/jpl/eval.rs`, and
+  `Second` in `coordinates/observation/observer_state.rs`.
+* Replaced deprecated API calls throughout:
+  * `EncodedTime::value()` → `.jd_value()` (six call sites).
+  * `Rotation3::from_matrix` → `from_matrix_unchecked` (three const statics).
+  * `SphericalPosition::new_raw` → `new_unchecked` (thirteen call sites).
+  * `SphericalPosition::new_raw_with_params` → `new_unchecked_with_params` (four call sites).
+  * `SphericalDirection::new_raw` → `new_unchecked` (nine call sites).
 
 ### Added
 * **Generic 1D and 2D gridded tables** under the new optional `tables`
@@ -169,7 +350,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * Ecliptic-of-date direction transforms via `coordinates::transform::ecliptic_of_date::{ToEclipticTrueOfDate, FromEclipticTrueOfDate}`
 * `SphericalDirectionAstroExt` for time-dependent frame transformations on `spherical::Direction<F>`
 * New conversion examples: `examples/all_center_conversions.rs` and `examples/all_frame_conversions.rs`
-* Regression suite `tests/test_high_precision_earth_rotation_regression.rs` with ERFA/SOFA reference vectors for true-of-date horizontal and topocentric site-vector paths
+* Regression suite `tests/test_high_precision_earth_rotation_regression.rs` with SOFA reference vectors for true-of-date horizontal and topocentric site-vector paths
 * ECEF-first coordinate aliases in `coordinates::types`: `EcefSphericalDir` and `EcefPos`
 
 ### Changed

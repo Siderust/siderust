@@ -132,10 +132,10 @@ pub(crate) fn rotate_to_ecliptic(
     longitude_of_ascending_node: Degrees,
     true_anomaly_radians: f64,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
-    let (sin_i, cos_i) = inclination.to::<Radian>().value().sin_cos();
+    let (sin_i, cos_i) = inclination.sin_cos();
     let (sin_u, cos_u) =
-        (argument_of_periapsis.to::<Radian>().value() + true_anomaly_radians).sin_cos();
-    let (sin_node, cos_node) = longitude_of_ascending_node.to::<Radian>().value().sin_cos();
+        (argument_of_periapsis.to::<Radian>() + Radians::new(true_anomaly_radians)).sin_cos();
+    let (sin_node, cos_node) = longitude_of_ascending_node.sin_cos();
     let x = radius_au * (cos_node * cos_u - sin_node * sin_u * cos_i);
     let y = radius_au * (sin_node * cos_u + cos_node * sin_u * cos_i);
     let z = radius_au * sin_u * sin_i;
@@ -176,7 +176,7 @@ pub fn calculate_mean_motion_position(
     let trig = OrientationTrig::from_orientation(orientation);
     let dt_days = (julian_date - orbit.epoch).value();
     let mean_anomaly_rad =
-        (orbit.mean_motion_deg_per_day.to_radians() * dt_days).rem_euclid(std::f64::consts::TAU);
+        (orbit.mean_motion.value().to_radians() * dt_days).rem_euclid(std::f64::consts::TAU);
     let mean_anomaly = Radians::new(mean_anomaly_rad);
     let eccentric_anomaly = solve_keplers_equation(mean_anomaly, eccentricity);
     let (true_anomaly, radius) =
@@ -255,6 +255,7 @@ impl ConicOrbit {
 mod tests {
     use super::*;
     use crate::macros::assert_cartesian_eq;
+    use crate::qtty::angular_rate::AngularRate;
 
     #[test]
     fn mean_motion_position_is_at_periapsis_at_epoch() {
@@ -264,7 +265,7 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            0.9856076686,
+            AngularRate::<Degree, Day>::new(0.9856076686),
             JulianDate::J2000,
         )
         .unwrap();
@@ -280,15 +281,15 @@ mod tests {
             Degrees::new(10.0),
             Degrees::new(20.0),
             Degrees::new(30.0),
-            0.9856076686,
+            AngularRate::<Degree, Day>::new(0.9856076686),
             JulianDate::J2000,
         )
         .unwrap();
         // 1e8 days ~ 274,000 years — tests M normalization for large accumulation.
         let position = orbit.position_at(JulianDate::new(2451545.0 + 1e8)).unwrap();
-        assert!(position.x().value().is_finite());
-        assert!(position.y().value().is_finite());
-        assert!(position.z().value().is_finite());
+        assert!(position.x().is_finite());
+        assert!(position.y().is_finite());
+        assert!(position.z().is_finite());
     }
 
     #[test]
@@ -304,9 +305,9 @@ mod tests {
         )
         .unwrap();
         let position = orbit.position_at(JulianDate::new(2458999.0)).unwrap();
-        assert!(position.x().value().is_finite());
-        assert!(position.y().value().is_finite());
-        assert!(position.z().value().is_finite());
+        assert!(position.x().is_finite());
+        assert!(position.y().is_finite());
+        assert!(position.z().is_finite());
     }
 
     #[test]
@@ -334,7 +335,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                1.0,
+                AngularRate::<Degree, Day>::new(1.0),
                 JulianDate::J2000,
             ),
             Err(ConicError::InvalidSemiMajorAxis)
@@ -350,7 +351,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                1.0,
+                AngularRate::<Degree, Day>::new(1.0),
                 JulianDate::J2000,
             ),
             Err(ConicError::HyperbolicNotSupported)
@@ -387,9 +388,9 @@ mod tests {
         )
         .unwrap();
         let position = orbit.position_at(JulianDate::new(2451545.5)).unwrap();
-        assert!(position.x().value().is_finite());
-        assert!(position.y().value().is_finite());
-        assert!(position.z().value().is_finite());
+        assert!(position.x().is_finite());
+        assert!(position.y().is_finite());
+        assert!(position.z().is_finite());
     }
 
     #[test]
@@ -405,9 +406,9 @@ mod tests {
         )
         .unwrap();
         let position = orbit.position_at(JulianDate::new(2451645.0)).unwrap();
-        assert!(position.x().value().is_finite());
-        assert!(position.y().value().is_finite());
-        assert!(position.z().value().is_finite());
+        assert!(position.x().is_finite());
+        assert!(position.y().is_finite());
+        assert!(position.z().is_finite());
     }
 
     #[test]
@@ -426,8 +427,8 @@ mod tests {
         let position = orbit
             .position_at(JulianDate::new(2451545.0 + 10000.0))
             .unwrap();
-        assert!(position.x().value().is_finite());
-        assert!(position.y().value().is_finite());
-        assert!(position.z().value().is_finite());
+        assert!(position.x().is_finite());
+        assert!(position.y().is_finite());
+        assert!(position.z().is_finite());
     }
 }

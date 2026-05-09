@@ -3,8 +3,23 @@
 
 //! # Search Options and Constants for Azimuth Calculus
 //!
-//! Re-exports [`SearchOpts`] from the altitude module (shared struct) and
-//! provides scan-step constants for azimuth event finding.
+//! ## Scientific scope
+//!
+//! Numerical controls for the bracket‑and‑refine azimuth event search.
+//! The default scan step (~10 min) is appropriate for diurnal motion of
+//! solar‑system bodies and most stars at mid‑latitudes; bodies near
+//! standstill or stationary points may need a finer step to avoid missed
+//! brackets near a turning point.
+//!
+//! ## Technical scope
+//!
+//! Re‑exports [`SearchOpts`] from the altitude module (shared struct) and
+//! provides crate‑internal scan‑step constants
+//! ([`DEFAULT_SCAN_STEP`], [`EXTREMA_SCAN_STEP`]) consumed by
+//! [`super::events`].
+//!
+//! ## References
+//! None.
 
 use crate::qtty::*;
 

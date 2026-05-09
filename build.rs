@@ -14,10 +14,6 @@ mod vsop87_build;
 #[path = "scripts/elp2000/mod.rs"]
 mod elp2000_build;
 
-#[cfg(feature = "regen-data")]
-#[path = "scripts/iers/mod.rs"]
-mod iers_build;
-
 #[cfg(feature = "de440")]
 #[path = "scripts/jpl/de440/mod.rs"]
 mod de440_build;
@@ -25,6 +21,18 @@ mod de440_build;
 #[cfg(feature = "de441")]
 #[path = "scripts/jpl/de441/mod.rs"]
 mod de441_build;
+
+#[cfg(any(feature = "de440", feature = "de441"))]
+#[path = "scripts/jpl/daf.rs"]
+pub(crate) mod jpl_daf;
+
+#[cfg(any(feature = "de440", feature = "de441"))]
+#[path = "scripts/jpl/pipeline.rs"]
+pub(crate) mod jpl_pipeline;
+
+#[cfg(any(feature = "de440", feature = "de441"))]
+#[path = "scripts/jpl/spk.rs"]
+pub(crate) mod jpl_spk;
 
 fn main() {
     println!("cargo:rerun-if-env-changed=SIDERUST_DATASETS_DIR");
@@ -38,7 +46,7 @@ fn main() {
 
     #[cfg(not(feature = "regen-data"))]
     eprintln!(
-        "siderust build: using committed generated tables in src/generated/. \
+        "siderust build: using committed generated VSOP87/ELP2000 tables in src/archive/. \
          Enable the `regen-data` feature and set SIDERUST_REGEN=1 to refresh them."
     );
 
@@ -63,7 +71,7 @@ fn datasets_base_dir() -> PathBuf {
 
 // ── `regen-data` feature ──────────────────────────────────────────────────────
 
-/// Regenerates the committed VSOP87, ELP2000 and IERS tables from source data.
+/// Regenerates the committed VSOP87 and ELP2000 tables from source data.
 ///
 /// Only runs when `SIDERUST_REGEN=1` (or `true`/`yes`) is set. Requires the
 /// `regen-data` build feature so that `reqwest` is compiled only when needed.
@@ -89,7 +97,7 @@ fn regen_tables() {
     let base = datasets_base_dir();
     let manifest_dir =
         PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
-    let gen_dir = manifest_dir.join("src/generated");
+    let gen_dir = manifest_dir.join("src/archive");
 
     eprintln!("Regenerating VSOP87 data...");
     vsop87_build::run_regen(base.join("vsop87_dataset").as_path(), &gen_dir)
@@ -100,11 +108,6 @@ fn regen_tables() {
     elp2000_build::run_regen(base.join("elp2000_dataset").as_path(), &gen_dir)
         .unwrap_or_else(|e| panic!("ELP2000 codegen failed: {e}"));
     eprintln!("ELP2000 regeneration complete");
-
-    eprintln!("Regenerating IERS EOP data...");
-    iers_build::run_regen(base.join("iers_dataset").as_path(), &gen_dir)
-        .unwrap_or_else(|e| panic!("IERS EOP codegen failed: {e}"));
-    eprintln!("IERS EOP regeneration complete");
 }
 
 // ── `de440` feature ───────────────────────────────────────────────────────────

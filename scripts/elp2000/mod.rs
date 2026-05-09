@@ -152,7 +152,7 @@ fn parse_all_elps(dir: &Path) -> Result<BTreeMap<String, Vec<Entry>>> {
     Ok(map)
 }
 
-/// ----------------------  RUST CODE GENERATOR  -------------------
+// ----------------------  RUST CODE GENERATOR  -------------------
 
 /// Provenance fields embedded as a comment header in the generated file.
 #[derive(Debug, Clone, Default)]
@@ -301,7 +301,7 @@ pub fn run(data_dir: &Path) -> Result<()> {
 /// Like [`run`] but writes `elp_data.rs` to `gen_dir` instead of `OUT_DIR`.
 ///
 /// Used by `build.rs` when `SIDERUST_REGEN=1` to overwrite the committed
-/// table in `src/generated/`. Verifies the input dataset SHA-256 against
+/// table in `src/archive/`. Verifies the input dataset SHA-256 against
 /// the `SIDERUST_ELP2000_SHA256` environment variable when set, and
 /// embeds the SHA-256 + retrieval timestamp as a comment header in the
 /// emitted `elp_data.rs`.

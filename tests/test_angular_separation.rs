@@ -127,7 +127,7 @@ fn angular_separation_symmetry_100_random_pairs() {
         // Angular separation is always non-negative; compare raw bit patterns.
         let ba = sep_ab.to_bits();
         let bb = sep_ba.to_bits();
-        let ulp_diff = if ba >= bb { ba - bb } else { bb - ba };
+        let ulp_diff = ba.abs_diff(bb);
 
         assert!(
             ulp_diff <= 4,

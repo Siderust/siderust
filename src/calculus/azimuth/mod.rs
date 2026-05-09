@@ -3,16 +3,29 @@
 
 //! # Unified Azimuth Computation & Event API
 //!
+//! ## Scientific scope
+//!
+//! Topocentric azimuth *A(t)* of a celestial body, expressed in the
+//! North‑clockwise convention (`N = 0°`, `E = 90°`). The body's apparent
+//! direction comes from the chosen analytical or numerical engine
+//! (VSOP87/ELP/JPL DE for solar‑system bodies; ICRS catalogue position
+//! plus proper motion for stars), so accuracy and validity match that
+//! engine. Azimuth is intrinsically circular in `[0°, 360°)`; this module
+//! supports queries that wrap around North by allowing
+//! `min_azimuth > max_azimuth`. No atmospheric refraction is modelled.
+//!
+//! ## Technical scope
+//!
 //! A clean, user‑friendly API for computing target azimuth vs time and
 //! finding events (bearing crossings, azimuth extrema, range periods) for
 //! **any** celestial target.
 //!
 //! ## Module Structure
 //!
-//! - [`types`]   , Core type definitions (events, query)
-//! - [`search`]  , Search options and configuration constants
-//! - [`events`]  , Event finding (crossings, extrema, range periods)
-//! - [`provider`], Trait-based dispatch for bodies
+//! - `types`, Core type definitions (events, query)
+//! - `search`, Search options and configuration constants
+//! - `events`, Event finding (crossings, extrema, range periods)
+//! - `provider`, Trait-based dispatch for bodies
 //!
 //! ## Public Functions
 //!
@@ -28,7 +41,7 @@
 //!
 //! ## Time Scale
 //!
-//! `ModifiedJulianDate` / `Period<MJD>` values in this API are interpreted on
+//! `ModifiedJulianDate` / `Period<ModifiedJulianDate>` values in this API are interpreted on
 //! the TT axis (`tempoch` canonical JD(TT) semantics).  If your inputs are UTC
 //! timestamps, convert them with `ModifiedJulianDate::from_utc(…)` first.
 //!
@@ -63,7 +76,7 @@
 //! // Find when the Sun crosses due-South (180°):
 //! let events = azimuth_crossings(&Sun, &site, window, Degrees::new(180.0), SearchOpts::default());
 //! for e in &events {
-//!     println!("Sun crosses South at MJD {:.6} ({:?})", e.mjd.value(), e.direction);
+//!     println!("Sun crosses South at MJD {:.6} ({:?})", e.mjd.mjd_value(), e.direction);
 //! }
 //!
 //! // Find intervals where azimuth is between East (90°) and West (270°):
@@ -75,6 +88,9 @@
 //! };
 //! let eastern_periods = Sun.azimuth_periods(&query);
 //! ```
+//!
+//! ## References
+//! None.
 
 mod events;
 mod provider;

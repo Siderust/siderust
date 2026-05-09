@@ -18,15 +18,15 @@ use siderust::calculus::lunar::phase::{
 };
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
-use siderust::qtty::{Days, Degree, Degrees, Meter, Quantity};
-use siderust::time::{JulianDate, ModifiedJulianDate, Period, MJD};
+use siderust::qtty::{Days, Degree, Degrees, IlluminationFractions, Meter, Quantity};
+use siderust::time::{JulianDate, ModifiedJulianDate, Period};
 
-fn print_periods(label: &str, periods: &[Period<MJD>]) {
+fn print_periods(label: &str, periods: &[Period<ModifiedJulianDate>]) {
     println!("\n{label}: {} period(s)", periods.len());
     for p in periods {
         let dur_h = ((p).end - (p).start).to::<siderust::qtty::Hour>();
-        let s = p.start.to_utc();
-        let e = p.end.to_utc();
+        let s = p.start.to_chrono().expect("valid UTC");
+        let e = p.end.to_chrono().expect("valid UTC");
         println!(
             "  - {} -> {} ({dur_h})",
             s.format("%Y-%m-%d %H:%M UTC"),
@@ -66,7 +66,7 @@ fn main() {
         start_date,
         NaiveTime::from_hms_opt(0, 0, 0).expect("00:00:00 must be valid"),
     );
-    let jd = JulianDate::from_utc(Utc.from_utc_datetime(&midnight));
+    let jd = JulianDate::from_chrono(Utc.from_utc_datetime(&midnight));
     let mjd = ModifiedJulianDate::from(jd);
     let window = Period::new(mjd, mjd + Days::new(35.0));
     let opts = PhaseSearchOpts::default();
@@ -80,7 +80,10 @@ fn main() {
     println!("Site: lat={lat:.4} deg, lon={lon:.4} deg, h={h_m:.0} m");
     println!("\nGeocentric:");
     println!("  label                 : {}", geo.label());
-    println!("  illuminated fraction  : {:.4}", geo.illuminated_fraction);
+    println!(
+        "  illuminated fraction  : {:.4}",
+        geo.illuminated_fraction.value()
+    );
     println!(
         "  illuminated percent   : {:.2} %",
         geo.illuminated_percent()
@@ -97,10 +100,13 @@ fn main() {
 
     println!("\nTopocentric:");
     println!("  label                 : {}", topo.label());
-    println!("  illuminated fraction  : {:.4}", topo.illuminated_fraction);
+    println!(
+        "  illuminated fraction  : {:.4}",
+        topo.illuminated_fraction.value()
+    );
     println!(
         "  illumination delta    : {:+.4} %",
-        (topo.illuminated_fraction - geo.illuminated_fraction) * 100.0
+        (topo.illuminated_fraction - geo.illuminated_fraction).value() * 100.0
     );
     println!(
         "  elongation            : {}",
@@ -111,7 +117,7 @@ fn main() {
     let events = find_phase_events::<Vsop87Ephemeris>(window, opts);
     println!("\nPrincipal phase events in next 35 days: {}", events.len());
     for ev in &events {
-        let utc = ev.mjd.to_utc();
+        let utc = ev.mjd.to_chrono().expect("valid UTC");
         println!(
             "  - {:>13} at {}",
             ev.kind,
@@ -120,9 +126,24 @@ fn main() {
     }
 
     // 3) Find periods where Moon illumination is in requested phase ranges.
-    let crescent = illumination_range::<Vsop87Ephemeris>(window, 0.05, 0.35, opts);
-    let quarterish = illumination_range::<Vsop87Ephemeris>(window, 0.45, 0.55, opts);
-    let gibbous = illumination_range::<Vsop87Ephemeris>(window, 0.65, 0.95, opts);
+    let crescent = illumination_range::<Vsop87Ephemeris>(
+        window,
+        IlluminationFractions::new(0.05),
+        IlluminationFractions::new(0.35),
+        opts,
+    );
+    let quarterish = illumination_range::<Vsop87Ephemeris>(
+        window,
+        IlluminationFractions::new(0.45),
+        IlluminationFractions::new(0.55),
+        opts,
+    );
+    let gibbous = illumination_range::<Vsop87Ephemeris>(
+        window,
+        IlluminationFractions::new(0.65),
+        IlluminationFractions::new(0.95),
+        opts,
+    );
 
     print_periods("Crescent-like range (5%-35%)", &crescent);
     print_periods("Quarter-like range (45%-55%)", &quarterish);

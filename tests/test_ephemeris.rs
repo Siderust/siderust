@@ -410,7 +410,7 @@ mod vsop87_tests {
     fn position_continuous_over_time() {
         // Check that positions change smoothly (no jumps)
         let jd1 = epoch_2020();
-        let jd2 = jd_from_value(epoch_2020().value() + 1.0);
+        let jd2 = jd_from_value(epoch_2020().jd_value() + 1.0);
 
         let earth1 = Vsop87Ephemeris::earth_barycentric(jd1);
         let earth2 = Vsop87Ephemeris::earth_barycentric(jd2);
@@ -701,7 +701,7 @@ mod generic_ephemeris_tests {
     /// Test that velocity is consistent with position change over time
     fn test_velocity_consistency<E: Ephemeris>() {
         let jd1 = epoch_2020();
-        let jd2 = jd_from_value(epoch_2020().value() + 1.0); // 1 day later
+        let jd2 = jd_from_value(epoch_2020().jd_value() + 1.0); // 1 day later
 
         let earth1 = E::earth_barycentric(jd1);
         let earth2 = E::earth_barycentric(jd2);

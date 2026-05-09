@@ -8,7 +8,7 @@
 //! It implements [`DynEphemeris`](super::DynEphemeris) (instance-based,
 //! object-safe).
 
-use super::{AuPerDay, DynEphemeris};
+use super::{AuPerDay, DynEphemeris, EphemerisError};
 use crate::calculus::jpl::bodies;
 use crate::calculus::jpl::eval::DynSegmentDescriptor;
 use crate::coordinates::{
@@ -116,11 +116,27 @@ impl std::fmt::Debug for RuntimeEphemeris {
 
 impl DynEphemeris for RuntimeEphemeris {
     #[inline]
+    fn try_sun_barycentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        bodies::try_dyn_sun_barycentric(jd, &self.inner.sun)
+    }
+
+    #[inline]
     fn sun_barycentric(
         &self,
         jd: JulianDate,
     ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
         bodies::dyn_sun_barycentric(jd, &self.inner.sun)
+    }
+
+    #[inline]
+    fn try_earth_barycentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        bodies::try_dyn_earth_barycentric(jd, &self.inner.emb, &self.inner.moon)
     }
 
     #[inline]
@@ -132,6 +148,14 @@ impl DynEphemeris for RuntimeEphemeris {
     }
 
     #[inline]
+    fn try_earth_heliocentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        bodies::try_dyn_earth_heliocentric(jd, &self.inner.sun, &self.inner.emb, &self.inner.moon)
+    }
+
+    #[inline]
     fn earth_heliocentric(
         &self,
         jd: JulianDate,
@@ -140,8 +164,24 @@ impl DynEphemeris for RuntimeEphemeris {
     }
 
     #[inline]
+    fn try_earth_barycentric_velocity(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
+        bodies::try_dyn_earth_barycentric_velocity(jd, &self.inner.emb, &self.inner.moon)
+    }
+
+    #[inline]
     fn earth_barycentric_velocity(&self, jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
         bodies::dyn_earth_barycentric_velocity(jd, &self.inner.emb, &self.inner.moon)
+    }
+
+    #[inline]
+    fn try_moon_geocentric(
+        &self,
+        jd: JulianDate,
+    ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
+        bodies::try_dyn_moon_geocentric(jd, &self.inner.moon)
     }
 
     #[inline]
@@ -158,7 +198,7 @@ mod tests {
     use super::*;
     use crate::data::spk::{BspSegments, SegmentData};
 
-    const SECONDS_PER_DAY: f64 = 86400.0;
+    const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
     const JD_J2000: f64 = 2451545.0;
 
     /// Create a minimal SegmentData with constant position (x_km, y_km, z_km).
@@ -223,45 +263,45 @@ mod tests {
     fn sun_barycentric_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let pos = eph.sun_barycentric(jd_mid());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
     fn earth_barycentric_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let pos = eph.earth_barycentric(jd_mid());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
     fn earth_heliocentric_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let pos = eph.earth_heliocentric(jd_mid());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]
     fn earth_barycentric_velocity_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let vel = eph.earth_barycentric_velocity(jd_mid());
-        assert!(vel.x().value().is_finite());
-        assert!(vel.y().value().is_finite());
-        assert!(vel.z().value().is_finite());
+        assert!(vel.x().is_finite());
+        assert!(vel.y().is_finite());
+        assert!(vel.z().is_finite());
     }
 
     #[test]
     fn moon_geocentric_is_finite() {
         let eph = RuntimeEphemeris::from_segments(make_bsp_segments());
         let pos = eph.moon_geocentric(jd_mid());
-        assert!(pos.x().value().is_finite());
-        assert!(pos.y().value().is_finite());
-        assert!(pos.z().value().is_finite());
+        assert!(pos.x().is_finite());
+        assert!(pos.y().is_finite());
+        assert!(pos.z().is_finite());
     }
 
     #[test]

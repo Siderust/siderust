@@ -3,15 +3,34 @@
 
 //! Single source of truth for **fixed J2000 rotations**.
 //!
+//! ## Scientific scope
+//!
+//! The J2000.0 epoch defines two interrelated fixed rotations that appear
+//! throughout astrometric software:
+//!
+//! 1. **Frame bias** (`rb`): a ~80 µas rotation from the ICRS to the J2000.0
+//!    mean equator/equinox. It arises because the ICRS pole and equinox do not
+//!    coincide exactly with the classical J2000.0 definitions.
+//! 2. **Mean obliquity** (ε₀ = 84 381.406″): the tilt between Earth's mean
+//!    equatorial and ecliptic planes at J2000.0, used to rotate between
+//!    equatorial and ecliptic coordinates.
+//!
+//! ## Technical scope
+//!
 //! Every fixed frame rotation involving ICRS, EquatorialMeanJ2000 and
 //! EclipticMeanJ2000 is derived from the two constants in this module:
 //!
 //! 1. [`FRAME_BIAS_ICRS_TO_J2000`] – the IAU 2006 frame bias matrix `rb`
-//!    (equivalent to the output of ERFA `eraBp06` at J2000.0).
-//! 2. The J2000 mean obliquity ε₀ = 84381.406″ (IAU 2006, `eraObl06`).
+//!    (equivalent to the output of SOFA `iauBp06` at J2000.0).
+//! 2. The J2000 mean obliquity ε₀ = 84 381.406″ (IAU 2006, `iauObl06`).
 //!
 //! Both the legacy `TransformFrame` impls and the `FrameRotationProvider`
 //! pipeline use this module so that the bias/obliquity values cannot diverge.
+//!
+//! ## References
+//!
+//! - Capitaine, N. & Wallace, P. T. (2006). *Astronomical Journal*, 132, 2922.
+//! - SOFA routines `iauBp06`, `iauObl06`.
 
 use crate::astro::precession;
 use affn::Rotation3;
@@ -19,7 +38,7 @@ use std::sync::OnceLock;
 
 /// Frame bias rotation matrix from ICRS to mean equator/equinox of J2000.0.
 ///
-/// This is the `rb` matrix produced by ERFA `eraBp06(2451545.0, 0.0, …)`,
+/// This is the `rb` matrix produced by SOFA `iauBp06(2451545.0, 0.0, …)`,
 /// which constructs the bias via the IAU 2006 Fukushima-Williams
 /// parametrisation at epoch J2000.0:
 ///
@@ -28,7 +47,7 @@ use std::sync::OnceLock;
 /// where γb = −0.052928″, φb = 84381.412819″, ψb = −0.041775″, and
 /// εA = obl06(J2000.0) = 84381.406″.
 ///
-/// The off-diagonal signs follow the SOFA/ERFA convention: `rb[0][1] < 0`.
+/// The off-diagonal signs follow the SOFA convention: `rb[0][1] < 0`.
 fn frame_bias_matrix() -> Rotation3 {
     static FRAME_BIAS: OnceLock<Rotation3> = OnceLock::new();
     *FRAME_BIAS
@@ -53,7 +72,7 @@ pub(crate) fn frame_bias_j2000_to_icrs() -> Rotation3 {
 
 /// J2000 mean obliquity ε₀ as `crate::qtty::Radians`.
 ///
-/// 84381.406″ × π / 648000 (IAU 2006, matches ERFA `eraObl06` at J2000.0).
+/// 84381.406″ × π / 648000 (IAU 2006, matches SOFA `iauObl06` at J2000.0).
 #[inline]
 pub(crate) fn j2000_obliquity() -> crate::qtty::Radians {
     crate::qtty::Radians::new(
@@ -119,16 +138,16 @@ mod tests {
         }
     }
 
-    /// The bias matrix must match ERFA `bp06` rb to double-precision level.
+    /// The bias matrix must match SOFA `bp06` rb to double-precision level.
     ///
-    /// Reference values: `erfa.bp06(2451545.0, 0.0)` → `rb`.
+    /// Reference values: `iauBp06(2451545.0, 0.0)` → `rb`.
     #[test]
-    fn bias_matches_erfa_bp06_rb() {
+    fn bias_matches_sofa_bp06_rb() {
         let rb = frame_bias_icrs_to_j2000();
         let m = rb.as_matrix();
 
-        // ERFA bp06 rb at J2000.0 (IAU 2006 Fukushima-Williams parametrisation)
-        let erfa_rb: [[f64; 3]; 3] = [
+        // SOFA bp06 rb at J2000.0 (IAU 2006 Fukushima-Williams parametrisation)
+        let sofa_rb: [[f64; 3]; 3] = [
             [
                 0.999_999_999_999_994_1,
                 -7.078_368_960_971_556e-8,
@@ -149,22 +168,22 @@ mod tests {
         for i in 0..3 {
             for j in 0..3 {
                 assert!(
-                    (m[i][j] - erfa_rb[i][j]).abs() < 1e-15,
-                    "rb[{i}][{j}]: siderust {:.17e} vs ERFA {:.17e}",
+                    (m[i][j] - sofa_rb[i][j]).abs() < 1e-15,
+                    "rb[{i}][{j}]: siderust {:.17e} vs SOFA {:.17e}",
                     m[i][j],
-                    erfa_rb[i][j],
+                    sofa_rb[i][j],
                 );
             }
         }
     }
 
-    /// Off-diagonal sign convention: rb[0][1] must be negative (SOFA/ERFA).
+    /// Off-diagonal sign convention: rb[0][1] must be negative (SOFA).
     #[test]
-    fn bias_off_diagonal_signs_match_erfa() {
+    fn bias_off_diagonal_signs_match_sofa() {
         let rb = frame_bias_icrs_to_j2000();
         let m = rb.as_matrix();
 
-        // ERFA convention:  rb[0][1] < 0,  rb[1][0] > 0
+        // SOFA convention: rb[0][1] < 0, rb[1][0] > 0
         assert!(
             m[0][1] < 0.0,
             "rb[0][1] should be negative, got {}",
@@ -187,12 +206,12 @@ mod tests {
         );
     }
 
-    /// Applying bias to basis vectors must produce sub-mas agreement with ERFA.
+    /// Applying bias to basis vectors must produce sub-mas agreement with SOFA.
     #[test]
-    fn bias_on_basis_vectors_agrees_with_erfa() {
+    fn bias_on_basis_vectors_agrees_with_sofa() {
         let rb = frame_bias_icrs_to_j2000();
 
-        // ERFA reference outputs for unit basis vectors
+        // SOFA reference outputs for unit basis vectors
         let cases: [([f64; 3], [f64; 3]); 3] = [
             (
                 [1.0, 0.0, 0.0],

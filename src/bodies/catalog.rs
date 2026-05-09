@@ -1,56 +1,63 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Star Catalog Module
+//! # Star Catalog
 //!
-//! This module defines a **compile‑time** catalog of some of the brightest and most
-//! frequently referenced stars in the night sky.  Each entry is a `const`
-//! [`Star`], fully initialised with its
-//! * distance,
-//! * mass,
-//! * radius,
-//! * bolometric luminosity, and
-//! * **equatorial coordinates referenced to the J2000.0 epoch**.
+//! ## Scientific scope
 //!
-//! All quantities use strongly typed physical‑unit wrappers from the crate’s
-//! [`units`] module, providing both type‑safety and convenience.  Because every
-//! field is available at compile‑time, the constants can be inlined into
-//! `const fn` contexts or embedded in `no_std` targets where dynamic allocation
-//! is undesirable.
+//! This module is a small, compile-time catalog of some of the brightest
+//! and most-referenced stars in the night sky. All entries are referenced
+//! to the geocentric mean equator and equinox of J2000.0 (ICRS-compatible),
+//! with positions expressed in right ascension and declination (degrees)
+//! and distances in light-years. Luminosities are bolometric (total
+//! radiated power) in units of the nominal solar luminosity (L☉ = 3.828 ×
+//! 10²⁶ W, IAU 2015 nominal). Masses and radii are in nominal solar units
+//! (M☉, R☉).
 //!
-//! ## Coordinate system
-//! Positions are expressed in the Earth‑centred *mean equator and equinox of
-//! J2000.0*.  Right‑ascension (RA) and declination (Dec) are stored in
-//! [`Degrees`]; distance is expressed in [`LightYear`].  A star’s position is
-//! wrapped in a [`Target`] tagged with [`JulianDate::J2000`] so that downstream
-//! algorithms can perform precession or proper‑motion corrections when needed.
+//! The catalog is suitable for illustrative examples, naked-eye observation
+//! planning, and as reference inputs to proper-motion propagation. For
+//! high-precision astrometry, use the Hipparcos (HIP) or Gaia (DR3)
+//! catalog entries with full proper-motion and parallax data.
+//!
+//! ## Technical scope
+//!
+//! Each constant is a `'static` [`Star`], fully initialised with its
+//! distance ([`LightYears`]), mass ([`SolarMasses`]), radius
+//! ([`SolarRadiuses`]), luminosity ([`SolarLuminosities`]), and equatorial
+//! J2000.0 coordinate wrapped in [`CoordinateWithPM`].  All values are
+//! available at compile-time; no dynamic allocation occurs.
+//!
+//! Stars included:
+//! | Constant | Common/Bayer name | Constellation | V-mag |
+//! |----------|-------------------|---------------|-------|
+//! | [`VEGA`]       | Vega / α Lyr   | Lyra          | +0.03 |
+//! | [`POLARIS`]    | Polaris / α UMi | Ursa Minor   | +1.98 |
+//! | [`SIRIUS`]     | Sirius / α CMa  | Canis Major  | −1.46 |
+//! | [`CANOPUS`]    | Canopus / α Car | Carina       | −0.72 |
+//! | [`ARCTURUS`]   | Arcturus / α Boo | Boötes      | −0.04 |
+//! | [`RIGEL`]      | Rigel / β Ori   | Orion        | +0.12 |
+//! | [`BETELGEUSE`] | Betelgeuse / α Ori | Orion     | +0.50 (var) |
+//! | [`PROCYON`]    | Procyon / α CMi | Canis Minor  | +0.34 |
+//! | [`ALDEBARAN`]  | Aldebaran / α Tau | Taurus     | +0.86 |
+//! | [`ALTAIR`]     | Altair / α Aql  | Aquila       | +0.76 |
+//!
+//! ## References
+//!
+//! - van Leeuwen, F. (2007). *Hipparcos, the New Reduction of the Raw Data*.
+//!   Astrophysics and Space Science Library 350. doi:10.1007/978-1-4020-6342-8
+//! - IAU Working Group on Nominal Units for Stellar and Planetary Astronomy
+//!   (2015). Resolution B3. doi:10.3847/0004-6256/152/2/41
 //!
 //! ## Example
 //! ```rust
 //! use siderust::bodies::catalog::VEGA;
 //! println!(
-//!     "{} is {:.1} ly away and shines with {:.0} L☉",
+//!     "{} is {:.1} ly away and shines with {:.0} L☉",
 //!     VEGA.name,
 //!     VEGA.distance,
 //!     VEGA.luminosity
 //! );
 //! ```
-//!
-//! ## Stars included
-//! | Constant | Common / Bayer name | Constellation | V‑mag |
-//! |----------|---------------------|---------------|-------|
-//! | [`VEGA`] | Vega / α Lyrae | Lyra | +0.03 |
-//! | [`POLARIS`] | Polaris / α UMi | Ursa Minor | +1.98 |
-//! | [`SIRIUS`] | Sirius / α CMa | Canis Major | −1.46 |
-//! | [`CANOPUS`] | Canopus / α Car | Carina | −0.72 |
-//! | [`ARCTURUS`] | Arcturus / α Boo | Boötes | −0.04 |
-//! | [`RIGEL`] | Rigel / β Ori | Orion | +0.12 |
-//! | [`BETELGEUSE`] | Betelgeuse / α Ori | Orion | +0.50 (var) |
-//! | [`PROCYON`] | Procyon / α CMi | Canis Minor | +0.34 |
-//! | [`ALDEBARAN`] | Aldebaran / α Tau | Taurus | +0.86 |
-//! | [`ALTAIR`] | Altair / α Aql | Aquila | +0.76 |
-//!
-//! ---
 
 use super::Star;
 use crate::coordinates::spherical::position::EquatorialMeanJ2000;
