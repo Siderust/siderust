@@ -1396,6 +1396,17 @@ siderust_status_t siderust_in_azimuth_range(struct siderust_subject_t subject,
                                             tempoch_period_mjd_t **out,
                                             uintptr_t *count);
 
+// Periods when a subject's azimuth is outside [min_deg, max_deg].
+
+siderust_status_t siderust_outside_azimuth_range(struct siderust_subject_t subject,
+                                                 struct siderust_geodetic_t observer,
+                                                 tempoch_period_mjd_t window,
+                                                 double min_deg,
+                                                 double max_deg,
+                                                 struct siderust_search_opts_t opts,
+                                                 tempoch_period_mjd_t **out,
+                                                 uintptr_t *count);
+
 // Create a generic target from the tagged target payload.
 //
 // This is the canonical constructor for the compact FFI target ABI. Existing
