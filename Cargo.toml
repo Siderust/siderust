@@ -4,12 +4,6 @@ members = [
     "siderust-ffi",
 ]
 
-[patch.crates-io]
-affn = { git = "https://github.com/Siderust/affn.git", branch = "main" }
-cheby = { git = "https://github.com/Siderust/cheby.git", branch = "main" }
-qtty = { git = "https://github.com/Siderust/qtty.git", branch = "main" }
-tempoch = { git = "https://github.com/Siderust/tempoch.git", branch = "main" }
-
 
 [package]
 name = "siderust"
@@ -39,9 +33,9 @@ tables = []
 atmosphere = []
 
 [dependencies]
-affn = { version = "0.6.2", git = "https://github.com/Siderust/affn.git", branch = "main", features = ["astro"] }
-cheby = "0.1.0"
-qtty = { version = "0.7.0", git = "https://github.com/Siderust/qtty.git", branch = "main", features = ["astro", "radiometry"] }
+affn = { version = "0.7.0", features = ["astro"] }
+cheby = "0.2.0"
+qtty = { version = "0.7.1", features = ["astro", "radiometry"] }
 tempoch = "0.4.3"
 approx = "0.5"
 chrono = "0.4.44"
