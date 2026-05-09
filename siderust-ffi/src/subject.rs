@@ -22,7 +22,9 @@ use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::angular::Degrees;
 use qtty::*;
-use siderust::calculus::azimuth::{azimuth_crossings, azimuth_extrema, in_azimuth_range, outside_azimuth_range};
+use siderust::calculus::azimuth::{
+    azimuth_crossings, azimuth_extrema, in_azimuth_range, outside_azimuth_range,
+};
 use siderust::AltitudePeriodsProvider;
 use siderust::AzimuthProvider;
 use tempoch::ModifiedJulianDate;
