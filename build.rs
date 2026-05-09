@@ -118,19 +118,13 @@ fn regen_tables() {
 /// the library falls back to `Vsop87Ephemeris` without downloading the BSP.
 #[cfg(feature = "de440")]
 fn build_de440() {
-    if jpl_stub_active() {
+    if jpl_stub_active_for("de440") {
         println!("cargo:rustc-cfg=siderust_mock_de440");
     }
     let de440_dir = datasets_base_dir().join("de440_dataset");
     eprintln!("Building DE440 data...");
     de440_build::run(de440_dir.as_path()).unwrap_or_else(|e| panic!("DE440 codegen failed: {e}"));
     eprintln!("DE440 data generation complete");
-}
-
-/// Returns `true` when `SIDERUST_JPL_STUB` requests stubbing for DE440.
-#[cfg(feature = "de440")]
-fn jpl_stub_active() -> bool {
-    jpl_stub_active_for("de440")
 }
 
 // ── `de441` feature ───────────────────────────────────────────────────────────
@@ -141,7 +135,7 @@ fn jpl_stub_active() -> bool {
 /// the library falls back to `Vsop87Ephemeris` without downloading the BSP.
 #[cfg(feature = "de441")]
 fn build_de441() {
-    if jpl_stub_active_de441() {
+    if jpl_stub_active_for("de441") {
         println!("cargo:rustc-cfg=siderust_mock_de441");
     }
     let de441_dir = datasets_base_dir().join("de441_dataset");
@@ -150,11 +144,7 @@ fn build_de441() {
     eprintln!("DE441 data generation complete");
 }
 
-/// Returns `true` when `SIDERUST_JPL_STUB` requests stubbing for DE441.
-#[cfg(feature = "de441")]
-fn jpl_stub_active_de441() -> bool {
-    jpl_stub_active_for("de441")
-}
+// ── Shared JPL helpers ────────────────────────────────────────────────────────
 
 #[cfg(any(feature = "de440", feature = "de441"))]
 fn jpl_stub_active_for(dataset: &str) -> bool {

@@ -12,7 +12,6 @@ header = """
 [defines]
 "feature = serde" = "SIDERUST_FFI_HAS_SERDE"
 "feature = de440" = "SIDERUST_FFI_HAS_DE440"
-"feature = de441" = "SIDERUST_FFI_HAS_DE441"
 "feature = runtime-data" = "SIDERUST_FFI_HAS_RUNTIME_DATA"
 
 [export]

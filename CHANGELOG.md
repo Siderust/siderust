@@ -4,9 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
-
-## [0.7.0] - 07/05/2026
+## [0.7.0] - 2026-05-07
 
 This release contains **breaking API changes** throughout the public surface.
 Callers must migrate before upgrading.
@@ -186,6 +184,16 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
   * `SphericalPosition::new_raw` → `new_unchecked` (thirteen call sites).
   * `SphericalPosition::new_raw_with_params` → `new_unchecked_with_params` (four call sites).
   * `SphericalDirection::new_raw` → `new_unchecked` (nine call sites).
+* Updated altitude benchmarks (`benches/solar_altitude.rs`, `moon_altitude.rs`,
+  `star_altitude.rs`, `altitude_comparison.rs`) to use `ModifiedJulianDate::from_chrono`
+  (replaces the removed `from_utc`) and `Period<ModifiedJulianDate>` (replaces `Period<MJD>`).
+* Removed erroneous `Eq` derive from `ConicError`: the `OutOfRange { value: f64 }` variant
+  contains an `f64` which does not implement `Eq`.
+* Fixed `build.rs` to eliminate duplicate `jpl_daf` / `jpl_pipeline` / `jpl_spk` module
+  declarations that caused `E0428` errors when both `de440` and `de441` features are enabled.
+* Added `de441 = []` to `[features]` in `Cargo.toml` and wired full `de441` build support
+  in `build.rs` (matching the existing `de440` pipeline), resolving `unexpected cfg condition
+  value: de441` warnings and `siderust_mock_de441` cfg check-cfg errors.
 
 ### Added
 * **Generic 1D and 2D gridded tables** under the new optional `tables`
@@ -266,6 +274,18 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
 
 ### Fixed
 * FFI orbit propagation can now preserve the declared orbit reference center in output metadata via `siderust_kepler_position_ex`, instead of always tagging results as heliocentric.
+* Implemented `serde::Serialize` / `serde::Deserialize` for `time::JulianDate`
+  and `time::ModifiedJulianDate` under the `serde` feature flag; these types
+  are now serialisable when derived in downstream structs (`ConicOrbit`,
+  `MeanMotionOrbit`, `CoordinateWithPM`, etc.).
+* Replaced manual `>= &&<=` range checks in `atmosphere::mie` tests with
+  `RangeInclusive::contains` (`clippy::manual_range_contains`).
+* Replaced `.max(0).min(35)` clamp pattern in `tables::grid2d` with
+  `clamp(0, 35)` (`clippy::manual_clamp`).
+* Removed unused `use serde_json;` import from `tests/test_serde.rs`
+  (`clippy::unused_imports` with `--all-features`).
+
+## [0.6.1] - 2026-05-09
 
 ## [0.6.0] - 08/03/2026
 

@@ -251,7 +251,7 @@ mod tests {
         let eop = EopValues::default(); // dut1 = 0 ⇒ UT1 ≡ UTC
         let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
 
-        let jd_tt_t: tempoch::JulianDate<TT> = jd().into();
+        let jd_tt_t: tempoch::JulianDate<TT> = jd();
         let ctx = TimeContext::with_builtin_eop();
         let bundled_ut1 = jd_tt_t.to_with::<UT1>(&ctx).expect("bundled UT1");
         let bundled_ut1_jd = bundled_ut1.to::<tempoch::JD>().raw().value();
@@ -292,7 +292,7 @@ mod tests {
         };
         let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
 
-        let jd_tt_t: tempoch::JulianDate<TT> = jd().into();
+        let jd_tt_t: tempoch::JulianDate<TT> = jd();
         let ctx = TimeContext::with_builtin_eop();
         let bundled_ut1 = jd_tt_t.to_with::<UT1>(&ctx).expect("bundled UT1");
         let bundled_ut1_jd = bundled_ut1.to::<tempoch::JD>().raw().value();
