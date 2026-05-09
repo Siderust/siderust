@@ -9,18 +9,13 @@ use siderust::time::{Interval, JulianDate, ModifiedJulianDate, UTC};
 
 fn main() {
     let now_utc = Utc::now();
-    let jd = JulianDate::from_chrono(now_utc);
+    let jd = JulianDate::from_utc(now_utc);
     let mjd: ModifiedJulianDate = jd.into();
 
     println!("UTC now : {}", now_utc.to_rfc3339());
     println!("JD (TT) : {}", jd);
     println!("MJD(TT) : {}", mjd);
-    println!(
-        "Back UTC: {}",
-        jd.to_chrono()
-            .map(|dt| dt.to_rfc3339())
-            .unwrap_or_else(|| "N/A".into())
-    );
+    println!("Back UTC: {}", jd.to_utc().to_rfc3339());
 
     let tomorrow = jd + Days::new(1.0);
     let window = Interval::<JulianDate>::new(jd, tomorrow);

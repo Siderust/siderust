@@ -163,8 +163,8 @@ macro_rules! dispatch_subject {
             }
             $crate::types::SiderustSubjectKind::Icrs => {
                 let __icrs_owned = siderust::coordinates::spherical::direction::ICRS::new(
-                    qtty::angular::Degrees::new(__subj.icrs_dir.azimuth_deg),
-                    qtty::angular::Degrees::new(__subj.icrs_dir.polar_deg),
+                    Degrees::new(__subj.icrs_dir.azimuth_deg),
+                    Degrees::new(__subj.icrs_dir.polar_deg),
                 );
                 let $provider = &__icrs_owned;
                 $action

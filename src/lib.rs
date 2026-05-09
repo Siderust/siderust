@@ -96,7 +96,7 @@
 //! use chrono::prelude::*;
 //!
 //! // 1. Select an epoch (UTC now to JD)
-//! let jd = JulianDate::from_chrono(Utc::now());
+//! let jd = JulianDate::from_utc(Utc::now());
 //!
 //! // 2. Compute barycentric ecliptic coordinates via VSOP87
 //! let mars = Mars::vsop87e(jd);

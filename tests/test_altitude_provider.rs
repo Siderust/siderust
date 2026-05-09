@@ -59,8 +59,8 @@ fn assert_periods_valid(
     periods: &[Period<ModifiedJulianDate>],
     window: Period<ModifiedJulianDate>,
 ) {
-    let win_start = window.start.mjd_value();
-    let win_end = window.end.mjd_value();
+    let win_start = window.start.value();
+    let win_end = window.end.value();
 
     for (i, p) in periods.iter().enumerate() {
         // Positive duration
@@ -72,17 +72,17 @@ fn assert_periods_valid(
         );
         // Within window
         assert!(
-            p.start.mjd_value() >= win_start - 1e-9,
+            p.start.value() >= win_start - 1e-9,
             "Period {} starts before window: {} < {}",
             i,
-            p.start.mjd_value(),
+            p.start.value(),
             win_start
         );
         assert!(
-            p.end.mjd_value() <= win_end + 1e-9,
+            p.end.value() <= win_end + 1e-9,
             "Period {} ends after window: {} > {}",
             i,
-            p.end.mjd_value(),
+            p.end.value(),
             win_end
         );
     }
@@ -90,7 +90,7 @@ fn assert_periods_valid(
     // Sorted and non-overlapping
     for w in periods.windows(2) {
         assert!(
-            w[0].end.mjd_value() <= w[1].start.mjd_value() + 1e-9,
+            w[0].end.value() <= w[1].start.value() + 1e-9,
             "Periods overlap or out of order: {:?} vs {:?}",
             w[0],
             w[1]
@@ -222,11 +222,11 @@ fn icrs_direction_matches_star() {
     );
     for (sp, dp) in star_periods.iter().zip(dir_periods.iter()) {
         assert!(
-            (sp.start.mjd_value() - dp.start.mjd_value()).abs() < 1e-6,
+            (sp.start.value() - dp.start.value()).abs() < 1e-6,
             "Start mismatch"
         );
         assert!(
-            (sp.end.mjd_value() - dp.end.mjd_value()).abs() < 1e-6,
+            (sp.end.value() - dp.end.value()).abs() < 1e-6,
             "End mismatch"
         );
     }

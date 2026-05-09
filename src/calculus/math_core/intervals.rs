@@ -388,7 +388,7 @@ mod tests {
     }
 
     fn mjd_scalar(t: Mjd) -> f64 {
-        t.mjd_value()
+        t.value()
     }
 
     #[test]

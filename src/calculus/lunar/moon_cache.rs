@@ -638,7 +638,7 @@ mod tests {
     #[test]
     fn find_and_label_crossings_sine_wave() {
         // Test with a known sine wave: sin(2π(t+0.05)) crosses 0 at known times
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.mjd_value() + 0.05)).sin());
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.value() + 0.05)).sin());
         let period = Period::new(Mjd::new(0.0), Mjd::new(1.0));
         let step = Days::new(0.01);
 

@@ -69,7 +69,7 @@ fn brent_with_values_saves_evaluations() {
     let count = Cell::new(0usize);
     let f = |t: Mjd| -> Radians {
         count.set(count.get() + 1);
-        Radians::new(t.mjd_value().sin())
+        Radians::new(t.value().sin())
     };
     let f_lo = Radians::new((3.0_f64).sin());
     let f_hi = Radians::new((4.0_f64).sin());
@@ -100,11 +100,11 @@ fn brent_tol_respects_relaxed_tolerance() {
         Period::new(Mjd::new(3.0), Mjd::new(4.0)),
         Radians::new((3.0_f64).sin()),
         Radians::new((4.0_f64).sin()),
-        |t: Mjd| Radians::new(t.mjd_value().sin()),
+        |t: Mjd| Radians::new(t.value().sin()),
         Days::new(1e-3),
     )
     .expect("relaxed tolerance");
-    assert!((root.mjd_value() - std::f64::consts::PI).abs() < 2e-3);
+    assert!((root.value() - std::f64::consts::PI).abs() < 2e-3);
 }
 
 #[test]

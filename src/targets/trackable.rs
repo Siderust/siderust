@@ -24,9 +24,6 @@
 //! | `Star` | `direction::ICRS` | extracts RA/Dec from stored coordinate |
 //! | `Sun`, `Mercury` … `Neptune` | `CoordinateWithPM<Position<Bary, Ecl, AU>>` | VSOP87 |
 //! | `Moon` | `Position<Geocentric, Ecl, Km>` | ELP2000 |
-//!
-//! The implementations for `Star` and solar-system bodies live in the `bodies`
-//! module to keep `targets` free of `bodies` dependencies.
 
 use crate::coordinates::spherical::direction;
 use crate::time::JulianDate;
@@ -87,24 +84,15 @@ impl<T: Clone> Trackable for CoordinateWithPM<T> {
 }
 
 // =============================================================================
-// Implementation: Star  (extracts RA/Dec from stored coordinate)
-// =============================================================================
-// NOTE: impl Trackable for Star<'_> lives in bodies/stars.rs to avoid a
-// bodies ↔ targets circular dependency.
-
-// =============================================================================
-// Implementations: Solar-system unit types  (VSOP87 / ELP2000)
-// =============================================================================
-// NOTE: impl_trackable_vsop87! and impl Trackable for Moon live in
-// bodies/solar_system.rs for the same reason.
-
-// =============================================================================
 // Tests
-// =============================================================================
+// ============================================================================= 
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::bodies::catalog;
+    use crate::bodies::solar_system;
+    use crate::qtty::*;
     use crate::time::JulianDate;
 
     #[test]
@@ -117,6 +105,66 @@ mod tests {
         let at_j2050 = dir.track(JulianDate::J2000 + crate::qtty::Days::new(365.25 * 50.0));
         assert_eq!(at_j2000.ra(), at_j2050.ra());
         assert_eq!(at_j2000.dec(), at_j2050.dec());
+    }
+
+    #[test]
+    fn star_produces_icrs_direction() {
+        let sirius = &catalog::SIRIUS;
+        let dir = sirius.track(JulianDate::J2000);
+        // Sirius: RA ≈ 101.287°, Dec ≈ −16.716°
+        let ra_diff = dir.ra() - Degrees::new(101.287);
+        assert!(ra_diff <= Degrees::new(0.01) && ra_diff >= -Degrees::new(0.01));
+        let dec_diff = dir.dec() + Degrees::new(16.716);
+        assert!(dec_diff <= Degrees::new(0.01) && dec_diff >= -Degrees::new(0.01));
+    }
+
+    #[test]
+    fn sun_produces_barycentric_position() {
+        let pos = solar_system::Sun.track(JulianDate::J2000);
+        // Sun's barycentric distance from SSB is small (< 0.02 AU)
+        let dist = pos.position.distance();
+        assert!(
+            dist < AstronomicalUnits::new(0.02),
+            "Sun should be near SSB, got {}",
+            dist
+        );
+    }
+
+    #[test]
+    fn earth_changes_with_time() {
+        let p1 = solar_system::Earth.track(JulianDate::J2000);
+        let p2 = solar_system::Earth.track(JulianDate::J2000 + crate::qtty::Days::new(182.625));
+        // After half a year, Earth should be on the opposite side (~2 AU apart)
+        let sep = p1.position.distance_to(&p2.position);
+        assert!(
+            sep > AstronomicalUnits::new(1.0),
+            "Half-year separation should be > 1 AU, got {}",
+            sep
+        );
+    }
+
+    #[test]
+    fn moon_produces_geocentric_position() {
+        let pos = solar_system::Moon.track(JulianDate::J2000);
+        // Moon is ~384 400 km from Earth center
+        let dist = pos.distance();
+        assert!(
+            dist >= Kilometers::new(350_000.0) && dist <= Kilometers::new(410_000.0),
+            "Moon distance should be ~384 400 km, got {}",
+            dist
+        );
+    }
+
+    #[test]
+    fn planets_produce_nonzero_positions() {
+        let jd = JulianDate::J2000;
+        let mars = solar_system::Mars.track(jd);
+        let dist = mars.position.distance();
+        assert!(
+            dist > AstronomicalUnits::new(1.0),
+            "Mars should be > 1 AU from SSB, got {}",
+            dist
+        );
     }
 
     #[test]

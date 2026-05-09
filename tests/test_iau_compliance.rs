@@ -187,7 +187,7 @@ fn null_eop_produces_ut1_equal_utc() {
     let jd_utc = JulianDate::new(2_460_000.5);
     let vals = eop.eop_at(jd_utc);
     let jd_ut1 = vals.jd_ut1(jd_utc);
-    assert_eq!(jd_ut1.jd_value(), jd_utc.jd_value());
+    assert_eq!(jd_ut1.value(), jd_utc.value());
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

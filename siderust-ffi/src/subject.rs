@@ -20,12 +20,13 @@ use crate::altitude::{crossings_to_c, culminations_to_c, periods_to_c, window_fr
 use crate::azimuth::{vec_az_crossings_to_c, vec_az_extrema_to_c};
 use crate::error::SiderustStatus;
 use crate::types::*;
-use qtty::angular::Degrees;
-use qtty::*;
-use siderust::calculus::azimuth::{azimuth_crossings, azimuth_extrema, in_azimuth_range};
+use siderust::calculus::azimuth::{
+    azimuth_crossings, azimuth_extrema, in_azimuth_range, outside_azimuth_range,
+};
+use siderust::qtty::*;
+use siderust::time::ModifiedJulianDate;
 use siderust::AltitudePeriodsProvider;
 use siderust::AzimuthProvider;
-use tempoch::ModifiedJulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Altitude, instantaneous
@@ -333,9 +334,39 @@ pub extern "C" fn siderust_in_azimuth_range(
     }}
 }
 
-// ═══════════════════════════════════════════════════════════════════════════
-// Tests
-// ═══════════════════════════════════════════════════════════════════════════
+/// Periods when a subject's azimuth is outside [min_deg, max_deg].
+#[no_mangle]
+pub extern "C" fn siderust_outside_azimuth_range(
+    subject: SiderustSubject,
+    observer: SiderustGeodetict,
+    window: TempochPeriodMjd,
+    min_deg: f64,
+    max_deg: f64,
+    opts: SiderustSearchOpts,
+    out: *mut *mut TempochPeriodMjd,
+    count: *mut usize,
+) -> SiderustStatus {
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_subject!(subject, |p| {
+            periods_to_c(
+                outside_azimuth_range(
+                    p,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(min_deg),
+                    Degrees::new(max_deg),
+                    opts.to_rust(),
+                ),
+                out,
+                count,
+            )
+        })
+    }}
+}
 
 #[cfg(test)]
 mod tests {

@@ -54,7 +54,7 @@ use serde::{Deserialize, Serialize};
 pub use affn::conic::ConicKind;
 
 /// Validation and propagation errors for conic-based orbit models.
-#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ConicError {
     /// Eccentricity must be finite and non-negative.
@@ -83,6 +83,13 @@ pub enum ConicError {
     InvalidMeanMotion,
     /// The hyperbolic anomaly solver failed to converge.
     HyperbolicSolverFailed,
+    /// A parameter value is outside its valid range.
+    OutOfRange {
+        /// Name of the out-of-range field.
+        field: &'static str,
+        /// The offending value.
+        value: f64,
+    },
 }
 
 impl std::fmt::Display for ConicError {
@@ -112,6 +119,9 @@ impl std::fmt::Display for ConicError {
             Self::HyperbolicSolverFailed => {
                 write!(f, "hyperbolic anomaly solver failed to converge")
             }
+            Self::OutOfRange { field, value } => {
+                write!(f, "parameter '{field}' has out-of-range value {value}")
+            }
         }
     }
 }
@@ -125,7 +135,7 @@ pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
         ConicValidationError::InvalidPeriapsisDistance => ConicError::InvalidPeriapsisDistance,
         ConicValidationError::ParabolicSemiMajorAxis => ConicError::ParabolicSemiMajorAxis,
         ConicValidationError::InvalidOrientation => ConicError::InvalidOrientation,
-        ConicValidationError::OutOfRange { .. } => ConicError::InvalidOrientation,
+        ConicValidationError::OutOfRange { field, value } => ConicError::OutOfRange { field, value },
     }
 }
 
@@ -180,7 +190,7 @@ impl ConicOrbit {
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -284,7 +294,7 @@ impl MeanMotionOrbit {
         if !mean_motion.value().is_finite() || mean_motion.value() <= 0.0 {
             return Err(ConicError::InvalidMeanMotion);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {

@@ -76,7 +76,7 @@
 //! // Find when the Sun crosses due-South (180°):
 //! let events = azimuth_crossings(&Sun, &site, window, Degrees::new(180.0), SearchOpts::default());
 //! for e in &events {
-//!     println!("Sun crosses South at MJD {:.6} ({:?})", e.mjd.mjd_value(), e.direction);
+//!     println!("Sun crosses South at MJD {:.6} ({:?})", e.mjd.value(), e.direction);
 //! }
 //!
 //! // Find intervals where azimuth is between East (90°) and West (270°):

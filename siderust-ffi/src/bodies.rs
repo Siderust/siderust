@@ -5,18 +5,13 @@
 
 use crate::error::SiderustStatus;
 use crate::types::{SiderustPlanet, SiderustProperMotion, SiderustRaConvention};
-use qtty::angular::Degrees;
 use qtty::length::nominal::SolarRadiuses;
-use qtty::length::LightYears;
-use qtty::mass::SolarMasses;
-use qtty::power::SolarLuminosities;
-use qtty::unit::LightYear;
-use qtty::*;
 use siderust::astro::proper_motion::{ProperMotion, RaProperMotionConvention};
 use siderust::bodies::{self, Star};
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::frames::EquatorialMeanJ2000;
 use siderust::coordinates::spherical;
+use siderust::qtty::*;
 use siderust::targets::Target;
 use siderust::time::JulianDate;
 use std::borrow::Cow;
