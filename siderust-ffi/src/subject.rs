@@ -22,7 +22,7 @@ use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::angular::Degrees;
 use qtty::*;
-use siderust::calculus::azimuth::{azimuth_crossings, azimuth_extrema, in_azimuth_range};
+use siderust::calculus::azimuth::{azimuth_crossings, azimuth_extrema, in_azimuth_range, outside_azimuth_range};
 use siderust::AltitudePeriodsProvider;
 use siderust::AzimuthProvider;
 use tempoch::ModifiedJulianDate;
@@ -319,6 +319,40 @@ pub extern "C" fn siderust_in_azimuth_range(
         dispatch_subject!(subject, |p| {
             periods_to_c(
                 in_azimuth_range(
+                    p,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(min_deg),
+                    Degrees::new(max_deg),
+                    opts.to_rust(),
+                ),
+                out,
+                count,
+            )
+        })
+    }}
+}
+
+/// Periods when a subject's azimuth is outside [min_deg, max_deg].
+#[no_mangle]
+pub extern "C" fn siderust_outside_azimuth_range(
+    subject: SiderustSubject,
+    observer: SiderustGeodetict,
+    window: TempochPeriodMjd,
+    min_deg: f64,
+    max_deg: f64,
+    opts: SiderustSearchOpts,
+    out: *mut *mut TempochPeriodMjd,
+    count: *mut usize,
+) -> SiderustStatus {
+    ffi_guard! {{
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_subject!(subject, |p| {
+            periods_to_c(
+                outside_azimuth_range(
                     p,
                     &observer.to_rust(),
                     window,
