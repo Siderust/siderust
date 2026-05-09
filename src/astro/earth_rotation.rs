@@ -74,7 +74,7 @@ use crate::time::{JulianDate, TimeContext, TT, UT1};
 /// [`tempoch::JulianDate::to_with`] directly to recover a `Result`.
 #[inline]
 pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
-    let jd_tt: tempoch::JulianDate<crate::time::TT> = jd_tt.into();
+    let jd_tt: tempoch::JulianDate<crate::time::TT> = jd_tt;
     let ut1 = jd_tt
         .to_with::<UT1>(&TimeContext::new())
         .expect("TT->UT1 conversion should succeed within the bundled model horizon");
@@ -88,7 +88,7 @@ pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
 /// table is explicitly keyed by UTC, such as IERS EOP data.
 #[inline]
 pub fn jd_utc_from_tt(jd_tt: JulianDate) -> JulianDate {
-    let jd_tt: tempoch::JulianDate<TT> = jd_tt.into();
+    let jd_tt: tempoch::JulianDate<TT> = jd_tt;
     let ctx = TimeContext::with_builtin_eop();
     let ut1 = jd_tt
         .to_with::<UT1>(&ctx)
@@ -149,7 +149,7 @@ pub fn jd_utc_from_tt(jd_tt: JulianDate) -> JulianDate {
 /// [`tempoch::JulianDate::to_with`].
 #[inline]
 pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> JulianDate {
-    let jd_tt_t: tempoch::JulianDate<TT> = jd_tt.into();
+    let jd_tt_t: tempoch::JulianDate<TT> = jd_tt;
     let ctx = TimeContext::with_builtin_eop();
     let ut1 = jd_tt_t
         .to_with::<UT1>(&ctx)
@@ -228,7 +228,7 @@ mod tests {
     fn jd_ut1_is_close_to_tt_at_modern_epoch() {
         // ΔT at J2000 is ~63.8 s, so UT1 ≈ TT - 63.8/86400 days
         let jd_ut1 = jd_ut1_from_tt(jd());
-        let diff_sec = (jd().value() - jd_ut1.value()) * 86400.0;
+        let diff_sec = (jd().jd_value() - jd_ut1.jd_value()) * 86400.0;
         assert!(
             diff_sec > 50.0 && diff_sec < 80.0,
             "ΔT at J2000 expected ~63s, got {diff_sec}s"
@@ -262,9 +262,9 @@ mod tests {
         let expected_utc_jd = bundled_ut1_jd - bundled_dut1 / 86_400.0;
 
         assert!(
-            (jd_eop.value() - expected_utc_jd).abs() < 1e-12,
+            (jd_eop.jd_value() - expected_utc_jd).abs() < 1e-12,
             "with dut1 = 0, UT1 must equal UTC, got {} vs UTC {}",
-            jd_eop.value(),
+            jd_eop.jd_value(),
             expected_utc_jd
         );
 
@@ -272,7 +272,7 @@ mod tests {
         // exposed via `jd_ut1_from_tt`: the two should differ by roughly the
         // bundled dUT1 at this epoch.
         let jd_dt = jd_ut1_from_tt(jd());
-        let diff_sec = (jd_eop.value() - jd_dt.value()).abs() * 86_400.0;
+        let diff_sec = (jd_eop.jd_value() - jd_dt.jd_value()).abs() * 86_400.0;
         assert!(
             diff_sec > 0.05,
             "EOP(dut1=0) and ΔT models should differ measurably, got {diff_sec}s"
@@ -301,7 +301,7 @@ mod tests {
             .map(|s| s.value())
             .unwrap_or(0.0);
         let expected_utc_jd = bundled_ut1_jd - bundled_dut1 / 86_400.0;
-        let recovered_dut1_s = (jd_eop.value() - expected_utc_jd) * 86_400.0;
+        let recovered_dut1_s = (jd_eop.jd_value() - expected_utc_jd) * 86_400.0;
 
         // f64 precision at JD ~2.45e6 limits the recoverable resolution to
         // roughly 10 µs; sub-microsecond agreement is unrealistic here.
@@ -319,7 +319,7 @@ mod tests {
             ..Default::default()
         };
         let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
-        assert!(jd_eop.value().is_finite());
+        assert!(jd_eop.jd_value().is_finite());
     }
 
     // ── gmst_from_tt ─────────────────────────────────────────────────────
@@ -398,7 +398,7 @@ mod tests {
     #[test]
     fn tt_to_utc_conversion_is_not_identity() {
         let jd_utc = jd_utc_from_tt(jd());
-        let diff_sec = (jd().value() - jd_utc.value()) * 86_400.0;
+        let diff_sec = (jd().jd_value() - jd_utc.jd_value()) * 86_400.0;
         assert!(
             diff_sec > 60.0 && diff_sec < 70.0,
             "TT-UTC at J2000 should include leap seconds + 32.184s, got {diff_sec}s"

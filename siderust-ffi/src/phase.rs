@@ -7,12 +7,16 @@ use crate::altitude::{periods_to_c, window_from_c};
 use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c};
 use crate::types::*;
+use qtty::angular::Radians;
+use qtty::time::Days;
+use qtty::unit::Degree;
+use qtty::*;
 use siderust::calculus::ephemeris::Vsop87Ephemeris;
 use siderust::calculus::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseLabel, PhaseKind, PhaseSearchOpts,
 };
-use siderust::qtty::*;
+use siderust::qtty::IlluminationFractions;
 use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -161,7 +165,7 @@ pub extern "C" fn siderust_find_phase_events(
         vec_to_c(
             events,
             |e| SiderustPhaseEvent {
-                mjd: e.mjd.value(),
+                mjd: e.mjd.mjd_value(),
                 kind: phase_kind_from_rust(e.kind),
                 _pad: [0; 4],
             },
@@ -191,7 +195,11 @@ pub extern "C" fn siderust_moon_illumination_above(
             Err(e) => return e,
         };
         periods_to_c(
-            illumination_above::<Vsop87Ephemeris>(window, k_min.into(), search_opts_to_phase(opts)),
+            illumination_above::<Vsop87Ephemeris>(
+                window,
+                IlluminationFractions::new(k_min),
+                search_opts_to_phase(opts),
+            ),
             out,
             count,
         )
@@ -214,7 +222,11 @@ pub extern "C" fn siderust_moon_illumination_below(
             Err(e) => return e,
         };
         periods_to_c(
-            illumination_below::<Vsop87Ephemeris>(window, k_max.into(), search_opts_to_phase(opts)),
+            illumination_below::<Vsop87Ephemeris>(
+                window,
+                IlluminationFractions::new(k_max),
+                search_opts_to_phase(opts),
+            ),
             out,
             count,
         )
@@ -238,7 +250,12 @@ pub extern "C" fn siderust_moon_illumination_range(
             Err(e) => return e,
         };
         periods_to_c(
-            illumination_range::<Vsop87Ephemeris>(window, k_min.into(), k_max.into(), search_opts_to_phase(opts)),
+            illumination_range::<Vsop87Ephemeris>(
+                window,
+                IlluminationFractions::new(k_min),
+                IlluminationFractions::new(k_max),
+                search_opts_to_phase(opts),
+            ),
             out,
             count,
         )

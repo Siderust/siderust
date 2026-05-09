@@ -12,11 +12,12 @@ use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
 #[cfg(test)]
 use siderust::coordinates::spherical;
-#[cfg(test)]
-use siderust::qtty::*;
-use siderust::time::{Interval, ModifiedJulianDate, Period, MJD};
+use siderust::time::{ModifiedJulianDate, Period};
+use tempoch::Interval;
 
-pub(crate) fn window_from_c(w: TempochPeriodMjd) -> Result<Period<MJD>, SiderustStatus> {
+pub(crate) fn window_from_c(
+    w: TempochPeriodMjd,
+) -> Result<Period<ModifiedJulianDate>, SiderustStatus> {
     if w.start_mjd > w.end_mjd {
         return Err(SiderustStatus::InvalidPeriod);
     }
@@ -27,7 +28,7 @@ pub(crate) fn window_from_c(w: TempochPeriodMjd) -> Result<Period<MJD>, Siderust
 }
 
 pub(crate) fn periods_to_c(
-    periods: Vec<Period<MJD>>,
+    periods: Vec<Period<ModifiedJulianDate>>,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
@@ -58,8 +59,8 @@ pub(crate) fn icrs_from_c(
         return Err(SiderustStatus::InvalidFrame);
     }
     Ok(spherical::direction::ICRS::new(
-        Degrees::new(dir.azimuth_deg),
-        Degrees::new(dir.polar_deg),
+        qtty::angular::Degrees::new(dir.azimuth_deg),
+        qtty::angular::Degrees::new(dir.polar_deg),
     ))
 }
 

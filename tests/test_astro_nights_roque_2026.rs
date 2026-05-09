@@ -65,7 +65,7 @@ fn utc_mjd_to_utc_datetime(mjd_utc: f64) -> DateTime<Utc> {
 }
 
 fn utc_mjd_to_tt_mjd(mjd_utc: f64) -> ModifiedJulianDate {
-    ModifiedJulianDate::from_utc(utc_mjd_to_utc_datetime(mjd_utc))
+    ModifiedJulianDate::from_chrono(utc_mjd_to_utc_datetime(mjd_utc))
 }
 
 fn load_reference_data() -> ReferenceData {
@@ -87,8 +87,8 @@ fn load_reference_data() -> ReferenceData {
     let start_utc = parse_utc_datetime(&reference.start_utc);
     let end_utc = parse_utc_datetime(&reference.end_utc);
     let window_tt = Period::new(
-        ModifiedJulianDate::from_utc(start_utc),
-        ModifiedJulianDate::from_utc(end_utc),
+        ModifiedJulianDate::from_chrono(start_utc),
+        ModifiedJulianDate::from_chrono(end_utc),
     );
 
     // Reference JSON stores period endpoints as UTC-based MJD numbers.
@@ -125,15 +125,15 @@ fn assert_periods_close(
     );
 
     for (i, (exp_p, calc_p)) in expected.iter().zip(computed.iter()).enumerate() {
-        let ds = (exp_p.start.value() - calc_p.start.value()).abs();
-        let de = (exp_p.end.value() - calc_p.end.value()).abs();
+        let ds = (exp_p.start.mjd_value() - calc_p.start.mjd_value()).abs();
+        let de = (exp_p.end.mjd_value() - calc_p.end.mjd_value()).abs();
 
         assert!(
             ds <= TOL_DAYS,
             "Start TT-MJD mismatch at index {}: expected {} got {} (diff {} days ~ {} s)",
             i,
-            exp_p.start.value(),
-            calc_p.start.value(),
+            exp_p.start.mjd_value(),
+            calc_p.start.mjd_value(),
             ds,
             ds * 86_400.0
         );
@@ -142,8 +142,8 @@ fn assert_periods_close(
             de <= TOL_DAYS,
             "End TT-MJD mismatch at index {}: expected {} got {} (diff {} days ~ {} s)",
             i,
-            exp_p.end.value(),
-            calc_p.end.value(),
+            exp_p.end.mjd_value(),
+            calc_p.end.mjd_value(),
             de,
             de * 86_400.0
         );

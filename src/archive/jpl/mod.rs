@@ -8,3 +8,5 @@
 
 #[cfg(feature = "de440")]
 pub(crate) mod de440;
+#[cfg(feature = "de441")]
+pub(crate) mod de441;

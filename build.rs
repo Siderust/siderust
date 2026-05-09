@@ -30,6 +30,18 @@ pub(crate) mod jpl_pipeline;
 #[path = "scripts/jpl/spk.rs"]
 pub(crate) mod jpl_spk;
 
+#[cfg(any(feature = "de440", feature = "de441"))]
+#[path = "scripts/jpl/daf.rs"]
+pub(crate) mod jpl_daf;
+
+#[cfg(any(feature = "de440", feature = "de441"))]
+#[path = "scripts/jpl/pipeline.rs"]
+pub(crate) mod jpl_pipeline;
+
+#[cfg(any(feature = "de440", feature = "de441"))]
+#[path = "scripts/jpl/spk.rs"]
+pub(crate) mod jpl_spk;
+
 fn main() {
     println!("cargo:rerun-if-env-changed=SIDERUST_DATASETS_DIR");
     println!("cargo:rerun-if-env-changed=SIDERUST_REGEN");

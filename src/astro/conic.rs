@@ -54,7 +54,7 @@ use serde::{Deserialize, Serialize};
 pub use affn::conic::ConicKind;
 
 /// Validation and propagation errors for conic-based orbit models.
-#[derive(Clone, Copy, Debug, PartialEq)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum ConicError {
     /// Eccentricity must be finite and non-negative.
@@ -135,9 +135,7 @@ pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
         ConicValidationError::InvalidPeriapsisDistance => ConicError::InvalidPeriapsisDistance,
         ConicValidationError::ParabolicSemiMajorAxis => ConicError::ParabolicSemiMajorAxis,
         ConicValidationError::InvalidOrientation => ConicError::InvalidOrientation,
-        ConicValidationError::OutOfRange { field, value } => {
-            ConicError::OutOfRange { field, value }
-        }
+        ConicValidationError::OutOfRange { .. } => ConicError::InvalidOrientation,
     }
 }
 
@@ -192,7 +190,7 @@ impl ConicOrbit {
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.value().is_finite() {
+        if !epoch.jd_value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -296,7 +294,7 @@ impl MeanMotionOrbit {
         if !mean_motion.value().is_finite() || mean_motion.value() <= 0.0 {
             return Err(ConicError::InvalidMeanMotion);
         }
-        if !epoch.value().is_finite() {
+        if !epoch.jd_value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {

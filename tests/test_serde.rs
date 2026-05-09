@@ -222,7 +222,7 @@ fn test_julian_date_roundtrip() {
     let json = serde_json::to_string(&jd).expect("serialize julian date");
     let recovered: JulianDate = serde_json::from_str(&json).expect("deserialize julian date");
 
-    assert!((jd.value() - recovered.value()).abs() < 1e-12);
+    assert!((jd.jd_value() - recovered.jd_value()).abs() < 1e-12);
 }
 
 #[test]
@@ -235,5 +235,5 @@ fn test_modified_julian_date_roundtrip() {
     let recovered: ModifiedJulianDate =
         serde_json::from_str(&json).expect("deserialize modified julian date");
 
-    assert!((mjd.value() - recovered.value()).abs() < 1e-12);
+    assert!((mjd.mjd_value() - recovered.mjd_value()).abs() < 1e-12);
 }
