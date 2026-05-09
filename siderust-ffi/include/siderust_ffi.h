@@ -99,6 +99,16 @@ enum siderust_status_t
   // Returned by qtty-aware functions when a quantity's dimension doesn't
   // match the expected type (e.g., passing a length where an angle is expected).
   SIDERUST_STATUS_T_INVALID_DIMENSION = 12,
+  // The requested epoch is outside the range covered by the loaded data.
+  //
+  // Returned when the Julian Date falls before or after the ephemeris or
+  // table coverage window.
+  SIDERUST_STATUS_T_OUT_OF_RANGE = 13,
+  // Earth Orientation Parameters (EOP) are not available for the requested epoch.
+  //
+  // Returned by high-precision transforms that require IERS EOP data when no
+  // data has been loaded or the epoch is outside the loaded dataset.
+  SIDERUST_STATUS_T_NO_EOP_DATA = 14,
 };
 #ifndef __cplusplus
 typedef int32_t siderust_status_t;
@@ -1391,6 +1401,17 @@ siderust_status_t siderust_in_azimuth_range(struct siderust_subject_t subject,
                                             struct siderust_search_opts_t opts,
                                             tempoch_period_mjd_t **out,
                                             uintptr_t *count);
+
+// Periods when a subject's azimuth is outside [min_deg, max_deg].
+
+siderust_status_t siderust_outside_azimuth_range(struct siderust_subject_t subject,
+                                                 struct siderust_geodetic_t observer,
+                                                 tempoch_period_mjd_t window,
+                                                 double min_deg,
+                                                 double max_deg,
+                                                 struct siderust_search_opts_t opts,
+                                                 tempoch_period_mjd_t **out,
+                                                 uintptr_t *count);
 
 // Create a generic target from the tagged target payload.
 //
