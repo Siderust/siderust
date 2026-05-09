@@ -273,15 +273,15 @@ mod tests {
         let aod_ls = mie_optical_depth(&MieParams::LA_SILLA, lambda).value();
 
         assert!(
-            aod_lp >= 0.01 && aod_lp <= 0.05,
+            (0.01..=0.05).contains(&aod_lp),
             "La Palma AOD(500nm) = {aod_lp:.4} outside 0.01–0.05"
         );
         assert!(
-            aod_mk >= 0.02 && aod_mk <= 0.05,
+            (0.02..=0.05).contains(&aod_mk),
             "Mauna Kea AOD(500nm) = {aod_mk:.4} outside 0.02–0.05"
         );
         assert!(
-            aod_ls >= 0.03 && aod_ls <= 0.07,
+            (0.03..=0.07).contains(&aod_ls),
             "La Silla AOD(500nm) = {aod_ls:.4} outside 0.03–0.07"
         );
     }

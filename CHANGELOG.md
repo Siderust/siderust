@@ -4,9 +4,7 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [0.6.1] - 2026-05-09
-
-## [0.7.0] - 07/05/2026
+## [0.7.0] - 2026-05-07
 
 This release contains **breaking API changes** throughout the public surface.
 Callers must migrate before upgrading.
@@ -266,6 +264,18 @@ let entry = iers_data::lookup(Days::new(jd_value_f64));
 
 ### Fixed
 * FFI orbit propagation can now preserve the declared orbit reference center in output metadata via `siderust_kepler_position_ex`, instead of always tagging results as heliocentric.
+* Implemented `serde::Serialize` / `serde::Deserialize` for `time::JulianDate`
+  and `time::ModifiedJulianDate` under the `serde` feature flag; these types
+  are now serialisable when derived in downstream structs (`ConicOrbit`,
+  `MeanMotionOrbit`, `CoordinateWithPM`, etc.).
+* Replaced manual `>= &&<=` range checks in `atmosphere::mie` tests with
+  `RangeInclusive::contains` (`clippy::manual_range_contains`).
+* Replaced `.max(0).min(35)` clamp pattern in `tables::grid2d` with
+  `clamp(0, 35)` (`clippy::manual_clamp`).
+* Removed unused `use serde_json;` import from `tests/test_serde.rs`
+  (`clippy::unused_imports` with `--all-features`).
+
+## [0.6.1] - 2026-05-09
 
 ## [0.6.0] - 08/03/2026
 

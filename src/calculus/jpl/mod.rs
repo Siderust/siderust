@@ -11,12 +11,10 @@
 //! accurate Chebyshev polynomial representations of barycentric and
 //! heliocentric positions and velocities.
 //!
-//! The two variants supported here differ in time span and perturbation model:
+//! The supported variant differs in time span and perturbation model:
 //!
 //! - **DE440** — modern fit (1550–2650), includes lunar laser ranging (LLR) data
 //!   and relativistic corrections.  Recommended for near-term applications.
-//! - **DE441** — extended fit (−13 200 to +17 191), sacrificing minor accuracy
-//!   improvements for broader temporal coverage.
 //!
 //! ## Technical scope
 //!
@@ -46,8 +44,6 @@ pub mod eval;
 
 #[cfg(feature = "de440")]
 pub mod de440;
-#[cfg(feature = "de441")]
-pub mod de441;
 
 use eval::SegmentDescriptor;
 

@@ -11,6 +11,9 @@
 
 use chrono::{DateTime, Utc};
 
+#[cfg(feature = "serde")]
+use serde::{Deserialize, Serialize};
+
 pub use tempoch::{
     constats, delta_t_seconds, delta_t_seconds_extrapolated, eop, ContinuousScale, ConversionError,
     ConversionTarget, CoordinateScale, EncodedTime, InfallibleConversionTarget, Interval,
@@ -34,6 +37,7 @@ const MJD_J2000: f64 = JD_J2000 - JD_MINUS_MJD;
 
 /// TT-based Julian Date compatibility wrapper.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(transparent)]
 pub struct JulianDate(f64);
 
@@ -183,6 +187,7 @@ impl core::ops::SubAssign<crate::qtty::Days> for JulianDate {
 
 /// TT-based Modified Julian Date compatibility wrapper.
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 #[repr(transparent)]
 pub struct ModifiedJulianDate(f64);
 

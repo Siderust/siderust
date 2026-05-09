@@ -16,8 +16,8 @@
 //!   enabling trait objects (`Box<dyn DynEphemeris>`) for runtime-loaded data.
 //!   A blanket impl bridges: every `Ephemeris` implementor automatically
 //!   implements `DynEphemeris`.
-//! - **Feature-gated**: VSOP87 is always available. DE440 and DE441 require
-//!   the matching Cargo feature. Runtime loading requires `runtime-data`.
+//! - **Feature-gated**: VSOP87 is always available. DE440 requires the
+//!   matching Cargo feature. Runtime loading requires `runtime-data`.
 //! - **Body-centric user API preserved**: `Earth::vsop87e(jd)` etc. remain
 //!   unchanged. The traits are used internally by the coordinate transform
 //!   pipeline and `AstroContext`.
@@ -28,20 +28,15 @@
 //! |----------------------|----------------|---------------------------|
 //! | [`Vsop87Ephemeris`]  | (always)       | VSOP87 + ELP2000-82B      |
 //! | `De440Ephemeris`     | `de440`        | JPL DE440 (compile-time)   |
-//! | `De441Ephemeris`     | `de441`        | JPL DE441 (compile-time)   |
 //! | [`RuntimeEphemeris`] | (always)       | Any BSP file (runtime)     |
 
 #[cfg(feature = "de440")]
 mod de440_backend;
-#[cfg(feature = "de441")]
-mod de441_backend;
 mod runtime_backend;
 mod vsop87_backend;
 
 #[cfg(feature = "de440")]
 pub use de440_backend::De440Ephemeris;
-#[cfg(feature = "de441")]
-pub use de441_backend::De441Ephemeris;
 pub use runtime_backend::RuntimeEphemeris;
 pub use vsop87_backend::Vsop87Ephemeris;
 

@@ -360,8 +360,6 @@ ffi_enum! {
     }
 }
 
-
-
 ffi_enum! {
     /// Coordinate kind discriminant for [`SiderustTargetCoord`].
     ///

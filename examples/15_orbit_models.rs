@@ -8,8 +8,8 @@
 //!
 //! Run with: `cargo run --example 15_orbit_models`
 
-use siderust::qtty::angular_rate::AngularRate;
 use siderust::qtty::angular::Degree;
+use siderust::qtty::angular_rate::AngularRate;
 use siderust::qtty::time::Day;
 use siderust::qtty::AstronomicalUnits;
 use siderust::time::JulianDate;

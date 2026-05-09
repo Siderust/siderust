@@ -632,7 +632,7 @@ mod tests {
         let b0 = (beta / 5.0).floor() as usize;
         let bt = (beta - 5.0 * b0 as f64) / 5.0;
         let l0_idx = ((180.0 - dl.ceil()) / 5.0).floor() as isize;
-        let l0 = l0_idx.max(0).min(35) as usize;
+        let l0 = l0_idx.clamp(0, 35) as usize;
         let lt = (180.0 - dl - 5.0 * l0 as f64) / 5.0;
         let row_lo = l0; // index in row-descending storage
         let row_hi = l0 + 1;

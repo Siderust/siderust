@@ -110,44 +110,50 @@ macro_rules! transform_spherical_dir_from {
 
 macro_rules! transform_spherical_dir_from_model {
     ($dir:expr, $dst_frame:expr, $jd:expr, $model:expr) => {{
-        dispatch_model!($model, mc, match $dst_frame {
-            SiderustFrame::ICRS => Ok(sph_to_pair(
-                &SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc),
-            )),
-            SiderustFrame::EclipticMeanJ2000 => {
-                let icrs =
-                    SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
-                Ok(sph_to_pair(&SphericalDirectionAstroExt::to_frame_with::<
-                    EclipticMeanJ2000,
-                    _,
-                >(&icrs, $jd, &mc)))
+        dispatch_model!(
+            $model,
+            mc,
+            match $dst_frame {
+                SiderustFrame::ICRS =>
+                    Ok(sph_to_pair(&SphericalDirectionAstroExt::to_frame_with::<
+                        ICRS,
+                        _,
+                    >(&$dir, $jd, &mc),)),
+                SiderustFrame::EclipticMeanJ2000 => {
+                    let icrs =
+                        SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
+                    Ok(sph_to_pair(&SphericalDirectionAstroExt::to_frame_with::<
+                        EclipticMeanJ2000,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EquatorialMeanJ2000 => {
+                    let icrs =
+                        SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
+                    Ok(sph_to_pair(&SphericalDirectionAstroExt::to_frame_with::<
+                        EquatorialMeanJ2000,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EquatorialMeanOfDate => {
+                    let icrs =
+                        SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
+                    Ok(sph_to_pair(&SphericalDirectionAstroExt::to_frame_with::<
+                        EquatorialMeanOfDate,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EquatorialTrueOfDate => {
+                    let icrs =
+                        SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
+                    Ok(sph_to_pair(&SphericalDirectionAstroExt::to_frame_with::<
+                        EquatorialTrueOfDate,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                _ => Err(SiderustStatus::InvalidFrame),
             }
-            SiderustFrame::EquatorialMeanJ2000 => {
-                let icrs =
-                    SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
-                Ok(sph_to_pair(&SphericalDirectionAstroExt::to_frame_with::<
-                    EquatorialMeanJ2000,
-                    _,
-                >(&icrs, $jd, &mc)))
-            }
-            SiderustFrame::EquatorialMeanOfDate => {
-                let icrs =
-                    SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
-                Ok(sph_to_pair(&SphericalDirectionAstroExt::to_frame_with::<
-                    EquatorialMeanOfDate,
-                    _,
-                >(&icrs, $jd, &mc)))
-            }
-            SiderustFrame::EquatorialTrueOfDate => {
-                let icrs =
-                    SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
-                Ok(sph_to_pair(&SphericalDirectionAstroExt::to_frame_with::<
-                    EquatorialTrueOfDate,
-                    _,
-                >(&icrs, $jd, &mc)))
-            }
-            _ => Err(SiderustStatus::InvalidFrame),
-        })
+        )
     }};
 }
 
@@ -176,8 +182,7 @@ macro_rules! spherical_dir_to_horizontal_precise_from {
 macro_rules! spherical_dir_to_horizontal_precise_from_model {
     ($dir:expr, $jd_tt:expr, $jd_ut1:expr, $site:expr, $model:expr) => {{
         dispatch_model!($model, mc, {
-            let icrs =
-                SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd_tt, &mc);
+            let icrs = SphericalDirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd_tt, &mc);
             let eq_tod = SphericalDirectionAstroExt::to_frame_with::<EquatorialTrueOfDate, _>(
                 &icrs, $jd_tt, &mc,
             );
@@ -502,48 +507,45 @@ macro_rules! transform_cartesian_dir_from {
 
 macro_rules! transform_cartesian_dir_from_model {
     ($dir:expr, $dst_frame:expr, $jd:expr, $model:expr) => {{
-        dispatch_model!($model, mc, match $dst_frame {
-            SiderustFrame::ICRS => Ok(cart_dir_to_triple(
-                &DirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc),
-            )),
-            SiderustFrame::EclipticMeanJ2000 => {
-                let icrs = DirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
-                Ok(cart_dir_to_triple(&DirectionAstroExt::to_frame_with::<
-                    EclipticMeanJ2000,
+        dispatch_model!(
+            $model,
+            mc,
+            match $dst_frame {
+                SiderustFrame::ICRS => Ok(cart_dir_to_triple(&DirectionAstroExt::to_frame_with::<
+                    ICRS,
                     _,
-                >(
-                    &icrs, $jd, &mc
-                )))
+                >(&$dir, $jd, &mc),)),
+                SiderustFrame::EclipticMeanJ2000 => {
+                    let icrs = DirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
+                    Ok(cart_dir_to_triple(&DirectionAstroExt::to_frame_with::<
+                        EclipticMeanJ2000,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EquatorialMeanJ2000 => {
+                    let icrs = DirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
+                    Ok(cart_dir_to_triple(&DirectionAstroExt::to_frame_with::<
+                        EquatorialMeanJ2000,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EquatorialMeanOfDate => {
+                    let icrs = DirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
+                    Ok(cart_dir_to_triple(&DirectionAstroExt::to_frame_with::<
+                        EquatorialMeanOfDate,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EquatorialTrueOfDate => {
+                    let icrs = DirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
+                    Ok(cart_dir_to_triple(&DirectionAstroExt::to_frame_with::<
+                        EquatorialTrueOfDate,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                _ => Err(SiderustStatus::InvalidFrame),
             }
-            SiderustFrame::EquatorialMeanJ2000 => {
-                let icrs = DirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
-                Ok(cart_dir_to_triple(&DirectionAstroExt::to_frame_with::<
-                    EquatorialMeanJ2000,
-                    _,
-                >(
-                    &icrs, $jd, &mc
-                )))
-            }
-            SiderustFrame::EquatorialMeanOfDate => {
-                let icrs = DirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
-                Ok(cart_dir_to_triple(&DirectionAstroExt::to_frame_with::<
-                    EquatorialMeanOfDate,
-                    _,
-                >(
-                    &icrs, $jd, &mc
-                )))
-            }
-            SiderustFrame::EquatorialTrueOfDate => {
-                let icrs = DirectionAstroExt::to_frame_with::<ICRS, _>(&$dir, $jd, &mc);
-                Ok(cart_dir_to_triple(&DirectionAstroExt::to_frame_with::<
-                    EquatorialTrueOfDate,
-                    _,
-                >(
-                    &icrs, $jd, &mc
-                )))
-            }
-            _ => Err(SiderustStatus::InvalidFrame),
-        })
+        )
     }};
 }
 
@@ -731,59 +733,57 @@ macro_rules! transform_cartesian_pos_from {
 
 macro_rules! transform_cartesian_pos_from_model {
     ($pos:expr, $dst_frame:expr, $jd:expr, $model:expr) => {{
-        dispatch_model!($model, mc, match $dst_frame {
-            SiderustFrame::ICRS => Ok(cart_pos_to_triple(
-                &PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc),
-            )),
-            SiderustFrame::ICRF => {
-                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
-                    PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
-                Ok(cart_pos_to_triple(
-                    &PositionAstroExt::to_frame_with::<ICRF, _>(&icrs, $jd, &mc),
-                ))
-            }
-            SiderustFrame::EclipticMeanJ2000 => {
-                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
-                    PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
-                Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
-                    EclipticMeanJ2000,
+        dispatch_model!(
+            $model,
+            mc,
+            match $dst_frame {
+                SiderustFrame::ICRS => Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
+                    ICRS,
                     _,
-                >(
-                    &icrs, $jd, &mc
-                )))
+                >(&$pos, $jd, &mc),)),
+                SiderustFrame::ICRF => {
+                    let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                        PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
+                    Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
+                        ICRF,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EclipticMeanJ2000 => {
+                    let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                        PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
+                    Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
+                        EclipticMeanJ2000,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EquatorialMeanJ2000 => {
+                    let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                        PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
+                    Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
+                        EquatorialMeanJ2000,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EquatorialMeanOfDate => {
+                    let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                        PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
+                    Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
+                        EquatorialMeanOfDate,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                SiderustFrame::EquatorialTrueOfDate => {
+                    let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
+                        PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
+                    Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
+                        EquatorialTrueOfDate,
+                        _,
+                    >(&icrs, $jd, &mc)))
+                }
+                _ => Err(SiderustStatus::InvalidFrame),
             }
-            SiderustFrame::EquatorialMeanJ2000 => {
-                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
-                    PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
-                Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
-                    EquatorialMeanJ2000,
-                    _,
-                >(
-                    &icrs, $jd, &mc
-                )))
-            }
-            SiderustFrame::EquatorialMeanOfDate => {
-                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
-                    PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
-                Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
-                    EquatorialMeanOfDate,
-                    _,
-                >(
-                    &icrs, $jd, &mc
-                )))
-            }
-            SiderustFrame::EquatorialTrueOfDate => {
-                let icrs: cartesian::Position<Barycentric, ICRS, AstronomicalUnit> =
-                    PositionAstroExt::to_frame_with::<ICRS, _>(&$pos, $jd, &mc);
-                Ok(cart_pos_to_triple(&PositionAstroExt::to_frame_with::<
-                    EquatorialTrueOfDate,
-                    _,
-                >(
-                    &icrs, $jd, &mc
-                )))
-            }
-            _ => Err(SiderustStatus::InvalidFrame),
-        })
+        )
     }};
 }
 
