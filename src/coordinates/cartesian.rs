@@ -225,4 +225,6 @@ pub mod velocity {
     pub type TEME<U> = Velocity<frames::TEME, U>;
     /// **FK4 B1950** cartesian velocity vector.
     pub type FK4B1950<U> = Velocity<frames::FK4B1950, U>;
+    /// **GCRS** cartesian velocity vector.
+    pub type GCRS<U> = Velocity<frames::GCRS, U>;
 }
