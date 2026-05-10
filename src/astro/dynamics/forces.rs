@@ -28,8 +28,12 @@
 
 use crate::astro::dynamics::atmosphere::{DensityProvider, ExponentialAtmosphere};
 use crate::astro::dynamics::state::{Acceleration, AccelerationUnit, OrbitState};
+use crate::astro::precession::ecliptic_of_date_to_mean_equatorial_matrix;
+use crate::calculus::ephemeris::DynEphemeris;
 use crate::coordinates::frames::GCRS;
 use crate::qtty::Kilometers;
+use crate::time::JulianDate;
+use std::sync::Arc;
 
 // =============================================================================
 // Earth constants (used by multiple force models)
@@ -250,6 +254,165 @@ impl<D: DensityProvider> ForceModel for DragForce<D> {
 /// Type alias: drag model with the built-in exponential atmosphere.
 pub type ExponentialDrag = DragForce<ExponentialAtmosphere>;
 
+// =============================================================================
+// Third-body perturbations (Sun + Moon)
+// =============================================================================
+
+/// Standard gravitational parameter of the Sun (km³/s²).
+pub const MU_SUN_KM3_S2: f64 = 1.327_124_400_18e11;
+/// Standard gravitational parameter of the Moon (km³/s²).
+pub const MU_MOON_KM3_S2: f64 = 4.902_800_066e3;
+
+/// Astronomical unit, km.
+pub const AU_KM: f64 = 149_597_870.7;
+
+/// Third-body point-mass perturbations from Sun and Moon.
+///
+/// Treats each body as a point mass at a known geocentric position `d` (km,
+/// mean equator of J2000). The Battin formula gives the acceleration on a
+/// satellite at position `r`:
+///
+/// ```text
+/// a = μ_b · ( (d − r) / |d − r|³ − d / |d|³ )
+/// ```
+///
+/// Body positions are fetched from a [`DynEphemeris`] provider.
+pub struct ThirdBodySunMoon {
+    provider: Arc<dyn DynEphemeris + Send + Sync>,
+}
+
+impl ThirdBodySunMoon {
+    /// Build from any arc-wrapped [`DynEphemeris`] implementation.
+    pub fn new(provider: Arc<dyn DynEphemeris + Send + Sync>) -> Self {
+        Self { provider }
+    }
+
+    fn sun_geocentric_km(&self, jd: JulianDate) -> [f64; 3] {
+        let sun_b = self.provider.try_sun_barycentric(jd);
+        let earth_b = self.provider.try_earth_barycentric(jd);
+        let (sun_b, earth_b) = match (sun_b, earth_b) {
+            (Ok(a), Ok(b)) => (a, b),
+            _ => return [0.0; 3],
+        };
+        let d_ecl_au = [
+            sun_b.x().value() - earth_b.x().value(),
+            sun_b.y().value() - earth_b.y().value(),
+            sun_b.z().value() - earth_b.z().value(),
+        ];
+        let rot = ecliptic_of_date_to_mean_equatorial_matrix(JulianDate::J2000);
+        let d_eq_au = rot.apply_array(d_ecl_au);
+        [d_eq_au[0] * AU_KM, d_eq_au[1] * AU_KM, d_eq_au[2] * AU_KM]
+    }
+
+    fn moon_geocentric_km(&self, jd: JulianDate) -> [f64; 3] {
+        let m_geo = match self.provider.try_moon_geocentric(jd) {
+            Ok(p) => p,
+            Err(_) => return [0.0; 3],
+        };
+        let rot = ecliptic_of_date_to_mean_equatorial_matrix(JulianDate::J2000);
+        rot.apply_array([m_geo.x().value(), m_geo.y().value(), m_geo.z().value()])
+    }
+}
+
+impl ForceModel for ThirdBodySunMoon {
+    #[inline]
+    fn acceleration(&self, s: &OrbitState) -> Acceleration<GCRS, AccelerationUnit> {
+        let r = [s.position.x().value(), s.position.y().value(), s.position.z().value()];
+        let mut a = [0.0_f64; 3];
+        for (mu, d) in [
+            (MU_SUN_KM3_S2, self.sun_geocentric_km(s.epoch_tt)),
+            (MU_MOON_KM3_S2, self.moon_geocentric_km(s.epoch_tt)),
+        ] {
+            let dr = [d[0] - r[0], d[1] - r[1], d[2] - r[2]];
+            let dr_n = norm3(dr);
+            let d_n = norm3(d);
+            if dr_n == 0.0 || d_n == 0.0 {
+                continue;
+            }
+            let dr3 = dr_n * dr_n * dr_n;
+            let d3 = d_n * d_n * d_n;
+            for i in 0..3 {
+                a[i] += mu * (dr[i] / dr3 - d[i] / d3);
+            }
+        }
+        Acceleration::<GCRS, AccelerationUnit>::new(a[0], a[1], a[2])
+    }
+}
+
+// =============================================================================
+// Solar Radiation Pressure
+// =============================================================================
+
+/// Solar radiation pressure at 1 AU, N/m².
+pub const P0_N_M2: f64 = 4.560e-6;
+
+/// Cannonball solar radiation pressure (SRP).
+///
+/// ```text
+/// a_srp = Cr · P0 · (AU / |r_sun_sat|)² · (A/m) · r̂_sun_sat
+/// ```
+///
+/// The resulting acceleration pushes the spacecraft away from the Sun.
+/// Eclipse modelling is not yet included — the Sun is always treated as visible.
+pub struct CannonballSrp {
+    provider: Arc<dyn DynEphemeris + Send + Sync>,
+    /// Radiation-pressure coefficient (dimensionless).
+    pub cr: f64,
+    /// Area-to-mass ratio in m² / kg.
+    pub area_to_mass_m2_kg: f64,
+}
+
+impl CannonballSrp {
+    /// Build a cannonball SRP model.
+    pub fn new(provider: Arc<dyn DynEphemeris + Send + Sync>, cr: f64, area_to_mass_m2_kg: f64) -> Self {
+        Self { provider, cr, area_to_mass_m2_kg }
+    }
+
+    fn sun_geocentric_km(&self, jd: JulianDate) -> Option<[f64; 3]> {
+        let sun_b = self.provider.try_sun_barycentric(jd).ok()?;
+        let earth_b = self.provider.try_earth_barycentric(jd).ok()?;
+        let d_ecl_au = [
+            sun_b.x().value() - earth_b.x().value(),
+            sun_b.y().value() - earth_b.y().value(),
+            sun_b.z().value() - earth_b.z().value(),
+        ];
+        let rot = ecliptic_of_date_to_mean_equatorial_matrix(JulianDate::J2000);
+        let d_eq_au = rot.apply_array(d_ecl_au);
+        Some([d_eq_au[0] * AU_KM, d_eq_au[1] * AU_KM, d_eq_au[2] * AU_KM])
+    }
+}
+
+impl ForceModel for CannonballSrp {
+    #[inline]
+    fn acceleration(&self, s: &OrbitState) -> Acceleration<GCRS, AccelerationUnit> {
+        let Some(sun) = self.sun_geocentric_km(s.epoch_tt) else {
+            return Acceleration::<GCRS, AccelerationUnit>::new(0.0, 0.0, 0.0);
+        };
+        let rx = s.position.x().value();
+        let ry = s.position.y().value();
+        let rz = s.position.z().value();
+        let r_sun_sat = [rx - sun[0], ry - sun[1], rz - sun[2]];
+        let r2 = r_sun_sat[0].powi(2) + r_sun_sat[1].powi(2) + r_sun_sat[2].powi(2);
+        let r = r2.sqrt();
+        if r == 0.0 {
+            return Acceleration::<GCRS, AccelerationUnit>::new(0.0, 0.0, 0.0);
+        }
+        // N/m² · m²/kg = m/s²; convert to km/s² by dividing by 1000.
+        let mag_km_s2 = self.cr * P0_N_M2 * (AU_KM * AU_KM / r2) * self.area_to_mass_m2_kg / 1_000.0;
+        let inv_r = 1.0 / r;
+        Acceleration::<GCRS, AccelerationUnit>::new(
+            mag_km_s2 * r_sun_sat[0] * inv_r,
+            mag_km_s2 * r_sun_sat[1] * inv_r,
+            mag_km_s2 * r_sun_sat[2] * inv_r,
+        )
+    }
+}
+
+#[inline]
+fn norm3(v: [f64; 3]) -> f64 {
+    (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt()
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -259,6 +422,14 @@ mod tests {
     fn leo() -> OrbitState {
         OrbitState::new(
             JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(7000.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        )
+    }
+
+    fn leo_at(epoch: JulianDate) -> OrbitState {
+        OrbitState::new(
+            epoch,
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         )
@@ -323,5 +494,39 @@ mod tests {
         let s_end = rk4_propagate(&force, s0, 30.0, 1440);
         let r_end = s_end.position.distance().value();
         assert!(r_end < r0, "expected drag-driven decay; r0={r0:.3}, r_end={r_end:.3}");
+    }
+
+    #[test]
+    fn third_body_nonzero_acceleration() {
+        use crate::calculus::ephemeris::Vsop87Ephemeris;
+        let prov: Arc<dyn DynEphemeris + Send + Sync> = Arc::new(Vsop87Ephemeris);
+        let f = ThirdBodySunMoon::new(prov);
+        let s = leo_at(JulianDate::new(2_451_545.0));
+        let a = f.acceleration(&s);
+        let mag = norm3([a.x().value(), a.y().value(), a.z().value()]);
+        // Sun + Moon perturbations are ~1e-7 km/s² at LEO; accept any non-zero
+        assert!(mag > 0.0, "third-body acceleration should be nonzero");
+        assert!(mag < 1e-4, "third-body acceleration unrealistically large: {mag}");
+    }
+
+    #[test]
+    fn srp_order_of_magnitude_at_leo() {
+        use crate::calculus::ephemeris::Vsop87Ephemeris;
+        // Cr=1.5, A/m=0.02 m²/kg ⇒ |a_srp| ≈ 1.5 · 4.56e-6 · 0.02 / 1000 ≈ 1.4e-10 km/s²
+        let prov: Arc<dyn DynEphemeris + Send + Sync> = Arc::new(Vsop87Ephemeris);
+        let srp = CannonballSrp::new(prov, 1.5, 0.02);
+        let s = leo_at(JulianDate::new(2_451_545.0));
+        let a = srp.acceleration(&s);
+        let mag = norm3([a.x().value(), a.y().value(), a.z().value()]);
+        assert!((5e-11..5e-10).contains(&mag), "SRP magnitude out of expected band: {mag} km/s²");
+    }
+
+    #[test]
+    fn srp_zero_when_area_is_zero() {
+        use crate::calculus::ephemeris::Vsop87Ephemeris;
+        let prov: Arc<dyn DynEphemeris + Send + Sync> = Arc::new(Vsop87Ephemeris);
+        let srp = CannonballSrp::new(prov, 1.5, 0.0);
+        let a = srp.acceleration(&leo());
+        assert!(a.x().value() == 0.0 && a.y().value() == 0.0 && a.z().value() == 0.0);
     }
 }
