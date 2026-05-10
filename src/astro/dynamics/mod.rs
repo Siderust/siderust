@@ -30,7 +30,9 @@
 //!   inertial and local orbital frames.
 
 pub mod covariance;
+pub mod forces;
 pub mod frames;
+pub mod integrators;
 pub mod state;
 
 pub use state::{
