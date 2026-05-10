@@ -29,6 +29,7 @@
 //! - `covariance` — frame-tagged 6×6 state covariance with transport between
 //!   inertial and local orbital frames.
 
+pub mod frames;
 pub mod state;
 
 pub use state::{
