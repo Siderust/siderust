@@ -64,7 +64,7 @@
 //! - [`geometry`]                : Angular geometry primitives (great-circle, parallactic angle, …)
 //! - [`interp`]                  : Generic interpolation kernels
 //! - [`data`]                    : Built-in reference data (EOP tables, star catalogs)
-//! - [`provenance`]              : Provenance and source-attribution types
+//! - [`provenance`]              : Provenance and source-attribution types (`Provenance`, `DataSource`)
 //! - `atmosphere` *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
 //! - `spectra` *(optional)*    : Spectral response and photometric bandpass utilities (`spectra` feature)
 //! - `tables` *(optional)*     : Tabulated data loaders (`tables` feature)
@@ -119,7 +119,15 @@ pub mod data;
 pub mod geometry;
 pub mod interp;
 pub mod observatories;
-pub mod provenance;
+pub mod provenance {
+    //! Provenance and source-attribution types — re-exported from [`crate::archive`].
+    //!
+    //! This module is a thin re-export shim so that the canonical import path
+    //! `siderust::provenance::Provenance` continues to work after the types
+    //! were moved into the internal `archive` module.
+    pub use crate::archive::provenance::checksum;
+    pub use crate::archive::provenance::{DataSource, Provenance};
+}
 pub mod qtty;
 #[cfg(feature = "spectra")]
 pub mod spectra;
@@ -129,6 +137,8 @@ pub mod targets;
 pub mod time;
 
 pub(crate) mod archive;
+#[doc(hidden)]
+pub use archive::provenance::checksum;
 pub(crate) mod macros;
 
 // ---------------------------------------------------------------------------
