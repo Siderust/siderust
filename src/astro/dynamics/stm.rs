@@ -10,6 +10,21 @@
 //!
 //! This avoids coding analytic variational equations per force model and is
 //! accurate enough for batch POD windows up to a few hours.
+//!
+//! The result is wrapped in [`StateTransition<F>`], which stores the 6×6 Jacobian as four
+//! typed 3×3 blocks:
+//!
+//! ```text
+//! Φ = [ dr_dr  dr_dv ]
+//!     [ dv_dr  dv_dv ]
+//! ```
+//!
+//! Call [`StateTransition::to_row_major`] for a dense `[[f64; 6]; 6]` export.
+
+
+
+
+use affn::matrix3::FrameMatrix3;
 
 use crate::astro::dynamics::forces::ForceModel;
 use crate::astro::dynamics::integrators::{rk4_propagate, rk4_propagate_series};
@@ -17,8 +32,112 @@ use crate::astro::dynamics::{OrbitState, Position, Velocity};
 use crate::coordinates::frames::GCRS;
 use crate::qtty::Second;
 
-/// A 6×6 row-major state-transition (or Jacobian) matrix.
-pub type Stm6 = [[f64; 6]; 6];
+/// Frame-tagged 6×6 state-transition matrix stored as four 3×3 blocks.
+///
+/// The block layout is `[r, v]` ordered:
+///
+/// ```text
+/// Φ = [ dr_dr  dr_dv ]
+///     [ dv_dr  dv_dv ]
+/// ```
+///
+/// - `dr_dr`, `dv_dv`: dimensionless (position→position, velocity→velocity)
+/// - `dr_dv`: position sensitivity to velocity perturbation (units: time)
+/// - `dv_dr`: velocity sensitivity to position perturbation (units: inverse time)
+#[derive(Debug, Clone, Copy)]
+pub struct StateTransition<F> {
+    dr_dr: FrameMatrix3<F>,
+    dr_dv: FrameMatrix3<F>,
+    dv_dr: FrameMatrix3<F>,
+    dv_dv: FrameMatrix3<F>,
+}
+
+impl<F> StateTransition<F> {
+    /// Construct from four 3×3 blocks.
+    #[inline]
+    pub fn from_blocks(
+        dr_dr: FrameMatrix3<F>,
+        dr_dv: FrameMatrix3<F>,
+        dv_dr: FrameMatrix3<F>,
+        dv_dv: FrameMatrix3<F>,
+    ) -> Self {
+        Self { dr_dr, dr_dv, dv_dr, dv_dv }
+    }
+
+    /// Identity state-transition: `dr_dr = I`, `dv_dv = I`, off-diagonal = 0.
+    pub fn identity() -> Self {
+        let eye = || FrameMatrix3::from_array([
+            [1.0, 0.0, 0.0],
+            [0.0, 1.0, 0.0],
+            [0.0, 0.0, 1.0],
+        ]);
+        Self {
+            dr_dr: eye(),
+            dr_dv: FrameMatrix3::zero(),
+            dv_dr: FrameMatrix3::zero(),
+            dv_dv: eye(),
+        }
+    }
+
+    /// Position–position Jacobian block (`∂r(t)/∂r(t₀)`, dimensionless).
+    #[inline]
+    pub fn dr_dr(&self) -> &FrameMatrix3<F> {
+        &self.dr_dr
+    }
+
+    /// Position–velocity Jacobian block (`∂r(t)/∂v(t₀)`, units: time).
+    #[inline]
+    pub fn dr_dv(&self) -> &FrameMatrix3<F> {
+        &self.dr_dv
+    }
+
+    /// Velocity–position Jacobian block (`∂v(t)/∂r(t₀)`, units: 1/time).
+    #[inline]
+    pub fn dv_dr(&self) -> &FrameMatrix3<F> {
+        &self.dv_dr
+    }
+
+    /// Velocity–velocity Jacobian block (`∂v(t)/∂v(t₀)`, dimensionless).
+    #[inline]
+    pub fn dv_dv(&self) -> &FrameMatrix3<F> {
+        &self.dv_dv
+    }
+
+    /// Assemble the full 6×6 row-major matrix for serialisation or numerical routines.
+    ///
+    /// Layout: rows/columns `0..2` are position, `3..5` are velocity.
+    pub fn to_row_major(&self) -> [[f64; 6]; 6] {
+        let dr_dr = self.dr_dr.as_array();
+        let dr_dv = self.dr_dv.as_array();
+        let dv_dr = self.dv_dr.as_array();
+        let dv_dv = self.dv_dv.as_array();
+        let mut out = [[0.0_f64; 6]; 6];
+        for i in 0..3 {
+            for j in 0..3 {
+                out[i][j] = dr_dr[i][j];
+                out[i][j + 3] = dr_dv[i][j];
+                out[i + 3][j] = dv_dr[i][j];
+                out[i + 3][j + 3] = dv_dv[i][j];
+            }
+        }
+        out
+    }
+
+    /// Re-tag as a different frame without changing data.
+    #[inline]
+    pub fn relabel<G>(self) -> StateTransition<G> {
+        StateTransition {
+            dr_dr: self.dr_dr.relabel::<G>(),
+            dr_dv: self.dr_dv.relabel::<G>(),
+            dv_dr: self.dv_dr.relabel::<G>(),
+            dv_dv: self.dv_dv.relabel::<G>(),
+        }
+    }
+}
+
+// =============================================================================
+// Private helpers (shared with finite_diff_stm functions)
+// =============================================================================
 
 fn state_component(s: &OrbitState, j: usize) -> f64 {
     match j {
@@ -46,28 +165,53 @@ fn perturb_component(s: &OrbitState, j: usize, delta: f64) -> OrbitState {
     )
 }
 
+fn fill_stm_from_raw(raw: &[[f64; 6]; 6]) -> StateTransition<GCRS> {
+    let mut dr_dr = [[0.0; 3]; 3];
+    let mut dr_dv = [[0.0; 3]; 3];
+    let mut dv_dr = [[0.0; 3]; 3];
+    let mut dv_dv = [[0.0; 3]; 3];
+    for i in 0..3 {
+        for j in 0..3 {
+            dr_dr[i][j] = raw[i][j];
+            dr_dv[i][j] = raw[i][j + 3];
+            dv_dr[i][j] = raw[i + 3][j];
+            dv_dv[i][j] = raw[i + 3][j + 3];
+        }
+    }
+    StateTransition::from_blocks(
+        FrameMatrix3::from_array(dr_dr),
+        FrameMatrix3::from_array(dr_dv),
+        FrameMatrix3::from_array(dv_dr),
+        FrameMatrix3::from_array(dv_dv),
+    )
+}
+
+// =============================================================================
+// Public API
+// =============================================================================
+
 /// Finite-difference state-transition matrix Φ(t, t₀).
 ///
-/// Returns a [`Stm6`] row-major Jacobian `∂x(t)/∂x(t₀)`.
+/// Returns a [`StateTransition<GCRS>`] with four typed 3×3 blocks.
 /// `dt` is the RK4 step size; `n_steps` is the total number of steps.
 pub fn finite_diff_stm<F: ForceModel>(
     force: &F,
     s0: OrbitState,
     dt: Second,
     n_steps: usize,
-) -> Stm6 {
-    let mut stm = [[0.0; 6]; 6];
+) -> StateTransition<GCRS> {
+    let mut raw = [[0.0; 6]; 6];
     for j in 0..6 {
         let x0j = state_component(&s0, j);
         let h = 1e-6 * x0j.abs().max(1.0);
         let s_plus = rk4_propagate(force, perturb_component(&s0, j, h), dt, n_steps);
         let s_minus = rk4_propagate(force, perturb_component(&s0, j, -h), dt, n_steps);
         for i in 0..6 {
-            stm[i][j] =
+            raw[i][j] =
                 (state_component(&s_plus, i) - state_component(&s_minus, i)) / (2.0 * h);
         }
     }
-    stm
+    fill_stm_from_raw(&raw)
 }
 
 /// Compute Φ(tₖ, t₀) at every step `k = 0..=n_steps`.
@@ -79,7 +223,7 @@ pub fn finite_diff_stm_series<F: ForceModel>(
     s0: OrbitState,
     dt: Second,
     n_steps: usize,
-) -> Vec<Stm6> {
+) -> Vec<StateTransition<GCRS>> {
     let mut perturbed: [[Vec<[f64; 6]>; 2]; 6] = Default::default();
     let mut hs = [0.0_f64; 6];
     for j in 0..6 {
@@ -105,15 +249,15 @@ pub fn finite_diff_stm_series<F: ForceModel>(
     }
     let mut out = Vec::with_capacity(n_steps + 1);
     for k in 0..=n_steps {
-        let mut phi = [[0.0; 6]; 6];
+        let mut raw = [[0.0; 6]; 6];
         for j in 0..6 {
             let plus = perturbed[j][1][k];
             let minus = perturbed[j][0][k];
             for i in 0..6 {
-                phi[i][j] = (plus[i] - minus[i]) / (2.0 * hs[j]);
+                raw[i][j] = (plus[i] - minus[i]) / (2.0 * hs[j]);
             }
         }
-        out.push(phi);
+        out.push(fill_stm_from_raw(&raw));
     }
     out
 }
@@ -124,19 +268,20 @@ mod tests {
     use crate::astro::dynamics::forces::TwoBody;
     use crate::time::JulianDate;
 
-    #[test]
-    fn two_body_stm_is_identity_at_zero_steps() {
-        let s = OrbitState::new(
+    fn sample_state() -> OrbitState {
+        OrbitState::new(
             JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
-        );
-        let phi = finite_diff_stm(&TwoBody::earth(), s, Second::new(1.0), 0);
+        )
+    }
+
+    fn check_identity(phi: &[[f64; 6]; 6], tol: f64) {
         for i in 0..6 {
             for j in 0..6 {
                 let target = if i == j { 1.0 } else { 0.0 };
                 assert!(
-                    (phi[i][j] - target).abs() < 1e-9,
+                    (phi[i][j] - target).abs() < tol,
                     "phi[{i}][{j}] = {} (expected {target})",
                     phi[i][j]
                 );
@@ -145,20 +290,24 @@ mod tests {
     }
 
     #[test]
+    fn two_body_stm_is_identity_at_zero_steps() {
+        let s = sample_state();
+        let phi = finite_diff_stm(&TwoBody::earth(), s, Second::new(1.0), 0);
+        check_identity(&phi.to_row_major(), 1e-9);
+    }
+
+    #[test]
+    fn identity_to_row_major() {
+        let phi = StateTransition::<GCRS>::identity().to_row_major();
+        check_identity(&phi, 1e-15);
+    }
+
+    #[test]
     fn stm_series_first_element_is_identity() {
-        let s = OrbitState::new(
-            JulianDate::new(2_451_545.0),
-            Position::<GCRS>::new(7000.0, 0.0, 0.0),
-            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
-        );
+        let s = sample_state();
         let series = finite_diff_stm_series(&TwoBody::earth(), s, Second::new(1.0), 2);
         assert_eq!(series.len(), 3);
-        let phi0 = series[0];
-        for i in 0..6 {
-            for j in 0..6 {
-                let target = if i == j { 1.0 } else { 0.0 };
-                assert!((phi0[i][j] - target).abs() < 1e-9);
-            }
-        }
+        check_identity(&series[0].to_row_major(), 1e-9);
     }
 }
+

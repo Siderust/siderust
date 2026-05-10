@@ -42,5 +42,5 @@ pub mod units;
 pub use state::{
     OrbitState, Position, SpacecraftProperties, SpacecraftState, StateDerivative, Velocity,
 };
-pub use stm::{finite_diff_stm, finite_diff_stm_series, Stm6};
+pub use stm::{finite_diff_stm, finite_diff_stm_series, StateTransition};
 pub use units::GravitationalParameter;
