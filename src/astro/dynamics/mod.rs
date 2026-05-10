@@ -36,7 +36,9 @@ pub mod frames;
 pub mod gravity;
 pub mod integrators;
 pub mod state;
+pub mod stm;
 
 pub use state::{
     OrbitState, Position, SpacecraftProperties, SpacecraftState, StateDerivative, Velocity,
 };
+pub use stm::{finite_diff_stm, finite_diff_stm_series, Stm6};
