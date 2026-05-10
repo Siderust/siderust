@@ -16,8 +16,6 @@ dependencies = [
 [[package]]
 name = "affn"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bccc9086e3ce406084e92ab6b01d010fe30fb4ce9e6aaed9e168f0e7ca35145d"
 dependencies = [
  "affn-derive 0.7.0",
  "qtty",
@@ -25,10 +23,29 @@ dependencies = [
 ]
 
 [[package]]
+name = "affn"
+version = "0.7.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bccc9086e3ce406084e92ab6b01d010fe30fb4ce9e6aaed9e168f0e7ca35145d"
+dependencies = [
+ "affn-derive 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "qtty",
+]
+
+[[package]]
 name = "affn-derive"
 version = "0.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "808e8b27c0eaf4d3481be80676a13f3173aa4a7f31df9d1e5e2bc34901ce8a5d"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "affn-derive"
+version = "0.7.0"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2010,7 +2027,7 @@ dependencies = [
 name = "siderust-ffi"
 version = "0.4.1"
 dependencies = [
- "affn 0.7.0",
+ "affn 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "cbindgen",
  "qtty",
  "siderust",

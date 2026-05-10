@@ -18,15 +18,16 @@
 //! Concrete implementations for full geopotential models (EGM2008, …)
 //! live in downstream crates and plug in via `impl GravityFieldProvider`.
 
+use crate::astro::dynamics::units::GravitationalParameter;
 use crate::qtty::Kilometers;
 
 /// Gravity-field constants.
 #[derive(Debug, Clone, Copy)]
 pub struct GravityConstants {
-    /// `GM = G·M_central`, km³/s².
-    pub gm_km3_s2: f64,
+    /// `GM = G·M_central`.
+    pub gm: GravitationalParameter,
     /// Equatorial reference radius of the field.
-    pub radius_km: Kilometers,
+    pub radius: Kilometers,
     /// Maximum degree available in the model.
     pub max_degree: u16,
 }
@@ -55,8 +56,8 @@ pub struct TwoBodyEarth;
 impl GravityFieldProvider for TwoBodyEarth {
     fn constants(&self) -> GravityConstants {
         GravityConstants {
-            gm_km3_s2: 398_600.441_8,
-            radius_km: Kilometers::new(6_378.137),
+            gm: GravitationalParameter::new(398_600.441_8),
+            radius: Kilometers::new(6_378.137),
             max_degree: 0,
         }
     }
@@ -77,8 +78,8 @@ mod tests {
     #[test]
     fn two_body_earth_constants() {
         let g = TwoBodyEarth.constants();
-        assert!((g.gm_km3_s2 - 398_600.441_8).abs() < 1e-3);
-        assert!((g.radius_km.value() - 6_378.137).abs() < 1e-3);
+        assert!((g.gm.value() - 398_600.441_8).abs() < 1e-3);
+        assert!((g.radius.value() - 6_378.137).abs() < 1e-3);
         assert_eq!(g.max_degree, 0);
     }
 

@@ -8,6 +8,7 @@
 
 use crate::astro::dynamics::forces::ForceModel;
 use crate::astro::dynamics::state::{OrbitState, StateDerivative};
+use crate::qtty::Second;
 use crate::time::JulianDate;
 
 const SEC_PER_DAY: f64 = 86_400.0;
@@ -17,7 +18,14 @@ const SEC_PER_DAY: f64 = 86_400.0;
 pub struct Tolerance {
     /// Relative tolerance.
     pub rel: f64,
-    /// Absolute tolerance (km, km/s).
+    /// Absolute tolerance applied uniformly to all six state components.
+    ///
+    /// The state vector mixes position (km) and velocity (km/s), so this
+    /// threshold is intentionally dimensionless from the integrator's
+    /// perspective.  Callers should choose a value that is small relative to
+    /// the expected magnitudes of both position and velocity (e.g. `1e-10`
+    /// gives sub-nanometre / sub-nanometre-per-second accuracy for a LEO
+    /// orbit at ~7 000 km radius and ~7.5 km/s speed).
     pub abs: f64,
 }
 
@@ -61,18 +69,20 @@ fn rhs<F: ForceModel>(force: &F, s: &OrbitState) -> StateDerivative {
 #[inline]
 fn state_at(s: &OrbitState, d: &StateDerivative, h: f64, dt: f64) -> OrbitState {
     let jd = JulianDate::new(s.epoch_tt.jd_value() + dt / SEC_PER_DAY);
-    let advanced = s.advance(d, h);
+    let advanced = s.advance(d, Second::new(h));
     OrbitState::new(jd, advanced.position, advanced.velocity)
 }
 
 /// Single adaptive DOPRI5 step. Returns `(new_state, h_used, h_next)`.
+///
+/// `h_try` is the initial step size to attempt.
 #[allow(clippy::too_many_lines)]
 pub fn dopri5_step<F: ForceModel>(
     force: &F,
     s: &OrbitState,
-    h_try: f64,
+    h_try: Second,
     tol: Tolerance,
-) -> (OrbitState, f64, f64) {
+) -> (OrbitState, Second, Second) {
     let c2 = 1.0 / 5.0;
     let c3 = 3.0 / 10.0;
     let c4 = 4.0 / 5.0;
@@ -106,12 +116,20 @@ pub fn dopri5_step<F: ForceModel>(
     let e6 = 22.0 / 525.0;
     let e7 = -1.0 / 40.0;
 
-    let mut h = h_try;
+    let mut h = h_try.value();
 
     loop {
         let k1 = rhs(force, s);
         let k2 = rhs(force, &state_at(s, &k1.scaled(a21), h, c2 * h));
-        let k3 = rhs(force, &state_at(s, &k1.scaled(a31).add(&k2.scaled(a32)), h, c3 * h));
+        let k3 = rhs(
+            force,
+            &state_at(
+                s,
+                &k1.scaled(a31).add(&k2.scaled(a32)),
+                h,
+                c3 * h,
+            ),
+        );
         let k4 = rhs(
             force,
             &state_at(
@@ -180,7 +198,7 @@ pub fn dopri5_step<F: ForceModel>(
                 let factor = 0.9 * err_norm.powf(-0.2);
                 h * factor.clamp(0.2, 5.0)
             };
-            return (s7, h, h_next);
+            return (s7, Second::new(h), Second::new(h_next));
         } else {
             let factor = 0.9 * err_norm.powf(-0.2);
             h *= factor.clamp(0.1, 0.9);
@@ -188,13 +206,14 @@ pub fn dopri5_step<F: ForceModel>(
     }
 }
 
-/// Propagate from `state` for `total_dt_s` seconds with adaptive steps.
+/// Propagate from `state` for `total_dt` with adaptive steps.
 pub fn dopri5_propagate<F: ForceModel>(
     force: &F,
     state: OrbitState,
-    total_dt_s: f64,
+    total_dt: Second,
     tol: Tolerance,
 ) -> OrbitState {
+    let total_dt_s = total_dt.value();
     let mut s = state;
     let mut t = 0.0;
     let mut h = total_dt_s.signum() * 30.0_f64.min(total_dt_s.abs());
@@ -202,10 +221,10 @@ pub fn dopri5_propagate<F: ForceModel>(
         if (t + h - total_dt_s) * total_dt_s.signum() > 0.0 {
             h = total_dt_s - t;
         }
-        let (s_new, h_used, h_next) = dopri5_step(force, &s, h, tol);
+        let (s_new, h_used, h_next) = dopri5_step(force, &s, Second::new(h), tol);
         s = s_new;
-        t += h_used;
-        h = h_next;
+        t += h_used.value();
+        h = h_next.value();
     }
     s
 }
@@ -228,7 +247,7 @@ mod tests {
             Velocity::<GCRS>::new(0.0, v, 0.0),
         );
         let period = 2.0 * std::f64::consts::PI * (r.powi(3) / mu).sqrt();
-        let s = dopri5_propagate(&TwoBody::earth(), s0, period, Tolerance::default());
+        let s = dopri5_propagate(&TwoBody::earth(), s0, Second::new(period), Tolerance::default());
         let dr = ((s.position.x().value() - r).powi(2)
             + s.position.y().value().powi(2)
             + s.position.z().value().powi(2))

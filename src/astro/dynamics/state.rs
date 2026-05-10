@@ -27,8 +27,8 @@
 use crate::coordinates::cartesian;
 use crate::coordinates::centers::Geocentric;
 use crate::coordinates::frames::GCRS;
-use crate::qtty::unit::{Kilometer, Per, Second};
-use crate::qtty::{Kilograms, SquareMeters};
+use crate::qtty::unit::{Kilometer, Per, Second as SecondUnit};
+use crate::qtty::{Kilograms, Second, SquareMeters};
 use crate::time::JulianDate;
 use affn::cartesian::Vector;
 
@@ -43,19 +43,19 @@ use affn::cartesian::Vector;
 pub type Position<S = GCRS, U = Kilometer> = cartesian::Position<Geocentric, S, U>;
 
 /// Inertial velocity vector, default `km/s` in [`GCRS`].
-pub type Velocity<S = GCRS, U = Per<Kilometer, Second>> = cartesian::Velocity<S, U>;
+pub type Velocity<S = GCRS, U = Per<Kilometer, SecondUnit>> = cartesian::Velocity<S, U>;
 
 /// Inertial acceleration vector, default `km/s²` in [`GCRS`].
 ///
 /// Stored as the canonical `Per<velocity, time>` unit so that it composes
 /// dimensionally with [`Velocity`] under [`qtty`] arithmetic.
-pub type Acceleration<S = GCRS, U = Per<Per<Kilometer, Second>, Second>> = Vector<S, U>;
+pub type Acceleration<S = GCRS, U = Per<Per<Kilometer, SecondUnit>, SecondUnit>> = Vector<S, U>;
 
 /// Default unit of [`Velocity`] used by the propagator.
-pub type VelocityUnit = Per<Kilometer, Second>;
+pub type VelocityUnit = Per<Kilometer, SecondUnit>;
 
 /// Default unit of [`Acceleration`] used by the propagator.
-pub type AccelerationUnit = Per<Per<Kilometer, Second>, Second>;
+pub type AccelerationUnit = Per<Per<Kilometer, SecondUnit>, SecondUnit>;
 
 // =============================================================================
 // OrbitState
@@ -102,13 +102,14 @@ impl OrbitState {
         }
     }
 
-    /// Advance position and velocity by `dt_s` seconds along `deriv`.
+    /// Advance position and velocity by `dt` along `deriv`.
     ///
     /// The epoch is **not** updated — the caller is responsible for advancing
     /// `epoch_tt` to the new time. This mirrors the mathematical step
     /// `x(t + h) ≈ x(t) + h · ẋ(t)`.
     #[inline]
-    pub fn advance(&self, deriv: &StateDerivative, dt_s: f64) -> Self {
+    pub fn advance(&self, deriv: &StateDerivative, dt: Second) -> Self {
+        let dt_s = dt.value();
         let new_pos = Position::<GCRS, Kilometer>::new(
             self.position.x().value() + dt_s * deriv.vel.x().value(),
             self.position.y().value() + dt_s * deriv.vel.y().value(),
@@ -291,7 +292,7 @@ mod tests {
         let s = OrbitState::new(epoch, pos, vel);
 
         let deriv = StateDerivative::from_components([0.0, 7.5, 0.0], [0.0, 0.0, -9.8e-3]);
-        let dt = 10.0;
+        let dt = Second::new(10.0);
         let s2 = s.advance(&deriv, dt);
 
         assert!((s2.position.x().value() - 7000.0).abs() < 1e-10);

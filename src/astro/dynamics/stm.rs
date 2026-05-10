@@ -15,6 +15,7 @@ use crate::astro::dynamics::forces::ForceModel;
 use crate::astro::dynamics::integrators::{rk4_propagate, rk4_propagate_series};
 use crate::astro::dynamics::{OrbitState, Position, Velocity};
 use crate::coordinates::frames::GCRS;
+use crate::qtty::Second;
 
 /// A 6×6 row-major state-transition (or Jacobian) matrix.
 pub type Stm6 = [[f64; 6]; 6];
@@ -48,19 +49,19 @@ fn perturb_component(s: &OrbitState, j: usize, delta: f64) -> OrbitState {
 /// Finite-difference state-transition matrix Φ(t, t₀).
 ///
 /// Returns a [`Stm6`] row-major Jacobian `∂x(t)/∂x(t₀)`.
-/// `dt_s` is the RK4 step size in seconds; `n_steps` is the total number of steps.
+/// `dt` is the RK4 step size; `n_steps` is the total number of steps.
 pub fn finite_diff_stm<F: ForceModel>(
     force: &F,
     s0: OrbitState,
-    dt_s: f64,
+    dt: Second,
     n_steps: usize,
 ) -> Stm6 {
     let mut stm = [[0.0; 6]; 6];
     for j in 0..6 {
         let x0j = state_component(&s0, j);
         let h = 1e-6 * x0j.abs().max(1.0);
-        let s_plus = rk4_propagate(force, perturb_component(&s0, j, h), dt_s, n_steps);
-        let s_minus = rk4_propagate(force, perturb_component(&s0, j, -h), dt_s, n_steps);
+        let s_plus = rk4_propagate(force, perturb_component(&s0, j, h), dt, n_steps);
+        let s_minus = rk4_propagate(force, perturb_component(&s0, j, -h), dt, n_steps);
         for i in 0..6 {
             stm[i][j] =
                 (state_component(&s_plus, i) - state_component(&s_minus, i)) / (2.0 * h);
@@ -76,7 +77,7 @@ pub fn finite_diff_stm<F: ForceModel>(
 pub fn finite_diff_stm_series<F: ForceModel>(
     force: &F,
     s0: OrbitState,
-    dt_s: f64,
+    dt: Second,
     n_steps: usize,
 ) -> Vec<Stm6> {
     let mut perturbed: [[Vec<[f64; 6]>; 2]; 6] = Default::default();
@@ -87,7 +88,7 @@ pub fn finite_diff_stm_series<F: ForceModel>(
         hs[j] = h;
         for (sign_idx, sign) in [-1.0_f64, 1.0_f64].iter().enumerate() {
             let sp = perturb_component(&s0, j, sign * h);
-            perturbed[j][sign_idx] = rk4_propagate_series(force, sp, dt_s, n_steps)
+            perturbed[j][sign_idx] = rk4_propagate_series(force, sp, dt, n_steps)
                 .into_iter()
                 .map(|s| {
                     [
@@ -120,7 +121,7 @@ pub fn finite_diff_stm_series<F: ForceModel>(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::dynamics::forces::{ForceModel, TwoBody};
+    use crate::astro::dynamics::forces::TwoBody;
     use crate::time::JulianDate;
 
     #[test]
@@ -130,7 +131,7 @@ mod tests {
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
-        let phi = finite_diff_stm(&TwoBody::earth(), s, 1.0, 0);
+        let phi = finite_diff_stm(&TwoBody::earth(), s, Second::new(1.0), 0);
         for i in 0..6 {
             for j in 0..6 {
                 let target = if i == j { 1.0 } else { 0.0 };
@@ -150,7 +151,7 @@ mod tests {
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
-        let series = finite_diff_stm_series(&TwoBody::earth(), s, 1.0, 2);
+        let series = finite_diff_stm_series(&TwoBody::earth(), s, Second::new(1.0), 2);
         assert_eq!(series.len(), 3);
         let phi0 = series[0];
         for i in 0..6 {
