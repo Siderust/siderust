@@ -29,9 +29,11 @@
 //! - `covariance` — frame-tagged 6×6 state covariance with transport between
 //!   inertial and local orbital frames.
 
+pub mod atmosphere;
 pub mod covariance;
 pub mod forces;
 pub mod frames;
+pub mod gravity;
 pub mod integrators;
 pub mod state;
 

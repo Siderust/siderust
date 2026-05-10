@@ -66,6 +66,8 @@ pub struct EopValues {
     pub dx: MilliArcseconds,
     /// Celestial pole offset dY.
     pub dy: MilliArcseconds,
+    /// Length-of-day excess (deviation from 86400 SI seconds).
+    pub lod: Seconds,
 }
 
 impl Default for EopValues {
@@ -76,6 +78,7 @@ impl Default for EopValues {
             yp: Arcseconds::new(0.0),
             dx: MilliArcseconds::new(0.0),
             dy: MilliArcseconds::new(0.0),
+            lod: Seconds::new(0.0),
         }
     }
 }
@@ -237,6 +240,7 @@ impl EopProvider for IersEop {
             yp: Arcseconds::new(e.pm_yp_arcsec.unwrap_or(0.0)),
             dx: MilliArcseconds::new(e.dx_milliarcsec.unwrap_or(0.0)),
             dy: MilliArcseconds::new(e.dy_milliarcsec.unwrap_or(0.0)),
+            lod: Seconds::new(e.lod_milliseconds.unwrap_or(0.0) / 1_000.0),
         })
     }
 
