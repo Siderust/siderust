@@ -55,6 +55,7 @@
 pub mod aberration;
 pub mod cio;
 pub mod conic;
+pub mod dynamics;
 pub mod earth_rotation;
 pub mod earth_rotation_provider;
 pub mod eop;
