@@ -63,7 +63,11 @@ impl GravityFieldProvider for TwoBodyEarth {
     }
 
     fn c_nm(&self, n: u16, _m: u16) -> f64 {
-        if n == 0 { 1.0 } else { 0.0 }
+        if n == 0 {
+            1.0
+        } else {
+            0.0
+        }
     }
 
     fn s_nm(&self, _n: u16, _m: u16) -> f64 {

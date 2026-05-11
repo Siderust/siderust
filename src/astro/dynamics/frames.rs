@@ -124,7 +124,10 @@ impl<M> LocalOrbitalFrame<M> {
     /// callers that already have a basis matrix from another source.
     #[inline]
     pub fn from_rotation(rotation: Rotation3) -> Self {
-        Self { rotation, _marker: PhantomData }
+        Self {
+            rotation,
+            _marker: PhantomData,
+        }
     }
 
     /// The captured GCRS→`M` rotation matrix.

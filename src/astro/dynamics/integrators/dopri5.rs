@@ -31,7 +31,10 @@ pub struct Tolerance {
 
 impl Default for Tolerance {
     fn default() -> Self {
-        Self { rel: 1e-10, abs: 1e-10 }
+        Self {
+            rel: 1e-10,
+            abs: 1e-10,
+        }
     }
 }
 
@@ -123,12 +126,7 @@ pub fn dopri5_step<F: ForceModel>(
         let k2 = rhs(force, &state_at(s, &k1.scaled(a21), h, c2 * h));
         let k3 = rhs(
             force,
-            &state_at(
-                s,
-                &k1.scaled(a31).add(&k2.scaled(a32)),
-                h,
-                c3 * h,
-            ),
+            &state_at(s, &k1.scaled(a31).add(&k2.scaled(a32)), h, c3 * h),
         );
         let k4 = rhs(
             force,
@@ -238,7 +236,7 @@ mod tests {
 
     #[test]
     fn dopri5_one_orbit_closes() {
-        let mu: f64 = 398_600.4418;
+        let mu: f64 = 398_600.441_8;
         let r: f64 = 7_000.0;
         let v: f64 = (mu / r).sqrt();
         let s0 = OrbitState::new(
@@ -247,7 +245,12 @@ mod tests {
             Velocity::<GCRS>::new(0.0, v, 0.0),
         );
         let period = 2.0 * std::f64::consts::PI * (r.powi(3) / mu).sqrt();
-        let s = dopri5_propagate(&TwoBody::earth(), s0, Second::new(period), Tolerance::default());
+        let s = dopri5_propagate(
+            &TwoBody::earth(),
+            s0,
+            Second::new(period),
+            Tolerance::default(),
+        );
         let dr = ((s.position.x().value() - r).powi(2)
             + s.position.y().value().powi(2)
             + s.position.z().value().powi(2))

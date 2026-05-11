@@ -72,7 +72,7 @@ mod tests {
 
     #[test]
     fn rk4_one_orbit_closes() {
-        let mu: f64 = 398_600.4418;
+        let mu: f64 = 398_600.441_8;
         let r: f64 = 7_000.0;
         let v: f64 = (mu / r).sqrt();
         let s0 = OrbitState::new(

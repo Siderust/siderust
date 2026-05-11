@@ -38,7 +38,6 @@ pub const GM_SUN: GravitationalParameter = GravitationalParameter::new(1.327_124
 /// Moon standard gravitational parameter (DE430 value).
 pub const GM_MOON: GravitationalParameter = GravitationalParameter::new(4.902_800_066e3);
 
-
 #[cfg(test)]
 mod tests {
     use super::*;

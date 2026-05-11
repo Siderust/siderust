@@ -90,11 +90,7 @@ impl PartialEq for OrbitState {
 impl OrbitState {
     /// Construct from typed GCRS position and velocity.
     #[inline]
-    pub fn new(
-        epoch_tt: JulianDate,
-        position: Position<GCRS>,
-        velocity: Velocity<GCRS>,
-    ) -> Self {
+    pub fn new(epoch_tt: JulianDate, position: Position<GCRS>, velocity: Velocity<GCRS>) -> Self {
         Self {
             epoch_tt,
             position,

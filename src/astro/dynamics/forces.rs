@@ -32,7 +32,9 @@ use crate::astro::dynamics::units::{GravitationalParameter, GM_EARTH, GM_MOON, G
 use crate::astro::precession::ecliptic_of_date_to_mean_equatorial_matrix;
 use crate::calculus::ephemeris::DynEphemeris;
 use crate::coordinates::frames::{EclipticMeanJ2000, GCRS};
-use crate::qtty::{AstronomicalUnit, Kilometer, Kilogram, Kilometers, Pascals, Quantity, Per, SquareMeter, Unit};
+use crate::qtty::{
+    AstronomicalUnit, Kilogram, Kilometer, Kilometers, Pascals, Per, Quantity, SquareMeter, Unit,
+};
 use crate::time::JulianDate;
 use affn::cartesian::Displacement;
 use std::sync::Arc;
@@ -93,7 +95,9 @@ impl Default for CompositeForce {
 impl CompositeForce {
     /// Empty force (returns zero).
     pub fn empty() -> Self {
-        Self { components: Vec::new() }
+        Self {
+            components: Vec::new(),
+        }
     }
 
     /// Append a force component.
@@ -239,7 +243,11 @@ pub struct DragForce<D: DensityProvider> {
 impl DragForce<ExponentialAtmosphere> {
     /// Build a drag model using the [`ExponentialAtmosphere::LEO_500KM`] profile.
     pub fn leo_500km(cd: f64, area_to_mass_m2_kg: f64) -> Self {
-        Self { cd, area_to_mass: AreaToMassRatio::new(area_to_mass_m2_kg), atmosphere: ExponentialAtmosphere::LEO_500KM }
+        Self {
+            cd,
+            area_to_mass: AreaToMassRatio::new(area_to_mass_m2_kg),
+            atmosphere: ExponentialAtmosphere::LEO_500KM,
+        }
     }
 }
 
@@ -260,7 +268,11 @@ impl<D: DensityProvider> ForceModel for DragForce<D> {
         let vz = s.velocity.z().value();
 
         let omega_cross_r = [-OMEGA_EARTH_RAD_S * ry, OMEGA_EARTH_RAD_S * rx, 0.0_f64];
-        let v_rel = [vx - omega_cross_r[0], vy - omega_cross_r[1], vz - omega_cross_r[2]];
+        let v_rel = [
+            vx - omega_cross_r[0],
+            vy - omega_cross_r[1],
+            vz - omega_cross_r[2],
+        ];
 
         let v_mag_m_s = (v_rel[0].powi(2) + v_rel[1].powi(2) + v_rel[2].powi(2)).sqrt() * 1_000.0;
         let pre = -0.5 * self.cd * self.area_to_mass.value() * rho * v_mag_m_s;
@@ -368,8 +380,16 @@ pub struct CannonballSrp {
 
 impl CannonballSrp {
     /// Build a cannonball SRP model.
-    pub fn new(provider: Arc<dyn DynEphemeris + Send + Sync>, cr: f64, area_to_mass_m2_kg: f64) -> Self {
-        Self { provider, cr, area_to_mass: AreaToMassRatio::new(area_to_mass_m2_kg) }
+    pub fn new(
+        provider: Arc<dyn DynEphemeris + Send + Sync>,
+        cr: f64,
+        area_to_mass_m2_kg: f64,
+    ) -> Self {
+        Self {
+            provider,
+            cr,
+            area_to_mass: AreaToMassRatio::new(area_to_mass_m2_kg),
+        }
     }
 
     fn sun_geocentric(&self, jd: JulianDate) -> Option<Displacement<GCRS, Kilometer>> {
@@ -399,7 +419,8 @@ impl ForceModel for CannonballSrp {
         }
         let r2 = r * r;
         // N/m² · m²/kg = m/s²; convert to km/s² by dividing by 1000.
-        let mag_km_s2 = self.cr * P0.value() * (AU_IN_KM * AU_IN_KM / r2) * self.area_to_mass.value() / 1_000.0;
+        let mag_km_s2 =
+            self.cr * P0.value() * (AU_IN_KM * AU_IN_KM / r2) * self.area_to_mass.value() / 1_000.0;
         let inv_r = 1.0 / r;
         Acceleration::<GCRS, AccelerationUnit>::new(
             mag_km_s2 * r_sun_sat.x().value() * inv_r,
@@ -489,7 +510,10 @@ mod tests {
             }));
         let s_end = rk4_propagate(&force, s0, Second::new(30.0), 1440);
         let r_end = s_end.position.distance().value();
-        assert!(r_end < r0, "expected drag-driven decay; r0={r0:.3}, r_end={r_end:.3}");
+        assert!(
+            r_end < r0,
+            "expected drag-driven decay; r0={r0:.3}, r_end={r_end:.3}"
+        );
     }
 
     #[test]
@@ -502,7 +526,10 @@ mod tests {
         let mag = a.magnitude().value();
         // Sun + Moon perturbations are ~1e-7 km/s² at LEO; accept any non-zero
         assert!(mag > 0.0, "third-body acceleration should be nonzero");
-        assert!(mag < 1e-4, "third-body acceleration unrealistically large: {mag}");
+        assert!(
+            mag < 1e-4,
+            "third-body acceleration unrealistically large: {mag}"
+        );
     }
 
     #[test]
@@ -514,7 +541,10 @@ mod tests {
         let s = leo_at(JulianDate::new(2_451_545.0));
         let a = srp.acceleration(&s);
         let mag = a.magnitude().value();
-        assert!((5e-11..5e-10).contains(&mag), "SRP magnitude out of expected band: {mag} km/s²");
+        assert!(
+            (5e-11..5e-10).contains(&mag),
+            "SRP magnitude out of expected band: {mag} km/s²"
+        );
     }
 
     #[test]

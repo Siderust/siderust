@@ -21,9 +21,6 @@
 //!
 //! Call [`StateTransition::to_row_major`] for a dense `[[f64; 6]; 6]` export.
 
-
-
-
 use affn::matrix3::FrameMatrix3;
 
 use crate::astro::dynamics::forces::ForceModel;
@@ -61,16 +58,17 @@ impl<F> StateTransition<F> {
         dv_dr: FrameMatrix3<F>,
         dv_dv: FrameMatrix3<F>,
     ) -> Self {
-        Self { dr_dr, dr_dv, dv_dr, dv_dv }
+        Self {
+            dr_dr,
+            dr_dv,
+            dv_dr,
+            dv_dv,
+        }
     }
 
     /// Identity state-transition: `dr_dr = I`, `dv_dv = I`, off-diagonal = 0.
     pub fn identity() -> Self {
-        let eye = || FrameMatrix3::from_array([
-            [1.0, 0.0, 0.0],
-            [0.0, 1.0, 0.0],
-            [0.0, 0.0, 1.0],
-        ]);
+        let eye = || FrameMatrix3::from_array([[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
         Self {
             dr_dr: eye(),
             dr_dv: FrameMatrix3::zero(),
@@ -206,9 +204,8 @@ pub fn finite_diff_stm<F: ForceModel>(
         let h = 1e-6 * x0j.abs().max(1.0);
         let s_plus = rk4_propagate(force, perturb_component(&s0, j, h), dt, n_steps);
         let s_minus = rk4_propagate(force, perturb_component(&s0, j, -h), dt, n_steps);
-        for i in 0..6 {
-            raw[i][j] =
-                (state_component(&s_plus, i) - state_component(&s_minus, i)) / (2.0 * h);
+        for (i, row) in raw.iter_mut().enumerate() {
+            row[j] = (state_component(&s_plus, i) - state_component(&s_minus, i)) / (2.0 * h);
         }
     }
     fill_stm_from_raw(&raw)
@@ -250,11 +247,11 @@ pub fn finite_diff_stm_series<F: ForceModel>(
     let mut out = Vec::with_capacity(n_steps + 1);
     for k in 0..=n_steps {
         let mut raw = [[0.0; 6]; 6];
-        for j in 0..6 {
-            let plus = perturbed[j][1][k];
-            let minus = perturbed[j][0][k];
-            for i in 0..6 {
-                raw[i][j] = (plus[i] - minus[i]) / (2.0 * hs[j]);
+        for (j, perturb_pair) in perturbed.iter().enumerate() {
+            let plus = perturb_pair[1][k];
+            let minus = perturb_pair[0][k];
+            for (i, row) in raw.iter_mut().enumerate() {
+                row[j] = (plus[i] - minus[i]) / (2.0 * hs[j]);
             }
         }
         out.push(fill_stm_from_raw(&raw));
@@ -277,13 +274,13 @@ mod tests {
     }
 
     fn check_identity(phi: &[[f64; 6]; 6], tol: f64) {
-        for i in 0..6 {
-            for j in 0..6 {
+        for (i, row) in phi.iter().enumerate() {
+            for (j, value) in row.iter().enumerate() {
                 let target = if i == j { 1.0 } else { 0.0 };
                 assert!(
-                    (phi[i][j] - target).abs() < tol,
+                    (*value - target).abs() < tol,
                     "phi[{i}][{j}] = {} (expected {target})",
-                    phi[i][j]
+                    value
                 );
             }
         }
@@ -310,4 +307,3 @@ mod tests {
         check_identity(&series[0].to_row_major(), 1e-9);
     }
 }
-

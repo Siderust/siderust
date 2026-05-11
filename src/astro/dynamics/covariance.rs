@@ -120,7 +120,11 @@ impl<F> StateCovariance<F> {
             sigma_v[1] * sigma_v[1],
             sigma_v[2] * sigma_v[2],
         ]);
-        Self { rr, rv: FrameMatrix3::zero(), vv }
+        Self {
+            rr,
+            rv: FrameMatrix3::zero(),
+            vv,
+        }
     }
 
     /// Position–position covariance block (symmetric, km²).
@@ -157,9 +161,9 @@ impl<F> StateCovariance<F> {
         let rv = self.rv.as_array();
         let vv = self.vv.as_array();
         let mut out = [[0.0_f64; 6]; 6];
-        for i in 0..3 {
-            for j in 0..3 {
-                out[i][j] = rr[i][j];
+        for (i, rr_row) in rr.iter().enumerate() {
+            for (j, rr_elt) in rr_row.iter().enumerate() {
+                out[i][j] = *rr_elt;
                 out[i][j + 3] = rv[i][j];
                 out[i + 3][j] = rv[j][i]; // vr = rv^T
                 out[i + 3][j + 3] = vv[i][j];
@@ -206,10 +210,7 @@ impl StateCovariance<GCRS> {
 impl<M: ReferenceFrame> StateCovariance<M> {
     /// Rotate this local-frame covariance back to the inertial parent frame
     /// ([`GCRS`]).
-    pub fn transform_into_inertial(
-        &self,
-        frame: &LocalOrbitalFrame<M>,
-    ) -> StateCovariance<GCRS> {
+    pub fn transform_into_inertial(&self, frame: &LocalOrbitalFrame<M>) -> StateCovariance<GCRS> {
         let r = frame.rotation_inverse();
         StateCovariance {
             rr: self.rr.rotated_by::<GCRS>(&r),
@@ -271,9 +272,9 @@ mod tests {
             SymmetricFrameMatrix3::<GCRS>::from_diagonal([1.0, 1.0, 1.0]),
         );
         let vr = p.vr();
-        for i in 0..3 {
-            for j in 0..3 {
-                assert_eq!(vr.as_array()[i][j], rv_data[j][i]);
+        for (i, row) in vr.as_array().iter().enumerate() {
+            for (j, value) in row.iter().enumerate() {
+                assert_eq!(*value, rv_data[j][i]);
             }
         }
     }
@@ -293,16 +294,16 @@ mod tests {
         assert_eq!(m[0][0], 2.0);
         assert_eq!(m[0][1], 0.5);
         assert_eq!(m[1][0], 0.5); // symmetric
-        // rv top-right
+                                  // rv top-right
         assert_eq!(m[0][3], 0.1);
         // vr bottom-left = rv^T
         assert_eq!(m[3][0], 0.1);
         // vv bottom-right
         assert_eq!(m[3][3], 0.01);
         // vr is rv^T
-        for i in 0..3 {
-            for j in 0..3 {
-                assert_eq!(m[i + 3][j], m[j][i + 3]);
+        for (i, row) in m[3..6].iter().enumerate() {
+            for (j, value) in row[..3].iter().enumerate() {
+                assert_eq!(*value, m[j][i + 3]);
             }
         }
     }
@@ -316,11 +317,13 @@ mod tests {
         let p_back = p_rtn.transform_into_inertial(&f);
         let orig = p.to_row_major();
         let back = p_back.to_row_major();
-        for i in 0..6 {
-            for j in 0..6 {
+        for (i, row) in back.iter().enumerate() {
+            for (j, value) in row.iter().enumerate() {
                 assert!(
-                    (back[i][j] - orig[i][j]).abs() < 1e-12,
-                    "back[{i}][{j}] = {} ≠ {}", back[i][j], orig[i][j]
+                    (*value - orig[i][j]).abs() < 1e-12,
+                    "back[{i}][{j}] = {} ≠ {}",
+                    value,
+                    orig[i][j]
                 );
             }
         }
@@ -343,4 +346,3 @@ mod tests {
         }
     }
 }
-
