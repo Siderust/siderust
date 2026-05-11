@@ -30,7 +30,9 @@
 //!   inertial and local orbital frames.
 
 pub mod atmosphere;
+pub mod context;
 pub mod covariance;
+pub mod errors;
 pub mod forces;
 pub mod frames;
 pub mod gravity;
@@ -39,8 +41,15 @@ pub mod state;
 pub mod stm;
 pub mod units;
 
+pub use context::{
+    Conventions, DynamicsContext, DynamicsContextBuilder, EarthOrientationProvider,
+    PrecessionModel, SolarActivityProvider,
+};
+pub use covariance::ProcessNoise;
+pub use errors::{DynamicsError, LocalFrameError};
 pub use state::{
-    OrbitState, Position, SpacecraftProperties, SpacecraftState, StateDerivative, Velocity,
+    Acceleration, AccelerationUnit, OrbitState, Position, SpacecraftProperties, SpacecraftState,
+    StateDerivative, Velocity, VelocityUnit,
 };
 pub use stm::{finite_diff_stm, finite_diff_stm_series, StateTransition};
 pub use units::GravitationalParameter;
