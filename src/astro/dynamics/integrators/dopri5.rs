@@ -13,6 +13,45 @@ use crate::astro::dynamics::state::{OrbitState, StateDerivative};
 use crate::ext_qtty::tolerances::IntegratorTolerances;
 use crate::qtty::Second;
 
+/// Dormand-Prince 4(5) adaptive integrator as a stateful object.
+///
+/// Wraps the free-function [`dopri5_step`] with stored tolerances and step bounds.
+pub struct Dopri5 {
+    pub tolerances: IntegratorTolerances,
+    pub h_max: Second,
+    pub h_min: Second,
+}
+
+impl Dopri5 {
+    pub fn new(tolerances: IntegratorTolerances) -> Self {
+        Self {
+            tolerances,
+            h_max: Second::new(86_400.0),
+            h_min: Second::new(1e-6),
+        }
+    }
+    pub fn with_h_max(mut self, h_max: Second) -> Self {
+        self.h_max = h_max;
+        self
+    }
+    pub fn with_h_min(mut self, h_min: Second) -> Self {
+        self.h_min = h_min;
+        self
+    }
+}
+
+impl super::AdaptiveStepper for Dopri5 {
+    fn step<FM: ForceModel>(
+        &self,
+        force: &FM,
+        state: &OrbitState,
+        h_try: Second,
+        ctx: &DynamicsContext,
+    ) -> Result<(OrbitState, Second, Second), DynamicsError> {
+        dopri5_step(force, state, h_try, self.tolerances, ctx)
+    }
+}
+
 #[inline]
 fn state_component(s: &OrbitState, i: usize) -> f64 {
     match i {
@@ -45,7 +84,10 @@ fn rhs<FM: ForceModel>(
     s: &OrbitState,
     ctx: &DynamicsContext,
 ) -> Result<StateDerivative, DynamicsError> {
-    Ok(StateDerivative::new(s.velocity, force.acceleration(s, ctx)?))
+    Ok(StateDerivative::new(
+        s.velocity,
+        force.acceleration(s, ctx)?,
+    ))
 }
 
 #[inline]

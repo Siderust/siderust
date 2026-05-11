@@ -205,10 +205,8 @@ pub fn finite_diff_stm<F: ForceModel>(
     for j in 0..6 {
         let x0j = state_component(&s0, j);
         let h = 1e-6 * x0j.abs().max(1.0);
-        let s_plus =
-            rk4_propagate(force, perturb_component(&s0, j, h), dt, n_steps, ctx)?;
-        let s_minus =
-            rk4_propagate(force, perturb_component(&s0, j, -h), dt, n_steps, ctx)?;
+        let s_plus = rk4_propagate(force, perturb_component(&s0, j, h), dt, n_steps, ctx)?;
+        let s_minus = rk4_propagate(force, perturb_component(&s0, j, -h), dt, n_steps, ctx)?;
         for (i, row) in raw.iter_mut().enumerate() {
             row[j] = (state_component(&s_plus, i) - state_component(&s_minus, i)) / (2.0 * h);
         }
@@ -297,8 +295,7 @@ mod tests {
     fn two_body_stm_is_identity_at_zero_steps() {
         let ctx = DynamicsContext::empty();
         let s = sample_state();
-        let phi =
-            finite_diff_stm(&TwoBody::earth(), s, Second::new(1.0), 0, &ctx).unwrap();
+        let phi = finite_diff_stm(&TwoBody::earth(), s, Second::new(1.0), 0, &ctx).unwrap();
         check_identity(&phi.to_row_major(), 1e-9);
     }
 

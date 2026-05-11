@@ -6,6 +6,21 @@ use crate::astro::dynamics::forces::ForceModel;
 use crate::astro::dynamics::state::{OrbitState, StateDerivative};
 use crate::qtty::Second;
 
+/// Classical RK4 as a stateful zero-sized object.
+pub struct Rk4;
+
+impl super::FixedStepper for Rk4 {
+    fn step<FM: ForceModel>(
+        &self,
+        force: &FM,
+        state: &OrbitState,
+        h: Second,
+        ctx: &DynamicsContext,
+    ) -> Result<OrbitState, DynamicsError> {
+        rk4_step(force, state, h, ctx)
+    }
+}
+
 /// Step the orbit state by `dt` using RK4 with the given force model.
 ///
 /// The returned state has its epoch advanced by `dt`.
@@ -41,7 +56,10 @@ fn derivative<FM: ForceModel>(
     s: &OrbitState,
     ctx: &DynamicsContext,
 ) -> Result<StateDerivative, DynamicsError> {
-    Ok(StateDerivative::new(s.velocity, force.acceleration(s, ctx)?))
+    Ok(StateDerivative::new(
+        s.velocity,
+        force.acceleration(s, ctx)?,
+    ))
 }
 
 /// Propagate `state` over `n_steps` of `dt` each.
