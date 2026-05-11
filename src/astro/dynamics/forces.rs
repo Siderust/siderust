@@ -452,7 +452,6 @@ mod tests {
 
     #[test]
     fn drag_density_decreases_with_altitude() {
-        use crate::astro::dynamics::atmosphere::ExponentialAtmosphere;
         use crate::qtty::Kilometers;
         let d = DragForce::leo_500km(2.2, 0.02);
         assert!(

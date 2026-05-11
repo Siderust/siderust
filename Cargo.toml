@@ -33,7 +33,7 @@ tables = []
 atmosphere = []
 
 [dependencies]
-affn = { path = "../affn", features = ["astro"] }
+affn = { git = "https://github.com/Siderust/affn.git", branch = "main", features = ["astro"] }
 cheby = "0.2"
 qtty = { version = "0.7", features = ["astro", "density", "radiometry"] }
 tempoch = "0.4"
