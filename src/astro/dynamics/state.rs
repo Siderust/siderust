@@ -7,6 +7,12 @@
 //! integrators need; richer state (including spacecraft mass, parameter
 //! blocks, and provenance) lives in [`SpacecraftState`].
 //!
+//! ## Generic over center and frame
+//!
+//! [`OrbitState<C, F>`] is parameterised over the reference center `C` and
+//! the reference frame `F`.  The defaults (`Geocentric`, `GCRS`) give the
+//! conventional geocentric inertial state used by most force models.
+//!
 //! ## Typed fields
 //!
 //! Position, velocity, and acceleration are stored directly as [`affn`]
@@ -20,64 +26,136 @@
 //!
 //! let pos = Position::<GCRS>::new(7000.0, 0.0, 0.0);
 //! let vel = Velocity::<GCRS>::new(0.0, 7.5, 0.0);
-//! let s = OrbitState::new(JulianDate::new(2_451_545.0), pos, vel);
+//! let s = OrbitState::new_at_jd(JulianDate::new(2_451_545.0), pos, vel);
 //! assert!((s.position.x().value() - 7000.0).abs() < 1e-12);
+//! ```
+//!
+//! ## Removed API
+//!
+//! `StateDerivative::from_components` was removed in this release because it
+//! bypassed the typed vector API.  Use [`StateDerivative::new`] with typed
+//! [`Velocity`] and [`Acceleration`] vectors instead.
+//!
+//! ```compile_fail
+//! use siderust::astro::dynamics::state::StateDerivative;
+//! // `from_components` no longer exists — this must not compile:
+//! let _ = StateDerivative::from_components([0.0; 3], [0.0; 3]);
 //! ```
 
 use crate::coordinates::cartesian;
-use crate::coordinates::centers::Geocentric;
-use crate::coordinates::frames::GCRS;
-use crate::qtty::unit::{Kilometer, Per, Second as SecondUnit};
-use crate::qtty::{Kilograms, Second, SquareMeters};
-use crate::time::JulianDate;
+use crate::coordinates::centers::{Geocentric, ReferenceCenter};
+use crate::coordinates::frames::{ReferenceFrame, GCRS};
+use crate::qtty::unit::Kilometer;
+use crate::qtty::{
+    AreaToMass, DragCoefficient, Kilograms, KmPerSecond, KmPerSecondSquared, Second, SquareMeters,
+    SrpCoefficient,
+};
+use crate::time::{JulianDate, Time, JD, TT};
 use affn::cartesian::Vector;
 
 // =============================================================================
 // Type aliases for the propagated state
 // =============================================================================
 
-/// Geocentric inertial position, default `Kilometer`.
+/// Inertial position in center `C` and frame `F`, default `Geocentric`/`GCRS`/`km`.
 ///
-/// Frame defaults to [`GCRS`] for use as `Position::<GCRS>` /
+/// For the usual geocentric-inertial case, use `Position::<GCRS>` or
 /// `Position::<GCRS, Kilometer>`.
-pub type Position<S = GCRS, U = Kilometer> = cartesian::Position<Geocentric, S, U>;
+pub type Position<F = GCRS, U = Kilometer> = cartesian::Position<Geocentric, F, U>;
 
 /// Inertial velocity vector, default `km/s` in [`GCRS`].
-pub type Velocity<S = GCRS, U = Per<Kilometer, SecondUnit>> = cartesian::Velocity<S, U>;
+///
+/// The unit `KmPerSecond` = `Per<Kilometer, Second>` is the canonical
+/// astrodynamics velocity unit.
+pub type Velocity<F = GCRS, U = KmPerSecond> = cartesian::Velocity<F, U>;
 
 /// Inertial acceleration vector, default `km/s²` in [`GCRS`].
 ///
-/// Stored as the canonical `Per<velocity, time>` unit so that it composes
-/// dimensionally with [`Velocity`] under [`qtty`] arithmetic.
-pub type Acceleration<S = GCRS, U = Per<Per<Kilometer, SecondUnit>, SecondUnit>> = Vector<S, U>;
+/// The unit `KmPerSecondSquared` = `Per<Per<Kilometer, Second>, Second>`.
+pub type Acceleration<F = GCRS, U = KmPerSecondSquared> = Vector<F, U>;
 
-/// Default unit of [`Velocity`] used by the propagator.
-pub type VelocityUnit = Per<Kilometer, SecondUnit>;
+/// Default unit of [`Velocity`] used by the propagator (`km/s`).
+pub type VelocityUnit = KmPerSecond;
 
-/// Default unit of [`Acceleration`] used by the propagator.
-pub type AccelerationUnit = Per<Per<Kilometer, SecondUnit>, SecondUnit>;
+/// Default unit of [`Acceleration`] used by the propagator (`km/s²`).
+pub type AccelerationUnit = KmPerSecondSquared;
 
 // =============================================================================
 // OrbitState
 // =============================================================================
 
-/// Cartesian inertial position + velocity in km / (km/s) in [`GCRS`].
+/// Generic Cartesian position + velocity state parameterised over center `C`
+/// and frame `F`.
 ///
-/// Position and velocity are stored as typed [`affn`] vectors, giving
-/// compile-time frame and unit guarantees.
-#[derive(Debug, Clone, Copy)]
-pub struct OrbitState {
-    /// Epoch (TT scale, Julian Date).
-    pub epoch_tt: JulianDate,
-    /// Position in GCRS, km.
-    pub position: Position<GCRS, Kilometer>,
-    /// Velocity in GCRS, km/s.
-    pub velocity: Velocity<GCRS, VelocityUnit>,
+/// Defaults to `Geocentric`/[`GCRS`], the standard geocentric inertial frame
+/// used by most LEO/MEO force models.  Use the explicit type parameters to
+/// express heliocentric, barycentric, or other states:
+///
+/// ```rust
+/// use siderust::astro::dynamics::state::OrbitState;
+/// use siderust::coordinates::centers::Heliocentric;
+/// use siderust::coordinates::frames::ICRS;
+/// use siderust::astro::dynamics::state::{Position, Velocity};
+/// use siderust::time::JulianDate;
+///
+/// // Heliocentric/ICRS state (for inner-planet propagation).
+/// type HelioPos = siderust::coordinates::cartesian::Position<
+///     Heliocentric,
+///     ICRS,
+///     siderust::qtty::unit::Kilometer,
+/// >;
+/// type HelioVel = siderust::coordinates::cartesian::Velocity<
+///     ICRS,
+///     siderust::qtty::KmPerSecond,
+/// >;
+/// let pos = HelioPos::new(1.496e8, 0.0, 0.0);
+/// let vel = HelioVel::new(0.0, 29.78, 0.0);
+/// let s = OrbitState::<Heliocentric, ICRS>::new(
+///     JulianDate::new(2_451_545.0).to_time(),
+///     pos,
+///     vel,
+/// );
+/// assert!((s.position.x().value() - 1.496e8).abs() < 1.0);
+/// ```
+///
+/// # Units
+///
+/// - `epoch`: continuous TT instant ([`Time<TT>`]).
+/// - `position`: km in frame `F` centred on `C`.
+/// - `velocity`: km/s in frame `F`.
+#[derive(Debug, Clone)]
+pub struct OrbitState<C = Geocentric, F = GCRS>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    /// Epoch as a continuous TT instant.
+    ///
+    /// Use [`OrbitState::epoch_jd`] to get the Julian Date encoding, and
+    /// [`OrbitState::new_at_jd`] to construct from a [`JulianDate`].
+    pub epoch: Time<TT>,
+    /// Position in frame `F` centred on `C`, km.
+    pub position: cartesian::Position<C, F, Kilometer>,
+    /// Velocity in frame `F`, km/s.
+    pub velocity: Velocity<F, VelocityUnit>,
 }
 
-impl PartialEq for OrbitState {
+// Manual Copy impl with explicit Params bound (the derive macro cannot express this).
+impl<C, F> Copy for OrbitState<C, F>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+    C::Params: Copy,
+{
+}
+
+impl<C, F> PartialEq for OrbitState<C, F>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
     fn eq(&self, other: &Self) -> bool {
-        self.epoch_tt == other.epoch_tt
+        self.epoch == other.epoch
             && self.position.x() == other.position.x()
             && self.position.y() == other.position.y()
             && self.position.z() == other.position.z()
@@ -87,49 +165,106 @@ impl PartialEq for OrbitState {
     }
 }
 
-impl OrbitState {
-    /// Construct from typed GCRS position and velocity.
+impl<C, F> OrbitState<C, F>
+where
+    C: ReferenceCenter,
+    F: ReferenceFrame,
+{
+    /// Construct from a continuous [`Time<TT>`] epoch, typed position, and
+    /// typed velocity.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use siderust::astro::dynamics::state::{OrbitState, Position, Velocity};
+    /// use siderust::time::{JulianDate, Time, TT};
+    ///
+    /// let epoch = JulianDate::new(2_451_545.0).to_time();
+    /// let pos = Position::new(7000.0, 0.0, 0.0);
+    /// let vel = Velocity::new(0.0, 7.5, 0.0);
+    /// let s = OrbitState::new(epoch, pos, vel);
+    /// ```
     #[inline]
-    pub fn new(epoch_tt: JulianDate, position: Position<GCRS>, velocity: Velocity<GCRS>) -> Self {
+    pub fn new(
+        epoch: Time<TT>,
+        position: cartesian::Position<C, F, Kilometer>,
+        velocity: Velocity<F, VelocityUnit>,
+    ) -> Self {
         Self {
-            epoch_tt,
+            epoch,
             position,
             velocity,
         }
     }
 
+    /// Boundary constructor: build from a [`JulianDate`] (TT) by converting
+    /// it to the internal [`Time<TT>`] representation.
+    ///
+    /// This is the preferred constructor when the epoch comes from an
+    /// ephemeris or other source that expresses time as a JD.
+    ///
+    /// # Example
+    ///
+    /// ```rust
+    /// use siderust::astro::dynamics::state::{OrbitState, Position, Velocity};
+    /// use siderust::time::JulianDate;
+    ///
+    /// let s = OrbitState::new_at_jd(
+    ///     JulianDate::new(2_451_545.0),
+    ///     Position::new(7000.0, 0.0, 0.0),
+    ///     Velocity::new(0.0, 7.5, 0.0),
+    /// );
+    /// assert!((s.epoch_jd().jd_value() - 2_451_545.0).abs() < 1e-9);
+    /// ```
+    #[inline]
+    pub fn new_at_jd(
+        epoch_jd: JulianDate,
+        position: cartesian::Position<C, F, Kilometer>,
+        velocity: Velocity<F, VelocityUnit>,
+    ) -> Self {
+        Self::new(epoch_jd.to_time(), position, velocity)
+    }
+
+    /// Return the epoch encoded as a TT Julian Date.
+    ///
+    /// This is the boundary helper used by ephemeris callers that require a
+    /// [`JulianDate`] scalar.
+    #[inline]
+    pub fn epoch_jd(&self) -> JulianDate {
+        self.epoch.to::<JD>()
+    }
+
     /// Advance position and velocity by `dt` along `deriv`.
     ///
     /// The epoch is **not** updated — the caller is responsible for advancing
-    /// `epoch_tt` to the new time. This mirrors the mathematical step
+    /// `epoch` to the new time. This mirrors the mathematical step:
     /// `x(t + h) ≈ x(t) + h · ẋ(t)`.
     #[inline]
-    pub fn advance(&self, deriv: &StateDerivative, dt: Second) -> Self {
+    pub fn advance(&self, deriv: &StateDerivative<F>, dt: Second) -> Self {
         let dt_s = dt.value();
-        let new_pos = Position::<GCRS, Kilometer>::new(
+        let new_pos = cartesian::Position::<C, F, Kilometer>::new_with_params(
+            self.position.center_params().clone(),
             self.position.x().value() + dt_s * deriv.vel.x().value(),
             self.position.y().value() + dt_s * deriv.vel.y().value(),
             self.position.z().value() + dt_s * deriv.vel.z().value(),
         );
-        let new_vel = Velocity::<GCRS, VelocityUnit>::new(
+        let new_vel = Velocity::<F, VelocityUnit>::new(
             self.velocity.x().value() + dt_s * deriv.acc.x().value(),
             self.velocity.y().value() + dt_s * deriv.acc.y().value(),
             self.velocity.z().value() + dt_s * deriv.acc.z().value(),
         );
         Self {
-            epoch_tt: self.epoch_tt,
+            epoch: self.epoch,
             position: new_pos,
             velocity: new_vel,
         }
     }
 
-    /// Build the typed velocity `(km/s)` from the orbit state.
+    /// Return a copy of the velocity as a typed `km/s` vector.
     ///
-    /// Convenience accessor: returns a clone of [`OrbitState::velocity`] with
-    /// the canonical default unit, useful when constructing
-    /// [`StateDerivative::position_rate_from_state`].
+    /// Convenience accessor useful when constructing a [`StateDerivative`].
     #[inline]
-    pub fn velocity_typed(&self) -> Velocity<GCRS, VelocityUnit> {
+    pub fn velocity_typed(&self) -> Velocity<F, VelocityUnit> {
         self.velocity
     }
 }
@@ -142,47 +277,39 @@ impl OrbitState {
 ///
 /// `vel` is the position rate (= the orbit-state velocity, km/s) and `acc`
 /// is the velocity rate (= inertial acceleration in km/s²). Both are typed
-/// [`affn`] vectors in [`GCRS`].
+/// [`affn`] vectors in frame `F`.
+///
+/// Generic over the reference frame `F` so that derivatives can be formed in
+/// any inertial frame without losing the frame tag.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub struct StateDerivative {
-    /// Position rate (= velocity), km/s.
-    pub vel: Velocity<GCRS, VelocityUnit>,
-    /// Velocity rate (= acceleration), km/s².
-    pub acc: Acceleration<GCRS, AccelerationUnit>,
+pub struct StateDerivative<F = GCRS>
+where
+    F: ReferenceFrame,
+{
+    /// Position rate (= velocity), km/s in frame `F`.
+    pub vel: Velocity<F, VelocityUnit>,
+    /// Velocity rate (= acceleration), km/s² in frame `F`.
+    pub acc: Acceleration<F, AccelerationUnit>,
 }
 
-impl StateDerivative {
-    /// Construct from a typed velocity and a typed acceleration.
-    #[inline]
-    pub fn new(
-        vel: Velocity<GCRS, VelocityUnit>,
-        acc: Acceleration<GCRS, AccelerationUnit>,
-    ) -> Self {
-        Self { vel, acc }
-    }
-
-    /// Convenience constructor from raw `f64` km/s and km/s² components.
+impl<F: ReferenceFrame> StateDerivative<F> {
+    /// Construct from a typed velocity (km/s) and a typed acceleration (km/s²).
     ///
-    /// Provided as a transitional shim while [`crate::astro::dynamics`]
-    /// force models and integrators are migrated to the typed API. New
-    /// code should call [`StateDerivative::new`] with typed vectors.
+    /// Both vectors must be expressed in the same frame `F`.
     #[inline]
-    pub fn from_components(vel_kms: [f64; 3], acc_km_s2: [f64; 3]) -> Self {
-        let vel = Velocity::<GCRS, VelocityUnit>::new(vel_kms[0], vel_kms[1], vel_kms[2]);
-        let acc =
-            Acceleration::<GCRS, AccelerationUnit>::new(acc_km_s2[0], acc_km_s2[1], acc_km_s2[2]);
+    pub fn new(vel: Velocity<F, VelocityUnit>, acc: Acceleration<F, AccelerationUnit>) -> Self {
         Self { vel, acc }
     }
 
     /// Return the velocity (position rate) as a typed vector.
     #[inline]
-    pub fn velocity(&self) -> Velocity<GCRS, VelocityUnit> {
+    pub fn velocity(&self) -> Velocity<F, VelocityUnit> {
         self.vel
     }
 
     /// Return the acceleration (velocity rate) as a typed vector.
     #[inline]
-    pub fn acceleration(&self) -> Acceleration<GCRS, AccelerationUnit> {
+    pub fn acceleration(&self) -> Acceleration<F, AccelerationUnit> {
         self.acc
     }
 
@@ -218,31 +345,79 @@ impl StateDerivative {
 // SpacecraftProperties + SpacecraftState
 // =============================================================================
 
-/// Spacecraft properties carried alongside the orbit state.
+/// Physical properties of a spacecraft, used by force models.
+///
+/// Raw area/mass fields are kept for legibility alongside the precomputed
+/// area-to-mass ratios consumed by drag and SRP force models.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SpacecraftProperties {
-    /// Total mass.
+    /// Total wet mass (kg).
     pub mass: Kilograms,
-    /// Cross-section for atmospheric drag.
+    /// Drag cross-section (m²).
     pub drag_area: SquareMeters,
-    /// Drag coefficient (dimensionless).
-    pub cd: f64,
-    /// Cross-section for solar radiation pressure.
+    /// Drag coefficient C_D (dimensionless).
+    pub cd: DragCoefficient,
+    /// SRP cross-section (m²).
     pub srp_area: SquareMeters,
-    /// SRP coefficient (dimensionless).
-    pub cr: f64,
+    /// SRP coefficient C_R (dimensionless).
+    pub cr: SrpCoefficient,
+    /// Precomputed drag area-to-mass ratio (m²/kg).
+    pub area_to_mass_drag: AreaToMass,
+    /// Precomputed SRP area-to-mass ratio (m²/kg).
+    pub area_to_mass_srp: AreaToMass,
 }
 
 impl SpacecraftProperties {
-    /// Reasonable demo defaults for a small LEO platform.
-    pub fn demo_leo() -> Self {
+    /// Construct from all physical parameters.
+    ///
+    /// The area-to-mass ratios are computed from the supplied values so they
+    /// are always consistent with `drag_area`, `srp_area`, and `mass`.
+    #[inline]
+    pub fn new(
+        mass: Kilograms,
+        drag_area: SquareMeters,
+        cd: DragCoefficient,
+        srp_area: SquareMeters,
+        cr: SrpCoefficient,
+    ) -> Self {
+        let area_to_mass_drag = AreaToMass::new(drag_area.value() / mass.value());
+        let area_to_mass_srp = AreaToMass::new(srp_area.value() / mass.value());
         Self {
-            mass: Kilograms::new(500.0),
-            drag_area: SquareMeters::new(2.0),
-            cd: 2.2,
-            srp_area: SquareMeters::new(2.0),
-            cr: 1.3,
+            mass,
+            drag_area,
+            cd,
+            srp_area,
+            cr,
+            area_to_mass_drag,
+            area_to_mass_srp,
         }
+    }
+
+    /// Drag area-to-mass ratio: `drag_area / mass` (m²/kg).
+    #[inline]
+    pub fn drag_area_to_mass(&self) -> AreaToMass {
+        self.area_to_mass_drag
+    }
+
+    /// SRP area-to-mass ratio: `srp_area / mass` (m²/kg).
+    #[inline]
+    pub fn srp_area_to_mass(&self) -> AreaToMass {
+        self.area_to_mass_srp
+    }
+
+    /// Reasonable demo defaults for a small LEO platform.
+    ///
+    /// - mass = 500 kg
+    /// - drag area = 2 m², C_D = 2.2
+    /// - SRP area  = 2 m², C_R = 1.3
+    pub fn demo_leo() -> Self {
+        Self::new(
+            Kilograms::new(500.0),
+            SquareMeters::new(2.0),
+            DragCoefficient::new(2.2),
+            SquareMeters::new(2.0),
+            SrpCoefficient::new(1.3),
+        )
     }
 }
 
@@ -263,6 +438,10 @@ pub struct SpacecraftState {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coordinates::centers::Heliocentric;
+    use crate::coordinates::frames::ICRS;
+
+    // ── OrbitState round-trip ─────────────────────────────────────────────────
 
     #[test]
     fn typed_roundtrip_preserves_values() {
@@ -270,7 +449,7 @@ mod tests {
         let pos = Position::<GCRS>::new(7000.0, 100.0, -200.0);
         let vel = Velocity::<GCRS>::new(0.5, 7.4, -0.1);
 
-        let s = OrbitState::new(epoch, pos, vel);
+        let s = OrbitState::new_at_jd(epoch, pos, vel);
 
         assert!((s.position.x().value() - 7000.0).abs() < f64::EPSILON);
         assert!((s.position.y().value() - 100.0).abs() < f64::EPSILON);
@@ -281,13 +460,34 @@ mod tests {
     }
 
     #[test]
+    fn new_at_jd_epoch_roundtrip() {
+        let jd_in = JulianDate::new(2_451_545.0);
+        let s = OrbitState::new_at_jd(
+            jd_in,
+            Position::<GCRS>::new(7000.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        );
+        let jd_out = s.epoch_jd();
+        assert!(
+            (jd_out.jd_value() - 2_451_545.0).abs() < 1e-9,
+            "JD round-trip error: {}",
+            jd_out.jd_value() - 2_451_545.0
+        );
+    }
+
+    // ── advance ───────────────────────────────────────────────────────────────
+
+    #[test]
     fn advance_applies_derivative_correctly() {
-        let epoch = JulianDate::new(2_451_545.0);
+        let epoch = JulianDate::new(2_451_545.0).to_time();
         let pos = Position::<GCRS>::new(7000.0, 0.0, 0.0);
         let vel = Velocity::<GCRS>::new(0.0, 7.5, 0.0);
         let s = OrbitState::new(epoch, pos, vel);
 
-        let deriv = StateDerivative::from_components([0.0, 7.5, 0.0], [0.0, 0.0, -9.8e-3]);
+        let deriv = StateDerivative::new(
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+            Acceleration::<GCRS>::new(0.0, 0.0, -9.8e-3),
+        );
         let dt = Second::new(10.0);
         let s2 = s.advance(&deriv, dt);
 
@@ -295,17 +495,40 @@ mod tests {
         assert!((s2.position.y().value() - 75.0).abs() < 1e-10);
         assert!((s2.velocity.z().value() - (-0.098)).abs() < 1e-10);
         // Epoch is unchanged by advance.
-        assert_eq!(s2.epoch_tt, epoch);
+        assert_eq!(s2.epoch, epoch);
     }
 
     #[test]
+    fn advance_leaves_epoch_unchanged() {
+        let epoch = JulianDate::new(2_451_545.0).to_time();
+        let s = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(7000.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        );
+        let deriv = StateDerivative::new(
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+            Acceleration::<GCRS>::new(0.0, 0.0, 0.0),
+        );
+        let s2 = s.advance(&deriv, Second::new(60.0));
+        assert_eq!(s2.epoch, epoch, "advance must not mutate the epoch");
+    }
+
+    // ── StateDerivative ───────────────────────────────────────────────────────
+
+    #[test]
     fn rk4_combine_is_weighted_mean() {
-        let k = StateDerivative::from_components([1.0, 0.0, 0.0], [0.0, 1.0, 0.0]);
+        let k = StateDerivative::new(
+            Velocity::<GCRS>::new(1.0, 0.0, 0.0),
+            Acceleration::<GCRS>::new(0.0, 1.0, 0.0),
+        );
         let combined = StateDerivative::rk4_combine(&k, &k, &k, &k);
         // (1 + 2 + 2 + 1) / 6 = 1
         assert!((combined.vel.x().value() - 1.0).abs() < 1e-12);
         assert!((combined.acc.y().value() - 1.0).abs() < 1e-12);
     }
+
+    // ── SpacecraftProperties ──────────────────────────────────────────────────
 
     #[test]
     fn spacecraft_properties_demo_leo() {
@@ -313,5 +536,27 @@ mod tests {
         assert!((p.mass.value() - 500.0).abs() < f64::EPSILON);
         assert!((p.drag_area.value() - 2.0).abs() < f64::EPSILON);
         assert!((p.srp_area.value() - 2.0).abs() < f64::EPSILON);
+        assert!((p.cd.value() - 2.2).abs() < f64::EPSILON);
+        assert!((p.cr.value() - 1.3).abs() < f64::EPSILON);
+        // area-to-mass: 2 m² / 500 kg = 0.004 m²/kg
+        assert!((p.drag_area_to_mass().value() - 0.004).abs() < 1e-12);
+        assert!((p.srp_area_to_mass().value() - 0.004).abs() < 1e-12);
+    }
+
+    // ── Generic instantiation ─────────────────────────────────────────────────
+
+    #[test]
+    fn generic_heliocentric_icrs_state_compiles() {
+        use crate::coordinates::cartesian;
+        use crate::qtty::unit::Kilometer;
+
+        type HelioPos = cartesian::Position<Heliocentric, ICRS, Kilometer>;
+        type HelioVel = cartesian::Velocity<ICRS, KmPerSecond>;
+
+        let pos = HelioPos::new(1.496e8, 0.0, 0.0);
+        let vel = HelioVel::new(0.0, 29.78, 0.0);
+        let s = OrbitState::<Heliocentric, ICRS>::new_at_jd(JulianDate::new(2_451_545.0), pos, vel);
+        assert!((s.position.x().value() - 1.496e8).abs() < 1.0);
+        assert!((s.velocity.y().value() - 29.78).abs() < 1e-10);
     }
 }

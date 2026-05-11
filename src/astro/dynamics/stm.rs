@@ -23,6 +23,8 @@
 
 use affn::matrix3::FrameMatrix3;
 
+use crate::astro::dynamics::context::DynamicsContext;
+use crate::astro::dynamics::errors::DynamicsError;
 use crate::astro::dynamics::forces::ForceModel;
 use crate::astro::dynamics::integrators::{rk4_propagate, rk4_propagate_series};
 use crate::astro::dynamics::{OrbitState, Position, Velocity};
@@ -157,7 +159,7 @@ fn perturb_component(s: &OrbitState, j: usize, delta: f64) -> OrbitState {
     let vy = s.velocity.y().value() + if j == 4 { delta } else { 0.0 };
     let vz = s.velocity.z().value() + if j == 5 { delta } else { 0.0 };
     OrbitState::new(
-        s.epoch_tt,
+        s.epoch,
         Position::<GCRS>::new(rx, ry, rz),
         Velocity::<GCRS>::new(vx, vy, vz),
     )
@@ -197,18 +199,21 @@ pub fn finite_diff_stm<F: ForceModel>(
     s0: OrbitState,
     dt: Second,
     n_steps: usize,
-) -> StateTransition<GCRS> {
+    ctx: &DynamicsContext,
+) -> Result<StateTransition<GCRS>, DynamicsError> {
     let mut raw = [[0.0; 6]; 6];
     for j in 0..6 {
         let x0j = state_component(&s0, j);
         let h = 1e-6 * x0j.abs().max(1.0);
-        let s_plus = rk4_propagate(force, perturb_component(&s0, j, h), dt, n_steps);
-        let s_minus = rk4_propagate(force, perturb_component(&s0, j, -h), dt, n_steps);
+        let s_plus =
+            rk4_propagate(force, perturb_component(&s0, j, h), dt, n_steps, ctx)?;
+        let s_minus =
+            rk4_propagate(force, perturb_component(&s0, j, -h), dt, n_steps, ctx)?;
         for (i, row) in raw.iter_mut().enumerate() {
             row[j] = (state_component(&s_plus, i) - state_component(&s_minus, i)) / (2.0 * h);
         }
     }
-    fill_stm_from_raw(&raw)
+    Ok(fill_stm_from_raw(&raw))
 }
 
 /// Compute Φ(tₖ, t₀) at every step `k = 0..=n_steps`.
@@ -220,7 +225,8 @@ pub fn finite_diff_stm_series<F: ForceModel>(
     s0: OrbitState,
     dt: Second,
     n_steps: usize,
-) -> Vec<StateTransition<GCRS>> {
+    ctx: &DynamicsContext,
+) -> Result<Vec<StateTransition<GCRS>>, DynamicsError> {
     let mut perturbed: [[Vec<[f64; 6]>; 2]; 6] = Default::default();
     let mut hs = [0.0_f64; 6];
     for j in 0..6 {
@@ -229,7 +235,7 @@ pub fn finite_diff_stm_series<F: ForceModel>(
         hs[j] = h;
         for (sign_idx, sign) in [-1.0_f64, 1.0_f64].iter().enumerate() {
             let sp = perturb_component(&s0, j, sign * h);
-            perturbed[j][sign_idx] = rk4_propagate_series(force, sp, dt, n_steps)
+            perturbed[j][sign_idx] = rk4_propagate_series(force, sp, dt, n_steps, ctx)?
                 .into_iter()
                 .map(|s| {
                     [
@@ -256,17 +262,18 @@ pub fn finite_diff_stm_series<F: ForceModel>(
         }
         out.push(fill_stm_from_raw(&raw));
     }
-    out
+    Ok(out)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::astro::dynamics::context::DynamicsContext;
     use crate::astro::dynamics::forces::TwoBody;
     use crate::time::JulianDate;
 
     fn sample_state() -> OrbitState {
-        OrbitState::new(
+        OrbitState::new_at_jd(
             JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
@@ -288,8 +295,10 @@ mod tests {
 
     #[test]
     fn two_body_stm_is_identity_at_zero_steps() {
+        let ctx = DynamicsContext::empty();
         let s = sample_state();
-        let phi = finite_diff_stm(&TwoBody::earth(), s, Second::new(1.0), 0);
+        let phi =
+            finite_diff_stm(&TwoBody::earth(), s, Second::new(1.0), 0, &ctx).unwrap();
         check_identity(&phi.to_row_major(), 1e-9);
     }
 
@@ -301,8 +310,10 @@ mod tests {
 
     #[test]
     fn stm_series_first_element_is_identity() {
+        let ctx = DynamicsContext::empty();
         let s = sample_state();
-        let series = finite_diff_stm_series(&TwoBody::earth(), s, Second::new(1.0), 2);
+        let series =
+            finite_diff_stm_series(&TwoBody::earth(), s, Second::new(1.0), 2, &ctx).unwrap();
         assert_eq!(series.len(), 3);
         check_identity(&series[0].to_row_major(), 1e-9);
     }

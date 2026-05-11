@@ -47,3 +47,17 @@ pub use crate::ext_qtty::Second;
 
 pub mod dimensionless;
 pub use dimensionless::*;
+
+/// Re-export `GravitationalParameter` from `qtty::dynamics` so that
+/// `crate::qtty::GravitationalParameter` is available in the `siderust` module tree.
+pub use crate::ext_qtty::GravitationalParameter;
+
+/// Re-export astrodynamics typed quantities used by `dynamics::state` and
+/// force models.
+pub use crate::ext_qtty::dynamics::{
+    AreaToMass, AreaToMassUnit, DragCoefficient, J2Coefficient, KmPerSecond, KmPerSecondSquared,
+    KmPerSecondsSquared, SrpCoefficient,
+};
+
+/// Re-export typed integrator tolerances for use in dynamics integrators.
+pub use crate::ext_qtty::tolerances::IntegratorTolerances;

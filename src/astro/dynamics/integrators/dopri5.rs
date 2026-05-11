@@ -6,37 +6,12 @@
 //! Sufficient for textbook orbits and MVP-grade satellite POD.  A
 //! higher-order DOP853 variant is left for follow-up work.
 
+use crate::astro::dynamics::context::DynamicsContext;
+use crate::astro::dynamics::errors::DynamicsError;
 use crate::astro::dynamics::forces::ForceModel;
 use crate::astro::dynamics::state::{OrbitState, StateDerivative};
+use crate::ext_qtty::tolerances::IntegratorTolerances;
 use crate::qtty::Second;
-use crate::time::JulianDate;
-
-const SEC_PER_DAY: f64 = 86_400.0;
-
-/// Tolerances for adaptive integration.
-#[derive(Debug, Clone, Copy)]
-pub struct Tolerance {
-    /// Relative tolerance.
-    pub rel: f64,
-    /// Absolute tolerance applied uniformly to all six state components.
-    ///
-    /// The state vector mixes position (km) and velocity (km/s), so this
-    /// threshold is intentionally dimensionless from the integrator's
-    /// perspective.  Callers should choose a value that is small relative to
-    /// the expected magnitudes of both position and velocity (e.g. `1e-10`
-    /// gives sub-nanometre / sub-nanometre-per-second accuracy for a LEO
-    /// orbit at ~7 000 km radius and ~7.5 km/s speed).
-    pub abs: f64,
-}
-
-impl Default for Tolerance {
-    fn default() -> Self {
-        Self {
-            rel: 1e-10,
-            abs: 1e-10,
-        }
-    }
-}
 
 #[inline]
 fn state_component(s: &OrbitState, i: usize) -> f64 {
@@ -65,27 +40,36 @@ fn deriv_component(d: &StateDerivative, i: usize) -> f64 {
 }
 
 #[inline]
-fn rhs<F: ForceModel>(force: &F, s: &OrbitState) -> StateDerivative {
-    StateDerivative::new(s.velocity, force.acceleration(s))
+fn rhs<FM: ForceModel>(
+    force: &FM,
+    s: &OrbitState,
+    ctx: &DynamicsContext,
+) -> Result<StateDerivative, DynamicsError> {
+    Ok(StateDerivative::new(s.velocity, force.acceleration(s, ctx)?))
 }
 
 #[inline]
 fn state_at(s: &OrbitState, d: &StateDerivative, h: f64, dt: f64) -> OrbitState {
-    let jd = JulianDate::new(s.epoch_tt.jd_value() + dt / SEC_PER_DAY);
+    let new_epoch = s.epoch + Second::new(dt);
     let advanced = s.advance(d, Second::new(h));
-    OrbitState::new(jd, advanced.position, advanced.velocity)
+    OrbitState {
+        epoch: new_epoch,
+        position: advanced.position,
+        velocity: advanced.velocity,
+    }
 }
 
 /// Single adaptive DOPRI5 step. Returns `(new_state, h_used, h_next)`.
 ///
 /// `h_try` is the initial step size to attempt.
 #[allow(clippy::too_many_lines)]
-pub fn dopri5_step<F: ForceModel>(
-    force: &F,
+pub fn dopri5_step<FM: ForceModel>(
+    force: &FM,
     s: &OrbitState,
     h_try: Second,
-    tol: Tolerance,
-) -> (OrbitState, Second, Second) {
+    tol: IntegratorTolerances,
+    ctx: &DynamicsContext,
+) -> Result<(OrbitState, Second, Second), DynamicsError> {
     let c2 = 1.0 / 5.0;
     let c3 = 3.0 / 10.0;
     let c4 = 4.0 / 5.0;
@@ -122,12 +106,13 @@ pub fn dopri5_step<F: ForceModel>(
     let mut h = h_try.value();
 
     loop {
-        let k1 = rhs(force, s);
-        let k2 = rhs(force, &state_at(s, &k1.scaled(a21), h, c2 * h));
+        let k1 = rhs(force, s, ctx)?;
+        let k2 = rhs(force, &state_at(s, &k1.scaled(a21), h, c2 * h), ctx)?;
         let k3 = rhs(
             force,
             &state_at(s, &k1.scaled(a31).add(&k2.scaled(a32)), h, c3 * h),
-        );
+            ctx,
+        )?;
         let k4 = rhs(
             force,
             &state_at(
@@ -136,7 +121,8 @@ pub fn dopri5_step<F: ForceModel>(
                 h,
                 c4 * h,
             ),
-        );
+            ctx,
+        )?;
         let k5 = rhs(
             force,
             &state_at(
@@ -148,7 +134,8 @@ pub fn dopri5_step<F: ForceModel>(
                 h,
                 c5 * h,
             ),
-        );
+            ctx,
+        )?;
         let k6 = rhs(
             force,
             &state_at(
@@ -161,7 +148,8 @@ pub fn dopri5_step<F: ForceModel>(
                 h,
                 h,
             ),
-        );
+            ctx,
+        )?;
         let d7 = k1
             .scaled(a71)
             .add(&k3.scaled(a73))
@@ -169,7 +157,7 @@ pub fn dopri5_step<F: ForceModel>(
             .add(&k5.scaled(a75))
             .add(&k6.scaled(a76));
         let s7 = state_at(s, &d7, h, h);
-        let k7 = rhs(force, &s7);
+        let k7 = rhs(force, &s7, ctx)?;
 
         let err_d = k1
             .scaled(e1)
@@ -183,7 +171,12 @@ pub fn dopri5_step<F: ForceModel>(
             let err = h * deriv_component(&err_d, i);
             let y0i = state_component(s, i);
             let y7i = state_component(&s7, i);
-            let sc = tol.abs + tol.rel * y0i.abs().max(y7i.abs());
+            let abs_tol = if i < 3 {
+                tol.abs_pos[i].value()
+            } else {
+                tol.abs_vel[i - 3].value()
+            };
+            let sc = abs_tol + tol.rel.value() * y0i.abs().max(y7i.abs());
             let r = err / sc;
             err_norm += r * r;
         }
@@ -196,7 +189,7 @@ pub fn dopri5_step<F: ForceModel>(
                 let factor = 0.9 * err_norm.powf(-0.2);
                 h * factor.clamp(0.2, 5.0)
             };
-            return (s7, Second::new(h), Second::new(h_next));
+            return Ok((s7, Second::new(h), Second::new(h_next)));
         } else {
             let factor = 0.9 * err_norm.powf(-0.2);
             h *= factor.clamp(0.1, 0.9);
@@ -205,12 +198,13 @@ pub fn dopri5_step<F: ForceModel>(
 }
 
 /// Propagate from `state` for `total_dt` with adaptive steps.
-pub fn dopri5_propagate<F: ForceModel>(
-    force: &F,
+pub fn dopri5_propagate<FM: ForceModel>(
+    force: &FM,
     state: OrbitState,
     total_dt: Second,
-    tol: Tolerance,
-) -> OrbitState {
+    tol: IntegratorTolerances,
+    ctx: &DynamicsContext,
+) -> Result<OrbitState, DynamicsError> {
     let total_dt_s = total_dt.value();
     let mut s = state;
     let mut t = 0.0;
@@ -219,38 +213,44 @@ pub fn dopri5_propagate<F: ForceModel>(
         if (t + h - total_dt_s) * total_dt_s.signum() > 0.0 {
             h = total_dt_s - t;
         }
-        let (s_new, h_used, h_next) = dopri5_step(force, &s, Second::new(h), tol);
+        let (s_new, h_used, h_next) = dopri5_step(force, &s, Second::new(h), tol, ctx)?;
         s = s_new;
         t += h_used.value();
         h = h_next.value();
     }
-    s
+    Ok(s)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::astro::dynamics::context::DynamicsContext;
     use crate::astro::dynamics::forces::TwoBody;
     use crate::astro::dynamics::{Position, Velocity};
     use crate::coordinates::frames::GCRS;
+    use crate::ext_qtty::tolerances::IntegratorTolerances;
+    use crate::time::JulianDate;
 
     #[test]
     fn dopri5_one_orbit_closes() {
         let mu: f64 = 398_600.441_8;
         let r: f64 = 7_000.0;
         let v: f64 = (mu / r).sqrt();
-        let s0 = OrbitState::new(
+        let s0 = OrbitState::new_at_jd(
             JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v, 0.0),
         );
         let period = 2.0 * std::f64::consts::PI * (r.powi(3) / mu).sqrt();
+        let ctx = DynamicsContext::empty();
         let s = dopri5_propagate(
             &TwoBody::earth(),
             s0,
             Second::new(period),
-            Tolerance::default(),
-        );
+            IntegratorTolerances::uniform(1e-10, 1e-10, 1e-10),
+            &ctx,
+        )
+        .unwrap();
         let dr = ((s.position.x().value() - r).powi(2)
             + s.position.y().value().powi(2)
             + s.position.z().value().powi(2))
