@@ -41,6 +41,7 @@ pub mod propagation;
 pub mod state;
 pub mod stm;
 pub mod units;
+pub mod variational;
 
 pub use context::{
     Conventions, DynamicsContext, DynamicsContextBuilder, EarthOrientationProvider,

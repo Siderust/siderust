@@ -94,3 +94,6 @@ harness = false
 [patch.crates-io]
 qtty = { path = "../qtty/qtty" }
 qtty-core = { path = "../qtty/qtty-core" }
+
+[patch.'https://github.com/Siderust/affn.git']
+affn = { path = "../affn" }

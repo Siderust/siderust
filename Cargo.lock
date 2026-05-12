@@ -16,21 +16,20 @@ dependencies = [
 [[package]]
 name = "affn"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bccc9086e3ce406084e92ab6b01d010fe30fb4ce9e6aaed9e168f0e7ca35145d"
 dependencies = [
- "affn-derive 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "affn-derive 0.7.0",
  "qtty",
+ "serde",
 ]
 
 [[package]]
 name = "affn"
 version = "0.7.0"
-source = "git+https://github.com/Siderust/affn.git?branch=main#a3664ef061ccc8e5328f2d429a403ae2731ea323"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bccc9086e3ce406084e92ab6b01d010fe30fb4ce9e6aaed9e168f0e7ca35145d"
 dependencies = [
- "affn-derive 0.7.0 (git+https://github.com/Siderust/affn.git?branch=main)",
+ "affn-derive 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "qtty",
- "serde",
 ]
 
 [[package]]
@@ -47,8 +46,6 @@ dependencies = [
 [[package]]
 name = "affn-derive"
 version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bb6481b80c14e224ae4471e7841d293789f9deb34a2aefe7a3aec842a5bb18bf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -58,7 +55,8 @@ dependencies = [
 [[package]]
 name = "affn-derive"
 version = "0.7.0"
-source = "git+https://github.com/Siderust/affn.git?branch=main#a3664ef061ccc8e5328f2d429a403ae2731ea323"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb6481b80c14e224ae4471e7841d293789f9deb34a2aefe7a3aec842a5bb18bf"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1999,7 +1997,7 @@ checksum = "0fda2ff0d084019ba4d7c6f371c95d8fd75ce3524c3cb8fb653a3023f6323e64"
 name = "siderust"
 version = "0.7.0"
 dependencies = [
- "affn 0.7.0 (git+https://github.com/Siderust/affn.git?branch=main)",
+ "affn 0.7.0",
  "anyhow",
  "approx",
  "cheby",
