@@ -229,4 +229,20 @@ mod tests {
             "expected GeopotentialDegreeOutOfRange(10, 4), got {result:?}"
         );
     }
+
+    #[test]
+    fn geopotential_full_constructor_sets_equal_degree_order() {
+        let g = Geopotential::full(4);
+        assert_eq!(g.degree, 4);
+        assert_eq!(g.order, 4);
+    }
+
+    #[test]
+    fn geopotential_partials_returns_error() {
+        let ctx = ctx_with_gravity();
+        let geopot = Geopotential::new(2, 0);
+        let s = make_state(7_000.0, 0.0, 0.0);
+        let result = geopot.partials(&s, &ctx);
+        assert!(result.is_err(), "Geopotential::partials must return error (not yet implemented)");
+    }
 }

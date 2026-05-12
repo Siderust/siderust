@@ -588,4 +588,70 @@ mod tests {
         assert!((s.position.x().value() - 1.496e8).abs() < 1.0);
         assert!((s.velocity.y().value() - 29.78).abs() < 1e-10);
     }
+
+    #[test]
+    fn state_derivative_velocity_and_acceleration_accessors() {
+        let k = StateDerivative::new(
+            Velocity::<GCRS>::new(1.0, 2.0, 3.0),
+            Acceleration::<GCRS>::new(4.0, 5.0, 6.0),
+        );
+        assert!((k.velocity().x().value() - 1.0).abs() < 1e-12);
+        assert!((k.velocity().y().value() - 2.0).abs() < 1e-12);
+        assert!((k.acceleration().x().value() - 4.0).abs() < 1e-12);
+        assert!((k.acceleration().z().value() - 6.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn state_derivative_add_and_scaled() {
+        let k = StateDerivative::new(
+            Velocity::<GCRS>::new(1.0, 0.0, 0.0),
+            Acceleration::<GCRS>::new(0.0, 1.0, 0.0),
+        );
+        let sum = k.add(&k);
+        assert!((sum.velocity().x().value() - 2.0).abs() < 1e-12);
+        let scaled = k.scaled(0.5);
+        assert!((scaled.velocity().x().value() - 0.5).abs() < 1e-12);
+    }
+
+    #[test]
+    fn velocity_typed_returns_velocity_field() {
+        let s = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(7000.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(1.0, 2.0, 3.0),
+        );
+        let v = s.velocity_typed();
+        assert!((v.x().value() - 1.0).abs() < 1e-12);
+        assert!((v.z().value() - 3.0).abs() < 1e-12);
+    }
+
+    #[test]
+    fn orbit_state_partial_eq_distinguishes_states() {
+        let s1 = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(7000.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        );
+        let s2 = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(7001.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        );
+        assert_ne!(s1, s2);
+        assert_eq!(s1, s1);
+    }
+
+    #[test]
+    fn spacecraft_state_constructs_and_compares() {
+        let orbit = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(7000.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        );
+        let props = SpacecraftProperties::demo_leo();
+        let sc = SpacecraftState { orbit, properties: props };
+        let sc2 = SpacecraftState { orbit, properties: props };
+        assert_eq!(sc, sc2);
+        assert!((sc.properties.mass.value() - 500.0).abs() < f64::EPSILON);
+    }
 }

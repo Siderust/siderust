@@ -7,7 +7,7 @@
 //!
 //! [`ForceModel<C, F>`] is the central abstraction.  Each call to
 //! [`acceleration`][ForceModel::acceleration] or [`partials`][ForceModel::partials]
-//! receives a [`DynamicsContext`] reference so force models can query
+//! receives a reference to the [`super::context::DynamicsContext`] so force models can query
 //! ephemeris, atmosphere, and gravity-field providers **without holding them
 //! as fields**.  Force models store only their tunable physical parameters
 //! (C_D, C_R, A/m, J2 coefficient, truncation degree, …).

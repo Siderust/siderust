@@ -7,7 +7,7 @@
 //!
 //! Provides a cannonball aerodynamic drag model that reads atmospheric mass
 //! density from the [`DynamicsContext`]'s atmosphere provider.  Any
-//! [`DensityProvider`] implementation can be injected at context-build time.
+//! [`super::super::atmosphere::DensityProvider`] implementation can be injected at context-build time.
 //!
 //! ## Equations
 //!
@@ -20,7 +20,7 @@
 //! * `Cd` — drag coefficient (dimensionless);
 //! * `A/m` — area-to-mass ratio (m²/kg);
 //! * `ρ(h)` — atmospheric mass density at geodetic altitude `h` (kg/m³),
-//!   read from the context's [`DensityProvider`];
+//!   read from the context's [`super::super::atmosphere::DensityProvider`];
 //! * `v_rel = v − ω_⊕ × r` — velocity relative to the co-rotating atmosphere
 //!   (km/s), subtracted element-wise in raw f64 after extracting typed values;
 //! * `|v_rel|_SI` — magnitude of `v_rel` converted to m/s for unit consistency.
@@ -136,7 +136,7 @@ impl ForceModel for DragForce {
     ///
     /// # Errors
     ///
-    /// * [`DynamicsError::MissingAtmosphereProvider`] — context has no atmosphere.
+    /// * [`DynamicsError::Provider`] — context has no atmosphere provider.
     /// * [`DynamicsError::AltitudeBelowSurface`] — geocentric altitude < 0.
     /// * [`DynamicsError::AtmosphereProviderError`] — density model error.
     #[inline]

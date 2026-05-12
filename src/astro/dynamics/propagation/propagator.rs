@@ -417,4 +417,53 @@ mod tests {
             "expected at least one altitude event, got 0"
         );
     }
+
+    #[test]
+    fn propagator_config_default_uses_dop853() {
+        let cfg = PropagatorConfig::default();
+        assert!(matches!(cfg.integrator, IntegratorChoice::Dop853));
+        assert_eq!(cfg.max_steps, 1_000_000);
+        assert!(cfg.event_dt.is_none());
+    }
+
+    #[test]
+    fn propagator_propagate_with_events_dopri5_fires() {
+        let v_circ = (MU / R).sqrt();
+        let s0_ecc = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(R, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, v_circ * 1.01, 0.0),
+        );
+        let period = 2.0 * std::f64::consts::PI * (R.powi(3) / MU).sqrt();
+        let event = AltitudeEvent::new(Kilometers::new(750.0), Kilometers::new(6_371.0));
+        let p = Propagator::new(TwoBody::earth(), dopri5_config(), DynamicsContext::empty());
+        let result = p
+            .propagate_with_events(s0_ecc, Second::new(period), event)
+            .unwrap();
+        assert!(!result.events.is_empty());
+    }
+
+    #[test]
+    fn propagator_event_dt_produces_dense_output() {
+        let (s0, period) = circular_state();
+        let mut cfg = dop853_config();
+        cfg.event_dt = Some(Second::new(period / 10.0));
+        let event = AltitudeEvent::new(Kilometers::new(100.0), Kilometers::new(6_371.0));
+        let p = Propagator::new(TwoBody::earth(), cfg, DynamicsContext::empty());
+        let result = p
+            .propagate_with_events(s0, Second::new(period), event)
+            .unwrap();
+        assert!(result.samples.len() > 3, "expected dense samples, got {}", result.samples.len());
+    }
+
+    #[test]
+    fn propagator_propagate_with_events_rk4_runs() {
+        let (s0, period) = circular_state();
+        let event = AltitudeEvent::new(Kilometers::new(100.0), Kilometers::new(6_371.0));
+        let p = Propagator::new(TwoBody::earth(), rk4_config(60.0), DynamicsContext::empty());
+        let result = p
+            .propagate_with_events(s0, Second::new(period), event)
+            .unwrap();
+        assert!(!result.samples.is_empty());
+    }
 }

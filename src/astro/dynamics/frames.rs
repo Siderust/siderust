@@ -46,7 +46,7 @@
 //! ## Failure modes and typed thresholds
 //!
 //! All three constructors are fallible and return
-//! [`LocalFrameError`](super::errors::LocalFrameError):
+//! [`LocalFrameError`]:
 //!
 //! | Condition | Error variant |
 //! |-----------|---------------|
@@ -63,10 +63,7 @@
 //! The constructors are generic over `C` (reference center) and `F`
 //! (reference frame) — they accept any [`OrbitState<C, F>`].  The resulting
 //! [`LocalOrbitalFrame<M>`] wraps a raw [`Rotation3`] that maps *from the
-//! inertial frame `F` of the parent state* into the local frame `M`.  The
-//! [`Self::to_local`] / [`Self::to_inertial`] helpers fix `F = GCRS`; for
-//! other inertial frames rotate the displacement manually using
-//! [`Self::rotation`].
+//! inertial frame `F` of the parent state* into the local frame `M`.
 //!
 //! ## Usage
 //!

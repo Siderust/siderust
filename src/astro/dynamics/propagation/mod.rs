@@ -5,13 +5,14 @@
 //!
 //! ## Scope
 //!
-//! Provides the [`propagate`] function, which composes any [`AdaptiveStepper`]
-//! with a [`PropagatorConfig`] to handle event detection, output sampling,
-//! and step budgeting in a single high-level call.
+//! Provides the [`propagate`] function, which composes any
+//! [`super::super::integrators::AdaptiveStepper`] with a [`PropagationConfig`]
+//! to handle event detection, output sampling, and step budgeting in a
+//! single high-level call.
 //!
 //! ## Workflow
 //!
-//! 1. Create a [`PropagatorConfig`] with time bounds, tolerances, event detectors.
+//! 1. Create a [`PropagationConfig`] with time bounds, tolerances, event detectors.
 //! 2. Call [`propagate`] with an integrator (DOPRI5 or DOP853), force model, and context.
 //! 3. Inspect the [`PropagationResult`] for samples, event times, and step counts.
 //!

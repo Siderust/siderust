@@ -265,3 +265,116 @@ where
         std::any::type_name::<Self>()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::dynamics::context::DynamicsContext;
+    use crate::astro::dynamics::state::{Acceleration, AccelerationUnit, OrbitState};
+    use crate::astro::dynamics::{Position, Velocity};
+    use crate::coordinates::frames::GCRS;
+    use crate::time::JulianDate;
+
+    fn sample_state() -> OrbitState {
+        OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(7000.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        )
+    }
+
+    #[test]
+    fn force_partials_zero_has_zero_matrices() {
+        let z = ForcePartials::<GCRS>::zero();
+        let a = z.d_acc_d_pos.as_array();
+        let v = z.d_acc_d_vel.as_array();
+        for i in 0..3 {
+            for j in 0..3 {
+                assert_eq!(a[i][j], 0.0);
+                assert_eq!(v[i][j], 0.0);
+            }
+        }
+    }
+
+    #[test]
+    fn force_partials_two_body_diagonal_sign() {
+        let mu = GM_EARTH;
+        let r = [7000.0_f64, 0.0, 0.0];
+        let p = ForcePartials::<GCRS>::two_body(mu, r);
+        let a = p.d_acc_d_pos.as_array();
+        assert!((a[0][1]).abs() < 1e-30, "off-diagonal [0][1] should be zero");
+        let v = p.d_acc_d_vel.as_array();
+        for i in 0..3 {
+            for j in 0..3 {
+                assert_eq!(v[i][j], 0.0, "d_acc_d_vel must be zero for two-body");
+            }
+        }
+    }
+
+    #[test]
+    fn force_partials_two_body_zero_position_returns_zero() {
+        let p = ForcePartials::<GCRS>::two_body(GM_EARTH, [0.0, 0.0, 0.0]);
+        let a = p.d_acc_d_pos.as_array();
+        for i in 0..3 {
+            for j in 0..3 {
+                assert_eq!(a[i][j], 0.0);
+            }
+        }
+    }
+
+    #[test]
+    fn force_partials_add_sums_elements() {
+        let a = ForcePartials::<GCRS>::two_body(GM_EARTH, [7000.0, 0.0, 0.0]);
+        let b = ForcePartials::<GCRS>::two_body(GM_EARTH, [7000.0, 0.0, 0.0]);
+        let c = a.add(&b);
+        let ca = c.d_acc_d_pos.as_array();
+        let aa = a.d_acc_d_pos.as_array();
+        for i in 0..3 {
+            for j in 0..3 {
+                let rel = (ca[i][j] - 2.0 * aa[i][j]).abs();
+                assert!(rel < 1e-20, "add must sum element-wise: [{i}][{j}] rel={rel}");
+            }
+        }
+    }
+
+    #[test]
+    fn force_partials_add_in_place_sums_elements() {
+        let mut a = ForcePartials::<GCRS>::two_body(GM_EARTH, [7000.0, 0.0, 0.0]);
+        let b = ForcePartials::<GCRS>::two_body(GM_EARTH, [7000.0, 0.0, 0.0]);
+        let orig = *a.d_acc_d_pos.as_array();
+        a.add_in_place(&b);
+        let ca = a.d_acc_d_pos.as_array();
+        for i in 0..3 {
+            for j in 0..3 {
+                let rel = (ca[i][j] - 2.0 * orig[i][j]).abs();
+                assert!(rel < 1e-20, "add_in_place must sum in place: [{i}][{j}] rel={rel}");
+            }
+        }
+    }
+
+    struct ConstantForce;
+    impl ForceModel for ConstantForce {
+        fn acceleration(
+            &self,
+            _state: &OrbitState,
+            _ctx: &DynamicsContext,
+        ) -> Result<Acceleration<GCRS, AccelerationUnit>, DynamicsError> {
+            Ok(Acceleration::<GCRS, AccelerationUnit>::new(1e-6, 0.0, 0.0))
+        }
+    }
+
+    #[test]
+    fn default_partials_returns_error() {
+        let f = ConstantForce;
+        let ctx = DynamicsContext::empty();
+        let result = f.partials(&sample_state(), &ctx);
+        assert!(result.is_err(), "default partials must return an error");
+    }
+
+    #[test]
+    fn default_name_returns_type_name() {
+        let f = ConstantForce;
+        let name = f.name();
+        assert!(!name.is_empty(), "type name must not be empty");
+    }
+}

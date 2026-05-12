@@ -112,3 +112,82 @@ where
         (self.t_end - self.t_start).value()
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::dynamics::propagation::events::AltitudeEvent;
+    use crate::astro::dynamics::state::OrbitState;
+    use crate::astro::dynamics::{Position, Velocity};
+    use crate::coordinates::frames::GCRS;
+    use crate::ext_qtty::tolerances::IntegratorTolerances;
+    use crate::qtty::{Kilometers, Second};
+    use crate::time::{JulianDate, Time, TT};
+
+    fn epoch(jd: f64) -> Time<TT> {
+        let s = OrbitState::new_at_jd(
+            JulianDate::new(jd),
+            Position::<GCRS>::new(7000.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        );
+        s.epoch
+    }
+
+    #[test]
+    fn new_sets_defaults() {
+        let cfg: PropagationConfig = PropagationConfig::new(epoch(2_451_545.0), epoch(2_451_546.0));
+        assert!((cfg.h0.value() - 30.0).abs() < 1e-10);
+        assert!(cfg.output_every.is_none());
+        assert!(cfg.events.is_empty());
+        assert_eq!(cfg.max_steps, 1_000_000);
+    }
+
+    #[test]
+    fn builder_methods_set_fields() {
+        let cfg: PropagationConfig = PropagationConfig::new(epoch(2_451_545.0), epoch(2_451_546.0))
+            .with_initial_step(Second::new(10.0))
+            .with_max_step(Second::new(300.0))
+            .with_min_step(Second::new(0.001))
+            .with_tolerances(IntegratorTolerances::uniform(1e-8, 1e-5, 1e-8))
+            .with_output_every(Second::new(60.0))
+            .with_max_steps(50_000);
+        assert!((cfg.h0.value() - 10.0).abs() < 1e-10);
+        assert!((cfg.h_max.value() - 300.0).abs() < 1e-10);
+        assert!((cfg.h_min.value() - 0.001).abs() < 1e-14);
+        assert!(cfg.output_every.is_some());
+        assert!((cfg.output_every.unwrap().value() - 60.0).abs() < 1e-10);
+        assert_eq!(cfg.max_steps, 50_000);
+    }
+
+    #[test]
+    fn with_output_at_sets_vec() {
+        let times = vec![epoch(2_451_545.01), epoch(2_451_545.02)];
+        let cfg: PropagationConfig =
+            PropagationConfig::new(epoch(2_451_545.0), epoch(2_451_545.1)).with_output_at(times);
+        assert_eq!(cfg.output_at.len(), 2);
+    }
+
+    #[test]
+    fn with_event_appends_event() {
+        let event = AltitudeEvent::new(Kilometers::new(600.0), Kilometers::new(6_371.0));
+        let cfg: PropagationConfig = PropagationConfig::new(epoch(2_451_545.0), epoch(2_451_546.0))
+            .with_event(Box::new(event));
+        assert_eq!(cfg.events.len(), 1);
+    }
+
+    #[test]
+    fn total_duration_s_positive() {
+        let dt_days = 1.0;
+        let dt_s = dt_days * 86_400.0;
+        let cfg: PropagationConfig =
+            PropagationConfig::new(epoch(2_451_545.0), epoch(2_451_545.0 + dt_days));
+        let dur = cfg.total_duration_s();
+        assert!((dur - dt_s).abs() < 1.0, "total duration off: {dur}");
+    }
+
+    #[test]
+    fn total_duration_s_negative_for_backward() {
+        let cfg: PropagationConfig = PropagationConfig::new(epoch(2_451_546.0), epoch(2_451_545.0));
+        assert!(cfg.total_duration_s() < 0.0, "backward propagation must give negative duration");
+    }
+}

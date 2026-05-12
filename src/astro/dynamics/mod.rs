@@ -24,7 +24,7 @@
 //!
 //! Submodules host:
 //!
-//! - [`forces`] — [`ForceModel`] trait and standard models (two-body, J2, drag, SRP, third-body, geopotential, relativity).
+//! - [`forces`] — force model trait and standard models (two-body, J2, drag, SRP, third-body, geopotential, relativity).
 //! - [`integrators`] — RK4 (fixed-step) and DOPRI5 / DOP853 (adaptive).
 //! - [`propagation`] — high-level adaptive driver with event detection.
 //! - [`variational`] — analytic state-transition-matrix propagation via variational equations.
@@ -47,7 +47,7 @@
 //!
 //! ## Failure modes
 //!
-//! Most errors are surface through [`DynamicsError`]:
+//! Most errors are surfaced through [`DynamicsError`]:
 //! - Provider unavailability (ephemeris, EOP, gravity, atmosphere)
 //! - Degenerate geometry (zero position, zero velocity, r ∥ v)
 //! - Geopotential degree/order out of range

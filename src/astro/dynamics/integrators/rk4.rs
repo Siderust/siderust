@@ -162,4 +162,36 @@ mod tests {
         .sqrt();
         assert!(dr < 5.0, "orbit closure error {dr} km exceeds 5 km");
     }
+
+    #[test]
+    fn rk4_propagate_series_length_is_n_steps_plus_one() {
+        let mu: f64 = 398_600.441_8;
+        let r: f64 = 7_000.0;
+        let v: f64 = (mu / r).sqrt();
+        let s0 = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(r, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, v, 0.0),
+        );
+        let ctx = DynamicsContext::empty();
+        let series = rk4_propagate_series(&TwoBody::earth(), s0, Second::new(60.0), 5, &ctx).unwrap();
+        assert_eq!(series.len(), 6, "series must have n_steps+1 elements");
+        assert_eq!(series[0], s0, "first element must be the initial state");
+    }
+
+    #[test]
+    fn rk4_fixed_stepper_advances_epoch() {
+        use super::super::FixedStepper;
+        let mu: f64 = 398_600.441_8;
+        let r: f64 = 7_000.0;
+        let v: f64 = (mu / r).sqrt();
+        let s0 = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(r, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, v, 0.0),
+        );
+        let ctx = DynamicsContext::empty();
+        let s1 = Rk4.step(&TwoBody::earth(), &s0, Second::new(60.0), &ctx).unwrap();
+        assert!(s1.epoch != s0.epoch, "Rk4::step must advance the epoch");
+    }
 }

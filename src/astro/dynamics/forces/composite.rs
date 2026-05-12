@@ -125,3 +125,78 @@ where
         Ok(total)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::dynamics::context::DynamicsContext;
+    use crate::astro::dynamics::forces::traits::ForceModel;
+    use crate::astro::dynamics::forces::two_body::TwoBody;
+    use crate::astro::dynamics::state::OrbitState;
+    use crate::astro::dynamics::{Position, Velocity};
+    use crate::coordinates::frames::GCRS;
+    use crate::time::JulianDate;
+
+    fn sample_state() -> OrbitState {
+        OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(7000.0, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        )
+    }
+
+    #[test]
+    fn empty_composite_is_zero() {
+        let comp = CompositeForce::empty();
+        assert!(comp.is_empty());
+        assert_eq!(comp.len(), 0);
+        let ctx = DynamicsContext::empty();
+        let a = comp.acceleration(&sample_state(), &ctx).unwrap();
+        assert_eq!(a.x().value(), 0.0);
+        assert_eq!(a.y().value(), 0.0);
+        assert_eq!(a.z().value(), 0.0);
+    }
+
+    #[test]
+    fn default_composite_is_empty() {
+        let comp: CompositeForce = CompositeForce::default();
+        assert!(comp.is_empty());
+    }
+
+    #[test]
+    fn push_increases_len() {
+        let comp = CompositeForce::empty().push(Box::new(TwoBody::earth()));
+        assert_eq!(comp.len(), 1);
+        assert!(!comp.is_empty());
+    }
+
+    #[test]
+    fn composite_acceleration_sums_components() {
+        let comp = CompositeForce::empty()
+            .push(Box::new(TwoBody::earth()))
+            .push(Box::new(TwoBody::earth()));
+        let ctx = DynamicsContext::empty();
+        let a = comp.acceleration(&sample_state(), &ctx).unwrap();
+        let single = TwoBody::earth().acceleration(&sample_state(), &ctx).unwrap();
+        let rel_x = (a.x().value() - 2.0 * single.x().value()).abs() / single.x().value().abs();
+        assert!(rel_x < 1e-12, "composite x should be 2× single-component: got {rel_x}");
+    }
+
+    #[test]
+    fn composite_partials_sums_components() {
+        let comp = CompositeForce::empty()
+            .push(Box::new(TwoBody::earth()))
+            .push(Box::new(TwoBody::earth()));
+        let ctx = DynamicsContext::empty();
+        let p = comp.partials(&sample_state(), &ctx).unwrap();
+        let single = TwoBody::earth().partials(&sample_state(), &ctx).unwrap();
+        let pa = p.d_acc_d_pos.as_array();
+        let sa = single.d_acc_d_pos.as_array();
+        for i in 0..3 {
+            for j in 0..3 {
+                let rel = (pa[i][j] - 2.0 * sa[i][j]).abs();
+                assert!(rel < 1e-12, "partials[{i}][{j}] mismatch: {rel}");
+            }
+        }
+    }
+}

@@ -104,3 +104,51 @@ impl EventDetector<Geocentric, GCRS> for AltitudeEvent {
         self.terminal
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::dynamics::state::OrbitState;
+    use crate::astro::dynamics::{Position, Velocity};
+    use crate::time::JulianDate;
+
+    fn st(r: f64) -> OrbitState {
+        OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(r, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        )
+    }
+
+    #[test]
+    fn altitude_event_name_is_altitude() {
+        let e = AltitudeEvent::new(Kilometers::new(100.0), Kilometers::new(6_371.0));
+        assert_eq!(e.name(), "altitude");
+    }
+
+    #[test]
+    fn altitude_event_default_not_terminal() {
+        let e = AltitudeEvent::new(Kilometers::new(100.0), Kilometers::new(6_371.0));
+        assert!(!EventDetector::<Geocentric, GCRS>::terminal(&e));
+    }
+
+    #[test]
+    fn altitude_event_terminal_builder() {
+        let e = AltitudeEvent::new(Kilometers::new(100.0), Kilometers::new(6_371.0)).terminal(true);
+        assert!(EventDetector::<Geocentric, GCRS>::terminal(&e));
+    }
+
+    #[test]
+    fn altitude_event_evaluate_positive_above_trigger() {
+        let e = AltitudeEvent::new(Kilometers::new(100.0), Kilometers::new(6_371.0));
+        let g = e.evaluate(&st(7_000.0), &DynamicsContext::empty()).unwrap();
+        assert!(g > 0.0, "expected positive g, got {g}");
+    }
+
+    #[test]
+    fn altitude_event_evaluate_negative_below_trigger() {
+        let e = AltitudeEvent::new(Kilometers::new(1_000.0), Kilometers::new(6_371.0));
+        let g = e.evaluate(&st(7_000.0), &DynamicsContext::empty()).unwrap();
+        assert!(g < 0.0, "expected negative g, got {g}");
+    }
+}

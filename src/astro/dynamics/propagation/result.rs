@@ -55,7 +55,7 @@ where
     C: ReferenceCenter,
     F: ReferenceFrame,
 {
-    /// Final state and any output samples requested via the [`super::config::PropagatorConfig`].
+    /// Final state and any output samples requested via the [`super::config::PropagationConfig`].
     pub samples: Vec<OrbitState<C, F>>,
     pub events: Vec<EventOccurrence<C, F>>,
     pub steps_taken: u32,

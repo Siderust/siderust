@@ -338,4 +338,60 @@ mod tests {
         assert_eq!(series.len(), 3);
         check_identity(&series[0].to_row_major(), 1e-9);
     }
+
+    #[test]
+    fn from_blocks_assembles_six_by_six() {
+        let m = FrameMatrix3::<GCRS>::from_array([
+            [1.0, 2.0, 3.0],
+            [4.0, 5.0, 6.0],
+            [7.0, 8.0, 9.0],
+        ]);
+        let z = FrameMatrix3::<GCRS>::zero();
+        let phi = StateTransition::from_blocks(m, z, z, m);
+        let raw = phi.to_row_major();
+        assert!((raw[0][0] - 1.0).abs() < 1e-15);
+        assert!((raw[0][2] - 3.0).abs() < 1e-15);
+        assert!((raw[1][1] - 5.0).abs() < 1e-15);
+        assert!((raw[3][3] - 1.0).abs() < 1e-15);
+        assert!((raw[5][5] - 9.0).abs() < 1e-15);
+        assert!((raw[0][3] - 0.0).abs() < 1e-15);
+    }
+
+    #[test]
+    fn block_accessors_return_correct_blocks() {
+        let phi = StateTransition::<GCRS>::identity();
+        let dr_dr = phi.dr_dr().as_array();
+        let dr_dv = phi.dr_dv().as_array();
+        let dv_dr = phi.dv_dr().as_array();
+        let dv_dv = phi.dv_dv().as_array();
+        for i in 0..3 {
+            for j in 0..3 {
+                let expected = if i == j { 1.0 } else { 0.0 };
+                assert!((dr_dr[i][j] - expected).abs() < 1e-15);
+                assert!((dv_dv[i][j] - expected).abs() < 1e-15);
+                assert!((dr_dv[i][j]).abs() < 1e-15);
+                assert!((dv_dr[i][j]).abs() < 1e-15);
+            }
+        }
+    }
+
+    #[test]
+    fn relabel_preserves_data() {
+        use crate::coordinates::frames::ICRS;
+        let phi = StateTransition::<GCRS>::identity();
+        let relabeled: StateTransition<ICRS> = phi.relabel::<ICRS>();
+        check_identity(&relabeled.to_row_major(), 1e-15);
+    }
+
+    #[test]
+    fn finite_diff_stm_non_identity_after_propagation() {
+        let ctx = DynamicsContext::empty();
+        let s = sample_state();
+        let phi = finite_diff_stm(&TwoBody::earth(), s, Second::new(60.0), 10, &ctx).unwrap();
+        let raw = phi.to_row_major();
+        // After propagation, the STM must differ from the identity matrix in the
+        // dr/dr off-diagonal (orbital coupling).
+        let off_diag_max = raw[0][1].abs() + raw[1][0].abs() + raw[0][3].abs() + raw[1][4].abs();
+        assert!(off_diag_max > 1e-6, "expected non-trivial STM, got off-diag mass {off_diag_max}");
+    }
 }

@@ -59,3 +59,83 @@ impl From<PropagationError> for DynamicsError {
         DynamicsError::Provider(Box::new(e))
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::dynamics::errors::DynamicsError;
+
+    fn dummy_err() -> DynamicsError {
+        DynamicsError::DegenerateGeometry { reason: "test" }
+    }
+
+    #[test]
+    fn step_control_display() {
+        let e = PropagationError::StepControl(dummy_err());
+        let s = format!("{e}");
+        assert!(s.contains("integrator step control"), "got: {s}");
+    }
+
+    #[test]
+    fn step_below_minimum_display() {
+        let e = PropagationError::StepBelowMinimum { h_requested: 1e-10, h_min: 1e-6 };
+        let s = format!("{e}");
+        assert!(s.contains("minimum"), "got: {s}");
+    }
+
+    #[test]
+    fn max_steps_exceeded_display() {
+        let e = PropagationError::MaxStepsExceeded { max_steps: 1000 };
+        let s = format!("{e}");
+        assert!(s.contains("1000"), "got: {s}");
+    }
+
+    #[test]
+    fn event_evaluation_display() {
+        let e = PropagationError::EventEvaluation {
+            name: "altitude",
+            source: dummy_err(),
+        };
+        let s = format!("{e}");
+        assert!(s.contains("altitude"), "got: {s}");
+    }
+
+    #[test]
+    fn step_control_has_source() {
+        use std::error::Error;
+        let e = PropagationError::StepControl(dummy_err());
+        assert!(e.source().is_some());
+    }
+
+    #[test]
+    fn event_evaluation_has_source() {
+        use std::error::Error;
+        let e = PropagationError::EventEvaluation {
+            name: "test",
+            source: dummy_err(),
+        };
+        assert!(e.source().is_some());
+    }
+
+    #[test]
+    fn step_below_minimum_no_source() {
+        use std::error::Error;
+        let e = PropagationError::StepBelowMinimum { h_requested: 1e-10, h_min: 1e-6 };
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn max_steps_no_source() {
+        use std::error::Error;
+        let e = PropagationError::MaxStepsExceeded { max_steps: 100 };
+        assert!(e.source().is_none());
+    }
+
+    #[test]
+    fn from_propagation_error_for_dynamics_error() {
+        let e = PropagationError::MaxStepsExceeded { max_steps: 42 };
+        let d: DynamicsError = DynamicsError::from(e);
+        let s = format!("{d:?}");
+        assert!(!s.is_empty());
+    }
+}

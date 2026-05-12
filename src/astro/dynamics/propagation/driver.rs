@@ -6,8 +6,9 @@
 //! ## Scope
 //!
 //! Provides [`propagate`], the main entry point for orbit propagation.  It
-//! composes any [`AdaptiveStepper`] with a [`PropagationConfig`] to manage
-//! event detection, output sampling, step control, and termination logic.
+//! composes any [`super::super::integrators::AdaptiveStepper`] with a
+//! [`super::config::PropagationConfig`] to manage event detection, output
+//! sampling, step control, and termination logic.
 //!
 //! ## Workflow
 //!
@@ -27,7 +28,7 @@
 //!
 //! ## Failure modes
 //!
-//! Returns [`DynamicsError::PropagationError`] on:
+//! Returns errors on:
 //! - Step control failure (integrator error)
 //! - Step shrinking below `h_min`
 //! - Step budget exhaustion
@@ -191,3 +192,103 @@ use crate as _siderust;
 use Geocentric as _Geocentric;
 #[allow(unused_imports)]
 use GCRS as _Gcrs;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::dynamics::context::DynamicsContext;
+    use crate::astro::dynamics::forces::two_body::TwoBody;
+    use crate::astro::dynamics::integrators::Dopri5;
+    use crate::astro::dynamics::propagation::events::AltitudeEvent;
+    use crate::astro::dynamics::state::OrbitState;
+    use crate::astro::dynamics::{Position, Velocity};
+    use crate::coordinates::frames::GCRS;
+    use crate::ext_qtty::tolerances::IntegratorTolerances;
+    use crate::qtty::{Kilometers, Second};
+    use crate::time::JulianDate;
+
+    const MU: f64 = 398_600.441_8;
+    const R: f64 = 7_000.0;
+
+    fn circ_state() -> OrbitState {
+        let v = (MU / R).sqrt();
+        OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(R, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, v, 0.0),
+        )
+    }
+
+    fn tol() -> IntegratorTolerances {
+        IntegratorTolerances::uniform(1e-9, 1e-6, 1e-9)
+    }
+
+    #[test]
+    fn zero_duration_returns_initial_state_only() {
+        let s0 = circ_state();
+        let cfg = PropagationConfig::new(s0.epoch, s0.epoch);
+        let stepper = Dopri5::new(tol());
+        let result = propagate(&stepper, &TwoBody::earth(), s0, &cfg, &DynamicsContext::empty()).unwrap();
+        assert_eq!(result.samples.len(), 1);
+        assert_eq!(result.steps_taken, 0);
+    }
+
+    #[test]
+    fn propagate_forward_one_orbit_arrives() {
+        let s0 = circ_state();
+        let period = 2.0 * std::f64::consts::PI * (R.powi(3) / MU).sqrt();
+        let t_end = s0.epoch + Second::new(period);
+        let cfg = PropagationConfig::new(s0.epoch, t_end);
+        let stepper = Dopri5::new(tol());
+        let result = propagate(&stepper, &TwoBody::earth(), s0, &cfg, &DynamicsContext::empty()).unwrap();
+        let final_state = result.samples.last().unwrap();
+        let dr = ((final_state.position.x().value() - R).powi(2)
+            + final_state.position.y().value().powi(2)
+            + final_state.position.z().value().powi(2))
+        .sqrt();
+        assert!(dr < 1.0, "orbit closure error {dr} km exceeds 1 km");
+    }
+
+    #[test]
+    fn output_every_produces_samples() {
+        let s0 = circ_state();
+        let period = 2.0 * std::f64::consts::PI * (R.powi(3) / MU).sqrt();
+        let t_end = s0.epoch + Second::new(period);
+        let cfg = PropagationConfig::new(s0.epoch, t_end)
+            .with_output_every(Second::new(period / 10.0));
+        let stepper = Dopri5::new(tol());
+        let result = propagate(&stepper, &TwoBody::earth(), s0, &cfg, &DynamicsContext::empty()).unwrap();
+        assert!(result.samples.len() > 3, "expected dense output samples, got {}", result.samples.len());
+    }
+
+    #[test]
+    fn output_at_appends_samples() {
+        let s0 = circ_state();
+        let period = 2.0 * std::f64::consts::PI * (R.powi(3) / MU).sqrt();
+        let t_target = s0.epoch + Second::new(period * 0.25);
+        let t_end = s0.epoch + Second::new(period);
+        let cfg = PropagationConfig::new(s0.epoch, t_end)
+            .with_output_at(vec![t_target]);
+        let stepper = Dopri5::new(tol());
+        let result = propagate(&stepper, &TwoBody::earth(), s0, &cfg, &DynamicsContext::empty()).unwrap();
+        assert!(result.samples.len() >= 3, "expected at least 3 samples");
+    }
+
+    #[test]
+    fn event_detection_fires() {
+        let v_circ = (MU / R).sqrt();
+        let s0_ecc = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(R, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, v_circ * 1.01, 0.0),
+        );
+        let period = 2.0 * std::f64::consts::PI * (R.powi(3) / MU).sqrt();
+        let t_end = s0_ecc.epoch + Second::new(period);
+        let event = AltitudeEvent::new(Kilometers::new(750.0), Kilometers::new(6_371.0));
+        let cfg = PropagationConfig::new(s0_ecc.epoch, t_end)
+            .with_event(Box::new(event));
+        let stepper = Dopri5::new(tol());
+        let result = propagate(&stepper, &TwoBody::earth(), s0_ecc, &cfg, &DynamicsContext::empty()).unwrap();
+        assert!(!result.events.is_empty(), "altitude event must fire for eccentric orbit");
+    }
+}

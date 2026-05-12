@@ -116,3 +116,44 @@ pub trait GravityFieldProvider: Send + Sync {
         self.s_normalized(n as usize, m as usize)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::dynamics::units::GravitationalParameter;
+    use crate::qtty::Kilometers;
+
+    struct StubProvider;
+    impl GravityFieldProvider for StubProvider {
+        fn gm(&self) -> GravitationalParameter { GravitationalParameter::new(398_600.441_8) }
+        fn reference_radius(&self) -> Kilometers { Kilometers::new(6_378.137) }
+        fn max_degree(&self) -> usize { 4 }
+        fn max_order(&self) -> usize { 4 }
+        fn c_normalized(&self, n: usize, m: usize) -> f64 {
+            if n == 0 && m == 0 { 1.0 } else { 0.0 }
+        }
+        fn s_normalized(&self, _n: usize, _m: usize) -> f64 { 0.0 }
+    }
+
+    #[test]
+    fn constants_helper_packs_fields() {
+        let p = StubProvider;
+        let c = p.constants();
+        assert!((c.gm.value() - 398_600.441_8).abs() < 1.0);
+        assert!((c.radius.value() - 6_378.137).abs() < 1.0);
+        assert_eq!(c.max_degree, 4);
+    }
+
+    #[test]
+    fn c_nm_delegates_to_c_normalized() {
+        let p = StubProvider;
+        assert!((p.c_nm(0, 0) - 1.0).abs() < 1e-12);
+        assert_eq!(p.c_nm(2, 1), 0.0);
+    }
+
+    #[test]
+    fn s_nm_delegates_to_s_normalized() {
+        let p = StubProvider;
+        assert_eq!(p.s_nm(2, 1), 0.0);
+    }
+}

@@ -343,4 +343,33 @@ mod tests {
         .sqrt();
         assert!(dr < 1.0, "orbit closure error {dr} km exceeds 1 km");
     }
+
+    #[test]
+    fn dopri5_builder_sets_bounds() {
+        let d = Dopri5::new(IntegratorTolerances::uniform(1e-9, 1e-6, 1e-9))
+            .with_h_max(Second::new(100.0))
+            .with_h_min(Second::new(1e-3));
+        assert!((d.h_max.value() - 100.0).abs() < 1e-10);
+        assert!((d.h_min.value() - 1e-3).abs() < 1e-14);
+    }
+
+    #[test]
+    fn dopri5_stepper_trait_object_works() {
+        use crate::astro::dynamics::integrators::AdaptiveStepper;
+        let mu: f64 = 398_600.441_8;
+        let r: f64 = 7_000.0;
+        let v: f64 = (mu / r).sqrt();
+        let s0 = OrbitState::new_at_jd(
+            JulianDate::new(2_451_545.0),
+            Position::<GCRS>::new(r, 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, v, 0.0),
+        );
+        let tol = IntegratorTolerances::uniform(1e-9, 1e-6, 1e-9);
+        let stepper = Dopri5::new(tol);
+        let ctx = DynamicsContext::empty();
+        let (s1, h_used, h_next) = stepper.step(&TwoBody::earth(), &s0, Second::new(30.0), &ctx).unwrap();
+        assert!(s1.epoch != s0.epoch, "stepper must advance the epoch");
+        assert!(h_used.value() > 0.0);
+        assert!(h_next.value() > 0.0);
+    }
 }
