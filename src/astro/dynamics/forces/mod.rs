@@ -52,9 +52,13 @@ pub mod two_body;
 // `use forces::TwoBody` continue to work unchanged.
 pub use composite::CompositeForce;
 pub use drag::{DragForce, ExponentialDrag};
+pub use crate::astro::dynamics::atmosphere::{ExponentialAtmosphere, Nrlmsise00LiteApprox};
 pub use j2::J2;
 pub use srp::CannonballSrp;
-pub use third_body::ThirdBodySunMoon;
+#[allow(deprecated)]
+pub use third_body::{
+    MoonPerturbation, SunPerturbation, ThirdBody, ThirdBodyProvider, ThirdBodySunMoon,
+};
 pub use traits::{
     ForceModel, ForcePartials, GM_EARTH, GM_MOON, GM_SUN, MU_MOON, MU_SUN, OMEGA_EARTH_RAD_S, P0,
     R_EARTH,
