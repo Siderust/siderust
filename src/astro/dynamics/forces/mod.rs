@@ -50,9 +50,9 @@ pub mod two_body;
 
 // Re-export the full public surface so callers using `use forces::*` or
 // `use forces::TwoBody` continue to work unchanged.
+pub use crate::astro::dynamics::atmosphere::{ExponentialAtmosphere, Nrlmsise00LiteApprox};
 pub use composite::CompositeForce;
 pub use drag::{DragForce, ExponentialDrag};
-pub use crate::astro::dynamics::atmosphere::{ExponentialAtmosphere, Nrlmsise00LiteApprox};
 pub use j2::J2;
 pub use srp::CannonballSrp;
 #[allow(deprecated)]
