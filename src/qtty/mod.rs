@@ -56,7 +56,7 @@ pub use crate::ext_qtty::GravitationalParameter;
 /// force models.
 pub use crate::ext_qtty::dynamics::{
     AreaToMass, AreaToMassUnit, DragCoefficient, J2Coefficient, KmPerSecond, KmPerSecondSquared,
-    KmPerSecondsSquared, SrpCoefficient,
+    KmPerSeconds, KmPerSecondsSquared, SPEED_OF_LIGHT_KM_S, SrpCoefficient,
 };
 
 /// Re-export typed integrator tolerances for use in dynamics integrators.
