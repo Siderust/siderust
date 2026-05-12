@@ -3,10 +3,41 @@
 
 //! Generic adaptive propagation driver.
 //!
-//! Composes any [`AdaptiveStepper`] with a [`PropagatorConfig`] (event
-//! detectors, output cadence, step budget) into a single high-level call.
+//! ## Scope
+//!
+//! Provides [`propagate`], the main entry point for orbit propagation.  It
+//! composes any [`AdaptiveStepper`] with a [`PropagationConfig`] to manage
+//! event detection, output sampling, step control, and termination logic.
+//!
+//! ## Workflow
+//!
+//! 1. Supply an adaptive integrator (DOPRI5, DOP853), force model, initial
+//!    state, configuration, and dynamics context.
+//! 2. The driver steps the integrator while:
+//!    - Checking event detector switching functions for zero crossings.
+//!    - Recording output at requested times (`output_every`, `output_at`).
+//!    - Honoring the step budget (`max_steps`).
+//!    - Terminating on terminal events or reaching `t_end`.
+//! 3. Return a [`PropagationResult`] with samples, event times, and statistics.
+//!
+//! ## Event detection
+//!
+//! Events are zero-crossing detectors: if `g(t) changes sign between steps,
+//! a zero-crossing is recorded.  Terminal events immediately halt propagation.
+//!
+//! ## Failure modes
+//!
+//! Returns [`DynamicsError::PropagationError`] on:
+//! - Step control failure (integrator error)
+//! - Step shrinking below `h_min`
+//! - Step budget exhaustion
+//! - Event evaluation error
+//!
+//! ## References
+//!
+//! * Vallado, *Fundamentals of Astrodynamics and Applications* (2013), §4.4.
 
-use super::config::PropagatorConfig;
+use super::config::PropagationConfig;
 use super::result::{EventOccurrence, PropagationResult};
 use crate::astro::dynamics::context::DynamicsContext;
 use crate::astro::dynamics::errors::DynamicsError;
@@ -26,7 +57,7 @@ pub fn propagate<I, C, F, FM>(
     integrator: &I,
     force: &FM,
     initial: OrbitState<C, F>,
-    cfg: &PropagatorConfig<C, F>,
+    cfg: &PropagationConfig<C, F>,
     ctx: &DynamicsContext,
 ) -> Result<PropagationResult<C, F>, DynamicsError>
 where
@@ -85,8 +116,7 @@ where
             h = direction * cfg.h_min.value().abs();
         }
 
-        let (new_state, h_used, h_next) =
-            integrator.step(force, &state, Second::new(h), ctx)?;
+        let (new_state, h_used, h_next) = integrator.step(force, &state, Second::new(h), ctx)?;
         steps_taken += 1;
         if steps_taken > cfg.max_steps {
             return Err(DynamicsError::InvalidStepRequest {
@@ -117,8 +147,7 @@ where
             if crossed {
                 samples.push(new_state.clone());
                 if let Some(dt) = cfg.output_every {
-                    next_output_t =
-                        Some(t_target + Second::new(direction * dt.value().abs()));
+                    next_output_t = Some(t_target + Second::new(direction * dt.value().abs()));
                 }
             }
         }

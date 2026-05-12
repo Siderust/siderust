@@ -3,9 +3,42 @@
 
 //! Numerical integrators for [`OrbitState`].
 //!
+//! ## Scope
+//!
+//! Provides fixed-step (RK4) and adaptive-step (DOPRI5, DOP853) integrators
+//! for the Cartesian state derivative `dy/dt = [v; a(t, y)]`.
+//!
+//! ## Algorithm overview
+//!
 //! All integrators consume a [`ForceModel`] and integrate the typed
 //! [`StateDerivative`] returned by [`StateDerivative::new`]; no raw
 //! `[f64; N]` plumbing escapes the public API.
+//!
+//! | Integrator | Type | Order | Stages | Use case |
+//! |------------|------|-------|--------|----------|
+//! | RK4 | Fixed | 4th | 4 | Fast, simple propagation; requires careful step choice |
+//! | DOPRI5 | Adaptive | 5th | 7 | General-purpose; sufficient for most LEO applications |
+//! | DOP853 | Adaptive | 8th | 12 | High-precision; POD, maneuver design |
+//!
+//! ## Units & frames
+//!
+//! Position km, velocity km/s, acceleration km/s² (GCRS by default).
+//! Time steps in seconds.
+//!
+//! ## Trait abstraction
+//!
+//! Two traits define the integrator contract:
+//! - [`FixedStepper`] — fixed-step integrators (RK4)
+//! - [`AdaptiveStepper`] — adaptive-step integrators (DOPRI5, DOP853)
+//!
+//! Both are generic over center `C` and frame `F`.
+//!
+//! ## References
+//!
+//! * Hairer, Norsett & Wanner, *Solving Ordinary Differential Equations I*,
+//!   2nd ed., Springer (1993).
+//! * Vallado, *Fundamentals of Astrodynamics and Applications* (2013), §4.4.
+//! * Montenbruck & Gill, *Satellite Orbits* (2001), §4.4.
 
 pub mod dop853;
 pub mod dopri5;

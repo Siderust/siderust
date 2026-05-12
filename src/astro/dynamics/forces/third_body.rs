@@ -323,9 +323,7 @@ pub struct ThirdBody {
 impl ThirdBody {
     /// Create an empty model with no perturbing bodies.
     pub fn new() -> Self {
-        Self {
-            bodies: Vec::new(),
-        }
+        Self { bodies: Vec::new() }
     }
 
     /// Add the Sun as a perturbing body.
@@ -651,7 +649,10 @@ mod tests {
         }));
         let a = model.acceleration(&s, &ctx_eph).unwrap();
         let mag = a.magnitude().value();
-        assert!(mag > 0.0, "custom provider: expected nonzero accel, got {mag}");
+        assert!(
+            mag > 0.0,
+            "custom provider: expected nonzero accel, got {mag}"
+        );
     }
 
     #[test]

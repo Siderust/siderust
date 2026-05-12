@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
+#![allow(deprecated)]
 
 //! Numerical state-transition matrices for Cartesian orbital states.
 //!
@@ -33,16 +34,15 @@ use crate::qtty::Second;
 
 /// Frame-tagged 6×6 state-transition matrix stored as four 3×3 blocks.
 ///
-/// The block layout is `[r, v]` ordered:
+/// # Deprecation
 ///
-/// ```text
-/// Φ = [ dr_dr  dr_dv ]
-///     [ dv_dr  dv_dv ]
-/// ```
-///
-/// - `dr_dr`, `dv_dv`: dimensionless (position→position, velocity→velocity)
-/// - `dr_dv`: position sensitivity to velocity perturbation (units: time)
-/// - `dv_dr`: velocity sensitivity to position perturbation (units: inverse time)
+/// This type is the finite-difference STM, preserved for validation only.
+/// New code should use [`siderust::astro::dynamics::variational::StateTransitionMatrix`],
+/// which is the variational (analytic) STM.
+#[deprecated(
+    note = "Use `astro::dynamics::variational::StateTransitionMatrix` (`FrameMatrix6<F>`) \
+            for production code; this type is preserved for validation only."
+)]
 #[derive(Debug, Clone, Copy)]
 pub struct StateTransition<F> {
     dr_dr: FrameMatrix3<F>,
@@ -194,6 +194,19 @@ fn fill_stm_from_raw(raw: &[[f64; 6]; 6]) -> StateTransition<GCRS> {
 ///
 /// Returns a [`StateTransition<GCRS>`] with four typed 3×3 blocks.
 /// `dt` is the RK4 step size; `n_steps` is the total number of steps.
+///
+/// # Deprecation
+///
+/// The finite-difference approach is preserved for **validation only**.
+/// New code should use the variational-equations propagator:
+///
+/// ```rust
+/// use siderust::astro::dynamics::variational::propagate_stm;
+/// ```
+#[deprecated(
+    note = "Use `astro::dynamics::variational::propagate_stm` for production code; \
+            finite-difference STM is preserved for validation only."
+)]
 pub fn finite_diff_stm<F: ForceModel>(
     force: &F,
     s0: OrbitState,
@@ -218,6 +231,16 @@ pub fn finite_diff_stm<F: ForceModel>(
 ///
 /// Φ₀ is the identity. The 12 perturbation propagations are shared across all
 /// output epochs, which is far cheaper than calling [`finite_diff_stm`] per epoch.
+///
+/// # Deprecation
+///
+/// Prefer [`siderust::astro::dynamics::variational::propagate_stm`] for new code.
+/// This series variant has no direct variational equivalent and is retained for
+/// validation workflows that need the STM at every intermediate step.
+#[deprecated(
+    note = "Use `astro::dynamics::variational::propagate_stm` for production code; \
+            finite-difference STM is preserved for validation only."
+)]
 pub fn finite_diff_stm_series<F: ForceModel>(
     force: &F,
     s0: OrbitState,
@@ -264,6 +287,7 @@ pub fn finite_diff_stm_series<F: ForceModel>(
 }
 
 #[cfg(test)]
+#[allow(deprecated)]
 mod tests {
     use super::*;
     use crate::astro::dynamics::context::DynamicsContext;

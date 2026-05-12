@@ -1,4 +1,40 @@
-//! Classical Runge-Kutta 4 integrator for [`OrbitState`].
+//! Classical Runge-Kutta 4 fixed-step integrator for [`OrbitState`].
+//!
+//! ## Scope
+//!
+//! Provides [`Rk4`] — a zero-sized fixed-step integrator implementing the
+//! classical 4th-order Runge-Kutta scheme (RK4).
+//!
+//! ## Equations
+//!
+//! The RK4 step from state `y_n` over interval `dt` is:
+//!
+//! ```text
+//! k1 = f(y_n)
+//! k2 = f(y_n + dt/2 · k1)
+//! k3 = f(y_n + dt/2 · k2)
+//! k4 = f(y_n + dt · k3)
+//! y_{n+1} = y_n + dt/6 · (k1 + 2k2 + 2k3 + k4)
+//! ```
+//!
+//! where `f(y) = [v; a]` is the state derivative.
+//!
+//! ## Units & frames
+//!
+//! Position km, velocity km/s, acceleration km/s² (all GCRS).
+//! Time step in seconds.
+//!
+//! ## Validity limits
+//!
+//! RK4 is 4th-order accurate per step: `O(dt⁵)` local truncation error.
+//! Step size must be chosen small enough to resolve force-model dynamics
+//! (typically 30–60 seconds for LEO with J2+drag).  No adaptive step control.
+//!
+//! ## References
+//!
+//! * Hairer, Norsett & Wanner, *Solving Ordinary Differential Equations I*,
+//!   §II.2.
+//! * Vallado, *Fundamentals of Astrodynamics and Applications*, §4.4.
 
 use crate::astro::dynamics::context::DynamicsContext;
 use crate::astro::dynamics::errors::DynamicsError;

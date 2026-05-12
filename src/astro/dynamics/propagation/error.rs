@@ -2,6 +2,11 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Errors specific to the high-level propagation driver.
+//!
+//! ## Scope
+//!
+//! Provides [`PropagationError`], which wraps integrator failures, step-control
+//! issues, event evaluation errors, and budget violations into a unified error type.
 
 use crate::astro::dynamics::errors::DynamicsError;
 use std::fmt;
@@ -25,10 +30,7 @@ impl fmt::Display for PropagationError {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Self::StepControl(e) => write!(f, "integrator step control error: {e}"),
-            Self::StepBelowMinimum {
-                h_requested,
-                h_min,
-            } => write!(
+            Self::StepBelowMinimum { h_requested, h_min } => write!(
                 f,
                 "requested step {h_requested:e} s falls below configured minimum {h_min:e} s"
             ),

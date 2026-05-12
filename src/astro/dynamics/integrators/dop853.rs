@@ -1,11 +1,48 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Hairer / Norsett / Wanner DOP853 8th-order adaptive Runge-Kutta integrator.
+//! 8th-order adaptive Runge-Kutta integrator (Hairer–Norsett–Wanner DOP853).
 //!
-//! Reference: E. Hairer, S. P. Norsett, G. Wanner, *Solving Ordinary
-//! Differential Equations I*, 2nd ed., Springer (1993), §II.5, Table 5.2.
-//! FORTRAN source: <http://www.unige.ch/~hairer/software.html>.
+//! ## Scope
+//!
+//! Provides [`Dop853`] — a highly-accurate adaptive integrator implementing the
+//! 8th-order Dormand-Prince method with embedded 7th-order error estimator and
+//! PI step-size control.
+//!
+//! ## Algorithm
+//!
+//! The DOP853 method (Dormand & Prince, 1981; Hairer et al., 1993) uses 12
+//! function evaluations per accepted step to achieve 8th-order accuracy
+//! `O(h⁹)` with dense output.  Error control is based on a 7th-order embedded
+//! solution.
+//!
+//! Step acceptance criterion:
+//! ```text
+//! error = |y8 - y7|  (element-wise)
+//! step accepted if: max_i(error_i / (atol + rtol|y_i|)) ≤ 1
+//! ```
+//!
+//! ## Units & frames
+//!
+//! Position km, velocity km/s, acceleration km/s² (GCRS).
+//! Tolerances: absolute (km, km/s), relative (unitless).
+//!
+//! ## Validity limits
+//!
+//! 8th-order accuracy makes this suitable for high-precision orbit propagation
+//! (POD, maneuver design, ephemeris generation).  Not suitable for highly
+//! stiff systems or singular perturbations.
+//!
+//! ## Failure modes
+//!
+//! [`DynamicsError::StepBelowMinimum`](crate::astro::dynamics::errors::DynamicsError)
+//! if the PI controller would shrink the step below `h_min`.
+//!
+//! ## References
+//!
+//! * Hairer, S. P. Norsett, G. Wanner, *Solving Ordinary Differential
+//!   Equations I*, 2nd ed., Springer (1993), §II.5, Table 5.2.
+//! * FORTRAN source: <http://www.unige.ch/~hairer/software.html>.
 
 #![allow(clippy::excessive_precision)]
 

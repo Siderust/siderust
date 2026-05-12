@@ -7,11 +7,35 @@
 //! integrators need; richer state (including spacecraft mass, parameter
 //! blocks, and provenance) lives in [`SpacecraftState`].
 //!
+//! ## Scope
+//!
+//! Provides [`OrbitState<C, F>`] — a frame- and center-tagged Cartesian state
+//! `(r, v, epoch)` — and [`StateDerivative<F>`] — the velocity and acceleration
+//! time derivatives used by all integrators.
+//!
+//! ## Equations
+//!
+//! The Cartesian equations of motion are:
+//!
+//! ```text
+//! dr/dt = v
+//! dv/dt = a(r, v, t) = [force model output]
+//! ```
+//!
+//! These are propagated by RK4, DOPRI5, or DOP853 integrators.
+//!
 //! ## Generic over center and frame
 //!
 //! [`OrbitState<C, F>`] is parameterised over the reference center `C` and
 //! the reference frame `F`.  The defaults (`Geocentric`, `GCRS`) give the
 //! conventional geocentric inertial state used by most force models.
+//!
+//! ## Units & frames
+//!
+//! - Position: **km**, GCRS frame (Geocentric, inertial)
+//! - Velocity: **km/s**, GCRS frame
+//! - Acceleration: **km/s²**, GCRS frame
+//! - Epoch: **seconds TT** (Terrestrial Time) as a [`Time<TT>`](crate::time::Time)
 //!
 //! ## Typed fields
 //!
@@ -29,6 +53,11 @@
 //! let s = OrbitState::new_at_jd(JulianDate::new(2_451_545.0), pos, vel);
 //! assert!((s.position.x().value() - 7000.0).abs() < 1e-12);
 //! ```
+//!
+//! ## Failure modes
+//!
+//! Construction is infallible for valid positions and velocities.
+//! Failures arise only in integrators when force models or providers fail.
 //!
 //! ## Removed API
 //!

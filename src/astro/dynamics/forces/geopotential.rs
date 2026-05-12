@@ -3,37 +3,50 @@
 
 //! Full spherical-harmonic geopotential force model.
 //!
-//! ## Quick start
+//! ## Scope
 //!
-//! ```rust,ignore
-//! use std::sync::Arc;
-//! use siderust::astro::dynamics::{
-//!     DynamicsContext,
-//!     forces::{Geopotential, ForceModel},
-//!     gravity::LowDegreeEarth,
-//! };
+//! Provides [`Geopotential`], a force model that delegates to the
+//! [`geopotential_acceleration`] kernel to compute spherical-harmonic
+//! gravitational acceleration up to a configurable degree/order.
 //!
-//! let ctx = DynamicsContext::builder()
-//!     .with_gravity(Arc::new(LowDegreeEarth))
-//!     .build();
+//! ## Equations
 //!
-//! let geopot = Geopotential::new(4, 4);    // degree 4, order 4
-//! let a = geopot.acceleration(&state, &ctx)?;
+//! Computes `a = ∇U` via [`geopotential_acceleration`] where
+//!
+//! ```text
+//! U = (GM/r) Σ_{n=0}^{N} (R/r)^n  Σ_{m=0}^{n}
+//!       [ C̄_{nm} P̄_{nm}(sin φ) cos(mλ)
+//!       + S̄_{nm} P̄_{nm}(sin φ) sin(mλ) ]
 //! ```
 //!
-//! ## Algorithm
+//! The computation is constrained to `degree` and `order` fields, but
+//! silently clamped to the provider's limits.
 //!
-//! Delegates to [`geopotential_acceleration`][crate::astro::dynamics::gravity::geopotential_acceleration]
-//! which implements a **spherical-coordinate gradient** over normalised
-//! associated Legendre functions.  See that function's documentation for the
-//! full derivation.
+//! ## Units & frames
 //!
-//! ## Errors
+//! Position km (geocentric).  Acceleration km/s² (same frame as input).
+//!
+//! ## Failure modes
 //!
 //! | Error | Condition |
 //! |-------|-----------|
-//! | [`DynamicsError::GravityFieldUnavailable`] | context has no gravity provider |
-//! | [`DynamicsError::GeopotentialDegreeOutOfRange`] | requested degree > provider max |
+//! | [`DynamicsError::GravityFieldUnavailable`] | Context has no gravity provider |
+//! | [`DynamicsError::GeopotentialDegreeOutOfRange`] | Requested degree > provider max |
+//!
+//! ## Validity limits
+//!
+//! The accuracy is limited by:
+//! - The provider's maximum degree/order.
+//! - Truncation at the configured `degree` and `order` parameters.
+//! - Floating-point precision at very high degrees (n > 180).
+//!
+//! High-degree models (e.g. EGM2008 full degree 2160) require a full coefficient set
+//! and are not included in the built-in providers.
+//!
+//! ## References
+//!
+//! * Montenbruck & Gill, *Satellite Orbits*, §3.2.
+//! * Vallado, *Fundamentals of Astrodynamics and Applications*, §8.6.
 
 use crate::astro::dynamics::context::DynamicsContext;
 use crate::astro::dynamics::errors::DynamicsError;

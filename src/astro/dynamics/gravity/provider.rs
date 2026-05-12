@@ -1,7 +1,46 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! [`GravityFieldProvider`] trait and the companion [`GravityConstants`] struct.
+//! [`GravityFieldProvider`] trait and coefficient-access interface.
+//!
+//! ## Scope
+//!
+//! Provides the [`GravityFieldProvider`] trait — an abstraction over normalised
+//! spherical-harmonic geopotential coefficient sources — and the companion
+//! [`GravityConstants`] helper struct.
+//!
+//! ## Equations
+//!
+//! The gravitational potential in spherical coordinates is:
+//!
+//! ```text
+//! U = (GM/r) Σ_{n=0}^{N} (R/r)^n  Σ_{m=0}^{n}
+//!       [ C̄_{nm} P̄_{nm}(sin φ) cos(mλ)
+//!       + S̄_{nm} P̄_{nm}(sin φ) sin(mλ) ]
+//! ```
+//!
+//! where C̄, S̄ are the **fully normalised** Stokes coefficients.
+//!
+//! ## Normalisation
+//!
+//! The 4π-normalisation factor is:
+//! ```text
+//! N_{n,m} = sqrt( (2n+1)(2 - δ_{m,0}) (n-m)! / (n+m)! )
+//! C_{n,m}^{unnorm} = C̄_{n,m} · N_{n,m}
+//! ```
+//!
+//! ## Provider contract
+//!
+//! - `c_normalized(n, m)` / `s_normalized(n, m)` return fully-normalised coefficients.
+//! - `C̄₀₀ = 1`, `S̄_{nm} = 0` for all m = 0.
+//! - Out-of-range calls return 0.0 (silent clipping).
+//! - `gm()` and `reference_radius()` must be self-consistent.
+//!
+//! ## References
+//!
+//! * Montenbruck & Gill, *Satellite Orbits* (2001), §3.2.
+//! * Vallado, *Fundamentals of Astrodynamics and Applications* (2013), §8.6.
+//! * IERS Conventions (2010).
 
 use crate::astro::dynamics::units::GravitationalParameter;
 use crate::qtty::Kilometers;

@@ -3,8 +3,52 @@
 
 //! Adaptive RK4(5) Dormand-Prince integrator with PI step controller.
 //!
-//! Sufficient for textbook orbits and MVP-grade satellite POD.  A
-//! higher-order DOP853 variant is left for follow-up work.
+//! ## Scope
+//!
+//! Provides [`Dopri5`] — an adaptive-step integrator implementing the 5th-order
+//! Dormand-Prince method with embedded 4th-order error estimator, controlled by
+//! a proportional-integral (PI) step-size controller.
+//!
+//! ## Equations
+//!
+//! The DOPRI5 tableau (Dormand & Prince, 1980; Hairer et al., 1993) uses seven
+//! stages to compute a 5th-order solution `y_{n+1}` and a 4th-order solution
+//! for error estimation:
+//!
+//! ```text
+//! error = |y5 - y4|  (element-wise)
+//! tolerance = atol + rtol * |y_n|
+//! step accepted if: max_i(error_i / tolerance_i) ≤ 1
+//! ```
+//!
+//! ## Step control
+//!
+//! The PI controller adjusts the next step size via:
+//!
+//! ```text
+//! h_new = h · (tolerance / error)^(α/order) · (h_prev / h)^(β/order)
+//! h_new = min(h_max, max(h_min, h_new))
+//! ```
+//!
+//! with α = 0.7, β = 0.4 (typical values).
+//!
+//! ## Units & frames
+//!
+//! Position km, velocity km/s, acceleration km/s² (all GCRS).
+//! Tolerances: absolute in km (position) and km/s (velocity), relative unitless.
+//!
+//! ## Validity limits
+//!
+//! Sufficient for textbook orbits and MVP-grade satellite POD.  Error control is
+//! based on an elementary RMS error norm; for high-fidelity applications, a
+//! DOP853 (8th-order) variant may be necessary.
+//!
+//! ## References
+//!
+//! * Hairer, Norsett & Wanner, *Solving Ordinary Differential Equations I*,
+//!   2nd ed., Springer (1993), §II.4, Table 5.2.
+//! * Vallado, *Fundamentals of Astrodynamics and Applications* (2013), §4.4.
+//! * Montenbruck & Gill, *Satellite Orbits* (2001), §4.4.
 
 use crate::astro::dynamics::context::DynamicsContext;
 use crate::astro::dynamics::errors::DynamicsError;

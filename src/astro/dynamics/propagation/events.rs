@@ -2,6 +2,38 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Zero-crossing event detectors for the propagation driver.
+//!
+//! ## Scope
+//!
+//! Provides the [`EventDetector<C, F>`] trait and built-in implementations
+//! for altitude-based event detection (e.g., apogee, perigee, eclipse).
+//!
+//! ## Equations
+//!
+//! Event detection uses a zero-crossing function `g(t, x)`:
+//! - When `g(t) changes sign between consecutive steps, an event occurred.
+//! - If `terminal()` returns `true`, propagation terminates immediately.
+//!
+//! Example (altitude trigger):
+//! ```text
+//! g(t) = |r(t)| − (R_body + h_trigger)
+//! ```
+//! - `g > 0` means above trigger altitude.
+//! - `g < 0` means below trigger altitude.
+//!
+//! ## Built-in detectors
+//!
+//! | Type | Switching function |
+//! |------|-------------------|
+//! | [`AltitudeEvent`] | `\|r\| − (R + h)` |
+//!
+//! ## Units & frames
+//!
+//! All positions in km (geocentric).  Altitudes in km above a spherical body.
+//!
+//! ## Custom detectors
+//!
+//! Implement [`EventDetector`] to add custom zero-crossing functions.
 
 use crate::astro::dynamics::context::DynamicsContext;
 use crate::astro::dynamics::errors::DynamicsError;

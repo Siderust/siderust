@@ -3,6 +3,12 @@
 
 //! Normalised spherical-harmonic geopotential acceleration kernel.
 //!
+//! ## Scope
+//!
+//! Provides [`geopotential_acceleration`] — the low-level acceleration kernel
+//! that computes Cartesian gradients of the gravitational potential from
+//! normalised Stokes coefficients.
+//!
 //! ## Algorithm
 //!
 //! The acceleration is derived from the gravitational potential
@@ -41,6 +47,16 @@
 //! N_{n,m} = sqrt( (2n+1)(2 - δ_{m,0}) (n-m)! / (n+m)! )
 //! P̄_{nm}  = N_{nm} · P_{nm}   (Ferrers convention, no Condon-Shortley phase)
 //! ```
+//!
+//! ## Units & frames
+//!
+//! Input position in km (geocentric, any frame).
+//! Output acceleration in km/s².
+//!
+//! ## Failure modes
+//!
+//! Returns [`DynamicsError::GeopotentialDegreeOutOfRange`] if requested degree
+//! exceeds the provider's maximum.
 //!
 //! ## References
 //!

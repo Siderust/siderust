@@ -1,7 +1,32 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! High-level configuration object for the [`super::driver::propagate`] driver.
+//! Low-level driver configuration for the [`super::driver::propagate`] function.
+//!
+//! ## Scope
+//!
+//! Provides [`PropagationConfig<C, F>`], the typed configuration bundle for the
+//! adaptive propagation driver: time bounds, step hints, tolerances, event
+//! detectors, output cadence, and step budgeting.
+//!
+//! See [`super::propagator::Propagator`] and the high-level API for the
+//! user-facing wrapper.
+//!
+//! ## Typical usage
+//!
+//! ```rust,ignore
+//! use siderust::astro::dynamics::propagation::PropagationConfig;
+//! use siderust::time::{Time, TT, JulianDate};
+//! use siderust::qtty::Second;
+//!
+//! let t_start = Time::<TT>::from_jd(JulianDate::new(2_451_545.0));
+//! let t_end = t_start + Second::new(86_400.0);
+//!
+//! let cfg = PropagationConfig::new(t_start, t_end)
+//!     .with_initial_step(Second::new(30.0))
+//!     .with_max_step(Second::new(600.0))
+//!     .with_output_every(Second::new(60.0));
+//! ```
 
 use super::events::EventDetector;
 use crate::coordinates::centers::{Geocentric, ReferenceCenter};
@@ -10,7 +35,9 @@ use crate::ext_qtty::tolerances::IntegratorTolerances;
 use crate::qtty::Second;
 use crate::time::{Time, TT};
 
-pub struct PropagatorConfig<C = Geocentric, F = GCRS>
+/// Low-level driver configuration.  Use [`super::propagator::PropagatorConfig`]
+/// + [`super::propagator::Propagator`] for the ergonomic high-level API.
+pub struct PropagationConfig<C = Geocentric, F = GCRS>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,
@@ -27,7 +54,7 @@ where
     pub max_steps: u32,
 }
 
-impl<C, F> PropagatorConfig<C, F>
+impl<C, F> PropagationConfig<C, F>
 where
     C: ReferenceCenter,
     F: ReferenceFrame,

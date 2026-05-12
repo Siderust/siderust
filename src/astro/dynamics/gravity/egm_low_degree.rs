@@ -3,12 +3,38 @@
 
 //! Built-in gravity field providers.
 //!
-//! ## Providers
+//! ## Scope
 //!
-//! | Type | Degree/Order | Description |
-//! |------|-------------|-------------|
-//! | [`TwoBodyEarth`] | 0/0 | Two-body point-mass (no perturbations) |
-//! | [`LowDegreeEarth`] | up to 4/4 | EGM2008 coefficients through degree/order 4 |
+//! Provides two reference implementations of [`GravityFieldProvider`]:
+//! [`TwoBodyEarth`] (degree 0, point-mass only) and [`LowDegreeEarth`]
+//! (degree/order 4, based on EGM2008 normalised coefficients).
+//!
+//! ## Models
+//!
+//! | Type | Degree/Order | Description | Use case |
+//! |------|-------------|-------------|----------|
+//! | [`TwoBodyEarth`] | 0/0 | Two-body point-mass (no harmonics) | Baseline, validation |
+//! | [`LowDegreeEarth`] | 4/4 | EGM2008 C/S through degree/order 4 | LEO primary gravity |
+//!
+//! ## Validity limits
+//!
+//! [`TwoBodyEarth`] is exact for a point-mass Earth.  [`LowDegreeEarth`]:
+//! - Includes J2, J3, J4, and coupled m ≠ 0 harmonics.
+//! - Ignores all coefficients beyond degree/order 4.
+//! - Suitable for LEO; higher-degree fields may be needed for high-precision
+//!   work or geosynchronous orbits.
+//!
+//! ## EGM2008 constants
+//!
+//! - GM = 398,600.4418 km³/s² (IERS 2010 value)
+//! - R = 6,378.137 km (WGS-84 equatorial radius)
+//!
+//! ## References
+//!
+//! * Pavlis, N.K., et al. (2012), "The development and evaluation of the
+//!   Earth Gravitational Model 2008 (EGM2008)", *J. Geophys. Res.*,
+//!   117, B04406.
+//! * IERS Conventions (2010).
 
 use super::provider::GravityFieldProvider;
 use crate::astro::dynamics::units::GravitationalParameter;

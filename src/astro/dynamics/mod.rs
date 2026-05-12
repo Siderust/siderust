@@ -3,8 +3,8 @@
 
 //! # Spacecraft dynamics
 //!
-//! Cartesian propagated state and (in later phases) force models, integrators,
-//! and orbit-relative local frames for satellite mechanics.
+//! Cartesian state propagation, force models, numerical integrators, and
+//! ancillary science models for satellite orbit mechanics.
 //!
 //! ## Scientific scope
 //!
@@ -22,12 +22,38 @@
 //! [`qtty`] units, so frame and unit constraints are checked at compile time.
 //! Time derivatives are carried as the typed [`StateDerivative`] aggregate.
 //!
-//! Subsequent submodules (added in later phases) will host:
+//! Submodules host:
 //!
-//! - `forces` — `ForceModel` trait and standard models (two-body, J2, …),
-//! - `integrators` — RK4 / DOPRI5,
-//! - `covariance` — frame-tagged 6×6 state covariance with transport between
-//!   inertial and local orbital frames.
+//! - [`forces`] — [`ForceModel`] trait and standard models (two-body, J2, drag, SRP, third-body, geopotential, relativity).
+//! - [`integrators`] — RK4 (fixed-step) and DOPRI5 / DOP853 (adaptive).
+//! - [`propagation`] — high-level adaptive driver with event detection.
+//! - [`variational`] — analytic state-transition-matrix propagation via variational equations.
+//! - [`gravity`] — geopotential field provider abstraction and acceleration kernel.
+//! - [`atmosphere`] — atmospheric density provider abstraction.
+//! - [`frames`] — local orbital frames (RTN, VNC, LVLH).
+//! - [`covariance`] — frame-tagged 6×6 state covariance with transport.
+//! - [`stm`] — finite-difference state-transition matrix computation.
+//!
+//! ## Units and frames
+//!
+//! | Quantity | Type/Units | Convention |
+//! |----------|-----------|-----------|
+//! | Position | km | Geocentric, GCRS |
+//! | Velocity | km/s | GCRS |
+//! | Acceleration | km/s² | GCRS (unless stated otherwise) |
+//! | GM | km³/s² | EGM2008/WGS-84 |
+//! | Density | kg/m³ | SI (geodetic altitude from sea level) |
+//! | Time | seconds (TT) | Typed as [`qtty::Second`] |
+//!
+//! ## Failure modes
+//!
+//! Most errors are surface through [`DynamicsError`]:
+//! - Provider unavailability (ephemeris, EOP, gravity, atmosphere)
+//! - Degenerate geometry (zero position, zero velocity, r ∥ v)
+//! - Geopotential degree/order out of range
+//! - Integration step control failures
+//!
+//! See [`errors`] for details.
 
 pub mod atmosphere;
 pub mod context;
@@ -53,9 +79,12 @@ pub use state::{
     Acceleration, AccelerationUnit, OrbitState, Position, SpacecraftProperties, SpacecraftState,
     StateDerivative, Velocity, VelocityUnit,
 };
+#[allow(deprecated)]
 pub use stm::{finite_diff_stm, finite_diff_stm_series, StateTransition};
 pub use units::GravitationalParameter;
 
 pub use propagation::{
-    AltitudeEvent, EventDetector, EventOccurrence, PropagationResult, PropagatorConfig,
+    AltitudeEvent, EventDetector, EventOccurrence, PropagationConfig, PropagationResult,
+    Propagator, PropagatorConfig, IntegratorChoice,
 };
+pub use variational::{propagate_stm, StateTransitionMatrix};
