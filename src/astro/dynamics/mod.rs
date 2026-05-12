@@ -76,8 +76,8 @@ pub use context::{
 pub use covariance::ProcessNoise;
 pub use errors::{DynamicsError, LocalFrameError};
 pub use state::{
-    Acceleration, AccelerationUnit, OrbitState, Position, SpacecraftProperties, SpacecraftState,
-    StateDerivative, Velocity, VelocityUnit,
+    Acceleration, AccelerationUnit, Force, OrbitState, Position, SpacecraftProperties,
+    SpacecraftState, StateDerivative, Velocity, VelocityUnit,
 };
 #[allow(deprecated)]
 pub use stm::{finite_diff_stm, finite_diff_stm_series, StateTransition};

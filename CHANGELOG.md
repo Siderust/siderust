@@ -19,6 +19,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **Expanded dynamics module docs** covering covariance propagation semantics,
   STM block structure, and the local typed-unit vocabulary used by the orbital
   propagation code.
+* **`astro::dynamics::Force<F, U>`** public type alias (defaulting to `GCRS`
+  frame and `Newton` unit), backed by `affn::cartesian::Force<F, U>`. Exposes a
+  semantically named handle for force vectors in the dynamics API, consistent
+  with how `Velocity` and `Displacement` are exposed as named aliases throughout
+  `affn`.
+* **`astro::dynamics::Acceleration<F, U>`** is now anchored to
+  `affn::cartesian::Acceleration<F, U>` instead of a local `Vector<F, U>` alias,
+  making the type visible under the canonical `affn` name across the entire
+  crate while remaining a zero-cost transparent alias.
 
 ### Changed
 

@@ -79,8 +79,8 @@ use crate::qtty::{
     AreaToMass, DragCoefficient, Kilograms, KmPerSecond, KmPerSecondSquared, Second, SquareMeters,
     SrpCoefficient,
 };
+use crate::qtty::force::Newton;
 use crate::time::{JulianDate, Time, JD, TT};
-use affn::cartesian::Vector;
 
 // =============================================================================
 // Type aliases for the propagated state
@@ -101,7 +101,18 @@ pub type Velocity<F = GCRS, U = KmPerSecond> = cartesian::Velocity<F, U>;
 /// Inertial acceleration vector, default `km/s²` in [`GCRS`].
 ///
 /// The unit `KmPerSecondSquared` = `Per<Per<Kilometer, Second>, Second>`.
-pub type Acceleration<F = GCRS, U = KmPerSecondSquared> = Vector<F, U>;
+/// Anchored to [`affn::cartesian::Acceleration`] so that all semantics are
+/// rooted in the `affn` geometry layer.
+pub type Acceleration<F = GCRS, U = KmPerSecondSquared> = affn::cartesian::Acceleration<F, U>;
+
+/// Frame-tagged force vector, default Newton in [`GCRS`].
+///
+/// Used for thrust vectors, SRP force budgets, or any quantity that represents
+/// actual force (as opposed to specific force / acceleration).  Division by
+/// spacecraft mass yields an [`Acceleration`].
+///
+/// Anchored to [`affn::cartesian::Force`].
+pub type Force<F = GCRS, U = Newton> = affn::cartesian::Force<F, U>;
 
 /// Default unit of [`Velocity`] used by the propagator (`km/s`).
 pub type VelocityUnit = KmPerSecond;
