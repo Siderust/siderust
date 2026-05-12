@@ -341,11 +341,8 @@ mod tests {
 
     #[test]
     fn from_blocks_assembles_six_by_six() {
-        let m = FrameMatrix3::<GCRS>::from_array([
-            [1.0, 2.0, 3.0],
-            [4.0, 5.0, 6.0],
-            [7.0, 8.0, 9.0],
-        ]);
+        let m =
+            FrameMatrix3::<GCRS>::from_array([[1.0, 2.0, 3.0], [4.0, 5.0, 6.0], [7.0, 8.0, 9.0]]);
         let z = FrameMatrix3::<GCRS>::zero();
         let phi = StateTransition::from_blocks(m, z, z, m);
         let raw = phi.to_row_major();
@@ -392,6 +389,9 @@ mod tests {
         // After propagation, the STM must differ from the identity matrix in the
         // dr/dr off-diagonal (orbital coupling).
         let off_diag_max = raw[0][1].abs() + raw[1][0].abs() + raw[0][3].abs() + raw[1][4].abs();
-        assert!(off_diag_max > 1e-6, "expected non-trivial STM, got off-diag mass {off_diag_max}");
+        assert!(
+            off_diag_max > 1e-6,
+            "expected non-trivial STM, got off-diag mass {off_diag_max}"
+        );
     }
 }

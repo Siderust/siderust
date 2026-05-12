@@ -11,13 +11,11 @@
 //!   1e-3 km over one full orbital period.
 
 use siderust_ffi::{
+    siderust_dynamics_context_free, siderust_dynamics_context_new, siderust_orbit_state_epoch_jd,
+    siderust_orbit_state_free, siderust_orbit_state_new, siderust_orbit_state_position,
+    siderust_orbit_state_velocity, siderust_propagator_free, siderust_propagator_propagate,
+    siderust_propagator_two_body_earth_new, siderust_propagator_two_body_new,
     SiderustDynamicsStatus, SiderustStatus,
-    siderust_dynamics_context_free, siderust_dynamics_context_new,
-    siderust_orbit_state_epoch_jd, siderust_orbit_state_free,
-    siderust_orbit_state_new, siderust_orbit_state_position,
-    siderust_orbit_state_velocity, siderust_propagator_free,
-    siderust_propagator_propagate, siderust_propagator_two_body_earth_new,
-    siderust_propagator_two_body_new,
 };
 
 // Earth GM (EGM2008) in km³/s²
@@ -133,13 +131,7 @@ fn two_body_circular_orbit_closes_within_1e3_km() {
 
     // 3. Propagate one orbital period (null ctx → empty context)
     let mut s_final: *mut siderust_ffi::SiderustOrbitState = std::ptr::null_mut();
-    let ds = siderust_propagator_propagate(
-        prop,
-        s0,
-        period,
-        std::ptr::null(),
-        &mut s_final,
-    );
+    let ds = siderust_propagator_propagate(prop, s0, period, std::ptr::null(), &mut s_final);
     assert_eq!(
         ds,
         SiderustDynamicsStatus::Ok,
@@ -226,7 +218,11 @@ fn two_body_backward_propagation_closes() {
 
     let mut s_final: *mut siderust_ffi::SiderustOrbitState = std::ptr::null_mut();
     let ds = siderust_propagator_propagate(prop, s0, -period, std::ptr::null(), &mut s_final);
-    assert_eq!(ds, SiderustDynamicsStatus::Ok, "backward propagation failed: {ds:?}");
+    assert_eq!(
+        ds,
+        SiderustDynamicsStatus::Ok,
+        "backward propagation failed: {ds:?}"
+    );
 
     let mut xf = 0.0_f64;
     let mut yf = 0.0_f64;

@@ -174,7 +174,8 @@ mod tests {
             Velocity::<GCRS>::new(0.0, v, 0.0),
         );
         let ctx = DynamicsContext::empty();
-        let series = rk4_propagate_series(&TwoBody::earth(), s0, Second::new(60.0), 5, &ctx).unwrap();
+        let series =
+            rk4_propagate_series(&TwoBody::earth(), s0, Second::new(60.0), 5, &ctx).unwrap();
         assert_eq!(series.len(), 6, "series must have n_steps+1 elements");
         assert_eq!(series[0], s0, "first element must be the initial state");
     }
@@ -191,7 +192,9 @@ mod tests {
             Velocity::<GCRS>::new(0.0, v, 0.0),
         );
         let ctx = DynamicsContext::empty();
-        let s1 = Rk4.step(&TwoBody::earth(), &s0, Second::new(60.0), &ctx).unwrap();
+        let s1 = Rk4
+            .step(&TwoBody::earth(), &s0, Second::new(60.0), &ctx)
+            .unwrap();
         assert!(s1.epoch != s0.epoch, "Rk4::step must advance the epoch");
     }
 }

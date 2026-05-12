@@ -177,9 +177,14 @@ mod tests {
             .push(Box::new(TwoBody::earth()));
         let ctx = DynamicsContext::empty();
         let a = comp.acceleration(&sample_state(), &ctx).unwrap();
-        let single = TwoBody::earth().acceleration(&sample_state(), &ctx).unwrap();
+        let single = TwoBody::earth()
+            .acceleration(&sample_state(), &ctx)
+            .unwrap();
         let rel_x = (a.x().value() - 2.0 * single.x().value()).abs() / single.x().value().abs();
-        assert!(rel_x < 1e-12, "composite x should be 2× single-component: got {rel_x}");
+        assert!(
+            rel_x < 1e-12,
+            "composite x should be 2× single-component: got {rel_x}"
+        );
     }
 
     #[test]

@@ -64,8 +64,9 @@ use crate::qtty::Second;
 ///
 /// `C` is the reference center, `F` the reference frame.  The method
 /// [`AdaptiveStepper::step`] attempts a single step of size `h_try` and
-/// returns the accepted state together with the step size actually used and
-/// a recommended next step.
+/// returns `(accepted_state, h_used, h_next, steps_rejected)` where
+/// `steps_rejected` is the number of internal trial steps the controller
+/// discarded before accepting this step.
 pub trait AdaptiveStepper<C = Geocentric, F = GCRS>
 where
     C: ReferenceCenter,
@@ -77,7 +78,7 @@ where
         state: &OrbitState<C, F>,
         h_try: Second,
         ctx: &DynamicsContext,
-    ) -> Result<(OrbitState<C, F>, Second, Second), DynamicsError>;
+    ) -> Result<(OrbitState<C, F>, Second, Second, u32), DynamicsError>;
 }
 
 /// Contract for fixed-step integrators (e.g. classical RK4).

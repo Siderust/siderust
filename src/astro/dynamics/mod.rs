@@ -84,7 +84,7 @@ pub use stm::{finite_diff_stm, finite_diff_stm_series, StateTransition};
 pub use units::GravitationalParameter;
 
 pub use propagation::{
-    AltitudeEvent, EventDetector, EventOccurrence, PropagationConfig, PropagationResult,
-    Propagator, PropagatorConfig, IntegratorChoice,
+    AltitudeEvent, EventDetector, EventOccurrence, IntegratorChoice, PropagationConfig,
+    PropagationResult, Propagator, PropagatorConfig,
 };
 pub use variational::{propagate_stm, StateTransitionMatrix};

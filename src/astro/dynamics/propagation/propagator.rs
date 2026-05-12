@@ -12,8 +12,7 @@
 //! use siderust::astro::dynamics::{OrbitState, Position, Velocity};
 //! use siderust::coordinates::frames::GCRS;
 //! use siderust::time::JulianDate;
-//! use siderust::qtty::Second;
-//! use siderust::ext_qtty::tolerances::IntegratorTolerances;
+//! use siderust::qtty::{Second, IntegratorTolerances};
 //!
 //! let s0 = OrbitState::new_at_jd(
 //!     JulianDate::new(2_451_545.0),
@@ -38,7 +37,7 @@ use crate::astro::dynamics::errors::DynamicsError;
 use crate::astro::dynamics::forces::ForceModel;
 use crate::astro::dynamics::integrators::rk4::rk4_step;
 use crate::astro::dynamics::integrators::{
-    AdaptiveStepper, Dop853, Dopri5, dop853_propagate, dopri5_propagate, rk4_propagate,
+    dop853_propagate, dopri5_propagate, rk4_propagate, AdaptiveStepper, Dop853, Dopri5,
 };
 use crate::astro::dynamics::state::OrbitState;
 use crate::astro::dynamics::variational;
@@ -261,12 +260,17 @@ impl AdaptiveStepper<Geocentric, GCRS> for FixedRk4Adapter {
         &self,
         force: &FM,
         state: &OrbitState<Geocentric, GCRS>,
-        _h_try: Second,
+        h_try: Second,
         ctx: &DynamicsContext,
-    ) -> Result<(OrbitState<Geocentric, GCRS>, Second, Second), DynamicsError> {
-        let h = self.step;
+    ) -> Result<(OrbitState<Geocentric, GCRS>, Second, Second, u32), DynamicsError> {
+        // Respect the driver's step clip: use h_try if it is smaller in magnitude.
+        let h = if h_try.value().abs() < self.step.value().abs() {
+            h_try
+        } else {
+            self.step
+        };
         let new_state = rk4_step(force, state, h, ctx)?;
-        Ok((new_state, h, h))
+        Ok((new_state, h, h, 0))
     }
 }
 
@@ -453,7 +457,11 @@ mod tests {
         let result = p
             .propagate_with_events(s0, Second::new(period), event)
             .unwrap();
-        assert!(result.samples.len() > 3, "expected dense samples, got {}", result.samples.len());
+        assert!(
+            result.samples.len() > 3,
+            "expected dense samples, got {}",
+            result.samples.len()
+        );
     }
 
     #[test]

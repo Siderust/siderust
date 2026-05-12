@@ -91,8 +91,16 @@ impl super::AdaptiveStepper for Dopri5 {
         state: &OrbitState,
         h_try: Second,
         ctx: &DynamicsContext,
-    ) -> Result<(OrbitState, Second, Second), DynamicsError> {
-        dopri5_step(force, state, h_try, self.tolerances, ctx)
+    ) -> Result<(OrbitState, Second, Second, u32), DynamicsError> {
+        dopri5_step(
+            force,
+            state,
+            h_try,
+            self.tolerances,
+            self.h_min,
+            self.h_max,
+            ctx,
+        )
     }
 }
 
@@ -145,17 +153,22 @@ fn state_at(s: &OrbitState, d: &StateDerivative, h: f64, dt: f64) -> OrbitState 
     }
 }
 
-/// Single adaptive DOPRI5 step. Returns `(new_state, h_used, h_next)`.
+/// Single adaptive DOPRI5 step.
 ///
-/// `h_try` is the initial step size to attempt.
+/// Returns `(new_state, h_used, h_next, steps_rejected)`.
+/// - `h_try` is clamped to `[h_min, h_max]` at entry.
+/// - Returns `Err(InvalidStepRequest)` if the PI controller fails to converge
+///   or shrinks the step below `h_min`.
 #[allow(clippy::too_many_lines)]
 pub fn dopri5_step<FM: ForceModel>(
     force: &FM,
     s: &OrbitState,
     h_try: Second,
     tol: IntegratorTolerances,
+    h_min: Second,
+    h_max: Second,
     ctx: &DynamicsContext,
-) -> Result<(OrbitState, Second, Second), DynamicsError> {
+) -> Result<(OrbitState, Second, Second, u32), DynamicsError> {
     let c2 = 1.0 / 5.0;
     let c3 = 3.0 / 10.0;
     let c4 = 4.0 / 5.0;
@@ -189,7 +202,16 @@ pub fn dopri5_step<FM: ForceModel>(
     let e6 = 22.0 / 525.0;
     let e7 = -1.0 / 40.0;
 
-    let mut h = h_try.value();
+    let h_min_abs = h_min.value().abs();
+    let h_max_abs = h_max.value().abs();
+    let sign = if h_try.value() >= 0.0 {
+        1.0_f64
+    } else {
+        -1.0_f64
+    };
+    let mut h = sign * h_try.value().abs().clamp(h_min_abs, h_max_abs);
+    let mut iters = 0u32;
+    let mut rejected = 0u32;
 
     loop {
         let k1 = rhs(force, s, ctx)?;
@@ -268,17 +290,30 @@ pub fn dopri5_step<FM: ForceModel>(
         }
         err_norm = (err_norm / 6.0).sqrt();
 
-        if err_norm <= 1.0 || h.abs() < 1e-9 {
-            let h_next = if err_norm == 0.0 {
+        if err_norm <= 1.0 {
+            let h_next_raw = if err_norm == 0.0 {
                 h * 5.0
             } else {
                 let factor = 0.9 * err_norm.powf(-0.2);
                 h * factor.clamp(0.2, 5.0)
             };
-            return Ok((s7, Second::new(h), Second::new(h_next)));
+            let h_next = sign * h_next_raw.abs().clamp(h_min_abs, h_max_abs);
+            return Ok((s7, Second::new(h), Second::new(h_next), rejected));
         } else {
+            rejected += 1;
+            iters += 1;
+            if iters > 50 {
+                return Err(DynamicsError::InvalidStepRequest {
+                    reason: "DOPRI5: step controller failed to converge after 50 iterations",
+                });
+            }
             let factor = 0.9 * err_norm.powf(-0.2);
             h *= factor.clamp(0.1, 0.9);
+            if h.abs() < h_min_abs {
+                return Err(DynamicsError::InvalidStepRequest {
+                    reason: "DOPRI5: step size fell below h_min; tolerances may be too tight",
+                });
+            }
         }
     }
 }
@@ -295,11 +330,14 @@ pub fn dopri5_propagate<FM: ForceModel>(
     let mut s = state;
     let mut t = 0.0;
     let mut h = total_dt_s.signum() * 30.0_f64.min(total_dt_s.abs());
+    let h_min = Second::new(1e-6);
+    let h_max = Second::new(86_400.0);
     while (total_dt_s - t).abs() > 1e-9 {
         if (t + h - total_dt_s) * total_dt_s.signum() > 0.0 {
             h = total_dt_s - t;
         }
-        let (s_new, h_used, h_next) = dopri5_step(force, &s, Second::new(h), tol, ctx)?;
+        let (s_new, h_used, h_next, _) =
+            dopri5_step(force, &s, Second::new(h), tol, h_min, h_max, ctx)?;
         s = s_new;
         t += h_used.value();
         h = h_next.value();
@@ -367,7 +405,9 @@ mod tests {
         let tol = IntegratorTolerances::uniform(1e-9, 1e-6, 1e-9);
         let stepper = Dopri5::new(tol);
         let ctx = DynamicsContext::empty();
-        let (s1, h_used, h_next) = stepper.step(&TwoBody::earth(), &s0, Second::new(30.0), &ctx).unwrap();
+        let (s1, h_used, h_next, _rejected) = stepper
+            .step(&TwoBody::earth(), &s0, Second::new(30.0), &ctx)
+            .unwrap();
         assert!(s1.epoch != s0.epoch, "stepper must advance the epoch");
         assert!(h_used.value() > 0.0);
         assert!(h_next.value() > 0.0);

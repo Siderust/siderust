@@ -188,6 +188,9 @@ mod tests {
     #[test]
     fn total_duration_s_negative_for_backward() {
         let cfg: PropagationConfig = PropagationConfig::new(epoch(2_451_546.0), epoch(2_451_545.0));
-        assert!(cfg.total_duration_s() < 0.0, "backward propagation must give negative duration");
+        assert!(
+            cfg.total_duration_s() < 0.0,
+            "backward propagation must give negative duration"
+        );
     }
 }

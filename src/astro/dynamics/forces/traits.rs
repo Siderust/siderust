@@ -39,7 +39,7 @@ use crate::astro::dynamics::errors::DynamicsError;
 use crate::astro::dynamics::state::{Acceleration, AccelerationUnit, OrbitState};
 use crate::coordinates::centers::{Geocentric, ReferenceCenter};
 use crate::coordinates::frames::{ReferenceFrame, GCRS};
-use crate::qtty::{AstronomicalUnit, Kilometer, Kilometers, Pascals, Unit};
+use crate::qtty::{AstronomicalUnit, InverseSeconds, Kilometer, Kilometers, Pascals, Unit};
 
 // Re-export so force-model subfiles can use them without extra imports.
 pub use crate::astro::dynamics::units::{GravitationalParameter, GM_EARTH, GM_MOON, GM_SUN};
@@ -52,7 +52,15 @@ pub use crate::astro::dynamics::units::{GravitationalParameter, GM_EARTH, GM_MOO
 pub const R_EARTH: Kilometers = Kilometers::new(6_378.137);
 
 /// Earth mean rotation rate (sidereal), rad/s (IAU 2000).
-pub const OMEGA_EARTH_RAD_S: f64 = 7.292_115_146_706_979e-5;
+///
+/// Typed as an angular rate (`InverseSeconds` ≡ `Quantity<Per<Ratio, Second>>`).
+/// Use `.value()` when you need the raw `f64`.
+pub const OMEGA_EARTH_RAD_S: InverseSeconds = InverseSeconds::new(7.292_115_146_706_979e-5);
+
+/// Minimum geocentric radius below which force-model computations are
+/// considered degenerate (satellite inside Earth).  100 km is well below any
+/// physical orbit but avoids false positives for very low-perigee trajectories.
+pub const DEGENERATE_RADIUS_KM: f64 = 100.0;
 
 /// Solar radiation pressure at 1 AU, N/m².
 pub const P0: Pascals = Pascals::new(4.560e-6);
@@ -302,7 +310,10 @@ mod tests {
         let r = [7000.0_f64, 0.0, 0.0];
         let p = ForcePartials::<GCRS>::two_body(mu, r);
         let a = p.d_acc_d_pos.as_array();
-        assert!((a[0][1]).abs() < 1e-30, "off-diagonal [0][1] should be zero");
+        assert!(
+            (a[0][1]).abs() < 1e-30,
+            "off-diagonal [0][1] should be zero"
+        );
         let v = p.d_acc_d_vel.as_array();
         for i in 0..3 {
             for j in 0..3 {
@@ -332,7 +343,10 @@ mod tests {
         for i in 0..3 {
             for j in 0..3 {
                 let rel = (ca[i][j] - 2.0 * aa[i][j]).abs();
-                assert!(rel < 1e-20, "add must sum element-wise: [{i}][{j}] rel={rel}");
+                assert!(
+                    rel < 1e-20,
+                    "add must sum element-wise: [{i}][{j}] rel={rel}"
+                );
             }
         }
     }
@@ -347,7 +361,10 @@ mod tests {
         for i in 0..3 {
             for j in 0..3 {
                 let rel = (ca[i][j] - 2.0 * orig[i][j]).abs();
-                assert!(rel < 1e-20, "add_in_place must sum in place: [{i}][{j}] rel={rel}");
+                assert!(
+                    rel < 1e-20,
+                    "add_in_place must sum in place: [{i}][{j}] rel={rel}"
+                );
             }
         }
     }

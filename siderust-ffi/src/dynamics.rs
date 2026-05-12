@@ -45,6 +45,7 @@
 use std::os::raw::c_void;
 use std::sync::Arc;
 
+use qtty::tolerances::IntegratorTolerances;
 use siderust::astro::dynamics::atmosphere::DensityProvider;
 use siderust::astro::dynamics::context::DynamicsContext;
 use siderust::astro::dynamics::errors::DynamicsError;
@@ -58,7 +59,6 @@ use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::frames::GCRS;
 use siderust::qtty::{KilogramsPerCubicMeter, Kilometers, Second};
 use siderust::time::JulianDate;
-use qtty::tolerances::IntegratorTolerances;
 
 use crate::error::SiderustStatus;
 use crate::runtime_ephemeris::SiderustRuntimeEphemeris;
@@ -225,10 +225,7 @@ impl DensityProvider for FfiDensityProvider {
         "ffi_atmosphere"
     }
 
-    fn density(
-        &self,
-        altitude: Kilometers,
-    ) -> Result<KilogramsPerCubicMeter, DynamicsError> {
+    fn density(&self, altitude: Kilometers) -> Result<KilogramsPerCubicMeter, DynamicsError> {
         // SAFETY: The C caller guarantees the fn pointer and user_data are valid.
         let rho = unsafe { (self.vtable.density)(altitude.value(), self.vtable.user_data) };
         if rho < 0.0 {
@@ -323,9 +320,7 @@ pub extern "C" fn siderust_dynamics_context_new(
 ///
 /// `handle` must be either null or a live pointer produced by this crate.
 #[no_mangle]
-pub unsafe extern "C" fn siderust_dynamics_context_free(
-    handle: *mut SiderustDynamicsContext,
-) {
+pub unsafe extern "C" fn siderust_dynamics_context_free(handle: *mut SiderustDynamicsContext) {
     if !handle.is_null() {
         drop(unsafe { Box::from_raw(handle) });
     }

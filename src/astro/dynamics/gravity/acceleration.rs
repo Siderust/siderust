@@ -99,6 +99,16 @@ pub fn geopotential_acceleration(
     let gm = provider.gm().value();
     let re = provider.reference_radius().value();
 
+    let r = {
+        let [x, y, z] = pos;
+        (x * x + y * y + z * z).sqrt()
+    };
+    if r < 100.0 {
+        return Err(DynamicsError::DegenerateGeometry {
+            reason: "geopotential: radius near zero",
+        });
+    }
+
     Ok(compute_inner(gm, re, max_n, max_m, provider, pos))
 }
 
@@ -119,6 +129,11 @@ fn compute_inner(
     let r = r2.sqrt();
     let rxy2 = x * x + y * y;
     let rxy = rxy2.sqrt();
+
+    debug_assert!(
+        r >= 100.0,
+        "geopotential kernel called with near-zero radius r={r:.3} km"
+    );
 
     let sinphi = z / r;
     let cosphi = rxy / r;
@@ -174,9 +189,7 @@ fn compute_inner(
         for m in 0..=(n - 2) {
             let fm = m as f64;
             let a = ((4.0 * fn_ * fn_ - 1.0) / (fn_ * fn_ - fm * fm)).sqrt();
-            let b = ((2.0 * fn_ + 1.0)
-                * (fn_ - fm - 1.0)
-                * (fn_ + fm - 1.0)
+            let b = ((2.0 * fn_ + 1.0) * (fn_ - fm - 1.0) * (fn_ + fm - 1.0)
                 / ((2.0 * fn_ - 3.0) * (fn_ - fm) * (fn_ + fm)))
                 .sqrt();
             P!(n, m) = a * sinphi * P!(n - 1, m) - b * P!(n - 2, m);
@@ -244,8 +257,7 @@ fn compute_inner(
             let cdp = if n == m {
                 -fn_ * sinphi * pnm
             } else {
-                let alpha =
-                    ((fn_ * fn_ - fm * fm) * (2.0 * fn_ + 1.0) / (2.0 * fn_ - 1.0)).sqrt();
+                let alpha = ((fn_ * fn_ - fm * fm) * (2.0 * fn_ + 1.0) / (2.0 * fn_ - 1.0)).sqrt();
                 -fn_ * sinphi * pnm + alpha * P!(n - 1, m)
             };
             // A accumulation: (GM/r²)(R/r)^n · f_nm · cdP
@@ -337,7 +349,7 @@ mod tests {
     #[test]
     fn geopotential_j2_matches_analytic() {
         let test_positions: &[[f64; 3]] = &[
-            [7_000.0, 0.0, 0.0],          // equatorial
+            [7_000.0, 0.0, 0.0],           // equatorial
             [0.0, 6_800.0, 1_500.0],       // inclined
             [4_500.0, 3_000.0, 3_500.0],   // 45° ish
             [-5_000.0, -3_000.0, 4_000.0], // all-negative x/y
@@ -380,7 +392,12 @@ mod tests {
         // a_x = -GM·x/r³ = -GM/r² when x = r = 7000
         let expected = -GM / (7_000.0_f64 * 7_000.0);
         let rel = (acc[0] - expected).abs() / expected.abs();
-        assert!(rel < 1e-12, "two-body x: got {:.9e}, want {:.9e}", acc[0], expected);
+        assert!(
+            rel < 1e-12,
+            "two-body x: got {:.9e}, want {:.9e}",
+            acc[0],
+            expected
+        );
         assert!(acc[1].abs() < 1e-30);
         assert!(acc[2].abs() < 1e-30);
     }
@@ -393,7 +410,10 @@ mod tests {
         assert!(
             matches!(
                 result,
-                Err(DynamicsError::GeopotentialDegreeOutOfRange { requested: 2, max: 0 })
+                Err(DynamicsError::GeopotentialDegreeOutOfRange {
+                    requested: 2,
+                    max: 0
+                })
             ),
             "expected GeopotentialDegreeOutOfRange, got {result:?}"
         );

@@ -49,6 +49,39 @@ use crate::coordinates::centers::{Geocentric, ReferenceCenter};
 use crate::coordinates::frames::{ReferenceFrame, GCRS};
 use crate::qtty::Second;
 
+/// Linear interpolation between two [`OrbitState`] values at fraction `theta`
+/// in `[0, 1]`.  Used to estimate the state at an event or output crossing
+/// between two integration steps.
+fn lerp_state<C: ReferenceCenter, F: ReferenceFrame>(
+    a: &OrbitState<C, F>,
+    b: &OrbitState<C, F>,
+    theta: f64,
+) -> OrbitState<C, F>
+where
+    C::Params: Clone,
+{
+    use crate::astro::dynamics::state::VelocityUnit;
+    use crate::coordinates::cartesian::Velocity as CartVelocity;
+    use crate::qtty::unit::Kilometer;
+    let px = a.position.x().value() + theta * (b.position.x().value() - a.position.x().value());
+    let py = a.position.y().value() + theta * (b.position.y().value() - a.position.y().value());
+    let pz = a.position.z().value() + theta * (b.position.z().value() - a.position.z().value());
+    let vx = a.velocity.x().value() + theta * (b.velocity.x().value() - a.velocity.x().value());
+    let vy = a.velocity.y().value() + theta * (b.velocity.y().value() - a.velocity.y().value());
+    let vz = a.velocity.z().value() + theta * (b.velocity.z().value() - a.velocity.z().value());
+    let epoch = a.epoch + Second::new(theta * (b.epoch - a.epoch).value());
+    OrbitState {
+        epoch,
+        position: crate::coordinates::cartesian::Position::<C, F, Kilometer>::new_with_params(
+            a.position.center_params().clone(),
+            px,
+            py,
+            pz,
+        ),
+        velocity: CartVelocity::<F, VelocityUnit>::new(vx, vy, vz),
+    }
+}
+
 /// Drive an [`AdaptiveStepper`] from `cfg.t_start` to `cfg.t_end`.
 ///
 /// Honors `output_every`, `output_at`, terminal events, and a hard
@@ -74,6 +107,7 @@ where
     let mut samples: Vec<OrbitState<C, F>> = Vec::new();
     let mut events: Vec<EventOccurrence<C, F>> = Vec::new();
     let mut steps_taken: u32 = 0;
+    let mut steps_rejected: u32 = 0;
 
     samples.push(initial.clone());
 
@@ -117,8 +151,27 @@ where
             h = direction * cfg.h_min.value().abs();
         }
 
-        let (new_state, h_used, h_next) = integrator.step(force, &state, Second::new(h), ctx)?;
+        // Clip h to not overshoot upcoming output times so the stored state
+        // is at the exact requested epoch (no interpolation needed).
+        if let Some(t_target) = next_output_t {
+            let to_target = (t_target - state.epoch).value();
+            if to_target.abs() > 1e-12 && to_target * direction >= 0.0 && to_target.abs() < h.abs()
+            {
+                h = to_target;
+            }
+        }
+        if let Some(&t_target) = output_at_iter.peek() {
+            let to_target = (*t_target - state.epoch).value();
+            if to_target.abs() > 1e-12 && to_target * direction >= 0.0 && to_target.abs() < h.abs()
+            {
+                h = to_target;
+            }
+        }
+
+        let (new_state, _h_used, h_next, rejected) =
+            integrator.step(force, &state, Second::new(h), ctx)?;
         steps_taken += 1;
+        steps_rejected += rejected;
         if steps_taken > cfg.max_steps {
             return Err(DynamicsError::InvalidStepRequest {
                 reason: "propagator max_steps exceeded",
@@ -129,9 +182,16 @@ where
         for (i, ev) in cfg.events.iter().enumerate() {
             let g_new = ev.evaluate(&new_state, ctx)?;
             if g_prev[i] == 0.0 || (g_prev[i] * g_new) < 0.0 {
+                // Linear interpolation to estimate the state at the crossing.
+                let theta = if (g_new - g_prev[i]).abs() > 1e-300 {
+                    g_prev[i].abs() / (g_prev[i].abs() + g_new.abs())
+                } else {
+                    0.5
+                };
+                let crossing_state = lerp_state(&state, &new_state, theta);
                 events.push(EventOccurrence {
                     event_name: ev.name(),
-                    state: new_state.clone(),
+                    state: crossing_state,
                 });
                 if ev.terminal() {
                     terminated = true;
@@ -164,7 +224,6 @@ where
         }
 
         state = new_state;
-        let _ = h_used;
         h = h_next.value();
     }
 
@@ -181,7 +240,7 @@ where
         samples,
         events,
         steps_taken,
-        steps_rejected: 0,
+        steps_rejected,
     })
 }
 
@@ -228,7 +287,14 @@ mod tests {
         let s0 = circ_state();
         let cfg = PropagationConfig::new(s0.epoch, s0.epoch);
         let stepper = Dopri5::new(tol());
-        let result = propagate(&stepper, &TwoBody::earth(), s0, &cfg, &DynamicsContext::empty()).unwrap();
+        let result = propagate(
+            &stepper,
+            &TwoBody::earth(),
+            s0,
+            &cfg,
+            &DynamicsContext::empty(),
+        )
+        .unwrap();
         assert_eq!(result.samples.len(), 1);
         assert_eq!(result.steps_taken, 0);
     }
@@ -240,7 +306,14 @@ mod tests {
         let t_end = s0.epoch + Second::new(period);
         let cfg = PropagationConfig::new(s0.epoch, t_end);
         let stepper = Dopri5::new(tol());
-        let result = propagate(&stepper, &TwoBody::earth(), s0, &cfg, &DynamicsContext::empty()).unwrap();
+        let result = propagate(
+            &stepper,
+            &TwoBody::earth(),
+            s0,
+            &cfg,
+            &DynamicsContext::empty(),
+        )
+        .unwrap();
         let final_state = result.samples.last().unwrap();
         let dr = ((final_state.position.x().value() - R).powi(2)
             + final_state.position.y().value().powi(2)
@@ -254,11 +327,22 @@ mod tests {
         let s0 = circ_state();
         let period = 2.0 * std::f64::consts::PI * (R.powi(3) / MU).sqrt();
         let t_end = s0.epoch + Second::new(period);
-        let cfg = PropagationConfig::new(s0.epoch, t_end)
-            .with_output_every(Second::new(period / 10.0));
+        let cfg =
+            PropagationConfig::new(s0.epoch, t_end).with_output_every(Second::new(period / 10.0));
         let stepper = Dopri5::new(tol());
-        let result = propagate(&stepper, &TwoBody::earth(), s0, &cfg, &DynamicsContext::empty()).unwrap();
-        assert!(result.samples.len() > 3, "expected dense output samples, got {}", result.samples.len());
+        let result = propagate(
+            &stepper,
+            &TwoBody::earth(),
+            s0,
+            &cfg,
+            &DynamicsContext::empty(),
+        )
+        .unwrap();
+        assert!(
+            result.samples.len() > 3,
+            "expected dense output samples, got {}",
+            result.samples.len()
+        );
     }
 
     #[test]
@@ -267,10 +351,16 @@ mod tests {
         let period = 2.0 * std::f64::consts::PI * (R.powi(3) / MU).sqrt();
         let t_target = s0.epoch + Second::new(period * 0.25);
         let t_end = s0.epoch + Second::new(period);
-        let cfg = PropagationConfig::new(s0.epoch, t_end)
-            .with_output_at(vec![t_target]);
+        let cfg = PropagationConfig::new(s0.epoch, t_end).with_output_at(vec![t_target]);
         let stepper = Dopri5::new(tol());
-        let result = propagate(&stepper, &TwoBody::earth(), s0, &cfg, &DynamicsContext::empty()).unwrap();
+        let result = propagate(
+            &stepper,
+            &TwoBody::earth(),
+            s0,
+            &cfg,
+            &DynamicsContext::empty(),
+        )
+        .unwrap();
         assert!(result.samples.len() >= 3, "expected at least 3 samples");
     }
 
@@ -285,10 +375,19 @@ mod tests {
         let period = 2.0 * std::f64::consts::PI * (R.powi(3) / MU).sqrt();
         let t_end = s0_ecc.epoch + Second::new(period);
         let event = AltitudeEvent::new(Kilometers::new(750.0), Kilometers::new(6_371.0));
-        let cfg = PropagationConfig::new(s0_ecc.epoch, t_end)
-            .with_event(Box::new(event));
+        let cfg = PropagationConfig::new(s0_ecc.epoch, t_end).with_event(Box::new(event));
         let stepper = Dopri5::new(tol());
-        let result = propagate(&stepper, &TwoBody::earth(), s0_ecc, &cfg, &DynamicsContext::empty()).unwrap();
-        assert!(!result.events.is_empty(), "altitude event must fire for eccentric orbit");
+        let result = propagate(
+            &stepper,
+            &TwoBody::earth(),
+            s0_ecc,
+            &cfg,
+            &DynamicsContext::empty(),
+        )
+        .unwrap();
+        assert!(
+            !result.events.is_empty(),
+            "altitude event must fire for eccentric orbit"
+        );
     }
 }

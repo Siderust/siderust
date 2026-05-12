@@ -43,7 +43,7 @@ use crate::astro::dynamics::state::{Acceleration, AccelerationUnit, OrbitState};
 use crate::astro::dynamics::units::GM_EARTH;
 use crate::coordinates::frames::GCRS;
 
-use super::traits::{ForceModel, ForcePartials, GravitationalParameter};
+use super::traits::{ForceModel, ForcePartials, GravitationalParameter, DEGENERATE_RADIUS_KM};
 
 /// Newtonian central-gravity acceleration `−μ r / |r|³`.
 ///
@@ -71,6 +71,11 @@ impl ForceModel for TwoBody {
         _ctx: &DynamicsContext,
     ) -> Result<Acceleration<GCRS, AccelerationUnit>, DynamicsError> {
         let r = s.position.distance().value();
+        if r < DEGENERATE_RADIUS_KM {
+            return Err(DynamicsError::DegenerateGeometry {
+                reason: "TwoBody: radius near zero",
+            });
+        }
         let r2 = r * r;
         let k = -self.gm.value() / (r2 * r);
         Ok(Acceleration::<GCRS, AccelerationUnit>::new(
@@ -85,12 +90,18 @@ impl ForceModel for TwoBody {
         s: &OrbitState,
         _ctx: &DynamicsContext,
     ) -> Result<ForcePartials<GCRS>, DynamicsError> {
-        let r = [
+        let r_vec = [
             s.position.x().value(),
             s.position.y().value(),
             s.position.z().value(),
         ];
-        Ok(ForcePartials::two_body(self.gm, r))
+        let r = s.position.distance().value();
+        if r < DEGENERATE_RADIUS_KM {
+            return Err(DynamicsError::DegenerateGeometry {
+                reason: "TwoBody partials: radius near zero",
+            });
+        }
+        Ok(ForcePartials::two_body(self.gm, r_vec))
     }
 }
 

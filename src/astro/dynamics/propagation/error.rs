@@ -78,7 +78,10 @@ mod tests {
 
     #[test]
     fn step_below_minimum_display() {
-        let e = PropagationError::StepBelowMinimum { h_requested: 1e-10, h_min: 1e-6 };
+        let e = PropagationError::StepBelowMinimum {
+            h_requested: 1e-10,
+            h_min: 1e-6,
+        };
         let s = format!("{e}");
         assert!(s.contains("minimum"), "got: {s}");
     }
@@ -120,7 +123,10 @@ mod tests {
     #[test]
     fn step_below_minimum_no_source() {
         use std::error::Error;
-        let e = PropagationError::StepBelowMinimum { h_requested: 1e-10, h_min: 1e-6 };
+        let e = PropagationError::StepBelowMinimum {
+            h_requested: 1e-10,
+            h_min: 1e-6,
+        };
         assert!(e.source().is_none());
     }
 

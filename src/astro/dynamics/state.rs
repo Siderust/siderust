@@ -74,12 +74,12 @@
 use crate::coordinates::cartesian;
 use crate::coordinates::centers::{Geocentric, ReferenceCenter};
 use crate::coordinates::frames::{ReferenceFrame, GCRS};
+use crate::qtty::force::Newton;
 use crate::qtty::unit::Kilometer;
 use crate::qtty::{
     AreaToMass, DragCoefficient, Kilograms, KmPerSecond, KmPerSecondSquared, Second, SquareMeters,
     SrpCoefficient,
 };
-use crate::qtty::force::Newton;
 use crate::time::{JulianDate, Time, JD, TT};
 
 // =============================================================================
@@ -217,11 +217,12 @@ where
     ///
     /// ```rust
     /// use siderust::astro::dynamics::state::{OrbitState, Position, Velocity};
+    /// use siderust::coordinates::frames::GCRS;
     /// use siderust::time::{JulianDate, Time, TT};
     ///
     /// let epoch = JulianDate::new(2_451_545.0).to_time();
-    /// let pos = Position::new(7000.0, 0.0, 0.0);
-    /// let vel = Velocity::new(0.0, 7.5, 0.0);
+    /// let pos = Position::<GCRS>::new(7000.0, 0.0, 0.0);
+    /// let vel = Velocity::<GCRS>::new(0.0, 7.5, 0.0);
     /// let s = OrbitState::new(epoch, pos, vel);
     /// ```
     #[inline]
@@ -247,12 +248,13 @@ where
     ///
     /// ```rust
     /// use siderust::astro::dynamics::state::{OrbitState, Position, Velocity};
+    /// use siderust::coordinates::frames::GCRS;
     /// use siderust::time::JulianDate;
     ///
     /// let s = OrbitState::new_at_jd(
     ///     JulianDate::new(2_451_545.0),
-    ///     Position::new(7000.0, 0.0, 0.0),
-    ///     Velocity::new(0.0, 7.5, 0.0),
+    ///     Position::<GCRS>::new(7000.0, 0.0, 0.0),
+    ///     Velocity::<GCRS>::new(0.0, 7.5, 0.0),
     /// );
     /// assert!((s.epoch_jd().jd_value() - 2_451_545.0).abs() < 1e-9);
     /// ```
@@ -660,8 +662,14 @@ mod tests {
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
         let props = SpacecraftProperties::demo_leo();
-        let sc = SpacecraftState { orbit, properties: props };
-        let sc2 = SpacecraftState { orbit, properties: props };
+        let sc = SpacecraftState {
+            orbit,
+            properties: props,
+        };
+        let sc2 = SpacecraftState {
+            orbit,
+            properties: props,
+        };
         assert_eq!(sc, sc2);
         assert!((sc.properties.mass.value() - 500.0).abs() < f64::EPSILON);
     }

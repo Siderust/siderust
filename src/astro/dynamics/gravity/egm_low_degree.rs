@@ -77,7 +77,11 @@ impl GravityFieldProvider for TwoBodyEarth {
     }
 
     fn c_normalized(&self, n: usize, _m: usize) -> f64 {
-        if n == 0 { 1.0 } else { 0.0 }
+        if n == 0 {
+            1.0
+        } else {
+            0.0
+        }
     }
 
     fn s_normalized(&self, _n: usize, _m: usize) -> f64 {

@@ -42,9 +42,7 @@ use crate::astro::dynamics::state::{OrbitState, Position, Velocity};
 use crate::coordinates::frames::GCRS;
 use crate::qtty::Second;
 
-use super::equations::{
-    identity_6x6, mat6_add, mat6_scale, variational_derivative,
-};
+use super::equations::{identity_6x6, mat6_add, mat6_scale, variational_derivative};
 
 // =============================================================================
 // Public type alias
@@ -278,7 +276,7 @@ fn rk4_combine_mat6x6(
 mod tests {
     use super::*;
     use crate::astro::dynamics::context::DynamicsContext;
-    use crate::astro::dynamics::forces::{CompositeForce, J2, TwoBody};
+    use crate::astro::dynamics::forces::{CompositeForce, TwoBody, J2};
     use crate::astro::dynamics::integrators::rk4::rk4_propagate;
     use crate::astro::dynamics::state::{OrbitState, Position, Velocity};
     use crate::coordinates::frames::GCRS;

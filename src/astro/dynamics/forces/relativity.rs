@@ -34,7 +34,7 @@ use crate::astro::dynamics::state::{Acceleration, AccelerationUnit, OrbitState};
 use crate::coordinates::frames::GCRS;
 use crate::qtty::{KmPerSeconds, SPEED_OF_LIGHT_KM_S};
 
-use super::traits::{ForceModel, GravitationalParameter, GM_EARTH};
+use super::traits::{ForceModel, GravitationalParameter, DEGENERATE_RADIUS_KM, GM_EARTH};
 
 /// First-order post-Newtonian (Schwarzschild) relativistic correction for a
 /// central body.
@@ -83,6 +83,11 @@ impl ForceModel for CentralBodyRelativity1Pn {
 
         let r2 = rx * rx + ry * ry + rz * rz;
         let r = r2.sqrt();
+        if r < DEGENERATE_RADIUS_KM {
+            return Err(DynamicsError::DegenerateGeometry {
+                reason: "CentralBodyRelativity1Pn: radius near zero",
+            });
+        }
         let r3 = r2 * r;
 
         let v2 = vx * vx + vy * vy + vz * vz;

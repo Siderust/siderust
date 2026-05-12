@@ -182,14 +182,17 @@ impl CannonballSrp {
 /// If the Sun is at the origin (zero vector), shadow cannot be determined;
 /// returns `1.0` (assume full sunlight).
 fn cylindrical_shadow_factor(r_sat: [f64; 3], r_sun: [f64; 3], r_earth_km: f64) -> f64 {
-    let r_sun_mag =
-        (r_sun[0] * r_sun[0] + r_sun[1] * r_sun[1] + r_sun[2] * r_sun[2]).sqrt();
+    let r_sun_mag = (r_sun[0] * r_sun[0] + r_sun[1] * r_sun[1] + r_sun[2] * r_sun[2]).sqrt();
     if r_sun_mag == 0.0 {
         // Degenerate: Sun at Earth centre — assume full sunlight.
         return 1.0;
     }
     // Unit vector from Earth centre toward the Sun.
-    let sun_hat = [r_sun[0] / r_sun_mag, r_sun[1] / r_sun_mag, r_sun[2] / r_sun_mag];
+    let sun_hat = [
+        r_sun[0] / r_sun_mag,
+        r_sun[1] / r_sun_mag,
+        r_sun[2] / r_sun_mag,
+    ];
 
     // Projection of satellite onto the Sun direction.
     let proj = r_sat[0] * sun_hat[0] + r_sat[1] * sun_hat[1] + r_sat[2] * sun_hat[2];
@@ -254,17 +257,21 @@ fn conical_shadow_factor(
     r_sun_radius_km: f64,
 ) -> f64 {
     // Distance from satellite to Earth centre.
-    let d_earth =
-        (r_sat[0] * r_sat[0] + r_sat[1] * r_sat[1] + r_sat[2] * r_sat[2]).sqrt();
+    let d_earth = (r_sat[0] * r_sat[0] + r_sat[1] * r_sat[1] + r_sat[2] * r_sat[2]).sqrt();
     if d_earth == 0.0 {
         return 1.0; // degenerate: satellite at Earth centre
     }
 
     // Vector and distance from satellite to Sun.
-    let sat_to_sun = [r_sun[0] - r_sat[0], r_sun[1] - r_sat[1], r_sun[2] - r_sat[2]];
-    let d_sun =
-        (sat_to_sun[0] * sat_to_sun[0] + sat_to_sun[1] * sat_to_sun[1] + sat_to_sun[2] * sat_to_sun[2])
-            .sqrt();
+    let sat_to_sun = [
+        r_sun[0] - r_sat[0],
+        r_sun[1] - r_sat[1],
+        r_sun[2] - r_sat[2],
+    ];
+    let d_sun = (sat_to_sun[0] * sat_to_sun[0]
+        + sat_to_sun[1] * sat_to_sun[1]
+        + sat_to_sun[2] * sat_to_sun[2])
+        .sqrt();
     if d_sun == 0.0 {
         return 1.0; // degenerate: satellite at Sun centre
     }
@@ -276,8 +283,9 @@ fn conical_shadow_factor(
     // Angular separation between Earth centre and Sun centre as seen from satellite.
     // Direction to Earth centre from satellite: -r_sat / d_earth
     // Direction to Sun from satellite: sat_to_sun / d_sun
-    let cos_theta = (-r_sat[0] * sat_to_sun[0] - r_sat[1] * sat_to_sun[1] - r_sat[2] * sat_to_sun[2])
-        / (d_earth * d_sun);
+    let cos_theta =
+        (-r_sat[0] * sat_to_sun[0] - r_sat[1] * sat_to_sun[1] - r_sat[2] * sat_to_sun[2])
+            / (d_earth * d_sun);
     let theta = cos_theta.clamp(-1.0, 1.0).acos();
 
     // Case 1: full sunlight.
@@ -400,13 +408,11 @@ mod tests {
     use std::sync::Arc;
 
     use super::*;
-    use crate::astro::dynamics::context::DynamicsContextBuilder;
     use crate::astro::dynamics::context::DynamicsContext;
+    use crate::astro::dynamics::context::DynamicsContextBuilder;
     use crate::astro::dynamics::state::OrbitState;
     use crate::astro::dynamics::{Position, Velocity};
-    use crate::calculus::ephemeris::{
-        AuPerDay, DynEphemeris, EphemerisError, Vsop87Ephemeris,
-    };
+    use crate::calculus::ephemeris::{AuPerDay, DynEphemeris, EphemerisError, Vsop87Ephemeris};
     use crate::coordinates::{
         cartesian::{Position as CartPosition, Velocity as CartVelocity},
         centers::{Barycentric, Geocentric as GeoCenter},
@@ -460,7 +466,11 @@ mod tests {
             &self,
             _jd: JulianDate,
         ) -> Result<
-            CartPosition<crate::coordinates::centers::Heliocentric, EclipticMeanJ2000, AstronomicalUnit>,
+            CartPosition<
+                crate::coordinates::centers::Heliocentric,
+                EclipticMeanJ2000,
+                AstronomicalUnit,
+            >,
             EphemerisError,
         > {
             Ok(CartPosition::new(0.0_f64, 0.0_f64, 0.0_f64))
@@ -469,7 +479,11 @@ mod tests {
         fn earth_heliocentric(
             &self,
             _jd: JulianDate,
-        ) -> CartPosition<crate::coordinates::centers::Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
+        ) -> CartPosition<
+            crate::coordinates::centers::Heliocentric,
+            EclipticMeanJ2000,
+            AstronomicalUnit,
+        > {
             CartPosition::new(0.0_f64, 0.0_f64, 0.0_f64)
         }
 
@@ -569,7 +583,10 @@ mod tests {
         let a = srp_no_eclipse.acceleration(&anti_sun_state, &ctx).unwrap();
         // Must be non-zero (eclipse is ignored).
         let mag = a.magnitude().value();
-        assert!(mag > 0.0, "ShadowModel::None should give non-zero SRP, got {mag}");
+        assert!(
+            mag > 0.0,
+            "ShadowModel::None should give non-zero SRP, got {mag}"
+        );
     }
 
     /// Real ephemeris smoke-test: SRP is in the correct physical range at J2000.
@@ -600,7 +617,10 @@ mod tests {
         let r_sun = [AU_IN_KM, 0.0, 0.0];
         let r_sat = [-(R_EARTH.value() + 100.0), 0.0, 0.0];
         let nu = cylindrical_shadow_factor(r_sat, r_sun, R_EARTH.value());
-        assert_eq!(nu, 0.0, "satellite on anti-Sun axis should be fully shadowed");
+        assert_eq!(
+            nu, 0.0,
+            "satellite on anti-Sun axis should be fully shadowed"
+        );
     }
 
     /// Satellite on the day side (+Sun direction) → ν = 1.
@@ -631,7 +651,10 @@ mod tests {
         // Satellite directly behind Earth on the anti-Sun axis.
         let r_sat = [-(R_EARTH.value() + 500.0), 0.0, 0.0];
         let nu = conical_shadow_factor(r_sat, r_sun_km, R_EARTH.value(), R_SUN_KM);
-        assert_eq!(nu, 0.0, "satellite in full umbra should have ν = 0; got {nu}");
+        assert_eq!(
+            nu, 0.0,
+            "satellite in full umbra should have ν = 0; got {nu}"
+        );
     }
 
     /// Full sunlight: satellite on the day side → ν = 1.
@@ -684,7 +707,10 @@ mod tests {
             nu > 0.0 && nu < 1.0,
             "annular eclipse should give ν in (0, 1); got {nu}"
         );
-        assert!(nu > 0.9, "annular eclipse: occulted fraction should be small; got nu={nu}");
+        assert!(
+            nu > 0.9,
+            "annular eclipse: occulted fraction should be small; got nu={nu}"
+        );
     }
 
     // ---- degenerate shadow edge cases ----------------------------------------
@@ -697,7 +723,12 @@ mod tests {
 
     #[test]
     fn conical_shadow_satellite_at_earth_centre_returns_full_sun() {
-        let nu = conical_shadow_factor([0.0, 0.0, 0.0], [AU_IN_KM, 0.0, 0.0], R_EARTH.value(), R_SUN_KM);
+        let nu = conical_shadow_factor(
+            [0.0, 0.0, 0.0],
+            [AU_IN_KM, 0.0, 0.0],
+            R_EARTH.value(),
+            R_SUN_KM,
+        );
         assert_eq!(nu, 1.0, "satellite at Earth centre must return 1.0");
     }
 
@@ -717,7 +748,10 @@ mod tests {
             .with_shadow(ShadowModel::Cylindrical);
         let a = srp.acceleration(&leo(), &ctx).unwrap();
         let mag = a.magnitude().value();
-        assert!(mag > 0.0, "cylindrical-shadow SRP at day-side LEO must be non-zero");
+        assert!(
+            mag > 0.0,
+            "cylindrical-shadow SRP at day-side LEO must be non-zero"
+        );
     }
 
     #[test]
@@ -727,7 +761,10 @@ mod tests {
             .with_shadow(ShadowModel::Conical);
         let a = srp.acceleration(&leo(), &ctx).unwrap();
         let mag = a.magnitude().value();
-        assert!(mag > 0.0, "conical-shadow SRP at day-side LEO must be non-zero");
+        assert!(
+            mag > 0.0,
+            "conical-shadow SRP at day-side LEO must be non-zero"
+        );
     }
 
     #[test]

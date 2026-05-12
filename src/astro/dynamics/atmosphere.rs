@@ -27,10 +27,12 @@
 //! [`geodetic_altitude`] converts an ECEF (or GCRS — see caveat below)
 //! Cartesian position to geodetic altitude above the WGS-84 ellipsoid using
 //! the iterative Bowring (1985) method.  The current implementation uses a
-//! **placeholder identity GCRS↔ITRF rotation** (the same approximation
-//! made by the geopotential module).  The resulting altitude error is at most
-//! ~20 km at the poles, which is within the uncertainty of every built-in
-//! density model.
+//! **placeholder identity GCRS↔ITRF rotation** for drag altitude.  The
+//! resulting altitude error is at most ~20 km at the poles, which is within
+//! the uncertainty of every built-in density model.  The
+//! [`Geopotential`][crate::astro::dynamics::forces::Geopotential] force model
+//! applies the Earth Rotation Angle for non-zonal terms, but drag does not
+//! yet carry an epoch-dependent rotation.
 //!
 //! ## Unit convention
 //!

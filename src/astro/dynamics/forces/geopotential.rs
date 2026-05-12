@@ -52,6 +52,7 @@ use crate::astro::dynamics::context::DynamicsContext;
 use crate::astro::dynamics::errors::DynamicsError;
 use crate::astro::dynamics::gravity::geopotential_acceleration;
 use crate::astro::dynamics::state::{Acceleration, AccelerationUnit, OrbitState};
+use crate::astro::era::earth_rotation_angle;
 use crate::coordinates::frames::GCRS;
 
 use super::traits::{ForceModel, ForcePartials};
@@ -66,6 +67,19 @@ use super::traits::{ForceModel, ForcePartials};
 /// clamped to the provider's declared limits, but requesting a degree
 /// **above** the provider limit returns
 /// [`GeopotentialDegreeOutOfRange`][DynamicsError::GeopotentialDegreeOutOfRange].
+///
+/// ## GCRS↔ITRF rotation
+///
+/// When `order > 0` (non-zonal terms), the input GCRS position is rotated to
+/// ITRF before evaluating the harmonic kernel, and the resulting acceleration
+/// is rotated back to GCRS.  The rotation is the Earth Rotation Angle (ERA,
+/// IAU 2000), computed from the epoch Julian Date with UT1 ≈ TT
+/// (error < 1 arcsecond; acceptable for phase-1 accuracy).  Full polar-motion
+/// (`xₚ`, `yₚ`, `s′`) and equation-of-the-origins corrections are left for a
+/// phase-2 implementation.
+///
+/// For zonal-only (`order == 0`) summations (e.g. J2), longitude plays no
+/// role and the rotation is skipped.
 #[derive(Debug, Clone, Copy)]
 pub struct Geopotential {
     /// Maximum degree `N` of the harmonic summation.
@@ -84,7 +98,10 @@ impl Geopotential {
 
     /// Convenience constructor: full order `(n, n)` summation.
     pub fn full(degree: usize) -> Self {
-        Self { degree, order: degree }
+        Self {
+            degree,
+            order: degree,
+        }
     }
 }
 
@@ -96,15 +113,41 @@ impl ForceModel for Geopotential {
     ) -> Result<Acceleration<GCRS, AccelerationUnit>, DynamicsError> {
         let provider = ctx.require_gravity_field()?;
 
-        let pos = [
-            s.position.x().value(),
-            s.position.y().value(),
-            s.position.z().value(),
-        ];
+        let (pos_kernel, era_sin_cos) = if self.order > 0 {
+            // Rotate GCRS → ITRF: r_itrf = R_z(θ_ERA) · r_gcrs
+            let era = earth_rotation_angle(s.epoch_jd());
+            let (sin_t, cos_t) = era.value().sin_cos();
+            let x = s.position.x().value();
+            let y = s.position.y().value();
+            let z = s.position.z().value();
+            (
+                [cos_t * x + sin_t * y, -sin_t * x + cos_t * y, z],
+                Some((sin_t, cos_t)),
+            )
+        } else {
+            let pos = [
+                s.position.x().value(),
+                s.position.y().value(),
+                s.position.z().value(),
+            ];
+            (pos, None)
+        };
 
-        let a = geopotential_acceleration(provider.as_ref(), pos, self.degree, self.order)?;
+        let a_kernel =
+            geopotential_acceleration(provider.as_ref(), pos_kernel, self.degree, self.order)?;
 
-        Ok(Acceleration::<GCRS, AccelerationUnit>::new(a[0], a[1], a[2]))
+        // Rotate ITRF acceleration back to GCRS: a_gcrs = R_z(-θ) · a_itrf
+        let [ax, ay, az] = if let Some((sin_t, cos_t)) = era_sin_cos {
+            [
+                cos_t * a_kernel[0] - sin_t * a_kernel[1],
+                sin_t * a_kernel[0] + cos_t * a_kernel[1],
+                a_kernel[2],
+            ]
+        } else {
+            a_kernel
+        };
+
+        Ok(Acceleration::<GCRS, AccelerationUnit>::new(ax, ay, az))
     }
 
     // Analytic partials are not yet implemented; the default impl returns an error.
@@ -168,7 +211,9 @@ mod tests {
             let s = make_state(x, y, z);
 
             let a_geo = geopot.acceleration(&s, &ctx).unwrap();
-            let a_j2 = J2::earth().acceleration(&s, &DynamicsContext::empty()).unwrap();
+            let a_j2 = J2::earth()
+                .acceleration(&s, &DynamicsContext::empty())
+                .unwrap();
 
             // Note: Geopotential at (2, 0) includes n=0 (two-body) +  n=2,m=0 (J2 only).
             // J2::earth() gives only the J2 perturbation.  We compare the J2
@@ -177,7 +222,9 @@ mod tests {
             //
             // Alternative: compare Geopotential(2,0) total against TwoBody + J2 sum.
             use crate::astro::dynamics::forces::two_body::TwoBody;
-            let a_tb = TwoBody::earth().acceleration(&s, &DynamicsContext::empty()).unwrap();
+            let a_tb = TwoBody::earth()
+                .acceleration(&s, &DynamicsContext::empty())
+                .unwrap();
             let sum_x = a_tb.x().value() + a_j2.x().value();
             let sum_y = a_tb.y().value() + a_j2.y().value();
             let sum_z = a_tb.z().value() + a_j2.z().value();
@@ -224,7 +271,10 @@ mod tests {
         assert!(
             matches!(
                 result,
-                Err(DynamicsError::GeopotentialDegreeOutOfRange { requested: 10, max: 4 })
+                Err(DynamicsError::GeopotentialDegreeOutOfRange {
+                    requested: 10,
+                    max: 4
+                })
             ),
             "expected GeopotentialDegreeOutOfRange(10, 4), got {result:?}"
         );
@@ -243,6 +293,9 @@ mod tests {
         let geopot = Geopotential::new(2, 0);
         let s = make_state(7_000.0, 0.0, 0.0);
         let result = geopot.partials(&s, &ctx);
-        assert!(result.is_err(), "Geopotential::partials must return error (not yet implemented)");
+        assert!(
+            result.is_err(),
+            "Geopotential::partials must return error (not yet implemented)"
+        );
     }
 }

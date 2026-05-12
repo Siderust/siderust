@@ -56,7 +56,7 @@ use crate::coordinates::centers::Geocentric;
 use crate::coordinates::frames::GCRS;
 use crate::ext_qtty::dynamics::InverseSecond;
 use crate::qtty::unit::Kilometer;
-use crate::qtty::{AreaToMass, DragCoefficient, Kilometers, Ratios};
+use crate::qtty::{AreaToMass, DragCoefficient, InverseSeconds, Kilometers, Ratios};
 
 use super::traits::{ForceModel, OMEGA_EARTH_RAD_S};
 
@@ -83,12 +83,17 @@ const WGS84_F: f64 = 1.0 / 298.257_223_563;
 ///
 /// ```rust
 /// use siderust::astro::dynamics::forces::DragForce;
+/// use siderust::qtty::{AreaToMass, DragCoefficient, InverseSeconds};
 ///
 /// // Default Earth rotation (7.292115e-5 rad/s about +Z):
-/// let drag = DragForce::new(2.2, 0.01);
+/// let drag = DragForce::new(DragCoefficient::new(2.2), AreaToMass::new(0.01));
 ///
 /// // Custom omega_earth (e.g. for tests or other bodies):
-/// let drag_custom = DragForce::with_omega(2.2, 0.01, 7.292115e-5);
+/// let drag_custom = DragForce::with_omega(
+///     DragCoefficient::new(2.2),
+///     AreaToMass::new(0.01),
+///     InverseSeconds::new(7.292115e-5),
+/// );
 /// ```
 #[derive(Debug, Clone)]
 pub struct DragForce {
@@ -107,10 +112,10 @@ impl DragForce {
     ///
     /// # Arguments
     ///
-    /// * `cd_val`          — Drag coefficient (e.g. `2.2`).
-    /// * `area_to_mass_m2_kg` — Area-to-mass ratio (m²/kg, e.g. `0.01`).
-    pub fn new(cd_val: f64, area_to_mass_m2_kg: f64) -> Self {
-        Self::with_omega(cd_val, area_to_mass_m2_kg, OMEGA_EARTH_RAD_S)
+    /// * `cd`           — Drag coefficient (e.g. `DragCoefficient::new(2.2)`).
+    /// * `area_to_mass` — Area-to-mass ratio (m²/kg, e.g. `AreaToMass::new(0.01)`).
+    pub fn new(cd: DragCoefficient, area_to_mass: AreaToMass) -> Self {
+        Self::with_omega(cd, area_to_mass, OMEGA_EARTH_RAD_S)
     }
 
     /// Construct a [`DragForce`] with a custom Earth angular-velocity magnitude.
@@ -119,14 +124,20 @@ impl DragForce {
     ///
     /// # Arguments
     ///
-    /// * `cd_val`          — Drag coefficient.
-    /// * `area_to_mass_m2_kg` — Area-to-mass ratio (m²/kg).
-    /// * `omega_z_rad_s`   — Angular velocity magnitude about +Z (rad/s).
-    pub fn with_omega(cd_val: f64, area_to_mass_m2_kg: f64, omega_z_rad_s: f64) -> Self {
+    /// * `cd` — Drag coefficient.
+    /// * `area_to_mass` — Area-to-mass ratio (m²/kg).
+    /// * `omega_z` — Angular velocity magnitude about +Z (rad/s), typed as
+    ///   [`InverseSeconds`].  Use `InverseSeconds::new(0.0)` to disable the
+    ///   rotating-atmosphere correction.
+    pub fn with_omega(
+        cd: DragCoefficient,
+        area_to_mass: AreaToMass,
+        omega_z: InverseSeconds,
+    ) -> Self {
         Self {
-            cd: DragCoefficient::new(cd_val),
-            area_to_mass: AreaToMass::new(area_to_mass_m2_kg),
-            omega_earth: Vector::<GCRS, InverseSecond>::new(0.0_f64, 0.0_f64, omega_z_rad_s),
+            cd,
+            area_to_mass,
+            omega_earth: Vector::<GCRS, InverseSecond>::new(0.0_f64, 0.0_f64, omega_z.value()),
         }
     }
 }
@@ -213,7 +224,9 @@ mod tests {
     use crate::astro::dynamics::state::OrbitState;
     use crate::astro::dynamics::{Position, Velocity};
     use crate::coordinates::frames::GCRS;
-    use crate::qtty::{AreaToMass, DragCoefficient, KilogramsPerCubicMeter, Second};
+    use crate::qtty::{
+        AreaToMass, DragCoefficient, InverseSeconds, KilogramsPerCubicMeter, Second,
+    };
     use crate::time::JulianDate;
 
     use super::super::composite::CompositeForce;
@@ -237,7 +250,7 @@ mod tests {
 
     #[test]
     fn drag_error_when_no_provider() {
-        let drag = DragForce::new(2.2, 0.01);
+        let drag = DragForce::new(DragCoefficient::new(2.2), AreaToMass::new(0.01));
         let ctx = DynamicsContext::empty();
         let r0 = R_EARTH.value() + 400.0;
         let s = OrbitState::new_at_jd(
@@ -256,7 +269,7 @@ mod tests {
 
     #[test]
     fn drag_direction_opposes_velocity() {
-        let drag = DragForce::new(2.2, 0.01);
+        let drag = DragForce::new(DragCoefficient::new(2.2), AreaToMass::new(0.01));
         let ctx = ctx_with_exponential();
         let r0 = R_EARTH.value() + 400.0;
         // prograde velocity along +Y
@@ -280,7 +293,7 @@ mod tests {
 
     #[test]
     fn drag_below_surface_returns_error() {
-        let drag = DragForce::new(2.2, 0.01);
+        let drag = DragForce::new(DragCoefficient::new(2.2), AreaToMass::new(0.01));
         let ctx = ctx_with_constant(1.0e-9);
         // Position well inside Earth
         let r_underground = R_EARTH.value() - 100.0;
@@ -304,9 +317,13 @@ mod tests {
         let v_circ = 7.7_f64; // km/s prograde +Y
 
         // No rotation
-        let drag_norot = DragForce::with_omega(2.2, 0.01, 0.0);
+        let drag_norot = DragForce::with_omega(
+            DragCoefficient::new(2.2),
+            AreaToMass::new(0.01),
+            InverseSeconds::new(0.0),
+        );
         // With Earth rotation
-        let drag_rot = DragForce::new(2.2, 0.01);
+        let drag_rot = DragForce::new(DragCoefficient::new(2.2), AreaToMass::new(0.01));
 
         let ctx = ctx_with_constant(1.0e-11);
         let s = OrbitState::new_at_jd(
@@ -363,15 +380,11 @@ mod tests {
 
         let force = CompositeForce::empty()
             .push(Box::new(TwoBody::earth()))
-            .push(Box::new(DragForce {
-                cd: DragCoefficient::new(2.2),
-                area_to_mass: AreaToMass::new(5.0),
-                omega_earth: Vector::<GCRS, InverseSecond>::new(
-                    0.0_f64,
-                    0.0_f64,
-                    OMEGA_EARTH_RAD_S,
-                ),
-            }));
+            .push(Box::new(DragForce::with_omega(
+                DragCoefficient::new(2.2),
+                AreaToMass::new(5.0),
+                OMEGA_EARTH_RAD_S,
+            )));
 
         let s_end = rk4_propagate(&force, s0, Second::new(30.0), 360, &ctx).unwrap();
         let r_end = s_end.position.distance().value();
@@ -388,7 +401,7 @@ mod tests {
         let atm: Arc<dyn DensityProvider + Send + Sync> = Arc::new(Nrlmsise00LiteApprox);
         let ctx = DynamicsContextBuilder::new().with_atmosphere(atm).build();
 
-        let drag = DragForce::new(2.2, 0.01);
+        let drag = DragForce::new(DragCoefficient::new(2.2), AreaToMass::new(0.01));
         let r0 = R_EARTH.value() + 400.0;
         let s = OrbitState::new_at_jd(
             JulianDate::new(2_451_545.0),

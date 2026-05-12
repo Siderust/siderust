@@ -40,6 +40,4 @@
 pub mod equations;
 pub mod propagator;
 
-pub use propagator::{
-    propagate_stm, propagate_stm_with, StateTransitionMatrix, VariationalConfig,
-};
+pub use propagator::{propagate_stm, propagate_stm_with, StateTransitionMatrix, VariationalConfig};

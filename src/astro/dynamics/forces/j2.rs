@@ -59,7 +59,9 @@ use crate::astro::dynamics::units::GM_EARTH;
 use crate::coordinates::frames::GCRS;
 use crate::qtty::{J2Coefficient, Kilometers};
 
-use super::traits::{ForceModel, ForcePartials, GravitationalParameter, R_EARTH};
+use super::traits::{
+    ForceModel, ForcePartials, GravitationalParameter, DEGENERATE_RADIUS_KM, R_EARTH,
+};
 
 /// J2 (Earth oblateness) perturbation acceleration in the inertial frame.
 ///
@@ -93,6 +95,11 @@ impl ForceModel for J2 {
         _ctx: &DynamicsContext,
     ) -> Result<Acceleration<GCRS, AccelerationUnit>, DynamicsError> {
         let r = s.position.distance().value();
+        if r < DEGENERATE_RADIUS_KM {
+            return Err(DynamicsError::DegenerateGeometry {
+                reason: "J2: radius near zero",
+            });
+        }
         let r2 = r * r;
         let rx = s.position.x().value();
         let ry = s.position.y().value();

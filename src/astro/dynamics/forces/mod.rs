@@ -66,8 +66,8 @@ pub use third_body::{
     MoonPerturbation, SunPerturbation, ThirdBody, ThirdBodyProvider, ThirdBodySunMoon,
 };
 pub use traits::{
-    ForceModel, ForcePartials, GM_EARTH, GM_MOON, GM_SUN, MU_MOON, MU_SUN, OMEGA_EARTH_RAD_S, P0,
-    R_EARTH,
+    ForceModel, ForcePartials, DEGENERATE_RADIUS_KM, GM_EARTH, GM_MOON, GM_SUN, MU_MOON, MU_SUN,
+    OMEGA_EARTH_RAD_S, P0, R_EARTH,
 };
 pub use two_body::TwoBody;
 

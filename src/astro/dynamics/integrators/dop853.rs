@@ -13,8 +13,10 @@
 //!
 //! The DOP853 method (Dormand & Prince, 1981; Hairer et al., 1993) uses 12
 //! function evaluations per accepted step to achieve 8th-order accuracy
-//! `O(h⁹)` with dense output.  Error control is based on a 7th-order embedded
-//! solution.
+//! `O(h⁹)`.  Error control is based on a 7th-order embedded solution.
+//! Inter-step interpolation is performed via cubic Hermite using step-endpoint
+//! values and derivatives — this is `O(h⁴)`, not the full DOP853 continuous-
+//! extension polynomial; see [`Dop853Step`] for details.
 //!
 //! Step acceptance criterion:
 //! ```text
@@ -135,13 +137,28 @@ impl super::AdaptiveStepper for Dop853 {
         state: &OrbitState,
         h_try: Second,
         ctx: &DynamicsContext,
-    ) -> Result<(OrbitState, Second, Second), DynamicsError> {
-        let (s, h_used, h_next, _) = dop853_step(force, state, h_try, self.tolerances, ctx)?;
-        Ok((s, h_used, h_next))
+    ) -> Result<(OrbitState, Second, Second, u32), DynamicsError> {
+        let (s, h_used, h_next, _dense, rejected) = dop853_step(
+            force,
+            state,
+            h_try,
+            self.tolerances,
+            self.h_min,
+            self.h_max,
+            ctx,
+        )?;
+        Ok((s, h_used, h_next, rejected))
     }
 }
 
-/// Cached endpoints of an accepted DOP853 step, for cubic-Hermite dense output.
+/// Cached endpoints of an accepted DOP853 step, for **cubic-Hermite dense
+/// output**.
+///
+/// Note: this is O(h⁴) cubic-Hermite interpolation based on the step
+/// endpoints and their derivatives — not the full 8th-order DOP853
+/// continuous-extension polynomial from Hairer et al.  For most orbit
+/// propagation use cases this is sufficient; implement the full DOP853
+/// dense stages if you need O(h⁹) interpolation.
 pub struct Dop853Step {
     pub state_start: OrbitState,
     pub state_end: OrbitState,
@@ -225,8 +242,10 @@ pub fn dop853_step<FM: ForceModel>(
     s: &OrbitState,
     h_try: Second,
     tol: IntegratorTolerances,
+    h_min: Second,
+    h_max: Second,
     ctx: &DynamicsContext,
-) -> Result<(OrbitState, Second, Second, Dop853Step), DynamicsError> {
+) -> Result<(OrbitState, Second, Second, Dop853Step, u32), DynamicsError> {
     // ---------- Butcher tableau (Hairer dop853.f) ----------
     let c2 = 5.260_015_195_876_773e-2;
     let c3 = 7.890_022_793_815_16e-2;
@@ -332,7 +351,12 @@ pub fn dop853_step<FM: ForceModel>(
             reason: "step size must be finite and non-zero",
         });
     }
+    let h_min_abs = h_min.value().abs();
+    let h_max_abs = h_max.value().abs();
+    let sign = if h >= 0.0 { 1.0_f64 } else { -1.0_f64 };
+    h = sign * h.abs().clamp(h_min_abs, h_max_abs);
     let mut iters = 0u32;
+    let mut rejected = 0u32;
 
     loop {
         let k1 = rhs(force, s, ctx)?;
@@ -522,7 +546,8 @@ pub fn dop853_step<FM: ForceModel>(
             } else {
                 (err_norm.powf(-EXP) * 0.9).clamp(1.0 / 6.0, 6.0)
             };
-            let h_next = h * factor;
+            let h_next_raw = h * factor;
+            let h_next = sign * h_next_raw.abs().clamp(h_min_abs, h_max_abs);
             // Compute k1 at endpoint for dense output (use k1 at new state).
             let deriv_end = rhs(force, &s_new, ctx)?;
             let dense = Dop853Step {
@@ -532,8 +557,9 @@ pub fn dop853_step<FM: ForceModel>(
                 deriv_end,
                 h_used: h,
             };
-            return Ok((s_new, Second::new(h), Second::new(h_next), dense));
+            return Ok((s_new, Second::new(h), Second::new(h_next), dense, rejected));
         } else {
+            rejected += 1;
             iters += 1;
             if iters > 50 {
                 return Err(DynamicsError::InvalidStepRequest {
@@ -547,9 +573,9 @@ pub fn dop853_step<FM: ForceModel>(
             }
             let factor = (err_norm.powf(-EXP) * 0.9).clamp(1.0 / 6.0, 1.0);
             h *= factor;
-            if h.abs() < 1e-12 {
+            if h.abs() < h_min_abs {
                 return Err(DynamicsError::InvalidStepRequest {
-                    reason: "DOP853 step size collapsed below 1e-12 s; tolerances likely too tight",
+                    reason: "DOP853 step size fell below h_min; tolerances may be too tight",
                 });
             }
         }
@@ -631,6 +657,8 @@ pub fn dop853_propagate<FM: ForceModel>(
     if total_dt_s == 0.0 {
         return Ok(state);
     }
+    let h_min = Second::new(1e-6);
+    let h_max = Second::new(86_400.0);
     let mut s = state;
     let mut t = 0.0;
     let mut h = hinit(force, &s, total_dt_s, tol, ctx)
@@ -639,7 +667,8 @@ pub fn dop853_propagate<FM: ForceModel>(
         if (t + h - total_dt_s) * total_dt_s.signum() > 0.0 {
             h = total_dt_s - t;
         }
-        let (s_new, h_used, h_next, _) = dop853_step(force, &s, Second::new(h), tol, ctx)?;
+        let (s_new, h_used, h_next, _, _) =
+            dop853_step(force, &s, Second::new(h), tol, h_min, h_max, ctx)?;
         s = s_new;
         t += h_used.value();
         h = h_next.value();
@@ -724,8 +753,16 @@ mod tests {
         let ctx = DynamicsContext::empty();
         let tol = IntegratorTolerances::uniform(1e-9, 1e-6, 1e-9);
         let h_try = Second::new(period); // one full orbit in a single step
-        let (_s, h_used, _h_next, _) =
-            dop853_step(&TwoBody::earth(), &s0, h_try, tol, &ctx).unwrap();
+        let (_s, h_used, _h_next, _, _rejected) = dop853_step(
+            &TwoBody::earth(),
+            &s0,
+            h_try,
+            tol,
+            Second::new(1e-6),
+            Second::new(86_400.0),
+            &ctx,
+        )
+        .unwrap();
         assert!(
             h_used.value().abs() < period * 0.5,
             "expected step shrinkage from {} but got {}",
@@ -739,8 +776,16 @@ mod tests {
         let (s0, _r, _v, _period) = circular();
         let ctx = DynamicsContext::empty();
         let tol = IntegratorTolerances::uniform(1e-10, 1e-10, 1e-10);
-        let (_s_end, h_used, _h_next, dense) =
-            dop853_step(&TwoBody::earth(), &s0, Second::new(60.0), tol, &ctx).unwrap();
+        let (_s_end, h_used, _h_next, dense, _) = dop853_step(
+            &TwoBody::earth(),
+            &s0,
+            Second::new(60.0),
+            tol,
+            Second::new(1e-6),
+            Second::new(86_400.0),
+            &ctx,
+        )
+        .unwrap();
         let s_at_start = dense.interpolate(s0.epoch).unwrap();
         let dx0 = (s_at_start.position.x().value() - s0.position.x().value()).abs();
         assert!(dx0 < 1e-9, "endpoint start mismatch: {dx0}");

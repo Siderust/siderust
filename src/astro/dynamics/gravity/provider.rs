@@ -125,14 +125,28 @@ mod tests {
 
     struct StubProvider;
     impl GravityFieldProvider for StubProvider {
-        fn gm(&self) -> GravitationalParameter { GravitationalParameter::new(398_600.441_8) }
-        fn reference_radius(&self) -> Kilometers { Kilometers::new(6_378.137) }
-        fn max_degree(&self) -> usize { 4 }
-        fn max_order(&self) -> usize { 4 }
-        fn c_normalized(&self, n: usize, m: usize) -> f64 {
-            if n == 0 && m == 0 { 1.0 } else { 0.0 }
+        fn gm(&self) -> GravitationalParameter {
+            GravitationalParameter::new(398_600.441_8)
         }
-        fn s_normalized(&self, _n: usize, _m: usize) -> f64 { 0.0 }
+        fn reference_radius(&self) -> Kilometers {
+            Kilometers::new(6_378.137)
+        }
+        fn max_degree(&self) -> usize {
+            4
+        }
+        fn max_order(&self) -> usize {
+            4
+        }
+        fn c_normalized(&self, n: usize, m: usize) -> f64 {
+            if n == 0 && m == 0 {
+                1.0
+            } else {
+                0.0
+            }
+        }
+        fn s_normalized(&self, _n: usize, _m: usize) -> f64 {
+            0.0
+        }
     }
 
     #[test]

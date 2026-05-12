@@ -65,18 +65,17 @@ use siderust::astro::dynamics::{
     integrators::{AdaptiveStepper, Dopri5},
     propagation::{PropagationConfig, propagate},
     stm::finite_diff_stm,
-    covariance::{StateCovariance, ProcessNoise},
 };
 use siderust::coordinates::frames::GCRS;
-use siderust::time::{Time, TT, JulianDate};
-use siderust::qtty::Second;
-use siderust::ext_qtty::tolerances::IntegratorTolerances;
+use siderust::time::JulianDate;
+use siderust::qtty::{Second, IntegratorTolerances};
 
 // 1. Build a typed orbit state in GCRS
-let epoch = Time::<TT>::from_jd(JulianDate::new(2_451_545.0));
-let pos = Position::<GCRS>::new(7000.0, 0.0, 0.0);
-let vel = Velocity::<GCRS>::new(0.0, 7.5, 0.0);
-let state = OrbitState::new_at_epoch(epoch, pos, vel);
+let epoch = JulianDate::new(2_451_545.0).to_time();
+let t_end = JulianDate::new(2_451_546.0).to_time();  // 1 day later
+let pos = Position::new(7000.0, 0.0, 0.0);
+let vel = Velocity::new(0.0, 7.5, 0.0);
+let state = OrbitState::new(epoch, pos, vel);
 
 // 2. Set up dynamics context with providers
 let ctx = DynamicsContext::builder()
@@ -86,29 +85,20 @@ let ctx = DynamicsContext::builder()
 // 3. Compose a force model: two-body + J2
 let two_body = TwoBody::earth();
 let j2 = J2::earth();
-let force = CompositeForce::new()
-    .with_component(Box::new(two_body))
-    .with_component(Box::new(j2));
+let force = CompositeForce::empty()
+    .push(Box::new(two_body))
+    .push(Box::new(j2));
 
 // 4. Propagate with adaptive integrator
-let config = PropagationConfig::new(
-    epoch,
-    epoch + Second::new(86_400.0),  // 1 day
-)
+let config = PropagationConfig::new(epoch, t_end)
     .with_initial_step(Second::new(30.0))
     .with_max_step(Second::new(600.0));
 
 let integrator = Dopri5::new(IntegratorTolerances::uniform(1e-9, 1e-3, 1e-6));
-let result = propagate(&integrator, &force, state.clone(), &config, &ctx)?;
+let result = propagate(&integrator, &force, state, &config, &ctx)?;
 
-// 5. Optionally compute state-transition matrix
-let final_dt = Second::new(3600.0);
-let stm = finite_diff_stm(&force, &state, final_dt, &ctx)?;
-
-// 6. Optionally transport covariance in inertial frame
-let mut cov = StateCovariance::<GCRS>::zeros();
-let process_noise = ProcessNoise::<GCRS>::none();
-// (Propagation and transport shown in covariance module)
+// 5. Optionally compute a state-transition matrix (RK4 finite-difference)
+let stm = finite_diff_stm(&force, state, Second::new(3600.0), 120, &ctx)?;
 
 println!("Propagated {} steps", result.steps_taken);
 println!("Final position: {:?}", result.samples.last().unwrap().position);
