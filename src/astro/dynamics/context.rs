@@ -227,6 +227,16 @@ impl DynamicsContext {
                 order: 0,
             })
     }
+
+    /// Return a reference to the gravity field provider, or
+    /// [`DynamicsError::GravityFieldUnavailable`] if none is configured.
+    pub fn require_gravity_field(
+        &self,
+    ) -> Result<&Arc<dyn GravityFieldProvider + Send + Sync>, DynamicsError> {
+        self.gravity
+            .as_ref()
+            .ok_or(DynamicsError::GravityFieldUnavailable)
+    }
 }
 
 // =============================================================================

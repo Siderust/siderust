@@ -42,7 +42,10 @@
 
 pub mod composite;
 pub mod drag;
+pub mod empirical;
+pub mod geopotential;
 pub mod j2;
+pub mod relativity;
 pub mod srp;
 pub mod third_body;
 pub mod traits;
@@ -53,8 +56,11 @@ pub mod two_body;
 pub use crate::astro::dynamics::atmosphere::{ExponentialAtmosphere, Nrlmsise00LiteApprox};
 pub use composite::CompositeForce;
 pub use drag::{DragForce, ExponentialDrag};
+pub use empirical::EmpiricalAcceleration;
+pub use geopotential::Geopotential;
 pub use j2::J2;
-pub use srp::CannonballSrp;
+pub use relativity::CentralBodyRelativity1Pn;
+pub use srp::{CannonballSrp, ShadowModel};
 #[allow(deprecated)]
 pub use third_body::{
     MoonPerturbation, SunPerturbation, ThirdBody, ThirdBodyProvider, ThirdBodySunMoon,

@@ -78,6 +78,18 @@ pub enum DynamicsError {
 
     /// An opaque provider error not covered by the more specific variants.
     Provider(Box<dyn std::error::Error + Send + Sync>),
+
+    /// A gravity field is required but no provider was set in the context.
+    GravityFieldUnavailable,
+
+    /// The requested degree/order exceeds what the gravity field provider
+    /// supports.
+    GeopotentialDegreeOutOfRange {
+        /// Degree requested by the force model.
+        requested: usize,
+        /// Maximum degree the provider supports.
+        max: usize,
+    },
 }
 
 impl fmt::Display for DynamicsError {
@@ -109,6 +121,15 @@ impl fmt::Display for DynamicsError {
             }
             Self::Provider(e) => {
                 write!(f, "provider error: {e}")
+            }
+            Self::GravityFieldUnavailable => {
+                write!(f, "no gravity field provider set in dynamics context")
+            }
+            Self::GeopotentialDegreeOutOfRange { requested, max } => {
+                write!(
+                    f,
+                    "requested geopotential degree {requested} exceeds provider maximum {max}"
+                )
             }
         }
     }
