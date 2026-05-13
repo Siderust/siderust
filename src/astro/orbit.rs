@@ -40,15 +40,12 @@
 //!   the Major Planets". *JPL Solar System Dynamics*.
 //!   <https://ssd.jpl.nasa.gov/planets/approx_pos.html>
 
-use crate::astro::conic::ConicError;
+use crate::astro::conic::{elliptic_geometry_from_sma, ConicError};
 use crate::astro::units::GaussianYears;
 use crate::qtty::angular_rate::AngularRate;
 use crate::qtty::*;
 use crate::time::JulianDate;
-use affn::conic::{
-    ClassifiedSemiMajorAxisParam, ConicOrientation, Elliptic, SemiMajorAxisParam,
-    TypedSemiMajorAxisParam,
-};
+use affn::conic::{ConicOrientation, Elliptic, SemiMajorAxisParam, TypedSemiMajorAxisParam};
 use affn::frames::EclipticMeanJ2000;
 
 #[cfg(feature = "serde")]
@@ -137,22 +134,13 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         mean_anomaly_at_epoch: Degrees,
         epoch: JulianDate,
     ) -> Result<Self, crate::astro::conic::ConicError> {
-        use crate::astro::conic::map_validation_error;
-
-        let sma = SemiMajorAxisParam::try_new(semi_major_axis, eccentricity)
-            .map_err(map_validation_error)?;
-        let typed = match sma.classify() {
-            ClassifiedSemiMajorAxisParam::Elliptic(t) => t,
-            ClassifiedSemiMajorAxisParam::Hyperbolic(_) => {
-                return Err(ConicError::HyperbolicNotSupported);
-            }
-        };
-        let orientation = ConicOrientation::try_new(
+        let geometry = elliptic_geometry_from_sma(
+            semi_major_axis,
+            eccentricity,
             inclination,
             longitude_of_ascending_node,
             argument_of_periapsis,
-        )
-        .map_err(map_validation_error)?;
+        )?;
 
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
@@ -161,8 +149,8 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
-            shape: typed,
-            orientation,
+            shape: *geometry.shape(),
+            orientation: *geometry.orientation(),
             mean_anomaly_at_epoch,
             epoch,
         })

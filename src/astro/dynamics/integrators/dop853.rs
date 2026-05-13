@@ -56,54 +56,7 @@ use crate::ext_qtty::tolerances::IntegratorTolerances;
 use crate::qtty::Second;
 use crate::time::{Time, TT};
 
-#[inline]
-fn state_component(s: &OrbitState, i: usize) -> f64 {
-    match i {
-        0 => s.position.x().value(),
-        1 => s.position.y().value(),
-        2 => s.position.z().value(),
-        3 => s.velocity.x().value(),
-        4 => s.velocity.y().value(),
-        5 => s.velocity.z().value(),
-        _ => panic!("index out of range"),
-    }
-}
-
-#[inline]
-fn deriv_component(d: &StateDerivative, i: usize) -> f64 {
-    match i {
-        0 => d.vel.x().value(),
-        1 => d.vel.y().value(),
-        2 => d.vel.z().value(),
-        3 => d.acc.x().value(),
-        4 => d.acc.y().value(),
-        5 => d.acc.z().value(),
-        _ => panic!("index out of range"),
-    }
-}
-
-#[inline]
-fn rhs<FM: ForceModel>(
-    force: &FM,
-    s: &OrbitState,
-    ctx: &DynamicsContext,
-) -> Result<StateDerivative, DynamicsError> {
-    Ok(StateDerivative::new(
-        s.velocity,
-        force.acceleration(s, ctx)?,
-    ))
-}
-
-#[inline]
-fn state_at(s: &OrbitState, d: &StateDerivative, h: f64, dt: f64) -> OrbitState {
-    let new_epoch = s.epoch + Second::new(dt);
-    let advanced = s.advance(d, Second::new(h));
-    OrbitState {
-        epoch: new_epoch,
-        position: advanced.position,
-        velocity: advanced.velocity,
-    }
-}
+use super::{deriv_component, rhs, state_at, state_component};
 
 /// Stateful DOP853 integrator (8th-order adaptive Runge-Kutta).
 pub struct Dop853 {

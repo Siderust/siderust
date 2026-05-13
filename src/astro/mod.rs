@@ -61,6 +61,7 @@ pub mod earth_rotation_provider;
 pub mod eop;
 pub mod era;
 pub mod iers_data;
+pub mod lambert;
 pub mod light_deflection;
 pub mod nutation;
 pub mod orbit;

@@ -35,7 +35,7 @@ atmosphere = []
 [dependencies]
 affn = { git = "https://github.com/Siderust/affn.git", branch = "main", features = ["astro"] }
 cheby = "0.2"
-qtty = { version = "0.7", features = ["astro", "density", "radiometry", "satellite"] }
+qtty = { version = "0.8", features = ["astro", "density", "radiometry", "satellite"] }
 tempoch = "0.4"
 approx = "0.5"
 chrono = "0.4"

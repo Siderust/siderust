@@ -391,6 +391,54 @@ macro_rules! impl_reverse_center_shifts {
 
 pub(crate) use impl_reverse_center_shifts;
 
+macro_rules! impl_reverse_center_shifts_without_geocentric {
+    ($center:ty) => {
+        impl<F> CenterShiftProvider<Barycentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop>,
+            ) -> AuShift {
+                inverse_shift::<Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+
+        impl<F> CenterShiftProvider<Heliocentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop>,
+            ) -> AuShift {
+                compose_shift::<Heliocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+
+        impl<F> CenterShiftProvider<$center, Heliocentric, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop>,
+            ) -> AuShift {
+                inverse_shift::<$center, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+    };
+}
+
+pub(crate) use impl_reverse_center_shifts_without_geocentric;
+
 /// Computes the body-fixed → ICRS rotation matrix from IAU rotation parameters.
 ///
 /// Builds a ZXZ Euler rotation from the IAU pole direction (α₀, δ₀) and
