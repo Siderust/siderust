@@ -36,8 +36,12 @@ fn build_period(days: u32) -> Period<ModifiedJulianDate> {
     let end_dt = Utc.from_utc_datetime(&end_naive);
 
     Period::new(
-        ModifiedJulianDate::from_chrono(start_dt),
-        ModifiedJulianDate::from_chrono(end_dt),
+        siderust::time::Time::<siderust::time::UTC>::from_chrono(start_dt)
+            .to::<siderust::time::TT>()
+            .to::<siderust::time::MJD>(),
+        siderust::time::Time::<siderust::time::UTC>::from_chrono(end_dt)
+            .to::<siderust::time::TT>()
+            .to::<siderust::time::MJD>(),
     )
 }
 
@@ -51,7 +55,7 @@ fn sirius_icrs() -> direction::ICRS {
 
 fn bench_single_altitude(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-    let mjd = ModifiedJulianDate::new(51544.5); // J2000
+    let mjd = ModifiedJulianDate::from_raw_unchecked(siderust::qtty::Days::new(51544.5)); // J2000
     let sirius = sirius_icrs();
 
     let mut group = c.benchmark_group("altitude/single_eval");

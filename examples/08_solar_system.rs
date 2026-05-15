@@ -17,7 +17,9 @@ use siderust::time::JulianDate;
 
 fn main() {
     let jd = JulianDate::J2000;
-    let now = JulianDate::from_chrono(chrono::Utc::now());
+    let now = siderust::time::Time::<siderust::time::UTC>::from_chrono(chrono::Utc::now())
+        .to::<siderust::time::TT>()
+        .to::<siderust::time::JD>();
 
     println!("=== Siderust Solar System Module Tour ===\n");
     println!("Epoch used for deterministic outputs: J2000 (JD {:.1})", jd);

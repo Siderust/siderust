@@ -41,7 +41,7 @@ fn greenwich() -> Geodetic<ECEF> {
 fn altitude_at_sun_j2000_greenwich() {
     let alt = Sun.altitude_at(
         &greenwich(),
-        siderust::time::ModifiedJulianDate::new(51544.5),
+        siderust::time::ModifiedJulianDate::from_raw_unchecked(siderust::qtty::Days::new(51544.5)),
     );
     // J2000 = 2000-01-01 12:00 TT, winter in northern hemisphere,
     // sun should be low but above horizon around local noon (UTC ≈ TT-64s).
@@ -57,7 +57,7 @@ fn altitude_at_sun_j2000_greenwich() {
 fn altitude_at_moon_j2000_greenwich() {
     let alt = Moon.altitude_at(
         &greenwich(),
-        siderust::time::ModifiedJulianDate::new(51544.5),
+        siderust::time::ModifiedJulianDate::from_raw_unchecked(siderust::qtty::Days::new(51544.5)),
     );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
@@ -68,7 +68,7 @@ fn altitude_at_sirius_reasonable() {
     let sirius = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
     let alt = sirius.altitude_at(
         &greenwich(),
-        siderust::time::ModifiedJulianDate::new(51544.5),
+        siderust::time::ModifiedJulianDate::from_raw_unchecked(siderust::qtty::Days::new(51544.5)),
     );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
@@ -82,8 +82,8 @@ fn crossings_sun_one_day_greenwich() {
     let site = greenwich();
     // MJD 60000 ≈ 2023-02-25
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60001.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60001.0)),
     );
     let events = crossings(
         &Sun,
@@ -113,8 +113,8 @@ fn crossings_sun_one_day_greenwich() {
 fn crossings_sun_astronomical_twilight() {
     let site = roque();
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60001.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60001.0)),
     );
     let events = crossings(
         &Sun,
@@ -138,8 +138,8 @@ fn crossings_sun_astronomical_twilight() {
 fn culminations_sun_one_day() {
     let site = greenwich();
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60001.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60001.0)),
     );
     let culms = culminations(&Sun, &site, window, SearchOpts::default());
 
@@ -168,8 +168,8 @@ fn culminations_sun_one_day() {
 fn culminations_moon_one_day() {
     let site = greenwich();
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60001.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60001.0)),
     );
     let culms = culminations(&Moon, &site, window, SearchOpts::default());
     assert!(!culms.is_empty(), "should find Moon culminations in 24h");
@@ -183,8 +183,8 @@ fn culminations_moon_one_day() {
 fn above_threshold_sun_week() {
     let site = roque();
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60007.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60007.0)),
     );
     let days = above_threshold(
         &Sun,
@@ -201,7 +201,7 @@ fn above_threshold_sun_week() {
         days.len()
     );
     for (i, p) in days.iter().enumerate() {
-        let hours = ((p).end - (p).start) * 24.0;
+        let hours = ((p).end.raw() - (p).start.raw()) * 24.0;
         assert!(
             hours.value() > 8.0 && hours.value() < 16.0,
             "day {} duration {} hours is unreasonable",
@@ -215,8 +215,8 @@ fn above_threshold_sun_week() {
 fn below_threshold_astronomical_night_week() {
     let site = roque();
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60007.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60007.0)),
     );
     let nights = below_threshold(
         &Sun,
@@ -228,7 +228,7 @@ fn below_threshold_astronomical_night_week() {
 
     assert!(!nights.is_empty(), "should find astronomical night periods");
     for p in &nights {
-        let hours = ((p).end - (p).start) * 24.0;
+        let hours = ((p).end.raw() - (p).start.raw()) * 24.0;
         // Nights should be several hours long
         assert!(
             hours.value() > 3.0,
@@ -246,8 +246,8 @@ fn below_threshold_astronomical_night_week() {
 fn altitude_ranges_nautical_to_astro_twilight() {
     let site = greenwich();
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60002.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60002.0)),
     );
     let bands = altitude_ranges(
         &Sun,
@@ -265,7 +265,7 @@ fn altitude_ranges_nautical_to_astro_twilight() {
         bands.len()
     );
     for p in &bands {
-        let minutes = ((p).end - (p).start) * 1440.0;
+        let minutes = ((p).end.raw() - (p).start.raw()) * 1440.0;
         // Each twilight band should be 20-90 minutes
         assert!(
             minutes.value() > 10.0 && minutes.value() < 120.0,
@@ -283,8 +283,8 @@ fn altitude_ranges_nautical_to_astro_twilight() {
 fn moon_above_horizon_week() {
     let site = roque();
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60007.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60007.0)),
     );
     let periods = above_threshold(
         &Moon,
@@ -308,8 +308,8 @@ fn polaris_always_above_horizon_at_greenwich() {
     let site = greenwich(); // 51.5°N, Polaris is circumpolar here
 
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60001.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60001.0)),
     );
 
     // Should have no horizon crossings (circumpolar)
@@ -340,7 +340,7 @@ fn polaris_always_above_horizon_at_greenwich() {
         "Polaris should be continuously above horizon, found {} periods",
         up.len()
     );
-    let duration = (up[0]).end - (up[0]).start;
+    let duration = (up[0]).end.raw() - (up[0]).start.raw();
     assert!(
         (duration - Days::new(1.0)).abs().value() < 0.01,
         "Polaris up-period should span the full day, got {} days",

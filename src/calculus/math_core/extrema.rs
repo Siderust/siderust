@@ -234,12 +234,26 @@ where
 
     let mut t0 = t_start_v;
     let mut f0 = f(t0);
-    let mut t1 = { let t_next = Mjd::from_raw_unchecked(t0.raw() + step_v); if t_next.raw() <= t_end_v.raw() { t_next } else { t_end_v } };
+    let mut t1 = {
+        let t_next = Mjd::from_raw_unchecked(t0.raw() + step_v);
+        if t_next.raw() <= t_end_v.raw() {
+            t_next
+        } else {
+            t_end_v
+        }
+    };
     let mut f1 = f(t1);
     let mut prev_rising = f1 > f0;
 
     loop {
-        let t2 = { let t_next = Mjd::from_raw_unchecked(t1.raw() + step_v); if t_next.raw() <= t_end_v.raw() { t_next } else { t_end_v } };
+        let t2 = {
+            let t_next = Mjd::from_raw_unchecked(t1.raw() + step_v);
+            if t_next.raw() <= t_end_v.raw() {
+                t_next
+            } else {
+                t_end_v
+            }
+        };
         if t2 <= t1 {
             break;
         }
@@ -310,7 +324,14 @@ where
     let mut prev_d = deriv(t);
 
     while t < t_end_v {
-        let next_t = { let t_next = Mjd::from_raw_unchecked(t.raw() + step_v); if t_next.raw() <= t_end_v.raw() { t_next } else { t_end_v } };
+        let next_t = {
+            let t_next = Mjd::from_raw_unchecked(t.raw() + step_v);
+            if t_next.raw() <= t_end_v.raw() {
+                t_next
+            } else {
+                t_end_v
+            }
+        };
         let next_d = deriv(next_t);
         if opposite_sign(prev_d, next_d) {
             if let Some(root_mjd) =
@@ -355,7 +376,7 @@ mod tests {
     type Radians = Quantity<Radian>;
 
     fn mjd(v: f64) -> Mjd {
-        Mjd::new(v)
+        Mjd::from_raw_unchecked(Days::new(v))
     }
     fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
         Period::new(mjd(a), mjd(b))
@@ -370,7 +391,11 @@ mod tests {
         let (t, v) = minimize(period(-5.0, 5.0), &|t: Mjd| {
             Radians::new((mjd_f64(t) - 2.0).powi(2))
         });
-        assert!((t.raw() - mjd(2.0).raw()).abs() < Days::new(1e-7), "t = {}", t);
+        assert!(
+            (t.raw() - mjd(2.0).raw()).abs() < Days::new(1e-7),
+            "t = {}",
+            t
+        );
         assert!(v < Radians::new(1e-12), "v = {}", v);
     }
 
@@ -379,7 +404,11 @@ mod tests {
         let (t, v) = maximize(period(-5.0, 5.0), &|t: Mjd| {
             Radians::new(-(mjd_f64(t) - 3.0).powi(2) + 10.0)
         });
-        assert!((t.raw() - mjd(3.0).raw()).abs() < Days::new(1e-7), "t = {}", t);
+        assert!(
+            (t.raw() - mjd(3.0).raw()).abs() < Days::new(1e-7),
+            "t = {}",
+            t
+        );
         assert!(
             (v - Radians::new(10.0)).abs() < Radians::new(1e-6),
             "v = {}",

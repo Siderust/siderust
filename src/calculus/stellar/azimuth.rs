@@ -9,7 +9,7 @@
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{JulianDate, ModifiedJulianDate, JD};
+use crate::time::{JulianDate, ModifiedJulianDate};
 
 /// Computes the topocentric azimuth of a fixed star in **radians**
 /// (North-clockwise, range `[0, 2π)`) at a given Julian Date and observer site.
@@ -28,7 +28,7 @@ pub(crate) fn fixed_star_azimuth_rad(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
 ) -> Radians {
-    let jd: JulianDate = mjd.to_time().to::<JD>();
+    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
     crate::calculus::horizontal::star_horizontal(ra_j2000, dec_j2000, site, jd)
         .az()
         .to::<Radian>()

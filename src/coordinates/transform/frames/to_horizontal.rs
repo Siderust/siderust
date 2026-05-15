@@ -275,7 +275,7 @@ mod tests {
     fn test_roundtrip_angles() {
         // Test that the angle conversion functions are inverses of each other
         let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
-        let jd = JulianDate::new(2460677.0);
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2460677.0));
 
         let ra = 101.29 * DEG;
         let dec = -16.72 * DEG;
@@ -317,7 +317,7 @@ mod tests {
         use crate::qtty::AU;
 
         let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
-        let jd = JulianDate::new(2460677.0);
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2460677.0));
 
         let eq_pos = cartesian::Position::<
             Topocentric,
@@ -359,7 +359,7 @@ mod tests {
         use crate::qtty::AU;
 
         let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
-        let jd = JulianDate::new(2460677.0);
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2460677.0));
 
         // Build a spherical equatorial position via cartesian → spherical
         let eq_cart = cartesian::Position::<

@@ -65,7 +65,14 @@ where
     let mut prev = g(t);
 
     while t < period.end {
-        let next_t = { let t_next = Mjd::from_raw_unchecked(t.raw() + step); if t_next.raw() <= period.end.raw() { t_next } else { period.end } };
+        let next_t = {
+            let t_next = Mjd::from_raw_unchecked(t.raw() + step);
+            if t_next.raw() <= period.end.raw() {
+                t_next
+            } else {
+                period.end
+            }
+        };
         let next_v = g(next_t);
 
         if opposite_sign(prev, next_v) {
@@ -114,7 +121,14 @@ where
     let mut t = period.start;
     let mut prev = g(t);
     while t < period.end {
-        let next_t = { let t_next = Mjd::from_raw_unchecked(t.raw() + initial_step); if t_next.raw() <= period.end.raw() { t_next } else { period.end } };
+        let next_t = {
+            let t_next = Mjd::from_raw_unchecked(t.raw() + initial_step);
+            if t_next.raw() <= period.end.raw() {
+                t_next
+            } else {
+                period.end
+            }
+        };
         let next_v = g(next_t);
         stack.push(Frame {
             period: Period::new(t, next_t),
@@ -229,7 +243,14 @@ where
         step = range * 0.5;
     }
 
-    bracket.start = { let t_prev = Mjd::from_raw_unchecked(bracket.end.raw() - step); if t_prev.raw() >= search_period.start.raw() { t_prev } else { search_period.start } };
+    bracket.start = {
+        let t_prev = Mjd::from_raw_unchecked(bracket.end.raw() - step);
+        if t_prev.raw() >= search_period.start.raw() {
+            t_prev
+        } else {
+            search_period.start
+        }
+    };
     let mut g_lo = g(bracket.start);
 
     while bracket.start > search_period.start {
@@ -238,7 +259,14 @@ where
         }
         bracket.end = bracket.start;
         g_hi = g_lo;
-        bracket.start = { let t_prev = Mjd::from_raw_unchecked(bracket.start.raw() - step); if t_prev.raw() >= search_period.start.raw() { t_prev } else { search_period.start } };
+        bracket.start = {
+            let t_prev = Mjd::from_raw_unchecked(bracket.start.raw() - step);
+            if t_prev.raw() >= search_period.start.raw() {
+                t_prev
+            } else {
+                search_period.start
+            }
+        };
         g_lo = g(bracket.start);
     }
 
@@ -270,7 +298,14 @@ where
         step = range * 0.5;
     }
 
-    bracket.end = { let t_next = Mjd::from_raw_unchecked(bracket.start.raw() + step); if t_next.raw() <= search_period.end.raw() { t_next } else { search_period.end } };
+    bracket.end = {
+        let t_next = Mjd::from_raw_unchecked(bracket.start.raw() + step);
+        if t_next.raw() <= search_period.end.raw() {
+            t_next
+        } else {
+            search_period.end
+        }
+    };
     let mut g_hi = g(bracket.end);
 
     while bracket.end < search_period.end {
@@ -279,7 +314,14 @@ where
         }
         bracket.start = bracket.end;
         g_lo = g_hi;
-        bracket.end = { let t_next = Mjd::from_raw_unchecked(bracket.end.raw() + step); if t_next.raw() <= search_period.end.raw() { t_next } else { search_period.end } };
+        bracket.end = {
+            let t_next = Mjd::from_raw_unchecked(bracket.end.raw() + step);
+            if t_next.raw() <= search_period.end.raw() {
+                t_next
+            } else {
+                search_period.end
+            }
+        };
         g_hi = g(bracket.end);
     }
 
@@ -302,7 +344,7 @@ mod tests {
     type Radians = Quantity<Radian>;
 
     fn mjd(v: f64) -> Mjd {
-        Mjd::new(v)
+        Mjd::from_raw_unchecked(Days::new(v))
     }
     fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
         Period::new(mjd(a), mjd(b))

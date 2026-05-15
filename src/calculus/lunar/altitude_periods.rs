@@ -32,7 +32,7 @@ use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, JD};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
 
 use super::moon_cache::{find_and_label_crossings, MoonAltitudeContext};
 
@@ -64,7 +64,7 @@ pub(crate) fn moon_altitude_rad(
     mjd: ModifiedJulianDate,
     site: &Geodetic<ECEF>,
 ) -> Quantity<Radian> {
-    let jd: JulianDate = mjd.to_time().to::<JD>();
+    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
     Moon::get_horizontal::<Kilometer>(jd, *site)
         .alt()
         .to::<Radian>()
@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn test_moon_altitude_basic() {
         let site = greenwich_site();
-        let mjd: ModifiedJulianDate = JulianDate::J2000.to_time().to::<MJD>();
+        let mjd: ModifiedJulianDate = JulianDate::J2000.to_time().to::<crate::time::MJD>();
         let alt = moon_altitude_rad(mjd, &site);
         assert!(
             alt > -std::f64::consts::FRAC_PI_2 * RAD && alt < std::f64::consts::FRAC_PI_2 * RAD
@@ -224,8 +224,8 @@ mod tests {
     #[test]
     fn test_find_moon_above_horizon() {
         let site = greenwich_site();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60007.0);
+        let mjd_start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
+        let mjd_end = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0));
         let period = Period::new(mjd_start, mjd_end);
 
         let periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
@@ -236,7 +236,7 @@ mod tests {
 
         for p in &periods {
             assert!(
-                ((p).end - (p).start) > Days::new(0.0),
+                (p.end.raw() - p.start.raw()) > Days::new(0.0),
                 "Period duration should be positive"
             );
         }
@@ -245,8 +245,8 @@ mod tests {
     #[test]
     fn test_find_moon_below_horizon() {
         let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-        let mjd_start = ModifiedJulianDate::new(60676.0);
-        let mjd_end = ModifiedJulianDate::new(60683.0);
+        let mjd_start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60676.0));
+        let mjd_end = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60683.0));
         let period = Period::new(mjd_start, mjd_end);
 
         let periods = find_moon_below_horizon(site, period, Degrees::new(-0.5));
@@ -257,8 +257,8 @@ mod tests {
     fn test_above_vs_scan_consistency() {
         // Verify that math_core-based and scan-based algorithms produce similar results
         let site = greenwich_site();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60003.0);
+        let mjd_start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
+        let mjd_end = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60003.0));
         let period = Period::new(mjd_start, mjd_end);
 
         let main_result = find_moon_above_horizon(site, period, Degrees::new(0.0));
@@ -277,11 +277,11 @@ mod tests {
         let tolerance = Days::new(1.0 / 1440.0);
         for (m, s) in main_result.iter().zip(scan_result.iter()) {
             assert!(
-                (m.start - s.start).abs() < tolerance,
+                (m.start.raw() - s.start.raw()).abs() < tolerance,
                 "Start times should match within 1 minute"
             );
             assert!(
-                (m.end - s.end).abs() < tolerance,
+                (m.end.raw() - s.end.raw()).abs() < tolerance,
                 "End times should match within 1 minute"
             );
         }

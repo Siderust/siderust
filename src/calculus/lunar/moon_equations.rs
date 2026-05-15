@@ -145,7 +145,7 @@ impl Moon {
     /// println!("Moon altitude: {}", moon_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
-    /// let mjd = ModifiedJulianDate::new(60000.0);
+    /// let mjd = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
     /// ```
     ///
     /// # Arguments
@@ -251,8 +251,9 @@ impl Moon {
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
     /// use siderust::qtty::Days;
     ///
-    /// let start  = ModifiedJulianDate::from(JulianDate::J2000);
-    /// let window = Period::new(start, start + Days::new(35.0));
+    /// let start = JulianDate::J2000.to_time().to::<siderust::time::MJD>();
+    /// let end = ModifiedJulianDate::from_raw_unchecked(start.raw() + Days::new(35.0));
+    /// let window = Period::new(start, end);
     /// let events = Moon::phase_events(window, PhaseSearchOpts::default());
     /// assert!(!events.is_empty());
     /// ```
@@ -324,8 +325,9 @@ impl Moon {
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
     /// use siderust::qtty::{Days, IlluminationFractions};
     ///
-    /// let start  = ModifiedJulianDate::from(JulianDate::J2000);
-    /// let window = Period::new(start, start + Days::new(30.0));
+    /// let start = JulianDate::J2000.to_time().to::<siderust::time::MJD>();
+    /// let end = ModifiedJulianDate::from_raw_unchecked(start.raw() + Days::new(30.0));
+    /// let window = Period::new(start, end);
     /// // Crescent phase: 5–35% illuminated
     /// let crescent = Moon::illumination_range(window, IlluminationFractions::new(0.05), IlluminationFractions::new(0.35), PhaseSearchOpts::default());
     /// ```
@@ -364,8 +366,11 @@ mod tests {
     }
 
     fn one_month() -> Period<ModifiedJulianDate> {
-        let start = ModifiedJulianDate::from(JulianDate::J2000);
-        Period::new(start, start + Days::new(30.0))
+        let start = JulianDate::J2000.to_time().to::<crate::time::MJD>();
+        Period::new(
+            start,
+            ModifiedJulianDate::from_raw_unchecked(start.raw() + Days::new(30.0)),
+        )
     }
 
     #[test]

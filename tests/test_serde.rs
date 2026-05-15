@@ -217,23 +217,23 @@ fn test_frame_types_roundtrip() {
 fn test_julian_date_roundtrip() {
     use siderust::time::JulianDate;
 
-    let jd = JulianDate::new(2451545.0); // J2000
+    let jd = JulianDate::from_raw_unchecked(Days::new(2451545.0)); // J2000
 
     let json = serde_json::to_string(&jd).expect("serialize julian date");
     let recovered: JulianDate = serde_json::from_str(&json).expect("deserialize julian date");
 
-    assert!((jd.jd_value() - recovered.jd_value()).abs() < 1e-12);
+    assert!((jd.raw().value() - recovered.raw().value()).abs() < 1e-12);
 }
 
 #[test]
 fn test_modified_julian_date_roundtrip() {
     use siderust::time::ModifiedJulianDate;
 
-    let mjd = ModifiedJulianDate::new(51544.5); // J2000 in MJD
+    let mjd = ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)); // J2000 in MJD
 
     let json = serde_json::to_string(&mjd).expect("serialize modified julian date");
     let recovered: ModifiedJulianDate =
         serde_json::from_str(&json).expect("deserialize modified julian date");
 
-    assert!((mjd.mjd_value() - recovered.mjd_value()).abs() < 1e-12);
+    assert!((mjd.raw().value() - recovered.raw().value()).abs() < 1e-12);
 }

@@ -7,7 +7,7 @@ use siderust::{bodies::solar_system::*, calculus::vsop87::VSOP87, time::JulianDa
 use std::hint::black_box;
 
 fn bench_vsop87(c: &mut Criterion) {
-    let start = JulianDate::J2000 + Days::new(25.0 * 365.25);
+    let start = JulianDate::from_raw_unchecked(JulianDate::J2000.raw() + Days::new(25.0 * 365.25));
 
     let planet_list: Vec<(&str, Box<dyn VSOP87>)> = vec![
         ("Mercury", Box::new(Mercury)),
@@ -24,7 +24,7 @@ fn bench_vsop87(c: &mut Criterion) {
         c.bench_function(&format!("vsop87a {}", name), |b| {
             let mut jd = start;
             b.iter(|| {
-                jd += Days::new(1.0);
+                jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
                 let _coords = planet.vsop87a(black_box(jd));
             });
         });
@@ -32,7 +32,7 @@ fn bench_vsop87(c: &mut Criterion) {
         c.bench_function(&format!("vsop87e {}", name), |b| {
             let mut jd = start;
             b.iter(|| {
-                jd += Days::new(1.0);
+                jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
                 let _coords = planet.vsop87e(black_box(jd));
             });
         });

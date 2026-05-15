@@ -16,27 +16,32 @@ use siderust::coordinates::{
 use siderust::qtty::{
     AstronomicalUnit, AstronomicalUnits, Days, Degrees, Kilograms, Kilometers, AU,
 };
-use siderust::time::JulianDate;
+use siderust::time::{JulianDate, JULIAN_YEAR_DAYS};
 
 #[test]
 fn julian_date_arithmetic_and_display_branches() {
-    let mut jd = JulianDate::new(2_450_000.0);
+    let mut jd = JulianDate::from_raw_unchecked(Days::new(2_450_000.0));
     let printed = format!("{jd}");
-    assert!(printed.contains("Julian Day"));
+    assert_eq!(printed, format!("{}", jd.raw()));
 
-    jd += Days::new(2.0);
-    jd -= Days::new(0.5);
+    jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(2.0));
+    jd = JulianDate::from_raw_unchecked(jd.raw() - Days::new(0.5));
 
-    let with_years = jd + JulianDate::JULIAN_YEAR;
-    let day_span: Days = with_years - jd;
-    assert!((day_span.value() - JulianDate::JULIAN_YEAR.value()).abs() < 1e-9);
+    let with_years = JulianDate::from_raw_unchecked(jd.raw() + JULIAN_YEAR_DAYS);
+    let day_span: Days = with_years.raw() - jd.raw();
+    assert!((day_span.value() - JULIAN_YEAR_DAYS.value()).abs() < 1e-9);
 
-    let min = with_years.min(jd);
+    let min = if with_years < jd { with_years } else { jd };
     assert_eq!(min, jd);
 
-    let utc = jd.to_chrono().expect("valid UTC");
-    let roundtrip = JulianDate::from_chrono(utc);
-    assert!((roundtrip.jd_value() - jd.jd_value()).abs() < 1e-6);
+    let utc = jd
+        .to::<siderust::time::UTC>()
+        .to_chrono()
+        .expect("valid UTC");
+    let roundtrip = siderust::time::Time::<siderust::time::UTC>::from_chrono(utc)
+        .to::<siderust::time::TT>()
+        .to::<siderust::time::JD>();
+    assert!((roundtrip.raw().value() - jd.raw().value()).abs() < 1e-6);
 }
 
 #[test]

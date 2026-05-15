@@ -26,7 +26,7 @@ use siderust::time::JulianDate;
 
 fn main() {
     let jd = JulianDate::J2000;
-    let jd_next = jd + Days::new(1.0);
+    let jd_next = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
 
     println!("Target + Trackable examples");
     println!("===========================\n");
@@ -145,7 +145,7 @@ fn section_target_with_proper_motion(jd: JulianDate) {
         moving_target.position.dec()
     );
 
-    let jd_future = jd + 25.0 * JulianDate::JULIAN_YEAR;
+    let jd_future = JulianDate::from_raw_unchecked(jd.raw() + Days::new(25.0 * 365.25));
     let moved = set_proper_motion_since_j2000(moving_target.position, pm, jd_future)
         .expect("proper-motion propagation should succeed");
     moving_target.update(moved, jd_future);

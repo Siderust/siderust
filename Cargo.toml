@@ -4,9 +4,6 @@ members = [
     "siderust-ffi",
 ]
 
-[patch.crates-io]
-tempoch     = { path = "../tempoch-cpp/tempoch/tempoch" }
-tempoch-ffi = { path = "../tempoch-cpp/tempoch/tempoch-ffi" }
 
 [package]
 name = "siderust"

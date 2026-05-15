@@ -91,12 +91,12 @@
 //! ```rust
 //! use siderust::{
 //!     bodies::Mars,
-//!     time::JulianDate,
+//!     time::{JD, TT, Time, UTC},
 //! };
 //! use chrono::prelude::*;
 //!
 //! // 1. Select an epoch (UTC now to JD)
-//! let jd = JulianDate::from_chrono(Utc::now());
+//! let jd = Time::<UTC>::from_chrono(Utc::now()).to::<TT>().to::<JD>();
 //!
 //! // 2. Compute barycentric ecliptic coordinates via VSOP87
 //! let mars = Mars::vsop87e(jd);

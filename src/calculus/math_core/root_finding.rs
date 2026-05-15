@@ -405,7 +405,15 @@ mod tests {
         };
         let f_lo = Radians::new((3.0_f64).sin());
         let f_hi = Radians::new((4.0_f64).sin());
-        let _ = brent_with_values(Interval::new(Mjd::new(3.0), Mjd::new(4.0)), f_lo, f_hi, f);
+        let _ = brent_with_values(
+            Interval::new(
+                Mjd::from_raw_unchecked(Days::new(3.0)),
+                Mjd::from_raw_unchecked(Days::new(4.0)),
+            ),
+            f_lo,
+            f_hi,
+            f,
+        );
         let with_vals = count.get();
 
         count.set(0);
@@ -422,14 +430,17 @@ mod tests {
     #[test]
     fn brent_tol_respects_relaxed_tolerance() {
         let root = brent_tol(
-            Interval::new(Mjd::new(3.0), Mjd::new(4.0)),
+            Interval::new(
+                Mjd::from_raw_unchecked(Days::new(3.0)),
+                Mjd::from_raw_unchecked(Days::new(4.0)),
+            ),
             Radians::new((3.0_f64).sin()),
             Radians::new((4.0_f64).sin()),
             |t: Mjd| Radians::new(mjd_f64(t).sin()),
             Days::new(1e-3),
         )
         .expect("relaxed");
-        assert!((root - Mjd::new(std::f64::consts::PI)).abs() < Days::new(2e-3));
+        assert!((root.raw() - Days::new(std::f64::consts::PI)).abs() < Days::new(2e-3));
     }
 
     #[test]

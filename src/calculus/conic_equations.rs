@@ -286,7 +286,11 @@ mod tests {
         )
         .unwrap();
         // 1e8 days ~ 274,000 years — tests M normalization for large accumulation.
-        let position = orbit.position_at(JulianDate::new(2451545.0 + 1e8)).unwrap();
+        let position = orbit
+            .position_at(JulianDate::from_raw_unchecked(qtty::Day::new(
+                2451545.0 + 1e8,
+            )))
+            .unwrap();
         assert!(position.x().is_finite());
         assert!(position.y().is_finite());
         assert!(position.z().is_finite());
@@ -301,10 +305,12 @@ mod tests {
             Degrees::new(260.04078),
             Degrees::new(68.15913068),
             Degrees::new(0.0),
-            JulianDate::new(2_458_997.030_358_636_3),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_458_997.030_358_636_3)),
         )
         .unwrap();
-        let position = orbit.position_at(JulianDate::new(2458999.0)).unwrap();
+        let position = orbit
+            .position_at(JulianDate::from_raw_unchecked(qtty::Day::new(2458999.0)))
+            .unwrap();
         assert!(position.x().is_finite());
         assert!(position.y().is_finite());
         assert!(position.z().is_finite());
@@ -387,7 +393,9 @@ mod tests {
             JulianDate::J2000,
         )
         .unwrap();
-        let position = orbit.position_at(JulianDate::new(2451545.5)).unwrap();
+        let position = orbit
+            .position_at(JulianDate::from_raw_unchecked(qtty::Day::new(2451545.5)))
+            .unwrap();
         assert!(position.x().is_finite());
         assert!(position.y().is_finite());
         assert!(position.z().is_finite());
@@ -405,7 +413,9 @@ mod tests {
             JulianDate::J2000,
         )
         .unwrap();
-        let position = orbit.position_at(JulianDate::new(2451645.0)).unwrap();
+        let position = orbit
+            .position_at(JulianDate::from_raw_unchecked(qtty::Day::new(2451645.0)))
+            .unwrap();
         assert!(position.x().is_finite());
         assert!(position.y().is_finite());
         assert!(position.z().is_finite());
@@ -425,7 +435,9 @@ mod tests {
         .unwrap();
         // Large dt to produce large M
         let position = orbit
-            .position_at(JulianDate::new(2451545.0 + 10000.0))
+            .position_at(JulianDate::from_raw_unchecked(qtty::Day::new(
+                2451545.0 + 10000.0,
+            )))
             .unwrap();
         assert!(position.x().is_finite());
         assert!(position.y().is_finite());

@@ -435,12 +435,12 @@ mod tests {
 
     /// JD for J2000 + 500 days (the midpoint → tau = 0).
     fn jd_mid() -> JulianDateG<TDB> {
-        JulianDateG::<TDB>::new(JD_J2000 + 500.0)
+        JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000 + 500.0))
     }
 
     /// JD for J2000 + 250 days (first quarter → tau = -0.5).
     fn jd_quarter() -> JulianDateG<TDB> {
-        JulianDateG::<TDB>::new(JD_J2000 + 250.0)
+        JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000 + 250.0))
     }
 
     // ── Position ──────────────────────────────────────────────────────────
@@ -480,7 +480,7 @@ mod tests {
     fn dyn_desc_position_at_boundary_does_not_panic() {
         // First JD in the segment.
         let desc = make_desc(100.0, 200.0, 300.0);
-        let jd_start = JulianDateG::<TDB>::new(JD_J2000); // et = 0 → idx = 0
+        let jd_start = JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000)); // et = 0 → idx = 0
         let pos = desc.position(jd_start);
         assert!(pos.x().is_finite());
     }
@@ -488,7 +488,7 @@ mod tests {
     #[test]
     fn dyn_desc_position_at_end_boundary_does_not_panic() {
         let desc = make_desc(100.0, 200.0, 300.0);
-        let jd_end = JulianDateG::<TDB>::new(JD_J2000 + 1000.0);
+        let jd_end = JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000 + 1000.0));
         let pos = desc.try_position(jd_end).expect("end boundary is in range");
         assert!(pos.x().is_finite());
     }
@@ -496,14 +496,14 @@ mod tests {
     #[test]
     fn dyn_desc_rejects_before_segment() {
         let desc = make_desc(100.0, 200.0, 300.0);
-        let before = JulianDateG::<TDB>::new(JD_J2000 - 1.0e-8);
+        let before = JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000 - 1.0e-8));
         assert!(desc.try_position(before).is_err());
     }
 
     #[test]
     fn dyn_desc_rejects_after_segment() {
         let desc = make_desc(100.0, 200.0, 300.0);
-        let after = JulianDateG::<TDB>::new(JD_J2000 + 1000.0 + 1.0e-8);
+        let after = JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000 + 1000.0 + 1.0e-8));
         assert!(desc.try_position_velocity(after).is_err());
     }
 
@@ -694,7 +694,7 @@ mod tests {
     #[test]
     fn static_desc_position_at_boundary() {
         let desc = make_static_desc();
-        let jd_start = JulianDateG::<TDB>::new(JD_J2000); // et=0 → idx=0
+        let jd_start = JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000)); // et=0 → idx=0
         let pos = desc.position(jd_start);
         assert!(pos.x().is_finite());
     }
@@ -702,7 +702,7 @@ mod tests {
     #[test]
     fn static_desc_position_at_end_boundary() {
         let desc = make_static_desc();
-        let jd_end = JulianDateG::<TDB>::new(JD_J2000 + 1000.0);
+        let jd_end = JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000 + 1000.0));
         let pos = desc
             .try_position(jd_end)
             .expect("end boundary is part of the last record");
@@ -712,8 +712,8 @@ mod tests {
     #[test]
     fn static_desc_rejects_out_of_range() {
         let desc = make_static_desc();
-        let before = JulianDateG::<TDB>::new(JD_J2000 - 1.0e-8);
-        let after = JulianDateG::<TDB>::new(JD_J2000 + 1000.0 + 1.0e-8);
+        let before = JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000 - 1.0e-8));
+        let after = JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000 + 1000.0 + 1.0e-8));
         assert!(desc.try_position(before).is_err());
         assert!(desc.try_velocity(after).is_err());
     }
@@ -744,7 +744,7 @@ mod tests {
             data,
         };
         // At J2000 + 750 days → et = 750 * 86400 = 64800000, idx = (64800000 / 43200000) = 1
-        let jd_second = JulianDateG::<TDB>::new(JD_J2000 + 750.0);
+        let jd_second = JulianDateG::<TDB>::from_raw_unchecked(Days::new(JD_J2000 + 750.0));
         let pos = desc.position(jd_second);
         // At tau = (et - mid1) / rad with et = 750*86400, mid1 = 750*86400 → tau=0 → x=200
         let et_s = 750.0 * SECONDS_PER_DAY;

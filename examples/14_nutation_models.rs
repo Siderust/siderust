@@ -20,7 +20,7 @@ fn chord_delta(a: &Direction<EquatorialTrueOfDate>, b: &Direction<EquatorialTrue
 }
 
 fn main() {
-    let jd = JulianDate::new(2_458_850.0);
+    let jd = JulianDate::from_raw_unchecked(siderust::qtty::Days::new(2_458_850.0));
     let icrs = Direction::<ICRS>::new(0.6, -0.3, 0.74);
 
     println!("=== Nutation Model Selection ===\n");

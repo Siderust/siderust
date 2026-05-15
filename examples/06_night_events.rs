@@ -24,8 +24,10 @@ fn week_period_from_date(start_date: NaiveDate) -> Period<ModifiedJulianDate> {
         start_date,
         chrono::NaiveTime::from_hms_opt(0, 0, 0).expect("00:00:00 is valid"),
     ));
-    let mjd_start = ModifiedJulianDate::from_chrono(start_dt);
-    let mjd_end = mjd_start + Days::new(7.0);
+    let mjd_start = siderust::time::Time::<siderust::time::UTC>::from_chrono(start_dt)
+        .to::<siderust::time::TT>()
+        .to::<siderust::time::MJD>();
+    let mjd_end = ModifiedJulianDate::from_raw_unchecked(mjd_start.raw() + Days::new(7.0));
     Period::new(mjd_start, mjd_end)
 }
 
@@ -57,7 +59,11 @@ fn print_events_for_type(
                 "night-type raise (Sun rising above threshold)"
             }
         };
-        let t_utc = ev.mjd.to_chrono().expect("valid UTC");
+        let t_utc = ev
+            .mjd
+            .to::<siderust::time::UTC>()
+            .to_chrono()
+            .expect("valid UTC");
         println!("  - {} at {}", label, t_utc.format("%Y-%m-%dT%H:%M:%S"));
     }
 
@@ -77,13 +83,21 @@ fn print_periods_for_type(
     );
 
     for p in periods {
-        let s = p.start.to_chrono().expect("valid UTC");
-        let e = p.end.to_chrono().expect("valid UTC");
+        let s = p
+            .start
+            .to::<siderust::time::UTC>()
+            .to_chrono()
+            .expect("valid UTC");
+        let e = p
+            .end
+            .to::<siderust::time::UTC>()
+            .to_chrono()
+            .expect("valid UTC");
         println!(
             "  - {} -> {} ({:.1} h)",
             s.format("%Y-%m-%dT%H:%M:%S"),
             e.format("%Y-%m-%dT%H:%M:%S"),
-            ((p).end - (p).start).to::<siderust::qtty::Hour>()
+            (p.end.raw() - p.start.raw()).to::<siderust::qtty::Hour>()
         );
     }
 }

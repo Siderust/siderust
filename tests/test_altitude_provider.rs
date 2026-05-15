@@ -42,15 +42,15 @@ fn north_pole() -> Geodetic<ECEF> {
 
 fn one_day() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60001.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60001.0)),
     )
 }
 
 fn one_week() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60007.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60007.0)),
     )
 }
 
@@ -59,30 +59,30 @@ fn assert_periods_valid(
     periods: &[Period<ModifiedJulianDate>],
     window: Period<ModifiedJulianDate>,
 ) {
-    let win_start = window.start.mjd_value();
-    let win_end = window.end.mjd_value();
+    let win_start = window.start.raw().value();
+    let win_end = window.end.raw().value();
 
     for (i, p) in periods.iter().enumerate() {
         // Positive duration
         assert!(
-            ((p).end - (p).start) >= Days::new(0.0),
+            ((p).end.raw() - (p).start.raw()) >= Days::new(0.0),
             "Period {} has negative duration: {:?}",
             i,
             p
         );
         // Within window
         assert!(
-            p.start.mjd_value() >= win_start - 1e-9,
+            p.start.raw().value() >= win_start - 1e-9,
             "Period {} starts before window: {} < {}",
             i,
-            p.start.mjd_value(),
+            p.start.raw().value(),
             win_start
         );
         assert!(
-            p.end.mjd_value() <= win_end + 1e-9,
+            p.end.raw().value() <= win_end + 1e-9,
             "Period {} ends after window: {} > {}",
             i,
-            p.end.mjd_value(),
+            p.end.raw().value(),
             win_end
         );
     }
@@ -90,7 +90,7 @@ fn assert_periods_valid(
     // Sorted and non-overlapping
     for w in periods.windows(2) {
         assert!(
-            w[0].end.mjd_value() <= w[1].start.mjd_value() + 1e-9,
+            w[0].end.raw().value() <= w[1].start.raw().value() + 1e-9,
             "Periods overlap or out of order: {:?} vs {:?}",
             w[0],
             w[1]
@@ -108,7 +108,7 @@ fn sun_daytime_periods_trait() {
     assert_periods_valid(&periods, one_day());
     assert!(!periods.is_empty(), "Sun should rise at 51°N");
     for p in &periods {
-        let hours = ((p).end - (p).start) * 24.0;
+        let hours = ((p).end.raw() - (p).start.raw()) * 24.0;
         assert!(
             hours.value() > 5.0 && hours.value() < 20.0,
             "Day length {} hours is unreasonable at 51°N in Feb",
@@ -129,8 +129,8 @@ fn sun_twilight_band_trait() {
     let query = AltitudeQuery {
         observer: greenwich(),
         window: Period::new(
-            ModifiedJulianDate::new(60000.0),
-            ModifiedJulianDate::new(60002.0),
+            ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+            ModifiedJulianDate::from_raw_unchecked(Days::new(60002.0)),
         ),
         min_altitude: Degrees::new(-18.0),
         max_altitude: Degrees::new(-12.0),
@@ -222,11 +222,11 @@ fn icrs_direction_matches_star() {
     );
     for (sp, dp) in star_periods.iter().zip(dir_periods.iter()) {
         assert!(
-            (sp.start.mjd_value() - dp.start.mjd_value()).abs() < 1e-6,
+            (sp.start.raw().value() - dp.start.raw().value()).abs() < 1e-6,
             "Start mismatch"
         );
         assert!(
-            (sp.end.mjd_value() - dp.end.mjd_value()).abs() < 1e-6,
+            (sp.end.raw().value() - dp.end.raw().value()).abs() < 1e-6,
             "End mismatch"
         );
     }
@@ -279,26 +279,38 @@ fn free_function_direction() {
 
 #[test]
 fn altitude_at_sun_in_range() {
-    let alt = Sun.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
+    let alt = Sun.altitude_at(
+        &greenwich(),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)),
+    );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_moon_in_range() {
-    let alt = Moon.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
+    let alt = Moon.altitude_at(
+        &greenwich(),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)),
+    );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_star_in_range() {
-    let alt = SIRIUS.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
+    let alt = SIRIUS.altitude_at(
+        &greenwich(),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)),
+    );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
 #[test]
 fn altitude_at_icrs_direction_in_range() {
     let dir = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
-    let alt = dir.altitude_at(&greenwich(), ModifiedJulianDate::new(51544.5));
+    let alt = dir.altitude_at(
+        &greenwich(),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)),
+    );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
 
@@ -309,8 +321,8 @@ fn altitude_at_icrs_direction_in_range() {
 #[test]
 fn empty_window_returns_empty() {
     let window = Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60000.0),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
     );
     let query = AltitudeQuery {
         observer: greenwich(),
@@ -334,7 +346,10 @@ fn full_sky_range_returns_full_window() {
     };
     let periods = Sun.altitude_periods(&query);
     assert!(!periods.is_empty());
-    let total: f64 = periods.iter().map(|p| ((p).end - (p).start).value()).sum();
+    let total: f64 = periods
+        .iter()
+        .map(|p| ((p).end.raw() - (p).start.raw()).value())
+        .sum();
     assert!(
         (total - 1.0).abs() < 0.01,
         "Full sky range should span ~1 day, got {}",
@@ -351,12 +366,12 @@ fn circumpolar_star_always_above() {
         "Polaris should be continuously above horizon at 51°N"
     );
     assert!(
-        (((periods[0]).end - (periods[0]).start) - Days::new(1.0))
+        (((periods[0]).end.raw() - (periods[0]).start.raw()) - Days::new(1.0))
             .abs()
             .value()
             < 0.01,
         "Polaris period should span full day, got {} days",
-        ((periods[0]).end - (periods[0]).start)
+        (periods[0]).end.raw() - (periods[0]).start.raw()
     );
 }
 
@@ -384,8 +399,8 @@ fn never_visible_star_at_north_pole() {
 fn periods_at_span_edges_are_clipped() {
     // Use a very short window; periods should not extend beyond it
     let window = Period::new(
-        ModifiedJulianDate::new(60000.4),
-        ModifiedJulianDate::new(60000.6),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.4)),
+        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.6)),
     );
     let periods = Sun.above_threshold(greenwich(), window, Degrees::new(0.0));
     assert_periods_valid(&periods, window);
@@ -400,8 +415,14 @@ fn above_and_below_cover_full_window() {
     let above = Sun.above_threshold(observer, window, threshold);
     let below = Sun.below_threshold(observer, window, threshold);
 
-    let total_above: f64 = above.iter().map(|p| ((p).end - (p).start).value()).sum();
-    let total_below: f64 = below.iter().map(|p| ((p).end - (p).start).value()).sum();
+    let total_above: f64 = above
+        .iter()
+        .map(|p| ((p).end.raw() - (p).start.raw()).value())
+        .sum();
+    let total_below: f64 = below
+        .iter()
+        .map(|p| ((p).end.raw() - (p).start.raw()).value())
+        .sum();
     let total = total_above + total_below;
 
     assert!(

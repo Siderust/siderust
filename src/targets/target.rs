@@ -297,7 +297,9 @@ mod tests {
             crate::qtty::Degrees::new(85.0),
             800.0,
         );
-        let new_time = JulianDate::J2000 + crate::qtty::Days::new(365.25);
+        let new_time = JulianDate::from_raw_unchecked(
+            JulianDate::J2000.raw() + crate::qtty::Days::new(365.25),
+        );
 
         target.update(new_position, new_time);
 

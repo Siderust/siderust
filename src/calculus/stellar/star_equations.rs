@@ -39,7 +39,7 @@ use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical;
 use crate::coordinates::transform::AstroContext;
 use crate::qtty::*;
-use crate::time::{JulianDate, JD};
+use crate::time::JulianDate;
 use crate::time::{ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
@@ -179,7 +179,7 @@ impl StarAltitudeParams {
     /// `HA = GAST(t) + λ − α` for true-of-date right ascension.
     #[inline]
     fn hour_angle(&self, mjd: ModifiedJulianDate) -> Degrees {
-        let jd: JulianDate = mjd.to_time().to::<JD>();
+        let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
         let ctx: AstroContext = AstroContext::default();
         let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
@@ -319,8 +319,8 @@ mod tests {
             JulianDate::J2000,
         );
         let period = Period::new(
-            ModifiedJulianDate::new(60000.0),
-            ModifiedJulianDate::new(60007.0),
+            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0)),
         );
         if let ThresholdResult::Crossings { h0 } = params.threshold_ha(Radians::new(0.0)) {
             let crossings = params.predict_crossings(period, h0);
@@ -333,8 +333,8 @@ mod tests {
 
             // All crossing times should be within the period
             for (t, _) in &crossings {
-                assert!(*t >= period.start - Days::new(1e-10));
-                assert!(*t <= period.end + Days::new(1e-10));
+                assert!(t.raw() >= period.start.raw() - Days::new(1e-10));
+                assert!(t.raw() <= period.end.raw() + Days::new(1e-10));
             }
 
             // Crossings should alternate rise/set (roughly)

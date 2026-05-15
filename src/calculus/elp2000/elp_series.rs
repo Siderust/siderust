@@ -945,7 +945,11 @@ mod tests {
         use chrono::{DateTime, NaiveDate, Utc};
         let date = NaiveDate::from_ymd_opt(yyyy, mm, dd).expect("invalid date");
         let datetime = date.and_hms_opt(h, m, s).expect("invalid time");
-        JulianDate::from_chrono(DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc))
+        tempoch::Time::<tempoch::UTC>::from_chrono(DateTime::<Utc>::from_naive_utc_and_offset(
+            datetime, Utc,
+        ))
+        .to::<tempoch::TT>()
+        .to::<tempoch::JD>()
     }
 
     /// Build time array t = [1, t1, t1², t1³, t1⁴] from Julian centuries
@@ -955,7 +959,7 @@ mod tests {
 
     /// Build a JulianDate from Julian centuries offset from J2000
     fn jd_from_centuries(t1: f64) -> JulianDate {
-        JulianDate::J2000 + Days::new(t1 * 36_525.0)
+        JulianDate::from_raw_unchecked(JulianDate::J2000.raw() + Days::new(t1 * 36_525.0))
     }
 
     // ===========================================================================
@@ -1546,7 +1550,7 @@ mod tests {
         // Moon's orbital speed is ~1.0 km/s, check velocity is in reasonable range
         let jd0 = make_jd_utc(2020, 6, 15, 12, 0, 0);
         let dt_days = 1.0 / 24.0; // 1 hour
-        let jd1 = jd0 + Days::new(dt_days);
+        let jd1 = JulianDate::from_raw_unchecked(jd0.raw() + Days::new(dt_days));
         let pos0 = Moon::get_geo_position::<Kilometer>(jd0);
         let pos1 = Moon::get_geo_position::<Kilometer>(jd1);
         let (x0, y0, z0) = (

@@ -107,7 +107,7 @@ fn show_topocentric_conversion(
 // ─── main ─────────────────────────────────────────────────────────────────────
 
 fn main() {
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::from_raw_unchecked(siderust::qtty::Days::new(2_460_000.5));
     println!("Center conversion demo at JD(TT) = {:.1}\n", jd);
 
     let p_bary = Position::<Barycentric, F, U>::new(0.40, -0.10, 1.20);

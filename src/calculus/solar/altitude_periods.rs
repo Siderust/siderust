@@ -33,7 +33,7 @@ use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, JD};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
 
 // =============================================================================
 // Constants
@@ -60,7 +60,7 @@ const SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
 ///
 /// Topocentric altitude as `Quantity<Radian>` (no refraction).
 pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Quantity<Radian> {
-    let jd: JulianDate = mjd.to_time().to::<JD>();
+    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
     Sun::get_horizontal::<AstronomicalUnit>(jd, *site)
         .alt()
         .to::<Radian>()
@@ -162,7 +162,9 @@ mod tests {
     #[test]
     fn test_sun_altitude_basic() {
         let site = greenwich_site();
-        let mjd: ModifiedJulianDate = crate::time::JulianDate::J2000.to_time().to::<MJD>();
+        let mjd: ModifiedJulianDate = crate::time::JulianDate::J2000
+            .to_time()
+            .to::<crate::time::MJD>();
         let alt = sun_altitude_rad(mjd, &site);
         assert!(
             alt > Radians::new(-std::f64::consts::FRAC_PI_2)
@@ -175,8 +177,8 @@ mod tests {
         use crate::calculus::solar::twilight;
 
         let site = greenwich_site();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60007.0);
+        let mjd_start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
+        let mjd_end = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0));
         let period = Period::new(mjd_start, mjd_end);
 
         let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
@@ -187,11 +189,11 @@ mod tests {
 
         for night in &nights {
             assert!(
-                ((night).end - (night).start) > Days::new(0.0),
+                (night.end.raw() - night.start.raw()) > Days::new(0.0),
                 "Night duration should be positive"
             );
             assert!(
-                ((night).end - (night).start) < Days::new(1.0),
+                (night.end.raw() - night.start.raw()) < Days::new(1.0),
                 "Night should be less than 24 hours"
             );
         }
@@ -200,8 +202,8 @@ mod tests {
     #[test]
     fn test_find_altitude_range_periods() {
         let site = greenwich_site();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60007.0);
+        let mjd_start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
+        let mjd_end = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0));
 
         let period = Period::new(mjd_start, mjd_end);
 

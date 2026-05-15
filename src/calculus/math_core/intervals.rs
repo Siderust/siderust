@@ -86,7 +86,14 @@ where
     let mut t = t_start_v;
     let mut prev = g(t);
     while t < t_end_v {
-        let next_t = { let t_next = Mjd::from_raw_unchecked(t.raw() + step_v); if t_next.raw() <= t_end_v.raw() { t_next } else { t_end_v } };
+        let next_t = {
+            let t_next = Mjd::from_raw_unchecked(t.raw() + step_v);
+            if t_next.raw() <= t_end_v.raw() {
+                t_next
+            } else {
+                t_end_v
+            }
+        };
         let next_v = g(next_t);
 
         if (prev < zero && next_v > zero) || (prev > zero && next_v < zero) {
@@ -254,7 +261,8 @@ where
                 t_end
             };
 
-            let mid_v = Mjd::from_raw_unchecked(enter_t.raw() + (exit_t.raw() - enter_t.raw()) * 0.5);
+            let mid_v =
+                Mjd::from_raw_unchecked(enter_t.raw() + (exit_t.raw() - enter_t.raw()) * 0.5);
             if mid_v >= t_start && mid_v <= t_end && is_above(f(mid_v)) {
                 periods.push(Period::new(enter_t, exit_t));
             }
@@ -381,14 +389,14 @@ mod tests {
     type Radians = Quantity<Radian>;
 
     fn mjd(v: f64) -> Mjd {
-        Mjd::new(v)
+        Mjd::from_raw_unchecked(Days::new(v))
     }
     fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
         Period::new(mjd(a), mjd(b))
     }
 
     fn mjd_scalar(t: Mjd) -> f64 {
-        t.mjd_value()
+        t.raw().value()
     }
 
     #[test]
@@ -402,9 +410,9 @@ mod tests {
         // Should find at least one above-threshold period
         assert!(!periods.is_empty(), "got {:?}", periods);
         // Total above duration should be roughly 0.5
-        let total = periods
-            .iter()
-            .fold(Days::new(0.0), |sum, p| sum + ((p).end.raw() - (p).start.raw()));
+        let total = periods.iter().fold(Days::new(0.0), |sum, p| {
+            sum + ((p).end.raw() - (p).start.raw())
+        });
         assert!(
             (total - Days::new(0.5)).abs() < Days::new(0.05),
             "total = {total}"
@@ -449,9 +457,9 @@ mod tests {
 
         assert!(!periods.is_empty(), "should find some in-range periods");
 
-        let total = periods
-            .iter()
-            .fold(Days::new(0.0), |sum, p| sum + ((p).end.raw() - (p).start.raw()));
+        let total = periods.iter().fold(Days::new(0.0), |sum, p| {
+            sum + ((p).end.raw() - (p).start.raw())
+        });
         // Analytically, sin(x) ∈ (-0.5, 0.5) for 1/3 of each full cycle ≈ 0.333
         assert!(
             total > Days::new(0.25) && total < Days::new(0.45),
@@ -474,7 +482,10 @@ mod tests {
     fn complement_empty_input() {
         let gaps = complement(period(0.0, 10.0), &[]);
         assert_eq!(gaps.len(), 1);
-        assert!((((gaps[0]).end.raw() - (gaps[0]).start.raw()) - Days::new(10.0)).abs() < Days::new(1e-10));
+        assert!(
+            (((gaps[0]).end.raw() - (gaps[0]).start.raw()) - Days::new(10.0)).abs()
+                < Days::new(1e-10)
+        );
     }
 
     #[test]
