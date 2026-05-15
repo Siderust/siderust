@@ -46,7 +46,7 @@ use crate::time::{complement_within, ModifiedJulianDate, Period};
 use crate::calculus::horizontal;
 use crate::coordinates::transform::Transform;
 use crate::coordinates::{cartesian, centers::Geocentric, frames};
-use crate::time::JulianDate;
+use crate::time::{JulianDate, JD};
 
 // ---------------------------------------------------------------------------
 // Trait Definition
@@ -224,7 +224,7 @@ impl AzimuthProvider for solar_system::Sun {
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         events::azimuth_range_periods(self, query)
@@ -242,7 +242,7 @@ impl AzimuthProvider for solar_system::Moon {
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         events::azimuth_range_periods(self, query)
@@ -274,7 +274,7 @@ impl AzimuthProvider for direction::ICRS {
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         events::azimuth_range_periods(self, query)
@@ -301,7 +301,7 @@ where
         AstronomicalUnit,
     >,
 {
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to_time().to::<JD>();
     let bary_ecl = vsop87e_fn(jd);
     let geo_equ: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
         bary_ecl.transform(jd);
@@ -326,7 +326,7 @@ macro_rules! impl_azimuth_provider_vsop87 {
                 }
 
                 fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
-                    if (query.window.end - query.window.start) <= Days::zero() {
+                    if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
                         return Vec::new();
                     }
                     events::azimuth_range_periods(self, query)

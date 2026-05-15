@@ -39,7 +39,7 @@ use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical;
 use crate::coordinates::transform::AstroContext;
 use crate::qtty::*;
-use crate::time::JulianDate;
+use crate::time::{JulianDate, JD};
 use crate::time::{ModifiedJulianDate, Period};
 
 // ---------------------------------------------------------------------------
@@ -179,7 +179,7 @@ impl StarAltitudeParams {
     /// `HA = GAST(t) + λ − α` for true-of-date right ascension.
     #[inline]
     fn hour_angle(&self, mjd: ModifiedJulianDate) -> Degrees {
-        let jd: JulianDate = mjd.into();
+        let jd: JulianDate = mjd.to_time().to::<JD>();
         let ctx: AstroContext = AstroContext::default();
         let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
@@ -216,8 +216,15 @@ impl StarAltitudeParams {
             let dt_first: Days = (SIDEREAL_DAY_DAYS * phase).to::<Day>();
 
             let mut dt = dt_first;
-            while period.start + dt <= period.end + CROSSING_EDGE_EPS {
-                let t_cross = (period.start + dt).max(period.start).min(period.end);
+            while (period.start.raw() + dt) <= (period.end.raw() + CROSSING_EDGE_EPS) {
+                let t_unclamped = ModifiedJulianDate::from_raw_unchecked(period.start.raw() + dt);
+                let t_cross = if t_unclamped.raw() >= period.end.raw() {
+                    period.end
+                } else if t_unclamped.raw() <= period.start.raw() {
+                    period.start
+                } else {
+                    t_unclamped
+                };
                 crossings.push((t_cross, dir));
                 dt += SIDEREAL_DAY_DAYS;
             }

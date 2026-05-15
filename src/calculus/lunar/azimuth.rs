@@ -26,7 +26,7 @@ use crate::bodies::solar_system::Moon;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{JulianDate, ModifiedJulianDate};
+use crate::time::{JulianDate, ModifiedJulianDate, JD};
 
 /// Computes the Moon's topocentric azimuth in **radians** (North-clockwise,
 /// range `[0, 2π)`) at a given Modified Julian Date and observer site.
@@ -43,7 +43,7 @@ use crate::time::{JulianDate, ModifiedJulianDate};
 ///
 /// `Radians` in `[0, 2π)`, North‑clockwise (no refraction).
 pub(crate) fn moon_azimuth_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Radians {
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to_time().to::<JD>();
     Moon::get_horizontal::<Kilometer>(jd, *site)
         .az()
         .to::<Radian>()

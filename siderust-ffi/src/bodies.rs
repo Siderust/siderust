@@ -117,7 +117,7 @@ pub extern "C" fn siderust_star_create(
             LightYears::new(distance_ly),
         );
 
-        let epoch = JulianDate::new(epoch_jd);
+        let epoch = JulianDate::from_raw_unchecked(qtty::Day::new(epoch_jd));
 
         let pm = if proper_motion.is_null() {
             None

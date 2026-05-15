@@ -56,7 +56,7 @@ use std::f64::consts::TAU;
 #[inline]
 pub fn earth_rotation_angle(jd_ut1: JulianDate) -> Radians {
     // Du = JD(UT1) − J2000.0
-    let du = (jd_ut1 - JulianDate::J2000).value();
+    let du = (jd_ut1.raw() - JulianDate::J2000.raw()).value();
 
     // ERA = 2π × (0.7790572732640 + 1.00273781191135448 × Du)
     // To maintain precision, split the fractional and integer parts:

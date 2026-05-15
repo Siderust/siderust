@@ -44,7 +44,7 @@ use crate::time::{ModifiedJulianDate, Period};
 // Imports for planet altitude support
 use crate::calculus::horizontal;
 use crate::coordinates::{cartesian, centers::Geocentric, frames};
-use crate::time::JulianDate;
+use crate::time::{JulianDate, JD};
 
 // ---------------------------------------------------------------------------
 // Trait Definition
@@ -219,7 +219,7 @@ pub fn altitude_periods<B: AltitudePeriodsProvider>(
 /// **Sun**, delegates to [`crate::calculus::solar`].
 impl AltitudePeriodsProvider for solar_system::Sun {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::solar;
@@ -247,7 +247,7 @@ impl AltitudePeriodsProvider for solar_system::Sun {
 /// **Moon**, delegates to [`crate::calculus::lunar`].
 impl AltitudePeriodsProvider for solar_system::Moon {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::lunar;
@@ -292,7 +292,7 @@ impl AltitudePeriodsProvider for Star<'_> {
 /// **direction::ICRS**, the lightest path: raw RA/Dec → stellar engine.
 impl AltitudePeriodsProvider for direction::ICRS {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::stellar;
@@ -360,7 +360,7 @@ where
         AstronomicalUnit,
     >,
 {
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to_time().to::<JD>();
     // 1) VSOP87e → barycentric ecliptic J2000
     let bary_ecl = vsop87e_fn(jd);
     // 2) Frame rotation + center shift → geocentric equatorial J2000
@@ -382,7 +382,7 @@ macro_rules! impl_altitude_provider_vsop87 {
         $(
             impl AltitudePeriodsProvider for solar_system::$Planet {
                 fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-                    if (query.window.end - query.window.start) <= Days::zero() {
+                    if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
                         return Vec::new();
                     }
                     let f = |t: ModifiedJulianDate| -> Radians {

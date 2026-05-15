@@ -112,31 +112,31 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let mut p = period;
-    let mut x1 = p.end - PHI * (p.end - p.start);
-    let mut x2 = p.start + PHI * (p.end - p.start);
+    let mut x1 = Mjd::from_raw_unchecked(p.end.raw() - PHI * (p.end.raw() - p.start.raw()));
+    let mut x2 = Mjd::from_raw_unchecked(p.start.raw() + PHI * (p.end.raw() - p.start.raw()));
     let mut f1: Quantity<V> = f(x1);
     let mut f2: Quantity<V> = f(x2);
 
     for _ in 0..MAX_ITER {
-        if (p.end - p.start) < tol {
+        if (p.end.raw() - p.start.raw()) < tol {
             break;
         }
         if f1 < f2 {
             p.end = x2;
             x2 = x1;
             f2 = f1;
-            x1 = p.end - PHI * (p.end - p.start);
+            x1 = Mjd::from_raw_unchecked(p.end.raw() - PHI * (p.end.raw() - p.start.raw()));
             f1 = f(x1);
         } else {
             p.start = x1;
             x1 = x2;
             f1 = f2;
-            x2 = p.start + PHI * (p.end - p.start);
+            x2 = Mjd::from_raw_unchecked(p.start.raw() + PHI * (p.end.raw() - p.start.raw()));
             f2 = f(x2);
         }
     }
 
-    let t = p.start.mean(p.end);
+    let t = Mjd::from_raw_unchecked((p.start.raw() + p.end.raw()) / 2.0);
     (t, f(t))
 }
 
@@ -184,8 +184,8 @@ where
 {
     let tv = t;
     let fc = f(t);
-    let fl = f(tv - PROBE_EPS);
-    let fr = f(tv + PROBE_EPS);
+    let fl = f(Mjd::from_raw_unchecked(tv.raw() - PROBE_EPS));
+    let fr = f(Mjd::from_raw_unchecked(tv.raw() + PROBE_EPS));
 
     if fc >= fl && fc >= fr {
         Some(ExtremumKind::Maximum)
@@ -234,12 +234,12 @@ where
 
     let mut t0 = t_start_v;
     let mut f0 = f(t0);
-    let mut t1 = (t0 + step_v).min(t_end_v);
+    let mut t1 = { let t_next = Mjd::from_raw_unchecked(t0.raw() + step_v); if t_next.raw() <= t_end_v.raw() { t_next } else { t_end_v } };
     let mut f1 = f(t1);
     let mut prev_rising = f1 > f0;
 
     loop {
-        let t2 = (t1 + step_v).min(t_end_v);
+        let t2 = { let t_next = Mjd::from_raw_unchecked(t1.raw() + step_v); if t_next.raw() <= t_end_v.raw() { t_next } else { t_end_v } };
         if t2 <= t1 {
             break;
         }
@@ -300,8 +300,8 @@ where
 
     let deriv = |t: Mjd| -> Quantity<V> {
         let tv = t;
-        let fwd = f(tv + fd_v);
-        let bwd = f(tv - fd_v);
+        let fwd = f(Mjd::from_raw_unchecked(tv.raw() + fd_v));
+        let bwd = f(Mjd::from_raw_unchecked(tv.raw() - fd_v));
         (fwd - bwd) / (fd_v + fd_v).value()
     };
 
@@ -310,7 +310,7 @@ where
     let mut prev_d = deriv(t);
 
     while t < t_end_v {
-        let next_t = (t + step_v).min(t_end_v);
+        let next_t = { let t_next = Mjd::from_raw_unchecked(t.raw() + step_v); if t_next.raw() <= t_end_v.raw() { t_next } else { t_end_v } };
         let next_d = deriv(next_t);
         if opposite_sign(prev_d, next_d) {
             if let Some(root_mjd) =
@@ -370,7 +370,7 @@ mod tests {
         let (t, v) = minimize(period(-5.0, 5.0), &|t: Mjd| {
             Radians::new((mjd_f64(t) - 2.0).powi(2))
         });
-        assert!((t - mjd(2.0)).abs() < Days::new(1e-7), "t = {}", t);
+        assert!((t.raw() - mjd(2.0).raw()).abs() < Days::new(1e-7), "t = {}", t);
         assert!(v < Radians::new(1e-12), "v = {}", v);
     }
 
@@ -379,7 +379,7 @@ mod tests {
         let (t, v) = maximize(period(-5.0, 5.0), &|t: Mjd| {
             Radians::new(-(mjd_f64(t) - 3.0).powi(2) + 10.0)
         });
-        assert!((t - mjd(3.0)).abs() < Days::new(1e-7), "t = {}", t);
+        assert!((t.raw() - mjd(3.0).raw()).abs() < Days::new(1e-7), "t = {}", t);
         assert!(
             (v - Radians::new(10.0)).abs() < Radians::new(1e-6),
             "v = {}",
@@ -430,13 +430,13 @@ mod tests {
             .unwrap();
 
         assert!(
-            (max_ext.t - mjd(0.25)).abs() < Days::new(1e-6),
+            (max_ext.t.raw() - mjd(0.25).raw()).abs() < Days::new(1e-6),
             "max at {}",
             max_ext.t
         );
         assert!((max_ext.value - Radians::new(1.0)).abs() < Radians::new(1e-6));
         assert!(
-            (min_ext.t - mjd(0.75)).abs() < Days::new(1e-6),
+            (min_ext.t.raw() - mjd(0.75).raw()).abs() < Days::new(1e-6),
             "min at {}",
             min_ext.t
         );
@@ -463,12 +463,12 @@ mod tests {
             .unwrap();
 
         assert!(
-            (max_ext.t - mjd(0.25)).abs() < Days::new(1e-3),
+            (max_ext.t.raw() - mjd(0.25).raw()).abs() < Days::new(1e-3),
             "max at {}",
             max_ext.t
         );
         assert!(
-            (min_ext.t - mjd(0.75)).abs() < Days::new(1e-3),
+            (min_ext.t.raw() - mjd(0.75).raw()).abs() < Days::new(1e-3),
             "min at {}",
             min_ext.t
         );

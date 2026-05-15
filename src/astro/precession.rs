@@ -67,7 +67,7 @@ use affn::Rotation3;
 /// * SOFA routine `iauPfw06`
 #[inline]
 pub fn precession_fw_angles(jd: JulianDate) -> (Radians, Radians, Radians, Radians) {
-    let t = jd.julian_centuries();
+    let t = (jd.raw().value() - 2_451_545.0) / 36525.0;
     let t2 = t * t;
     let t3 = t2 * t;
     let t4 = t3 * t;
@@ -118,13 +118,13 @@ pub fn precession_fw_angles(jd: JulianDate) -> (Radians, Radians, Radians, Radia
 /// * SOFA routine `iauObl06`
 #[inline]
 pub fn mean_obliquity_iau2006(jd: JulianDate) -> Radians {
-    let t = jd.julian_centuries();
+    let t = (jd.raw().value() - 2_451_545.0) / 36525.0;
     let t2 = t * t;
     let t3 = t2 * t;
     let t4 = t3 * t;
     let t5 = t4 * t;
 
-    let epsa_as = 84381.406 - 46.836_769 * t - 0.000_183_1 * t2 + 0.002_003_40 * t3
+    let epsa_as: f64 = 84381.406 - 46.836_769 * t - 0.000_183_1 * t2 + 0.002_003_40 * t3
         - 5.76e-7 * t4
         - 4.34e-8 * t5;
 

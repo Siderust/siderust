@@ -33,7 +33,7 @@ use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, JD};
 
 // =============================================================================
 // Constants
@@ -60,7 +60,7 @@ const SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
 ///
 /// Topocentric altitude as `Quantity<Radian>` (no refraction).
 pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Quantity<Radian> {
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to_time().to::<JD>();
     Sun::get_horizontal::<AstronomicalUnit>(jd, *site)
         .alt()
         .to::<Radian>()
@@ -162,7 +162,7 @@ mod tests {
     #[test]
     fn test_sun_altitude_basic() {
         let site = greenwich_site();
-        let mjd: ModifiedJulianDate = crate::time::JulianDate::J2000.into();
+        let mjd: ModifiedJulianDate = crate::time::JulianDate::J2000.to_time().to::<MJD>();
         let alt = sun_altitude_rad(mjd, &site);
         assert!(
             alt > Radians::new(-std::f64::consts::FRAC_PI_2)

@@ -190,7 +190,7 @@ impl ConicOrbit {
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -294,7 +294,7 @@ impl MeanMotionOrbit {
         if !mean_motion.value().is_finite() || mean_motion.value() <= 0.0 {
             return Err(ConicError::InvalidMeanMotion);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {

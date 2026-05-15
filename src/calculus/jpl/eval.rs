@@ -76,7 +76,7 @@ fn locate_params(
     n_records: usize,
     jd_tdb: JulianDateG<TDB>,
 ) -> Result<(usize, f64, Seconds), EphemerisError> {
-    let et = jd_to_et(jd_tdb.jd_value());
+    let et = jd_to_et(jd_tdb.raw().value());
     let init_s = init.value();
     let intlen_s = intlen.value();
     let et_s = et.value();
@@ -91,9 +91,9 @@ fn locate_params(
 
     let span_s = intlen_s * n_records as f64;
     let end_s = init_s + span_s;
-    if !jd_tdb.jd_value().is_finite() || et_s < init_s || et_s > end_s {
+    if !jd_tdb.raw().value().is_finite() || et_s < init_s || et_s > end_s {
         return Err(EphemerisError::OutOfRange {
-            jd: jd_tdb.jd_value(),
+            jd: jd_tdb.raw().value(),
             start_jd: 2_451_545.0 + init_s / SECONDS_PER_DAY,
             end_jd: 2_451_545.0 + end_s / SECONDS_PER_DAY,
         });

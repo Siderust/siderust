@@ -158,7 +158,7 @@ fn direction_payload_from_cartesian_pos(
 fn build_inner_target(
     data: &SiderustGenericTargetData,
 ) -> Result<CoordinateWithPM<spherical::direction::ICRS>, SiderustStatus> {
-    let epoch = JulianDate::new(data.epoch_jd);
+    let epoch = JulianDate::from_raw_unchecked(qtty::Day::new(data.epoch_jd));
     let source_dir = match data.kind {
         SiderustTargetCoordKind::SphericalDir => unsafe { data.coord.spherical_dir },
         SiderustTargetCoordKind::SphericalPos => {

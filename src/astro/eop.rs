@@ -84,7 +84,7 @@ impl EopValues {
     /// Convert UTC Julian Date to UT1 Julian Date using this EOP's dUT1.
     #[inline]
     pub fn jd_ut1(&self, jd_utc: JulianDate) -> JulianDate {
-        JulianDate::new(jd_utc.jd_value() + self.dut1.to::<Day>().value())
+        JulianDate::from_raw_unchecked(qtty::Day::new(jd_utc.raw().value() + self.dut1.to::<Day>().value()))
     }
 }
 
@@ -224,10 +224,10 @@ impl IersEop {
 
 impl EopProvider for IersEop {
     fn try_eop_at(&self, jd_utc: JulianDate) -> Result<EopValues, EopError> {
-        let mjd = Days::new(jd_utc.jd_value() - 2_400_000.5);
+        let mjd = Days::new(jd_utc.raw().value() - 2_400_000.5);
 
         let e = tempoch::eop::builtin_eop_at(mjd).ok_or(EopError::NoData {
-            jd_utc: jd_utc.jd_value(),
+            jd_utc: jd_utc.raw().value(),
             mjd_utc: mjd.value(),
         })?;
 

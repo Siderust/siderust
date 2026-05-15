@@ -228,7 +228,7 @@ pub fn calculate_orbit_position(
     let n: RadiansPerDay = Radians::TAU / period;
 
     // 2) Days since epoch
-    let dt: Days = julian_date - elements.epoch;
+    let dt: Days = julian_date.raw() - elements.epoch.raw();
 
     // 3) Mean Anomaly (M) in radians
     let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
@@ -269,7 +269,7 @@ pub fn calculate_prepared_position(
     prepared: &PreparedOrbit,
     julian_date: JulianDate,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
-    let dt = (julian_date - prepared.elements().epoch).value();
+    let dt = (julian_date.raw() - prepared.elements().epoch.raw()).value();
     let m_rad = prepared.m0_rad() + prepared.mean_motion().value() * dt;
     let m_rad = Radians::new(m_rad % std::f64::consts::TAU);
 

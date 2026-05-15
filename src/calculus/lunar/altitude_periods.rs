@@ -32,7 +32,7 @@ use crate::calculus::math_core::intervals;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
+use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period, JD};
 
 use super::moon_cache::{find_and_label_crossings, MoonAltitudeContext};
 
@@ -64,7 +64,7 @@ pub(crate) fn moon_altitude_rad(
     mjd: ModifiedJulianDate,
     site: &Geodetic<ECEF>,
 ) -> Quantity<Radian> {
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to_time().to::<JD>();
     Moon::get_horizontal::<Kilometer>(jd, *site)
         .alt()
         .to::<Radian>()
@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn test_moon_altitude_basic() {
         let site = greenwich_site();
-        let mjd: ModifiedJulianDate = JulianDate::J2000.into();
+        let mjd: ModifiedJulianDate = JulianDate::J2000.to_time().to::<MJD>();
         let alt = moon_altitude_rad(mjd, &site);
         assert!(
             alt > -std::f64::consts::FRAC_PI_2 * RAD && alt < std::f64::consts::FRAC_PI_2 * RAD

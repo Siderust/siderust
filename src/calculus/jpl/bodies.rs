@@ -54,7 +54,7 @@ use crate::coordinates::{
     transform::VectorAstroExt,
 };
 use crate::qtty::{AstronomicalUnit, Day, Kilometer, Per};
-use crate::time::JulianDate;
+use crate::time::{JulianDate, TDB, JD};
 
 // ── Physical constants (single source of truth: qtty + DE4xx headers) ────
 
@@ -83,7 +83,7 @@ pub fn try_sun_barycentric(
     jd: JulianDate,
     sun: &SegmentDescriptor,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let sun_icrf = sun.try_position(jd_tdb)?;
     let sun_ecl_au = sun_icrf
         .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
@@ -120,7 +120,7 @@ pub fn try_earth_barycentric(
     emb: &SegmentDescriptor,
     moon: &SegmentDescriptor,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let emb_pos = emb.try_position(jd_tdb)?;
     let moon_off = moon.try_position(jd_tdb)?;
     let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON);
@@ -161,7 +161,7 @@ pub fn try_earth_heliocentric(
     emb: &SegmentDescriptor,
     moon: &SegmentDescriptor,
 ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let emb_pos = emb.try_position(jd_tdb)?;
     let moon_off = moon.try_position(jd_tdb)?;
     let sun_pos = sun.try_position(jd_tdb)?;
@@ -203,7 +203,7 @@ pub fn try_earth_barycentric_velocity(
     emb: &SegmentDescriptor,
     moon: &SegmentDescriptor,
 ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let v_emb = emb.try_velocity(jd_tdb)?;
     let v_moon_off = moon.try_velocity(jd_tdb)?;
     let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
@@ -238,7 +238,7 @@ pub fn try_moon_geocentric(
     jd: JulianDate,
     moon: &SegmentDescriptor,
 ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let moon_off = moon.try_position(jd_tdb)?;
     let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
     let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&JulianDate::J2000);
@@ -273,7 +273,7 @@ pub fn try_dyn_sun_barycentric(
     jd: JulianDate,
     sun: &DynSegmentDescriptor,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let sun_icrf = sun.try_position(jd_tdb)?;
     let sun_ecl_au = sun_icrf
         .to_frame::<EclipticMeanJ2000>(&JulianDate::J2000)
@@ -301,7 +301,7 @@ pub fn try_dyn_earth_barycentric(
     emb: &DynSegmentDescriptor,
     moon: &DynSegmentDescriptor,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let emb_pos = emb.try_position(jd_tdb)?;
     let moon_off = moon.try_position(jd_tdb)?;
     let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON);
@@ -334,7 +334,7 @@ pub fn try_dyn_earth_heliocentric(
     emb: &DynSegmentDescriptor,
     moon: &DynSegmentDescriptor,
 ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let emb_pos = emb.try_position(jd_tdb)?;
     let moon_off = moon.try_position(jd_tdb)?;
     let sun_pos = sun.try_position(jd_tdb)?;
@@ -368,7 +368,7 @@ pub fn try_dyn_earth_barycentric_velocity(
     emb: &DynSegmentDescriptor,
     moon: &DynSegmentDescriptor,
 ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let v_emb = emb.try_velocity(jd_tdb)?;
     let v_moon_off = moon.try_velocity(jd_tdb)?;
     let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
@@ -394,7 +394,7 @@ pub fn try_dyn_moon_geocentric(
     jd: JulianDate,
     moon: &DynSegmentDescriptor,
 ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
-    let jd_tdb = JulianDate::tt_to_tdb(jd);
+    let jd_tdb = jd.to_time().to_scale::<TDB>().to::<JD>();
     let moon_off = moon.try_position(jd_tdb)?;
     let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
     let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&JulianDate::J2000);

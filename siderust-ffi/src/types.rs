@@ -491,7 +491,7 @@ impl SiderustOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
-            JulianDate::new(self.epoch_jd),
+            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
         )
     }
 
@@ -504,7 +504,7 @@ impl SiderustOrbit {
             lon_ascending_node_deg: o.orientation().longitude_of_ascending_node().value(),
             arg_periapsis_deg: o.orientation().argument_of_periapsis().value(),
             mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
-            epoch_jd: o.epoch.jd_value(),
+            epoch_jd: o.epoch.raw().value(),
         }
     }
 }
@@ -539,7 +539,7 @@ impl SiderustMeanMotionOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             AngularRate::<Degree, Day>::new(self.mean_motion_deg_per_day),
-            JulianDate::new(self.epoch_jd),
+            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
         )
     }
 
@@ -556,7 +556,7 @@ impl SiderustMeanMotionOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             AngularRate::<Degree, Day>::new(self.mean_motion_deg_per_day),
-            JulianDate::new(self.epoch_jd),
+            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
         )
     }
 
@@ -573,7 +573,7 @@ impl SiderustMeanMotionOrbit {
                 .value(),
             arg_periapsis_deg: o.geometry().orientation().argument_of_periapsis().value(),
             mean_motion_deg_per_day: o.mean_motion.value(),
-            epoch_jd: o.epoch.jd_value(),
+            epoch_jd: o.epoch.raw().value(),
         }
     }
 }
@@ -608,7 +608,7 @@ impl SiderustConicOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
-            JulianDate::new(self.epoch_jd),
+            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
         )
     }
 
@@ -624,7 +624,7 @@ impl SiderustConicOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
-            JulianDate::new(self.epoch_jd),
+            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
         )
     }
 
@@ -641,7 +641,7 @@ impl SiderustConicOrbit {
                 .value(),
             arg_periapsis_deg: o.geometry().orientation().argument_of_periapsis().value(),
             mean_anomaly_deg: o.mean_anomaly_at_epoch.value(),
-            epoch_jd: o.epoch.jd_value(),
+            epoch_jd: o.epoch.raw().value(),
         }
     }
 }
@@ -743,7 +743,7 @@ impl SiderustCrossingEvent {
     /// Create from the Rust domain type.
     pub fn from_rust(e: &siderust::CrossingEvent) -> Self {
         Self {
-            mjd: e.mjd.mjd_value(),
+            mjd: e.mjd.raw().value(),
             direction: match e.direction {
                 siderust::CrossingDirection::Rising => SiderustCrossingDirection::Rising,
                 siderust::CrossingDirection::Setting => SiderustCrossingDirection::Setting,
@@ -768,7 +768,7 @@ impl SiderustCulminationEvent {
     /// Create from the Rust domain type.
     pub fn from_rust(e: &siderust::CulminationEvent) -> Self {
         Self {
-            mjd: e.mjd.mjd_value(),
+            mjd: e.mjd.raw().value(),
             altitude_deg: e.altitude.value(),
             kind: match e.kind {
                 siderust::CulminationKind::Max => SiderustCulminationKind::Max,
@@ -800,8 +800,8 @@ impl SiderustAltitudeQuery {
         siderust::AltitudeQuery {
             observer: self.observer.to_rust(),
             window: Interval::new(
-                ModifiedJulianDate::new(self.start_mjd),
-                ModifiedJulianDate::new(self.end_mjd),
+                ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(self.start_mjd)),
+                ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(self.end_mjd)),
             ),
             min_altitude: Degrees::new(self.min_altitude_deg),
             max_altitude: Degrees::new(self.max_altitude_deg),
@@ -1050,8 +1050,8 @@ pub struct SiderustPhaseEvent {
 impl FfiFrom<Period<ModifiedJulianDate>> for TempochPeriodMjd {
     fn ffi_from(p: &Period<ModifiedJulianDate>) -> Self {
         TempochPeriodMjd {
-            start_mjd: p.start.mjd_value(),
-            end_mjd: p.end.mjd_value(),
+            start_mjd: p.start.raw().value(),
+            end_mjd: p.end.raw().value(),
         }
     }
 }
@@ -1071,7 +1071,7 @@ impl FfiFrom<siderust::CulminationEvent> for SiderustCulminationEvent {
 impl FfiFrom<AzimuthCrossingEvent> for SiderustAzimuthCrossingEvent {
     fn ffi_from(e: &AzimuthCrossingEvent) -> Self {
         SiderustAzimuthCrossingEvent {
-            mjd: e.mjd.mjd_value(),
+            mjd: e.mjd.raw().value(),
             direction: match e.direction {
                 AzimuthCrossingDirection::Rising => SiderustCrossingDirection::Rising,
                 AzimuthCrossingDirection::Setting => SiderustCrossingDirection::Setting,
@@ -1084,7 +1084,7 @@ impl FfiFrom<AzimuthCrossingEvent> for SiderustAzimuthCrossingEvent {
 impl FfiFrom<AzimuthExtremum> for SiderustAzimuthExtremum {
     fn ffi_from(e: &AzimuthExtremum) -> Self {
         SiderustAzimuthExtremum {
-            mjd: e.mjd.mjd_value(),
+            mjd: e.mjd.raw().value(),
             azimuth_deg: e.azimuth.value(),
             kind: match e.kind {
                 AzimuthExtremumKind::Max => SiderustAzimuthExtremumKind::Max,
@@ -1304,8 +1304,8 @@ mod tests {
     fn ffi_from_period_mjd() {
         use tempoch::Interval;
         let p: Period<ModifiedJulianDate> = Interval::new(
-            ModifiedJulianDate::new(60000.0),
-            ModifiedJulianDate::new(60001.0),
+            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60001.0)),
         );
         let ffi = TempochPeriodMjd::ffi_from(&p);
         assert!((ffi.start_mjd - 60000.0).abs() < 1e-10);
@@ -1317,7 +1317,7 @@ mod tests {
     #[test]
     fn crossing_event_from_rust_rising() {
         let e = siderust::CrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.5),
+            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5)),
             direction: siderust::CrossingDirection::Rising,
         };
         let ffi = SiderustCrossingEvent::from_rust(&e);
@@ -1328,7 +1328,7 @@ mod tests {
     #[test]
     fn crossing_event_from_rust_setting() {
         let e = siderust::CrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.5),
+            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5)),
             direction: siderust::CrossingDirection::Setting,
         };
         let ffi = SiderustCrossingEvent::ffi_from(&e);
@@ -1338,7 +1338,7 @@ mod tests {
     #[test]
     fn culmination_event_from_rust_max() {
         let e = siderust::CulminationEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
             altitude: qtty::angular::Degrees::new(45.0),
             kind: siderust::CulminationKind::Max,
         };
@@ -1350,7 +1350,7 @@ mod tests {
     #[test]
     fn culmination_event_from_rust_min() {
         let e = siderust::CulminationEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
             altitude: qtty::angular::Degrees::new(-10.0),
             kind: siderust::CulminationKind::Min,
         };
@@ -1364,7 +1364,7 @@ mod tests {
     fn azimuth_extremum_ffi_from_max() {
         use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
             azimuth: qtty::angular::Degrees::new(180.0),
             kind: AzimuthExtremumKind::Max,
         };
@@ -1377,7 +1377,7 @@ mod tests {
     fn azimuth_extremum_ffi_from_min() {
         use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
             azimuth: qtty::angular::Degrees::new(0.0),
             kind: AzimuthExtremumKind::Min,
         };
@@ -1391,7 +1391,7 @@ mod tests {
     fn azimuth_crossing_event_ffi_from_rising() {
         use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
             direction: AzimuthCrossingDirection::Rising,
         };
         let ffi = SiderustAzimuthCrossingEvent::ffi_from(&e);
@@ -1402,7 +1402,7 @@ mod tests {
     fn azimuth_crossing_event_ffi_from_setting() {
         use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::new(60000.0),
+            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
             direction: AzimuthCrossingDirection::Setting,
         };
         let ffi = SiderustAzimuthCrossingEvent::ffi_from(&e);

@@ -54,9 +54,9 @@
 pub use tempoch::{
     complement_within, constats, delta_t_seconds, delta_t_seconds_extrapolated, eop,
     ContinuousScale, ConversionError, ConversionTarget, CoordinateScale, EncodedTime,
-    InfallibleConversionTarget, InfallibleRepresentationForScale, Interval, InvalidIntervalError,
-    InvalidPeriodError, PeriodListError, RepresentationForScale, Scale, ScaleKind, Time,
-    TimeContext, TimeDataError, TimeInstant, J2000_TT, JD, JULIAN_YEAR_DAYS, MJD, TAI, TCB, TCG,
+    InfallibleConversionTarget, InfallibleFormatForScale, Interval, InvalidIntervalError,
+    InvalidPeriodError, PeriodListError, FormatForScale, Scale, ScaleKind, Time,
+    TimeContext, TimeDataError, TimeInstant, JD, JULIAN_YEAR_DAYS, MJD, TAI, TCB, TCG,
     TDB, TT, UT1, UTC,
 };
 
@@ -77,6 +77,7 @@ pub type JulianDate = tempoch::JulianDate<TT>;
 pub type ModifiedJulianDate = tempoch::ModifiedJulianDate<TT>;
 
 /// J2000.0 epoch as a [`JulianDate`] (TT, JD 2 451 545.0).
-pub const J2000: JulianDate = J2000_TT;
+pub const J2000: JulianDate =
+    JulianDate::from_raw_unchecked(qtty::Quantity::<qtty::unit::Day>::new(2_451_545.0));
 
 pub use crate::calculus::math_core::intervals::intersect as intersect_periods;

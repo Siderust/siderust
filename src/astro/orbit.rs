@@ -157,7 +157,7 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {

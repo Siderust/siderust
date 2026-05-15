@@ -4,6 +4,9 @@ members = [
     "siderust-ffi",
 ]
 
+[patch.crates-io]
+tempoch     = { path = "../tempoch-cpp/tempoch/tempoch" }
+tempoch-ffi = { path = "../tempoch-cpp/tempoch/tempoch-ffi" }
 
 [package]
 name = "siderust"
@@ -35,8 +38,8 @@ atmosphere = []
 [dependencies]
 affn = { version = "0.7", features = ["astro"] }
 cheby = "0.2"
-qtty = { version = "0.7", features = ["astro", "radiometry"] }
-tempoch = "0.4"
+qtty = { version = "0.8", features = ["astro", "radiometry"] }
+tempoch = "0.5"
 approx = "0.5"
 chrono = "0.4"
 paste = "1.0"

@@ -38,7 +38,7 @@ use crate::calculus::math_core::{intervals, root_finding};
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::qtty::*;
-use crate::time::JulianDate;
+use crate::time::{JulianDate, JD};
 use crate::time::{complement_within, ModifiedJulianDate, Period};
 
 use super::star_equations::{StarAltitudeParams, ThresholdResult};
@@ -84,7 +84,7 @@ pub(crate) fn fixed_star_altitude_rad(
     use crate::coordinates::transform::AstroContext;
     use crate::qtty::Radian;
 
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to_time().to::<JD>();
 
     // Convert J2000 RA/Dec → unit Cartesian
     let ra_rad = ra_j2000.to::<Radian>().value();
@@ -150,9 +150,9 @@ fn find_crossings_analytical(
     let start_above = f(period.start) > thr;
 
     // Build analytical model at the period midpoint
-    let start_jd: JulianDate = period.start.into();
-    let end_jd: JulianDate = period.end.into();
-    let mid_jd = start_jd.mean(end_jd);
+    let start_jd: JulianDate = period.start.to_time().to::<JD>();
+    let end_jd: JulianDate = period.end.to_time().to::<JD>();
+    let mid_jd = JulianDate::from_raw_unchecked((start_jd.raw() + end_jd.raw()) / 2.0);
     let equatorial_j2000 =
         crate::coordinates::spherical::direction::EquatorialMeanJ2000::new(ra_j2000, dec_j2000);
     let params = StarAltitudeParams::from_j2000(equatorial_j2000, site, mid_jd);
@@ -190,10 +190,12 @@ fn find_crossings_analytical(
             let mut refined: Vec<Mjd> = Vec::with_capacity(predicted.len());
 
             for (t_pred, _dir) in &predicted {
-                let lo = (*t_pred - BRACKET_HALF).max(period.start);
-                let hi = (*t_pred + BRACKET_HALF).min(period.end);
+                let lo_raw = t_pred.raw() - BRACKET_HALF;
+                let lo = Mjd::from_raw_unchecked(if lo_raw >= period.start.raw() { lo_raw } else { period.start.raw() });
+                let hi_raw = t_pred.raw() + BRACKET_HALF;
+                let hi = Mjd::from_raw_unchecked(if hi_raw <= period.end.raw() { hi_raw } else { period.end.raw() });
 
-                if (hi - lo) < Days::new(1e-12) {
+                if (hi.raw() - lo.raw()) < Days::new(1e-12) {
                     continue; // degenerate bracket at boundary
                 }
 
@@ -397,8 +399,8 @@ mod tests {
         let above = find_star_above_periods(ra, dec, site, period, Degrees::new(0.0));
         let below = find_star_below_periods(ra, dec, site, period, Degrees::new(0.0));
 
-        let total_above: Days = above.iter().map(|p| p.end - p.start).sum();
-        let total_below: Days = below.iter().map(|p| p.end - p.start).sum();
+        let total_above: Days = above.iter().map(|p| p.end.raw() - p.start.raw()).sum();
+        let total_below: Days = below.iter().map(|p| p.end.raw() - p.start.raw()).sum();
         assert!(
             (total_above + total_below - Days::new(7.0)).abs() < Days::new(0.01),
             "above + below should cover 7 days, got {}",

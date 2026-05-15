@@ -174,7 +174,7 @@ pub fn calculate_mean_motion_position(
     let orientation = geometry.orientation();
 
     let trig = OrientationTrig::from_orientation(orientation);
-    let dt_days = (julian_date - orbit.epoch).value();
+    let dt_days = (julian_date.raw() - orbit.epoch.raw()).value();
     let mean_anomaly_rad =
         (orbit.mean_motion.value().to_radians() * dt_days).rem_euclid(std::f64::consts::TAU);
     let mean_anomaly = Radians::new(mean_anomaly_rad);
@@ -201,7 +201,7 @@ pub fn calculate_conic_position(
             let semi_major_axis = periapsis_distance / (1.0 - eccentricity);
             let mean_motion =
                 GAUSSIAN_GRAVITATIONAL_CONSTANT / (semi_major_axis * semi_major_axis.sqrt());
-            let dt_days = (julian_date - orbit.epoch).value();
+            let dt_days = (julian_date.raw() - orbit.epoch.raw()).value();
             let mean_anomaly_raw =
                 orbit.mean_anomaly_at_epoch.to::<Radian>().value() + mean_motion * dt_days;
             let mean_anomaly = Radians::new(mean_anomaly_raw.rem_euclid(std::f64::consts::TAU));
@@ -215,7 +215,7 @@ pub fn calculate_conic_position(
             let semi_major_axis = periapsis_distance / (eccentricity - 1.0);
             let mean_motion =
                 GAUSSIAN_GRAVITATIONAL_CONSTANT / (semi_major_axis * semi_major_axis.sqrt());
-            let dt_days = (julian_date - orbit.epoch).value();
+            let dt_days = (julian_date.raw() - orbit.epoch.raw()).value();
             let mean_anomaly =
                 orbit.mean_anomaly_at_epoch.to::<Radian>().value() + mean_motion * dt_days;
             let hyperbolic_anomaly = solve_hyperbolic_anomaly(mean_anomaly, eccentricity)

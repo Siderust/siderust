@@ -19,9 +19,9 @@ runtime-data = ["siderust/runtime-data"]
 
 [dependencies]
 siderust    = { version = "0.7", path = ".." }
-qtty        = "0.7"
-tempoch     = "0.4"
-tempoch-ffi = "0.4"
+qtty        = "0.8"
+tempoch     = "0.5"
+tempoch-ffi = "0.5"
 affn        = { version = "0.7.0", features = ["astro"] }
 
 [build-dependencies]

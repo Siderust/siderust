@@ -82,7 +82,7 @@ pub use crate::qtty::time::SIDEREAL_DAY;
 #[inline]
 pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
     let era = earth_rotation_angle(jd_ut1);
-    let t = jd_tt.julian_centuries();
+    let t = (jd_tt.raw().value() - 2_451_545.0) / 36525.0;
 
     // Polynomial: accumulated precession of equinox in arcseconds
     // Coefficients from Capitaine et al. (2003), eq. 42
@@ -146,7 +146,7 @@ mod tests {
     #[test]
     fn gmst_iau2006_range() {
         for jd in [2_451_545.0, 2_460_000.5, 2_440_000.0] {
-            let jd = JulianDate::new(jd);
+            let jd = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
             let gmst = gmst_iau2006(jd, jd);
             assert!(gmst >= Radians::new(0.0), "GMST should be ≥ 0");
             assert!(gmst < Radians::new(TAU), "GMST should be < 2π");
@@ -156,7 +156,7 @@ mod tests {
     #[test]
     fn gast_iau2006_close_to_gmst() {
         // GAST = GMST + Δψ·cos(ε). For small nutation (~17″ max), |GAST−GMST| < 20″.
-        let jd = JulianDate::new(2_460_000.5);
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
         let nutation = crate::astro::nutation::nutation_iau2000b(jd);
         let true_obliquity = nutation.true_obliquity();
         let gast = gast_iau2006(jd, jd, nutation.dpsi, true_obliquity);

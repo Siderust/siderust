@@ -48,7 +48,7 @@ pub extern "C" fn siderust_altitude_at(
         dispatch_subject!(subject, |p| {
             unsafe {
                 *out_rad = p
-                    .altitude_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                    .altitude_at(&observer.to_rust(), ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(mjd)))
                     .value();
             }
             SiderustStatus::Ok
@@ -232,7 +232,7 @@ pub extern "C" fn siderust_azimuth_at(
         dispatch_subject!(subject, |p| {
             unsafe {
                 *out_deg = p
-                    .azimuth_at(&observer.to_rust(), ModifiedJulianDate::new(mjd))
+                    .azimuth_at(&observer.to_rust(), ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(mjd)))
                     .value();
             }
             SiderustStatus::Ok

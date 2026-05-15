@@ -185,7 +185,7 @@ pub extern "C" fn siderust_runtime_ephemeris_sun_barycentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::new(jd);
+        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
         let pos = match eph.inner.try_sun_barycentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
@@ -216,7 +216,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::new(jd);
+        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
         let pos = match eph.inner.try_earth_barycentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
@@ -247,7 +247,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_heliocentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::new(jd);
+        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
         let pos = match eph.inner.try_earth_heliocentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
@@ -278,7 +278,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric_velocity(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::new(jd);
+        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
         let vel = match eph.inner.try_earth_barycentric_velocity(t) {
             Ok(vel) => vel,
             Err(err) => return ephemeris_status(err),
@@ -307,7 +307,7 @@ pub extern "C" fn siderust_runtime_ephemeris_moon_geocentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::new(jd);
+        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
         let pos = match eph.inner.try_moon_geocentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
