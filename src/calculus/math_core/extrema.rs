@@ -112,8 +112,8 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let mut p = period;
-    let mut x1 = Mjd::from_raw_unchecked(p.end.raw() - PHI * (p.end.raw() - p.start.raw()));
-    let mut x2 = Mjd::from_raw_unchecked(p.start.raw() + PHI * (p.end.raw() - p.start.raw()));
+    let mut x1 = crate::time::mjd(p.end.raw() - PHI * (p.end.raw() - p.start.raw()));
+    let mut x2 = crate::time::mjd(p.start.raw() + PHI * (p.end.raw() - p.start.raw()));
     let mut f1: Quantity<V> = f(x1);
     let mut f2: Quantity<V> = f(x2);
 
@@ -125,18 +125,18 @@ where
             p.end = x2;
             x2 = x1;
             f2 = f1;
-            x1 = Mjd::from_raw_unchecked(p.end.raw() - PHI * (p.end.raw() - p.start.raw()));
+            x1 = crate::time::mjd(p.end.raw() - PHI * (p.end.raw() - p.start.raw()));
             f1 = f(x1);
         } else {
             p.start = x1;
             x1 = x2;
             f1 = f2;
-            x2 = Mjd::from_raw_unchecked(p.start.raw() + PHI * (p.end.raw() - p.start.raw()));
+            x2 = crate::time::mjd(p.start.raw() + PHI * (p.end.raw() - p.start.raw()));
             f2 = f(x2);
         }
     }
 
-    let t = Mjd::from_raw_unchecked((p.start.raw() + p.end.raw()) / 2.0);
+    let t = crate::time::mjd((p.start.raw() + p.end.raw()) / 2.0);
     (t, f(t))
 }
 
@@ -184,8 +184,8 @@ where
 {
     let tv = t;
     let fc = f(t);
-    let fl = f(Mjd::from_raw_unchecked(tv.raw() - PROBE_EPS));
-    let fr = f(Mjd::from_raw_unchecked(tv.raw() + PROBE_EPS));
+    let fl = f(crate::time::mjd(tv.raw() - PROBE_EPS));
+    let fr = f(crate::time::mjd(tv.raw() + PROBE_EPS));
 
     if fc >= fl && fc >= fr {
         Some(ExtremumKind::Maximum)
@@ -235,7 +235,7 @@ where
     let mut t0 = t_start_v;
     let mut f0 = f(t0);
     let mut t1 = {
-        let t_next = Mjd::from_raw_unchecked(t0.raw() + step_v);
+        let t_next = crate::time::mjd(t0.raw() + step_v);
         if t_next.raw() <= t_end_v.raw() {
             t_next
         } else {
@@ -247,7 +247,7 @@ where
 
     loop {
         let t2 = {
-            let t_next = Mjd::from_raw_unchecked(t1.raw() + step_v);
+            let t_next = crate::time::mjd(t1.raw() + step_v);
             if t_next.raw() <= t_end_v.raw() {
                 t_next
             } else {
@@ -314,8 +314,8 @@ where
 
     let deriv = |t: Mjd| -> Quantity<V> {
         let tv = t;
-        let fwd = f(Mjd::from_raw_unchecked(tv.raw() + fd_v));
-        let bwd = f(Mjd::from_raw_unchecked(tv.raw() - fd_v));
+        let fwd = f(crate::time::mjd(tv.raw() + fd_v));
+        let bwd = f(crate::time::mjd(tv.raw() - fd_v));
         (fwd - bwd) / (fd_v + fd_v).value()
     };
 
@@ -325,7 +325,7 @@ where
 
     while t < t_end_v {
         let next_t = {
-            let t_next = Mjd::from_raw_unchecked(t.raw() + step_v);
+            let t_next = crate::time::mjd(t.raw() + step_v);
             if t_next.raw() <= t_end_v.raw() {
                 t_next
             } else {
@@ -376,7 +376,7 @@ mod tests {
     type Radians = Quantity<Radian>;
 
     fn mjd(v: f64) -> Mjd {
-        Mjd::from_raw_unchecked(Days::new(v))
+        crate::time::mjd(Days::new(v))
     }
     fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
         Period::new(mjd(a), mjd(b))

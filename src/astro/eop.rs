@@ -84,7 +84,7 @@ impl EopValues {
     /// Convert UTC Julian Date to UT1 Julian Date using this EOP's dUT1.
     #[inline]
     pub fn jd_ut1(&self, jd_utc: JulianDate) -> JulianDate {
-        JulianDate::from_raw_unchecked(qtty::Day::new(
+        crate::time::jd(qtty::Day::new(
             jd_utc.raw().value() + self.dut1.to::<Day>().value(),
         ))
     }
@@ -300,7 +300,7 @@ mod tests {
     fn iers_eop_rejects_out_of_range_instead_of_zeroing() {
         let eop = IersEop::new();
         let (first, _) = eop.mjd_range().expect("compiled EOP range");
-        let before = JulianDate::from_raw_unchecked(qtty::Day::new(first + 2_400_000.5 - 1.0));
+        let before = crate::time::jd(qtty::Day::new(first + 2_400_000.5 - 1.0));
         let err = eop.try_eop_at(before).expect_err("before range must fail");
         assert!(matches!(err, EopError::NoData { .. }));
     }
@@ -309,7 +309,7 @@ mod tests {
     fn iers_eop_uses_tempoch_builtin_data() {
         let eop = IersEop::new();
         let (first, _) = eop.mjd_range().expect("compiled EOP range");
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(first + 2_400_000.5));
+        let jd = crate::time::jd(qtty::Day::new(first + 2_400_000.5));
         let vals = eop.try_eop_at(jd).expect("range start must be covered");
         let raw = tempoch::eop::builtin_eop_at(Days::new(first)).expect("tempoch EOP");
         assert!((vals.dut1.value() - raw.ut1_minus_utc.value()).abs() < 1e-12);

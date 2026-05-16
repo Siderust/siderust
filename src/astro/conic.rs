@@ -419,7 +419,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                JulianDate::from_raw_unchecked(qtty::Day::new(f64::NAN)),
+                crate::time::jd(qtty::Day::new(f64::NAN)),
             ),
             Err(ConicError::InvalidEpoch)
         );
@@ -499,7 +499,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 AngularRate::<Degree, Day>::new(1.0),
-                JulianDate::from_raw_unchecked(qtty::Day::new(f64::NAN)),
+                crate::time::jd(qtty::Day::new(f64::NAN)),
             ),
             Err(ConicError::InvalidEpoch)
         );

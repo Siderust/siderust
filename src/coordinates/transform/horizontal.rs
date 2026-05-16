@@ -37,8 +37,8 @@
 //! use siderust::time::JulianDate;
 //! use siderust::qtty::*;
 //!
-//! let jd_ut1 = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
-//! let jd_tt = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.000_800_741));
+//! let jd_ut1 = crate::time::jd(qtty::Day::new(2_451_545.0));
+//! let jd_tt = crate::time::jd(qtty::Day::new(2_451_545.000_800_741));
 //!
 //! let equatorial = spherical::Direction::<EquatorialTrueOfDate>::new(45.0 * DEG, 30.0 * DEG)
 //!     .to_cartesian();
@@ -311,8 +311,8 @@ mod tests {
 
     #[test]
     fn roundtrip_equatorial_horizontal_is_stable() {
-        let jd_ut1 = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
-        let jd_tt = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.000_800_741));
+        let jd_ut1 = crate::time::jd(qtty::Day::new(2_451_545.0));
+        let jd_tt = crate::time::jd(qtty::Day::new(2_451_545.000_800_741));
 
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
@@ -348,8 +348,8 @@ mod tests {
     #[test]
     fn matches_sofa_reference_case() {
         // Reference generated from the SOFA-based lab benchmark suite
-        let jd_ut1 = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
-        let jd_tt = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.000_800_741));
+        let jd_ut1 = crate::time::jd(qtty::Day::new(2_451_545.0));
+        let jd_tt = crate::time::jd(qtty::Day::new(2_451_545.000_800_741));
 
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
@@ -385,8 +385,8 @@ mod tests {
         use crate::qtty::Kilometer;
         use affn::spherical;
 
-        let jd_ut1 = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
-        let jd_tt = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.000_800_741));
+        let jd_ut1 = crate::time::jd(qtty::Day::new(2_451_545.0));
+        let jd_tt = crate::time::jd(qtty::Day::new(2_451_545.000_800_741));
 
         let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.5 * DEG, 100.0 * M);
         let ra = 45.0 * DEG;

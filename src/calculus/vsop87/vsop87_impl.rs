@@ -361,7 +361,7 @@ mod tests {
     #[test]
     fn test_position_velocity() {
         // 100 years after J2000 -> T = 0.1
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0 + 36525.0));
+        let jd = crate::time::jd(qtty::Day::new(2451545.0 + 36525.0));
         let pos = position(jd, &[&X0, &X1], &[&Y0, &Y1, &Y2], &[&Z0]);
         assert!((pos.0 - 1.2).abs() < 1e-12);
         assert!((pos.1 - 0.03).abs() < 1e-12);

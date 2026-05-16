@@ -788,11 +788,11 @@ mod tests {
     #[test]
     fn rotation_params_rate() {
         let p = &MARS_ROTATION;
-        let alpha = p.alpha0(JulianDate::from_raw_unchecked(
+        let alpha = p.alpha0(crate::time::jd(
             JulianDate::J2000.raw() + Days::new(36_525.0),
         ));
         assert!((alpha.value() - (317.269 - 0.10927)).abs() < 1e-10);
-        let w = p.w(JulianDate::from_raw_unchecked(
+        let w = p.w(crate::time::jd(
             JulianDate::J2000.raw() + crate::qtty::Days::new(1.0),
         ));
         assert!((w.value() - (176.049 + 350.891982443)).abs() < 1e-8);
@@ -882,7 +882,7 @@ mod trackable_tests {
     #[test]
     fn earth_changes_with_time() {
         let p1 = Earth.track(JulianDate::J2000);
-        let p2 = Earth.track(JulianDate::from_raw_unchecked(
+        let p2 = Earth.track(crate::time::jd(
             JulianDate::J2000.raw() + Days::new(182.625),
         ));
         let sep = p1.position.distance_to(&p2.position);

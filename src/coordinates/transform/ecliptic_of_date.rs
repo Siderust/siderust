@@ -43,7 +43,7 @@
 //! use siderust::time::JulianDate;
 //! use siderust::qtty::*;
 //!
-//! let jd_tt = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
+//! let jd_tt = crate::time::jd(qtty::Day::new(2_451_545.0));
 //! let equatorial = spherical::Direction::<EquatorialMeanOfDate>::new(45.0 * DEG, 30.0 * DEG)
 //!     .to_cartesian();
 //!
@@ -267,7 +267,7 @@ mod tests {
 
     #[test]
     fn roundtrip_mean_of_date_is_stable() {
-        let jd_tt = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
+        let jd_tt = crate::time::jd(qtty::Day::new(2_451_545.0));
 
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;
@@ -296,7 +296,7 @@ mod tests {
 
     #[test]
     fn roundtrip_icrs_is_stable() {
-        let jd_tt = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
+        let jd_tt = crate::time::jd(qtty::Day::new(2_451_545.0));
 
         let ra = 1.0 * RAD;
         let dec = 0.5 * RAD;

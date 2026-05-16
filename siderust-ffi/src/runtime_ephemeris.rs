@@ -22,7 +22,6 @@ use std::os::raw::c_char;
 use crate::error::SiderustStatus;
 use crate::types::*;
 use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
-use siderust::time::JulianDate;
 
 #[inline]
 fn ephemeris_status(err: siderust::calculus::ephemeris::EphemerisError) -> SiderustStatus {
@@ -185,7 +184,7 @@ pub extern "C" fn siderust_runtime_ephemeris_sun_barycentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
         let pos = match eph.inner.try_sun_barycentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
@@ -216,7 +215,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
         let pos = match eph.inner.try_earth_barycentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
@@ -247,7 +246,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_heliocentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
         let pos = match eph.inner.try_earth_heliocentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
@@ -278,7 +277,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric_velocity(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
         let vel = match eph.inner.try_earth_barycentric_velocity(t) {
             Ok(vel) => vel,
             Err(err) => return ephemeris_status(err),
@@ -307,7 +306,7 @@ pub extern "C" fn siderust_runtime_ephemeris_moon_geocentric(
             return SiderustStatus::NullPointer;
         }
         let eph = unsafe { &*handle };
-        let t = JulianDate::from_raw_unchecked(qtty::Day::new(jd));
+        let t = ffi_try!(crate::ffi_utils::jd_from_f64(jd));
         let pos = match eph.inner.try_moon_geocentric(t) {
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),

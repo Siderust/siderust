@@ -24,20 +24,19 @@
 //!
 //! All time handling is delegated to the `tempoch` crate. This module
 //! re-exports its full public surface (`Scale`, `EncodedTime`, `Time`,
-//! `JulianDate`, `ModifiedJulianDate`, the `TT`/`TDB`/`TCB`/`TCG`/
-//! `TAI`/`UTC`/`UT1` scale markers, `Interval`, `delta_t_seconds`, …)
-//! and adds two backward-compatible non-generic aliases that pin the
-//! scale to TT for legacy call sites:
+//! the `TT`/`TDB`/`TCB`/`TCG`/`TAI`/`UTC`/`UT1` scale markers,
+//! `Interval`, `delta_t_seconds`, …) and defines the v1 astronomy-facing
+//! defaults as TT-based encoded dates:
 //!
 //! - [`JulianDate`] = `tempoch::JulianDate<TT>` = `EncodedTime<TT, JD>`.
 //! - [`ModifiedJulianDate`] = `tempoch::ModifiedJulianDate<TT>` =
 //!   `EncodedTime<TT, MJD>`.
 //!
-//! Generic re-exports `JulianDateG`/`ModifiedJulianDateG` keep the
-//! `JulianDate<TT>` / `JulianDate<TDB>` form compiling. The
-//! [`J2000`] constant exposes the J2000.0 TT epoch as a [`JulianDate`].
-//! [`UT`] is a backward-compatible alias for [`UT1`]; [`Period<T>`] is a
-//! backward-compatible alias for [`Interval<T>`].
+//! Advanced scale-aware work still uses `tempoch::JulianDate<S>` and
+//! `tempoch::ModifiedJulianDate<S>` directly. The [`J2000`] constant exposes
+//! the J2000.0 TT epoch as a [`JulianDate`]. [`UT`] is a backward-compatible
+//! alias for [`UT1`]; [`Period<T>`] is a backward-compatible alias for
+//! [`Interval<T>`].
 //!
 //! ## References
 //!
@@ -59,10 +58,6 @@ pub use tempoch::{
     TimeDataError, TimeInstant, JD, JULIAN_YEAR_DAYS, MJD, TAI, TCB, TCG, TDB, TT, UT1, UTC,
 };
 
-/// Re-export `JulianDate` and `ModifiedJulianDate` under their generic names
-/// so code that explicitly writes `JulianDate<TT>` or `JulianDate<TDB>` still compiles.
-pub use tempoch::{JulianDate as JulianDateG, ModifiedJulianDate as ModifiedJulianDateG};
-
 /// Backward-compatible alias: old siderust code used `UT` for the UT1 axis.
 pub type UT = UT1;
 
@@ -76,7 +71,44 @@ pub type JulianDate = tempoch::JulianDate<TT>;
 pub type ModifiedJulianDate = tempoch::ModifiedJulianDate<TT>;
 
 /// J2000.0 epoch as a [`JulianDate`] (TT, JD 2 451 545.0).
-pub const J2000: JulianDate =
-    JulianDate::from_raw_unchecked(qtty::Quantity::<qtty::unit::Day>::new(2_451_545.0));
+pub const J2000: JulianDate = JulianDate::J2000;
+
+/// Checked TT Julian Date constructor from a typed day quantity.
+#[inline]
+pub fn try_jd(raw: qtty::Day) -> Result<JulianDate, ConversionError> {
+    JulianDate::try_new(raw)
+}
+
+/// Checked TT Julian Date constructor from a scalar JD value.
+#[inline]
+pub fn try_jd_f64(value: f64) -> Result<JulianDate, ConversionError> {
+    try_jd(qtty::Day::new(value))
+}
+
+/// Panicking TT Julian Date constructor for internal finite constants and tests.
+#[track_caller]
+#[inline]
+pub fn jd(raw: qtty::Day) -> JulianDate {
+    try_jd(raw).expect("JulianDate must be finite")
+}
+
+/// Checked TT Modified Julian Date constructor from a typed day quantity.
+#[inline]
+pub fn try_mjd(raw: qtty::Day) -> Result<ModifiedJulianDate, ConversionError> {
+    ModifiedJulianDate::try_new(raw)
+}
+
+/// Checked TT Modified Julian Date constructor from a scalar MJD value.
+#[inline]
+pub fn try_mjd_f64(value: f64) -> Result<ModifiedJulianDate, ConversionError> {
+    try_mjd(qtty::Day::new(value))
+}
+
+/// Panicking TT Modified Julian Date constructor for internal finite constants and tests.
+#[track_caller]
+#[inline]
+pub fn mjd(raw: qtty::Day) -> ModifiedJulianDate {
+    try_mjd(raw).expect("ModifiedJulianDate must be finite")
+}
 
 pub use crate::calculus::math_core::intervals::intersect as intersect_periods;

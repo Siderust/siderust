@@ -177,8 +177,8 @@ mod tests {
         use crate::calculus::solar::twilight;
 
         let site = greenwich_site();
-        let mjd_start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
-        let mjd_end = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0));
+        let mjd_start = crate::time::mjd(qtty::Day::new(60000.0));
+        let mjd_end = crate::time::mjd(qtty::Day::new(60007.0));
         let period = Period::new(mjd_start, mjd_end);
 
         let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
@@ -202,8 +202,8 @@ mod tests {
     #[test]
     fn test_find_altitude_range_periods() {
         let site = greenwich_site();
-        let mjd_start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
-        let mjd_end = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0));
+        let mjd_start = crate::time::mjd(qtty::Day::new(60000.0));
+        let mjd_end = crate::time::mjd(qtty::Day::new(60007.0));
 
         let period = Period::new(mjd_start, mjd_end);
 

@@ -227,7 +227,7 @@ mod tests {
 
     #[test]
     fn gcrs_to_cirs_is_proper_rotation() {
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+        let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
         let nut = crate::astro::nutation::nutation_iau2000b(jd);
         let cip = cip_cio(jd, nut.dpsi, nut.deps);
         let q = gcrs_to_cirs_matrix(cip.x, cip.y, cip.s);

@@ -152,7 +152,7 @@ fn find_crossings_analytical(
     // Build analytical model at the period midpoint
     let start_jd: JulianDate = period.start.to_time().to::<crate::time::JD>();
     let end_jd: JulianDate = period.end.to_time().to::<crate::time::JD>();
-    let mid_jd = JulianDate::from_raw_unchecked((start_jd.raw() + end_jd.raw()) / 2.0);
+    let mid_jd = crate::time::jd((start_jd.raw() + end_jd.raw()) / 2.0);
     let equatorial_j2000 =
         crate::coordinates::spherical::direction::EquatorialMeanJ2000::new(ra_j2000, dec_j2000);
     let params = StarAltitudeParams::from_j2000(equatorial_j2000, site, mid_jd);
@@ -191,13 +191,13 @@ fn find_crossings_analytical(
 
             for (t_pred, _dir) in &predicted {
                 let lo_raw = t_pred.raw() - BRACKET_HALF;
-                let lo = Mjd::from_raw_unchecked(if lo_raw >= period.start.raw() {
+                let lo = crate::time::mjd(if lo_raw >= period.start.raw() {
                     lo_raw
                 } else {
                     period.start.raw()
                 });
                 let hi_raw = t_pred.raw() + BRACKET_HALF;
-                let hi = Mjd::from_raw_unchecked(if hi_raw <= period.end.raw() {
+                let hi = crate::time::mjd(if hi_raw <= period.end.raw() {
                     hi_raw
                 } else {
                     period.end.raw()
@@ -337,8 +337,8 @@ mod tests {
 
     fn period_7d() -> Period<ModifiedJulianDate> {
         Period::new(
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0)),
+            crate::time::mjd(qtty::Day::new(60000.0)),
+            crate::time::mjd(qtty::Day::new(60007.0)),
         )
     }
 
@@ -432,8 +432,8 @@ mod tests {
     fn analytical_matches_scan() {
         let site = roque();
         let period = Period::new(
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60003.0)),
+            crate::time::mjd(qtty::Day::new(60000.0)),
+            crate::time::mjd(qtty::Day::new(60003.0)),
         );
         let ra = Degrees::new(101.287);
         let dec = Degrees::new(-16.716);

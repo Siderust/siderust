@@ -18,7 +18,6 @@ use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::frames::EquatorialMeanJ2000;
 use siderust::coordinates::spherical;
 use siderust::targets::Target;
-use siderust::time::JulianDate;
 use std::borrow::Cow;
 use std::ffi::CStr;
 use std::os::raw::c_char;
@@ -117,7 +116,7 @@ pub extern "C" fn siderust_star_create(
             LightYears::new(distance_ly),
         );
 
-        let epoch = JulianDate::from_raw_unchecked(qtty::Day::new(epoch_jd));
+        let epoch = ffi_try!(crate::ffi_utils::jd_from_f64(epoch_jd));
 
         let pm = if proper_motion.is_null() {
             None

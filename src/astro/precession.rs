@@ -351,7 +351,7 @@ mod tests {
     #[test]
     fn precession_matrix_j2025_reasonable() {
         // JD of approximately 2025-01-01
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_676.5));
+        let jd = crate::time::jd(qtty::Day::new(2_460_676.5));
         let mat = precession_matrix_iau2006(jd);
         let m = mat.as_matrix();
 
@@ -381,7 +381,7 @@ mod tests {
 
     #[test]
     fn precession_nutation_matrix_includes_corrections() {
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+        let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
         let mat_prec = precession_matrix_iau2006(jd);
         let mat_pn = precession_nutation_matrix(jd, Radians::new(1e-5), Radians::new(1e-5));
 
@@ -409,7 +409,7 @@ mod tests {
     fn mean_obliquity_decreases_with_time() {
         let eps_2000 = mean_obliquity_iau2006(JulianDate::J2000);
         let eps_2100 =
-            mean_obliquity_iau2006(JulianDate::from_raw_unchecked(qtty::Day::new(2_488_069.5)));
+            mean_obliquity_iau2006(crate::time::jd(qtty::Day::new(2_488_069.5)));
         // Obliquity is currently decreasing at ~47″/century
         assert!(eps_2100 < eps_2000, "obliquity should decrease over time");
         let diff_arcsec = (eps_2000 - eps_2100).to::<Degree>().value() * 3600.0;

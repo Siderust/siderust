@@ -347,7 +347,7 @@ mod tests {
     const JD_J2000: f64 = 2451545.0;
 
     fn jd() -> JulianDate {
-        JulianDate::from_raw_unchecked(qtty::Day::new(JD_J2000))
+        crate::time::jd(qtty::Day::new(JD_J2000))
     }
 
     // Test the DynEphemeris blanket impl via Vsop87Ephemeris (which implements Ephemeris).

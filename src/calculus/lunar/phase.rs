@@ -67,8 +67,6 @@ use crate::time::{JulianDate, ModifiedJulianDate, Period};
 use std::f64::consts::PI;
 use std::marker::PhantomData;
 
-type Mjd = ModifiedJulianDate;
-
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
@@ -607,8 +605,8 @@ impl Default for PhaseSearchOpts {
 /// use siderust::calculus::ephemeris::Vsop87Ephemeris;
 /// use siderust::time::{ModifiedJulianDate, Period};
 ///
-/// let start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
-/// let end   = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60030.0));
+/// let start = crate::time::mjd(qtty::Day::new(60000.0));
+/// let end   = crate::time::mjd(qtty::Day::new(60030.0));
 /// let window = Period::new(start, end);
 ///
 /// let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
@@ -704,7 +702,7 @@ impl<E: Ephemeris> MoonPhaseSeries<E> {
             let jd: JulianDate = t.to_time().to::<crate::time::JD>();
             let geom = moon_phase_geocentric::<E>(jd);
             results.push((t, geom));
-            t = Mjd::from_raw_unchecked(t.raw() + step);
+            t = crate::time::mjd(t.raw() + step);
         }
         results
     }
@@ -735,7 +733,7 @@ impl<E: Ephemeris> MoonPhaseSeries<E> {
             let jd: JulianDate = t.to_time().to::<crate::time::JD>();
             let geom = moon_phase_topocentric::<E>(jd, site);
             results.push((t, geom));
-            t = Mjd::from_raw_unchecked(t.raw() + step);
+            t = crate::time::mjd(t.raw() + step);
         }
         results
     }
@@ -772,8 +770,8 @@ fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> IlluminationFra
 /// use siderust::time::{ModifiedJulianDate, Period};
 /// use siderust::qtty::{Days, IlluminationFractions};
 ///
-/// let start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
-/// let end = ModifiedJulianDate::from_raw_unchecked(start.raw() + Days::new(30.0));
+/// let start = crate::time::mjd(qtty::Day::new(60000.0));
+/// let end = crate::time::mjd(start.raw() + Days::new(30.0));
 /// let window = Period::new(start, end);
 /// // Find windows where Moon is more than 50% illuminated (gibbous/full)
 /// let bright = illumination_above::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.5), PhaseSearchOpts::default());
@@ -830,8 +828,8 @@ pub fn illumination_below<E: Ephemeris>(
 /// use siderust::time::{ModifiedJulianDate, Period};
 /// use siderust::qtty::{Days, IlluminationFractions};
 ///
-/// let start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
-/// let end = ModifiedJulianDate::from_raw_unchecked(start.raw() + Days::new(60.0));
+/// let start = crate::time::mjd(qtty::Day::new(60000.0));
+/// let end = crate::time::mjd(start.raw() + Days::new(60.0));
 /// let window = Period::new(start, end);
 /// // Crescent phase: 5–35% illuminated
 /// let crescent = illumination_range::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.05), IlluminationFractions::new(0.35), PhaseSearchOpts::default());
@@ -870,7 +868,7 @@ mod tests {
         // Check that illuminated fraction is always in [0, 1] for a range of dates.
         let start = JulianDate::J2000;
         for i in 0..100 {
-            let jd = JulianDate::from_raw_unchecked(start.raw() + Days::new(i as f64 * 3.0));
+            let jd = crate::time::jd(start.raw() + Days::new(i as f64 * 3.0));
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             assert!(
                 geom.illuminated_fraction.value() >= 0.0
@@ -886,7 +884,7 @@ mod tests {
     fn phase_angle_bounded() {
         let start = JulianDate::J2000;
         for i in 0..50 {
-            let jd = JulianDate::from_raw_unchecked(start.raw() + Days::new(i as f64 * 5.0));
+            let jd = crate::time::jd(start.raw() + Days::new(i as f64 * 5.0));
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             let i_val = geom.phase_angle;
             assert!(
@@ -902,7 +900,7 @@ mod tests {
     fn elongation_bounded() {
         let start = JulianDate::J2000;
         for i in 0..50 {
-            let jd = JulianDate::from_raw_unchecked(start.raw() + Days::new(i as f64 * 5.0));
+            let jd = crate::time::jd(start.raw() + Days::new(i as f64 * 5.0));
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             let e = geom.elongation;
             assert!(
@@ -918,7 +916,7 @@ mod tests {
     fn waxing_consistent_with_elongation() {
         let start = JulianDate::J2000;
         for i in 0..50 {
-            let jd = JulianDate::from_raw_unchecked(start.raw() + Days::new(i as f64 * 5.0));
+            let jd = crate::time::jd(start.raw() + Days::new(i as f64 * 5.0));
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             let e = geom.elongation;
             let expected_waxing = e > Radians::new(0.0) && e < Radians::new(PI);
@@ -987,7 +985,7 @@ mod tests {
     fn find_events_in_one_synodic_month() {
         // Search ~35 days from J2000, should find at least one of each kind.
         let start = JulianDate::J2000.to_time().to::<crate::time::MJD>();
-        let end = Mjd::from_raw_unchecked(start.raw() + Days::new(35.0));
+        let end = crate::time::mjd(start.raw() + Days::new(35.0));
         let window = Period::new(start, end);
         let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
 
@@ -1035,7 +1033,7 @@ mod tests {
     #[test]
     fn series_length() {
         let start = JulianDate::J2000.to_time().to::<crate::time::MJD>();
-        let end = Mjd::from_raw_unchecked(start.raw() + Days::new(10.0));
+        let end = crate::time::mjd(start.raw() + Days::new(10.0));
         let step = Days::new(1.0);
         let series = MoonPhaseSeries::<Vsop87Ephemeris>::sample(start, end, step);
         assert_eq!(series.len(), 11); // 0, 1, 2, ..., 10

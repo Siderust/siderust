@@ -472,7 +472,7 @@ mod tests {
     #[test]
     fn nutation_2000b_vs_iau1980_similar_magnitude() {
         // The IAU 2000B and IAU 1980 nutations should agree to ~0.5″
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_459_000.5));
+        let jd = crate::time::jd(qtty::Day::new(2_459_000.5));
         let nut_2000b = nutation_iau2000b(jd);
 
         let nut_1980 = crate::astro::nutation::get_nutation(jd);
@@ -491,7 +491,7 @@ mod tests {
 
     #[test]
     fn nutation_rotation_near_identity() {
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
+        let jd = crate::time::jd(qtty::Day::new(2_451_545.0));
         let rot = nutation_rotation_iau2000b(jd);
         let m = rot.as_matrix();
 

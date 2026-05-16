@@ -351,7 +351,7 @@ mod tests {
         assert_cartesian_eq!(coord, EclipticMeanJ2000::new(1.0, 0.0, 0.0), 1e-10);
 
         // 90 degrees after epoch
-        let jd = JulianDate::from_raw_unchecked(
+        let jd = crate::time::jd(
             JulianDate::J2000.raw() + Days::new(90.0 / 0.9856076686),
         ); // Roughly 90 degrees / n days
         let coord = calculate_orbit_position(&orbit, jd);
@@ -393,7 +393,7 @@ mod tests {
         // Assume circular orbit for simplicity in this test
         let coord = calculate_orbit_position(
             &elements,
-            JulianDate::from_raw_unchecked(JulianDate::J2000.raw() + Days::new(100.0)),
+            crate::time::jd(JulianDate::J2000.raw() + Days::new(100.0)),
         );
 
         // Mean motion n = 0.9856076686 / a^(3/2) = 0.9856076686 degrees/day
@@ -591,8 +591,8 @@ mod tests {
         // Test at different Julian dates
         let dates = [
             JulianDate::J2000,
-            JulianDate::from_raw_unchecked(JulianDate::J2000.raw() + Days::new(365.25)),
-            JulianDate::from_raw_unchecked(JulianDate::J2000.raw() + Days::new(730.5)),
+            crate::time::jd(JulianDate::J2000.raw() + Days::new(365.25)),
+            crate::time::jd(JulianDate::J2000.raw() + Days::new(730.5)),
         ];
 
         for &date in &dates {

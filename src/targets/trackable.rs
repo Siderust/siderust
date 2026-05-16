@@ -114,7 +114,7 @@ mod tests {
             crate::qtty::Degrees::new(-16.716),
         );
         let at_j2000 = dir.track(JulianDate::J2000);
-        let at_j2050 = dir.track(JulianDate::from_raw_unchecked(
+        let at_j2050 = dir.track(crate::time::jd(
             JulianDate::J2000.raw() + crate::qtty::Days::new(365.25 * 50.0),
         ));
         assert_eq!(at_j2000.ra(), at_j2050.ra());
@@ -130,7 +130,7 @@ mod tests {
             crate::qtty::LightYears::new(548.0),
         );
         let sample = CoordinateWithPM::new_static(pos, JulianDate::J2000);
-        let result = sample.track(JulianDate::from_raw_unchecked(
+        let result = sample.track(crate::time::jd(
             JulianDate::J2000.raw() + crate::qtty::Days::new(365.25),
         ));
         assert_eq!(result.ra(), crate::qtty::Degrees::new(88.0));

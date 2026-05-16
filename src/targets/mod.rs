@@ -56,7 +56,7 @@
 //! );
 //! let betelgeuse = CoordinateWithPM::new(
 //!     Direction::<EquatorialMeanJ2000>::new(88.792939*DEG, 7.407064*DEG),
-//!     ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60200.0))
+//!     crate::time::mjd(qtty::Day::new(60200.0))
 //!         .to_time()
 //!         .to::<siderust::time::JD>(),
 //!     betelgeuse_pm,
@@ -64,7 +64,7 @@
 //!
 //! let jupiter = CoordinateWithPM::new_static(
 //!     Direction::<EquatorialMeanJ2000>::new(23.123*DEG, -5.321*DEG),
-//!     ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60200.0))
+//!     crate::time::mjd(qtty::Day::new(60200.0))
 //!         .to_time()
 //!         .to::<siderust::time::JD>(),
 //! );

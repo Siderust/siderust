@@ -138,7 +138,7 @@ fn test_precession_identity_at_j2000() {
 #[test]
 fn test_nutation_rotation_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
 
     let rot = frame_rotation::<EquatorialMeanOfDate, EquatorialTrueOfDate>(jd, &ctx);
     let inv = frame_rotation::<EquatorialTrueOfDate, EquatorialMeanOfDate>(jd, &ctx);
@@ -281,7 +281,7 @@ fn sofa_icrs_to_ecliptic_j2000_matches_ecm06() {
 #[test]
 fn sofa_precession_j2010_matches_pmat06() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0 + 3654.7681));
+    let jd = crate::time::jd(qtty::Day::new(2451545.0 + 3654.7681));
     let rot = frame_rotation::<ICRS, EquatorialMeanOfDate>(jd, &ctx);
 
     // pmat06 includes bias; provider's ICRS→EquatorialMeanOfDate = precession * bias
@@ -323,7 +323,7 @@ fn sofa_precession_j2010_matches_pmat06() {
 #[test]
 fn sofa_precession_j2020_matches_pmat06() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0 + 7305.0));
+    let jd = crate::time::jd(qtty::Day::new(2451545.0 + 7305.0));
     let rot = frame_rotation::<ICRS, EquatorialMeanOfDate>(jd, &ctx);
     let m = rot.as_matrix();
 
@@ -356,7 +356,7 @@ fn sofa_precession_j2020_matches_pmat06() {
 #[test]
 fn sofa_nutation_j2020_default_matches_num06a() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0 + 7305.0));
+    let jd = crate::time::jd(qtty::Day::new(2451545.0 + 7305.0));
     let rot = frame_rotation::<EquatorialMeanOfDate, EquatorialTrueOfDate>(jd, &ctx);
     let m = rot.as_matrix();
 
@@ -394,7 +394,7 @@ fn sofa_nutation_j2020_iau2000b_within_ceiling() {
 
     let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
     let model_ctx = ctx.with_model::<Iau2000B>();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0 + 7305.0));
+    let jd = crate::time::jd(qtty::Day::new(2451545.0 + 7305.0));
     let rot = frame_rotation_with::<EquatorialMeanOfDate, EquatorialTrueOfDate, _>(jd, &model_ctx);
     let m = rot.as_matrix();
 
@@ -473,7 +473,7 @@ fn sofa_bias_basis_vectors_via_provider() {
 #[test]
 fn sofa_bpn_j2020_composed() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0 + 7305.0));
+    let jd = crate::time::jd(qtty::Day::new(2451545.0 + 7305.0));
     let rot = frame_rotation::<ICRS, EquatorialTrueOfDate>(jd, &ctx);
     let _m = rot.as_matrix();
 
@@ -502,7 +502,7 @@ fn sofa_bpn_j2020_iau2006a_matches_pnm06a() {
 
     let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
     let model_ctx = ctx.with_model::<Iau2006A>();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2458850.0));
+    let jd = crate::time::jd(qtty::Day::new(2458850.0));
     let rot = frame_rotation_with::<ICRS, EquatorialTrueOfDate, _>(jd, &model_ctx);
     let m = rot.as_matrix();
 
@@ -541,7 +541,7 @@ fn sofa_nutation_j2020_iau2006a_matches_num06a() {
 
     let ctx = AstroContext::<DefaultEphemeris, DefaultEop>::with_types();
     let model_ctx = ctx.with_model::<Iau2006A>();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2458850.0));
+    let jd = crate::time::jd(qtty::Day::new(2458850.0));
     let rot = frame_rotation_with::<EquatorialMeanOfDate, EquatorialTrueOfDate, _>(jd, &model_ctx);
     let m = rot.as_matrix();
 
@@ -639,7 +639,7 @@ fn test_eme2000_ecliptic_roundtrip() {
 #[test]
 fn test_eme2000_to_mean_of_date_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<EME2000, EquatorialMeanOfDate>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialMeanOfDate, EME2000>(jd, &ctx);
     let v = [0.1, 0.9, -0.4];
@@ -652,7 +652,7 @@ fn test_eme2000_to_mean_of_date_roundtrip() {
 #[test]
 fn test_eme2000_to_true_of_date_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<EME2000, EquatorialTrueOfDate>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialTrueOfDate, EME2000>(jd, &ctx);
     let v = [0.6, -0.2, 0.7];
@@ -735,7 +735,7 @@ fn test_gcrs_to_ecliptic_roundtrip() {
 #[test]
 fn test_gcrs_to_true_of_date_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<GCRSFrame, EquatorialTrueOfDate>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialTrueOfDate, GCRSFrame>(jd, &ctx);
     let v = [0.9, -0.1, 0.3];
@@ -784,7 +784,7 @@ fn test_j2000_ecliptic_roundtrip() {
 #[test]
 fn test_j2000_to_mean_of_date_non_identity_at_offset_epoch() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5)); // ~2023
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5)); // ~2023
 
     let rot = frame_rotation::<EquatorialMeanJ2000, EquatorialMeanOfDate>(jd, &ctx);
     let v = [0.0, 1.0, 0.0];
@@ -801,7 +801,7 @@ fn test_j2000_to_mean_of_date_non_identity_at_offset_epoch() {
 #[test]
 fn test_j2000_to_true_of_date_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<EquatorialMeanJ2000, EquatorialTrueOfDate>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialTrueOfDate, EquatorialMeanJ2000>(jd, &ctx);
     let v = [0.4, -0.6, 0.3];
@@ -814,7 +814,7 @@ fn test_j2000_to_true_of_date_roundtrip() {
 #[test]
 fn test_icrs_to_mean_of_date_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<ICRS, EquatorialMeanOfDate>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialMeanOfDate, ICRS>(jd, &ctx);
     let v = [0.2, 0.8, -0.4];
@@ -827,7 +827,7 @@ fn test_icrs_to_mean_of_date_roundtrip() {
 #[test]
 fn test_icrs_to_true_of_date_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<ICRS, EquatorialTrueOfDate>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialTrueOfDate, ICRS>(jd, &ctx);
     let v = [0.7, -0.2, 0.5];
@@ -840,7 +840,7 @@ fn test_icrs_to_true_of_date_roundtrip() {
 #[test]
 fn test_mean_of_date_to_true_of_date_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<EquatorialMeanOfDate, EquatorialTrueOfDate>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialTrueOfDate, EquatorialMeanOfDate>(jd, &ctx);
     let v = [0.5, 0.5, 0.5];
@@ -866,7 +866,7 @@ fn test_icrf_j2000_roundtrip() {
 #[test]
 fn test_icrf_mean_of_date_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<ICRF, EquatorialMeanOfDate>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialMeanOfDate, ICRF>(jd, &ctx);
     let v = [0.1, -0.8, 0.6];
@@ -879,7 +879,7 @@ fn test_icrf_mean_of_date_roundtrip() {
 #[test]
 fn test_icrf_true_of_date_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<ICRF, EquatorialTrueOfDate>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialTrueOfDate, ICRF>(jd, &ctx);
     let v = [0.4, 0.4, -0.8];
@@ -896,7 +896,7 @@ fn test_icrf_true_of_date_roundtrip() {
 #[test]
 fn test_j2000_to_true_via_mean_equals_direct() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
 
     // Direct EquatorialMeanJ2000 → EquatorialTrueOfDate (precession + nutation, no EOP)
     let direct = frame_rotation::<EquatorialMeanJ2000, EquatorialTrueOfDate>(jd, &ctx);
@@ -921,7 +921,7 @@ fn test_j2000_to_true_via_mean_equals_direct() {
 #[test]
 fn test_all_frame_rotations_preserve_length() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let v = [0.3_f64, -0.7, 0.5];
     let n_orig = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
 
@@ -964,7 +964,7 @@ fn test_all_frame_rotations_preserve_length() {
 #[test]
 fn test_gcrs_to_cirs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<GCRSFrame, CIRS>(jd, &ctx);
     let r2 = frame_rotation::<CIRS, GCRSFrame>(jd, &ctx);
     let v = [0.4, 0.5, 0.6];
@@ -977,7 +977,7 @@ fn test_gcrs_to_cirs_roundtrip() {
 #[test]
 fn test_cirs_to_tirs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<CIRS, TIRS>(jd, &ctx);
     let r2 = frame_rotation::<TIRS, CIRS>(jd, &ctx);
     let v = [0.3, -0.6, 0.7];
@@ -990,7 +990,7 @@ fn test_cirs_to_tirs_roundtrip() {
 #[test]
 fn test_tirs_to_itrf_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<TIRS, ITRF>(jd, &ctx);
     let r2 = frame_rotation::<ITRF, TIRS>(jd, &ctx);
     let v = [0.5, 0.5, -0.5];
@@ -1015,7 +1015,7 @@ fn test_itrf_ecef_identity() {
 #[test]
 fn test_icrs_to_ecef_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<ICRS, ECEF>(jd, &ctx);
     let r2 = frame_rotation::<ECEF, ICRS>(jd, &ctx);
     let v = [0.8, -0.3, 0.4];
@@ -1028,7 +1028,7 @@ fn test_icrs_to_ecef_roundtrip() {
 #[test]
 fn test_icrs_to_itrf_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<ICRS, ITRF>(jd, &ctx);
     let r2 = frame_rotation::<ITRF, ICRS>(jd, &ctx);
     let v = [0.6, 0.2, -0.7];
@@ -1041,7 +1041,7 @@ fn test_icrs_to_itrf_roundtrip() {
 #[test]
 fn test_icrs_to_tirs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<ICRS, TIRS>(jd, &ctx);
     let r2 = frame_rotation::<TIRS, ICRS>(jd, &ctx);
     let v = [0.4, -0.5, 0.6];
@@ -1054,7 +1054,7 @@ fn test_icrs_to_tirs_roundtrip() {
 #[test]
 fn test_icrs_to_cirs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<ICRS, CIRS>(jd, &ctx);
     let r2 = frame_rotation::<CIRS, ICRS>(jd, &ctx);
     let v = [0.7, 0.1, -0.6];
@@ -1067,7 +1067,7 @@ fn test_icrs_to_cirs_roundtrip() {
 #[test]
 fn test_earth_chain_preserves_length() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let v = [0.5_f64, -0.3, 0.7];
     let n_orig = (v[0] * v[0] + v[1] * v[1] + v[2] * v[2]).sqrt();
 
@@ -1102,7 +1102,7 @@ fn test_earth_chain_preserves_length() {
 #[test]
 fn test_ecliptic_to_ecef_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<EclipticMeanJ2000, ECEF>(jd, &ctx);
     let r2 = frame_rotation::<ECEF, EclipticMeanJ2000>(jd, &ctx);
     let v = [0.3, -0.5, 0.8];
@@ -1115,7 +1115,7 @@ fn test_ecliptic_to_ecef_roundtrip() {
 #[test]
 fn test_true_of_date_to_itrf_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
+    let jd = crate::time::jd(qtty::Day::new(2_460_000.5));
     let r1 = frame_rotation::<EquatorialTrueOfDate, ITRF>(jd, &ctx);
     let r2 = frame_rotation::<ITRF, EquatorialTrueOfDate>(jd, &ctx);
     let v = [0.6, 0.4, -0.3];

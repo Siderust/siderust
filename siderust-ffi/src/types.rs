@@ -48,6 +48,7 @@
 //!
 //! Adapters should enforce these rules at their language boundary.
 
+use crate::error::SiderustStatus;
 use crate::ffi_utils::FfiFrom;
 use qtty::angular::Degrees;
 use qtty::angular_rate::AngularRate;
@@ -63,7 +64,7 @@ use siderust::coordinates::centers::{
     OrbitReferenceCenter as RustOrbitRefCenter,
 };
 use siderust::coordinates::frames::ECEF;
-use siderust::time::{JulianDate, ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Period};
 use tempoch::Interval;
 
 // Re-export tempoch-ffi types so the generated header can reference them.
@@ -484,15 +485,21 @@ pub struct SiderustOrbit {
 impl SiderustOrbit {
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::astro::orbit::KeplerianOrbit {
-        siderust::astro::orbit::KeplerianOrbit::new(
+        self.try_to_rust()
+            .expect("SiderustOrbit epoch_jd must be finite")
+    }
+
+    /// Convert to the Rust domain type with epoch validation.
+    pub fn try_to_rust(&self) -> Result<siderust::astro::orbit::KeplerianOrbit, SiderustStatus> {
+        Ok(siderust::astro::orbit::KeplerianOrbit::new(
             AstronomicalUnits::new(self.semi_major_axis_au),
             self.eccentricity,
             Degrees::new(self.inclination_deg),
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
-            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
-        )
+            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
+        ))
     }
 
     /// Create from the Rust domain type.
@@ -532,23 +539,29 @@ pub struct SiderustMeanMotionOrbit {
 impl SiderustMeanMotionOrbit {
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::MeanMotionOrbit {
-        siderust::MeanMotionOrbit::new_unchecked(
+        self.try_to_rust()
+            .expect("SiderustMeanMotionOrbit must be valid")
+    }
+
+    /// Convert to the Rust domain type with validation.
+    ///
+    /// Returns an error if any field is invalid: non-positive semi-major axis,
+    /// non-finite or negative eccentricity, non-finite orientation angles,
+    /// eccentricity ≥ 1, or a non-finite epoch.
+    pub fn try_to_rust(&self) -> Result<siderust::MeanMotionOrbit, SiderustStatus> {
+        Ok(siderust::MeanMotionOrbit::new_unchecked(
             AstronomicalUnits::new(self.semi_major_axis_au),
             self.eccentricity,
             Degrees::new(self.inclination_deg),
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             AngularRate::<Degree, Day>::new(self.mean_motion_deg_per_day),
-            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
-        )
+            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
+        ))
     }
 
-    /// Convert to the Rust domain type with validation.
-    ///
-    /// Returns an error if any field is invalid: non-positive semi-major axis,
-    /// non-finite or negative eccentricity, non-finite orientation angles, or
-    /// eccentricity ≥ 1 (this type only supports elliptic orbits).
-    pub fn try_to_rust(&self) -> Result<siderust::MeanMotionOrbit, siderust::ConicError> {
+    /// Convert to the Rust domain type with full geometric validation.
+    pub fn try_to_rust_validated(&self) -> Result<siderust::MeanMotionOrbit, SiderustStatus> {
         siderust::MeanMotionOrbit::try_new(
             AstronomicalUnits::new(self.semi_major_axis_au),
             self.eccentricity,
@@ -556,8 +569,9 @@ impl SiderustMeanMotionOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             AngularRate::<Degree, Day>::new(self.mean_motion_deg_per_day),
-            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
+            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
         )
+        .map_err(|_| SiderustStatus::InvalidArgument)
     }
 
     /// Create from the Rust domain type.
@@ -601,22 +615,25 @@ pub struct SiderustConicOrbit {
 impl SiderustConicOrbit {
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::ConicOrbit {
-        siderust::ConicOrbit::new_unchecked(
+        self.try_to_rust()
+            .expect("SiderustConicOrbit must be valid")
+    }
+
+    /// Convert to the Rust domain type with epoch validation.
+    pub fn try_to_rust(&self) -> Result<siderust::ConicOrbit, SiderustStatus> {
+        Ok(siderust::ConicOrbit::new_unchecked(
             AstronomicalUnits::new(self.periapsis_distance_au),
             self.eccentricity,
             Degrees::new(self.inclination_deg),
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
-            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
-        )
+            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
+        ))
     }
 
-    /// Convert to the Rust domain type with validation.
-    ///
-    /// Returns an error if any field is invalid: non-positive periapsis distance,
-    /// non-finite or negative eccentricity, or non-finite orientation angles.
-    pub fn try_to_rust(&self) -> Result<siderust::ConicOrbit, siderust::ConicError> {
+    /// Convert to the Rust domain type with full geometric validation.
+    pub fn try_to_rust_validated(&self) -> Result<siderust::ConicOrbit, SiderustStatus> {
         siderust::ConicOrbit::try_new(
             AstronomicalUnits::new(self.periapsis_distance_au),
             self.eccentricity,
@@ -624,8 +641,9 @@ impl SiderustConicOrbit {
             Degrees::new(self.lon_ascending_node_deg),
             Degrees::new(self.arg_periapsis_deg),
             Degrees::new(self.mean_anomaly_deg),
-            JulianDate::from_raw_unchecked(qtty::Day::new(self.epoch_jd)),
+            crate::ffi_utils::jd_from_f64(self.epoch_jd)?,
         )
+        .map_err(|_| SiderustStatus::InvalidArgument)
     }
 
     /// Create from the Rust domain type.
@@ -668,14 +686,20 @@ pub struct SiderustBodycentricParams {
 impl SiderustBodycentricParams {
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> RustBodycentricParams {
-        let orbit = self.orbit.to_rust();
+        self.try_to_rust()
+            .expect("SiderustBodycentricParams orbit must be valid")
+    }
+
+    /// Convert to the Rust domain type with orbit epoch validation.
+    pub fn try_to_rust(&self) -> Result<RustBodycentricParams, SiderustStatus> {
+        let orbit = self.orbit.try_to_rust()?;
         let orbit_center = match self.orbit_center {
             0 => RustOrbitRefCenter::Barycentric,
             1 => RustOrbitRefCenter::Heliocentric,
             2 => RustOrbitRefCenter::Geocentric,
             _ => RustOrbitRefCenter::Heliocentric, // safe default
         };
-        RustBodycentricParams::new(orbit, orbit_center)
+        Ok(RustBodycentricParams::new(orbit, orbit_center))
     }
 
     /// Create from the Rust domain type.
@@ -797,15 +821,21 @@ pub struct SiderustAltitudeQuery {
 impl SiderustAltitudeQuery {
     /// Convert to the Rust domain type.
     pub fn to_rust(&self) -> siderust::AltitudeQuery {
-        siderust::AltitudeQuery {
+        self.try_to_rust()
+            .expect("SiderustAltitudeQuery MJD bounds must be finite")
+    }
+
+    /// Convert to the Rust domain type with MJD validation.
+    pub fn try_to_rust(&self) -> Result<siderust::AltitudeQuery, SiderustStatus> {
+        Ok(siderust::AltitudeQuery {
             observer: self.observer.to_rust(),
             window: Interval::new(
-                ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(self.start_mjd)),
-                ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(self.end_mjd)),
+                crate::ffi_utils::mjd_from_f64(self.start_mjd)?,
+                crate::ffi_utils::mjd_from_f64(self.end_mjd)?,
             ),
             min_altitude: Degrees::new(self.min_altitude_deg),
             max_altitude: Degrees::new(self.max_altitude_deg),
-        }
+        })
     }
 }
 
@@ -1304,8 +1334,8 @@ mod tests {
     fn ffi_from_period_mjd() {
         use tempoch::Interval;
         let p: Period<ModifiedJulianDate> = Interval::new(
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60001.0)),
+            siderust::time::try_mjd_f64(60000.0).unwrap(),
+            siderust::time::try_mjd_f64(60001.0).unwrap(),
         );
         let ffi = TempochPeriodMjd::ffi_from(&p);
         assert!((ffi.start_mjd - 60000.0).abs() < 1e-10);
@@ -1317,7 +1347,7 @@ mod tests {
     #[test]
     fn crossing_event_from_rust_rising() {
         let e = siderust::CrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5)),
+            mjd: siderust::time::try_mjd_f64(60000.5).unwrap(),
             direction: siderust::CrossingDirection::Rising,
         };
         let ffi = SiderustCrossingEvent::from_rust(&e);
@@ -1328,7 +1358,7 @@ mod tests {
     #[test]
     fn crossing_event_from_rust_setting() {
         let e = siderust::CrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5)),
+            mjd: siderust::time::try_mjd_f64(60000.5).unwrap(),
             direction: siderust::CrossingDirection::Setting,
         };
         let ffi = SiderustCrossingEvent::ffi_from(&e);
@@ -1338,7 +1368,7 @@ mod tests {
     #[test]
     fn culmination_event_from_rust_max() {
         let e = siderust::CulminationEvent {
-            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             altitude: qtty::angular::Degrees::new(45.0),
             kind: siderust::CulminationKind::Max,
         };
@@ -1350,7 +1380,7 @@ mod tests {
     #[test]
     fn culmination_event_from_rust_min() {
         let e = siderust::CulminationEvent {
-            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             altitude: qtty::angular::Degrees::new(-10.0),
             kind: siderust::CulminationKind::Min,
         };
@@ -1364,7 +1394,7 @@ mod tests {
     fn azimuth_extremum_ffi_from_max() {
         use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
-            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             azimuth: qtty::angular::Degrees::new(180.0),
             kind: AzimuthExtremumKind::Max,
         };
@@ -1377,7 +1407,7 @@ mod tests {
     fn azimuth_extremum_ffi_from_min() {
         use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
-            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             azimuth: qtty::angular::Degrees::new(0.0),
             kind: AzimuthExtremumKind::Min,
         };
@@ -1391,7 +1421,7 @@ mod tests {
     fn azimuth_crossing_event_ffi_from_rising() {
         use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             direction: AzimuthCrossingDirection::Rising,
         };
         let ffi = SiderustAzimuthCrossingEvent::ffi_from(&e);
@@ -1402,7 +1432,7 @@ mod tests {
     fn azimuth_crossing_event_ffi_from_setting() {
         use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
-            mjd: tempoch::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             direction: AzimuthCrossingDirection::Setting,
         };
         let ffi = SiderustAzimuthCrossingEvent::ffi_from(&e);

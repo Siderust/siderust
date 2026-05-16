@@ -267,7 +267,7 @@ impl OrientationTrig {
 ///     JulianDate::J2000,
 /// );
 /// let prepared = PreparedOrbit::try_from(orbit).unwrap();
-/// let pos = prepared.position_at(JulianDate::from_raw_unchecked(qtty::Day::new(2459200.5)));
+/// let pos = prepared.position_at(crate::time::jd(qtty::Day::new(2459200.5)));
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PreparedOrbit {

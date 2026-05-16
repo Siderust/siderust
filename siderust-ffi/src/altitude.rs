@@ -22,8 +22,8 @@ pub(crate) fn window_from_c(
         return Err(SiderustStatus::InvalidPeriod);
     }
     Ok(Interval::new(
-        ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(w.start_mjd)),
-        ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(w.end_mjd)),
+        crate::ffi_utils::mjd_from_f64(w.start_mjd)?,
+        crate::ffi_utils::mjd_from_f64(w.end_mjd)?,
     ))
 }
 

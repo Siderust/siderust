@@ -231,7 +231,7 @@ mod tests {
     }
 
     fn jd_mid() -> JulianDate {
-        JulianDate::from_raw_unchecked(qtty::Day::new(JD_J2000 + 500.0))
+        crate::time::jd(qtty::Day::new(JD_J2000 + 500.0))
     }
 
     // ── Construction ─────────────────────────────────────────────────────

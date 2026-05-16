@@ -27,7 +27,6 @@ use siderust::calculus::azimuth::{
 };
 use siderust::AltitudePeriodsProvider;
 use siderust::AzimuthProvider;
-use tempoch::ModifiedJulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Altitude, instantaneous
@@ -48,7 +47,7 @@ pub extern "C" fn siderust_altitude_at(
         dispatch_subject!(subject, |p| {
             unsafe {
                 *out_rad = p
-                    .altitude_at(&observer.to_rust(), ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(mjd)))
+                    .altitude_at(&observer.to_rust(), ffi_try!(crate::ffi_utils::mjd_from_f64(mjd)))
                     .value();
             }
             SiderustStatus::Ok
@@ -203,7 +202,7 @@ pub extern "C" fn siderust_altitude_periods(
     ffi_guard! {{
         match subject.kind {
             SiderustSubjectKind::Body => {
-                let q = query.to_rust();
+                let q = ffi_try!(query.try_to_rust());
                 dispatch_body!(subject.body, |b| {
                     periods_to_c(b.altitude_periods(&q), out, count)
                 })
@@ -232,7 +231,7 @@ pub extern "C" fn siderust_azimuth_at(
         dispatch_subject!(subject, |p| {
             unsafe {
                 *out_deg = p
-                    .azimuth_at(&observer.to_rust(), ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(mjd)))
+                    .azimuth_at(&observer.to_rust(), ffi_try!(crate::ffi_utils::mjd_from_f64(mjd)))
                     .value();
             }
             SiderustStatus::Ok

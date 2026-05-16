@@ -217,7 +217,7 @@ impl StarAltitudeParams {
 
             let mut dt = dt_first;
             while (period.start.raw() + dt) <= (period.end.raw() + CROSSING_EDGE_EPS) {
-                let t_unclamped = ModifiedJulianDate::from_raw_unchecked(period.start.raw() + dt);
+                let t_unclamped = crate::time::mjd(period.start.raw() + dt);
                 let t_cross = if t_unclamped.raw() >= period.end.raw() {
                     period.end
                 } else if t_unclamped.raw() <= period.start.raw() {
@@ -319,8 +319,8 @@ mod tests {
             JulianDate::J2000,
         );
         let period = Period::new(
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0)),
+            crate::time::mjd(qtty::Day::new(60000.0)),
+            crate::time::mjd(qtty::Day::new(60007.0)),
         );
         if let ThresholdResult::Crossings { h0 } = params.threshold_ha(Radians::new(0.0)) {
             let crossings = params.predict_crossings(period, h0);

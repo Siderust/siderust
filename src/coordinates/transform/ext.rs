@@ -644,7 +644,7 @@ mod tests {
         use crate::astro::nutation::{Iau2006, Iau2006A};
 
         let dir = Direction::<ICRS>::new(1.0, 0.0, 0.0);
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_458_850.0));
+        let jd = crate::time::jd(qtty::Day::new(2_458_850.0));
         let ctx: AstroContext<DefaultEphemeris, DefaultEop> = AstroContext::default();
 
         let with_nutation = dir

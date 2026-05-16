@@ -186,7 +186,7 @@ pub trait AzimuthProvider {
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let window = Period::new(ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)), ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60001.0)));
+/// let window = Period::new(crate::time::mjd(qtty::Day::new(60000.0)), crate::time::mjd(qtty::Day::new(60001.0)));
 /// let query = AzimuthQuery {
 ///     observer: site,
 ///     window,
@@ -358,8 +358,8 @@ mod tests {
 
     fn one_day_window() -> Period<ModifiedJulianDate> {
         Period::new(
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60001.0)),
+            crate::time::mjd(qtty::Day::new(60000.0)),
+            crate::time::mjd(qtty::Day::new(60001.0)),
         )
     }
 
@@ -367,7 +367,7 @@ mod tests {
     fn sun_azimuth_at_returns_valid_range() {
         let az = solar_system::Sun.azimuth_at(
             &greenwich(),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5)), // noon-ish
+            crate::time::mjd(qtty::Day::new(60000.5)), // noon-ish
         );
         assert!(az.value() >= 0.0, "azimuth must be ≥ 0");
         assert!(az.value() < std::f64::consts::TAU, "azimuth must be < 2π");
@@ -377,7 +377,7 @@ mod tests {
     fn moon_azimuth_at_returns_valid_range() {
         let az = Moon.azimuth_at(
             &greenwich(),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5)),
+            crate::time::mjd(qtty::Day::new(60000.5)),
         );
         assert!(az.value() >= 0.0);
         assert!(az.value() < std::f64::consts::TAU);
@@ -388,7 +388,7 @@ mod tests {
         let sirius = &catalog::SIRIUS;
         let az = sirius.azimuth_at(
             &greenwich(),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5)),
+            crate::time::mjd(qtty::Day::new(60000.5)),
         );
         assert!(az.value() >= 0.0);
         assert!(az.value() < std::f64::consts::TAU);
@@ -398,7 +398,7 @@ mod tests {
     fn star_and_icrs_agree() {
         let sirius = &catalog::SIRIUS;
         let dir = direction::ICRS::from(sirius);
-        let mjd = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5));
+        let mjd = crate::time::mjd(qtty::Day::new(60000.5));
         let az_star = sirius.azimuth_at(&greenwich(), mjd);
         let az_dir = dir.azimuth_at(&greenwich(), mjd);
         assert!(
@@ -462,7 +462,7 @@ mod tests {
     fn mars_azimuth_at_returns_valid_range() {
         let az = solar_system::Mars.azimuth_at(
             &greenwich(),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5)),
+            crate::time::mjd(qtty::Day::new(60000.5)),
         );
         assert!(az.value() >= 0.0, "azimuth must be ≥ 0, got {}", az);
         assert!(
@@ -475,7 +475,7 @@ mod tests {
     #[test]
     fn all_planets_azimuth_valid() {
         let observer = greenwich();
-        let mjd = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5));
+        let mjd = crate::time::mjd(qtty::Day::new(60000.5));
         let mercury_az = solar_system::Mercury.azimuth_at(&observer, mjd);
         let venus_az = solar_system::Venus.azimuth_at(&observer, mjd);
         let mars_az = solar_system::Mars.azimuth_at(&observer, mjd);
