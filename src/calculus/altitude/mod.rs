@@ -47,8 +47,9 @@
 //! ## Time Scale
 //!
 //! `ModifiedJulianDate` / `Period<ModifiedJulianDate>` values in this API are interpreted on
-//! the TT axis (`tempoch` canonical JD(TT) semantics). If your inputs are UTC
-//! timestamps, convert them with `Modifiedtempoch::Time::<tempoch::UTC>::from_chrono(…).to::<tempoch::TT>().to::<tempoch::JD>().into()` first.
+//! the TT axis. If your inputs are UTC timestamps, convert them with
+//! `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
+//! into `ModifiedJulianDate` first.
 //!
 //! ## Trait-Based API
 //!

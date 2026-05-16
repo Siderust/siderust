@@ -24,10 +24,10 @@ fn julian_date_arithmetic_and_display_branches() {
     let printed = format!("{jd}");
     assert_eq!(printed, format!("{}", jd.raw()));
 
-    jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(2.0));
-    jd = JulianDate::from_raw_unchecked(jd.raw() - Days::new(0.5));
+    jd += Days::new(2.0);
+    jd -= Days::new(0.5);
 
-    let with_years = JulianDate::from_raw_unchecked(jd.raw() + JULIAN_YEAR_DAYS);
+    let with_years = jd + JULIAN_YEAR_DAYS;
     let day_span: Days = with_years.raw() - jd.raw();
     assert!((day_span.value() - JULIAN_YEAR_DAYS.value()).abs() < 1e-9);
 
@@ -38,9 +38,9 @@ fn julian_date_arithmetic_and_display_branches() {
         .to::<siderust::time::UTC>()
         .to_chrono()
         .expect("valid UTC");
-    let roundtrip = siderust::time::Time::<siderust::time::UTC>::from_chrono(utc)
+    let roundtrip: JulianDate = siderust::time::Time::<siderust::time::UTC>::from_chrono(utc)
         .to::<siderust::time::TT>()
-        .to::<siderust::time::JD>();
+        .into();
     assert!((roundtrip.raw().value() - jd.raw().value()).abs() < 1e-6);
 }
 

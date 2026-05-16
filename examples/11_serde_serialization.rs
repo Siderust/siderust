@@ -81,11 +81,7 @@ mod demo {
         let time_bundle = TimeBundle {
             j2000: jd,
             mjd,
-            timeline: vec![
-                jd,
-                JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0)),
-                JulianDate::from_raw_unchecked(jd.raw() + Days::new(7.0)),
-            ],
+            timeline: vec![jd, jd + Days::new(1.0), jd + Days::new(7.0)],
         };
         println!("{}", pretty_json(&time_bundle));
 

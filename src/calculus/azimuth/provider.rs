@@ -58,8 +58,9 @@ use crate::time::JulianDate;
 /// ## Time Scale
 ///
 /// All `ModifiedJulianDate` and `Period<ModifiedJulianDate>` values are on the canonical
-/// JD(TT) axis.  Convert UTC instants with `Modifiedtempoch::Time::<tempoch::UTC>::from_chrono(…).to::<tempoch::TT>().to::<tempoch::JD>().into()`
-/// before using this API.
+/// JD(TT) axis. Convert UTC instants with
+/// `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
+/// into `ModifiedJulianDate` before using this API.
 ///
 /// ## Azimuth convention
 ///
@@ -375,10 +376,7 @@ mod tests {
 
     #[test]
     fn moon_azimuth_at_returns_valid_range() {
-        let az = Moon.azimuth_at(
-            &greenwich(),
-            crate::time::mjd(qtty::Day::new(60000.5)),
-        );
+        let az = Moon.azimuth_at(&greenwich(), crate::time::mjd(qtty::Day::new(60000.5)));
         assert!(az.value() >= 0.0);
         assert!(az.value() < std::f64::consts::TAU);
     }
@@ -386,10 +384,7 @@ mod tests {
     #[test]
     fn star_azimuth_at_returns_valid_range() {
         let sirius = &catalog::SIRIUS;
-        let az = sirius.azimuth_at(
-            &greenwich(),
-            crate::time::mjd(qtty::Day::new(60000.5)),
-        );
+        let az = sirius.azimuth_at(&greenwich(), crate::time::mjd(qtty::Day::new(60000.5)));
         assert!(az.value() >= 0.0);
         assert!(az.value() < std::f64::consts::TAU);
     }
@@ -460,10 +455,8 @@ mod tests {
 
     #[test]
     fn mars_azimuth_at_returns_valid_range() {
-        let az = solar_system::Mars.azimuth_at(
-            &greenwich(),
-            crate::time::mjd(qtty::Day::new(60000.5)),
-        );
+        let az =
+            solar_system::Mars.azimuth_at(&greenwich(), crate::time::mjd(qtty::Day::new(60000.5)));
         assert!(az.value() >= 0.0, "azimuth must be ≥ 0, got {}", az);
         assert!(
             az.value() < std::f64::consts::TAU,

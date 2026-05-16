@@ -16,7 +16,7 @@
 use siderust::calculus::ephemeris::Vsop87Ephemeris;
 use siderust::calculus::lunar::phase::*;
 use siderust::qtty::*;
-use siderust::time::{JulianDate, ModifiedJulianDate, Period};
+use siderust::time::{JulianDate, Period};
 
 // ---------------------------------------------------------------------------
 // Helpers, known lunar events from the USNO / Meeus
@@ -31,7 +31,7 @@ fn jd_from_utc(year: i32, month: u32, day: u32, hour: u32, min: u32) -> JulianDa
         .unwrap();
     tempoch::Time::<tempoch::UTC>::from_chrono(dt)
         .to::<tempoch::TT>()
-        .to::<tempoch::JD>()
+        .into()
 }
 
 // ---------------------------------------------------------------------------
@@ -42,7 +42,7 @@ fn jd_from_utc(year: i32, month: u32, day: u32, hour: u32, min: u32) -> JulianDa
 fn l1_illuminated_fraction_bounded_1000_points() {
     let start = JulianDate::J2000;
     for i in 0..1000 {
-        let jd = JulianDate::from_raw_unchecked(start.raw() + Days::new(i as f64 * 0.37)); // irregular spacing
+        let jd = start + Days::new(i as f64 * 0.37); // irregular spacing
         let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
         assert!(
             geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0,
@@ -197,9 +197,7 @@ fn l5_topocentric_parallax_bound() {
 
     for (s, site) in sites.iter().enumerate() {
         for i in 0..10 {
-            let jd = JulianDate::from_raw_unchecked(
-                JulianDate::J2000.raw() + Days::new(i as f64 * 30.0),
-            );
+            let jd = JulianDate::J2000 + Days::new(i as f64 * 30.0);
             let geo = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             let topo = moon_phase_topocentric::<Vsop87Ephemeris>(jd, *site);
 
@@ -290,7 +288,7 @@ fn l6_waxing_waning_flags() {
 #[test]
 fn l4b_all_four_phase_kinds_found() {
     let start = JulianDate::J2000.to_time().to::<tempoch::MJD>();
-    let end = ModifiedJulianDate::from_raw_unchecked(start.raw() + Days::new(35.0));
+    let end = start + Days::new(35.0);
     let window = Period::new(start, end);
     let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
 
@@ -308,7 +306,7 @@ fn l4b_all_four_phase_kinds_found() {
 #[test]
 fn series_sample_correct_length() {
     let start = JulianDate::J2000.to_time().to::<tempoch::MJD>();
-    let end = ModifiedJulianDate::from_raw_unchecked(start.raw() + Days::new(29.0));
+    let end = start + Days::new(29.0);
     let step = Days::new(1.0);
     let series = MoonPhaseSeries::<Vsop87Ephemeris>::sample(start, end, step);
     assert_eq!(series.len(), 30); // days 0..=29
@@ -321,7 +319,7 @@ fn series_topocentric_works() {
 
     let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
     let start = JulianDate::J2000.to_time().to::<tempoch::MJD>();
-    let end = ModifiedJulianDate::from_raw_unchecked(start.raw() + Days::new(5.0));
+    let end = start + Days::new(5.0);
     let step = Days::new(1.0);
     let series = MoonPhaseSeries::<Vsop87Ephemeris>::sample_topocentric(start, end, step, site);
     assert_eq!(series.len(), 6);

@@ -1793,7 +1793,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "tempoch",
+ "tempoch 0.5.1",
  "ureq",
  "walkdir",
  "wide",
@@ -1807,7 +1807,7 @@ dependencies = [
  "cbindgen",
  "qtty 0.8.1",
  "siderust",
- "tempoch",
+ "tempoch 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "tempoch-ffi",
 ]
 
@@ -1914,10 +1914,28 @@ dependencies = [
 [[package]]
 name = "tempoch"
 version = "0.5.1"
+dependencies = [
+ "tempoch-core 0.5.1",
+]
+
+[[package]]
+name = "tempoch"
+version = "0.5.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7b1d7e68af3f2dfb15180cd12404d2dfbe14af74ea5e09bad431f30d9a2be7ca"
 dependencies = [
- "tempoch-core",
+ "tempoch-core 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "tempoch-core"
+version = "0.5.1"
+dependencies = [
+ "affn",
+ "chrono",
+ "qtty 0.8.1",
+ "serde",
+ "tempoch-time-data 0.1.2",
 ]
 
 [[package]]
@@ -1929,8 +1947,7 @@ dependencies = [
  "affn",
  "chrono",
  "qtty 0.8.1",
- "serde",
- "tempoch-time-data",
+ "tempoch-time-data 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -1943,7 +1960,14 @@ dependencies = [
  "chrono",
  "qtty 0.8.1",
  "qtty-ffi",
- "tempoch",
+ "tempoch 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "tempoch-time-data"
+version = "0.1.2"
+dependencies = [
+ "chrono",
 ]
 
 [[package]]

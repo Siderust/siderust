@@ -35,9 +35,9 @@
 //! use chrono::prelude::*;
 //! use siderust::astro::sidereal::gmst_iau2006;
 //! use siderust::qtty::*;
-//! use siderust::time::{JD, TT, Time, UTC};
+//! use siderust::time::{JulianDate, TT, Time, UTC};
 //!
-//! let jd = Time::<UTC>::from_chrono(Utc::now()).to::<TT>().to::<JD>();
+//! let jd: JulianDate = Time::<UTC>::from_chrono(Utc::now()).to::<TT>().into();
 //! let gmst = gmst_iau2006(jd, jd); // jd_ut1 ≈ jd_tt for most applications
 //! let lon_madrid = Degrees::new(-3.7038).to::<Radian>();
 //! let lst = gmst + lon_madrid;

@@ -58,7 +58,8 @@ use crate::time::JulianDate;
 ///
 /// Time scale note: all `ModifiedJulianDate` and `Period<ModifiedJulianDate>` values are on
 /// the canonical JD(TT) axis (`tempoch` semantics). Convert UTC instants with
-/// `Modifiedtempoch::Time::<tempoch::UTC>::from_chrono(…).to::<tempoch::TT>().to::<tempoch::JD>().into()` before using this API.
+/// `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
+/// into `ModifiedJulianDate` before using this API.
 pub trait AltitudePeriodsProvider {
     /// Returns all contiguous intervals inside `query.window` where the
     /// body's topocentric altitude is within
@@ -699,10 +700,8 @@ mod tests {
 
     #[test]
     fn mars_altitude_at_is_finite() {
-        let alt = solar_system::Mars.altitude_at(
-            &greenwich(),
-            crate::time::mjd(qtty::Day::new(60000.5)),
-        );
+        let alt =
+            solar_system::Mars.altitude_at(&greenwich(), crate::time::mjd(qtty::Day::new(60000.5)));
         assert!(alt.is_finite());
         assert!(
             alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2),

@@ -19,8 +19,9 @@
 //! Public API: [`azimuth_crossings`], [`azimuth_extrema`],
 //! [`azimuth_ranges`], [`in_azimuth_range`], [`outside_azimuth_range`].
 //! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the
-//! TT axis. Convert UTC timestamps with `Modifiedtempoch::Time::<tempoch::UTC>::from_chrono(…).to::<tempoch::TT>().to::<tempoch::JD>().into()`
-//! first.
+//! TT axis. Convert UTC timestamps with
+//! `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
+//! into `ModifiedJulianDate` first.
 //!
 //! ### Handling the 0°/360° discontinuity
 //!

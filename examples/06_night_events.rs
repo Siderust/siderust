@@ -24,10 +24,11 @@ fn week_period_from_date(start_date: NaiveDate) -> Period<ModifiedJulianDate> {
         start_date,
         chrono::NaiveTime::from_hms_opt(0, 0, 0).expect("00:00:00 is valid"),
     ));
-    let mjd_start = siderust::time::Time::<siderust::time::UTC>::from_chrono(start_dt)
-        .to::<siderust::time::TT>()
-        .to::<siderust::time::MJD>();
-    let mjd_end = ModifiedJulianDate::from_raw_unchecked(mjd_start.raw() + Days::new(7.0));
+    let mjd_start: ModifiedJulianDate =
+        siderust::time::Time::<siderust::time::UTC>::from_chrono(start_dt)
+            .to::<siderust::time::TT>()
+            .into();
+    let mjd_end = mjd_start + Days::new(7.0);
     Period::new(mjd_start, mjd_end)
 }
 

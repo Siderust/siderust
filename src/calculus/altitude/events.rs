@@ -17,8 +17,9 @@
 //! ## Technical scope
 //!
 //! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the
-//! TT axis. Convert UTC timestamps with `Modifiedtempoch::Time::<tempoch::UTC>::from_chrono(…).to::<tempoch::TT>().to::<tempoch::JD>().into()`
-//! first. Public functions: [`crossings`], [`culminations`],
+//! TT axis. Convert UTC timestamps with
+//! `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
+//! into `ModifiedJulianDate` first. Public functions: [`crossings`], [`culminations`],
 //! [`altitude_ranges`], [`above_threshold`], [`below_threshold`]. The
 //! refinement uses bracketed root finding from `math_core::intervals` and
 //! `math_core::extrema`; precision is governed by [`SearchOpts`].

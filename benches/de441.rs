@@ -40,7 +40,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     group.bench_function("sun_barycentric", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = eph.sun_barycentric(black_box(jd));
         });
     });
@@ -48,7 +48,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     group.bench_function("earth_barycentric", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = eph.earth_barycentric(black_box(jd));
         });
     });
@@ -56,7 +56,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     group.bench_function("earth_heliocentric", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = eph.earth_heliocentric(black_box(jd));
         });
     });
@@ -64,7 +64,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     group.bench_function("earth_barycentric_velocity", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = eph.earth_barycentric_velocity(black_box(jd));
         });
     });
@@ -72,7 +72,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     group.bench_function("moon_geocentric", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = eph.moon_geocentric(black_box(jd));
         });
     });

@@ -22,10 +22,7 @@ fn main() {
 
     // One-night search window (MJD TT).
     let t_0 = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
-    let window = Period::new(
-        t_0,
-        ModifiedJulianDate::from_raw_unchecked(t_0.raw() + Days::new(1.0)),
-    );
+    let window = Period::new(t_0, t_0 + Days::new(1.0));
 
     // Constraint 1: altitude between 25° and 65°.
     let altitude_query = AltitudeQuery {

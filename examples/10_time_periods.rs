@@ -9,9 +9,9 @@ use siderust::time::{Interval, JulianDate, ModifiedJulianDate, UTC};
 
 fn main() {
     let now_utc = Utc::now();
-    let jd = siderust::time::Time::<siderust::time::UTC>::from_chrono(now_utc)
+    let jd: JulianDate = siderust::time::Time::<siderust::time::UTC>::from_chrono(now_utc)
         .to::<siderust::time::TT>()
-        .to::<siderust::time::JD>();
+        .into();
     let mjd: ModifiedJulianDate = jd.to::<siderust::time::MJD>();
 
     println!("UTC now : {}", now_utc.to_rfc3339());
@@ -25,7 +25,7 @@ fn main() {
             .unwrap_or_else(|| "N/A".into())
     );
 
-    let tomorrow = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+    let tomorrow = jd + Days::new(1.0);
     let window = Interval::<JulianDate>::new(jd, tomorrow);
     println!(
         "1-day window length: {}",

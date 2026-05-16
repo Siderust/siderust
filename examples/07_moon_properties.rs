@@ -19,7 +19,7 @@ use siderust::calculus::lunar::phase::{
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::qtty::{Days, Degree, Degrees, IlluminationFractions, Meter, Quantity};
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{JulianDate, ModifiedJulianDate, Period};
 
 fn print_periods(label: &str, periods: &[Period<ModifiedJulianDate>]) {
     println!("\n{label}: {} period(s)", periods.len());
@@ -74,15 +74,12 @@ fn main() {
         start_date,
         NaiveTime::from_hms_opt(0, 0, 0).expect("00:00:00 must be valid"),
     );
-    let jd =
+    let jd: JulianDate =
         siderust::time::Time::<siderust::time::UTC>::from_chrono(Utc.from_utc_datetime(&midnight))
             .to::<siderust::time::TT>()
-            .to::<siderust::time::JD>();
+            .into();
     let mjd = jd.to::<siderust::time::MJD>();
-    let window = Period::new(
-        mjd,
-        ModifiedJulianDate::from_raw_unchecked(mjd.raw() + Days::new(35.0)),
-    );
+    let window = Period::new(mjd, mjd + Days::new(35.0));
     let opts = PhaseSearchOpts::default();
 
     // 1) Point-in-time phase properties.

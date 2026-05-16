@@ -33,7 +33,7 @@ fn bench_sun_barycentric(c: &mut Criterion) {
     group.bench_function("vsop87", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::sun_barycentric(black_box(jd));
         });
     });
@@ -42,7 +42,7 @@ fn bench_sun_barycentric(c: &mut Criterion) {
     group.bench_function("de440", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = De440Ephemeris::sun_barycentric(black_box(jd));
         });
     });
@@ -60,7 +60,7 @@ fn bench_earth_heliocentric(c: &mut Criterion) {
     group.bench_function("vsop87", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::earth_heliocentric(black_box(jd));
         });
     });
@@ -69,7 +69,7 @@ fn bench_earth_heliocentric(c: &mut Criterion) {
     group.bench_function("de440", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = De440Ephemeris::earth_heliocentric(black_box(jd));
         });
     });
@@ -87,7 +87,7 @@ fn bench_earth_velocity(c: &mut Criterion) {
     group.bench_function("vsop87", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::earth_barycentric_velocity(black_box(jd));
         });
     });
@@ -96,7 +96,7 @@ fn bench_earth_velocity(c: &mut Criterion) {
     group.bench_function("de440", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = De440Ephemeris::earth_barycentric_velocity(black_box(jd));
         });
     });
@@ -114,7 +114,7 @@ fn bench_moon_geocentric(c: &mut Criterion) {
     group.bench_function("vsop87", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::moon_geocentric(black_box(jd));
         });
     });
@@ -123,7 +123,7 @@ fn bench_moon_geocentric(c: &mut Criterion) {
     group.bench_function("de440", |b| {
         let mut jd = JulianDate::J2000;
         b.iter(|| {
-            jd = JulianDate::from_raw_unchecked(jd.raw() + Days::new(1.0));
+            jd += Days::new(1.0);
             let _ = De440Ephemeris::moon_geocentric(black_box(jd));
         });
     });

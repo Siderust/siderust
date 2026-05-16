@@ -67,7 +67,7 @@ fn utc_mjd_to_utc_datetime(mjd_utc: f64) -> DateTime<Utc> {
 fn utc_mjd_to_tt_mjd(mjd_utc: f64) -> ModifiedJulianDate {
     tempoch::Time::<tempoch::UTC>::from_chrono(utc_mjd_to_utc_datetime(mjd_utc))
         .to::<tempoch::TT>()
-        .to::<tempoch::MJD>()
+        .into()
 }
 
 fn load_reference_data() -> ReferenceData {
@@ -88,14 +88,13 @@ fn load_reference_data() -> ReferenceData {
 
     let start_utc = parse_utc_datetime(&reference.start_utc);
     let end_utc = parse_utc_datetime(&reference.end_utc);
-    let window_tt = Period::new(
-        tempoch::Time::<tempoch::UTC>::from_chrono(start_utc)
-            .to::<tempoch::TT>()
-            .to::<tempoch::MJD>(),
-        tempoch::Time::<tempoch::UTC>::from_chrono(end_utc)
-            .to::<tempoch::TT>()
-            .to::<tempoch::MJD>(),
-    );
+    let window_start: ModifiedJulianDate = tempoch::Time::<tempoch::UTC>::from_chrono(start_utc)
+        .to::<tempoch::TT>()
+        .into();
+    let window_end: ModifiedJulianDate = tempoch::Time::<tempoch::UTC>::from_chrono(end_utc)
+        .to::<tempoch::TT>()
+        .into();
+    let window_tt = Period::new(window_start, window_end);
 
     // Reference JSON stores period endpoints as UTC-based MJD numbers.
     // Siderust altitude APIs use Period<MJD> values on the canonical TT axis.
