@@ -54,7 +54,7 @@ fn bench_star_altitude_computation(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let target = sirius_target();
     let mjd =
-        siderust::time::ModifiedJulianDate::from_raw_unchecked(siderust::qtty::Days::new(51544.5)); // J2000 epoch
+        siderust::time::ModifiedJulianDate::new(51544.5)); // J2000 epoch
 
     let mut group = c.benchmark_group("star_altitude_single");
 

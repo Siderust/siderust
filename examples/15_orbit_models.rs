@@ -15,7 +15,7 @@ use siderust::time::JulianDate;
 use siderust::{ConicKind, ConicOrbit, KeplerianOrbit, MeanMotionOrbit, PreparedOrbit};
 
 fn main() {
-    let jd = JulianDate::from_raw_unchecked(siderust::qtty::Days::new(2458850.0));
+    let jd = JulianDate::new(2458850.0);
 
     println!("=== Orbit Models ===\n");
     println!("Epoch: {:.1}\n", jd.raw().value());
@@ -28,7 +28,7 @@ fn main() {
         siderust::qtty::Degrees::new(0.0),
         siderust::qtty::Degrees::new(102.9),
         siderust::qtty::Degrees::new(100.0),
-        JulianDate::from_raw_unchecked(siderust::qtty::Days::new(2451545.0)),
+        JulianDate::new(2451545.0),
     );
     let kepler_pos = kepler.kepler_position(jd);
     println!("1. KeplerianOrbit");
@@ -48,7 +48,7 @@ fn main() {
         siderust::qtty::Degrees::new(0.0),
         siderust::qtty::Degrees::new(102.9),
         AngularRate::<Degree, Day>::new(0.9856),
-        JulianDate::from_raw_unchecked(siderust::qtty::Days::new(2451545.0)),
+        JulianDate::new(2451545.0),
     )
     .expect("valid mean-motion orbit");
     let mean_motion_pos = mean_motion.position_at(jd).expect("valid propagation");
@@ -72,7 +72,7 @@ fn main() {
         siderust::qtty::Degrees::new(58.4),
         siderust::qtty::Degrees::new(111.3),
         siderust::qtty::Degrees::new(38.4),
-        JulianDate::from_raw_unchecked(siderust::qtty::Days::new(2451545.0)),
+        JulianDate::new(2451545.0),
     )
     .expect("valid halley-like conic orbit");
     let hyperbolic = ConicOrbit::try_new(
@@ -82,7 +82,7 @@ fn main() {
         siderust::qtty::Degrees::new(24.6),
         siderust::qtty::Degrees::new(241.8),
         siderust::qtty::Degrees::new(12.0),
-        JulianDate::from_raw_unchecked(siderust::qtty::Days::new(2451545.0)),
+        JulianDate::new(2451545.0),
     )
     .expect("valid hyperbolic conic orbit");
     let halley_pos = halley_like

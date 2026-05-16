@@ -40,7 +40,7 @@ where
 }
 
 fn main() {
-    let jd = JulianDate::from_raw_unchecked(siderust::qtty::Days::new(2_460_000.5));
+    let jd = JulianDate::new(2_460_000.5);
     println!("Frame conversion demo at {:.1}", jd);
 
     let p_icrs = Position::<C, ICRS, U>::new(0.30, -0.70, 0.64);

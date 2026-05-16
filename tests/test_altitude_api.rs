@@ -41,7 +41,7 @@ fn greenwich() -> Geodetic<ECEF> {
 fn altitude_at_sun_j2000_greenwich() {
     let alt = Sun.altitude_at(
         &greenwich(),
-        siderust::time::ModifiedJulianDate::from_raw_unchecked(siderust::qtty::Days::new(51544.5)),
+        siderust::time::ModifiedJulianDate::new(51544.5)),
     );
     // J2000 = 2000-01-01 12:00 TT, winter in northern hemisphere,
     // sun should be low but above horizon around local noon (UTC ≈ TT-64s).
@@ -57,7 +57,7 @@ fn altitude_at_sun_j2000_greenwich() {
 fn altitude_at_moon_j2000_greenwich() {
     let alt = Moon.altitude_at(
         &greenwich(),
-        siderust::time::ModifiedJulianDate::from_raw_unchecked(siderust::qtty::Days::new(51544.5)),
+        siderust::time::ModifiedJulianDate::new(51544.5)),
     );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
@@ -68,7 +68,7 @@ fn altitude_at_sirius_reasonable() {
     let sirius = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
     let alt = sirius.altitude_at(
         &greenwich(),
-        siderust::time::ModifiedJulianDate::from_raw_unchecked(siderust::qtty::Days::new(51544.5)),
+        siderust::time::ModifiedJulianDate::new(51544.5)),
     );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }

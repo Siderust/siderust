@@ -57,7 +57,7 @@ fn sirius_icrs() -> direction::ICRS {
 
 fn bench_single_altitude(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-    let mjd = ModifiedJulianDate::from_raw_unchecked(siderust::qtty::Days::new(51544.5)); // J2000
+    let mjd = ModifiedJulianDate::new(51544.5)); // J2000
     let sirius = sirius_icrs();
 
     let mut group = c.benchmark_group("altitude/single_eval");
