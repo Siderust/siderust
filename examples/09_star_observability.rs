@@ -60,7 +60,7 @@ fn main() {
 
     println!("Matched periods: {}", observable_periods.len());
     for (idx, period) in observable_periods.iter().enumerate() {
-        let hours = (period.end - period.start).to::<Hour>();
+        let hours = period.length().to::<Hour>();
         println!(
             "  {}. {} -> {}  ({})",
             idx + 1,
@@ -71,7 +71,7 @@ fn main() {
     }
 
     let total_hours = observable_periods.iter().fold(Hours::new(0.0), |acc, p| {
-        acc + (p.end - p.start).to::<Hour>()
+        acc + p.length().to::<Hour>()
     });
     println!("\nTotal observable time in both ranges: {}", total_hours);
 }

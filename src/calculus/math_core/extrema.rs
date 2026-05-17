@@ -112,8 +112,8 @@ where
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
 {
     let mut p = period;
-    let mut x1 = crate::time::mjd(p.end.raw() - PHI * p.length());
-    let mut x2 = crate::time::mjd(p.start.raw() + PHI * p.length());
+    let mut x1 = p.end - p.length() * PHI;
+    let mut x2 = p.start + p.length() * PHI;
     let mut f1: Quantity<V> = f(x1);
     let mut f2: Quantity<V> = f(x2);
 
