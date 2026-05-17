@@ -115,11 +115,11 @@ pub fn mjd(raw: qtty::Day) -> ModifiedJulianDate {
 
 /// Helper: build a `ModifiedJulianDate` (TT scale) directly from a `chrono::DateTime<Utc>`.
 ///
-/// This mirrors the common pattern `Time::<UTC>::from_chrono(dt).into()` but provides
-/// a concise, single-call helper for callers that only need an MJD.
+/// This mirrors the common pattern `ModifiedJulianDate::from(dt)` but keeps a
+/// crate-local helper for callers that prefer going through `siderust::time`.
 #[inline]
-pub fn modified_julian_date_from_chrono(dt: chrono::DateTime<UTC>) -> ModifiedJulianDate {
-    Time::<UTC>::from_chrono(dt).into()
+pub fn modified_julian_date_from_chrono(dt: chrono::DateTime<chrono::Utc>) -> ModifiedJulianDate {
+    ModifiedJulianDate::from(dt)
 }
 
 pub use crate::calculus::math_core::intervals::intersect as intersect_periods;

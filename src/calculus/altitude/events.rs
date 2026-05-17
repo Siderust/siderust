@@ -81,7 +81,10 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let window = Period::new(crate::time::mjd(qtty::Day::new(60000.0)), crate::time::mjd(qtty::Day::new(60001.0)));
+/// let window = Period::new(
+///     siderust::time::mjd(qtty::Day::new(60000.0)),
+///     siderust::time::mjd(qtty::Day::new(60001.0)),
+/// );
 /// let events = crossings(&Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
 /// for e in events {
 ///     println!("{:?} at MJD {}", e.direction, e.mjd);

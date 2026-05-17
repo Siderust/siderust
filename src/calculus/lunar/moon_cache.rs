@@ -183,8 +183,7 @@ impl MoonPositionCache {
         }
 
         // Map jd into [-1, 1] within the segment
-        let seg_start =
-            crate::time::mjd(self.mjd_start.raw() + seg_idx as f64 * SEGMENT_DAYS);
+        let seg_start = crate::time::mjd(self.mjd_start.raw() + seg_idx as f64 * SEGMENT_DAYS);
         let seg_mid = crate::time::mjd(seg_start.raw() + SEGMENT_DAYS * 0.5);
         let x = (mjd.raw() - seg_mid.raw()) / (SEGMENT_DAYS * 0.5);
         let px = Kilometers::new(cheby::evaluate(&self.cx[seg_idx], x));
@@ -588,8 +587,7 @@ mod tests {
     #[test]
     fn nutation_cache_accuracy() {
         let mjd_start: ModifiedJulianDate = JulianDate::J2000.to_time().to::<crate::time::MJD>();
-        let mjd_end: ModifiedJulianDate =
-            crate::time::mjd(mjd_start.raw() + Days::new(30.0));
+        let mjd_end: ModifiedJulianDate = crate::time::mjd(mjd_start.raw() + Days::new(30.0));
         let cache = NutationCache::new(mjd_start, mjd_end);
 
         for i in 0..100 {
@@ -628,8 +626,7 @@ mod tests {
         let ctx = MoonAltitudeContext::new(mjd_start, mjd_end, site);
 
         for i in 0..50 {
-            let mjd =
-                crate::time::mjd(mjd_start.raw() + Days::new((i as f64) * 0.14 + 0.01));
+            let mjd = crate::time::mjd(mjd_start.raw() + Days::new((i as f64) * 0.14 + 0.01));
             let cached_alt = ctx.altitude_rad(mjd);
             let direct_alt = moon_altitude_rad(mjd, &site);
 

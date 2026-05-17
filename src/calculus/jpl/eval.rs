@@ -322,10 +322,7 @@ impl DynSegmentDescriptor {
 
     /// Locate the record for a given JD and compute tau.
     #[inline]
-    fn try_locate(
-        &self,
-        jd_tdb: TdbJulianDate,
-    ) -> Result<(&[f64], f64, Seconds), EphemerisError> {
+    fn try_locate(&self, jd_tdb: TdbJulianDate) -> Result<(&[f64], f64, Seconds), EphemerisError> {
         let (idx, et, _) = locate_params(self.init, self.intlen, self.n_records, jd_tdb)?;
         let record = self.record(idx);
         let (tau, radius) = record_tau(record, et);

@@ -411,6 +411,8 @@ mod tests {
 
     #[test]
     fn conic_rejects_nan_epoch() {
+        let invalid_epoch = crate::time::try_jd(qtty::Day::new(f64::NAN));
+        assert!(invalid_epoch.is_err());
         assert_eq!(
             ConicOrbit::try_new(
                 1.0 * AU,
@@ -419,7 +421,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                crate::time::jd(qtty::Day::new(f64::NAN)),
+                JulianDate::from_raw_unchecked(qtty::Day::new(f64::NAN)),
             ),
             Err(ConicError::InvalidEpoch)
         );
@@ -491,6 +493,8 @@ mod tests {
 
     #[test]
     fn mean_motion_rejects_nan_epoch() {
+        let invalid_epoch = crate::time::try_jd(qtty::Day::new(f64::NAN));
+        assert!(invalid_epoch.is_err());
         assert_eq!(
             MeanMotionOrbit::try_new(
                 1.0 * AU,
@@ -499,7 +503,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 AngularRate::<Degree, Day>::new(1.0),
-                crate::time::jd(qtty::Day::new(f64::NAN)),
+                JulianDate::from_raw_unchecked(qtty::Day::new(f64::NAN)),
             ),
             Err(ConicError::InvalidEpoch)
         );

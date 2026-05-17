@@ -408,8 +408,7 @@ mod tests {
     #[test]
     fn mean_obliquity_decreases_with_time() {
         let eps_2000 = mean_obliquity_iau2006(JulianDate::J2000);
-        let eps_2100 =
-            mean_obliquity_iau2006(crate::time::jd(qtty::Day::new(2_488_069.5)));
+        let eps_2100 = mean_obliquity_iau2006(crate::time::jd(qtty::Day::new(2_488_069.5)));
         // Obliquity is currently decreasing at ~47″/century
         assert!(eps_2100 < eps_2000, "obliquity should decrease over time");
         let diff_arcsec = (eps_2000 - eps_2100).to::<Degree>().value() * 3600.0;

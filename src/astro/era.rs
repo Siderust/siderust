@@ -132,10 +132,8 @@ mod tests {
 
     #[test]
     fn era_increases_with_time() {
-        let era1 =
-            earth_rotation_angle(crate::time::jd(qtty::Day::new(2_451_545.0)));
-        let era2 =
-            earth_rotation_angle(crate::time::jd(qtty::Day::new(2_451_545.5)));
+        let era1 = earth_rotation_angle(crate::time::jd(qtty::Day::new(2_451_545.0)));
+        let era2 = earth_rotation_angle(crate::time::jd(qtty::Day::new(2_451_545.5)));
         // Half a solar day ≈ half a sidereal rotation ≈ 180°
         // Actually ERA increases by 360.985...° per solar day, so ≈ 180.5° per half day
         let diff = (era2 - era1).value().rem_euclid(TAU);

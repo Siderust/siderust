@@ -942,7 +942,7 @@ mod tests {
     }
 
     fn make_jd_utc(yyyy: i32, mm: u32, dd: u32, h: u32, m: u32, s: u32) -> JulianDate {
-        use chrono::{DateTime, NaiveDate, Utc};
+        use chrono::{NaiveDate, TimeZone, Utc};
         let date = NaiveDate::from_ymd_opt(yyyy, mm, dd).expect("invalid date");
         let datetime = date.and_hms_opt(h, m, s).expect("invalid time");
         JulianDate::from_chrono(Utc.from_utc_datetime(&datetime))

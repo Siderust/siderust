@@ -287,9 +287,7 @@ mod tests {
         .unwrap();
         // 1e8 days ~ 274,000 years — tests M normalization for large accumulation.
         let position = orbit
-            .position_at(crate::time::jd(qtty::Day::new(
-                2451545.0 + 1e8,
-            )))
+            .position_at(crate::time::jd(qtty::Day::new(2451545.0 + 1e8)))
             .unwrap();
         assert!(position.x().is_finite());
         assert!(position.y().is_finite());
@@ -435,9 +433,7 @@ mod tests {
         .unwrap();
         // Large dt to produce large M
         let position = orbit
-            .position_at(crate::time::jd(qtty::Day::new(
-                2451545.0 + 10000.0,
-            )))
+            .position_at(crate::time::jd(qtty::Day::new(2451545.0 + 10000.0)))
             .unwrap();
         assert!(position.x().is_finite());
         assert!(position.y().is_finite());

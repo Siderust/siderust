@@ -43,7 +43,7 @@
 //! use siderust::time::JulianDate;
 //! use siderust::qtty::*;
 //!
-//! let jd_tt = crate::time::jd(qtty::Day::new(2_451_545.0));
+//! let jd_tt = siderust::time::jd(qtty::Day::new(2_451_545.0));
 //! let equatorial = spherical::Direction::<EquatorialMeanOfDate>::new(45.0 * DEG, 30.0 * DEG)
 //!     .to_cartesian();
 //!

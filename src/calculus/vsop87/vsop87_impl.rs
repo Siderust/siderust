@@ -329,7 +329,6 @@ pub fn position_velocity(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::JulianDate;
 
     const X0: [Vsop87; 1] = [Vsop87 {
         a: 1.0,

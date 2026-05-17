@@ -145,7 +145,7 @@ fn section_target_with_proper_motion(jd: JulianDate) {
         moving_target.position.dec()
     );
 
-    let jd_future = jd + Days::new(25.0 * 365.25);
+    let jd_future = jd + qtty::Year::one();
     let moved = set_proper_motion_since_j2000(moving_target.position, pm, jd_future)
         .expect("proper-motion propagation should succeed");
     moving_target.update(moved, jd_future);

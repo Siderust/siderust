@@ -337,9 +337,7 @@ mod tests {
     #[test]
     fn gmst_from_tt_varies_with_time() {
         let gmst1 = gmst_from_tt(jd());
-        let gmst2 = gmst_from_tt(crate::time::jd(qtty::Day::new(
-            JD_J2000 + 1.0,
-        )));
+        let gmst2 = gmst_from_tt(crate::time::jd(qtty::Day::new(JD_J2000 + 1.0)));
         // One sidereal day rotates by ~2π, so GMST changes significantly
         let diff = (gmst2.value() - gmst1.value()).abs();
         assert!(diff > 0.0, "GMST should change over 1 day");

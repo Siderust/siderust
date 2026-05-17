@@ -36,7 +36,7 @@ atmosphere = []
 affn = { version = "0.7", features = ["astro"] }
 cheby = "0.2"
 qtty = { version = "0.8", features = ["astro", "radiometry"] }
-tempoch = { path = "../tempoch-cpp/tempoch/tempoch", version = "0.5.1" }
+tempoch = { git = "https://github.com/Siderust/tempoch.git", branch = "helpers", version = "0.5.1" }
 approx = "0.5"
 chrono = "0.4"
 paste = "1.0"

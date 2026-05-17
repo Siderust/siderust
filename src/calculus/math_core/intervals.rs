@@ -261,8 +261,7 @@ where
                 t_end
             };
 
-            let mid_v =
-                crate::time::mjd(enter_t.raw() + (exit_t.raw() - enter_t.raw()) * 0.5);
+            let mid_v = crate::time::mjd(enter_t.raw() + (exit_t.raw() - enter_t.raw()) * 0.5);
             if mid_v >= t_start && mid_v <= t_end && is_above(f(mid_v)) {
                 periods.push(Period::new(enter_t, exit_t));
             }
