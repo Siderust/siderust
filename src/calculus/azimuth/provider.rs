@@ -441,11 +441,11 @@ mod tests {
         // Total covered should be the full window
         let total_inside: f64 = inside
             .iter()
-            .map(|p| (p.end.raw() - p.start.raw()).value())
+            .map(|p| p.length().value())
             .sum();
         let total_outside: f64 = outside
             .iter()
-            .map(|p| (p.end.raw() - p.start.raw()).value())
+            .map(|p| p.length().value())
             .sum();
         let window_len = (window.end.raw() - window.start.raw()).value();
         assert!(

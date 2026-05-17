@@ -477,5 +477,4 @@ mod tests {
             Err(ConicError::InvalidMeanMotion)
         );
     }
-
 }

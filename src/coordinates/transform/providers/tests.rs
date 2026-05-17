@@ -19,8 +19,7 @@ fn test_identity_frame_rotation() {
 
 #[test]
 fn test_icrs_to_ecliptic_rotation() {
-    let rot =
-        frame_rotation::<ICRS, EclipticMeanJ2000>(crate::J2000, &AstroContext::default());
+    let rot = frame_rotation::<ICRS, EclipticMeanJ2000>(crate::J2000, &AstroContext::default());
     let v = [1.0, 2.0, 3.0];
     let w = rot.apply_array(v);
 

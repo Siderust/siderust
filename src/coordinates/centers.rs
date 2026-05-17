@@ -507,7 +507,6 @@ mod tests {
 
     #[test]
     fn bodycentric_has_params() {
-
         // Create a simple orbit
         let orbit = KeplerianOrbit::new(
             1.524 * AU,
@@ -528,7 +527,6 @@ mod tests {
 
     #[test]
     fn bodycentric_params_constructors() {
-
         let orbit = KeplerianOrbit::new(
             1.0 * AU,
             0.0,
@@ -558,7 +556,6 @@ mod tests {
 
     #[test]
     fn bodycentric_params_equality() {
-
         let orbit1 = KeplerianOrbit::new(
             1.0 * AU,
             0.0,

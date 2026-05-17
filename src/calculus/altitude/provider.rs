@@ -478,8 +478,8 @@ mod tests {
             solar_system::Sun.above_threshold(greenwich(), one_day_window(), Degrees::new(0.0));
         assert!(!periods.is_empty(), "Sun should be above horizon at 51°N");
         for p in &periods {
-            assert!((p.end.raw() - p.start.raw()) > Days::new(0.0));
-            assert!((p.end.raw() - p.start.raw()) < Days::new(1.0));
+            assert!(p.length() > Days::new(0.0));
+            assert!(p.length() < Days::new(1.0));
         }
     }
 
@@ -605,7 +605,7 @@ mod tests {
         );
         let total: f64 = periods
             .iter()
-            .map(|p| (p.end.raw() - p.start.raw()).value())
+            .map(|p| p.length().value())
             .sum();
         assert!(
             (total - 1.0).abs() < 0.01,

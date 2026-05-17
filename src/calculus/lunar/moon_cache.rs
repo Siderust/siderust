@@ -139,8 +139,7 @@ impl MoonPositionCache {
 
             for k in 0..CHEB_NODES {
                 let mjd_k = crate::time::mjd(seg_mid.raw() + seg_half * nodes[k]);
-                let pos =
-                    DefaultEphemeris::moon_geocentric(mjd_k.to::<crate::JD>());
+                let pos = DefaultEphemeris::moon_geocentric(mjd_k.to::<crate::JD>());
                 vx[k] = pos.x().value();
                 vy[k] = pos.y().value();
                 vz[k] = pos.z().value();

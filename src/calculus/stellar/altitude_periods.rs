@@ -375,7 +375,7 @@ mod tests {
             periods.len()
         );
         for p in &periods {
-            let hours = (p.end.raw() - p.start.raw()).to::<Hour>();
+            let hours = p.length().to::<Hour>();
             // First/last period may be truncated by the window boundary
             assert!(
                 hours > Hours::new(0.1) && hours < Hours::new(18.0),

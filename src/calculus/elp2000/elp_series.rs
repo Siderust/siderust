@@ -921,7 +921,7 @@ mod tests {
     // ===========================================================================
 
     fn pos_j2000_km() -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
-        Moon::get_geo_position::<Kilometer>(crate::J2000)
+        Moon::get_geo_position::<Kilometer>(JulianDate::J2000)
     }
 
     fn r_from_xyz_km(p: &Position<Geocentric, EclipticMeanJ2000, Kilometer>) -> f64 {
@@ -942,10 +942,10 @@ mod tests {
     }
 
     fn make_jd_utc(yyyy: i32, mm: u32, dd: u32, h: u32, m: u32, s: u32) -> JulianDate {
-        use chrono::{NaiveDate, TimeZone, Utc};
+        use chrono::{DateTime, NaiveDate, Utc};
         let date = NaiveDate::from_ymd_opt(yyyy, mm, dd).expect("invalid date");
         let datetime = date.and_hms_opt(h, m, s).expect("invalid time");
-        JulianDate::from_chrono(Utc.from_utc_datetime(&datetime))
+        JulianDate::from_chrono(DateTime::<Utc>::from_naive_utc_and_offset(datetime, Utc))
     }
 
     /// Build time array t = [1, t1, t1², t1³, t1⁴] from Julian centuries
@@ -955,7 +955,7 @@ mod tests {
 
     /// Build a JulianDate from Julian centuries offset from J2000
     fn jd_from_centuries(t1: f64) -> JulianDate {
-        crate::time::jd(crate::J2000.raw() + Days::new(t1 * 36_525.0))
+        crate::time::jd(JulianDate::J2000.raw() + Days::new(t1 * 36_525.0))
     }
 
     // ===========================================================================
@@ -967,7 +967,7 @@ mod tests {
     #[test]
     fn j2000_julian_centuries_is_zero() {
         // The epoch origin must be exactly J2000 (t1 = 0)
-        let centuries = (crate::J2000.raw().value() - 2_451_545.0) / 36525.0;
+        let centuries = (JulianDate::J2000.raw().value() - 2_451_545.0) / 36525.0;
         assert!(
             centuries.abs() < 1e-15,
             "J2000.julian_centuries() should be 0, got {centuries}"
@@ -977,7 +977,7 @@ mod tests {
     #[test]
     fn julian_centuries_one_century_from_j2000() {
         // J2000 + 36525 days = exactly 1 Julian century
-        let jd = crate::time::jd(crate::J2000.raw() + Days::new(36_525.0));
+        let jd = crate::time::jd(JulianDate::J2000.raw() + Days::new(36_525.0));
         let centuries = (jd.raw().value() - 2_451_545.0) / 36525.0;
         assert!(
             (centuries - 1.0).abs() < 1e-12,

@@ -57,11 +57,7 @@ fn print_events_for_type(
                 "night-type raise (Sun rising above threshold)"
             }
         };
-        let t_utc = ev
-            .mjd
-            .to::<siderust::time::UTC>()
-            .to_chrono()
-            .expect("valid UTC");
+        let t_utc = ev.mjd.to_chrono().expect("valid UTC");
         println!("  - {} at {}", label, t_utc.format("%Y-%m-%dT%H:%M:%S"));
     }
 
@@ -81,21 +77,13 @@ fn print_periods_for_type(
     );
 
     for p in periods {
-        let s = p
-            .start
-            .to::<siderust::time::UTC>()
-            .to_chrono()
-            .expect("valid UTC");
-        let e = p
-            .end
-            .to::<siderust::time::UTC>()
-            .to_chrono()
-            .expect("valid UTC");
+        let s = p.start.to_chrono().expect("valid UTC");
+        let e = p.end.to_chrono().expect("valid UTC");
         println!(
             "  - {} -> {} ({:.1} h)",
             s.format("%Y-%m-%dT%H:%M:%S"),
             e.format("%Y-%m-%dT%H:%M:%S"),
-            (p.end.raw() - p.start.raw()).to::<siderust::qtty::Hour>()
+            p.length().to::<siderust::qtty::Hour>()
         );
     }
 }

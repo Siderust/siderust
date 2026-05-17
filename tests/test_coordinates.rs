@@ -128,9 +128,10 @@ fn test_direction_frame_transformations() {
 #[test]
 fn test_spherical_direction_transformations() {
     // Create a direction from Mars position
-    let cart_original: cartesian::Direction<EclipticMeanJ2000> = Mars::vsop87a(siderust::time::J2000)
-        .direction()
-        .expect("Mars position should have a direction");
+    let cart_original: cartesian::Direction<EclipticMeanJ2000> =
+        Mars::vsop87a(siderust::time::J2000)
+            .direction()
+            .expect("Mars position should have a direction");
 
     // Convert to spherical and back
     let sph = cart_original.to_spherical();

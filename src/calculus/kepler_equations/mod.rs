@@ -341,7 +341,7 @@ mod tests {
             Degrees::new(0.0), // Ω
             Degrees::new(0.0), // ω
             Degrees::new(0.0), // M0
-            crate::J2000, // epoch (Julian Date)
+            crate::J2000,      // epoch (Julian Date)
         );
 
         // At epoch, mean anomaly M0 = 0 degrees, so true anomaly should be 0
@@ -366,7 +366,7 @@ mod tests {
             Degrees::new(0.0), // Ω
             Degrees::new(0.0), // ω
             Degrees::new(0.0), // M0
-            crate::J2000, // epoch (Julian Date)
+            crate::J2000,      // epoch (Julian Date)
         );
 
         // At epoch, mean anomaly M0 = 0, so true anomaly = 0
@@ -384,7 +384,7 @@ mod tests {
             Degrees::new(0.0), // Ω
             Degrees::new(0.0), // ω
             Degrees::new(0.0), // M0
-            crate::J2000, // epoch (Julian Date)
+            crate::J2000,      // epoch (Julian Date)
         );
 
         // Assume circular orbit for simplicity in this test
@@ -582,7 +582,7 @@ mod tests {
             Degrees::new(0.0), // Ω
             Degrees::new(0.0), // ω
             Degrees::new(0.0), // M0
-            crate::J2000, // epoch
+            crate::J2000,      // epoch
         );
 
         // Test at different Julian dates
@@ -613,7 +613,7 @@ mod tests {
             Degrees::new(0.0), // Ω
             Degrees::new(0.0), // ω
             Degrees::new(0.0), // M0
-            crate::J2000, // epoch
+            crate::J2000,      // epoch
         );
 
         // Test the convenience method
@@ -634,7 +634,7 @@ mod tests {
             Degrees::new(0.0),  // Ω
             Degrees::new(0.0),  // ω
             Degrees::new(90.0), // M0 (90 degrees to get non-zero z)
-            crate::J2000,  // epoch
+            crate::J2000,       // epoch
         );
 
         let coord = calculate_orbit_position(&orbit, crate::J2000);
@@ -658,7 +658,7 @@ mod tests {
             Degrees::new(0.0),   // Ω
             Degrees::new(0.0),   // ω
             Degrees::new(0.0),   // M0
-            crate::J2000,   // epoch
+            crate::J2000,        // epoch
         );
 
         let coord = calculate_orbit_position(&orbit, crate::J2000);

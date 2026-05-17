@@ -56,8 +56,8 @@ pub use tempoch::{
     complement_within, constats, delta_t_seconds, delta_t_seconds_extrapolated, eop,
     ContinuousScale, ConversionError, ConversionTarget, CoordinateScale, EncodedTime,
     FormatForScale, InfallibleConversionTarget, InfallibleFormatForScale, Interval,
-    InvalidIntervalError, PeriodListError, Scale, Time, TimeContext,
-    TimeDataError, TimeInstant, JD, MJD, TAI, TCB, TCG, TDB, TT, UT1, UTC,
+    InvalidIntervalError, PeriodListError, Scale, Time, TimeContext, TimeDataError, TimeInstant,
+    JD, MJD, TAI, TCB, TCG, TDB, TT, UT1, UTC,
 };
 
 /// Julian year length in days (`365.25`), matching tempoch's compiled Julian-year definition.

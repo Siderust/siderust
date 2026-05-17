@@ -38,7 +38,7 @@ fn jd_from_utc(year: i32, month: u32, day: u32, hour: u32, min: u32) -> JulianDa
 
 #[test]
 fn l1_illuminated_fraction_bounded_1000_points() {
-    let start = siderust::time::J2000;
+    let start = JulianDate::J2000;
     for i in 0..1000 {
         let jd = start + Days::new(i as f64 * 0.37); // irregular spacing
         let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
@@ -121,8 +121,8 @@ fn l3_new_moon_low_illumination() {
 fn l4_find_phase_events_golden_regression() {
     // Known Full Moon: 2000-01-21 04:41 UTC → MJD ≈ 51563.1951
     // Known New Moon:  2000-01-06 18:14 UTC → MJD ≈ 51549.7597
-    let start = jd_from_utc(2000, 1, 1, 0, 0).to::<tempoch::MJD>();
-    let end = jd_from_utc(2000, 2, 1, 0, 0).to::<tempoch::MJD>();
+    let start = jd_from_utc(2000, 1, 1, 0, 0).to_time().to::<tempoch::MJD>();
+    let end = jd_from_utc(2000, 2, 1, 0, 0).to_time().to::<tempoch::MJD>();
     let window = Period::new(start, end);
 
     let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
@@ -141,7 +141,9 @@ fn l4_find_phase_events_golden_regression() {
     assert!(!full_moons.is_empty(), "No full moon found in Jan 2000");
 
     // Check the new moon is close to 2000-01-06 18:14 UTC
-    let expected_new = jd_from_utc(2000, 1, 6, 18, 14).to::<tempoch::MJD>();
+    let expected_new = jd_from_utc(2000, 1, 6, 18, 14)
+        .to_time()
+        .to::<tempoch::MJD>();
     let found_new = new_moons[0].mjd;
     let diff_new = if found_new > expected_new {
         found_new.raw() - expected_new.raw()
@@ -154,7 +156,9 @@ fn l4_find_phase_events_golden_regression() {
     );
 
     // Check the full moon is close to 2000-01-21 04:41 UTC
-    let expected_full = jd_from_utc(2000, 1, 21, 4, 41).to::<tempoch::MJD>();
+    let expected_full = jd_from_utc(2000, 1, 21, 4, 41)
+        .to_time()
+        .to::<tempoch::MJD>();
     let found_full = full_moons[0].mjd;
     let diff_full = if found_full > expected_full {
         found_full.raw() - expected_full.raw()
@@ -191,7 +195,7 @@ fn l5_topocentric_parallax_bound() {
 
     for (s, site) in sites.iter().enumerate() {
         for i in 0..10 {
-            let jd = siderust::time::J2000 + Days::new(i as f64 * 30.0);
+            let jd = JulianDate::J2000 + Days::new(i as f64 * 30.0);
             let geo = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             let topo = moon_phase_topocentric::<Vsop87Ephemeris>(jd, *site);
 
@@ -281,7 +285,7 @@ fn l6_waxing_waning_flags() {
 
 #[test]
 fn l4b_all_four_phase_kinds_found() {
-    let start = siderust::time::J2000.to::<tempoch::MJD>();
+    let start = JulianDate::J2000.to_time().to::<tempoch::MJD>();
     let end = start + Days::new(35.0);
     let window = Period::new(start, end);
     let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
@@ -299,7 +303,7 @@ fn l4b_all_four_phase_kinds_found() {
 
 #[test]
 fn series_sample_correct_length() {
-    let start = siderust::time::J2000.to::<tempoch::MJD>();
+    let start = JulianDate::J2000.to_time().to::<tempoch::MJD>();
     let end = start + Days::new(29.0);
     let step = Days::new(1.0);
     let series = MoonPhaseSeries::<Vsop87Ephemeris>::sample(start, end, step);
@@ -312,7 +316,7 @@ fn series_topocentric_works() {
     use siderust::coordinates::frames::ECEF;
 
     let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-    let start = siderust::time::J2000.to::<tempoch::MJD>();
+    let start = JulianDate::J2000.to_time().to::<tempoch::MJD>();
     let end = start + Days::new(5.0);
     let step = Days::new(1.0);
     let series = MoonPhaseSeries::<Vsop87Ephemeris>::sample_topocentric(start, end, step, site);

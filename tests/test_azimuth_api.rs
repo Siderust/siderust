@@ -271,7 +271,7 @@ fn outside_plus_inside_equals_window_sun() {
     let total: f64 = inside
         .iter()
         .chain(outside.iter())
-        .map(|p| (p.end.raw() - p.start.raw()).value())
+        .map(|p| p.length().value())
         .sum();
     let window_len = (window.end.raw() - window.start.raw()).value();
     assert!(
@@ -303,7 +303,7 @@ fn outside_plus_inside_equals_window_moon() {
     let total: f64 = inside
         .iter()
         .chain(outside.iter())
-        .map(|p| (p.end.raw() - p.start.raw()).value())
+        .map(|p| p.length().value())
         .sum();
     let window_len = (window.end.raw() - window.start.raw()).value();
     assert!(
@@ -340,7 +340,7 @@ fn wrap_range_complement_covers_window() {
     let total: f64 = inside
         .iter()
         .chain(outside.iter())
-        .map(|p| (p.end.raw() - p.start.raw()).value())
+        .map(|p| p.length().value())
         .sum();
     let window_len = (window.end.raw() - window.start.raw()).value();
     assert!(

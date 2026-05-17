@@ -510,7 +510,7 @@ mod tests {
         let total: f64 = inside
             .iter()
             .chain(outside.iter())
-            .map(|p| (p.end.raw() - p.start.raw()).value())
+            .map(|p| p.length().value())
             .sum();
         let window_duration = (window.end.raw() - window.start.raw()).value();
         assert!(

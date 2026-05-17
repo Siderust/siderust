@@ -24,15 +24,13 @@ use siderust::time::{JulianDate, ModifiedJulianDate, Period};
 fn print_periods(label: &str, periods: &[Period<ModifiedJulianDate>]) {
     println!("\n{label}: {} period(s)", periods.len());
     for p in periods {
-        let dur_h = (p.end.raw() - p.start.raw()).to::<siderust::qtty::Hour>();
+        let dur_h = p.length().to::<siderust::qtty::Hour>();
         let s = p
             .start
-            .to::<siderust::time::UTC>()
             .to_chrono()
             .expect("valid UTC");
         let e = p
             .end
-            .to::<siderust::time::UTC>()
             .to_chrono()
             .expect("valid UTC");
         println!(
@@ -127,7 +125,6 @@ fn main() {
     for ev in &events {
         let utc = ev
             .mjd
-            .to::<siderust::time::UTC>()
             .to_chrono()
             .expect("valid UTC");
         println!(
