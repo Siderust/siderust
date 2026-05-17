@@ -21,7 +21,7 @@ fn main() {
     let target = SIRIUS;
 
     // One-night search window (MJD TT).
-    let t_0 = ModifiedJulianDate::try_new(qtty::Day::new(60000.0)).unwrap();
+    let t_0 = ModifiedJulianDate::new(60000.0);
     let window = Period::new(t_0, t_0 + Days::new(1.0));
 
     // Constraint 1: altitude between 25° and 65°.
@@ -60,7 +60,7 @@ fn main() {
 
     println!("Matched periods: {}", observable_periods.len());
     for (idx, period) in observable_periods.iter().enumerate() {
-        let hours = (period.end.raw() - period.start.raw()).to::<Hour>();
+        let hours = (period.end - period.start).to::<Hour>();
         println!(
             "  {}. {} -> {}  ({})",
             idx + 1,
@@ -71,7 +71,7 @@ fn main() {
     }
 
     let total_hours = observable_periods.iter().fold(Hours::new(0.0), |acc, p| {
-        acc + (p.end.raw() - p.start.raw()).to::<Hour>()
+        acc + p.duration().to::<Hour>()
     });
     println!("\nTotal observable time in both ranges: {}", total_hours);
 }
