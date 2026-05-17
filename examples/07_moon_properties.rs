@@ -74,10 +74,7 @@ fn main() {
         start_date,
         NaiveTime::from_hms_opt(0, 0, 0).expect("00:00:00 must be valid"),
     );
-    let jd: JulianDate =
-        siderust::time::Time::<siderust::time::UTC>::from_chrono(Utc.from_utc_datetime(&midnight))
-            .to::<siderust::time::TT>()
-            .into();
+    let jd: JulianDate = JulianDate::from_chrono(Utc.from_utc_datetime(&midnight));
     let mjd = jd.to::<siderust::time::MJD>();
     let window = Period::new(mjd, mjd + Days::new(35.0));
     let opts = PhaseSearchOpts::default();

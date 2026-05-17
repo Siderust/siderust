@@ -13,13 +13,11 @@ use siderust::coordinates::cartesian::position::EclipticMeanJ2000;
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::transform::TransformCenter;
 use siderust::qtty::*;
-use siderust::time::{JulianDate, Time, TT, UTC};
+use siderust::time::JulianDate;
 
 fn main() {
     let jd = JulianDate::J2000;
-    let now: JulianDate = Time::<UTC>::from_chrono(chrono::Utc::now())
-        .to::<TT>()
-        .into();
+    let now: JulianDate = JulianDate::from_chrono(chrono::Utc::now());
 
     println!("=== Siderust Solar System Module Tour ===\n");
     println!("Epoch used for deterministic outputs: J2000 (JD {:.1})", jd);

@@ -29,9 +29,7 @@ fn jd_from_utc(year: i32, month: u32, day: u32, hour: u32, min: u32) -> JulianDa
     let dt = Utc
         .with_ymd_and_hms(year, month, day, hour, min, 0)
         .unwrap();
-    tempoch::Time::<tempoch::UTC>::from_chrono(dt)
-        .to::<tempoch::TT>()
-        .into()
+    JulianDate::from_chrono(dt)
 }
 
 // ---------------------------------------------------------------------------

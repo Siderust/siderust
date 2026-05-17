@@ -38,9 +38,7 @@ fn julian_date_arithmetic_and_display_branches() {
         .to::<siderust::time::UTC>()
         .to_chrono()
         .expect("valid UTC");
-    let roundtrip: JulianDate = siderust::time::Time::<siderust::time::UTC>::from_chrono(utc)
-        .to::<siderust::time::TT>()
-        .into();
+    let roundtrip: JulianDate = siderust::time::Time::<siderust::time::UTC>::from_chrono(utc).into();
     assert!((roundtrip.raw().value() - jd.raw().value()).abs() < 1e-6);
 }
 

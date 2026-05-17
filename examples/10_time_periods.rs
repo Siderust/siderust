@@ -9,9 +9,7 @@ use siderust::time::{Interval, JulianDate, ModifiedJulianDate, UTC};
 
 fn main() {
     let now_utc = Utc::now();
-    let jd: JulianDate = siderust::time::Time::<siderust::time::UTC>::from_chrono(now_utc)
-        .to::<siderust::time::TT>()
-        .into();
+    let jd: JulianDate = JulianDate::from_chrono(now_utc);
     let mjd: ModifiedJulianDate = jd.to::<siderust::time::MJD>();
 
     println!("UTC now : {}", now_utc.to_rfc3339());

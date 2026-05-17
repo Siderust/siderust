@@ -26,7 +26,9 @@
 //! re-exports its full public surface (`Scale`, `EncodedTime`, `Time`,
 //! the `TT`/`TDB`/`TCB`/`TCG`/`TAI`/`UTC`/`UT1` scale markers,
 //! `Interval`, `delta_t_seconds`, …) and defines the v1 astronomy-facing
-//! defaults as TT-based encoded dates:
+//! defaults as TT-based encoded dates plus the named same-scale helpers
+//! (`to_jd`, `to_mjd`, `to_j2000_seconds`, `shifted_by`, `duration_since`)
+//! provided by tempoch core:
 //!
 //! - [`JulianDate`] = `tempoch::JulianDate<TT>` = `EncodedTime<TT, JD>`.
 //! - [`ModifiedJulianDate`] = `tempoch::ModifiedJulianDate<TT>` =
@@ -109,6 +111,15 @@ pub fn try_mjd_f64(value: f64) -> Result<ModifiedJulianDate, ConversionError> {
 #[inline]
 pub fn mjd(raw: qtty::Day) -> ModifiedJulianDate {
     try_mjd(raw).expect("ModifiedJulianDate must be finite")
+}
+
+/// Helper: build a `ModifiedJulianDate` (TT scale) directly from a `chrono::DateTime<Utc>`.
+///
+/// This mirrors the common pattern `Time::<UTC>::from_chrono(dt).into()` but provides
+/// a concise, single-call helper for callers that only need an MJD.
+#[inline]
+pub fn modified_julian_date_from_chrono(dt: chrono::DateTime<UTC>) -> ModifiedJulianDate {
+    Time::<UTC>::from_chrono(dt).into()
 }
 
 pub use crate::calculus::math_core::intervals::intersect as intersect_periods;
