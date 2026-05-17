@@ -229,7 +229,7 @@ fn test_julian_date_roundtrip() {
 fn test_modified_julian_date_roundtrip() {
     use siderust::time::ModifiedJulianDate;
 
-    let mjd = ModifiedJulianDate::try_new(Days::new(51544.5)).unwrap(); // J2000 in MJD
+    let mjd = ModifiedJulianDate::new(51544.5); // J2000 in MJD
 
     let json = serde_json::to_string(&mjd).expect("serialize modified julian date");
     let recovered: ModifiedJulianDate =

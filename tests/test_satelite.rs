@@ -4,7 +4,6 @@
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::Satellite;
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 use std::borrow::Cow;
 
 #[test]

@@ -18,7 +18,6 @@ fn runtime_ephemeris_real_bsp_smoke() {
         return;
     };
     use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
-    use siderust::time::JulianDate;
 
     let eph = RuntimeEphemeris::from_bsp(&path)
         .unwrap_or_else(|e| panic!("Failed to load BSP file '{path}': {e}"));

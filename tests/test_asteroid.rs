@@ -6,7 +6,6 @@ use siderust::bodies::asteroid::{
     Asteroid, AsteroidClass, APOPHIS, ASTEROID_PRESETS, BENNU, CERES_AST,
 };
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 const TEST_ORBIT: KeplerianOrbit = KeplerianOrbit::new(
     AstronomicalUnits::new(1.0),

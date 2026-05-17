@@ -7,7 +7,6 @@ use siderust::coordinates::frames::*;
 use siderust::coordinates::transform::TransformFrame;
 use siderust::coordinates::*;
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 fn approx_eq_pos<C, F, U>(a: &cartesian::Position<C, F, U>, b: &cartesian::Position<C, F, U>)
 where

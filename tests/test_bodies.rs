@@ -7,7 +7,6 @@ use siderust::bodies::comet::{Comet, OrbitFrame, HALLEY};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::bodies::{EARTH, MARS, MOON};
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 #[test]
 fn earth_constants() {

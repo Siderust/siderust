@@ -52,7 +52,7 @@ fn build_period(days: u32) -> Period<ModifiedJulianDate> {
 
 fn bench_moon_altitude_computation(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-    let mjd = ModifiedJulianDate::try_new(Days::new(51544.5)).unwrap(); // J2000
+    let mjd = ModifiedJulianDate::new(51544.5); // J2000
 
     let mut group = c.benchmark_group("moon_altitude_single");
 

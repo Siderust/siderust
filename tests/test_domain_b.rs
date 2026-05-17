@@ -16,7 +16,6 @@ use siderust::coordinates::observation::{Apparent, Astrometric, ObserverState};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::{Transform, TransformCenter};
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 // =============================================================================
 // B1: Aberration is NOT part of center transforms
