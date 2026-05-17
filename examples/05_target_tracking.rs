@@ -25,7 +25,7 @@ use siderust::targets::{Target, Trackable};
 use siderust::time::JulianDate;
 
 fn main() {
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
     let jd_next = jd + Days::new(1.0);
 
     println!("Target + Trackable examples");

@@ -217,7 +217,7 @@ fn test_frame_types_roundtrip() {
 fn test_julian_date_roundtrip() {
     use siderust::time::JulianDate;
 
-    let jd = JulianDate::from_raw_unchecked(Days::new(2451545.0)); // J2000
+    let jd = JulianDate::try_new(Days::new(2451545.0)).unwrap(); // J2000
 
     let json = serde_json::to_string(&jd).expect("serialize julian date");
     let recovered: JulianDate = serde_json::from_str(&json).expect("deserialize julian date");
@@ -229,7 +229,7 @@ fn test_julian_date_roundtrip() {
 fn test_modified_julian_date_roundtrip() {
     use siderust::time::ModifiedJulianDate;
 
-    let mjd = ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)); // J2000 in MJD
+    let mjd = ModifiedJulianDate::try_new(Days::new(51544.5)).unwrap(); // J2000 in MJD
 
     let json = serde_json::to_string(&mjd).expect("serialize modified julian date");
     let recovered: ModifiedJulianDate =

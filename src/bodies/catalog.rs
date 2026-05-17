@@ -64,7 +64,6 @@ use crate::coordinates::spherical::position::EquatorialMeanJ2000;
 use crate::qtty::length::nominal::SolarRadiuses;
 use crate::qtty::*;
 use crate::targets::CoordinateWithPM;
-use crate::time::JulianDate;
 
 /// **Vega** (α Lyrae), an A0 V star that defines the zero‑point of the Johnson
 /// V photometric system.
@@ -86,7 +85,7 @@ pub const VEGA: Star<'static> = Star::new_const(
             Degrees::new(279.2347), // RA (azimuth)
             LightYears::new(25.0),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -110,7 +109,7 @@ pub const POLARIS: Star<'static> = Star::new_const(
             Degrees::new(37.95456067), // RA (azimuth)
             LightYears::new(433.0),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -134,7 +133,7 @@ pub const SIRIUS: Star<'static> = Star::new_const(
             Degrees::new(101.28715533),  // RA (azimuth)
             LightYears::new(8.6),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -158,7 +157,7 @@ pub const CANOPUS: Star<'static> = Star::new_const(
             Degrees::new(95.98787778),  // RA (azimuth)
             LightYears::new(310.0),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -182,7 +181,7 @@ pub const ARCTURUS: Star<'static> = Star::new_const(
             Degrees::new(213.9153), // RA (azimuth)
             LightYears::new(36.7),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -206,7 +205,7 @@ pub const RIGEL: Star<'static> = Star::new_const(
             Degrees::new(78.634467),   // RA (azimuth)
             LightYears::new(860.0),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -230,7 +229,7 @@ pub const BETELGEUSE: Star<'static> = Star::new_const(
             Degrees::new(88.792939), // RA (azimuth)
             LightYears::new(548.0),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -254,7 +253,7 @@ pub const PROCYON: Star<'static> = Star::new_const(
             Degrees::new(114.825493), // RA (azimuth)
             LightYears::new(11.5),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -278,7 +277,7 @@ pub const ALDEBARAN: Star<'static> = Star::new_const(
             Degrees::new(68.980163), // RA (azimuth)
             LightYears::new(65.1),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -302,6 +301,6 @@ pub const ALTAIR: Star<'static> = Star::new_const(
             Degrees::new(297.695827), // RA (azimuth)
             LightYears::new(16.7),
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );

@@ -15,7 +15,7 @@ const TEST_ORBIT: KeplerianOrbit = KeplerianOrbit::new(
     Degrees::new(0.0),
     Degrees::new(0.0),
     Degrees::new(0.0),
-    JulianDate::J2000,
+    siderust::time::J2000,
 );
 
 #[test]

@@ -65,7 +65,7 @@
 //! use siderust::qtty::AstronomicalUnit;
 //!
 //! let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
-//! let jd = JulianDate::J2000;
+//! let jd = siderust::J2000;
 //!
 //! // Transform to Geocentric ICRS, no context needed
 //! let geo_icrs: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd);
@@ -510,7 +510,7 @@ mod tests {
     #[test]
     fn test_direction_frame_transform() {
         let dir = Direction::<ICRS>::new(1.0, 0.0, 0.0);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         // ICRS to EclipticMeanJ2000 includes a small frame-bias; don't assume exact axis invariance.
         let dir_ecl: Direction<EclipticMeanJ2000> = dir.to_frame(&jd);
@@ -528,7 +528,7 @@ mod tests {
     fn test_direction_frame_transform_with_ctx() {
         let dir = Direction::<ICRS>::new(1.0, 0.0, 0.0);
         let ctx: AstroContext = AstroContext::default();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let dir_ecl: Direction<EclipticMeanJ2000> = dir.to_frame_with(&jd, &ctx);
         let dir_ecl_default: Direction<EclipticMeanJ2000> = dir.to_frame(&jd);
@@ -541,7 +541,7 @@ mod tests {
     #[test]
     fn test_direction_frame_roundtrip() {
         let dir = Direction::<ICRS>::new(1.0, 2.0, 3.0);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let dir_ecl: Direction<EclipticMeanJ2000> = dir.to_frame(&jd);
         let dir_back: Direction<ICRS> = dir_ecl.to_frame(&jd);
@@ -554,7 +554,7 @@ mod tests {
     #[test]
     fn test_position_frame_transform() {
         let pos = Position::<Barycentric, ICRS, AstronomicalUnit>::new(1.0, 0.0, 0.0);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let pos_ecl: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> = pos.to_frame(&jd);
 
@@ -572,7 +572,7 @@ mod tests {
 
     #[test]
     fn test_position_center_transform() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         // A point at the Geocentric origin should map to Earth's position in Barycentric
         let geo_origin =
@@ -591,7 +591,7 @@ mod tests {
 
     #[test]
     fn test_position_combined_transform() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
 
@@ -608,7 +608,7 @@ mod tests {
 
     #[test]
     fn test_position_identity_transforms() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let pos = Position::<Barycentric, ICRS, AstronomicalUnit>::new(1.5, 2.5, 3.5);
 
@@ -629,7 +629,7 @@ mod tests {
     fn test_using_engine() {
         let dir = Direction::<ICRS>::new(1.0, 0.0, 0.0);
         let engine: AstroContext = AstroContext::default();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let dir_ecl: Direction<EclipticMeanJ2000> = dir.using(&engine).to_frame(&jd);
         let dir_ecl_direct: Direction<EclipticMeanJ2000> = dir.to_frame(&jd);
@@ -680,7 +680,7 @@ mod tests {
         use crate::qtty::DEG;
 
         let sph_dir = spherical::Direction::<ICRS>::new(45.0 * DEG, 30.0 * DEG);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let sph_ecl: spherical::Direction<EclipticMeanJ2000> = sph_dir.to_frame(&jd);
 
@@ -696,7 +696,7 @@ mod tests {
         use crate::qtty::DEG;
 
         let sph_dir = spherical::Direction::<ICRS>::new(123.0 * DEG, -45.0 * DEG);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let sph_ecl: spherical::Direction<EclipticMeanJ2000> = sph_dir.to_frame(&jd);
         let sph_back: spherical::Direction<ICRS> = sph_ecl.to_frame(&jd);
@@ -713,7 +713,7 @@ mod tests {
 
         let sph_dir = spherical::Direction::<ICRS>::new(90.0 * DEG, 0.0 * DEG);
         let ctx: AstroContext = AstroContext::default();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let with_ctx: spherical::Direction<EclipticMeanJ2000> = sph_dir.to_frame_with(&jd, &ctx);
         let without_ctx: spherical::Direction<EclipticMeanJ2000> = sph_dir.to_frame(&jd);
@@ -735,7 +735,7 @@ mod tests {
             AstronomicalUnits::new(2.0),
             AstronomicalUnits::new(3.0),
         );
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let vec_ecl: Vector<EclipticMeanJ2000, AstronomicalUnit> = vec.to_frame(&jd);
         assert!(vec_ecl.x().is_finite() && vec_ecl.y().is_finite() && vec_ecl.z().is_finite());
@@ -757,7 +757,7 @@ mod tests {
             AstronomicalUnits::new(-0.3),
             AstronomicalUnits::new(0.8),
         );
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let vec_ecl: Vector<EclipticMeanJ2000, AstronomicalUnit> = vec.to_frame(&jd);
         let vec_back: Vector<ICRS, AstronomicalUnit> = vec_ecl.to_frame(&jd);
@@ -777,7 +777,7 @@ mod tests {
             AstronomicalUnits::new(0.0),
         );
         let ctx: AstroContext = AstroContext::default();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let with_ctx: Vector<EclipticMeanJ2000, AstronomicalUnit> = vec.to_frame_with(&jd, &ctx);
         let without_ctx: Vector<EclipticMeanJ2000, AstronomicalUnit> = vec.to_frame(&jd);
@@ -795,7 +795,7 @@ mod tests {
     fn test_using_engine_position_frame() {
         let pos = Position::<Barycentric, ICRS, AstronomicalUnit>::new(1.0, 0.5, 0.2);
         let engine: AstroContext = AstroContext::default();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let via_engine: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
             pos.using(&engine).to_frame(&jd);
@@ -810,7 +810,7 @@ mod tests {
     fn test_using_engine_position_center() {
         let pos = Position::<Geocentric, EclipticMeanJ2000, AstronomicalUnit>::new(0.0, 0.0, 0.0);
         let engine: AstroContext = AstroContext::default();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let via_engine: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
             pos.using(&engine).to_center(&jd);
@@ -825,7 +825,7 @@ mod tests {
     fn test_using_engine_position_combined() {
         let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
         let engine: AstroContext = AstroContext::default();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let via_engine: Position<Geocentric, ICRS, AstronomicalUnit> = pos.using(&engine).to(&jd);
         let direct: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd);
@@ -843,7 +843,7 @@ mod tests {
     fn test_position_frame_with_ctx() {
         let pos = Position::<Barycentric, ICRS, AstronomicalUnit>::new(1.0, 2.0, 3.0);
         let ctx: AstroContext = AstroContext::default();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let with_ctx: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
             pos.to_frame_with(&jd, &ctx);
@@ -859,7 +859,7 @@ mod tests {
     fn test_position_combined_with_ctx() {
         let pos = Position::<Barycentric, EclipticMeanJ2000, AstronomicalUnit>::new(1.0, 0.5, 0.2);
         let ctx: AstroContext = AstroContext::default();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let with_ctx: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to_with(&jd, &ctx);
         let default_ctx: Position<Geocentric, ICRS, AstronomicalUnit> = pos.to(&jd);

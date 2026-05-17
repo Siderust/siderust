@@ -11,13 +11,12 @@ use siderust::coordinates::{
 };
 use siderust::qtty::*;
 use siderust::targets::CoordinateWithPM;
-use siderust::time::JulianDate;
 
 const EPS: f64 = 1e-9;
 
 #[test]
 fn target_cartesian_position_transform() {
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
     let orig: CoordinateWithPM<
         cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>,
     > = CoordinateWithPM::new_static(Mars::vsop87a(jd), jd);
@@ -41,7 +40,7 @@ fn target_cartesian_position_transform() {
 
 #[test]
 fn target_spherical_position_transform() {
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
     let cart_orig: CoordinateWithPM<
         cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>,
     > = CoordinateWithPM::new_static(Mars::vsop87a(jd), jd);

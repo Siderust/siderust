@@ -42,15 +42,15 @@ fn north_pole() -> Geodetic<ECEF> {
 
 fn one_day() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60001.0)),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     )
 }
 
 fn one_week() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60007.0)),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     )
 }
 
@@ -129,8 +129,8 @@ fn sun_twilight_band_trait() {
     let query = AltitudeQuery {
         observer: greenwich(),
         window: Period::new(
-            ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(Days::new(60002.0)),
+            ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+            ModifiedJulianDate::try_new(Days::new(60002.0)).unwrap(),
         ),
         min_altitude: Degrees::new(-18.0),
         max_altitude: Degrees::new(-12.0),
@@ -281,7 +281,7 @@ fn free_function_direction() {
 fn altitude_at_sun_in_range() {
     let alt = Sun.altitude_at(
         &greenwich(),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)),
+        ModifiedJulianDate::try_new(Days::new(51544.5)).unwrap(),
     );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
@@ -290,7 +290,7 @@ fn altitude_at_sun_in_range() {
 fn altitude_at_moon_in_range() {
     let alt = Moon.altitude_at(
         &greenwich(),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)),
+        ModifiedJulianDate::try_new(Days::new(51544.5)).unwrap(),
     );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
@@ -299,7 +299,7 @@ fn altitude_at_moon_in_range() {
 fn altitude_at_star_in_range() {
     let alt = SIRIUS.altitude_at(
         &greenwich(),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)),
+        ModifiedJulianDate::try_new(Days::new(51544.5)).unwrap(),
     );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
@@ -309,7 +309,7 @@ fn altitude_at_icrs_direction_in_range() {
     let dir = direction::ICRS::new(Degrees::new(101.287), Degrees::new(-16.716));
     let alt = dir.altitude_at(
         &greenwich(),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(51544.5)),
+        ModifiedJulianDate::try_new(Days::new(51544.5)).unwrap(),
     );
     assert!(alt.abs().value() < std::f64::consts::FRAC_PI_2);
 }
@@ -321,8 +321,8 @@ fn altitude_at_icrs_direction_in_range() {
 #[test]
 fn empty_window_returns_empty() {
     let window = Period::new(
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
     );
     let query = AltitudeQuery {
         observer: greenwich(),
@@ -399,8 +399,8 @@ fn never_visible_star_at_north_pole() {
 fn periods_at_span_edges_are_clipped() {
     // Use a very short window; periods should not extend beyond it
     let window = Period::new(
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.4)),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.6)),
+        ModifiedJulianDate::try_new(Days::new(60000.4)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60000.6)).unwrap(),
     );
     let periods = Sun.above_threshold(greenwich(), window, Degrees::new(0.0));
     assert_periods_valid(&periods, window);

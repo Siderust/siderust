@@ -64,7 +64,7 @@ pub(crate) fn moon_altitude_rad(
     mjd: ModifiedJulianDate,
     site: &Geodetic<ECEF>,
 ) -> Quantity<Radian> {
-    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     Moon::get_horizontal::<Kilometer>(jd, *site)
         .alt()
         .to::<Radian>()
@@ -205,7 +205,7 @@ fn find_moon_above_horizon_scan(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::{observatories::ROQUE_DE_LOS_MUCHACHOS, time::JulianDate};
+    use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
 
     fn greenwich_site() -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
@@ -214,7 +214,7 @@ mod tests {
     #[test]
     fn test_moon_altitude_basic() {
         let site = greenwich_site();
-        let mjd: ModifiedJulianDate = JulianDate::J2000.to_time().to::<crate::time::MJD>();
+        let mjd: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
         let alt = moon_altitude_rad(mjd, &site);
         assert!(
             alt > -std::f64::consts::FRAC_PI_2 * RAD && alt < std::f64::consts::FRAC_PI_2 * RAD

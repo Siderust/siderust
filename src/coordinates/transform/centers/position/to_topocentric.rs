@@ -250,7 +250,7 @@ mod tests {
             position::EquatorialMeanJ2000::<Kilometer, Geocentric>::new(384_400.0, 0.0, 0.0);
 
         let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let moon_topo: position::EquatorialMeanJ2000<Kilometer, Topocentric> =
             moon_geo.to_center((site, jd));
@@ -270,7 +270,7 @@ mod tests {
         );
 
         let site = Geodetic::<ECEF>::new(10.0 * DEG, 45.0 * DEG, 100.0 * M);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let topo: position::EquatorialMeanJ2000<Kilometer, Topocentric> = geo.to_center((site, jd));
         let geo_recovered: position::EquatorialMeanJ2000<Kilometer, Geocentric> =
@@ -301,7 +301,7 @@ mod tests {
         let star_geo = position::EquatorialMeanJ2000::<Au, Geocentric>::new(206265.0, 0.0, 0.0);
 
         let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let star_topo: position::EquatorialMeanJ2000<Au, Topocentric> =
             star_geo.to_center((site, jd));

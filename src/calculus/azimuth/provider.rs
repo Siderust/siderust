@@ -305,7 +305,7 @@ where
         AstronomicalUnit,
     >,
 {
-    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     let bary_ecl = vsop87e_fn(jd);
     let geo_equ: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
         bary_ecl.transform(jd);

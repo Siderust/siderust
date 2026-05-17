@@ -179,7 +179,7 @@ impl StarAltitudeParams {
     /// `HA = GAST(t) + λ − α` for true-of-date right ascension.
     #[inline]
     fn hour_angle(&self, mjd: ModifiedJulianDate) -> Degrees {
-        let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
+        let jd: JulianDate = mjd.to::<crate::JD>();
         let ctx: AstroContext = AstroContext::default();
         let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
@@ -263,7 +263,7 @@ mod tests {
                 Degrees::new(89.26), // Polaris Dec
             ),
             &greenwich(),
-            JulianDate::J2000,
+            crate::J2000,
         );
         match params.threshold_ha(Radians::new(0.0)) {
             ThresholdResult::AlwaysAbove => {} // expected
@@ -279,7 +279,7 @@ mod tests {
                 Degrees::new(-16.716), // Sirius Dec
             ),
             &greenwich(),
-            JulianDate::J2000,
+            crate::J2000,
         );
         match params.threshold_ha(Radians::new(0.0)) {
             ThresholdResult::Crossings { h0 } => {
@@ -300,7 +300,7 @@ mod tests {
         let params = StarAltitudeParams::from_j2000(
             equatorial_j2000(Degrees::new(0.0), Degrees::new(-80.0)),
             &greenwich(),
-            JulianDate::J2000,
+            crate::J2000,
         );
         match params.threshold_ha(Radians::new(0.0)) {
             ThresholdResult::NeverAbove => {} // expected
@@ -316,7 +316,7 @@ mod tests {
         let params = StarAltitudeParams::from_j2000(
             equatorial_j2000(Degrees::new(101.287), Degrees::new(-16.716)),
             &greenwich(),
-            JulianDate::J2000,
+            crate::J2000,
         );
         let period = Period::new(
             crate::time::mjd(qtty::Day::new(60000.0)),

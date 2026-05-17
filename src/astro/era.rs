@@ -56,7 +56,7 @@ use std::f64::consts::TAU;
 #[inline]
 pub fn earth_rotation_angle(jd_ut1: JulianDate) -> Radians {
     // Du = JD(UT1) − J2000.0
-    let du = (jd_ut1.raw() - JulianDate::J2000.raw()).value();
+    let du = (jd_ut1.raw() - crate::J2000.raw()).value();
 
     // ERA = 2π × (0.7790572732640 + 1.00273781191135448 × Du)
     // To maintain precision, split the fractional and integer parts:
@@ -120,7 +120,7 @@ mod tests {
     #[test]
     fn era_at_j2000() {
         // At J2000.0 (JD 2451545.0), ERA ≈ 280.46° (GST at that epoch)
-        let era = earth_rotation_angle(JulianDate::J2000);
+        let era = earth_rotation_angle(crate::J2000);
         let era_deg = era.to::<Degree>();
         // ERA at J2000.0 ≈ 0.7790572732640 × 360° ≈ 280.46°
         assert!(

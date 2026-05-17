@@ -175,7 +175,7 @@ mod tests {
     #[test]
     fn cip_xy_at_j2000() {
         // At J2000.0, the CIP is very close to the GCRS pole, so X ≈ 0, Y ≈ 0
-        let (x, y) = cip_xy(JulianDate::J2000, Radians::new(0.0), Radians::new(0.0));
+        let (x, y) = cip_xy(crate::J2000, Radians::new(0.0), Radians::new(0.0));
         // Frame bias gives X, Y of order ~10 mas = ~5e-8 rad
         assert!(
             x.value().abs() < 1e-4,
@@ -193,7 +193,7 @@ mod tests {
     fn cio_locator_small() {
         // The CIO locator s is very small (< 1 mas for current epochs)
         let s = cio_locator_s(
-            JulianDate::J2000,
+            crate::J2000,
             CipCoordinates::new(0.0),
             CipCoordinates::new(0.0),
         );

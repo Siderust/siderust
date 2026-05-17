@@ -23,7 +23,7 @@ fn runtime_ephemeris_real_bsp_smoke() {
     let eph = RuntimeEphemeris::from_bsp(&path)
         .unwrap_or_else(|e| panic!("Failed to load BSP file '{path}': {e}"));
 
-    let earth = eph.earth_barycentric(JulianDate::J2000);
+    let earth = eph.earth_barycentric(siderust::time::J2000);
     assert!(
         earth.x().value().is_finite(),
         "RuntimeEphemeris: Earth barycentric should produce finite X at J2000"

@@ -255,7 +255,7 @@ mod tests {
     #[test]
     fn null_eop_returns_zeros() {
         let eop = NullEop;
-        let vals = eop.eop_at(JulianDate::J2000);
+        let vals = eop.eop_at(crate::J2000);
         assert_eq!(vals.dut1.value(), 0.0);
         assert_eq!(vals.xp.value(), 0.0);
         assert_eq!(vals.yp.value(), 0.0);
@@ -269,7 +269,7 @@ mod tests {
             dut1: Seconds::new(0.35),
             ..Default::default()
         };
-        let jd_utc = JulianDate::J2000;
+        let jd_utc = crate::J2000;
         let jd_ut1 = vals.jd_ut1(jd_utc);
         let diff_days = (jd_ut1.raw() - jd_utc.raw()).value();
         let diff_s = diff_days * 86400.0;

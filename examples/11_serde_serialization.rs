@@ -69,7 +69,7 @@ mod demo {
     pub fn run() {
         println!("=== Siderust Serde Serialization Examples ===\n");
 
-        let jd = JulianDate::J2000;
+        let jd = siderust::time::J2000;
 
         // =========================================================================
         // 1) Times
@@ -77,7 +77,7 @@ mod demo {
         println!("1) TIME OBJECTS");
         println!("---------------");
 
-        let mjd = jd.to_time().to::<siderust::time::MJD>();
+        let mjd = jd.to::<siderust::time::MJD>();
         let time_bundle = TimeBundle {
             j2000: jd,
             mjd,

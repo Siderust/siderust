@@ -191,15 +191,14 @@ mod tests {
     use crate::coordinates::transform::Transform;
     use crate::macros::assert_cartesian_eq;
     use crate::qtty::AstronomicalUnit;
-    use crate::time::JulianDate;
 
     const EPSILON: f64 = 1e-8;
 
     #[test]
     fn test_position_barycentric_to_geocentric() {
-        let earth_bary = DefaultEphemeris::earth_barycentric(JulianDate::J2000);
+        let earth_bary = DefaultEphemeris::earth_barycentric(crate::J2000);
         let earth_geo: cartesian::position::EclipticMeanJ2000<AstronomicalUnit, Geocentric> =
-            earth_bary.transform(JulianDate::J2000);
+            earth_bary.transform(crate::J2000);
         let expected_earth_geo =
             cartesian::position::EclipticMeanJ2000::<AstronomicalUnit, Geocentric>::CENTER;
         assert_cartesian_eq!(
@@ -213,9 +212,9 @@ mod tests {
 
     #[test]
     fn test_position_heliocentric_to_geocentric() {
-        let earth_helio = DefaultEphemeris::earth_heliocentric(JulianDate::J2000);
+        let earth_helio = DefaultEphemeris::earth_heliocentric(crate::J2000);
         let earth_geo: cartesian::position::EclipticMeanJ2000<AstronomicalUnit, Geocentric> =
-            earth_helio.transform(JulianDate::J2000);
+            earth_helio.transform(crate::J2000);
         let expected =
             cartesian::position::EclipticMeanJ2000::<AstronomicalUnit, Geocentric>::CENTER;
         assert_cartesian_eq!(&earth_geo, &expected, EPSILON);

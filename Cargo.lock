@@ -1793,7 +1793,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "tempoch 0.5.1 (git+https://github.com/Siderust/tempoch.git?branch=helpers)",
+ "tempoch",
  "ureq",
  "walkdir",
  "wide",
@@ -1807,7 +1807,7 @@ dependencies = [
  "cbindgen",
  "qtty 0.8.1",
  "siderust",
- "tempoch 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tempoch",
  "tempoch-ffi",
 ]
 
@@ -1914,72 +1914,38 @@ dependencies = [
 [[package]]
 name = "tempoch"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b1d7e68af3f2dfb15180cd12404d2dfbe14af74ea5e09bad431f30d9a2be7ca"
 dependencies = [
- "tempoch-core 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "tempoch"
-version = "0.5.1"
-source = "git+https://github.com/Siderust/tempoch.git?branch=helpers#c3003c394c5235c628bf161cb8070adbd6f6392b"
-dependencies = [
- "tempoch-core 0.5.1 (git+https://github.com/Siderust/tempoch.git?branch=helpers)",
+ "tempoch-core",
 ]
 
 [[package]]
 name = "tempoch-core"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9b4aa0179d5bfd78680f7d835177d8c79669e62c906f8b5bdb62c86a8a2fa6cd"
-dependencies = [
- "affn",
- "chrono",
- "qtty 0.8.1",
- "tempoch-time-data 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "tempoch-core"
-version = "0.5.1"
-source = "git+https://github.com/Siderust/tempoch.git?branch=helpers#c3003c394c5235c628bf161cb8070adbd6f6392b"
 dependencies = [
  "affn",
  "chrono",
  "qtty 0.8.1",
  "serde",
- "tempoch-time-data 0.1.2 (git+https://github.com/Siderust/tempoch.git?branch=helpers)",
+ "tempoch-time-data",
 ]
 
 [[package]]
 name = "tempoch-ffi"
 version = "0.5.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfb2ec521cbfcd0483509aa08413a1c73033187ee0c175c29be005903008a317"
 dependencies = [
  "cbindgen",
  "chrono",
  "qtty 0.8.1",
  "qtty-ffi",
- "tempoch 0.5.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tempoch",
 ]
 
 [[package]]
 name = "tempoch-time-data"
 version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "474b2b74bab3c5ab5fa32061fe43b81d4309eae349c2f1b490f0d6103beb551d"
 dependencies = [
  "chrono",
-]
-
-[[package]]
-name = "tempoch-time-data"
-version = "0.1.2"
-source = "git+https://github.com/Siderust/tempoch.git?branch=helpers#c3003c394c5235c628bf161cb8070adbd6f6392b"
-dependencies = [
- "chrono",
+ "qtty 0.8.1",
 ]
 
 [[package]]

@@ -61,7 +61,7 @@
 //!         Degrees::new(0.0),
 //!         Degrees::new(0.0),
 //!         Degrees::new(0.0),
-//!         JulianDate::J2000,
+//!         siderust::J2000,
 //!     ))
 //!     .build();
 //!
@@ -241,7 +241,6 @@ impl OrbitExt for KeplerianOrbit {
 mod tests {
     use super::*;
     use crate::qtty::{AstronomicalUnits, Degrees, Kilograms, Kilometers};
-    use crate::time::JulianDate;
 
     #[test]
     fn builder_roundtrip() {
@@ -255,7 +254,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                JulianDate::J2000,
+                crate::J2000,
             ))
             .build();
         assert_eq!(p.mass.value(), 1.0);
@@ -273,7 +272,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                JulianDate::J2000,
+                crate::J2000,
             ))
             .albedo(Albedos::new(0.30))
             .build();

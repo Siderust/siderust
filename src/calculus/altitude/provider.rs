@@ -364,7 +364,7 @@ where
         AstronomicalUnit,
     >,
 {
-    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     // 1) VSOP87e → barycentric ecliptic J2000
     let bary_ecl = vsop87e_fn(jd);
     // 2) Frame rotation + center shift → geocentric equatorial J2000

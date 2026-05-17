@@ -20,7 +20,7 @@ use siderust::time::{JulianDate, JULIAN_YEAR_DAYS};
 
 #[test]
 fn julian_date_arithmetic_and_display_branches() {
-    let mut jd = JulianDate::from_raw_unchecked(Days::new(2_450_000.0));
+    let mut jd = JulianDate::try_new(Days::new(2_450_000.0)).unwrap();
     let printed = format!("{jd}");
     assert_eq!(printed, format!("{}", jd.raw()));
 
@@ -58,7 +58,7 @@ fn horizontal_conversion_variants_cover_all_impls() {
         Degrees::new(28.76),  // lat
         siderust::qtty::Meters::new(2400.0),
     );
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     // site is already Geodetic::<ECEF> from affn
     let site = observer;
@@ -145,7 +145,7 @@ fn body_const_constructors_and_builders() {
         Degrees::new(2.0),
         Degrees::new(3.0),
         Degrees::new(4.0),
-        JulianDate::J2000,
+        siderust::time::J2000,
     );
 
     let asteroid = Asteroid::new_const("Test", "T-1", "Rock", AsteroidClass::NearEarth, orbit);

@@ -339,7 +339,7 @@ mod tests {
     /// At J2000.0, IAU 2000A and 2000B should agree to within 1 mas.
     #[test]
     fn nut2000a_agrees_with_2000b_at_j2000() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let n2a = nutation_iau2006a(jd);
         let n2b = crate::astro::nutation::nutation_iau2000b(jd);
 
@@ -416,7 +416,7 @@ mod tests {
     /// The P03 J₂ correction should be tiny for near-current epochs.
     #[test]
     fn p03_correction_is_small() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let (dp_raw, de_raw) = nutation_iau2000a_raw(jd);
         let n06a = nutation_iau2006a(jd);
 

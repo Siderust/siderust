@@ -29,15 +29,15 @@ fn greenwich() -> Geodetic<ECEF> {
 
 fn one_day() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60001.0)),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     )
 }
 
 fn one_week() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60007.0)),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     )
 }
 
@@ -49,7 +49,7 @@ fn one_week() -> Period<ModifiedJulianDate> {
 fn sun_azimuth_at_in_valid_range() {
     let az = Sun.azimuth_at(
         &greenwich(),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.5)),
+        ModifiedJulianDate::try_new(Days::new(60000.5)).unwrap(),
     );
     assert!(az.value() >= 0.0, "az must be ≥ 0 rad");
     assert!(az.value() < std::f64::consts::TAU, "az must be < 2π rad");
@@ -59,7 +59,7 @@ fn sun_azimuth_at_in_valid_range() {
 fn moon_azimuth_at_in_valid_range() {
     let az = Moon.azimuth_at(
         &greenwich(),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.5)),
+        ModifiedJulianDate::try_new(Days::new(60000.5)).unwrap(),
     );
     assert!(az.value() >= 0.0);
     assert!(az.value() < std::f64::consts::TAU);
@@ -70,7 +70,7 @@ fn star_azimuth_at_in_valid_range() {
     let sirius = &catalog::SIRIUS;
     let az = sirius.azimuth_at(
         &greenwich(),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.5)),
+        ModifiedJulianDate::try_new(Days::new(60000.5)).unwrap(),
     );
     assert!(az.value() >= 0.0);
     assert!(az.value() < std::f64::consts::TAU);
@@ -80,7 +80,7 @@ fn star_azimuth_at_in_valid_range() {
 fn star_and_icrs_direction_azimuth_agree() {
     let sirius = &catalog::SIRIUS;
     let dir = direction::ICRS::from(sirius);
-    let mjd = ModifiedJulianDate::from_raw_unchecked(Days::new(60000.3));
+    let mjd = ModifiedJulianDate::try_new(Days::new(60000.3)).unwrap();
     let az_star = sirius.azimuth_at(&greenwich(), mjd);
     let az_dir = dir.azimuth_at(&greenwich(), mjd);
     assert!(

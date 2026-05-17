@@ -140,7 +140,7 @@ impl MoonPositionCache {
             for k in 0..CHEB_NODES {
                 let mjd_k = crate::time::mjd(seg_mid.raw() + seg_half * nodes[k]);
                 let pos =
-                    DefaultEphemeris::moon_geocentric(mjd_k.to_time().to::<crate::time::JD>());
+                    DefaultEphemeris::moon_geocentric(mjd_k.to::<crate::JD>());
                 vx[k] = pos.x().value();
                 vy[k] = pos.y().value();
                 vz[k] = pos.z().value();
@@ -178,7 +178,7 @@ impl MoonPositionCache {
 
         if seg_idx >= self.num_segments {
             // Fallback: outside cache range
-            let pos = DefaultEphemeris::moon_geocentric(mjd.to_time().to::<crate::time::JD>());
+            let pos = DefaultEphemeris::moon_geocentric(mjd.to::<crate::JD>());
             return (pos.x(), pos.y(), pos.z());
         }
 
@@ -230,7 +230,7 @@ impl NutationCache {
         let mut values = Vec::with_capacity(num_entries);
         for i in 0..num_entries {
             let mjd = crate::time::mjd(t0.raw() + i as f64 * NUT_STEP_DAYS);
-            let nut = nutation_iau2000b(mjd.to_time().to::<crate::time::JD>());
+            let nut = nutation_iau2000b(mjd.to::<crate::JD>());
             values.push([nut.dpsi, nut.deps, nut.mean_obliquity]);
         }
 
@@ -259,7 +259,7 @@ impl NutationCache {
 
         if idx + 1 >= self.num_entries {
             // Fallback: outside cache range, compute directly
-            let nut = nutation_iau2000b(mjd.to_time().to::<crate::time::JD>());
+            let nut = nutation_iau2000b(mjd.to::<crate::JD>());
             return (nut.dpsi, nut.deps, nut.mean_obliquity);
         }
 
@@ -374,7 +374,7 @@ impl MoonAltitudeContext {
     /// Topocentric altitude in `Radians`, no atmospheric refraction.
     #[inline]
     pub fn altitude_rad(&self, mjd: ModifiedJulianDate) -> Quantity<Radian> {
-        let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
+        let jd: JulianDate = mjd.to::<crate::JD>();
         let ctx: AstroContext = AstroContext::default();
 
         // ---------------------------------------------------------------
@@ -412,7 +412,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 4. Precession: J2000 → mean-of-date
         // ---------------------------------------------------------------
-        let rot_prec = precession_matrix_iau2006(mjd.to_time().to::<crate::time::JD>());
+        let rot_prec = precession_matrix_iau2006(mjd.to::<crate::JD>());
         let [x_mod, y_mod, z_mod] =
             rot_prec.apply_array([x_topo.value(), y_topo.value(), z_topo.value()]);
 
@@ -555,19 +555,18 @@ mod tests {
     use crate::calculus::lunar::moon_altitude_rad;
     use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
     use crate::qtty::Radians;
-    use crate::time::JulianDate;
 
     #[test]
     fn chebyshev_position_accuracy() {
         // Compare cached vs. direct ELP2000 at random times within a segment
-        let mjd_start: ModifiedJulianDate = JulianDate::J2000.to_time().to::<crate::time::MJD>();
+        let mjd_start: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
         let mjd_end = crate::time::mjd(mjd_start.raw() + Days::new(30.0));
         let cache = MoonPositionCache::new(mjd_start, mjd_end);
 
         for i in 0..100 {
             let mjd = crate::time::mjd(mjd_start.raw() + Days::new((i as f64) * 0.3 + 0.1)); // sample every ~7 hours
             let (cx, cy, cz) = cache.get_position_km(mjd);
-            let direct = DefaultEphemeris::moon_geocentric(mjd.to_time().to::<crate::time::JD>());
+            let direct = DefaultEphemeris::moon_geocentric(mjd.to::<crate::JD>());
             let (dx, dy, dz) = (direct.x(), direct.y(), direct.z());
             let err = (cx - dx).abs().max((cy - dy).abs()).max((cz - dz).abs());
             // Error should be < 1 km (≈ 0.5 arcsecond at Moon distance)
@@ -586,14 +585,14 @@ mod tests {
 
     #[test]
     fn nutation_cache_accuracy() {
-        let mjd_start: ModifiedJulianDate = JulianDate::J2000.to_time().to::<crate::time::MJD>();
+        let mjd_start: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
         let mjd_end: ModifiedJulianDate = crate::time::mjd(mjd_start.raw() + Days::new(30.0));
         let cache = NutationCache::new(mjd_start, mjd_end);
 
         for i in 0..100 {
             let mjd = crate::time::mjd(mjd_start.raw() + Days::new((i as f64) * 0.3 + 0.05));
             let (dpsi, deps, eps0) = cache.get_nutation_rad(mjd);
-            let direct = nutation_iau2000b(mjd.to_time().to::<crate::time::JD>());
+            let direct = nutation_iau2000b(mjd.to::<crate::JD>());
             let d_dpsi = direct.dpsi;
             let d_deps = direct.deps;
             let d_eps0 = direct.mean_obliquity;
@@ -621,7 +620,7 @@ mod tests {
     #[test]
     fn cached_altitude_matches_direct() {
         let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-        let mjd_start: ModifiedJulianDate = JulianDate::J2000.to_time().to::<crate::time::MJD>();
+        let mjd_start: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
         let mjd_end = crate::time::mjd(mjd_start.raw() + Days::new(7.0));
         let ctx = MoonAltitudeContext::new(mjd_start, mjd_end, site);
 

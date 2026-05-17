@@ -51,7 +51,7 @@ use std::sync::OnceLock;
 fn frame_bias_matrix() -> Rotation3 {
     static FRAME_BIAS: OnceLock<Rotation3> = OnceLock::new();
     *FRAME_BIAS
-        .get_or_init(|| precession::precession_matrix_iau2006(crate::time::JulianDate::J2000))
+        .get_or_init(|| precession::precession_matrix_iau2006(crate::J2000))
 }
 
 // ── Bias helpers ──────────────────────────────────────────────────────

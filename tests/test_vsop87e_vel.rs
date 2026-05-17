@@ -10,7 +10,7 @@ const PRECISION: f64 = 1.0e-6;
 
 macro_rules! check_body {
     ($body:ident) => {{
-        let jd = JulianDate::J2000;
+        let jd = siderust::time::J2000;
         let pos = $body::vsop87e(jd);
         let vel = $body::vsop87e_vel(jd);
         let (pos2, vel2) = $body::vsop87e_pos_vel(jd);
@@ -39,7 +39,7 @@ fn velocities_match_combined() {
 
 #[test]
 fn sun_position_finite() {
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
     let pos = Sun::vsop87e(jd);
     assert!(pos.x().value().is_finite());
     assert!(pos.y().value().is_finite());

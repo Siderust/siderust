@@ -76,8 +76,8 @@ fn brent_with_values_saves_evaluations() {
 
     let _ = root_finding::brent_with_values(
         Period::new(
-            Mjd::from_raw_unchecked(Days::new(3.0)),
-            Mjd::from_raw_unchecked(Days::new(4.0)),
+            Mjd::try_new(Days::new(3.0)).unwrap(),
+            Mjd::try_new(Days::new(4.0)).unwrap(),
         ),
         f_lo,
         f_hi,
@@ -105,8 +105,8 @@ fn brent_with_values_saves_evaluations() {
 fn brent_tol_respects_relaxed_tolerance() {
     let root = root_finding::brent_tol(
         Period::new(
-            Mjd::from_raw_unchecked(Days::new(3.0)),
-            Mjd::from_raw_unchecked(Days::new(4.0)),
+            Mjd::try_new(Days::new(3.0)).unwrap(),
+            Mjd::try_new(Days::new(4.0)).unwrap(),
         ),
         Radians::new((3.0_f64).sin()),
         Radians::new((4.0_f64).sin()),

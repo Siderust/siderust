@@ -28,7 +28,7 @@ pub(crate) fn fixed_star_azimuth_rad(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
 ) -> Radians {
-    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     crate::calculus::horizontal::star_horizontal(ra_j2000, dec_j2000, site, jd)
         .az()
         .to::<Radian>()

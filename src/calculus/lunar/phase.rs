@@ -411,7 +411,7 @@ fn phase_angle_from_triangle(r_moon_km: f64, r_sun_au: f64, psi: f64) -> f64 {
 /// use siderust::calculus::ephemeris::Vsop87Ephemeris;
 /// use siderust::time::JulianDate;
 ///
-/// let geom = moon_phase_geocentric::<Vsop87Ephemeris>(JulianDate::J2000);
+/// let geom = moon_phase_geocentric::<Vsop87Ephemeris>(siderust::J2000);
 /// assert!(geom.illuminated_fraction.value() >= 0.0);
 /// assert!(geom.illuminated_fraction.value() <= 1.0);
 /// ```
@@ -495,7 +495,7 @@ fn great_circle_elongation(lon1: Radians, lat1: Radians, lon2: Radians, lat2: Ra
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M);
-/// let geom = moon_phase_topocentric::<Vsop87Ephemeris>(JulianDate::J2000, site);
+/// let geom = moon_phase_topocentric::<Vsop87Ephemeris>(siderust::J2000, site);
 /// assert!(geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0);
 /// ```
 pub fn moon_phase_topocentric<E: Ephemeris>(
@@ -549,7 +549,7 @@ pub fn moon_phase_topocentric<E: Ephemeris>(
 
 /// Geocentric elongation as a function of MJD, returned in radians.
 fn elongation_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> f64 {
-    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     let (moon_lon, _, _) = moon_ecliptic_geocentric::<E>(jd);
     let (sun_lon, _) = sun_ecliptic_geocentric::<E>(jd);
     elongation_from_longitudes(moon_lon, sun_lon)
@@ -699,7 +699,7 @@ impl<E: Ephemeris> MoonPhaseSeries<E> {
         let mut results = Vec::new();
         let mut t = start;
         while t <= end {
-            let jd: JulianDate = t.to_time().to::<crate::time::JD>();
+            let jd: JulianDate = t.to::<crate::JD>();
             let geom = moon_phase_geocentric::<E>(jd);
             results.push((t, geom));
             t = crate::time::mjd(t.raw() + step);
@@ -730,7 +730,7 @@ impl<E: Ephemeris> MoonPhaseSeries<E> {
         let mut results = Vec::new();
         let mut t = start;
         while t <= end {
-            let jd: JulianDate = t.to_time().to::<crate::time::JD>();
+            let jd: JulianDate = t.to::<crate::JD>();
             let geom = moon_phase_topocentric::<E>(jd, site);
             results.push((t, geom));
             t = crate::time::mjd(t.raw() + step);
@@ -745,7 +745,7 @@ impl<E: Ephemeris> MoonPhaseSeries<E> {
 
 /// A reusable scalar closure for geocentric illuminated fraction at a given MJD.
 fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> IlluminationFractions {
-    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     moon_phase_geocentric::<E>(jd).illuminated_fraction
 }
 
@@ -866,7 +866,7 @@ mod tests {
     #[test]
     fn illuminated_fraction_bounded() {
         // Check that illuminated fraction is always in [0, 1] for a range of dates.
-        let start = JulianDate::J2000;
+        let start = crate::J2000;
         for i in 0..100 {
             let jd = crate::time::jd(start.raw() + Days::new(i as f64 * 3.0));
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
@@ -882,7 +882,7 @@ mod tests {
 
     #[test]
     fn phase_angle_bounded() {
-        let start = JulianDate::J2000;
+        let start = crate::J2000;
         for i in 0..50 {
             let jd = crate::time::jd(start.raw() + Days::new(i as f64 * 5.0));
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
@@ -898,7 +898,7 @@ mod tests {
 
     #[test]
     fn elongation_bounded() {
-        let start = JulianDate::J2000;
+        let start = crate::J2000;
         for i in 0..50 {
             let jd = crate::time::jd(start.raw() + Days::new(i as f64 * 5.0));
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
@@ -914,7 +914,7 @@ mod tests {
 
     #[test]
     fn waxing_consistent_with_elongation() {
-        let start = JulianDate::J2000;
+        let start = crate::J2000;
         for i in 0..50 {
             let jd = crate::time::jd(start.raw() + Days::new(i as f64 * 5.0));
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
@@ -975,7 +975,7 @@ mod tests {
     #[test]
     fn label_via_geometry() {
         // At J2000 the Moon should produce a valid label.
-        let geom = moon_phase_geocentric::<Vsop87Ephemeris>(JulianDate::J2000);
+        let geom = moon_phase_geocentric::<Vsop87Ephemeris>(crate::J2000);
         let label = geom.label();
         // Just ensure it doesn't panic and returns something reasonable.
         let _ = format!("{}", label);
@@ -984,7 +984,7 @@ mod tests {
     #[test]
     fn find_events_in_one_synodic_month() {
         // Search ~35 days from J2000, should find at least one of each kind.
-        let start = JulianDate::J2000.to_time().to::<crate::time::MJD>();
+        let start = crate::J2000.to::<crate::MJD>();
         let end = crate::time::mjd(start.raw() + Days::new(35.0));
         let window = Period::new(start, end);
         let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
@@ -1006,7 +1006,7 @@ mod tests {
         use crate::coordinates::frames::ECEF;
 
         let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         let geo = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
         let topo = moon_phase_topocentric::<Vsop87Ephemeris>(jd, site);
@@ -1032,7 +1032,7 @@ mod tests {
 
     #[test]
     fn series_length() {
-        let start = JulianDate::J2000.to_time().to::<crate::time::MJD>();
+        let start = crate::J2000.to::<crate::MJD>();
         let end = crate::time::mjd(start.raw() + Days::new(10.0));
         let step = Days::new(1.0);
         let series = MoonPhaseSeries::<Vsop87Ephemeris>::sample(start, end, step);

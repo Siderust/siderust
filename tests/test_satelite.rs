@@ -16,7 +16,7 @@ fn satellite_new_const() {
         Degrees::new(10.0),
         Degrees::new(20.0),
         Degrees::new(30.0),
-        JulianDate::J2000,
+        siderust::time::J2000,
     );
     let sat = Satellite::new_const(
         "TestSat",
@@ -44,7 +44,7 @@ fn satellite_new_owned() {
         Degrees::new(2.0),
         Degrees::new(3.0),
         Degrees::new(4.0),
-        JulianDate::J2000,
+        siderust::time::J2000,
     );
     let name = String::from("OwnedSat");
     let sat = Satellite::new(

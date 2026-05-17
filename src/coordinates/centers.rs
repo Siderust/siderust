@@ -317,7 +317,7 @@ pub enum OrbitReferenceCenter {
 ///     Degrees::new(49.56),  // longitude of ascending node
 ///     Degrees::new(286.5),  // argument of periapsis
 ///     Degrees::new(19.41),  // mean anomaly at epoch
-///     JulianDate::J2000,    // epoch
+///     siderust::J2000,    // epoch
 /// );
 ///
 /// let mars_params = BodycentricParams::heliocentric(mars_orbit);
@@ -372,7 +372,6 @@ impl Default for BodycentricParams {
     /// always provide meaningful orbital elements for body-centric calculations.
     fn default() -> Self {
         use crate::qtty::AstronomicalUnits;
-        use crate::time::JulianDate;
 
         Self {
             orbit: KeplerianOrbit::new(
@@ -382,7 +381,7 @@ impl Default for BodycentricParams {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             orbit_center: OrbitReferenceCenter::Heliocentric,
         }
@@ -420,7 +419,7 @@ impl Default for BodycentricParams {
 ///     Degrees::new(0.0),
 ///     Degrees::new(0.0),
 ///     Degrees::new(0.0),
-///     JulianDate::J2000,
+///     siderust::J2000,
 /// );
 ///
 /// let sat_params = BodycentricParams::geocentric(satellite_orbit);
@@ -508,7 +507,6 @@ mod tests {
 
     #[test]
     fn bodycentric_has_params() {
-        use crate::time::JulianDate;
 
         // Create a simple orbit
         let orbit = KeplerianOrbit::new(
@@ -518,7 +516,7 @@ mod tests {
             Degrees::new(49.56),
             Degrees::new(286.5),
             Degrees::new(19.41),
-            JulianDate::J2000,
+            crate::J2000,
         );
 
         let params = BodycentricParams::heliocentric(orbit);
@@ -530,7 +528,6 @@ mod tests {
 
     #[test]
     fn bodycentric_params_constructors() {
-        use crate::time::JulianDate;
 
         let orbit = KeplerianOrbit::new(
             1.0 * AU,
@@ -539,7 +536,7 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         );
 
         let helio = BodycentricParams::heliocentric(orbit);
@@ -561,7 +558,6 @@ mod tests {
 
     #[test]
     fn bodycentric_params_equality() {
-        use crate::time::JulianDate;
 
         let orbit1 = KeplerianOrbit::new(
             1.0 * AU,
@@ -570,7 +566,7 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         );
         let orbit2 = KeplerianOrbit::new(
             2.0 * AU, // Different semi-major axis
@@ -579,7 +575,7 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         );
 
         let params1 = BodycentricParams::heliocentric(orbit1);

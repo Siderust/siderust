@@ -266,10 +266,10 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             AngularRate::<Degree, Day>::new(0.9856076686),
-            JulianDate::J2000,
+            crate::J2000,
         )
         .unwrap();
-        let position = orbit.position_at(JulianDate::J2000).unwrap();
+        let position = orbit.position_at(crate::J2000).unwrap();
         assert_cartesian_eq!(position, EclipticMeanJ2000::new(1.0, 0.0, 0.0), 1e-10);
     }
 
@@ -282,7 +282,7 @@ mod tests {
             Degrees::new(20.0),
             Degrees::new(30.0),
             AngularRate::<Degree, Day>::new(0.9856076686),
-            JulianDate::J2000,
+            crate::J2000,
         )
         .unwrap();
         // 1e8 days ~ 274,000 years — tests M normalization for large accumulation.
@@ -324,7 +324,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::ParabolicUnsupported)
         ));
@@ -340,7 +340,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 AngularRate::<Degree, Day>::new(1.0),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::InvalidSemiMajorAxis)
         ));
@@ -356,7 +356,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 AngularRate::<Degree, Day>::new(1.0),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::HyperbolicNotSupported)
         ));
@@ -372,7 +372,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::InvalidPeriapsisDistance)
         ));
@@ -388,7 +388,7 @@ mod tests {
             Degrees::new(20.0),
             Degrees::new(30.0),
             Degrees::new(0.001),
-            JulianDate::J2000,
+            crate::J2000,
         )
         .unwrap();
         let position = orbit
@@ -408,7 +408,7 @@ mod tests {
             Degrees::new(60.0),
             Degrees::new(90.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         )
         .unwrap();
         let position = orbit
@@ -428,7 +428,7 @@ mod tests {
             Degrees::new(90.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         )
         .unwrap();
         // Large dt to produce large M

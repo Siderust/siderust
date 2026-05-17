@@ -9,7 +9,7 @@ const AU_EPS: crate::qtty::AstronomicalUnits = crate::qtty::AstronomicalUnits::n
 
 #[test]
 fn test_identity_frame_rotation() {
-    let rot = frame_rotation::<ICRS, ICRS>(JulianDate::J2000, &AstroContext::default());
+    let rot = frame_rotation::<ICRS, ICRS>(crate::J2000, &AstroContext::default());
     let v = [1.0, 2.0, 3.0];
     let result = rot.apply_array(v);
     assert!((result[0] - v[0]).abs() < EPSILON);
@@ -20,7 +20,7 @@ fn test_identity_frame_rotation() {
 #[test]
 fn test_icrs_to_ecliptic_rotation() {
     let rot =
-        frame_rotation::<ICRS, EclipticMeanJ2000>(JulianDate::J2000, &AstroContext::default());
+        frame_rotation::<ICRS, EclipticMeanJ2000>(crate::J2000, &AstroContext::default());
     let v = [1.0, 2.0, 3.0];
     let w = rot.apply_array(v);
 
@@ -34,7 +34,7 @@ fn test_icrs_to_ecliptic_rotation() {
 #[test]
 fn test_ecliptic_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
 
     let r1 = frame_rotation::<ICRS, EclipticMeanJ2000>(jd, &ctx);
     let r2 = frame_rotation::<EclipticMeanJ2000, ICRS>(jd, &ctx);
@@ -50,7 +50,7 @@ fn test_ecliptic_icrs_roundtrip() {
 #[test]
 fn test_identity_center_shift() {
     let shift = center_shift::<Barycentric, Barycentric, EclipticMeanJ2000>(
-        JulianDate::J2000,
+        crate::J2000,
         &AstroContext::default(),
     );
     assert!((shift[0]).abs() < AU_EPS);
@@ -61,7 +61,7 @@ fn test_identity_center_shift() {
 #[test]
 fn test_helio_bary_geo_composition() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
 
     let helio_geo = center_shift::<Heliocentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
     let helio_bary = center_shift::<Heliocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
@@ -81,7 +81,7 @@ fn test_helio_bary_geo_composition() {
 #[test]
 fn test_center_shift_antisymmetry() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
 
     let forward = center_shift::<Heliocentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
     let backward = center_shift::<Geocentric, Heliocentric, EclipticMeanJ2000>(jd, &ctx);
@@ -94,7 +94,7 @@ fn test_center_shift_antisymmetry() {
 #[test]
 fn test_frame_bias_is_non_identity() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
 
     let rot = frame_rotation::<ICRS, EquatorialMeanJ2000>(jd, &ctx);
     let v = [0.0, 1.0, 0.0];
@@ -107,7 +107,7 @@ fn test_frame_bias_is_non_identity() {
 #[test]
 fn test_icrs_ecliptic_roundtrip_is_identity() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
 
     let r = frame_rotation::<ICRS, EclipticMeanJ2000>(jd, &ctx);
     let rinv = frame_rotation::<EclipticMeanJ2000, ICRS>(jd, &ctx);
@@ -124,7 +124,7 @@ fn test_icrs_ecliptic_roundtrip_is_identity() {
 #[test]
 fn test_precession_identity_at_j2000() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
 
     let rot = frame_rotation::<EquatorialMeanJ2000, EquatorialMeanOfDate>(jd, &ctx);
     let v = [1.0, 0.0, 0.0];
@@ -154,7 +154,7 @@ fn test_nutation_rotation_roundtrip() {
 #[test]
 fn test_icrf_icrs_identity_rotation() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let rot = frame_rotation::<ICRF, ICRS>(jd, &ctx);
     let v = [0.1, -0.2, 0.3];
     let out = rot.apply_array(v);
@@ -166,7 +166,7 @@ fn test_icrf_icrs_identity_rotation() {
 #[test]
 fn test_icrf_ecliptic_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r = frame_rotation::<ICRF, EclipticMeanJ2000>(jd, &ctx);
     let rinv = frame_rotation::<EclipticMeanJ2000, ICRF>(jd, &ctx);
 
@@ -180,7 +180,7 @@ fn test_icrf_ecliptic_roundtrip() {
 #[test]
 fn test_icrf_to_ecliptic_matches_icrs_to_ecliptic() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let via_icrf = frame_rotation::<ICRF, EclipticMeanJ2000>(jd, &ctx);
     let via_icrs = frame_rotation::<ICRS, EclipticMeanJ2000>(jd, &ctx);
 
@@ -217,7 +217,7 @@ fn mat_frobenius(a: &[[f64; 3]; 3], b: &[[f64; 3]; 3]) -> f64 {
 #[test]
 fn sofa_frame_bias_provider_matches_bp06_rb() {
     let ctx = AstroContext::default();
-    let rb = frame_rotation::<ICRS, EquatorialMeanJ2000>(JulianDate::J2000, &ctx);
+    let rb = frame_rotation::<ICRS, EquatorialMeanJ2000>(crate::J2000, &ctx);
     let m = rb.as_matrix();
 
     // SOFA bp06(2451545.0, 0.0) → rb
@@ -249,7 +249,7 @@ fn sofa_frame_bias_provider_matches_bp06_rb() {
 #[test]
 fn sofa_icrs_to_ecliptic_j2000_matches_ecm06() {
     let ctx = AstroContext::default();
-    let rot = frame_rotation::<ICRS, EclipticMeanJ2000>(JulianDate::J2000, &ctx);
+    let rot = frame_rotation::<ICRS, EclipticMeanJ2000>(crate::J2000, &ctx);
     let m = rot.as_matrix();
 
     // SOFA ecm06(2451545.0, 0.0)
@@ -438,7 +438,7 @@ fn sofa_obliquity_j2000() {
 #[test]
 fn sofa_bias_basis_vectors_via_provider() {
     let ctx = AstroContext::default();
-    let rb = frame_rotation::<ICRS, EquatorialMeanJ2000>(JulianDate::J2000, &ctx);
+    let rb = frame_rotation::<ICRS, EquatorialMeanJ2000>(crate::J2000, &ctx);
 
     let ex = rb.apply_array([1.0, 0.0, 0.0]);
     let ey = rb.apply_array([0.0, 1.0, 0.0]);
@@ -576,7 +576,7 @@ fn sofa_nutation_j2020_iau2006a_matches_num06a() {
 #[test]
 fn sofa_inverse_bias_provider_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let fwd = frame_rotation::<ICRS, EquatorialMeanJ2000>(jd, &ctx);
     let inv = frame_rotation::<EquatorialMeanJ2000, ICRS>(jd, &ctx);
 
@@ -598,7 +598,7 @@ fn sofa_inverse_bias_provider_roundtrip() {
 #[test]
 fn test_eme2000_is_equatorial_mean_j2000() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let rot = frame_rotation::<EME2000, EquatorialMeanJ2000>(jd, &ctx);
     let v = [1.0, 2.0, 3.0];
     let out = rot.apply_array(v);
@@ -611,7 +611,7 @@ fn test_eme2000_is_equatorial_mean_j2000() {
 #[test]
 fn test_eme2000_to_icrs_matches_j2000_to_icrs() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let via_eme = frame_rotation::<EME2000, ICRS>(jd, &ctx);
     let via_j2k = frame_rotation::<EquatorialMeanJ2000, ICRS>(jd, &ctx);
 
@@ -626,7 +626,7 @@ fn test_eme2000_to_icrs_matches_j2000_to_icrs() {
 #[test]
 fn test_eme2000_ecliptic_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<EME2000, EclipticMeanJ2000>(jd, &ctx);
     let r2 = frame_rotation::<EclipticMeanJ2000, EME2000>(jd, &ctx);
     let v = [0.5, -0.3, 0.8];
@@ -665,7 +665,7 @@ fn test_eme2000_to_true_of_date_roundtrip() {
 #[test]
 fn test_eme2000_icrf_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<EME2000, ICRF>(jd, &ctx);
     let r2 = frame_rotation::<ICRF, EME2000>(jd, &ctx);
     let v = [1.0, -1.0, 0.5];
@@ -678,7 +678,7 @@ fn test_eme2000_icrf_roundtrip() {
 #[test]
 fn test_eme2000_gcrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<EME2000, GCRSFrame>(jd, &ctx);
     let r2 = frame_rotation::<GCRSFrame, EME2000>(jd, &ctx);
     let v = [0.4, 0.5, 0.6];
@@ -695,7 +695,7 @@ fn test_eme2000_gcrs_roundtrip() {
 #[test]
 fn test_gcrs_icrs_identity() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let rot = frame_rotation::<GCRSFrame, ICRS>(jd, &ctx);
     let v = [0.7, -0.3, 0.1];
     let out = rot.apply_array(v);
@@ -707,7 +707,7 @@ fn test_gcrs_icrs_identity() {
 #[test]
 fn test_gcrs_to_j2000_matches_icrs_to_j2000() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let via_gcrs = frame_rotation::<GCRSFrame, EquatorialMeanJ2000>(jd, &ctx);
     let via_icrs = frame_rotation::<ICRS, EquatorialMeanJ2000>(jd, &ctx);
 
@@ -722,7 +722,7 @@ fn test_gcrs_to_j2000_matches_icrs_to_j2000() {
 #[test]
 fn test_gcrs_to_ecliptic_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<GCRSFrame, EclipticMeanJ2000>(jd, &ctx);
     let r2 = frame_rotation::<EclipticMeanJ2000, GCRSFrame>(jd, &ctx);
     let v = [0.2, 0.8, -0.5];
@@ -752,7 +752,7 @@ fn test_gcrs_to_true_of_date_roundtrip() {
 #[test]
 fn test_j2000_ecliptic_obliquity_rotation() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
 
     // EquatorialMeanJ2000 → EclipticMeanJ2000 is Rx(-ε₀)
     let rot = frame_rotation::<EquatorialMeanJ2000, EclipticMeanJ2000>(jd, &ctx);
@@ -771,7 +771,7 @@ fn test_j2000_ecliptic_obliquity_rotation() {
 #[test]
 fn test_j2000_ecliptic_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<EquatorialMeanJ2000, EclipticMeanJ2000>(jd, &ctx);
     let r2 = frame_rotation::<EclipticMeanJ2000, EquatorialMeanJ2000>(jd, &ctx);
     let v = [0.3, 0.7, -0.5];
@@ -853,7 +853,7 @@ fn test_mean_of_date_to_true_of_date_roundtrip() {
 #[test]
 fn test_icrf_j2000_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<ICRF, EquatorialMeanJ2000>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialMeanJ2000, ICRF>(jd, &ctx);
     let v = [0.6, 0.3, -0.7];
@@ -1003,7 +1003,7 @@ fn test_tirs_to_itrf_roundtrip() {
 #[test]
 fn test_itrf_ecef_identity() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let rot = frame_rotation::<ITRF, ECEF>(jd, &ctx);
     let v = [0.1, 0.2, 0.3];
     let out = rot.apply_array(v);
@@ -1132,7 +1132,7 @@ fn test_true_of_date_to_itrf_roundtrip() {
 #[test]
 fn test_galactic_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<Galactic, ICRS>(jd, &ctx);
     let r2 = frame_rotation::<ICRS, Galactic>(jd, &ctx);
     let v = [0.6, -0.4, 0.7];
@@ -1146,7 +1146,7 @@ fn test_galactic_icrs_roundtrip() {
 #[test]
 fn test_galactic_is_not_identity() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let rot = frame_rotation::<Galactic, ICRS>(jd, &ctx);
     let v = [1.0, 0.0, 0.0];
     let out = rot.apply_array(v);
@@ -1157,7 +1157,7 @@ fn test_galactic_is_not_identity() {
 #[test]
 fn test_galactic_preserves_length() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let rot = frame_rotation::<Galactic, ICRS>(jd, &ctx);
     let v = [0.5_f64, 0.6, 0.7];
     let w = rot.apply_array(v);
@@ -1169,7 +1169,7 @@ fn test_galactic_preserves_length() {
 #[test]
 fn test_galactic_to_j2000_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<Galactic, EquatorialMeanJ2000>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialMeanJ2000, Galactic>(jd, &ctx);
     let v = [0.3, 0.4, -0.8];
@@ -1182,7 +1182,7 @@ fn test_galactic_to_j2000_roundtrip() {
 #[test]
 fn test_galactic_to_ecliptic_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<Galactic, EclipticMeanJ2000>(jd, &ctx);
     let r2 = frame_rotation::<EclipticMeanJ2000, Galactic>(jd, &ctx);
     let v = [0.5, -0.3, 0.7];
@@ -1195,7 +1195,7 @@ fn test_galactic_to_ecliptic_roundtrip() {
 #[test]
 fn test_fk4_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<FK4B1950, ICRS>(jd, &ctx);
     let r2 = frame_rotation::<ICRS, FK4B1950>(jd, &ctx);
     let v = [0.7, 0.2, -0.6];
@@ -1208,7 +1208,7 @@ fn test_fk4_icrs_roundtrip() {
 #[test]
 fn test_fk4_j2000_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let r1 = frame_rotation::<FK4B1950, EquatorialMeanJ2000>(jd, &ctx);
     let r2 = frame_rotation::<EquatorialMeanJ2000, FK4B1950>(jd, &ctx);
     let v = [0.4, -0.5, 0.6];
@@ -1221,7 +1221,7 @@ fn test_fk4_j2000_roundtrip() {
 #[test]
 fn test_fk4_is_not_identity() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let rot = frame_rotation::<FK4B1950, ICRS>(jd, &ctx);
     let v = [0.0, 1.0, 0.0];
     let out = rot.apply_array(v);
@@ -1236,7 +1236,7 @@ fn test_fk4_is_not_identity() {
 #[test]
 fn test_mars_bary_shift_is_nonzero() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let shift = center_shift::<Marscentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
     let dist = (shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]).scalar_sqrt();
     // Mars is 1.2–1.7 AU from the Sun at J2000
@@ -1250,7 +1250,7 @@ fn test_mars_bary_shift_is_nonzero() {
 #[test]
 fn test_mars_shift_antisymmetry() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let fwd = center_shift::<Marscentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Marscentric, EclipticMeanJ2000>(jd, &ctx);
     assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
@@ -1261,7 +1261,7 @@ fn test_mars_shift_antisymmetry() {
 #[test]
 fn test_venus_helio_shift_via_barycentric() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let direct = center_shift::<Heliocentric, Venuscentric, EclipticMeanJ2000>(jd, &ctx);
     let via_bary = {
         let a = center_shift::<Heliocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
@@ -1276,7 +1276,7 @@ fn test_venus_helio_shift_via_barycentric() {
 #[test]
 fn test_jupiter_geo_shift_via_barycentric() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let direct = center_shift::<Geocentric, Jovicentric, EclipticMeanJ2000>(jd, &ctx);
     let via_bary = {
         let a = center_shift::<Geocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
@@ -1291,7 +1291,7 @@ fn test_jupiter_geo_shift_via_barycentric() {
 #[test]
 fn test_selenocentric_bary_shift_nonzero() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let shift = center_shift::<Selenocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
     let dist = (shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]).scalar_sqrt();
     // Moon is ~1 AU from barycenter (roughly same as Earth)
@@ -1305,7 +1305,7 @@ fn test_selenocentric_bary_shift_nonzero() {
 #[test]
 fn test_selenocentric_geocentric_antisymmetry() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let fwd = center_shift::<Geocentric, Selenocentric, EclipticMeanJ2000>(jd, &ctx);
     let bwd = center_shift::<Selenocentric, Geocentric, EclipticMeanJ2000>(jd, &ctx);
     assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
@@ -1316,7 +1316,7 @@ fn test_selenocentric_geocentric_antisymmetry() {
 #[test]
 fn test_selenocentric_helio_shift_via_barycentric() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let direct = center_shift::<Heliocentric, Selenocentric, EclipticMeanJ2000>(jd, &ctx);
     let via_bary = {
         let a = center_shift::<Heliocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
@@ -1331,7 +1331,7 @@ fn test_selenocentric_helio_shift_via_barycentric() {
 #[test]
 fn test_pluto_bary_shift_nonzero() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let shift = center_shift::<Plutocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
     let dist = (shift[0] * shift[0] + shift[1] * shift[1] + shift[2] * shift[2]).scalar_sqrt();
     // Pluto is ~30–50 AU from the Sun
@@ -1345,7 +1345,7 @@ fn test_pluto_bary_shift_nonzero() {
 #[test]
 fn test_pluto_shift_antisymmetry() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let fwd = center_shift::<Plutocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Plutocentric, EclipticMeanJ2000>(jd, &ctx);
     assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
@@ -1360,7 +1360,7 @@ fn test_pluto_shift_antisymmetry() {
 #[test]
 fn test_helio_bary_shift_in_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let fwd = center_shift::<Heliocentric, Barycentric, ICRS>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Heliocentric, ICRS>(jd, &ctx);
     assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
@@ -1371,7 +1371,7 @@ fn test_helio_bary_shift_in_icrs_roundtrip() {
 #[test]
 fn test_geo_bary_shift_in_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
     let fwd = center_shift::<Geocentric, Barycentric, ICRS>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Geocentric, ICRS>(jd, &ctx);
     assert!((fwd[0] + bwd[0]).abs() < AU_EPS);
@@ -1382,7 +1382,7 @@ fn test_geo_bary_shift_in_icrs_roundtrip() {
 #[test]
 fn test_geo_helio_composition_in_icrs() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = crate::J2000;
 
     let helio_geo = center_shift::<Heliocentric, Geocentric, ICRS>(jd, &ctx);
     let helio_bary = center_shift::<Heliocentric, Barycentric, ICRS>(jd, &ctx);

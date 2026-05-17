@@ -35,9 +35,9 @@
 //! use chrono::prelude::*;
 //! use siderust::astro::sidereal::gmst_iau2006;
 //! use siderust::qtty::*;
-//! use siderust::time::{JulianDate, TT, Time, UTC};
+//! use siderust::time::{JulianDate, JD, TT, Time, UTC};
 //!
-//! let jd: JulianDate = Time::<UTC>::from_chrono(Utc::now()).to::<TT>().into();
+//! let jd: JulianDate = Time::<UTC>::from_chrono(Utc::now()).to::<TT>().to::<JD>();
 //! let gmst = gmst_iau2006(jd, jd); // jd_ut1 ≈ jd_tt for most applications
 //! let lon_madrid = Degrees::new(-3.7038).to::<Radian>();
 //! let lst = gmst + lon_madrid;
@@ -133,7 +133,7 @@ mod tests {
     #[test]
     fn gmst_iau2006_at_j2000() {
         // At J2000.0, GMST ≈ ERA ≈ 280.46° (polynomial term is tiny at t=0)
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let gmst = gmst_iau2006(jd, jd);
         let gmst_deg = gmst.to::<Degree>();
         assert!(

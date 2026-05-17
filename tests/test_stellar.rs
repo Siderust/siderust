@@ -37,15 +37,15 @@ fn roque() -> Geodetic<ECEF> {
 
 fn period_7d() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60007.0)),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     )
 }
 
 fn period_3d() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60000.0)),
-        ModifiedJulianDate::from_raw_unchecked(Days::new(60003.0)),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60003.0)).unwrap(),
     )
 }
 

@@ -264,7 +264,7 @@ impl OrientationTrig {
 ///     1.0 * AU, 0.0167,
 ///     Degrees::new(0.00005), Degrees::new(-11.26064),
 ///     Degrees::new(102.94719), Degrees::new(100.46435),
-///     JulianDate::J2000,
+///     siderust::J2000,
 /// );
 /// let prepared = PreparedOrbit::try_from(orbit).unwrap();
 /// let pos = prepared.position_at(siderust::time::jd(qtty::Day::new(2459200.5)));

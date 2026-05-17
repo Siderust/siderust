@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn tio_locator_at_j2000_is_zero() {
-        let sp = tio_locator_sp(JulianDate::J2000);
+        let sp = tio_locator_sp(crate::J2000);
         assert!(
             sp.value().abs() < 1e-15,
             "s' at J2000 should be ~0, got {}",

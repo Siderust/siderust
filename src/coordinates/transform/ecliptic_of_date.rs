@@ -326,7 +326,7 @@ mod tests {
     #[test]
     fn ecliptic_of_date_has_correct_obliquity() {
         // At J2000, the mean obliquity should be approximately 23.439279444444445°
-        let jd_tt = JulianDate::J2000;
+        let jd_tt = crate::J2000;
 
         // A point on the equatorial equator (RA = 0°, Dec = 0°) should be on the ecliptic
         let spherical_equ =

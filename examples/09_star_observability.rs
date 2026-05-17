@@ -21,7 +21,7 @@ fn main() {
     let target = SIRIUS;
 
     // One-night search window (MJD TT).
-    let t_0 = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
+    let t_0 = ModifiedJulianDate::try_new(qtty::Day::new(60000.0)).unwrap();
     let window = Period::new(t_0, t_0 + Days::new(1.0));
 
     // Constraint 1: altitude between 25° and 65°.

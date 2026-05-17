@@ -19,12 +19,12 @@ use siderust::time::JulianDate;
 
 /// Build a [`JulianDate`] from a Julian Day Number (for clarity in tests).
 fn jd_from_value(jd: f64) -> JulianDate {
-    JulianDate::from_raw_unchecked(qtty::Day::new(jd))
+    JulianDate::try_new(qtty::Day::new(jd)).unwrap()
 }
 
 /// Standard test epoch: J2000.0
 fn j2000() -> JulianDate {
-    JulianDate::J2000
+    siderust::time::J2000
 }
 
 /// Test epoch: 2020-01-01 12:00 TT

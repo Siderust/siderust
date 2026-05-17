@@ -36,7 +36,7 @@ atmosphere = []
 affn = { version = "0.7", features = ["astro"] }
 cheby = "0.2"
 qtty = { version = "0.8", features = ["astro", "radiometry"] }
-tempoch = { git = "https://github.com/Siderust/tempoch.git", branch = "helpers", version = "0.5.1" }
+tempoch = { path = "../tempoch-cpp/tempoch/tempoch", version = "0.5.1" }
 approx = "0.5"
 chrono = "0.4"
 paste = "1.0"
@@ -90,3 +90,10 @@ harness = false
 [[bench]]
 name = "altitude_comparison"
 harness = false
+
+# Vendor path matches `tempoch-cpp/tempoch` submodule (same sources CMake builds via tempoch-ffi).
+[patch.crates-io]
+tempoch = { path = "../tempoch-cpp/tempoch/tempoch" }
+tempoch-core = { path = "../tempoch-cpp/tempoch/tempoch-core" }
+tempoch-ffi = { path = "../tempoch-cpp/tempoch/tempoch-ffi" }
+tempoch-time-data = { path = "../tempoch-cpp/tempoch/tempoch-time-data" }

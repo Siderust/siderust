@@ -4,7 +4,6 @@
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 #[test]
 fn planet_builder_errors() {
@@ -17,7 +16,7 @@ fn planet_builder_errors() {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            siderust::time::J2000,
         ));
     let err = builder.clone().try_build().unwrap_err();
     assert!(matches!(err, PlanetBuilderError::MissingMass));
@@ -40,7 +39,7 @@ fn orbit_period_computation() {
         Degrees::new(0.0),
         Degrees::new(0.0),
         Degrees::new(0.0),
-        JulianDate::J2000,
+        siderust::time::J2000,
     );
     let planet = Planet::builder()
         .mass(Kilograms::new(1.0))

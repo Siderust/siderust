@@ -450,7 +450,7 @@ mod tests {
 
     #[test]
     fn nutation_at_j2000_dominant_term() {
-        let nut = nutation_iau2000b(JulianDate::J2000);
+        let nut = nutation_iau2000b(crate::J2000);
 
         // At J2000.0, the dominant Ω term gives Δψ ≈ −14″ to −17″, Δε ≈ 9″
         // (exact value depends on Ω phase at epoch)
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn mean_obliquity_matches_iau2006() {
-        let nut = nutation_iau2000b(JulianDate::J2000);
+        let nut = nutation_iau2000b(crate::J2000);
         let eps_arcsec = nut.mean_obliquity.to::<Degree>().value() * 3600.0;
         // IAU 2006 value at J2000: 84381.406″
         assert!(

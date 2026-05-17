@@ -48,7 +48,7 @@ struct RuntimeEphemerisInner {
 /// use siderust::time::JulianDate;
 ///
 /// let eph = RuntimeEphemeris::from_bsp("path/to/de440.bsp")?;
-/// let sun_pos = eph.sun_barycentric(JulianDate::J2000);
+/// let sun_pos = eph.sun_barycentric(crate::J2000);
 /// ```
 #[derive(Clone)]
 pub struct RuntimeEphemeris {

@@ -84,7 +84,7 @@ pub(crate) fn fixed_star_altitude_rad(
     use crate::coordinates::transform::AstroContext;
     use crate::qtty::Radian;
 
-    let jd: JulianDate = mjd.to_time().to::<crate::time::JD>();
+    let jd: JulianDate = mjd.to::<crate::JD>();
 
     // Convert J2000 RA/Dec → unit Cartesian
     let ra_rad = ra_j2000.to::<Radian>().value();
@@ -150,8 +150,8 @@ fn find_crossings_analytical(
     let start_above = f(period.start) > thr;
 
     // Build analytical model at the period midpoint
-    let start_jd: JulianDate = period.start.to_time().to::<crate::time::JD>();
-    let end_jd: JulianDate = period.end.to_time().to::<crate::time::JD>();
+    let start_jd: JulianDate = period.start.to::<crate::JD>();
+    let end_jd: JulianDate = period.end.to::<crate::JD>();
     let mid_jd = crate::time::jd((start_jd.raw() + end_jd.raw()) / 2.0);
     let equatorial_j2000 =
         crate::coordinates::spherical::direction::EquatorialMeanJ2000::new(ra_j2000, dec_j2000);

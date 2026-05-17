@@ -148,13 +148,13 @@ impl Sun {
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     ///
     /// // Using JulianDate
-    /// let sun_pos = Sun::get_horizontal::<AstronomicalUnit>(JulianDate::J2000, site);
+    /// let sun_pos = Sun::get_horizontal::<AstronomicalUnit>(siderust::J2000, site);
     /// println!("Sun altitude: {}", sun_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
     /// let mjd = siderust::time::mjd(qtty::Day::new(60000.0));
     /// let sun_pos =
-    ///     Sun::get_horizontal::<AstronomicalUnit>(mjd.to_time().to::<siderust::time::JD>(), site);
+    ///     Sun::get_horizontal::<AstronomicalUnit>(mjd.to::<siderust::time::JD>(), site);
     /// ```
     pub fn get_horizontal<U: LengthUnit>(
         time: impl Into<JulianDate>,
@@ -198,11 +198,10 @@ impl Sun {
 mod tests {
     use crate::bodies::solar_system::Sun;
     use crate::qtty::{AstronomicalUnit, AstronomicalUnits, Degrees, Radians};
-    use crate::time::JulianDate;
 
     #[test]
     fn apparent_sun_position_j2000() {
-        let pos = Sun::get_apparent_geocentric_equ::<AstronomicalUnit>(JulianDate::J2000);
+        let pos = Sun::get_apparent_geocentric_equ::<AstronomicalUnit>(crate::J2000);
 
         // Expected approximate values around J2000 epoch
         let expected_ra = 281.2; // degrees
@@ -238,7 +237,7 @@ mod tests {
     /// 280.46° ≈ 4.895 rad (Sun near winter solstice as seen from Earth).
     #[test]
     fn ecliptic_longitude_geocentric_j2000() {
-        let lon: Radians = Sun::ecliptic_longitude_geocentric(JulianDate::J2000);
+        let lon: Radians = Sun::ecliptic_longitude_geocentric(crate::J2000);
         // VSOP87 gives ~4.8935 rad (≈ 280.34°) at J2000.0.  Tolerance: 1e-3 rad (~0.06°).
         let expected = 4.8935_f64;
         assert!(

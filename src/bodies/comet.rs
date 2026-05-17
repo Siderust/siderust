@@ -34,7 +34,6 @@
 
 use crate::astro::orbit::KeplerianOrbit;
 use crate::qtty::{AstronomicalUnits, Degrees, Kilometers, Years};
-use crate::time::JulianDate;
 
 /// Indicates whether orbital elements are given **with respect to the Solar‑System barycentre**
 /// or the heliocentre (Sun‑centred).
@@ -159,7 +158,7 @@ pub const HALLEY: Comet = Comet::new_const(
         Degrees::new(58.42008),
         Degrees::new(111.33249),
         Degrees::new(38.384),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     OrbitFrame::Heliocentric,
 );
@@ -175,7 +174,7 @@ pub const ENCKE: Comet = Comet::new_const(
         Degrees::new(334.568),
         Degrees::new(186.545),
         Degrees::new(163.105),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     OrbitFrame::Heliocentric,
 );
@@ -191,7 +190,7 @@ pub const HALE_BOPP: Comet = Comet::new_const(
         Degrees::new(282.472),
         Degrees::new(130.589),
         Degrees::new(17.258),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     OrbitFrame::Barycentric,
 );

@@ -265,9 +265,7 @@ pub fn position(
     z_series: &[&[Vsop87]],
 ) -> (f64, f64, f64) {
     let t = (jd
-        .to_time()
         .to_scale::<TDB>()
-        .to::<crate::time::JD>()
         .raw()
         .value()
         - 2_451_545.0)
@@ -287,9 +285,7 @@ pub fn velocity(
     z_series: &[&[Vsop87]],
 ) -> (f64, f64, f64) {
     let t = (jd
-        .to_time()
         .to_scale::<TDB>()
-        .to::<crate::time::JD>()
         .raw()
         .value()
         - 2_451_545.0)
@@ -311,9 +307,7 @@ pub fn position_velocity(
     z_series: &[&[Vsop87]],
 ) -> ((f64, f64, f64), (f64, f64, f64)) {
     let t = (jd
-        .to_time()
         .to_scale::<TDB>()
-        .to::<crate::time::JD>()
         .raw()
         .value()
         - 2_451_545.0)

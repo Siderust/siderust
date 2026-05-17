@@ -60,7 +60,7 @@ fn asteroid_builder_defaults() {
         Degrees::new(2.0),
         Degrees::new(3.0),
         Degrees::new(4.0),
-        JulianDate::J2000,
+        siderust::time::J2000,
     );
     let asteroid = Asteroid::builder()
         .name("Test")
@@ -95,7 +95,7 @@ fn planet_builder_errors_and_period() {
         Degrees::new(0.0),
         Degrees::new(0.0),
         Degrees::new(0.0),
-        JulianDate::J2000,
+        siderust::time::J2000,
     );
     let err = Planet::builder()
         .mass(Kilograms::new(1.0))

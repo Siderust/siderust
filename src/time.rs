@@ -35,8 +35,8 @@
 //!   `EncodedTime<TT, MJD>`.
 //!
 //! Advanced scale-aware work still uses `tempoch::JulianDate<S>` and
-//! `tempoch::ModifiedJulianDate<S>` directly. The [`J2000`] constant exposes
-//! the J2000.0 TT epoch as a [`JulianDate`]. [`UT`] is a backward-compatible
+//! `tempoch::ModifiedJulianDate<S>` directly. The J2000.0 TT epoch is the
+//! [`J2000`] constant (JD 2 451 545.0 TT). [`UT`] is a backward-compatible
 //! alias for [`UT1`]; [`Period<T>`] is a backward-compatible alias for
 //! [`Interval<T>`].
 //!
@@ -56,9 +56,12 @@ pub use tempoch::{
     complement_within, constats, delta_t_seconds, delta_t_seconds_extrapolated, eop,
     ContinuousScale, ConversionError, ConversionTarget, CoordinateScale, EncodedTime,
     FormatForScale, InfallibleConversionTarget, InfallibleFormatForScale, Interval,
-    InvalidIntervalError, InvalidPeriodError, PeriodListError, Scale, ScaleKind, Time, TimeContext,
-    TimeDataError, TimeInstant, JD, JULIAN_YEAR_DAYS, MJD, TAI, TCB, TCG, TDB, TT, UT1, UTC,
+    InvalidIntervalError, PeriodListError, Scale, Time, TimeContext,
+    TimeDataError, TimeInstant, JD, MJD, TAI, TCB, TCG, TDB, TT, UT1, UTC,
 };
+
+/// Julian year length in days (`365.25`), matching tempoch's compiled Julian-year definition.
+pub const JULIAN_YEAR_DAYS: qtty::Day = qtty::Day::new(365.25);
 
 /// Backward-compatible alias: old siderust code used `UT` for the UT1 axis.
 pub type UT = UT1;
@@ -72,12 +75,21 @@ pub type JulianDate = tempoch::JulianDate<TT>;
 /// TT-scale Modified Julian Date.  Equivalent to `tempoch::ModifiedJulianDate<TT>`.
 pub type ModifiedJulianDate = tempoch::ModifiedJulianDate<TT>;
 
-/// J2000.0 epoch as a [`JulianDate`] (TT, JD 2 451 545.0).
-pub const J2000: JulianDate = JulianDate::J2000;
+/// J2000.0 TT as a [`JulianDate`] (`JD 2 451 545.0 TT`); **`const`** everywhere.
+pub const J2000: JulianDate = tempoch::JulianDate::<TT>::JD_EPOCH_J2000_0;
+
+/// Runtime helper; prefer [`J2000`] in `const` contexts.
+#[inline]
+pub fn j2000_tt() -> JulianDate {
+    J2000
+}
 
 /// Checked TT Julian Date constructor from a typed day quantity.
 #[inline]
 pub fn try_jd(raw: qtty::Day) -> Result<JulianDate, ConversionError> {
+    if !raw.value().is_finite() {
+        return Err(ConversionError::NonFinite);
+    }
     JulianDate::try_new(raw)
 }
 
@@ -97,6 +109,9 @@ pub fn jd(raw: qtty::Day) -> JulianDate {
 /// Checked TT Modified Julian Date constructor from a typed day quantity.
 #[inline]
 pub fn try_mjd(raw: qtty::Day) -> Result<ModifiedJulianDate, ConversionError> {
+    if !raw.value().is_finite() {
+        return Err(ConversionError::NonFinite);
+    }
     ModifiedJulianDate::try_new(raw)
 }
 

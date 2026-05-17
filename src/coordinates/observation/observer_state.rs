@@ -58,7 +58,7 @@ pub type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 /// use siderust::time::JulianDate;
 ///
 /// // Create observer state for a geocentric observer
-/// let obs = ObserverState::geocentric(JulianDate::J2000);
+/// let obs = ObserverState::geocentric(siderust::J2000);
 ///
 /// // The observer velocity is now available for aberration calculations
 /// println!("Observer velocity: {:?}", obs.velocity());
@@ -87,7 +87,7 @@ impl ObserverState {
     /// use siderust::coordinates::observation::ObserverState;
     /// use siderust::time::JulianDate;
     ///
-    /// let obs = ObserverState::geocentric(JulianDate::J2000);
+    /// let obs = ObserverState::geocentric(siderust::J2000);
     /// ```
     pub fn geocentric(jd: JulianDate) -> Self {
         use crate::coordinates::transform::TransformFrame;
@@ -212,7 +212,7 @@ mod tests {
 
     #[test]
     fn test_geocentric_observer_state() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
 
         // Earth's orbital velocity is approximately 30 km/s
@@ -235,7 +235,7 @@ mod tests {
 
     #[test]
     fn test_topocentric_includes_diurnal_velocity() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let geo = ObserverState::geocentric(jd);
         let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M); // equator
         let topo = ObserverState::topocentric(&site, jd);
