@@ -66,7 +66,7 @@ where
 
     while t < period.end {
         let next_t = {
-            let t_next = crate::time::mjd(t.raw() + step);
+            let t_next = crate::time::ModifiedJulianDate::new((t.raw() + step).value());
             if t_next.raw() <= period.end.raw() {
                 t_next
             } else {
@@ -122,7 +122,7 @@ where
     let mut prev = g(t);
     while t < period.end {
         let next_t = {
-            let t_next = crate::time::mjd(t.raw() + initial_step);
+            let t_next = crate::time::ModifiedJulianDate::new((t.raw() + initial_step).value());
             if t_next.raw() <= period.end.raw() {
                 t_next
             } else {
@@ -147,7 +147,7 @@ where
                 brackets.push(frame.period);
             } else {
                 // Subdivide to find tighter bracket
-                let mid = crate::time::mjd(frame.period.start.raw() + width * 0.5);
+                let mid = crate::time::ModifiedJulianDate::new((frame.period.start.raw() + width * 0.5).value());
                 let g_mid = g(mid);
                 // Push both halves (will be processed)
                 stack.push(Frame {
@@ -244,7 +244,7 @@ where
     }
 
     bracket.start = {
-        let t_prev = crate::time::mjd(bracket.end.raw() - step);
+        let t_prev = crate::time::ModifiedJulianDate::new((bracket.end.raw() - step).value());
         if t_prev.raw() >= search_period.start.raw() {
             t_prev
         } else {
@@ -260,7 +260,7 @@ where
         bracket.end = bracket.start;
         g_hi = g_lo;
         bracket.start = {
-            let t_prev = crate::time::mjd(bracket.start.raw() - step);
+            let t_prev = crate::time::ModifiedJulianDate::new((bracket.start.raw() - step).value());
             if t_prev.raw() >= search_period.start.raw() {
                 t_prev
             } else {
@@ -299,7 +299,7 @@ where
     }
 
     bracket.end = {
-        let t_next = crate::time::mjd(bracket.start.raw() + step);
+        let t_next = crate::time::ModifiedJulianDate::new((bracket.start.raw() + step).value());
         if t_next.raw() <= search_period.end.raw() {
             t_next
         } else {
@@ -315,7 +315,7 @@ where
         bracket.start = bracket.end;
         g_lo = g_hi;
         bracket.end = {
-            let t_next = crate::time::mjd(bracket.end.raw() + step);
+            let t_next = crate::time::ModifiedJulianDate::new((bracket.end.raw() + step).value());
             if t_next.raw() <= search_period.end.raw() {
                 t_next
             } else {
@@ -344,7 +344,7 @@ mod tests {
     type Radians = Quantity<Radian>;
 
     fn mjd(v: f64) -> Mjd {
-        crate::time::mjd(Days::new(v))
+        crate::time::ModifiedJulianDate::new((Days::new(v)).value())
     }
     fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
         Period::new(mjd(a), mjd(b))

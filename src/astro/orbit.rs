@@ -267,7 +267,7 @@ impl OrientationTrig {
 ///     siderust::J2000,
 /// );
 /// let prepared = PreparedOrbit::try_from(orbit).unwrap();
-/// let pos = prepared.position_at(siderust::time::jd(qtty::Day::new(2459200.5)));
+/// let pos = prepared.position_at(siderust::JulianDate::new(qtty::Day::new(2459200.5)));
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PreparedOrbit {

@@ -187,8 +187,8 @@ pub trait AltitudePeriodsProvider {
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 /// let window = Period::new(
-///     siderust::time::mjd(qtty::Day::new(60000.0)),
-///     siderust::time::mjd(qtty::Day::new(60001.0)),
+///     siderust::ModifiedJulianDate::new(qtty::Day::new(60000.0)),
+///     siderust::ModifiedJulianDate::new(qtty::Day::new(60001.0)),
 /// );
 /// let query = AltitudeQuery {
 ///     observer: site,
@@ -458,15 +458,15 @@ mod tests {
 
     fn one_day_window() -> Period<ModifiedJulianDate> {
         Period::new(
-            crate::time::mjd(qtty::Day::new(60000.0)),
-            crate::time::mjd(qtty::Day::new(60001.0)),
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60001.0),
         )
     }
 
     fn one_week_window() -> Period<ModifiedJulianDate> {
         Period::new(
-            crate::time::mjd(qtty::Day::new(60000.0)),
-            crate::time::mjd(qtty::Day::new(60007.0)),
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60007.0),
         )
     }
 
@@ -574,7 +574,7 @@ mod tests {
     #[test]
     fn altitude_at_consistent_across_types() {
         let observer = greenwich();
-        let mjd = crate::time::mjd(qtty::Day::new(51544.5)); // J2000 epoch in MJD
+        let mjd = crate::time::ModifiedJulianDate::new(51544.5); // J2000 epoch in MJD
 
         let sun_alt = solar_system::Sun.altitude_at(&observer, mjd);
         assert!(sun_alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2));
@@ -644,8 +644,8 @@ mod tests {
     #[test]
     fn empty_window_returns_empty() {
         let window = Period::new(
-            crate::time::mjd(qtty::Day::new(60000.0)),
-            crate::time::mjd(qtty::Day::new(60000.0)),
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60000.0),
         );
         let query = AltitudeQuery {
             observer: greenwich(),
@@ -669,8 +669,8 @@ mod tests {
         let query = AltitudeQuery {
             observer: greenwich(),
             window: Period::new(
-                crate::time::mjd(qtty::Day::new(60000.0)),
-                crate::time::mjd(qtty::Day::new(60002.0)),
+                crate::time::ModifiedJulianDate::new(60000.0),
+                crate::time::ModifiedJulianDate::new(60002.0),
             ),
             min_altitude: Degrees::new(-18.0),
             max_altitude: Degrees::new(-12.0),
@@ -704,7 +704,7 @@ mod tests {
     #[test]
     fn mars_altitude_at_is_finite() {
         let alt =
-            solar_system::Mars.altitude_at(&greenwich(), crate::time::mjd(qtty::Day::new(60000.5)));
+            solar_system::Mars.altitude_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(alt.is_finite());
         assert!(
             alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2),
@@ -728,7 +728,7 @@ mod tests {
     #[test]
     fn planet_altitudes_are_realistic() {
         let observer = greenwich();
-        let mjd = crate::time::mjd(qtty::Day::new(60000.5));
+        let mjd = crate::time::ModifiedJulianDate::new(60000.5);
         // All planets should return finite altitudes
         let mercury_alt = solar_system::Mercury.altitude_at(&observer, mjd);
         let venus_alt = solar_system::Venus.altitude_at(&observer, mjd);

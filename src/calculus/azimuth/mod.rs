@@ -72,8 +72,8 @@
 //!
 //! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 //! let window = Period::new(
-//!     siderust::time::mjd(qtty::Day::new(60000.0)),
-//!     siderust::time::mjd(qtty::Day::new(60001.0)),
+//!     siderust::ModifiedJulianDate::new(qtty::Day::new(60000.0)),
+//!     siderust::ModifiedJulianDate::new(qtty::Day::new(60001.0)),
 //! );
 //!
 //! // Find when the Sun crosses due-South (180°):

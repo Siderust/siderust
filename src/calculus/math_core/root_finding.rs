@@ -407,8 +407,8 @@ mod tests {
         let f_hi = Radians::new((4.0_f64).sin());
         let _ = brent_with_values(
             Interval::new(
-                crate::time::mjd(Days::new(3.0)),
-                crate::time::mjd(Days::new(4.0)),
+                crate::time::ModifiedJulianDate::new((Days::new(3.0)).value()),
+                crate::time::ModifiedJulianDate::new((Days::new(4.0)).value()),
             ),
             f_lo,
             f_hi,
@@ -431,8 +431,8 @@ mod tests {
     fn brent_tol_respects_relaxed_tolerance() {
         let root = brent_tol(
             Interval::new(
-                crate::time::mjd(Days::new(3.0)),
-                crate::time::mjd(Days::new(4.0)),
+                crate::time::ModifiedJulianDate::new((Days::new(3.0)).value()),
+                crate::time::ModifiedJulianDate::new((Days::new(4.0)).value()),
             ),
             Radians::new((3.0_f64).sin()),
             Radians::new((4.0_f64).sin()),

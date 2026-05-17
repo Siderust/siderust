@@ -99,13 +99,6 @@ pub fn try_jd_f64(value: f64) -> Result<JulianDate, ConversionError> {
     try_jd(qtty::Day::new(value))
 }
 
-/// Panicking TT Julian Date constructor for internal finite constants and tests.
-#[track_caller]
-#[inline]
-pub fn jd(raw: qtty::Day) -> JulianDate {
-    try_jd(raw).expect("JulianDate must be finite")
-}
-
 /// Checked TT Modified Julian Date constructor from a typed day quantity.
 #[inline]
 pub fn try_mjd(raw: qtty::Day) -> Result<ModifiedJulianDate, ConversionError> {
@@ -119,13 +112,6 @@ pub fn try_mjd(raw: qtty::Day) -> Result<ModifiedJulianDate, ConversionError> {
 #[inline]
 pub fn try_mjd_f64(value: f64) -> Result<ModifiedJulianDate, ConversionError> {
     try_mjd(qtty::Day::new(value))
-}
-
-/// Panicking TT Modified Julian Date constructor for internal finite constants and tests.
-#[track_caller]
-#[inline]
-pub fn mjd(raw: qtty::Day) -> ModifiedJulianDate {
-    try_mjd(raw).expect("ModifiedJulianDate must be finite")
 }
 
 /// Helper: build a `ModifiedJulianDate` (TT scale) directly from a `chrono::DateTime<Utc>`.

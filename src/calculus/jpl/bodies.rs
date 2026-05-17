@@ -482,7 +482,7 @@ mod tests {
     }
 
     fn jd_test_static() -> JulianDate {
-        crate::time::jd(qtty::Day::new(JD_J2000 + 500.0))
+        crate::time::JulianDate::new(JD_J2000 + 500.0)
     }
 
     // ── SegmentDescriptor (compile-time) tests ────────────────────────────
@@ -577,7 +577,7 @@ mod tests {
 
     /// JD at J2000 + 500 days (midpoint of our test segment → tau = 0).
     fn jd_test() -> JulianDate {
-        crate::time::jd(qtty::Day::new(JD_J2000 + 500.0))
+        crate::time::JulianDate::new(JD_J2000 + 500.0)
     }
 
     // ── FRAC constants ────────────────────────────────────────────────────

@@ -228,7 +228,7 @@ mod tests {
 
     #[test]
     fn test_observer_jd() {
-        let jd = crate::time::jd(qtty::Day::new(2451545.0));
+        let jd = crate::time::JulianDate::new(2451545.0);
         let obs = ObserverState::geocentric(jd);
         assert_eq!(obs.jd(), jd);
     }

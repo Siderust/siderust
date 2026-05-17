@@ -130,7 +130,7 @@ mod tests {
     fn meeus_example_1992_apr_12() {
         // Meeus Example 47.a: 1992 April 12, 00:00 TD
         // JDE = 2448724.5
-        let jd = crate::time::jd(qtty::Day::new(2_448_724.5));
+        let jd = crate::time::JulianDate::new(2_448_724.5);
         let moon = moon_position_meeus_ch47(jd);
 
         // Expected: λ ≈ 133.17°, β ≈ -3.23°, Δ ≈ 368409 km (reduced-term)

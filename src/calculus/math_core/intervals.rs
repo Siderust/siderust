@@ -87,7 +87,7 @@ where
     let mut prev = g(t);
     while t < t_end_v {
         let next_t = {
-            let t_next = crate::time::mjd(t.raw() + step_v);
+            let t_next = crate::time::ModifiedJulianDate::new((t.raw() + step_v).value());
             if t_next.raw() <= t_end_v.raw() {
                 t_next
             } else {
@@ -189,8 +189,8 @@ where
         .iter()
         .filter_map(|&t| {
             let tv = t;
-            let before = is_above(f(crate::time::mjd(tv.raw() - PROBE_DT)));
-            let after = is_above(f(crate::time::mjd(tv.raw() + PROBE_DT)));
+            let before = is_above(f(crate::time::ModifiedJulianDate::new((tv.raw() - PROBE_DT).value())));
+            let after = is_above(f(crate::time::ModifiedJulianDate::new((tv.raw() + PROBE_DT).value())));
             if !before && after {
                 Some(LabeledCrossing { t, direction: 1 })
             } else if before && !after {
@@ -241,7 +241,7 @@ where
     // Leading partial period: we start above and first crossing exits
     if start_above && labeled[0].direction == -1 {
         let exit_t = labeled[0].t;
-        let mid_v = crate::time::mjd(t_start.raw() + (exit_t.raw() - t_start.raw()) * 0.5);
+        let mid_v = crate::time::ModifiedJulianDate::new((t_start.raw() + (exit_t.raw() - t_start.raw()) * 0.5).value());
         if is_above(f(mid_v)) {
             periods.push(Period::new(period.start, exit_t));
         }
@@ -261,7 +261,7 @@ where
                 t_end
             };
 
-            let mid_v = crate::time::mjd(enter_t.raw() + (exit_t.raw() - enter_t.raw()) * 0.5);
+            let mid_v = crate::time::ModifiedJulianDate::new((enter_t.raw() + (exit_t.raw() - enter_t.raw()) * 0.5).value());
             if mid_v >= t_start && mid_v <= t_end && is_above(f(mid_v)) {
                 periods.push(Period::new(enter_t, exit_t));
             }
@@ -388,7 +388,7 @@ mod tests {
     type Radians = Quantity<Radian>;
 
     fn mjd(v: f64) -> Mjd {
-        crate::time::mjd(Days::new(v))
+        crate::time::ModifiedJulianDate::new((Days::new(v)).value())
     }
     fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
         Period::new(mjd(a), mjd(b))

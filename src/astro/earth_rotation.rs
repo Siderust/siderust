@@ -78,7 +78,7 @@ pub fn jd_ut1_from_tt(jd_tt: JulianDate) -> JulianDate {
     let ut1 = jd_tt
         .to_with::<UT1>(&TimeContext::new())
         .expect("TT->UT1 conversion should succeed within the bundled model horizon");
-    crate::time::jd(qtty::Day::new(ut1.to::<tempoch::JD>().raw().value()))
+    crate::time::JulianDate::new(ut1.to::<tempoch::JD>().raw().value())
 }
 
 /// Compute JD(UTC) from JD(TT).
@@ -104,7 +104,7 @@ pub fn jd_utc_from_tt(jd_tt: JulianDate) -> JulianDate {
         utc_jd = ut1_jd - eop.ut1_minus_utc.to::<Day>().value();
     }
 
-    crate::time::jd(qtty::Day::new(utc_jd))
+    crate::time::JulianDate::new(utc_jd)
 }
 
 /// Compute JD(UT1) from JD(TT) with IERS EOP refinement.
@@ -168,7 +168,7 @@ pub fn jd_ut1_from_tt_eop(jd_tt: JulianDate, eop: &EopValues) -> JulianDate {
         .unwrap_or(0.0);
     let residual_days = (eop.dut1.value() - bundled_dut1) / 86_400.0;
 
-    crate::time::jd(qtty::Day::new(ut1_jd + residual_days))
+    crate::time::JulianDate::new(ut1_jd + residual_days)
 }
 
 /// Compute GMST with proper UT1/TT separation.
@@ -219,7 +219,7 @@ mod tests {
     const JD_J2000: f64 = 2451545.0;
 
     fn jd() -> JulianDate {
-        crate::time::jd(qtty::Day::new(JD_J2000))
+        crate::time::JulianDate::new(JD_J2000)
     }
 
     // ── jd_ut1_from_tt ────────────────────────────────────────────────────
@@ -337,7 +337,7 @@ mod tests {
     #[test]
     fn gmst_from_tt_varies_with_time() {
         let gmst1 = gmst_from_tt(jd());
-        let gmst2 = gmst_from_tt(crate::time::jd(qtty::Day::new(JD_J2000 + 1.0)));
+        let gmst2 = gmst_from_tt(crate::time::JulianDate::new(JD_J2000 + 1.0));
         // One sidereal day rotates by ~2π, so GMST changes significantly
         let diff = (gmst2.value() - gmst1.value()).abs();
         assert!(diff > 0.0, "GMST should change over 1 day");
