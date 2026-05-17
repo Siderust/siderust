@@ -114,9 +114,9 @@ mod tests {
             crate::qtty::Degrees::new(-16.716),
         );
         let at_j2000 = dir.track(crate::J2000);
-        let at_j2050 = dir.track(crate::time::JulianDate::new((
-            crate::J2000.raw() + crate::qtty::Days::new(365.25 * 50.0),
-        ).value()));
+        let at_j2050 = dir.track(crate::time::JulianDate::new(
+            (crate::J2000.raw() + crate::qtty::Days::new(365.25 * 50.0)).value(),
+        ));
         assert_eq!(at_j2000.ra(), at_j2050.ra());
         assert_eq!(at_j2000.dec(), at_j2050.dec());
     }
@@ -130,9 +130,9 @@ mod tests {
             crate::qtty::LightYears::new(548.0),
         );
         let sample = CoordinateWithPM::new_static(pos, crate::J2000);
-        let result = sample.track(crate::time::JulianDate::new((
-            crate::J2000.raw() + crate::qtty::Days::new(365.25),
-        ).value()));
+        let result = sample.track(crate::time::JulianDate::new(
+            (crate::J2000.raw() + crate::qtty::Days::new(365.25)).value(),
+        ));
         assert_eq!(result.ra(), crate::qtty::Degrees::new(88.0));
         assert_eq!(result.dec(), crate::qtty::Degrees::new(7.0));
     }

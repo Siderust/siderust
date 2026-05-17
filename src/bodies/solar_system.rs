@@ -790,9 +790,9 @@ mod tests {
         let p = &MARS_ROTATION;
         let alpha = p.alpha0(crate::time::JulianDate::new((crate::J2000.raw() + Days::new(36_525.0)).value()));
         assert!((alpha.value() - (317.269 - 0.10927)).abs() < 1e-10);
-        let w = p.w(crate::time::JulianDate::new((
-            crate::J2000.raw() + crate::qtty::Days::new(1.0),
-        ).value()));
+        let w = p.w(crate::time::JulianDate::new(
+            (crate::J2000.raw() + crate::qtty::Days::new(1.0)).value(),
+        ));
         assert!((w.value() - (176.049 + 350.891982443)).abs() < 1e-8);
     }
 
