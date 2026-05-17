@@ -44,7 +44,7 @@ impl Pluto {
     pub fn get_heliocentric(
         jd: JulianDate,
     ) -> cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
-        let t = (jd.raw().value() - 2_451_545.0) / 36525.0;
+        let t = jd.julian_centuries();
 
         // 2. Calculate mean longitudes (in degrees) for Jupiter, Saturn, and Pluto.
         let jupiter_lon = Degrees::new(34.35 + 3034.9057 * t);

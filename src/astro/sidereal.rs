@@ -82,7 +82,7 @@ pub use crate::qtty::time::SIDEREAL_DAY;
 #[inline]
 pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
     let era = earth_rotation_angle(jd_ut1);
-    let t = (jd_tt.raw().value() - 2_451_545.0) / 36525.0;
+    let t = jd_tt.julian_centuries();
 
     // Polynomial: accumulated precession of equinox in arcseconds
     // Coefficients from Capitaine et al. (2003), eq. 42

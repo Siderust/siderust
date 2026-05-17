@@ -64,7 +64,7 @@ impl IauRotationParams {
     /// * `jd` - Julian Date (TDB/TT-compatible epoch for IAU model evaluation).
     #[inline]
     pub fn alpha0(&self, jd: JulianDate) -> Degrees {
-        let t_centuries = (jd.raw().value() - 2_451_545.0) / 36525.0;
+        let t_centuries = jd.julian_centuries();
         self.alpha0_deg + self.alpha0_rate * t_centuries
     }
 
@@ -74,7 +74,7 @@ impl IauRotationParams {
     /// * `jd` - Julian Date (TDB/TT-compatible epoch for IAU model evaluation).
     #[inline]
     pub fn delta0(&self, jd: JulianDate) -> Degrees {
-        let t_centuries = (jd.raw().value() - 2_451_545.0) / 36525.0;
+        let t_centuries = jd.julian_centuries();
         self.delta0_deg + self.delta0_rate * t_centuries
     }
 

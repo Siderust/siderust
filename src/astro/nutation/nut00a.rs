@@ -223,7 +223,7 @@ const U2R: f64 = AS2R / 1e7;
 /// Do not reorder the loop without updating the IAU compliance tests in
 /// `tests/`.
 pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
-    let t = (jd.raw().value() - 2_451_545.0) / 36525.0;
+    let t = jd.julian_centuries();
 
     // ── Luni-solar fundamental arguments ──
     let el = fa_l_iers03(t);
@@ -304,7 +304,7 @@ pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
 ///
 /// Reference: Wallace & Capitaine (2006), Eqs. 5.
 pub(crate) fn nutation_iau2006a(jd: JulianDate) -> NutationAngles {
-    let t = (jd.raw().value() - 2_451_545.0) / 36525.0;
+    let t = jd.julian_centuries();
     let fj2 = -2.7774e-6 * t;
 
     let (dp, de) = nutation_iau2000a_raw(jd);

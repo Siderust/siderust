@@ -94,7 +94,7 @@ pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (CipCoordinates, 
 /// * Capitaine, Wallace & Chapront (2003)
 /// * SOFA routine `iauS06`
 pub fn cio_locator_s(jd: JulianDate, x: CipCoordinates, y: CipCoordinates) -> Radians {
-    let t = (jd.raw().value() - 2_451_545.0) / 36525.0;
+    let t = jd.julian_centuries();
 
     // Polynomial part (μas), from IERS Conventions (2010) eq. 5.15
     let poly_uas = 94.0 + 3808.65 * t - 122.68 * t.powi(2) - 72574.11 * t.powi(3);
