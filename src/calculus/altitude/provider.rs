@@ -603,10 +603,7 @@ mod tests {
             !periods.is_empty(),
             "Full sky range should return at least one period"
         );
-        let total: f64 = periods
-            .iter()
-            .map(|p| p.length().value())
-            .sum();
+        let total: f64 = periods.iter().map(|p| p.length().value()).sum();
         assert!(
             (total - 1.0).abs() < 0.01,
             "Full sky range should span ~1 day, got {} days",
@@ -703,8 +700,8 @@ mod tests {
 
     #[test]
     fn mars_altitude_at_is_finite() {
-        let alt =
-            solar_system::Mars.altitude_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
+        let alt = solar_system::Mars
+            .altitude_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(alt.is_finite());
         assert!(
             alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2),

@@ -217,7 +217,8 @@ impl StarAltitudeParams {
 
             let mut dt = dt_first;
             while (period.start.raw() + dt) <= (period.end.raw() + CROSSING_EDGE_EPS) {
-                let t_unclamped = crate::time::ModifiedJulianDate::new((period.start.raw() + dt).value());
+                let t_unclamped =
+                    crate::time::ModifiedJulianDate::new((period.start.raw() + dt).value());
                 let t_cross = if t_unclamped.raw() >= period.end.raw() {
                     period.end
                 } else if t_unclamped.raw() <= period.start.raw() {

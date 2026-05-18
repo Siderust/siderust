@@ -439,14 +439,8 @@ mod tests {
         );
 
         // Total covered should be the full window
-        let total_inside: f64 = inside
-            .iter()
-            .map(|p| p.length().value())
-            .sum();
-        let total_outside: f64 = outside
-            .iter()
-            .map(|p| p.length().value())
-            .sum();
+        let total_inside: f64 = inside.iter().map(|p| p.length().value()).sum();
+        let total_outside: f64 = outside.iter().map(|p| p.length().value()).sum();
         let window_len = (window.end.raw() - window.start.raw()).value();
         assert!(
             (total_inside + total_outside - window_len).abs() < 1e-6,
@@ -458,8 +452,8 @@ mod tests {
 
     #[test]
     fn mars_azimuth_at_returns_valid_range() {
-        let az =
-            solar_system::Mars.azimuth_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
+        let az = solar_system::Mars
+            .azimuth_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(az.value() >= 0.0, "azimuth must be ≥ 0, got {}", az);
         assert!(
             az.value() < std::f64::consts::TAU,

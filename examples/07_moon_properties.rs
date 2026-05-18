@@ -25,14 +25,8 @@ fn print_periods(label: &str, periods: &[Period<ModifiedJulianDate>]) {
     println!("\n{label}: {} period(s)", periods.len());
     for p in periods {
         let dur_h = p.length().to::<siderust::qtty::Hour>();
-        let s = p
-            .start
-            .to_chrono()
-            .expect("valid UTC");
-        let e = p
-            .end
-            .to_chrono()
-            .expect("valid UTC");
+        let s = p.start.to_chrono().expect("valid UTC");
+        let e = p.end.to_chrono().expect("valid UTC");
         println!(
             "  - {} -> {} ({dur_h})",
             s.format("%Y-%m-%d %H:%M UTC"),
@@ -123,10 +117,7 @@ fn main() {
     let events = find_phase_events::<Vsop87Ephemeris>(window, opts);
     println!("\nPrincipal phase events in next 35 days: {}", events.len());
     for ev in &events {
-        let utc = ev
-            .mjd
-            .to_chrono()
-            .expect("valid UTC");
+        let utc = ev.mjd.to_chrono().expect("valid UTC");
         println!(
             "  - {:>13} at {}",
             ev.kind,

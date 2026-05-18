@@ -189,8 +189,12 @@ where
         .iter()
         .filter_map(|&t| {
             let tv = t;
-            let before = is_above(f(crate::time::ModifiedJulianDate::new((tv.raw() - PROBE_DT).value())));
-            let after = is_above(f(crate::time::ModifiedJulianDate::new((tv.raw() + PROBE_DT).value())));
+            let before = is_above(f(crate::time::ModifiedJulianDate::new(
+                (tv.raw() - PROBE_DT).value(),
+            )));
+            let after = is_above(f(crate::time::ModifiedJulianDate::new(
+                (tv.raw() + PROBE_DT).value(),
+            )));
             if !before && after {
                 Some(LabeledCrossing { t, direction: 1 })
             } else if before && !after {
@@ -241,7 +245,9 @@ where
     // Leading partial period: we start above and first crossing exits
     if start_above && labeled[0].direction == -1 {
         let exit_t = labeled[0].t;
-        let mid_v = crate::time::ModifiedJulianDate::new((t_start.raw() + (exit_t.raw() - t_start.raw()) * 0.5).value());
+        let mid_v = crate::time::ModifiedJulianDate::new(
+            (t_start.raw() + (exit_t.raw() - t_start.raw()) * 0.5).value(),
+        );
         if is_above(f(mid_v)) {
             periods.push(Period::new(period.start, exit_t));
         }
@@ -261,7 +267,9 @@ where
                 t_end
             };
 
-            let mid_v = crate::time::ModifiedJulianDate::new((enter_t.raw() + (exit_t.raw() - enter_t.raw()) * 0.5).value());
+            let mid_v = crate::time::ModifiedJulianDate::new(
+                (enter_t.raw() + (exit_t.raw() - enter_t.raw()) * 0.5).value(),
+            );
             if mid_v >= t_start && mid_v <= t_end && is_above(f(mid_v)) {
                 periods.push(Period::new(enter_t, exit_t));
             }

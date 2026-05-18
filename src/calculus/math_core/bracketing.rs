@@ -147,7 +147,9 @@ where
                 brackets.push(frame.period);
             } else {
                 // Subdivide to find tighter bracket
-                let mid = crate::time::ModifiedJulianDate::new((frame.period.start.raw() + width * 0.5).value());
+                let mid = crate::time::ModifiedJulianDate::new(
+                    (frame.period.start.raw() + width * 0.5).value(),
+                );
                 let g_mid = g(mid);
                 // Push both halves (will be processed)
                 stack.push(Frame {

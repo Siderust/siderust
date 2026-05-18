@@ -84,9 +84,7 @@ impl EopValues {
     /// Convert UTC Julian Date to UT1 Julian Date using this EOP's dUT1.
     #[inline]
     pub fn jd_ut1(&self, jd_utc: JulianDate) -> JulianDate {
-        crate::time::JulianDate::new(
-            jd_utc.raw().value() + self.dut1.to::<Day>().value(),
-        )
+        crate::time::JulianDate::new(jd_utc.raw().value() + self.dut1.to::<Day>().value())
     }
 }
 

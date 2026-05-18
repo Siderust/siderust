@@ -18,15 +18,13 @@ fn main() {
     println!(
         "Back UTC: {}",
         jd.to_chrono()
-          .map(|dt| dt.to_rfc3339())
-          .unwrap_or_else(|| "N/A".into())
+            .map(|dt| dt.to_rfc3339())
+            .unwrap_or_else(|| "N/A".into())
     );
 
     let tomorrow = jd + Days::new(1.0);
     let window = Interval::<JulianDate>::new(jd, tomorrow);
-    println!(
-        "1-day window length: {}", window.duration().to::<Day>()
-    );
+    println!("1-day window length: {}", window.duration().to::<Day>());
 
     let utc_time = tempoch::Time::<UTC>::from_chrono(now_utc);
     let utc_window = Interval::<tempoch::Time<UTC>>::new(

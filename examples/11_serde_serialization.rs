@@ -180,8 +180,7 @@ mod demo {
         let recovered_targets: BodyTargetsBundle = roundtrip(&targets);
         println!(
             "Roundtrip check: Mars target JD {:.1}, Moon target JD {:.1}\n",
-            recovered_targets.mars_bary_target.time,
-            recovered_targets.moon_geo_target.time
+            recovered_targets.mars_bary_target.time, recovered_targets.moon_geo_target.time
         );
 
         // =========================================================================

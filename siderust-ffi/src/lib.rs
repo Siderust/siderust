@@ -31,6 +31,8 @@ pub mod azimuth;
 pub mod bodies;
 pub mod context;
 pub mod coordinates;
+#[cfg(feature = "satellite")]
+pub mod dynamics;
 pub mod ephemeris;
 pub mod observatories;
 pub mod phase;
@@ -47,6 +49,8 @@ pub use azimuth::*;
 pub use bodies::*;
 pub use context::*;
 pub use coordinates::*;
+#[cfg(feature = "satellite")]
+pub use dynamics::*;
 pub use ephemeris::*;
 pub use error::*;
 pub use observatories::*;

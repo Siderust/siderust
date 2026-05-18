@@ -367,7 +367,10 @@ mod tests {
 
     fn one_month() -> Period<ModifiedJulianDate> {
         let start = crate::J2000.to::<crate::MJD>();
-        Period::new(start, crate::time::ModifiedJulianDate::new((start.raw() + Days::new(30.0)).value()))
+        Period::new(
+            start,
+            crate::time::ModifiedJulianDate::new((start.raw() + Days::new(30.0)).value()),
+        )
     }
 
     #[test]

@@ -191,17 +191,23 @@ fn find_crossings_analytical(
 
             for (t_pred, _dir) in &predicted {
                 let lo_raw = t_pred.raw() - BRACKET_HALF;
-                let lo = crate::time::ModifiedJulianDate::new((if lo_raw >= period.start.raw() {
-                    lo_raw
-                } else {
-                    period.start.raw()
-                }).value());
+                let lo = crate::time::ModifiedJulianDate::new(
+                    (if lo_raw >= period.start.raw() {
+                        lo_raw
+                    } else {
+                        period.start.raw()
+                    })
+                    .value(),
+                );
                 let hi_raw = t_pred.raw() + BRACKET_HALF;
-                let hi = crate::time::ModifiedJulianDate::new((if hi_raw <= period.end.raw() {
-                    hi_raw
-                } else {
-                    period.end.raw()
-                }).value());
+                let hi = crate::time::ModifiedJulianDate::new(
+                    (if hi_raw <= period.end.raw() {
+                        hi_raw
+                    } else {
+                        period.end.raw()
+                    })
+                    .value(),
+                );
 
                 if (hi.raw() - lo.raw()) < Days::new(1e-12) {
                     continue; // degenerate bracket at boundary

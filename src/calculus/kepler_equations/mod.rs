@@ -350,7 +350,9 @@ mod tests {
         assert_cartesian_eq!(coord, EclipticMeanJ2000::new(1.0, 0.0, 0.0), 1e-10);
 
         // 90 degrees after epoch
-        let jd = crate::time::JulianDate::new((crate::J2000.raw() + Days::new(90.0 / 0.9856076686)).value()); // Roughly 90 degrees / n days
+        let jd = crate::time::JulianDate::new(
+            (crate::J2000.raw() + Days::new(90.0 / 0.9856076686)).value(),
+        ); // Roughly 90 degrees / n days
         let coord = calculate_orbit_position(&orbit, jd);
         // Expect y to be approximately 1 AstronomicalUnits
         assert_cartesian_eq!(coord, EclipticMeanJ2000::new(0.0, 1.0, 0.0), 1e-4);

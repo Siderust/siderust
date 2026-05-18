@@ -868,7 +868,8 @@ mod tests {
         // Check that illuminated fraction is always in [0, 1] for a range of dates.
         let start = crate::J2000;
         for i in 0..100 {
-            let jd = crate::time::JulianDate::new((start.raw() + Days::new(i as f64 * 3.0)).value());
+            let jd =
+                crate::time::JulianDate::new((start.raw() + Days::new(i as f64 * 3.0)).value());
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             assert!(
                 geom.illuminated_fraction.value() >= 0.0
@@ -884,7 +885,8 @@ mod tests {
     fn phase_angle_bounded() {
         let start = crate::J2000;
         for i in 0..50 {
-            let jd = crate::time::JulianDate::new((start.raw() + Days::new(i as f64 * 5.0)).value());
+            let jd =
+                crate::time::JulianDate::new((start.raw() + Days::new(i as f64 * 5.0)).value());
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             let i_val = geom.phase_angle;
             assert!(
@@ -900,7 +902,8 @@ mod tests {
     fn elongation_bounded() {
         let start = crate::J2000;
         for i in 0..50 {
-            let jd = crate::time::JulianDate::new((start.raw() + Days::new(i as f64 * 5.0)).value());
+            let jd =
+                crate::time::JulianDate::new((start.raw() + Days::new(i as f64 * 5.0)).value());
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             let e = geom.elongation;
             assert!(
@@ -916,7 +919,8 @@ mod tests {
     fn waxing_consistent_with_elongation() {
         let start = crate::J2000;
         for i in 0..50 {
-            let jd = crate::time::JulianDate::new((start.raw() + Days::new(i as f64 * 5.0)).value());
+            let jd =
+                crate::time::JulianDate::new((start.raw() + Days::new(i as f64 * 5.0)).value());
             let geom = moon_phase_geocentric::<Vsop87Ephemeris>(jd);
             let e = geom.elongation;
             let expected_waxing = e > Radians::new(0.0) && e < Radians::new(PI);

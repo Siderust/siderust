@@ -184,8 +184,12 @@ where
 {
     let tv = t;
     let fc = f(t);
-    let fl = f(crate::time::ModifiedJulianDate::new((tv.raw() - PROBE_EPS).value()));
-    let fr = f(crate::time::ModifiedJulianDate::new((tv.raw() + PROBE_EPS).value()));
+    let fl = f(crate::time::ModifiedJulianDate::new(
+        (tv.raw() - PROBE_EPS).value(),
+    ));
+    let fr = f(crate::time::ModifiedJulianDate::new(
+        (tv.raw() + PROBE_EPS).value(),
+    ));
 
     if fc >= fl && fc >= fr {
         Some(ExtremumKind::Maximum)
@@ -314,8 +318,12 @@ where
 
     let deriv = |t: Mjd| -> Quantity<V> {
         let tv = t;
-        let fwd = f(crate::time::ModifiedJulianDate::new((tv.raw() + fd_v).value()));
-        let bwd = f(crate::time::ModifiedJulianDate::new((tv.raw() - fd_v).value()));
+        let fwd = f(crate::time::ModifiedJulianDate::new(
+            (tv.raw() + fd_v).value(),
+        ));
+        let bwd = f(crate::time::ModifiedJulianDate::new(
+            (tv.raw() - fd_v).value(),
+        ));
         (fwd - bwd) / (fd_v + fd_v).value()
     };
 

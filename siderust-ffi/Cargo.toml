@@ -16,6 +16,7 @@ default = []
 serde = ["siderust/serde"]
 de440 = ["siderust/de440"]
 runtime-data = ["siderust/runtime-data"]
+satellite = ["qtty/satellite"]
 
 [dependencies]
 siderust    = { version = "0.7", path = ".." }
