@@ -378,7 +378,7 @@ const DEPS_PLANETARY_CORR: f64 = 3880.0; // 0.1 μas
 /// * McCarthy & Luzum (2003)
 /// * IERS Conventions (2010), §5.5.1
 pub fn nutation_iau2000b(jd: JulianDate) -> Nutation2000B {
-    let t = jd.julian_centuries();
+    let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
 
     // Delaunay arguments (radians)
     let fa = delaunay_arguments(t);
@@ -472,7 +472,7 @@ mod tests {
     #[test]
     fn nutation_2000b_vs_iau1980_similar_magnitude() {
         // The IAU 2000B and IAU 1980 nutations should agree to ~0.5″
-        let jd = JulianDate::new(2_459_000.5);
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_459_000.5));
         let nut_2000b = nutation_iau2000b(jd);
 
         let nut_1980 = crate::astro::nutation::get_nutation(jd);
@@ -491,7 +491,7 @@ mod tests {
 
     #[test]
     fn nutation_rotation_near_identity() {
-        let jd = JulianDate::new(2_451_545.0);
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
         let rot = nutation_rotation_iau2000b(jd);
         let m = rot.as_matrix();
 
@@ -580,7 +580,7 @@ pub(crate) mod iau1980 {
     #[cfg(test)]
     pub(crate) fn get_nutation(jd: JulianDate) -> Nutation {
         // Input is interpreted as JD(TT), as required by the IAU 1980 model.
-        let t = jd.julian_centuries();
+        let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
         let t2 = t * t;
         let t3 = t2 * t;
 

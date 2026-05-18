@@ -94,7 +94,7 @@ pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (CipCoordinates, 
 /// * Capitaine, Wallace & Chapront (2003)
 /// * SOFA routine `iauS06`
 pub fn cio_locator_s(jd: JulianDate, x: CipCoordinates, y: CipCoordinates) -> Radians {
-    let t = jd.julian_centuries();
+    let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
 
     // Polynomial part (μas), from IERS Conventions (2010) eq. 5.15
     let poly_uas = 94.0 + 3808.65 * t - 122.68 * t.powi(2) - 72574.11 * t.powi(3);
@@ -227,7 +227,7 @@ mod tests {
 
     #[test]
     fn gcrs_to_cirs_is_proper_rotation() {
-        let jd = JulianDate::new(2_460_000.5);
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5));
         let nut = crate::astro::nutation::nutation_iau2000b(jd);
         let cip = cip_cio(jd, nut.dpsi, nut.deps);
         let q = gcrs_to_cirs_matrix(cip.x, cip.y, cip.s);

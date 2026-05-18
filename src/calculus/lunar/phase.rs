@@ -605,8 +605,8 @@ impl Default for PhaseSearchOpts {
 /// use siderust::calculus::ephemeris::Vsop87Ephemeris;
 /// use siderust::time::{ModifiedJulianDate, Period};
 ///
-/// let start = ModifiedJulianDate::new(60000.0);
-/// let end   = ModifiedJulianDate::new(60030.0);
+/// let start = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
+/// let end   = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60030.0));
 /// let window = Period::new(start, end);
 ///
 /// let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
@@ -770,7 +770,7 @@ fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> IlluminationFra
 /// use siderust::time::{ModifiedJulianDate, Period};
 /// use siderust::qtty::{Days, IlluminationFractions};
 ///
-/// let start  = ModifiedJulianDate::new(60000.0);
+/// let start  = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
 /// let window = Period::new(start, start + Days::new(30.0));
 /// // Find windows where Moon is more than 50% illuminated (gibbous/full)
 /// let bright = illumination_above::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.5), PhaseSearchOpts::default());
@@ -827,7 +827,7 @@ pub fn illumination_below<E: Ephemeris>(
 /// use siderust::time::{ModifiedJulianDate, Period};
 /// use siderust::qtty::{Days, IlluminationFractions};
 ///
-/// let start  = ModifiedJulianDate::new(60000.0);
+/// let start  = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
 /// let window = Period::new(start, start + Days::new(60.0));
 /// // Crescent phase: 5–35% illuminated
 /// let crescent = illumination_range::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.05), IlluminationFractions::new(0.35), PhaseSearchOpts::default());

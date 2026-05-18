@@ -176,7 +176,7 @@ mod tests {
 
     fn leo_state(rx: f64, ry: f64, rz: f64) -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(rx, ry, rz),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         )
@@ -213,7 +213,7 @@ mod tests {
         // Representative LEO: non-equatorial so all Jacobian entries are exercised.
         let r0 = [4_500.0_f64, 3_000.0, 3_500.0];
         let state = OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(r0[0], r0[1], r0[2]),
             Velocity::<GCRS>::new(0.0, 6.0, 4.0),
         );
@@ -229,7 +229,7 @@ mod tests {
                 let mut pos = r0;
                 pos[j] += delta;
                 let s = OrbitState::new_at_jd(
-                    JulianDate::new(2_451_545.0),
+                    JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
                     Position::<GCRS>::new(pos[0], pos[1], pos[2]),
                     Velocity::<GCRS>::new(0.0, 6.0, 4.0),
                 );

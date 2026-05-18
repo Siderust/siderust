@@ -116,7 +116,7 @@ mod tests {
 
     fn leo() -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         )
@@ -149,7 +149,7 @@ mod tests {
         // Representative LEO state: inclined orbit.
         let r0 = [4_500.0_f64, 4_500.0, 3_000.0];
         let state = OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(r0[0], r0[1], r0[2]),
             Velocity::<GCRS>::new(0.0, 6.0, 4.0),
         );
@@ -165,7 +165,7 @@ mod tests {
                 let mut pos = r0;
                 pos[j] += delta;
                 let s = OrbitState::new_at_jd(
-                    JulianDate::new(2_451_545.0),
+                    JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
                     Position::<GCRS>::new(pos[0], pos[1], pos[2]),
                     Velocity::<GCRS>::new(0.0, 6.0, 4.0),
                 );

@@ -53,7 +53,7 @@ use affn::Rotation3;
 /// * SOFA routine `iauSp00`
 #[inline]
 pub fn tio_locator_sp(jd_tt: JulianDate) -> Radians {
-    let t = jd_tt.julian_centuries();
+    let t = (jd_tt.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
     MicroArcseconds::new(-47.0 * t).to::<Radian>()
 }
 
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn tio_locator_is_small() {
         // After 25 years: s' ≈ −47e-6 × 0.25 arcsec ≈ −11.75 μas
-        let jd = JulianDate::new(2_460_000.5); // ~2023
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5)); // ~2023
         let sp = tio_locator_sp(jd);
         let sp_uas = sp.to::<MicroArcsecond>().value();
         assert!(
@@ -150,7 +150,7 @@ mod tests {
         let w = polar_motion_matrix_from_eop(
             Arcseconds::new(0.3),
             Arcseconds::new(0.2),
-            JulianDate::new(2_460_000.5),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5)),
         );
         let m = w.as_matrix();
 

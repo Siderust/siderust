@@ -19,7 +19,7 @@
 //! use siderust::time::{Time, TT, JulianDate};
 //! use siderust::qtty::Second;
 //!
-//! let t_start = Time::<TT>::from_jd(JulianDate::new(2_451_545.0));
+//! let t_start = Time::<TT>::from_jd(JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)));
 //! let t_end = t_start + Second::new(86_400.0);
 //!
 //! let cfg = PropagationConfig::new(t_start, t_end)
@@ -126,7 +126,7 @@ mod tests {
 
     fn epoch(jd: f64) -> Time<TT> {
         let s = OrbitState::new_at_jd(
-            JulianDate::new(jd),
+            JulianDate::from_raw_unchecked(qtty::Day::new(jd)),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );

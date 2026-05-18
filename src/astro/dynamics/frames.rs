@@ -78,7 +78,7 @@
 //! use affn::cartesian::Displacement;
 //!
 //! let s = OrbitState::new_at_jd(
-//!     JulianDate::new(2_451_545.0),
+//!     JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
 //!     Position::<GCRS>::new(7000.0, 0.0, 0.0),
 //!     Velocity::<GCRS>::new(0.0, 7.5, 0.0),
 //! );
@@ -409,7 +409,7 @@ mod tests {
 
     fn circular_orbit() -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         )
@@ -417,7 +417,7 @@ mod tests {
 
     fn zero_position_state() -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(0.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         )
@@ -425,7 +425,7 @@ mod tests {
 
     fn zero_velocity_state() -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 0.0, 0.0),
         )
@@ -434,7 +434,7 @@ mod tests {
     fn collinear_state() -> OrbitState {
         // r and v are parallel → r × v = 0
         OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(7.5, 0.0, 0.0),
         )
@@ -656,7 +656,7 @@ mod tests {
         let pos = HelioPos::new(1.496e8, 0.0, 0.0);
         let vel = HelioVel::new(0.0, 29.78, 0.0);
         let s =
-            OrbitState::<Heliocentric, ICRS>::new(JulianDate::new(2_451_545.0).to_time(), pos, vel);
+            OrbitState::<Heliocentric, ICRS>::new(JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)).to_time(), pos, vel);
         let result = LocalOrbitalFrame::<RTN>::try_from_state(&s);
         assert!(result.is_ok());
         assert_orthonormal(result.unwrap().rotation());
@@ -670,7 +670,7 @@ mod tests {
         let pos = HelioPos::new(1.496e8, 0.0, 0.0);
         let vel = HelioVel::new(0.0, 29.78, 0.0);
         let s =
-            OrbitState::<Heliocentric, ICRS>::new(JulianDate::new(2_451_545.0).to_time(), pos, vel);
+            OrbitState::<Heliocentric, ICRS>::new(JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)).to_time(), pos, vel);
         let result = LocalOrbitalFrame::<VNC>::try_from_state(&s);
         assert!(result.is_ok());
         assert_right_handed(result.unwrap().rotation());

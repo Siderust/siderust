@@ -145,7 +145,7 @@ impl Moon {
     /// println!("Moon altitude: {}", moon_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
-    /// let mjd = ModifiedJulianDate::new(60000.0);
+    /// let mjd = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
     /// ```
     ///
     /// # Arguments

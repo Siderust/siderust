@@ -73,13 +73,13 @@
 //! use siderust::qtty::*;
 //!
 //! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-//! let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
+//! let window = Period::new(ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)), ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60001.0)));
 //!
 //! // Pass any body that implements AltitudePeriodsProvider
 //! let events = crossings(&Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
 //!
 //! // Or use the trait methods directly
-//! let alt_rad = Sun.altitude_at(&site, siderust::time::ModifiedJulianDate::new(60000.0));
+//! let alt_rad = Sun.altitude_at(&site, siderust::time::ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)));
 //! ```
 //!
 //! ## References

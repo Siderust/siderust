@@ -60,7 +60,7 @@
 //! use siderust::qtty::KmPerSecond;
 //!
 //! let s = OrbitState::new_at_jd(
-//!     JulianDate::new(2_451_545.0),
+//!     JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
 //!     Position::<GCRS>::new(7000.0, 100.0, -200.0),
 //!     Velocity::<GCRS>::new(0.5, 7.5, 0.1),
 //! );
@@ -624,7 +624,7 @@ mod tests {
 
     fn sample_state() -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(7000.0, 100.0, -200.0),
             Velocity::<GCRS>::new(0.5, 7.5, 0.1),
         )

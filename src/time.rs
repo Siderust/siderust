@@ -53,12 +53,15 @@
 
 pub use tempoch::{
     complement_within, constats, delta_t_seconds, delta_t_seconds_extrapolated, eop,
-    ContinuousScale, ConversionError, ConversionTarget, CoordinateScale, EncodedTime,
-    InfallibleConversionTarget, InfallibleRepresentationForScale, Interval, InvalidIntervalError,
-    InvalidPeriodError, PeriodListError, RepresentationForScale, Scale, ScaleKind, Time,
-    TimeContext, TimeDataError, TimeInstant, J2000_TT, JD, JULIAN_YEAR_DAYS, MJD, TAI, TCB, TCG,
-    TDB, TT, UT1, UTC,
+    Coord, ContinuousScale, ConversionError, ConversionTarget, CoordinateScale, EncodedTime,
+    FormatForScale, InfallibleConversionTarget, InfallibleFormatForScale, Interval,
+    InvalidIntervalError, InvalidPeriodError, Offset, PeriodListError, Scale, ScaleKind, Time,
+    TimeContext, TimeDataError, TimeInstant, JD, JULIAN_YEAR_DAYS, MJD, TAI, TCB, TCG, TDB, TT,
+    UT1, UTC,
 };
+
+/// J2000.0 epoch as a [`JulianDate`] (TT, JD 2 451 545.0).
+pub const J2000_TT: JulianDate = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
 
 /// Re-export `JulianDate` and `ModifiedJulianDate` under their generic names
 /// so code that explicitly writes `JulianDate<TT>` or `JulianDate<TDB>` still compiles.

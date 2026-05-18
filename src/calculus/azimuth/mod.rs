@@ -71,7 +71,7 @@
 //! use siderust::qtty::*;
 //!
 //! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-//! let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
+//! let window = Period::new(ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)), ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60001.0)));
 //!
 //! // Find when the Sun crosses due-South (180°):
 //! let events = azimuth_crossings(&Sun, &site, window, Degrees::new(180.0), SearchOpts::default());

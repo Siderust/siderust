@@ -596,7 +596,7 @@ mod tests {
         let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.02))
             .with_shadow(ShadowModel::None);
         let s = OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );

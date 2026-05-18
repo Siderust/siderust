@@ -217,7 +217,7 @@ impl ConicOrbit {
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -314,7 +314,7 @@ impl MeanMotionOrbit {
         if !mean_motion.value().is_finite() || mean_motion.value() <= 0.0 {
             return Err(ConicError::InvalidMeanMotion);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -439,7 +439,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                JulianDate::new(f64::NAN),
+                JulianDate::from_raw_unchecked(qtty::Day::new(f64::NAN)),
             ),
             Err(ConicError::InvalidEpoch)
         );
@@ -519,7 +519,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 AngularRate::<Degree, Day>::new(1.0),
-                JulianDate::new(f64::NAN),
+                JulianDate::from_raw_unchecked(qtty::Day::new(f64::NAN)),
             ),
             Err(ConicError::InvalidEpoch)
         );

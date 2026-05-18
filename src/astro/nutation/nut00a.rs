@@ -223,7 +223,7 @@ const U2R: f64 = AS2R / 1e7;
 /// Do not reorder the loop without updating the IAU compliance tests in
 /// `tests/`.
 pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
-    let t = jd.julian_centuries();
+    let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
 
     // ── Luni-solar fundamental arguments ──
     let el = fa_l_iers03(t);
@@ -304,7 +304,7 @@ pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
 ///
 /// Reference: Wallace & Capitaine (2006), Eqs. 5.
 pub(crate) fn nutation_iau2006a(jd: JulianDate) -> NutationAngles {
-    let t = jd.julian_centuries();
+    let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
     let fj2 = -2.7774e-6 * t;
 
     let (dp, de) = nutation_iau2000a_raw(jd);
@@ -365,7 +365,7 @@ mod tests {
     /// At a future epoch (J2020), 2000A and 2000B still agree to ~1 mas.
     #[test]
     fn nut2000a_agrees_with_2000b_at_j2020() {
-        let jd = JulianDate::new(2_458_849.5); // 2020-01-01
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_458_849.5)); // 2020-01-01
         let n2a = nutation_iau2006a(jd);
         let n2b = crate::astro::nutation::nutation_iau2000b(jd);
 
@@ -389,7 +389,7 @@ mod tests {
     /// Reference epoch: 2020-01-01T12:00 TT (`JD_TT = 2458849.5`)
     #[test]
     fn nut2006a_matches_sofa_at_j2020() {
-        let jd = JulianDate::new(2_458_849.5);
+        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_458_849.5));
         let n = nutation_iau2006a(jd);
 
         let sofa_dpsi: f64 = -7.996558234083069e-05; // rad

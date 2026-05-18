@@ -56,7 +56,7 @@ use std::f64::consts::TAU;
 #[inline]
 pub fn earth_rotation_angle(jd_ut1: JulianDate) -> Radians {
     // Du = JD(UT1) − J2000.0
-    let du = (jd_ut1 - JulianDate::J2000).value();
+    let du = (jd_ut1.raw() - JulianDate::J2000.raw()).value();
 
     // ERA = 2π × (0.7790572732640 + 1.00273781191135448 × Du)
     // To maintain precision, split the fractional and integer parts:
@@ -132,8 +132,8 @@ mod tests {
 
     #[test]
     fn era_increases_with_time() {
-        let era1 = earth_rotation_angle(JulianDate::new(2_451_545.0));
-        let era2 = earth_rotation_angle(JulianDate::new(2_451_545.5));
+        let era1 = earth_rotation_angle(JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)));
+        let era2 = earth_rotation_angle(JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.5)));
         // Half a solar day ≈ half a sidereal rotation ≈ 180°
         // Actually ERA increases by 360.985...° per solar day, so ≈ 180.5° per half day
         let diff = ((era2 - era1).value()).rem_euclid(TAU);
@@ -148,7 +148,7 @@ mod tests {
     #[test]
     fn era_range() {
         for jd in [2_451_545.0, 2_460_000.5, 2_440_000.0] {
-            let era = earth_rotation_angle(JulianDate::new(jd));
+            let era = earth_rotation_angle(JulianDate::from_raw_unchecked(qtty::Day::new(jd)));
             assert!(era >= Radians::new(0.0), "ERA should be ≥ 0");
             assert!(era < Radians::new(TAU), "ERA should be < 2π");
         }

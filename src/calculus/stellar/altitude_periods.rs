@@ -327,8 +327,8 @@ mod tests {
 
     fn period_7d() -> Period<ModifiedJulianDate> {
         Period::new(
-            ModifiedJulianDate::new(60000.0),
-            ModifiedJulianDate::new(60007.0),
+            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0)),
         )
     }
 
@@ -422,8 +422,8 @@ mod tests {
     fn analytical_matches_scan() {
         let site = roque();
         let period = Period::new(
-            ModifiedJulianDate::new(60000.0),
-            ModifiedJulianDate::new(60003.0),
+            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60003.0)),
         );
         let ra = Degrees::new(101.287);
         let dec = Degrees::new(-16.716);

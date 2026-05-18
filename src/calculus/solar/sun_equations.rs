@@ -152,7 +152,7 @@ impl Sun {
     /// println!("Sun altitude: {}", sun_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
-    /// let mjd = ModifiedJulianDate::new(60000.0);
+    /// let mjd = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
     /// let sun_pos = Sun::get_horizontal::<AstronomicalUnit>(mjd, site);
     /// ```
     pub fn get_horizontal<U: LengthUnit>(

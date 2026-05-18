@@ -36,7 +36,8 @@ atmosphere = []
 affn = { git = "https://github.com/Siderust/affn.git", branch = "main", features = ["astro"] }
 cheby = "0.2"
 qtty = { version = "0.8", features = ["astro", "density", "radiometry", "satellite"] }
-tempoch = "0.4"
+tempoch = "0.6"
+thiserror = "2"
 approx = "0.5"
 chrono = "0.4"
 paste = "1.0"
@@ -94,6 +95,11 @@ harness = false
 [patch.crates-io]
 qtty = { path = "../qtty/qtty" }
 qtty-core = { path = "../qtty/qtty-core" }
+qtty-derive = { path = "../qtty/qtty-derive" }
+tempoch = { path = "../tempoch/tempoch" }
+tempoch-core = { path = "../tempoch/tempoch-core" }
+tempoch-ffi = { path = "../tempoch/tempoch-ffi" }
+affn = { path = "../affn" }
 
 [patch.'https://github.com/Siderust/affn.git']
 affn = { path = "../affn" }

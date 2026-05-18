@@ -819,7 +819,7 @@ impl Moon {
     where
         U: LengthUnit,
     {
-        let t1 = jd.julian_centuries();
+        let t1 = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
         let t2 = t1 * t1;
         let t3 = t2 * t1;
         let t4 = t2 * t2;
@@ -967,7 +967,7 @@ mod tests {
     #[test]
     fn j2000_julian_centuries_is_zero() {
         // The epoch origin must be exactly J2000 (t1 = 0)
-        let centuries = JulianDate::J2000.julian_centuries();
+        let centuries = (JulianDate::J2000.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
         assert!(
             centuries.abs() < 1e-15,
             "J2000.julian_centuries() should be 0, got {centuries}"
@@ -977,8 +977,8 @@ mod tests {
     #[test]
     fn julian_centuries_one_century_from_j2000() {
         // J2000 + 36525 days = exactly 1 Julian century
-        let jd = JulianDate::J2000 + Days::new(36_525.0);
-        let centuries = jd.julian_centuries();
+        let jd = JulianDate::from_raw_unchecked(JulianDate::J2000.raw() + qtty::Day::new(36_525.0));
+        let centuries = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
         assert!(
             (centuries - 1.0).abs() < 1e-12,
             "Expected 1.0 Julian century, got {centuries}"
