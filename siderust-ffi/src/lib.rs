@@ -43,8 +43,6 @@ pub mod twilight;
 #[cfg(test)]
 pub(crate) mod test_helpers;
 
-#[cfg(feature = "constops")]
-pub mod constops_ffi;
 
 pub use altitude::*;
 pub use azimuth::*;
