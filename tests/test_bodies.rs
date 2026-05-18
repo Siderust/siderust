@@ -3,11 +3,10 @@
 
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
-use siderust::bodies::comet::{Comet, OrbitFrame, HALLEY};
+use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame, HALLEY};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::bodies::{EARTH, MARS, MOON};
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 #[test]
 fn earth_constants() {
@@ -60,7 +59,7 @@ fn asteroid_builder_defaults() {
         Degrees::new(2.0),
         Degrees::new(3.0),
         Degrees::new(4.0),
-        JulianDate::J2000,
+        siderust::time::J2000,
     );
     let asteroid = Asteroid::builder()
         .name("Test")
@@ -85,6 +84,37 @@ fn comet_builder_defaults_and_period() {
 }
 
 #[test]
+fn comet_const_constructor_and_builder_reference() {
+    let orbit = KeplerianOrbit::new(
+        AstronomicalUnits::new(1.0),
+        0.01,
+        Degrees::new(1.0),
+        Degrees::new(2.0),
+        Degrees::new(3.0),
+        Degrees::new(4.0),
+        siderust::time::J2000,
+    );
+
+    let comet = Comet::new_const(
+        "TestComet",
+        Kilometers::new(1_234.0),
+        orbit,
+        OrbitFrame::Barycentric,
+    );
+    assert_eq!(comet.name, "TestComet");
+    assert_eq!(comet.reference, OrbitFrame::Barycentric);
+    assert!(comet.period_years().value() > 0.0);
+
+    let comet_from_builder = CometBuilder::default()
+        .name("Builder")
+        .tail_length(Kilometers::new(1.0))
+        .reference(OrbitFrame::Heliocentric)
+        .orbit(orbit)
+        .build();
+    assert_eq!(comet_from_builder.reference, OrbitFrame::Heliocentric);
+}
+
+#[test]
 fn planet_builder_errors_and_period() {
     use std::f64::consts::PI;
 
@@ -95,7 +125,7 @@ fn planet_builder_errors_and_period() {
         Degrees::new(0.0),
         Degrees::new(0.0),
         Degrees::new(0.0),
-        JulianDate::J2000,
+        siderust::time::J2000,
     );
     let err = Planet::builder()
         .mass(Kilograms::new(1.0))

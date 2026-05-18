@@ -339,7 +339,7 @@ mod tests {
     /// At J2000.0, IAU 2000A and 2000B should agree to within 1 mas.
     #[test]
     fn nut2000a_agrees_with_2000b_at_j2000() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let n2a = nutation_iau2006a(jd);
         let n2b = crate::astro::nutation::nutation_iau2000b(jd);
 
@@ -365,7 +365,7 @@ mod tests {
     /// At a future epoch (J2020), 2000A and 2000B still agree to ~1 mas.
     #[test]
     fn nut2000a_agrees_with_2000b_at_j2020() {
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_458_849.5)); // 2020-01-01
+        let jd = crate::time::JulianDate::new(2_458_849.5); // 2020-01-01
         let n2a = nutation_iau2006a(jd);
         let n2b = crate::astro::nutation::nutation_iau2000b(jd);
 
@@ -389,7 +389,7 @@ mod tests {
     /// Reference epoch: 2020-01-01T12:00 TT (`JD_TT = 2458849.5`)
     #[test]
     fn nut2006a_matches_sofa_at_j2020() {
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_458_849.5));
+        let jd = crate::time::JulianDate::new(2_458_849.5);
         let n = nutation_iau2006a(jd);
 
         let sofa_dpsi: f64 = -7.996558234083069e-05; // rad
@@ -416,7 +416,7 @@ mod tests {
     /// The P03 J₂ correction should be tiny for near-current epochs.
     #[test]
     fn p03_correction_is_small() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let (dp_raw, de_raw) = nutation_iau2000a_raw(jd);
         let n06a = nutation_iau2006a(jd);
 

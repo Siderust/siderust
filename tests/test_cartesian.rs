@@ -42,3 +42,18 @@ fn position_affine_operations() {
     let between = p1.distance_to(&p2);
     assert!((between.value() - 2.0_f64.sqrt()).abs() < 1e-12);
 }
+
+#[test]
+fn position_display_includes_center_frame_and_components() {
+    let v = siderust::coordinates::cartesian::position::ICRS::<AstronomicalUnit>::new(
+        1.0 * AU,
+        2.0 * AU,
+        3.0 * AU,
+    );
+
+    let rendered = format!("{v}");
+
+    assert!(rendered.contains("Center: Barycentric"));
+    assert!(rendered.contains("Frame: ICRS"));
+    assert!(rendered.contains("X: 1"));
+}

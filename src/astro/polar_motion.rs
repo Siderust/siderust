@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     fn tio_locator_at_j2000_is_zero() {
-        let sp = tio_locator_sp(JulianDate::J2000);
+        let sp = tio_locator_sp(crate::J2000);
         assert!(
             sp.value().abs() < 1e-15,
             "s' at J2000 should be ~0, got {}",
@@ -103,7 +103,7 @@ mod tests {
     #[test]
     fn tio_locator_is_small() {
         // After 25 years: s' ≈ −47e-6 × 0.25 arcsec ≈ −11.75 μas
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5)); // ~2023
+        let jd = crate::time::JulianDate::new(2_460_000.5); // ~2023
         let sp = tio_locator_sp(jd);
         let sp_uas = sp.to::<MicroArcsecond>().value();
         assert!(
@@ -150,7 +150,7 @@ mod tests {
         let w = polar_motion_matrix_from_eop(
             Arcseconds::new(0.3),
             Arcseconds::new(0.2),
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_460_000.5)),
+            crate::time::JulianDate::new(2_460_000.5),
         );
         let m = w.as_matrix();
 

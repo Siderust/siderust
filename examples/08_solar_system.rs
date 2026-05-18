@@ -16,8 +16,8 @@ use siderust::qtty::*;
 use siderust::time::JulianDate;
 
 fn main() {
-    let jd = JulianDate::J2000;
-    let now = JulianDate::from_chrono(chrono::Utc::now());
+    let jd = siderust::time::J2000;
+    let now: JulianDate = JulianDate::from_chrono(chrono::Utc::now());
 
     println!("=== Siderust Solar System Module Tour ===\n");
     println!("Epoch used for deterministic outputs: J2000 (JD {:.1})", jd);
@@ -178,7 +178,7 @@ fn section_planet_builder() {
             Degrees::new(120.0),
             Degrees::new(80.0),
             Degrees::new(10.0),
-            JulianDate::J2000,
+            siderust::time::J2000,
         ))
         .build();
 

@@ -29,15 +29,15 @@ fn greenwich() -> Geodetic<ECEF> {
 
 fn one_day() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60001.0),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     )
 }
 
 fn one_week() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60007.0),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     )
 }
 
@@ -47,14 +47,20 @@ fn one_week() -> Period<ModifiedJulianDate> {
 
 #[test]
 fn sun_azimuth_at_in_valid_range() {
-    let az = Sun.azimuth_at(&greenwich(), ModifiedJulianDate::new(60000.5));
+    let az = Sun.azimuth_at(
+        &greenwich(),
+        ModifiedJulianDate::try_new(Days::new(60000.5)).unwrap(),
+    );
     assert!(az.value() >= 0.0, "az must be ≥ 0 rad");
     assert!(az.value() < std::f64::consts::TAU, "az must be < 2π rad");
 }
 
 #[test]
 fn moon_azimuth_at_in_valid_range() {
-    let az = Moon.azimuth_at(&greenwich(), ModifiedJulianDate::new(60000.5));
+    let az = Moon.azimuth_at(
+        &greenwich(),
+        ModifiedJulianDate::try_new(Days::new(60000.5)).unwrap(),
+    );
     assert!(az.value() >= 0.0);
     assert!(az.value() < std::f64::consts::TAU);
 }
@@ -62,7 +68,10 @@ fn moon_azimuth_at_in_valid_range() {
 #[test]
 fn star_azimuth_at_in_valid_range() {
     let sirius = &catalog::SIRIUS;
-    let az = sirius.azimuth_at(&greenwich(), ModifiedJulianDate::new(60000.5));
+    let az = sirius.azimuth_at(
+        &greenwich(),
+        ModifiedJulianDate::try_new(Days::new(60000.5)).unwrap(),
+    );
     assert!(az.value() >= 0.0);
     assert!(az.value() < std::f64::consts::TAU);
 }
@@ -71,7 +80,7 @@ fn star_azimuth_at_in_valid_range() {
 fn star_and_icrs_direction_azimuth_agree() {
     let sirius = &catalog::SIRIUS;
     let dir = direction::ICRS::from(sirius);
-    let mjd = ModifiedJulianDate::new(60000.3);
+    let mjd = ModifiedJulianDate::try_new(Days::new(60000.3)).unwrap();
     let az_star = sirius.azimuth_at(&greenwich(), mjd);
     let az_dir = dir.azimuth_at(&greenwich(), mjd);
     assert!(
@@ -262,9 +271,9 @@ fn outside_plus_inside_equals_window_sun() {
     let total: f64 = inside
         .iter()
         .chain(outside.iter())
-        .map(|p| ((p).end - (p).start).value())
+        .map(|p| p.length().value())
         .sum();
-    let window_len = ((window).end - (window).start).value();
+    let window_len = (window.end.raw() - window.start.raw()).value();
     assert!(
         (total - window_len).abs() < 1e-5,
         "inside ({total:.6}) + outside must equal window ({window_len:.6})"
@@ -294,9 +303,9 @@ fn outside_plus_inside_equals_window_moon() {
     let total: f64 = inside
         .iter()
         .chain(outside.iter())
-        .map(|p| ((p).end - (p).start).value())
+        .map(|p| p.length().value())
         .sum();
-    let window_len = ((window).end - (window).start).value();
+    let window_len = (window.end.raw() - window.start.raw()).value();
     assert!(
         (total - window_len).abs() < 1e-5,
         "Moon: inside + outside must equal window"
@@ -331,9 +340,9 @@ fn wrap_range_complement_covers_window() {
     let total: f64 = inside
         .iter()
         .chain(outside.iter())
-        .map(|p| ((p).end - (p).start).value())
+        .map(|p| p.length().value())
         .sum();
-    let window_len = ((window).end - (window).start).value();
+    let window_len = (window.end.raw() - window.start.raw()).value();
     assert!(
         (total - window_len).abs() < 1e-5,
         "wrap-around inside + outside must cover the full window"

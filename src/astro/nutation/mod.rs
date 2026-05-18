@@ -450,7 +450,7 @@ mod tests {
 
     #[test]
     fn nutation_at_j2000_dominant_term() {
-        let nut = nutation_iau2000b(JulianDate::J2000);
+        let nut = nutation_iau2000b(crate::J2000);
 
         // At J2000.0, the dominant Ω term gives Δψ ≈ −14″ to −17″, Δε ≈ 9″
         // (exact value depends on Ω phase at epoch)
@@ -472,7 +472,7 @@ mod tests {
     #[test]
     fn nutation_2000b_vs_iau1980_similar_magnitude() {
         // The IAU 2000B and IAU 1980 nutations should agree to ~0.5″
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_459_000.5));
+        let jd = crate::time::JulianDate::new(2_459_000.5);
         let nut_2000b = nutation_iau2000b(jd);
 
         let nut_1980 = crate::astro::nutation::get_nutation(jd);
@@ -491,7 +491,7 @@ mod tests {
 
     #[test]
     fn nutation_rotation_near_identity() {
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
+        let jd = crate::time::JulianDate::new(2_451_545.0);
         let rot = nutation_rotation_iau2000b(jd);
         let m = rot.as_matrix();
 
@@ -508,7 +508,7 @@ mod tests {
 
     #[test]
     fn mean_obliquity_matches_iau2006() {
-        let nut = nutation_iau2000b(JulianDate::J2000);
+        let nut = nutation_iau2000b(crate::J2000);
         let eps_arcsec = nut.mean_obliquity.to::<Degree>().value() * 3600.0;
         // IAU 2006 value at J2000: 84381.406″
         assert!(
@@ -522,7 +522,7 @@ mod tests {
     fn delaunay_args_finite() {
         // Test that fundamental arguments don't blow up at various epochs
         for jd_val in &[2_400_000.5, 2_451_545.0, 2_460_000.5, 2_500_000.5] {
-            let t = (jd_val - 2_451_545.0) / 36525.0;
+            let t = crate::time::JulianDate::new(*jd_val).julian_centuries();
             let fa = delaunay_arguments(t);
             for (i, &a) in fa.iter().enumerate() {
                 assert!(

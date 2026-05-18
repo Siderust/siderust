@@ -190,7 +190,7 @@ mod tests {
 
     #[test]
     fn test_aberration_preserva_distance_and_epoch() {
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0)); // J2000.0
+        let jd = crate::time::JulianDate::new(2451545.0); // J2000.0
         let mean =
             position::EquatorialMeanJ2000::<Au>::new(Degrees::new(10.0), Degrees::new(20.0), 1.23);
         let out = apply_aberration_sph(&mean, jd);
@@ -206,7 +206,7 @@ mod tests {
 
     #[test]
     fn test_aberration_introduces_shift() {
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0)); // J2000.0
+        let jd = crate::time::JulianDate::new(2451545.0); // J2000.0
         let mean = position::EquatorialMeanJ2000::<Au>::new(
             Degrees::new(0.0), // RA = 0°
             Degrees::new(0.0), // Dec = 0°
@@ -228,7 +228,7 @@ mod tests {
 
     #[test]
     fn test_aberration_at_north_pole() {
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0));
+        let jd = crate::time::JulianDate::new(2451545.0);
         let mean = position::EquatorialMeanJ2000::<Au>::new(
             Degrees::new(123.4), // dummy RA
             Degrees::new(90.0),  // Dec = +90°
@@ -254,7 +254,7 @@ mod tests {
     #[test]
     fn aberration_roundtrip_is_machine_precision() {
         use crate::bodies::solar_system::Earth;
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2458850.0)); // 2020-ish
+        let jd = crate::time::JulianDate::new(2458850.0); // 2020-ish
         let velocity_ecl = Earth::vsop87e_vel(jd);
         let velocity: Velocity<frames::EquatorialMeanJ2000, AuPerDay> = velocity_ecl.to_frame();
 

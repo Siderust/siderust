@@ -6,7 +6,6 @@ use siderust::bodies::asteroid::{
     Asteroid, AsteroidClass, APOPHIS, ASTEROID_PRESETS, BENNU, CERES_AST,
 };
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 const TEST_ORBIT: KeplerianOrbit = KeplerianOrbit::new(
     AstronomicalUnits::new(1.0),
@@ -15,7 +14,7 @@ const TEST_ORBIT: KeplerianOrbit = KeplerianOrbit::new(
     Degrees::new(0.0),
     Degrees::new(0.0),
     Degrees::new(0.0),
-    JulianDate::J2000,
+    siderust::time::J2000,
 );
 
 #[test]
@@ -79,4 +78,18 @@ fn const_constructor_and_presets() {
     assert!(std::ptr::eq(ASTEROID_PRESETS[0], &CERES_AST));
     assert!(std::ptr::eq(ASTEROID_PRESETS[1], &BENNU));
     assert!(std::ptr::eq(ASTEROID_PRESETS[2], &APOPHIS));
+}
+
+#[test]
+fn new_const_sets_all_fields() {
+    let asteroid = Asteroid::new_const("Test", "T-1", "Rock", AsteroidClass::NearEarth, TEST_ORBIT);
+
+    assert_eq!(asteroid.name, "Test");
+    assert_eq!(asteroid.designation, "T-1");
+    assert_eq!(asteroid.composition, "Rock");
+    assert_eq!(asteroid.class, AsteroidClass::NearEarth);
+    assert_eq!(
+        asteroid.orbit.shape().semi_major_axis(),
+        TEST_ORBIT.shape().semi_major_axis()
+    );
 }

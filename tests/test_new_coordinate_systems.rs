@@ -28,7 +28,7 @@ const AU_EPS: AstronomicalUnits = AstronomicalUnits::new(EPSILON);
 #[test]
 fn fk4_b1950_to_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<FK4B1950, ICRS>(jd, &ctx);
     let rinv = frame_rotation::<ICRS, FK4B1950>(jd, &ctx);
@@ -44,7 +44,7 @@ fn fk4_b1950_to_icrs_roundtrip() {
 #[test]
 fn fk4_b1950_is_not_identity() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<FK4B1950, ICRS>(jd, &ctx);
     let v = [1.0, 0.0, 0.0];
@@ -58,7 +58,7 @@ fn fk4_b1950_is_not_identity() {
 #[test]
 fn fk4_b1950_preserves_vector_length() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<FK4B1950, ICRS>(jd, &ctx);
     let v = [1.0, 2.0, 3.0];
@@ -72,7 +72,7 @@ fn fk4_b1950_preserves_vector_length() {
 #[test]
 fn fk4_via_equatorial_mean_j2000_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r1 = frame_rotation::<FK4B1950, ICRS>(jd, &ctx);
     let r2 = frame_rotation::<ICRS, EquatorialMeanJ2000>(jd, &ctx);
@@ -94,7 +94,7 @@ fn fk4_via_equatorial_mean_j2000_roundtrip() {
 #[test]
 fn teme_to_tod_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<TEME, EquatorialTrueOfDate>(jd, &ctx);
     let rinv = frame_rotation::<EquatorialTrueOfDate, TEME>(jd, &ctx);
@@ -110,7 +110,7 @@ fn teme_to_tod_roundtrip() {
 #[test]
 fn teme_to_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<TEME, ICRS>(jd, &ctx);
     let rinv = frame_rotation::<ICRS, TEME>(jd, &ctx);
@@ -127,7 +127,7 @@ fn teme_to_icrs_roundtrip() {
 fn teme_to_tod_is_z_rotation() {
     // TEME → TOD should be a pure z-axis rotation (equation of equinoxes).
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<TEME, EquatorialTrueOfDate>(jd, &ctx);
     let v = [0.0, 0.0, 1.0]; // z-axis should be invariant under z-rotation
@@ -141,7 +141,7 @@ fn teme_to_tod_is_z_rotation() {
 #[test]
 fn teme_preserves_vector_length() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<TEME, ICRS>(jd, &ctx);
     let v = [1.0, 2.0, 3.0];
@@ -159,7 +159,7 @@ fn teme_preserves_vector_length() {
 #[test]
 fn galactic_to_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<Galactic, ICRS>(jd, &ctx);
     let rinv = frame_rotation::<ICRS, Galactic>(jd, &ctx);
@@ -175,7 +175,7 @@ fn galactic_to_icrs_roundtrip() {
 #[test]
 fn galactic_is_not_identity() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<Galactic, ICRS>(jd, &ctx);
     let v = [1.0, 0.0, 0.0];
@@ -189,7 +189,7 @@ fn galactic_is_not_identity() {
 #[test]
 fn galactic_preserves_vector_length() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<Galactic, ICRS>(jd, &ctx);
     let v = [1.0, 2.0, 3.0];
@@ -205,7 +205,7 @@ fn galactic_preserves_vector_length() {
 #[test]
 fn galactic_via_equatorial_j2000_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     // Galactic→ICRS→EquatorialMeanJ2000 composed vs direct
     let r1 = frame_rotation::<Galactic, ICRS>(jd, &ctx);
@@ -228,7 +228,7 @@ fn galactic_via_equatorial_j2000_roundtrip() {
 #[test]
 fn gcrs_to_icrs_is_near_identity() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<GCRS, ICRS>(jd, &ctx);
     let v = [1.0, 0.0, 0.0];
@@ -247,7 +247,7 @@ fn gcrs_to_icrs_is_near_identity() {
 #[test]
 fn eme2000_is_alias_frame_with_explicit_marker() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<EME2000, EquatorialMeanJ2000>(jd, &ctx);
     let v = [0.2, -0.4, 0.9];
@@ -261,7 +261,7 @@ fn eme2000_is_alias_frame_with_explicit_marker() {
 #[test]
 fn eme2000_to_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<EME2000, ICRS>(jd, &ctx);
     let rinv = frame_rotation::<ICRS, EME2000>(jd, &ctx);
@@ -276,7 +276,7 @@ fn eme2000_to_icrs_roundtrip() {
 #[test]
 fn gcrs_cirs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<GCRS, CIRS>(jd, &ctx);
     let rinv = frame_rotation::<CIRS, GCRS>(jd, &ctx);
@@ -291,7 +291,7 @@ fn gcrs_cirs_roundtrip() {
 #[test]
 fn cirs_tirs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<CIRS, TIRS>(jd, &ctx);
     let rinv = frame_rotation::<TIRS, CIRS>(jd, &ctx);
@@ -306,7 +306,7 @@ fn cirs_tirs_roundtrip() {
 #[test]
 fn tirs_itrf_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<TIRS, ITRF>(jd, &ctx);
     let rinv = frame_rotation::<ITRF, TIRS>(jd, &ctx);
@@ -321,7 +321,7 @@ fn tirs_itrf_roundtrip() {
 #[test]
 fn itrf_to_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<ITRF, ICRS>(jd, &ctx);
     let rinv = frame_rotation::<ICRS, ITRF>(jd, &ctx);
@@ -336,7 +336,7 @@ fn itrf_to_icrs_roundtrip() {
 #[test]
 fn ecef_tracks_itrf_in_provider_layer() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<ECEF, ITRF>(jd, &ctx);
     let v = [0.2, 0.9, -0.387_298_334_621];
@@ -354,7 +354,7 @@ fn ecef_tracks_itrf_in_provider_layer() {
 #[test]
 fn mars_fixed_to_icrs_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<planetary::MarsFixed, ICRS>(jd, &ctx);
     let rinv = frame_rotation::<ICRS, planetary::MarsFixed>(jd, &ctx);
@@ -370,7 +370,7 @@ fn mars_fixed_to_icrs_roundtrip() {
 #[test]
 fn mars_fixed_preserves_length() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let r = frame_rotation::<planetary::MarsFixed, ICRS>(jd, &ctx);
     let v = [1.0, 2.0, 3.0];
@@ -384,7 +384,7 @@ fn mars_fixed_preserves_length() {
 #[test]
 fn all_body_fixed_roundtrips() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
     let v = [0.3, -0.7, 0.5];
 
     // Test all body-fixed frames roundtrip through ICRS
@@ -421,8 +421,8 @@ fn body_fixed_rotation_varies_with_time() {
     // Body-fixed frames rotate with the body, so the rotation should
     // differ at different epochs.
     let ctx = AstroContext::default();
-    let jd1 = JulianDate::J2000;
-    let jd2 = JulianDate::new(2_460_000.5); // ~2023
+    let jd1 = siderust::time::J2000;
+    let jd2 = JulianDate::try_new(Days::new(2_460_000.5)).unwrap(); // ~2023
 
     let r1 = frame_rotation::<planetary::MarsFixed, ICRS>(jd1, &ctx);
     let r2 = frame_rotation::<planetary::MarsFixed, ICRS>(jd2, &ctx);
@@ -441,7 +441,7 @@ fn body_fixed_rotation_varies_with_time() {
 
 #[test]
 fn standard_center_shift_roundtrip_in_itrf() {
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let bary = cartesian::Position::<Barycentric, ITRF, AstronomicalUnit>::new(0.4, -0.2, 0.7);
     let geo: cartesian::Position<Geocentric, ITRF, AstronomicalUnit> = bary.to_center(jd);
@@ -456,7 +456,7 @@ fn standard_center_shift_roundtrip_in_itrf() {
 #[test]
 fn planetocentric_to_bary_antisymmetry() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     macro_rules! test_antisymmetry {
         ($center:ty) => {{
@@ -486,7 +486,7 @@ fn planetocentric_to_bary_antisymmetry() {
 #[test]
 fn selenocentric_to_bary_antisymmetry() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let fwd = center_shift::<Selenocentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
     let bwd = center_shift::<Barycentric, Selenocentric, EclipticMeanJ2000>(jd, &ctx);
@@ -499,7 +499,7 @@ fn selenocentric_to_bary_antisymmetry() {
 #[test]
 fn planetocentric_center_shifts_are_nonzero() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     macro_rules! test_nonzero {
         ($center:ty) => {{
@@ -528,7 +528,7 @@ fn planetocentric_center_shifts_are_nonzero() {
 #[test]
 fn marscentric_helio_geo_composition() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     // Marscentric → Geocentric should compose via Barycentric
     let mars_bary = center_shift::<Marscentric, Barycentric, EclipticMeanJ2000>(jd, &ctx);
@@ -549,7 +549,7 @@ fn marscentric_helio_geo_composition() {
 #[test]
 fn selenocentric_geocentric_composition() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     // Selenocentric → Barycentric should equal
     // Selenocentric → Geocentric + Geocentric → Barycentric
@@ -586,7 +586,7 @@ fn selenocentric_geocentric_composition() {
 #[test]
 fn selenocentric_geocentric_distance_is_reasonable() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let s = center_shift::<Geocentric, Selenocentric, EclipticMeanJ2000>(jd, &ctx);
     let dist_au = (s[0] * s[0] + s[1] * s[1] + s[2] * s[2]).scalar_sqrt();
@@ -602,7 +602,7 @@ fn selenocentric_geocentric_distance_is_reasonable() {
 #[test]
 fn jupiter_distance_is_reasonable() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let s = center_shift::<Heliocentric, Jovicentric, EclipticMeanJ2000>(jd, &ctx);
     let dist_au = (s[0] * s[0] + s[1] * s[1] + s[2] * s[2]).scalar_sqrt();
@@ -670,9 +670,9 @@ fn mars_rotation_parameters_at_j2000() {
     use siderust::coordinates::frames::planetary::MARS_ROTATION;
 
     // At T=0 (J2000.0), IAU 2015: α₀ = 317.269, δ₀ = 54.432, W(d=0) = 176.049
-    let alpha0 = MARS_ROTATION.alpha0(JulianDate::J2000);
-    let delta0 = MARS_ROTATION.delta0(JulianDate::J2000);
-    let w = MARS_ROTATION.w(JulianDate::J2000);
+    let alpha0 = MARS_ROTATION.alpha0(siderust::time::J2000);
+    let delta0 = MARS_ROTATION.delta0(siderust::time::J2000);
+    let w = MARS_ROTATION.w(siderust::time::J2000);
 
     assert!(
         (alpha0.value() - 317.269).abs() < 0.001,
@@ -695,9 +695,9 @@ fn mars_rotation_parameters_at_j2000() {
 fn jupiter_rotation_parameters_at_j2000() {
     use siderust::coordinates::frames::planetary::JUPITER_ROTATION;
 
-    let alpha0 = JUPITER_ROTATION.alpha0(JulianDate::J2000);
-    let delta0 = JUPITER_ROTATION.delta0(JulianDate::J2000);
-    let w = JUPITER_ROTATION.w(JulianDate::J2000);
+    let alpha0 = JUPITER_ROTATION.alpha0(siderust::time::J2000);
+    let delta0 = JUPITER_ROTATION.delta0(siderust::time::J2000);
+    let w = JUPITER_ROTATION.w(siderust::time::J2000);
 
     // α₀ = 268.056595, δ₀ = 64.495303
     assert!(
@@ -721,7 +721,7 @@ fn jupiter_rotation_parameters_at_j2000() {
 fn direction_transform_fk4_to_icrs() {
     // Create a direction in FK4, rotate to ICRS, and verify it's still unit
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<FK4B1950, ICRS>(jd, &ctx);
     let v = [1.0, 0.0, 0.0];
@@ -734,7 +734,7 @@ fn direction_transform_fk4_to_icrs() {
 #[test]
 fn direction_transform_galactic_to_icrs() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     // Galactic z-axis = North Galactic Pole direction in ICRS
     let r = frame_rotation::<Galactic, ICRS>(jd, &ctx);
@@ -754,7 +754,7 @@ fn direction_transform_galactic_to_icrs() {
 #[test]
 fn galactic_to_ecliptic_roundtrip() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let r = frame_rotation::<Galactic, EclipticMeanJ2000>(jd, &ctx);
     let rinv = frame_rotation::<EclipticMeanJ2000, Galactic>(jd, &ctx);
@@ -773,7 +773,7 @@ fn galactic_to_ecliptic_roundtrip() {
 #[test]
 fn gcrs_to_ecliptic_matches_icrs_to_ecliptic() {
     let ctx = AstroContext::default();
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let via_gcrs = frame_rotation::<GCRS, EclipticMeanJ2000>(jd, &ctx);
     let via_icrs = frame_rotation::<ICRS, EclipticMeanJ2000>(jd, &ctx);

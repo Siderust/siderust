@@ -141,11 +141,11 @@ impl Moon {
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     ///
     /// // Using JulianDate
-    /// let moon_pos = Moon::get_horizontal::<Kilometer>(JulianDate::J2000, site);
+    /// let moon_pos = Moon::get_horizontal::<Kilometer>(siderust::J2000, site);
     /// println!("Moon altitude: {}", moon_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
-    /// let mjd = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0));
+    /// let mjd = siderust::ModifiedJulianDate::new(60000.0);
     /// ```
     ///
     /// # Arguments
@@ -187,7 +187,7 @@ impl Moon {
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::time::JulianDate;
     ///
-    /// let geom = Moon::phase_geocentric(JulianDate::J2000);
+    /// let geom = Moon::phase_geocentric(siderust::J2000);
     /// assert!(geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0);
     /// ```
     ///
@@ -218,7 +218,7 @@ impl Moon {
     /// use siderust::qtty::*;
     ///
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M);
-    /// let geom = Moon::phase_topocentric(JulianDate::J2000, site);
+    /// let geom = Moon::phase_topocentric(siderust::J2000, site);
     /// println!("Illuminated: {:.1} %", geom.illuminated_percent());
     /// ```
     ///
@@ -251,8 +251,9 @@ impl Moon {
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
     /// use siderust::qtty::Days;
     ///
-    /// let start  = ModifiedJulianDate::from(JulianDate::J2000);
-    /// let window = Period::new(start, start + Days::new(35.0));
+    /// let start = siderust::J2000.to::<siderust::time::MJD>();
+    /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 35.0);
+    /// let window = Period::new(start, end);
     /// let events = Moon::phase_events(window, PhaseSearchOpts::default());
     /// assert!(!events.is_empty());
     /// ```
@@ -324,8 +325,9 @@ impl Moon {
     /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
     /// use siderust::qtty::{Days, IlluminationFractions};
     ///
-    /// let start  = ModifiedJulianDate::from(JulianDate::J2000);
-    /// let window = Period::new(start, start + Days::new(30.0));
+    /// let start = siderust::J2000.to::<siderust::time::MJD>();
+    /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 30.0);
+    /// let window = Period::new(start, end);
     /// // Crescent phase: 5–35% illuminated
     /// let crescent = Moon::illumination_range(window, IlluminationFractions::new(0.05), IlluminationFractions::new(0.35), PhaseSearchOpts::default());
     /// ```
@@ -357,20 +359,23 @@ mod tests {
     use crate::coordinates::centers::Geodetic;
     use crate::coordinates::frames::ECEF;
     use crate::qtty::*;
-    use crate::time::{JulianDate, ModifiedJulianDate};
+    use crate::time::ModifiedJulianDate;
 
     fn greenwich() -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M)
     }
 
     fn one_month() -> Period<ModifiedJulianDate> {
-        let start = ModifiedJulianDate::from(JulianDate::J2000);
-        Period::new(start, start + Days::new(30.0))
+        let start = crate::J2000.to::<crate::MJD>();
+        Period::new(
+            start,
+            crate::time::ModifiedJulianDate::new((start.raw() + Days::new(30.0)).value()),
+        )
     }
 
     #[test]
     fn phase_topocentric_illuminated_fraction_bounded() {
-        let geom = Moon::phase_topocentric(JulianDate::J2000, greenwich());
+        let geom = Moon::phase_topocentric(crate::J2000, greenwich());
         assert!(
             geom.illuminated_fraction.value() >= 0.0 && geom.illuminated_fraction.value() <= 1.0
         );

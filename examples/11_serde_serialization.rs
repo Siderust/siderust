@@ -69,7 +69,7 @@ mod demo {
     pub fn run() {
         println!("=== Siderust Serde Serialization Examples ===\n");
 
-        let jd = JulianDate::J2000;
+        let jd = siderust::time::J2000;
 
         // =========================================================================
         // 1) Times
@@ -77,9 +77,10 @@ mod demo {
         println!("1) TIME OBJECTS");
         println!("---------------");
 
+        let mjd = jd.to::<siderust::time::MJD>();
         let time_bundle = TimeBundle {
             j2000: jd,
-            mjd: ModifiedJulianDate::from(jd),
+            mjd,
             timeline: vec![jd, jd + Days::new(1.0), jd + Days::new(7.0)],
         };
         println!("{}", pretty_json(&time_bundle));
@@ -87,7 +88,7 @@ mod demo {
         let recovered_times: TimeBundle = roundtrip(&time_bundle);
         println!(
             "Roundtrip check: j2000={:.1}, timeline_len={}\n",
-            recovered_times.j2000.jd_value(),
+            recovered_times.j2000,
             recovered_times.timeline.len()
         );
 
@@ -157,7 +158,7 @@ mod demo {
         println!(
             "Roundtrip check: {} @ JD {:.1}, r={:.6} AU\n",
             recovered_halley.name,
-            recovered_halley.epoch.jd_value(),
+            recovered_halley.epoch,
             recovered_halley.heliocentric_ecliptic.distance().value()
         );
 
@@ -179,8 +180,7 @@ mod demo {
         let recovered_targets: BodyTargetsBundle = roundtrip(&targets);
         println!(
             "Roundtrip check: Mars target JD {:.1}, Moon target JD {:.1}\n",
-            recovered_targets.mars_bary_target.time.jd_value(),
-            recovered_targets.moon_geo_target.time.jd_value()
+            recovered_targets.mars_bary_target.time, recovered_targets.moon_geo_target.time
         );
 
         // =========================================================================

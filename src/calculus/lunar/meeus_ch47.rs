@@ -55,8 +55,7 @@ pub struct MoonMeeusCh47 {
 /// A [`MoonMeeusCh47`] containing geocentric apparent right ascension,
 /// declination, distance, and ecliptic longitude/latitude of date.
 pub fn moon_position_meeus_ch47(jd_tt: JulianDate) -> MoonMeeusCh47 {
-    let date2 = jd_tt.raw().value() - 2_451_545.0;
-    let t = date2 / 36_525.0;
+    let t = jd_tt.julian_centuries();
 
     // Mean elements (degrees), Meeus Ch.47
     let lp = (218.316_447_7 + 481_267.881_234_21 * t - 0.001_578_6 * t * t + t * t * t / 538_841.0
@@ -131,7 +130,7 @@ mod tests {
     fn meeus_example_1992_apr_12() {
         // Meeus Example 47.a: 1992 April 12, 00:00 TD
         // JDE = 2448724.5
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2_448_724.5));
+        let jd = crate::time::JulianDate::new(2_448_724.5);
         let moon = moon_position_meeus_ch47(jd);
 
         // Expected: λ ≈ 133.17°, β ≈ -3.23°, Δ ≈ 368409 km (reduced-term)

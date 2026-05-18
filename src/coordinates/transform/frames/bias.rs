@@ -50,8 +50,7 @@ use std::sync::OnceLock;
 /// The off-diagonal signs follow the SOFA convention: `rb[0][1] < 0`.
 fn frame_bias_matrix() -> Rotation3 {
     static FRAME_BIAS: OnceLock<Rotation3> = OnceLock::new();
-    *FRAME_BIAS
-        .get_or_init(|| precession::precession_matrix_iau2006(crate::time::JulianDate::J2000))
+    *FRAME_BIAS.get_or_init(|| precession::precession_matrix_iau2006(crate::J2000))
 }
 
 // ── Bias helpers ──────────────────────────────────────────────────────

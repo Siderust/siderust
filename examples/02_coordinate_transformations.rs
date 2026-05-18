@@ -12,12 +12,11 @@ use siderust::coordinates::cartesian::position::{
 use siderust::coordinates::centers::{Geocentric, Heliocentric};
 use siderust::coordinates::transform::{Transform, TransformCenter, TransformFrame};
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 fn main() {
     println!("=== Coordinate Transformations Example ===\n");
 
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
     println!("Reference time: J2000.0 (JD {:.1})\n", jd);
 
     // =========================================================================

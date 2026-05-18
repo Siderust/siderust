@@ -37,15 +37,15 @@ fn roque() -> Geodetic<ECEF> {
 
 fn period_7d() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60007.0),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     )
 }
 
 fn period_3d() -> Period<ModifiedJulianDate> {
     Period::new(
-        ModifiedJulianDate::new(60000.0),
-        ModifiedJulianDate::new(60003.0),
+        ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
+        ModifiedJulianDate::try_new(Days::new(60003.0)).unwrap(),
     )
 }
 
@@ -78,7 +78,7 @@ fn polaris_circumpolar_at_greenwich() {
         1,
         "Polaris should be continuously above horizon at 51°N"
     );
-    let dur = (periods[0]).end - (periods[0]).start;
+    let dur = (periods[0]).end.raw() - (periods[0]).start.raw();
     assert!(
         (dur - Days::new(7.0)).abs().value() < 0.01,
         "should span full 7 days, got {}",
@@ -108,7 +108,7 @@ fn sirius_above_horizon_greenwich_7d() {
         periods.len()
     );
     for p in &periods {
-        let hours = ((p).end - (p).start).to::<Hour>();
+        let hours = ((p).end.raw() - (p).start.raw()).to::<Hour>();
         // First/last period may be truncated by the window boundary
         assert!(
             hours > Hours::new(0.1) && hours < Hours::new(18.0),
@@ -156,8 +156,14 @@ fn above_plus_below_covers_full_period() {
     let above = sirius().above_threshold(site, period, thr);
     let below = sirius().below_threshold(site, period, thr);
 
-    let total_above: f64 = above.iter().map(|p| ((p).end - (p).start).value()).sum();
-    let total_below: f64 = below.iter().map(|p| ((p).end - (p).start).value()).sum();
+    let total_above: f64 = above
+        .iter()
+        .map(|p| ((p).end.raw() - (p).start.raw()).value())
+        .sum();
+    let total_below: f64 = below
+        .iter()
+        .map(|p| ((p).end.raw() - (p).start.raw()).value())
+        .sum();
     assert!(
         (total_above + total_below - 7.0).abs() < 0.01,
         "above({}) + below({}) should sum to 7 days",
@@ -197,8 +203,14 @@ fn trait_api_above_below_consistent() {
     let above = sirius().above_threshold(site, period, thr);
     let below = sirius().below_threshold(site, period, thr);
 
-    let total_above: f64 = above.iter().map(|p| ((p).end - (p).start).value()).sum();
-    let total_below: f64 = below.iter().map(|p| ((p).end - (p).start).value()).sum();
+    let total_above: f64 = above
+        .iter()
+        .map(|p| ((p).end.raw() - (p).start.raw()).value())
+        .sum();
+    let total_below: f64 = below
+        .iter()
+        .map(|p| ((p).end.raw() - (p).start.raw()).value())
+        .sum();
     assert!(
         (total_above + total_below - 3.0).abs() < 0.01,
         "above({:.4}) + below({:.4}) should sum to 3.0 days",
@@ -223,9 +235,12 @@ fn trait_api_range_within_above() {
     // Range [10°, 30°] periods should be subsets of above(10°) periods
     let total_range: f64 = range_10_30
         .iter()
-        .map(|p| ((p).end - (p).start).value())
+        .map(|p| ((p).end.raw() - (p).start.raw()).value())
         .sum();
-    let total_above: f64 = above_10.iter().map(|p| ((p).end - (p).start).value()).sum();
+    let total_above: f64 = above_10
+        .iter()
+        .map(|p| ((p).end.raw() - (p).start.raw()).value())
+        .sum();
     assert!(
         total_range <= total_above + 0.01,
         "range time ({:.4}) should not exceed above time ({:.4})",

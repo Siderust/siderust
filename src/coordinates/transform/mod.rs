@@ -55,7 +55,7 @@
 //! use siderust::time::JulianDate;
 //!
 //! let cart_eq = Position::<Geocentric, EquatorialMeanJ2000, AstronomicalUnit>::new(1.0, 2.0, 3.0);
-//! let jd = JulianDate::J2000;
+//! let jd = siderust::J2000;
 //! // Transform to Geocentric EclipticMeanJ2000 coordinates (frame transform)
 //! let cart_geo_ecl: Position<Geocentric, EclipticMeanJ2000, AstronomicalUnit> = cart_eq.to_frame();
 //! // Transform to Heliocentric EclipticMeanJ2000 coordinates (center transform)

@@ -45,6 +45,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   records checksums for the updated dependency graph, aligning `siderust` with
   the current canonical affine-geometry implementation.
 
+## [0.8.0] - 2026-05-18
+
+### Added
+
+* `siderust::JulianDate` and `siderust::ModifiedJulianDate` re-exported at
+  crate root so user code can write `siderust::JulianDate::new(…)` without
+  an additional `use siderust::time::…` import.
+
+### Changed
+
+* **Dependency**: `qtty` upgraded from `0.7` to `0.8`.
+* **Dependency**: `tempoch` upgraded from `0.4` to `0.6`.
+  `siderust-ffi` dependencies updated to `qtty 0.8`, `tempoch 0.6`, and
+  `tempoch-ffi 0.6`.
+* `JulianDate::new(f64)` and `ModifiedJulianDate::new(f64)` are now the
+  canonical constructors throughout the codebase; `from_raw_unchecked` and
+  the fallible `try_new` variants are no longer used internally.
+* Internal time-period durations are now computed via `.end()` / `.start()`
+  accessors rather than raw-value arithmetic.
+* Internal time calculations use the `julian_centuries()` method for
+  consistency.
+* All public code examples (doctests) updated to use the unambiguous
+  `JulianDate::new(2451545.0)` / `ModifiedJulianDate::new(60000.0)` form.
+
+### Removed
+
+* **`siderust-ffi` dynamics module** (`siderust_ffi::dynamics`) and its
+  entire C ABI surface have been removed.  The orbital/satellite-propagation
+  FFI layer is no longer part of the crate.
+
+### Fixed
+
+* Resolved 17 doctest compilation errors caused by passing
+  `qtty::Day::new(x)` (a typed quantity) where the `f64` argument of
+  `JulianDate::new` / `ModifiedJulianDate::new` is expected.  Affected
+  modules: `calculus::altitude`, `calculus::azimuth`,
+  `calculus::lunar::phase`, `calculus::lunar::moon_equations`,
+  `calculus::solar`, `coordinates::transform`, `astro::orbit`, and
+  `targets`.
+
 ## [0.7.0] - 2026-05-07
 
 This release contains **breaking API changes** throughout the public surface.

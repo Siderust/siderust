@@ -58,7 +58,8 @@ use crate::time::JulianDate;
 ///
 /// Time scale note: all `ModifiedJulianDate` and `Period<ModifiedJulianDate>` values are on
 /// the canonical JD(TT) axis (`tempoch` semantics). Convert UTC instants with
-/// `ModifiedJulianDate::from_chrono(…)` before using this API.
+/// `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
+/// into `ModifiedJulianDate` before using this API.
 pub trait AltitudePeriodsProvider {
     /// Returns all contiguous intervals inside `query.window` where the
     /// body's topocentric altitude is within
@@ -185,7 +186,10 @@ pub trait AltitudePeriodsProvider {
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let window = Period::new(ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)), ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60001.0)));
+/// let window = Period::new(
+///     siderust::ModifiedJulianDate::new(60000.0),
+///     siderust::ModifiedJulianDate::new(60001.0),
+/// );
 /// let query = AltitudeQuery {
 ///     observer: site,
 ///     window,
@@ -219,7 +223,7 @@ pub fn altitude_periods<B: AltitudePeriodsProvider>(
 /// **Sun**, delegates to [`crate::calculus::solar`].
 impl AltitudePeriodsProvider for solar_system::Sun {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::solar;
@@ -247,7 +251,7 @@ impl AltitudePeriodsProvider for solar_system::Sun {
 /// **Moon**, delegates to [`crate::calculus::lunar`].
 impl AltitudePeriodsProvider for solar_system::Moon {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::lunar;
@@ -292,7 +296,7 @@ impl AltitudePeriodsProvider for Star<'_> {
 /// **direction::ICRS**, the lightest path: raw RA/Dec → stellar engine.
 impl AltitudePeriodsProvider for direction::ICRS {
     fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         use crate::calculus::stellar;
@@ -360,7 +364,7 @@ where
         AstronomicalUnit,
     >,
 {
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     // 1) VSOP87e → barycentric ecliptic J2000
     let bary_ecl = vsop87e_fn(jd);
     // 2) Frame rotation + center shift → geocentric equatorial J2000
@@ -382,7 +386,7 @@ macro_rules! impl_altitude_provider_vsop87 {
         $(
             impl AltitudePeriodsProvider for solar_system::$Planet {
                 fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
-                    if (query.window.end - query.window.start) <= Days::zero() {
+                    if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
                         return Vec::new();
                     }
                     let f = |t: ModifiedJulianDate| -> Radians {
@@ -454,15 +458,15 @@ mod tests {
 
     fn one_day_window() -> Period<ModifiedJulianDate> {
         Period::new(
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60001.0)),
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60001.0),
         )
     }
 
     fn one_week_window() -> Period<ModifiedJulianDate> {
         Period::new(
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0)),
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60007.0),
         )
     }
 
@@ -474,8 +478,8 @@ mod tests {
             solar_system::Sun.above_threshold(greenwich(), one_day_window(), Degrees::new(0.0));
         assert!(!periods.is_empty(), "Sun should be above horizon at 51°N");
         for p in &periods {
-            assert!(((p).end - (p).start) > Days::new(0.0));
-            assert!(((p).end - (p).start) < Days::new(1.0));
+            assert!(p.length() > Days::new(0.0));
+            assert!(p.length() < Days::new(1.0));
         }
     }
 
@@ -528,11 +532,11 @@ mod tests {
         );
         for (sp, dp) in star_periods.iter().zip(dir_periods.iter()) {
             assert!(
-                (sp.start - dp.start).abs() < Days::new(1e-6),
+                (sp.start.raw() - dp.start.raw()).abs() < Days::new(1e-6),
                 "Period starts should match"
             );
             assert!(
-                (sp.end - dp.end).abs() < Days::new(1e-6),
+                (sp.end.raw() - dp.end.raw()).abs() < Days::new(1e-6),
                 "Period ends should match"
             );
         }
@@ -570,7 +574,7 @@ mod tests {
     #[test]
     fn altitude_at_consistent_across_types() {
         let observer = greenwich();
-        let mjd = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(51544.5)); // J2000 epoch in MJD
+        let mjd = crate::time::ModifiedJulianDate::new(51544.5); // J2000 epoch in MJD
 
         let sun_alt = solar_system::Sun.altitude_at(&observer, mjd);
         assert!(sun_alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2));
@@ -599,7 +603,7 @@ mod tests {
             !periods.is_empty(),
             "Full sky range should return at least one period"
         );
-        let total: f64 = periods.iter().map(|p| ((p).end - (p).start).value()).sum();
+        let total: f64 = periods.iter().map(|p| p.length().value()).sum();
         assert!(
             (total - 1.0).abs() < 0.01,
             "Full sky range should span ~1 day, got {} days",
@@ -617,7 +621,8 @@ mod tests {
             "Polaris should be continuously above horizon at 51°N"
         );
         assert!(
-            (((periods[0]).end - (periods[0]).start) - Days::new(1.0)).abs() < Days::new(0.01),
+            ((periods[0].end.raw() - periods[0].start.raw()) - Days::new(1.0)).abs()
+                < Days::new(0.01),
             "Polaris up-period should span the full day"
         );
     }
@@ -636,8 +641,8 @@ mod tests {
     #[test]
     fn empty_window_returns_empty() {
         let window = Period::new(
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60000.0),
         );
         let query = AltitudeQuery {
             observer: greenwich(),
@@ -661,8 +666,8 @@ mod tests {
         let query = AltitudeQuery {
             observer: greenwich(),
             window: Period::new(
-                ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-                ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60002.0)),
+                crate::time::ModifiedJulianDate::new(60000.0),
+                crate::time::ModifiedJulianDate::new(60002.0),
             ),
             min_altitude: Degrees::new(-18.0),
             max_altitude: Degrees::new(-12.0),
@@ -695,7 +700,8 @@ mod tests {
 
     #[test]
     fn mars_altitude_at_is_finite() {
-        let alt = solar_system::Mars.altitude_at(&greenwich(), ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5)));
+        let alt = solar_system::Mars
+            .altitude_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(alt.is_finite());
         assert!(
             alt.abs() < Radians::new(std::f64::consts::FRAC_PI_2),
@@ -719,7 +725,7 @@ mod tests {
     #[test]
     fn planet_altitudes_are_realistic() {
         let observer = greenwich();
-        let mjd = ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.5));
+        let mjd = crate::time::ModifiedJulianDate::new(60000.5);
         // All planets should return finite altitudes
         let mercury_alt = solar_system::Mercury.altitude_at(&observer, mjd);
         let venus_alt = solar_system::Venus.altitude_at(&observer, mjd);

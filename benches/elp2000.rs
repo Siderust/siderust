@@ -12,7 +12,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::solar_system::Moon;
 use siderust::qtty::{Days, Kilometer};
-use siderust::time::JulianDate;
 use std::hint::black_box;
 
 fn bench_moon_geo_position(c: &mut Criterion) {
@@ -21,7 +20,7 @@ fn bench_moon_geo_position(c: &mut Criterion) {
     // J2000 epoch (t1 = 0, simplest case)
     group.bench_function("get_geo_position_j2000", |b| {
         b.iter(|| {
-            let jd = black_box(JulianDate::J2000);
+            let jd = black_box(siderust::time::J2000);
             let _p = Moon::get_geo_position::<Kilometer>(jd);
         });
     });
@@ -29,7 +28,7 @@ fn bench_moon_geo_position(c: &mut Criterion) {
     // Offset epoch (~3.4 years from J2000)
     group.bench_function("get_geo_position_offset", |b| {
         b.iter(|| {
-            let jd = black_box(JulianDate::J2000 + Days::new(1234.567));
+            let jd = black_box(siderust::time::J2000 + Days::new(1234.567));
             let _p = Moon::get_geo_position::<Kilometer>(jd);
         });
     });
@@ -37,7 +36,7 @@ fn bench_moon_geo_position(c: &mut Criterion) {
     // Far future epoch (~50 years from J2000)
     group.bench_function("get_geo_position_far_future", |b| {
         b.iter(|| {
-            let jd = black_box(JulianDate::J2000 + Days::new(18262.5)); // ~50 years
+            let jd = black_box(siderust::time::J2000 + Days::new(18262.5)); // ~50 years
             let _p = Moon::get_geo_position::<Kilometer>(jd);
         });
     });
@@ -45,7 +44,7 @@ fn bench_moon_geo_position(c: &mut Criterion) {
     // Negative epoch (before J2000)
     group.bench_function("get_geo_position_negative", |b| {
         b.iter(|| {
-            let jd = black_box(JulianDate::J2000 - Days::new(3652.5)); // ~10 years before
+            let jd = black_box(siderust::time::J2000 - Days::new(3652.5)); // ~10 years before
             let _p = Moon::get_geo_position::<Kilometer>(jd);
         });
     });

@@ -60,6 +60,21 @@ macro_rules! check_out {
     };
 }
 
+/// Early-return an FFI status on `Err`, otherwise unwrap the success value.
+///
+/// ```ignore
+/// let jd = ffi_try!($crate::ffi_utils::jd_from_f64(jd_raw));
+/// ```
+#[macro_export]
+macro_rules! ffi_try {
+    ($expr:expr) => {
+        match $expr {
+            Ok(value) => value,
+            Err(status) => return status,
+        }
+    };
+}
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Body dispatch macro
 // ═══════════════════════════════════════════════════════════════════════════
@@ -211,6 +226,18 @@ pub trait TryFromFfi<F>: Sized {
     /// error code when the FFI value is invalid (e.g. unknown enum discriminant,
     /// out-of-range field).
     fn try_from_ffi(ffi: &F) -> Result<Self, SiderustStatus>;
+}
+
+/// Validate and construct a TT Julian Date from an FFI scalar.
+#[inline]
+pub fn jd_from_f64(value: f64) -> Result<siderust::time::JulianDate, SiderustStatus> {
+    siderust::time::try_jd_f64(value).map_err(|_| SiderustStatus::InvalidArgument)
+}
+
+/// Validate and construct a TT Modified Julian Date from an FFI scalar.
+#[inline]
+pub fn mjd_from_f64(value: f64) -> Result<siderust::time::ModifiedJulianDate, SiderustStatus> {
+    siderust::time::try_mjd_f64(value).map_err(|_| SiderustStatus::InvalidArgument)
 }
 
 // ═══════════════════════════════════════════════════════════════════════════

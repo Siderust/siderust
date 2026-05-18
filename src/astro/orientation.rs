@@ -84,7 +84,7 @@ impl IauRotationParams {
     /// * `jd` - Julian Date (TDB/TT-compatible epoch for IAU model evaluation).
     #[inline]
     pub fn w(&self, jd: JulianDate) -> Degrees {
-        let d_days = (jd.raw() - JulianDate::J2000.raw()).value();
+        let d_days = (jd.raw() - crate::J2000.raw()).value();
         self.w0_deg + self.w_rate * d_days
     }
 }

@@ -264,10 +264,7 @@ pub fn position(
     y_series: &[&[Vsop87]],
     z_series: &[&[Vsop87]],
 ) -> (f64, f64, f64) {
-    let t = {
-        let jd_tdb = jd.to_time().to_scale::<TDB>().to::<crate::time::JD>();
-        (jd_tdb.raw().value() - 2_451_545.0_f64) / 365_250.0_f64
-    };
+    let t = jd.to_scale::<TDB>().julian_centuries() / 10.0;
 
     let x = coord_value(x_series, t);
     let y = coord_value(y_series, t);
@@ -282,10 +279,7 @@ pub fn velocity(
     y_series: &[&[Vsop87]],
     z_series: &[&[Vsop87]],
 ) -> (f64, f64, f64) {
-    let t = {
-        let jd_tdb = jd.to_time().to_scale::<TDB>().to::<crate::time::JD>();
-        (jd_tdb.raw().value() - 2_451_545.0_f64) / 365_250.0_f64
-    };
+    let t = jd.to_scale::<TDB>().julian_centuries() / 10.0;
 
     let xdot = coord_deriv(x_series, t);
     let ydot = coord_deriv(y_series, t);
@@ -302,10 +296,7 @@ pub fn position_velocity(
     y_series: &[&[Vsop87]],
     z_series: &[&[Vsop87]],
 ) -> ((f64, f64, f64), (f64, f64, f64)) {
-    let t = {
-        let jd_tdb = jd.to_time().to_scale::<TDB>().to::<crate::time::JD>();
-        (jd_tdb.raw().value() - 2_451_545.0_f64) / 365_250.0_f64
-    };
+    let t = jd.to_scale::<TDB>().julian_centuries() / 10.0;
 
     let (x, xdot) = coord_both(x_series, t);
     let (y, ydot) = coord_both(y_series, t);
@@ -317,7 +308,6 @@ pub fn position_velocity(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::time::JulianDate;
 
     const X0: [Vsop87; 1] = [Vsop87 {
         a: 1.0,
@@ -349,7 +339,7 @@ mod tests {
     #[test]
     fn test_position_velocity() {
         // 100 years after J2000 -> T = 0.1
-        let jd = JulianDate::from_raw_unchecked(qtty::Day::new(2451545.0 + 36525.0));
+        let jd = crate::J2000 + qtty::Day::new(36_525.0);
         let pos = position(jd, &[&X0, &X1], &[&Y0, &Y1, &Y2], &[&Z0]);
         assert!((pos.0 - 1.2).abs() < 1e-12);
         assert!((pos.1 - 0.03).abs() < 1e-12);

@@ -32,7 +32,7 @@ fn full_gcrs_to_itrs_chain() {
     //
     // We verify that the chain produces a proper rotation (det = 1, orthogonal).
 
-    let jd_tt = JulianDate::new(2_460_000.5); // 2023-02-25 TT
+    let jd_tt = JulianDate::try_new(Days::new(2_460_000.5)).unwrap(); // 2023-02-25 TT
     let jd_ut1 = jd_tt; // approximation: UT1 ≈ TT (placeholder pending real EOP; ΔT ≈ 69 s in 2025)
 
     // Step 1: Nutation
@@ -86,7 +86,7 @@ fn full_gcrs_to_itrs_chain() {
 fn precession_nutation_matrix_is_consistent() {
     // The NPB matrix should be very close to the pure precession matrix
     // when nutation is zero.
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
 
     let p = precession_matrix_iau2006(jd);
     let npb = precession_nutation_matrix(jd, Radians::new(0.0), Radians::new(0.0));
@@ -113,7 +113,7 @@ fn precession_nutation_matrix_is_consistent() {
 #[test]
 fn nutation_shifts_cip_significantly() {
     // With real nutation, CIP should differ from zero-nutation by ~10-20 arcseconds
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
     let nut = nutation_iau2000b(jd);
 
     let (x0, y0) = siderust::astro::cio::cip_xy(jd, Radians::new(0.0), Radians::new(0.0));
@@ -143,7 +143,7 @@ fn era_and_gmst_differ_by_accumulation() {
     // GMST = ERA + accumulated precession polynomial.
     // The polynomial is ~0.014506″ at t=0, growing at ~4612″/century.
     // At t ≈ 0.23 century (2023), the polynomial is ~1060″ ≈ 0.295°.
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
     let era = earth_rotation_angle(jd);
     let gmst = gmst_iau2006(jd, jd);
 
@@ -159,7 +159,7 @@ fn era_and_gmst_differ_by_accumulation() {
 #[test]
 fn gast_minus_gmst_equals_equation_of_equinoxes() {
     // GAST = GMST + Δψ·cos(ε)
-    let jd = JulianDate::new(2_460_000.5);
+    let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
     let nut = nutation_iau2000b(jd);
     let true_obliquity = nut.true_obliquity();
 
@@ -184,10 +184,10 @@ fn gast_minus_gmst_equals_equation_of_equinoxes() {
 #[test]
 fn null_eop_produces_ut1_equal_utc() {
     let eop = NullEop;
-    let jd_utc = JulianDate::new(2_460_000.5);
+    let jd_utc = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
     let vals = eop.eop_at(jd_utc);
     let jd_ut1 = vals.jd_ut1(jd_utc);
-    assert_eq!(jd_ut1.jd_value(), jd_utc.jd_value());
+    assert_eq!(jd_ut1.raw().value(), jd_utc.raw().value());
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -232,8 +232,8 @@ fn light_deflection_roundtrip_accuracy() {
 #[test]
 fn obliquity_consistent_across_modules() {
     // The IAU 2006 obliquity at J2000 should be 84381.406″ everywhere
-    let eps_prec = mean_obliquity_iau2006(JulianDate::J2000);
-    let nut = nutation_iau2000b(JulianDate::J2000);
+    let eps_prec = mean_obliquity_iau2006(siderust::time::J2000);
+    let nut = nutation_iau2000b(siderust::time::J2000);
 
     let eps_prec_as = eps_prec.to::<Degree>().value() * 3600.0;
     let eps_nut_as = nut.mean_obliquity.to::<Degree>().value() * 3600.0;
@@ -295,7 +295,7 @@ fn era_monotonic_over_sidereal_day() {
     let mut prev = 0.0f64;
     let jd0 = 2_460_000.5;
     for i in 0..24 {
-        let jd = JulianDate::new(jd0 + i as f64 / 24.0 * 0.99727);
+        let jd = JulianDate::try_new(Days::new(jd0 + i as f64 / 24.0 * 0.99727)).unwrap();
         let era = earth_rotation_angle(jd).value();
         if i > 0 {
             // Allow wraparound at 2π
@@ -316,8 +316,8 @@ fn era_monotonic_over_sidereal_day() {
 fn nutation_varies_on_18_6_year_cycle() {
     // The dominant nutation term has an 18.6-year period (Ω of the Moon's node).
     // Check that nutation at two epochs separated by 9.3 years has opposite sign.
-    let jd1 = JulianDate::new(2_451_545.0); // J2000.0
-    let jd2 = JulianDate::new(2_451_545.0 + 9.3 * 365.25); // ~9.3 years later
+    let jd1 = JulianDate::try_new(Days::new(2_451_545.0)).unwrap(); // J2000.0
+    let jd2 = JulianDate::try_new(Days::new(2_451_545.0 + 9.3 * 365.25)).unwrap(); // ~9.3 years later
 
     let nut1 = nutation_iau2000b(jd1);
     let nut2 = nutation_iau2000b(jd2);

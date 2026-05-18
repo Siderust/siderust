@@ -47,7 +47,7 @@
 //! );
 //!
 //! // Get observer state (Earth-bound observer at J2000)
-//! let obs = ObserverState::geocentric(JulianDate::J2000);
+//! let obs = ObserverState::geocentric(siderust::J2000);
 //!
 //! // Convert to apparent direction (applies aberration)
 //! let apparent_dir: Apparent<EquatorialMeanJ2000> = astrometric_dir.to_apparent(&obs);

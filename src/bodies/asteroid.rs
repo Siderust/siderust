@@ -32,7 +32,6 @@
 
 use crate::astro::orbit::KeplerianOrbit;
 use crate::qtty::{Albedos, AstronomicalUnits, Degrees};
-use crate::time::JulianDate;
 
 /// Taxonomic class of a small Solar‑System body.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -165,7 +164,7 @@ pub const CERES_AST: Asteroid = Asteroid::new_const(
         Degrees::new(80.3055),
         Degrees::new(73.5977),
         Degrees::new(95.9892),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.09));
@@ -183,7 +182,7 @@ pub const BENNU: Asteroid = Asteroid::new_const(
         Degrees::new(2.06084),
         Degrees::new(66.2221),
         Degrees::new(101.703),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.044));
@@ -201,7 +200,7 @@ pub const APOPHIS: Asteroid = Asteroid::new_const(
         Degrees::new(204.4722),
         Degrees::new(126.4001),
         Degrees::new(204.479),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.23));

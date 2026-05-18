@@ -1,6 +1,6 @@
 [package]
 name = "siderust-ffi"
-version = "0.4.1"
+version = "0.5.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "C FFI bindings for siderust, high-precision astronomy library."
@@ -19,8 +19,8 @@ runtime-data = ["siderust/runtime-data"]
 constops = ["dep:constops", "dep:serde_json", "dep:tokio"]
 
 [dependencies]
-siderust    = { version = "0.7", path = ".." }
-qtty        = "0.7"
+siderust    = { version = "0.8", path = ".." }
+qtty        = "0.8"
 tempoch     = "0.6"
 tempoch-ffi = "0.6"
 affn        = { version = "0.7.0", features = ["astro"] }

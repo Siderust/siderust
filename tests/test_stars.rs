@@ -6,7 +6,6 @@ use siderust::coordinates::spherical::position::EquatorialMeanJ2000;
 use siderust::qtty::length::nominal::SolarRadiuses;
 use siderust::qtty::*;
 use siderust::targets::CoordinateWithPM;
-use siderust::time::JulianDate;
 use std::borrow::Cow;
 
 #[test]
@@ -15,7 +14,7 @@ fn star_new_const() {
         EquatorialMeanJ2000::<LightYear>::new(Degrees::new(10.0), Degrees::new(20.0), 4.0);
     let expected_ra = position.ra();
     let expected_dec = position.dec();
-    let coord = CoordinateWithPM::new_static(position, JulianDate::J2000);
+    let coord = CoordinateWithPM::new_static(position, siderust::time::J2000);
     let star = Star::new_const(
         "Alpha",
         LightYears::new(4.0),
@@ -32,7 +31,7 @@ fn star_new_const() {
     assert_eq!(star.luminosity, SolarLuminosities::new(1.3));
     assert_eq!(star.coordinate.position.ra(), expected_ra);
     assert_eq!(star.coordinate.position.dec(), expected_dec);
-    assert_eq!(star.coordinate.time, JulianDate::J2000);
+    assert_eq!(star.coordinate.time, siderust::time::J2000);
 }
 
 #[test]
@@ -41,7 +40,7 @@ fn star_new_owned() {
         EquatorialMeanJ2000::<LightYear>::new(Degrees::new(30.0), Degrees::new(-10.0), 10.0);
     let expected_ra = position.ra();
     let expected_dec = position.dec();
-    let coord = CoordinateWithPM::new_static(position, JulianDate::J2000);
+    let coord = CoordinateWithPM::new_static(position, siderust::time::J2000);
     let name = String::from("Beta");
     let star = Star::new(
         name.clone(),
@@ -59,5 +58,5 @@ fn star_new_owned() {
     assert_eq!(star.luminosity, SolarLuminosities::new(4.0));
     assert_eq!(star.coordinate.position.ra(), expected_ra);
     assert_eq!(star.coordinate.position.dec(), expected_dec);
-    assert_eq!(star.coordinate.time, JulianDate::J2000);
+    assert_eq!(star.coordinate.time, siderust::time::J2000);
 }

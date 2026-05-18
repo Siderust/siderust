@@ -17,7 +17,6 @@ use siderust::calculus::lunar::phase::{
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseLabel, PhaseKind, PhaseSearchOpts,
 };
 use siderust::qtty::IlluminationFractions;
-use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Conversion helpers
@@ -88,7 +87,7 @@ pub extern "C" fn siderust_moon_phase_geocentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let geom = moon_phase_geocentric::<Vsop87Ephemeris>(JulianDate::new(jd));
+        let geom = moon_phase_geocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok
 
@@ -106,7 +105,7 @@ pub extern "C" fn siderust_moon_phase_topocentric(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let geom = moon_phase_topocentric::<Vsop87Ephemeris>(JulianDate::new(jd), observer.to_rust());
+        let geom = moon_phase_topocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)), observer.to_rust());
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok
 
@@ -165,7 +164,7 @@ pub extern "C" fn siderust_find_phase_events(
         vec_to_c(
             events,
             |e| SiderustPhaseEvent {
-                mjd: e.mjd.mjd_value(),
+                mjd: e.mjd.raw().value(),
                 kind: phase_kind_from_rust(e.kind),
                 _pad: [0; 4],
             },

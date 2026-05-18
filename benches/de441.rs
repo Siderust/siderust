@@ -13,7 +13,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
 use siderust::qtty::Days;
-use siderust::time::JulianDate;
 use std::hint::black_box;
 
 fn bench_runtime_ephemeris(c: &mut Criterion) {
@@ -38,7 +37,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     let mut group = c.benchmark_group("runtime_ephemeris");
 
     group.bench_function("sun_barycentric", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = eph.sun_barycentric(black_box(jd));
@@ -46,7 +45,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     });
 
     group.bench_function("earth_barycentric", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = eph.earth_barycentric(black_box(jd));
@@ -54,7 +53,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     });
 
     group.bench_function("earth_heliocentric", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = eph.earth_heliocentric(black_box(jd));
@@ -62,7 +61,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     });
 
     group.bench_function("earth_barycentric_velocity", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = eph.earth_barycentric_velocity(black_box(jd));
@@ -70,7 +69,7 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
     });
 
     group.bench_function("moon_geocentric", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = eph.moon_geocentric(black_box(jd));

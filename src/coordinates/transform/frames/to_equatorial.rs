@@ -64,7 +64,6 @@ mod tests {
     use crate::coordinates::{centers, frames, spherical::Position};
     use crate::macros::assert_spherical_eq;
     use crate::qtty::{AstronomicalUnit, Degrees};
-    use crate::time::JulianDate;
 
     const EPS: f64 = 1.0e-12;
 
@@ -79,12 +78,12 @@ mod tests {
             centers::Barycentric,
             frames::EquatorialMeanJ2000,
             AstronomicalUnit,
-        > = ecliptic_orig.transform(JulianDate::J2000);
+        > = ecliptic_orig.transform(crate::J2000);
         let ecliptic_rec: Position<
             centers::Barycentric,
             frames::EclipticMeanJ2000,
             AstronomicalUnit,
-        > = equatorial.transform(JulianDate::J2000);
+        > = equatorial.transform(crate::J2000);
 
         assert_spherical_eq!(ecliptic_orig, ecliptic_rec, EPS);
     }

@@ -179,7 +179,7 @@ impl StarAltitudeParams {
     /// `HA = GAST(t) + λ − α` for true-of-date right ascension.
     #[inline]
     fn hour_angle(&self, mjd: ModifiedJulianDate) -> Degrees {
-        let jd: JulianDate = mjd.into();
+        let jd: JulianDate = mjd.to::<crate::JD>();
         let ctx: AstroContext = AstroContext::default();
         let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
@@ -216,8 +216,16 @@ impl StarAltitudeParams {
             let dt_first: Days = (SIDEREAL_DAY_DAYS * phase).to::<Day>();
 
             let mut dt = dt_first;
-            while period.start + dt <= period.end + CROSSING_EDGE_EPS {
-                let t_cross = (period.start + dt).max(period.start).min(period.end);
+            while (period.start.raw() + dt) <= (period.end.raw() + CROSSING_EDGE_EPS) {
+                let t_unclamped =
+                    crate::time::ModifiedJulianDate::new((period.start.raw() + dt).value());
+                let t_cross = if t_unclamped.raw() >= period.end.raw() {
+                    period.end
+                } else if t_unclamped.raw() <= period.start.raw() {
+                    period.start
+                } else {
+                    t_unclamped
+                };
                 crossings.push((t_cross, dir));
                 dt += SIDEREAL_DAY_DAYS;
             }
@@ -256,7 +264,7 @@ mod tests {
                 Degrees::new(89.26), // Polaris Dec
             ),
             &greenwich(),
-            JulianDate::J2000,
+            crate::J2000,
         );
         match params.threshold_ha(Radians::new(0.0)) {
             ThresholdResult::AlwaysAbove => {} // expected
@@ -272,7 +280,7 @@ mod tests {
                 Degrees::new(-16.716), // Sirius Dec
             ),
             &greenwich(),
-            JulianDate::J2000,
+            crate::J2000,
         );
         match params.threshold_ha(Radians::new(0.0)) {
             ThresholdResult::Crossings { h0 } => {
@@ -293,7 +301,7 @@ mod tests {
         let params = StarAltitudeParams::from_j2000(
             equatorial_j2000(Degrees::new(0.0), Degrees::new(-80.0)),
             &greenwich(),
-            JulianDate::J2000,
+            crate::J2000,
         );
         match params.threshold_ha(Radians::new(0.0)) {
             ThresholdResult::NeverAbove => {} // expected
@@ -309,11 +317,11 @@ mod tests {
         let params = StarAltitudeParams::from_j2000(
             equatorial_j2000(Degrees::new(101.287), Degrees::new(-16.716)),
             &greenwich(),
-            JulianDate::J2000,
+            crate::J2000,
         );
         let period = Period::new(
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60000.0)),
-            ModifiedJulianDate::from_raw_unchecked(qtty::Day::new(60007.0)),
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60007.0),
         );
         if let ThresholdResult::Crossings { h0 } = params.threshold_ha(Radians::new(0.0)) {
             let crossings = params.predict_crossings(period, h0);
@@ -326,8 +334,8 @@ mod tests {
 
             // All crossing times should be within the period
             for (t, _) in &crossings {
-                assert!(*t >= period.start - Days::new(1e-10));
-                assert!(*t <= period.end + Days::new(1e-10));
+                assert!(t.raw() >= period.start.raw() - Days::new(1e-10));
+                assert!(t.raw() <= period.end.raw() + Days::new(1e-10));
             }
 
             // Crossings should alternate rise/set (roughly)
