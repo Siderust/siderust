@@ -177,3 +177,75 @@ fn test_line_of_sight() {
     assert!(los.y().abs() < 1e-12);
     assert!(los.z().abs() < 1e-12);
 }
+
+#[test]
+fn transform_frame_trait_preserves_expected_metadata() {
+    use siderust::coordinates::centers::Heliocentric;
+
+    let vec_ecl = cartesian::position::EclipticMeanJ2000::<AstronomicalUnit>::new(
+        0.1 * AU,
+        0.2 * AU,
+        0.3 * AU,
+    );
+    let vec_same: cartesian::position::EclipticMeanJ2000<AstronomicalUnit> =
+        TransformFrame::to_frame(&vec_ecl);
+    assert_eq!(vec_same.x(), vec_ecl.x());
+
+    let sph_ecl =
+        spherical::direction::EclipticMeanJ2000::new(Degrees::new(10.0), Degrees::new(5.0));
+    let cart_ecl = sph_ecl.to_cartesian();
+    let cart_equatorial: cartesian::direction::EquatorialMeanJ2000 =
+        TransformFrame::to_frame(&cart_ecl);
+    assert!(cart_equatorial.x().is_finite());
+
+    let vec_equatorial: cartesian::Position<Heliocentric, EquatorialMeanJ2000, AstronomicalUnit> =
+        TransformFrame::to_frame(&vec_ecl);
+    assert!(vec_equatorial.x().value().is_finite());
+}
+
+#[test]
+fn topocentric_horizontal_position_transform_preserves_distance() {
+    use siderust::coordinates::transform::{
+        providers::frame_rotation, AstroContext, Transform, TransformCenter,
+    };
+
+    let observer = Geodetic::<ECEF>::new(
+        Degrees::new(-17.89),
+        Degrees::new(28.76),
+        Meters::new(2400.0),
+    );
+    let jd = siderust::time::J2000;
+    let site = observer;
+
+    let eq_pos = spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(
+        Degrees::new(83.0),
+        Degrees::new(-5.0),
+        1.0,
+    );
+    let cart_pos = eq_pos.to_cartesian();
+    let topo_cart_j2000: cartesian::Position<Topocentric, EquatorialMeanJ2000, AstronomicalUnit> =
+        cart_pos.to_center((site, jd));
+
+    let ctx = AstroContext::default();
+    let rot = frame_rotation::<EquatorialMeanJ2000, EquatorialMeanOfDate>(jd, &ctx);
+    let [x, y, z] = rot
+        * [
+            topo_cart_j2000.x(),
+            topo_cart_j2000.y(),
+            topo_cart_j2000.z(),
+        ];
+    let topo_cart_mod =
+        cartesian::Position::<Topocentric, EquatorialMeanOfDate, AstronomicalUnit>::new_with_params(
+            *topo_cart_j2000.center_params(),
+            x,
+            y,
+            z,
+        );
+
+    let horiz_cart_pos: cartesian::position::Horizontal<AstronomicalUnit> =
+        topo_cart_mod.transform(jd);
+    let horiz_pos = horiz_cart_pos.to_spherical();
+
+    assert!((horiz_pos.distance - eq_pos.distance).abs().value() < 1e-4);
+    assert!(horiz_cart_pos.z().value().is_finite());
+}

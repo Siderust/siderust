@@ -3,7 +3,7 @@
 
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::asteroid::{Asteroid, AsteroidClass};
-use siderust::bodies::comet::{Comet, OrbitFrame, HALLEY};
+use siderust::bodies::comet::{Comet, CometBuilder, OrbitFrame, HALLEY};
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::bodies::{EARTH, MARS, MOON};
 use siderust::qtty::*;
@@ -81,6 +81,37 @@ fn comet_builder_defaults_and_period() {
     assert_eq!(comet.reference, OrbitFrame::Heliocentric);
     let period = HALLEY.period_years();
     assert!((period.value() - 75.0).abs() < 5.0);
+}
+
+#[test]
+fn comet_const_constructor_and_builder_reference() {
+    let orbit = KeplerianOrbit::new(
+        AstronomicalUnits::new(1.0),
+        0.01,
+        Degrees::new(1.0),
+        Degrees::new(2.0),
+        Degrees::new(3.0),
+        Degrees::new(4.0),
+        siderust::time::J2000,
+    );
+
+    let comet = Comet::new_const(
+        "TestComet",
+        Kilometers::new(1_234.0),
+        orbit,
+        OrbitFrame::Barycentric,
+    );
+    assert_eq!(comet.name, "TestComet");
+    assert_eq!(comet.reference, OrbitFrame::Barycentric);
+    assert!(comet.period_years().value() > 0.0);
+
+    let comet_from_builder = CometBuilder::default()
+        .name("Builder")
+        .tail_length(Kilometers::new(1.0))
+        .reference(OrbitFrame::Heliocentric)
+        .orbit(orbit)
+        .build();
+    assert_eq!(comet_from_builder.reference, OrbitFrame::Heliocentric);
 }
 
 #[test]
