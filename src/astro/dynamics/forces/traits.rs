@@ -315,9 +315,9 @@ mod tests {
             "off-diagonal [0][1] should be zero"
         );
         let v = p.d_acc_d_vel.as_array();
-        for i in 0..3 {
-            for j in 0..3 {
-                assert_eq!(v[i][j], 0.0, "d_acc_d_vel must be zero for two-body");
+        for row in v {
+            for &val in row {
+                assert_eq!(val, 0.0, "d_acc_d_vel must be zero for two-body");
             }
         }
     }
@@ -326,9 +326,9 @@ mod tests {
     fn force_partials_two_body_zero_position_returns_zero() {
         let p = ForcePartials::<GCRS>::two_body(GM_EARTH, [0.0, 0.0, 0.0]);
         let a = p.d_acc_d_pos.as_array();
-        for i in 0..3 {
-            for j in 0..3 {
-                assert_eq!(a[i][j], 0.0);
+        for row in a {
+            for &val in row {
+                assert_eq!(val, 0.0);
             }
         }
     }

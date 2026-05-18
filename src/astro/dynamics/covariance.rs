@@ -926,8 +926,8 @@ mod tests {
         // when we use from_row_major with asymmetric input.
         // Build an asymmetric raw matrix.
         let mut raw = [[0.0_f64; 6]; 6];
-        for i in 0..6 {
-            raw[i][i] = 1.0;
+        for (i, row) in raw.iter_mut().enumerate() {
+            row[i] = 1.0;
         }
         raw[0][1] = 0.5;
         raw[1][0] = 0.0; // asymmetric
@@ -947,8 +947,8 @@ mod tests {
     fn is_psd_detects_negative_eigenvalue() {
         // A 6×6 identity is PSD.
         let mut raw = [[0.0_f64; 6]; 6];
-        for i in 0..6 {
-            raw[i][i] = 1.0;
+        for (i, row) in raw.iter_mut().enumerate() {
+            row[i] = 1.0;
         }
         let p_id = StateCovariance::<GCRS>::from_row_major(raw);
         assert!(p_id.is_positive_semidefinite(RelativeTolerance::new(1e-10)));

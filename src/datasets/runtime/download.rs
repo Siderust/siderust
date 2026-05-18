@@ -30,9 +30,9 @@ pub fn download(
         std::fs::create_dir_all(parent)?;
     }
 
-    let response = ureq::get(rdm.url).call().map_err(|e| {
-        DatasetError::Download(format!("HTTP request failed for {}: {}", name, e))
-    })?;
+    let response = ureq::get(rdm.url)
+        .call()
+        .map_err(|e| DatasetError::Download(format!("HTTP request failed for {}: {}", name, e)))?;
 
     let total: u64 = response
         .headers()

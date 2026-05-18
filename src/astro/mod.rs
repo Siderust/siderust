@@ -60,6 +60,7 @@ pub mod earth_rotation;
 pub mod earth_rotation_provider;
 pub mod eop;
 pub mod era;
+pub mod frame_bias;
 pub mod iers_data;
 pub mod lambert;
 pub mod light_deflection;

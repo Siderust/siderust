@@ -441,6 +441,7 @@ mod tests {
     }
 
     // Verify rotation matrix is orthonormal (all diagonal entries ≈ 1 after R·Rᵀ)
+    #[allow(clippy::needless_range_loop)]
     fn assert_orthonormal(rot: Rotation3) {
         let m = rot.as_matrix();
         let rt_owned = rot.transpose();
@@ -655,8 +656,11 @@ mod tests {
         type HelioVel = crate::astro::dynamics::Velocity<ICRS>;
         let pos = HelioPos::new(1.496e8, 0.0, 0.0);
         let vel = HelioVel::new(0.0, 29.78, 0.0);
-        let s =
-            OrbitState::<Heliocentric, ICRS>::new(JulianDate::new(2_451_545.0).to_j2000s(), pos, vel);
+        let s = OrbitState::<Heliocentric, ICRS>::new(
+            JulianDate::new(2_451_545.0).to_j2000s(),
+            pos,
+            vel,
+        );
         let result = LocalOrbitalFrame::<RTN>::try_from_state(&s);
         assert!(result.is_ok());
         assert_orthonormal(result.unwrap().rotation());
@@ -669,8 +673,11 @@ mod tests {
         type HelioVel = crate::astro::dynamics::Velocity<ICRS>;
         let pos = HelioPos::new(1.496e8, 0.0, 0.0);
         let vel = HelioVel::new(0.0, 29.78, 0.0);
-        let s =
-            OrbitState::<Heliocentric, ICRS>::new(JulianDate::new(2_451_545.0).to_j2000s(), pos, vel);
+        let s = OrbitState::<Heliocentric, ICRS>::new(
+            JulianDate::new(2_451_545.0).to_j2000s(),
+            pos,
+            vel,
+        );
         let result = LocalOrbitalFrame::<VNC>::try_from_state(&s);
         assert!(result.is_ok());
         assert_right_handed(result.unwrap().rotation());

@@ -16,8 +16,8 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use crate::formats::spice::spk;
 use crate::datasets::DatasetError;
+use crate::formats::spice::spk;
 use crate::qtty::{AstronomicalUnit, Kilometer};
 use crate::time::JulianDate;
 use std::path::Path;

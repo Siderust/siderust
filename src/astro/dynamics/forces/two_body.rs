@@ -155,7 +155,7 @@ mod tests {
         );
 
         let analytic = model.partials(&state, &ctx).unwrap();
-        let A = analytic.d_acc_d_pos.as_array();
+        let a_mat = analytic.d_acc_d_pos.as_array();
 
         // 5-point stencil step: 1 km.
         let h = 1.0_f64; // km
@@ -180,7 +180,7 @@ mod tests {
 
             for i in 0..3 {
                 let fd = (-ap2[i] + 8.0 * ap1[i] - 8.0 * am1[i] + am2[i]) / (12.0 * h);
-                let an = A[i][j];
+                let an = a_mat[i][j];
                 let denom = an.abs().max(fd.abs()).max(1e-30);
                 let rel_err = (fd - an).abs() / denom;
                 assert!(

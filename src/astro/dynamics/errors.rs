@@ -292,8 +292,7 @@ mod tests {
 
     #[test]
     fn provider_error_source_forwarded() {
-        let inner: Box<dyn Error + Send + Sync> =
-            Box::new(std::io::Error::new(std::io::ErrorKind::Other, "boom"));
+        let inner: Box<dyn Error + Send + Sync> = Box::new(std::io::Error::other("boom"));
         let e = DynamicsError::Provider(inner);
         assert!(e.source().is_some());
         assert!(e.to_string().contains("boom"));
@@ -301,8 +300,7 @@ mod tests {
 
     #[test]
     fn atmosphere_provider_error_source_forwarded() {
-        let inner: Box<dyn Error + Send + Sync> =
-            Box::new(std::io::Error::new(std::io::ErrorKind::Other, "atm error"));
+        let inner: Box<dyn Error + Send + Sync> = Box::new(std::io::Error::other("atm error"));
         let e = DynamicsError::AtmosphereProviderError(inner);
         assert!(e.source().is_some());
     }

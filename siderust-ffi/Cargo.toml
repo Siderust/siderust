@@ -23,7 +23,7 @@ siderust    = { version = "0.8", path = ".." }
 qtty        = "0.8"
 tempoch     = "0.6"
 tempoch-ffi = "0.6"
-affn        = { version = "0.7.0", features = ["astro"] }
+affn        = { version = "0.7", features = ["astro"] }
 constops    = { path = "../../constops", default-features = false, features = ["serde"], optional = true }
 serde_json  = { version = "1.0", optional = true }
 tokio       = { version = "1.39", features = ["rt"], optional = true }

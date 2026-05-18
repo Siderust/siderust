@@ -36,8 +36,8 @@
 //! * SOFA routines `iauNut00a`, `iauNut06a`
 
 use super::NutationAngles;
-use crate::embedded_data::nut00a_tables::{NUT00A_LS, NUT00A_PL};
 use crate::astro::precession::mean_obliquity_iau2006;
+use crate::embedded_data::nut00a_tables::{NUT00A_LS, NUT00A_PL};
 use crate::qtty::*;
 use crate::time::JulianDate;
 

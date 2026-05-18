@@ -15,7 +15,10 @@ const ISS_LINE_1: &str = "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -
 const ISS_LINE_2: &str = "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537";
 
 fn empty_buffer() -> ConstopsBuffer {
-    ConstopsBuffer { data: std::ptr::null_mut(), len: 0 }
+    ConstopsBuffer {
+        data: std::ptr::null_mut(),
+        len: 0,
+    }
 }
 
 fn buffer_to_vec(buf: &ConstopsBuffer) -> Vec<u8> {
@@ -111,7 +114,9 @@ fn passes_generate_roundtrip() {
         let msg = if msg_ptr.is_null() {
             "<no message>".to_string()
         } else {
-            unsafe { CStr::from_ptr(msg_ptr) }.to_string_lossy().into_owned()
+            unsafe { CStr::from_ptr(msg_ptr) }
+                .to_string_lossy()
+                .into_owned()
         };
         panic!("constops_passes_generate failed (rc={rc}): {msg}");
     }
@@ -135,14 +140,18 @@ fn passes_generate_roundtrip() {
 fn error_path_returns_nonzero_and_sets_message() {
     let bad = b"{ this is not valid json";
     let mut out = empty_buffer();
-    let rc = unsafe {
-        constops_passes_generate(bad.as_ptr(), bad.len(), &mut out as *mut _)
-    };
+    let rc = unsafe { constops_passes_generate(bad.as_ptr(), bad.len(), &mut out as *mut _) };
     assert_ne!(rc, 0, "expected non-zero status for invalid JSON");
-    assert!(out.data.is_null() && out.len == 0, "out buffer must remain empty on failure");
+    assert!(
+        out.data.is_null() && out.len == 0,
+        "out buffer must remain empty on failure"
+    );
 
     let msg_ptr = constops_last_error();
-    assert!(!msg_ptr.is_null(), "constops_last_error must be set on failure");
+    assert!(
+        !msg_ptr.is_null(),
+        "constops_last_error must be set on failure"
+    );
     let msg = unsafe { CStr::from_ptr(msg_ptr) }.to_string_lossy();
     assert!(!msg.is_empty(), "error message must be non-empty");
     assert!(

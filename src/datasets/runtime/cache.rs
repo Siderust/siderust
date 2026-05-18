@@ -6,8 +6,8 @@
 //! Default location: `~/.siderust/data/`
 //! Override with `SIDERUST_DATA_DIR` environment variable.
 
-use crate::datasets::RuntimeDownloadMeta;
 use crate::datasets::DatasetError;
+use crate::datasets::RuntimeDownloadMeta;
 use std::path::{Path, PathBuf};
 
 /// Environment variable to override the data directory.

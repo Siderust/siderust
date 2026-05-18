@@ -33,8 +33,8 @@ tables = []
 atmosphere = []
 
 [dependencies]
-affn = { git = "https://github.com/Siderust/affn.git", branch = "main", features = ["astro"] }
-cheby = "0.2"
+affn = { version = "0.7.1", features = ["astro"] }
+cheby = "0.3"
 qtty = { version = "0.8", features = ["astro", "density", "radiometry", "satellite"] }
 tempoch = "0.6"
 thiserror = "2"
@@ -91,15 +91,3 @@ harness = false
 [[bench]]
 name = "altitude_comparison"
 harness = false
-
-[patch.crates-io]
-qtty = { path = "../qtty/qtty" }
-qtty-core = { path = "../qtty/qtty-core" }
-qtty-derive = { path = "../qtty/qtty-derive" }
-tempoch = { path = "../tempoch/tempoch" }
-tempoch-core = { path = "../tempoch/tempoch-core" }
-tempoch-ffi = { path = "../tempoch/tempoch-ffi" }
-affn = { path = "../affn" }
-
-[patch.'https://github.com/Siderust/affn.git']
-affn = { path = "../affn" }

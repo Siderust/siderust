@@ -360,9 +360,9 @@ mod tests {
             // Partial pivot
             let mut max_row = col;
             let mut max_val = a[col][col].abs();
-            for row in (col + 1)..6 {
-                if a[row][col].abs() > max_val {
-                    max_val = a[row][col].abs();
+            for (row, a_row) in a.iter().enumerate().skip(col + 1) {
+                if a_row[col].abs() > max_val {
+                    max_val = a_row[col].abs();
                     max_row = row;
                 }
             }
@@ -376,6 +376,7 @@ mod tests {
             det *= a[col][col];
             for row in (col + 1)..6 {
                 let factor = a[row][col] / a[col][col];
+                #[allow(clippy::needless_range_loop)]
                 for k in col..6 {
                     let sub = factor * a[col][k];
                     a[row][k] -= sub;
@@ -396,13 +397,13 @@ mod tests {
 
         let (_, phi) = propagate_stm(&force, s0, Second::new(0.0), &ctx).unwrap();
         let eye = *phi.as_array();
-        for i in 0..6 {
-            for j in 0..6 {
+        for (i, row) in eye.iter().enumerate() {
+            for (j, &val) in row.iter().enumerate() {
                 let expected = if i == j { 1.0 } else { 0.0 };
                 assert!(
-                    (eye[i][j] - expected).abs() < 1e-12,
+                    (val - expected).abs() < 1e-12,
                     "Φ[{i},{j}] = {:.4e}, expected {expected}",
-                    eye[i][j]
+                    val
                 );
             }
         }

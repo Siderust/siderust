@@ -75,7 +75,10 @@ pub struct ConstopsBuffer {
 
 impl ConstopsBuffer {
     fn empty() -> Self {
-        Self { data: std::ptr::null_mut(), len: 0 }
+        Self {
+            data: std::ptr::null_mut(),
+            len: 0,
+        }
     }
 
     fn from_vec(mut v: Vec<u8>) -> Self {
@@ -334,7 +337,10 @@ pub unsafe extern "C" fn constops_orbit_ingest(
             Ok(r) => r,
             Err(code) => return code,
         };
-        let runtime = match tokio::runtime::Builder::new_current_thread().enable_all().build() {
+        let runtime = match tokio::runtime::Builder::new_current_thread()
+            .enable_all()
+            .build()
+        {
             Ok(rt) => rt,
             Err(e) => {
                 set_last_error(format_args!("tokio runtime build failed: {e}"));

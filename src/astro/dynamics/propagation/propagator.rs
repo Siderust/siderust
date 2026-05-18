@@ -378,13 +378,13 @@ mod tests {
         let p = Propagator::new(TwoBody::earth(), dop853_config(), DynamicsContext::empty());
         let (_, phi) = p.propagate_with_stm(s0, Second::new(0.0)).unwrap();
         let arr = phi.as_array();
-        for i in 0..6 {
-            for j in 0..6 {
+        for (i, arr_row) in arr.iter().enumerate() {
+            for (j, &val) in arr_row.iter().enumerate() {
                 let expected = if i == j { 1.0 } else { 0.0 };
                 assert!(
-                    (arr[i][j] - expected).abs() < 1e-12,
+                    (val - expected).abs() < 1e-12,
                     "phi[{i}][{j}] = {} (expected {expected})",
-                    arr[i][j]
+                    val
                 );
             }
         }
