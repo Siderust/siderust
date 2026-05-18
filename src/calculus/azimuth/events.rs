@@ -19,8 +19,9 @@
 //! Public API: [`azimuth_crossings`], [`azimuth_extrema`],
 //! [`azimuth_ranges`], [`in_azimuth_range`], [`outside_azimuth_range`].
 //! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the
-//! TT axis. Convert UTC timestamps with `ModifiedJulianDate::from_chrono(…)`
-//! first.
+//! TT axis. Convert UTC timestamps with
+//! `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
+//! into `ModifiedJulianDate` first.
 //!
 //! ### Handling the 0°/360° discontinuity
 //!
@@ -79,7 +80,7 @@ fn make_az_bearing_sin_fn<'a, T: AzimuthProvider>(
     let site = *site;
     move |t: ModifiedJulianDate| {
         let az = target.azimuth_at(&site, t);
-        Radians::new((az - bearing).value().sin())
+        Radians::new((az - bearing).sin())
     }
 }
 
@@ -97,7 +98,7 @@ fn make_az_cosine_fn<'a, T: AzimuthProvider>(
     let site = *site;
     move |t: ModifiedJulianDate| {
         let az = target.azimuth_at(&site, t);
-        Radians::new((az - mid).value().cos() - cos_hw)
+        Radians::new((az - mid).cos() - cos_hw)
     }
 }
 
@@ -164,7 +165,10 @@ fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
+/// let window = Period::new(
+///     siderust::ModifiedJulianDate::new(60000.0),
+///     siderust::ModifiedJulianDate::new(60001.0),
+/// );
 ///
 /// // Find when the Sun crosses due-South (180°)
 /// let events = azimuth_crossings(&Sun, &site, window, Degrees::new(180.0), SearchOpts::default());
@@ -413,8 +417,8 @@ mod tests {
 
     fn one_day() -> Period<ModifiedJulianDate> {
         Period::new(
-            ModifiedJulianDate::new(60000.0),
-            ModifiedJulianDate::new(60001.0),
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60001.0),
         )
     }
 
@@ -472,8 +476,8 @@ mod tests {
             // but let's just check the function runs without panicking and that
             // non-wrap + wrap complement each other.
             Period::new(
-                ModifiedJulianDate::new(60000.0),
-                ModifiedJulianDate::new(60007.0),
+                crate::time::ModifiedJulianDate::new(60000.0),
+                crate::time::ModifiedJulianDate::new(60007.0),
             ),
             Degrees::new(340.0),
             Degrees::new(20.0),
@@ -506,9 +510,9 @@ mod tests {
         let total: f64 = inside
             .iter()
             .chain(outside.iter())
-            .map(|p| ((p).end - (p).start).value())
+            .map(|p| p.length().value())
             .sum();
-        let window_duration = ((window).end - (window).start).value();
+        let window_duration = (window.end.raw() - window.start.raw()).value();
         assert!(
             (total - window_duration).abs() < 1e-6,
             "inside + outside durations must equal the window"

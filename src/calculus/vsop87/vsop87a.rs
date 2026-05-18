@@ -179,14 +179,13 @@ mod tests {
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
     use crate::qtty::AU;
-    use crate::time::JulianDate;
 
     const PRECISION: f64 = 1e-6;
 
     /// Mercury heliocentric (ecliptic J2000) at epoch J2000.0 (JD_TDB = 2451545.0)
     #[test]
     fn test_mercury_at_epoch() {
-        let coord = Mercury::vsop87a(JulianDate::J2000);
+        let coord = Mercury::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.1300934115 * AU, -0.4472876716 * AU, -0.0245983802 * AU),
@@ -197,7 +196,7 @@ mod tests {
     /// Venus heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_venus_at_epoch() {
-        let coord = Venus::vsop87a(JulianDate::J2000);
+        let coord = Venus::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.7183022797 * AU, -0.0326546017 * AU, 0.0410142975 * AU),
@@ -208,7 +207,7 @@ mod tests {
     /// Test Earth's heliocentric coordinates at epoch J2000.0
     #[test]
     fn test_earth_at_epoch() {
-        let coord = Earth::vsop87a(JulianDate::J2000);
+        let coord = Earth::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.1771354586 * AU, 0.9672416237 * AU, -0.0000039000 * AU),
@@ -219,7 +218,7 @@ mod tests {
     /// Mars heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_mars_at_epoch() {
-        let coord = Mars::vsop87a(JulianDate::J2000);
+        let coord = Mars::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(1.3907159264 * AU, -0.0134157043 * AU, -0.0344677967 * AU),
@@ -230,7 +229,7 @@ mod tests {
     /// Jupiter heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_jupiter_at_epoch() {
-        let coord = Jupiter::vsop87a(JulianDate::J2000);
+        let coord = Jupiter::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(4.0011740268 * AU, 2.9385810077 * AU, -0.1017837501 * AU),
@@ -241,7 +240,7 @@ mod tests {
     /// Saturn heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_saturn_at_epoch() {
-        let coord = Saturn::vsop87a(JulianDate::J2000);
+        let coord = Saturn::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(6.4064068573 * AU, 6.5699929449 * AU, -0.3690768029 * AU),
@@ -252,7 +251,7 @@ mod tests {
     /// Uranus heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_uranus_at_epoch() {
-        let coord = Uranus::vsop87a(JulianDate::J2000);
+        let coord = Uranus::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(14.4318934159 * AU, -13.7343162527 * AU, -0.2381421963 * AU),
@@ -263,7 +262,7 @@ mod tests {
     /// Neptune heliocentric (ecliptic J2000) at epoch J2000.0
     #[test]
     fn test_neptune_at_epoch() {
-        let coord = Neptune::vsop87a(JulianDate::J2000);
+        let coord = Neptune::vsop87a(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(16.8121116576 * AU, -24.9916630908 * AU, 0.1272190171 * AU),
@@ -273,7 +272,7 @@ mod tests {
 
     macro_rules! test_vel_and_pos_vel {
         ($body:ident) => {{
-            let jd = JulianDate::J2000;
+            let jd = crate::J2000;
             let pos = $body::vsop87a(jd);
             let vel = $body::vsop87a_vel(jd);
             let (pos2, vel2) = $body::vsop87a_pos_vel(jd);

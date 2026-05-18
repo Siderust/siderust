@@ -58,8 +58,9 @@ use crate::time::JulianDate;
 /// ## Time Scale
 ///
 /// All `ModifiedJulianDate` and `Period<ModifiedJulianDate>` values are on the canonical
-/// JD(TT) axis.  Convert UTC instants with `ModifiedJulianDate::from_chrono(…)`
-/// before using this API.
+/// JD(TT) axis. Convert UTC instants with
+/// `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
+/// into `ModifiedJulianDate` before using this API.
 ///
 /// ## Azimuth convention
 ///
@@ -186,7 +187,10 @@ pub trait AzimuthProvider {
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
+/// let window = Period::new(
+///     siderust::ModifiedJulianDate::new(60000.0),
+///     siderust::ModifiedJulianDate::new(60001.0),
+/// );
 /// let query = AzimuthQuery {
 ///     observer: site,
 ///     window,
@@ -224,7 +228,7 @@ impl AzimuthProvider for solar_system::Sun {
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         events::azimuth_range_periods(self, query)
@@ -242,7 +246,7 @@ impl AzimuthProvider for solar_system::Moon {
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         events::azimuth_range_periods(self, query)
@@ -274,7 +278,7 @@ impl AzimuthProvider for direction::ICRS {
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
-        if (query.window.end - query.window.start) <= Days::zero() {
+        if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
         events::azimuth_range_periods(self, query)
@@ -301,7 +305,7 @@ where
         AstronomicalUnit,
     >,
 {
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     let bary_ecl = vsop87e_fn(jd);
     let geo_equ: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
         bary_ecl.transform(jd);
@@ -326,7 +330,7 @@ macro_rules! impl_azimuth_provider_vsop87 {
                 }
 
                 fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Period<ModifiedJulianDate>> {
-                    if (query.window.end - query.window.start) <= Days::zero() {
+                    if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
                         return Vec::new();
                     }
                     events::azimuth_range_periods(self, query)
@@ -358,8 +362,8 @@ mod tests {
 
     fn one_day_window() -> Period<ModifiedJulianDate> {
         Period::new(
-            ModifiedJulianDate::new(60000.0),
-            ModifiedJulianDate::new(60001.0),
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60001.0),
         )
     }
 
@@ -367,7 +371,7 @@ mod tests {
     fn sun_azimuth_at_returns_valid_range() {
         let az = solar_system::Sun.azimuth_at(
             &greenwich(),
-            ModifiedJulianDate::new(60000.5), // noon-ish
+            crate::time::ModifiedJulianDate::new(60000.5), // noon-ish
         );
         assert!(az.value() >= 0.0, "azimuth must be ≥ 0");
         assert!(az.value() < std::f64::consts::TAU, "azimuth must be < 2π");
@@ -375,7 +379,7 @@ mod tests {
 
     #[test]
     fn moon_azimuth_at_returns_valid_range() {
-        let az = Moon.azimuth_at(&greenwich(), ModifiedJulianDate::new(60000.5));
+        let az = Moon.azimuth_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(az.value() >= 0.0);
         assert!(az.value() < std::f64::consts::TAU);
     }
@@ -383,7 +387,7 @@ mod tests {
     #[test]
     fn star_azimuth_at_returns_valid_range() {
         let sirius = &catalog::SIRIUS;
-        let az = sirius.azimuth_at(&greenwich(), ModifiedJulianDate::new(60000.5));
+        let az = sirius.azimuth_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(az.value() >= 0.0);
         assert!(az.value() < std::f64::consts::TAU);
     }
@@ -392,7 +396,7 @@ mod tests {
     fn star_and_icrs_agree() {
         let sirius = &catalog::SIRIUS;
         let dir = direction::ICRS::from(sirius);
-        let mjd = ModifiedJulianDate::new(60000.5);
+        let mjd = crate::time::ModifiedJulianDate::new(60000.5);
         let az_star = sirius.azimuth_at(&greenwich(), mjd);
         let az_dir = dir.azimuth_at(&greenwich(), mjd);
         assert!(
@@ -435,9 +439,9 @@ mod tests {
         );
 
         // Total covered should be the full window
-        let total_inside: f64 = inside.iter().map(|p| ((p).end - (p).start).value()).sum();
-        let total_outside: f64 = outside.iter().map(|p| ((p).end - (p).start).value()).sum();
-        let window_len = ((window).end - (window).start).value();
+        let total_inside: f64 = inside.iter().map(|p| p.length().value()).sum();
+        let total_outside: f64 = outside.iter().map(|p| p.length().value()).sum();
+        let window_len = (window.end.raw() - window.start.raw()).value();
         assert!(
             (total_inside + total_outside - window_len).abs() < 1e-6,
             "inside + outside should equal the full window"
@@ -448,7 +452,8 @@ mod tests {
 
     #[test]
     fn mars_azimuth_at_returns_valid_range() {
-        let az = solar_system::Mars.azimuth_at(&greenwich(), ModifiedJulianDate::new(60000.5));
+        let az = solar_system::Mars
+            .azimuth_at(&greenwich(), crate::time::ModifiedJulianDate::new(60000.5));
         assert!(az.value() >= 0.0, "azimuth must be ≥ 0, got {}", az);
         assert!(
             az.value() < std::f64::consts::TAU,
@@ -460,7 +465,7 @@ mod tests {
     #[test]
     fn all_planets_azimuth_valid() {
         let observer = greenwich();
-        let mjd = ModifiedJulianDate::new(60000.5);
+        let mjd = crate::time::ModifiedJulianDate::new(60000.5);
         let mercury_az = solar_system::Mercury.azimuth_at(&observer, mjd);
         let venus_az = solar_system::Venus.azimuth_at(&observer, mjd);
         let mars_az = solar_system::Mars.azimuth_at(&observer, mjd);

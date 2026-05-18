@@ -921,7 +921,7 @@ mod tests {
     // ===========================================================================
 
     fn pos_j2000_km() -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
-        Moon::get_geo_position::<Kilometer>(JulianDate::J2000)
+        Moon::get_geo_position::<Kilometer>(crate::J2000)
     }
 
     fn r_from_xyz_km(p: &Position<Geocentric, EclipticMeanJ2000, Kilometer>) -> f64 {
@@ -955,7 +955,7 @@ mod tests {
 
     /// Build a JulianDate from Julian centuries offset from J2000
     fn jd_from_centuries(t1: f64) -> JulianDate {
-        JulianDate::J2000 + Days::new(t1 * 36_525.0)
+        crate::time::JulianDate::new((crate::J2000.raw() + Days::new(t1 * 36_525.0)).value())
     }
 
     // ===========================================================================
@@ -967,7 +967,7 @@ mod tests {
     #[test]
     fn j2000_julian_centuries_is_zero() {
         // The epoch origin must be exactly J2000 (t1 = 0)
-        let centuries = JulianDate::J2000.julian_centuries();
+        let centuries = crate::J2000.julian_centuries();
         assert!(
             centuries.abs() < 1e-15,
             "J2000.julian_centuries() should be 0, got {centuries}"
@@ -977,7 +977,7 @@ mod tests {
     #[test]
     fn julian_centuries_one_century_from_j2000() {
         // J2000 + 36525 days = exactly 1 Julian century
-        let jd = JulianDate::J2000 + Days::new(36_525.0);
+        let jd = crate::time::JulianDate::new((crate::J2000.raw() + Days::new(36_525.0)).value());
         let centuries = jd.julian_centuries();
         assert!(
             (centuries - 1.0).abs() < 1e-12,
@@ -1546,7 +1546,7 @@ mod tests {
         // Moon's orbital speed is ~1.0 km/s, check velocity is in reasonable range
         let jd0 = make_jd_utc(2020, 6, 15, 12, 0, 0);
         let dt_days = 1.0 / 24.0; // 1 hour
-        let jd1 = jd0 + Days::new(dt_days);
+        let jd1 = crate::time::JulianDate::new((jd0.raw() + Days::new(dt_days)).value());
         let pos0 = Moon::get_geo_position::<Kilometer>(jd0);
         let pos1 = Moon::get_geo_position::<Kilometer>(jd1);
         let (x0, y0, z0) = (

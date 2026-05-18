@@ -24,10 +24,9 @@
 //! ```
 
 use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
-use siderust::time::JulianDate;
 
 fn print_positions(eph: &RuntimeEphemeris, label: &str) {
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let sun = eph.sun_barycentric(jd);
     let earth_bary = eph.earth_barycentric(jd);

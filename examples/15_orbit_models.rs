@@ -18,7 +18,7 @@ fn main() {
     let jd = JulianDate::new(2458850.0);
 
     println!("=== Orbit Models ===\n");
-    println!("Epoch: {:.1}\n", jd.jd_value());
+    println!("Epoch: {:.1}\n", jd);
 
     // 1. KeplerianOrbit
     let kepler = KeplerianOrbit::new(

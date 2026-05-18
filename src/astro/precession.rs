@@ -124,7 +124,7 @@ pub fn mean_obliquity_iau2006(jd: JulianDate) -> Radians {
     let t4 = t3 * t;
     let t5 = t4 * t;
 
-    let epsa_as = 84381.406 - 46.836_769 * t - 0.000_183_1 * t2 + 0.002_003_40 * t3
+    let epsa_as: f64 = 84381.406 - 46.836_769 * t - 0.000_183_1 * t2 + 0.002_003_40 * t3
         - 5.76e-7 * t4
         - 4.34e-8 * t5;
 
@@ -320,7 +320,7 @@ mod tests {
 
     #[test]
     fn mean_obliquity_at_j2000() {
-        let eps = mean_obliquity_iau2006(JulianDate::J2000);
+        let eps = mean_obliquity_iau2006(crate::J2000);
         // IAU 2006: 84381.406″ = 23.4392911111...°
         let expected_deg = 84381.406 / 3600.0;
         assert!(
@@ -335,7 +335,7 @@ mod tests {
     fn fw_angles_at_j2000_are_approximately_identity() {
         // At J2000, t=0: gamb≈-0.053″, phib≈84381.413″, psib≈-0.042″, epsa=84381.406″
         // The precession matrix at J2000 should be close to identity (with frame bias).
-        let mat = precession_matrix_iau2006(JulianDate::J2000);
+        let mat = precession_matrix_iau2006(crate::J2000);
         let m = mat.as_matrix();
         // Diagonal should be very close to 1
         for (i, row) in m.iter().enumerate().take(3) {
@@ -351,7 +351,7 @@ mod tests {
     #[test]
     fn precession_matrix_j2025_reasonable() {
         // JD of approximately 2025-01-01
-        let jd = JulianDate::new(2_460_676.5);
+        let jd = crate::time::JulianDate::new(2_460_676.5);
         let mat = precession_matrix_iau2006(jd);
         let m = mat.as_matrix();
 
@@ -381,7 +381,7 @@ mod tests {
 
     #[test]
     fn precession_nutation_matrix_includes_corrections() {
-        let jd = JulianDate::new(2_460_000.5);
+        let jd = crate::time::JulianDate::new(2_460_000.5);
         let mat_prec = precession_matrix_iau2006(jd);
         let mat_pn = precession_nutation_matrix(jd, Radians::new(1e-5), Radians::new(1e-5));
 
@@ -407,8 +407,8 @@ mod tests {
 
     #[test]
     fn mean_obliquity_decreases_with_time() {
-        let eps_2000 = mean_obliquity_iau2006(JulianDate::J2000);
-        let eps_2100 = mean_obliquity_iau2006(JulianDate::new(2_488_069.5));
+        let eps_2000 = mean_obliquity_iau2006(crate::J2000);
+        let eps_2100 = mean_obliquity_iau2006(crate::time::JulianDate::new(2_488_069.5));
         // Obliquity is currently decreasing at ~47″/century
         assert!(eps_2100 < eps_2000, "obliquity should decrease over time");
         let diff_arcsec = (eps_2000 - eps_2100).to::<Degree>().value() * 3600.0;

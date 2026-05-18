@@ -49,7 +49,7 @@ use super::CoordinateWithPM;
 /// use siderust::bodies::solar_system::Mars;
 /// use siderust::time::JulianDate;
 ///
-/// let pos = Mars.track(JulianDate::J2000);
+/// let pos = Mars.track(siderust::J2000);
 /// println!("Mars at J2000: {:?}", pos);
 /// ```
 pub trait Trackable {
@@ -113,8 +113,10 @@ mod tests {
             crate::qtty::Degrees::new(101.287),
             crate::qtty::Degrees::new(-16.716),
         );
-        let at_j2000 = dir.track(JulianDate::J2000);
-        let at_j2050 = dir.track(JulianDate::J2000 + crate::qtty::Days::new(365.25 * 50.0));
+        let at_j2000 = dir.track(crate::J2000);
+        let at_j2050 = dir.track(crate::time::JulianDate::new(
+            (crate::J2000.raw() + crate::qtty::Days::new(365.25 * 50.0)).value(),
+        ));
         assert_eq!(at_j2000.ra(), at_j2050.ra());
         assert_eq!(at_j2000.dec(), at_j2050.dec());
     }
@@ -127,8 +129,10 @@ mod tests {
             crate::qtty::Degrees::new(7.0),
             crate::qtty::LightYears::new(548.0),
         );
-        let sample = CoordinateWithPM::new_static(pos, JulianDate::J2000);
-        let result = sample.track(JulianDate::J2000 + crate::qtty::Days::new(365.25));
+        let sample = CoordinateWithPM::new_static(pos, crate::J2000);
+        let result = sample.track(crate::time::JulianDate::new(
+            (crate::J2000.raw() + crate::qtty::Days::new(365.25)).value(),
+        ));
         assert_eq!(result.ra(), crate::qtty::Degrees::new(88.0));
         assert_eq!(result.dec(), crate::qtty::Degrees::new(7.0));
     }
@@ -143,7 +147,7 @@ mod tests {
             crate::qtty::Degrees::new(45.0),
             crate::qtty::Degrees::new(30.0),
         );
-        let result = track_anything(&dir, JulianDate::J2000);
+        let result = track_anything(&dir, crate::J2000);
         assert_eq!(result.ra(), crate::qtty::Degrees::new(45.0));
         assert_eq!(result.dec(), crate::qtty::Degrees::new(30.0));
     }

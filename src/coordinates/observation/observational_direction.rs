@@ -26,7 +26,7 @@
 //! use siderust::qtty::*;
 //!
 //! let geo_dir = Astrometric::new(EquatorialMeanJ2000::new(45.0 * DEG, 20.0 * DEG));
-//! let obs = ObserverState::geocentric(JulianDate::J2000);
+//! let obs = ObserverState::geocentric(siderust::J2000);
 //!
 //! // Explicit conversion with observer state
 //! let app_dir: Apparent<EquatorialMeanJ2000> = geo_dir.to_apparent(&obs);
@@ -105,7 +105,7 @@ impl<F: MutableFrame> Astrometric<spherical::Direction<F>> {
     /// use siderust::qtty::*;
     ///
     /// let astrometric = Astrometric::new(EquatorialMeanJ2000::new(0.0 * DEG, 0.0 * DEG));
-    /// let obs = ObserverState::geocentric(JulianDate::J2000);
+    /// let obs = ObserverState::geocentric(siderust::J2000);
     /// let apparent: Apparent<EquatorialMeanJ2000> = astrometric.to_apparent(&obs);
     /// ```
     pub fn to_apparent(self, obs: &ObserverState) -> Apparent<spherical::Direction<F>>
@@ -313,11 +313,10 @@ impl<D: std::fmt::UpperExp> std::fmt::UpperExp for Apparent<D> {
 mod tests {
     use super::*;
     use crate::qtty::*;
-    use crate::time::JulianDate;
 
     #[test]
     fn test_astrometric_to_apparent_introduces_shift() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
 
         // Create an astrometric direction
@@ -358,7 +357,7 @@ mod tests {
 
     #[test]
     fn test_roundtrip_preserves_direction() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
 
         // Create an astrometric direction
@@ -394,7 +393,7 @@ mod tests {
 
     #[test]
     fn test_apparent_at_pole() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
 
         // At the north pole
@@ -415,7 +414,7 @@ mod tests {
     #[test]
     fn test_type_safety() {
         // This test verifies that you can't accidentally mix astrometric and apparent
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
 
         let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
@@ -440,7 +439,7 @@ mod tests {
 
     #[test]
     fn test_cartesian_astrometric_to_apparent_roundtrip() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
 
         let cart_dir = cartesian::Direction::<crate::coordinates::frames::EquatorialMeanJ2000>::new(
@@ -460,7 +459,7 @@ mod tests {
 
     #[test]
     fn test_cartesian_aberration_introduces_shift() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
 
         let cart_dir = cartesian::Direction::<crate::coordinates::frames::EquatorialMeanJ2000>::new(
@@ -507,7 +506,7 @@ mod tests {
 
     #[test]
     fn test_apparent_display_formatting() {
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
         let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
             10.0 * DEG,
@@ -526,7 +525,7 @@ mod tests {
         let display = format!("{:e}", astrometric);
         assert!(display.starts_with("Astrometric("));
 
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
         let apparent = astrometric.to_apparent(&obs);
         let display = format!("{:e}", apparent);
@@ -540,7 +539,7 @@ mod tests {
         let display = format!("{:E}", astrometric);
         assert!(display.starts_with("Astrometric("));
 
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let obs = ObserverState::geocentric(jd);
         let apparent = astrometric.to_apparent(&obs);
         let display = format!("{:E}", apparent);

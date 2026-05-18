@@ -17,8 +17,9 @@
 //! ## Technical scope
 //!
 //! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the
-//! TT axis. Convert UTC timestamps with `ModifiedJulianDate::from_chrono(…)`
-//! first. Public functions: [`crossings`], [`culminations`],
+//! TT axis. Convert UTC timestamps with
+//! `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
+//! into `ModifiedJulianDate` first. Public functions: [`crossings`], [`culminations`],
 //! [`altitude_ranges`], [`above_threshold`], [`below_threshold`]. The
 //! refinement uses bracketed root finding from `math_core::intervals` and
 //! `math_core::extrema`; precision is governed by [`SearchOpts`].
@@ -80,7 +81,10 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let window = Period::new(ModifiedJulianDate::new(60000.0), ModifiedJulianDate::new(60001.0));
+/// let window = Period::new(
+///     siderust::ModifiedJulianDate::new(60000.0),
+///     siderust::ModifiedJulianDate::new(60001.0),
+/// );
 /// let events = crossings(&Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
 /// for e in events {
 ///     println!("{:?} at MJD {}", e.direction, e.mjd);
@@ -305,8 +309,8 @@ mod tests {
     #[test]
     fn crossings_finds_sun_rise_set() {
         let site = greenwich();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60001.0);
+        let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
+        let mjd_end = crate::time::ModifiedJulianDate::new(60001.0);
         let window = Period::new(mjd_start, mjd_end);
 
         let events = crossings(
@@ -336,8 +340,8 @@ mod tests {
     #[test]
     fn culminations_finds_sun_extrema() {
         let site = greenwich();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60001.0);
+        let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
+        let mjd_end = crate::time::ModifiedJulianDate::new(60001.0);
         let window = Period::new(mjd_start, mjd_end);
 
         let culms = culminations(&Sun, &site, window, SearchOpts::default());
@@ -359,8 +363,8 @@ mod tests {
     #[test]
     fn above_threshold_sun_day_periods() {
         let site = greenwich();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60007.0);
+        let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
+        let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
         let window = Period::new(mjd_start, mjd_end);
 
         let days = above_threshold(
@@ -373,19 +377,16 @@ mod tests {
 
         assert!(!days.is_empty(), "should find daytime periods in 7 days");
         for p in &days {
-            assert!(((p).end - (p).start) > Days::new(0.0));
-            assert!(
-                ((p).end - (p).start) < Days::new(1.0),
-                "each day period < 24h"
-            );
+            assert!(p.length() > Days::new(0.0));
+            assert!(p.length() < Days::new(1.0), "each day period < 24h");
         }
     }
 
     #[test]
     fn below_threshold_sun_night_periods() {
         let site = greenwich();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60007.0);
+        let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
+        let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
         let window = Period::new(mjd_start, mjd_end);
 
         let nights = below_threshold(
@@ -402,8 +403,8 @@ mod tests {
     #[test]
     fn altitude_ranges_twilight_band() {
         let site = greenwich();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60002.0);
+        let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
+        let mjd_end = crate::time::ModifiedJulianDate::new(60002.0);
         let window = Period::new(mjd_start, mjd_end);
 
         let twilight = altitude_ranges(
@@ -422,8 +423,8 @@ mod tests {
     #[test]
     fn moon_above_horizon_7_days() {
         let site = greenwich();
-        let mjd_start = ModifiedJulianDate::new(60000.0);
-        let mjd_end = ModifiedJulianDate::new(60007.0);
+        let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
+        let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
         let window = Period::new(mjd_start, mjd_end);
 
         let periods = above_threshold(

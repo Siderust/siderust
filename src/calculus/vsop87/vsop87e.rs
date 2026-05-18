@@ -215,13 +215,12 @@ mod tests {
     use crate::coordinates::cartesian::Position;
     use crate::macros::assert_cartesian_eq;
     use crate::qtty::AU;
-    use crate::time::JulianDate;
 
     const PRECISION: f64 = 1.0e-6;
 
     #[test]
     fn test_mercury_at_epoch() {
-        let coord = mercury_vsop87e(JulianDate::J2000);
+        let coord = mercury_vsop87e(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.1372349394 * AU, -0.4500758422 * AU, -0.0243922379 * AU),
@@ -231,7 +230,7 @@ mod tests {
 
     #[test]
     fn test_venus_at_epoch() {
-        let coord = venus_vsop87e(JulianDate::J2000);
+        let coord = venus_vsop87e(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.7254438061 * AU, -0.0354427729 * AU, 0.0412204390 * AU),
@@ -241,7 +240,7 @@ mod tests {
 
     #[test]
     fn test_earth_barycentric_at_epoch() {
-        let coord = earth_vsop87e(JulianDate::J2000);
+        let coord = earth_vsop87e(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(-0.1842769894 * AU, 0.9644534522 * AU, 0.0002021000 * AU),
@@ -251,7 +250,7 @@ mod tests {
 
     #[test]
     fn test_mars_at_epoch() {
-        let coord = mars_vsop87e(JulianDate::J2000);
+        let coord = mars_vsop87e(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(1.3835744053 * AU, -0.0162038666 * AU, -0.0342616574 * AU),
@@ -261,7 +260,7 @@ mod tests {
 
     #[test]
     fn test_jupiter_at_epoch() {
-        let coord = jupiter_vsop87e(JulianDate::J2000);
+        let coord = jupiter_vsop87e(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(3.9940325025 * AU, 2.9357928287 * AU, -0.1015776146 * AU),
@@ -271,7 +270,7 @@ mod tests {
 
     #[test]
     fn test_saturn_at_epoch() {
-        let coord = saturn_vsop87e(JulianDate::J2000);
+        let coord = saturn_vsop87e(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(6.3992653459 * AU, 6.5672047374 * AU, -0.3688706482 * AU),
@@ -281,7 +280,7 @@ mod tests {
 
     #[test]
     fn test_uranus_at_epoch() {
-        let coord = uranus_vsop87e(JulianDate::J2000);
+        let coord = uranus_vsop87e(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(14.4247519568 * AU, -13.7371045087 * AU, -0.2379360887 * AU),
@@ -291,7 +290,7 @@ mod tests {
 
     #[test]
     fn test_neptune_at_epoch() {
-        let coord = neptune_vsop87e(JulianDate::J2000);
+        let coord = neptune_vsop87e(crate::J2000);
         assert_cartesian_eq!(
             coord,
             Position::new(16.8049701269 * AU, -24.9944513569 * AU, 0.1274251215 * AU),

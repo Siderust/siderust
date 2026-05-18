@@ -22,14 +22,14 @@
 //! let satellite_orbit = KeplerianOrbit::new(
 //!     0.0000426 * AU, 0.001,
 //!     Degrees::new(51.6), Degrees::new(0.0), Degrees::new(0.0), Degrees::new(0.0),
-//!     JulianDate::J2000,
+//!     siderust::J2000,
 //! );
 //! let sat_params = BodycentricParams::geocentric(satellite_orbit);
 //!
 //! let target_geo: Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
 //!     Position::new(0.00257, 0.0, 0.0);
 //!
-//! let target_from_sat: Position<Bodycentric, frames::EquatorialMeanJ2000, AstronomicalUnit> = target_geo.to_center((sat_params, JulianDate::J2000));
+//! let target_from_sat: Position<Bodycentric, frames::EquatorialMeanJ2000, AstronomicalUnit> = target_geo.to_center((sat_params, siderust::J2000));
 //! ```
 //!
 //! Reverse (Bodycentric → Geocentric):
@@ -297,7 +297,7 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         );
 
         let sat_params = BodycentricParams::geocentric(satellite_orbit);
@@ -306,7 +306,7 @@ mod tests {
             Position::new(0.001, 0.0, 0.0);
 
         let result: Position<Bodycentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
-            target.to_center((sat_params, JulianDate::J2000));
+            target.to_center((sat_params, crate::J2000));
 
         assert!(result.x().value() > 0.0);
         assert!(result.x().value() < 0.001);
@@ -321,15 +321,15 @@ mod tests {
             Degrees::new(49.56),
             Degrees::new(286.5),
             Degrees::new(19.41),
-            JulianDate::J2000,
+            crate::J2000,
         );
 
         let mars_params = BodycentricParams::heliocentric(mars_orbit);
 
-        let earth_helio = Earth::vsop87a(JulianDate::J2000);
+        let earth_helio = Earth::vsop87a(crate::J2000);
 
         let earth_from_mars: Position<Bodycentric, frames::EclipticMeanJ2000, Au> =
-            earth_helio.to_center((mars_params, JulianDate::J2000));
+            earth_helio.to_center((mars_params, crate::J2000));
 
         assert!(earth_from_mars.x().is_finite());
         assert!(earth_from_mars.y().is_finite());
@@ -345,7 +345,7 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         );
 
         let sat_params = BodycentricParams::geocentric(satellite_orbit);
@@ -354,9 +354,9 @@ mod tests {
             Position::new(0.001, 0.002, 0.003);
 
         let bodycentric: Position<Bodycentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
-            original.to_center((sat_params, JulianDate::J2000));
+            original.to_center((sat_params, crate::J2000));
         let recovered: Position<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
-            bodycentric.to_center(JulianDate::J2000);
+            bodycentric.to_center(crate::J2000);
 
         assert_cartesian_eq!(
             &original,
@@ -375,17 +375,17 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         );
 
         let params = BodycentricParams::geocentric(orbit);
 
-        let body_geo_ecl = orbit.kepler_position(JulianDate::J2000);
+        let body_geo_ecl = orbit.kepler_position(crate::J2000);
         let body_geo: Position<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
             Position::from_array_origin(*body_geo_ecl.as_array());
 
         let body_from_body: Position<Bodycentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
-            body_geo.to_center((params, JulianDate::J2000));
+            body_geo.to_center((params, crate::J2000));
 
         assert!(
             body_from_body.distance().abs().value() < 1e-10,

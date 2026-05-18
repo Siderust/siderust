@@ -4,13 +4,13 @@
 //! Time wrappers and interval helpers.
 
 use chrono::{Duration, Utc};
-use siderust::qtty::Days;
+use siderust::qtty::{Day, Days, Hour};
 use siderust::time::{Interval, JulianDate, ModifiedJulianDate, UTC};
 
 fn main() {
     let now_utc = Utc::now();
-    let jd = JulianDate::from_chrono(now_utc);
-    let mjd: ModifiedJulianDate = jd.into();
+    let jd: JulianDate = JulianDate::from_chrono(now_utc);
+    let mjd: ModifiedJulianDate = jd.to::<siderust::time::MJD>();
 
     println!("UTC now : {}", now_utc.to_rfc3339());
     println!("JD (TT) : {}", jd);
@@ -24,12 +24,12 @@ fn main() {
 
     let tomorrow = jd + Days::new(1.0);
     let window = Interval::<JulianDate>::new(jd, tomorrow);
-    println!("1-day window length: {}", window.end - window.start);
+    println!("1-day window length: {}", window.duration().to::<Day>());
 
     let utc_time = tempoch::Time::<UTC>::from_chrono(now_utc);
     let utc_window = Interval::<tempoch::Time<UTC>>::new(
         utc_time,
         tempoch::Time::<UTC>::from_chrono(now_utc + Duration::hours(6)),
     );
-    println!("UTC scale window: {}", utc_window.end - utc_window.start);
+    println!("UTC scale window: {}", utc_window.duration().to::<Hour>());
 }

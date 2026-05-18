@@ -69,7 +69,6 @@ mod tests {
     use crate::macros::assert_spherical_eq;
     use crate::qtty::Degrees;
     use crate::qtty::*;
-    use crate::time::JulianDate;
 
     const EPSILON: f64 = 1e-9; // Precision tolerance for floating-point comparisons
 
@@ -175,12 +174,12 @@ mod tests {
             AstronomicalUnit,
         >::new(Degrees::new(123.4), Degrees::new(-21.0), 2.7);
         let ecliptic: spherical::Position<centers::Barycentric, frames::EclipticMeanJ2000, Au> =
-            equatorial_orig.transform(JulianDate::J2000);
+            equatorial_orig.transform(crate::J2000);
         let equatorial_rec: spherical::Position<
             centers::Barycentric,
             frames::EquatorialMeanJ2000,
             Au,
-        > = ecliptic.transform(JulianDate::J2000);
+        > = ecliptic.transform(crate::J2000);
 
         assert_spherical_eq!(equatorial_orig, equatorial_rec, 1e-10);
     }

@@ -249,7 +249,7 @@ mod tests {
     fn test_equatorial_to_horizontal_zenith() {
         // An object at the zenith should have altitude 90°
         let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
 
         // At the zenith, the object's declination equals the latitude
         // and hour angle is 0 (on the meridian)
@@ -275,7 +275,7 @@ mod tests {
     fn test_roundtrip_angles() {
         // Test that the angle conversion functions are inverses of each other
         let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
-        let jd = JulianDate::new(2460677.0);
+        let jd = crate::time::JulianDate::new(2460677.0);
 
         let ra = 101.29 * DEG;
         let dec = -16.72 * DEG;
@@ -317,7 +317,7 @@ mod tests {
         use crate::qtty::AU;
 
         let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
-        let jd = JulianDate::new(2460677.0);
+        let jd = crate::time::JulianDate::new(2460677.0);
 
         let eq_pos = cartesian::Position::<
             Topocentric,
@@ -359,7 +359,7 @@ mod tests {
         use crate::qtty::AU;
 
         let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
-        let jd = JulianDate::new(2460677.0);
+        let jd = crate::time::JulianDate::new(2460677.0);
 
         // Build a spherical equatorial position via cartesian → spherical
         let eq_cart = cartesian::Position::<
@@ -402,7 +402,7 @@ mod tests {
     #[test]
     fn test_observer_at_equator() {
         let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let site_trig = SiteTrig::from_site(&site);
 
         // Object on meridian at dec=0 should be at altitude 0 (horizon) or 90 (zenith)

@@ -89,14 +89,11 @@
 //! ## Minimal Example
 //!
 //! ```rust
-//! use siderust::{
-//!     bodies::Mars,
-//!     time::JulianDate,
-//! };
+//! use siderust::{bodies::Mars, time::{JulianDate, JD, TT, Time, UTC}};
 //! use chrono::prelude::*;
 //!
 //! // 1. Select an epoch (UTC now to JD)
-//! let jd = JulianDate::from_chrono(Utc::now());
+//! let jd: JulianDate = Time::<UTC>::from_chrono(Utc::now()).to::<TT>().to::<JD>();
 //!
 //! // 2. Compute barycentric ecliptic coordinates via VSOP87
 //! let mars = Mars::vsop87e(jd);
@@ -127,6 +124,9 @@ pub mod spectra;
 pub mod tables;
 pub mod targets;
 pub mod time;
+
+// Ergonomic re-exports of common time markers / epoch (`siderust::J2000` in rustdoc examples).
+pub use time::{JulianDate, ModifiedJulianDate, J2000, JD, MJD};
 
 pub(crate) mod archive;
 pub(crate) mod macros;

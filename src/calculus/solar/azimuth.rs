@@ -38,7 +38,7 @@ use crate::time::{JulianDate, ModifiedJulianDate};
 ///
 /// `Radians` in `[0, 2π)`, North‑clockwise (no refraction).
 pub(crate) fn sun_azimuth_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Radians {
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     Sun::get_horizontal::<AstronomicalUnit>(jd, *site)
         .az()
         .to::<Radian>()

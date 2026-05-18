@@ -93,11 +93,10 @@ impl Pluto {
 mod tests {
     use crate::calculus::pluto::Pluto;
     use crate::qtty::AstronomicalUnits;
-    use crate::time::JulianDate;
 
     #[test]
     fn pluto_heliocentric_position_j2000() {
-        let pos = Pluto::get_heliocentric(JulianDate::J2000);
+        let pos = Pluto::get_heliocentric(crate::J2000);
         assert!(
             (pos.x() - AstronomicalUnits::new(-9.875333629852145))
                 .abs()

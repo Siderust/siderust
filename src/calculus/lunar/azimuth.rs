@@ -43,7 +43,7 @@ use crate::time::{JulianDate, ModifiedJulianDate};
 ///
 /// `Radians` in `[0, 2π)`, North‑clockwise (no refraction).
 pub(crate) fn moon_azimuth_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Radians {
-    let jd: JulianDate = mjd.into();
+    let jd: JulianDate = mjd.to::<crate::JD>();
     Moon::get_horizontal::<Kilometer>(jd, *site)
         .az()
         .to::<Radian>()

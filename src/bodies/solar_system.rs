@@ -224,7 +224,7 @@ pub const SUN: super::Star<'static> = super::Star::new_const(
             HourAngles::from_hms(18, 44, 48.0).to_const::<Degree>(), // RA (azimuth) Approx at J2000
             LightYears::new(1.58125e-5), // 1 AstronomicalUnits in LightYears
         ),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 );
 
@@ -250,7 +250,7 @@ pub const MERCURY: super::Planet = super::Planet {
         Degrees::new(48.33167),
         Degrees::new(29.12478),
         Degrees::new(174.79439),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.068)),
 };
@@ -277,7 +277,7 @@ pub const VENUS: super::Planet = super::Planet {
         Degrees::new(76.68069),
         Degrees::new(54.85229),
         Degrees::new(50.44675),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.76)),
 };
@@ -304,7 +304,7 @@ pub const EARTH: super::Planet = super::Planet {
         Degrees::new(-11.26064),
         Degrees::new(114.20783),
         Degrees::new(357.51716),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.306)),
 };
@@ -332,7 +332,7 @@ pub const MOON: super::Satellite = super::Satellite::new_const(
         Degrees::new(125.08),
         Degrees::new(318.15),
         Degrees::new(135.27),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.12));
@@ -359,7 +359,7 @@ pub const MARS: super::Planet = super::Planet {
         Degrees::new(49.57854),
         Degrees::new(286.46230),
         Degrees::new(19.41248),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.25)),
 };
@@ -386,7 +386,7 @@ pub const JUPITER: super::Planet = super::Planet {
         Degrees::new(100.55615),
         Degrees::new(274.19770),
         Degrees::new(19.65053),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.503)),
 };
@@ -413,7 +413,7 @@ pub const SATURN: super::Planet = super::Planet {
         Degrees::new(113.71504),
         Degrees::new(338.71690),
         Degrees::new(317.51238),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.342)),
 };
@@ -440,7 +440,7 @@ pub const URANUS: super::Planet = super::Planet {
         Degrees::new(74.22988),
         Degrees::new(96.73436),
         Degrees::new(142.26794),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.3)),
 };
@@ -467,7 +467,7 @@ pub const NEPTUNE: super::Planet = super::Planet {
         Degrees::new(131.72169),
         Degrees::new(273.24966),
         Degrees::new(259.90868),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.29)),
 };
@@ -494,7 +494,7 @@ pub const PLUTO: super::Planet = super::Planet {
         Degrees::new(110.30347),
         Degrees::new(113.76329),
         Degrees::new(14.86205),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.52)),
 };
@@ -513,7 +513,7 @@ pub const CERES: Planet = Planet {
         Degrees::new(80.3055),
         Degrees::new(73.5977),
         Degrees::new(95.9892),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.09)),
 };
@@ -528,7 +528,7 @@ pub const HAUMEA: Planet = Planet {
         Degrees::new(121.9),
         Degrees::new(239.1),
         Degrees::new(205.7),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.8)),
 };
@@ -543,7 +543,7 @@ pub const MAKEMAKE: Planet = Planet {
         Degrees::new(79.3),
         Degrees::new(286.1),
         Degrees::new(159.8),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.81)),
 };
@@ -558,7 +558,7 @@ pub const ERIS: Planet = Planet {
         Degrees::new(35.95),
         Degrees::new(151.231),
         Degrees::new(204.17),
-        JulianDate::J2000,
+        crate::J2000,
     ),
     albedo: Some(Albedos::new(0.96)),
 };
@@ -581,7 +581,7 @@ pub const IO: Satellite = Satellite::new_const(
         Degrees::new(43.977),
         Degrees::new(84.129),
         Degrees::new(171.016),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.62));
@@ -597,7 +597,7 @@ pub const EUROPA: Satellite = Satellite::new_const(
         Degrees::new(219.106),
         Degrees::new(88.970),
         Degrees::new(324.528),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.67));
@@ -613,7 +613,7 @@ pub const GANYMEDE: Satellite = Satellite::new_const(
         Degrees::new(63.552),
         Degrees::new(192.417),
         Degrees::new(317.654),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.43));
@@ -629,7 +629,7 @@ pub const CALLISTO: Satellite = Satellite::new_const(
         Degrees::new(298.848),
         Degrees::new(52.643),
         Degrees::new(51.483),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.17));
@@ -645,7 +645,7 @@ pub const TITAN: Satellite = Satellite::new_const(
         Degrees::new(168.650),
         Degrees::new(186.585),
         Degrees::new(30.744),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.22));
@@ -661,7 +661,7 @@ pub const TRITON: Satellite = Satellite::new_const(
         Degrees::new(216.732),
         Degrees::new(185.965),
         Degrees::new(144.960),
-        JulianDate::J2000,
+        crate::J2000,
     ),
 )
 .with_albedo(Albedos::new(0.76));
@@ -780,17 +780,21 @@ mod tests {
     #[test]
     fn rotation_params_at_j2000() {
         let p = &MARS_ROTATION;
-        assert!((p.alpha0(JulianDate::J2000).value() - 317.269).abs() < 1e-10);
-        assert!((p.delta0(JulianDate::J2000).value() - 54.432).abs() < 1e-10);
-        assert!((p.w(JulianDate::J2000).value() - 176.049).abs() < 1e-10);
+        assert!((p.alpha0(crate::J2000).value() - 317.269).abs() < 1e-10);
+        assert!((p.delta0(crate::J2000).value() - 54.432).abs() < 1e-10);
+        assert!((p.w(crate::J2000).value() - 176.049).abs() < 1e-10);
     }
 
     #[test]
     fn rotation_params_rate() {
         let p = &MARS_ROTATION;
-        let alpha = p.alpha0(JulianDate::J2000 + JulianDate::JULIAN_CENTURY);
+        let alpha = p.alpha0(crate::time::JulianDate::new(
+            (crate::J2000.raw() + Days::new(36_525.0)).value(),
+        ));
         assert!((alpha.value() - (317.269 - 0.10927)).abs() < 1e-10);
-        let w = p.w(JulianDate::J2000 + crate::qtty::Days::new(1.0));
+        let w = p.w(crate::time::JulianDate::new(
+            (crate::J2000.raw() + crate::qtty::Days::new(1.0)).value(),
+        ));
         assert!((w.value() - (176.049 + 350.891982443)).abs() < 1e-8);
     }
 
@@ -852,13 +856,12 @@ impl Trackable for Moon {
 #[cfg(test)]
 mod trackable_tests {
     use super::*;
-    use crate::time::JulianDate;
 
     #[test]
     fn star_produces_icrs_direction() {
         use crate::bodies::catalog;
         let sirius = &catalog::SIRIUS;
-        let dir = <crate::bodies::Star<'_> as Trackable>::track(sirius, JulianDate::J2000);
+        let dir = <crate::bodies::Star<'_> as Trackable>::track(sirius, crate::J2000);
         let ra_diff = dir.ra() - Degrees::new(101.287);
         assert!(ra_diff <= Degrees::new(0.01) && ra_diff >= -Degrees::new(0.01));
         let dec_diff = dir.dec() + Degrees::new(16.716);
@@ -867,7 +870,7 @@ mod trackable_tests {
 
     #[test]
     fn sun_produces_barycentric_position() {
-        let pos = Sun.track(JulianDate::J2000);
+        let pos = Sun.track(crate::J2000);
         let dist = pos.position.distance();
         assert!(
             dist < AstronomicalUnits::new(0.02),
@@ -877,8 +880,10 @@ mod trackable_tests {
 
     #[test]
     fn earth_changes_with_time() {
-        let p1 = Earth.track(JulianDate::J2000);
-        let p2 = Earth.track(JulianDate::J2000 + Days::new(182.625));
+        let p1 = Earth.track(crate::J2000);
+        let p2 = Earth.track(crate::time::JulianDate::new(
+            (crate::J2000.raw() + Days::new(182.625)).value(),
+        ));
         let sep = p1.position.distance_to(&p2.position);
         assert!(
             sep > AstronomicalUnits::new(1.0),
@@ -888,7 +893,7 @@ mod trackable_tests {
 
     #[test]
     fn moon_produces_geocentric_position() {
-        let pos = Moon.track(JulianDate::J2000);
+        let pos = Moon.track(crate::J2000);
         let dist = pos.distance();
         assert!(
             dist >= Kilometers::new(350_000.0) && dist <= Kilometers::new(410_000.0),
@@ -898,7 +903,7 @@ mod trackable_tests {
 
     #[test]
     fn planets_produce_nonzero_positions() {
-        let dist = Mars.track(JulianDate::J2000).position.distance();
+        let dist = Mars.track(crate::J2000).position.distance();
         assert!(
             dist > AstronomicalUnits::new(1.0),
             "Mars should be > 1 AU from SSB, got {dist}"

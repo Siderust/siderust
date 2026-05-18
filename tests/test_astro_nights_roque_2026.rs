@@ -86,10 +86,9 @@ fn load_reference_data() -> ReferenceData {
 
     let start_utc = parse_utc_datetime(&reference.start_utc);
     let end_utc = parse_utc_datetime(&reference.end_utc);
-    let window_tt = Period::new(
-        ModifiedJulianDate::from_chrono(start_utc),
-        ModifiedJulianDate::from_chrono(end_utc),
-    );
+    let window_start: ModifiedJulianDate = ModifiedJulianDate::from_chrono(start_utc);
+    let window_end: ModifiedJulianDate = ModifiedJulianDate::from_chrono(end_utc);
+    let window_tt = Period::new(window_start, window_end);
 
     // Reference JSON stores period endpoints as UTC-based MJD numbers.
     // Siderust altitude APIs use Period<MJD> values on the canonical TT axis.
@@ -125,15 +124,15 @@ fn assert_periods_close(
     );
 
     for (i, (exp_p, calc_p)) in expected.iter().zip(computed.iter()).enumerate() {
-        let ds = (exp_p.start.mjd_value() - calc_p.start.mjd_value()).abs();
-        let de = (exp_p.end.mjd_value() - calc_p.end.mjd_value()).abs();
+        let ds = (exp_p.start.raw().value() - calc_p.start.raw().value()).abs();
+        let de = (exp_p.end.raw().value() - calc_p.end.raw().value()).abs();
 
         assert!(
             ds <= TOL_DAYS,
             "Start TT-MJD mismatch at index {}: expected {} got {} (diff {} days ~ {} s)",
             i,
-            exp_p.start.mjd_value(),
-            calc_p.start.mjd_value(),
+            exp_p.start.raw().value(),
+            calc_p.start.raw().value(),
             ds,
             ds * 86_400.0
         );
@@ -142,8 +141,8 @@ fn assert_periods_close(
             de <= TOL_DAYS,
             "End TT-MJD mismatch at index {}: expected {} got {} (diff {} days ~ {} s)",
             i,
-            exp_p.end.mjd_value(),
-            calc_p.end.mjd_value(),
+            exp_p.end.raw().value(),
+            calc_p.end.raw().value(),
             de,
             de * 86_400.0
         );

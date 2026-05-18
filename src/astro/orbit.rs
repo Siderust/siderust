@@ -157,7 +157,7 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -264,10 +264,10 @@ impl OrientationTrig {
 ///     1.0 * AU, 0.0167,
 ///     Degrees::new(0.00005), Degrees::new(-11.26064),
 ///     Degrees::new(102.94719), Degrees::new(100.46435),
-///     JulianDate::J2000,
+///     siderust::J2000,
 /// );
 /// let prepared = PreparedOrbit::try_from(orbit).unwrap();
-/// let pos = prepared.position_at(JulianDate::new(2459200.5));
+/// let pos = prepared.position_at(siderust::JulianDate::new(2459200.5));
 /// ```
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct PreparedOrbit {

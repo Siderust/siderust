@@ -16,7 +16,6 @@ use siderust::coordinates::observation::{Apparent, Astrometric, ObserverState};
 use siderust::coordinates::spherical;
 use siderust::coordinates::transform::{Transform, TransformCenter};
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 // =============================================================================
 // B1: Aberration is NOT part of center transforms
@@ -29,7 +28,7 @@ fn center_transforms_do_not_apply_aberration() {
         10000.0, 0.0, 0.0, // 10000 AU along x-axis
     );
 
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     // Transform to geocentric - should be pure translation
     let star_geo: Position<Geocentric, EquatorialMeanJ2000, Au> = star_helio.transform(jd);
@@ -58,7 +57,7 @@ fn roundtrip_center_transform_preserves_position() {
     // This test verifies center transforms are reversible (pure geometry)
     let pos_helio = Position::<Heliocentric, EquatorialMeanJ2000, Au>::new(1000.0, 500.0, -200.0);
 
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     // Helio -> Geo -> Helio should recover original position
     let pos_geo: Position<Geocentric, EquatorialMeanJ2000, Au> = pos_helio.transform(jd);
@@ -88,7 +87,7 @@ fn roundtrip_center_transform_preserves_position() {
 
 #[test]
 fn astrometric_and_apparent_are_distinct_types() {
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
     let obs = ObserverState::geocentric(jd);
 
     // Create an astrometric direction
@@ -129,7 +128,7 @@ fn aberration_requires_observer_state() {
     // This test verifies that aberration cannot be applied without an observer state
     // (This is enforced by the type system - to_apparent() requires &ObserverState)
 
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
     let astrometric = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
         0.0 * DEG,
         0.0 * DEG,
@@ -146,7 +145,7 @@ fn aberration_requires_observer_state() {
 
 #[test]
 fn aberration_roundtrip_preserves_direction() {
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
     let obs = ObserverState::geocentric(jd);
 
     let original = Astrometric::new(spherical::direction::EquatorialMeanJ2000::new(
@@ -178,7 +177,7 @@ fn aberration_maximum_near_ecliptic_pole() {
     // Aberration is maximum for objects perpendicular to Earth's velocity
     // At the ecliptic poles, aberration should be close to the aberration constant
 
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
     let obs = ObserverState::geocentric(jd);
 
     // Direction toward north ecliptic pole (roughly)
@@ -215,7 +214,7 @@ fn topocentric_parallax_is_real_translation() {
 
     // Observer at equator, prime meridian
     let site = Geodetic::<ECEF>::new(0.0 * DEG, 0.0 * DEG, 0.0 * M);
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let moon_topo: Position<Topocentric, EquatorialMeanJ2000, Kilometer> =
         moon_geo.to_center((site, jd));
@@ -244,7 +243,7 @@ fn topocentric_roundtrip_preserves_geocentric_position() {
         Position::<Geocentric, EquatorialMeanJ2000, Kilometer>::new(100_000.0, 50_000.0, 25_000.0);
 
     let site = Geodetic::<ECEF>::new(10.0 * DEG, 45.0 * DEG, 100.0 * M);
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     // Geocentric -> Topocentric -> Geocentric
     let topo: Position<Topocentric, EquatorialMeanJ2000, Kilometer> = geo.to_center((site, jd));
@@ -275,7 +274,7 @@ fn topocentric_parallax_negligible_for_stars() {
     let star_geo = Position::<Geocentric, EquatorialMeanJ2000, Au>::new(206265.0, 0.0, 0.0);
 
     let site = Geodetic::<ECEF>::new(0.0 * DEG, 45.0 * DEG, 0.0 * M);
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     let star_topo: Position<Topocentric, EquatorialMeanJ2000, Au> = star_geo.to_center((site, jd));
 
@@ -337,7 +336,7 @@ fn complete_pipeline_geometric_to_apparent() {
     // 3. Compute line of sight direction
     // 4. Apply aberration to get apparent direction
 
-    let jd = JulianDate::J2000;
+    let jd = siderust::time::J2000;
 
     // A fictitious object at 10 AU from the Sun
     let object_helio = Position::<Heliocentric, EquatorialMeanJ2000, Au>::new(10.0, 0.0, 0.0);

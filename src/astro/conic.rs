@@ -190,7 +190,7 @@ impl ConicOrbit {
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -294,7 +294,7 @@ impl MeanMotionOrbit {
         if !mean_motion.value().is_finite() || mean_motion.value() <= 0.0 {
             return Err(ConicError::InvalidMeanMotion);
         }
-        if !epoch.jd_value().is_finite() {
+        if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
@@ -356,7 +356,7 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         )
         .unwrap();
         assert_eq!(orbit.kind(), ConicKind::Elliptic);
@@ -371,7 +371,7 @@ mod tests {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            crate::J2000,
         )
         .unwrap();
         assert_eq!(orbit.kind(), ConicKind::Hyperbolic);
@@ -387,7 +387,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::InvalidEccentricity)
         );
@@ -403,26 +403,15 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 AngularRate::<Degree, Day>::new(1.0),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::HyperbolicNotSupported)
         );
     }
 
     #[test]
-    fn conic_rejects_nan_epoch() {
-        assert_eq!(
-            ConicOrbit::try_new(
-                1.0 * AU,
-                0.5,
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                JulianDate::new(f64::NAN),
-            ),
-            Err(ConicError::InvalidEpoch)
-        );
+    fn jd_try_new_rejects_non_finite_encoded_day() {
+        assert!(crate::time::try_jd(qtty::Day::new(f64::NAN)).is_err());
     }
 
     #[test]
@@ -435,7 +424,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(f64::INFINITY),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::InvalidMeanAnomaly)
         );
@@ -451,7 +440,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 Degrees::new(0.0),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::ParabolicUnsupported)
         );
@@ -467,7 +456,7 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 AngularRate::<Degree, Day>::new(f64::NAN),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::InvalidMeanMotion)
         );
@@ -483,25 +472,9 @@ mod tests {
                 Degrees::new(0.0),
                 Degrees::new(0.0),
                 AngularRate::<Degree, Day>::new(-1.0),
-                JulianDate::J2000,
+                crate::J2000,
             ),
             Err(ConicError::InvalidMeanMotion)
-        );
-    }
-
-    #[test]
-    fn mean_motion_rejects_nan_epoch() {
-        assert_eq!(
-            MeanMotionOrbit::try_new(
-                1.0 * AU,
-                0.5,
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                AngularRate::<Degree, Day>::new(1.0),
-                JulianDate::new(f64::NAN),
-            ),
-            Err(ConicError::InvalidEpoch)
         );
     }
 }

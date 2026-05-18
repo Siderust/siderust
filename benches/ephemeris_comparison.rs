@@ -16,7 +16,6 @@
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::qtty::Days;
-use siderust::time::JulianDate;
 use std::hint::black_box;
 use std::time::Duration;
 
@@ -31,7 +30,7 @@ fn bench_sun_barycentric(c: &mut Criterion) {
     let mut group = c.benchmark_group("ephemeris/sun_barycentric");
 
     group.bench_function("vsop87", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::sun_barycentric(black_box(jd));
@@ -40,7 +39,7 @@ fn bench_sun_barycentric(c: &mut Criterion) {
 
     #[cfg(feature = "de440")]
     group.bench_function("de440", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = De440Ephemeris::sun_barycentric(black_box(jd));
@@ -58,7 +57,7 @@ fn bench_earth_heliocentric(c: &mut Criterion) {
     let mut group = c.benchmark_group("ephemeris/earth_heliocentric");
 
     group.bench_function("vsop87", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::earth_heliocentric(black_box(jd));
@@ -67,7 +66,7 @@ fn bench_earth_heliocentric(c: &mut Criterion) {
 
     #[cfg(feature = "de440")]
     group.bench_function("de440", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = De440Ephemeris::earth_heliocentric(black_box(jd));
@@ -85,7 +84,7 @@ fn bench_earth_velocity(c: &mut Criterion) {
     let mut group = c.benchmark_group("ephemeris/earth_velocity");
 
     group.bench_function("vsop87", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::earth_barycentric_velocity(black_box(jd));
@@ -94,7 +93,7 @@ fn bench_earth_velocity(c: &mut Criterion) {
 
     #[cfg(feature = "de440")]
     group.bench_function("de440", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = De440Ephemeris::earth_barycentric_velocity(black_box(jd));
@@ -112,7 +111,7 @@ fn bench_moon_geocentric(c: &mut Criterion) {
     let mut group = c.benchmark_group("ephemeris/moon_geocentric");
 
     group.bench_function("vsop87", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::moon_geocentric(black_box(jd));
@@ -121,7 +120,7 @@ fn bench_moon_geocentric(c: &mut Criterion) {
 
     #[cfg(feature = "de440")]
     group.bench_function("de440", |b| {
-        let mut jd = JulianDate::J2000;
+        let mut jd = siderust::time::J2000;
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = De440Ephemeris::moon_geocentric(black_box(jd));

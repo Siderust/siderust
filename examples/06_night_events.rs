@@ -83,7 +83,7 @@ fn print_periods_for_type(
             "  - {} -> {} ({:.1} h)",
             s.format("%Y-%m-%dT%H:%M:%S"),
             e.format("%Y-%m-%dT%H:%M:%S"),
-            ((p).end - (p).start).to::<siderust::qtty::Hour>()
+            p.length().to::<siderust::qtty::Hour>()
         );
     }
 }

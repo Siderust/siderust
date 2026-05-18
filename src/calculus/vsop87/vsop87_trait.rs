@@ -81,7 +81,6 @@ impl_vsop87_for_planet!(Neptune);
 mod tests {
     use super::*;
     use crate::macros::assert_cartesian_eq;
-    use crate::time::JulianDate;
 
     const PRECISION: f64 = 1.0e-12;
 
@@ -89,7 +88,7 @@ mod tests {
         ($planet:ident) => {{
             let body = $planet;
             let dyn_ref: &dyn VSOP87 = &body;
-            let jd = JulianDate::J2000;
+            let jd = crate::J2000;
 
             let via_trait_a = dyn_ref.vsop87a(jd);
             let via_trait_e = dyn_ref.vsop87e(jd);

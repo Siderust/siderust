@@ -40,7 +40,7 @@ fn tod_unit_position(
 
 #[test]
 fn horizontal_true_of_date_matches_sofa_roque_sirius_2020() {
-    let jd_tt = JulianDate::new(2_459_015.5);
+    let jd_tt = JulianDate::try_new(Days::new(2_459_015.5)).unwrap();
     let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
     let eq = tod_unit_position(site, 101.287, -16.716);
     let ctx: AstroContext = AstroContext::default();
@@ -64,7 +64,7 @@ fn horizontal_true_of_date_matches_sofa_roque_sirius_2020() {
 
 #[test]
 fn horizontal_true_of_date_matches_sofa_greenwich_2024() {
-    let jd_tt = JulianDate::new(2_460_310.25);
+    let jd_tt = JulianDate::try_new(Days::new(2_460_310.25)).unwrap();
     let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.4769 * DEG, 0.0 * M);
     let eq = tod_unit_position(site, 210.1234, 35.6789);
     let ctx: AstroContext = AstroContext::default();
@@ -88,7 +88,7 @@ fn horizontal_true_of_date_matches_sofa_greenwich_2024() {
 
 #[test]
 fn topocentric_site_vector_matches_sofa_chain_roque_2020() {
-    let jd_tt = JulianDate::new(2_459_015.5);
+    let jd_tt = JulianDate::try_new(Days::new(2_459_015.5)).unwrap();
     let site = Geodetic::<ECEF>::new(-17.8925 * DEG, 28.7543 * DEG, 2396.0 * M);
     let origin = position::EquatorialMeanJ2000::<Kilometer, Geocentric>::new(0.0, 0.0, 0.0);
 

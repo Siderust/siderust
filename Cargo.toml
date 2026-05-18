@@ -7,7 +7,7 @@ members = [
 
 [package]
 name = "siderust"
-version = "0.7.0"
+version = "0.8.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
@@ -35,8 +35,8 @@ atmosphere = []
 [dependencies]
 affn = { version = "0.7", features = ["astro"] }
 cheby = "0.2"
-qtty = { version = "0.7", features = ["astro", "radiometry"] }
-tempoch = "0.4"
+qtty = { version = "0.8", features = ["astro", "radiometry"] }
+tempoch = "0.6"
 approx = "0.5"
 chrono = "0.4"
 paste = "1.0"
@@ -90,3 +90,4 @@ harness = false
 [[bench]]
 name = "altitude_comparison"
 harness = false
+

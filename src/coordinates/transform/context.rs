@@ -436,7 +436,7 @@ mod tests {
     #[test]
     fn test_eop_at_returns_values() {
         let ctx = AstroContext::new();
-        let jd = JulianDate::J2000;
+        let jd = crate::J2000;
         let eop = ctx.eop_at_tt(jd);
         // EOP values should be finite
         assert!(eop.dut1.is_finite());
@@ -455,7 +455,7 @@ mod tests {
         // Vsop87Ephemeris implements DynEphemeris via blanket impl
         let dyn_ctx = DynAstroContext::with_ephemeris(Box::new(Vsop87Ephemeris));
         let _eph = dyn_ctx.ephemeris();
-        let _eop = dyn_ctx.eop_at(JulianDate::J2000);
+        let _eop = dyn_ctx.eop_at(crate::J2000);
         let _eop_ref = dyn_ctx.eop();
 
         // Debug should work
@@ -471,7 +471,7 @@ mod tests {
             Box::new(Vsop87Ephemeris),
             DefaultEop::default(),
         );
-        let eop = dyn_ctx.eop_at(JulianDate::J2000);
+        let eop = dyn_ctx.eop_at(crate::J2000);
         assert!(eop.dut1.is_finite());
     }
 }

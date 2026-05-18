@@ -4,7 +4,6 @@
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::planets::{OrbitExt, Planet, PlanetBuilderError};
 use siderust::qtty::*;
-use siderust::time::JulianDate;
 
 #[test]
 fn planet_builder_errors() {
@@ -17,7 +16,7 @@ fn planet_builder_errors() {
             Degrees::new(0.0),
             Degrees::new(0.0),
             Degrees::new(0.0),
-            JulianDate::J2000,
+            siderust::time::J2000,
         ));
     let err = builder.clone().try_build().unwrap_err();
     assert!(matches!(err, PlanetBuilderError::MissingMass));
@@ -40,7 +39,7 @@ fn orbit_period_computation() {
         Degrees::new(0.0),
         Degrees::new(0.0),
         Degrees::new(0.0),
-        JulianDate::J2000,
+        siderust::time::J2000,
     );
     let planet = Planet::builder()
         .mass(Kilograms::new(1.0))
@@ -51,4 +50,35 @@ fn orbit_period_computation() {
     let p = planet.orbit.period().value();
     let expected = 2.0 * std::f64::consts::PI / k * 1.0_f64.powf(1.5) * 86400.0;
     assert!((p - expected).abs() < 1e-6);
+}
+
+#[test]
+fn const_constructor_and_unchecked_builder() {
+    let orbit = KeplerianOrbit::new(
+        AstronomicalUnits::new(1.0),
+        0.01,
+        Degrees::new(1.0),
+        Degrees::new(2.0),
+        Degrees::new(3.0),
+        Degrees::new(4.0),
+        siderust::time::J2000,
+    );
+
+    let planet = Planet::new_const(Kilograms::new(5.0e24), Kilometers::new(6_000.0), orbit);
+    assert!((planet.mass.value() - 5.0e24).abs() < 1e-6);
+    assert!((planet.radius.value() - 6_000.0).abs() < 1e-6);
+
+    let unchecked = Planet::builder()
+        .mass(Kilograms::new(1.0e24))
+        .radius(Kilometers::new(3_000.0))
+        .orbit(orbit)
+        .build_unchecked();
+    assert!((unchecked.mass.value() - 1.0e24).abs() < 1e-6);
+    assert!((unchecked.radius.value() - 3_000.0).abs() < 1e-6);
+}
+
+#[test]
+#[should_panic(expected = "PlanetBuilder::build_unchecked called with missing fields")]
+fn build_unchecked_missing_fields_panics() {
+    let _ = Planet::builder().build_unchecked();
 }

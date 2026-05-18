@@ -26,7 +26,6 @@ use siderust::coordinates::transform::{
     AstroContext, DirectionAstroExt, PositionAstroExt, SphericalDirectionAstroExt,
 };
 use siderust::coordinates::{cartesian, spherical};
-use siderust::time::JulianDate;
 
 // ═══════════════════════════════════════════════════════════════════════════
 // Spherical Direction, frame transforms
@@ -251,7 +250,7 @@ pub extern "C" fn siderust_spherical_dir_transform_frame(
             src_frame,
             polar_deg,
             azimuth_deg,
-            |dir| transform_spherical_dir_from!(dir, dst_frame, &JulianDate::new(jd))
+            |dir| transform_spherical_dir_from!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)))
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -294,7 +293,7 @@ pub extern "C" fn siderust_spherical_dir_transform_frame_with_context(
             src_frame,
             polar_deg,
             azimuth_deg,
-            |dir| transform_spherical_dir_from_model!(dir, dst_frame, &JulianDate::new(jd), model)
+            |dir| transform_spherical_dir_from_model!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)), model)
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -336,7 +335,7 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal(
             src_frame,
             polar_deg,
             azimuth_deg,
-            |dir| spherical_dir_to_horizontal_from!(dir, &JulianDate::new(jd), &site)
+            |dir| spherical_dir_to_horizontal_from!(dir, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)), &site)
         ) {
             Ok(values) => values,
             Err(e) => return e,
@@ -377,8 +376,8 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal_precise(
             azimuth_deg,
             |dir| spherical_dir_to_horizontal_precise_from!(
                 dir,
-                &JulianDate::new(jd_tt),
-                &JulianDate::new(jd_ut1),
+                &ffi_try!(crate::ffi_utils::jd_from_f64(jd_tt)),
+                &ffi_try!(crate::ffi_utils::jd_from_f64(jd_ut1)),
                 &site
             )
         ) {
@@ -426,8 +425,8 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal_precise_with_context(
             azimuth_deg,
             |dir| spherical_dir_to_horizontal_precise_from_model!(
                 dir,
-                &JulianDate::new(jd_tt),
-                &JulianDate::new(jd_ut1),
+                &ffi_try!(crate::ffi_utils::jd_from_f64(jd_tt)),
+                &ffi_try!(crate::ffi_utils::jd_from_f64(jd_ut1)),
                 &site,
                 model
             )
@@ -583,7 +582,7 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame(
             x,
             y,
             z,
-            |dir| transform_cartesian_dir_from!(dir, dst_frame, &JulianDate::new(jd))
+            |dir| transform_cartesian_dir_from!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)))
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -631,7 +630,7 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame_with_context(
             x,
             y,
             z,
-            |dir| transform_cartesian_dir_from_model!(dir, dst_frame, &JulianDate::new(jd), model)
+            |dir| transform_cartesian_dir_from_model!(dir, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)), model)
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -828,7 +827,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame(
             pos.x,
             pos.y,
             pos.z,
-            |source| transform_cartesian_pos_from!(source, dst_frame, &JulianDate::new(jd))
+            |source| transform_cartesian_pos_from!(source, dst_frame, &ffi_try!(crate::ffi_utils::jd_from_f64(jd)))
         ) {
             Ok(Ok(values)) => values,
             Err(e) => return e,
@@ -876,7 +875,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame_with_context(
             |source| transform_cartesian_pos_from_model!(
                 source,
                 dst_frame,
-                &JulianDate::new(jd),
+                &ffi_try!(crate::ffi_utils::jd_from_f64(jd)),
                 model
             )
         ) {
@@ -936,11 +935,18 @@ pub extern "C" fn siderust_geodetic_to_cartesian_ecef(
 ///
 /// Center codes: 0 = Barycentric, 1 = Heliocentric, 2 = Geocentric.
 /// These match `OrbitReferenceCenter` (Barycentric=0, Heliocentric=1, Geocentric=2).
-fn shift_center_xyz(x: f64, y: f64, z: f64, from: u8, to: u8, jd: f64) -> (f64, f64, f64) {
+fn shift_center_xyz(
+    x: f64,
+    y: f64,
+    z: f64,
+    from: u8,
+    to: u8,
+    jd: f64,
+) -> Result<(f64, f64, f64), SiderustStatus> {
     if from == to {
-        return (x, y, z);
+        return Ok((x, y, z));
     }
-    let t = JulianDate::new(jd);
+    let t = crate::ffi_utils::jd_from_f64(jd)?;
 
     // Sun's barycentric position, used for helio ↔ bary shifts
     let sun_b = Vsop87Ephemeris::sun_barycentric(t);
@@ -963,12 +969,12 @@ fn shift_center_xyz(x: f64, y: f64, z: f64, from: u8, to: u8, jd: f64) -> (f64, 
     };
 
     // Convert heliocentric to target center
-    match to {
+    Ok(match to {
         0 => (hx + sb_x, hy + sb_y, hz + sb_z), // helio → bary
         1 => (hx, hy, hz),                      // helio → helio (no-op)
         2 => (hx - eh_x, hy - eh_y, hz - eh_z), // helio → geo
         _ => (hx, hy, hz),
-    }
+    })
 }
 
 /// Map SiderustCenter enum values to the internal shift_center_xyz codes.
@@ -1009,7 +1015,8 @@ pub extern "C" fn siderust_cartesian_pos_transform_center(
             None => return SiderustStatus::InvalidCenter,
         };
 
-        let (ox, oy, oz) = shift_center_xyz(pos.x, pos.y, pos.z, from_code, to_code, jd);
+        let (ox, oy, oz) =
+            ffi_try!(shift_center_xyz(pos.x, pos.y, pos.z, from_code, to_code, jd));
 
         unsafe {
             *out = SiderustCartesianPos {
@@ -1076,7 +1083,8 @@ pub extern "C" fn siderust_kepler_position_ex(
             Some(c) => c,
             None => return SiderustStatus::InvalidCenter,
         };
-        let pos = orbit.to_rust().kepler_position(JulianDate::new(jd));
+        let orbit = ffi_try!(orbit.try_to_rust());
+        let pos = orbit.kepler_position(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
         write_ecliptic_au_position(out, pos, center);
         SiderustStatus::Ok
 
@@ -1094,11 +1102,8 @@ pub extern "C" fn siderust_mean_motion_position(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let rust_orbit = match orbit.try_to_rust() {
-            Ok(o) => o,
-            Err(_) => return SiderustStatus::InvalidArgument,
-        };
-        let pos = match rust_orbit.position_at(JulianDate::new(jd)) {
+        let rust_orbit = ffi_try!(orbit.try_to_rust_validated());
+        let pos = match rust_orbit.position_at(ffi_try!(crate::ffi_utils::jd_from_f64(jd))) {
             Ok(pos) => pos,
             Err(_) => return SiderustStatus::InvalidArgument,
         };
@@ -1119,11 +1124,8 @@ pub extern "C" fn siderust_conic_position(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let rust_orbit = match orbit.try_to_rust() {
-            Ok(o) => o,
-            Err(_) => return SiderustStatus::InvalidArgument,
-        };
-        let pos = match rust_orbit.position_at(JulianDate::new(jd)) {
+        let rust_orbit = ffi_try!(orbit.try_to_rust_validated());
+        let pos = match rust_orbit.position_at(ffi_try!(crate::ffi_utils::jd_from_f64(jd))) {
             Ok(pos) => pos,
             Err(_) => return SiderustStatus::InvalidArgument,
         };
@@ -1167,7 +1169,7 @@ pub extern "C" fn siderust_prepared_orbit_create(
             Degrees::new(orbit.lon_ascending_node_deg),
             Degrees::new(orbit.arg_periapsis_deg),
             Degrees::new(orbit.mean_anomaly_deg),
-            JulianDate::new(orbit.epoch_jd),
+            ffi_try!(crate::ffi_utils::jd_from_f64(orbit.epoch_jd)),
         ) {
             Ok(p) => p,
             Err(_) => return SiderustStatus::InvalidArgument,
@@ -1193,7 +1195,7 @@ pub extern "C" fn siderust_prepared_orbit_position(
             return SiderustStatus::NullPointer;
         }
         let prepared = unsafe { &*(handle as *const siderust::PreparedOrbit) };
-        let pos = prepared.position_at(JulianDate::new(jd));
+        let pos = prepared.position_at(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
         write_ecliptic_au_position(out, pos, SiderustCenter::Heliocentric);
         SiderustStatus::Ok
     }}
@@ -1245,7 +1247,8 @@ pub extern "C" fn siderust_to_bodycentric(
         };
 
         // Keplerian position of the body in its own orbit's reference center
-        let body_kep = params.orbit.to_rust().kepler_position(JulianDate::new(jd));
+        let orbit = ffi_try!(params.orbit.try_to_rust());
+        let body_kep = orbit.kepler_position(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
         let (bkx, bky, bkz) = (
             body_kep.x().value(),
             body_kep.y().value(),
@@ -1254,7 +1257,7 @@ pub extern "C" fn siderust_to_bodycentric(
 
         // Shift body position to match the input center
         let (body_x, body_y, body_z) =
-            shift_center_xyz(bkx, bky, bkz, params.orbit_center, input_center, jd);
+            ffi_try!(shift_center_xyz(bkx, bky, bkz, params.orbit_center, input_center, jd));
 
         // Relative position: input – body (vector from body to target)
         unsafe {
@@ -1293,7 +1296,8 @@ pub extern "C" fn siderust_from_bodycentric(
         }
 
         // Keplerian position of the body in its own orbit's reference center
-        let body_kep = params.orbit.to_rust().kepler_position(JulianDate::new(jd));
+        let orbit = ffi_try!(params.orbit.try_to_rust());
+        let body_kep = orbit.kepler_position(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
         let (bkx, bky, bkz) = (
             body_kep.x().value(),
             body_kep.y().value(),
@@ -1302,7 +1306,7 @@ pub extern "C" fn siderust_from_bodycentric(
 
         // Convert body position to geocentric (target center code = 2)
         let (body_geo_x, body_geo_y, body_geo_z) =
-            shift_center_xyz(bkx, bky, bkz, params.orbit_center, 2, jd);
+            ffi_try!(shift_center_xyz(bkx, bky, bkz, params.orbit_center, 2, jd));
 
         // Recover geocentric: bodycentric + body_geocentric
         unsafe {
@@ -1706,7 +1710,7 @@ mod tests {
     fn to_horizontal_precise_matches_default_ut1_path() {
         let mut coarse = empty_dir();
         let mut precise = empty_dir();
-        let jd_tt = siderust::time::JulianDate::new(J2000);
+        let jd_tt = siderust::time::try_jd_f64(J2000).unwrap();
         // Replicate the EOP-derived UT1 that `to_horizontal` uses internally:
         // the coarse path calls `jd_ut1_from_tt_eop` with the default IersEop context.
         let ctx: siderust::coordinates::transform::AstroContext = Default::default();
@@ -1726,7 +1730,7 @@ mod tests {
             279.2,
             SiderustFrame::ICRS,
             J2000,
-            jd_ut1.jd_value(),
+            jd_ut1.raw().value(),
             paris_observer(),
             &mut precise,
         );
@@ -1740,15 +1744,15 @@ mod tests {
     fn to_horizontal_precise_with_context_is_finite() {
         let mut out = empty_dir();
         let ctx = context_with_model(SiderustEarthOrientationModel::Iau2006);
-        let jd_tt = siderust::time::JulianDate::new(2_458_850.0);
+        let jd_tt = siderust::time::try_jd_f64(2_458_850.0).unwrap();
         let jd_ut1 = siderust::astro::earth_rotation::jd_ut1_from_tt(jd_tt);
 
         let s = siderust_spherical_dir_to_horizontal_precise_with_context(
             38.8,
             279.2,
             SiderustFrame::ICRS,
-            jd_tt.jd_value(),
-            jd_ut1.jd_value(),
+            jd_tt.raw().value(),
+            jd_ut1.raw().value(),
             paris_observer(),
             ctx,
             &mut out,

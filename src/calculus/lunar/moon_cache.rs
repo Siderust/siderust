@@ -119,8 +119,8 @@ impl MoonPositionCache {
     /// for X, Y, Z over each segment.
     pub fn new(mjd_start: ModifiedJulianDate, mjd_end: ModifiedJulianDate) -> Self {
         let pad = Days::new(1.0); // 1-day padding on each side
-        let t0 = mjd_start - pad;
-        let span = mjd_end + pad - t0;
+        let t0 = crate::time::ModifiedJulianDate::new((mjd_start.raw() - pad).value());
+        let span = mjd_end.raw() + pad - t0.raw();
         let num_segments = ((span / SEGMENT_DAYS).ceil() as usize).max(1);
 
         let nodes: [f64; CHEB_NODES] = cheby::nodes();
@@ -129,8 +129,12 @@ impl MoonPositionCache {
         let mut cz = Vec::with_capacity(num_segments);
 
         for seg in 0..num_segments {
-            let seg_start = t0 + seg as f64 * SEGMENT_DAYS;
-            let seg_mid = seg_start + SEGMENT_DAYS * 0.5;
+            let seg_start = crate::time::ModifiedJulianDate::new(
+                (t0.raw() + seg as f64 * SEGMENT_DAYS).value(),
+            );
+            let seg_mid = crate::time::ModifiedJulianDate::new(
+                (seg_start.raw() + SEGMENT_DAYS * 0.5).value(),
+            );
             let seg_half = SEGMENT_DAYS * 0.5;
 
             let mut vx = [0.0; CHEB_NODES];
@@ -138,8 +142,10 @@ impl MoonPositionCache {
             let mut vz = [0.0; CHEB_NODES];
 
             for k in 0..CHEB_NODES {
-                let mjd_k = seg_mid + seg_half * nodes[k];
-                let pos = DefaultEphemeris::moon_geocentric(mjd_k.into());
+                let mjd_k = crate::time::ModifiedJulianDate::new(
+                    (seg_mid.raw() + seg_half * nodes[k]).value(),
+                );
+                let pos = DefaultEphemeris::moon_geocentric(mjd_k.to::<crate::JD>());
                 vx[k] = pos.x().value();
                 vy[k] = pos.y().value();
                 vz[k] = pos.z().value();
@@ -172,19 +178,22 @@ impl MoonPositionCache {
     /// `(x, y, z)` in `Kilometers` in the EclipticMeanJ2000 frame.
     #[inline]
     pub fn get_position_km(&self, mjd: ModifiedJulianDate) -> (Kilometers, Kilometers, Kilometers) {
-        let offset = mjd - self.mjd_start;
+        let offset = mjd.raw() - self.mjd_start.raw();
         let seg_idx = (offset / SEGMENT_DAYS) as usize;
 
         if seg_idx >= self.num_segments {
             // Fallback: outside cache range
-            let pos = DefaultEphemeris::moon_geocentric(mjd.into());
+            let pos = DefaultEphemeris::moon_geocentric(mjd.to::<crate::JD>());
             return (pos.x(), pos.y(), pos.z());
         }
 
         // Map jd into [-1, 1] within the segment
-        let seg_start = self.mjd_start + seg_idx as f64 * SEGMENT_DAYS;
-        let seg_mid = seg_start + SEGMENT_DAYS * 0.5;
-        let x = (mjd - seg_mid) / (SEGMENT_DAYS * 0.5);
+        let seg_start = crate::time::ModifiedJulianDate::new(
+            (self.mjd_start.raw() + seg_idx as f64 * SEGMENT_DAYS).value(),
+        );
+        let seg_mid =
+            crate::time::ModifiedJulianDate::new((seg_start.raw() + SEGMENT_DAYS * 0.5).value());
+        let x = (mjd.raw() - seg_mid.raw()) / (SEGMENT_DAYS * 0.5);
         let px = Kilometers::new(cheby::evaluate(&self.cx[seg_idx], x));
         let py = Kilometers::new(cheby::evaluate(&self.cy[seg_idx], x));
         let pz = Kilometers::new(cheby::evaluate(&self.cz[seg_idx], x));
@@ -221,15 +230,16 @@ impl NutationCache {
     /// 2‑hour spacing across the padded window.
     pub fn new(mjd_start: ModifiedJulianDate, mjd_end: ModifiedJulianDate) -> Self {
         let pad = Days::new(1.0); // 1-day padding
-        let t0 = mjd_start - pad;
-        let t1 = mjd_end + pad;
-        let span = t1 - t0;
+        let t0 = crate::time::ModifiedJulianDate::new((mjd_start.raw() - pad).value());
+        let t1 = crate::time::ModifiedJulianDate::new((mjd_end.raw() + pad).value());
+        let span = t1.raw() - t0.raw();
         let num_entries = ((span / NUT_STEP_DAYS).ceil() as usize) + 1;
 
         let mut values = Vec::with_capacity(num_entries);
         for i in 0..num_entries {
-            let mjd = t0 + i as f64 * NUT_STEP_DAYS;
-            let nut = nutation_iau2000b(mjd.into());
+            let mjd =
+                crate::time::ModifiedJulianDate::new((t0.raw() + i as f64 * NUT_STEP_DAYS).value());
+            let nut = nutation_iau2000b(mjd.to::<crate::JD>());
             values.push([nut.dpsi, nut.deps, nut.mean_obliquity]);
         }
 
@@ -252,13 +262,13 @@ impl NutationCache {
     /// IAU 2000B evaluation if `mjd` is outside the cached window.
     #[inline]
     pub fn get_nutation_rad(&self, mjd: ModifiedJulianDate) -> (Radians, Radians, Radians) {
-        let offset = mjd - self.mjd_start;
+        let offset = mjd.raw() - self.mjd_start.raw();
         let frac = offset / NUT_STEP_DAYS;
         let idx = frac as usize;
 
         if idx + 1 >= self.num_entries {
             // Fallback: outside cache range, compute directly
-            let nut = nutation_iau2000b(mjd.into());
+            let nut = nutation_iau2000b(mjd.to::<crate::JD>());
             return (nut.dpsi, nut.deps, nut.mean_obliquity);
         }
 
@@ -373,7 +383,7 @@ impl MoonAltitudeContext {
     /// Topocentric altitude in `Radians`, no atmospheric refraction.
     #[inline]
     pub fn altitude_rad(&self, mjd: ModifiedJulianDate) -> Quantity<Radian> {
-        let jd: JulianDate = mjd.into();
+        let jd: JulianDate = mjd.to::<crate::JD>();
         let ctx: AstroContext = AstroContext::default();
 
         // ---------------------------------------------------------------
@@ -411,7 +421,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 4. Precession: J2000 → mean-of-date
         // ---------------------------------------------------------------
-        let rot_prec = precession_matrix_iau2006(mjd.into());
+        let rot_prec = precession_matrix_iau2006(mjd.to::<crate::JD>());
         let [x_mod, y_mod, z_mod] =
             rot_prec.apply_array([x_topo.value(), y_topo.value(), z_topo.value()]);
 
@@ -501,7 +511,14 @@ where
     let mut prev = start_val;
 
     while t < t_end {
-        let next_t = (t + step).min(t_end);
+        let next_t = {
+            let t_nx = crate::time::ModifiedJulianDate::new((t.raw() + step).value());
+            if t_nx.raw() <= t_end.raw() {
+                t_nx
+            } else {
+                t_end
+            }
+        };
         let next_v = g(next_t);
 
         if prev.signum() * next_v.signum() < 0.0 {
@@ -527,7 +544,7 @@ where
     // Sort and deduplicate (should already be sorted from linear scan)
     labeled.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
     labeled.dedup_by(|a, b| {
-        let dup = (a.t - b.t).abs() < DEDUPE_EPS;
+        let dup = (a.t.raw() - b.t.raw()).abs() < DEDUPE_EPS;
         if dup {
             // Keep the earlier one (b), discard a
         }
@@ -547,19 +564,21 @@ mod tests {
     use crate::calculus::lunar::moon_altitude_rad;
     use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
     use crate::qtty::Radians;
-    use crate::time::JulianDate;
 
     #[test]
     fn chebyshev_position_accuracy() {
         // Compare cached vs. direct ELP2000 at random times within a segment
-        let mjd_start: ModifiedJulianDate = JulianDate::J2000.into();
-        let mjd_end = mjd_start + Days::new(30.0);
+        let mjd_start: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
+        let mjd_end =
+            crate::time::ModifiedJulianDate::new((mjd_start.raw() + Days::new(30.0)).value());
         let cache = MoonPositionCache::new(mjd_start, mjd_end);
 
         for i in 0..100 {
-            let mjd = mjd_start + Days::new((i as f64) * 0.3 + 0.1); // sample every ~7 hours
+            let mjd = crate::time::ModifiedJulianDate::new(
+                (mjd_start.raw() + Days::new((i as f64) * 0.3 + 0.1)).value(),
+            ); // sample every ~7 hours
             let (cx, cy, cz) = cache.get_position_km(mjd);
-            let direct = DefaultEphemeris::moon_geocentric(JulianDate::from(mjd));
+            let direct = DefaultEphemeris::moon_geocentric(mjd.to::<crate::JD>());
             let (dx, dy, dz) = (direct.x(), direct.y(), direct.z());
             let err = (cx - dx).abs().max((cy - dy).abs()).max((cz - dz).abs());
             // Error should be < 1 km (≈ 0.5 arcsecond at Moon distance)
@@ -578,14 +597,17 @@ mod tests {
 
     #[test]
     fn nutation_cache_accuracy() {
-        let mjd_start: ModifiedJulianDate = JulianDate::J2000.into();
-        let mjd_end: ModifiedJulianDate = mjd_start + Days::new(30.0);
+        let mjd_start: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
+        let mjd_end: ModifiedJulianDate =
+            crate::time::ModifiedJulianDate::new((mjd_start.raw() + Days::new(30.0)).value());
         let cache = NutationCache::new(mjd_start, mjd_end);
 
         for i in 0..100 {
-            let mjd = mjd_start + Days::new((i as f64) * 0.3 + 0.05);
+            let mjd = crate::time::ModifiedJulianDate::new(
+                (mjd_start.raw() + Days::new((i as f64) * 0.3 + 0.05)).value(),
+            );
             let (dpsi, deps, eps0) = cache.get_nutation_rad(mjd);
-            let direct = nutation_iau2000b(mjd.into());
+            let direct = nutation_iau2000b(mjd.to::<crate::JD>());
             let d_dpsi = direct.dpsi;
             let d_deps = direct.deps;
             let d_eps0 = direct.mean_obliquity;
@@ -613,12 +635,15 @@ mod tests {
     #[test]
     fn cached_altitude_matches_direct() {
         let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
-        let mjd_start: ModifiedJulianDate = JulianDate::J2000.into();
-        let mjd_end = mjd_start + Days::new(7.0);
+        let mjd_start: ModifiedJulianDate = crate::J2000.to::<crate::MJD>();
+        let mjd_end =
+            crate::time::ModifiedJulianDate::new((mjd_start.raw() + Days::new(7.0)).value());
         let ctx = MoonAltitudeContext::new(mjd_start, mjd_end, site);
 
         for i in 0..50 {
-            let mjd = mjd_start + Days::new((i as f64) * 0.14 + 0.01);
+            let mjd = crate::time::ModifiedJulianDate::new(
+                (mjd_start.raw() + Days::new((i as f64) * 0.14 + 0.01)).value(),
+            );
             let cached_alt = ctx.altitude_rad(mjd);
             let direct_alt = moon_altitude_rad(mjd, &site);
 
@@ -638,8 +663,12 @@ mod tests {
     #[test]
     fn find_and_label_crossings_sine_wave() {
         // Test with a known sine wave: sin(2π(t+0.05)) crosses 0 at known times
-        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.mjd_value() + 0.05)).sin());
-        let period = Period::new(Mjd::new(0.0), Mjd::new(1.0));
+        let f =
+            |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.raw().value() + 0.05)).sin());
+        let period = Period::new(
+            crate::time::ModifiedJulianDate::new((Days::new(0.0)).value()),
+            crate::time::ModifiedJulianDate::new((Days::new(1.0)).value()),
+        );
         let step = Days::new(0.01);
 
         let (labeled, _start_above) = find_and_label_crossings(period, step, &f, Radians::new(0.0));
