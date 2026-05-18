@@ -59,7 +59,7 @@ use wide::f64x4;
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
 mod elp_data {
-    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/archive/elp_data.rs"));
+    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/embedded_data/elp_data.rs"));
 }
 use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;

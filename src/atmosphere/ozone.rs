@@ -49,7 +49,7 @@ use crate::spectra::interp::{Interpolation, OutOfRange};
 use crate::spectra::loaders::ascii;
 use crate::spectra::sampled::SampledSpectrum;
 
-const RAW: &str = include_str!("../archive/data/o3trans.dat");
+const RAW: &str = include_str!("../embedded_data/data/o3trans.dat");
 #[cfg(test)]
 const OZONE_SHA256: &str = "cb06c173f393d6d55e3c39551665abb8f5d6c1a846cd0fd739a15d0155f94502";
 

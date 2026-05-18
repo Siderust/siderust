@@ -102,11 +102,11 @@ use super::Throughput;
 
 // ── bundled data ─────────────────────────────────────────────────────────────
 
-const RAW_U: &str = include_str!("../../archive/data/passbands/bessell1990/U.dat");
-const RAW_B: &str = include_str!("../../archive/data/passbands/bessell1990/B.dat");
-const RAW_V: &str = include_str!("../../archive/data/passbands/bessell1990/V.dat");
-const RAW_R: &str = include_str!("../../archive/data/passbands/bessell1990/R.dat");
-const RAW_I: &str = include_str!("../../archive/data/passbands/bessell1990/I.dat");
+const RAW_U: &str = include_str!("../../embedded_data/data/passbands/bessell1990/U.dat");
+const RAW_B: &str = include_str!("../../embedded_data/data/passbands/bessell1990/B.dat");
+const RAW_V: &str = include_str!("../../embedded_data/data/passbands/bessell1990/V.dat");
+const RAW_R: &str = include_str!("../../embedded_data/data/passbands/bessell1990/R.dat");
+const RAW_I: &str = include_str!("../../embedded_data/data/passbands/bessell1990/I.dat");
 
 // Pinned SHA-256 of each Bessell 1990 passband file. Update only when the
 // curated SVO export is intentionally refreshed (see

@@ -302,7 +302,7 @@ pub struct DynSegmentDescriptor {
 
 impl DynSegmentDescriptor {
     /// Construct from parsed SPK segment data.
-    pub fn from_spk(seg: &crate::data::spk::SegmentData) -> Self {
+    pub fn from_spk(seg: &crate::formats::spice::spk::SegmentData) -> Self {
         Self {
             init: Seconds::new(seg.init),
             intlen: Seconds::new(seg.intlen),
@@ -572,7 +572,7 @@ mod tests {
 
     #[test]
     fn dyn_desc_from_spk_roundtrip() {
-        use crate::data::spk::SegmentData;
+        use crate::formats::spice::spk::SegmentData;
         let ncoeff = 3usize;
         let rsize = 2 + 3 * ncoeff; // = 11
         let records = vec![0.0; rsize]; // one zero record

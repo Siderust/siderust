@@ -33,7 +33,7 @@
 //! * Williams, T. G. (1991). "An optimized algorithm for Pluto", *Mem. Brit.
 //!   Astron. Assoc.* **99** (2), 75–82.
 
-use crate::archive::pluto_tables::{ARGUMENTS, LATITUDE_TERMS, LONGITUDE_TERMS, RADIUS_TERMS};
+use crate::embedded_data::pluto_tables::{ARGUMENTS, LATITUDE_TERMS, LONGITUDE_TERMS, RADIUS_TERMS};
 use crate::coordinates::{cartesian, centers::Heliocentric, frames::EclipticMeanJ2000, spherical};
 use crate::qtty::{AstronomicalUnit, Degrees, Radian, AU};
 use crate::time::JulianDate;

@@ -5,8 +5,7 @@
 //!
 //! Uses `ureq` (sync, minimal dependency footprint, no async runtime).
 
-use super::registry::DatasetMeta;
-use super::DataError;
+use crate::datasets::{DatasetError, RuntimeDownloadMeta};
 use std::io::{Read, Write};
 use std::path::Path;
 
@@ -17,21 +16,22 @@ pub type ProgressCallback = Box<dyn Fn(u64, u64)>;
 
 /// Download a dataset to `dest`, writing through a temp file for atomicity.
 ///
-/// If `progress` is `Some`, it is called periodically with download progress.
+/// `name` is used only in error messages. If `progress` is `Some`, it is
+/// called periodically with `(bytes_downloaded, total_or_zero)`.
 pub fn download(
-    meta: &DatasetMeta,
+    name: &str,
+    rdm: &RuntimeDownloadMeta,
     dest: &Path,
     progress: Option<ProgressCallback>,
-) -> Result<(), DataError> {
+) -> Result<(), DatasetError> {
     let tmp = dest.with_extension("download");
 
-    // Ensure parent directory exists
     if let Some(parent) = tmp.parent() {
         std::fs::create_dir_all(parent)?;
     }
 
-    let response = ureq::get(meta.url).call().map_err(|e| {
-        DataError::Download(format!("HTTP request failed for {}: {}", meta.name, e))
+    let response = ureq::get(rdm.url).call().map_err(|e| {
+        DatasetError::Download(format!("HTTP request failed for {}: {}", name, e))
     })?;
 
     let total: u64 = response
@@ -48,7 +48,7 @@ pub fn download(
 
     loop {
         let n = reader.read(&mut buf).map_err(|e| {
-            DataError::Download(format!("read error during {} download: {}", meta.name, e))
+            DatasetError::Download(format!("read error during {} download: {}", name, e))
         })?;
         if n == 0 {
             break;
@@ -64,20 +64,18 @@ pub fn download(
     file.flush()?;
     drop(file);
 
-    // Basic size check before renaming into place
     let file_size = std::fs::metadata(&tmp)?.len();
-    if file_size < meta.min_size {
+    if file_size < rdm.min_size {
         let _ = std::fs::remove_file(&tmp);
-        return Err(DataError::Integrity(format!(
+        return Err(DatasetError::Integrity(format!(
             "{}: downloaded file too small ({} bytes, expected >= {})",
-            meta.name, file_size, meta.min_size,
+            name, file_size, rdm.min_size,
         )));
     }
 
-    // Atomic rename
     std::fs::rename(&tmp, dest).map_err(|e| {
         let _ = std::fs::remove_file(&tmp);
-        DataError::Io(e)
+        DatasetError::Io(e)
     })?;
 
     Ok(())

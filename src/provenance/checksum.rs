@@ -347,27 +347,27 @@ pub(crate) mod dev {
         let datasets: &[(&str, &[u8])] = &[
             (
                 "siderust/data/o3trans.dat",
-                include_bytes!("../data/o3trans.dat"),
+                include_bytes!("../embedded_data/data/o3trans.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/U.dat",
-                include_bytes!("../data/passbands/bessell1990/U.dat"),
+                include_bytes!("../embedded_data/data/passbands/bessell1990/U.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/B.dat",
-                include_bytes!("../data/passbands/bessell1990/B.dat"),
+                include_bytes!("../embedded_data/data/passbands/bessell1990/B.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/V.dat",
-                include_bytes!("../data/passbands/bessell1990/V.dat"),
+                include_bytes!("../embedded_data/data/passbands/bessell1990/V.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/R.dat",
-                include_bytes!("../data/passbands/bessell1990/R.dat"),
+                include_bytes!("../embedded_data/data/passbands/bessell1990/R.dat"),
             ),
             (
                 "siderust/data/passbands/bessell1990/I.dat",
-                include_bytes!("../data/passbands/bessell1990/I.dat"),
+                include_bytes!("../embedded_data/data/passbands/bessell1990/I.dat"),
             ),
         ];
         for (name, data) in datasets {

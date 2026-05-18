@@ -16,8 +16,8 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use crate::data::spk;
-use crate::data::DataError;
+use crate::formats::spice::spk;
+use crate::datasets::DatasetError;
 use crate::qtty::{AstronomicalUnit, Kilometer};
 use crate::time::JulianDate;
 use std::path::Path;
@@ -60,13 +60,13 @@ impl RuntimeEphemeris {
     ///
     /// The file is read entirely into memory, parsed as a DAF/SPK container,
     /// and the Sun, EMB, and Moon Chebyshev segments are extracted.
-    pub fn from_bsp(path: impl AsRef<Path>) -> Result<Self, DataError> {
+    pub fn from_bsp(path: impl AsRef<Path>) -> Result<Self, DatasetError> {
         let file_data = std::fs::read(path.as_ref())?;
         Self::from_bytes(&file_data)
     }
 
     /// Load a runtime ephemeris from raw BSP bytes already in memory.
-    pub fn from_bytes(data: &[u8]) -> Result<Self, DataError> {
+    pub fn from_bytes(data: &[u8]) -> Result<Self, DatasetError> {
         let segments = spk::parse_bsp(data)?;
         Ok(Self::from_segments(segments))
     }
@@ -83,22 +83,22 @@ impl RuntimeEphemeris {
         }
     }
 
-    /// Load from a BSP file resolved by the [`DataManager`](crate::data::DataManager).
+    /// Load from a BSP file resolved by the [`DatasetManager`](crate::datasets::runtime::DatasetManager).
     ///
     /// This is a convenience method that combines data management with loading:
     /// ```rust,ignore
-    /// use siderust::data::{DataManager, DatasetId};
+    /// use siderust::datasets::{DatasetId, runtime::DatasetManager};
     /// use siderust::calculus::ephemeris::RuntimeEphemeris;
     ///
-    /// let dm = DataManager::new()?;
+    /// let dm = DatasetManager::new()?;
     /// let path = dm.ensure(DatasetId::De441)?;
     /// let eph = RuntimeEphemeris::from_bsp(path)?;
     /// ```
     #[cfg(feature = "runtime-data")]
-    pub fn from_data_manager(
-        dm: &crate::data::DataManager,
-        id: crate::data::DatasetId,
-    ) -> Result<Self, DataError> {
+    pub fn from_dataset_manager(
+        dm: &crate::datasets::runtime::DatasetManager,
+        id: crate::datasets::DatasetId,
+    ) -> Result<Self, DatasetError> {
         let path = dm.ensure(id)?;
         Self::from_bsp(path)
     }
@@ -196,7 +196,7 @@ impl DynEphemeris for RuntimeEphemeris {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::spk::{BspSegments, SegmentData};
+    use crate::formats::spice::spk::{BspSegments, SegmentData};
 
     const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
     const JD_J2000: f64 = 2451545.0;

@@ -11,7 +11,7 @@
 //! build-script pipeline in `scripts/jpl/`) and at runtime (via the
 //! `runtime-data` feature).
 
-use super::DataError;
+use super::SpiceError;
 
 /// Parsed DAF container.
 #[derive(Debug)]
@@ -47,9 +47,9 @@ pub struct Summary {
 
 impl Daf {
     /// Parse a DAF container from raw file bytes.
-    pub fn parse(data: &[u8]) -> Result<Self, DataError> {
+    pub fn parse(data: &[u8]) -> Result<Self, SpiceError> {
         if data.len() < 1024 {
-            return Err(DataError::Parse(format!(
+            return Err(SpiceError::Parse(format!(
                 "DAF file too small ({} bytes)",
                 data.len()
             )));
@@ -57,7 +57,7 @@ impl Daf {
 
         let locid = std::str::from_utf8(&data[0..8]).unwrap_or("").trim();
         if !locid.starts_with("DAF") {
-            return Err(DataError::Parse(format!(
+            return Err(SpiceError::Parse(format!(
                 "Not a DAF file (locator = {:?})",
                 locid
             )));
@@ -73,7 +73,7 @@ impl Daf {
         } else if nd_be > 0 && nd_be <= 100 && ni_be > 0 && ni_be <= 100 {
             (false, nd_be as usize, ni_be as usize)
         } else {
-            return Err(DataError::Parse(format!(
+            return Err(SpiceError::Parse(format!(
                 "Cannot determine DAF endianness: ND/NI LE=({},{}), BE=({},{})",
                 nd_le, ni_le, nd_be, ni_be
             )));
@@ -85,7 +85,7 @@ impl Daf {
         let fward = read_i32(data, 76) as usize;
 
         if nd != 2 || ni != 6 {
-            return Err(DataError::Parse(format!(
+            return Err(SpiceError::Parse(format!(
                 "Expected SPK format (ND=2, NI=6), got ND={}, NI={}",
                 nd, ni
             )));
@@ -99,7 +99,7 @@ impl Daf {
         while rec > 0 {
             let rec_offset = (rec - 1) * 1024;
             if rec_offset + 1024 > data.len() {
-                return Err(DataError::Parse(format!(
+                return Err(SpiceError::Parse(format!(
                     "Summary record {} extends past EOF",
                     rec
                 )));
@@ -112,7 +112,7 @@ impl Daf {
             for i in 0..nsum {
                 let off = rec_offset + 24 + i * ss * 8;
                 if off + ss * 8 > data.len() {
-                    return Err(DataError::Parse(format!(
+                    return Err(SpiceError::Parse(format!(
                         "Summary {} in record {} extends past EOF",
                         i, rec
                     )));

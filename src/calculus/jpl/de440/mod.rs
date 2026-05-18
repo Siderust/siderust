@@ -27,7 +27,7 @@
 //!   <https://doi.org/10.3847/1538-3881/abd414>
 
 use super::{eval::SegmentDescriptor, DeData};
-use crate::archive::jpl::de440 as data;
+use crate::embedded_data::jpl::de440 as data;
 
 /// Marker type selecting DE440 embedded coefficient data.
 pub struct De440Data;

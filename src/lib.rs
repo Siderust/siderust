@@ -112,19 +112,12 @@ pub mod atmosphere;
 pub mod bodies;
 pub mod calculus;
 pub mod coordinates;
-pub mod data;
+pub mod datasets;
+pub mod formats;
 pub mod geometry;
 pub mod interp;
 pub mod observatories;
-pub mod provenance {
-    //! Provenance and source-attribution types — re-exported from [`crate::archive`].
-    //!
-    //! This module is a thin re-export shim so that the canonical import path
-    //! `siderust::provenance::Provenance` continues to work after the types
-    //! were moved into the internal `archive` module.
-    pub use crate::archive::provenance::checksum;
-    pub use crate::archive::provenance::{DataSource, Provenance};
-}
+pub mod provenance;
 pub mod qtty;
 #[cfg(feature = "spectra")]
 pub mod spectra;
@@ -136,9 +129,9 @@ pub mod time;
 // Ergonomic re-exports of common time markers / epoch (`siderust::J2000` in rustdoc examples).
 pub use time::{JulianDate, ModifiedJulianDate, J2000, JD, MJD};
 
-pub(crate) mod archive;
+pub(crate) mod embedded_data;
 #[doc(hidden)]
-pub use archive::provenance::checksum;
+pub use provenance::checksum;
 pub(crate) mod macros;
 
 // ---------------------------------------------------------------------------

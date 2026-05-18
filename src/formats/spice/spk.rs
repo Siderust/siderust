@@ -8,7 +8,7 @@
 //! pipeline in `scripts/jpl/`.
 
 use super::daf::{Daf, Summary};
-use super::DataError;
+use super::SpiceError;
 
 /// Metadata and coefficient data for one SPK Type 2 segment.
 #[derive(Debug)]
@@ -51,7 +51,7 @@ pub fn read_type2_segment(
     file_data: &[u8],
     daf: &Daf,
     summary: &Summary,
-) -> Result<SegmentData, DataError> {
+) -> Result<SegmentData, SpiceError> {
     let end = summary.end_word;
 
     let n_records = daf.read_f64_at_word(file_data, end) as usize;
@@ -60,7 +60,7 @@ pub fn read_type2_segment(
     let init = daf.read_f64_at_word(file_data, end - 3);
 
     if !(5..=200).contains(&rsize) {
-        return Err(DataError::Parse(format!(
+        return Err(SpiceError::Parse(format!(
             "Implausible rsize={} for SPK Type 2 segment",
             rsize
         )));
@@ -68,14 +68,14 @@ pub fn read_type2_segment(
 
     let ncoeff = (rsize - 2) / 3;
     if 2 + 3 * ncoeff != rsize {
-        return Err(DataError::Parse(format!(
+        return Err(SpiceError::Parse(format!(
             "rsize={} is not 2 + 3k for any k (ncoeff would be {})",
             rsize, ncoeff
         )));
     }
 
     if n_records == 0 || n_records > 10_000_000 {
-        return Err(DataError::Parse(format!(
+        return Err(SpiceError::Parse(format!(
             "Implausible n_records={}",
             n_records
         )));
@@ -101,23 +101,23 @@ pub fn read_type2_segment(
 }
 
 /// Parse a BSP file and extract the three required segments (Sun, EMB, Moon).
-pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, DataError> {
+pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
     let daf = Daf::parse(file_data)?;
 
-    let find_segment = |target: i32, center: i32, name: &str| -> Result<SegmentData, DataError> {
+    let find_segment = |target: i32, center: i32, name: &str| -> Result<SegmentData, SpiceError> {
         let summary = daf
             .summaries
             .iter()
             .find(|s| s.target_id == target && s.center_id == center)
             .ok_or_else(|| {
-                DataError::Parse(format!(
+                SpiceError::Parse(format!(
                     "BSP: segment target={} center={} ({}) not found",
                     target, center, name
                 ))
             })?;
 
         if summary.data_type != 2 && summary.data_type != 3 {
-            return Err(DataError::Parse(format!(
+            return Err(SpiceError::Parse(format!(
                 "BSP: {} segment is Type {} (only Type 2/3 supported)",
                 name, summary.data_type
             )));
@@ -136,7 +136,7 @@ pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, DataError> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::data::daf::{Daf, Summary};
+    use crate::formats::spice::daf::{Daf, Summary};
 
     fn make_daf() -> Daf {
         Daf {
