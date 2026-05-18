@@ -18,7 +18,7 @@ de440 = ["siderust/de440"]
 runtime-data = ["siderust/runtime-data"]
 
 [dependencies]
-siderust    = { version = "0.7", path = ".." }
+siderust    = { version = "0.8", path = ".." }
 qtty        = "0.8"
 tempoch     = "0.6"
 tempoch-ffi = "0.6"
