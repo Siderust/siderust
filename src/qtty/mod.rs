@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Internal compatibility facade over the external `qtty` crate.
+//! # `siderust::qtty` — typed physical quantities
+//!
+//! This module re-exports the external [`qtty`](https://crates.io/crates/qtty) crate
+//! so you can write `siderust::qtty::Kilometer` without adding a separate
+//! `qtty` dependency in your `Cargo.toml`. The pattern mirrors
+//! `siderust::time` (a façade over `tempoch`).
+//!
+//! Adding `qtty` directly as a dependency gives you identical types; this
+//! re-export is purely for ergonomics.
+//!
+//! ## Compatibility façade
 //!
 //! Older `siderust` code expects `use qtty::*;` to bring unit markers such as
 //! `Day` and `AstronomicalUnit` into scope alongside plural quantity aliases

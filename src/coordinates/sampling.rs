@@ -52,15 +52,6 @@
 //! dΩ = cos(alt) · Δalt_rad · Δaz_rad
 //! ```
 //!
-//! ### Module placement
-//!
-//! Hemispherical samplers are geometric primitives independent of any
-//! particular astronomical model — they don't need ephemerides, sidereal
-//! time, or even an observer. They live in [`crate::geometry`] (alongside
-//! other sky-coverage helpers) rather than under `astro::` or
-//! `calculus::horizontal`, both of which are reserved for time-dependent or
-//! body-specific calculations.
-//!
 //! ## References
 //!
 //! - Górski, K. M., Hivon, E., Banday, A. J., et al. (2005). *HEALPix*:
@@ -73,7 +64,7 @@
 //! ## Example
 //!
 //! ```rust
-//! use siderust::geometry::SkyGrid;
+//! use siderust::coordinates::SkyGrid;
 //! use siderust::qtty::DEG;
 //!
 //! let grid = SkyGrid::uniform(5.0 * DEG);
@@ -131,7 +122,7 @@ pub struct SkyGridCell {
 /// Plain direction iteration via `IntoIterator`:
 ///
 /// ```rust
-/// use siderust::geometry::SkyGrid;
+/// use siderust::coordinates::SkyGrid;
 /// use siderust::qtty::DEG;
 ///
 /// let grid = SkyGrid::uniform(10.0 * DEG);
@@ -142,7 +133,7 @@ pub struct SkyGridCell {
 /// Direction + per-cell solid angle:
 ///
 /// ```rust
-/// use siderust::geometry::SkyGrid;
+/// use siderust::coordinates::SkyGrid;
 /// use siderust::qtty::{DEG, Steradians};
 ///
 /// let grid = SkyGrid::uniform(5.0 * DEG);
