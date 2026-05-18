@@ -378,7 +378,7 @@ const DEPS_PLANETARY_CORR: f64 = 3880.0; // 0.1 μas
 /// * McCarthy & Luzum (2003)
 /// * IERS Conventions (2010), §5.5.1
 pub fn nutation_iau2000b(jd: JulianDate) -> Nutation2000B {
-    let t = jd.julian_centuries();
+    let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
 
     // Delaunay arguments (radians)
     let fa = delaunay_arguments(t);
@@ -580,7 +580,7 @@ pub(crate) mod iau1980 {
     #[cfg(test)]
     pub(crate) fn get_nutation(jd: JulianDate) -> Nutation {
         // Input is interpreted as JD(TT), as required by the IAU 1980 model.
-        let t = jd.julian_centuries();
+        let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
         let t2 = t * t;
         let t3 = t2 * t;
 

@@ -81,7 +81,7 @@ Siderust is built on two cross-cutting principles documented in
 
 - Stellar aberration uses the full special-relativistic (Lorentz) formula per IERS Conventions (2020, §7.2); annual uses VSOP87E barycentric Earth velocity and topocentric adds a diurnal `ω×r` term.
 - The Earth-orientation chain now exposes public frame transforms for `GCRS ↔ CIRS ↔ TIRS ↔ ITRF/ECEF`, plus the usual inertial and operational frames (`ICRS`, `ICRF`, `EME2000`, `TEME`, `Galactic`, planetary body-fixed).
-- Local orbital frames such as `RTN` / `RIC` and covariance transport in those frames are not first-class yet.
+- Local orbital frames (`RTN`, `LVLH`, `VNC`) and covariance transport in those frames are first-class via [`astro::dynamics::frames::LocalOrbitalFrame`] and [`astro::dynamics::covariance::StateCovariance`], built from a typed [`OrbitState`].
 
 ---
 

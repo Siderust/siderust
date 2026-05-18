@@ -128,6 +128,12 @@ impl std::fmt::Display for ConicError {
 
 impl std::error::Error for ConicError {}
 
+impl From<ConicValidationError> for ConicError {
+    fn from(error: ConicValidationError) -> Self {
+        map_validation_error(error)
+    }
+}
+
 pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
     match error {
         ConicValidationError::InvalidEccentricity => ConicError::InvalidEccentricity,
@@ -137,6 +143,29 @@ pub(crate) fn map_validation_error(error: ConicValidationError) -> ConicError {
         ConicValidationError::InvalidOrientation => ConicError::InvalidOrientation,
         ConicValidationError::OutOfRange { .. } => ConicError::InvalidOrientation,
     }
+}
+
+pub(crate) fn elliptic_geometry_from_sma<U: LengthUnit>(
+    semi_major_axis: Quantity<U>,
+    eccentricity: f64,
+    inclination: Degrees,
+    longitude_of_ascending_node: Degrees,
+    argument_of_periapsis: Degrees,
+) -> Result<OrientedConic<TypedSemiMajorAxisParam<U, Elliptic>, EclipticMeanJ2000>, ConicError> {
+    let sma = SemiMajorAxisParam::try_new(semi_major_axis, eccentricity)?;
+    let typed = match sma.classify() {
+        ClassifiedSemiMajorAxisParam::Elliptic(t) => t,
+        ClassifiedSemiMajorAxisParam::Hyperbolic(_) => {
+            return Err(ConicError::HyperbolicNotSupported);
+        }
+    };
+    let orientation = ConicOrientation::try_new(
+        inclination,
+        longitude_of_ascending_node,
+        argument_of_periapsis,
+    )?;
+
+    Ok(OrientedConic::new(typed, orientation))
 }
 
 // =============================================================================
@@ -176,8 +205,7 @@ impl ConicOrbit {
         mean_anomaly_at_epoch: Degrees,
         epoch: JulianDate,
     ) -> Result<Self, ConicError> {
-        let shape = PeriapsisParam::try_new(periapsis_distance, eccentricity)
-            .map_err(map_validation_error)?;
+        let shape = PeriapsisParam::try_new(periapsis_distance, eccentricity)?;
         if eccentricity == 1.0 {
             return Err(ConicError::ParabolicUnsupported);
         }
@@ -185,8 +213,7 @@ impl ConicOrbit {
             inclination,
             longitude_of_ascending_node,
             argument_of_periapsis,
-        )
-        .map_err(map_validation_error)?;
+        )?;
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
@@ -277,20 +304,13 @@ impl MeanMotionOrbit {
         mean_motion: AngularRate<Degree, Day>,
         epoch: JulianDate,
     ) -> Result<Self, ConicError> {
-        let sma = SemiMajorAxisParam::try_new(semi_major_axis, eccentricity)
-            .map_err(map_validation_error)?;
-        let typed = match sma.classify() {
-            ClassifiedSemiMajorAxisParam::Elliptic(t) => t,
-            ClassifiedSemiMajorAxisParam::Hyperbolic(_) => {
-                return Err(ConicError::HyperbolicNotSupported);
-            }
-        };
-        let orientation = ConicOrientation::try_new(
+        let geometry = elliptic_geometry_from_sma(
+            semi_major_axis,
+            eccentricity,
             inclination,
             longitude_of_ascending_node,
             argument_of_periapsis,
-        )
-        .map_err(map_validation_error)?;
+        )?;
         if !mean_motion.value().is_finite() || mean_motion.value() <= 0.0 {
             return Err(ConicError::InvalidMeanMotion);
         }
@@ -298,7 +318,7 @@ impl MeanMotionOrbit {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
-            geometry: OrientedConic::new(typed, orientation),
+            geometry,
             mean_motion,
             epoch,
         })
@@ -415,6 +435,22 @@ mod tests {
     }
 
     #[test]
+    fn conic_rejects_nan_epoch() {
+        assert_eq!(
+            ConicOrbit::try_new(
+                1.0 * AU,
+                0.5,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                crate::time::JulianDate::new(f64::NAN),
+            ),
+            Err(ConicError::InvalidEpoch)
+        );
+    }
+
+    #[test]
     fn conic_rejects_inf_mean_anomaly() {
         assert_eq!(
             ConicOrbit::try_new(
@@ -475,6 +511,21 @@ mod tests {
                 crate::J2000,
             ),
             Err(ConicError::InvalidMeanMotion)
+        );
+    }
+    #[test]
+    fn mean_motion_rejects_nan_epoch() {
+        assert_eq!(
+            MeanMotionOrbit::try_new(
+                1.0 * AU,
+                0.5,
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                Degrees::new(0.0),
+                AngularRate::<Degree, Day>::new(1.0),
+                crate::time::JulianDate::new(f64::NAN),
+            ),
+            Err(ConicError::InvalidEpoch)
         );
     }
 }

@@ -121,9 +121,12 @@ pub mod centers;
 pub mod frames;
 pub mod horizontal;
 pub mod observation;
+pub mod sampling;
 pub mod spherical;
 pub mod transform;
 pub mod types;
+
+pub use sampling::{SkyGrid, SkyGridCell};
 
 /// Prelude module for convenient imports.
 ///

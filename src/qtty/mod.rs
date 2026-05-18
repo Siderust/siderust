@@ -1,7 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Internal compatibility facade over the external `qtty` crate.
+//! # `siderust::qtty` — typed physical quantities
+//!
+//! This module re-exports the external [`qtty`](https://crates.io/crates/qtty) crate
+//! so you can write `siderust::qtty::Kilometer` without adding a separate
+//! `qtty` dependency in your `Cargo.toml`. The pattern mirrors
+//! `siderust::time` (a façade over `tempoch`).
+//!
+//! Adding `qtty` directly as a dependency gives you identical types; this
+//! re-export is purely for ergonomics.
+//!
+//! ## Compatibility façade
 //!
 //! Older `siderust` code expects `use qtty::*;` to bring unit markers such as
 //! `Day` and `AstronomicalUnit` into scope alongside plural quantity aliases
@@ -19,8 +29,8 @@ pub use crate::ext_qtty::{
 
 pub use crate::ext_qtty::unit;
 pub use crate::ext_qtty::{
-    acceleration, angular, area, energy, force, length, mass, power, radiometry, solid_angle, time,
-    volume,
+    acceleration, angular, area, density, energy, force, length, mass, power, radiometry,
+    solid_angle, time, volume,
 };
 
 pub use crate::ext_qtty::solid_angle::*;
@@ -28,6 +38,7 @@ pub use crate::ext_qtty::solid_angle::*;
 pub use crate::ext_qtty::acceleration::*;
 pub use crate::ext_qtty::angular::*;
 pub use crate::ext_qtty::area::*;
+pub use crate::ext_qtty::density::*;
 pub use crate::ext_qtty::energy::*;
 pub use crate::ext_qtty::force::*;
 pub use crate::ext_qtty::length::*;
@@ -46,3 +57,18 @@ pub use crate::ext_qtty::Second;
 
 pub mod dimensionless;
 pub use dimensionless::*;
+
+/// Re-export `GravitationalParameter` from `qtty::dynamics` so that
+/// `crate::qtty::GravitationalParameter` is available in the `siderust` module tree.
+pub use crate::ext_qtty::GravitationalParameter;
+
+/// Re-export astrodynamics typed quantities used by `dynamics::state` and
+/// force models.
+pub use crate::ext_qtty::dynamics::{
+    AreaToMass, AreaToMassUnit, DragCoefficient, InverseSecond, InverseSeconds, J2Coefficient,
+    KmPerSecond, KmPerSecondSquared, KmPerSeconds, KmPerSecondsSquared, SrpCoefficient,
+    SPEED_OF_LIGHT_KM_S,
+};
+
+/// Re-export typed integrator tolerances for use in dynamics integrators.
+pub use crate::ext_qtty::tolerances::IntegratorTolerances;

@@ -53,18 +53,17 @@
 //!
 //! ## Crate Modules
 //!
-//! - [`coordinates`]             : Cartesian & Spherical coordinate types and transformations
-//! - [`targets`]                 : `CoordinateWithPM<T>` + `Trackable` trait for targets
+//! - [`coordinates`]             : Cartesian & Spherical coordinate types and transformations; includes [`SkyGrid`] sampling utility
+//! - [`targets`]                 : `CoordinateWithPM<T>` + `Trackable` trait for observation targets
 //! - [`time`]                    : Time types and scale-based `Period<S>` / generic `Interval<T>`
-//! - [`astro`]                   : Aberration, nutation, precession, sidereal time, event searches, orbits
+//! - [`astro`]                   : Aberration, nutation, precession, sidereal time, event searches, orbits, orbital mechanics
 //! - [`calculus`]                : Numerical kernels (VSOP87, ELP2000, DE4xx, altitude/azimuth/lunar APIs, root-finding)
 //! - [`bodies`]                  : Planets, stars, satellites, asteroids, comets, and built-in catalogs
 //! - [`observatories`]           : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 //! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate (including `OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`, `Refractivity`, `CipCoordinate`)
-//! - [`geometry`]                : Angular geometry primitives (great-circle, parallactic angle, …)
-//! - [`interp`]                  : Generic interpolation kernels
-//! - [`data`]                    : Built-in reference data (EOP tables, star catalogs)
-//! - [`provenance`]              : Provenance and source-attribution types
+//! - [`datasets`]                : Scientific dataset catalog: [`DatasetId`](datasets::DatasetId), acquisition metadata, and optional runtime download/cache manager
+//! - [`formats`]                 : Low-level binary file-format parsers (e.g. SPICE DAF/SPK); no dataset-catalog knowledge
+//! - [`provenance`]              : Provenance and source-attribution types (`Provenance`, `DataSource`)
 //! - `atmosphere` *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
 //! - `spectra` *(optional)*    : Spectral response and photometric bandpass utilities (`spectra` feature)
 //! - `tables` *(optional)*     : Tabulated data loaders (`tables` feature)
@@ -112,9 +111,10 @@ pub mod atmosphere;
 pub mod bodies;
 pub mod calculus;
 pub mod coordinates;
-pub mod data;
-pub mod geometry;
-pub mod interp;
+pub mod datasets;
+pub mod formats;
+#[cfg(any(feature = "spectra", feature = "tables", feature = "atmosphere"))]
+pub(crate) mod interp;
 pub mod observatories;
 pub mod provenance;
 pub mod qtty;
@@ -128,7 +128,12 @@ pub mod time;
 // Ergonomic re-exports of common time markers / epoch (`siderust::J2000` in rustdoc examples).
 pub use time::{JulianDate, ModifiedJulianDate, J2000, JD, MJD};
 
-pub(crate) mod archive;
+// Convenience re-export: sky sampling utilities.
+pub use coordinates::{SkyGrid, SkyGridCell};
+
+pub(crate) mod embedded_data;
+#[doc(hidden)]
+pub use provenance::checksum;
 pub(crate) mod macros;
 
 // ---------------------------------------------------------------------------

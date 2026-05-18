@@ -46,7 +46,7 @@ fn main() {
 
     #[cfg(not(feature = "regen-data"))]
     eprintln!(
-        "siderust build: using committed generated VSOP87/ELP2000 tables in src/archive/. \
+        "siderust build: using committed generated VSOP87/ELP2000 tables in src/embedded_data/. \
          Enable the `regen-data` feature and set SIDERUST_REGEN=1 to refresh them."
     );
 
@@ -97,7 +97,7 @@ fn regen_tables() {
     let base = datasets_base_dir();
     let manifest_dir =
         PathBuf::from(env::var("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR not set"));
-    let gen_dir = manifest_dir.join("src/archive");
+    let gen_dir = manifest_dir.join("src/embedded_data");
 
     eprintln!("Regenerating VSOP87 data...");
     vsop87_build::run_regen(base.join("vsop87_dataset").as_path(), &gen_dir)

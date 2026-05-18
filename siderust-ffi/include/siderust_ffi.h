@@ -228,6 +228,61 @@ enum SiderustLengthUnit
 typedef int32_t SiderustLengthUnit;
 #endif // __cplusplus
 
+// Status codes returned by dynamics propagation functions.
+//
+// Maps to the variants of [`siderust::astro::dynamics::errors::DynamicsError`].
+//
+// | Value | Meaning |
+// |-------|---------|
+// | 0 | Success |
+// | 1 | Required pointer was null |
+// | 2 | No ephemeris provider configured |
+// | 3 | EOP data unavailable |
+// | 4 | A gravity spherical-harmonic coefficient is unavailable |
+// | 5 | Altitude is below the body surface |
+// | 6 | Degenerate geometry (zero position or velocity, r ∥ v) |
+// | 7 | Invalid integrator step request |
+// | 8 | Atmosphere density provider returned an error |
+// | 9 | An opaque provider error occurred |
+// | 10 | No gravity field provider configured in the context |
+// | 11 | Requested geopotential degree/order exceeds the provider limit |
+// | 99 | A Rust panic was caught at the FFI boundary |
+enum siderust_dynamics_status_t
+#ifdef __cplusplus
+  : int32_t
+#endif // __cplusplus
+ {
+  // Propagation succeeded.
+  SIDERUST_DYNAMICS_STATUS_T_OK = 0,
+  // A required pointer argument was null.
+  SIDERUST_DYNAMICS_STATUS_T_NULL_POINTER = 1,
+  // No ephemeris provider configured in the dynamics context.
+  SIDERUST_DYNAMICS_STATUS_T_EPHEMERIS_UNAVAILABLE = 2,
+  // Earth Orientation Parameters unavailable for the requested epoch.
+  SIDERUST_DYNAMICS_STATUS_T_EOP_UNAVAILABLE = 3,
+  // A gravity spherical-harmonic coefficient is unavailable.
+  SIDERUST_DYNAMICS_STATUS_T_GRAVITY_COEFFICIENT_UNAVAILABLE = 4,
+  // Spacecraft altitude is below the body surface (negative altitude).
+  SIDERUST_DYNAMICS_STATUS_T_ALTITUDE_BELOW_SURFACE = 5,
+  // Degenerate geometry (zero position, zero velocity, or r ∥ v).
+  SIDERUST_DYNAMICS_STATUS_T_DEGENERATE_GEOMETRY = 6,
+  // Integrator step request violated a constraint (e.g. step size is zero).
+  SIDERUST_DYNAMICS_STATUS_T_INVALID_STEP_REQUEST = 7,
+  // The atmosphere density provider returned an error.
+  SIDERUST_DYNAMICS_STATUS_T_ATMOSPHERE_PROVIDER_ERROR = 8,
+  // An opaque provider error not covered by the more specific variants.
+  SIDERUST_DYNAMICS_STATUS_T_PROVIDER_ERROR = 9,
+  // No gravity field provider configured in the dynamics context.
+  SIDERUST_DYNAMICS_STATUS_T_GRAVITY_FIELD_UNAVAILABLE = 10,
+  // Requested geopotential degree or order exceeds the provider's maximum.
+  SIDERUST_DYNAMICS_STATUS_T_GEOPOTENTIAL_DEGREE_OUT_OF_RANGE = 11,
+  // A Rust panic was caught at the FFI boundary.
+  SIDERUST_DYNAMICS_STATUS_T_INTERNAL_PANIC = 99,
+};
+#ifndef __cplusplus
+typedef int32_t siderust_dynamics_status_t;
+#endif // __cplusplus
+
 // Principal lunar phase kind.
 enum siderust_phase_kind_t
 #ifdef __cplusplus
@@ -374,6 +429,13 @@ typedef int32_t siderust_twilight_phase_t;
 // Opaque FFI context used by model-sensitive transform entry points.
 typedef struct siderust_context_t siderust_context_t;
 
+// Opaque handle to a [`DynamicsContext`] used by propagation entry points.
+//
+// Created via `siderust_dynamics_context_new` and freed via
+// `siderust_dynamics_context_free`.  Providers are attached via the
+// `siderust_dynamics_context_with_*` family.
+typedef struct siderust_dynamics_context_t siderust_dynamics_context_t;
+
 // Opaque handle representing a generic celestial target.
 //
 // This mirrors Rust's `CoordinateWithPM<T>`, supporting:
@@ -382,6 +444,22 @@ typedef struct siderust_context_t siderust_context_t;
 // - cartesian positions with frame/center/unit metadata,
 // - and optional proper motion payloads.
 typedef struct SiderustGenericTarget SiderustGenericTarget;
+
+// Opaque handle to an [`OrbitState`] in the Geocentric/GCRS inertial frame.
+//
+// Units:
+// - Position: km
+// - Velocity: km/s
+// - Epoch: Julian Date (TT)
+typedef struct siderust_orbit_state_t siderust_orbit_state_t;
+
+// Opaque handle to a DOP853 two-body propagator.
+//
+// Stores the [`TwoBody`] force model; propagation is performed directly via
+// the DOP853 adaptive integrator.
+// Created via `siderust_propagator_two_body_earth_new` or
+// `siderust_propagator_two_body_new`.
+typedef struct siderust_propagator_t siderust_propagator_t;
 
 // Opaque handle to a `RuntimeEphemeris`.
 //
@@ -569,6 +647,52 @@ typedef struct SiderustBodycentricParams {
   // Padding bytes for alignment; must be zeroed.
   uint8_t _pad[7];
 } SiderustBodycentricParams;
+
+// C-callback vtable for an atmosphere density provider.
+//
+// Pass a pointer to this struct to
+// `siderust_dynamics_context_with_atmosphere`. The function pointer
+// `density` will be called during propagation with the spacecraft's geodetic
+// altitude (km); it must return the air density in kg/m³, or a **negative**
+// value to signal an error (e.g. below-surface altitude).
+//
+// `user_data` is passed unchanged to every call; use it to carry a pointer to
+// your density-model state.  You are responsible for its lifetime: keep the
+// data alive until the context is freed.
+typedef struct siderust_atmosphere_vtable_t {
+  // Compute atmospheric density (kg/m³) at `altitude_km` above the surface.
+  //
+  // Return a negative value to signal that the altitude is below the surface
+  // (the propagator will map this to `SIDERUST_DYNAMICS_STATUS_ALTITUDE_BELOW_SURFACE`).
+  double (*density)(double altitude_km, void *user_data);
+  // Caller-controlled context forwarded to every `density` call.
+  void *user_data;
+} siderust_atmosphere_vtable_t;
+
+// C-callback vtable for a spherical-harmonic gravity field provider.
+//
+// Pass a pointer to this struct to
+// `siderust_dynamics_context_with_gravity_field`.  The function pointers
+// `c_normalized` and `s_normalized` are called during propagation to retrieve
+// fully-normalised Stokes coefficients C̄_{n,m} and S̄_{n,m}.
+//
+// `user_data` is forwarded to every coefficient call.
+typedef struct siderust_gravity_vtable_t {
+  // Gravitational parameter GM (km³/s²).
+  double gm_km3_s2;
+  // Equatorial reference radius (km).
+  double reference_radius_km;
+  // Maximum spherical-harmonic degree available.
+  uint32_t max_degree;
+  // Maximum spherical-harmonic order available.
+  uint32_t max_order;
+  // Return the fully-normalised cosine coefficient C̄_{n,m}.
+  double (*c_normalized)(uint32_t n, uint32_t m, void *user_data);
+  // Return the fully-normalised sine coefficient S̄_{n,m}.
+  double (*s_normalized)(uint32_t n, uint32_t m, void *user_data);
+  // Caller-controlled context forwarded to every coefficient call.
+  void *user_data;
+} siderust_gravity_vtable_t;
 
 // A principal lunar phase event.
 typedef struct siderust_phase_event_t {
@@ -1080,6 +1204,147 @@ siderust_status_t siderust_from_bodycentric(struct siderust_cartesian_pos_t pos,
                                             struct SiderustBodycentricParams params,
                                             double jd,
                                             struct siderust_cartesian_pos_t *out);
+
+// Create a dynamics context with no providers (suitable for pure two-body
+// propagation).
+//
+// On success, `*out` receives a pointer to a newly heap-allocated context.
+// Free the context with `siderust_dynamics_context_free` when done.
+ siderust_status_t siderust_dynamics_context_new(struct siderust_dynamics_context_t **out);
+
+// Free a dynamics context previously created by `siderust_dynamics_context_new`.
+//
+// # Safety
+//
+// `handle` must be either null or a live pointer produced by this crate.
+ void siderust_dynamics_context_free(struct siderust_dynamics_context_t *handle);
+
+// Attach a runtime ephemeris provider to the dynamics context.
+//
+// Clones the underlying `RuntimeEphemeris` so both the context and the
+// original handle remain independently valid.  `eph` must be a live handle
+// previously returned by `siderust_runtime_ephemeris_load_bsp` or
+// `siderust_runtime_ephemeris_load_bytes`.
+
+siderust_status_t siderust_dynamics_context_with_ephemeris(struct siderust_dynamics_context_t *ctx,
+                                                           const struct siderust_runtime_ephemeris_t *eph);
+
+// Attach an atmosphere density provider (C-callback vtable) to the context.
+//
+// The `vtable` is copied by value; the caller's `user_data` pointer must
+// remain valid until the context is freed.
+//
+// # Safety
+//
+// The `density` function pointer in `vtable` must remain valid for the
+// lifetime of the context.  `user_data` must be safe to pass across thread
+// boundaries (the propagator may call it from a different thread).
+
+siderust_status_t siderust_dynamics_context_with_atmosphere(struct siderust_dynamics_context_t *ctx,
+                                                            const struct siderust_atmosphere_vtable_t *vtable);
+
+// Attach a spherical-harmonic gravity field provider (C-callback vtable) to
+// the context.
+//
+// The `vtable` is copied by value.  The function pointers and `user_data`
+// must remain valid until the context is freed.
+//
+// # Safety
+//
+// The `c_normalized` / `s_normalized` function pointers must remain valid for
+// the lifetime of the context.  `user_data` must be thread-safe.
+
+siderust_status_t siderust_dynamics_context_with_gravity_field(struct siderust_dynamics_context_t *ctx,
+                                                               const struct siderust_gravity_vtable_t *vtable);
+
+// Construct an orbit state from raw components.
+//
+// - `epoch_jd` — epoch as a Julian Date (TT).
+// - `x`, `y`, `z` — position components in km (Geocentric/GCRS).
+// - `vx`, `vy`, `vz` — velocity components in km/s (GCRS).
+//
+// On success, `*out` receives a pointer to a new handle.
+// Free with `siderust_orbit_state_free`.
+
+siderust_status_t siderust_orbit_state_new(double epoch_jd,
+                                           double x,
+                                           double y,
+                                           double z,
+                                           double vx,
+                                           double vy,
+                                           double vz,
+                                           struct siderust_orbit_state_t **out);
+
+// Free an orbit state handle previously returned by this crate.
+//
+// # Safety
+//
+// `handle` must be either null or a live pointer produced by this crate.
+ void siderust_orbit_state_free(struct siderust_orbit_state_t *handle);
+
+// Read the position components (km, Geocentric/GCRS) from an orbit state.
+
+siderust_status_t siderust_orbit_state_position(const struct siderust_orbit_state_t *handle,
+                                                double *out_x,
+                                                double *out_y,
+                                                double *out_z);
+
+// Read the velocity components (km/s, GCRS) from an orbit state.
+
+siderust_status_t siderust_orbit_state_velocity(const struct siderust_orbit_state_t *handle,
+                                                double *out_vx,
+                                                double *out_vy,
+                                                double *out_vz);
+
+// Read the epoch (Julian Date, TT) from an orbit state.
+
+siderust_status_t siderust_orbit_state_epoch_jd(const struct siderust_orbit_state_t *handle,
+                                                double *out_jd);
+
+// Create a DOP853 two-body propagator using Earth's gravitational parameter
+// (EGM2008 GM = 398 600.441 8 km³/s²).
+//
+// On success, `*out` receives a pointer to the new handle.
+// Free with `siderust_propagator_free`.
+ siderust_status_t siderust_propagator_two_body_earth_new(struct siderust_propagator_t **out);
+
+// Create a DOP853 two-body propagator with a custom gravitational parameter.
+//
+// - `gm_km3_s2` — gravitational parameter GM in km³/s² (e.g. 398 600.441 8
+//   for Earth, 1.327 124 4e11 for the Sun).
+//
+// On success, `*out` receives a pointer to the new handle.
+// Free with `siderust_propagator_free`.
+
+siderust_status_t siderust_propagator_two_body_new(double gm_km3_s2,
+                                                   struct siderust_propagator_t **out);
+
+// Free a propagator handle previously returned by this crate.
+//
+// # Safety
+//
+// `handle` must be either null or a live pointer produced by this crate.
+ void siderust_propagator_free(struct siderust_propagator_t *handle);
+
+// Propagate an orbit state forward (or backward) by `dt_s` seconds.
+//
+// - `handle` — propagator created by `siderust_propagator_two_body_*_new`.
+// - `state_in` — initial orbit state (Geocentric/GCRS).
+// - `dt_s` — propagation interval in seconds (negative for backward propagation).
+// - `ctx` — dynamics context (may be null; null is treated as an empty context,
+//   equivalent to `siderust_dynamics_context_new` with no providers attached).
+// - `out_state` — on success, `*out_state` is set to a newly allocated orbit
+//   state representing the final state.  Free with `siderust_orbit_state_free`.
+//
+// Returns [`SiderustDynamicsStatus`]:
+// - `OK` (0) on success.
+// - A specific non-zero code when propagation fails (see [`SiderustDynamicsStatus`]).
+
+siderust_dynamics_status_t siderust_propagator_propagate(const struct siderust_propagator_t *handle,
+                                                         const struct siderust_orbit_state_t *state_in,
+                                                         double dt_s,
+                                                         const struct siderust_dynamics_context_t *ctx,
+                                                         struct siderust_orbit_state_t **out_state);
 
 // Get the Sun's barycentric position (EclipticMeanJ2000, AU) via VSOP87.
  siderust_status_t siderust_vsop87_sun_barycentric(double jd, struct siderust_cartesian_pos_t *out);

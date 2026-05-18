@@ -35,6 +35,10 @@ What you will find here:
 - `orientation.rs`: IAU pole and prime-meridian rotation parameters for body
   frames.
 - `units.rs`: astronomy-specific scalar units not provided by `qtty`.
+- `dynamics/`: spacecraft dynamics — Cartesian inertial state, force models
+  (two-body, J₂, drag, SRP, third-body), numerical integrators (RK4 / DOPRI5),
+  state-transition matrices, covariance transport, gravity-field abstraction,
+  and atmospheric density models.  All public APIs use `qtty` typed quantities.
 
 All public entry points are expressed in typed `qtty` and `tempoch` values.
 Where multiple standard models exist, selection is represented by marker types

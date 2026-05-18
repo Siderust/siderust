@@ -59,7 +59,7 @@ use wide::f64x4;
 #[allow(clippy::approx_constant)]
 #[rustfmt::skip]
 mod elp_data {
-    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/archive/elp_data.rs"));
+    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/embedded_data/elp_data.rs"));
 }
 use crate::bodies::solar_system::Moon;
 use crate::calculus::elp2000::elp_structs::*;
@@ -819,7 +819,7 @@ impl Moon {
     where
         U: LengthUnit,
     {
-        let t1 = jd.julian_centuries();
+        let t1 = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
         let t2 = t1 * t1;
         let t3 = t2 * t1;
         let t4 = t2 * t2;

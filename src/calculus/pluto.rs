@@ -33,8 +33,10 @@
 //! * Williams, T. G. (1991). "An optimized algorithm for Pluto", *Mem. Brit.
 //!   Astron. Assoc.* **99** (2), 75–82.
 
-use crate::archive::pluto_tables::{ARGUMENTS, LATITUDE_TERMS, LONGITUDE_TERMS, RADIUS_TERMS};
 use crate::coordinates::{cartesian, centers::Heliocentric, frames::EclipticMeanJ2000, spherical};
+use crate::embedded_data::pluto_tables::{
+    ARGUMENTS, LATITUDE_TERMS, LONGITUDE_TERMS, RADIUS_TERMS,
+};
 use crate::qtty::{AstronomicalUnit, Degrees, Radian, AU};
 use crate::time::JulianDate;
 
@@ -44,7 +46,7 @@ impl Pluto {
     pub fn get_heliocentric(
         jd: JulianDate,
     ) -> cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
-        let t = jd.julian_centuries();
+        let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
 
         // 2. Calculate mean longitudes (in degrees) for Jupiter, Saturn, and Pluto.
         let jupiter_lon = Degrees::new(34.35 + 3034.9057 * t);

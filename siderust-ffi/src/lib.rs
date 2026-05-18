@@ -31,6 +31,7 @@ pub mod azimuth;
 pub mod bodies;
 pub mod context;
 pub mod coordinates;
+pub mod dynamics;
 pub mod ephemeris;
 pub mod observatories;
 pub mod phase;
@@ -42,11 +43,13 @@ pub mod twilight;
 #[cfg(test)]
 pub(crate) mod test_helpers;
 
+
 pub use altitude::*;
 pub use azimuth::*;
 pub use bodies::*;
 pub use context::*;
 pub use coordinates::*;
+pub use dynamics::*;
 pub use ephemeris::*;
 pub use error::*;
 pub use observatories::*;

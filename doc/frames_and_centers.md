@@ -415,14 +415,16 @@ Named getters (`lat()`, `lon()`, `altitude()`) are generated automatically by th
 
 ## 10. Current Non-Goals
 
-The following operational frames are **not** first-class in the current typed
-frame system:
+Local orbital frames (`RTN`, `LVLH`, `VNC`) and covariance transport between
+them and the inertial Cartesian frame are now first-class through the
+orbit-relative API in `astro::dynamics::frames::LocalOrbitalFrame<M>` and
+`astro::dynamics::covariance::StateCovariance<F>`.  Each instance is built
+from a concrete `OrbitState`, so the state-dependent nature of the frame is
+preserved at the type level.
 
-- `RTN` / `RIC` / `LVLH`-style local orbital frames
-- covariance transport objects tied to those local frames
-
-Those frames are state-dependent rather than global; they need an orbit-relative
-API instead of the current zero-sized global frame markers.
+Other operational frames (e.g. body-fixed frames for minor planets, or
+observer-defined topocentric frames beyond `Horizontal`) are still out of
+scope for the typed frame system.
 
 ---
 

@@ -4,6 +4,47 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+
+### Added
+
+* **Typed spacecraft-dynamics gravitational-parameter aliases and constants** in
+  `astro::dynamics::units`, re-exported from `astro::dynamics` as
+  `GravitationalParameter`, with canonical `GM_EARTH`, `GM_SUN`, and `GM_MOON`
+  values expressed as `km³/s²`.
+* **`astro::dynamics::StateTransition<F>`** as a frame-tagged state-transition
+  container storing the 6×6 STM as four typed `affn::matrix3::FrameMatrix3`
+  blocks (`dr_dr`, `dr_dv`, `dv_dr`, `dv_dv`), plus identity construction,
+  block accessors, relabelling, and dense `to_row_major()` export.
+* **Expanded dynamics module docs** covering covariance propagation semantics,
+  STM block structure, and the local typed-unit vocabulary used by the orbital
+  propagation code.
+* **`astro::dynamics::Force<F, U>`** public type alias (defaulting to `GCRS`
+  frame and `Newton` unit), backed by `affn::cartesian::Force<F, U>`. Exposes a
+  semantically named handle for force vectors in the dynamics API, consistent
+  with how `Velocity` and `Displacement` are exposed as named aliases throughout
+  `affn`.
+* **`astro::dynamics::Acceleration<F, U>`** is now anchored to
+  `affn::cartesian::Acceleration<F, U>` instead of a local `Vector<F, U>` alias,
+  making the type visible under the canonical `affn` name across the entire
+  crate while remaining a zero-cost transparent alias.
+
+### Changed
+
+* **Dynamics gravitational-parameter APIs now use typed quantities** instead of
+  bare `f64` values. Force-model and gravity code paths now accept and store
+  `GravitationalParameter`, and the main solar-system GM constants in
+  `astro::dynamics::forces` are typed aliases of the new canonical constants.
+* **Orbit propagation time-step APIs in the dynamics integrators now use
+  `Second`** rather than raw scalars, preserving time-unit semantics across RK4,
+  DOPRI5, and `OrbitState::advance`.
+* **Finite-difference STM routines now return `StateTransition<GCRS>`** instead
+  of exposing only raw dense matrices, pushing frame-tagged affine structure
+  into the public dynamics API while still allowing dense export when needed.
+* **The `affn` dependency now resolves from the git source** and the lockfile
+  records checksums for the updated dependency graph, aligning `siderust` with
+  the current canonical affine-geometry implementation.
+
 ## [0.8.0] - 2026-05-18
 
 ### Added

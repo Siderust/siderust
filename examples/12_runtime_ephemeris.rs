@@ -16,7 +16,7 @@
 //! # Load from a local BSP file
 //! cargo run --example 12_runtime_ephemeris -- /path/to/de440.bsp
 //!
-//! # With the `runtime-data` feature: uses DataManager (auto-cache)
+//! # With the `runtime-data` feature: uses DatasetManager (auto-cache)
 //! cargo run --features runtime-data --example 12_runtime_ephemeris -- /path/to/de440.bsp
 //!
 //! # With `runtime-data` and no path: shows how to download DE440 on first run
@@ -78,25 +78,25 @@ fn demo_load_from_bytes() {
     println!();
 }
 
-/// Section 3 (requires `runtime-data` feature): Demonstrate [`DataManager`].
+/// Section 3 (requires `runtime-data` feature): Demonstrate [`DatasetManager`].
 ///
-/// [`DataManager`] handles the persistent cache, integrity checking, and
+/// [`DatasetManager`] handles the persistent cache, integrity checking, and
 /// (on explicit request) HTTP downloads from JPL servers.
 #[cfg(feature = "runtime-data")]
 fn demo_data_manager(explicit_download: bool) {
-    use siderust::data::{DataManager, DatasetId};
+    use siderust::datasets::{runtime::DatasetManager, DatasetId};
 
     println!("────────────────────────────────────────────────────");
-    println!("3) DataManager (feature = runtime-data)");
+    println!("3) DatasetManager (feature = runtime-data)");
     println!("────────────────────────────────────────────────────");
 
-    let dm = match DataManager::new() {
+    let dm = match DatasetManager::new() {
         Ok(dm) => {
             println!("  Cache dir: {}", dm.data_dir().display());
             dm
         }
         Err(e) => {
-            eprintln!("  ✗ Cannot create DataManager: {}", e);
+            eprintln!("  ✗ Cannot create DatasetManager: {}", e);
             return;
         }
     };
@@ -118,8 +118,8 @@ fn demo_data_manager(explicit_download: bool) {
 
     if dm.is_available(id) {
         // File already cached, load it directly.
-        match RuntimeEphemeris::from_data_manager(&dm, id) {
-            Ok(eph) => print_positions(&eph, "DE440 (DataManager)"),
+        match RuntimeEphemeris::from_dataset_manager(&dm, id) {
+            Ok(eph) => print_positions(&eph, "DE440 (DatasetManager)"),
             Err(e) => eprintln!("  ✗ Load failed: {}", e),
         }
     } else if explicit_download {
@@ -193,7 +193,7 @@ fn main() {
     // Demo 2: loading from raw bytes.
     demo_load_from_bytes();
 
-    // Demo 3: DataManager, only compiled when `runtime-data` feature is active.
+    // Demo 3: DatasetManager, only compiled when `runtime-data` feature is active.
     #[cfg(feature = "runtime-data")]
     {
         let explicit_download = args.iter().any(|a| a == "--download");
@@ -203,7 +203,7 @@ fn main() {
     #[cfg(not(feature = "runtime-data"))]
     {
         println!("────────────────────────────────────────────────────");
-        println!("3) DataManager (feature = runtime-data)  [SKIPPED]");
+        println!("3) DatasetManager (feature = runtime-data)  [SKIPPED]");
         println!("────────────────────────────────────────────────────");
         println!("  Enable with: cargo run --features runtime-data --example 12_runtime_ephemeris");
         println!();

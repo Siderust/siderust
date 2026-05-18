@@ -165,47 +165,7 @@ where
     }
 }
 
-impl<F> CenterShiftProvider<Barycentric, Selenocentric, F> for ()
-where
-    F: affn::ReferenceFrame,
-    (): FrameRotationProvider<EclipticMeanJ2000, F>,
-{
-    #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
-        jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        inverse_shift::<Barycentric, Selenocentric, F, Eph, Eop, Nut>(jd, ctx)
-    }
-}
-
-impl<F> CenterShiftProvider<Heliocentric, Selenocentric, F> for ()
-where
-    F: affn::ReferenceFrame,
-    (): FrameRotationProvider<EclipticMeanJ2000, F>,
-{
-    #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
-        jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        compose_shift::<Heliocentric, Barycentric, Selenocentric, F, Eph, Eop, Nut>(jd, ctx)
-    }
-}
-
-impl<F> CenterShiftProvider<Selenocentric, Heliocentric, F> for ()
-where
-    F: affn::ReferenceFrame,
-    (): FrameRotationProvider<EclipticMeanJ2000, F>,
-{
-    #[inline]
-    fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
-        jd: JulianDate,
-        ctx: &AstroContext<Eph, Eop>,
-    ) -> AuShift {
-        inverse_shift::<Selenocentric, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
-    }
-}
+impl_reverse_center_shifts_without_geocentric!(Selenocentric);
 
 /// Selenocentric → Geocentric override (inverse of the direct Geo→Seleno).
 impl<F> CenterShiftProvider<Selenocentric, Geocentric, F> for ()
