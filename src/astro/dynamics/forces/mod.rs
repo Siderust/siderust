@@ -60,7 +60,7 @@ pub use empirical::EmpiricalAcceleration;
 pub use geopotential::Geopotential;
 pub use j2::J2;
 pub use relativity::CentralBodyRelativity1Pn;
-pub use srp::{CannonballSrp, ShadowModel};
+pub use srp::{CannonballSrp, Conical, Cylindrical, EclipseModel, NoEclipse, ShadowModel};
 #[allow(deprecated)]
 pub use third_body::{
     MoonPerturbation, SunPerturbation, ThirdBody, ThirdBodyProvider, ThirdBodySunMoon,

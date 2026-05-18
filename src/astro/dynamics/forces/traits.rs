@@ -137,14 +137,10 @@ impl<F> ForcePartials<F> {
         let mu_val = mu.value();
         let diag = -mu_val / r3;
         let scale = 3.0 * mu_val / r5;
-        let mut data = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                data[i][j] = scale * r[i] * r[j] + if i == j { diag } else { 0.0 };
-            }
-        }
+        let mut d_acc_d_pos = FrameMatrix3::from_diagonal([diag; 3]);
+        d_acc_d_pos.add_outer_product_in_place(r, [scale * r[0], scale * r[1], scale * r[2]]);
         Self {
-            d_acc_d_pos: FrameMatrix3::from_array(data),
+            d_acc_d_pos,
             d_acc_d_vel: FrameMatrix3::zero(),
         }
     }
@@ -152,49 +148,20 @@ impl<F> ForcePartials<F> {
     /// Element-wise sum of `self` and `other`, returning a new [`ForcePartials`].
     #[must_use]
     pub fn add(&self, other: &Self) -> Self {
-        let a_pos = self.d_acc_d_pos.as_array();
-        let b_pos = other.d_acc_d_pos.as_array();
-        let mut out_pos = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                out_pos[i][j] = a_pos[i][j] + b_pos[i][j];
-            }
-        }
-        let a_vel = self.d_acc_d_vel.as_array();
-        let b_vel = other.d_acc_d_vel.as_array();
-        let mut out_vel = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                out_vel[i][j] = a_vel[i][j] + b_vel[i][j];
-            }
-        }
+        let mut d_acc_d_pos = FrameMatrix3::from_array(*self.d_acc_d_pos.as_array());
+        d_acc_d_pos.add_in_place(&other.d_acc_d_pos);
+        let mut d_acc_d_vel = FrameMatrix3::from_array(*self.d_acc_d_vel.as_array());
+        d_acc_d_vel.add_in_place(&other.d_acc_d_vel);
         Self {
-            d_acc_d_pos: FrameMatrix3::from_array(out_pos),
-            d_acc_d_vel: FrameMatrix3::from_array(out_vel),
+            d_acc_d_pos,
+            d_acc_d_vel,
         }
     }
 
     /// Element-wise add `other` into `self` in place.
     pub fn add_in_place(&mut self, other: &Self) {
-        let b_pos = *other.d_acc_d_pos.as_array();
-        let cur_pos = *self.d_acc_d_pos.as_array();
-        let mut out_pos = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                out_pos[i][j] = cur_pos[i][j] + b_pos[i][j];
-            }
-        }
-        self.d_acc_d_pos = FrameMatrix3::from_array(out_pos);
-
-        let b_vel = *other.d_acc_d_vel.as_array();
-        let cur_vel = *self.d_acc_d_vel.as_array();
-        let mut out_vel = [[0.0_f64; 3]; 3];
-        for i in 0..3 {
-            for j in 0..3 {
-                out_vel[i][j] = cur_vel[i][j] + b_vel[i][j];
-            }
-        }
-        self.d_acc_d_vel = FrameMatrix3::from_array(out_vel);
+        self.d_acc_d_pos.add_in_place(&other.d_acc_d_pos);
+        self.d_acc_d_vel.add_in_place(&other.d_acc_d_vel);
     }
 }
 

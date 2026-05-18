@@ -44,6 +44,8 @@
 //! * Vallado, *Fundamentals of Astrodynamics and Applications* (4th ed.), §8, §3.5.
 //! * Montenbruck & Gill, *Satellite Orbits*, §3.4, §3.4.2.
 
+use std::marker::PhantomData;
+
 use affn::cartesian::Displacement;
 
 use crate::astro::dynamics::context::DynamicsContext;
@@ -90,6 +92,64 @@ pub enum ShadowModel {
 }
 
 // =============================================================================
+// EclipseModel — sealed trait + marker types
+// =============================================================================
+
+mod sealed {
+    pub trait Sealed {}
+}
+
+/// Compile-time eclipse model for [`CannonballSrp<S>`].
+///
+/// Implement this trait to plug in custom shadow geometries.  The trait is
+/// **sealed** — only the three built-in markers ([`NoEclipse`], [`Cylindrical`],
+/// [`Conical`]) are available in public API.
+pub trait EclipseModel: sealed::Sealed + Send + Sync + 'static {
+    /// Compute the eclipse factor ν ∈ [0, 1].
+    ///
+    /// * `r_sat`  — satellite position in GCRS (km).
+    /// * `r_sun`  — geocentric Sun position in GCRS (km).
+    fn eclipse_factor(r_sat: [f64; 3], r_sun: [f64; 3]) -> f64;
+}
+
+/// Eclipse model: no shadowing — ν = 1 always.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct NoEclipse;
+
+/// Eclipse model: cylindrical Earth shadow — binary ν ∈ {0, 1}.
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Cylindrical;
+
+/// Eclipse model: conical shadow geometry — continuous ν ∈ [0, 1] (default).
+#[derive(Debug, Clone, Copy, Default)]
+pub struct Conical;
+
+impl sealed::Sealed for NoEclipse {}
+impl sealed::Sealed for Cylindrical {}
+impl sealed::Sealed for Conical {}
+
+impl EclipseModel for NoEclipse {
+    #[inline]
+    fn eclipse_factor(_r_sat: [f64; 3], _r_sun: [f64; 3]) -> f64 {
+        1.0
+    }
+}
+
+impl EclipseModel for Cylindrical {
+    #[inline]
+    fn eclipse_factor(r_sat: [f64; 3], r_sun: [f64; 3]) -> f64 {
+        cylindrical_shadow_factor(r_sat, r_sun, R_EARTH.value())
+    }
+}
+
+impl EclipseModel for Conical {
+    #[inline]
+    fn eclipse_factor(r_sat: [f64; 3], r_sun: [f64; 3]) -> f64 {
+        conical_shadow_factor(r_sat, r_sun, R_EARTH.value(), R_SUN_KM)
+    }
+}
+
+// =============================================================================
 // CannonballSrp
 // =============================================================================
 
@@ -100,24 +160,23 @@ pub enum ShadowModel {
 /// ```
 ///
 /// The acceleration pushes the spacecraft away from the Sun.  The eclipse
-/// factor ν is computed by the selected [`ShadowModel`].
+/// factor ν is determined at compile time by the [`EclipseModel`] type
+/// parameter `S`.
 ///
-/// ## Builder
+/// ## Construction
 ///
 /// ```rust,ignore
-/// use siderust::astro::dynamics::forces::{CannonballSrp, ShadowModel};
+/// use siderust::astro::dynamics::forces::{CannonballSrp, Conical, Cylindrical, NoEclipse};
 /// use siderust::qtty::{AreaToMass, SrpCoefficient};
 ///
 /// // Default: conical shadow model.
 /// let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
 ///
 /// // Cylindrical shadow:
-/// let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01))
-///     .with_shadow(ShadowModel::Cylindrical);
+/// let srp = CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
 ///
 /// // No eclipse:
-/// let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01))
-///     .with_shadow(ShadowModel::None);
+/// let srp = CannonballSrp::<NoEclipse>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
 /// ```
 ///
 /// ## Sun position
@@ -125,29 +184,22 @@ pub enum ShadowModel {
 /// The Sun geocentric position is fetched from the [`DynamicsContext`] ephemeris
 /// at each call.
 #[derive(Debug, Clone, Copy)]
-pub struct CannonballSrp {
+pub struct CannonballSrp<S: EclipseModel = Conical> {
     /// Radiation-pressure coefficient (dimensionless).
     pub cr: SrpCoefficient,
     /// Area-to-mass ratio (m²/kg).
     pub area_to_mass: AreaToMass,
-    /// Selected eclipse shadow model.
-    pub shadow: ShadowModel,
+    _shadow: PhantomData<fn() -> S>,
 }
 
-impl CannonballSrp {
-    /// Build a cannonball SRP model with the default [`ShadowModel::Conical`] eclipse model.
+impl<S: EclipseModel> CannonballSrp<S> {
+    /// Build a cannonball SRP model using eclipse model `S`.
     pub fn new(cr: SrpCoefficient, area_to_mass: AreaToMass) -> Self {
         Self {
             cr,
             area_to_mass,
-            shadow: ShadowModel::default(),
+            _shadow: PhantomData,
         }
-    }
-
-    /// Override the eclipse shadow model.
-    pub fn with_shadow(mut self, shadow: ShadowModel) -> Self {
-        self.shadow = shadow;
-        self
     }
 }
 
@@ -337,7 +389,7 @@ fn conical_shadow_factor(
 // ForceModel impl
 // =============================================================================
 
-impl ForceModel<Geocentric, GCRS> for CannonballSrp {
+impl<S: EclipseModel> ForceModel<Geocentric, GCRS> for CannonballSrp<S> {
     #[inline]
     fn acceleration(
         &self,
@@ -359,28 +411,14 @@ impl ForceModel<Geocentric, GCRS> for CannonballSrp {
             return Ok(Acceleration::<GCRS, AccelerationUnit>::new(0.0, 0.0, 0.0));
         }
 
-        // Eclipse factor ν.
-        let nu = match self.shadow {
-            ShadowModel::None => 1.0,
-            ShadowModel::Cylindrical => {
-                let r_sat = [
-                    s.position.x().value(),
-                    s.position.y().value(),
-                    s.position.z().value(),
-                ];
-                let r_sun_arr = [sun.x().value(), sun.y().value(), sun.z().value()];
-                cylindrical_shadow_factor(r_sat, r_sun_arr, R_EARTH.value())
-            }
-            ShadowModel::Conical => {
-                let r_sat = [
-                    s.position.x().value(),
-                    s.position.y().value(),
-                    s.position.z().value(),
-                ];
-                let r_sun_arr = [sun.x().value(), sun.y().value(), sun.z().value()];
-                conical_shadow_factor(r_sat, r_sun_arr, R_EARTH.value(), R_SUN_KM)
-            }
-        };
+        // Eclipse factor ν (zero-cost static dispatch via S).
+        let r_sat = [
+            s.position.x().value(),
+            s.position.y().value(),
+            s.position.z().value(),
+        ];
+        let r_sun_arr = [sun.x().value(), sun.y().value(), sun.z().value()];
+        let nu = S::eclipse_factor(r_sat, r_sun_arr);
 
         let r2 = r * r;
         // N/m² · m²/kg = m/s²; divide by 1 000 to convert to km/s².
@@ -544,8 +582,7 @@ mod tests {
     #[test]
     fn srp_order_of_magnitude_at_leo() {
         let ctx = ctx_stub();
-        let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01))
-            .with_shadow(ShadowModel::None);
+        let srp = CannonballSrp::<NoEclipse>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
         let a = srp.acceleration(&leo(), &ctx).unwrap();
         let mag = a.magnitude().value();
         // Expected: ~6.8e-11 km/s²  (= 6.8e-8 m/s² ≈ 1e-7 m/s² order of magnitude).
@@ -559,7 +596,7 @@ mod tests {
     #[test]
     fn srp_zero_when_area_is_zero() {
         let ctx = ctx_stub();
-        let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.0));
+        let srp = CannonballSrp::<Conical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.0));
         let a = srp.acceleration(&leo(), &ctx).unwrap();
         assert_eq!(a.x().value(), 0.0);
         assert_eq!(a.y().value(), 0.0);
@@ -578,8 +615,8 @@ mod tests {
             Position::<GCRS>::new(-(R_EARTH.value() + 500.0), 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
-        let srp_no_eclipse = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01))
-            .with_shadow(ShadowModel::None);
+        let srp_no_eclipse =
+            CannonballSrp::<NoEclipse>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
         let a = srp_no_eclipse.acceleration(&anti_sun_state, &ctx).unwrap();
         // Must be non-zero (eclipse is ignored).
         let mag = a.magnitude().value();
@@ -593,8 +630,7 @@ mod tests {
     #[test]
     fn srp_real_ephemeris_magnitude() {
         let ctx = ctx_vsop();
-        let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.02))
-            .with_shadow(ShadowModel::None);
+        let srp = CannonballSrp::<NoEclipse>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.02));
         let s = OrbitState::new_at_jd(
             JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
@@ -744,8 +780,7 @@ mod tests {
     #[test]
     fn srp_cylindrical_model_force_model() {
         let ctx = ctx_stub();
-        let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01))
-            .with_shadow(ShadowModel::Cylindrical);
+        let srp = CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
         let a = srp.acceleration(&leo(), &ctx).unwrap();
         let mag = a.magnitude().value();
         assert!(
@@ -757,8 +792,7 @@ mod tests {
     #[test]
     fn srp_conical_model_force_model() {
         let ctx = ctx_stub();
-        let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01))
-            .with_shadow(ShadowModel::Conical);
+        let srp = CannonballSrp::<Conical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
         let a = srp.acceleration(&leo(), &ctx).unwrap();
         let mag = a.magnitude().value();
         assert!(
@@ -770,7 +804,7 @@ mod tests {
     #[test]
     fn srp_no_ephemeris_returns_error() {
         let ctx = DynamicsContext::empty();
-        let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
+        let srp = CannonballSrp::<Conical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
         let result = srp.acceleration(&leo(), &ctx);
         assert!(result.is_err(), "SRP without ephemeris must return error");
     }

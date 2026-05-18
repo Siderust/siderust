@@ -137,7 +137,7 @@ mod tests {
         let a = CentralBodyRelativity1Pn::earth()
             .acceleration(&leo_circular(), &ctx)
             .unwrap();
-        let mag = (a.x().value().powi(2) + a.y().value().powi(2) + a.z().value().powi(2)).sqrt();
+        let mag = a.magnitude().value();
         assert!(
             mag > 1e-12 && mag < 1e-9,
             "expected 1e-12 < |a_rel| < 1e-9 km/s², got {mag:.3e}"
