@@ -82,8 +82,8 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
 /// let window = Period::new(
-///     siderust::ModifiedJulianDate::new(qtty::Day::new(60000.0)),
-///     siderust::ModifiedJulianDate::new(qtty::Day::new(60001.0)),
+///     siderust::ModifiedJulianDate::new(60000.0),
+///     siderust::ModifiedJulianDate::new(60001.0),
 /// );
 /// let events = crossings(&Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
 /// for e in events {

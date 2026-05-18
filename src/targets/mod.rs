@@ -56,13 +56,13 @@
 //! );
 //! let betelgeuse = CoordinateWithPM::new(
 //!     Direction::<EquatorialMeanJ2000>::new(88.792939*DEG, 7.407064*DEG),
-//!     siderust::ModifiedJulianDate::new(qtty::Day::new(60200.0)).to::<siderust::JD>(),
+//!     siderust::ModifiedJulianDate::new(60200.0).to::<siderust::JD>(),
 //!     betelgeuse_pm,
 //! );
 //!
 //! let jupiter = CoordinateWithPM::new_static(
 //!     Direction::<EquatorialMeanJ2000>::new(23.123*DEG, -5.321*DEG),
-//!     siderust::ModifiedJulianDate::new(qtty::Day::new(60200.0)).to::<siderust::JD>(),
+//!     siderust::ModifiedJulianDate::new(60200.0).to::<siderust::JD>(),
 //! );
 //! ```
 //!

@@ -37,8 +37,8 @@
 //! use siderust::time::JulianDate;
 //! use siderust::qtty::*;
 //!
-//! let jd_ut1 = siderust::JulianDate::new(qtty::Day::new(2_451_545.0));
-//! let jd_tt = siderust::JulianDate::new(qtty::Day::new(2_451_545.000_800_741));
+//! let jd_ut1 = siderust::JulianDate::new(2_451_545.0);
+//! let jd_tt = siderust::JulianDate::new(2_451_545.000_800_741);
 //!
 //! let equatorial = spherical::Direction::<EquatorialTrueOfDate>::new(45.0 * DEG, 30.0 * DEG)
 //!     .to_cartesian();

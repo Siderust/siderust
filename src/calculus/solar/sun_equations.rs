@@ -152,7 +152,7 @@ impl Sun {
     /// println!("Sun altitude: {}", sun_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
-    /// let mjd = siderust::ModifiedJulianDate::new(qtty::Day::new(60000.0));
+    /// let mjd = siderust::ModifiedJulianDate::new(60000.0);
     /// let sun_pos =
     ///     Sun::get_horizontal::<AstronomicalUnit>(mjd.to::<siderust::time::JD>(), site);
     /// ```

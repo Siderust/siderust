@@ -145,7 +145,7 @@ impl Moon {
     /// println!("Moon altitude: {}", moon_pos.alt().to::<Deg>());
     ///
     /// // Using ModifiedJulianDate
-    /// let mjd = siderust::ModifiedJulianDate::new(qtty::Day::new(60000.0));
+    /// let mjd = siderust::ModifiedJulianDate::new(60000.0);
     /// ```
     ///
     /// # Arguments
@@ -252,7 +252,7 @@ impl Moon {
     /// use siderust::qtty::Days;
     ///
     /// let start = siderust::J2000.to::<siderust::time::MJD>();
-    /// let end = siderust::ModifiedJulianDate::new(start.raw() + Days::new(35.0));
+    /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 35.0);
     /// let window = Period::new(start, end);
     /// let events = Moon::phase_events(window, PhaseSearchOpts::default());
     /// assert!(!events.is_empty());
@@ -326,7 +326,7 @@ impl Moon {
     /// use siderust::qtty::{Days, IlluminationFractions};
     ///
     /// let start = siderust::J2000.to::<siderust::time::MJD>();
-    /// let end = siderust::ModifiedJulianDate::new(start.raw() + Days::new(30.0));
+    /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 30.0);
     /// let window = Period::new(start, end);
     /// // Crescent phase: 5–35% illuminated
     /// let crescent = Moon::illumination_range(window, IlluminationFractions::new(0.05), IlluminationFractions::new(0.35), PhaseSearchOpts::default());

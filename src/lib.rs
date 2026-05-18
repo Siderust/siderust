@@ -126,7 +126,7 @@ pub mod targets;
 pub mod time;
 
 // Ergonomic re-exports of common time markers / epoch (`siderust::J2000` in rustdoc examples).
-pub use time::{J2000, JD, MJD};
+pub use time::{JulianDate, ModifiedJulianDate, J2000, JD, MJD};
 
 pub(crate) mod archive;
 pub(crate) mod macros;
