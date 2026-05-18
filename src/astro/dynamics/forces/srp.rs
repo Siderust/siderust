@@ -532,7 +532,7 @@ mod tests {
 
     fn leo() -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::J2000,
+            JulianDate::JD_EPOCH_J2000_0,
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         )
@@ -574,7 +574,7 @@ mod tests {
         // Put satellite in a position that would be shadowed under any eclipse model:
         // anti-Sun direction, well inside Earth radius cylinder.
         let anti_sun_state = OrbitState::new_at_jd(
-            JulianDate::J2000,
+            JulianDate::JD_EPOCH_J2000_0,
             Position::<GCRS>::new(-(R_EARTH.value() + 500.0), 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
@@ -596,7 +596,7 @@ mod tests {
         let srp = CannonballSrp::new(SrpCoefficient::new(1.5), AreaToMass::new(0.02))
             .with_shadow(ShadowModel::None);
         let s = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
@@ -795,7 +795,7 @@ mod tests {
     #[test]
     fn stub_ephemeris_all_methods_reachable() {
         let eph = FixedSunEphemeris;
-        let jd = JulianDate::J2000;
+        let jd = JulianDate::JD_EPOCH_J2000_0;
 
         let _ = eph.sun_barycentric(jd);
         let _ = eph.earth_barycentric(jd);

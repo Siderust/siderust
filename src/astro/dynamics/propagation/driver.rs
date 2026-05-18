@@ -272,7 +272,7 @@ mod tests {
     fn circ_state() -> OrbitState {
         let v = (MU / R).sqrt();
         OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(R, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v, 0.0),
         )
@@ -368,7 +368,7 @@ mod tests {
     fn event_detection_fires() {
         let v_circ = (MU / R).sqrt();
         let s0_ecc = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(R, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v_circ * 1.01, 0.0),
         );

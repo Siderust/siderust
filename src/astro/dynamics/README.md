@@ -71,8 +71,8 @@ use siderust::time::JulianDate;
 use siderust::qtty::{Second, IntegratorTolerances};
 
 // 1. Build a typed orbit state in GCRS
-let epoch = JulianDate::new(2_451_545.0).to_time();
-let t_end = JulianDate::new(2_451_546.0).to_time();  // 1 day later
+let epoch = JulianDate::new(2_451_545.0).to_j2000s();
+let t_end = JulianDate::new(2_451_546.0).to_j2000s();  // 1 day later
 let pos = Position::new(7000.0, 0.0, 0.0);
 let vel = Velocity::new(0.0, 7.5, 0.0);
 let state = OrbitState::new(epoch, pos, vel);

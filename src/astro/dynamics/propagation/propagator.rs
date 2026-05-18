@@ -15,7 +15,7 @@
 //! use siderust::qtty::{Second, IntegratorTolerances};
 //!
 //! let s0 = OrbitState::new_at_jd(
-//!     JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+//!     JulianDate::new(2_451_545.0),
 //!     Position::<GCRS>::new(7_000.0, 0.0, 0.0),
 //!     Velocity::<GCRS>::new(0.0, 7.5450, 0.0),
 //! );
@@ -296,7 +296,7 @@ mod tests {
     fn circular_state() -> (OrbitState, f64) {
         let v = (MU / R).sqrt();
         let s0 = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(R, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v, 0.0),
         );
@@ -401,7 +401,7 @@ mod tests {
         // Add 1% perturbation to velocity to create eccentricity so altitude
         // oscillates and crosses the trigger threshold.
         let s0_ecc = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v_circ * 1.01, 0.0),
         );
@@ -434,7 +434,7 @@ mod tests {
     fn propagator_propagate_with_events_dopri5_fires() {
         let v_circ = (MU / R).sqrt();
         let s0_ecc = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(R, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v_circ * 1.01, 0.0),
         );

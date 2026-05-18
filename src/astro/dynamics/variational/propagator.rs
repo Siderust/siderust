@@ -285,7 +285,7 @@ mod tests {
     /// Typical LEO state used across tests.
     fn leo() -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(6_800.0, 1_200.0, 2_400.0),
             Velocity::<GCRS>::new(-1.5, 7.2, 0.8),
         )

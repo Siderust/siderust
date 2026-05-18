@@ -314,7 +314,7 @@ mod tests {
         let r: f64 = 7_000.0;
         let v: f64 = (mu / r).sqrt();
         let s0 = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v, 0.0),
         );
@@ -351,7 +351,7 @@ mod tests {
         let r: f64 = 7_000.0;
         let v: f64 = (mu / r).sqrt();
         let s0 = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v, 0.0),
         );

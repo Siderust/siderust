@@ -139,7 +139,7 @@ mod tests {
 
     fn sample_state() -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         )

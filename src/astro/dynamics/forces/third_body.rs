@@ -172,7 +172,7 @@ pub(super) fn sun_geocentric(
                 source: Some(Box::new(e)),
             })?;
     let d_ecl: Displacement<EclipticMeanJ2000, AstronomicalUnit> = sun_b - earth_b;
-    let rot = ecliptic_of_date_to_mean_equatorial_matrix(JulianDate::J2000);
+    let rot = ecliptic_of_date_to_mean_equatorial_matrix(JulianDate::JD_EPOCH_J2000_0);
     let d_gcrs: Displacement<GCRS, AstronomicalUnit> = rot.apply_vec(d_ecl);
     Ok(d_gcrs.to_unit::<Kilometer>())
 }
@@ -193,7 +193,7 @@ pub(super) fn moon_geocentric(
         m.y().value(),
         m.z().value(),
     );
-    let rot = ecliptic_of_date_to_mean_equatorial_matrix(JulianDate::J2000);
+    let rot = ecliptic_of_date_to_mean_equatorial_matrix(JulianDate::JD_EPOCH_J2000_0);
     Ok(rot.apply_vec(m_ecl))
 }
 
@@ -442,7 +442,7 @@ mod tests {
             .build()
     }
 
-    const J2000: JulianDate = JulianDate::J2000;
+    const J2000: JulianDate = JulianDate::JD_EPOCH_J2000_0;
 
     // ---- Battin formula vs naive (regression / sanity) ----------------------
 

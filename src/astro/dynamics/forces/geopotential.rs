@@ -183,7 +183,7 @@ mod tests {
 
     fn make_state(x: f64, y: f64, z: f64) -> OrbitState {
         OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(x, y, z),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         )

@@ -50,7 +50,7 @@
 //!
 //! let pos = Position::<GCRS>::new(7000.0, 0.0, 0.0);
 //! let vel = Velocity::<GCRS>::new(0.0, 7.5, 0.0);
-//! let s = OrbitState::new_at_jd(JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)), pos, vel);
+//! let s = OrbitState::new_at_jd(JulianDate::new(2_451_545.0), pos, vel);
 //! assert!((s.position.x().value() - 7000.0).abs() < 1e-12);
 //! ```
 //!
@@ -151,7 +151,7 @@ pub type AccelerationUnit = KmPerSecondSquared;
 /// let pos = HelioPos::new(1.496e8, 0.0, 0.0);
 /// let vel = HelioVel::new(0.0, 29.78, 0.0);
 /// let s = OrbitState::<Heliocentric, ICRS>::new(
-///     JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)).to_time(),
+///     JulianDate::new(2_451_545.0).to_j2000s(),
 ///     pos,
 ///     vel,
 /// );
@@ -220,7 +220,7 @@ where
     /// use siderust::coordinates::frames::GCRS;
     /// use siderust::time::{JulianDate, Time, TT};
     ///
-    /// let epoch = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)).to_time();
+    /// let epoch = JulianDate::new(2_451_545.0).to_j2000s();
     /// let pos = Position::<GCRS>::new(7000.0, 0.0, 0.0);
     /// let vel = Velocity::<GCRS>::new(0.0, 7.5, 0.0);
     /// let s = OrbitState::new(epoch, pos, vel);
@@ -252,7 +252,7 @@ where
     /// use siderust::time::JulianDate;
     ///
     /// let s = OrbitState::new_at_jd(
-    ///     JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+    ///     JulianDate::new(2_451_545.0),
     ///     Position::<GCRS>::new(7000.0, 0.0, 0.0),
     ///     Velocity::<GCRS>::new(0.0, 7.5, 0.0),
     /// );
@@ -264,7 +264,7 @@ where
         position: cartesian::Position<C, F, Kilometer>,
         velocity: Velocity<F, VelocityUnit>,
     ) -> Self {
-        Self::new(epoch_jd.to_time(), position, velocity)
+        Self::new(epoch_jd.to_j2000s(), position, velocity)
     }
 
     /// Return the epoch encoded as a TT Julian Date.
@@ -487,7 +487,7 @@ mod tests {
 
     #[test]
     fn typed_roundtrip_preserves_values() {
-        let epoch = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
+        let epoch = JulianDate::new(2_451_545.0);
         let pos = Position::<GCRS>::new(7000.0, 100.0, -200.0);
         let vel = Velocity::<GCRS>::new(0.5, 7.4, -0.1);
 
@@ -503,7 +503,7 @@ mod tests {
 
     #[test]
     fn new_at_jd_epoch_roundtrip() {
-        let jd_in = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0));
+        let jd_in = JulianDate::new(2_451_545.0);
         let s = OrbitState::new_at_jd(
             jd_in,
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
@@ -521,7 +521,7 @@ mod tests {
 
     #[test]
     fn advance_applies_derivative_correctly() {
-        let epoch = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)).to_time();
+        let epoch = JulianDate::new(2_451_545.0).to_j2000s();
         let pos = Position::<GCRS>::new(7000.0, 0.0, 0.0);
         let vel = Velocity::<GCRS>::new(0.0, 7.5, 0.0);
         let s = OrbitState::new(epoch, pos, vel);
@@ -542,9 +542,9 @@ mod tests {
 
     #[test]
     fn advance_leaves_epoch_unchanged() {
-        let epoch = JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)).to_time();
+        let epoch = JulianDate::new(2_451_545.0).to_j2000s();
         let s = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
@@ -597,7 +597,7 @@ mod tests {
 
         let pos = HelioPos::new(1.496e8, 0.0, 0.0);
         let vel = HelioVel::new(0.0, 29.78, 0.0);
-        let s = OrbitState::<Heliocentric, ICRS>::new_at_jd(JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)), pos, vel);
+        let s = OrbitState::<Heliocentric, ICRS>::new_at_jd(JulianDate::new(2_451_545.0), pos, vel);
         assert!((s.position.x().value() - 1.496e8).abs() < 1.0);
         assert!((s.velocity.y().value() - 29.78).abs() < 1e-10);
     }
@@ -629,7 +629,7 @@ mod tests {
     #[test]
     fn velocity_typed_returns_velocity_field() {
         let s = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(1.0, 2.0, 3.0),
         );
@@ -641,12 +641,12 @@ mod tests {
     #[test]
     fn orbit_state_partial_eq_distinguishes_states() {
         let s1 = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
         let s2 = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7001.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
@@ -657,7 +657,7 @@ mod tests {
     #[test]
     fn spacecraft_state_constructs_and_compares() {
         let orbit = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );

@@ -254,7 +254,7 @@ mod tests {
         let ctx = DynamicsContext::empty();
         let r0 = R_EARTH.value() + 400.0;
         let s = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.7, 0.0),
         );
@@ -274,7 +274,7 @@ mod tests {
         let r0 = R_EARTH.value() + 400.0;
         // prograde velocity along +Y
         let s = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.7, 0.0),
         );
@@ -298,7 +298,7 @@ mod tests {
         // Position well inside Earth
         let r_underground = R_EARTH.value() - 100.0;
         let s = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r_underground, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.0, 0.0),
         );
@@ -327,7 +327,7 @@ mod tests {
 
         let ctx = ctx_with_constant(1.0e-11);
         let s = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v_circ, 0.0),
         );
@@ -367,7 +367,7 @@ mod tests {
         let r0 = R_EARTH.value() + 350.0;
         let v0 = (mu / r0).sqrt();
         let s0 = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, v0, 0.0),
         );
@@ -404,7 +404,7 @@ mod tests {
         let drag = DragForce::new(DragCoefficient::new(2.2), AreaToMass::new(0.01));
         let r0 = R_EARTH.value() + 400.0;
         let s = OrbitState::new_at_jd(
-            JulianDate::from_raw_unchecked(qtty::Day::new(2_451_545.0)),
+            JulianDate::new(2_451_545.0),
             Position::<GCRS>::new(r0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.7, 0.0),
         );
