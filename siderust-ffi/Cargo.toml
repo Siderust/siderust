@@ -21,8 +21,8 @@ satellite = ["qtty/satellite"]
 [dependencies]
 siderust    = { version = "0.7", path = ".." }
 qtty        = "0.8"
-tempoch     = "0.5"
-tempoch-ffi = "0.5"
+tempoch     = "0.6"
+tempoch-ffi = "0.6"
 affn        = { version = "0.7.0", features = ["astro"] }
 
 [build-dependencies]
