@@ -43,7 +43,6 @@ pub mod twilight;
 #[cfg(test)]
 pub(crate) mod test_helpers;
 
-
 pub use altitude::*;
 pub use azimuth::*;
 pub use bodies::*;

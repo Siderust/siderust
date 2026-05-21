@@ -780,7 +780,8 @@ mod tests {
     #[test]
     fn srp_cylindrical_model_force_model() {
         let ctx = ctx_stub();
-        let srp = CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
+        let srp =
+            CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
         let a = srp.acceleration(&leo(), &ctx).unwrap();
         let mag = a.magnitude().value();
         assert!(
