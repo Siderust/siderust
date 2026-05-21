@@ -19,6 +19,7 @@ use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::qtty::*;
 use crate::time::JulianDate;
 use keplerian::anomaly::{eccentric_from_mean, hyperbolic_from_mean, AnomalyOptions};
+use keplerian::Eccentricity;
 
 /// Gaussian gravitational constant `k` in AU^{3/2} d^{-1}.
 ///
@@ -48,15 +49,18 @@ fn solve_elliptic_anomaly(mean_anomaly: Radians, eccentricity: f64) -> Radians {
         max_iter: 100,
         tol: 1e-15,
     };
-    let anomaly = eccentric_from_mean(mean_anomaly.value(), eccentricity, options)
-        .expect("validated elliptic orbit must solve Kepler's equation");
-    Radians::new(anomaly)
+    eccentric_from_mean(
+        mean_anomaly,
+        Eccentricity::new_unchecked(eccentricity),
+        options,
+    )
+    .expect("validated elliptic orbit must solve Kepler's equation")
 }
 
 fn solve_hyperbolic_anomaly(mean_anomaly_radians: f64, eccentricity: f64) -> Option<f64> {
     hyperbolic_from_mean(
-        mean_anomaly_radians,
-        eccentricity,
+        Radians::new(mean_anomaly_radians),
+        Eccentricity::new_unchecked(eccentricity),
         AnomalyOptions {
             max_iter: 100,
             tol: 1e-14,

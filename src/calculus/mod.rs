@@ -57,9 +57,11 @@
 //!
 //! ```rust
 //! use keplerian::anomaly::{eccentric_from_mean, AnomalyOptions};
+//! use keplerian::Eccentricity;
+//! use qtty::angular::Radians;
 //!
-//! let eccentric_anomaly = eccentric_from_mean(1.0, 0.0167, AnomalyOptions::default()).unwrap();
-//! assert!(eccentric_anomaly.is_finite());
+//! let ea = eccentric_from_mean(Radians::new(1.0), Eccentricity::new_unchecked(0.0167), AnomalyOptions::default()).unwrap();
+//! assert!(ea.value().is_finite());
 //! ```
 //!
 //! ## Re-exports

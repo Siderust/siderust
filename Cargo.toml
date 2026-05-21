@@ -96,3 +96,9 @@ harness = false
 [[bench]]
 name = "altitude_comparison"
 harness = false
+
+[patch.crates-io]
+qtty = { path = "../qtty/qtty" }
+qtty-core = { path = "../qtty/qtty-core" }
+qtty-derive = { path = "../qtty/qtty-derive" }
+affn = { path = "../affn" }
