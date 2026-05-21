@@ -9,13 +9,17 @@
 //! ## Modules
 //!
 //! - [`daf`] — DAF (Double Precision Array File) container parser.
-//! - [`spk`] — SPK Type 2 segment reader built on top of [`daf`].
+//! - [`spk`] — SPK Type 2/3 segment reader built on top of [`daf`].
+//! - [`kernel`] — High-level SPK kernel with segment chain resolution.
+//! - [`segment`] — SPK segment evaluation (Type 2 and Type 3 Chebyshev).
+//! - [`naif`] — NAIF body ID lookup table.
 //!
 //! ## Error handling
 //!
-//! Parse errors are reported as [`SpiceError`], which is independent of
-//! the dataset catalog error type. Callers that bridge these layers
-//! can convert via `impl From<SpiceError> for datasets::DatasetError`.
+//! Parse and kernel errors are reported as [`SpiceError`]. The low-level
+//! `daf` and `spk` parsers use [`SpiceError::FormatParse`]; the kernel
+//! layer uses the richer structured variants (`OutOfCoverage`, `NoChain`,
+//! `UnsupportedDataType`, etc.).
 //!
 //! ## References
 //!
@@ -25,21 +29,14 @@
 //!   <https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/spk.html>
 
 pub mod daf;
+pub mod error;
+pub mod kernel;
+pub mod naif;
+pub mod segment;
 pub mod spk;
 
-/// Errors produced by SPICE format parsers.
-#[derive(Debug)]
-pub enum SpiceError {
-    /// Structural parse failure (bad magic, truncated data, unsupported type, …).
-    Parse(String),
-}
+pub use error::SpiceError;
 
-impl std::fmt::Display for SpiceError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            SpiceError::Parse(msg) => write!(f, "SPICE parse error: {}", msg),
-        }
-    }
-}
-
-impl std::error::Error for SpiceError {}
+pub use kernel::{LoadedSegment, SpkKernel};
+pub use naif::{naif_id_for_name, well_known};
+pub use segment::{segment_for_summary, ChebSegment, SpkSegment};

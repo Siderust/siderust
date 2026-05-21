@@ -394,7 +394,7 @@ mod tests {
 
     #[test]
     fn dataset_error_display_spice() {
-        let e = DatasetError::Spice(crate::formats::spice::SpiceError::Parse(
+        let e = DatasetError::Spice(crate::formats::spice::SpiceError::FormatParse(
             "bad header".to_string(),
         ));
         let msg = format!("{}", e);
@@ -411,7 +411,7 @@ mod tests {
 
     #[test]
     fn dataset_error_from_spice() {
-        let spice_err = crate::formats::spice::SpiceError::Parse("test".to_string());
+        let spice_err = crate::formats::spice::SpiceError::FormatParse("test".to_string());
         let e: DatasetError = spice_err.into();
         assert!(matches!(e, DatasetError::Spice(_)));
     }

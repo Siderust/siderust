@@ -43,6 +43,8 @@
 //! - [`polar_motion`]: polar-motion matrix `W`.
 //! - [`precession`]: IAU 2006 (Fukushima-Williams) precession.
 //! - [`proper_motion`]: stellar proper-motion propagation.
+//! - [`lambert`]: typed Lambert boundary-value solver.
+//! - [`sgp4`]: SGP4/SDP4 propagator producing typed TEME states.
 //! - [`sidereal`][]: GMST/GAST/LST.
 //! - [`units`]: astronomical units (e.g. Gaussian year) not covered by `qtty`.
 //!
@@ -63,6 +65,7 @@ pub mod era;
 pub mod frame_bias;
 pub mod iers_data;
 pub mod lambert;
+pub mod sgp4;
 pub mod light_deflection;
 pub mod nutation;
 pub mod orbit;

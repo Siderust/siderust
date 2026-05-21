@@ -60,7 +60,7 @@ pub fn read_type2_segment(
     let init = daf.read_f64_at_word(file_data, end - 3);
 
     if !(5..=200).contains(&rsize) {
-        return Err(SpiceError::Parse(format!(
+        return Err(SpiceError::FormatParse(format!(
             "Implausible rsize={} for SPK Type 2 segment",
             rsize
         )));
@@ -68,14 +68,14 @@ pub fn read_type2_segment(
 
     let ncoeff = (rsize - 2) / 3;
     if 2 + 3 * ncoeff != rsize {
-        return Err(SpiceError::Parse(format!(
+        return Err(SpiceError::FormatParse(format!(
             "rsize={} is not 2 + 3k for any k (ncoeff would be {})",
             rsize, ncoeff
         )));
     }
 
     if n_records == 0 || n_records > 10_000_000 {
-        return Err(SpiceError::Parse(format!(
+        return Err(SpiceError::FormatParse(format!(
             "Implausible n_records={}",
             n_records
         )));
@@ -110,14 +110,14 @@ pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
             .iter()
             .find(|s| s.target_id == target && s.center_id == center)
             .ok_or_else(|| {
-                SpiceError::Parse(format!(
+                SpiceError::FormatParse(format!(
                     "BSP: segment target={} center={} ({}) not found",
                     target, center, name
                 ))
             })?;
 
         if summary.data_type != 2 && summary.data_type != 3 {
-            return Err(SpiceError::Parse(format!(
+            return Err(SpiceError::FormatParse(format!(
                 "BSP: {} segment is Type {} (only Type 2/3 supported)",
                 name, summary.data_type
             )));

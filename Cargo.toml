@@ -27,10 +27,11 @@ de440 = []
 de441 = []
 regen-data = ["dep:reqwest"]
 runtime-data = ["dep:ureq", "dep:sha2"]
-serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
+serde = ["dep:serde", "dep:serde_json", "qtty/serde", "affn/serde", "tempoch/serde"]
 spectra = []
 tables = []
 atmosphere = []
+doris = []
 
 [dependencies]
 affn = { version = "0.7.1", features = ["astro"] }
@@ -41,7 +42,10 @@ thiserror = "2"
 approx = "0.5"
 chrono = "0.4"
 paste = "1.0"
+quick-xml = "0.36"
+sgp4 = { version = "2.4", default-features = false, features = ["std"] }
 serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
 sha2 = { version = "0.11", optional = true }
 ureq = { version = "3.3", optional = true, default-features = false }
 wide = "1.4"
