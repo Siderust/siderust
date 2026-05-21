@@ -13,7 +13,7 @@
 //!
 //! All three round-trip through the same in-memory [`Omm`] record. Use
 //! [`Omm::from_tle`] / [`Omm::to_tle`] to convert from/to the classic
-//! 2LE/3LE [`crate::formats::tle::Tle`] representation.
+//! 2LE/3LE [`crate::formats::tle::TLE`] representation.
 
 #[cfg(feature = "serde")]
 pub mod json;
@@ -28,7 +28,7 @@ use qtty::time::Day;
 use tempoch::{Time, UTC};
 
 use crate::formats::tle::TleError;
-use crate::formats::tle::{Classification, InternationalDesignator, SatelliteNumber, Tle};
+use crate::formats::tle::{Classification, InternationalDesignator, SatelliteNumber, TLE};
 
 /// Strongly-typed OMM record.
 ///
@@ -87,7 +87,7 @@ pub struct Omm {
 }
 
 impl Omm {
-    /// Build an OMM record from a parsed [`Tle`].
+    /// Build an OMM record from a parsed [`TLE`].
     ///
     /// `OBJECT_NAME` falls back to the catalog id rendering when the TLE
     /// has no name (i.e. parsed via [`crate::formats::tle::parse_tle`] rather than
@@ -108,7 +108,7 @@ impl Omm {
     /// let omm = Omm::from_tle(&tle);
     /// assert_eq!(omm.object_id, "1998-067A");
     /// ```
-    pub fn from_tle(tle: &Tle) -> Self {
+    pub fn from_tle(tle: &TLE) -> Self {
         let object_name = tle
             .name
             .clone()
@@ -135,7 +135,7 @@ impl Omm {
         }
     }
 
-    /// Convert the OMM into a classic [`Tle`].
+    /// Convert the OMM into a classic [`TLE`].
     ///
     /// `name` is set from `OBJECT_NAME`, and the international designator
     /// is contracted from `YYYY-NNNP` back into the 6/7-character TLE
@@ -151,8 +151,8 @@ impl Omm {
     /// let tle2 = Omm::from_tle(&tle1).to_tle();
     /// assert_eq!(tle2.norad_id, tle1.norad_id);
     /// ```
-    pub fn to_tle(&self) -> Tle {
-        Tle {
+    pub fn to_tle(&self) -> TLE {
+        TLE {
             name: Some(self.object_name.clone()),
             norad_id: self.norad_id,
             classification: self.classification,

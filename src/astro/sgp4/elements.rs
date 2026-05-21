@@ -1,26 +1,26 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Bridge from [`crate::formats::tle::Tle`] to the SGP4 input record.
+//! Bridge from [`crate::formats::tle::TLE`] to the SGP4 input record.
 //!
 //! The SGP4 backend ([`sgp4` crate](https://crates.io/crates/sgp4)) consumes
 //! its own [`sgp4::Elements`] struct. We treat this purely as an internal
 //! record format — callers always interact with the typed
-//! [`crate::formats::tle::Tle`].
+//! [`crate::formats::tle::TLE`].
 
-use crate::formats::tle::{Classification as TleClass, Tle};
+use crate::formats::tle::{Classification as TleClass, TLE};
 use chrono::Datelike;
 use sgp4::Elements;
 
 use super::Sgp4Error;
 
-/// Convert a typed [`Tle`] into the dimensionless record consumed by the SGP4
+/// Convert a typed [`TLE`] into the dimensionless record consumed by the SGP4
 /// backend.
 ///
 /// The conversion preserves all SGP4-relevant fields (epoch, mean elements,
 /// drag terms, classification, international designator) and is lossless in
 /// both directions for the subset SGP4 uses.
-pub(crate) fn tle_to_elements(tle: &Tle) -> Result<Elements, Sgp4Error> {
+pub(crate) fn tle_to_elements(tle: &TLE) -> Result<Elements, Sgp4Error> {
     let dt_utc = tle
         .epoch
         .try_to_chrono()

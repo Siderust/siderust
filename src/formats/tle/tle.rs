@@ -191,10 +191,10 @@ pub struct InternationalDesignator(pub String);
 // derivatives of mean motion and the dimensionless eccentricity have no
 // typed wrapper that adds safety; we therefore expose them as plain `f64`.
 //
-/// [`mean_motion_dot`]: Tle::mean_motion_dot
-/// [`mean_motion_ddot`]: Tle::mean_motion_ddot
-/// [`bstar`]: Tle::bstar
-/// [`eccentricity`]: Tle::eccentricity
+/// [`mean_motion_dot`]: TLE::mean_motion_dot
+/// [`mean_motion_ddot`]: TLE::mean_motion_ddot
+/// [`bstar`]: TLE::bstar
+/// [`eccentricity`]: TLE::eccentricity
 ///
 /// # Examples
 ///
@@ -208,7 +208,7 @@ pub struct InternationalDesignator(pub String);
 /// assert_eq!(tle.norad_id.0, 25544);
 /// ```
 #[derive(Clone, Debug)]
-pub struct Tle {
+pub struct TLE {
     /// Optional satellite name (from 3LE format, line 0).
     pub name: Option<String>,
     /// NORAD catalog number (satellite ID).

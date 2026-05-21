@@ -36,6 +36,7 @@ doris = []
 [dependencies]
 affn = { version = "0.7.1", features = ["astro"] }
 cheby = "0.3"
+keplerian = { path = "../keplerian" }
 qtty = { version = "0.8", features = ["astro", "density", "radiometry", "satellite"] }
 tempoch = "0.6"
 thiserror = "2"

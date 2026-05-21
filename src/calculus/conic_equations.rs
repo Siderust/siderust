@@ -13,11 +13,12 @@
 //! gravitational parameter approach in a future extension.
 
 use crate::astro::conic::{ConicError, ConicKind, ConicOrbit, MeanMotionOrbit};
-use crate::astro::orbit::OrientationTrig;
-use crate::calculus::kepler_equations::solve_keplers_equation;
+use crate::astro::orbit::{KeplerianOrbit, OrientationTrig, PreparedOrbit};
+use crate::astro::units::GaussianYears;
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::qtty::*;
 use crate::time::JulianDate;
+use keplerian::anomaly::{eccentric_from_mean, hyperbolic_from_mean, AnomalyOptions};
 
 /// Gaussian gravitational constant `k` in AU^{3/2} d^{-1}.
 ///
@@ -25,81 +26,29 @@ use crate::time::JulianDate;
 /// constant ties all propagation in this module to a Sun-centered
 /// context.
 const GAUSSIAN_GRAVITATIONAL_CONSTANT: f64 = 0.01720209895;
-const HYPERBOLIC_TOLERANCE: f64 = 1e-14;
-const MAX_HYPERBOLIC_ITERS: usize = 100;
-
-const MAX_HYPERBOLIC_BISECTION_ITERS: usize = 100;
-
-/// Residual of the hyperbolic Kepler equation: `e*sinh(H) - H - M`.
+/// Siderust keeps heliocentric orbit wrappers here, while `keplerian` owns the
+/// reusable Kepler-equation solver.
 #[inline]
-fn hyperbolic_residual(h: f64, e: f64, m: f64) -> f64 {
-    e * h.sinh() - h - m
-}
-
-/// Bisection fallback for the hyperbolic Kepler equation.
-///
-/// `f(H) = e*sinh(H) - H - M` is monotonically increasing for `e > 1`
-/// (derivative `e*cosh(H) - 1 > 0`), so exactly one root exists.
-fn hyperbolic_bisection(m: f64, e: f64) -> Option<f64> {
-    // Initial bracket: expand outward from 0 in the direction of M.
-    let mut lo = if m >= 0.0 { 0.0 } else { m - 1.0 };
-    let mut hi = if m >= 0.0 { m + 1.0 } else { 0.0 };
-
-    let mut f_lo = hyperbolic_residual(lo, e, m);
-    let mut f_hi = hyperbolic_residual(hi, e, m);
-
-    // Expand bracket until signs differ.
-    for _ in 0..50 {
-        if f_lo.signum() != f_hi.signum() {
-            break;
-        }
-        lo -= 1.0;
-        hi += 1.0;
-        f_lo = hyperbolic_residual(lo, e, m);
-        f_hi = hyperbolic_residual(hi, e, m);
-    }
-
-    for _ in 0..MAX_HYPERBOLIC_BISECTION_ITERS {
-        let mid = 0.5 * (lo + hi);
-        let f_mid = hyperbolic_residual(mid, e, m);
-        if f_mid.abs() < HYPERBOLIC_TOLERANCE || (hi - lo) < HYPERBOLIC_TOLERANCE {
-            return if mid.is_finite() { Some(mid) } else { None };
-        }
-        if f_lo.signum() == f_mid.signum() {
-            lo = mid;
-            f_lo = f_mid;
-        } else {
-            hi = mid;
-        }
-    }
-    let result = 0.5 * (lo + hi);
-    if result.is_finite() {
-        Some(result)
-    } else {
-        None
-    }
+fn solve_elliptic_anomaly(mean_anomaly: Radians, eccentricity: f64) -> Radians {
+    let options = AnomalyOptions {
+        max_iter: 100,
+        tol: 1e-15,
+    };
+    let anomaly = eccentric_from_mean(mean_anomaly.value(), eccentricity, options)
+        .expect("validated elliptic orbit must solve Kepler's equation");
+    Radians::new(anomaly)
 }
 
 fn solve_hyperbolic_anomaly(mean_anomaly_radians: f64, eccentricity: f64) -> Option<f64> {
-    let mut hyperbolic_anomaly = (mean_anomaly_radians / eccentricity).asinh();
-    for _ in 0..MAX_HYPERBOLIC_ITERS {
-        let sinh_h = hyperbolic_anomaly.sinh();
-        let cosh_h = hyperbolic_anomaly.cosh();
-        let f_prime = eccentricity * cosh_h - 1.0;
-        if f_prime.abs() < 1e-30 {
-            break;
-        }
-        let delta = (eccentricity * sinh_h - hyperbolic_anomaly - mean_anomaly_radians) / f_prime;
-        hyperbolic_anomaly -= delta;
-        if !hyperbolic_anomaly.is_finite() {
-            break;
-        }
-        if delta.abs() < HYPERBOLIC_TOLERANCE {
-            return Some(hyperbolic_anomaly);
-        }
-    }
-    // Newton did not converge — fall back to bisection.
-    hyperbolic_bisection(mean_anomaly_radians, eccentricity)
+    hyperbolic_from_mean(
+        mean_anomaly_radians,
+        eccentricity,
+        AnomalyOptions {
+            max_iter: 100,
+            tol: 1e-14,
+        },
+    )
+    .ok()
 }
 
 /// Like [`rotate_to_ecliptic`] but uses precomputed sin/cos values from
@@ -178,7 +127,7 @@ pub fn calculate_mean_motion_position(
     let mean_anomaly_rad =
         (orbit.mean_motion.value().to_radians() * dt_days).rem_euclid(std::f64::consts::TAU);
     let mean_anomaly = Radians::new(mean_anomaly_rad);
-    let eccentric_anomaly = solve_keplers_equation(mean_anomaly, eccentricity);
+    let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
     let (true_anomaly, radius) =
         elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, semi_major_axis);
 
@@ -205,7 +154,7 @@ pub fn calculate_conic_position(
             let mean_anomaly_raw =
                 orbit.mean_anomaly_at_epoch.to::<Radian>().value() + mean_motion * dt_days;
             let mean_anomaly = Radians::new(mean_anomaly_raw.rem_euclid(std::f64::consts::TAU));
-            let eccentric_anomaly = solve_keplers_equation(mean_anomaly, eccentricity);
+            let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
             let (true_anomaly, radius) =
                 elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, semi_major_axis);
 
@@ -251,11 +200,82 @@ impl ConicOrbit {
     }
 }
 
+#[inline]
+fn orbital_period_days(a: AstronomicalUnits) -> Days {
+    // Kepler's Third Law: T [Gaussian years] = a [AU]^(3/2).
+    let a_val = a.value();
+    let t_gaussian_years = a_val * a_val.sqrt();
+    GaussianYears::new(t_gaussian_years).to::<Day>()
+}
+
+/// Calculates the heliocentric coordinates of a Keplerian orbit at a Julian date.
+pub fn calculate_orbit_position(
+    elements: &KeplerianOrbit,
+    julian_date: JulianDate,
+) -> EclipticMeanJ2000<AstronomicalUnit> {
+    let period = orbital_period_days(elements.shape().semi_major_axis());
+    type RadiansPerDay = crate::qtty::angular_rate::AngularRate<Radian, Day>;
+    let n: RadiansPerDay = Radians::TAU / period;
+    let dt: Days = julian_date.raw() - elements.epoch.raw();
+    let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
+    let eccentricity = elements.shape().eccentricity();
+    let mean_anomaly = (m0_rad + (n * dt).to::<Radian>()) % std::f64::consts::TAU;
+    let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
+    let (true_anomaly, radius) = elliptic_true_anomaly_and_radius(
+        eccentric_anomaly,
+        eccentricity,
+        elements.shape().semi_major_axis().value(),
+    );
+
+    rotate_to_ecliptic(
+        radius,
+        elements.orientation().inclination(),
+        elements.orientation().argument_of_periapsis(),
+        elements.orientation().longitude_of_ascending_node(),
+        true_anomaly,
+    )
+}
+
+impl KeplerianOrbit {
+    /// Calculates heliocentric coordinates at a given Julian date.
+    pub fn kepler_position(&self, jd: JulianDate) -> EclipticMeanJ2000<AstronomicalUnit> {
+        calculate_orbit_position(self, jd)
+    }
+}
+
+/// Fast propagation for a [`PreparedOrbit`] using its precomputed constants.
+pub fn calculate_prepared_position(
+    prepared: &PreparedOrbit,
+    julian_date: JulianDate,
+) -> EclipticMeanJ2000<AstronomicalUnit> {
+    let dt = (julian_date.raw() - prepared.elements().epoch.raw()).value();
+    let mean_anomaly = Radians::new(
+        (prepared.m0_rad() + prepared.mean_motion().value() * dt) % std::f64::consts::TAU,
+    );
+    let eccentricity = prepared.elements().shape().eccentricity();
+    let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
+    let (true_anomaly, radius) = elliptic_true_anomaly_and_radius(
+        eccentric_anomaly,
+        eccentricity,
+        prepared.elements().shape().semi_major_axis().value(),
+    );
+
+    rotate_to_ecliptic_precomputed(radius, prepared.orientation_trig(), true_anomaly)
+}
+
+impl PreparedOrbit {
+    /// Calculates heliocentric coordinates at a given Julian date.
+    #[inline]
+    pub fn position_at(&self, jd: JulianDate) -> EclipticMeanJ2000<AstronomicalUnit> {
+        calculate_prepared_position(self, jd)
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::macros::assert_cartesian_eq;
-    use crate::qtty::angular_rate::AngularRate;
+    use crate::qtty::{angular_rate::AngularRate, Days};
 
     #[test]
     fn mean_motion_position_is_at_periapsis_at_epoch() {
@@ -438,5 +458,45 @@ mod tests {
         assert!(position.x().is_finite());
         assert!(position.y().is_finite());
         assert!(position.z().is_finite());
+    }
+
+    #[test]
+    fn keplerian_orbit_position_is_at_periapsis_at_epoch() {
+        let orbit = KeplerianOrbit::new(
+            2.0 * AU,
+            0.1,
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            Degrees::new(0.0),
+            crate::J2000,
+        );
+
+        assert_cartesian_eq!(
+            calculate_orbit_position(&orbit, crate::J2000),
+            EclipticMeanJ2000::new(1.8, 0.0, 0.0),
+            1e-10
+        );
+    }
+
+    #[test]
+    fn prepared_orbit_matches_keplerian_position() {
+        let orbit = KeplerianOrbit::new(
+            1.0 * AU,
+            0.0167,
+            Degrees::new(0.00005),
+            Degrees::new(-11.26064),
+            Degrees::new(102.94719),
+            Degrees::new(100.46435),
+            crate::J2000,
+        );
+        let jd = crate::time::JulianDate::new((crate::J2000.raw() + Days::new(100.0)).value());
+        let prepared = PreparedOrbit::try_from(orbit).unwrap();
+
+        let direct = orbit.kepler_position(jd);
+        let cached = prepared.position_at(jd);
+        assert!((direct.x() - cached.x()).abs() < AstronomicalUnits::new(1e-12));
+        assert!((direct.y() - cached.y()).abs() < AstronomicalUnits::new(1e-12));
+        assert!((direct.z() - cached.z()).abs() < AstronomicalUnits::new(1e-12));
     }
 }

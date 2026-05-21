@@ -11,7 +11,7 @@ use qtty::time::Day;
 use tempoch::{Time, UTC};
 
 use super::TleError;
-use crate::formats::tle::{Classification, InternationalDesignator, SatelliteNumber, Tle};
+use crate::formats::tle::{Classification, InternationalDesignator, SatelliteNumber, TLE};
 
 /// Validate the canonical TLE checksum (digits + minus signs, mod 10).
 ///
@@ -96,7 +96,7 @@ pub(crate) fn compute_checksum(prefix_68: &str) -> u8 {
 /// ).unwrap();
 /// assert_eq!(tle.norad_id.0, 25544);
 /// ```
-pub fn parse_tle(line1: &str, line2: &str) -> Result<Tle, TleError> {
+pub fn parse_tle(line1: &str, line2: &str) -> Result<TLE, TleError> {
     parse_tle_inner(None, line1, line2)
 }
 
@@ -116,7 +116,7 @@ pub fn parse_tle(line1: &str, line2: &str) -> Result<Tle, TleError> {
 /// ).unwrap();
 /// assert_eq!(tle.name.as_deref(), Some("ISS (ZARYA)"));
 /// ```
-pub fn parse_3le(name: &str, line1: &str, line2: &str) -> Result<Tle, TleError> {
+pub fn parse_3le(name: &str, line1: &str, line2: &str) -> Result<TLE, TleError> {
     let trimmed = name.trim_start_matches("0 ").trim();
     let owned = if trimmed.is_empty() {
         None
@@ -126,7 +126,7 @@ pub fn parse_3le(name: &str, line1: &str, line2: &str) -> Result<Tle, TleError> 
     parse_tle_inner(owned, line1, line2)
 }
 
-fn parse_tle_inner(name: Option<String>, line1: &str, line2: &str) -> Result<Tle, TleError> {
+fn parse_tle_inner(name: Option<String>, line1: &str, line2: &str) -> Result<TLE, TleError> {
     if line1.len() != 69 {
         return Err(TleError::BadLength {
             line: 1,
@@ -201,7 +201,7 @@ fn parse_tle_inner(name: Option<String>, line1: &str, line2: &str) -> Result<Tle
 
     let epoch = epoch_from_year_doy(expand_two_digit_year(epoch_year_2 as i32), epoch_day)?;
 
-    Ok(Tle {
+    Ok(TLE {
         name,
         norad_id: norad_l1,
         classification,

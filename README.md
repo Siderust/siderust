@@ -339,7 +339,7 @@ cargo run --example 11_serde_serialization --features serde
 │   ├─ stellar/      # Analytical star altitude engine
 │   ├─ vsop87/       # VSOP87 planetary theory
 │   ├─ elp2000/      # ELP2000-82B lunar theory
-│   ├─ kepler_equations/  # Kepler equation solvers
+│   ├─ conic_equations.rs # Siderust wrappers over keplerian solvers
 │   └─ pluto         # Meeus/Williams Pluto ephemeris
 ├─ coordinates/   # Cartesian/Spherical types, frames, centers, transforms
 ├─ observatories/ # Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)

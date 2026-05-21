@@ -15,7 +15,7 @@
 //! - **VSOP87 planetary theory**: High-precision positions for the major planets.
 //! - **ELP2000 lunar theory**: Accurate lunar positions using the ELP2000-82B model.
 //! - **Solar calculations**: Solar coordinates and related phenomena.
-//! - **Keplerian orbits**: General elliptical orbit propagation and Kepler's equation solvers.
+//! - **Keplerian orbit glue**: Heliocentric wrappers around reusable `keplerian` solvers.
 //! - **Math core**: Reusable root-finding, extrema, intervals, and bracketing algorithms.
 //!
 //! ## Submodules
@@ -38,12 +38,10 @@
 //! - Solar equations of time, declination, and related phenomena.
 //! - Utility functions for solar ephemerides.
 //!
-//! ### `kepler_equations`
-//! Provides general-purpose routines for elliptical orbit propagation, including:
-//! - Solvers for Kepler's equation (Newton-Raphson and bisection methods).
-//! - Calculation of true anomaly, eccentric anomaly, and orbital positions.
-//! - Conversion between orbital elements and Cartesian coordinates.
-//! - Orbital period and mean motion calculations.
+//! ### `conic_equations`
+//! Provides Siderust's heliocentric propagation wrappers for conic and
+//! Keplerian orbit models. Reusable Kepler-equation solvers live in the
+//! standalone `keplerian` crate.
 //!
 //! ### `math_core`
 //! Reusable numerical primitives shared by all body-specific modules:
@@ -58,19 +56,17 @@
 //! but its public API can be used directly for custom calculations. For example:
 //!
 //! ```rust
-//! use siderust::calculus::kepler_equations::solve_keplers_equation;
-//! use siderust::qtty::*;
+//! use keplerian::anomaly::{eccentric_from_mean, AnomalyOptions};
 //!
-//! let m = 1.0 * RAD;
-//! let e = 0.0167;
-//! let eccentric_anomaly = solve_keplers_equation(m, e);
+//! let eccentric_anomaly = eccentric_from_mean(1.0, 0.0167, AnomalyOptions::default()).unwrap();
+//! assert!(eccentric_anomaly.is_finite());
 //! ```
 //!
 //! ## Re-exports
 //!
-//! The module re-exports the most important functions and types from its submodules for convenience:
-//! - `kepler_equations::*`
-//! - `solar::*`
+//! The module keeps astronomy-specific numerical modules together while
+//! reusable math kernels may live in standalone crates such as `cheby` and
+//! `keplerian`.
 //!
 //! ## References
 //!
@@ -85,7 +81,7 @@
 //! - `solar/`         , Solar coordinate calculations
 //! - `lunar/`         , Lunar coordinate calculations
 //! - `stellar/`       , Stellar altitude period finding (analytical sinusoidal model)
-//! - `kepler_equations/`— General orbital mechanics
+//! - `conic_equations.rs`— Heliocentric conic and Keplerian orbit wrappers
 //! - `math_core/`     , Reusable numerical primitives
 //! - `altitude.rs`    , Unified altitude computation & event API
 //!
@@ -107,7 +103,6 @@ pub mod elp2000;
 pub mod ephemeris;
 pub mod horizontal;
 pub mod jpl;
-pub mod kepler_equations;
 pub mod lunar;
 pub mod math_core;
 pub mod pluto;

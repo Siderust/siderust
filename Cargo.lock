@@ -1029,6 +1029,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "keplerian"
+version = "0.1.0"
+dependencies = [
+ "affn",
+ "qtty",
+ "thiserror",
+]
+
+[[package]]
 name = "leb128fmt"
 version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1773,6 +1782,7 @@ dependencies = [
  "cheby",
  "chrono",
  "criterion",
+ "keplerian",
  "paste",
  "qtty",
  "quick-xml",

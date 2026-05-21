@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Programmatic constructor for [`Tle`] records.
+//! Programmatic constructor for [`TLE`] records.
 //!
 //! [`TleBuilder`] is the synthesis counterpart of the parser in
 //! [`crate::formats::tle::parse_tle`]. It is used by `siderust-sgp4` tests and by any
@@ -20,9 +20,9 @@ use tempoch::{Time, UTC};
 
 use super::parse::compute_tle_checksum;
 use super::TleError;
-use crate::formats::tle::{Classification, InternationalDesignator, SatelliteNumber, Tle};
+use crate::formats::tle::{Classification, InternationalDesignator, SatelliteNumber, TLE};
 
-/// Typed builder for [`Tle`].
+/// Typed builder for [`TLE`].
 ///
 /// Required fields are `norad_id`, `international_designator`, `epoch`,
 /// `inclination`, `raan`, `eccentricity`, `argument_of_perigee`,
@@ -310,7 +310,7 @@ impl TleBuilder {
         self
     }
 
-    /// Finalize the builder into a [`Tle`].
+    /// Finalize the builder into a [`TLE`].
     ///
     /// Returns [`TleError::BuilderMissingField`] if any mandatory field
     /// was left unset.
@@ -321,8 +321,8 @@ impl TleBuilder {
     /// use siderust::formats::tle::{TleBuilder, TleError};
     /// assert!(matches!(TleBuilder::new().build(), Err(TleError::BuilderMissingField(_))));
     /// ```
-    pub fn build(self) -> Result<Tle, TleError> {
-        Ok(Tle {
+    pub fn build(self) -> Result<TLE, TleError> {
+        Ok(TLE {
             name: self.name,
             norad_id: self
                 .norad_id
@@ -357,7 +357,7 @@ impl TleBuilder {
     }
 }
 
-/// Render a [`Tle`] back to its canonical 2-line ASCII representation.
+/// Render a [`TLE`] back to its canonical 2-line ASCII representation.
 ///
 /// The returned tuple is `(line1, line2)`; both are 69 ASCII characters
 /// long with a valid checksum digit. Composing them with the satellite
@@ -374,7 +374,7 @@ impl TleBuilder {
 /// assert_eq!(rl1, l1);
 /// assert_eq!(rl2, l2);
 /// ```
-pub fn format_tle(tle: &Tle) -> Result<(String, String), TleError> {
+pub fn format_tle(tle: &TLE) -> Result<(String, String), TleError> {
     let cat = tle.norad_id.format_alpha5()?;
     let cls = tle.classification.as_char();
     let intl = format!("{:<8}", tle.international_designator.0);

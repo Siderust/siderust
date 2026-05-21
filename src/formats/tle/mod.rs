@@ -62,7 +62,7 @@ mod tle;
 pub use builder::{format_tle, TleBuilder};
 pub use error::TleError;
 pub use parse::{compute_tle_checksum, parse_3le, parse_tle, validate_tle_checksum};
-pub use tle::{Classification, InternationalDesignator, SatelliteNumber, Tle};
+pub use tle::{Classification, InternationalDesignator, SatelliteNumber, TLE};
 
 #[cfg(test)]
 mod tests;

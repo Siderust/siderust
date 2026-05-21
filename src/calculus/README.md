@@ -22,7 +22,8 @@ What you will find here:
 - `jpl/` and `ephemeris/`: JPL DE440/DE441 and backend abstraction.
 - `solar/`, `lunar/`, `stellar/`: body-specific event and geometry helpers.
 - `altitude/`, `azimuth/`: unified event-search APIs and provider traits.
-- `kepler_equations/`, `conic_equations.rs`: orbit and anomaly solvers.
+- `conic_equations.rs`: heliocentric orbit wrappers around reusable
+  `keplerian` anomaly solvers.
 - `math_core/`: reusable Brent, bracketing, extrema, and interval logic.
 - `horizontal.rs`, `pluto.rs`: focused numerical helpers used elsewhere.
 

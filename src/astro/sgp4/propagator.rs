@@ -8,13 +8,13 @@
 //! implementation distributed via the [`sgp4` crate](https://crates.io/crates/sgp4).
 //! The wrapper takes responsibility for:
 //!
-//! * mapping [`crate::formats::tle::Tle`] into the SGP4 backend's element record,
+//! * mapping [`crate::formats::tle::TLE`] into the SGP4 backend's element record,
 //! * converting [`tempoch::JulianDate<tempoch::UTC>`] target epochs into
 //!   minutes-since-epoch (the propagator's natural argument), and
 //! * tagging the resulting Cartesian arrays with their TEME / geocentric /
 //!   km / km·s⁻¹ types from `affn`, `siderust`, and `qtty`.
 
-use crate::formats::tle::Tle;
+use crate::formats::tle::TLE;
 use sgp4::{Constants, Elements, Geopotential, MinutesSinceEpoch};
 use tempoch::{JulianDate, JD, UTC};
 
@@ -106,7 +106,7 @@ pub struct Sgp4Propagator {
 }
 
 impl Sgp4Propagator {
-    /// Initialise the propagator from a [`Tle`] using the default
+    /// Initialise the propagator from a [`TLE`] using the default
     /// (WGS-72, Vallado 2006) gravity model.
     ///
     /// # Errors
@@ -129,11 +129,11 @@ impl Sgp4Propagator {
     /// ).unwrap();
     /// let _ = Sgp4Propagator::from_tle(&tle).unwrap();
     /// ```
-    pub fn from_tle(tle: &Tle) -> Result<Self, Sgp4Error> {
+    pub fn from_tle(tle: &TLE) -> Result<Self, Sgp4Error> {
         Self::from_tle_with_model(tle, GravityModel::default())
     }
 
-    /// Initialise the propagator from a [`Tle`] under an explicit
+    /// Initialise the propagator from a [`TLE`] under an explicit
     /// [`GravityModel`].
     ///
     /// # Examples
@@ -148,7 +148,7 @@ impl Sgp4Propagator {
     /// ).unwrap();
     /// let _ = Sgp4Propagator::from_tle_with_model(&tle, GravityModel::Wgs84).unwrap();
     /// ```
-    pub fn from_tle_with_model(tle: &Tle, model: GravityModel) -> Result<Self, Sgp4Error> {
+    pub fn from_tle_with_model(tle: &TLE, model: GravityModel) -> Result<Self, Sgp4Error> {
         let elements = tle_to_elements(tle)?;
         let constants = match model {
             GravityModel::Wgs72 => Constants::from_elements_afspc_compatibility_mode(&elements)
@@ -337,8 +337,8 @@ impl Sgp4Propagator {
 }
 
 fn jd_offset_minutes(epoch: JulianDate<UTC>, minutes: f64) -> JulianDate<UTC> {
-    use qtty::Quantity;
     use qtty::time::Day;
+    use qtty::Quantity;
     let days = minutes / 1_440.0;
     let raw = epoch.raw().value() + days;
     JulianDate::<UTC>::try_new(Quantity::<Day>::new(raw))
