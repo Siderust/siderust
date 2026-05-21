@@ -70,5 +70,50 @@ pub use crate::ext_qtty::dynamics::{
     SPEED_OF_LIGHT_KM_S,
 };
 
+/// Re-export standard gravitational parameter constants for common solar-system bodies.
+///
+/// All values are in km³/s² from JPL DE430 (or IAU 2012 for the Sun).
+pub use crate::ext_qtty::dynamics::{GM_EARTH, GM_MOON, GM_SUN};
+
+/// Standard gravitational parameter of Mercury (system) in km³/s².
+///
+/// Source: JPL DE430.
+pub const GM_MERCURY: GravitationalParameter = GravitationalParameter::new(2.203_187_832_8e4);
+
+/// Standard gravitational parameter of Venus (system) in km³/s².
+///
+/// Source: JPL DE430.
+pub const GM_VENUS: GravitationalParameter = GravitationalParameter::new(3.248_585_920_0e5);
+
+/// Standard gravitational parameter of Mars (system) in km³/s².
+///
+/// Source: JPL DE430.
+pub const GM_MARS: GravitationalParameter = GravitationalParameter::new(4.282_837_581_6e4);
+
+/// Standard gravitational parameter of Jupiter (system) in km³/s².
+///
+/// Source: JPL DE430.
+pub const GM_JUPITER: GravitationalParameter = GravitationalParameter::new(1.267_127_648_0e8);
+
+/// Standard gravitational parameter of Saturn (system) in km³/s².
+///
+/// Source: JPL DE430.
+pub const GM_SATURN: GravitationalParameter = GravitationalParameter::new(3.794_058_520_0e7);
+
+/// Standard gravitational parameter of Uranus (system) in km³/s².
+///
+/// Source: JPL DE430.
+pub const GM_URANUS: GravitationalParameter = GravitationalParameter::new(5.794_548_600_0e6);
+
+/// Standard gravitational parameter of Neptune (system) in km³/s².
+///
+/// Source: JPL DE430.
+pub const GM_NEPTUNE: GravitationalParameter = GravitationalParameter::new(6.836_527_100_5e6);
+
+/// Standard gravitational parameter of Pluto (system) in km³/s².
+///
+/// Source: JPL DE430.
+pub const GM_PLUTO: GravitationalParameter = GravitationalParameter::new(9.770e2);
+
 /// Re-export typed integrator tolerances for use in dynamics integrators.
 pub use crate::ext_qtty::tolerances::IntegratorTolerances;

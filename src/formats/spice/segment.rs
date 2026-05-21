@@ -253,7 +253,7 @@ fn read_chebyshev(
         });
     }
     let comp = components as usize;
-    if (rsize - 2) % comp != 0 {
+    if !(rsize - 2).is_multiple_of(comp) {
         return Err(SpiceError::Parse {
             message: format!("rsize={rsize} is not 2 + {comp}*k for any k (components={comp})"),
         });

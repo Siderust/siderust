@@ -91,6 +91,28 @@ pub type GaussianYears = Quantity<GaussianYear>;
 pub const GAUSSIAN_YEAR: GaussianYears = GaussianYears::new(1.0);
 
 // ─────────────────────────────────────────────────────────────────────────────
+// Heliocentric period helper
+// ─────────────────────────────────────────────────────────────────────────────
+
+/// Heliocentric orbital period in days from Kepler's third law (AU-day system).
+///
+/// Applies `T [Gaussian years] = a [AU]^{3/2}` and converts to days using the
+/// Gaussian year (2π / k ≈ 365.256 898 326 d). Valid only for heliocentric
+/// (Sun-centered) orbits; for other central bodies derive mean motion from the
+/// body's gravitational parameter instead.
+///
+/// # Arguments
+///
+/// - `semi_major_axis_au` — semi-major axis in astronomical units.
+#[inline]
+pub(crate) fn heliocentric_period_days(semi_major_axis_au: f64) -> f64 {
+    use crate::qtty::time::Day;
+    GaussianYears::new(semi_major_axis_au * semi_major_axis_au.sqrt())
+        .to::<Day>()
+        .value()
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // Tests
 // ─────────────────────────────────────────────────────────────────────────────
 

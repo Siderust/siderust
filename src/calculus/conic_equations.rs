@@ -14,7 +14,7 @@
 
 use crate::astro::conic::{ConicError, ConicKind, ConicOrbit, MeanMotionOrbit};
 use crate::astro::orbit::{KeplerianOrbit, OrientationTrig, PreparedOrbit};
-use crate::astro::units::GaussianYears;
+use crate::astro::units::heliocentric_period_days;
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::qtty::*;
 use crate::time::JulianDate;
@@ -26,6 +26,20 @@ use keplerian::anomaly::{eccentric_from_mean, hyperbolic_from_mean, AnomalyOptio
 /// constant ties all propagation in this module to a Sun-centered
 /// context.
 const GAUSSIAN_GRAVITATIONAL_CONSTANT: f64 = 0.01720209895;
+
+/// Converts a gravitational parameter from km³/s² to AU³/day².
+///
+/// The Gaussian constant satisfies k² = GM_☉ [AU³/day²], so:
+///
+/// ```text
+/// mu [AU³/day²] = mu [km³/s²] × (86400 s/day)² / (149597870.7 km/AU)³
+/// ```
+#[inline]
+fn mu_to_au3_d2(mu: GravitationalParameter) -> f64 {
+    const KM_PER_AU: f64 = 149_597_870.7;
+    const S_PER_DAY: f64 = 86_400.0;
+    mu.value() * (S_PER_DAY * S_PER_DAY) / (KM_PER_AU * KM_PER_AU * KM_PER_AU)
+}
 /// Siderust keeps heliocentric orbit wrappers here, while `keplerian` owns the
 /// reusable Kepler-equation solver.
 #[inline]
@@ -200,32 +214,61 @@ impl ConicOrbit {
     }
 }
 
-#[inline]
-fn orbital_period_days(a: AstronomicalUnits) -> Days {
-    // Kepler's Third Law: T [Gaussian years] = a [AU]^(3/2).
-    let a_val = a.value();
-    let t_gaussian_years = a_val * a_val.sqrt();
-    GaussianYears::new(t_gaussian_years).to::<Day>()
-}
-
 /// Calculates the heliocentric coordinates of a Keplerian orbit at a Julian date.
+///
+/// Uses the Gaussian gravitational constant (`k = 0.01720209895 AU^{3/2} d^{-1}`)
+/// which encodes `GM_☉` in the AU-day system. Elements must be heliocentric and
+/// in AU. For orbits around other central bodies use
+/// [`calculate_orbit_position_with_mu`] with an explicit `mu`.
 pub fn calculate_orbit_position(
     elements: &KeplerianOrbit,
     julian_date: JulianDate,
 ) -> EclipticMeanJ2000<AstronomicalUnit> {
-    let period = orbital_period_days(elements.shape().semi_major_axis());
+    // Mean motion derived the same way as PreparedOrbit to ensure identical results.
+    let a = elements.shape().semi_major_axis().value();
     type RadiansPerDay = crate::qtty::angular_rate::AngularRate<Radian, Day>;
-    let n: RadiansPerDay = Radians::TAU / period;
+    let period_days = heliocentric_period_days(a);
+    let n = RadiansPerDay::new(std::f64::consts::TAU / period_days);
     let dt: Days = julian_date.raw() - elements.epoch.raw();
     let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
     let eccentricity = elements.shape().eccentricity();
     let mean_anomaly = (m0_rad + (n * dt).to::<Radian>()) % std::f64::consts::TAU;
     let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
-    let (true_anomaly, radius) = elliptic_true_anomaly_and_radius(
-        eccentric_anomaly,
-        eccentricity,
-        elements.shape().semi_major_axis().value(),
-    );
+    let (true_anomaly, radius) =
+        elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, a);
+    rotate_to_ecliptic(
+        radius,
+        elements.orientation().inclination(),
+        elements.orientation().longitude_of_ascending_node(),
+        elements.orientation().argument_of_periapsis(),
+        true_anomaly,
+    )
+}
+
+/// Calculates the position of a Keplerian orbit at a Julian date using an
+/// explicit gravitational parameter.
+///
+/// The elements are assumed to be in AU, and the returned position is in the
+/// ecliptic mean J2000 frame. `mu` may be the gravitational parameter of any
+/// central body (not just the Sun): use [`GM_SUN`] for heliocentric orbits,
+/// [`GM_EARTH`] for geocentric, or any other body's μ.
+pub fn calculate_orbit_position_with_mu(
+    elements: &KeplerianOrbit,
+    julian_date: JulianDate,
+    mu: GravitationalParameter,
+) -> EclipticMeanJ2000<AstronomicalUnit> {
+    let a_au = elements.shape().semi_major_axis().value();
+    let mu_au3_d2 = mu_to_au3_d2(mu);
+    type RadiansPerDay = crate::qtty::angular_rate::AngularRate<Radian, Day>;
+    // mean motion n = sqrt(mu / a³) rad/day
+    let n: RadiansPerDay = RadiansPerDay::new((mu_au3_d2 / (a_au * a_au * a_au)).sqrt());
+    let dt: Days = julian_date.raw() - elements.epoch.raw();
+    let m0_rad = elements.mean_anomaly_at_epoch.to::<Radian>();
+    let eccentricity = elements.shape().eccentricity();
+    let mean_anomaly = (m0_rad + (n * dt).to::<Radian>()) % std::f64::consts::TAU;
+    let eccentric_anomaly = solve_elliptic_anomaly(mean_anomaly, eccentricity);
+    let (true_anomaly, radius) =
+        elliptic_true_anomaly_and_radius(eccentric_anomaly, eccentricity, a_au);
 
     rotate_to_ecliptic(
         radius,
@@ -238,8 +281,34 @@ pub fn calculate_orbit_position(
 
 impl KeplerianOrbit {
     /// Calculates heliocentric coordinates at a given Julian date.
+    ///
+    /// Uses the Gaussian gravitational constant, which encodes `GM_☉` in the
+    /// AU-day system. This method is **heliocentric-only**. For orbits around
+    /// any other central body supply the body's μ via [`position_with_mu`].
+    ///
+    /// [`position_with_mu`]: KeplerianOrbit::position_with_mu
     pub fn kepler_position(&self, jd: JulianDate) -> EclipticMeanJ2000<AstronomicalUnit> {
-        calculate_orbit_position(self, jd)
+        calculate_prepared_position(&PreparedOrbit::from_validated(*self), jd)
+    }
+
+    /// Calculates orbital position at a given Julian date using an explicit
+    /// gravitational parameter.
+    ///
+    /// Use this method when the orbit is not heliocentric. Supply the central
+    /// body's μ from the `qtty` dynamics constants:
+    ///
+    /// - [`GM_SUN`] for heliocentric (same as [`kepler_position`])
+    /// - [`GM_EARTH`] for geocentric (Earth-orbiting satellites, Moon)
+    /// - [`GM_JUPITER`] for Jupiter-centric (Galilean moons)
+    /// - etc.
+    ///
+    /// [`kepler_position`]: KeplerianOrbit::kepler_position
+    pub fn position_with_mu(
+        &self,
+        jd: JulianDate,
+        mu: GravitationalParameter,
+    ) -> EclipticMeanJ2000<AstronomicalUnit> {
+        calculate_orbit_position_with_mu(self, jd, mu)
     }
 }
 

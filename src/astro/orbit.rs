@@ -41,7 +41,7 @@
 //!   <https://ssd.jpl.nasa.gov/planets/approx_pos.html>
 
 use crate::astro::conic::{elliptic_geometry_from_sma, ConicError};
-use crate::astro::units::GaussianYears;
+use crate::astro::units::heliocentric_period_days;
 use crate::qtty::angular_rate::AngularRate;
 use crate::qtty::*;
 use crate::time::JulianDate;
@@ -321,9 +321,8 @@ impl PreparedOrbit {
     /// Internal: build from an already-validated orbit.
     pub(crate) fn from_validated(orbit: KeplerianOrbit) -> Self {
         let a = orbit.shape().semi_major_axis().value();
-        // Kepler's 3rd law: T [Gaussian years] = a [AU]^{3/2}
-        let t_gaussian_years = a * a.sqrt();
-        let period_days = GaussianYears::new(t_gaussian_years).to::<Day>().value();
+        // Kepler's 3rd law in the AU-day system (heliocentric).
+        let period_days = heliocentric_period_days(a);
         let mean_motion = AngularRate::<Radian, Day>::new(std::f64::consts::TAU / period_days);
         let m0_rad = orbit.mean_anomaly_at_epoch.to::<Radian>().value();
         let trig = OrientationTrig::from_orientation(orbit.orientation());

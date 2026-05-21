@@ -71,9 +71,6 @@
 use crate::astro::orbit::KeplerianOrbit;
 use crate::qtty::*;
 
-type RadiansPerDay = crate::qtty::Quantity<crate::qtty::Per<Radian, Day>>;
-const GAUSSIAN_GRAVITATIONAL_CONSTANT: RadiansPerDay = Quantity::new(0.017_202_098_95);
-
 /// Represents a **Planet** characterised by its mass, mean radius, Bond albedo
 /// and Keplerian heliocentric orbit.
 #[derive(Clone, Debug)]
@@ -218,19 +215,12 @@ pub trait OrbitExt {
 
 impl OrbitExt for KeplerianOrbit {
     fn period(&self) -> Seconds {
-        // Kepler's 3rd: P = 2π * sqrt(a^3 / μ)
-        // Using Gaussian gravitational constant k ≈ 0.01720209895 AU^{3/2} d^{-1}
-        // => period (days) = 2π / k * sqrt(a^3)
-        use std::f64::consts::PI;
         let a_au = self
             .shape()
             .semi_major_axis()
             .to::<AstronomicalUnit>()
             .value();
-        let k = GAUSSIAN_GRAVITATIONAL_CONSTANT.value();
-
-        let t_days = (2.0 * PI / k) * (a_au * a_au.sqrt());
-        Seconds::new(t_days * 86_400.0)
+        Seconds::new(crate::astro::units::heliocentric_period_days(a_au) * 86_400.0)
     }
 }
 

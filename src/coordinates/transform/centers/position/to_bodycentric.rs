@@ -68,7 +68,7 @@ where
         jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Bodycentric, F, U> {
-        let body_ecliptic_au = body_params.orbit.kepler_position(jd);
+        let body_ecliptic_au = body_params.orbit.position_with_mu(jd, body_params.mu);
 
         let body_in_our_center: Position<Geocentric, F, U> = match body_params.orbit_center {
             OrbitReferenceCenter::Geocentric => {
@@ -125,7 +125,7 @@ where
         jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Bodycentric, F, U> {
-        let body_ecliptic_au = body_params.orbit.kepler_position(jd);
+        let body_ecliptic_au = body_params.orbit.position_with_mu(jd, body_params.mu);
 
         let body_in_our_center: Position<Heliocentric, F, U> = match body_params.orbit_center {
             OrbitReferenceCenter::Heliocentric => {
@@ -183,7 +183,7 @@ where
         jd: JulianDate,
         _ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Bodycentric, F, U> {
-        let body_ecliptic_au = body_params.orbit.kepler_position(jd);
+        let body_ecliptic_au = body_params.orbit.position_with_mu(jd, body_params.mu);
 
         let body_in_our_center: Position<Barycentric, F, U> = match body_params.orbit_center {
             OrbitReferenceCenter::Barycentric => {
@@ -241,7 +241,7 @@ where
         _ctx: &AstroContext<Eph, Eop>,
     ) -> Position<Geocentric, F, U> {
         let body_params = *self.center_params();
-        let body_ecliptic_au = body_params.orbit.kepler_position(jd);
+        let body_ecliptic_au = body_params.orbit.position_with_mu(jd, body_params.mu);
 
         let body_geo: Position<Geocentric, F, U> = match body_params.orbit_center {
             OrbitReferenceCenter::Geocentric => {
@@ -380,7 +380,8 @@ mod tests {
 
         let params = BodycentricParams::geocentric(orbit);
 
-        let body_geo_ecl = orbit.kepler_position(crate::J2000);
+        // Use position_with_mu to match what to_center does internally (GM_EARTH for geocentric).
+        let body_geo_ecl = orbit.position_with_mu(crate::J2000, params.mu);
         let body_geo: Position<Geocentric, frames::EclipticMeanJ2000, AstronomicalUnit> =
             Position::from_array_origin(*body_geo_ecl.as_array());
 
