@@ -197,11 +197,8 @@ impl<S: EclipseModel> AccelerationModel<DynamicsContext, TT, Geocentric, GCRS>
         if r == 0.0 {
             return Ok(Acceleration::<GCRS, AccelerationUnit>::new(0.0, 0.0, 0.0));
         }
-        let r_sat_disp = Displacement::<GCRS, Kilometer>::new(
-            s.position.x(),
-            s.position.y(),
-            s.position.z(),
-        );
+        let r_sat_disp =
+            Displacement::<GCRS, Kilometer>::new(s.position.x(), s.position.y(), s.position.z());
         let nu = S::eclipse_factor(r_sat_disp, sun).value();
         let mag_km_s2 = nu
             * self.cr.value()

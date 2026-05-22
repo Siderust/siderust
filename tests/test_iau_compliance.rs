@@ -197,9 +197,9 @@ fn null_eop_produces_ut1_equal_utc() {
 #[test]
 fn light_deflection_roundtrip_accuracy() {
     // Apply and remove solar deflection; result should match original to < 1 μas
+    use affn::cartesian::Displacement;
     use siderust::coordinates::cartesian::direction;
     use siderust::coordinates::frames::EquatorialMeanJ2000 as EMJ2000;
-    use affn::cartesian::Displacement;
     use siderust::qtty::AstronomicalUnit;
 
     let star_arr = [0.3f64, 0.8, 0.5];
