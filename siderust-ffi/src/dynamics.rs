@@ -53,7 +53,7 @@ use siderust::astro::dynamics::forces::TwoBody;
 use siderust::astro::dynamics::gravity::GravityFieldProvider;
 use siderust::astro::dynamics::integrators::dop853_propagate;
 use siderust::astro::dynamics::units::{GravitationalParameter, GM_EARTH};
-use siderust::astro::dynamics::{OrbitState, Position, Velocity};
+use siderust::astro::dynamics::{OrbitState, Position, PrincipiaError, Velocity};
 use siderust::calculus::ephemeris::DynEphemeris;
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::frames::GCRS;
@@ -247,7 +247,7 @@ struct FfiGravityProvider {
 }
 
 impl GravityFieldProvider for FfiGravityProvider {
-    fn gm(&self) -> GravitationalParameter {
+    fn mu(&self) -> GravitationalParameter {
         GravitationalParameter::new(self.vtable.gm_km3_s2)
     }
 
@@ -263,14 +263,14 @@ impl GravityFieldProvider for FfiGravityProvider {
         self.vtable.max_order as usize
     }
 
-    fn c_normalized(&self, n: usize, m: usize) -> f64 {
+    fn c_normalized(&self, n: usize, m: usize) -> Result<f64, PrincipiaError> {
         // SAFETY: The C caller guarantees the fn pointer and user_data are valid.
-        unsafe { (self.vtable.c_normalized)(n as u32, m as u32, self.vtable.user_data) }
+        Ok(unsafe { (self.vtable.c_normalized)(n as u32, m as u32, self.vtable.user_data) })
     }
 
-    fn s_normalized(&self, n: usize, m: usize) -> f64 {
+    fn s_normalized(&self, n: usize, m: usize) -> Result<f64, PrincipiaError> {
         // SAFETY: The C caller guarantees the fn pointer and user_data are valid.
-        unsafe { (self.vtable.s_normalized)(n as u32, m as u32, self.vtable.user_data) }
+        Ok(unsafe { (self.vtable.s_normalized)(n as u32, m as u32, self.vtable.user_data) })
     }
 }
 
@@ -441,8 +441,8 @@ pub extern "C" fn siderust_orbit_state_new(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let state = OrbitState::new_at_jd(
-            JulianDate::new(epoch_jd),
+        let state = OrbitState::new(
+            JulianDate::new(epoch_jd).to_j2000s(),
             Position::<GCRS>::new(x, y, z),
             Velocity::<GCRS>::new(vx, vy, vz),
         );
@@ -518,7 +518,7 @@ pub extern "C" fn siderust_orbit_state_epoch_jd(
         if handle.is_null() || out_jd.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let epoch_jd = unsafe { (*handle).inner.epoch_jd().jd_value() };
+        let epoch_jd = unsafe { (*handle).inner.epoch.to::<siderust::JD>().raw().value() };
         unsafe { *out_jd = epoch_jd };
         SiderustStatus::Ok
     }}
@@ -551,7 +551,7 @@ pub extern "C" fn siderust_propagator_two_body_earth_new(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let handle = Box::new(SiderustPropagator { force: TwoBody { gm: GM_EARTH } });
+        let handle = Box::new(SiderustPropagator { force: TwoBody { mu: GM_EARTH } });
         unsafe { *out = Box::into_raw(handle) };
         SiderustStatus::Ok
     }}
@@ -574,7 +574,7 @@ pub extern "C" fn siderust_propagator_two_body_new(
             return SiderustStatus::NullPointer;
         }
         let handle = Box::new(SiderustPropagator {
-            force: TwoBody { gm: GravitationalParameter::new(gm_km3_s2) },
+            force: TwoBody { mu: GravitationalParameter::new(gm_km3_s2) },
         });
         unsafe { *out = Box::into_raw(handle) };
         SiderustStatus::Ok
@@ -620,7 +620,7 @@ pub extern "C" fn siderust_propagator_propagate(
         }
 
         let propagator = unsafe { &(*handle) };
-        let s0 = unsafe { (*state_in).inner.clone() };
+        let s0 = unsafe { (*state_in).inner };
         let dt = Second::new(dt_s);
 
         // Support null ctx as "empty context" so callers doing pure two-body
@@ -661,7 +661,7 @@ fn propagate_with_context(
     ctx: &DynamicsContext,
 ) -> Result<OrbitState<Geocentric, GCRS>, DynamicsError> {
     let tols = IntegratorTolerances::uniform(1e-9, 1e-6, 1e-9);
-    dop853_propagate(&p.force, state, dt, tols, ctx)
+    Ok(dop853_propagate(&p.force, state, dt, tols, ctx)?)
 }
 
 // =============================================================================

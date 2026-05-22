@@ -56,6 +56,7 @@ use qtty::length::{AstronomicalUnits, Meters};
 use qtty::time::Days;
 use qtty::unit::{Day, Degree};
 use qtty::*;
+use siderust::astro::dynamics::units::{GM_EARTH, GM_SUN};
 use siderust::calculus::azimuth::{
     AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
 };
@@ -699,7 +700,11 @@ impl SiderustBodycentricParams {
             2 => RustOrbitRefCenter::Geocentric,
             _ => RustOrbitRefCenter::Heliocentric, // safe default
         };
-        Ok(RustBodycentricParams::new(orbit, orbit_center))
+        let mu = match orbit_center {
+            RustOrbitRefCenter::Geocentric => GM_EARTH,
+            RustOrbitRefCenter::Barycentric | RustOrbitRefCenter::Heliocentric => GM_SUN,
+        };
+        Ok(RustBodycentricParams::new(orbit, orbit_center, mu))
     }
 
     /// Create from the Rust domain type.

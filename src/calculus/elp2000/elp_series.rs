@@ -622,192 +622,192 @@ mod series_wrappers {
     use super::*;
 
     #[inline(always)]
-    pub fn sum_series_elp1(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp1(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp1_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp2(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp2(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp2_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp3(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp3(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp3_ctx(&pc)
     }
 
     #[inline(always)]
-    pub fn sum_series_elp4(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp4(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp4_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp5(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp5(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp5_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp6(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp6(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp6_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp7(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp7(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp7_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp8(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp8(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp8_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp9(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp9(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp9_ctx(&pc)
     }
 
     #[inline(always)]
-    pub fn sum_series_elp10(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp10(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp10_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp11(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp11(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp11_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp12(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp12(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp12_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp13(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp13(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp13_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp14(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp14(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp14_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp15(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp15(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp15_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp16(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp16(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp16_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp17(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp17(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp17_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp18(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp18(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp18_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp19(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp19(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp19_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp20(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp20(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp20_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp21(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp21(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp21_ctx(&pc)
     }
 
     #[inline(always)]
-    pub fn sum_series_elp22(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp22(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp22_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp23(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp23(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp23_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp24(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp24(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp24_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp25(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp25(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp25_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp26(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp26(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp26_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp27(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp27(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp27_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp28(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp28(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp28_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp29(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp29(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp29_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp30(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp30(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp30_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp31(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp31(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp31_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp32(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp32(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp32_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp33(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp33(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp33_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp34(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp34(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp34_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp35(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp35(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp35_ctx(&pc)
     }
     #[inline(always)]
-    pub fn sum_series_elp36(t: &[f64; 5]) -> f64 {
+    pub(crate) fn sum_series_elp36(t: &[f64; 5]) -> f64 {
         let pc = ElpPrecomputed::from_t(t);
         sum_series_elp36_ctx(&pc)
     }
 }
 
 #[cfg(test)]
-pub use series_wrappers::*;
+pub(crate) use series_wrappers::*;
 
 // ====================
 // Lunar position computation

@@ -5,6 +5,6 @@
 
 pub use crate::formats::error::{FileLocation, FormatError, ParseMode};
 
-pub mod obs;
-pub mod nav;
 pub mod doris;
+pub mod nav;
+pub mod obs;

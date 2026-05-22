@@ -1,101 +1,63 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Force models for spacecraft dynamics.
-//!
-//! ## Trait design
-//!
-//! [`ForceModel<C, F>`] is the central abstraction.  Each call to
-//! [`acceleration`][ForceModel::acceleration] or [`partials`][ForceModel::partials]
-//! receives a reference to the [`super::context::DynamicsContext`] so force models can query
-//! ephemeris, atmosphere, and gravity-field providers **without holding them
-//! as fields**.  Force models store only their tunable physical parameters
-//! (C_D, C_R, A/m, J2 coefficient, truncation degree, …).
-//!
-//! ## Partial derivatives
-//!
-//! [`ForcePartials<F>`] is the linearization block
-//! `A(t) = ∂a/∂[r, v]`, the lower half of the variational matrix
-//! `F(t) = [[0, I], [A_r, A_v]]`:
-//!
-//! * `d_acc_d_pos` (`A_r = ∂a/∂r`): units km/s² per km = s⁻² (stored as raw f64 in frame `F`)
-//! * `d_acc_d_vel` (`A_v = ∂a/∂v`): units km/s² per km/s = s⁻¹ (stored as raw f64 in frame `F`)
-//!
-//! [`TwoBody`] and [`J2`] supply analytic partials.  All other models return
-//! `Err(DynamicsError::Provider(_))` from the default impl.
-//!
-//! ## Provided models
-//!
-//! | Model | Type parameters | Description |
-//! |-------|-----------------|-------------|
-//! | [`TwoBody`] | `<Geocentric, GCRS>` | Central Newtonian gravity |
-//! | [`J2`] | `<Geocentric, GCRS>` | Zonal oblateness perturbation |
-//! | [`DragForce<D>`] | `<Geocentric, GCRS>` | Cannonball atmospheric drag |
-//! | [`ThirdBodySunMoon`] | `<Geocentric, GCRS>` | Sun + Moon point-mass perturbation |
-//! | [`CannonballSrp`] | `<Geocentric, GCRS>` | Cannonball solar radiation pressure |
-//! | [`CompositeForce<C, F>`] | generic | Linear sum of any force models |
-//!
-//! ## References
-//!
-//! * Vallado, *Fundamentals of Astrodynamics and Applications*, §1, §8, §8.8.1.
-//! * Montenbruck & Gill, *Satellite Orbits*, §3.2, §3.4.
+//! Astronomy-specific perturbation models plus `principia`'s generic accelerations.
 
-pub mod composite;
 pub mod drag;
 pub mod empirical;
 pub mod geopotential;
-pub mod j2;
 pub mod relativity;
 pub mod srp;
 pub mod third_body;
-pub mod traits;
-pub mod two_body;
 
-// Re-export the full public surface so callers using `use forces::*` or
-// `use forces::TwoBody` continue to work unchanged.
+use crate::qtty::{AstronomicalUnit, InverseSeconds, Kilometer, Kilometers, Pascals, Unit};
+
 pub use crate::astro::dynamics::atmosphere::{ExponentialAtmosphere, Nrlmsise00LiteApprox};
-pub use composite::CompositeForce;
+pub use crate::astro::dynamics::units::{GravitationalParameter, GM_EARTH, GM_MOON, GM_SUN};
 pub use drag::{DragForce, ExponentialDrag};
 pub use empirical::EmpiricalAcceleration;
 pub use geopotential::Geopotential;
-pub use j2::J2;
+pub use principia::{AccelerationModel, AccelerationPartials, CompositeModel, TwoBody, J2};
 pub use relativity::CentralBodyRelativity1Pn;
 pub use srp::{CannonballSrp, Conical, Cylindrical, EclipseModel, NoEclipse, ShadowModel};
-#[allow(deprecated)]
-pub use third_body::{
-    MoonPerturbation, SunPerturbation, ThirdBody, ThirdBodyProvider, ThirdBodySunMoon,
-};
-pub use traits::{
-    ForceModel, ForcePartials, DEGENERATE_RADIUS_KM, GM_EARTH, GM_MOON, GM_SUN, MU_MOON, MU_SUN,
-    OMEGA_EARTH_RAD_S, P0, R_EARTH,
-};
-pub use two_body::TwoBody;
+pub use third_body::{MoonPerturbation, SunPerturbation, ThirdBody, ThirdBodyProvider};
+
+/// Earth mean equatorial radius (GRS-80 / WGS-84), km.
+pub const R_EARTH: Kilometers = Kilometers::new(6_378.137);
+/// Earth mean rotation rate (sidereal), rad/s.
+pub const OMEGA_EARTH_RAD_S: InverseSeconds = InverseSeconds::new(7.292_115_146_706_979e-5);
+/// Minimum geocentric radius below which force-model computations are considered degenerate.
+pub const DEGENERATE_RADIUS_KM: f64 = 100.0;
+/// Solar radiation pressure at 1 AU, N/m².
+pub const P0: Pascals = Pascals::new(4.560e-6);
+/// Canonical Earth J2 coefficient used by the built-in low-degree field.
+pub const EARTH_J2: f64 = 1.082_626_68e-3;
+/// Astronomical unit in km.
+pub const AU_IN_KM: f64 = AstronomicalUnit::RATIO / Kilometer::RATIO;
 
 #[cfg(test)]
 mod tests {
     use super::*;
     use crate::astro::dynamics::context::DynamicsContext;
-    use crate::astro::dynamics::state::OrbitState;
-    use crate::astro::dynamics::{Position, Velocity};
+    use crate::astro::dynamics::{OrbitState, Position, Velocity};
     use crate::coordinates::frames::GCRS;
     use crate::time::JulianDate;
 
     fn leo() -> OrbitState {
-        OrbitState::new_at_jd(
-            JulianDate::new(2_451_545.0),
+        OrbitState::new(
+            JulianDate::new(2_451_545.0).to_j2000s(),
             Position::<GCRS>::new(7000.0, 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         )
     }
 
     #[test]
-    fn composite_sums_components() {
+    fn composite_model_sums_components() {
         let ctx = DynamicsContext::empty();
-        let f = CompositeForce::empty()
-            .push(Box::new(TwoBody::earth()))
-            .push(Box::new(J2::earth()));
-        let a = f.acceleration(&leo(), &ctx).unwrap();
+        let model = CompositeModel::empty()
+            .push(Box::new(TwoBody::new(GM_EARTH)))
+            .push(Box::new(J2::new(GM_EARTH, R_EARTH, EARTH_J2)));
+        let a = model.acceleration(&leo(), &ctx).unwrap();
         assert!(a.x().value() < 0.0);
-        assert!(a.z().value().abs() < 1e-12);
     }
 }

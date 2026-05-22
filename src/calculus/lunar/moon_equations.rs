@@ -219,7 +219,7 @@ impl Moon {
     ///
     /// let site = Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M);
     /// let geom = Moon::phase_topocentric(siderust::J2000, site);
-    /// println!("Illuminated: {:.1} %", geom.illuminated_percent());
+    /// println!("Illuminated: {:.1} %", geom.illuminated_fraction.value() * 100.0);
     /// ```
     ///
     /// # Arguments

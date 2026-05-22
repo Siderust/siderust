@@ -30,6 +30,7 @@
 //! ```
 //! use siderust::astro::sgp4::Sgp4Propagator;
 //! use siderust::formats::tle::parse_3le;
+//! use siderust::qtty::Minutes;
 //!
 //! let tle = parse_3le(
 //!     "ISS (ZARYA)",
@@ -37,7 +38,7 @@
 //!     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
 //! ).unwrap();
 //! let prop = Sgp4Propagator::from_tle(&tle).unwrap();
-//! let state = prop.propagate_minutes(0.0).unwrap();
+//! let state = prop.propagate_minutes(Minutes::new(0.0)).unwrap();
 //! assert!(state.position().distance().value() > 6_500.0);
 //! assert!(state.velocity().magnitude().value() > 5.0);
 //! ```

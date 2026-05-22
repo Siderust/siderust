@@ -49,7 +49,13 @@ fn orbit_period_computation() {
 
     let p = planet.orbit.period().value();
     let expected = 2.0 * std::f64::consts::PI / k * 1.0_f64.powf(1.5) * 86400.0;
-    assert!((p - expected).abs() < 1e-6);
+    // The inherent rounding between the 11-digit k and the stored Gaussian-year
+    // constant (365.256898326 days) is ~2.8×10⁻⁵ s; use 1e-3 s tolerance.
+    assert!(
+        (p - expected).abs() < 1e-3,
+        "period {p} vs expected {expected}, diff = {}",
+        (p - expected).abs()
+    );
 }
 
 #[test]

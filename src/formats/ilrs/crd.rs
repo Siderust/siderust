@@ -268,7 +268,7 @@ pub fn parse_crd(text: &str) -> Result<CrdFile, FormatError> {
 /// # Examples
 ///
 /// ```
-/// use siderust::formats::{ParseMode, crd::parse_crd_with_mode};
+/// use siderust::formats::{ParseMode, ilrs::crd::parse_crd_with_mode};
 /// // Permissive: a broken "11" record is skipped rather than failing.
 /// let txt = "H2 GRAZ 7839 1 1 0\nH3 lageos1 1155 7603901 0 1\n11 BROKEN\nH8\n";
 /// let f = parse_crd_with_mode(txt, ParseMode::Permissive).unwrap();

@@ -56,6 +56,7 @@ pub type TemeVelocityKmPerSec = velocity::TEME<KilometerPerSecond>;
 /// ```
 /// use siderust::astro::sgp4::{Sgp4Propagator, TemeState};
 /// use siderust::formats::tle::parse_3le;
+/// use siderust::qtty::Minutes;
 ///
 /// let tle = parse_3le(
 ///     "ISS (ZARYA)",
@@ -63,7 +64,7 @@ pub type TemeVelocityKmPerSec = velocity::TEME<KilometerPerSecond>;
 ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
 /// ).unwrap();
 /// let prop = Sgp4Propagator::from_tle(&tle).unwrap();
-/// let state: TemeState = prop.propagate_minutes(0.0).unwrap();
+/// let state: TemeState = prop.propagate_minutes(Minutes::new(0.0)).unwrap();
 /// // Magnitudes are in kilometres and km/s for an LEO.
 /// let r = state.position().as_array();
 /// assert!(r[0].value().abs() < 8_000.0);
@@ -131,13 +132,14 @@ impl TemeState {
     /// ```
     /// use siderust::astro::sgp4::Sgp4Propagator;
     /// use siderust::formats::tle::parse_3le;
+    /// use siderust::qtty::Minutes;
     /// let tle = parse_3le(
     ///     "ISS (ZARYA)",
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
     /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
-    /// let s = p.propagate_minutes(0.0).unwrap();
+    /// let s = p.propagate_minutes(Minutes::new(0.0)).unwrap();
     /// assert!(s.epoch().raw().value() > 2_454_000.0);
     /// ```
     pub fn epoch(&self) -> JulianDate<UTC> {
@@ -151,13 +153,14 @@ impl TemeState {
     /// ```
     /// use siderust::astro::sgp4::Sgp4Propagator;
     /// use siderust::formats::tle::parse_3le;
+    /// use siderust::qtty::Minutes;
     /// let tle = parse_3le(
     ///     "ISS (ZARYA)",
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
     /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
-    /// let s = p.propagate_minutes(0.0).unwrap();
+    /// let s = p.propagate_minutes(Minutes::new(0.0)).unwrap();
     /// let r = s.position();
     /// assert!(r.distance().value() > 6_000.0);
     /// ```
@@ -172,13 +175,14 @@ impl TemeState {
     /// ```
     /// use siderust::astro::sgp4::Sgp4Propagator;
     /// use siderust::formats::tle::parse_3le;
+    /// use siderust::qtty::Minutes;
     /// let tle = parse_3le(
     ///     "ISS (ZARYA)",
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
     /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
-    /// let s = p.propagate_minutes(0.0).unwrap();
+    /// let s = p.propagate_minutes(Minutes::new(0.0)).unwrap();
     /// let v = s.velocity();
     /// // LEO speed is ~7.7 km/s.
     /// assert!(v.magnitude().value() > 5.0 && v.magnitude().value() < 10.0);

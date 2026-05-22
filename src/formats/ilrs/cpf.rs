@@ -242,7 +242,7 @@ pub fn parse_cpf(text: &str) -> Result<CpfFile, FormatError> {
 /// # Examples
 ///
 /// ```
-/// use siderust::formats::{ParseMode, cpf::parse_cpf_with_mode};
+/// use siderust::formats::{ParseMode, ilrs::cpf::parse_cpf_with_mode};
 /// let txt = "H1 CPF 2 HTS 2024 01 01 00 1\nH2 s 0 0\n10 1 BROKEN\n99\n";
 /// let f = parse_cpf_with_mode(txt, ParseMode::Permissive).unwrap();
 /// assert_eq!(f.ephemeris.entries.len(), 0); // skipped
@@ -422,8 +422,11 @@ fn parse_cpf_impl(
                         }
                         _ => {
                             let loc = FileLocation::new(path.clone(), Some(line_no), None);
-                            let err =
-                                FormatError::located("CPF v2 §4.1", loc, "record 10: missing X/Y/Z");
+                            let err = FormatError::located(
+                                "CPF v2 §4.1",
+                                loc,
+                                "record 10: missing X/Y/Z",
+                            );
                             if mode == ParseMode::Strict {
                                 return Err(err);
                             }

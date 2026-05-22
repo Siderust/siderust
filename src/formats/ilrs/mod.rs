@@ -5,5 +5,5 @@
 
 pub use crate::formats::error::{FileLocation, FormatError, ParseMode};
 
-pub mod crd;
 pub mod cpf;
+pub mod crd;

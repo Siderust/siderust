@@ -198,6 +198,9 @@ fn null_eop_produces_ut1_equal_utc() {
 fn light_deflection_roundtrip_accuracy() {
     // Apply and remove solar deflection; result should match original to < 1 μas
     use siderust::coordinates::cartesian::direction;
+    use siderust::coordinates::frames::EquatorialMeanJ2000 as EMJ2000;
+    use affn::cartesian::Displacement;
+    use siderust::qtty::AstronomicalUnit;
 
     let star_arr = [0.3f64, 0.8, 0.5];
     let mag = (star_arr[0].powi(2) + star_arr[1].powi(2) + star_arr[2].powi(2)).sqrt();
@@ -207,7 +210,11 @@ fn light_deflection_roundtrip_accuracy() {
         star_arr[2] / mag,
     );
 
-    let earth_sun = [0.9, -0.3, 0.1]; // ~1 AU from Sun
+    let earth_sun = Displacement::<EMJ2000, AstronomicalUnit>::new(
+        AstronomicalUnits::new(0.9),
+        AstronomicalUnits::new(-0.3),
+        AstronomicalUnits::new(0.1),
+    );
 
     let apparent = solar_deflection(star, earth_sun);
     let recovered = solar_deflection_inverse(apparent, earth_sun);

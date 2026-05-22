@@ -86,7 +86,7 @@ fn main() {
     );
     println!(
         "  illuminated percent   : {:.2} %",
-        geo.illuminated_percent()
+        geo.illuminated_fraction.value() * 100.0
     );
     println!(
         "  phase angle           : {}",

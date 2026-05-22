@@ -159,7 +159,9 @@ pub fn read_rinex_obs<R: Read>(rdr: R) -> Result<RinexObs, FormatError> {
             .ok_or_else(|| FormatError::Format("rinex_obs: invalid epoch date".into()))?;
         let epoch_time =
             Time::<UTC>::try_from_chrono(DateTime::from_naive_utc_and_offset(naive, ChronoUtc))
-                .map_err(|e| FormatError::Format(format!("rinex_obs: epoch UTC conversion: {e}")))?;
+                .map_err(|e| {
+                    FormatError::Format(format!("rinex_obs: epoch UTC conversion: {e}"))
+                })?;
         let n_sat: usize = parts[8].parse().unwrap_or(0);
 
         let mut sats = HashMap::new();

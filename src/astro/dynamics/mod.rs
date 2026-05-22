@@ -1,90 +1,92 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! # Spacecraft dynamics
-//!
-//! Cartesian state propagation, force models, numerical integrators, and
-//! ancillary science models for satellite orbit mechanics.
+//! Astronomy-specific spacecraft dynamics layer built on top of `principia`.
 //!
 //! ## Scientific scope
 //!
-//! While [`crate::astro::orbit`] models orbits as Keplerian element sets,
-//! many high-fidelity applications — orbit propagation under non-Keplerian
-//! perturbations (J2, third-body, drag, SRP), state-transition matrices,
-//! covariance transport, precise orbit determination — work directly with a
-//! Cartesian inertial state `(r, v)`. This module provides the typed primitive
-//! for that representation, [`OrbitState`], plus the surrounding spacecraft
-//! description (mass, drag and SRP cross-sections).
+//! Provides force models, runtime context, atmospheric density providers, and
+//! a high-level [`Propagator`] facade for geocentric orbit propagation in the
+//! GCRS frame on the TT time scale.  Numerical integration kernels, generic
+//! integrators, covariance transport, and variational equations live in the
+//! `principia` crate; this module adds the astronomy semantics (body
+//! constants, ephemeris access, Earth orientation, geodetic altitude) that
+//! `principia` deliberately omits.
 //!
 //! ## Technical scope
 //!
-//! All position, velocity, and acceleration values are [`affn`] vectors with
-//! [`qtty`] units, so frame and unit constraints are checked at compile time.
-//! Time derivatives are carried as the typed [`StateDerivative`] aggregate.
+//! Entry points for most callers:
+//! * [`Propagator`] / [`Dop853Propagator`] / [`Dopri5Propagator`] /
+//!   [`Rk4Propagator`] — typed orbit propagators.
+//! * [`DynamicsContext`] / [`DynamicsContextBuilder`] — provider injection.
+//! * [`forces`] — force-model implementations (two-body, J2, drag, SRP, …).
+//! * [`gravity`] — geopotential helpers.
+//! * [`atmosphere`] — atmospheric density models.
+//! * [`state`] — typed orbit state, position, velocity aliases.
 //!
-//! Submodules host:
+//! Types returned by the propagator but defined in `principia`
+//! ([`EventDetector`], [`PropagationResult`], [`StateTransitionMatrix`]) are
+//! re-exported here so callers of this crate-level API do not need to add a
+//! direct `principia` dependency.
 //!
-//! - [`forces`] — force model trait and standard models (two-body, J2, drag, SRP, third-body, geopotential, relativity).
-//! - [`integrators`] — RK4 (fixed-step) and DOPRI5 / DOP853 (adaptive).
-//! - [`propagation`] — high-level adaptive driver with event detection.
-//! - [`variational`] — analytic state-transition-matrix propagation via variational equations.
-//! - [`gravity`] — geopotential field provider abstraction and acceleration kernel.
-//! - [`atmosphere`] — atmospheric density provider abstraction.
-//! - [`frames`] — local orbital frames (RTN, VNC, LVLH).
-//! - [`covariance`] — frame-tagged 6×6 state covariance with transport.
-//! - [`stm`] — finite-difference state-transition matrix computation.
+//! ## References
 //!
-//! ## Units and frames
-//!
-//! | Quantity | Type/Units | Convention |
-//! |----------|-----------|-----------|
-//! | Position | km | Geocentric, GCRS |
-//! | Velocity | km/s | GCRS |
-//! | Acceleration | km/s² | GCRS (unless stated otherwise) |
-//! | GM | km³/s² | EGM2008/WGS-84 |
-//! | Density | kg/m³ | SI (geodetic altitude from sea level) |
-//! | Time | seconds (TT) | Typed as [`qtty::Second`] |
-//!
-//! ## Failure modes
-//!
-//! Most errors are surfaced through [`DynamicsError`]:
-//! - Provider unavailability (ephemeris, EOP, gravity, atmosphere)
-//! - Degenerate geometry (zero position, zero velocity, r ∥ v)
-//! - Geopotential degree/order out of range
-//! - Integration step control failures
-//!
-//! See [`errors`] for details.
+//! * Montenbruck & Gill, *Satellite Orbits*, Springer, 2000.
+//! * Vallado, *Fundamentals of Astrodynamics and Applications*, 4th ed.
+//! * IERS Conventions 2010, IERS Technical Note 36.
 
 pub mod atmosphere;
 pub mod context;
-pub mod covariance;
 pub mod errors;
 pub mod forces;
-pub mod frames;
 pub mod gravity;
-pub mod integrators;
 pub mod propagation;
 pub mod state;
-pub mod stm;
 pub mod units;
-pub mod variational;
 
+pub mod frames {
+    //! Astronomy-specific local orbital frame aliases.
+    pub use principia::frames::LocalTrajectoryFrame;
+    pub use principia::frames::{lvlh_from_state, rtn_from_state, vnc_from_state, LVLH, RTN, VNC};
+
+    /// Local orbital frame anchored to the GCRS inertial frame.
+    pub type LocalOrbitalFrame<M> = LocalTrajectoryFrame<crate::coordinates::frames::GCRS, M>;
+}
+
+// ── Astronomy-specific sub-modules ──────────────────────────────────────────
+
+pub use atmosphere::{
+    geodetic_altitude, AtmosphereProvider, ConstantDensity, DensityProvider, ExponentialAtmosphere,
+    Nrlmsise00LiteApprox,
+};
 pub use context::{
     Conventions, DynamicsContext, DynamicsContextBuilder, EarthOrientationProvider,
-    PrecessionModel, SolarActivityProvider,
+    PrecessionModel, SolarActivityProvider, TimeScaleHint,
 };
-pub use covariance::ProcessNoise;
 pub use errors::{DynamicsError, LocalFrameError};
+pub use forces::{
+    CannonballSrp, CentralBodyRelativity1Pn, Conical, Cylindrical, DragForce, EclipseModel,
+    EmpiricalAcceleration, ExponentialDrag, Geopotential, NoEclipse, ShadowModel, SunPerturbation,
+    ThirdBody, ThirdBodyProvider, TwoBody, AU_IN_KM, DEGENERATE_RADIUS_KM, EARTH_J2, GM_EARTH,
+    GM_MOON, GM_SUN, J2, OMEGA_EARTH_RAD_S, P0, R_EARTH,
+};
+pub use gravity::{
+    spherical_harmonic_acceleration, GravityConstants, GravityFieldProvider, LowDegreeEarth,
+    TwoBodyEarth,
+};
+pub use propagation::{
+    Dop853Propagator, Dopri5Propagator, EventDetector, EventOccurrence, FixedRk4Adapter,
+    PropagationError, PropagationResult, Propagator, PropagatorConfig, RadialThresholdEvent,
+    Rk4Propagator,
+};
 pub use state::{
     Acceleration, AccelerationUnit, Force, OrbitState, Position, SpacecraftProperties,
-    SpacecraftState, StateDerivative, Velocity, VelocityUnit,
+    SpacecraftState, Velocity, VelocityUnit,
 };
-#[allow(deprecated)]
-pub use stm::{finite_diff_stm, finite_diff_stm_series, StateTransition};
 pub use units::GravitationalParameter;
 
-pub use propagation::{
-    AltitudeEvent, EventDetector, EventOccurrence, IntegratorChoice, PropagationConfig,
-    PropagationResult, Propagator, PropagatorConfig,
-};
-pub use variational::{propagate_stm, StateTransitionMatrix};
+// ── `principia` types used in the Propagator return API ─────────────────────
+//
+// Re-exported so callers of `siderust::astro::dynamics` do not need a direct
+// `principia` dependency to work with propagation results.
+pub use principia::StateTransitionMatrix;

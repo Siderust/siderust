@@ -8,6 +8,35 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* Publish workflow for `keplerian` and `principia`: both crates now ship
+  `.github/workflows/publish.yml` that triggers on `v*.*.*` tags and verifies
+  the crate version matches the tag before uploading to crates.io.
+
+### Changed
+
+* **`astro::dynamics` module simplification**: removed the thin
+  `integrators/mod.rs` and `variational/mod.rs` wrapper files that were
+  pure re-exports of `principia`. Those namespaces are now exposed via
+  `pub use principia::integrators` and `pub use principia::variational` in
+  `dynamics/mod.rs`, keeping all existing import paths stable.
+* `keplerian` CI upgraded to match `principia`: added `audit`, `deny`,
+  `coverage` (llvm-cov ≥ 90 % line rate), and `miri` jobs.
+
+### Fixed
+
+* `astro::conic`: removed unreachable `conic_rejects_non_finite_epoch` and
+  `mean_motion_rejects_non_finite_epoch` tests — `JulianDate::new` now panics
+  on NaN and the split representation rejects ∞ in debug builds before the
+  orbit constructor's release-mode guard is reached.  The guard is retained and
+  documented.
+* `formats::ilrs::cpf::parse_cpf_with_mode` and
+  `formats::ilrs::crd::parse_crd_with_mode` doctests: corrected import path
+  from `siderust::formats::{…, cpf::…}` to
+  `siderust::formats::{…, ilrs::cpf::…}` (and likewise for `crd`).
+* **`astro::perturbations`** as the astronomy-specific spacecraft-dynamics layer,
+  collecting runtime context/provider wiring, atmosphere models, Earth gravity
+  helpers, spacecraft-state helpers, and perturbation force models under a
+  dedicated namespace separate from the generic numerical mechanics kernel.
 * **Typed spacecraft-dynamics gravitational-parameter aliases and constants** in
   `astro::dynamics::units`, re-exported from `astro::dynamics` as
   `GravitationalParameter`, with canonical `GM_EARTH`, `GM_SUN`, and `GM_MOON`
@@ -31,6 +60,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* **`astro::dynamics` now fronts the extracted `principia` mechanics crate** for
+  generic Cartesian state propagation, integrators, covariance transport,
+  variational equations, gravity kernels, and local-trajectory frames, while
+  astronomy-specific perturbations live in `astro::perturbations`.
+* **The legacy generic dynamics implementation has been removed from `siderust`.**
+  `OrbitState<C, F>` is now the TT-fixed alias
+  `principia::DynamicsState<TT, C, F>`, generic force/composite/integrator APIs
+  come from `principia`, and callers should use `AccelerationModel` /
+  `CompositeModel` plus typed epoch conversions instead of the removed local
+  `ForceModel`, `CompositeForce`, `new_at_jd`, and `epoch_jd` helpers.
 * **Dynamics gravitational-parameter APIs now use typed quantities** instead of
   bare `f64` values. Force-model and gravity code paths now accept and store
   `GravitationalParameter`, and the main solar-system GM constants in

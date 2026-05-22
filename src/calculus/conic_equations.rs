@@ -243,8 +243,8 @@ pub fn calculate_orbit_position(
     rotate_to_ecliptic(
         radius,
         elements.orientation().inclination(),
-        elements.orientation().longitude_of_ascending_node(),
         elements.orientation().argument_of_periapsis(),
+        elements.orientation().longitude_of_ascending_node(),
         true_anomaly,
     )
 }

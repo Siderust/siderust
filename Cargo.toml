@@ -37,6 +37,7 @@ doris = []
 affn = { version = "0.7.1", features = ["astro"] }
 cheby = "0.3"
 keplerian = { path = "../keplerian" }
+principia = { path = "../principia", features = ["alloc"] }
 qtty = { version = "0.8", features = ["astro", "density", "radiometry", "satellite"] }
 tempoch = "0.6"
 thiserror = "2"
@@ -98,7 +99,10 @@ name = "altitude_comparison"
 harness = false
 
 [patch.crates-io]
+principia = { path = "../principia" }
 qtty = { path = "../qtty/qtty" }
 qtty-core = { path = "../qtty/qtty-core" }
 qtty-derive = { path = "../qtty/qtty-derive" }
 affn = { path = "../affn" }
+tempoch = { path = "../tempoch/tempoch" }
+tempoch-core = { path = "../tempoch/tempoch-core" }

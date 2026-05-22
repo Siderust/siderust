@@ -5,7 +5,7 @@
 
 pub use crate::formats::error::{FileLocation, FormatError, ParseMode};
 
-pub mod sp3;
 pub mod antex;
-pub mod sinex;
 pub mod orbex;
+pub mod sinex;
+pub mod sp3;

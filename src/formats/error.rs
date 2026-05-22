@@ -150,7 +150,11 @@ impl FormatError {
     /// use siderust::formats::{FileLocation, FormatError};
     /// let _ = FormatError::located("OEM v3 §5.2", FileLocation::at_line(3), "missing OBJECT_ID");
     /// ```
-    pub fn located<M: Into<String>>(spec: &'static str, location: FileLocation, message: M) -> Self {
+    pub fn located<M: Into<String>>(
+        spec: &'static str,
+        location: FileLocation,
+        message: M,
+    ) -> Self {
         Self::Located {
             spec,
             location,

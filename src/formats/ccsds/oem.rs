@@ -661,13 +661,14 @@ pub fn read_oem_xml<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> 
                     }
                     "segment" => {
                         if let Some(s) = seg.take() {
-                            let need = |o: Option<String>, n: &str| -> Result<String, FormatError> {
-                                o.ok_or_else(|| {
-                                    FormatError::Format(format!(
-                                        "read_oem_xml: metadata missing {n}"
-                                    ))
-                                })
-                            };
+                            let need =
+                                |o: Option<String>, n: &str| -> Result<String, FormatError> {
+                                    o.ok_or_else(|| {
+                                        FormatError::Format(format!(
+                                            "read_oem_xml: metadata missing {n}"
+                                        ))
+                                    })
+                                };
                             segments.push(OemSegment {
                                 metadata: OemMetadata {
                                     object_id: need(s.object_id, "OBJECT_ID")?,

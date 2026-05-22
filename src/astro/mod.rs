@@ -5,8 +5,8 @@
 //!
 //! Top-level entry point for siderust's astronomical calculations, gathering
 //! the IAU-aligned models for Earth rotation, sidereal time, precession,
-//! nutation, aberration, light deflection, proper motion, and orbital
-//! mechanics under a single namespace.
+//! nutation, aberration, light deflection, proper motion, perturbations, and
+//! orbital mechanics under a single namespace.
 //!
 //! ## Scientific scope
 //!
@@ -33,6 +33,7 @@
 //! - [`aberration`]: stellar aberration via the full Lorentz transform.
 //! - [`cio`]: CIP `(X, Y)` coordinates and CIO locator `s`.
 //! - [`conic`], [`orbit`]: conic-section and Keplerian orbital mechanics.
+//! - [`perturbations`]: spacecraft-perturbation context, density, gravity, and force models.
 //! - [`earth_rotation`], [`earth_rotation_provider`], [`era`]: TT↔UT1, ERA,
 //!   and the composite ITRS→equatorial rotation.
 //! - [`eop`]: Earth Orientation Parameters backed by `tempoch` EOP data.
@@ -67,6 +68,7 @@ pub mod light_deflection;
 pub mod nutation;
 pub mod orbit;
 pub mod orientation;
+pub mod perturbations;
 pub mod polar_motion;
 pub mod precession;
 pub mod proper_motion;

@@ -200,13 +200,13 @@ impl IersEop {
     /// # Returns
     ///
     /// * `Some((first_mjd, last_mjd))` when the table has at least one
-    ///   entry; the values are the first and last `mjd` columns,
+    ///   entry; the typed [`Days`] values are the first and last MJD entries,
     ///   inclusive on both ends.
     /// * `None` if and only if the active table is empty (which can only
     ///   happen if a caller passes an explicitly empty slice via a custom
     ///   constructor; the default build-embedded table is never empty).
-    pub fn mjd_range(&self) -> Option<(f64, f64)> {
-        Some((tempoch::EOP_START_MJD.value(), tempoch::EOP_END_MJD.value()))
+    pub fn mjd_range(&self) -> Option<(Days, Days)> {
+        Some((tempoch::EOP_START_MJD, tempoch::EOP_END_MJD))
     }
 
     /// Number of entries in the active table.
@@ -302,7 +302,7 @@ mod tests {
     fn iers_eop_rejects_out_of_range_instead_of_zeroing() {
         let eop = IersEop::new();
         let (first, _) = eop.mjd_range().expect("compiled EOP range");
-        let before = crate::time::JulianDate::new(first + 2_400_000.5 - 1.0);
+        let before = crate::time::JulianDate::new(first.value() + 2_400_000.5 - 1.0);
         let err = eop.try_eop_at(before).expect_err("before range must fail");
         assert!(matches!(err, EopError::NoData { .. }));
     }
@@ -311,9 +311,9 @@ mod tests {
     fn iers_eop_uses_tempoch_builtin_data() {
         let eop = IersEop::new();
         let (first, _) = eop.mjd_range().expect("compiled EOP range");
-        let jd = crate::time::JulianDate::new(first + 2_400_000.5);
+        let jd = crate::time::JulianDate::new(first.value() + 2_400_000.5);
         let vals = eop.try_eop_at(jd).expect("range start must be covered");
-        let raw = tempoch::eop::builtin_eop_at(Days::new(first)).expect("tempoch EOP");
+        let raw = tempoch::eop::builtin_eop_at(first).expect("tempoch EOP");
         assert!((vals.dut1.value() - raw.ut1_minus_utc.value()).abs() < 1e-12);
     }
 }

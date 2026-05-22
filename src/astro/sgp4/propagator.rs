@@ -15,6 +15,7 @@
 //!   km / km·s⁻¹ types from `affn`, `siderust`, and `qtty`.
 
 use crate::formats::tle::TLE;
+use crate::qtty::Minutes;
 use sgp4::{Constants, Elements, Geopotential, MinutesSinceEpoch};
 use tempoch::{JulianDate, JD, UTC};
 
@@ -87,6 +88,7 @@ impl GravityModel {
 /// ```
 /// use siderust::astro::sgp4::{GravityModel, Sgp4Propagator};
 /// use siderust::formats::tle::parse_3le;
+/// use siderust::qtty::Minutes;
 ///
 /// let tle = parse_3le(
 ///     "ISS (ZARYA)",
@@ -94,7 +96,7 @@ impl GravityModel {
 ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
 /// ).unwrap();
 /// let prop = Sgp4Propagator::from_tle_with_model(&tle, GravityModel::Wgs72).unwrap();
-/// let s = prop.propagate_minutes(0.0).unwrap();
+/// let s = prop.propagate_minutes(Minutes::new(0.0)).unwrap();
 /// assert!(s.position().distance().value() > 6_500.0);
 /// ```
 #[derive(Clone, Debug)]
@@ -290,24 +292,25 @@ impl Sgp4Propagator {
     /// ```
     /// use siderust::astro::sgp4::Sgp4Propagator;
     /// use siderust::formats::tle::parse_3le;
+    /// use siderust::qtty::Minutes;
     /// let tle = parse_3le(
     ///     "ISS (ZARYA)",
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
     /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
-    /// let s_now = p.propagate_minutes(0.0).unwrap();
-    /// let s_later = p.propagate_minutes(90.0).unwrap();
+    /// let s_now = p.propagate_minutes(Minutes::new(0.0)).unwrap();
+    /// let s_later = p.propagate_minutes(Minutes::new(90.0)).unwrap();
     /// assert!(s_now.position() != s_later.position());
     /// ```
-    pub fn propagate_minutes(&self, dt_minutes: f64) -> Result<TemeState, Sgp4Error> {
-        if !dt_minutes.is_finite() {
+    pub fn propagate_minutes(&self, dt_minutes: Minutes) -> Result<TemeState, Sgp4Error> {
+        if !dt_minutes.value().is_finite() {
             return Err(Sgp4Error::TimeConversion(
                 "minutes offset is non-finite".into(),
             ));
         }
         let target = jd_offset_minutes(self.epoch_jd_utc, dt_minutes);
-        self.propagate_internal(dt_minutes, target)
+        self.propagate_internal(dt_minutes.value(), target)
     }
 
     fn propagate_internal(
@@ -336,10 +339,10 @@ impl Sgp4Propagator {
     }
 }
 
-fn jd_offset_minutes(epoch: JulianDate<UTC>, minutes: f64) -> JulianDate<UTC> {
+fn jd_offset_minutes(epoch: JulianDate<UTC>, minutes: Minutes) -> JulianDate<UTC> {
     use qtty::time::Day;
     use qtty::Quantity;
-    let days = minutes / 1_440.0;
+    let days = minutes.value() / 1_440.0;
     let raw = epoch.raw().value() + days;
     JulianDate::<UTC>::try_new(Quantity::<Day>::new(raw))
         .expect("finite Julian date increments remain finite")

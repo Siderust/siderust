@@ -217,6 +217,9 @@ impl ConicOrbit {
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
         }
+        // Release-mode guard: `JulianDate::new` rejects NaN via a hard panic,
+        // and the split representation catches ∞ in debug builds via
+        // `debug_assert!`. This check catches ∞ in release builds.
         if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
@@ -314,6 +317,7 @@ impl MeanMotionOrbit {
         if !mean_motion.value().is_finite() || mean_motion.value() <= 0.0 {
             return Err(ConicError::InvalidMeanMotion);
         }
+        // Release-mode guard: see comment in `ConicOrbit::try_new`.
         if !epoch.raw().value().is_finite() {
             return Err(ConicError::InvalidEpoch);
         }
@@ -435,22 +439,6 @@ mod tests {
     }
 
     #[test]
-    fn conic_rejects_nan_epoch() {
-        assert_eq!(
-            ConicOrbit::try_new(
-                1.0 * AU,
-                0.5,
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                crate::time::JulianDate::new(f64::NAN),
-            ),
-            Err(ConicError::InvalidEpoch)
-        );
-    }
-
-    #[test]
     fn conic_rejects_inf_mean_anomaly() {
         assert_eq!(
             ConicOrbit::try_new(
@@ -511,21 +499,6 @@ mod tests {
                 crate::J2000,
             ),
             Err(ConicError::InvalidMeanMotion)
-        );
-    }
-    #[test]
-    fn mean_motion_rejects_nan_epoch() {
-        assert_eq!(
-            MeanMotionOrbit::try_new(
-                1.0 * AU,
-                0.5,
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                AngularRate::<Degree, Day>::new(1.0),
-                crate::time::JulianDate::new(f64::NAN),
-            ),
-            Err(ConicError::InvalidEpoch)
         );
     }
 }

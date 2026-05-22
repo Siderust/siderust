@@ -325,11 +325,6 @@ impl MoonPhaseGeometry {
     pub fn label_with(&self, th: &PhaseThresholds) -> MoonPhaseLabel {
         MoonPhaseLabel::from_elongation(self.elongation.to::<Degree>(), th)
     }
-
-    /// Illuminated fraction as a percentage \[0, 100\].
-    pub fn illuminated_percent(&self) -> f64 {
-        self.illuminated_fraction.value() * 100.0
-    }
 }
 
 // ===========================================================================
