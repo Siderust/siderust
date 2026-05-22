@@ -566,6 +566,7 @@ fn xml_escape(s: &str) -> String {
 /// assert_eq!(parsed.segments[0].states.len(), 1);
 /// ```
 pub fn read_oem_xml<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> {
+    use quick_xml::escape::unescape;
     use quick_xml::events::Event;
     use quick_xml::Reader;
 
@@ -686,10 +687,11 @@ pub fn read_oem_xml<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> 
                 cur_tag = None;
             }
             Event::Text(t) => {
-                let txt = t
-                    .unescape()
-                    .map_err(|e| FormatError::Format(format!("read_oem_xml: xml text: {e}")))?
-                    .to_string();
+                let txt = unescape(&t.xml10_content().map_err(|e| {
+                    FormatError::Format(format!("read_oem_xml: xml text: {e}"))
+                })?)
+                .map_err(|e| FormatError::Format(format!("read_oem_xml: xml text: {e}")))?
+                .to_string();
                 let tag = match &cur_tag {
                     Some(t) => t.as_str(),
                     None => continue,
