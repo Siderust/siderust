@@ -9,10 +9,10 @@
 
 use siderust::bodies::catalog::{POLARIS, SIRIUS, VEGA};
 use siderust::bodies::solar_system::{Moon, Sun};
-use siderust::calculus::altitude::{altitude_periods, AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
+use siderust::event::altitude::{altitude_periods, AltitudePeriodsProvider, AltitudeQuery};
 use siderust::time::{ModifiedJulianDate, Period};
 
 use siderust::qtty::*;

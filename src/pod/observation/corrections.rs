@@ -154,7 +154,12 @@ impl CorrectionRegistry {
     /// let corrected = reg.apply(Meter::new(20_182_000.0), rx, sat);
     /// assert!(corrected.value() > 20_182_000.0); // Shapiro adds a positive delay
     /// ```
-    pub fn apply(&self, range: Meter, rx_gcrs_km: Position<GCRS>, sat_gcrs_km: Position<GCRS>) -> Meter {
+    pub fn apply(
+        &self,
+        range: Meter,
+        rx_gcrs_km: Position<GCRS>,
+        sat_gcrs_km: Position<GCRS>,
+    ) -> Meter {
         let mut r = range;
         for c in &self.corrections {
             r = c.apply_to_range(r, rx_gcrs_km, sat_gcrs_km);
@@ -232,8 +237,16 @@ impl Correction for PhaseCenterOffset {
         rx_gcrs_km: Position<GCRS>,
         sat_gcrs_km: Position<GCRS>,
     ) -> Meter {
-        let rx = [rx_gcrs_km.x().value(), rx_gcrs_km.y().value(), rx_gcrs_km.z().value()];
-        let sat = [sat_gcrs_km.x().value(), sat_gcrs_km.y().value(), sat_gcrs_km.z().value()];
+        let rx = [
+            rx_gcrs_km.x().value(),
+            rx_gcrs_km.y().value(),
+            rx_gcrs_km.z().value(),
+        ];
+        let sat = [
+            sat_gcrs_km.x().value(),
+            sat_gcrs_km.y().value(),
+            sat_gcrs_km.z().value(),
+        ];
         let los = [sat[0] - rx[0], sat[1] - rx[1], sat[2] - rx[2]];
         let los_mag = (los[0] * los[0] + los[1] * los[1] + los[2] * los[2]).sqrt();
         if los_mag == 0.0 {
@@ -295,8 +308,16 @@ impl Correction for ShapiroDelay {
         rx_gcrs_km: Position<GCRS>,
         sat_gcrs_km: Position<GCRS>,
     ) -> Meter {
-        let rx = [rx_gcrs_km.x().value(), rx_gcrs_km.y().value(), rx_gcrs_km.z().value()];
-        let sat = [sat_gcrs_km.x().value(), sat_gcrs_km.y().value(), sat_gcrs_km.z().value()];
+        let rx = [
+            rx_gcrs_km.x().value(),
+            rx_gcrs_km.y().value(),
+            rx_gcrs_km.z().value(),
+        ];
+        let sat = [
+            sat_gcrs_km.x().value(),
+            sat_gcrs_km.y().value(),
+            sat_gcrs_km.z().value(),
+        ];
         let r_rx = (rx[0] * rx[0] + rx[1] * rx[1] + rx[2] * rx[2]).sqrt() * 1_000.0; // km → m
         let r_sat = (sat[0] * sat[0] + sat[1] * sat[1] + sat[2] * sat[2]).sqrt() * 1_000.0;
         let rho = range.value();
@@ -372,8 +393,16 @@ impl Correction for EarthTideDisplacement {
         rx_gcrs_km: Position<GCRS>,
         sat_gcrs_km: Position<GCRS>,
     ) -> Meter {
-        let rx = [rx_gcrs_km.x().value(), rx_gcrs_km.y().value(), rx_gcrs_km.z().value()];
-        let sat = [sat_gcrs_km.x().value(), sat_gcrs_km.y().value(), sat_gcrs_km.z().value()];
+        let rx = [
+            rx_gcrs_km.x().value(),
+            rx_gcrs_km.y().value(),
+            rx_gcrs_km.z().value(),
+        ];
+        let sat = [
+            sat_gcrs_km.x().value(),
+            sat_gcrs_km.y().value(),
+            sat_gcrs_km.z().value(),
+        ];
         let los = [sat[0] - rx[0], sat[1] - rx[1], sat[2] - rx[2]];
         let los_mag = (los[0] * los[0] + los[1] * los[1] + los[2] * los[2]).sqrt();
         if los_mag == 0.0 {
@@ -397,7 +426,7 @@ mod tests {
 
     #[test]
     fn shapiro_positive_and_small() {
-        let rx  = Position::<GCRS>::new(6_378.0, 0.0, 0.0);
+        let rx = Position::<GCRS>::new(6_378.0, 0.0, 0.0);
         let sat = Position::<GCRS>::new(26_560.0, 0.0, 0.0);
         let rho_m = Meter::new((26_560.0 - 6_378.0) * 1_000.0);
         let corrected = ShapiroDelay.apply_to_range(rho_m, rx, sat);
@@ -407,7 +436,7 @@ mod tests {
 
     #[test]
     fn earth_tide_zero_is_noop() {
-        let rx  = Position::<GCRS>::new(7_000.0, 0.0, 0.0);
+        let rx = Position::<GCRS>::new(7_000.0, 0.0, 0.0);
         let sat = Position::<GCRS>::new(26_560.0, 1_000.0, 500.0);
         let rho = Meter::new(19_000_000.0);
         let etd = EarthTideDisplacement::zero();
@@ -437,7 +466,7 @@ mod tests {
     fn pco_along_los_subtracts_offset() {
         // Receiver at origin, satellite along +X.  PCO offset 1 km along +X.
         let pco = PhaseCenterOffset::new([0.001, 0.0, 0.0]); // 1 m in km
-        let rx  = Position::<GCRS>::new(0.0, 0.0, 0.0);
+        let rx = Position::<GCRS>::new(0.0, 0.0, 0.0);
         let sat = Position::<GCRS>::new(1_000.0, 0.0, 0.0);
         let corrected = pco.apply_to_range(Meter::new(1_000_000.0), rx, sat);
         assert!((corrected.value() - (1_000_000.0 - 1.0)).abs() < 1e-9);

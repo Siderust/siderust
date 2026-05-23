@@ -35,9 +35,9 @@
 
 use std::sync::Arc;
 
-use crate::calculus::ephemeris::DynEphemeris;
+use crate::ephemeris::DynEphemeris;
 
-use super::atmosphere::DensityProvider;
+use super::density::DensityProvider;
 use super::errors::DynamicsError;
 use super::gravity::GravityFieldProvider;
 
@@ -327,7 +327,7 @@ impl DynamicsContextBuilder {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::astro::dynamics::atmosphere::ExponentialAtmosphere;
+    use crate::astro::dynamics::density::ExponentialAtmosphere;
     use crate::astro::dynamics::gravity::TwoBodyEarth;
 
     // ---- empty() ----

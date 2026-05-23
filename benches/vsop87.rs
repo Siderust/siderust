@@ -4,7 +4,7 @@
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::qtty::Days;
-use siderust::{bodies::solar_system::*, calculus::vsop87::VSOP87};
+use siderust::{bodies::solar_system::*, ephemeris::VSOP87};
 use std::hint::black_box;
 
 fn bench_vsop87(c: &mut Criterion) {

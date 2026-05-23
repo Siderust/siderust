@@ -57,14 +57,14 @@ use qtty::time::Days;
 use qtty::unit::{Day, Degree};
 use qtty::*;
 use siderust::astro::dynamics::units::{GM_EARTH, GM_SUN};
-use siderust::calculus::azimuth::{
-    AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
-};
 use siderust::coordinates::centers::{
     BodycentricParams as RustBodycentricParams, Geodetic,
     OrbitReferenceCenter as RustOrbitRefCenter,
 };
 use siderust::coordinates::frames::ECEF;
+use siderust::event::azimuth::{
+    AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
+};
 use siderust::time::{ModifiedJulianDate, Period};
 use tempoch::Interval;
 
@@ -1397,7 +1397,7 @@ mod tests {
 
     #[test]
     fn azimuth_extremum_ffi_from_max() {
-        use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
+        use siderust::event::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
             mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             azimuth: qtty::angular::Degrees::new(180.0),
@@ -1410,7 +1410,7 @@ mod tests {
 
     #[test]
     fn azimuth_extremum_ffi_from_min() {
-        use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
+        use siderust::event::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
             mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             azimuth: qtty::angular::Degrees::new(0.0),
@@ -1424,7 +1424,7 @@ mod tests {
 
     #[test]
     fn azimuth_crossing_event_ffi_from_rising() {
-        use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
+        use siderust::event::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
             mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             direction: AzimuthCrossingDirection::Rising,
@@ -1435,7 +1435,7 @@ mod tests {
 
     #[test]
     fn azimuth_crossing_event_ffi_from_setting() {
-        use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
+        use siderust::event::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
             mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             direction: AzimuthCrossingDirection::Setting,

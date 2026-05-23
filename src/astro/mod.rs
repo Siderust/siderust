@@ -32,8 +32,8 @@
 //!
 //! - [`aberration`]: stellar aberration via the full Lorentz transform.
 //! - [`cio`]: CIP `(X, Y)` coordinates and CIO locator `s`.
-//! - [`conic`], [`orbit`]: conic-section and Keplerian orbital mechanics.
-//! - [`perturbations`]: spacecraft-perturbation context, density, gravity, and force models.
+//! - [`conic`], [`conic_equations`], [`orbit`]: conic-section and Keplerian orbital mechanics.
+//! - [`dynamics`]: spacecraft dynamics context, density, gravity, and force models.
 //! - [`earth_rotation`], [`earth_rotation_provider`], [`era`]: TT↔UT1, ERA,
 //!   and the composite ITRS→equatorial rotation.
 //! - [`eop`]: Earth Orientation Parameters backed by `tempoch` EOP data.
@@ -57,6 +57,7 @@
 pub mod aberration;
 pub mod cio;
 pub mod conic;
+pub mod conic_equations;
 pub mod dynamics;
 pub mod earth_rotation;
 pub mod earth_rotation_provider;
@@ -68,7 +69,6 @@ pub mod light_deflection;
 pub mod nutation;
 pub mod orbit;
 pub mod orientation;
-pub mod perturbations;
 pub mod polar_motion;
 pub mod precession;
 pub mod proper_motion;

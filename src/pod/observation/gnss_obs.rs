@@ -364,7 +364,9 @@ impl Observation for GnssPseudorangeObs {
         };
 
         let dt_r = providers.receiver_clock_m().value();
-        let dt_s = providers.gnss_satellite_clock_m(&self.prn, self.epoch).value();
+        let dt_s = providers
+            .gnss_satellite_clock_m(&self.prn, self.epoch)
+            .value();
 
         let modelled = rho_m + dt_r - dt_s + trop_m + iono_m + sagnac_m + rel_m;
         Ok(self.measured_m.value() - modelled)
@@ -488,7 +490,9 @@ impl Observation for GnssCarrierPhaseObs {
         };
 
         let dt_r = providers.receiver_clock_m().value();
-        let dt_s = providers.gnss_satellite_clock_m(&self.prn, self.epoch).value();
+        let dt_s = providers
+            .gnss_satellite_clock_m(&self.prn, self.epoch)
+            .value();
 
         let wavelength_m = if f_hz > 0.0 {
             C_M_S / f_hz
@@ -525,9 +529,9 @@ impl Observation for GnssCarrierPhaseObs {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::astro::dynamics::{Position, Velocity};
     use crate::pod::observation::provider_bundle::NullProviderBundle;
     use approx::assert_abs_diff_eq;
-    use crate::astro::dynamics::{Position, Velocity};
     use qtty::{Hertz, Meter};
 
     const EPOCH: fn() -> JulianDate = || JulianDate::new(2_451_545.0);

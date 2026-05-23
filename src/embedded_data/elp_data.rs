@@ -4,7 +4,7 @@
 
 // ---------------------------------------------------
 
-use crate::calculus::elp2000::elp_structs::*;
+use crate::ephemeris::elp2000::elp_structs::*;
 
 pub static ELP1: &[MainProblem] = &[
     MainProblem { ilu: [0, 0, 0, 2], a: -411.60287, b: [168.48, -18433.81, -121.62, 0.40, -0.18, 0.00] },

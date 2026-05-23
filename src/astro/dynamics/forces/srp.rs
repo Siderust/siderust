@@ -238,12 +238,12 @@ mod tests {
     use super::*;
     use crate::astro::dynamics::context::DynamicsContextBuilder;
     use crate::astro::dynamics::{Position, Velocity};
-    use crate::calculus::ephemeris::{AuPerDay, DynEphemeris, EphemerisError};
     use crate::coordinates::{
         cartesian::{Position as CartPosition, Velocity as CartVelocity},
         centers::{Barycentric, Geocentric as GeoCenter, Heliocentric},
         frames::{EclipticMeanJ2000, GCRS},
     };
+    use crate::ephemeris::{AuPerDay, DynEphemeris, EphemerisError};
     use crate::qtty::{AstronomicalUnit, Kilometer};
     use crate::time::JulianDate;
 

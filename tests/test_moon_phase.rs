@@ -13,8 +13,8 @@
 //! - L6: Label mapping from known elongation values
 //! - L7: Backend parity (DE441 feature-gated)
 
-use siderust::calculus::ephemeris::Vsop87Ephemeris;
-use siderust::calculus::lunar::phase::*;
+use siderust::ephemeris::Vsop87Ephemeris;
+use siderust::event::lunar::phase::*;
 use siderust::qtty::*;
 use siderust::time::{JulianDate, Period};
 

@@ -22,7 +22,7 @@
 //! ## Technical scope
 //!
 //! Provides three typed table constants consumed by
-//! [`crate::calculus::pluto`]:
+//! [`crate::ephemeris::pluto`]:
 //!
 //! - [`ARGUMENTS`] — 43 argument multiplier rows `(j, s, p)`.
 //! - [`LONGITUDE_TERMS`], [`LATITUDE_TERMS`], [`RADIUS_TERMS`] — 43 amplitude rows.

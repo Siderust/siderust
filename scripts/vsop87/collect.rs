@@ -107,7 +107,7 @@ fn parse_data_line(line: &str) -> Option<(f64, f64, f64, f64, f64)> {
 ///   [`HEADER_REGEX`] and collects the following `count` data lines.
 /// * Converts each data line into a [`Term`] via [`sk_to_term`].
 /// * Inserts the term at `versions[version][planet][coord][T_power]`.
-pub fn collect_terms(data_dir: &Path) -> anyhow::Result<VersionMap> {
+pub(crate) fn collect_terms(data_dir: &Path) -> anyhow::Result<VersionMap> {
     // --- Compile regexes ---------------------------------------------------
     let file_re = Regex::new(REGEX_FILE)?;
     let header_re = Regex::new(HEADER_REGEX)?;

@@ -26,11 +26,11 @@
 //!   Determination. Elsevier Academic Press.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+use crate::astro::dynamics::frames::RTN;
+use crate::astro::dynamics::OrbitState;
 use affn::cartesian::Displacement;
 use affn::frames::GCRS;
 use qtty::unit::Kilometer;
-use crate::astro::dynamics::frames::RTN;
-use crate::astro::dynamics::OrbitState;
 
 /// Per-epoch RTN difference between an estimated and reference state.
 #[derive(Debug, Clone)]

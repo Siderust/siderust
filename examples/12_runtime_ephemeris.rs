@@ -24,7 +24,7 @@
 //! ```
 #![allow(clippy::print_stdout)]
 
-use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
+use siderust::ephemeris::{DynEphemeris, RuntimeEphemeris};
 
 fn print_positions(eph: &RuntimeEphemeris, label: &str) {
     let jd = siderust::time::J2000;

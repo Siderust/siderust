@@ -6,7 +6,7 @@
 use crate::error::SiderustStatus;
 use crate::types::*;
 use siderust::bodies::solar_system::{Jupiter, Mars, Mercury, Neptune, Saturn, Uranus, Venus};
-use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
+use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
 
 // ═══════════════════════════════════════════════════════════════════════════
 // VSOP87 (always available)

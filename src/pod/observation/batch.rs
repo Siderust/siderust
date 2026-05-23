@@ -149,10 +149,10 @@ fn epochs_match(a: JulianDate, b: JulianDate) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::pod::observation::obs_trait::{ObsType, Observation};
-    use crate::pod::observation::provider_bundle::NullProviderBundle;
     use crate::astro::dynamics::{Position, Velocity};
     use crate::coordinates::frames::GCRS;
+    use crate::pod::observation::obs_trait::{ObsType, Observation};
+    use crate::pod::observation::provider_bundle::NullProviderBundle;
 
     struct ConstObs {
         epoch: JulianDate,
@@ -175,7 +175,8 @@ mod tests {
         }
         fn sigma(&self) -> qtty::Meter {
             qtty::Meter::new(1.0)
-        }    }
+        }
+    }
 
     fn make_state(epoch: JulianDate) -> CartesianState {
         CartesianState::new(

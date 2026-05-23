@@ -9,8 +9,8 @@
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::Sun;
-use siderust::calculus::altitude::AltitudePeriodsProvider;
-use siderust::calculus::solar::twilight;
+use siderust::event::altitude::AltitudePeriodsProvider;
+use siderust::event::solar::twilight;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period};
 use std::hint::black_box;

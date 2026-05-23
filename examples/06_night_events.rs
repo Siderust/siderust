@@ -12,10 +12,10 @@
 
 use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
 use siderust::bodies::Sun;
-use siderust::calculus::altitude::{below_threshold, crossings, CrossingDirection, SearchOpts};
-use siderust::calculus::solar::night_types::{twilight, Twilight};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
+use siderust::event::altitude::{below_threshold, crossings, CrossingDirection, SearchOpts};
+use siderust::event::solar::night_types::{twilight, Twilight};
 use siderust::qtty::{Days, Degrees, Meter, Quantity};
 use siderust::time::ModifiedJulianDate;
 use siderust::time::Period;

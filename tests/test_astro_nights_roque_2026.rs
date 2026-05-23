@@ -2,7 +2,6 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 #![allow(missing_docs)]
-
 #![cfg(feature = "serde")]
 
 use std::fs;
@@ -10,10 +9,10 @@ use std::fs;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use siderust::bodies::Sun;
-use siderust::calculus::altitude::AltitudePeriodsProvider;
-use siderust::calculus::solar::twilight;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
+use siderust::event::altitude::AltitudePeriodsProvider;
+use siderust::event::solar::twilight;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{ModifiedJulianDate, Period};
 

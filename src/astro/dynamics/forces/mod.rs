@@ -12,7 +12,7 @@ pub mod third_body;
 
 use crate::qtty::{AstronomicalUnit, InverseSeconds, Kilometer, Kilometers, Pascals, Unit};
 
-pub use crate::astro::dynamics::atmosphere::{ExponentialAtmosphere, Nrlmsise00LiteApprox};
+pub use crate::astro::dynamics::density::{ExponentialAtmosphere, Nrlmsise00LiteApprox};
 pub use crate::astro::dynamics::units::{GravitationalParameter, GM_EARTH, GM_MOON, GM_SUN};
 pub use drag::{DragForce, ExponentialDrag};
 pub use empirical::EmpiricalAcceleration;

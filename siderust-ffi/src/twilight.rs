@@ -9,7 +9,7 @@
 use crate::error::SiderustStatus;
 use qtty::angular::Degrees;
 use qtty::*;
-use siderust::calculus::solar::classification::{twilight_classification, TwilightPhase};
+use siderust::event::solar::classification::{twilight_classification, TwilightPhase};
 
 ffi_enum! {
     /// Sky condition derived from the Sun's altitude.

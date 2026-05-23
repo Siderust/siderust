@@ -5,13 +5,13 @@
 //! [`AltitudePeriodsProvider`] trait API.
 //!
 //! Validates correctness for circumpolar, rise/set, and never-visible cases.
-//! Scan-vs-analytical consistency is tested inside the `calculus::stellar`
+//! Scan-vs-analytical consistency is tested inside the `event::stellar`
 //! module's own `#[cfg(test)]` block.
 
-use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
+use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::qtty::*;
 use siderust::time::{ModifiedJulianDate, Period};
 

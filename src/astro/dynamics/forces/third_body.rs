@@ -12,9 +12,9 @@ use crate::astro::dynamics::context::DynamicsContext;
 use crate::astro::dynamics::errors::DynamicsError;
 use crate::astro::dynamics::state::{Acceleration, AccelerationUnit, OrbitState};
 use crate::astro::precession::ecliptic_of_date_to_mean_equatorial_matrix;
-use crate::calculus::ephemeris::DynEphemeris;
 use crate::coordinates::centers::Geocentric;
 use crate::coordinates::frames::{EclipticMeanJ2000, GCRS};
+use crate::ephemeris::DynEphemeris;
 use crate::qtty::{AstronomicalUnit, Kilometer};
 use crate::time::{JulianDate, JD, TT};
 
@@ -221,7 +221,7 @@ mod tests {
     use super::*;
     use crate::astro::dynamics::context::DynamicsContextBuilder;
     use crate::astro::dynamics::{Position, Velocity};
-    use crate::calculus::ephemeris::Vsop87Ephemeris;
+    use crate::ephemeris::Vsop87Ephemeris;
 
     fn leo() -> OrbitState {
         OrbitState::new(

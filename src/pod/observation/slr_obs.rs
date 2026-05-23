@@ -251,9 +251,9 @@ impl Observation for SlrNormalPointObs {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::astro::dynamics::{Position, Velocity};
     use crate::pod::observation::provider_bundle::NullProviderBundle;
     use approx::assert_abs_diff_eq;
-    use crate::astro::dynamics::{Position, Velocity};
     use qtty::Meter;
 
     const EPOCH: fn() -> JulianDate = || JulianDate::new(2_451_545.0);

@@ -24,14 +24,14 @@
 //!   Determination. Elsevier Academic Press.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+use crate::astro::dynamics::{OrbitState, Velocity};
+use crate::coordinates::frames::GCRS;
 use affn::Displacement;
 use faer::Mat;
+use principia::StateCovariance;
 use qtty::dynamics::KmPerSeconds;
 use qtty::length::Kilometers;
 use qtty::unit::Kilometer;
-use principia::StateCovariance;
-use crate::astro::dynamics::{OrbitState, Velocity};
-use crate::coordinates::frames::GCRS;
 use thiserror::Error;
 
 /// EKF error type.

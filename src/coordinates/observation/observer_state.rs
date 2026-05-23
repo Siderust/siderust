@@ -27,12 +27,12 @@
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
-use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Velocity;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::EquatorialMeanJ2000;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::transform::context::{AstroContext, DefaultEphemeris, TransformContext};
+use crate::ephemeris::Ephemeris;
 use crate::qtty::{AstronomicalUnit, Day};
 use crate::time::JulianDate;
 
@@ -176,7 +176,7 @@ impl ObserverState {
     pub fn topocentric_with<Ctx>(site: &Geodetic<ECEF>, jd: JulianDate, ctx: &Ctx) -> Self
     where
         Ctx: TransformContext,
-        Ctx::Eph: crate::calculus::ephemeris::Ephemeris,
+        Ctx::Eph: crate::ephemeris::Ephemeris,
     {
         Self::topocentric_with_ctx::<Ctx::Eph, Ctx::Eop, Ctx::Nut>(site, jd, ctx.astro_context())
     }

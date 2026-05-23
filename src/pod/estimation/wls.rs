@@ -29,11 +29,11 @@
 //!   Determination. Elsevier Academic Press.
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
+use crate::coordinates::frames::GCRS;
 use affn::matrix3::{FrameMatrix3, SymmetricFrameMatrix3};
 use faer::linalg::solvers::Solve;
 use faer::{Mat, Side};
 use principia::StateCovariance;
-use crate::coordinates::frames::GCRS;
 use thiserror::Error;
 
 /// Errors emerging from WLS assembly or solve.

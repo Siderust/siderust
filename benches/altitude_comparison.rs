@@ -15,8 +15,8 @@
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::{Moon, Sun};
-use siderust::calculus::altitude::AltitudePeriodsProvider;
 use siderust::coordinates::spherical::direction;
+use siderust::event::altitude::AltitudePeriodsProvider;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::qtty::*;
 use siderust::time::{ModifiedJulianDate, Period};

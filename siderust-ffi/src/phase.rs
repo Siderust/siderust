@@ -11,8 +11,8 @@ use qtty::angular::Radians;
 use qtty::time::Days;
 use qtty::unit::Degree;
 use qtty::*;
-use siderust::calculus::ephemeris::Vsop87Ephemeris;
-use siderust::calculus::lunar::phase::{
+use siderust::ephemeris::Vsop87Ephemeris;
+use siderust::event::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseLabel, PhaseKind, PhaseSearchOpts,
 };
@@ -23,7 +23,7 @@ use siderust::qtty::IlluminationFractions;
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn phase_geometry_from_rust(
-    g: siderust::calculus::lunar::phase::MoonPhaseGeometry,
+    g: siderust::event::lunar::phase::MoonPhaseGeometry,
 ) -> SiderustMoonPhaseGeometry {
     SiderustMoonPhaseGeometry {
         phase_angle_rad: g.phase_angle.value(),

@@ -30,20 +30,20 @@
 //!   Messages, CCSDS 502.0-B-2 / 502.0-B-3.
 //! - International GNSS Service. (2020). SP3-c / SP3-d Orbit Format
 //!   Specification.
-use affn::cartesian;
-use qtty::time::Microseconds;
-use qtty::unit::Kilometer;
-use qtty::Day;
 use crate::astro::dynamics::state::SpacecraftState;
 use crate::astro::dynamics::OrbitState;
 use crate::coordinates::frames::GCRS;
 use crate::formats::ccsds::oem::{write_oem, OemMetadata, OemState};
 use crate::formats::igs::sp3::{write_sp3, EarthCenter, Sp3Epoch, Sp3Position, Sp3Record};
 use crate::formats::FormatError;
+use crate::time::JulianDate;
+use affn::cartesian;
+use qtty::time::Microseconds;
+use qtty::unit::Kilometer;
+use qtty::Day;
 use std::io::Write;
 use std::path::Path;
 use tempoch::{Time, UTC};
-use crate::time::JulianDate;
 
 use super::error::PodProductsError;
 
@@ -95,12 +95,11 @@ pub fn write_sp3_from_states<W: Write>(
         .iter()
         .map(|s| {
             // SP3 epochs are UTC; orbit states carry TT internally.
-            let epoch_utc: Time<UTC> = JulianDate::try_new(Day::new(
-                s.epoch.to::<tempoch::JD>().value(),
-            ))
-                .expect("OrbitState epoch must be finite")
-                .to_scale::<UTC>()
-                .into();
+            let epoch_utc: Time<UTC> =
+                JulianDate::try_new(Day::new(s.epoch.to::<tempoch::JD>().value()))
+                    .expect("OrbitState epoch must be finite")
+                    .to_scale::<UTC>()
+                    .into();
             Sp3Epoch {
                 time: epoch_utc,
                 positions: vec![Sp3Position {

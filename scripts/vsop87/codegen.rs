@@ -52,15 +52,15 @@ fn fmt_f(v: f64) -> String {
 /// Provenance of the input dataset, embedded as a comment header in each
 /// generated `vsop87X.rs` file.
 #[derive(Debug, Clone, Default)]
-pub struct DatasetProvenance {
+pub(crate) struct DatasetProvenance {
     /// Source URL the coefficient files were originally fetched from.
-    pub source_url: String,
+    pub(crate) source_url: String,
     /// SHA-256 of the concatenated input dataset, hex-encoded.
-    pub sha256_hex: String,
+    pub(crate) sha256_hex: String,
     /// ISO-8601 timestamp at which the dataset was fingerprinted.
-    pub retrieved_at: String,
+    pub(crate) retrieved_at: String,
     /// Number of bytes covered by the SHA.
-    pub byte_count: u64,
+    pub(crate) byte_count: u64,
 }
 
 /// Build one source blob per *version* (A, E, …).
@@ -68,7 +68,7 @@ pub struct DatasetProvenance {
 /// The map key is the version letter so that the caller can immediately decide
 /// a file name (`vsop87{version}.rs`).  We keep a deterministic order thanks to
 /// `BTreeMap` – vital for reproducible builds and clean diffs.
-pub fn generate_modules_with_provenance(
+pub(crate) fn generate_modules_with_provenance(
     versions: &VersionMap,
     prov: &DatasetProvenance,
 ) -> anyhow::Result<BTreeMap<char, String>> {
@@ -82,7 +82,7 @@ pub fn generate_modules_with_provenance(
 
 /// Backwards-compatible variant without provenance, kept so existing call
 /// sites (`run` in `mod.rs`) continue to compile in legacy build modes.
-pub fn generate_modules(versions: &VersionMap) -> anyhow::Result<BTreeMap<char, String>> {
+pub(crate) fn generate_modules(versions: &VersionMap) -> anyhow::Result<BTreeMap<char, String>> {
     let mut modules = BTreeMap::new();
     for (version, planets) in versions {
         let code = generate_one(*version, planets, None);
@@ -115,7 +115,7 @@ fn generate_one(
         code.push_str("// Generator    : siderust scripts/vsop87/codegen.rs\n");
     }
     code.push_str("// ───────────────────────────────────────────────────────────────────\n");
-    code.push_str("use crate::calculus::vsop87::vsop87_impl::Vsop87;\n\n");
+    code.push_str("use crate::ephemeris::vsop87::vsop87_impl::Vsop87;\n\n");
 
     for (planet, coords) in planets {
         let planet_up = planet.to_uppercase();

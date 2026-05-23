@@ -1,16 +1,16 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Integration tests for the unified altitude API (`calculus::altitude`).
+//! Integration tests for the unified altitude API (`event::altitude`).
 
 use siderust::bodies::solar_system::{Moon, Sun};
-use siderust::calculus::altitude::{
-    above_threshold, altitude_ranges, below_threshold, crossings, culminations,
-    AltitudePeriodsProvider, CrossingDirection, CulminationKind, SearchOpts,
-};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
+use siderust::event::altitude::{
+    above_threshold, altitude_ranges, below_threshold, crossings, culminations,
+    AltitudePeriodsProvider, CrossingDirection, CulminationKind, SearchOpts,
+};
 use siderust::time::{ModifiedJulianDate, Period};
 
 use siderust::qtty::*;

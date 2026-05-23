@@ -189,7 +189,7 @@ fn generate_rust(
         "// ───────────────────────────────────────────────────────────────────"
     )?;
     writeln!(out)?;
-    writeln!(out, "use crate::calculus::elp2000::elp_structs::*;\n")?;
+    writeln!(out, "use crate::ephemeris::elp2000::elp_structs::*;\n")?;
 
     for (name, entries) in data {
         let idx: u32 = name.trim_start_matches("ELP").parse().unwrap();
@@ -282,7 +282,7 @@ fn ensure_dataset(dir: &Path) -> Result<()> {
 
 /// ---------------------------  ENTRYPOINT  -----------------------
 #[allow(dead_code)]
-pub fn run(data_dir: &Path) -> Result<()> {
+pub(crate) fn run(data_dir: &Path) -> Result<()> {
     ensure_dataset(data_dir)?;
 
     println!("cargo:rerun-if-changed=build.rs");
@@ -305,7 +305,7 @@ pub fn run(data_dir: &Path) -> Result<()> {
 /// the `SIDERUST_ELP2000_SHA256` environment variable when set, and
 /// embeds the SHA-256 + retrieval timestamp as a comment header in the
 /// emitted `elp_data.rs`.
-pub fn run_regen(data_dir: &Path, gen_dir: &Path) -> Result<()> {
+pub(crate) fn run_regen(data_dir: &Path, gen_dir: &Path) -> Result<()> {
     ensure_dataset(data_dir)?;
 
     let (sha, bytes) = dataset_sha256(data_dir)?;

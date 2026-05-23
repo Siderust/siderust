@@ -9,7 +9,7 @@
 use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
-use siderust::calculus::azimuth::{AzimuthCrossingEvent, AzimuthExtremum};
+use siderust::event::azimuth::{AzimuthCrossingEvent, AzimuthExtremum};
 
 pub(crate) fn vec_az_crossings_to_c(
     events: Vec<AzimuthCrossingEvent>,

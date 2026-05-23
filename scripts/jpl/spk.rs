@@ -7,23 +7,23 @@ use crate::jpl_daf::{Daf, Summary};
 use std::path::Path;
 
 /// Metadata and coefficient data for one SPK Type 2 segment.
-pub struct SegmentMeta {
+pub(crate) struct SegmentMeta {
     /// Initial epoch (TDB seconds past J2000).
-    pub init: f64,
+    pub(crate) init: f64,
     /// Interval length (seconds).
-    pub intlen: f64,
+    pub(crate) intlen: f64,
     /// Doubles per record.
-    pub rsize: usize,
+    pub(crate) rsize: usize,
     /// Chebyshev polynomial degree + 1 (coefficients per coordinate).
-    pub ncoeff: usize,
+    pub(crate) ncoeff: usize,
     /// Number of records.
-    pub n_records: usize,
+    pub(crate) n_records: usize,
     /// Flattened record data: n_records × rsize f64 values.
-    pub records: Vec<f64>,
+    pub(crate) records: Vec<f64>,
 }
 
 /// Read an SPK Type 2 segment from raw file data.
-pub fn read_type2_segment(
+pub(crate) fn read_type2_segment(
     file_data: &[u8],
     daf: &Daf,
     summary: &Summary,
@@ -72,7 +72,7 @@ pub fn read_type2_segment(
 }
 
 /// Write a segment's coefficient data as raw little-endian f64 bytes.
-pub fn write_binary(meta: &SegmentMeta, path: &Path) -> anyhow::Result<()> {
+pub(crate) fn write_binary(meta: &SegmentMeta, path: &Path) -> anyhow::Result<()> {
     let mut buf = Vec::with_capacity(meta.records.len() * 8);
     for &val in &meta.records {
         buf.extend_from_slice(&val.to_le_bytes());

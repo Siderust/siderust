@@ -22,7 +22,7 @@ use crate::error::SiderustStatus;
 use crate::types::*;
 use qtty::angular::Degrees;
 use qtty::*;
-use siderust::calculus::azimuth::{
+use siderust::event::azimuth::{
     azimuth_crossings, azimuth_extrema, in_azimuth_range, outside_azimuth_range,
 };
 use siderust::AltitudePeriodsProvider;

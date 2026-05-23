@@ -154,7 +154,7 @@ type VersionMap = BTreeMap<char, PlanetMap>;
 /// # Errors
 /// Returns any I/O or parsing error wrapped in `anyhow::Error`.
 #[allow(dead_code)]
-pub fn run(data_dir: &Path) -> anyhow::Result<()> {
+pub(crate) fn run(data_dir: &Path) -> anyhow::Result<()> {
     let out_dir = PathBuf::from(
         env::var("OUT_DIR").context("OUT_DIR not set (missing Cargo build context)")?,
     );
@@ -175,7 +175,7 @@ pub fn run(data_dir: &Path) -> anyhow::Result<()> {
 /// the `SIDERUST_VSOP87_SHA256` environment variable when set, and embeds
 /// the SHA-256 + retrieval timestamp as a comment header in every emitted
 /// `vsop87X.rs` file.
-pub fn run_regen(data_dir: &Path, gen_dir: &Path) -> anyhow::Result<()> {
+pub(crate) fn run_regen(data_dir: &Path, gen_dir: &Path) -> anyhow::Result<()> {
     fetch::ensure_dataset(data_dir)?;
 
     let (sha, bytes) = dataset_sha256(data_dir)?;

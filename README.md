@@ -132,7 +132,7 @@ siderust = { version = "0.7.0", features = ["de441"] }
 4. Combine backends in one binary
 
 ```rust
-use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
+use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::time::JulianDate;
 
 let jd = JulianDate::J2000;
@@ -143,7 +143,7 @@ let earth_vsop = Vsop87Ephemeris::earth_heliocentric(jd);
 
 ```rust
 // With `de441` feature enabled:
-use siderust::calculus::ephemeris::De441Ephemeris;
+use siderust::ephemeris::De441Ephemeris;
 
 let earth_jpl = De441Ephemeris::earth_heliocentric(jd);
 ```

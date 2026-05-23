@@ -38,7 +38,6 @@ use crate::astro::earth_rotation_provider::nutation_with_celestial_pole_offsets;
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
 use crate::astro::{cio, era, polar_motion, precession, HasIauRotation, IauRotationParams};
-use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{
     Barycentric, Geocentric, Heliocentric, Jovicentric, Marscentric, Mercurycentric,
@@ -53,6 +52,7 @@ use crate::coordinates::frames::{
     CIRS, ECEF, EME2000, FK4B1950, GCRS as GCRSFrame, ICRF, ICRS, ITRF, TEME, TIRS,
 };
 use crate::coordinates::transform::context::{AstroContext, TransformContext};
+use crate::ephemeris::Ephemeris;
 use crate::time::JulianDate;
 use affn::Rotation3;
 

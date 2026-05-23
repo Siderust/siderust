@@ -1,3 +1,5 @@
+//! Build script for `siderust-ffi`, generating the exported C header.
+
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;

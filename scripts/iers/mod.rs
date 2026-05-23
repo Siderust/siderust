@@ -49,15 +49,15 @@ use std::fmt::Write;
 #[derive(Debug, Clone)]
 pub(crate) struct SourceProvenance {
     /// Human-readable name of the dataset (e.g. `finals2000A.all`).
-    pub source_name: String,
+    pub(crate) source_name: String,
     /// Canonical fetch URL (or `"local cache"` when reused from disk).
-    pub source_url: String,
+    pub(crate) source_url: String,
     /// Number of bytes in the input artifact.
-    pub byte_count: u64,
+    pub(crate) byte_count: u64,
     /// Lowercase hex-encoded SHA-256 of the input bytes.
-    pub sha256_hex: String,
+    pub(crate) sha256_hex: String,
     /// ISO-8601 timestamp at which the artifact was retrieved or hashed.
-    pub retrieved_at: String,
+    pub(crate) retrieved_at: String,
 }
 
 impl SourceProvenance {
@@ -433,7 +433,7 @@ fn download_finals(dst: &Path) -> Result<()> {
 
 /// Build-time entrypoint: fetch, parse, and generate EOP Rust source.
 #[allow(dead_code)]
-pub fn run(data_dir: &Path) -> Result<()> {
+pub(crate) fn run(data_dir: &Path) -> Result<()> {
     let finals_path = ensure_dataset(data_dir)?;
 
     println!("cargo:rerun-if-changed=build.rs");
@@ -468,7 +468,7 @@ pub fn run(data_dir: &Path) -> Result<()> {
 /// table in `src/generated/`. Verifies the input SHA-256 against the
 /// `SIDERUST_IERS_SHA256` environment variable when set, so CI/release
 /// builds can pin a specific Bulletin A/B vintage.
-pub fn run_regen(data_dir: &Path, gen_dir: &Path) -> Result<()> {
+pub(crate) fn run_regen(data_dir: &Path, gen_dir: &Path) -> Result<()> {
     let finals_path = ensure_dataset(data_dir)?;
 
     let provenance = SourceProvenance::from_file(FINALS_FILENAME, IERS_URL, &finals_path)?;

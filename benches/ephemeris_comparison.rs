@@ -14,13 +14,13 @@
 //! ```
 
 use criterion::{criterion_group, criterion_main, Criterion};
-use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
+use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::qtty::Days;
 use std::hint::black_box;
 use std::time::Duration;
 
 #[cfg(feature = "de440")]
-use siderust::calculus::ephemeris::De440Ephemeris;
+use siderust::ephemeris::De440Ephemeris;
 
 // =============================================================================
 // Sun Barycentric

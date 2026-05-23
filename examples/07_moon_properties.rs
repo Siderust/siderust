@@ -12,13 +12,13 @@
 #![allow(clippy::print_stdout)]
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use siderust::calculus::ephemeris::Vsop87Ephemeris;
-use siderust::calculus::lunar::phase::{
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
+use siderust::ephemeris::Vsop87Ephemeris;
+use siderust::event::lunar::phase::{
     find_phase_events, illumination_range, moon_phase_geocentric, moon_phase_topocentric,
     PhaseSearchOpts,
 };
-use siderust::coordinates::centers::Geodetic;
-use siderust::coordinates::frames::ECEF;
 use siderust::qtty::{Days, Degree, Degrees, IlluminationFractions, Meter, Quantity};
 use siderust::time::{JulianDate, ModifiedJulianDate, Period};
 

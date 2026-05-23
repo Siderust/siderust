@@ -21,7 +21,7 @@
 //! * [`DynamicsContext`] / [`DynamicsContextBuilder`] — provider injection.
 //! * [`forces`] — force-model implementations (two-body, J2, drag, SRP, …).
 //! * [`gravity`] — geopotential helpers.
-//! * [`atmosphere`] — atmospheric density models.
+//! * [`density`] — atmospheric density models.
 //! * [`state`] — typed orbit state, position, velocity aliases.
 //!
 //! Types returned by the propagator but defined in `principia`
@@ -35,8 +35,8 @@
 //! * Vallado, *Fundamentals of Astrodynamics and Applications*, 4th ed.
 //! * IERS Conventions 2010, IERS Technical Note 36.
 
-pub mod atmosphere;
 pub mod context;
+pub mod density;
 pub mod errors;
 pub mod forces;
 pub mod gravity;
@@ -55,13 +55,13 @@ pub mod frames {
 
 // ── Astronomy-specific sub-modules ──────────────────────────────────────────
 
-pub use atmosphere::{
-    geodetic_altitude, AtmosphereProvider, ConstantDensity, DensityProvider, ExponentialAtmosphere,
-    Nrlmsise00LiteApprox,
-};
 pub use context::{
     Conventions, DynamicsContext, DynamicsContextBuilder, EarthOrientationProvider,
     PrecessionModel, SolarActivityProvider, TimeScaleHint,
+};
+pub use density::{
+    geodetic_altitude, AtmosphereProvider, ConstantDensity, DensityProvider, ExponentialAtmosphere,
+    Nrlmsise00LiteApprox,
 };
 pub use errors::{DynamicsError, LocalFrameError};
 pub use forces::{

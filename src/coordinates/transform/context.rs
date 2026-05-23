@@ -65,7 +65,7 @@ use crate::astro::nutation::NutationModel;
 use crate::time::JulianDate;
 
 #[cfg(not(any(feature = "de440", feature = "de441")))]
-use crate::calculus::ephemeris::Vsop87Ephemeris;
+use crate::ephemeris::Vsop87Ephemeris;
 
 /// Default ephemeris type.
 ///
@@ -84,19 +84,21 @@ use crate::calculus::ephemeris::Vsop87Ephemeris;
 pub type DefaultEphemeris = Vsop87Ephemeris;
 
 #[cfg(all(feature = "de441", not(siderust_mock_de441)))]
-pub type DefaultEphemeris = crate::calculus::ephemeris::De441Ephemeris;
+pub type DefaultEphemeris = crate::ephemeris::De441Ephemeris;
 
 #[cfg(all(feature = "de440", not(feature = "de441"), not(siderust_mock_de440)))]
-pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
+pub type DefaultEphemeris = crate::ephemeris::De440Ephemeris;
 
 // Stub: DE feature is on but SIDERUST_JPL_STUB is set, fall back to VSOP87 so
 // tests work without the BSP download. DE441 takes precedence when both DE
 // features are enabled.
+/// Default compile-time ephemeris backend when DE features are enabled
+/// but stubbed via `SIDERUST_JPL_STUB`, forcing a VSOP87 fallback.
 #[cfg(any(
     all(feature = "de441", siderust_mock_de441),
     all(feature = "de440", not(feature = "de441"), siderust_mock_de440)
 ))]
-pub type DefaultEphemeris = crate::calculus::ephemeris::Vsop87Ephemeris;
+pub type DefaultEphemeris = crate::ephemeris::Vsop87Ephemeris;
 
 /// Default Earth orientation model: [`IersEop`], backed by the
 /// build-time embedded `finals2000A.all` table.
@@ -305,7 +307,7 @@ impl<'a, Eph, Eop: EopProvider, Nut: NutationModel> TransformContext
 // DynAstroContext, runtime-selected ephemeris via DynEphemeris trait object
 // ═══════════════════════════════════════════════════════════════════════════
 
-use crate::calculus::ephemeris::DynEphemeris;
+use crate::ephemeris::DynEphemeris;
 
 /// Astronomical context with a runtime-selected ephemeris backend.
 ///
@@ -314,14 +316,14 @@ use crate::calculus::ephemeris::DynEphemeris;
 /// `Box<dyn DynEphemeris>` and dispatches via virtual calls.
 ///
 /// Use this when:
-/// - You load BSP files at runtime via [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris)
+/// - You load BSP files at runtime via [`RuntimeEphemeris`](crate::ephemeris::RuntimeEphemeris)
 /// - You need to switch between backends without recompiling
 /// - You want to override the default ephemeris at runtime
 ///
 /// # Example
 ///
 /// ```rust,ignore
-/// use siderust::calculus::ephemeris::{RuntimeEphemeris, DynEphemeris};
+/// use siderust::ephemeris::{RuntimeEphemeris, DynEphemeris};
 /// use siderust::coordinates::transform::context::DynAstroContext;
 ///
 /// let eph = RuntimeEphemeris::from_bsp("path/to/de441.bsp")?;
@@ -450,7 +452,7 @@ mod tests {
 
     #[test]
     fn test_dyn_context_creation() {
-        use crate::calculus::ephemeris::Vsop87Ephemeris;
+        use crate::ephemeris::Vsop87Ephemeris;
 
         // Vsop87Ephemeris implements DynEphemeris via blanket impl
         let dyn_ctx = DynAstroContext::with_ephemeris(Box::new(Vsop87Ephemeris));
@@ -465,7 +467,7 @@ mod tests {
 
     #[test]
     fn test_dyn_context_with_eop() {
-        use crate::calculus::ephemeris::Vsop87Ephemeris;
+        use crate::ephemeris::Vsop87Ephemeris;
 
         let dyn_ctx = DynAstroContext::with_ephemeris_and_eop(
             Box::new(Vsop87Ephemeris),

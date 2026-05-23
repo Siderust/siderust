@@ -39,7 +39,6 @@
 
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
-use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::position::{EclipticMeanJ2000, Position};
 use crate::coordinates::centers::{
     Barycentric, Bodycentric, BodycentricParams, Geocentric, Heliocentric, OrbitReferenceCenter,
@@ -48,6 +47,7 @@ use crate::coordinates::frames::MutableFrame;
 use crate::coordinates::transform::centers::TransformCenter;
 use crate::coordinates::transform::context::AstroContext;
 use crate::coordinates::transform::TransformFrame;
+use crate::ephemeris::Ephemeris;
 use crate::qtty::{AstronomicalUnits, LengthUnit, Quantity};
 use crate::time::JulianDate;
 

@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Comprehensive tests for the [`calculus::ephemeris`] module.
+//! Comprehensive tests for the [`ephemeris`] module.
 //!
 //! This test file aims to provide comprehensive coverage of the ephemeris module,
 //! testing all backends (Vsop87Ephemeris, De440Ephemeris) and
@@ -9,7 +9,7 @@
 //!
 //! DE441 is no longer a compile-time backend; use `RuntimeEphemeris` at runtime.
 
-use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
+use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::qtty::*;
 use siderust::time::JulianDate;
 
@@ -475,7 +475,7 @@ mod vsop87_tests {
 #[cfg(feature = "de440")]
 mod de440_tests {
     use super::*;
-    use siderust::calculus::ephemeris::De440Ephemeris;
+    use siderust::ephemeris::De440Ephemeris;
 
     fn skip_if_de440_stubbed() -> bool {
         if jpl_stub_enabled_for("de440") {
@@ -694,7 +694,7 @@ mod generic_ephemeris_tests {
             eprintln!("Skipping DE440 generic test: SIDERUST_JPL_STUB enables DE440 stubbing.");
             return;
         }
-        use siderust::calculus::ephemeris::De440Ephemeris;
+        use siderust::ephemeris::De440Ephemeris;
         test_ephemeris_basic_properties::<De440Ephemeris>();
     }
 
@@ -737,7 +737,7 @@ mod generic_ephemeris_tests {
             eprintln!("Skipping DE440 generic test: SIDERUST_JPL_STUB enables DE440 stubbing.");
             return;
         }
-        use siderust::calculus::ephemeris::De440Ephemeris;
+        use siderust::ephemeris::De440Ephemeris;
         test_velocity_consistency::<De440Ephemeris>();
     }
 }

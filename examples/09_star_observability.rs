@@ -7,8 +7,8 @@
 #![allow(clippy::print_stdout)]
 
 use siderust::bodies::catalog::SIRIUS;
-use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
-use siderust::calculus::azimuth::{AzimuthProvider, AzimuthQuery};
+use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
+use siderust::event::azimuth::{AzimuthProvider, AzimuthQuery};
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::intersect_periods;
 use siderust::time::{ModifiedJulianDate, Period};

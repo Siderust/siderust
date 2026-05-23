@@ -9,13 +9,13 @@
 
 use siderust::bodies::catalog;
 use siderust::bodies::solar_system::{Moon, Sun};
-use siderust::calculus::azimuth::{
-    azimuth_crossings, azimuth_extrema, azimuth_periods, azimuth_ranges, in_azimuth_range,
-    outside_azimuth_range, AzimuthProvider, AzimuthQuery, SearchOpts,
-};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
+use siderust::event::azimuth::{
+    azimuth_crossings, azimuth_extrema, azimuth_periods, azimuth_ranges, in_azimuth_range,
+    outside_azimuth_range, AzimuthProvider, AzimuthQuery, SearchOpts,
+};
 use siderust::qtty::*;
 use siderust::time::{ModifiedJulianDate, Period};
 

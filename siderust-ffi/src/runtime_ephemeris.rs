@@ -4,7 +4,7 @@
 //! FFI bindings for the runtime-loaded ephemeris backend.
 //!
 //! All functions in this module work with an opaque [`SiderustRuntimeEphemeris`]
-//! handle that wraps a [`RuntimeEphemeris`](siderust::calculus::ephemeris::RuntimeEphemeris).
+//! handle that wraps a [`RuntimeEphemeris`](siderust::ephemeris::RuntimeEphemeris).
 //!
 //! ## Lifecycle
 //!
@@ -21,17 +21,13 @@ use std::os::raw::c_char;
 
 use crate::error::SiderustStatus;
 use crate::types::*;
-use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
+use siderust::ephemeris::{DynEphemeris, RuntimeEphemeris};
 
 #[inline]
-fn ephemeris_status(err: siderust::calculus::ephemeris::EphemerisError) -> SiderustStatus {
+fn ephemeris_status(err: siderust::ephemeris::EphemerisError) -> SiderustStatus {
     match err {
-        siderust::calculus::ephemeris::EphemerisError::OutOfRange { .. } => {
-            SiderustStatus::OutOfRange
-        }
-        siderust::calculus::ephemeris::EphemerisError::InvalidSegment { .. } => {
-            SiderustStatus::DataError
-        }
+        siderust::ephemeris::EphemerisError::OutOfRange { .. } => SiderustStatus::OutOfRange,
+        siderust::ephemeris::EphemerisError::InvalidSegment { .. } => SiderustStatus::DataError,
     }
 }
 

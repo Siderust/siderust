@@ -1,7 +1,7 @@
 //! [`EphemerisProvider`] trait.
 //!
 //! Concrete implementations should typically wrap
-//! `siderust::calculus::ephemeris` or sibling crates such as
+//! `siderust::ephemeris` or sibling crates such as
 //! `siderust-spice`. The state representation is left associated so POD
 //! code is not pinned to a single `siderust` view.
 

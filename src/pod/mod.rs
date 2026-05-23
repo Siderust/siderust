@@ -15,7 +15,7 @@
 //! The crate provides the geophysical primitives needed by any POD pipeline:
 //!
 //! - typed problem definitions and run metadata ([`problem`], [`run`]),
-//! - high-fidelity dynamics composition on top of `siderust` ([`dynamics`]),
+//! - high-fidelity force-model composition, propagation, and process-noise building blocks on top of `siderust` ([`force`], [`propagation`], [`process`]),
 //! - observation models for GNSS pseudorange and carrier-phase and SLR
 //!   normal points ([`observation`]),
 //! - batch and sequential estimators ([`estimation`]),
@@ -51,7 +51,9 @@
 //! | [`problem`]      | POD problem primitives: arcs, parameters, covariance            |
 //! | [`run`]          | Run-level provenance and dataset references                     |
 //! | [`providers`]    | Ephemeris provider traits bridging POD code to services         |
-//! | [`dynamics`]     | Astrodynamics primitives and POD force-model composition        |
+//! | [`force`]        | Force-model configuration, registries, empirical accelerations  |
+//! | [`propagation`]  | Integrators, adapters, variational propagation, STM helpers     |
+//! | [`process`]      | Process-noise models and Q-matrix construction                  |
 //! | [`observation`]  | Typed measurement models: GNSS, SLR                             |
 //! | [`estimation`]   | Batch (WLS, Gauss-Newton) and sequential estimator scaffolding  |
 //! | [`qc`]           | Quality-control and validation products                         |
@@ -69,12 +71,14 @@
 
 #![forbid(unsafe_code)]
 
-pub mod dynamics;
 pub mod estimation;
+pub mod force;
 pub mod io;
 pub mod observation;
 pub mod problem;
+pub mod process;
 pub mod product;
+pub mod propagation;
 pub mod providers;
 pub mod qc;
 pub mod run;

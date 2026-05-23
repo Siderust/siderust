@@ -64,7 +64,7 @@ SIDERUST_JPL_STUB=all cargo check --all-features
 This generates a small stub `de441_data.rs` so the crate compiles, but any
 direct use of low-level DE441 JPL data will panic.
 
-For the public ephemeris backend (`calculus::ephemeris::De441Ephemeris`), the
+For the public ephemeris backend (`ephemeris::De441Ephemeris`), the
 same setting enables a mock backend that falls back to VSOP87/ELP2000 so tests
 can execute without downloading DE441.
 

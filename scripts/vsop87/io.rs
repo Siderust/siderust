@@ -39,7 +39,7 @@ use anyhow::Context;
 /// The function is **idempotent**: it always overwrites the file with the new
 /// contents.  Errors from the file system are wrapped with context so that the
 /// caller knows *which* file failed.
-pub fn write_modules(mods: &BTreeMap<char, String>, out_dir: &Path) -> anyhow::Result<()> {
+pub(crate) fn write_modules(mods: &BTreeMap<char, String>, out_dir: &Path) -> anyhow::Result<()> {
     for (version, code) in mods {
         // ------------------------------------------------------------------
         // 1) Compute final path   OUT_DIR / "vsop87{version}.rs"

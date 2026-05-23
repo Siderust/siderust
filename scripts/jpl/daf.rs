@@ -9,41 +9,41 @@
 //! This parser is shared by DE440/DE441 build pipelines.
 
 /// Parsed DAF container.
-pub struct Daf {
+pub(crate) struct Daf {
     /// Number of double components per summary.
-    pub nd: usize,
+    pub(crate) nd: usize,
     /// Number of integer components per summary.
-    pub ni: usize,
+    pub(crate) ni: usize,
     /// All segment summaries found in the file.
-    pub summaries: Vec<Summary>,
+    pub(crate) summaries: Vec<Summary>,
 }
 
 /// A single segment summary extracted from the DAF.
-pub struct Summary {
+pub(crate) struct Summary {
     /// Start epoch (TDB seconds past J2000).
     #[allow(dead_code)]
-    pub start_et: f64,
+    pub(crate) start_et: f64,
     /// End epoch (TDB seconds past J2000).
     #[allow(dead_code)]
-    pub end_et: f64,
+    pub(crate) end_et: f64,
     /// NAIF body ID of the target.
-    pub target_id: i32,
+    pub(crate) target_id: i32,
     /// NAIF body ID of the center.
-    pub center_id: i32,
+    pub(crate) center_id: i32,
     /// Reference frame ID (typically 1 = J2000).
     #[allow(dead_code)]
-    pub frame_id: i32,
+    pub(crate) frame_id: i32,
     /// SPK segment type (2 = Chebyshev position, 3 = Chebyshev pos+vel).
-    pub data_type: i32,
+    pub(crate) data_type: i32,
     /// 1-based word index of first data element in the file.
-    pub start_word: usize,
+    pub(crate) start_word: usize,
     /// 1-based word index of last data element in the file.
-    pub end_word: usize,
+    pub(crate) end_word: usize,
 }
 
 impl Daf {
     /// Parse a DAF container from raw file bytes.
-    pub fn parse(data: &[u8]) -> anyhow::Result<Self> {
+    pub(crate) fn parse(data: &[u8]) -> anyhow::Result<Self> {
         if data.len() < 1024 {
             anyhow::bail!("DAF file too small ({} bytes)", data.len());
         }
@@ -138,7 +138,7 @@ impl Daf {
 
     /// Read a f64 from the data array at a given word index (1-based).
     #[inline]
-    pub fn read_f64_at_word(&self, data: &[u8], word: usize) -> f64 {
+    pub(crate) fn read_f64_at_word(&self, data: &[u8], word: usize) -> f64 {
         let offset = (word - 1) * 8;
         // DE440/DE441 kernels from NAIF are little-endian on modern systems.
         read_f64_le(data, offset)

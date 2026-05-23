@@ -20,6 +20,6 @@ const CONFIG: pipeline::DeConfig = pipeline::DeConfig {
 };
 
 /// Run the DE441 build pipeline.
-pub fn run(data_dir: &Path) -> anyhow::Result<()> {
+pub(crate) fn run(data_dir: &Path) -> anyhow::Result<()> {
     pipeline::run(&CONFIG, data_dir)
 }

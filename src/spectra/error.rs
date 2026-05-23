@@ -27,14 +27,29 @@ use core::fmt;
 #[derive(Debug, Clone, PartialEq)]
 pub enum SpectrumError {
     /// `xs` and `ys` had different lengths.
-    LengthMismatch { xs: usize, ys: usize },
+    LengthMismatch {
+        /// Length of the wavelength/sample-axis input.
+        xs: usize,
+        /// Length of the value/amplitude input.
+        ys: usize,
+    },
     /// Fewer than two samples were provided.
     TooFewSamples(usize),
     /// `xs` was not strictly monotonically increasing.
-    NotMonotonic { index: usize },
+    NotMonotonic {
+        /// Index of the first sample that violates strict monotonicity.
+        index: usize,
+    },
     /// A query was outside the spectrum's domain and the configured
     /// [`crate::spectra::OutOfRange`] policy was [`crate::spectra::OutOfRange::Error`].
-    OutOfRange { x: f64, lo: f64, hi: f64 },
+    OutOfRange {
+        /// Queried abscissa value.
+        x: f64,
+        /// Lower bound of the sampled domain.
+        lo: f64,
+        /// Upper bound of the sampled domain.
+        hi: f64,
+    },
     /// A loader failed to parse an input source.
     Parse(String),
 }

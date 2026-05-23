@@ -25,21 +25,21 @@ const BODIES: &[(i32, i32, &str)] = &[
 ];
 
 /// Configuration for a specific DE version (DE440, DE441, etc.).
-pub struct DeConfig {
+pub(crate) struct DeConfig {
     /// File prefix for binary output, e.g. `"de440"` or `"de441"`.
-    pub prefix: &'static str,
+    pub(crate) prefix: &'static str,
     /// Human-readable label, e.g. `"DE440"` or `"DE441"`.
-    pub label: &'static str,
+    pub(crate) label: &'static str,
     /// URL to download the BSP file from NAIF.
-    pub bsp_url: &'static str,
+    pub(crate) bsp_url: &'static str,
     /// BSP filename on disk, e.g. `"de440.bsp"`.
-    pub bsp_filename: &'static str,
+    pub(crate) bsp_filename: &'static str,
     /// Minimum plausible BSP file size in bytes (for validation).
-    pub min_bsp_size: u64,
+    pub(crate) min_bsp_size: u64,
     /// Download timeout in seconds (curl/wget).
-    pub download_timeout: u64,
+    pub(crate) download_timeout: u64,
     /// Human-readable size hint for log messages, e.g. `"~120 MB"`.
-    pub size_hint: &'static str,
+    pub(crate) size_hint: &'static str,
 }
 
 fn jpl_stub_enabled(cfg: &DeConfig) -> bool {
@@ -66,7 +66,7 @@ fn jpl_stub_enabled(cfg: &DeConfig) -> bool {
 }
 
 /// Run the full DE4xx build pipeline: fetch → parse DAF → extract → codegen.
-pub fn run(cfg: &DeConfig, data_dir: &Path) -> anyhow::Result<()> {
+pub(crate) fn run(cfg: &DeConfig, data_dir: &Path) -> anyhow::Result<()> {
     let out_dir =
         std::path::PathBuf::from(std::env::var("OUT_DIR").expect("OUT_DIR not set by Cargo"));
 

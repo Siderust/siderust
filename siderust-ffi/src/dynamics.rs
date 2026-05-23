@@ -45,19 +45,19 @@
 use std::os::raw::c_void;
 use std::sync::Arc;
 
+use principia::integrators::dop853_propagate;
+use principia::PrincipiaError;
 use qtty::tolerances::IntegratorTolerances;
-use siderust::astro::dynamics::atmosphere::DensityProvider;
 use siderust::astro::dynamics::context::DynamicsContext;
+use siderust::astro::dynamics::density::DensityProvider;
 use siderust::astro::dynamics::errors::DynamicsError;
 use siderust::astro::dynamics::forces::TwoBody;
 use siderust::astro::dynamics::gravity::GravityFieldProvider;
-use principia::integrators::dop853_propagate;
 use siderust::astro::dynamics::units::{GravitationalParameter, GM_EARTH};
 use siderust::astro::dynamics::{OrbitState, Position, Velocity};
-use principia::PrincipiaError;
-use siderust::calculus::ephemeris::DynEphemeris;
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::frames::GCRS;
+use siderust::ephemeris::DynEphemeris;
 use siderust::qtty::{KilogramsPerCubicMeter, Kilometers, Second};
 use siderust::time::JulianDate;
 

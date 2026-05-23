@@ -6,8 +6,8 @@
 use affn::cartesian::Vector;
 use principia::{AccelerationModel, PrincipiaError};
 
-use crate::astro::dynamics::atmosphere::geodetic_altitude;
 use crate::astro::dynamics::context::DynamicsContext;
+use crate::astro::dynamics::density::geodetic_altitude;
 use crate::astro::dynamics::errors::DynamicsError;
 use crate::astro::dynamics::state::{Acceleration, AccelerationUnit, OrbitState};
 use crate::coordinates::centers::Geocentric;
@@ -106,10 +106,10 @@ mod tests {
     use std::sync::Arc;
 
     use super::*;
-    use crate::astro::dynamics::atmosphere::{
+    use crate::astro::dynamics::context::DynamicsContextBuilder;
+    use crate::astro::dynamics::density::{
         ConstantDensity, DensityProvider, ExponentialAtmosphere,
     };
-    use crate::astro::dynamics::context::DynamicsContextBuilder;
     use crate::astro::dynamics::forces::R_EARTH;
     use crate::astro::dynamics::{Position, Velocity};
     use crate::qtty::{AreaToMass, DragCoefficient, KilogramsPerCubicMeter};

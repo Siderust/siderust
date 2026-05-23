@@ -51,7 +51,7 @@ const FILE_RE_STR: &str = r"VSOP87[A-Z]\.[A-Za-z]{3}"; // e.g. VSOP87A.ear
 ///
 /// * Creates the directory if it doesn’t exist.
 /// * Downloads any missing file from the internet.
-pub fn ensure_dataset(data_dir: &Path) -> Result<()> {
+pub(crate) fn ensure_dataset(data_dir: &Path) -> Result<()> {
     // 1) Early‑out if dataset already present -----------------------------
     if contains_vsop_files(data_dir)? {
         return Ok(());

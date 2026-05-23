@@ -71,10 +71,15 @@ use super::{algo, AxisDirection, TableError};
 /// (NSB Leinert zodiacal corner clamps).
 #[derive(Debug, Clone, Copy)]
 pub struct ConstantRegion<S: Scalar> {
+    /// Inclusive lower x bound; `None` means unbounded below.
     pub x_min_inclusive: Option<S>,
+    /// Exclusive upper x bound; `None` means unbounded above.
     pub x_max_exclusive: Option<S>,
+    /// Inclusive lower y bound; `None` means unbounded below.
     pub y_min_inclusive: Option<S>,
+    /// Exclusive upper y bound; `None` means unbounded above.
     pub y_max_exclusive: Option<S>,
+    /// Constant value returned for queries inside the region.
     pub value: S,
 }
 
