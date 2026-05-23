@@ -43,7 +43,7 @@ use crate::qtty::*;
 use crate::time::JulianDate;
 type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 
-#[allow(clippy::approx_constant)]
+#[allow(clippy::approx_constant, unreachable_pub, missing_docs)]
 #[rustfmt::skip]
 mod vsop_data {
     include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/embedded_data/vsop87a.rs"));
@@ -58,6 +58,7 @@ macro_rules! impl_vsop87a {
         z: [$($z:ident),+ $(,)?]
     ) => {
         impl $Planet {
+            /// Computes the VSOP87A heliocentric ecliptic Cartesian position (mean J2000.0 equinox).
             pub fn vsop87a(jd: JulianDate) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
                 let (x, y, z) = position(
                     jd,
@@ -72,6 +73,7 @@ macro_rules! impl_vsop87a {
                 )
             }
 
+            /// Computes the VSOP87A heliocentric ecliptic Cartesian velocity (mean J2000.0 equinox, AU/day).
             pub fn vsop87a_vel(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
                 let (vx, vy, vz) = velocity(
                     jd,
@@ -86,6 +88,7 @@ macro_rules! impl_vsop87a {
                 )
             }
 
+            /// Computes both VSOP87A heliocentric position and velocity in one pass (more efficient than calling both separately).
             pub fn vsop87a_pos_vel(jd: JulianDate)
                 -> (Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, Velocity<EclipticMeanJ2000, AuPerDay>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(

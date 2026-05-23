@@ -33,7 +33,9 @@ use crate::time::{ModifiedJulianDate, Period};
 /// Direction of a threshold crossing.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum CrossingDirection {
+    /// Altitude is increasing through the threshold (object rising).
     Rising,
+    /// Altitude is decreasing through the threshold (object setting).
     Setting,
 }
 

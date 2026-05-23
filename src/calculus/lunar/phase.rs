@@ -117,13 +117,21 @@ impl Default for PhaseThresholds {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum MoonPhaseLabel {
+    /// Conjunction: Moon and Sun share the same ecliptic longitude (elongation ≈ 0°).
     NewMoon,
+    /// Moon waxing between new and first-quarter (elongation ∈ (0°, 90°)).
     WaxingCrescent,
+    /// Moon at 90° eastern elongation; approximately half-illuminated, growing.
     FirstQuarter,
+    /// Moon waxing between first-quarter and full (elongation ∈ (90°, 180°)).
     WaxingGibbous,
+    /// Opposition: Moon opposite the Sun, fully illuminated (elongation ≈ 180°).
     FullMoon,
+    /// Moon waning between full and last-quarter (elongation ∈ (180°, 270°)).
     WaningGibbous,
+    /// Moon at 90° western elongation; approximately half-illuminated, shrinking.
     LastQuarter,
+    /// Moon waning between last-quarter and new (elongation ∈ (270°, 360°)).
     WaningCrescent,
 }
 
@@ -221,9 +229,13 @@ impl From<MoonPhaseLabel> for Degrees {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub enum PhaseKind {
+    /// New Moon: Moon–Sun elongation ≈ 0°.
     NewMoon,
+    /// First Quarter: Moon–Sun elongation ≈ 90° (waxing).
     FirstQuarter,
+    /// Full Moon: Moon–Sun elongation ≈ 180°.
     FullMoon,
+    /// Last Quarter: Moon–Sun elongation ≈ 270° (waning).
     LastQuarter,
 }
 

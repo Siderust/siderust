@@ -39,11 +39,14 @@ use crate::coordinates::{
 use crate::qtty::AstronomicalUnit;
 use crate::time::JulianDate;
 
+/// Object-safe trait for planets that support VSOP87 ephemeris computation.
 pub trait VSOP87 {
+    /// Heliocentric ecliptic rectangular coordinates (VSOP87A solution).
     fn vsop87a(
         &self,
         jd: JulianDate,
     ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>;
+    /// Barycentric ecliptic rectangular coordinates (VSOP87E solution).
     fn vsop87e(&self, jd: JulianDate)
         -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>;
 }

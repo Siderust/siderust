@@ -83,9 +83,14 @@ pub(super) fn moon_geocentric(
     Ok(rot.apply_vec(m_ecl))
 }
 
+/// Trait for objects that provide the position and gravitational parameter of a
+/// perturbing third body relative to the reference frame origin.
 pub trait ThirdBodyProvider: Send + Sync {
+    /// Short human-readable name of the perturbing body (e.g. `"Sun"`).
     fn name(&self) -> &'static str;
+    /// Standard gravitational parameter µ = GM (km³ s⁻²) of the body.
     fn gm(&self) -> GravitationalParameter;
+    /// Geocentric position of the body in GCRS at `epoch`.
     fn position_relative_to_origin(
         &self,
         eph: &Arc<dyn DynEphemeris + Send + Sync>,
@@ -93,6 +98,7 @@ pub trait ThirdBodyProvider: Send + Sync {
     ) -> Result<Displacement<GCRS, Kilometer>, DynamicsError>;
 }
 
+/// Third-body perturbation due to solar gravity.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct SunPerturbation;
 impl ThirdBodyProvider for SunPerturbation {
@@ -111,6 +117,7 @@ impl ThirdBodyProvider for SunPerturbation {
     }
 }
 
+/// Third-body perturbation due to lunar gravity.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct MoonPerturbation;
 impl ThirdBodyProvider for MoonPerturbation {
@@ -129,26 +136,33 @@ impl ThirdBodyProvider for MoonPerturbation {
     }
 }
 
+/// Composite third-body force model: accumulates contributions from any number
+/// of [`ThirdBodyProvider`]s using the Battin formulation for numerical stability.
 pub struct ThirdBody {
     bodies: Vec<Box<dyn ThirdBodyProvider>>,
 }
 
 impl ThirdBody {
+    /// Create an empty model with no perturbing bodies.
     pub fn new() -> Self {
         Self { bodies: Vec::new() }
     }
+    /// Add solar gravity perturbation.
     pub fn with_sun(mut self) -> Self {
         self.bodies.push(Box::new(SunPerturbation));
         self
     }
+    /// Add lunar gravity perturbation.
     pub fn with_moon(mut self) -> Self {
         self.bodies.push(Box::new(MoonPerturbation));
         self
     }
+    /// Add an arbitrary third-body provider.
     pub fn with(mut self, body: Box<dyn ThirdBodyProvider>) -> Self {
         self.bodies.push(body);
         self
     }
+    /// Convenience constructor: Sun + Moon perturbations.
     pub fn sun_and_moon() -> Self {
         Self::new().with_sun().with_moon()
     }

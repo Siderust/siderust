@@ -44,6 +44,8 @@
 //!   nutation series. *Astronomy & Astrophysics* 412, 567–586.
 //!   doi:10.1051/0004‑6361:20031539
 
+#![allow(unreachable_pub, missing_docs)]
+
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::earth_rotation_provider::itrs_to_equatorial_mean_j2000_rotation;
 use crate::astro::nutation::nutation_iau2000b;

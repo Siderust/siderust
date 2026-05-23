@@ -41,6 +41,7 @@ pub use affn::cartesian::*;
 // Direction type aliases (frame-only, no center, dimensionless)
 // =============================================================================
 
+/// Type aliases for cartesian directions (unit vectors) keyed by frame.
 pub mod direction {
     use super::frames;
     pub use super::Direction;
@@ -81,6 +82,7 @@ pub mod direction {
 // Displacement type aliases (frame + unit, no center)
 // =============================================================================
 
+/// Type aliases for cartesian displacement vectors keyed by frame.
 pub mod displacement {
     use super::frames;
     pub use super::Displacement;
@@ -111,6 +113,7 @@ pub mod displacement {
 // Position type aliases (center + frame + unit)
 // =============================================================================
 
+/// Type aliases for cartesian positions keyed by frame and center.
 pub mod position {
     pub use super::Position;
     use super::{centers, frames};
@@ -201,6 +204,7 @@ pub mod position {
 // Velocity type aliases (frame + unit, no center)
 // =============================================================================
 
+/// Type aliases for cartesian velocity vectors keyed by frame.
 pub mod velocity {
     use super::frames;
     pub use super::Velocity;

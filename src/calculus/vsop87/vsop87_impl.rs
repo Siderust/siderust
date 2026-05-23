@@ -40,6 +40,8 @@
 //!   and spherical variables: VSOP87 solutions".
 //!   *Astronomy and Astrophysics* 202, 309–315.
 
+#![allow(unreachable_pub)]
+
 use crate::time::{JulianDate, TDB};
 use wide::f64x4;
 

@@ -4,6 +4,7 @@
 //! Star observability in altitude + azimuth ranges.
 //!
 //! Run with: `cargo run --example 09_star_observability`
+#![allow(clippy::print_stdout)]
 
 use siderust::bodies::catalog::SIRIUS;
 use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};

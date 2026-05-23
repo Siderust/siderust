@@ -29,10 +29,15 @@ use crate::qtty::Degrees;
 /// Common twilight types.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Twilight {
+    /// Civil twilight: Sun is 0°–6° below the horizon.
     Civil,
+    /// Nautical twilight: Sun is 6°–12° below the horizon.
     Nautical,
+    /// Astronomical twilight: Sun is 12°–18° below the horizon.
     Astronomical,
+    /// Geometric horizon (0° altitude).
     Horizon,
+    /// Apparent horizon accounting for atmospheric refraction (~0°34′ depression).
     ApparentHorizon,
 }
 

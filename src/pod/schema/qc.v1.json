@@ -1,0 +1,46 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.siderust.io/pod/qc.v1.json",
+  "title": "QcReport",
+  "description": "Compact QC report emitted alongside POD products. RTN summary plus optional residual statistics.",
+  "type": "object",
+  "required": ["schema", "rtn"],
+  "additionalProperties": false,
+  "properties": {
+    "schema": { "const": "qc.v1" },
+    "rtn": {
+      "type": "object",
+      "required": ["n", "rms_3d_m", "rms_r_m", "rms_t_m", "rms_n_m"],
+      "additionalProperties": false,
+      "properties": {
+        "n":         { "type": "integer", "minimum": 0 },
+        "rms_3d_m":  { "type": "number", "minimum": 0 },
+        "rms_r_m":   { "type": "number", "minimum": 0 },
+        "rms_t_m":   { "type": "number", "minimum": 0 },
+        "rms_n_m":   { "type": "number", "minimum": 0 }
+      }
+    },
+    "residuals": {
+      "type": "object",
+      "additionalProperties": false,
+      "properties": {
+        "code":  { "$ref": "#/definitions/ResidualStats" },
+        "phase": { "$ref": "#/definitions/ResidualStats" },
+        "range": { "$ref": "#/definitions/ResidualStats" }
+      }
+    }
+  },
+  "definitions": {
+    "ResidualStats": {
+      "type": "object",
+      "required": ["n", "rms"],
+      "additionalProperties": false,
+      "properties": {
+        "n":    { "type": "integer", "minimum": 0 },
+        "rms":  { "type": "number", "minimum": 0 },
+        "mean": { "type": "number" },
+        "p95":  { "type": "number", "minimum": 0 }
+      }
+    }
+  }
+}

@@ -45,9 +45,13 @@ use std::borrow::Cow;
 /// Bond albedo, and Keplerian orbit.
 #[derive(Clone, Debug)]
 pub struct Satellite<'a> {
+    /// Human-readable name of the satellite (e.g. `"Io"`).
     pub name: Cow<'a, str>,
+    /// Total mass of the satellite.
     pub mass: Kilograms,
+    /// Mean radius of the satellite.
     pub radius: Kilometers,
+    /// Keplerian orbital elements (typically planet-centric).
     pub orbit: KeplerianOrbit,
     /// Bond albedo (dimensionless, ∈ [0, 1]).  `None` when not catalogued.
     pub albedo: Option<Albedos>,

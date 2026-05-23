@@ -1,5 +1,6 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
+#![allow(missing_docs, clippy::print_stdout)]
 
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::coordinates::{cartesian, centers::Barycentric, frames::ICRS, spherical};

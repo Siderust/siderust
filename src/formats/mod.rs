@@ -9,6 +9,7 @@
 //!
 //! | Module | Coverage |
 //! |--------|----------|
+//! | [`adsb`] | ADS-B / Mode S Extended Squitter frames |
 //! | [`ccsds`] | OEM / OPM / TDM text messages |
 //! | [`iers`] | Earth-orientation parameter products |
 //! | [`igs`] | SP3 / ANTEX / SINEX / ORBEX products |
@@ -22,6 +23,7 @@
 //! [`crate::datasets`]. The `formats` modules sit *below* the catalog: they
 //! are called by the runtime back-end after a file has been located on disk.
 
+pub mod adsb;
 pub mod ccsds;
 pub mod error;
 pub mod iers;

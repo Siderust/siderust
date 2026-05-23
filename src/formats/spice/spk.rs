@@ -29,10 +29,15 @@ pub struct SegmentData {
 
 /// NAIF body IDs for the three segments we need.
 pub const SUN_TARGET: i32 = 10;
+/// NAIF center ID for the Sun segment (Solar System Barycenter = 0).
 pub const SUN_CENTER: i32 = 0;
+/// NAIF target ID for the Earth-Moon Barycenter segment.
 pub const EMB_TARGET: i32 = 3;
+/// NAIF center ID for the EMB segment (Solar System Barycenter = 0).
 pub const EMB_CENTER: i32 = 0;
+/// NAIF target ID for the Moon segment (301 = Moon).
 pub const MOON_TARGET: i32 = 301;
+/// NAIF center ID for the Moon segment (Earth-Moon Barycenter = 3).
 pub const MOON_CENTER: i32 = 3; // EMB
 
 /// A set of three SPK segments (Sun, EMB, Moon) extracted from a BSP file.

@@ -27,7 +27,7 @@
 //!   Independent Exchange Format, Version 3.05.
 //! - IS-GPS-200. (current revision). Navstar GPS Space Segment / Navigation
 //!   User Interfaces.
-use super::FormatError;
+use super::{FileLocation, FormatError, ParseMode};
 use chrono::{DateTime, Datelike, NaiveDate, Timelike, Utc as ChronoUtc};
 use qtty::angular::Radians;
 use qtty::angular_rate::AngularRate;
@@ -135,116 +135,296 @@ pub fn read_rinex_nav<P: AsRef<Path>>(path: P) -> Result<RinexNavFile, FormatErr
     parse_rinex_nav(&text)
 }
 
-/// Parse a RINEX NAV file from a string slice.
+/// Parse a RINEX NAV file from a string slice using [`ParseMode::Strict`].
+///
+/// Returns an error on the first malformed record. Use
+/// [`parse_rinex_nav_with_mode`] with [`ParseMode::Permissive`] to skip
+/// malformed records while keeping good ones.
+///
+/// # Errors
+///
+/// Returns [`FormatError::Located`] on malformed header, invalid PRN, invalid
+/// epoch, or body lines with fewer than the expected number of fields.
+///
+/// # Examples
+///
+/// ```
+/// use siderust::formats::rinex::nav::parse_rinex_nav;
+///
+/// let txt = "\
+///      3.04           N: GNSS NAV DATA    M (Mixed)           RINEX VERSION / TYPE\n\
+///                                                             END OF HEADER\n\
+/// G01 2024 01 01 00 00 00 1.234567E-04 5.678E-12 0.000E+00\n\
+///      1.000000E+00 2.000000E+01 3.456E-09 1.234567E+00\n\
+///      5.000E-07 1.000E-03 9.000E-07 5.153651E+03\n\
+///      5.184000E+05 1.000E-08 1.000E+00 2.000E-08\n\
+///      9.760000E-01 2.500E+02 -1.500E+00 -8.000E-09\n\
+///      1.000E-10\n\
+///      0.000E+00 0.000E+00 0.000E+00 0.000E+00\n\
+///      0.000E+00 0.000E+00 0.000E+00 0.000E+00\n";
+/// let f = parse_rinex_nav(txt).expect("valid NAV");
+/// assert_eq!(f.gps.len(), 1);
+/// assert_eq!(f.gps[0].prn, 1);
+/// ```
 pub fn parse_rinex_nav(text: &str) -> Result<RinexNavFile, FormatError> {
+    parse_rinex_nav_with_mode(text, ParseMode::Strict)
+}
+
+/// Parse a RINEX NAV file from a string slice with an explicit [`ParseMode`].
+///
+/// - `Strict` (the default): returns a [`FormatError`] on the first malformed
+///   record — invalid PRN, epoch, or body field.
+/// - `Permissive`: skips any malformed record and continues; non-GPS system
+///   identifiers are also silently skipped.
+///
+/// # Errors
+///
+/// In `Strict` mode, returns [`FormatError::Located`] on any malformed field.
+/// In `Permissive` mode, only returns an error if the header is unreadable.
+///
+/// # Examples
+///
+/// ```
+/// use siderust::formats::{ParseMode, rinex::nav::parse_rinex_nav_with_mode};
+///
+/// // A record with an invalid float field → strict fails, permissive skips.
+/// let bad = "\
+///      3.04           N: GNSS NAV DATA    M (Mixed)           RINEX VERSION / TYPE\n\
+///                                                             END OF HEADER\n\
+/// G01 2024 01 01 00 00 00 NOTAFLOAT 5.678E-12 0.000E+00\n\
+///      1.000000E+00 2.000000E+01 3.456E-09 1.234567E+00\n\
+///      5.000E-07 1.000E-03 9.000E-07 5.153651E+03\n\
+///      5.184000E+05 1.000E-08 1.000E+00 2.000E-08\n\
+///      9.760000E-01 2.500E+02 -1.500E+00 -8.000E-09\n\
+///      1.000E-10\n\
+///      0.000E+00 0.000E+00 0.000E+00 0.000E+00\n\
+///      0.000E+00 0.000E+00 0.000E+00 0.000E+00\n";
+/// assert!(parse_rinex_nav_with_mode(bad, ParseMode::Strict).is_err());
+/// let f = parse_rinex_nav_with_mode(bad, ParseMode::Permissive).unwrap();
+/// assert_eq!(f.gps.len(), 0);   // malformed record was skipped
+/// ```
+pub fn parse_rinex_nav_with_mode(
+    text: &str,
+    mode: ParseMode,
+) -> Result<RinexNavFile, FormatError> {
     let mut out = RinexNavFile::default();
 
-    let mut lines = text.lines();
+    let mut lines = text.lines().enumerate();
     // Skip header up to and including "END OF HEADER".
-    for l in lines.by_ref() {
+    let mut found_header = false;
+    for (_, l) in lines.by_ref() {
         if l.contains("END OF HEADER") {
+            found_header = true;
             break;
         }
     }
+    if !found_header && mode == ParseMode::Strict {
+        return Err(FormatError::Format(
+            "RINEX NAV: END OF HEADER marker not found".to_owned(),
+        ));
+    }
 
-    let collected: Vec<&str> = lines.collect();
+    let collected: Vec<(usize, &str)> = lines.collect();
     let mut i = 0;
-    while i + 7 < collected.len() {
-        let l0 = collected[i];
+    while i < collected.len() {
+        let (line_no, l0) = collected[i];
+        let line_no_1 = line_no + 1; // 1-based for diagnostics
+
+        // Only GPS (G prefix or bare digit) records are supported.
         if l0.len() < 4 || !(l0.starts_with('G') || l0.as_bytes()[0].is_ascii_digit()) {
             i += 1;
             continue;
         }
-        let prn = if l0.starts_with('G') {
-            l0[1..3].trim().parse::<u8>().unwrap_or(0)
-        } else {
-            l0[..3].trim().parse::<u8>().unwrap_or(0)
-        };
-        if prn == 0 {
-            i += 1;
-            continue;
+
+        // Need 7 continuation lines (indices i+1 … i+7).
+        if i + 7 >= collected.len() {
+            if mode == ParseMode::Strict {
+                return Err(FormatError::located(
+                    "RINEX 3.05 §6.5",
+                    FileLocation::at_line(line_no_1),
+                    "truncated GPS record: fewer than 8 lines",
+                ));
+            }
+            break;
         }
 
-        // TOC: positions 4..23 → "YYYY MM DD HH MM SS"
+        // ── PRN ────────────────────────────────────────────────────────────
+        let prn_result = if l0.starts_with('G') {
+            l0[1..3].trim().parse::<u8>()
+        } else {
+            l0[..3].trim().parse::<u8>()
+        };
+        let prn = match prn_result {
+            Ok(p) if p > 0 => p,
+            Ok(_) | Err(_) => {
+                if mode == ParseMode::Strict {
+                    return Err(FormatError::located(
+                        "RINEX 3.05 §6.3",
+                        FileLocation::at_line(line_no_1),
+                        format!("invalid GPS PRN: {:?}", &l0[..l0.len().min(3)]),
+                    ));
+                }
+                i += 8;
+                continue;
+            }
+        };
+
+        // ── TOC + clock terms ──────────────────────────────────────────────
         let rest = &l0[3..];
         let toc_tokens: Vec<&str> = rest.split_whitespace().collect();
-        if toc_tokens.len() < 9 {
-            i += 1;
-            continue;
-        }
-        let mut rec = GpsNavRecord {
-            prn,
-            toc: {
-                let y: i32 = toc_tokens[0].parse().unwrap_or(2000);
-                let mo: u32 = toc_tokens[1].parse().unwrap_or(1);
-                let d: u32 = toc_tokens[2].parse().unwrap_or(1);
-                let h: u32 = toc_tokens[3].parse().unwrap_or(0);
-                let mi: u32 = toc_tokens[4].parse().unwrap_or(0);
-                let sec_f: f64 = toc_tokens[5].parse().unwrap_or(0.0);
-                let sec_i = sec_f as u32;
-                let nanos = ((sec_f - sec_i as f64) * 1e9).round() as u32;
-                NaiveDate::from_ymd_opt(y, mo, d)
-                    .and_then(|d| d.and_hms_nano_opt(h, mi, sec_i, nanos))
-                    .and_then(|naive| {
-                        let dt = DateTime::from_naive_utc_and_offset(naive, ChronoUtc);
-                        Time::<UTC>::try_from_chrono(dt).ok()
-                    })
-                    .unwrap_or_else(|| {
-                        let naive = NaiveDate::from_ymd_opt(2000, 1, 1)
-                            .unwrap()
-                            .and_hms_opt(0, 0, 0)
-                            .unwrap();
-                        Time::<UTC>::try_from_chrono(DateTime::from_naive_utc_and_offset(
-                            naive, ChronoUtc,
-                        ))
-                        .unwrap()
-                    })
-            },
-            af0: Seconds::new(parse_d(toc_tokens[6])),
-            af1: parse_d(toc_tokens[7]),
-            af2: parse_d(toc_tokens[8]),
-            ..Default::default()
+        let header_result = (|| -> Result<(Time<UTC>, f64, f64, f64), FormatError> {
+            if toc_tokens.len() < 9 {
+                return Err(FormatError::located(
+                    "RINEX 3.05 §6.3",
+                    FileLocation::at_line(line_no_1),
+                    format!(
+                        "GPS record line 0 needs ≥9 whitespace tokens, got {}",
+                        toc_tokens.len()
+                    ),
+                ));
+            }
+            let parse_int = |s: &str, field: &str| -> Result<i64, FormatError> {
+                s.parse::<i64>().map_err(|_| {
+                    FormatError::located(
+                        "RINEX 3.05 §6.3",
+                        FileLocation::at_line(line_no_1),
+                        format!("invalid {field} in TOC: {s:?}"),
+                    )
+                })
+            };
+            let y = parse_int(toc_tokens[0], "year")?;
+            let mo = parse_int(toc_tokens[1], "month")?;
+            let d = parse_int(toc_tokens[2], "day")?;
+            let h = parse_int(toc_tokens[3], "hour")?;
+            let mi = parse_int(toc_tokens[4], "minute")?;
+            let sec_f = parse_d(toc_tokens[5], line_no_1, "second")?;
+            let sec_i = sec_f as u64;
+            let nanos = ((sec_f - sec_i as f64) * 1e9).round() as u32;
+            let toc = NaiveDate::from_ymd_opt(y as i32, mo as u32, d as u32)
+                .and_then(|nd| nd.and_hms_nano_opt(h as u32, mi as u32, sec_i as u32, nanos))
+                .and_then(|naive| {
+                    let dt = DateTime::from_naive_utc_and_offset(naive, ChronoUtc);
+                    Time::<UTC>::try_from_chrono(dt).ok()
+                })
+                .ok_or_else(|| {
+                    FormatError::located(
+                        "RINEX 3.05 §6.3",
+                        FileLocation::at_line(line_no_1),
+                        format!(
+                            "invalid TOC date/time: {}-{:02}-{:02} {:02}:{:02}:{:.3}",
+                            toc_tokens[0], mo, d, h, mi, sec_f
+                        ),
+                    )
+                })?;
+            let af0 = parse_d(toc_tokens[6], line_no_1, "af0")?;
+            let af1 = parse_d(toc_tokens[7], line_no_1, "af1")?;
+            let af2 = parse_d(toc_tokens[8], line_no_1, "af2")?;
+            Ok((toc, af0, af1, af2))
+        })();
+        let (toc, af0, af1, af2) = match header_result {
+            Ok(v) => v,
+            Err(e) => {
+                if mode == ParseMode::Strict {
+                    return Err(e);
+                }
+                i += 8;
+                continue;
+            }
         };
 
-        // Lines 1..7 each carry up to 4 floats in fixed 19-char fields,
-        // but split_whitespace works for our subset.
-        let v1: Vec<f64> = collect_floats(collected[i + 1]);
-        let v2: Vec<f64> = collect_floats(collected[i + 2]);
-        let v3: Vec<f64> = collect_floats(collected[i + 3]);
-        let v4: Vec<f64> = collect_floats(collected[i + 4]);
-        let v5: Vec<f64> = collect_floats(collected[i + 5]);
-        let v6: Vec<f64> = collect_floats(collected[i + 6]);
-        let v7: Vec<f64> = collect_floats(collected[i + 7]);
+        // ── Body lines ─────────────────────────────────────────────────────
+        let parse_body = |idx: usize, expected: usize| -> Result<Vec<f64>, FormatError> {
+            let (ln, text) = collected[i + idx];
+            let vals = collect_floats(text, ln + 1)?;
+            if vals.len() < expected && mode == ParseMode::Strict {
+                return Err(FormatError::located(
+                    "RINEX 3.05 §6.5",
+                    FileLocation::at_line(ln + 1),
+                    format!(
+                        "GPS broadcast body line {idx}: expected ≥{expected} fields, got {}",
+                        vals.len()
+                    ),
+                ));
+            }
+            Ok(vals)
+        };
 
-        if v1.len() >= 4 {
-            rec.iode = v1[0];
-            rec.crs = Meters::new(v1[1]);
-            rec.delta_n = AngularRate::new(v1[2]);
-            rec.m0 = Radians::new(v1[3]);
-        }
-        if v2.len() >= 4 {
-            rec.cuc = Radians::new(v2[0]);
-            rec.e = v2[1];
-            rec.cus = Radians::new(v2[2]);
-            rec.sqrt_a = v2[3];
-        }
-        if v3.len() >= 4 {
-            rec.toe = Seconds::new(v3[0]);
-            rec.cic = Radians::new(v3[1]);
-            rec.omega0 = Radians::new(v3[2]);
-            rec.cis = Radians::new(v3[3]);
-        }
-        if v4.len() >= 4 {
-            rec.i0 = Radians::new(v4[0]);
-            rec.crc = Meters::new(v4[1]);
-            rec.omega = Radians::new(v4[2]);
-            rec.omega_dot = AngularRate::new(v4[3]);
-        }
-        if !v5.is_empty() {
-            rec.idot = AngularRate::new(v5[0]);
-        }
-        let _ = v6;
-        let _ = v7;
+        let v1 = match parse_body(1, 4) {
+            Ok(v) => v,
+            Err(e) => {
+                if mode == ParseMode::Strict {
+                    return Err(e);
+                }
+                i += 8;
+                continue;
+            }
+        };
+        let v2 = match parse_body(2, 4) {
+            Ok(v) => v,
+            Err(e) => {
+                if mode == ParseMode::Strict {
+                    return Err(e);
+                }
+                i += 8;
+                continue;
+            }
+        };
+        let v3 = match parse_body(3, 4) {
+            Ok(v) => v,
+            Err(e) => {
+                if mode == ParseMode::Strict {
+                    return Err(e);
+                }
+                i += 8;
+                continue;
+            }
+        };
+        let v4 = match parse_body(4, 4) {
+            Ok(v) => v,
+            Err(e) => {
+                if mode == ParseMode::Strict {
+                    return Err(e);
+                }
+                i += 8;
+                continue;
+            }
+        };
+        let v5 = match parse_body(5, 1) {
+            Ok(v) => v,
+            Err(e) => {
+                if mode == ParseMode::Strict {
+                    return Err(e);
+                }
+                i += 8;
+                continue;
+            }
+        };
+        // Lines 6–7 are reserved / broadcast health — skipped but must parse.
+
+        let rec = GpsNavRecord {
+            prn,
+            toc,
+            af0: Seconds::new(af0),
+            af1,
+            af2,
+            iode: v1[0],
+            crs: Meters::new(v1[1]),
+            delta_n: AngularRate::new(v1[2]),
+            m0: Radians::new(v1[3]),
+            cuc: Radians::new(v2[0]),
+            e: v2[1],
+            cus: Radians::new(v2[2]),
+            sqrt_a: v2[3],
+            toe: Seconds::new(v3[0]),
+            cic: Radians::new(v3[1]),
+            omega0: Radians::new(v3[2]),
+            cis: Radians::new(v3[3]),
+            i0: Radians::new(v4[0]),
+            crc: Meters::new(v4[1]),
+            omega: Radians::new(v4[2]),
+            omega_dot: AngularRate::new(v4[3]),
+            idot: AngularRate::new(v5[0]),
+        };
 
         out.gps.push(rec);
         i += 8;
@@ -253,12 +433,24 @@ pub fn parse_rinex_nav(text: &str) -> Result<RinexNavFile, FormatError> {
     Ok(out)
 }
 
-fn parse_d(s: &str) -> f64 {
-    s.replace('D', "E").replace('d', "e").parse().unwrap_or(0.0)
+/// Parse a Fortran D-notation float field.
+fn parse_d(s: &str, line: usize, field: &str) -> Result<f64, FormatError> {
+    s.replace('D', "E")
+        .replace('d', "e")
+        .parse::<f64>()
+        .map_err(|_| {
+            FormatError::located(
+                "RINEX 3.05 §6.5",
+                FileLocation::at_line(line),
+                format!("invalid float for field {field}: {s:?}"),
+            )
+        })
 }
 
-fn collect_floats(line: &str) -> Vec<f64> {
-    line.split_whitespace().map(parse_d).collect()
+fn collect_floats(line: &str, line_no: usize) -> Result<Vec<f64>, FormatError> {
+    line.split_whitespace()
+        .map(|s| parse_d(s, line_no, "body"))
+        .collect()
 }
 
 /// Format an `f64` in Fortran D-notation (e.g. `1.234567890123456E+02` →
@@ -446,5 +638,56 @@ G01 2024 01 01 00 00 00 1.234567E-04 5.678E-12 0.000E+00\n\
         assert!((r.e - r2.e).abs() < 1e-15);
         assert!((r.toe.value() - r2.toe.value()).abs() < 1e-9);
         assert!((r.m0.value() - r2.m0.value()).abs() < 1e-12);
+    }
+
+    const VALID_RECORD: &str = "\
+     3.04           N: GNSS NAV DATA    M (Mixed)           RINEX VERSION / TYPE\n\
+                                                            END OF HEADER\n\
+G01 2024 01 01 00 00 00 1.234567E-04 5.678E-12 0.000E+00\n\
+     1.000000E+00 2.000000E+01 3.456E-09 1.234567E+00\n\
+     5.000E-07 1.000E-03 9.000E-07 5.153651E+03\n\
+     5.184000E+05 1.000E-08 1.000E+00 2.000E-08\n\
+     9.760000E-01 2.500E+02 -1.500E+00 -8.000E-09\n\
+     1.000E-10\n\
+     0.000E+00 0.000E+00 0.000E+00 0.000E+00\n\
+     0.000E+00 0.000E+00 0.000E+00 0.000E+00\n";
+
+    #[test]
+    fn strict_rejects_bad_float_field() {
+        use crate::formats::ParseMode;
+        let bad = VALID_RECORD.replace("1.234567E-04", "NOTAFLOAT");
+        assert!(
+            parse_rinex_nav(&bad).is_err(),
+            "strict mode must reject malformed float"
+        );
+        let f = parse_rinex_nav_with_mode(&bad, ParseMode::Permissive).unwrap();
+        assert_eq!(f.gps.len(), 0, "permissive mode must skip the malformed record");
+    }
+
+    #[test]
+    fn strict_rejects_invalid_date() {
+        use crate::formats::ParseMode;
+        // Month 99 is invalid.
+        let bad = VALID_RECORD.replace("2024 01 01", "2024 99 01");
+        assert!(
+            parse_rinex_nav(&bad).is_err(),
+            "strict mode must reject out-of-range month"
+        );
+        let f = parse_rinex_nav_with_mode(&bad, ParseMode::Permissive).unwrap();
+        assert_eq!(f.gps.len(), 0, "permissive mode must skip the record with invalid date");
+    }
+
+    #[test]
+    fn strict_rejects_truncated_record() {
+        use crate::formats::ParseMode;
+        // Drop the last two body lines so the record is incomplete.
+        let lines: Vec<&str> = VALID_RECORD.lines().collect();
+        let truncated = lines[..lines.len() - 2].join("\n") + "\n";
+        assert!(
+            parse_rinex_nav(&truncated).is_err(),
+            "strict mode must reject a truncated record"
+        );
+        // Permissive hits EOF gracefully (truncated record at end is a break, not skip).
+        assert!(parse_rinex_nav_with_mode(&truncated, ParseMode::Permissive).is_ok());
     }
 }

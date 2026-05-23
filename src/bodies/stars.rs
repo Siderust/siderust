@@ -58,11 +58,17 @@ use std::borrow::Cow;
 /// Represents a **Star** characterized by its distance, mass, radius, luminosity and position in the sky.
 #[derive(Clone, Debug)]
 pub struct Star<'a> {
+    /// Human-readable name or designation (e.g. `"Alpha Centauri A"`).
     pub name: Cow<'a, str>,
+    /// Distance from Earth.
     pub distance: LightYears,
+    /// Total mass.
     pub mass: SolarMasses,
+    /// Mean photospheric radius.
     pub radius: SolarRadiuses,
+    /// Total bolometric luminosity.
     pub luminosity: SolarLuminosities,
+    /// J2000 ICRS coordinate, with optional proper motion.
     pub coordinate: CoordinateWithPM<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
     /// Annual trigonometric parallax.
     ///

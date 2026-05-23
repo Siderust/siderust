@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+#![allow(missing_docs)]
+
 use siderust::bodies::Star;
 use siderust::coordinates::spherical::position::EquatorialMeanJ2000;
 use siderust::qtty::length::nominal::SolarRadiuses;

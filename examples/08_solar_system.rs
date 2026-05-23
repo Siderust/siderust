@@ -4,6 +4,7 @@
 //! Solar System + Planets Module Tour
 //!
 //! Run with: `cargo run --example 12_solar_system_example`
+#![allow(clippy::print_stdout)]
 
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::planets::{OrbitExt, Planet};

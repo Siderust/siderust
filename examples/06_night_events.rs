@@ -8,6 +8,7 @@
 //!
 //! Run with:
 //! `cargo run --example 06_night_events -- [YYYY-MM-DD] [lat_deg] [lon_deg] [height_m]`
+#![allow(clippy::print_stdout)]
 
 use chrono::{NaiveDate, NaiveDateTime, TimeZone, Utc};
 use siderust::bodies::Sun;

@@ -4,6 +4,7 @@
 //! Serde serialization examples.
 //!
 //! Run with: `cargo run --example 11_serde_serialization --features serde`
+#![allow(clippy::print_stdout, missing_docs, unreachable_pub)]
 
 #![cfg_attr(not(feature = "serde"), allow(dead_code, unused_imports))]
 

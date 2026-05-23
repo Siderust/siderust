@@ -55,36 +55,47 @@ use crate::time::JulianDate;
 #[cfg(feature = "serde")]
 use serde::{Deserialize, Serialize};
 
+/// The Sun — central star of the Solar System.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Sun;
+/// Mercury — first planet from the Sun.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Mercury;
+/// Venus — second planet from the Sun.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Venus;
+/// Earth — third planet from the Sun; our home world.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Earth;
+/// The Moon — natural satellite of Earth.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Moon;
+/// Mars — fourth planet from the Sun.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Mars;
+/// Jupiter — fifth planet; largest in the Solar System.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Jupiter;
+/// Saturn — sixth planet; known for its prominent ring system.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Saturn;
+/// Uranus — seventh planet; an ice giant.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Uranus;
+/// Neptune — eighth planet; an ice giant and the outermost major planet.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Neptune;
+/// Pluto — dwarf planet in the Kuiper Belt.
 #[derive(Debug, Copy, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Pluto;
@@ -107,6 +118,7 @@ macro_rules! define_body_rotations {
         ),+ $(,)?
     ) => {
         $(
+            /// IAU rotation parameters for this body (pole direction α₀, δ₀ and prime-meridian rate W).
             pub const $rotation_const: IauRotationParams = IauRotationParams {
                 alpha0_deg: $alpha0_deg,
                 alpha0_rate: $alpha0_rate,
@@ -117,10 +129,12 @@ macro_rules! define_body_rotations {
             };
 
             impl HasIauRotation for $body {
+                /// IAU rotation parameters (pole direction and prime-meridian rate) for this body.
                 const ROTATION: IauRotationParams = $rotation_const;
             }
 
             impl $body {
+                /// IAU rotation parameters (pole direction and prime-meridian rate) for this body.
                 pub const ROTATION: IauRotationParams = $rotation_const;
             }
         )+
@@ -503,6 +517,7 @@ pub const PLUTO: super::Planet = super::Planet {
 //  Dwarf planets
 // -------------------------------------------------------------------------------------------------
 
+/// Ceres — the largest object in the asteroid belt; classified as a dwarf planet.
 pub const CERES: Planet = Planet {
     mass: Kilograms::new(9.393e20),
     radius: Kilometers::new(473.0),
@@ -518,6 +533,7 @@ pub const CERES: Planet = Planet {
     albedo: Some(Albedos::new(0.09)),
 };
 
+/// Haumea — a trans-Neptunian dwarf planet in the Kuiper Belt with a rapid rotation.
 pub const HAUMEA: Planet = Planet {
     mass: Kilograms::new(4.006e21),
     radius: Kilometers::new(620.0),
@@ -533,6 +549,7 @@ pub const HAUMEA: Planet = Planet {
     albedo: Some(Albedos::new(0.8)),
 };
 
+/// Makemake — a trans-Neptunian dwarf planet in the Kuiper Belt.
 pub const MAKEMAKE: Planet = Planet {
     mass: Kilograms::new(3.1e21),
     radius: Kilometers::new(715.0),
@@ -548,6 +565,7 @@ pub const MAKEMAKE: Planet = Planet {
     albedo: Some(Albedos::new(0.81)),
 };
 
+/// Eris — a trans-Neptunian dwarf planet more massive than Pluto.
 pub const ERIS: Planet = Planet {
     mass: Kilograms::new(1.66e22),
     radius: Kilometers::new(1163.0),
@@ -563,12 +581,14 @@ pub const ERIS: Planet = Planet {
     albedo: Some(Albedos::new(0.96)),
 };
 
+/// The five recognised IAU dwarf planets: Pluto, Ceres, Haumea, Makemake, and Eris.
 pub const DWARF_PLANETS: &[&Planet] = &[&super::PLUTO, &CERES, &HAUMEA, &MAKEMAKE, &ERIS];
 
 // -------------------------------------------------------------------------------------------------
 //  Major moons (planet‑centric orbital elements approximated; not heliocentric)
 // -------------------------------------------------------------------------------------------------
 
+/// Io — innermost Galilean moon of Jupiter; most volcanically active body in the Solar System.
 pub const IO: Satellite = Satellite::new_const(
     "Io",
     Kilograms::new(8.9319e22),
@@ -586,6 +606,7 @@ pub const IO: Satellite = Satellite::new_const(
 )
 .with_albedo(Albedos::new(0.62));
 
+/// Europa — second Galilean moon of Jupiter.
 pub const EUROPA: Satellite = Satellite::new_const(
     "Europa",
     Kilograms::new(4.7998e22),
@@ -602,6 +623,7 @@ pub const EUROPA: Satellite = Satellite::new_const(
 )
 .with_albedo(Albedos::new(0.67));
 
+/// Ganymede — third Galilean moon of Jupiter; largest moon in the Solar System.
 pub const GANYMEDE: Satellite = Satellite::new_const(
     "Ganymede",
     Kilograms::new(1.4819e23),
@@ -618,6 +640,7 @@ pub const GANYMEDE: Satellite = Satellite::new_const(
 )
 .with_albedo(Albedos::new(0.43));
 
+/// Callisto — fourth Galilean moon of Jupiter.
 pub const CALLISTO: Satellite = Satellite::new_const(
     "Callisto",
     Kilograms::new(1.0759e23),
@@ -634,6 +657,7 @@ pub const CALLISTO: Satellite = Satellite::new_const(
 )
 .with_albedo(Albedos::new(0.17));
 
+/// Titan — largest moon of Saturn; has a dense nitrogen atmosphere.
 pub const TITAN: Satellite = Satellite::new_const(
     "Titan",
     Kilograms::new(1.3452e23),
@@ -650,6 +674,7 @@ pub const TITAN: Satellite = Satellite::new_const(
 )
 .with_albedo(Albedos::new(0.22));
 
+/// Triton — largest moon of Neptune; retrograde orbit suggests captured origin.
 pub const TRITON: Satellite = Satellite::new_const(
     "Triton",
     Kilograms::new(2.14e22),
@@ -666,6 +691,7 @@ pub const TRITON: Satellite = Satellite::new_const(
 )
 .with_albedo(Albedos::new(0.76));
 
+/// Canonical set of major moons used in multi-body computations.
 pub const MAJOR_MOONS: &[&Satellite] = &[
     &super::MOON,
     &IO,
@@ -711,6 +737,7 @@ const SUN_EARTH_L2: LagrangePoint = LagrangePoint {
     ),
 };
 
+/// Sun–Earth L1 and L2 restricted-three-body Lagrange points.
 pub const LAGRANGE_POINTS: &[&LagrangePoint] = &[&SUN_EARTH_L1, &SUN_EARTH_L2];
 
 // -------------------------------------------------------------------------------------------------
@@ -721,13 +748,19 @@ pub const LAGRANGE_POINTS: &[&LagrangePoint] = &[&SUN_EARTH_L1, &SUN_EARTH_L2];
 /// ergonomic iteration.
 #[derive(Debug)]
 pub struct SolarSystem<'a> {
+    /// The Sun.
     pub sun: &'a Star<'a>,
+    /// The eight classical planets (Mercury … Neptune).
     pub planets: &'a [&'a Planet],
+    /// IAU-recognised dwarf planets (Ceres, Pluto, Haumea, Makemake, Eris).
     pub dwarf_planets: &'a [&'a Planet],
+    /// Major moons: Moon, Io, Europa, Ganymede, Callisto, Titan, Triton.
     pub moons: &'a [&'a Satellite<'a>],
+    /// Sun–Earth Lagrange points L1 and L2.
     pub lagrange_points: &'a [&'a LagrangePoint],
 }
 
+/// The eight classical planets in heliocentric distance order.
 pub const PLANETS: &[&Planet] = &[
     &super::MERCURY,
     &super::VENUS,
@@ -739,6 +772,8 @@ pub const PLANETS: &[&Planet] = &[
     &super::NEPTUNE,
 ];
 
+/// The complete canonical Solar System: Sun, all eight planets, five dwarf
+/// planets, major moons, and the Sun–Earth Lagrange points.
 pub const SOLAR_SYSTEM: SolarSystem<'static> = SolarSystem {
     sun: &super::SUN,
     planets: PLANETS,

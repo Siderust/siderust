@@ -55,7 +55,9 @@ const DEDUPE_EPS: Days = Days::new(1e-8);
 ///  +1 = entering the region,  −1 = exiting the region.
 #[derive(Debug, Clone, Copy)]
 pub struct LabeledCrossing {
+    /// Modified Julian Date at which the crossing occurs.
     pub t: ModifiedJulianDate,
+    /// +1 when entering the target region (rising), −1 when leaving (falling).
     pub direction: i32,
 }
 

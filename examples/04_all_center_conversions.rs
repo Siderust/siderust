@@ -14,6 +14,7 @@
 //!   body-centric frame (Mars-centric and ISS-centric) with round-trip verification.
 //! - **Topocentric** conversions: observer-on-Earth parallax correction applied to
 //!   positions originally expressed in each of the three standard centers.
+#![allow(clippy::print_stdout)]
 
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::coordinates::cartesian::Position;

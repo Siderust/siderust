@@ -12,14 +12,19 @@ use crate::coordinates::frames::GCRS;
 use crate::qtty::KmPerSecondsSquared;
 use crate::time::TT;
 
+/// Constant empirical acceleration in the Radial-Transverse-Normal (RTN) frame.
 #[derive(Debug, Clone, Copy)]
 pub struct EmpiricalAcceleration {
+    /// Radial (along-position-vector) component of the empirical acceleration (km s⁻²).
     pub radial: KmPerSecondsSquared,
+    /// Transverse (along-velocity-vector projected) component (km s⁻²).
     pub transverse: KmPerSecondsSquared,
+    /// Normal (orbit-plane perpendicular) component (km s⁻²).
     pub normal: KmPerSecondsSquared,
 }
 
 impl EmpiricalAcceleration {
+    /// Construct an empirical acceleration from its Radial, Transverse, Normal components.
     pub fn rtn(
         radial: KmPerSecondsSquared,
         transverse: KmPerSecondsSquared,

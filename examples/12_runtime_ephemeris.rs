@@ -22,6 +22,7 @@
 //! # With `runtime-data` and no path: shows how to download DE440 on first run
 //! cargo run --features runtime-data --example 12_runtime_ephemeris
 //! ```
+#![allow(clippy::print_stdout)]
 
 use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
 

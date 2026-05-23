@@ -35,6 +35,9 @@ pub use crate::ext_qtty::{
 
 pub use crate::ext_qtty::solid_angle::*;
 
+pub use crate::ext_qtty::frequency;
+pub use crate::ext_qtty::frequency::*;
+
 pub use crate::ext_qtty::acceleration::*;
 pub use crate::ext_qtty::angular::*;
 pub use crate::ext_qtty::area::*;

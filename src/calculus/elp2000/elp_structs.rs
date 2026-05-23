@@ -39,6 +39,8 @@
 //!   lunar ephemeris adequate for historical times".
 //!   *Astronomy and Astrophysics* 190, 342–352.
 
+#![allow(unreachable_pub)]
+
 // ────────────────────────────────────────────────────────────────────────────
 // Main term of the lunar theory (ELP “Main Problem” series).
 // Each record governs one sine term of the form:

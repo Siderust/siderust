@@ -22,18 +22,24 @@ use super::OMEGA_EARTH_RAD_S;
 const WGS84_A_KM: f64 = 6_378.137;
 const WGS84_F: f64 = 1.0 / 298.257_223_563;
 
+/// Cannonball atmospheric drag force model.
 #[derive(Debug, Clone)]
 pub struct DragForce {
+    /// Drag coefficient Cd (dimensionless, typically 2.0–2.4 for LEO spacecraft).
     pub cd: DragCoefficient,
+    /// Effective area-to-mass ratio (m² kg⁻¹).
     pub area_to_mass: AreaToMass,
+    /// Angular velocity vector of Earth's rotation in GCRS (rad s⁻¹, default ≈ 7.292 × 10⁻⁵ k̂).
     pub omega_earth: Vector<GCRS, InverseSecond>,
 }
 
 impl DragForce {
+    /// Construct a drag model with the standard WGS-84 Earth rotation rate.
     pub fn new(cd: DragCoefficient, area_to_mass: AreaToMass) -> Self {
         Self::with_omega(cd, area_to_mass, OMEGA_EARTH_RAD_S)
     }
 
+    /// Construct a drag model with a custom Earth rotation rate (useful for tests).
     pub fn with_omega(
         cd: DragCoefficient,
         area_to_mass: AreaToMass,
@@ -90,6 +96,9 @@ impl AccelerationModel<DynamicsContext, TT, Geocentric, GCRS> for DragForce {
     }
 }
 
+/// Type alias: [`DragForce`] with the default exponential atmosphere model.
+///
+/// Kept for API compatibility; prefer [`DragForce`] directly.
 pub type ExponentialDrag = DragForce;
 
 #[cfg(test)]

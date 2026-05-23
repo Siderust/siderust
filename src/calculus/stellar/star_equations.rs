@@ -29,6 +29,8 @@
 //! yielding O(1) bracket discovery per sidereal cycle, much faster than the
 //! uniform scan used for bodies with non‑trivial orbital motion (Sun, Moon).
 
+#![allow(unreachable_pub)]
+
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::nutation::nutation_iau2000b;
 use crate::astro::precession;

@@ -80,8 +80,13 @@ impl std::fmt::Display for RaProperMotionConvention {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProperMotion {
+    /// Right-ascension proper motion in degrees per Julian year.
+    /// Interpretation (µα or µα⋆) is given by `ra_convention`.
     pub pm_ra: DegreesPerYear,
+    /// Declination proper motion in degrees per Julian year.
     pub pm_dec: DegreesPerYear,
+    /// States whether `pm_ra` is the true RA rate µα or the catalogue
+    /// rate µα⋆ = µα cos(δ).
     pub ra_convention: RaProperMotionConvention,
 }
 
@@ -95,10 +100,14 @@ impl fmt::Display for ProperMotion {
     }
 }
 
+/// Error type for proper-motion propagation failures.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProperMotionError {
     /// Conversion from `µα⋆` to `µα` is unstable near the poles (`cos(dec)≈0`).
-    RightAscensionUndefinedAtPole { dec: Degrees },
+    RightAscensionUndefinedAtPole {
+        /// Declination at which the instability occurred.
+        dec: Degrees,
+    },
 }
 
 impl fmt::Display for ProperMotionError {

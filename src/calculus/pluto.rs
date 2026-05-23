@@ -40,9 +40,12 @@ use crate::embedded_data::pluto_tables::{
 use crate::qtty::{AstronomicalUnit, Degrees, Radian, AU};
 use crate::time::JulianDate;
 
+/// Marker struct for Pluto ephemeris computations via the Meeus/Williams series.
 pub struct Pluto;
 
 impl Pluto {
+    /// Compute Pluto's heliocentric ecliptic rectangular position for the
+    /// given Julian Day (TT time scale).
     pub fn get_heliocentric(
         jd: JulianDate,
     ) -> cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {

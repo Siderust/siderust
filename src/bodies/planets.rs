@@ -75,8 +75,11 @@ use crate::qtty::*;
 /// and Keplerian heliocentric orbit.
 #[derive(Clone, Debug)]
 pub struct Planet {
+    /// Total mass of the planet.
     pub mass: Kilograms,
+    /// Mean equatorial radius.
     pub radius: Kilometers,
+    /// Heliocentric Keplerian orbital elements.
     pub orbit: KeplerianOrbit,
     /// Bond albedo (dimensionless, ∈ [0, 1]).  `None` when not catalogued.
     pub albedo: Option<Albedos>,
@@ -118,8 +121,11 @@ impl Planet {
 /// Error returned when mandatory fields are missing in [`PlanetBuilder`].
 #[derive(Debug, Clone)]
 pub enum PlanetBuilderError {
+    /// Required mass was not supplied.
     MissingMass,
+    /// Required radius was not supplied.
     MissingRadius,
+    /// Required orbital elements were not supplied.
     MissingOrbit,
 }
 

@@ -4,6 +4,20 @@ members = [
     "siderust-ffi",
 ]
 
+[workspace.lints.rust]
+unsafe_code     = "forbid"
+missing_docs    = "deny"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+all           = { level = "deny", priority = -1 }
+todo          = "deny"
+unimplemented = "deny"
+dbg_macro     = "deny"
+print_stdout  = "warn"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
 
 [package]
 name = "siderust"
@@ -21,8 +35,33 @@ categories = ["science", "aerospace", "simulation"]
 [lib]
 name = "siderust"
 
+[[example]]
+name = "16_lambert_earth_to_mars"
+path = "examples/16_lambert_earth_to_mars.rs"
+required-features = ["pod"]
+
+[[example]]
+name = "17_sgp4_from_tle"
+path = "examples/17_sgp4_from_tle.rs"
+required-features = ["pod"]
+
+[[example]]
+name = "18_lisa_pod"
+path = "examples/18_lisa_pod.rs"
+required-features = ["pod"]
+
+[[test]]
+name = "pod_smoke"
+path = "tests/pod_smoke.rs"
+required-features = ["pod"]
+
+[[test]]
+name = "tle_sgp4_pipeline"
+path = "tests/tle_sgp4_pipeline.rs"
+required-features = ["pod"]
+
 [features]
-default = []
+default = ["pod", "serde"]
 de440 = []
 de441 = []
 regen-data = ["dep:reqwest"]
@@ -32,13 +71,19 @@ spectra = []
 tables = []
 atmosphere = []
 doris = []
+## Precise Orbit Determination (POD) toolkit. Folded from the former `siderust-pod` crate.
+pod = ["serde", "dep:faer", "dep:hex", "dep:sha2"]
+## Parquet residuals writer in the `pod::product` module.
+pod-parquet = ["pod", "dep:parquet"]
+## DORIS RINEX observation parser inside `pod::io`.
+pod-doris = ["pod", "doris"]
 
 [dependencies]
 affn = { version = "0.7", features = ["astro"] }
 cheby = "0.3"
 keplerian = "0.1"
 principia = { version = "0.1", features = ["alloc"] }
-qtty = { version = "0.8", features = ["astro", "density", "radiometry", "satellite"] }
+qtty = { version = "0.8", features = ["astro", "density", "frequency", "radiometry", "satellite"] }
 tempoch = "0.6"
 thiserror = "2"
 approx = "0.5"
@@ -51,6 +96,11 @@ serde_json = { version = "1.0", optional = true }
 sha2 = { version = "0.11", optional = true }
 ureq = { version = "3.3", optional = true, default-features = false }
 wide = "1.4"
+
+# POD toolkit dependencies (gated on the `pod` feature family)
+faer = { version = "0.22", default-features = false, features = ["std", "linalg"], optional = true }
+hex = { version = "0.4", optional = true }
+parquet = { version = "52", default-features = false, optional = true }
 
 [dev-dependencies]
 rstest = "0.26"
@@ -97,3 +147,25 @@ harness = false
 [[bench]]
 name = "altitude_comparison"
 harness = false
+
+# ── Redirect transitive crates.io pulls to the local path checkouts ───────────
+# Keeps the local workspace coherent with the rest of the siderust ecosystem
+# (qtty / tempoch / affn / cheby / keplerian / principia are co-developed and
+# track ahead of their last published crates.io release).
+[patch.crates-io]
+qtty-core         = { path = "../qtty/qtty-core" }
+qtty-derive       = { path = "../qtty/qtty-derive" }
+qtty              = { path = "../qtty/qtty" }
+tempoch-core      = { path = "../tempoch/tempoch-core" }
+tempoch-time-data = { path = "../tempoch/tempoch-time-data" }
+tempoch           = { path = "../tempoch/tempoch" }
+affn              = { path = "../affn" }
+cheby             = { path = "../cheby" }
+keplerian         = { path = "../keplerian" }
+principia         = { path = "../principia" }
+
+[patch."https://github.com/Siderust/affn.git"]
+affn = { path = "../affn" }
+
+[lints]
+workspace = true

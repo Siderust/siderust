@@ -548,6 +548,7 @@ pub(crate) mod iau1980 {
 
     #[cfg(test)]
     #[derive(Debug)]
+    #[allow(unreachable_pub)]
     pub struct Nutation {
         pub longitude: Degrees,
         pub obliquity: Degrees,

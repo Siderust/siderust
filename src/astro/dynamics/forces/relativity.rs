@@ -14,13 +14,20 @@ use crate::time::TT;
 
 use super::{GravitationalParameter, DEGENERATE_RADIUS_KM, GM_EARTH};
 
+/// First-order post-Newtonian (Schwarzschild) relativistic correction for a central body.
+///
+/// Models the GR perihelion/perigee precession term. The acceleration is:
+/// `a = (GM / c²r³) · [(4GM/r − v²) r + 4(r·v) v]`
 #[derive(Debug, Clone, Copy)]
 pub struct CentralBodyRelativity1Pn {
+    /// Standard gravitational parameter µ = GM (km³ s⁻²).
     pub gm: GravitationalParameter,
+    /// Speed of light (km s⁻¹).
     pub c: KmPerSeconds,
 }
 
 impl CentralBodyRelativity1Pn {
+    /// Pre-configured for the Earth–satellite system (GM_EARTH, c = 299792.458 km/s).
     pub fn earth() -> Self {
         Self {
             gm: GM_EARTH,

@@ -8,11 +8,46 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* **`siderust::aircraft` module**: identity and state types for atmospheric
+  vehicles — `Aircraft` (ICAO 24-bit address, callsign, wake category),
+  `AircraftState` (geodetic position, ground speed, track angle), and
+  `aircraft::isa` (ICAO International Standard Atmosphere: pressure, temperature,
+  density, and geopotential-to-pressure-altitude conversion for all ISA layers).
+  All public APIs use typed `qtty` quantities; no bare `f64` on the boundary.
+* **`siderust::formats::adsb` module**: strict ADS-B / Mode-S frame parser —
+  CRC-24 verification, identification (callsign), airborne position with full
+  CPR global and local decoding (`nl()` per DO-260B eq. 2-15), airborne velocity
+  (ground speed, heading, vertical rate), and Gillham/Q-bit altitude decoding.
+  Malformed frames are rejected with `FormatError`; no silent repair.
+* **`pod` feature** (default-on): the former `siderust-pod` crate has been
+  folded into `siderust` as the new `siderust::pod` module. POD-only
+  dependencies (`faer`, `hex`, optional `parquet`) live behind the `pod`
+  feature family (`pod`, `pod-parquet`, `pod-doris`). Build without POD via
+  `cargo build --no-default-features`.
+* Examples `16_lambert_earth_to_mars`, `17_sgp4_from_tle`, and
+  `18_lisa_pod` (all gated on `pod`), plus integration tests `pod_smoke`
+  and `tle_sgp4_pipeline`.
+* `constops::report::html` — HTML QC report renderer moved from the library
+  to `constops`, where service-shaped output belongs.
+
+### Changed
+
+* **`siderust-pod` crate removed.** All public items now live under
+  `siderust::pod::{problem, run, providers, observation, estimation, qc,
+  product, dynamics, io, spice}`. Migration: replace
+  `use siderust_pod::X::*` with `use siderust::pod::X::*`. TLE parsing
+  helpers that previously sat behind `siderust_pod::tle` are the same
+  re-exports of `siderust::formats::tle` — import directly from there.
+  Likewise the former `siderust_pod::sgp4` shim has been removed;
+  import `siderust::astro::sgp4` directly.
+* **`pod-lisa` feature removed.** The LISA inter-satellite range model and
+  orbit reader are mission-specific code; they now live in
+  `examples/18_lisa_pod.rs` rather than the library source.
+* **`siderust::pod::qc::render_html` removed.** The HTML QC report renderer
+  is a service concern; it is now `constops::report::html::render_html`.
 * Publish workflow for `keplerian` and `principia`: both crates now ship
   `.github/workflows/publish.yml` that triggers on `v*.*.*` tags and verifies
   the crate version matches the tag before uploading to crates.io.
-
-### Changed
 
 * **`astro::dynamics` module simplification**: removed the thin
   `integrators/mod.rs` and `variational/mod.rs` wrapper files that were
@@ -23,6 +58,49 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `coverage` (llvm-cov ≥ 90 % line rate), and `miri` jobs.
 
 ### Fixed
+
+* **`pod::dynamics` parallel `ForceModel` layer removed**: the POD-specific
+  `ForceModel` trait, its wrapper implementations (`TwoBodyForce`,
+  `J2PerturbationForce`, `DragForce`, `SolarRadiationPressureForce`), the
+  evaluating `pod::dynamics::forces::ForceModelRegistry`, and the
+  `Acceleration3`/`AccelPartials` types have been deleted. These were unused
+  wrappers that silenced physics errors (returning zero acceleration on
+  failures). All POD propagation uses the canonical fallible
+  `AccelerationModel` trait via `SiderustCompositeModel` and the
+  `registry::ForceModelRegistry` factory. Migration: remove any direct
+  imports of these types; use the canonical `TwoBody`, `J2`, `DragForce`,
+  and `CannonballSrp` from `siderust::astro::dynamics::forces` instead.
+  `CartesianState` and `Epoch` are now re-exported directly from
+  `siderust::pod::dynamics`.
+
+* **Typed POD provider and observation APIs** (Finding #3): all raw `f64`
+  fields in the public POD surface have been replaced with typed quantities.
+  - `ProviderBundle`: `epoch_jd: f64` → `JulianDate`; satellite state returns
+    now use `Position<GCRS>` and `Velocity<GCRS>`; clock bias returns
+    `qtty::Meter`.
+  - `GnssPseudorangeObs`, `GnssCarrierPhaseObs`: `measured_m`, `sigma` →
+    `qtty::Meter`; `sat_pos_gcrs_km` → `Position<GCRS>`;
+    `sat_vel_gcrs_km_s` → `Velocity<GCRS>`; `frequency_hz` → `qtty::Hertz`.
+  - `SlrNormalPointObs`: `measured_m`, `sigma` → `qtty::Meter`;
+    `station_gcrs_km`, `sat_pos_gcrs_km` → `Position<GCRS>`;
+    `sat_vel_gcrs_km_s` → `Velocity<GCRS>`.
+  - `Observation::sigma()` trait method return type changed from `f64` to
+    `qtty::Meter`.
+  - `InterSatRangeObs` in `examples/18_lisa_pod.rs`: `sigma: f64` →
+    `qtty::Meter`.
+  - `siderust::qtty` facade: added re-exports of `qtty::frequency` and
+    `qtty::frequency::*` (makes `siderust::qtty::Hertzs` available without
+    a direct `qtty` dependency).
+
+* **`bodies::satelite` → `bodies::satellite`**: the misspelled module path and
+  source file have been corrected. The `Satellite` type is unchanged; only the
+  internal module name and the integration test file changed. The test file
+  `tests/test_satelite.rs` is now `tests/test_satellite.rs`.
+* **`formats::rinex::nav` strict parsing**: `parse_rinex_nav` and the new
+  `parse_rinex_nav_with_mode` now return `FormatError::Located` on malformed
+  PRN, epoch, or body fields instead of silently falling back to `0`. The old
+  behaviour (skip/zero-fill malformed records) is still available via
+  `parse_rinex_nav_with_mode(text, ParseMode::Permissive)`.
 
 * `astro::conic`: removed unreachable `conic_rejects_non_finite_epoch` and
   `mean_motion_rejects_non_finite_epoch` tests — `JulianDate::new` now panics

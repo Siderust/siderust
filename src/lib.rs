@@ -113,10 +113,13 @@ pub mod calculus;
 pub mod coordinates;
 pub mod datasets;
 pub mod formats;
+pub mod aircraft;
 #[cfg(any(feature = "spectra", feature = "tables", feature = "atmosphere"))]
 pub(crate) mod interp;
 pub mod observatories;
 pub mod provenance;
+#[cfg(feature = "pod")]
+pub mod pod;
 pub mod qtty;
 #[cfg(feature = "spectra")]
 pub mod spectra;

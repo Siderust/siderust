@@ -13,17 +13,22 @@ use crate::coordinates::centers::Geocentric;
 use crate::coordinates::frames::GCRS;
 use crate::time::{JD, TT};
 
+/// Spherical-harmonic geopotential force model (degree/order configurable).
 #[derive(Debug, Clone, Copy)]
 pub struct Geopotential {
+    /// Maximum expansion degree *n*.
     pub degree: usize,
+    /// Maximum expansion order *m* (≤ degree).
     pub order: usize,
 }
 
 impl Geopotential {
+    /// Construct a geopotential model up to the given degree and order.
     pub fn new(degree: usize, order: usize) -> Self {
         Self { degree, order }
     }
 
+    /// Convenience: construct a *full* model where order == degree.
     pub fn full(degree: usize) -> Self {
         Self {
             degree,

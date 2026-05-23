@@ -112,11 +112,13 @@ use super::frames::ECEF;
 /// - `Geodetic<ITRF>`, GRS80 ellipsoid
 pub type Geodetic<F, U = crate::qtty::Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
 
+/// Reference center at the center of mass of the Sun.
 // Required for Transform specialization
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Heliocentric;
 
+/// Reference center at the center of mass of the Solar System barycentre.
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Barycentric;
@@ -179,6 +181,7 @@ impl Topocentric {
     }
 }
 
+/// Reference center at the center of mass of the Earth.
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Geocentric;

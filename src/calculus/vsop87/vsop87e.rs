@@ -42,7 +42,7 @@ use crate::qtty::*;
 use crate::time::JulianDate;
 type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 
-#[allow(clippy::approx_constant)]
+#[allow(clippy::approx_constant, unreachable_pub, missing_docs)]
 #[rustfmt::skip]
 mod vsop_data {
     include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/embedded_data/vsop87e.rs"));
@@ -58,6 +58,8 @@ macro_rules! impl_vsop87e {
         z: [$($z:ident),+ $(,)?]
     ) => {
         paste::paste! {
+            /// Computes the VSOP87E barycentric ecliptic Cartesian position (mean J2000.0 equinox, AU).
+            #[allow(unreachable_pub)]
             pub fn [<$prefix _vsop87e>](jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
                 let (x, y, z) = position(
                     jd,
@@ -72,6 +74,8 @@ macro_rules! impl_vsop87e {
                 )
             }
 
+            /// Computes the VSOP87E barycentric ecliptic Cartesian velocity (mean J2000.0 equinox, AU/day).
+            #[allow(unreachable_pub)]
             pub fn [<$prefix _vsop87e_vel>](jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
                 let (vx, vy, vz) = velocity(
                     jd,
@@ -86,6 +90,8 @@ macro_rules! impl_vsop87e {
                 )
             }
 
+            /// Computes both VSOP87E barycentric position and velocity in one pass (more efficient than calling both separately).
+            #[allow(unreachable_pub)]
             pub fn [<$prefix _vsop87e_pos_vel>](jd: JulianDate)
                 -> (Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, Velocity<EclipticMeanJ2000, AuPerDay>) {
                 let ((x, y, z), (vx, vy, vz)) = position_velocity(
@@ -108,14 +114,17 @@ macro_rules! impl_vsop87e {
             }
 
             impl $Planet {
+                /// Computes the VSOP87E barycentric ecliptic Cartesian position (mean J2000.0 equinox, AU).
                 pub fn vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
                     [<$prefix _vsop87e>](jd)
                 }
 
+                /// Computes the VSOP87E barycentric ecliptic Cartesian velocity (mean J2000.0 equinox, AU/day).
                 pub fn vsop87e_vel(jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
                     [<$prefix _vsop87e_vel>](jd)
                 }
 
+                /// Computes both VSOP87E barycentric position and velocity in one pass (more efficient than calling both separately).
                 pub fn vsop87e_pos_vel(jd: JulianDate)
                     -> (Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, Velocity<EclipticMeanJ2000, AuPerDay>) {
                     [<$prefix _vsop87e_pos_vel>](jd)
@@ -125,6 +134,8 @@ macro_rules! impl_vsop87e {
     };
 }
 
+/// Computes the VSOP87E barycentric position of the Sun (mean J2000.0 ecliptic equinox, AU).
+#[allow(unreachable_pub)]
 pub fn sun_vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
     let (x, y, z) = position(
         jd,
@@ -140,6 +151,7 @@ pub fn sun_vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, A
 }
 
 impl Sun {
+    /// Computes the VSOP87E barycentric position of the Sun (mean J2000.0 ecliptic equinox, AU).
     pub fn vsop87e(jd: JulianDate) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
         sun_vsop87e(jd)
     }

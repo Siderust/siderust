@@ -11,6 +11,7 @@
 //!
 //! Run with:
 //! `cargo run --example 08_target`
+#![allow(clippy::print_stdout)]
 
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::astro::proper_motion::{set_proper_motion_since_j2000, ProperMotion};

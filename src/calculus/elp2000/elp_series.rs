@@ -56,7 +56,7 @@
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};
 use wide::f64x4;
 
-#[allow(clippy::approx_constant)]
+#[allow(clippy::approx_constant, unreachable_pub, missing_docs)]
 #[rustfmt::skip]
 mod elp_data {
     include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/embedded_data/elp_data.rs"));

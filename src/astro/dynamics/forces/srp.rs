@@ -21,10 +21,14 @@ use super::{AU_IN_KM, P0, R_EARTH};
 
 const R_SUN_KM: f64 = 695_700.0;
 
+/// Shadow model to apply when computing the SRP eclipse fraction.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum ShadowModel {
+    /// No shadowing — satellite is always in sunlight.
     None,
+    /// Cylindrical shadow model (sharp umbra, no penumbra).
     Cylindrical,
+    /// Conical (dual-cone) model with partial penumbra (default).
     #[default]
     Conical,
 }
@@ -33,17 +37,25 @@ mod sealed {
     pub trait Sealed {}
 }
 
+/// Object-safe trait for eclipse models used by [`CannonballSrp`].
+///
+/// Implementors compute the fraction of solar flux seen by the satellite
+/// (1.0 = full sunlight, 0.0 = full shadow).
 pub trait EclipseModel: sealed::Sealed + Send + Sync + 'static {
+    /// Return the shadow factor ν ∈ [0, 1] for the given satellite and Sun vectors.
     fn eclipse_factor(
         r_sat: Displacement<GCRS, Kilometer>,
         r_sun: Displacement<GCRS, Kilometer>,
     ) -> Ratios;
 }
 
+/// Eclipse model that always returns full illumination (ν = 1).
 #[derive(Debug, Clone, Copy, Default)]
 pub struct NoEclipse;
+/// Cylindrical (hard) shadow model — sharp umbra boundary.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Cylindrical;
+/// Dual-cone (penumbra + umbra) shadow model.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Conical;
 
@@ -80,14 +92,18 @@ impl EclipseModel for Conical {
     }
 }
 
+/// Cannonball solar radiation pressure model with a configurable eclipse model.
 #[derive(Debug, Clone, Copy)]
 pub struct CannonballSrp<S: EclipseModel = Conical> {
+    /// SRP reflectivity coefficient Cr (typically 1.0–2.0).
     pub cr: SrpCoefficient,
+    /// Area-to-mass ratio (m² kg⁻¹).
     pub area_to_mass: AreaToMass,
     _shadow: PhantomData<fn() -> S>,
 }
 
 impl<S: EclipseModel> CannonballSrp<S> {
+    /// Construct a cannonball SRP model with the given Cr and A/m ratio.
     pub fn new(cr: SrpCoefficient, area_to_mass: AreaToMass) -> Self {
         Self {
             cr,

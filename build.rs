@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+//! Build script: downloads JPL DE440/DE441 kernels on demand.
 #[cfg(any(feature = "regen-data", feature = "de440", feature = "de441"))]
 use std::env;
 #[cfg(any(feature = "regen-data", feature = "de440", feature = "de441"))]

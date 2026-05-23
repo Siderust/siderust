@@ -343,6 +343,7 @@ pub(crate) mod dev {
     /// ```
     #[test]
     #[ignore = "developer helper — prints pinned-dataset hashes"]
+    #[allow(clippy::print_stdout)]
     fn print_hashes() {
         let datasets: &[(&str, &[u8])] = &[
             (
@@ -371,7 +372,7 @@ pub(crate) mod dev {
             ),
         ];
         for (name, data) in datasets {
-            println!("{}  {}", to_hex(&sha256(data)), name);
+            eprintln!("{}  {}", to_hex(&sha256(data)), name);
         }
     }
 }

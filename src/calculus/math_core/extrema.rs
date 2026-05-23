@@ -68,7 +68,9 @@ const PROBE_EPS: Days = Days::new(1e-7);
 /// The kind of extremum.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExtremumKind {
+    /// A local maximum of the function.
     Maximum,
+    /// A local minimum of the function.
     Minimum,
 }
 
@@ -77,8 +79,11 @@ pub enum ExtremumKind {
 /// Generic over `V` (value unit).
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Extremum<V: Unit> {
+    /// Modified Julian Date of the extremum.
     pub t: ModifiedJulianDate,
+    /// Function value at the extremum.
     pub value: Quantity<V>,
+    /// Whether this is a maximum or minimum.
     pub kind: ExtremumKind,
 }
 
