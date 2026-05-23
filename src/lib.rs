@@ -138,6 +138,8 @@ pub use time::{JulianDate, ModifiedJulianDate, J2000, JD, MJD};
 // Convenience re-export: sky sampling utilities.
 pub use coordinates::{SkyGrid, SkyGridCell};
 
+#[cfg(feature = "lagrange-centers")]
+pub(crate) mod archive;
 pub(crate) mod embedded_data;
 #[doc(hidden)]
 pub use provenance::checksum;

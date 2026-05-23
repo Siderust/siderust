@@ -738,6 +738,10 @@ const SUN_EARTH_L2: LagrangePoint = LagrangePoint {
 };
 
 /// Sun–Earth L1 and L2 restricted-three-body Lagrange points.
+///
+/// These entries are a simple static approximation table. With the
+/// `lagrange-centers` feature enabled, use `ephemeris::lagrange` and the
+/// `SunEarthL1`…`SunEarthL5` dynamic centers for epoch-dependent origins.
 pub const LAGRANGE_POINTS: &[&LagrangePoint] = &[&SUN_EARTH_L1, &SUN_EARTH_L2];
 
 // -------------------------------------------------------------------------------------------------

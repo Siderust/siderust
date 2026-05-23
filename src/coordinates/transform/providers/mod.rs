@@ -39,6 +39,8 @@ use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
 use crate::astro::{cio, era, polar_motion, precession, HasIauRotation, IauRotationParams};
 use crate::coordinates::cartesian::Position;
+#[cfg(feature = "lagrange-centers")]
+use crate::coordinates::centers::{SunEarthL1, SunEarthL2, SunEarthL3, SunEarthL4, SunEarthL5};
 use crate::coordinates::centers::{
     Barycentric, Geocentric, Heliocentric, Jovicentric, Marscentric, Mercurycentric,
     Neptunocentric, Plutocentric, Saturnocentric, Selenocentric, Uranocentric, Venuscentric,
@@ -56,6 +58,8 @@ use crate::ephemeris::Ephemeris;
 use crate::time::JulianDate;
 use affn::Rotation3;
 
+#[cfg(feature = "lagrange-centers")]
+mod centers_lagrange;
 mod centers_planetary;
 mod centers_standard;
 mod frames_catalog;

@@ -33,6 +33,8 @@
 
 pub(crate) mod elp2000;
 pub(crate) mod jpl;
+#[cfg(feature = "lagrange-centers")]
+pub mod lagrange;
 pub mod pluto;
 pub(crate) mod vsop87;
 

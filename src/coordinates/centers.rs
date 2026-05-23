@@ -123,6 +123,56 @@ pub struct Heliocentric;
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Barycentric;
 
+
+// =============================================================================
+// Sun-Earth Lagrange centers
+// =============================================================================
+
+/// Sun-Earth Lagrange point L1.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L1 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL1;
+
+/// Sun-Earth Lagrange point L2.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L2 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL2;
+
+/// Sun-Earth Lagrange point L3.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L3 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL3;
+
+/// Sun-Earth Lagrange point L4.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L4 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL4;
+
+/// Sun-Earth Lagrange point L5.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L5 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL5;
+
 // =============================================================================
 // Topocentric Center (parameterized)
 // =============================================================================
