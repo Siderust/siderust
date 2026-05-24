@@ -17,22 +17,22 @@ use siderust::coordinates::frames::ECEF;
 use siderust::event::altitude::{below_threshold, crossings, CrossingDirection, SearchOpts};
 use siderust::event::solar::night_types::{twilight, Twilight};
 use siderust::qtty::{Days, Degrees, Meter, Quantity};
+use siderust::time::Interval;
 use siderust::time::ModifiedJulianDate;
-use siderust::time::Period;
 
-fn week_period_from_date(start_date: NaiveDate) -> Period<ModifiedJulianDate> {
+fn week_period_from_date(start_date: NaiveDate) -> Interval<ModifiedJulianDate> {
     let start_dt = Utc.from_utc_datetime(&NaiveDateTime::new(
         start_date,
         chrono::NaiveTime::from_hms_opt(0, 0, 0).expect("00:00:00 is valid"),
     ));
     let mjd_start = ModifiedJulianDate::from_chrono(start_dt);
     let mjd_end = mjd_start + Days::new(7.0);
-    Period::new(mjd_start, mjd_end)
+    Interval::new(mjd_start, mjd_end)
 }
 
 fn print_events_for_type(
     site: &Geodetic<ECEF>,
-    week: Period<ModifiedJulianDate>,
+    week: Interval<ModifiedJulianDate>,
     name: &str,
     threshold: Degrees,
 ) {
@@ -67,7 +67,7 @@ fn print_events_for_type(
 
 fn print_periods_for_type(
     site: &Geodetic<ECEF>,
-    week: Period<ModifiedJulianDate>,
+    week: Interval<ModifiedJulianDate>,
     name: &str,
     threshold: Degrees,
 ) {

@@ -16,7 +16,7 @@
 //!
 //! ## Technical scope
 //!
-//! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the
+//! All `Interval<ModifiedJulianDate>` inputs/outputs are interpreted on the
 //! TT axis. Convert UTC timestamps with
 //! `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
 //! into `ModifiedJulianDate` first. Public functions: [`crossings`], [`culminations`],
@@ -34,7 +34,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::numeric::{extrema, intervals};
 use crate::qtty::*;
-use crate::time::{complement_within, ModifiedJulianDate, Period};
+use crate::time::{complement_within, Interval, ModifiedJulianDate};
 
 // ---------------------------------------------------------------------------
 // Internal: build altitude function from trait
@@ -51,9 +51,7 @@ fn make_altitude_fn<'a, T: AltitudePeriodsProvider>(
 
 /// Choose the best scan step for the target.
 fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> Days {
-    opts.scan_step_days
-        .or_else(|| target.scan_step_hint())
-        .unwrap_or(DEFAULT_SCAN_STEP)
+    super::search::resolve_scan_step(target.scan_step_hint(), opts, DEFAULT_SCAN_STEP)
 }
 
 // ---------------------------------------------------------------------------
@@ -77,11 +75,11 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 /// use siderust::bodies::Sun;
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
-/// use siderust::time::{ModifiedJulianDate, MJD, Period};
+/// use siderust::time::{ModifiedJulianDate, MJD, Interval};
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let window = Period::new(
+/// let window = Interval::new(
 ///     siderust::ModifiedJulianDate::new(60000.0),
 ///     siderust::ModifiedJulianDate::new(60001.0),
 /// );
@@ -98,7 +96,7 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
 pub fn crossings<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
     opts: SearchOpts,
 ) -> Vec<CrossingEvent> {
@@ -145,7 +143,7 @@ pub fn crossings<T: AltitudePeriodsProvider>(
 pub fn culminations<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     opts: SearchOpts,
 ) -> Vec<CulminationEvent> {
     let f = make_altitude_fn(target, observer);
@@ -180,7 +178,7 @@ pub fn culminations<T: AltitudePeriodsProvider>(
 /// Find all time intervals where the altitude of `target` is within
 /// `[h_min, h_max]`.
 ///
-/// Returns a sorted list of `Period<ModifiedJulianDate>`.
+/// Returns a sorted list of `Interval<ModifiedJulianDate>`.
 ///
 /// # Algorithm
 ///
@@ -210,16 +208,16 @@ pub fn culminations<T: AltitudePeriodsProvider>(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` covering the
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` covering the
 /// time intervals where `h_min ≤ altitude(t) ≤ h_max`.
 pub fn altitude_ranges<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     h_min: Degrees,
     h_max: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let f = make_altitude_fn(target, observer);
     let min_rad = h_min.to::<Radian>();
     let max_rad = h_max.to::<Radian>();
@@ -246,15 +244,15 @@ pub fn altitude_ranges<T: AltitudePeriodsProvider>(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` covering the
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` covering the
 /// times when `altitude(t) ≥ threshold`.
 pub fn above_threshold<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let f = make_altitude_fn(target, observer);
     let thr_rad = threshold.to::<Radian>();
     let step = scan_step_for(target, &opts);
@@ -276,15 +274,15 @@ pub fn above_threshold<T: AltitudePeriodsProvider>(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` covering the
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` covering the
 /// times inside `window` when `altitude(t) < threshold`.
 pub fn below_threshold<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let above = above_threshold(target, observer, window, threshold, opts);
     complement_within(window, &above)
 }
@@ -311,7 +309,7 @@ mod tests {
         let site = greenwich();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60001.0);
-        let window = Period::new(mjd_start, mjd_end);
+        let window = Interval::new(mjd_start, mjd_end);
 
         let events = crossings(
             &Sun,
@@ -342,7 +340,7 @@ mod tests {
         let site = greenwich();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60001.0);
-        let window = Period::new(mjd_start, mjd_end);
+        let window = Interval::new(mjd_start, mjd_end);
 
         let culms = culminations(&Sun, &site, window, SearchOpts::default());
 
@@ -365,7 +363,7 @@ mod tests {
         let site = greenwich();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
-        let window = Period::new(mjd_start, mjd_end);
+        let window = Interval::new(mjd_start, mjd_end);
 
         let days = above_threshold(
             &Sun,
@@ -387,7 +385,7 @@ mod tests {
         let site = greenwich();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
-        let window = Period::new(mjd_start, mjd_end);
+        let window = Interval::new(mjd_start, mjd_end);
 
         let nights = below_threshold(
             &Sun,
@@ -405,7 +403,7 @@ mod tests {
         let site = greenwich();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60002.0);
-        let window = Period::new(mjd_start, mjd_end);
+        let window = Interval::new(mjd_start, mjd_end);
 
         let twilight = altitude_ranges(
             &Sun,
@@ -425,7 +423,7 @@ mod tests {
         let site = greenwich();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
-        let window = Period::new(mjd_start, mjd_end);
+        let window = Interval::new(mjd_start, mjd_end);
 
         let periods = above_threshold(
             &Moon,

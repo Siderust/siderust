@@ -55,7 +55,7 @@
 //!
 //! - [`coordinates`]             : Cartesian & Spherical coordinate types and transformations; includes [`SkyGrid`] sampling utility
 //! - [`targets`]                 : `CoordinateWithPM<T>` + `Trackable` trait for observation targets
-//! - [`time`]                    : Time types and scale-based `Period<S>` / generic `Interval<T>`
+//! - [`time`]                    : Time types, scales, and typed `tempoch::Interval<T>` values
 //! - [`astro`]                   : Aberration, nutation, precession, sidereal time, conic helpers, event support, orbits, orbital mechanics
 //! - [`ephemeris`]               : Ephemeris traits and backends (VSOP87, ELP2000, DE4xx, Pluto)
 //! - [`event`]                   : Altitude/azimuth/lunar/solar/stellar event-search APIs

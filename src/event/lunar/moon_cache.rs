@@ -462,7 +462,7 @@ impl MoonAltitudeContext {
 
 use crate::numeric::intervals::LabeledCrossing;
 use crate::numeric::root_finding;
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{Interval, ModifiedJulianDate};
 
 type Mjd = ModifiedJulianDate;
 type Days = crate::qtty::Quantity<crate::qtty::Day>;
@@ -491,7 +491,7 @@ const DEDUPE_EPS: Days = Days::new(1e-8);
 /// crossing direction (`+1` entering, `−1` leaving), and `start_above`
 /// is `true` if `f(start) > threshold`.
 pub fn find_and_label_crossings<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     step: Days,
     f: &F,
     threshold: crate::qtty::Quantity<V>,
@@ -525,7 +525,7 @@ where
 
         if prev.signum() * next_v.signum() < 0.0 {
             if let Some(root) =
-                root_finding::brent_with_values(Period::new(t, next_t), prev, next_v, g)
+                root_finding::brent_with_values(Interval::new(t, next_t), prev, next_v, g)
             {
                 if root >= t_start && root <= t_end {
                     // Direction from sign change: prev < 0 → next > 0 means entering (+1)
@@ -667,7 +667,7 @@ mod tests {
         // Test with a known sine wave: sin(2π(t+0.05)) crosses 0 at known times
         let f =
             |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (t.raw().value() + 0.05)).sin());
-        let period = Period::new(
+        let period = Interval::new(
             crate::time::ModifiedJulianDate::new((Days::new(0.0)).value()),
             crate::time::ModifiedJulianDate::new((Days::new(1.0)).value()),
         );

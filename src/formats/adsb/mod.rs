@@ -80,9 +80,7 @@ impl AdsbFrame {
     /// ICAO 24-bit aircraft address (bytes 2–4).
     #[inline]
     pub fn icao24(&self) -> u32 {
-        ((self.bytes[1] as u32) << 16)
-            | ((self.bytes[2] as u32) << 8)
-            | (self.bytes[3] as u32)
+        ((self.bytes[1] as u32) << 16) | ((self.bytes[2] as u32) << 8) | (self.bytes[3] as u32)
     }
 
     /// 56-bit ME (Message, Extended Squitter) payload (bytes 5–11).
@@ -329,10 +327,7 @@ pub fn decode_identification(frame: &AdsbFrame) -> Result<IdentificationMessage,
         callsign.push(ch as char);
     }
     let callsign = callsign.trim_end_matches(' ').to_owned();
-    Ok(IdentificationMessage {
-        category,
-        callsign,
-    })
+    Ok(IdentificationMessage { category, callsign })
 }
 
 /// Decode a TC 9–18 (airborne position) frame into raw CPR data.
@@ -344,9 +339,7 @@ pub fn decode_identification(frame: &AdsbFrame) -> Result<IdentificationMessage,
 /// # Errors
 ///
 /// [`FormatError`] if the type code is out of range.
-pub fn decode_airborne_position(
-    frame: &AdsbFrame,
-) -> Result<AirbornePositionMessage, FormatError> {
+pub fn decode_airborne_position(frame: &AdsbFrame) -> Result<AirbornePositionMessage, FormatError> {
     let tc = frame.type_code();
     if !(9..=18).contains(&tc) {
         return Err(FormatError::located(
@@ -360,12 +353,8 @@ pub fn decode_airborne_position(
     let single_antenna = (me[0] & 0x01) != 0;
     let encoded_altitude = ((me[1] as u16) << 4) | ((me[2] as u16) >> 4);
     let cpr_odd = (me[2] & 0x04) != 0;
-    let cpr_lat = ((me[2] as u32 & 0x03) << 15)
-        | ((me[3] as u32) << 7)
-        | (me[4] as u32 >> 1);
-    let cpr_lon = ((me[4] as u32 & 0x01) << 16)
-        | ((me[5] as u32) << 8)
-        | (me[6] as u32);
+    let cpr_lat = ((me[2] as u32 & 0x03) << 15) | ((me[3] as u32) << 7) | (me[4] as u32 >> 1);
+    let cpr_lon = ((me[4] as u32 & 0x01) << 16) | ((me[5] as u32) << 8) | (me[6] as u32);
     Ok(AirbornePositionMessage {
         surveillance_status,
         single_antenna,
@@ -381,9 +370,7 @@ pub fn decode_airborne_position(
 /// # Errors
 ///
 /// [`FormatError`] if the type code is not 19 or the sub-type is unsupported.
-pub fn decode_airborne_velocity(
-    frame: &AdsbFrame,
-) -> Result<AirborneVelocityMessage, FormatError> {
+pub fn decode_airborne_velocity(frame: &AdsbFrame) -> Result<AirborneVelocityMessage, FormatError> {
     let tc = frame.type_code();
     if tc != 19 {
         return Err(FormatError::located(
@@ -533,7 +520,11 @@ mod tests {
         let encoded: u16 = 888;
         let alt = decode_altitude(encoded).unwrap();
         // 10 000 ft × 0.3048 = 3 048 m
-        assert!((alt.value() - 3_048.0).abs() < 0.01, "alt = {}", alt.value());
+        assert!(
+            (alt.value() - 3_048.0).abs() < 0.01,
+            "alt = {}",
+            alt.value()
+        );
     }
 
     #[test]

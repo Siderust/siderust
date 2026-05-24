@@ -32,7 +32,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::numeric::intervals;
 use crate::qtty::*;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
+use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
 
 use super::moon_cache::{find_and_label_crossings, MoonAltitudeContext};
 
@@ -90,13 +90,13 @@ pub(crate) fn moon_altitude_rad(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` where the
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` where the
 /// Moon altitude is at or above `threshold`.
 pub(crate) fn find_moon_above_horizon(
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
     // Build Chebyshev + nutation caches for the period
@@ -126,13 +126,13 @@ pub(crate) fn find_moon_above_horizon(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` where the
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` where the
 /// Moon altitude is at or below `threshold`.
 pub(crate) fn find_moon_below_horizon(
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let above = find_moon_above_horizon(site, period, threshold);
     complement_within(period, &above)
 }
@@ -155,13 +155,13 @@ pub(crate) fn find_moon_below_horizon(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of intervals
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of intervals
 /// where `min ≤ altitude(t) ≤ max`.
 pub(crate) fn find_moon_altitude_range(
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
@@ -188,9 +188,9 @@ const SCAN_STEP_10MIN: Days = Quantity::new(10.0 / 1440.0);
 /// for comparison / validation.
 fn find_moon_above_horizon_scan(
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
     let f = |t: ModifiedJulianDate| -> Radians { moon_altitude_rad(t, &site) };
@@ -226,7 +226,7 @@ mod tests {
         let site = greenwich_site();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
-        let period = Period::new(mjd_start, mjd_end);
+        let period = Interval::new(mjd_start, mjd_end);
 
         let periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
         assert!(
@@ -247,7 +247,7 @@ mod tests {
         let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
         let mjd_start = crate::time::ModifiedJulianDate::new(60676.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60683.0);
-        let period = Period::new(mjd_start, mjd_end);
+        let period = Interval::new(mjd_start, mjd_end);
 
         let periods = find_moon_below_horizon(site, period, Degrees::new(-0.5));
         assert!(!periods.is_empty(), "Should find moon-down periods");
@@ -259,7 +259,7 @@ mod tests {
         let site = greenwich_site();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60003.0);
-        let period = Period::new(mjd_start, mjd_end);
+        let period = Interval::new(mjd_start, mjd_end);
 
         let main_result = find_moon_above_horizon(site, period, Degrees::new(0.0));
         let scan_result = find_moon_above_horizon_scan(site, period, Degrees::new(0.0));

@@ -20,7 +20,12 @@
 //!   motion is the directly fitted quantity.
 //!
 //! The reusable conic geometry (shape + orientation abstractions) lives in
-//! `affn::conic`.  This module layers epoch and anomaly semantics on top.
+//! `affn::conic`. This module is the astronomy-facing wrapper over the
+//! lower-level `keplerian` crate: `keplerian` owns pure conic/anomaly/two-body
+//! math, while `siderust::astro::conic` adds astronomy semantics such as
+//! [`JulianDate`] epochs from `tempoch`, [`EclipticMeanJ2000`] orientation from
+//! `affn`, and the heliocentric GM conventions used by Solar-System orbit
+//! catalogs.
 //!
 //! ## Technical scope
 //!

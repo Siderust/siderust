@@ -39,12 +39,12 @@ use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
 use crate::astro::{cio, era, polar_motion, precession, HasIauRotation, IauRotationParams};
 use crate::coordinates::cartesian::Position;
-#[cfg(feature = "lagrange-centers")]
-use crate::coordinates::centers::{SunEarthL1, SunEarthL2, SunEarthL3, SunEarthL4, SunEarthL5};
 use crate::coordinates::centers::{
     Barycentric, Geocentric, Heliocentric, Jovicentric, Marscentric, Mercurycentric,
     Neptunocentric, Plutocentric, Saturnocentric, Selenocentric, Uranocentric, Venuscentric,
 };
+#[cfg(feature = "lagrange-centers")]
+use crate::coordinates::centers::{SunEarthL1, SunEarthL2, SunEarthL3, SunEarthL4, SunEarthL5};
 use crate::coordinates::frames::planetary::{
     JupiterSystemIII, MarsFixed, MercuryFixed, MoonPrincipalAxes, NeptuneFixed, PlutoFixed,
     SaturnFixed, UranusFixed, VenusFixed,

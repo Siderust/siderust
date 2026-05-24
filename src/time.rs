@@ -36,9 +36,7 @@
 //!
 //! Advanced scale-aware work still uses `tempoch::JulianDate<S>` and
 //! `tempoch::ModifiedJulianDate<S>` directly. The J2000.0 TT epoch is the
-//! [`J2000`] constant (JD 2 451 545.0 TT). [`UT`] is a backward-compatible
-//! alias for [`UT1`]; [`Period<T>`] is a backward-compatible alias for
-//! [`Interval<T>`].
+//! [`J2000`] constant (JD 2 451 545.0 TT).
 //!
 //! ## References
 //!
@@ -62,12 +60,6 @@ pub use tempoch::{
 
 /// Julian year length in days (`365.25`), matching tempoch's compiled Julian-year definition.
 pub const JULIAN_YEAR_DAYS: qtty::Day = qtty::Day::new(365.25);
-
-/// Backward-compatible alias: old siderust code used `UT` for the UT1 axis.
-pub type UT = UT1;
-
-/// Backward-compatible generic period alias over an instant type `T`.
-pub type Period<T> = Interval<T>;
 
 /// TT-scale Julian Date.  Equivalent to `tempoch::JulianDate<TT>`.
 pub type JulianDate = tempoch::JulianDate<TT>;

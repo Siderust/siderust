@@ -24,7 +24,7 @@
 //! None.
 
 use crate::qtty::*;
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{Interval, ModifiedJulianDate};
 
 // ---------------------------------------------------------------------------
 // Crossing Types
@@ -115,7 +115,7 @@ pub struct AltitudeQuery {
     /// Observer location on Earth.
     pub observer: crate::coordinates::centers::Geodetic<crate::coordinates::frames::ECEF>,
     /// Time window to search (MJD on the TT axis).
-    pub window: Period<ModifiedJulianDate>,
+    pub window: Interval<ModifiedJulianDate>,
     /// Lower bound of the altitude band (inclusive).
     pub min_altitude: Degrees,
     /// Upper bound of the altitude band (inclusive).

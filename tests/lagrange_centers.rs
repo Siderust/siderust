@@ -35,7 +35,10 @@ fn sun_earth_lagrange_centers_are_unit_parameterized() {
 fn placeholder_archive_returns_out_of_range() {
     let err = try_sun_earth_lagrange_barycentric(SunEarthLagrangePoint::L1, siderust::J2000)
         .expect_err("placeholder records are intentionally empty");
-    assert!(matches!(err, siderust::ephemeris::EphemerisError::OutOfRange { .. }));
+    assert!(matches!(
+        err,
+        siderust::ephemeris::EphemerisError::OutOfRange { .. }
+    ));
 }
 
 #[test]
@@ -57,7 +60,8 @@ where
         Transform<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>>,
 {
     let shifted: Position<C, EclipticMeanJ2000, AstronomicalUnit> = bary.transform(siderust::J2000);
-    let back: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> = shifted.transform(siderust::J2000);
+    let back: Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> =
+        shifted.transform(siderust::J2000);
     assert!((back.x().value() - bary.x().value()).abs() < 1.0e-8);
     assert!((back.y().value() - bary.y().value()).abs() < 1.0e-8);
     assert!((back.z().value() - bary.z().value()).abs() < 1.0e-8);

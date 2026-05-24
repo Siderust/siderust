@@ -13,7 +13,7 @@ use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::qtty::*;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{Interval, ModifiedJulianDate};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -35,15 +35,15 @@ fn roque() -> Geodetic<ECEF> {
     )
 }
 
-fn period_7d() -> Period<ModifiedJulianDate> {
-    Period::new(
+fn period_7d() -> Interval<ModifiedJulianDate> {
+    Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     )
 }
 
-fn period_3d() -> Period<ModifiedJulianDate> {
-    Period::new(
+fn period_3d() -> Interval<ModifiedJulianDate> {
+    Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60003.0)).unwrap(),
     )

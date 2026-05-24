@@ -42,7 +42,7 @@ use crate::event::lunar::phase::{
 use crate::qtty::{
     AstronomicalUnits, IlluminationFractions, Kilometer, LengthUnit, Meter, Quantity,
 };
-use crate::time::{JulianDate, ModifiedJulianDate, Period};
+use crate::time::{Interval, JulianDate, ModifiedJulianDate};
 
 impl Moon {
     /// Returns the **apparent topocentric equatorial coordinates** of the Moon
@@ -248,12 +248,12 @@ impl Moon {
     /// ```rust
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::event::lunar::phase::PhaseSearchOpts;
-    /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
+    /// use siderust::time::{JulianDate, ModifiedJulianDate, Interval};
     /// use siderust::qtty::Days;
     ///
     /// let start = siderust::J2000.to::<siderust::time::MJD>();
     /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 35.0);
-    /// let window = Period::new(start, end);
+    /// let window = Interval::new(start, end);
     /// let events = Moon::phase_events(window, PhaseSearchOpts::default());
     /// assert!(!events.is_empty());
     /// ```
@@ -267,7 +267,7 @@ impl Moon {
     ///
     /// `Vec<PhaseEvent>` ordered by time, each tagged with its quarter.
     pub fn phase_events(
-        window: Period<ModifiedJulianDate>,
+        window: Interval<ModifiedJulianDate>,
         opts: PhaseSearchOpts,
     ) -> Vec<PhaseEvent> {
         find_phase_events::<DefaultEphemeris>(window, opts)
@@ -284,13 +284,13 @@ impl Moon {
     ///
     /// # Returns
     ///
-    /// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of
+    /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of
     /// intervals where `illuminated_fraction(t) ≥ k_min`.
     pub fn illumination_above(
-        window: Period<ModifiedJulianDate>,
+        window: Interval<ModifiedJulianDate>,
         k_min: IlluminationFractions,
         opts: PhaseSearchOpts,
-    ) -> Vec<Period<ModifiedJulianDate>> {
+    ) -> Vec<Interval<ModifiedJulianDate>> {
         illumination_above::<DefaultEphemeris>(window, k_min, opts)
     }
 
@@ -305,13 +305,13 @@ impl Moon {
     ///
     /// # Returns
     ///
-    /// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of
+    /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of
     /// intervals where `illuminated_fraction(t) ≤ k_max`.
     pub fn illumination_below(
-        window: Period<ModifiedJulianDate>,
+        window: Interval<ModifiedJulianDate>,
         k_max: IlluminationFractions,
         opts: PhaseSearchOpts,
-    ) -> Vec<Period<ModifiedJulianDate>> {
+    ) -> Vec<Interval<ModifiedJulianDate>> {
         illumination_below::<DefaultEphemeris>(window, k_max, opts)
     }
 
@@ -322,12 +322,12 @@ impl Moon {
     /// ```rust
     /// use siderust::bodies::solar_system::Moon;
     /// use siderust::event::lunar::phase::PhaseSearchOpts;
-    /// use siderust::time::{JulianDate, ModifiedJulianDate, Period};
+    /// use siderust::time::{JulianDate, ModifiedJulianDate, Interval};
     /// use siderust::qtty::{Days, IlluminationFractions};
     ///
     /// let start = siderust::J2000.to::<siderust::time::MJD>();
     /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 30.0);
-    /// let window = Period::new(start, end);
+    /// let window = Interval::new(start, end);
     /// // Crescent phase: 5–35% illuminated
     /// let crescent = Moon::illumination_range(window, IlluminationFractions::new(0.05), IlluminationFractions::new(0.35), PhaseSearchOpts::default());
     /// ```
@@ -341,14 +341,14 @@ impl Moon {
     ///
     /// # Returns
     ///
-    /// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of
+    /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of
     /// intervals where `k_min ≤ illuminated_fraction(t) ≤ k_max`.
     pub fn illumination_range(
-        window: Period<ModifiedJulianDate>,
+        window: Interval<ModifiedJulianDate>,
         k_min: IlluminationFractions,
         k_max: IlluminationFractions,
         opts: PhaseSearchOpts,
-    ) -> Vec<Period<ModifiedJulianDate>> {
+    ) -> Vec<Interval<ModifiedJulianDate>> {
         illumination_range::<DefaultEphemeris>(window, k_min, k_max, opts)
     }
 }
@@ -365,9 +365,9 @@ mod tests {
         Geodetic::<ECEF>::new(0.0 * DEG, 51.48 * DEG, 0.0 * M)
     }
 
-    fn one_month() -> Period<ModifiedJulianDate> {
+    fn one_month() -> Interval<ModifiedJulianDate> {
         let start = crate::J2000.to::<crate::MJD>();
-        Period::new(
+        Interval::new(
             start,
             crate::time::ModifiedJulianDate::new((start.raw() + Days::new(30.0)).value()),
         )

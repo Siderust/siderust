@@ -17,10 +17,10 @@ use std::sync::Arc;
 use crate::coordinates::centers::ReferenceCenter;
 use crate::coordinates::frames::ICRS;
 use crate::pod::providers::EphemerisProvider;
-use affn::cartesian::Position;
+use affn::cartesian::{Position, Velocity};
 use qtty::unit::Kilometer;
-use qtty::Quantity;
-use tempoch::{EncodedTime, J2000s, Time, TDB};
+use qtty::{KmPerSecond, Quantity};
+use tempoch::{Time, TDB};
 
 use crate::formats::spice::{SpiceError, SpkKernel};
 
@@ -28,17 +28,16 @@ use crate::formats::spice::{SpiceError, SpkKernel};
 ///
 /// The position is typed by the construction-time reference center `C`,
 /// so adding a barycentric position to a heliocentric position fails to
-/// compile via `affn`'s affine algebra rules. Velocity is returned as a
-/// raw `[f64; 3]` (km/s) for now; once the workspace `affn::Velocity`
-/// or `qtty::Velocity` types stabilize for the J2000-reference-frame
-/// case, this can be tightened without breaking the public surface.
+/// compile via `affn`'s affine algebra rules. Velocity is represented as a
+/// typed free vector in the same frame using the canonical `qtty::KmPerSecond`
+/// unit.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct SpiceState<C: ReferenceCenter<Params = ()>> {
     /// Position in the kernel's frame (typically ICRS / J2000),
     /// expressed in kilometers from the construction-time center.
     pub position: Position<C, ICRS, Kilometer>,
     /// Velocity in km/s in the same frame.
-    pub velocity_km_s: [f64; 3],
+    pub velocity_km_s: Velocity<ICRS, KmPerSecond>,
 }
 
 /// Typed `EphemerisProvider` backed by an in-memory [`SpkKernel`].
@@ -127,17 +126,14 @@ impl<C: ReferenceCenter<Params = ()>> SpiceEphemerisProvider<C> {
 
     /// Convenience: query state at a typed `tempoch` TDB epoch.
     ///
-    /// Equivalent to [`EphemerisProvider::state`] but accepts a typed
-    /// [`Time<TDB>`] instead of a raw `f64` so callers using the
-    /// `tempoch` time-stack stay typed end-to-end.
+    /// Equivalent to [`EphemerisProvider::state_at`] but kept as an inherent
+    /// method so callers do not need to import the trait.
     pub fn state_at(
         &self,
         body_naif_id: i32,
         epoch: Time<TDB>,
     ) -> Result<SpiceState<C>, SpiceError> {
-        let encoded: EncodedTime<TDB, J2000s> = epoch.to::<J2000s>();
-        let secs: Quantity<qtty::unit::Second> = encoded.raw();
-        EphemerisProvider::state(self, body_naif_id, secs.value())
+        EphemerisProvider::state_at(self, body_naif_id, epoch)
     }
 }
 
@@ -156,7 +152,11 @@ impl<C: ReferenceCenter<Params = ()>> EphemerisProvider for SpiceEphemerisProvid
         );
         Ok(SpiceState {
             position,
-            velocity_km_s: [s[3], s[4], s[5]],
+            velocity_km_s: Velocity::<ICRS, KmPerSecond>::new(
+                Quantity::<KmPerSecond>::new(s[3]),
+                Quantity::<KmPerSecond>::new(s[4]),
+                Quantity::<KmPerSecond>::new(s[5]),
+            ),
         })
     }
 }

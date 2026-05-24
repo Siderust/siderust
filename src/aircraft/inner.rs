@@ -314,10 +314,19 @@ impl Trackable for AircraftTrack {
         // because this is a private math kernel that produces typed output.
         let dt_s = (jd.raw().value() - self.epoch.raw().value()) * 86_400.0;
 
-        let gs = self.state.ground_speed.value();         // m/s
-        let vr = self.state.vertical_rate.value();         // m/s
-        let track_rad = self.state.track_angle.to::<crate::qtty::unit::Radian>().value();
-        let lat_rad = self.state.position.lat.to::<crate::qtty::unit::Radian>().value();
+        let gs = self.state.ground_speed.value(); // m/s
+        let vr = self.state.vertical_rate.value(); // m/s
+        let track_rad = self
+            .state
+            .track_angle
+            .to::<crate::qtty::unit::Radian>()
+            .value();
+        let lat_rad = self
+            .state
+            .position
+            .lat
+            .to::<crate::qtty::unit::Radian>()
+            .value();
 
         let ds_m = gs * dt_s; // horizontal displacement (m)
 
@@ -340,8 +349,6 @@ impl Trackable for AircraftTrack {
     }
 }
 
-
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -363,11 +370,7 @@ mod tests {
     #[test]
     fn aircraft_state_new_zeroed_kinematics() {
         let state = AircraftState::new(
-            Geodetic::<ECEF>::new(
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                Meters::new(10_000.0),
-            ),
+            Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(0.0), Meters::new(10_000.0)),
             Degrees::new(180.0),
         );
         assert_eq!(state.ground_speed.value(), 0.0);
@@ -392,11 +395,7 @@ mod tests {
 
         // Aircraft at equator, 0° lon, heading due east (90°), 100 m/s GS, FL0.
         let state = AircraftState {
-            position: Geodetic::<ECEF>::new(
-                Degrees::new(0.0),
-                Degrees::new(0.0),
-                Meters::new(0.0),
-            ),
+            position: Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(0.0), Meters::new(0.0)),
             ground_speed: MetersPerSecond::new(100.0),
             track_angle: Degrees::new(90.0),
             vertical_rate: MetersPerSecond::new(0.0),
@@ -410,10 +409,19 @@ mod tests {
 
         // Expected lon increment: 6000 / 6_371_000 * (180/PI) ≈ 0.03386°
         let expected_dlon = 6_000.0 / 6_371_000.0 * (180.0 / std::f64::consts::PI);
-        assert!((s1.position.lon.value() - expected_dlon).abs() < 1e-6,
-            "lon = {}", s1.position.lon.value());
-        assert!(s1.position.lat.value().abs() < 1e-9, "lat should not change");
-        assert!(s1.position.height.value().abs() < 1e-9, "alt should not change");
+        assert!(
+            (s1.position.lon.value() - expected_dlon).abs() < 1e-6,
+            "lon = {}",
+            s1.position.lon.value()
+        );
+        assert!(
+            s1.position.lat.value().abs() < 1e-9,
+            "lat should not change"
+        );
+        assert!(
+            s1.position.height.value().abs() < 1e-9,
+            "alt should not change"
+        );
     }
 
     #[test]
@@ -442,7 +450,10 @@ mod tests {
         let expected_dlat = 24_000.0 / 6_371_000.0 * (180.0 / std::f64::consts::PI);
         assert!((s1.position.lat.value() - expected_dlat).abs() < 1e-6);
         assert!(s1.position.lon.value().abs() < 1e-9);
-        assert!((s1.position.height.value() - 1_600.0).abs() < 0.01,
-            "height = {}", s1.position.height.value());
+        assert!(
+            (s1.position.height.value() - 1_600.0).abs() < 0.01,
+            "height = {}",
+            s1.position.height.value()
+        );
     }
 }

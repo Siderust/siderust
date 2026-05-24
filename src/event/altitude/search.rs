@@ -49,6 +49,11 @@ impl Default for SearchOpts {
     }
 }
 
+/// Choose the best scan step given an optional provider hint and user overrides.
+pub(crate) fn resolve_scan_step(hint: Option<Days>, opts: &SearchOpts, default_step: Days) -> Days {
+    opts.scan_step_days.or(hint).unwrap_or(default_step)
+}
+
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------

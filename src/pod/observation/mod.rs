@@ -60,4 +60,3 @@ pub use obs_trait::{
 };
 pub use provider_bundle::{NullProviderBundle, ProviderBundle};
 pub use slr_obs::SlrNormalPointObs;
-

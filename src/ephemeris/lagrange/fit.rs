@@ -169,7 +169,9 @@ pub fn fit_sun_earth_lagrange(
             return Ok(fitted);
         }
     }
-    let max_abs_error = best.map_or(Meters::new(f64::INFINITY), |fitted| fitted.stats.max_abs_error);
+    let max_abs_error = best.map_or(Meters::new(f64::INFINITY), |fitted| {
+        fitted.stats.max_abs_error
+    });
     Err(FitError::ToleranceNotMet { max_abs_error })
 }
 
@@ -190,7 +192,10 @@ pub fn fit_sun_earth_lagrange(
 pub fn evaluate_fitted(
     fitted: &FittedPoint,
     jd: JulianDate,
-) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, crate::ephemeris::EphemerisError> {
+) -> Result<
+    Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>,
+    crate::ephemeris::EphemerisError,
+> {
     evaluate_records(&fitted.records, fitted.ncoeff, jd)
 }
 
@@ -242,7 +247,12 @@ fn fit_with_order<const N: usize>(
     }
 
     let stats = validate_fit(ephemeris, point, config, N, &records)?;
-    Ok(FittedPoint { point, ncoeff: N, records, stats })
+    Ok(FittedPoint {
+        point,
+        ncoeff: N,
+        records,
+        stats,
+    })
 }
 
 fn validate_fit(
@@ -261,7 +271,13 @@ fn validate_fit(
     let mut previous_seed = None;
     while sample_s <= end_s + 1.0e-9 {
         let jd = jd_from_seconds(sample_s)?;
-        let truth = solve_sun_earth_lagrange_dyn_with_config(ephemeris, point, jd, config.solver, previous_seed)?;
+        let truth = solve_sun_earth_lagrange_dyn_with_config(
+            ephemeris,
+            point,
+            jd,
+            config.solver,
+            previous_seed,
+        )?;
         previous_seed = Some(truth.position);
         let fit = evaluate_records(records, ncoeff, jd).map_err(|_| FitError::InvalidConfig)?;
         let fit_km = fit.to_unit::<Kilometer>();
@@ -272,8 +288,15 @@ fn validate_fit(
         count += 1;
         sample_s += step_s;
     }
-    let rms = if count == 0 { 0.0 } else { (sum_sq / count as f64).sqrt() };
-    Ok(FitStats { max_abs_error: Meters::new(max_error), rms_error: Meters::new(rms) })
+    let rms = if count == 0 {
+        0.0
+    } else {
+        (sum_sq / count as f64).sqrt()
+    };
+    Ok(FitStats {
+        max_abs_error: Meters::new(max_error),
+        rms_error: Meters::new(rms),
+    })
 }
 
 fn validate_config(config: FitConfig) -> Result<(), FitError> {
@@ -281,7 +304,14 @@ fn validate_config(config: FitConfig) -> Result<(), FitError> {
     let to = seconds_since_j2000(config.to);
     let block = config.block.value();
     let step = config.validation_step.value();
-    if from.is_finite() && to.is_finite() && to > from && block.is_finite() && block > 0.0 && step.is_finite() && step > 0.0 {
+    if from.is_finite()
+        && to.is_finite()
+        && to > from
+        && block.is_finite()
+        && block > 0.0
+        && step.is_finite()
+        && step > 0.0
+    {
         Ok(())
     } else {
         Err(FitError::InvalidConfig)
@@ -293,7 +323,8 @@ fn seconds_since_j2000(jd: JulianDate) -> f64 {
 }
 
 fn jd_from_seconds(seconds: f64) -> Result<JulianDate, FitError> {
-    crate::time::try_jd_f64(J2000_JD + seconds / SECONDS_PER_DAY).map_err(|_| FitError::InvalidEpoch)
+    crate::time::try_jd_f64(J2000_JD + seconds / SECONDS_PER_DAY)
+        .map_err(|_| FitError::InvalidEpoch)
 }
 
 fn distance_km(

@@ -159,7 +159,10 @@ impl LisaOrbitSet {
 pub struct LisaOrbitReader;
 
 impl LisaOrbitReader {
-    pub fn read<R: Read>(reader: R, spacecraft_id: LisaSpacecraftId) -> Result<LisaOrbit, FormatError> {
+    pub fn read<R: Read>(
+        reader: R,
+        spacecraft_id: LisaSpacecraftId,
+    ) -> Result<LisaOrbit, FormatError> {
         let oem_file = read_oem(reader)?;
         Self::convert(oem_file, spacecraft_id)
     }
@@ -168,7 +171,10 @@ impl LisaOrbitReader {
         Self::read(s.as_bytes(), spacecraft_id)
     }
 
-    fn convert(oem_file: OemFile, spacecraft_id: LisaSpacecraftId) -> Result<LisaOrbit, FormatError> {
+    fn convert(
+        oem_file: OemFile,
+        spacecraft_id: LisaSpacecraftId,
+    ) -> Result<LisaOrbit, FormatError> {
         let mut points: Vec<LisaOrbitPoint> = Vec::new();
         for segment in oem_file.segments {
             for state in segment.states {
@@ -186,14 +192,24 @@ impl LisaOrbitReader {
                     qtty::Quantity::<KmPerSecond>::new(vy),
                     qtty::Quantity::<KmPerSecond>::new(vz),
                 );
-                points.push(LisaOrbitPoint { epoch, epoch_j2000_s, position, velocity });
+                points.push(LisaOrbitPoint {
+                    epoch,
+                    epoch_j2000_s,
+                    position,
+                    velocity,
+                });
             }
         }
         if points.is_empty() {
-            return Err(FormatError::Format("lisa: OEM file contains no state vectors".into()));
+            return Err(FormatError::Format(
+                "lisa: OEM file contains no state vectors".into(),
+            ));
         }
         points.sort_by(|a, b| a.epoch_j2000_s.partial_cmp(&b.epoch_j2000_s).unwrap());
-        Ok(LisaOrbit { spacecraft_id, points })
+        Ok(LisaOrbit {
+            spacecraft_id,
+            points,
+        })
     }
 }
 
@@ -228,7 +244,11 @@ impl EphemerisProvider for LisaEphemerisProvider {
     type State = LisaOrbitPoint;
     type Error = LisaProviderError;
 
-    fn state(&self, body_naif_id: i32, epoch_seconds_tdb: f64) -> Result<LisaOrbitPoint, LisaProviderError> {
+    fn state(
+        &self,
+        body_naif_id: i32,
+        epoch_seconds_tdb: f64,
+    ) -> Result<LisaOrbitPoint, LisaProviderError> {
         let sc = LisaSpacecraftId::from_naif_id(body_naif_id)
             .ok_or(LisaProviderError::UnknownBody(body_naif_id))?;
         let orbit = self.orbits.orbit(sc);
@@ -260,7 +280,9 @@ fn hermite_interp(orbit: &LisaOrbit, t: f64) -> Result<LisaOrbitPoint, LisaProvi
         return Err(LisaProviderError::OutOfRange(t, t0, t1));
     }
     let idx = match pts.binary_search_by(|p| {
-        p.epoch_j2000_s.partial_cmp(&t).unwrap_or(std::cmp::Ordering::Less)
+        p.epoch_j2000_s
+            .partial_cmp(&t)
+            .unwrap_or(std::cmp::Ordering::Less)
     }) {
         Ok(i) => return Ok(pts[i].clone()),
         Err(i) => i.saturating_sub(1).min(pts.len() - 2),
@@ -278,10 +300,26 @@ fn hermite_interp(orbit: &LisaOrbit, t: f64) -> Result<LisaOrbitPoint, LisaProvi
     let h01 = -2.0 * tau3 + 3.0 * tau2;
     let h11 = tau3 - tau2;
 
-    let interp_pos = |a: f64, da: f64, b: f64, db: f64| h00 * a + h10 * dt * da + h01 * b + h11 * dt * db;
-    let x = interp_pos(p0.position.x().value(), p0.velocity.x().value(), p1.position.x().value(), p1.velocity.x().value());
-    let y = interp_pos(p0.position.y().value(), p0.velocity.y().value(), p1.position.y().value(), p1.velocity.y().value());
-    let z = interp_pos(p0.position.z().value(), p0.velocity.z().value(), p1.position.z().value(), p1.velocity.z().value());
+    let interp_pos =
+        |a: f64, da: f64, b: f64, db: f64| h00 * a + h10 * dt * da + h01 * b + h11 * dt * db;
+    let x = interp_pos(
+        p0.position.x().value(),
+        p0.velocity.x().value(),
+        p1.position.x().value(),
+        p1.velocity.x().value(),
+    );
+    let y = interp_pos(
+        p0.position.y().value(),
+        p0.velocity.y().value(),
+        p1.position.y().value(),
+        p1.velocity.y().value(),
+    );
+    let z = interp_pos(
+        p0.position.z().value(),
+        p0.velocity.z().value(),
+        p1.position.z().value(),
+        p1.velocity.z().value(),
+    );
 
     let interp_vel = |a: f64, da: f64, b: f64, db: f64| {
         let dh00 = 6.0 * tau2 - 6.0 * tau;
@@ -290,11 +328,30 @@ fn hermite_interp(orbit: &LisaOrbit, t: f64) -> Result<LisaOrbitPoint, LisaProvi
         let dh11 = 3.0 * tau2 - 2.0 * tau;
         (dh00 * a + dh10 * dt * da + dh01 * b + dh11 * dt * db) / dt
     };
-    let vx = interp_vel(p0.position.x().value(), p0.velocity.x().value(), p1.position.x().value(), p1.velocity.x().value());
-    let vy = interp_vel(p0.position.y().value(), p0.velocity.y().value(), p1.position.y().value(), p1.velocity.y().value());
-    let vz = interp_vel(p0.position.z().value(), p0.velocity.z().value(), p1.position.z().value(), p1.velocity.z().value());
+    let vx = interp_vel(
+        p0.position.x().value(),
+        p0.velocity.x().value(),
+        p1.position.x().value(),
+        p1.velocity.x().value(),
+    );
+    let vy = interp_vel(
+        p0.position.y().value(),
+        p0.velocity.y().value(),
+        p1.position.y().value(),
+        p1.velocity.y().value(),
+    );
+    let vz = interp_vel(
+        p0.position.z().value(),
+        p0.velocity.z().value(),
+        p1.position.z().value(),
+        p1.velocity.z().value(),
+    );
 
-    let position = LisaPosition::new(qtty::Kilometer::new(x), qtty::Kilometer::new(y), qtty::Kilometer::new(z));
+    let position = LisaPosition::new(
+        qtty::Kilometer::new(x),
+        qtty::Kilometer::new(y),
+        qtty::Kilometer::new(z),
+    );
     let velocity = LisaVelocity::new(
         qtty::Quantity::<KmPerSecond>::new(vx),
         qtty::Quantity::<KmPerSecond>::new(vy),
@@ -305,7 +362,12 @@ fn hermite_interp(orbit: &LisaOrbit, t: f64) -> Result<LisaOrbitPoint, LisaProvi
     let epoch_jd = j2000_seconds_to_jd(epoch_j2000_s);
     let epoch = jd_to_time_tdb(epoch_jd).unwrap_or(p0.epoch);
 
-    Ok(LisaOrbitPoint { epoch, epoch_j2000_s, position, velocity })
+    Ok(LisaOrbitPoint {
+        epoch,
+        epoch_j2000_s,
+        position,
+        velocity,
+    })
 }
 
 // ── Time helpers ──────────────────────────────────────────────────────────────
@@ -391,9 +453,13 @@ impl Observation for InterSatRangeObs {
         let naif_a = self.sc_a.naif_id();
         let naif_b = self.sc_b.naif_id();
 
-        let pt_a = self.provider.state(naif_a, t_recv)
+        let pt_a = self
+            .provider
+            .state(naif_a, t_recv)
             .map_err(|_e| PodObservationsError::LightTimeNotConverged)?;
-        let pt_b0 = self.provider.state(naif_b, t_recv)
+        let pt_b0 = self
+            .provider
+            .state(naif_b, t_recv)
             .map_err(|_| PodObservationsError::LightTimeNotConverged)?;
 
         let pos_a = pt_a.position;
@@ -404,7 +470,9 @@ impl Observation for InterSatRangeObs {
         let rho0_km = (dx0 * dx0 + dy0 * dy0 + dz0 * dz0).sqrt();
 
         let t_emit = t_recv - rho0_km / C_KM_S;
-        let pt_b1 = self.provider.state(naif_b, t_emit)
+        let pt_b1 = self
+            .provider
+            .state(naif_b, t_emit)
             .map_err(|_| PodObservationsError::LightTimeNotConverged)?;
 
         let pos_b1 = pt_b1.position;
@@ -433,26 +501,37 @@ impl Observation for InterSatRangeObs {
 // ── main ──────────────────────────────────────────────────────────────────────
 
 fn load_orbit(path: &str, sc: LisaSpacecraftId) -> LisaOrbit {
-    let raw = std::fs::read_to_string(path)
-        .unwrap_or_else(|e| panic!("cannot open {path}: {e}"));
-    LisaOrbitReader::from_str(&raw, sc)
-        .unwrap_or_else(|e| panic!("cannot parse {path}: {e}"))
+    let raw = std::fs::read_to_string(path).unwrap_or_else(|e| panic!("cannot open {path}: {e}"));
+    LisaOrbitReader::from_str(&raw, sc).unwrap_or_else(|e| panic!("cannot parse {path}: {e}"))
 }
 
 fn main() {
     let root = concat!(env!("CARGO_MANIFEST_DIR"), "/test-data/lisa");
 
     let provider = Arc::new(LisaEphemerisProvider::new(LisaOrbitSet {
-        sc1: load_orbit(&format!("{root}/lisa_orbit_sample.oem1"), LisaSpacecraftId::SC1),
-        sc2: load_orbit(&format!("{root}/lisa_orbit_sample.oem2"), LisaSpacecraftId::SC2),
-        sc3: load_orbit(&format!("{root}/lisa_orbit_sample.oem3"), LisaSpacecraftId::SC3),
+        sc1: load_orbit(
+            &format!("{root}/lisa_orbit_sample.oem1"),
+            LisaSpacecraftId::SC1,
+        ),
+        sc2: load_orbit(
+            &format!("{root}/lisa_orbit_sample.oem2"),
+            LisaSpacecraftId::SC2,
+        ),
+        sc3: load_orbit(
+            &format!("{root}/lisa_orbit_sample.oem3"),
+            LisaSpacecraftId::SC3,
+        ),
     }));
 
     // Query SC1 at its first tabulated epoch.
     let sc1_t0 = provider.orbits.sc1.points[0].epoch_j2000_s;
     let pt = provider.state(-1001, sc1_t0).expect("SC1 state query");
-    println!("SC1 position at t₀: ({:.0}, {:.0}, {:.0}) km",
-        pt.position.x().value(), pt.position.y().value(), pt.position.z().value());
+    println!(
+        "SC1 position at t₀: ({:.0}, {:.0}, {:.0}) km",
+        pt.position.x().value(),
+        pt.position.y().value(),
+        pt.position.z().value()
+    );
 
     // Build a synthetic inter-satellite range observation.
     let epoch_jd = j2000_seconds_to_jd(sc1_t0);
@@ -476,16 +555,18 @@ fn main() {
     };
     println!("{obs:?}");
 
-    use siderust::pod::observation::obs_trait::CartesianState;
-    use siderust::pod::observation::provider_bundle::NullProviderBundle;
     use siderust::astro::dynamics::{Position, Velocity};
     use siderust::coordinates::frames::GCRS;
+    use siderust::pod::observation::obs_trait::CartesianState;
+    use siderust::pod::observation::provider_bundle::NullProviderBundle;
     let state = CartesianState::new(
         epoch.to_j2000s(),
         Position::<GCRS>::new(0.0, 0.0, 0.0),
         Velocity::<GCRS>::new(0.0, 0.0, 0.0),
     );
-    let residual = obs.modeled_value(&state, &NullProviderBundle).expect("range residual");
+    let residual = obs
+        .modeled_value(&state, &NullProviderBundle)
+        .expect("range residual");
     println!("O−C residual: {residual:.6} m  (should be ~0)");
     assert!(residual.abs() < 1.0, "residual too large: {residual}");
 
@@ -516,7 +597,11 @@ META_STOP\n\
 
     #[test]
     fn spacecraft_id_naif_roundtrip() {
-        for sc in [LisaSpacecraftId::SC1, LisaSpacecraftId::SC2, LisaSpacecraftId::SC3] {
+        for sc in [
+            LisaSpacecraftId::SC1,
+            LisaSpacecraftId::SC2,
+            LisaSpacecraftId::SC3,
+        ] {
             assert_eq!(LisaSpacecraftId::from_naif_id(sc.naif_id()), Some(sc));
         }
         assert_eq!(LisaSpacecraftId::from_naif_id(399), None);
@@ -549,8 +634,15 @@ META_STOP\n\
     #[test]
     fn provider_unknown_body_error() {
         let orbit = LisaOrbitReader::from_str(OEM_SAMPLE, LisaSpacecraftId::SC1).unwrap();
-        let set = LisaOrbitSet { sc1: orbit.clone(), sc2: orbit.clone(), sc3: orbit };
+        let set = LisaOrbitSet {
+            sc1: orbit.clone(),
+            sc2: orbit.clone(),
+            sc3: orbit,
+        };
         let provider = LisaEphemerisProvider::new(set);
-        assert!(matches!(provider.state(999, 0.0).unwrap_err(), LisaProviderError::UnknownBody(999)));
+        assert!(matches!(
+            provider.state(999, 0.0).unwrap_err(),
+            LisaProviderError::UnknownBody(999)
+        ));
     }
 }

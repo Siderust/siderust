@@ -45,8 +45,8 @@
 //! consumers outside the crate should use the typed APIs provided by
 //! [`calculus`](crate::calculus), [`astro`](crate::astro), etc.
 
+pub(crate) mod jpl;
 #[cfg(feature = "lagrange-centers")]
 pub(crate) mod lagrange;
-pub(crate) mod jpl;
 pub(crate) mod nut00a_tables;
 pub(crate) mod pluto_tables;

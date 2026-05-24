@@ -6,7 +6,7 @@
 
 use siderust::numeric::root_finding;
 use siderust::qtty::{Day, Quantity, Radian};
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{Interval, ModifiedJulianDate};
 use std::cell::Cell;
 
 type Days = Quantity<Day>;
@@ -75,7 +75,7 @@ fn brent_with_values_saves_evaluations() {
     let f_hi = Radians::new((4.0_f64).sin());
 
     let _ = root_finding::brent_with_values(
-        Period::new(
+        Interval::new(
             Mjd::try_new(Days::new(3.0)).unwrap(),
             Mjd::try_new(Days::new(4.0)).unwrap(),
         ),
@@ -104,7 +104,7 @@ fn brent_with_values_saves_evaluations() {
 #[test]
 fn brent_tol_respects_relaxed_tolerance() {
     let root = root_finding::brent_tol(
-        Period::new(
+        Interval::new(
             Mjd::try_new(Days::new(3.0)).unwrap(),
             Mjd::try_new(Days::new(4.0)).unwrap(),
         ),

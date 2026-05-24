@@ -1,13 +1,13 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Target examples.
+//! CoordinateWithPM examples.
 //!
 //! Shows how to use:
 //! - `Trackable` for dynamic sky objects (Sun, planets, Moon, stars, ICRS directions)
-//! - `Target<T>` / `CoordinateWithPM<T>` as timestamped coordinate snapshots
+//! - `CoordinateWithPM<T>` as a timestamped coordinate snapshot
 //! - optional proper motion for stellar targets
-//! - target frame+center conversion through `From<&Target<_>>`
+//! - target frame+center conversion through `From<&CoordinateWithPM<_>>`
 //!
 //! Run with:
 //! `cargo run --example 08_target`
@@ -22,14 +22,14 @@ use siderust::coordinates::cartesian;
 use siderust::coordinates::centers::{Geocentric, Heliocentric};
 use siderust::coordinates::spherical::direction;
 use siderust::qtty::*;
-use siderust::targets::{Target, Trackable};
+use siderust::targets::{CoordinateWithPM, Trackable};
 use siderust::time::JulianDate;
 
 fn main() {
     let jd = siderust::time::J2000;
     let jd_next = jd + Days::new(1.0);
 
-    println!("Target + Trackable examples");
+    println!("CoordinateWithPM + Trackable examples");
     println!("===========================\n");
 
     section_trackable_objects(jd, jd_next);
@@ -73,10 +73,10 @@ fn section_trackable_objects(jd: JulianDate, jd_next: JulianDate) {
 }
 
 fn section_target_snapshots(jd: JulianDate, jd_next: JulianDate) {
-    println!("2) Target snapshots for arbitrary sky objects");
+    println!("2) CoordinateWithPM snapshots for arbitrary sky objects");
 
     // Planet snapshot target (heliocentric ecliptic cartesian)
-    let mut mars_target = Target::new_static(Mars::vsop87a(jd), jd);
+    let mut mars_target = CoordinateWithPM::new_static(Mars::vsop87a(jd), jd);
     println!(
         "  Mars target at JD {:.1}: r = {:.6}",
         mars_target.time,
@@ -92,14 +92,14 @@ fn section_target_snapshots(jd: JulianDate, jd_next: JulianDate) {
     );
 
     // Comet snapshot target (orbit propagated with Kepler helper).
-    let halley_target = Target::new_static(HALLEY.orbit.kepler_position(jd), jd);
+    let halley_target = CoordinateWithPM::new_static(HALLEY.orbit.kepler_position(jd), jd);
     println!(
         "  Halley target at JD {:.1}: r = {:.6}",
         halley_target.time,
         halley_target.position.distance()
     );
 
-    // Satellite-like custom object: propagate its Orbit and wrap in Target.
+    // Satellite-like custom object: propagate its Orbit and wrap in CoordinateWithPM.
     let demo_satellite = Satellite::new(
         "DemoSat",
         Kilograms::new(1_200.0),
@@ -114,7 +114,8 @@ fn section_target_snapshots(jd: JulianDate, jd_next: JulianDate) {
             jd,
         ),
     );
-    let demo_satellite_target = Target::new_static(demo_satellite.orbit.kepler_position(jd), jd);
+    let demo_satellite_target =
+        CoordinateWithPM::new_static(demo_satellite.orbit.kepler_position(jd), jd);
     println!(
         "  {} target at JD {:.1}: r = {:.6}\n",
         demo_satellite.name,
@@ -124,7 +125,7 @@ fn section_target_snapshots(jd: JulianDate, jd_next: JulianDate) {
 }
 
 fn section_target_with_proper_motion(jd: JulianDate) {
-    println!("3) Target with proper motion (stellar-style target)");
+    println!("3) CoordinateWithPM with proper motion (stellar-style target)");
 
     type MasPerYear = siderust::qtty::Per<siderust::qtty::MilliArcsecond, siderust::qtty::Year>;
     type MasPerYearQ = siderust::qtty::Quantity<MasPerYear>;
@@ -134,7 +135,7 @@ fn section_target_with_proper_motion(jd: JulianDate) {
         MasPerYearQ::new(10.86), // µδ
     );
 
-    let mut moving_target = Target::new(
+    let mut moving_target = CoordinateWithPM::new(
         *catalog::BETELGEUSE.coordinate.get_position(),
         jd,
         pm.clone(),
@@ -159,13 +160,14 @@ fn section_target_with_proper_motion(jd: JulianDate) {
 }
 
 fn section_target_transform(jd: JulianDate) {
-    println!("4) Target conversion across frame + center");
+    println!("4) CoordinateWithPM conversion across frame + center");
 
     type HelioEclAu = cartesian::position::EclipticMeanJ2000<AstronomicalUnit, Heliocentric>;
     type GeoEqAu = cartesian::position::EquatorialMeanJ2000<AstronomicalUnit, Geocentric>;
 
-    let mars_helio: Target<HelioEclAu> = Target::new_static(Mars::vsop87a(jd), jd);
-    let mars_geoeq: Target<GeoEqAu> = Target::from(&mars_helio);
+    let mars_helio: CoordinateWithPM<HelioEclAu> =
+        CoordinateWithPM::new_static(Mars::vsop87a(jd), jd);
+    let mars_geoeq: CoordinateWithPM<GeoEqAu> = CoordinateWithPM::from(&mars_helio);
 
     println!(
         "  Mars heliocentric ecliptic target: r = {:.6}",

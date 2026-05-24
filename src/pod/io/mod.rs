@@ -6,4 +6,4 @@
 #![forbid(unsafe_code)]
 #![warn(missing_docs)]
 
-pub use crate::formats::{FileLocation, FormatError as PodIoError, ParseMode};
+pub use crate::formats::{FileLocation, FormatError, ParseMode};

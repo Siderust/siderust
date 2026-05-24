@@ -219,7 +219,13 @@ pub fn solve_sun_earth_lagrange_dyn_with_config(
     seed: Option<Position<Barycentric, EclipticMeanJ2000, Kilometer>>,
 ) -> Result<SolverSolution, SolverError> {
     let sampler = DynSampler { ephemeris };
-    solve_with_sampler(&sampler, point, jd, config, seed.map(|pos| [pos.x().value(), pos.y().value(), pos.z().value()]))
+    solve_with_sampler(
+        &sampler,
+        point,
+        jd,
+        config,
+        seed.map(|pos| [pos.x().value(), pos.y().value(), pos.z().value()]),
+    )
 }
 
 trait Sampler {
@@ -366,17 +372,38 @@ impl RotatingFrame {
         }
         let y_axis = normalize(cross(z_axis, x_axis)).ok_or(SolverError::DegenerateFrame)?;
         let total_mu = GM_SUN.value() + GM_EARTH.value();
-        let origin = scale(add(scale(sun, GM_SUN.value()), scale(earth, GM_EARTH.value())), 1.0 / total_mu);
+        let origin = scale(
+            add(scale(sun, GM_SUN.value()), scale(earth, GM_EARTH.value())),
+            1.0 / total_mu,
+        );
         let omega = (total_mu / d.powi(3)).sqrt();
         let origin_accel = sun_earth_barycenter_external_accel(sun, earth, moon);
-        Ok(Self { sun, earth, moon, origin, x_axis, y_axis, z_axis, omega, distance: d, origin_accel })
+        Ok(Self {
+            sun,
+            earth,
+            moon,
+            origin,
+            x_axis,
+            y_axis,
+            z_axis,
+            omega,
+            distance: d,
+            origin_accel,
+        })
     }
 
     fn residual(&self, pos: Vec3) -> Vec3 {
-        let bodies = [(self.sun, GM_SUN.value()), (self.earth, GM_EARTH.value()), (self.moon, GM_MOON.value())];
+        let bodies = [
+            (self.sun, GM_SUN.value()),
+            (self.earth, GM_EARTH.value()),
+            (self.moon, GM_MOON.value()),
+        ];
         let rho = sub(pos, self.origin);
         let omega_vec = scale(self.z_axis, self.omega);
-        sub(sub(grav_accel(pos, &bodies), self.origin_accel), cross(omega_vec, cross(omega_vec, rho)))
+        sub(
+            sub(grav_accel(pos, &bodies), self.origin_accel),
+            cross(omega_vec, cross(omega_vec, rho)),
+        )
     }
 
     fn seed(&self, point: SunEarthLagrangePoint) -> Vec3 {
@@ -396,17 +423,25 @@ impl RotatingFrame {
             _ => 0.0,
         };
         let bary_x = (x - mu) * d;
-        add(self.origin, add(scale(self.x_axis, bary_x), scale(self.y_axis, y * d)))
+        add(
+            self.origin,
+            add(scale(self.x_axis, bary_x), scale(self.y_axis, y * d)),
+        )
     }
 }
 
 fn relative_velocity(sampler: &dyn Sampler, jd: JulianDate) -> Result<Vec3, SolverError> {
     let jd_value = jd.raw().value();
-    let before = crate::time::try_jd_f64(jd_value - DERIVATIVE_STEP_DAYS).map_err(|_| SolverError::DegenerateFrame)?;
-    let after = crate::time::try_jd_f64(jd_value + DERIVATIVE_STEP_DAYS).map_err(|_| SolverError::DegenerateFrame)?;
+    let before = crate::time::try_jd_f64(jd_value - DERIVATIVE_STEP_DAYS)
+        .map_err(|_| SolverError::DegenerateFrame)?;
+    let after = crate::time::try_jd_f64(jd_value + DERIVATIVE_STEP_DAYS)
+        .map_err(|_| SolverError::DegenerateFrame)?;
     let rel_before = sub(sampler.earth(before)?, sampler.sun(before)?);
     let rel_after = sub(sampler.earth(after)?, sampler.sun(after)?);
-    Ok(scale(sub(rel_after, rel_before), 1.0 / (2.0 * DERIVATIVE_STEP_DAYS * SECONDS_PER_DAY)))
+    Ok(scale(
+        sub(rel_after, rel_before),
+        1.0 / (2.0 * DERIVATIVE_STEP_DAYS * SECONDS_PER_DAY),
+    ))
 }
 
 fn pos_au_to_km<C>(pos: Position<C, EclipticMeanJ2000, crate::qtty::AstronomicalUnit>) -> Vec3
@@ -424,13 +459,15 @@ where
     [pos.x().value(), pos.y().value(), pos.z().value()]
 }
 
-
 fn sun_earth_barycenter_external_accel(sun: Vec3, earth: Vec3, moon: Vec3) -> Vec3 {
     let sun_due_moon = point_mass_accel(sun, moon, GM_MOON.value());
     let earth_due_moon = point_mass_accel(earth, moon, GM_MOON.value());
     let total_mu = GM_SUN.value() + GM_EARTH.value();
     scale(
-        add(scale(sun_due_moon, GM_SUN.value()), scale(earth_due_moon, GM_EARTH.value())),
+        add(
+            scale(sun_due_moon, GM_SUN.value()),
+            scale(earth_due_moon, GM_EARTH.value()),
+        ),
         1.0 / total_mu,
     )
 }
@@ -464,7 +501,10 @@ fn jacobian(frame: &RotatingFrame, pos: Vec3, h: f64) -> Mat3 {
         plus[axis] += h;
         let mut minus = pos;
         minus[axis] -= h;
-        let diff = scale(sub(frame.residual(plus), frame.residual(minus)), 1.0 / (2.0 * h));
+        let diff = scale(
+            sub(frame.residual(plus), frame.residual(minus)),
+            1.0 / (2.0 * h),
+        );
         for row in 0..3 {
             jac[row][axis] = diff[row];
         }
@@ -506,14 +546,30 @@ fn solve_linear(mut a: Mat3, mut b: Vec3) -> Option<Vec3> {
     Some(b)
 }
 
-fn add(a: Vec3, b: Vec3) -> Vec3 { [a[0] + b[0], a[1] + b[1], a[2] + b[2]] }
-fn sub(a: Vec3, b: Vec3) -> Vec3 { [a[0] - b[0], a[1] - b[1], a[2] - b[2]] }
-fn neg(a: Vec3) -> Vec3 { [-a[0], -a[1], -a[2]] }
-fn scale(a: Vec3, s: f64) -> Vec3 { [a[0] * s, a[1] * s, a[2] * s] }
-fn dot(a: Vec3, b: Vec3) -> f64 { a[0] * b[0] + a[1] * b[1] + a[2] * b[2] }
-fn norm(a: Vec3) -> f64 { dot(a, a).sqrt() }
+fn add(a: Vec3, b: Vec3) -> Vec3 {
+    [a[0] + b[0], a[1] + b[1], a[2] + b[2]]
+}
+fn sub(a: Vec3, b: Vec3) -> Vec3 {
+    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
+}
+fn neg(a: Vec3) -> Vec3 {
+    [-a[0], -a[1], -a[2]]
+}
+fn scale(a: Vec3, s: f64) -> Vec3 {
+    [a[0] * s, a[1] * s, a[2] * s]
+}
+fn dot(a: Vec3, b: Vec3) -> f64 {
+    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
+}
+fn norm(a: Vec3) -> f64 {
+    dot(a, a).sqrt()
+}
 fn cross(a: Vec3, b: Vec3) -> Vec3 {
-    [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]]
+    [
+        a[1] * b[2] - a[2] * b[1],
+        a[2] * b[0] - a[0] * b[2],
+        a[0] * b[1] - a[1] * b[0],
+    ]
 }
 fn normalize(a: Vec3) -> Option<Vec3> {
     let n = norm(a);
@@ -537,7 +593,10 @@ mod tests {
         ] {
             let solution = solve_sun_earth_lagrange::<Vsop87Ephemeris>(point, J2000)
                 .expect("solver should converge");
-            assert!(solution.step_norm_km <= STEP_TOL_KM * 10.0 || solution.residual_norm_km_s2 < 1.0e-6);
+            assert!(
+                solution.step_norm_km <= STEP_TOL_KM * 10.0
+                    || solution.residual_norm_km_s2 < 1.0e-6
+            );
         }
     }
 }

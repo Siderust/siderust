@@ -3,6 +3,19 @@
 
 //! SPK segment decoding and Chebyshev evaluation.
 //!
+//! ## Technical scope
+//!
+//! This module decodes the SPK segment payloads used by the low-level kernel
+//! reader. It stays at the NAIF wire-format level: epochs are raw TDB seconds
+//! past J2000 and evaluations return raw `[f64; 6]` state vectors in km and
+//! km/s.
+//!
+//! ## API contract
+//!
+//! [`SpkSegment::evaluate`] is intentionally a low-level wire-format entry
+//! point. Higher-level scientific callers should prefer typed ephemeris
+//! providers instead of working with raw kernel records directly.
+//!
 //! This module covers the two SPK data types relevant to the JPL DE
 //! planetary kernels exercised by POD:
 //!
@@ -71,6 +84,12 @@ impl SpkSegment {
     /// and velocities in **kilometers per second**, expressed in the
     /// segment's reference frame (typically J2000 ≡ ICRS for DE
     /// kernels).
+    ///
+    /// # Safety / Wire-format API
+    ///
+    /// This method intentionally exposes raw SPK record values. Prefer a typed
+    /// [`crate::pod::providers::EphemerisProvider`] implementation when you
+    /// need the scientific API.
     pub fn evaluate(&self, et: f64) -> Result<[f64; 6], SpiceError> {
         match self {
             SpkSegment::Type2(c) => c.evaluate_type2(et),

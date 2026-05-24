@@ -24,9 +24,9 @@
 //! ## References
 //! None.
 
-use crate::event::altitude::CrossingDirection;
+use crate::event::altitude::{CrossingDirection, SearchOpts};
 use crate::qtty::*;
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{Interval, ModifiedJulianDate};
 
 // Re-export CrossingDirection so consumers only need to import from this module.
 pub use crate::event::altitude::CrossingDirection as AzimuthCrossingDirection;
@@ -116,9 +116,11 @@ pub struct AzimuthQuery {
     /// Observer location on Earth.
     pub observer: crate::coordinates::centers::Geodetic<crate::coordinates::frames::ECEF>,
     /// Time window to search (MJD on the TT axis).
-    pub window: Period<ModifiedJulianDate>,
+    pub window: Interval<ModifiedJulianDate>,
     /// Lower (or start-of-wrap) bound of the azimuth band.
     pub min_azimuth: Degrees,
     /// Upper (or end-of-wrap) bound of the azimuth band.
     pub max_azimuth: Degrees,
+    /// Numerical search options (scan step, tolerance).
+    pub opts: SearchOpts,
 }

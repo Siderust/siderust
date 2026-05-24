@@ -24,11 +24,11 @@ use siderust::bodies::Moon;
 use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::qtty::*;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{ModifiedJulianDate, Interval};
 use std::hint::black_box;
 use std::time::Duration;
 
-fn build_period(days: u32) -> Period<ModifiedJulianDate> {
+fn build_period(days: u32) -> Interval<ModifiedJulianDate> {
     let start_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
         .unwrap()
         .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
@@ -43,7 +43,7 @@ fn build_period(days: u32) -> Period<ModifiedJulianDate> {
     let mjd_start: ModifiedJulianDate = ModifiedJulianDate::from(start_dt);
     let mjd_end: ModifiedJulianDate = ModifiedJulianDate::from(end_dt);
 
-    Period::new(mjd_start, mjd_end)
+    Interval::new(mjd_start, mjd_end)
 }
 
 // =============================================================================

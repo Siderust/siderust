@@ -115,19 +115,25 @@ pub fn decode_globally(
     let nl_lat = nl(lat);
 
     let (lon, lon_ref) = if odd_is_latest {
-        let dlon = if nl_lat <= 1.0 { 360.0 } else { 360.0 / (nl_lat - 1.0) };
-        let m = (lon0 as f64 * (nl_lat - 1.0) / 131_072.0
-            - lon1 as f64 * nl_lat / 131_072.0
-            + 0.5)
+        let dlon = if nl_lat <= 1.0 {
+            360.0
+        } else {
+            360.0 / (nl_lat - 1.0)
+        };
+        let m = (lon0 as f64 * (nl_lat - 1.0) / 131_072.0 - lon1 as f64 * nl_lat / 131_072.0 + 0.5)
             .floor();
-        (dlon * (m.rem_euclid(nl_lat - 1.0) + lon1 as f64 / 131_072.0), lat_o)
+        (
+            dlon * (m.rem_euclid(nl_lat - 1.0) + lon1 as f64 / 131_072.0),
+            lat_o,
+        )
     } else {
         let dlon = if nl_lat < 1.0 { 360.0 } else { 360.0 / nl_lat };
-        let m = (lon0 as f64 * (nl_lat - 1.0) / 131_072.0
-            - lon1 as f64 * nl_lat / 131_072.0
-            + 0.5)
+        let m = (lon0 as f64 * (nl_lat - 1.0) / 131_072.0 - lon1 as f64 * nl_lat / 131_072.0 + 0.5)
             .floor();
-        (dlon * (m.rem_euclid(nl_lat) + lon0 as f64 / 131_072.0), lat_e)
+        (
+            dlon * (m.rem_euclid(nl_lat) + lon0 as f64 / 131_072.0),
+            lat_e,
+        )
     };
 
     let _ = lon_ref; // used implicitly in lat selection above

@@ -169,7 +169,11 @@ pub(crate) fn evaluate_records(
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
     let record_len = 2 + 3 * ncoeff;
     let jd_value = jd.raw().value();
-    if records.is_empty() || ncoeff == 0 || record_len == 2 || !records.len().is_multiple_of(record_len) {
+    if records.is_empty()
+        || ncoeff == 0
+        || record_len == 2
+        || !records.len().is_multiple_of(record_len)
+    {
         return Err(EphemerisError::OutOfRange {
             jd: jd_value,
             start_jd: SUN_EARTH_LAGRANGE_METADATA.valid_from.value(),

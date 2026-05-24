@@ -8,9 +8,10 @@
 //! versions 1 and 2 with both strict and permissive parse modes.
 //!
 //! The primary POD product is the **normal-point** record (type `11`), which
-//! is a compressed, time-averaged two-way range observation. Full-rate records
-//! (type `10`) are also parsed. Station and target metadata (H2/H3 header
-//! blocks) are captured in typed structs.
+//! is a compressed, time-averaged two-way range observation. Station and target
+//! metadata (H2/H3 header blocks) are captured in typed structs. Full-rate
+//! records (type `10`) may appear in the input but are not exposed by the
+//! typed public API.
 //!
 //! Station motion, atmospheric delay, range residual analysis, and any
 //! corrections beyond what is in the file are outside this module.
@@ -22,8 +23,6 @@
 //!
 //! - [`CrdStation`] / [`CrdTarget`] metadata from H2/H3.
 //! - A [`Vec<NormalPoint>`] of typed normal-point records.
-//! - A [`Vec<CrdRange>`] of raw range records (both types 10 and 11) for
-//!   backward compatibility.
 //!
 //! The one-way slant range in [`NormalPoint::range_m`] is derived as
 //! `c × TOF / 2` where `c = 299 792 458 m s⁻¹`.
@@ -159,40 +158,12 @@ pub struct NormalPoint {
     pub return_rate: Option<f64>,
 }
 
-// ── Backward-compatible raw range record ──────────────────────────────────────
-
-/// A raw SLR range record from CRD type `10` (full-rate) or `11` (normal-point).
-///
-/// Kept for backward compatibility. New code should prefer [`NormalPoint`]
-/// for type-11 records.
-///
-/// # Examples
-///
-/// ```
-/// use siderust::formats::ilrs::crd::parse_crd;
-/// let txt = "H2 S 0 0 0 0\nH3 t 0 0 0 1\nH4 0 2024 1 1 0 0 0 0 0 0 0 0 0 0 1 0\n\
-///            11 300.0 0.08 std 0 0 1 0\nH8\n";
-/// let f = parse_crd(txt).unwrap();
-/// assert_eq!(f.ranges[0].record_type, 11);
-/// ```
-#[derive(Debug, Clone)]
-pub struct CrdRange {
-    /// Seconds of day (UTC) at the epoch of the range observation.
-    pub seconds_of_day: Seconds,
-    /// Two-way time-of-flight.
-    pub time_of_flight: Seconds,
-    /// System configuration ID.
-    pub system_config_id: String,
-    /// `10` for full-rate, `11` for normal-point.
-    pub record_type: u8,
-}
-
 // ── CrdFile ───────────────────────────────────────────────────────────────────
 
 /// Parsed CRD file (header + observations).
 ///
-/// Contains both the high-level typed view ([`normal_points`](CrdFile::normal_points))
-/// and the backward-compatible raw [`ranges`](CrdFile::ranges).
+/// Contains the high-level typed normal-point view exposed by
+/// [`normal_points`](CrdFile::normal_points).
 ///
 /// # Examples
 ///
@@ -217,8 +188,6 @@ pub struct CrdFile {
     pub satellite_norad: String,
     /// Session start (UTC midnight) from the H4 record.
     pub session_date: Option<Time<UTC>>,
-    /// Raw range records (types 10 and 11) — backward-compatible view.
-    pub ranges: Vec<CrdRange>,
     /// CRD format version string from H1 (e.g. `"2"`).
     pub format_version: String,
     /// Typed station metadata.
@@ -412,14 +381,6 @@ fn parse_crd_impl(
                 // Gather remaining optional fields for normal points.
                 let rest: Vec<&str> = tokens.collect();
 
-                // Backward-compatible raw range record.
-                out.ranges.push(CrdRange {
-                    seconds_of_day: Seconds::new(sod),
-                    time_of_flight: Seconds::new(tof),
-                    system_config_id: current_sys.clone(),
-                    record_type,
-                });
-
                 if record_type == 11 {
                     // Build epoch directly from H4 date + SOD components to
                     // avoid floating-point precision loss in the JD round-trip.
@@ -507,9 +468,8 @@ H8\n";
         assert_eq!(d.year(), 2024);
         assert_eq!(d.month(), 1);
         assert_eq!(d.day(), 1);
-        assert_eq!(f.ranges.len(), 2);
-        assert!((f.ranges[0].time_of_flight.value() - 0.05123456789).abs() < 1e-15);
-        assert_eq!(f.ranges[0].record_type, 11);
+        assert_eq!(f.normal_points.len(), 2);
+        assert!((f.normal_points[0].time_of_flight.value() - 0.05123456789).abs() < 1e-15);
     }
 
     #[test]
@@ -602,11 +562,9 @@ H8\n";
     }
 
     #[test]
-    fn full_rate_records_parsed() {
+    fn full_rate_records_are_not_exposed_as_normal_points() {
         let txt = "H2 S 0 0 0 0\n10 100.0 0.08 std\nH8\n";
         let f = parse_crd(txt).expect("parse full-rate");
-        assert_eq!(f.ranges.len(), 1);
-        assert_eq!(f.ranges[0].record_type, 10);
-        assert_eq!(f.normal_points.len(), 0); // type-10 not added to NPs
+        assert_eq!(f.normal_points.len(), 0);
     }
 }

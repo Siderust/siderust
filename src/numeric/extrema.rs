@@ -14,7 +14,7 @@
 //!
 //! ## Technical scope
 //!
-//! All routines operate on `Period<ModifiedJulianDate>` time windows and
+//! All routines operate on `Interval<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
 //!
 //! | Function | Purpose |
@@ -34,7 +34,7 @@
 //!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
 use crate::qtty::*;
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{Interval, ModifiedJulianDate};
 
 use super::root_finding;
 
@@ -96,7 +96,7 @@ pub struct Extremum<V: Unit> {
 /// Uses golden‑section search (derivative‑free, guaranteed convergence).
 /// Returns `(t_min, f(t_min))`.
 pub fn minimize<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     f: &F,
 ) -> (ModifiedJulianDate, Quantity<V>)
 where
@@ -108,7 +108,7 @@ where
 
 /// Like [`minimize`] but with a caller‑chosen tolerance.
 pub fn minimize_tol<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     f: &F,
     tol: Days,
 ) -> (ModifiedJulianDate, Quantity<V>)
@@ -149,7 +149,7 @@ where
 ///
 /// Implemented as `minimize(-f)`.  Returns `(t_max, f(t_max))`.
 pub fn maximize<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     f: &F,
 ) -> (ModifiedJulianDate, Quantity<V>)
 where
@@ -161,7 +161,7 @@ where
 
 /// Like [`maximize`] but with a caller‑chosen tolerance.
 pub fn maximize_tol<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     f: &F,
     tol: Days,
 ) -> (ModifiedJulianDate, Quantity<V>)
@@ -213,7 +213,11 @@ where
 /// and refine each extremum with golden‑section.
 ///
 /// Returns a chronologically sorted list of [`Extremum`] values.
-pub fn find_extrema<V, F>(period: Period<ModifiedJulianDate>, step: Days, f: &F) -> Vec<Extremum<V>>
+pub fn find_extrema<V, F>(
+    period: Interval<ModifiedJulianDate>,
+    step: Days,
+    f: &F,
+) -> Vec<Extremum<V>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -223,7 +227,7 @@ where
 
 /// Like [`find_extrema`] but with a caller‑chosen tolerance.
 pub fn find_extrema_tol<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     step: Days,
     f: &F,
     tol: Days,
@@ -271,7 +275,7 @@ where
 
         if prev_rising && !now_rising {
             // Was rising, now falling → local maximum in [t0, t2]
-            let (t_max, v_max) = maximize_tol(Period::new(t0, t2), f, tol);
+            let (t_max, v_max) = maximize_tol(Interval::new(t0, t2), f, tol);
             result.push(Extremum {
                 t: t_max,
                 value: v_max,
@@ -279,7 +283,7 @@ where
             });
         } else if !prev_rising && now_rising {
             // Was falling, now rising → local minimum in [t0, t2]
-            let (t_min, v_min) = minimize_tol(Period::new(t0, t2), f, tol);
+            let (t_min, v_min) = minimize_tol(Interval::new(t0, t2), f, tol);
             result.push(Extremum {
                 t: t_min,
                 value: v_min,
@@ -307,7 +311,7 @@ where
 ///
 /// The derivative is estimated as: f'(t) ≈ (f(t+h) − f(t−h)) / (2h)
 pub fn find_extrema_via_derivative<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     step: Days,
     f: &F,
     fd_step: Days,
@@ -348,7 +352,7 @@ where
         let next_d = deriv(next_t);
         if opposite_sign(prev_d, next_d) {
             if let Some(root_mjd) =
-                root_finding::brent_with_values(Period::new(t, next_t), prev_d, next_d, deriv)
+                root_finding::brent_with_values(Interval::new(t, next_t), prev_d, next_d, deriv)
             {
                 let val = f(root_mjd);
                 let kind = if let Some(k) = classify::<V, _>(root_mjd, f) {
@@ -391,8 +395,8 @@ mod tests {
     fn mjd(v: f64) -> Mjd {
         crate::time::ModifiedJulianDate::new((Days::new(v)).value())
     }
-    fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
-        Period::new(mjd(a), mjd(b))
+    fn period(a: f64, b: f64) -> Interval<ModifiedJulianDate> {
+        Interval::new(mjd(a), mjd(b))
     }
 
     fn mjd_f64(t: Mjd) -> f64 {

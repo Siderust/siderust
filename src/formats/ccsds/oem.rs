@@ -687,11 +687,12 @@ pub fn read_oem_xml<R: std::io::Read>(mut r: R) -> Result<OemFile, FormatError> 
                 cur_tag = None;
             }
             Event::Text(t) => {
-                let txt = unescape(&t.xml10_content().map_err(|e| {
-                    FormatError::Format(format!("read_oem_xml: xml text: {e}"))
-                })?)
-                .map_err(|e| FormatError::Format(format!("read_oem_xml: xml text: {e}")))?
-                .to_string();
+                let txt =
+                    unescape(&t.xml10_content().map_err(|e| {
+                        FormatError::Format(format!("read_oem_xml: xml text: {e}"))
+                    })?)
+                    .map_err(|e| FormatError::Format(format!("read_oem_xml: xml text: {e}")))?
+                    .to_string();
                 let tag = match &cur_tag {
                     Some(t) => t.as_str(),
                     None => continue,

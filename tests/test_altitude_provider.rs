@@ -13,7 +13,7 @@ use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
 use siderust::event::altitude::{altitude_periods, AltitudePeriodsProvider, AltitudeQuery};
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{Interval, ModifiedJulianDate};
 
 use siderust::qtty::*;
 
@@ -40,15 +40,15 @@ fn north_pole() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(89.0), Meters::new(0.0))
 }
 
-fn one_day() -> Period<ModifiedJulianDate> {
-    Period::new(
+fn one_day() -> Interval<ModifiedJulianDate> {
+    Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     )
 }
 
-fn one_week() -> Period<ModifiedJulianDate> {
-    Period::new(
+fn one_week() -> Interval<ModifiedJulianDate> {
+    Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     )
@@ -56,8 +56,8 @@ fn one_week() -> Period<ModifiedJulianDate> {
 
 /// Generic assertion helper: verifies basic structural invariants of periods.
 fn assert_periods_valid(
-    periods: &[Period<ModifiedJulianDate>],
-    window: Period<ModifiedJulianDate>,
+    periods: &[Interval<ModifiedJulianDate>],
+    window: Interval<ModifiedJulianDate>,
 ) {
     let win_start = window.start.raw().value();
     let win_end = window.end.raw().value();
@@ -128,7 +128,7 @@ fn sun_night_periods_trait() {
 fn sun_twilight_band_trait() {
     let query = AltitudeQuery {
         observer: greenwich(),
-        window: Period::new(
+        window: Interval::new(
             ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
             ModifiedJulianDate::try_new(Days::new(60002.0)).unwrap(),
         ),
@@ -308,7 +308,7 @@ fn altitude_at_icrs_direction_in_range() {
 
 #[test]
 fn empty_window_returns_empty() {
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
     );
@@ -386,7 +386,7 @@ fn never_visible_star_at_north_pole() {
 #[test]
 fn periods_at_span_edges_are_clipped() {
     // Use a very short window; periods should not extend beyond it
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.4)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60000.6)).unwrap(),
     );

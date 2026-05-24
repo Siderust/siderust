@@ -40,7 +40,7 @@
 //! ### D) Illumination period finders
 //!
 //! [`illumination_above`], [`illumination_below`], [`illumination_range`] find
-//! `Period<ModifiedJulianDate>` intervals where the geocentric *k* satisfies a
+//! `Interval<ModifiedJulianDate>` intervals where the geocentric *k* satisfies a
 //! threshold or band condition.  Parameters typed as `IlluminationFractions`.
 //!
 //! All free functions are generic over `E: Ephemeris`, supporting
@@ -63,7 +63,7 @@ use crate::coordinates::frames;
 use crate::ephemeris::Ephemeris;
 use crate::numeric::intervals;
 use crate::qtty::*;
-use crate::time::{JulianDate, ModifiedJulianDate, Period};
+use crate::time::{Interval, JulianDate, ModifiedJulianDate};
 use std::f64::consts::PI;
 use std::marker::PhantomData;
 
@@ -598,7 +598,7 @@ impl Default for PhaseSearchOpts {
 ///
 /// # Arguments
 ///
-/// - `window`, search interval as `Period<ModifiedJulianDate>` (TT axis)
+/// - `window`, search interval as `Interval<ModifiedJulianDate>` (TT axis)
 /// - `opts`, search precision options
 ///
 /// # Returns
@@ -610,11 +610,11 @@ impl Default for PhaseSearchOpts {
 /// ```rust,no_run
 /// use siderust::event::lunar::phase::{find_phase_events, PhaseSearchOpts};
 /// use siderust::ephemeris::Vsop87Ephemeris;
-/// use siderust::time::{ModifiedJulianDate, Period};
+/// use siderust::time::{ModifiedJulianDate, Interval};
 ///
 /// let start = siderust::ModifiedJulianDate::new(60000.0);
 /// let end   = siderust::ModifiedJulianDate::new(60030.0);
-/// let window = Period::new(start, end);
+/// let window = Interval::new(start, end);
 ///
 /// let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
 /// for ev in &events {
@@ -622,7 +622,7 @@ impl Default for PhaseSearchOpts {
 /// }
 /// ```
 pub fn find_phase_events<E: Ephemeris>(
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     opts: PhaseSearchOpts,
 ) -> Vec<PhaseEvent> {
     let mut events = Vec::new();
@@ -761,33 +761,33 @@ fn illumination_at_mjd<E: Ephemeris>(mjd: ModifiedJulianDate) -> IlluminationFra
 ///
 /// # Parameters
 ///
-/// - `window`: search interval (`Period<ModifiedJulianDate>`, TT axis)
+/// - `window`: search interval (`Interval<ModifiedJulianDate>`, TT axis)
 /// - `k_min`: illuminated fraction lower bound, in \[0, 1\]
 /// - `opts`: scan precision options
 ///
 /// # Returns
 ///
-/// Sorted, non-overlapping `Vec<Period<ModifiedJulianDate>>`.
+/// Sorted, non-overlapping `Vec<Interval<ModifiedJulianDate>>`.
 ///
 /// # Example
 ///
 /// ```rust,no_run
 /// use siderust::event::lunar::phase::{illumination_above, PhaseSearchOpts};
 /// use siderust::ephemeris::Vsop87Ephemeris;
-/// use siderust::time::{ModifiedJulianDate, Period};
+/// use siderust::time::{ModifiedJulianDate, Interval};
 /// use siderust::qtty::IlluminationFractions;
 ///
 /// let start = siderust::ModifiedJulianDate::new(60000.0);
 /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 30.0);
-/// let window = Period::new(start, end);
+/// let window = Interval::new(start, end);
 /// // Find windows where Moon is more than 50% illuminated (gibbous/full)
 /// let bright = illumination_above::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.5), PhaseSearchOpts::default());
 /// ```
 pub fn illumination_above<E: Ephemeris>(
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     k_min: IlluminationFractions,
     opts: PhaseSearchOpts,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     intervals::above_threshold_periods(window, opts.scan_step, &illumination_at_mjd::<E>, k_min)
 }
 
@@ -802,13 +802,13 @@ pub fn illumination_above<E: Ephemeris>(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of intervals
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of intervals
 /// where `illuminated_fraction(t) ≤ k_max`.
 pub fn illumination_below<E: Ephemeris>(
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     k_max: IlluminationFractions,
     opts: PhaseSearchOpts,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     use crate::time::complement_within;
     let above = illumination_above::<E>(window, k_max, opts);
     complement_within(window, &above)
@@ -832,26 +832,26 @@ pub fn illumination_below<E: Ephemeris>(
 /// ```rust,no_run
 /// use siderust::event::lunar::phase::{illumination_range, PhaseSearchOpts};
 /// use siderust::ephemeris::Vsop87Ephemeris;
-/// use siderust::time::{ModifiedJulianDate, Period};
+/// use siderust::time::{ModifiedJulianDate, Interval};
 /// use siderust::qtty::IlluminationFractions;
 ///
 /// let start = siderust::ModifiedJulianDate::new(60000.0);
 /// let end = siderust::ModifiedJulianDate::new(start.raw().value() + 60.0);
-/// let window = Period::new(start, end);
+/// let window = Interval::new(start, end);
 /// // Crescent phase: 5–35% illuminated
 /// let crescent = illumination_range::<Vsop87Ephemeris>(window, IlluminationFractions::new(0.05), IlluminationFractions::new(0.35), PhaseSearchOpts::default());
 /// ```
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of intervals
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of intervals
 /// where `k_min ≤ illuminated_fraction(t) ≤ k_max`.
 pub fn illumination_range<E: Ephemeris>(
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     k_min: IlluminationFractions,
     k_max: IlluminationFractions,
     opts: PhaseSearchOpts,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     intervals::in_range_periods(
         window,
         opts.scan_step,
@@ -997,7 +997,7 @@ mod tests {
         // Search ~35 days from J2000, should find at least one of each kind.
         let start = crate::J2000.to::<crate::MJD>();
         let end = crate::time::ModifiedJulianDate::new((start.raw() + Days::new(35.0)).value());
-        let window = Period::new(start, end);
+        let window = Interval::new(start, end);
         let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
 
         assert!(

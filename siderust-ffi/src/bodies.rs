@@ -17,7 +17,7 @@ use siderust::bodies::{self, Star};
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::frames::EquatorialMeanJ2000;
 use siderust::coordinates::spherical;
-use siderust::targets::Target;
+use siderust::targets::CoordinateWithPM;
 use std::borrow::Cow;
 use std::ffi::CStr;
 use std::os::raw::c_char;
@@ -134,8 +134,8 @@ pub extern "C" fn siderust_star_create(
         };
 
         let target = match pm {
-            Some(pm) => Target::new(pos, epoch, pm),
-            None => Target::new_static(pos, epoch),
+            Some(pm) => CoordinateWithPM::new(pos, epoch, pm),
+            None => CoordinateWithPM::new_static(pos, epoch),
         };
 
         let star = Star::new(

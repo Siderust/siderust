@@ -9,6 +9,13 @@
 //! `GM_☉` in the AU-day system. The returned positions are heliocentric
 //! ecliptic J2000.
 //!
+//! This is the astronomy wrapper over the lower-level `keplerian` crate.
+//! `keplerian` owns the pure Kepler-equation solvers and generic two-body
+//! propagation kernels; this `siderust` module stays above it because it binds
+//! those kernels to astronomy-specific choices: [`JulianDate`] epochs from
+//! `tempoch`, [`EclipticMeanJ2000`] output coordinates from `affn`, and the
+//! heliocentric GM conventions used for Solar-System bodies.
+//!
 //! To propagate orbits around other central bodies, use the generic
 //! gravitational parameter approach in a future extension.
 

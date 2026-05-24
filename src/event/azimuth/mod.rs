@@ -41,7 +41,7 @@
 //!
 //! ## Time Scale
 //!
-//! `ModifiedJulianDate` / `Period<ModifiedJulianDate>` values in this API are interpreted on
+//! `ModifiedJulianDate` / `Interval<ModifiedJulianDate>` values in this API are interpreted on
 //! the TT axis (`tempoch` canonical JD(TT) semantics).  If your inputs are UTC
 //! timestamps, convert them with `ModifiedJulianDate::from_utc(…)` first.
 //!
@@ -67,11 +67,11 @@
 //! use siderust::bodies::Sun;
 //! use siderust::coordinates::centers::Geodetic;
 //! use siderust::coordinates::frames::ECEF;
-//! use siderust::time::{ModifiedJulianDate, Period};
+//! use siderust::time::{ModifiedJulianDate, Interval};
 //! use siderust::qtty::*;
 //!
 //! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-//! let window = Period::new(
+//! let window = Interval::new(
 //!     siderust::ModifiedJulianDate::new(60000.0),
 //!     siderust::ModifiedJulianDate::new(60001.0),
 //! );
@@ -88,6 +88,7 @@
 //!     window,
 //!     min_azimuth: Degrees::new(90.0),
 //!     max_azimuth: Degrees::new(270.0),
+//!     opts: siderust::event::azimuth::SearchOpts::default(),
 //! };
 //! let eastern_periods = Sun.azimuth_periods(&query);
 //! ```

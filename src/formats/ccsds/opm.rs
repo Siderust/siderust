@@ -1,8 +1,23 @@
 //! # CCSDS OPM reader/writer (CCSDS 502.0-B-3)
 //!
+//! ## Scientific scope
+//!
 //! Parses and emits Orbit Parameter Messages in Keyword-Value Notation (KVN).
-//! Supported blocks: header, `META_START`/`META_STOP`, and state vector
+//! Supported blocks: header, `META_START`/`META_STOP`, and state/vector
 //! keywords (`EPOCH`, `X`/`Y`/`Z`, `X_DOT`/`Y_DOT`/`Z_DOT`).
+//!
+//! ## Technical scope
+//!
+//! The types in this module are plain CCSDS message containers, not the typed
+//! scientific orbit API. They preserve the field names and units used by the
+//! wire format so readers/writers can round-trip OPM payloads losslessly.
+//!
+//! ## Wire-format note
+//!
+//! [`CartesianState`] and [`KeplerianElements`] directly mirror the CCSDS OPM
+//! fields and therefore use raw km, km/s, and degree scalars. Convert into the
+//! typed `qtty`/`tempoch`/`affn` model after parsing when you need scientific
+//! computation.
 //!
 //! ## References
 //!
@@ -12,6 +27,10 @@ use super::FormatError;
 use std::io::{BufRead, BufReader, Read, Write};
 
 /// OPM state vector (Cartesian).
+///
+/// This struct directly mirrors the CCSDS OPM `X`/`Y`/`Z` and
+/// `X_DOT`/`Y_DOT`/`Z_DOT` fields, so its coordinates remain raw km and km/s
+/// wire-format scalars.
 ///
 /// # Examples
 ///
@@ -35,6 +54,9 @@ pub struct CartesianState {
 }
 
 /// OPM Keplerian elements section.
+///
+/// This struct directly mirrors the CCSDS OPM Keplerian-element fields, so the
+/// values remain raw km and degree wire-format scalars.
 ///
 /// # Examples
 ///

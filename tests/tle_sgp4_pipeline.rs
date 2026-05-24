@@ -21,10 +21,10 @@
 //! [`Sgp4Propagator::from_tle_with_model`]: siderust::astro::sgp4::Sgp4Propagator::from_tle_with_model
 //! [`TemeState`]: siderust::astro::sgp4::TemeState
 
-use qtty::Quantity;
 use qtty::time::Day;
-use siderust::formats::tle::parse_tle;
+use qtty::Quantity;
 use siderust::astro::sgp4::{GravityModel, Sgp4Propagator};
+use siderust::formats::tle::parse_tle;
 use tempoch::JulianDate;
 
 // Vallado SGP4 Verification TLE, NORAD catalog 5.

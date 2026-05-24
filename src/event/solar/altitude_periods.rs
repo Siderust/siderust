@@ -33,7 +33,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::numeric::intervals;
 use crate::qtty::*;
-use crate::time::{complement_within, JulianDate, ModifiedJulianDate, Period};
+use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
 
 // =============================================================================
 // Constants
@@ -82,13 +82,13 @@ pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` where the Sun
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` where the Sun
 /// is above `threshold`.
 pub(crate) fn find_day_periods(
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
     let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
@@ -108,13 +108,13 @@ pub(crate) fn find_day_periods(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` where the Sun
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` where the Sun
 /// is at or below `twilight`.
 pub(crate) fn find_night_periods(
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     twilight: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let days = find_day_periods(site, period, twilight);
     complement_within(period, &days)
 }
@@ -132,13 +132,13 @@ pub(crate) fn find_night_periods(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of intervals
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of intervals
 /// where `min ≤ altitude(t) ≤ max`.
 pub(crate) fn find_sun_range_periods(
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
@@ -177,7 +177,7 @@ mod tests {
         let site = greenwich_site();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
-        let period = Period::new(mjd_start, mjd_end);
+        let period = Interval::new(mjd_start, mjd_end);
 
         let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
         assert!(
@@ -203,7 +203,7 @@ mod tests {
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
 
-        let period = Period::new(mjd_start, mjd_end);
+        let period = Interval::new(mjd_start, mjd_end);
 
         let nights =
             find_sun_range_periods(site, period, (Degrees::new(-90.0), Degrees::new(-18.0)));

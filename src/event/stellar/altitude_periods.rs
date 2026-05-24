@@ -39,7 +39,7 @@ use crate::coordinates::frames::ECEF;
 use crate::numeric::{intervals, root_finding};
 use crate::qtty::*;
 use crate::time::JulianDate;
-use crate::time::{complement_within, ModifiedJulianDate, Period};
+use crate::time::{complement_within, Interval, ModifiedJulianDate};
 
 use super::star_equations::{StarAltitudeParams, ThresholdResult};
 
@@ -141,7 +141,7 @@ fn find_crossings_analytical(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: &Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     threshold: Radians,
 ) -> (Vec<intervals::LabeledCrossing>, bool) {
     let thr = threshold;
@@ -218,7 +218,7 @@ fn find_crossings_analytical(
 
                 if opposite_sign(g_lo, g_hi) {
                     if let Some(root) =
-                        root_finding::brent_with_values(Period::new(lo, hi), g_lo, g_hi, g)
+                        root_finding::brent_with_values(Interval::new(lo, hi), g_lo, g_hi, g)
                     {
                         if root >= period.start && root <= period.end {
                             refined.push(root);
@@ -254,9 +254,9 @@ pub(crate) fn find_star_above_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
     let f = make_star_fn(ra_j2000, dec_j2000, &site);
 
@@ -272,9 +272,9 @@ pub(crate) fn find_star_below_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let above = find_star_above_periods(ra_j2000, dec_j2000, site, period, threshold);
     complement_within(period, &above)
 }
@@ -286,9 +286,9 @@ pub(crate) fn find_star_range_periods(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let above_min = find_star_above_periods(ra_j2000, dec_j2000, site, period, range.0);
     let above_max = find_star_above_periods(ra_j2000, dec_j2000, site, period, range.1);
     let below_max = intervals::complement(period, &above_max);
@@ -309,9 +309,9 @@ fn find_star_above_periods_scan(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
     site: Geodetic<ECEF>,
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
     let f = make_star_fn(ra_j2000, dec_j2000, &site);
     intervals::above_threshold_periods(period, SCAN_STEP_FALLBACK, &f, thr)
@@ -341,8 +341,8 @@ mod tests {
         )
     }
 
-    fn period_7d() -> Period<ModifiedJulianDate> {
-        Period::new(
+    fn period_7d() -> Interval<ModifiedJulianDate> {
+        Interval::new(
             crate::time::ModifiedJulianDate::new(60000.0),
             crate::time::ModifiedJulianDate::new(60007.0),
         )
@@ -437,7 +437,7 @@ mod tests {
     #[test]
     fn analytical_matches_scan() {
         let site = roque();
-        let period = Period::new(
+        let period = Interval::new(
             crate::time::ModifiedJulianDate::new(60000.0),
             crate::time::ModifiedJulianDate::new(60003.0),
         );

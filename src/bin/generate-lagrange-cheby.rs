@@ -19,7 +19,8 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args: Vec<String> = env::args().collect();
     let source = value_arg(&args, "--source").unwrap_or("vsop87");
     let bsp_path = value_arg(&args, "--bsp-path");
-    let out = PathBuf::from(value_arg(&args, "--out").unwrap_or("src/embedded_data/lagrange/generated"));
+    let out =
+        PathBuf::from(value_arg(&args, "--out").unwrap_or("src/embedded_data/lagrange/generated"));
     let from = parse_jd(value_arg(&args, "--from"), 2_451_545.0)?;
     let to = parse_jd(value_arg(&args, "--to"), 2_451_577.0)?;
 
@@ -51,11 +52,15 @@ fn main() {
 
 #[cfg(feature = "lagrange-centers")]
 fn value_arg<'a>(args: &'a [String], name: &str) -> Option<&'a str> {
-    args.windows(2).find_map(|pair| (pair[0] == name).then_some(pair[1].as_str()))
+    args.windows(2)
+        .find_map(|pair| (pair[0] == name).then_some(pair[1].as_str()))
 }
 
 #[cfg(feature = "lagrange-centers")]
-fn parse_jd(value: Option<&str>, default: f64) -> Result<siderust::JulianDate, Box<dyn std::error::Error>> {
+fn parse_jd(
+    value: Option<&str>,
+    default: f64,
+) -> Result<siderust::JulianDate, Box<dyn std::error::Error>> {
     let raw = value.map_or(Ok(default), str::parse::<f64>)?;
     siderust::time::try_jd_f64(raw).map_err(|err| err.into())
 }
@@ -78,7 +83,8 @@ fn generate_for(
     ];
     let mut metadata = String::new();
     for (point, name) in points {
-        let fitted = siderust::ephemeris::lagrange::fit::fit_sun_earth_lagrange(ephemeris, point, config)?;
+        let fitted =
+            siderust::ephemeris::lagrange::fit::fit_sun_earth_lagrange(ephemeris, point, config)?;
         let const_name = format!("RECORDS_{}", point.label());
         let body = format!(
             "pub const {const_name}: &[f64] = &{:?};\npub const NCOEFF_{}: usize = {};\n",

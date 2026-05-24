@@ -203,10 +203,7 @@ pub fn parse_rinex_nav(text: &str) -> Result<RinexNavFile, FormatError> {
 /// let f = parse_rinex_nav_with_mode(bad, ParseMode::Permissive).unwrap();
 /// assert_eq!(f.gps.len(), 0);   // malformed record was skipped
 /// ```
-pub fn parse_rinex_nav_with_mode(
-    text: &str,
-    mode: ParseMode,
-) -> Result<RinexNavFile, FormatError> {
+pub fn parse_rinex_nav_with_mode(text: &str, mode: ParseMode) -> Result<RinexNavFile, FormatError> {
     let mut out = RinexNavFile::default();
 
     let mut lines = text.lines().enumerate();
@@ -661,7 +658,11 @@ G01 2024 01 01 00 00 00 1.234567E-04 5.678E-12 0.000E+00\n\
             "strict mode must reject malformed float"
         );
         let f = parse_rinex_nav_with_mode(&bad, ParseMode::Permissive).unwrap();
-        assert_eq!(f.gps.len(), 0, "permissive mode must skip the malformed record");
+        assert_eq!(
+            f.gps.len(),
+            0,
+            "permissive mode must skip the malformed record"
+        );
     }
 
     #[test]
@@ -674,7 +675,11 @@ G01 2024 01 01 00 00 00 1.234567E-04 5.678E-12 0.000E+00\n\
             "strict mode must reject out-of-range month"
         );
         let f = parse_rinex_nav_with_mode(&bad, ParseMode::Permissive).unwrap();
-        assert_eq!(f.gps.len(), 0, "permissive mode must skip the record with invalid date");
+        assert_eq!(
+            f.gps.len(),
+            0,
+            "permissive mode must skip the record with invalid date"
+        );
     }
 
     #[test]

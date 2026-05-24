@@ -39,7 +39,7 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical::direction;
 use crate::qtty::*;
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{Interval, ModifiedJulianDate};
 
 // Imports for planet altitude support
 use crate::coordinates::{cartesian, centers::Geocentric, frames};
@@ -56,7 +56,7 @@ use crate::time::JulianDate;
 /// the `calculus` layer.  The trait is intentionally small, one required
 /// method plus convenience defaults.
 ///
-/// Time scale note: all `ModifiedJulianDate` and `Period<ModifiedJulianDate>` values are on
+/// Time scale note: all `ModifiedJulianDate` and `Interval<ModifiedJulianDate>` values are on
 /// the canonical JD(TT) axis (`tempoch` semantics). Convert UTC instants with
 /// `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
 /// into `ModifiedJulianDate` before using this API.
@@ -65,7 +65,7 @@ pub trait AltitudePeriodsProvider {
     /// body's topocentric altitude is within
     /// `[query.min_altitude, query.max_altitude]`.
     ///
-    /// `query.window` is interpreted on the TT axis (`Period<ModifiedJulianDate>` with
+    /// `query.window` is interpreted on the TT axis (`Interval<ModifiedJulianDate>` with
     /// canonical `JD(TT)` semantics).
     ///
     /// The returned vector is sorted chronologically.  An empty vector
@@ -77,9 +77,9 @@ pub trait AltitudePeriodsProvider {
     ///
     /// # Returns
     ///
-    /// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` of all
+    /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of all
     /// in‑band intervals.
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>>;
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Interval<ModifiedJulianDate>>;
 
     /// Convenience: intervals where altitude is **above** `threshold`.
     ///
@@ -94,14 +94,14 @@ pub trait AltitudePeriodsProvider {
     ///
     /// # Returns
     ///
-    /// Sorted `Vec<Period<ModifiedJulianDate>>` covering times where
+    /// Sorted `Vec<Interval<ModifiedJulianDate>>` covering times where
     /// `altitude(t) ≥ threshold`.
     fn above_threshold(
         &self,
         observer: Geodetic<ECEF>,
-        window: Period<ModifiedJulianDate>,
+        window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-    ) -> Vec<Period<ModifiedJulianDate>> {
+    ) -> Vec<Interval<ModifiedJulianDate>> {
         self.altitude_periods(&AltitudeQuery {
             observer,
             window,
@@ -123,14 +123,14 @@ pub trait AltitudePeriodsProvider {
     ///
     /// # Returns
     ///
-    /// Sorted `Vec<Period<ModifiedJulianDate>>` covering times where
+    /// Sorted `Vec<Interval<ModifiedJulianDate>>` covering times where
     /// `altitude(t) ≤ threshold`.
     fn below_threshold(
         &self,
         observer: Geodetic<ECEF>,
-        window: Period<ModifiedJulianDate>,
+        window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-    ) -> Vec<Period<ModifiedJulianDate>> {
+    ) -> Vec<Interval<ModifiedJulianDate>> {
         self.altitude_periods(&AltitudeQuery {
             observer,
             window,
@@ -182,11 +182,11 @@ pub trait AltitudePeriodsProvider {
 /// use siderust::bodies::Sun;
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
-/// use siderust::time::{ModifiedJulianDate, Period};
+/// use siderust::time::{ModifiedJulianDate, Interval};
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let window = Period::new(
+/// let window = Interval::new(
 ///     siderust::ModifiedJulianDate::new(60000.0),
 ///     siderust::ModifiedJulianDate::new(60001.0),
 /// );
@@ -206,13 +206,13 @@ pub trait AltitudePeriodsProvider {
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` produced by
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` produced by
 /// `body.altitude_periods(query)`.
 #[inline]
 pub fn altitude_periods<B: AltitudePeriodsProvider>(
     body: &B,
     query: &AltitudeQuery,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     body.altitude_periods(query)
 }
 
@@ -222,7 +222,7 @@ pub fn altitude_periods<B: AltitudePeriodsProvider>(
 
 /// **Sun**, delegates to [`crate::event::solar`].
 impl AltitudePeriodsProvider for solar_system::Sun {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Interval<ModifiedJulianDate>> {
         if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
@@ -250,7 +250,7 @@ impl AltitudePeriodsProvider for solar_system::Sun {
 
 /// **Moon**, delegates to [`crate::event::lunar`].
 impl AltitudePeriodsProvider for solar_system::Moon {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Interval<ModifiedJulianDate>> {
         if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
@@ -282,7 +282,7 @@ impl AltitudePeriodsProvider for solar_system::Moon {
 /// **Star**, extracts RA/Dec from the star's target, delegates to
 /// [`crate::event::stellar`].
 impl AltitudePeriodsProvider for Star<'_> {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Interval<ModifiedJulianDate>> {
         let dir = direction::ICRS::from(self);
         dir.altitude_periods(query)
     }
@@ -295,7 +295,7 @@ impl AltitudePeriodsProvider for Star<'_> {
 
 /// **direction::ICRS**, the lightest path: raw RA/Dec → stellar engine.
 impl AltitudePeriodsProvider for direction::ICRS {
-    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
+    fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Interval<ModifiedJulianDate>> {
         if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
             return Vec::new();
         }
@@ -385,7 +385,7 @@ macro_rules! impl_altitude_provider_vsop87 {
     ($($Planet:ident),+ $(,)?) => {
         $(
             impl AltitudePeriodsProvider for solar_system::$Planet {
-                fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Period<ModifiedJulianDate>> {
+                fn altitude_periods(&self, query: &AltitudeQuery) -> Vec<Interval<ModifiedJulianDate>> {
                     if (query.window.end.raw() - query.window.start.raw()) <= Days::zero() {
                         return Vec::new();
                     }
@@ -456,15 +456,15 @@ mod tests {
         Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
-    fn one_day_window() -> Period<ModifiedJulianDate> {
-        Period::new(
+    fn one_day_window() -> Interval<ModifiedJulianDate> {
+        Interval::new(
             crate::time::ModifiedJulianDate::new(60000.0),
             crate::time::ModifiedJulianDate::new(60001.0),
         )
     }
 
-    fn one_week_window() -> Period<ModifiedJulianDate> {
-        Period::new(
+    fn one_week_window() -> Interval<ModifiedJulianDate> {
+        Interval::new(
             crate::time::ModifiedJulianDate::new(60000.0),
             crate::time::ModifiedJulianDate::new(60007.0),
         )
@@ -640,7 +640,7 @@ mod tests {
 
     #[test]
     fn empty_window_returns_empty() {
-        let window = Period::new(
+        let window = Interval::new(
             crate::time::ModifiedJulianDate::new(60000.0),
             crate::time::ModifiedJulianDate::new(60000.0),
         );
@@ -665,7 +665,7 @@ mod tests {
     fn altitude_range_twilight_via_trait() {
         let query = AltitudeQuery {
             observer: greenwich(),
-            window: Period::new(
+            window: Interval::new(
                 crate::time::ModifiedJulianDate::new(60000.0),
                 crate::time::ModifiedJulianDate::new(60002.0),
             ),

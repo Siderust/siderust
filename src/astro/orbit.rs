@@ -23,6 +23,14 @@
 //!
 //! ## Technical scope
 //!
+//! This module is the astronomy-facing wrapper over the lower-level
+//! [`keplerian`](https://docs.rs/keplerian) crate. Pure Keplerian math such as
+//! anomaly solving and two-body propagation lives in `keplerian`; `siderust`
+//! keeps [`KeplerianOrbit<U>`] here because it binds that math to astronomy
+//! semantics: TT-scale [`JulianDate`] epochs from `tempoch`,
+//! [`EclipticMeanJ2000`] orientation from `affn`, and the heliocentric
+//! Gaussian/GM conventions used by Solar-System elements.
+//!
 //! - [`KeplerianOrbit<U>`] — storage type for the six elements, generic over
 //!   length unit `U`.  Constructed via the infallible `new` (trusted constants)
 //!   or the validated `try_new` (user/deserialized data).

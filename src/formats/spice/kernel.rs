@@ -2,8 +2,22 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! [`SpkKernel`] — owns DAF bytes, indexes every segment, and resolves
-//! body-relative state queries by chaining segments through the kernel
-//! graph.
+//! body-relative state queries by chaining segments through the kernel graph.
+//!
+//! ## Technical scope
+//!
+//! This module exposes the low-level SPK kernel reader used by higher-level
+//! ephemeris adapters. It works directly in NAIF wire-format units: epochs are
+//! raw TDB seconds past J2000 and states are raw `[f64; 6]` vectors in km and
+//! km/s.
+//!
+//! ## API contract
+//!
+//! [`SpkKernel::state`] is intentionally a wire-format API for kernel-native
+//! access and performance-sensitive adapters. Callers looking for the typed
+//! scientific API should prefer `siderust` ephemeris providers such as
+//! [`crate::pod::spice::SpiceEphemerisProvider`], which lift epochs, centers,
+//! frames, and units into typed `tempoch`/`affn`/`qtty` abstractions.
 
 use std::collections::{HashMap, VecDeque};
 use std::path::Path;
@@ -144,6 +158,13 @@ impl SpkKernel {
     ///
     /// The chain is resolved by BFS over the directed segment graph;
     /// per-segment states are summed (with sign for reverse traversal).
+    ///
+    /// # Safety / Wire-format API
+    ///
+    /// This method intentionally exposes raw SPICE wire-format scalars. Prefer
+    /// a typed [`crate::pod::providers::EphemerisProvider`] implementation such
+    /// as [`crate::pod::spice::SpiceEphemerisProvider`] when you want a
+    /// scientific API with typed epochs, centers, frames, and units.
     pub fn state(
         &self,
         target: i32,

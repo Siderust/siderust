@@ -13,7 +13,7 @@
 //!
 //! ## Technical scope
 //!
-//! All routines operate on `Period<ModifiedJulianDate>` time windows and
+//! All routines operate on `Interval<ModifiedJulianDate>` time windows and
 //! closures `Fn(ModifiedJulianDate) → Quantity<V>`.
 //!
 //! | Policy | Description |
@@ -30,7 +30,7 @@
 //!   (2007). *Numerical Recipes in C++*, 3rd ed. Cambridge University Press.
 
 use crate::qtty::*;
-use crate::time::{ModifiedJulianDate, Period};
+use crate::time::{Interval, ModifiedJulianDate};
 
 use super::extrema::{self, ExtremumKind};
 
@@ -49,11 +49,11 @@ fn opposite_sign<V: Unit>(a: Quantity<V>, b: Quantity<V>) -> bool {
 ///
 /// Returns sign‑change brackets for `f(t) − threshold`.
 pub fn fixed_step_brackets<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<ModifiedJulianDate>>
+) -> Vec<Interval<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -76,7 +76,7 @@ where
         let next_v = g(next_t);
 
         if opposite_sign(prev, next_v) {
-            brackets.push(Period::new(t, next_t));
+            brackets.push(Interval::new(t, next_t));
         }
 
         t = next_t;
@@ -95,12 +95,12 @@ where
 ///
 /// `min_step` prevents infinite subdivision.
 pub fn adaptive_step_brackets<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     initial_step: Days,
     min_step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<ModifiedJulianDate>>
+) -> Vec<Interval<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -110,7 +110,7 @@ where
     let mut brackets = Vec::new();
 
     struct Frame<V: Unit> {
-        period: Period<ModifiedJulianDate>,
+        period: Interval<ModifiedJulianDate>,
         g_lo: Quantity<V>,
         g_hi: Quantity<V>,
     }
@@ -131,7 +131,7 @@ where
         };
         let next_v = g(next_t);
         stack.push(Frame {
-            period: Period::new(t, next_t),
+            period: Interval::new(t, next_t),
             g_lo: prev,
             g_hi: next_v,
         });
@@ -153,12 +153,12 @@ where
                 let g_mid = g(mid);
                 // Push both halves (will be processed)
                 stack.push(Frame {
-                    period: Period::new(frame.period.start, mid),
+                    period: Interval::new(frame.period.start, mid),
                     g_lo: frame.g_lo,
                     g_hi: g_mid,
                 });
                 stack.push(Frame {
-                    period: Period::new(mid, frame.period.end),
+                    period: Interval::new(mid, frame.period.end),
                     g_lo: g_mid,
                     g_hi: frame.g_hi,
                 });
@@ -181,11 +181,11 @@ where
 /// This is ideal for satellite pass detection: find the altitude peak of each
 /// pass, then bracket the rise/set crossings on either side.
 pub fn extrema_based_brackets<V, F>(
-    period: Period<ModifiedJulianDate>,
+    period: Interval<ModifiedJulianDate>,
     extrema_step: Days,
     f: &F,
     threshold: Quantity<V>,
-) -> Vec<Period<ModifiedJulianDate>>
+) -> Vec<Interval<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -200,13 +200,14 @@ where
             // before it and a setting crossing after it.
             // Search backward from the extremum for the rising crossing
             let rise_bracket =
-                search_crossing_backward(Period::new(period.start, ext.t), f, threshold);
+                search_crossing_backward(Interval::new(period.start, ext.t), f, threshold);
             if let Some(br) = rise_bracket {
                 brackets.push(br);
             }
 
             // Search forward from the extremum for the setting crossing
-            let set_bracket = search_crossing_forward(Period::new(ext.t, period.end), f, threshold);
+            let set_bracket =
+                search_crossing_forward(Interval::new(ext.t, period.end), f, threshold);
             if let Some(br) = set_bracket {
                 brackets.push(br);
             }
@@ -226,10 +227,10 @@ where
 
 /// Search backward from `search_period.end` to `search_period.start` for a sign change in `f(t) − threshold`.
 fn search_crossing_backward<V, F>(
-    search_period: Period<ModifiedJulianDate>,
+    search_period: Interval<ModifiedJulianDate>,
     f: &F,
     threshold: Quantity<V>,
-) -> Option<Period<ModifiedJulianDate>>
+) -> Option<Interval<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -238,7 +239,7 @@ where
     let range = search_period.end.raw() - search_period.start.raw();
 
     // Expanding search: start near the extremum and step backward
-    let mut bracket = Period::new(search_period.end, search_period.end);
+    let mut bracket = Interval::new(search_period.end, search_period.end);
     let mut g_hi = g(bracket.end);
     let mut step = range * 0.1;
     if step < Days::new(1e-10) {
@@ -282,10 +283,10 @@ where
 
 /// Search forward from `search_period.start` to `search_period.end` for a sign change.
 fn search_crossing_forward<V, F>(
-    search_period: Period<ModifiedJulianDate>,
+    search_period: Interval<ModifiedJulianDate>,
     f: &F,
     threshold: Quantity<V>,
-) -> Option<Period<ModifiedJulianDate>>
+) -> Option<Interval<ModifiedJulianDate>>
 where
     V: Unit,
     F: Fn(ModifiedJulianDate) -> Quantity<V>,
@@ -293,7 +294,7 @@ where
     let g = |t: Mjd| f(t) - threshold;
     let range = search_period.end.raw() - search_period.start.raw();
 
-    let mut bracket = Period::new(search_period.start, search_period.start);
+    let mut bracket = Interval::new(search_period.start, search_period.start);
     let mut g_lo = g(bracket.start);
     let mut step = range * 0.1;
     if step < Days::new(1e-10) {
@@ -348,8 +349,8 @@ mod tests {
     fn mjd(v: f64) -> Mjd {
         crate::time::ModifiedJulianDate::new((Days::new(v)).value())
     }
-    fn period(a: f64, b: f64) -> Period<ModifiedJulianDate> {
-        Period::new(mjd(a), mjd(b))
+    fn period(a: f64, b: f64) -> Interval<ModifiedJulianDate> {
+        Interval::new(mjd(a), mjd(b))
     }
 
     fn mjd_f64(t: Mjd) -> f64 {

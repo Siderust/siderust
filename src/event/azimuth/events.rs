@@ -18,7 +18,7 @@
 //!
 //! Public API: [`azimuth_crossings`], [`azimuth_extrema`],
 //! [`azimuth_ranges`], [`in_azimuth_range`], [`outside_azimuth_range`].
-//! All `Period<ModifiedJulianDate>` inputs/outputs are interpreted on the
+//! All `Interval<ModifiedJulianDate>` inputs/outputs are interpreted on the
 //! TT axis. Convert UTC timestamps with
 //! `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
 //! into `ModifiedJulianDate` first.
@@ -51,7 +51,7 @@ use crate::coordinates::frames::ECEF;
 use crate::event::altitude::CrossingDirection;
 use crate::numeric::{extrema, intervals};
 use crate::qtty::*;
-use crate::time::{complement_within, ModifiedJulianDate, Period};
+use crate::time::{complement_within, Interval, ModifiedJulianDate};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -59,9 +59,11 @@ use crate::time::{complement_within, ModifiedJulianDate, Period};
 
 /// Choose the best scan step for the target.
 fn scan_step_for<T: AzimuthProvider>(target: &T, opts: &SearchOpts) -> Days {
-    opts.scan_step_days
-        .or_else(|| target.scan_step_hint())
-        .unwrap_or(DEFAULT_SCAN_STEP)
+    crate::event::altitude::search::resolve_scan_step(
+        target.scan_step_hint(),
+        opts,
+        DEFAULT_SCAN_STEP,
+    )
 }
 
 /// Build a **continuous** function `sin(az(t) − bearing)`.
@@ -161,11 +163,11 @@ fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
 /// use siderust::bodies::Sun;
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
-/// use siderust::time::{ModifiedJulianDate, MJD, Period};
+/// use siderust::time::{ModifiedJulianDate, MJD, Interval};
 /// use siderust::qtty::*;
 ///
 /// let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-/// let window = Period::new(
+/// let window = Interval::new(
 ///     siderust::ModifiedJulianDate::new(60000.0),
 ///     siderust::ModifiedJulianDate::new(60001.0),
 /// );
@@ -181,7 +183,7 @@ fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
 pub fn azimuth_crossings<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     bearing: Degrees,
     opts: SearchOpts,
 ) -> Vec<AzimuthCrossingEvent> {
@@ -231,7 +233,7 @@ pub fn azimuth_crossings<T: AzimuthProvider>(
 pub fn azimuth_extrema<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     opts: SearchOpts,
 ) -> Vec<AzimuthExtremum> {
     let step = opts
@@ -284,8 +286,8 @@ pub fn azimuth_extrema<T: AzimuthProvider>(
 pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
     target: &T,
     query: &AzimuthQuery,
-) -> Vec<Period<ModifiedJulianDate>> {
-    let step = target.scan_step_hint().unwrap_or(DEFAULT_SCAN_STEP);
+) -> Vec<Interval<ModifiedJulianDate>> {
+    let step = scan_step_for(target, &query.opts);
 
     if query.min_azimuth <= query.max_azimuth {
         // ── Non-wrap arc [min, max] ────────────────────────────────────────
@@ -317,7 +319,7 @@ pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
 ///
 /// Supports wrap-around ranges when `min_az > max_az` (e.g. 350° → 10°).
 ///
-/// Returns a sorted list of `Period<ModifiedJulianDate>`.
+/// Returns a sorted list of `Interval<ModifiedJulianDate>`.
 ///
 /// # Arguments
 ///
@@ -326,25 +328,26 @@ pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
 /// * `window`, MJD/TT search interval
 /// * `min_az`, lower bearing bound (or start of wrap arc)
 /// * `max_az`, upper bearing bound (or end of wrap arc)
-/// * `_opts`, search precision options (currently routed via the provider hint)
+/// * `opts`, search precision options (scan step, tolerance)
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` covering the
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` covering the
 /// times when the azimuth lies in the requested arc.
 pub fn azimuth_ranges<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     min_az: Degrees,
     max_az: Degrees,
-    _opts: SearchOpts,
-) -> Vec<Period<ModifiedJulianDate>> {
+    opts: SearchOpts,
+) -> Vec<Interval<ModifiedJulianDate>> {
     target.azimuth_periods(&AzimuthQuery {
         observer: *observer,
         window,
         min_azimuth: min_az,
         max_azimuth: max_az,
+        opts,
     })
 }
 
@@ -363,15 +366,15 @@ pub fn azimuth_ranges<T: AzimuthProvider>(
 ///
 /// # Returns
 ///
-/// Same as [`azimuth_ranges`]: sorted `Vec<Period<ModifiedJulianDate>>`.
+/// Same as [`azimuth_ranges`]: sorted `Vec<Interval<ModifiedJulianDate>>`.
 pub fn in_azimuth_range<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     min_az: Degrees,
     max_az: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     azimuth_ranges(target, observer, window, min_az, max_az, opts)
 }
 
@@ -388,16 +391,16 @@ pub fn in_azimuth_range<T: AzimuthProvider>(
 ///
 /// # Returns
 ///
-/// Sorted, non‑overlapping `Vec<Period<ModifiedJulianDate>>` covering the
+/// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` covering the
 /// complement of [`in_azimuth_range`] inside `window`.
 pub fn outside_azimuth_range<T: AzimuthProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
-    window: Period<ModifiedJulianDate>,
+    window: Interval<ModifiedJulianDate>,
     min_az: Degrees,
     max_az: Degrees,
     opts: SearchOpts,
-) -> Vec<Period<ModifiedJulianDate>> {
+) -> Vec<Interval<ModifiedJulianDate>> {
     let inside = azimuth_ranges(target, observer, window, min_az, max_az, opts);
     complement_within(window, &inside)
 }
@@ -415,8 +418,8 @@ mod tests {
         Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
     }
 
-    fn one_day() -> Period<ModifiedJulianDate> {
-        Period::new(
+    fn one_day() -> Interval<ModifiedJulianDate> {
+        Interval::new(
             crate::time::ModifiedJulianDate::new(60000.0),
             crate::time::ModifiedJulianDate::new(60001.0),
         )
@@ -475,7 +478,7 @@ mod tests {
             // Use a 7-day window, the Sun is near North briefly near the solstice,
             // but let's just check the function runs without panicking and that
             // non-wrap + wrap complement each other.
-            Period::new(
+            Interval::new(
                 crate::time::ModifiedJulianDate::new(60000.0),
                 crate::time::ModifiedJulianDate::new(60007.0),
             ),

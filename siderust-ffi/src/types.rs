@@ -65,7 +65,7 @@ use siderust::coordinates::frames::ECEF;
 use siderust::event::azimuth::{
     AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
 };
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{Interval, ModifiedJulianDate};
 use tempoch::Interval;
 
 // Re-export tempoch-ffi types so the generated header can reference them.
@@ -1082,8 +1082,8 @@ pub struct SiderustPhaseEvent {
 // FfiFrom implementations
 // ═══════════════════════════════════════════════════════════════════════════
 
-impl FfiFrom<Period<ModifiedJulianDate>> for TempochPeriodMjd {
-    fn ffi_from(p: &Period<ModifiedJulianDate>) -> Self {
+impl FfiFrom<Interval<ModifiedJulianDate>> for TempochPeriodMjd {
+    fn ffi_from(p: &Interval<ModifiedJulianDate>) -> Self {
         TempochPeriodMjd {
             start_mjd: p.start.raw().value(),
             end_mjd: p.end.raw().value(),
@@ -1333,12 +1333,12 @@ mod tests {
         assert!(s5.contains("Iau2006A"));
     }
 
-    // ── FfiFrom for Period<MJD> ──────────────────────────────────────────
+    // ── FfiFrom for Interval<MJD> ──────────────────────────────────────────
 
     #[test]
     fn ffi_from_period_mjd() {
         use tempoch::Interval;
-        let p: Period<ModifiedJulianDate> = Interval::new(
+        let p: Interval<ModifiedJulianDate> = Interval::new(
             siderust::time::try_mjd_f64(60000.0).unwrap(),
             siderust::time::try_mjd_f64(60001.0).unwrap(),
         );
