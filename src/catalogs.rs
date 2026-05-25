@@ -154,8 +154,7 @@ impl LargeStarCatalog {
         self.records
             .iter()
             .filter(|r| {
-                inside_cone(r.ra, r.dec, center_ra, center_dec, radius)
-                    && passes_filter(r, &filter)
+                inside_cone(r.ra, r.dec, center_ra, center_dec, radius) && passes_filter(r, &filter)
             })
             .collect()
     }
@@ -281,22 +280,24 @@ pub fn parse_csv_chunk(input: &str) -> Result<Vec<CatalogRecord>, CatalogIngestE
         let hdr = header.as_ref().unwrap();
         let col = |name: &'static str| -> Result<Option<&str>, CatalogIngestError> {
             let pos = hdr.iter().position(|h| h == name);
-            Ok(pos.and_then(|i| fields.get(i)).map(|s| s.trim()).filter(|s| !s.is_empty()))
+            Ok(pos
+                .and_then(|i| fields.get(i))
+                .map(|s| s.trim())
+                .filter(|s| !s.is_empty()))
         };
-        let parse_opt_f64 =
-            |col_name: &'static str| -> Result<Option<f64>, CatalogIngestError> {
-                if let Some(s) = col(col_name)? {
-                    s.parse::<f64>()
-                        .map(Some)
-                        .map_err(|_| CatalogIngestError::InvalidNumber {
-                            column: col_name,
-                            line: line_no,
-                            raw: s.to_owned(),
-                        })
-                } else {
-                    Ok(None)
-                }
-            };
+        let parse_opt_f64 = |col_name: &'static str| -> Result<Option<f64>, CatalogIngestError> {
+            if let Some(s) = col(col_name)? {
+                s.parse::<f64>()
+                    .map(Some)
+                    .map_err(|_| CatalogIngestError::InvalidNumber {
+                        column: col_name,
+                        line: line_no,
+                        raw: s.to_owned(),
+                    })
+            } else {
+                Ok(None)
+            }
+        };
         let require_f64 = |col_name: &'static str| -> Result<f64, CatalogIngestError> {
             parse_opt_f64(col_name)?.ok_or(CatalogIngestError::MissingColumn {
                 column: col_name,
@@ -395,12 +396,7 @@ mod tests {
         let mut cat = LargeStarCatalog::new();
         cat.push(rec(1, 359.0, 0.0));
         cat.push(rec(2, 1.0, 0.0));
-        let hits = cat.cone_search(
-            0.0,
-            0.0,
-            2.0_f64.to_radians(),
-            CatalogFilter::default(),
-        );
+        let hits = cat.cone_search(0.0, 0.0, 2.0_f64.to_radians(), CatalogFilter::default());
         assert_eq!(hits.len(), 2);
     }
 

@@ -4,7 +4,7 @@ version = 4
 
 [[package]]
 name = "affn"
-version = "0.7.2"
+version = "0.7.3"
 dependencies = [
  "affn-derive",
  "qtty",
@@ -13,7 +13,7 @@ dependencies = [
 
 [[package]]
 name = "affn-derive"
-version = "0.7.2"
+version = "0.7.3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -1607,6 +1607,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7c87def4c32ab89d880effc9e097653c8da5d6ef28e6b539d313baaacfbafcbe"
 
 [[package]]
+name = "optica"
+version = "0.1.0"
+dependencies = [
+ "affn",
+ "qtty",
+ "thiserror 2.0.18",
+]
+
+[[package]]
 name = "ordered-float"
 version = "2.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1786,7 +1795,7 @@ dependencies = [
 
 [[package]]
 name = "qtty"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "qtty-core",
  "qtty-derive",
@@ -1794,7 +1803,7 @@ dependencies = [
 
 [[package]]
 name = "qtty-core"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "libm",
  "qtty-derive",
@@ -1804,7 +1813,7 @@ dependencies = [
 
 [[package]]
 name = "qtty-derive"
-version = "0.8.2"
+version = "0.8.3"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -2342,6 +2351,7 @@ dependencies = [
  "faer",
  "hex",
  "keplerian",
+ "optica",
  "parquet",
  "paste",
  "principia",
@@ -2509,14 +2519,14 @@ dependencies = [
 
 [[package]]
 name = "tempoch"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "tempoch-core",
 ]
 
 [[package]]
 name = "tempoch-core"
-version = "0.6.0"
+version = "0.6.1"
 dependencies = [
  "affn",
  "chrono",

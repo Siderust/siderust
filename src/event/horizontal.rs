@@ -47,8 +47,8 @@
 //!   quantities". *Astronomy and Astrophysics* 412, 567–586.
 //!   <https://doi.org/10.1051/0004-6361:20031539>
 
-use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::apparent::CorrectionPolicy;
+use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
 use crate::astro::nutation::{nutation_iau2000b, NutationModel};
 use crate::astro::precession;
 use crate::astro::sidereal::gast_iau2006;

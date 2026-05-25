@@ -45,6 +45,7 @@ pub extern "C" fn siderust_altitude_at(
             return SiderustStatus::NullPointer;
         }
         dispatch_subject!(subject, |p| {
+            // TODO: justify soundness — add doc comment before publishing
             unsafe {
                 *out_rad = p
                     .altitude_at(&observer.to_rust(), ffi_try!(crate::ffi_utils::mjd_from_f64(mjd)))
@@ -229,6 +230,7 @@ pub extern "C" fn siderust_azimuth_at(
             return SiderustStatus::NullPointer;
         }
         dispatch_subject!(subject, |p| {
+            // TODO: justify soundness — add doc comment before publishing
             unsafe {
                 *out_deg = p
                     .azimuth_at(&observer.to_rust(), ffi_try!(crate::ffi_utils::mjd_from_f64(mjd)))

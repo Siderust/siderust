@@ -71,6 +71,7 @@ pub extern "C" fn siderust_star_catalog(
         match star {
             Some(s) => {
                 let handle = Box::new(SiderustStar { inner: s.clone() });
+                // TODO: justify soundness — add doc comment before publishing
                 unsafe { *out = Box::into_raw(handle) };
                 SiderustStatus::Ok
             }
@@ -148,6 +149,7 @@ pub extern "C" fn siderust_star_create(
         );
 
         let handle = Box::new(SiderustStar { inner: star });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(handle) };
         SiderustStatus::Ok
 
@@ -188,6 +190,7 @@ pub extern "C" fn siderust_star_name(
         if name.len() + 1 > buf_len {
             return SiderustStatus::InvalidArgument;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             std::ptr::copy_nonoverlapping(name.as_ptr(), buf as *mut u8, name.len());
             *buf.add(name.len()) = 0; // NUL terminator
@@ -206,6 +209,7 @@ pub extern "C" fn siderust_star_distance_ly(handle: *const SiderustStar) -> f64 
     if handle.is_null() {
         return f64::NAN;
     }
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { (*handle).inner.distance.value() }
 }
 
@@ -215,6 +219,7 @@ pub extern "C" fn siderust_star_mass_solar(handle: *const SiderustStar) -> f64 {
     if handle.is_null() {
         return f64::NAN;
     }
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { (*handle).inner.mass.value() }
 }
 
@@ -224,6 +229,7 @@ pub extern "C" fn siderust_star_radius_solar(handle: *const SiderustStar) -> f64
     if handle.is_null() {
         return f64::NAN;
     }
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { (*handle).inner.radius.value() }
 }
 
@@ -233,6 +239,7 @@ pub extern "C" fn siderust_star_luminosity_solar(handle: *const SiderustStar) ->
     if handle.is_null() {
         return f64::NAN;
     }
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { (*handle).inner.luminosity.value() }
 }
 
@@ -247,6 +254,7 @@ pub extern "C" fn siderust_planet_mercury(out: *mut SiderustPlanet) -> SiderustS
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = SiderustPlanet::from_rust(&bodies::MERCURY) };
         SiderustStatus::Ok
 
@@ -260,6 +268,7 @@ pub extern "C" fn siderust_planet_venus(out: *mut SiderustPlanet) -> SiderustSta
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = SiderustPlanet::from_rust(&bodies::VENUS) };
         SiderustStatus::Ok
 
@@ -273,6 +282,7 @@ pub extern "C" fn siderust_planet_earth(out: *mut SiderustPlanet) -> SiderustSta
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = SiderustPlanet::from_rust(&bodies::EARTH) };
         SiderustStatus::Ok
 
@@ -286,6 +296,7 @@ pub extern "C" fn siderust_planet_mars(out: *mut SiderustPlanet) -> SiderustStat
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = SiderustPlanet::from_rust(&bodies::MARS) };
         SiderustStatus::Ok
 
@@ -299,6 +310,7 @@ pub extern "C" fn siderust_planet_jupiter(out: *mut SiderustPlanet) -> SiderustS
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = SiderustPlanet::from_rust(&bodies::JUPITER) };
         SiderustStatus::Ok
 
@@ -312,6 +324,7 @@ pub extern "C" fn siderust_planet_saturn(out: *mut SiderustPlanet) -> SiderustSt
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = SiderustPlanet::from_rust(&bodies::SATURN) };
         SiderustStatus::Ok
 
@@ -325,6 +338,7 @@ pub extern "C" fn siderust_planet_uranus(out: *mut SiderustPlanet) -> SiderustSt
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = SiderustPlanet::from_rust(&bodies::URANUS) };
         SiderustStatus::Ok
 
@@ -338,6 +352,7 @@ pub extern "C" fn siderust_planet_neptune(out: *mut SiderustPlanet) -> SiderustS
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = SiderustPlanet::from_rust(&bodies::NEPTUNE) };
         SiderustStatus::Ok
 

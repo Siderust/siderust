@@ -116,9 +116,9 @@ pub mod data;
 pub mod ephemeris;
 pub mod event;
 pub mod formats;
-#[cfg(any(feature = "spectra", feature = "tables", feature = "atmosphere"))]
-pub(crate) mod interp;
 pub mod instruments;
+#[cfg(any(feature = "spectra", feature = "atmosphere"))]
+pub(crate) mod interp;
 pub mod mission_context;
 pub mod mission_geometry;
 pub mod numeric;
@@ -128,8 +128,6 @@ pub mod pod;
 pub mod qtty;
 #[cfg(feature = "spectra")]
 pub mod spectra;
-#[cfg(feature = "tables")]
-pub mod tables;
 pub mod targets;
 pub mod time;
 

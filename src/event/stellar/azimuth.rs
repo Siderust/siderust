@@ -6,9 +6,9 @@
 //! Fixed-star azimuth scalar function, used by the unified azimuth calculus
 //! API via the [`AzimuthProvider`](crate::event::azimuth::AzimuthProvider) trait.
 
+use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::astro::apparent::CorrectionPolicy;
 use crate::qtty::*;
 use crate::time::{JulianDate, ModifiedJulianDate};
 
@@ -29,13 +29,7 @@ pub(crate) fn fixed_star_azimuth_rad(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
 ) -> Radians {
-    fixed_star_azimuth_rad_with_policy(
-        mjd,
-        site,
-        ra_j2000,
-        dec_j2000,
-        CorrectionPolicy::APPARENT,
-    )
+    fixed_star_azimuth_rad_with_policy(mjd, site, ra_j2000, dec_j2000, CorrectionPolicy::APPARENT)
 }
 
 /// Computes fixed-star azimuth with an explicit apparent-position policy.

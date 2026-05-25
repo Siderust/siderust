@@ -60,7 +60,8 @@ pub struct VgosDbHeader {
 /// ```
 pub fn read_vgosdb(_path: &Path) -> Result<VgosDbHeader, FormatError> {
     Err(FormatError::Unsupported(
-        "vgosDB binary NetCDF reader is out of scope for siderust core; use the text side-car path".to_string(),
+        "vgosDB binary NetCDF reader is out of scope for siderust core; use the text side-car path"
+            .to_string(),
     ))
 }
 
@@ -143,7 +144,10 @@ mod tests {
         let h = read_vgosdb_sidecar(&buf[..]).unwrap();
         assert_eq!(h.session_code, "R1100");
         assert_eq!(h.start_epoch, "2024-01-01T00:00:00");
-        assert_eq!(h.stations, vec!["KOKEE".to_string(), "WETTZELL".to_string()]);
+        assert_eq!(
+            h.stations,
+            vec!["KOKEE".to_string(), "WETTZELL".to_string()]
+        );
     }
 
     #[test]

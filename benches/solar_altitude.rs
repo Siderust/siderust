@@ -12,7 +12,7 @@ use siderust::bodies::Sun;
 use siderust::event::altitude::AltitudePeriodsProvider;
 use siderust::event::solar::twilight;
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{ModifiedJulianDate, Interval};
+use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;
 use std::time::Duration;
 

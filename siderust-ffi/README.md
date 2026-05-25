@@ -99,3 +99,18 @@ invokes Cargo for you and installs both headers and libraries via `cmake --insta
 - The cross-repo parity checklist lives in `../doc/ffi_bindings_matrix.md`.
 - When changing exported signatures or the meaning/values of public enums, consider ABI
   compatibility and bump `siderust_ffi_version()` in `src/lib.rs` accordingly.
+
+## Publishing Policy
+
+This crate is not published by default; publish only when C API/ABI changes.
+
+**Manual publish procedure:**
+
+1. Flip `publish = false` to `publish = true` in `Cargo.toml`.
+2. Ensure every `unsafe` block in `src/` carries a `// SAFETY:` rationale comment.
+3. Run `cargo test -p siderust-ffi --all-features` and `cargo clippy -p siderust-ffi -- -D warnings`.
+4. Run `cargo publish --manifest-path siderust/siderust-ffi/Cargo.toml`.
+5. Revert `publish` back to `false`.
+
+Alternatively, use `scripts/publish-changed.sh --confirm-ffi` from the repo root, which
+enforces the soundness check and skips `publish = false` crates automatically.

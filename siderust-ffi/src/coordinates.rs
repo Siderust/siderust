@@ -257,6 +257,7 @@ pub extern "C" fn siderust_spherical_dir_transform_frame(
             Ok(Err(e)) => return e,
         };
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustSphericalDir {
                 polar_deg: out_polar,
@@ -300,6 +301,7 @@ pub extern "C" fn siderust_spherical_dir_transform_frame_with_context(
             Ok(Err(e)) => return e,
         };
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustSphericalDir {
                 polar_deg: out_polar,
@@ -341,6 +343,7 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal(
             Err(e) => return e,
         };
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustSphericalDir {
                 polar_deg: alt,
@@ -385,6 +388,7 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal_precise(
             Err(e) => return e,
         };
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustSphericalDir {
                 polar_deg: alt,
@@ -435,6 +439,7 @@ pub extern "C" fn siderust_spherical_dir_to_horizontal_precise_with_context(
             Err(e) => return e,
         };
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustSphericalDir {
                 polar_deg: alt,
@@ -589,6 +594,7 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame(
             Ok(Err(e)) => return e,
         };
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: ox,
@@ -637,6 +643,7 @@ pub extern "C" fn siderust_cartesian_dir_transform_frame_with_context(
             Ok(Err(e)) => return e,
         };
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: ox,
@@ -834,6 +841,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame(
             Ok(Err(e)) => return e,
         };
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: ox,
@@ -884,6 +892,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_frame_with_context(
             Ok(Err(e)) => return e,
         };
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: ox,
@@ -911,6 +920,7 @@ pub extern "C" fn siderust_geodetic_to_cartesian_ecef(
         let g = geodetic.to_rust();
         let cart = g.to_cartesian::<Meter>();
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: cart.x().value(),
@@ -1018,6 +1028,7 @@ pub extern "C" fn siderust_cartesian_pos_transform_center(
         let (ox, oy, oz) =
             ffi_try!(shift_center_xyz(pos.x, pos.y, pos.z, from_code, to_code, jd));
 
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: ox,
@@ -1040,6 +1051,7 @@ fn write_ecliptic_au_position(
     pos: siderust::coordinates::cartesian::position::EclipticMeanJ2000<AstronomicalUnit>,
     center: SiderustCenter,
 ) {
+    // TODO: justify soundness — add doc comment before publishing
     unsafe {
         *out = SiderustCartesianPos {
             x: pos.x().value(),
@@ -1175,6 +1187,7 @@ pub extern "C" fn siderust_prepared_orbit_create(
             Err(_) => return SiderustStatus::InvalidArgument,
         };
         let boxed = Box::new(prepared);
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(boxed) as *mut std::ffi::c_void };
         SiderustStatus::Ok
     }}
@@ -1212,6 +1225,7 @@ pub extern "C" fn siderust_prepared_orbit_destroy(
         if handle.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { drop(Box::from_raw(handle as *mut siderust::PreparedOrbit)) };
         SiderustStatus::Ok
     }}
@@ -1260,6 +1274,7 @@ pub extern "C" fn siderust_to_bodycentric(
             ffi_try!(shift_center_xyz(bkx, bky, bkz, params.orbit_center, input_center, jd));
 
         // Relative position: input – body (vector from body to target)
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x - body_x,
@@ -1309,6 +1324,7 @@ pub extern "C" fn siderust_from_bodycentric(
             ffi_try!(shift_center_xyz(bkx, bky, bkz, params.orbit_center, 2, jd));
 
         // Recover geocentric: bodycentric + body_geocentric
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x + body_geo_x,

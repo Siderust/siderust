@@ -260,11 +260,10 @@ impl DiscreteStatesSegment {
                 end_tdb_seconds: end,
             });
         }
-        match self.epochs.binary_search_by(|epoch| {
-            epoch
-                .partial_cmp(&et)
-                .unwrap_or(core::cmp::Ordering::Less)
-        }) {
+        match self
+            .epochs
+            .binary_search_by(|epoch| epoch.partial_cmp(&et).unwrap_or(core::cmp::Ordering::Less))
+        {
             Ok(idx) => Ok(WindowSelection::Exact(idx)),
             Err(insertion) => {
                 if count == 0 || count > self.n_records {
@@ -318,12 +317,8 @@ impl DiscreteStatesSegment {
                         positions.push(self.states[idx * 6 + axis]);
                         velocities.push(self.states[idx * 6 + axis + 3]);
                     }
-                    let (position, velocity) = hermite_value_and_derivative(
-                        epochs,
-                        &positions,
-                        &velocities,
-                        et,
-                    )?;
+                    let (position, velocity) =
+                        hermite_value_and_derivative(epochs, &positions, &velocities, et)?;
                     out[axis] = position;
                     out[axis + 3] = velocity;
                 }
@@ -521,7 +516,9 @@ fn read_discrete_states(
     }
     if !descriptor_f.is_finite() || descriptor_f < 0.0 {
         return Err(SpiceError::Parse {
-            message: format!("SPK Type {data_type} invalid interpolation descriptor {descriptor_f}"),
+            message: format!(
+                "SPK Type {data_type} invalid interpolation descriptor {descriptor_f}"
+            ),
         });
     }
     let n_records = n_records_f as usize;
@@ -533,9 +530,7 @@ fn read_discrete_states(
     let epoch_end = epoch_start + n_records;
     if epoch_end + 2 > words.len() {
         return Err(SpiceError::Parse {
-            message: format!(
-                "SPK Type {data_type} payload too short for {n_records} records"
-            ),
+            message: format!("SPK Type {data_type} payload too short for {n_records} records"),
         });
     }
     let states = words[..state_len].to_vec();

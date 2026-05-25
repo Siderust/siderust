@@ -33,6 +33,7 @@ pub extern "C" fn siderust_context_create_default(
             return SiderustStatus::NullPointer;
         }
         let ctx = Box::new(SiderustContext::default());
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(ctx) };
         SiderustStatus::Ok
     }}
@@ -49,6 +50,7 @@ pub extern "C" fn siderust_context_create_with_model(
             return SiderustStatus::NullPointer;
         }
         let ctx = Box::new(SiderustContext { model });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(ctx) };
         SiderustStatus::Ok
     }}
@@ -75,6 +77,7 @@ pub extern "C" fn siderust_context_get_model(
         if handle.is_null() || out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = (*handle).model };
         SiderustStatus::Ok
     }}

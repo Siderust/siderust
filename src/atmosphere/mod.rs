@@ -75,6 +75,5 @@ pub use mie::{mie_optical_depth, MieParams};
 pub use ozone::transmission_table;
 pub use profile::AtmosphereProfile;
 pub use rayleigh::{rayleigh_optical_depth_bodhaine99, rayleigh_phase, DEFAULT_SCALE_HEIGHT};
-#[cfg(feature = "tables")]
 pub use scattering::TabulatedPhaseFunction;
 pub use scattering::{PhaseFunction, RayleighPhaseFunction, ScatteringFactor};

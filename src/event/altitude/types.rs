@@ -23,9 +23,9 @@
 //! ## References
 //! None.
 
+use crate::astro::apparent::CorrectionPolicy;
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
-use crate::astro::apparent::CorrectionPolicy;
 
 // ---------------------------------------------------------------------------
 // Crossing Types

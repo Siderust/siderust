@@ -14,7 +14,7 @@ use siderust::event::altitude::{
 };
 use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::qtty::*;
-use siderust::time::{ModifiedJulianDate, Interval};
+use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;
 use std::time::Duration;
 

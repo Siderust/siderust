@@ -38,8 +38,8 @@
 
 use crate::ext_qtty::Unit;
 
-use crate::spectra::interp::{Interpolation, OutOfRange};
 use crate::data::Provenance;
+use crate::spectra::interp::{Interpolation, OutOfRange};
 use crate::spectra::sampled::SampledSpectrum;
 use crate::spectra::SpectrumError;
 

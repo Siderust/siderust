@@ -310,6 +310,7 @@ pub extern "C" fn siderust_dynamics_context_new(
         let ctx = Box::new(SiderustDynamicsContext {
             inner: DynamicsContext::empty(),
         });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(ctx) };
         SiderustStatus::Ok
     }}
@@ -345,6 +346,7 @@ pub extern "C" fn siderust_dynamics_context_with_ephemeris(
         // Clone the inner RuntimeEphemeris and box it as an Arc<dyn DynEphemeris>.
         let eph_arc: Arc<dyn DynEphemeris + Send + Sync> =
             Arc::new(unsafe { (*eph).inner.clone() });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { (*ctx).inner.ephemeris = Some(eph_arc) };
         SiderustStatus::Ok
     }}
@@ -373,6 +375,7 @@ pub extern "C" fn siderust_dynamics_context_with_atmosphere(
         let vt = unsafe { std::ptr::read(vtable) };
         let provider: Arc<dyn DensityProvider + Send + Sync> =
             Arc::new(FfiDensityProvider { vtable: vt });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { (*ctx).inner.atmosphere = Some(provider) };
         SiderustStatus::Ok
     }}
@@ -400,6 +403,7 @@ pub extern "C" fn siderust_dynamics_context_with_gravity_field(
         let vt = unsafe { std::ptr::read(vtable) };
         let provider: Arc<dyn GravityFieldProvider + Send + Sync> =
             Arc::new(FfiGravityProvider { vtable: vt });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { (*ctx).inner.gravity = Some(provider) };
         SiderustStatus::Ok
     }}
@@ -448,6 +452,7 @@ pub extern "C" fn siderust_orbit_state_new(
             Velocity::<GCRS>::new(vx, vy, vz),
         );
         let handle = Box::new(SiderustOrbitState { inner: state });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(handle) };
         SiderustStatus::Ok
     }}
@@ -478,6 +483,7 @@ pub extern "C" fn siderust_orbit_state_position(
             return SiderustStatus::NullPointer;
         }
         let s = unsafe { &(*handle).inner };
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out_x = s.position.x().value();
             *out_y = s.position.y().value();
@@ -500,6 +506,7 @@ pub extern "C" fn siderust_orbit_state_velocity(
             return SiderustStatus::NullPointer;
         }
         let s = unsafe { &(*handle).inner };
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out_vx = s.velocity.x().value();
             *out_vy = s.velocity.y().value();
@@ -520,6 +527,7 @@ pub extern "C" fn siderust_orbit_state_epoch_jd(
             return SiderustStatus::NullPointer;
         }
         let epoch_jd = unsafe { (*handle).inner.epoch.to::<siderust::JD>().raw().value() };
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out_jd = epoch_jd };
         SiderustStatus::Ok
     }}
@@ -553,6 +561,7 @@ pub extern "C" fn siderust_propagator_two_body_earth_new(
             return SiderustStatus::NullPointer;
         }
         let handle = Box::new(SiderustPropagator { force: TwoBody { mu: GM_EARTH } });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(handle) };
         SiderustStatus::Ok
     }}
@@ -577,6 +586,7 @@ pub extern "C" fn siderust_propagator_two_body_new(
         let handle = Box::new(SiderustPropagator {
             force: TwoBody { mu: GravitationalParameter::new(gm_km3_s2) },
         });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(handle) };
         SiderustStatus::Ok
     }}
@@ -631,6 +641,7 @@ pub extern "C" fn siderust_propagator_propagate(
             empty = DynamicsContext::empty();
             &empty
         } else {
+            // TODO: justify soundness — add doc comment before publishing
             unsafe { &(*ctx).inner }
         };
 
@@ -642,6 +653,7 @@ pub extern "C" fn siderust_propagator_propagate(
         match result {
             Ok(s_final) => {
                 let handle_out = Box::new(SiderustOrbitState { inner: s_final });
+                // TODO: justify soundness — add doc comment before publishing
                 unsafe { *out_state = Box::into_raw(handle_out) };
                 SiderustDynamicsStatus::Ok
             }

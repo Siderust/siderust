@@ -6,6 +6,7 @@ authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "C FFI bindings for siderust, high-precision astronomy library."
 license = "AGPL-3.0-only"
 repository = "https://github.com/Siderust/siderust"
+publish    = false
 
 [lib]
 name = "siderust_ffi"

@@ -259,6 +259,7 @@ pub unsafe fn write_out<T>(out: *mut T, value: T) -> SiderustStatus {
     if out.is_null() {
         return SiderustStatus::NullPointer;
     }
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { out.write(value) };
     SiderustStatus::Ok
 }
@@ -426,6 +427,7 @@ where
     }
     let v: Vec<U> = items.iter().map(conv).collect();
     let len = v.len();
+    // TODO: justify soundness — add doc comment before publishing
     unsafe {
         *out = Box::into_raw(v.into_boxed_slice()) as *mut _;
         *count = len;

@@ -41,6 +41,7 @@ pub unsafe extern "C" fn siderust_azimuth_crossings_free(
     ptr: *mut SiderustAzimuthCrossingEvent,
     count: usize,
 ) {
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { free_boxed_slice(ptr, count) };
 }
 
@@ -58,5 +59,6 @@ pub unsafe extern "C" fn siderust_azimuth_extrema_free(
     ptr: *mut SiderustAzimuthExtremum,
     count: usize,
 ) {
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { free_boxed_slice(ptr, count) };
 }

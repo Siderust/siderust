@@ -63,10 +63,7 @@ impl CorrectionPolicy {
     /// Geocentric apparent direction: proper motion + light-time +
     /// aberration + deflection.
     pub const APPARENT: Self = Self(
-        Self::PROPER_MOTION.0
-            | Self::LIGHT_TIME.0
-            | Self::ABERRATION.0
-            | Self::LIGHT_DEFLECTION.0,
+        Self::PROPER_MOTION.0 | Self::LIGHT_TIME.0 | Self::ABERRATION.0 | Self::LIGHT_DEFLECTION.0,
     );
 
     /// True iff `self` includes every stage flagged in `other`.

@@ -290,7 +290,11 @@ impl Sgp4Propagator {
         target_jd_utc: JulianDate<UTC>,
     ) -> Result<TemeState, Sgp4Error> {
         let prediction = propagate_native(&self.elements, self.constants, dt_minutes)?;
-        Ok(TemeState::from_arrays(target_jd_utc, prediction.0, prediction.1))
+        Ok(TemeState::from_arrays(
+            target_jd_utc,
+            prediction.0,
+            prediction.1,
+        ))
     }
 }
 
@@ -350,11 +354,8 @@ fn propagate_native(
     let cos_i = elements.inclination_rad.cos();
     let raan_dot = -1.5 * j2_factor * n_rad_s * cos_i;
     let argp_dot = 0.75 * j2_factor * n_rad_s * (5.0 * cos_i * cos_i - 1.0);
-    let mean_j2_dot = 0.75
-        * j2_factor
-        * n_rad_s
-        * one_minus_e2.sqrt()
-        * (3.0 * cos_i * cos_i - 1.0);
+    let mean_j2_dot =
+        0.75 * j2_factor * n_rad_s * one_minus_e2.sqrt() * (3.0 * cos_i * cos_i - 1.0);
 
     let raan = elements.raan_rad + raan_dot * dt_seconds;
     let argp = elements.argument_of_perigee_rad + argp_dot * dt_seconds;
@@ -362,7 +363,8 @@ fn propagate_native(
         * (elements.mean_motion_rev_per_day * dt_days
             + 0.5 * elements.mean_motion_dot_rev_per_day2 * dt_days * dt_days
             + elements.mean_motion_ddot_rev_per_day3 * dt_days * dt_days * dt_days / 6.0);
-    let m = normalize_radians(elements.mean_anomaly_rad + mean_motion_phase + mean_j2_dot * dt_seconds);
+    let m =
+        normalize_radians(elements.mean_anomaly_rad + mean_motion_phase + mean_j2_dot * dt_seconds);
     let eccentric_anomaly = solve_kepler(m, e)?;
     let (sin_e, cos_e) = eccentric_anomaly.sin_cos();
     let edot = n_rad_s / (1.0 - e * cos_e);
@@ -381,7 +383,11 @@ fn propagate_native(
         argp,
     );
 
-    if position.iter().chain(velocity.iter()).any(|v| !v.is_finite()) {
+    if position
+        .iter()
+        .chain(velocity.iter())
+        .any(|v| !v.is_finite())
+    {
         return Err(Sgp4Error::Propagation {
             details: "propagated state contains non-finite component".into(),
         });

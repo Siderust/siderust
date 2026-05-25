@@ -25,9 +25,9 @@
 //! - IDS/CDDIS, *RINEX 3 DORIS Format Description*, rev. 14, 2023.
 
 use super::FormatError;
+use std::io::Read;
 #[cfg(feature = "doris")]
 use std::io::{BufRead, BufReader};
-use std::io::Read;
 
 /// Header of a RINEX-DORIS file.
 #[derive(Debug, Default, Clone, PartialEq)]
@@ -133,7 +133,11 @@ fn parse_doris<R: Read>(reader: R) -> Result<RinexDoris, FormatError> {
             current_sat.clone()
         };
         if let (Some(mjd), Some(sat)) = (current_obs_epoch, sat_id) {
-            let raw = if l.len() > 3 { l[3..].trim().to_string() } else { String::new() };
+            let raw = if l.len() > 3 {
+                l[3..].trim().to_string()
+            } else {
+                String::new()
+            };
             if raw.is_empty() {
                 out.unsupported_obs += 1;
             }

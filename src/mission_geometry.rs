@@ -327,8 +327,16 @@ pub fn occultation_fraction(
     let r = app_t;
     let r2 = app_o;
     let d = sep;
-    let part1 = r * r * ((d * d + r * r - r2 * r2) / (2.0 * d * r)).clamp(-1.0, 1.0).acos();
-    let part2 = r2 * r2 * ((d * d + r2 * r2 - r * r) / (2.0 * d * r2)).clamp(-1.0, 1.0).acos();
+    let part1 = r
+        * r
+        * ((d * d + r * r - r2 * r2) / (2.0 * d * r))
+            .clamp(-1.0, 1.0)
+            .acos();
+    let part2 = r2
+        * r2
+        * ((d * d + r2 * r2 - r * r) / (2.0 * d * r2))
+            .clamp(-1.0, 1.0)
+            .acos();
     let part3 = 0.5
         * ((-d + r + r2) * (d + r - r2) * (d - r + r2) * (d + r + r2))
             .max(0.0)
@@ -406,16 +414,8 @@ pub fn beta_angle(
     sat_vel: [MetersPerSecond; 3],
     sun_dir: [f64; 3],
 ) -> Radians {
-    let r = [
-        sat_pos[0].value(),
-        sat_pos[1].value(),
-        sat_pos[2].value(),
-    ];
-    let v = [
-        sat_vel[0].value(),
-        sat_vel[1].value(),
-        sat_vel[2].value(),
-    ];
+    let r = [sat_pos[0].value(), sat_pos[1].value(), sat_pos[2].value()];
+    let v = [sat_vel[0].value(), sat_vel[1].value(), sat_vel[2].value()];
     let h = unit(cross(r, v));
     let s = unit(sun_dir);
     // Beta = π/2 − angle(h, s)  ⇒  sin(beta) = h · s
@@ -470,7 +470,13 @@ mod tests {
         let obs = [m(0.0), m(0.0), m(r)];
         let tgt = [m(0.0), m(0.0), m(r + 1000.0)];
         let zero = [mps(0.0), mps(0.0), mps(0.0)];
-        let result = azimuth_elevation_range(obs, zero, tgt, zero, LocalFrame::new(rad(PI / 2.0), rad(0.0)));
+        let result = azimuth_elevation_range(
+            obs,
+            zero,
+            tgt,
+            zero,
+            LocalFrame::new(rad(PI / 2.0), rad(0.0)),
+        );
         assert_abs_diff_eq!(result.elevation.value(), PI / 2.0, epsilon = 1e-9);
         assert_abs_diff_eq!(result.range.value(), 1000.0, epsilon = 1e-6);
     }
@@ -482,7 +488,8 @@ mod tests {
         let obs = [m(r), m(0.0), m(0.0)];
         let tgt = [m(-r), m(0.0), m(0.0)];
         let zero = [mps(0.0), mps(0.0), mps(0.0)];
-        let result = azimuth_elevation_range(obs, zero, tgt, zero, LocalFrame::new(rad(0.0), rad(0.0)));
+        let result =
+            azimuth_elevation_range(obs, zero, tgt, zero, LocalFrame::new(rad(0.0), rad(0.0)));
         // Target is in -up direction → elevation = -π/2.
         assert!(result.elevation.value() < 0.0);
     }

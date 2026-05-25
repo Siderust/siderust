@@ -46,8 +46,8 @@ use crate::ext_qtty::{Quantity, Unit};
 
 use super::algo::{self, CubicSplineCoeffs};
 use super::interp::{Interpolation, OutOfRange};
-use crate::data::Provenance;
 use super::SpectrumError;
+use crate::data::Provenance;
 
 /// A monotonically-sampled 1-D spectrum `y(x)` with explicit interpolation
 /// and out-of-range policies.

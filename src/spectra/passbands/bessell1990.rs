@@ -92,8 +92,8 @@
 
 use std::sync::OnceLock;
 
-use crate::ext_qtty::length::Nanometer;
 use crate::data::Provenance;
+use crate::ext_qtty::length::Nanometer;
 use crate::spectra::interp::{Interpolation, OutOfRange};
 use crate::spectra::loaders::ascii;
 use crate::spectra::sampled::SampledSpectrum;

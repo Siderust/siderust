@@ -34,9 +34,9 @@
 //! (default ≈ 86 µs).  Precession at the midpoint introduces < 25″ of RA
 //! error over a full year, well within the ±15‑minute Brent bracket.
 
+use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::astro::apparent::CorrectionPolicy;
 use crate::numeric::{intervals, root_finding};
 use crate::qtty::*;
 use crate::time::JulianDate;
@@ -78,13 +78,7 @@ pub(crate) fn fixed_star_altitude_rad(
     ra_j2000: crate::qtty::Degrees,
     dec_j2000: crate::qtty::Degrees,
 ) -> crate::qtty::Radians {
-    fixed_star_altitude_rad_with_policy(
-        mjd,
-        site,
-        ra_j2000,
-        dec_j2000,
-        CorrectionPolicy::APPARENT,
-    )
+    fixed_star_altitude_rad_with_policy(mjd, site, ra_j2000, dec_j2000, CorrectionPolicy::APPARENT)
 }
 
 /// Compute altitude of a fixed RA/Dec object with an explicit correction policy.

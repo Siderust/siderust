@@ -15,6 +15,7 @@ pub extern "C" fn siderust_observatory_roque_de_los_muchachos(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustGeodetict::from_rust(&siderust::observatories::ROQUE_DE_LOS_MUCHACHOS.geodetic);
         }
@@ -30,6 +31,7 @@ pub extern "C" fn siderust_observatory_el_paranal(out: *mut SiderustGeodetict) -
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustGeodetict::from_rust(&siderust::observatories::EL_PARANAL.geodetic);
         }
@@ -45,6 +47,7 @@ pub extern "C" fn siderust_observatory_mauna_kea(out: *mut SiderustGeodetict) ->
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustGeodetict::from_rust(&siderust::observatories::MAUNA_KEA);
         }
@@ -60,6 +63,7 @@ pub extern "C" fn siderust_observatory_la_silla(out: *mut SiderustGeodetict) -> 
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustGeodetict::from_rust(&siderust::observatories::LA_SILLA_OBSERVATORY);
         }
@@ -80,6 +84,7 @@ pub extern "C" fn siderust_geodetic_new(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustGeodetict {
                 lon_deg,

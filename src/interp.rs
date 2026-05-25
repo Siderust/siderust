@@ -24,7 +24,7 @@
 //!
 //! ## Technical scope
 //!
-//! Defines [`OutOfRange`] with three variants:
+//! Re-exports [`OutOfRange`] from `optica::grid` with three variants:
 //!
 //! - [`OutOfRange::ClampToEndpoints`] — default; matches `numpy.interp`.
 //! - [`OutOfRange::Zero`] — return `0` outside the domain.
@@ -32,7 +32,7 @@
 //!   typed evaluation API.
 //!
 //! No interpolation algorithm lives here; the kernels live in the
-//! feature-gated `spectra::algo` and `tables::algo` modules.
+//! feature-gated `spectra::algo` module and in `optica::grid::algo`.
 //!
 //! ## References
 //!
@@ -40,14 +40,4 @@
 //!   <https://numpy.org/doc/stable/reference/generated/numpy.interp.html>
 //!   (default behaviour: clamp to endpoints).
 
-/// How to evaluate `y(x)` (or `f(x, y)`) outside the sampled domain.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
-pub enum OutOfRange {
-    /// Hold the nearest endpoint value (matches `numpy.interp` default).
-    #[default]
-    ClampToEndpoints,
-    /// Return zero outside the domain.
-    Zero,
-    /// Surface an out-of-range error to the caller.
-    Error,
-}
+pub use optica::grid::OutOfRange;

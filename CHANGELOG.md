@@ -8,6 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* **`optica` dependency**: `optica` is now an unconditional dependency, providing
+  the canonical grid interpolation and optical-transport primitives used by
+  `siderust`'s atmosphere and spectra modules.
+
+### Changed
+
+* **`interp::OutOfRange`**: re-exported from `optica::grid::OutOfRange`;
+  the local definition is removed.
+
 * **Spectra interpolation modes**: `Interpolation::Nearest`,
   `PiecewiseConstantLeft`, `PiecewiseConstantRight`, and `CubicSpline` are
   now implemented (previously rejected at construction time). Cubic-spline
@@ -45,6 +54,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+* **`siderust-ffi`**: marked `publish = false` in `Cargo.toml`. FFI crates are
+  not published by default; publish only when C API/ABI changes are intentional.
+  See `siderust-ffi/README.md` for the manual publish procedure.
 * **`siderust-pod` crate removed.** All public items now live under
   `siderust::pod::{problem, run, providers, observation, estimation, qc,
   product, dynamics, io, spice}`. Migration: replace
@@ -174,6 +186,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **The `affn` dependency now resolves from the git source** and the lockfile
   records checksums for the updated dependency graph, aligning `siderust` with
   the current canonical affine-geometry implementation.
+
+### Removed
+
+* **`siderust::tables` module deleted.** Generic grid interpolation now lives
+  entirely in `optica::grid`. Callers that used `siderust::tables::{Grid1D,
+  Grid2D, Grid3D, OutOfRange, AxisDirection, algo, …}` must migrate to
+  `optica::grid::{Grid1D, Grid2D, Grid3D, OutOfRange, AxisDirection, algo, …}`.
+* **`tables` feature flag removed.** Removing `features = ["tables"]` from any
+  downstream `Cargo.toml` is the required migration step; the feature no longer
+  exists and its presence will cause a build error.
+* **`TabulatedPhaseFunction` is no longer gated on `tables`.** It is now
+  available whenever the `atmosphere` feature is enabled. The internal grid
+  type is `optica::grid::Grid2D<Nanometer, Degree, ScatteringFactor>`;
+  `from_raw_row_major` now accepts `&[f64]` slices (was `Vec<f64>`), returns
+  `Result<Self, optica::grid::GridError>`, and `interp_at` is infalible
+  (`-> Quantity<ScatteringFactor>`, clamps by default).
 
 ## [0.8.0] - 2026-05-18
 

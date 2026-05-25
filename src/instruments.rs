@@ -137,7 +137,11 @@ impl TerrainMask {
         let (a0, e0) = self.samples[n - 1];
         let (a1, e1) = self.samples[0];
         let a0w = a0 - TAU;
-        let t = if a1 == a0w { 0.0 } else { (az - a0w) / (a1 - a0w) };
+        let t = if a1 == a0w {
+            0.0
+        } else {
+            (az - a0w) / (a1 - a0w)
+        };
         qtty::Quantity::new(e0 + t * (e1 - e0))
     }
 
