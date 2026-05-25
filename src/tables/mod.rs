@@ -72,7 +72,7 @@ pub use grid2d::{ConstantRegion, Grid2D};
 pub use grid3d::Grid3D;
 
 pub use crate::interp::OutOfRange;
-pub use crate::provenance::{DataSource, Provenance};
+pub use crate::data::{DataSource, Provenance};
 
 /// Direction of a strictly-monotonic axis.
 ///

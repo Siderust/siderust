@@ -191,6 +191,7 @@ fn sun_in_eastern_half_non_empty() {
         min_azimuth: Degrees::new(90.0),
         max_azimuth: Degrees::new(270.0),
         opts: SearchOpts::default(),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let periods = Sun.azimuth_periods(&query);
     assert!(
@@ -209,6 +210,7 @@ fn azimuth_periods_free_fn_matches_trait() {
         min_azimuth: Degrees::new(90.0),
         max_azimuth: Degrees::new(270.0),
         opts: SearchOpts::default(),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let via_trait = Sun.azimuth_periods(&query);
     let via_fn = azimuth_periods(&Sun, &query);

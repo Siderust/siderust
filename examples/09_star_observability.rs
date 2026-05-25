@@ -31,6 +31,7 @@ fn main() {
         window,
         min_altitude: Degrees::new(25.0),
         max_altitude: Degrees::new(65.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let altitude_periods = target.altitude_periods(&altitude_query);
 
@@ -41,6 +42,7 @@ fn main() {
         min_azimuth: Degrees::new(110.0),
         max_azimuth: Degrees::new(220.0),
         opts: siderust::event::azimuth::SearchOpts::default(),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let azimuth_periods = target.azimuth_periods(&azimuth_query);
 

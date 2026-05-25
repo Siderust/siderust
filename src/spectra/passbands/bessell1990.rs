@@ -29,7 +29,7 @@
 //! constants for each of the five UBVRI bands via accessor functions
 //! `bessell1990::u()`, `bessell1990::b()`, `bessell1990::v()`,
 //! `bessell1990::r()`, `bessell1990::i()`. Each spectrum carries a
-//! [`Provenance`](crate::provenance::Provenance) record citing the
+//! [`Provenance`](crate::data::Provenance) record citing the
 //! Bessell (1990) paper and the bundled ASCII source file.
 //!
 //! Sample values are exposed at the typed boundary; consumers that need
@@ -93,7 +93,7 @@
 use std::sync::OnceLock;
 
 use crate::ext_qtty::length::Nanometer;
-use crate::provenance::Provenance;
+use crate::data::Provenance;
 use crate::spectra::interp::{Interpolation, OutOfRange};
 use crate::spectra::loaders::ascii;
 use crate::spectra::sampled::SampledSpectrum;
@@ -102,15 +102,15 @@ use super::Throughput;
 
 // ── bundled data ─────────────────────────────────────────────────────────────
 
-const RAW_U: &str = include_str!("../../embedded_data/data/passbands/bessell1990/U.dat");
-const RAW_B: &str = include_str!("../../embedded_data/data/passbands/bessell1990/B.dat");
-const RAW_V: &str = include_str!("../../embedded_data/data/passbands/bessell1990/V.dat");
-const RAW_R: &str = include_str!("../../embedded_data/data/passbands/bessell1990/R.dat");
-const RAW_I: &str = include_str!("../../embedded_data/data/passbands/bessell1990/I.dat");
+const RAW_U: &str = include_str!("../../data/file/passbands/bessell1990/U.dat");
+const RAW_B: &str = include_str!("../../data/file/passbands/bessell1990/B.dat");
+const RAW_V: &str = include_str!("../../data/file/passbands/bessell1990/V.dat");
+const RAW_R: &str = include_str!("../../data/file/passbands/bessell1990/R.dat");
+const RAW_I: &str = include_str!("../../data/file/passbands/bessell1990/I.dat");
 
 // Pinned SHA-256 of each Bessell 1990 passband file. Update only when the
 // curated SVO export is intentionally refreshed (see
-// `siderust::provenance::checksum`).
+// `siderust::data::checksum`).
 crate::assert_data_checksum!(
     "siderust/data/passbands/bessell1990/U.dat",
     RAW_U.as_bytes(),
@@ -299,7 +299,7 @@ mod tests {
     /// [`assert_data_checksum!`].
     #[test]
     fn pinned_sha256_matches_runtime_hash() {
-        use crate::provenance::checksum::{sha256, to_hex};
+        use crate::data::checksum::{sha256, to_hex};
         let cases: &[(&str, &str)] = &[
             (
                 RAW_U,

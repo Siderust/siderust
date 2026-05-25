@@ -8,14 +8,14 @@
 //!
 //! 1. [`parse_tle`] consuming a published Vallado SGP4 Verification TLE.
 //! 2. [`Sgp4Propagator::from_tle_with_model`] adapting the TLE to the
-//!    upstream SGP4 backend with the WGS-84 gravity model.
+//!    Siderust-native propagation core with the WGS-84 gravity model.
 //! 3. Propagation at the TLE epoch and at later epochs, returning
 //!    typed [`TemeState`] values whose components live in the typed
 //!    [`affn`] / [`qtty`] / [`tempoch`] coordinate stack.
 //!
 //! No external dataset is required. If this test fails the typed
-//! boundary between `tle`, `sgp4`, and the upstream `siderust` /
-//! `tempoch` / `qtty` stack is broken.
+//! boundary between `tle`, `sgp4`, and the `siderust` / `tempoch` /
+//! `qtty` stack is broken.
 //!
 //! [`parse_tle`]: siderust::formats::tle::parse_tle
 //! [`Sgp4Propagator::from_tle_with_model`]: siderust::astro::sgp4::Sgp4Propagator::from_tle_with_model
@@ -35,7 +35,7 @@ const L2: &str = "2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.8241915
 fn tle_sgp4_pipeline_produces_typed_teme_state() {
     let tle = parse_tle(L1, L2).expect("vendored Vallado-VER TLE parses cleanly");
     let prop = Sgp4Propagator::from_tle_with_model(&tle, GravityModel::Wgs84)
-        .expect("Vallado-VER TLE accepted by the SGP4 backend");
+        .expect("Vallado-VER TLE accepted by the native propagator");
 
     let epoch_jd: JulianDate<_> = tle.epoch.to::<tempoch::JD>();
     let state_at_epoch = prop

@@ -36,15 +36,14 @@ pub struct LoadedSegment {
     pub center: i32,
     /// SPICE frame id (typically 1 = J2000 ≡ ICRS for DE kernels).
     pub frame_id: i32,
-    /// SPK data type code (`2`, `3`, or `9`/`13` if loaded but not
-    /// evaluable).
+    /// SPK data type code (`2`, `3`, `9`, or `13` for supported segments).
     pub data_type: i32,
     /// Coverage start (TDB seconds past J2000).
     pub start_tdb_seconds: f64,
     /// Coverage end (TDB seconds past J2000).
     pub end_tdb_seconds: f64,
     /// Decoded segment payload, or `None` if the data type is not
-    /// supported by this crate (e.g. SPK Type 9 / 13).
+    /// supported by this crate.
     pub segment: Option<SpkSegment>,
 }
 

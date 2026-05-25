@@ -45,7 +45,7 @@ type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
 #[allow(clippy::approx_constant, unreachable_pub, missing_docs)]
 #[rustfmt::skip]
 mod vsop_data {
-    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/embedded_data/vsop87e.rs"));
+    include!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/data/compiled/vsop87e.rs"));
 }
 use vsop_data::*;
 

@@ -48,6 +48,7 @@
 //!   <https://doi.org/10.1051/0004-6361:20031539>
 
 use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
+use crate::astro::apparent::CorrectionPolicy;
 use crate::astro::nutation::{nutation_iau2000b, NutationModel};
 use crate::astro::precession;
 use crate::astro::sidereal::gast_iau2006;
@@ -234,6 +235,18 @@ pub fn star_horizontal(
     site: &Geodetic<frames::ECEF>,
     jd: JulianDate,
 ) -> spherical::Direction<frames::Horizontal> {
+    star_horizontal_with_policy(ra_j2000, dec_j2000, site, jd, CorrectionPolicy::APPARENT)
+}
+
+/// Computes the horizontal direction for a fixed-star RA/Dec with an explicit
+/// apparent-position correction policy.
+pub fn star_horizontal_with_policy(
+    ra_j2000: crate::qtty::Degrees,
+    dec_j2000: crate::qtty::Degrees,
+    site: &Geodetic<frames::ECEF>,
+    jd: JulianDate,
+    policy: CorrectionPolicy,
+) -> spherical::Direction<frames::Horizontal> {
     // Full IAU 2006/2000B NPB matrix-based approach:
     // 1. Convert J2000 direction to Cartesian unit vector
     // 2. Apply full precession-nutation-bias (NPB) matrix → true-of-date
@@ -250,10 +263,13 @@ pub fn star_horizontal(
     let y0 = cos_dec * sin_ra;
     let z0 = sin_dec;
 
-    // Full NPB matrix: GCRS → true equator/equinox of date
     let nut = nutation_iau2000b(jd);
-    let npb = precession::precession_nutation_matrix(jd, nut.dpsi, nut.deps);
-    let [x_t, y_t, z_t] = npb.apply_array([x0, y0, z0]);
+    let [x_t, y_t, z_t] = if policy == CorrectionPolicy::GEOMETRIC {
+        [x0, y0, z0]
+    } else {
+        let npb = precession::precession_nutation_matrix(jd, nut.dpsi, nut.deps);
+        npb.apply_array([x0, y0, z0])
+    };
 
     // True-of-date RA/Dec
     let ra_tod = Radians::new(y_t.atan2(x_t));

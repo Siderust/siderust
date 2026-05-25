@@ -81,6 +81,18 @@ pub trait AzimuthProvider {
     /// `Radians` in `[0, 2π)`, North‑clockwise.
     fn azimuth_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians;
 
+    /// Compute the topocentric azimuth with an explicit apparent-position
+    /// correction policy.
+    fn azimuth_at_with_policy(
+        &self,
+        observer: &Geodetic<ECEF>,
+        mjd: ModifiedJulianDate,
+        policy: crate::astro::apparent::CorrectionPolicy,
+    ) -> Radians {
+        let _ = policy;
+        self.azimuth_at(observer, mjd)
+    }
+
     /// Returns all contiguous intervals inside `query.window` where the body's
     /// azimuth is within `[query.min_azimuth, query.max_azimuth]`.
     ///
@@ -129,6 +141,7 @@ pub trait AzimuthProvider {
             min_azimuth: min_az,
             max_azimuth: max_az,
             opts,
+            correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
         })
     }
 
@@ -203,6 +216,7 @@ pub trait AzimuthProvider {
 ///     min_azimuth: Degrees::new(90.0),
 ///     max_azimuth: Degrees::new(270.0),
 ///     opts: siderust::event::azimuth::SearchOpts::default(),
+///     correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
 /// };
 /// let periods = azimuth_periods(&Sun, &query);
 /// ```
@@ -282,6 +296,21 @@ impl AzimuthProvider for Star<'_> {
 impl AzimuthProvider for direction::ICRS {
     fn azimuth_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::event::stellar::fixed_star_azimuth_rad(mjd, observer, self.ra(), self.dec())
+    }
+
+    fn azimuth_at_with_policy(
+        &self,
+        observer: &Geodetic<ECEF>,
+        mjd: ModifiedJulianDate,
+        policy: crate::astro::apparent::CorrectionPolicy,
+    ) -> Radians {
+        crate::event::stellar::fixed_star_azimuth_rad_with_policy(
+            mjd,
+            observer,
+            self.ra(),
+            self.dec(),
+            policy,
+        )
     }
 
     fn azimuth_periods(&self, query: &AzimuthQuery) -> Vec<Interval<ModifiedJulianDate>> {
@@ -420,6 +449,7 @@ mod tests {
             min_azimuth: Degrees::new(90.0),
             max_azimuth: Degrees::new(270.0),
             opts: SearchOpts::default(),
+            correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
         };
         let periods = solar_system::Sun.azimuth_periods(&query);
         // Sun is on the eastern half (az 90-270) for roughly half a day

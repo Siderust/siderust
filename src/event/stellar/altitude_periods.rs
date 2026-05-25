@@ -36,6 +36,7 @@
 
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
+use crate::astro::apparent::CorrectionPolicy;
 use crate::numeric::{intervals, root_finding};
 use crate::qtty::*;
 use crate::time::JulianDate;
@@ -77,6 +78,23 @@ pub(crate) fn fixed_star_altitude_rad(
     ra_j2000: crate::qtty::Degrees,
     dec_j2000: crate::qtty::Degrees,
 ) -> crate::qtty::Radians {
+    fixed_star_altitude_rad_with_policy(
+        mjd,
+        site,
+        ra_j2000,
+        dec_j2000,
+        CorrectionPolicy::APPARENT,
+    )
+}
+
+/// Compute altitude of a fixed RA/Dec object with an explicit correction policy.
+pub(crate) fn fixed_star_altitude_rad_with_policy(
+    mjd: ModifiedJulianDate,
+    site: &crate::coordinates::centers::Geodetic<crate::coordinates::frames::ECEF>,
+    ra_j2000: crate::qtty::Degrees,
+    dec_j2000: crate::qtty::Degrees,
+    policy: CorrectionPolicy,
+) -> crate::qtty::Radians {
     use crate::astro::earth_rotation::jd_ut1_from_tt_eop;
     use crate::astro::nutation::nutation_iau2000b;
     use crate::astro::precession::precession_nutation_matrix;
@@ -96,9 +114,15 @@ pub(crate) fn fixed_star_altitude_rad(
     let z_j2000 = sin_dec;
 
     // Apply full NPB matrix (IAU 2006 precession + IAU 2000B nutation)
+    // for the apparent/default pipeline. Geometric-only queries keep the
+    // catalogue direction and only rotate it by Earth orientation below.
     let nut = nutation_iau2000b(jd);
-    let npb = precession_nutation_matrix(jd, nut.dpsi, nut.deps);
-    let [x_tod, y_tod, z_tod] = npb.apply_array([x_j2000, y_j2000, z_j2000]);
+    let [x_tod, y_tod, z_tod] = if policy == CorrectionPolicy::GEOMETRIC {
+        [x_j2000, y_j2000, z_j2000]
+    } else {
+        let npb = precession_nutation_matrix(jd, nut.dpsi, nut.deps);
+        npb.apply_array([x_j2000, y_j2000, z_j2000])
+    };
 
     // Extract true-of-date RA and Dec
     let ra_tod = y_tod.atan2(x_tod);

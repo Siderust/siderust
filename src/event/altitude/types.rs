@@ -25,6 +25,7 @@
 
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
+use crate::astro::apparent::CorrectionPolicy;
 
 // ---------------------------------------------------------------------------
 // Crossing Types
@@ -120,4 +121,6 @@ pub struct AltitudeQuery {
     pub min_altitude: Degrees,
     /// Upper bound of the altitude band (inclusive).
     pub max_altitude: Degrees,
+    /// Apparent-position correction policy for the target pipeline.
+    pub correction_policy: CorrectionPolicy,
 }

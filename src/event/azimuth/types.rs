@@ -27,6 +27,7 @@
 use crate::event::altitude::{CrossingDirection, SearchOpts};
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
+use crate::astro::apparent::CorrectionPolicy;
 
 // Re-export CrossingDirection so consumers only need to import from this module.
 pub use crate::event::altitude::CrossingDirection as AzimuthCrossingDirection;
@@ -123,4 +124,6 @@ pub struct AzimuthQuery {
     pub max_azimuth: Degrees,
     /// Numerical search options (scan step, tolerance).
     pub opts: SearchOpts,
+    /// Apparent-position correction policy for the target pipeline.
+    pub correction_policy: CorrectionPolicy,
 }

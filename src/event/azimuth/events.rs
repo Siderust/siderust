@@ -78,10 +78,11 @@ fn make_az_bearing_sin_fn<'a, T: AzimuthProvider>(
     target: &'a T,
     site: &'a Geodetic<ECEF>,
     bearing: Radians,
+    policy: crate::astro::apparent::CorrectionPolicy,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let site = *site;
     move |t: ModifiedJulianDate| {
-        let az = target.azimuth_at(&site, t);
+        let az = target.azimuth_at_with_policy(&site, t, policy);
         Radians::new((az - bearing).sin())
     }
 }
@@ -96,10 +97,11 @@ fn make_az_cosine_fn<'a, T: AzimuthProvider>(
     site: &'a Geodetic<ECEF>,
     mid: Radians,
     cos_hw: f64,
+    policy: crate::astro::apparent::CorrectionPolicy,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let site = *site;
     move |t: ModifiedJulianDate| {
-        let az = target.azimuth_at(&site, t);
+        let az = target.azimuth_at_with_policy(&site, t, policy);
         Radians::new((az - mid).cos() - cos_hw)
     }
 }
@@ -116,11 +118,12 @@ fn make_az_cosine_fn<'a, T: AzimuthProvider>(
 fn make_az_unwrapped_fn<'a, T: AzimuthProvider>(
     target: &'a T,
     site: Geodetic<ECEF>,
+    policy: crate::astro::apparent::CorrectionPolicy,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let prev_raw: Cell<f64> = Cell::new(f64::NAN);
     let offset: Cell<f64> = Cell::new(0.0f64);
     move |t: ModifiedJulianDate| {
-        let raw = target.azimuth_at(&site, t).value(); // [0, 2π)
+        let raw = target.azimuth_at_with_policy(&site, t, policy).value(); // [0, 2π)
         let p = prev_raw.get();
         if !p.is_nan() {
             let diff = raw - p;
@@ -188,7 +191,12 @@ pub fn azimuth_crossings<T: AzimuthProvider>(
     opts: SearchOpts,
 ) -> Vec<AzimuthCrossingEvent> {
     let bearing_rad = bearing.to::<Radian>();
-    let f = make_az_bearing_sin_fn(target, observer, bearing_rad);
+    let f = make_az_bearing_sin_fn(
+        target,
+        observer,
+        bearing_rad,
+        crate::astro::apparent::CorrectionPolicy::APPARENT,
+    );
     let step = scan_step_for(target, &opts);
 
     let mut raw = intervals::find_crossings(window, step, &f, Radians::new(0.0));
@@ -242,7 +250,11 @@ pub fn azimuth_extrema<T: AzimuthProvider>(
         .unwrap_or(EXTREMA_SCAN_STEP);
     let tol = opts.time_tolerance;
 
-    let f = make_az_unwrapped_fn(target, *observer);
+    let f = make_az_unwrapped_fn(
+        target,
+        *observer,
+        crate::astro::apparent::CorrectionPolicy::APPARENT,
+    );
     let raw: Vec<extrema::Extremum<Radian>> = extrema::find_extrema_tol(window, step, &f, tol);
 
     raw.iter()
@@ -295,7 +307,13 @@ pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
         let half_width = ((query.max_azimuth - query.min_azimuth) * 0.5).to::<Radian>();
         let cos_hw = half_width.cos();
 
-        let f = make_az_cosine_fn(target, &query.observer, mid, cos_hw);
+        let f = make_az_cosine_fn(
+            target,
+            &query.observer,
+            mid,
+            cos_hw,
+            query.correction_policy,
+        );
         intervals::above_threshold_periods(query.window, step, &f, Radians::new(0.0))
     } else {
         // ── Wrap-around arc [min, 360°) ∪ [0°, max] ──────────────────────
@@ -304,7 +322,13 @@ pub(crate) fn azimuth_range_periods<T: AzimuthProvider>(
         let half_width = ((query.min_azimuth - query.max_azimuth) * 0.5).to::<Radian>();
         let cos_hw = half_width.cos();
 
-        let f = make_az_cosine_fn(target, &query.observer, mid, cos_hw);
+        let f = make_az_cosine_fn(
+            target,
+            &query.observer,
+            mid,
+            cos_hw,
+            query.correction_policy,
+        );
         let outside = intervals::above_threshold_periods(query.window, step, &f, Radians::new(0.0));
         complement_within(query.window, &outside)
     }
@@ -348,6 +372,7 @@ pub fn azimuth_ranges<T: AzimuthProvider>(
         min_azimuth: min_az,
         max_azimuth: max_az,
         opts,
+        correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
     })
 }
 

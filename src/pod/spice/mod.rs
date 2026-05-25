@@ -10,7 +10,7 @@
 //!
 //! # Scope
 //!
-//! The pure DAF/SPK parsing, SPK segment evaluation (Type 2/3), body
+//! The pure DAF/SPK parsing, SPK segment evaluation (Type 2/3/9/13), body
 //! chain resolution, and NAIF body-ID lookup all live in
 //! `siderust::formats::spice`. This module only owns the thin POD
 //! adapter:
@@ -19,11 +19,6 @@
 //!   [`siderust::pod::providers::EphemerisProvider`]. Center selection
 //!   is **explicit** at construction time and is propagated as a typed
 //!   `affn` reference center on the returned [`SpiceState`].
-//!
-//! SPK **Type 9** and **Type 13** (Lagrange interpolation) are not
-//! implemented. Loading a kernel that contains such a segment succeeds,
-//! but a state query that resolves to it returns
-//! [`SpiceError::UnsupportedDataType`].
 //!
 //! # Time semantics
 //!
@@ -43,10 +38,15 @@
 //! # Examples
 //!
 //! ```rust
-//! use siderust::formats::spice::SpiceError;
+//! use siderust::formats::spice::{daf::{Daf, Summary}, segment_for_summary, SpiceError};
 //!
-//! let err: SpiceError = SpiceError::UnsupportedDataType { data_type: 9 };
-//! assert!(format!("{err}").contains("Type 9"));
+//! let daf = Daf { nd: 2, ni: 6, summaries: vec![] };
+//! let summary = Summary {
+//!     start_et: 0.0, end_et: 1.0, target_id: 1, center_id: 0,
+//!     frame_id: 1, data_type: 21, start_word: 1, end_word: 1,
+//! };
+//! let err = segment_for_summary(&0.0_f64.to_le_bytes(), &daf, &summary).unwrap_err();
+//! assert!(matches!(err, SpiceError::UnsupportedDataType { data_type: 21 }));
 //! # Ok::<_, SpiceError>(())
 //! ```
 

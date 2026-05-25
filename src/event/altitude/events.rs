@@ -30,6 +30,7 @@
 use super::provider::AltitudePeriodsProvider;
 use super::search::{SearchOpts, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};
 use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind};
+use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::numeric::{extrema, intervals};
@@ -44,9 +45,10 @@ use crate::time::{complement_within, Interval, ModifiedJulianDate};
 fn make_altitude_fn<'a, T: AltitudePeriodsProvider>(
     target: &'a T,
     site: &'a Geodetic<ECEF>,
+    policy: CorrectionPolicy,
 ) -> impl Fn(ModifiedJulianDate) -> Radians + 'a {
     let site = *site;
-    move |t: ModifiedJulianDate| target.altitude_at(&site, t)
+    move |t: ModifiedJulianDate| target.altitude_at_with_policy(&site, t, policy)
 }
 
 /// Choose the best scan step for the target.
@@ -100,7 +102,27 @@ pub fn crossings<T: AltitudePeriodsProvider>(
     threshold: Degrees,
     opts: SearchOpts,
 ) -> Vec<CrossingEvent> {
-    let f = make_altitude_fn(target, observer);
+    crossings_with_policy(
+        target,
+        observer,
+        window,
+        threshold,
+        opts,
+        CorrectionPolicy::APPARENT,
+    )
+}
+
+/// Find threshold crossings using an explicit apparent-position correction
+/// policy.
+pub fn crossings_with_policy<T: AltitudePeriodsProvider>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+    policy: CorrectionPolicy,
+) -> Vec<CrossingEvent> {
+    let f = make_altitude_fn(target, observer, policy);
     let thr_rad = threshold.to::<Radian>();
     let step = scan_step_for(target, &opts);
 
@@ -146,7 +168,19 @@ pub fn culminations<T: AltitudePeriodsProvider>(
     window: Interval<ModifiedJulianDate>,
     opts: SearchOpts,
 ) -> Vec<CulminationEvent> {
-    let f = make_altitude_fn(target, observer);
+    culminations_with_policy(target, observer, window, opts, CorrectionPolicy::APPARENT)
+}
+
+/// Find altitude culminations using an explicit apparent-position correction
+/// policy.
+pub fn culminations_with_policy<T: AltitudePeriodsProvider>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    opts: SearchOpts,
+    policy: CorrectionPolicy,
+) -> Vec<CulminationEvent> {
+    let f = make_altitude_fn(target, observer, policy);
     // For culminations, use a slightly larger step (or the target's hint)
     let step = opts
         .scan_step_days
@@ -218,7 +252,29 @@ pub fn altitude_ranges<T: AltitudePeriodsProvider>(
     h_max: Degrees,
     opts: SearchOpts,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    let f = make_altitude_fn(target, observer);
+    altitude_ranges_with_policy(
+        target,
+        observer,
+        window,
+        h_min,
+        h_max,
+        opts,
+        CorrectionPolicy::APPARENT,
+    )
+}
+
+/// Find altitude-range periods using an explicit apparent-position correction
+/// policy.
+pub fn altitude_ranges_with_policy<T: AltitudePeriodsProvider>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    h_min: Degrees,
+    h_max: Degrees,
+    opts: SearchOpts,
+    policy: CorrectionPolicy,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    let f = make_altitude_fn(target, observer, policy);
     let min_rad = h_min.to::<Radian>();
     let max_rad = h_max.to::<Radian>();
     let step = scan_step_for(target, &opts);
@@ -253,7 +309,27 @@ pub fn above_threshold<T: AltitudePeriodsProvider>(
     threshold: Degrees,
     opts: SearchOpts,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    let f = make_altitude_fn(target, observer);
+    above_threshold_with_policy(
+        target,
+        observer,
+        window,
+        threshold,
+        opts,
+        CorrectionPolicy::APPARENT,
+    )
+}
+
+/// Find above-threshold periods using an explicit apparent-position
+/// correction policy.
+pub fn above_threshold_with_policy<T: AltitudePeriodsProvider>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+    policy: CorrectionPolicy,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    let f = make_altitude_fn(target, observer, policy);
     let thr_rad = threshold.to::<Radian>();
     let step = scan_step_for(target, &opts);
 
@@ -283,7 +359,27 @@ pub fn below_threshold<T: AltitudePeriodsProvider>(
     threshold: Degrees,
     opts: SearchOpts,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    let above = above_threshold(target, observer, window, threshold, opts);
+    below_threshold_with_policy(
+        target,
+        observer,
+        window,
+        threshold,
+        opts,
+        CorrectionPolicy::APPARENT,
+    )
+}
+
+/// Find below-threshold periods using an explicit apparent-position
+/// correction policy.
+pub fn below_threshold_with_policy<T: AltitudePeriodsProvider>(
+    target: &T,
+    observer: &Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+    policy: CorrectionPolicy,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    let above = above_threshold_with_policy(target, observer, window, threshold, opts, policy);
     complement_within(window, &above)
 }
 

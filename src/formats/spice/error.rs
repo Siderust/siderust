@@ -73,15 +73,13 @@ pub enum SpiceError {
 
     /// SPK data type is not implemented.
     ///
-    /// This crate ships SPK Type 2 (Chebyshev position) and Type 3
-    /// (Chebyshev position+velocity). Types 9 / 13 (Lagrange equal- and
-    /// unequal-step interpolation) and the higher Types are not
-    /// implemented; the parser still indexes them so callers can detect
-    /// their presence, but a state query that resolves to such a segment
-    /// fails with this error.
+    /// This crate ships SPK Type 2 (Chebyshev position), Type 3 (Chebyshev
+    /// position+velocity), Type 9 (unequally-spaced Lagrange state
+    /// interpolation), and Type 13 (unequally-spaced Hermite state
+    /// interpolation). Higher Types are indexed but not evaluated.
     #[error("SPICE kernel: SPK Type {data_type} is not implemented")]
     UnsupportedDataType {
-        /// NAIF SPK data type code (e.g. 9 or 13).
+        /// NAIF SPK data type code.
         data_type: i32,
     },
 
@@ -100,10 +98,10 @@ pub enum SpiceError {
     FormatParse(String),
 }
 
-impl From<crate::datasets::DatasetError> for SpiceError {
-    fn from(err: crate::datasets::DatasetError) -> Self {
+impl From<crate::data::DatasetError> for SpiceError {
+    fn from(err: crate::data::DatasetError) -> Self {
         match err {
-            crate::datasets::DatasetError::Io(e) => SpiceError::Io(e),
+            crate::data::DatasetError::Io(e) => SpiceError::Io(e),
             other => SpiceError::FormatParse(format!("{other}")),
         }
     }

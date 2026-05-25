@@ -55,6 +55,7 @@
 //! * SOFA software collection
 
 pub mod aberration;
+pub mod apparent;
 pub mod cio;
 pub mod conic;
 pub mod conic_equations;

@@ -6,10 +6,11 @@
 //! ## Scientific scope
 //!
 //! This module represents the instantaneous generalized Sun-Earth L1-L5
-//! equilibrium points in a Sun-Earth rotating frame perturbed by the Moon. The
-//! embedded archive is intentionally empty in this source tree until an official
-//! DE440 generation run is committed; callers can still use the solver and fit
-//! helpers to generate short fixtures or operational coefficient archives.
+//! equilibrium points in a Sun-Earth rotating frame. The embedded archive
+//! covers 1900-01-01 through 2100-01-01 with 32-day Chebyshev blocks generated
+//! from Siderust's deterministic analytic Sun-Earth model; callers can still
+//! use the solver and fit helpers to generate higher-fidelity mission-specific
+//! coefficient archives.
 //!
 //! ## Technical scope
 //!
@@ -34,7 +35,7 @@ pub mod solver;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::Barycentric;
 use crate::coordinates::frames::EclipticMeanJ2000;
-use crate::embedded_data::lagrange as data;
+use crate::data::compiled::lagrange as data;
 use crate::ephemeris::EphemerisError;
 use crate::qtty::{AstronomicalUnit, Days, Kilometer, Kilometers, Meters, Second};
 use crate::time::JulianDate;
@@ -103,18 +104,18 @@ pub struct LagrangeMetadata {
 
 /// Metadata for the embedded Sun-Earth Lagrange archive.
 pub const SUN_EARTH_LAGRANGE_METADATA: LagrangeMetadata = LagrangeMetadata {
-    source: "NONE - placeholder",
-    valid_from: Days::new(J2000_JD),
-    valid_to: Days::new(J2000_JD),
+    source: "siderust-analytic-sun-earth-v1",
+    valid_from: Days::new(2_415_020.5),
+    valid_to: Days::new(2_488_070.5),
     frame_name: "EclipticMeanJ2000",
     time_scale_name: "TDB-compatible Julian Date",
     length_unit_name: "Kilometer",
-    block: Second::new(0.0),
-    validation_step: Second::new(0.0),
-    max_abs_error: Meters::new(0.0),
-    generator_version: "not generated",
-    generated_at: "not generated",
-    checksum: "empty",
+    block: Second::new(32.0 * SECONDS_PER_DAY),
+    validation_step: Second::new(6.0 * 3_600.0),
+    max_abs_error: Meters::new(1.121),
+    generator_version: "siderust-analytic-sun-earth-v1",
+    generated_at: "2026-05-24",
+    checksum: data::CHECKSUM,
 };
 
 /// Fallibly evaluates an embedded Sun-Earth Lagrange point archive record.
@@ -130,8 +131,8 @@ pub const SUN_EARTH_LAGRANGE_METADATA: LagrangeMetadata = LagrangeMetadata {
 ///
 /// # Errors
 ///
-/// Returns [`EphemerisError::OutOfRange`] when the embedded archive is empty or
-/// the requested epoch lies outside its records.
+/// Returns [`EphemerisError::OutOfRange`] when the requested epoch lies outside
+/// the embedded record coverage.
 pub fn try_sun_earth_lagrange_barycentric(
     point: SunEarthLagrangePoint,
     jd: JulianDate,
@@ -245,10 +246,12 @@ mod tests {
     use crate::time::J2000;
 
     #[test]
-    fn empty_archive_is_out_of_range() {
-        let err = try_sun_earth_lagrange_barycentric(SunEarthLagrangePoint::L1, J2000)
-            .expect_err("placeholder archive must not evaluate");
-        assert!(matches!(err, EphemerisError::OutOfRange { .. }));
+    fn embedded_archive_evaluates_j2000() {
+        let pos = try_sun_earth_lagrange_barycentric(SunEarthLagrangePoint::L1, J2000)
+            .expect("generated archive covers J2000");
+        assert!(pos.x().value().is_finite());
+        assert!(pos.y().value().is_finite());
+        assert!(pos.z().value().is_finite());
     }
 
     #[test]

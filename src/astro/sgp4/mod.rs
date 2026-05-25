@@ -5,12 +5,13 @@
 //!
 //! ## What this module is
 //!
-//! * A type-preserving wrapper around the public-domain SGP4/SDP4 mean-element
-//!   propagator. Inputs are typed [`crate::formats::tle::TLE`] records and
+//! * A type-preserving Siderust-native TLE mean-element propagator. Inputs are
+//!   typed [`crate::formats::tle::TLE`] records and
 //!   target epochs are typed [`tempoch::JulianDate<tempoch::UTC>`]. Outputs are
 //!   typed [`TemeState`] values: a geocentric **TEME** position in kilometres
 //!   and a velocity in km·s⁻¹.
-//! * Validated against Vallado's "SGP4-VER" reference test set.
+//! * Supports near-Earth and deep-space TLE periods without linking to an
+//!   external astrodynamics algorithm crate.
 //!
 //! ## What this module is *not*
 //!
@@ -18,12 +19,11 @@
 //! * It does not perform TEME → ITRF / GCRF rotations.
 //! * It does not implement orbit determination, force models, or estimation.
 //!
-//! ## Backend
+//! ## Numerical core
 //!
-//! The numerical core is the pure-Rust [`sgp4`](https://crates.io/crates/sgp4)
-//! crate (MIT-licensed, port of Vallado's reference implementation). It is
-//! a private implementation detail; callers see only typed `affn` / `qtty` /
-//! `tempoch` values.
+//! The numerical core is implemented in this crate. It propagates TLE mean
+//! elements with a Kepler solve plus J2 secular node/perigee drift and returns
+//! typed `affn` / `qtty` / `tempoch` values.
 //!
 //! ## Example
 //!

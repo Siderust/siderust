@@ -63,9 +63,8 @@
 //! - [`bodies`]                  : Planets, stars, satellites, asteroids, comets, and built-in catalogs
 //! - [`observatories`]           : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 //! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate (including `OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`, `Refractivity`, `CipCoordinate`)
-//! - [`datasets`]                : Scientific dataset catalog: [`DatasetId`](datasets::DatasetId), acquisition metadata, and optional runtime download/cache manager
+//! - [`data`]                    : Scientific dataset catalog, provenance, checksums, compiled tables, and optional runtime download/cache manager
 //! - [`formats`]                 : Low-level binary file-format parsers (e.g. SPICE DAF/SPK); no dataset-catalog knowledge
-//! - [`provenance`]              : Provenance and source-attribution types (`Provenance`, `DataSource`)
 //! - `atmosphere` *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
 //! - `spectra` *(optional)*    : Spectral response and photometric bandpass utilities (`spectra` feature)
 //! - `tables` *(optional)*     : Tabulated data loaders (`tables` feature)
@@ -112,18 +111,21 @@ pub mod astro;
 #[cfg(feature = "atmosphere")]
 pub mod atmosphere;
 pub mod bodies;
+pub mod catalogs;
 pub mod coordinates;
-pub mod datasets;
+pub mod data;
 pub mod ephemeris;
 pub mod event;
 pub mod formats;
 #[cfg(any(feature = "spectra", feature = "tables", feature = "atmosphere"))]
 pub(crate) mod interp;
+pub mod instruments;
+pub mod mission_context;
+pub mod mission_geometry;
 pub mod numeric;
 pub mod observatories;
 #[cfg(feature = "pod")]
 pub mod pod;
-pub mod provenance;
 pub mod qtty;
 #[cfg(feature = "spectra")]
 pub mod spectra;
@@ -138,11 +140,8 @@ pub use time::{JulianDate, ModifiedJulianDate, J2000, JD, MJD};
 // Convenience re-export: sky sampling utilities.
 pub use coordinates::{SkyGrid, SkyGridCell};
 
-#[cfg(feature = "lagrange-centers")]
-pub(crate) mod archive;
-pub(crate) mod embedded_data;
 #[doc(hidden)]
-pub use provenance::checksum;
+pub use data::checksum;
 pub(crate) mod macros;
 
 // ---------------------------------------------------------------------------

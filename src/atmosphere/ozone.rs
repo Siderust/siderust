@@ -43,13 +43,13 @@ use std::sync::OnceLock;
 
 use crate::atmosphere::{Transmittance, Transmittances};
 use crate::ext_qtty::length::Nanometer;
-use crate::provenance::Provenance;
+use crate::data::Provenance;
 use crate::qtty::Nanometers;
 use crate::spectra::interp::{Interpolation, OutOfRange};
 use crate::spectra::loaders::ascii;
 use crate::spectra::sampled::SampledSpectrum;
 
-const RAW: &str = include_str!("../embedded_data/data/o3trans.dat");
+const RAW: &str = include_str!("../data/file/o3trans.dat");
 #[cfg(test)]
 const OZONE_SHA256: &str = "cb06c173f393d6d55e3c39551665abb8f5d6c1a846cd0fd739a15d0155f94502";
 
@@ -98,7 +98,7 @@ mod tests {
     /// the value pinned via [`assert_data_checksum!`].
     #[test]
     fn pinned_sha256_matches_runtime_hash() {
-        use crate::provenance::checksum::{sha256, to_hex};
+        use crate::data::checksum::{sha256, to_hex};
         assert_eq!(to_hex(&sha256(RAW.as_bytes())), OZONE_SHA256);
     }
 

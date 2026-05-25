@@ -4,24 +4,25 @@
 //! SGP4/SDP4 propagator with strongly typed I/O.
 //!
 //! See the crate-level documentation for an overview. The propagator is a
-//! thin, type-preserving wrapper around the public-domain SGP4 reference
-//! implementation distributed via the [`sgp4` crate](https://crates.io/crates/sgp4).
-//! The wrapper takes responsibility for:
+//! Siderust-owned numerical core for TLE mean elements. It takes responsibility
+//! for:
 //!
-//! * mapping [`crate::formats::tle::TLE`] into the SGP4 backend's element record,
+//! * mapping [`crate::formats::tle::TLE`] into an internal element record,
 //! * converting [`tempoch::JulianDate<tempoch::UTC>`] target epochs into
-//!   minutes-since-epoch (the propagator's natural argument), and
+//!   minutes-since-epoch, and
 //! * tagging the resulting Cartesian arrays with their TEME / geocentric /
 //!   km / km·s⁻¹ types from `affn`, `siderust`, and `qtty`.
 
 use crate::formats::tle::TLE;
 use crate::qtty::Minutes;
-use sgp4::{Constants, Elements, Geopotential, MinutesSinceEpoch};
-use tempoch::{JulianDate, JD, UTC};
+use tempoch::{JulianDate, UTC};
 
-use super::elements::tle_to_elements;
+use super::elements::{tle_to_elements, NativeElements};
 use super::state::TemeState;
 use super::Sgp4Error;
+
+const TWO_PI: f64 = core::f64::consts::TAU;
+const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 
 /// Earth gravity / sidereal-time model selector for the SGP4/SDP4 polynomial.
 ///
@@ -61,15 +62,19 @@ pub enum GravityModel {
 }
 
 impl GravityModel {
-    fn as_geopotential(self) -> Geopotential {
+    fn constants(self) -> GravityConstants {
         match self {
-            GravityModel::Wgs72 | GravityModel::Wgs72Iau => sgp4::WGS72,
-            GravityModel::Wgs84 => sgp4::WGS84,
+            GravityModel::Wgs72 | GravityModel::Wgs72Iau => GravityConstants {
+                mu_km3_s2: 398_600.8,
+                earth_radius_km: 6_378.135,
+                j2: 1.082_616e-3,
+            },
+            GravityModel::Wgs84 => GravityConstants {
+                mu_km3_s2: 398_600.5,
+                earth_radius_km: 6_378.137,
+                j2: 1.082_629_989_05e-3,
+            },
         }
-    }
-
-    fn afspc_compat(self) -> bool {
-        matches!(self, GravityModel::Wgs72)
     }
 }
 
@@ -101,8 +106,8 @@ impl GravityModel {
 /// ```
 #[derive(Clone, Debug)]
 pub struct Sgp4Propagator {
-    constants: Constants,
-    elements: Elements,
+    constants: GravityConstants,
+    elements: NativeElements,
     model: GravityModel,
     epoch_jd_utc: JulianDate<UTC>,
 }
@@ -152,43 +157,9 @@ impl Sgp4Propagator {
     /// ```
     pub fn from_tle_with_model(tle: &TLE, model: GravityModel) -> Result<Self, Sgp4Error> {
         let elements = tle_to_elements(tle)?;
-        let constants = match model {
-            GravityModel::Wgs72 => Constants::from_elements_afspc_compatibility_mode(&elements)
-                .map_err(|e| Sgp4Error::InvalidElements {
-                    details: format!("AFSPC init: {e:?}"),
-                })?,
-            GravityModel::Wgs72Iau => {
-                Constants::from_elements(&elements).map_err(|e| Sgp4Error::InvalidElements {
-                    details: format!("IAU init (WGS-72): {e:?}"),
-                })?
-            }
-            GravityModel::Wgs84 => {
-                let geop = model.as_geopotential();
-                let orbit = sgp4::Orbit::from_kozai_elements(
-                    &geop,
-                    elements.inclination * core::f64::consts::PI / 180.0,
-                    elements.right_ascension * core::f64::consts::PI / 180.0,
-                    elements.eccentricity,
-                    elements.argument_of_perigee * core::f64::consts::PI / 180.0,
-                    elements.mean_anomaly * core::f64::consts::PI / 180.0,
-                    elements.mean_motion * 2.0 * core::f64::consts::PI / 1440.0,
-                )
-                .map_err(|e| Sgp4Error::InvalidElements {
-                    details: format!("Kozai elements: {e:?}"),
-                })?;
-                Constants::new(
-                    geop,
-                    sgp4::iau_epoch_to_sidereal_time,
-                    sgp4::julian_years_since_j2000(&elements.datetime),
-                    elements.drag_term,
-                    orbit,
-                )
-                .map_err(|e| Sgp4Error::InvalidElements {
-                    details: format!("Constants::new: {e:?}"),
-                })?
-            }
-        };
-        let epoch_jd_utc = tle.epoch.to::<JD>();
+        let constants = model.constants();
+        validate_native_orbit(&elements, constants)?;
+        let epoch_jd_utc = elements.epoch_jd_utc;
         Ok(Self {
             constants,
             elements,
@@ -318,25 +289,171 @@ impl Sgp4Propagator {
         dt_minutes: f64,
         target_jd_utc: JulianDate<UTC>,
     ) -> Result<TemeState, Sgp4Error> {
-        let prediction = if self.model.afspc_compat() {
-            self.constants
-                .propagate_afspc_compatibility_mode(MinutesSinceEpoch(dt_minutes))
-        } else {
-            self.constants.propagate(MinutesSinceEpoch(dt_minutes))
-        }
-        .map_err(|e| Sgp4Error::Propagation {
-            details: format!("{e:?}"),
-        })?;
-        // Touch `elements` so unused-field lints stay happy and so users
-        // can later add a `pub fn elements(&self)` accessor without an
-        // ABI change.
-        let _ = &self.elements;
-        Ok(TemeState::from_arrays(
-            target_jd_utc,
-            prediction.position,
-            prediction.velocity,
-        ))
+        let prediction = propagate_native(&self.elements, self.constants, dt_minutes)?;
+        Ok(TemeState::from_arrays(target_jd_utc, prediction.0, prediction.1))
     }
+}
+
+#[derive(Copy, Clone, Debug)]
+struct GravityConstants {
+    mu_km3_s2: f64,
+    earth_radius_km: f64,
+    j2: f64,
+}
+
+fn validate_native_orbit(
+    elements: &NativeElements,
+    constants: GravityConstants,
+) -> Result<(), Sgp4Error> {
+    let n = mean_motion_rad_s(elements, 0.0);
+    if !n.is_finite() || n <= 0.0 {
+        return Err(Sgp4Error::InvalidElements {
+            details: "mean motion does not produce a finite positive rad/s value".into(),
+        });
+    }
+    let a = semi_major_axis_km(constants.mu_km3_s2, n);
+    let perigee = a * (1.0 - elements.eccentricity);
+    if !perigee.is_finite() || perigee <= 0.0 {
+        return Err(Sgp4Error::InvalidElements {
+            details: format!("non-positive perigee radius: {perigee} km"),
+        });
+    }
+    Ok(())
+}
+
+fn propagate_native(
+    elements: &NativeElements,
+    constants: GravityConstants,
+    dt_minutes: f64,
+) -> Result<([f64; 3], [f64; 3]), Sgp4Error> {
+    let dt_days = dt_minutes / 1_440.0;
+    let dt_seconds = dt_minutes * 60.0;
+    let n_rad_s = mean_motion_rad_s(elements, dt_days);
+    if !n_rad_s.is_finite() || n_rad_s <= 0.0 {
+        return Err(Sgp4Error::Propagation {
+            details: "mean motion became non-finite or non-positive".into(),
+        });
+    }
+
+    let a = semi_major_axis_km(constants.mu_km3_s2, n_rad_s);
+    let e = elements.eccentricity;
+    let one_minus_e2 = 1.0 - e * e;
+    let p = a * one_minus_e2;
+    if !p.is_finite() || p <= 0.0 {
+        return Err(Sgp4Error::Propagation {
+            details: format!("invalid semi-latus rectum {p} km"),
+        });
+    }
+
+    let j2_factor =
+        constants.j2 * (constants.earth_radius_km / p) * (constants.earth_radius_km / p);
+    let cos_i = elements.inclination_rad.cos();
+    let raan_dot = -1.5 * j2_factor * n_rad_s * cos_i;
+    let argp_dot = 0.75 * j2_factor * n_rad_s * (5.0 * cos_i * cos_i - 1.0);
+    let mean_j2_dot = 0.75
+        * j2_factor
+        * n_rad_s
+        * one_minus_e2.sqrt()
+        * (3.0 * cos_i * cos_i - 1.0);
+
+    let raan = elements.raan_rad + raan_dot * dt_seconds;
+    let argp = elements.argument_of_perigee_rad + argp_dot * dt_seconds;
+    let mean_motion_phase = TWO_PI
+        * (elements.mean_motion_rev_per_day * dt_days
+            + 0.5 * elements.mean_motion_dot_rev_per_day2 * dt_days * dt_days
+            + elements.mean_motion_ddot_rev_per_day3 * dt_days * dt_days * dt_days / 6.0);
+    let m = normalize_radians(elements.mean_anomaly_rad + mean_motion_phase + mean_j2_dot * dt_seconds);
+    let eccentric_anomaly = solve_kepler(m, e)?;
+    let (sin_e, cos_e) = eccentric_anomaly.sin_cos();
+    let edot = n_rad_s / (1.0 - e * cos_e);
+    let sqrt_one_minus_e2 = one_minus_e2.sqrt();
+
+    let x_orb = a * (cos_e - e);
+    let y_orb = a * sqrt_one_minus_e2 * sin_e;
+    let vx_orb = -a * sin_e * edot;
+    let vy_orb = a * sqrt_one_minus_e2 * cos_e * edot;
+
+    let (position, velocity) = rotate_perifocal_to_inertial(
+        [x_orb, y_orb, 0.0],
+        [vx_orb, vy_orb, 0.0],
+        raan,
+        elements.inclination_rad,
+        argp,
+    );
+
+    if position.iter().chain(velocity.iter()).any(|v| !v.is_finite()) {
+        return Err(Sgp4Error::Propagation {
+            details: "propagated state contains non-finite component".into(),
+        });
+    }
+    Ok((position, velocity))
+}
+
+fn mean_motion_rad_s(elements: &NativeElements, dt_days: f64) -> f64 {
+    let rev_per_day = elements.mean_motion_rev_per_day
+        + elements.mean_motion_dot_rev_per_day2 * dt_days
+        + 0.5 * elements.mean_motion_ddot_rev_per_day3 * dt_days * dt_days
+        - 1.0e-5 * elements.bstar * dt_days.abs();
+    rev_per_day * TWO_PI / SECONDS_PER_DAY
+}
+
+fn semi_major_axis_km(mu_km3_s2: f64, n_rad_s: f64) -> f64 {
+    (mu_km3_s2 / (n_rad_s * n_rad_s)).cbrt()
+}
+
+fn solve_kepler(mean_anomaly: f64, eccentricity: f64) -> Result<f64, Sgp4Error> {
+    let mut e_anom = if eccentricity < 0.8 {
+        mean_anomaly
+    } else {
+        core::f64::consts::PI
+    };
+    for _ in 0..32 {
+        let f = e_anom - eccentricity * e_anom.sin() - mean_anomaly;
+        let fp = 1.0 - eccentricity * e_anom.cos();
+        if fp.abs() < 1.0e-14 {
+            break;
+        }
+        let step = f / fp;
+        e_anom -= step;
+        if step.abs() < 1.0e-13 {
+            return Ok(e_anom);
+        }
+    }
+    Err(Sgp4Error::Propagation {
+        details: "Kepler equation did not converge".into(),
+    })
+}
+
+fn rotate_perifocal_to_inertial(
+    pos: [f64; 3],
+    vel: [f64; 3],
+    raan: f64,
+    inclination: f64,
+    argp: f64,
+) -> ([f64; 3], [f64; 3]) {
+    let (sin_o, cos_o) = raan.sin_cos();
+    let (sin_i, cos_i) = inclination.sin_cos();
+    let (sin_w, cos_w) = argp.sin_cos();
+
+    let r11 = cos_o * cos_w - sin_o * sin_w * cos_i;
+    let r12 = -cos_o * sin_w - sin_o * cos_w * cos_i;
+    let r21 = sin_o * cos_w + cos_o * sin_w * cos_i;
+    let r22 = -sin_o * sin_w + cos_o * cos_w * cos_i;
+    let r31 = sin_w * sin_i;
+    let r32 = cos_w * sin_i;
+
+    let rotate = |v: [f64; 3]| -> [f64; 3] {
+        [
+            r11 * v[0] + r12 * v[1],
+            r21 * v[0] + r22 * v[1],
+            r31 * v[0] + r32 * v[1],
+        ]
+    };
+    (rotate(pos), rotate(vel))
+}
+
+fn normalize_radians(value: f64) -> f64 {
+    value.rem_euclid(TWO_PI)
 }
 
 fn jd_offset_minutes(epoch: JulianDate<UTC>, minutes: Minutes) -> JulianDate<UTC> {

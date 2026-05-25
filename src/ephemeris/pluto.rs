@@ -13,7 +13,7 @@
 //! while being dramatically faster than a full numerical integration or the
 //! DE ephemerides.
 //!
-//! Coefficient tables live in the crate-private `archive::pluto_tables` module.
+//! Coefficient tables live in the crate-private `data::compiled::pluto_tables` module.
 //!
 //! ```text
 //! Step outline (see code for details):
@@ -34,7 +34,7 @@
 //!   Astron. Assoc.* **99** (2), 75–82.
 
 use crate::coordinates::{cartesian, centers::Heliocentric, frames::EclipticMeanJ2000, spherical};
-use crate::embedded_data::pluto_tables::{
+use crate::data::compiled::pluto_tables::{
     ARGUMENTS, LATITUDE_TERMS, LONGITUDE_TERMS, RADIUS_TERMS,
 };
 use crate::qtty::{AstronomicalUnit, Degrees, Radian, AU};

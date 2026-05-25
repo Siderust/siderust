@@ -44,9 +44,9 @@
 
 use crate::ext_qtty::{Quantity, Unit};
 
-use super::algo;
+use super::algo::{self, CubicSplineCoeffs};
 use super::interp::{Interpolation, OutOfRange};
-use super::provenance::Provenance;
+use crate::data::Provenance;
 use super::SpectrumError;
 
 /// A monotonically-sampled 1-D spectrum `y(x)` with explicit interpolation
@@ -67,6 +67,9 @@ pub struct SampledSpectrum<X: Unit, Y: Unit, S: crate::ext_qtty::Scalar = f64> {
     interp: Interpolation,
     oor: OutOfRange,
     provenance: Option<Provenance>,
+    /// Precomputed natural cubic spline coefficients, populated when
+    /// `interp == Interpolation::CubicSpline`.
+    cubic: Option<CubicSplineCoeffs>,
 }
 
 impl<X: Unit, Y: Unit, S: crate::ext_qtty::Scalar> SampledSpectrum<X, Y, S> {
@@ -140,12 +143,18 @@ impl<X: Unit, Y: Unit> SampledSpectrum<X, Y, f64> {
         provenance: Option<Provenance>,
     ) -> Result<Self, SpectrumError> {
         algo::validate(&xs, &ys)?;
+        let cubic = if interpolation == Interpolation::CubicSpline {
+            Some(CubicSplineCoeffs::natural(&xs, &ys)?)
+        } else {
+            None
+        };
         Ok(Self {
             xs: xs.into_iter().map(Quantity::<X, f64>::new).collect(),
             ys: ys.into_iter().map(Quantity::<Y, f64>::new).collect(),
             interp: interpolation,
             oor: out_of_range,
             provenance,
+            cubic,
         })
     }
 
@@ -159,12 +168,18 @@ impl<X: Unit, Y: Unit> SampledSpectrum<X, Y, f64> {
     ) -> Result<Self, SpectrumError> {
         let raw_xs: Vec<f64> = xs.iter().map(|q| q.value()).collect();
         algo::validate(&raw_xs, &ys)?;
+        let cubic = if interpolation == Interpolation::CubicSpline {
+            Some(CubicSplineCoeffs::natural(&raw_xs, &ys)?)
+        } else {
+            None
+        };
         Ok(Self {
             xs,
             ys: ys.into_iter().map(Quantity::<Y, f64>::new).collect(),
             interp: interpolation,
             oor: out_of_range,
             provenance,
+            cubic,
         })
     }
 
@@ -179,12 +194,18 @@ impl<X: Unit, Y: Unit> SampledSpectrum<X, Y, f64> {
         let raw_xs: Vec<f64> = xs.iter().map(|q| q.value()).collect();
         let raw_ys: Vec<f64> = ys.iter().map(|q| q.value()).collect();
         algo::validate(&raw_xs, &raw_ys)?;
+        let cubic = if interpolation == Interpolation::CubicSpline {
+            Some(CubicSplineCoeffs::natural(&raw_xs, &raw_ys)?)
+        } else {
+            None
+        };
         Ok(Self {
             xs,
             ys,
             interp: interpolation,
             oor: out_of_range,
             provenance,
+            cubic,
         })
     }
 
@@ -213,7 +234,11 @@ impl<X: Unit, Y: Unit> SampledSpectrum<X, Y, f64> {
     pub fn interp_at(&self, x: Quantity<X, f64>) -> Result<Quantity<Y, f64>, SpectrumError> {
         let xs = self.xs_raw();
         let ys = self.ys_raw();
-        let v = algo::interp(&xs, &ys, x.value(), self.interp, self.oor)?;
+        let v = if let (Interpolation::CubicSpline, Some(coeffs)) = (self.interp, &self.cubic) {
+            algo::interp_cubic_spline(&xs, &ys, coeffs, x.value(), self.oor)?
+        } else {
+            algo::interp(&xs, &ys, x.value(), self.interp, self.oor)?
+        };
         Ok(Quantity::<Y, f64>::new(v))
     }
 
@@ -365,5 +390,38 @@ mod tests {
         .unwrap();
         let v = source.integrate_weighted(&weight);
         assert_abs_diff_eq!(v.value(), 4.0, epsilon = 1e-12);
+    }
+
+    #[test]
+    fn cubic_spline_precomputed_on_construction() {
+        let s = SampledSpectrum::<Nanometer, Meter, f64>::from_raw(
+            vec![0.0, 1.0, 2.0, 3.0, 4.0],
+            vec![1.0, 0.0, -1.0, 0.0, 1.0],
+            Interpolation::CubicSpline,
+            OutOfRange::ClampToEndpoints,
+            None,
+        )
+        .unwrap();
+        // Hitting a sample reproduces the stored value (within roundoff).
+        let v = s
+            .interp_at(crate::ext_qtty::Quantity::<Nanometer, f64>::new(2.0))
+            .unwrap();
+        assert_abs_diff_eq!(v.value(), -1.0, epsilon = 1e-10);
+    }
+
+    #[test]
+    fn nearest_neighbour_via_sampled_spectrum() {
+        let s = SampledSpectrum::<Nanometer, Meter, f64>::from_raw(
+            vec![0.0, 1.0, 2.0],
+            vec![10.0, 20.0, 30.0],
+            Interpolation::Nearest,
+            OutOfRange::ClampToEndpoints,
+            None,
+        )
+        .unwrap();
+        let v = s
+            .interp_at(crate::ext_qtty::Quantity::<Nanometer, f64>::new(0.6))
+            .unwrap();
+        assert_eq!(v.value(), 20.0);
     }
 }

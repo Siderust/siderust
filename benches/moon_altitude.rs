@@ -204,6 +204,7 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
                 window: black_box(period),
                 min_altitude: black_box(Degrees::new(0.0)),
                 max_altitude: black_box(Degrees::new(30.0)),
+                correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
             });
         });
     });
@@ -217,6 +218,7 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
                 window: black_box(period),
                 min_altitude: black_box(Degrees::new(60.0)),
                 max_altitude: black_box(Degrees::new(90.0)),
+                correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
             });
         });
     });

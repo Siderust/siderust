@@ -8,6 +8,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* **Spectra interpolation modes**: `Interpolation::Nearest`,
+  `PiecewiseConstantLeft`, `PiecewiseConstantRight`, and `CubicSpline` are
+  now implemented (previously rejected at construction time). Cubic-spline
+  coefficients are precomputed once at construction time on
+  `SampledSpectrum::from_*` via the tridiagonal Thomas algorithm; per-query
+  evaluation is `O(log n)`. Nearest-neighbour ties resolve to the lower
+  index, matching `scipy.interpolate.interp1d(kind="nearest")`. New public
+  helpers `spectra::algo::{interp_nearest, interp_step_left,
+  interp_step_right, interp_cubic_spline, CubicSplineCoeffs}` expose the
+  untyped kernels.
 * **`lagrange-centers` feature**: typed Sun-Earth L1-L5 reference centers,
   `ephemeris::lagrange` Chebyshev archive evaluation, N-body solver/fitter,
   center-shift providers, generator binary, and placeholder embedded records.

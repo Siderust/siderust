@@ -20,7 +20,7 @@
 //! | [`vlbi`] | vgosDB VLBI datasets |
 //!
 //! For the dataset catalog (what datasets exist and how to acquire them) see
-//! [`crate::datasets`]. The `formats` modules sit *below* the catalog: they
+//! [`crate::data`]. The `formats` modules sit *below* the catalog: they
 //! are called by the runtime back-end after a file has been located on disk.
 
 pub mod adsb;

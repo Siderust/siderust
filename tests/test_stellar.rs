@@ -183,6 +183,7 @@ fn range_periods_sirius_roque() {
         window: period_7d(),
         min_altitude: Degrees::new(10.0),
         max_altitude: Degrees::new(30.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     });
     assert!(
         !periods.is_empty(),
@@ -230,6 +231,7 @@ fn trait_api_range_within_above() {
         window: period,
         min_altitude: Degrees::new(10.0),
         max_altitude: Degrees::new(30.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     });
 
     // Range [10°, 30°] periods should be subsets of above(10°) periods

@@ -32,13 +32,12 @@ fn sun_earth_lagrange_centers_are_unit_parameterized() {
 }
 
 #[test]
-fn placeholder_archive_returns_out_of_range() {
-    let err = try_sun_earth_lagrange_barycentric(SunEarthLagrangePoint::L1, siderust::J2000)
-        .expect_err("placeholder records are intentionally empty");
-    assert!(matches!(
-        err,
-        siderust::ephemeris::EphemerisError::OutOfRange { .. }
-    ));
+fn generated_archive_covers_j2000() {
+    let pos = try_sun_earth_lagrange_barycentric(SunEarthLagrangePoint::L1, siderust::J2000)
+        .expect("generated records cover J2000");
+    assert!(pos.x().value().is_finite());
+    assert!(pos.y().value().is_finite());
+    assert!(pos.z().value().is_finite());
 }
 
 #[test]

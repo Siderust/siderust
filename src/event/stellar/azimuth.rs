@@ -8,6 +8,7 @@
 
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
+use crate::astro::apparent::CorrectionPolicy;
 use crate::qtty::*;
 use crate::time::{JulianDate, ModifiedJulianDate};
 
@@ -28,8 +29,25 @@ pub(crate) fn fixed_star_azimuth_rad(
     ra_j2000: Degrees,
     dec_j2000: Degrees,
 ) -> Radians {
+    fixed_star_azimuth_rad_with_policy(
+        mjd,
+        site,
+        ra_j2000,
+        dec_j2000,
+        CorrectionPolicy::APPARENT,
+    )
+}
+
+/// Computes fixed-star azimuth with an explicit apparent-position policy.
+pub(crate) fn fixed_star_azimuth_rad_with_policy(
+    mjd: ModifiedJulianDate,
+    site: &Geodetic<ECEF>,
+    ra_j2000: Degrees,
+    dec_j2000: Degrees,
+    policy: CorrectionPolicy,
+) -> Radians {
     let jd: JulianDate = mjd.to::<crate::JD>();
-    crate::event::horizontal::star_horizontal(ra_j2000, dec_j2000, site, jd)
+    crate::event::horizontal::star_horizontal_with_policy(ra_j2000, dec_j2000, site, jd, policy)
         .az()
         .to::<Radian>()
 }

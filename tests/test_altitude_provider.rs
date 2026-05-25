@@ -134,6 +134,7 @@ fn sun_twilight_band_trait() {
         ),
         min_altitude: Degrees::new(-18.0),
         max_altitude: Degrees::new(-12.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let bands = Sun.altitude_periods(&query);
     assert_periods_valid(&bands, query.window);
@@ -243,6 +244,7 @@ fn free_function_sun() {
         window: one_day(),
         min_altitude: Degrees::new(0.0),
         max_altitude: Degrees::new(90.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let periods = altitude_periods(&Sun, &query);
     assert!(!periods.is_empty());
@@ -255,6 +257,7 @@ fn free_function_moon() {
         window: one_week(),
         min_altitude: Degrees::new(0.0),
         max_altitude: Degrees::new(90.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let periods = altitude_periods(&Moon, &query);
     assert!(!periods.is_empty());
@@ -268,6 +271,7 @@ fn free_function_direction() {
         window: one_day(),
         min_altitude: Degrees::new(0.0),
         max_altitude: Degrees::new(90.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let periods = altitude_periods(&dir, &query);
     assert!(!periods.is_empty());
@@ -317,6 +321,7 @@ fn empty_window_returns_empty() {
         window,
         min_altitude: Degrees::new(0.0),
         max_altitude: Degrees::new(90.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     assert!(Sun.altitude_periods(&query).is_empty());
     assert!(Moon.altitude_periods(&query).is_empty());
@@ -331,6 +336,7 @@ fn full_sky_range_returns_full_window() {
         window: one_day(),
         min_altitude: Degrees::new(-90.0),
         max_altitude: Degrees::new(90.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let periods = Sun.altitude_periods(&query);
     assert!(!periods.is_empty());

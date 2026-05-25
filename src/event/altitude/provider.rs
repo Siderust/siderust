@@ -107,6 +107,7 @@ pub trait AltitudePeriodsProvider {
             window,
             min_altitude: threshold,
             max_altitude: Degrees::new(90.0),
+            correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
         })
     }
 
@@ -136,6 +137,7 @@ pub trait AltitudePeriodsProvider {
             window,
             min_altitude: Degrees::new(-90.0),
             max_altitude: threshold,
+            correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
         })
     }
 
@@ -152,6 +154,18 @@ pub trait AltitudePeriodsProvider {
     ///
     /// Topocentric altitude as `Radians` (no refraction applied).
     fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians;
+
+    /// Compute the altitude with an explicit apparent-position correction
+    /// policy.
+    fn altitude_at_with_policy(
+        &self,
+        observer: &Geodetic<ECEF>,
+        mjd: ModifiedJulianDate,
+        policy: crate::astro::apparent::CorrectionPolicy,
+    ) -> Radians {
+        let _ = policy;
+        self.altitude_at(observer, mjd)
+    }
 
     /// Hint for the scan step to use when searching for events.
     ///
@@ -195,6 +209,7 @@ pub trait AltitudePeriodsProvider {
 ///     window,
 ///     min_altitude: Degrees::new(0.0),
 ///     max_altitude: Degrees::new(90.0),
+///     correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
 /// };
 /// let periods = altitude_periods(&Sun, &query);
 /// ```
@@ -291,6 +306,16 @@ impl AltitudePeriodsProvider for Star<'_> {
         let dir = direction::ICRS::from(self);
         dir.altitude_at(observer, mjd)
     }
+
+    fn altitude_at_with_policy(
+        &self,
+        observer: &Geodetic<ECEF>,
+        mjd: ModifiedJulianDate,
+        policy: crate::astro::apparent::CorrectionPolicy,
+    ) -> Radians {
+        let dir = direction::ICRS::from(self);
+        dir.altitude_at_with_policy(observer, mjd, policy)
+    }
 }
 
 /// **direction::ICRS**, the lightest path: raw RA/Dec → stellar engine.
@@ -300,6 +325,42 @@ impl AltitudePeriodsProvider for direction::ICRS {
             return Vec::new();
         }
         use crate::event::stellar;
+
+        if query.correction_policy != crate::astro::apparent::CorrectionPolicy::APPARENT {
+            let f = |t: ModifiedJulianDate| -> Radians {
+                stellar::fixed_star_altitude_rad_with_policy(
+                    t,
+                    &query.observer,
+                    self.ra(),
+                    self.dec(),
+                    query.correction_policy,
+                )
+            };
+            if query.max_altitude >= Degrees::new(89.99) {
+                return intervals::above_threshold_periods(
+                    query.window,
+                    PLANET_SCAN_STEP,
+                    &f,
+                    query.min_altitude.to::<Radian>(),
+                );
+            }
+            if query.min_altitude <= Degrees::new(-89.99) {
+                let above = intervals::above_threshold_periods(
+                    query.window,
+                    PLANET_SCAN_STEP,
+                    &f,
+                    query.max_altitude.to::<Radian>(),
+                );
+                return complement_within(query.window, &above);
+            }
+            return intervals::in_range_periods(
+                query.window,
+                PLANET_SCAN_STEP,
+                &f,
+                query.min_altitude.to::<Radian>(),
+                query.max_altitude.to::<Radian>(),
+            );
+        }
 
         if query.max_altitude >= Degrees::new(89.99) {
             stellar::find_star_above_periods(
@@ -330,6 +391,21 @@ impl AltitudePeriodsProvider for direction::ICRS {
 
     fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::event::stellar::fixed_star_altitude_rad(mjd, observer, self.ra(), self.dec())
+    }
+
+    fn altitude_at_with_policy(
+        &self,
+        observer: &Geodetic<ECEF>,
+        mjd: ModifiedJulianDate,
+        policy: crate::astro::apparent::CorrectionPolicy,
+    ) -> Radians {
+        crate::event::stellar::fixed_star_altitude_rad_with_policy(
+            mjd,
+            observer,
+            self.ra(),
+            self.dec(),
+            policy,
+        )
     }
 }
 
@@ -551,6 +627,7 @@ mod tests {
             window: one_day_window(),
             min_altitude: Degrees::new(0.0),
             max_altitude: Degrees::new(90.0),
+            correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
         };
         let periods = altitude_periods(&solar_system::Sun, &query);
         assert!(!periods.is_empty());
@@ -564,6 +641,7 @@ mod tests {
             window: one_day_window(),
             min_altitude: Degrees::new(0.0),
             max_altitude: Degrees::new(90.0),
+            correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
         };
         let periods = altitude_periods(&dir, &query);
         assert!(!periods.is_empty());
@@ -596,6 +674,7 @@ mod tests {
             window: one_day_window(),
             min_altitude: Degrees::new(-90.0),
             max_altitude: Degrees::new(90.0),
+            correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
         };
         let periods = solar_system::Sun.altitude_periods(&query);
         // The sun's altitude is always in [-90, 90], so we should get the full window
@@ -649,6 +728,7 @@ mod tests {
             window,
             min_altitude: Degrees::new(0.0),
             max_altitude: Degrees::new(90.0),
+            correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
         };
         let periods = solar_system::Sun.altitude_periods(&query);
         assert!(periods.is_empty(), "Empty window should return no periods");
@@ -671,6 +751,7 @@ mod tests {
             ),
             min_altitude: Degrees::new(-18.0),
             max_altitude: Degrees::new(-12.0),
+            correction_policy: crate::astro::apparent::CorrectionPolicy::APPARENT,
         };
         let bands = solar_system::Sun.altitude_periods(&query);
         assert!(

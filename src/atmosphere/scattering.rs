@@ -96,7 +96,7 @@ impl TabulatedPhaseFunction {
     }
 
     /// Attach provenance to the underlying grid.
-    pub fn with_provenance(mut self, provenance: crate::provenance::Provenance) -> Self {
+    pub fn with_provenance(mut self, provenance: crate::data::Provenance) -> Self {
         self.grid = self.grid.with_provenance(provenance);
         self
     }

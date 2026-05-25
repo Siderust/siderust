@@ -39,7 +39,7 @@
 //! - Burki, G., et al. (1995). *A&AS* 112, 383.
 
 use crate::ext_qtty::length::Nanometers;
-use crate::provenance::{DataSource, Provenance};
+use crate::data::{DataSource, Provenance};
 use crate::qtty::OpticalDepths;
 
 /// Aerosol optical-depth model parameters.

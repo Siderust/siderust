@@ -4,8 +4,8 @@
 //! Center-shift providers for dynamic Sun-Earth Lagrange centers.
 //!
 //! Each center is represented by its barycentric ecliptic J2000 position from
-//! the embedded Chebyshev archive when available. The committed placeholder
-//! archive is empty, so transform providers fall back to the N-body solver with
+//! the embedded Chebyshev archive when the requested epoch is covered. Outside
+//! archive coverage, transform providers fall back to the N-body solver with
 //! the caller-selected ephemeris backend.
 
 use super::*;

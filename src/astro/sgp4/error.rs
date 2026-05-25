@@ -5,7 +5,7 @@
 
 use thiserror::Error;
 
-/// Errors produced while constructing or evaluating an [`Sgp4Propagator`](crate::sgp4::Sgp4Propagator).
+/// Errors produced while constructing or evaluating an [`Sgp4Propagator`](crate::astro::sgp4::Sgp4Propagator).
 ///
 /// The variants split cleanly into three groups:
 ///

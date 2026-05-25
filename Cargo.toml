@@ -60,6 +60,11 @@ name = "tle_sgp4_pipeline"
 path = "tests/tle_sgp4_pipeline.rs"
 required-features = ["pod"]
 
+[[bin]]
+name = "generate-lagrange-cheby"
+path = "scripts/generate-lagrange-cheby.rs"
+required-features = ["lagrange-centers"]
+
 [features]
 default = ["pod", "serde"]
 de440 = []
@@ -91,7 +96,6 @@ approx = "0.5"
 chrono = "0.4"
 paste = "1.0"
 quick-xml = "0.40"
-sgp4 = { version = "2.4", default-features = false, features = ["std"] }
 serde = { version = "1.0", features = ["derive"], optional = true }
 serde_json = { version = "1.0", optional = true }
 sha2 = { version = "0.11", optional = true }

@@ -29,6 +29,16 @@
 //! - [`interp_linear`] — piecewise-linear interpolation honouring the
 //!   given [`OutOfRange`] policy (matches `numpy.interp` exactly when
 //!   `oor == ClampToEndpoints`).
+//! - [`interp_nearest`] — nearest-neighbour interpolation with deterministic
+//!   half-way tie-breaking toward the *lower* index (matches
+//!   `scipy.interpolate.interp1d(kind="nearest")`).
+//! - [`interp_step_left`] / [`interp_step_right`] — left- and
+//!   right-continuous piecewise-constant ("step") interpolation
+//!   (matches `scipy.interpolate.interp1d(kind="previous" | "next")`).
+//! - [`CubicSplineCoeffs::natural`] / [`interp_cubic_spline`] — natural
+//!   cubic-spline interpolation. The second-derivative coefficients are
+//!   computed once in `O(n)` via the tridiagonal Thomas algorithm and then
+//!   reused for every query.
 //! - [`trapz`] — trapezoidal integral over the entire sampled domain.
 //! - [`trapz_range`] — trapezoidal integral restricted to a sub-interval.
 //! - [`trapz_weighted`] — trapezoidal integral of `f(x) · w(x)` against
@@ -91,7 +101,212 @@ pub fn interp_linear(
     Ok(y0 + t * (y1 - y0))
 }
 
+/// Nearest-neighbour interpolated value with the given out-of-range policy.
+///
+/// Ties (exact midpoint between adjacent samples) resolve to the *lower*
+/// index, matching `scipy.interpolate.interp1d(kind="nearest")`.
+#[inline]
+pub fn interp_nearest(
+    xs: &[f64],
+    ys: &[f64],
+    x: f64,
+    oor: OutOfRange,
+) -> Result<f64, SpectrumError> {
+    debug_assert_eq!(xs.len(), ys.len());
+    debug_assert!(xs.len() >= 2);
+    let lo = xs[0];
+    let hi = *xs.last().unwrap();
+    if x <= lo {
+        if x == lo {
+            return Ok(ys[0]);
+        }
+        return out_of_range_low(ys, x, lo, hi, oor);
+    }
+    if x >= hi {
+        if x == hi {
+            return Ok(*ys.last().unwrap());
+        }
+        return out_of_range_high(ys, x, lo, hi, oor);
+    }
+    let i = xs.partition_point(|&xi| xi <= x);
+    let (x0, x1) = (xs[i - 1], xs[i]);
+    let mid = 0.5 * (x0 + x1);
+    Ok(if x <= mid { ys[i - 1] } else { ys[i] })
+}
+
+/// Left-continuous piecewise-constant ("previous") interpolation:
+/// `y(x) = ys[i-1]` for `x` in `[xs[i-1], xs[i])`.
+#[inline]
+pub fn interp_step_left(
+    xs: &[f64],
+    ys: &[f64],
+    x: f64,
+    oor: OutOfRange,
+) -> Result<f64, SpectrumError> {
+    debug_assert_eq!(xs.len(), ys.len());
+    debug_assert!(xs.len() >= 2);
+    let lo = xs[0];
+    let hi = *xs.last().unwrap();
+    if x < lo {
+        return out_of_range_low(ys, x, lo, hi, oor);
+    }
+    if x > hi {
+        return out_of_range_high(ys, x, lo, hi, oor);
+    }
+    if x == hi {
+        return Ok(*ys.last().unwrap());
+    }
+    // partition_point finds the first index where xi > x; previous sample owns x.
+    let i = xs.partition_point(|&xi| xi <= x);
+    if i == 0 {
+        Ok(ys[0])
+    } else {
+        Ok(ys[i - 1])
+    }
+}
+
+/// Right-continuous piecewise-constant ("next") interpolation:
+/// `y(x) = ys[i]` for `x` in `(xs[i-1], xs[i]]`.
+#[inline]
+pub fn interp_step_right(
+    xs: &[f64],
+    ys: &[f64],
+    x: f64,
+    oor: OutOfRange,
+) -> Result<f64, SpectrumError> {
+    debug_assert_eq!(xs.len(), ys.len());
+    debug_assert!(xs.len() >= 2);
+    let lo = xs[0];
+    let hi = *xs.last().unwrap();
+    if x < lo {
+        return out_of_range_low(ys, x, lo, hi, oor);
+    }
+    if x > hi {
+        return out_of_range_high(ys, x, lo, hi, oor);
+    }
+    if x == lo {
+        return Ok(ys[0]);
+    }
+    let i = xs.partition_point(|&xi| xi < x);
+    Ok(ys[i])
+}
+
+#[inline]
+fn out_of_range_low(
+    ys: &[f64],
+    x: f64,
+    lo: f64,
+    hi: f64,
+    oor: OutOfRange,
+) -> Result<f64, SpectrumError> {
+    match oor {
+        OutOfRange::ClampToEndpoints => Ok(ys[0]),
+        OutOfRange::Zero => Ok(0.0),
+        OutOfRange::Error => Err(SpectrumError::OutOfRange { x, lo, hi }),
+    }
+}
+
+#[inline]
+fn out_of_range_high(
+    ys: &[f64],
+    x: f64,
+    lo: f64,
+    hi: f64,
+    oor: OutOfRange,
+) -> Result<f64, SpectrumError> {
+    match oor {
+        OutOfRange::ClampToEndpoints => Ok(*ys.last().unwrap()),
+        OutOfRange::Zero => Ok(0.0),
+        OutOfRange::Error => Err(SpectrumError::OutOfRange { x, lo, hi }),
+    }
+}
+
+/// Precomputed natural-cubic-spline second derivatives.
+///
+/// Constructed once in `O(n)` time via the tridiagonal Thomas algorithm
+/// and reused for every query through [`interp_cubic_spline`].
+#[derive(Debug, Clone)]
+pub struct CubicSplineCoeffs {
+    /// Second derivatives `y''(xs[i])`, co-indexed with the source samples.
+    pub y2: Vec<f64>,
+}
+
+impl CubicSplineCoeffs {
+    /// Build the natural cubic spline coefficients for the given samples.
+    ///
+    /// The "natural" spline imposes `y''(x_0) = y''(x_{n-1}) = 0`.
+    ///
+    /// Returns [`SpectrumError::TooFewSamples`] if `xs.len() < 2`.
+    pub fn natural(xs: &[f64], ys: &[f64]) -> Result<Self, SpectrumError> {
+        debug_assert_eq!(xs.len(), ys.len());
+        let n = xs.len();
+        if n < 2 {
+            return Err(SpectrumError::TooFewSamples(n));
+        }
+        let mut y2 = vec![0.0; n];
+        if n == 2 {
+            // Degenerates to linear interpolation; natural BCs already zero.
+            return Ok(Self { y2 });
+        }
+        // Thomas-algorithm scratch.
+        let mut u = vec![0.0; n];
+        for i in 1..n - 1 {
+            let sig = (xs[i] - xs[i - 1]) / (xs[i + 1] - xs[i - 1]);
+            let p = sig * y2[i - 1] + 2.0;
+            y2[i] = (sig - 1.0) / p;
+            let num = (ys[i + 1] - ys[i]) / (xs[i + 1] - xs[i])
+                - (ys[i] - ys[i - 1]) / (xs[i] - xs[i - 1]);
+            u[i] = (6.0 * num / (xs[i + 1] - xs[i - 1]) - sig * u[i - 1]) / p;
+        }
+        for k in (1..n - 1).rev() {
+            y2[k] = y2[k] * y2[k + 1] + u[k];
+        }
+        Ok(Self { y2 })
+    }
+}
+
+/// Evaluate a natural cubic spline at `x` using precomputed coefficients.
+#[inline]
+pub fn interp_cubic_spline(
+    xs: &[f64],
+    ys: &[f64],
+    coeffs: &CubicSplineCoeffs,
+    x: f64,
+    oor: OutOfRange,
+) -> Result<f64, SpectrumError> {
+    debug_assert_eq!(xs.len(), ys.len());
+    debug_assert_eq!(xs.len(), coeffs.y2.len());
+    debug_assert!(xs.len() >= 2);
+    let lo = xs[0];
+    let hi = *xs.last().unwrap();
+    if x <= lo {
+        if x == lo {
+            return Ok(ys[0]);
+        }
+        return out_of_range_low(ys, x, lo, hi, oor);
+    }
+    if x >= hi {
+        if x == hi {
+            return Ok(*ys.last().unwrap());
+        }
+        return out_of_range_high(ys, x, lo, hi, oor);
+    }
+    let i = xs.partition_point(|&xi| xi <= x);
+    let (x0, x1) = (xs[i - 1], xs[i]);
+    let (y0, y1) = (ys[i - 1], ys[i]);
+    let (y2_0, y2_1) = (coeffs.y2[i - 1], coeffs.y2[i]);
+    let h = x1 - x0;
+    let a = (x1 - x) / h;
+    let b = (x - x0) / h;
+    Ok(a * y0 + b * y1 + ((a * a * a - a) * y2_0 + (b * b * b - b) * y2_1) * (h * h) / 6.0)
+}
+
 /// Dispatches an interpolation policy to its implementation.
+///
+/// For [`Interpolation::CubicSpline`] this builds the coefficients on every
+/// call. Callers that evaluate many points on the same table should hold a
+/// [`CubicSplineCoeffs`] and invoke [`interp_cubic_spline`] directly; the
+/// typed [`crate::spectra::SampledSpectrum`] does this automatically.
 #[inline]
 pub fn interp(
     xs: &[f64],
@@ -102,12 +317,13 @@ pub fn interp(
 ) -> Result<f64, SpectrumError> {
     match interp {
         Interpolation::Linear => interp_linear(xs, ys, x, oor),
-        Interpolation::Nearest
-        | Interpolation::PiecewiseConstantLeft
-        | Interpolation::PiecewiseConstantRight
-        | Interpolation::CubicSpline => Err(SpectrumError::Parse(format!(
-            "interpolation {interp:?} is not implemented yet",
-        ))),
+        Interpolation::Nearest => interp_nearest(xs, ys, x, oor),
+        Interpolation::PiecewiseConstantLeft => interp_step_left(xs, ys, x, oor),
+        Interpolation::PiecewiseConstantRight => interp_step_right(xs, ys, x, oor),
+        Interpolation::CubicSpline => {
+            let coeffs = CubicSplineCoeffs::natural(xs, ys)?;
+            interp_cubic_spline(xs, ys, &coeffs, x, oor)
+        }
     }
 }
 
@@ -289,5 +505,169 @@ mod tests {
             validate(&xs, &ys),
             Err(SpectrumError::LengthMismatch { xs: 2, ys: 1 })
         ));
+    }
+
+    // -------- Nearest-neighbour --------
+
+    #[test]
+    fn nearest_exact_samples() {
+        let (xs, ys) = linear();
+        for (i, x) in xs.iter().enumerate() {
+            let v = interp_nearest(&xs, &ys, *x, OutOfRange::ClampToEndpoints).unwrap();
+            assert_eq!(v, ys[i]);
+        }
+    }
+
+    #[test]
+    fn nearest_ties_resolve_to_lower_index() {
+        let xs = vec![0.0_f64, 1.0, 2.0];
+        let ys = vec![10.0_f64, 20.0, 30.0];
+        // Exact midpoint between xs[0] and xs[1] is 0.5; tie -> lower index (ys[0]).
+        let v = interp_nearest(&xs, &ys, 0.5, OutOfRange::ClampToEndpoints).unwrap();
+        assert_eq!(v, 10.0);
+    }
+
+    #[test]
+    fn nearest_off_midpoint() {
+        let xs = vec![0.0_f64, 1.0, 2.0];
+        let ys = vec![10.0_f64, 20.0, 30.0];
+        let v = interp_nearest(&xs, &ys, 0.51, OutOfRange::ClampToEndpoints).unwrap();
+        assert_eq!(v, 20.0);
+        let v = interp_nearest(&xs, &ys, 0.49, OutOfRange::ClampToEndpoints).unwrap();
+        assert_eq!(v, 10.0);
+    }
+
+    #[test]
+    fn nearest_out_of_range_zero() {
+        let (xs, ys) = linear();
+        assert_eq!(
+            interp_nearest(&xs, &ys, -5.0, OutOfRange::Zero).unwrap(),
+            0.0
+        );
+        assert_eq!(
+            interp_nearest(&xs, &ys, 50.0, OutOfRange::Zero).unwrap(),
+            0.0
+        );
+    }
+
+    // -------- Step (left / right) --------
+
+    #[test]
+    fn step_left_discontinuity() {
+        let xs = vec![0.0_f64, 1.0, 2.0];
+        let ys = vec![10.0_f64, 20.0, 30.0];
+        // Left-continuous: y(0.999) = 10, y(1.0) = 20.
+        assert_eq!(
+            interp_step_left(&xs, &ys, 0.999, OutOfRange::ClampToEndpoints).unwrap(),
+            10.0
+        );
+        assert_eq!(
+            interp_step_left(&xs, &ys, 1.0, OutOfRange::ClampToEndpoints).unwrap(),
+            20.0
+        );
+        assert_eq!(
+            interp_step_left(&xs, &ys, 2.0, OutOfRange::ClampToEndpoints).unwrap(),
+            30.0
+        );
+    }
+
+    #[test]
+    fn step_right_discontinuity() {
+        let xs = vec![0.0_f64, 1.0, 2.0];
+        let ys = vec![10.0_f64, 20.0, 30.0];
+        // Right-continuous: y(0.0) = 10, y(0.001) = 20, y(1.0) = 20, y(1.001) = 30.
+        assert_eq!(
+            interp_step_right(&xs, &ys, 0.0, OutOfRange::ClampToEndpoints).unwrap(),
+            10.0
+        );
+        assert_eq!(
+            interp_step_right(&xs, &ys, 0.001, OutOfRange::ClampToEndpoints).unwrap(),
+            20.0
+        );
+        assert_eq!(
+            interp_step_right(&xs, &ys, 1.0, OutOfRange::ClampToEndpoints).unwrap(),
+            20.0
+        );
+        assert_eq!(
+            interp_step_right(&xs, &ys, 1.001, OutOfRange::ClampToEndpoints).unwrap(),
+            30.0
+        );
+    }
+
+    #[test]
+    fn step_left_out_of_range_error() {
+        let xs = vec![0.0_f64, 1.0];
+        let ys = vec![0.0_f64, 1.0];
+        assert!(matches!(
+            interp_step_left(&xs, &ys, -0.1, OutOfRange::Error),
+            Err(SpectrumError::OutOfRange { .. })
+        ));
+        assert!(matches!(
+            interp_step_right(&xs, &ys, 1.5, OutOfRange::Error),
+            Err(SpectrumError::OutOfRange { .. })
+        ));
+    }
+
+    // -------- Cubic spline --------
+
+    #[test]
+    fn cubic_spline_reproduces_linear_function() {
+        // Trapezoidal cubic spline of a strictly linear function should match
+        // the analytic line within roundoff: y''(x) = 0 everywhere, so the
+        // natural BCs are exact for any segment count.
+        let xs: Vec<f64> = (0..6).map(|i| i as f64).collect();
+        let ys: Vec<f64> = xs.iter().map(|x| 2.0 * x + 1.0).collect();
+        let c = CubicSplineCoeffs::natural(&xs, &ys).unwrap();
+        for x in [0.0, 0.25, 1.5, 3.7, 5.0] {
+            let v = interp_cubic_spline(&xs, &ys, &c, x, OutOfRange::ClampToEndpoints).unwrap();
+            assert_abs_diff_eq!(v, 2.0 * x + 1.0, epsilon = 1e-10);
+        }
+    }
+
+    #[test]
+    fn cubic_spline_passes_through_samples() {
+        let xs = vec![0.0_f64, 1.0, 2.5, 4.0, 6.0];
+        let ys = vec![1.0_f64, 0.0, -2.0, 0.5, 3.0];
+        let c = CubicSplineCoeffs::natural(&xs, &ys).unwrap();
+        for (i, x) in xs.iter().enumerate() {
+            let v = interp_cubic_spline(&xs, &ys, &c, *x, OutOfRange::ClampToEndpoints).unwrap();
+            assert_abs_diff_eq!(v, ys[i], epsilon = 1e-10);
+        }
+    }
+
+    #[test]
+    fn cubic_spline_natural_endpoints_have_zero_second_derivative() {
+        let xs = vec![0.0_f64, 1.0, 2.5, 4.0, 6.0];
+        let ys = vec![1.0_f64, 0.0, -2.0, 0.5, 3.0];
+        let c = CubicSplineCoeffs::natural(&xs, &ys).unwrap();
+        assert_eq!(c.y2[0], 0.0);
+        assert_eq!(*c.y2.last().unwrap(), 0.0);
+    }
+
+    #[test]
+    fn cubic_spline_two_samples_is_linear() {
+        let xs = vec![0.0_f64, 4.0];
+        let ys = vec![1.0_f64, 9.0];
+        let c = CubicSplineCoeffs::natural(&xs, &ys).unwrap();
+        for x in [0.0, 1.0, 2.0, 3.0, 4.0] {
+            let v = interp_cubic_spline(&xs, &ys, &c, x, OutOfRange::ClampToEndpoints).unwrap();
+            assert_abs_diff_eq!(v, 1.0 + 2.0 * x, epsilon = 1e-12);
+        }
+    }
+
+    #[test]
+    fn dispatch_routes_each_mode() {
+        let (xs, ys) = linear();
+        for mode in [
+            Interpolation::Linear,
+            Interpolation::Nearest,
+            Interpolation::PiecewiseConstantLeft,
+            Interpolation::PiecewiseConstantRight,
+            Interpolation::CubicSpline,
+        ] {
+            let v = interp(&xs, &ys, 2.0, mode, OutOfRange::ClampToEndpoints).unwrap();
+            // Every mode must reproduce the value exactly at a sample point.
+            assert_abs_diff_eq!(v, 5.0, epsilon = 1e-10);
+        }
     }
 }

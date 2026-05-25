@@ -38,7 +38,7 @@
 
 use crate::ext_qtty::{Quantity, Scalar, Unit};
 use crate::interp::OutOfRange;
-use crate::provenance::Provenance;
+use crate::data::Provenance;
 
 use super::{algo, AxisDirection, TableError};
 

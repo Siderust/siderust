@@ -72,10 +72,9 @@ pub mod integrate;
 pub mod interp;
 pub mod loaders;
 pub mod passbands;
-pub mod provenance;
 pub mod sampled;
 
+pub use crate::data::{DataSource, Provenance};
 pub use error::SpectrumError;
 pub use interp::{Interpolation, OutOfRange};
-pub use provenance::{DataSource, Provenance};
 pub use sampled::SampledSpectrum;
