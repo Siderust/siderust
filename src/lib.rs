@@ -117,8 +117,6 @@ pub mod ephemeris;
 pub mod event;
 pub mod formats;
 pub mod instruments;
-#[cfg(any(feature = "spectra", feature = "atmosphere"))]
-pub(crate) mod interp;
 pub mod mission_context;
 pub mod mission_geometry;
 pub mod numeric;

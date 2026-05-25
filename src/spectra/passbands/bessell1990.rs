@@ -25,7 +25,7 @@
 //! ## Technical scope
 //!
 //! Provides lazily-initialised, statically-cached
-//! [`SampledSpectrum<Nanometer, Throughput>`](crate::spectra::SampledSpectrum)
+//! [`SampledSpectrum<Nanometer, Throughput>`](optica::spectrum::SampledSpectrum)
 //! constants for each of the five UBVRI bands via accessor functions
 //! `bessell1990::u()`, `bessell1990::b()`, `bessell1990::v()`,
 //! `bessell1990::r()`, `bessell1990::i()`. Each spectrum carries a
@@ -34,11 +34,11 @@
 //!
 //! Sample values are exposed at the typed boundary; consumers that need
 //! to drive the untyped numerical kernels can use
-//! [`SampledSpectrum::xs_raw`](crate::spectra::SampledSpectrum::xs_raw)
+//! [`SampledSpectrum::xs_raw`](optica::spectrum::SampledSpectrum::xs_raw)
 //! and
-//! [`SampledSpectrum::ys_raw`](crate::spectra::SampledSpectrum::ys_raw)
-//! to obtain zero-cost numeric-table views (`Vec<f64>` of each axis'
-//! unit-scoped value) suitable for passing to the algo kernels.
+//! [`SampledSpectrum::ys_raw`](optica::spectrum::SampledSpectrum::ys_raw)
+//! to obtain zero-cost numeric-table views (`&[f64]` in each axis'
+//! unit-scoped values) suitable for passing to the algo kernels.
 //!
 //! ### Data source
 //!
@@ -94,9 +94,9 @@ use std::sync::OnceLock;
 
 use crate::data::Provenance;
 use crate::ext_qtty::length::Nanometer;
-use crate::spectra::interp::{Interpolation, OutOfRange};
-use crate::spectra::loaders::ascii;
-use crate::spectra::sampled::SampledSpectrum;
+use optica::grid::OutOfRange;
+use optica::spectrum::loaders::ascii::two_column;
+use optica::spectrum::{Interpolation, SampledSpectrum};
 
 use super::Throughput;
 
@@ -156,14 +156,35 @@ fn provenance(filter_id: &str, dat_path: &str) -> Provenance {
     ))
 }
 
+fn into_optica_provenance(p: Provenance) -> optica::data::Provenance {
+    optica::data::Provenance {
+        source: p.source.map(|s| match s {
+            crate::data::DataSource::LiteratureCitation { bibkey, doi } => {
+                optica::data::DataSource::LiteratureCitation { bibkey, doi }
+            }
+            crate::data::DataSource::BundledFile { path } => {
+                optica::data::DataSource::BundledFile { path }
+            }
+            crate::data::DataSource::External { url } => optica::data::DataSource::External { url },
+            crate::data::DataSource::Computed { name } => {
+                optica::data::DataSource::Computed { name }
+            }
+        }),
+        version: p.version,
+        retrieved_at: p.retrieved_at,
+        checksum: p.checksum,
+        notes: p.notes,
+    }
+}
+
 fn load(raw: &str, filter_id: &str, dat_path: &str) -> SampledSpectrum<Nanometer, Throughput> {
-    ascii::two_column::<Nanometer, Throughput>(
+    two_column::<Nanometer, Throughput>(
         raw,
         1.0, // wavelengths already in nm (converted from Å during data curation)
         1.0,
         Interpolation::Linear,
-        OutOfRange::ClampToEndpoints,
-        Some(provenance(filter_id, dat_path)),
+        OutOfRange::Zero,
+        Some(into_optica_provenance(provenance(filter_id, dat_path))),
     )
     .unwrap_or_else(|e| panic!("Bessell 1990 {filter_id} passband failed to parse: {e}"))
 }

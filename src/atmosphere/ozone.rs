@@ -45,15 +45,36 @@ use crate::atmosphere::{Transmittance, Transmittances};
 use crate::data::Provenance;
 use crate::ext_qtty::length::Nanometer;
 use crate::qtty::Nanometers;
-use crate::spectra::interp::{Interpolation, OutOfRange};
-use crate::spectra::loaders::ascii;
-use crate::spectra::sampled::SampledSpectrum;
+use optica::grid::OutOfRange;
+use optica::spectrum::loaders::ascii::two_column;
+use optica::spectrum::{Interpolation, SampledSpectrum};
 
 const RAW: &str = include_str!("../data/file/o3trans.dat");
 #[cfg(test)]
 const OZONE_SHA256: &str = "cb06c173f393d6d55e3c39551665abb8f5d6c1a846cd0fd739a15d0155f94502";
 
 static TABLE: OnceLock<SampledSpectrum<Nanometer, Transmittance>> = OnceLock::new();
+
+fn into_optica_provenance(p: Provenance) -> optica::data::Provenance {
+    optica::data::Provenance {
+        source: p.source.map(|s| match s {
+            crate::data::DataSource::LiteratureCitation { bibkey, doi } => {
+                optica::data::DataSource::LiteratureCitation { bibkey, doi }
+            }
+            crate::data::DataSource::BundledFile { path } => {
+                optica::data::DataSource::BundledFile { path }
+            }
+            crate::data::DataSource::External { url } => optica::data::DataSource::External { url },
+            crate::data::DataSource::Computed { name } => {
+                optica::data::DataSource::Computed { name }
+            }
+        }),
+        version: p.version,
+        retrieved_at: p.retrieved_at,
+        checksum: p.checksum,
+        notes: p.notes,
+    }
+}
 
 /// Pre-computed ozone transmittance vs wavelength.
 ///
@@ -66,13 +87,13 @@ pub fn transmission_table() -> &'static SampledSpectrum<Nanometer, Transmittance
     TABLE.get_or_init(|| {
         let provenance = Provenance::bundled_file("siderust/data/o3trans.dat")
             .with_notes("Original NSB/darknsb o3trans.dat; wavelengths converted µm→nm.");
-        ascii::two_column::<Nanometer, Transmittance>(
+        two_column::<Nanometer, Transmittance>(
             RAW,
             1000.0, // µm → nm
             1.0,
             Interpolation::Linear,
             OutOfRange::ClampToEndpoints,
-            Some(provenance),
+            Some(into_optica_provenance(provenance)),
         )
         .expect("o3trans.dat is a well-formed, monotonic table — parse must not fail")
     })
@@ -85,9 +106,7 @@ pub fn transmission_table() -> &'static SampledSpectrum<Nanometer, Transmittance
 /// [`OutOfRange::ClampToEndpoints`]), so this never errors and always
 /// returns a finite [`Transmittances`] value in `[0, 1]`.
 pub fn transmittance_at(wavelength: Nanometers) -> Transmittances {
-    transmission_table()
-        .interp_at(wavelength)
-        .expect("ozone table is clamped at endpoints; interp_at cannot fail")
+    transmission_table().interp_at(wavelength)
 }
 
 #[cfg(test)]
@@ -147,7 +166,7 @@ mod tests {
     #[test]
     fn typed_helper_matches_table_lookup() {
         let lambda = Nanometers::new(550.0);
-        let direct = transmission_table().interp_at(lambda).unwrap();
+        let direct = transmission_table().interp_at(lambda);
         let typed = transmittance_at(lambda);
         assert_eq!(direct.value(), typed.value());
     }

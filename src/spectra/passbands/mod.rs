@@ -14,7 +14,7 @@
 //! definitions. Each sub-module of this module bundles a curated
 //! transmission curve for one such system, distributed as a
 //! lazily-initialised, statically-cached
-//! [`SampledSpectrum`](crate::spectra::SampledSpectrum) constant.
+//! [`SampledSpectrum`](optica::spectrum::SampledSpectrum) constant.
 //!
 //! Validity ranges are bounded by the wavelength interval of the
 //! published table; outside that interval the throughput is taken as
@@ -45,7 +45,7 @@ pub mod bessell1990;
 
 use crate::ext_qtty::length::Nanometer;
 use crate::ext_qtty::Unit;
-use crate::spectra::sampled::SampledSpectrum;
+use optica::spectrum::SampledSpectrum;
 
 /// Convenience accessor for the Johnson **B** passband.
 ///

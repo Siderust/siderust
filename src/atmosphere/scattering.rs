@@ -111,7 +111,9 @@ impl TabulatedPhaseFunction {
     ///
     /// The `crate::data::Provenance` is converted to `optica::data::Provenance`.
     pub fn with_provenance(mut self, provenance: crate::data::Provenance) -> Self {
-        self.grid = self.grid.with_provenance(into_optica_provenance(provenance));
+        self.grid = self
+            .grid
+            .with_provenance(into_optica_provenance(provenance));
         self
     }
 
@@ -147,9 +149,7 @@ fn into_optica_provenance(p: crate::data::Provenance) -> optica::data::Provenanc
             crate::data::DataSource::BundledFile { path } => {
                 optica::data::DataSource::BundledFile { path }
             }
-            crate::data::DataSource::External { url } => {
-                optica::data::DataSource::External { url }
-            }
+            crate::data::DataSource::External { url } => optica::data::DataSource::External { url },
             crate::data::DataSource::Computed { name } => {
                 optica::data::DataSource::Computed { name }
             }

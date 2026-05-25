@@ -27,6 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   helpers `spectra::algo::{interp_nearest, interp_step_left,
   interp_step_right, interp_cubic_spline, CubicSplineCoeffs}` expose the
   untyped kernels.
+* `siderust::spectra` is now a thin astronomical layer; generic spectrum
+  infrastructure (interpolation, integration, loaders) moved to
+  `optica::spectrum`.
+* `siderust::spectra::passbands::bessell1990` now uses `OutOfRange::Zero`
+  for compact-support passbands (previously `ClampToEndpoints`).
 * **`lagrange-centers` feature**: typed Sun-Earth L1-L5 reference centers,
   `ephemeris::lagrange` Chebyshev archive evaluation, N-body solver/fitter,
   center-shift providers, generator binary, and placeholder embedded records.
@@ -57,6 +62,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **`siderust-ffi`**: marked `publish = false` in `Cargo.toml`. FFI crates are
   not published by default; publish only when C API/ABI changes are intentional.
   See `siderust-ffi/README.md` for the manual publish procedure.
+
+### Removed
+
 * **`siderust-pod` crate removed.** All public items now live under
   `siderust::pod::{problem, run, providers, observation, estimation, qc,
   product, dynamics, io, spice}`. Migration: replace
@@ -65,6 +73,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   re-exports of `siderust::formats::tle` — import directly from there.
   Likewise the former `siderust_pod::sgp4` shim has been removed;
   import `siderust::astro::sgp4` directly.
+* `siderust::spectra::SampledSpectrum` removed — use
+  `optica::spectrum::SampledSpectrum`.
+* `siderust::spectra::Interpolation` removed — use
+  `optica::spectrum::Interpolation`.
+* `siderust::spectra::OutOfRange` removed — use `optica::grid::OutOfRange`.
+* `siderust::spectra::SpectrumError` removed — use
+  `optica::spectrum::SpectrumError`.
+* `siderust::spectra::algo` removed — use `optica::spectrum::algo`.
+* `siderust::spectra::loaders` removed — use `optica::spectrum::loaders`.
+* `siderust::spectra::integrate` removed — use `optica::spectrum::integrate`.
 * **`pod-lisa` feature removed.** The LISA inter-satellite range model and
   orbit reader are mission-specific code; they now live in
   `examples/18_lisa_pod.rs` rather than the library source.
