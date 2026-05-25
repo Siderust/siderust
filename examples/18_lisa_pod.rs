@@ -22,7 +22,7 @@
 //! cargo run --example 18_lisa_pod --features pod
 //! ```
 //!
-//! The example loads orbit files from `test-data/lisa/` in the crate root.
+//! The example loads orbit files from `tests/test-data/lisa/`.
 //!
 //! ## References
 //!
@@ -506,7 +506,7 @@ fn load_orbit(path: &str, sc: LisaSpacecraftId) -> LisaOrbit {
 }
 
 fn main() {
-    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/test-data/lisa");
+    let root = concat!(env!("CARGO_MANIFEST_DIR"), "/tests/test-data/lisa");
 
     let provider = Arc::new(LisaEphemerisProvider::new(LisaOrbitSet {
         sc1: load_orbit(
