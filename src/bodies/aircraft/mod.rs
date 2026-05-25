@@ -33,7 +33,7 @@
 //! ## Usage
 //!
 //! ```rust
-//! use siderust::aircraft::{Aircraft, AircraftState};
+//! use siderust::bodies::aircraft::{Aircraft, AircraftState};
 //! use siderust::coordinates::centers::Geodetic;
 //! use siderust::coordinates::frames::ECEF;
 //! use siderust::qtty::{Degrees, Meters};

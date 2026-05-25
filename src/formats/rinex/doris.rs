@@ -26,7 +26,7 @@
 
 use super::FormatError;
 #[cfg(feature = "doris")]
-use std::io::BufReader;
+use std::io::{BufRead, BufReader};
 use std::io::Read;
 
 /// Header of a RINEX-DORIS file.

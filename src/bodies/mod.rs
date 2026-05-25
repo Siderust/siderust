@@ -49,6 +49,7 @@
 //! println!("{} is {} away", ALTAIR.name, ALTAIR.distance);
 //! ```
 
+pub mod aircraft;
 pub mod asteroid;
 pub mod catalog;
 pub mod comet;
@@ -57,6 +58,7 @@ pub mod satellite;
 pub mod solar_system;
 pub mod stars;
 
+pub use aircraft::{Aircraft, AircraftState, AircraftTrack, MetersPerSecond, WakeCategory};
 pub use asteroid::Asteroid;
 pub use comet::Comet;
 pub use planets::Planet;

@@ -89,6 +89,7 @@
 //!     min_azimuth: Degrees::new(90.0),
 //!     max_azimuth: Degrees::new(270.0),
 //!     opts: siderust::event::azimuth::SearchOpts::default(),
+//!     correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
 //! };
 //! let eastern_periods = Sun.azimuth_periods(&query);
 //! ```

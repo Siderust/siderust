@@ -12,8 +12,8 @@
 //! Annex 10, Volume III and in the MOPS document DO-260B.
 //!
 //! This module parses the **minimal subset** of ADS-B frames required to
-//! construct [`crate::aircraft::AircraftState`] and
-//! [`crate::aircraft::Aircraft`] records:
+//! construct [`crate::bodies::aircraft::AircraftState`] and
+//! [`crate::bodies::aircraft::Aircraft`] records:
 //!
 //! | Downlink Format | Type Code | Content |
 //! |-----------------|-----------|---------|
@@ -52,7 +52,7 @@
 
 pub mod cpr;
 
-use crate::aircraft::MetersPerSecond;
+use crate::bodies::aircraft::MetersPerSecond;
 use crate::formats::{FileLocation, FormatError};
 use crate::qtty::{Degrees, Meters};
 

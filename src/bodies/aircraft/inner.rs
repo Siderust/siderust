@@ -30,7 +30,7 @@ pub type MetersPerSecond = Quantity<Per<Meter, Second>>;
 /// # Examples
 ///
 /// ```rust
-/// use siderust::aircraft::Aircraft;
+/// use siderust::bodies::aircraft::Aircraft;
 ///
 /// let ac = Aircraft::new(0x4CA2B5, "EIN104");
 /// assert_eq!(ac.icao24(), 0x4CA2B5);
@@ -60,7 +60,7 @@ impl<'a> Aircraft<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use siderust::aircraft::Aircraft;
+    /// use siderust::bodies::aircraft::Aircraft;
     ///
     /// let ac = Aircraft::new(0x4CA2B5, "EIN104");
     /// assert_eq!(ac.callsign(), "EIN104");
@@ -82,7 +82,7 @@ impl<'a> Aircraft<'a> {
     /// # Examples
     ///
     /// ```rust
-    /// use siderust::aircraft::{Aircraft, WakeCategory};
+    /// use siderust::bodies::aircraft::{Aircraft, WakeCategory};
     ///
     /// let ac = Aircraft::new(0x4CA2B5, "EIN104").with_wake_category(WakeCategory::Heavy);
     /// assert_eq!(ac.wake_category, Some(WakeCategory::Heavy));
@@ -143,7 +143,7 @@ pub enum WakeCategory {
 /// # Examples
 ///
 /// ```rust
-/// use siderust::aircraft::AircraftState;
+/// use siderust::bodies::aircraft::AircraftState;
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
 /// use siderust::qtty::{Degrees, Meters};
@@ -181,7 +181,7 @@ impl AircraftState {
     /// # Examples
     ///
     /// ```rust
-    /// use siderust::aircraft::AircraftState;
+    /// use siderust::bodies::aircraft::AircraftState;
     /// use siderust::coordinates::centers::Geodetic;
     /// use siderust::coordinates::frames::ECEF;
     /// use siderust::qtty::{Degrees, Meters};
@@ -204,7 +204,7 @@ impl AircraftState {
     /// Geodetic (ellipsoidal) altitude above WGS-84 in metres.
     ///
     /// Note: this is the **ellipsoidal height**, not the barometric pressure
-    /// altitude transmitted in ADS-B.  Use [`crate::aircraft::isa::geopotential_altitude_m`]
+    /// altitude transmitted in ADS-B.  Use [`crate::bodies::aircraft::isa::geopotential_altitude_m`]
     /// to convert between geometric and geopotential altitudes.
     ///
     /// # Returns
@@ -214,7 +214,7 @@ impl AircraftState {
     /// # Examples
     ///
     /// ```rust
-    /// use siderust::aircraft::AircraftState;
+    /// use siderust::bodies::aircraft::AircraftState;
     /// use siderust::coordinates::centers::Geodetic;
     /// use siderust::coordinates::frames::ECEF;
     /// use siderust::qtty::{Degrees, Meters};
@@ -251,7 +251,7 @@ impl AircraftState {
 /// # Examples
 ///
 /// ```rust
-/// use siderust::aircraft::{AircraftState, AircraftTrack, MetersPerSecond};
+/// use siderust::bodies::aircraft::{AircraftState, AircraftTrack, MetersPerSecond};
 /// use siderust::coordinates::centers::Geodetic;
 /// use siderust::coordinates::frames::ECEF;
 /// use siderust::qtty::{Degrees, Meters};

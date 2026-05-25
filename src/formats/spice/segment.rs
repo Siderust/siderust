@@ -292,12 +292,12 @@ impl DiscreteStatesSegment {
             WindowSelection::Window { first, count } => {
                 let epochs = &self.epochs[first..first + count];
                 let mut out = [0.0_f64; 6];
-                for component in 0..6 {
+                for (component, output) in out.iter_mut().enumerate() {
                     let mut values = Vec::with_capacity(count);
                     for idx in first..first + count {
                         values.push(self.states[idx * 6 + component]);
                     }
-                    out[component] = lagrange_value(epochs, &values, et)?;
+                    *output = lagrange_value(epochs, &values, et)?;
                 }
                 Ok(out)
             }

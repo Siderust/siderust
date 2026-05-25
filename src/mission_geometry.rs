@@ -261,7 +261,7 @@ pub fn line_of_sight_obstructed(
     let t1 = (-b - sd) / (2.0 * a);
     let t2 = (-b + sd) / (2.0 * a);
     // Segment is parameterised t ∈ [0, 1]; intersection if any root lies in [0,1].
-    (t1 >= 0.0 && t1 <= 1.0) || (t2 >= 0.0 && t2 <= 1.0) || (t1 < 0.0 && t2 > 1.0)
+    (0.0..=1.0).contains(&t1) || (0.0..=1.0).contains(&t2) || (t1 < 0.0 && t2 > 1.0)
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

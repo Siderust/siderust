@@ -104,7 +104,7 @@ fn p_tropo() -> f64 {
 /// # Examples
 ///
 /// ```rust
-/// use siderust::aircraft::isa::pressure_at_altitude;
+/// use siderust::bodies::aircraft::isa::pressure_at_altitude;
 /// use siderust::qtty::Meters;
 ///
 /// // Sea level: 101 325 Pa
@@ -145,7 +145,7 @@ pub fn pressure_at_altitude(altitude: Meters) -> Pascals {
 /// # Examples
 ///
 /// ```rust
-/// use siderust::aircraft::isa::{pressure_at_altitude, pressure_altitude_m};
+/// use siderust::bodies::aircraft::isa::{pressure_at_altitude, pressure_altitude_m};
 /// use siderust::qtty::Meters;
 ///
 /// let h_in = Meters::new(8_500.0);
@@ -182,7 +182,7 @@ pub fn pressure_altitude_m(pressure: Pascals) -> Meters {
 /// # Examples
 ///
 /// ```rust
-/// use siderust::aircraft::isa::temperature_at_altitude;
+/// use siderust::bodies::aircraft::isa::temperature_at_altitude;
 /// use siderust::qtty::Meters;
 ///
 /// // Sea level: 288.15 K
@@ -218,7 +218,7 @@ pub fn temperature_at_altitude(altitude: Meters) -> Kelvins {
 /// # Examples
 ///
 /// ```rust
-/// use siderust::aircraft::isa::geopotential_altitude_m;
+/// use siderust::bodies::aircraft::isa::geopotential_altitude_m;
 /// use siderust::qtty::Meters;
 ///
 /// // At sea level, geopotential ≈ geometric
@@ -249,7 +249,7 @@ pub fn geopotential_altitude_m(geometric: Meters) -> Meters {
 /// # Examples
 ///
 /// ```rust
-/// use siderust::aircraft::isa::{geopotential_altitude_m, geometric_altitude_m};
+/// use siderust::bodies::aircraft::isa::{geopotential_altitude_m, geometric_altitude_m};
 /// use siderust::qtty::Meters;
 ///
 /// let z_in = Meters::new(10_000.0);

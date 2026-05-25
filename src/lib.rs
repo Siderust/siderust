@@ -106,7 +106,6 @@
 
 pub(crate) use ::qtty as ext_qtty;
 
-pub mod aircraft;
 pub mod astro;
 #[cfg(feature = "atmosphere")]
 pub mod atmosphere;

@@ -21,10 +21,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **`lagrange-centers` feature**: typed Sun-Earth L1-L5 reference centers,
   `ephemeris::lagrange` Chebyshev archive evaluation, N-body solver/fitter,
   center-shift providers, generator binary, and placeholder embedded records.
-* **`siderust::aircraft` module**: identity and state types for atmospheric
+* **`siderust::bodies::aircraft` module**: identity and state types for atmospheric
   vehicles — `Aircraft` (ICAO 24-bit address, callsign, wake category),
   `AircraftState` (geodetic position, ground speed, track angle), and
-  `aircraft::isa` (ICAO International Standard Atmosphere: pressure, temperature,
+  `bodies::aircraft::isa` (ICAO International Standard Atmosphere: pressure, temperature,
   density, and geopotential-to-pressure-altitude conversion for all ISA layers).
   All public APIs use typed `qtty` quantities; no bare `f64` on the boundary.
 * **`siderust::formats::adsb` module**: strict ADS-B / Mode-S frame parser —

@@ -184,14 +184,14 @@ impl LargeStarCatalog {
     /// Chunked cone search: splits the underlying record slice into
     /// `chunk_size`-row windows and yields matches per chunk. The
     /// concatenated result is identical to [`Self::cone_search`].
-    pub fn cone_search_chunked<'a>(
-        &'a self,
+    pub fn cone_search_chunked(
+        &self,
         center_ra: f64,
         center_dec: f64,
         radius: f64,
         filter: CatalogFilter,
         chunk_size: usize,
-    ) -> impl Iterator<Item = Vec<&'a CatalogRecord>> {
+    ) -> impl Iterator<Item = Vec<&CatalogRecord>> {
         let chunks = self.records.chunks(chunk_size.max(1));
         chunks.map(move |chunk| {
             chunk
