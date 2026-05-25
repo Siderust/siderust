@@ -1,26 +1,38 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Bridge from [`crate::formats::tle::TLE`] to the SGP4 input record.
+//! Native TLE mean-element record used by the propagator.
 //!
-//! The SGP4 backend ([`sgp4` crate](https://crates.io/crates/sgp4)) consumes
-//! its own [`sgp4::Elements`] struct. We treat this purely as an internal
-//! record format — callers always interact with the typed
-//! [`crate::formats::tle::TLE`].
+//! Callers always interact with the typed [`crate::formats::tle::TLE`]
+//! record. This module copies the SGP4-relevant fields into a compact
+//! crate-private representation with radians and revolutions-per-day scalars
+//! for the numerical core.
 
-use crate::formats::tle::{Classification as TleClass, TLE};
+use crate::formats::tle::TLE;
 use chrono::Datelike;
-use sgp4::Elements;
 
 use super::Sgp4Error;
 
-/// Convert a typed [`TLE`] into the dimensionless record consumed by the SGP4
-/// backend.
+/// Native copy of the TLE fields needed by the propagator.
 ///
-/// The conversion preserves all SGP4-relevant fields (epoch, mean elements,
-/// drag terms, classification, international designator) and is lossless in
-/// both directions for the subset SGP4 uses.
-pub(crate) fn tle_to_elements(tle: &TLE) -> Result<Elements, Sgp4Error> {
+/// Angles are stored in radians. Mean motion and derivatives keep the TLE
+/// convention of revolutions per day and its time derivatives.
+#[derive(Clone, Debug)]
+pub(crate) struct NativeElements {
+    pub(crate) epoch_jd_utc: tempoch::JulianDate<tempoch::UTC>,
+    pub(crate) inclination_rad: f64,
+    pub(crate) raan_rad: f64,
+    pub(crate) eccentricity: f64,
+    pub(crate) argument_of_perigee_rad: f64,
+    pub(crate) mean_anomaly_rad: f64,
+    pub(crate) mean_motion_rev_per_day: f64,
+    pub(crate) mean_motion_dot_rev_per_day2: f64,
+    pub(crate) mean_motion_ddot_rev_per_day3: f64,
+    pub(crate) bstar: f64,
+}
+
+/// Convert a typed [`TLE`] into native propagation elements.
+pub(crate) fn tle_to_elements(tle: &TLE) -> Result<NativeElements, Sgp4Error> {
     let dt_utc = tle
         .epoch
         .try_to_chrono()
@@ -31,30 +43,27 @@ pub(crate) fn tle_to_elements(tle: &TLE) -> Result<Elements, Sgp4Error> {
     if datetime.year() < 1950 {
         return Err(Sgp4Error::InvalidEpoch("year < 1950 not representable"));
     }
+    if !tle.eccentricity.is_finite() || !(0.0..1.0).contains(&tle.eccentricity) {
+        return Err(Sgp4Error::InvalidElements {
+            details: format!("eccentricity outside [0, 1): {}", tle.eccentricity),
+        });
+    }
+    if !tle.mean_motion.value().is_finite() || tle.mean_motion.value() <= 0.0 {
+        return Err(Sgp4Error::InvalidElements {
+            details: format!("non-positive mean motion: {}", tle.mean_motion.value()),
+        });
+    }
 
-    let classification = match tle.classification {
-        TleClass::Unclassified => sgp4::Classification::Unclassified,
-        TleClass::Classified => sgp4::Classification::Classified,
-        TleClass::Secret => sgp4::Classification::Secret,
-    };
-
-    Ok(Elements {
-        object_name: tle.name.clone(),
-        international_designator: Some(tle.international_designator.0.clone()),
-        norad_id: u64::from(tle.norad_id.0),
-        classification,
-        datetime,
-        mean_motion_dot: tle.mean_motion_dot,
-        mean_motion_ddot: tle.mean_motion_ddot,
-        drag_term: tle.bstar,
-        element_set_number: u64::from(tle.element_set_number),
-        inclination: tle.inclination.value(),
-        right_ascension: tle.raan.value(),
+    Ok(NativeElements {
+        epoch_jd_utc: tle.epoch.to::<tempoch::JD>(),
+        inclination_rad: tle.inclination.value().to_radians(),
+        raan_rad: tle.raan.value().to_radians(),
         eccentricity: tle.eccentricity,
-        argument_of_perigee: tle.argument_of_perigee.value(),
-        mean_anomaly: tle.mean_anomaly.value(),
-        mean_motion: tle.mean_motion.value(),
-        revolution_number: u64::from(tle.revolution_number_at_epoch),
-        ephemeris_type: 0,
+        argument_of_perigee_rad: tle.argument_of_perigee.value().to_radians(),
+        mean_anomaly_rad: tle.mean_anomaly.value().to_radians(),
+        mean_motion_rev_per_day: tle.mean_motion.value(),
+        mean_motion_dot_rev_per_day2: tle.mean_motion_dot,
+        mean_motion_ddot_rev_per_day3: tle.mean_motion_ddot,
+        bstar: tle.bstar,
     })
 }

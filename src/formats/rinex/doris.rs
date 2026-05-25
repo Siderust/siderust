@@ -25,7 +25,9 @@
 //! - IDS/CDDIS, *RINEX 3 DORIS Format Description*, rev. 14, 2023.
 
 use super::FormatError;
-use std::io::{BufRead, BufReader, Read};
+#[cfg(feature = "doris")]
+use std::io::BufReader;
+use std::io::Read;
 
 /// Header of a RINEX-DORIS file.
 #[derive(Debug, Default, Clone, PartialEq)]

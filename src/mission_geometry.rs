@@ -87,11 +87,6 @@ fn sub(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
 }
 
 #[inline]
-fn scale(a: [f64; 3], s: f64) -> [f64; 3] {
-    [a[0] * s, a[1] * s, a[2] * s]
-}
-
-#[inline]
 fn unit(v: [f64; 3]) -> [f64; 3] {
     let n = norm(v);
     if n == 0.0 {
