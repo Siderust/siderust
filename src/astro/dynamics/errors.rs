@@ -140,6 +140,7 @@ impl From<PropagationError> for DynamicsError {
                 reason: "propagator max_steps exceeded",
             },
             PropagationError::EventEvaluation { source, .. } => source.into(),
+            PropagationError::InvalidConfiguration(source) => source.into(),
         }
     }
 }

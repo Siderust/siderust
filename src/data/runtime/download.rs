@@ -18,7 +18,7 @@ pub type ProgressCallback = Box<dyn Fn(u64, u64)>;
 ///
 /// `name` is used only in error messages. If `progress` is `Some`, it is
 /// called periodically with `(bytes_downloaded, total_or_zero)`.
-pub fn download(
+pub(super) fn download(
     name: &str,
     rdm: &RuntimeDownloadMeta,
     dest: &Path,

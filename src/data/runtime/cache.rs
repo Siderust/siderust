@@ -11,7 +11,7 @@ use crate::data::RuntimeDownloadMeta;
 use std::path::{Path, PathBuf};
 
 /// Environment variable to override the data directory.
-pub const DATA_DIR_ENV: &str = "SIDERUST_DATA_DIR";
+pub(super) const DATA_DIR_ENV: &str = "SIDERUST_DATA_DIR";
 
 /// Default subdirectory under the user's home directory.
 const DEFAULT_SUBDIR: &str = ".siderust/data";
@@ -21,7 +21,7 @@ const DEFAULT_SUBDIR: &str = ".siderust/data";
 /// Priority:
 /// 1. `SIDERUST_DATA_DIR` environment variable
 /// 2. `~/.siderust/data/`
-pub fn resolve_data_dir() -> Result<PathBuf, DatasetError> {
+pub(super) fn resolve_data_dir() -> Result<PathBuf, DatasetError> {
     if let Ok(dir) = std::env::var(DATA_DIR_ENV) {
         let dir = dir.trim();
         if !dir.is_empty() {
@@ -42,20 +42,20 @@ pub fn resolve_data_dir() -> Result<PathBuf, DatasetError> {
 }
 
 /// Ensure the data directory exists (creates it if needed).
-pub fn ensure_data_dir(dir: &Path) -> Result<(), DatasetError> {
+pub(super) fn ensure_data_dir(dir: &Path) -> Result<(), DatasetError> {
     std::fs::create_dir_all(dir)?;
     Ok(())
 }
 
 /// Return the expected file path for a dataset within the cache directory.
-pub fn dataset_path(data_dir: &Path, rdm: &RuntimeDownloadMeta) -> PathBuf {
+pub(super) fn dataset_path(data_dir: &Path, rdm: &RuntimeDownloadMeta) -> PathBuf {
     data_dir.join(rdm.filename)
 }
 
 /// Check whether a cached dataset file exists and passes basic size validation.
 ///
 /// Returns `true` if the file exists and its size is >= [`rdm.min_size`].
-pub fn is_cached(data_dir: &Path, rdm: &RuntimeDownloadMeta) -> bool {
+pub(super) fn is_cached(data_dir: &Path, rdm: &RuntimeDownloadMeta) -> bool {
     let path = dataset_path(data_dir, rdm);
     match std::fs::metadata(&path) {
         Ok(m) => m.len() >= rdm.min_size,
@@ -68,7 +68,11 @@ pub fn is_cached(data_dir: &Path, rdm: &RuntimeDownloadMeta) -> bool {
 /// Checks:
 /// 1. File exists and size >= `min_size`
 /// 2. SHA-256 matches (if `rdm.sha256` is non-empty)
-pub fn verify(name: &str, path: &Path, rdm: &RuntimeDownloadMeta) -> Result<(), DatasetError> {
+pub(super) fn verify(
+    name: &str,
+    path: &Path,
+    rdm: &RuntimeDownloadMeta,
+) -> Result<(), DatasetError> {
     let file_meta = std::fs::metadata(path)?;
     if file_meta.len() < rdm.min_size {
         return Err(DatasetError::Integrity(format!(

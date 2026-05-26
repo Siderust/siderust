@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 #![cfg_attr(siderust_mock_de440, allow(dead_code))]
+#![allow(unreachable_pub)]
 
 //! Embedded DE440 coefficient data.
 //!

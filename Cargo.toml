@@ -92,11 +92,12 @@ pod-doris = ["pod", "doris"]
 [dependencies]
 affn = { version = "0.7", features = ["astro"] }
 cheby = "0.3"
-keplerian = "0.1"
+keplerian = "0.2"
 optica = { path = "../optica" }
-principia = { version = "0.1", features = ["alloc"] }
+principia = { version = "0.2", features = ["alloc"] }
 qtty = { version = "0.8", features = ["astro", "density", "frequency", "radiometry", "satellite"] }
 tempoch = "0.6"
+
 thiserror = "2"
 approx = "0.5"
 chrono = "0.4"
@@ -111,7 +112,7 @@ wide = "1.4"
 # POD toolkit dependencies (gated on the `pod` feature family)
 faer = { version = "0.22", default-features = false, features = ["std", "linalg"], optional = true }
 hex = { version = "0.4", optional = true }
-parquet = { version = "52", default-features = false, optional = true }
+parquet = { version = "58", default-features = false, optional = true }
 
 [dev-dependencies]
 rstest = "0.26"
@@ -158,25 +159,6 @@ harness = false
 [[bench]]
 name = "altitude_comparison"
 harness = false
-
-# ── Redirect transitive crates.io pulls to the local path checkouts ───────────
-# Keeps the local workspace coherent with the rest of the siderust ecosystem
-# (qtty / tempoch / affn / cheby / keplerian / principia are co-developed and
-# track ahead of their last published crates.io release).
-[patch.crates-io]
-qtty-core         = { path = "../qtty/qtty-core" }
-qtty-derive       = { path = "../qtty/qtty-derive" }
-qtty              = { path = "../qtty/qtty" }
-tempoch-core      = { path = "../tempoch/tempoch-core" }
-tempoch-time-data = { path = "../tempoch/tempoch-time-data" }
-tempoch           = { path = "../tempoch/tempoch" }
-affn              = { path = "../affn" }
-cheby             = { path = "../cheby" }
-keplerian         = { path = "../keplerian" }
-principia         = { path = "../principia" }
-
-[patch."https://github.com/Siderust/affn.git"]
-affn = { path = "../affn" }
 
 [lints]
 workspace = true

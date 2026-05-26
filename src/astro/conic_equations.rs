@@ -25,7 +25,7 @@ use crate::astro::units::heliocentric_period_days;
 use crate::coordinates::cartesian::position::EclipticMeanJ2000;
 use crate::qtty::*;
 use crate::time::JulianDate;
-use keplerian::anomaly::{eccentric_from_mean, hyperbolic_from_mean, AnomalyOptions};
+use keplerian::anomaly::{eccentric_from_mean, hyperbolic_from_mean, AnomalyOptions, MeanAnomaly};
 use keplerian::Eccentricity;
 
 /// Gaussian gravitational constant `k` in AU^{3/2} d^{-1}.
@@ -52,28 +52,25 @@ fn mu_to_au3_d2(mu: GravitationalParameter) -> f64 {
 /// reusable Kepler-equation solver.
 #[inline]
 fn solve_elliptic_anomaly(mean_anomaly: Radians, eccentricity: f64) -> Radians {
-    let options = AnomalyOptions {
-        max_iter: 100,
-        tol: 1e-15,
-    };
+    let options = AnomalyOptions::try_new(100, 1e-15).expect("hardcoded anomaly options are valid");
     eccentric_from_mean(
-        mean_anomaly,
+        MeanAnomaly::new(mean_anomaly),
         Eccentricity::new_unchecked(eccentricity),
         options,
     )
     .expect("validated elliptic orbit must solve Kepler's equation")
+    .radians()
 }
 
 fn solve_hyperbolic_anomaly(mean_anomaly_radians: f64, eccentricity: f64) -> Option<f64> {
+    let options = AnomalyOptions::try_new(100, 1e-14).expect("hardcoded anomaly options are valid");
     hyperbolic_from_mean(
-        Radians::new(mean_anomaly_radians),
+        MeanAnomaly::from_value(mean_anomaly_radians),
         Eccentricity::new_unchecked(eccentricity),
-        AnomalyOptions {
-            max_iter: 100,
-            tol: 1e-14,
-        },
+        options,
     )
     .ok()
+    .map(|h| h.value())
 }
 
 /// Like [`rotate_to_ecliptic`] but uses precomputed sin/cos values from

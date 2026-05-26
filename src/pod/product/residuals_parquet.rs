@@ -280,7 +280,7 @@ mod tests {
             satellite: "G01".into(),
             residual_m: f64::from(i) * 0.1,
             sigma_m: 0.3,
-            rejected: i % 3 == 0,
+            rejected: i.is_multiple_of(3),
         }
     }
 

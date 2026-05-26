@@ -112,9 +112,9 @@ fn parse_doris<R: Read>(reader: R) -> Result<RinexDoris, FormatError> {
         if l.is_empty() {
             continue;
         }
-        if l.starts_with('>') {
+        if let Some(rest) = l.strip_prefix('>') {
             // RINEX 3 epoch flag line: "> YYYY MM DD HH MM SS.SSS"
-            let parts: Vec<&str> = l[1..].split_whitespace().collect();
+            let parts: Vec<&str> = rest.split_whitespace().collect();
             if parts.len() >= 6 {
                 let y: i32 = parts[0].parse().unwrap_or(0);
                 let mo: u32 = parts[1].parse().unwrap_or(0);

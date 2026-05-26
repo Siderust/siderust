@@ -47,7 +47,10 @@ pub mod units;
 pub mod frames {
     //! Astronomy-specific local orbital frame aliases.
     pub use principia::frames::LocalTrajectoryFrame;
-    pub use principia::frames::{lvlh_from_state, rtn_from_state, vnc_from_state, LVLH, RTN, VNC};
+    pub use principia::frames::{
+        lvlh_from_raw_km_km_s as lvlh_from_state, rtn_from_raw_km_km_s as rtn_from_state,
+        vnc_from_raw_km_km_s as vnc_from_state, LVLH, RTN, VNC,
+    };
 
     /// Local orbital frame anchored to the GCRS inertial frame.
     pub type LocalOrbitalFrame<M> = LocalTrajectoryFrame<crate::coordinates::frames::GCRS, M>;

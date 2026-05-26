@@ -3,7 +3,8 @@
 
 //! Spherical-harmonic geopotential acceleration model.
 
-use principia::{spherical_harmonic_acceleration, AccelerationModel, PrincipiaError};
+use principia::gravity::spherical_harmonic_acceleration_raw_km;
+use principia::{AccelerationModel, PrincipiaError};
 
 use crate::astro::dynamics::context::DynamicsContext;
 use crate::astro::dynamics::errors::DynamicsError;
@@ -70,11 +71,13 @@ impl AccelerationModel<DynamicsContext, TT, Geocentric, GCRS> for Geopotential {
                 None,
             )
         };
-        let a_kernel = spherical_harmonic_acceleration(
-            provider.as_ref(),
+        let a_kernel = spherical_harmonic_acceleration_raw_km(
             pos_kernel,
-            self.degree,
-            self.order,
+            self.degree as u32,
+            self.order as u32,
+            &provider.constants(),
+            provider.as_ref(),
+            provider.reference_radius().value(),
         )?;
         let [ax, ay, az] = if let Some((sin_t, cos_t)) = era_sin_cos {
             [
