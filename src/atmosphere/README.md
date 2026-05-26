@@ -29,7 +29,7 @@ What you will find here:
 - `profile.rs`: `AtmosphereProfile`, the typed bundle of site atmospheric
   parameters used by higher-level callers.
 - `ozone.rs`: wavelength-dependent ozone transmission tables when the
-  `spectra` feature is enabled.
+  `photometry` feature is enabled.
 - `scattering.rs`: shared scattering traits and typed factors.
 
 The public surface uses typed `qtty` values throughout: zenith angles,

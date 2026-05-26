@@ -73,7 +73,7 @@ lagrange-centers = []
 regen-data = ["dep:reqwest"]
 runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "dep:serde_json", "qtty/serde", "affn/serde", "tempoch/serde"]
-spectra = []
+photometry = []
 atmosphere = []
 doris = []
 ## Precise Orbit Determination (POD) toolkit. Folded from the former `siderust-pod` crate.

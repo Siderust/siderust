@@ -33,7 +33,7 @@
 //!
 //! All fields are owned `String` / `Option<String>` for portability; no
 //! external serialization is implied. Re-exported at the crate root and
-//! from the `spectra` and `tables` feature modules for backwards
+//! from the `photometry` and `tables` feature modules for backwards
 //! compatibility.
 //!
 //! The [`checksum`] submodule provides a const-evaluable SHA-256 and the

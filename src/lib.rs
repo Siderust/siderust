@@ -39,7 +39,7 @@
 //! - Sky brightness and lunar photometry (phase geometry, albedo, spectral radiance)
 //! - Time handling (via the `tempoch` crate, re-exported as [`time`])
 //! - Keplerian / conic orbits and satellite mechanics
-//! - Spectral utilities (optional `spectra` feature)
+//! - Photometric passbands and throughput (optional `photometry` feature)
 //!
 //! ## API pillars
 //!
@@ -66,7 +66,7 @@
 //! - [`data`]                    : Scientific dataset catalog, provenance, checksums, compiled tables, and optional runtime download/cache manager
 //! - [`formats`]                 : Low-level binary file-format parsers (e.g. SPICE DAF/SPK); no dataset-catalog knowledge
 //! - `atmosphere` *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
-//! - `spectra` *(optional)*    : Spectral response and photometric bandpass utilities (`spectra` feature)
+//! - `photometry` *(optional)* : Astronomical photometric passbands and throughput unit (`photometry` feature)
 //! - `tables` *(optional)*     : Tabulated data loaders (`tables` feature)
 //!
 //! ## Error-handling conventions
@@ -124,8 +124,8 @@ pub mod observatories;
 #[cfg(feature = "pod")]
 pub mod pod;
 pub mod qtty;
-#[cfg(feature = "spectra")]
-pub mod spectra;
+#[cfg(feature = "photometry")]
+pub mod photometry;
 pub mod targets;
 pub mod time;
 

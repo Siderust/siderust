@@ -53,9 +53,9 @@
 //! ### Usage
 //!
 //! ```
-//! # #[cfg(feature = "spectra")]
+//! # #[cfg(feature = "photometry")]
 //! # {
-//! use siderust::spectra::passbands::bessell1990;
+//! use siderust::photometry::passbands::bessell1990;
 //!
 //! let v = bessell1990::v();
 //! assert!(!v.is_empty());
@@ -451,6 +451,18 @@ mod tests {
                     spec.name
                 );
             }
+        }
+    }
+
+    #[test]
+    fn all_bands_have_provenance() {
+        for spec in bands() {
+            let s = (spec.band)();
+            assert!(
+                s.provenance().is_some(),
+                "{}: passband must carry provenance",
+                spec.name
+            );
         }
     }
 

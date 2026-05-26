@@ -35,7 +35,7 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 | `de441`  |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
 | `serde`  |         | `Serialize` / `Deserialize` on public types |
 | `atmosphere` |     | Atmospheric tables and radiative transfer helpers |
-| `spectra` |        | Spectral tables and synthetic-photometry helpers |
+| `photometry` |        | Photometric passbands and throughput unit |
 | `tables` |         | Additional tabulated astronomy helpers |
 | `runtime-data` |   | Runtime dataset-loading helpers |
 | `regen-data` |     | Regenerates committed VSOP87/ELP2000 tables |

@@ -8,9 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+* **`siderust::photometry` module** (`photometry` feature): introduces the
+  canonical home for astronomical photometric concepts. Contains
+  `siderust::photometry::passbands` with Johnson–Cousins UBVRI passbands from
+  Bessell (1990), `siderust::photometry::passbands::johnson_b()` /
+  `johnson_v()` convenience accessors, and the `Throughput` unit type.
+  Generic sampled-spectrum infrastructure continues to be delegated to
+  `optica::spectrum`.
+
 * **`optica` dependency**: `optica` is now an unconditional dependency, providing
   the canonical grid interpolation and optical-transport primitives used by
-  `siderust`'s atmosphere and spectra modules.
+  `siderust`'s atmosphere and photometry modules.
 
 ### Changed
 
@@ -24,13 +32,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `SampledSpectrum::from_*` via the tridiagonal Thomas algorithm; per-query
   evaluation is `O(log n)`. Nearest-neighbour ties resolve to the lower
   index, matching `scipy.interpolate.interp1d(kind="nearest")`. New public
-  helpers `spectra::algo::{interp_nearest, interp_step_left,
+  helpers `optica::spectrum::algo::{interp_nearest, interp_step_left,
   interp_step_right, interp_cubic_spline, CubicSplineCoeffs}` expose the
   untyped kernels.
-* `siderust::spectra` is now a thin astronomical layer; generic spectrum
-  infrastructure (interpolation, integration, loaders) moved to
+* `siderust::spectra` renamed to `siderust::photometry`; the `spectra`
+  feature is replaced by the `photometry` feature. Photometric passband data
+  and the [`Throughput`](siderust::photometry::passbands::Throughput) unit now
+  live under `siderust::photometry::passbands`. Generic spectrum
+  infrastructure (interpolation, integration, loaders) lives in
   `optica::spectrum`.
-* `siderust::spectra::passbands::bessell1990` now uses `OutOfRange::Zero`
+* `siderust::photometry::passbands::bessell1990` uses `OutOfRange::Zero`
   for compact-support passbands (previously `ClampToEndpoints`).
 * **`lagrange-centers` feature**: typed Sun-Earth L1-L5 reference centers,
   `ephemeris::lagrange` Chebyshev archive evaluation, N-body solver/fitter,
@@ -73,6 +84,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   re-exports of `siderust::formats::tle` — import directly from there.
   Likewise the former `siderust_pod::sgp4` shim has been removed;
   import `siderust::astro::sgp4` directly.
+* `siderust::spectra` module removed; replaced by `siderust::photometry`
+  (see Added section). Migrate:
+  - `siderust::spectra::passbands` → `siderust::photometry::passbands`
+  - `siderust::spectra::passbands::bessell1990` → `siderust::photometry::passbands::bessell1990`
+  - `siderust::spectra::Throughput` → `siderust::photometry::Throughput`
+  - feature `spectra` → feature `photometry`
 * `siderust::spectra::SampledSpectrum` removed — use
   `optica::spectrum::SampledSpectrum`.
 * `siderust::spectra::Interpolation` removed — use

@@ -57,7 +57,7 @@ pub mod airglow;
 pub mod airmass;
 pub mod extinction;
 pub mod mie;
-#[cfg(feature = "spectra")]
+#[cfg(feature = "photometry")]
 pub mod ozone;
 pub mod profile;
 pub mod rayleigh;
@@ -71,7 +71,7 @@ pub use airmass::{
 };
 pub use extinction::transmission;
 pub use mie::{mie_optical_depth, MieParams};
-#[cfg(feature = "spectra")]
+#[cfg(feature = "photometry")]
 pub use ozone::transmission_table;
 pub use profile::AtmosphereProfile;
 pub use rayleigh::{rayleigh_optical_depth_bodhaine99, rayleigh_phase, DEFAULT_SCALE_HEIGHT};
