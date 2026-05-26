@@ -93,7 +93,7 @@ pod-doris = ["pod", "doris"]
 affn = { version = "0.7", features = ["astro"] }
 cheby = "0.3"
 keplerian = "0.2"
-optica = { path = "../optica" }
+optica = "0.1"
 principia = { version = "0.2", features = ["alloc"] }
 qtty = { version = "0.8", features = ["astro", "density", "frequency", "radiometry", "satellite"] }
 tempoch = "0.6"
