@@ -8,6 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- `siderust::spice` module (feature `spice`): high-level SPICE kernel context
+  with `SpiceContext`, `KernelSet`, `FrameRegistry`, and `SpiceContextError`.
+  Supports SPK, CK, LSK, FK, PCK text, SCLK, and IK kernels. Binary PCK (BPC),
+  DSK, and EK kernel queries return `UnsupportedKernelQuery` in V1.
+- `formats::spice::text`: generic SPICE text kernel parser (`TextKernel`).
+- `formats::spice::lsk`: leapseconds kernel (`LeapSecondKernel`), UTC↔TDB
+  conversion via the `DELTET/DELTA_AT` table.
+- `formats::spice::fk`: frame kernel parser (`FrameKernel`, `FrameSpec`),
+  supporting inertial, PCK, CK, and TK (constant-matrix) frames.
+- `formats::spice::pck`: PCK text kernel parser (`PckKernel`, `BodyOrientation`)
+  with `rotation_to_j2000()` using first-order IAU pole RA/Dec/PM constants.
+- `formats::spice::ck`: CK attitude kernel parser (`CkKernel`, `CkSegment1`);
+  Type 1 segments with SLERP quaternion interpolation.
+- `formats::spice::sclk`: SCLK text kernel parser (`SclkKernel`) with
+  partition-based ET↔SCLK ticks conversion.
+- `formats::spice::ik`: IK instrument kernel parser (`IkKernel`).
+- `formats::spice::daf`: `DafRaw` generic DAF container for non-SPK kernel types.
+- `SpiceError::UnsupportedKernelQuery`, `SpiceError::UnknownFrame`,
+  `SpiceError::TimeConversion` — new structured error variants.
+
 * **`siderust::photometry` module** (`photometry` feature): introduces the
   canonical home for astronomical photometric concepts. Contains
   `siderust::photometry::passbands` with Johnson–Cousins UBVRI passbands from

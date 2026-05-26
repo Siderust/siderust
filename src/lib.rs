@@ -121,11 +121,13 @@ pub mod mission_context;
 pub mod mission_geometry;
 pub mod numeric;
 pub mod observatories;
+#[cfg(feature = "photometry")]
+pub mod photometry;
 #[cfg(feature = "pod")]
 pub mod pod;
 pub mod qtty;
-#[cfg(feature = "photometry")]
-pub mod photometry;
+#[cfg(feature = "spice")]
+pub mod spice;
 pub mod targets;
 pub mod time;
 

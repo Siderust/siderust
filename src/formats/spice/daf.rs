@@ -45,6 +45,59 @@ pub struct Summary {
     pub end_word: usize,
 }
 
+/// Raw summary entry for a generic DAF kernel.
+///
+/// The `doubles` slice contains `nd` values; their interpretation depends on
+/// the kernel type. The `integers` slice contains `ni` values; the final two
+/// integers are always the 1-based start and end word addresses.
+#[derive(Debug, Clone)]
+pub struct RawSummary {
+    /// The `nd` double-precision values from this summary.
+    pub doubles: Vec<f64>,
+    /// The `ni` integer values from this summary.
+    pub integers: Vec<i32>,
+}
+
+impl RawSummary {
+    /// First 1-based data word.
+    pub fn start_word(&self) -> usize {
+        self.integers[self.integers.len() - 2] as usize
+    }
+
+    /// Last 1-based data word.
+    pub fn end_word(&self) -> usize {
+        self.integers[self.integers.len() - 1] as usize
+    }
+}
+
+/// A DAF container parsed without kernel-type constraints.
+///
+/// ## Scientific scope
+///
+/// n/a — this type is a wire-format container only.
+///
+/// ## Technical scope
+///
+/// Parses the DAF binary container structure without assuming SPK-specific
+/// summary layouts. Use this for CK, binary PCK, DSK, and other DAF-based
+/// kernel types.
+///
+/// ## References
+///
+/// - NAIF DAF Required Reading
+#[derive(Debug)]
+pub struct DafRaw {
+    /// Number of double-precision components per summary.
+    pub nd: usize,
+    /// Number of integer components per summary.
+    pub ni: usize,
+    /// Eight-character file locator.
+    pub locator: String,
+    /// All raw summaries parsed from the kernel.
+    pub raw_summaries: Vec<RawSummary>,
+    bytes: Vec<u8>,
+}
+
 impl Daf {
     /// Parse a DAF container from raw file bytes.
     pub fn parse(data: &[u8]) -> Result<Self, SpiceError> {
@@ -153,6 +206,103 @@ impl Daf {
         let offset = (word - 1) * 8;
         // DE440/DE441 kernels from NAIF are little-endian on modern systems.
         read_f64_le(data, offset)
+    }
+}
+
+impl DafRaw {
+    /// Parse any DAF kernel from raw bytes without restricting ND/NI.
+    pub fn parse(data: Vec<u8>) -> Result<Self, SpiceError> {
+        if data.len() < 1024 {
+            return Err(SpiceError::FormatParse(format!(
+                "DAF file too small ({} bytes)",
+                data.len()
+            )));
+        }
+
+        let locator = String::from_utf8_lossy(&data[0..8]).to_string();
+        if !locator.trim().starts_with("DAF") {
+            return Err(SpiceError::FormatParse(format!(
+                "Not a DAF file (locator = {:?})",
+                locator.trim()
+            )));
+        }
+
+        let nd_le = read_i32_le(&data, 8);
+        let ni_le = read_i32_le(&data, 12);
+        let nd_be = read_i32_be(&data, 8);
+        let ni_be = read_i32_be(&data, 12);
+
+        let (le, nd, ni) = if nd_le > 0 && nd_le <= 100 && ni_le > 0 && ni_le <= 100 {
+            (true, nd_le as usize, ni_le as usize)
+        } else if nd_be > 0 && nd_be <= 100 && ni_be > 0 && ni_be <= 100 {
+            (false, nd_be as usize, ni_be as usize)
+        } else {
+            return Err(SpiceError::FormatParse(format!(
+                "Cannot determine DAF endianness: ND/NI LE=({},{}), BE=({},{})",
+                nd_le, ni_le, nd_be, ni_be
+            )));
+        };
+
+        let read_i32 = if le { read_i32_le } else { read_i32_be };
+        let read_f64 = if le { read_f64_le } else { read_f64_be };
+        let fward = read_i32(&data, 76) as usize;
+        let ss = nd + ni.div_ceil(2);
+
+        let mut raw_summaries = Vec::new();
+        let mut rec = fward;
+        while rec > 0 {
+            let rec_offset = (rec - 1) * 1024;
+            if rec_offset + 1024 > data.len() {
+                return Err(SpiceError::FormatParse(format!(
+                    "Summary record {} extends past EOF",
+                    rec
+                )));
+            }
+
+            let next = read_f64(&data, rec_offset) as i64 as usize;
+            let nsum = read_f64(&data, rec_offset + 16) as usize;
+            for i in 0..nsum {
+                let off = rec_offset + 24 + i * ss * 8;
+                if off + ss * 8 > data.len() {
+                    return Err(SpiceError::FormatParse(format!(
+                        "Summary {} in record {} extends past EOF",
+                        i, rec
+                    )));
+                }
+
+                let mut doubles = Vec::with_capacity(nd);
+                for j in 0..nd {
+                    doubles.push(read_f64(&data, off + j * 8));
+                }
+                let int_off = off + nd * 8;
+                let mut integers = Vec::with_capacity(ni);
+                for j in 0..ni {
+                    integers.push(read_i32(&data, int_off + j * 4));
+                }
+                raw_summaries.push(RawSummary { doubles, integers });
+            }
+            rec = next;
+        }
+
+        Ok(Self {
+            nd,
+            ni,
+            locator,
+            raw_summaries,
+            bytes: data,
+        })
+    }
+
+    /// Read an `f64` at a 1-based word index (little-endian).
+    #[inline]
+    pub fn read_f64_at_word(&self, word: usize) -> f64 {
+        let offset = (word - 1) * 8;
+        read_f64_le(&self.bytes, offset)
+    }
+
+    /// Borrow the raw kernel bytes.
+    pub fn bytes(&self) -> &[u8] {
+        &self.bytes
     }
 }
 
@@ -297,6 +447,18 @@ mod tests {
     }
 
     #[test]
+    fn parse_raw_daf_accepts_non_spk_locator() {
+        let mut buf = vec![0u8; 1024];
+        buf[0..8].copy_from_slice(b"DAF/CK  ");
+        write_i32_le(&mut buf, 8, 2);
+        write_i32_le(&mut buf, 12, 6);
+        write_i32_le(&mut buf, 76, 0);
+        let daf = DafRaw::parse(buf).unwrap();
+        assert_eq!(daf.locator, "DAF/CK  ");
+        assert!(daf.raw_summaries.is_empty());
+    }
+
+    #[test]
     fn parse_fward_beyond_eof_returns_error() {
         let mut buf = minimal_valid_daf();
         // Set FWARD to record 99, but file only has 1 record (1024 bytes)
@@ -390,5 +552,15 @@ mod tests {
         let result = Daf::parse(&buf);
         // Should either succeed with partial summaries or return an error, must not panic
         let _ = result;
+    }
+
+    #[test]
+    fn raw_summary_word_helpers_return_trailing_addresses() {
+        let summary = RawSummary {
+            doubles: vec![0.0, 1.0],
+            integers: vec![1, 2, 3, 4, 257, 300],
+        };
+        assert_eq!(summary.start_word(), 257);
+        assert_eq!(summary.end_word(), 300);
     }
 }

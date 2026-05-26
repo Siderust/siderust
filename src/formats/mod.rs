@@ -15,7 +15,7 @@
 //! | [`igs`] | SP3 / ANTEX / SINEX / ORBEX products |
 //! | [`ilrs`] | CRD / CPF laser-ranging products |
 //! | [`rinex`] | RINEX observation / navigation formats |
-//! | [`spice`] | DAF/SPK binary kernel parsing (ephemerides) |
+//! | [`spice`] | SPICE text and binary kernel parsing (SPK, CK, FK, LSK, PCK, SCLK, IK) |
 //! | [`tle`] | NORAD TLE / 3LE / CCSDS OMM (KVN, XML, JSON) |
 //! | [`vlbi`] | vgosDB VLBI datasets |
 //!

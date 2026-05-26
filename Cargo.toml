@@ -60,6 +60,11 @@ name = "tle_sgp4_pipeline"
 path = "tests/tle_sgp4_pipeline.rs"
 required-features = ["pod"]
 
+[[test]]
+name = "spice_context"
+path = "tests/spice_context.rs"
+required-features = ["spice"]
+
 [[bin]]
 name = "generate-lagrange-cheby"
 path = "scripts/generate-lagrange-cheby.rs"
@@ -74,6 +79,7 @@ regen-data = ["dep:reqwest"]
 runtime-data = ["dep:ureq", "dep:sha2"]
 serde = ["dep:serde", "dep:serde_json", "qtty/serde", "affn/serde", "tempoch/serde"]
 photometry = []
+spice = []
 atmosphere = []
 doris = []
 ## Precise Orbit Determination (POD) toolkit. Folded from the former `siderust-pod` crate.

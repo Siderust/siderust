@@ -17,14 +17,19 @@ use thiserror::Error;
 /// ```rust
 /// use siderust::formats::spice::SpiceError;
 ///
-/// let e = SpiceError::OutOfCoverage {
+/// let coverage = SpiceError::OutOfCoverage {
 ///     target: 399,
 ///     center: 0,
 ///     epoch_tdb_seconds: 0.0,
 ///     start_tdb_seconds: 1.0,
 ///     end_tdb_seconds: 2.0,
 /// };
-/// assert!(format!("{e}").contains("out of coverage"));
+/// assert!(format!("{coverage}").contains("out of coverage"));
+///
+/// let unsupported = SpiceError::UnsupportedKernelQuery {
+///     message: "DSK surface queries are not implemented".to_string(),
+/// };
+/// assert!(format!("{unsupported}").contains("unsupported kernel query"));
 /// ```
 #[derive(Debug, Error)]
 pub enum SpiceError {
@@ -90,6 +95,27 @@ pub enum SpiceError {
     #[error("SPICE kernel: segment record corrupted: {message}")]
     Corrupted {
         /// Human-readable description.
+        message: String,
+    },
+
+    /// A high-level kernel query is not implemented for this kernel type.
+    #[error("SPICE kernel: unsupported kernel query: {message}")]
+    UnsupportedKernelQuery {
+        /// Human-readable explanation.
+        message: String,
+    },
+
+    /// The requested frame ID or name is not registered in the current context.
+    #[error("SPICE context: unknown frame: {description}")]
+    UnknownFrame {
+        /// Description of the unrecognised frame.
+        description: String,
+    },
+
+    /// A time conversion failed.
+    #[error("SPICE context: time conversion error: {message}")]
+    TimeConversion {
+        /// Human-readable reason.
         message: String,
     },
 
