@@ -116,7 +116,7 @@ fn shapiro_slr_m(r_rx_km: f64, r_sat_km: f64, rho_km: f64) -> f64 {
 /// P₂w = 2·ρ + ΔT_trop + ΔR_rel
 /// ```
 ///
-/// `modeled_value` returns `measured_m − modelled_m` (O−C, metres).
+/// `residual` returns `measured_m − modelled_m` (O−C, metres).
 ///
 /// ## Center-of-mass correction
 ///
@@ -151,7 +151,7 @@ fn shapiro_slr_m(r_rx_km: f64, r_sat_km: f64, rho_km: f64) -> f64 {
 ///     elevation_rad: std::f64::consts::FRAC_PI_2,
 ///     wavelength_um: 0.532,
 /// };
-/// let residual = obs.modeled_value(&state, &NullProviderBundle).unwrap();
+/// let residual = obs.residual(&state, &NullProviderBundle).unwrap();
 /// // Two-way range between station and satellite at 7000 km geocentric
 /// // minus station at 6378 km → 622 km one-way → ~1 244 000 m two-way.
 /// // Residual = 0 - modelled → should be around -1.24e6 m.
@@ -184,7 +184,7 @@ pub struct SlrNormalPointObs {
 impl Observation for SlrNormalPointObs {
     type Residual = f64;
 
-    fn modeled_value(
+    fn residual(
         &self,
         _state: &CartesianState,
         _providers: &dyn ProviderBundle,
@@ -285,7 +285,7 @@ mod tests {
             wavelength_um: 0.532,
         };
         let neg_res = obs_probe
-            .modeled_value(&state, &NullProviderBundle)
+            .residual(&state, &NullProviderBundle)
             .unwrap();
         let modelled = -neg_res;
 
@@ -293,7 +293,7 @@ mod tests {
             measured_m: Meter::new(modelled),
             ..obs_probe
         };
-        let r = obs.modeled_value(&state, &NullProviderBundle).unwrap();
+        let r = obs.residual(&state, &NullProviderBundle).unwrap();
         assert_abs_diff_eq!(r, 0.0, epsilon = 1e-6);
     }
 

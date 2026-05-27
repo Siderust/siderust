@@ -77,11 +77,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   CPR global and local decoding (`nl()` per DO-260B eq. 2-15), airborne velocity
   (ground speed, heading, vertical rate), and Gillham/Q-bit altitude decoding.
   Malformed frames are rejected with `FormatError`; no silent repair.
-* **`pod` feature** (default-on): the former `siderust-pod` crate has been
+* **`pod` feature** (must be enabled explicitly): the former `siderust-pod` crate has been
   folded into `siderust` as the new `siderust::pod` module. POD-only
   dependencies (`faer`, `hex`, optional `parquet`) live behind the `pod`
-  feature family (`pod`, `pod-parquet`, `pod-doris`). Build without POD via
-  `cargo build --no-default-features`.
+  feature family (`pod`, `pod-parquet`, `pod-doris`). Default features now
+  include `serde` only. Enable POD functionality via `features = ["pod"]`.
 * Examples `16_lambert_earth_to_mars`, `17_sgp4_from_tle`, and
   `18_lisa_pod` (all gated on `pod`), plus integration tests `pod_smoke`
   and `tle_sgp4_pipeline`.
@@ -90,9 +90,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 * **`siderust-ffi`**: marked `publish = false` in `Cargo.toml`. FFI crates are
   not published by default; publish only when C API/ABI changes are intentional.
   See `siderust-ffi/README.md` for the manual publish procedure.
-* **`pod` feature**: no longer default-on. Enable explicitly with
-  `features = ["pod"]`. Default features now include `serde` only.
-
 ### Removed
 
 - Removed public `siderust::numeric`; the event-search internals (root-finding,
@@ -101,8 +98,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   The `intersect_periods` function remains available via
   `siderust::time::intersect_periods`.
 * **`siderust-pod` crate removed.** All public items now live under
-  `siderust::pod::{problem, run, providers, observation, estimation, qc,
-  product, dynamics, io, spice}`. Migration: replace
+  `siderust::pod::{problem, run, providers, force, propagation, process,
+  observation, estimation, qc, product, io, spice}`. Migration: replace
   `use siderust_pod::X::*` with `use siderust::pod::X::*`. TLE parsing
   helpers that previously sat behind `siderust_pod::tle` are the same
   re-exports of `siderust::formats::tle` — import directly from there.
@@ -154,8 +151,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `registry::ForceModelRegistry` factory. Migration: remove any direct
   imports of these types; use the canonical `TwoBody`, `J2`, `DragForce`,
   and `CannonballSrp` from `siderust::astro::dynamics::forces` instead.
-  `CartesianState` and `Epoch` are now re-exported directly from
-  `siderust::pod::dynamics`.
 
 * **Typed POD provider and observation APIs** (Finding #3): all raw `f64`
   fields in the public POD surface have been replaced with typed quantities.

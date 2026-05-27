@@ -85,7 +85,7 @@ impl ObservationBatch {
     /// struct ZeroObs(JulianDate);
     /// impl Observation for ZeroObs {
     ///     type Residual = f64;
-    ///     fn modeled_value(&self, _: &CartesianState, _: &dyn ProviderBundle)
+    ///     fn residual(&self, _: &CartesianState, _: &dyn ProviderBundle)
     ///         -> Result<f64, PodObservationsError> { Ok(0.0) }
     ///     fn obs_type(&self) -> ObsType { ObsType::GnssPseudorange }
     ///     fn epoch(&self) -> JulianDate { self.0 }
@@ -129,7 +129,7 @@ impl ObservationBatch {
         self.obs
             .iter()
             .filter(|o| epochs_match(o.epoch(), epoch))
-            .map(|o| o.any_modeled_value(state, providers))
+            .map(|o| o.any_residual(state, providers))
             .collect()
     }
 }
@@ -160,7 +160,7 @@ mod tests {
     }
     impl Observation for ConstObs {
         type Residual = f64;
-        fn modeled_value(
+        fn residual(
             &self,
             _: &CartesianState,
             _: &dyn ProviderBundle,

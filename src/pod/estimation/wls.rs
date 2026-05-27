@@ -33,7 +33,7 @@ use crate::coordinates::frames::GCRS;
 use affn::matrix3::{FrameMatrix3, SymmetricFrameMatrix3};
 use faer::linalg::solvers::Solve;
 use faer::{Mat, Side};
-use principia::StateCovariance;
+use crate::astro::dynamics::StateCovariance;
 use thiserror::Error;
 
 /// Errors emerging from WLS assembly or solve.

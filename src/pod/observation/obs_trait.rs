@@ -136,7 +136,7 @@ impl From<PhaseResidual> for ObsResidual {
 /// struct ConstantObs;
 /// impl Observation for ConstantObs {
 ///     type Residual = f64;
-///     fn modeled_value(
+///     fn residual(
 ///         &self,
 ///         _state: &CartesianState,
 ///         _providers: &dyn siderust::pod::observation::provider_bundle::ProviderBundle,
@@ -152,7 +152,7 @@ impl From<PhaseResidual> for ObsResidual {
 ///     Position::<GCRS>::new(7_000.0, 0.0, 0.0),
 ///     Velocity::<GCRS>::new(0.0, 7.5, 0.0),
 /// );
-/// let r = ConstantObs.modeled_value(&state, &NullProviderBundle).unwrap();
+/// let r = ConstantObs.residual(&state, &NullProviderBundle).unwrap();
 /// assert_eq!(r, 0.0);
 /// ```
 pub trait Observation: Send + Sync {
@@ -163,7 +163,7 @@ pub trait Observation: Send + Sync {
     ///
     /// The `providers` argument is consulted for dynamic auxiliary data such as
     /// satellite clock biases, station positions, and receiver clock biases.
-    fn modeled_value(
+    fn residual(
         &self,
         state: &CartesianState,
         providers: &dyn ProviderBundle,
@@ -196,7 +196,7 @@ pub trait Observation: Send + Sync {
 /// ```
 pub trait AnyObservation: Send + Sync {
     /// Compute the type-erased O−C residual.
-    fn any_modeled_value(
+    fn any_residual(
         &self,
         state: &CartesianState,
         providers: &dyn ProviderBundle,
@@ -217,12 +217,12 @@ where
     T: Observation + 'static,
     ObsResidual: From<T::Residual>,
 {
-    fn any_modeled_value(
+    fn any_residual(
         &self,
         state: &CartesianState,
         providers: &dyn ProviderBundle,
     ) -> Result<ObsResidual, PodObservationsError> {
-        self.modeled_value(state, providers).map(ObsResidual::from)
+        self.residual(state, providers).map(ObsResidual::from)
     }
 
     fn obs_type(&self) -> ObsType {

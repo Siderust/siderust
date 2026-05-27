@@ -397,7 +397,7 @@ const C_KM_S: f64 = 299_792.458;
 /// Implements one Newton iteration of light-time correction:
 /// `t_emit = t_recv − ρ₀/c`.
 ///
-/// `modeled_value` returns `measured_m − modelled_m` (O−C residual, metres).
+/// `residual` returns `measured_m − modelled_m` (O−C residual, metres).
 ///
 /// ## Scientific scope
 ///
@@ -444,7 +444,7 @@ fn jd_to_j2000_s_obs(jd: JulianDate) -> f64 {
 impl Observation for InterSatRangeObs {
     type Residual = f64;
 
-    fn modeled_value(
+    fn residual(
         &self,
         _state: &CartesianState,
         _providers: &dyn ProviderBundle,
@@ -565,7 +565,7 @@ fn main() {
         Velocity::<GCRS>::new(0.0, 0.0, 0.0),
     );
     let residual = obs
-        .modeled_value(&state, &NullProviderBundle)
+        .residual(&state, &NullProviderBundle)
         .expect("range residual");
     println!("O−C residual: {residual:.6} m  (should be ~0)");
     assert!(residual.abs() < 1.0, "residual too large: {residual}");

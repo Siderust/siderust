@@ -36,6 +36,7 @@
 //! * IERS Conventions 2010, IERS Technical Note 36.
 
 pub mod context;
+pub mod covariance;
 pub mod density;
 pub mod errors;
 pub mod forces;
@@ -92,4 +93,5 @@ pub use units::GravitationalParameter;
 //
 // Re-exported so callers of `siderust::astro::dynamics` do not need a direct
 // `principia` dependency to work with propagation results.
+pub use covariance::StateCovariance;
 pub use principia::StateTransitionMatrix;

@@ -268,7 +268,7 @@ fn geometric_range_m(state: &CartesianState, sat_pos_km: Position<GCRS>) -> (f64
 /// P = ρ + c·(dt_r − dt_s) + T + I + Sagnac + Rel + ε
 /// ```
 ///
-/// `modeled_value` returns `measured_m − modelled_m` (O−C residual, metres).
+/// `residual` returns `measured_m − modelled_m` (O−C residual, metres).
 ///
 /// # Examples
 ///
@@ -301,7 +301,7 @@ fn geometric_range_m(state: &CartesianState, sat_pos_km: Position<GCRS>) -> (f64
 ///     iono: IonoModel::IonoFree,
 ///     frequency_hz: siderust::qtty::Hertzs::new(1_575_420_000.0),
 /// };
-/// let residual = obs.modeled_value(&state, &NullProviderBundle).unwrap();
+/// let residual = obs.residual(&state, &NullProviderBundle).unwrap();
 /// // Residual should be small (depends on exact geometry + Sagnac + Rel)
 /// assert!(residual.abs() < 1.0);
 /// ```
@@ -330,7 +330,7 @@ pub struct GnssPseudorangeObs {
 impl Observation for GnssPseudorangeObs {
     type Residual = f64;
 
-    fn modeled_value(
+    fn residual(
         &self,
         state: &CartesianState,
         providers: &dyn ProviderBundle,
@@ -395,7 +395,7 @@ impl Observation for GnssPseudorangeObs {
 /// L = ρ + c·(dt_r − dt_s) + T − I + λ·N + ε
 /// ```
 ///
-/// `modeled_value` returns a [`PhaseResidual`] carrying the O−C in metres and
+/// `residual` returns a [`PhaseResidual`] carrying the O−C in metres and
 /// in carrier cycles.
 ///
 /// # Examples
@@ -427,7 +427,7 @@ impl Observation for GnssPseudorangeObs {
 ///     frequency_hz: siderust::qtty::Hertzs::new(1_575_420_000.0),
 ///     integer_ambiguity: 0,
 /// };
-/// let r = obs.modeled_value(&state, &NullProviderBundle).unwrap();
+/// let r = obs.residual(&state, &NullProviderBundle).unwrap();
 /// assert!(r.residual_m.abs() < 1.0);
 /// ```
 #[derive(Debug, Clone)]
@@ -457,7 +457,7 @@ pub struct GnssCarrierPhaseObs {
 impl Observation for GnssCarrierPhaseObs {
     type Residual = PhaseResidual;
 
-    fn modeled_value(
+    fn residual(
         &self,
         state: &CartesianState,
         providers: &dyn ProviderBundle,
@@ -569,7 +569,7 @@ mod tests {
         };
         // First get the modelled value
         let neg_residual = obs_probe
-            .modeled_value(&state, &NullProviderBundle)
+            .residual(&state, &NullProviderBundle)
             .unwrap();
         // neg_residual = 0 - modelled  → modelled = -neg_residual
         let modelled = -neg_residual;
@@ -578,7 +578,7 @@ mod tests {
             measured_m: Meter::new(modelled),
             ..obs_probe
         };
-        let r = obs.modeled_value(&state, &NullProviderBundle).unwrap();
+        let r = obs.residual(&state, &NullProviderBundle).unwrap();
         assert_abs_diff_eq!(r, 0.0, epsilon = 1e-6);
     }
 
@@ -598,12 +598,12 @@ mod tests {
             frequency_hz: Hertz::new(1_575_420_000.0),
         };
         let r_none = make(TropModel::None)
-            .modeled_value(&state, &NullProviderBundle)
+            .residual(&state, &NullProviderBundle)
             .unwrap();
         let r_trop = make(TropModel::Saastamoinen {
             elevation_rad: std::f64::consts::FRAC_PI_2,
         })
-        .modeled_value(&state, &NullProviderBundle)
+        .residual(&state, &NullProviderBundle)
         .unwrap();
         // Troposphere adds to the range → modelled_trop > modelled_none →
         // residual_trop (= 0 − modelled) is more negative than residual_none.
@@ -653,8 +653,8 @@ mod tests {
             integer_ambiguity: 0,
         };
 
-        let r_pr = pr.modeled_value(&state, &NullProviderBundle).unwrap();
-        let r_cp = cp.modeled_value(&state, &NullProviderBundle).unwrap();
+        let r_pr = pr.residual(&state, &NullProviderBundle).unwrap();
+        let r_cp = cp.residual(&state, &NullProviderBundle).unwrap();
 
         // Pseudorange: residual = 0 - (rho + I + ...) → negative
         // Carrier:     residual = 0 - (rho - I + ...) → less negative than pseudorange
@@ -681,7 +681,7 @@ mod tests {
             frequency_hz: Hertz::new(1_575_420_000.0),
             integer_ambiguity: 0,
         };
-        let r = obs.modeled_value(&state, &NullProviderBundle).unwrap();
+        let r = obs.residual(&state, &NullProviderBundle).unwrap();
         let wavelength = C_M_S / 1_575_420_000.0;
         assert_abs_diff_eq!(r.cycles, r.residual_m / wavelength, epsilon = 1e-9);
     }

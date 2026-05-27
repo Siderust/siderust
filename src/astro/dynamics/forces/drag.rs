@@ -23,6 +23,16 @@ const WGS84_A_KM: f64 = 6_378.137;
 const WGS84_F: f64 = 1.0 / 298.257_223_563;
 
 /// Cannonball atmospheric drag force model.
+///
+/// # Approximations
+///
+/// - **Altitude computation**: geodetic altitude is derived from the GCRS
+///   position using an identity GCRS ↔ ITRF rotation (no polar motion or
+///   Earth-rotation angle applied).  At mid-latitudes the resulting altitude
+///   error is negligible; near the poles it can reach ~20 km, which
+///   translates to a density error of roughly one order of magnitude in
+///   LEO.  For precise orbit determination (POD) applications, a proper
+///   GCRS → ITRF transformation should be supplied by the caller.
 #[derive(Debug, Clone)]
 pub struct DragForce {
     /// Drag coefficient Cd (dimensionless, typically 2.0–2.4 for LEO spacecraft).

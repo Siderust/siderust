@@ -28,7 +28,7 @@ use crate::astro::dynamics::{OrbitState, Velocity};
 use crate::coordinates::frames::GCRS;
 use affn::Displacement;
 use faer::Mat;
-use principia::StateCovariance;
+use crate::astro::dynamics::StateCovariance;
 use qtty::dynamics::KmPerSeconds;
 use qtty::length::Kilometers;
 use qtty::unit::Kilometer;

@@ -35,7 +35,9 @@
 
 use std::sync::Arc;
 
+use crate::astro::eop::EopValues;
 use crate::ephemeris::DynEphemeris;
+use crate::time::JulianDate;
 
 use super::density::DensityProvider;
 use super::errors::DynamicsError;
@@ -47,24 +49,63 @@ use super::gravity::GravityFieldProvider;
 
 /// Earth Orientation Parameters provider.
 ///
-/// Interface to be expanded by downstream crates.  The trait exists now so
-/// [`DynamicsContext`] can carry an optional `Arc<dyn EarthOrientationProvider>`
-/// without creating a hard dependency on any particular EOP backend.
+/// Interface for supplying Earth Orientation Parameters (EOP) to dynamics
+/// computations.  The trait exists so [`DynamicsContext`] can carry an optional
+/// `Arc<dyn EarthOrientationProvider>` without creating a hard dependency on
+/// any particular EOP backend.
 ///
 /// Downstream crates that supply real EOP data should implement this trait and
 /// inject the implementation via [`DynamicsContextBuilder::with_eop`].
-pub trait EarthOrientationProvider: Send + Sync {}
-
-/// Solar activity (F10.7 flux, Kp, Ap) provider.
 ///
-/// Interface to be expanded by downstream crates.  The trait exists now so
-/// [`DynamicsContext`] can carry an optional `Arc<dyn SolarActivityProvider>`
-/// without creating a hard dependency on any particular space-weather backend.
+/// # Default implementations
+///
+/// All methods provide default implementations that return `None`, so existing
+/// marker implementations continue to compile unchanged.  Override only the
+/// methods relevant to your provider.
+pub trait EarthOrientationProvider: Send + Sync {
+    /// EOP values at the given UTC Julian Date.
+    ///
+    /// Returns `None` if data is unavailable for the requested epoch.
+    ///
+    /// # Time-scale contract
+    /// `jd_utc` **must** be a UTC Julian Date. Passing a TT or UT1 Julian
+    /// Date will silently return incorrect (or no) EOP values.
+    fn eop_at(&self, _jd_utc: JulianDate) -> Option<EopValues> {
+        None
+    }
+}
+
+/// Solar activity (F10.7 flux, Ap) provider.
+///
+/// Interface for supplying space-weather indices to atmospheric density models
+/// such as NRLMSISE-00 or JB2008.  The trait exists so [`DynamicsContext`] can
+/// carry an optional `Arc<dyn SolarActivityProvider>` without creating a hard
+/// dependency on any particular space-weather backend.
 ///
 /// Downstream crates that supply real solar-activity indices should implement
 /// this trait and inject the implementation via
 /// [`DynamicsContextBuilder::with_solar_activity`].
-pub trait SolarActivityProvider: Send + Sync {}
+///
+/// # Default implementations
+///
+/// All methods provide default implementations that return `None`, so existing
+/// marker implementations continue to compile unchanged.  Override only the
+/// methods relevant to your provider.
+pub trait SolarActivityProvider: Send + Sync {
+    /// F10.7 solar flux index (solar flux units, SFU) at the given UTC Julian Date.
+    ///
+    /// Returns `None` if data is unavailable for the requested epoch.
+    fn f107_sfu(&self, _jd_utc: JulianDate) -> Option<f64> {
+        None
+    }
+
+    /// Daily Ap geomagnetic index at the given UTC Julian Date.
+    ///
+    /// Returns `None` if data is unavailable for the requested epoch.
+    fn ap_daily(&self, _jd_utc: JulianDate) -> Option<f64> {
+        None
+    }
+}
 
 // =============================================================================
 // Conventions
