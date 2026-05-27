@@ -65,7 +65,7 @@ impl TerrainMask {
     /// True iff the supplied elevation clears the mask at the given
     /// azimuth.
     pub fn clears(&self, azimuth: Radians, elevation: Radians) -> bool {
-        elevation.value() >= self.elevation_at(azimuth).value()
+        elevation >= self.elevation_at(azimuth)
     }
 }
 

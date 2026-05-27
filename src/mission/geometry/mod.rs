@@ -46,46 +46,6 @@
 //!   Methods, and Applications*, §3.4, §11.2.
 
 // ─────────────────────────────────────────────────────────────────────────────
-// Three-element vector helpers (m). Operate on f64 internally; the public
-// API takes typed inputs and returns typed outputs.
-// Private to this module tree — accessible to all sub-modules.
-// ─────────────────────────────────────────────────────────────────────────────
-
-#[inline]
-fn dot(a: [f64; 3], b: [f64; 3]) -> f64 {
-    a[0] * b[0] + a[1] * b[1] + a[2] * b[2]
-}
-
-#[inline]
-fn cross(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
-    [
-        a[1] * b[2] - a[2] * b[1],
-        a[2] * b[0] - a[0] * b[2],
-        a[0] * b[1] - a[1] * b[0],
-    ]
-}
-
-#[inline]
-fn norm(v: [f64; 3]) -> f64 {
-    dot(v, v).sqrt()
-}
-
-#[inline]
-fn sub(a: [f64; 3], b: [f64; 3]) -> [f64; 3] {
-    [a[0] - b[0], a[1] - b[1], a[2] - b[2]]
-}
-
-#[inline]
-fn unit(v: [f64; 3]) -> [f64; 3] {
-    let n = norm(v);
-    if n == 0.0 {
-        [0.0; 3]
-    } else {
-        [v[0] / n, v[1] / n, v[2] / n]
-    }
-}
-
-// ─────────────────────────────────────────────────────────────────────────────
 // Sub-modules
 // ─────────────────────────────────────────────────────────────────────────────
 

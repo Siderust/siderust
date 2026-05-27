@@ -24,21 +24,29 @@ pub enum Fov {
 }
 
 impl Fov {
-    /// Test whether a unit vector expressed in the instrument frame
-    /// (boresight = +Z) lies inside the field of view.
+    /// Test whether an off-axis angle (measured from the boresight in the
+    /// instrument frame, boresight = +Z) lies inside the field of view.
     ///
-    /// The input is the cosine of the angle off boresight and (for
-    /// rectangular FoVs) the off-axis offsets `(x_angle, y_angle)` in
-    /// radians.
+    /// For conical FoVs, the point is inside when `|off_axis| ≤ half_angle`.
+    ///
+    /// For rectangular FoVs a single off-axis angle is insufficient to fully
+    /// describe containment in both axes; this method conservatively tests
+    /// `|off_axis| ≤ min(across_track, along_track) / 2`. Callers that need
+    /// a proper 2-axis rectangular test should decompose the off-axis vector
+    /// into its x and y components and test each axis independently.
     pub fn contains_boresight(&self, off_axis: Radians) -> bool {
+        let abs_off = off_axis.abs();
         match self {
-            Fov::Conical { half_angle } => off_axis.value().abs() <= half_angle.value(),
+            Fov::Conical { half_angle } => abs_off <= *half_angle,
             Fov::Rectangular {
                 across_track,
                 along_track,
             } => {
-                off_axis.value().abs() <= across_track.value() / 2.0
-                    || off_axis.value().abs() <= along_track.value() / 2.0
+                let half_x = *across_track / 2.0;
+                let half_y = *along_track / 2.0;
+                // Use the smaller half-angle as the conservative single-axis bound.
+                let bound = if half_x <= half_y { half_x } else { half_y };
+                abs_off <= bound
             }
         }
     }
@@ -73,6 +81,19 @@ mod tests {
         assert!(fov.contains_boresight(Quantity::new(0.0)));
         assert!(fov.contains_boresight(Quantity::new(0.099)));
         assert!(!fov.contains_boresight(Quantity::new(0.2)));
+    }
+
+    #[test]
+    fn fov_rectangular_uses_smaller_half_angle() {
+        // across_track = 0.2 rad full → half = 0.1; along_track = 0.4 rad full → half = 0.2.
+        // Conservative bound = min(0.1, 0.2) = 0.1.
+        let fov = Fov::Rectangular {
+            across_track: Quantity::new(0.2),
+            along_track: Quantity::new(0.4),
+        };
+        assert!(fov.contains_boresight(Quantity::new(0.0)));
+        assert!(fov.contains_boresight(Quantity::new(0.09)));
+        assert!(!fov.contains_boresight(Quantity::new(0.15)));
     }
 
     #[test]

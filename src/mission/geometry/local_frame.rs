@@ -3,6 +3,8 @@
 
 //! Local east-north-up (ENU) reference frame at an observer site.
 
+use affn::cartesian::Direction;
+use affn::frames::ReferenceFrame;
 use qtty::angular::Radians;
 
 /// Local east-north-up (ENU) basis at an observer site whose geodetic
@@ -25,13 +27,15 @@ impl LocalFrame {
         Self { lat, lon }
     }
 
-    /// Compute the east, north, and up unit vectors for this local frame.
-    pub(in crate::mission::geometry) fn basis(&self) -> ([f64; 3], [f64; 3], [f64; 3]) {
-        let (sp, cp) = (self.lat.value().sin(), self.lat.value().cos());
-        let (sl, cl) = (self.lon.value().sin(), self.lon.value().cos());
-        let east = [-sl, cl, 0.0];
-        let north = [-sp * cl, -sp * sl, cp];
-        let up = [cp * cl, cp * sl, sp];
+    /// Compute the east, north, and up unit-direction vectors for this local frame.
+    pub(in crate::mission::geometry) fn basis<F: ReferenceFrame>(
+        &self,
+    ) -> (Direction<F>, Direction<F>, Direction<F>) {
+        let (sp, cp) = self.lat.sin_cos();
+        let (sl, cl) = self.lon.sin_cos();
+        let east = Direction::new_unchecked(-sl, cl, 0.0);
+        let north = Direction::new_unchecked(-sp * cl, -sp * sl, cp);
+        let up = Direction::new_unchecked(cp * cl, cp * sl, sp);
         (east, north, up)
     }
 }
