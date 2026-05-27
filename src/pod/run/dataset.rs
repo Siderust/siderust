@@ -11,7 +11,7 @@ use sha2::{Digest, Sha256};
 ///
 /// A `DatasetRef` records the canonical path, an opaque kind tag (e.g.
 /// `"sp3"`, `"rinex_obs"`, `"qc_json"`), the byte length, and the SHA-256
-/// content hash. It is the building block of [`siderust::pod::run::manifest::RunManifest`].
+/// content hash. It is the building block of [`crate::pod::run::manifest::RunManifest`].
 #[derive(Debug, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct DatasetRef {

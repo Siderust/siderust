@@ -97,16 +97,29 @@ impl NormalEquations {
     ///
     /// `partials` is a sparse vector of `(index, value)` pairs, `residual`
     /// is the measurement minus prediction, and `sigma` is its standard
-    /// deviation (must be > 0).
+    /// deviation (must be finite and > 0).
+    ///
+    /// # Errors
+    ///
+    /// Returns [`WlsSolverError::NotPositiveDefinite`] if `sigma` is not
+    /// finite or not strictly positive.  Returns the same variant if
+    /// `residual` is not finite.  Returns [`WlsSolverError::InvalidIndex`]
+    /// if any partial index exceeds `n_params - 1`.  Returns
+    /// [`WlsSolverError::Other`] if any partial value is not finite.
     pub fn add_row(
         &mut self,
         partials: &[(usize, f64)],
         residual: f64,
         sigma: f64,
     ) -> Result<(), WlsSolverError> {
-        if sigma <= 0.0 {
+        if !sigma.is_finite() || sigma <= 0.0 {
             return Err(WlsSolverError::NotPositiveDefinite(format!(
-                "sigma must be > 0 (got {sigma})"
+                "sigma must be finite and > 0 (got {sigma})"
+            )));
+        }
+        if !residual.is_finite() {
+            return Err(WlsSolverError::Other(format!(
+                "residual must be finite (got {residual})"
             )));
         }
         let w = 1.0 / (sigma * sigma);
@@ -116,6 +129,11 @@ impl NormalEquations {
                     index: i,
                     n_params: self.n,
                 });
+            }
+            if !hi.is_finite() {
+                return Err(WlsSolverError::Other(format!(
+                    "partial at index {i} must be finite (got {hi})"
+                )));
             }
             // Accumulate into the upper triangle; symmetrise at solve time.
             self.b[(i, 0)] += w * hi * residual;
@@ -253,6 +271,51 @@ mod tests {
         assert!(matches!(
             ne.solve(),
             Err(WlsSolverError::NotPositiveDefinite(_))
+        ));
+    }
+
+    #[test]
+    fn rejects_nan_sigma() {
+        let mut ne = NormalEquations::new(1);
+        assert!(matches!(
+            ne.add_row(&[(0, 1.0)], 1.0, f64::NAN),
+            Err(WlsSolverError::NotPositiveDefinite(_))
+        ));
+    }
+
+    #[test]
+    fn rejects_inf_sigma() {
+        let mut ne = NormalEquations::new(1);
+        assert!(matches!(
+            ne.add_row(&[(0, 1.0)], 1.0, f64::INFINITY),
+            Err(WlsSolverError::NotPositiveDefinite(_))
+        ));
+    }
+
+    #[test]
+    fn rejects_zero_sigma() {
+        let mut ne = NormalEquations::new(1);
+        assert!(matches!(
+            ne.add_row(&[(0, 1.0)], 1.0, 0.0),
+            Err(WlsSolverError::NotPositiveDefinite(_))
+        ));
+    }
+
+    #[test]
+    fn rejects_nan_residual() {
+        let mut ne = NormalEquations::new(1);
+        assert!(matches!(
+            ne.add_row(&[(0, 1.0)], f64::NAN, 1.0),
+            Err(WlsSolverError::Other(_))
+        ));
+    }
+
+    #[test]
+    fn rejects_nan_partial() {
+        let mut ne = NormalEquations::new(1);
+        assert!(matches!(
+            ne.add_row(&[(0, f64::NAN)], 1.0, 1.0),
+            Err(WlsSolverError::Other(_))
         ));
     }
 }

@@ -134,7 +134,7 @@ pub enum WakeCategory {
 ///
 /// - `position` — WGS-84 ellipsoidal geodetic position (longitude, latitude,
 ///   ellipsoidal height above WGS-84).  The height field carries the
-///   geometric (ellipsoidal) altitude; convert with [`barometric_altitude_m`]
+///   geometric (ellipsoidal) altitude; convert with [`AircraftState::barometric_altitude_m`]
 ///   for the pressure altitude used in ADS-B.
 /// - `ground_speed` — horizontal speed over ground in m/s.
 /// - `track_angle` — true track (clockwise from true north) in degrees.

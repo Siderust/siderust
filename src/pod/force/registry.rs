@@ -5,7 +5,7 @@
 //!
 //! The POD service layer ingests a YAML/JSON config and needs to translate
 //! string keys (`"two_body"`, `"j2"`, `"drag"`, …) into concrete
-//! [`ForceModel`] instances. The registry centralises that mapping so that:
+//! `AccelerationModel` instances. The registry centralises that mapping so that:
 //!
 //! * Built-in models (two-body, J2, geopotential, Sun/Moon third body,
 //!   cannonball SRP, drag, central-body relativity, constant/1-CPR/2-CPR
@@ -16,7 +16,7 @@
 //! Each factory implements the [`ForceModelFactory`] trait. A
 //! [`ForceModelSpec`] (`name + ForceModelParams`) is consumed by the
 //! registry to produce a heap-allocated `Box<DynSiderustForceModel>` ready for
-//! insertion into [`siderust::astro::dynamics::forces::CompositeForce`].
+//! insertion into a [`SiderustCompositeModel`].
 //!
 //! # Example
 //!
@@ -217,7 +217,7 @@ impl ForceModelRegistry {
         self.factories.keys().map(|s| s.as_str()).collect()
     }
 
-    /// Resolve a single spec into a boxed [`ForceModel`].
+    /// Resolve a single spec into a boxed `DynSiderustForceModel`.
     ///
     /// # Errors
     ///
@@ -234,7 +234,7 @@ impl ForceModelRegistry {
         f.build(&spec.params)
     }
 
-    /// Resolve a batch of specs into a [`CompositeForce`] in declared order.
+    /// Resolve a batch of specs into a [`SiderustCompositeModel`] in declared order.
     ///
     /// # Example
     ///
@@ -471,11 +471,11 @@ impl ForceModelFactory for Empirical2CprFactory {
 }
 
 /// Lightweight type alias for atmosphere density providers consumable by the
-/// drag factory indirectly through [`siderust::astro::dynamics::context::DynamicsContext`].
+/// drag factory indirectly through [`crate::astro::dynamics::DynamicsContext`].
 ///
 /// Built-in models such as
-/// [`siderust::astro::dynamics::density::ExponentialAtmosphere`] and
-/// [`siderust::astro::dynamics::density::Nrlmsise00LiteApprox`] implement
+/// [`crate::astro::dynamics::density::ExponentialAtmosphere`] and
+/// [`crate::astro::dynamics::density::Nrlmsise00LiteApprox`] implement
 /// this trait directly, and downstream crates can plug in MSIS-86, JB2008, …
 /// by implementing [`DensityProvider`].
 pub type AtmosphereDensityProvider = dyn DensityProvider + Send + Sync;

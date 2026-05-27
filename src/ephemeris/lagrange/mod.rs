@@ -18,7 +18,7 @@
 //! [`AstronomicalUnit`] on the [`EclipticMeanJ2000`] frame from flat Chebyshev
 //! records with layout `[mid_seconds, radius_seconds, x..., y..., z...]`, where
 //! stored coefficients are kilometres. [`solver`] computes per-epoch positions
-//! from an [`Ephemeris`] or [`DynEphemeris`], and [`fit`] builds records for a
+//! from a [`crate::ephemeris::Ephemeris`] or [`crate::ephemeris::DynEphemeris`], and [`fit`] builds records for a
 //! caller-provided epoch span.
 //!
 //! ## References

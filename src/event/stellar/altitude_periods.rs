@@ -37,7 +37,7 @@
 use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::numeric::{intervals, root_finding};
+use crate::event::search::{intervals, root_finding};
 use crate::qtty::*;
 use crate::time::JulianDate;
 use crate::time::{complement_within, Interval, ModifiedJulianDate};

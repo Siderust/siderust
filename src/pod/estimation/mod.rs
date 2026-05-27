@@ -1,5 +1,5 @@
 #![allow(clippy::needless_range_loop, clippy::inconsistent_digit_grouping)]
-//! # siderust-pod estimation
+//! # siderust::pod estimation
 //!
 //! ## Scientific scope
 //!
@@ -7,7 +7,7 @@
 //! workspace: batch weighted least squares, nonlinear Gauss-Newton
 //! iteration, and a sequential Kalman-style update path. The scientific
 //! target is short-arc orbit determination where measurement models and
-//! force models are supplied by neighboring crates.
+//! force models are supplied by sibling modules.
 //!
 //! These routines assume callers provide already-linearized residual rows
 //! or propagation closures at the appropriate orbit-determination epoch.
@@ -16,7 +16,7 @@
 //!
 //! ## Technical scope
 //!
-//! The crate re-exports `gauss_newton`, `NormalEquations`, `OrbitEkf`, and the
+//! The module re-exports `gauss_newton`, `NormalEquations`, `OrbitEkf`, and the
 //! parameter descriptors that define estimator-state ordering. Public APIs
 //! mainly consume scalar residuals, Jacobians, and covariance-like matrices
 //! in solver space, while typed orbital and temporal quantities remain
@@ -33,7 +33,6 @@
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
 
 pub mod nonlinear;
 pub mod sequential;

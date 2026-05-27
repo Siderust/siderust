@@ -89,7 +89,7 @@ pub fn write_sp3_from_states<W: Write>(
         "%f  0.0000000  0.000000000  0.00000000000  0.000000000000000".to_string(),
         "%i    0    0    0    0      0      0      0      0         0".to_string(),
         "%i    0    0    0    0      0      0      0      0         0".to_string(),
-        "/* siderust-pod orbit product".to_string(),
+        "/* siderust orbit product".to_string(),
     ];
     let epochs = states
         .iter()

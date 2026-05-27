@@ -17,7 +17,7 @@
 //!
 //! Crate‑internal API: `sun_altitude_rad`, [`find_day_periods`],
 //! [`find_night_periods`], [`find_sun_range_periods`]. All period‑finding
-//! is delegated to [`crate::numeric::intervals`] which
+//! is delegated to [`crate::event::search::intervals`] which
 //! provides scan + Brent refinement + crossing classification + interval
 //! assembly. Below‑threshold and range variants are derived at negligible
 //! cost via [`crate::time::complement_within`] / set intersection.
@@ -31,7 +31,7 @@
 use crate::bodies::solar_system::Sun;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::numeric::intervals;
+use crate::event::search::intervals;
 use crate::qtty::*;
 use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
 

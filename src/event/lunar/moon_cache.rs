@@ -460,8 +460,8 @@ impl MoonAltitudeContext {
 // find_and_label_crossings, avoids probe evaluations
 // =============================================================================
 
-use crate::numeric::intervals::LabeledCrossing;
-use crate::numeric::root_finding;
+use crate::event::search::intervals::LabeledCrossing;
+use crate::event::search::root_finding;
 use crate::time::{Interval, ModifiedJulianDate};
 
 type Mjd = ModifiedJulianDate;

@@ -5,9 +5,9 @@
 //!
 //! Wraps the two failure surfaces this crate exposes:
 //!
-//! * Upstream [`siderust::astro::dynamics::errors::DynamicsError`] for any
+//! * Upstream [`crate::astro::dynamics::errors::DynamicsError`] for any
 //!   force-model / integrator / variational-equation failure.
-//! * [`siderust::pod::force::thrust::ManeuverError`] for finite-burn / thrust-arc input
+//! * [`crate::pod::force::thrust::ManeuverError`] for finite-burn / thrust-arc input
 //!   validation.
 //!
 //! Both upstream errors are funnelled here via [`From`] so consumer code

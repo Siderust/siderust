@@ -3,7 +3,7 @@
 
 //! Periodic empirical accelerations (1-CPR, 2-CPR) in the RTN frame.
 //!
-//! Upstream `siderust` ships only [`siderust::astro::dynamics::forces::EmpiricalAcceleration`],
+//! Upstream `siderust` ships only [`crate::astro::dynamics::forces::EmpiricalAcceleration`],
 //! a *constant* RTN acceleration. Sequential-filter POD typically also
 //! estimates once-per-revolution (1-CPR) and twice-per-revolution (2-CPR)
 //! sinusoidal coefficients. Those are POD-specific composition; they live

@@ -59,7 +59,6 @@
 //! - [`astro`]                   : Aberration, nutation, precession, sidereal time, conic helpers, event support, orbits, orbital mechanics
 //! - [`ephemeris`]               : Ephemeris traits and backends (VSOP87, ELP2000, DE4xx, Pluto)
 //! - [`event`]                   : Altitude/azimuth/lunar/solar/stellar event-search APIs
-//! - [`numeric`]                 : Reusable numerical kernels (root-finding, extrema, intervals, bracketing)
 //! - [`bodies`]                  : Planets, stars, satellites, asteroids, comets, and built-in catalogs
 //! - [`observatories`]           : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 //! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate (including `OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`, `Refractivity`, `CipCoordinate`)
@@ -119,7 +118,6 @@ pub mod formats;
 pub mod instruments;
 pub mod mission_context;
 pub mod mission_geometry;
-pub mod numeric;
 pub mod observatories;
 #[cfg(feature = "photometry")]
 pub mod photometry;
@@ -140,11 +138,6 @@ pub use coordinates::{SkyGrid, SkyGridCell};
 #[doc(hidden)]
 pub use data::checksum;
 pub(crate) mod macros;
-
-// ---------------------------------------------------------------------------
-// Convenience re‑exports: interval utilities
-// ---------------------------------------------------------------------------
-pub use numeric::intervals::intersect as intersect_periods;
 
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: unified azimuth API

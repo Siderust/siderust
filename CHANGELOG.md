@@ -87,15 +87,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   and `tle_sgp4_pipeline`.
 * `constops::report::html` — HTML QC report renderer moved from the library
   to `constops`, where service-shaped output belongs.
-
-### Changed
-
 * **`siderust-ffi`**: marked `publish = false` in `Cargo.toml`. FFI crates are
   not published by default; publish only when C API/ABI changes are intentional.
   See `siderust-ffi/README.md` for the manual publish procedure.
+* **`pod` feature**: no longer default-on. Enable explicitly with
+  `features = ["pod"]`. Default features now include `serde` only.
 
 ### Removed
 
+- Removed public `siderust::numeric`; the event-search internals (root-finding,
+  extrema, bracketing, interval assembly) have been moved to the crate-private
+  `event::search` module. Use the high-level `siderust::event::*` APIs instead.
+  The `intersect_periods` function remains available via
+  `siderust::time::intersect_periods`.
 * **`siderust-pod` crate removed.** All public items now live under
   `siderust::pod::{problem, run, providers, observation, estimation, qc,
   product, dynamics, io, spice}`. Migration: replace

@@ -79,7 +79,7 @@ pub struct PhaseResidual {
     pub cycles: f64,
 }
 
-/// Type-erased residual for use in heterogeneous [`siderust::pod::observation::batch::ObservationBatch`]
+/// Type-erased residual for use in heterogeneous [`crate::pod::observation::ObservationBatch`]
 /// collections.
 ///
 /// # Examples
@@ -182,7 +182,7 @@ pub trait Observation: Send + Sync {
 // ─── Object-safe erasure ─────────────────────────────────────────────────────
 
 /// Object-safe version of [`Observation`] used inside
-/// [`siderust::pod::observation::batch::ObservationBatch`].
+/// [`crate::pod::observation::ObservationBatch`].
 ///
 /// This trait is blanket-implemented for every `T: Observation` whose
 /// `Residual` type can be converted into [`ObsResidual`].

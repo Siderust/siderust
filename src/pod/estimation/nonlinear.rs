@@ -82,6 +82,14 @@ pub struct NonlinearReport {
 /// `assemble(params) -> NormalEquations` is invoked at every iteration
 /// with the *current* best parameter vector and is responsible for
 /// producing prefit residuals and partials around that point.
+///
+/// # Errors
+///
+/// Returns [`NonlinearError::Solver`] wrapping a [`WlsSolverError::Other`]
+/// if `opts.max_iter == 0`, any tolerance is non-finite or negative, or
+/// any element of `initial` is non-finite.  Returns
+/// [`NonlinearError::DidNotConverge`] if the loop completes without
+/// satisfying the convergence criteria.
 pub fn gauss_newton<F>(
     initial: Vec<f64>,
     opts: NonlinearOptions,
@@ -90,6 +98,30 @@ pub fn gauss_newton<F>(
 where
     F: FnMut(&[f64]) -> Result<NormalEquations, NonlinearError>,
 {
+    use super::wls::WlsSolverError;
+
+    if opts.max_iter == 0 {
+        return Err(NonlinearError::Solver(WlsSolverError::other(
+            "max_iter must be > 0",
+        )));
+    }
+    if !opts.tol_rel.is_finite() || opts.tol_rel < 0.0 {
+        return Err(NonlinearError::Solver(WlsSolverError::other(format!(
+            "tol_rel must be finite and ≥ 0 (got {})",
+            opts.tol_rel
+        ))));
+    }
+    if !opts.tol_chi2_rel.is_finite() || opts.tol_chi2_rel < 0.0 {
+        return Err(NonlinearError::Solver(WlsSolverError::other(format!(
+            "tol_chi2_rel must be finite and ≥ 0 (got {})",
+            opts.tol_chi2_rel
+        ))));
+    }
+    if let Some(bad) = initial.iter().copied().find(|v| !v.is_finite()) {
+        return Err(NonlinearError::Solver(WlsSolverError::other(format!(
+            "initial vector must be finite (got {bad})"
+        ))));
+    }
     let mut params = initial;
     let mut last_chi2 = f64::INFINITY;
     #[allow(unused_assignments)]

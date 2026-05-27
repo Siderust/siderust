@@ -15,9 +15,9 @@
 //! floor is bounded by RK4 truncation noise rather than by the
 //! linearisation, and `< 1e-7` is reached comfortably (typically `< 1e-8`).
 //!
-//! The function is force-model-agnostic: pass [`siderust::astro::dynamics::forces::TwoBody`],
-//! [`siderust::astro::dynamics::forces::J2`], or any [`ForceModel`] whose
-//! analytic [`ForceModel::partials`] are wired up.
+//! The function is force-model-agnostic: pass [`crate::astro::dynamics::forces::TwoBody`],
+//! [`crate::astro::dynamics::forces::J2`], or any `AccelerationModel` whose
+//! analytic partials are wired up.
 
 use crate::astro::dynamics::{DynamicsContext, OrbitState};
 use principia::{propagate_stm, rk4_propagate};

@@ -23,7 +23,7 @@
 //!
 //! - [`Aircraft`] — static identity record: ICAO 24-bit address, callsign,
 //!   and optional wake turbulence category.
-//! - [`AircraftState`] — snapshot of position ([`Geodetic<ECEF>`]) plus
+//! - [`AircraftState`] — snapshot of position (`Geodetic<ECEF>`) plus
 //!   geodetic altitude, horizontal velocity (ground-speed, track angle), and
 //!   vertical rate, all typed via [`crate::qtty`].
 //! - [`isa`] — ICAO International Standard Atmosphere model: pressure ↔

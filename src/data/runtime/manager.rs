@@ -10,7 +10,7 @@ use std::path::{Path, PathBuf};
 
 /// Manages a local data cache for `RuntimeDownload` datasets.
 ///
-/// Calling [`ensure`] or [`download`] on an `Embedded` or `ExternalProvider`
+/// Calling [`Self::ensure`] or [`Self::download`] on an `Embedded` or `ExternalProvider`
 /// dataset returns [`DatasetError::NotDownloadable`].
 ///
 /// # Example

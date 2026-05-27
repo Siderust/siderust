@@ -20,7 +20,7 @@
 //!   built on `math_core::intervals` (scan + Brent + interval algebra).
 //! - Twilight phase classification via [`twilight_classification`].
 //!
-//! All period‑finding delegates to [`crate::numeric::intervals`]
+//! All period‑finding delegates to `crate::event::search::intervals`
 //! which provides scan + Brent refinement + interval assembly. This module
 //! supplies the Sun‑altitude closure and JD↔MJD conversions.
 //!

@@ -17,3 +17,6 @@ pub mod horizontal;
 pub mod lunar;
 pub mod solar;
 pub mod stellar;
+
+#[allow(dead_code, unreachable_pub)]
+pub(crate) mod search;

@@ -18,7 +18,7 @@
 //! Crate‑internal API: `moon_altitude_rad`, [`find_moon_above_horizon`],
 //! [`find_moon_below_horizon`], [`find_moon_altitude_range`]. All
 //! period‑finding is delegated to
-//! [`crate::numeric::intervals`] which provides scan + Brent
+//! [`crate::event::search::intervals`] which provides scan + Brent
 //! refinement + crossing classification + interval assembly. A 2‑hour
 //! scan step safely brackets every moonrise/moonset (the shortest
 //! above‑horizon arc is ~4 h). Below‑threshold and range variants are
@@ -30,7 +30,7 @@
 use crate::bodies::solar_system::Moon;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::numeric::intervals;
+use crate::event::search::intervals;
 use crate::qtty::*;
 use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
 

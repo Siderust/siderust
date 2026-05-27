@@ -43,7 +43,7 @@ use std::io::Write;
 ///
 /// let manifest = RunManifest {
 ///     run_id: "test-run".into(),
-///     tool_version: "siderust-pod 0.0.0".into(),
+///     tool_version: "siderust 0.8.0".into(),
 ///     config_sha256: "0".repeat(64),
 ///     inputs: vec![],
 ///     outputs: vec![],
@@ -81,7 +81,7 @@ impl ManifestWriter {
     ///
     /// let m = RunManifest {
     ///     run_id: "00000000-0000-0000-0000-000000000000".into(),
-    ///     tool_version: "siderust-pod 0.0.0".into(),
+    ///     tool_version: "siderust 0.8.0".into(),
     ///     config_sha256: "a".repeat(64),
     ///     inputs: vec![],
     ///     outputs: vec![],
@@ -107,7 +107,7 @@ mod tests {
     fn sample_manifest() -> RunManifest {
         RunManifest {
             run_id: "00000000-0000-0000-0000-000000000000".into(),
-            tool_version: "siderust-pod 0.0.0".into(),
+            tool_version: "siderust 0.8.0".into(),
             config_sha256: "0".repeat(64),
             inputs: vec![],
             outputs: vec![],

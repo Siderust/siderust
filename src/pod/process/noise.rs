@@ -3,7 +3,7 @@
 
 //! Process-noise (`Q`) matrix construction for the sequential filter.
 //!
-//! The sequential EKF in `siderust-pod-estimation` consumes a discrete-time
+//! The sequential EKF in `siderust::pod::estimation` consumes a discrete-time
 //! process-noise covariance `Q(Δt)` block-diagonal in:
 //!
 //! 1. Cartesian position/velocity (driven by white acceleration noise).

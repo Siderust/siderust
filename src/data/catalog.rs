@@ -217,7 +217,7 @@ pub enum DatasetError {
     Download(String),
     /// Data integrity check failed (checksum mismatch, wrong size, etc.).
     Integrity(String),
-    /// The requested dataset cannot be managed by [`runtime::DatasetManager`]
+    /// The requested dataset cannot be managed by [`crate::data::runtime::DatasetManager`]
     /// because its acquisition kind is not [`Acquisition::RuntimeDownload`].
     NotDownloadable(DatasetId),
     /// SPICE format parse error forwarded from [`crate::formats::spice`].

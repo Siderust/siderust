@@ -1,14 +1,14 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Unified error enum for `siderust-pod-dynamics`.
+//! Unified error enum for `siderust::pod::propagation`.
 //!
 //! Wraps the failure surfaces this crate exposes:
 //!
-//! * [`siderust::pod::propagation::DynamicsError`] for any integrator,
+//! * [`crate::pod::propagation::DynamicsError`] for any integrator,
 //!   variational, or force-model failure surfaced through the typed adapter.
 //! * Registry / configuration validation errors raised by
-//!   [`siderust::pod::force::registry::ForceModelRegistry`] and friends.
+//!   [`crate::pod::force::registry::ForceModelRegistry`] and friends.
 //! * Process-noise input validation.
 //! * Explicit *feature-not-implemented* signal for stubs that the registry
 //!   recognises by name but cannot yet build (e.g. boxwing SRP).
@@ -18,7 +18,7 @@
 
 use thiserror::Error;
 
-/// Top-level error type for `siderust-pod-dynamics`.
+/// Top-level error type for `siderust::pod::propagation`.
 ///
 /// # Examples
 ///

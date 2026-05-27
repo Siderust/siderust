@@ -414,7 +414,7 @@ impl AltitudePeriodsProvider for direction::ICRS {
 // ---------------------------------------------------------------------------
 
 use crate::coordinates::transform::Transform;
-use crate::numeric::intervals;
+use crate::event::search::intervals;
 use crate::time::complement_within;
 
 /// Scan step for planet altitude threshold detection (2 hours in days).

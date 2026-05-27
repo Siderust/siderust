@@ -33,7 +33,7 @@ use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, Culminati
 use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::numeric::{extrema, intervals};
+use crate::event::search::{extrema, intervals};
 use crate::qtty::*;
 use crate::time::{complement_within, Interval, ModifiedJulianDate};
 

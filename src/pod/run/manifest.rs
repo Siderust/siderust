@@ -17,7 +17,7 @@ use serde::{Deserialize, Serialize};
 pub struct RunManifest {
     /// Free-form identifier (e.g. UUID) for the run.
     pub run_id: String,
-    /// Tool version string (e.g. `"siderust-pod 0.0.0"`).
+    /// Tool version string (e.g. `"siderust 0.8.0"`).
     pub tool_version: String,
     /// Hex SHA-256 of the canonical run configuration document.
     pub config_sha256: String,
@@ -68,7 +68,7 @@ mod tests {
     fn sample() -> RunManifest {
         RunManifest {
             run_id: "00000000-0000-0000-0000-000000000000".into(),
-            tool_version: "siderust-pod test".into(),
+            tool_version: "siderust test".into(),
             config_sha256: "0".repeat(64),
             inputs: vec![
                 DatasetRef {

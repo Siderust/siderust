@@ -38,7 +38,7 @@ pub type KilometerPerSecond = Per<Kilometer, Second>;
 
 /// Geocentric **TEME** Cartesian position with kilometre units.
 ///
-/// Re-export of [`siderust::coordinates::cartesian::position::TEME`] specialised
+/// Re-export of [`crate::coordinates::cartesian::position::TEME`] specialised
 /// to [`qtty::length::Kilometer`].
 pub type TemePositionKm = position::TEME<Kilometer>;
 

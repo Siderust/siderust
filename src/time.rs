@@ -115,4 +115,4 @@ pub fn modified_julian_date_from_chrono(dt: chrono::DateTime<chrono::Utc>) -> Mo
     ModifiedJulianDate::from(dt)
 }
 
-pub use crate::numeric::intervals::intersect as intersect_periods;
+pub use crate::event::search::intervals::intersect as intersect_periods;

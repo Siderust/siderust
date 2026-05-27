@@ -49,7 +49,7 @@ use super::types::{AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind, A
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::event::altitude::CrossingDirection;
-use crate::numeric::{extrema, intervals};
+use crate::event::search::{extrema, intervals};
 use crate::qtty::*;
 use crate::time::{complement_within, Interval, ModifiedJulianDate};
 

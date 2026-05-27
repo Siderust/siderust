@@ -25,7 +25,7 @@
 //!   (new/first‑quarter/full/last‑quarter), illumination period finders.
 //! - `photometry`: empirical lunar reflectance / phase attenuation models.
 //!
-//! All period‑finding delegates to [`crate::numeric::intervals`]
+//! All period‑finding delegates to `crate::event::search::intervals`
 //! which provides scan + Brent refinement + interval assembly. This module
 //! supplies the Moon‑altitude closure and JD↔MJD conversions.
 //!

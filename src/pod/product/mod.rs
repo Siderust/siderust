@@ -1,4 +1,4 @@
-//! # siderust-pod product writers
+//! # siderust::pod product writers
 //!
 //! ## Scientific scope
 //!
@@ -20,7 +20,7 @@
 //! | [`naming`] | IGS Long File Name helpers: `igs_lfn`, `sp3_filename`, `sp3_lfn`, `sp3_short_filename`, `clk_filename`, … |
 //! | [`residuals_csv`] | `ResidualRecord`, `ResidualCsvWriter` (streaming) |
 //! | `residuals_parquet` | `ResidualParquetWriter` (feature `parquet`) |
-//! | [`manifest`] | `ManifestWriter` for [`RunManifest`][siderust::pod::run::manifest::RunManifest] |
+//! | [`manifest`] | `ManifestWriter` for [`crate::pod::run::manifest::RunManifest`] |
 //! | [`qc_json`] | `QcDocument`, `write_qc_json` |
 //! | [`error`] | [`PodProductsError`] |
 //!
@@ -33,7 +33,6 @@
 //! - International GNSS Service. (2020). SP3-c / SP3-d Orbit Format
 //!   Specification.
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
 
 pub mod error;
 pub mod manifest;

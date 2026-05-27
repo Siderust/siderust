@@ -17,7 +17,7 @@
 //! [`Integrator`] is exactly that thin uniform interface. Each impl
 //! delegates to the canonical upstream [`principia::rk4_propagate`] /
 //! [`principia::dopri5_propagate`] / [`principia::dop853_propagate`] functions
-//! and re-raises any upstream [`siderust::astro::dynamics::errors::DynamicsError`]
+//! and re-raises any upstream [`crate::astro::dynamics::errors::DynamicsError`]
 //! through the crate-local [`DynamicsError`].
 
 use crate::astro::dynamics::{DynamicsContext, OrbitState};
@@ -67,7 +67,7 @@ pub trait Integrator {
 
 /// Fixed-step classical Runge-Kutta 4th-order integrator.
 ///
-/// Uses [`siderust::astro::dynamics::integrators::rk4_propagate`] under the
+/// Uses [`principia::rk4_propagate`] under the
 /// hood. The configured `step` is treated as a magnitude; the wrapper
 /// computes `n_steps = ceil(|dt| / step)` so the *effective* sub-step never
 /// exceeds `step` in absolute value. Forward propagation is supported (RK4
@@ -126,7 +126,7 @@ impl Integrator for Rk4Integrator {
 
 /// Adaptive Dormand-Prince 5(4) integrator (DOPRI5).
 ///
-/// Wraps [`siderust::astro::dynamics::integrators::dopri5_propagate`].
+/// Wraps [`principia::dopri5_propagate`].
 /// Suitable for general-purpose LEO/MEO propagation when 5th-order accuracy
 /// is enough.
 ///
@@ -159,7 +159,7 @@ impl Integrator for Dopri5Integrator {
 
 /// Adaptive Hairer DOP853 8th-order integrator.
 ///
-/// Wraps [`siderust::astro::dynamics::integrators::dop853_propagate`]. This
+/// Wraps [`principia::dop853_propagate`]. This
 /// is the high-precision choice for POD batch windows and finite-burn
 /// integration where 1e-9 relative tolerance is the working point.
 ///

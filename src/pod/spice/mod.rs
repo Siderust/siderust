@@ -4,19 +4,19 @@
 //! NAIF SPICE kernel reader and [`SpiceEphemerisProvider`] adapter.
 //!
 //! This module re-exports the pure kernel-parsing layer from
-//! [`siderust::formats::spice`] and adds the POD-specific
+//! [`crate::formats::spice`] and adds the POD-specific
 //! [`SpiceEphemerisProvider`] that implements
-//! [`siderust::pod::providers::EphemerisProvider`].
+//! [`crate::pod::providers::EphemerisProvider`].
 //!
 //! # Scope
 //!
 //! The pure DAF/SPK parsing, SPK segment evaluation (Type 2/3/9/13), body
 //! chain resolution, and NAIF body-ID lookup all live in
-//! `siderust::formats::spice`. This module only owns the thin POD
+//! `crate::formats::spice`. This module only owns the thin POD
 //! adapter:
 //!
 //! * [`SpiceEphemerisProvider`] — typed adapter implementing
-//!   [`siderust::pod::providers::EphemerisProvider`]. Center selection
+//!   [`crate::pod::providers::EphemerisProvider`]. Center selection
 //!   is **explicit** at construction time and is propagated as a typed
 //!   `affn` reference center on the returned [`SpiceState`].
 //!

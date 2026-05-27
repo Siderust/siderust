@@ -26,7 +26,7 @@
 //! no `f64` leaks to the public API.
 //!
 //! Submodules:
-//! - [`airmass`] — geometric path-length multipliers
+//! - [`mod@airmass`] — geometric path-length multipliers
 //!   ([`PlaneParallel`](airmass::PlaneParallel),
 //!   [`Young1994`](airmass::Young1994),
 //!   [`Rozenberg1966`](airmass::Rozenberg1966),

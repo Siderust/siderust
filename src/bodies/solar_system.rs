@@ -12,7 +12,7 @@
 //! Orbital elements are osculating values from the JPL planetary ephemeris;
 //! they capture mean orbital behaviour well for visualisation and coarse
 //! ephemeris but should not be used for precision close-approach analysis
-//! (use VSOP87 / ELP-2000 via [`crate::calculus`] for that). Bond albedo
+//! (use VSOP87 / ELP-2000 via [`crate::event`] for that). Bond albedo
 //! values are IAU/NASA consensus; they are typed as [`Albedos`] to prevent
 //! unit-confusion with geometric albedo.
 //!

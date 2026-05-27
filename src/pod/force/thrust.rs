@@ -4,7 +4,7 @@
 //! Finite-burn / thrust-arc physical model.
 //!
 //! This module provides a minimal but unit-safe thrust model usable both
-//! from precise-orbit-determination workflows (`siderust-pod-dynamics`,
+//! from precise-orbit-determination workflows (`siderust::pod`,
 //! where the constant scale factor / delta-v components are estimable)
 //! and from future mission-design workflows.
 //!

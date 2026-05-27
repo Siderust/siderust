@@ -1,4 +1,4 @@
-//! # siderust-pod quality control
+//! # siderust::pod quality control
 //!
 //! ## Scientific scope
 //!
@@ -25,7 +25,6 @@
 //! - Vallado, D. A. (2013). Fundamentals of Astrodynamics and Applications
 //!   (4th ed.). Microcosm Press.
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
 
 pub mod orbit_compare;
 pub mod residuals;

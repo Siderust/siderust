@@ -15,7 +15,7 @@
 
 use thiserror::Error;
 
-/// Unified error returned by all writers in `siderust-pod-products`.
+/// Unified error returned by all writers in `siderust::pod::product`.
 ///
 /// # Examples
 ///

@@ -1,4 +1,4 @@
-//! # siderust-pod observation models
+//! # siderust::pod observation models
 //!
 //! ## Scientific scope
 //!
@@ -37,7 +37,6 @@
 //!   Formats*.
 
 #![forbid(unsafe_code)]
-#![warn(missing_docs)]
 
 pub mod batch;
 pub mod corrections;

@@ -24,7 +24,7 @@
 //! let ctx = DynamicsContext::empty();
 //! assert!(ctx.require_ephemeris().is_err());
 //! assert!(ctx.require_atmosphere().is_err());
-//! assert!(ctx.require_gravity().is_err());
+//! assert!(ctx.require_gravity_field().is_err());
 //!
 //! // Builder with explicit providers.
 //! let ctx = DynamicsContextBuilder::new()
@@ -140,7 +140,7 @@ impl Default for Conventions {
 ///
 /// Convenience accessors ([`require_ephemeris`][Self::require_ephemeris],
 /// [`require_atmosphere`][Self::require_atmosphere],
-/// [`require_gravity`][Self::require_gravity]) return a typed
+/// [`require_gravity_field`][Self::require_gravity_field]) return a typed
 /// [`DynamicsError`] when the requested provider is absent, allowing force
 /// models to propagate the error cleanly without `unwrap`.
 pub struct DynamicsContext {
@@ -212,20 +212,6 @@ impl DynamicsContext {
                 "no atmosphere provider in DynamicsContext",
             )))
         })
-    }
-
-    /// Return a reference to the gravity field provider, or a
-    /// [`DynamicsError::GravityCoefficientUnavailable`] error (degree 0,
-    /// order 0) if none is configured.
-    pub fn require_gravity(
-        &self,
-    ) -> Result<&Arc<dyn GravityFieldProvider + Send + Sync>, DynamicsError> {
-        self.gravity
-            .as_ref()
-            .ok_or(DynamicsError::GravityCoefficientUnavailable {
-                degree: 0,
-                order: 0,
-            })
     }
 
     /// Return a reference to the gravity field provider, or
@@ -417,21 +403,21 @@ mod tests {
     }
 
     #[test]
-    fn require_gravity_returns_error_when_absent() {
+    fn require_gravity_field_returns_error_when_absent() {
         let ctx = DynamicsContext::empty();
-        let result = ctx.require_gravity();
+        let result = ctx.require_gravity_field();
         assert!(result.is_err());
         assert!(matches!(
             result.err().unwrap(),
-            DynamicsError::GravityCoefficientUnavailable { .. }
+            DynamicsError::GravityFieldUnavailable
         ));
     }
 
     #[test]
-    fn require_gravity_returns_ok_when_present() {
+    fn require_gravity_field_returns_ok_when_present() {
         let g: Arc<dyn GravityFieldProvider + Send + Sync> = Arc::new(TwoBodyEarth);
         let ctx = DynamicsContextBuilder::new().with_gravity(g).build();
-        assert!(ctx.require_gravity().is_ok());
+        assert!(ctx.require_gravity_field().is_ok());
     }
 
     #[test]

@@ -3,7 +3,7 @@
 
 //! Typed integrator adapter.
 //!
-//! Re-exports of [`siderust::pod::propagation::Integrator`] (and the concrete
+//! Re-exports of [`crate::pod::propagation::Integrator`] (and the concrete
 //! Rk4/Dopri5/Dop853 wrappers) live in the crate root. This module provides
 //! the POD-level convenience helpers that take a [`SpacecraftState`] (or
 //! [`OrbitState`]) plus a registry-built composite force model and return
@@ -63,7 +63,7 @@ where
 ///
 /// Spacecraft properties (`C_D`, `C_R`, `A/m`, mass) are passed through
 /// unchanged — finite-burn / mass-flow integration is the responsibility of
-/// the upstream `siderust::pod::force::thrust` module, not this adapter.
+/// the `crate::pod::force::thrust` module, not this adapter.
 ///
 /// # Example
 ///

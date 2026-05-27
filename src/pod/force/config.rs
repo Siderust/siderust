@@ -5,9 +5,9 @@
 //!
 //! [`ForceModelConfig`] is the high-level "which force families are on?"
 //! description that the POD service / CLI consumes. It maps to the
-//! lower-level [`siderust::pod::force::registry::ForceModelSpec`] vector via
+//! lower-level [`crate::pod::force::registry::ForceModelSpec`] vector via
 //! [`ForceModelConfig::to_specs`], which is then materialised by
-//! [`siderust::pod::force::registry::ForceModelRegistry`].
+//! [`crate::pod::force::registry::ForceModelRegistry`].
 //!
 //! The split keeps the config layer free of heavy numerical types while
 //! still guaranteeing that the registry-level translation is exhaustive

@@ -18,7 +18,7 @@
 //!   process crash cannot silently drop already-written residuals.
 //!
 //! Formatting is intentionally simple and stable; statistical
-//! aggregation remains the responsibility of [`siderust::pod::qc`].
+//! aggregation remains the responsibility of [`crate::pod::qc`].
 //!
 //! ## References
 //!

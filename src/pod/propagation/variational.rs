@@ -18,7 +18,7 @@
 //! ```
 //!
 //! The caller supplies a closure that maps a perturbed parameter value to a
-//! freshly-built [`ForceModel`]. This keeps the harness completely
+//! freshly-built `AccelerationModel`. This keeps the harness completely
 //! force-model agnostic — drag scale, SRP scale, and empirical-acceleration
 //! amplitudes all reduce to "vary one scalar, rebuild the force, re-propagate".
 //!
@@ -89,7 +89,7 @@ pub struct ParamStmReport {
 /// * `ctx` — dynamics context (atmosphere/ephemeris/gravity providers).
 /// * `p_nominal` — nominal value of the parameter.
 /// * `epsilon` — perturbation step. Must be strictly positive and finite.
-/// * `build_force` — closure `(p) -> impl ForceModel` that builds the
+/// * `build_force` — closure `(p) -> impl AccelerationModel` that builds the
 ///   force-model composite at parameter value `p`.
 ///
 /// # Errors
@@ -225,7 +225,7 @@ impl PropagatedArc {
 /// Propagates an orbit arc step-by-step, accumulating the state-transition
 /// matrix `Φ(tₖ, t₀)` at each step.
 ///
-/// Uses [`siderust::astro::dynamics::propagate_stm`] for each sub-step.
+/// Uses [`principia::propagate_stm`] for each sub-step.
 /// The cumulative STM is updated by left-multiplying the step STM:
 /// `Φ(tₖ₊₁, t₀) = Φ(tₖ₊₁, tₖ) · Φ(tₖ, t₀)`.
 ///

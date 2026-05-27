@@ -4,7 +4,7 @@
 //!
 //! Parquet is a columnar binary format that supports efficient analytical
 //! queries and compact storage for large residual tables. This module
-//! provides the same schema as [`siderust::residuals_csv`] but in Parquet
+//! provides the same schema as [`crate::pod::product::residuals_csv`] but in Parquet
 //! format for use in big-data pipelines and analytical tools.
 //!
 //! The schema and column semantics are identical to the CSV surface:

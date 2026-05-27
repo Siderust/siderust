@@ -1,10 +1,10 @@
 //! Parameter-vector covariance.
 //!
 //! State-only, frame/center-aware covariance lives in `siderust` as
-//! `siderust::astro::dynamics::covariance::StateCovariance` and is re-used
+//! `crate::astro::dynamics::covariance::StateCovariance` and is re-used
 //! directly. This module adds [`ParameterCovariance`] for the *full*
 //! estimator parameter vector, which mixes state, receiver clocks, biases,
-//! scales, and ambiguities (see [`siderust::pod::problem::parameter::ParameterOrdering`]).
+//! scales, and ambiguities (see [`crate::pod::problem::parameter::ParameterOrdering`]).
 
 use crate::pod::problem::parameter::ParameterOrdering;
 #[cfg(feature = "serde")]

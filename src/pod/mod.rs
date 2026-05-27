@@ -8,11 +8,9 @@
 //! `siderust::pod` is a library of typed building blocks for Precise Orbit
 //! Determination (POD) of artificial satellites — GNSS and LEO — built on
 //! the rest of `siderust` and the [`qtty`], [`tempoch`], and [`affn`]
-//! baseline crates. It was previously distributed as the standalone
-//! `siderust-pod` crate; it now lives behind the default-on `pod` Cargo
-//! feature inside `siderust`.
+//! baseline crates. Enable it with the `pod` Cargo feature.
 //!
-//! The crate provides the geophysical primitives needed by any POD pipeline:
+//! The module provides the geophysical primitives needed by any POD pipeline:
 //!
 //! - typed problem definitions and run metadata ([`problem`], [`run`]),
 //! - high-fidelity force-model composition, propagation, and process-noise building blocks on top of `siderust` ([`force`], [`propagation`], [`process`]),

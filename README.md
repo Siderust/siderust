@@ -28,17 +28,20 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 
 ## Supported Feature Flags
 
-| Feature  | Default | What it enables |
-|----------|---------|-----------------|
-| *(none)* | ✔       | VSOP87 + ELP2000-82B analytical ephemerides, full coordinate/altitude API |
-| `de440`  |         | JPL DE440 Chebyshev ephemeris backend (1550–2650 CE) |
-| `de441`  |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
-| `serde`  |         | `Serialize` / `Deserialize` on public types |
-| `atmosphere` |     | Atmospheric tables and radiative transfer helpers |
-| `photometry` |        | Photometric passbands and throughput unit |
-| `tables` |         | Additional tabulated astronomy helpers |
-| `runtime-data` |   | Runtime dataset-loading helpers |
-| `regen-data` |     | Regenerates committed VSOP87/ELP2000 tables |
+| Feature        | Default | What it enables |
+|----------------|---------|-----------------|
+| `serde`        | ✔       | `Serialize` / `Deserialize` on public types (default) |
+| *(base)*       |         | VSOP87 + ELP2000-82B analytical ephemerides, full coordinate/altitude API |
+| `de440`        |         | JPL DE440 Chebyshev ephemeris backend (1550–2650 CE) |
+| `de441`        |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
+| `atmosphere`   |         | Atmospheric tables and radiative transfer helpers |
+| `photometry`   |         | Photometric passbands and throughput unit (Johnson–Cousins UBVRI) |
+| `spice`        |         | High-level SPICE kernel context (`SpiceContext`, `KernelSet`) |
+| `pod`          |         | Precise Orbit Determination toolkit (WLS, EKF, force models, I/O) |
+| `pod-parquet`  |         | Parquet residuals writer (implies `pod`) |
+| `pod-doris`    |         | DORIS RINEX observation parser (implies `pod`) |
+| `runtime-data` |         | Runtime dataset-loading helpers |
+| `regen-data`   |         | Regenerates committed VSOP87/ELP2000 tables |
 
 > **Note:** `no_std` and `f128` quad‑precision are **not** supported today.
 > The crate depends on `std`‑only libraries such as `chrono`.
@@ -91,7 +94,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.7.0"
+siderust = "0.8"
 ```
 
 Committed datasets (VSOP87/ELP2000 and tempoch-owned EOP tables) are available offline. Optional JPL kernels are downloaded on demand when the corresponding feature is enabled; see `doc/datasets.md`.
@@ -112,21 +115,21 @@ Optional features add JPL backends:
 
 ```toml
 [dependencies]
-siderust = { version = "0.7.0", default-features = false }
+siderust = { version = "0.8", default-features = false }
 ```
 
 2. Enable DE440
 
 ```toml
 [dependencies]
-siderust = { version = "0.7.0", features = ["de440"] }
+siderust = { version = "0.8", features = ["de440"] }
 ```
 
 3. Enable DE441
 
 ```toml
 [dependencies]
-siderust = { version = "0.7.0", features = ["de441"] }
+siderust = { version = "0.8", features = ["de441"] }
 ```
 
 4. Combine backends in one binary
@@ -152,7 +155,7 @@ You can combine ephemeris features with others (for example `serde`):
 
 ```toml
 [dependencies]
-siderust = { version = "0.7.0", features = ["de441", "serde"] }
+siderust = { version = "0.8", features = ["de441", "serde"] }
 ```
 
 ### JPL Build Modes: Real vs Stubbed

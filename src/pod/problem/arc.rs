@@ -73,7 +73,7 @@ impl std::fmt::Display for ArcId {
 /// before constructing an [`ArcDefinition`].
 ///
 /// `step_hint` is *advisory* — propagators may pick a different step. It
-/// is preserved in the [`siderust::pod::run::manifest::RunManifest`] so reruns can
+/// is preserved in the [`crate::pod::run::manifest::RunManifest`] so reruns can
 /// reproduce the original hint exactly.
 ///
 /// # Examples

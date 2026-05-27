@@ -25,7 +25,7 @@ version = "0.8.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
-license = "AGPL-3.0"
+license = "AGPL-3.0-or-later"
 readme = "README.md"
 repository = "https://github.com/Siderust/siderust"
 homepage = "https://github.com/Siderust/siderust"
@@ -71,7 +71,7 @@ path = "scripts/generate-lagrange-cheby.rs"
 required-features = ["lagrange-centers"]
 
 [features]
-default = ["pod", "serde"]
+default = ["serde"]
 de440 = []
 de441 = []
 lagrange-centers = []

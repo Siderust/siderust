@@ -61,7 +61,7 @@ use crate::coordinates::cartesian;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames;
 use crate::ephemeris::Ephemeris;
-use crate::numeric::intervals;
+use crate::event::search::intervals;
 use crate::qtty::*;
 use crate::time::{Interval, JulianDate, ModifiedJulianDate};
 use std::f64::consts::PI;

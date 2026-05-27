@@ -56,6 +56,11 @@ pub struct SpacecraftProperties {
 
 impl SpacecraftProperties {
     /// Construct from all physical parameters.
+    ///
+    /// # Panics
+    ///
+    /// Panics if any parameter is invalid (non-finite, mass ≤ 0, negative
+    /// areas or coefficients). For a checked variant see [`Self::try_new`].
     #[inline]
     pub fn new(
         mass: Kilograms,
@@ -64,9 +69,76 @@ impl SpacecraftProperties {
         srp_area: SquareMeters,
         cr: SrpCoefficient,
     ) -> Self {
-        let area_to_mass_drag = AreaToMass::new(drag_area.value() / mass.value());
-        let area_to_mass_srp = AreaToMass::new(srp_area.value() / mass.value());
-        Self {
+        Self::try_new(mass, drag_area, cd, srp_area, cr)
+            .expect("SpacecraftProperties::new: invalid physical parameters")
+    }
+
+    /// Fallible constructor; returns an error string describing the first
+    /// violated invariant.
+    ///
+    /// Invariants:
+    /// - `mass.value()` finite and > 0
+    /// - `drag_area.value()` finite and ≥ 0
+    /// - `srp_area.value()` finite and ≥ 0
+    /// - `cd.value()` finite and ≥ 0
+    /// - `cr.value()` finite and ≥ 0
+    ///
+    /// # Errors
+    ///
+    /// Returns a descriptive [`String`] if any invariant is violated.
+    ///
+    /// # Examples
+    ///
+    /// ```
+    /// use siderust::astro::dynamics::state::SpacecraftProperties;
+    /// use siderust::qtty::{DragCoefficient, Kilograms, SquareMeters, SrpCoefficient};
+    ///
+    /// assert!(SpacecraftProperties::try_new(
+    ///     Kilograms::new(500.0),
+    ///     SquareMeters::new(2.0),
+    ///     DragCoefficient::new(2.2),
+    ///     SquareMeters::new(2.0),
+    ///     SrpCoefficient::new(1.3),
+    /// ).is_ok());
+    ///
+    /// assert!(SpacecraftProperties::try_new(
+    ///     Kilograms::new(0.0),      // mass must be > 0
+    ///     SquareMeters::new(2.0),
+    ///     DragCoefficient::new(2.2),
+    ///     SquareMeters::new(2.0),
+    ///     SrpCoefficient::new(1.3),
+    /// ).is_err());
+    /// ```
+    pub fn try_new(
+        mass: Kilograms,
+        drag_area: SquareMeters,
+        cd: DragCoefficient,
+        srp_area: SquareMeters,
+        cr: SrpCoefficient,
+    ) -> Result<Self, String> {
+        let m = mass.value();
+        if !m.is_finite() || m <= 0.0 {
+            return Err(format!("mass must be finite and > 0 (got {m})"));
+        }
+        let da = drag_area.value();
+        if !da.is_finite() || da < 0.0 {
+            return Err(format!("drag_area must be finite and ≥ 0 (got {da})"));
+        }
+        let sa = srp_area.value();
+        if !sa.is_finite() || sa < 0.0 {
+            return Err(format!("srp_area must be finite and ≥ 0 (got {sa})"));
+        }
+        let cd_v = cd.value();
+        if !cd_v.is_finite() || cd_v < 0.0 {
+            return Err(format!("cd must be finite and ≥ 0 (got {cd_v})"));
+        }
+        let cr_v = cr.value();
+        if !cr_v.is_finite() || cr_v < 0.0 {
+            return Err(format!("cr must be finite and ≥ 0 (got {cr_v})"));
+        }
+        let area_to_mass_drag = AreaToMass::new(da / m);
+        let area_to_mass_srp = AreaToMass::new(sa / m);
+        Ok(Self {
             mass,
             drag_area,
             cd,
@@ -74,7 +146,7 @@ impl SpacecraftProperties {
             cr,
             area_to_mass_drag,
             area_to_mass_srp,
-        }
+        })
     }
 
     /// Drag area-to-mass ratio: `drag_area / mass` (m²/kg).
@@ -138,5 +210,65 @@ mod tests {
         );
         assert_eq!(props.drag_area_to_mass(), AreaToMass::new(0.004));
         assert_eq!(props.srp_area_to_mass(), AreaToMass::new(0.006));
+    }
+
+    #[test]
+    fn try_new_rejects_zero_mass() {
+        assert!(SpacecraftProperties::try_new(
+            Kilograms::new(0.0),
+            SquareMeters::new(2.0),
+            DragCoefficient::new(2.2),
+            SquareMeters::new(2.0),
+            SrpCoefficient::new(1.3),
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn try_new_rejects_negative_mass() {
+        assert!(SpacecraftProperties::try_new(
+            Kilograms::new(-1.0),
+            SquareMeters::new(2.0),
+            DragCoefficient::new(2.2),
+            SquareMeters::new(2.0),
+            SrpCoefficient::new(1.3),
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn try_new_rejects_nan_mass() {
+        assert!(SpacecraftProperties::try_new(
+            Kilograms::new(f64::NAN),
+            SquareMeters::new(2.0),
+            DragCoefficient::new(2.2),
+            SquareMeters::new(2.0),
+            SrpCoefficient::new(1.3),
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn try_new_rejects_negative_drag_area() {
+        assert!(SpacecraftProperties::try_new(
+            Kilograms::new(500.0),
+            SquareMeters::new(-1.0),
+            DragCoefficient::new(2.2),
+            SquareMeters::new(2.0),
+            SrpCoefficient::new(1.3),
+        )
+        .is_err());
+    }
+
+    #[test]
+    fn try_new_accepts_zero_drag_area() {
+        assert!(SpacecraftProperties::try_new(
+            Kilograms::new(500.0),
+            SquareMeters::new(0.0),
+            DragCoefficient::new(2.2),
+            SquareMeters::new(2.0),
+            SrpCoefficient::new(1.3),
+        )
+        .is_ok());
     }
 }
