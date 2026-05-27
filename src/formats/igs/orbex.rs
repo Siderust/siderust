@@ -307,3 +307,145 @@ fn orbex_epoch_to_mjd(year: i32, doy: u32, sod: f64) -> f64 {
     let days = (epoch - mjd_ref).num_days() as f64;
     days + sod / 86400.0
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::formats::ParseMode;
+
+    fn orb_only_text() -> String {
+        [
+            "%=ORBEX  0.09",
+            "%%",
+            "+EPHEMERIS/DATA",
+            "#ORB",
+            "## 2024 21 21600.000000000",
+            " G01  1.0E+07  2.0E+06  3.0E+06",
+            "-EPHEMERIS/DATA",
+            "%ENDORBEX",
+        ]
+        .join("\n")
+    }
+
+    #[test]
+    fn read_orbex_orb_entry() {
+        let prod = read_orbex(orb_only_text().as_bytes(), ParseMode::Strict).unwrap();
+        assert_eq!(prod.orbits.len(), 1);
+        assert_eq!(prod.orbits[0].sat, "G01");
+        assert_eq!(prod.orbits[0].pos_m[0], 1.0e7);
+        assert!(prod.orbits[0].vel_m_s.is_none());
+    }
+
+    #[test]
+    fn read_orbex_orb_with_velocity() {
+        let text = [
+            "%=ORBEX  0.09",
+            "%%",
+            "+EPHEMERIS/DATA",
+            "#ORB",
+            "## 2024 21 0.0",
+            " G02  1.0E+07  0.0  0.0  100.0  200.0  300.0",
+            "-EPHEMERIS/DATA",
+            "%ENDORBEX",
+        ]
+        .join("\n");
+        let prod = read_orbex(text.as_bytes(), ParseMode::Strict).unwrap();
+        assert_eq!(prod.orbits.len(), 1);
+        let vel = prod.orbits[0].vel_m_s.unwrap();
+        assert_eq!(vel[0], 100.0);
+        assert_eq!(vel[1], 200.0);
+        assert_eq!(vel[2], 300.0);
+    }
+
+    #[test]
+    fn read_orbex_clk_entry() {
+        let text = [
+            "%=ORBEX  0.09",
+            "%%",
+            "+EPHEMERIS/DATA",
+            "#CLK",
+            "## 2024 21 0.0",
+            " G01  1.5E-7",
+            "-EPHEMERIS/DATA",
+            "%ENDORBEX",
+        ]
+        .join("\n");
+        let prod = read_orbex(text.as_bytes(), ParseMode::Strict).unwrap();
+        assert_eq!(prod.clocks.len(), 1);
+        assert_eq!(prod.clocks[0].sat, "G01");
+        assert!((prod.clocks[0].bias_s - 1.5e-7).abs() < 1e-15);
+    }
+
+    #[test]
+    fn read_orbex_att_entry() {
+        let text = [
+            "%=ORBEX  0.09",
+            "%%",
+            "+EPHEMERIS/DATA",
+            "#ATT",
+            "## 2024 21 0.0",
+            " G01  1.0  0.0  0.0  0.0",
+            "-EPHEMERIS/DATA",
+            "%ENDORBEX",
+        ]
+        .join("\n");
+        let prod = read_orbex(text.as_bytes(), ParseMode::Strict).unwrap();
+        assert_eq!(prod.attitudes.len(), 1);
+        assert_eq!(prod.attitudes[0].quaternion[0], 1.0);
+    }
+
+    #[test]
+    fn read_orbex_short_record_strict_is_error() {
+        let text = [
+            "%=ORBEX  0.09",
+            "+EPHEMERIS/DATA",
+            "#ORB",
+            "## 2024 21 0.0",
+            " G01  1.0E+07",
+            "-EPHEMERIS/DATA",
+            "%ENDORBEX",
+        ]
+        .join("\n");
+        assert!(read_orbex(text.as_bytes(), ParseMode::Strict).is_err());
+    }
+
+    #[test]
+    fn read_orbex_short_record_permissive_skips() {
+        let text = [
+            "%=ORBEX  0.09",
+            "+EPHEMERIS/DATA",
+            "#ORB",
+            "## 2024 21 0.0",
+            " G01  1.0E+07",
+            "-EPHEMERIS/DATA",
+            "%ENDORBEX",
+        ]
+        .join("\n");
+        let prod = read_orbex(text.as_bytes(), ParseMode::Permissive).unwrap();
+        assert!(prod.orbits.is_empty());
+    }
+
+    #[test]
+    fn read_orbex_unknown_section_sets_none() {
+        let text = [
+            "%=ORBEX  0.09",
+            "+EPHEMERIS/DATA",
+            "#FOO",
+            "## 2024 21 0.0",
+            " G01  1.0E+07  2.0  3.0",
+            "-EPHEMERIS/DATA",
+            "%ENDORBEX",
+        ]
+        .join("\n");
+        let prod = read_orbex(text.as_bytes(), ParseMode::Permissive).unwrap();
+        assert!(prod.orbits.is_empty());
+        assert!(prod.clocks.is_empty());
+        assert!(prod.attitudes.is_empty());
+    }
+
+    #[test]
+    fn read_orbex_version_parsed() {
+        let prod = read_orbex(orb_only_text().as_bytes(), ParseMode::Permissive).unwrap();
+        assert_eq!(prod.version, "0.09");
+    }
+}

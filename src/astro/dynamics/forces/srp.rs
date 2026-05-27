@@ -356,4 +356,174 @@ mod tests {
                 > 0.0
         );
     }
+
+    // ── cylindrical_shadow_factor ──────────────────────────────────────────
+
+    #[test]
+    fn cylindrical_full_sunlight() {
+        // Satellite on the sunny side: projection onto sun direction is positive
+        let factor = cylindrical_shadow_factor([7_000.0, 0.0, 0.0], [1.496e8, 0.0, 0.0], 6_371.0);
+        assert_eq!(factor, 1.0);
+    }
+
+    #[test]
+    fn cylindrical_deep_shadow() {
+        // Satellite directly behind Earth, inside the cylinder
+        let factor =
+            cylindrical_shadow_factor([-7_000.0, 0.0, 0.0], [1.496e8, 0.0, 0.0], 6_371.0);
+        assert_eq!(factor, 0.0);
+    }
+
+    #[test]
+    fn cylindrical_behind_but_outside_cylinder() {
+        // Behind Earth but perpendicular distance > R_EARTH → illuminated
+        let factor =
+            cylindrical_shadow_factor([-7_000.0, 8_000.0, 0.0], [1.496e8, 0.0, 0.0], 6_371.0);
+        assert_eq!(factor, 1.0);
+    }
+
+    #[test]
+    fn cylindrical_zero_sun_returns_one() {
+        let factor = cylindrical_shadow_factor([-7_000.0, 0.0, 0.0], [0.0, 0.0, 0.0], 6_371.0);
+        assert_eq!(factor, 1.0);
+    }
+
+    // ── conical_shadow_factor ──────────────────────────────────────────────
+
+    #[test]
+    fn conical_full_illumination() {
+        let nu = conical_shadow_factor(
+            [7_000.0, 0.0, 0.0],
+            [1.496e8, 0.0, 0.0],
+            6_371.0,
+            695_700.0,
+        );
+        assert_eq!(nu, 1.0);
+    }
+
+    #[test]
+    fn conical_full_shadow() {
+        // Satellite directly behind Earth along the Sun–Earth line
+        let nu = conical_shadow_factor(
+            [-7_000.0, 0.0, 0.0],
+            [1.496e8, 0.0, 0.0],
+            6_371.0,
+            695_700.0,
+        );
+        assert_eq!(nu, 0.0);
+    }
+
+    #[test]
+    fn conical_penumbra() {
+        // Satellite at edge of shadow cone — partial overlap expected
+        let nu = conical_shadow_factor(
+            [-7_000.0, 6_371.0, 0.0],
+            [1.496e8, 0.0, 0.0],
+            6_371.0,
+            695_700.0,
+        );
+        assert!(nu > 0.0 && nu < 1.0, "expected penumbra, got {nu}");
+    }
+
+    #[test]
+    fn conical_annular_eclipse() {
+        // Toy geometry: tiny Earth radius, large Sun radius → annular eclipse
+        let nu = conical_shadow_factor([-5.0, 0.0, 0.0], [10.0, 0.0, 0.0], 1.0, 100.0);
+        assert!(nu > 0.0 && nu < 1.0, "expected annular eclipse, got {nu}");
+    }
+
+    #[test]
+    fn conical_zero_d_earth_returns_one() {
+        let nu = conical_shadow_factor(
+            [0.0, 0.0, 0.0],
+            [1.496e8, 0.0, 0.0],
+            6_371.0,
+            695_700.0,
+        );
+        assert_eq!(nu, 1.0);
+    }
+
+    #[test]
+    fn conical_zero_d_sun_returns_one() {
+        // Satellite at the same position as the Sun
+        let nu = conical_shadow_factor(
+            [1.496e8, 0.0, 0.0],
+            [1.496e8, 0.0, 0.0],
+            6_371.0,
+            695_700.0,
+        );
+        assert_eq!(nu, 1.0);
+    }
+
+    // ── EclipseModel trait impls ───────────────────────────────────────────
+
+    #[test]
+    fn cylindrical_eclipse_factor_sunlit() {
+        let r_sat = Displacement::<GCRS, Kilometer>::new(7_000.0, 0.0, 0.0);
+        let r_sun = Displacement::<GCRS, Kilometer>::new(1.496e8, 0.0, 0.0);
+        assert_eq!(Cylindrical::eclipse_factor(r_sat, r_sun).value(), 1.0);
+    }
+
+    #[test]
+    fn cylindrical_eclipse_factor_shadow() {
+        let r_sat = Displacement::<GCRS, Kilometer>::new(-7_000.0, 0.0, 0.0);
+        let r_sun = Displacement::<GCRS, Kilometer>::new(1.496e8, 0.0, 0.0);
+        assert_eq!(Cylindrical::eclipse_factor(r_sat, r_sun).value(), 0.0);
+    }
+
+    #[test]
+    fn conical_eclipse_factor_sunlit() {
+        let r_sat = Displacement::<GCRS, Kilometer>::new(7_000.0, 0.0, 0.0);
+        let r_sun = Displacement::<GCRS, Kilometer>::new(1.496e8, 0.0, 0.0);
+        assert_eq!(Conical::eclipse_factor(r_sat, r_sun).value(), 1.0);
+    }
+
+    #[test]
+    fn conical_eclipse_factor_shadow() {
+        let r_sat = Displacement::<GCRS, Kilometer>::new(-7_000.0, 0.0, 0.0);
+        let r_sun = Displacement::<GCRS, Kilometer>::new(1.496e8, 0.0, 0.0);
+        assert_eq!(Conical::eclipse_factor(r_sat, r_sun).value(), 0.0);
+    }
+
+    // ── CannonballSrp<Cylindrical> ─────────────────────────────────────────
+
+    #[test]
+    fn cylindrical_srp_zero_in_shadow() {
+        let srp = CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
+        let state = OrbitState::new(
+            JulianDate::JD_EPOCH_J2000_0.to_j2000s(),
+            Position::<GCRS>::new(-(R_EARTH.value() + 500.0), 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        );
+        let mag = srp.acceleration(&state, &ctx_stub()).unwrap().magnitude().value();
+        assert_eq!(mag, 0.0);
+    }
+
+    #[test]
+    fn cylindrical_srp_nonzero_in_sunlight() {
+        let srp = CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
+        let mag = srp.acceleration(&leo(), &ctx_stub()).unwrap().magnitude().value();
+        assert!((1e-11..5e-10).contains(&mag));
+    }
+
+    // ── CannonballSrp<Conical> ─────────────────────────────────────────────
+
+    #[test]
+    fn conical_srp_zero_in_shadow() {
+        let srp = CannonballSrp::<Conical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
+        let state = OrbitState::new(
+            JulianDate::JD_EPOCH_J2000_0.to_j2000s(),
+            Position::<GCRS>::new(-(R_EARTH.value() + 500.0), 0.0, 0.0),
+            Velocity::<GCRS>::new(0.0, 7.5, 0.0),
+        );
+        let mag = srp.acceleration(&state, &ctx_stub()).unwrap().magnitude().value();
+        assert_eq!(mag, 0.0);
+    }
+
+    #[test]
+    fn conical_srp_nonzero_in_sunlight() {
+        let srp = CannonballSrp::<Conical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
+        let mag = srp.acceleration(&leo(), &ctx_stub()).unwrap().magnitude().value();
+        assert!((1e-11..5e-10).contains(&mag));
+    }
 }

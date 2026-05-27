@@ -298,3 +298,111 @@ pub fn write_tdm<W: Write>(w: &mut W, msg: &TdmMessage) -> Result<(), FormatErro
     writeln!(w, "DATA_STOP").map_err(FormatError::Io)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn base_tdm_text() -> &'static str {
+        "CCSDS_TDM_VERS = 1.0\n\
+         META_START\n\
+         PARTICIPANT_1 = STATION_A\n\
+         PARTICIPANT_2 = SAT1\n\
+         MODE = SEQUENTIAL\n\
+         PATH = 1,2,1\n\
+         TIME_SYSTEM = UTC\n\
+         META_STOP\n\
+         DATA_START\n\
+         RANGE = 2024-001T12:00:00 : 23000.0\n\
+         DATA_STOP\n"
+    }
+
+    #[test]
+    fn read_tdm_basic_range() {
+        let msg = read_tdm(base_tdm_text().as_bytes()).unwrap();
+        assert_eq!(msg.observations.len(), 1);
+        assert_eq!(msg.observations[0].obs_type, ObservationType::Range);
+        assert_eq!(msg.observations[0].value, 23000.0);
+        assert_eq!(msg.observations[0].epoch, "2024-001T12:00:00");
+    }
+
+    #[test]
+    fn read_tdm_all_obs_types() {
+        let text = "CCSDS_TDM_VERS = 1.0\n\
+                    META_START\nPARTICIPANT_1 = S\nMETA_STOP\n\
+                    DATA_START\n\
+                    RANGE = 2024-001T00:00:00 : 1.0\n\
+                    DOPPLER_INSTANTANEOUS = 2024-001T00:01:00 : 2.0\n\
+                    ANGLE_1 = 2024-001T00:02:00 : 3.0\n\
+                    ANGLE_2 = 2024-001T00:03:00 : 4.0\n\
+                    MY_CUSTOM_OBS = 2024-001T00:04:00 : 5.0\n\
+                    DATA_STOP\n";
+        let msg = read_tdm(text.as_bytes()).unwrap();
+        assert_eq!(msg.observations.len(), 5);
+        assert_eq!(msg.observations[1].obs_type, ObservationType::Doppler);
+        assert_eq!(msg.observations[2].obs_type, ObservationType::Angle1);
+        assert_eq!(msg.observations[3].obs_type, ObservationType::Angle2);
+        assert!(matches!(&msg.observations[4].obs_type, ObservationType::Other(s) if s == "MY_CUSTOM_OBS"));
+    }
+
+    #[test]
+    fn read_tdm_multiple_metadata_blocks() {
+        let text = "CCSDS_TDM_VERS = 1.0\n\
+                    META_START\nPARTICIPANT_1 = A\nMETA_STOP\n\
+                    META_START\nPARTICIPANT_1 = B\nMETA_STOP\n\
+                    DATA_START\nRANGE = 2024-001T00:00:00 : 10.0\nDATA_STOP\n";
+        let msg = read_tdm(text.as_bytes()).unwrap();
+        assert_eq!(msg.metadata.len(), 2);
+        assert_eq!(msg.metadata[0].participants[0], "A");
+        assert_eq!(msg.metadata[1].participants[0], "B");
+    }
+
+    #[test]
+    fn read_tdm_missing_separator_is_error() {
+        let text = "CCSDS_TDM_VERS = 1.0\n\
+                    META_START\nPARTICIPANT_1 = S\nMETA_STOP\n\
+                    DATA_START\n\
+                    RANGE = 2024-001T00:00:00_NO_SEPARATOR\n\
+                    DATA_STOP\n";
+        assert!(read_tdm(text.as_bytes()).is_err());
+    }
+
+    #[test]
+    fn read_tdm_invalid_float_is_error() {
+        let text = "CCSDS_TDM_VERS = 1.0\n\
+                    META_START\nPARTICIPANT_1 = S\nMETA_STOP\n\
+                    DATA_START\n\
+                    RANGE = 2024-001T00:00:00 : not_a_float\n\
+                    DATA_STOP\n";
+        assert!(read_tdm(text.as_bytes()).is_err());
+    }
+
+    #[test]
+    fn write_tdm_roundtrip() {
+        let mut msg = TdmMessage::default();
+        msg.metadata.push(TdmMetadata {
+            participants: vec!["STATION_A".to_string(), "SAT1".to_string()],
+            mode: "SEQUENTIAL".to_string(),
+            path: "1,2,1".to_string(),
+            time_system: "UTC".to_string(),
+        });
+        msg.observations.push(ObservationData {
+            obs_type: ObservationType::Range,
+            epoch: "2024-001T12:00:00".to_string(),
+            value: 23000.0,
+        });
+        msg.observations.push(ObservationData {
+            obs_type: ObservationType::Angle1,
+            epoch: "2024-001T12:01:00".to_string(),
+            value: 45.5,
+        });
+        let mut buf = Vec::new();
+        write_tdm(&mut buf, &msg).unwrap();
+        let text = String::from_utf8(buf.clone()).unwrap();
+        assert!(text.contains("RANGE"));
+        assert!(text.contains("ANGLE_1"));
+        let parsed = read_tdm(buf.as_slice()).unwrap();
+        assert_eq!(parsed.observations.len(), 2);
+        assert_eq!(parsed.observations[0].value, 23000.0);
+    }
+}

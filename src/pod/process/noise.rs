@@ -510,4 +510,69 @@ mod tests {
         let p = ProcessNoise::PiecewiseConstant { intervals: vec![] };
         assert_eq!(p.sigma_at(Second::new(0.0)), (0.0, 0.0));
     }
+
+    #[test]
+    fn q_matrix_negative_dt_is_error() {
+        let m = ProcessNoiseModel {
+            position_velocity: WhiteAccelPsd::isotropic(KmPerSecondsSquared::new(1e-9)),
+            drag_scale: None,
+            srp_scale: None,
+            empirical_white: None,
+        };
+        assert!(matches!(
+            m.q_matrix(Second::new(-1.0)).unwrap_err(),
+            PodDynamicsError::InvalidProcessNoise(_)
+        ));
+    }
+
+    #[test]
+    fn gauss_markov_negative_sigma_is_error() {
+        let gm = GaussMarkovParams { sigma: -1.0, tau: Second::new(3600.0) };
+        assert!(matches!(
+            gm.variance_after(Second::new(60.0)).unwrap_err(),
+            PodDynamicsError::InvalidProcessNoise(_)
+        ));
+    }
+
+    #[test]
+    fn gauss_markov_zero_tau_is_error() {
+        let gm = GaussMarkovParams { sigma: 1.0, tau: Second::new(0.0) };
+        assert!(matches!(
+            gm.variance_after(Second::new(60.0)).unwrap_err(),
+            PodDynamicsError::InvalidProcessNoise(_)
+        ));
+    }
+
+    #[test]
+    fn matrix_is_psd_identity_is_true() {
+        let identity = vec![vec![1.0, 0.0], vec![0.0, 1.0]];
+        assert!(matrix_is_psd(&identity));
+    }
+
+    #[test]
+    fn matrix_is_psd_indefinite_is_false() {
+        // [[1,2],[2,1]] has eigenvalues 3 and -1 → not PSD
+        let m = vec![vec![1.0, 2.0], vec![2.0, 1.0]];
+        assert!(!matrix_is_psd(&m));
+    }
+
+    #[test]
+    fn white_accel_psd_isotropic_squares_value() {
+        let sigma = 1e-4;
+        let psd = WhiteAccelPsd::isotropic(KmPerSecondsSquared::new(sigma));
+        assert!((psd.0[0] - sigma * sigma).abs() < 1e-20);
+        assert_eq!(psd.0[0], psd.0[1]);
+        assert_eq!(psd.0[1], psd.0[2]);
+    }
+
+    #[test]
+    fn is_psd_returns_true_for_valid_model() {
+        let m = ProcessNoiseModel {
+            position_velocity: WhiteAccelPsd::isotropic(KmPerSecondsSquared::new(1e-9)),
+            drag_scale: None,
+            srp_scale: None,
+            empirical_white: None,
+        };
+        assert!(m.is_psd(Second::new(60.0)).unwrap());
+    }
 }

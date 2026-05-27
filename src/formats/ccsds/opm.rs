@@ -323,3 +323,123 @@ pub fn write_opm<W: Write>(w: &mut W, msg: &OpmMessage) -> Result<(), FormatErro
     }
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn make_meta() -> OpmMetadata {
+        OpmMetadata {
+            object_name: "SAT".to_string(),
+            object_id: "2024-001A".to_string(),
+            center_name: "EARTH".to_string(),
+            ref_frame: "EME2000".to_string(),
+            time_system: "UTC".to_string(),
+        }
+    }
+
+    fn make_state() -> CartesianState {
+        CartesianState {
+            epoch: "2024-001T12:00:00.000".to_string(),
+            position_km: [7000.0, 0.0, 0.0],
+            velocity_km_s: [0.0, 7.5, 0.0],
+        }
+    }
+
+    fn base_opm_text() -> String {
+        "CCSDS_OPM_VERS = 2.0\n\
+         META_START\n\
+         OBJECT_NAME = SAT\n\
+         OBJECT_ID = 2024-001A\n\
+         CENTER_NAME = EARTH\n\
+         REF_FRAME = EME2000\n\
+         TIME_SYSTEM = UTC\n\
+         META_STOP\n\
+         EPOCH = 2024-001T12:00:00.000\n\
+         X = 7000.0\n\
+         Y = 0.0\n\
+         Z = 0.0\n\
+         X_DOT = 0.0\n\
+         Y_DOT = 7.5\n\
+         Z_DOT = 0.0\n"
+            .to_string()
+    }
+
+    #[test]
+    fn read_opm_cartesian_only() {
+        let msg = read_opm(base_opm_text().as_bytes()).unwrap();
+        assert_eq!(msg.metadata.object_name, "SAT");
+        assert_eq!(msg.state.position_km[0], 7000.0);
+        assert!(msg.keplerian.is_none());
+    }
+
+    #[test]
+    fn read_opm_with_keplerian_block() {
+        let text = format!(
+            "{}\
+             SEMI_MAJOR_AXIS = 7000.0\n\
+             ECCENTRICITY = 0.001\n\
+             INCLINATION = 51.6\n\
+             RA_OF_ASC_NODE = 247.0\n\
+             ARG_OF_PERICENTER = 130.0\n\
+             TRUE_ANOMALY = 325.0\n",
+            base_opm_text()
+        );
+        let msg = read_opm(text.as_bytes()).unwrap();
+        let kep = msg.keplerian.unwrap();
+        assert_eq!(kep.semi_major_axis_km, 7000.0);
+        assert_eq!(kep.eccentricity, 0.001);
+        assert_eq!(kep.inclination_deg, 51.6);
+    }
+
+    #[test]
+    fn read_opm_missing_object_name_is_error() {
+        let text = "CCSDS_OPM_VERS = 2.0\n\
+                    META_START\n\
+                    OBJECT_ID = 2024-001A\n\
+                    META_STOP\n\
+                    EPOCH = 2024-001T12:00:00.000\n\
+                    X = 7000.0\nY = 0.0\nZ = 0.0\n\
+                    X_DOT = 0.0\nY_DOT = 7.5\nZ_DOT = 0.0\n";
+        assert!(read_opm(text.as_bytes()).is_err());
+    }
+
+    #[test]
+    fn read_opm_bad_float_is_error() {
+        let text = base_opm_text().replace("X = 7000.0", "X = not_a_number");
+        assert!(read_opm(text.as_bytes()).is_err());
+    }
+
+    #[test]
+    fn write_opm_roundtrip_cartesian() {
+        let msg = OpmMessage { metadata: make_meta(), state: make_state(), keplerian: None };
+        let mut buf = Vec::new();
+        write_opm(&mut buf, &msg).unwrap();
+        let parsed = read_opm(buf.as_slice()).unwrap();
+        assert_eq!(parsed.metadata.object_name, "SAT");
+        assert!((parsed.state.position_km[0] - 7000.0).abs() < 1e-4);
+    }
+
+    #[test]
+    fn write_opm_roundtrip_with_keplerian() {
+        let kep = KeplerianElements {
+            semi_major_axis_km: 7000.0,
+            eccentricity: 0.001,
+            inclination_deg: 51.6,
+            ra_of_asc_node_deg: 247.0,
+            arg_of_pericenter_deg: 130.0,
+            true_anomaly_deg: 325.0,
+        };
+        let msg = OpmMessage {
+            metadata: make_meta(),
+            state: make_state(),
+            keplerian: Some(kep),
+        };
+        let mut buf = Vec::new();
+        write_opm(&mut buf, &msg).unwrap();
+        let parsed = read_opm(buf.as_slice()).unwrap();
+        let k = parsed.keplerian.unwrap();
+        assert!((k.semi_major_axis_km - 7000.0).abs() < 1e-4);
+        assert!((k.inclination_deg - 51.6).abs() < 1e-4);
+    }
+}

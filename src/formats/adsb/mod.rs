@@ -537,4 +537,47 @@ mod tests {
         // CRC of empty data should be 0
         assert_eq!(crc24(&[]), 0);
     }
+
+    // TC=4 identification frame (CRC-verified): ICAO=4840D6, callsign "KLM1234 "
+    const IDENT_FRAME: &str = "8D4840D6232CC371CB3D2048E9A0";
+    // TC=19 airborne velocity frame (synthetic, CRC-verified)
+    const VELOCITY_FRAME: &str = "8D4840D69900651920400034CDB3";
+
+    #[test]
+    fn decode_identification_succeeds() {
+        let frame = parse_frame(IDENT_FRAME).unwrap();
+        assert_eq!(frame.type_code(), 4);
+        let id = decode_identification(&frame).unwrap();
+        assert!(!id.callsign.is_empty());
+    }
+
+    #[test]
+    fn decode_identification_wrong_tc_is_error() {
+        // POSITION_FRAME has TC=11, not 1-4
+        let frame = parse_frame(POSITION_FRAME).unwrap();
+        assert!(decode_identification(&frame).is_err());
+    }
+
+    #[test]
+    fn decode_airborne_velocity_succeeds() {
+        let frame = parse_frame(VELOCITY_FRAME).unwrap();
+        assert_eq!(frame.type_code(), 19);
+        let vel = decode_airborne_velocity(&frame).unwrap();
+        assert!(vel.ground_speed_mps.is_some());
+    }
+
+    #[test]
+    fn decode_airborne_velocity_wrong_tc_is_error() {
+        // POSITION_FRAME has TC=11
+        let frame = parse_frame(POSITION_FRAME).unwrap();
+        assert!(decode_airborne_velocity(&frame).is_err());
+    }
+
+    #[test]
+    fn decode_altitude_q_bit_zero_returns_none() {
+        // Q-bit = 0 (Gillham code) → returns None
+        // encoded = 0b0000_0000_0000 but non-zero: use encoded=1 (Q-bit=0)
+        let encoded: u16 = 1; // bit 4 = 0 → Q-bit = 0
+        assert!(decode_altitude(encoded).is_none());
+    }
 }

@@ -515,4 +515,124 @@ mod tests {
         ));
         assert!(ok.is_ok());
     }
+
+    #[test]
+    fn geopotential_requires_params() {
+        let r = ForceModelRegistry::with_builtins();
+        let e = r.build_one(&ForceModelSpec::named("geopotential")).err().unwrap();
+        assert!(matches!(e, PodDynamicsError::InvalidParameters { .. }));
+        let ok = r.build_one(&ForceModelSpec::with_params(
+            "geopotential",
+            ForceModelParams::Geopotential { degree: 4, order: 4 },
+        ));
+        assert!(ok.is_ok());
+    }
+
+    #[test]
+    fn srp_cannonball_all_shadow_models() {
+        let r = ForceModelRegistry::with_builtins();
+        for shadow in [ShadowModel::None, ShadowModel::Cylindrical, ShadowModel::Conical] {
+            let ok = r.build_one(&ForceModelSpec::with_params(
+                "srp_cannonball",
+                ForceModelParams::SrpCannonball {
+                    cr: SrpCoefficient::new(1.5),
+                    area_to_mass: AreaToMass::new(0.01),
+                    shadow,
+                },
+            ));
+            assert!(ok.is_ok(), "srp_cannonball with shadow={shadow:?} failed");
+        }
+    }
+
+    #[test]
+    fn srp_cannonball_no_params_is_error() {
+        let r = ForceModelRegistry::with_builtins();
+        let e = r.build_one(&ForceModelSpec::named("srp_cannonball")).err().unwrap();
+        assert!(matches!(e, PodDynamicsError::InvalidParameters { .. }));
+    }
+
+    #[test]
+    fn empirical_constant_builds_ok() {
+        let r = ForceModelRegistry::with_builtins();
+        let ok = r.build_one(&ForceModelSpec::with_params(
+            "empirical_constant",
+            ForceModelParams::EmpiricalConstant {
+                radial: KmPerSecondsSquared::new(1e-8),
+                transverse: KmPerSecondsSquared::new(0.0),
+                normal: KmPerSecondsSquared::new(0.0),
+            },
+        ));
+        assert!(ok.is_ok());
+    }
+
+    #[test]
+    fn empirical_1cpr_builds_with_once_per_rev() {
+        let r = ForceModelRegistry::with_builtins();
+        let ok = r.build_one(&ForceModelSpec::with_params(
+            "empirical_1cpr",
+            ForceModelParams::EmpiricalPeriodic {
+                harmonic: PeriodicHarmonic::OncePerRev,
+                epoch_ref: crate::J2000,
+                period: Second::new(5400.0),
+                coeffs: [KmPerSecondsSquared::new(0.0); 6],
+            },
+        ));
+        assert!(ok.is_ok());
+    }
+
+    #[test]
+    fn empirical_2cpr_wrong_harmonic_is_error() {
+        let r = ForceModelRegistry::with_builtins();
+        let e = r
+            .build_one(&ForceModelSpec::with_params(
+                "empirical_2cpr",
+                ForceModelParams::EmpiricalPeriodic {
+                    harmonic: PeriodicHarmonic::OncePerRev, // wrong for 2cpr
+                    epoch_ref: crate::J2000,
+                    period: Second::new(5400.0),
+                    coeffs: [KmPerSecondsSquared::new(0.0); 6],
+                },
+            ))
+            .err()
+            .unwrap();
+        assert!(matches!(e, PodDynamicsError::InvalidParameters { .. }));
+    }
+
+    #[test]
+    fn names_returns_all_builtins_sorted() {
+        let r = ForceModelRegistry::with_builtins();
+        let names = r.names();
+        assert!(names.windows(2).all(|w| w[0] <= w[1]), "names not sorted");
+        assert!(names.contains(&"two_body"));
+        assert!(names.contains(&"empirical_2cpr"));
+    }
+
+    #[test]
+    fn register_custom_factory() {
+        struct MyFactory;
+        impl ForceModelFactory for MyFactory {
+            fn name(&self) -> &'static str {
+                "my_custom"
+            }
+            fn build(
+                &self,
+                _p: &ForceModelParams,
+            ) -> Result<Box<DynSiderustForceModel>, PodDynamicsError> {
+                Ok(Box::new(TwoBody::new(GM_EARTH)))
+            }
+        }
+        let mut r = ForceModelRegistry::with_builtins();
+        assert!(!r.is_registered("my_custom"));
+        r.register(Box::new(MyFactory));
+        assert!(r.is_registered("my_custom"));
+    }
+
+    #[test]
+    fn build_batch_returns_composite() {
+        let r = ForceModelRegistry::with_builtins();
+        let composite = r
+            .build(&[ForceModelSpec::named("two_body"), ForceModelSpec::named("j2")])
+            .unwrap();
+        assert_eq!(composite.len(), 2);
+    }
 }
