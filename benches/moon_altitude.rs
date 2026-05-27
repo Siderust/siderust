@@ -21,8 +21,8 @@
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::Moon;
+use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
-use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::qtty::*;
 use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;

@@ -8,11 +8,11 @@
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
+use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::coordinates::spherical::direction;
 use siderust::event::altitude::{
     above_threshold, altitude_ranges, crossings, AltitudePeriodsProvider, SearchOpts,
 };
-use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::qtty::*;
 use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;
