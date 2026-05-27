@@ -13,7 +13,6 @@ use crate::types::*;
 #[cfg(test)]
 use siderust::coordinates::spherical;
 use siderust::time::{Interval, ModifiedJulianDate};
-use tempoch::Interval;
 
 pub(crate) fn window_from_c(
     w: TempochPeriodMjd,

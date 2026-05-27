@@ -40,6 +40,11 @@ pub enum EkfError {
     /// Singular innovation covariance (S ≤ 0 for a scalar measurement).
     #[error("singular innovation covariance: {0}")]
     Singular(f64),
+    /// One or more inputs to the measurement update are invalid (non-finite
+    /// measurement noise variance, non-finite innovation, or non-finite
+    /// observation matrix element).
+    #[error("invalid measurement update input: {0}")]
+    InvalidInput(String),
 }
 
 /// Per-measurement innovation/NIS record produced by `update_scalar`.
@@ -133,18 +138,38 @@ impl OrbitEkf {
         }));
     }
 
-    /// Scalar measurement update.
+    /// Scalar measurement update using the Joseph-form covariance update
+    /// for numerical robustness.
     ///
     /// `h` is the 6-element row of partial derivatives ∂y/∂x.
-    /// `r` is the measurement variance σ².
+    /// `r` is the measurement noise variance σ² (must be finite and ≥ 0).
+    /// `innovation` is the pre-fit residual (measured minus predicted).
     /// Returns the innovation record or an error if the innovation variance
-    /// is not strictly positive.
+    /// is not strictly positive or any input is invalid.
     pub fn update_scalar(
         &mut self,
         h: [f64; 6],
         innovation: f64,
         r: f64,
     ) -> Result<InnovationRecord, EkfError> {
+        if !r.is_finite() || r < 0.0 {
+            return Err(EkfError::InvalidInput(format!(
+                "measurement noise variance r must be finite and ≥ 0 (got {r})"
+            )));
+        }
+        if !innovation.is_finite() {
+            return Err(EkfError::InvalidInput(format!(
+                "innovation must be finite (got {innovation})"
+            )));
+        }
+        for (i, &hi) in h.iter().enumerate() {
+            if !hi.is_finite() {
+                return Err(EkfError::InvalidInput(format!(
+                    "observation matrix element h[{i}] must be finite (got {hi})"
+                )));
+            }
+        }
+
         let p = self.cov.to_row_major();
         let p_m: Mat<f64> = Mat::from_fn(6, 6, |i, j| p[i][j]);
         let h_col: Mat<f64> = Mat::from_fn(6, 1, |i, _| h[i]);
@@ -179,11 +204,14 @@ impl OrbitEkf {
         let new_vel = self.state.velocity + vel_delta;
         self.state = OrbitState::new(self.state.epoch, new_pos, new_vel);
 
-        // P ← P − K (hᵀ P)  then symmetrise
-        let htp: Mat<f64> =
-            Mat::from_fn(1, 6, |_, j| (0..6).map(|i| h[i] * p_m[(i, j)]).sum::<f64>());
-        let mut p_next = p_m - &k * &htp;
-        // Symmetrise
+        // Joseph form: P ← (I − K hᵀ) P (I − K hᵀ)ᵀ + R K Kᵀ
+        // This preserves positive-definiteness under rounding errors.
+        use faer::Scale;
+        let h_row: Mat<f64> = Mat::from_fn(1, 6, |_, j| h[j]);
+        let mut i_kh: Mat<f64> = Mat::identity(6, 6);
+        i_kh -= &k * &h_row;
+        let mut p_next = &i_kh * &p_m * i_kh.transpose() + Scale(r) * (&k * k.transpose());
+        // Symmetrise to cancel floating-point asymmetry.
         for i in 0..6 {
             for j in (i + 1)..6 {
                 let v = 0.5 * (p_next[(i, j)] + p_next[(j, i)]);

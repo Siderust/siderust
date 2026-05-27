@@ -21,7 +21,7 @@ runtime-data = ["siderust/runtime-data"]
 
 [dependencies]
 siderust    = { version = "0.8", path = ".." }
-principia   = { version = "0.1", features = ["alloc"] }
+principia   = { version = "0.2", features = ["alloc"] }
 qtty        = "0.8"
 tempoch     = "0.6"
 tempoch-ffi = "0.6"
@@ -36,5 +36,17 @@ cbindgen = "0.29.2"
 chrono     = { version = "0.4", default-features = false, features = ["clock"] }
 serde_json = "1.0"
 
-[lints]
-workspace = true
+[lints.rust]
+unsafe_code = "allow"
+missing_docs = "deny"
+unreachable_pub = "warn"
+
+[lints.clippy]
+all = { level = "deny", priority = -1 }
+todo = "deny"
+unimplemented = "deny"
+dbg_macro = "deny"
+print_stdout = "warn"
+
+[lints.rustdoc]
+broken_intra_doc_links = "deny"

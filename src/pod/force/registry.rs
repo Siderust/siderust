@@ -173,7 +173,7 @@ impl ForceModelRegistry {
 
     /// Create a registry pre-populated with the built-in factories:
     /// `two_body`, `j2`, `geopotential`, `third_body_sun`, `third_body_moon`,
-    /// `third_body_sun_moon`, `drag`, `srp_cannonball`, `srp_boxwing` (stub),
+    /// `third_body_sun_moon`, `drag`, `srp_cannonball`,
     /// `relativity`, `empirical_constant`, `empirical_1cpr`, `empirical_2cpr`.
     ///
     /// # Example
@@ -194,7 +194,6 @@ impl ForceModelRegistry {
         r.register(Box::new(ThirdBodySunMoonFactory));
         r.register(Box::new(DragFactory));
         r.register(Box::new(SrpCannonballFactory));
-        r.register(Box::new(SrpBoxwingFactory));
         r.register(Box::new(RelativityFactory));
         r.register(Box::new(EmpiricalConstantFactory));
         r.register(Box::new(Empirical1CprFactory));
@@ -383,16 +382,6 @@ impl ForceModelFactory for SrpCannonballFactory {
     }
 }
 
-struct SrpBoxwingFactory;
-impl ForceModelFactory for SrpBoxwingFactory {
-    fn name(&self) -> &'static str {
-        "srp_boxwing"
-    }
-    fn build(&self, _p: &ForceModelParams) -> Result<Box<DynSiderustForceModel>, PodDynamicsError> {
-        Err(PodDynamicsError::FeatureNotImplemented("srp_boxwing"))
-    }
-}
-
 struct RelativityFactory;
 impl ForceModelFactory for RelativityFactory {
     fn name(&self) -> &'static str {
@@ -496,7 +485,6 @@ mod tests {
             "third_body_sun_moon",
             "drag",
             "srp_cannonball",
-            "srp_boxwing",
             "relativity",
             "empirical_constant",
             "empirical_1cpr",
@@ -511,19 +499,6 @@ mod tests {
         let r = ForceModelRegistry::with_builtins();
         let e = r.build_one(&ForceModelSpec::named("nope")).err().unwrap();
         assert!(matches!(e, PodDynamicsError::UnknownModel(ref s) if s == "nope"));
-    }
-
-    #[test]
-    fn srp_boxwing_returns_feature_not_implemented() {
-        let r = ForceModelRegistry::with_builtins();
-        let e = r
-            .build_one(&ForceModelSpec::named("srp_boxwing"))
-            .err()
-            .unwrap();
-        assert!(matches!(
-            e,
-            PodDynamicsError::FeatureNotImplemented("srp_boxwing")
-        ));
     }
 
     #[test]

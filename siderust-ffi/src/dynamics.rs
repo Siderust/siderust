@@ -229,13 +229,17 @@ impl DensityProvider for FfiDensityProvider {
     fn density(&self, altitude: Kilometers) -> Result<KilogramsPerCubicMeter, DynamicsError> {
         // SAFETY: The C caller guarantees the fn pointer and user_data are valid.
         let rho = unsafe { (self.vtable.density)(altitude.value(), self.vtable.user_data) };
-        if rho < 0.0 {
-            Err(DynamicsError::AltitudeBelowSurface {
-                altitude_km: altitude.value(),
-            })
-        } else {
-            Ok(KilogramsPerCubicMeter::new(rho))
+        if !rho.is_finite() {
+            return Err(DynamicsError::Provider(
+                format!("atmosphere density callback returned non-finite value: {rho}").into(),
+            ));
         }
+        if rho < 0.0 {
+            return Err(DynamicsError::AltitudeBelowSurface {
+                altitude_km: altitude.value(),
+            });
+        }
+        Ok(KilogramsPerCubicMeter::new(rho))
     }
 }
 
@@ -266,12 +270,26 @@ impl GravityFieldProvider for FfiGravityProvider {
 
     fn c_normalized(&self, n: usize, m: usize) -> Result<f64, PrincipiaError> {
         // SAFETY: The C caller guarantees the fn pointer and user_data are valid.
-        Ok(unsafe { (self.vtable.c_normalized)(n as u32, m as u32, self.vtable.user_data) })
+        let v = unsafe { (self.vtable.c_normalized)(n as u32, m as u32, self.vtable.user_data) };
+        if !v.is_finite() {
+            return Err(PrincipiaError::GravityCoefficientUnavailable {
+                degree: n as u16,
+                order: m as u16,
+            });
+        }
+        Ok(v)
     }
 
     fn s_normalized(&self, n: usize, m: usize) -> Result<f64, PrincipiaError> {
         // SAFETY: The C caller guarantees the fn pointer and user_data are valid.
-        Ok(unsafe { (self.vtable.s_normalized)(n as u32, m as u32, self.vtable.user_data) })
+        let v = unsafe { (self.vtable.s_normalized)(n as u32, m as u32, self.vtable.user_data) };
+        if !v.is_finite() {
+            return Err(PrincipiaError::GravityCoefficientUnavailable {
+                degree: n as u16,
+                order: m as u16,
+            });
+        }
+        Ok(v)
     }
 }
 
@@ -401,6 +419,11 @@ pub extern "C" fn siderust_dynamics_context_with_gravity_field(
             return SiderustStatus::NullPointer;
         }
         let vt = unsafe { std::ptr::read(vtable) };
+        if !vt.gm_km3_s2.is_finite() || vt.gm_km3_s2 <= 0.0
+            || !vt.reference_radius_km.is_finite() || vt.reference_radius_km <= 0.0
+        {
+            return SiderustStatus::InvalidArgument;
+        }
         let provider: Arc<dyn GravityFieldProvider + Send + Sync> =
             Arc::new(FfiGravityProvider { vtable: vt });
         // TODO: justify soundness — add doc comment before publishing
@@ -445,6 +468,9 @@ pub extern "C" fn siderust_orbit_state_new(
     ffi_guard! {{
         if out.is_null() {
             return SiderustStatus::NullPointer;
+        }
+        if ![epoch_jd, x, y, z, vx, vy, vz].iter().all(|v| v.is_finite()) {
+            return SiderustStatus::InvalidArgument;
         }
         let state = OrbitState::new(
             JulianDate::new(epoch_jd).to_j2000s(),
@@ -560,7 +586,9 @@ pub extern "C" fn siderust_propagator_two_body_earth_new(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
-        let handle = Box::new(SiderustPropagator { force: TwoBody { mu: GM_EARTH } });
+        let handle = Box::new(SiderustPropagator {
+            force: TwoBody::new(GM_EARTH),
+        });
         // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(handle) };
         SiderustStatus::Ok
@@ -583,8 +611,11 @@ pub extern "C" fn siderust_propagator_two_body_new(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        if !gm_km3_s2.is_finite() || gm_km3_s2 <= 0.0 {
+            return SiderustStatus::InvalidArgument;
+        }
         let handle = Box::new(SiderustPropagator {
-            force: TwoBody { mu: GravitationalParameter::new(gm_km3_s2) },
+            force: TwoBody::new(GravitationalParameter::new(gm_km3_s2)),
         });
         // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(handle) };
@@ -628,6 +659,9 @@ pub extern "C" fn siderust_propagator_propagate(
     dyn_guard! {{
         if handle.is_null() || state_in.is_null() || out_state.is_null() {
             return SiderustDynamicsStatus::NullPointer;
+        }
+        if !dt_s.is_finite() {
+            return SiderustDynamicsStatus::InvalidStepRequest;
         }
 
         let propagator = unsafe { &(*handle) };

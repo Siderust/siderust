@@ -24,33 +24,22 @@ use super::Sgp4Error;
 const TWO_PI: f64 = core::f64::consts::TAU;
 const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 
-/// Earth gravity / sidereal-time model selector for the SGP4/SDP4 polynomial.
+/// Earth gravity / sidereal-time model selector for the TLE mean-element propagator.
 ///
-/// SGP4 was historically defined against the WGS-72 geopotential constants
-/// together with the AFSPC sidereal-time convention. That combination
-/// (`Wgs72`) is the **bit-exact** match for Vallado & Crawford's published
-/// `tcppver.out` reference outputs and is the default here.
-///
-/// `Wgs72Iau` keeps the WGS-72 geopotential but switches to the IAU
-/// sidereal-time formula — slightly more accurate in absolute terms but
-/// drifts a few millimetres away from the Vallado reference.
-///
-/// `Wgs84` swaps in the WGS-84 geopotential constants together with the
-/// IAU sidereal-time formula. New code that does not need bit-exact
-/// reproduction of legacy AFSPC outputs should pick this.
+/// The three variants select the geopotential constants and the sidereal-time
+/// convention used when computing secular J2 node/perigee drift rates and the
+/// final perifocal-to-inertial rotation.
 ///
 /// # Examples
 ///
 /// ```
 /// use siderust::astro::sgp4::GravityModel;
-/// // The default matches Vallado's `tcppver.out` reference outputs exactly.
 /// assert!(matches!(GravityModel::default(), GravityModel::Wgs72));
 /// ```
 #[derive(Copy, Clone, Debug, Default, PartialEq, Eq)]
 pub enum GravityModel {
     /// WGS-72 geopotential with AFSPC sidereal-time convention. Default;
-    /// reproduces Vallado's `tcppver.out` reference outputs to numerical
-    /// noise (≤ 1e-6 km / ≤ 1e-9 km·s⁻¹).
+    /// matches the WGS-72 TLE mean-element conventions.
     #[default]
     Wgs72,
     /// WGS-72 geopotential with the IAU sidereal-time formula. Use when
@@ -78,20 +67,26 @@ impl GravityModel {
     }
 }
 
-/// Strongly typed SGP4/SDP4 propagator.
+/// Simplified J2 mean-elements propagator for TLE data.
 ///
-/// Construct with [`Sgp4Propagator::from_tle`] (default WGS-72 gravity) or
-/// [`Sgp4Propagator::from_tle_with_model`] (explicit gravity model).
-/// Propagate with [`Sgp4Propagator::propagate_at`] (UTC Julian date) or
-/// [`Sgp4Propagator::propagate_minutes`] (offset from the TLE epoch).
+/// This propagator derives an osculating trajectory from TLE mean elements
+/// by applying secular J2 node/perigee/mean-anomaly drift rates and solving
+/// Kepler's equation at the requested epoch. It is **not** a full SGP4/SDP4
+/// implementation and does not apply SGP4 periodic corrections, Lyddane
+/// deep-space drag, or resonance terms used by the Vallado reference.
 ///
-/// The propagator owns its initialised `Constants` table, so propagation is
+/// Construct with [`TlePropagator::from_tle`] (default WGS-72 gravity) or
+/// [`TlePropagator::from_tle_with_model`] (explicit gravity model).
+/// Propagate with [`TlePropagator::propagate_at`] (UTC Julian date) or
+/// [`TlePropagator::propagate_minutes`] (offset from the TLE epoch).
+///
+/// The propagator owns its initialised constants table, so propagation is
 /// allocation-free and thread-safe (the type is `Send + Sync`).
 ///
 /// # Examples
 ///
 /// ```
-/// use siderust::astro::sgp4::{GravityModel, Sgp4Propagator};
+/// use siderust::astro::sgp4::{GravityModel, TlePropagator};
 /// use siderust::formats::tle::parse_3le;
 /// use siderust::qtty::Minutes;
 ///
@@ -100,25 +95,25 @@ impl GravityModel {
 ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
 ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
 /// ).unwrap();
-/// let prop = Sgp4Propagator::from_tle_with_model(&tle, GravityModel::Wgs72).unwrap();
+/// let prop = TlePropagator::from_tle_with_model(&tle, GravityModel::Wgs72).unwrap();
 /// let s = prop.propagate_minutes(Minutes::new(0.0)).unwrap();
 /// assert!(s.position().distance().value() > 6_500.0);
 /// ```
 #[derive(Clone, Debug)]
-pub struct Sgp4Propagator {
+pub struct TlePropagator {
     constants: GravityConstants,
     elements: NativeElements,
     model: GravityModel,
     epoch_jd_utc: JulianDate<UTC>,
 }
 
-impl Sgp4Propagator {
+impl TlePropagator {
     /// Initialise the propagator from a [`TLE`] using the default
-    /// (WGS-72, Vallado 2006) gravity model.
+    /// (WGS-72) gravity model.
     ///
     /// # Errors
     ///
-    /// Returns [`Sgp4Error::InvalidElements`] if the SGP4 initialiser
+    /// Returns [`Sgp4Error::InvalidElements`] if the initialiser
     /// rejects the mean elements (e.g. negative mean motion, eccentricity
     /// outside `[0, 1)`), or [`Sgp4Error::InvalidEpoch`] /
     /// [`Sgp4Error::TimeConversion`] if the TLE epoch cannot be expressed
@@ -127,14 +122,14 @@ impl Sgp4Propagator {
     /// # Examples
     ///
     /// ```
-    /// use siderust::astro::sgp4::Sgp4Propagator;
+    /// use siderust::astro::sgp4::TlePropagator;
     /// use siderust::formats::tle::parse_3le;
     /// let tle = parse_3le(
     ///     "ISS (ZARYA)",
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
-    /// let _ = Sgp4Propagator::from_tle(&tle).unwrap();
+    /// let _ = TlePropagator::from_tle(&tle).unwrap();
     /// ```
     pub fn from_tle(tle: &TLE) -> Result<Self, Sgp4Error> {
         Self::from_tle_with_model(tle, GravityModel::default())
@@ -146,14 +141,14 @@ impl Sgp4Propagator {
     /// # Examples
     ///
     /// ```
-    /// use siderust::astro::sgp4::{GravityModel, Sgp4Propagator};
+    /// use siderust::astro::sgp4::{GravityModel, TlePropagator};
     /// use siderust::formats::tle::parse_3le;
     /// let tle = parse_3le(
     ///     "ISS (ZARYA)",
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
-    /// let _ = Sgp4Propagator::from_tle_with_model(&tle, GravityModel::Wgs84).unwrap();
+    /// let _ = TlePropagator::from_tle_with_model(&tle, GravityModel::Wgs84).unwrap();
     /// ```
     pub fn from_tle_with_model(tle: &TLE, model: GravityModel) -> Result<Self, Sgp4Error> {
         let elements = tle_to_elements(tle)?;
@@ -173,14 +168,14 @@ impl Sgp4Propagator {
     /// # Examples
     ///
     /// ```
-    /// use siderust::astro::sgp4::{GravityModel, Sgp4Propagator};
+    /// use siderust::astro::sgp4::{GravityModel, TlePropagator};
     /// use siderust::formats::tle::parse_3le;
     /// let tle = parse_3le(
     ///     "ISS (ZARYA)",
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
-    /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
+    /// let p = TlePropagator::from_tle(&tle).unwrap();
     /// assert_eq!(p.gravity_model(), GravityModel::Wgs72);
     /// ```
     pub fn gravity_model(&self) -> GravityModel {
@@ -193,14 +188,14 @@ impl Sgp4Propagator {
     /// # Examples
     ///
     /// ```
-    /// use siderust::astro::sgp4::Sgp4Propagator;
+    /// use siderust::astro::sgp4::TlePropagator;
     /// use siderust::formats::tle::parse_3le;
     /// let tle = parse_3le(
     ///     "ISS (ZARYA)",
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
-    /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
+    /// let p = TlePropagator::from_tle(&tle).unwrap();
     /// assert!(p.epoch_jd_utc().raw().value() > 2_454_700.0);
     /// ```
     pub fn epoch_jd_utc(&self) -> JulianDate<UTC> {
@@ -215,22 +210,22 @@ impl Sgp4Propagator {
     ///
     /// # Errors
     ///
-    /// * [`Sgp4Error::Propagation`] — the SGP4 polynomial diverged at
-    ///   the requested epoch.
+    /// * [`Sgp4Error::Propagation`] — propagation diverged at the
+    ///   requested epoch.
     /// * [`Sgp4Error::TimeConversion`] — the supplied UTC instant cannot
     ///   be related to the TLE epoch (e.g. a non-finite Julian date).
     ///
     /// # Examples
     ///
     /// ```
-    /// use siderust::astro::sgp4::Sgp4Propagator;
+    /// use siderust::astro::sgp4::TlePropagator;
     /// use siderust::formats::tle::parse_3le;
     /// let tle = parse_3le(
     ///     "ISS (ZARYA)",
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
-    /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
+    /// let p = TlePropagator::from_tle(&tle).unwrap();
     /// let target = p.epoch_jd_utc(); // propagate to TLE epoch itself
     /// let s = p.propagate_at(target).unwrap();
     /// assert!(s.position().distance().value() > 6_500.0);
@@ -249,19 +244,16 @@ impl Sgp4Propagator {
 
     /// Propagate by an offset, in minutes, from the TLE epoch.
     ///
-    /// This is the natural argument to SGP4 and exactly mirrors the
-    /// reference test vectors distributed with Vallado's "SGP4-VER" set.
-    ///
     /// # Errors
     ///
-    /// [`Sgp4Error::Propagation`] if the polynomial diverges, or
+    /// [`Sgp4Error::Propagation`] if propagation diverges, or
     /// [`Sgp4Error::TimeConversion`] if the resulting epoch cannot be
     /// represented as a UTC Julian date.
     ///
     /// # Examples
     ///
     /// ```
-    /// use siderust::astro::sgp4::Sgp4Propagator;
+    /// use siderust::astro::sgp4::TlePropagator;
     /// use siderust::formats::tle::parse_3le;
     /// use siderust::qtty::Minutes;
     /// let tle = parse_3le(
@@ -269,7 +261,7 @@ impl Sgp4Propagator {
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
-    /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
+    /// let p = TlePropagator::from_tle(&tle).unwrap();
     /// let s_now = p.propagate_minutes(Minutes::new(0.0)).unwrap();
     /// let s_later = p.propagate_minutes(Minutes::new(90.0)).unwrap();
     /// assert!(s_now.position() != s_later.position());

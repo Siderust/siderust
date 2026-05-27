@@ -1,10 +1,10 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Strongly typed SGP4/SDP4 prediction state.
+//! Strongly typed TLE propagator prediction state.
 //!
 //! [`TemeState`] bundles the position and velocity returned by a single
-//! [`Sgp4Propagator::propagate_at`](crate::astro::sgp4::Sgp4Propagator::propagate_at) call,
+//! [`TlePropagator::propagate_at`](crate::astro::sgp4::TlePropagator::propagate_at) call,
 //! together with the UTC instant the prediction is valid for.
 //!
 //! The state lives in the **TEME** (True Equator, Mean Equinox) frame defined
@@ -54,7 +54,7 @@ pub type TemeVelocityKmPerSec = velocity::TEME<KilometerPerSecond>;
 /// # Examples
 ///
 /// ```
-/// use siderust::astro::sgp4::{Sgp4Propagator, TemeState};
+/// use siderust::astro::sgp4::{TlePropagator, TemeState};
 /// use siderust::formats::tle::parse_3le;
 /// use siderust::qtty::Minutes;
 ///
@@ -63,7 +63,7 @@ pub type TemeVelocityKmPerSec = velocity::TEME<KilometerPerSecond>;
 ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
 ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
 /// ).unwrap();
-/// let prop = Sgp4Propagator::from_tle(&tle).unwrap();
+/// let prop = TlePropagator::from_tle(&tle).unwrap();
 /// let state: TemeState = prop.propagate_minutes(Minutes::new(0.0)).unwrap();
 /// // Magnitudes are in kilometres and km/s for an LEO.
 /// let r = state.position().as_array();
@@ -130,7 +130,7 @@ impl TemeState {
     /// # Examples
     ///
     /// ```
-    /// use siderust::astro::sgp4::Sgp4Propagator;
+    /// use siderust::astro::sgp4::TlePropagator;
     /// use siderust::formats::tle::parse_3le;
     /// use siderust::qtty::Minutes;
     /// let tle = parse_3le(
@@ -138,7 +138,7 @@ impl TemeState {
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
-    /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
+    /// let p = TlePropagator::from_tle(&tle).unwrap();
     /// let s = p.propagate_minutes(Minutes::new(0.0)).unwrap();
     /// assert!(s.epoch().raw().value() > 2_454_000.0);
     /// ```
@@ -151,7 +151,7 @@ impl TemeState {
     /// # Examples
     ///
     /// ```
-    /// use siderust::astro::sgp4::Sgp4Propagator;
+    /// use siderust::astro::sgp4::TlePropagator;
     /// use siderust::formats::tle::parse_3le;
     /// use siderust::qtty::Minutes;
     /// let tle = parse_3le(
@@ -159,7 +159,7 @@ impl TemeState {
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
-    /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
+    /// let p = TlePropagator::from_tle(&tle).unwrap();
     /// let s = p.propagate_minutes(Minutes::new(0.0)).unwrap();
     /// let r = s.position();
     /// assert!(r.distance().value() > 6_000.0);
@@ -173,7 +173,7 @@ impl TemeState {
     /// # Examples
     ///
     /// ```
-    /// use siderust::astro::sgp4::Sgp4Propagator;
+    /// use siderust::astro::sgp4::TlePropagator;
     /// use siderust::formats::tle::parse_3le;
     /// use siderust::qtty::Minutes;
     /// let tle = parse_3le(
@@ -181,7 +181,7 @@ impl TemeState {
     ///     "1 25544U 98067A   08264.51782528 -.00002182  00000-0 -11606-4 0  2927",
     ///     "2 25544  51.6416 247.4627 0006703 130.5360 325.0288 15.72125391563537",
     /// ).unwrap();
-    /// let p = Sgp4Propagator::from_tle(&tle).unwrap();
+    /// let p = TlePropagator::from_tle(&tle).unwrap();
     /// let s = p.propagate_minutes(Minutes::new(0.0)).unwrap();
     /// let v = s.velocity();
     /// // LEO speed is ~7.7 km/s.

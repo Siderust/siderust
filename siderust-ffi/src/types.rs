@@ -66,7 +66,6 @@ use siderust::event::azimuth::{
     AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
 };
 use siderust::time::{Interval, ModifiedJulianDate};
-use tempoch::Interval;
 
 // Re-export tempoch-ffi types so the generated header can reference them.
 // The extern crate declaration is needed because the dep name maps through a hyphen.
@@ -840,6 +839,7 @@ impl SiderustAltitudeQuery {
             ),
             min_altitude: Degrees::new(self.min_altitude_deg),
             max_altitude: Degrees::new(self.max_altitude_deg),
+            correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
         })
     }
 }

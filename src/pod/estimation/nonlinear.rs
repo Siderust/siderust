@@ -128,6 +128,13 @@ where
     let mut last_result: Option<WlsResult> = None;
     for it in 0..opts.max_iter {
         let ne = assemble(&params)?;
+        if ne.n_params() != params.len() {
+            return Err(NonlinearError::Solver(WlsSolverError::other(format!(
+                "assembler returned {} parameters but initial vector has {} entries",
+                ne.n_params(),
+                params.len()
+            ))));
+        }
         let result = ne.solve()?;
         let mut max_rel = 0.0_f64;
         for (i, dp) in result.update.iter().enumerate() {

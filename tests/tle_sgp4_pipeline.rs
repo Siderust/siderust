@@ -7,7 +7,7 @@
 //! `siderust-pod`. It exercises:
 //!
 //! 1. [`parse_tle`] consuming a published Vallado SGP4 Verification TLE.
-//! 2. [`Sgp4Propagator::from_tle_with_model`] adapting the TLE to the
+//! 2. [`TlePropagator::from_tle_with_model`] adapting the TLE to the
 //!    Siderust-native propagation core with the WGS-84 gravity model.
 //! 3. Propagation at the TLE epoch and at later epochs, returning
 //!    typed [`TemeState`] values whose components live in the typed
@@ -18,12 +18,12 @@
 //! `qtty` stack is broken.
 //!
 //! [`parse_tle`]: siderust::formats::tle::parse_tle
-//! [`Sgp4Propagator::from_tle_with_model`]: siderust::astro::sgp4::Sgp4Propagator::from_tle_with_model
+//! [`TlePropagator::from_tle_with_model`]: siderust::astro::sgp4::TlePropagator::from_tle_with_model
 //! [`TemeState`]: siderust::astro::sgp4::TemeState
 
 use qtty::time::Day;
 use qtty::Quantity;
-use siderust::astro::sgp4::{GravityModel, Sgp4Propagator};
+use siderust::astro::sgp4::{GravityModel, TlePropagator};
 use siderust::formats::tle::parse_tle;
 use tempoch::JulianDate;
 
@@ -34,7 +34,7 @@ const L2: &str = "2 00005  34.2682 348.7242 1859667 331.7664  19.3264 10.8241915
 #[test]
 fn tle_sgp4_pipeline_produces_typed_teme_state() {
     let tle = parse_tle(L1, L2).expect("vendored Vallado-VER TLE parses cleanly");
-    let prop = Sgp4Propagator::from_tle_with_model(&tle, GravityModel::Wgs84)
+    let prop = TlePropagator::from_tle_with_model(&tle, GravityModel::Wgs84)
         .expect("Vallado-VER TLE accepted by the native propagator");
 
     let epoch_jd: JulianDate<_> = tle.epoch.to::<tempoch::JD>();
@@ -70,7 +70,7 @@ fn tle_sgp4_pipeline_produces_typed_teme_state() {
 fn tle_sgp4_pipeline_propagates_forward_in_time() {
     let tle = parse_tle(L1, L2).expect("vendored Vallado-VER TLE parses cleanly");
     let prop =
-        Sgp4Propagator::from_tle_with_model(&tle, GravityModel::Wgs84).expect("propagator builds");
+        TlePropagator::from_tle_with_model(&tle, GravityModel::Wgs84).expect("propagator builds");
 
     let epoch_jd: JulianDate<_> = tle.epoch.to::<tempoch::JD>();
     let state_0 = prop.propagate_at(epoch_jd).expect("epoch state");

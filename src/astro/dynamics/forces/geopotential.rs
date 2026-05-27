@@ -15,6 +15,15 @@ use crate::coordinates::frames::GCRS;
 use crate::time::{JD, TT};
 
 /// Spherical-harmonic geopotential force model (degree/order configurable).
+///
+/// # Frame handling
+///
+/// The Earth-to-space rotation used here is the **Earth Rotation Angle (ERA)**
+/// only. Polar motion, precession, and nutation are *not* applied, so this
+/// is not a full GCRS↔ITRS transformation chain. Tesseral and sectorial
+/// terms at high degree/order will not be in the exact ITRS body-fixed frame.
+/// For precision orbit determination requiring full GCRS↔ITRS (including EOP,
+/// polar motion, and nutation), a complete frame-rotation provider is needed.
 #[derive(Debug, Clone, Copy)]
 pub struct Geopotential {
     /// Maximum expansion degree *n*.

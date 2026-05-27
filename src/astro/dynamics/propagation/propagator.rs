@@ -76,10 +76,21 @@ where
         h_try: Second,
         ctx: &DynamicsContext,
     ) -> Result<(OrbitState<C, F>, Second, Second, u32), principia::PrincipiaError> {
-        let h = if h_try.value().abs() < self.step.value().abs() {
+        if !h_try.value().is_finite() {
+            return Err(principia::PrincipiaError::InvalidStepRequest {
+                reason: "h_try must be finite",
+            });
+        }
+        let max_h = self.step.value().abs();
+        if !max_h.is_finite() || max_h == 0.0 {
+            return Err(principia::PrincipiaError::InvalidStepRequest {
+                reason: "FixedRk4Adapter.step must be finite and non-zero",
+            });
+        }
+        let h = if h_try.value().abs() < max_h {
             h_try
         } else {
-            self.step
+            Second::new(h_try.value().signum() * max_h)
         };
         let new_state = rk4_step(model, state, h, ctx)?;
         Ok((new_state, h, h, 0))

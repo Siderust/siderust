@@ -223,6 +223,21 @@ mod tests {
     use crate::astro::dynamics::{Position, Velocity};
     use crate::ephemeris::Vsop87Ephemeris;
 
+    fn direct_third_body_accel(r_s: [f64; 3], r_b: [f64; 3], mu: f64) -> [f64; 3] {
+        let d = [
+            r_b[0] - r_s[0],
+            r_b[1] - r_s[1],
+            r_b[2] - r_s[2],
+        ];
+        let d3 = (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).powf(1.5);
+        let rb3 = (r_b[0] * r_b[0] + r_b[1] * r_b[1] + r_b[2] * r_b[2]).powf(1.5);
+        [
+            mu * (d[0] / d3 - r_b[0] / rb3),
+            mu * (d[1] / d3 - r_b[1] / rb3),
+            mu * (d[2] / d3 - r_b[2] / rb3),
+        ]
+    }
+
     fn leo() -> OrbitState {
         OrbitState::new(
             JulianDate::JD_EPOCH_J2000_0.to_j2000s(),
@@ -253,5 +268,41 @@ mod tests {
             .magnitude()
             .value();
         assert!(mag > 0.0 && mag < 1e-4);
+    }
+
+    /// Verify the Battin formula matches the direct (numerically naive) formula
+    /// for well-separated geometries (LEO, MEO, GEO spacecraft vs Moon/Sun).
+    #[test]
+    fn battin_matches_direct_formula_well_separated() {
+        const MU_MOON: f64 = 4902.8;
+        const MU_SUN: f64 = 1.327_124_4e11;
+
+        let cases: &[(&str, [f64; 3], [f64; 3], f64)] = &[
+            // LEO spacecraft, Moon roughly in +Y
+            ("leo_moon", [7_000.0, 0.0, 0.0], [0.0, 384_400.0, 0.0], MU_MOON),
+            // MEO spacecraft, Moon at an angle
+            ("meo_moon", [20_000.0, 5_000.0, 0.0], [200_000.0, 300_000.0, 50_000.0], MU_MOON),
+            // GEO spacecraft, Sun in +X
+            ("geo_sun", [42_164.0, 0.0, 0.0], [1.496e8, 0.0, 0.0], MU_SUN),
+            // Out-of-plane spacecraft, Moon at angle
+            ("inclined_moon", [5_000.0, 3_000.0, 4_000.0], [-150_000.0, 330_000.0, 80_000.0], MU_MOON),
+        ];
+
+        for (name, r_s, r_b, mu) in cases {
+            let battin = battin_third_body_accel(*r_s, *r_b, *mu);
+            let direct = direct_third_body_accel(*r_s, *r_b, *mu);
+
+            let mag = (direct[0] * direct[0] + direct[1] * direct[1] + direct[2] * direct[2]).sqrt();
+            assert!(mag > 0.0, "{name}: reference magnitude is zero");
+
+            for i in 0..3 {
+                let rel_err = ((battin[i] - direct[i]) / mag).abs();
+                assert!(
+                    rel_err < 1e-10,
+                    "{name}[{i}]: Battin={:.6e}, direct={:.6e}, rel_err={:.3e}",
+                    battin[i], direct[i], rel_err
+                );
+            }
+        }
     }
 }

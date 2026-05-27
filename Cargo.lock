@@ -1700,18 +1700,6 @@ dependencies = [
 
 [[package]]
 name = "principia"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d02a95878f28c1949f3aef7534353b1544cb2ca9eaefb327fb2d8a308edfa44"
-dependencies = [
- "affn",
- "qtty",
- "tempoch",
- "thiserror 2.0.18",
-]
-
-[[package]]
-name = "principia"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d70e50e026e96ee325f0163790a620cd0b06a4e002ef5cccb27f7aa17914a9f"
@@ -2345,7 +2333,7 @@ dependencies = [
  "optica",
  "parquet",
  "paste",
- "principia 0.2.0",
+ "principia",
  "qtty",
  "quick-xml",
  "regex",
@@ -2368,7 +2356,7 @@ dependencies = [
  "affn",
  "cbindgen",
  "chrono",
- "principia 0.1.0",
+ "principia",
  "qtty",
  "serde_json",
  "siderust",
