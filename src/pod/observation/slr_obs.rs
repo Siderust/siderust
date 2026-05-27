@@ -284,9 +284,7 @@ mod tests {
             elevation_rad: std::f64::consts::FRAC_PI_2,
             wavelength_um: 0.532,
         };
-        let neg_res = obs_probe
-            .residual(&state, &NullProviderBundle)
-            .unwrap();
+        let neg_res = obs_probe.residual(&state, &NullProviderBundle).unwrap();
         let modelled = -neg_res;
 
         let obs = SlrNormalPointObs {

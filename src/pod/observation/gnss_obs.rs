@@ -568,9 +568,7 @@ mod tests {
             frequency_hz: Hertz::new(1_575_420_000.0),
         };
         // First get the modelled value
-        let neg_residual = obs_probe
-            .residual(&state, &NullProviderBundle)
-            .unwrap();
+        let neg_residual = obs_probe.residual(&state, &NullProviderBundle).unwrap();
         // neg_residual = 0 - modelled  → modelled = -neg_residual
         let modelled = -neg_residual;
 
