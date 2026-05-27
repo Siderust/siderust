@@ -224,11 +224,7 @@ mod tests {
     use crate::ephemeris::Vsop87Ephemeris;
 
     fn direct_third_body_accel(r_s: [f64; 3], r_b: [f64; 3], mu: f64) -> [f64; 3] {
-        let d = [
-            r_b[0] - r_s[0],
-            r_b[1] - r_s[1],
-            r_b[2] - r_s[2],
-        ];
+        let d = [r_b[0] - r_s[0], r_b[1] - r_s[1], r_b[2] - r_s[2]];
         let d3 = (d[0] * d[0] + d[1] * d[1] + d[2] * d[2]).powf(1.5);
         let rb3 = (r_b[0] * r_b[0] + r_b[1] * r_b[1] + r_b[2] * r_b[2]).powf(1.5);
         [
@@ -279,20 +275,36 @@ mod tests {
 
         let cases: &[(&str, [f64; 3], [f64; 3], f64)] = &[
             // LEO spacecraft, Moon roughly in +Y
-            ("leo_moon", [7_000.0, 0.0, 0.0], [0.0, 384_400.0, 0.0], MU_MOON),
+            (
+                "leo_moon",
+                [7_000.0, 0.0, 0.0],
+                [0.0, 384_400.0, 0.0],
+                MU_MOON,
+            ),
             // MEO spacecraft, Moon at an angle
-            ("meo_moon", [20_000.0, 5_000.0, 0.0], [200_000.0, 300_000.0, 50_000.0], MU_MOON),
+            (
+                "meo_moon",
+                [20_000.0, 5_000.0, 0.0],
+                [200_000.0, 300_000.0, 50_000.0],
+                MU_MOON,
+            ),
             // GEO spacecraft, Sun in +X
             ("geo_sun", [42_164.0, 0.0, 0.0], [1.496e8, 0.0, 0.0], MU_SUN),
             // Out-of-plane spacecraft, Moon at angle
-            ("inclined_moon", [5_000.0, 3_000.0, 4_000.0], [-150_000.0, 330_000.0, 80_000.0], MU_MOON),
+            (
+                "inclined_moon",
+                [5_000.0, 3_000.0, 4_000.0],
+                [-150_000.0, 330_000.0, 80_000.0],
+                MU_MOON,
+            ),
         ];
 
         for (name, r_s, r_b, mu) in cases {
             let battin = battin_third_body_accel(*r_s, *r_b, *mu);
             let direct = direct_third_body_accel(*r_s, *r_b, *mu);
 
-            let mag = (direct[0] * direct[0] + direct[1] * direct[1] + direct[2] * direct[2]).sqrt();
+            let mag =
+                (direct[0] * direct[0] + direct[1] * direct[1] + direct[2] * direct[2]).sqrt();
             assert!(mag > 0.0, "{name}: reference magnitude is zero");
 
             for i in 0..3 {
@@ -300,7 +312,9 @@ mod tests {
                 assert!(
                     rel_err < 1e-10,
                     "{name}[{i}]: Battin={:.6e}, direct={:.6e}, rel_err={:.3e}",
-                    battin[i], direct[i], rel_err
+                    battin[i],
+                    direct[i],
+                    rel_err
                 );
             }
         }
