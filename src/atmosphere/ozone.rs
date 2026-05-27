@@ -16,9 +16,9 @@
 //!
 //! - Dataset is parsed once (lazy [`OnceLock`]) into a typed
 //!   [`SampledSpectrum`] with axis [`Nanometer`] and value
-//!   [`Transmittance`](crate::atmosphere::Transmittance).
+//!   [`Transmittance`].
 //! - The convenience helper [`transmittance_at`] returns a typed
-//!   [`Transmittances`](crate::atmosphere::Transmittances) clamped to the
+//!   [`Transmittances`] clamped to the
 //!   table endpoints.
 //!
 //! ## Dataset provenance

@@ -251,7 +251,8 @@ mod tests {
     use crate::targets::Trackable;
     use crate::J2000;
 
-    type DegreesPerYear = crate::qtty::Quantity<crate::qtty::Per<crate::qtty::unit::Degree, crate::qtty::unit::Year>>;
+    type DegreesPerYear =
+        crate::qtty::Quantity<crate::qtty::Per<crate::qtty::unit::Degree, crate::qtty::unit::Year>>;
 
     fn make_pos() -> position::EquatorialMeanJ2000<LightYear> {
         // new_unchecked(polar=dec, azimuth=ra, distance)

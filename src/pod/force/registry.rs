@@ -519,11 +519,17 @@ mod tests {
     #[test]
     fn geopotential_requires_params() {
         let r = ForceModelRegistry::with_builtins();
-        let e = r.build_one(&ForceModelSpec::named("geopotential")).err().unwrap();
+        let e = r
+            .build_one(&ForceModelSpec::named("geopotential"))
+            .err()
+            .unwrap();
         assert!(matches!(e, PodDynamicsError::InvalidParameters { .. }));
         let ok = r.build_one(&ForceModelSpec::with_params(
             "geopotential",
-            ForceModelParams::Geopotential { degree: 4, order: 4 },
+            ForceModelParams::Geopotential {
+                degree: 4,
+                order: 4,
+            },
         ));
         assert!(ok.is_ok());
     }
@@ -531,7 +537,11 @@ mod tests {
     #[test]
     fn srp_cannonball_all_shadow_models() {
         let r = ForceModelRegistry::with_builtins();
-        for shadow in [ShadowModel::None, ShadowModel::Cylindrical, ShadowModel::Conical] {
+        for shadow in [
+            ShadowModel::None,
+            ShadowModel::Cylindrical,
+            ShadowModel::Conical,
+        ] {
             let ok = r.build_one(&ForceModelSpec::with_params(
                 "srp_cannonball",
                 ForceModelParams::SrpCannonball {
@@ -547,7 +557,10 @@ mod tests {
     #[test]
     fn srp_cannonball_no_params_is_error() {
         let r = ForceModelRegistry::with_builtins();
-        let e = r.build_one(&ForceModelSpec::named("srp_cannonball")).err().unwrap();
+        let e = r
+            .build_one(&ForceModelSpec::named("srp_cannonball"))
+            .err()
+            .unwrap();
         assert!(matches!(e, PodDynamicsError::InvalidParameters { .. }));
     }
 
@@ -631,7 +644,10 @@ mod tests {
     fn build_batch_returns_composite() {
         let r = ForceModelRegistry::with_builtins();
         let composite = r
-            .build(&[ForceModelSpec::named("two_body"), ForceModelSpec::named("j2")])
+            .build(&[
+                ForceModelSpec::named("two_body"),
+                ForceModelSpec::named("j2"),
+            ])
             .unwrap();
         assert_eq!(composite.len(), 2);
     }

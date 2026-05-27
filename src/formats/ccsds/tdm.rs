@@ -342,7 +342,9 @@ mod tests {
         assert_eq!(msg.observations[1].obs_type, ObservationType::Doppler);
         assert_eq!(msg.observations[2].obs_type, ObservationType::Angle1);
         assert_eq!(msg.observations[3].obs_type, ObservationType::Angle2);
-        assert!(matches!(&msg.observations[4].obs_type, ObservationType::Other(s) if s == "MY_CUSTOM_OBS"));
+        assert!(
+            matches!(&msg.observations[4].obs_type, ObservationType::Other(s) if s == "MY_CUSTOM_OBS")
+        );
     }
 
     #[test]

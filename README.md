@@ -2,6 +2,9 @@
 
 [![Crates.io](https://img.shields.io/crates/v/siderust.svg)](https://crates.io/crates/siderust)
 [![Docs.rs](https://docs.rs/siderust/badge.svg)](https://docs.rs/siderust)
+[![CI](https://github.com/Siderust/siderust/actions/workflows/ci.yml/badge.svg)](https://github.com/Siderust/siderust/actions/workflows/github-ci.yml)
+[![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
+
 
 > **Typed astronomy & satellite mechanics in safe Rust.**
 
@@ -345,6 +348,10 @@ cargo run --example 11_serde_serialization --features serde
 │   ├─ conic_equations.rs # Siderust wrappers over keplerian solvers
 │   └─ pluto         # Meeus/Williams Pluto ephemeris
 ├─ coordinates/   # Cartesian/Spherical types, frames, centers, transforms
+├─ mission/       # Mission-analysis building blocks
+│   ├─ geometry/     # AzElRange, Fov, TerrainMask, eclipse, orbit-relative geometry
+│   ├─ context.rs    # MissionContext — runtime aggregation of instruments and sites
+│   └─ site.rs       # Location — ground-station / observing-site metadata
 ├─ observatories/ # Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 ├─ targets/       # Target<T> with time & ProperMotion
 └─ time           # Re-export of tempoch: JulianDate, MJD, Period<S>, time scales

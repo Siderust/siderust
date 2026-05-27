@@ -527,7 +527,10 @@ mod tests {
 
     #[test]
     fn gauss_markov_negative_sigma_is_error() {
-        let gm = GaussMarkovParams { sigma: -1.0, tau: Second::new(3600.0) };
+        let gm = GaussMarkovParams {
+            sigma: -1.0,
+            tau: Second::new(3600.0),
+        };
         assert!(matches!(
             gm.variance_after(Second::new(60.0)).unwrap_err(),
             PodDynamicsError::InvalidProcessNoise(_)
@@ -536,7 +539,10 @@ mod tests {
 
     #[test]
     fn gauss_markov_zero_tau_is_error() {
-        let gm = GaussMarkovParams { sigma: 1.0, tau: Second::new(0.0) };
+        let gm = GaussMarkovParams {
+            sigma: 1.0,
+            tau: Second::new(0.0),
+        };
         assert!(matches!(
             gm.variance_after(Second::new(60.0)).unwrap_err(),
             PodDynamicsError::InvalidProcessNoise(_)

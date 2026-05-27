@@ -128,6 +128,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   is a service concern; it is now `constops::report::html::render_html`.
 * Publish workflow for `keplerian` and `principia`: both crates now ship
   `.github/workflows/publish.yml` that triggers on `v*.*.*` tags and verifies
+
+* **`siderust::instruments`, `siderust::mission_geometry`, and
+  `siderust::mission_context` modules removed.** All public items have moved
+  into the new `siderust::mission` namespace:
+  - `siderust::instruments::Fov` → `siderust::mission::geometry::Fov`
+  - `siderust::instruments::Instrument` → `siderust::mission::geometry::Instrument`
+  - `siderust::instruments::TerrainMask` → `siderust::mission::geometry::TerrainMask`
+  - `siderust::instruments::Location` → `siderust::mission::site::Location`
+  - `siderust::mission_geometry::*` → `siderust::mission::geometry::*`
+    (includes `AzElRange`, `LineOfSightStatus`, `MetersPerSecond`,
+    `EclipseState`, `LocalFrame`, `beta_angle`, `local_solar_time`,
+    `ltan`, `azimuth_elevation_range`, `eclipse_state`, `solar_eclipsing`,
+    `line_of_sight_obstructed`, `occultation_fraction`)
+  - `siderust::mission_context::MissionContext` → `siderust::mission::context::MissionContext`
+
+  No compatibility re-exports are provided; this is an intentional
+  breaking change. Update all import paths.
   the crate version matches the tag before uploading to crates.io.
 
 * **`astro::dynamics` module simplification**: removed the thin

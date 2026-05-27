@@ -181,7 +181,11 @@ mod tests {
     fn converges_for_1d_linear_problem() {
         // y = x, measurement y = 3.0, sigma = 0.1
         // After 1 Gauss-Newton step params[0]=3.0; use tol_chi2_rel=2.0 so iter 2 terminates.
-        let opts = NonlinearOptions { max_iter: 20, tol_rel: 1e-9, tol_chi2_rel: 2.0 };
+        let opts = NonlinearOptions {
+            max_iter: 20,
+            tol_rel: 1e-9,
+            tol_chi2_rel: 2.0,
+        };
         let report = gauss_newton(vec![0.0], opts, |params| {
             let mut ne = NormalEquations::new(1);
             ne.add_row(&[(0, 1.0)], 3.0 - params[0], 0.1).unwrap();
@@ -194,44 +198,61 @@ mod tests {
 
     #[test]
     fn max_iter_zero_is_error() {
-        let opts = NonlinearOptions { max_iter: 0, ..default_opts() };
+        let opts = NonlinearOptions {
+            max_iter: 0,
+            ..default_opts()
+        };
         let err = gauss_newton(vec![0.0], opts, |_| Ok(NormalEquations::new(1))).unwrap_err();
         assert!(matches!(err, NonlinearError::Solver(_)));
     }
 
     #[test]
     fn non_finite_tol_rel_is_error() {
-        let opts = NonlinearOptions { tol_rel: f64::NAN, ..default_opts() };
+        let opts = NonlinearOptions {
+            tol_rel: f64::NAN,
+            ..default_opts()
+        };
         let err = gauss_newton(vec![0.0], opts, |_| Ok(NormalEquations::new(1))).unwrap_err();
         assert!(matches!(err, NonlinearError::Solver(_)));
     }
 
     #[test]
     fn negative_tol_chi2_is_error() {
-        let opts = NonlinearOptions { tol_chi2_rel: -1.0, ..default_opts() };
+        let opts = NonlinearOptions {
+            tol_chi2_rel: -1.0,
+            ..default_opts()
+        };
         let err = gauss_newton(vec![0.0], opts, |_| Ok(NormalEquations::new(1))).unwrap_err();
         assert!(matches!(err, NonlinearError::Solver(_)));
     }
 
     #[test]
     fn non_finite_initial_is_error() {
-        let err = gauss_newton(vec![f64::NAN], default_opts(), |_| Ok(NormalEquations::new(1)))
-            .unwrap_err();
+        let err = gauss_newton(vec![f64::NAN], default_opts(), |_| {
+            Ok(NormalEquations::new(1))
+        })
+        .unwrap_err();
         assert!(matches!(err, NonlinearError::Solver(_)));
     }
 
     #[test]
     fn dimension_mismatch_is_error() {
         // Initial has 2 params but assembler returns NormalEquations::new(1)
-        let err = gauss_newton(vec![0.0, 0.0], default_opts(), |_| Ok(NormalEquations::new(1)))
-            .unwrap_err();
+        let err = gauss_newton(vec![0.0, 0.0], default_opts(), |_| {
+            Ok(NormalEquations::new(1))
+        })
+        .unwrap_err();
         assert!(matches!(err, NonlinearError::Solver(_)));
     }
 
     #[test]
     fn did_not_converge_after_max_iter() {
         // Residual 100.0 – x starting from x=0 with max_iter=1 won't converge
-        let opts = NonlinearOptions { max_iter: 1, tol_rel: 0.0, tol_chi2_rel: 0.0 };
+        let opts = NonlinearOptions {
+            max_iter: 1,
+            tol_rel: 0.0,
+            tol_chi2_rel: 0.0,
+        };
         let err = gauss_newton(vec![0.0], opts, |params| {
             let mut ne = NormalEquations::new(1);
             ne.add_row(&[(0, 1.0)], 100.0 - params[0], 0.1).unwrap();

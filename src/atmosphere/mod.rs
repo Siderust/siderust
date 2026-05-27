@@ -27,14 +27,14 @@
 //!
 //! Submodules:
 //! - [`mod@airmass`] — geometric path-length multipliers
-//!   ([`PlaneParallel`](airmass::PlaneParallel),
-//!   [`Young1994`](airmass::Young1994),
-//!   [`Rozenberg1966`](airmass::Rozenberg1966),
-//!   [`KrisciunasSchaefer1991`](airmass::KrisciunasSchaefer1991)).
+//!   ([`airmass::PlaneParallel`],
+//!   [`airmass::Young1994`],
+//!   [`airmass::Rozenberg1966`],
+//!   [`airmass::KrisciunasSchaefer1991`]).
 //! - [`rayleigh`] — Rayleigh optical depth (Bodhaine et al. 1999) and
 //!   the Rayleigh phase function.
 //! - [`mie`] — Mie / aerosol optical depth via the Patat 2011 power-law,
-//!   with site presets including [`MieParams::PARANAL`](mie::MieParams).
+//!   with site presets including [`mie::MieParams::PARANAL`].
 //! - [`airglow`] — Van Rhijn airglow emission-layer geometry.
 //! - [`scattering`] — phase-function traits and Rayleigh / tabulated
 //!   helpers; defines the dimensionless [`ScatteringFactor`] unit.

@@ -258,7 +258,10 @@ mod tests {
     // Display impls
     #[test]
     fn display_ephemeris_unavailable() {
-        let e = DynamicsError::EphemerisUnavailable { body: "Mars", source: None };
+        let e = DynamicsError::EphemerisUnavailable {
+            body: "Mars",
+            source: None,
+        };
         assert!(e.to_string().contains("Mars"));
     }
 
@@ -270,7 +273,10 @@ mod tests {
 
     #[test]
     fn display_gravity_coeff_unavailable() {
-        let e = DynamicsError::GravityCoefficientUnavailable { degree: 3, order: 2 };
+        let e = DynamicsError::GravityCoefficientUnavailable {
+            degree: 3,
+            order: 2,
+        };
         assert!(e.to_string().contains("C_3,2"));
     }
 
@@ -282,13 +288,17 @@ mod tests {
 
     #[test]
     fn display_degenerate_geometry() {
-        let e = DynamicsError::DegenerateGeometry { reason: "collinear" };
+        let e = DynamicsError::DegenerateGeometry {
+            reason: "collinear",
+        };
         assert!(e.to_string().contains("collinear"));
     }
 
     #[test]
     fn display_invalid_step_request() {
-        let e = DynamicsError::InvalidStepRequest { reason: "too large" };
+        let e = DynamicsError::InvalidStepRequest {
+            reason: "too large",
+        };
         assert!(e.to_string().contains("too large"));
     }
 
@@ -312,7 +322,10 @@ mod tests {
 
     #[test]
     fn display_geopotential_degree_out_of_range() {
-        let e = DynamicsError::GeopotentialDegreeOutOfRange { requested: 8, max: 4 };
+        let e = DynamicsError::GeopotentialDegreeOutOfRange {
+            requested: 8,
+            max: 4,
+        };
         let s = e.to_string();
         assert!(s.contains('8') && s.contains('4'));
     }
@@ -322,7 +335,9 @@ mod tests {
     fn error_source_with_source() {
         let inner: Box<dyn std::error::Error + Send + Sync> =
             Box::new(std::io::Error::other("fail"));
-        let e = DynamicsError::EOPUnavailable { source: Some(inner) };
+        let e = DynamicsError::EOPUnavailable {
+            source: Some(inner),
+        };
         assert!(std::error::Error::source(&e).is_some());
     }
 
@@ -341,8 +356,11 @@ mod tests {
     // From<PropagationError>
     #[test]
     fn from_propagation_step_below_minimum() {
-        let e: DynamicsError =
-            PropagationError::StepBelowMinimum { h_requested: 1e-10, h_min: 1e-9 }.into();
+        let e: DynamicsError = PropagationError::StepBelowMinimum {
+            h_requested: 1e-10,
+            h_min: 1e-9,
+        }
+        .into();
         assert!(matches!(e, DynamicsError::InvalidStepRequest { .. }));
     }
 
@@ -368,9 +386,14 @@ mod tests {
 
     #[test]
     fn from_propagation_event_evaluation() {
-        let src = PrincipiaError::DegenerateGeometry { reason: "degenerate" };
-        let e: DynamicsError =
-            PropagationError::EventEvaluation { name: "test_event", source: src }.into();
+        let src = PrincipiaError::DegenerateGeometry {
+            reason: "degenerate",
+        };
+        let e: DynamicsError = PropagationError::EventEvaluation {
+            name: "test_event",
+            source: src,
+        }
+        .into();
         assert!(matches!(e, DynamicsError::DegenerateGeometry { .. }));
     }
 
@@ -383,13 +406,19 @@ mod tests {
 
     #[test]
     fn principia_step_control_failed_maps() {
-        let e: DynamicsError = PrincipiaError::StepControlFailed { reason: "step ctrl" }.into();
+        let e: DynamicsError = PrincipiaError::StepControlFailed {
+            reason: "step ctrl",
+        }
+        .into();
         assert!(matches!(e, DynamicsError::InvalidStepRequest { .. }));
     }
 
     #[test]
     fn principia_step_below_minimum_maps() {
-        let e: DynamicsError = PrincipiaError::StepBelowMinimum { reason: "too small" }.into();
+        let e: DynamicsError = PrincipiaError::StepBelowMinimum {
+            reason: "too small",
+        }
+        .into();
         assert!(matches!(e, DynamicsError::InvalidStepRequest { .. }));
     }
 
@@ -401,11 +430,17 @@ mod tests {
 
     #[test]
     fn principia_gravity_coeff_maps() {
-        let e: DynamicsError =
-            PrincipiaError::GravityCoefficientUnavailable { degree: 5, order: 3 }.into();
+        let e: DynamicsError = PrincipiaError::GravityCoefficientUnavailable {
+            degree: 5,
+            order: 3,
+        }
+        .into();
         assert!(matches!(
             e,
-            DynamicsError::GravityCoefficientUnavailable { degree: 5, order: 3 }
+            DynamicsError::GravityCoefficientUnavailable {
+                degree: 5,
+                order: 3
+            }
         ));
     }
 
@@ -423,29 +458,31 @@ mod tests {
 
     #[test]
     fn principia_context_gravity_maps() {
-        let e: DynamicsError =
-            PrincipiaError::ContextDataUnavailable { what: "gravity" }.into();
+        let e: DynamicsError = PrincipiaError::ContextDataUnavailable { what: "gravity" }.into();
         assert!(matches!(e, DynamicsError::GravityFieldUnavailable));
     }
 
     #[test]
     fn principia_context_gravity_field_maps() {
-        let e: DynamicsError =
-            PrincipiaError::ContextDataUnavailable { what: "gravity field" }.into();
+        let e: DynamicsError = PrincipiaError::ContextDataUnavailable {
+            what: "gravity field",
+        }
+        .into();
         assert!(matches!(e, DynamicsError::GravityFieldUnavailable));
     }
 
     #[test]
     fn principia_context_atmosphere_maps() {
-        let e: DynamicsError =
-            PrincipiaError::ContextDataUnavailable { what: "atmosphere" }.into();
+        let e: DynamicsError = PrincipiaError::ContextDataUnavailable { what: "atmosphere" }.into();
         assert!(matches!(e, DynamicsError::AtmosphereProviderError(_)));
     }
 
     #[test]
     fn principia_context_unknown_maps() {
-        let e: DynamicsError =
-            PrincipiaError::ContextDataUnavailable { what: "unknown_field" }.into();
+        let e: DynamicsError = PrincipiaError::ContextDataUnavailable {
+            what: "unknown_field",
+        }
+        .into();
         assert!(matches!(e, DynamicsError::Provider(_)));
     }
 
@@ -470,7 +507,9 @@ mod tests {
         let e = DynamicsError::GravityFieldUnavailable;
         assert!(matches!(
             e.into_principia(),
-            PrincipiaError::ContextDataUnavailable { what: "gravity field" }
+            PrincipiaError::ContextDataUnavailable {
+                what: "gravity field"
+            }
         ));
     }
 
@@ -495,21 +534,33 @@ mod tests {
     #[test]
     fn into_principia_degenerate_geometry() {
         let e = DynamicsError::DegenerateGeometry { reason: "zero vec" };
-        assert!(matches!(e.into_principia(), PrincipiaError::DegenerateGeometry { .. }));
+        assert!(matches!(
+            e.into_principia(),
+            PrincipiaError::DegenerateGeometry { .. }
+        ));
     }
 
     #[test]
     fn into_principia_invalid_step() {
         let e = DynamicsError::InvalidStepRequest { reason: "overflow" };
-        assert!(matches!(e.into_principia(), PrincipiaError::InvalidStepRequest { .. }));
+        assert!(matches!(
+            e.into_principia(),
+            PrincipiaError::InvalidStepRequest { .. }
+        ));
     }
 
     #[test]
     fn into_principia_geopotential_out_of_range() {
-        let e = DynamicsError::GeopotentialDegreeOutOfRange { requested: 8, max: 4 };
+        let e = DynamicsError::GeopotentialDegreeOutOfRange {
+            requested: 8,
+            max: 4,
+        };
         assert!(matches!(
             e.into_principia(),
-            PrincipiaError::GeopotentialDegreeOutOfRange { requested: 8, max: 4 }
+            PrincipiaError::GeopotentialDegreeOutOfRange {
+                requested: 8,
+                max: 4
+            }
         ));
     }
 

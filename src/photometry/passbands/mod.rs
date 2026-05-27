@@ -14,7 +14,7 @@
 //! definitions. Each sub-module of this module bundles a curated
 //! transmission curve for one such system, distributed as a
 //! lazily-initialised, statically-cached
-//! [`SampledSpectrum`](optica::spectrum::SampledSpectrum) constant.
+//! [`SampledSpectrum`] constant.
 //!
 //! Validity ranges are bounded by the wavelength interval of the
 //! published table; outside that interval the throughput is taken as

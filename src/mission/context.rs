@@ -6,18 +6,17 @@
 //! ## Scientific scope
 //!
 //! The [`MissionContext`] type aggregates the typed objects an
-//! operational pipeline needs at runtime: ephemeris backends,
-//! orientation providers, physical constants overrides, the catalog
-//! of ground-station [`Location`]s, and the catalog of on-board
-//! [`Instrument`]s. It is intentionally a passive container of typed
-//! handles — there is no service registry, no async runtime, no
+//! operational pipeline needs at runtime: the catalog of ground-station
+//! [`crate::mission::site::Location`]s and the catalog of on-board
+//! [`crate::mission::geometry::Instrument`]s. It is intentionally a passive container of
+//! typed handles — there is no service registry, no async runtime, no
 //! network layer. Those operational concerns live in **SatOps**.
 //!
 //! ## Technical scope
 //!
-//! - Build a context with [`MissionContext::new`] (no providers
-//!   attached) or [`MissionContext::default`] and progressively call
-//!   the `add_*` / `with_*` builder methods.
+//! - Build a context with [`MissionContext::new`] (no items registered)
+//!   or [`MissionContext::default`] and progressively call the `add_*` /
+//!   `with_*` builder methods.
 //! - Look up locations / instruments by string alias; aliases are
 //!   case-sensitive and unique per category.
 //! - The context owns its handles; cloning is cheap because the
@@ -28,11 +27,10 @@
 //! - Vallado, D. A. (2013). *Fundamentals of Astrodynamics and
 //!   Applications*, 4th ed. §1.2 (mission analysis context).
 
-#![forbid(unsafe_code)]
-
 use std::collections::HashMap;
 
-use crate::instruments::{Instrument, Location};
+use crate::mission::geometry::Instrument;
+use crate::mission::site::Location;
 
 /// Runtime mission-analysis context.
 #[derive(Debug, Default, Clone)]
@@ -105,8 +103,7 @@ impl MissionContext {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::instruments::Fov;
-    use crate::mission_geometry::LocalFrame;
+    use crate::mission::geometry::{Fov, LocalFrame};
     use qtty::Quantity;
 
     #[test]

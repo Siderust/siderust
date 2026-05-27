@@ -369,8 +369,7 @@ mod tests {
     #[test]
     fn cylindrical_deep_shadow() {
         // Satellite directly behind Earth, inside the cylinder
-        let factor =
-            cylindrical_shadow_factor([-7_000.0, 0.0, 0.0], [1.496e8, 0.0, 0.0], 6_371.0);
+        let factor = cylindrical_shadow_factor([-7_000.0, 0.0, 0.0], [1.496e8, 0.0, 0.0], 6_371.0);
         assert_eq!(factor, 0.0);
     }
 
@@ -392,12 +391,8 @@ mod tests {
 
     #[test]
     fn conical_full_illumination() {
-        let nu = conical_shadow_factor(
-            [7_000.0, 0.0, 0.0],
-            [1.496e8, 0.0, 0.0],
-            6_371.0,
-            695_700.0,
-        );
+        let nu =
+            conical_shadow_factor([7_000.0, 0.0, 0.0], [1.496e8, 0.0, 0.0], 6_371.0, 695_700.0);
         assert_eq!(nu, 1.0);
     }
 
@@ -434,24 +429,15 @@ mod tests {
 
     #[test]
     fn conical_zero_d_earth_returns_one() {
-        let nu = conical_shadow_factor(
-            [0.0, 0.0, 0.0],
-            [1.496e8, 0.0, 0.0],
-            6_371.0,
-            695_700.0,
-        );
+        let nu = conical_shadow_factor([0.0, 0.0, 0.0], [1.496e8, 0.0, 0.0], 6_371.0, 695_700.0);
         assert_eq!(nu, 1.0);
     }
 
     #[test]
     fn conical_zero_d_sun_returns_one() {
         // Satellite at the same position as the Sun
-        let nu = conical_shadow_factor(
-            [1.496e8, 0.0, 0.0],
-            [1.496e8, 0.0, 0.0],
-            6_371.0,
-            695_700.0,
-        );
+        let nu =
+            conical_shadow_factor([1.496e8, 0.0, 0.0], [1.496e8, 0.0, 0.0], 6_371.0, 695_700.0);
         assert_eq!(nu, 1.0);
     }
 
@@ -489,20 +475,30 @@ mod tests {
 
     #[test]
     fn cylindrical_srp_zero_in_shadow() {
-        let srp = CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
+        let srp =
+            CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
         let state = OrbitState::new(
             JulianDate::JD_EPOCH_J2000_0.to_j2000s(),
             Position::<GCRS>::new(-(R_EARTH.value() + 500.0), 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
-        let mag = srp.acceleration(&state, &ctx_stub()).unwrap().magnitude().value();
+        let mag = srp
+            .acceleration(&state, &ctx_stub())
+            .unwrap()
+            .magnitude()
+            .value();
         assert_eq!(mag, 0.0);
     }
 
     #[test]
     fn cylindrical_srp_nonzero_in_sunlight() {
-        let srp = CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
-        let mag = srp.acceleration(&leo(), &ctx_stub()).unwrap().magnitude().value();
+        let srp =
+            CannonballSrp::<Cylindrical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
+        let mag = srp
+            .acceleration(&leo(), &ctx_stub())
+            .unwrap()
+            .magnitude()
+            .value();
         assert!((1e-11..5e-10).contains(&mag));
     }
 
@@ -516,14 +512,22 @@ mod tests {
             Position::<GCRS>::new(-(R_EARTH.value() + 500.0), 0.0, 0.0),
             Velocity::<GCRS>::new(0.0, 7.5, 0.0),
         );
-        let mag = srp.acceleration(&state, &ctx_stub()).unwrap().magnitude().value();
+        let mag = srp
+            .acceleration(&state, &ctx_stub())
+            .unwrap()
+            .magnitude()
+            .value();
         assert_eq!(mag, 0.0);
     }
 
     #[test]
     fn conical_srp_nonzero_in_sunlight() {
         let srp = CannonballSrp::<Conical>::new(SrpCoefficient::new(1.5), AreaToMass::new(0.01));
-        let mag = srp.acceleration(&leo(), &ctx_stub()).unwrap().magnitude().value();
+        let mag = srp
+            .acceleration(&leo(), &ctx_stub())
+            .unwrap()
+            .magnitude()
+            .value();
         assert!((1e-11..5e-10).contains(&mag));
     }
 }

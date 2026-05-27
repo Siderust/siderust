@@ -60,6 +60,7 @@
 //! - [`ephemeris`]               : Ephemeris traits and backends (VSOP87, ELP2000, DE4xx, Pluto)
 //! - [`event`]                   : Altitude/azimuth/lunar/solar/stellar event-search APIs
 //! - [`bodies`]                  : Planets, stars, satellites, asteroids, comets, and built-in catalogs
+//! - [`mission`]                 : Mission geometry, runtime context, and site metadata (FoV, terrain mask, AzElRange, eclipse, orbit-relative)
 //! - [`observatories`]           : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 //! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate (including `OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`, `Refractivity`, `CipCoordinate`)
 //! - [`data`]                    : Scientific dataset catalog, provenance, checksums, compiled tables, and optional runtime download/cache manager
@@ -115,9 +116,7 @@ pub mod data;
 pub mod ephemeris;
 pub mod event;
 pub mod formats;
-pub mod instruments;
-pub mod mission_context;
-pub mod mission_geometry;
+pub mod mission;
 pub mod observatories;
 #[cfg(feature = "photometry")]
 pub mod photometry;

@@ -412,7 +412,11 @@ mod tests {
 
     #[test]
     fn write_opm_roundtrip_cartesian() {
-        let msg = OpmMessage { metadata: make_meta(), state: make_state(), keplerian: None };
+        let msg = OpmMessage {
+            metadata: make_meta(),
+            state: make_state(),
+            keplerian: None,
+        };
         let mut buf = Vec::new();
         write_opm(&mut buf, &msg).unwrap();
         let parsed = read_opm(buf.as_slice()).unwrap();

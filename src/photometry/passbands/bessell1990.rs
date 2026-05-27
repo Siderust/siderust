@@ -29,7 +29,7 @@
 //! constants for each of the five UBVRI bands via accessor functions
 //! `bessell1990::u()`, `bessell1990::b()`, `bessell1990::v()`,
 //! `bessell1990::r()`, `bessell1990::i()`. Each spectrum carries a
-//! [`Provenance`](crate::data::Provenance) record citing the
+//! [`Provenance`] record citing the
 //! Bessell (1990) paper and the bundled ASCII source file.
 //!
 //! Sample values are exposed at the typed boundary; consumers that need
