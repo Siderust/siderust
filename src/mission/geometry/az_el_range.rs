@@ -5,7 +5,9 @@
 
 use core::f64::consts::TAU;
 
-use affn::cartesian::{line_of_sight_with_distance, Direction as CartesianDirection, Position, Velocity};
+use affn::cartesian::{
+    line_of_sight_with_distance, Direction as CartesianDirection, Position, Velocity,
+};
 use affn::frames::Horizontal;
 use affn::spherical::Direction;
 use affn::{ReferenceCenter, ReferenceFrame};
@@ -107,8 +109,8 @@ where
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::LocalFrame;
+    use super::*;
     use affn::cartesian::{Position, Velocity};
     use affn::DeriveReferenceCenter;
     use affn::DeriveReferenceFrame;
@@ -163,8 +165,13 @@ mod tests {
         let obs = p(r, 0.0, 0.0);
         let tgt = p(-r, 0.0, 0.0);
         let zero = v(0.0, 0.0, 0.0);
-        let result =
-            azimuth_elevation_range(&obs, &zero, &tgt, &zero, LocalFrame::new(rad(0.0), rad(0.0)));
+        let result = azimuth_elevation_range(
+            &obs,
+            &zero,
+            &tgt,
+            &zero,
+            LocalFrame::new(rad(0.0), rad(0.0)),
+        );
         // Target is in -up direction → elevation = -π/2.
         assert!(result.pointing.alt().value() < 0.0);
     }

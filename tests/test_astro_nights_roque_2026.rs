@@ -9,11 +9,11 @@ use std::fs;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use siderust::bodies::Sun;
+use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::event::altitude::AltitudePeriodsProvider;
 use siderust::event::solar::twilight;
-use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::{Interval, ModifiedJulianDate};
 
 const REFERENCE_PATH: &str = "tests/reference_data/astro_night_periods_2026.json";

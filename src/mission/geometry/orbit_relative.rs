@@ -30,7 +30,11 @@ where
     F: ReferenceFrame,
 {
     let r_hat = sat_pos.direction_unchecked();
-    let v_hat = Direction::<F>::new(sat_vel.x().value(), sat_vel.y().value(), sat_vel.z().value());
+    let v_hat = Direction::<F>::new(
+        sat_vel.x().value(),
+        sat_vel.y().value(),
+        sat_vel.z().value(),
+    );
     let h = r_hat.cross(&v_hat).expect("non-degenerate orbit");
     // Beta = π/2 − angle(h, s)  ⇒  sin(beta) = h · s
     let sb = h.dot(sun_dir).clamp(-1.0, 1.0);
@@ -65,8 +69,8 @@ pub fn ltan(raan: Radians, sun_ra: Radians) -> Seconds {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
     use super::MeterPerSecond;
+    use super::*;
     use affn::cartesian::{Direction, Position, Velocity};
     use affn::DeriveReferenceCenter;
     use affn::DeriveReferenceFrame;
