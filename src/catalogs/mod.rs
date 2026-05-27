@@ -111,7 +111,12 @@ mod tests {
         let mut cat = LargeStarCatalog::new();
         cat.push(rec(1, 359.0, 0.0));
         cat.push(rec(2, 1.0, 0.0));
-        let hits = cat.cone_search(rad(0.0), rad(0.0), rad(2.0_f64.to_radians()), CatalogFilter::default());
+        let hits = cat.cone_search(
+            rad(0.0),
+            rad(0.0),
+            rad(2.0_f64.to_radians()),
+            CatalogFilter::default(),
+        );
         assert_eq!(hits.len(), 2);
     }
 
@@ -144,7 +149,10 @@ mod tests {
             rad(10.0_f64.to_radians()),
             rad(0.0),
             rad(1.0_f64.to_radians()),
-            CatalogFilter { max_g_mag: Some(10.0), require_quality: None },
+            CatalogFilter {
+                max_g_mag: Some(10.0),
+                require_quality: None,
+            },
         );
         assert_eq!(hits.len(), 1);
         assert_eq!(hits[0].source_id, 1);

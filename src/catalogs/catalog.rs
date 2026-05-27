@@ -60,7 +60,9 @@ impl LargeStarCatalog {
     ) -> Vec<&CatalogRecord> {
         self.records
             .iter()
-            .filter(|r| inside_cone(r.ra, r.dec, center_ra, center_dec, radius) && passes_filter(r, &filter))
+            .filter(|r| {
+                inside_cone(r.ra, r.dec, center_ra, center_dec, radius) && passes_filter(r, &filter)
+            })
             .collect()
     }
 

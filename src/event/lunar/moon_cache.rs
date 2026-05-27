@@ -563,8 +563,8 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::event::lunar::moon_altitude_rad;
     use crate::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
+    use crate::event::lunar::moon_altitude_rad;
     use crate::qtty::Radians;
 
     #[test]
