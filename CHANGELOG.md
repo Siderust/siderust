@@ -8,271 +8,47 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- `siderust::spice` module (feature `spice`): high-level SPICE kernel context
-  with `SpiceContext`, `KernelSet`, `FrameRegistry`, and `SpiceContextError`.
-  Supports SPK, CK, LSK, FK, PCK text, SCLK, and IK kernels. Binary PCK (BPC),
-  DSK, and EK kernel queries return `UnsupportedKernelQuery` in V1.
-- `formats::spice::text`: generic SPICE text kernel parser (`TextKernel`).
-- `formats::spice::lsk`: leapseconds kernel (`LeapSecondKernel`), UTC↔TDB
-  conversion via the `DELTET/DELTA_AT` table.
-- `formats::spice::fk`: frame kernel parser (`FrameKernel`, `FrameSpec`),
-  supporting inertial, PCK, CK, and TK (constant-matrix) frames.
-- `formats::spice::pck`: PCK text kernel parser (`PckKernel`, `BodyOrientation`)
-  with `rotation_to_j2000()` using first-order IAU pole RA/Dec/PM constants.
-- `formats::spice::ck`: CK attitude kernel parser (`CkKernel`, `CkSegment1`);
-  Type 1 segments with SLERP quaternion interpolation.
-- `formats::spice::sclk`: SCLK text kernel parser (`SclkKernel`) with
-  partition-based ET↔SCLK ticks conversion.
-- `formats::spice::ik`: IK instrument kernel parser (`IkKernel`).
-- `formats::spice::daf`: `DafRaw` generic DAF container for non-SPK kernel types.
-- `SpiceError::UnsupportedKernelQuery`, `SpiceError::UnknownFrame`,
-  `SpiceError::TimeConversion` — new structured error variants.
-
-* **`siderust::photometry` module** (`photometry` feature): introduces the
-  canonical home for astronomical photometric concepts. Contains
-  `siderust::photometry::passbands` with Johnson–Cousins UBVRI passbands from
-  Bessell (1990), `siderust::photometry::passbands::johnson_b()` /
-  `johnson_v()` convenience accessors, and the `Throughput` unit type.
-  Generic sampled-spectrum infrastructure continues to be delegated to
-  `optica::spectrum`.
-
-* **`optica` dependency**: `optica` is now an unconditional dependency, providing
-  the canonical grid interpolation and optical-transport primitives used by
-  `siderust`'s atmosphere and photometry modules.
+- Added the `spice` feature and `siderust::spice` / `formats::spice` stack for SPICE text, DAF/SPK, FK, PCK, CK, SCLK, IK, kernel metadata, and high-level `SpiceContext`.
+- Added `photometry` support for Johnson–Cousins UBVRI passbands and delegated generic sampled-spectrum/grid interpolation to `optica`.
+- Added `pod` as an explicit opt-in feature, folding the former `siderust-pod` functionality into `siderust::pod` with force-model configuration, propagation, process noise, observations, estimation, QC, products, and SPICE/I/O adapters.
+- Added spacecraft dynamics under `astro::dynamics`: typed orbital states, perturbation context, drag, SRP, geopotential, third-body, relativity, empirical accelerations, covariance/STM helpers, and propagator wrappers.
+- Added SGP4/TLE/OMM support, CCSDS/IGS/ILRS/RINEX/VLBI format modules, and related examples/tests.
+- Added aircraft identity/state and ICAO ISA atmosphere support under `bodies::aircraft`.
+- Added Lagrange-center support, generated Chebyshev tooling/placeholders, and center-shift providers.
+- Added FFI dynamics bindings and tests.
 
 ### Changed
 
-* **`interp::OutOfRange`**: re-exported from `optica::grid::OutOfRange`;
-  the local definition is removed.
+- Reorganized major internal namespaces:
+  - `calculus::*` functionality moved into `event::*`, `ephemeris::*`, and `astro::*`.
+  - `archive` / `provenance` data moved under `data::*`.
+  - generic grid/table functionality moved to `optica::grid`.
+- Replaced the old local generic dynamics implementation with the extracted `principia` mechanics crate for integration, STM, covariance transport, gravity kernels, and local trajectory frames.
+- Updated force-model and propagation APIs to use typed `qtty` quantities such as `GravitationalParameter` and `Second` instead of raw scalars.
+- Renamed `siderust::spectra` to `siderust::photometry`; use `optica::spectrum` for generic spectrum infrastructure.
+- Made `pod` non-default; default features now include `serde` only.
+- Marked `siderust-ffi` as `publish = false`.
+- Corrected and modernized examples, benches, docs, and generated bindings for the new module layout.
 
-* **Spectra interpolation modes**: `Interpolation::Nearest`,
-  `PiecewiseConstantLeft`, `PiecewiseConstantRight`, and `CubicSpline` are
-  now implemented (previously rejected at construction time). Cubic-spline
-  coefficients are precomputed once at construction time on
-  `SampledSpectrum::from_*` via the tridiagonal Thomas algorithm; per-query
-  evaluation is `O(log n)`. Nearest-neighbour ties resolve to the lower
-  index, matching `scipy.interpolate.interp1d(kind="nearest")`. New public
-  helpers `optica::spectrum::algo::{interp_nearest, interp_step_left,
-  interp_step_right, interp_cubic_spline, CubicSplineCoeffs}` expose the
-  untyped kernels.
-* `siderust::spectra` renamed to `siderust::photometry`; the `spectra`
-  feature is replaced by the `photometry` feature. Photometric passband data
-  and the [`Throughput`](siderust::photometry::passbands::Throughput) unit now
-  live under `siderust::photometry::passbands`. Generic spectrum
-  infrastructure (interpolation, integration, loaders) lives in
-  `optica::spectrum`.
-* `siderust::photometry::passbands::bessell1990` uses `OutOfRange::Zero`
-  for compact-support passbands (previously `ClampToEndpoints`).
-* **`lagrange-centers` feature**: typed Sun-Earth L1-L5 reference centers,
-  `ephemeris::lagrange` Chebyshev archive evaluation, N-body solver/fitter,
-  center-shift providers, generator binary, and placeholder embedded records.
-* **`siderust::bodies::aircraft` module**: identity and state types for atmospheric
-  vehicles — `Aircraft` (ICAO 24-bit address, callsign, wake category),
-  `AircraftState` (geodetic position, ground speed, track angle), and
-  `bodies::aircraft::isa` (ICAO International Standard Atmosphere: pressure, temperature,
-  density, and geopotential-to-pressure-altitude conversion for all ISA layers).
-  All public APIs use typed `qtty` quantities; no bare `f64` on the boundary.
-* **`siderust::formats::adsb` module**: strict ADS-B / Mode-S frame parser —
-  CRC-24 verification, identification (callsign), airborne position with full
-  CPR global and local decoding (`nl()` per DO-260B eq. 2-15), airborne velocity
-  (ground speed, heading, vertical rate), and Gillham/Q-bit altitude decoding.
-  Malformed frames are rejected with `FormatError`; no silent repair.
-* **`pod` feature** (must be enabled explicitly): the former `siderust-pod` crate has been
-  folded into `siderust` as the new `siderust::pod` module. POD-only
-  dependencies (`faer`, `hex`, optional `parquet`) live behind the `pod`
-  feature family (`pod`, `pod-parquet`, `pod-doris`). Default features now
-  include `serde` only. Enable POD functionality via `features = ["pod"]`.
-* Examples `16_lambert_earth_to_mars`, `17_sgp4_from_tle`, and
-  `18_lisa_pod` (all gated on `pod`), plus integration tests `pod_smoke`
-  and `tle_sgp4_pipeline`.
-* `constops::report::html` — HTML QC report renderer moved from the library
-  to `constops`, where service-shaped output belongs.
-* **`siderust-ffi`**: marked `publish = false` in `Cargo.toml`. FFI crates are
-  not published by default; publish only when C API/ABI changes are intentional.
-  See `siderust-ffi/README.md` for the manual publish procedure.
 ### Removed
 
-- Removed public `siderust::numeric`; the event-search internals (root-finding,
-  extrema, bracketing, interval assembly) have been moved to the crate-private
-  `event::search` module. Use the high-level `siderust::event::*` APIs instead.
-  The `intersect_periods` function remains available via
-  `siderust::time::intersect_periods`.
-* **`siderust-pod` crate removed.** All public items now live under
-  `siderust::pod::{problem, run, providers, force, propagation, process,
-  observation, estimation, qc, product, io, spice}`. Migration: replace
-  `use siderust_pod::X::*` with `use siderust::pod::X::*`. TLE parsing
-  helpers that previously sat behind `siderust_pod::tle` are the same
-  re-exports of `siderust::formats::tle` — import directly from there.
-  Likewise the former `siderust_pod::sgp4` shim has been removed;
-  import `siderust::astro::sgp4` directly.
-* `siderust::spectra` module removed; replaced by `siderust::photometry`
-  (see Added section). Migrate:
-  - `siderust::spectra::passbands` → `siderust::photometry::passbands`
-  - `siderust::spectra::passbands::bessell1990` → `siderust::photometry::passbands::bessell1990`
-  - `siderust::spectra::Throughput` → `siderust::photometry::Throughput`
-  - feature `spectra` → feature `photometry`
-* `siderust::spectra::SampledSpectrum` removed — use
-  `optica::spectrum::SampledSpectrum`.
-* `siderust::spectra::Interpolation` removed — use
-  `optica::spectrum::Interpolation`.
-* `siderust::spectra::OutOfRange` removed — use `optica::grid::OutOfRange`.
-* `siderust::spectra::SpectrumError` removed — use
-  `optica::spectrum::SpectrumError`.
-* `siderust::spectra::algo` removed — use `optica::spectrum::algo`.
-* `siderust::spectra::loaders` removed — use `optica::spectrum::loaders`.
-* `siderust::spectra::integrate` removed — use `optica::spectrum::integrate`.
-* **`pod-lisa` feature removed.** The LISA inter-satellite range model and
-  orbit reader are mission-specific code; they now live in
-  `examples/18_lisa_pod.rs` rather than the library source.
-* **`siderust::pod::qc::render_html` removed.** The HTML QC report renderer
-  is a service concern; it is now `constops::report::html::render_html`.
-* Publish workflow for `keplerian` and `principia`: both crates now ship
-  `.github/workflows/publish.yml` that triggers on `v*.*.*` tags and verifies
-
-* **`siderust::instruments`, `siderust::mission_geometry`, and
-  `siderust::mission_context` modules removed.** All public items have moved
-  into the new `siderust::mission` namespace:
-  - `siderust::instruments::Fov` → `siderust::mission::geometry::Fov`
-  - `siderust::instruments::Instrument` → `siderust::mission::geometry::Instrument`
-  - `siderust::instruments::TerrainMask` → `siderust::mission::geometry::TerrainMask`
-  - `siderust::instruments::Location` → `siderust::mission::site::Location`
-  - `siderust::mission_geometry::*` → `siderust::mission::geometry::*`
-    (includes `AzElRange`, `LineOfSightStatus`, `MetersPerSecond`,
-    `EclipseState`, `LocalFrame`, `beta_angle`, `local_solar_time`,
-    `ltan`, `azimuth_elevation_range`, `eclipse_state`, `solar_eclipsing`,
-    `line_of_sight_obstructed`, `occultation_fraction`)
-  - `siderust::mission_context::MissionContext` → `siderust::mission::context::MissionContext`
-
-  No compatibility re-exports are provided; this is an intentional
-  breaking change. Update all import paths.
-  the crate version matches the tag before uploading to crates.io.
-
-* **`astro::dynamics` module simplification**: removed the thin
-  `integrators/mod.rs` and `variational/mod.rs` wrapper files that were
-  pure re-exports of `principia`. Those namespaces are now exposed via
-  `pub use principia::integrators` and `pub use principia::variational` in
-  `dynamics/mod.rs`, keeping all existing import paths stable.
-* `keplerian` CI upgraded to match `principia`: added `audit`, `deny`,
-  `coverage` (llvm-cov ≥ 90 % line rate), and `miri` jobs.
+- Removed public `siderust::numeric`; event-search internals are now crate-private under `event::search`.
+- Removed `siderust::calculus` as a public namespace after moving its responsibilities into `event`, `ephemeris`, and `astro`.
+- Removed `siderust::archive` and old data/provenance layout in favor of `siderust::data`.
+- Removed `siderust::tables` and the `tables` feature; use `optica::grid`.
+- Removed `siderust::spectra`; use `siderust::photometry` and `optica::spectrum`.
+- Removed the standalone `siderust-pod` crate and `pod-lisa` feature; POD now lives behind `siderust::pod`, and LISA-specific logic lives in examples.
+- Removed the parallel `pod::dynamics` force-model wrapper layer in favor of canonical `AccelerationModel` / `CompositeModel`.
+- Removed root-level `siderust::instruments`, `siderust::mission_geometry`, and
+  `siderust::mission_context`; mission APIs now live under `siderust::mission`.
 
 ### Fixed
 
-* **`pod::dynamics` parallel `ForceModel` layer removed**: the POD-specific
-  `ForceModel` trait, its wrapper implementations (`TwoBodyForce`,
-  `J2PerturbationForce`, `DragForce`, `SolarRadiationPressureForce`), the
-  evaluating `pod::dynamics::forces::ForceModelRegistry`, and the
-  `Acceleration3`/`AccelPartials` types have been deleted. These were unused
-  wrappers that silenced physics errors (returning zero acceleration on
-  failures). All POD propagation uses the canonical fallible
-  `AccelerationModel` trait via `SiderustCompositeModel` and the
-  `registry::ForceModelRegistry` factory. Migration: remove any direct
-  imports of these types; use the canonical `TwoBody`, `J2`, `DragForce`,
-  and `CannonballSrp` from `siderust::astro::dynamics::forces` instead.
+- Fixed misspelled `bodies::satelite` path to `bodies::satellite`.
+- Made RINEX NAV parsing strict by default, returning located `FormatError`s instead of silently zero-filling malformed records.
+- Fixed ILRS CPF/CRD doctest import paths.
+- Removed unreachable non-finite epoch tests now covered by stricter `JulianDate` construction.
 
-* **Typed POD provider and observation APIs** (Finding #3): all raw `f64`
-  fields in the public POD surface have been replaced with typed quantities.
-  - `ProviderBundle`: `epoch_jd: f64` → `JulianDate`; satellite state returns
-    now use `Position<GCRS>` and `Velocity<GCRS>`; clock bias returns
-    `qtty::Meter`.
-  - `GnssPseudorangeObs`, `GnssCarrierPhaseObs`: `measured_m`, `sigma` →
-    `qtty::Meter`; `sat_pos_gcrs_km` → `Position<GCRS>`;
-    `sat_vel_gcrs_km_s` → `Velocity<GCRS>`; `frequency_hz` → `qtty::Hertz`.
-  - `SlrNormalPointObs`: `measured_m`, `sigma` → `qtty::Meter`;
-    `station_gcrs_km`, `sat_pos_gcrs_km` → `Position<GCRS>`;
-    `sat_vel_gcrs_km_s` → `Velocity<GCRS>`.
-  - `Observation::sigma()` trait method return type changed from `f64` to
-    `qtty::Meter`.
-  - `InterSatRangeObs` in `examples/18_lisa_pod.rs`: `sigma: f64` →
-    `qtty::Meter`.
-  - `siderust::qtty` facade: added re-exports of `qtty::frequency` and
-    `qtty::frequency::*` (makes `siderust::qtty::Hertzs` available without
-    a direct `qtty` dependency).
-
-* **`bodies::satelite` → `bodies::satellite`**: the misspelled module path and
-  source file have been corrected. The `Satellite` type is unchanged; only the
-  internal module name and the integration test file changed. The test file
-  `tests/test_satelite.rs` is now `tests/test_satellite.rs`.
-* **`formats::rinex::nav` strict parsing**: `parse_rinex_nav` and the new
-  `parse_rinex_nav_with_mode` now return `FormatError::Located` on malformed
-  PRN, epoch, or body fields instead of silently falling back to `0`. The old
-  behaviour (skip/zero-fill malformed records) is still available via
-  `parse_rinex_nav_with_mode(text, ParseMode::Permissive)`.
-
-* `astro::conic`: removed unreachable `conic_rejects_non_finite_epoch` and
-  `mean_motion_rejects_non_finite_epoch` tests — `JulianDate::new` now panics
-  on NaN and the split representation rejects ∞ in debug builds before the
-  orbit constructor's release-mode guard is reached.  The guard is retained and
-  documented.
-* `formats::ilrs::cpf::parse_cpf_with_mode` and
-  `formats::ilrs::crd::parse_crd_with_mode` doctests: corrected import path
-  from `siderust::formats::{…, cpf::…}` to
-  `siderust::formats::{…, ilrs::cpf::…}` (and likewise for `crd`).
-* **`astro::perturbations`** as the astronomy-specific spacecraft-dynamics layer,
-  collecting runtime context/provider wiring, atmosphere models, Earth gravity
-  helpers, spacecraft-state helpers, and perturbation force models under a
-  dedicated namespace separate from the generic numerical mechanics kernel.
-* **Typed spacecraft-dynamics gravitational-parameter aliases and constants** in
-  `astro::dynamics::units`, re-exported from `astro::dynamics` as
-  `GravitationalParameter`, with canonical `GM_EARTH`, `GM_SUN`, and `GM_MOON`
-  values expressed as `km³/s²`.
-* **`astro::dynamics::StateTransition<F>`** as a frame-tagged state-transition
-  container storing the 6×6 STM as four typed `affn::matrix3::FrameMatrix3`
-  blocks (`dr_dr`, `dr_dv`, `dv_dr`, `dv_dv`), plus identity construction,
-  block accessors, relabelling, and dense `to_row_major()` export.
-* **Expanded dynamics module docs** covering covariance propagation semantics,
-  STM block structure, and the local typed-unit vocabulary used by the orbital
-  propagation code.
-* **`astro::dynamics::Force<F, U>`** public type alias (defaulting to `GCRS`
-  frame and `Newton` unit), backed by `affn::cartesian::Force<F, U>`. Exposes a
-  semantically named handle for force vectors in the dynamics API, consistent
-  with how `Velocity` and `Displacement` are exposed as named aliases throughout
-  `affn`.
-* **`astro::dynamics::Acceleration<F, U>`** is now anchored to
-  `affn::cartesian::Acceleration<F, U>` instead of a local `Vector<F, U>` alias,
-  making the type visible under the canonical `affn` name across the entire
-  crate while remaining a zero-cost transparent alias.
-
-### Changed
-
-* **`astro::dynamics` now fronts the extracted `principia` mechanics crate** for
-  generic Cartesian state propagation, integrators, covariance transport,
-  variational equations, gravity kernels, and local-trajectory frames, while
-  astronomy-specific perturbations live in `astro::perturbations`.
-* **The legacy generic dynamics implementation has been removed from `siderust`.**
-  `OrbitState<C, F>` is now the TT-fixed alias
-  `principia::DynamicsState<TT, C, F>`, generic force/composite/integrator APIs
-  come from `principia`, and callers should use `AccelerationModel` /
-  `CompositeModel` plus typed epoch conversions instead of the removed local
-  `ForceModel`, `CompositeForce`, `new_at_jd`, and `epoch_jd` helpers.
-* **Dynamics gravitational-parameter APIs now use typed quantities** instead of
-  bare `f64` values. Force-model and gravity code paths now accept and store
-  `GravitationalParameter`, and the main solar-system GM constants in
-  `astro::dynamics::forces` are typed aliases of the new canonical constants.
-* **Orbit propagation time-step APIs in the dynamics integrators now use
-  `Second`** rather than raw scalars, preserving time-unit semantics across RK4,
-  DOPRI5, and `OrbitState::advance`.
-* **Finite-difference STM routines now return `StateTransition<GCRS>`** instead
-  of exposing only raw dense matrices, pushing frame-tagged affine structure
-  into the public dynamics API while still allowing dense export when needed.
-* **The `affn` dependency now resolves from the git source** and the lockfile
-  records checksums for the updated dependency graph, aligning `siderust` with
-  the current canonical affine-geometry implementation.
-
-### Removed
-
-* **`siderust::tables` module deleted.** Generic grid interpolation now lives
-  entirely in `optica::grid`. Callers that used `siderust::tables::{Grid1D,
-  Grid2D, Grid3D, OutOfRange, AxisDirection, algo, …}` must migrate to
-  `optica::grid::{Grid1D, Grid2D, Grid3D, OutOfRange, AxisDirection, algo, …}`.
-* **`tables` feature flag removed.** Removing `features = ["tables"]` from any
-  downstream `Cargo.toml` is the required migration step; the feature no longer
-  exists and its presence will cause a build error.
-* **`TabulatedPhaseFunction` is no longer gated on `tables`.** It is now
-  available whenever the `atmosphere` feature is enabled. The internal grid
-  type is `optica::grid::Grid2D<Nanometer, Degree, ScatteringFactor>`;
-  `from_raw_row_major` now accepts `&[f64]` slices (was `Vec<f64>`), returns
-  `Result<Self, optica::grid::GridError>`, and `interp_at` is infalible
-  (`-> Quantity<ScatteringFactor>`, clamps by default).
 
 ## [0.8.0] - 2026-05-18
 

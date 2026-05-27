@@ -9,7 +9,7 @@
 use siderust::bodies::catalog::SIRIUS;
 use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::event::azimuth::{AzimuthProvider, AzimuthQuery};
-use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
+use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::time::intersect_periods;
 use siderust::time::{Interval, ModifiedJulianDate};
 

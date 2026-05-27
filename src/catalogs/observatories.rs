@@ -45,7 +45,7 @@
 //! ## Usage
 //!
 //! ```rust
-//! use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
+//! use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 //! use siderust::qtty::Meter;
 //!
 //! let ecef = ROQUE_DE_LOS_MUCHACHOS.geodetic().to_cartesian::<Meter>();
@@ -109,8 +109,6 @@ impl Observatory {
 /// - Altitude:  2396 m (WGS84 ellipsoidal height)
 /// - Reference pressure: 744 hPa (source: `NSB_Utils.py:59`, `la_palma_pres = 744 hPa`)
 /// - Reference temperature: `None` — no authoritative cited value wired in yet.
-///   The upstream NSB code does not carry a per-site temperature constant; an
-///   ORM site-characterization citation (IAC) should be added in a follow-up.
 /// - Reference relative humidity: `None` — same rationale as temperature.
 ///
 /// For an atmosphere profile calibrated to this site, see
@@ -134,9 +132,6 @@ pub const ROQUE_DE_LOS_MUCHACHOS: Observatory = Observatory {
 /// - Altitude:  2635 m (WGS84 ellipsoidal height)
 /// - Reference pressure: 744 hPa (source: `NSB_Utils.py:59`, `cerro_paranal_pres = 744 hPa`)
 /// - Reference temperature: `None` — no authoritative cited value wired in yet.
-///   The upstream NSB code does not carry a per-site temperature constant; an
-///   ESO Paranal site-characterization citation (e.g. Patat et al. 2011) should
-///   be added in a follow-up.
 /// - Reference relative humidity: `None` — same rationale as temperature.
 pub const EL_PARANAL: Observatory = Observatory {
     name: "El Paranal Observatory",
@@ -150,33 +145,51 @@ pub const EL_PARANAL: Observatory = Observatory {
     reference_relative_humidity: None,
 };
 
-/// Mauna Kea Observatory (Hawaiʻi, USA)
+/// Mauna Kea Observatory (Hawaiʻi, USA).
 ///
 /// - Longitude: −155.4681°
 /// - Latitude:  +19.8207°
 /// - Altitude:  4207 m (WGS84 ellipsoidal height)
+/// - Reference pressure: 614 hPa (ISA barometric formula at 4207 m altitude)
+/// - Reference temperature: `None` — no authoritative cited value wired in yet.
+/// - Reference relative humidity: `None` — same rationale as temperature.
 ///
 /// For an atmosphere profile calibrated to this site, see
 /// `AtmosphereProfile::MAUNA_KEA` (requires the `atmosphere` feature).
-pub const MAUNA_KEA: Geodetic<ECEF> = Geodetic::new_raw(
-    Degrees::new(-155.4681),
-    Degrees::new(19.8207),
-    Meters::new(4207.0),
-);
+pub const MAUNA_KEA: Observatory = Observatory {
+    name: "Mauna Kea Observatory",
+    geodetic: Geodetic::new_raw(
+        Degrees::new(-155.4681),
+        Degrees::new(19.8207),
+        Meters::new(4207.0),
+    ),
+    reference_pressure: Hectopascals::new(614.0),
+    reference_temperature: None,
+    reference_relative_humidity: None,
+};
 
-/// La Silla Observatory (ESO, Chile)
+/// La Silla Observatory (ESO, Chile).
 ///
 /// - Longitude: −70.7346°
 /// - Latitude:  −29.2584°
 /// - Altitude:  2400 m (WGS84 ellipsoidal height)
+/// - Reference pressure: 744 hPa (same altitude class as El Paranal and Roque)
+/// - Reference temperature: `None` — no authoritative cited value wired in yet.
+/// - Reference relative humidity: `None` — same rationale as temperature.
 ///
 /// For an atmosphere profile calibrated to this site, see
 /// `AtmosphereProfile::LA_SILLA` (requires the `atmosphere` feature).
-pub const LA_SILLA_OBSERVATORY: Geodetic<ECEF> = Geodetic::new_raw(
-    Degrees::new(-70.7346),
-    Degrees::new(-29.2584),
-    Meters::new(2400.0),
-);
+pub const LA_SILLA_OBSERVATORY: Observatory = Observatory {
+    name: "La Silla Observatory",
+    geodetic: Geodetic::new_raw(
+        Degrees::new(-70.7346),
+        Degrees::new(-29.2584),
+        Meters::new(2400.0),
+    ),
+    reference_pressure: Hectopascals::new(744.0),
+    reference_temperature: None,
+    reference_relative_humidity: None,
+};
 
 #[cfg(test)]
 mod tests {
@@ -197,6 +210,24 @@ mod tests {
             ROQUE_DE_LOS_MUCHACHOS.reference_pressure.value(),
             744.0,
             "Roque de los Muchachos reference pressure should be 744 hPa (NSB_Utils.py:59)"
+        );
+    }
+
+    #[test]
+    fn mauna_kea_reference_pressure() {
+        assert_eq!(
+            MAUNA_KEA.reference_pressure.value(),
+            614.0,
+            "Mauna Kea reference pressure should be ~614 hPa at 4207 m altitude"
+        );
+    }
+
+    #[test]
+    fn la_silla_reference_pressure() {
+        assert_eq!(
+            LA_SILLA_OBSERVATORY.reference_pressure.value(),
+            744.0,
+            "La Silla reference pressure should be 744 hPa"
         );
     }
 
@@ -222,5 +253,17 @@ mod tests {
             ROQUE_DE_LOS_MUCHACHOS.reference_relative_humidity.is_none(),
             "ORM reference relative humidity must stay None until a cited value is wired in"
         );
+    }
+
+    #[test]
+    fn mauna_kea_optional_atmosphere_unset() {
+        assert!(MAUNA_KEA.reference_temperature.is_none());
+        assert!(MAUNA_KEA.reference_relative_humidity.is_none());
+    }
+
+    #[test]
+    fn la_silla_optional_atmosphere_unset() {
+        assert!(LA_SILLA_OBSERVATORY.reference_temperature.is_none());
+        assert!(LA_SILLA_OBSERVATORY.reference_relative_humidity.is_none());
     }
 }

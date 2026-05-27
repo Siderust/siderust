@@ -205,7 +205,7 @@ fn find_moon_above_horizon_scan(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::observatories::ROQUE_DE_LOS_MUCHACHOS;
+    use crate::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 
     fn greenwich_site() -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))

@@ -61,7 +61,7 @@
 //! - [`event`]                   : Altitude/azimuth/lunar/solar/stellar event-search APIs
 //! - [`bodies`]                  : Planets, stars, satellites, asteroids, comets, and built-in catalogs
 //! - [`mission`]                 : Mission geometry, runtime context, and site metadata (FoV, terrain mask, AzElRange, eclipse, orbit-relative)
-//! - [`observatories`]           : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
+//! - [`catalogs`]`::observatories` : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 //! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate (including `OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`, `Refractivity`, `CipCoordinate`)
 //! - [`data`]                    : Scientific dataset catalog, provenance, checksums, compiled tables, and optional runtime download/cache manager
 //! - [`formats`]                 : Low-level binary file-format parsers (e.g. SPICE DAF/SPK); no dataset-catalog knowledge
@@ -117,7 +117,6 @@ pub mod ephemeris;
 pub mod event;
 pub mod formats;
 pub mod mission;
-pub mod observatories;
 #[cfg(feature = "photometry")]
 pub mod photometry;
 #[cfg(feature = "pod")]
