@@ -21,6 +21,7 @@ runtime-data = ["siderust/runtime-data"]
 
 [dependencies]
 siderust    = { version = "0.8", path = ".." }
+keplerian   = "0.2"
 principia   = { version = "0.2", features = ["alloc"] }
 qtty        = "0.8"
 tempoch     = "0.6"

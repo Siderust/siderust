@@ -1732,6 +1732,102 @@ siderust_status_t siderust_twilight_classification_deg(double altitude_deg,
 siderust_status_t siderust_twilight_classification_rad(double altitude_rad,
                                                        siderust_twilight_phase_t *out);
 
+// ── Lambert solver ─────────────────────────────────────────────────────────
+
+// Householder-iteration diagnostics accompanying a Lambert solution.
+
+typedef struct SiderustLambertDiagnostics {
+  uint32_t iterations;
+  double residual;
+  uint32_t revolutions;
+} SiderustLambertDiagnostics;
+
+// Solve Lambert's single-revolution two-point boundary-value problem.
+
+siderust_status_t siderust_lambert_solve(const double *r1_km,
+                                         const double *r2_km,
+                                         double tof_s,
+                                         double mu_km3_s2,
+                                         int32_t branch,
+                                         double *out_v1_kms,
+                                         double *out_v2_kms,
+                                         struct SiderustLambertDiagnostics *out_diag);
+
+// ── TLE / SGP4 ─────────────────────────────────────────────────────────────
+
+// Opaque handle to a parsed Two-Line Element set.
+
+struct SiderustTle;
+
+// Parse a two-line element set from two NUL-terminated C strings.
+
+siderust_status_t siderust_tle_parse(const char *line1,
+                                     const char *line2,
+                                     struct SiderustTle **out);
+
+// Return the NORAD catalog number of a TLE handle.
+
+siderust_status_t siderust_tle_norad_id(const struct SiderustTle *tle,
+                                         uint32_t *out_id);
+
+// Free a TLE handle.
+
+void siderust_tle_free(struct SiderustTle *tle);
+
+// Opaque handle to an initialised SGP4 propagator.
+
+struct SiderustSgp4;
+
+// Create an SGP4 propagator from a TLE handle.
+
+siderust_status_t siderust_sgp4_new(const struct SiderustTle *tle,
+                                     int32_t gravity_model,
+                                     struct SiderustSgp4 **out);
+
+// Return the gravity model (0=WGS-72, 1=WGS-72/IAU, 2=WGS-84).
+
+siderust_status_t siderust_sgp4_gravity_model(const struct SiderustSgp4 *sgp4,
+                                               int32_t *out_model);
+
+// Return the UTC Julian date of the TLE epoch.
+
+siderust_status_t siderust_sgp4_epoch_jd_utc(const struct SiderustSgp4 *sgp4,
+                                               double *out_jd);
+
+// Propagate to a UTC Julian date. Writes position (km) and velocity (km/s) in TEME.
+
+siderust_status_t siderust_sgp4_propagate_at(const struct SiderustSgp4 *sgp4,
+                                              double jd_utc,
+                                              double *out_pos_km,
+                                              double *out_vel_kms);
+
+// Free an SGP4 handle.
+
+void siderust_sgp4_free(struct SiderustSgp4 *sgp4);
+
+// ── CCSDS OEM parser ───────────────────────────────────────────────────────
+
+// A single spacecraft state vector from a CCSDS OEM file.
+
+typedef struct SiderustOemState {
+  double epoch_jd;
+  double pos_km[3];
+  double vel_kms[3];
+} SiderustOemState;
+
+// Parse a CCSDS OEM document from a NUL-terminated C string.
+// Returns a heap-allocated array of SiderustOemState in *out_states.
+// Must be freed with siderust_oem_states_free.
+
+siderust_status_t siderust_oem_parse_str(const char *text,
+                                          struct SiderustOemState **out_states,
+                                          unsigned long *out_count);
+
+// Free an array of SiderustOemState returned by siderust_oem_parse_str.
+
+void siderust_oem_states_free(struct SiderustOemState *states,
+                               unsigned long count);
+
 #ifdef __cplusplus
 }  // extern "C"
 #endif  // __cplusplus
