@@ -106,13 +106,15 @@
 
 pub(crate) use ::qtty as ext_qtty;
 
+pub mod archive;
 pub mod astro;
 #[cfg(feature = "atmosphere")]
 pub mod atmosphere;
 pub mod bodies;
 pub mod catalogs;
+pub mod checksum;
 pub mod coordinates;
-pub mod data;
+pub mod datasets;
 pub mod ephemeris;
 pub mod event;
 pub mod formats;
@@ -133,8 +135,6 @@ pub use time::{JulianDate, ModifiedJulianDate, J2000, JD, MJD};
 // Convenience re-export: sky sampling utilities.
 pub use coordinates::{SkyGrid, SkyGridCell};
 
-#[doc(hidden)]
-pub use data::checksum;
 pub(crate) mod macros;
 
 // ---------------------------------------------------------------------------

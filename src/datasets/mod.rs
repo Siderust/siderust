@@ -30,7 +30,7 @@
 //! ## Quick start
 //!
 //! ```rust,ignore
-//! use siderust::data::{DatasetId, runtime::DatasetManager};
+//! use siderust::datasets::{DatasetId, runtime::DatasetManager};
 //!
 //! let dm = DatasetManager::new()?;
 //! let path = dm.ensure(DatasetId::De441)?;
@@ -47,6 +47,9 @@
 //!   towards the future in the handling of space science mission
 //!   geometry". *Planetary and Space Science* **150**, 9–12.
 //!   doi:10.1016/j.pss.2017.02.013.
+
+#[cfg(feature = "runtime-data")]
+pub mod runtime;
 
 /// Identifies a scientific dataset known to `siderust`.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]

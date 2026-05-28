@@ -43,6 +43,7 @@
 
 pub(crate) mod bodies;
 pub(crate) mod eval;
+pub(crate) mod jpl_data;
 
 #[cfg(feature = "de440")]
 pub(crate) mod de440;

@@ -85,7 +85,7 @@ fn demo_load_from_bytes() {
 /// (on explicit request) HTTP downloads from JPL servers.
 #[cfg(feature = "runtime-data")]
 fn demo_data_manager(explicit_download: bool) {
-    use siderust::data::{runtime::DatasetManager, DatasetId};
+    use siderust::datasets::{runtime::DatasetManager, DatasetId};
 
     println!("────────────────────────────────────────────────────");
     println!("3) DatasetManager (feature = runtime-data)");

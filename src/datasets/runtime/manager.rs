@@ -5,7 +5,7 @@
 
 use super::cache;
 use super::download;
-use crate::data::{lookup, Acquisition, DatasetError, DatasetId, RuntimeDownloadMeta};
+use crate::datasets::{lookup, Acquisition, DatasetError, DatasetId, RuntimeDownloadMeta};
 use std::path::{Path, PathBuf};
 
 /// Manages a local data cache for `RuntimeDownload` datasets.
@@ -106,7 +106,7 @@ impl DatasetManager {
 
     /// List all `RuntimeDownload` datasets and their cache availability.
     pub fn list(&self) -> Vec<(DatasetId, bool)> {
-        crate::data::DATASETS
+        crate::datasets::DATASETS
             .iter()
             .filter_map(|meta| {
                 if let Acquisition::RuntimeDownload(rdm) = &meta.acquisition {

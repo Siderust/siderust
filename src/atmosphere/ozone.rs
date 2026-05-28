@@ -42,39 +42,17 @@
 use std::sync::OnceLock;
 
 use crate::atmosphere::{Transmittance, Transmittances};
-use crate::data::Provenance;
 use crate::ext_qtty::length::Nanometer;
 use crate::qtty::Nanometers;
 use optica::grid::OutOfRange;
 use optica::spectrum::loaders::ascii::two_column;
 use optica::spectrum::{Interpolation, SampledSpectrum};
 
-const RAW: &str = include_str!("../data/file/o3trans.dat");
+const RAW: &str = include_str!("o3trans.dat");
 #[cfg(test)]
 const OZONE_SHA256: &str = "cb06c173f393d6d55e3c39551665abb8f5d6c1a846cd0fd739a15d0155f94502";
 
 static TABLE: OnceLock<SampledSpectrum<Nanometer, Transmittance>> = OnceLock::new();
-
-fn into_optica_provenance(p: Provenance) -> optica::data::Provenance {
-    optica::data::Provenance {
-        source: p.source.map(|s| match s {
-            crate::data::DataSource::LiteratureCitation { bibkey, doi } => {
-                optica::data::DataSource::LiteratureCitation { bibkey, doi }
-            }
-            crate::data::DataSource::BundledFile { path } => {
-                optica::data::DataSource::BundledFile { path }
-            }
-            crate::data::DataSource::External { url } => optica::data::DataSource::External { url },
-            crate::data::DataSource::Computed { name } => {
-                optica::data::DataSource::Computed { name }
-            }
-        }),
-        version: p.version,
-        retrieved_at: p.retrieved_at,
-        checksum: p.checksum,
-        notes: p.notes,
-    }
-}
 
 /// Pre-computed ozone transmittance vs wavelength.
 ///
@@ -85,7 +63,7 @@ fn into_optica_provenance(p: Provenance) -> optica::data::Provenance {
 /// and reused for all subsequent calls.
 pub fn transmission_table() -> &'static SampledSpectrum<Nanometer, Transmittance> {
     TABLE.get_or_init(|| {
-        let provenance = Provenance::bundled_file("siderust/data/o3trans.dat")
+        let provenance = optica::data::Provenance::bundled_file("siderust/data/o3trans.dat")
             .with_notes("Original NSB/darknsb o3trans.dat; wavelengths converted µm→nm.");
         two_column::<Nanometer, Transmittance>(
             RAW,
@@ -93,7 +71,7 @@ pub fn transmission_table() -> &'static SampledSpectrum<Nanometer, Transmittance
             1.0,
             Interpolation::Linear,
             OutOfRange::ClampToEndpoints,
-            Some(into_optica_provenance(provenance)),
+            Some(provenance),
         )
         .expect("o3trans.dat is a well-formed, monotonic table — parse must not fail")
     })
@@ -117,7 +95,7 @@ mod tests {
     /// the value pinned via [`assert_data_checksum!`].
     #[test]
     fn pinned_sha256_matches_runtime_hash() {
-        use crate::data::checksum::{sha256, to_hex};
+        use crate::checksum::{sha256, to_hex};
         assert_eq!(to_hex(&sha256(RAW.as_bytes())), OZONE_SHA256);
     }
 

@@ -14,7 +14,7 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use crate::data::DatasetError;
+use crate::datasets::DatasetError;
 use crate::ephemeris::jpl::bodies;
 use crate::ephemeris::jpl::eval::DynSegmentDescriptor;
 use crate::formats::spice::spk;
@@ -83,11 +83,11 @@ impl RuntimeEphemeris {
         }
     }
 
-    /// Load from a BSP file resolved by the [`DatasetManager`](crate::data::runtime::DatasetManager).
+    /// Load from a BSP file resolved by the [`DatasetManager`](crate::datasets::runtime::DatasetManager).
     ///
     /// This is a convenience method that combines data management with loading:
     /// ```rust,ignore
-    /// use siderust::data::{DatasetId, runtime::DatasetManager};
+    /// use siderust::datasets::{DatasetId, runtime::DatasetManager};
     /// use siderust::ephemeris::RuntimeEphemeris;
     ///
     /// let dm = DatasetManager::new()?;
@@ -96,8 +96,8 @@ impl RuntimeEphemeris {
     /// ```
     #[cfg(feature = "runtime-data")]
     pub fn from_dataset_manager(
-        dm: &crate::data::runtime::DatasetManager,
-        id: crate::data::DatasetId,
+        dm: &crate::datasets::runtime::DatasetManager,
+        id: crate::datasets::DatasetId,
     ) -> Result<Self, DatasetError> {
         let path = dm.ensure(id)?;
         Self::from_bsp(path)

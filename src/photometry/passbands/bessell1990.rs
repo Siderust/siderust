@@ -92,8 +92,8 @@
 
 use std::sync::OnceLock;
 
-use crate::data::Provenance;
 use crate::ext_qtty::length::Nanometer;
+use optica::data::Provenance;
 use optica::grid::OutOfRange;
 use optica::spectrum::loaders::ascii::two_column;
 use optica::spectrum::{Interpolation, SampledSpectrum};
@@ -102,11 +102,11 @@ use super::Throughput;
 
 // ── bundled data ─────────────────────────────────────────────────────────────
 
-const RAW_U: &str = include_str!("../../data/file/passbands/bessell1990/U.dat");
-const RAW_B: &str = include_str!("../../data/file/passbands/bessell1990/B.dat");
-const RAW_V: &str = include_str!("../../data/file/passbands/bessell1990/V.dat");
-const RAW_R: &str = include_str!("../../data/file/passbands/bessell1990/R.dat");
-const RAW_I: &str = include_str!("../../data/file/passbands/bessell1990/I.dat");
+const RAW_U: &str = include_str!("bessell1990/U.dat");
+const RAW_B: &str = include_str!("bessell1990/B.dat");
+const RAW_V: &str = include_str!("bessell1990/V.dat");
+const RAW_R: &str = include_str!("bessell1990/R.dat");
+const RAW_I: &str = include_str!("bessell1990/I.dat");
 
 // Pinned SHA-256 of each Bessell 1990 passband file. Update only when the
 // curated SVO export is intentionally refreshed (see
@@ -156,25 +156,8 @@ fn provenance(filter_id: &str, dat_path: &str) -> Provenance {
     ))
 }
 
-fn into_optica_provenance(p: Provenance) -> optica::data::Provenance {
-    optica::data::Provenance {
-        source: p.source.map(|s| match s {
-            crate::data::DataSource::LiteratureCitation { bibkey, doi } => {
-                optica::data::DataSource::LiteratureCitation { bibkey, doi }
-            }
-            crate::data::DataSource::BundledFile { path } => {
-                optica::data::DataSource::BundledFile { path }
-            }
-            crate::data::DataSource::External { url } => optica::data::DataSource::External { url },
-            crate::data::DataSource::Computed { name } => {
-                optica::data::DataSource::Computed { name }
-            }
-        }),
-        version: p.version,
-        retrieved_at: p.retrieved_at,
-        checksum: p.checksum,
-        notes: p.notes,
-    }
+fn into_optica_provenance(p: Provenance) -> Provenance {
+    p
 }
 
 fn load(raw: &str, filter_id: &str, dat_path: &str) -> SampledSpectrum<Nanometer, Throughput> {
@@ -320,7 +303,7 @@ mod tests {
     /// [`assert_data_checksum!`].
     #[test]
     fn pinned_sha256_matches_runtime_hash() {
-        use crate::data::checksum::{sha256, to_hex};
+        use crate::checksum::{sha256, to_hex};
         let cases: &[(&str, &str)] = &[
             (
                 RAW_U,

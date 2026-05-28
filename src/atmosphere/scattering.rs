@@ -108,12 +108,8 @@ impl TabulatedPhaseFunction {
     }
 
     /// Attach provenance to the underlying grid.
-    ///
-    /// The `crate::data::Provenance` is converted to `optica::data::Provenance`.
-    pub fn with_provenance(mut self, provenance: crate::data::Provenance) -> Self {
-        self.grid = self
-            .grid
-            .with_provenance(into_optica_provenance(provenance));
+    pub fn with_provenance(mut self, provenance: optica::data::Provenance) -> Self {
+        self.grid = self.grid.with_provenance(provenance);
         self
     }
 
@@ -137,27 +133,6 @@ impl PhaseFunction for TabulatedPhaseFunction {
         scattering_angle: Radians,
     ) -> Quantity<ScatteringFactor> {
         self.interp_at(wavelength, scattering_angle)
-    }
-}
-
-fn into_optica_provenance(p: crate::data::Provenance) -> optica::data::Provenance {
-    optica::data::Provenance {
-        source: p.source.map(|s| match s {
-            crate::data::DataSource::LiteratureCitation { bibkey, doi } => {
-                optica::data::DataSource::LiteratureCitation { bibkey, doi }
-            }
-            crate::data::DataSource::BundledFile { path } => {
-                optica::data::DataSource::BundledFile { path }
-            }
-            crate::data::DataSource::External { url } => optica::data::DataSource::External { url },
-            crate::data::DataSource::Computed { name } => {
-                optica::data::DataSource::Computed { name }
-            }
-        }),
-        version: p.version,
-        retrieved_at: p.retrieved_at,
-        checksum: p.checksum,
-        notes: p.notes,
     }
 }
 

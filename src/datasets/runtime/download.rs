@@ -5,7 +5,7 @@
 //!
 //! Uses `ureq` (sync, minimal dependency footprint, no async runtime).
 
-use crate::data::{DatasetError, RuntimeDownloadMeta};
+use crate::datasets::{DatasetError, RuntimeDownloadMeta};
 use std::io::{Read, Write};
 use std::path::Path;
 

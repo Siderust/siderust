@@ -64,6 +64,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- **Dissolved `src/data/` module** — the `data` namespace no longer exists.
+  Sub-modules were redistributed:
+  - `data::checksum` → `siderust::checksum` (top-level)
+  - `data::archive` → `siderust::archive` (top-level)
+  - `data::{DatasetId, DatasetMeta, DatasetError, …}` → `siderust::datasets`
+  - `data::runtime` → `siderust::datasets::runtime`
+  - `data::compiled::jpl` → `siderust::ephemeris::jpl` (co-located)
+  - `data::provenance` / `data::DataSource` replaced by `optica::data::{Provenance, DataSource}` directly
+  - Static data files (`o3trans.dat`, Bessell passbands) moved next to their only consumers
 - Removed public `siderust::numeric`; event-search internals are now crate-private under `event::search`.
 - Removed `siderust::calculus` as a public namespace after moving its responsibilities into `event`, `ephemeris`, and `astro`.
 - Removed `siderust::archive` and old data/provenance layout in favor of `siderust::data`.

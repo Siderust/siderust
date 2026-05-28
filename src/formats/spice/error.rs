@@ -124,10 +124,10 @@ pub enum SpiceError {
     FormatParse(String),
 }
 
-impl From<crate::data::DatasetError> for SpiceError {
-    fn from(err: crate::data::DatasetError) -> Self {
+impl From<crate::datasets::DatasetError> for SpiceError {
+    fn from(err: crate::datasets::DatasetError) -> Self {
         match err {
-            crate::data::DatasetError::Io(e) => SpiceError::Io(e),
+            crate::datasets::DatasetError::Io(e) => SpiceError::Io(e),
             other => SpiceError::FormatParse(format!("{other}")),
         }
     }
