@@ -36,6 +36,7 @@ pub(crate) mod jpl;
 #[cfg(feature = "lagrange-centers")]
 pub mod lagrange;
 pub mod pluto;
+pub(crate) mod pluto_tables;
 pub(crate) mod vsop87;
 
 #[cfg(feature = "de440")]

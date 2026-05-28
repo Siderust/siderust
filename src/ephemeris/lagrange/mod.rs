@@ -32,10 +32,11 @@
 pub mod fit;
 pub mod solver;
 
+mod embedded;
+
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::Barycentric;
 use crate::coordinates::frames::EclipticMeanJ2000;
-use crate::data::compiled::lagrange as data;
 use crate::ephemeris::EphemerisError;
 use crate::qtty::{AstronomicalUnit, Days, Kilometer, Kilometers, Meters, Second};
 use crate::time::JulianDate;
@@ -121,7 +122,7 @@ pub const SUN_EARTH_LAGRANGE_METADATA: LagrangeMetadata = LagrangeMetadata {
     max_abs_error: Meters::new(1.121),
     generator_version: "siderust-analytic-sun-earth-v1",
     generated_at: "2026-05-24",
-    checksum: data::CHECKSUM,
+    checksum: embedded::CHECKSUM,
 };
 
 /// Fallibly evaluates an embedded Sun-Earth Lagrange point archive record.
@@ -221,16 +222,16 @@ fn evaluate_embedded(
     point: SunEarthLagrangePoint,
     jd: JulianDate,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    evaluate_records(records_for(point), data::NCOEFF, jd)
+    evaluate_records(records_for(point), embedded::NCOEFF, jd)
 }
 
 fn records_for(point: SunEarthLagrangePoint) -> &'static [f64] {
     match point {
-        SunEarthLagrangePoint::L1 => data::RECORDS_L1,
-        SunEarthLagrangePoint::L2 => data::RECORDS_L2,
-        SunEarthLagrangePoint::L3 => data::RECORDS_L3,
-        SunEarthLagrangePoint::L4 => data::RECORDS_L4,
-        SunEarthLagrangePoint::L5 => data::RECORDS_L5,
+        SunEarthLagrangePoint::L1 => embedded::records_l1(),
+        SunEarthLagrangePoint::L2 => embedded::records_l2(),
+        SunEarthLagrangePoint::L3 => embedded::records_l3(),
+        SunEarthLagrangePoint::L4 => embedded::records_l4(),
+        SunEarthLagrangePoint::L5 => embedded::records_l5(),
     }
 }
 

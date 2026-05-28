@@ -73,6 +73,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Removed the parallel `pod::dynamics` force-model wrapper layer in favor of canonical `AccelerationModel` / `CompositeModel`.
 - Removed root-level `siderust::instruments`, `siderust::mission_geometry`, and
   `siderust::mission_context`; mission APIs now live under `siderust::mission`.
+- **Removed `src/data/compiled/lagrange/`** — the 296 K-line generated Rust
+  array is replaced by five compact SCK binary kernels committed to the
+  `archive/` submodule (`archive/lagrange/vsop87/l{1..5}.sck`, each ~475 KB,
+  2283 records, 1900–2100 coverage).  The runtime loader uses `include_bytes!`
+  and a lazy parser instead of a giant static array.
+- **Removed `src/data/compiled/{vsop87a,vsop87e,elp_data,nut00a_tables,pluto_tables}.rs`**
+  from the `data::compiled` module; each file now lives co-located with its
+  sole consumer (`src/ephemeris/vsop87/`, `src/ephemeris/elp2000/`,
+  `src/astro/nutation/`, `src/ephemeris/`).
+- **Removed `src/data/source/lagrange/`** — metadata superseded by
+  `archive/lagrange/vsop87/manifest.toml`.
+- `data::compiled` now contains only the feature-gated JPL DE440/DE441 binary
+  sub-modules; all other compiled tables are gone.
 
 ### Fixed
 

@@ -59,6 +59,7 @@ mod iau2000b;
 mod iau2006;
 mod iau2006a;
 pub(crate) mod nut00a;
+mod nut00a_tables;
 
 pub use iau2000a::Iau2000A;
 pub use iau2000b::Iau2000B;

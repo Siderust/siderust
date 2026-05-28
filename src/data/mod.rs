@@ -6,17 +6,15 @@
 //! ## Scientific scope
 //!
 //! This module is the single public entry point for dataset cataloging,
-//! runtime acquisition metadata, provenance, checksums, and compiled-in
-//! scientific tables used by Siderust astronomy, mission geometry, and POD
-//! workflows.
+//! runtime acquisition metadata, provenance, checksums, and the archive
+//! registry used by Siderust astronomy, mission geometry, and POD workflows.
 //!
 //! ## Technical scope
 //!
 //! Public users interact with [`DatasetId`], [`DatasetMeta`], [`DATASETS`],
 //! [`lookup`], [`DataSource`], [`Provenance`], [`checksum`], and, when the
-//! `runtime-data` feature is enabled, [`runtime`]. Generated coefficient
-//! tables and raw bundled files are crate-private implementation details under
-//! `data::compiled`, `data::source`, and `data::file`.
+//! `runtime-data` feature is enabled, [`runtime`]. JPL planetary ephemeris
+//! binary data is crate-private under `data::compiled::jpl`.
 //!
 //! ## References
 //!
@@ -31,7 +29,6 @@ pub(crate) mod compiled;
 mod provenance;
 #[cfg(feature = "runtime-data")]
 pub mod runtime;
-pub(crate) mod source;
 
 pub use catalog::*;
 pub use provenance::{DataSource, Provenance};
