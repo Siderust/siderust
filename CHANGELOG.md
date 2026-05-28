@@ -6,6 +6,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [unreleased]
 
+### Changed
+
+- Removed the `archive/` git submodule. The reusable archive crate (now named
+  `siderust-archive`) is published on crates.io; downstream consumers that
+  want archive-backed data should clone https://github.com/Siderust/archive
+  separately or set `SIDERUST_ARCHIVE_ROOT` to point at a checkout. The
+  `build.rs` archive registry generator now resolves the archive root via,
+  in order: `SIDERUST_ARCHIVE_ROOT`, `./archive/`, `../archive/`.
+- The `lagrange-centers` feature now requires the archive to be reachable at
+  build time (same resolution rules). The build emits a `compile_error!` with
+  an actionable message when the SCK kernels cannot be found, instead of the
+  former opaque `include_bytes!` failure.
+
 ### Added
 
 - Added a reusable `siderust-archive-data` Rust crate inside the archive

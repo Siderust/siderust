@@ -467,9 +467,19 @@ typedef struct siderust_propagator_t siderust_propagator_t;
 // `_ensure`. Must be freed with `siderust_runtime_ephemeris_free`.
 typedef struct siderust_runtime_ephemeris_t siderust_runtime_ephemeris_t;
 
+// Opaque handle to an initialised SGP4 propagator.
+//
+// Owned by the caller; must be freed with [`siderust_sgp4_free`].
+typedef struct SiderustSgp4 SiderustSgp4;
+
 // Opaque handle to a Star. Created via `siderust_star_*` functions, freed
 // with `siderust_star_free`.
 typedef struct SiderustStar SiderustStar;
+
+// Opaque handle to a parsed Two-Line Element set.
+//
+// Owned by the caller; must be freed with [`siderust_tle_free`].
+typedef struct SiderustTle SiderustTle;
 
 // A threshold-crossing event.
 typedef struct siderust_crossing_event_t {
@@ -693,6 +703,29 @@ typedef struct siderust_gravity_vtable_t {
   // Caller-controlled context forwarded to every coefficient call.
   void *user_data;
 } siderust_gravity_vtable_t;
+
+// Householder-iteration diagnostics accompanying a Lambert solution.
+typedef struct SiderustLambertDiagnostics {
+  // Number of Householder iterations performed.
+  uint32_t iterations;
+  // Final residual from the Householder solver (dimensionless).
+  double residual;
+  // Number of complete revolutions (0 for single-revolution transfers).
+  uint32_t revolutions;
+} SiderustLambertDiagnostics;
+
+// A single spacecraft state vector as parsed from a CCSDS OEM file.
+//
+// All numeric fields use the conventional OEM units: position in km,
+// velocity in km/s, epoch as a Julian Date.
+typedef struct SiderustOemState {
+  // Epoch as a Julian Date (any time system declared in the OEM metadata).
+  double epoch_jd;
+  // Position components [x, y, z] in km.
+  double pos_km[3];
+  // Velocity components [vx, vy, vz] in km/s.
+  double vel_kms[3];
+} SiderustOemState;
 
 // A principal lunar phase event.
 typedef struct siderust_phase_event_t {
@@ -1432,6 +1465,37 @@ siderust_status_t siderust_vsop87_neptune_barycentric(double jd,
 // Get the Moon's geocentric position (EclipticMeanJ2000, km) via ELP2000.
  siderust_status_t siderust_vsop87_moon_geocentric(double jd, struct siderust_cartesian_pos_t *out);
 
+// Solve Lambert's single-revolution two-point boundary-value problem.
+//
+// All position/velocity arrays follow the standard ordering `[x, y, z]`.
+//
+// # Parameters
+//
+// * `r1_km`       — departure position, km (3 elements).
+// * `r2_km`       — arrival position, km (3 elements).
+// * `tof_s`       — time of flight, seconds.
+// * `mu_km3_s2`   — gravitational parameter of the central body, km³·s⁻².
+// * `branch`      — 0 = prograde, 1 = retrograde.
+// * `out_v1_kms`  — receives departure velocity, km/s (3 elements, **not** null).
+// * `out_v2_kms`  — receives arrival velocity, km/s (3 elements, **not** null).
+// * `out_diag`    — receives solver diagnostics; may be null.
+//
+// # Returns
+//
+// [`SiderustStatus::Ok`] on success.
+// [`SiderustStatus::NullPointer`] if any required pointer is null.
+// [`SiderustStatus::InvalidArgument`] if the solver fails to converge or
+// the input geometry is degenerate (e.g. anti-parallel positions, zero ToF).
+
+siderust_status_t siderust_lambert_solve(const double *r1_km,
+                                         const double *r2_km,
+                                         double tof_s,
+                                         double mu_km3_s2,
+                                         int32_t branch,
+                                         double *out_v1_kms,
+                                         double *out_v2_kms,
+                                         struct SiderustLambertDiagnostics *out_diag);
+
 // Fill `out` with the Roque de los Muchachos observatory (La Palma, Spain).
  siderust_status_t siderust_observatory_roque_de_los_muchachos(struct siderust_geodetic_t *out);
 
@@ -1450,6 +1514,37 @@ siderust_status_t siderust_geodetic_new(double lon_deg,
                                         double lat_deg,
                                         double height_m,
                                         struct siderust_geodetic_t *out);
+
+// Parse a CCSDS OEM (KVN) document from a NUL-terminated C string.
+//
+// All state vectors from all segments are flattened into a single heap-
+// allocated C array returned through `out_states`.  The caller must free it
+// with [`siderust_oem_states_free`] when no longer needed.
+//
+// # Parameters
+//
+// * `text`       — NUL-terminated OEM document (UTF-8 or ASCII).
+// * `out_states` — receives a `*mut SiderustOemState` pointing to the array.
+// * `out_count`  — receives the number of elements in the array.
+//
+// # Returns
+//
+// [`SiderustStatus::Ok`] on success (including zero states).
+// [`SiderustStatus::NullPointer`] if any required pointer is null.
+// [`SiderustStatus::InvalidArgument`] if the OEM document cannot be parsed.
+
+siderust_status_t siderust_oem_parse_str(const char *text,
+                                         struct SiderustOemState **out_states,
+                                         unsigned long *out_count);
+
+// Free an array of [`SiderustOemState`] returned by [`siderust_oem_parse_str`].
+//
+// # Safety
+//
+// `states` must have been returned by [`siderust_oem_parse_str`] and
+// `count` must match the value written into `out_count`.
+// Passing null or count 0 is a no-op.
+ void siderust_oem_states_free(struct SiderustOemState *states, unsigned long count);
 
 // Free an array of phase events.
 //
@@ -1567,6 +1662,90 @@ siderust_status_t siderust_runtime_ephemeris_earth_barycentric_velocity(const st
 siderust_status_t siderust_runtime_ephemeris_moon_geocentric(const struct siderust_runtime_ephemeris_t *handle,
                                                              double jd,
                                                              struct siderust_cartesian_pos_t *out);
+
+// Parse a two-line element set from two NUL-terminated C strings.
+//
+// # Parameters
+//
+// * `line1` — TLE line 1 (NUL-terminated).
+// * `line2` — TLE line 2 (NUL-terminated).
+// * `out`   — receives a `*mut SiderustTle` on success; must **not** be null.
+//
+// # Returns
+//
+// [`SiderustStatus::Ok`] on success.
+// [`SiderustStatus::NullPointer`] if any pointer is null.
+// [`SiderustStatus::InvalidArgument`] if parsing fails.
+
+siderust_status_t siderust_tle_parse(const char *line1,
+                                     const char *line2,
+                                     struct SiderustTle **out);
+
+// Return the NORAD catalog number of a TLE handle.
+//
+// # Returns
+//
+// [`SiderustStatus::Ok`] on success.
+// [`SiderustStatus::NullPointer`] if either pointer is null.
+ siderust_status_t siderust_tle_norad_id(const struct SiderustTle *tle, uint32_t *out_id);
+
+// Free a TLE handle obtained from [`siderust_tle_parse`].
+//
+// Passing null is a no-op.
+ void siderust_tle_free(struct SiderustTle *tle);
+
+// Create an SGP4 propagator from a TLE handle.
+//
+// # Parameters
+//
+// * `tle`           — TLE handle (not consumed; caller still owns it).
+// * `gravity_model` — 0 = WGS-72 (default), 1 = WGS-72/IAU, 2 = WGS-84.
+// * `out`           — receives a `*mut SiderustSgp4` on success.
+//
+// # Returns
+//
+// [`SiderustStatus::Ok`] on success.
+// [`SiderustStatus::NullPointer`] if any pointer is null.
+// [`SiderustStatus::InvalidArgument`] if propagator initialisation fails.
+
+siderust_status_t siderust_sgp4_new(const struct SiderustTle *tle,
+                                    int32_t gravity_model,
+                                    struct SiderustSgp4 **out);
+
+// Return the gravity model used by an SGP4 propagator handle.
+//
+// * `out_model` receives 0 (WGS-72), 1 (WGS-72/IAU), or 2 (WGS-84).
+ siderust_status_t siderust_sgp4_gravity_model(const struct SiderustSgp4 *sgp4, int32_t *out_model);
+
+// Return the UTC Julian date of the TLE epoch stored in an SGP4 handle.
+//
+// `out_jd` receives the Julian date in days.
+ siderust_status_t siderust_sgp4_epoch_jd_utc(const struct SiderustSgp4 *sgp4, double *out_jd);
+
+// Propagate an SGP4 handle to a UTC Julian date.
+//
+// # Parameters
+//
+// * `sgp4`        — propagator handle (must not be null).
+// * `jd_utc`      — target epoch as a UTC Julian date (days).
+// * `out_pos_km`  — receives position [x, y, z] in km (TEME frame, 3 elements).
+// * `out_vel_kms` — receives velocity [vx, vy, vz] in km/s (TEME frame, 3 elements).
+//
+// # Returns
+//
+// [`SiderustStatus::Ok`] on success.
+// [`SiderustStatus::NullPointer`] if any required pointer is null.
+// [`SiderustStatus::InvalidArgument`] if propagation fails (e.g. singular orbit).
+
+siderust_status_t siderust_sgp4_propagate_at(const struct SiderustSgp4 *sgp4,
+                                             double jd_utc,
+                                             double *out_pos_km,
+                                             double *out_vel_kms);
+
+// Free an SGP4 handle obtained from [`siderust_sgp4_new`].
+//
+// Passing null is a no-op.
+ void siderust_sgp4_free(struct SiderustSgp4 *sgp4);
 
 // Altitude of any subject at an instant (radians).
 
@@ -1731,102 +1910,6 @@ siderust_status_t siderust_twilight_classification_deg(double altitude_deg,
 
 siderust_status_t siderust_twilight_classification_rad(double altitude_rad,
                                                        siderust_twilight_phase_t *out);
-
-// ── Lambert solver ─────────────────────────────────────────────────────────
-
-// Householder-iteration diagnostics accompanying a Lambert solution.
-
-typedef struct SiderustLambertDiagnostics {
-  uint32_t iterations;
-  double residual;
-  uint32_t revolutions;
-} SiderustLambertDiagnostics;
-
-// Solve Lambert's single-revolution two-point boundary-value problem.
-
-siderust_status_t siderust_lambert_solve(const double *r1_km,
-                                         const double *r2_km,
-                                         double tof_s,
-                                         double mu_km3_s2,
-                                         int32_t branch,
-                                         double *out_v1_kms,
-                                         double *out_v2_kms,
-                                         struct SiderustLambertDiagnostics *out_diag);
-
-// ── TLE / SGP4 ─────────────────────────────────────────────────────────────
-
-// Opaque handle to a parsed Two-Line Element set.
-
-struct SiderustTle;
-
-// Parse a two-line element set from two NUL-terminated C strings.
-
-siderust_status_t siderust_tle_parse(const char *line1,
-                                     const char *line2,
-                                     struct SiderustTle **out);
-
-// Return the NORAD catalog number of a TLE handle.
-
-siderust_status_t siderust_tle_norad_id(const struct SiderustTle *tle,
-                                         uint32_t *out_id);
-
-// Free a TLE handle.
-
-void siderust_tle_free(struct SiderustTle *tle);
-
-// Opaque handle to an initialised SGP4 propagator.
-
-struct SiderustSgp4;
-
-// Create an SGP4 propagator from a TLE handle.
-
-siderust_status_t siderust_sgp4_new(const struct SiderustTle *tle,
-                                     int32_t gravity_model,
-                                     struct SiderustSgp4 **out);
-
-// Return the gravity model (0=WGS-72, 1=WGS-72/IAU, 2=WGS-84).
-
-siderust_status_t siderust_sgp4_gravity_model(const struct SiderustSgp4 *sgp4,
-                                               int32_t *out_model);
-
-// Return the UTC Julian date of the TLE epoch.
-
-siderust_status_t siderust_sgp4_epoch_jd_utc(const struct SiderustSgp4 *sgp4,
-                                               double *out_jd);
-
-// Propagate to a UTC Julian date. Writes position (km) and velocity (km/s) in TEME.
-
-siderust_status_t siderust_sgp4_propagate_at(const struct SiderustSgp4 *sgp4,
-                                              double jd_utc,
-                                              double *out_pos_km,
-                                              double *out_vel_kms);
-
-// Free an SGP4 handle.
-
-void siderust_sgp4_free(struct SiderustSgp4 *sgp4);
-
-// ── CCSDS OEM parser ───────────────────────────────────────────────────────
-
-// A single spacecraft state vector from a CCSDS OEM file.
-
-typedef struct SiderustOemState {
-  double epoch_jd;
-  double pos_km[3];
-  double vel_kms[3];
-} SiderustOemState;
-
-// Parse a CCSDS OEM document from a NUL-terminated C string.
-// Returns a heap-allocated array of SiderustOemState in *out_states.
-// Must be freed with siderust_oem_states_free.
-
-siderust_status_t siderust_oem_parse_str(const char *text,
-                                          struct SiderustOemState **out_states,
-                                          unsigned long *out_count);
-
-// Free an array of SiderustOemState returned by siderust_oem_parse_str.
-
-void siderust_oem_states_free(struct SiderustOemState *states,
-                               unsigned long count);
 
 #ifdef __cplusplus
 }  // extern "C"

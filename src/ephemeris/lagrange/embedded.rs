@@ -3,18 +3,25 @@
 
 //! Embedded Sun-Earth Lagrange Chebyshev kernels loaded from the archive.
 //!
-//! The five SCK binary files in `archive/lagrange/vsop87/` are embedded at
-//! compile time via `include_bytes!`.  They are lazily parsed on first access
-//! so that the parsing cost is paid only when the Lagrange API is first called.
+//! The five SCK binary files (`l1.sck`..`l5.sck`) live in the
+//! [Siderust Archive](https://github.com/Siderust/archive) under
+//! `lagrange/vsop87/` and are embedded at compile time via `include_bytes!`.
+//! They are lazily parsed on first access so the parsing cost is paid only
+//! when the Lagrange API is first called.
 //!
 //! # Archive requirement
 //!
-//! The `archive/` git submodule must be checked out before compiling with the
-//! `lagrange-centers` feature:
+//! Building with the `lagrange-centers` feature requires a checkout of the
+//! archive repository. `build.rs` resolves its location, in order:
 //!
-//! ```text
-//! git submodule update --init --recursive
-//! ```
+//! 1. `SIDERUST_ARCHIVE_ROOT` environment variable, if it points at a
+//!    directory containing `MANIFEST.toml`.
+//! 2. `./archive/` next to this crate.
+//! 3. `../archive/` next to this crate.
+//!
+//! If none of the above contains `lagrange/vsop87/l[1-5].sck`, the build
+//! fails with an actionable `compile_error!` rather than producing an opaque
+//! `include_bytes!` not-found error.
 
 use std::sync::LazyLock;
 
@@ -23,26 +30,8 @@ use crate::formats::sck::parse_sck;
 pub(crate) const NCOEFF: usize = 8;
 
 // Each `.sck` file is ~475 KB (2283 records × 26 f64s × 8 bytes + 64-byte header).
-static L1_BYTES: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/archive/lagrange/vsop87/l1.sck"
-));
-static L2_BYTES: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/archive/lagrange/vsop87/l2.sck"
-));
-static L3_BYTES: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/archive/lagrange/vsop87/l3.sck"
-));
-static L4_BYTES: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/archive/lagrange/vsop87/l4.sck"
-));
-static L5_BYTES: &[u8] = include_bytes!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/archive/lagrange/vsop87/l5.sck"
-));
+// L1_BYTES..L5_BYTES are declared by build.rs in OUT_DIR/lagrange_paths.rs.
+include!(concat!(env!("OUT_DIR"), "/lagrange_paths.rs"));
 
 static L1: LazyLock<Vec<f64>> = LazyLock::new(|| {
     parse_sck(L1_BYTES)
