@@ -210,7 +210,6 @@ fn fit_with_order<const N: usize>(
     let block_s = config.block.value();
     let mut records = Vec::new();
     let mut start = from_s;
-    let mut previous_seed = None;
 
     while start < to_s {
         let end = (start + block_s).min(to_s);
@@ -223,14 +222,16 @@ fn fit_with_order<const N: usize>(
         for (idx, node) in nodes.iter().enumerate() {
             let sample_s = mid + radius * node;
             let jd = jd_from_seconds(sample_s)?;
+            // Each node gets an independent CR3BP seed. Propagating seeds backward
+            // through Chebyshev nodes (ordered high-to-low within the block) causes
+            // Newton overshoots to spurious near-zero-residual points.
             let solution = solve_sun_earth_lagrange_dyn_with_config(
                 ephemeris,
                 point,
                 jd,
                 config.solver,
-                previous_seed,
+                None,
             )?;
-            previous_seed = Some(solution.position);
             xs[idx] = solution.position.x().value();
             ys[idx] = solution.position.y().value();
             zs[idx] = solution.position.z().value();
@@ -268,17 +269,12 @@ fn validate_fit(
     let mut max_error = 0.0_f64;
     let mut sum_sq = 0.0_f64;
     let mut count = 0_usize;
-    let mut previous_seed = None;
     while sample_s <= end_s + 1.0e-9 {
         let jd = jd_from_seconds(sample_s)?;
-        let truth = solve_sun_earth_lagrange_dyn_with_config(
-            ephemeris,
-            point,
-            jd,
-            config.solver,
-            previous_seed,
-        )?;
-        previous_seed = Some(truth.position);
+        // Each validation sample uses an independent CR3BP seed. Forward seed
+        // propagation also causes Newton overshoots across frame rotations.
+        let truth =
+            solve_sun_earth_lagrange_dyn_with_config(ephemeris, point, jd, config.solver, None)?;
         let fit = evaluate_records(records, ncoeff, jd).map_err(|_| FitError::InvalidConfig)?;
         let fit_km = fit.to_unit::<Kilometer>();
         let err_km = distance_km(truth.position, fit_km);

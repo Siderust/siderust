@@ -109,10 +109,8 @@ pub extern "C" fn siderust_lambert_solve(
         let r1_arr = unsafe { std::slice::from_raw_parts(r1_km, 3) };
         let r2_arr = unsafe { std::slice::from_raw_parts(r2_km, 3) };
 
-        let r1 =
-            Position::<(), ICRS, Kilometer>::new(r1_arr[0], r1_arr[1], r1_arr[2]);
-        let r2 =
-            Position::<(), ICRS, Kilometer>::new(r2_arr[0], r2_arr[1], r2_arr[2]);
+        let r1 = Position::<(), ICRS, Kilometer>::new(r1_arr[0], r1_arr[1], r1_arr[2]);
+        let r2 = Position::<(), ICRS, Kilometer>::new(r2_arr[0], r2_arr[1], r2_arr[2]);
 
         let tof = Second::new(tof_s);
         let mu = GravitationalParameter::new(mu_km3_s2);

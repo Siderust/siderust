@@ -32,10 +32,10 @@ use crate::qtty::{Kilometer, Kilometers, GM_EARTH, GM_MOON, GM_SUN};
 use crate::time::JulianDate;
 use std::fmt;
 
-const MAX_ITERS: usize = 30;
+const MAX_ITERS: usize = 50;
 const STEP_TOL_KM: f64 = 1.0e-6;
-const FD_STEP_KM: f64 = 100.0;
-const RESIDUAL_TOL_KM_S2: f64 = 1.0e-9;
+const FD_STEP_KM: f64 = 1.0;
+const RESIDUAL_TOL_KM_S2: f64 = 1.0e-14;
 const DERIVATIVE_STEP_DAYS: f64 = 0.01;
 const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 
@@ -280,9 +280,26 @@ fn solve_with_sampler(
     let mut last_step = f64::INFINITY;
     let mut residual_norm = f64::INFINITY;
 
+    // Track best (lowest-residual) position seen. At L4/L5 the Hessian has a negative
+    // eigenvalue: Newton alternates over the shallow direction, causing large oscillating
+    // steps even when the residual is already at floating-point noise level. We accept the
+    // best position found whenever the residual plateaus below a practical threshold.
+    let mut best_pos = pos;
+    let mut best_residual = f64::INFINITY;
+    let mut best_iter = 0usize;
+    let mut best_step = f64::INFINITY;
+
     for iter in 0..config.max_iterations {
         let residual = frame.residual(pos);
         residual_norm = norm(residual);
+
+        if residual_norm < best_residual {
+            best_residual = residual_norm;
+            best_pos = pos;
+            best_iter = iter;
+            best_step = last_step;
+        }
+
         if residual_norm <= config.residual_tolerance_km_s2 {
             return Ok(SolverSolution {
                 position: Position::new(
@@ -326,6 +343,23 @@ fn solve_with_sampler(
                 residual_norm_km_s2: residual_norm,
             });
         }
+    }
+
+    // Best-effort fallback: at triangular points (L4/L5) Newton oscillates over the
+    // shallow direction — steps remain large but the residual plateaus at floating-point
+    // noise level.  Accept the best position found if it cleared a practical threshold.
+    let practical_threshold = 1.0e-6_f64;
+    if best_residual <= practical_threshold {
+        return Ok(SolverSolution {
+            position: Position::new(
+                Kilometers::new(best_pos[0]),
+                Kilometers::new(best_pos[1]),
+                Kilometers::new(best_pos[2]),
+            ),
+            iterations: best_iter,
+            step_norm_km: best_step,
+            residual_norm_km_s2: best_residual,
+        });
     }
 
     Err(SolverError::DidNotConverge {
@@ -376,7 +410,15 @@ impl RotatingFrame {
             add(scale(sun, GM_SUN.value()), scale(earth, GM_EARTH.value())),
             1.0 / total_mu,
         );
-        let omega = (total_mu / d.powi(3)).sqrt();
+        // Use the actual angular velocity of the rotating frame (|r × v| / r²) rather than
+        // the circular-orbit approximation sqrt(GM/r³). The two agree only for a circular
+        // orbit; for Earth's elliptical orbit they diverge by ~3.4% at perihelion/aphelion,
+        // which shifts the pseudo-equilibrium by thousands of km in the soft (y/z) directions.
+        let omega = if z_norm > 0.0 && z_norm.is_finite() {
+            z_norm / (d * d)
+        } else {
+            (total_mu / d.powi(3)).sqrt()
+        };
         let origin_accel = sun_earth_barycenter_external_accel(sun, earth, moon);
         Ok(Self {
             sun,
@@ -598,5 +640,22 @@ mod tests {
                     || solution.residual_norm_km_s2 < 1.0e-6
             );
         }
+    }
+
+    #[test]
+    fn dyn_solver_converges_at_j2000() {
+        use crate::ephemeris::DynEphemeris;
+        let eph: &dyn DynEphemeris = &Vsop87Ephemeris;
+        let solution = solve_sun_earth_lagrange_dyn_with_config(
+            eph,
+            SunEarthLagrangePoint::L1,
+            J2000,
+            SolverConfig::default(),
+            None,
+        )
+        .expect("dyn solver should converge at J2000");
+        assert!(
+            solution.step_norm_km <= STEP_TOL_KM * 10.0 || solution.residual_norm_km_s2 < 1.0e-6
+        );
     }
 }

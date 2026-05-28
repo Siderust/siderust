@@ -43,6 +43,12 @@ use crate::time::JulianDate;
 const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 const J2000_JD: f64 = 2_451_545.0;
 
+/// Default start Julian Date for the embedded Sun-Earth Lagrange archive (1900-01-01).
+pub const FIT_FROM_JD: f64 = 2_415_020.5;
+
+/// Default end Julian Date for the embedded Sun-Earth Lagrange archive (2100-01-01).
+pub const FIT_TO_JD: f64 = 2_488_070.5;
+
 /// Sun-Earth Lagrange point selector.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
 #[cfg_attr(feature = "serde", derive(serde::Serialize, serde::Deserialize))]
