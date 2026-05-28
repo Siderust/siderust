@@ -8,6 +8,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Added a reusable `siderust-archive-data` Rust crate inside the archive
+  submodule (`archive/crates/siderust-archive-data`) so every repository in the
+  Siderust family can share one data-access layer via a path dependency into
+  the submodule. It provides: TOML manifest parsing (schema v1, top-level
+  registry + per-family manifests), SHA-256 checksum verification, provenance,
+  and a runtime IERS time-data downloader (`time::TimeDataManager`, behind the
+  `fetch` feature) that downloads, verifies, caches, and records provenance for
+  leap seconds, ΔT, and Earth Orientation Parameters. The crate carries no
+  embedded data and declares an empty `[workspace]` so it is not absorbed into a
+  consumer's cargo workspace. Added `archive/time/eop/` describing the IERS
+  EOP/ΔT sources (fetched at runtime, not committed).
 - Established the `archive/` git submodule as the canonical store for
   scientific datasets, kernels, manifests, generators, and validation
   reports. Added `.gitmodules`, `archive/README.md`, `archive/MANIFEST.toml`
