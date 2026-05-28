@@ -8,6 +8,38 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+- Established the `archive/` git submodule as the canonical store for
+  scientific datasets, kernels, manifests, generators, and validation
+  reports. Added `.gitmodules`, `archive/README.md`, `archive/MANIFEST.toml`
+  (top-level registry), per-family `manifest.toml` skeletons for VSOP87,
+  IAU 2000A nutation, ELP2000-82B, Meeus 1998 Pluto, leap seconds, frames,
+  body constants, and the generated Sun-Earth Lagrange Chebyshev kernels.
+  All archive metadata is TOML; JSON is no longer used in the archive.
+- Added `archive/schema/archive-manifest-v1.md` (manifest contract) and
+  `archive/schema/sck-v1.md` (Siderust Chebyshev Kernel binary spec).
+- Added directory skeletons for `archive/generators/lagrange/`,
+  `archive/tools/validate/`, and `archive/tools/convert/` with README stubs
+  describing planned standalone Cargo crates.
+- Added `plans/archive-plan.md` documenting the 12-phase data-architecture
+  migration.
+- Added Cargo features `archive-data`, `embedded-data`, `generated-tables`,
+  and `external-data` to opt in to the archive-backed dataset stack.
+- Added `siderust::data::archive` with the build-time generated
+  `ARCHIVE_ENTRIES` table and `lookup_family` helper. The registry is
+  populated from `archive/MANIFEST.toml` when the `archive-data` feature
+  is enabled and the submodule is checked out; otherwise it is empty.
+- Added `siderust::formats::sck` reader for the Siderust Chebyshev Kernel
+  v1 binary format used by the Lagrange archive payloads.
+- Extended `build.rs` to detect the `archive/` submodule, emit an
+  `archive_registry.rs` artifact into `OUT_DIR`, and watch the relevant
+  manifest paths via `cargo:rerun-if-changed`. The build never regenerates
+  scientific datasets and falls back to an empty registry when the
+  submodule is missing.
+- The Lagrange generator (`scripts/generate-lagrange-cheby.rs`) now
+  accepts `--block-days` to control the Chebyshev block size, writes its
+  outputs directly into `archive/lagrange/<source>/`, and emits an
+  archive-compatible `manifest.toml` next to the `.sck` files.
+
 - Added the `spice` feature and `siderust::spice` / `formats::spice` stack for SPICE text, DAF/SPK, FK, PCK, CK, SCLK, IK, kernel metadata, and high-level `SpiceContext`.
 - Added `photometry` support for Johnson–Cousins UBVRI passbands and delegated generic sampled-spectrum/grid interpolation to `optica`.
 - Added `pod` as an explicit opt-in feature, folding the former `siderust-pod` functionality into `siderust::pod` with force-model configuration, propagation, process noise, observations, estimation, QC, products, and SPICE/I/O adapters.

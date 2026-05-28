@@ -94,10 +94,12 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     )?;
 
     fs::create_dir_all(&out)?;
+    let block_days_raw = value_arg(&args, "--block-days").unwrap_or("8");
+    let block_days: f64 = block_days_raw.parse()?;
     let config = FitConfig {
         from,
         to,
-        block: Seconds::new(32.0 * siderust::qtty::time::SECONDS_PER_DAY),
+        block: Seconds::new(block_days * siderust::qtty::time::SECONDS_PER_DAY),
         validation_step: Seconds::new(6.0 * 3_600.0),
         ..FitConfig::default()
     };

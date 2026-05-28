@@ -24,6 +24,7 @@
 //! - JPL DE technical memoranda.
 //! - NASA NAIF SPICE Toolkit documentation.
 
+pub mod archive;
 mod catalog;
 pub mod checksum;
 pub(crate) mod compiled;

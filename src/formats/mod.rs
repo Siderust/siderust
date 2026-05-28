@@ -15,6 +15,7 @@
 //! | [`igs`] | SP3 / ANTEX / SINEX / ORBEX products |
 //! | [`ilrs`] | CRD / CPF laser-ranging products |
 //! | [`rinex`] | RINEX observation / navigation formats |
+//! | [`sck`] | Siderust Chebyshev Kernel v1 (archive binary) |
 //! | [`spice`] | SPICE text and binary kernel parsing (SPK, CK, FK, LSK, PCK, SCLK, IK) |
 //! | [`tle`] | NORAD TLE / 3LE / CCSDS OMM (KVN, XML, JSON) |
 //! | [`vlbi`] | vgosDB VLBI datasets |
@@ -30,6 +31,7 @@ pub mod iers;
 pub mod igs;
 pub mod ilrs;
 pub mod rinex;
+pub mod sck;
 pub mod spice;
 pub mod tle;
 pub mod vlbi;

@@ -91,6 +91,35 @@ Siderust is built on two cross-cutting principles documented in
 
 ---
 
+## Scientific Archive (submodule)
+
+Large scientific datasets — VSOP87, IAU 2000A nutation, ELP2000-82B,
+Sun-Earth Lagrange Chebyshev kernels, SPICE time/frame/constants kernels,
+and dataset generators/validators — live in the separate
+[`Siderust/archive`](https://github.com/Siderust/archive) repository, attached
+here as the `archive/` git submodule.
+
+After cloning Siderust, initialise the submodule:
+
+```sh
+git submodule update --init --recursive
+```
+
+All archive metadata uses **TOML** (`MANIFEST.toml`, per-family
+`manifest.toml`). Binary payloads use their authoritative formats (SPICE
+`.bsp`, Siderust Chebyshev Kernel `.sck`, raw `.dat`). The archive layout,
+manifest schema, and regeneration recipes are documented in
+[`archive/README.md`](archive/README.md) and
+[`archive/schema/archive-manifest-v1.md`](archive/schema/archive-manifest-v1.md).
+
+The default `siderust` build does **not** require the archive — large data
+tables are still embedded as `.rs` while the migration is in progress (see
+[`plans/archive-plan.md`](plans/archive-plan.md)). Future feature flags
+(`archive-data`, `embedded-data`, `external-data`) will control how the
+runtime consumes the archive once the migration is complete.
+
+---
+
 ## Installation
 
 Add to your `Cargo.toml`:
