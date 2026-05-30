@@ -8,11 +8,11 @@ use std::env;
 use std::path::PathBuf;
 
 #[cfg(feature = "regen-data")]
-#[path = "../archive/src/vsop/pipeline.rs"]
+#[path = "build/regen/vsop/pipeline.rs"]
 mod vsop87_build;
 
 #[cfg(feature = "regen-data")]
-#[path = "../archive/src/elp/pipeline.rs"]
+#[path = "build/regen/elp/pipeline.rs"]
 mod elp2000_build;
 
 fn main() {
