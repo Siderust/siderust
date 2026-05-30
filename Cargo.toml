@@ -65,14 +65,9 @@ name = "spice_context"
 path = "tests/spice_context.rs"
 required-features = ["spice"]
 
-[[bin]]
-name = "generate-lagrange-cheby"
-path = "scripts/generate-lagrange-cheby.rs"
-required-features = ["lagrange-centers"]
-
 [features]
 default = ["serde"]
-lagrange-centers = ["serde", "dep:sha2", "dep:hex", "siderust-archive/lagrange"]
+lagrange-centers = ["serde", "siderust-archive/lagrange"]
 runtime-data = ["siderust-archive/fetch"]
 serde = ["dep:serde", "dep:serde_json", "qtty/serde", "affn/serde", "tempoch/serde"]
 photometry = []

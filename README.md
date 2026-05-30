@@ -212,7 +212,7 @@ and prefetch the kernel you need:
 
 ```bash
 export SIDERUST_DATASETS_DIR="$HOME/.cache/siderust"
-./scripts/prefetch_datasets.sh --de440   # downloads $SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp
+../archive/scripts/prefetch_datasets.sh --de440   # downloads $SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp
 ```
 
 Notes:

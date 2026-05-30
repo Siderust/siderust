@@ -20,7 +20,7 @@ runtime-data = ["siderust/runtime-data", "dep:siderust-archive", "siderust-archi
 
 [dependencies]
 siderust    = { version = "0.8", path = ".." }
-siderust-archive = { version = "0.1", optional = true, features = ["jpl"] }
+siderust-archive = { path = "../../archive", optional = true, features = ["jpl"] }
 keplerian   = "0.2"
 principia   = { version = "0.2", features = ["alloc"] }
 qtty        = "0.8"

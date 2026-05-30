@@ -59,34 +59,33 @@ Typical sizes:
 
 ## How to regenerate locally
 
-Use the helper script to download source datasets and regenerate all committed
-Rust tables in one step:
+Use the archive helper script to prefetch source datasets (VSOP87, ELP2000, JPL
+kernels). Table regeneration is owned by `siderust-archive`; see
+[`archive/README.md`](../../archive/README.md).
 
 ```bash
-# From the siderust crate root:
-./scripts/update_generated_tables.sh
+# From the siderust crate root (monorepo layout):
+../archive/scripts/prefetch_datasets.sh --minimal
 ```
 
-This does three things:
-1. Downloads the source datasets via `scripts/prefetch_datasets.sh --minimal`.
-2. Runs `SIDERUST_REGEN=1 cargo build` which overwrites the active generated
-   VSOP87/ELP2000 files under `src/generated/`.
-3. Writes an updated `src/generated/datasets.lock.json`.
-
-Review with `git diff src/generated/`, then commit:
-
-```bash
-git add src/generated/
-git commit -m "chore: refresh generated dataset tables"
-```
-
-Alternatively, you can drive the regen directly without the script:
+For JPL kernels only:
 
 ```bash
 export SIDERUST_DATASETS_DIR="$PWD/.siderust_datasets"
-./scripts/prefetch_datasets.sh --minimal
-SIDERUST_REGEN=1 cargo build
+../archive/scripts/prefetch_datasets.sh --de440
 ```
+
+To regenerate Sun-Earth Lagrange SCK kernels, use the archive tool:
+
+```bash
+cd ../archive
+cargo run -p generate-lagrange-cheby -- \
+    --source vsop87 --out src/lagrange/vsop87
+```
+
+Legacy note: `siderust/scripts/update_generated_tables.sh` and
+`siderust/scripts/prefetch_datasets.sh` were removed; use the archive paths
+above.
 
 ## How `SIDERUST_REGEN=1` works
 

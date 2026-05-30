@@ -16,10 +16,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   `archive_registry.rs`.
 - `runtime-data` now enables `siderust-archive/runtime` instead of bundling
   `ureq`/`sha2` directly in this crate.
+- Sun-Earth Lagrange SCK regeneration moved to
+  `siderust-archive/tools/generate-lagrange-cheby` (archive workspace tool).
+  The `generate-lagrange-cheby` binary and `scripts/` shims were removed from
+  this crate.
+- Dataset maintenance shell scripts now live under `siderust-archive/scripts/`
+  only; the former `siderust/scripts/` redirect shims were deleted.
 
 ### Removed
 
 - Deleted `src/datasets/` and `src/archive.rs`.
+- Removed `scripts/generate-lagrange-cheby.rs`, `scripts/jpl/`, and other
+  archive redirect shims from this crate.
 - Removed the `archive/` git submodule. The reusable archive crate (now named
   `siderust-archive`) is published on crates.io; downstream consumers that
   want archive-backed data should clone https://github.com/Siderust/archive

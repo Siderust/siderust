@@ -4,8 +4,8 @@
 //! SPK Type 2 segment reader.
 //!
 //! Reads Chebyshev polynomial coefficient segments from a parsed DAF container.
-//! This is a runtime-capable version of the parser used by the build-time
-//! pipeline in `scripts/jpl/`.
+//! This is a runtime-capable version of the parser; build-time JPL extraction
+//! lives in `siderust-archive/generators/jpl/`.
 
 use super::daf::{Daf, Summary};
 use super::SpiceError;

@@ -18,6 +18,10 @@
 //! checksum, and the `const fn` SHA-256 implementation here lets the
 //! Rust compiler verify the pin during build.
 //!
+//! For runtime SHA-256 verification of archive manifests and downloaded
+//! datasets, use [`siderust_archive::checksum`] instead — that module is
+//! intentionally separate and does not support `const` evaluation.
+//!
 //! ## Technical scope
 //!
 //! This module provides:

@@ -7,9 +7,9 @@
 //! <https://naif.jpl.nasa.gov/pub/naif/toolkit_docs/C/req/daf.html>
 //!
 //! This is a runtime-capable version of the parser, it returns `Result`
-//! errors instead of panicking and can be used both at build time (via the
-//! build-script pipeline in `scripts/jpl/`) and at runtime (via the
-//! `runtime-data` feature).
+//! errors instead of panicking and can be used at runtime (via the
+//! `runtime-data` feature). Build-time JPL extraction lives in
+//! `siderust-archive/generators/jpl/`.
 
 use super::SpiceError;
 

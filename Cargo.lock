@@ -1761,7 +1761,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
- "siderust-archive",
+ "siderust-archive 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "tempoch",
  "thiserror 2.0.18",
  "wide",
@@ -1769,9 +1769,24 @@ dependencies = [
 
 [[package]]
 name = "siderust-archive"
-version = "0.1.1"
+version = "0.1.2"
+dependencies = [
+ "anyhow",
+ "chrono",
+ "qtty",
+ "regex",
+ "serde",
+ "sha2",
+ "toml 0.8.23",
+ "ureq",
+ "walkdir",
+]
+
+[[package]]
+name = "siderust-archive"
+version = "0.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0c885202514dc0a0795738b019d259482da029d1bc36869c14aab470543fbb65"
+checksum = "c45eabd7e179107c88e46257b95488defab6a454ad2aeb3e202cd3f9968fd62b"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1796,7 +1811,7 @@ dependencies = [
  "qtty",
  "serde_json",
  "siderust",
- "siderust-archive",
+ "siderust-archive 0.1.2",
  "tempoch",
  "tempoch-ffi",
  "tokio",
@@ -1894,7 +1909,7 @@ dependencies = [
  "chrono",
  "qtty",
  "serde",
- "siderust-archive",
+ "siderust-archive 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
