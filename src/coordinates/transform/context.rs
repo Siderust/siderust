@@ -176,15 +176,19 @@ impl<Eph, Eop: EopProvider> AstroContext<Eph, Eop> {
     /// EOP provider contract while keeping transform call sites ergonomic.
     #[inline]
     pub fn try_eop_at_tt(&self, jd_tt: JulianDate) -> Result<EopValues, EopError> {
-        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
+        let jd_utc = crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt)?;
         self.try_eop_at(jd_utc)
     }
 
     /// Look up EOP values for a **TT** observation epoch.
     #[inline]
     pub fn eop_at_tt(&self, jd_tt: JulianDate) -> EopValues {
-        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
-        self.eop_at(jd_utc)
+        match crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt) {
+            Ok(jd_utc) => self.eop_at(jd_utc),
+            Err(_) => self
+                .eop
+                .eop_at(crate::astro::earth_rotation::jd_utc_from_tt_delta_t(jd_tt)),
+        }
     }
 
     /// Look up EOP values for the given **UTC** Julian Date.
@@ -348,15 +352,19 @@ impl<Eop: EopProvider> DynAstroContext<Eop> {
     /// Fallibly look up EOP values for a **TT** observation epoch.
     #[inline]
     pub fn try_eop_at_tt(&self, jd_tt: JulianDate) -> Result<EopValues, EopError> {
-        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
+        let jd_utc = crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt)?;
         self.try_eop_at(jd_utc)
     }
 
     /// Look up EOP values for a **TT** observation epoch.
     #[inline]
     pub fn eop_at_tt(&self, jd_tt: JulianDate) -> EopValues {
-        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
-        self.eop_at(jd_utc)
+        match crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt) {
+            Ok(jd_utc) => self.eop_at(jd_utc),
+            Err(_) => self
+                .eop
+                .eop_at(crate::astro::earth_rotation::jd_utc_from_tt_delta_t(jd_tt)),
+        }
     }
 
     /// Reference to the underlying EOP provider.

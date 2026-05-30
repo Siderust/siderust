@@ -29,7 +29,6 @@
 //! - [`JulianDate`] = `tempoch::JulianDate<TT>` (TT-default Julian Date)
 //! - [`ModifiedJulianDate`] = `tempoch::ModifiedJulianDate<TT>`
 //! - [`J2000`] — the J2000.0 TT epoch constant
-//! - [`JULIAN_YEAR_DAYS`] — `qtty::time::JULIAN_YEAR` expressed as [`qtty::Day`]
 //!
 //! All time-scale ownership (ΔT tables, EOP, UTC/TAI leap seconds, time-data
 //! freshness) belongs to `tempoch`.  Callers that need advanced scale-aware
@@ -57,6 +56,10 @@ pub use tempoch::{
 };
 
 /// Julian year length in days, derived from [`qtty::time::JULIAN_YEAR`].
+#[deprecated(
+    since = "0.8.0",
+    note = "use qtty::time::JULIAN_YEAR.to::<qtty::unit::Day>() instead"
+)]
 pub const JULIAN_YEAR_DAYS: qtty::Day = qtty::time::JULIAN_YEAR.to_const::<qtty::unit::Day>();
 
 /// TT-scale Julian Date.  Equivalent to `tempoch::JulianDate<TT>`.

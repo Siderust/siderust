@@ -207,9 +207,7 @@ impl IersEop {
     /// * `Some((first_mjd, last_mjd))` when the table has at least one
     ///   entry; the typed [`Days`] values are the first and last MJD entries,
     ///   inclusive on both ends.
-    /// * `None` if and only if the active table is empty (which can only
-    ///   happen if a caller passes an explicitly empty slice via a custom
-    ///   constructor; the default build-embedded table is never empty).
+    /// * `None` when no runtime EOP bundle has been loaded.
     pub fn mjd_range(&self) -> Option<(Days, Days)> {
         let start = tempoch::eop::eop_start()?;
         let end = tempoch::eop::eop_end()?;

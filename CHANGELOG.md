@@ -8,147 +8,65 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Removed `siderust::datasets` and `siderust::archive`. Dataset catalog and
-  runtime acquisition now come from the `siderust-archive` dependency
-  (`siderust_archive::datasets`, `siderust_archive::runtime`).
-- Dropped `archive-data`, `embedded-data`, `generated-tables`, and
-  `external-data` Cargo features; `build.rs` no longer emits
-  `archive_registry.rs`.
-- `runtime-data` now enables `siderust-archive/runtime` instead of bundling
-  `ureq`/`sha2` directly in this crate.
-- Sun-Earth Lagrange SCK regeneration moved to
-  `siderust-archive/tools/generate-lagrange-cheby` (archive workspace tool).
-  The `generate-lagrange-cheby` binary and `scripts/` shims were removed from
-  this crate.
-- Dataset maintenance shell scripts now live under `siderust-archive/scripts/`
-  only; the former `siderust/scripts/` redirect shims were deleted.
-
-### Removed
-
-- Deleted `src/datasets/` and `src/archive.rs`.
-- Removed `scripts/generate-lagrange-cheby.rs`, `scripts/jpl/`, and other
-  archive redirect shims from this crate.
-- Removed the `archive/` git submodule. The reusable archive crate (now named
-  `siderust-archive`) is published on crates.io; downstream consumers that
-  want archive-backed data should clone https://github.com/Siderust/archive
-  separately or set `SIDERUST_ARCHIVE_ROOT` to point at a checkout. The
-  `build.rs` lagrange layout helper resolves the archive root via, in order:
-  `SIDERUST_ARCHIVE_ROOT`, `./archive/`, `../archive/`.
-- The `lagrange-centers` feature now requires the archive to be reachable at
-  build time (same resolution rules). The build emits a `compile_error!` with
-  an actionable message when the SCK kernels cannot be found, instead of the
-  former opaque `include_bytes!` failure.
+- Siderust is now a clean orchestration crate: canonical scientific datasets
+  live in the [`siderust-archive`](https://crates.io/crates/siderust-archive)
+  dependency; time-scale conversion, leap seconds, ΔT, and EOP ownership belong
+  to [`tempoch`](https://crates.io/crates/tempoch).
+- Removed `siderust::datasets`, `siderust::archive`, and the former
+  `src/data/` tree. Dataset catalog and optional runtime acquisition are
+  provided by `siderust-archive` (`siderust_archive::datasets`,
+  `siderust_archive::runtime`).
+- Dropped legacy Cargo features `archive-data`, `embedded-data`,
+  `generated-tables`, and `external-data`. The `runtime-data` feature now
+  enables `siderust-archive/fetch` for on-demand kernel download.
+- The `lagrange-centers` feature is consumer-only: it enables archive-backed
+  Sun–Earth Lagrange SCK kernels via `siderust-archive/lagrange`. Generation
+  lives in `siderust-archive/tools/generate-lagrange-cheby`; Siderust no longer
+  ships a local generator binary or build-time data mutation.
+- Earth-rotation helpers delegate UTC/EOP indexing to `tempoch`'s active
+  bundle. `try_jd_utc_from_tt` and `try_gmst_with_eop` fail when no runtime EOP
+  is loaded; `gmst_default` uses the ΔT model only. `jd_utc_from_tt` remains as
+  a ΔT-based compatibility wrapper.
+- VSOP87/ELP coefficient tables are consumed from `siderust-archive` static
+  snapshots; Siderust does not regenerate them at build time.
+- Generic grid/spectrum/math ownership delegated to `optica`; orbital
+  mechanics integration/STM/covariance delegated to `principia`.
+- Reorganized internal namespaces: former `calculus::*` responsibilities moved
+  into `event::*`, `ephemeris::*`, and `astro::*`; `spectra` renamed to
+  `photometry`.
+- Force-model and propagation APIs use typed `qtty` quantities
+  (`GravitationalParameter`, `Second`, …) instead of raw scalars.
+- Default features are now `serde` only; POD lives behind the explicit `pod`
+  feature family (`pod-parquet`, `pod-doris`).
 
 ### Added
 
-- Dependency on `siderust-archive` for dataset catalog and optional runtime
-  ephemeris download.
-- Added a reusable `siderust-archive-data` Rust crate inside the archive
-  submodule (`archive/crates/siderust-archive-data`) so every repository in the
-  Siderust family can share one data-access layer via a path dependency into
-  the submodule. It provides: TOML manifest parsing (schema v1, top-level
-  registry + per-family manifests), SHA-256 checksum verification, provenance,
-  and a runtime IERS time-data downloader (`time::TimeDataManager`, behind the
-  `fetch` feature) that downloads, verifies, caches, and records provenance for
-  leap seconds, ΔT, and Earth Orientation Parameters. The crate carries no
-  embedded data and declares an empty `[workspace]` so it is not absorbed into a
-  consumer's cargo workspace. Added `archive/time/eop/` describing the IERS
-  EOP/ΔT sources (fetched at runtime, not committed).
-- Established the `archive/` git submodule as the canonical store for
-  scientific datasets, kernels, manifests, generators, and validation
-  reports. Added `.gitmodules`, `archive/README.md`, `archive/MANIFEST.toml`
-  (top-level registry), per-family `manifest.toml` skeletons for VSOP87,
-  IAU 2000A nutation, ELP2000-82B, Meeus 1998 Pluto, leap seconds, frames,
-  body constants, and the generated Sun-Earth Lagrange Chebyshev kernels.
-  All archive metadata is TOML; JSON is no longer used in the archive.
-- Added `archive/schema/archive-manifest-v1.md` (manifest contract) and
-  `archive/schema/sck-v1.md` (Siderust Chebyshev Kernel binary spec).
-- Added directory skeletons for `archive/generators/lagrange/`,
-  `archive/tools/validate/`, and `archive/tools/convert/` with README stubs
-  describing planned standalone Cargo crates.
-- Added `plans/archive-plan.md` documenting the 12-phase data-architecture
-  migration.
-- Added Cargo features `archive-data`, `embedded-data`, `generated-tables`,
-  and `external-data` to opt in to the archive-backed dataset stack.
-- Added `siderust::data::archive` with the build-time generated
-  `ARCHIVE_ENTRIES` table and `lookup_family` helper. The registry is
-  populated from `archive/MANIFEST.toml` when the `archive-data` feature
-  is enabled and the submodule is checked out; otherwise it is empty.
-- Added `siderust::formats::sck` reader for the Siderust Chebyshev Kernel
-  v1 binary format used by the Lagrange archive payloads.
-- Extended `build.rs` to detect the `archive/` submodule, emit an
-  `archive_registry.rs` artifact into `OUT_DIR`, and watch the relevant
-  manifest paths via `cargo:rerun-if-changed`. The build never regenerates
-  scientific datasets and falls back to an empty registry when the
-  submodule is missing.
-- The Lagrange generator (`scripts/generate-lagrange-cheby.rs`) now
-  accepts `--block-days` to control the Chebyshev block size, writes its
-  outputs directly into `archive/lagrange/<source>/`, and emits an
-  archive-compatible `manifest.toml` next to the `.sck` files.
-
-- Added the `spice` feature and `siderust::spice` / `formats::spice` stack for SPICE text, DAF/SPK, FK, PCK, CK, SCLK, IK, kernel metadata, and high-level `SpiceContext`.
-- Added `photometry` support for Johnson–Cousins UBVRI passbands and delegated generic sampled-spectrum/grid interpolation to `optica`.
-- Added `pod` as an explicit opt-in feature, folding the former `siderust-pod` functionality into `siderust::pod` with force-model configuration, propagation, process noise, observations, estimation, QC, products, and SPICE/I/O adapters.
-- Added spacecraft dynamics under `astro::dynamics`: typed orbital states, perturbation context, drag, SRP, geopotential, third-body, relativity, empirical accelerations, covariance/STM helpers, and propagator wrappers.
-- Added SGP4/TLE/OMM support, CCSDS/IGS/ILRS/RINEX/VLBI format modules, and related examples/tests.
-- Added aircraft identity/state and ICAO ISA atmosphere support under `bodies::aircraft`.
-- Added Lagrange-center support, generated Chebyshev tooling/placeholders, and center-shift providers.
-- Added FFI dynamics bindings and tests.
-
-### Changed
-
-- Reorganized major internal namespaces:
-  - `calculus::*` functionality moved into `event::*`, `ephemeris::*`, and `astro::*`.
-  - `archive` / `provenance` data moved under `data::*`.
-  - generic grid/table functionality moved to `optica::grid`.
-- Replaced the old local generic dynamics implementation with the extracted `principia` mechanics crate for integration, STM, covariance transport, gravity kernels, and local trajectory frames.
-- Updated force-model and propagation APIs to use typed `qtty` quantities such as `GravitationalParameter` and `Second` instead of raw scalars.
-- Renamed `siderust::spectra` to `siderust::photometry`; use `optica::spectrum` for generic spectrum infrastructure.
-- Made `pod` non-default; default features now include `serde` only.
-- Marked `siderust-ffi` as `publish = false`.
-- Corrected and modernized examples, benches, docs, and generated bindings for the new module layout.
+- Dependency on `siderust-archive` for embedded ephemeris tables, nutation,
+  gravity, atmosphere, Pluto, and optional runtime fetch.
+- `spice` feature with `siderust::spice` / `formats::spice` for SPICE kernels
+  and `SpiceContext`.
+- `pod` feature folding the former `siderust-pod` crate into `siderust::pod`
+  (force models, propagation, estimation, QC, products, I/O).
+- Spacecraft dynamics under `astro::dynamics`, SGP4/TLE/OMM support, and
+  mission/format modules (CCSDS, IGS, ILRS, RINEX, VLBI).
+- Lagrange-center support via archive-backed Chebyshev kernels.
+- FFI dynamics bindings and tests.
 
 ### Removed
 
-- **Dissolved `src/data/` module** — the `data` namespace no longer exists.
-  Sub-modules were redistributed:
-  - `data::checksum` → `siderust::checksum` (top-level)
-  - `data::archive` → `siderust::archive` (top-level)
-  - `data::{DatasetId, DatasetMeta, DatasetError, …}` → `siderust::datasets`
-  - `data::runtime` → `siderust::datasets::runtime`
-  - `data::compiled::jpl` → `siderust::ephemeris::jpl` (co-located)
-  - `data::provenance` / `data::DataSource` replaced by `optica::data::{Provenance, DataSource}` directly
-  - Static data files (`o3trans.dat`, Bessell passbands) moved next to their only consumers
-- Removed public `siderust::numeric`; event-search internals are now crate-private under `event::search`.
-- Removed `siderust::calculus` as a public namespace after moving its responsibilities into `event`, `ephemeris`, and `astro`.
-- Removed `siderust::archive` and old data/provenance layout in favor of `siderust::data`.
-- Removed `siderust::tables` and the `tables` feature; use `optica::grid`.
-- Removed `siderust::spectra`; use `siderust::photometry` and `optica::spectrum`.
-- Removed the standalone `siderust-pod` crate and `pod-lisa` feature; POD now lives behind `siderust::pod`, and LISA-specific logic lives in examples.
-- Removed the parallel `pod::dynamics` force-model wrapper layer in favor of canonical `AccelerationModel` / `CompositeModel`.
-- Removed root-level `siderust::instruments`, `siderust::mission_geometry`, and
-  `siderust::mission_context`; mission APIs now live under `siderust::mission`.
-- **Removed `src/data/compiled/lagrange/`** — the 296 K-line generated Rust
-  array is replaced by five compact SCK binary kernels committed to the
-  `archive/` submodule (`archive/lagrange/vsop87/l{1..5}.sck`, each ~475 KB,
-  2283 records, 1900–2100 coverage).  The runtime loader uses `include_bytes!`
-  and a lazy parser instead of a giant static array.
-- **Removed `src/data/compiled/{vsop87a,vsop87e,elp_data,nut00a_tables,pluto_tables}.rs`**
-  from the `data::compiled` module; each file now lives co-located with its
-  sole consumer (`src/ephemeris/vsop87/`, `src/ephemeris/elp2000/`,
-  `src/astro/nutation/`, `src/ephemeris/`).
-- **Removed `src/data/source/lagrange/`** — metadata superseded by
-  `archive/lagrange/vsop87/manifest.toml`.
-- `data::compiled` now contains only the feature-gated JPL DE440/DE441 binary
-  sub-modules; all other compiled tables are gone.
+- Local canonical dataset regeneration (`regen-data`, `build.rs` archive
+  generation, `scripts/generate-lagrange-cheby.rs`, and related build deps).
+- `siderust::numeric`, `siderust::calculus`, `siderust::tables`, and the
+  standalone `siderust-pod` crate.
+- Build-time embedding of IERS EOP; EOP is runtime-loaded through `tempoch`.
+- Deprecated `siderust::time::JULIAN_YEAR_DAYS` (use
+  `qtty::time::JULIAN_YEAR.to::<qtty::unit::Day>()`).
 
 ### Fixed
 
-- Fixed misspelled `bodies::satelite` path to `bodies::satellite`.
-- Made RINEX NAV parsing strict by default, returning located `FormatError`s instead of silently zero-filling malformed records.
-- Fixed ILRS CPF/CRD doctest import paths.
-- Removed unreachable non-finite epoch tests now covered by stricter `JulianDate` construction.
-
+- Earth-rotation/EOP paths no longer equate UT1 with UTC when no runtime EOP
+  bundle is active.
+- RINEX NAV parsing is strict by default; ILRS/CPF doctest paths corrected.
 
 ## [0.8.0] - 2026-05-18
 

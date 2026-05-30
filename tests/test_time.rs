@@ -3,8 +3,9 @@
 
 #![allow(missing_docs)]
 
+use qtty::time::JULIAN_YEAR;
 use siderust::qtty::Days;
-use siderust::time::{JulianDate, JULIAN_YEAR_DAYS};
+use siderust::time::JulianDate;
 
 #[test]
 fn julian_date_arithmetic_display_and_chrono_roundtrip() {
@@ -15,9 +16,10 @@ fn julian_date_arithmetic_display_and_chrono_roundtrip() {
     jd += Days::new(2.0);
     jd -= Days::new(0.5);
 
-    let with_years = jd + JULIAN_YEAR_DAYS;
+    let julian_year_days = JULIAN_YEAR.to::<qtty::unit::Day>();
+    let with_years = jd + julian_year_days;
     let day_span: Days = with_years.raw() - jd.raw();
-    assert!((day_span.value() - JULIAN_YEAR_DAYS.value()).abs() < 1e-9);
+    assert!((day_span.value() - julian_year_days.value()).abs() < 1e-9);
 
     let min = if with_years < jd { with_years } else { jd };
     assert_eq!(min, jd);
