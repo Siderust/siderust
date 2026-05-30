@@ -60,7 +60,7 @@ mod iau2006;
 mod iau2006a;
 pub(crate) mod nut00a;
 
-use siderust_archive::nutation::tables::NUT00B_LS;
+use crate::archive::nutation::tables::NUT00B_LS;
 
 pub use iau2000a::Iau2000A;
 pub use iau2000b::Iau2000B;

@@ -9,6 +9,7 @@
 //! object-safe).
 
 use super::{AuPerDay, DynEphemeris, EphemerisError};
+use crate::archive::ArchiveError;
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
@@ -19,7 +20,6 @@ use crate::ephemeris::jpl::eval::DynSegmentDescriptor;
 use crate::formats::spice::{self, spk};
 use crate::qtty::{AstronomicalUnit, Kilometer};
 use crate::time::JulianDate;
-use siderust_archive::ArchiveError;
 use std::path::Path;
 use std::sync::Arc;
 
@@ -94,8 +94,8 @@ impl RuntimeEphemeris {
     /// ```
     #[cfg(feature = "runtime-data")]
     pub fn from_dataset_manager(
-        dm: &siderust_archive::jpl::DatasetManager,
-        id: siderust_archive::jpl::JplDatasetId,
+        dm: &crate::archive::jpl::DatasetManager,
+        id: crate::archive::jpl::JplDatasetId,
     ) -> Result<Self, ArchiveError> {
         let path = dm.ensure(id)?;
         Self::from_bsp(path)

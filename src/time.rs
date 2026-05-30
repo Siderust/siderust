@@ -58,8 +58,8 @@ pub use tempoch::{
     JD, MJD, TAI, TCB, TCG, TDB, TT, UT1, UTC,
 };
 
-/// Julian year length in days (`365.25`), matching tempoch's compiled Julian-year definition.
-pub const JULIAN_YEAR_DAYS: qtty::Day = qtty::Day::new(365.25);
+/// Julian year length in days, derived from [`qtty::time::JULIAN_YEAR`].
+pub const JULIAN_YEAR_DAYS: qtty::Day = qtty::time::JULIAN_YEAR.to_const::<qtty::unit::Day>();
 
 /// TT-scale Julian Date.  Equivalent to `tempoch::JulianDate<TT>`.
 pub type JulianDate = tempoch::JulianDate<TT>;

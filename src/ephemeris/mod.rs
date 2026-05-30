@@ -42,13 +42,13 @@
 /// describing the upstream source, the generator tool, and the generation
 /// timestamp for the corresponding dataset.
 pub mod provenance {
-    pub use siderust_archive::atmosphere::provenance as atmosphere;
-    pub use siderust_archive::elp::provenance as elp;
-    pub use siderust_archive::gravity::provenance as gravity;
-    pub use siderust_archive::nutation::provenance as nutation;
-    pub use siderust_archive::pluto::provenance as pluto;
-    pub use siderust_archive::time::provenance as time;
-    pub use siderust_archive::vsop::provenance as vsop;
+    pub use crate::archive::atmosphere::provenance as atmosphere;
+    pub use crate::archive::elp::provenance as elp;
+    pub use crate::archive::gravity::provenance as gravity;
+    pub use crate::archive::nutation::provenance as nutation;
+    pub use crate::archive::pluto::provenance as pluto;
+    pub use crate::archive::time::provenance as time;
+    pub use crate::archive::vsop::provenance as vsop;
 }
 
 pub(crate) mod elp2000;

@@ -50,8 +50,8 @@
 //! * Bowring, B.R. (1985), "The geodetic line and the geodetic coordinates",
 //!   *Survey Review*, 28, 276–281.
 
+use crate::archive::atmosphere::tables::NRLMSISE_TABLE;
 use affn::cartesian::Position;
-use siderust_archive::atmosphere::tables::NRLMSISE_TABLE;
 
 use crate::coordinates::centers::Geocentric;
 use crate::coordinates::frames::GCRS;

@@ -56,6 +56,11 @@
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};
 use wide::f64x4;
 
+use crate::archive::elp::constants::{
+    A0, AM, ATH, DEL, DELE, DELEP, DELG, DELNP, DELNU, DTASM, P1, P2, P3, P4, P5, P_ARGS, Q1, Q2,
+    Q3, Q4, Q5, W1, ZETA,
+};
+use crate::archive::elp::elp_data;
 use crate::bodies::solar_system::Moon;
 use crate::ephemeris::elp2000::elp_structs::*;
 #[cfg(test)]
@@ -63,11 +68,6 @@ use crate::qtty::Radians;
 use crate::qtty::{Arcseconds, Kilometers, LengthUnit, Radian};
 use crate::time::JulianDate;
 use elp_data::*;
-use siderust_archive::elp::constants::{
-    A0, AM, ATH, DEL, DELE, DELEP, DELG, DELNP, DELNU, DTASM, P1, P2, P3, P4, P5, P_ARGS, Q1, Q2,
-    Q3, Q4, Q5, W1, ZETA,
-};
-use siderust_archive::elp::elp_data;
 use std::f64::consts::FRAC_PI_2;
 
 // ====================
@@ -842,7 +842,13 @@ mod tests {
     /// Build a JulianDate from Julian centuries offset from J2000
     fn jd_from_centuries(t1: f64) -> JulianDate {
         crate::time::JulianDate::new(
-            (crate::J2000.raw() + Days::new(t1 * tempoch::DAYS_PER_JULIAN_CENTURY.value())).value(),
+            (crate::J2000.raw()
+                + Days::new(
+                    t1 * qtty::time::JULIAN_CENTURY
+                        .to_const::<qtty::unit::Day>()
+                        .value(),
+                ))
+            .value(),
         )
     }
 
@@ -866,7 +872,7 @@ mod tests {
     fn julian_centuries_one_century_from_j2000() {
         // J2000 + 36525 days = exactly 1 Julian century
         let jd = crate::time::JulianDate::new(
-            (crate::J2000.raw() + tempoch::DAYS_PER_JULIAN_CENTURY).value(),
+            (crate::J2000.raw() + qtty::time::JULIAN_CENTURY.to_const::<qtty::unit::Day>()).value(),
         );
         let centuries = jd.julian_centuries();
         assert!(

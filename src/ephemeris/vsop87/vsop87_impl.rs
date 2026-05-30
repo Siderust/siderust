@@ -45,10 +45,14 @@
 use crate::time::{JulianDate, TDB};
 use wide::f64x4;
 
-pub use siderust_archive::vsop::Vsop87;
+pub use crate::archive::vsop::Vsop87;
 
 /// Conversion factor: dT/dt (T in Julian millennia per day; 1 millennium = 10 Julian centuries)
-const DT_DT: f64 = 1.0 / (tempoch::DAYS_PER_JULIAN_CENTURY.value() * 10.0);
+const DT_DT: f64 = 1.0
+    / (qtty::time::JULIAN_CENTURY
+        .to_const::<qtty::unit::Day>()
+        .value()
+        * 10.0);
 
 // ═══════════════════════════════════════════════════════════════════════════
 // SIMD helpers for batched sin/cos using wide crate
@@ -336,7 +340,7 @@ mod tests {
     #[test]
     fn test_position_velocity() {
         // 100 years after J2000 -> T = 0.1
-        let jd = crate::J2000 + tempoch::DAYS_PER_JULIAN_CENTURY;
+        let jd = crate::J2000 + qtty::time::JULIAN_CENTURY.to_const::<qtty::unit::Day>();
         let pos = position(jd, &[&X0, &X1], &[&Y0, &Y1, &Y2], &[&Z0]);
         assert!((pos.0 - 1.2).abs() < 1e-12);
         assert!((pos.1 - 0.03).abs() < 1e-12);

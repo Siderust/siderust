@@ -58,7 +58,7 @@ use crate::time::{JulianDate, TDB};
 
 // ── Physical constants (from archive: siderust_archive::jpl::constants) ──────
 
-use siderust_archive::jpl::constants::EARTH_MOON_RATIO;
+use crate::archive::jpl::constants::EARTH_MOON_RATIO;
 
 /// μ_Earth / (μ_Earth + μ_Moon), Earth's mass fraction of the EM system.
 const FRAC_EARTH: f64 = EARTH_MOON_RATIO / (EARTH_MOON_RATIO + 1.0);

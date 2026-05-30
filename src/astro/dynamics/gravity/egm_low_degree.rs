@@ -8,7 +8,7 @@ use principia::{GravityFieldProvider, PrincipiaError};
 use crate::astro::dynamics::units::GravitationalParameter;
 use crate::qtty::Kilometers;
 
-use siderust_archive::gravity::tables::EGM2008_COEFFS;
+use crate::archive::gravity::tables::EGM2008_COEFFS;
 
 /// Earth GM (WGS-84), km³/s².
 const GM_EARTH_KM3_S2: f64 = 398_600.441_8;

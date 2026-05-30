@@ -127,6 +127,8 @@ pub mod spice;
 pub mod targets;
 pub mod time;
 
+pub(crate) use siderust_archive as archive;
+
 // Ergonomic re-exports of common time markers / epoch (`siderust::J2000` in rustdoc examples).
 pub use time::{JulianDate, ModifiedJulianDate, J2000, JD, MJD};
 

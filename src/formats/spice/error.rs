@@ -124,10 +124,10 @@ pub enum SpiceError {
     FormatParse(String),
 }
 
-impl From<siderust_archive::ArchiveError> for SpiceError {
-    fn from(err: siderust_archive::ArchiveError) -> Self {
+impl From<crate::archive::ArchiveError> for SpiceError {
+    fn from(err: crate::archive::ArchiveError) -> Self {
         match err {
-            siderust_archive::ArchiveError::Io(e) => SpiceError::Io(e),
+            crate::archive::ArchiveError::Io(e) => SpiceError::Io(e),
             other => SpiceError::FormatParse(format!("{other}")),
         }
     }

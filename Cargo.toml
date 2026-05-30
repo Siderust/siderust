@@ -4,11 +4,6 @@ members = [
     "siderust-ffi",
 ]
 
-[patch.crates-io]
-siderust-archive = { path = "../archive" }
-tempoch          = { path = "../tempoch/tempoch" }
-tempoch-core     = { path = "../tempoch/tempoch-core" }
-
 [workspace.lints.rust]
 unsafe_code     = "forbid"
 missing_docs    = "deny"
