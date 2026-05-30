@@ -51,23 +51,38 @@
 //! - **Ephemeris backends**: `Ephemeris` trait with VSOP87/ELP2000 and optional DE440/DE441.
 //! - **Serde**: optional `serde` feature for public types.
 //!
+//! ## Crate composition
+//!
+//! `siderust` is an orchestration crate that composes the specialized
+//! Siderust sub-crates. Each sub-crate owns a distinct concern:
+//!
+//! | Crate | Owns |
+//! |-------|------|
+//! | `siderust` | Astronomy API, coordinate transforms, observation planning, ephemeris front-end, satellite workflows, POD |
+//! | [`siderust_archive`] | Scientific datasets, manifests, checksums, provenance, generated coefficient snapshots |
+//! | `tempoch` | Time scales (TT/TAI/UTC/UT1/TDB/TCG/TCB), ΔT, EOP, active time-data status |
+//! | `qtty` | Physical units and typed quantity arithmetic |
+//! | `cheby` | Chebyshev / polynomial interpolation |
+//! | `keplerian` | Keplerian orbital primitives |
+//! | `principia` | Dynamics and physical force-model primitives |
+//! | `optica` | Photometry and optics primitives |
+//!
 //! ## Crate Modules
 //!
 //! - [`coordinates`]             : Cartesian & Spherical coordinate types and transformations; includes [`SkyGrid`] sampling utility
 //! - [`targets`]                 : `CoordinateWithPM<T>` + `Trackable` trait for observation targets
-//! - [`time`]                    : Time types, scales, and typed `tempoch::Interval<T>` values
+//! - [`time`]                    : Thin re-export facade over `tempoch`; adds TT-default [`JulianDate`] / [`J2000`] aliases
 //! - [`astro`]                   : Aberration, nutation, precession, sidereal time, conic helpers, event support, orbits, orbital mechanics
-//! - [`ephemeris`]               : Ephemeris traits and backends (VSOP87, ELP2000, DE4xx, Pluto)
+//! - [`ephemeris`]               : Ephemeris traits and backends (VSOP87, ELP2000, DE4xx, Pluto); coefficient tables from [`siderust_archive`]
 //! - [`event`]                   : Altitude/azimuth/lunar/solar/stellar event-search APIs
 //! - [`bodies`]                  : Planets, stars, satellites, asteroids, comets, and built-in catalogs
 //! - [`mission`]                 : Mission geometry, runtime context, and site metadata (FoV, terrain mask, AzElRange, eclipse, orbit-relative)
 //! - [`catalogs`]`::observatories` : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
-//! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate (including `OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`, `Refractivity`, `CipCoordinate`)
+//! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate
 //! - [`formats`]                 : Low-level binary file-format parsers (e.g. SPICE DAF/SPK)
-//! - Dataset catalog and runtime download: [`siderust_archive`] crate
 //! - `atmosphere` *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
 //! - `photometry` *(optional)* : Astronomical photometric passbands and throughput unit (`photometry` feature)
-//! - `tables` *(optional)*     : Tabulated data loaders (`tables` feature)
+//! - Dataset catalog, manifests, and runtime ephemeris download: [`siderust_archive`] crate
 //!
 //! ## Error-handling conventions
 //!

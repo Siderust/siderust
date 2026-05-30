@@ -1,60 +1,45 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Embedded Sun-Earth Lagrange Chebyshev kernels loaded from the archive.
+//! Embedded Sun-Earth Lagrange Chebyshev kernels.
 //!
-//! The five SCK binary files (`l1.sck`..`l5.sck`) live in the
-//! [Siderust Archive](https://github.com/Siderust/archive) under
-//! `lagrange/vsop87/` and are embedded at compile time via `include_bytes!`.
-//! They are lazily parsed on first access so the parsing cost is paid only
+//! The five SCK binary files (`l1.sck`..`l5.sck`) are embedded in
+//! [`siderust_archive`] under `src/lagrange/vsop87/` and activated by the
+//! `lagrange` feature of that crate (pulled in automatically when this crate
+//! is built with `lagrange-centers`).
+//!
+//! The bytes are lazily parsed on first access so the parsing cost is paid only
 //! when the Lagrange API is first called.
-//!
-//! # Archive requirement
-//!
-//! Building with the `lagrange-centers` feature requires a checkout of the
-//! archive repository. `build.rs` resolves its location, in order:
-//!
-//! 1. `SIDERUST_ARCHIVE_ROOT` environment variable, if it points at a
-//!    directory containing `MANIFEST.toml`.
-//! 2. `./archive/` next to this crate.
-//! 3. `../archive/` next to this crate.
-//!
-//! If none of the above contains `lagrange/vsop87/l[1-5].sck`, the build
-//! fails with an actionable `compile_error!` rather than producing an opaque
-//! `include_bytes!` not-found error.
 
 use std::sync::LazyLock;
 
+use crate::archive::lagrange::vsop87 as sck_data;
 use crate::formats::sck::parse_sck;
 
 pub(crate) const NCOEFF: usize = 8;
 
-// Each `.sck` file is ~475 KB (2283 records × 26 f64s × 8 bytes + 64-byte header).
-// L1_BYTES..L5_BYTES are declared by build.rs in OUT_DIR/lagrange_paths.rs.
-include!(concat!(env!("OUT_DIR"), "/lagrange_paths.rs"));
-
 static L1: LazyLock<Vec<f64>> = LazyLock::new(|| {
-    parse_sck(L1_BYTES)
+    parse_sck(sck_data::L1_BYTES)
         .expect("embedded L1 SCK must be valid")
         .records
 });
 static L2: LazyLock<Vec<f64>> = LazyLock::new(|| {
-    parse_sck(L2_BYTES)
+    parse_sck(sck_data::L2_BYTES)
         .expect("embedded L2 SCK must be valid")
         .records
 });
 static L3: LazyLock<Vec<f64>> = LazyLock::new(|| {
-    parse_sck(L3_BYTES)
+    parse_sck(sck_data::L3_BYTES)
         .expect("embedded L3 SCK must be valid")
         .records
 });
 static L4: LazyLock<Vec<f64>> = LazyLock::new(|| {
-    parse_sck(L4_BYTES)
+    parse_sck(sck_data::L4_BYTES)
         .expect("embedded L4 SCK must be valid")
         .records
 });
 static L5: LazyLock<Vec<f64>> = LazyLock::new(|| {
-    parse_sck(L5_BYTES)
+    parse_sck(sck_data::L5_BYTES)
         .expect("embedded L5 SCK must be valid")
         .records
 });

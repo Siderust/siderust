@@ -43,8 +43,7 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 | `pod`          |         | Precise Orbit Determination toolkit (WLS, EKF, force models, I/O) |
 | `pod-parquet`  |         | Parquet residuals writer (implies `pod`) |
 | `pod-doris`    |         | DORIS RINEX observation parser (implies `pod`) |
-| `runtime-data` |         | Runtime dataset-loading helpers |
-| `regen-data`   |         | Regenerates committed VSOP87/ELP2000 tables |
+| `runtime-data` |         | Runtime dataset-loading helpers via `siderust-archive` |
 
 > **Note:** `no_std` and `f128` quad‑precision are **not** supported today.
 > The crate depends on `std`‑only libraries such as `chrono`.
@@ -112,11 +111,11 @@ manifest schema, and regeneration recipes are documented in
 [`archive/README.md`](archive/README.md) and
 [`archive/schema/archive-manifest-v1.md`](archive/schema/archive-manifest-v1.md).
 
-The default `siderust` build does **not** require the archive — large data
-tables are still embedded as `.rs` while the migration is in progress (see
-[`plans/archive-plan.md`](plans/archive-plan.md)). Future feature flags
-(`archive-data`, `embedded-data`, `external-data`) will control how the
-runtime consumes the archive once the migration is complete.
+The default `siderust` build does **not** require a separate archive checkout.
+Large scientific datasets (VSOP87, ELP2000, nutation, gravity, atmosphere, Pluto)
+are embedded via the [`siderust-archive`](https://crates.io/crates/siderust-archive)
+crate which is a regular Cargo dependency.  JPL DE4xx kernels are resolved at
+runtime from the local filesystem or downloaded on demand via `runtime-data`.
 
 ---
 
@@ -129,7 +128,12 @@ Add to your `Cargo.toml`:
 siderust = "0.8"
 ```
 
-Committed datasets (VSOP87/ELP2000 and tempoch-owned EOP tables) are available offline. Optional JPL kernels are downloaded on demand when the corresponding feature is enabled; see `doc/datasets.md`.
+VSOP87/ELP2000 coefficients, nutation tables, and EOP data are provided by
+[`siderust-archive`](https://crates.io/crates/siderust-archive) (scientific
+datasets, manifests, checksums, provenance) and
+[`tempoch`](https://crates.io/crates/tempoch) (UTC/TAI/TT/UT1/TDB time scales,
+ΔT, and EOP freshness). Optional JPL kernels are downloaded on demand when the
+corresponding feature is enabled; see `doc/datasets.md`.
 
 ### Ephemeris Backends (Enable / Disable / Combine)
 

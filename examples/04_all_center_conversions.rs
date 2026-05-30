@@ -8,6 +8,7 @@
 //! - Barycentric <-> Geocentric
 //! - Heliocentric <-> Geocentric
 //! - Identity shifts for each center
+//! - Sun-Earth Lagrange center shifts when built with `lagrange-centers`
 //!
 //! It also demonstrates:
 //! - **Bodycentric** conversions: from Barycentric, Heliocentric, and Geocentric into a
@@ -26,6 +27,9 @@ use siderust::coordinates::frames::{EclipticMeanJ2000, ECEF};
 use siderust::coordinates::transform::{CenterShiftProvider, TransformCenter};
 use siderust::qtty::*;
 use siderust::time::JulianDate;
+
+#[cfg(feature = "lagrange-centers")]
+use siderust::coordinates::centers::{SunEarthL1, SunEarthL2, SunEarthL3, SunEarthL4, SunEarthL5};
 
 type F = EclipticMeanJ2000;
 type U = AstronomicalUnit;
@@ -132,6 +136,17 @@ fn main() {
     show_center_conversion::<Geocentric, Geocentric>(&jd, &p_geo);
     show_center_conversion::<Geocentric, Barycentric>(&jd, &p_geo);
     show_center_conversion::<Geocentric, Heliocentric>(&jd, &p_geo);
+
+    #[cfg(feature = "lagrange-centers")]
+    {
+        println!("\n── Sun-Earth Lagrange center shifts ───────────────────────────────────");
+
+        show_center_conversion::<Barycentric, SunEarthL1>(&jd, &p_bary);
+        show_center_conversion::<Barycentric, SunEarthL2>(&jd, &p_bary);
+        show_center_conversion::<Barycentric, SunEarthL3>(&jd, &p_bary);
+        show_center_conversion::<Barycentric, SunEarthL4>(&jd, &p_bary);
+        show_center_conversion::<Barycentric, SunEarthL5>(&jd, &p_bary);
+    }
 
     // ── Bodycentric: Mars-like orbit (heliocentric reference) ──────────────────
     println!("\n── Bodycentric – Mars-like orbit (heliocentric ref) ───────────────────");

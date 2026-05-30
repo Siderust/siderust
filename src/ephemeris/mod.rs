@@ -40,7 +40,8 @@
 ///
 /// Every accessor returns a [`siderust_archive::provenance::DatasetProvenance`]
 /// describing the upstream source, the generator tool, and the generation
-/// timestamp for the corresponding dataset.
+/// timestamp for the corresponding dataset.  All provenance records are owned
+/// by the [`siderust_archive`] crate; this module only re-exports them.
 pub mod provenance {
     pub use crate::archive::atmosphere::provenance as atmosphere;
     pub use crate::archive::elp::provenance as elp;

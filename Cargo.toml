@@ -72,8 +72,7 @@ required-features = ["lagrange-centers"]
 
 [features]
 default = ["serde"]
-lagrange-centers = ["serde", "dep:sha2", "dep:hex"]
-regen-data = ["dep:reqwest"]
+lagrange-centers = ["serde", "dep:sha2", "dep:hex", "siderust-archive/lagrange"]
 runtime-data = ["siderust-archive/fetch"]
 serde = ["dep:serde", "dep:serde_json", "qtty/serde", "affn/serde", "tempoch/serde"]
 photometry = []
@@ -118,11 +117,6 @@ criterion = "0.8"
 serde_json = "1.0"
 
 [build-dependencies]
-walkdir = "2"
-regex = "1.12"
-anyhow = "1.0"
-reqwest = { version = "0.13.2", optional = true, default-features = false, features = ["blocking", "rustls"] }
-sha2 = "0.11"
 
 [[bench]]
 name = "converters"

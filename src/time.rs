@@ -22,21 +22,19 @@
 //!
 //! ## Technical scope
 //!
-//! All time handling is delegated to the `tempoch` crate. This module
-//! re-exports its full public surface (`Scale`, `EncodedTime`, `Time`,
-//! the `TT`/`TDB`/`TCB`/`TCG`/`TAI`/`UTC`/`UT1` scale markers,
-//! `Interval`, `delta_t_seconds`, …) and defines the v1 astronomy-facing
-//! defaults as TT-based encoded dates plus the named same-scale helpers
-//! (`to_jd`, `to_mjd`, `to_j2000_seconds`, `shifted_by`, `duration_since`)
-//! provided by tempoch core:
+//! This module is a **thin delegation facade** over `tempoch`. It re-exports
+//! `tempoch`'s full public surface (scales, `Time`, `TimeContext`, format tags,
+//! `Interval`, ΔT/EOP accessors) and defines two siderust-specific shortcuts:
 //!
-//! - [`JulianDate`] = `tempoch::JulianDate<TT>` = `EncodedTime<TT, JD>`.
-//! - [`ModifiedJulianDate`] = `tempoch::ModifiedJulianDate<TT>` =
-//!   `EncodedTime<TT, MJD>`.
+//! - [`JulianDate`] = `tempoch::JulianDate<TT>` (TT-default Julian Date)
+//! - [`ModifiedJulianDate`] = `tempoch::ModifiedJulianDate<TT>`
+//! - [`J2000`] — the J2000.0 TT epoch constant
+//! - [`JULIAN_YEAR_DAYS`] — `qtty::time::JULIAN_YEAR` expressed as [`qtty::Day`]
 //!
-//! Advanced scale-aware work still uses `tempoch::JulianDate<S>` and
-//! `tempoch::ModifiedJulianDate<S>` directly. The J2000.0 TT epoch is the
-//! [`J2000`] constant (JD 2 451 545.0 TT).
+//! All time-scale ownership (ΔT tables, EOP, UTC/TAI leap seconds, time-data
+//! freshness) belongs to `tempoch`.  Callers that need advanced scale-aware
+//! work can use `tempoch` types directly; those types are identical to what
+//! `siderust::time::*` re-exports.
 //!
 //! ## References
 //!

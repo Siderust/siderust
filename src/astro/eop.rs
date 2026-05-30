@@ -172,14 +172,16 @@ impl EopProvider for NullEop {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// IERS EOP provider (build-time embedded table + optional runtime override)
+// IERS EOP provider (runtime-loaded via tempoch)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// EOP provider backed by tempoch's active IERS `finals2000A.all` bundle.
 ///
-/// By default, uses the time-data bundle embedded in `tempoch`. Runtime
-/// refreshes performed through `tempoch` are visible to newly constructed
-/// contexts/providers, keeping UTC/UT1 and EOP data centralized in one crate.
+/// Uses the time-data bundle that `tempoch` has loaded at runtime.  EOP data
+/// is **not** compiled into the binary; it is loaded on demand via
+/// `tempoch`'s runtime-data mechanisms.  Runtime refreshes performed through
+/// `tempoch` are immediately visible to newly constructed providers because
+/// `IersEop` always reads from tempoch's active bundle.
 ///
 /// The provider interpolates linearly between daily entries for any epoch
 /// within the bundle's MJD range. For epochs outside the range,
@@ -189,7 +191,10 @@ impl EopProvider for NullEop {
 pub struct IersEop;
 
 impl IersEop {
-    /// Create an `IersEop` from the build-time embedded table.
+    /// Create an `IersEop` provider.
+    ///
+    /// EOP data is not embedded at compile time; the provider reads from
+    /// whichever `tempoch` time-data bundle is active at the time of lookup.
     #[inline]
     pub fn new() -> Self {
         Self
