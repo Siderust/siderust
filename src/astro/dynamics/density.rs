@@ -238,24 +238,24 @@ fn nrlmsise_interpolate(h_km: f64) -> f64 {
     let table = NRLMSISE_TABLE;
     let n = table.len();
 
-    if h_km <= table[0].0 {
-        return table[0].1;
+    if h_km <= table[0].0.value() {
+        return table[0].1.value();
     }
-    if h_km >= table[n - 1].0 {
-        let (h1, rho1) = table[n - 2];
-        let (h2, rho2) = table[n - 1];
+    if h_km >= table[n - 1].0.value() {
+        let (h1, rho1) = (table[n - 2].0.value(), table[n - 2].1.value());
+        let (h2, rho2) = (table[n - 1].0.value(), table[n - 1].1.value());
         let frac = (h_km - h1) / (h2 - h1);
         return (rho1.ln() + frac * (rho2.ln() - rho1.ln())).exp();
     }
     for i in 0..n - 1 {
-        let (h1, rho1) = table[i];
-        let (h2, rho2) = table[i + 1];
+        let (h1, rho1) = (table[i].0.value(), table[i].1.value());
+        let (h2, rho2) = (table[i + 1].0.value(), table[i + 1].1.value());
         if h_km >= h1 && h_km <= h2 {
             let frac = (h_km - h1) / (h2 - h1);
             return (rho1.ln() + frac * (rho2.ln() - rho1.ln())).exp();
         }
     }
-    table[n - 1].1 // unreachable guard
+    table[n - 1].1.value() // unreachable guard
 }
 
 // =============================================================================

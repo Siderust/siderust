@@ -35,11 +35,11 @@
 //! * Wallace & Capitaine (2006), *Astron. Astrophys.* 459, 981
 //! * SOFA routines `iauNut00a`, `iauNut06a`
 
-use siderust_archive::nutation::tables::{NUT00A_LS, NUT00A_PL};
 use super::NutationAngles;
 use crate::astro::precession::mean_obliquity_iau2006;
 use crate::qtty::*;
 use crate::time::JulianDate;
+use siderust_archive::nutation::tables::{NUT00A_LS, NUT00A_PL};
 
 // ═══════════════════════════════════════════════════════════════════════════
 //  Fundamental arguments, planetary longitudes (IERS 2003)

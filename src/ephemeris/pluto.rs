@@ -70,9 +70,11 @@ impl Pluto {
             let (sin_a, cos_a) = a.to::<Radian>().sin_cos();
 
             // Add periodic corrections for longitude, latitude, and radius.
-            sum_longitude +=
-                Degrees::new(PLUTO_LONGITUDE_TERMS[i].a * sin_a + PLUTO_LONGITUDE_TERMS[i].b * cos_a);
-            sum_latitude += Degrees::new(PLUTO_LATITUDE_TERMS[i].a * sin_a + PLUTO_LATITUDE_TERMS[i].b * cos_a);
+            sum_longitude += Degrees::new(
+                PLUTO_LONGITUDE_TERMS[i].a * sin_a + PLUTO_LONGITUDE_TERMS[i].b * cos_a,
+            );
+            sum_latitude +=
+                Degrees::new(PLUTO_LATITUDE_TERMS[i].a * sin_a + PLUTO_LATITUDE_TERMS[i].b * cos_a);
             sum_radius += PLUTO_RADIUS_TERMS[i].a * sin_a + PLUTO_RADIUS_TERMS[i].b * cos_a;
         }
 

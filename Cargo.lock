@@ -2401,10 +2401,9 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "chrono",
+ "qtty",
  "regex",
- "reqwest",
  "serde",
- "serde_json",
  "sha2",
  "toml 0.8.23",
  "ureq",

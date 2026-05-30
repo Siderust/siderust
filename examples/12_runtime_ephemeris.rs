@@ -85,7 +85,7 @@ fn demo_load_from_bytes() {
 /// (on explicit request) HTTP downloads from JPL servers.
 #[cfg(feature = "runtime-data")]
 fn demo_data_manager(explicit_download: bool) {
-    use siderust_archive::jpl::{DatasetManager, refs::JplDatasetId};
+    use siderust_archive::jpl::{refs::JplDatasetId, DatasetManager};
 
     println!("────────────────────────────────────────────────────");
     println!("3) DatasetManager (feature = runtime-data)");
@@ -168,7 +168,9 @@ fn demo_data_manager(explicit_download: bool) {
         );
         println!();
         println!("  DE441 (~1.65 GB) is only supported via runtime loading:");
-        println!("    dm.ensure(JplDatasetId::De441)   // downloads de441_part-2.bsp on first call");
+        println!(
+            "    dm.ensure(JplDatasetId::De441)   // downloads de441_part-2.bsp on first call"
+        );
     }
     println!();
 }

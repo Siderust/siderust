@@ -37,9 +37,8 @@ fn emit_archive_layout() {
     use std::path::PathBuf;
 
     let out_dir = PathBuf::from(env::var_os("OUT_DIR").expect("OUT_DIR must be set"));
-    let manifest_dir = PathBuf::from(
-        env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR must be set"),
-    );
+    let manifest_dir =
+        PathBuf::from(env::var_os("CARGO_MANIFEST_DIR").expect("CARGO_MANIFEST_DIR must be set"));
 
     println!("cargo:rerun-if-env-changed=SIDERUST_ARCHIVE_ROOT");
     let archive_root = env::var_os("SIDERUST_ARCHIVE_ROOT")
@@ -77,8 +76,10 @@ fn emit_lagrange_byte_paths(
     let path = out_dir.join("lagrange_paths.rs");
     let lagrange_dir = archive_root.join("src").join("lagrange").join("vsop87");
     let required = ["l1.sck", "l2.sck", "l3.sck", "l4.sck", "l5.sck"];
-    let all_present =
-        archive_present && required.iter().all(|name| lagrange_dir.join(name).is_file());
+    let all_present = archive_present
+        && required
+            .iter()
+            .all(|name| lagrange_dir.join(name).is_file());
 
     let body = if cfg!(feature = "lagrange-centers") {
         if all_present {
@@ -169,5 +170,3 @@ fn datasets_base_dir() -> PathBuf {
         .map(PathBuf::from)
         .unwrap_or(out_dir)
 }
-
-

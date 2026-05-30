@@ -255,7 +255,6 @@ fn delaunay_arguments(t: f64) -> [f64; 5] {
     [l, lp, f, d, om]
 }
 
-
 /// Fixed correction for omitted planetary nutation terms (0.1 μas).
 ///
 /// IAU 2000B adds these fixed offsets to account for the aggregate effect

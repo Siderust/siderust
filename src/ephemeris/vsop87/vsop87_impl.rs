@@ -89,26 +89,26 @@ fn coord_value(series_by_power: &[&[Vsop87]], t: f64) -> f64 {
 
             // Compute arguments using mul_add: arg = c * t + b
             let args = f64x4::new([
-                t0.c.mul_add(t, t0.b),
-                t1.c.mul_add(t, t1.b),
-                t2.c.mul_add(t, t2.b),
-                t3.c.mul_add(t, t3.b),
+                t0.c.mul_add(t, t0.b.value()),
+                t1.c.mul_add(t, t1.b.value()),
+                t2.c.mul_add(t, t2.b.value()),
+                t3.c.mul_add(t, t3.b.value()),
             ]);
 
             let cos_args = args.cos();
             let cos_arr = cos_args.to_array();
 
             // Accumulate: a * cos(arg)
-            serie_val += t0.a * cos_arr[0];
-            serie_val += t1.a * cos_arr[1];
-            serie_val += t2.a * cos_arr[2];
-            serie_val += t3.a * cos_arr[3];
+            serie_val += t0.a.value() * cos_arr[0];
+            serie_val += t1.a.value() * cos_arr[1];
+            serie_val += t2.a.value() * cos_arr[2];
+            serie_val += t3.a.value() * cos_arr[3];
         }
 
         // Handle remaining terms (0-3) with scalar operations
         for term in &terms[chunks * 4..chunks * 4 + remainder] {
-            let arg = term.c.mul_add(t, term.b);
-            serie_val += term.a * arg.cos();
+            let arg = term.c.mul_add(t, term.b.value());
+            serie_val += term.a.value() * arg.cos();
         }
 
         value = t_pow.mul_add(serie_val, value);
@@ -143,10 +143,10 @@ fn coord_deriv(series_by_power: &[&[Vsop87]], t: f64) -> f64 {
             let t3 = &terms[base + 3];
 
             let args = f64x4::new([
-                t0.c.mul_add(t, t0.b),
-                t1.c.mul_add(t, t1.b),
-                t2.c.mul_add(t, t2.b),
-                t3.c.mul_add(t, t3.b),
+                t0.c.mul_add(t, t0.b.value()),
+                t1.c.mul_add(t, t1.b.value()),
+                t2.c.mul_add(t, t2.b.value()),
+                t3.c.mul_add(t, t3.b.value()),
             ]);
 
             let (sin_args, cos_args) = sin_cos_x4(args);
@@ -155,23 +155,23 @@ fn coord_deriv(series_by_power: &[&[Vsop87]], t: f64) -> f64 {
 
             // serie_val += a * cos(arg)
             // serie_der += -a * c * sin(arg)
-            serie_val += t0.a * cos_arr[0];
-            serie_val += t1.a * cos_arr[1];
-            serie_val += t2.a * cos_arr[2];
-            serie_val += t3.a * cos_arr[3];
+            serie_val += t0.a.value() * cos_arr[0];
+            serie_val += t1.a.value() * cos_arr[1];
+            serie_val += t2.a.value() * cos_arr[2];
+            serie_val += t3.a.value() * cos_arr[3];
 
-            serie_der -= t0.a * t0.c * sin_arr[0];
-            serie_der -= t1.a * t1.c * sin_arr[1];
-            serie_der -= t2.a * t2.c * sin_arr[2];
-            serie_der -= t3.a * t3.c * sin_arr[3];
+            serie_der -= t0.a.value() * t0.c * sin_arr[0];
+            serie_der -= t1.a.value() * t1.c * sin_arr[1];
+            serie_der -= t2.a.value() * t2.c * sin_arr[2];
+            serie_der -= t3.a.value() * t3.c * sin_arr[3];
         }
 
         // Handle remaining terms with scalar operations
         for term in &terms[chunks * 4..chunks * 4 + remainder] {
-            let arg = term.c.mul_add(t, term.b);
+            let arg = term.c.mul_add(t, term.b.value());
             let (sin_arg, cos_arg) = arg.sin_cos();
-            serie_val += term.a * cos_arg;
-            serie_der -= term.a * term.c * sin_arg;
+            serie_val += term.a.value() * cos_arg;
+            serie_der -= term.a.value() * term.c * sin_arg;
         }
 
         deriv_t = t_pow.mul_add(serie_der, deriv_t);
@@ -210,33 +210,33 @@ fn coord_both(series_by_power: &[&[Vsop87]], t: f64) -> (f64, f64) {
             let t3 = &terms[base + 3];
 
             let args = f64x4::new([
-                t0.c.mul_add(t, t0.b),
-                t1.c.mul_add(t, t1.b),
-                t2.c.mul_add(t, t2.b),
-                t3.c.mul_add(t, t3.b),
+                t0.c.mul_add(t, t0.b.value()),
+                t1.c.mul_add(t, t1.b.value()),
+                t2.c.mul_add(t, t2.b.value()),
+                t3.c.mul_add(t, t3.b.value()),
             ]);
 
             let (sin_args, cos_args) = sin_cos_x4(args);
             let sin_arr = sin_args.to_array();
             let cos_arr = cos_args.to_array();
 
-            serie_val += t0.a * cos_arr[0];
-            serie_val += t1.a * cos_arr[1];
-            serie_val += t2.a * cos_arr[2];
-            serie_val += t3.a * cos_arr[3];
+            serie_val += t0.a.value() * cos_arr[0];
+            serie_val += t1.a.value() * cos_arr[1];
+            serie_val += t2.a.value() * cos_arr[2];
+            serie_val += t3.a.value() * cos_arr[3];
 
-            serie_der -= t0.a * t0.c * sin_arr[0];
-            serie_der -= t1.a * t1.c * sin_arr[1];
-            serie_der -= t2.a * t2.c * sin_arr[2];
-            serie_der -= t3.a * t3.c * sin_arr[3];
+            serie_der -= t0.a.value() * t0.c * sin_arr[0];
+            serie_der -= t1.a.value() * t1.c * sin_arr[1];
+            serie_der -= t2.a.value() * t2.c * sin_arr[2];
+            serie_der -= t3.a.value() * t3.c * sin_arr[3];
         }
 
         // Handle remaining terms with scalar operations
         for term in &terms[chunks * 4..chunks * 4 + remainder] {
-            let arg = term.c.mul_add(t, term.b);
+            let arg = term.c.mul_add(t, term.b.value());
             let (sin_arg, cos_arg) = arg.sin_cos();
-            serie_val += term.a * cos_arg;
-            serie_der -= term.a * term.c * sin_arg;
+            serie_val += term.a.value() * cos_arg;
+            serie_der -= term.a.value() * term.c * sin_arg;
         }
 
         value = t_pow.mul_add(serie_val, value);
@@ -304,31 +304,32 @@ pub fn position_velocity(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::qtty::{AstronomicalUnits, Radians};
 
     const X0: [Vsop87; 1] = [Vsop87 {
-        a: 1.0,
-        b: 0.0,
+        a: AstronomicalUnits::new(1.0),
+        b: Radians::new(0.0),
         c: 0.0,
     }];
     const X1: [Vsop87; 1] = [Vsop87 {
-        a: 2.0,
-        b: 0.0,
+        a: AstronomicalUnits::new(2.0),
+        b: Radians::new(0.0),
         c: 0.0,
     }];
     const Y0: [Vsop87; 1] = [Vsop87 {
-        a: 0.0,
-        b: 0.0,
+        a: AstronomicalUnits::new(0.0),
+        b: Radians::new(0.0),
         c: 0.0,
     }];
     const Y1: [Vsop87; 0] = [];
     const Y2: [Vsop87; 1] = [Vsop87 {
-        a: 3.0,
-        b: 0.0,
+        a: AstronomicalUnits::new(3.0),
+        b: Radians::new(0.0),
         c: 0.0,
     }];
     const Z0: [Vsop87; 1] = [Vsop87 {
-        a: 4.0,
-        b: 0.0,
+        a: AstronomicalUnits::new(4.0),
+        b: Radians::new(0.0),
         c: 0.0,
     }];
 

@@ -56,83 +56,19 @@
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};
 use wide::f64x4;
 
-use siderust_archive::elp::constants::{
-    A0_KM, ATH_KM, AM, DTASM,
-    P1, P2, P3, P4, P5, Q1, Q2, Q3, Q4, Q5,
-    DELNU, DELE, DELG, DELNP, DELEP,
-    DEL as DEL_RAW, ZETA as ZETA_RAW, P_ARGS as P_ARGS_RAW, W1 as W1_RAW,
-};
-use siderust_archive::elp::elp_data;
 use crate::bodies::solar_system::Moon;
 use crate::ephemeris::elp2000::elp_structs::*;
-use crate::qtty::{Arcseconds, Kilometers, LengthUnit, Radian, Radians};
+#[cfg(test)]
+use crate::qtty::Radians;
+use crate::qtty::{Arcseconds, Kilometers, LengthUnit, Radian};
 use crate::time::JulianDate;
 use elp_data::*;
+use siderust_archive::elp::constants::{
+    A0, AM, ATH, DEL, DELE, DELEP, DELG, DELNP, DELNU, DTASM, P1, P2, P3, P4, P5, P_ARGS, Q1, Q2,
+    Q3, Q4, Q5, W1, ZETA,
+};
+use siderust_archive::elp::elp_data;
 use std::f64::consts::FRAC_PI_2;
-
-// ── Re-typed constants from archive ──────────────────────────────────────
-// Archive stores raw f64; here we wrap them in the strongly-typed units
-// used throughout this module.
-
-const A0: Kilometers = Kilometers::new(A0_KM);
-const ATH: Kilometers = Kilometers::new(ATH_KM);
-
-#[allow(clippy::all)]
-const DEL: [[Radians; 5]; 4] = [
-    [
-        Radians::new(DEL_RAW[0][0]),
-        Radians::new(DEL_RAW[0][1]),
-        Radians::new(DEL_RAW[0][2]),
-        Radians::new(DEL_RAW[0][3]),
-        Radians::new(DEL_RAW[0][4]),
-    ],
-    [
-        Radians::new(DEL_RAW[1][0]),
-        Radians::new(DEL_RAW[1][1]),
-        Radians::new(DEL_RAW[1][2]),
-        Radians::new(DEL_RAW[1][3]),
-        Radians::new(DEL_RAW[1][4]),
-    ],
-    [
-        Radians::new(DEL_RAW[2][0]),
-        Radians::new(DEL_RAW[2][1]),
-        Radians::new(DEL_RAW[2][2]),
-        Radians::new(DEL_RAW[2][3]),
-        Radians::new(DEL_RAW[2][4]),
-    ],
-    [
-        Radians::new(DEL_RAW[3][0]),
-        Radians::new(DEL_RAW[3][1]),
-        Radians::new(DEL_RAW[3][2]),
-        Radians::new(DEL_RAW[3][3]),
-        Radians::new(DEL_RAW[3][4]),
-    ],
-];
-
-const ZETA: [Radians; 2] = [
-    Radians::new(ZETA_RAW[0]),
-    Radians::new(ZETA_RAW[1]),
-];
-
-#[allow(clippy::all)]
-const P_ARGS: [[Radians; 2]; 8] = [
-    [Radians::new(P_ARGS_RAW[0][0]), Radians::new(P_ARGS_RAW[0][1])],
-    [Radians::new(P_ARGS_RAW[1][0]), Radians::new(P_ARGS_RAW[1][1])],
-    [Radians::new(P_ARGS_RAW[2][0]), Radians::new(P_ARGS_RAW[2][1])],
-    [Radians::new(P_ARGS_RAW[3][0]), Radians::new(P_ARGS_RAW[3][1])],
-    [Radians::new(P_ARGS_RAW[4][0]), Radians::new(P_ARGS_RAW[4][1])],
-    [Radians::new(P_ARGS_RAW[5][0]), Radians::new(P_ARGS_RAW[5][1])],
-    [Radians::new(P_ARGS_RAW[6][0]), Radians::new(P_ARGS_RAW[6][1])],
-    [Radians::new(P_ARGS_RAW[7][0]), Radians::new(P_ARGS_RAW[7][1])],
-];
-
-const W1: [Radians; 5] = [
-    Radians::new(W1_RAW[0]),
-    Radians::new(W1_RAW[1]),
-    Radians::new(W1_RAW[2]),
-    Radians::new(W1_RAW[3]),
-    Radians::new(W1_RAW[4]),
-];
 
 // ====================
 // Helpers
@@ -204,7 +140,7 @@ impl ElpPrecomputed {
 #[inline(always)]
 fn sum_main_problem_series(series: &[MainProblem], pc: &ElpPrecomputed, y_offset: f64) -> f64 {
     // Precompute combined coefficient
-    let delta_aux = DELNP - AM * DELNU;
+    let delta_aux = DELNP.value() - AM * DELNU.value();
 
     let d = pc.del_full[0];
     let m = pc.del_full[1];
@@ -230,10 +166,26 @@ fn sum_main_problem_series(series: &[MainProblem], pc: &ElpPrecomputed, y_offset
         let tgv2 = e2.b[0] + DTASM * e2.b[4];
         let tgv3 = e3.b[0] + DTASM * e3.b[4];
 
-        let c0 = e0.a + tgv0 * delta_aux + e0.b[1] * DELG + e0.b[2] * DELE + e0.b[3] * DELEP;
-        let c1 = e1.a + tgv1 * delta_aux + e1.b[1] * DELG + e1.b[2] * DELE + e1.b[3] * DELEP;
-        let c2 = e2.a + tgv2 * delta_aux + e2.b[1] * DELG + e2.b[2] * DELE + e2.b[3] * DELEP;
-        let c3 = e3.a + tgv3 * delta_aux + e3.b[1] * DELG + e3.b[2] * DELE + e3.b[3] * DELEP;
+        let c0 = e0.a
+            + tgv0 * delta_aux
+            + e0.b[1] * DELG.value()
+            + e0.b[2] * DELE.value()
+            + e0.b[3] * DELEP.value();
+        let c1 = e1.a
+            + tgv1 * delta_aux
+            + e1.b[1] * DELG.value()
+            + e1.b[2] * DELE.value()
+            + e1.b[3] * DELEP.value();
+        let c2 = e2.a
+            + tgv2 * delta_aux
+            + e2.b[1] * DELG.value()
+            + e2.b[2] * DELE.value()
+            + e2.b[3] * DELEP.value();
+        let c3 = e3.a
+            + tgv3 * delta_aux
+            + e3.b[1] * DELG.value()
+            + e3.b[2] * DELE.value()
+            + e3.b[3] * DELEP.value();
 
         // Compute arguments
         let y0 = y_offset
@@ -266,8 +218,11 @@ fn sum_main_problem_series(series: &[MainProblem], pc: &ElpPrecomputed, y_offset
     // Handle remainder with scalar operations
     for entry in &series[chunks * 4..chunks * 4 + remainder] {
         let tgv = entry.b[0] + DTASM * entry.b[4];
-        let coeff =
-            entry.a + tgv * delta_aux + entry.b[1] * DELG + entry.b[2] * DELE + entry.b[3] * DELEP;
+        let coeff = entry.a
+            + tgv * delta_aux
+            + entry.b[1] * DELG.value()
+            + entry.b[2] * DELE.value()
+            + entry.b[3] * DELEP.value();
 
         let y = y_offset
             + d * (entry.ilu[0] as f64)
@@ -806,7 +761,7 @@ impl Moon {
             + W1[3].value() * t[3]
             + W1[4].value() * t[4];
         let lat_rad = Arcseconds::new(b).to::<Radian>().value();
-        let ratio = A0 / ATH;
+        let ratio = A0.value() / ATH.value();
         let distance_km = c * ratio;
 
         // Use sin_cos for efficiency (2 combined calls instead of 4 separate)
@@ -1773,16 +1728,16 @@ mod tests {
         t: &[f64; 5],
         y_offset: Radians,
     ) -> f64 {
-        let delta_aux = DELNP - AM * DELNU;
+        let delta_aux = DELNP.value() - AM * DELNU.value();
         let mut sum = 0.0;
 
         for entry in series {
             let tgv = entry.b[0] + DTASM * entry.b[4];
             let coeff = entry.a
                 + tgv * delta_aux
-                + entry.b[1] * DELG
-                + entry.b[2] * DELE
-                + entry.b[3] * DELEP;
+                + entry.b[1] * DELG.value()
+                + entry.b[2] * DELE.value()
+                + entry.b[3] * DELEP.value();
 
             let mut y = y_offset;
             for k in 0..5 {

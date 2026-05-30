@@ -14,12 +14,12 @@ use crate::coordinates::{
     centers::{Barycentric, Geocentric, Heliocentric},
     frames::EclipticMeanJ2000,
 };
-use siderust_archive::ArchiveError;
 use crate::ephemeris::jpl::bodies;
 use crate::ephemeris::jpl::eval::DynSegmentDescriptor;
 use crate::formats::spice::{self, spk};
 use crate::qtty::{AstronomicalUnit, Kilometer};
 use crate::time::JulianDate;
+use siderust_archive::ArchiveError;
 use std::path::Path;
 use std::sync::Arc;
 
