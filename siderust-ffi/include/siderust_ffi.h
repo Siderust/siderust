@@ -13,9 +13,9 @@
 
 // Crossing event direction.
 enum siderust_crossing_direction_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // The body is crossing upward through the threshold.
   SIDERUST_CROSSING_DIRECTION_T_RISING = 0,
@@ -23,14 +23,18 @@ enum siderust_crossing_direction_t
   SIDERUST_CROSSING_DIRECTION_T_SETTING = 1,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_crossing_direction_t siderust_crossing_direction_t;
+#else
 typedef int32_t siderust_crossing_direction_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Culmination event kind.
 enum siderust_culmination_kind_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Upper culmination (maximum altitude).
   SIDERUST_CULMINATION_KIND_T_MAX = 0,
@@ -38,14 +42,18 @@ enum siderust_culmination_kind_t
   SIDERUST_CULMINATION_KIND_T_MIN = 1,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_culmination_kind_t siderust_culmination_kind_t;
+#else
 typedef int32_t siderust_culmination_kind_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Azimuth extremum kind (maximum or minimum bearing).
 enum siderust_azimuth_extremum_kind_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Maximum azimuth (easternmost bearing).
   SIDERUST_AZIMUTH_EXTREMUM_KIND_T_MAX = 0,
@@ -53,16 +61,20 @@ enum siderust_azimuth_extremum_kind_t
   SIDERUST_AZIMUTH_EXTREMUM_KIND_T_MIN = 1,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_azimuth_extremum_kind_t siderust_azimuth_extremum_kind_t;
+#else
 typedef int32_t siderust_azimuth_extremum_kind_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Status codes returned by every siderust-ffi function.
 //
 // Callers must inspect this value before reading any output parameters.
 enum siderust_status_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Success.
   SIDERUST_STATUS_T_OK = 0,
@@ -105,14 +117,18 @@ enum siderust_status_t
   SIDERUST_STATUS_T_NO_EOP_DATA = 14,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_status_t siderust_status_t;
+#else
 typedef int32_t siderust_status_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Proper motion RA convention.
 enum siderust_ra_convention_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // True RA rate µα (deg/yr).
   SIDERUST_RA_CONVENTION_T_MU_ALPHA = 0,
@@ -120,14 +136,18 @@ enum siderust_ra_convention_t
   SIDERUST_RA_CONVENTION_T_MU_ALPHA_STAR = 1,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_ra_convention_t siderust_ra_convention_t;
+#else
 typedef int32_t siderust_ra_convention_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Runtime Earth-orientation / nutation model preset.
 enum siderust_earth_orientation_model_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Full IAU 2000A nutation.
   SIDERUST_EARTH_ORIENTATION_MODEL_T_IAU2000_A = 0,
@@ -139,14 +159,18 @@ enum siderust_earth_orientation_model_t
   SIDERUST_EARTH_ORIENTATION_MODEL_T_IAU2006_A = 3,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_earth_orientation_model_t siderust_earth_orientation_model_t;
+#else
 typedef int32_t siderust_earth_orientation_model_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Reference frame identifier for C interop.
 enum siderust_frame_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // International Celestial Reference System.
   SIDERUST_FRAME_T_ICRS = 1,
@@ -180,14 +204,18 @@ enum siderust_frame_t
   SIDERUST_FRAME_T_ICRF = 15,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_frame_t siderust_frame_t;
+#else
 typedef int32_t siderust_frame_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Reference center identifier for C interop.
 enum siderust_center_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Solar-system barycentre.
   SIDERUST_CENTER_T_BARYCENTRIC = 1,
@@ -201,7 +229,11 @@ enum siderust_center_t
   SIDERUST_CENTER_T_BODYCENTRIC = 5,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_center_t siderust_center_t;
+#else
 typedef int32_t siderust_center_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Length unit for coordinate positions.
@@ -209,9 +241,9 @@ typedef int32_t siderust_center_t;
 // Specifies the unit of measure for coordinate distances (x, y, z components
 // in Cartesian positions, or distance in spherical positions).
 enum SiderustLengthUnit
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Astronomical Units (≈149.6 million km).
   SIDERUST_LENGTH_UNIT_AU = 0,
@@ -225,7 +257,11 @@ enum SiderustLengthUnit
   SIDERUST_LENGTH_UNIT_METER = 4,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum SiderustLengthUnit SiderustLengthUnit;
+#else
 typedef int32_t SiderustLengthUnit;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Status codes returned by dynamics propagation functions.
@@ -248,9 +284,9 @@ typedef int32_t SiderustLengthUnit;
 // | 11 | Requested geopotential degree/order exceeds the provider limit |
 // | 99 | A Rust panic was caught at the FFI boundary |
 enum siderust_dynamics_status_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Propagation succeeded.
   SIDERUST_DYNAMICS_STATUS_T_OK = 0,
@@ -280,14 +316,18 @@ enum siderust_dynamics_status_t
   SIDERUST_DYNAMICS_STATUS_T_INTERNAL_PANIC = 99,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_dynamics_status_t siderust_dynamics_status_t;
+#else
 typedef int32_t siderust_dynamics_status_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Principal lunar phase kind.
 enum siderust_phase_kind_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // New Moon.
   SIDERUST_PHASE_KIND_T_NEW_MOON = 0,
@@ -299,14 +339,18 @@ enum siderust_phase_kind_t
   SIDERUST_PHASE_KIND_T_LAST_QUARTER = 3,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_phase_kind_t siderust_phase_kind_t;
+#else
 typedef int32_t siderust_phase_kind_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Named phase label (includes intermediate phases).
 enum siderust_moon_phase_label_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // New Moon.
   SIDERUST_MOON_PHASE_LABEL_T_NEW_MOON = 0,
@@ -326,14 +370,18 @@ enum siderust_moon_phase_label_t
   SIDERUST_MOON_PHASE_LABEL_T_WANING_CRESCENT = 7,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_moon_phase_label_t siderust_moon_phase_label_t;
+#else
 typedef int32_t siderust_moon_phase_label_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Subject kind discriminant for [`SiderustSubject`].
 enum siderust_subject_kind_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Solar-system body (the `body` field is valid).
   SIDERUST_SUBJECT_KIND_T_BODY = 0,
@@ -345,16 +393,20 @@ enum siderust_subject_kind_t
   SIDERUST_SUBJECT_KIND_T_GENERIC_TARGET = 3,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_subject_kind_t siderust_subject_kind_t;
+#else
 typedef int32_t siderust_subject_kind_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Solar-system body identifier for generic altitude/azimuth dispatch.
 //
 // Each variant maps to a concrete unit type in `siderust::bodies::solar_system`.
 enum SiderustBody
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // The Sun.
   SIDERUST_BODY_SUN = 0,
@@ -376,16 +428,20 @@ enum SiderustBody
   SIDERUST_BODY_NEPTUNE = 8,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum SiderustBody SiderustBody;
+#else
 typedef int32_t SiderustBody;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Coordinate kind discriminant for [`SiderustTargetCoord`].
 //
 // Specifies which coordinate representation is stored in the target.
 enum SiderustTargetCoordKind
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Spherical direction (RA/Dec) without distance.
   SIDERUST_TARGET_COORD_KIND_SPHERICAL_DIR = 0,
@@ -395,7 +451,11 @@ enum SiderustTargetCoordKind
   SIDERUST_TARGET_COORD_KIND_CARTESIAN_POS = 2,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum SiderustTargetCoordKind SiderustTargetCoordKind;
+#else
 typedef int32_t SiderustTargetCoordKind;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Sky condition derived from the Sun's altitude.
@@ -407,9 +467,9 @@ typedef int32_t SiderustTargetCoordKind;
 // [`Civil`]: SiderustTwilightPhase::Civil
 // [`Nautical`]: SiderustTwilightPhase::Nautical
 enum siderust_twilight_phase_t
-#ifdef __cplusplus
+#if defined(__cplusplus) || __STDC_VERSION__ >= 202311L
   : int32_t
-#endif // __cplusplus
+#endif // defined(__cplusplus) || __STDC_VERSION__ >= 202311L
  {
   // Sun above the horizon: altitude > 0°.
   SIDERUST_TWILIGHT_PHASE_T_DAY = 0,
@@ -423,7 +483,11 @@ enum siderust_twilight_phase_t
   SIDERUST_TWILIGHT_PHASE_T_DARK = 4,
 };
 #ifndef __cplusplus
+#if __STDC_VERSION__ >= 202311L
+typedef enum siderust_twilight_phase_t siderust_twilight_phase_t;
+#else
 typedef int32_t siderust_twilight_phase_t;
+#endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
 // Opaque FFI context used by model-sensitive transform entry points.

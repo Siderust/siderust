@@ -5,9 +5,9 @@
 //!
 //! Re-exports the IERS EOP data and lookup API from [`tempoch`].
 //!
-//! The EOP table (daily `finals2000A.all` values for polar motion `xp`, `yp`,
-//! `UT1 − UTC`, and celestial-pole offsets `dX`, `dY`) is generated and
-//! maintained by `tempoch`.  Siderust no longer embeds its own copy.
+//! The EOP series (daily `finals2000A.all` values for polar motion `xp`, `yp`,
+//! `UT1 − UTC`, and celestial-pole offsets `dX`, `dY`) is owned by `tempoch`
+//! and loaded at runtime. Siderust does not embed its own copy.
 //!
 //! ## Usage
 //!

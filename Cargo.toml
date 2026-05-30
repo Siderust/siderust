@@ -88,7 +88,7 @@ keplerian = "0.2"
 optica = "0.1"
 principia = { version = "0.2", features = ["alloc"] }
 qtty = { version = "0.8", features = ["astro", "density", "frequency", "radiometry", "satellite"] }
-tempoch = "0.6"
+tempoch = "0.6.3"
 siderust-archive = { version = "0.1", features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
 
 thiserror = "2"

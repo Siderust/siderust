@@ -128,11 +128,11 @@ pub extern "C" fn siderust_runtime_ephemeris_ensure(
             return SiderustStatus::NullPointer;
         }
         let id = match dataset_id {
-            0 => siderust_archive::datasets::DatasetId::De440,
-            1 => siderust_archive::datasets::DatasetId::De441,
+            0 => siderust_archive::jpl::JplDatasetId::De440,
+            1 => siderust_archive::jpl::JplDatasetId::De441,
             _ => return SiderustStatus::InvalidArgument,
         };
-        let dm = match siderust_archive::runtime::DatasetManager::new() {
+        let dm = match siderust_archive::jpl::DatasetManager::new() {
             Ok(dm) => dm,
             Err(_) => return SiderustStatus::DataError,
         };

@@ -21,7 +21,7 @@
 //!   - `Eph` selects the ephemeris backend (default: [`DefaultEphemeris`],
 //!     VSOP87/ELP2000; DE440/DE441 selectable via Cargo features).
 //!   - `Eop` selects the EOP source (default: [`DefaultEop`] = [`IersEop`],
-//!     backed by the build-time `finals2000A.all` table; substitute
+//!     backed by `tempoch`'s runtime-loaded IERS `finals2000A.all` bundle; substitute
 //!     [`NullEop`](crate::astro::eop::NullEop) for zero overhead).
 //! - [`AstroContext::with_model::<Nut>()`] — attaches a compile-time nutation
 //!   model marker, returning a zero-cost [`ModelContext`]. The nutation model
@@ -72,8 +72,8 @@ use crate::ephemeris::Vsop87Ephemeris;
 /// with a BSP file loaded at runtime.
 pub type DefaultEphemeris = Vsop87Ephemeris;
 
-/// Default Earth orientation model: [`IersEop`], backed by the
-/// build-time embedded `finals2000A.all` table.
+/// Default Earth orientation model: [`IersEop`], backed by `tempoch`'s active
+/// runtime IERS `finals2000A.all` bundle when loaded.
 ///
 /// For zero-overhead use (no EOP corrections), substitute
 /// [`NullEop`](crate::astro::eop::NullEop) as the `Eop` type parameter.
