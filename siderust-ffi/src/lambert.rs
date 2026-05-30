@@ -132,9 +132,9 @@ pub extern "C" fn siderust_lambert_solve(
                     *out_v2_kms.add(2) = sol.v2.z().value();
                     if !out_diag.is_null() {
                         *out_diag = SiderustLambertDiagnostics {
-                            iterations: sol.diagnostics.iterations as u32,
+                            iterations: sol.diagnostics.iterations,
                             residual: sol.diagnostics.residual,
-                            revolutions: sol.diagnostics.revolutions as u32,
+                            revolutions: sol.diagnostics.revolutions,
                         };
                     }
                 }
