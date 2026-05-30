@@ -133,7 +133,10 @@ fn demo_data_manager(explicit_download: bool) {
             id,
             Some(Box::new(|downloaded, total| {
                 if total > 0 {
-                    let pct = downloaded * 100 / total;
+                    let pct = downloaded
+                        .checked_mul(100)
+                        .and_then(|value| value.checked_div(total))
+                        .unwrap_or(0);
                     eprint!(
                         "\r  Progress: {}% ({} / {} MB)",
                         pct,
