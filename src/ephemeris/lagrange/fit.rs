@@ -34,7 +34,7 @@ use crate::time::JulianDate;
 use std::fmt;
 
 const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
-const J2000_JD: f64 = 2_451_545.0;
+const J2000_JD: f64 = tempoch::J2000_JD_TT_DAY.value();
 const DEFAULT_FROM_JD: f64 = 2_415_020.5;
 const DEFAULT_TO_JD: f64 = 2_488_070.5;
 const DEFAULT_BLOCK_SECONDS: f64 = 32.0 * SECONDS_PER_DAY;
@@ -341,8 +341,8 @@ mod tests {
     #[test]
     fn tiny_fixture_fits_and_evaluates() {
         let config = FitConfig {
-            from: crate::time::try_jd_f64(2_451_545.0).expect("valid JD"),
-            to: crate::time::try_jd_f64(2_451_545.25).expect("valid JD"),
+            from: crate::time::try_jd_f64(J2000_JD).expect("valid JD"),
+            to: crate::time::try_jd_f64(J2000_JD + 0.25).expect("valid JD"),
             block: Seconds::new(0.125 * SECONDS_PER_DAY),
             validation_step: Seconds::new(0.125 * SECONDS_PER_DAY),
             tolerance: Meters::new(5_000_000.0),

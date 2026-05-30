@@ -20,9 +20,9 @@
 //! | [`tle`] | NORAD TLE / 3LE / CCSDS OMM (KVN, XML, JSON) |
 //! | [`vlbi`] | vgosDB VLBI datasets |
 //!
-//! For the dataset catalog (what datasets exist and how to acquire them) see
-//! [`crate::data`]. The `formats` modules sit *below* the catalog: they
-//! are called by the runtime back-end after a file has been located on disk.
+//! For the dataset catalog (what datasets exist and how to acquire them) see the
+//! [`siderust_archive`] crate. The `formats` modules sit *below* the catalog:
+//! they are called by the runtime back-end after a file has been located on disk.
 
 pub mod adsb;
 pub mod ccsds;

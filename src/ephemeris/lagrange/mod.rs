@@ -42,7 +42,7 @@ use crate::qtty::{AstronomicalUnit, Days, Kilometer, Kilometers, Meters, Second}
 use crate::time::JulianDate;
 
 const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
-const J2000_JD: f64 = 2_451_545.0;
+const J2000_JD: f64 = tempoch::J2000_JD_TT_DAY.value();
 
 /// Default start Julian Date for the embedded Sun-Earth Lagrange archive (1900-01-01).
 pub const FIT_FROM_JD: f64 = 2_415_020.5;

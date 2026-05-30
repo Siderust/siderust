@@ -63,8 +63,8 @@
 //! - [`mission`]                 : Mission geometry, runtime context, and site metadata (FoV, terrain mask, AzElRange, eclipse, orbit-relative)
 //! - [`catalogs`]`::observatories` : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 //! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate (including `OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`, `Refractivity`, `CipCoordinate`)
-//! - [`data`]                    : Scientific dataset catalog, provenance, checksums, compiled tables, and optional runtime download/cache manager
-//! - [`formats`]                 : Low-level binary file-format parsers (e.g. SPICE DAF/SPK); no dataset-catalog knowledge
+//! - [`formats`]                 : Low-level binary file-format parsers (e.g. SPICE DAF/SPK)
+//! - Dataset catalog and runtime download: [`siderust_archive`] crate
 //! - `atmosphere` *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
 //! - `photometry` *(optional)* : Astronomical photometric passbands and throughput unit (`photometry` feature)
 //! - `tables` *(optional)*     : Tabulated data loaders (`tables` feature)
@@ -106,7 +106,6 @@
 
 pub(crate) use ::qtty as ext_qtty;
 
-pub mod archive;
 pub mod astro;
 #[cfg(feature = "atmosphere")]
 pub mod atmosphere;
@@ -114,7 +113,6 @@ pub mod bodies;
 pub mod catalogs;
 pub mod checksum;
 pub mod coordinates;
-pub mod datasets;
 pub mod ephemeris;
 pub mod event;
 pub mod formats;

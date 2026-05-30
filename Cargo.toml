@@ -4,6 +4,11 @@ members = [
     "siderust-ffi",
 ]
 
+[patch.crates-io]
+siderust-archive = { path = "../archive" }
+tempoch          = { path = "../tempoch/tempoch" }
+tempoch-core     = { path = "../tempoch/tempoch-core" }
+
 [workspace.lints.rust]
 unsafe_code     = "forbid"
 missing_docs    = "deny"
@@ -72,20 +77,9 @@ required-features = ["lagrange-centers"]
 
 [features]
 default = ["serde"]
-## Archive registry: parses `archive/MANIFEST.toml` at build-time and emits
-## a typed catalog accessible through `siderust::data::archive`.
-archive-data = ["dep:toml"]
-## Embeds selected archive datasets directly into the library via `include_bytes!`.
-embedded-data = ["archive-data"]
-## Reserved for tiny generated tables (kept as opt-in to keep default builds fast).
-generated-tables = ["archive-data"]
-## Enables runtime loading of archive files from external paths.
-external-data = ["archive-data"]
-de440 = []
-de441 = []
 lagrange-centers = ["serde", "dep:sha2", "dep:hex"]
 regen-data = ["dep:reqwest"]
-runtime-data = ["dep:ureq", "dep:sha2"]
+runtime-data = ["siderust-archive/fetch"]
 serde = ["dep:serde", "dep:serde_json", "qtty/serde", "affn/serde", "tempoch/serde"]
 photometry = []
 spice = []
@@ -106,6 +100,7 @@ optica = "0.1"
 principia = { version = "0.2", features = ["alloc"] }
 qtty = { version = "0.8", features = ["astro", "density", "frequency", "radiometry", "satellite"] }
 tempoch = "0.6"
+siderust-archive = { version = "0.1", features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
 
 thiserror = "2"
 approx = "0.5"
@@ -115,9 +110,7 @@ quick-xml = "0.40"
 serde = { version = "1.0", features = ["derive"], optional = true }
 serde_json = { version = "1.0", optional = true }
 sha2 = { version = "0.11", optional = true }
-ureq = { version = "3.3", optional = true, default-features = false }
 wide = "1.4"
-toml = { version = "0.8", optional = true, default-features = false, features = ["parse"] }
 
 # POD toolkit dependencies (gated on the `pod` feature family)
 faer = { version = "0.22", default-features = false, features = ["std", "linalg"], optional = true }
@@ -133,10 +126,7 @@ serde_json = "1.0"
 walkdir = "2"
 regex = "1.12"
 anyhow = "1.0"
-toml = { version = "0.8", default-features = false, features = ["parse"] }
 reqwest = { version = "0.13.2", optional = true, default-features = false, features = ["blocking", "rustls"] }
-# SHA-256 verification of downloaded coefficient datasets (regen-data feature).
-# Always linked; only invoked when regenerating tables, so it adds no runtime cost.
 sha2 = "0.11"
 
 [[bench]]

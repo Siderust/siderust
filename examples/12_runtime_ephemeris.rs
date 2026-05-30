@@ -85,7 +85,7 @@ fn demo_load_from_bytes() {
 /// (on explicit request) HTTP downloads from JPL servers.
 #[cfg(feature = "runtime-data")]
 fn demo_data_manager(explicit_download: bool) {
-    use siderust::datasets::{runtime::DatasetManager, DatasetId};
+    use siderust_archive::jpl::{DatasetManager, refs::JplDatasetId};
 
     println!("────────────────────────────────────────────────────");
     println!("3) DatasetManager (feature = runtime-data)");
@@ -114,7 +114,7 @@ fn demo_data_manager(explicit_download: bool) {
     }
 
     // DE440 (~120 MB): check if already downloaded before loading.
-    let id = DatasetId::De440;
+    let id = JplDatasetId::De440;
     println!("\n  Checking DE440...");
 
     if dm.is_available(id) {
@@ -161,14 +161,14 @@ fn demo_data_manager(explicit_download: bool) {
         println!();
         println!("  To download it, either:");
         println!("    a) Run this example with --download:         cargo run --features runtime-data --example 12_runtime_ephemeris -- --download");
-        println!("    b) Call dm.ensure(DatasetId::De440) in code: it downloads if missing.");
+        println!("    b) Call dm.ensure(JplDatasetId::De440) in code: it downloads if missing.");
         println!(
             "    c) Place de440.bsp in: {}",
             dm.data_dir().join("de440.bsp").display()
         );
         println!();
         println!("  DE441 (~1.65 GB) is only supported via runtime loading:");
-        println!("    dm.ensure(DatasetId::De441)   // downloads de441_part-2.bsp on first call");
+        println!("    dm.ensure(JplDatasetId::De441)   // downloads de441_part-2.bsp on first call");
     }
     println!();
 }

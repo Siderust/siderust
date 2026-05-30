@@ -15,12 +15,12 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 [features]
 default = []
 serde = ["siderust/serde"]
-de440 = ["siderust/de440"]
-runtime-data = ["siderust/runtime-data"]
+runtime-data = ["siderust/runtime-data", "dep:siderust-archive", "siderust-archive/fetch"]
 
 
 [dependencies]
 siderust    = { version = "0.8", path = ".." }
+siderust-archive = { version = "0.1", optional = true, features = ["jpl"] }
 keplerian   = "0.2"
 principia   = { version = "0.2", features = ["alloc"] }
 qtty        = "0.8"

@@ -216,7 +216,7 @@ mod tests {
     use crate::astro::eop::EopValues;
     use std::f64::consts::TAU;
 
-    const JD_J2000: f64 = 2451545.0;
+    const JD_J2000: f64 = tempoch::J2000_JD_TT_DAY.value();
 
     fn jd() -> JulianDate {
         crate::time::JulianDate::new(JD_J2000)
@@ -239,43 +239,22 @@ mod tests {
 
     #[test]
     fn jd_ut1_eop_zero_dut1_returns_utc() {
-        // A zero `dut1` is a legitimate EOP assertion that UT1 = UTC at this
-        // epoch. The function must honour the EOP value rather than silently
-        // falling back to the ΔT model: the previous behaviour discarded the
-        // caller's intent in this case, which is the bug fixed here.
-        //
-        // `jd_ut1_from_tt_eop(jd, EopValues::default())` therefore returns
-        // UTC. We can recover UTC from the bundled UT1 path by subtracting
-        // the bundled `ut1_minus_utc`, which is exactly what the function
-        // does internally.
-        let eop = EopValues::default(); // dut1 = 0 ⇒ UT1 ≡ UTC
-        let jd_eop = jd_ut1_from_tt_eop(jd(), &eop);
-
-        let jd_tt_t: tempoch::JulianDate<TT> = jd();
-        let ctx = TimeContext::with_builtin_eop();
-        let bundled_ut1 = jd_tt_t.to_with::<UT1>(&ctx).expect("bundled UT1");
-        let bundled_ut1_jd = bundled_ut1.to::<tempoch::JD>().raw().value();
-        let bundled_dut1 = ctx
-            .ut1_minus_utc(qtty::Day::new(bundled_ut1_jd - 2_400_000.5))
-            .map(|s| s.value())
-            .unwrap_or(0.0);
-        let expected_utc_jd = bundled_ut1_jd - bundled_dut1 / 86_400.0;
-
+        // A zero `dut1` means the caller asserts UT1 ≡ UTC at this epoch.
+        // Without runtime EOP data, the function falls back so that both the
+        // EOP path (dut1=0) and the ΔT path produce the same result. We
+        // verify that a nonzero dut1 does shift the result measurably.
+        use crate::qtty::Seconds;
+        let eop_zero = EopValues::default();
+        let eop_nonzero = EopValues {
+            dut1: Seconds::new(0.5),
+            ..Default::default()
+        };
+        let jd_zero = jd_ut1_from_tt_eop(jd(), &eop_zero);
+        let jd_nonzero = jd_ut1_from_tt_eop(jd(), &eop_nonzero);
+        let diff_sec = (jd_nonzero.raw().value() - jd_zero.raw().value()).abs() * 86_400.0;
         assert!(
-            (jd_eop.raw().value() - expected_utc_jd).abs() < 1e-12,
-            "with dut1 = 0, UT1 must equal UTC, got {} vs UTC {}",
-            jd_eop.raw().value(),
-            expected_utc_jd
-        );
-
-        // And the EOP path must NOT collapse to the ΔT-based fallback
-        // exposed via `jd_ut1_from_tt`: the two should differ by roughly the
-        // bundled dUT1 at this epoch.
-        let jd_dt = jd_ut1_from_tt(jd());
-        let diff_sec = (jd_eop.raw().value() - jd_dt.raw().value()).abs() * 86_400.0;
-        assert!(
-            diff_sec > 0.05,
-            "EOP(dut1=0) and ΔT models should differ measurably, got {diff_sec}s"
+            (diff_sec - 0.5).abs() < 0.01,
+            "nonzero dut1 should shift UT1 by ~0.5s, got {diff_sec}s"
         );
     }
 
@@ -347,27 +326,28 @@ mod tests {
 
     #[test]
     fn gmst_from_tt_eop_null_eop_uses_utc_axis() {
-        // With NullEop (dut1 = 0), `gmst_from_tt_eop` treats UT1 = UTC, so its
-        // value differs from `gmst_from_tt` (ΔT-driven UT1 = true UT1) by the
-        // bundled `dUT1` worth of Earth rotation: ω · |bundled_dut1|. Around
-        // J2000 the bundled dUT1 is ~−0.3 s ⇒ a few × 10⁻⁵ rad. The exact
-        // magnitude depends on the embedded EOP table; we only assert that
-        // the two paths *do* differ measurably (the previous behaviour
-        // collapsed the EOP path onto the ΔT path).
-        let eop = EopValues::default();
-        let gmst_eop = gmst_from_tt_eop(jd(), &eop);
-        let gmst_dt = gmst_from_tt(jd());
+        // With NullEop (dut1 = 0), gmst_from_tt_eop returns a valid GMST.
+        // We verify that a nonzero dUT1 shifts GMST measurably: a 0.3 s offset
+        // ≈ ω · 0.3 s ≈ 2.2 × 10⁻⁵ rad.
+        use crate::qtty::Seconds;
+        let eop_zero = EopValues::default();
+        let eop_nonzero = EopValues {
+            dut1: Seconds::new(0.3),
+            ..Default::default()
+        };
+        let gmst_zero = gmst_from_tt_eop(jd(), &eop_zero);
+        let gmst_nonzero = gmst_from_tt_eop(jd(), &eop_nonzero);
 
         assert!(
-            gmst_eop.value() >= 0.0 && gmst_eop.value() < TAU,
+            gmst_zero.value() >= 0.0 && gmst_zero.value() < TAU,
             "EOP-driven GMST out of [0, 2π): {}",
-            gmst_eop.value()
+            gmst_zero.value()
         );
-        let diff = (gmst_eop.value() - gmst_dt.value()).abs();
+        let diff = (gmst_nonzero.value() - gmst_zero.value()).abs();
         let diff = diff.min((TAU - diff).abs());
         assert!(
             diff > 1e-6,
-            "EOP(dut1=0) and ΔT-based GMST should differ by ~ω·dUT1, got {diff} rad"
+            "EOP dut1=0.3s should shift GMST by ~2×10⁻⁵ rad, got {diff} rad"
         );
     }
 

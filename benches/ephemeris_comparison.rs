@@ -1,16 +1,11 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Comparative benchmarks across ephemeris backends.
-//!
-//! Measures every `Ephemeris` trait method for VSOP87 and DE440 (if enabled)
-//! side-by-side in the same Criterion group so that Criterion's HTML reports
-//! show relative performance.
+//! Benchmarks for the `Vsop87Ephemeris` backend.
 //!
 //! Run with:
 //! ```bash
 //! cargo bench --bench ephemeris_comparison
-//! cargo bench --bench ephemeris_comparison --features de440
 //! ```
 
 use criterion::{criterion_group, criterion_main, Criterion};
@@ -18,9 +13,6 @@ use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::qtty::Days;
 use std::hint::black_box;
 use std::time::Duration;
-
-#[cfg(feature = "de440")]
-use siderust::ephemeris::De440Ephemeris;
 
 // =============================================================================
 // Sun Barycentric
@@ -34,15 +26,6 @@ fn bench_sun_barycentric(c: &mut Criterion) {
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::sun_barycentric(black_box(jd));
-        });
-    });
-
-    #[cfg(feature = "de440")]
-    group.bench_function("de440", |b| {
-        let mut jd = siderust::time::J2000;
-        b.iter(|| {
-            jd += Days::new(1.0);
-            let _ = De440Ephemeris::sun_barycentric(black_box(jd));
         });
     });
 
@@ -64,15 +47,6 @@ fn bench_earth_heliocentric(c: &mut Criterion) {
         });
     });
 
-    #[cfg(feature = "de440")]
-    group.bench_function("de440", |b| {
-        let mut jd = siderust::time::J2000;
-        b.iter(|| {
-            jd += Days::new(1.0);
-            let _ = De440Ephemeris::earth_heliocentric(black_box(jd));
-        });
-    });
-
     group.finish();
 }
 
@@ -91,15 +65,6 @@ fn bench_earth_velocity(c: &mut Criterion) {
         });
     });
 
-    #[cfg(feature = "de440")]
-    group.bench_function("de440", |b| {
-        let mut jd = siderust::time::J2000;
-        b.iter(|| {
-            jd += Days::new(1.0);
-            let _ = De440Ephemeris::earth_barycentric_velocity(black_box(jd));
-        });
-    });
-
     group.finish();
 }
 
@@ -115,15 +80,6 @@ fn bench_moon_geocentric(c: &mut Criterion) {
         b.iter(|| {
             jd += Days::new(1.0);
             let _ = Vsop87Ephemeris::moon_geocentric(black_box(jd));
-        });
-    });
-
-    #[cfg(feature = "de440")]
-    group.bench_function("de440", |b| {
-        let mut jd = siderust::time::J2000;
-        b.iter(|| {
-            jd += Days::new(1.0);
-            let _ = De440Ephemeris::moon_geocentric(black_box(jd));
         });
     });
 

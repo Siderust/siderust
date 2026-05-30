@@ -51,6 +51,7 @@
 //!   *Survey Review*, 28, 276–281.
 
 use affn::cartesian::Position;
+use siderust_archive::atmosphere::tables::NRLMSISE_TABLE;
 
 use crate::coordinates::centers::Geocentric;
 use crate::coordinates::frames::GCRS;
@@ -213,33 +214,6 @@ impl DensityProvider for ConstantDensity {
 /// * Vallado, *Fundamentals of Astrodynamics and Applications*, Table 8-4.
 #[derive(Debug, Clone, Copy, Default)]
 pub struct Nrlmsise00LiteApprox;
-
-/// (altitude_km, density_kg_m3) table for [`Nrlmsise00LiteApprox`].
-///
-/// Approximate NRLMSISE-00 output for F10.7 = 140, Ap = 15.
-/// Sources: Picone et al. (2002) and Vallado Table 8-4.
-///
-/// Teaching/test quality — accuracy ±50 % under mean conditions.
-const NRLMSISE_TABLE: &[(f64, f64)] = &[
-    (50.0, 1.027e-3),
-    (100.0, 5.602e-7),
-    (150.0, 2.076e-9),
-    (200.0, 2.541e-10),
-    (250.0, 6.073e-11),
-    (300.0, 1.916e-11),
-    (350.0, 7.014e-12),
-    (400.0, 2.803e-12),
-    (450.0, 1.184e-12),
-    (500.0, 5.215e-13),
-    (550.0, 2.384e-13),
-    (600.0, 1.137e-13),
-    (650.0, 5.660e-14),
-    (700.0, 2.930e-14),
-    (750.0, 1.585e-14),
-    (800.0, 9.010e-15),
-    (900.0, 3.427e-15),
-    (1000.0, 1.618e-15),
-];
 
 impl DensityProvider for Nrlmsise00LiteApprox {
     fn name(&self) -> &'static str {

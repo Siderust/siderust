@@ -23,7 +23,7 @@
 //! The fundamental arguments (Mercury through Uranus mean longitudes,
 //! general precession `pa`, plus the luni-solar Delaunay arguments) are
 //! evaluated as polynomials in `t = (JD_TT − J2000) / 36525`. The series
-//! coefficients live in `nut00a_tables` (units of 0.1 µas / 0.1 µas·cy)
+//! coefficients live in `siderust_archive::nutation::tables` (units of 0.1 µas / 0.1 µas·cy)
 //! and are summed against the trigonometric arguments to yield `(Δψ, Δε)`.
 //! The public entry point [`nutation_iau2006a`] additionally applies the
 //! IAU 2006 precession-compatibility corrections from Wallace & Capitaine
@@ -35,7 +35,7 @@
 //! * Wallace & Capitaine (2006), *Astron. Astrophys.* 459, 981
 //! * SOFA routines `iauNut00a`, `iauNut06a`
 
-use super::nut00a_tables::{NUT00A_LS, NUT00A_PL};
+use siderust_archive::nutation::tables::{NUT00A_LS, NUT00A_PL};
 use super::NutationAngles;
 use crate::astro::precession::mean_obliquity_iau2006;
 use crate::qtty::*;

@@ -25,5 +25,6 @@
 //!
 //! For the full typed EOP provider, use [`crate::astro::eop::IersEop`].
 
-pub use tempoch::eop::{builtin_eop_at, builtin_eop_covers, EopValues};
-pub use tempoch::{EOP_END_MJD, EOP_OBSERVED_END_MJD, EOP_START_MJD};
+pub use tempoch::eop::{
+    builtin_eop_at, builtin_eop_covers, eop_end, eop_observed_end, eop_start, EopValues,
+};

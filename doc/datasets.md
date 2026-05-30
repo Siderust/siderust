@@ -1,5 +1,10 @@
 # Datasets, Codegen, and JPL Backends (offline-by-default)
 
+Dataset cataloging, runtime download/cache managers, and IERS time-data providers
+live in the [`siderust-archive`](../../archive/crates/siderust-archive) crate.
+Import `siderust_archive::datasets` and `siderust_archive::runtime` directly;
+`siderust` no longer re-exports those modules.
+
 Siderust relies on several datasets that are embedded at compile time.
 This document explains what is embedded, how the offline-first strategy works,
 and how to refresh or extend the pre-generated data.

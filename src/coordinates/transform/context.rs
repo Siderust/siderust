@@ -64,41 +64,13 @@ use crate::astro::eop::{EopError, EopProvider, EopValues, IersEop};
 use crate::astro::nutation::NutationModel;
 use crate::time::JulianDate;
 
-#[cfg(not(any(feature = "de440", feature = "de441")))]
 use crate::ephemeris::Vsop87Ephemeris;
 
-/// Default ephemeris type.
+/// Default ephemeris type: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
 ///
-/// - Without a DE feature: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
-/// - With `de441` feature (and real data): `De441Ephemeris` (JPL DE441, compile-time).
-/// - With `de440` feature (and real data): `De440Ephemeris` (JPL DE440, compile-time).
-/// - With a DE feature but matching `SIDERUST_JPL_STUB` set: falls back to
-///   [`Vsop87Ephemeris`] so tests run without downloading the BSP.
-/// - For other large datasets: use
-///   `DataManager` (from the `runtime-data` feature) with a BSP file loaded at runtime.
-///
-/// This type alias is used as the default `Eph` parameter in [`AstroContext`],
-/// so all code using `AstroContext::default()` will automatically use the
-/// selected backend.
-#[cfg(not(any(feature = "de440", feature = "de441")))]
+/// For larger JPL datasets, use [`RuntimeEphemeris`](crate::ephemeris::RuntimeEphemeris)
+/// with a BSP file loaded at runtime.
 pub type DefaultEphemeris = Vsop87Ephemeris;
-
-#[cfg(all(feature = "de441", not(siderust_mock_de441)))]
-pub type DefaultEphemeris = crate::ephemeris::De441Ephemeris;
-
-#[cfg(all(feature = "de440", not(feature = "de441"), not(siderust_mock_de440)))]
-pub type DefaultEphemeris = crate::ephemeris::De440Ephemeris;
-
-// Stub: DE feature is on but SIDERUST_JPL_STUB is set, fall back to VSOP87 so
-// tests work without the BSP download. DE441 takes precedence when both DE
-// features are enabled.
-/// Default compile-time ephemeris backend when DE features are enabled
-/// but stubbed via `SIDERUST_JPL_STUB`, forcing a VSOP87 fallback.
-#[cfg(any(
-    all(feature = "de441", siderust_mock_de441),
-    all(feature = "de440", not(feature = "de441"), siderust_mock_de440)
-))]
-pub type DefaultEphemeris = crate::ephemeris::Vsop87Ephemeris;
 
 /// Default Earth orientation model: [`IersEop`], backed by the
 /// build-time embedded `finals2000A.all` table.

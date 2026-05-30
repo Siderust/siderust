@@ -44,7 +44,7 @@
 //!   DE440 and DE441". *The Astronomical Journal* 161, 105.
 //!   <https://doi.org/10.3847/1538-3881/abd414>
 
-use super::eval::{DynSegmentDescriptor, SegmentDescriptor};
+use super::eval::DynSegmentDescriptor;
 
 use crate::coordinates::{
     cartesian::{Position, Velocity},
@@ -56,216 +56,21 @@ use crate::ephemeris::EphemerisError;
 use crate::qtty::{AstronomicalUnit, Day, Kilometer, Per};
 use crate::time::{JulianDate, TDB};
 
-// ── Physical constants (single source of truth: qtty + DE4xx headers) ────
+// ── Physical constants (from archive: siderust_archive::jpl::constants) ──────
 
-/// Earth/Moon mass ratio embedded in DE4xx headers.
-///
-/// This value is consistent across DE440 and DE441.
-const EARTH_MOON_RATIO: f64 = 81.300_569_074_190_62;
+use siderust_archive::jpl::constants::EARTH_MOON_RATIO;
 
-/// μ_Earth / (μ_Earth + μ_Moon) , Earth's mass fraction of the EM system.
+/// μ_Earth / (μ_Earth + μ_Moon), Earth's mass fraction of the EM system.
 const FRAC_EARTH: f64 = EARTH_MOON_RATIO / (EARTH_MOON_RATIO + 1.0);
 
-/// μ_Moon / (μ_Earth + μ_Moon) , Moon's mass fraction of the EM system.
+/// μ_Moon / (μ_Earth + μ_Moon), Moon's mass fraction of the EM system.
 const FRAC_MOON: f64 = 1.0 / (EARTH_MOON_RATIO + 1.0);
 
-// ── Velocity type alias ─────────────────────────────────────────────────
+// ── Velocity type alias ─────────────────────────────────────────────────────
 
 type AuPerDay = Per<AstronomicalUnit, Day>;
 
-// ── Generic body-chain functions ─────────────────────────────────────────
-
-/// Sun barycentric position in EclipticMeanJ2000 J2000 (AU).
-///
-/// Generic over any DE4xx data source providing a SUN segment.
-#[inline]
-pub(crate) fn try_sun_barycentric(
-    jd: JulianDate,
-    sun: &SegmentDescriptor,
-) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let sun_icrf = sun.try_position(jd_tdb)?;
-    let sun_ecl_au = sun_icrf
-        .to_frame::<EclipticMeanJ2000>(&crate::J2000)
-        .to_unit::<AstronomicalUnit>();
-    Ok(Position::new(
-        sun_ecl_au.x(),
-        sun_ecl_au.y(),
-        sun_ecl_au.z(),
-    ))
-}
-
-/// Sun barycentric position in EclipticMeanJ2000 J2000 (AU).
-///
-/// # Panics
-///
-/// Panics when `jd` is outside the underlying JPL segment coverage. Use
-/// [`try_sun_barycentric`] for explicit error handling.
-#[inline]
-pub(crate) fn sun_barycentric(
-    jd: JulianDate,
-    sun: &SegmentDescriptor,
-) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
-    try_sun_barycentric(jd, sun).expect("JPL Sun barycentric position unavailable")
-}
-
-/// Earth barycentric position in EclipticMeanJ2000 J2000 (AU).
-///
-/// `Earth_bary = EMB − Moon_offset × FRAC_MOON`
-///
-/// Generic over any DE4xx data source providing EMB and MOON segments.
-#[inline]
-pub(crate) fn try_earth_barycentric(
-    jd: JulianDate,
-    emb: &SegmentDescriptor,
-    moon: &SegmentDescriptor,
-) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let emb_pos = emb.try_position(jd_tdb)?;
-    let moon_off = moon.try_position(jd_tdb)?;
-    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON);
-    let earth_ecl_au = earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&crate::J2000)
-        .to_unit::<AstronomicalUnit>();
-    Ok(Position::new(
-        earth_ecl_au.x(),
-        earth_ecl_au.y(),
-        earth_ecl_au.z(),
-    ))
-}
-
-/// Earth barycentric position in EclipticMeanJ2000 J2000 (AU).
-///
-/// # Panics
-///
-/// Panics when `jd` is outside the underlying JPL segment coverage. Use
-/// [`try_earth_barycentric`] for explicit error handling.
-#[inline]
-pub(crate) fn earth_barycentric(
-    jd: JulianDate,
-    emb: &SegmentDescriptor,
-    moon: &SegmentDescriptor,
-) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
-    try_earth_barycentric(jd, emb, moon).expect("JPL Earth barycentric position unavailable")
-}
-
-/// Earth heliocentric position in EclipticMeanJ2000 J2000 (AU).
-///
-/// `Earth_helio = Earth_bary − Sun_bary`
-///
-/// Generic over any DE4xx data source providing SUN, EMB, and MOON segments.
-#[inline]
-pub(crate) fn try_earth_heliocentric(
-    jd: JulianDate,
-    sun: &SegmentDescriptor,
-    emb: &SegmentDescriptor,
-    moon: &SegmentDescriptor,
-) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let emb_pos = emb.try_position(jd_tdb)?;
-    let moon_off = moon.try_position(jd_tdb)?;
-    let sun_pos = sun.try_position(jd_tdb)?;
-    let earth_icrf = emb_pos - moon_off.scale(FRAC_MOON) - sun_pos;
-    let earth_ecl_au = earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&crate::J2000)
-        .to_unit::<AstronomicalUnit>();
-    Ok(Position::new(
-        earth_ecl_au.x(),
-        earth_ecl_au.y(),
-        earth_ecl_au.z(),
-    ))
-}
-
-/// Earth heliocentric position in EclipticMeanJ2000 J2000 (AU).
-///
-/// # Panics
-///
-/// Panics when `jd` is outside the underlying JPL segment coverage. Use
-/// [`try_earth_heliocentric`] for explicit error handling.
-#[inline]
-pub(crate) fn earth_heliocentric(
-    jd: JulianDate,
-    sun: &SegmentDescriptor,
-    emb: &SegmentDescriptor,
-    moon: &SegmentDescriptor,
-) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
-    try_earth_heliocentric(jd, sun, emb, moon).expect("JPL Earth heliocentric position unavailable")
-}
-
-/// Earth barycentric velocity in EclipticMeanJ2000 J2000 (AU/day).
-///
-/// `v_Earth = v_EMB − v_Moon_offset × FRAC_MOON`
-///
-/// Generic over any DE4xx data source providing EMB and MOON segments.
-#[inline]
-pub(crate) fn try_earth_barycentric_velocity(
-    jd: JulianDate,
-    emb: &SegmentDescriptor,
-    moon: &SegmentDescriptor,
-) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let v_emb = emb.try_velocity(jd_tdb)?;
-    let v_moon_off = moon.try_velocity(jd_tdb)?;
-    let v_earth_icrf = v_emb - v_moon_off.scale(FRAC_MOON);
-    Ok(v_earth_icrf
-        .to_frame::<EclipticMeanJ2000>(&crate::J2000)
-        .to_unit::<AuPerDay>())
-}
-
-/// Earth barycentric velocity in EclipticMeanJ2000 J2000 (AU/day).
-///
-/// # Panics
-///
-/// Panics when `jd` is outside the underlying JPL segment coverage. Use
-/// [`try_earth_barycentric_velocity`] for explicit error handling.
-#[inline]
-pub(crate) fn earth_barycentric_velocity(
-    jd: JulianDate,
-    emb: &SegmentDescriptor,
-    moon: &SegmentDescriptor,
-) -> Velocity<EclipticMeanJ2000, AuPerDay> {
-    try_earth_barycentric_velocity(jd, emb, moon)
-        .expect("JPL Earth barycentric velocity unavailable")
-}
-
-/// Moon geocentric position in EclipticMeanJ2000 J2000 (km).
-///
-/// `Moon_geo = Moon_offset × FRAC_EARTH`
-///
-/// Generic over any DE4xx data source providing a MOON segment.
-#[inline]
-pub(crate) fn try_moon_geocentric(
-    jd: JulianDate,
-    moon: &SegmentDescriptor,
-) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let moon_off = moon.try_position(jd_tdb)?;
-    let moon_geo_icrf = moon_off.scale(FRAC_EARTH);
-    let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&crate::J2000);
-    Ok(Position::new(
-        moon_geo_ecl.x(),
-        moon_geo_ecl.y(),
-        moon_geo_ecl.z(),
-    ))
-}
-
-/// Moon geocentric position in EclipticMeanJ2000 J2000 (km).
-///
-/// # Panics
-///
-/// Panics when `jd` is outside the underlying JPL segment coverage. Use
-/// [`try_moon_geocentric`] for explicit error handling.
-#[inline]
-pub(crate) fn moon_geocentric(
-    jd: JulianDate,
-    moon: &SegmentDescriptor,
-) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
-    try_moon_geocentric(jd, moon).expect("JPL Moon geocentric position unavailable")
-}
-
-// ═══════════════════════════════════════════════════════════════════════════
-// DynSegmentDescriptor variants, runtime-loaded data
-// ═══════════════════════════════════════════════════════════════════════════
+// ── DynSegmentDescriptor body-chain functions (runtime-loaded data) ───────────
 
 /// Sun barycentric position (runtime data).
 #[inline]
@@ -417,138 +222,10 @@ pub(crate) fn dyn_moon_geocentric(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ephemeris::jpl::eval::{DynSegmentDescriptor, SegmentDescriptor};
+    use crate::ephemeris::jpl::eval::DynSegmentDescriptor;
 
     const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
-    const JD_J2000: f64 = 2451545.0;
-
-    // ── Shared test data for SegmentDescriptor (compile-time variant) ─────
-
-    /// Static record for sun-like segment: position ~0.5 AU at tau=0.
-    static SUN_RECORD: [f64; 8] = [
-        500.0 * SECONDS_PER_DAY, // mid (seconds past J2000)
-        500.0 * SECONDS_PER_DAY, // radius = half-interval
-        7.5e7,
-        0.0, // cx ~0.5 AU in km
-        3.0e7,
-        0.0, // cy
-        1.0e7,
-        0.0, // cz
-    ];
-
-    /// Static record for EMB-like segment: ~1 AU from SSB.
-    static EMB_RECORD: [f64; 8] = [
-        500.0 * SECONDS_PER_DAY,
-        500.0 * SECONDS_PER_DAY,
-        1.5e8,
-        0.0, // ~1 AU
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-    ];
-
-    /// Static record for Moon offset (~Earth-Moon distance).
-    static MOON_RECORD: [f64; 8] = [
-        500.0 * SECONDS_PER_DAY,
-        500.0 * SECONDS_PER_DAY,
-        3.84e5,
-        0.0, // ~384400 km
-        0.0,
-        0.0,
-        0.0,
-        0.0,
-    ];
-
-    fn sun_record_fn(_: usize) -> &'static [f64] {
-        &SUN_RECORD
-    }
-    fn emb_record_fn(_: usize) -> &'static [f64] {
-        &EMB_RECORD
-    }
-    fn moon_record_fn(_: usize) -> &'static [f64] {
-        &MOON_RECORD
-    }
-
-    fn make_static_seg(record_fn: fn(usize) -> &'static [f64]) -> SegmentDescriptor {
-        use crate::qtty::Seconds;
-        SegmentDescriptor {
-            init: Seconds::new(0.0),
-            intlen: Seconds::new(1000.0 * SECONDS_PER_DAY),
-            ncoeff: 2,
-            n_records: 1,
-            record_fn,
-        }
-    }
-
-    fn jd_test_static() -> JulianDate {
-        crate::time::JulianDate::new(JD_J2000 + 500.0)
-    }
-
-    // ── SegmentDescriptor (compile-time) tests ────────────────────────────
-
-    #[test]
-    fn sun_barycentric_is_finite() {
-        let sun = make_static_seg(sun_record_fn);
-        let pos = sun_barycentric(jd_test_static(), &sun);
-        assert!(pos.x().is_finite());
-        assert!(pos.y().is_finite());
-        assert!(pos.z().is_finite());
-    }
-
-    #[test]
-    fn earth_barycentric_is_finite() {
-        let emb = make_static_seg(emb_record_fn);
-        let moon = make_static_seg(moon_record_fn);
-        let pos = earth_barycentric(jd_test_static(), &emb, &moon);
-        assert!(pos.x().is_finite());
-        assert!(pos.y().is_finite());
-        assert!(pos.z().is_finite());
-    }
-
-    #[test]
-    fn earth_heliocentric_is_finite() {
-        let sun = make_static_seg(sun_record_fn);
-        let emb = make_static_seg(emb_record_fn);
-        let moon = make_static_seg(moon_record_fn);
-        let pos = earth_heliocentric(jd_test_static(), &sun, &emb, &moon);
-        assert!(pos.x().is_finite());
-        assert!(pos.y().is_finite());
-        assert!(pos.z().is_finite());
-    }
-
-    #[test]
-    fn earth_barycentric_velocity_is_finite() {
-        let emb = make_static_seg(emb_record_fn);
-        let moon = make_static_seg(moon_record_fn);
-        let vel = earth_barycentric_velocity(jd_test_static(), &emb, &moon);
-        assert!(vel.x().is_finite());
-        assert!(vel.y().is_finite());
-        assert!(vel.z().is_finite());
-    }
-
-    #[test]
-    fn moon_geocentric_is_finite() {
-        let moon = make_static_seg(moon_record_fn);
-        let pos = moon_geocentric(jd_test_static(), &moon);
-        assert!(pos.x().is_finite());
-        assert!(pos.y().is_finite());
-        assert!(pos.z().is_finite());
-    }
-
-    #[test]
-    fn moon_geocentric_magnitude_scaled_by_frac_earth() {
-        let r_km = 384400.0;
-        let moon = make_static_seg(moon_record_fn); // position = (r_km, 0, 0) at tau=0
-        let pos = moon_geocentric(jd_test_static(), &moon);
-        let mag =
-            (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
-        let expected = r_km * FRAC_EARTH;
-        assert!(
-            (mag - expected).abs() / expected < 0.01,
-            "mag={mag}, expected={expected}"
-        );
-    }
+    const JD_J2000: f64 = tempoch::J2000_JD_TT_DAY.value();
 
     // ── DynSegmentDescriptor tests ────────────────────────────────────────
 

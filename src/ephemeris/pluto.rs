@@ -13,7 +13,7 @@
 //! while being dramatically faster than a full numerical integration or the
 //! DE ephemerides.
 //!
-//! Coefficient tables live in the crate-private `ephemeris::pluto_tables` module.
+//! Coefficient tables live in `siderust_archive::pluto::pluto_data`.
 //!
 //! ```text
 //! Step outline (see code for details):
@@ -34,9 +34,11 @@
 //!   Astron. Assoc.* **99** (2), 75–82.
 
 use crate::coordinates::{cartesian, centers::Heliocentric, frames::EclipticMeanJ2000, spherical};
-use crate::ephemeris::pluto_tables::{ARGUMENTS, LATITUDE_TERMS, LONGITUDE_TERMS, RADIUS_TERMS};
 use crate::qtty::{AstronomicalUnit, Degrees, Radian, AU};
 use crate::time::JulianDate;
+use siderust_archive::pluto::pluto_data::{
+    PLUTO_ARGUMENTS, PLUTO_LATITUDE_TERMS, PLUTO_LONGITUDE_TERMS, PLUTO_RADIUS_TERMS,
+};
 
 /// Marker struct for Pluto ephemeris computations via the Meeus/Williams series.
 pub struct Pluto;
@@ -47,9 +49,7 @@ impl Pluto {
     pub fn get_heliocentric(
         jd: JulianDate,
     ) -> cartesian::Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
-        let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
-
-        // 2. Calculate mean longitudes (in degrees) for Jupiter, Saturn, and Pluto.
+        let t = jd.julian_centuries();
         let jupiter_lon = Degrees::new(34.35 + 3034.9057 * t);
         let saturn_lon = Degrees::new(50.08 + 1222.1138 * t);
         let pluto_lon = Degrees::new(238.96 + 144.9600 * t);
@@ -60,20 +60,20 @@ impl Pluto {
         let mut sum_radius = 0.0;
 
         // 4. Loop over all periodic terms.
-        for i in 0..ARGUMENTS.len() {
+        for i in 0..PLUTO_ARGUMENTS.len() {
             // Calculate the argument:
-            let a = jupiter_lon * ARGUMENTS[i].j
-                + saturn_lon * ARGUMENTS[i].s
-                + pluto_lon * ARGUMENTS[i].p;
+            let a = jupiter_lon * PLUTO_ARGUMENTS[i].j
+                + saturn_lon * PLUTO_ARGUMENTS[i].s
+                + pluto_lon * PLUTO_ARGUMENTS[i].p;
 
             // Convert 'a' from degrees to radians.
             let (sin_a, cos_a) = a.to::<Radian>().sin_cos();
 
             // Add periodic corrections for longitude, latitude, and radius.
             sum_longitude +=
-                Degrees::new(LONGITUDE_TERMS[i].a * sin_a + LONGITUDE_TERMS[i].b * cos_a);
-            sum_latitude += Degrees::new(LATITUDE_TERMS[i].a * sin_a + LATITUDE_TERMS[i].b * cos_a);
-            sum_radius += RADIUS_TERMS[i].a * sin_a + RADIUS_TERMS[i].b * cos_a;
+                Degrees::new(PLUTO_LONGITUDE_TERMS[i].a * sin_a + PLUTO_LONGITUDE_TERMS[i].b * cos_a);
+            sum_latitude += Degrees::new(PLUTO_LATITUDE_TERMS[i].a * sin_a + PLUTO_LATITUDE_TERMS[i].b * cos_a);
+            sum_radius += PLUTO_RADIUS_TERMS[i].a * sin_a + PLUTO_RADIUS_TERMS[i].b * cos_a;
         }
 
         // 5. Calculate the final heliocentric spherical coordinates.

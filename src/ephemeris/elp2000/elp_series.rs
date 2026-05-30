@@ -56,151 +56,82 @@
 use crate::coordinates::{cartesian::Position, centers::Geocentric, frames::EclipticMeanJ2000};
 use wide::f64x4;
 
-#[allow(clippy::approx_constant, unreachable_pub, missing_docs)]
-#[rustfmt::skip]
-mod elp_data {
-    include!("elp_data.rs");
-}
+use siderust_archive::elp::constants::{
+    A0_KM, ATH_KM, AM, DTASM,
+    P1, P2, P3, P4, P5, Q1, Q2, Q3, Q4, Q5,
+    DELNU, DELE, DELG, DELNP, DELEP,
+    DEL as DEL_RAW, ZETA as ZETA_RAW, P_ARGS as P_ARGS_RAW, W1 as W1_RAW,
+};
+use siderust_archive::elp::elp_data;
 use crate::bodies::solar_system::Moon;
 use crate::ephemeris::elp2000::elp_structs::*;
-use crate::qtty::{Arcseconds, Degrees, Kilometers, LengthUnit, Radian, Radians};
+use crate::qtty::{Arcseconds, Kilometers, LengthUnit, Radian, Radians};
 use crate::time::JulianDate;
 use elp_data::*;
 use std::f64::consts::FRAC_PI_2;
 
-// ====================
-// Constants
-// ====================
-// Conversion helper using the strongly typed Units module
-const A0: Kilometers = Kilometers::new(384_747.980_644_895_4);
-const ATH: Kilometers = Kilometers::new(384_747.980_674_316_5);
-const AM: f64 = 0.074_801_329_518;
-const ALPHA: f64 = 0.002_571_881_335;
-const DTASM: f64 = 2.0 * ALPHA / (3.0 * AM);
-const PRECES: Radians = Arcseconds::new(5_029.096_6).to_const::<Radian>();
+// ── Re-typed constants from archive ──────────────────────────────────────
+// Archive stores raw f64; here we wrap them in the strongly-typed units
+// used throughout this module.
 
-// LengthUnit conversions
-const C1: f64 = 60.0;
-const C2: f64 = 3600.0;
+const A0: Kilometers = Kilometers::new(A0_KM);
+const ATH: Kilometers = Kilometers::new(ATH_KM);
 
-// Precession matrix coefficients (Laskar)
-const P1: f64 = 0.10180391e-4;
-const P2: f64 = 0.47020439e-6;
-const P3: f64 = -0.5417367e-9;
-const P4: f64 = -0.2507948e-11;
-const P5: f64 = 0.463486e-14;
-const Q1: f64 = -0.113469002e-3;
-const Q2: f64 = 0.12372674e-6;
-const Q3: f64 = 0.1265417e-8;
-const Q4: f64 = -0.1371808e-11;
-const Q5: f64 = -0.320334e-14;
-
-// Corrections
-const DELNU: f64 = Arcseconds::new(0.55604)
-    .to_const::<Radian>()
-    .const_div(
-        Arcseconds::new(1_732_559_343.736_04)
-            .to_const::<Radian>()
-            .value(),
-    )
-    .value();
-const DELE: f64 = Arcseconds::new(0.01789).to_const::<Radian>().value();
-const DELG: f64 = Arcseconds::new(-0.08066).to_const::<Radian>().value();
-const DELNP: f64 = Arcseconds::new(-0.06424)
-    .to_const::<Radian>()
-    .const_div(
-        Arcseconds::new(1_732_559_343.736_04)
-            .to_const::<Radian>()
-            .value(),
-    )
-    .value();
-const DELEP: f64 = Arcseconds::new(-0.12879).to_const::<Radian>().value();
-
-// Delaunay arguments (series coefficients)
 #[allow(clippy::all)]
 const DEL: [[Radians; 5]; 4] = [
     [
-        Radians::new(5.198466741027443),
-        Radians::new(7771.377146811758394),
-        Radians::new(-2.8449351621e-5),
-        Radians::new(3.1973462e-8),
-        Radians::new(-1.54365e-10),
+        Radians::new(DEL_RAW[0][0]),
+        Radians::new(DEL_RAW[0][1]),
+        Radians::new(DEL_RAW[0][2]),
+        Radians::new(DEL_RAW[0][3]),
+        Radians::new(DEL_RAW[0][4]),
     ],
     [
-        Radians::new(-0.043125180208125),
-        Radians::new(628.301955168488007),
-        Radians::new(-2.6805348430e-6),
-        Radians::new(7.12676e-10),
-        Radians::new(7.2700e-13),
+        Radians::new(DEL_RAW[1][0]),
+        Radians::new(DEL_RAW[1][1]),
+        Radians::new(DEL_RAW[1][2]),
+        Radians::new(DEL_RAW[1][3]),
+        Radians::new(DEL_RAW[1][4]),
     ],
     [
-        Radians::new(2.355555898265799),
-        Radians::new(8328.691426955554562),
-        Radians::new(1.57027757616e-4),
-        Radians::new(2.50411114e-7),
-        Radians::new(-1.186339e-9),
+        Radians::new(DEL_RAW[2][0]),
+        Radians::new(DEL_RAW[2][1]),
+        Radians::new(DEL_RAW[2][2]),
+        Radians::new(DEL_RAW[2][3]),
+        Radians::new(DEL_RAW[2][4]),
     ],
     [
-        Radians::new(1.627905233371468),
-        Radians::new(8433.466158130539043),
-        Radians::new(-5.9392100004e-5),
-        Radians::new(-4.949948e-9),
-        Radians::new(2.0217e-11),
+        Radians::new(DEL_RAW[3][0]),
+        Radians::new(DEL_RAW[3][1]),
+        Radians::new(DEL_RAW[3][2]),
+        Radians::new(DEL_RAW[3][3]),
+        Radians::new(DEL_RAW[3][4]),
     ],
 ];
 
-// Fundamental lunar arguments: longitude offset and rate
 const ZETA: [Radians; 2] = [
-    Degrees::new(218.0 + 18.0 / 60.0 + 59.955_71 / 3_600.0).to_const::<Radian>(),
-    Arcseconds::new(1_732_559_343.736_04)
-        .to_const::<Radian>()
-        .const_add(PRECES),
+    Radians::new(ZETA_RAW[0]),
+    Radians::new(ZETA_RAW[1]),
 ];
 
-// Planetary argument coefficients
 #[allow(clippy::all)]
 const P_ARGS: [[Radians; 2]; 8] = [
-    [
-        Degrees::new(252.0 + 15.0 / C1 + 3.25986 / C2).to_const::<Radian>(),
-        Arcseconds::new(538_101_628.68898).to_const::<Radian>(),
-    ],
-    [
-        Degrees::new(181.0 + 58.0 / C1 + 47.28305 / C2).to_const::<Radian>(),
-        Arcseconds::new(210_664_136.43355).to_const::<Radian>(),
-    ],
-    [
-        Degrees::new(100.0 + 27.0 / 60.0 + 59.22059 / 3600.0).to_const::<Radian>(),
-        Arcseconds::new(129_597_742.27580).to_const::<Radian>(),
-    ],
-    [
-        Degrees::new(355.0 + 25.0 / C1 + 59.78866 / C2).to_const::<Radian>(),
-        Arcseconds::new(68_905_077.59284).to_const::<Radian>(),
-    ],
-    [
-        Degrees::new(34.0 + 21.0 / C1 + 5.34212 / C2).to_const::<Radian>(),
-        Arcseconds::new(10_925_660.42861).to_const::<Radian>(),
-    ],
-    [
-        Degrees::new(50.0 + 4.0 / C1 + 38.89694 / C2).to_const::<Radian>(),
-        Arcseconds::new(4_399_609.65932).to_const::<Radian>(),
-    ],
-    [
-        Degrees::new(314.0 + 3.0 / C1 + 18.01841 / C2).to_const::<Radian>(),
-        Arcseconds::new(1_542_481.19393).to_const::<Radian>(),
-    ],
-    [
-        Degrees::new(304.0 + 20.0 / C1 + 55.19575 / C2).to_const::<Radian>(),
-        Arcseconds::new(786_550.32074).to_const::<Radian>(),
-    ],
+    [Radians::new(P_ARGS_RAW[0][0]), Radians::new(P_ARGS_RAW[0][1])],
+    [Radians::new(P_ARGS_RAW[1][0]), Radians::new(P_ARGS_RAW[1][1])],
+    [Radians::new(P_ARGS_RAW[2][0]), Radians::new(P_ARGS_RAW[2][1])],
+    [Radians::new(P_ARGS_RAW[3][0]), Radians::new(P_ARGS_RAW[3][1])],
+    [Radians::new(P_ARGS_RAW[4][0]), Radians::new(P_ARGS_RAW[4][1])],
+    [Radians::new(P_ARGS_RAW[5][0]), Radians::new(P_ARGS_RAW[5][1])],
+    [Radians::new(P_ARGS_RAW[6][0]), Radians::new(P_ARGS_RAW[6][1])],
+    [Radians::new(P_ARGS_RAW[7][0]), Radians::new(P_ARGS_RAW[7][1])],
 ];
 
-// Lunar rotation series terms
 const W1: [Radians; 5] = [
-    Degrees::new(218.0 + 18.0 / 60.0 + 59.955_71 / 3_600.0).to_const::<Radian>(),
-    Arcseconds::new(1_732_559_343.736_04).to_const::<Radian>(),
-    Arcseconds::new(-5.888_3).to_const::<Radian>(),
-    Arcseconds::new(0.006_604).to_const::<Radian>(),
-    Arcseconds::new(-0.000_031_69).to_const::<Radian>(),
+    Radians::new(W1_RAW[0]),
+    Radians::new(W1_RAW[1]),
+    Radians::new(W1_RAW[2]),
+    Radians::new(W1_RAW[3]),
+    Radians::new(W1_RAW[4]),
 ];
 
 // ====================
@@ -819,7 +750,7 @@ impl Moon {
     where
         U: LengthUnit,
     {
-        let t1 = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
+        let t1 = jd.julian_centuries();
         let t2 = t1 * t1;
         let t3 = t2 * t1;
         let t4 = t2 * t2;
@@ -913,7 +844,7 @@ impl Moon {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::qtty::{Days, Kilometer, KM};
+    use crate::qtty::{Days, Degrees, Kilometer, KM};
     use std::f64::consts::PI;
 
     // ===========================================================================
@@ -955,7 +886,9 @@ mod tests {
 
     /// Build a JulianDate from Julian centuries offset from J2000
     fn jd_from_centuries(t1: f64) -> JulianDate {
-        crate::time::JulianDate::new((crate::J2000.raw() + Days::new(t1 * 36_525.0)).value())
+        crate::time::JulianDate::new(
+            (crate::J2000.raw() + Days::new(t1 * tempoch::DAYS_PER_JULIAN_CENTURY.value())).value(),
+        )
     }
 
     // ===========================================================================
@@ -977,7 +910,9 @@ mod tests {
     #[test]
     fn julian_centuries_one_century_from_j2000() {
         // J2000 + 36525 days = exactly 1 Julian century
-        let jd = crate::time::JulianDate::new((crate::J2000.raw() + Days::new(36_525.0)).value());
+        let jd = crate::time::JulianDate::new(
+            (crate::J2000.raw() + tempoch::DAYS_PER_JULIAN_CENTURY).value(),
+        );
         let centuries = jd.julian_centuries();
         assert!(
             (centuries - 1.0).abs() < 1e-12,

@@ -8,6 +8,8 @@ use principia::{GravityFieldProvider, PrincipiaError};
 use crate::astro::dynamics::units::GravitationalParameter;
 use crate::qtty::Kilometers;
 
+use siderust_archive::gravity::tables::EGM2008_COEFFS;
+
 /// Earth GM (WGS-84), km³/s².
 const GM_EARTH_KM3_S2: f64 = 398_600.441_8;
 /// Earth equatorial radius (WGS-84 / EGM2008), km.
@@ -46,22 +48,6 @@ impl GravityFieldProvider for TwoBodyEarth {
 /// Earth geopotential through degree/order 4 using EGM2008 normalized coefficients.
 #[derive(Debug, Clone, Copy)]
 pub struct LowDegreeEarth;
-
-#[rustfmt::skip]
-const EGM2008_COEFFS: &[(usize, usize, f64, f64)] = &[
-    (2, 0, -4.841_653_701_469_824e-4,  0.0),
-    (2, 1, -2.066_155_09e-10,         1.384_413_9e-9),
-    (2, 2,  2.439_383_74e-6,         -1.400_273_8e-6),
-    (3, 0,  9.571_612_0e-7,           0.0),
-    (3, 1,  2.030_462_0e-6,           2.484_348_0e-7),
-    (3, 2,  9.047_878_0e-7,          -6.190_135_0e-7),
-    (3, 3,  7.213_217_0e-7,           1.414_349_0e-6),
-    (4, 0,  5.399_737_0e-7,           0.0),
-    (4, 1, -5.362_616_0e-7,          -4.735_903_0e-7),
-    (4, 2,  3.505_016_0e-7,           6.624_480_0e-7),
-    (4, 3,  9.908_551_0e-8,          -2.009_382_0e-7),
-    (4, 4, -1.888_440_0e-8,           3.088_772_0e-8),
-];
 
 impl LowDegreeEarth {
     fn lookup(n: usize, m: usize) -> (f64, f64) {

@@ -16,41 +16,51 @@
 //!   enabling trait objects (`Box<dyn DynEphemeris>`) for runtime-loaded data.
 //!   A blanket impl bridges: every `Ephemeris` implementor automatically
 //!   implements `DynEphemeris`.
-//! - **Feature-gated**: VSOP87 is always available. DE440 requires the
-//!   matching Cargo feature. DE441 requires the `de441` feature. Runtime loading requires `runtime-data`.
 //! - **Body-centric user API preserved**: `Earth::vsop87e(jd)` etc. remain
 //!   unchanged. The traits are used internally by the coordinate transform
 //!   pipeline and `AstroContext`.
+//! - **Data-free**: This module stores no coefficient tables. All scientific
+//!   data originates from [`siderust_archive`]; see [`provenance`] for
+//!   per-dataset lineage records.
 //!
 //! ## Available Backends
 //!
-//! | Backend              | Feature        | Source                     |
-//! |----------------------|----------------|----------------------------|
-//! | [`Vsop87Ephemeris`]  | (always)       | VSOP87 + ELP2000-82B       |
-//! | `De440Ephemeris`     | `de440`        | JPL DE440 (compile-time)   |
-//! | `De441Ephemeris`     | `de441`        | JPL DE441 (compile-time)   |
-//! | [`RuntimeEphemeris`] | (always)       | Any BSP file (runtime)     |
+//! | Backend              | Source                     |
+//! |----------------------|----------------------------|
+//! | [`Vsop87Ephemeris`]  | VSOP87 + ELP2000-82B       |
+//! | [`RuntimeEphemeris`] | Any BSP file (runtime)     |
+//!
+//! ## Provenance
+//!
+//! Dataset lineage is exposed through the [`provenance`] sub-module, which
+//! re-exports the `provenance()` accessor from each `siderust_archive` dataset
+//! used by this module.
+
+/// Dataset lineage for all coefficient tables used by the ephemeris module.
+///
+/// Every accessor returns a [`siderust_archive::provenance::DatasetProvenance`]
+/// describing the upstream source, the generator tool, and the generation
+/// timestamp for the corresponding dataset.
+pub mod provenance {
+    pub use siderust_archive::atmosphere::provenance as atmosphere;
+    pub use siderust_archive::elp::provenance as elp;
+    pub use siderust_archive::gravity::provenance as gravity;
+    pub use siderust_archive::nutation::provenance as nutation;
+    pub use siderust_archive::pluto::provenance as pluto;
+    pub use siderust_archive::time::provenance as time;
+    pub use siderust_archive::vsop::provenance as vsop;
+}
 
 pub(crate) mod elp2000;
 pub(crate) mod jpl;
 #[cfg(feature = "lagrange-centers")]
 pub mod lagrange;
 pub mod pluto;
-pub(crate) mod pluto_tables;
 pub(crate) mod vsop87;
 
-#[cfg(feature = "de440")]
-mod de440_backend;
-#[cfg(feature = "de441")]
-mod de441_backend;
 mod runtime_backend;
 mod vsop87_backend;
 
-#[cfg(feature = "de440")]
-pub use de440_backend::De440Ephemeris;
-#[cfg(feature = "de441")]
-pub use de441_backend::De441Ephemeris;
-pub use jpl::{DeData, DeEphemeris};
 pub use pluto::Pluto;
 pub use runtime_backend::RuntimeEphemeris;
 pub use vsop87::VSOP87;
@@ -360,7 +370,7 @@ mod tests {
     use super::*;
     use crate::ephemeris::Vsop87Ephemeris;
 
-    const JD_J2000: f64 = 2451545.0;
+    const JD_J2000: f64 = tempoch::J2000_JD_TT_DAY.value();
 
     fn jd() -> JulianDate {
         crate::time::JulianDate::new(JD_J2000)

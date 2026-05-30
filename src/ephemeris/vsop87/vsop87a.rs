@@ -32,6 +32,7 @@
 //!   <https://www.imcce.fr/inpop/ephemerides/vsop87/>
 
 use super::*;
+use siderust_archive::vsop::vsop87a_data::*;
 use crate::bodies::solar_system::Moon;
 use crate::bodies::solar_system::*;
 use crate::coordinates::{
@@ -42,13 +43,6 @@ use crate::coordinates::{
 use crate::qtty::*;
 use crate::time::JulianDate;
 type AuPerDay = crate::qtty::Per<AstronomicalUnit, Day>;
-
-#[allow(clippy::approx_constant, unreachable_pub, missing_docs)]
-#[rustfmt::skip]
-mod vsop_data {
-    include!("vsop87a_data.rs");
-}
-use vsop_data::*;
 
 macro_rules! impl_vsop87a {
     (
