@@ -127,3 +127,37 @@ pub struct AzimuthQuery {
     /// Apparent-position correction policy for the target pipeline.
     pub correction_policy: CorrectionPolicy,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn azimuth_crossing_event_display() {
+        let event = AzimuthCrossingEvent {
+            mjd: ModifiedJulianDate::new(60_000.0),
+            direction: CrossingDirection::Setting,
+        };
+        let text = event.to_string();
+        assert!(text.contains("Azimuth"));
+        assert!(text.contains("Setting"));
+    }
+
+    #[test]
+    fn azimuth_extremum_kind_display() {
+        assert_eq!(AzimuthExtremumKind::Max.to_string(), "Max Azimuth");
+        assert_eq!(AzimuthExtremumKind::Min.to_string(), "Min Azimuth");
+    }
+
+    #[test]
+    fn azimuth_extremum_display_includes_kind_and_azimuth() {
+        let event = AzimuthExtremum {
+            mjd: ModifiedJulianDate::new(60_002.0),
+            azimuth: Degrees::new(180.0),
+            kind: AzimuthExtremumKind::Min,
+        };
+        let text = event.to_string();
+        assert!(text.contains("Min Azimuth"));
+        assert!(text.contains("180"));
+    }
+}

@@ -117,3 +117,44 @@ pub fn modified_julian_date_from_chrono(dt: chrono::DateTime<chrono::Utc>) -> Mo
 }
 
 pub use crate::event::search::intervals::intersect as intersect_periods;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+    use qtty::Day;
+
+    #[test]
+    fn j2000_constant_matches_runtime_helper() {
+        assert_eq!(j2000_tt(), J2000);
+    }
+
+    #[test]
+    fn try_jd_rejects_non_finite_scalar() {
+        assert_eq!(
+            try_jd_f64(f64::NAN).unwrap_err(),
+            ConversionError::NonFinite
+        );
+    }
+
+    #[test]
+    fn try_mjd_accepts_finite_scalar() {
+        try_mjd_f64(58_000.0).unwrap();
+    }
+
+    #[test]
+    fn try_jd_accepts_typed_day() {
+        try_jd(Day::new(2_451_545.0)).unwrap();
+    }
+
+    #[test]
+    fn julian_year_days_matches_typed_conversion() {
+        let _days: qtty::Day = qtty::time::JULIAN_YEAR.to::<qtty::unit::Day>();
+    }
+
+    #[test]
+    fn modified_julian_date_from_chrono_produces_finite_mjd() {
+        let mjd = modified_julian_date_from_chrono(Utc::now());
+        assert!(mjd.raw().value().is_finite());
+    }
+}

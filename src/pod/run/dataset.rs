@@ -71,4 +71,18 @@ mod tests {
         );
         assert_eq!(a.bytes, 11);
     }
+
+    #[test]
+    fn from_file_hashes_like_from_bytes() {
+        let path = std::env::temp_dir().join(format!(
+            "siderust_dataset_{}_{}",
+            std::process::id(),
+            "hello_world.bin"
+        ));
+        std::fs::write(&path, b"hello world").unwrap();
+        let from_file = DatasetRef::from_file(&path, "test").unwrap();
+        let from_bytes = DatasetRef::from_bytes(&path, "test", b"hello world");
+        assert_eq!(from_file, from_bytes);
+        let _ = std::fs::remove_file(path);
+    }
 }

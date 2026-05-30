@@ -131,3 +131,65 @@ impl KernelSet {
         Err(SpiceError::NoChain { target, center })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::formats::spice::{LeapSecondKernel, SpiceError};
+
+    fn minimal_valid_spk() -> SpkKernel {
+        let mut buf = vec![0u8; 1024];
+        buf[0..8].copy_from_slice(b"DAF/SPK ");
+        buf[8..12].copy_from_slice(&2i32.to_le_bytes());
+        buf[12..16].copy_from_slice(&6i32.to_le_bytes());
+        buf[76..80].copy_from_slice(&0i32.to_le_bytes());
+        SpkKernel::from_bytes(buf).unwrap()
+    }
+
+    #[test]
+    fn accessors_reflect_loaded_kernels() {
+        let mut set = KernelSet::new();
+        assert_eq!(set.spk_count(), 0);
+        assert!(!set.has_lsk());
+
+        set.add_spk("spk", minimal_valid_spk());
+        assert_eq!(set.spk_count(), 1);
+
+        let lsk_src =
+            "\\begindata\nDELTET/DELTA_T_A = 32.184\nDELTET/DELTA_AT = ( 37 @2017-JAN-1 )\n";
+        set.set_lsk("lsk", LeapSecondKernel::from_text(lsk_src).unwrap());
+        assert!(set.has_lsk());
+        assert!(set.lsk().is_some());
+        assert_eq!(set.fk_kernels().count(), 0);
+        assert_eq!(set.pck_text_kernels().count(), 0);
+        assert_eq!(set.ck_kernels().count(), 0);
+        assert_eq!(set.sclk_kernels().count(), 0);
+    }
+
+    #[test]
+    fn state_naif_without_spk_returns_no_chain() {
+        let set = KernelSet::new();
+        let error = set.state_naif(399, 0, 0.0).unwrap_err();
+        assert!(matches!(
+            error,
+            SpiceError::NoChain {
+                target: 399,
+                center: 0
+            }
+        ));
+    }
+
+    #[test]
+    fn state_naif_with_empty_spk_still_returns_no_chain() {
+        let mut set = KernelSet::new();
+        set.add_spk("empty", minimal_valid_spk());
+        let error = set.state_naif(399, 0, 0.0).unwrap_err();
+        assert!(matches!(
+            error,
+            SpiceError::NoChain {
+                target: 399,
+                center: 0
+            }
+        ));
+    }
+}

@@ -322,3 +322,152 @@ fn mat3_transpose(matrix: [[f64; 3]; 3]) -> [[f64; 3]; 3] {
         [matrix[0][2], matrix[1][2], matrix[2][2]],
     ]
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::formats::spice::SpiceError;
+
+    fn minimal_valid_spk() -> Vec<u8> {
+        let mut buf = vec![0u8; 1024];
+        buf[0..8].copy_from_slice(b"DAF/SPK ");
+        buf[8..12].copy_from_slice(&2i32.to_le_bytes());
+        buf[12..16].copy_from_slice(&6i32.to_le_bytes());
+        buf[76..80].copy_from_slice(&0i32.to_le_bytes());
+        buf
+    }
+
+    const MINIMAL_LSK: &str =
+        "\\begindata\nDELTET/DELTA_T_A = 32.184\nDELTET/DELTA_AT = ( 37 @2017-JAN-1 )\n";
+
+    const MINIMAL_FK_TK: &str = "\\begindata\nFRAME_2000_NAME = 'TEST_TK'\nFRAME_2000_CLASS = 4\nFRAME_2000_CLASS_ID = 2000\nFRAME_2000_CENTER = 399\nTKFRAME_2000_SPEC = 'MATRIX'\nTKFRAME_2000_RELATIVE = 'J2000'\nTKFRAME_2000_MATRIX = ( 1 0 0 0 1 0 0 0 1 )\n";
+
+    #[test]
+    fn default_context_is_empty() {
+        let context = SpiceContext::default();
+        assert_eq!(context.kernel_set().spk_count(), 0);
+        assert!(!context.kernel_set().has_lsk());
+    }
+
+    #[test]
+    fn load_bytes_accepts_minimal_spk() {
+        let mut context = SpiceContext::new();
+        context
+            .load_bytes("empty.bsp", minimal_valid_spk())
+            .unwrap();
+        assert_eq!(context.kernel_set().spk_count(), 1);
+    }
+
+    #[test]
+    fn load_bytes_accepts_lsk_text() {
+        let mut context = SpiceContext::new();
+        context
+            .load_bytes("naif0009.tls", MINIMAL_LSK.as_bytes().to_vec())
+            .unwrap();
+        assert!(context.kernel_set().has_lsk());
+    }
+
+    #[test]
+    fn tai_and_tdb_minus_utc_require_lsk() {
+        let context = SpiceContext::new();
+        assert!(matches!(
+            context.tai_minus_utc(0.0).unwrap_err(),
+            SpiceContextError::KernelNotLoaded { ref kernel_type } if kernel_type == "LSK"
+        ));
+        assert!(matches!(
+            context.tdb_minus_utc(0.0).unwrap_err(),
+            SpiceContextError::KernelNotLoaded { ref kernel_type } if kernel_type == "LSK"
+        ));
+    }
+
+    #[test]
+    fn tai_and_tdb_minus_utc_with_lsk() {
+        let mut context = SpiceContext::new();
+        context
+            .load_bytes("lsk", MINIMAL_LSK.as_bytes().to_vec())
+            .unwrap();
+        let epoch = context.kernel_set().lsk().unwrap().leap_table[0].0 + 1.0;
+        assert_eq!(context.tai_minus_utc(epoch).unwrap(), 37.0);
+        assert!((context.tdb_minus_utc(epoch).unwrap() - 69.184).abs() < 1.0e-12);
+    }
+
+    #[test]
+    fn rotation_naif_same_frame_is_identity() {
+        let context = SpiceContext::new();
+        let matrix = context.rotation_naif(1, 1, 0.0).unwrap();
+        assert_eq!(matrix, [[1.0, 0.0, 0.0], [0.0, 1.0, 0.0], [0.0, 0.0, 1.0]]);
+    }
+
+    #[test]
+    fn rotation_naif_composes_fk_matrix_frame() {
+        let mut context = SpiceContext::new();
+        context
+            .load_bytes("test.fk", MINIMAL_FK_TK.as_bytes().to_vec())
+            .unwrap();
+        let matrix = context.rotation_naif(2000, 1, 0.0).unwrap();
+        assert_eq!(matrix[0][0], 1.0);
+        assert_eq!(matrix[1][1], 1.0);
+        assert_eq!(matrix[2][2], 1.0);
+    }
+
+    #[test]
+    fn state_naif_without_spk_returns_no_chain() {
+        let context = SpiceContext::new();
+        assert!(matches!(
+            context.state_naif(399, 0, 0.0).unwrap_err(),
+            SpiceContextError::Kernel(SpiceError::NoChain {
+                target: 399,
+                center: 0
+            })
+        ));
+    }
+
+    #[test]
+    fn state_naif_with_loaded_empty_spk_returns_no_chain() {
+        let mut context = SpiceContext::new();
+        context
+            .load_bytes("empty.bsp", minimal_valid_spk())
+            .unwrap();
+        assert!(matches!(
+            context.state_naif(399, 0, 0.0).unwrap_err(),
+            SpiceContextError::Kernel(SpiceError::NoChain {
+                target: 399,
+                center: 0
+            })
+        ));
+    }
+
+    #[test]
+    fn load_bytes_rejects_invalid_utf8_non_daf() {
+        let mut context = SpiceContext::new();
+        let err = context
+            .load_bytes("bad.txt", vec![0xFF, 0xFE, 0x00, 0x01])
+            .unwrap_err();
+        assert!(matches!(
+            err,
+            SpiceContextError::Kernel(SpiceError::FormatParse(_))
+        ));
+    }
+
+    #[test]
+    fn load_bytes_rejects_unimplemented_dsk() {
+        let mut context = SpiceContext::new();
+        let mut buf = vec![0u8; 16];
+        buf[0..8].copy_from_slice(b"DAF/DSK ");
+        let err = context.load_bytes("surf.bds", buf).unwrap_err();
+        assert!(matches!(
+            err,
+            SpiceContextError::UnsupportedKernelQuery { ref message }
+                if message.contains("DSK/EK")
+        ));
+    }
+
+    #[test]
+    fn frame_registry_exposes_builtin_j2000() {
+        let context = SpiceContext::new();
+        assert_eq!(
+            context.frame_registry().frame_by_name("J2000").unwrap().id,
+            1
+        );
+    }
+}

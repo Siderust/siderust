@@ -62,3 +62,43 @@ impl FrameRegistry {
             })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::formats::spice::{FrameClass, FrameKernel};
+
+    #[test]
+    fn builtin_j2000_lookup_by_id_and_name() {
+        let registry = FrameRegistry::new();
+        assert_eq!(registry.frame_by_id(1).unwrap().name, "J2000");
+        assert_eq!(registry.frame_by_name("j2000").unwrap().id, 1);
+        assert_eq!(
+            registry.frame_by_name("J2000").unwrap().class,
+            FrameClass::Inertial
+        );
+    }
+
+    #[test]
+    fn unknown_frame_errors_are_structured() {
+        let registry = FrameRegistry::new();
+        assert!(matches!(
+            registry.frame_by_id(9_999).unwrap_err(),
+            SpiceError::UnknownFrame { description } if description.contains("9999")
+        ));
+        assert!(matches!(
+            registry.frame_by_name("NOPE").unwrap_err(),
+            SpiceError::UnknownFrame { description } if description == "NOPE"
+        ));
+    }
+
+    #[test]
+    fn add_fk_extends_lookup() {
+        let src = "\\begindata\nFRAME_1234_NAME = 'TEST'\nFRAME_1234_CLASS = 1\nFRAME_1234_CLASS_ID = 1234\nFRAME_1234_CENTER = 0\n";
+        let fk = FrameKernel::from_text(src).unwrap();
+        let mut registry = FrameRegistry::new();
+        registry.add_fk(&fk);
+        assert_eq!(registry.frame_by_id(1234).unwrap().name, "TEST");
+        assert_eq!(registry.frame_by_name("test").unwrap().id, 1234);
+    }
+}

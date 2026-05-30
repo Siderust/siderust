@@ -124,3 +124,45 @@ pub struct AltitudeQuery {
     /// Apparent-position correction policy for the target pipeline.
     pub correction_policy: CorrectionPolicy,
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::qtty::Degrees;
+
+    #[test]
+    fn crossing_direction_display() {
+        assert_eq!(CrossingDirection::Rising.to_string(), "Rising");
+        assert_eq!(CrossingDirection::Setting.to_string(), "Setting");
+    }
+
+    #[test]
+    fn crossing_event_display_includes_direction_and_mjd() {
+        let event = CrossingEvent {
+            mjd: ModifiedJulianDate::new(60_000.0),
+            direction: CrossingDirection::Rising,
+        };
+        let text = event.to_string();
+        assert!(text.contains("Rising"));
+        assert!(text.contains("60000"));
+    }
+
+    #[test]
+    fn culmination_kind_display() {
+        assert_eq!(CulminationKind::Max.to_string(), "Upper Transit");
+        assert_eq!(CulminationKind::Min.to_string(), "Lower Transit");
+    }
+
+    #[test]
+    fn culmination_event_display_includes_kind_altitude_and_mjd() {
+        let event = CulminationEvent {
+            mjd: ModifiedJulianDate::new(60_001.5),
+            altitude: Degrees::new(45.0),
+            kind: CulminationKind::Max,
+        };
+        let text = event.to_string();
+        assert!(text.contains("Upper Transit"));
+        assert!(text.contains("45"));
+        assert!(text.contains("60001.5"));
+    }
+}

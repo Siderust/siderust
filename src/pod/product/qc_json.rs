@@ -100,3 +100,27 @@ pub fn write_qc_json<W: Write, S: Serialize>(
     w.write_all(b"\n")?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn write_qc_json_emits_reduced_chi2_and_trailing_newline() {
+        let doc = QcDocument {
+            schema_version: "qc.v1".into(),
+            run_id: "test-run".into(),
+            software_version: "0.0.0".into(),
+            n_obs: 1000,
+            n_params: 6,
+            reduced_chi2: 1.02,
+            iterations: 3,
+            residuals: serde_json::json!({"C1C": {"rms_m": 0.45}}),
+        };
+        let mut buf = Vec::new();
+        write_qc_json(&mut buf, &doc).unwrap();
+        let text = String::from_utf8(buf).unwrap();
+        assert!(text.contains("reduced_chi2"));
+        assert!(text.ends_with('\n'));
+    }
+}

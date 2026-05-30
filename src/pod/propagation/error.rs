@@ -57,3 +57,39 @@ impl From<principia::PropagationError> for DynamicsError {
         Self::Upstream(upstream)
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::pod::force::{mass_flow_rate, ManeuverError};
+    use principia::{PrincipiaError, PropagationError};
+    use qtty::{force::Newtons, Second};
+
+    #[test]
+    fn maneuver_error_converts() {
+        let err = DynamicsError::from(ManeuverError::NonPositiveIsp(0.0));
+        assert!(matches!(
+            err,
+            DynamicsError::Maneuver(ManeuverError::NonPositiveIsp(_))
+        ));
+    }
+
+    #[test]
+    fn mass_flow_rate_failure_maps_to_maneuver_variant() {
+        let err =
+            DynamicsError::from(mass_flow_rate(Newtons::new(1.0), Second::new(0.0)).unwrap_err());
+        assert!(matches!(err, DynamicsError::Maneuver(_)));
+    }
+
+    #[test]
+    fn principia_error_converts_to_upstream() {
+        let err = DynamicsError::from(PrincipiaError::DegenerateGeometry { reason: "test" });
+        assert!(matches!(err, DynamicsError::Upstream(_)));
+    }
+
+    #[test]
+    fn propagation_error_converts_to_upstream() {
+        let err = DynamicsError::from(PropagationError::MaxStepsExceeded { max_steps: 1 });
+        assert!(matches!(err, DynamicsError::Upstream(_)));
+    }
+}

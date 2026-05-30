@@ -63,3 +63,28 @@ pub trait EphemerisProvider {
         self.state(body_naif_id, secs.value())
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tempoch::{Time, TDB};
+
+    struct DummyState;
+    struct DummyProvider;
+
+    impl EphemerisProvider for DummyProvider {
+        type State = DummyState;
+        type Error = std::io::Error;
+
+        fn state(&self, _id: i32, _t: f64) -> Result<DummyState, Self::Error> {
+            Ok(DummyState)
+        }
+    }
+
+    #[test]
+    fn state_at_forwards_j2000_seconds_to_state() {
+        let provider = DummyProvider;
+        let epoch = Time::<TDB>::from_raw_j2000_seconds(qtty::Second::new(123.0)).unwrap();
+        assert!(provider.state_at(399, epoch).is_ok());
+    }
+}

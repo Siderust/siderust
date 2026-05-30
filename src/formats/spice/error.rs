@@ -132,3 +132,24 @@ impl From<crate::archive::ArchiveError> for SpiceError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::archive::ArchiveError;
+
+    #[test]
+    fn archive_io_error_converts_to_spice_io() {
+        let err = SpiceError::from(ArchiveError::Io(std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "missing kernel",
+        )));
+        assert!(matches!(err, SpiceError::Io(_)));
+    }
+
+    #[test]
+    fn archive_integrity_error_converts_to_format_parse() {
+        let err = SpiceError::from(ArchiveError::Integrity("checksum mismatch".into()));
+        assert!(matches!(err, SpiceError::FormatParse(message) if message.contains("checksum")));
+    }
+}
