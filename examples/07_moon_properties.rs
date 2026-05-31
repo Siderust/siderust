@@ -9,19 +9,20 @@
 //!
 //! Run with:
 //! `cargo run --example 07_moon_phase -- [YYYY-MM-DD] [lat_deg] [lon_deg] [height_m]`
+#![allow(clippy::print_stdout)]
 
 use chrono::{NaiveDate, NaiveDateTime, NaiveTime, TimeZone, Utc};
-use siderust::calculus::ephemeris::Vsop87Ephemeris;
-use siderust::calculus::lunar::phase::{
+use siderust::coordinates::centers::Geodetic;
+use siderust::coordinates::frames::ECEF;
+use siderust::ephemeris::Vsop87Ephemeris;
+use siderust::event::lunar::phase::{
     find_phase_events, illumination_range, moon_phase_geocentric, moon_phase_topocentric,
     PhaseSearchOpts,
 };
-use siderust::coordinates::centers::Geodetic;
-use siderust::coordinates::frames::ECEF;
 use siderust::qtty::{Days, Degree, Degrees, IlluminationFractions, Meter, Quantity};
-use siderust::time::{JulianDate, ModifiedJulianDate, Period};
+use siderust::time::{Interval, JulianDate, ModifiedJulianDate};
 
-fn print_periods(label: &str, periods: &[Period<ModifiedJulianDate>]) {
+fn print_periods(label: &str, periods: &[Interval<ModifiedJulianDate>]) {
     println!("\n{label}: {} period(s)", periods.len());
     for p in periods {
         let dur_h = p.length().to::<siderust::qtty::Hour>();
@@ -68,7 +69,7 @@ fn main() {
     );
     let jd: JulianDate = JulianDate::from_chrono(Utc.from_utc_datetime(&midnight));
     let mjd = jd.to::<siderust::time::MJD>();
-    let window = Period::new(mjd, mjd + Days::new(35.0));
+    let window = Interval::new(mjd, mjd + Days::new(35.0));
     let opts = PhaseSearchOpts::default();
 
     // 1) Point-in-time phase properties.
@@ -86,7 +87,7 @@ fn main() {
     );
     println!(
         "  illuminated percent   : {:.2} %",
-        geo.illuminated_percent()
+        geo.illuminated_fraction.value() * 100.0
     );
     println!(
         "  phase angle           : {}",

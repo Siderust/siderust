@@ -40,8 +40,11 @@
 //! * SOFA routines `iauLdsun`, `iauLd`
 //! * Klioner, S. A. (2003), AJ 125, 1580
 
+use affn::cartesian::Displacement;
+use affn::frames::ReferenceFrame;
+
 use crate::coordinates::cartesian::direction;
-use crate::qtty::{Arcsecond, Arcseconds, AstronomicalUnits, Radians};
+use crate::qtty::{Arcsecond, Arcseconds, AstronomicalUnit, AstronomicalUnits, Radians};
 
 /// Schwarzschild radius of the Sun in AU: 2 G M☉ / c².
 ///
@@ -78,12 +81,12 @@ const SATURN_SCHWARZSCHILD_AU: f64 = SOLAR_SCHWARZSCHILD_AU / 3_497.901_8;
 ///
 /// ## Parameters
 ///
-/// * `star`: Unit direction toward the source in [`EquatorialMeanJ2000`](direction::EquatorialMeanJ2000) (BCRS).
-/// * `earth_sun_au`: Vector from the Sun to the Earth/observer in AU `[x, y, z]` (BCRS).
+/// * `star`: Unit direction toward the source in frame `F` (BCRS/equatorial).
+/// * `earth_sun_au`: Displacement from the Sun to the Earth/observer in AU (same frame `F`).
 ///
 /// ## Returns
 ///
-/// The deflected unit direction in [`EquatorialMeanJ2000`](direction::EquatorialMeanJ2000).
+/// The deflected unit direction in frame `F`.
 ///
 /// ## Notes
 ///
@@ -95,51 +98,15 @@ const SATURN_SCHWARZSCHILD_AU: f64 = SOLAR_SCHWARZSCHILD_AU / 3_497.901_8;
 /// ## References
 /// * SOFA routine `iauLdsun`
 /// * IERS Conventions (2010), eq. 7.4
-pub fn solar_deflection(
-    star: direction::EquatorialMeanJ2000,
-    earth_sun_au: [f64; 3],
-) -> direction::EquatorialMeanJ2000 {
-    // ── Geometry ──
-    let q_mag =
-        (earth_sun_au[0].powi(2) + earth_sun_au[1].powi(2) + earth_sun_au[2].powi(2)).sqrt();
-
-    if q_mag < 1e-10 {
-        return star; // degenerate: observer at the Sun
-    }
-
-    // Unit vector from Sun toward observer
-    let q_hat = [
-        earth_sun_au[0] / q_mag,
-        earth_sun_au[1] / q_mag,
-        earth_sun_au[2] / q_mag,
-    ];
-
-    // Dot products
-    let sx = star.x();
-    let sy = star.y();
-    let sz = star.z();
-    let s_dot_q = sx * q_hat[0] + sy * q_hat[1] + sz * q_hat[2];
-
-    // Avoid degenerate case: source is exactly behind the Sun
-    let denom = 1.0 + s_dot_q;
-    if denom.abs() < 1e-15 {
-        return star; // source directly behind sun, deflection undefined
-    }
-
-    // Deflection factor: 2 G M / (c² |q|)
-    let factor = SOLAR_SCHWARZSCHILD_AU / q_mag;
-
-    // Vector deflection formula (SOFA iauLd):
-    // p1 = p + f * (qhat - sn*p) where f = 2mu/(c^2 * eq) / (1 + sn)
-    // and sn = p · qhat
-    let f = factor / denom;
-
-    let dx = sx + f * (q_hat[0] - s_dot_q * sx);
-    let dy = sy + f * (q_hat[1] - s_dot_q * sy);
-    let dz = sz + f * (q_hat[2] - s_dot_q * sz);
-
-    // Re-normalize to unit direction
-    direction::EquatorialMeanJ2000::normalize(dx, dy, dz)
+pub fn solar_deflection<F: ReferenceFrame>(
+    star: direction::Direction<F>,
+    earth_sun_au: Displacement<F, AstronomicalUnit>,
+) -> direction::Direction<F> {
+    body_deflection(
+        star,
+        earth_sun_au,
+        AstronomicalUnits::new(SOLAR_SCHWARZSCHILD_AU),
+    )
 }
 
 /// Apply the gravitational light deflection of an arbitrary deflecting body.
@@ -154,33 +121,28 @@ pub fn solar_deflection(
 ///
 /// ## Parameters
 ///
-/// * `star`: Unit direction toward the source in
-///   [`EquatorialMeanJ2000`](direction::EquatorialMeanJ2000) (BCRS).
-/// * `body_to_observer_au`: Vector from the deflecting body to the
-///   observer in AU (BCRS). Magnitude `|q|` enters the formula linearly.
+/// * `star`: Unit direction toward the source in frame `F` (BCRS/equatorial).
+/// * `body_to_observer_au`: Displacement from the deflecting body to the
+///   observer in AU (same frame `F`). Magnitude `|q|` enters the formula linearly.
 /// * `schwarzschild_au`: `2 G M / c²` for the deflecting body, in AU.
 ///
 /// ## References
 /// * SOFA routine `iauLd`
 /// * IERS Conventions (2010), eq. 7.4
 /// * Klioner, S. A. (2003), AJ 125, 1580
-pub fn body_deflection(
-    star: direction::EquatorialMeanJ2000,
-    body_to_observer_au: [f64; 3],
-    schwarzschild_au: f64,
-) -> direction::EquatorialMeanJ2000 {
-    let q_mag = (body_to_observer_au[0].powi(2)
-        + body_to_observer_au[1].powi(2)
-        + body_to_observer_au[2].powi(2))
-    .sqrt();
-    if q_mag < 1e-10 || schwarzschild_au <= 0.0 {
+pub fn body_deflection<F: ReferenceFrame>(
+    star: direction::Direction<F>,
+    body_to_observer_au: Displacement<F, AstronomicalUnit>,
+    schwarzschild_au: AstronomicalUnits,
+) -> direction::Direction<F> {
+    let qx = body_to_observer_au.x().value();
+    let qy = body_to_observer_au.y().value();
+    let qz = body_to_observer_au.z().value();
+    let q_mag = (qx * qx + qy * qy + qz * qz).sqrt();
+    if q_mag < 1e-10 || schwarzschild_au.value() <= 0.0 {
         return star;
     }
-    let q_hat = [
-        body_to_observer_au[0] / q_mag,
-        body_to_observer_au[1] / q_mag,
-        body_to_observer_au[2] / q_mag,
-    ];
+    let q_hat = [qx / q_mag, qy / q_mag, qz / q_mag];
     let sx = star.x();
     let sy = star.y();
     let sz = star.z();
@@ -189,12 +151,12 @@ pub fn body_deflection(
     if denom.abs() < 1e-15 {
         return star;
     }
-    let factor = schwarzschild_au / q_mag;
+    let factor = schwarzschild_au.value() / q_mag;
     let f = factor / denom;
     let dx = sx + f * (q_hat[0] - s_dot_q * sx);
     let dy = sy + f * (q_hat[1] - s_dot_q * sy);
     let dz = sz + f * (q_hat[2] - s_dot_q * sz);
-    direction::EquatorialMeanJ2000::normalize(dx, dy, dz)
+    direction::Direction::<F>::normalize(dx, dy, dz)
 }
 
 /// Apply the Jovian gravitational light deflection.
@@ -203,7 +165,7 @@ pub fn body_deflection(
 /// source 5° away from Jupiter at conjunction, the residual deflection is
 /// ~0.4 mas — large enough to matter for sub-mas astrometry.
 ///
-/// `jupiter_to_observer_au` is the BCRS vector from Jupiter to the observer.
+/// `jupiter_to_observer_au` is the BCRS displacement from Jupiter to the observer.
 /// Compute it as `r_observer − r_jupiter` from your ephemeris at the same
 /// epoch as `star`.
 ///
@@ -211,11 +173,15 @@ pub fn body_deflection(
 /// * SOFA routine `iauLdsun` (this is the same algorithm with a different
 ///   Schwarzschild radius).
 #[inline]
-pub fn jupiter_deflection(
-    star: direction::EquatorialMeanJ2000,
-    jupiter_to_observer_au: [f64; 3],
-) -> direction::EquatorialMeanJ2000 {
-    body_deflection(star, jupiter_to_observer_au, JUPITER_SCHWARZSCHILD_AU)
+pub fn jupiter_deflection<F: ReferenceFrame>(
+    star: direction::Direction<F>,
+    jupiter_to_observer_au: Displacement<F, AstronomicalUnit>,
+) -> direction::Direction<F> {
+    body_deflection(
+        star,
+        jupiter_to_observer_au,
+        AstronomicalUnits::new(JUPITER_SCHWARZSCHILD_AU),
+    )
 }
 
 /// Apply the Saturnian gravitational light deflection.
@@ -224,13 +190,17 @@ pub fn jupiter_deflection(
 /// only relevant for sub-mas astrometry of sources within a few degrees of
 /// Saturn.
 ///
-/// `saturn_to_observer_au` is the BCRS vector from Saturn to the observer.
+/// `saturn_to_observer_au` is the BCRS displacement from Saturn to the observer.
 #[inline]
-pub fn saturn_deflection(
-    star: direction::EquatorialMeanJ2000,
-    saturn_to_observer_au: [f64; 3],
-) -> direction::EquatorialMeanJ2000 {
-    body_deflection(star, saturn_to_observer_au, SATURN_SCHWARZSCHILD_AU)
+pub fn saturn_deflection<F: ReferenceFrame>(
+    star: direction::Direction<F>,
+    saturn_to_observer_au: Displacement<F, AstronomicalUnit>,
+) -> direction::Direction<F> {
+    body_deflection(
+        star,
+        saturn_to_observer_au,
+        AstronomicalUnits::new(SATURN_SCHWARZSCHILD_AU),
+    )
 }
 
 /// Apply the Sun, Jupiter, and Saturn gravitational light deflection in
@@ -243,22 +213,22 @@ pub fn saturn_deflection(
 ///
 /// ## Arguments
 ///
-/// * `star`: catalog (geometric) direction toward the source in BCRS.
-/// * `earth_sun_au`: Sun → observer in AU.
-/// * `earth_jupiter_au`: Jupiter → observer in AU.
-/// * `earth_saturn_au`: Saturn → observer in AU.
+/// * `star`: catalog (geometric) direction toward the source in frame `F`.
+/// * `earth_sun_au`: Sun → observer displacement in AU.
+/// * `earth_jupiter_au`: Jupiter → observer displacement in AU.
+/// * `earth_saturn_au`: Saturn → observer displacement in AU.
 ///
 /// ## Notes
 ///
 /// The three deflectors are applied independently (their cross-terms are
 /// negligible). The order of application affects the result only at the
 /// `1e−14` rad level.
-pub fn full_planetary_deflection(
-    star: direction::EquatorialMeanJ2000,
-    earth_sun_au: [f64; 3],
-    earth_jupiter_au: [f64; 3],
-    earth_saturn_au: [f64; 3],
-) -> direction::EquatorialMeanJ2000 {
+pub fn full_planetary_deflection<F: ReferenceFrame>(
+    star: direction::Direction<F>,
+    earth_sun_au: Displacement<F, AstronomicalUnit>,
+    earth_jupiter_au: Displacement<F, AstronomicalUnit>,
+    earth_saturn_au: Displacement<F, AstronomicalUnit>,
+) -> direction::Direction<F> {
     let s = solar_deflection(star, earth_sun_au);
     let s = jupiter_deflection(s, earth_jupiter_au);
     saturn_deflection(s, earth_saturn_au)
@@ -312,16 +282,16 @@ pub fn solar_deflection_magnitude(
 ///
 /// ## Parameters
 ///
-/// * `apparent`: Apparent unit direction in [`EquatorialMeanJ2000`](direction::EquatorialMeanJ2000) (BCRS).
-/// * `earth_sun_au`: Vector from the Sun to the Earth/observer in AU `[x, y, z]` (BCRS).
+/// * `apparent`: Apparent unit direction in frame `F` (BCRS/equatorial).
+/// * `earth_sun_au`: Displacement from the Sun to the Earth/observer in AU (same frame `F`).
 ///
 /// ## Returns
 ///
-/// The un-deflected unit direction in [`EquatorialMeanJ2000`](direction::EquatorialMeanJ2000).
-pub fn solar_deflection_inverse(
-    apparent: direction::EquatorialMeanJ2000,
-    earth_sun_au: [f64; 3],
-) -> direction::EquatorialMeanJ2000 {
+/// The un-deflected unit direction in frame `F`.
+pub fn solar_deflection_inverse<F: ReferenceFrame>(
+    apparent: direction::Direction<F>,
+    earth_sun_au: Displacement<F, AstronomicalUnit>,
+) -> direction::Direction<F> {
     // Single iteration: apply negative deflection
     // For small angles: geometric ≈ apparent − δ(apparent)
     let deflected = solar_deflection(apparent, earth_sun_au);
@@ -331,12 +301,13 @@ pub fn solar_deflection_inverse(
     let gz = 2.0 * apparent.z() - deflected.z();
 
     // Re-normalize
-    direction::EquatorialMeanJ2000::normalize(gx, gy, gz)
+    direction::Direction::<F>::normalize(gx, gy, gz)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::coordinates::frames::EquatorialMeanJ2000 as EMJ2000;
     use crate::qtty::{Radian, Radians};
 
     #[test]
@@ -387,7 +358,11 @@ mod tests {
         // Source at (1, 0, 0), Sun along (0, 0, -1) direction from observer
         // observer at 1 AU from Sun
         let star = direction::EquatorialMeanJ2000::new(1.0, 0.0, 0.0);
-        let earth_sun_au = [0.0, 0.0, -1.0]; // Sun 1 AU in -z direction
+        let earth_sun_au = Displacement::<EMJ2000, AstronomicalUnit>::new(
+            AstronomicalUnits::new(0.0),
+            AstronomicalUnits::new(0.0),
+            AstronomicalUnits::new(-1.0),
+        );
 
         let deflected = solar_deflection(star, earth_sun_au);
 
@@ -408,7 +383,11 @@ mod tests {
     #[test]
     fn scalar_magnitude_matches_vector_case_at_ninety_deg() {
         let star = direction::EquatorialMeanJ2000::new(1.0, 0.0, 0.0);
-        let earth_sun_au = [0.0, 0.0, -1.0];
+        let earth_sun_au = Displacement::<EMJ2000, AstronomicalUnit>::new(
+            AstronomicalUnits::new(0.0),
+            AstronomicalUnits::new(0.0),
+            AstronomicalUnits::new(-1.0),
+        );
 
         let deflected = solar_deflection(star, earth_sun_au);
         let chord = ((deflected.x() - star.x()).powi(2)
@@ -436,7 +415,11 @@ mod tests {
     #[test]
     fn no_deflection_when_at_sun() {
         let star = direction::EquatorialMeanJ2000::new(1.0, 0.0, 0.0);
-        let earth_sun_au = [0.0, 0.0, 0.0]; // degenerate
+        let earth_sun_au = Displacement::<EMJ2000, AstronomicalUnit>::new(
+            AstronomicalUnits::new(0.0),
+            AstronomicalUnits::new(0.0),
+            AstronomicalUnits::new(0.0),
+        );
         let result = solar_deflection(star, earth_sun_au);
         assert_eq!(result.x(), star.x());
         assert_eq!(result.y(), star.y());
@@ -447,7 +430,11 @@ mod tests {
     fn deflection_roundtrip() {
         // Apply deflection, then inverse, should recover original direction
         let star = direction::EquatorialMeanJ2000::new(0.6, 0.7, 0.3742);
-        let earth_sun_au = [0.5, -0.3, 0.8]; // ~1 AU
+        let earth_sun_au = Displacement::<EMJ2000, AstronomicalUnit>::new(
+            AstronomicalUnits::new(0.5),
+            AstronomicalUnits::new(-0.3),
+            AstronomicalUnits::new(0.8),
+        );
 
         let deflected = solar_deflection(star, earth_sun_au);
         let recovered = solar_deflection_inverse(deflected, earth_sun_au);

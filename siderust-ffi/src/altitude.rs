@@ -12,12 +12,11 @@ use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
 #[cfg(test)]
 use siderust::coordinates::spherical;
-use siderust::time::{ModifiedJulianDate, Period};
-use tempoch::Interval;
+use siderust::time::{Interval, ModifiedJulianDate};
 
 pub(crate) fn window_from_c(
     w: TempochPeriodMjd,
-) -> Result<Period<ModifiedJulianDate>, SiderustStatus> {
+) -> Result<Interval<ModifiedJulianDate>, SiderustStatus> {
     if w.start_mjd > w.end_mjd {
         return Err(SiderustStatus::InvalidPeriod);
     }
@@ -28,7 +27,7 @@ pub(crate) fn window_from_c(
 }
 
 pub(crate) fn periods_to_c(
-    periods: Vec<Period<ModifiedJulianDate>>,
+    periods: Vec<Interval<ModifiedJulianDate>>,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
@@ -75,6 +74,7 @@ pub(crate) fn icrs_from_c(
 ///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_periods_free(ptr: *mut TempochPeriodMjd, count: usize) {
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { free_boxed_slice(ptr, count) };
 }
 
@@ -89,6 +89,7 @@ pub unsafe extern "C" fn siderust_periods_free(ptr: *mut TempochPeriodMjd, count
 ///   this call.
 #[no_mangle]
 pub unsafe extern "C" fn siderust_crossings_free(ptr: *mut SiderustCrossingEvent, count: usize) {
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { free_boxed_slice(ptr, count) };
 }
 
@@ -106,6 +107,7 @@ pub unsafe extern "C" fn siderust_culminations_free(
     ptr: *mut SiderustCulminationEvent,
     count: usize,
 ) {
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { free_boxed_slice(ptr, count) };
 }
 

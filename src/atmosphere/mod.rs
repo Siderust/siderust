@@ -26,15 +26,15 @@
 //! no `f64` leaks to the public API.
 //!
 //! Submodules:
-//! - [`airmass`] — geometric path-length multipliers
-//!   ([`PlaneParallel`](airmass::PlaneParallel),
-//!   [`Young1994`](airmass::Young1994),
-//!   [`Rozenberg1966`](airmass::Rozenberg1966),
-//!   [`KrisciunasSchaefer1991`](airmass::KrisciunasSchaefer1991)).
+//! - [`mod@airmass`] — geometric path-length multipliers
+//!   ([`airmass::PlaneParallel`],
+//!   [`airmass::Young1994`],
+//!   [`airmass::Rozenberg1966`],
+//!   [`airmass::KrisciunasSchaefer1991`]).
 //! - [`rayleigh`] — Rayleigh optical depth (Bodhaine et al. 1999) and
 //!   the Rayleigh phase function.
 //! - [`mie`] — Mie / aerosol optical depth via the Patat 2011 power-law,
-//!   with site presets including [`MieParams::PARANAL`](mie::MieParams).
+//!   with site presets including [`mie::MieParams::PARANAL`].
 //! - [`airglow`] — Van Rhijn airglow emission-layer geometry.
 //! - [`scattering`] — phase-function traits and Rayleigh / tabulated
 //!   helpers; defines the dimensionless [`ScatteringFactor`] unit.
@@ -57,7 +57,7 @@ pub mod airglow;
 pub mod airmass;
 pub mod extinction;
 pub mod mie;
-#[cfg(feature = "spectra")]
+#[cfg(feature = "photometry")]
 pub mod ozone;
 pub mod profile;
 pub mod rayleigh;
@@ -71,10 +71,9 @@ pub use airmass::{
 };
 pub use extinction::transmission;
 pub use mie::{mie_optical_depth, MieParams};
-#[cfg(feature = "spectra")]
+#[cfg(feature = "photometry")]
 pub use ozone::transmission_table;
 pub use profile::AtmosphereProfile;
 pub use rayleigh::{rayleigh_optical_depth_bodhaine99, rayleigh_phase, DEFAULT_SCALE_HEIGHT};
-#[cfg(feature = "tables")]
 pub use scattering::TabulatedPhaseFunction;
 pub use scattering::{PhaseFunction, RayleighPhaseFunction, ScatteringFactor};

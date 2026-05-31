@@ -112,14 +112,65 @@ use super::frames::ECEF;
 /// - `Geodetic<ITRF>`, GRS80 ellipsoid
 pub type Geodetic<F, U = crate::qtty::Meter> = affn::ellipsoidal::Position<Geocentric, F, U>;
 
+/// Reference center at the center of mass of the Sun.
 // Required for Transform specialization
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Heliocentric;
 
+/// Reference center at the center of mass of the Solar System barycentre.
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Barycentric;
+
+// =============================================================================
+// Sun-Earth Lagrange centers
+// =============================================================================
+
+/// Sun-Earth Lagrange point L1.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L1 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL1;
+
+/// Sun-Earth Lagrange point L2.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L2 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL2;
+
+/// Sun-Earth Lagrange point L3.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L3 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL3;
+
+/// Sun-Earth Lagrange point L4.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L4 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL4;
+
+/// Sun-Earth Lagrange point L5.
+///
+/// This dynamic center represents the instantaneous Sun-Earth L5 equilibrium
+/// point from the `ephemeris::lagrange` Chebyshev archive or solver.
+#[cfg(feature = "lagrange-centers")]
+#[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
+#[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
+pub struct SunEarthL5;
 
 // =============================================================================
 // Topocentric Center (parameterized)
@@ -179,6 +230,7 @@ impl Topocentric {
     }
 }
 
+/// Reference center at the center of mass of the Earth.
 #[derive(Debug, Copy, Clone, DeriveReferenceCenter)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct Geocentric;
@@ -286,9 +338,11 @@ pub enum OrbitReferenceCenter {
 
 /// Parameters for a body-centered coordinate system.
 ///
-/// This struct specifies the orbital elements of a celestial body and which
-/// reference center the orbit is defined relative to. This allows computing
-/// the body's position at any Julian date using Keplerian propagation.
+/// This struct specifies the orbital elements of a celestial body, which
+/// reference center the orbit is defined relative to, and the gravitational
+/// parameter of the central body. The gravitational parameter is used to
+/// compute the mean motion from the semi-major axis during Keplerian
+/// propagation.
 ///
 /// **Intentionally elliptic:** `BodycentricParams` uses [`KeplerianOrbit`],
 /// which is restricted to elliptic motion (`0 ≤ e < 1`). This is appropriate
@@ -300,6 +354,7 @@ pub enum OrbitReferenceCenter {
 ///
 /// - `orbit`: The Keplerian orbital elements of the body.
 /// - `orbit_center`: Which center the orbit is defined relative to.
+/// - `mu`: Gravitational parameter of the central body (km³/s²).
 ///
 /// # Example
 ///
@@ -329,6 +384,12 @@ pub struct BodycentricParams {
     pub orbit: KeplerianOrbit,
     /// Which standard center the orbit is defined relative to.
     pub orbit_center: OrbitReferenceCenter,
+    /// Gravitational parameter of the central body (km³/s²).
+    ///
+    /// Used to derive mean motion from the semi-major axis. Supply
+    /// [`GM_SUN`] for heliocentric orbits, [`GM_EARTH`] for geocentric,
+    /// or any other body's μ from the `qtty` dynamics constants.
+    pub mu: GravitationalParameter,
 }
 
 impl BodycentricParams {
@@ -338,30 +399,54 @@ impl BodycentricParams {
     ///
     /// - `orbit`: The Keplerian orbital elements of the body.
     /// - `orbit_center`: Which center the orbit is defined relative to.
-    pub const fn new(orbit: KeplerianOrbit, orbit_center: OrbitReferenceCenter) -> Self {
+    /// - `mu`: Gravitational parameter of the central body (km³/s²).
+    pub const fn new(
+        orbit: KeplerianOrbit,
+        orbit_center: OrbitReferenceCenter,
+        mu: GravitationalParameter,
+    ) -> Self {
         Self {
             orbit,
             orbit_center,
+            mu,
         }
     }
 
     /// Creates parameters for a body orbiting the Sun (heliocentric orbit).
     ///
     /// This is the most common case for planets, asteroids, and comets.
+    /// Uses [`GM_SUN`] as the central body's gravitational parameter.
     pub const fn heliocentric(orbit: KeplerianOrbit) -> Self {
-        Self::new(orbit, OrbitReferenceCenter::Heliocentric)
+        Self::new(orbit, OrbitReferenceCenter::Heliocentric, GM_SUN)
     }
 
     /// Creates parameters for a body orbiting Earth (geocentric orbit).
     ///
     /// Use this for artificial satellites, the Moon, etc.
+    /// Uses [`GM_EARTH`] as the central body's gravitational parameter.
     pub const fn geocentric(orbit: KeplerianOrbit) -> Self {
-        Self::new(orbit, OrbitReferenceCenter::Geocentric)
+        Self::new(orbit, OrbitReferenceCenter::Geocentric, GM_EARTH)
     }
 
     /// Creates parameters for a body orbiting the solar system barycenter.
+    ///
+    /// Uses [`GM_SUN`] as an approximation for the barycentric gravitational
+    /// parameter (appropriate when the barycenter is near the Sun's center).
     pub const fn barycentric(orbit: KeplerianOrbit) -> Self {
-        Self::new(orbit, OrbitReferenceCenter::Barycentric)
+        Self::new(orbit, OrbitReferenceCenter::Barycentric, GM_SUN)
+    }
+
+    /// Creates parameters for a body orbiting any central body.
+    ///
+    /// Use this for moons orbiting planets other than Earth. Supply the
+    /// planet's gravitational parameter from the `qtty` dynamics constants
+    /// (e.g., [`GM_JUPITER`] for Galilean moons, [`GM_SATURN`] for Titan).
+    pub const fn for_body(
+        orbit: KeplerianOrbit,
+        orbit_center: OrbitReferenceCenter,
+        mu: GravitationalParameter,
+    ) -> Self {
+        Self::new(orbit, orbit_center, mu)
     }
 }
 
@@ -384,6 +469,7 @@ impl Default for BodycentricParams {
                 crate::J2000,
             ),
             orbit_center: OrbitReferenceCenter::Heliocentric,
+            mu: GM_SUN,
         }
     }
 }

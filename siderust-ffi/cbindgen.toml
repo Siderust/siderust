@@ -54,6 +54,12 @@ header = """
 "SiderustCartesianVel" = "siderust_cartesian_vel_t"
 "SiderustRuntimeEphemeris" = "siderust_runtime_ephemeris_t"
 "SiderustTwilightPhase" = "siderust_twilight_phase_t"
+"SiderustDynamicsStatus" = "siderust_dynamics_status_t"
+"SiderustDynamicsContext" = "siderust_dynamics_context_t"
+"SiderustOrbitState" = "siderust_orbit_state_t"
+"SiderustPropagator" = "siderust_propagator_t"
+"SiderustAtmosphereVtable" = "siderust_atmosphere_vtable_t"
+"SiderustGravityVtable" = "siderust_gravity_vtable_t"
 
 [enum]
 rename_variants = "ScreamingSnakeCase"

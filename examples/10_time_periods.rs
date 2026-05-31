@@ -2,6 +2,7 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Time wrappers and interval helpers.
+#![allow(clippy::print_stdout)]
 
 use chrono::{Duration, Utc};
 use siderust::qtty::{Day, Days, Hour};

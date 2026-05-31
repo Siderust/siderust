@@ -108,6 +108,20 @@ pub(crate) fn __assert_spherical_eq<C, F, U>(
     }
 }
 
+/// Assert that two [`cartesian::Position`](crate::coordinates::cartesian::Position) values agree
+/// component-wise within `epsilon` (same type and units). Panics with a
+/// coordinate-aware message on failure.
+///
+/// # Examples
+/// ```rust,ignore
+/// use siderust::coordinates::cartesian;
+/// use siderust::qtty::{AstronomicalUnit, AU};
+/// use siderust::assert_cartesian_eq;
+///
+/// let a = cartesian::position::ICRS::<AstronomicalUnit>::new(1.0 * AU, 0.0 * AU, 0.0 * AU);
+/// let b = cartesian::position::ICRS::<AstronomicalUnit>::new(1.0 * AU, 0.0 * AU, 0.0 * AU);
+/// assert_cartesian_eq!(a, b, 1e-12);
+/// ```
 #[macro_export]
 macro_rules! assert_cartesian_eq {
     ($a:expr, $b:expr, $eps:expr $(,)?) => {{
@@ -127,6 +141,24 @@ macro_rules! assert_cartesian_eq {
     }};
 }
 
+/// Assert that two [`spherical::Position`](crate::coordinates::spherical::Position) values agree
+/// within `epsilon` (distance in the typed length unit, angles in degrees).
+/// Panics with a coordinate-aware message on failure.
+///
+/// # Examples
+/// ```rust,ignore
+/// use siderust::coordinates::spherical;
+/// use siderust::qtty::{AstronomicalUnit, Degrees};
+/// use siderust::assert_spherical_eq;
+///
+/// let a = spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(
+///     Degrees::new(0.0), Degrees::new(0.0), 1.0,
+/// );
+/// let b = spherical::position::EquatorialMeanJ2000::<AstronomicalUnit>::new(
+///     Degrees::new(0.0), Degrees::new(0.0), 1.0,
+/// );
+/// assert_spherical_eq!(a, b, 1e-12);
+/// ```
 #[macro_export]
 macro_rules! assert_spherical_eq {
     ($a:expr, $b:expr, $eps:expr $(,)?) => {{

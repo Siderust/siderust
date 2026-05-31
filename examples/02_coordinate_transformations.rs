@@ -4,6 +4,7 @@
 //! Coordinate Transformations Example (prefixed)
 //!
 //! Run with: `cargo run --example 02_coordinate_transformations`
+#![allow(clippy::print_stdout)]
 
 use siderust::bodies::solar_system::{Earth, Mars};
 use siderust::coordinates::cartesian::position::{

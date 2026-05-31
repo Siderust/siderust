@@ -13,10 +13,10 @@
 //! - L6: Label mapping from known elongation values
 //! - L7: Backend parity (DE441 feature-gated)
 
-use siderust::calculus::ephemeris::Vsop87Ephemeris;
-use siderust::calculus::lunar::phase::*;
+use siderust::ephemeris::Vsop87Ephemeris;
+use siderust::event::lunar::phase::*;
 use siderust::qtty::*;
-use siderust::time::{JulianDate, Period};
+use siderust::time::{Interval, JulianDate};
 
 // ---------------------------------------------------------------------------
 // Helpers, known lunar events from the USNO / Meeus
@@ -123,7 +123,7 @@ fn l4_find_phase_events_golden_regression() {
     // Known New Moon:  2000-01-06 18:14 UTC → MJD ≈ 51549.7597
     let start = jd_from_utc(2000, 1, 1, 0, 0).to::<tempoch::MJD>();
     let end = jd_from_utc(2000, 2, 1, 0, 0).to::<tempoch::MJD>();
-    let window = Period::new(start, end);
+    let window = Interval::new(start, end);
 
     let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
 
@@ -283,7 +283,7 @@ fn l6_waxing_waning_flags() {
 fn l4b_all_four_phase_kinds_found() {
     let start = siderust::J2000.to::<tempoch::MJD>();
     let end = start + Days::new(35.0);
-    let window = Period::new(start, end);
+    let window = Interval::new(start, end);
     let events = find_phase_events::<Vsop87Ephemeris>(window, PhaseSearchOpts::default());
 
     let has = |k: PhaseKind| events.iter().any(|e| e.kind == k);

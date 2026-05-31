@@ -11,8 +11,8 @@ use qtty::angular::Radians;
 use qtty::time::Days;
 use qtty::unit::Degree;
 use qtty::*;
-use siderust::calculus::ephemeris::Vsop87Ephemeris;
-use siderust::calculus::lunar::phase::{
+use siderust::ephemeris::Vsop87Ephemeris;
+use siderust::event::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseLabel, PhaseKind, PhaseSearchOpts,
 };
@@ -23,7 +23,7 @@ use siderust::qtty::IlluminationFractions;
 // ═══════════════════════════════════════════════════════════════════════════
 
 fn phase_geometry_from_rust(
-    g: siderust::calculus::lunar::phase::MoonPhaseGeometry,
+    g: siderust::event::lunar::phase::MoonPhaseGeometry,
 ) -> SiderustMoonPhaseGeometry {
     SiderustMoonPhaseGeometry {
         phase_angle_rad: g.phase_angle.value(),
@@ -88,6 +88,7 @@ pub extern "C" fn siderust_moon_phase_geocentric(
             return SiderustStatus::NullPointer;
         }
         let geom = moon_phase_geocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)));
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok
 
@@ -106,6 +107,7 @@ pub extern "C" fn siderust_moon_phase_topocentric(
             return SiderustStatus::NullPointer;
         }
         let geom = moon_phase_topocentric::<Vsop87Ephemeris>(ffi_try!(crate::ffi_utils::jd_from_f64(jd)), observer.to_rust());
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = phase_geometry_from_rust(geom) };
         SiderustStatus::Ok
 
@@ -134,6 +136,7 @@ pub extern "C" fn siderust_moon_phase_label(
             MoonPhaseLabel::LastQuarter => SiderustMoonPhaseLabel::LastQuarter,
             MoonPhaseLabel::WaningCrescent => SiderustMoonPhaseLabel::WaningCrescent,
         };
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = ffi_label };
         SiderustStatus::Ok
 

@@ -7,6 +7,7 @@
 //! Conic, and Prepared.
 //!
 //! Run with: `cargo run --example 15_orbit_models`
+#![allow(clippy::print_stdout)]
 
 use siderust::qtty::angular_rate::AngularRate;
 use siderust::qtty::unit::{Day, Degree};

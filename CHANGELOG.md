@@ -4,6 +4,70 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [unreleased]
+
+### Changed
+
+- Siderust is now a clean orchestration crate: canonical scientific datasets
+  live in the [`siderust-archive`](https://crates.io/crates/siderust-archive)
+  dependency; time-scale conversion, leap seconds, ΔT, and EOP ownership belong
+  to [`tempoch`](https://crates.io/crates/tempoch).
+- Removed `siderust::datasets`, `siderust::archive`, and the former
+  `src/data/` tree. Dataset catalog and optional runtime acquisition are
+  provided by `siderust-archive` (`siderust_archive::datasets`,
+  `siderust_archive::runtime`).
+- Dropped legacy Cargo features `archive-data`, `embedded-data`,
+  `generated-tables`, and `external-data`. The `runtime-data` feature now
+  enables `siderust-archive/fetch` for on-demand kernel download.
+- The `lagrange-centers` feature is consumer-only: it enables archive-backed
+  Sun–Earth Lagrange SCK kernels via `siderust-archive/lagrange`. Generation
+  lives in `siderust-archive/tools/generate-lagrange-cheby`; Siderust no longer
+  ships a local generator binary or build-time data mutation.
+- Earth-rotation helpers delegate UTC/EOP indexing to `tempoch`'s active
+  bundle. `try_jd_utc_from_tt` and `try_gmst_with_eop` fail when no runtime EOP
+  is loaded; `gmst_default` uses the ΔT model only. `jd_utc_from_tt` remains as
+  a ΔT-based compatibility wrapper.
+- VSOP87/ELP coefficient tables are consumed from `siderust-archive` static
+  snapshots; Siderust does not regenerate them at build time.
+- Generic grid/spectrum/math ownership delegated to `optica`; orbital
+  mechanics integration/STM/covariance delegated to `principia`.
+- Reorganized internal namespaces: former `calculus::*` responsibilities moved
+  into `event::*`, `ephemeris::*`, and `astro::*`; `spectra` renamed to
+  `photometry`.
+- Force-model and propagation APIs use typed `qtty` quantities
+  (`GravitationalParameter`, `Second`, …) instead of raw scalars.
+- Default features are now `serde` only; POD lives behind the explicit `pod`
+  feature family (`pod-parquet`, `pod-doris`).
+
+### Added
+
+- Dependency on `siderust-archive` for embedded ephemeris tables, nutation,
+  gravity, atmosphere, Pluto, and optional runtime fetch.
+- `spice` feature with `siderust::spice` / `formats::spice` for SPICE kernels
+  and `SpiceContext`.
+- `pod` feature folding the former `siderust-pod` crate into `siderust::pod`
+  (force models, propagation, estimation, QC, products, I/O).
+- Spacecraft dynamics under `astro::dynamics`, SGP4/TLE/OMM support, and
+  mission/format modules (CCSDS, IGS, ILRS, RINEX, VLBI).
+- Lagrange-center support via archive-backed Chebyshev kernels.
+- FFI dynamics bindings and tests.
+
+### Removed
+
+- Local canonical dataset regeneration (`regen-data`, `build.rs` archive
+  generation, `scripts/generate-lagrange-cheby.rs`, and related build deps).
+- `siderust::numeric`, `siderust::calculus`, `siderust::tables`, and the
+  standalone `siderust-pod` crate.
+- Build-time embedding of IERS EOP; EOP is runtime-loaded through `tempoch`.
+- Deprecated `siderust::time::JULIAN_YEAR_DAYS` (use
+  `qtty::time::JULIAN_YEAR.to::<qtty::unit::Day>()`).
+
+### Fixed
+
+- Earth-rotation/EOP paths no longer equate UT1 with UTC when no runtime EOP
+  bundle is active.
+- RINEX NAV parsing is strict by default; ILRS/CPF doctest paths corrected.
+
 ## [0.8.0] - 2026-05-18
 
 ### Added

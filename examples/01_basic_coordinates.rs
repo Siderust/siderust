@@ -4,6 +4,7 @@
 //! Basic Coordinates Example (prefixed)
 //!
 //! Run with: `cargo run --example 01_basic_coordinates`
+#![allow(clippy::print_stdout)]
 
 use siderust::coordinates::cartesian;
 use siderust::coordinates::centers::{self, ReferenceCenter};

@@ -21,7 +21,7 @@
 //!   - `Eph` selects the ephemeris backend (default: [`DefaultEphemeris`],
 //!     VSOP87/ELP2000; DE440/DE441 selectable via Cargo features).
 //!   - `Eop` selects the EOP source (default: [`DefaultEop`] = [`IersEop`],
-//!     backed by the build-time `finals2000A.all` table; substitute
+//!     backed by `tempoch`'s runtime-loaded IERS `finals2000A.all` bundle; substitute
 //!     [`NullEop`](crate::astro::eop::NullEop) for zero overhead).
 //! - [`AstroContext::with_model::<Nut>()`] — attaches a compile-time nutation
 //!   model marker, returning a zero-cost [`ModelContext`]. The nutation model
@@ -64,42 +64,16 @@ use crate::astro::eop::{EopError, EopProvider, EopValues, IersEop};
 use crate::astro::nutation::NutationModel;
 use crate::time::JulianDate;
 
-#[cfg(not(any(feature = "de440", feature = "de441")))]
-use crate::calculus::ephemeris::Vsop87Ephemeris;
+use crate::ephemeris::Vsop87Ephemeris;
 
-/// Default ephemeris type.
+/// Default ephemeris type: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
 ///
-/// - Without a DE feature: [`Vsop87Ephemeris`] (VSOP87 + ELP2000-82B).
-/// - With `de441` feature (and real data): `De441Ephemeris` (JPL DE441, compile-time).
-/// - With `de440` feature (and real data): `De440Ephemeris` (JPL DE440, compile-time).
-/// - With a DE feature but matching `SIDERUST_JPL_STUB` set: falls back to
-///   [`Vsop87Ephemeris`] so tests run without downloading the BSP.
-/// - For other large datasets: use
-///   `DataManager` (from the `runtime-data` feature) with a BSP file loaded at runtime.
-///
-/// This type alias is used as the default `Eph` parameter in [`AstroContext`],
-/// so all code using `AstroContext::default()` will automatically use the
-/// selected backend.
-#[cfg(not(any(feature = "de440", feature = "de441")))]
+/// For larger JPL datasets, use [`RuntimeEphemeris`](crate::ephemeris::RuntimeEphemeris)
+/// with a BSP file loaded at runtime.
 pub type DefaultEphemeris = Vsop87Ephemeris;
 
-#[cfg(all(feature = "de441", not(siderust_mock_de441)))]
-pub type DefaultEphemeris = crate::calculus::ephemeris::De441Ephemeris;
-
-#[cfg(all(feature = "de440", not(feature = "de441"), not(siderust_mock_de440)))]
-pub type DefaultEphemeris = crate::calculus::ephemeris::De440Ephemeris;
-
-// Stub: DE feature is on but SIDERUST_JPL_STUB is set, fall back to VSOP87 so
-// tests work without the BSP download. DE441 takes precedence when both DE
-// features are enabled.
-#[cfg(any(
-    all(feature = "de441", siderust_mock_de441),
-    all(feature = "de440", not(feature = "de441"), siderust_mock_de440)
-))]
-pub type DefaultEphemeris = crate::calculus::ephemeris::Vsop87Ephemeris;
-
-/// Default Earth orientation model: [`IersEop`], backed by the
-/// build-time embedded `finals2000A.all` table.
+/// Default Earth orientation model: [`IersEop`], backed by `tempoch`'s active
+/// runtime IERS `finals2000A.all` bundle when loaded.
 ///
 /// For zero-overhead use (no EOP corrections), substitute
 /// [`NullEop`](crate::astro::eop::NullEop) as the `Eop` type parameter.
@@ -202,15 +176,19 @@ impl<Eph, Eop: EopProvider> AstroContext<Eph, Eop> {
     /// EOP provider contract while keeping transform call sites ergonomic.
     #[inline]
     pub fn try_eop_at_tt(&self, jd_tt: JulianDate) -> Result<EopValues, EopError> {
-        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
+        let jd_utc = crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt)?;
         self.try_eop_at(jd_utc)
     }
 
     /// Look up EOP values for a **TT** observation epoch.
     #[inline]
     pub fn eop_at_tt(&self, jd_tt: JulianDate) -> EopValues {
-        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
-        self.eop_at(jd_utc)
+        match crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt) {
+            Ok(jd_utc) => self.eop_at(jd_utc),
+            Err(_) => self
+                .eop
+                .eop_at(crate::astro::earth_rotation::jd_utc_from_tt_delta_t(jd_tt)),
+        }
     }
 
     /// Look up EOP values for the given **UTC** Julian Date.
@@ -305,7 +283,7 @@ impl<'a, Eph, Eop: EopProvider, Nut: NutationModel> TransformContext
 // DynAstroContext, runtime-selected ephemeris via DynEphemeris trait object
 // ═══════════════════════════════════════════════════════════════════════════
 
-use crate::calculus::ephemeris::DynEphemeris;
+use crate::ephemeris::DynEphemeris;
 
 /// Astronomical context with a runtime-selected ephemeris backend.
 ///
@@ -314,14 +292,14 @@ use crate::calculus::ephemeris::DynEphemeris;
 /// `Box<dyn DynEphemeris>` and dispatches via virtual calls.
 ///
 /// Use this when:
-/// - You load BSP files at runtime via [`RuntimeEphemeris`](crate::calculus::ephemeris::RuntimeEphemeris)
+/// - You load BSP files at runtime via [`RuntimeEphemeris`](crate::ephemeris::RuntimeEphemeris)
 /// - You need to switch between backends without recompiling
 /// - You want to override the default ephemeris at runtime
 ///
 /// # Example
 ///
 /// ```rust,ignore
-/// use siderust::calculus::ephemeris::{RuntimeEphemeris, DynEphemeris};
+/// use siderust::ephemeris::{RuntimeEphemeris, DynEphemeris};
 /// use siderust::coordinates::transform::context::DynAstroContext;
 ///
 /// let eph = RuntimeEphemeris::from_bsp("path/to/de441.bsp")?;
@@ -374,15 +352,19 @@ impl<Eop: EopProvider> DynAstroContext<Eop> {
     /// Fallibly look up EOP values for a **TT** observation epoch.
     #[inline]
     pub fn try_eop_at_tt(&self, jd_tt: JulianDate) -> Result<EopValues, EopError> {
-        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
+        let jd_utc = crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt)?;
         self.try_eop_at(jd_utc)
     }
 
     /// Look up EOP values for a **TT** observation epoch.
     #[inline]
     pub fn eop_at_tt(&self, jd_tt: JulianDate) -> EopValues {
-        let jd_utc = crate::astro::earth_rotation::jd_utc_from_tt(jd_tt);
-        self.eop_at(jd_utc)
+        match crate::astro::earth_rotation::try_jd_utc_from_tt(jd_tt) {
+            Ok(jd_utc) => self.eop_at(jd_utc),
+            Err(_) => self
+                .eop
+                .eop_at(crate::astro::earth_rotation::jd_utc_from_tt_delta_t(jd_tt)),
+        }
     }
 
     /// Reference to the underlying EOP provider.
@@ -450,7 +432,7 @@ mod tests {
 
     #[test]
     fn test_dyn_context_creation() {
-        use crate::calculus::ephemeris::Vsop87Ephemeris;
+        use crate::ephemeris::Vsop87Ephemeris;
 
         // Vsop87Ephemeris implements DynEphemeris via blanket impl
         let dyn_ctx = DynAstroContext::with_ephemeris(Box::new(Vsop87Ephemeris));
@@ -465,7 +447,7 @@ mod tests {
 
     #[test]
     fn test_dyn_context_with_eop() {
-        use crate::calculus::ephemeris::Vsop87Ephemeris;
+        use crate::ephemeris::Vsop87Ephemeris;
 
         let dyn_ctx = DynAstroContext::with_ephemeris_and_eop(
             Box::new(Vsop87Ephemeris),

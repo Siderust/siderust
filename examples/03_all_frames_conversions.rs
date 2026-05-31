@@ -5,6 +5,7 @@
 //!
 //! This demonstrates every direct frame-rotation pair implemented in
 //! `providers.rs`, plus identity rotations for each frame.
+#![allow(clippy::print_stdout)]
 
 use siderust::coordinates::cartesian::Position;
 use siderust::coordinates::centers::Barycentric;

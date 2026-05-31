@@ -17,7 +17,7 @@ fn runtime_ephemeris_real_bsp_smoke() {
         eprintln!("Skipping RuntimeEphemeris smoke test: set SIDERUST_BSP_PATH to a BSP file.");
         return;
     };
-    use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
+    use siderust::ephemeris::{DynEphemeris, RuntimeEphemeris};
 
     let eph = RuntimeEphemeris::from_bsp(&path)
         .unwrap_or_else(|e| panic!("Failed to load BSP file '{path}': {e}"));

@@ -22,23 +22,18 @@
 //!
 //! ## Technical scope
 //!
-//! All time handling is delegated to the `tempoch` crate. This module
-//! re-exports its full public surface (`Scale`, `EncodedTime`, `Time`,
-//! the `TT`/`TDB`/`TCB`/`TCG`/`TAI`/`UTC`/`UT1` scale markers,
-//! `Interval`, `delta_t_seconds`, …) and defines the v1 astronomy-facing
-//! defaults as TT-based encoded dates plus the named same-scale helpers
-//! (`to_jd`, `to_mjd`, `to_j2000_seconds`, `shifted_by`, `duration_since`)
-//! provided by tempoch core:
+//! This module is a **thin delegation facade** over `tempoch`. It re-exports
+//! `tempoch`'s full public surface (scales, `Time`, `TimeContext`, format tags,
+//! `Interval`, ΔT/EOP accessors) and defines two siderust-specific shortcuts:
 //!
-//! - [`JulianDate`] = `tempoch::JulianDate<TT>` = `EncodedTime<TT, JD>`.
-//! - [`ModifiedJulianDate`] = `tempoch::ModifiedJulianDate<TT>` =
-//!   `EncodedTime<TT, MJD>`.
+//! - [`JulianDate`] = `tempoch::JulianDate<TT>` (TT-default Julian Date)
+//! - [`ModifiedJulianDate`] = `tempoch::ModifiedJulianDate<TT>`
+//! - [`J2000`] — the J2000.0 TT epoch constant
 //!
-//! Advanced scale-aware work still uses `tempoch::JulianDate<S>` and
-//! `tempoch::ModifiedJulianDate<S>` directly. The J2000.0 TT epoch is the
-//! [`J2000`] constant (JD 2 451 545.0 TT). [`UT`] is a backward-compatible
-//! alias for [`UT1`]; [`Period<T>`] is a backward-compatible alias for
-//! [`Interval<T>`].
+//! All time-scale ownership (ΔT tables, EOP, UTC/TAI leap seconds, time-data
+//! freshness) belongs to `tempoch`.  Callers that need advanced scale-aware
+//! work can use `tempoch` types directly; those types are identical to what
+//! `siderust::time::*` re-exports.
 //!
 //! ## References
 //!
@@ -60,14 +55,12 @@ pub use tempoch::{
     JD, MJD, TAI, TCB, TCG, TDB, TT, UT1, UTC,
 };
 
-/// Julian year length in days (`365.25`), matching tempoch's compiled Julian-year definition.
-pub const JULIAN_YEAR_DAYS: qtty::Day = qtty::Day::new(365.25);
-
-/// Backward-compatible alias: old siderust code used `UT` for the UT1 axis.
-pub type UT = UT1;
-
-/// Backward-compatible generic period alias over an instant type `T`.
-pub type Period<T> = Interval<T>;
+/// Julian year length in days, derived from [`qtty::time::JULIAN_YEAR`].
+#[deprecated(
+    since = "0.8.0",
+    note = "use qtty::time::JULIAN_YEAR.to::<qtty::unit::Day>() instead"
+)]
+pub const JULIAN_YEAR_DAYS: qtty::Day = qtty::time::JULIAN_YEAR.to_const::<qtty::unit::Day>();
 
 /// TT-scale Julian Date.  Equivalent to `tempoch::JulianDate<TT>`.
 pub type JulianDate = tempoch::JulianDate<TT>;
@@ -123,4 +116,45 @@ pub fn modified_julian_date_from_chrono(dt: chrono::DateTime<chrono::Utc>) -> Mo
     ModifiedJulianDate::from(dt)
 }
 
-pub use crate::calculus::math_core::intervals::intersect as intersect_periods;
+pub use crate::event::search::intervals::intersect as intersect_periods;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use chrono::Utc;
+    use qtty::Day;
+
+    #[test]
+    fn j2000_constant_matches_runtime_helper() {
+        assert_eq!(j2000_tt(), J2000);
+    }
+
+    #[test]
+    fn try_jd_rejects_non_finite_scalar() {
+        assert_eq!(
+            try_jd_f64(f64::NAN).unwrap_err(),
+            ConversionError::NonFinite
+        );
+    }
+
+    #[test]
+    fn try_mjd_accepts_finite_scalar() {
+        try_mjd_f64(58_000.0).unwrap();
+    }
+
+    #[test]
+    fn try_jd_accepts_typed_day() {
+        try_jd(Day::new(2_451_545.0)).unwrap();
+    }
+
+    #[test]
+    fn julian_year_days_matches_typed_conversion() {
+        let _days: qtty::Day = qtty::time::JULIAN_YEAR.to::<qtty::unit::Day>();
+    }
+
+    #[test]
+    fn modified_julian_date_from_chrono_produces_finite_mjd() {
+        let mjd = modified_julian_date_from_chrono(Utc::now());
+        assert!(mjd.raw().value().is_finite());
+    }
+}

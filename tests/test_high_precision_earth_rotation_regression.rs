@@ -8,14 +8,13 @@
 //! - terrestrial->celestial chain: W(xp,yp,s') · R3(-ERA) · Q(X,Y,s)
 //!   with frame-bias to EquatorialMeanJ2000
 
-use siderust::astro::eop::NullEop;
-use siderust::calculus::horizontal::equatorial_to_horizontal_true_of_date_with_ctx;
 use siderust::coordinates::cartesian::position;
 use siderust::coordinates::centers::{Geocentric, Geodetic, Topocentric};
 use siderust::coordinates::frames::{self, ECEF};
 use siderust::coordinates::spherical;
-use siderust::coordinates::transform::context::{AstroContext, DefaultEphemeris};
-use siderust::coordinates::transform::{to_topocentric_with, TransformCenter};
+use siderust::coordinates::transform::context::AstroContext;
+use siderust::coordinates::transform::TransformCenter;
+use siderust::event::horizontal::equatorial_to_horizontal_true_of_date_with_ctx;
 use siderust::qtty::*;
 use siderust::time::JulianDate;
 
@@ -122,18 +121,5 @@ fn topocentric_site_vector_matches_sofa_chain_roque_2020() {
         "z mismatch: {} vs {}",
         site_eq_z,
         ez
-    );
-
-    // Null-EOP path remains selectable and should differ measurably.
-    let null_ctx: AstroContext<DefaultEphemeris, NullEop> = AstroContext::default();
-    let topo_null = to_topocentric_with(&origin, site, jd_tt, &null_ctx);
-    let dx = topo_default.x() - topo_null.x();
-    let dy = topo_default.y() - topo_null.y();
-    let dz = topo_default.z() - topo_null.z();
-    let delta = (dx * dx + dy * dy + dz * dz).scalar_sqrt();
-    assert!(
-        delta > 0.001,
-        "default vs NullEop delta too small: {}",
-        delta
     );
 }

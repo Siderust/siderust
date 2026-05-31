@@ -39,7 +39,7 @@
 //! - Sky brightness and lunar photometry (phase geometry, albedo, spectral radiance)
 //! - Time handling (via the `tempoch` crate, re-exported as [`time`])
 //! - Keplerian / conic orbits and satellite mechanics
-//! - Spectral utilities (optional `spectra` feature)
+//! - Photometric passbands and throughput (optional `photometry` feature)
 //!
 //! ## API pillars
 //!
@@ -51,23 +51,38 @@
 //! - **Ephemeris backends**: `Ephemeris` trait with VSOP87/ELP2000 and optional DE440/DE441.
 //! - **Serde**: optional `serde` feature for public types.
 //!
+//! ## Crate composition
+//!
+//! `siderust` is an orchestration crate that composes the specialized
+//! Siderust sub-crates. Each sub-crate owns a distinct concern:
+//!
+//! | Crate | Owns |
+//! |-------|------|
+//! | `siderust` | Astronomy API, coordinate transforms, observation planning, ephemeris front-end, satellite workflows, POD |
+//! | [`siderust_archive`] | Scientific datasets, manifests, checksums, provenance, generated coefficient snapshots |
+//! | `tempoch` | Time scales (TT/TAI/UTC/UT1/TDB/TCG/TCB), ΔT, EOP, active time-data status |
+//! | `qtty` | Physical units and typed quantity arithmetic |
+//! | `cheby` | Chebyshev / polynomial interpolation |
+//! | `keplerian` | Keplerian orbital primitives |
+//! | `principia` | Dynamics and physical force-model primitives |
+//! | `optica` | Photometry and optics primitives |
+//!
 //! ## Crate Modules
 //!
-//! - [`coordinates`]             : Cartesian & Spherical coordinate types and transformations
-//! - [`targets`]                 : `CoordinateWithPM<T>` + `Trackable` trait for targets
-//! - [`time`]                    : Time types and scale-based `Period<S>` / generic `Interval<T>`
-//! - [`astro`]                   : Aberration, nutation, precession, sidereal time, event searches, orbits
-//! - [`calculus`]                : Numerical kernels (VSOP87, ELP2000, DE4xx, altitude/azimuth/lunar APIs, root-finding)
+//! - [`coordinates`]             : Cartesian & Spherical coordinate types and transformations; includes [`SkyGrid`] sampling utility
+//! - [`targets`]                 : `CoordinateWithPM<T>` + `Trackable` trait for observation targets
+//! - [`time`]                    : Thin re-export facade over `tempoch`; adds TT-default [`JulianDate`] / [`J2000`] aliases
+//! - [`astro`]                   : Aberration, nutation, precession, sidereal time, conic helpers, event support, orbits, orbital mechanics
+//! - [`ephemeris`]               : Ephemeris traits and backends (VSOP87, ELP2000, DE4xx, Pluto); coefficient tables from [`siderust_archive`]
+//! - [`event`]                   : Altitude/azimuth/lunar/solar/stellar event-search APIs
 //! - [`bodies`]                  : Planets, stars, satellites, asteroids, comets, and built-in catalogs
-//! - [`observatories`]           : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
-//! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate (including `OpticalDepth`, `Airmass`, `Albedo`, `IlluminationFraction`, `Refractivity`, `CipCoordinate`)
-//! - [`geometry`]                : Angular geometry primitives (great-circle, parallactic angle, …)
-//! - [`interp`]                  : Generic interpolation kernels
-//! - [`data`]                    : Built-in reference data (EOP tables, star catalogs)
-//! - [`provenance`]              : Provenance and source-attribution types
+//! - [`mission`]                 : Mission geometry, runtime context, and site metadata (FoV, terrain mask, AzElRange, eclipse, orbit-relative)
+//! - [`catalogs`]`::observatories` : Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
+//! - [`qtty`]                    : Re-exports of typed quantity newtypes from the `qtty` crate
+//! - [`formats`]                 : Low-level binary file-format parsers (e.g. SPICE DAF/SPK)
 //! - `atmosphere` *(optional)* : Atmospheric refraction, extinction, airmass, and optical-depth models (`atmosphere` feature)
-//! - `spectra` *(optional)*    : Spectral response and photometric bandpass utilities (`spectra` feature)
-//! - `tables` *(optional)*     : Tabulated data loaders (`tables` feature)
+//! - `photometry` *(optional)* : Astronomical photometric passbands and throughput unit (`photometry` feature)
+//! - Dataset catalog, manifests, and runtime ephemeris download: [`siderust_archive`] crate
 //!
 //! ## Error-handling conventions
 //!
@@ -110,42 +125,43 @@ pub mod astro;
 #[cfg(feature = "atmosphere")]
 pub mod atmosphere;
 pub mod bodies;
-pub mod calculus;
+pub mod catalogs;
+pub mod checksum;
 pub mod coordinates;
-pub mod data;
-pub mod geometry;
-pub mod interp;
-pub mod observatories;
-pub mod provenance;
+pub mod ephemeris;
+pub mod event;
+pub mod formats;
+pub mod mission;
+#[cfg(feature = "photometry")]
+pub mod photometry;
+#[cfg(feature = "pod")]
+pub mod pod;
 pub mod qtty;
-#[cfg(feature = "spectra")]
-pub mod spectra;
-#[cfg(feature = "tables")]
-pub mod tables;
+#[cfg(feature = "spice")]
+pub mod spice;
 pub mod targets;
 pub mod time;
+
+pub(crate) use siderust_archive as archive;
 
 // Ergonomic re-exports of common time markers / epoch (`siderust::J2000` in rustdoc examples).
 pub use time::{JulianDate, ModifiedJulianDate, J2000, JD, MJD};
 
-pub(crate) mod archive;
-pub(crate) mod macros;
+// Convenience re-export: sky sampling utilities.
+pub use coordinates::{SkyGrid, SkyGridCell};
 
-// ---------------------------------------------------------------------------
-// Convenience re‑exports: interval utilities
-// ---------------------------------------------------------------------------
-pub use calculus::math_core::intervals::intersect as intersect_periods;
+pub(crate) mod macros;
 
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: unified azimuth API
 // ---------------------------------------------------------------------------
-pub use calculus::azimuth::{
+pub use event::azimuth::{
     azimuth_crossings, azimuth_extrema, azimuth_periods as compute_azimuth_periods, azimuth_ranges,
     in_azimuth_range, outside_azimuth_range, AzimuthCrossingDirection, AzimuthCrossingEvent,
     AzimuthExtremum, AzimuthExtremumKind, AzimuthProvider, AzimuthQuery,
 };
-pub use calculus::solar::{twilight, Twilight};
-pub use calculus::solar::{twilight_classification, TwilightPhase};
+pub use event::solar::{twilight, Twilight};
+pub use event::solar::{twilight_classification, TwilightPhase};
 
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: unified altitude API
@@ -153,7 +169,7 @@ pub use calculus::solar::{twilight_classification, TwilightPhase};
 pub use affn::conic::ConicKind;
 pub use astro::conic::{ConicError, ConicOrbit, MeanMotionOrbit};
 pub use astro::orbit::{KeplerianOrbit, PreparedOrbit};
-pub use calculus::altitude::{
+pub use event::altitude::{
     above_threshold, altitude_periods as compute_altitude_periods, altitude_ranges,
     below_threshold, crossings, culminations, AltitudePeriodsProvider, AltitudeQuery,
     CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind, SearchOpts,
@@ -162,12 +178,12 @@ pub use calculus::altitude::{
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: lunar phase API
 // ---------------------------------------------------------------------------
-pub use calculus::lunar::phase::{
+pub use event::lunar::phase::{
     find_phase_events, illumination_above, illumination_below, illumination_range,
     moon_phase_geocentric, moon_phase_topocentric, MoonPhaseGeometry, MoonPhaseLabel,
     MoonPhaseSeries, PhaseEvent, PhaseKind, PhaseSearchOpts, PhaseThresholds,
 };
-pub use calculus::lunar::photometry::{
+pub use event::lunar::photometry::{
     lunar_albedo_jones2013, lunar_full_moon_albedo_jones2013, lunar_phase_attenuation_jones2013,
     reflected_lunar_spectral_radiance_jones2013,
 };

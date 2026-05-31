@@ -1,15 +1,12 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Comprehensive tests for the [`calculus::ephemeris`] module.
+//! Comprehensive tests for the [`ephemeris`] module.
 //!
-//! This test file aims to provide comprehensive coverage of the ephemeris module,
-//! testing all backends (Vsop87Ephemeris, De440Ephemeris) and
-//! all trait methods across multiple epochs.
-//!
-//! DE441 is no longer a compile-time backend; use `RuntimeEphemeris` at runtime.
+//! Covers `Vsop87Ephemeris` across all trait methods and multiple epochs.
+//! JPL DE ephemeris testing is done via `RuntimeEphemeris` at runtime.
 
-use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
+use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::qtty::*;
 use siderust::time::JulianDate;
 
@@ -50,28 +47,6 @@ fn epoch_1900() -> JulianDate {
 fn epoch_2100() -> JulianDate {
     // JD 2488069.5 corresponds to 2100-01-01 12:00 TT
     jd_from_value(2488069.5)
-}
-
-/// Returns true when build/test runs are configured to stub JPL datasets.
-#[cfg(feature = "de440")]
-fn jpl_stub_enabled_for(prefix: &str) -> bool {
-    let Ok(raw) = std::env::var("SIDERUST_JPL_STUB") else {
-        return false;
-    };
-    let raw = raw.trim();
-    if raw.is_empty() {
-        return false;
-    }
-
-    let lower = raw.to_ascii_lowercase();
-    if matches!(lower.as_str(), "all" | "1" | "true" | "yes" | "on") {
-        return true;
-    }
-
-    lower
-        .split(|c: char| c == ',' || c.is_whitespace())
-        .filter(|s| !s.is_empty())
-        .any(|tok| tok == prefix)
 }
 
 // ============================================================================
@@ -468,191 +443,8 @@ mod vsop87_tests {
     }
 }
 
-// ============================================================================
-// DE440 Ephemeris Tests (Feature-gated)
-// ============================================================================
-
-#[cfg(feature = "de440")]
-mod de440_tests {
-    use super::*;
-    use siderust::calculus::ephemeris::De440Ephemeris;
-
-    fn skip_if_de440_stubbed() -> bool {
-        if jpl_stub_enabled_for("de440") {
-            eprintln!("Skipping DE440 test: SIDERUST_JPL_STUB enables DE440 stubbing.");
-            return true;
-        }
-        false
-    }
-
-    #[test]
-    fn de440_sun_barycentric_at_j2000() {
-        if skip_if_de440_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let sun = De440Ephemeris::sun_barycentric(jd);
-        let pos = sun;
-
-        // Sun should be very close to SSB
-        let dist = pos.distance();
-        assert!(
-            dist < AstronomicalUnits::new(0.02),
-            "DE440: Sun should be close to SSB at J2000"
-        );
-    }
-
-    #[test]
-    fn de440_earth_barycentric_at_j2000() {
-        if skip_if_de440_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let earth = De440Ephemeris::earth_barycentric(jd);
-        let pos = earth;
-
-        let dist = pos.distance();
-        assert!(
-            dist > AstronomicalUnits::new(0.98) && dist < AstronomicalUnits::new(1.02),
-            "DE440: Earth should be ~1 AU from SSB"
-        );
-    }
-
-    #[test]
-    fn de440_earth_heliocentric_at_j2000() {
-        if skip_if_de440_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let earth = De440Ephemeris::earth_heliocentric(jd);
-        let pos = earth;
-
-        let dist = pos.distance();
-        assert!(
-            dist > AstronomicalUnits::new(0.98) && dist < AstronomicalUnits::new(1.02),
-            "DE440: Earth heliocentric should be ~1 AU"
-        );
-    }
-
-    #[test]
-    fn de440_earth_barycentric_velocity_at_j2000() {
-        if skip_if_de440_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let vel = De440Ephemeris::earth_barycentric_velocity(jd);
-
-        let vx = vel.x().value();
-        let vy = vel.y().value();
-        let vz = vel.z().value();
-        let speed = (vx * vx + vy * vy + vz * vz).sqrt();
-
-        assert!(
-            speed > 0.015 && speed < 0.02,
-            "DE440: Earth velocity should be ~0.017 AU/day"
-        );
-    }
-
-    #[test]
-    fn de440_moon_geocentric_at_j2000() {
-        if skip_if_de440_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let moon = De440Ephemeris::moon_geocentric(jd);
-
-        let dist = moon.distance();
-        assert!(
-            dist > Kilometers::new(356_000.0) && dist < Kilometers::new(407_000.0),
-            "DE440: Moon distance should be 356k-407k km"
-        );
-    }
-
-    #[test]
-    fn de440_consistency_sun_versus_vsop87() {
-        if skip_if_de440_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let sun_de440 = De440Ephemeris::sun_barycentric(jd);
-        let sun_vsop = Vsop87Ephemeris::sun_barycentric(jd);
-
-        // DE440 and VSOP87 should give similar results (within ~1000 km = ~7e-6 AU)
-        let tol = AstronomicalUnits::new(1e-4); // 1e-4 AU ~ 15,000 km tolerance
-        let dx = (sun_de440.x() - sun_vsop.x()).abs();
-        let dy = (sun_de440.y() - sun_vsop.y()).abs();
-        let dz = (sun_de440.z() - sun_vsop.z()).abs();
-
-        assert!(
-            dx < tol && dy < tol && dz < tol,
-            "DE440 and VSOP87 Sun positions should be similar at J2000"
-        );
-    }
-
-    #[test]
-    fn de440_consistency_earth_versus_vsop87() {
-        if skip_if_de440_stubbed() {
-            return;
-        }
-        let jd = j2000();
-        let earth_de440 = De440Ephemeris::earth_barycentric(jd);
-        let earth_vsop = Vsop87Ephemeris::earth_barycentric(jd);
-
-        let tol = AstronomicalUnits::new(1e-4);
-        let dx = (earth_de440.x() - earth_vsop.x()).abs();
-        let dy = (earth_de440.y() - earth_vsop.y()).abs();
-        let dz = (earth_de440.z() - earth_vsop.z()).abs();
-
-        assert!(
-            dx < tol && dy < tol && dz < tol,
-            "DE440 and VSOP87 Earth positions should be similar at J2000"
-        );
-    }
-
-    #[test]
-    fn de440_at_epoch_2020() {
-        if skip_if_de440_stubbed() {
-            return;
-        }
-        let jd = epoch_2020();
-
-        let sun = De440Ephemeris::sun_barycentric(jd);
-        let earth_bary = De440Ephemeris::earth_barycentric(jd);
-        let earth_helio = De440Ephemeris::earth_heliocentric(jd);
-        let vel = De440Ephemeris::earth_barycentric_velocity(jd);
-        let moon = De440Ephemeris::moon_geocentric(jd);
-
-        // Verify all are finite and reasonable
-        assert!(sun.distance() < AstronomicalUnits::new(0.03));
-        assert!(earth_bary.distance() > AstronomicalUnits::new(0.9));
-        assert!(earth_helio.distance() > AstronomicalUnits::new(0.9));
-        assert!(vel.x().value().is_finite());
-        assert!(moon.distance() > Kilometers::new(350_000.0));
-    }
-
-    #[test]
-    fn de440_at_epoch_2026() {
-        if skip_if_de440_stubbed() {
-            return;
-        }
-        let jd = epoch_2026();
-
-        let sun = De440Ephemeris::sun_barycentric(jd);
-        let earth_bary = De440Ephemeris::earth_barycentric(jd);
-        let earth_helio = De440Ephemeris::earth_heliocentric(jd);
-        let vel = De440Ephemeris::earth_barycentric_velocity(jd);
-        let moon = De440Ephemeris::moon_geocentric(jd);
-
-        assert!(sun.x().value().is_finite());
-        assert!(earth_bary.x().value().is_finite());
-        assert!(earth_helio.x().value().is_finite());
-        assert!(vel.x().value().is_finite());
-        assert!(moon.x().value().is_finite());
-    }
-}
-
-// DE441 is now runtime-only via RuntimeEphemeris, see examples/12_runtime_ephemeris.rs.
-// The compile-time De441Ephemeris backend has been removed.
+// DE440 and DE441 are now runtime-only via RuntimeEphemeris.
+// The compile-time backends have been removed.
 
 // ============================================================================
 // Generic Ephemeris Trait Tests
@@ -687,17 +479,6 @@ mod generic_ephemeris_tests {
         test_ephemeris_basic_properties::<Vsop87Ephemeris>();
     }
 
-    #[cfg(feature = "de440")]
-    #[test]
-    fn de440_basic_properties() {
-        if jpl_stub_enabled_for("de440") {
-            eprintln!("Skipping DE440 generic test: SIDERUST_JPL_STUB enables DE440 stubbing.");
-            return;
-        }
-        use siderust::calculus::ephemeris::De440Ephemeris;
-        test_ephemeris_basic_properties::<De440Ephemeris>();
-    }
-
     /// Test that velocity is consistent with position change over time
     fn test_velocity_consistency<E: Ephemeris>() {
         let jd1 = epoch_2020();
@@ -728,17 +509,6 @@ mod generic_ephemeris_tests {
     #[test]
     fn vsop87_velocity_consistency() {
         test_velocity_consistency::<Vsop87Ephemeris>();
-    }
-
-    #[cfg(feature = "de440")]
-    #[test]
-    fn de440_velocity_consistency() {
-        if jpl_stub_enabled_for("de440") {
-            eprintln!("Skipping DE440 generic test: SIDERUST_JPL_STUB enables DE440 stubbing.");
-            return;
-        }
-        use siderust::calculus::ephemeris::De440Ephemeris;
-        test_velocity_consistency::<De440Ephemeris>();
     }
 }
 

@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
+#![allow(missing_docs)]
 #![cfg(feature = "serde")]
 
 use std::fs;
@@ -8,12 +9,12 @@ use std::fs;
 use chrono::{DateTime, Utc};
 use serde::Deserialize;
 use siderust::bodies::Sun;
-use siderust::calculus::altitude::AltitudePeriodsProvider;
-use siderust::calculus::solar::twilight;
+use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
-use siderust::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::event::altitude::AltitudePeriodsProvider;
+use siderust::event::solar::twilight;
+use siderust::time::{Interval, ModifiedJulianDate};
 
 const REFERENCE_PATH: &str = "tests/reference_data/astro_night_periods_2026.json";
 const TOL_SECONDS: f64 = 3.0;
@@ -37,8 +38,8 @@ struct ReferenceDataFile {
 
 #[derive(Debug)]
 struct ReferenceData {
-    window_tt: Period<ModifiedJulianDate>,
-    periods_tt: Vec<Period<ModifiedJulianDate>>,
+    window_tt: Interval<ModifiedJulianDate>,
+    periods_tt: Vec<Interval<ModifiedJulianDate>>,
 }
 
 fn parse_utc_datetime(s: &str) -> DateTime<Utc> {
@@ -88,15 +89,15 @@ fn load_reference_data() -> ReferenceData {
     let end_utc = parse_utc_datetime(&reference.end_utc);
     let window_start: ModifiedJulianDate = ModifiedJulianDate::from_chrono(start_utc);
     let window_end: ModifiedJulianDate = ModifiedJulianDate::from_chrono(end_utc);
-    let window_tt = Period::new(window_start, window_end);
+    let window_tt = Interval::new(window_start, window_end);
 
     // Reference JSON stores period endpoints as UTC-based MJD numbers.
-    // Siderust altitude APIs use Period<MJD> values on the canonical TT axis.
+    // Siderust altitude APIs use Interval<MJD> values on the canonical TT axis.
     let periods_tt = reference
         .periods
         .into_iter()
         .map(|period| {
-            Period::new(
+            Interval::new(
                 utc_mjd_to_tt_mjd(period.start_mjd),
                 utc_mjd_to_tt_mjd(period.end_mjd),
             )
@@ -114,8 +115,8 @@ fn roque_site() -> Geodetic<ECEF> {
 }
 
 fn assert_periods_close(
-    expected: &[Period<ModifiedJulianDate>],
-    computed: &[Period<ModifiedJulianDate>],
+    expected: &[Interval<ModifiedJulianDate>],
+    computed: &[Interval<ModifiedJulianDate>],
 ) {
     assert_eq!(
         expected.len(),

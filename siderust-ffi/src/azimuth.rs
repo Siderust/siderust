@@ -9,7 +9,7 @@
 use crate::error::SiderustStatus;
 use crate::ffi_utils::{free_boxed_slice, vec_to_c, FfiFrom};
 use crate::types::*;
-use siderust::calculus::azimuth::{AzimuthCrossingEvent, AzimuthExtremum};
+use siderust::event::azimuth::{AzimuthCrossingEvent, AzimuthExtremum};
 
 pub(crate) fn vec_az_crossings_to_c(
     events: Vec<AzimuthCrossingEvent>,
@@ -41,6 +41,7 @@ pub unsafe extern "C" fn siderust_azimuth_crossings_free(
     ptr: *mut SiderustAzimuthCrossingEvent,
     count: usize,
 ) {
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { free_boxed_slice(ptr, count) };
 }
 
@@ -58,5 +59,6 @@ pub unsafe extern "C" fn siderust_azimuth_extrema_free(
     ptr: *mut SiderustAzimuthExtremum,
     count: usize,
 ) {
+    // TODO: justify soundness — add doc comment before publishing
     unsafe { free_boxed_slice(ptr, count) };
 }

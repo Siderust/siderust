@@ -23,7 +23,7 @@
 //! The fundamental arguments (Mercury through Uranus mean longitudes,
 //! general precession `pa`, plus the luni-solar Delaunay arguments) are
 //! evaluated as polynomials in `t = (JD_TT − J2000) / 36525`. The series
-//! coefficients live in `nut00a_tables` (units of 0.1 µas / 0.1 µas·cy)
+//! coefficients live in `siderust_archive::nutation::tables` (units of 0.1 µas / 0.1 µas·cy)
 //! and are summed against the trigonometric arguments to yield `(Δψ, Δε)`.
 //! The public entry point [`nutation_iau2006a`] additionally applies the
 //! IAU 2006 precession-compatibility corrections from Wallace & Capitaine
@@ -36,7 +36,7 @@
 //! * SOFA routines `iauNut00a`, `iauNut06a`
 
 use super::NutationAngles;
-use crate::archive::nut00a_tables::{NUT00A_LS, NUT00A_PL};
+use crate::archive::nutation::tables::{NUT00A_LS, NUT00A_PL};
 use crate::astro::precession::mean_obliquity_iau2006;
 use crate::qtty::*;
 use crate::time::JulianDate;
@@ -223,7 +223,7 @@ const U2R: f64 = AS2R / 1e7;
 /// Do not reorder the loop without updating the IAU compliance tests in
 /// `tests/`.
 pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
-    let t = jd.julian_centuries();
+    let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
 
     // ── Luni-solar fundamental arguments ──
     let el = fa_l_iers03(t);
@@ -304,7 +304,7 @@ pub(crate) fn nutation_iau2000a_raw(jd: JulianDate) -> (f64, f64) {
 ///
 /// Reference: Wallace & Capitaine (2006), Eqs. 5.
 pub(crate) fn nutation_iau2006a(jd: JulianDate) -> NutationAngles {
-    let t = jd.julian_centuries();
+    let t = (jd.raw().value() - 2_451_545.0_f64) / 36_525.0_f64;
     let fj2 = -2.7774e-6 * t;
 
     let (dp, de) = nutation_iau2000a_raw(jd);

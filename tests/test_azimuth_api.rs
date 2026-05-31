@@ -9,15 +9,15 @@
 
 use siderust::bodies::catalog;
 use siderust::bodies::solar_system::{Moon, Sun};
-use siderust::calculus::azimuth::{
-    azimuth_crossings, azimuth_extrema, azimuth_periods, azimuth_ranges, in_azimuth_range,
-    outside_azimuth_range, AzimuthProvider, AzimuthQuery, SearchOpts,
-};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
+use siderust::event::azimuth::{
+    azimuth_crossings, azimuth_extrema, azimuth_periods, azimuth_ranges, in_azimuth_range,
+    outside_azimuth_range, AzimuthProvider, AzimuthQuery, SearchOpts,
+};
 use siderust::qtty::*;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{Interval, ModifiedJulianDate};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -27,15 +27,15 @@ fn greenwich() -> Geodetic<ECEF> {
     Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
 }
 
-fn one_day() -> Period<ModifiedJulianDate> {
-    Period::new(
+fn one_day() -> Interval<ModifiedJulianDate> {
+    Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     )
 }
 
-fn one_week() -> Period<ModifiedJulianDate> {
-    Period::new(
+fn one_week() -> Interval<ModifiedJulianDate> {
+    Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     )
@@ -190,6 +190,8 @@ fn sun_in_eastern_half_non_empty() {
         window: one_day(),
         min_azimuth: Degrees::new(90.0),
         max_azimuth: Degrees::new(270.0),
+        opts: SearchOpts::default(),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let periods = Sun.azimuth_periods(&query);
     assert!(
@@ -207,6 +209,8 @@ fn azimuth_periods_free_fn_matches_trait() {
         window,
         min_azimuth: Degrees::new(90.0),
         max_azimuth: Degrees::new(270.0),
+        opts: SearchOpts::default(),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     };
     let via_trait = Sun.azimuth_periods(&query);
     let via_fn = azimuth_periods(&Sun, &query);

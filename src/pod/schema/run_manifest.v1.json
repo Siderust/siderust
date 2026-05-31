@@ -1,0 +1,39 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://schemas.siderust.io/pod/run_manifest.v1.json",
+  "title": "RunManifest",
+  "description": "Reproducible record of a single siderust-pod run. Inputs and outputs are sorted by (kind, path) for deterministic byte-identical serialisation.",
+  "type": "object",
+  "required": [
+    "run_id",
+    "tool_version",
+    "config_sha256",
+    "inputs",
+    "outputs",
+    "started_at",
+    "finished_at"
+  ],
+  "additionalProperties": false,
+  "properties": {
+    "run_id":        { "type": "string", "minLength": 1 },
+    "tool_version":  { "type": "string", "minLength": 1 },
+    "config_sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" },
+    "inputs":  { "type": "array", "items": { "$ref": "#/definitions/DatasetRef" } },
+    "outputs": { "type": "array", "items": { "$ref": "#/definitions/DatasetRef" } },
+    "started_at":  { "type": "string", "format": "date-time" },
+    "finished_at": { "type": "string", "format": "date-time" }
+  },
+  "definitions": {
+    "DatasetRef": {
+      "type": "object",
+      "required": ["path", "kind", "bytes", "sha256"],
+      "additionalProperties": false,
+      "properties": {
+        "path":   { "type": "string", "minLength": 1 },
+        "kind":   { "type": "string", "minLength": 1 },
+        "bytes":  { "type": "integer", "minimum": 0 },
+        "sha256": { "type": "string", "pattern": "^[0-9a-f]{64}$" }
+      }
+    }
+  }
+}

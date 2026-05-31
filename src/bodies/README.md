@@ -19,7 +19,7 @@ What you will find here:
 
 - `solar_system.rs`: top-level Solar System constants and aggregates.
 - `planets.rs`: the `Planet` type and planetary constant records.
-- `satelite.rs`: natural satellites and related constants.
+- `satellite.rs`: natural satellites and related constants.
 - `comet.rs`: comet records and named examples such as Halley and Encke.
 - `asteroid.rs`: asteroid records and example near-Earth objects.
 - `stars.rs`: the `Star` type and stellar parameter helpers.

@@ -4,6 +4,20 @@ members = [
     "siderust-ffi",
 ]
 
+[workspace.lints.rust]
+unsafe_code     = "forbid"
+missing_docs    = "deny"
+unreachable_pub = "warn"
+
+[workspace.lints.clippy]
+all           = { level = "deny", priority = -1 }
+todo          = "deny"
+unimplemented = "deny"
+dbg_macro     = "deny"
+print_stdout  = "warn"
+
+[workspace.lints.rustdoc]
+broken_intra_doc_links = "deny"
 
 [package]
 name = "siderust"
@@ -11,7 +25,7 @@ version = "0.8.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "High-precision astronomy and satellite mechanics in Rust."
-license = "AGPL-3.0"
+license = "AGPL-3.0-or-later"
 readme = "README.md"
 repository = "https://github.com/Siderust/siderust"
 homepage = "https://github.com/Siderust/siderust"
@@ -21,29 +35,76 @@ categories = ["science", "aerospace", "simulation"]
 [lib]
 name = "siderust"
 
+[[example]]
+name = "16_lambert_earth_to_mars"
+path = "examples/16_lambert_earth_to_mars.rs"
+required-features = ["pod"]
+
+[[example]]
+name = "17_sgp4_from_tle"
+path = "examples/17_sgp4_from_tle.rs"
+required-features = ["pod"]
+
+[[example]]
+name = "18_lisa_pod"
+path = "examples/18_lisa_pod.rs"
+required-features = ["pod"]
+
+[[test]]
+name = "pod_smoke"
+path = "tests/pod_smoke.rs"
+required-features = ["pod"]
+
+[[test]]
+name = "tle_sgp4_pipeline"
+path = "tests/tle_sgp4_pipeline.rs"
+required-features = ["pod"]
+
+[[test]]
+name = "spice_context"
+path = "tests/spice_context.rs"
+required-features = ["spice"]
+
 [features]
-default = []
-de440 = []
-de441 = []
-regen-data = ["dep:reqwest"]
-runtime-data = ["dep:ureq", "dep:sha2"]
-serde = ["dep:serde", "qtty/serde", "affn/serde", "tempoch/serde"]
-spectra = []
-tables = []
+default = ["serde"]
+lagrange-centers = ["serde", "siderust-archive/lagrange"]
+runtime-data = ["siderust-archive/fetch"]
+serde = ["dep:serde", "dep:serde_json", "qtty/serde", "affn/serde", "tempoch/serde"]
+photometry = []
+spice = []
 atmosphere = []
+doris = []
+## Precise Orbit Determination (POD) toolkit. Folded from the former `siderust-pod` crate.
+pod = ["serde", "dep:faer", "dep:hex", "dep:sha2"]
+## Parquet residuals writer in the `pod::product` module.
+pod-parquet = ["pod", "dep:parquet"]
+## DORIS RINEX observation parser inside `pod::io`.
+pod-doris = ["pod", "doris"]
 
 [dependencies]
 affn = { version = "0.7", features = ["astro"] }
-cheby = "0.2"
-qtty = { version = "0.8", features = ["astro", "radiometry"] }
-tempoch = "0.6"
+cheby = "0.3"
+keplerian = "0.2"
+optica = "0.1"
+principia = { version = "0.2", features = ["alloc"] }
+qtty = { version = "0.8", features = ["astro", "density", "frequency", "radiometry", "satellite"] }
+tempoch = "0.6.3"
+siderust-archive = { version = "0.1", features = ["jpl", "vsop", "elp", "nutation", "gravity", "atmosphere", "pluto", "time"] }
+
+thiserror = "2"
 approx = "0.5"
 chrono = "0.4"
 paste = "1.0"
+quick-xml = "0.40"
 serde = { version = "1.0", features = ["derive"], optional = true }
+serde_json = { version = "1.0", optional = true }
 sha2 = { version = "0.11", optional = true }
-ureq = { version = "3.3", optional = true, default-features = false }
 wide = "1.4"
+
+# POD toolkit dependencies (gated on the `pod` feature family)
+faer = { version = "0.22", default-features = false, features = ["std", "linalg"], optional = true }
+hex = { version = "0.4", optional = true }
+parquet = { version = "58", default-features = false, optional = true }
 
 [dev-dependencies]
 rstest = "0.26"
@@ -51,13 +112,6 @@ criterion = "0.8"
 serde_json = "1.0"
 
 [build-dependencies]
-walkdir = "2"
-regex = "1.12"
-anyhow = "1.0"
-reqwest = { version = "0.13.2", optional = true, default-features = false, features = ["blocking", "rustls"] }
-# SHA-256 verification of downloaded coefficient datasets (regen-data feature).
-# Always linked; only invoked when regenerating tables, so it adds no runtime cost.
-sha2 = "0.11"
 
 [[bench]]
 name = "converters"
@@ -91,3 +145,5 @@ harness = false
 name = "altitude_comparison"
 harness = false
 
+[lints]
+workspace = true

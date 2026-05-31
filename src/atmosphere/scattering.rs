@@ -17,8 +17,8 @@
 //!   atmosphere submodules,
 //! - a generic [`PhaseFunction`] trait,
 //! - the closed-form [`RayleighPhaseFunction`], and
-//! - an optional tabulated implementation [`TabulatedPhaseFunction`]
-//!   (behind the `tables` feature) for empirical / Mie phase functions.
+//! - a tabulated implementation [`TabulatedPhaseFunction`] for empirical
+//!   or Mie phase functions, backed by [`optica::grid::Grid2D`].
 //!
 //! ## Technical scope
 //!
@@ -33,7 +33,6 @@
 
 use crate::atmosphere::rayleigh::rayleigh_phase;
 use crate::ext_qtty::{Dimensionless, Quantity, Unit};
-#[cfg(feature = "tables")]
 use crate::qtty::unit::{Degree, Nanometer};
 use crate::qtty::{Nanometers, Radians};
 
@@ -74,49 +73,59 @@ impl PhaseFunction for RayleighPhaseFunction {
 }
 
 /// Generic tabulated phase or correction function over wavelength and
-/// scattering angle.
-#[cfg(feature = "tables")]
+/// scattering angle, backed by a [`optica::grid::Grid2D`].
+///
+/// Evaluation is infalible: out-of-range queries are clamped to the nearest
+/// endpoint. Construct with [`from_raw_row_major`](Self::from_raw_row_major).
 #[derive(Debug, Clone)]
 pub struct TabulatedPhaseFunction {
-    grid: crate::tables::Grid2D<Nanometer, Degree, ScatteringFactor>,
+    grid: optica::grid::Grid2D<Nanometer, Degree, ScatteringFactor>,
 }
 
-#[cfg(feature = "tables")]
 impl TabulatedPhaseFunction {
-    /// Construct from row-major data with rows indexed by `angles_deg` and
-    /// columns indexed by `wavelengths_nm`.
+    /// Construct from row-major data.
+    ///
+    /// Rows are indexed by `angles_deg` (y-axis) and columns by
+    /// `wavelengths_nm` (x-axis). Values are stored `[ny][nx]`.
+    ///
+    /// # Errors
+    ///
+    /// Returns [`optica::grid::GridError`] when axes are invalid or the
+    /// value count does not match `wavelengths_nm.len() * angles_deg.len()`.
     pub fn from_raw_row_major(
-        wavelengths_nm: Vec<f64>,
-        angles_deg: Vec<f64>,
-        row_major: Vec<f64>,
-    ) -> Result<Self, crate::tables::TableError> {
+        wavelengths_nm: &[f64],
+        angles_deg: &[f64],
+        row_major: &[f64],
+    ) -> Result<Self, optica::grid::GridError> {
         Ok(Self {
-            grid: crate::tables::Grid2D::from_raw_row_major(wavelengths_nm, angles_deg, row_major)?,
+            grid: optica::grid::Grid2D::from_raw_row_major(
+                wavelengths_nm,
+                angles_deg,
+                row_major,
+                optica::grid::OutOfRange::ClampToEndpoints,
+            )?,
         })
     }
 
     /// Attach provenance to the underlying grid.
-    pub fn with_provenance(mut self, provenance: crate::provenance::Provenance) -> Self {
+    pub fn with_provenance(mut self, provenance: optica::data::Provenance) -> Self {
         self.grid = self.grid.with_provenance(provenance);
         self
     }
 
     /// Interpolate at a typed wavelength and scattering angle.
+    ///
+    /// Out-of-range queries are clamped to the nearest endpoint.
     pub fn interp_at(
         &self,
         wavelength: Nanometers,
         scattering_angle: Radians,
-    ) -> Result<Quantity<ScatteringFactor>, crate::tables::TableError> {
-        self.grid.interp_at(
-            wavelength,
-            scattering_angle.to::<Degree>(),
-            crate::tables::OutOfRange::ClampToEndpoints,
-            crate::tables::OutOfRange::ClampToEndpoints,
-        )
+    ) -> Quantity<ScatteringFactor> {
+        self.grid
+            .interp_at(wavelength, scattering_angle.to::<Degree>())
     }
 }
 
-#[cfg(feature = "tables")]
 impl PhaseFunction for TabulatedPhaseFunction {
     fn phase(
         &self,
@@ -124,7 +133,6 @@ impl PhaseFunction for TabulatedPhaseFunction {
         scattering_angle: Radians,
     ) -> Quantity<ScatteringFactor> {
         self.interp_at(wavelength, scattering_angle)
-            .expect("tabulated phase-function interpolation failed")
     }
 }
 
@@ -149,13 +157,12 @@ mod tests {
         assert!(p0 > p90);
     }
 
-    #[cfg(feature = "tables")]
     #[test]
     fn tabulated_phase_interpolates() {
         let t = TabulatedPhaseFunction::from_raw_row_major(
-            vec![500.0, 600.0],
-            vec![0.0, 90.0],
-            vec![1.0, 2.0, 3.0, 4.0],
+            &[500.0, 600.0],
+            &[0.0, 90.0],
+            &[1.0, 2.0, 3.0, 4.0],
         )
         .unwrap();
         let v = t

@@ -39,7 +39,9 @@ use crate::qtty::{AstronomicalUnits, Degrees, Kilometers, Years};
 /// or the heliocentre (Sun‑centred).
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum OrbitFrame {
+    /// Elements are relative to the Sun's centre of mass.
     Heliocentric,
+    /// Elements are relative to the Solar System barycentre.
     Barycentric,
 }
 
@@ -47,9 +49,13 @@ pub enum OrbitFrame {
 /// orbital elements in a specific reference frame.
 #[derive(Clone, Debug)]
 pub struct Comet<'a> {
+    /// Short human-readable designation (e.g. `"1P/Halley"`).
     pub name: &'a str,
+    /// Approximate maximum tail length in kilometres.
     pub tail_length: Kilometers,
+    /// Keplerian orbital elements.
     pub orbit: KeplerianOrbit,
+    /// Reference frame for the orbital elements.
     pub reference: OrbitFrame,
 }
 
@@ -79,6 +85,7 @@ impl<'a> Comet<'a> {
 //  Builder pattern
 // -------------------------------------------------------------------------------------------------
 
+/// Builder for runtime construction of [`Comet`] values.
 #[derive(Default, Debug, Clone)]
 pub struct CometBuilder<'a> {
     name: Option<&'a str>,
@@ -88,23 +95,28 @@ pub struct CometBuilder<'a> {
 }
 
 impl<'a> CometBuilder<'a> {
+    /// Set the comet name/designation.
     pub fn name(mut self, name: &'a str) -> Self {
         self.name = Some(name);
         self
     }
+    /// Set the tail length.
     pub fn tail_length(mut self, len: Kilometers) -> Self {
         self.tail_length = Some(len);
         self
     }
+    /// Set the Keplerian orbital elements.
     pub fn orbit(mut self, orbit: KeplerianOrbit) -> Self {
         self.orbit = Some(orbit);
         self
     }
+    /// Set the reference frame for orbital elements.
     pub fn reference(mut self, frame: OrbitFrame) -> Self {
         self.reference = Some(frame);
         self
     }
 
+    /// Build the [`Comet`]; panics if required fields are missing.
     pub fn build(self) -> Comet<'a> {
         Comet {
             name: self.name.expect("missing name"),
@@ -195,4 +207,5 @@ pub const HALE_BOPP: Comet = Comet::new_const(
     OrbitFrame::Barycentric,
 );
 
+/// Preset catalogue of known comets (Halley, Encke, Hale-Bopp).
 pub const COMET_PRESETS: &[&Comet] = &[&HALLEY, &ENCKE, &HALE_BOPP];
