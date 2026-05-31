@@ -62,5 +62,5 @@ pub use naif::{naif_id_for_name, well_known};
 pub use pck::{BodyOrientation, PckKernel};
 pub use sclk::SclkKernel;
 pub use segment::{segment_for_summary, ChebSegment, SpkSegment};
-pub use text::TextKernel;
 pub use spk_kernel::{SpkKernelError, SpkKernelSet};
+pub use text::TextKernel;

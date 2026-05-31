@@ -5,9 +5,9 @@
 
 use super::spk::{self, IndexedSegmentData};
 use super::SpiceError;
+use crate::coordinates::frames::ICRF;
 use crate::ephemeris::jpl::eval::DynSegmentDescriptor;
 use crate::ephemeris::{EphemerisError, MajorPlanet, PlanetPoint};
-use crate::coordinates::frames::ICRF;
 use crate::qtty::{Kilometer, Kilometers};
 use crate::time::{JulianDate, TDB};
 use affn::Displacement;
