@@ -213,6 +213,7 @@ mod tests {
         // Record: [mid, radius, cx0, cx1, cy0, cy1, cz0, cz1]
         let records = vec![mid, radius, x_km, 0.0, y_km, 0.0, z_km, 0.0];
         SegmentData {
+            data_type: 2,
             init: 0.0,
             intlen,
             rsize,

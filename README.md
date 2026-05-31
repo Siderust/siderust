@@ -179,6 +179,10 @@ export SIDERUST_DATASETS_DIR="$HOME/.cache/siderust"
 Notes:
 - `cargo test --all-features` enables `de440`, so it will try to acquire `de440.bsp` if missing.
 - If the file is already present in the datasets directory, the build script reuses it.
+- Runtime Mars-through-Neptune planet-center SPK chains need opt-in satellite
+  kernels in addition to a planetary DE kernel. For example,
+  `./scripts/prefetch_datasets.sh --de440 --mar099 --jup365` prepares Mars and
+  Jupiter center offsets; `doc/datasets.md` lists the full stack.
 
 Real JPL mode (recommended for representative DE440/DE441 behavior):
 

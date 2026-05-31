@@ -184,7 +184,7 @@ impl StarAltitudeParams {
         let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
         let nut = nutation_iau2000b(jd);
-        let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
+        let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.mean_obliquity);
         let lst_rad = gast + self.lon.to::<Radian>();
         let ha_rad = lst_rad - self.ra_corrected.to::<Radian>();
         ha_rad.to::<Degree>()

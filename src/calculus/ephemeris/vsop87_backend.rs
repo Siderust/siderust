@@ -55,3 +55,33 @@ impl Ephemeris for Vsop87Ephemeris {
         Moon::get_geo_position(jd)
     }
 }
+
+// Stubbed JPL builds alias De440Ephemeris to this backend so feature users can
+// compile without downloading BSP data. Keep the new JPL planet methods present
+// on that alias, but fail rather than substituting VSOP87 for embedded DE data.
+#[cfg(siderust_mock_de440)]
+impl Vsop87Ephemeris {
+    /// Stub-only DE440 major-planet barycentric API placeholder.
+    pub fn try_major_planet_barycentric(
+        planet: super::MajorPlanet,
+        point: super::PlanetPoint,
+        _jd: JulianDate,
+    ) -> Result<
+        Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>,
+        super::PlanetEphemerisError,
+    > {
+        Err(super::PlanetEphemerisError::UnsupportedPoint { planet, point })
+    }
+
+    /// Stub-only DE440 major-planet geocentric API placeholder.
+    pub fn try_major_planet_geocentric(
+        planet: super::MajorPlanet,
+        point: super::PlanetPoint,
+        _jd: JulianDate,
+    ) -> Result<
+        Position<Geocentric, EclipticMeanJ2000, AstronomicalUnit>,
+        super::PlanetEphemerisError,
+    > {
+        Err(super::PlanetEphemerisError::UnsupportedPoint { planet, point })
+    }
+}

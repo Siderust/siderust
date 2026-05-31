@@ -74,11 +74,13 @@ mod download;
 
 pub mod daf;
 pub mod spk;
+mod spk_kernel;
 
 #[cfg(feature = "runtime-data")]
 mod manager;
 
 pub use registry::{DatasetId, DatasetMeta, DATASETS};
+pub use spk_kernel::{SpkKernelError, SpkKernelSet};
 
 #[cfg(feature = "runtime-data")]
 pub use download::ProgressCallback;

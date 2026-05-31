@@ -13,6 +13,8 @@ use super::DataError;
 /// Metadata and coefficient data for one SPK Type 2 segment.
 #[derive(Debug)]
 pub struct SegmentData {
+    /// SPK segment type (2 = position Chebyshev, 3 = state Chebyshev).
+    pub data_type: i32,
     /// Initial epoch (TDB seconds past J2000).
     pub init: f64,
     /// Interval length (seconds).
@@ -25,6 +27,23 @@ pub struct SegmentData {
     pub n_records: usize,
     /// Flattened record data: `n_records × rsize` f64 values.
     pub records: Vec<f64>,
+}
+
+/// A parsed SPK segment with the target-center metadata needed for chaining.
+#[derive(Debug)]
+pub struct IndexedSegmentData {
+    /// NAIF body ID of the segment target.
+    pub target_id: i32,
+    /// NAIF body ID of the segment center.
+    pub center_id: i32,
+    /// NAIF frame ID.
+    pub frame_id: i32,
+    /// Segment start epoch in TDB seconds past J2000.
+    pub start_et: f64,
+    /// Segment end epoch in TDB seconds past J2000.
+    pub end_et: f64,
+    /// Chebyshev coefficients and record metadata.
+    pub data: SegmentData,
 }
 
 /// NAIF body IDs for the three segments we need.
@@ -46,8 +65,8 @@ pub struct BspSegments {
     pub moon: SegmentData,
 }
 
-/// Read an SPK Type 2 segment from raw file data.
-pub fn read_type2_segment(
+/// Read an SPK Type 2 or Type 3 segment from raw file data.
+pub fn read_segment(
     file_data: &[u8],
     daf: &Daf,
     summary: &Summary,
@@ -66,11 +85,21 @@ pub fn read_type2_segment(
         )));
     }
 
-    let ncoeff = (rsize - 2) / 3;
-    if 2 + 3 * ncoeff != rsize {
+    let coeff_axes = match summary.data_type {
+        2 => 3,
+        3 => 6,
+        other => {
+            return Err(DataError::Parse(format!(
+                "SPK segment Type {} is unsupported (only Type 2/3)",
+                other
+            )))
+        }
+    };
+    let ncoeff = (rsize - 2) / coeff_axes;
+    if 2 + coeff_axes * ncoeff != rsize {
         return Err(DataError::Parse(format!(
-            "rsize={} is not 2 + 3k for any k (ncoeff would be {})",
-            rsize, ncoeff
+            "rsize={} is not 2 + {}k for SPK Type {} (ncoeff would be {})",
+            rsize, coeff_axes, summary.data_type, ncoeff
         )));
     }
 
@@ -91,6 +120,7 @@ pub fn read_type2_segment(
     }
 
     Ok(SegmentData {
+        data_type: summary.data_type,
         init,
         intlen,
         rsize,
@@ -98,6 +128,45 @@ pub fn read_type2_segment(
         n_records,
         records,
     })
+}
+
+/// Read an SPK Type 2 segment from raw file data.
+///
+/// This backwards-compatible helper also accepts Type 3 summaries so callers
+/// that already gate on "Type 2 or Type 3" receive the correct record shape.
+pub fn read_type2_segment(
+    file_data: &[u8],
+    daf: &Daf,
+    summary: &Summary,
+) -> Result<SegmentData, DataError> {
+    read_segment(file_data, daf, summary)
+}
+
+/// Parse every supported J2000 Type 2/3 segment in a BSP file.
+pub fn parse_indexed_segments(file_data: &[u8]) -> Result<Vec<IndexedSegmentData>, DataError> {
+    let daf = Daf::parse(file_data)?;
+    let mut segments = Vec::new();
+
+    for summary in &daf.summaries {
+        if summary.frame_id != 1 || (summary.data_type != 2 && summary.data_type != 3) {
+            continue;
+        }
+        segments.push(IndexedSegmentData {
+            target_id: summary.target_id,
+            center_id: summary.center_id,
+            frame_id: summary.frame_id,
+            start_et: summary.start_et,
+            end_et: summary.end_et,
+            data: read_segment(file_data, &daf, summary)?,
+        });
+    }
+
+    if segments.is_empty() {
+        return Err(DataError::Parse(
+            "BSP contains no supported J2000 SPK Type 2/3 segments".to_string(),
+        ));
+    }
+    Ok(segments)
 }
 
 /// Parse a BSP file and extract the three required segments (Sun, EMB, Moon).
@@ -123,7 +192,7 @@ pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, DataError> {
             )));
         }
 
-        read_type2_segment(file_data, &daf, summary)
+        read_segment(file_data, &daf, summary)
     };
 
     let sun = find_segment(SUN_TARGET, SUN_CENTER, "Sun")?;

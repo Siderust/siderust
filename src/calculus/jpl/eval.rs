@@ -69,6 +69,16 @@ fn xyz_coeffs(record: &[f64], ncoeff: usize) -> (&[f64], &[f64], &[f64]) {
     )
 }
 
+#[inline]
+fn type3_velocity_coeffs(record: &[f64], ncoeff: usize) -> (&[f64], &[f64], &[f64]) {
+    let start = 2 + 3 * ncoeff;
+    (
+        &record[start..start + ncoeff],
+        &record[start + ncoeff..start + 2 * ncoeff],
+        &record[start + 2 * ncoeff..start + 3 * ncoeff],
+    )
+}
+
 /// Compute the record index and Chebyshev parameter tau from segment metadata.
 #[inline]
 fn locate_params(
@@ -143,6 +153,17 @@ fn eval_velocity(
         KmPerDayQ::new(cheby::evaluate_derivative(cx, tau) * scale),
         KmPerDayQ::new(cheby::evaluate_derivative(cy, tau) * scale),
         KmPerDayQ::new(cheby::evaluate_derivative(cz, tau) * scale),
+    )
+}
+
+/// Evaluate explicit SPK Type 3 velocity coefficient blocks.
+#[inline]
+fn eval_type3_velocity(record: &[f64], ncoeff: usize, tau: f64) -> Velocity<ICRF, KmPerDay> {
+    let (cvx, cvy, cvz) = type3_velocity_coeffs(record, ncoeff);
+    Velocity::new(
+        KmPerDayQ::new(cheby::evaluate(cvx, tau) * SECONDS_PER_DAY),
+        KmPerDayQ::new(cheby::evaluate(cvy, tau) * SECONDS_PER_DAY),
+        KmPerDayQ::new(cheby::evaluate(cvz, tau) * SECONDS_PER_DAY),
     )
 }
 
@@ -286,6 +307,9 @@ impl SegmentDescriptor {
 /// owned by this struct (or shared via `Arc`). This enables loading BSP files
 /// at runtime without embedding them at compile time.
 pub struct DynSegmentDescriptor {
+    /// SPK segment type (2 differentiates position coefficients, 3 stores
+    /// explicit velocity coefficient blocks).
+    pub data_type: i32,
     /// Initial epoch of the segment (TDB seconds past J2000).
     pub init: Seconds,
     /// Length of each Chebyshev sub-interval (seconds).
@@ -304,6 +328,7 @@ impl DynSegmentDescriptor {
     /// Construct from parsed SPK segment data.
     pub fn from_spk(seg: &crate::data::spk::SegmentData) -> Self {
         Self {
+            data_type: seg.data_type,
             init: Seconds::new(seg.init),
             intlen: Seconds::new(seg.intlen),
             ncoeff: seg.ncoeff,
@@ -358,7 +383,11 @@ impl DynSegmentDescriptor {
         jd_tdb: TdbJulianDate,
     ) -> Result<Velocity<ICRF, KmPerDay>, EphemerisError> {
         let (record, tau, radius) = self.try_locate(jd_tdb)?;
-        Ok(eval_velocity(record, self.ncoeff, tau, radius))
+        if self.data_type == 3 {
+            Ok(eval_type3_velocity(record, self.ncoeff, tau))
+        } else {
+            Ok(eval_velocity(record, self.ncoeff, tau, radius))
+        }
     }
 
     /// Evaluate velocity in km/day (ICRF) at Julian Date (TDB).
@@ -377,7 +406,14 @@ impl DynSegmentDescriptor {
     #[inline]
     pub fn try_position_velocity(&self, jd_tdb: TdbJulianDate) -> PosVelResult {
         let (record, tau, radius) = self.try_locate(jd_tdb)?;
-        Ok(eval_both(record, self.ncoeff, tau, radius))
+        if self.data_type == 3 {
+            Ok((
+                eval_position(record, self.ncoeff, tau),
+                eval_type3_velocity(record, self.ncoeff, tau),
+            ))
+        } else {
+            Ok(eval_both(record, self.ncoeff, tau, radius))
+        }
     }
 
     /// Evaluate both position and velocity in one pass.
@@ -422,6 +458,7 @@ mod tests {
         let data = vec![mid, radius, cx0, 0.0, cy0, 0.0, cz0, 0.0];
 
         DynSegmentDescriptor {
+            data_type: 2,
             init: Seconds::new(init_secs),
             intlen: Seconds::new(intlen_secs),
             ncoeff,
@@ -535,6 +572,7 @@ mod tests {
             3.0, // cz = [0, 3] → at tau=0: d/dtau = 3
         ];
         let desc = DynSegmentDescriptor {
+            data_type: 2,
             init: Seconds::new(0.0),
             intlen: Seconds::new(intlen_secs),
             ncoeff,
@@ -577,6 +615,7 @@ mod tests {
         let rsize = 2 + 3 * ncoeff; // = 11
         let records = vec![0.0; rsize]; // one zero record
         let seg = SegmentData {
+            data_type: 2,
             init: 0.0,
             intlen: 86400.0,
             rsize,
@@ -589,6 +628,43 @@ mod tests {
         assert_eq!(desc.rsize, rsize);
         assert_eq!(desc.n_records, 1);
         assert_eq!(desc.data.len(), rsize);
+    }
+
+    #[test]
+    fn dyn_desc_type3_uses_explicit_velocity_coefficients() {
+        use crate::data::spk::SegmentData;
+
+        let intlen = 1000.0 * SECONDS_PER_DAY;
+        let seg = SegmentData {
+            data_type: 3,
+            init: 0.0,
+            intlen,
+            rsize: 14,
+            ncoeff: 2,
+            n_records: 1,
+            records: vec![
+                intlen / 2.0,
+                intlen / 2.0,
+                10.0,
+                0.0,
+                20.0,
+                0.0,
+                30.0,
+                0.0,
+                1.0,
+                0.0,
+                2.0,
+                0.0,
+                3.0,
+                0.0,
+            ],
+        };
+        let desc = DynSegmentDescriptor::from_spk(&seg);
+        let (pos, vel) = desc.position_velocity(jd_mid());
+        assert_eq!(pos.x().value(), 10.0);
+        assert_eq!(vel.x().value(), SECONDS_PER_DAY);
+        assert_eq!(vel.y().value(), 2.0 * SECONDS_PER_DAY);
+        assert_eq!(vel.z().value(), 3.0 * SECONDS_PER_DAY);
     }
 
     // ── SegmentDescriptor (compile-time data) ─────────────────────────────
@@ -734,6 +810,7 @@ mod tests {
             mid1, rad, 200.0, 0.0, 0.0, 0.0, 0.0, 0.0, // record 1
         ];
         let desc = DynSegmentDescriptor {
+            data_type: 2,
             init: Seconds::new(0.0),
             intlen: Seconds::new(intlen_secs),
             ncoeff,

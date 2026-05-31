@@ -122,6 +122,31 @@ If you prefer downloading by hand, place files in the cache directory:
 - DE441 → `$SIDERUST_DATASETS_DIR/de441_dataset/de441_part-2.bsp`
   - `https://naif.jpl.nasa.gov/pub/naif/generic_kernels/spk/planets/de441_part-2.bsp`
 
+## Runtime planet-center SPKs
+
+Generic DE planetary kernels provide the outer planet-system barycenters. Exact
+Mars through Neptune center chains need the corresponding satellite SPK offset
+loaded together with a DE kernel at runtime:
+
+| Center | Runtime SPK |
+|---|---|
+| Mars `499` | `$SIDERUST_DATASETS_DIR/mar099.bsp` |
+| Jupiter `599` | `$SIDERUST_DATASETS_DIR/jup365.bsp` |
+| Saturn `699` | `$SIDERUST_DATASETS_DIR/sat441l.bsp` |
+| Uranus `799` | `$SIDERUST_DATASETS_DIR/ura184.bsp` |
+| Neptune `899` | `$SIDERUST_DATASETS_DIR/nep097.bsp` |
+
+Fetch only the center kernels needed for a run when possible; several are large:
+
+```bash
+export SIDERUST_DATASETS_DIR="$PWD/.siderust_datasets"
+./scripts/prefetch_datasets.sh --de440 --mar099 --jup365
+```
+
+`--planet-centers` fetches DE440 and every center-offset SPK above for a full
+Mars-through-Neptune runtime center stack. These files are runtime data: they
+are not embedded by `de440`/`de441` feature builds.
+
 ## Stubbing JPL datasets (fast/offline)
 
 To compile with JPL features enabled while skipping downloads/codegen:

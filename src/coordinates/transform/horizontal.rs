@@ -9,7 +9,7 @@
 //! ## Approach
 //!
 //! The transformation follows SOFA conventions:
-//! - GAST (Greenwich Apparent Sidereal Time) = `gast_iau2006(UT1, TT, dpsi, true_obliquity)`
+//! - GAST (Greenwich Apparent Sidereal Time) = `gast_iau2006(UT1, TT, dpsi, mean_obliquity)`
 //! - Hour Angle = GAST + observer_longitude - RA
 //! - Azimuth uses astronomical convention: 0° = North, increasing clockwise through East
 //!
@@ -17,7 +17,7 @@
 //!
 //! Horizontal transformations require **both** UT1 and TT timescales:
 //! - **UT1** for Earth rotation angle and sidereal time
-//! - **TT** for precession/nutation models (IAU 2000B nutation)
+//! - **TT** for precession/nutation models (IAU 2006A nutation)
 //!
 //! ## Observer Location
 //!
@@ -105,8 +105,8 @@ impl ToHorizontal for Direction<EquatorialTrueOfDate> {
         let obs_lat = Radians::from(site.lat);
 
         // Compute GAST and hour angle
-        let nut = nutation::nutation_iau2000b(*jd_tt);
-        let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.true_obliquity());
+        let nut = <nutation::Iau2006A as nutation::NutationModel>::nutation(*jd_tt);
+        let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.mean_obliquity);
         let ha = (gast + obs_lon - ra).value();
 
         // Spherical trigonometry for equatorial → horizontal
@@ -182,8 +182,8 @@ impl FromHorizontal for Direction<Horizontal> {
         let obs_lat = Radians::from(site.lat);
 
         // Compute LAST (Local Apparent Sidereal Time)
-        let nut = nutation::nutation_iau2000b(*jd_tt);
-        let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.true_obliquity());
+        let nut = <nutation::Iau2006A as nutation::NutationModel>::nutation(*jd_tt);
+        let gast = sidereal::gast_iau2006(*jd_ut1, *jd_tt, nut.dpsi, nut.mean_obliquity);
         let last = (gast + obs_lon).value();
 
         // Spherical trigonometry for horizontal → equatorial

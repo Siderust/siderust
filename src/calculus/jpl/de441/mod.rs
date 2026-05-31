@@ -36,4 +36,13 @@ impl DeData for De441Data {
     const SUN: SegmentDescriptor = data::SUN;
     const EMB: SegmentDescriptor = data::EMB;
     const MOON: SegmentDescriptor = data::MOON;
+    const MERCURY_BARYCENTER: SegmentDescriptor = data::MERCURY_BARYCENTER;
+    const MERCURY_CENTER: SegmentDescriptor = data::MERCURY_CENTER;
+    const VENUS_BARYCENTER: SegmentDescriptor = data::VENUS_BARYCENTER;
+    const VENUS_CENTER: SegmentDescriptor = data::VENUS_CENTER;
+    const MARS_BARYCENTER: SegmentDescriptor = data::MARS_BARYCENTER;
+    const JUPITER_BARYCENTER: SegmentDescriptor = data::JUPITER_BARYCENTER;
+    const SATURN_BARYCENTER: SegmentDescriptor = data::SATURN_BARYCENTER;
+    const URANUS_BARYCENTER: SegmentDescriptor = data::URANUS_BARYCENTER;
+    const NEPTUNE_BARYCENTER: SegmentDescriptor = data::NEPTUNE_BARYCENTER;
 }

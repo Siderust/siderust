@@ -51,7 +51,9 @@ pub mod de441;
 
 use eval::SegmentDescriptor;
 
-use crate::calculus::ephemeris::{AuPerDay, Ephemeris, EphemerisError};
+use crate::calculus::ephemeris::{
+    AuPerDay, Ephemeris, EphemerisError, MajorPlanet, PlanetEphemerisError, PlanetPoint,
+};
 use crate::coordinates::{
     cartesian::{Position, Velocity},
     centers::{Barycentric, Geocentric, Heliocentric},
@@ -74,6 +76,24 @@ pub trait DeData: 'static {
     const EMB: SegmentDescriptor;
     /// Segment descriptor for the Moon (NAIF 301 → EMB).
     const MOON: SegmentDescriptor;
+    /// Segment descriptor for Mercury system barycenter (NAIF 1 -> SSB).
+    const MERCURY_BARYCENTER: SegmentDescriptor;
+    /// Segment descriptor for Mercury center (NAIF 199 -> Mercury barycenter).
+    const MERCURY_CENTER: SegmentDescriptor;
+    /// Segment descriptor for Venus system barycenter (NAIF 2 -> SSB).
+    const VENUS_BARYCENTER: SegmentDescriptor;
+    /// Segment descriptor for Venus center (NAIF 299 -> Venus barycenter).
+    const VENUS_CENTER: SegmentDescriptor;
+    /// Segment descriptor for Mars system barycenter (NAIF 4 -> SSB).
+    const MARS_BARYCENTER: SegmentDescriptor;
+    /// Segment descriptor for Jupiter system barycenter (NAIF 5 -> SSB).
+    const JUPITER_BARYCENTER: SegmentDescriptor;
+    /// Segment descriptor for Saturn system barycenter (NAIF 6 -> SSB).
+    const SATURN_BARYCENTER: SegmentDescriptor;
+    /// Segment descriptor for Uranus system barycenter (NAIF 7 -> SSB).
+    const URANUS_BARYCENTER: SegmentDescriptor;
+    /// Segment descriptor for Neptune system barycenter (NAIF 8 -> SSB).
+    const NEPTUNE_BARYCENTER: SegmentDescriptor;
 }
 
 /// Generic zero-sized ephemeris backend for any JPL DE4xx dataset.
@@ -156,5 +176,104 @@ impl<D: DeData> Ephemeris for DeEphemeris<D> {
     #[inline]
     fn moon_geocentric(jd: JulianDate) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
         bodies::moon_geocentric(jd, &D::MOON)
+    }
+}
+
+impl<D: DeData> DeEphemeris<D> {
+    /// Fallible embedded JPL barycentric state for a major planet point.
+    ///
+    /// Generic DE kernels carry system barycenters for all major planets and
+    /// direct center offsets for Mercury and Venus. Outer planet center
+    /// offsets live in satellite SPK kernels and require the runtime kernel
+    /// set API.
+    pub fn try_major_planet_barycentric(
+        planet: MajorPlanet,
+        point: PlanetPoint,
+        jd: JulianDate,
+    ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, PlanetEphemerisError>
+    {
+        match (planet, point) {
+            (MajorPlanet::Mercury, PlanetPoint::SystemBarycenter) => {
+                Ok(bodies::try_planet_barycentric(jd, &D::MERCURY_BARYCENTER)?)
+            }
+            (MajorPlanet::Mercury, PlanetPoint::Center) => {
+                Ok(bodies::try_child_planet_barycentric(
+                    jd,
+                    &D::MERCURY_BARYCENTER,
+                    &D::MERCURY_CENTER,
+                )?)
+            }
+            (MajorPlanet::Venus, PlanetPoint::SystemBarycenter) => {
+                Ok(bodies::try_planet_barycentric(jd, &D::VENUS_BARYCENTER)?)
+            }
+            (MajorPlanet::Venus, PlanetPoint::Center) => Ok(bodies::try_child_planet_barycentric(
+                jd,
+                &D::VENUS_BARYCENTER,
+                &D::VENUS_CENTER,
+            )?),
+            (MajorPlanet::Mars, PlanetPoint::SystemBarycenter) => {
+                Ok(bodies::try_planet_barycentric(jd, &D::MARS_BARYCENTER)?)
+            }
+            (MajorPlanet::Jupiter, PlanetPoint::SystemBarycenter) => {
+                Ok(bodies::try_planet_barycentric(jd, &D::JUPITER_BARYCENTER)?)
+            }
+            (MajorPlanet::Saturn, PlanetPoint::SystemBarycenter) => {
+                Ok(bodies::try_planet_barycentric(jd, &D::SATURN_BARYCENTER)?)
+            }
+            (MajorPlanet::Uranus, PlanetPoint::SystemBarycenter) => {
+                Ok(bodies::try_planet_barycentric(jd, &D::URANUS_BARYCENTER)?)
+            }
+            (MajorPlanet::Neptune, PlanetPoint::SystemBarycenter) => {
+                Ok(bodies::try_planet_barycentric(jd, &D::NEPTUNE_BARYCENTER)?)
+            }
+            _ => Err(PlanetEphemerisError::UnsupportedPoint { planet, point }),
+        }
+    }
+
+    /// Fallible embedded JPL Earth-centered state for a major planet point.
+    pub fn try_major_planet_geocentric(
+        planet: MajorPlanet,
+        point: PlanetPoint,
+        jd: JulianDate,
+    ) -> Result<Position<Geocentric, EclipticMeanJ2000, AstronomicalUnit>, PlanetEphemerisError>
+    {
+        match (planet, point) {
+            (MajorPlanet::Mercury, PlanetPoint::SystemBarycenter) => Ok(
+                bodies::try_planet_geocentric(jd, &D::MERCURY_BARYCENTER, &D::EMB, &D::MOON)?,
+            ),
+            (MajorPlanet::Mercury, PlanetPoint::Center) => Ok(bodies::try_child_planet_geocentric(
+                jd,
+                &D::MERCURY_BARYCENTER,
+                &D::MERCURY_CENTER,
+                &D::EMB,
+                &D::MOON,
+            )?),
+            (MajorPlanet::Venus, PlanetPoint::SystemBarycenter) => Ok(
+                bodies::try_planet_geocentric(jd, &D::VENUS_BARYCENTER, &D::EMB, &D::MOON)?,
+            ),
+            (MajorPlanet::Venus, PlanetPoint::Center) => Ok(bodies::try_child_planet_geocentric(
+                jd,
+                &D::VENUS_BARYCENTER,
+                &D::VENUS_CENTER,
+                &D::EMB,
+                &D::MOON,
+            )?),
+            (MajorPlanet::Mars, PlanetPoint::SystemBarycenter) => Ok(
+                bodies::try_planet_geocentric(jd, &D::MARS_BARYCENTER, &D::EMB, &D::MOON)?,
+            ),
+            (MajorPlanet::Jupiter, PlanetPoint::SystemBarycenter) => Ok(
+                bodies::try_planet_geocentric(jd, &D::JUPITER_BARYCENTER, &D::EMB, &D::MOON)?,
+            ),
+            (MajorPlanet::Saturn, PlanetPoint::SystemBarycenter) => Ok(
+                bodies::try_planet_geocentric(jd, &D::SATURN_BARYCENTER, &D::EMB, &D::MOON)?,
+            ),
+            (MajorPlanet::Uranus, PlanetPoint::SystemBarycenter) => Ok(
+                bodies::try_planet_geocentric(jd, &D::URANUS_BARYCENTER, &D::EMB, &D::MOON)?,
+            ),
+            (MajorPlanet::Neptune, PlanetPoint::SystemBarycenter) => Ok(
+                bodies::try_planet_geocentric(jd, &D::NEPTUNE_BARYCENTER, &D::EMB, &D::MOON)?,
+            ),
+            _ => Err(PlanetEphemerisError::UnsupportedPoint { planet, point }),
+        }
     }
 }

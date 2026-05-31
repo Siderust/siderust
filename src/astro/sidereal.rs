@@ -25,9 +25,8 @@
 //! coefficients of Capitaine, Wallace & Chapront (2003) adopted by IAU 2006
 //! Resolution B1. The two time arguments are kept distinct (UT1 for ERA,
 //! TT for the polynomial) to match SOFA semantics. [`gast_iau2006`] adds
-//! the equation of the equinoxes built from the nutation model and CIO
-//! locator. Accuracy is better than ±0.1″ for dates within ±100 yr of
-//! J2000.
+//! the IAU 2000 equation of the equinoxes, including the complementary
+//! periodic terms required by modern UT1 conventions.
 //!
 //! ## Example
 //!
@@ -101,13 +100,14 @@ pub fn gmst_iau2006(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
 /// GAST = GMST + equation_of_the_equinoxes
 /// ```
 ///
-/// This adds the nutation correction (equation of the equinoxes) to the
-/// mean sidereal time. The equation of the equinoxes is Δψ·cos(ε).
+/// This adds the IAU 2000 equation of the equinoxes to mean sidereal time:
+/// the dominant nutation term and the complementary periodic terms required
+/// by modern UT1 conventions.
 ///
 /// `jd_ut1`: Julian Date on the UT1 time scale.
 /// `jd_tt`:  Julian Date on the TT time scale.
 /// `dpsi`:   nutation in longitude (Δψ) in radians.
-/// `true_obliquity`: ε_A + Δε in radians.
+/// `mean_obliquity`: ε_A in radians.
 ///
 /// Returns GAST in **radians**, normalized to [0, 2π).
 ///
@@ -118,10 +118,10 @@ pub fn gast_iau2006(
     jd_ut1: JulianDate,
     jd_tt: JulianDate,
     dpsi: Radians,
-    true_obliquity: Radians,
+    mean_obliquity: Radians,
 ) -> Radians {
     let gmst = gmst_iau2006(jd_ut1, jd_tt);
-    let ee = crate::astro::era::equation_of_the_equinoxes(dpsi, true_obliquity);
+    let ee = crate::astro::era::equation_of_the_equinoxes_iau2000(jd_tt, dpsi, mean_obliquity);
     (gmst + ee).wrap_pos()
 }
 
@@ -155,11 +155,10 @@ mod tests {
 
     #[test]
     fn gast_iau2006_close_to_gmst() {
-        // GAST = GMST + Δψ·cos(ε). For small nutation (~17″ max), |GAST−GMST| < 20″.
+        // GAST differs from GMST by the equation of the equinoxes.
         let jd = crate::time::JulianDate::new(2_460_000.5);
         let nutation = crate::astro::nutation::nutation_iau2000b(jd);
-        let true_obliquity = nutation.true_obliquity();
-        let gast = gast_iau2006(jd, jd, nutation.dpsi, true_obliquity);
+        let gast = gast_iau2006(jd, jd, nutation.dpsi, nutation.mean_obliquity);
         let gmst = gmst_iau2006(jd, jd);
 
         let diff_as = (gast - gmst).value().abs() * 206_264.806;
@@ -167,6 +166,24 @@ mod tests {
             diff_as < 20.0,
             "GAST–GMST = {:.3}″, max nutation effect should be < 20″",
             diff_as
+        );
+    }
+
+    #[test]
+    fn gast_iau2006_matches_sofa_gst06a_reference() {
+        use crate::astro::nutation::{Iau2006A, NutationModel};
+
+        let jd = crate::time::JulianDate::new(2_453_736.5);
+        let nut = <Iau2006A as NutationModel>::nutation(jd);
+        let gast = gast_iau2006(jd, jd, nut.dpsi, nut.mean_obliquity);
+
+        // SOFA/ERFA `gst06a(2400000.5, 53736.0, 2400000.5, 53736.0)`.
+        let sofa = 1.754_166_137_675_019_2_f64;
+        assert!(
+            (gast.value() - sofa).abs() < 1e-12,
+            "GAST = {:.16e}, SOFA gst06a = {:.16e}",
+            gast.value(),
+            sofa
         );
     }
 }

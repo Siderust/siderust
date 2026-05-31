@@ -5,13 +5,20 @@ usage() {
   cat <<'EOF'
 prefetch_datasets.sh
 
-Downloads Siderust build-time datasets into $SIDERUST_DATASETS_DIR.
+Downloads Siderust build-time datasets and opt-in runtime SPKs into
+$SIDERUST_DATASETS_DIR.
 
 Usage:
   ./scripts/prefetch_datasets.sh --minimal
   ./scripts/prefetch_datasets.sh --all
   ./scripts/prefetch_datasets.sh --de440
   ./scripts/prefetch_datasets.sh --de441
+  ./scripts/prefetch_datasets.sh --planet-centers
+  ./scripts/prefetch_datasets.sh --mar099
+  ./scripts/prefetch_datasets.sh --jup365
+  ./scripts/prefetch_datasets.sh --sat441l
+  ./scripts/prefetch_datasets.sh --ura184
+  ./scripts/prefetch_datasets.sh --nep097
 
 Environment:
   SIDERUST_DATASETS_DIR  Destination directory (recommended).
@@ -42,16 +49,25 @@ fi
 download() {
   local url="$1"
   local out="$2"
+  local tmp="${out}.download"
   mkdir -p "$(dirname "$out")"
   if [[ -s "$out" ]]; then
     return 0
   fi
   echo "downloading: $url"
+  rm -f "$tmp"
   if [[ "$downloader" == "curl" ]]; then
-    curl -fSL --retry 3 --retry-delay 2 -o "$out" "$url" || return 1
+    curl -fSL --retry 3 --retry-delay 2 -o "$tmp" "$url" || {
+      rm -f "$tmp"
+      return 1
+    }
   else
-    wget -q --tries=3 --waitretry=2 -O "$out" "$url" || return 1
+    wget -q --tries=3 --waitretry=2 -O "$tmp" "$url" || {
+      rm -f "$tmp"
+      return 1
+    }
   fi
+  mv "$tmp" "$out"
 }
 
 prefetch_vsop87() {
@@ -122,10 +138,46 @@ prefetch_de441() {
   download "$url" "$out"
 }
 
+prefetch_mar099() {
+  download \
+    "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/mar099.bsp" \
+    "$DATASETS_DIR/mar099.bsp"
+}
+
+prefetch_jup365() {
+  download \
+    "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/jup365.bsp" \
+    "$DATASETS_DIR/jup365.bsp"
+}
+
+prefetch_sat441l() {
+  download \
+    "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/sat441l.bsp" \
+    "$DATASETS_DIR/sat441l.bsp"
+}
+
+prefetch_ura184() {
+  download \
+    "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/ura184.bsp" \
+    "$DATASETS_DIR/ura184.bsp"
+}
+
+prefetch_nep097() {
+  download \
+    "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/nep097.bsp" \
+    "$DATASETS_DIR/nep097.bsp"
+}
+
 want_minimal=0
 want_all=0
 want_de440=0
 want_de441=0
+want_planet_centers=0
+want_mar099=0
+want_jup365=0
+want_sat441l=0
+want_ura184=0
+want_nep097=0
 
 for arg in "$@"; do
   case "$arg" in
@@ -133,6 +185,12 @@ for arg in "$@"; do
     --all) want_all=1 ;;
     --de440) want_de440=1 ;;
     --de441) want_de441=1 ;;
+    --planet-centers) want_planet_centers=1 ;;
+    --mar099) want_mar099=1 ;;
+    --jup365) want_jup365=1 ;;
+    --sat441l) want_sat441l=1 ;;
+    --ura184) want_ura184=1 ;;
+    --nep097) want_nep097=1 ;;
     *)
       echo "error: unknown arg: $arg" >&2
       usage >&2
@@ -151,6 +209,15 @@ if [[ "$want_all" -eq 1 ]]; then
   want_de441=1
 fi
 
+if [[ "$want_planet_centers" -eq 1 ]]; then
+  want_de440=1
+  want_mar099=1
+  want_jup365=1
+  want_sat441l=1
+  want_ura184=1
+  want_nep097=1
+fi
+
 if [[ "$want_minimal" -eq 1 ]]; then
   prefetch_vsop87
   prefetch_elp2000
@@ -162,6 +229,26 @@ fi
 
 if [[ "$want_de441" -eq 1 ]]; then
   prefetch_de441
+fi
+
+if [[ "$want_mar099" -eq 1 ]]; then
+  prefetch_mar099
+fi
+
+if [[ "$want_jup365" -eq 1 ]]; then
+  prefetch_jup365
+fi
+
+if [[ "$want_sat441l" -eq 1 ]]; then
+  prefetch_sat441l
+fi
+
+if [[ "$want_ura184" -eq 1 ]]; then
+  prefetch_ura184
+fi
+
+if [[ "$want_nep097" -eq 1 ]]; then
+  prefetch_nep097
 fi
 
 echo

@@ -100,6 +100,112 @@ impl core::fmt::Display for EphemerisError {
 
 impl std::error::Error for EphemerisError {}
 
+/// Major planets covered by the high-accuracy JPL planet APIs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum MajorPlanet {
+    /// Mercury.
+    Mercury,
+    /// Venus.
+    Venus,
+    /// Mars.
+    Mars,
+    /// Jupiter.
+    Jupiter,
+    /// Saturn.
+    Saturn,
+    /// Uranus.
+    Uranus,
+    /// Neptune.
+    Neptune,
+}
+
+impl MajorPlanet {
+    /// NAIF ID for the planetary-system barycenter carried by generic DE kernels.
+    pub const fn system_barycenter_naif_id(self) -> i32 {
+        match self {
+            Self::Mercury => 1,
+            Self::Venus => 2,
+            Self::Mars => 4,
+            Self::Jupiter => 5,
+            Self::Saturn => 6,
+            Self::Uranus => 7,
+            Self::Neptune => 8,
+        }
+    }
+
+    /// NAIF ID for the named planet center.
+    pub const fn center_naif_id(self) -> i32 {
+        match self {
+            Self::Mercury => 199,
+            Self::Venus => 299,
+            Self::Mars => 499,
+            Self::Jupiter => 599,
+            Self::Saturn => 699,
+            Self::Uranus => 799,
+            Self::Neptune => 899,
+        }
+    }
+
+    /// NAIF ID for the requested point on this planet system.
+    pub const fn naif_id(self, point: PlanetPoint) -> i32 {
+        match point {
+            PlanetPoint::Center => self.center_naif_id(),
+            PlanetPoint::SystemBarycenter => self.system_barycenter_naif_id(),
+        }
+    }
+}
+
+/// Planet point selected by the JPL planet APIs.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum PlanetPoint {
+    /// The named planet center, for example Mars `499`.
+    Center,
+    /// The planetary-system barycenter carried by generic DE kernels.
+    SystemBarycenter,
+}
+
+/// Errors from embedded major-planet APIs.
+#[derive(Debug)]
+pub enum PlanetEphemerisError {
+    /// The requested point is not present in the embedded DE dataset.
+    UnsupportedPoint {
+        /// Planet requested by the caller.
+        planet: MajorPlanet,
+        /// Point requested by the caller.
+        point: PlanetPoint,
+    },
+    /// Segment evaluation failed for the requested epoch.
+    Ephemeris(EphemerisError),
+}
+
+impl core::fmt::Display for PlanetEphemerisError {
+    fn fmt(&self, f: &mut core::fmt::Formatter<'_>) -> core::fmt::Result {
+        match self {
+            Self::UnsupportedPoint { planet, point } => write!(
+                f,
+                "embedded JPL data does not provide {:?} {:?}; load an SPK kernel set for planet-center offsets",
+                planet, point
+            ),
+            Self::Ephemeris(err) => err.fmt(f),
+        }
+    }
+}
+
+impl std::error::Error for PlanetEphemerisError {
+    fn source(&self) -> Option<&(dyn std::error::Error + 'static)> {
+        match self {
+            Self::Ephemeris(err) => Some(err),
+            Self::UnsupportedPoint { .. } => None,
+        }
+    }
+}
+
+impl From<EphemerisError> for PlanetEphemerisError {
+    fn from(value: EphemerisError) -> Self {
+        Self::Ephemeris(value)
+    }
+}
+
 /// Trait abstracting over ephemeris backends for fundamental body states
 /// (**compile-time, static dispatch**).
 ///

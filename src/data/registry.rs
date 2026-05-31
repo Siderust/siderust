@@ -10,6 +10,16 @@ pub enum DatasetId {
     De440,
     /// JPL DE441 planetary ephemeris, part 2 (~1.65 GB BSP).
     De441,
+    /// JPL Mars satellite ephemeris used for Mars-center offsets.
+    Mar099,
+    /// JPL Jupiter satellite ephemeris used for Jupiter-center offsets.
+    Jup365Merged,
+    /// JPL Saturn satellite ephemeris used for Saturn-center offsets.
+    Sat441l,
+    /// JPL Uranus satellite ephemeris used for Uranus-center offsets.
+    Ura184Merged,
+    /// JPL Neptune satellite ephemeris used for Neptune-center offsets.
+    Nep097,
     // Smaller datasets, normally compiled in, but available for runtime override.
     /// VSOP87A planetary theory tables.
     Vsop87a,
@@ -27,6 +37,11 @@ impl DatasetId {
         match self {
             DatasetId::De440 => "de440",
             DatasetId::De441 => "de441",
+            DatasetId::Mar099 => "mar099",
+            DatasetId::Jup365Merged => "jup365_merged",
+            DatasetId::Sat441l => "sat441l",
+            DatasetId::Ura184Merged => "ura184_merged",
+            DatasetId::Nep097 => "nep097",
             DatasetId::Vsop87a => "vsop87a",
             DatasetId::Vsop87e => "vsop87e",
             DatasetId::Elp2000 => "elp2000",
@@ -81,6 +96,51 @@ pub static DATASETS: &[DatasetMeta] = &[
         size_hint: "~1.65 GB",
     },
     DatasetMeta {
+        id: DatasetId::Mar099,
+        name: "JPL MAR099 Mars satellite ephemeris",
+        url: "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/mar099.bsp",
+        filename: "mar099.bsp",
+        sha256: "",
+        min_size: 1_000_000_000,
+        size_hint: "~1.18 GB",
+    },
+    DatasetMeta {
+        id: DatasetId::Jup365Merged,
+        name: "JPL JUP365 Jupiter satellite ephemeris",
+        url: "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/jup365.bsp",
+        filename: "jup365.bsp",
+        sha256: "",
+        min_size: 1_000_000_000,
+        size_hint: "~1.11 GB",
+    },
+    DatasetMeta {
+        id: DatasetId::Sat441l,
+        name: "JPL SAT441 Saturn satellite ephemeris",
+        url: "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/sat441l.bsp",
+        filename: "sat441l.bsp",
+        sha256: "",
+        min_size: 600_000_000,
+        size_hint: "~639 MB",
+    },
+    DatasetMeta {
+        id: DatasetId::Ura184Merged,
+        name: "JPL URA184 Uranus satellite ephemeris",
+        url: "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/ura184.bsp",
+        filename: "ura184.bsp",
+        sha256: "",
+        min_size: 4_000_000_000,
+        size_hint: "~4.44 GB",
+    },
+    DatasetMeta {
+        id: DatasetId::Nep097,
+        name: "JPL NEP097 Neptune satellite ephemeris",
+        url: "https://ssd.jpl.nasa.gov/ftp/eph/satellites/bsp/nep097.bsp",
+        filename: "nep097.bsp",
+        sha256: "",
+        min_size: 3_000_000_000,
+        size_hint: "~3.23 GB",
+    },
+    DatasetMeta {
         id: DatasetId::IersEop,
         name: "IERS EOP finals2000A",
         url: "https://datacenter.iers.org/products/eop/rapid/standard/finals2000A.all",
@@ -105,6 +165,7 @@ mod tests {
     fn dataset_id_as_str() {
         assert_eq!(DatasetId::De440.as_str(), "de440");
         assert_eq!(DatasetId::De441.as_str(), "de441");
+        assert_eq!(DatasetId::Mar099.as_str(), "mar099");
         assert_eq!(DatasetId::Vsop87a.as_str(), "vsop87a");
         assert_eq!(DatasetId::Vsop87e.as_str(), "vsop87e");
         assert_eq!(DatasetId::Elp2000.as_str(), "elp2000");
