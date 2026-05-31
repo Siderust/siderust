@@ -28,7 +28,7 @@ use crate::qtty::{Airmasses, OpticalDepths};
 /// Slant-path transmission `T = exp(-X · τ)`.
 ///
 /// `airmass` is the dimensionless geometric path length (see
-/// [`crate::atmosphere::airmass`]) and `tau` is the per-unit-airmass
+/// [`mod@crate::atmosphere::airmass`]) and `tau` is the per-unit-airmass
 /// vertical optical depth (e.g. Rayleigh + Mie + ozone).
 #[inline]
 pub fn transmission(tau: OpticalDepths, airmass: Airmasses) -> Transmittances {

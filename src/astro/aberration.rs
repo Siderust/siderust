@@ -32,13 +32,13 @@
 //! * SOFA: stellar aberration as a full SR (Lorentz) transform
 //!   (cf. `iauAb` / `eraAb`)
 
-use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::transform::context::DefaultEphemeris;
 use crate::coordinates::transform::TransformFrame;
 use crate::coordinates::{
     cartesian::{direction, position, Velocity},
     frames,
 };
+use crate::ephemeris::Ephemeris;
 use crate::qtty::*;
 use crate::time::JulianDate;
 

@@ -25,7 +25,7 @@
 //! - All public fields and constructors take/return typed [`qtty`](crate::qtty)
 //!   quantities — no raw `f64` units cross this module's boundary.
 //! - Four ready-to-use observatory presets
-//!   ([`AtmosphereProfile::PARANAL`], [`AtmosphereProfile::LA_PALMA`],
+//!   ([`AtmosphereProfile::EL_PARANAL`], [`AtmosphereProfile::ROQUE_DE_LOS_MUCHACHOS`],
 //!   [`AtmosphereProfile::MAUNA_KEA`], [`AtmosphereProfile::LA_SILLA`])
 //!   are `const`-constructed from typed literals.
 //! - [`AtmosphereProfile::optical_depth`] returns an [`OpticalDepths`]
@@ -100,7 +100,7 @@ impl AtmosphereProfile {
 
     /// La Silla, Chile (≈ 2400 m).
     ///
-    /// See [`crate::observatories::LA_SILLA`].
+    /// See [`crate::observatories::LA_SILLA_OBSERVATORY`].
     pub const LA_SILLA: AtmosphereProfile = AtmosphereProfile {
         surface_pressure: Hectopascals::new(770.0),
         observer_altitude: Kilometers::new(2.400),

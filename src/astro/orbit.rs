@@ -23,6 +23,14 @@
 //!
 //! ## Technical scope
 //!
+//! This module is the astronomy-facing wrapper over the lower-level
+//! [`keplerian`](https://docs.rs/keplerian) crate. Pure Keplerian math such as
+//! anomaly solving and two-body propagation lives in `keplerian`; `siderust`
+//! keeps [`KeplerianOrbit<U>`] here because it binds that math to astronomy
+//! semantics: TT-scale [`JulianDate`] epochs from `tempoch`,
+//! [`EclipticMeanJ2000`] orientation from `affn`, and the heliocentric
+//! Gaussian/GM conventions used by Solar-System elements.
+//!
 //! - [`KeplerianOrbit<U>`] — storage type for the six elements, generic over
 //!   length unit `U`.  Constructed via the infallible `new` (trusted constants)
 //!   or the validated `try_new` (user/deserialized data).
@@ -40,15 +48,12 @@
 //!   the Major Planets". *JPL Solar System Dynamics*.
 //!   <https://ssd.jpl.nasa.gov/planets/approx_pos.html>
 
-use crate::astro::conic::ConicError;
-use crate::astro::units::GaussianYears;
+use crate::astro::conic::{elliptic_geometry_from_sma, ConicError};
+use crate::astro::units::heliocentric_period_days;
 use crate::qtty::angular_rate::AngularRate;
 use crate::qtty::*;
 use crate::time::JulianDate;
-use affn::conic::{
-    ClassifiedSemiMajorAxisParam, ConicOrientation, Elliptic, SemiMajorAxisParam,
-    TypedSemiMajorAxisParam,
-};
+use affn::conic::{ConicOrientation, Elliptic, SemiMajorAxisParam, TypedSemiMajorAxisParam};
 use affn::frames::EclipticMeanJ2000;
 
 #[cfg(feature = "serde")]
@@ -137,22 +142,13 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
         mean_anomaly_at_epoch: Degrees,
         epoch: JulianDate,
     ) -> Result<Self, crate::astro::conic::ConicError> {
-        use crate::astro::conic::map_validation_error;
-
-        let sma = SemiMajorAxisParam::try_new(semi_major_axis, eccentricity)
-            .map_err(map_validation_error)?;
-        let typed = match sma.classify() {
-            ClassifiedSemiMajorAxisParam::Elliptic(t) => t,
-            ClassifiedSemiMajorAxisParam::Hyperbolic(_) => {
-                return Err(ConicError::HyperbolicNotSupported);
-            }
-        };
-        let orientation = ConicOrientation::try_new(
+        let geometry = elliptic_geometry_from_sma(
+            semi_major_axis,
+            eccentricity,
             inclination,
             longitude_of_ascending_node,
             argument_of_periapsis,
-        )
-        .map_err(map_validation_error)?;
+        )?;
 
         if !mean_anomaly_at_epoch.is_finite() {
             return Err(ConicError::InvalidMeanAnomaly);
@@ -161,8 +157,8 @@ impl<U: LengthUnit> KeplerianOrbit<U> {
             return Err(ConicError::InvalidEpoch);
         }
         Ok(Self {
-            shape: typed,
-            orientation,
+            shape: *geometry.shape(),
+            orientation: *geometry.orientation(),
             mean_anomaly_at_epoch,
             epoch,
         })
@@ -333,9 +329,8 @@ impl PreparedOrbit {
     /// Internal: build from an already-validated orbit.
     pub(crate) fn from_validated(orbit: KeplerianOrbit) -> Self {
         let a = orbit.shape().semi_major_axis().value();
-        // Kepler's 3rd law: T [Gaussian years] = a [AU]^{3/2}
-        let t_gaussian_years = a * a.sqrt();
-        let period_days = GaussianYears::new(t_gaussian_years).to::<Day>().value();
+        // Kepler's 3rd law in the AU-day system (heliocentric).
+        let period_days = heliocentric_period_days(a);
         let mean_motion = AngularRate::<Radian, Day>::new(std::f64::consts::TAU / period_days);
         let m0_rad = orbit.mean_anomaly_at_epoch.to::<Radian>().value();
         let trig = OrientationTrig::from_orientation(orbit.orientation());

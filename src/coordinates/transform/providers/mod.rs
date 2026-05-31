@@ -38,12 +38,13 @@ use crate::astro::earth_rotation_provider::nutation_with_celestial_pole_offsets;
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
 use crate::astro::{cio, era, polar_motion, precession, HasIauRotation, IauRotationParams};
-use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::{
     Barycentric, Geocentric, Heliocentric, Jovicentric, Marscentric, Mercurycentric,
     Neptunocentric, Plutocentric, Saturnocentric, Selenocentric, Uranocentric, Venuscentric,
 };
+#[cfg(feature = "lagrange-centers")]
+use crate::coordinates::centers::{SunEarthL1, SunEarthL2, SunEarthL3, SunEarthL4, SunEarthL5};
 use crate::coordinates::frames::planetary::{
     JupiterSystemIII, MarsFixed, MercuryFixed, MoonPrincipalAxes, NeptuneFixed, PlutoFixed,
     SaturnFixed, UranusFixed, VenusFixed,
@@ -53,9 +54,12 @@ use crate::coordinates::frames::{
     CIRS, ECEF, EME2000, FK4B1950, GCRS as GCRSFrame, ICRF, ICRS, ITRF, TEME, TIRS,
 };
 use crate::coordinates::transform::context::{AstroContext, TransformContext};
+use crate::ephemeris::Ephemeris;
 use crate::time::JulianDate;
 use affn::Rotation3;
 
+#[cfg(feature = "lagrange-centers")]
+mod centers_lagrange;
 mod centers_planetary;
 mod centers_standard;
 mod frames_catalog;
@@ -390,6 +394,54 @@ macro_rules! impl_reverse_center_shifts {
 }
 
 pub(crate) use impl_reverse_center_shifts;
+
+macro_rules! impl_reverse_center_shifts_without_geocentric {
+    ($center:ty) => {
+        impl<F> CenterShiftProvider<Barycentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop>,
+            ) -> AuShift {
+                inverse_shift::<Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+
+        impl<F> CenterShiftProvider<Heliocentric, $center, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop>,
+            ) -> AuShift {
+                compose_shift::<Heliocentric, Barycentric, $center, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+
+        impl<F> CenterShiftProvider<$center, Heliocentric, F> for ()
+        where
+            F: affn::ReferenceFrame,
+            (): FrameRotationProvider<EclipticMeanJ2000, F>,
+        {
+            #[inline]
+            fn shift<Eph: Ephemeris, Eop: EopProvider, Nut: NutationModel>(
+                jd: JulianDate,
+                ctx: &AstroContext<Eph, Eop>,
+            ) -> AuShift {
+                inverse_shift::<$center, Heliocentric, F, Eph, Eop, Nut>(jd, ctx)
+            }
+        }
+    };
+}
+
+pub(crate) use impl_reverse_center_shifts_without_geocentric;
 
 /// Computes the body-fixed → ICRS rotation matrix from IAU rotation parameters.
 ///

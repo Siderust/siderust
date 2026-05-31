@@ -4,7 +4,7 @@
 //! FFI bindings for the runtime-loaded ephemeris backend.
 //!
 //! All functions in this module work with an opaque [`SiderustRuntimeEphemeris`]
-//! handle that wraps a [`RuntimeEphemeris`](siderust::calculus::ephemeris::RuntimeEphemeris).
+//! handle that wraps a [`RuntimeEphemeris`](siderust::ephemeris::RuntimeEphemeris).
 //!
 //! ## Lifecycle
 //!
@@ -21,17 +21,13 @@ use std::os::raw::c_char;
 
 use crate::error::SiderustStatus;
 use crate::types::*;
-use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
+use siderust::ephemeris::{DynEphemeris, RuntimeEphemeris};
 
 #[inline]
-fn ephemeris_status(err: siderust::calculus::ephemeris::EphemerisError) -> SiderustStatus {
+fn ephemeris_status(err: siderust::ephemeris::EphemerisError) -> SiderustStatus {
     match err {
-        siderust::calculus::ephemeris::EphemerisError::OutOfRange { .. } => {
-            SiderustStatus::OutOfRange
-        }
-        siderust::calculus::ephemeris::EphemerisError::InvalidSegment { .. } => {
-            SiderustStatus::DataError
-        }
+        siderust::ephemeris::EphemerisError::OutOfRange { .. } => SiderustStatus::OutOfRange,
+        siderust::ephemeris::EphemerisError::InvalidSegment { .. } => SiderustStatus::DataError,
     }
 }
 
@@ -72,6 +68,7 @@ pub extern "C" fn siderust_runtime_ephemeris_load_bsp(
         match RuntimeEphemeris::from_bsp(path_str) {
             Ok(eph) => {
                 let handle = Box::new(SiderustRuntimeEphemeris { inner: eph });
+                // TODO: justify soundness — add doc comment before publishing
                 unsafe { *out = Box::into_raw(handle) };
                 SiderustStatus::Ok
             }
@@ -98,6 +95,7 @@ pub extern "C" fn siderust_runtime_ephemeris_load_bytes(
         match RuntimeEphemeris::from_bytes(slice) {
             Ok(eph) => {
                 let handle = Box::new(SiderustRuntimeEphemeris { inner: eph });
+                // TODO: justify soundness — add doc comment before publishing
                 unsafe { *out = Box::into_raw(handle) };
                 SiderustStatus::Ok
             }
@@ -130,17 +128,18 @@ pub extern "C" fn siderust_runtime_ephemeris_ensure(
             return SiderustStatus::NullPointer;
         }
         let id = match dataset_id {
-            0 => siderust::data::DatasetId::De440,
-            1 => siderust::data::DatasetId::De441,
+            0 => siderust_archive::jpl::JplDatasetId::De440,
+            1 => siderust_archive::jpl::JplDatasetId::De441,
             _ => return SiderustStatus::InvalidArgument,
         };
-        let dm = match siderust::data::DataManager::new() {
+        let dm = match siderust_archive::jpl::DatasetManager::new() {
             Ok(dm) => dm,
             Err(_) => return SiderustStatus::DataError,
         };
-        match RuntimeEphemeris::from_data_manager(&dm, id) {
+        match RuntimeEphemeris::from_dataset_manager(&dm, id) {
             Ok(eph) => {
                 let handle = Box::new(SiderustRuntimeEphemeris { inner: eph });
+                // TODO: justify soundness — add doc comment before publishing
                 unsafe { *out = Box::into_raw(handle) };
                 SiderustStatus::Ok
             }
@@ -189,6 +188,7 @@ pub extern "C" fn siderust_runtime_ephemeris_sun_barycentric(
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
         };
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x().value(),
@@ -220,6 +220,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric(
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
         };
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x().value(),
@@ -251,6 +252,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_heliocentric(
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
         };
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x().value(),
@@ -282,6 +284,7 @@ pub extern "C" fn siderust_runtime_ephemeris_earth_barycentric_velocity(
             Ok(vel) => vel,
             Err(err) => return ephemeris_status(err),
         };
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianVel {
                 vx: vel.x().value(),
@@ -311,6 +314,7 @@ pub extern "C" fn siderust_runtime_ephemeris_moon_geocentric(
             Ok(pos) => pos,
             Err(err) => return ephemeris_status(err),
         };
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustCartesianPos {
                 x: pos.x().value(),

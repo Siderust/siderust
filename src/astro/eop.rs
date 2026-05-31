@@ -66,6 +66,8 @@ pub struct EopValues {
     pub dx: MilliArcseconds,
     /// Celestial pole offset dY.
     pub dy: MilliArcseconds,
+    /// Length-of-day excess (deviation from 86400 SI seconds).
+    pub lod: Seconds,
 }
 
 impl Default for EopValues {
@@ -76,6 +78,7 @@ impl Default for EopValues {
             yp: Arcseconds::new(0.0),
             dx: MilliArcseconds::new(0.0),
             dy: MilliArcseconds::new(0.0),
+            lod: Seconds::new(0.0),
         }
     }
 }
@@ -169,14 +172,16 @@ impl EopProvider for NullEop {
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// IERS EOP provider (build-time embedded table + optional runtime override)
+// IERS EOP provider (runtime-loaded via tempoch)
 // ═══════════════════════════════════════════════════════════════════════════
 
 /// EOP provider backed by tempoch's active IERS `finals2000A.all` bundle.
 ///
-/// By default, uses the time-data bundle embedded in `tempoch`. Runtime
-/// refreshes performed through `tempoch` are visible to newly constructed
-/// contexts/providers, keeping UTC/UT1 and EOP data centralized in one crate.
+/// Uses the time-data bundle that `tempoch` has loaded at runtime.  EOP data
+/// is **not** compiled into the binary; it is loaded on demand via
+/// `tempoch`'s runtime-data mechanisms.  Runtime refreshes performed through
+/// `tempoch` are immediately visible to newly constructed providers because
+/// `IersEop` always reads from tempoch's active bundle.
 ///
 /// The provider interpolates linearly between daily entries for any epoch
 /// within the bundle's MJD range. For epochs outside the range,
@@ -186,7 +191,10 @@ impl EopProvider for NullEop {
 pub struct IersEop;
 
 impl IersEop {
-    /// Create an `IersEop` from the build-time embedded table.
+    /// Create an `IersEop` provider.
+    ///
+    /// EOP data is not embedded at compile time; the provider reads from
+    /// whichever `tempoch` time-data bundle is active at the time of lookup.
     #[inline]
     pub fn new() -> Self {
         Self
@@ -197,28 +205,28 @@ impl IersEop {
     /// # Returns
     ///
     /// * `Some((first_mjd, last_mjd))` when the table has at least one
-    ///   entry; the values are the first and last `mjd` columns,
+    ///   entry; the typed [`Days`] values are the first and last MJD entries,
     ///   inclusive on both ends.
-    /// * `None` if and only if the active table is empty (which can only
-    ///   happen if a caller passes an explicitly empty slice via a custom
-    ///   constructor; the default build-embedded table is never empty).
-    pub fn mjd_range(&self) -> Option<(f64, f64)> {
-        Some((tempoch::EOP_START_MJD.value(), tempoch::EOP_END_MJD.value()))
+    /// * `None` when no runtime EOP bundle has been loaded.
+    pub fn mjd_range(&self) -> Option<(Days, Days)> {
+        let start = tempoch::eop::eop_start()?;
+        let end = tempoch::eop::eop_end()?;
+        Some((start, end))
     }
 
     /// Number of entries in the active table.
     #[inline]
     pub fn len(&self) -> usize {
-        ((tempoch::EOP_END_MJD - tempoch::EOP_START_MJD)
-            .value()
-            .floor() as usize)
-            + 1
+        match self.mjd_range() {
+            Some((start, end)) => (end - start).value().floor() as usize + 1,
+            None => 0,
+        }
     }
 
     /// Whether the table is empty.
     #[inline]
     pub fn is_empty(&self) -> bool {
-        false
+        self.mjd_range().is_none()
     }
 }
 
@@ -233,16 +241,16 @@ impl EopProvider for IersEop {
 
         Ok(EopValues {
             dut1: e.ut1_minus_utc,
-            xp: Arcseconds::new(e.pm_xp_arcsec.unwrap_or(0.0)),
-            yp: Arcseconds::new(e.pm_yp_arcsec.unwrap_or(0.0)),
-            dx: MilliArcseconds::new(e.dx_milliarcsec.unwrap_or(0.0)),
-            dy: MilliArcseconds::new(e.dy_milliarcsec.unwrap_or(0.0)),
+            xp: Arcseconds::new(e.pm_xp.map(|v| v.value()).unwrap_or(0.0)),
+            yp: Arcseconds::new(e.pm_yp.map(|v| v.value()).unwrap_or(0.0)),
+            dx: MilliArcseconds::new(e.dx.map(|v| v.value()).unwrap_or(0.0)),
+            dy: MilliArcseconds::new(e.dy.map(|v| v.value()).unwrap_or(0.0)),
+            lod: Seconds::new(e.lod.map(|v| v.value() / 1_000.0).unwrap_or(0.0)),
         })
     }
 
     fn eop_at(&self, jd_utc: JulianDate) -> EopValues {
-        self.try_eop_at(jd_utc)
-            .expect("IERS EOP requested outside bundled EOP coverage")
+        self.try_eop_at(jd_utc).unwrap_or_default()
     }
 }
 
@@ -295,21 +303,32 @@ mod tests {
     }
 
     #[test]
-    fn iers_eop_rejects_out_of_range_instead_of_zeroing() {
+    fn iers_eop_returns_no_data_without_runtime_bundle() {
+        // tempoch no longer embeds EOP at compile time; IersEop.try_eop_at
+        // returns Err(NoData) when no runtime bundle has been loaded.
         let eop = IersEop::new();
-        let (first, _) = eop.mjd_range().expect("compiled EOP range");
-        let before = crate::time::JulianDate::new(first + 2_400_000.5 - 1.0);
-        let err = eop.try_eop_at(before).expect_err("before range must fail");
-        assert!(matches!(err, EopError::NoData { .. }));
+        let result = eop.try_eop_at(crate::J2000);
+        assert!(
+            matches!(result, Err(EopError::NoData { .. })),
+            "expected NoData without runtime EOP bundle, got {result:?}"
+        );
     }
 
     #[test]
-    fn iers_eop_uses_tempoch_builtin_data() {
+    fn iers_eop_falls_back_to_zeros_without_runtime_bundle() {
+        // eop_at() uses the graceful fallback (zero corrections) when no
+        // runtime EOP bundle is loaded.
         let eop = IersEop::new();
-        let (first, _) = eop.mjd_range().expect("compiled EOP range");
-        let jd = crate::time::JulianDate::new(first + 2_400_000.5);
-        let vals = eop.try_eop_at(jd).expect("range start must be covered");
-        let raw = tempoch::eop::builtin_eop_at(Days::new(first)).expect("tempoch EOP");
-        assert!((vals.dut1.value() - raw.ut1_minus_utc.value()).abs() < 1e-12);
+        let vals = eop.eop_at(crate::J2000);
+        assert_eq!(vals.dut1.value(), 0.0);
+        assert_eq!(vals.xp.value(), 0.0);
+    }
+
+    #[test]
+    fn iers_eop_mjd_range_is_none_without_runtime_bundle() {
+        let eop = IersEop::new();
+        // EOP is runtime-loaded; without a bundle the range is undefined.
+        assert!(eop.mjd_range().is_none());
+        assert!(eop.is_empty());
     }
 }

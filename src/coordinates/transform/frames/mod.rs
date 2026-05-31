@@ -32,6 +32,8 @@
 //! - IAU SOFA Tools for Earth Attitude (2023): <https://www.iausofa.org>
 //! - IERS Conventions 2010 (IERS Technical Note No. 36).
 
+#![allow(unreachable_pub, missing_docs)]
+
 pub(crate) mod bias;
 pub mod direction;
 pub mod to_ecliptic;

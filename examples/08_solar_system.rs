@@ -4,14 +4,15 @@
 //! Solar System + Planets Module Tour
 //!
 //! Run with: `cargo run --example 12_solar_system_example`
+#![allow(clippy::print_stdout)]
 
 use siderust::astro::orbit::KeplerianOrbit;
 use siderust::bodies::planets::{OrbitExt, Planet};
 use siderust::bodies::solar_system::*;
-use siderust::calculus::vsop87::VSOP87;
 use siderust::coordinates::cartesian::position::EclipticMeanJ2000;
 use siderust::coordinates::centers::Geocentric;
 use siderust::coordinates::transform::TransformCenter;
+use siderust::ephemeris::VSOP87;
 use siderust::qtty::*;
 use siderust::time::JulianDate;
 
@@ -141,7 +142,7 @@ fn section_moon_and_lagrange_points(jd: JulianDate) {
 }
 
 fn section_trait_dispatch(jd: JulianDate) {
-    println!("6) TRAIT-BASED DISPATCH (calculus::vsop87::VSOP87)");
+    println!("6) TRAIT-BASED DISPATCH (ephemeris::VSOP87)");
     println!("-------------------------------------------------");
 
     let dynamic_planets: [(&str, &dyn VSOP87); 4] = [

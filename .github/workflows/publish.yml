@@ -14,19 +14,15 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history so publish-changed.sh can resolve base tag
 
       - uses: dtolnay/rust-toolchain@stable
 
-      # Publish in dependency order: siderust → siderust-ffi
-      - name: Publish siderust
-        run: cargo publish -p siderust --no-verify
-        env:
-          CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}
-
-      - name: Wait for crates.io to index siderust
-        run: sleep 30
-
-      - name: Publish siderust-ffi
-        run: cargo publish -p siderust-ffi --no-verify
+      # Publish changed publishable packages.
+      # siderust-ffi has publish = false and is skipped automatically.
+      # Pass --confirm-ffi and protect behind a manual environment for FFI releases.
+      - name: Publish changed packages
+        run: bash scripts/publish-changed.sh
         env:
           CARGO_REGISTRY_TOKEN: ${{ secrets.CARGO_REGISTRY_TOKEN }}

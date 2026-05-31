@@ -28,7 +28,6 @@
 //! - [`CoordinateWithPM<T>`] — a stamped coordinate snapshot pairing any
 //!   typed coordinate `T` with a [`crate::time::JulianDate`] and an optional
 //!   proper-motion model. Constructors are `const` where possible.
-//! - [`Target<T>`] — backward-compatible alias for `CoordinateWithPM<T>`.
 //! - [`Trackable`] — trait abstracting "anything that can produce a position
 //!   at time *t*"; implemented for solar-system unit types, `Star`,
 //!   `direction::ICRS`, and `CoordinateWithPM<T>` itself (identity).
@@ -80,5 +79,5 @@ mod target;
 mod trackable;
 mod transform;
 
-pub use target::{CoordinateWithPM, Target};
+pub use target::CoordinateWithPM;
 pub use trackable::Trackable;

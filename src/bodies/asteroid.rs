@@ -36,21 +36,32 @@ use crate::qtty::{Albedos, AstronomicalUnits, Degrees};
 /// Taxonomic class of a small Solar‑System body.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AsteroidClass {
+    /// Main-belt asteroid: orbits between Mars and Jupiter (~2–3.3 AU).
     MainBelt,
+    /// Near-Earth asteroid: orbit brings it within ~1.3 AU of the Sun.
     NearEarth,
+    /// Trojan asteroid: librates around Jupiter's L4 or L5 Lagrange point.
     Trojan,
+    /// Centaur: orbit crosses those of the giant planets (between Jupiter and Neptune).
     Centaur,
+    /// Trans-Neptunian object: orbit beyond Neptune (> 30 AU).
     TransNeptunian,
+    /// Dwarf planet: a body that has not cleared the neighbourhood around its orbit.
     DwarfPlanet,
 }
 
 /// Data structure representing an **asteroid / minor planet**.
 #[derive(Clone, Debug)]
 pub struct Asteroid<'a> {
+    /// Human-readable name (e.g. `"Bennu"`).
     pub name: &'a str,
+    /// Formal designation (e.g. `"(101955) Bennu"`).
     pub designation: &'a str,
+    /// Mineralogical/taxonomic composition description (e.g. `"B-type (carbonaceous)"`).
     pub composition: &'a str,
+    /// Orbital classification.
     pub class: AsteroidClass,
+    /// Keplerian orbital elements.
     pub orbit: KeplerianOrbit,
     /// Bond albedo (dimensionless, ∈ [0, 1]).  `None` when not catalogued.
     pub albedo: Option<Albedos>,
@@ -99,6 +110,7 @@ impl<'a> Asteroid<'a> {
 //  Builder
 // -------------------------------------------------------------------------------------------------
 
+/// Builder for runtime construction of [`Asteroid`] values.
 #[derive(Default, Clone, Debug)]
 pub struct AsteroidBuilder<'a> {
     name: Option<&'a str>,
@@ -110,31 +122,38 @@ pub struct AsteroidBuilder<'a> {
 }
 
 impl<'a> AsteroidBuilder<'a> {
+    /// Set the asteroid name.
     pub fn name(mut self, name: &'a str) -> Self {
         self.name = Some(name);
         self
     }
+    /// Set the formal designation string.
     pub fn designation(mut self, des: &'a str) -> Self {
         self.designation = Some(des);
         self
     }
+    /// Set the composition description.
     pub fn composition(mut self, comp: &'a str) -> Self {
         self.composition = Some(comp);
         self
     }
+    /// Set the orbital classification.
     pub fn class(mut self, class: AsteroidClass) -> Self {
         self.class = Some(class);
         self
     }
+    /// Set the Keplerian orbital elements.
     pub fn orbit(mut self, orbit: KeplerianOrbit) -> Self {
         self.orbit = Some(orbit);
         self
     }
+    /// Set the Bond albedo.
     pub fn albedo(mut self, albedo: Albedos) -> Self {
         self.albedo = Some(albedo);
         self
     }
 
+    /// Build the [`Asteroid`]; panics if required fields are missing.
     pub fn build(self) -> Asteroid<'a> {
         Asteroid {
             name: self.name.expect("missing name"),

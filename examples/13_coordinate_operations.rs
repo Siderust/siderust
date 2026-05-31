@@ -9,6 +9,7 @@
 //! accidentally mixing incompatible coordinate systems.
 //!
 //! Run with: `cargo run --example 13_coordinate_operations`
+#![allow(clippy::print_stdout)]
 
 use std::f64::consts::PI;
 

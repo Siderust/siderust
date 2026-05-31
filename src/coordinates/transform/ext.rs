@@ -338,7 +338,7 @@ pub trait PositionAstroExt<C: ReferenceCenter, F: ReferenceFrame, U: LengthUnit>
     ) -> Position<C2, F2, U>
     where
         Ctx: TransformContext,
-        Ctx::Eph: crate::calculus::ephemeris::Ephemeris,
+        Ctx::Eph: crate::ephemeris::Ephemeris,
         (): CenterShiftProvider<C, C2, F>,
         (): FrameRotationProvider<F, F2>;
 }
@@ -390,7 +390,7 @@ where
     ) -> Position<C2, F2, U>
     where
         Ctx: TransformContext,
-        Ctx::Eph: crate::calculus::ephemeris::Ephemeris,
+        Ctx::Eph: crate::ephemeris::Ephemeris,
         (): CenterShiftProvider<C, C2, F>,
         (): FrameRotationProvider<F, F2>,
     {
@@ -458,7 +458,7 @@ impl<'a, C, F, U, Ctx> WithEngine<'a, Position<C, F, U>, Ctx>
 where
     C: ReferenceCenter<Params = ()>,
     Ctx: TransformContext,
-    Ctx::Eph: crate::calculus::ephemeris::Ephemeris,
+    Ctx::Eph: crate::ephemeris::Ephemeris,
     F: ReferenceFrame,
     U: LengthUnit,
 {

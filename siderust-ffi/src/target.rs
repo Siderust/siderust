@@ -197,6 +197,7 @@ pub extern "C" fn siderust_generic_target_create(
         };
 
         let handle = Box::new(SiderustGenericTarget { inner, data });
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = Box::into_raw(handle) };
         SiderustStatus::Ok
     }}
@@ -283,6 +284,7 @@ pub extern "C" fn siderust_generic_target_get_data(
         if handle.is_null() || out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = (*handle).data };
         SiderustStatus::Ok
     }}
@@ -298,6 +300,7 @@ pub extern "C" fn siderust_generic_target_epoch_jd(
         if handle.is_null() || out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe { *out = (*handle).data.epoch_jd };
         SiderustStatus::Ok
     }}

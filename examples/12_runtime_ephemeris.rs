@@ -16,14 +16,15 @@
 //! # Load from a local BSP file
 //! cargo run --example 12_runtime_ephemeris -- /path/to/de440.bsp
 //!
-//! # With the `runtime-data` feature: uses DataManager (auto-cache)
+//! # With the `runtime-data` feature: uses DatasetManager (auto-cache)
 //! cargo run --features runtime-data --example 12_runtime_ephemeris -- /path/to/de440.bsp
 //!
 //! # With `runtime-data` and no path: shows how to download DE440 on first run
 //! cargo run --features runtime-data --example 12_runtime_ephemeris
 //! ```
+#![allow(clippy::print_stdout)]
 
-use siderust::calculus::ephemeris::{DynEphemeris, RuntimeEphemeris};
+use siderust::ephemeris::{DynEphemeris, RuntimeEphemeris};
 
 fn print_positions(eph: &RuntimeEphemeris, label: &str) {
     let jd = siderust::time::J2000;
@@ -78,25 +79,25 @@ fn demo_load_from_bytes() {
     println!();
 }
 
-/// Section 3 (requires `runtime-data` feature): Demonstrate [`DataManager`].
+/// Section 3 (requires `runtime-data` feature): Demonstrate [`DatasetManager`].
 ///
-/// [`DataManager`] handles the persistent cache, integrity checking, and
+/// [`DatasetManager`] handles the persistent cache, integrity checking, and
 /// (on explicit request) HTTP downloads from JPL servers.
 #[cfg(feature = "runtime-data")]
 fn demo_data_manager(explicit_download: bool) {
-    use siderust::data::{DataManager, DatasetId};
+    use siderust_archive::jpl::{refs::JplDatasetId, DatasetManager};
 
     println!("────────────────────────────────────────────────────");
-    println!("3) DataManager (feature = runtime-data)");
+    println!("3) DatasetManager (feature = runtime-data)");
     println!("────────────────────────────────────────────────────");
 
-    let dm = match DataManager::new() {
+    let dm = match DatasetManager::new() {
         Ok(dm) => {
             println!("  Cache dir: {}", dm.data_dir().display());
             dm
         }
         Err(e) => {
-            eprintln!("  ✗ Cannot create DataManager: {}", e);
+            eprintln!("  ✗ Cannot create DatasetManager: {}", e);
             return;
         }
     };
@@ -113,13 +114,13 @@ fn demo_data_manager(explicit_download: bool) {
     }
 
     // DE440 (~120 MB): check if already downloaded before loading.
-    let id = DatasetId::De440;
+    let id = JplDatasetId::De440;
     println!("\n  Checking DE440...");
 
     if dm.is_available(id) {
         // File already cached, load it directly.
-        match RuntimeEphemeris::from_data_manager(&dm, id) {
-            Ok(eph) => print_positions(&eph, "DE440 (DataManager)"),
+        match RuntimeEphemeris::from_dataset_manager(&dm, id) {
+            Ok(eph) => print_positions(&eph, "DE440 (DatasetManager)"),
             Err(e) => eprintln!("  ✗ Load failed: {}", e),
         }
     } else if explicit_download {
@@ -132,7 +133,10 @@ fn demo_data_manager(explicit_download: bool) {
             id,
             Some(Box::new(|downloaded, total| {
                 if total > 0 {
-                    let pct = downloaded * 100 / total;
+                    let pct = downloaded
+                        .checked_mul(100)
+                        .and_then(|value| value.checked_div(total))
+                        .unwrap_or(0);
                     eprint!(
                         "\r  Progress: {}% ({} / {} MB)",
                         pct,
@@ -160,14 +164,16 @@ fn demo_data_manager(explicit_download: bool) {
         println!();
         println!("  To download it, either:");
         println!("    a) Run this example with --download:         cargo run --features runtime-data --example 12_runtime_ephemeris -- --download");
-        println!("    b) Call dm.ensure(DatasetId::De440) in code: it downloads if missing.");
+        println!("    b) Call dm.ensure(JplDatasetId::De440) in code: it downloads if missing.");
         println!(
             "    c) Place de440.bsp in: {}",
             dm.data_dir().join("de440.bsp").display()
         );
         println!();
         println!("  DE441 (~1.65 GB) is only supported via runtime loading:");
-        println!("    dm.ensure(DatasetId::De441)   // downloads de441_part-2.bsp on first call");
+        println!(
+            "    dm.ensure(JplDatasetId::De441)   // downloads de441_part-2.bsp on first call"
+        );
     }
     println!();
 }
@@ -193,7 +199,7 @@ fn main() {
     // Demo 2: loading from raw bytes.
     demo_load_from_bytes();
 
-    // Demo 3: DataManager, only compiled when `runtime-data` feature is active.
+    // Demo 3: DatasetManager, only compiled when `runtime-data` feature is active.
     #[cfg(feature = "runtime-data")]
     {
         let explicit_download = args.iter().any(|a| a == "--download");
@@ -203,7 +209,7 @@ fn main() {
     #[cfg(not(feature = "runtime-data"))]
     {
         println!("────────────────────────────────────────────────────");
-        println!("3) DataManager (feature = runtime-data)  [SKIPPED]");
+        println!("3) DatasetManager (feature = runtime-data)  [SKIPPED]");
         println!("────────────────────────────────────────────────────");
         println!("  Enable with: cargo run --features runtime-data --example 12_runtime_ephemeris");
         println!();

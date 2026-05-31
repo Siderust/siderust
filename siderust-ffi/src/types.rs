@@ -56,16 +56,16 @@ use qtty::length::{AstronomicalUnits, Meters};
 use qtty::time::Days;
 use qtty::unit::{Day, Degree};
 use qtty::*;
-use siderust::calculus::azimuth::{
-    AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
-};
+use siderust::astro::dynamics::units::{GM_EARTH, GM_SUN};
 use siderust::coordinates::centers::{
     BodycentricParams as RustBodycentricParams, Geodetic,
     OrbitReferenceCenter as RustOrbitRefCenter,
 };
 use siderust::coordinates::frames::ECEF;
-use siderust::time::{ModifiedJulianDate, Period};
-use tempoch::Interval;
+use siderust::event::azimuth::{
+    AzimuthCrossingDirection, AzimuthCrossingEvent, AzimuthExtremum, AzimuthExtremumKind,
+};
+use siderust::time::{Interval, ModifiedJulianDate};
 
 // Re-export tempoch-ffi types so the generated header can reference them.
 // The extern crate declaration is needed because the dep name maps through a hyphen.
@@ -699,7 +699,11 @@ impl SiderustBodycentricParams {
             2 => RustOrbitRefCenter::Geocentric,
             _ => RustOrbitRefCenter::Heliocentric, // safe default
         };
-        Ok(RustBodycentricParams::new(orbit, orbit_center))
+        let mu = match orbit_center {
+            RustOrbitRefCenter::Geocentric => GM_EARTH,
+            RustOrbitRefCenter::Barycentric | RustOrbitRefCenter::Heliocentric => GM_SUN,
+        };
+        Ok(RustBodycentricParams::new(orbit, orbit_center, mu))
     }
 
     /// Create from the Rust domain type.
@@ -835,6 +839,7 @@ impl SiderustAltitudeQuery {
             ),
             min_altitude: Degrees::new(self.min_altitude_deg),
             max_altitude: Degrees::new(self.max_altitude_deg),
+            correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
         })
     }
 }
@@ -1077,8 +1082,8 @@ pub struct SiderustPhaseEvent {
 // FfiFrom implementations
 // ═══════════════════════════════════════════════════════════════════════════
 
-impl FfiFrom<Period<ModifiedJulianDate>> for TempochPeriodMjd {
-    fn ffi_from(p: &Period<ModifiedJulianDate>) -> Self {
+impl FfiFrom<Interval<ModifiedJulianDate>> for TempochPeriodMjd {
+    fn ffi_from(p: &Interval<ModifiedJulianDate>) -> Self {
         TempochPeriodMjd {
             start_mjd: p.start.raw().value(),
             end_mjd: p.end.raw().value(),
@@ -1328,12 +1333,12 @@ mod tests {
         assert!(s5.contains("Iau2006A"));
     }
 
-    // ── FfiFrom for Period<MJD> ──────────────────────────────────────────
+    // ── FfiFrom for Interval<MJD> ──────────────────────────────────────────
 
     #[test]
     fn ffi_from_period_mjd() {
         use tempoch::Interval;
-        let p: Period<ModifiedJulianDate> = Interval::new(
+        let p: Interval<ModifiedJulianDate> = Interval::new(
             siderust::time::try_mjd_f64(60000.0).unwrap(),
             siderust::time::try_mjd_f64(60001.0).unwrap(),
         );
@@ -1392,7 +1397,7 @@ mod tests {
 
     #[test]
     fn azimuth_extremum_ffi_from_max() {
-        use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
+        use siderust::event::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
             mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             azimuth: qtty::angular::Degrees::new(180.0),
@@ -1405,7 +1410,7 @@ mod tests {
 
     #[test]
     fn azimuth_extremum_ffi_from_min() {
-        use siderust::calculus::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
+        use siderust::event::azimuth::{AzimuthExtremum, AzimuthExtremumKind};
         let e = AzimuthExtremum {
             mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             azimuth: qtty::angular::Degrees::new(0.0),
@@ -1419,7 +1424,7 @@ mod tests {
 
     #[test]
     fn azimuth_crossing_event_ffi_from_rising() {
-        use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
+        use siderust::event::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
             mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             direction: AzimuthCrossingDirection::Rising,
@@ -1430,7 +1435,7 @@ mod tests {
 
     #[test]
     fn azimuth_crossing_event_ffi_from_setting() {
-        use siderust::calculus::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
+        use siderust::event::azimuth::{AzimuthCrossingDirection, AzimuthCrossingEvent};
         let e = AzimuthCrossingEvent {
             mjd: siderust::time::try_mjd_f64(60000.0).unwrap(),
             direction: AzimuthCrossingDirection::Setting,

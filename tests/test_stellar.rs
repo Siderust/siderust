@@ -5,15 +5,15 @@
 //! [`AltitudePeriodsProvider`] trait API.
 //!
 //! Validates correctness for circumpolar, rise/set, and never-visible cases.
-//! Scan-vs-analytical consistency is tested inside the `calculus::stellar`
+//! Scan-vs-analytical consistency is tested inside the `event::stellar`
 //! module's own `#[cfg(test)]` block.
 
-use siderust::calculus::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
+use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
 use siderust::qtty::*;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::time::{Interval, ModifiedJulianDate};
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -35,15 +35,15 @@ fn roque() -> Geodetic<ECEF> {
     )
 }
 
-fn period_7d() -> Period<ModifiedJulianDate> {
-    Period::new(
+fn period_7d() -> Interval<ModifiedJulianDate> {
+    Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     )
 }
 
-fn period_3d() -> Period<ModifiedJulianDate> {
-    Period::new(
+fn period_3d() -> Interval<ModifiedJulianDate> {
+    Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60003.0)).unwrap(),
     )
@@ -183,6 +183,7 @@ fn range_periods_sirius_roque() {
         window: period_7d(),
         min_altitude: Degrees::new(10.0),
         max_altitude: Degrees::new(30.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     });
     assert!(
         !periods.is_empty(),
@@ -230,6 +231,7 @@ fn trait_api_range_within_above() {
         window: period,
         min_altitude: Degrees::new(10.0),
         max_altitude: Degrees::new(30.0),
+        correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
     });
 
     // Range [10°, 30°] periods should be subsets of above(10°) periods

@@ -41,7 +41,7 @@ use crate::qtty::LengthUnit;
 
 /// Blanket implementation to allow chaining two consecutive `Transform` operations.
 ///
-/// This implementation allows converting a `Target` in Cartesian coordinates from one
+/// This implementation allows converting a `CoordinateWithPM` in Cartesian coordinates from one
 /// reference center and frame (`C1`, `F1`) to another (`C2`, `F2`) by applying two
 /// transformations:
 /// 1. Frame transformation (within the same center)
@@ -68,7 +68,7 @@ where
     }
 }
 
-/// Blanket implementation for transforming `Target` in spherical coordinates,
+/// Blanket implementation for transforming `CoordinateWithPM` in spherical coordinates,
 /// involving frame and center changes. Internally uses Cartesian conversions.
 ///
 /// The transformation follows these steps:

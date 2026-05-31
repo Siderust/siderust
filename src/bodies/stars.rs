@@ -58,11 +58,17 @@ use std::borrow::Cow;
 /// Represents a **Star** characterized by its distance, mass, radius, luminosity and position in the sky.
 #[derive(Clone, Debug)]
 pub struct Star<'a> {
+    /// Human-readable name or designation (e.g. `"Alpha Centauri A"`).
     pub name: Cow<'a, str>,
+    /// Distance from Earth.
     pub distance: LightYears,
+    /// Total mass.
     pub mass: SolarMasses,
+    /// Mean photospheric radius.
     pub radius: SolarRadiuses,
+    /// Total bolometric luminosity.
     pub luminosity: SolarLuminosities,
+    /// J2000 ICRS coordinate, with optional proper motion.
     pub coordinate: CoordinateWithPM<Position<Geocentric, EquatorialMeanJ2000, LightYear>>,
     /// Annual trigonometric parallax.
     ///
@@ -233,5 +239,132 @@ impl crate::targets::Trackable for Star<'_> {
     #[inline]
     fn track(&self, _jd: JulianDate) -> Self::Coords {
         direction::ICRS::from(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use crate::astro::proper_motion::{ProperMotion, RaProperMotionConvention};
+    use crate::qtty::angular::Degrees;
+    use crate::targets::CoordinateWithPM;
+    use crate::targets::Trackable;
+    use crate::J2000;
+
+    type DegreesPerYear =
+        crate::qtty::Quantity<crate::qtty::Per<crate::qtty::unit::Degree, crate::qtty::unit::Year>>;
+
+    fn make_pos() -> position::EquatorialMeanJ2000<LightYear> {
+        // new_unchecked(polar=dec, azimuth=ra, distance)
+        position::EquatorialMeanJ2000::<LightYear>::new_unchecked(
+            Degrees::new(5.7),
+            Degrees::new(45.0),
+            LightYears::new(4.37),
+        )
+    }
+
+    fn simple_coord() -> CoordinateWithPM<position::EquatorialMeanJ2000<LightYear>> {
+        CoordinateWithPM::new_static(make_pos(), J2000)
+    }
+
+    fn simple_star() -> Star<'static> {
+        Star::new(
+            "TestStar",
+            LightYears::new(4.37),
+            SolarMasses::new(1.1),
+            SolarRadiuses::new(1.2),
+            SolarLuminosities::new(1.5),
+            simple_coord(),
+        )
+    }
+
+    #[test]
+    fn star_name_is_set_correctly() {
+        let s = simple_star();
+        assert_eq!(s.name, "TestStar");
+    }
+
+    #[test]
+    fn with_parallax_builder_attaches_value() {
+        let s = simple_star().with_parallax(MilliArcseconds::new(742.0));
+        assert!(s.parallax.is_some());
+        assert!((s.parallax.unwrap().value() - 742.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn with_radial_velocity_builder_attaches_value() {
+        let rv = Velocity::<Kilometer, unit::Second>::new(-22.0);
+        let s = simple_star().with_radial_velocity(rv);
+        assert!(s.radial_velocity.is_some());
+    }
+
+    #[test]
+    fn has_full_space_motion_false_without_parallax_rv_pm() {
+        let s = simple_star();
+        assert!(!s.has_full_space_motion());
+    }
+
+    #[test]
+    fn has_full_space_motion_true_with_all_fields() {
+        let pm = ProperMotion {
+            pm_ra: DegreesPerYear::new(1e-6),
+            pm_dec: DegreesPerYear::new(1e-6),
+            ra_convention: RaProperMotionConvention::MuAlphaStar,
+        };
+        let coord = CoordinateWithPM::new(make_pos(), J2000, pm);
+        let s = Star::new(
+            "FullMotionStar",
+            LightYears::new(4.37),
+            SolarMasses::new(1.0),
+            SolarRadiuses::new(1.0),
+            SolarLuminosities::new(1.0),
+            coord,
+        )
+        .with_parallax(MilliArcseconds::new(742.0))
+        .with_radial_velocity(Velocity::<Kilometer, unit::Second>::new(-22.0));
+        assert!(s.has_full_space_motion());
+    }
+
+    #[test]
+    fn from_star_ref_extracts_direction() {
+        let s = simple_star();
+        let dir = direction::ICRS::from(&s);
+        let pos = s.coordinate.get_position();
+        assert!((dir.azimuth.value() - pos.azimuth.value()).abs() < 1e-9);
+        assert!((dir.polar.value() - pos.polar.value()).abs() < 1e-9);
+    }
+
+    #[test]
+    fn track_matches_from_ref() {
+        let s = simple_star();
+        let tracked = s.track(J2000);
+        let from_ref = direction::ICRS::from(&s);
+        assert_eq!(tracked.azimuth, from_ref.azimuth);
+        assert_eq!(tracked.polar, from_ref.polar);
+    }
+
+    #[test]
+    fn position_at_no_pm_returns_ok() {
+        let s = simple_star();
+        assert!(s.position_at(J2000).is_ok());
+    }
+
+    #[test]
+    fn position_at_with_pm_only_returns_ok() {
+        let pm = ProperMotion {
+            pm_ra: DegreesPerYear::new(1e-6),
+            pm_dec: DegreesPerYear::new(1e-6),
+            ra_convention: RaProperMotionConvention::MuAlphaStar,
+        };
+        let coord = CoordinateWithPM::new(make_pos(), J2000, pm);
+        let s = Star::new(
+            "PmOnlyStar",
+            LightYears::new(4.37),
+            SolarMasses::new(1.0),
+            SolarRadiuses::new(1.0),
+            SolarLuminosities::new(1.0),
+            coord,
+        );
+        assert!(s.position_at(J2000).is_ok());
     }
 }

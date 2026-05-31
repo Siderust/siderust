@@ -4,7 +4,7 @@
 //! Serde serialization examples.
 //!
 //! Run with: `cargo run --example 11_serde_serialization --features serde`
-
+#![allow(clippy::print_stdout, missing_docs, unreachable_pub)]
 #![cfg_attr(not(feature = "serde"), allow(dead_code, unused_imports))]
 
 #[cfg(feature = "serde")]
@@ -15,7 +15,7 @@ mod demo {
     use siderust::bodies::solar_system::{Earth, Mars, Moon};
     use siderust::coordinates::{cartesian, centers, frames, spherical};
     use siderust::qtty::*;
-    use siderust::targets::{Target, Trackable};
+    use siderust::targets::{CoordinateWithPM, Trackable};
     use siderust::time::{JulianDate, ModifiedJulianDate};
     use std::fs;
 
@@ -45,13 +45,14 @@ mod demo {
 
     #[derive(Debug, Serialize, Deserialize)]
     struct BodyTargetsBundle {
-        // Mars `Trackable` output is already a CoordinateWithPM<...>, i.e. Target<...>.
-        mars_bary_target: Target<
+        // Mars `Trackable` output is already a `CoordinateWithPM<...>`.
+        mars_bary_target: CoordinateWithPM<
             cartesian::Position<centers::Barycentric, frames::EclipticMeanJ2000, AstronomicalUnit>,
         >,
         // Moon does not return CoordinateWithPM from `track`, so we wrap a snapshot.
-        moon_geo_target:
-            Target<cartesian::Position<centers::Geocentric, frames::EclipticMeanJ2000, Kilometer>>,
+        moon_geo_target: CoordinateWithPM<
+            cartesian::Position<centers::Geocentric, frames::EclipticMeanJ2000, Kilometer>,
+        >,
     }
 
     fn pretty_json<T: Serialize>(value: &T) -> String {
@@ -163,13 +164,13 @@ mod demo {
         );
 
         // =========================================================================
-        // 4) Target objects (CoordinateWithPM alias)
+        // 4) CoordinateWithPM objects
         // =========================================================================
         println!("4) TARGET OBJECTS");
         println!("-----------------");
 
         let mars_target = Mars.track(jd);
-        let moon_target = Target::new_static(Moon.track(jd), jd);
+        let moon_target = CoordinateWithPM::new_static(Moon.track(jd), jd);
 
         let targets = BodyTargetsBundle {
             mars_bary_target: mars_target,

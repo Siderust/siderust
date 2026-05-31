@@ -127,11 +127,6 @@ impl<T> CoordinateWithPM<T> {
     }
 }
 
-/// Backward-compatibility type alias, existing code that says `Target<T>`
-/// continues to compile without changes.  New code should prefer
-/// [`CoordinateWithPM`].
-pub type Target<T> = CoordinateWithPM<T>;
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -147,7 +142,8 @@ mod tests {
 
     #[test]
     fn test_target_new() {
-        let target = Target::new_static(*ALDEBARAN.coordinate.get_position(), crate::J2000);
+        let target =
+            CoordinateWithPM::new_static(*ALDEBARAN.coordinate.get_position(), crate::J2000);
 
         assert_eq!(
             target.position.ra(),
@@ -171,7 +167,7 @@ mod tests {
             MilliArcsecondsPerDay::new(10.0),
             MilliArcsecondsPerDay::new(5.0),
         );
-        let target = Target::new(position, crate::J2000, proper_motion);
+        let target = CoordinateWithPM::new(position, crate::J2000, proper_motion);
 
         assert_eq!(target.position.ra().value(), 45.0);
         assert_eq!(target.position.dec().value(), 30.0);
@@ -186,7 +182,7 @@ mod tests {
             crate::qtty::Degrees::new(45.0),
             200.0,
         );
-        let target = Target::new_static(position, crate::J2000);
+        let target = CoordinateWithPM::new_static(position, crate::J2000);
 
         assert_eq!(target.position.ra().value(), 60.0);
         assert_eq!(target.position.dec().value(), 45.0);
@@ -207,14 +203,14 @@ mod tests {
         );
 
         // Test with Some(proper_motion)
-        let target = Target::new_raw(position, crate::J2000, Some(proper_motion));
+        let target = CoordinateWithPM::new_raw(position, crate::J2000, Some(proper_motion));
         assert_eq!(target.position.ra().value(), 90.0);
         assert_eq!(target.position.dec().value(), 60.0);
         assert_eq!(target.time, crate::J2000);
         assert!(target.proper_motion.is_some());
 
         // Test with None proper_motion
-        let target = Target::new_raw(position, crate::J2000, None);
+        let target = CoordinateWithPM::new_raw(position, crate::J2000, None);
         assert_eq!(target.position.ra().value(), 90.0);
         assert_eq!(target.position.dec().value(), 60.0);
         assert_eq!(target.time, crate::J2000);
@@ -228,7 +224,7 @@ mod tests {
             crate::qtty::Degrees::new(75.0),
             400.0,
         );
-        let target = Target::new_static(position, crate::J2000);
+        let target = CoordinateWithPM::new_static(position, crate::J2000);
 
         let retrieved_position = target.get_position();
         assert_eq!(retrieved_position.ra(), Degrees::new(120.0));
@@ -249,7 +245,7 @@ mod tests {
         );
 
         // Test with proper motion
-        let target = Target::new(position, crate::J2000, proper_motion);
+        let target = CoordinateWithPM::new(position, crate::J2000, proper_motion);
         let retrieved_pm = target.get_proper_motion();
         assert!(retrieved_pm.is_some());
         if let Some(pm) = retrieved_pm {
@@ -259,7 +255,7 @@ mod tests {
         }
 
         // Test without proper motion
-        let target = Target::new_static(position, crate::J2000);
+        let target = CoordinateWithPM::new_static(position, crate::J2000);
         let retrieved_pm = target.get_proper_motion();
         assert!(retrieved_pm.is_none());
     }
@@ -271,7 +267,7 @@ mod tests {
             crate::qtty::Degrees::new(85.0),
             600.0,
         );
-        let target = Target::new_static(position, crate::J2000);
+        let target = CoordinateWithPM::new_static(position, crate::J2000);
 
         let retrieved_time = target.get_time();
         assert_eq!(*retrieved_time, crate::J2000);
@@ -288,7 +284,7 @@ mod tests {
             MilliArcsecondsPerDay::new(25.0),
             MilliArcsecondsPerDay::new(15.0),
         );
-        let mut target = Target::new(initial_position, crate::J2000, proper_motion);
+        let mut target = CoordinateWithPM::new(initial_position, crate::J2000, proper_motion);
 
         // Update position and time
         let new_position = GCRS::<Au>::new(
@@ -324,7 +320,7 @@ mod tests {
             crate::qtty::Degrees::new(80.0),
             900.0,
         );
-        let target = Target::new_static(position, crate::J2000);
+        let target = CoordinateWithPM::new_static(position, crate::J2000);
 
         let debug_str = format!("{:?}", target);
         assert!(debug_str.contains("CoordinateWithPM"));
@@ -341,7 +337,7 @@ mod tests {
             MilliArcsecondsPerDay::new(30.0),
             MilliArcsecondsPerDay::new(18.0),
         );
-        let target1 = Target::new(position, crate::J2000, proper_motion);
+        let target1 = CoordinateWithPM::new(position, crate::J2000, proper_motion);
 
         let target2 = target1.clone();
 
@@ -367,7 +363,7 @@ mod tests {
             crate::qtty::Degrees::new(0.0),
             0.0,
         );
-        let target = Target::new_static(position, crate::J2000);
+        let target = CoordinateWithPM::new_static(position, crate::J2000);
         assert_eq!(target.position.ra(), Degrees::new(0.0));
         assert_eq!(target.position.dec(), Degrees::new(0.0));
         assert_eq!(target.position.distance, AstronomicalUnits::new(0.0));
@@ -378,7 +374,7 @@ mod tests {
             crate::qtty::Degrees::new(89.999),
             1e6,
         );
-        let target = Target::new_static(position, crate::J2000);
+        let target = CoordinateWithPM::new_static(position, crate::J2000);
         assert!((target.position.ra().value() - 359.999).abs() < 1e-6);
         assert!((target.position.dec().value() - 89.999).abs() < 1e-6);
         assert_eq!(target.position.distance, AstronomicalUnits::new(1e6));
@@ -395,7 +391,7 @@ mod tests {
             MilliArcsecondsPerDay::new(0.0),
             MilliArcsecondsPerDay::new(0.0),
         );
-        let target = Target::new(position, crate::J2000, zero_proper_motion);
+        let target = CoordinateWithPM::new(position, crate::J2000, zero_proper_motion);
 
         assert!(target.proper_motion.is_some());
         if let Some(pm) = target.get_proper_motion() {

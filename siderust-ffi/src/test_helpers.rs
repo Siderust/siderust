@@ -8,12 +8,12 @@
 use crate::types::*;
 
 /// Wrap a raw Modified Julian Date for FFI calls.
-pub fn mjd(value: f64) -> f64 {
+pub(crate) fn mjd(value: f64) -> f64 {
     value
 }
 
 /// Observer at Paris (lat 48.85°N, lon 2.35°E, 35 m).
-pub fn paris() -> SiderustGeodetict {
+pub(crate) fn paris() -> SiderustGeodetict {
     SiderustGeodetict {
         lon_deg: 2.35,
         lat_deg: 48.85,
@@ -22,7 +22,7 @@ pub fn paris() -> SiderustGeodetict {
 }
 
 /// A one-day time window starting at MJD 60000.
-pub fn one_day_window() -> TempochPeriodMjd {
+pub(crate) fn one_day_window() -> TempochPeriodMjd {
     TempochPeriodMjd {
         start_mjd: mjd(60000.0),
         end_mjd: mjd(60001.0),
@@ -30,7 +30,7 @@ pub fn one_day_window() -> TempochPeriodMjd {
 }
 
 /// Default search options (tight tolerance, no explicit scan step).
-pub fn default_opts() -> SiderustSearchOpts {
+pub(crate) fn default_opts() -> SiderustSearchOpts {
     SiderustSearchOpts {
         time_tolerance_days: 1e-9,
         scan_step_days: 0.0,
@@ -39,7 +39,7 @@ pub fn default_opts() -> SiderustSearchOpts {
 }
 
 /// Vega's ICRS coordinates as a `SiderustSphericalDir`.
-pub fn icrs_vega() -> SiderustSphericalDir {
+pub(crate) fn icrs_vega() -> SiderustSphericalDir {
     SiderustSphericalDir {
         polar_deg: 38.78,
         azimuth_deg: 279.23,

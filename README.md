@@ -2,6 +2,9 @@
 
 [![Crates.io](https://img.shields.io/crates/v/siderust.svg)](https://crates.io/crates/siderust)
 [![Docs.rs](https://docs.rs/siderust/badge.svg)](https://docs.rs/siderust)
+[![CI](https://github.com/Siderust/siderust/actions/workflows/ci.yml/badge.svg)](https://github.com/Siderust/siderust/actions/workflows/github-ci.yml)
+[![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
+
 
 > **Typed astronomy & satellite mechanics in safe Rust.**
 
@@ -28,17 +31,19 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 
 ## Supported Feature Flags
 
-| Feature  | Default | What it enables |
-|----------|---------|-----------------|
-| *(none)* | ✔       | VSOP87 + ELP2000-82B analytical ephemerides, full coordinate/altitude API |
-| `de440`  |         | JPL DE440 Chebyshev ephemeris backend (1550–2650 CE) |
-| `de441`  |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
-| `serde`  |         | `Serialize` / `Deserialize` on public types |
-| `atmosphere` |     | Atmospheric tables and radiative transfer helpers |
-| `spectra` |        | Spectral tables and synthetic-photometry helpers |
-| `tables` |         | Additional tabulated astronomy helpers |
-| `runtime-data` |   | Runtime dataset-loading helpers |
-| `regen-data` |     | Regenerates committed VSOP87/ELP2000 tables |
+| Feature        | Default | What it enables |
+|----------------|---------|-----------------|
+| `serde`        | ✔       | `Serialize` / `Deserialize` on public types (default) |
+| *(base)*       |         | VSOP87 + ELP2000-82B analytical ephemerides, full coordinate/altitude API |
+| `de440`        |         | JPL DE440 Chebyshev ephemeris backend (1550–2650 CE) |
+| `de441`        |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
+| `atmosphere`   |         | Atmospheric tables and radiative transfer helpers |
+| `photometry`   |         | Photometric passbands and throughput unit (Johnson–Cousins UBVRI) |
+| `spice`        |         | High-level SPICE kernel context (`SpiceContext`, `KernelSet`) |
+| `pod`          |         | Precise Orbit Determination toolkit (WLS, EKF, force models, I/O) |
+| `pod-parquet`  |         | Parquet residuals writer (implies `pod`) |
+| `pod-doris`    |         | DORIS RINEX observation parser (implies `pod`) |
+| `runtime-data` |         | Runtime dataset-loading helpers via `siderust-archive` |
 
 > **Note:** `no_std` and `f128` quad‑precision are **not** supported today.
 > The crate depends on `std`‑only libraries such as `chrono`.
@@ -54,13 +59,13 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 | **Coordinate Systems**  | `Position` and spherical `Direction` types parameterised by `ReferenceCenter`, `ReferenceFrame`, and `Unit`. Compile‑time guarantees prevent mixing frames by accident.       |
 | **Target Tracking**     | `Target<T>` couples any coordinate with an observation epoch and optional `ProperMotion`, enabling extrapolation & filtering.                                                  |
 | **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Duration` & more via the [`qtty`](https://crates.io/crates/qtty) crate, dimensional correctness at compile time.       |
-| **Celestial Mechanics** | Kepler solvers, VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches.                |
+| **Celestial Mechanics** | VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches, SGP4/TLE propagation.         |
 | **Ephemeris Backends**  | Pluggable `Ephemeris` trait with three backends, `Vsop87Ephemeris` (always available), `De440Ephemeris`, and `De441Ephemeris` (feature-gated JPL DE4xx).                     |
 | **Altitude API**        | Unified `AltitudePeriodsProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions, find crossings, culminations, altitude ranges, and above/below‑threshold periods.|
 | **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, + helpers for custom datasets.                           |
 | **Observatories**       | Predefined sites (Roque de los Muchachos, El Paranal, Mauna Kea, La Silla) with `ObserverSite` for topocentric transforms.                                                  |
 
-Coordinate algebra and reusable conic geometry are provided by [`affn`](https://crates.io/crates/affn); `siderust` adds the astronomy-specific time, anomaly, and propagation semantics on top.
+Coordinate algebra and reusable conic geometry are provided by [`affn`](https://crates.io/crates/affn); Kepler-equation solving and domain-neutral conic propagation live in [`keplerian`](https://crates.io/crates/keplerian); `siderust` adds astronomy-specific time, frame transforms, ephemeris backends, and body/observer orchestration on top.
 
 ### API Design Pillars
 
@@ -81,7 +86,36 @@ Siderust is built on two cross-cutting principles documented in
 
 - Stellar aberration uses the full special-relativistic (Lorentz) formula per IERS Conventions (2020, §7.2); annual uses VSOP87E barycentric Earth velocity and topocentric adds a diurnal `ω×r` term.
 - The Earth-orientation chain now exposes public frame transforms for `GCRS ↔ CIRS ↔ TIRS ↔ ITRF/ECEF`, plus the usual inertial and operational frames (`ICRS`, `ICRF`, `EME2000`, `TEME`, `Galactic`, planetary body-fixed).
-- Local orbital frames such as `RTN` / `RIC` and covariance transport in those frames are not first-class yet.
+- Local orbital frames (`RTN`, `LVLH`, `VNC`) and covariance transport in those frames are first-class via [`astro::dynamics::frames::LocalOrbitalFrame`] and [`astro::dynamics::covariance::StateCovariance`], built from a typed [`OrbitState`].
+
+---
+
+## Scientific Archive (submodule)
+
+Large scientific datasets — VSOP87, IAU 2000A nutation, ELP2000-82B,
+Sun-Earth Lagrange Chebyshev kernels, SPICE time/frame/constants kernels,
+and dataset generators/validators — live in the separate
+[`Siderust/archive`](https://github.com/Siderust/archive) repository, attached
+here as the `archive/` git submodule.
+
+After cloning Siderust, initialise the submodule:
+
+```sh
+git submodule update --init --recursive
+```
+
+All archive metadata uses **TOML** (`MANIFEST.toml`, per-family
+`manifest.toml`). Binary payloads use their authoritative formats (SPICE
+`.bsp`, Siderust Chebyshev Kernel `.sck`, raw `.dat`). The archive layout,
+manifest schema, and regeneration recipes are documented in
+[`archive/README.md`](archive/README.md) and
+[`archive/schema/archive-manifest-v1.md`](archive/schema/archive-manifest-v1.md).
+
+The default `siderust` build does **not** require a separate archive checkout.
+Large scientific datasets (VSOP87, ELP2000, nutation, gravity, atmosphere, Pluto)
+are embedded via the [`siderust-archive`](https://crates.io/crates/siderust-archive)
+crate which is a regular Cargo dependency.  JPL DE4xx kernels are resolved at
+runtime from the local filesystem or downloaded on demand via `runtime-data`.
 
 ---
 
@@ -91,10 +125,15 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.7.0"
+siderust = "0.8"
 ```
 
-Committed datasets (VSOP87/ELP2000 and tempoch-owned EOP tables) are available offline. Optional JPL kernels are downloaded on demand when the corresponding feature is enabled; see `doc/datasets.md`.
+VSOP87/ELP2000 coefficients, nutation tables, and EOP data are provided by
+[`siderust-archive`](https://crates.io/crates/siderust-archive) (scientific
+datasets, manifests, checksums, provenance) and
+[`tempoch`](https://crates.io/crates/tempoch) (UTC/TAI/TT/UT1/TDB time scales,
+ΔT, and EOP freshness). Optional JPL kernels are downloaded on demand when the
+corresponding feature is enabled; see `doc/datasets.md`.
 
 ### Ephemeris Backends (Enable / Disable / Combine)
 
@@ -112,27 +151,27 @@ Optional features add JPL backends:
 
 ```toml
 [dependencies]
-siderust = { version = "0.7.0", default-features = false }
+siderust = { version = "0.8", default-features = false }
 ```
 
 2. Enable DE440
 
 ```toml
 [dependencies]
-siderust = { version = "0.7.0", features = ["de440"] }
+siderust = { version = "0.8", features = ["de440"] }
 ```
 
 3. Enable DE441
 
 ```toml
 [dependencies]
-siderust = { version = "0.7.0", features = ["de441"] }
+siderust = { version = "0.8", features = ["de441"] }
 ```
 
 4. Combine backends in one binary
 
 ```rust
-use siderust::calculus::ephemeris::{Ephemeris, Vsop87Ephemeris};
+use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
 use siderust::time::JulianDate;
 
 let jd = JulianDate::J2000;
@@ -143,7 +182,7 @@ let earth_vsop = Vsop87Ephemeris::earth_heliocentric(jd);
 
 ```rust
 // With `de441` feature enabled:
-use siderust::calculus::ephemeris::De441Ephemeris;
+use siderust::ephemeris::De441Ephemeris;
 
 let earth_jpl = De441Ephemeris::earth_heliocentric(jd);
 ```
@@ -152,7 +191,7 @@ You can combine ephemeris features with others (for example `serde`):
 
 ```toml
 [dependencies]
-siderust = { version = "0.7.0", features = ["de441", "serde"] }
+siderust = { version = "0.8", features = ["de441", "serde"] }
 ```
 
 ### JPL Build Modes: Real vs Stubbed
@@ -173,7 +212,7 @@ and prefetch the kernel you need:
 
 ```bash
 export SIDERUST_DATASETS_DIR="$HOME/.cache/siderust"
-./scripts/prefetch_datasets.sh --de440   # downloads $SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp
+../archive/scripts/prefetch_datasets.sh --de440   # downloads $SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp
 ```
 
 Notes:
@@ -343,9 +382,13 @@ cargo run --example 11_serde_serialization --features serde
 │   ├─ stellar/      # Analytical star altitude engine
 │   ├─ vsop87/       # VSOP87 planetary theory
 │   ├─ elp2000/      # ELP2000-82B lunar theory
-│   ├─ kepler_equations/  # Kepler equation solvers
+│   ├─ conic_equations.rs # Siderust wrappers over keplerian solvers
 │   └─ pluto         # Meeus/Williams Pluto ephemeris
 ├─ coordinates/   # Cartesian/Spherical types, frames, centers, transforms
+├─ mission/       # Mission-analysis building blocks
+│   ├─ geometry/     # AzElRange, Fov, TerrainMask, eclipse, orbit-relative geometry
+│   ├─ context.rs    # MissionContext — runtime aggregation of instruments and sites
+│   └─ site.rs       # Location — ground-station / observing-site metadata
 ├─ observatories/ # Predefined observatory locations (Roque, Paranal, Mauna Kea, La Silla)
 ├─ targets/       # Target<T> with time & ProperMotion
 └─ time           # Re-export of tempoch: JulianDate, MJD, Period<S>, time scales

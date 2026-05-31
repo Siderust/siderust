@@ -12,50 +12,22 @@ permissions:
   pull-requests: write   # needed to post PR comments
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  group: ${{ github.workflow }}-${{ github.event.ref }}
   cancel-in-progress: true
 
 env:
   CARGO_TERM_COLOR: always
-  SIDERUST_DATASETS_DIR: ${{ github.workspace }}/.siderust_datasets
 
 jobs:
-  datasets:
-    name: Datasets Cache
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          submodules: recursive
-          fetch-depth: 0
-      - id: datasets-cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.SIDERUST_DATASETS_DIR }}
-          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
-          restore-keys: |
-            siderust-datasets-${{ runner.os }}-v1-
-      - name: Prefetch minimal datasets
-        if: steps.datasets-cache.outputs.cache-hit != 'true'
-        run: ./scripts/prefetch_datasets.sh --minimal
-
   check:
-    name: Check
-    needs: datasets
+    name: Check (all features)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
-      - uses: actions/cache@v4
-        with:
-          path: ${{ env.SIDERUST_DATASETS_DIR }}
-          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
-          restore-keys: |
-            siderust-datasets-${{ runner.os }}-v1-
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo check --all-targets
+      - run: cargo check --workspace --all-targets --all-features
 
   fmt:
     name: Format
@@ -63,56 +35,78 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: rustfmt
-      - run: cargo fmt --check
+      - run: cargo fmt --all -- --check
 
   clippy:
-    name: Clippy
-    needs: datasets
+    name: Clippy (all features)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
-      - uses: actions/cache@v4
-        with:
-          path: ${{ env.SIDERUST_DATASETS_DIR }}
-          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
-          restore-keys: |
-            siderust-datasets-${{ runner.os }}-v1-
       - uses: dtolnay/rust-toolchain@stable
         with:
           components: clippy
-      - run: cargo clippy --all-targets -- -D warnings
+      - run: cargo clippy --workspace --all-targets --all-features -- -D warnings
 
   test:
-    name: Test
-    needs: datasets
+    name: Test (all features)
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
-      - uses: actions/cache@v4
-        with:
-          path: ${{ env.SIDERUST_DATASETS_DIR }}
-          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
-          restore-keys: |
-            siderust-datasets-${{ runner.os }}-v1-
       - uses: dtolnay/rust-toolchain@stable
-      - run: cargo test --all-targets
-      - run: cargo test --doc
+      - run: cargo test --workspace --all-targets --all-features
+      - run: cargo test --doc --workspace --all-features
+
+  test-pod:
+    name: Test (pod)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --features pod
+
+  test-spice:
+    name: Test (spice)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --features spice
+
+  test-runtime-data:
+    name: Test (runtime-data)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --features runtime-data
+
+  test-pod-parquet:
+    name: Test (pod-parquet)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --features pod-parquet
+
+  test-pod-doris:
+    name: Test (pod-doris)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dtolnay/rust-toolchain@stable
+      - run: cargo test --features pod-doris
 
   coverage:
     name: Test & Coverage
     if: ${{ github.event_name == 'push' || github.event.pull_request.draft == false }}
-    needs: datasets
     runs-on: ubuntu-latest
     env:
       SIDERUST_JPL_STUB: all
@@ -120,14 +114,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          submodules: recursive
           fetch-depth: 0
-      - uses: actions/cache@v4
-        with:
-          path: ${{ env.SIDERUST_DATASETS_DIR }}
-          key: siderust-datasets-${{ runner.os }}-v1-${{ hashFiles('scripts/prefetch_datasets.sh') }}
-          restore-keys: |
-            siderust-datasets-${{ runner.os }}-v1-
 
       - name: Set up Rust (nightly + llvm-tools)
         uses: dtolnay/rust-toolchain@v1
@@ -140,24 +127,20 @@ jobs:
         with:
           tool: cargo-llvm-cov
 
-      # Clean any previous coverage data to ensure fresh results
       - name: Clean previous coverage data
         run: |
           cargo +nightly llvm-cov clean --workspace
           rm -rf target/llvm-cov-target/*.profraw
 
-      # Run tests once and collect coverage data (no report yet)
       - name: Coverage (run, no report)
         run: cargo +nightly llvm-cov --workspace --all-features --doctests --no-report
 
-      # Produce machine-readable + human-readable reports
       - name: Coverage (Cobertura XML)
         run: cargo +nightly llvm-cov report --cobertura --output-path coverage.xml
 
       - name: Coverage (HTML)
         run: cargo +nightly llvm-cov report --html --output-dir coverage_html
 
-      # Put a nice table + badge into the PR Checks "Summary" tab
       - name: Build coverage summary (Markdown)
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
@@ -176,8 +159,6 @@ jobs:
           message-path: code-coverage-results.md
           repo-token: ${{ secrets.GITHUB_TOKEN }}
 
-
-      # Gate: fail if total LINE coverage < 90% (no extra test run needed)
       - name: Coverage gate (≥90% lines)
         run: cargo +nightly llvm-cov --workspace --all-features --doctests --no-run --fail-under-lines 90
 

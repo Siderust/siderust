@@ -1,3 +1,5 @@
+//! Build script for `siderust-ffi`, generating the exported C header.
+
 use std::env;
 use std::path::PathBuf;
 use std::process::Command;
@@ -28,8 +30,10 @@ fn main() {
         cbindgen::Config::from_file("cbindgen.toml").expect("Unable to read cbindgen.toml");
 
     let previous_rustc = env::var_os("RUSTC");
+    let previous_target_dir = env::var_os("CARGO_TARGET_DIR");
     if let Some(nightly_rustc) = nightly_rustc_path() {
         env::set_var("RUSTC", nightly_rustc);
+        env::set_var("CARGO_TARGET_DIR", out_dir.join("expanded"));
     } else {
         println!(
             "cargo:warning=nightly rustc not found; falling back to the checked-in siderust_ffi.h if cbindgen macro expansion fails"
@@ -45,8 +49,12 @@ fn main() {
         Some(value) => env::set_var("RUSTC", value),
         None => env::remove_var("RUSTC"),
     }
+    match previous_target_dir {
+        Some(value) => env::set_var("CARGO_TARGET_DIR", value),
+        None => env::remove_var("CARGO_TARGET_DIR"),
+    }
 
-    let bindings = match bindings_result {
+    let bindings: cbindgen::Bindings = match bindings_result {
         Ok(bindings) => bindings,
         Err(err) => {
             let checked_in_header = include_dir.join("siderust_ffi.h");

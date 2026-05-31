@@ -1,17 +1,17 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Integration tests for the unified altitude API (`calculus::altitude`).
+//! Integration tests for the unified altitude API (`event::altitude`).
 
 use siderust::bodies::solar_system::{Moon, Sun};
-use siderust::calculus::altitude::{
-    above_threshold, altitude_ranges, below_threshold, crossings, culminations,
-    AltitudePeriodsProvider, CrossingDirection, CulminationKind, SearchOpts,
-};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
 use siderust::coordinates::spherical::direction;
-use siderust::time::{ModifiedJulianDate, Period};
+use siderust::event::altitude::{
+    above_threshold, altitude_ranges, below_threshold, crossings, culminations,
+    AltitudePeriodsProvider, CrossingDirection, CulminationKind, SearchOpts,
+};
+use siderust::time::{Interval, ModifiedJulianDate};
 
 use siderust::qtty::*;
 
@@ -81,7 +81,7 @@ fn altitude_at_sirius_reasonable() {
 fn crossings_sun_one_day_greenwich() {
     let site = greenwich();
     // MJD 60000 ≈ 2023-02-25
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     );
@@ -112,7 +112,7 @@ fn crossings_sun_one_day_greenwich() {
 #[test]
 fn crossings_sun_astronomical_twilight() {
     let site = roque();
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     );
@@ -137,7 +137,7 @@ fn crossings_sun_astronomical_twilight() {
 #[test]
 fn culminations_sun_one_day() {
     let site = greenwich();
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     );
@@ -167,7 +167,7 @@ fn culminations_sun_one_day() {
 #[test]
 fn culminations_moon_one_day() {
     let site = greenwich();
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     );
@@ -182,7 +182,7 @@ fn culminations_moon_one_day() {
 #[test]
 fn above_threshold_sun_week() {
     let site = roque();
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     );
@@ -214,7 +214,7 @@ fn above_threshold_sun_week() {
 #[test]
 fn below_threshold_astronomical_night_week() {
     let site = roque();
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     );
@@ -245,7 +245,7 @@ fn below_threshold_astronomical_night_week() {
 #[test]
 fn altitude_ranges_nautical_to_astro_twilight() {
     let site = greenwich();
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60002.0)).unwrap(),
     );
@@ -282,7 +282,7 @@ fn altitude_ranges_nautical_to_astro_twilight() {
 #[test]
 fn moon_above_horizon_week() {
     let site = roque();
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60007.0)).unwrap(),
     );
@@ -307,7 +307,7 @@ fn polaris_always_above_horizon_at_greenwich() {
     let polaris = direction::ICRS::new(Degrees::new(37.95), Degrees::new(89.26));
     let site = greenwich(); // 51.5°N, Polaris is circumpolar here
 
-    let window = Period::new(
+    let window = Interval::new(
         ModifiedJulianDate::try_new(Days::new(60000.0)).unwrap(),
         ModifiedJulianDate::try_new(Days::new(60001.0)).unwrap(),
     );

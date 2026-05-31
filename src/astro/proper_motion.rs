@@ -40,7 +40,7 @@ use crate::coordinates::spherical::position;
 use crate::qtty::*;
 use crate::time::JulianDate;
 #[cfg(test)]
-use crate::time::JULIAN_YEAR_DAYS;
+use qtty::time::JULIAN_YEAR;
 use std::fmt;
 
 #[cfg(feature = "serde")]
@@ -80,8 +80,13 @@ impl std::fmt::Display for RaProperMotionConvention {
 #[derive(Debug, Clone)]
 #[cfg_attr(feature = "serde", derive(Serialize, Deserialize))]
 pub struct ProperMotion {
+    /// Right-ascension proper motion in degrees per Julian year.
+    /// Interpretation (µα or µα⋆) is given by `ra_convention`.
     pub pm_ra: DegreesPerYear,
+    /// Declination proper motion in degrees per Julian year.
     pub pm_dec: DegreesPerYear,
+    /// States whether `pm_ra` is the true RA rate µα or the catalogue
+    /// rate µα⋆ = µα cos(δ).
     pub ra_convention: RaProperMotionConvention,
 }
 
@@ -95,10 +100,14 @@ impl fmt::Display for ProperMotion {
     }
 }
 
+/// Error type for proper-motion propagation failures.
 #[derive(Debug, Clone, PartialEq)]
 pub enum ProperMotionError {
     /// Conversion from `µα⋆` to `µα` is unstable near the poles (`cos(dec)≈0`).
-    RightAscensionUndefinedAtPole { dec: Degrees },
+    RightAscensionUndefinedAtPole {
+        /// Declination at which the instability occurred.
+        dec: Degrees,
+    },
 }
 
 impl fmt::Display for ProperMotionError {
@@ -401,8 +410,8 @@ mod tests {
         );
 
         // Target epoch: 50 years after J2000
-        let jd_future =
-            crate::time::JulianDate::new((crate::J2000.raw() + 50.0 * JULIAN_YEAR_DAYS).value());
+        let jy = JULIAN_YEAR.to::<qtty::unit::Day>();
+        let jd_future = crate::time::JulianDate::new((crate::J2000.raw() + 50.0 * jy).value());
 
         // Expected shifts (compute before moving mean_position)
         let expected_ra = mean_position.ra() + Degrees::new(0.5);
@@ -441,8 +450,8 @@ mod tests {
             DegreesPerYear::new(0.0),
         );
 
-        let jd_future =
-            crate::time::JulianDate::new((crate::J2000.raw() + 10.0 * JULIAN_YEAR_DAYS).value());
+        let jy = JULIAN_YEAR.to::<qtty::unit::Day>();
+        let jd_future = crate::time::JulianDate::new((crate::J2000.raw() + 10.0 * jy).value());
         let shifted = set_proper_motion_since_j2000(mean_position, mu, jd_future).unwrap();
         let expected_ra = Degrees::new(10.1);
         let ra_err = (shifted.ra() - expected_ra).abs();
@@ -466,8 +475,8 @@ mod tests {
             DegreesPerYear::new(0.01),
             DegreesPerYear::new(0.0),
         );
-        let jd_future =
-            crate::time::JulianDate::new((crate::J2000.raw() + JULIAN_YEAR_DAYS).value());
+        let jy = JULIAN_YEAR.to::<qtty::unit::Day>();
+        let jd_future = crate::time::JulianDate::new((crate::J2000.raw() + jy).value());
 
         assert!(matches!(
             set_proper_motion_since_j2000(mean_position, mu, jd_future),
@@ -491,8 +500,8 @@ mod tests {
             parallax: MilliArcseconds::new(100.0),
             radial_velocity: crate::qtty::velocity::Velocity::new(0.0),
         };
-        let jd_future =
-            crate::time::JulianDate::new((crate::J2000.raw() + 1000.0 * JULIAN_YEAR_DAYS).value());
+        let jy = JULIAN_YEAR.to::<qtty::unit::Day>();
+        let jd_future = crate::time::JulianDate::new((crate::J2000.raw() + 1000.0 * jy).value());
         let p = propagate_space_motion_since_j2000(pos, motion, jd_future).unwrap();
         assert!((p.ra().value() - 45.0).abs() < 1e-9);
         assert!((p.dec().value() - 30.0).abs() < 1e-9);
@@ -514,8 +523,8 @@ mod tests {
             parallax: MilliArcseconds::new(100.0), // 10 pc
             radial_velocity: crate::qtty::velocity::Velocity::new(0.0),
         };
-        let jd_future =
-            crate::time::JulianDate::new((crate::J2000.raw() + 100.0 * JULIAN_YEAR_DAYS).value());
+        let jy = JULIAN_YEAR.to::<qtty::unit::Day>();
+        let jd_future = crate::time::JulianDate::new((crate::J2000.raw() + 100.0 * jy).value());
         let space = propagate_space_motion_since_j2000(pos, motion, jd_future).unwrap();
 
         // Linear (transverse-only) prediction: 100 mas/yr · 100 yr = 10 000 mas
@@ -549,16 +558,18 @@ mod tests {
             radial_velocity: crate::qtty::velocity::Velocity::new(-110.0),
         };
 
+        let jy = JULIAN_YEAR.to::<qtty::unit::Day>();
+
         let p10 = propagate_space_motion_since_j2000(
             pos,
             motion,
-            crate::time::JulianDate::new((crate::J2000.raw() + 10.0 * JULIAN_YEAR_DAYS).value()),
+            crate::time::JulianDate::new((crate::J2000.raw() + 10.0 * jy).value()),
         )
         .unwrap();
         let p20 = propagate_space_motion_since_j2000(
             pos,
             motion,
-            crate::time::JulianDate::new((crate::J2000.raw() + 20.0 * JULIAN_YEAR_DAYS).value()),
+            crate::time::JulianDate::new((crate::J2000.raw() + 20.0 * jy).value()),
         )
         .unwrap();
 
@@ -589,10 +600,11 @@ mod tests {
             parallax: MilliArcseconds::new(-1.0),
             radial_velocity: crate::qtty::velocity::Velocity::new(0.0),
         };
+        let jy = JULIAN_YEAR.to::<qtty::unit::Day>();
         let result = propagate_space_motion_since_j2000(
             pos,
             motion,
-            crate::time::JulianDate::new((crate::J2000.raw() + JULIAN_YEAR_DAYS).value()),
+            crate::time::JulianDate::new((crate::J2000.raw() + jy).value()),
         );
         assert!(matches!(
             result,

@@ -22,7 +22,7 @@
 //! - Observer altitude and scale height are typed [`Kilometers`].
 //! - Optical depth is returned as [`OpticalDepths`].
 //! - The phase function takes a typed scattering angle [`Radians`] and
-//!   returns a dimensionless [`ScatteringFactor`](super::ScatteringFactor)
+//!   returns a dimensionless [`ScatteringFactor`]
 //!   quantity.
 //!
 //! Internally the kernel still operates on `f64` for performance; the

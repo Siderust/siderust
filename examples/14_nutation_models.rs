@@ -8,6 +8,7 @@
 //! - custom transforms using `AstroContext::with_model::<...>()`
 //!
 //! Run with: `cargo run --example 14_nutation_models`
+#![allow(clippy::print_stdout)]
 
 use siderust::astro::nutation::{Iau2000B, Iau2006};
 use siderust::coordinates::cartesian::Direction;

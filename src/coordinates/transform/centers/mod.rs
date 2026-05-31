@@ -41,12 +41,12 @@ pub use position::to_topocentric::{to_topocentric_with, to_topocentric_with_ctx}
 
 use crate::astro::eop::EopProvider;
 use crate::astro::nutation::NutationModel;
-use crate::calculus::ephemeris::Ephemeris;
 use crate::coordinates::cartesian::Position;
 use crate::coordinates::centers::*;
 use crate::coordinates::frames::ReferenceFrame;
 use crate::coordinates::transform::context::{AstroContext, TransformContext};
 use crate::coordinates::transform::providers::{center_shift_as, CenterShiftProvider};
+use crate::ephemeris::Ephemeris;
 use crate::qtty::LengthUnit;
 use crate::time::JulianDate;
 
@@ -185,10 +185,10 @@ where
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::calculus::ephemeris::Ephemeris;
     use crate::coordinates::cartesian;
     use crate::coordinates::transform::context::DefaultEphemeris;
     use crate::coordinates::transform::Transform;
+    use crate::ephemeris::Ephemeris;
     use crate::macros::assert_cartesian_eq;
     use crate::qtty::AstronomicalUnit;
 

@@ -5,6 +5,7 @@
 
 use crate::error::SiderustStatus;
 use crate::types::SiderustGeodetict;
+use siderust::catalogs::observatories;
 
 /// Fill `out` with the Roque de los Muchachos observatory (La Palma, Spain).
 #[no_mangle]
@@ -15,8 +16,9 @@ pub extern "C" fn siderust_observatory_roque_de_los_muchachos(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
-            *out = SiderustGeodetict::from_rust(&siderust::observatories::ROQUE_DE_LOS_MUCHACHOS.geodetic);
+            *out = SiderustGeodetict::from_rust(&observatories::ROQUE_DE_LOS_MUCHACHOS.geodetic);
         }
         SiderustStatus::Ok
 
@@ -30,8 +32,9 @@ pub extern "C" fn siderust_observatory_el_paranal(out: *mut SiderustGeodetict) -
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
-            *out = SiderustGeodetict::from_rust(&siderust::observatories::EL_PARANAL.geodetic);
+            *out = SiderustGeodetict::from_rust(&observatories::EL_PARANAL.geodetic);
         }
         SiderustStatus::Ok
 
@@ -45,8 +48,9 @@ pub extern "C" fn siderust_observatory_mauna_kea(out: *mut SiderustGeodetict) ->
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
-            *out = SiderustGeodetict::from_rust(&siderust::observatories::MAUNA_KEA);
+            *out = SiderustGeodetict::from_rust(&observatories::MAUNA_KEA.geodetic);
         }
         SiderustStatus::Ok
 
@@ -60,8 +64,9 @@ pub extern "C" fn siderust_observatory_la_silla(out: *mut SiderustGeodetict) -> 
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
-            *out = SiderustGeodetict::from_rust(&siderust::observatories::LA_SILLA_OBSERVATORY);
+            *out = SiderustGeodetict::from_rust(&observatories::LA_SILLA_OBSERVATORY.geodetic);
         }
         SiderustStatus::Ok
 
@@ -80,6 +85,7 @@ pub extern "C" fn siderust_geodetic_new(
         if out.is_null() {
             return SiderustStatus::NullPointer;
         }
+        // TODO: justify soundness — add doc comment before publishing
         unsafe {
             *out = SiderustGeodetict {
                 lon_deg,

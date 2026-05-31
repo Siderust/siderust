@@ -25,7 +25,7 @@
 //! |------------|---------|------------|
 //! | [`solar_system`] | Sun, planets, moons, dwarf planets, Lagrange points | [`SOLAR_SYSTEM`] aggregate |
 //! | [`planets`] | Generic [`Planet`] type + builder | Typed Keplerian elements, albedo |
-//! | [`satelite`] | Natural moons + artificial satellites | [`MOON`] constant |
+//! | [`satellite`] | Natural moons + artificial satellites | [`MOON`] constant |
 //! | [`comet`] | Barycentric and heliocentric comet orbits | [`comet::HALLEY`], [`comet::ENCKE`], [`comet::HALE_BOPP`] |
 //! | [`asteroid`] | Minor planets and NEOs | [`asteroid::CERES_AST`], [`asteroid::BENNU`], [`asteroid::APOPHIS`] |
 //! | [`stars`] | Generic [`Star`] type and stellar parameter helpers | mass, luminosity |
@@ -49,18 +49,20 @@
 //! println!("{} is {} away", ALTAIR.name, ALTAIR.distance);
 //! ```
 
+pub mod aircraft;
 pub mod asteroid;
 pub mod catalog;
 pub mod comet;
 pub mod planets;
-pub mod satelite;
+pub mod satellite;
 pub mod solar_system;
 pub mod stars;
 
+pub use aircraft::{Aircraft, AircraftState, AircraftTrack, MetersPerSecond, WakeCategory};
 pub use asteroid::Asteroid;
 pub use comet::Comet;
 pub use planets::Planet;
-pub use satelite::Satellite;
+pub use satellite::Satellite;
 pub use stars::Star;
 
 pub use catalog::*;
