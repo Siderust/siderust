@@ -37,7 +37,7 @@
 use crate::coordinates::frames::ICRF;
 use crate::ephemeris::EphemerisError;
 use crate::qtty::*;
-use crate::time::TDB;
+use crate::time::{JulianDate, TDB};
 use affn::{Displacement, Velocity};
 
 type KmPerDay = Per<Kilometer, Day>;
@@ -49,6 +49,11 @@ type TdbJulianDate = tempoch::JulianDate<TDB>;
 const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
 const J2000_JD: f64 = tempoch::J2000_JD_TT_DAY.value();
 
+const NAIF_M0: f64 = 6.239_996;
+const NAIF_M1: f64 = 1.990_968_71e-7;
+const NAIF_EB: f64 = 1.671e-2;
+const NAIF_K: f64 = 1.657e-3;
+
 // ═══════════════════════════════════════════════════════════════════════════
 // Shared helpers (used by both SegmentDescriptor and DynSegmentDescriptor)
 // ═══════════════════════════════════════════════════════════════════════════
@@ -57,6 +62,28 @@ const J2000_JD: f64 = tempoch::J2000_JD_TT_DAY.value();
 #[inline]
 fn jd_to_et(jd_value: f64) -> Seconds {
     Seconds::new((jd_value - J2000_JD) * SECONDS_PER_DAY)
+}
+
+/// Convert a TT Julian Date to SPICE/NAIF ephemeris time seconds past J2000.
+///
+/// SPK Type 2/3 segment metadata is keyed by ephemeris time seconds. The NAIF
+/// leapseconds kernels define ET from TT/TDT as `ET = TT + K sin(E)`, with
+/// `E = M + EB sin(M)` and `M = M0 + M1 * ET`. Iterating the small periodic
+/// term keeps runtime BSP evaluation aligned with SPICE/ANISE semantics.
+#[inline]
+pub(crate) fn jd_tt_to_spice_et_seconds(jd_tt: JulianDate) -> f64 {
+    let tt_seconds = (jd_tt.raw().value() - J2000_JD) * SECONDS_PER_DAY;
+    let mut et_seconds = tt_seconds;
+    for _ in 0..5 {
+        let mean_anomaly = NAIF_M0 + NAIF_M1 * et_seconds;
+        let eccentric_anomaly = mean_anomaly + NAIF_EB * mean_anomaly.sin();
+        let next = tt_seconds + NAIF_K * eccentric_anomaly.sin();
+        if (next - et_seconds).abs() < 1.0e-12 {
+            return next;
+        }
+        et_seconds = next;
+    }
+    et_seconds
 }
 
 #[inline]
@@ -87,9 +114,18 @@ fn locate_params(
     jd_tdb: TdbJulianDate,
 ) -> Result<(usize, f64, Seconds), EphemerisError> {
     let et = jd_to_et(jd_tdb.raw().value());
+    locate_params_et(init, intlen, n_records, et.value())
+}
+
+#[inline]
+fn locate_params_et(
+    init: Seconds,
+    intlen: Seconds,
+    n_records: usize,
+    et_s: f64,
+) -> Result<(usize, f64, Seconds), EphemerisError> {
     let init_s = init.value();
     let intlen_s = intlen.value();
-    let et_s = et.value();
 
     if n_records == 0 || !init_s.is_finite() || !intlen_s.is_finite() || intlen_s <= 0.0 {
         return Err(EphemerisError::InvalidSegment {
@@ -101,9 +137,9 @@ fn locate_params(
 
     let span_s = intlen_s * n_records as f64;
     let end_s = init_s + span_s;
-    if !jd_tdb.raw().value().is_finite() || et_s < init_s || et_s > end_s {
+    if !et_s.is_finite() || et_s < init_s || et_s > end_s {
         return Err(EphemerisError::OutOfRange {
-            jd: jd_tdb.raw().value(),
+            jd: J2000_JD + et_s / SECONDS_PER_DAY,
             start_jd: J2000_JD + init_s / SECONDS_PER_DAY,
             end_jd: J2000_JD + end_s / SECONDS_PER_DAY,
         });
@@ -251,6 +287,15 @@ impl DynSegmentDescriptor {
         Ok((record, tau, radius))
     }
 
+    /// Locate the record for SPICE/NAIF ET seconds past J2000 and compute tau.
+    #[inline]
+    fn try_locate_et(&self, et_seconds: f64) -> Result<(&[f64], f64, Seconds), EphemerisError> {
+        let (idx, et, _) = locate_params_et(self.init, self.intlen, self.n_records, et_seconds)?;
+        let record = self.record(idx);
+        let (tau, radius) = record_tau(record, et);
+        Ok((record, tau, radius))
+    }
+
     /// Fallibly evaluate position in km (ICRF) at Julian Date (TDB).
     #[inline]
     pub(crate) fn try_position(
@@ -258,6 +303,16 @@ impl DynSegmentDescriptor {
         jd_tdb: TdbJulianDate,
     ) -> Result<Displacement<ICRF, Kilometer>, EphemerisError> {
         let (record, tau, _) = self.try_locate(jd_tdb)?;
+        Ok(eval_position(record, self.ncoeff, tau))
+    }
+
+    /// Fallibly evaluate position in km (ICRF) at SPICE/NAIF ET seconds past J2000.
+    #[inline]
+    pub(crate) fn try_position_et(
+        &self,
+        et_seconds: f64,
+    ) -> Result<Displacement<ICRF, Kilometer>, EphemerisError> {
+        let (record, tau, _) = self.try_locate_et(et_seconds)?;
         Ok(eval_position(record, self.ncoeff, tau))
     }
 
@@ -281,6 +336,20 @@ impl DynSegmentDescriptor {
         jd_tdb: TdbJulianDate,
     ) -> Result<Velocity<ICRF, KmPerDay>, EphemerisError> {
         let (record, tau, radius) = self.try_locate(jd_tdb)?;
+        if self.data_type == 3 {
+            Ok(eval_type3_velocity(record, self.ncoeff, tau))
+        } else {
+            Ok(eval_velocity(record, self.ncoeff, tau, radius))
+        }
+    }
+
+    /// Fallibly evaluate velocity in km/day (ICRF) at SPICE/NAIF ET seconds past J2000.
+    #[inline]
+    pub(crate) fn try_velocity_et(
+        &self,
+        et_seconds: f64,
+    ) -> Result<Velocity<ICRF, KmPerDay>, EphemerisError> {
+        let (record, tau, radius) = self.try_locate_et(et_seconds)?;
         if self.data_type == 3 {
             Ok(eval_type3_velocity(record, self.ncoeff, tau))
         } else {
@@ -376,6 +445,30 @@ mod tests {
     /// JD for J2000 + 250 days (first quarter → tau = -0.5).
     fn jd_quarter() -> TdbJulianDate {
         TdbJulianDate::try_new(Days::new(JD_J2000 + 250.0)).unwrap()
+    }
+
+    #[test]
+    fn spice_et_conversion_matches_naif_j2000_term() {
+        let jd = JulianDate::new(JD_J2000);
+        let et = jd_tt_to_spice_et_seconds(jd);
+
+        assert!(
+            (et + 7.273_677_621_567_873e-5).abs() < 1.0e-14,
+            "et={et:.17e}"
+        );
+    }
+
+    #[test]
+    fn position_et_matches_tdb_seconds_for_same_epoch() {
+        let desc = make_desc(1.0, 2.0, 3.0);
+        let jd = jd_quarter();
+        let et = (jd.raw().value() - JD_J2000) * SECONDS_PER_DAY;
+        let from_jd = desc.position(jd);
+        let from_et = desc.try_position_et(et).unwrap();
+
+        assert_eq!(from_jd.x().value(), from_et.x().value());
+        assert_eq!(from_jd.y().value(), from_et.y().value());
+        assert_eq!(from_jd.z().value(), from_et.z().value());
     }
 
     // ── Position ──────────────────────────────────────────────────────────

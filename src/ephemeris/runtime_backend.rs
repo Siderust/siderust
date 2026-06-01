@@ -28,6 +28,7 @@ struct RuntimeEphemerisInner {
     sun: DynSegmentDescriptor,
     emb: DynSegmentDescriptor,
     moon: DynSegmentDescriptor,
+    earth: Option<DynSegmentDescriptor>,
 }
 
 /// Runtime-loaded JPL DE4xx ephemeris backend.
@@ -77,6 +78,7 @@ impl RuntimeEphemeris {
             sun: DynSegmentDescriptor::from_spk(&segments.sun),
             emb: DynSegmentDescriptor::from_spk(&segments.emb),
             moon: DynSegmentDescriptor::from_spk(&segments.moon),
+            earth: segments.earth.as_ref().map(DynSegmentDescriptor::from_spk),
         };
         Self {
             inner: Arc::new(inner),
@@ -115,6 +117,10 @@ impl std::fmt::Debug for RuntimeEphemeris {
             .field("sun_records", &self.inner.sun.n_records)
             .field("emb_records", &self.inner.emb.n_records)
             .field("moon_records", &self.inner.moon.n_records)
+            .field(
+                "earth_records",
+                &self.inner.earth.as_ref().map(|earth| earth.n_records),
+            )
             .finish()
     }
 }
@@ -141,6 +147,9 @@ impl DynEphemeris for RuntimeEphemeris {
         &self,
         jd: JulianDate,
     ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        if let Some(earth) = &self.inner.earth {
+            return bodies::try_dyn_earth_barycentric_direct(jd, &self.inner.emb, earth);
+        }
         bodies::try_dyn_earth_barycentric(jd, &self.inner.emb, &self.inner.moon)
     }
 
@@ -149,6 +158,10 @@ impl DynEphemeris for RuntimeEphemeris {
         &self,
         jd: JulianDate,
     ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
+        if let Some(earth) = &self.inner.earth {
+            return bodies::try_dyn_earth_barycentric_direct(jd, &self.inner.emb, earth)
+                .expect("runtime JPL Earth barycentric position unavailable");
+        }
         bodies::dyn_earth_barycentric(jd, &self.inner.emb, &self.inner.moon)
     }
 
@@ -157,6 +170,14 @@ impl DynEphemeris for RuntimeEphemeris {
         &self,
         jd: JulianDate,
     ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+        if let Some(earth) = &self.inner.earth {
+            return bodies::try_dyn_earth_heliocentric_direct(
+                jd,
+                &self.inner.sun,
+                &self.inner.emb,
+                earth,
+            );
+        }
         bodies::try_dyn_earth_heliocentric(jd, &self.inner.sun, &self.inner.emb, &self.inner.moon)
     }
 
@@ -165,6 +186,15 @@ impl DynEphemeris for RuntimeEphemeris {
         &self,
         jd: JulianDate,
     ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
+        if let Some(earth) = &self.inner.earth {
+            return bodies::try_dyn_earth_heliocentric_direct(
+                jd,
+                &self.inner.sun,
+                &self.inner.emb,
+                earth,
+            )
+            .expect("runtime JPL Earth heliocentric position unavailable");
+        }
         bodies::dyn_earth_heliocentric(jd, &self.inner.sun, &self.inner.emb, &self.inner.moon)
     }
 
@@ -173,11 +203,18 @@ impl DynEphemeris for RuntimeEphemeris {
         &self,
         jd: JulianDate,
     ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
+        if let Some(earth) = &self.inner.earth {
+            return bodies::try_dyn_earth_barycentric_velocity_direct(jd, &self.inner.emb, earth);
+        }
         bodies::try_dyn_earth_barycentric_velocity(jd, &self.inner.emb, &self.inner.moon)
     }
 
     #[inline]
     fn earth_barycentric_velocity(&self, jd: JulianDate) -> Velocity<EclipticMeanJ2000, AuPerDay> {
+        if let Some(earth) = &self.inner.earth {
+            return bodies::try_dyn_earth_barycentric_velocity_direct(jd, &self.inner.emb, earth)
+                .expect("runtime JPL Earth barycentric velocity unavailable");
+        }
         bodies::dyn_earth_barycentric_velocity(jd, &self.inner.emb, &self.inner.moon)
     }
 
@@ -186,6 +223,9 @@ impl DynEphemeris for RuntimeEphemeris {
         &self,
         jd: JulianDate,
     ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
+        if let Some(earth) = &self.inner.earth {
+            return bodies::try_dyn_moon_geocentric_direct(jd, &self.inner.moon, earth);
+        }
         bodies::try_dyn_moon_geocentric(jd, &self.inner.moon)
     }
 
@@ -194,6 +234,10 @@ impl DynEphemeris for RuntimeEphemeris {
         &self,
         jd: JulianDate,
     ) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
+        if let Some(earth) = &self.inner.earth {
+            return bodies::try_dyn_moon_geocentric_direct(jd, &self.inner.moon, earth)
+                .expect("runtime JPL Moon geocentric position unavailable");
+        }
         bodies::dyn_moon_geocentric(jd, &self.inner.moon)
     }
 }
@@ -233,6 +277,16 @@ mod tests {
             sun: make_segment(1.0e8, 2.0e7, 1.0e6), // ~solar-system scale (km)
             emb: make_segment(1.5e8, 0.0, 0.0),     // ~1 AU
             moon: make_segment(3.84e5, 5.0e3, 1.0e3), // ~Moon distance (km)
+            earth: None,
+        }
+    }
+
+    fn make_bsp_segments_with_earth() -> BspSegments {
+        BspSegments {
+            sun: make_segment(1.0e8, 0.0, 0.0),
+            emb: make_segment(1.5e8, 0.0, 0.0),
+            moon: make_segment(3.84e5, 0.0, 0.0),
+            earth: Some(make_segment(-5.0e3, 0.0, 0.0)),
         }
     }
 
@@ -308,6 +362,34 @@ mod tests {
         assert!(pos.x().is_finite());
         assert!(pos.y().is_finite());
         assert!(pos.z().is_finite());
+    }
+
+    #[test]
+    fn earth_segment_takes_precedence_for_earth_barycentric() {
+        let eph = RuntimeEphemeris::from_segments(make_bsp_segments_with_earth());
+        let pos = eph.earth_barycentric(jd_mid());
+        let mag_au =
+            (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
+        let expected_au = (1.5e8 - 5.0e3) / 149_597_870.700;
+
+        assert!(
+            (mag_au - expected_au).abs() < 1e-12,
+            "mag_au={mag_au}, expected={expected_au}"
+        );
+    }
+
+    #[test]
+    fn earth_segment_takes_precedence_for_moon_geocentric() {
+        let eph = RuntimeEphemeris::from_segments(make_bsp_segments_with_earth());
+        let pos = eph.moon_geocentric(jd_mid());
+        let mag_km =
+            (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2)).sqrt();
+        let expected_km = 384_000.0 + 5_000.0;
+
+        assert!(
+            (mag_km - expected_km).abs() < 1e-8,
+            "mag_km={mag_km}, expected={expected_km}"
+        );
     }
 
     #[test]

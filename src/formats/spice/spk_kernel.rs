@@ -6,10 +6,10 @@
 use super::spk::{self, IndexedSegmentData};
 use super::SpiceError;
 use crate::coordinates::frames::ICRF;
-use crate::ephemeris::jpl::eval::DynSegmentDescriptor;
+use crate::ephemeris::jpl::eval::{jd_tt_to_spice_et_seconds, DynSegmentDescriptor};
 use crate::ephemeris::{EphemerisError, MajorPlanet, PlanetPoint};
 use crate::qtty::{Kilometer, Kilometers};
-use crate::time::{JulianDate, TDB};
+use crate::time::JulianDate;
 use affn::Displacement;
 use std::path::Path;
 
@@ -91,21 +91,34 @@ impl KernelSegment {
     }
 
     fn covers(&self, jd: JulianDate) -> bool {
-        let jd_tdb = jd.to_scale::<TDB>().raw().value();
-        let et = (jd_tdb - 2_451_545.0) * SECONDS_PER_DAY;
+        let et = jd_tt_to_spice_et_seconds(jd);
+        self.covers_et(et)
+    }
+
+    fn covers_et(&self, et: f64) -> bool {
         et.is_finite() && et >= self.start_et && et <= self.end_et
     }
 
     fn out_of_range(&self, jd: JulianDate) -> SpkKernelError {
+        let et = jd_tt_to_spice_et_seconds(jd);
+        self.out_of_range_et(et)
+    }
+
+    fn out_of_range_et(&self, et: f64) -> SpkKernelError {
         SpkKernelError::Ephemeris(EphemerisError::OutOfRange {
-            jd: jd.to_scale::<TDB>().raw().value(),
+            jd: 2_451_545.0 + et / SECONDS_PER_DAY,
             start_jd: 2_451_545.0 + self.start_et / SECONDS_PER_DAY,
             end_jd: 2_451_545.0 + self.end_et / SECONDS_PER_DAY,
         })
     }
 
     fn try_position(&self, jd: JulianDate) -> Result<IcrfKm, EphemerisError> {
-        self.descriptor.try_position(jd.to_scale::<TDB>())
+        self.descriptor
+            .try_position_et(jd_tt_to_spice_et_seconds(jd))
+    }
+
+    fn try_position_et(&self, et: f64) -> Result<IcrfKm, EphemerisError> {
+        self.descriptor.try_position_et(et)
     }
 }
 
@@ -173,7 +186,31 @@ impl SpkKernelSet {
         point: PlanetPoint,
         jd: JulianDate,
     ) -> Result<IcrfKm, SpkKernelError> {
+        if let PlanetPoint::SystemBarycenter = point {
+            if let Ok(state) = self.try_major_planet_barycenter_geocentric_fast(planet, jd) {
+                return Ok(state);
+            }
+        }
         self.try_geometric_state(planet.naif_id(point), EARTH_ID, jd)
+    }
+
+    fn try_major_planet_barycenter_geocentric_fast(
+        &self,
+        planet: MajorPlanet,
+        jd: JulianDate,
+    ) -> Result<IcrfKm, SpkKernelError> {
+        let et = jd_tt_to_spice_et_seconds(jd);
+        let target =
+            self.try_edge_position_et(planet.naif_id(PlanetPoint::SystemBarycenter), SSB_ID, et)?;
+        let emb = self.try_edge_position_et(EMB_ID, SSB_ID, et)?;
+        let earth = match self.try_edge_position_et(EARTH_ID, EMB_ID, et) {
+            Ok(earth_off) => emb + earth_off,
+            Err(_) => {
+                let moon_off = self.try_edge_position_et(MOON_ID, EMB_ID, et)?;
+                emb - moon_off.scale(1.0 / EARTH_MOON_RATIO)
+            }
+        };
+        Ok(target - earth)
     }
 
     fn try_position_from_ssb(
@@ -248,6 +285,15 @@ impl SpkKernelSet {
         center_id: i32,
         jd: JulianDate,
     ) -> Result<IcrfKm, SpkKernelError> {
+        self.try_edge_position_et(target_id, center_id, jd_tt_to_spice_et_seconds(jd))
+    }
+
+    fn try_edge_position_et(
+        &self,
+        target_id: i32,
+        center_id: i32,
+        et: f64,
+    ) -> Result<IcrfKm, SpkKernelError> {
         let mut out_of_range = None;
         for segment in self
             .segments
@@ -255,11 +301,11 @@ impl SpkKernelSet {
             .rev()
             .filter(|segment| segment.target_id == target_id && segment.center_id == center_id)
         {
-            if !segment.covers(jd) {
-                out_of_range.get_or_insert(segment.out_of_range(jd));
+            if !segment.covers_et(et) {
+                out_of_range.get_or_insert(segment.out_of_range_et(et));
                 continue;
             }
-            match segment.try_position(jd) {
+            match segment.try_position_et(et) {
                 Ok(position) => return Ok(position),
                 Err(err @ EphemerisError::OutOfRange { .. }) => {
                     out_of_range.get_or_insert(SpkKernelError::Ephemeris(err));
@@ -337,6 +383,23 @@ mod tests {
             .try_major_planet_geocentric(MajorPlanet::Jupiter, PlanetPoint::Center, jd_mid())
             .unwrap();
         assert!((state.x().value() - 407.0).abs() < 1.0e-9);
+    }
+
+    #[test]
+    fn planet_system_barycenter_uses_direct_emb_and_earth_edges() {
+        let set = SpkKernelSet::from_indexed_segments(vec![
+            indexed(5, 0, 500.0),
+            indexed(3, 0, 100.0),
+            indexed(399, 3, 10.0),
+        ]);
+        let state = set
+            .try_major_planet_geocentric(
+                MajorPlanet::Jupiter,
+                PlanetPoint::SystemBarycenter,
+                jd_mid(),
+            )
+            .unwrap();
+        assert!((state.x().value() - 390.0).abs() < 1.0e-9);
     }
 
     #[test]

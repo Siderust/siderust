@@ -67,6 +67,7 @@ required-features = ["spice"]
 
 [features]
 default = ["serde"]
+de440 = []
 lagrange-centers = ["serde", "siderust-archive/lagrange"]
 runtime-data = ["siderust-archive/fetch"]
 serde = ["dep:serde", "dep:serde_json", "qtty/serde", "affn/serde", "tempoch/serde"]

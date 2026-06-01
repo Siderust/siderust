@@ -34,8 +34,8 @@
 //!   is compile-time checked.
 //! - Frame conversion (ICRF → EclipticMeanJ2000) and unit conversion
 //!   (km → AU, km/day → AU/day) are applied explicitly after chain arithmetic.
-//! - Time input: `JulianDate` (TT); TT → TDB conversion is performed
-//!   internally via [`JulianDate::tt_to_tdb`].
+//! - Time input: `JulianDate` (TT); runtime SPK evaluation converts TT to
+//!   NAIF/SPICE ephemeris time seconds before Chebyshev lookup.
 //!
 //! | Segment | DE NAIF IDs   | Meaning                                |
 //! |---------|---------------|----------------------------------------|
@@ -51,7 +51,7 @@
 //!   DE440 and DE441". *The Astronomical Journal* 161, 105.
 //!   <https://doi.org/10.3847/1538-3881/abd414>
 
-use super::eval::DynSegmentDescriptor;
+use super::eval::{jd_tt_to_spice_et_seconds, DynSegmentDescriptor};
 
 use crate::coordinates::{
     cartesian::{Position, Velocity},
@@ -61,7 +61,7 @@ use crate::coordinates::{
 };
 use crate::ephemeris::EphemerisError;
 use crate::qtty::{AstronomicalUnit, Day, Kilometer, Per};
-use crate::time::{JulianDate, TDB};
+use crate::time::JulianDate;
 
 // ── Physical constants (from archive: siderust_archive::jpl::constants) ──────
 
@@ -94,8 +94,8 @@ pub(crate) fn try_dyn_sun_barycentric(
     jd: JulianDate,
     sun: &DynSegmentDescriptor,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let sun_icrf = sun.try_position(jd_tdb)?;
+    let et = jd_tt_to_spice_et_seconds(jd);
+    let sun_icrf = sun.try_position_et(et)?;
     let sun_ecl_au = sun_icrf
         .to_frame::<EclipticMeanJ2000>(&crate::J2000)
         .to_unit::<AstronomicalUnit>();
@@ -122,11 +122,31 @@ pub(crate) fn try_dyn_earth_barycentric(
     emb: &DynSegmentDescriptor,
     moon: &DynSegmentDescriptor,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let emb_pos = emb.try_position(jd_tdb)?;
-    let moon_off = moon.try_position(jd_tdb)?;
+    let et = jd_tt_to_spice_et_seconds(jd);
+    let emb_pos = emb.try_position_et(et)?;
+    let moon_off = moon.try_position_et(et)?;
     let earth_icrf = emb_pos - moon_off.scale(EARTH_OFFSET_FROM_MOON_OFF);
     let earth_ecl_au = earth_icrf
+        .to_frame::<EclipticMeanJ2000>(&crate::J2000)
+        .to_unit::<AstronomicalUnit>();
+    Ok(Position::new(
+        earth_ecl_au.x(),
+        earth_ecl_au.y(),
+        earth_ecl_au.z(),
+    ))
+}
+
+/// Earth barycentric position using a direct `Earth -> EMB` SPK segment.
+#[inline]
+pub(crate) fn try_dyn_earth_barycentric_direct(
+    jd: JulianDate,
+    emb: &DynSegmentDescriptor,
+    earth: &DynSegmentDescriptor,
+) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+    let et = jd_tt_to_spice_et_seconds(jd);
+    let emb_pos = emb.try_position_et(et)?;
+    let earth_off = earth.try_position_et(et)?;
+    let earth_ecl_au = (emb_pos + earth_off)
         .to_frame::<EclipticMeanJ2000>(&crate::J2000)
         .to_unit::<AstronomicalUnit>();
     Ok(Position::new(
@@ -155,12 +175,34 @@ pub(crate) fn try_dyn_earth_heliocentric(
     emb: &DynSegmentDescriptor,
     moon: &DynSegmentDescriptor,
 ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let emb_pos = emb.try_position(jd_tdb)?;
-    let moon_off = moon.try_position(jd_tdb)?;
-    let sun_pos = sun.try_position(jd_tdb)?;
+    let et = jd_tt_to_spice_et_seconds(jd);
+    let emb_pos = emb.try_position_et(et)?;
+    let moon_off = moon.try_position_et(et)?;
+    let sun_pos = sun.try_position_et(et)?;
     let earth_icrf = emb_pos - moon_off.scale(EARTH_OFFSET_FROM_MOON_OFF) - sun_pos;
     let earth_ecl_au = earth_icrf
+        .to_frame::<EclipticMeanJ2000>(&crate::J2000)
+        .to_unit::<AstronomicalUnit>();
+    Ok(Position::new(
+        earth_ecl_au.x(),
+        earth_ecl_au.y(),
+        earth_ecl_au.z(),
+    ))
+}
+
+/// Earth heliocentric position using a direct `Earth -> EMB` SPK segment.
+#[inline]
+pub(crate) fn try_dyn_earth_heliocentric_direct(
+    jd: JulianDate,
+    sun: &DynSegmentDescriptor,
+    emb: &DynSegmentDescriptor,
+    earth: &DynSegmentDescriptor,
+) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
+    let et = jd_tt_to_spice_et_seconds(jd);
+    let emb_pos = emb.try_position_et(et)?;
+    let earth_off = earth.try_position_et(et)?;
+    let sun_pos = sun.try_position_et(et)?;
+    let earth_ecl_au = (emb_pos + earth_off - sun_pos)
         .to_frame::<EclipticMeanJ2000>(&crate::J2000)
         .to_unit::<AstronomicalUnit>();
     Ok(Position::new(
@@ -189,11 +231,26 @@ pub(crate) fn try_dyn_earth_barycentric_velocity(
     emb: &DynSegmentDescriptor,
     moon: &DynSegmentDescriptor,
 ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let v_emb = emb.try_velocity(jd_tdb)?;
-    let v_moon_off = moon.try_velocity(jd_tdb)?;
+    let et = jd_tt_to_spice_et_seconds(jd);
+    let v_emb = emb.try_velocity_et(et)?;
+    let v_moon_off = moon.try_velocity_et(et)?;
     let v_earth_icrf = v_emb - v_moon_off.scale(EARTH_OFFSET_FROM_MOON_OFF);
     Ok(v_earth_icrf
+        .to_frame::<EclipticMeanJ2000>(&crate::J2000)
+        .to_unit::<AuPerDay>())
+}
+
+/// Earth barycentric velocity using a direct `Earth -> EMB` SPK segment.
+#[inline]
+pub(crate) fn try_dyn_earth_barycentric_velocity_direct(
+    jd: JulianDate,
+    emb: &DynSegmentDescriptor,
+    earth: &DynSegmentDescriptor,
+) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
+    let et = jd_tt_to_spice_et_seconds(jd);
+    let v_emb = emb.try_velocity_et(et)?;
+    let v_earth_off = earth.try_velocity_et(et)?;
+    Ok((v_emb + v_earth_off)
         .to_frame::<EclipticMeanJ2000>(&crate::J2000)
         .to_unit::<AuPerDay>())
 }
@@ -215,10 +272,29 @@ pub(crate) fn try_dyn_moon_geocentric(
     jd: JulianDate,
     moon: &DynSegmentDescriptor,
 ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
-    let jd_tdb = jd.to_scale::<TDB>();
-    let moon_off = moon.try_position(jd_tdb)?;
+    let et = jd_tt_to_spice_et_seconds(jd);
+    let moon_off = moon.try_position_et(et)?;
     let moon_geo_icrf = moon_off.scale(MOON_GEO_FROM_MOON_OFF);
     let moon_geo_ecl = moon_geo_icrf.to_frame::<EclipticMeanJ2000>(&crate::J2000);
+    Ok(Position::new(
+        moon_geo_ecl.x(),
+        moon_geo_ecl.y(),
+        moon_geo_ecl.z(),
+    ))
+}
+
+/// Moon geocentric position using direct `Moon -> EMB` and `Earth -> EMB`
+/// SPK segments.
+#[inline]
+pub(crate) fn try_dyn_moon_geocentric_direct(
+    jd: JulianDate,
+    moon: &DynSegmentDescriptor,
+    earth: &DynSegmentDescriptor,
+) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
+    let et = jd_tt_to_spice_et_seconds(jd);
+    let moon_off = moon.try_position_et(et)?;
+    let earth_off = earth.try_position_et(et)?;
+    let moon_geo_ecl = (moon_off - earth_off).to_frame::<EclipticMeanJ2000>(&crate::J2000);
     Ok(Position::new(
         moon_geo_ecl.x(),
         moon_geo_ecl.y(),

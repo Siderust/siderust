@@ -58,8 +58,12 @@ pub const EMB_CENTER: i32 = 0;
 pub const MOON_TARGET: i32 = 301;
 /// NAIF center ID for the Moon segment (Earth-Moon Barycenter = 3).
 pub const MOON_CENTER: i32 = 3; // EMB
+/// NAIF target ID for Earth center.
+pub const EARTH_TARGET: i32 = 399;
+/// NAIF center ID for the Earth segment in DE440-class kernels.
+pub const EARTH_CENTER: i32 = 3; // EMB
 
-/// A set of three SPK segments (Sun, EMB, Moon) extracted from a BSP file.
+/// Core SPK segments extracted from a planetary BSP file.
 #[derive(Debug)]
 pub struct BspSegments {
     /// Sun (NAIF 10 → SSB)
@@ -68,6 +72,8 @@ pub struct BspSegments {
     pub emb: SegmentData,
     /// Moon (NAIF 301 → EMB)
     pub moon: SegmentData,
+    /// Earth (NAIF 399 → EMB), present in DE440-class kernels.
+    pub earth: Option<SegmentData>,
 }
 
 /// Read an SPK Type 2 or Type 3 segment from raw file data.
@@ -174,21 +180,23 @@ pub fn parse_indexed_segments(file_data: &[u8]) -> Result<Vec<IndexedSegmentData
     Ok(segments)
 }
 
-/// Parse a BSP file and extract the three required segments (Sun, EMB, Moon).
+/// Parse a BSP file and extract the required Sun, EMB, Moon, and optional Earth segments.
 pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
     let daf = Daf::parse(file_data)?;
 
-    let find_segment = |target: i32, center: i32, name: &str| -> Result<SegmentData, SpiceError> {
-        let summary = daf
-            .summaries
+    let find_summary = |target: i32, center: i32| {
+        daf.summaries
             .iter()
             .find(|s| s.target_id == target && s.center_id == center)
-            .ok_or_else(|| {
-                SpiceError::FormatParse(format!(
-                    "BSP: segment target={} center={} ({}) not found",
-                    target, center, name
-                ))
-            })?;
+    };
+
+    let find_segment = |target: i32, center: i32, name: &str| -> Result<SegmentData, SpiceError> {
+        let summary = find_summary(target, center).ok_or_else(|| {
+            SpiceError::FormatParse(format!(
+                "BSP: segment target={} center={} ({}) not found",
+                target, center, name
+            ))
+        })?;
 
         if summary.data_type != 2 && summary.data_type != 3 {
             return Err(SpiceError::FormatParse(format!(
@@ -203,8 +211,25 @@ pub fn parse_bsp(file_data: &[u8]) -> Result<BspSegments, SpiceError> {
     let sun = find_segment(SUN_TARGET, SUN_CENTER, "Sun")?;
     let emb = find_segment(EMB_TARGET, EMB_CENTER, "EMB")?;
     let moon = find_segment(MOON_TARGET, MOON_CENTER, "Moon")?;
+    let earth = match find_summary(EARTH_TARGET, EARTH_CENTER) {
+        Some(summary) if summary.data_type == 2 || summary.data_type == 3 => {
+            Some(read_segment(file_data, &daf, summary)?)
+        }
+        Some(summary) => {
+            return Err(SpiceError::FormatParse(format!(
+                "BSP: Earth segment is Type {} (only Type 2/3 supported)",
+                summary.data_type
+            )));
+        }
+        None => None,
+    };
 
-    Ok(BspSegments { sun, emb, moon })
+    Ok(BspSegments {
+        sun,
+        emb,
+        moon,
+        earth,
+    })
 }
 
 #[cfg(test)]
