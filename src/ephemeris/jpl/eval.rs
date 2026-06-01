@@ -66,10 +66,25 @@ fn jd_to_et(jd_value: f64) -> Seconds {
 
 /// Convert a TT Julian Date to SPICE/NAIF ephemeris time seconds past J2000.
 ///
-/// SPK Type 2/3 segment metadata is keyed by ephemeris time seconds. The NAIF
-/// leapseconds kernels define ET from TT/TDT as `ET = TT + K sin(E)`, with
-/// `E = M + EB sin(M)` and `M = M0 + M1 * ET`. Iterating the small periodic
-/// term keeps runtime BSP evaluation aligned with SPICE/ANISE semantics.
+/// ## What this approximates
+///
+/// SPK Type 2/3 segment metadata is keyed by **ephemeris time (ET)** seconds
+/// past J2000. Without a loaded leapseconds kernel (LSK), this uses the
+/// closed-form TT→ET mapping from the NAIF planetary ephemeris documentation:
+///
+/// ```text
+/// ET ≈ TT + K·sin(E),   E = M + eB·sin(M),   M = M0 + M1·ET  (fixed-point)
+/// ```
+///
+/// with constants `K`, `eB`, `M0`, `M1` from the DE405/SPICE headers. This
+/// is **not** a full LSK-based conversion: it ignores leap seconds and the
+/// historical ΔT table, and the fixed-point iteration introduces a residual
+/// of order **10⁻⁵ s** (~1 m at Earth orbital speed) relative to CSPICE when
+/// an LSK is loaded. It is adequate for Chebyshev segment lookup inside JPL
+/// DE BSP files, which are themselves sampled on this ET axis.
+///
+/// For strict CSPICE/ANISE parity, compare against an external kernel using the
+/// same TT input; see unit tests in this module for the J2000 anchor term.
 #[inline]
 pub(crate) fn jd_tt_to_spice_et_seconds(jd_tt: JulianDate) -> f64 {
     let tt_seconds = (jd_tt.raw().value() - J2000_JD) * SECONDS_PER_DAY;
@@ -239,6 +254,7 @@ fn eval_both(
 ///
 /// The coefficient data is stored in a `Vec<f64>` owned by this struct. This
 /// enables loading BSP files at runtime without embedding them at compile time.
+#[derive(Clone)]
 pub(crate) struct DynSegmentDescriptor {
     /// SPK segment type (2 differentiates position coefficients, 3 stores
     /// explicit velocity coefficient blocks).
@@ -289,7 +305,10 @@ impl DynSegmentDescriptor {
 
     /// Locate the record for SPICE/NAIF ET seconds past J2000 and compute tau.
     #[inline]
-    fn try_locate_et(&self, et_seconds: f64) -> Result<(&[f64], f64, Seconds), EphemerisError> {
+    pub(crate) fn try_locate_et(
+        &self,
+        et_seconds: f64,
+    ) -> Result<(&[f64], f64, Seconds), EphemerisError> {
         let (idx, et, _) = locate_params_et(self.init, self.intlen, self.n_records, et_seconds)?;
         let record = self.record(idx);
         let (tau, radius) = record_tau(record, et);
@@ -402,6 +421,126 @@ impl DynSegmentDescriptor {
     }
 }
 
+// ═══════════════════════════════════════════════════════════════════════════
+// DynSegmentStack — one or more SPK segments for the same target/center
+// ═══════════════════════════════════════════════════════════════════════════
+
+#[derive(Clone)]
+struct StackedSegment {
+    start_et: f64,
+    end_et: f64,
+    descriptor: DynSegmentDescriptor,
+}
+
+/// All SPK segments for one target/center pair, with later segments preferred.
+#[derive(Clone)]
+pub(crate) struct DynSegmentStack {
+    segments: Vec<StackedSegment>,
+}
+
+impl DynSegmentStack {
+    /// Coverage interval in ET seconds past J2000 from segment metadata.
+    pub(crate) fn coverage_from_spk(seg: &crate::formats::spice::spk::SegmentData) -> (f64, f64) {
+        let start = seg.init;
+        let end = seg.init + seg.intlen * seg.n_records as f64;
+        (start, end)
+    }
+
+    /// One segment covering `[start_et, end_et]`.
+    pub(crate) fn single(descriptor: DynSegmentDescriptor, start_et: f64, end_et: f64) -> Self {
+        Self {
+            segments: vec![StackedSegment {
+                start_et,
+                end_et,
+                descriptor,
+            }],
+        }
+    }
+
+    /// Build from one parsed SPK segment (coverage inferred from metadata).
+    pub(crate) fn from_spk_segment(seg: &crate::formats::spice::spk::SegmentData) -> Self {
+        let (start_et, end_et) = Self::coverage_from_spk(seg);
+        Self::single(DynSegmentDescriptor::from_spk(seg), start_et, end_et)
+    }
+
+    /// Collect every indexed segment for a NAIF target/center pair.
+    pub(crate) fn for_indexed_pair(
+        indexed: &[crate::formats::spice::spk::IndexedSegmentData],
+        target_id: i32,
+        center_id: i32,
+    ) -> Self {
+        let segments = indexed
+            .iter()
+            .filter(|s| s.target_id == target_id && s.center_id == center_id)
+            .map(|s| StackedSegment {
+                start_et: s.start_et,
+                end_et: s.end_et,
+                descriptor: DynSegmentDescriptor::from_spk(&s.data),
+            })
+            .collect();
+        Self { segments }
+    }
+
+    #[inline]
+    fn covers_et(segment: &StackedSegment, et: f64) -> bool {
+        et.is_finite() && et >= segment.start_et && et <= segment.end_et
+    }
+
+    #[inline]
+    fn out_of_range_et(segment: &StackedSegment, et: f64) -> EphemerisError {
+        EphemerisError::OutOfRange {
+            jd: J2000_JD + et / SECONDS_PER_DAY,
+            start_jd: J2000_JD + segment.start_et / SECONDS_PER_DAY,
+            end_jd: J2000_JD + segment.end_et / SECONDS_PER_DAY,
+        }
+    }
+
+    fn select_et(&self, et_seconds: f64) -> Result<&DynSegmentDescriptor, EphemerisError> {
+        let mut out_of_range = None;
+        for segment in self.segments.iter().rev() {
+            if !Self::covers_et(segment, et_seconds) {
+                out_of_range.get_or_insert(Self::out_of_range_et(segment, et_seconds));
+                continue;
+            }
+            match segment.descriptor.try_locate_et(et_seconds) {
+                Ok(_) => return Ok(&segment.descriptor),
+                Err(err @ EphemerisError::OutOfRange { .. }) => {
+                    out_of_range.get_or_insert(err);
+                }
+                Err(err) => return Err(err),
+            }
+        }
+        Err(out_of_range.unwrap_or(EphemerisError::InvalidSegment {
+            init_seconds: f64::NAN,
+            intlen_seconds: f64::NAN,
+            n_records: 0,
+        }))
+    }
+
+    /// Fallibly evaluate position in km (ICRF) at SPICE/NAIF ET seconds past J2000.
+    #[inline]
+    pub(crate) fn try_position_et(
+        &self,
+        et_seconds: f64,
+    ) -> Result<Displacement<ICRF, Kilometer>, EphemerisError> {
+        self.select_et(et_seconds)?.try_position_et(et_seconds)
+    }
+
+    /// Fallibly evaluate velocity in km/day (ICRF) at SPICE/NAIF ET seconds past J2000.
+    #[inline]
+    pub(crate) fn try_velocity_et(
+        &self,
+        et_seconds: f64,
+    ) -> Result<Velocity<ICRF, KmPerDay>, EphemerisError> {
+        self.select_et(et_seconds)?.try_velocity_et(et_seconds)
+    }
+
+    /// Total number of stacked SPK segments.
+    pub(crate) fn segment_count(&self) -> usize {
+        self.segments.len()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -456,6 +595,59 @@ mod tests {
             (et + 7.273_677_621_567_873e-5).abs() < 1.0e-14,
             "et={et:.17e}"
         );
+    }
+
+    /// TT→ET without LSK stays within ~0.1 s of TT at sample epochs (see module docs).
+    #[test]
+    fn spice_et_conversion_near_tt_at_reference_epochs() {
+        for jd in [JD_J2000, 2_453_372.5, 2_440_000.0, 2_500_000.0] {
+            let et = jd_tt_to_spice_et_seconds(JulianDate::new(jd));
+            let tt_seconds = (jd - JD_J2000) * SECONDS_PER_DAY;
+            assert!(et.is_finite());
+            assert!(
+                (et - tt_seconds).abs() < 0.1,
+                "jd={jd}: |ET−TT| = {} s exceeds 0.1 s approximation bound",
+                (et - tt_seconds).abs()
+            );
+        }
+    }
+
+    #[test]
+    fn dyn_segment_stack_later_segment_preferred() {
+        use crate::formats::spice::spk::{IndexedSegmentData, SegmentData};
+
+        let intlen = 500.0 * SECONDS_PER_DAY;
+        let seg = |x: f64| SegmentData {
+            data_type: 2,
+            init: 0.0,
+            intlen,
+            rsize: 8,
+            ncoeff: 2,
+            n_records: 1,
+            records: vec![intlen / 2.0, intlen / 2.0, x, 0.0, 0.0, 0.0, 0.0, 0.0],
+        };
+        let indexed = vec![
+            IndexedSegmentData {
+                target_id: 10,
+                center_id: 0,
+                frame_id: 1,
+                start_et: 0.0,
+                end_et: intlen,
+                data: seg(100.0),
+            },
+            IndexedSegmentData {
+                target_id: 10,
+                center_id: 0,
+                frame_id: 1,
+                start_et: 0.0,
+                end_et: intlen,
+                data: seg(900.0),
+            },
+        ];
+        let stack = DynSegmentStack::for_indexed_pair(&indexed, 10, 0);
+        let et = 250.0 * SECONDS_PER_DAY;
+        let pos = stack.try_position_et(et).unwrap();
+        assert!((pos.x().value() - 900.0).abs() < 1.0e-6);
     }
 
     #[test]

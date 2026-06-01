@@ -51,7 +51,7 @@
 //!   DE440 and DE441". *The Astronomical Journal* 161, 105.
 //!   <https://doi.org/10.3847/1538-3881/abd414>
 
-use super::eval::{jd_tt_to_spice_et_seconds, DynSegmentDescriptor};
+use super::eval::{jd_tt_to_spice_et_seconds, DynSegmentStack};
 
 use crate::coordinates::{
     cartesian::{Position, Velocity},
@@ -92,7 +92,7 @@ type AuPerDay = Per<AstronomicalUnit, Day>;
 #[inline]
 pub(crate) fn try_dyn_sun_barycentric(
     jd: JulianDate,
-    sun: &DynSegmentDescriptor,
+    sun: &DynSegmentStack,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
     let et = jd_tt_to_spice_et_seconds(jd);
     let sun_icrf = sun.try_position_et(et)?;
@@ -110,7 +110,7 @@ pub(crate) fn try_dyn_sun_barycentric(
 #[inline]
 pub(crate) fn dyn_sun_barycentric(
     jd: JulianDate,
-    sun: &DynSegmentDescriptor,
+    sun: &DynSegmentStack,
 ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
     try_dyn_sun_barycentric(jd, sun).expect("runtime JPL Sun barycentric position unavailable")
 }
@@ -119,8 +119,8 @@ pub(crate) fn dyn_sun_barycentric(
 #[inline]
 pub(crate) fn try_dyn_earth_barycentric(
     jd: JulianDate,
-    emb: &DynSegmentDescriptor,
-    moon: &DynSegmentDescriptor,
+    emb: &DynSegmentStack,
+    moon: &DynSegmentStack,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
     let et = jd_tt_to_spice_et_seconds(jd);
     let emb_pos = emb.try_position_et(et)?;
@@ -140,8 +140,8 @@ pub(crate) fn try_dyn_earth_barycentric(
 #[inline]
 pub(crate) fn try_dyn_earth_barycentric_direct(
     jd: JulianDate,
-    emb: &DynSegmentDescriptor,
-    earth: &DynSegmentDescriptor,
+    emb: &DynSegmentStack,
+    earth: &DynSegmentStack,
 ) -> Result<Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
     let et = jd_tt_to_spice_et_seconds(jd);
     let emb_pos = emb.try_position_et(et)?;
@@ -160,8 +160,8 @@ pub(crate) fn try_dyn_earth_barycentric_direct(
 #[inline]
 pub(crate) fn dyn_earth_barycentric(
     jd: JulianDate,
-    emb: &DynSegmentDescriptor,
-    moon: &DynSegmentDescriptor,
+    emb: &DynSegmentStack,
+    moon: &DynSegmentStack,
 ) -> Position<Barycentric, EclipticMeanJ2000, AstronomicalUnit> {
     try_dyn_earth_barycentric(jd, emb, moon)
         .expect("runtime JPL Earth barycentric position unavailable")
@@ -171,9 +171,9 @@ pub(crate) fn dyn_earth_barycentric(
 #[inline]
 pub(crate) fn try_dyn_earth_heliocentric(
     jd: JulianDate,
-    sun: &DynSegmentDescriptor,
-    emb: &DynSegmentDescriptor,
-    moon: &DynSegmentDescriptor,
+    sun: &DynSegmentStack,
+    emb: &DynSegmentStack,
+    moon: &DynSegmentStack,
 ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
     let et = jd_tt_to_spice_et_seconds(jd);
     let emb_pos = emb.try_position_et(et)?;
@@ -194,9 +194,9 @@ pub(crate) fn try_dyn_earth_heliocentric(
 #[inline]
 pub(crate) fn try_dyn_earth_heliocentric_direct(
     jd: JulianDate,
-    sun: &DynSegmentDescriptor,
-    emb: &DynSegmentDescriptor,
-    earth: &DynSegmentDescriptor,
+    sun: &DynSegmentStack,
+    emb: &DynSegmentStack,
+    earth: &DynSegmentStack,
 ) -> Result<Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit>, EphemerisError> {
     let et = jd_tt_to_spice_et_seconds(jd);
     let emb_pos = emb.try_position_et(et)?;
@@ -216,9 +216,9 @@ pub(crate) fn try_dyn_earth_heliocentric_direct(
 #[inline]
 pub(crate) fn dyn_earth_heliocentric(
     jd: JulianDate,
-    sun: &DynSegmentDescriptor,
-    emb: &DynSegmentDescriptor,
-    moon: &DynSegmentDescriptor,
+    sun: &DynSegmentStack,
+    emb: &DynSegmentStack,
+    moon: &DynSegmentStack,
 ) -> Position<Heliocentric, EclipticMeanJ2000, AstronomicalUnit> {
     try_dyn_earth_heliocentric(jd, sun, emb, moon)
         .expect("runtime JPL Earth heliocentric position unavailable")
@@ -228,8 +228,8 @@ pub(crate) fn dyn_earth_heliocentric(
 #[inline]
 pub(crate) fn try_dyn_earth_barycentric_velocity(
     jd: JulianDate,
-    emb: &DynSegmentDescriptor,
-    moon: &DynSegmentDescriptor,
+    emb: &DynSegmentStack,
+    moon: &DynSegmentStack,
 ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
     let et = jd_tt_to_spice_et_seconds(jd);
     let v_emb = emb.try_velocity_et(et)?;
@@ -244,8 +244,8 @@ pub(crate) fn try_dyn_earth_barycentric_velocity(
 #[inline]
 pub(crate) fn try_dyn_earth_barycentric_velocity_direct(
     jd: JulianDate,
-    emb: &DynSegmentDescriptor,
-    earth: &DynSegmentDescriptor,
+    emb: &DynSegmentStack,
+    earth: &DynSegmentStack,
 ) -> Result<Velocity<EclipticMeanJ2000, AuPerDay>, EphemerisError> {
     let et = jd_tt_to_spice_et_seconds(jd);
     let v_emb = emb.try_velocity_et(et)?;
@@ -259,8 +259,8 @@ pub(crate) fn try_dyn_earth_barycentric_velocity_direct(
 #[inline]
 pub(crate) fn dyn_earth_barycentric_velocity(
     jd: JulianDate,
-    emb: &DynSegmentDescriptor,
-    moon: &DynSegmentDescriptor,
+    emb: &DynSegmentStack,
+    moon: &DynSegmentStack,
 ) -> Velocity<EclipticMeanJ2000, AuPerDay> {
     try_dyn_earth_barycentric_velocity(jd, emb, moon)
         .expect("runtime JPL Earth barycentric velocity unavailable")
@@ -270,7 +270,7 @@ pub(crate) fn dyn_earth_barycentric_velocity(
 #[inline]
 pub(crate) fn try_dyn_moon_geocentric(
     jd: JulianDate,
-    moon: &DynSegmentDescriptor,
+    moon: &DynSegmentStack,
 ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
     let et = jd_tt_to_spice_et_seconds(jd);
     let moon_off = moon.try_position_et(et)?;
@@ -288,8 +288,8 @@ pub(crate) fn try_dyn_moon_geocentric(
 #[inline]
 pub(crate) fn try_dyn_moon_geocentric_direct(
     jd: JulianDate,
-    moon: &DynSegmentDescriptor,
-    earth: &DynSegmentDescriptor,
+    moon: &DynSegmentStack,
+    earth: &DynSegmentStack,
 ) -> Result<Position<Geocentric, EclipticMeanJ2000, Kilometer>, EphemerisError> {
     let et = jd_tt_to_spice_et_seconds(jd);
     let moon_off = moon.try_position_et(et)?;
@@ -306,7 +306,7 @@ pub(crate) fn try_dyn_moon_geocentric_direct(
 #[inline]
 pub(crate) fn dyn_moon_geocentric(
     jd: JulianDate,
-    moon: &DynSegmentDescriptor,
+    moon: &DynSegmentStack,
 ) -> Position<Geocentric, EclipticMeanJ2000, Kilometer> {
     try_dyn_moon_geocentric(jd, moon).expect("runtime JPL Moon geocentric position unavailable")
 }
@@ -314,7 +314,7 @@ pub(crate) fn dyn_moon_geocentric(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::ephemeris::jpl::eval::DynSegmentDescriptor;
+    use crate::ephemeris::jpl::eval::{DynSegmentDescriptor, DynSegmentStack};
 
     const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
     const JD_J2000: f64 = tempoch::J2000_JD_TT_DAY.value();
@@ -325,7 +325,7 @@ mod tests {
     ///
     /// The segment spans 1000 days from J2000. The position at tau=0 (J2000+500d)
     /// is (x_km, y_km, z_km) in ICRF km. The velocity is zero.
-    fn make_seg(x_km: f64, y_km: f64, z_km: f64) -> DynSegmentDescriptor {
+    fn make_seg(x_km: f64, y_km: f64, z_km: f64) -> DynSegmentStack {
         use crate::qtty::Seconds;
         let ncoeff = 2usize;
         let rsize = 2 + 3 * ncoeff; // 8
@@ -334,7 +334,7 @@ mod tests {
         let radius = intlen_secs / 2.0;
         // Record: [mid, radius, cx0, cx1, cy0, cy1, cz0, cz1]
         let data = vec![mid, radius, x_km, 0.0, y_km, 0.0, z_km, 0.0];
-        DynSegmentDescriptor {
+        let descriptor = DynSegmentDescriptor {
             data_type: 2,
             init: Seconds::new(0.0),
             intlen: Seconds::new(intlen_secs),
@@ -342,7 +342,8 @@ mod tests {
             rsize,
             n_records: 1,
             data,
-        }
+        };
+        DynSegmentStack::single(descriptor, 0.0, intlen_secs)
     }
 
     /// JD at J2000 + 500 days (midpoint of our test segment → tau = 0).

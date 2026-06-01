@@ -76,23 +76,102 @@ pub struct BspSegments {
     pub earth: Option<SegmentData>,
 }
 
+fn file_word_count(file_data: &[u8]) -> usize {
+    file_data.len() / 8
+}
+
+fn ensure_word_in_file(file_data: &[u8], word: usize) -> Result<(), SpiceError> {
+    if word == 0 {
+        return Err(SpiceError::FormatParse(
+            "SPK segment word index must be ≥ 1".to_string(),
+        ));
+    }
+    let max = file_word_count(file_data);
+    if word > max {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK segment word {word} exceeds file data ({max} words)"
+        )));
+    }
+    Ok(())
+}
+
+fn read_trailer_f64(
+    file_data: &[u8],
+    daf: &Daf,
+    word: usize,
+    name: &str,
+) -> Result<f64, SpiceError> {
+    ensure_word_in_file(file_data, word)?;
+    let value = daf.read_f64_at_word(file_data, word);
+    if !value.is_finite() {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK segment trailer {name} at word {word} is not finite ({value})"
+        )));
+    }
+    Ok(value)
+}
+
 /// Read an SPK Type 2 or Type 3 segment from raw file data.
 pub fn read_segment(
     file_data: &[u8],
     daf: &Daf,
     summary: &Summary,
 ) -> Result<SegmentData, SpiceError> {
+    if summary.start_word == 0 || summary.end_word == 0 {
+        return Err(SpiceError::FormatParse(
+            "SPK summary start_word/end_word must be positive".to_string(),
+        ));
+    }
+    if summary.end_word < summary.start_word {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK summary end_word={} precedes start_word={}",
+            summary.end_word, summary.start_word
+        )));
+    }
+    if summary.end_word < summary.start_word + 3 {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK summary span too small for trailer (start={}, end={})",
+            summary.start_word, summary.end_word
+        )));
+    }
+
     let end = summary.end_word;
+    for word in [end, end - 1, end - 2, end - 3] {
+        ensure_word_in_file(file_data, word)?;
+    }
 
-    let n_records = daf.read_f64_at_word(file_data, end) as usize;
-    let rsize = daf.read_f64_at_word(file_data, end - 1) as usize;
-    let intlen = daf.read_f64_at_word(file_data, end - 2);
-    let init = daf.read_f64_at_word(file_data, end - 3);
+    let n_records_f = read_trailer_f64(file_data, daf, end, "n_records")?;
+    let rsize_f = read_trailer_f64(file_data, daf, end - 1, "rsize")?;
+    let intlen = read_trailer_f64(file_data, daf, end - 2, "intlen")?;
+    let init = read_trailer_f64(file_data, daf, end - 3, "init")?;
 
+    if intlen <= 0.0 {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK segment intlen must be positive (got {intlen})"
+        )));
+    }
+
+    if n_records_f.fract() != 0.0 || n_records_f < 0.0 {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK segment n_records must be a non-negative integer (got {n_records_f})"
+        )));
+    }
+    let n_records = n_records_f as usize;
+    if n_records == 0 || n_records > 10_000_000 {
+        return Err(SpiceError::FormatParse(format!(
+            "Implausible n_records={n_records}"
+        )));
+    }
+
+    if rsize_f.fract() != 0.0 {
+        return Err(SpiceError::FormatParse(format!(
+            "SPK segment rsize must be an integer (got {rsize_f})"
+        )));
+    }
+    let rsize = rsize_f as usize;
     if !(5..=200).contains(&rsize) {
         return Err(SpiceError::FormatParse(format!(
-            "Implausible rsize={} for SPK Type 2 segment",
-            rsize
+            "Implausible rsize={rsize} for SPK Type 2/3 segment"
         )));
     }
 
@@ -101,32 +180,44 @@ pub fn read_segment(
         3 => 6,
         other => {
             return Err(SpiceError::FormatParse(format!(
-                "SPK segment Type {} is unsupported (only Type 2/3)",
-                other
-            )))
+                "SPK segment Type {other} is unsupported (only Type 2/3)"
+            )));
         }
     };
     let ncoeff = (rsize - 2) / coeff_axes;
     if 2 + coeff_axes * ncoeff != rsize {
         return Err(SpiceError::FormatParse(format!(
-            "rsize={} is not 2 + {}k for SPK Type {} (ncoeff would be {})",
-            rsize, coeff_axes, summary.data_type, ncoeff
+            "rsize={rsize} is not 2 + {coeff_axes}k for SPK Type {} (ncoeff would be {ncoeff})",
+            summary.data_type
         )));
     }
 
-    if n_records == 0 || n_records > 10_000_000 {
+    let total_doubles = n_records.checked_mul(rsize).ok_or_else(|| {
+        SpiceError::FormatParse(format!(
+            "SPK record buffer size overflows (n_records={n_records}, rsize={rsize})"
+        ))
+    })?;
+
+    let data_end_word = summary
+        .start_word
+        .checked_add(total_doubles)
+        .and_then(|w| w.checked_sub(1))
+        .ok_or_else(|| {
+            SpiceError::FormatParse("SPK segment data extent overflows word index".to_string())
+        })?;
+    if data_end_word > summary.end_word.saturating_sub(4) {
         return Err(SpiceError::FormatParse(format!(
-            "Implausible n_records={}",
-            n_records
+            "SPK coefficient data ends at word {data_end_word} but trailer starts at {}",
+            summary.end_word.saturating_sub(3)
         )));
     }
+    ensure_word_in_file(file_data, data_end_word)?;
 
-    let total_doubles = n_records * rsize;
     let mut records = Vec::with_capacity(total_doubles);
-
     let data_start_word = summary.start_word;
     for i in 0..total_doubles {
         let word = data_start_word + i;
+        ensure_word_in_file(file_data, word)?;
         records.push(daf.read_f64_at_word(file_data, word));
     }
 
@@ -408,5 +499,97 @@ mod tests {
         assert_eq!(EMB_CENTER, 0);
         assert_eq!(MOON_TARGET, 301);
         assert_eq!(MOON_CENTER, 3);
+    }
+
+    #[test]
+    fn read_segment_rejects_overflowing_record_count() {
+        let end_word = 10usize;
+        let mut buf = vec![0u8; (end_word + 1) * 8];
+        w_f64(&mut buf, (end_word - 4) * 8, 0.0);
+        w_f64(&mut buf, (end_word - 3) * 8, 86400.0);
+        w_f64(&mut buf, (end_word - 2) * 8, 8.0);
+        w_f64(&mut buf, (end_word - 1) * 8, 3_000_000.0); // huge n_records
+        let daf = make_daf();
+        let summary = make_summary(1, end_word, 2);
+        let err = read_type2_segment(&buf, &daf, &summary).unwrap_err();
+        let msg = err.to_string();
+        assert!(
+            msg.contains("overflow")
+                || msg.contains("exceeds")
+                || msg.contains("Implausible")
+                || msg.contains("coefficient data ends"),
+            "{msg}"
+        );
+    }
+
+    #[test]
+    fn read_segment_rejects_truncated_file() {
+        let end_word = 10usize;
+        let mut buf = vec![0u8; (end_word + 1) * 8];
+        w_f64(&mut buf, (end_word - 4) * 8, 0.0);
+        w_f64(&mut buf, (end_word - 3) * 8, 86400.0);
+        w_f64(&mut buf, (end_word - 2) * 8, 8.0);
+        w_f64(&mut buf, (end_word - 1) * 8, 1.0);
+        let daf = make_daf();
+        let summary = Summary {
+            start_word: 1,
+            end_word: 5, // trailer words not present
+            ..make_summary(1, end_word, 2)
+        };
+        assert!(read_type2_segment(&buf, &daf, &summary).is_err());
+    }
+
+    #[test]
+    fn read_segment_rejects_nan_init() {
+        let end_word = 10usize;
+        let mut buf = vec![0u8; (end_word + 1) * 8];
+        w_f64(&mut buf, (end_word - 4) * 8, f64::NAN);
+        w_f64(&mut buf, (end_word - 3) * 8, 86400.0);
+        w_f64(&mut buf, (end_word - 2) * 8, 8.0);
+        w_f64(&mut buf, (end_word - 1) * 8, 1.0);
+        let daf = make_daf();
+        let summary = make_summary(1, end_word, 2);
+        let msg = read_type2_segment(&buf, &daf, &summary)
+            .unwrap_err()
+            .to_string();
+        assert!(msg.contains("init") || msg.contains("finite"), "{msg}");
+    }
+
+    #[test]
+    fn read_segment_rejects_non_positive_intlen() {
+        let end_word = 10usize;
+        let mut buf = vec![0u8; (end_word + 1) * 8];
+        w_f64(&mut buf, (end_word - 4) * 8, 0.0);
+        w_f64(&mut buf, (end_word - 3) * 8, 0.0);
+        w_f64(&mut buf, (end_word - 2) * 8, 8.0);
+        w_f64(&mut buf, (end_word - 1) * 8, 1.0);
+        let daf = make_daf();
+        let summary = make_summary(1, end_word, 2);
+        let msg = read_type2_segment(&buf, &daf, &summary)
+            .unwrap_err()
+            .to_string();
+        assert!(msg.contains("intlen"), "{msg}");
+    }
+
+    #[test]
+    fn read_type3_segment_valid_minimal() {
+        let ncoeff = 1usize;
+        let rsize = 2 + 6 * ncoeff;
+        let n_records = 1usize;
+        let start_word = 1usize;
+        let end_word_idx = start_word + rsize + 3;
+        let mut buf = vec![0u8; (end_word_idx + 1) * 8];
+        for i in 0..rsize {
+            w_f64(&mut buf, (start_word - 1 + i) * 8, i as f64);
+        }
+        w_f64(&mut buf, (end_word_idx - 4) * 8, 0.0);
+        w_f64(&mut buf, (end_word_idx - 3) * 8, 86400.0);
+        w_f64(&mut buf, (end_word_idx - 2) * 8, rsize as f64);
+        w_f64(&mut buf, (end_word_idx - 1) * 8, n_records as f64);
+        let daf = make_daf();
+        let summary = make_summary(start_word, end_word_idx, 3);
+        let seg = read_segment(&buf, &daf, &summary).expect("type 3 segment");
+        assert_eq!(seg.data_type, 3);
+        assert_eq!(seg.rsize, rsize);
     }
 }

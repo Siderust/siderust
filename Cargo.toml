@@ -8,6 +8,7 @@ members = [
 unsafe_code     = "forbid"
 missing_docs    = "deny"
 unreachable_pub = "warn"
+unexpected_cfgs = { level = "warn", check-cfg = ['cfg(siderust_mock_de440)'] }
 
 [workspace.lints.clippy]
 all           = { level = "deny", priority = -1 }
@@ -144,6 +145,18 @@ harness = false
 
 [[bench]]
 name = "altitude_comparison"
+harness = false
+
+[[bench]]
+name = "de441"
+harness = false
+
+[[bench]]
+name = "spk_perf"
+harness = false
+
+[[bench]]
+name = "sidereal"
 harness = false
 
 [lints]

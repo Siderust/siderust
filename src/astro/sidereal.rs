@@ -125,6 +125,19 @@ pub fn gast_iau2006(
     (gmst + ee).wrap_pos()
 }
 
+/// Greenwich Apparent Sidereal Time, IAU 2006/2000A (high-level).
+///
+/// Computes nutation and mean obliquity internally from `jd_tt` using
+/// [`nutation_iau2000b`](crate::astro::nutation::nutation_iau2000b), then
+/// evaluates [`gast_iau2006`]. Prefer this at call sites that do not already
+/// hold nutation angles; use [`gast_iau2006`] when supplying precomputed
+/// nutation for batch transforms.
+#[inline]
+pub fn gast_iau2006a(jd_ut1: JulianDate, jd_tt: JulianDate) -> Radians {
+    let nut = crate::astro::nutation::nutation_iau2000b(jd_tt);
+    gast_iau2006(jd_ut1, jd_tt, nut.dpsi, nut.mean_obliquity)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -185,5 +198,14 @@ mod tests {
             gast.value(),
             sofa
         );
+    }
+
+    #[test]
+    fn gast_iau2006a_matches_low_level_gast() {
+        let jd = crate::time::JulianDate::new(2_460_000.5);
+        let nut = crate::astro::nutation::nutation_iau2000b(jd);
+        let low = gast_iau2006(jd, jd, nut.dpsi, nut.mean_obliquity);
+        let high = gast_iau2006a(jd, jd);
+        assert!((low.value() - high.value()).abs() < 1.0e-15);
     }
 }

@@ -16,7 +16,7 @@ use crate::coordinates::{
     frames::EclipticMeanJ2000,
 };
 use crate::ephemeris::jpl::bodies;
-use crate::ephemeris::jpl::eval::DynSegmentDescriptor;
+use crate::ephemeris::jpl::eval::DynSegmentStack;
 use crate::formats::spice::{self, spk};
 use crate::qtty::{AstronomicalUnit, Kilometer};
 use crate::time::JulianDate;
@@ -25,10 +25,10 @@ use std::sync::Arc;
 
 /// Shared inner data for a runtime-loaded ephemeris.
 struct RuntimeEphemerisInner {
-    sun: DynSegmentDescriptor,
-    emb: DynSegmentDescriptor,
-    moon: DynSegmentDescriptor,
-    earth: Option<DynSegmentDescriptor>,
+    sun: DynSegmentStack,
+    emb: DynSegmentStack,
+    moon: DynSegmentStack,
+    earth: Option<DynSegmentStack>,
 }
 
 /// Runtime-loaded JPL DE4xx ephemeris backend.
@@ -41,6 +41,8 @@ struct RuntimeEphemerisInner {
 /// - Stores coefficient data on the **heap** (via `Vec<f64>`)
 /// - Implements [`DynEphemeris`] (instance methods with `&self`)
 /// - Is cloneable and shareable via internal `Arc`
+/// - Retains **all** matching SPK segments per body chain and selects by epoch
+///   (later kernels win when coverage overlaps), matching [`SpkKernelSet`] semantics
 ///
 /// # Example
 ///
@@ -60,7 +62,7 @@ impl RuntimeEphemeris {
     /// Load a runtime ephemeris from a BSP file on disk.
     ///
     /// The file is read entirely into memory, parsed as a DAF/SPK container,
-    /// and the Sun, EMB, and Moon Chebyshev segments are extracted.
+    /// and every supported Sun, EMB, Moon, and optional Earth segment is indexed.
     pub fn from_bsp(path: impl AsRef<Path>) -> Result<Self, ArchiveError> {
         let file_data = std::fs::read(path.as_ref())?;
         Self::from_bytes(&file_data)
@@ -68,17 +70,44 @@ impl RuntimeEphemeris {
 
     /// Load a runtime ephemeris from raw BSP bytes already in memory.
     pub fn from_bytes(data: &[u8]) -> Result<Self, ArchiveError> {
-        let segments = spk::parse_bsp(data).map_err(spice_error_to_archive)?;
-        Ok(Self::from_segments(segments))
+        let indexed = spk::parse_indexed_segments(data).map_err(spice_error_to_archive)?;
+        Ok(Self::from_indexed_segments(indexed))
     }
 
-    /// Construct from pre-parsed BSP segments.
+    /// Construct from every parsed J2000 Type 2/3 segment in a BSP file.
+    pub fn from_indexed_segments(indexed: Vec<spk::IndexedSegmentData>) -> Self {
+        let inner = RuntimeEphemerisInner {
+            sun: DynSegmentStack::for_indexed_pair(&indexed, spk::SUN_TARGET, spk::SUN_CENTER),
+            emb: DynSegmentStack::for_indexed_pair(&indexed, spk::EMB_TARGET, spk::EMB_CENTER),
+            moon: DynSegmentStack::for_indexed_pair(&indexed, spk::MOON_TARGET, spk::MOON_CENTER),
+            earth: {
+                let stack = DynSegmentStack::for_indexed_pair(
+                    &indexed,
+                    spk::EARTH_TARGET,
+                    spk::EARTH_CENTER,
+                );
+                if stack.segment_count() > 0 {
+                    Some(stack)
+                } else {
+                    None
+                }
+            },
+        };
+        Self {
+            inner: Arc::new(inner),
+        }
+    }
+
+    /// Construct from legacy single-segment [`spk::BspSegments`] (tests and tooling).
     pub fn from_segments(segments: spk::BspSegments) -> Self {
         let inner = RuntimeEphemerisInner {
-            sun: DynSegmentDescriptor::from_spk(&segments.sun),
-            emb: DynSegmentDescriptor::from_spk(&segments.emb),
-            moon: DynSegmentDescriptor::from_spk(&segments.moon),
-            earth: segments.earth.as_ref().map(DynSegmentDescriptor::from_spk),
+            sun: DynSegmentStack::from_spk_segment(&segments.sun),
+            emb: DynSegmentStack::from_spk_segment(&segments.emb),
+            moon: DynSegmentStack::from_spk_segment(&segments.moon),
+            earth: segments
+                .earth
+                .as_ref()
+                .map(DynSegmentStack::from_spk_segment),
         };
         Self {
             inner: Arc::new(inner),
@@ -114,12 +143,16 @@ fn spice_error_to_archive(err: spice::SpiceError) -> ArchiveError {
 impl std::fmt::Debug for RuntimeEphemeris {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("RuntimeEphemeris")
-            .field("sun_records", &self.inner.sun.n_records)
-            .field("emb_records", &self.inner.emb.n_records)
-            .field("moon_records", &self.inner.moon.n_records)
+            .field("sun_segments", &self.inner.sun.segment_count())
+            .field("emb_segments", &self.inner.emb.segment_count())
+            .field("moon_segments", &self.inner.moon.segment_count())
             .field(
-                "earth_records",
-                &self.inner.earth.as_ref().map(|earth| earth.n_records),
+                "earth_segments",
+                &self
+                    .inner
+                    .earth
+                    .as_ref()
+                    .map(DynSegmentStack::segment_count),
             )
             .finish()
     }
@@ -245,21 +278,18 @@ impl DynEphemeris for RuntimeEphemeris {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::formats::spice::spk::{BspSegments, SegmentData};
+    use crate::formats::spice::spk::{BspSegments, IndexedSegmentData, SegmentData};
 
     const SECONDS_PER_DAY: f64 = crate::qtty::time::SECONDS_PER_DAY;
     const JD_J2000: f64 = tempoch::J2000_JD_TT_DAY.value();
 
     /// Create a minimal SegmentData with constant position (x_km, y_km, z_km).
-    ///
-    /// ncoeff=2, one record, spanning 1000 days from J2000.
     fn make_segment(x_km: f64, y_km: f64, z_km: f64) -> SegmentData {
         let ncoeff = 2usize;
-        let rsize = 2 + 3 * ncoeff; // 8
+        let rsize = 2 + 3 * ncoeff;
         let intlen = 1000.0 * SECONDS_PER_DAY;
         let mid = intlen / 2.0;
         let radius = intlen / 2.0;
-        // Record: [mid, radius, cx0, cx1, cy0, cy1, cz0, cz1]
         let records = vec![mid, radius, x_km, 0.0, y_km, 0.0, z_km, 0.0];
         SegmentData {
             data_type: 2,
@@ -272,11 +302,36 @@ mod tests {
         }
     }
 
+    fn indexed(
+        target_id: i32,
+        center_id: i32,
+        x_km: f64,
+        start_et: f64,
+        end_et: f64,
+    ) -> IndexedSegmentData {
+        let intlen = end_et - start_et;
+        IndexedSegmentData {
+            target_id,
+            center_id,
+            frame_id: 1,
+            start_et,
+            end_et,
+            data: {
+                let mut data = make_segment(x_km, 0.0, 0.0);
+                data.init = start_et;
+                data.intlen = intlen;
+                data.records[0] = start_et + intlen / 2.0;
+                data.records[1] = intlen / 2.0;
+                data
+            },
+        }
+    }
+
     fn make_bsp_segments() -> BspSegments {
         BspSegments {
-            sun: make_segment(1.0e8, 2.0e7, 1.0e6), // ~solar-system scale (km)
-            emb: make_segment(1.5e8, 0.0, 0.0),     // ~1 AU
-            moon: make_segment(3.84e5, 5.0e3, 1.0e3), // ~Moon distance (km)
+            sun: make_segment(1.0e8, 2.0e7, 1.0e6),
+            emb: make_segment(1.5e8, 0.0, 0.0),
+            moon: make_segment(3.84e5, 5.0e3, 1.0e3),
             earth: None,
         }
     }
@@ -294,16 +349,13 @@ mod tests {
         crate::time::JulianDate::new(JD_J2000 + 500.0)
     }
 
-    // ── Construction ─────────────────────────────────────────────────────
-
     #[test]
     fn from_segments_roundtrip_n_records() {
         let segs = make_bsp_segments();
         let eph = RuntimeEphemeris::from_segments(segs);
-        // Debug impl accesses inner.*.n_records
-        let dbg = format!("{:?}", eph);
+        let dbg = format!("{eph:?}");
         assert!(dbg.contains("RuntimeEphemeris"));
-        assert!(dbg.contains("sun_records"));
+        assert!(dbg.contains("sun_segments"));
     }
 
     #[test]
@@ -316,8 +368,6 @@ mod tests {
         let pos2 = eph2.sun_barycentric(jd);
         assert!((pos1.x().value() - pos2.x().value()).abs() < 1e-15);
     }
-
-    // ── DynEphemeris impl ─────────────────────────────────────────────────
 
     #[test]
     fn sun_barycentric_is_finite() {
@@ -390,6 +440,54 @@ mod tests {
             (mag_km - expected_km).abs() < 1e-8,
             "mag_km={mag_km}, expected={expected_km}"
         );
+    }
+
+    #[test]
+    fn later_sun_segment_wins_at_overlap() {
+        let intlen = 1000.0 * SECONDS_PER_DAY;
+        let indexed = vec![
+            indexed(spk::SUN_TARGET, spk::SUN_CENTER, 100.0, 0.0, intlen),
+            indexed(spk::SUN_TARGET, spk::SUN_CENTER, 900.0, 0.0, intlen),
+            indexed(spk::EMB_TARGET, spk::EMB_CENTER, 1.5e8, 0.0, intlen),
+            indexed(spk::MOON_TARGET, spk::MOON_CENTER, 3.84e5, 0.0, intlen),
+        ];
+        let eph = RuntimeEphemeris::from_indexed_segments(indexed);
+        let pos = eph.sun_barycentric(jd_mid());
+        let mag_km = (pos.x().value().powi(2) + pos.y().value().powi(2) + pos.z().value().powi(2))
+            .sqrt()
+            * 149_597_870.700;
+        assert!(
+            (mag_km - 900.0).abs() < 1.0,
+            "expected later Sun segment (900 km), got {mag_km} km"
+        );
+    }
+
+    #[test]
+    fn direct_earth_matches_emb_moon_derivation() {
+        let intlen = 1000.0 * SECONDS_PER_DAY;
+        let earth_off_km = -4.0e3;
+        let moon_off_km = -earth_off_km * crate::archive::jpl::constants::EARTH_MOON_RATIO;
+        let with_earth = RuntimeEphemeris::from_indexed_segments(vec![
+            indexed(spk::SUN_TARGET, spk::SUN_CENTER, 1.0e8, 0.0, intlen),
+            indexed(spk::EMB_TARGET, spk::EMB_CENTER, 1.5e8, 0.0, intlen),
+            indexed(spk::MOON_TARGET, spk::MOON_CENTER, moon_off_km, 0.0, intlen),
+            indexed(
+                spk::EARTH_TARGET,
+                spk::EARTH_CENTER,
+                earth_off_km,
+                0.0,
+                intlen,
+            ),
+        ]);
+        let without_earth = RuntimeEphemeris::from_indexed_segments(vec![
+            indexed(spk::SUN_TARGET, spk::SUN_CENTER, 1.0e8, 0.0, intlen),
+            indexed(spk::EMB_TARGET, spk::EMB_CENTER, 1.5e8, 0.0, intlen),
+            indexed(spk::MOON_TARGET, spk::MOON_CENTER, moon_off_km, 0.0, intlen),
+        ]);
+        let jd = jd_mid();
+        let direct = with_earth.earth_barycentric(jd);
+        let derived = without_earth.earth_barycentric(jd);
+        assert!((direct.x().value() - derived.x().value()).abs() < 1e-9);
     }
 
     #[test]

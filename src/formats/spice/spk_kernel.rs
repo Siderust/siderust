@@ -187,8 +187,10 @@ impl SpkKernelSet {
         jd: JulianDate,
     ) -> Result<IcrfKm, SpkKernelError> {
         if let PlanetPoint::SystemBarycenter = point {
-            if let Ok(state) = self.try_major_planet_barycenter_geocentric_fast(planet, jd) {
-                return Ok(state);
+            match self.try_major_planet_barycenter_geocentric_fast(planet, jd) {
+                Ok(state) => return Ok(state),
+                Err(SpkKernelError::MissingSegment { .. }) => {}
+                Err(err) => return Err(err),
             }
         }
         self.try_geometric_state(planet.naif_id(point), EARTH_ID, jd)
@@ -316,8 +318,8 @@ impl SpkKernelSet {
         Err(out_of_range.unwrap_or(SpkKernelError::MissingSegment { target_id }))
     }
 
-    #[cfg(test)]
-    fn from_indexed_segments(segments: Vec<IndexedSegmentData>) -> Self {
+    /// Build a kernel set from pre-parsed segments (tests and tooling).
+    pub fn from_indexed_segments(segments: Vec<IndexedSegmentData>) -> Self {
         Self {
             segments: segments
                 .into_iter()
