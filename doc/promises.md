@@ -23,11 +23,12 @@ change (and documented in the changelog).
 
 ## Feature flags & build behavior
 
-- `de440` / `de441` enable the corresponding JPL ephemeris backends.
-- Enabling JPL features may trigger build-time downloads of NAIF BSP files.
-- `SIDERUST_JPL_STUB` is an explicit opt-in for fast/offline builds:
-  - `de441` is **mocked** to the analytical backend when stubbed (to keep tests runnable).
-  - `de440` is **compile-only** when stubbed; runtime calls are expected to panic.
+- JPL DE4xx ephemerides are loaded at **runtime** via [`RuntimeEphemeris`] and
+  optional `runtime-data` (not compile-time `de440`/`de441` features).
+- `SIDERUST_JPL_STUB` is retained for CI/local determinism with
+  `cargo test --all-features`; it does not embed JPL data in the crate.
+
+[`RuntimeEphemeris`]: https://docs.rs/siderust/latest/siderust/ephemeris/struct.RuntimeEphemeris.html
 
 ## Compatibility
 

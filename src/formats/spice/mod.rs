@@ -12,6 +12,7 @@
 //! - [`daf`] — DAF container parsing, including generic [`daf::DafRaw`].
 //! - [`spk`] — SPK Type 2/3 segment reader built on top of [`daf`].
 //! - [`kernel`] — High-level SPK kernel with segment chain resolution.
+//! - [`spk_kernel`] — typed runtime SPK stack helpers for ephemeris use.
 //! - [`segment`] — SPK segment evaluation (Type 2/3/9/13).
 //! - [`text`] — Generic SPICE text-kernel parser.
 //! - [`lsk`] — Leapseconds-kernel parsing.
@@ -48,6 +49,7 @@ pub mod pck;
 pub mod sclk;
 pub mod segment;
 pub mod spk;
+pub mod spk_kernel;
 pub mod text;
 
 pub use ck::{CkKernel, CkRecord, CkSegment1};
@@ -60,4 +62,5 @@ pub use naif::{naif_id_for_name, well_known};
 pub use pck::{BodyOrientation, PckKernel};
 pub use sclk::SclkKernel;
 pub use segment::{segment_for_summary, ChebSegment, SpkSegment};
+pub use spk_kernel::{SpkKernelError, SpkKernelSet};
 pub use text::TextKernel;

@@ -44,8 +44,10 @@
 //! threshold or band condition.  Parameters typed as `IlluminationFractions`.
 //!
 //! All free functions are generic over `E: Ephemeris`, supporting
-//! `Vsop87Ephemeris` (always available) and optional `De440Ephemeris` /
-//! `De441Ephemeris`.  All `JulianDate` / `ModifiedJulianDate` values are on
+//! `Vsop87Ephemeris` via [`DefaultEphemeris`](crate::coordinates::transform::context::DefaultEphemeris)
+//! (always available) or a custom `Ephemeris` implementor such as
+//! [`RuntimeEphemeris`](crate::ephemeris::RuntimeEphemeris). All `JulianDate` /
+//! `ModifiedJulianDate` values are on
 //! the TT axis.
 //!
 //! ## References

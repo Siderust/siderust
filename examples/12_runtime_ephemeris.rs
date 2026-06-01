@@ -6,7 +6,7 @@
 //! Demonstrates how to load a JPL DE4xx BSP file at runtime and query
 //! planetary positions using [`RuntimeEphemeris`].
 //!
-//! Unlike the compile-time backends (DE440 via the `de440` feature),
+//! Unlike compile-time VSOP87, JPL DE4xx uses [`RuntimeEphemeris`] with a BSP file
 //! DE441 and other large datasets are only supported at runtime because
 //! embedding ~1.65 GB into the binary is impractical.
 //!

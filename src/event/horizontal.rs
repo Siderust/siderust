@@ -194,7 +194,7 @@ where
     let eop = ctx.astro_context().eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
     let nut = Ctx::Nut::nutation(jd);
-    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
+    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.mean_obliquity);
     let lst = gast + site.lon.to::<Radian>();
     let ha = (lst - ra.to::<Radian>())
         .value()
@@ -279,7 +279,7 @@ pub fn star_horizontal_with_policy(
     let ctx: AstroContext = AstroContext::default();
     let eop = ctx.eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
-    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
+    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.mean_obliquity);
     let lst = gast + site.lon.to::<Radian>();
     let ha = (lst - ra_tod).wrap_pos();
 

@@ -11,6 +11,7 @@
 //! ```
 
 use criterion::{criterion_group, criterion_main, Criterion};
+use siderust::astro::sidereal::{gast_iau2006a, gmst_iau2006};
 use siderust::ephemeris::{DynEphemeris, RuntimeEphemeris};
 use siderust::qtty::Days;
 use std::hint::black_box;
@@ -74,6 +75,16 @@ fn bench_runtime_ephemeris(c: &mut Criterion) {
             jd += Days::new(1.0);
             let _ = eph.moon_geocentric(black_box(jd));
         });
+    });
+
+    group.bench_function("gmst_iau2006", |b| {
+        let jd = siderust::time::J2000;
+        b.iter(|| black_box(gmst_iau2006(black_box(jd), jd)));
+    });
+
+    group.bench_function("gast_iau2006a", |b| {
+        let jd = siderust::time::J2000;
+        b.iter(|| black_box(gast_iau2006a(black_box(jd), jd)));
     });
 
     group.finish();

@@ -1,13 +1,10 @@
 # Workspace Cargo config for siderust.
 #
-# Goal: avoid repeated DE440/DE441 BSP fetching during `cargo check/clippy --all-features`.
+# `SIDERUST_JPL_STUB=all` is set in CI for deterministic `--all-features` jobs.
+# It is a no-op for current releases (JPL kernels are runtime-only via BSP files).
 #
-# - `SIDERUST_JPL_STUB=all` makes build-time JPL backends use lightweight mock data.
-# - `SIDERUST_DATASETS_DIR` points to a stable path outside `target/` so data is not
-#   tied to Cargo OUT_DIR and survives `cargo clean`.
-#
-# To force real JPL generation in one command, override these env vars inline, e.g.:
-# SIDERUST_JPL_STUB= SIDERUST_DATASETS_DIR=$PWD/.datasets cargo test --features de440
+# For runtime dataset caching when using `runtime-data`:
+# SIDERUST_DATASETS_DIR=$PWD/.datasets cargo test --features runtime-data
 
 [env]
 SIDERUST_JPL_STUB = "all"

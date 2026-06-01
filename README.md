@@ -2,7 +2,7 @@
 
 [![Crates.io](https://img.shields.io/crates/v/siderust.svg)](https://crates.io/crates/siderust)
 [![Docs.rs](https://docs.rs/siderust/badge.svg)](https://docs.rs/siderust)
-[![CI](https://github.com/Siderust/siderust/actions/workflows/ci.yml/badge.svg)](https://github.com/Siderust/siderust/actions/workflows/github-ci.yml)
+[![CI](https://github.com/Siderust/siderust/actions/workflows/github-ci.yml/badge.svg)](https://github.com/Siderust/siderust/actions/workflows/github-ci.yml)
 [![License: AGPL-3.0-only](https://img.shields.io/badge/license-AGPL--3.0--only-blue)](LICENSE)
 
 
@@ -35,8 +35,6 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 |----------------|---------|-----------------|
 | `serde`        | ✔       | `Serialize` / `Deserialize` on public types (default) |
 | *(base)*       |         | VSOP87 + ELP2000-82B analytical ephemerides, full coordinate/altitude API |
-| `de440`        |         | JPL DE440 Chebyshev ephemeris backend (1550–2650 CE) |
-| `de441`        |         | JPL DE441 Chebyshev ephemeris backend (extended coverage) |
 | `atmosphere`   |         | Atmospheric tables and radiative transfer helpers |
 | `photometry`   |         | Photometric passbands and throughput unit (Johnson–Cousins UBVRI) |
 | `spice`        |         | High-level SPICE kernel context (`SpiceContext`, `KernelSet`) |
@@ -60,7 +58,7 @@ Siderust provides ephemerides, coordinate transforms, time-scale handling, and o
 | **Target Tracking**     | `Target<T>` couples any coordinate with an observation epoch and optional `ProperMotion`, enabling extrapolation & filtering.                                                  |
 | **Physical Units**      | Strongly typed `Mass`, `Length`, `Angle`, `Velocity`, `Duration` & more via the [`qtty`](https://crates.io/crates/qtty) crate, dimensional correctness at compile time.       |
 | **Celestial Mechanics** | VSOP87 & ELP2000 theories, Pluto (Meeus/Williams), light‑time & aberration, nutation & precession, apparent Sun & Moon, culmination searches, SGP4/TLE propagation.         |
-| **Ephemeris Backends**  | Pluggable `Ephemeris` trait with three backends, `Vsop87Ephemeris` (always available), `De440Ephemeris`, and `De441Ephemeris` (feature-gated JPL DE4xx).                     |
+| **Ephemeris Backends**  | Pluggable `Ephemeris` / `DynEphemeris` traits: `Vsop87Ephemeris` (always available) and [`RuntimeEphemeris`](https://docs.rs/siderust/latest/siderust/ephemeris/struct.RuntimeEphemeris.html) for JPL DE4xx BSP files at runtime. |
 | **Altitude API**        | Unified `AltitudePeriodsProvider` trait for Sun, Moon, stars, and arbitrary ICRS directions, find crossings, culminations, altitude ranges, and above/below‑threshold periods.|
 | **Catalogs & Bodies**   | Built‑in Sun→Neptune, asteroids (Ceres, Bennu, Apophis), comets (Halley, Encke, Hale-Bopp), a starter star catalog, + helpers for custom datasets.                           |
 | **Observatories**       | Predefined sites (Roque de los Muchachos, El Paranal, Mauna Kea, La Silla) with `ObserverSite` for topocentric transforms.                                                  |
@@ -125,7 +123,7 @@ Add to your `Cargo.toml`:
 
 ```toml
 [dependencies]
-siderust = "0.8"
+siderust = "0.9"
 ```
 
 VSOP87/ELP2000 coefficients, nutation tables, and EOP data are provided by
@@ -135,127 +133,70 @@ datasets, manifests, checksums, provenance) and
 ΔT, and EOP freshness). Optional JPL kernels are downloaded on demand when the
 corresponding feature is enabled; see `doc/datasets.md`.
 
-### Ephemeris Backends (Enable / Disable / Combine)
+### Ephemeris Backends
 
-Siderust always includes `Vsop87Ephemeris` (VSOP87 + ELP2000-82B).
-Optional features add JPL backends:
-- `de440` → `De440Ephemeris` (1550–2650 CE)
-- `de441` → `De441Ephemeris` (extended coverage from NAIF `de441_part-2.bsp`)
+Siderust always includes [`Vsop87Ephemeris`](https://docs.rs/siderust/latest/siderust/ephemeris/struct.Vsop87Ephemeris.html) (VSOP87 + ELP2000-82B). Compile-time [`DefaultEphemeris`](https://docs.rs/siderust/latest/siderust/coordinates/transform/context/type.DefaultEphemeris.html) is an alias to VSOP87.
 
-`DefaultEphemeris` selects the best available:
-- `De441Ephemeris` when `de441` is enabled
-- otherwise `De440Ephemeris` when `de440` is enabled
-- otherwise `Vsop87Ephemeris`
-
-1. VSOP87-only (explicit)
+JPL DE440/DE441 (and other NAIF BSP kernels) are provided at **runtime** via [`RuntimeEphemeris`](https://docs.rs/siderust/latest/siderust/ephemeris/struct.RuntimeEphemeris.html):
 
 ```toml
 [dependencies]
-siderust = { version = "0.8", default-features = false }
+siderust = { version = "0.9", features = ["runtime-data"] }
 ```
-
-2. Enable DE440
-
-```toml
-[dependencies]
-siderust = { version = "0.8", features = ["de440"] }
-```
-
-3. Enable DE441
-
-```toml
-[dependencies]
-siderust = { version = "0.8", features = ["de441"] }
-```
-
-4. Combine backends in one binary
 
 ```rust
-use siderust::ephemeris::{Ephemeris, Vsop87Ephemeris};
+use siderust::ephemeris::{DynEphemeris, RuntimeEphemeris};
 use siderust::time::JulianDate;
 
-let jd = JulianDate::J2000;
-
-// Analytical series (always available)
-let earth_vsop = Vsop87Ephemeris::earth_heliocentric(jd);
+let eph = RuntimeEphemeris::from_bsp("/path/to/de440.bsp")?;
+let earth = eph.earth_heliocentric(JulianDate::J2000);
 ```
 
-```rust
-// With `de441` feature enabled:
-use siderust::ephemeris::De441Ephemeris;
+With `runtime-data`, [`siderust_archive::jpl::DatasetManager`](https://docs.rs/siderust-archive/latest/siderust_archive/jpl/struct.DatasetManager.html) can download kernels on first use (see example `12_runtime_ephemeris`).
 
-let earth_jpl = De441Ephemeris::earth_heliocentric(jd);
-```
-
-You can combine ephemeris features with others (for example `serde`):
+VSOP87-only (explicit):
 
 ```toml
 [dependencies]
-siderust = { version = "0.8", features = ["de441", "serde"] }
+siderust = { version = "0.9", default-features = false }
 ```
 
-### JPL Build Modes: Real vs Stubbed
+Combine with other features (for example `serde`):
 
-When JPL features are enabled, build scripts may download:
+```toml
+[dependencies]
+siderust = { version = "0.9", features = ["runtime-data", "serde"] }
+```
+
+### JPL datasets (runtime, not compile-time features)
+
+DE kernels are **not** embedded at compile time. Typical files:
+
 - `de440.bsp` (~120 MB)
 - `de441_part-2.bsp` (~1.65 GB)
 
-Default checked-in behavior is **real JPL builds** (no global stubbing).
-
-### Persistent Cache (Recommended)
-
-By default, downloaded JPL kernels are cached under Cargo's build output directory (`OUT_DIR`),
-so `cargo clean` (or switching targets) can force a re-download.
-
-To download once and reuse across builds, set `SIDERUST_DATASETS_DIR` to a persistent location
-and prefetch the kernel you need:
+Prefetch into a persistent cache (optional):
 
 ```bash
 export SIDERUST_DATASETS_DIR="$HOME/.cache/siderust"
-../archive/scripts/prefetch_datasets.sh --de440   # downloads $SIDERUST_DATASETS_DIR/de440_dataset/de440.bsp
+# from an archive checkout:
+../archive/scripts/prefetch_datasets.sh --de440
 ```
 
-Notes:
-- `cargo test --all-features` enables `de440`, so it will try to acquire `de440.bsp` if missing.
-- If the file is already present in the datasets directory, the build script reuses it.
+`cargo test --all-features` does **not** download JPL kernels by itself. Use `cargo test --features runtime-data` when exercising download paths, or point `SIDERUST_BSP_PATH` at a local BSP for integration tests (see `tests/test_jpl_real_backend.rs`).
 
-Real JPL mode (recommended for representative DE440/DE441 behavior):
+CI sets `SIDERUST_JPL_STUB=all` for deterministic `--all-features` jobs. For local parity:
 
 ```bash
-unset SIDERUST_JPL_STUB
-cargo test --features de440
-cargo test --features de441
+SIDERUST_JPL_STUB=all cargo test --all-features
 ```
 
-Offline/stub mode (explicit opt-in for fast local loops):
+Real-kernel validation (manual / optional workflow):
 
 ```bash
-SIDERUST_JPL_STUB=all cargo check --all-features
+SIDERUST_BSP_PATH=/path/to/de440.bsp cargo test --test test_jpl_real_backend
+SIDERUST_BSP_PATH=/path/to/de440.bsp cargo bench --bench de441
 ```
-
-Supported stub values:
-- `de441`: stubs DE441 only (`De441Ephemeris` is mocked to `Vsop87Ephemeris`).
-- `de440`: stubs DE440 only.
-- `de440,de441` or `all` (also `1`, `true`, `yes`, `on`): stubs both.
-
-Optional local override file (keep untracked):
-
-```toml
-# .cargo/config.local.toml
-[env]
-SIDERUST_JPL_STUB = "all"
-```
-
-Use it explicitly:
-
-```bash
-cargo --config .cargo/config.local.toml check --all-features
-```
-
-Caveat:
-- Stubbed DE datasets compile successfully, but low-level DE calls are unavailable at runtime.
-- `de441` has a high-level mock backend (`De441Ephemeris -> Vsop87Ephemeris`).
-- `de440` is compile-only when stubbed; direct runtime calls to `De440Ephemeris` will panic.
 
 Coverage:
 - Fallible JPL APIs such as `try_position`, `try_velocity`, and `try_position_velocity` return an error outside the Chebyshev segment coverage.
@@ -352,12 +293,9 @@ The `examples/` directory is a curated tour of the crate’s major building bloc
 Feature-gated examples:
 
 ```bash
-# JPL DE4xx (may download large BSP datasets unless you explicitly stub)
-cargo run --example 12_runtime_ephemeris --features de440
-cargo run --example 12_runtime_ephemeris --features de441
-
-# Fast/offline loop: compile JPL features but skip runtime DE calls
-SIDERUST_JPL_STUB=all cargo run --example 12_runtime_ephemeris --features de440,de441
+# Runtime JPL ephemeris (BSP path argument or runtime-data download)
+cargo run --example 12_runtime_ephemeris -- /path/to/de440.bsp
+cargo run --features runtime-data --example 12_runtime_ephemeris
 
 # Serde
 cargo run --example 11_serde_serialization --features serde
@@ -370,7 +308,7 @@ cargo run --example 11_serde_serialization --features serde
 ├─ bodies/        # Planet, Star, Satellite, Asteroid, Comet + built-in catalogs
 ├─ calculus/
 │   ├─ altitude/     # Unified altitude API (AltitudePeriodsProvider trait)
-│   ├─ ephemeris/    # Ephemeris trait + VSOP87/DE440/DE441 backends
+│   ├─ ephemeris/    # Ephemeris trait + VSOP87 + runtime JPL backends
 │   ├─ jpl/          # Shared JPL DE4xx infrastructure (Chebyshev evaluation)
 │   ├─ math_core/    # Root-finding (Brent/bisection), extrema, interval assembly
 │   ├─ solar/        # Sun altitude, night/day/twilight periods

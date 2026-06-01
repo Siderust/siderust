@@ -41,9 +41,9 @@ This crate is meant to be built from a workspace checkout where the Rust sources
 
 - `siderust` (Rust implementation) at `..`
 - `affn`, `qtty`, `tempoch` in the sibling workspace crates
-- `tempoch-ffi` from crates.io for the shared C time ABI
+- `tempoch-ffi` (git tag `v0.6.3`, package `tempoch-ffi`) for the shared C time ABI
 
-`tempoch-ffi 0.4` exposes JD/MJD carriers as raw `double`s, so `siderust-ffi`
+`tempoch-ffi` exposes JD/MJD carriers as raw `double`s, so `siderust-ffi`
 reuses that scalar ABI directly instead of duplicating wrapper structs.
 
 If you cloned via git submodules, make sure they are initialized:
@@ -54,17 +54,17 @@ git submodule update --init --recursive
 
 ## Features
 
-Cargo features mirror `siderust` options:
+Cargo features forward a subset of `siderust` capabilities:
 
 - `serde`: enables serialization-related APIs where applicable
-- `de440`: enables DE440 ephemeris support
-- `de441`: enables DE441 ephemeris support
-- `runtime-data`: enables runtime dataset-management helpers exposed through `siderust`
+- `runtime-data`: enables runtime BSP / dataset-manager helpers exposed through `siderust`
+
+JPL DE4xx access is runtime-only (no `de440` / `de441` feature flags on this crate).
 
 Example:
 
 ```bash
-cargo build --release --features de440
+cargo build --release --features runtime-data
 ```
 
 ## Build

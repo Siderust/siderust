@@ -430,7 +430,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         // 5. Nutation: mean-of-date → true-of-date (from cache)
         // ---------------------------------------------------------------
-        let (dpsi, deps, eps0) = self.nut_cache.get_nutation_rad(mjd);
+        let (dpsi, _deps, eps0) = self.nut_cache.get_nutation_rad(mjd);
         let rot_nut = self.nut_cache.nutation_rotation(mjd);
         let [x_tod, y_tod, z_tod] = rot_nut.apply_array([x_mod, y_mod, z_mod]);
 
@@ -446,7 +446,7 @@ impl MoonAltitudeContext {
         // ---------------------------------------------------------------
         let eop = ctx.eop_at_tt(jd);
         let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
-        let gast = gast_iau2006(jd_ut1, jd, dpsi, eps0 + deps);
+        let gast = gast_iau2006(jd_ut1, jd, dpsi, eps0);
         let lst_rad = gast + self.lon_rad;
         let ha = (lst_rad.value() - ra_rad).rem_euclid(std::f64::consts::TAU);
 

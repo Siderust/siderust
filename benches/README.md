@@ -6,8 +6,8 @@ Results go to `target/criterion/` with HTML reports.
 ## Quick Start
 
 ```bash
-cargo bench                           # run everything (except feature-gated)
-cargo bench --features de440          # include JPL DE440 backend
+cargo bench                           # run Criterion suites (no BSP required)
+SIDERUST_BSP_PATH=/path/to/de440.bsp cargo bench --bench de441   # runtime JPL
 ```
 
 ## Comparative Suites
@@ -17,7 +17,7 @@ Criterion's HTML reports show relative performance in a single chart.
 
 | Benchmark | What it compares | Command |
 |-----------|-----------------|---------|
-| `ephemeris_comparison` | VSOP87 vs DE440 for every `Ephemeris` trait method | `cargo bench --bench ephemeris_comparison --features de440` |
+| `ephemeris_comparison` | VSOP87 `Ephemeris` trait methods | `cargo bench --bench ephemeris_comparison` |
 | `altitude_comparison`  | Sun vs Moon vs Star (Sirius) for single-point, 7-day, 30-day, 365-day searches | `cargo bench --bench altitude_comparison` |
 
 ## Per-Module Benchmarks

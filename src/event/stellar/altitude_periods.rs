@@ -127,7 +127,7 @@ pub(crate) fn fixed_star_altitude_rad_with_policy(
     let ctx: AstroContext = AstroContext::default();
     let eop = ctx.eop_at_tt(jd);
     let jd_ut1 = jd_ut1_from_tt_eop(jd, &eop);
-    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.true_obliquity());
+    let gast = gast_iau2006(jd_ut1, jd, nut.dpsi, nut.mean_obliquity);
     let lst_rad = gast.value() + site.lon.to::<Radian>().value();
     let ha = (lst_rad - ra_tod).rem_euclid(std::f64::consts::TAU);
 

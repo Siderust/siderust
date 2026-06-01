@@ -40,11 +40,33 @@ data.
 When using `runtime-data`, downloaded kernels are cached under a configurable
 directory (see `siderust_archive::runtime` and example `12_runtime_ephemeris`).
 
-For offline JPL testing without large downloads:
+## Runtime planet-center SPKs
+
+Generic DE planetary kernels provide the outer planet-system barycenters. Exact
+Mars through Neptune center chains need the corresponding satellite SPK offset
+loaded together with a DE kernel at runtime. Cache and acquisition are handled
+by `siderust_archive::runtime`; manual setups should keep the NAIF file identity
+visible in run provenance.
+
+| Center | Runtime SPK |
+|---|---|
+| Mars `499` | `mar099.bsp` |
+| Jupiter `599` | `jup365.bsp` |
+| Saturn `699` | `sat441l.bsp` |
+| Uranus `799` | `ura184.bsp` |
+| Neptune `899` | `nep097.bsp` |
+
+These files are runtime data; they are not embedded into the crate.
+
+## Offline / CI testing
+
+`cargo test --all-features` does not download JPL BSP files. CI sets
+`SIDERUST_JPL_STUB=all` for deterministic workspace checks.
+
+For real-kernel checks, provide a local BSP:
 
 ```bash
-SIDERUST_JPL_STUB=all cargo test --all-features
+SIDERUST_BSP_PATH=/path/to/de440.bsp cargo test --test test_jpl_real_backend
 ```
 
-See `README.md` for the recommended local override file pattern
-(`.cargo/config.local.toml`).
+See `README.md` for `runtime-data` download and cache layout.

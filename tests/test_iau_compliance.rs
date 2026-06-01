@@ -9,7 +9,7 @@
 
 use siderust::astro::cio::{cip_cio, gcrs_to_cirs_matrix};
 use siderust::astro::eop::{EopProvider, NullEop};
-use siderust::astro::era::earth_rotation_angle;
+use siderust::astro::era::{earth_rotation_angle, equation_of_the_equinoxes_iau2000};
 use siderust::astro::light_deflection::{solar_deflection, solar_deflection_inverse};
 use siderust::astro::nutation::nutation_iau2000b;
 use siderust::astro::polar_motion::{polar_motion_matrix, tio_locator_sp};
@@ -158,22 +158,21 @@ fn era_and_gmst_differ_by_accumulation() {
 
 #[test]
 fn gast_minus_gmst_equals_equation_of_equinoxes() {
-    // GAST = GMST + Δψ·cos(ε)
+    // GAST = GMST + IAU 2000 equation of the equinoxes.
     let jd = JulianDate::try_new(Days::new(2_460_000.5)).unwrap();
     let nut = nutation_iau2000b(jd);
-    let true_obliquity = nut.true_obliquity();
 
     let gmst = gmst_iau2006(jd, jd);
-    let gast = gast_iau2006(jd, jd, nut.dpsi, true_obliquity);
+    let gast = gast_iau2006(jd, jd, nut.dpsi, nut.mean_obliquity);
 
-    let ee_expected = nut.dpsi.value() * true_obliquity.cos();
+    let ee_expected = equation_of_the_equinoxes_iau2000(jd, nut.dpsi, nut.mean_obliquity);
     let ee_actual = (gast - gmst).value();
 
     assert!(
-        (ee_actual - ee_expected).abs() < 1e-12,
-        "GAST−GMST = {}, Δψ·cos(ε) = {}",
+        (ee_actual - ee_expected.value()).abs() < 1e-12,
+        "GAST−GMST = {}, equation of the equinoxes = {}",
         ee_actual,
-        ee_expected
+        ee_expected.value()
     );
 }
 

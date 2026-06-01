@@ -30,8 +30,8 @@
 //! # Validation gate
 //!
 //! Position recovery is byte-identical to NAIF's CSPICE `spkez_c` for
-//! the planet body chains in `de440.bsp` / `de441.bsp`. The `de440`
-//! feature unlocks an integration test (`tests/de440_validation.rs`)
+//! the planet body chains in `de440.bsp` / `de441.bsp` at runtime via
+//! [`RuntimeEphemeris`](crate::ephemeris::RuntimeEphemeris).
 //! that loads a kernel from disk (`SIDERUST_SPICE_DE_PATH`) and
 //! compares against committed reference states.
 //!
