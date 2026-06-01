@@ -38,6 +38,7 @@ pub mod observatories;
 pub mod oem;
 pub mod phase;
 pub mod runtime_ephemeris;
+pub mod sampling;
 pub mod sgp4;
 pub mod subject;
 pub mod target;
