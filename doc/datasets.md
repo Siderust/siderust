@@ -58,13 +58,15 @@ visible in run provenance.
 
 These files are runtime data; they are not embedded into the crate.
 
-## Offline JPL testing
+## Offline / CI testing
 
-For offline JPL testing without large downloads:
+`cargo test --all-features` does not download JPL BSP files. CI sets
+`SIDERUST_JPL_STUB=all` for deterministic workspace checks.
+
+For real-kernel checks, provide a local BSP:
 
 ```bash
-SIDERUST_JPL_STUB=all cargo test --all-features
+SIDERUST_BSP_PATH=/path/to/de440.bsp cargo test --test test_jpl_real_backend
 ```
 
-See `README.md` for the recommended local override file pattern
-(`.cargo/config.local.toml`).
+See `README.md` for `runtime-data` download and cache layout.

@@ -318,7 +318,7 @@ pub trait Ephemeris {
 ///
 /// Every type implementing [`Ephemeris`] automatically implements `DynEphemeris`
 /// (the `&self` receiver is ignored since `Ephemeris` uses associated functions).
-/// This means `Vsop87Ephemeris`, `De440Ephemeris`, etc. can all be used as
+/// This means `Vsop87Ephemeris`, `RuntimeEphemeris`, etc. can all be used as
 /// `&dyn DynEphemeris` with zero additional code.
 ///
 /// ## Example

@@ -17,6 +17,8 @@ concurrency:
 
 env:
   CARGO_TERM_COLOR: always
+  # Deterministic CI: do not download multi-GB JPL BSP files during --all-features.
+  SIDERUST_JPL_STUB: all
 
 jobs:
   check:

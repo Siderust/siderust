@@ -35,7 +35,7 @@ struct RuntimeEphemerisInner {
 ///
 /// This struct loads a BSP file at runtime and evaluates Sun, Earth, and Moon
 /// positions using the same Chebyshev polynomial evaluation as the compile-time
-/// backends. Unlike `De440Ephemeris`/`De441Ephemeris`, it:
+/// backends. Unlike compile-time VSOP87, it:
 ///
 /// - Does **not** require a Cargo feature flag
 /// - Stores coefficient data on the **heap** (via `Vec<f64>`)

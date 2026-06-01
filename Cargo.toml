@@ -8,7 +8,6 @@ members = [
 unsafe_code     = "forbid"
 missing_docs    = "deny"
 unreachable_pub = "warn"
-unexpected_cfgs = { level = "warn", check-cfg = ['cfg(siderust_mock_de440)'] }
 
 [workspace.lints.clippy]
 all           = { level = "deny", priority = -1 }
@@ -68,7 +67,6 @@ required-features = ["spice"]
 
 [features]
 default = ["serde"]
-de440 = []
 lagrange-centers = ["serde", "siderust-archive/lagrange"]
 runtime-data = ["siderust-archive/fetch"]
 serde = ["dep:serde", "dep:serde_json", "qtty/serde", "affn/serde", "tempoch/serde"]

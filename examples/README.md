@@ -57,9 +57,6 @@ cargo run --example 10_time_periods
 
 ```bash
 cargo run --example 11_serde_serialization --features serde
-cargo run --example 12_runtime_ephemeris --features de440
-cargo run --example 12_runtime_ephemeris --features de441
-
-# Fast/offline loop: compile JPL features while stubbing large DE datasets.
-SIDERUST_JPL_STUB=all cargo run --example 12_runtime_ephemeris --features de440,de441
+cargo run --example 12_runtime_ephemeris -- /path/to/de440.bsp
+cargo run --features runtime-data --example 12_runtime_ephemeris
 ```
