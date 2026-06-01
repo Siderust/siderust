@@ -837,6 +837,19 @@ typedef struct siderust_cartesian_vel_t {
   siderust_frame_t frame;
 } siderust_cartesian_vel_t;
 
+// A single sky-grid cell: a Horizontal direction and its approximate solid
+// angle.
+//
+// Mirrors [`siderust::coordinates::SkyGridCell`].
+typedef struct SiderustSkyGridCell {
+  // Altitude above the horizon (polar component), in degrees, `[-90, 90]`.
+  double altitude_deg;
+  // Azimuth from North (clockwise), in degrees, `[0, 360)`.
+  double azimuth_deg;
+  // Approximate solid angle subtended by the cell, in steradians.
+  double solid_angle_sr;
+} SiderustSkyGridCell;
+
 // Unified subject for altitude / azimuth / tracking computations.
 //
 // A tagged struct that can represent any entity on which altitude and
@@ -1726,6 +1739,34 @@ siderust_status_t siderust_runtime_ephemeris_earth_barycentric_velocity(const st
 siderust_status_t siderust_runtime_ephemeris_moon_geocentric(const struct siderust_runtime_ephemeris_t *handle,
                                                              double jd,
                                                              struct siderust_cartesian_pos_t *out);
+
+// Materialise every cell of a hemispherical alt/az grid.
+//
+// The grid covers the altitude band `[alt_min_deg, alt_max_deg)` with altitude
+// step `alt_step_deg` and azimuth step `az_step_deg`.  When `equal_area` is
+// true, the azimuth count per altitude ring scales with `cos(alt)` (the
+// [`SkyGrid::equal_area`] construction); otherwise a fixed azimuth step is used
+// ([`SkyGrid::with_steps`]).
+//
+// # Safety
+// `out` and `count` must be valid, writable pointers.  On success `*out` owns
+// a heap array of `*count` cells that must be released with
+// [`siderust_sky_grid_cells_free`].
+
+siderust_status_t siderust_sky_grid_cells(double alt_min_deg,
+                                          double alt_max_deg,
+                                          double alt_step_deg,
+                                          double az_step_deg,
+                                          bool equal_area,
+                                          struct SiderustSkyGridCell **out,
+                                          uintptr_t *count);
+
+// Free a sky-grid cell array produced by [`siderust_sky_grid_cells`].
+//
+// # Safety
+// `ptr` and `count` must originate from the same `siderust_sky_grid_cells`
+// call and must not have been freed before; `ptr` must not be used afterwards.
+ void siderust_sky_grid_cells_free(struct SiderustSkyGridCell *ptr, uintptr_t count);
 
 // Parse a two-line element set from two NUL-terminated C strings.
 //
