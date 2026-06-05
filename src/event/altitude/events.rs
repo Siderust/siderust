@@ -56,6 +56,13 @@ fn scan_step_for<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOpts) -> D
     super::search::resolve_scan_step(target.scan_step_hint(), opts, DEFAULT_SCAN_STEP)
 }
 
+fn can_use_provider_threshold_path(opts: &SearchOpts, policy: CorrectionPolicy) -> bool {
+    let default_opts = SearchOpts::default();
+    policy == CorrectionPolicy::APPARENT
+        && opts.scan_step_days.is_none()
+        && opts.time_tolerance == default_opts.time_tolerance
+}
+
 // ---------------------------------------------------------------------------
 // Crossings
 // ---------------------------------------------------------------------------
@@ -329,6 +336,10 @@ pub fn above_threshold_with_policy<T: AltitudePeriodsProvider>(
     opts: SearchOpts,
     policy: CorrectionPolicy,
 ) -> Vec<Interval<ModifiedJulianDate>> {
+    if can_use_provider_threshold_path(&opts, policy) {
+        return target.above_threshold(*observer, window, threshold);
+    }
+
     let f = make_altitude_fn(target, observer, policy);
     let thr_rad = threshold.to::<Radian>();
     let step = scan_step_for(target, &opts);
@@ -379,6 +390,10 @@ pub fn below_threshold_with_policy<T: AltitudePeriodsProvider>(
     opts: SearchOpts,
     policy: CorrectionPolicy,
 ) -> Vec<Interval<ModifiedJulianDate>> {
+    if can_use_provider_threshold_path(&opts, policy) {
+        return target.below_threshold(*observer, window, threshold);
+    }
+
     let above = above_threshold_with_policy(target, observer, window, threshold, opts, policy);
     complement_within(window, &above)
 }
@@ -492,6 +507,30 @@ mod tests {
         );
 
         assert!(!nights.is_empty(), "should find night periods");
+    }
+
+    #[test]
+    fn public_sun_below_threshold_matches_provider_altitude_periods() {
+        let site = greenwich();
+        let window = Interval::new(
+            crate::time::ModifiedJulianDate::new(60000.0),
+            crate::time::ModifiedJulianDate::new(60031.0),
+        );
+
+        let below = below_threshold(
+            &Sun,
+            &site,
+            window,
+            Degrees::new(-18.0),
+            SearchOpts::default(),
+        );
+        let provider = Sun.below_threshold(site, window, Degrees::new(-18.0));
+
+        assert_eq!(below.len(), provider.len());
+        for (actual, expected) in below.iter().zip(provider.iter()) {
+            assert!((actual.start.raw() - expected.start.raw()).abs() < Days::new(1e-6));
+            assert!((actual.end.raw() - expected.end.raw()).abs() < Days::new(1e-6));
+        }
     }
 
     #[test]

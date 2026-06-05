@@ -61,6 +61,11 @@ pub struct LabeledCrossing {
     pub direction: i32,
 }
 
+fn sort_and_dedup_labeled_crossings(crossings: &mut Vec<LabeledCrossing>) {
+    crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap());
+    crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < DEDUPE_EPS);
+}
+
 // ---------------------------------------------------------------------------
 // Core: find crossings of f(t) = threshold via scan + Brent
 // ---------------------------------------------------------------------------
@@ -113,6 +118,74 @@ where
     }
 
     crossings
+}
+
+/// Scan `period` at `step` intervals and return refined crossings with
+/// directions derived from each bracket's endpoint signs.
+///
+/// The boolean in the return value is whether the function is above the
+/// threshold at `period.start`; callers use it to assemble leading intervals
+/// without evaluating the function again.
+pub fn find_directed_crossings<V, F>(
+    period: Interval<ModifiedJulianDate>,
+    step: Days,
+    f: &F,
+    threshold: Quantity<V>,
+) -> (Vec<LabeledCrossing>, bool)
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    let g = |t: Mjd| -> Quantity<V> { f(t) - threshold };
+
+    let step_v = step;
+    let t_start_v = period.start;
+    let t_end_v = period.end;
+    let zero = Quantity::<V>::new(0.0);
+
+    let mut crossings = Vec::new();
+    let mut t = t_start_v;
+    let mut prev = g(t);
+    let start_above = prev > zero;
+
+    while t < t_end_v {
+        let next_t = {
+            let t_next = crate::time::ModifiedJulianDate::new((t.raw() + step_v).value());
+            if t_next.raw() <= t_end_v.raw() {
+                t_next
+            } else {
+                t_end_v
+            }
+        };
+        let next_v = g(next_t);
+
+        let direction = if prev < zero && next_v > zero {
+            Some(1)
+        } else if prev > zero && next_v < zero {
+            Some(-1)
+        } else {
+            None
+        };
+
+        if let Some(direction) = direction {
+            if let Some(root_t) =
+                root_finding::brent_with_values(Interval::new(t, next_t), prev, next_v, g)
+            {
+                if root_t >= t_start_v && root_t <= t_end_v {
+                    crossings.push(LabeledCrossing {
+                        t: root_t,
+                        direction,
+                    });
+                }
+            }
+        }
+
+        t = next_t;
+        prev = next_v;
+    }
+
+    sort_and_dedup_labeled_crossings(&mut crossings);
+    (crossings, start_above)
 }
 
 /// Find crossings within pre‑computed key‑time segments (e.g. between
@@ -283,6 +356,60 @@ where
     periods
 }
 
+/// Build time periods where `f(t) > threshold` from directed crossings.
+///
+/// Unlike [`build_above_periods`], this does not re-sample the function at
+/// midpoints because each crossing direction was already established by a
+/// coarse-scan sign change.
+pub fn build_above_periods_directed(
+    labeled: &[LabeledCrossing],
+    period: Interval<ModifiedJulianDate>,
+    start_above: bool,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    let t_start = period.start;
+    let t_end = period.end;
+    let mut periods = Vec::new();
+
+    if labeled.is_empty() {
+        if start_above {
+            return vec![Interval::new(t_start, t_end)];
+        }
+        return Vec::new();
+    }
+
+    let mut i = 0;
+
+    if start_above && labeled[0].direction == -1 {
+        let exit_t = labeled[0].t;
+        if t_start < exit_t {
+            periods.push(Interval::new(t_start, exit_t));
+        }
+        i = 1;
+    }
+
+    while i < labeled.len() {
+        if labeled[i].direction == 1 {
+            let enter_t = labeled[i].t;
+            let exit_t = if i + 1 < labeled.len() && labeled[i + 1].direction == -1 {
+                let t = labeled[i + 1].t;
+                i += 2;
+                t
+            } else {
+                i += 1;
+                t_end
+            };
+
+            if enter_t < exit_t {
+                periods.push(Interval::new(enter_t, exit_t));
+            }
+        } else {
+            i += 1;
+        }
+    }
+
+    periods
+}
+
 // ---------------------------------------------------------------------------
 // High‑level: above‑threshold periods (scan approach)
 // ---------------------------------------------------------------------------
@@ -304,6 +431,25 @@ where
     let labeled = label_crossings(&mut crossings, f, threshold);
     let start_above = f(period.start) > threshold;
     build_above_periods(&labeled, period, start_above, f, threshold)
+}
+
+/// Find all periods where `f(t) > threshold` using directed scan brackets.
+///
+/// This is equivalent to [`above_threshold_periods`] for ordinary sign-change
+/// crossings, but it avoids the extra probe and midpoint evaluations used by
+/// the generic classifier.
+pub fn above_threshold_periods_directed<V, F>(
+    period: Interval<ModifiedJulianDate>,
+    step: Days,
+    f: &F,
+    threshold: Quantity<V>,
+) -> Vec<Interval<ModifiedJulianDate>>
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    let (labeled, start_above) = find_directed_crossings(period, step, f, threshold);
+    build_above_periods_directed(&labeled, period, start_above)
 }
 
 /// Find all periods where `f(t) > threshold` using pre‑computed key‑time
@@ -344,6 +490,24 @@ where
 {
     let above_min = above_threshold_periods(period, step, f, h_min);
     let above_max = above_threshold_periods(period, step, f, h_max);
+    let below_max = complement(period, &above_max);
+    intersect(&above_min, &below_max)
+}
+
+/// Find all periods where `h_min < f(t) < h_max` using directed scan brackets.
+pub fn in_range_periods_directed<V, F>(
+    period: Interval<ModifiedJulianDate>,
+    step: Days,
+    f: &F,
+    h_min: Quantity<V>,
+    h_max: Quantity<V>,
+) -> Vec<Interval<ModifiedJulianDate>>
+where
+    V: Unit,
+    F: Fn(ModifiedJulianDate) -> Quantity<V>,
+{
+    let above_min = above_threshold_periods_directed(period, step, f, h_min);
+    let above_max = above_threshold_periods_directed(period, step, f, h_max);
     let below_max = complement(period, &above_max);
     intersect(&above_min, &below_max)
 }
@@ -406,6 +570,40 @@ mod tests {
 
     fn mjd_scalar(t: Mjd) -> f64 {
         t.raw().value()
+    }
+
+    fn assert_periods_close(
+        actual: &[Interval<ModifiedJulianDate>],
+        expected: &[Interval<ModifiedJulianDate>],
+    ) {
+        assert_eq!(
+            actual.len(),
+            expected.len(),
+            "actual={actual:?} expected={expected:?}"
+        );
+        for (a, e) in actual.iter().zip(expected.iter()) {
+            assert!(
+                (a.start.raw() - e.start.raw()).abs() < Days::new(1e-8),
+                "start mismatch: actual={a:?} expected={e:?}"
+            );
+            assert!(
+                (a.end.raw() - e.end.raw()).abs() < Days::new(1e-8),
+                "end mismatch: actual={a:?} expected={e:?}"
+            );
+        }
+    }
+
+    fn assert_directed_above_matches_scan<F>(
+        period: Interval<ModifiedJulianDate>,
+        step: Days,
+        f: F,
+        threshold: Radians,
+    ) where
+        F: Fn(Mjd) -> Radians,
+    {
+        let scan = above_threshold_periods(period, step, &f, threshold);
+        let directed = above_threshold_periods_directed(period, step, &f, threshold);
+        assert_periods_close(&directed, &scan);
     }
 
     #[test]
@@ -613,5 +811,66 @@ mod tests {
         assert_eq!(periods.len(), 2);
         assert_eq!(periods[0], period(2.0, 5.0));
         assert_eq!(periods[1], period(7.0, 9.0));
+    }
+
+    #[test]
+    fn directed_above_matches_scan_always_above() {
+        assert_directed_above_matches_scan(
+            period(0.0, 10.0),
+            Days::new(1.0),
+            |_: Mjd| Radians::new(5.0),
+            Radians::new(0.0),
+        );
+    }
+
+    #[test]
+    fn directed_above_matches_scan_always_below() {
+        assert_directed_above_matches_scan(
+            period(0.0, 10.0),
+            Days::new(1.0),
+            |_: Mjd| Radians::new(-5.0),
+            Radians::new(0.0),
+        );
+    }
+
+    #[test]
+    fn directed_above_matches_scan_one_crossing() {
+        assert_directed_above_matches_scan(
+            period(0.0, 1.0),
+            Days::new(0.1),
+            |t: Mjd| Radians::new(mjd_scalar(t) - 0.4),
+            Radians::new(0.0),
+        );
+    }
+
+    #[test]
+    fn directed_above_matches_scan_multiple_crossings() {
+        assert_directed_above_matches_scan(
+            period(0.0, 1.0),
+            Days::new(0.005),
+            |t: Mjd| Radians::new((20.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.01)).sin()),
+            Radians::new(0.0),
+        );
+    }
+
+    #[test]
+    fn directed_range_matches_scan() {
+        let p = period(0.0, 1.0);
+        let f = |t: Mjd| Radians::new((2.0 * std::f64::consts::PI * (mjd_scalar(t) + 0.05)).sin());
+        let scan = in_range_periods(
+            p,
+            Days::new(0.01),
+            &f,
+            Radians::new(-0.5),
+            Radians::new(0.5),
+        );
+        let directed = in_range_periods_directed(
+            p,
+            Days::new(0.01),
+            &f,
+            Radians::new(-0.5),
+            Radians::new(0.5),
+        );
+        assert_periods_close(&directed, &scan);
     }
 }

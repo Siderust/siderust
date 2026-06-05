@@ -7,11 +7,12 @@
 //! algorithms and time horizons.
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
-use criterion::{criterion_group, criterion_main, Criterion};
+use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use siderust::bodies::Sun;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::event::altitude::AltitudePeriodsProvider;
+use siderust::event::altitude::{self, AltitudePeriodsProvider, AltitudeQuery, SearchOpts};
 use siderust::event::solar::twilight;
+use siderust::qtty::Degrees;
 use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;
 use std::time::Duration;
@@ -39,65 +40,34 @@ fn bench_find_night_periods(c: &mut Criterion) {
 
     let mut group = c.benchmark_group("solar_altitude_periods");
 
-    // Benchmark for 1-day horizon
-    group.bench_function("find_night_periods_1day", |b| {
-        let period = black_box(build_period(1));
-        b.iter(|| {
-            let _result = Sun.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(twilight::ASTRONOMICAL),
-            );
-        });
-    });
+    for (label, days) in [("1month", 30), ("6months", 184), ("1year", 365)] {
+        let period = build_period(days);
 
-    // Benchmark for 7-day horizon
-    group.bench_function("find_night_periods_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = Sun.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(twilight::ASTRONOMICAL),
-            );
+        group.bench_function(BenchmarkId::new("below_threshold", label), |b| {
+            b.iter(|| {
+                let _result = altitude::below_threshold(
+                    black_box(&Sun),
+                    black_box(&site),
+                    black_box(period),
+                    black_box(twilight::ASTRONOMICAL),
+                    black_box(SearchOpts::default()),
+                );
+            });
         });
-    });
 
-    // Benchmark for 30-day horizon
-    group.bench_function("find_night_periods_30day", |b| {
-        let period = black_box(build_period(30));
-        b.iter(|| {
-            let _result = Sun.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(twilight::ASTRONOMICAL),
-            );
+        group.bench_function(BenchmarkId::new("altitude_periods", label), |b| {
+            b.iter(|| {
+                let query = AltitudeQuery {
+                    observer: black_box(site),
+                    window: black_box(period),
+                    min_altitude: black_box(Degrees::new(-90.0)),
+                    max_altitude: black_box(twilight::ASTRONOMICAL),
+                    correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
+                };
+                let _result = Sun.altitude_periods(black_box(&query));
+            });
         });
-    });
-
-    // Benchmark for 365-day horizon (full year)
-    group.bench_function("find_night_periods_365day", |b| {
-        let period = black_box(build_period(365));
-        b.iter(|| {
-            let _result = Sun.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(twilight::ASTRONOMICAL),
-            );
-        });
-    });
-
-    // Compare with above-threshold algorithm for 7 days
-    group.bench_function("find_day_periods_7day", |b| {
-        let period = black_box(build_period(7));
-        b.iter(|| {
-            let _result = Sun.above_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(twilight::ASTRONOMICAL),
-            );
-        });
-    });
+    }
 
     group.finish();
 }
