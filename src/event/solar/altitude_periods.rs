@@ -93,7 +93,7 @@ pub(crate) fn find_day_periods(
 
     let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
 
-    intervals::above_threshold_periods(period, SCAN_STEP, &f, thr)
+    intervals::above_threshold_periods_directed(period, SCAN_STEP, &f, thr)
 }
 
 /// Finds night periods (Sun **below** `twilight`) inside `period`.
@@ -144,12 +144,13 @@ pub(crate) fn find_sun_range_periods(
 
     let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
 
-    intervals::in_range_periods(period, SCAN_STEP, &f, h_min, h_max)
+    intervals::in_range_periods_directed(period, SCAN_STEP, &f, h_min, h_max)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use chrono::{TimeZone, Utc};
 
     fn greenwich_site() -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(
@@ -157,6 +158,44 @@ mod tests {
             Degrees::new(51.4769),
             Quantity::<Meter>::new(0.0),
         )
+    }
+
+    fn utc_mjd(year: i32, month: u32, day: u32) -> ModifiedJulianDate {
+        ModifiedJulianDate::from(
+            Utc.with_ymd_and_hms(year, month, day, 0, 0, 0)
+                .single()
+                .unwrap(),
+        )
+    }
+
+    fn assert_periods_close(
+        actual: &[Interval<ModifiedJulianDate>],
+        expected: &[Interval<ModifiedJulianDate>],
+    ) {
+        assert_eq!(
+            actual.len(),
+            expected.len(),
+            "actual={actual:?} expected={expected:?}"
+        );
+        for (a, e) in actual.iter().zip(expected.iter()) {
+            assert!(
+                (a.start.raw() - e.start.raw()).abs() < Days::new(1e-6),
+                "start mismatch: actual={a:?} expected={e:?}"
+            );
+            assert!(
+                (a.end.raw() - e.end.raw()).abs() < Days::new(1e-6),
+                "end mismatch: actual={a:?} expected={e:?}"
+            );
+        }
+    }
+
+    fn generic_day_periods(
+        site: Geodetic<ECEF>,
+        period: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
+        intervals::above_threshold_periods(period, SCAN_STEP, &f, threshold.to::<Radian>())
     }
 
     #[test]
@@ -216,6 +255,63 @@ mod tests {
         assert!(
             !nautical.is_empty(),
             "Should find nautical twilight periods"
+        );
+    }
+
+    #[test]
+    fn directed_solar_threshold_periods_match_generic_scan() {
+        let site = greenwich_site();
+        let period = Interval::new(utc_mjd(2026, 1, 1), utc_mjd(2026, 1, 8));
+
+        for threshold in [
+            Degrees::new(0.0),
+            Degrees::new(-6.0),
+            Degrees::new(-12.0),
+            Degrees::new(-18.0),
+        ] {
+            let directed_days = find_day_periods(site, period, threshold);
+            let generic_days = generic_day_periods(site, period, threshold);
+            assert_periods_close(&directed_days, &generic_days);
+
+            let directed_nights = find_night_periods(site, period, threshold);
+            let generic_nights = complement_within(period, &generic_days);
+            assert_periods_close(&directed_nights, &generic_nights);
+        }
+    }
+
+    #[test]
+    fn directed_solar_range_periods_match_generic_scan() {
+        let site = greenwich_site();
+        let period = Interval::new(utc_mjd(2026, 1, 1), utc_mjd(2026, 1, 8));
+        let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
+
+        let directed =
+            find_sun_range_periods(site, period, (Degrees::new(-18.0), Degrees::new(-12.0)));
+        let generic = intervals::in_range_periods(
+            period,
+            SCAN_STEP,
+            &f,
+            Degrees::new(-18.0).to::<Radian>(),
+            Degrees::new(-12.0).to::<Radian>(),
+        );
+
+        assert_periods_close(&directed, &generic);
+    }
+
+    #[test]
+    fn directed_solar_no_crossing_matches_generic_scan() {
+        let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(80.0), Meters::new(0.0));
+        let period = Interval::new(utc_mjd(2026, 6, 20), utc_mjd(2026, 6, 27));
+        let threshold = Degrees::new(-18.0);
+
+        let directed_nights = find_night_periods(site, period, threshold);
+        let generic_days = generic_day_periods(site, period, threshold);
+        let generic_nights = complement_within(period, &generic_days);
+
+        assert_periods_close(&directed_nights, &generic_nights);
+        assert!(
+            directed_nights.is_empty(),
+            "80°N near solstice should stay above -18°"
         );
     }
 }

@@ -4,6 +4,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.1] - 2026-06-06
+
+### Changed
+
+- Speed up solar altitude, daylight, twilight, and night-period searches by using directed threshold crossings that avoid extra midpoint classification probes.
+- Route default apparent-altitude threshold searches through provider-optimized paths when custom scan options are not requested.
+- Update solar altitude benchmarks to cover the optimized night-event search path.
+
+### Added
+
+- Add directed above-threshold and in-range interval search helpers, with regression coverage against the existing generic scan implementation.
+
 ## [0.9.0] - 2026-06-01
 
 ### Changed
