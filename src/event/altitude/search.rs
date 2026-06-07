@@ -5,20 +5,15 @@
 //!
 //! ## Scientific scope
 //!
-//! Numerical controls for the bracket‑and‑refine algorithm used to locate
-//! altitude crossings and culminations. The default scan step (~10 min)
-//! and refinement tolerance (~1 µs ≈ 86 µs in time) are sized for fast
-//! diurnal motion of solar‑system bodies; very slow targets (Moon close
-//! to standstill, deep‑sky tracking around culmination) may require a
-//! coarser scan step or finer tolerance to avoid missed brackets or
-//! spurious extrema.
+//! Numerical controls for altitude crossing discovery and culmination
+//! searches. The default refinement tolerance (~1 µs in time) is sized for
+//! fast diurnal motion of solar-system bodies; very slow targets may require
+//! a coarser scan step or finer tolerance.
 //!
 //! ## Technical scope
 //!
-//! Defines [`SearchOpts`], its [`Default`] impl, and the crate‑internal
-//! step constants (`DEFAULT_SCAN_STEP`, `EXTREMA_SCAN_STEP`). No event
-//! search is performed here; this module only carries configuration that
-//! is consumed by [`super::events`] and [`super::provider`].
+//! Defines the stable public [`SearchOpts`] type and crate-internal crossing
+//! search configuration consumed by [`super::events`] and [`super::provider`].
 //!
 //! ## References
 //! None.
@@ -26,23 +21,47 @@
 use crate::qtty::*;
 
 // ---------------------------------------------------------------------------
-// Search Options
+// Stable public search options
 // ---------------------------------------------------------------------------
 
-/// Crossing discovery algorithm.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum CrossingAlgorithm {
-    /// Choose Chebyshev roots for suitable default Sun/Moon windows and
-    /// scan+Brent where scan is cheaper or more conservative for the target.
-    Auto,
-    /// Use the legacy uniform scan plus Brent refinement path.
-    ScanBrent,
-    /// Try Chebyshev root finding first, falling back per unsafe segment.
-    ChebyshevRoots,
+/// Options for controlling search precision and strategy.
+#[derive(Debug, Clone, Copy)]
+pub struct SearchOpts {
+    /// Time tolerance for root/extremum refinement (days).
+    /// Default: ~1 µs (1e-9 days).
+    pub time_tolerance: Days,
+    /// Scan step for legacy scan+Brent compatibility (days).
+    ///
+    /// When set, crossing discovery uses the uniform scan plus Brent
+    /// refinement path instead of the default Chebyshev-first engine.
+    pub scan_step_days: Option<Days>,
 }
 
-/// Options for Chebyshev-based crossing discovery.
+impl Default for SearchOpts {
+    fn default() -> Self {
+        Self {
+            time_tolerance: Days::new(1e-9),
+            scan_step_days: None,
+        }
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Internal crossing-search configuration
+// ---------------------------------------------------------------------------
+
+/// Internal crossing discovery mode for benchmarks and validation.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub(crate) enum CrossingAlgorithm {
+    /// Chebyshev root finding first, with local scan+Brent fallback.
+    ChebyshevFirst,
+    /// Force the legacy uniform scan plus Brent refinement path.
+    ScanBrent,
+}
+
+/// Internal options for Chebyshev-based crossing discovery.
 #[derive(Debug, Clone, Copy, PartialEq)]
+#[doc(hidden)]
 pub struct ChebyshevOptions {
     /// Segment length fitted by one Chebyshev polynomial, in days.
     pub segment_length: Days,
@@ -83,58 +102,47 @@ impl Default for ChebyshevOptions {
     }
 }
 
-/// Options for controlling search precision and strategy.
+/// Internal extended search options used by event-search engines.
 #[derive(Debug, Clone, Copy)]
-pub struct SearchOpts {
-    /// Time tolerance for root/extremum refinement (days).
-    /// Default: ~1 µs (1e-9 days).
-    pub time_tolerance: Days,
-    /// Scan step for coarse bracket detection (days).
-    /// Default: 10 minutes. Override for slower-moving bodies like the Moon.
-    pub scan_step_days: Option<Days>,
-}
-
-impl Default for SearchOpts {
-    fn default() -> Self {
-        Self {
-            time_tolerance: Days::new(1e-9),
-            scan_step_days: None,
-        }
-    }
-}
-
-/// Extended search options for callers that need explicit crossing-algorithm
-/// control without changing the legacy [`SearchOpts`] layout.
-#[derive(Debug, Clone, Copy)]
-pub struct SearchOptsV2 {
+pub(crate) struct SearchOptsV2 {
     /// Time tolerance for root/extremum refinement (days).
     pub time_tolerance: Days,
     /// Scan step for scan+Brent fallback. `None` uses the target default.
     pub scan_step_days: Option<Days>,
-    /// Crossing discovery algorithm.
+    /// Crossing discovery mode.
     pub algorithm: CrossingAlgorithm,
     /// Chebyshev crossing-search controls.
     pub chebyshev: ChebyshevOptions,
 }
 
 impl SearchOptsV2 {
-    /// Build extended options from the legacy option struct.
+    /// Build internal options from the stable public option struct.
     #[inline]
-    pub fn from_legacy(opts: SearchOpts) -> Self {
-        Self {
-            time_tolerance: opts.time_tolerance,
-            scan_step_days: opts.scan_step_days,
-            ..Self::default()
+    pub(crate) fn from_legacy(opts: SearchOpts) -> Self {
+        let mut out = Self::default();
+        out.time_tolerance = opts.time_tolerance;
+        out.scan_step_days = opts.scan_step_days;
+        if opts.scan_step_days.is_some() {
+            out.algorithm = CrossingAlgorithm::ScanBrent;
         }
+        out
     }
 
-    /// Return the legacy subset of these options.
+    /// Return the stable public subset of these options.
     #[inline]
-    pub fn legacy(self) -> SearchOpts {
+    pub(crate) fn legacy(self) -> SearchOpts {
         SearchOpts {
             time_tolerance: self.time_tolerance,
             scan_step_days: self.scan_step_days,
         }
+    }
+
+    /// Benchmark/validation helper: force scan+Brent mode.
+    #[inline]
+    pub(crate) fn scan_brent_legacy(opts: SearchOpts) -> Self {
+        let mut out = Self::from_legacy(opts);
+        out.algorithm = CrossingAlgorithm::ScanBrent;
+        out
     }
 }
 
@@ -144,7 +152,7 @@ impl Default for SearchOptsV2 {
         Self {
             time_tolerance: legacy.time_tolerance,
             scan_step_days: legacy.scan_step_days,
-            algorithm: CrossingAlgorithm::Auto,
+            algorithm: CrossingAlgorithm::ChebyshevFirst,
             chebyshev: ChebyshevOptions::default(),
         }
     }
@@ -164,3 +172,75 @@ pub(crate) const DEFAULT_SCAN_STEP: Days = Minutes::new(10.0).to_const::<Day>();
 
 /// Extrema scan step: 20 minutes in days (for culmination detection).
 pub(crate) const EXTREMA_SCAN_STEP: Days = Minutes::new(20.0).to_const::<Day>();
+
+// ---------------------------------------------------------------------------
+// Hidden exports for the separate FFI crate (not part of the stable API).
+// ---------------------------------------------------------------------------
+
+/// Hidden crossing algorithm selector retained for the FFI crate.
+#[doc(hidden)]
+pub enum CrossingAlgorithmFfi {
+    Auto,
+    ScanBrent,
+    ChebyshevRoots,
+}
+
+/// Hidden Chebyshev tuning retained for the FFI crate.
+#[doc(hidden)]
+pub type ChebyshevOptionsFfi = ChebyshevOptions;
+
+/// Hidden extended search options retained for the FFI crate.
+#[doc(hidden)]
+pub struct SearchOptsV2Ffi {
+    pub time_tolerance: Days,
+    pub scan_step_days: Option<Days>,
+    pub algorithm: CrossingAlgorithmFfi,
+    pub chebyshev: ChebyshevOptions,
+}
+
+#[doc(hidden)]
+impl SearchOptsV2Ffi {
+    pub fn from_legacy(opts: SearchOpts) -> Self {
+        Self {
+            time_tolerance: opts.time_tolerance,
+            scan_step_days: opts.scan_step_days,
+            algorithm: if opts.scan_step_days.is_some() {
+                CrossingAlgorithmFfi::ScanBrent
+            } else {
+                CrossingAlgorithmFfi::Auto
+            },
+            chebyshev: ChebyshevOptions::default(),
+        }
+    }
+
+    pub fn to_internal(self) -> SearchOptsV2 {
+        let mut opts = SearchOptsV2 {
+            time_tolerance: self.time_tolerance,
+            scan_step_days: self.scan_step_days,
+            chebyshev: self.chebyshev,
+            ..SearchOptsV2::default()
+        };
+        opts.algorithm = match self.algorithm {
+            CrossingAlgorithmFfi::ScanBrent => CrossingAlgorithm::ScanBrent,
+            CrossingAlgorithmFfi::Auto | CrossingAlgorithmFfi::ChebyshevRoots => {
+                CrossingAlgorithm::ChebyshevFirst
+            }
+        };
+        if opts.scan_step_days.is_some() {
+            opts.algorithm = CrossingAlgorithm::ScanBrent;
+        }
+        opts
+    }
+}
+
+#[doc(hidden)]
+impl Default for SearchOptsV2Ffi {
+    fn default() -> Self {
+        Self {
+            time_tolerance: SearchOpts::default().time_tolerance,
+            scan_step_days: None,
+            algorithm: CrossingAlgorithmFfi::Auto,
+            chebyshev: ChebyshevOptions::default(),
+        }
+    }
+}

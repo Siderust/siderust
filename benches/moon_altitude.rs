@@ -11,7 +11,8 @@
 //! - **2-hour scan** (recommended): `find_moon_above_horizon`, fast, ~12 evals/day
 //! - **10-minute scan** (validation): `find_moon_above_horizon_scan`, finer step
 //!
-//! Both delegate to `math_core::intervals` for scan + Brent refinement.
+//! Both the default Chebyshev-first engine and the legacy scan+Brent baseline
+//! are compared over 30, 184, and 365 day windows.
 //!
 //! ## Performance Targets
 //!
@@ -23,8 +24,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::Moon;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::event::altitude::{
-    above_threshold_with_search_opts_v2, below_threshold_with_search_opts_v2,
-    AltitudePeriodsProvider, AltitudeQuery, CrossingAlgorithm, SearchOptsV2,
+    above_threshold, below_threshold, AltitudePeriodsProvider, AltitudeQuery, SearchOpts,
 };
 use siderust::qtty::*;
 use siderust::time::{Interval, ModifiedJulianDate};
@@ -230,58 +230,50 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
 }
 
 // =============================================================================
-// Algorithm Comparison: ScanBrent vs ChebyshevRoots vs Auto
+// Algorithm Comparison: Chebyshev-first vs scan+Brent baseline
 // =============================================================================
 
 fn bench_algorithm_comparison(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
+    let default_opts = SearchOpts::default();
+    let scan_opts = SearchOpts {
+        scan_step_days: Some(Quantity::<Hour>::new(2.0).to::<Day>()),
+        ..default_opts
+    };
 
     let mut group = c.benchmark_group("moon_algorithm_comparison");
     group.measurement_time(Duration::from_secs(15));
 
-    let algorithms = [
-        ("auto", CrossingAlgorithm::Auto),
-        ("scan_brent", CrossingAlgorithm::ScanBrent),
-        ("chebyshev_roots", CrossingAlgorithm::ChebyshevRoots),
-    ];
-
     for (days_label, days) in [("30day", 30), ("184day", 184), ("365day", 365)] {
         let period = build_period(days);
-        for (algorithm_label, algorithm) in algorithms {
-            let opts = SearchOptsV2 {
-                algorithm,
-                ..SearchOptsV2::default()
-            };
 
-            group.bench_function(
-                format!("above_horizon/{algorithm_label}/{days_label}"),
-                |b| {
-                    b.iter(|| {
-                        let _result = above_threshold_with_search_opts_v2(
-                            black_box(&Moon),
-                            black_box(&site),
-                            black_box(period),
-                            black_box(Degrees::new(0.0)),
-                            black_box(opts),
-                        );
-                    });
-                },
-            );
+        for (mode_label, opts) in [
+            ("chebyshev_first", default_opts),
+            ("scan_brent", scan_opts),
+        ] {
+            group.bench_function(format!("above_horizon/{mode_label}/{days_label}"), |b| {
+                b.iter(|| {
+                    let _result = above_threshold(
+                        black_box(&Moon),
+                        black_box(&site),
+                        black_box(period),
+                        black_box(Degrees::new(0.0)),
+                        black_box(opts),
+                    );
+                });
+            });
 
-            group.bench_function(
-                format!("below_horizon/{algorithm_label}/{days_label}"),
-                |b| {
-                    b.iter(|| {
-                        let _result = below_threshold_with_search_opts_v2(
-                            black_box(&Moon),
-                            black_box(&site),
-                            black_box(period),
-                            black_box(Degrees::new(0.0)),
-                            black_box(opts),
-                        );
-                    });
-                },
-            );
+            group.bench_function(format!("below_horizon/{mode_label}/{days_label}"), |b| {
+                b.iter(|| {
+                    let _result = below_threshold(
+                        black_box(&Moon),
+                        black_box(&site),
+                        black_box(period),
+                        black_box(Degrees::new(0.0)),
+                        black_box(opts),
+                    );
+                });
+            });
         }
     }
 

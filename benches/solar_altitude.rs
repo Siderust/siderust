@@ -3,19 +3,18 @@
 
 //! Benchmarks for solar altitude period calculations.
 //!
-//! Tests the performance of finding astronomical night periods using different
-//! algorithms and time horizons.
+//! Compares the default Chebyshev-first engine against the legacy scan+Brent
+//! baseline over 30, 184, and 365 day windows.
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use siderust::bodies::Sun;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::event::altitude::{
-    altitude_ranges_with_search_opts_v2, below_threshold_with_search_opts_v2,
-    AltitudePeriodsProvider, AltitudeQuery, CrossingAlgorithm, SearchOptsV2,
+    altitude_ranges, below_threshold, AltitudePeriodsProvider, AltitudeQuery, SearchOpts,
 };
 use siderust::event::solar::twilight;
-use siderust::qtty::Degrees;
+use siderust::qtty::{Day, Degrees, Hour, Quantity};
 use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;
 use std::time::Duration;
@@ -40,54 +39,78 @@ fn build_period(days: u32) -> Interval<ModifiedJulianDate> {
 
 fn bench_find_night_periods(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
+    let default_opts = SearchOpts::default();
+    let scan_opts = SearchOpts {
+        scan_step_days: Some(Quantity::<Hour>::new(2.0).to::<Day>()),
+        ..default_opts
+    };
 
     let mut group = c.benchmark_group("solar_altitude_periods");
-    let algorithms = [
-        ("auto", CrossingAlgorithm::Auto),
-        ("scan_brent", CrossingAlgorithm::ScanBrent),
-        ("chebyshev_roots", CrossingAlgorithm::ChebyshevRoots),
-    ];
 
     for (label, days) in [("1month", 30), ("6months", 184), ("1year", 365)] {
         let period = build_period(days);
 
-        for (algorithm_label, algorithm) in algorithms {
-            let opts = SearchOptsV2 {
-                algorithm,
-                ..SearchOptsV2::default()
-            };
+        group.bench_function(
+            BenchmarkId::new("below_threshold/chebyshev_first", label),
+            |b| {
+                b.iter(|| {
+                    let _result = below_threshold(
+                        black_box(&Sun),
+                        black_box(&site),
+                        black_box(period),
+                        black_box(twilight::ASTRONOMICAL),
+                        black_box(default_opts),
+                    );
+                });
+            },
+        );
 
-            group.bench_function(
-                BenchmarkId::new(format!("below_threshold/{algorithm_label}"), label),
-                |b| {
-                    b.iter(|| {
-                        let _result = below_threshold_with_search_opts_v2(
-                            black_box(&Sun),
-                            black_box(&site),
-                            black_box(period),
-                            black_box(twilight::ASTRONOMICAL),
-                            black_box(opts),
-                        );
-                    });
-                },
-            );
+        group.bench_function(
+            BenchmarkId::new("below_threshold/scan_brent", label),
+            |b| {
+                b.iter(|| {
+                    let _result = below_threshold(
+                        black_box(&Sun),
+                        black_box(&site),
+                        black_box(period),
+                        black_box(twilight::ASTRONOMICAL),
+                        black_box(scan_opts),
+                    );
+                });
+            },
+        );
 
-            group.bench_function(
-                BenchmarkId::new(format!("altitude_periods/{algorithm_label}"), label),
-                |b| {
-                    b.iter(|| {
-                        let _result = altitude_ranges_with_search_opts_v2(
-                            black_box(&Sun),
-                            black_box(&site),
-                            black_box(period),
-                            black_box(Degrees::new(-90.0)),
-                            black_box(twilight::ASTRONOMICAL),
-                            black_box(opts),
-                        );
-                    });
-                },
-            );
-        }
+        group.bench_function(
+            BenchmarkId::new("altitude_periods/chebyshev_first", label),
+            |b| {
+                b.iter(|| {
+                    let _result = altitude_ranges(
+                        black_box(&Sun),
+                        black_box(&site),
+                        black_box(period),
+                        black_box(Degrees::new(-90.0)),
+                        black_box(twilight::ASTRONOMICAL),
+                        black_box(default_opts),
+                    );
+                });
+            },
+        );
+
+        group.bench_function(
+            BenchmarkId::new("altitude_periods/scan_brent", label),
+            |b| {
+                b.iter(|| {
+                    let _result = altitude_ranges(
+                        black_box(&Sun),
+                        black_box(&site),
+                        black_box(period),
+                        black_box(Degrees::new(-90.0)),
+                        black_box(twilight::ASTRONOMICAL),
+                        black_box(scan_opts),
+                    );
+                });
+            },
+        );
 
         group.bench_function(BenchmarkId::new("provider_default", label), |b| {
             b.iter(|| {

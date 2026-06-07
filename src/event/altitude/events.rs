@@ -21,15 +21,15 @@
 //! `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
 //! into `ModifiedJulianDate` first. Public functions: [`crossings`], [`culminations`],
 //! [`altitude_ranges`], [`above_threshold`], [`below_threshold`]. The
-//! refinement uses bracketed root finding from `math_core::intervals` and
-//! `math_core::extrema`; precision is governed by [`SearchOpts`].
+//! refinement uses Chebyshev-first crossing discovery with precise validation
+//! and local scan+Brent fallback; precision is governed by [`SearchOpts`].
 //!
 //! ## References
 //! None.
 
 use super::provider::AltitudePeriodsProvider;
 use super::search::{
-    CrossingAlgorithm, SearchOpts, SearchOptsV2, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP,
+    SearchOpts, SearchOptsV2, SearchOptsV2Ffi, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP,
 };
 use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind};
 use crate::astro::apparent::CorrectionPolicy;
@@ -59,6 +59,41 @@ fn scan_step_for_v2<T: AltitudePeriodsProvider>(target: &T, opts: &SearchOptsV2)
 
 fn can_use_provider_search_path(opts: SearchOptsV2, policy: CorrectionPolicy) -> bool {
     policy == CorrectionPolicy::APPARENT && opts.scan_step_days.is_none()
+}
+
+fn labelled_crossings_for_altitude<F>(
+    window: Interval<ModifiedJulianDate>,
+    step: Days,
+    altitude: &F,
+    threshold: Radians,
+    opts: SearchOptsV2,
+) -> (Vec<intervals::LabeledCrossing>, bool)
+where
+    F: Fn(ModifiedJulianDate) -> Radians,
+{
+    let signal = |t: ModifiedJulianDate| -> f64 { altitude(t).sin() };
+    let (labeled, start_above, _) = crate::event::search::crossings::find_labelled_crossings(
+        window,
+        step,
+        &signal,
+        threshold.sin(),
+        opts,
+    );
+    (labeled, start_above)
+}
+
+fn crossing_events_from_labelled(labeled: &[intervals::LabeledCrossing]) -> Vec<CrossingEvent> {
+    labeled
+        .iter()
+        .map(|lc| CrossingEvent {
+            mjd: lc.t,
+            direction: if lc.direction > 0 {
+                CrossingDirection::Rising
+            } else {
+                CrossingDirection::Setting
+            },
+        })
+        .collect()
 }
 
 // ---------------------------------------------------------------------------
@@ -138,19 +173,20 @@ pub fn crossings_with_policy<T: AltitudePeriodsProvider>(
 }
 
 /// Find threshold crossings using extended search options.
+#[doc(hidden)]
 pub fn crossings_with_search_opts_v2<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-    opts: SearchOptsV2,
+    opts: SearchOptsV2Ffi,
 ) -> Vec<CrossingEvent> {
     crossings_with_search_opts_v2_and_policy(
         target,
         observer,
         window,
         threshold,
-        opts,
+        opts.to_internal(),
         CorrectionPolicy::APPARENT,
     )
 }
@@ -172,34 +208,8 @@ fn crossings_with_search_opts_v2_and_policy<T: AltitudePeriodsProvider>(
     let f = make_altitude_fn(target, observer, policy);
     let thr_rad = threshold.to::<Radian>();
     let step = scan_step_for_v2(target, &opts);
-
-    let labeled = if opts.algorithm == CrossingAlgorithm::ScanBrent || opts.scan_step_days.is_some()
-    {
-        let mut raw_crossings = intervals::find_crossings(window, step, &f, thr_rad);
-        intervals::label_crossings(&mut raw_crossings, &f, thr_rad)
-    } else {
-        let signal = |t: ModifiedJulianDate| -> f64 { f(t).sin() };
-        let (labeled, _, _) = crate::event::search::chebyshev::find_directed_crossings(
-            window,
-            step,
-            &signal,
-            thr_rad.sin(),
-            opts,
-        );
-        labeled
-    };
-
-    labeled
-        .iter()
-        .map(|lc| CrossingEvent {
-            mjd: lc.t,
-            direction: if lc.direction > 0 {
-                CrossingDirection::Rising
-            } else {
-                CrossingDirection::Setting
-            },
-        })
-        .collect()
+    let (labeled, _) = labelled_crossings_for_altitude(window, step, &f, thr_rad, opts);
+    crossing_events_from_labelled(&labeled)
 }
 
 // ---------------------------------------------------------------------------
@@ -275,10 +285,8 @@ pub fn culminations_with_policy<T: AltitudePeriodsProvider>(
 ///
 /// # Algorithm
 ///
-/// Uses the two‑stage approach:
-/// 1. Fast coarse scan to find threshold crossings of `h_min` and `h_max`.
-/// 2. Brent refinement for each bracket.
-/// 3. Interval algebra: `above(h_min) ∩ complement(above(h_max))`.
+/// Uses labelled threshold crossings of `h_min` and `h_max`, then interval
+/// algebra: `above(h_min) ∩ complement(above(h_max))`.
 ///
 /// # Example
 /// ```ignore
@@ -345,13 +353,14 @@ pub fn altitude_ranges_with_policy<T: AltitudePeriodsProvider>(
 }
 
 /// Find altitude-range periods using extended search options.
+#[doc(hidden)]
 pub fn altitude_ranges_with_search_opts_v2<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     h_min: Degrees,
     h_max: Degrees,
-    opts: SearchOptsV2,
+    opts: SearchOptsV2Ffi,
 ) -> Vec<Interval<ModifiedJulianDate>> {
     altitude_ranges_with_search_opts_v2_and_policy(
         target,
@@ -359,7 +368,7 @@ pub fn altitude_ranges_with_search_opts_v2<T: AltitudePeriodsProvider>(
         window,
         h_min,
         h_max,
-        opts,
+        opts.to_internal(),
         CorrectionPolicy::APPARENT,
     )
 }
@@ -384,34 +393,15 @@ fn altitude_ranges_with_search_opts_v2_and_policy<T: AltitudePeriodsProvider>(
     let max_rad = h_max.to::<Radian>();
     let step = scan_step_for_v2(target, &opts);
 
-    if opts.algorithm == CrossingAlgorithm::ScanBrent || opts.scan_step_days.is_some() {
-        intervals::in_range_periods(window, step, &f, min_rad, max_rad)
-    } else {
-        let signal = |t: ModifiedJulianDate| -> f64 { f(t).sin() };
-        let (above_min, start_above_min, _) =
-            crate::event::search::chebyshev::find_directed_crossings(
-                window,
-                step,
-                &signal,
-                min_rad.sin(),
-                opts,
-            );
-        let above_min =
-            intervals::build_above_periods_directed(&above_min, window, start_above_min);
+    let (above_min, start_above_min) =
+        labelled_crossings_for_altitude(window, step, &f, min_rad, opts);
+    let above_min = intervals::build_above_periods_directed(&above_min, window, start_above_min);
 
-        let (above_max, start_above_max, _) =
-            crate::event::search::chebyshev::find_directed_crossings(
-                window,
-                step,
-                &signal,
-                max_rad.sin(),
-                opts,
-            );
-        let above_max =
-            intervals::build_above_periods_directed(&above_max, window, start_above_max);
-        let below_max = complement_within(window, &above_max);
-        intervals::intersect(&above_min, &below_max)
-    }
+    let (above_max, start_above_max) =
+        labelled_crossings_for_altitude(window, step, &f, max_rad, opts);
+    let above_max = intervals::build_above_periods_directed(&above_max, window, start_above_max);
+    let below_max = complement_within(window, &above_max);
+    intervals::intersect(&above_min, &below_max)
 }
 
 // ---------------------------------------------------------------------------
@@ -472,19 +462,20 @@ pub fn above_threshold_with_policy<T: AltitudePeriodsProvider>(
 }
 
 /// Find above-threshold periods using extended search options.
+#[doc(hidden)]
 pub fn above_threshold_with_search_opts_v2<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-    opts: SearchOptsV2,
+    opts: SearchOptsV2Ffi,
 ) -> Vec<Interval<ModifiedJulianDate>> {
     above_threshold_with_search_opts_v2_and_policy(
         target,
         observer,
         window,
         threshold,
-        opts,
+        opts.to_internal(),
         CorrectionPolicy::APPARENT,
     )
 }
@@ -506,20 +497,8 @@ fn above_threshold_with_search_opts_v2_and_policy<T: AltitudePeriodsProvider>(
     let f = make_altitude_fn(target, observer, policy);
     let thr_rad = threshold.to::<Radian>();
     let step = scan_step_for_v2(target, &opts);
-
-    if opts.algorithm == CrossingAlgorithm::ScanBrent || opts.scan_step_days.is_some() {
-        intervals::above_threshold_periods(window, step, &f, thr_rad)
-    } else {
-        let signal = |t: ModifiedJulianDate| -> f64 { f(t).sin() };
-        let (labeled, start_above, _) = crate::event::search::chebyshev::find_directed_crossings(
-            window,
-            step,
-            &signal,
-            thr_rad.sin(),
-            opts,
-        );
-        intervals::build_above_periods_directed(&labeled, window, start_above)
-    }
+    let (labeled, start_above) = labelled_crossings_for_altitude(window, step, &f, thr_rad, opts);
+    intervals::build_above_periods_directed(&labeled, window, start_above)
 }
 
 /// Convenience: find periods where altitude is **below** a threshold.
@@ -576,19 +555,20 @@ pub fn below_threshold_with_policy<T: AltitudePeriodsProvider>(
 }
 
 /// Find below-threshold periods using extended search options.
+#[doc(hidden)]
 pub fn below_threshold_with_search_opts_v2<T: AltitudePeriodsProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-    opts: SearchOptsV2,
+    opts: SearchOptsV2Ffi,
 ) -> Vec<Interval<ModifiedJulianDate>> {
     below_threshold_with_search_opts_v2_and_policy(
         target,
         observer,
         window,
         threshold,
-        opts,
+        opts.to_internal(),
         CorrectionPolicy::APPARENT,
     )
 }

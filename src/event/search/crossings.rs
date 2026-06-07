@@ -1,26 +1,28 @@
 // SPDX-License-Identifier: AGPL-3.0-or-later
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Chebyshev-based crossing discovery for smooth altitude signals.
+//! Chebyshev-first labelled crossing discovery for smooth altitude signals.
 //!
-//! This module fits `sin(altitude(t)) - sin(threshold)` on short time
-//! segments, solves roots of the fitted polynomial on `[-1, 1]`, validates the
-//! candidates against the precise signal, and falls back per segment to the
-//! legacy scan+Brent path when the polynomial is not trustworthy.
+//! Fits `sin(altitude(t)) - sin(threshold)` on short time segments, solves roots
+//! of the fitted polynomial on `[-1, 1]`, validates candidates against the
+//! precise signal, and falls back per segment to scan+Brent when the polynomial
+//! is not trustworthy.
+
+use cheby::fit_dyn_from_fn;
 
 use crate::event::altitude::search::{CrossingAlgorithm, SearchOptsV2};
 use crate::event::search::intervals::LabeledCrossing;
+use crate::event::search::scan_fallback;
 use crate::qtty::{Day, Quantity};
 use crate::time::{Interval, ModifiedJulianDate};
 
 type Days = Quantity<Day>;
 type Mjd = ModifiedJulianDate;
 
-const UNIT_ROOT_TOL: f64 = 1e-13;
-const POLY_ZERO_TOL: f64 = 1e-12;
-const DEDUPE_X_EPS: f64 = 1e-10;
+pub(crate) const POLY_ZERO_TOL: f64 = 1e-12;
 const DEDUPE_T_EPS: Days = Days::new(1e-8);
 const MIN_SEGMENT_DAYS: f64 = 1e-6;
+const TAIL_NORM_COEFFS: usize = 4;
 
 /// Runtime counters for Chebyshev crossing searches.
 #[derive(Debug, Default, Clone, Copy)]
@@ -81,153 +83,8 @@ impl Segment {
     }
 }
 
-/// Chebyshev polynomial `sum c_k T_k(x)` on `[-1, 1]`.
-#[derive(Debug, Clone)]
-pub(crate) struct ChebPoly {
-    coeffs: Vec<f64>,
-}
-
-impl ChebPoly {
-    /// Fit a Chebyshev polynomial of `degree` on `[-1, 1]`.
-    pub(crate) fn fit<F>(degree: usize, mut f: F) -> Self
-    where
-        F: FnMut(f64) -> f64,
-    {
-        let n = degree.saturating_add(1).max(2);
-        let mut values = Vec::with_capacity(n);
-        for j in 0..n {
-            let theta = std::f64::consts::PI * (j as f64 + 0.5) / n as f64;
-            values.push(f(theta.cos()));
-        }
-
-        let mut coeffs = vec![0.0; n];
-        for (k, coeff) in coeffs.iter_mut().enumerate() {
-            let mut sum = 0.0;
-            for (j, value) in values.iter().enumerate() {
-                let theta = std::f64::consts::PI * (j as f64 + 0.5) / n as f64;
-                sum += value * (k as f64 * theta).cos();
-            }
-            *coeff = 2.0 * sum / n as f64;
-        }
-        coeffs[0] *= 0.5;
-
-        Self { coeffs }
-    }
-
-    /// Evaluate the polynomial using Clenshaw recurrence.
-    #[inline]
-    pub(crate) fn eval(&self, x: f64) -> f64 {
-        if self.coeffs.is_empty() {
-            return 0.0;
-        }
-
-        let mut b1 = 0.0;
-        let mut b2 = 0.0;
-        for &coeff in self.coeffs.iter().skip(1).rev() {
-            let b0 = 2.0 * x * b1 - b2 + coeff;
-            b2 = b1;
-            b1 = b0;
-        }
-        x * b1 - b2 + self.coeffs[0]
-    }
-
-    /// Return the derivative polynomial.
-    pub(crate) fn derivative(&self) -> Self {
-        let n = self.coeffs.len().saturating_sub(1);
-        if n == 0 {
-            return Self { coeffs: vec![0.0] };
-        }
-        if n == 1 {
-            return Self {
-                coeffs: vec![self.coeffs[1]],
-            };
-        }
-
-        let mut deriv = vec![0.0; n];
-        deriv[n - 1] = 2.0 * n as f64 * self.coeffs[n];
-        if n >= 2 {
-            for k in (1..=(n - 2)).rev() {
-                let next = if k + 2 < deriv.len() {
-                    deriv[k + 2]
-                } else {
-                    0.0
-                };
-                deriv[k] = next + 2.0 * (k as f64 + 1.0) * self.coeffs[k + 1];
-            }
-            deriv[0] = deriv.get(2).copied().unwrap_or(0.0) * 0.5 + self.coeffs[1];
-        }
-
-        Self { coeffs: deriv }
-    }
-
-    /// Sum of the last Chebyshev coefficients, used as a cheap fit-quality
-    /// signal.
-    pub(crate) fn tail_norm(&self) -> f64 {
-        let tail = self.coeffs.len().min(4);
-        self.coeffs.iter().rev().take(tail).map(|c| c.abs()).sum()
-    }
-
-    /// Roots in `[-1, 1]`, segmented by derivative roots and refined on the
-    /// polynomial.
-    pub(crate) fn roots(&self) -> Vec<f64> {
-        let mut roots = self.roots_recursive(0);
-        sort_dedup_f64(&mut roots, DEDUPE_X_EPS);
-        roots
-    }
-
-    fn roots_recursive(&self, depth: usize) -> Vec<f64> {
-        if self.coeffs.len() <= 1 {
-            return Vec::new();
-        }
-        if self.coeffs.len() == 2 {
-            let a = self.coeffs[1];
-            if a.abs() <= POLY_ZERO_TOL {
-                return Vec::new();
-            }
-            let x = -self.coeffs[0] / a;
-            if (-1.0 - UNIT_ROOT_TOL..=1.0 + UNIT_ROOT_TOL).contains(&x) {
-                return vec![x.clamp(-1.0, 1.0)];
-            }
-            return Vec::new();
-        }
-
-        let mut points = vec![-1.0, 1.0];
-        if depth < self.coeffs.len() {
-            points.extend(self.derivative().roots_recursive(depth + 1));
-        }
-        sort_dedup_f64(&mut points, DEDUPE_X_EPS);
-
-        let mut roots = Vec::new();
-        for &x in &points {
-            if self.eval(x).abs() <= POLY_ZERO_TOL {
-                roots.push(x);
-            }
-        }
-
-        for pair in points.windows(2) {
-            let a = pair[0];
-            let b = pair[1];
-            if b - a <= UNIT_ROOT_TOL {
-                continue;
-            }
-            let fa = self.eval(a);
-            let fb = self.eval(b);
-            if fa.abs() <= POLY_ZERO_TOL || fb.abs() <= POLY_ZERO_TOL {
-                continue;
-            }
-            if fa.signum() * fb.signum() < 0.0 {
-                if let Some(root) = brent_f64(a, b, fa, fb, |x| self.eval(x), UNIT_ROOT_TOL) {
-                    roots.push(root.clamp(-1.0, 1.0));
-                }
-            }
-        }
-
-        roots
-    }
-}
-
-/// Find labelled crossings of a precise `sin_altitude` signal.
-pub(crate) fn find_directed_crossings<F>(
+/// Internal primitive: find labelled crossings of a precise `sin_altitude` signal.
+pub(crate) fn find_labelled_crossings<F>(
     period: Interval<Mjd>,
     fallback_step: Days,
     signal: &F,
@@ -245,19 +102,9 @@ where
     let start_above = eval_signal(signal, period.start, &mut diagnostics) > threshold_sin;
     let fallback_step = opts.scan_step_days.unwrap_or(fallback_step);
 
-    let segment_days = opts.chebyshev.segment_length.value();
-    let window_days = (period.end.raw() - period.start.raw()).value();
-    let short_window = window_days <= segment_days.max(fallback_step.value()) * 0.5;
-    let debug_long_window =
-        cfg!(debug_assertions) && opts.algorithm == CrossingAlgorithm::Auto && window_days > 60.0;
-    let use_scan = opts.algorithm == CrossingAlgorithm::ScanBrent
-        || opts.scan_step_days.is_some()
-        || (opts.algorithm == CrossingAlgorithm::Auto && short_window)
-        || debug_long_window;
-
-    if use_scan {
+    if opts.algorithm == CrossingAlgorithm::ScanBrent || opts.scan_step_days.is_some() {
         diagnostics.fallback_segments = 1;
-        let crossings = scan_directed_crossings(
+        let crossings = scan_fallback::scan_labelled_crossings(
             period,
             fallback_step,
             signal,
@@ -322,24 +169,20 @@ where
 
     search.diagnostics.segments += 1;
     if segment.span_days() < MIN_SEGMENT_DAYS {
-        search.diagnostics.fallback_segments += 1;
-        search.out.extend(scan_directed_crossings(
-            segment.as_interval(),
-            search.fallback_step,
-            search.signal,
-            search.threshold_sin,
-            search.diagnostics,
-        ));
+        fallback_segment(search, segment);
         return;
     }
 
     let degree = search.opts.chebyshev.degree.clamp(4, 64);
-    let poly = ChebPoly::fit(degree, |x| {
+    let Ok(poly) = fit_dyn_from_fn(degree, |x| {
         eval_signal(search.signal, segment.time_from_unit(x), search.diagnostics)
             - search.threshold_sin
-    });
+    }) else {
+        fallback_segment(search, segment);
+        return;
+    };
 
-    let tail_norm = poly.tail_norm();
+    let tail_norm = poly.tail_norm(TAIL_NORM_COEFFS);
     if !tail_norm.is_finite() || tail_norm > search.opts.chebyshev.max_tail_norm {
         if search.opts.chebyshev.adaptive_split && depth < search.opts.chebyshev.max_split_depth {
             let (left, right) = segment.split();
@@ -347,15 +190,7 @@ where
             append_segment_crossings(search, right, depth + 1);
             return;
         }
-
-        search.diagnostics.fallback_segments += 1;
-        search.out.extend(scan_directed_crossings(
-            segment.as_interval(),
-            search.fallback_step,
-            search.signal,
-            search.threshold_sin,
-            search.diagnostics,
-        ));
+        fallback_segment(search, segment);
         return;
     }
 
@@ -365,16 +200,9 @@ where
 
     let mut segment_crossings = Vec::new();
     for root_x in roots {
-        let slope = derivative.eval(root_x).abs();
+        let slope = derivative.evaluate(root_x).abs();
         if slope < search.opts.chebyshev.min_slope {
-            search.diagnostics.fallback_segments += 1;
-            search.out.extend(scan_directed_crossings(
-                segment.as_interval(),
-                search.fallback_step,
-                search.signal,
-                search.threshold_sin,
-                search.diagnostics,
-            ));
+            fallback_segment(search, segment);
             return;
         }
 
@@ -387,20 +215,27 @@ where
             search.opts,
             search.diagnostics,
         ) else {
-            search.diagnostics.fallback_segments += 1;
-            search.out.extend(scan_directed_crossings(
-                segment.as_interval(),
-                search.fallback_step,
-                search.signal,
-                search.threshold_sin,
-                search.diagnostics,
-            ));
+            fallback_segment(search, segment);
             return;
         };
         segment_crossings.push(crossing);
     }
 
     search.out.extend(segment_crossings);
+}
+
+fn fallback_segment<F>(search: &mut SegmentSearch<'_, F>, segment: Segment)
+where
+    F: Fn(Mjd) -> f64,
+{
+    search.diagnostics.fallback_segments += 1;
+    search.out.extend(scan_fallback::scan_labelled_crossings(
+        segment.as_interval(),
+        search.fallback_step,
+        search.signal,
+        search.threshold_sin,
+        search.diagnostics,
+    ));
 }
 
 fn validate_candidate<F>(
@@ -507,7 +342,7 @@ where
             }
             if f_lo.signum() * f_hi.signum() < 0.0 {
                 let tol = opts.time_tolerance.value().max(1e-12);
-                return brent_f64(
+                return scan_fallback::brent_f64(
                     lo,
                     hi,
                     f_lo,
@@ -567,161 +402,7 @@ where
     }
 }
 
-fn scan_directed_crossings<F>(
-    period: Interval<Mjd>,
-    step: Days,
-    signal: &F,
-    threshold_sin: f64,
-    diagnostics: &mut SearchDiagnostics,
-) -> Vec<LabeledCrossing>
-where
-    F: Fn(Mjd) -> f64,
-{
-    if period.end <= period.start {
-        return Vec::new();
-    }
-
-    let step_days = step.value().max(MIN_SEGMENT_DAYS);
-    let t_start = period.start;
-    let t_end = period.end;
-
-    let mut labeled = Vec::new();
-    let mut t = t_start;
-    let mut prev = eval_signal(signal, t, diagnostics) - threshold_sin;
-
-    while t < t_end {
-        let next_t = {
-            let proposed = mjd_from_days(mjd_days(t) + step_days);
-            if proposed <= t_end {
-                proposed
-            } else {
-                t_end
-            }
-        };
-        let next_v = eval_signal(signal, next_t, diagnostics) - threshold_sin;
-
-        if prev.signum() * next_v.signum() < 0.0 {
-            let direction = if prev < 0.0 { 1 } else { -1 };
-            let tol = 1e-9;
-            if let Some(root_days) = brent_f64(
-                mjd_days(t),
-                mjd_days(next_t),
-                prev,
-                next_v,
-                |days| precise_residual_days(signal, days, threshold_sin, diagnostics),
-                tol,
-            ) {
-                let root = mjd_from_days(root_days);
-                if root >= t_start && root <= t_end {
-                    labeled.push(LabeledCrossing { t: root, direction });
-                }
-            }
-        }
-
-        t = next_t;
-        prev = next_v;
-    }
-
-    sort_dedup_crossings(&mut labeled);
-    labeled
-}
-
-fn brent_f64<F>(lo: f64, hi: f64, f_lo: f64, f_hi: f64, mut f: F, tol: f64) -> Option<f64>
-where
-    F: FnMut(f64) -> f64,
-{
-    if !lo.is_finite() || !hi.is_finite() || hi < lo {
-        return None;
-    }
-    if f_lo.abs() <= POLY_ZERO_TOL {
-        return Some(lo);
-    }
-    if f_hi.abs() <= POLY_ZERO_TOL {
-        return Some(hi);
-    }
-    if f_lo.signum() * f_hi.signum() > 0.0 {
-        return None;
-    }
-
-    let mut a = lo;
-    let mut b = hi;
-    let mut fa = f_lo;
-    let mut fb = f_hi;
-    let mut c = a;
-    let mut fc = fa;
-    let mut d = b - a;
-    let mut e = d;
-
-    for _ in 0..100 {
-        if fb.signum() * fc.signum() > 0.0 {
-            c = a;
-            fc = fa;
-            d = b - a;
-            e = d;
-        }
-        if fc.abs() < fb.abs() {
-            a = b;
-            b = c;
-            c = a;
-            fa = fb;
-            fb = fc;
-            fc = fa;
-        }
-
-        let tol1 = 2.0 * f64::EPSILON * b.abs() + tol * 0.5;
-        let xm = 0.5 * (c - b);
-        if xm.abs() <= tol1 || fb.abs() <= POLY_ZERO_TOL {
-            return Some(b);
-        }
-
-        if e.abs() >= tol1 && fa.abs() > fb.abs() {
-            let s = fb / fa;
-            let (mut p, mut q) = if (a - c).abs() <= f64::EPSILON {
-                (2.0 * xm * s, 1.0 - s)
-            } else {
-                let q = fa / fc;
-                let r = fb / fc;
-                (
-                    s * (2.0 * xm * q * (q - r) - (b - a) * (r - 1.0)),
-                    (q - 1.0) * (r - 1.0) * (s - 1.0),
-                )
-            };
-            if p > 0.0 {
-                q = -q;
-            }
-            p = p.abs();
-
-            let min1 = 3.0 * xm * q - (tol1 * q).abs();
-            let min2 = (e * q).abs();
-            if 2.0 * p < min1.min(min2) {
-                e = d;
-                d = p / q;
-            } else {
-                d = xm;
-                e = d;
-            }
-        } else {
-            d = xm;
-            e = d;
-        }
-
-        a = b;
-        fa = fb;
-        if d.abs() > tol1 {
-            b += d;
-        } else {
-            b += tol1.copysign(xm);
-        }
-        fb = f(b);
-        if !fb.is_finite() {
-            return None;
-        }
-    }
-
-    Some(b)
-}
-
-fn eval_signal<F>(signal: &F, t: Mjd, diagnostics: &mut SearchDiagnostics) -> f64
+pub(crate) fn eval_signal<F>(signal: &F, t: Mjd, diagnostics: &mut SearchDiagnostics) -> f64
 where
     F: Fn(Mjd) -> f64,
 {
@@ -729,7 +410,7 @@ where
     signal(t)
 }
 
-fn precise_residual_days<F>(
+pub(crate) fn precise_residual_days<F>(
     signal: &F,
     days: f64,
     threshold_sin: f64,
@@ -755,12 +436,6 @@ fn looser_radius_exhausts_segment(center: f64, radius: f64, start: f64, end: f64
     center - radius <= start && center + radius >= end
 }
 
-fn sort_dedup_f64(values: &mut Vec<f64>, eps: f64) {
-    values.retain(|v| v.is_finite());
-    values.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
-    values.dedup_by(|a, b| (*a - *b).abs() <= eps);
-}
-
 fn sort_dedup_crossings(crossings: &mut Vec<LabeledCrossing>) {
     crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));
     crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < DEDUPE_T_EPS);
@@ -776,30 +451,7 @@ mod tests {
     }
 
     #[test]
-    fn cheb_poly_evaluates_fit() {
-        let poly = ChebPoly::fit(12, |x| x * x - 0.25);
-        assert!(poly.eval(0.5).abs() < 1e-12);
-        assert!((poly.eval(0.0) + 0.25).abs() < 1e-12);
-    }
-
-    #[test]
-    fn cheb_poly_derivative_is_consistent() {
-        let poly = ChebPoly::fit(8, |x| 2.0 * x * x - 1.0);
-        let deriv = poly.derivative();
-        assert!((deriv.eval(0.25) - 1.0).abs() < 1e-10);
-    }
-
-    #[test]
-    fn polynomial_roots_find_crossings() {
-        let poly = ChebPoly::fit(12, |x| x * x - 0.25);
-        let roots = poly.roots();
-        assert_eq!(roots.len(), 2, "{roots:?}");
-        assert!((roots[0] + 0.5).abs() < 1e-10, "{roots:?}");
-        assert!((roots[1] - 0.5).abs() < 1e-10, "{roots:?}");
-    }
-
-    #[test]
-    fn directed_crossings_match_sine_wave() {
+    fn labelled_crossings_match_sine_wave() {
         let opts = SearchOptsV2 {
             chebyshev: ChebyshevOptions {
                 segment_length: Days::new(0.5),
@@ -812,7 +464,7 @@ mod tests {
         };
         let signal = |t: Mjd| (2.0 * std::f64::consts::PI * (t.raw().value() + 0.05)).sin();
         let (crossings, start_above, diagnostics) =
-            find_directed_crossings(period(0.0, 1.0), Days::new(0.02), &signal, 0.0, opts);
+            find_labelled_crossings(period(0.0, 1.0), Days::new(0.02), &signal, 0.0, opts);
 
         assert!(start_above);
         assert_eq!(crossings.len(), 2, "{crossings:?} {diagnostics:?}");
@@ -831,7 +483,7 @@ mod tests {
         };
         let signal = |t: Mjd| t.raw().value() - 0.5;
         let (crossings, _, diagnostics) =
-            find_directed_crossings(period(0.0, 1.0), Days::new(0.1), &signal, 0.0, opts);
+            find_labelled_crossings(period(0.0, 1.0), Days::new(0.1), &signal, 0.0, opts);
         assert_eq!(crossings.len(), 1);
         assert_eq!(diagnostics.fallback_segments, 1);
     }

@@ -14,9 +14,9 @@
 //! here; thresholds such as `−0.833°` must be supplied by the caller.
 //!
 //! Event detection (rise/set crossings, culminations, time inside an
-//! altitude band) is computed by combining a coarse scan with bracketed
-//! root finding, so the temporal accuracy is limited by the scan step and
-//! by the chosen `time_tolerance`.
+//! altitude band) uses Chebyshev-first crossing discovery with precise
+//! validation and local scan+Brent fallback; temporal accuracy is limited
+//! by the chosen `time_tolerance` and any explicit `scan_step_days`.
 //!
 //! ## Technical scope
 //!
@@ -111,7 +111,7 @@ pub use types::{
 // Re-exports: Search Options
 // ---------------------------------------------------------------------------
 
-pub use search::{ChebyshevOptions, CrossingAlgorithm, SearchOpts, SearchOptsV2};
+pub use search::SearchOpts;
 
 // ---------------------------------------------------------------------------
 // Re-exports: Core Computation
@@ -124,10 +124,9 @@ pub use search::{ChebyshevOptions, CrossingAlgorithm, SearchOpts, SearchOptsV2};
 // ---------------------------------------------------------------------------
 
 pub use events::{
-    above_threshold, above_threshold_with_policy, above_threshold_with_search_opts_v2,
-    altitude_ranges, altitude_ranges_with_policy, altitude_ranges_with_search_opts_v2,
-    below_threshold, below_threshold_with_policy, below_threshold_with_search_opts_v2, crossings,
-    crossings_with_policy, crossings_with_search_opts_v2, culminations, culminations_with_policy,
+    above_threshold, above_threshold_with_policy, altitude_ranges, altitude_ranges_with_policy,
+    below_threshold, below_threshold_with_policy, crossings, crossings_with_policy, culminations,
+    culminations_with_policy,
 };
 
 // ---------------------------------------------------------------------------
@@ -135,3 +134,9 @@ pub use events::{
 // ---------------------------------------------------------------------------
 
 pub use provider::{altitude_periods, AltitudePeriodsProvider};
+
+#[doc(hidden)]
+pub use events::{
+    above_threshold_with_search_opts_v2, altitude_ranges_with_search_opts_v2,
+    below_threshold_with_search_opts_v2, crossings_with_search_opts_v2,
+};

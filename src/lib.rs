@@ -170,12 +170,20 @@ pub use affn::conic::ConicKind;
 pub use astro::conic::{ConicError, ConicOrbit, MeanMotionOrbit};
 pub use astro::orbit::{KeplerianOrbit, PreparedOrbit};
 pub use event::altitude::{
-    above_threshold, above_threshold_with_search_opts_v2,
-    altitude_periods as compute_altitude_periods, altitude_ranges,
-    altitude_ranges_with_search_opts_v2, below_threshold, below_threshold_with_search_opts_v2,
-    crossings, crossings_with_search_opts_v2, culminations, AltitudePeriodsProvider, AltitudeQuery,
-    ChebyshevOptions, CrossingAlgorithm, CrossingDirection, CrossingEvent, CulminationEvent,
-    CulminationKind, SearchOpts, SearchOptsV2,
+    above_threshold, altitude_periods as compute_altitude_periods, altitude_ranges,
+    below_threshold, crossings, culminations, AltitudePeriodsProvider, AltitudeQuery,
+    CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind, SearchOpts,
+};
+
+#[doc(hidden)]
+pub use event::altitude::{
+    above_threshold_with_search_opts_v2, altitude_ranges_with_search_opts_v2,
+    below_threshold_with_search_opts_v2, crossings_with_search_opts_v2,
+};
+#[doc(hidden)]
+pub use event::altitude::search::{
+    ChebyshevOptionsFfi as ChebyshevOptions, CrossingAlgorithmFfi as CrossingAlgorithm,
+    SearchOptsV2Ffi as SearchOptsV2,
 };
 
 // ---------------------------------------------------------------------------

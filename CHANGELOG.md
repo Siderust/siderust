@@ -8,14 +8,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add an internal Chebyshev-roots crossing engine for smooth altitude signals, with Clenshaw evaluation, derivative-segmented polynomial roots, precise residual checks, adaptive split, and scan+Brent fallback.
-- Add `CrossingAlgorithm`, `ChebyshevOptions`, and `SearchOptsV2` for additive algorithm control without changing the legacy `SearchOpts` layout.
-- Add FFI v2 altitude search functions and options for explicit Auto, ScanBrent, and ChebyshevRoots selection.
+- Add an internal Chebyshev-first crossing engine for smooth altitude signals, with Clenshaw evaluation, derivative-segmented polynomial roots, precise residual checks, adaptive split, and scan+Brent fallback.
+- Move dynamic Chebyshev fitting and root finding into the `cheby` crate (`fit_dyn_from_fn`, `ChebySeriesDyn::roots`, `tail_norm`).
 
 ### Changed
 
-- Route default Sun and Moon altitude crossings and threshold/range periods through Auto search, selecting the validated fast path for each target while preserving explicit ChebyshevRoots and scan+Brent controls.
-- Extend Rust solar and lunar altitude benchmarks to compare Auto, ScanBrent, and ChebyshevRoots over 30, 184, and 365 day windows.
+- Default Sun and Moon long-window altitude period searches now use Chebyshev-first crossing discovery with precise validation/refinement and local scan+Brent fallback; explicit `scan_step_days` continues to force the legacy scan path for compatibility.
+- Consolidate altitude event search around a single internal `find_labelled_crossings` primitive; `above_threshold`, `below_threshold`, `altitude_ranges`, and crossings are built from labelled crossings plus interval algebra.
+- Hide algorithm-selection types (`CrossingAlgorithm`, `ChebyshevOptions`, `SearchOptsV2`) from the stable public API; keep only minimal [`SearchOpts`] for callers.
+- Extend Rust solar and lunar altitude benchmarks to compare Chebyshev-first defaults against the scan+Brent baseline over 30, 184, and 365 day windows.
 
 ## [0.9.1] - 2026-06-06
 
