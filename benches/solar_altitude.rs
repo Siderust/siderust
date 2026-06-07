@@ -1,17 +1,39 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Benchmarks comparing the solar daily predictor against internal baselines.
+//! Solar altitude benchmarks.
+//!
+//! Organized into two halves:
+//!
+//! - **`public_api/solar/{30d,184d,365d}`**: what callers invoke via the stable
+//!   Option A API. All four public altitude functions are covered. The default
+//!   engine (solar daily predictor + precise Brent validation + batch range path)
+//!   is what runs here.
+//!
+//! - **`engines/solar/{30d,184d,365d}`**: apples-to-apples internal engine
+//!   comparison for the same operations, using `bench_internals` baselines:
+//!   - `daily_predictor` — default engine (same as `public_api`, labelled for
+//!     direct comparison)
+//!   - `chebyshev_baseline` — generic Chebyshev-first engine, daily predictor
+//!     disabled (not exposed publicly)
+//!   - `scan_brent_baseline` — uniform scan + Brent refinement (not exposed
+//!     publicly)
 //!
 //! Requires the `bench-internals` feature:
-//! `cargo bench --features bench-internals --bench solar_altitude`
+//!
+//! ```bash
+//! cargo bench --features bench-internals --bench solar_altitude
+//! cargo bench --no-run --features bench-internals
+//! ```
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bench_internals;
 use siderust::bodies::Sun;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::event::altitude::{altitude_ranges, below_threshold, crossings, SearchOpts};
+use siderust::event::altitude::{
+    above_threshold, altitude_ranges, below_threshold, crossings, SearchOpts,
+};
 use siderust::event::solar::twilight;
 use siderust::qtty::Degrees;
 use siderust::time::{Interval, ModifiedJulianDate};
@@ -19,32 +41,30 @@ use std::hint::black_box;
 use std::time::Duration;
 
 fn build_period(days: u32) -> Interval<ModifiedJulianDate> {
-    let start_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
+    let start = NaiveDate::from_ymd_opt(2026, 1, 1)
         .unwrap()
         .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap());
-    let end_naive = NaiveDate::from_ymd_opt(2026, 1, 1)
-        .unwrap()
-        .and_time(NaiveTime::from_hms_opt(0, 0, 0).unwrap())
-        + chrono::Duration::days(days as i64);
-
-    let start_dt = Utc.from_utc_datetime(&start_naive);
-    let end_dt = Utc.from_utc_datetime(&end_naive);
-
+    let end = start + chrono::Duration::days(days as i64);
     Interval::new(
-        ModifiedJulianDate::from(start_dt),
-        ModifiedJulianDate::from(end_dt),
+        ModifiedJulianDate::from(Utc.from_utc_datetime(&start)),
+        ModifiedJulianDate::from(Utc.from_utc_datetime(&end)),
     )
 }
 
-fn bench_solar_engines(c: &mut Criterion) {
+// ---------------------------------------------------------------------------
+// A. Public API benchmarks — stable Option A calls, default engine
+// ---------------------------------------------------------------------------
+
+fn bench_public_api_solar(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let opts = SearchOpts::default();
 
-    for (label, days) in [("30d", 30), ("184d", 184), ("365d", 365)] {
+    for (label, days) in [("30d", 30u32), ("184d", 184), ("365d", 365)] {
         let period = build_period(days);
 
-        let mut daily = c.benchmark_group(format!("solar/daily_predictor/{label}"));
-        daily.bench_function("below_threshold/-18", |b| {
+        let mut g = c.benchmark_group(format!("public_api/solar/{label}"));
+
+        g.bench_function("below_threshold/astro_night", |b| {
             b.iter(|| {
                 black_box(below_threshold(
                     &Sun,
@@ -52,10 +72,24 @@ fn bench_solar_engines(c: &mut Criterion) {
                     black_box(period),
                     black_box(twilight::ASTRONOMICAL),
                     opts,
-                ));
+                ))
             });
         });
-        daily.bench_function("altitude_ranges/twilight (batch daily path)", |b| {
+
+        g.bench_function("above_threshold/horizon", |b| {
+            b.iter(|| {
+                black_box(above_threshold(
+                    &Sun,
+                    &site,
+                    black_box(period),
+                    black_box(Degrees::new(0.0)),
+                    opts,
+                ))
+            });
+        });
+
+        // altitude_ranges uses the batch daily-predictor path internally
+        g.bench_function("altitude_ranges/astro_to_nautical", |b| {
             b.iter(|| {
                 black_box(altitude_ranges(
                     &Sun,
@@ -64,10 +98,11 @@ fn bench_solar_engines(c: &mut Criterion) {
                     black_box(Degrees::new(-18.0)),
                     black_box(Degrees::new(-12.0)),
                     opts,
-                ));
+                ))
             });
         });
-        daily.bench_function("crossings/horizon", |b| {
+
+        g.bench_function("crossings/horizon", |b| {
             b.iter(|| {
                 black_box(crossings(
                     &Sun,
@@ -75,36 +110,107 @@ fn bench_solar_engines(c: &mut Criterion) {
                     black_box(period),
                     black_box(Degrees::new(0.0)),
                     opts,
-                ));
+                ))
             });
         });
-        daily.finish();
 
-        let mut cheb = c.benchmark_group(format!("solar/chebyshev_fallback_baseline/{label}"));
-        cheb.bench_function("below_threshold/-18", |b| {
+        g.finish();
+    }
+}
+
+// ---------------------------------------------------------------------------
+// B. Engine comparison — internal baselines via bench_internals
+// ---------------------------------------------------------------------------
+
+fn bench_engines_solar(c: &mut Criterion) {
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
+    let opts = SearchOpts::default();
+
+    for (label, days) in [("30d", 30u32), ("184d", 184), ("365d", 365)] {
+        let period = build_period(days);
+
+        // --- below_threshold: daily predictor vs Chebyshev vs scan+Brent --------
+        let mut g = c.benchmark_group(format!("engines/solar/{label}/below_threshold"));
+
+        // Default engine (matches public_api group above)
+        g.bench_function("daily_predictor", |b| {
+            b.iter(|| {
+                black_box(below_threshold(
+                    &Sun,
+                    &site,
+                    black_box(period),
+                    black_box(twilight::ASTRONOMICAL),
+                    opts,
+                ))
+            });
+        });
+
+        g.bench_function("chebyshev_baseline", |b| {
             b.iter(|| {
                 black_box(bench_internals::solar_below_threshold_chebyshev_baseline(
                     site,
                     black_box(period),
                     twilight::ASTRONOMICAL,
                     opts,
-                ));
+                ))
             });
         });
-        cheb.finish();
 
-        let mut scan = c.benchmark_group(format!("solar/scan_brent_baseline/{label}"));
-        scan.bench_function("below_threshold/-18", |b| {
+        g.bench_function("scan_brent_baseline", |b| {
             b.iter(|| {
                 black_box(bench_internals::solar_below_threshold_scan_baseline(
                     site,
                     black_box(period),
                     twilight::ASTRONOMICAL,
                     opts,
-                ));
+                ))
             });
         });
-        scan.finish();
+
+        g.finish();
+
+        // --- altitude_ranges: batch daily path vs Chebyshev vs scan+Brent -------
+        let mut g = c.benchmark_group(format!("engines/solar/{label}/altitude_ranges"));
+
+        // Default engine — uses the batch solar daily path (two thresholds, one pass)
+        g.bench_function("daily_batch", |b| {
+            b.iter(|| {
+                black_box(altitude_ranges(
+                    &Sun,
+                    &site,
+                    black_box(period),
+                    black_box(Degrees::new(-18.0)),
+                    black_box(Degrees::new(-12.0)),
+                    opts,
+                ))
+            });
+        });
+
+        g.bench_function("chebyshev_baseline", |b| {
+            b.iter(|| {
+                black_box(bench_internals::solar_altitude_ranges_chebyshev_baseline(
+                    site,
+                    black_box(period),
+                    Degrees::new(-18.0),
+                    Degrees::new(-12.0),
+                    opts,
+                ))
+            });
+        });
+
+        g.bench_function("scan_brent_baseline", |b| {
+            b.iter(|| {
+                black_box(bench_internals::solar_altitude_ranges_scan_baseline(
+                    site,
+                    black_box(period),
+                    Degrees::new(-18.0),
+                    Degrees::new(-12.0),
+                    opts,
+                ))
+            });
+        });
+
+        g.finish();
     }
 }
 
@@ -113,6 +219,6 @@ criterion_group! {
     config = Criterion::default()
         .measurement_time(Duration::from_secs(5))
         .sample_size(20);
-    targets = bench_solar_engines
+    targets = bench_public_api_solar, bench_engines_solar
 }
 criterion_main!(solar_benches);

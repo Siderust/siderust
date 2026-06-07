@@ -18,7 +18,26 @@ use crate::event::altitude::{CrossingEvent, SearchOpts};
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
 
-/// Run a solar below-threshold search using the internal scan+Brent baseline.
+// ---------------------------------------------------------------------------
+// Solar baselines
+// ---------------------------------------------------------------------------
+
+/// Solar above-threshold using the internal scan+Brent baseline.
+pub fn solar_above_threshold_scan_baseline(
+    site: Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    crate::event::solar::solar_above_threshold_impl(
+        site,
+        window,
+        threshold,
+        InternalSearchConfig::scan_brent_baseline_config(opts),
+    )
+}
+
+/// Solar below-threshold using the internal scan+Brent baseline.
 pub fn solar_below_threshold_scan_baseline(
     site: Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -33,7 +52,7 @@ pub fn solar_below_threshold_scan_baseline(
     )
 }
 
-/// Run a solar below-threshold search using the generic Chebyshev engine only.
+/// Solar below-threshold using the generic Chebyshev-first engine (daily predictor disabled).
 pub fn solar_below_threshold_chebyshev_baseline(
     site: Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -48,7 +67,7 @@ pub fn solar_below_threshold_chebyshev_baseline(
     )
 }
 
-/// Run a solar altitude-range search using the internal scan+Brent baseline.
+/// Solar altitude-range search using the internal scan+Brent baseline.
 pub fn solar_altitude_ranges_scan_baseline(
     site: Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -64,7 +83,23 @@ pub fn solar_altitude_ranges_scan_baseline(
     )
 }
 
-/// Run a solar crossing search using the internal scan+Brent baseline.
+/// Solar altitude-range search using the generic Chebyshev-first engine (daily predictor disabled).
+pub fn solar_altitude_ranges_chebyshev_baseline(
+    site: Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    h_min: Degrees,
+    h_max: Degrees,
+    opts: SearchOpts,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    crate::event::solar::solar_altitude_ranges_impl(
+        site,
+        window,
+        (h_min, h_max),
+        InternalSearchConfig::chebyshev_baseline_config(opts),
+    )
+}
+
+/// Solar crossing search using the internal scan+Brent baseline.
 pub fn solar_crossings_scan_baseline(
     site: Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -79,7 +114,11 @@ pub fn solar_crossings_scan_baseline(
     )
 }
 
-/// Run a lunar above-threshold search using the internal scan+Brent baseline.
+// ---------------------------------------------------------------------------
+// Lunar baselines
+// ---------------------------------------------------------------------------
+
+/// Lunar above-threshold using the internal scan+Brent baseline.
 pub fn lunar_above_threshold_scan_baseline(
     site: Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -94,7 +133,7 @@ pub fn lunar_above_threshold_scan_baseline(
     )
 }
 
-/// Run a lunar below-threshold search using the internal scan+Brent baseline.
+/// Lunar below-threshold using the internal scan+Brent baseline.
 pub fn lunar_below_threshold_scan_baseline(
     site: Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -105,6 +144,22 @@ pub fn lunar_below_threshold_scan_baseline(
         site,
         window,
         threshold,
+        InternalSearchConfig::scan_brent_baseline_config(opts),
+    )
+}
+
+/// Lunar altitude-range search using the internal scan+Brent baseline.
+pub fn lunar_altitude_ranges_scan_baseline(
+    site: Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    h_min: Degrees,
+    h_max: Degrees,
+    opts: SearchOpts,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    crate::event::lunar::lunar_altitude_ranges_impl(
+        site,
+        window,
+        (h_min, h_max),
         InternalSearchConfig::scan_brent_baseline_config(opts),
     )
 }
