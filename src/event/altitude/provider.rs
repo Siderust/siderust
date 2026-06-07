@@ -8,17 +8,16 @@
 //! Provides a uniform, type-safe way to evaluate topocentric altitude *h(t)* for
 //! the Sun, Moon, fixed stars, planets, and ICRS directions. Period semantics
 //! (`above_threshold`, `below_threshold`, `altitude_ranges`) live in
-//! [`super::events`]; this module routes single-point altitude evaluation and
-//! optional internal search optimizations. Refraction is not applied.
+//! [`super::events`]; this module routes single-point altitude evaluation.
+//! Refraction is not applied.
 //!
 //! ## Technical scope
 //!
 //! Defines the [`AltitudeProvider`] trait and implementations that normalise
-//! altitude evaluation across celestial targets. Optimized Sun/Moon period
-//! search hooks are internal implementation details consumed by the event
-//! engine in [`super::events`].
+//! altitude evaluation across celestial targets.
 
-use super::search::{SearchOpts, SearchOptsV2};
+use super::search::SearchOpts;
+use super::search::SearchOptsV2;
 use super::types::CrossingEvent;
 use crate::bodies::solar_system;
 use crate::bodies::Star;
@@ -32,6 +31,58 @@ use crate::time::{Interval, ModifiedJulianDate};
 use crate::coordinates::{cartesian, centers::Geocentric, frames};
 use crate::event::horizontal;
 use crate::time::JulianDate;
+
+// ---------------------------------------------------------------------------
+// Internal search hooks (not part of the public trait surface)
+// ---------------------------------------------------------------------------
+
+/// Crate-internal optimized search paths for bodies with analytical shortcuts.
+pub(crate) trait AltitudeSearchSpecialization {
+    fn above_threshold_search(
+        &self,
+        observer: Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
+        let _ = (observer, window, threshold, opts);
+        None
+    }
+
+    fn below_threshold_search(
+        &self,
+        observer: Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
+        let _ = (observer, window, threshold, opts);
+        None
+    }
+
+    fn altitude_range_search(
+        &self,
+        observer: Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        min_altitude: Degrees,
+        max_altitude: Degrees,
+        opts: SearchOpts,
+    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
+        let _ = (observer, window, min_altitude, max_altitude, opts);
+        None
+    }
+
+    fn crossings_search(
+        &self,
+        observer: Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Option<Vec<CrossingEvent>> {
+        let _ = (observer, window, threshold, opts);
+        None
+    }
+}
 
 // ---------------------------------------------------------------------------
 // Trait Definition
@@ -48,7 +99,8 @@ use crate::time::JulianDate;
 /// axis (`tempoch` semantics). Convert UTC instants with
 /// `tempoch::Time::<tempoch::UTC>::from_chrono(...).to::<tempoch::TT>().into()`
 /// into `ModifiedJulianDate` before using this API.
-pub trait AltitudeProvider {
+#[allow(private_bounds)]
+pub trait AltitudeProvider: AltitudeSearchSpecialization {
     /// Compute the altitude of this body at a single instant.
     ///
     /// Returns the topocentric altitude in radians.
@@ -72,67 +124,13 @@ pub trait AltitudeProvider {
     fn scan_step_hint(&self) -> Option<Days> {
         None
     }
-
-    /// Internal optimized above-threshold path with extended search options.
-    fn above_threshold_search(
-        &self,
-        observer: Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        threshold: Degrees,
-        opts: SearchOpts,
-    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
-        let _ = (observer, window, threshold, opts);
-        None
-    }
-
-    /// Internal optimized below-threshold path with extended search options.
-    fn below_threshold_search(
-        &self,
-        observer: Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        threshold: Degrees,
-        opts: SearchOpts,
-    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
-        let _ = (observer, window, threshold, opts);
-        None
-    }
-
-    /// Internal optimized altitude-range path with extended search options.
-    fn altitude_range_search(
-        &self,
-        observer: Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        min_altitude: Degrees,
-        max_altitude: Degrees,
-        opts: SearchOpts,
-    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
-        let _ = (observer, window, min_altitude, max_altitude, opts);
-        None
-    }
-
-    /// Internal optimized threshold-crossing path with extended search options.
-    fn crossings_search(
-        &self,
-        observer: Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        threshold: Degrees,
-        opts: SearchOpts,
-    ) -> Option<Vec<CrossingEvent>> {
-        let _ = (observer, window, threshold, opts);
-        None
-    }
 }
 
 // ---------------------------------------------------------------------------
 // Implementations
 // ---------------------------------------------------------------------------
 
-/// **Sun** — specialized period search hooks delegate to [`crate::event::solar`].
-impl AltitudeProvider for solar_system::Sun {
-    fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
-        crate::event::solar::sun_altitude_rad(mjd, observer)
-    }
-
+impl AltitudeSearchSpecialization for solar_system::Sun {
     fn above_threshold_search(
         &self,
         observer: Geodetic<ECEF>,
@@ -197,12 +195,13 @@ impl AltitudeProvider for solar_system::Sun {
     }
 }
 
-/// **Moon** — specialized period search hooks delegate to [`crate::event::lunar`].
-impl AltitudeProvider for solar_system::Moon {
+impl AltitudeProvider for solar_system::Sun {
     fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
-        crate::event::lunar::moon_altitude_rad(mjd, observer)
+        crate::event::solar::sun_altitude_rad(mjd, observer)
     }
+}
 
+impl AltitudeSearchSpecialization for solar_system::Moon {
     fn above_threshold_search(
         &self,
         observer: Geodetic<ECEF>,
@@ -269,14 +268,75 @@ impl AltitudeProvider for solar_system::Moon {
             SearchOptsV2::from_legacy(opts),
         ))
     }
+}
+
+impl AltitudeProvider for solar_system::Moon {
+    fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
+        crate::event::lunar::moon_altitude_rad(mjd, observer)
+    }
 
     fn scan_step_hint(&self) -> Option<Days> {
-        // Moon moves slower, 2-hour steps are sufficient
         Some(Hours::new(2.0).to::<Day>())
     }
 }
 
-/// **Star** — delegates single-point altitude to [`direction::ICRS`].
+impl<'a> AltitudeSearchSpecialization for Star<'a> {
+    fn above_threshold_search(
+        &self,
+        observer: Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
+        let _ = opts;
+        let dir = direction::ICRS::from(self);
+        Some(crate::event::stellar::find_star_above_periods(
+            dir.ra(),
+            dir.dec(),
+            observer,
+            window,
+            threshold,
+        ))
+    }
+
+    fn below_threshold_search(
+        &self,
+        observer: Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
+        let _ = opts;
+        let dir = direction::ICRS::from(self);
+        Some(crate::event::stellar::find_star_below_periods(
+            dir.ra(),
+            dir.dec(),
+            observer,
+            window,
+            threshold,
+        ))
+    }
+
+    fn altitude_range_search(
+        &self,
+        observer: Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        min_altitude: Degrees,
+        max_altitude: Degrees,
+        opts: SearchOpts,
+    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
+        let _ = opts;
+        let dir = direction::ICRS::from(self);
+        Some(crate::event::stellar::find_star_range_periods(
+            dir.ra(),
+            dir.dec(),
+            observer,
+            window,
+            (min_altitude, max_altitude),
+        ))
+    }
+}
+
 impl AltitudeProvider for Star<'_> {
     fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         let dir = direction::ICRS::from(self);
@@ -292,64 +352,9 @@ impl AltitudeProvider for Star<'_> {
         let dir = direction::ICRS::from(self);
         dir.altitude_at_with_policy(observer, mjd, policy)
     }
-
-    fn above_threshold_search(
-        &self,
-        observer: Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        threshold: Degrees,
-        opts: SearchOpts,
-    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
-        let _ = opts;
-        let dir = direction::ICRS::from(self);
-        dir.above_threshold_search(observer, window, threshold, opts)
-    }
-
-    fn below_threshold_search(
-        &self,
-        observer: Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        threshold: Degrees,
-        opts: SearchOpts,
-    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
-        let dir = direction::ICRS::from(self);
-        dir.below_threshold_search(observer, window, threshold, opts)
-    }
-
-    fn altitude_range_search(
-        &self,
-        observer: Geodetic<ECEF>,
-        window: Interval<ModifiedJulianDate>,
-        min_altitude: Degrees,
-        max_altitude: Degrees,
-        opts: SearchOpts,
-    ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
-        let dir = direction::ICRS::from(self);
-        dir.altitude_range_search(observer, window, min_altitude, max_altitude, opts)
-    }
 }
 
-/// **direction::ICRS** — fixed-sky direction altitude evaluation.
-impl AltitudeProvider for direction::ICRS {
-    fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
-        crate::event::stellar::fixed_star_altitude_rad(mjd, observer, self.ra(), self.dec())
-    }
-
-    fn altitude_at_with_policy(
-        &self,
-        observer: &Geodetic<ECEF>,
-        mjd: ModifiedJulianDate,
-        policy: crate::astro::apparent::CorrectionPolicy,
-    ) -> Radians {
-        crate::event::stellar::fixed_star_altitude_rad_with_policy(
-            mjd,
-            observer,
-            self.ra(),
-            self.dec(),
-            policy,
-        )
-    }
-
+impl AltitudeSearchSpecialization for direction::ICRS {
     fn above_threshold_search(
         &self,
         observer: Geodetic<ECEF>,
@@ -403,21 +408,35 @@ impl AltitudeProvider for direction::ICRS {
     }
 }
 
+impl AltitudeProvider for direction::ICRS {
+    fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
+        crate::event::stellar::fixed_star_altitude_rad(mjd, observer, self.ra(), self.dec())
+    }
+
+    fn altitude_at_with_policy(
+        &self,
+        observer: &Geodetic<ECEF>,
+        mjd: ModifiedJulianDate,
+        policy: crate::astro::apparent::CorrectionPolicy,
+    ) -> Radians {
+        crate::event::stellar::fixed_star_altitude_rad_with_policy(
+            mjd,
+            observer,
+            self.ra(),
+            self.dec(),
+            policy,
+        )
+    }
+}
+
 // ---------------------------------------------------------------------------
 // Implementations: VSOP87 Planets (Mercury–Neptune)
 // ---------------------------------------------------------------------------
 
 use crate::coordinates::transform::Transform;
 
-/// Scan step for planet altitude threshold detection (2 hours in days).
-///
-/// Planets' apparent motion is dominated by Earth's rotation, so the same
-/// 2‑hour scan step used for the Sun is adequate.
 const PLANET_SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
 
-/// Computes the topocentric altitude (in radians) of a VSOP87 planet at a
-/// given instant, using the full VSOP87 → geocentric equatorial → topocentric
-/// → horizontal pipeline.
 fn vsop87_planet_altitude_rad<F>(
     vsop87e_fn: F,
     mjd: ModifiedJulianDate,
@@ -433,22 +452,19 @@ where
     >,
 {
     let jd: JulianDate = mjd.to::<crate::JD>();
-    // 1) VSOP87e → barycentric ecliptic J2000
     let bary_ecl = vsop87e_fn(jd);
-    // 2) Frame rotation + center shift → geocentric equatorial J2000
     let geo_equ: cartesian::Position<Geocentric, frames::EquatorialMeanJ2000, AstronomicalUnit> =
         bary_ecl.transform(jd);
-    // 3–4) Topocentric parallax + precession/nutation → true‑of‑date RA/Dec,
-    //       then equatorial → horizontal
     let topo = horizontal::geocentric_j2000_to_apparent_topocentric(&geo_equ, *site, jd);
     let horiz = horizontal::equatorial_to_horizontal(&topo, *site, jd);
     horiz.alt().to::<Radian>()
 }
 
-/// Helper macro: implement [`AltitudeProvider`] for a VSOP87‑backed planet.
 macro_rules! impl_altitude_provider_vsop87 {
     ($($Planet:ident),+ $(,)?) => {
         $(
+            impl AltitudeSearchSpecialization for solar_system::$Planet {}
+
             impl AltitudeProvider for solar_system::$Planet {
                 fn altitude_at(
                     &self,
@@ -479,6 +495,7 @@ mod tests {
     use super::*;
     use crate::bodies::catalog;
     use crate::event::altitude::{above_threshold, altitude_ranges, below_threshold, SearchOpts};
+    use crate::time::Interval;
 
     fn greenwich() -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.4769), Meters::new(0.0))
@@ -733,8 +750,6 @@ mod tests {
         }
     }
 
-    // --- Planet altitude ---
-
     #[test]
     fn mars_altitude_at_is_finite() {
         let alt = solar_system::Mars
@@ -765,7 +780,6 @@ mod tests {
     fn planet_altitudes_are_realistic() {
         let observer = greenwich();
         let mjd = crate::time::ModifiedJulianDate::new(60000.5);
-        // All planets should return finite altitudes
         let mercury_alt = solar_system::Mercury.altitude_at(&observer, mjd);
         let venus_alt = solar_system::Venus.altitude_at(&observer, mjd);
         let mars_alt = solar_system::Mars.altitude_at(&observer, mjd);

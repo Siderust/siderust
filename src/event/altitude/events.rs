@@ -51,7 +51,7 @@ fn make_altitude_fn<'a, T: AltitudeProvider>(
     move |t: ModifiedJulianDate| target.altitude_at_with_policy(&site, t, policy)
 }
 
-fn scan_step_for_v2<T: AltitudeProvider>(target: &T, opts: &SearchOptsV2) -> Days {
+fn scan_step_for_opts<T: AltitudeProvider>(target: &T, opts: &SearchOptsV2) -> Days {
     super::search::resolve_scan_step(target.scan_step_hint(), &opts.legacy(), DEFAULT_SCAN_STEP)
 }
 
@@ -160,7 +160,7 @@ pub fn crossings_with_policy<T: AltitudeProvider>(
     opts: SearchOpts,
     policy: CorrectionPolicy,
 ) -> Vec<CrossingEvent> {
-    crossings_with_search_opts_v2_and_policy(
+    crossings_with_internal_opts_and_policy(
         target,
         observer,
         window,
@@ -170,7 +170,7 @@ pub fn crossings_with_policy<T: AltitudeProvider>(
     )
 }
 
-fn crossings_with_search_opts_v2_and_policy<T: AltitudeProvider>(
+fn crossings_with_internal_opts_and_policy<T: AltitudeProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -186,7 +186,7 @@ fn crossings_with_search_opts_v2_and_policy<T: AltitudeProvider>(
 
     let f = make_altitude_fn(target, observer, policy);
     let thr_rad = threshold.to::<Radian>();
-    let step = scan_step_for_v2(target, &opts);
+    let step = scan_step_for_opts(target, &opts);
     let (labeled, _) = labelled_crossings_for_altitude(window, step, &f, thr_rad, opts);
     crossing_events_from_labelled(&labeled)
 }
@@ -320,7 +320,7 @@ pub fn altitude_ranges_with_policy<T: AltitudeProvider>(
     opts: SearchOpts,
     policy: CorrectionPolicy,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    altitude_ranges_with_search_opts_v2_and_policy(
+    altitude_ranges_with_internal_opts_and_policy(
         target,
         observer,
         window,
@@ -331,7 +331,7 @@ pub fn altitude_ranges_with_policy<T: AltitudeProvider>(
     )
 }
 
-fn altitude_ranges_with_search_opts_v2_and_policy<T: AltitudeProvider>(
+fn altitude_ranges_with_internal_opts_and_policy<T: AltitudeProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -351,7 +351,7 @@ fn altitude_ranges_with_search_opts_v2_and_policy<T: AltitudeProvider>(
     let f = make_altitude_fn(target, observer, policy);
     let min_rad = h_min.to::<Radian>();
     let max_rad = h_max.to::<Radian>();
-    let step = scan_step_for_v2(target, &opts);
+    let step = scan_step_for_opts(target, &opts);
 
     let (above_min, start_above_min) =
         labelled_crossings_for_altitude(window, step, &f, min_rad, opts);
@@ -411,7 +411,7 @@ pub fn above_threshold_with_policy<T: AltitudeProvider>(
     opts: SearchOpts,
     policy: CorrectionPolicy,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    above_threshold_with_search_opts_v2_and_policy(
+    above_threshold_with_internal_opts_and_policy(
         target,
         observer,
         window,
@@ -421,7 +421,7 @@ pub fn above_threshold_with_policy<T: AltitudeProvider>(
     )
 }
 
-fn above_threshold_with_search_opts_v2_and_policy<T: AltitudeProvider>(
+fn above_threshold_with_internal_opts_and_policy<T: AltitudeProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -439,7 +439,7 @@ fn above_threshold_with_search_opts_v2_and_policy<T: AltitudeProvider>(
 
     let f = make_altitude_fn(target, observer, policy);
     let thr_rad = threshold.to::<Radian>();
-    let step = scan_step_for_v2(target, &opts);
+    let step = scan_step_for_opts(target, &opts);
     let (labeled, start_above) = labelled_crossings_for_altitude(window, step, &f, thr_rad, opts);
     intervals::build_above_periods_directed(&labeled, window, start_above)
 }
@@ -487,7 +487,7 @@ pub fn below_threshold_with_policy<T: AltitudeProvider>(
     opts: SearchOpts,
     policy: CorrectionPolicy,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    below_threshold_with_search_opts_v2_and_policy(
+    below_threshold_with_internal_opts_and_policy(
         target,
         observer,
         window,
@@ -497,7 +497,7 @@ pub fn below_threshold_with_policy<T: AltitudeProvider>(
     )
 }
 
-fn below_threshold_with_search_opts_v2_and_policy<T: AltitudeProvider>(
+fn below_threshold_with_internal_opts_and_policy<T: AltitudeProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -513,7 +513,7 @@ fn below_threshold_with_search_opts_v2_and_policy<T: AltitudeProvider>(
         }
     }
 
-    let above = above_threshold_with_search_opts_v2_and_policy(
+    let above = above_threshold_with_internal_opts_and_policy(
         target, observer, window, threshold, opts, policy,
     );
     complement_within(window, &above)
