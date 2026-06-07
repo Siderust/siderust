@@ -15,8 +15,12 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::event::altitude::search::InternalSearchConfig;
 use crate::event::altitude::{CrossingEvent, SearchOpts};
+use crate::event::search::intervals::LabeledCrossing;
 use crate::qtty::*;
 use crate::time::{Interval, ModifiedJulianDate};
+
+// Re-export the diagnostics struct so bench binaries can inspect it.
+pub use crate::event::solar::daily_events::SolarDailyDiagnostics;
 
 // ---------------------------------------------------------------------------
 // Solar baselines
@@ -96,6 +100,42 @@ pub fn solar_altitude_ranges_chebyshev_baseline(
         window,
         (h_min, h_max),
         InternalSearchConfig::chebyshev_baseline_config(opts),
+    )
+}
+
+/// Returns diagnostics from the solar daily predictor for one threshold/window.
+///
+/// Useful in benchmarks and tests to measure `precise_evaluations`,
+/// `bracket_failures`, `newton_accepted`, etc.
+pub fn solar_daily_diagnostics(
+    site: Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOpts,
+) -> SolarDailyDiagnostics {
+    crate::event::solar::daily_events::solar_daily_crossings_impl(
+        site,
+        window,
+        threshold,
+        InternalSearchConfig::from_public_opts(opts),
+    )
+    .1
+}
+
+/// Batch twilight-profile crossing helper (one daily pass, all thresholds).
+///
+/// Returns one sorted `Vec<LabeledCrossing>` per threshold entry.
+pub fn solar_twilight_profile(
+    site: Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    thresholds: &[Degrees],
+    opts: SearchOpts,
+) -> Vec<Vec<LabeledCrossing>> {
+    crate::event::solar::daily_events::solar_twilight_profile_impl(
+        site,
+        window,
+        thresholds,
+        InternalSearchConfig::from_public_opts(opts),
     )
 }
 

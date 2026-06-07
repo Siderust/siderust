@@ -214,11 +214,60 @@ fn bench_engines_solar(c: &mut Criterion) {
     }
 }
 
+// ---------------------------------------------------------------------------
+// C. Twilight profile — batch vs independent: demonstrates one-pass advantage
+// ---------------------------------------------------------------------------
+
+fn bench_twilight_profile(c: &mut Criterion) {
+    let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
+    let opts = SearchOpts::default();
+
+    // All five standard twilight thresholds processed in one daily pass.
+    let thresholds: &[Degrees] = &[
+        Degrees::new(0.0),
+        Degrees::new(-0.833),
+        Degrees::new(-6.0),
+        Degrees::new(-12.0),
+        Degrees::new(-18.0),
+    ];
+
+    for (label, days) in [("30d", 30u32), ("184d", 184), ("365d", 365)] {
+        let period = build_period(days);
+        let mut g = c.benchmark_group(format!("engines/solar/{label}/twilight_profile"));
+
+        // Single-pass batch: computes all five thresholds in one daily sweep.
+        g.bench_function("daily_batch_all_thresholds", |b| {
+            b.iter(|| {
+                black_box(bench_internals::solar_twilight_profile(
+                    site,
+                    black_box(period),
+                    thresholds,
+                    opts,
+                ))
+            });
+        });
+
+        // Independent baseline: five separate `below_threshold` calls.
+        g.bench_function("independent_below_threshold_x5", |b| {
+            b.iter(|| {
+                black_box(
+                    thresholds
+                        .iter()
+                        .map(|&thr| below_threshold(&Sun, &site, black_box(period), thr, opts))
+                        .collect::<Vec<_>>(),
+                )
+            });
+        });
+
+        g.finish();
+    }
+}
+
 criterion_group! {
     name = solar_benches;
     config = Criterion::default()
         .measurement_time(Duration::from_secs(5))
         .sample_size(20);
-    targets = bench_public_api_solar, bench_engines_solar
+    targets = bench_public_api_solar, bench_engines_solar, bench_twilight_profile
 }
 criterion_main!(solar_benches);
