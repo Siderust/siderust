@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Benchmarks for lunar altitude calculations.
@@ -8,8 +8,8 @@
 //!
 //! ## Algorithms Compared
 //!
-//! - **2-hour scan** (recommended): `find_moon_above_horizon`, fast, ~12 evals/day
-//! - **10-minute scan** (validation): `find_moon_above_horizon_scan`, finer step
+//! - **2-hour scan** (recommended): `above_threshold` with default options, fast, ~12 evals/day
+//! - **10-minute scan** (validation): finer `scan_step_days`, for algorithm comparison
 //!
 //! Both the default Chebyshev-first engine and the legacy scan+Brent baseline
 //! are compared over 30, 184, and 365 day windows.
@@ -79,7 +79,7 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
     let mut group = c.benchmark_group("moon_above_horizon");
 
     // 1-day horizon
-    group.bench_function("find_moon_above_horizon_1day", |b| {
+    group.bench_function("above_threshold_1day", |b| {
         let period = black_box(build_period(1));
         b.iter(|| {
             let _result = above_threshold(
@@ -93,7 +93,7 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
     });
 
     // 7-day horizon
-    group.bench_function("find_moon_above_horizon_7day", |b| {
+    group.bench_function("above_threshold_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
             let _result = above_threshold(
@@ -107,7 +107,7 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
     });
 
     // 30-day horizon (full lunar cycle)
-    group.bench_function("find_moon_above_horizon_30day", |b| {
+    group.bench_function("above_threshold_30day", |b| {
         let period = black_box(build_period(30));
         b.iter(|| {
             let _result = above_threshold(
@@ -121,7 +121,7 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
     });
 
     // 365-day horizon (full year) - PRIMARY PERFORMANCE TARGET
-    group.bench_function("find_moon_above_horizon_365day", |b| {
+    group.bench_function("above_threshold_365day", |b| {
         let period = black_box(build_period(365));
         b.iter(|| {
             let _result = above_threshold(
@@ -147,7 +147,7 @@ fn bench_moon_below_horizon(c: &mut Criterion) {
     let mut group = c.benchmark_group("moon_below_horizon");
 
     // 1-day horizon
-    group.bench_function("find_moon_below_horizon_1day", |b| {
+    group.bench_function("below_threshold_1day", |b| {
         let period = black_box(build_period(1));
         b.iter(|| {
             let _result = below_threshold(
@@ -161,7 +161,7 @@ fn bench_moon_below_horizon(c: &mut Criterion) {
     });
 
     // 7-day horizon
-    group.bench_function("find_moon_below_horizon_7day", |b| {
+    group.bench_function("below_threshold_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
             let _result = below_threshold(
@@ -175,7 +175,7 @@ fn bench_moon_below_horizon(c: &mut Criterion) {
     });
 
     // 30-day horizon
-    group.bench_function("find_moon_below_horizon_30day", |b| {
+    group.bench_function("below_threshold_30day", |b| {
         let period = black_box(build_period(30));
         b.iter(|| {
             let _result = below_threshold(
@@ -189,7 +189,7 @@ fn bench_moon_below_horizon(c: &mut Criterion) {
     });
 
     // 365-day horizon (full year) - PRIMARY PERFORMANCE TARGET
-    group.bench_function("find_moon_below_horizon_365day", |b| {
+    group.bench_function("below_threshold_365day", |b| {
         let period = black_box(build_period(365));
         b.iter(|| {
             let _result = below_threshold(
@@ -215,7 +215,7 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
     let mut group = c.benchmark_group("moon_altitude_range");
 
     // Finding Moon at low altitude (0-30 degrees) over 7 days
-    group.bench_function("find_moon_low_altitude_7day", |b| {
+    group.bench_function("altitude_ranges_low_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
             let _result = altitude_ranges(
@@ -230,7 +230,7 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
     });
 
     // Finding Moon at high altitude (60-90 degrees) over 7 days
-    group.bench_function("find_moon_high_altitude_7day", |b| {
+    group.bench_function("altitude_ranges_high_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
             let _result = altitude_ranges(

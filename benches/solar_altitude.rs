@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Benchmarks for solar altitude period calculations.
@@ -35,7 +35,7 @@ fn build_period(days: u32) -> Interval<ModifiedJulianDate> {
     Interval::new(mjd_start, mjd_end)
 }
 
-fn bench_find_night_periods(c: &mut Criterion) {
+fn bench_solar_below_threshold(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let default_opts = SearchOpts::default();
     let scan_opts = SearchOpts {
@@ -43,7 +43,7 @@ fn bench_find_night_periods(c: &mut Criterion) {
         ..default_opts
     };
 
-    let mut group = c.benchmark_group("solar_altitude_periods");
+    let mut group = c.benchmark_group("solar_altitude_ranges");
 
     for (label, days) in [("1month", 30), ("6months", 184), ("1year", 365)] {
         let period = build_period(days);
@@ -113,6 +113,6 @@ criterion_group! {
     config = Criterion::default()
         .measurement_time(Duration::from_secs(5))
         .sample_size(20);
-    targets = bench_find_night_periods
+    targets = bench_solar_below_threshold
 }
 criterion_main!(solar_benches);

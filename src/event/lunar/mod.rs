@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Lunar Calculus Module
@@ -15,7 +15,7 @@
 //!
 //! ## Technical scope
 //!
-//! - `altitude_periods`: Moon altitude band/threshold periods.
+//! - `lunar_*_impl`: Moon altitude band/threshold period search.
 //! - `azimuth`: scalar azimuth function used by the unified azimuth API.
 //! - `meeus_ch47`: closed‑form Moon position from *Astronomical Algorithms*.
 //! - `moon_cache`: Chebyshev caches for fast batch evaluation of

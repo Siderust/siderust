@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Lunar Altitude Window Periods
@@ -15,8 +15,8 @@
 //!
 //! ## Technical scope
 //!
-//! Crate‑internal API: `moon_altitude_rad`, [`find_moon_above_horizon`],
-//! [`find_moon_below_horizon`], [`find_moon_altitude_range`]. All
+//! Crate-internal API: `moon_altitude_rad`, `lunar_above_threshold_impl`,
+//! `lunar_below_threshold_impl`, `lunar_altitude_ranges_impl`.
 //! period‑finding uses Chebyshev-first labelled crossing discovery with
 //! precise validation and local scan+Brent fallback via
 //! [`crate::event::search::crossings`]. `find_and_label_crossings` remains
@@ -28,7 +28,7 @@
 use crate::bodies::solar_system::Moon;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::event::altitude::search::SearchOptsV2;
+use crate::event::altitude::search::InternalSearchConfig;
 use crate::event::altitude::{CrossingDirection, CrossingEvent};
 use crate::event::search::crossings;
 use crate::event::search::intervals;
@@ -86,18 +86,20 @@ pub(crate) fn moon_altitude_rad(
 ///
 /// # Example
 /// ```ignore
-/// let moonrise_periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
+/// ```ignore
+/// above_threshold(&Moon, &site, period, Degrees::new(0.0), SearchOpts::default());
+/// ```
 /// ```
 ///
 /// # Returns
 ///
 /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` where the
 /// Moon altitude is at or above `threshold`.
-pub(crate) fn find_moon_above_horizon_with_search_opts(
+pub(crate) fn lunar_above_threshold_impl(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
 ) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
@@ -110,7 +112,7 @@ pub(crate) fn find_moon_above_horizon_with_search_opts(
 
 /// Finds periods when the Moon is below the given altitude threshold.
 ///
-/// Complement of [`find_moon_above_horizon`] within `period`.
+/// Complement of [`above_threshold`] within `period`.
 ///
 /// # Arguments
 ///
@@ -120,20 +122,22 @@ pub(crate) fn find_moon_above_horizon_with_search_opts(
 ///
 /// # Example
 /// ```ignore
-/// let moonless_periods = find_moon_below_horizon(site, period, Degrees::new(-0.5));
+/// ```ignore
+/// below_threshold(&Moon, &site, period, Degrees::new(-0.5), SearchOpts::default());
+/// ```
 /// ```
 ///
 /// # Returns
 ///
 /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` where the
 /// Moon altitude is at or below `threshold`.
-pub(crate) fn find_moon_below_horizon_with_search_opts(
+pub(crate) fn lunar_below_threshold_impl(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    let above = find_moon_above_horizon_with_search_opts(site, period, threshold, opts);
+    let above = lunar_above_threshold_impl(site, period, threshold, opts);
     complement_within(period, &above)
 }
 
@@ -150,18 +154,20 @@ pub(crate) fn find_moon_below_horizon_with_search_opts(
 ///
 /// # Example
 /// ```ignore
-/// let low_moon = find_moon_altitude_range(site, period, (Degrees::new(0.0), Degrees::new(30.0)));
+/// ```ignore
+/// altitude_ranges(&Moon, &site, period, Degrees::new(0.0), Degrees::new(30.0), SearchOpts::default());
+/// ```
 /// ```
 ///
 /// # Returns
 ///
 /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of intervals
 /// where `min ≤ altitude(t) ≤ max`.
-pub(crate) fn find_moon_altitude_range_with_search_opts(
+pub(crate) fn lunar_altitude_ranges_impl(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
     range: (Degrees, Degrees),
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
 ) -> Vec<Interval<ModifiedJulianDate>> {
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
@@ -182,11 +188,11 @@ pub(crate) fn find_moon_altitude_range_with_search_opts(
     intervals::intersect(&above_min, &below_max)
 }
 
-pub(crate) fn find_moon_crossings_with_search_opts(
+pub(crate) fn lunar_crossings_impl(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
 ) -> Vec<CrossingEvent> {
     let thr = threshold.to::<Radian>();
     let ctx = MoonAltitudeContext::new(period.start, period.end, site);
@@ -208,7 +214,7 @@ fn find_moon_labeled_crossings_with_context(
     ctx: &MoonAltitudeContext,
     period: Interval<ModifiedJulianDate>,
     threshold: Radians,
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
 ) -> (Vec<intervals::LabeledCrossing>, bool) {
     let signal = |t: ModifiedJulianDate| -> f64 { ctx.altitude_rad(t).sin() };
     let (labeled, start_above, _) =
@@ -240,17 +246,17 @@ mod tests {
     }
 
     #[test]
-    fn test_find_moon_above_horizon() {
+    fn test_lunar_above_threshold() {
         let site = greenwich_site();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
         let period = Interval::new(mjd_start, mjd_end);
 
-        let periods = find_moon_above_horizon_with_search_opts(
+        let periods = lunar_above_threshold_impl(
             site,
             period,
             Degrees::new(0.0),
-            SearchOptsV2::default(),
+            InternalSearchConfig::default(),
         );
         assert!(
             !periods.is_empty(),
@@ -266,17 +272,17 @@ mod tests {
     }
 
     #[test]
-    fn test_find_moon_below_horizon() {
+    fn test_lunar_below_threshold() {
         let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
         let mjd_start = crate::time::ModifiedJulianDate::new(60676.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60683.0);
         let period = Interval::new(mjd_start, mjd_end);
 
-        let periods = find_moon_below_horizon_with_search_opts(
+        let periods = lunar_below_threshold_impl(
             site,
             period,
             Degrees::new(-0.5),
-            SearchOptsV2::default(),
+            InternalSearchConfig::default(),
         );
         assert!(!periods.is_empty(), "Should find moon-down periods");
     }
@@ -297,18 +303,18 @@ mod tests {
     }
 
     #[test]
-    fn chebyshev_moon_above_horizon_matches_scan_baseline() {
+    fn chebyshev_lunar_above_threshold_matches_scan_baseline() {
         // Verify that math_core-based and scan-based algorithms produce similar results
         let site = greenwich_site();
         let mjd_start = crate::time::ModifiedJulianDate::new(60000.0);
         let mjd_end = crate::time::ModifiedJulianDate::new(60003.0);
         let period = Interval::new(mjd_start, mjd_end);
 
-        let main_result = find_moon_above_horizon_with_search_opts(
+        let main_result = lunar_above_threshold_impl(
             site,
             period,
             Degrees::new(0.0),
-            SearchOptsV2::default(),
+            InternalSearchConfig::default(),
         );
         let ctx = MoonAltitudeContext::new(period.start, period.end, site);
         let scan_result = scan_baseline_above_horizon(&ctx, period, Degrees::new(0.0));

@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Legacy scan+Brent crossing discovery used as an internal fallback baseline.
@@ -33,7 +33,7 @@ where
 
     let step_days = step.value().max(MIN_SEGMENT_DAYS);
     let time_tol = time_tolerance.value().max(f64::EPSILON);
-    let residual_tol = max_residual.max(1e-6).max(POLY_ZERO_TOL);
+    let residual_tol = max_residual.max(POLY_ZERO_TOL);
     let t_start = period.start;
     let t_end = period.end;
 
@@ -131,7 +131,7 @@ where
         let tol1 = 2.0 * f64::EPSILON * b.abs() + time_tol * 0.5;
         let xm = 0.5 * (c - b);
         if xm.abs() <= tol1 {
-            if brent_converged(b, fb, lo, hi, time_tol, residual_tol) {
+            if brent_converged(fb, (c - b).abs(), time_tol, residual_tol) {
                 return Some(b);
             }
         } else if fb.abs() <= residual_tol {
@@ -182,7 +182,7 @@ where
         }
     }
 
-    if brent_converged(b, fb, lo, hi, time_tol, residual_tol) {
+    if brent_converged(fb, (c - b).abs(), time_tol, residual_tol) {
         Some(b)
     } else {
         None
@@ -190,19 +190,14 @@ where
 }
 
 #[inline]
-fn brent_converged(_b: f64, fb: f64, lo: f64, hi: f64, time_tol: f64, residual_tol: f64) -> bool {
+fn brent_converged(fb: f64, bracket_width: f64, time_tol: f64, residual_tol: f64) -> bool {
     if !fb.is_finite() {
         return false;
     }
     if fb.abs() <= residual_tol {
         return true;
     }
-    let width = (hi - lo).abs();
-    if width <= time_tol * 4.0 {
-        let acceptable = residual_tol.max(1e-6);
-        return fb.abs() <= acceptable;
-    }
-    false
+    bracket_width <= time_tol * 4.0
 }
 
 #[inline]
@@ -226,8 +221,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn brent_rejects_non_converged_max_iterations() {
-        let root = brent_f64(0.0, 1.0, -1.0, 1.0, |_| 1.0, 1e-12, 1e-12);
+    fn brent_uses_current_bracket_width_for_convergence() {
+        // Flat function: original bracket is wide, current bracket is tiny, residual still bad.
+        let root = brent_f64(0.0, 100.0, 1.0, 1.0, |_| 1.0, 1e-12, 1e-12);
         assert!(root.is_none());
     }
 

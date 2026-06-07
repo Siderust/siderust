@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Solar Calculus Module
@@ -15,9 +15,8 @@
 //! ## Technical scope
 //!
 //! - Apparent geocentric equatorial coordinates with nutation + aberration.
-//! - Optimised Sun altitude/azimuth closures.
-//! - `find_day_periods`, `find_night_periods`, `find_sun_range_periods`
-//!   built on `math_core::intervals` (scan + Brent + interval algebra).
+//! - Optimised Sun altitude/azimuth closures and internal period helpers
+//!   (`solar_*_impl`, `sun_altitude_rad`) built on labelled crossings.
 //! - Twilight phase classification via [`twilight_classification`].
 //!
 //! All period‑finding delegates to `crate::event::search::intervals`

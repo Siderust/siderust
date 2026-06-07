@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Chebyshev-first labelled crossing discovery for smooth altitude signals.
@@ -10,7 +10,7 @@
 
 use cheby::{fit_dyn_from_fn, RootOptions};
 
-use crate::event::altitude::search::{CrossingAlgorithm, SearchOptsV2};
+use crate::event::altitude::search::InternalSearchConfig;
 use crate::event::search::intervals::LabeledCrossing;
 use crate::event::search::scan_fallback;
 use crate::qtty::{Day, Quantity};
@@ -89,7 +89,7 @@ pub(crate) fn find_labelled_crossings<F>(
     fallback_step: Days,
     signal: &F,
     threshold_sin: f64,
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
 ) -> (Vec<LabeledCrossing>, bool, SearchDiagnostics)
 where
     F: Fn(Mjd) -> f64,
@@ -102,7 +102,7 @@ where
     let start_above = eval_signal(signal, period.start, &mut diagnostics) > threshold_sin;
     let fallback_step = opts.scan_step_days.unwrap_or(fallback_step);
 
-    if opts.algorithm == CrossingAlgorithm::ScanBrent || opts.scan_step_days.is_some() {
+    if opts.uses_scan_baseline() {
         diagnostics.fallback_segments = 1;
         let crossings = scan_fallback::scan_labelled_crossings(
             period,
@@ -156,7 +156,7 @@ where
     fallback_step: Days,
     signal: &'a F,
     threshold_sin: f64,
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
     out: &'a mut Vec<LabeledCrossing>,
     diagnostics: &'a mut SearchDiagnostics,
 }
@@ -232,7 +232,7 @@ where
     search.out.extend(segment_crossings);
 }
 
-fn root_options_for_segment(opts: &SearchOptsV2, segment_span_days: f64) -> RootOptions {
+fn root_options_for_segment(opts: &InternalSearchConfig, segment_span_days: f64) -> RootOptions {
     let span = segment_span_days.max(MIN_SEGMENT_DAYS);
     let unit_tol = (opts.time_tolerance.value() / span).clamp(f64::EPSILON, 0.25);
     let zero_tol = opts.chebyshev.max_residual.max(POLY_ZERO_TOL);
@@ -299,7 +299,7 @@ fn validate_candidate<F>(
     root_x: f64,
     signal: &F,
     threshold_sin: f64,
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
     diagnostics: &mut SearchDiagnostics,
 ) -> Option<LabeledCrossing>
 where
@@ -329,7 +329,7 @@ fn refine_precise_root<F>(
     initial: Mjd,
     signal: &F,
     threshold_sin: f64,
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
     diagnostics: &mut SearchDiagnostics,
 ) -> Option<Mjd>
 where
@@ -387,7 +387,7 @@ fn classify_direction<F>(
     t: Mjd,
     signal: &F,
     threshold_sin: f64,
-    opts: SearchOptsV2,
+    opts: InternalSearchConfig,
     diagnostics: &mut SearchDiagnostics,
 ) -> Option<i32>
 where
@@ -464,7 +464,7 @@ fn sort_dedup_crossings(crossings: &mut Vec<LabeledCrossing>) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::event::altitude::search::ChebyshevOptions;
+    use crate::event::altitude::search::{ChebyshevSearchConfig, SearchOpts};
 
     fn period(a: f64, b: f64) -> Interval<Mjd> {
         Interval::new(ModifiedJulianDate::new(a), ModifiedJulianDate::new(b))
@@ -472,15 +472,15 @@ mod tests {
 
     #[test]
     fn labelled_crossings_match_sine_wave() {
-        let opts = SearchOptsV2 {
-            chebyshev: ChebyshevOptions {
+        let opts = InternalSearchConfig {
+            chebyshev: ChebyshevSearchConfig {
                 segment_length: Days::new(0.5),
                 degree: 14,
                 max_tail_norm: 1e-10,
                 max_residual: 1e-10,
-                ..ChebyshevOptions::default()
+                ..ChebyshevSearchConfig::default()
             },
-            ..SearchOptsV2::default()
+            ..InternalSearchConfig::default()
         };
         let signal = |t: Mjd| (2.0 * std::f64::consts::PI * (t.raw().value() + 0.05)).sin();
         let (crossings, start_above, diagnostics) =
@@ -497,10 +497,10 @@ mod tests {
 
     #[test]
     fn explicit_scan_uses_fallback_path() {
-        let opts = SearchOptsV2 {
-            algorithm: CrossingAlgorithm::ScanBrent,
-            ..SearchOptsV2::default()
-        };
+        let opts = InternalSearchConfig::scan_brent_baseline(SearchOpts {
+            scan_step_days: Some(Days::new(0.1)),
+            ..SearchOpts::default()
+        });
         let signal = |t: Mjd| t.raw().value() - 0.5;
         let (crossings, _, diagnostics) =
             find_labelled_crossings(period(0.0, 1.0), Days::new(0.1), &signal, 0.0, opts);
@@ -510,16 +510,16 @@ mod tests {
 
     #[test]
     fn empty_polynomial_roots_with_endpoint_sign_change_falls_back() {
-        let opts = SearchOptsV2 {
-            chebyshev: ChebyshevOptions {
+        let opts = InternalSearchConfig {
+            chebyshev: ChebyshevSearchConfig {
                 segment_length: Days::new(1.0),
                 degree: 8,
                 max_tail_norm: 1e-3,
                 max_residual: 1e-10,
                 min_slope: 1e-4,
-                ..ChebyshevOptions::default()
+                ..ChebyshevSearchConfig::default()
             },
-            ..SearchOptsV2::default()
+            ..InternalSearchConfig::default()
         };
         // Piecewise linear crossing; Chebyshev fit may miss roots but endpoints differ in sign.
         let signal = |t: Mjd| {
@@ -541,15 +541,15 @@ mod tests {
 
     #[test]
     fn high_tail_norm_triggers_fallback() {
-        let opts = SearchOptsV2 {
-            chebyshev: ChebyshevOptions {
+        let opts = InternalSearchConfig {
+            chebyshev: ChebyshevSearchConfig {
                 segment_length: Days::new(1.0),
                 degree: 6,
                 max_tail_norm: 1e-15,
                 adaptive_split: false,
-                ..ChebyshevOptions::default()
+                ..ChebyshevSearchConfig::default()
             },
-            ..SearchOptsV2::default()
+            ..InternalSearchConfig::default()
         };
         let signal = |t: Mjd| (10.0 * t.raw().value()).sin();
         let (_, _, diagnostics) =
@@ -559,12 +559,12 @@ mod tests {
 
     #[test]
     fn crossing_near_segment_start_is_found() {
-        let opts = SearchOptsV2 {
-            chebyshev: ChebyshevOptions {
+        let opts = InternalSearchConfig {
+            chebyshev: ChebyshevSearchConfig {
                 segment_length: Days::new(0.25),
-                ..ChebyshevOptions::default()
+                ..ChebyshevSearchConfig::default()
             },
-            ..SearchOptsV2::default()
+            ..InternalSearchConfig::default()
         };
         let signal = |t: Mjd| t.raw().value() - 0.01;
         let (crossings, _, _) =

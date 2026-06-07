@@ -1,4 +1,4 @@
-// SPDX-License-Identifier: AGPL-3.0-or-later
+// SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! # Search Options and Constants
@@ -13,7 +13,7 @@
 //! ## Technical scope
 //!
 //! Defines the stable public [`SearchOpts`] type and crate-internal crossing
-//! search configuration consumed by [`super::events`] and [`super::provider`].
+//! search configuration consumed by [`super::events`].
 //!
 //! ## References
 //! None.
@@ -24,16 +24,16 @@ use crate::qtty::*;
 // Stable public search options
 // ---------------------------------------------------------------------------
 
-/// Options for controlling search precision and strategy.
+/// Options for controlling search precision.
 #[derive(Debug, Clone, Copy)]
 pub struct SearchOpts {
     /// Time tolerance for root/extremum refinement (days).
     /// Default: ~1 µs (1e-9 days).
     pub time_tolerance: Days,
-    /// Scan step for legacy scan+Brent compatibility (days).
+    /// Optional scan-step override for validation or baseline searches.
     ///
-    /// When set, crossing discovery uses the uniform scan plus Brent
-    /// refinement path instead of the default Chebyshev-first engine.
+    /// Normal users should leave this as `None`; the default engine is
+    /// Chebyshev-first with internal scan+Brent fallback.
     pub scan_step_days: Option<Days>,
 }
 
@@ -50,18 +50,9 @@ impl Default for SearchOpts {
 // Internal crossing-search configuration
 // ---------------------------------------------------------------------------
 
-/// Internal crossing discovery mode for benchmarks and validation.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum CrossingAlgorithm {
-    /// Chebyshev root finding first, with local scan+Brent fallback.
-    ChebyshevFirst,
-    /// Force the legacy uniform scan plus Brent refinement path.
-    ScanBrent,
-}
-
 /// Internal options for Chebyshev-based crossing discovery.
 #[derive(Debug, Clone, Copy, PartialEq)]
-pub(crate) struct ChebyshevOptions {
+pub(crate) struct ChebyshevSearchConfig {
     /// Segment length fitted by one Chebyshev polynomial, in days.
     pub segment_length: Days,
     /// Polynomial degree used for the fitted signal.
@@ -85,7 +76,7 @@ pub(crate) struct ChebyshevOptions {
     pub max_split_depth: usize,
 }
 
-impl Default for ChebyshevOptions {
+impl Default for ChebyshevSearchConfig {
     fn default() -> Self {
         Self {
             segment_length: Hours::new(12.0).to::<Day>(),
@@ -101,63 +92,57 @@ impl Default for ChebyshevOptions {
     }
 }
 
-/// Internal extended search options used by event-search engines.
+/// Internal search configuration used by event-search engines.
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct SearchOptsV2 {
+pub(crate) struct InternalSearchConfig {
     /// Time tolerance for root/extremum refinement (days).
     pub time_tolerance: Days,
-    /// Scan step for scan+Brent fallback. `None` uses the target default.
+    /// Scan step for scan+Brent baseline. `None` uses the target default.
     pub scan_step_days: Option<Days>,
-    /// Crossing discovery mode.
-    pub algorithm: CrossingAlgorithm,
     /// Chebyshev crossing-search controls.
-    pub chebyshev: ChebyshevOptions,
+    pub chebyshev: ChebyshevSearchConfig,
 }
 
-impl SearchOptsV2 {
-    /// Build internal options from the stable public option struct.
+impl InternalSearchConfig {
+    /// Build internal configuration from the stable public option struct.
     #[inline]
-    pub(crate) fn from_legacy(opts: SearchOpts) -> Self {
+    pub(crate) fn from_public_opts(opts: SearchOpts) -> Self {
         Self {
             time_tolerance: opts.time_tolerance,
             scan_step_days: opts.scan_step_days,
-            algorithm: if opts.scan_step_days.is_some() {
-                CrossingAlgorithm::ScanBrent
-            } else {
-                CrossingAlgorithm::ChebyshevFirst
-            },
-            chebyshev: ChebyshevOptions::default(),
+            chebyshev: ChebyshevSearchConfig::default(),
         }
     }
 
     /// Return the stable public subset of these options.
     #[inline]
-    pub(crate) fn legacy(self) -> SearchOpts {
+    pub(crate) fn public_opts(self) -> SearchOpts {
         SearchOpts {
             time_tolerance: self.time_tolerance,
             scan_step_days: self.scan_step_days,
         }
     }
 
-    /// Benchmark/validation helper: force scan+Brent mode.
+    /// Whether the caller requested a uniform scan+Brent baseline path.
     #[inline]
+    pub(crate) fn uses_scan_baseline(self) -> bool {
+        self.scan_step_days.is_some()
+    }
+
+    /// Test/bench helper: force scan+Brent baseline from public options.
     #[allow(dead_code)]
-    pub(crate) fn scan_brent_legacy(opts: SearchOpts) -> Self {
-        let mut out = Self::from_legacy(opts);
-        out.algorithm = CrossingAlgorithm::ScanBrent;
-        out
+    pub(crate) fn scan_brent_baseline(opts: SearchOpts) -> Self {
+        let mut config = Self::from_public_opts(opts);
+        if config.scan_step_days.is_none() {
+            config.scan_step_days = Some(DEFAULT_SCAN_STEP);
+        }
+        config
     }
 }
 
-impl Default for SearchOptsV2 {
+impl Default for InternalSearchConfig {
     fn default() -> Self {
-        let legacy = SearchOpts::default();
-        Self {
-            time_tolerance: legacy.time_tolerance,
-            scan_step_days: legacy.scan_step_days,
-            algorithm: CrossingAlgorithm::ChebyshevFirst,
-            chebyshev: ChebyshevOptions::default(),
-        }
+        Self::from_public_opts(SearchOpts::default())
     }
 }
 

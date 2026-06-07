@@ -1,4 +1,4 @@
-# Moon Altitude Bench, Performance Notes (`find_moon_above_horizon_365day`)
+# Moon Altitude Bench, Performance Notes (`above_threshold` / 365-day horizon)
 
 > Note: This report lives under `benches/reports/` because it documents
 > benchmark-driven performance work.
@@ -15,7 +15,7 @@ complete scan→refine→assemble pipeline:
 
 - `Moon.above_threshold(site, period, 0°)` (above-horizon windows)
 - `Moon.below_threshold(site, period, -0.5°)` (below-horizon windows)
-- `Moon.altitude_periods(query)` (within an altitude band)
+- `altitude_ranges(&Moon, site, period, min, max, opts)` (within an altitude band)
 
 The suite also includes an explicit single-point cost benchmark
 (`moon_altitude_single/compute_altitude`) to anchor the cost model.
@@ -24,8 +24,8 @@ The suite also includes an explicit single-point cost benchmark
 
 At a high level, long-horizon Moon window finding goes through:
 
-1. the altitude API (`AltitudePeriodsProvider` on `Moon`),  
-2. Moon-specific closures in `../../src/calculus/lunar/altitude_periods.rs`,  
+1. the altitude API (`AltitudeProvider` on `Moon`),  
+2. Moon-specific closures in `../../src/event/lunar/` (`lunar_*_impl`),  
 3. generic scan/refine logic in `../../src/calculus/math_core/intervals.rs`,  
 4. and per-sample altitude evaluation based on `Moon::get_horizontal(...)`.
 
@@ -54,7 +54,7 @@ The production path used by the benchmarks relies on two ideas:
 ### 1) Coarse scan with refinement
 
 The Moon period finders use a 2-hour scan step (see `SCAN_STEP` in
-`../../src/calculus/lunar/altitude_periods.rs`). The scan is only responsible
+`../../src/event/lunar/`). The scan is only responsible
 for bracketing sign changes of:
 
 ```text

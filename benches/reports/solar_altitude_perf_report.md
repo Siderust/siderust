@@ -1,4 +1,4 @@
-# Solar Altitude Bench, Performance Investigation (`find_night_periods_365day`)
+# Solar Altitude Bench, Performance Investigation (`below_threshold` / 365-day horizon)
 
 > Note: This report lives under `benches/reports/` because it documents
 > benchmark-driven performance work.
@@ -10,7 +10,7 @@ results.
 
 ## What is being measured
 
-The benchmark group `solar_altitude_periods` measures the end-to-end cost of
+The benchmark group `solar_altitude_ranges` measures the end-to-end cost of
 finding periods where the Sun is **below** a twilight threshold (astronomical
 night uses −18°), for horizons of 1/7/30/365 days.
 
@@ -30,7 +30,7 @@ That call includes both:
 At a high level, the Sun-night pipeline is:
 
 1. `Sun.below_threshold(...)` (the altitude API)  
-2. Sun-specific altitude closure in `src/calculus/solar/altitude_periods.rs`  
+2. Sun-specific altitude closure in `src/event/solar/` (`solar_*_impl`)  
 3. Generic scan→refine→assemble logic in `src/calculus/math_core/intervals.rs`  
 4. Per-sample Sun altitude computed by `Sun::get_horizontal(...)` in
    `src/calculus/solar/sun_equations.rs`
@@ -56,7 +56,7 @@ one evaluation?
 ### Evaluation count
 
 The current Sun altitude period finder uses a fixed **2-hour scan step**
-(`SCAN_STEP` in `src/calculus/solar/altitude_periods.rs`). That produces about
+(scan step in `src/event/solar/`). That produces about
 12 altitude evaluations per day for the coarse scan, plus a small number of
 refinement calls near each sunrise/sunset and near each twilight crossing.
 
