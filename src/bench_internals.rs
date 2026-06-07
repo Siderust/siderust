@@ -4,6 +4,12 @@
 //! Internal baseline helpers for Criterion benchmarks.
 //!
 //! Enabled with the `bench-internals` feature; not part of the stable API.
+//! Run gated benches with:
+//!
+//! ```bash
+//! cargo bench --features bench-internals --bench solar_altitude
+//! cargo bench --features bench-internals --bench moon_altitude
+//! ```
 
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;

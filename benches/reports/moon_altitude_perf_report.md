@@ -45,6 +45,8 @@ cargo bench --features bench-internals --bench moon_altitude
 cargo bench --no-run --features bench-internals
 ```
 
+Plain `cargo bench --no-run` skips these benches because they require `bench-internals`.
+
 ## Speedup claims
 
 This report does **not** claim measured speedups unless benchmark numbers are pasted here

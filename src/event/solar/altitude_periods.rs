@@ -81,6 +81,7 @@ fn solar_labelled_crossings(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::event::altitude::search::DIURNAL_CHEBY_SCAN_STEP;
     use chrono::{TimeZone, Utc};
 
     fn greenwich_site() -> Geodetic<ECEF> {
@@ -125,7 +126,7 @@ mod tests {
         period: Interval<ModifiedJulianDate>,
         threshold: Degrees,
     ) -> Vec<Interval<ModifiedJulianDate>> {
-        let scan_step = Hours::new(2.0).to::<Day>();
+        let scan_step = DIURNAL_CHEBY_SCAN_STEP;
         let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
         intervals::above_threshold_periods(period, scan_step, &f, threshold.to::<Radian>())
     }

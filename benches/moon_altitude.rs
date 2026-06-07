@@ -2,6 +2,9 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Benchmarks comparing the lunar Chebyshev context engine against scan+Brent baseline.
+//!
+//! Requires the `bench-internals` feature:
+//! `cargo bench --features bench-internals --bench moon_altitude`
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};

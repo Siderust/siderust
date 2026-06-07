@@ -11,7 +11,9 @@
 use crate::astro::earth_rotation::gmst_default;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::event::altitude::search::InternalSearchConfig;
+use crate::event::altitude::search::{
+    InternalSearchConfig, CROSSING_DEDUPE_EPS, DIURNAL_CHEBY_SCAN_STEP, ONE_DAY, ROOT_INTERVAL_EPS,
+};
 use crate::event::altitude::{CrossingDirection, CrossingEvent};
 use crate::event::search::crossings;
 use crate::event::search::intervals::LabeledCrossing;
@@ -22,10 +24,8 @@ use crate::time::{Interval, JulianDate, ModifiedJulianDate};
 use super::altitude_periods::sun_altitude_rad;
 
 const GRAZE_EPS: f64 = 1e-3;
-const SCAN_STEP: Days = Hours::new(2.0).to_const::<Day>();
 /// Hour-angle rate used for candidate spacing (rad per mean solar day).
 const HA_RATE_RAD_PER_DAY: f64 = std::f64::consts::TAU;
-const J2000_MJD: f64 = 51544.5;
 
 const BRACKET_RADII: [Days; 5] = [
     Minutes::new(15.0).to_const::<Day>(),
@@ -89,7 +89,7 @@ pub(crate) fn solar_daily_crossings_impl(
         let mut search_diag = crossings::SearchDiagnostics::default();
         let labelled = scan_fallback::scan_labelled_crossings(
             window,
-            opts.fallback_scan_step(SCAN_STEP),
+            opts.fallback_scan_step(DIURNAL_CHEBY_SCAN_STEP),
             &signal,
             threshold.to::<Radian>().sin(),
             opts.time_tolerance,
@@ -113,7 +113,7 @@ pub(crate) fn solar_daily_crossings_impl(
     let mut full_day_start = floor_day(window.start);
 
     while full_day_start < window.end {
-        let full_day_end = add_days(full_day_start, Days::new(1.0));
+        let full_day_end = add_days(full_day_start, ONE_DAY);
         let full_day = Interval::new(full_day_start, full_day_end);
 
         let clipped_start = max_mjd(full_day_start, window.start);
@@ -277,7 +277,8 @@ fn solar_daily_state(
 ) -> Option<SolarDailyState> {
     let t_mid = midpoint(full_day);
     let jd: JulianDate = t_mid.to::<crate::JD>();
-    let n = t_mid.raw().value() - J2000_MJD;
+    let j2000_mjd = crate::J2000.to::<crate::MJD>();
+    let n = (t_mid.raw() - j2000_mjd.raw()).value();
 
     let l_deg = 280.46646 + 0.98564736 * n;
     let g_deg = 357.52911 + 0.98560028 * n;
@@ -304,9 +305,9 @@ fn solar_daily_state(
     let mut approx_transit = add_days(t_mid, Days::new(transit_offset_days));
 
     if approx_transit < full_day.start {
-        approx_transit = add_days(approx_transit, Days::new(1.0));
+        approx_transit = add_days(approx_transit, ONE_DAY);
     } else if approx_transit > full_day.end {
-        approx_transit = add_days(approx_transit, Days::new(-1.0));
+        approx_transit = add_days(approx_transit, Days::new(-ONE_DAY.value()));
     }
 
     Some(SolarDailyState {
@@ -351,7 +352,7 @@ fn refine_candidate(
     let (lo, hi, f_lo, f_hi) =
         find_candidate_bracket(site, bounds, predicted, thr_sin, opts, diagnostics)?;
 
-    if (hi.raw() - lo.raw()) < Days::new(1e-12) {
+    if (hi.raw() - lo.raw()) < ROOT_INTERVAL_EPS {
         let root = lo;
         if root < bounds.start || root > bounds.end {
             return None;
@@ -501,7 +502,7 @@ pub(crate) fn chebyshev_labelled_crossings_raw(
 ) -> (Vec<LabeledCrossing>, crossings::SearchDiagnostics) {
     let signal = |t: ModifiedJulianDate| sun_altitude_rad(t, &site).sin();
     let (labelled, _, diag) =
-        crossings::find_labelled_crossings(window, SCAN_STEP, &signal, thr_sin, opts);
+        crossings::find_labelled_crossings(window, DIURNAL_CHEBY_SCAN_STEP, &signal, thr_sin, opts);
     (labelled, diag)
 }
 
@@ -549,9 +550,8 @@ fn midpoint(interval: Interval<ModifiedJulianDate>) -> ModifiedJulianDate {
 }
 
 fn sort_dedup_labelled(crossings: &mut Vec<LabeledCrossing>) {
-    const DEDUPE: Days = Days::new(1e-8);
     crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));
-    crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < DEDUPE);
+    crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < CROSSING_DEDUPE_EPS);
 }
 
 #[cfg(test)]
@@ -586,7 +586,7 @@ mod tests {
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
     ) -> Vec<LabeledCrossing> {
-        let scan_step = Hours::new(2.0).to::<Day>();
+        let scan_step = DIURNAL_CHEBY_SCAN_STEP;
         let thr = threshold.to::<Radian>();
         let f = |t: ModifiedJulianDate| sun_altitude_rad(t, &site);
         let mut crossings_t = intervals::find_crossings(window, scan_step, &f, thr);

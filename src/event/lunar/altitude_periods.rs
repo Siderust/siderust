@@ -28,7 +28,7 @@
 use crate::bodies::solar_system::Moon;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::event::altitude::search::InternalSearchConfig;
+use crate::event::altitude::search::{InternalSearchConfig, DIURNAL_CHEBY_SCAN_STEP};
 use crate::event::altitude::{CrossingDirection, CrossingEvent};
 use crate::event::search::crossings;
 use crate::event::search::intervals;
@@ -36,15 +36,6 @@ use crate::qtty::*;
 use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
 
 use super::moon_cache::MoonAltitudeContext;
-
-// =============================================================================
-// Constants
-// =============================================================================
-
-/// Scan step for Moon altitude threshold detection (2 hours in days).
-/// Moon rises/sets are separated by ~12+ hours, so 2-hour steps
-/// safely detect all horizon crossings (~12 altitude calls per day).
-const SCAN_STEP: Days = Quantity::new(2.0 / 24.0);
 
 // =============================================================================
 // Core Altitude Function
@@ -211,8 +202,13 @@ fn find_moon_labeled_crossings_with_context(
     opts: InternalSearchConfig,
 ) -> (Vec<intervals::LabeledCrossing>, bool) {
     let signal = |t: ModifiedJulianDate| -> f64 { ctx.altitude_rad(t).sin() };
-    let (labeled, start_above, _) =
-        crossings::find_labelled_crossings(period, SCAN_STEP, &signal, threshold.sin(), opts);
+    let (labeled, start_above, _) = crossings::find_labelled_crossings(
+        period,
+        DIURNAL_CHEBY_SCAN_STEP,
+        &signal,
+        threshold.sin(),
+        opts,
+    );
     (labeled, start_above)
 }
 
@@ -289,7 +285,7 @@ mod tests {
         let f = |t: ModifiedJulianDate| -> Radians { ctx.altitude_rad(t) };
         let (labeled, start_above) = crate::event::lunar::moon_cache::find_and_label_crossings(
             period,
-            SCAN_STEP,
+            DIURNAL_CHEBY_SCAN_STEP,
             &f,
             threshold.to::<Radian>(),
         );

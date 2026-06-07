@@ -10,7 +10,7 @@
 
 use cheby::{fit_dyn_from_fn, RootOptions};
 
-use crate::event::altitude::search::InternalSearchConfig;
+use crate::event::altitude::search::{InternalSearchConfig, CROSSING_DEDUPE_EPS};
 use crate::event::search::intervals::LabeledCrossing;
 use crate::event::search::scan_fallback;
 use crate::qtty::{Day, Quantity};
@@ -20,7 +20,6 @@ type Days = Quantity<Day>;
 type Mjd = ModifiedJulianDate;
 
 pub(crate) const POLY_ZERO_TOL: f64 = 1e-12;
-const DEDUPE_T_EPS: Days = Days::new(1e-8);
 const MIN_SEGMENT_DAYS: f64 = 1e-6;
 const TAIL_NORM_COEFFS: usize = 4;
 
@@ -458,7 +457,7 @@ fn looser_radius_exhausts_segment(center: f64, radius: f64, start: f64, end: f64
 
 fn sort_dedup_crossings(crossings: &mut Vec<LabeledCrossing>) {
     crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));
-    crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < DEDUPE_T_EPS);
+    crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < CROSSING_DEDUPE_EPS);
 }
 
 #[cfg(test)]

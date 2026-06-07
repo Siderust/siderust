@@ -3,6 +3,7 @@
 
 //! Scan+Brent fallback baseline for threshold crossing discovery.
 
+use crate::event::altitude::search::CROSSING_DEDUPE_EPS;
 use crate::event::search::intervals::LabeledCrossing;
 use crate::qtty::{Day, Quantity};
 use crate::time::{Interval, ModifiedJulianDate};
@@ -211,9 +212,8 @@ fn mjd_from_days(days: f64) -> Mjd {
 }
 
 fn sort_dedup_crossings(crossings: &mut Vec<LabeledCrossing>) {
-    const DEDUPE_T_EPS: Days = Days::new(1e-8);
     crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));
-    crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < DEDUPE_T_EPS);
+    crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < CROSSING_DEDUPE_EPS);
 }
 
 #[cfg(test)]

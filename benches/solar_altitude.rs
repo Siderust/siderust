@@ -2,6 +2,9 @@
 // Copyright (C) 2026 Vallés Puig, Ramon
 
 //! Benchmarks comparing the solar daily predictor against internal baselines.
+//!
+//! Requires the `bench-internals` feature:
+//! `cargo bench --features bench-internals --bench solar_altitude`
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};

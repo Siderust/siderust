@@ -31,7 +31,7 @@ pub struct SearchOpts {
 impl Default for SearchOpts {
     fn default() -> Self {
         Self {
-            time_tolerance: Days::new(1e-9),
+            time_tolerance: DEFAULT_TIME_TOLERANCE,
         }
     }
 }
@@ -182,6 +182,21 @@ pub(crate) fn resolve_scan_step(
 // ---------------------------------------------------------------------------
 // Constants
 // ---------------------------------------------------------------------------
+
+/// One mean solar day.
+pub(crate) const ONE_DAY: Days = Days::new(1.0);
+
+/// Default root/extremum refinement tolerance (~1 µs).
+pub(crate) const DEFAULT_TIME_TOLERANCE: Days = Days::new(1e-9);
+
+/// Minimum bracket width before treating endpoints as the root.
+pub(crate) const ROOT_INTERVAL_EPS: Days = Days::new(1e-12);
+
+/// Deduplicate crossing times closer than this interval.
+pub(crate) const CROSSING_DEDUPE_EPS: Days = Days::new(1e-8);
+
+/// Chebyshev segment scan hint for slowly varying diurnal bodies (2 hours).
+pub(crate) const DIURNAL_CHEBY_SCAN_STEP: Days = Hours::new(2.0).to_const::<Day>();
 
 /// Default scan step: 10 minutes in days.
 pub(crate) const DEFAULT_SCAN_STEP: Days = Minutes::new(10.0).to_const::<Day>();
