@@ -191,3 +191,6 @@ pub use event::lunar::photometry::{
 // Convenience re‑exports: target abstractions
 // ---------------------------------------------------------------------------
 pub use targets::{CoordinateWithPM, Trackable};
+
+#[cfg(feature = "bench-internals")]
+pub mod bench_internals;

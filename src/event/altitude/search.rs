@@ -7,21 +7,17 @@
 //!
 //! Numerical controls for altitude crossing discovery and culmination
 //! searches. The default refinement tolerance (~1 µs in time) is sized for
-//! fast diurnal motion of solar-system bodies; very slow targets may require
-//! a coarser scan step or finer tolerance.
+//! fast diurnal motion of solar-system bodies.
 //!
 //! ## Technical scope
 //!
 //! Defines the stable public [`SearchOpts`] type and crate-internal crossing
 //! search configuration consumed by [`super::events`].
-//!
-//! ## References
-//! None.
 
 use crate::qtty::*;
 
 // ---------------------------------------------------------------------------
-// Stable public search options
+// Stable public search options (Option A: semantic tolerance only)
 // ---------------------------------------------------------------------------
 
 /// Options for controlling search precision.
@@ -30,18 +26,12 @@ pub struct SearchOpts {
     /// Time tolerance for root/extremum refinement (days).
     /// Default: ~1 µs (1e-9 days).
     pub time_tolerance: Days,
-    /// Optional scan-step override for validation or baseline searches.
-    ///
-    /// Normal users should leave this as `None`; the default engine is
-    /// Chebyshev-first with internal scan+Brent fallback.
-    pub scan_step_days: Option<Days>,
 }
 
 impl Default for SearchOpts {
     fn default() -> Self {
         Self {
             time_tolerance: Days::new(1e-9),
-            scan_step_days: None,
         }
     }
 }
@@ -92,15 +82,28 @@ impl Default for ChebyshevSearchConfig {
     }
 }
 
+/// Internal scan+Brent fallback controls.
+#[derive(Debug, Clone, Copy, PartialEq, Default)]
+pub(crate) struct FallbackSearchConfig {
+    /// Scan step for scan+Brent fallback. `None` uses the target default hint.
+    pub scan_step: Option<Days>,
+    /// When true, the entire search window uses scan+Brent instead of the
+    /// primary engine (tests/benches only).
+    pub force_scan_baseline: bool,
+}
+
 /// Internal search configuration used by event-search engines.
 #[derive(Debug, Clone, Copy)]
 pub(crate) struct InternalSearchConfig {
     /// Time tolerance for root/extremum refinement (days).
     pub time_tolerance: Days,
-    /// Scan step for scan+Brent baseline. `None` uses the target default.
-    pub scan_step_days: Option<Days>,
     /// Chebyshev crossing-search controls.
     pub chebyshev: ChebyshevSearchConfig,
+    /// Scan+Brent fallback controls.
+    pub fallback: FallbackSearchConfig,
+    /// Skip the solar daily predictor and use the generic Chebyshev engine
+    /// (tests/benches only).
+    pub disable_solar_daily_predictor: bool,
 }
 
 impl InternalSearchConfig {
@@ -109,8 +112,9 @@ impl InternalSearchConfig {
     pub(crate) fn from_public_opts(opts: SearchOpts) -> Self {
         Self {
             time_tolerance: opts.time_tolerance,
-            scan_step_days: opts.scan_step_days,
             chebyshev: ChebyshevSearchConfig::default(),
+            fallback: FallbackSearchConfig::default(),
+            disable_solar_daily_predictor: false,
         }
     }
 
@@ -119,24 +123,44 @@ impl InternalSearchConfig {
     pub(crate) fn public_opts(self) -> SearchOpts {
         SearchOpts {
             time_tolerance: self.time_tolerance,
-            scan_step_days: self.scan_step_days,
         }
     }
 
     /// Whether the caller requested a uniform scan+Brent baseline path.
     #[inline]
     pub(crate) fn uses_scan_baseline(self) -> bool {
-        self.scan_step_days.is_some()
+        self.fallback.force_scan_baseline
+    }
+
+    /// Resolve the scan step for fallback paths.
+    #[inline]
+    pub(crate) fn fallback_scan_step(self, default_step: Days) -> Days {
+        self.fallback.scan_step.unwrap_or(default_step)
     }
 
     /// Test/bench helper: force scan+Brent baseline from public options.
-    #[allow(dead_code)]
-    pub(crate) fn scan_brent_baseline(opts: SearchOpts) -> Self {
-        let mut config = Self::from_public_opts(opts);
-        if config.scan_step_days.is_none() {
-            config.scan_step_days = Some(DEFAULT_SCAN_STEP);
+    #[cfg(any(test, feature = "bench-internals"))]
+    pub(crate) fn scan_brent_baseline_config(opts: SearchOpts) -> Self {
+        Self {
+            time_tolerance: opts.time_tolerance,
+            chebyshev: ChebyshevSearchConfig::default(),
+            fallback: FallbackSearchConfig {
+                scan_step: Some(DEFAULT_SCAN_STEP),
+                force_scan_baseline: true,
+            },
+            disable_solar_daily_predictor: true,
         }
-        config
+    }
+
+    /// Test/bench helper: generic Chebyshev-first baseline (no solar daily predictor).
+    #[cfg(any(test, feature = "bench-internals"))]
+    pub(crate) fn chebyshev_baseline_config(opts: SearchOpts) -> Self {
+        Self {
+            time_tolerance: opts.time_tolerance,
+            chebyshev: ChebyshevSearchConfig::default(),
+            fallback: FallbackSearchConfig::default(),
+            disable_solar_daily_predictor: true,
+        }
     }
 }
 
@@ -146,9 +170,13 @@ impl Default for InternalSearchConfig {
     }
 }
 
-/// Choose the best scan step given an optional provider hint and user overrides.
-pub(crate) fn resolve_scan_step(hint: Option<Days>, opts: &SearchOpts, default_step: Days) -> Days {
-    opts.scan_step_days.or(hint).unwrap_or(default_step)
+/// Choose the best scan step given an optional provider hint and internal config.
+pub(crate) fn resolve_scan_step(
+    hint: Option<Days>,
+    opts: &InternalSearchConfig,
+    default_step: Days,
+) -> Days {
+    opts.fallback.scan_step.or(hint).unwrap_or(default_step)
 }
 
 // ---------------------------------------------------------------------------

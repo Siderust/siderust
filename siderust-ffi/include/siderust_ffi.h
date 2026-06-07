@@ -819,10 +819,6 @@ typedef struct siderust_moon_phase_geometry_t {
 typedef struct siderust_search_opts_t {
   // Time tolerance in days (default: ~1 µs = 1e-9 days).
   double time_tolerance_days;
-  // Scan step in days. Set to 0 or negative to use the body's default.
-  double scan_step_days;
-  // Whether `scan_step_days` is valid (non-zero).
-  bool has_scan_step;
 } siderust_search_opts_t;
 
 // Cartesian velocity (vx, vy, vz + frame metadata).

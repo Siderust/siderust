@@ -35,8 +35,6 @@ fn one_day_window() -> TempochPeriodMjd {
 fn default_opts() -> SiderustSearchOpts {
     SiderustSearchOpts {
         time_tolerance_days: 1e-9,
-        scan_step_days: 0.0,
-        has_scan_step: false,
     }
 }
 

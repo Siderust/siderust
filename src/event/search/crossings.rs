@@ -100,7 +100,7 @@ where
     }
 
     let start_above = eval_signal(signal, period.start, &mut diagnostics) > threshold_sin;
-    let fallback_step = opts.scan_step_days.unwrap_or(fallback_step);
+    let fallback_step = opts.fallback_scan_step(fallback_step);
 
     if opts.uses_scan_baseline() {
         diagnostics.fallback_segments = 1;
@@ -497,10 +497,7 @@ mod tests {
 
     #[test]
     fn explicit_scan_uses_fallback_path() {
-        let opts = InternalSearchConfig::scan_brent_baseline(SearchOpts {
-            scan_step_days: Some(Days::new(0.1)),
-            ..SearchOpts::default()
-        });
+        let opts = InternalSearchConfig::scan_brent_baseline_config(SearchOpts::default());
         let signal = |t: Mjd| t.raw().value() - 0.5;
         let (crossings, _, diagnostics) =
             find_labelled_crossings(period(0.0, 1.0), Days::new(0.1), &signal, 0.0, opts);

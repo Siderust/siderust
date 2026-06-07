@@ -727,10 +727,6 @@ impl SiderustBodycentricParams {
 pub struct SiderustSearchOpts {
     /// Time tolerance in days (default: ~1 µs = 1e-9 days).
     pub time_tolerance_days: f64,
-    /// Scan step in days. Set to 0 or negative to use the body's default.
-    pub scan_step_days: f64,
-    /// Whether `scan_step_days` is valid (non-zero).
-    pub has_scan_step: bool,
 }
 
 impl SiderustSearchOpts {
@@ -740,9 +736,6 @@ impl SiderustSearchOpts {
         if self.time_tolerance_days > 0.0 {
             opts.time_tolerance = Days::new(self.time_tolerance_days);
         }
-        if self.has_scan_step && self.scan_step_days > 0.0 {
-            opts.scan_step_days = Some(Days::new(self.scan_step_days));
-        }
         opts
     }
 }
@@ -751,8 +744,6 @@ impl Default for SiderustSearchOpts {
     fn default() -> Self {
         Self {
             time_tolerance_days: 1e-9,
-            scan_step_days: 0.0,
-            has_scan_step: false,
         }
     }
 }
@@ -1173,42 +1164,23 @@ mod tests {
     fn search_opts_default() {
         let d = SiderustSearchOpts::default();
         assert!((d.time_tolerance_days - 1e-9).abs() < 1e-15);
-        assert!(!d.has_scan_step);
     }
 
     #[test]
-    fn search_opts_to_rust_without_scan_step() {
+    fn search_opts_to_rust() {
         let opts = SiderustSearchOpts {
             time_tolerance_days: 1e-6,
-            scan_step_days: 0.0,
-            has_scan_step: false,
         };
         let rust = opts.to_rust();
         assert!((rust.time_tolerance.value() - 1e-6).abs() < 1e-12);
-        assert!(rust.scan_step_days.is_none());
-    }
-
-    #[test]
-    fn search_opts_to_rust_with_scan_step() {
-        let opts = SiderustSearchOpts {
-            time_tolerance_days: 1e-9,
-            scan_step_days: 0.1,
-            has_scan_step: true,
-        };
-        let rust = opts.to_rust();
-        assert!(rust.scan_step_days.is_some());
-        assert!((rust.scan_step_days.unwrap().value() - 0.1).abs() < 1e-12);
     }
 
     #[test]
     fn search_opts_zero_tolerance_uses_default() {
         let opts = SiderustSearchOpts {
-            time_tolerance_days: 0.0, // ≤ 0 → keep default
-            scan_step_days: 0.0,
-            has_scan_step: false,
+            time_tolerance_days: 0.0,
         };
         let rust = opts.to_rust();
-        // With 0 tolerance the default is kept
         let default_rust = SiderustSearchOpts::default().to_rust();
         assert_eq!(
             rust.time_tolerance.value(),
@@ -1448,8 +1420,7 @@ mod tests {
 
     #[test]
     fn layout_search_opts() {
-        // 2 × f64 + bool + padding = 24
-        assert_eq!(std::mem::size_of::<SiderustSearchOpts>(), 24);
+        assert_eq!(std::mem::size_of::<SiderustSearchOpts>(), 8);
     }
 
     #[test]

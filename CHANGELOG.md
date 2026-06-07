@@ -8,24 +8,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Depend on `cheby 0.4` for dynamic Chebyshev fitting, tail norms, derivatives, and root finding on crossing segments.
-- Add an internal Chebyshev-first crossing engine for smooth altitude signals: fit `sin(altitude) − sin(threshold)` per segment, solve roots with mapped [`RootOptions`](https://docs.rs/cheby/0.4/cheby/struct.RootOptions.html), validate against the precise model, and fall back per segment to scan+Brent when the polynomial is untrusted.
+- Internal solar daily predictor for solar altitude threshold events.
+- Internal Chebyshev-first generic crossing engine using `cheby 0.4`.
+- Internal local scan+Brent fallback baseline (`bench-internals` helpers for benchmarks).
 
 ### Changed
 
-- Standardize altitude period semantics to three public functions only: [`altitude_ranges`], [`above_threshold`], and [`below_threshold`]. Night, twilight, and Moon-up/down windows are expressed through these thresholds rather than target-specific wrappers.
-- Rename the unified altitude provider trait to [`AltitudeProvider`]; the trait now exposes single-point `altitude_at` and internal search hooks only, not period-query convenience methods.
-- Remove the legacy query-builder period API from the stable Rust API.
-- Replace stable FFI altitude-period entry points with `siderust_altitude_ranges`; stable FFI mirrors the three standardized period semantics for all subject types.
-- Depend on `cheby 0.4` for dynamic Chebyshev fitting, tail norms, derivatives, and root finding on crossing segments.
+- Standardized public altitude period API on [`altitude_ranges`], [`above_threshold`], and [`below_threshold`].
+- [`AltitudeProvider`] now only represents single-point altitude evaluation.
+- Search options follow Option A: public [`SearchOpts`] contains only `time_tolerance`, not algorithm controls.
+- Solar events use a specialized internal daily predictor with precise validation.
+- Lunar events use `MoonAltitudeContext` + Chebyshev-first crossing discovery.
+- Stable FFI [`SiderustSearchOpts`] mirrors public [`SearchOpts`] (time tolerance only).
 
 ### Removed
 
-- Experimental event-search feature and all experimental algorithm/tuning hooks (extended search options, Chebyshev tuning types, crossing-algorithm selectors, FFI `_v2` entry points, and the experimental event-search module).
-- Legacy query-builder period API and trait period-query convenience methods.
-- Stable FFI altitude-period query structs.
-- Local Chebyshev polynomial/root code in favour of the `cheby` crate backend.
-- Custom Newton/secant refinement loop in crossing validation; local Brent bracket refinement is used instead.
+- `unstable-event-search` feature and experimental algorithm/tuning hooks.
+- FFI `_v2` altitude/crossing functions and v2 tuning structs.
+- Public `scan_step_days` override and public `*_with_policy` event search exports.
+- `AltitudeQuery`, `AltitudePeriodsProvider`, `altitude_periods`, and target-specific legacy period wrappers.
+- Local Chebyshev root code superseded by `cheby`.
 
 ## [0.9.1] - 2026-06-06
 

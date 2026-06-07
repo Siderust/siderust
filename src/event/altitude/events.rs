@@ -54,12 +54,11 @@ fn make_altitude_fn<'a, T: AltitudeProvider>(
 }
 
 fn scan_step_for_opts<T: AltitudeProvider>(target: &T, opts: &InternalSearchConfig) -> Days {
-    let public = opts.public_opts();
-    super::search::resolve_scan_step(target.scan_step_hint(), &public, DEFAULT_SCAN_STEP)
+    super::search::resolve_scan_step(target.scan_step_hint(), opts, DEFAULT_SCAN_STEP)
 }
 
 fn can_use_provider_search_path(opts: InternalSearchConfig, policy: CorrectionPolicy) -> bool {
-    policy == CorrectionPolicy::APPARENT && opts.scan_step_days.is_none()
+    policy == CorrectionPolicy::APPARENT && !opts.fallback.force_scan_baseline
 }
 
 fn labelled_crossings_for_altitude<F>(
@@ -148,32 +147,12 @@ pub fn crossings<T: AltitudeProvider + 'static>(
         observer,
         window,
         threshold,
-        opts,
+        InternalSearchConfig::from_public_opts(opts),
         CorrectionPolicy::APPARENT,
     )
 }
 
-/// Find threshold crossings using an explicit apparent-position correction
-/// policy.
-pub fn crossings_with_policy<T: AltitudeProvider + 'static>(
-    target: &T,
-    observer: &Geodetic<ECEF>,
-    window: Interval<ModifiedJulianDate>,
-    threshold: Degrees,
-    opts: SearchOpts,
-    policy: CorrectionPolicy,
-) -> Vec<CrossingEvent> {
-    crossings_with_internal_opts_and_policy(
-        target,
-        observer,
-        window,
-        threshold,
-        InternalSearchConfig::from_public_opts(opts),
-        policy,
-    )
-}
-
-fn crossings_with_internal_opts_and_policy<T: AltitudeProvider + Any + 'static>(
+fn crossings_with_policy<T: AltitudeProvider + Any + 'static>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -228,9 +207,7 @@ pub fn culminations<T: AltitudeProvider>(
     culminations_with_policy(target, observer, window, opts, CorrectionPolicy::APPARENT)
 }
 
-/// Find altitude culminations using an explicit apparent-position correction
-/// policy.
-pub fn culminations_with_policy<T: AltitudeProvider>(
+fn culminations_with_policy<T: AltitudeProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -238,11 +215,7 @@ pub fn culminations_with_policy<T: AltitudeProvider>(
     policy: CorrectionPolicy,
 ) -> Vec<CulminationEvent> {
     let f = make_altitude_fn(target, observer, policy);
-    // For culminations, use a slightly larger step (or the target's hint)
-    let step = opts
-        .scan_step_days
-        .or_else(|| target.scan_step_hint())
-        .unwrap_or(EXTREMA_SCAN_STEP);
+    let step = target.scan_step_hint().unwrap_or(EXTREMA_SCAN_STEP);
     let tol = opts.time_tolerance;
 
     let raw: Vec<extrema::Extremum<Radian>> = extrema::find_extrema_tol(window, step, &f, tol);
@@ -313,34 +286,12 @@ pub fn altitude_ranges<T: AltitudeProvider + 'static>(
         window,
         h_min,
         h_max,
-        opts,
+        InternalSearchConfig::from_public_opts(opts),
         CorrectionPolicy::APPARENT,
     )
 }
 
-/// Find altitude-range periods using an explicit apparent-position correction
-/// policy.
-pub fn altitude_ranges_with_policy<T: AltitudeProvider + 'static>(
-    target: &T,
-    observer: &Geodetic<ECEF>,
-    window: Interval<ModifiedJulianDate>,
-    h_min: Degrees,
-    h_max: Degrees,
-    opts: SearchOpts,
-    policy: CorrectionPolicy,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    altitude_ranges_with_internal_opts_and_policy(
-        target,
-        observer,
-        window,
-        h_min,
-        h_max,
-        InternalSearchConfig::from_public_opts(opts),
-        policy,
-    )
-}
-
-fn altitude_ranges_with_internal_opts_and_policy<T: AltitudeProvider + Any + 'static>(
+fn altitude_ranges_with_policy<T: AltitudeProvider + Any + 'static>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -410,32 +361,12 @@ pub fn above_threshold<T: AltitudeProvider + 'static>(
         observer,
         window,
         threshold,
-        opts,
+        InternalSearchConfig::from_public_opts(opts),
         CorrectionPolicy::APPARENT,
     )
 }
 
-/// Find above-threshold periods using an explicit apparent-position
-/// correction policy.
-pub fn above_threshold_with_policy<T: AltitudeProvider + 'static>(
-    target: &T,
-    observer: &Geodetic<ECEF>,
-    window: Interval<ModifiedJulianDate>,
-    threshold: Degrees,
-    opts: SearchOpts,
-    policy: CorrectionPolicy,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    above_threshold_with_internal_opts_and_policy(
-        target,
-        observer,
-        window,
-        threshold,
-        InternalSearchConfig::from_public_opts(opts),
-        policy,
-    )
-}
-
-fn above_threshold_with_internal_opts_and_policy<T: AltitudeProvider + Any + 'static>(
+fn above_threshold_with_policy<T: AltitudeProvider + Any + 'static>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -490,32 +421,12 @@ pub fn below_threshold<T: AltitudeProvider + 'static>(
         observer,
         window,
         threshold,
-        opts,
+        InternalSearchConfig::from_public_opts(opts),
         CorrectionPolicy::APPARENT,
     )
 }
 
-/// Find below-threshold periods using an explicit apparent-position
-/// correction policy.
-pub fn below_threshold_with_policy<T: AltitudeProvider + 'static>(
-    target: &T,
-    observer: &Geodetic<ECEF>,
-    window: Interval<ModifiedJulianDate>,
-    threshold: Degrees,
-    opts: SearchOpts,
-    policy: CorrectionPolicy,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    below_threshold_with_internal_opts_and_policy(
-        target,
-        observer,
-        window,
-        threshold,
-        InternalSearchConfig::from_public_opts(opts),
-        policy,
-    )
-}
-
-fn below_threshold_with_internal_opts_and_policy<T: AltitudeProvider + Any + 'static>(
+fn below_threshold_with_policy<T: AltitudeProvider + Any + 'static>(
     target: &T,
     observer: &Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
@@ -535,9 +446,7 @@ fn below_threshold_with_internal_opts_and_policy<T: AltitudeProvider + Any + 'st
         }
     }
 
-    let above = above_threshold_with_internal_opts_and_policy(
-        target, observer, window, threshold, opts, policy,
-    );
+    let above = above_threshold_with_policy(target, observer, window, threshold, opts, policy);
     complement_within(window, &above)
 }
 

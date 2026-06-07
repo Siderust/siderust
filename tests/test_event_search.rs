@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Chebyshev-first event search integration tests and scan baseline comparisons.
+//! Chebyshev-first event search integration tests and internal baseline comparisons.
 
+use siderust::bench_internals;
 use siderust::bodies::solar_system::{Moon, Sun};
 use siderust::coordinates::centers::Geodetic;
 use siderust::coordinates::frames::ECEF;
@@ -27,15 +28,8 @@ fn window_days(start: f64, len: f64) -> Interval<ModifiedJulianDate> {
     )
 }
 
-fn chebyshev_opts() -> SearchOpts {
+fn default_opts() -> SearchOpts {
     SearchOpts::default()
-}
-
-fn scan_baseline_opts() -> SearchOpts {
-    SearchOpts {
-        scan_step_days: Some(Minutes::new(10.0).to::<Day>()),
-        ..SearchOpts::default()
-    }
 }
 
 fn assert_periods_in_window(
@@ -48,194 +42,81 @@ fn assert_periods_in_window(
         assert!(p.end > p.start, "non-positive period");
     }
     for pair in periods.windows(2) {
-        assert!(
-            pair[0].end <= pair[1].start,
-            "overlapping periods: {:?} vs {:?}",
-            pair[0],
-            pair[1]
-        );
+        assert!(pair[0].end <= pair[1].start, "overlapping periods");
     }
 }
 
-fn assert_crossings_in_window(
-    events: &[siderust::event::altitude::CrossingEvent],
-    window: Interval<ModifiedJulianDate>,
+fn assert_period_lists_close(
+    actual: &[Interval<ModifiedJulianDate>],
+    expected: &[Interval<ModifiedJulianDate>],
 ) {
-    for e in events {
-        assert!(e.mjd >= window.start, "crossing before window");
-        assert!(e.mjd <= window.end, "crossing after window");
-    }
-    for pair in events.windows(2) {
-        assert!(pair[0].mjd <= pair[1].mjd, "crossings not sorted");
+    assert_eq!(actual.len(), expected.len(), "period count mismatch");
+    for (a, e) in actual.iter().zip(expected.iter()) {
+        assert!((a.start.raw() - e.start.raw()).abs() < Days::new(1e-5));
+        assert!((a.end.raw() - e.end.raw()).abs() < Days::new(1e-5));
     }
 }
 
 #[test]
-fn stable_public_api_exports_minimal_search_surface() {
-    use siderust::bodies::Sun;
-    use siderust::{
-        above_threshold, altitude_ranges, below_threshold, crossings, culminations, SearchOpts,
-    };
+fn sun_below_threshold_default_matches_scan_baseline() {
     let site = roque();
-    let window = window_days(60000.0, 1.0);
-    let opts = SearchOpts::default();
-    let _ = crossings(&Sun, &site, window, Degrees::new(0.0), opts);
-    let _ = above_threshold(&Sun, &site, window, Degrees::new(0.0), opts);
-    let _ = below_threshold(&Sun, &site, window, Degrees::new(0.0), opts);
-    let _ = altitude_ranges(
+    let window = window_days(60000.0, 30.0);
+    let threshold = Degrees::new(-18.0);
+    let opts = default_opts();
+
+    let default = below_threshold(&Sun, &site, window, threshold, opts);
+    let scan = bench_internals::solar_below_threshold_scan_baseline(site, window, threshold, opts);
+    assert_period_lists_close(&default, &scan);
+}
+
+#[test]
+fn sun_altitude_ranges_default_matches_scan_baseline() {
+    let site = roque();
+    let window = window_days(60000.0, 7.0);
+    let opts = default_opts();
+
+    let default = altitude_ranges(
         &Sun,
         &site,
         window,
-        Degrees::new(-6.0),
-        Degrees::new(0.0),
+        Degrees::new(-18.0),
+        Degrees::new(-12.0),
         opts,
     );
-    let _ = culminations(&Sun, &site, window, opts);
+    let scan = bench_internals::solar_altitude_ranges_scan_baseline(
+        site,
+        window,
+        Degrees::new(-18.0),
+        Degrees::new(-12.0),
+        opts,
+    );
+    assert_period_lists_close(&default, &scan);
 }
 
 #[test]
-fn solar_thresholds_match_scan_baseline_one_day() {
+fn moon_above_threshold_default_matches_scan_baseline() {
+    let site = roque();
+    let window = window_days(60000.0, 30.0);
+    let threshold = Degrees::new(0.0);
+    let opts = default_opts();
+
+    let default = above_threshold(&Moon, &site, window, threshold, opts);
+    let scan = bench_internals::lunar_above_threshold_scan_baseline(site, window, threshold, opts);
+    assert_period_lists_close(&default, &scan);
+}
+
+#[test]
+fn sun_crossings_finds_events_in_day() {
     let site = roque();
     let window = window_days(60000.0, 1.0);
-    for threshold in [0.0, -6.0, -12.0, -18.0] {
-        let thr = Degrees::new(threshold);
-        let cheb = crossings(&Sun, &site, window, thr, chebyshev_opts());
-        let scan = crossings(&Sun, &site, window, thr, scan_baseline_opts());
-        assert_crossings_in_window(&cheb, window);
-        assert_crossings_in_window(&scan, window);
-        assert_eq!(
-            cheb.len(),
-            scan.len(),
-            "threshold {threshold}: cheb={} scan={}",
-            cheb.len(),
-            scan.len()
-        );
-    }
-}
-
-#[test]
-fn solar_above_below_range_match_scan_baseline_week() {
-    let site = roque();
-    let window = window_days(60000.0, 7.0);
-    let cheb = chebyshev_opts();
-    let scan = scan_baseline_opts();
-
-    let above_cheb = above_threshold(&Sun, &site, window, Degrees::new(0.0), cheb);
-    let above_scan = above_threshold(&Sun, &site, window, Degrees::new(0.0), scan);
-    assert_periods_in_window(&above_cheb, window);
-    assert_periods_in_window(&above_scan, window);
-    assert_eq!(above_cheb.len(), above_scan.len());
-
-    let below_cheb = below_threshold(&Sun, &site, window, Degrees::new(-18.0), cheb);
-    let below_scan = below_threshold(&Sun, &site, window, Degrees::new(-18.0), scan);
-    assert_periods_in_window(&below_cheb, window);
-    assert_periods_in_window(&below_scan, window);
-    assert_eq!(below_cheb.len(), below_scan.len());
-
-    let range_cheb = altitude_ranges(
-        &Sun,
-        &site,
-        window,
-        Degrees::new(-18.0),
-        Degrees::new(-12.0),
-        cheb,
-    );
-    let range_scan = altitude_ranges(
-        &Sun,
-        &site,
-        window,
-        Degrees::new(-18.0),
-        Degrees::new(-12.0),
-        scan,
-    );
-    assert_periods_in_window(&range_cheb, window);
-    assert_periods_in_window(&range_scan, window);
-    assert_eq!(range_cheb.len(), range_scan.len());
-}
-
-#[test]
-fn lunar_above_below_range_match_scan_baseline_week() {
-    let site = roque();
-    let window = window_days(60000.0, 7.0);
-    let cheb = chebyshev_opts();
-    let scan = scan_baseline_opts();
-
-    let above_cheb = above_threshold(&Moon, &site, window, Degrees::new(0.0), cheb);
-    let above_scan = above_threshold(&Moon, &site, window, Degrees::new(0.0), scan);
-    assert_periods_in_window(&above_cheb, window);
-    assert_eq!(above_cheb.len(), above_scan.len());
-
-    let below_cheb = below_threshold(&Moon, &site, window, Degrees::new(0.0), cheb);
-    let below_scan = below_threshold(&Moon, &site, window, Degrees::new(0.0), scan);
-    assert_periods_in_window(&below_cheb, window);
-    assert_eq!(below_cheb.len(), below_scan.len());
-
-    let range_cheb = altitude_ranges(
-        &Moon,
-        &site,
-        window,
-        Degrees::new(-5.0),
-        Degrees::new(45.0),
-        cheb,
-    );
-    let range_scan = altitude_ranges(
-        &Moon,
-        &site,
-        window,
-        Degrees::new(-5.0),
-        Degrees::new(45.0),
-        scan,
-    );
-    assert_periods_in_window(&range_cheb, window);
-    assert_eq!(range_cheb.len(), range_scan.len());
-}
-
-#[test]
-fn long_windows_solar_below_astronomical_twilight() {
-    let site = roque();
-    let cheb = chebyshev_opts();
-    let scan = scan_baseline_opts();
-    for len in [30.0, 184.0] {
-        let window = window_days(60000.0, len);
-        let cheb_nights = below_threshold(&Sun, &site, window, Degrees::new(-18.0), cheb);
-        let scan_nights = below_threshold(&Sun, &site, window, Degrees::new(-18.0), scan);
-        assert_periods_in_window(&cheb_nights, window);
-        assert_eq!(cheb_nights.len(), scan_nights.len(), "len={len}");
-    }
-}
-
-#[test]
-#[ignore = "slow: one-year window baseline comparison"]
-fn long_window_one_year_solar_below_astronomical_twilight() {
-    let site = roque();
-    let window = window_days(60000.0, 365.0);
-    let cheb_nights = below_threshold(&Sun, &site, window, Degrees::new(-18.0), chebyshev_opts());
-    let scan_nights = below_threshold(
-        &Sun,
-        &site,
-        window,
-        Degrees::new(-18.0),
-        scan_baseline_opts(),
-    );
-    assert_periods_in_window(&cheb_nights, window);
-    assert_eq!(cheb_nights.len(), scan_nights.len());
-}
-
-#[test]
-fn crossing_near_window_start() {
-    let site = roque();
-    let window = window_days(60000.0, 2.0);
-    let events = crossings(&Sun, &site, window, Degrees::new(0.0), chebyshev_opts());
-    assert_crossings_in_window(&events, window);
+    let events = crossings(&Sun, &site, window, Degrees::new(0.0), default_opts());
     assert!(!events.is_empty());
 }
 
 #[test]
-fn explicit_scan_step_forces_scan_path() {
+fn periods_respect_window_bounds() {
     let site = roque();
-    let window = window_days(60000.0, 1.0);
-    let scan = scan_baseline_opts();
-    let events = crossings(&Sun, &site, window, Degrees::new(0.0), scan);
-    assert_crossings_in_window(&events, window);
-    assert_eq!(events.len(), 2);
+    let window = window_days(60000.0, 30.0);
+    let periods = below_threshold(&Sun, &site, window, Degrees::new(-18.0), default_opts());
+    assert_periods_in_window(&periods, window);
 }

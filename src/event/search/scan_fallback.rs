@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: AGPL-3.0-only
 // Copyright (C) 2026 Vallés Puig, Ramon
 
-//! Legacy scan+Brent crossing discovery used as an internal fallback baseline.
+//! Scan+Brent fallback baseline for threshold crossing discovery.
 
 use crate::event::search::intervals::LabeledCrossing;
 use crate::qtty::{Day, Quantity};

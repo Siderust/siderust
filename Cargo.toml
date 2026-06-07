@@ -80,6 +80,8 @@ pod = ["serde", "dep:faer", "dep:hex", "dep:sha2"]
 pod-parquet = ["pod", "dep:parquet"]
 ## DORIS RINEX observation parser inside `pod::io`.
 pod-doris = ["pod", "doris"]
+## Internal baseline helpers for Criterion benchmarks (not part of the stable API).
+bench-internals = []
 
 [dependencies]
 affn = { version = "0.7", features = ["astro"] }
@@ -111,6 +113,11 @@ rstest = "0.26"
 criterion = "0.8"
 serde_json = "1.0"
 
+[[test]]
+name = "test_event_search"
+path = "tests/test_event_search.rs"
+required-features = ["bench-internals"]
+
 [build-dependencies]
 
 [[bench]]
@@ -124,10 +131,12 @@ harness = false
 [[bench]]
 name = "solar_altitude"
 harness = false
+required-features = ["bench-internals"]
 
 [[bench]]
 name = "moon_altitude"
 harness = false
+required-features = ["bench-internals"]
 
 [[bench]]
 name = "star_altitude"

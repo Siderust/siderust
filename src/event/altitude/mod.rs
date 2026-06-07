@@ -15,8 +15,8 @@
 //!
 //! Event detection (rise/set crossings, culminations, time inside an
 //! altitude band) uses Chebyshev-first crossing discovery with precise
-//! validation and local scan+Brent fallback; temporal accuracy is limited
-//! by the chosen `time_tolerance` and any explicit `scan_step_days`.
+//! scan+Brent fallback; temporal accuracy is limited by the chosen
+//! `time_tolerance`.
 //!
 //! ## Technical scope
 //!
@@ -41,7 +41,6 @@
 //! | [`altitude_ranges`] | Intervals where altitude is within `[h_min, h_max]` |
 //! | [`above_threshold`] | Intervals where altitude is above threshold |
 //! | [`below_threshold`] | Intervals where altitude is below threshold |
-//! | `*_with_policy` variants | Same searches with an explicit apparent-position correction policy |
 //!
 //! All inputs/outputs are typed with `qtty` (`Degrees`, `JulianDate`, etc.).
 //!
@@ -120,11 +119,7 @@ pub use search::SearchOpts;
 // Re-exports: Event Finding
 // ---------------------------------------------------------------------------
 
-pub use events::{
-    above_threshold, above_threshold_with_policy, altitude_ranges, altitude_ranges_with_policy,
-    below_threshold, below_threshold_with_policy, crossings, crossings_with_policy, culminations,
-    culminations_with_policy,
-};
+pub use events::{above_threshold, altitude_ranges, below_threshold, crossings, culminations};
 
 // ---------------------------------------------------------------------------
 // Re-exports: Trait & Provider Functions

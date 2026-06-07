@@ -58,12 +58,8 @@ use crate::time::{complement_within, Interval, ModifiedJulianDate};
 // ---------------------------------------------------------------------------
 
 /// Choose the best scan step for the target.
-fn scan_step_for<T: AzimuthProvider>(target: &T, opts: &SearchOpts) -> Days {
-    crate::event::altitude::search::resolve_scan_step(
-        target.scan_step_hint(),
-        opts,
-        DEFAULT_SCAN_STEP,
-    )
+fn scan_step_for<T: AzimuthProvider>(target: &T, _opts: &SearchOpts) -> Days {
+    target.scan_step_hint().unwrap_or(DEFAULT_SCAN_STEP)
 }
 
 /// Build a **continuous** function `sin(az(t) − bearing)`.
@@ -244,10 +240,7 @@ pub fn azimuth_extrema<T: AzimuthProvider>(
     window: Interval<ModifiedJulianDate>,
     opts: SearchOpts,
 ) -> Vec<AzimuthExtremum> {
-    let step = opts
-        .scan_step_days
-        .or_else(|| target.scan_step_hint())
-        .unwrap_or(EXTREMA_SCAN_STEP);
+    let step = target.scan_step_hint().unwrap_or(EXTREMA_SCAN_STEP);
     let tol = opts.time_tolerance;
 
     let f = make_az_unwrapped_fn(

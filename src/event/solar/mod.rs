@@ -29,6 +29,7 @@
 //!   rectangular and spherical variables. VSOP 87 solutions". *A&A*,
 //!   202, 309–315.
 
+mod daily_events;
 mod sun_equations;
 
 pub(crate) mod altitude_periods;
