@@ -15,7 +15,7 @@ use crate::qtty::*;
 use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
 
 use super::daily_events::solar_daily_crossing_events_impl;
-use super::daily_events::solar_daily_crossings_impl;
+use super::daily_events::{solar_daily_crossings_for_thresholds_impl, solar_daily_crossings_impl};
 
 /// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
 pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Quantity<Radian> {
@@ -51,8 +51,23 @@ pub(crate) fn solar_altitude_ranges_impl(
     range: (Degrees, Degrees),
     opts: InternalSearchConfig,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    let above_min = solar_above_threshold_impl(site, period, range.0, opts);
-    let above_max = solar_above_threshold_impl(site, period, range.1, opts);
+    if period.end <= period.start {
+        return Vec::new();
+    }
+
+    let crossings =
+        solar_daily_crossings_for_thresholds_impl(site, period, &[range.0, range.1], opts);
+    let min_crossings = &crossings[0];
+    let max_crossings = &crossings[1];
+
+    let min_sin = range.0.to::<Radian>().sin();
+    let max_sin = range.1.to::<Radian>().sin();
+
+    let start_above_min = sun_altitude_rad(period.start, &site).sin() > min_sin;
+    let start_above_max = sun_altitude_rad(period.start, &site).sin() > max_sin;
+
+    let above_min = intervals::build_above_periods_directed(min_crossings, period, start_above_min);
+    let above_max = intervals::build_above_periods_directed(max_crossings, period, start_above_max);
     let below_max = intervals::complement(period, &above_max);
     intervals::intersect(&above_min, &below_max)
 }
@@ -129,6 +144,30 @@ mod tests {
         let scan_step = DIURNAL_CHEBY_SCAN_STEP;
         let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
         intervals::above_threshold_periods(period, scan_step, &f, threshold.to::<Radian>())
+    }
+
+    fn independent_solar_altitude_range_reference(
+        site: Geodetic<ECEF>,
+        period: Interval<ModifiedJulianDate>,
+        range: (Degrees, Degrees),
+        opts: InternalSearchConfig,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        let above_min = solar_above_threshold_impl(site, period, range.0, opts);
+        let above_max = solar_above_threshold_impl(site, period, range.1, opts);
+        let below_max = intervals::complement(period, &above_max);
+        intervals::intersect(&above_min, &below_max)
+    }
+
+    #[test]
+    fn solar_altitude_range_batch_matches_independent_thresholds() {
+        let site = greenwich_site();
+        let period = Interval::new(utc_mjd(2026, 1, 1), utc_mjd(2026, 1, 8));
+        let range = (Degrees::new(-18.0), Degrees::new(-12.0));
+        let opts = InternalSearchConfig::default();
+
+        let batch = solar_altitude_ranges_impl(site, period, range, opts);
+        let reference = independent_solar_altitude_range_reference(site, period, range, opts);
+        assert_periods_close(&batch, &reference);
     }
 
     #[test]

@@ -86,7 +86,11 @@ approximation, not a site-specific refraction model.
 - **Grazing events**: tangent crossings near polar boundaries may be missed by
   sign-change bracketing.
 
-Benchmarks: `cargo bench --bench solar_altitude`.
+Benchmarks (require `bench-internals`):
+
+```bash
+cargo bench --features bench-internals --bench solar_altitude
+```
 
 [`below_threshold`]: https://docs.rs/siderust/latest/siderust/event/altitude/fn.below_threshold.html
 [`above_threshold`]: https://docs.rs/siderust/latest/siderust/event/altitude/fn.above_threshold.html

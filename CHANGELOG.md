@@ -4,29 +4,30 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.10.0] - 2026-06-07
 
 ### Added
 
 - Internal solar daily predictor for solar altitude threshold events.
 - Internal Chebyshev-first generic crossing engine using `cheby 0.4`.
-- Internal local scan+Brent fallback baseline (`bench-internals` helpers for benchmarks).
+- Internal local scan+Brent fallback baseline.
+- `bench-internals` feature for Criterion baseline comparisons.
 
 ### Changed
 
-- Standardized public altitude period API on [`altitude_ranges`], [`above_threshold`], and [`below_threshold`].
+- Public altitude period API standardized on [`altitude_ranges`], [`above_threshold`], and [`below_threshold`], plus event-level [`crossings`] and [`culminations`].
+- [`SearchOpts`] follows Option A and contains only `time_tolerance`.
 - [`AltitudeProvider`] now only represents single-point altitude evaluation.
-- Search options follow Option A: public [`SearchOpts`] contains only `time_tolerance`, not algorithm controls.
-- Solar events use a specialized internal daily predictor with precise validation.
-- Lunar events use `MoonAltitudeContext` + Chebyshev-first crossing discovery.
-- Stable FFI [`SiderustSearchOpts`] mirrors public [`SearchOpts`] (time tolerance only).
+- Solar altitude events use an internal daily predictor with precise Brent validation and local fallback.
+- Lunar altitude events use `MoonAltitudeContext` + Chebyshev-first crossing discovery.
+- FFI [`SiderustSearchOpts`] mirrors public [`SearchOpts`] (time tolerance only).
 
 ### Removed
 
 - `unstable-event-search` feature and experimental algorithm/tuning hooks.
 - FFI `_v2` altitude/crossing functions and v2 tuning structs.
-- Public `scan_step_days` override and public `*_with_policy` event search exports.
-- `AltitudeQuery`, `AltitudePeriodsProvider`, `altitude_periods`, and target-specific legacy period wrappers.
+- Public algorithm/tuning structs and public scan-step override.
+- `AltitudeQuery`, `AltitudePeriodsProvider`, `altitude_periods`, `compute_altitude_periods`, and target-specific legacy period wrappers.
 - Local Chebyshev root code superseded by `cheby`.
 
 ## [0.9.1] - 2026-06-06

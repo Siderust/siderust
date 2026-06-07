@@ -1,6 +1,6 @@
 [package]
 name = "siderust-ffi"
-version = "0.9.1"
+version = "0.10.0"
 edition = "2021"
 authors = ["VPRamon <vallespuigramon@gmail.com>"]
 description = "C FFI bindings for siderust, high-precision astronomy library."
@@ -19,7 +19,7 @@ runtime-data = ["siderust/runtime-data", "dep:siderust-archive", "siderust-archi
 
 
 [dependencies]
-siderust    = { version = "0.9", path = ".." }
+siderust    = { version = "0.10", path = ".." }
 siderust-archive = { version = "0.1", optional = true, features = ["jpl"] }
 keplerian   = "0.2"
 principia   = { version = "0.2", features = ["alloc"] }

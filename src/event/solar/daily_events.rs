@@ -57,6 +57,7 @@ enum DayThresholdCase {
 }
 
 /// Analytic daily solar state for one full MJD day (predictor only).
+#[derive(Clone, Copy)]
 struct SolarDailyState {
     sin_dec: f64,
     cos_dec: f64,
@@ -69,6 +70,106 @@ struct DayCrossingInput {
     thr_sin: f64,
     sin_lat: f64,
     cos_lat: f64,
+}
+
+/// Precomputed full-day windows overlapping a search interval.
+pub(crate) struct SolarEventContext {
+    days: Vec<SolarDayWindow>,
+}
+
+#[derive(Clone, Copy)]
+struct SolarDayWindow {
+    clipped_day: Interval<ModifiedJulianDate>,
+    state: Option<SolarDailyState>,
+}
+
+impl SolarEventContext {
+    pub(crate) fn new(site: Geodetic<ECEF>, window: Interval<ModifiedJulianDate>) -> Self {
+        let mut days = Vec::new();
+        if window.end > window.start {
+            let mut full_day_start = floor_day(window.start);
+            while full_day_start < window.end {
+                let full_day_end = add_days(full_day_start, ONE_DAY);
+                let full_day = Interval::new(full_day_start, full_day_end);
+
+                let clipped_start = max_mjd(full_day_start, window.start);
+                let clipped_end = min_mjd(full_day_end, window.end);
+                if clipped_end > clipped_start {
+                    days.push(SolarDayWindow {
+                        clipped_day: Interval::new(clipped_start, clipped_end),
+                        state: solar_daily_state(site, full_day),
+                    });
+                }
+                full_day_start = full_day_end;
+            }
+        }
+        Self { days }
+    }
+}
+
+/// Find labelled threshold crossings for multiple thresholds in one daily pass.
+pub(crate) fn solar_daily_crossings_for_thresholds_impl(
+    site: Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    thresholds: &[Degrees],
+    opts: InternalSearchConfig,
+) -> Vec<Vec<LabeledCrossing>> {
+    if thresholds.is_empty() {
+        return Vec::new();
+    }
+    if window.end <= window.start {
+        return vec![Vec::new(); thresholds.len()];
+    }
+
+    if opts.uses_scan_baseline() || opts.disable_solar_daily_predictor {
+        return thresholds
+            .iter()
+            .map(|&threshold| solar_daily_crossings_impl(site, window, threshold, opts).0)
+            .collect();
+    }
+
+    let ctx = SolarEventContext::new(site, window);
+    let lat = site.lat.to::<Radian>().value();
+    let (sin_lat, cos_lat) = lat.sin_cos();
+    let threshold_sins: Vec<f64> = thresholds.iter().map(|h| h.to::<Radian>().sin()).collect();
+
+    let mut results = vec![Vec::new(); thresholds.len()];
+    let mut diagnostics = SolarDailyDiagnostics::default();
+
+    for day in ctx.days {
+        for (idx, thr_sin) in threshold_sins.iter().copied().enumerate() {
+            let Some(state) = day.state else {
+                diagnostics.grazing_days += 1;
+                results[idx].extend(fallback_day(
+                    site,
+                    day.clipped_day,
+                    thr_sin,
+                    opts,
+                    &mut diagnostics,
+                ));
+                continue;
+            };
+
+            results[idx].extend(predict_day_crossings(
+                site,
+                DayCrossingInput {
+                    state,
+                    clipped_day: day.clipped_day,
+                    thr_sin,
+                    sin_lat,
+                    cos_lat,
+                },
+                opts,
+                &mut diagnostics,
+            ));
+        }
+    }
+
+    for crossings in &mut results {
+        sort_dedup_labelled(crossings);
+    }
+
+    results
 }
 
 /// Find labelled threshold crossings using the solar daily predictor.
@@ -109,48 +210,34 @@ pub(crate) fn solar_daily_crossings_impl(
     let lat = site.lat.to::<Radian>().value();
     let (sin_lat, cos_lat) = lat.sin_cos();
 
+    let ctx = SolarEventContext::new(site, window);
     let mut labelled = Vec::new();
-    let mut full_day_start = floor_day(window.start);
 
-    while full_day_start < window.end {
-        let full_day_end = add_days(full_day_start, ONE_DAY);
-        let full_day = Interval::new(full_day_start, full_day_end);
-
-        let clipped_start = max_mjd(full_day_start, window.start);
-        let clipped_end = min_mjd(full_day_end, window.end);
-        if clipped_end <= clipped_start {
-            full_day_start = full_day_end;
-            continue;
-        }
-        let clipped_day = Interval::new(clipped_start, clipped_end);
-
+    for day in ctx.days {
         diagnostics.predicted_days += 1;
-        let Some(state) = solar_daily_state(site, full_day) else {
+        let Some(state) = day.state else {
             diagnostics.grazing_days += 1;
             labelled.extend(fallback_day(
                 site,
-                clipped_day,
+                day.clipped_day,
                 thr_sin,
                 opts,
                 &mut diagnostics,
             ));
-            full_day_start = full_day_end;
             continue;
         };
-        let day_crossings = predict_day_crossings(
+        labelled.extend(predict_day_crossings(
             site,
             DayCrossingInput {
                 state,
-                clipped_day,
+                clipped_day: day.clipped_day,
                 thr_sin,
                 sin_lat,
                 cos_lat,
             },
             opts,
             &mut diagnostics,
-        );
-        labelled.extend(day_crossings);
-        full_day_start = full_day_end;
+        ));
     }
 
     sort_dedup_labelled(&mut labelled);
@@ -608,6 +695,36 @@ mod tests {
                 (a.t.raw() - e.t.raw()).abs() < Minutes::new(2.0).to::<Day>(),
                 "{threshold}: time mismatch {a:?} vs {e:?}"
             );
+        }
+    }
+
+    #[test]
+    fn solar_daily_batch_returns_one_result_per_threshold() {
+        let site = greenwich();
+        let window = utc_window(7);
+        let thresholds = [
+            Degrees::new(0.0),
+            Degrees::new(-6.0),
+            Degrees::new(-12.0),
+            Degrees::new(-18.0),
+        ];
+        let batch = solar_daily_crossings_for_thresholds_impl(
+            site,
+            window,
+            &thresholds,
+            InternalSearchConfig::default(),
+        );
+        assert_eq!(batch.len(), thresholds.len());
+        for (crossings, &thr) in batch.iter().zip(thresholds.iter()) {
+            let (single, _) =
+                solar_daily_crossings_impl(site, window, thr, InternalSearchConfig::default());
+            assert_labelled_close(crossings, &single, &format!("threshold {}", thr.value()));
+            for pair in crossings.windows(2) {
+                assert!(
+                    pair[0].t <= pair[1].t,
+                    "unsorted batch crossings: {crossings:?}"
+                );
+            }
         }
     }
 

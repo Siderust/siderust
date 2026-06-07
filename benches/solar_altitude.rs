@@ -55,7 +55,7 @@ fn bench_solar_engines(c: &mut Criterion) {
                 ));
             });
         });
-        daily.bench_function("altitude_ranges/twilight", |b| {
+        daily.bench_function("altitude_ranges/twilight (batch daily path)", |b| {
             b.iter(|| {
                 black_box(altitude_ranges(
                     &Sun,
