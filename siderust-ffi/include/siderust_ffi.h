@@ -877,20 +877,6 @@ typedef struct siderust_subject_t {
   const struct SiderustGenericTarget *generic_target_handle;
 } siderust_subject_t;
 
-// Altitude computation query parameters.
-typedef struct siderust_altitude_query_t {
-  // Observer location.
-  struct siderust_geodetic_t observer;
-  // Start of the search window (Modified Julian Date).
-  double start_mjd;
-  // End of the search window (Modified Julian Date).
-  double end_mjd;
-  // Minimum altitude threshold in degrees.
-  double min_altitude_deg;
-  // Maximum altitude threshold in degrees.
-  double max_altitude_deg;
-} siderust_altitude_query_t;
-
 // Spherical position (direction + distance).
 typedef struct siderust_spherical_pos_t {
   // Longitude in degrees.
@@ -1898,15 +1884,16 @@ siderust_status_t siderust_culminations(struct siderust_subject_t subject,
                                         struct siderust_culmination_event_t **out,
                                         uintptr_t *count);
 
-// Periods when a body's altitude is within [min, max].
-//
-// Only `Body` subjects support this operation. For `Star`, `Icrs`, and
-// `GenericTarget`, `SIDERUST_STATUS_T_INVALID_ARGUMENT` is returned.
+// Periods when a subject's altitude is within `[h_min, h_max]`.
 
-siderust_status_t siderust_altitude_periods(struct siderust_subject_t subject,
-                                            struct siderust_altitude_query_t query,
-                                            tempoch_period_mjd_t **out,
-                                            uintptr_t *count);
+siderust_status_t siderust_altitude_ranges(struct siderust_subject_t subject,
+                                           struct siderust_geodetic_t observer,
+                                           tempoch_period_mjd_t window,
+                                           double h_min_deg,
+                                           double h_max_deg,
+                                           struct siderust_search_opts_t opts,
+                                           tempoch_period_mjd_t **out,
+                                           uintptr_t *count);
 
 // Azimuth of any subject at an instant (degrees, North-clockwise).
 

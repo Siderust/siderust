@@ -25,7 +25,7 @@ use qtty::*;
 use siderust::event::azimuth::{
     azimuth_crossings, azimuth_extrema, in_azimuth_range, outside_azimuth_range,
 };
-use siderust::AltitudePeriodsProvider;
+use siderust::AltitudeProvider;
 use siderust::AzimuthProvider;
 
 // ═══════════════════════════════════════════════════════════════════════════
@@ -285,67 +285,75 @@ pub extern "C" fn siderust_culminations(
 }
 
 // ═══════════════════════════════════════════════════════════════════════════
-// Altitude periods (body-only)
+// Altitude, range periods
 // ═══════════════════════════════════════════════════════════════════════════
 
-/// Periods when a body's altitude is within [min, max].
-///
-/// Only `Body` subjects support this operation. For `Star`, `Icrs`, and
-/// `GenericTarget`, `SIDERUST_STATUS_T_INVALID_ARGUMENT` is returned.
+/// Periods when a subject's altitude is within `[h_min, h_max]`.
 #[no_mangle]
-pub extern "C" fn siderust_altitude_periods(
+pub extern "C" fn siderust_altitude_ranges(
     subject: SiderustSubject,
-    query: SiderustAltitudeQuery,
+    observer: SiderustGeodetict,
+    window: TempochPeriodMjd,
+    h_min_deg: f64,
+    h_max_deg: f64,
+    opts: SiderustSearchOpts,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
     ffi_guard! {{
-        match subject.kind {
-            SiderustSubjectKind::Body => {
-                let q = ffi_try!(query.try_to_rust());
-                dispatch_body!(subject.body, |b| {
-                    periods_to_c(b.altitude_periods(&q), out, count)
-                })
-            }
-            _ => SiderustStatus::InvalidArgument,
-        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_subject!(subject, |p| {
+            periods_to_c(
+                siderust::altitude_ranges(
+                    p,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(h_min_deg),
+                    Degrees::new(h_max_deg),
+                    opts.to_rust(),
+                ),
+                out,
+                count,
+            )
+        })
     }}
 }
 
-/// Periods when a body's altitude is within [min, max], with extended search options.
-///
-/// Only `Body` subjects support this operation. For `Star`, `Icrs`, and
-/// `GenericTarget`, `SIDERUST_STATUS_T_INVALID_ARGUMENT` is returned.
+/// Periods when a subject's altitude is within `[h_min, h_max]`, with extended search options.
 #[cfg(feature = "unstable-event-search")]
 #[no_mangle]
-pub extern "C" fn siderust_altitude_periods_v2(
+pub extern "C" fn siderust_altitude_ranges_v2(
     subject: SiderustSubject,
-    query: SiderustAltitudeQuery,
+    observer: SiderustGeodetict,
+    window: TempochPeriodMjd,
+    h_min_deg: f64,
+    h_max_deg: f64,
     opts: SiderustSearchOptsV2,
     out: *mut *mut TempochPeriodMjd,
     count: *mut usize,
 ) -> SiderustStatus {
     ffi_guard! {{
-        match subject.kind {
-            SiderustSubjectKind::Body => {
-                let q = ffi_try!(query.try_to_rust());
-                dispatch_body!(subject.body, |b| {
-                    periods_to_c(
-                        siderust::unstable_event_search::altitude_ranges_with_search_opts_v2(
-                            &b,
-                            &q.observer,
-                            q.window,
-                            q.min_altitude,
-                            q.max_altitude,
-                            opts.to_ffi(),
-                        ),
-                        out,
-                        count,
-                    )
-                })
-            }
-            _ => SiderustStatus::InvalidArgument,
-        }
+        let window = match window_from_c(window) {
+            Ok(w) => w,
+            Err(e) => return e,
+        };
+        dispatch_subject!(subject, |p| {
+            periods_to_c(
+                siderust::unstable_event_search::altitude_ranges_with_search_opts_v2(
+                    p,
+                    &observer.to_rust(),
+                    window,
+                    Degrees::new(h_min_deg),
+                    Degrees::new(h_max_deg),
+                    opts.to_ffi(),
+                ),
+                out,
+                count,
+            )
+        })
     }}
 }
 
@@ -746,67 +754,57 @@ mod tests {
     }
 
     #[test]
-    fn altitude_periods_body_only() {
-        let query = SiderustAltitudeQuery {
-            observer: paris(),
-            start_mjd: mjd(60000.0),
-            end_mjd: mjd(60001.0),
-            min_altitude_deg: -90.0,
-            max_altitude_deg: 90.0,
-        };
+    fn altitude_ranges_works_for_all_subjects() {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
-        let st = siderust_altitude_periods(
+        let st = siderust_altitude_ranges(
             SiderustSubject::body(SiderustBody::Sun),
-            query,
+            paris(),
+            one_day_window(),
+            -90.0,
+            90.0,
+            default_opts(),
             &mut out,
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_periods_free(out, count) };
-        let (star_handle, star_subj) = star_subject("VEGA");
-        let st = siderust_altitude_periods(star_subj, query, &mut out, &mut count);
-        assert_eq!(st, SiderustStatus::InvalidArgument);
-        unsafe { crate::bodies::siderust_star_free(star_handle) };
 
-        let (target_handle, target_subj) = generic_target_subject();
-        let st = siderust_altitude_periods(target_subj, query, &mut out, &mut count);
-        assert_eq!(st, SiderustStatus::InvalidArgument);
-        unsafe { siderust_generic_target_free(target_handle) };
+        let (star_handle, star_subj) = star_subject("VEGA");
+        let st = siderust_altitude_ranges(
+            star_subj,
+            paris(),
+            one_day_window(),
+            0.0,
+            90.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        );
+        assert_eq!(st, SiderustStatus::Ok);
+        unsafe {
+            crate::altitude::siderust_periods_free(out, count);
+            siderust_star_free(star_handle);
+        }
     }
 
     #[cfg(feature = "unstable-event-search")]
     #[test]
-    fn altitude_periods_v2_body_only() {
-        let query = SiderustAltitudeQuery {
-            observer: paris(),
-            start_mjd: mjd(60000.0),
-            end_mjd: mjd(60001.0),
-            min_altitude_deg: -90.0,
-            max_altitude_deg: 0.0,
-        };
+    fn altitude_ranges_v2_works_for_sun() {
         let mut out: *mut TempochPeriodMjd = ptr::null_mut();
         let mut count = 0usize;
-        let st = siderust_altitude_periods_v2(
+        let st = siderust_altitude_ranges_v2(
             SiderustSubject::body(SiderustBody::Sun),
-            query,
+            paris(),
+            one_day_window(),
+            -90.0,
+            0.0,
             opts_v2(SiderustCrossingAlgorithm::ChebyshevRoots),
             &mut out,
             &mut count,
         );
         assert_eq!(st, SiderustStatus::Ok);
         unsafe { crate::altitude::siderust_periods_free(out, count) };
-
-        let (star_handle, star_subj) = star_subject("VEGA");
-        let st = siderust_altitude_periods_v2(
-            star_subj,
-            query,
-            opts_v2(SiderustCrossingAlgorithm::Auto),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(st, SiderustStatus::InvalidArgument);
-        unsafe { crate::bodies::siderust_star_free(star_handle) };
     }
 
     #[test]

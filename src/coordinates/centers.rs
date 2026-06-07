@@ -62,7 +62,7 @@
 //!
 //! ### Validated Construction
 //!
-//! Observatory catalog constants (e.g., in [`crate::observatories`]) are of
+//! Observatory catalog constants (e.g., in [`crate::catalogs::observatories`]) are of
 //! type [`Geodetic<ECEF>`] and can be used directly as `Topocentric` parameters.
 //! Use [`Geodetic::<ECEF>::new`] to construct validated geodetic coordinates
 //! (longitude and latitude are normalised automatically).

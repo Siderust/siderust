@@ -4,7 +4,7 @@
 //! # Catalog record type and filter
 //!
 //! [`CatalogRecord`] is the column-aligned row type for large stellar catalogs
-//! (Gaia-style). Position is stored as typed [`Radians`] scalars; parallax and
+//! (Gaia-style). Position is stored as typed [`crate::qtty::Radians`] scalars; parallax and
 //! radial velocity use typed quantities. Proper-motion components (mas/yr)
 //! remain plain `f64` until a `MilliArcSecondPerYear` unit is added to `qtty`.
 

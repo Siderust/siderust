@@ -54,37 +54,35 @@
 //!
 //! ## Trait-Based API
 //!
-//! The [`AltitudePeriodsProvider`] trait provides a unified interface for
-//! computing altitude periods of any celestial body. Implementations exist
-//! for [`Sun`](crate::bodies::solar_system::Sun),
+//! The [`AltitudeProvider`] trait provides a unified interface for evaluating
+//! topocentric altitude of any celestial body. Implementations exist for
+//! [`Sun`](crate::bodies::solar_system::Sun),
 //! [`Moon`](crate::bodies::solar_system::Moon),
 //! [`Star`](crate::bodies::Star), and
 //! [`direction::ICRS`](crate::coordinates::spherical::direction::ICRS).
 //!
-//! All event-finding functions are generic over `AltitudePeriodsProvider`,
-//! so you can pass any supported body directly.
+//! Period semantics are expressed only through the three public functions
+//! [`above_threshold`], [`below_threshold`], and [`altitude_ranges`], which are
+//! generic over `AltitudeProvider`.
 //!
-//! ## Example
+//! ## Examples
 //!
-//! ```rust
-//! use siderust::event::altitude::{crossings, AltitudePeriodsProvider, SearchOpts};
-//! use siderust::bodies::Sun;
-//! use siderust::coordinates::centers::Geodetic;
-//! use siderust::coordinates::frames::ECEF;
-//! use siderust::time::{ModifiedJulianDate, Interval};
-//! use siderust::qtty::*;
+//! Astronomical night (Sun below −18°):
 //!
-//! let site = Geodetic::<ECEF>::new(Degrees::new(0.0), Degrees::new(51.48), Meters::new(0.0));
-//! let window = Interval::new(
-//!     siderust::ModifiedJulianDate::new(60000.0),
-//!     siderust::ModifiedJulianDate::new(60001.0),
-//! );
+//! ```rust,ignore
+//! below_threshold(&Sun, &site, window, Degrees::new(-18.0), SearchOpts::default());
+//! ```
 //!
-//! // Pass any body that implements AltitudePeriodsProvider
-//! let events = crossings(&Sun, &site, window, Degrees::new(0.0), SearchOpts::default());
+//! Nautical twilight band (−18° to −12°):
 //!
-//! // Or use the trait methods directly
-//! let alt_rad = Sun.altitude_at(&site, siderust::ModifiedJulianDate::new(60000.0));
+//! ```rust,ignore
+//! altitude_ranges(&Sun, &site, window, Degrees::new(-18.0), Degrees::new(-12.0), SearchOpts::default());
+//! ```
+//!
+//! Moon above the horizon:
+//!
+//! ```rust,ignore
+//! above_threshold(&Moon, &site, window, Degrees::new(0.0), SearchOpts::default());
 //! ```
 //!
 //! ## References
@@ -103,9 +101,7 @@ mod types;
 // Re-exports: Types
 // ---------------------------------------------------------------------------
 
-pub use types::{
-    AltitudeQuery, CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind,
-};
+pub use types::{CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind};
 
 // ---------------------------------------------------------------------------
 // Re-exports: Search Options
@@ -133,7 +129,7 @@ pub use events::{
 // Re-exports: Trait & Provider Functions
 // ---------------------------------------------------------------------------
 
-pub use provider::{altitude_periods, AltitudePeriodsProvider};
+pub use provider::AltitudeProvider;
 
 #[cfg(feature = "unstable-event-search")]
 pub use events::{

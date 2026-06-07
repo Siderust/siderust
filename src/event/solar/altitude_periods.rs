@@ -58,14 +58,6 @@ pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -
 // =============================================================================
 
 /// Finds day periods (Sun **above** `threshold`) inside `period`.
-pub(crate) fn find_day_periods(
-    site: Geodetic<ECEF>,
-    period: Interval<ModifiedJulianDate>,
-    threshold: Degrees,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    find_day_periods_with_search_opts(site, period, threshold, SearchOptsV2::default())
-}
-
 pub(crate) fn find_day_periods_with_search_opts(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
@@ -80,14 +72,6 @@ pub(crate) fn find_day_periods_with_search_opts(
 }
 
 /// Finds night periods (Sun **below** `twilight`) inside `period`.
-pub(crate) fn find_night_periods(
-    site: Geodetic<ECEF>,
-    period: Interval<ModifiedJulianDate>,
-    twilight: Degrees,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    find_night_periods_with_search_opts(site, period, twilight, SearchOptsV2::default())
-}
-
 pub(crate) fn find_night_periods_with_search_opts(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
@@ -99,14 +83,6 @@ pub(crate) fn find_night_periods_with_search_opts(
 }
 
 /// Finds periods where Sun altitude is within `range` `[min, max]`.
-pub(crate) fn find_sun_range_periods(
-    site: Geodetic<ECEF>,
-    period: Interval<ModifiedJulianDate>,
-    range: (Degrees, Degrees),
-) -> Vec<Interval<ModifiedJulianDate>> {
-    find_sun_range_periods_with_search_opts(site, period, range, SearchOptsV2::default())
-}
-
 pub(crate) fn find_sun_range_periods_with_search_opts(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
@@ -213,7 +189,12 @@ mod tests {
         let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
         let period = Interval::new(mjd_start, mjd_end);
 
-        let nights = find_night_periods(site, period, twilight::ASTRONOMICAL);
+        let nights = find_night_periods_with_search_opts(
+            site,
+            period,
+            twilight::ASTRONOMICAL,
+            SearchOptsV2::default(),
+        );
         assert!(
             !nights.is_empty(),
             "Should find night periods at 51° latitude"
@@ -239,13 +220,21 @@ mod tests {
 
         let period = Interval::new(mjd_start, mjd_end);
 
-        let nights =
-            find_sun_range_periods(site, period, (Degrees::new(-90.0), Degrees::new(-18.0)));
+        let nights = find_sun_range_periods_with_search_opts(
+            site,
+            period,
+            (Degrees::new(-90.0), Degrees::new(-18.0)),
+            SearchOptsV2::default(),
+        );
 
         assert!(!nights.is_empty(), "Should find night periods using range");
 
-        let nautical =
-            find_sun_range_periods(site, period, (Degrees::new(-18.0), Degrees::new(-12.0)));
+        let nautical = find_sun_range_periods_with_search_opts(
+            site,
+            period,
+            (Degrees::new(-18.0), Degrees::new(-12.0)),
+            SearchOptsV2::default(),
+        );
 
         assert!(
             !nautical.is_empty(),
@@ -264,11 +253,17 @@ mod tests {
             Degrees::new(-12.0),
             Degrees::new(-18.0),
         ] {
-            let chebyshev_days = find_day_periods(site, period, threshold);
+            let chebyshev_days =
+                find_day_periods_with_search_opts(site, period, threshold, SearchOptsV2::default());
             let scan_days = generic_day_periods(site, period, threshold);
             assert_periods_close(&chebyshev_days, &scan_days);
 
-            let chebyshev_nights = find_night_periods(site, period, threshold);
+            let chebyshev_nights = find_night_periods_with_search_opts(
+                site,
+                period,
+                threshold,
+                SearchOptsV2::default(),
+            );
             let scan_nights = complement_within(period, &scan_days);
             assert_periods_close(&chebyshev_nights, &scan_nights);
         }
@@ -280,8 +275,12 @@ mod tests {
         let period = Interval::new(utc_mjd(2026, 1, 1), utc_mjd(2026, 1, 8));
         let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
 
-        let chebyshev =
-            find_sun_range_periods(site, period, (Degrees::new(-18.0), Degrees::new(-12.0)));
+        let chebyshev = find_sun_range_periods_with_search_opts(
+            site,
+            period,
+            (Degrees::new(-18.0), Degrees::new(-12.0)),
+            SearchOptsV2::default(),
+        );
         let scan = intervals::in_range_periods(
             period,
             SCAN_STEP,
@@ -299,7 +298,8 @@ mod tests {
         let period = Interval::new(utc_mjd(2026, 6, 20), utc_mjd(2026, 6, 27));
         let threshold = Degrees::new(-18.0);
 
-        let chebyshev_nights = find_night_periods(site, period, threshold);
+        let chebyshev_nights =
+            find_night_periods_with_search_opts(site, period, threshold, SearchOptsV2::default());
         let scan_days = generic_day_periods(site, period, threshold);
         let scan_nights = complement_within(period, &scan_days);
 

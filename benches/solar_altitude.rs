@@ -10,9 +10,7 @@ use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use siderust::bodies::Sun;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::event::altitude::{
-    altitude_ranges, below_threshold, AltitudePeriodsProvider, AltitudeQuery, SearchOpts,
-};
+use siderust::event::altitude::{altitude_ranges, below_threshold, SearchOpts};
 use siderust::event::solar::twilight;
 use siderust::qtty::{Day, Degrees, Hour, Quantity};
 use siderust::time::{Interval, ModifiedJulianDate};
@@ -78,7 +76,7 @@ fn bench_find_night_periods(c: &mut Criterion) {
         });
 
         group.bench_function(
-            BenchmarkId::new("altitude_periods/chebyshev_first", label),
+            BenchmarkId::new("altitude_ranges/chebyshev_first", label),
             |b| {
                 b.iter(|| {
                     let _result = altitude_ranges(
@@ -93,32 +91,16 @@ fn bench_find_night_periods(c: &mut Criterion) {
             },
         );
 
-        group.bench_function(
-            BenchmarkId::new("altitude_periods/scan_brent", label),
-            |b| {
-                b.iter(|| {
-                    let _result = altitude_ranges(
-                        black_box(&Sun),
-                        black_box(&site),
-                        black_box(period),
-                        black_box(Degrees::new(-90.0)),
-                        black_box(twilight::ASTRONOMICAL),
-                        black_box(scan_opts),
-                    );
-                });
-            },
-        );
-
-        group.bench_function(BenchmarkId::new("provider_default", label), |b| {
+        group.bench_function(BenchmarkId::new("altitude_ranges/scan_brent", label), |b| {
             b.iter(|| {
-                let query = AltitudeQuery {
-                    observer: black_box(site),
-                    window: black_box(period),
-                    min_altitude: black_box(Degrees::new(-90.0)),
-                    max_altitude: black_box(twilight::ASTRONOMICAL),
-                    correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
-                };
-                let _result = Sun.altitude_periods(black_box(&query));
+                let _result = altitude_ranges(
+                    black_box(&Sun),
+                    black_box(&site),
+                    black_box(period),
+                    black_box(Degrees::new(-90.0)),
+                    black_box(twilight::ASTRONOMICAL),
+                    black_box(scan_opts),
+                );
             });
         });
     }

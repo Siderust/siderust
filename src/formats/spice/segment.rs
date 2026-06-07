@@ -102,8 +102,7 @@ impl SpkSegment {
     /// # Safety / Wire-format API
     ///
     /// This method intentionally exposes raw SPK record values. Prefer a typed
-    /// [`crate::pod::providers::EphemerisProvider`] implementation when you
-    /// need the scientific API.
+    /// `EphemerisProvider` (`pod` feature) when you need the scientific API.
     pub fn evaluate(&self, et: f64) -> Result<[f64; 6], SpiceError> {
         match self {
             SpkSegment::Type2(c) => c.evaluate_type2(et),

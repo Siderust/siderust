@@ -93,14 +93,6 @@ pub(crate) fn moon_altitude_rad(
 ///
 /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` where the
 /// Moon altitude is at or above `threshold`.
-pub(crate) fn find_moon_above_horizon(
-    site: Geodetic<ECEF>,
-    period: Interval<ModifiedJulianDate>,
-    threshold: Degrees,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    find_moon_above_horizon_with_search_opts(site, period, threshold, SearchOptsV2::default())
-}
-
 pub(crate) fn find_moon_above_horizon_with_search_opts(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
@@ -135,14 +127,6 @@ pub(crate) fn find_moon_above_horizon_with_search_opts(
 ///
 /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` where the
 /// Moon altitude is at or below `threshold`.
-pub(crate) fn find_moon_below_horizon(
-    site: Geodetic<ECEF>,
-    period: Interval<ModifiedJulianDate>,
-    threshold: Degrees,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    find_moon_below_horizon_with_search_opts(site, period, threshold, SearchOptsV2::default())
-}
-
 pub(crate) fn find_moon_below_horizon_with_search_opts(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
@@ -173,14 +157,6 @@ pub(crate) fn find_moon_below_horizon_with_search_opts(
 ///
 /// Sorted, non‑overlapping `Vec<Interval<ModifiedJulianDate>>` of intervals
 /// where `min ≤ altitude(t) ≤ max`.
-pub(crate) fn find_moon_altitude_range(
-    site: Geodetic<ECEF>,
-    period: Interval<ModifiedJulianDate>,
-    range: (Degrees, Degrees),
-) -> Vec<Interval<ModifiedJulianDate>> {
-    find_moon_altitude_range_with_search_opts(site, period, range, SearchOptsV2::default())
-}
-
 pub(crate) fn find_moon_altitude_range_with_search_opts(
     site: Geodetic<ECEF>,
     period: Interval<ModifiedJulianDate>,
@@ -270,7 +246,12 @@ mod tests {
         let mjd_end = crate::time::ModifiedJulianDate::new(60007.0);
         let period = Interval::new(mjd_start, mjd_end);
 
-        let periods = find_moon_above_horizon(site, period, Degrees::new(0.0));
+        let periods = find_moon_above_horizon_with_search_opts(
+            site,
+            period,
+            Degrees::new(0.0),
+            SearchOptsV2::default(),
+        );
         assert!(
             !periods.is_empty(),
             "Should find moon-up periods over 7 days"
@@ -291,7 +272,12 @@ mod tests {
         let mjd_end = crate::time::ModifiedJulianDate::new(60683.0);
         let period = Interval::new(mjd_start, mjd_end);
 
-        let periods = find_moon_below_horizon(site, period, Degrees::new(-0.5));
+        let periods = find_moon_below_horizon_with_search_opts(
+            site,
+            period,
+            Degrees::new(-0.5),
+            SearchOptsV2::default(),
+        );
         assert!(!periods.is_empty(), "Should find moon-down periods");
     }
 
@@ -318,7 +304,12 @@ mod tests {
         let mjd_end = crate::time::ModifiedJulianDate::new(60003.0);
         let period = Interval::new(mjd_start, mjd_end);
 
-        let main_result = find_moon_above_horizon(site, period, Degrees::new(0.0));
+        let main_result = find_moon_above_horizon_with_search_opts(
+            site,
+            period,
+            Degrees::new(0.0),
+            SearchOptsV2::default(),
+        );
         let ctx = MoonAltitudeContext::new(period.start, period.end, site);
         let scan_result = scan_baseline_above_horizon(&ctx, period, Degrees::new(0.0));
 

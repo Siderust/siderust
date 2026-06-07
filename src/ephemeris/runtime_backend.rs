@@ -42,7 +42,7 @@ struct RuntimeEphemerisInner {
 /// - Implements [`DynEphemeris`] (instance methods with `&self`)
 /// - Is cloneable and shareable via internal `Arc`
 /// - Retains **all** matching SPK segments per body chain and selects by epoch
-///   (later kernels win when coverage overlaps), matching [`SpkKernelSet`] semantics
+///   (later kernels win when coverage overlaps), matching [`crate::formats::spice::SpkKernelSet`] semantics
 ///
 /// # Example
 ///

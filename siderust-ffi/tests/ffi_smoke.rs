@@ -294,25 +294,42 @@ fn subject_vector_queries_allocate_and_free() {
 }
 
 #[test]
-fn altitude_periods_stays_body_only() {
-    let query = SiderustAltitudeQuery {
-        observer: paris_observer(),
-        start_mjd: mjd(60000.0),
-        end_mjd: mjd(60001.0),
-        min_altitude_deg: -90.0,
-        max_altitude_deg: 90.0,
-    };
-
+fn altitude_ranges_works_for_generic_target() {
     let mut out: *mut TempochPeriodMjd = ptr::null_mut();
     let mut count = 0usize;
-    let status = unsafe { siderust_altitude_periods(sun_subject(), query, &mut out, &mut count) };
+    let status = unsafe {
+        siderust_altitude_ranges(
+            sun_subject(),
+            paris_observer(),
+            one_day_window(),
+            -90.0,
+            90.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        )
+    };
     assert_eq!(status, SiderustStatus::Ok);
     unsafe { siderust_periods_free(out, count) };
 
     let (target_handle, target_subject) = generic_target_subject();
-    let status = unsafe { siderust_altitude_periods(target_subject, query, &mut out, &mut count) };
-    assert_eq!(status, SiderustStatus::InvalidArgument);
-    unsafe { siderust_generic_target_free(target_handle) };
+    let status = unsafe {
+        siderust_altitude_ranges(
+            target_subject,
+            paris_observer(),
+            one_day_window(),
+            0.0,
+            90.0,
+            default_opts(),
+            &mut out,
+            &mut count,
+        )
+    };
+    assert_eq!(status, SiderustStatus::Ok);
+    unsafe {
+        siderust_periods_free(out, count);
+        siderust_generic_target_free(target_handle);
+    }
 }
 
 #[test]

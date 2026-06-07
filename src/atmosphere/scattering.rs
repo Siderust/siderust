@@ -23,7 +23,7 @@
 //! ## Technical scope
 //!
 //! All phase-function evaluators take typed [`Nanometers`] wavelengths
-//! and typed [`Radians`] scattering angles, and return typed
+//! and typed [`crate::qtty::Radians`] scattering angles, and return typed
 //! [`Quantity<ScatteringFactor>`] values.
 //!
 //! ## References

@@ -774,7 +774,7 @@ pub enum SiderustCrossingAlgorithm {
 #[cfg(feature = "unstable-event-search")]
 #[allow(private_interfaces)]
 impl SiderustCrossingAlgorithm {
-    fn to_internal(self) -> siderust::unstable_event_search::CrossingAlgorithmFfi {
+    fn into_internal(self) -> siderust::unstable_event_search::CrossingAlgorithmFfi {
         match self {
             Self::Auto => siderust::unstable_event_search::CrossingAlgorithmFfi::Auto,
             Self::ScanBrent => siderust::unstable_event_search::CrossingAlgorithmFfi::ScanBrent,
@@ -852,7 +852,7 @@ pub struct SiderustSearchOptsV2 {
 #[cfg(feature = "unstable-event-search")]
 #[allow(private_interfaces)]
 impl SiderustSearchOptsV2 {
-    pub(crate) fn to_ffi(&self) -> siderust::unstable_event_search::SearchOptsV2Ffi {
+    pub(crate) fn to_ffi(self) -> siderust::unstable_event_search::SearchOptsV2Ffi {
         let cheb = if self.has_chebyshev {
             self.chebyshev
         } else {
@@ -862,7 +862,7 @@ impl SiderustSearchOptsV2 {
             self.time_tolerance_days,
             self.has_scan_step,
             self.scan_step_days,
-            self.algorithm.to_internal(),
+            self.algorithm.into_internal(),
             self.has_chebyshev,
             cheb.segment_length_days,
             cheb.degree,
@@ -937,44 +937,6 @@ impl SiderustCulminationEvent {
                 siderust::CulminationKind::Min => SiderustCulminationKind::Min,
             },
         }
-    }
-}
-
-/// Altitude computation query parameters.
-#[repr(C)]
-#[derive(Debug, Clone, Copy)]
-pub struct SiderustAltitudeQuery {
-    /// Observer location.
-    pub observer: SiderustGeodetict,
-    /// Start of the search window (Modified Julian Date).
-    pub start_mjd: f64,
-    /// End of the search window (Modified Julian Date).
-    pub end_mjd: f64,
-    /// Minimum altitude threshold in degrees.
-    pub min_altitude_deg: f64,
-    /// Maximum altitude threshold in degrees.
-    pub max_altitude_deg: f64,
-}
-
-impl SiderustAltitudeQuery {
-    /// Convert to the Rust domain type.
-    pub fn to_rust(&self) -> siderust::AltitudeQuery {
-        self.try_to_rust()
-            .expect("SiderustAltitudeQuery MJD bounds must be finite")
-    }
-
-    /// Convert to the Rust domain type with MJD validation.
-    pub fn try_to_rust(&self) -> Result<siderust::AltitudeQuery, SiderustStatus> {
-        Ok(siderust::AltitudeQuery {
-            observer: self.observer.to_rust(),
-            window: Interval::new(
-                crate::ffi_utils::mjd_from_f64(self.start_mjd)?,
-                crate::ffi_utils::mjd_from_f64(self.end_mjd)?,
-            ),
-            min_altitude: Degrees::new(self.min_altitude_deg),
-            max_altitude: Degrees::new(self.max_altitude_deg),
-            correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
-        })
     }
 }
 
@@ -1386,26 +1348,6 @@ mod tests {
             rust.time_tolerance.value(),
             default_rust.time_tolerance.value()
         );
-    }
-
-    // ── SiderustAltitudeQuery ────────────────────────────────────────────
-
-    #[test]
-    fn altitude_query_to_rust() {
-        let q = SiderustAltitudeQuery {
-            observer: SiderustGeodetict {
-                lon_deg: 0.0,
-                lat_deg: 51.5,
-                height_m: 10.0,
-            },
-            start_mjd: 60000.0,
-            end_mjd: 60001.0,
-            min_altitude_deg: 10.0,
-            max_altitude_deg: 90.0,
-        };
-        let rust = q.to_rust();
-        assert!((rust.min_altitude.value() - 10.0).abs() < 1e-10);
-        assert!((rust.max_altitude.value() - 90.0).abs() < 1e-10);
     }
 
     // ── SiderustPlanet ───────────────────────────────────────────────────

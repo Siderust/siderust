@@ -22,7 +22,7 @@
 //! ## Technical scope
 //!
 //! - [`CatalogRecord`] is the column-aligned star record with typed positional
-//!   fields ([`Radians`], [`MilliArcseconds`], [`KmPerSeconds`]).
+//!   fields ([`crate::qtty::Radians`], [`crate::qtty::MilliArcseconds`], [`crate::qtty::KmPerSeconds`]).
 //! - [`LargeStarCatalog`] is the in-memory container with cone search
 //!   (`cone_search`), magnitude/quality filters, and an epoch-aware
 //!   query that propagates positions via proper motion.

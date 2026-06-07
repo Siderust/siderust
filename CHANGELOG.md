@@ -14,14 +14,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
-- Default Sun and Moon altitude crossing discovery is Chebyshev-first with precise validation and local Brent refinement; uniform scan+Brent remains an internal fallback and a compatibility path when `scan_step_days` is set explicitly.
-- Consolidate altitude event search around a single internal `find_labelled_crossings` primitive; `above_threshold`, `below_threshold`, `altitude_ranges`, and crossings are built from labelled crossings plus interval algebra.
-- Stable public Rust API exposes only [`SearchOpts`] (`time_tolerance`, optional `scan_step_days`) and event functions; algorithm selectors and Chebyshev tuning knobs are `pub(crate)` or gated behind `unstable-event-search`.
-- Stable FFI exposes only `SiderustSearchOpts`; extended `_v2` entry points and tuning structs are gated behind `unstable-event-search` and omitted from normal generated headers.
-- Extend Rust solar and lunar altitude benchmarks to compare Chebyshev-first defaults against the scan+Brent baseline over 30, 184, and 365 day windows.
+- Standardize altitude period semantics to three public functions only: [`altitude_ranges`], [`above_threshold`], and [`below_threshold`]. Night, twilight, and Moon-up/down windows are expressed through these thresholds rather than target-specific wrappers.
+- Rename `AltitudePeriodsProvider` to [`AltitudeProvider`]; the trait now exposes single-point `altitude_at` and internal search hooks only, not period-query convenience methods.
+- Remove public `altitude_periods`, `compute_altitude_periods`, and `AltitudeQuery` from the stable Rust API.
+- Replace stable FFI `siderust_altitude_periods` / `SiderustAltitudeQuery` with `siderust_altitude_ranges`; stable FFI mirrors the three standardized period semantics for all subject types.
+- Depend on `cheby 0.4` for dynamic Chebyshev fitting, tail norms, derivatives, and root finding on crossing segments.
 
 ### Removed
 
+- Public `altitude_periods`, `compute_altitude_periods`, `AltitudeQuery`, and trait period-query convenience methods (`AltitudePeriodsProvider::above_threshold`, `below_threshold`, `altitude_periods`).
+- Stable FFI `siderust_altitude_periods` and `SiderustAltitudeQuery`.
 - Local Chebyshev polynomial/root code in favour of the `cheby` crate backend.
 - Custom Newton/secant refinement loop in crossing validation; local Brent bracket refinement is used instead.
 

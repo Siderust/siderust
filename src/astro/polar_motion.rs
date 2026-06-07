@@ -28,7 +28,7 @@
 //!
 //! where `s'` is the TIO locator, here implemented as the linear-in-time
 //! IERS form `s' ≈ −47 μas × t` (Julian centuries from J2000 on TT).
-//! Convenience helpers convert IERS [`Arcseconds`] inputs to [`Radians`]
+//! Convenience helpers convert IERS [`crate::qtty::Arcseconds`] inputs to [`crate::qtty::Radians`]
 //! and assemble the rotation via `affn::Rotation3` factors.
 //!
 //! ## References

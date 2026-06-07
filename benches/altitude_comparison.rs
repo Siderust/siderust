@@ -17,7 +17,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::{Moon, Sun};
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::coordinates::spherical::direction;
-use siderust::event::altitude::AltitudePeriodsProvider;
+use siderust::event::altitude::{above_threshold, below_threshold, AltitudeProvider, SearchOpts};
 use siderust::qtty::*;
 use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;
@@ -79,35 +79,42 @@ fn bench_above_horizon_7day(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
     let period = build_period(7);
     let sirius = sirius_icrs();
+    let opts = SearchOpts::default();
 
     let mut group = c.benchmark_group("altitude/above_horizon_7day");
 
     group.bench_function("sun", |b| {
         b.iter(|| {
-            Sun.above_threshold(
-                black_box(site),
+            above_threshold(
+                black_box(&Sun),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(opts),
             )
         });
     });
 
     group.bench_function("moon", |b| {
         b.iter(|| {
-            Moon.above_threshold(
-                black_box(site),
+            above_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(opts),
             )
         });
     });
 
     group.bench_function("star_sirius", |b| {
         b.iter(|| {
-            sirius.above_threshold(
-                black_box(site),
+            above_threshold(
+                black_box(&sirius),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(opts),
             )
         });
     });
@@ -124,34 +131,42 @@ fn bench_below_threshold_30day(c: &mut Criterion) {
     let period = build_period(30);
     let sirius = sirius_icrs();
 
+    let opts = SearchOpts::default();
+
     let mut group = c.benchmark_group("altitude/below_threshold_30day");
 
     group.bench_function("sun_astro_night", |b| {
         b.iter(|| {
-            Sun.below_threshold(
-                black_box(site),
+            below_threshold(
+                black_box(&Sun),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(-18.0)),
+                black_box(opts),
             )
         });
     });
 
     group.bench_function("moon_below_horizon", |b| {
         b.iter(|| {
-            Moon.below_threshold(
-                black_box(site),
+            below_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(opts),
             )
         });
     });
 
     group.bench_function("star_sirius_below_horizon", |b| {
         b.iter(|| {
-            sirius.below_threshold(
-                black_box(site),
+            below_threshold(
+                black_box(&sirius),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(opts),
             )
         });
     });
@@ -168,34 +183,42 @@ fn bench_period_search_365day(c: &mut Criterion) {
     let period = build_period(365);
     let sirius = sirius_icrs();
 
+    let opts = SearchOpts::default();
+
     let mut group = c.benchmark_group("altitude/period_search_365day");
 
     group.bench_function("sun_above_horizon", |b| {
         b.iter(|| {
-            Sun.above_threshold(
-                black_box(site),
+            above_threshold(
+                black_box(&Sun),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(opts),
             )
         });
     });
 
     group.bench_function("moon_above_horizon", |b| {
         b.iter(|| {
-            Moon.above_threshold(
-                black_box(site),
+            above_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(opts),
             )
         });
     });
 
     group.bench_function("star_sirius_above_horizon", |b| {
         b.iter(|| {
-            sirius.above_threshold(
-                black_box(site),
+            above_threshold(
+                black_box(&sirius),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(opts),
             )
         });
     });

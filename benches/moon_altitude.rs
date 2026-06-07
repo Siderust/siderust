@@ -24,7 +24,7 @@ use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::Moon;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
 use siderust::event::altitude::{
-    above_threshold, below_threshold, AltitudePeriodsProvider, AltitudeQuery, SearchOpts,
+    above_threshold, altitude_ranges, below_threshold, AltitudeProvider, SearchOpts,
 };
 use siderust::qtty::*;
 use siderust::time::{Interval, ModifiedJulianDate};
@@ -82,10 +82,12 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
     group.bench_function("find_moon_above_horizon_1day", |b| {
         let period = black_box(build_period(1));
         b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
+            let _result = above_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(SearchOpts::default()),
             );
         });
     });
@@ -94,10 +96,12 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
     group.bench_function("find_moon_above_horizon_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
+            let _result = above_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(SearchOpts::default()),
             );
         });
     });
@@ -106,10 +110,12 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
     group.bench_function("find_moon_above_horizon_30day", |b| {
         let period = black_box(build_period(30));
         b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
+            let _result = above_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(SearchOpts::default()),
             );
         });
     });
@@ -118,10 +124,12 @@ fn bench_moon_above_horizon(c: &mut Criterion) {
     group.bench_function("find_moon_above_horizon_365day", |b| {
         let period = black_box(build_period(365));
         b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
+            let _result = above_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(0.0)),
+                black_box(SearchOpts::default()),
             );
         });
     });
@@ -142,10 +150,12 @@ fn bench_moon_below_horizon(c: &mut Criterion) {
     group.bench_function("find_moon_below_horizon_1day", |b| {
         let period = black_box(build_period(1));
         b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
+            let _result = below_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(-0.5)),
+                black_box(SearchOpts::default()),
             );
         });
     });
@@ -154,10 +164,12 @@ fn bench_moon_below_horizon(c: &mut Criterion) {
     group.bench_function("find_moon_below_horizon_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
+            let _result = below_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(-0.5)),
+                black_box(SearchOpts::default()),
             );
         });
     });
@@ -166,10 +178,12 @@ fn bench_moon_below_horizon(c: &mut Criterion) {
     group.bench_function("find_moon_below_horizon_30day", |b| {
         let period = black_box(build_period(30));
         b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
+            let _result = below_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(-0.5)),
+                black_box(SearchOpts::default()),
             );
         });
     });
@@ -178,10 +192,12 @@ fn bench_moon_below_horizon(c: &mut Criterion) {
     group.bench_function("find_moon_below_horizon_365day", |b| {
         let period = black_box(build_period(365));
         b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
+            let _result = below_threshold(
+                black_box(&Moon),
+                black_box(&site),
                 black_box(period),
                 black_box(Degrees::new(-0.5)),
+                black_box(SearchOpts::default()),
             );
         });
     });
@@ -202,13 +218,14 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
     group.bench_function("find_moon_low_altitude_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
-            let _result = Moon.altitude_periods(&AltitudeQuery {
-                observer: black_box(site),
-                window: black_box(period),
-                min_altitude: black_box(Degrees::new(0.0)),
-                max_altitude: black_box(Degrees::new(30.0)),
-                correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
-            });
+            let _result = altitude_ranges(
+                black_box(&Moon),
+                black_box(&site),
+                black_box(period),
+                black_box(Degrees::new(0.0)),
+                black_box(Degrees::new(30.0)),
+                black_box(SearchOpts::default()),
+            );
         });
     });
 
@@ -216,13 +233,14 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
     group.bench_function("find_moon_high_altitude_7day", |b| {
         let period = black_box(build_period(7));
         b.iter(|| {
-            let _result = Moon.altitude_periods(&AltitudeQuery {
-                observer: black_box(site),
-                window: black_box(period),
-                min_altitude: black_box(Degrees::new(60.0)),
-                max_altitude: black_box(Degrees::new(90.0)),
-                correction_policy: siderust::astro::apparent::CorrectionPolicy::APPARENT,
-            });
+            let _result = altitude_ranges(
+                black_box(&Moon),
+                black_box(&site),
+                black_box(period),
+                black_box(Degrees::new(60.0)),
+                black_box(Degrees::new(90.0)),
+                black_box(SearchOpts::default()),
+            );
         });
     });
 

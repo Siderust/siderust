@@ -46,8 +46,8 @@
 //! - **Coordinates**: `cartesian::{Position, Direction, Velocity, ...}` and
 //!   `spherical::{Position, Direction}` parameterized by `Center`, `Frame`, and `Unit`.
 //! - **Transforms**: frame rotations + center shifts with compile-time guarantees.
-//! - **Altitude API**: `AltitudePeriodsProvider` + free functions to compute crossings,
-//!   culminations, altitude ranges, and above/below-threshold windows.
+//! - **Altitude API**: `AltitudeProvider` plus `above_threshold`, `below_threshold`,
+//!   and `altitude_ranges` for crossings, culminations, and altitude periods.
 //! - **Ephemeris backends**: `Ephemeris` trait with VSOP87/ELP2000 and optional DE440/DE441.
 //! - **Serde**: optional `serde` feature for public types.
 //!
@@ -170,8 +170,7 @@ pub use affn::conic::ConicKind;
 pub use astro::conic::{ConicError, ConicOrbit, MeanMotionOrbit};
 pub use astro::orbit::{KeplerianOrbit, PreparedOrbit};
 pub use event::altitude::{
-    above_threshold, altitude_periods as compute_altitude_periods, altitude_ranges,
-    below_threshold, crossings, culminations, AltitudePeriodsProvider, AltitudeQuery,
+    above_threshold, altitude_ranges, below_threshold, crossings, culminations, AltitudeProvider,
     CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind, SearchOpts,
 };
 

@@ -87,7 +87,7 @@ pub fn cip_xy(jd: JulianDate, dpsi: Radians, deps: Radians) -> (CipCoordinates, 
 /// `jd`: Julian Date (TT).
 /// `x`, `y`: CIP coordinates.
 ///
-/// Returns s as [`Radians`].
+/// Returns s as [`crate::qtty::Radians`].
 ///
 /// ## References
 /// * IERS Conventions (2010), §5.5.4

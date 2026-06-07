@@ -21,7 +21,7 @@
 //! - Surface pressure is taken as a typed [`Hectopascals`].
 //! - Observer altitude and scale height are typed [`Kilometers`].
 //! - Optical depth is returned as [`OpticalDepths`].
-//! - The phase function takes a typed scattering angle [`Radians`] and
+//! - The phase function takes a typed scattering angle [`crate::qtty::Radians`] and
 //!   returns a dimensionless [`ScatteringFactor`]
 //!   quantity.
 //!

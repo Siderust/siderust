@@ -189,7 +189,7 @@ macro_rules! dispatch_subject {
                     return $crate::error::SiderustStatus::NullPointer;
                 }
                 // Dispatch on the inner position, not the whole CoordinateWithPM,
-                // because AltitudePeriodsProvider is implemented for the position type.
+                // because AltitudeProvider is implemented for the position type.
                 let $provider = unsafe { &(*__subj.generic_target_handle).inner.position };
                 $action
             }
