@@ -135,7 +135,7 @@ pub use events::{
 
 pub use provider::{altitude_periods, AltitudePeriodsProvider};
 
-#[doc(hidden)]
+#[cfg(feature = "unstable-event-search")]
 pub use events::{
     above_threshold_with_search_opts_v2, altitude_ranges_with_search_opts_v2,
     below_threshold_with_search_opts_v2, crossings_with_search_opts_v2,

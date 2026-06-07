@@ -28,8 +28,8 @@
 use crate::bodies::solar_system::Moon;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::event::altitude::{CrossingDirection, CrossingEvent};
 use crate::event::altitude::search::SearchOptsV2;
+use crate::event::altitude::{CrossingDirection, CrossingEvent};
 use crate::event::search::crossings;
 use crate::event::search::intervals;
 use crate::qtty::*;
@@ -235,13 +235,8 @@ fn find_moon_labeled_crossings_with_context(
     opts: SearchOptsV2,
 ) -> (Vec<intervals::LabeledCrossing>, bool) {
     let signal = |t: ModifiedJulianDate| -> f64 { ctx.altitude_rad(t).sin() };
-    let (labeled, start_above, _) = crossings::find_labelled_crossings(
-        period,
-        SCAN_STEP,
-        &signal,
-        threshold.sin(),
-        opts,
-    );
+    let (labeled, start_above, _) =
+        crossings::find_labelled_crossings(period, SCAN_STEP, &signal, threshold.sin(), opts);
     (labeled, start_above)
 }
 

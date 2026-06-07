@@ -65,20 +65,17 @@ fn bench_find_night_periods(c: &mut Criterion) {
             },
         );
 
-        group.bench_function(
-            BenchmarkId::new("below_threshold/scan_brent", label),
-            |b| {
-                b.iter(|| {
-                    let _result = below_threshold(
-                        black_box(&Sun),
-                        black_box(&site),
-                        black_box(period),
-                        black_box(twilight::ASTRONOMICAL),
-                        black_box(scan_opts),
-                    );
-                });
-            },
-        );
+        group.bench_function(BenchmarkId::new("below_threshold/scan_brent", label), |b| {
+            b.iter(|| {
+                let _result = below_threshold(
+                    black_box(&Sun),
+                    black_box(&site),
+                    black_box(period),
+                    black_box(twilight::ASTRONOMICAL),
+                    black_box(scan_opts),
+                );
+            });
+        });
 
         group.bench_function(
             BenchmarkId::new("altitude_periods/chebyshev_first", label),

@@ -26,8 +26,8 @@
 use crate::bodies::solar_system::Sun;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::event::altitude::{CrossingDirection, CrossingEvent};
 use crate::event::altitude::search::SearchOptsV2;
+use crate::event::altitude::{CrossingDirection, CrossingEvent};
 use crate::event::search::crossings;
 use crate::event::search::intervals;
 use crate::qtty::*;
@@ -74,13 +74,8 @@ pub(crate) fn find_day_periods_with_search_opts(
 ) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
     let signal = |t: ModifiedJulianDate| -> f64 { sun_altitude_rad(t, &site).sin() };
-    let (labeled, start_above, _) = crossings::find_labelled_crossings(
-        period,
-        SCAN_STEP,
-        &signal,
-        thr.sin(),
-        opts,
-    );
+    let (labeled, start_above, _) =
+        crossings::find_labelled_crossings(period, SCAN_STEP, &signal, thr.sin(), opts);
     intervals::build_above_periods_directed(&labeled, period, start_above)
 }
 
@@ -132,13 +127,8 @@ pub(crate) fn find_sun_crossings_with_search_opts(
 ) -> Vec<CrossingEvent> {
     let thr = threshold.to::<Radian>();
     let signal = |t: ModifiedJulianDate| -> f64 { sun_altitude_rad(t, &site).sin() };
-    let (labeled, _, _) = crossings::find_labelled_crossings(
-        period,
-        SCAN_STEP,
-        &signal,
-        thr.sin(),
-        opts,
-    );
+    let (labeled, _, _) =
+        crossings::find_labelled_crossings(period, SCAN_STEP, &signal, thr.sin(), opts);
     labeled
         .iter()
         .map(|crossing| CrossingEvent {

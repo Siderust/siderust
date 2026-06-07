@@ -20,6 +20,8 @@ pub(crate) fn scan_labelled_crossings<F>(
     step: Days,
     signal: &F,
     threshold_sin: f64,
+    time_tolerance: Days,
+    max_residual: f64,
     diagnostics: &mut SearchDiagnostics,
 ) -> Vec<LabeledCrossing>
 where
@@ -30,6 +32,8 @@ where
     }
 
     let step_days = step.value().max(MIN_SEGMENT_DAYS);
+    let time_tol = time_tolerance.value().max(f64::EPSILON);
+    let residual_tol = max_residual.max(1e-6).max(POLY_ZERO_TOL);
     let t_start = period.start;
     let t_end = period.end;
 
@@ -50,14 +54,14 @@ where
 
         if prev.signum() * next_v.signum() < 0.0 {
             let direction = if prev < 0.0 { 1 } else { -1 };
-            let tol = 1e-9;
             if let Some(root_days) = brent_f64(
                 mjd_days(t),
                 mjd_days(next_t),
                 prev,
                 next_v,
                 |days| precise_residual_days(signal, days, threshold_sin, diagnostics),
-                tol,
+                time_tol,
+                residual_tol,
             ) {
                 let root = mjd_from_days(root_days);
                 if root >= t_start && root <= t_end {
@@ -74,17 +78,25 @@ where
     labeled
 }
 
-pub(crate) fn brent_f64<F>(lo: f64, hi: f64, f_lo: f64, f_hi: f64, mut f: F, tol: f64) -> Option<f64>
+pub(crate) fn brent_f64<F>(
+    lo: f64,
+    hi: f64,
+    f_lo: f64,
+    f_hi: f64,
+    mut f: F,
+    time_tol: f64,
+    residual_tol: f64,
+) -> Option<f64>
 where
     F: FnMut(f64) -> f64,
 {
     if !lo.is_finite() || !hi.is_finite() || hi < lo {
         return None;
     }
-    if f_lo.abs() <= POLY_ZERO_TOL {
+    if f_lo.abs() <= residual_tol {
         return Some(lo);
     }
-    if f_hi.abs() <= POLY_ZERO_TOL {
+    if f_hi.abs() <= residual_tol {
         return Some(hi);
     }
     if f_lo.signum() * f_hi.signum() > 0.0 {
@@ -116,9 +128,13 @@ where
             fc = fa;
         }
 
-        let tol1 = 2.0 * f64::EPSILON * b.abs() + tol * 0.5;
+        let tol1 = 2.0 * f64::EPSILON * b.abs() + time_tol * 0.5;
         let xm = 0.5 * (c - b);
-        if xm.abs() <= tol1 || fb.abs() <= POLY_ZERO_TOL {
+        if xm.abs() <= tol1 {
+            if brent_converged(b, fb, lo, hi, time_tol, residual_tol) {
+                return Some(b);
+            }
+        } else if fb.abs() <= residual_tol {
             return Some(b);
         }
 
@@ -166,7 +182,27 @@ where
         }
     }
 
-    Some(b)
+    if brent_converged(b, fb, lo, hi, time_tol, residual_tol) {
+        Some(b)
+    } else {
+        None
+    }
+}
+
+#[inline]
+fn brent_converged(_b: f64, fb: f64, lo: f64, hi: f64, time_tol: f64, residual_tol: f64) -> bool {
+    if !fb.is_finite() {
+        return false;
+    }
+    if fb.abs() <= residual_tol {
+        return true;
+    }
+    let width = (hi - lo).abs();
+    if width <= time_tol * 4.0 {
+        let acceptable = residual_tol.max(1e-6);
+        return fb.abs() <= acceptable;
+    }
+    false
 }
 
 #[inline]
@@ -183,4 +219,22 @@ fn sort_dedup_crossings(crossings: &mut Vec<LabeledCrossing>) {
     const DEDUPE_T_EPS: Days = Days::new(1e-8);
     crossings.sort_by(|a, b| a.t.partial_cmp(&b.t).unwrap_or(std::cmp::Ordering::Equal));
     crossings.dedup_by(|a, b| (a.t.raw() - b.t.raw()).abs() < DEDUPE_T_EPS);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn brent_rejects_non_converged_max_iterations() {
+        let root = brent_f64(0.0, 1.0, -1.0, 1.0, |_| 1.0, 1e-12, 1e-12);
+        assert!(root.is_none());
+    }
+
+    #[test]
+    fn brent_finds_linear_root_with_tolerances() {
+        let root = brent_f64(0.0, 1.0, -0.5, 0.5, |x| x - 0.25, 1e-12, 1e-12);
+        assert!(root.is_some());
+        assert!((root.unwrap() - 0.25).abs() < 1e-9);
+    }
 }

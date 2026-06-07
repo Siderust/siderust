@@ -8,15 +8,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
-- Add an internal Chebyshev-first crossing engine for smooth altitude signals, with Clenshaw evaluation, derivative-segmented polynomial roots, precise residual checks, adaptive split, and scan+Brent fallback.
-- Move dynamic Chebyshev fitting and root finding into the `cheby` crate (`fit_dyn_from_fn`, `ChebySeriesDyn::roots`, `tail_norm`).
+- Depend on `cheby 0.4` for dynamic Chebyshev fitting, tail norms, derivatives, and root finding on crossing segments.
+- Add an internal Chebyshev-first crossing engine for smooth altitude signals: fit `sin(altitude) − sin(threshold)` per segment, solve roots with mapped [`RootOptions`](https://docs.rs/cheby/0.4/cheby/struct.RootOptions.html), validate against the precise model, and fall back per segment to scan+Brent when the polynomial is untrusted.
+- Add `unstable-event-search` feature exposing experimental algorithm/tuning hooks for benchmarks and FFI experiments without polluting the stable API.
 
 ### Changed
 
-- Default Sun and Moon long-window altitude period searches now use Chebyshev-first crossing discovery with precise validation/refinement and local scan+Brent fallback; explicit `scan_step_days` continues to force the legacy scan path for compatibility.
+- Default Sun and Moon altitude crossing discovery is Chebyshev-first with precise validation and local Brent refinement; uniform scan+Brent remains an internal fallback and a compatibility path when `scan_step_days` is set explicitly.
 - Consolidate altitude event search around a single internal `find_labelled_crossings` primitive; `above_threshold`, `below_threshold`, `altitude_ranges`, and crossings are built from labelled crossings plus interval algebra.
-- Hide algorithm-selection types (`CrossingAlgorithm`, `ChebyshevOptions`, `SearchOptsV2`) from the stable public API; keep only minimal [`SearchOpts`] for callers.
+- Stable public Rust API exposes only [`SearchOpts`] (`time_tolerance`, optional `scan_step_days`) and event functions; algorithm selectors and Chebyshev tuning knobs are `pub(crate)` or gated behind `unstable-event-search`.
+- Stable FFI exposes only `SiderustSearchOpts`; extended `_v2` entry points and tuning structs are gated behind `unstable-event-search` and omitted from normal generated headers.
 - Extend Rust solar and lunar altitude benchmarks to compare Chebyshev-first defaults against the scan+Brent baseline over 30, 184, and 365 day windows.
+
+### Removed
+
+- Local Chebyshev polynomial/root code in favour of the `cheby` crate backend.
+- Custom Newton/secant refinement loop in crossing validation; local Brent bracket refinement is used instead.
 
 ## [0.9.1] - 2026-06-06
 

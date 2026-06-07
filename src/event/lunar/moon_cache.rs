@@ -464,10 +464,12 @@ use crate::event::search::intervals::LabeledCrossing;
 use crate::event::search::root_finding;
 use crate::time::{Interval, ModifiedJulianDate};
 
+#[allow(dead_code)]
 type Mjd = ModifiedJulianDate;
 type Days = crate::qtty::Quantity<crate::qtty::Day>;
 
 /// Tiny epsilon for deduplication (same as intervals.rs).
+#[allow(dead_code)]
 const DEDUPE_EPS: Days = Days::new(1e-8);
 
 /// Combined scan + Brent root-finding + labelling in a single pass.
@@ -490,6 +492,7 @@ const DEDUPE_EPS: Days = Days::new(1e-8);
 /// deduplicated `Vec<LabeledCrossing>` of root MJDs annotated with the
 /// crossing direction (`+1` entering, `−1` leaving), and `start_above`
 /// is `true` if `f(start) > threshold`.
+#[allow(dead_code)]
 pub fn find_and_label_crossings<V, F>(
     period: Interval<ModifiedJulianDate>,
     step: Days,

@@ -12,6 +12,7 @@ header = """
 [defines]
 "feature = serde" = "SIDERUST_FFI_HAS_SERDE"
 "feature = runtime-data" = "SIDERUST_FFI_HAS_RUNTIME_DATA"
+"feature = unstable-event-search" = "SIDERUST_FFI_UNSTABLE_EVENT_SEARCH"
 
 [export]
 

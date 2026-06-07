@@ -93,6 +93,7 @@ pub extern "C" fn siderust_above_threshold(
 }
 
 /// Periods when a subject is above a threshold altitude, with extended search options.
+#[cfg(feature = "unstable-event-search")]
 #[no_mangle]
 pub extern "C" fn siderust_above_threshold_v2(
     subject: SiderustSubject,
@@ -110,12 +111,12 @@ pub extern "C" fn siderust_above_threshold_v2(
         };
         dispatch_subject!(subject, |p| {
             periods_to_c(
-                siderust::above_threshold_with_search_opts_v2(
+                siderust::unstable_event_search::above_threshold_with_search_opts_v2(
                     p,
                     &observer.to_rust(),
                     window,
                     Degrees::new(threshold_deg),
-                    opts.to_rust(),
+                    opts.to_ffi(),
                 ),
                 out,
                 count,
@@ -157,6 +158,7 @@ pub extern "C" fn siderust_below_threshold(
 }
 
 /// Periods when a subject is below a threshold altitude, with extended search options.
+#[cfg(feature = "unstable-event-search")]
 #[no_mangle]
 pub extern "C" fn siderust_below_threshold_v2(
     subject: SiderustSubject,
@@ -174,12 +176,12 @@ pub extern "C" fn siderust_below_threshold_v2(
         };
         dispatch_subject!(subject, |p| {
             periods_to_c(
-                siderust::below_threshold_with_search_opts_v2(
+                siderust::unstable_event_search::below_threshold_with_search_opts_v2(
                     p,
                     &observer.to_rust(),
                     window,
                     Degrees::new(threshold_deg),
-                    opts.to_rust(),
+                    opts.to_ffi(),
                 ),
                 out,
                 count,
@@ -225,6 +227,7 @@ pub extern "C" fn siderust_crossings(
 }
 
 /// Threshold-crossing events for a subject, with extended search options.
+#[cfg(feature = "unstable-event-search")]
 #[no_mangle]
 pub extern "C" fn siderust_crossings_v2(
     subject: SiderustSubject,
@@ -242,12 +245,12 @@ pub extern "C" fn siderust_crossings_v2(
         };
         dispatch_subject!(subject, |p| {
             crossings_to_c(
-                siderust::crossings_with_search_opts_v2(
+                siderust::unstable_event_search::crossings_with_search_opts_v2(
                     p,
                     &observer.to_rust(),
                     window,
                     Degrees::new(threshold_deg),
-                    opts.to_rust(),
+                    opts.to_ffi(),
                 ),
                 out,
                 count,
@@ -313,6 +316,7 @@ pub extern "C" fn siderust_altitude_periods(
 ///
 /// Only `Body` subjects support this operation. For `Star`, `Icrs`, and
 /// `GenericTarget`, `SIDERUST_STATUS_T_INVALID_ARGUMENT` is returned.
+#[cfg(feature = "unstable-event-search")]
 #[no_mangle]
 pub extern "C" fn siderust_altitude_periods_v2(
     subject: SiderustSubject,
@@ -327,13 +331,13 @@ pub extern "C" fn siderust_altitude_periods_v2(
                 let q = ffi_try!(query.try_to_rust());
                 dispatch_body!(subject.body, |b| {
                     periods_to_c(
-                        siderust::altitude_ranges_with_search_opts_v2(
+                        siderust::unstable_event_search::altitude_ranges_with_search_opts_v2(
                             &b,
                             &q.observer,
                             q.window,
                             q.min_altitude,
                             q.max_altitude,
-                            opts.to_rust(),
+                            opts.to_ffi(),
                         ),
                         out,
                         count,
@@ -536,6 +540,7 @@ mod tests {
         (handle, SiderustSubject::generic_target(handle))
     }
 
+    #[cfg(feature = "unstable-event-search")]
     fn opts_v2(algorithm: SiderustCrossingAlgorithm) -> SiderustSearchOptsV2 {
         SiderustSearchOptsV2 {
             algorithm,
@@ -676,6 +681,7 @@ mod tests {
         unsafe { crate::altitude::siderust_crossings_free(crossings, count) };
     }
 
+    #[cfg(feature = "unstable-event-search")]
     #[test]
     fn altitude_v2_options_body() {
         let mut periods: *mut TempochPeriodMjd = ptr::null_mut();
@@ -769,6 +775,7 @@ mod tests {
         unsafe { siderust_generic_target_free(target_handle) };
     }
 
+    #[cfg(feature = "unstable-event-search")]
     #[test]
     fn altitude_periods_v2_body_only() {
         let query = SiderustAltitudeQuery {

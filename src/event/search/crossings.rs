@@ -8,7 +8,7 @@
 //! precise signal, and falls back per segment to scan+Brent when the polynomial
 //! is not trustworthy.
 
-use cheby::fit_dyn_from_fn;
+use cheby::{fit_dyn_from_fn, RootOptions};
 
 use crate::event::altitude::search::{CrossingAlgorithm, SearchOptsV2};
 use crate::event::search::intervals::LabeledCrossing;
@@ -109,6 +109,8 @@ where
             fallback_step,
             signal,
             threshold_sin,
+            opts.time_tolerance,
+            opts.chebyshev.max_residual,
             &mut diagnostics,
         );
         return (crossings, start_above, diagnostics);
@@ -195,8 +197,14 @@ where
     }
 
     let derivative = poly.derivative();
-    let roots = poly.roots();
+    let root_opts = root_options_for_segment(&search.opts, segment.span_days());
+    let roots = poly.roots_with(root_opts);
     search.diagnostics.polynomial_roots += roots.len();
+
+    if roots.is_empty() && segment_has_hidden_sign_change(search, segment) {
+        fallback_segment(search, segment);
+        return;
+    }
 
     let mut segment_crossings = Vec::new();
     for root_x in roots {
@@ -224,6 +232,51 @@ where
     search.out.extend(segment_crossings);
 }
 
+fn root_options_for_segment(opts: &SearchOptsV2, segment_span_days: f64) -> RootOptions {
+    let span = segment_span_days.max(MIN_SEGMENT_DAYS);
+    let unit_tol = (opts.time_tolerance.value() / span).clamp(f64::EPSILON, 0.25);
+    let zero_tol = opts.chebyshev.max_residual.max(POLY_ZERO_TOL);
+    let dedupe_eps = (opts.time_tolerance.value() / span * 4.0).max(1e-12);
+    RootOptions {
+        unit_tol,
+        zero_tol,
+        dedupe_eps,
+    }
+    .effective()
+}
+
+fn segment_residual_at<F>(search: &mut SegmentSearch<'_, F>, t: Mjd) -> f64
+where
+    F: Fn(Mjd) -> f64,
+{
+    eval_signal(search.signal, t, search.diagnostics) - search.threshold_sin
+}
+
+fn segment_has_hidden_sign_change<F>(search: &mut SegmentSearch<'_, F>, segment: Segment) -> bool
+where
+    F: Fn(Mjd) -> f64,
+{
+    let f_start = segment_residual_at(search, segment.start);
+    let f_end = segment_residual_at(search, segment.end);
+    if f_start.signum() * f_end.signum() < 0.0 {
+        return true;
+    }
+
+    let f_mid = segment_residual_at(search, segment.time_from_unit(0.0));
+    if f_start.signum() * f_mid.signum() < 0.0 || f_mid.signum() * f_end.signum() < 0.0 {
+        return true;
+    }
+
+    for node in [-0.5, 0.5] {
+        let f_node = segment_residual_at(search, segment.time_from_unit(node));
+        if f_start.signum() * f_node.signum() < 0.0 || f_node.signum() * f_end.signum() < 0.0 {
+            return true;
+        }
+    }
+
+    false
+}
+
 fn fallback_segment<F>(search: &mut SegmentSearch<'_, F>, segment: Segment)
 where
     F: Fn(Mjd) -> f64,
@@ -234,6 +287,8 @@ where
         search.fallback_step,
         search.signal,
         search.threshold_sin,
+        search.opts.time_tolerance,
+        search.opts.chebyshev.max_residual,
         search.diagnostics,
     ));
 }
@@ -283,48 +338,13 @@ where
     let segment_start = mjd_days(segment.start);
     let segment_end = mjd_days(segment.end);
     let margin = opts.chebyshev.refine_margin.value().max(1e-5);
-    let mut t = mjd_days(initial).clamp(segment_start, segment_end);
-    let mut best_t = t;
-    let mut best_residual = precise_residual_days(signal, t, threshold_sin, diagnostics).abs();
+    let time_tol = opts.time_tolerance.value().max(1e-12);
+    let max_res = opts.chebyshev.max_residual;
 
-    for _ in 0..6 {
-        if best_residual <= opts.chebyshev.max_residual {
-            return Some(mjd_from_days(best_t));
-        }
-
-        let h = margin.min((segment_end - segment_start) * 0.05).max(1e-7);
-        let lo = (t - h).max(segment_start);
-        let hi = (t + h).min(segment_end);
-        if hi <= lo {
-            break;
-        }
-
-        let f_lo = precise_residual_days(signal, lo, threshold_sin, diagnostics);
-        let f_hi = precise_residual_days(signal, hi, threshold_sin, diagnostics);
-        let slope = (f_hi - f_lo) / (hi - lo);
-        if !slope.is_finite() || slope.abs() < 1e-12 {
-            break;
-        }
-
-        let f_t = precise_residual_days(signal, t, threshold_sin, diagnostics);
-        let next = (t - f_t / slope).clamp(segment_start, segment_end);
-        if (next - t).abs() < opts.time_tolerance.value().max(1e-12)
-            || (next - mjd_days(initial)).abs() <= margin * 4.0
-        {
-            t = next;
-        } else {
-            break;
-        }
-
-        let residual = precise_residual_days(signal, t, threshold_sin, diagnostics).abs();
-        if residual < best_residual {
-            best_residual = residual;
-            best_t = t;
-        }
-    }
-
-    if best_residual <= opts.chebyshev.max_residual {
-        return Some(mjd_from_days(best_t));
+    let t_days = mjd_days(initial).clamp(segment_start, segment_end);
+    let residual = precise_residual_days(signal, t_days, threshold_sin, diagnostics).abs();
+    if residual <= max_res {
+        return Some(mjd_from_days(t_days));
     }
 
     let mut radius = margin;
@@ -334,21 +354,21 @@ where
         if hi > lo {
             let f_lo = precise_residual_days(signal, lo, threshold_sin, diagnostics);
             let f_hi = precise_residual_days(signal, hi, threshold_sin, diagnostics);
-            if f_lo.abs() <= opts.chebyshev.max_residual {
+            if f_lo.abs() <= max_res {
                 return Some(mjd_from_days(lo));
             }
-            if f_hi.abs() <= opts.chebyshev.max_residual {
+            if f_hi.abs() <= max_res {
                 return Some(mjd_from_days(hi));
             }
             if f_lo.signum() * f_hi.signum() < 0.0 {
-                let tol = opts.time_tolerance.value().max(1e-12);
                 return scan_fallback::brent_f64(
                     lo,
                     hi,
                     f_lo,
                     f_hi,
                     |days| precise_residual_days(signal, days, threshold_sin, diagnostics),
-                    tol,
+                    time_tol,
+                    max_res,
                 )
                 .map(mjd_from_days);
             }
@@ -486,5 +506,70 @@ mod tests {
             find_labelled_crossings(period(0.0, 1.0), Days::new(0.1), &signal, 0.0, opts);
         assert_eq!(crossings.len(), 1);
         assert_eq!(diagnostics.fallback_segments, 1);
+    }
+
+    #[test]
+    fn empty_polynomial_roots_with_endpoint_sign_change_falls_back() {
+        let opts = SearchOptsV2 {
+            chebyshev: ChebyshevOptions {
+                segment_length: Days::new(1.0),
+                degree: 8,
+                max_tail_norm: 1e-3,
+                max_residual: 1e-10,
+                min_slope: 1e-4,
+                ..ChebyshevOptions::default()
+            },
+            ..SearchOptsV2::default()
+        };
+        // Piecewise linear crossing; Chebyshev fit may miss roots but endpoints differ in sign.
+        let signal = |t: Mjd| {
+            let x = t.raw().value();
+            if x < 0.5 {
+                x - 0.4
+            } else {
+                x - 0.6
+            }
+        };
+        let (crossings, _, diagnostics) =
+            find_labelled_crossings(period(0.0, 1.0), Days::new(0.05), &signal, 0.0, opts);
+        assert!(!crossings.is_empty(), "{crossings:?} {diagnostics:?}");
+        assert!(
+            diagnostics.fallback_segments >= 1 || diagnostics.polynomial_roots >= 1,
+            "{diagnostics:?}"
+        );
+    }
+
+    #[test]
+    fn high_tail_norm_triggers_fallback() {
+        let opts = SearchOptsV2 {
+            chebyshev: ChebyshevOptions {
+                segment_length: Days::new(1.0),
+                degree: 6,
+                max_tail_norm: 1e-15,
+                adaptive_split: false,
+                ..ChebyshevOptions::default()
+            },
+            ..SearchOptsV2::default()
+        };
+        let signal = |t: Mjd| (10.0 * t.raw().value()).sin();
+        let (_, _, diagnostics) =
+            find_labelled_crossings(period(0.0, 1.0), Days::new(0.05), &signal, 0.0, opts);
+        assert!(diagnostics.fallback_segments >= 1);
+    }
+
+    #[test]
+    fn crossing_near_segment_start_is_found() {
+        let opts = SearchOptsV2 {
+            chebyshev: ChebyshevOptions {
+                segment_length: Days::new(0.25),
+                ..ChebyshevOptions::default()
+            },
+            ..SearchOptsV2::default()
+        };
+        let signal = |t: Mjd| t.raw().value() - 0.01;
+        let (crossings, _, _) =
+            find_labelled_crossings(period(0.0, 0.5), Days::new(0.02), &signal, 0.0, opts);
+        assert_eq!(crossings.len(), 1);
+        assert!((crossings[0].t.raw().value() - 0.01).abs() < 1e-6);
     }
 }

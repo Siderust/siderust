@@ -247,10 +247,7 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
     for (days_label, days) in [("30day", 30), ("184day", 184), ("365day", 365)] {
         let period = build_period(days);
 
-        for (mode_label, opts) in [
-            ("chebyshev_first", default_opts),
-            ("scan_brent", scan_opts),
-        ] {
+        for (mode_label, opts) in [("chebyshev_first", default_opts), ("scan_brent", scan_opts)] {
             group.bench_function(format!("above_horizon/{mode_label}/{days_label}"), |b| {
                 b.iter(|| {
                     let _result = above_threshold(

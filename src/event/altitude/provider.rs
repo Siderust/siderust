@@ -32,7 +32,7 @@
 //! ## References
 //! None.
 
-use super::search::SearchOptsV2;
+use super::search::{SearchOpts, SearchOptsV2};
 use super::types::{AltitudeQuery, CrossingEvent};
 use crate::bodies::solar_system;
 use crate::bodies::Star;
@@ -148,7 +148,7 @@ pub trait AltitudePeriodsProvider {
         observer: Geodetic<ECEF>,
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
         let _ = (observer, window, threshold, opts);
         None
@@ -160,7 +160,7 @@ pub trait AltitudePeriodsProvider {
         observer: Geodetic<ECEF>,
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
         let _ = (observer, window, threshold, opts);
         None
@@ -173,7 +173,7 @@ pub trait AltitudePeriodsProvider {
         window: Interval<ModifiedJulianDate>,
         min_altitude: Degrees,
         max_altitude: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
         let _ = (observer, window, min_altitude, max_altitude, opts);
         None
@@ -185,7 +185,7 @@ pub trait AltitudePeriodsProvider {
         observer: Geodetic<ECEF>,
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<CrossingEvent>> {
         let _ = (observer, window, threshold, opts);
         None
@@ -317,10 +317,13 @@ impl AltitudePeriodsProvider for solar_system::Sun {
         observer: Geodetic<ECEF>,
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
         Some(crate::event::solar::find_day_periods_with_search_opts(
-            observer, window, threshold, opts,
+            observer,
+            window,
+            threshold,
+            SearchOptsV2::from_legacy(opts),
         ))
     }
 
@@ -329,10 +332,13 @@ impl AltitudePeriodsProvider for solar_system::Sun {
         observer: Geodetic<ECEF>,
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
         Some(crate::event::solar::find_night_periods_with_search_opts(
-            observer, window, threshold, opts,
+            observer,
+            window,
+            threshold,
+            SearchOptsV2::from_legacy(opts),
         ))
     }
 
@@ -342,14 +348,14 @@ impl AltitudePeriodsProvider for solar_system::Sun {
         window: Interval<ModifiedJulianDate>,
         min_altitude: Degrees,
         max_altitude: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
         Some(
             crate::event::solar::find_sun_range_periods_with_search_opts(
                 observer,
                 window,
                 (min_altitude, max_altitude),
-                opts,
+                SearchOptsV2::from_legacy(opts),
             ),
         )
     }
@@ -359,10 +365,13 @@ impl AltitudePeriodsProvider for solar_system::Sun {
         observer: Geodetic<ECEF>,
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<CrossingEvent>> {
         Some(crate::event::solar::find_sun_crossings_with_search_opts(
-            observer, window, threshold, opts,
+            observer,
+            window,
+            threshold,
+            SearchOptsV2::from_legacy(opts),
         ))
     }
 }
@@ -397,11 +406,14 @@ impl AltitudePeriodsProvider for solar_system::Moon {
         observer: Geodetic<ECEF>,
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
         Some(
             crate::event::lunar::find_moon_above_horizon_with_search_opts(
-                observer, window, threshold, opts,
+                observer,
+                window,
+                threshold,
+                SearchOptsV2::from_legacy(opts),
             ),
         )
     }
@@ -411,11 +423,14 @@ impl AltitudePeriodsProvider for solar_system::Moon {
         observer: Geodetic<ECEF>,
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
         Some(
             crate::event::lunar::find_moon_below_horizon_with_search_opts(
-                observer, window, threshold, opts,
+                observer,
+                window,
+                threshold,
+                SearchOptsV2::from_legacy(opts),
             ),
         )
     }
@@ -426,14 +441,14 @@ impl AltitudePeriodsProvider for solar_system::Moon {
         window: Interval<ModifiedJulianDate>,
         min_altitude: Degrees,
         max_altitude: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<Interval<ModifiedJulianDate>>> {
         Some(
             crate::event::lunar::find_moon_altitude_range_with_search_opts(
                 observer,
                 window,
                 (min_altitude, max_altitude),
-                opts,
+                SearchOptsV2::from_legacy(opts),
             ),
         )
     }
@@ -443,10 +458,13 @@ impl AltitudePeriodsProvider for solar_system::Moon {
         observer: Geodetic<ECEF>,
         window: Interval<ModifiedJulianDate>,
         threshold: Degrees,
-        opts: SearchOptsV2,
+        opts: SearchOpts,
     ) -> Option<Vec<CrossingEvent>> {
         Some(crate::event::lunar::find_moon_crossings_with_search_opts(
-            observer, window, threshold, opts,
+            observer,
+            window,
+            threshold,
+            SearchOptsV2::from_legacy(opts),
         ))
     }
 

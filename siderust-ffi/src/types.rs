@@ -757,7 +757,9 @@ impl Default for SiderustSearchOpts {
     }
 }
 
-/// Crossing search algorithm selector.
+/// Crossing search algorithm selector (unstable; requires `unstable-event-search`).
+#[cfg(feature = "unstable-event-search")]
+#[allow(private_interfaces)]
 #[repr(C)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SiderustCrossingAlgorithm {
@@ -769,18 +771,23 @@ pub enum SiderustCrossingAlgorithm {
     ChebyshevRoots = 2,
 }
 
+#[cfg(feature = "unstable-event-search")]
+#[allow(private_interfaces)]
 impl SiderustCrossingAlgorithm {
-    /// Convert to the Rust domain type.
-    pub fn to_rust(self) -> siderust::CrossingAlgorithm {
+    fn to_internal(self) -> siderust::unstable_event_search::CrossingAlgorithmFfi {
         match self {
-            Self::Auto => siderust::CrossingAlgorithm::Auto,
-            Self::ScanBrent => siderust::CrossingAlgorithm::ScanBrent,
-            Self::ChebyshevRoots => siderust::CrossingAlgorithm::ChebyshevRoots,
+            Self::Auto => siderust::unstable_event_search::CrossingAlgorithmFfi::Auto,
+            Self::ScanBrent => siderust::unstable_event_search::CrossingAlgorithmFfi::ScanBrent,
+            Self::ChebyshevRoots => {
+                siderust::unstable_event_search::CrossingAlgorithmFfi::ChebyshevRoots
+            }
         }
     }
 }
 
-/// Chebyshev crossing-search options for altitude computations.
+/// Chebyshev crossing-search options for altitude computations (unstable).
+#[cfg(feature = "unstable-event-search")]
+#[allow(private_interfaces)]
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustChebSearchOpts {
@@ -804,70 +811,27 @@ pub struct SiderustChebSearchOpts {
     pub max_split_depth: u32,
 }
 
-impl SiderustChebSearchOpts {
-    /// Convert to the Rust domain type, preserving defaults for invalid fields.
-    pub fn to_rust(self) -> siderust::ChebyshevOptions {
-        let defaults = siderust::ChebyshevOptions::default();
-        siderust::ChebyshevOptions {
-            segment_length: if self.segment_length_days > 0.0 {
-                Days::new(self.segment_length_days)
-            } else {
-                defaults.segment_length
-            },
-            degree: if self.degree > 0 {
-                self.degree as usize
-            } else {
-                defaults.degree
-            },
-            max_tail_norm: if self.max_tail_norm > 0.0 {
-                self.max_tail_norm
-            } else {
-                defaults.max_tail_norm
-            },
-            max_residual: if self.max_residual > 0.0 {
-                self.max_residual
-            } else {
-                defaults.max_residual
-            },
-            refine: self.refine,
-            refine_margin: if self.refine_margin_days > 0.0 {
-                Days::new(self.refine_margin_days)
-            } else {
-                defaults.refine_margin
-            },
-            min_slope: if self.min_slope > 0.0 {
-                self.min_slope
-            } else {
-                defaults.min_slope
-            },
-            adaptive_split: self.adaptive_split,
-            max_split_depth: if self.max_split_depth > 0 {
-                self.max_split_depth as usize
-            } else {
-                defaults.max_split_depth
-            },
-        }
-    }
-}
-
+#[cfg(feature = "unstable-event-search")]
+#[allow(private_interfaces)]
 impl Default for SiderustChebSearchOpts {
     fn default() -> Self {
-        let defaults = siderust::ChebyshevOptions::default();
         Self {
-            segment_length_days: defaults.segment_length.value(),
-            degree: defaults.degree as u32,
-            max_tail_norm: defaults.max_tail_norm,
-            max_residual: defaults.max_residual,
-            refine: defaults.refine,
-            refine_margin_days: defaults.refine_margin.value(),
-            min_slope: defaults.min_slope,
-            adaptive_split: defaults.adaptive_split,
-            max_split_depth: defaults.max_split_depth as u32,
+            segment_length_days: 0.5,
+            degree: 10,
+            max_tail_norm: 1e-6,
+            max_residual: 1e-10,
+            refine: true,
+            refine_margin_days: 20.0 / 1440.0,
+            min_slope: 1e-8,
+            adaptive_split: true,
+            max_split_depth: 2,
         }
     }
 }
 
-/// Extended search options for altitude computations.
+/// Extended search options for altitude computations (unstable).
+#[cfg(feature = "unstable-event-search")]
+#[allow(private_interfaces)]
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]
 pub struct SiderustSearchOptsV2 {
@@ -885,24 +849,35 @@ pub struct SiderustSearchOptsV2 {
     pub has_chebyshev: bool,
 }
 
+#[cfg(feature = "unstable-event-search")]
+#[allow(private_interfaces)]
 impl SiderustSearchOptsV2 {
-    /// Convert to the Rust domain type.
-    pub fn to_rust(&self) -> siderust::SearchOptsV2 {
-        let mut opts = siderust::SearchOptsV2::default();
-        if self.time_tolerance_days > 0.0 {
-            opts.time_tolerance = Days::new(self.time_tolerance_days);
-        }
-        if self.has_scan_step && self.scan_step_days > 0.0 {
-            opts.scan_step_days = Some(Days::new(self.scan_step_days));
-        }
-        opts.algorithm = self.algorithm.to_rust();
-        if self.has_chebyshev {
-            opts.chebyshev = self.chebyshev.to_rust();
-        }
-        opts
+    pub(crate) fn to_ffi(&self) -> siderust::unstable_event_search::SearchOptsV2Ffi {
+        let cheb = if self.has_chebyshev {
+            self.chebyshev
+        } else {
+            SiderustChebSearchOpts::default()
+        };
+        siderust::unstable_event_search::search_opts_v2_ffi_from_scalars(
+            self.time_tolerance_days,
+            self.has_scan_step,
+            self.scan_step_days,
+            self.algorithm.to_internal(),
+            self.has_chebyshev,
+            cheb.segment_length_days,
+            cheb.degree,
+            cheb.max_tail_norm,
+            cheb.max_residual,
+            cheb.refine,
+            cheb.refine_margin_days,
+            cheb.min_slope,
+            cheb.adaptive_split,
+            cheb.max_split_depth,
+        )
     }
 }
 
+#[cfg(feature = "unstable-event-search")]
 impl Default for SiderustSearchOptsV2 {
     fn default() -> Self {
         Self {
