@@ -1,122 +1,65 @@
-# Solar Altitude Bench, Performance Investigation (`below_threshold` / 365-day horizon)
+# Solar Altitude Bench — Architecture and Performance Notes
 
-> Note: This report lives under `benches/reports/` because it documents
-> benchmark-driven performance work.
+> Documents benchmark-driven performance work for `benches/solar_altitude.rs`.
 
-This report explains where time goes in the solar-night benchmarks in
-`benches/solar_altitude.rs`, and which levers matter most when you want the
-365‑day horizon to be fast without sacrificing physically meaningful altitude
-results.
+## What is measured
 
-## What is being measured
+The benchmark groups compare solar threshold event discovery over 30-, 184-, and 365-day
+windows at Roque de los Muchachos:
 
-The benchmark group `solar_altitude_ranges` measures the end-to-end cost of
-finding periods where the Sun is **below** a twilight threshold (astronomical
-night uses −18°), for horizons of 1/7/30/365 days.
+- `solar/daily_predictor/*` — public Option A API (`below_threshold`, `altitude_ranges`, `crossings`)
+- `solar/chebyshev_fallback_baseline/*` — internal Chebyshev-first engine (daily predictor disabled)
+- `solar/scan_brent_baseline/*` — internal scan+Brent baseline via `bench_internals`
 
-At the API level, the benchmark calls:
+Thresholds exercised in the daily-predictor group include astronomical twilight (−18°),
+nautical bands, and horizon crossings.
 
-```rust
-Sun.below_threshold(site, period, twilight::ASTRONOMICAL)
-```
+## Engine architecture (current branch)
 
-That call includes both:
+### Default: solar daily predictor
 
-1) scanning/bracketing potential crossings over the full time window, and  
-2) root refinement + interval assembly to produce precise boundaries.
+1. Iterate full MJD days overlapping the requested window.
+2. Build an **analytic daily state** (approximate RA/Dec/transit) from a compact solar model.
+3. Predict morning/evening crossing candidates from hour-angle geometry.
+4. Expand local brackets (15 min → 4 h) and refine with **`sun_altitude_rad` + Brent**.
+5. Accept a day only when every in-window candidate refines successfully.
 
-## Current call path (today)
+Performance depends primarily on **precise `sun_altitude_rad` evaluation count**,
+not on scanning the full window at a fixed step.
 
-At a high level, the Sun-night pipeline is:
+### Fallback: local Chebyshev-first
 
-1. `Sun.below_threshold(...)` (the altitude API)  
-2. Sun-specific altitude closure in `src/event/solar/` (`solar_*_impl`)  
-3. Generic scan→refine→assemble logic in `src/calculus/math_core/intervals.rs`  
-4. Per-sample Sun altitude computed by `Sun::get_horizontal(...)` in
-   `src/calculus/solar/sun_equations.rs`
+When the daily model is unreliable (grazing latitude, partial-window edge cases, bracket
+failures, or failed always-above/below safety checks), the clipped day falls back to the
+generic Chebyshev-first crossing engine in `src/event/search/crossings.rs`.
 
-The *important* detail is how `Sun::get_horizontal` obtains a geocentric/topocentric
-Sun direction. It starts from a heliocentric “Sun at origin” position and shifts
-it to the geocentric frame via a center transform:
+### Final fallback / baseline: local scan+Brent
 
-- `cartesian::position::EclipticMeanJ2000::<U, Heliocentric>::CENTER`
-- `.transform(jd)` into a geocentric equatorial J2000 position
+Per-segment or whole-window scan+Brent is used only as an internal baseline (tests/benches)
+or when Chebyshev marks a segment unsafe.
 
-That center transform requires Earth’s heliocentric position, which is provided
-by the analytical VSOP87 backend (Earth VSOP87A). So even “Sun altitude” is
-largely an **Earth ephemeris** workload.
+## Expected diagnostics (normal mid-latitude cases)
 
-## The cost model: evaluation count × per-evaluation cost
+For ordinary sites and twilight thresholds:
 
-For this benchmark, the time spent is dominated by a single question:
+- `scan_fallback_days == 0`
+- `bracket_failures == 0` (or handled by local day fallback without silent partial results)
+- `precise_evaluations` substantially lower than Chebyshev-first or scan+Brent baselines
 
-How many times do we evaluate “Sun altitude at time `t`” and how expensive is
-one evaluation?
+Polar and grazing cases should show non-zero `chebyshev_fallback_days` and still match
+scan baselines in tests.
 
-### Evaluation count
-
-The current Sun altitude period finder uses a fixed **2-hour scan step**
-(scan step in `src/event/solar/`). That produces about
-12 altitude evaluations per day for the coarse scan, plus a small number of
-refinement calls near each sunrise/sunset and near each twilight crossing.
-
-This matters more than micro-optimizations: if you double the evaluation count,
-you will usually double the runtime.
-
-### Per-evaluation cost
-
-A single altitude evaluation (`Sun::get_horizontal`) includes:
-
-- Earth VSOP87A evaluation (thousands of trigonometric terms)
-- a chain of rotations/transforms (precession/nutation, equatorial→horizontal)
-- conversion to spherical altitude
-
-So the performance floor is set by “how expensive is Earth VSOP87A + transforms”.
-
-## What tends to show up in profilers
-
-On typical x86_64 CPUs, profiles of the 365‑day benchmark are usually
-compute-bound and dominated by:
-
-- trigonometric range reduction and polynomial approximations (SIMD and scalar)
-- series accumulation (mul-add heavy loops)
-- nutation/precession argument generation and trig
-
-If you see `wide` SIMD trig frames dominating, that generally means “we are
-paying for a lot of VSOP87 terms”. If you see `mul_add` lowering through helper
-symbols, that usually means the build is not taking advantage of `+fma` on the
-local CPU.
-
-## What to optimize first (in practice)
-
-If this benchmark regresses or becomes a bottleneck, the most reliable ordering
-is:
-
-1. **Reduce evaluation count** (scan step, reuse precomputed values, avoid extra probes).  
-2. **Reduce per-evaluation work** (cache slow-changing transforms, cheaper solar model for bracketing).  
-3. **Only then** consider micro-optimizations inside VSOP87 loops.
-
-The generic interval engine already does one high-leverage thing: it reuses
-scan endpoint values when refining roots (via `brent_with_values`), so a bracket
-does not pay for redundant endpoint evaluations.
-
-## How to reproduce and profile
-
-Run the benchmark:
+## How to run
 
 ```bash
-cargo bench --bench solar_altitude
+cargo bench --features bench-internals --bench solar_altitude
+cargo bench --no-run --features bench-internals
 ```
 
-Profile it (Linux, `perf`) using the workflow in `benches/reports/profiling.md`.
+Plain `cargo bench --no-run` skips these benches because they require `bench-internals`.
 
-If you are doing local, machine-specific performance work, compiling with native
-CPU features is often meaningful:
+## Speedup claims
 
-```bash
-RUSTFLAGS="-C target-cpu=native" cargo bench --bench solar_altitude
-```
-
-That build is not portable, but it is a good way to determine whether your
-bottleneck is “math kernel throughput” vs “evaluation count / algorithm”.
-
+This report does **not** claim measured speedups unless benchmark numbers are pasted here
+after a local run. Compare groups `solar/daily_predictor` vs `solar/chebyshev_fallback_baseline`
+vs `solar/scan_brent_baseline` for the same window/threshold.
