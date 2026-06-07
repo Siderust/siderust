@@ -174,18 +174,6 @@ pub use event::altitude::{
     CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind, SearchOpts,
 };
 
-#[cfg(feature = "unstable-event-search")]
-pub mod unstable_event_search {
-    //! Experimental event-search tuning APIs; not covered by semver stability guarantees.
-    pub use crate::event::altitude::search::{
-        search_opts_v2_ffi_from_scalars, ChebyshevOptionsFfi, CrossingAlgorithmFfi, SearchOptsV2Ffi,
-    };
-    pub use crate::event::altitude::{
-        above_threshold_with_search_opts_v2, altitude_ranges_with_search_opts_v2,
-        below_threshold_with_search_opts_v2, crossings_with_search_opts_v2,
-    };
-}
-
 // ---------------------------------------------------------------------------
 // Convenience re‑exports: lunar phase API
 // ---------------------------------------------------------------------------

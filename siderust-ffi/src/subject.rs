@@ -92,39 +92,6 @@ pub extern "C" fn siderust_above_threshold(
     }}
 }
 
-/// Periods when a subject is above a threshold altitude, with extended search options.
-#[cfg(feature = "unstable-event-search")]
-#[no_mangle]
-pub extern "C" fn siderust_above_threshold_v2(
-    subject: SiderustSubject,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOptsV2,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_subject!(subject, |p| {
-            periods_to_c(
-                siderust::unstable_event_search::above_threshold_with_search_opts_v2(
-                    p,
-                    &observer.to_rust(),
-                    window,
-                    Degrees::new(threshold_deg),
-                    opts.to_ffi(),
-                ),
-                out,
-                count,
-            )
-        })
-    }}
-}
-
 /// Periods when a subject is below a threshold altitude.
 #[no_mangle]
 pub extern "C" fn siderust_below_threshold(
@@ -149,39 +116,6 @@ pub extern "C" fn siderust_below_threshold(
                     window,
                     Degrees::new(threshold_deg),
                     opts.to_rust(),
-                ),
-                out,
-                count,
-            )
-        })
-    }}
-}
-
-/// Periods when a subject is below a threshold altitude, with extended search options.
-#[cfg(feature = "unstable-event-search")]
-#[no_mangle]
-pub extern "C" fn siderust_below_threshold_v2(
-    subject: SiderustSubject,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOptsV2,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_subject!(subject, |p| {
-            periods_to_c(
-                siderust::unstable_event_search::below_threshold_with_search_opts_v2(
-                    p,
-                    &observer.to_rust(),
-                    window,
-                    Degrees::new(threshold_deg),
-                    opts.to_ffi(),
                 ),
                 out,
                 count,
@@ -218,39 +152,6 @@ pub extern "C" fn siderust_crossings(
                     window,
                     Degrees::new(threshold_deg),
                     opts.to_rust(),
-                ),
-                out,
-                count,
-            )
-        })
-    }}
-}
-
-/// Threshold-crossing events for a subject, with extended search options.
-#[cfg(feature = "unstable-event-search")]
-#[no_mangle]
-pub extern "C" fn siderust_crossings_v2(
-    subject: SiderustSubject,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    threshold_deg: f64,
-    opts: SiderustSearchOptsV2,
-    out: *mut *mut SiderustCrossingEvent,
-    count: *mut usize,
-) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_subject!(subject, |p| {
-            crossings_to_c(
-                siderust::unstable_event_search::crossings_with_search_opts_v2(
-                    p,
-                    &observer.to_rust(),
-                    window,
-                    Degrees::new(threshold_deg),
-                    opts.to_ffi(),
                 ),
                 out,
                 count,
@@ -314,41 +215,6 @@ pub extern "C" fn siderust_altitude_ranges(
                     Degrees::new(h_min_deg),
                     Degrees::new(h_max_deg),
                     opts.to_rust(),
-                ),
-                out,
-                count,
-            )
-        })
-    }}
-}
-
-/// Periods when a subject's altitude is within `[h_min, h_max]`, with extended search options.
-#[cfg(feature = "unstable-event-search")]
-#[no_mangle]
-pub extern "C" fn siderust_altitude_ranges_v2(
-    subject: SiderustSubject,
-    observer: SiderustGeodetict,
-    window: TempochPeriodMjd,
-    h_min_deg: f64,
-    h_max_deg: f64,
-    opts: SiderustSearchOptsV2,
-    out: *mut *mut TempochPeriodMjd,
-    count: *mut usize,
-) -> SiderustStatus {
-    ffi_guard! {{
-        let window = match window_from_c(window) {
-            Ok(w) => w,
-            Err(e) => return e,
-        };
-        dispatch_subject!(subject, |p| {
-            periods_to_c(
-                siderust::unstable_event_search::altitude_ranges_with_search_opts_v2(
-                    p,
-                    &observer.to_rust(),
-                    window,
-                    Degrees::new(h_min_deg),
-                    Degrees::new(h_max_deg),
-                    opts.to_ffi(),
                 ),
                 out,
                 count,
@@ -548,14 +414,6 @@ mod tests {
         (handle, SiderustSubject::generic_target(handle))
     }
 
-    #[cfg(feature = "unstable-event-search")]
-    fn opts_v2(algorithm: SiderustCrossingAlgorithm) -> SiderustSearchOptsV2 {
-        SiderustSearchOptsV2 {
-            algorithm,
-            ..SiderustSearchOptsV2::default()
-        }
-    }
-
     #[test]
     fn altitude_at_body_star_icrs_and_generic_target() {
         let mut out = 0.0f64;
@@ -689,50 +547,6 @@ mod tests {
         unsafe { crate::altitude::siderust_crossings_free(crossings, count) };
     }
 
-    #[cfg(feature = "unstable-event-search")]
-    #[test]
-    fn altitude_v2_options_body() {
-        let mut periods: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-
-        let st = siderust_above_threshold_v2(
-            SiderustSubject::body(SiderustBody::Sun),
-            paris(),
-            one_day_window(),
-            0.0,
-            opts_v2(SiderustCrossingAlgorithm::ScanBrent),
-            &mut periods,
-            &mut count,
-        );
-        assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_periods_free(periods, count) };
-
-        let st = siderust_below_threshold_v2(
-            SiderustSubject::body(SiderustBody::Sun),
-            paris(),
-            one_day_window(),
-            -18.0,
-            opts_v2(SiderustCrossingAlgorithm::ChebyshevRoots),
-            &mut periods,
-            &mut count,
-        );
-        assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_periods_free(periods, count) };
-
-        let mut crossings: *mut SiderustCrossingEvent = ptr::null_mut();
-        let st = siderust_crossings_v2(
-            SiderustSubject::body(SiderustBody::Moon),
-            paris(),
-            one_day_window(),
-            0.0,
-            opts_v2(SiderustCrossingAlgorithm::ChebyshevRoots),
-            &mut crossings,
-            &mut count,
-        );
-        assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_crossings_free(crossings, count) };
-    }
-
     #[test]
     fn culminations_generic_target() {
         let (handle, subj) = generic_target_subject();
@@ -784,27 +598,8 @@ mod tests {
         assert_eq!(st, SiderustStatus::Ok);
         unsafe {
             crate::altitude::siderust_periods_free(out, count);
-            siderust_star_free(star_handle);
+            crate::bodies::siderust_star_free(star_handle);
         }
-    }
-
-    #[cfg(feature = "unstable-event-search")]
-    #[test]
-    fn altitude_ranges_v2_works_for_sun() {
-        let mut out: *mut TempochPeriodMjd = ptr::null_mut();
-        let mut count = 0usize;
-        let st = siderust_altitude_ranges_v2(
-            SiderustSubject::body(SiderustBody::Sun),
-            paris(),
-            one_day_window(),
-            -90.0,
-            0.0,
-            opts_v2(SiderustCrossingAlgorithm::ChebyshevRoots),
-            &mut out,
-            &mut count,
-        );
-        assert_eq!(st, SiderustStatus::Ok);
-        unsafe { crate::altitude::siderust_periods_free(out, count) };
     }
 
     #[test]

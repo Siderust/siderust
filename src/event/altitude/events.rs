@@ -28,8 +28,6 @@
 //! None.
 
 use super::provider::AltitudeProvider;
-#[cfg(feature = "unstable-event-search")]
-use super::search::SearchOptsV2Ffi;
 use super::search::{SearchOpts, SearchOptsV2, DEFAULT_SCAN_STEP, EXTREMA_SCAN_STEP};
 use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind};
 use crate::astro::apparent::CorrectionPolicy;
@@ -169,25 +167,6 @@ pub fn crossings_with_policy<T: AltitudeProvider>(
         threshold,
         SearchOptsV2::from_legacy(opts),
         policy,
-    )
-}
-
-/// Find threshold crossings using extended search options.
-#[cfg(feature = "unstable-event-search")]
-pub fn crossings_with_search_opts_v2<T: AltitudeProvider>(
-    target: &T,
-    observer: &Geodetic<ECEF>,
-    window: Interval<ModifiedJulianDate>,
-    threshold: Degrees,
-    opts: SearchOptsV2Ffi,
-) -> Vec<CrossingEvent> {
-    crossings_with_search_opts_v2_and_policy(
-        target,
-        observer,
-        window,
-        threshold,
-        opts.to_internal(),
-        CorrectionPolicy::APPARENT,
     )
 }
 
@@ -352,28 +331,6 @@ pub fn altitude_ranges_with_policy<T: AltitudeProvider>(
     )
 }
 
-/// Find altitude-range periods using extended search options.
-/// Find altitude-range periods using extended search options.
-#[cfg(feature = "unstable-event-search")]
-pub fn altitude_ranges_with_search_opts_v2<T: AltitudeProvider>(
-    target: &T,
-    observer: &Geodetic<ECEF>,
-    window: Interval<ModifiedJulianDate>,
-    h_min: Degrees,
-    h_max: Degrees,
-    opts: SearchOptsV2Ffi,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    altitude_ranges_with_search_opts_v2_and_policy(
-        target,
-        observer,
-        window,
-        h_min,
-        h_max,
-        opts.to_internal(),
-        CorrectionPolicy::APPARENT,
-    )
-}
-
 fn altitude_ranges_with_search_opts_v2_and_policy<T: AltitudeProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
@@ -464,25 +421,6 @@ pub fn above_threshold_with_policy<T: AltitudeProvider>(
     )
 }
 
-/// Find above-threshold periods using extended search options.
-#[cfg(feature = "unstable-event-search")]
-pub fn above_threshold_with_search_opts_v2<T: AltitudeProvider>(
-    target: &T,
-    observer: &Geodetic<ECEF>,
-    window: Interval<ModifiedJulianDate>,
-    threshold: Degrees,
-    opts: SearchOptsV2Ffi,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    above_threshold_with_search_opts_v2_and_policy(
-        target,
-        observer,
-        window,
-        threshold,
-        opts.to_internal(),
-        CorrectionPolicy::APPARENT,
-    )
-}
-
 fn above_threshold_with_search_opts_v2_and_policy<T: AltitudeProvider>(
     target: &T,
     observer: &Geodetic<ECEF>,
@@ -556,25 +494,6 @@ pub fn below_threshold_with_policy<T: AltitudeProvider>(
         threshold,
         SearchOptsV2::from_legacy(opts),
         policy,
-    )
-}
-
-/// Find below-threshold periods using extended search options.
-#[cfg(feature = "unstable-event-search")]
-pub fn below_threshold_with_search_opts_v2<T: AltitudeProvider>(
-    target: &T,
-    observer: &Geodetic<ECEF>,
-    window: Interval<ModifiedJulianDate>,
-    threshold: Degrees,
-    opts: SearchOptsV2Ffi,
-) -> Vec<Interval<ModifiedJulianDate>> {
-    below_threshold_with_search_opts_v2_and_policy(
-        target,
-        observer,
-        window,
-        threshold,
-        opts.to_internal(),
-        CorrectionPolicy::APPARENT,
     )
 }
 

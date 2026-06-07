@@ -12,7 +12,6 @@
 
 #![deny(missing_docs)]
 #![deny(unsafe_op_in_unsafe_fn)]
-#![cfg_attr(feature = "unstable-event-search", allow(private_interfaces))]
 // FFI entry points accept raw pointer out-params validated inside ffi_guard!.
 // Marking every extern "C" fn unsafe would require Safety docs on ~80 functions;
 // instead we suppress the lint crate-wide and rely on the API contract.

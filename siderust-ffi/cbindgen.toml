@@ -12,7 +12,6 @@ header = """
 [defines]
 "feature = serde" = "SIDERUST_FFI_HAS_SERDE"
 "feature = runtime-data" = "SIDERUST_FFI_HAS_RUNTIME_DATA"
-"feature = unstable-event-search" = "SIDERUST_FFI_UNSTABLE_EVENT_SEARCH"
 
 [export]
 
@@ -31,9 +30,6 @@ header = """
 "SiderustMeanMotionOrbit" = "siderust_mean_motion_orbit_t"
 "SiderustConicOrbit" = "siderust_conic_orbit_t"
 "SiderustSearchOpts" = "siderust_search_opts_t"
-"SiderustCrossingAlgorithm" = "siderust_crossing_algorithm_t"
-"SiderustChebSearchOpts" = "siderust_cheb_search_opts_t"
-"SiderustSearchOptsV2" = "siderust_search_opts_v2_t"
 "SiderustCrossingEvent" = "siderust_crossing_event_t"
 "SiderustCulminationEvent" = "siderust_culmination_event_t"
 "SiderustProperMotion" = "siderust_proper_motion_t"

@@ -15,7 +15,6 @@ crate-type = ["cdylib", "staticlib", "rlib"]
 [features]
 default = []
 ## Experimental FFI for event-search algorithm/tuning knobs (not in stable headers).
-unstable-event-search = ["siderust/unstable-event-search"]
 serde = ["siderust/serde"]
 runtime-data = ["siderust/runtime-data", "dep:siderust-archive", "siderust-archive/fetch"]
 

@@ -10,7 +10,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - Depend on `cheby 0.4` for dynamic Chebyshev fitting, tail norms, derivatives, and root finding on crossing segments.
 - Add an internal Chebyshev-first crossing engine for smooth altitude signals: fit `sin(altitude) − sin(threshold)` per segment, solve roots with mapped [`RootOptions`](https://docs.rs/cheby/0.4/cheby/struct.RootOptions.html), validate against the precise model, and fall back per segment to scan+Brent when the polynomial is untrusted.
-- Add `unstable-event-search` feature exposing experimental algorithm/tuning hooks for benchmarks and FFI experiments without polluting the stable API.
 
 ### Changed
 
@@ -22,6 +21,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Removed
 
+- `unstable-event-search` feature and all experimental algorithm/tuning hooks (`SearchOptsV2`, `ChebyshevOptions`, `CrossingAlgorithm`, FFI `_v2` entry points, and `unstable_event_search` module).
 - Public `altitude_periods`, `compute_altitude_periods`, `AltitudeQuery`, and trait period-query convenience methods (`AltitudePeriodsProvider::above_threshold`, `below_threshold`, `altitude_periods`).
 - Stable FFI `siderust_altitude_periods` and `SiderustAltitudeQuery`.
 - Local Chebyshev polynomial/root code in favour of the `cheby` crate backend.
