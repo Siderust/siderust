@@ -3,7 +3,7 @@
 
 //! Benchmarks for solar altitude period calculations.
 //!
-//! Compares the default Chebyshev-first engine against the legacy scan+Brent
+//! Compares the default Chebyshev-first engine against the scan+Brent
 //! baseline over 30, 184, and 365 day windows.
 
 use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};

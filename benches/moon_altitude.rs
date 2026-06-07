@@ -11,7 +11,7 @@
 //! - **2-hour scan** (recommended): `above_threshold` with default options, fast, ~12 evals/day
 //! - **10-minute scan** (validation): finer `scan_step_days`, for algorithm comparison
 //!
-//! Both the default Chebyshev-first engine and the legacy scan+Brent baseline
+//! Both the default Chebyshev-first engine and the scan+Brent baseline
 //! are compared over 30, 184, and 365 day windows.
 //!
 //! ## Performance Targets

@@ -86,9 +86,7 @@ pub(crate) fn moon_altitude_rad(
 ///
 /// # Example
 /// ```ignore
-/// ```ignore
 /// above_threshold(&Moon, &site, period, Degrees::new(0.0), SearchOpts::default());
-/// ```
 /// ```
 ///
 /// # Returns
@@ -122,9 +120,7 @@ pub(crate) fn lunar_above_threshold_impl(
 ///
 /// # Example
 /// ```ignore
-/// ```ignore
 /// below_threshold(&Moon, &site, period, Degrees::new(-0.5), SearchOpts::default());
-/// ```
 /// ```
 ///
 /// # Returns
@@ -154,9 +150,7 @@ pub(crate) fn lunar_below_threshold_impl(
 ///
 /// # Example
 /// ```ignore
-/// ```ignore
 /// altitude_ranges(&Moon, &site, period, Degrees::new(0.0), Degrees::new(30.0), SearchOpts::default());
-/// ```
 /// ```
 ///
 /// # Returns
