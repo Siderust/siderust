@@ -651,10 +651,7 @@ fn refine_candidate_root(
     let mut r_cur = r0;
     let mut slope = analytic_slope;
 
-    #[cfg(test)]
-    let mut _dbg_iters = 0usize;
-
-    for _iter in 0..MAX_NEWTON_ITERS {
+    for _ in 0..MAX_NEWTON_ITERS {
         if slope.abs() < 1e-8 {
             break;
         }
@@ -663,15 +660,6 @@ fn refine_candidate_root(
             break;
         }
         let r_next = solar_residual(site, t_next, thr_sin, diagnostics);
-        #[cfg(test)]
-        {
-            _dbg_iters += 1;
-            if _iter < 3 {
-                eprintln!(
-                    "  newton iter={_iter} r_cur={r_cur:.3e} slope={slope:.3e} r_next={r_next:.3e} tol={tol:.1e}",
-                );
-            }
-        }
         if r_next.abs() <= newton_tol {
             diagnostics.newton_accepted += 1;
             return Some(t_next);
@@ -1062,23 +1050,11 @@ mod tests {
     fn newton_accepted_nonzero_for_normal_case() {
         let site = roque();
         let window = utc_window(30);
-        let (crossings, diag) = solar_daily_crossings_impl(
+        let (_crossings, diag) = solar_daily_crossings_impl(
             site,
             window,
             Degrees::new(-18.0),
             InternalSearchConfig::default(),
-        );
-        eprintln!(
-            "newton_check: crossings={} precise_evals={} newton_accepted={} \
-             evals/crossing={:.1}",
-            crossings.len(),
-            diag.precise_evaluations,
-            diag.newton_accepted,
-            if crossings.is_empty() {
-                0.0
-            } else {
-                diag.precise_evaluations as f64 / crossings.len() as f64
-            },
         );
         assert!(
             diag.newton_accepted <= diag.refined_crossings,
@@ -1234,25 +1210,11 @@ mod tests {
     fn mid_latitude_diagnostics_low_fallback() {
         let site = roque();
         let window = utc_window(30);
-        let (crossings, diag) = solar_daily_crossings_impl(
+        let (_crossings, diag) = solar_daily_crossings_impl(
             site,
             window,
             Degrees::new(-18.0),
             InternalSearchConfig::default(),
-        );
-        eprintln!(
-            "30d -18° Roque: crossings={} precise_evals={} newton_accepted={} \
-             evals/crossing={:.1} bracket_failures={} scan_fallback={}",
-            crossings.len(),
-            diag.precise_evaluations,
-            diag.newton_accepted,
-            if crossings.is_empty() {
-                0.0
-            } else {
-                diag.precise_evaluations as f64 / crossings.len() as f64
-            },
-            diag.bracket_failures,
-            diag.scan_fallback_days,
         );
         assert_eq!(diag.scan_fallback_days, 0);
         assert_eq!(diag.bracket_failures, 0);

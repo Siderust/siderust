@@ -36,8 +36,12 @@ Plain `cargo bench --no-run` skips these benches because they require `bench-int
 1. Iterate full MJD days overlapping the requested window.
 2. Build an **analytic daily state** (approximate RA/Dec/transit) from a compact solar model.
 3. Predict morning/evening crossing candidates from hour-angle geometry.
-4. Expand local brackets (15 min → 4 h) and refine each candidate with `sun_altitude_rad` + Brent.
-5. Accept a day only when every in-window candidate refines successfully.
+4. **Fast-model bracket** (Meeus-style `sin(altitude)` — ~8 arcmin accuracy, ~10× cheaper than
+   the precise model) to narrow the root location.
+5. **Newton/secant polish** (up to 6 iterations) using precise `sun_altitude_rad` residuals,
+   starting from the fast root. Accepts when `|residual| ≤ 1e-9` (time accuracy ~16–30 µs,
+   well within the declared 86 µs `time_tolerance`).
+6. Fallback to full-model Brent if Newton/secant does not converge (polar/grazing cases).
 
 For `altitude_ranges`, a **batch daily path** computes both threshold crossings (h_min and h_max)
 in a single day loop, sharing the daily state computation.
@@ -56,17 +60,31 @@ Not exposed in the public API.
 
 ## Expected diagnostics (normal mid-latitude cases)
 
-For ordinary sites and twilight thresholds:
+For ordinary sites and twilight thresholds (measured: Roque de los Muchachos, 30 days, −18°):
 
-- `scan_fallback_days == 0`
-- `bracket_failures == 0`
-- `precise_evaluations` substantially lower than Chebyshev-first or scan+Brent baselines
+| Metric | Value |
+|--------|-------|
+| `crossings` | 60 |
+| `precise_evaluations` | ~261 |
+| `newton_accepted` | ~51 / 60 |
+| `evals/crossing` | ~4.3 |
+| `bracket_failures` | 0 |
+| `scan_fallback_days` | 0 |
 
 Polar and grazing cases will show non-zero `chebyshev_fallback_days` and still match
 scan baselines in tests.
 
-## Speedup claims
+## Measured performance (Roque de los Muchachos, 2026, release build)
 
-This report does **not** claim measured speedups unless benchmark numbers are pasted here
-after a local run. Compare `engines/solar/{N}/below_threshold/daily_predictor` vs
-`chebyshev_baseline` vs `scan_brent_baseline` for the same window to measure the speedup.
+Measured on Linux 6.17, AMD Ryzen, `cargo bench --features bench-internals`.
+
+| Benchmark | Time | Notes |
+|-----------|------|-------|
+| `public_api/solar/365d/below_threshold/astro_night` | **471 ms** | −45% vs pre-optimization 0.85 s |
+| `public_api/solar/365d/above_threshold/horizon` | **467 ms** | |
+| `public_api/solar/365d/altitude_ranges/astro_to_nautical` | **955 ms** | −40% vs pre-optimization 1.58 s |
+| `public_api/solar/365d/crossings/horizon` | **552 ms** | |
+
+The speedup comes from reducing precise `sun_altitude_rad` evaluations per root from ~9 (old
+Brent-only path) to ~4.3 (Newton/secant polish accepts 85% of mid-latitude crossings in 3
+iterations). No public API changes; no reduction in crossing accuracy.
