@@ -111,7 +111,7 @@ pub use types::{
 // Re-exports: Search Options
 // ---------------------------------------------------------------------------
 
-pub use search::SearchOpts;
+pub use search::{ChebyshevOptions, CrossingAlgorithm, SearchOpts, SearchOptsV2};
 
 // ---------------------------------------------------------------------------
 // Re-exports: Core Computation
@@ -124,9 +124,10 @@ pub use search::SearchOpts;
 // ---------------------------------------------------------------------------
 
 pub use events::{
-    above_threshold, above_threshold_with_policy, altitude_ranges, altitude_ranges_with_policy,
-    below_threshold, below_threshold_with_policy, crossings, crossings_with_policy, culminations,
-    culminations_with_policy,
+    above_threshold, above_threshold_with_policy, above_threshold_with_search_opts_v2,
+    altitude_ranges, altitude_ranges_with_policy, altitude_ranges_with_search_opts_v2,
+    below_threshold, below_threshold_with_policy, below_threshold_with_search_opts_v2, crossings,
+    crossings_with_policy, crossings_with_search_opts_v2, culminations, culminations_with_policy,
 };
 
 // ---------------------------------------------------------------------------

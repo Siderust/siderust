@@ -22,7 +22,10 @@ use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, Criterion};
 use siderust::bodies::Moon;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::event::altitude::{AltitudePeriodsProvider, AltitudeQuery};
+use siderust::event::altitude::{
+    above_threshold_with_search_opts_v2, below_threshold_with_search_opts_v2,
+    AltitudePeriodsProvider, AltitudeQuery, CrossingAlgorithm, SearchOptsV2,
+};
 use siderust::qtty::*;
 use siderust::time::{Interval, ModifiedJulianDate};
 use std::hint::black_box;
@@ -227,7 +230,7 @@ fn bench_moon_altitude_range(c: &mut Criterion) {
 }
 
 // =============================================================================
-// Algorithm Comparison: Cached (default) vs above/below for 365-day horizons
+// Algorithm Comparison: ScanBrent vs ChebyshevRoots vs Auto
 // =============================================================================
 
 fn bench_algorithm_comparison(c: &mut Criterion) {
@@ -236,28 +239,51 @@ fn bench_algorithm_comparison(c: &mut Criterion) {
     let mut group = c.benchmark_group("moon_algorithm_comparison");
     group.measurement_time(Duration::from_secs(15));
 
-    // 365-day above vs below comparison
-    group.bench_function("moon_above_horizon_365day", |b| {
-        let period = black_box(build_period(365));
-        b.iter(|| {
-            let _result = Moon.above_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
-            );
-        });
-    });
+    let algorithms = [
+        ("auto", CrossingAlgorithm::Auto),
+        ("scan_brent", CrossingAlgorithm::ScanBrent),
+        ("chebyshev_roots", CrossingAlgorithm::ChebyshevRoots),
+    ];
 
-    group.bench_function("moon_below_horizon_365day", |b| {
-        let period = black_box(build_period(365));
-        b.iter(|| {
-            let _result = Moon.below_threshold(
-                black_box(site),
-                black_box(period),
-                black_box(Degrees::new(0.0)),
+    for (days_label, days) in [("30day", 30), ("184day", 184), ("365day", 365)] {
+        let period = build_period(days);
+        for (algorithm_label, algorithm) in algorithms {
+            let opts = SearchOptsV2 {
+                algorithm,
+                ..SearchOptsV2::default()
+            };
+
+            group.bench_function(
+                format!("above_horizon/{algorithm_label}/{days_label}"),
+                |b| {
+                    b.iter(|| {
+                        let _result = above_threshold_with_search_opts_v2(
+                            black_box(&Moon),
+                            black_box(&site),
+                            black_box(period),
+                            black_box(Degrees::new(0.0)),
+                            black_box(opts),
+                        );
+                    });
+                },
             );
-        });
-    });
+
+            group.bench_function(
+                format!("below_horizon/{algorithm_label}/{days_label}"),
+                |b| {
+                    b.iter(|| {
+                        let _result = below_threshold_with_search_opts_v2(
+                            black_box(&Moon),
+                            black_box(&site),
+                            black_box(period),
+                            black_box(Degrees::new(0.0)),
+                            black_box(opts),
+                        );
+                    });
+                },
+            );
+        }
+    }
 
     group.finish();
 }

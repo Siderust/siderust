@@ -31,6 +31,10 @@
 use crate::bodies::solar_system::Sun;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
+use crate::event::altitude::{
+    CrossingAlgorithm, CrossingDirection, CrossingEvent, SearchOptsV2,
+};
+use crate::event::search::chebyshev;
 use crate::event::search::intervals;
 use crate::qtty::*;
 use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
@@ -43,6 +47,13 @@ use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
 /// Sunrise/sunset events are separated by ≥5 h even at high latitudes,
 /// so 2-hour steps safely detect all crossings (~12 altitude calls per day).
 const SCAN_STEP: Days = Quantity::<Hour>::new(2.0).to_const::<Day>();
+
+fn solar_auto_search_opts(mut opts: SearchOptsV2) -> SearchOptsV2 {
+    if opts.algorithm == CrossingAlgorithm::Auto && opts.scan_step_days.is_none() {
+        opts.algorithm = CrossingAlgorithm::ScanBrent;
+    }
+    opts
+}
 
 // =============================================================================
 // Core Altitude Function
@@ -89,11 +100,27 @@ pub(crate) fn find_day_periods(
     period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
 ) -> Vec<Interval<ModifiedJulianDate>> {
+    find_day_periods_with_search_opts(site, period, threshold, SearchOptsV2::default())
+}
+
+pub(crate) fn find_day_periods_with_search_opts(
+    site: Geodetic<ECEF>,
+    period: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOptsV2,
+) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
-    let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
+    let signal = |t: ModifiedJulianDate| -> f64 { sun_altitude_rad(t, &site).sin() };
 
-    intervals::above_threshold_periods_directed(period, SCAN_STEP, &f, thr)
+    let (labeled, start_above, _) = chebyshev::find_directed_crossings(
+        period,
+        SCAN_STEP,
+        &signal,
+        thr.sin(),
+        solar_auto_search_opts(opts),
+    );
+    intervals::build_above_periods_directed(&labeled, period, start_above)
 }
 
 /// Finds night periods (Sun **below** `twilight`) inside `period`.
@@ -115,7 +142,16 @@ pub(crate) fn find_night_periods(
     period: Interval<ModifiedJulianDate>,
     twilight: Degrees,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    let days = find_day_periods(site, period, twilight);
+    find_night_periods_with_search_opts(site, period, twilight, SearchOptsV2::default())
+}
+
+pub(crate) fn find_night_periods_with_search_opts(
+    site: Geodetic<ECEF>,
+    period: Interval<ModifiedJulianDate>,
+    twilight: Degrees,
+    opts: SearchOptsV2,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    let days = find_day_periods_with_search_opts(site, period, twilight, opts);
     complement_within(period, &days)
 }
 
@@ -139,12 +175,47 @@ pub(crate) fn find_sun_range_periods(
     period: Interval<ModifiedJulianDate>,
     range: (Degrees, Degrees),
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    let h_min = range.0.to::<Radian>();
-    let h_max = range.1.to::<Radian>();
+    find_sun_range_periods_with_search_opts(site, period, range, SearchOptsV2::default())
+}
 
-    let f = |t: ModifiedJulianDate| -> Radians { sun_altitude_rad(t, &site) };
+pub(crate) fn find_sun_range_periods_with_search_opts(
+    site: Geodetic<ECEF>,
+    period: Interval<ModifiedJulianDate>,
+    range: (Degrees, Degrees),
+    opts: SearchOptsV2,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    let above_min = find_day_periods_with_search_opts(site, period, range.0, opts);
+    let above_max = find_day_periods_with_search_opts(site, period, range.1, opts);
+    let below_max = intervals::complement(period, &above_max);
+    intervals::intersect(&above_min, &below_max)
+}
 
-    intervals::in_range_periods_directed(period, SCAN_STEP, &f, h_min, h_max)
+pub(crate) fn find_sun_crossings_with_search_opts(
+    site: Geodetic<ECEF>,
+    period: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOptsV2,
+) -> Vec<CrossingEvent> {
+    let thr = threshold.to::<Radian>();
+    let signal = |t: ModifiedJulianDate| -> f64 { sun_altitude_rad(t, &site).sin() };
+    let (labeled, _, _) = chebyshev::find_directed_crossings(
+        period,
+        SCAN_STEP,
+        &signal,
+        thr.sin(),
+        solar_auto_search_opts(opts),
+    );
+    labeled
+        .iter()
+        .map(|crossing| CrossingEvent {
+            mjd: crossing.t,
+            direction: if crossing.direction > 0 {
+                CrossingDirection::Rising
+            } else {
+                CrossingDirection::Setting
+            },
+        })
+        .collect()
 }
 
 #[cfg(test)]

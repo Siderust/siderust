@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Added
+
+- Add an internal Chebyshev-roots crossing engine for smooth altitude signals, with Clenshaw evaluation, derivative-segmented polynomial roots, precise residual checks, adaptive split, and scan+Brent fallback.
+- Add `CrossingAlgorithm`, `ChebyshevOptions`, and `SearchOptsV2` for additive algorithm control without changing the legacy `SearchOpts` layout.
+- Add FFI v2 altitude search functions and options for explicit Auto, ScanBrent, and ChebyshevRoots selection.
+
+### Changed
+
+- Route default Sun and Moon altitude crossings and threshold/range periods through Auto search, selecting the validated fast path for each target while preserving explicit ChebyshevRoots and scan+Brent controls.
+- Extend Rust solar and lunar altitude benchmarks to compare Auto, ScanBrent, and ChebyshevRoots over 30, 184, and 365 day windows.
+
 ## [0.9.1] - 2026-06-06
 
 ### Changed

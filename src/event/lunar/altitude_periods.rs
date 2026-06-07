@@ -30,6 +30,8 @@
 use crate::bodies::solar_system::Moon;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
+use crate::event::altitude::{CrossingAlgorithm, CrossingDirection, CrossingEvent, SearchOptsV2};
+use crate::event::search::chebyshev;
 use crate::event::search::intervals;
 use crate::qtty::*;
 use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
@@ -97,16 +99,22 @@ pub(crate) fn find_moon_above_horizon(
     period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
 ) -> Vec<Interval<ModifiedJulianDate>> {
+    find_moon_above_horizon_with_search_opts(site, period, threshold, SearchOptsV2::default())
+}
+
+pub(crate) fn find_moon_above_horizon_with_search_opts(
+    site: Geodetic<ECEF>,
+    period: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOptsV2,
+) -> Vec<Interval<ModifiedJulianDate>> {
     let thr = threshold.to::<Radian>();
 
     // Build Chebyshev + nutation caches for the period
     let ctx = MoonAltitudeContext::new(period.start, period.end, site);
 
-    let f = |t: ModifiedJulianDate| -> Radians { ctx.altitude_rad(t) };
-
-    // Use find_and_label_crossings to avoid probe evaluations
-    let (labeled, start_above) = find_and_label_crossings(period, SCAN_STEP, &f, thr);
-    intervals::build_above_periods(&labeled, period, start_above, &f, thr)
+    let (labeled, start_above) = find_moon_labeled_crossings_with_context(&ctx, period, thr, opts);
+    intervals::build_above_periods_directed(&labeled, period, start_above)
 }
 
 /// Finds periods when the Moon is below the given altitude threshold.
@@ -133,7 +141,16 @@ pub(crate) fn find_moon_below_horizon(
     period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    let above = find_moon_above_horizon(site, period, threshold);
+    find_moon_below_horizon_with_search_opts(site, period, threshold, SearchOptsV2::default())
+}
+
+pub(crate) fn find_moon_below_horizon_with_search_opts(
+    site: Geodetic<ECEF>,
+    period: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOptsV2,
+) -> Vec<Interval<ModifiedJulianDate>> {
+    let above = find_moon_above_horizon_with_search_opts(site, period, threshold, opts);
     complement_within(period, &above)
 }
 
@@ -162,15 +179,72 @@ pub(crate) fn find_moon_altitude_range(
     period: Interval<ModifiedJulianDate>,
     range: (Degrees, Degrees),
 ) -> Vec<Interval<ModifiedJulianDate>> {
+    find_moon_altitude_range_with_search_opts(site, period, range, SearchOptsV2::default())
+}
+
+pub(crate) fn find_moon_altitude_range_with_search_opts(
+    site: Geodetic<ECEF>,
+    period: Interval<ModifiedJulianDate>,
+    range: (Degrees, Degrees),
+    opts: SearchOptsV2,
+) -> Vec<Interval<ModifiedJulianDate>> {
     let h_min = range.0.to::<Radian>();
     let h_max = range.1.to::<Radian>();
 
     // Build Chebyshev + nutation caches for the period
     let ctx = MoonAltitudeContext::new(period.start, period.end, site);
 
-    let f = |t: ModifiedJulianDate| -> Radians { ctx.altitude_rad(t) };
+    let (min_crossings, start_above_min) =
+        find_moon_labeled_crossings_with_context(&ctx, period, h_min, opts);
+    let above_min =
+        intervals::build_above_periods_directed(&min_crossings, period, start_above_min);
 
-    intervals::in_range_periods(period, SCAN_STEP, &f, h_min, h_max)
+    let (max_crossings, start_above_max) =
+        find_moon_labeled_crossings_with_context(&ctx, period, h_max, opts);
+    let above_max =
+        intervals::build_above_periods_directed(&max_crossings, period, start_above_max);
+    let below_max = intervals::complement(period, &above_max);
+    intervals::intersect(&above_min, &below_max)
+}
+
+pub(crate) fn find_moon_crossings_with_search_opts(
+    site: Geodetic<ECEF>,
+    period: Interval<ModifiedJulianDate>,
+    threshold: Degrees,
+    opts: SearchOptsV2,
+) -> Vec<CrossingEvent> {
+    let thr = threshold.to::<Radian>();
+    let ctx = MoonAltitudeContext::new(period.start, period.end, site);
+    let (labeled, _) = find_moon_labeled_crossings_with_context(&ctx, period, thr, opts);
+    labeled
+        .iter()
+        .map(|crossing| CrossingEvent {
+            mjd: crossing.t,
+            direction: if crossing.direction > 0 {
+                CrossingDirection::Rising
+            } else {
+                CrossingDirection::Setting
+            },
+        })
+        .collect()
+}
+
+fn find_moon_labeled_crossings_with_context(
+    ctx: &MoonAltitudeContext,
+    period: Interval<ModifiedJulianDate>,
+    threshold: Radians,
+    opts: SearchOptsV2,
+) -> (Vec<intervals::LabeledCrossing>, bool) {
+    let f = |t: ModifiedJulianDate| -> Radians { ctx.altitude_rad(t) };
+    if opts.algorithm != CrossingAlgorithm::ChebyshevRoots || opts.scan_step_days.is_some() {
+        let step = opts.scan_step_days.unwrap_or(SCAN_STEP);
+        return find_and_label_crossings(period, step, &f, threshold);
+    }
+
+    let signal = |t: ModifiedJulianDate| -> f64 { f(t).sin() };
+    let (labeled, start_above, _) =
+        chebyshev::find_directed_crossings(period, SCAN_STEP, &signal, threshold.sin(), opts);
+    (labeled, start_above)
 }
 
 // =============================================================================

@@ -10,7 +10,10 @@ use chrono::{NaiveDate, NaiveTime, TimeZone, Utc};
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use siderust::bodies::Sun;
 use siderust::catalogs::observatories::ROQUE_DE_LOS_MUCHACHOS;
-use siderust::event::altitude::{self, AltitudePeriodsProvider, AltitudeQuery, SearchOpts};
+use siderust::event::altitude::{
+    altitude_ranges_with_search_opts_v2, below_threshold_with_search_opts_v2,
+    AltitudePeriodsProvider, AltitudeQuery, CrossingAlgorithm, SearchOptsV2,
+};
 use siderust::event::solar::twilight;
 use siderust::qtty::Degrees;
 use siderust::time::{Interval, ModifiedJulianDate};
@@ -39,23 +42,54 @@ fn bench_find_night_periods(c: &mut Criterion) {
     let site = ROQUE_DE_LOS_MUCHACHOS.geodetic();
 
     let mut group = c.benchmark_group("solar_altitude_periods");
+    let algorithms = [
+        ("auto", CrossingAlgorithm::Auto),
+        ("scan_brent", CrossingAlgorithm::ScanBrent),
+        ("chebyshev_roots", CrossingAlgorithm::ChebyshevRoots),
+    ];
 
     for (label, days) in [("1month", 30), ("6months", 184), ("1year", 365)] {
         let period = build_period(days);
 
-        group.bench_function(BenchmarkId::new("below_threshold", label), |b| {
-            b.iter(|| {
-                let _result = altitude::below_threshold(
-                    black_box(&Sun),
-                    black_box(&site),
-                    black_box(period),
-                    black_box(twilight::ASTRONOMICAL),
-                    black_box(SearchOpts::default()),
-                );
-            });
-        });
+        for (algorithm_label, algorithm) in algorithms {
+            let opts = SearchOptsV2 {
+                algorithm,
+                ..SearchOptsV2::default()
+            };
 
-        group.bench_function(BenchmarkId::new("altitude_periods", label), |b| {
+            group.bench_function(
+                BenchmarkId::new(format!("below_threshold/{algorithm_label}"), label),
+                |b| {
+                    b.iter(|| {
+                        let _result = below_threshold_with_search_opts_v2(
+                            black_box(&Sun),
+                            black_box(&site),
+                            black_box(period),
+                            black_box(twilight::ASTRONOMICAL),
+                            black_box(opts),
+                        );
+                    });
+                },
+            );
+
+            group.bench_function(
+                BenchmarkId::new(format!("altitude_periods/{algorithm_label}"), label),
+                |b| {
+                    b.iter(|| {
+                        let _result = altitude_ranges_with_search_opts_v2(
+                            black_box(&Sun),
+                            black_box(&site),
+                            black_box(period),
+                            black_box(Degrees::new(-90.0)),
+                            black_box(twilight::ASTRONOMICAL),
+                            black_box(opts),
+                        );
+                    });
+                },
+            );
+        }
+
+        group.bench_function(BenchmarkId::new("provider_default", label), |b| {
             b.iter(|| {
                 let query = AltitudeQuery {
                     observer: black_box(site),

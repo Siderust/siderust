@@ -435,6 +435,16 @@ typedef int32_t SiderustBody;
 #endif // __STDC_VERSION__ >= 202311L
 #endif // __cplusplus
 
+// Crossing search algorithm selector.
+typedef enum siderust_crossing_algorithm_t {
+  // Let Siderust choose the fastest safe algorithm.
+  SIDERUST_CROSSING_ALGORITHM_T_AUTO = 0,
+  // Force legacy scan+Brent crossing discovery.
+  SIDERUST_CROSSING_ALGORITHM_T_SCAN_BRENT = 1,
+  // Prefer Chebyshev polynomial roots with per-segment fallback.
+  SIDERUST_CROSSING_ALGORITHM_T_CHEBYSHEV_ROOTS = 2,
+} siderust_crossing_algorithm_t;
+
 // Coordinate kind discriminant for [`SiderustTargetCoord`].
 //
 // Specifies which coordinate representation is stored in the target.
@@ -876,6 +886,44 @@ typedef struct siderust_subject_t {
   // Opaque generic target handle.  Valid when `kind == GenericTarget`.
   const struct SiderustGenericTarget *generic_target_handle;
 } siderust_subject_t;
+
+// Chebyshev crossing-search options for altitude computations.
+typedef struct siderust_cheb_search_opts_t {
+  // Segment length in days.
+  double segment_length_days;
+  // Chebyshev polynomial degree.
+  uint32_t degree;
+  // Maximum tail coefficient norm before split/fallback.
+  double max_tail_norm;
+  // Maximum precise residual after validation/refinement.
+  double max_residual;
+  // Whether candidates are refined against the precise signal.
+  bool refine;
+  // Precise refinement margin in days.
+  double refine_margin_days;
+  // Minimum polynomial slope accepted at a candidate root.
+  double min_slope;
+  // Whether unsafe segments are split before fallback.
+  bool adaptive_split;
+  // Maximum adaptive split depth.
+  uint32_t max_split_depth;
+} siderust_cheb_search_opts_t;
+
+// Extended search options for altitude computations.
+typedef struct siderust_search_opts_v2_t {
+  // Time tolerance in days.
+  double time_tolerance_days;
+  // Scan step in days. Set to 0 or negative to use the body's default.
+  double scan_step_days;
+  // Whether `scan_step_days` is valid.
+  bool has_scan_step;
+  // Crossing search algorithm selector.
+  enum siderust_crossing_algorithm_t algorithm;
+  // Chebyshev crossing-search options.
+  struct siderust_cheb_search_opts_t chebyshev;
+  // Whether `chebyshev` is valid. Defaults are used when false.
+  bool has_chebyshev;
+} siderust_search_opts_v2_t;
 
 // Altitude computation query parameters.
 typedef struct siderust_altitude_query_t {
@@ -1869,6 +1917,16 @@ siderust_status_t siderust_above_threshold(struct siderust_subject_t subject,
                                            tempoch_period_mjd_t **out,
                                            uintptr_t *count);
 
+// Periods when a subject is above a threshold altitude, with extended search options.
+
+siderust_status_t siderust_above_threshold_v2(struct siderust_subject_t subject,
+                                              struct siderust_geodetic_t observer,
+                                              tempoch_period_mjd_t window,
+                                              double threshold_deg,
+                                              struct siderust_search_opts_v2_t opts,
+                                              tempoch_period_mjd_t **out,
+                                              uintptr_t *count);
+
 // Periods when a subject is below a threshold altitude.
 
 siderust_status_t siderust_below_threshold(struct siderust_subject_t subject,
@@ -1879,6 +1937,16 @@ siderust_status_t siderust_below_threshold(struct siderust_subject_t subject,
                                            tempoch_period_mjd_t **out,
                                            uintptr_t *count);
 
+// Periods when a subject is below a threshold altitude, with extended search options.
+
+siderust_status_t siderust_below_threshold_v2(struct siderust_subject_t subject,
+                                              struct siderust_geodetic_t observer,
+                                              tempoch_period_mjd_t window,
+                                              double threshold_deg,
+                                              struct siderust_search_opts_v2_t opts,
+                                              tempoch_period_mjd_t **out,
+                                              uintptr_t *count);
+
 // Threshold-crossing events for a subject.
 
 siderust_status_t siderust_crossings(struct siderust_subject_t subject,
@@ -1888,6 +1956,16 @@ siderust_status_t siderust_crossings(struct siderust_subject_t subject,
                                      struct siderust_search_opts_t opts,
                                      struct siderust_crossing_event_t **out,
                                      uintptr_t *count);
+
+// Threshold-crossing events for a subject, with extended search options.
+
+siderust_status_t siderust_crossings_v2(struct siderust_subject_t subject,
+                                        struct siderust_geodetic_t observer,
+                                        tempoch_period_mjd_t window,
+                                        double threshold_deg,
+                                        struct siderust_search_opts_v2_t opts,
+                                        struct siderust_crossing_event_t **out,
+                                        uintptr_t *count);
 
 // Culmination (local extrema) events for a subject.
 
@@ -1907,6 +1985,17 @@ siderust_status_t siderust_altitude_periods(struct siderust_subject_t subject,
                                             struct siderust_altitude_query_t query,
                                             tempoch_period_mjd_t **out,
                                             uintptr_t *count);
+
+// Periods when a body's altitude is within [min, max], with extended search options.
+//
+// Only `Body` subjects support this operation. For `Star`, `Icrs`, and
+// `GenericTarget`, `SIDERUST_STATUS_T_INVALID_ARGUMENT` is returned.
+
+siderust_status_t siderust_altitude_periods_v2(struct siderust_subject_t subject,
+                                               struct siderust_altitude_query_t query,
+                                               struct siderust_search_opts_v2_t opts,
+                                               tempoch_period_mjd_t **out,
+                                               uintptr_t *count);
 
 // Azimuth of any subject at an instant (degrees, North-clockwise).
 

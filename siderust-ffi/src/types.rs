@@ -757,6 +757,165 @@ impl Default for SiderustSearchOpts {
     }
 }
 
+/// Crossing search algorithm selector.
+#[repr(C)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SiderustCrossingAlgorithm {
+    /// Let Siderust choose the fastest safe algorithm.
+    Auto = 0,
+    /// Force legacy scan+Brent crossing discovery.
+    ScanBrent = 1,
+    /// Prefer Chebyshev polynomial roots with per-segment fallback.
+    ChebyshevRoots = 2,
+}
+
+impl SiderustCrossingAlgorithm {
+    /// Convert to the Rust domain type.
+    pub fn to_rust(self) -> siderust::CrossingAlgorithm {
+        match self {
+            Self::Auto => siderust::CrossingAlgorithm::Auto,
+            Self::ScanBrent => siderust::CrossingAlgorithm::ScanBrent,
+            Self::ChebyshevRoots => siderust::CrossingAlgorithm::ChebyshevRoots,
+        }
+    }
+}
+
+/// Chebyshev crossing-search options for altitude computations.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct SiderustChebSearchOpts {
+    /// Segment length in days.
+    pub segment_length_days: f64,
+    /// Chebyshev polynomial degree.
+    pub degree: u32,
+    /// Maximum tail coefficient norm before split/fallback.
+    pub max_tail_norm: f64,
+    /// Maximum precise residual after validation/refinement.
+    pub max_residual: f64,
+    /// Whether candidates are refined against the precise signal.
+    pub refine: bool,
+    /// Precise refinement margin in days.
+    pub refine_margin_days: f64,
+    /// Minimum polynomial slope accepted at a candidate root.
+    pub min_slope: f64,
+    /// Whether unsafe segments are split before fallback.
+    pub adaptive_split: bool,
+    /// Maximum adaptive split depth.
+    pub max_split_depth: u32,
+}
+
+impl SiderustChebSearchOpts {
+    /// Convert to the Rust domain type, preserving defaults for invalid fields.
+    pub fn to_rust(self) -> siderust::ChebyshevOptions {
+        let defaults = siderust::ChebyshevOptions::default();
+        siderust::ChebyshevOptions {
+            segment_length: if self.segment_length_days > 0.0 {
+                Days::new(self.segment_length_days)
+            } else {
+                defaults.segment_length
+            },
+            degree: if self.degree > 0 {
+                self.degree as usize
+            } else {
+                defaults.degree
+            },
+            max_tail_norm: if self.max_tail_norm > 0.0 {
+                self.max_tail_norm
+            } else {
+                defaults.max_tail_norm
+            },
+            max_residual: if self.max_residual > 0.0 {
+                self.max_residual
+            } else {
+                defaults.max_residual
+            },
+            refine: self.refine,
+            refine_margin: if self.refine_margin_days > 0.0 {
+                Days::new(self.refine_margin_days)
+            } else {
+                defaults.refine_margin
+            },
+            min_slope: if self.min_slope > 0.0 {
+                self.min_slope
+            } else {
+                defaults.min_slope
+            },
+            adaptive_split: self.adaptive_split,
+            max_split_depth: if self.max_split_depth > 0 {
+                self.max_split_depth as usize
+            } else {
+                defaults.max_split_depth
+            },
+        }
+    }
+}
+
+impl Default for SiderustChebSearchOpts {
+    fn default() -> Self {
+        let defaults = siderust::ChebyshevOptions::default();
+        Self {
+            segment_length_days: defaults.segment_length.value(),
+            degree: defaults.degree as u32,
+            max_tail_norm: defaults.max_tail_norm,
+            max_residual: defaults.max_residual,
+            refine: defaults.refine,
+            refine_margin_days: defaults.refine_margin.value(),
+            min_slope: defaults.min_slope,
+            adaptive_split: defaults.adaptive_split,
+            max_split_depth: defaults.max_split_depth as u32,
+        }
+    }
+}
+
+/// Extended search options for altitude computations.
+#[repr(C)]
+#[derive(Debug, Clone, Copy)]
+pub struct SiderustSearchOptsV2 {
+    /// Time tolerance in days.
+    pub time_tolerance_days: f64,
+    /// Scan step in days. Set to 0 or negative to use the body's default.
+    pub scan_step_days: f64,
+    /// Whether `scan_step_days` is valid.
+    pub has_scan_step: bool,
+    /// Crossing search algorithm selector.
+    pub algorithm: SiderustCrossingAlgorithm,
+    /// Chebyshev crossing-search options.
+    pub chebyshev: SiderustChebSearchOpts,
+    /// Whether `chebyshev` is valid. Defaults are used when false.
+    pub has_chebyshev: bool,
+}
+
+impl SiderustSearchOptsV2 {
+    /// Convert to the Rust domain type.
+    pub fn to_rust(&self) -> siderust::SearchOptsV2 {
+        let mut opts = siderust::SearchOptsV2::default();
+        if self.time_tolerance_days > 0.0 {
+            opts.time_tolerance = Days::new(self.time_tolerance_days);
+        }
+        if self.has_scan_step && self.scan_step_days > 0.0 {
+            opts.scan_step_days = Some(Days::new(self.scan_step_days));
+        }
+        opts.algorithm = self.algorithm.to_rust();
+        if self.has_chebyshev {
+            opts.chebyshev = self.chebyshev.to_rust();
+        }
+        opts
+    }
+}
+
+impl Default for SiderustSearchOptsV2 {
+    fn default() -> Self {
+        Self {
+            time_tolerance_days: 1e-9,
+            scan_step_days: 0.0,
+            has_scan_step: false,
+            algorithm: SiderustCrossingAlgorithm::Auto,
+            chebyshev: SiderustChebSearchOpts::default(),
+            has_chebyshev: false,
+        }
+    }
+}
+
 /// A threshold-crossing event.
 #[repr(C)]
 #[derive(Debug, Clone, Copy)]

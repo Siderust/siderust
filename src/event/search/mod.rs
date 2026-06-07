@@ -21,6 +21,7 @@
 //! - Brent, R.P. (1973). *Algorithms for Minimization without Derivatives*. Prentice-Hall.
 
 pub(crate) mod bracketing;
+pub(crate) mod chebyshev;
 pub(crate) mod extrema;
 pub(crate) mod intervals;
 pub(crate) mod root_finding;
