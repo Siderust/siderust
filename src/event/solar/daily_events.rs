@@ -37,6 +37,7 @@ const BRACKET_RADII: [Days; 5] = [
 
 /// Runtime counters for the solar daily predictor (tests/benches only).
 #[doc(hidden)]
+#[cfg_attr(not(feature = "bench-internals"), allow(unreachable_pub))]
 #[derive(Debug, Default, Clone, Copy, PartialEq)]
 pub struct SolarDailyDiagnostics {
     pub predicted_days: usize,
@@ -846,6 +847,7 @@ fn midpoint(interval: Interval<ModifiedJulianDate>) -> ModifiedJulianDate {
 /// Returns one sorted `Vec<LabeledCrossing>` per threshold, computed in a single
 /// daily pass (same efficiency as `solar_daily_crossings_for_thresholds_impl`).
 /// Intended for benchmarks and diagnostic callers only; not part of the public API.
+#[cfg(feature = "bench-internals")]
 pub(crate) fn solar_twilight_profile_impl(
     site: Geodetic<ECEF>,
     window: Interval<ModifiedJulianDate>,
