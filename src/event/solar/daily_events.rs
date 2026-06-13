@@ -21,7 +21,7 @@ use crate::event::search::scan_fallback;
 use crate::qtty::*;
 use crate::time::{Interval, JulianDate, ModifiedJulianDate};
 
-use super::altitude_periods::sun_altitude_rad;
+use super::altitude::sun_altitude_rad;
 
 const GRAZE_EPS: f64 = 1e-3;
 /// Hour-angle rate used for candidate spacing (rad per mean solar day).
@@ -70,10 +70,18 @@ struct SolarDailyState {
 
 struct DayCrossingInput {
     state: SolarDailyState,
-    clipped_day: Interval<ModifiedJulianDate>,
+    transit_day: Interval<ModifiedJulianDate>,
+    query_window: Interval<ModifiedJulianDate>,
     thr_sin: f64,
     sin_lat: f64,
     cos_lat: f64,
+}
+
+#[derive(Clone, Copy)]
+struct SolarThresholdCandidate {
+    predicted: ModifiedJulianDate,
+    direction: i32,
+    analytic_slope_per_day: f64,
 }
 
 // ---------------------------------------------------------------------------
@@ -143,14 +151,19 @@ fn solar_residual_fast(t: ModifiedJulianDate, thr_sin: f64, ctx: &SolarAltitudeS
 
 // ---------------------------------------------------------------------------
 
-/// Precomputed full-day windows overlapping a search interval.
+/// Precomputed full MJD transit-day windows for a solar event query.
+///
+/// The predictor intentionally expands one day before and after the query
+/// window. A local solar day's evening crossing can land on the next UTC/MJD
+/// day at western longitudes, so candidate filtering happens later against the
+/// original global query window.
 pub(crate) struct SolarEventContext {
     days: Vec<SolarDayWindow>,
 }
 
 #[derive(Clone, Copy)]
 struct SolarDayWindow {
-    clipped_day: Interval<ModifiedJulianDate>,
+    transit_day: Interval<ModifiedJulianDate>,
     state: Option<SolarDailyState>,
 }
 
@@ -158,19 +171,15 @@ impl SolarEventContext {
     pub(crate) fn new(site: Geodetic<ECEF>, window: Interval<ModifiedJulianDate>) -> Self {
         let mut days = Vec::new();
         if window.end > window.start {
-            let mut full_day_start = floor_day(window.start);
-            while full_day_start < window.end {
+            let mut full_day_start = add_days(floor_day(window.start), Days::new(-1.0));
+            let last_day_start = add_days(floor_day(window.end), ONE_DAY);
+            while full_day_start <= last_day_start {
                 let full_day_end = add_days(full_day_start, ONE_DAY);
                 let full_day = Interval::new(full_day_start, full_day_end);
-
-                let clipped_start = max_mjd(full_day_start, window.start);
-                let clipped_end = min_mjd(full_day_end, window.end);
-                if clipped_end > clipped_start {
-                    days.push(SolarDayWindow {
-                        clipped_day: Interval::new(clipped_start, clipped_end),
-                        state: solar_daily_state(site, full_day),
-                    });
-                }
+                days.push(SolarDayWindow {
+                    transit_day: full_day,
+                    state: solar_daily_state(site, full_day),
+                });
                 full_day_start = full_day_end;
             }
         }
@@ -212,9 +221,9 @@ pub(crate) fn solar_daily_crossings_for_thresholds_impl(
         for (idx, thr_sin) in threshold_sins.iter().copied().enumerate() {
             let Some(state) = day.state else {
                 diagnostics.grazing_days += 1;
-                results[idx].extend(fallback_day(
+                results[idx].extend(fallback_solar_crossings_for_window(
                     site,
-                    day.clipped_day,
+                    transit_day_influence_window(day.transit_day, window),
                     thr_sin,
                     opts,
                     &mut diagnostics,
@@ -226,7 +235,8 @@ pub(crate) fn solar_daily_crossings_for_thresholds_impl(
                 site,
                 DayCrossingInput {
                     state,
-                    clipped_day: day.clipped_day,
+                    transit_day: day.transit_day,
+                    query_window: window,
                     thr_sin,
                     sin_lat,
                     cos_lat,
@@ -291,9 +301,9 @@ pub(crate) fn solar_daily_crossings_impl(
         diagnostics.predicted_days += 1;
         let Some(state) = day.state else {
             diagnostics.grazing_days += 1;
-            labelled.extend(fallback_day(
+            labelled.extend(fallback_solar_crossings_for_window(
                 site,
-                day.clipped_day,
+                transit_day_influence_window(day.transit_day, window),
                 thr_sin,
                 opts,
                 &mut diagnostics,
@@ -304,7 +314,8 @@ pub(crate) fn solar_daily_crossings_impl(
             site,
             DayCrossingInput {
                 state,
-                clipped_day: day.clipped_day,
+                transit_day: day.transit_day,
+                query_window: window,
                 thr_sin,
                 sin_lat,
                 cos_lat,
@@ -350,15 +361,23 @@ fn predict_day_crossings(
 ) -> Vec<LabeledCrossing> {
     let DayCrossingInput {
         state,
-        clipped_day,
+        transit_day,
+        query_window,
         thr_sin,
         sin_lat,
         cos_lat,
     } = input;
+    let fallback_window = transit_day_influence_window(transit_day, query_window);
     let denom = cos_lat * state.cos_dec;
     if denom.abs() < 1e-12 {
         diagnostics.grazing_days += 1;
-        return fallback_day(site, clipped_day, thr_sin, opts, diagnostics);
+        return fallback_solar_crossings_for_window(
+            site,
+            fallback_window,
+            thr_sin,
+            opts,
+            diagnostics,
+        );
     }
 
     let cos_h0 = (thr_sin - sin_lat * state.sin_dec) / denom;
@@ -371,49 +390,51 @@ fn predict_day_crossings(
         || (cos_h0 - 1.0).abs() < GRAZE_EPS
     {
         diagnostics.grazing_days += 1;
-        return fallback_day(site, clipped_day, thr_sin, opts, diagnostics);
+        return fallback_solar_crossings_for_window(
+            site,
+            fallback_window,
+            thr_sin,
+            opts,
+            diagnostics,
+        );
     } else {
         DayThresholdCase::Crossings(cos_h0.clamp(-1.0, 1.0).acos())
     };
 
     match case {
         DayThresholdCase::AlwaysBelow => {
-            if accept_no_crossing_day(site, clipped_day, thr_sin, false, opts, diagnostics) {
+            if accept_no_crossing_day(site, fallback_window, thr_sin, false, opts, diagnostics) {
                 Vec::new()
             } else {
-                fallback_day(site, clipped_day, thr_sin, opts, diagnostics)
+                fallback_solar_crossings_for_window(
+                    site,
+                    fallback_window,
+                    thr_sin,
+                    opts,
+                    diagnostics,
+                )
             }
         }
         DayThresholdCase::AlwaysAbove => {
-            if accept_no_crossing_day(site, clipped_day, thr_sin, true, opts, diagnostics) {
+            if accept_no_crossing_day(site, fallback_window, thr_sin, true, opts, diagnostics) {
                 Vec::new()
             } else {
-                fallback_day(site, clipped_day, thr_sin, opts, diagnostics)
+                fallback_solar_crossings_for_window(
+                    site,
+                    fallback_window,
+                    thr_sin,
+                    opts,
+                    diagnostics,
+                )
             }
         }
         DayThresholdCase::Crossings(h0) => {
-            let dt = h0 / HA_RATE_RAD_PER_DAY;
-            // Analytic d(sin_alt)/dt at the two candidate crossings:
-            //   rising  (transit − dt, HA = −h0): slope = +cos_lat * cos_dec * sin(h0) * HA_rate
-            //   setting (transit + dt, HA = +h0): slope = −cos_lat * cos_dec * sin(h0) * HA_rate
-            let sin_h0 = h0.sin();
-            let base_slope = cos_lat * state.cos_dec * sin_h0 * HA_RATE_RAD_PER_DAY;
-            let candidates = [
-                (state.approx_transit.raw() - Days::new(dt), 1_i8, base_slope),
-                (
-                    state.approx_transit.raw() + Days::new(dt),
-                    -1_i8,
-                    -base_slope,
-                ),
-            ];
-
             let mut expected_candidates = 0usize;
             let mut refined = Vec::new();
             let mut failed = false;
 
-            for (pred_raw, expected_dir, analytic_slope) in candidates {
-                let pred = ModifiedJulianDate::new(pred_raw.value());
-                if pred < clipped_day.start || pred > clipped_day.end {
+            for candidate in predict_solar_threshold_candidates(state, h0, cos_lat) {
+                if !candidate_in_query_window(candidate, query_window) {
                     continue;
                 }
 
@@ -422,10 +443,10 @@ fn predict_day_crossings(
 
                 match refine_candidate_root(
                     site,
-                    clipped_day,
-                    pred,
+                    query_window,
+                    candidate.predicted,
                     thr_sin,
-                    analytic_slope,
+                    candidate.analytic_slope_per_day,
                     fast_ctx,
                     opts,
                     diagnostics,
@@ -433,7 +454,7 @@ fn predict_day_crossings(
                     Some(root) => {
                         refined.push(LabeledCrossing {
                             t: root,
-                            direction: expected_dir as i32,
+                            direction: candidate.direction,
                         });
                     }
                     None => {
@@ -444,12 +465,75 @@ fn predict_day_crossings(
             }
 
             if failed || refined.len() != expected_candidates {
-                return fallback_day(site, clipped_day, thr_sin, opts, diagnostics);
+                return fallback_solar_crossings_for_window(
+                    site,
+                    fallback_window,
+                    thr_sin,
+                    opts,
+                    diagnostics,
+                );
             }
 
             refined
         }
     }
+}
+
+fn predict_solar_threshold_candidates(
+    state: SolarDailyState,
+    hour_angle_at_threshold: f64,
+    cos_lat: f64,
+) -> [SolarThresholdCandidate; 2] {
+    let dt = hour_angle_at_threshold / HA_RATE_RAD_PER_DAY;
+    // Analytic d(sin_alt)/dt at the two candidate crossings:
+    //   rising  (transit - dt, HA = -h0): positive slope
+    //   setting (transit + dt, HA = +h0): negative slope
+    let base_slope = cos_lat * state.cos_dec * hour_angle_at_threshold.sin() * HA_RATE_RAD_PER_DAY;
+    [
+        SolarThresholdCandidate {
+            predicted: add_days(state.approx_transit, Days::new(-dt)),
+            direction: 1,
+            analytic_slope_per_day: base_slope,
+        },
+        SolarThresholdCandidate {
+            predicted: add_days(state.approx_transit, Days::new(dt)),
+            direction: -1,
+            analytic_slope_per_day: -base_slope,
+        },
+    ]
+}
+
+fn candidate_in_query_window(
+    candidate: SolarThresholdCandidate,
+    query_window: Interval<ModifiedJulianDate>,
+) -> bool {
+    candidate.predicted >= query_window.start && candidate.predicted <= query_window.end
+}
+
+fn fallback_solar_crossings_for_window(
+    site: Geodetic<ECEF>,
+    window: Interval<ModifiedJulianDate>,
+    thr_sin: f64,
+    opts: InternalSearchConfig,
+    diagnostics: &mut SolarDailyDiagnostics,
+) -> Vec<LabeledCrossing> {
+    if window.end > window.start {
+        fallback_day(site, window, thr_sin, opts, diagnostics)
+    } else {
+        Vec::new()
+    }
+}
+
+fn transit_day_influence_window(
+    transit_day: Interval<ModifiedJulianDate>,
+    query_window: Interval<ModifiedJulianDate>,
+) -> Interval<ModifiedJulianDate> {
+    let start = max_mjd(
+        query_window.start,
+        add_days(transit_day.start, Days::new(-0.5)),
+    );
+    let end = min_mjd(query_window.end, add_days(transit_day.end, Days::new(0.5)));
+    Interval::new(start, end)
 }
 
 fn solar_daily_state(
@@ -506,6 +590,10 @@ fn accept_no_crossing_day(
     opts: InternalSearchConfig,
     diagnostics: &mut SolarDailyDiagnostics,
 ) -> bool {
+    if clipped_day.end <= clipped_day.start {
+        return true;
+    }
+
     let tol = residual_tol(opts);
     for t in [clipped_day.start, midpoint(clipped_day), clipped_day.end] {
         let r = solar_residual(site, t, thr_sin, diagnostics);
@@ -880,12 +968,38 @@ mod tests {
         )
     }
 
+    fn cta_s() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
+            Degrees::new(-70.406944),
+            Degrees::new(-24.627222),
+            Meters::new(2100.0),
+        )
+    }
+
     fn utc_window(days: u32) -> Interval<ModifiedJulianDate> {
         let start = Utc.with_ymd_and_hms(2026, 1, 1, 0, 0, 0).single().unwrap();
         let end = start + chrono::Duration::days(days as i64);
         Interval::new(
             ModifiedJulianDate::from(start),
             ModifiedJulianDate::from(end),
+        )
+    }
+
+    fn utc_datetime_window(
+        start: (i32, u32, u32, u32, u32, u32),
+        end: (i32, u32, u32, u32, u32, u32),
+    ) -> Interval<ModifiedJulianDate> {
+        Interval::new(
+            ModifiedJulianDate::from(
+                Utc.with_ymd_and_hms(start.0, start.1, start.2, start.3, start.4, start.5)
+                    .single()
+                    .unwrap(),
+            ),
+            ModifiedJulianDate::from(
+                Utc.with_ymd_and_hms(end.0, end.1, end.2, end.3, end.4, end.5)
+                    .single()
+                    .unwrap(),
+            ),
         )
     }
 
@@ -915,6 +1029,11 @@ mod tests {
             assert!(
                 (a.t.raw() - e.t.raw()).abs() < Minutes::new(2.0).to::<Day>(),
                 "{threshold}: time mismatch {a:?} vs {e:?}"
+            );
+            assert_eq!(
+                a.direction.signum(),
+                e.direction.signum(),
+                "{threshold}: direction mismatch {a:?} vs {e:?}"
             );
         }
     }
@@ -1124,6 +1243,24 @@ mod tests {
             let scan = scan_labelled(site, window, thr);
             assert_labelled_close(&daily, &scan, &format!("threshold {threshold}"));
         }
+    }
+
+    #[test]
+    fn cta_s_daily_crossings_match_scan_baseline_2025() {
+        let site = cta_s();
+        let window = utc_datetime_window((2025, 1, 1, 12, 0, 0), (2025, 7, 31, 12, 0, 0));
+        let threshold = Degrees::new(-18.0);
+
+        let (daily, diag) =
+            solar_daily_crossings_impl(site, window, threshold, InternalSearchConfig::default());
+        let scan = scan_labelled(site, window, threshold);
+
+        assert_labelled_close(&daily, &scan, "CTA-S -18 deg 2025");
+        assert!(
+            daily.len() > 360,
+            "expected many twilight crossings for CTA-S Jan-Jul 2025, got {} with diag={diag:?}",
+            daily.len()
+        );
     }
 
     #[test]

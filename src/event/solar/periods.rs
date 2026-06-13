@@ -10,20 +10,13 @@ use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::event::altitude::search::InternalSearchConfig;
 use crate::event::altitude::CrossingEvent;
-use crate::event::search::intervals;
+use crate::event::search::periods as threshold_periods;
 use crate::qtty::*;
-use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
+use crate::time::{Interval, ModifiedJulianDate};
 
+use super::altitude::sun_altitude_rad;
 use super::daily_events::solar_daily_crossing_events_impl;
 use super::daily_events::{solar_daily_crossings_for_thresholds_impl, solar_daily_crossings_impl};
-
-/// Computes the Sun's altitude in **radians** at a given Julian Date and observer site.
-pub(crate) fn sun_altitude_rad(mjd: ModifiedJulianDate, site: &Geodetic<ECEF>) -> Quantity<Radian> {
-    let jd: JulianDate = mjd.to::<crate::JD>();
-    crate::bodies::solar_system::Sun::get_horizontal::<AstronomicalUnit>(jd, *site)
-        .alt()
-        .to::<Radian>()
-}
 
 pub(crate) fn solar_above_threshold_impl(
     site: Geodetic<ECEF>,
@@ -32,7 +25,7 @@ pub(crate) fn solar_above_threshold_impl(
     opts: InternalSearchConfig,
 ) -> Vec<Interval<ModifiedJulianDate>> {
     let (labelled, start_above) = solar_labelled_crossings(site, period, threshold, opts);
-    intervals::build_above_periods_directed(&labelled, period, start_above)
+    threshold_periods::assemble_above_threshold_periods(&labelled, period, start_above)
 }
 
 pub(crate) fn solar_below_threshold_impl(
@@ -41,8 +34,8 @@ pub(crate) fn solar_below_threshold_impl(
     twilight: Degrees,
     opts: InternalSearchConfig,
 ) -> Vec<Interval<ModifiedJulianDate>> {
-    let days = solar_above_threshold_impl(site, period, twilight, opts);
-    complement_within(period, &days)
+    let above = solar_above_threshold_impl(site, period, twilight, opts);
+    threshold_periods::complement_threshold_periods(period, &above)
 }
 
 pub(crate) fn solar_altitude_ranges_impl(
@@ -63,13 +56,14 @@ pub(crate) fn solar_altitude_ranges_impl(
     let min_sin = range.0.to::<Radian>().sin();
     let max_sin = range.1.to::<Radian>().sin();
 
-    let start_above_min = sun_altitude_rad(period.start, &site).sin() > min_sin;
-    let start_above_max = sun_altitude_rad(period.start, &site).sin() > max_sin;
-
-    let above_min = intervals::build_above_periods_directed(min_crossings, period, start_above_min);
-    let above_max = intervals::build_above_periods_directed(max_crossings, period, start_above_max);
-    let below_max = intervals::complement(period, &above_max);
-    intervals::intersect(&above_min, &below_max)
+    let start_sin_altitude = sun_altitude_rad(period.start, &site).sin();
+    threshold_periods::assemble_in_range_periods(
+        min_crossings,
+        start_sin_altitude > min_sin,
+        max_crossings,
+        start_sin_altitude > max_sin,
+        period,
+    )
 }
 
 pub(crate) fn solar_crossings_impl(
@@ -86,7 +80,7 @@ fn solar_labelled_crossings(
     period: Interval<ModifiedJulianDate>,
     threshold: Degrees,
     opts: InternalSearchConfig,
-) -> (Vec<intervals::LabeledCrossing>, bool) {
+) -> (Vec<crate::event::search::intervals::LabeledCrossing>, bool) {
     let thr_sin = threshold.to::<Radian>().sin();
     let start_above = sun_altitude_rad(period.start, &site).sin() > thr_sin;
     let (labelled, _) = solar_daily_crossings_impl(site, period, threshold, opts);
@@ -97,6 +91,8 @@ fn solar_labelled_crossings(
 mod tests {
     use super::*;
     use crate::event::altitude::search::DIURNAL_CHEBY_SCAN_STEP;
+    use crate::event::search::intervals;
+    use crate::time::complement_within;
     use chrono::{TimeZone, Utc};
 
     fn greenwich_site() -> Geodetic<ECEF> {
@@ -107,9 +103,32 @@ mod tests {
         )
     }
 
-    fn utc_mjd(year: i32, month: u32, day: u32) -> ModifiedJulianDate {
+    fn cta_s_site() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
+            Degrees::new(-70.406944),
+            Degrees::new(-24.627222),
+            Meters::new(2100.0),
+        )
+    }
+
+    fn utc_midnight_as_tt_mjd(year: i32, month: u32, day: u32) -> ModifiedJulianDate {
         ModifiedJulianDate::from(
             Utc.with_ymd_and_hms(year, month, day, 0, 0, 0)
+                .single()
+                .unwrap(),
+        )
+    }
+
+    fn utc_datetime_as_tt_mjd(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> ModifiedJulianDate {
+        ModifiedJulianDate::from(
+            Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
                 .single()
                 .unwrap(),
         )
@@ -161,7 +180,10 @@ mod tests {
     #[test]
     fn solar_altitude_range_batch_matches_independent_thresholds() {
         let site = greenwich_site();
-        let period = Interval::new(utc_mjd(2026, 1, 1), utc_mjd(2026, 1, 8));
+        let period = Interval::new(
+            utc_midnight_as_tt_mjd(2026, 1, 1),
+            utc_midnight_as_tt_mjd(2026, 1, 8),
+        );
         let range = (Degrees::new(-18.0), Degrees::new(-12.0));
         let opts = InternalSearchConfig::default();
 
@@ -203,7 +225,10 @@ mod tests {
     #[test]
     fn daily_predictor_periods_match_scan_baseline() {
         let site = greenwich_site();
-        let period = Interval::new(utc_mjd(2026, 1, 1), utc_mjd(2026, 1, 8));
+        let period = Interval::new(
+            utc_midnight_as_tt_mjd(2026, 1, 1),
+            utc_midnight_as_tt_mjd(2026, 1, 8),
+        );
 
         for threshold in [
             Degrees::new(0.0),
@@ -228,6 +253,53 @@ mod tests {
             );
             let scan_nights = complement_within(period, &scan);
             assert_periods_close(&daily_nights, &scan_nights);
+        }
+    }
+
+    #[test]
+    fn cta_s_astronomical_nights_match_scan_baseline_2025() {
+        let site = cta_s_site();
+        let start = utc_datetime_as_tt_mjd(2025, 1, 1, 12, 0, 0);
+        let end = utc_datetime_as_tt_mjd(2025, 7, 31, 12, 0, 0);
+        let window = Interval::new(start, end);
+        let threshold = Degrees::new(-18.0);
+
+        let daily_days =
+            solar_above_threshold_impl(site, window, threshold, InternalSearchConfig::default());
+        let scan_days = scan_day_periods(site, window, threshold);
+
+        assert_periods_close(&daily_days, &scan_days);
+
+        let daily_nights =
+            solar_below_threshold_impl(site, window, threshold, InternalSearchConfig::default());
+        let scan_nights = complement_within(window, &scan_days);
+
+        assert_periods_close(&daily_nights, &scan_nights);
+        assert!(
+            daily_nights.len() > 180,
+            "CTA-S should have many astronomical-night periods in Jan-Jul 2025, got {}",
+            daily_nights.len()
+        );
+
+        for night in &daily_nights {
+            assert!(
+                night.end > night.start,
+                "night interval must have positive duration: {night:?}"
+            );
+            assert!(
+                night.start >= window.start,
+                "night starts before query window: {night:?}"
+            );
+            assert!(
+                night.end <= window.end,
+                "night ends after query window: {night:?}"
+            );
+            let midpoint =
+                ModifiedJulianDate::new((night.start.raw() + night.end.raw()).value() / 2.0);
+            assert!(
+                sun_altitude_rad(midpoint, &site) < threshold.to::<Radian>(),
+                "night midpoint must be below astronomical threshold: {night:?}"
+            );
         }
     }
 }

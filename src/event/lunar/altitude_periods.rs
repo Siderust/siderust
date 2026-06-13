@@ -32,8 +32,9 @@ use crate::event::altitude::search::{InternalSearchConfig, DIURNAL_CHEBY_SCAN_ST
 use crate::event::altitude::{CrossingDirection, CrossingEvent};
 use crate::event::search::crossings;
 use crate::event::search::intervals;
+use crate::event::search::periods as threshold_periods;
 use crate::qtty::*;
-use crate::time::{complement_within, Interval, JulianDate, ModifiedJulianDate};
+use crate::time::{Interval, JulianDate, ModifiedJulianDate};
 
 use super::moon_cache::MoonAltitudeContext;
 
@@ -96,7 +97,7 @@ pub(crate) fn lunar_above_threshold_impl(
     let ctx = MoonAltitudeContext::new(period.start, period.end, site);
 
     let (labeled, start_above) = find_moon_labeled_crossings_with_context(&ctx, period, thr, opts);
-    intervals::build_above_periods_directed(&labeled, period, start_above)
+    threshold_periods::assemble_above_threshold_periods(&labeled, period, start_above)
 }
 
 /// Finds periods when the Moon is below the given altitude threshold.
@@ -125,7 +126,7 @@ pub(crate) fn lunar_below_threshold_impl(
     opts: InternalSearchConfig,
 ) -> Vec<Interval<ModifiedJulianDate>> {
     let above = lunar_above_threshold_impl(site, period, threshold, opts);
-    complement_within(period, &above)
+    threshold_periods::complement_threshold_periods(period, &above)
 }
 
 /// Finds periods when Moon altitude is within a range `[min, max]`.
@@ -162,15 +163,15 @@ pub(crate) fn lunar_altitude_ranges_impl(
 
     let (min_crossings, start_above_min) =
         find_moon_labeled_crossings_with_context(&ctx, period, h_min, opts);
-    let above_min =
-        intervals::build_above_periods_directed(&min_crossings, period, start_above_min);
-
     let (max_crossings, start_above_max) =
         find_moon_labeled_crossings_with_context(&ctx, period, h_max, opts);
-    let above_max =
-        intervals::build_above_periods_directed(&max_crossings, period, start_above_max);
-    let below_max = intervals::complement(period, &above_max);
-    intervals::intersect(&above_min, &below_max)
+    threshold_periods::assemble_in_range_periods(
+        &min_crossings,
+        start_above_min,
+        &max_crossings,
+        start_above_max,
+        period,
+    )
 }
 
 pub(crate) fn lunar_crossings_impl(

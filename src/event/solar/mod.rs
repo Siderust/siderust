@@ -29,15 +29,17 @@
 //!   rectangular and spherical variables. VSOP 87 solutions". *A&A*,
 //!   202, 309–315.
 
+pub(crate) mod altitude;
 pub(crate) mod daily_events;
 mod sun_equations;
 
-pub(crate) mod altitude_periods;
 pub(crate) mod azimuth;
 pub mod classification;
 pub mod night_types;
+pub(crate) mod periods;
 
-pub(crate) use altitude_periods::*;
+pub(crate) use altitude::*;
 pub(crate) use azimuth::*;
 pub use classification::{twilight_classification, TwilightPhase};
 pub use night_types::*;
+pub(crate) use periods::*;

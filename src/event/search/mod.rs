@@ -24,5 +24,6 @@ pub(crate) mod bracketing;
 pub(crate) mod crossings;
 pub(crate) mod extrema;
 pub(crate) mod intervals;
+pub(crate) mod periods;
 pub(crate) mod root_finding;
 pub(crate) mod scan_fallback;

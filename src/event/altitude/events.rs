@@ -34,9 +34,9 @@ use super::types::{CrossingDirection, CrossingEvent, CulminationEvent, Culminati
 use crate::astro::apparent::CorrectionPolicy;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
-use crate::event::search::{extrema, intervals};
+use crate::event::search::{extrema, intervals, periods as threshold_periods};
 use crate::qtty::*;
-use crate::time::{complement_within, Interval, ModifiedJulianDate};
+use crate::time::{Interval, ModifiedJulianDate};
 use std::any::Any;
 
 // ---------------------------------------------------------------------------
@@ -320,13 +320,15 @@ fn altitude_ranges_with_policy<T: AltitudeProvider + Any + 'static>(
 
     let (above_min, start_above_min) =
         labelled_crossings_for_altitude(window, step, &f, min_rad, opts);
-    let above_min = intervals::build_above_periods_directed(&above_min, window, start_above_min);
-
     let (above_max, start_above_max) =
         labelled_crossings_for_altitude(window, step, &f, max_rad, opts);
-    let above_max = intervals::build_above_periods_directed(&above_max, window, start_above_max);
-    let below_max = complement_within(window, &above_max);
-    intervals::intersect(&above_min, &below_max)
+    threshold_periods::assemble_in_range_periods(
+        &above_min,
+        start_above_min,
+        &above_max,
+        start_above_max,
+        window,
+    )
 }
 
 // ---------------------------------------------------------------------------
@@ -390,7 +392,7 @@ fn above_threshold_with_policy<T: AltitudeProvider + Any + 'static>(
     let thr_rad = threshold.to::<Radian>();
     let step = scan_step_for_opts(target, &opts);
     let (labeled, start_above) = labelled_crossings_for_altitude(window, step, &f, thr_rad, opts);
-    intervals::build_above_periods_directed(&labeled, window, start_above)
+    threshold_periods::assemble_above_threshold_periods(&labeled, window, start_above)
 }
 
 /// Convenience: find periods where altitude is **below** a threshold.
@@ -447,7 +449,7 @@ fn below_threshold_with_policy<T: AltitudeProvider + Any + 'static>(
     }
 
     let above = above_threshold_with_policy(target, observer, window, threshold, opts, policy);
-    complement_within(window, &above)
+    threshold_periods::complement_threshold_periods(window, &above)
 }
 
 // ---------------------------------------------------------------------------
@@ -458,6 +460,8 @@ fn below_threshold_with_policy<T: AltitudeProvider + Any + 'static>(
 mod tests {
     use super::*;
     use crate::bodies::solar_system::{Moon, Sun};
+    use crate::time::complement_within;
+    use chrono::{TimeZone, Utc};
 
     fn greenwich() -> Geodetic<ECEF> {
         Geodetic::<ECEF>::new(
@@ -465,6 +469,97 @@ mod tests {
             Degrees::new(51.4769),
             Quantity::<Meter>::new(0.0),
         )
+    }
+
+    fn roque_like() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
+            Degrees::new(-17.892),
+            Degrees::new(28.762),
+            Quantity::<Meter>::new(2396.0),
+        )
+    }
+
+    fn cta_s() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
+            Degrees::new(-70.406944),
+            Degrees::new(-24.627222),
+            Quantity::<Meter>::new(2100.0),
+        )
+    }
+
+    fn polar_summer() -> Geodetic<ECEF> {
+        Geodetic::<ECEF>::new(
+            Degrees::new(0.0),
+            Degrees::new(89.0),
+            Quantity::<Meter>::new(0.0),
+        )
+    }
+
+    fn utc_datetime_as_tt_mjd(
+        year: i32,
+        month: u32,
+        day: u32,
+        hour: u32,
+        minute: u32,
+        second: u32,
+    ) -> ModifiedJulianDate {
+        ModifiedJulianDate::from(
+            Utc.with_ymd_and_hms(year, month, day, hour, minute, second)
+                .single()
+                .unwrap(),
+        )
+    }
+
+    fn assert_periods_close(
+        actual: &[Interval<ModifiedJulianDate>],
+        expected: &[Interval<ModifiedJulianDate>],
+    ) {
+        assert_eq!(
+            actual.len(),
+            expected.len(),
+            "actual={actual:?} expected={expected:?}"
+        );
+        for (actual, expected) in actual.iter().zip(expected.iter()) {
+            assert!(
+                (actual.start.raw() - expected.start.raw()).abs() < Days::new(1e-6),
+                "start mismatch: actual={actual:?} expected={expected:?}"
+            );
+            assert!(
+                (actual.end.raw() - expected.end.raw()).abs() < Days::new(1e-6),
+                "end mismatch: actual={actual:?} expected={expected:?}"
+            );
+        }
+    }
+
+    fn assert_solar_threshold_identities(
+        site: Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+    ) {
+        let above = above_threshold(&Sun, &site, window, threshold, SearchOpts::default());
+        let below = below_threshold(&Sun, &site, window, threshold, SearchOpts::default());
+        let complement = complement_within(window, &above);
+        assert_periods_close(&below, &complement);
+
+        let below_as_range = altitude_ranges(
+            &Sun,
+            &site,
+            window,
+            Degrees::new(-90.0),
+            threshold,
+            SearchOpts::default(),
+        );
+        assert_periods_close(&below_as_range, &below);
+
+        let above_as_range = altitude_ranges(
+            &Sun,
+            &site,
+            window,
+            threshold,
+            Degrees::new(90.0),
+            SearchOpts::default(),
+        );
+        assert_periods_close(&above_as_range, &above);
     }
 
     #[test]
@@ -608,6 +703,28 @@ mod tests {
 
         // Should find nautical-to-astronomical twilight bands
         assert!(!twilight.is_empty(), "should find twilight bands");
+    }
+
+    #[test]
+    fn threshold_period_identities_hold_for_solar_sites() {
+        let threshold = Degrees::new(-18.0);
+        let standard_window = Interval::new(
+            utc_datetime_as_tt_mjd(2026, 1, 1, 0, 0, 0),
+            utc_datetime_as_tt_mjd(2026, 1, 8, 0, 0, 0),
+        );
+        let cta_s_window = Interval::new(
+            utc_datetime_as_tt_mjd(2025, 1, 1, 12, 0, 0),
+            utc_datetime_as_tt_mjd(2025, 1, 8, 12, 0, 0),
+        );
+        let polar_window = Interval::new(
+            utc_datetime_as_tt_mjd(2026, 6, 20, 0, 0, 0),
+            utc_datetime_as_tt_mjd(2026, 6, 23, 0, 0, 0),
+        );
+
+        assert_solar_threshold_identities(greenwich(), standard_window, threshold);
+        assert_solar_threshold_identities(roque_like(), standard_window, threshold);
+        assert_solar_threshold_identities(cta_s(), cta_s_window, threshold);
+        assert_solar_threshold_identities(polar_summer(), polar_window, threshold);
     }
 
     #[test]
