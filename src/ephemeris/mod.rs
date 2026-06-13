@@ -562,4 +562,66 @@ mod tests {
         assert!((pos_static.y().value() - pos_dyn.y().value()).abs() < 1e-15);
         assert!((pos_static.z().value() - pos_dyn.z().value()).abs() < 1e-15);
     }
+
+    #[test]
+    fn ephemeris_error_display_variants() {
+        let out_of_range = EphemerisError::OutOfRange {
+            jd: 2.0,
+            start_jd: 2.4e6,
+            end_jd: 2.5e6,
+        };
+        let msg = out_of_range.to_string();
+        assert!(msg.contains("outside covered range"));
+        assert!(msg.contains('2'));
+
+        let invalid = EphemerisError::InvalidSegment {
+            init_seconds: 1.0,
+            intlen_seconds: 86400.0,
+            n_records: 0,
+        };
+        assert!(invalid
+            .to_string()
+            .contains("invalid ephemeris segment metadata"));
+    }
+
+    #[test]
+    fn planet_ephemeris_error_display_and_source() {
+        use std::error::Error;
+
+        let unsupported = PlanetEphemerisError::UnsupportedPoint {
+            planet: MajorPlanet::Mars,
+            point: PlanetPoint::Center,
+        };
+        assert!(unsupported.to_string().contains("Mars"));
+        assert!(unsupported.source().is_none());
+
+        let wrapped = PlanetEphemerisError::Ephemeris(EphemerisError::OutOfRange {
+            jd: 1.0,
+            start_jd: 2.0,
+            end_jd: 3.0,
+        });
+        assert!(wrapped.source().is_some());
+    }
+
+    #[test]
+    fn major_planet_naif_ids() {
+        assert_eq!(MajorPlanet::Mars.system_barycenter_naif_id(), 4);
+        assert_eq!(MajorPlanet::Mars.center_naif_id(), 499);
+        assert_eq!(MajorPlanet::Mars.naif_id(PlanetPoint::SystemBarycenter), 4);
+        assert_eq!(MajorPlanet::Mars.naif_id(PlanetPoint::Center), 499);
+    }
+
+    #[test]
+    fn try_methods_match_infallible_results() {
+        let jd_val = jd();
+        let pos = <Vsop87Ephemeris as Ephemeris>::sun_barycentric(jd_val);
+        let try_pos = <Vsop87Ephemeris as Ephemeris>::try_sun_barycentric(jd_val).unwrap();
+        assert!((pos.x().value() - try_pos.x().value()).abs() < 1e-15);
+
+        let eph: &dyn DynEphemeris = &Vsop87Ephemeris;
+        let dyn_try = eph.try_earth_heliocentric(jd_val).unwrap();
+        let dyn_pos = eph.earth_heliocentric(jd_val);
+        assert!((dyn_try.x().value() - dyn_pos.x().value()).abs() < 1e-15);
+        assert!(eph.try_moon_geocentric(jd_val).is_ok());
+    }
 }

@@ -518,4 +518,58 @@ EOF\n";
             assert_eq!(e1.positions, e2.positions);
         }
     }
+
+    #[test]
+    fn stream_reader_matches_batch() {
+        let batch = read_sp3(SAMPLE.as_bytes()).expect("batch parse");
+        let mut stream = Sp3Stream::new(SAMPLE.as_bytes()).expect("stream");
+        assert!(!stream.header().is_empty());
+        let mut streamed = Vec::new();
+        while let Some(epoch) = stream.next_epoch().expect("epoch") {
+            streamed.push(epoch);
+        }
+        assert_eq!(batch.epochs.len(), streamed.len());
+        assert_eq!(batch.epochs[0].positions, streamed[0].positions);
+    }
+
+    #[test]
+    fn ignores_velocity_and_exponent_records() {
+        const WITH_V: &str = "\
+#dP2024  1  1  0  0  0.00000000       1 ORBIT IGS20 HLM  IGS\n\
+##  2295 518400.00000000   900.00000000 60310 0.0000000000000\n\
++    1   G01                                                      \n\
+++         5                                                       \n\
+%c L  cc GPS ccc cccc cccc cccc cccc ccccc ccccc ccccc ccccc\n\
+%c cc cc ccc ccc cccc cccc cccc cccc ccccc ccccc ccccc ccccc\n\
+%f  1.2500000  1.025000000  0.00000000000  0.000000000000000\n\
+%f  0.0000000  0.000000000  0.00000000000  0.000000000000000\n\
+%i    0    0    0    0      0      0      0      0         0\n\
+%i    0    0    0    0      0      0      0      0         0\n\
+*  2024  1  1  0  0  0.00000000\n\
+PG01   1000.000000   2000.000000   3000.000000      0.000123\n\
+VG01     0.100000     0.200000     0.300000      0.000001\n\
+EPG01  0 0\n\
+EVG01  0 0\n\
+EOF\n";
+        let rec = read_sp3(WITH_V.as_bytes()).expect("parse");
+        assert_eq!(rec.epochs[0].positions.len(), 1);
+    }
+
+    #[test]
+    fn short_p_record_errors() {
+        const BAD: &str = "\
+#dP2024  1  1  0  0  0.00000000       1 ORBIT IGS20 HLM  IGS\n\
+*  2024  1  1  0  0  0.00000000\n\
+PG0\n\
+EOF\n";
+        let err = read_sp3(BAD.as_bytes()).unwrap_err();
+        assert!(matches!(err, Sp3Error::Record { .. }));
+    }
+
+    #[test]
+    fn short_epoch_line_errors() {
+        const BAD: &str = "* 2024 1 1 0 0\nEOF\n";
+        let err = read_sp3(BAD.as_bytes()).unwrap_err();
+        assert!(matches!(err, Sp3Error::Record { .. }));
+    }
 }

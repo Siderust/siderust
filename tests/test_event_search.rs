@@ -120,3 +120,88 @@ fn periods_respect_window_bounds() {
     let periods = below_threshold(&Sun, &site, window, Degrees::new(-18.0), default_opts());
     assert_periods_in_window(&periods, window);
 }
+
+#[test]
+fn sun_above_threshold_default_matches_scan_baseline() {
+    let site = roque();
+    let window = window_days(60000.0, 30.0);
+    let threshold = Degrees::new(0.0);
+    let opts = default_opts();
+
+    let default = above_threshold(&Sun, &site, window, threshold, opts);
+    let scan = bench_internals::solar_above_threshold_scan_baseline(site, window, threshold, opts);
+    assert_period_lists_close(&default, &scan);
+}
+
+#[test]
+fn sun_chebyshev_baselines_run() {
+    let site = roque();
+    let window = window_days(60000.0, 7.0);
+    let opts = default_opts();
+    let threshold = Degrees::new(-18.0);
+
+    let below =
+        bench_internals::solar_below_threshold_chebyshev_baseline(site, window, threshold, opts);
+    assert_periods_in_window(&below, window);
+
+    let ranges = bench_internals::solar_altitude_ranges_chebyshev_baseline(
+        site,
+        window,
+        Degrees::new(-18.0),
+        Degrees::new(-12.0),
+        opts,
+    );
+    assert_periods_in_window(&ranges, window);
+}
+
+#[test]
+fn sun_crossings_scan_baseline_finds_events() {
+    let site = roque();
+    let window = window_days(60000.0, 1.0);
+    let events = bench_internals::solar_crossings_scan_baseline(
+        site,
+        window,
+        Degrees::new(0.0),
+        default_opts(),
+    );
+    assert!(!events.is_empty());
+}
+
+#[test]
+fn solar_daily_diagnostics_and_twilight_profile_run() {
+    let site = roque();
+    let window = window_days(60000.0, 3.0);
+    let opts = default_opts();
+    let threshold = Degrees::new(-6.0);
+
+    let diag = bench_internals::solar_daily_diagnostics(site, window, threshold, opts);
+    assert!(diag.precise_evaluations > 0);
+
+    let profile = bench_internals::solar_twilight_profile(
+        site,
+        window,
+        &[Degrees::new(-6.0), Degrees::new(-12.0)],
+        opts,
+    );
+    assert_eq!(profile.len(), 2);
+}
+
+#[test]
+fn lunar_scan_baselines_run() {
+    let site = roque();
+    let window = window_days(60000.0, 14.0);
+    let opts = default_opts();
+    let threshold = Degrees::new(0.0);
+
+    let below = bench_internals::lunar_below_threshold_scan_baseline(site, window, threshold, opts);
+    assert_periods_in_window(&below, window);
+
+    let ranges = bench_internals::lunar_altitude_ranges_scan_baseline(
+        site,
+        window,
+        Degrees::new(-5.0),
+        Degrees::new(45.0),
+        opts,
+    );
+    assert_periods_in_window(&ranges, window);
+}
