@@ -118,14 +118,6 @@ impl InternalSearchConfig {
         }
     }
 
-    /// Return the stable public subset of these options.
-    #[inline]
-    pub(crate) fn public_opts(self) -> SearchOpts {
-        SearchOpts {
-            time_tolerance: self.time_tolerance,
-        }
-    }
-
     /// Whether the caller requested a uniform scan+Brent baseline path.
     #[inline]
     pub(crate) fn uses_scan_baseline(self) -> bool {
@@ -153,7 +145,7 @@ impl InternalSearchConfig {
     }
 
     /// Test/bench helper: generic Chebyshev-first baseline (no solar daily predictor).
-    #[cfg(any(test, feature = "bench-internals"))]
+    #[cfg(feature = "bench-internals")]
     pub(crate) fn chebyshev_baseline_config(opts: SearchOpts) -> Self {
         Self {
             time_tolerance: opts.time_tolerance,

@@ -170,8 +170,9 @@ pub use affn::conic::ConicKind;
 pub use astro::conic::{ConicError, ConicOrbit, MeanMotionOrbit};
 pub use astro::orbit::{KeplerianOrbit, PreparedOrbit};
 pub use event::altitude::{
-    above_threshold, altitude_ranges, below_threshold, crossings, culminations, AltitudeProvider,
-    CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind, SearchOpts,
+    above_threshold, altitude_ranges, below_threshold, crossings, culminations, AltitudeEventsExt,
+    AltitudeProvider, CrossingDirection, CrossingEvent, CulminationEvent, CulminationKind,
+    SearchOpts,
 };
 
 // ---------------------------------------------------------------------------

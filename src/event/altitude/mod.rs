@@ -94,7 +94,6 @@
 mod events;
 mod provider;
 pub(crate) mod search;
-mod specialized_dispatch;
 mod types;
 
 // ---------------------------------------------------------------------------
@@ -119,7 +118,9 @@ pub use search::SearchOpts;
 // Re-exports: Event Finding
 // ---------------------------------------------------------------------------
 
-pub use events::{above_threshold, altitude_ranges, below_threshold, crossings, culminations};
+pub use events::{
+    above_threshold, altitude_ranges, below_threshold, crossings, culminations, AltitudeEventsExt,
+};
 
 // ---------------------------------------------------------------------------
 // Re-exports: Trait & Provider Functions

@@ -10,8 +10,10 @@ use crate::bodies::Star;
 use crate::coordinates::centers::Geodetic;
 use crate::coordinates::frames::ECEF;
 use crate::coordinates::spherical::direction;
+use crate::event::altitude::search::{InternalSearchConfig, SearchOpts};
+use crate::event::altitude::types::{CrossingEvent, CulminationEvent};
 use crate::qtty::*;
-use crate::time::ModifiedJulianDate;
+use crate::time::{Interval, ModifiedJulianDate};
 
 use crate::coordinates::{cartesian, centers::Geocentric, frames};
 use crate::event::horizontal;
@@ -41,11 +43,127 @@ pub trait AltitudeProvider {
     fn scan_step_hint(&self) -> Option<Days> {
         None
     }
+
+    #[doc(hidden)]
+    fn event_above_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        super::events::generic_above_threshold(self, observer, window, threshold, opts)
+    }
+
+    #[doc(hidden)]
+    fn event_below_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        super::events::generic_below_threshold(self, observer, window, threshold, opts)
+    }
+
+    #[doc(hidden)]
+    fn event_altitude_ranges(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        h_min: Degrees,
+        h_max: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        super::events::generic_altitude_ranges(self, observer, window, h_min, h_max, opts)
+    }
+
+    #[doc(hidden)]
+    fn event_crossings(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<CrossingEvent> {
+        super::events::generic_crossings(self, observer, window, threshold, opts)
+    }
+
+    #[doc(hidden)]
+    fn event_culminations(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        opts: SearchOpts,
+    ) -> Vec<CulminationEvent> {
+        super::events::generic_culminations(self, observer, window, opts)
+    }
 }
 
 impl AltitudeProvider for solar_system::Sun {
     fn altitude_at(&self, observer: &Geodetic<ECEF>, mjd: ModifiedJulianDate) -> Radians {
         crate::event::solar::sun_altitude_rad(mjd, observer)
+    }
+
+    fn event_above_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        crate::event::solar::solar_above_threshold_impl(
+            *observer,
+            window,
+            threshold,
+            InternalSearchConfig::from_public_opts(opts),
+        )
+    }
+
+    fn event_below_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        crate::event::solar::solar_below_threshold_impl(
+            *observer,
+            window,
+            threshold,
+            InternalSearchConfig::from_public_opts(opts),
+        )
+    }
+
+    fn event_altitude_ranges(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        h_min: Degrees,
+        h_max: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        crate::event::solar::solar_altitude_ranges_impl(
+            *observer,
+            window,
+            (h_min, h_max),
+            InternalSearchConfig::from_public_opts(opts),
+        )
+    }
+
+    fn event_crossings(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<CrossingEvent> {
+        crate::event::solar::solar_crossings_impl(
+            *observer,
+            window,
+            threshold,
+            InternalSearchConfig::from_public_opts(opts),
+        )
     }
 }
 
@@ -56,6 +174,67 @@ impl AltitudeProvider for solar_system::Moon {
 
     fn scan_step_hint(&self) -> Option<Days> {
         Some(Hours::new(2.0).to::<Day>())
+    }
+
+    fn event_above_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        crate::event::lunar::lunar_above_threshold_impl(
+            *observer,
+            window,
+            threshold,
+            InternalSearchConfig::from_public_opts(opts),
+        )
+    }
+
+    fn event_below_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        crate::event::lunar::lunar_below_threshold_impl(
+            *observer,
+            window,
+            threshold,
+            InternalSearchConfig::from_public_opts(opts),
+        )
+    }
+
+    fn event_altitude_ranges(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        h_min: Degrees,
+        h_max: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        crate::event::lunar::lunar_altitude_ranges_impl(
+            *observer,
+            window,
+            (h_min, h_max),
+            InternalSearchConfig::from_public_opts(opts),
+        )
+    }
+
+    fn event_crossings(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        opts: SearchOpts,
+    ) -> Vec<CrossingEvent> {
+        crate::event::lunar::lunar_crossings_impl(
+            *observer,
+            window,
+            threshold,
+            InternalSearchConfig::from_public_opts(opts),
+        )
     }
 }
 
@@ -71,6 +250,58 @@ impl AltitudeProvider for Star<'_> {
         policy: crate::astro::apparent::CorrectionPolicy,
     ) -> Radians {
         direction::ICRS::from(self).altitude_at_with_policy(observer, mjd, policy)
+    }
+
+    fn event_above_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        _opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        let dir = direction::ICRS::from(self);
+        crate::event::stellar::find_star_above_periods(
+            dir.ra(),
+            dir.dec(),
+            *observer,
+            window,
+            threshold,
+        )
+    }
+
+    fn event_below_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        _opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        let dir = direction::ICRS::from(self);
+        crate::event::stellar::find_star_below_periods(
+            dir.ra(),
+            dir.dec(),
+            *observer,
+            window,
+            threshold,
+        )
+    }
+
+    fn event_altitude_ranges(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        h_min: Degrees,
+        h_max: Degrees,
+        _opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        let dir = direction::ICRS::from(self);
+        crate::event::stellar::find_star_range_periods(
+            dir.ra(),
+            dir.dec(),
+            *observer,
+            window,
+            (h_min, h_max),
+        )
     }
 }
 
@@ -91,6 +322,55 @@ impl AltitudeProvider for direction::ICRS {
             self.ra(),
             self.dec(),
             policy,
+        )
+    }
+
+    fn event_above_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        _opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        crate::event::stellar::find_star_above_periods(
+            self.ra(),
+            self.dec(),
+            *observer,
+            window,
+            threshold,
+        )
+    }
+
+    fn event_below_threshold(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        threshold: Degrees,
+        _opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        crate::event::stellar::find_star_below_periods(
+            self.ra(),
+            self.dec(),
+            *observer,
+            window,
+            threshold,
+        )
+    }
+
+    fn event_altitude_ranges(
+        &self,
+        observer: &Geodetic<ECEF>,
+        window: Interval<ModifiedJulianDate>,
+        h_min: Degrees,
+        h_max: Degrees,
+        _opts: SearchOpts,
+    ) -> Vec<Interval<ModifiedJulianDate>> {
+        crate::event::stellar::find_star_range_periods(
+            self.ra(),
+            self.dec(),
+            *observer,
+            window,
+            (h_min, h_max),
         )
     }
 }
@@ -150,16 +430,28 @@ impl_altitude_provider_vsop87!(Mercury, Venus, Mars, Jupiter, Saturn, Uranus, Ne
 mod tests {
     use super::*;
     use crate::bodies::catalog;
-    use crate::event::altitude::{above_threshold, altitude_ranges, below_threshold, SearchOpts};
+    use crate::event::altitude::{
+        above_threshold, altitude_ranges, below_threshold, AltitudeEventsExt, SearchOpts,
+    };
     use crate::time::Interval;
 
     struct FixedAltitudeTarget {
         alt: Radians,
     }
 
+    struct BorrowedAltitudeTarget<'a> {
+        alt: &'a Radians,
+    }
+
     impl AltitudeProvider for FixedAltitudeTarget {
         fn altitude_at(&self, _observer: &Geodetic<ECEF>, _mjd: ModifiedJulianDate) -> Radians {
             self.alt
+        }
+    }
+
+    impl AltitudeProvider for BorrowedAltitudeTarget<'_> {
+        fn altitude_at(&self, _observer: &Geodetic<ECEF>, _mjd: ModifiedJulianDate) -> Radians {
+            *self.alt
         }
     }
 
@@ -201,6 +493,20 @@ mod tests {
     }
 
     #[test]
+    fn borrowed_custom_altitude_provider_works_with_above_threshold() {
+        let alt = Degrees::new(45.0).to::<Radian>();
+        let target = BorrowedAltitudeTarget { alt: &alt };
+        let periods = above_threshold(
+            &target,
+            &greenwich(),
+            one_day_window(),
+            Degrees::new(0.0),
+            SearchOpts::default(),
+        );
+        assert_eq!(periods.len(), 1);
+    }
+
+    #[test]
     fn sun_above_horizon_via_standard_api() {
         let periods = above_threshold(
             &solar_system::Sun,
@@ -218,6 +524,17 @@ mod tests {
             &solar_system::Moon,
             &greenwich(),
             one_week_window(),
+            Degrees::new(0.0),
+            SearchOpts::default(),
+        );
+        assert!(!periods.is_empty());
+    }
+
+    #[test]
+    fn extension_trait_exposes_method_style_events() {
+        let periods = solar_system::Sun.above_threshold(
+            &greenwich(),
+            one_day_window(),
             Degrees::new(0.0),
             SearchOpts::default(),
         );
